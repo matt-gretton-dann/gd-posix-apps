@@ -38,3 +38,6 @@
 
 # Build directories:
 build*/
+
+# Python
+__pycache__/
