@@ -1,0 +1,23 @@
+# \file   .editorconfig
+# \author Copyright 2020, Matthew Gretton-Dann
+# SPDX-License-Identifier: Apache-2.0
+
+# top-most EditorConfig file
+root = true
+
+# We default to 2-spaces at tabs
+indent_style = space
+indent_size = 2
+tab_width = 8
+trim_trailing_whitespace = true
+insert_final_newline = true
+max_line_length = 100
+
+# Python is 4 spaces
+[*.py]
+indent_size = 4
+max_line_length = 79
+
+# Makefiles use Tabs.
+[Makefile]
+indent_style = tab
