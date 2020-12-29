@@ -1,0 +1,59 @@
+name: GD-Posix-Apps Build/test CI
+on: [push, pull_request]
+
+jobs:
+  linux-build:
+    name: Build and test on ${{ matrix.os }}
+    runs-on: ${{ matrix. os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    
+    steps:
+    - uses: actions/checkout@v2
+    - name: Configure
+      run: |
+        sudo apt install ninja-build
+        mkdir -p "${GITHUB_WORKSPACE}/build"
+        cmake -S "${GITHUB_WORKSPACE}" -B "${GITHUB_WORKSPACE}/build" -G Ninja
+    - name: Build
+      run: cmake --build "${GITHUB_WORKSPACE}/build"
+    - name: Test
+      run: cmake --build "${GITHUB_WORKSPACE}/build" --target test
+
+  macos-build:
+    name: Build and test on ${{ matrix.os }}
+    runs-on: ${{ matrix. os }}
+    strategy:
+      matrix:
+        os: [macos-latest]
+    
+    steps:
+    - uses: actions/checkout@v2
+    - name: Configure
+      run: |
+        brew install ninja
+        mkdir -p "${GITHUB_WORKSPACE}/build"
+        cmake -S "${GITHUB_WORKSPACE}" -B "${GITHUB_WORKSPACE}/build" -G Ninja
+    - name: Build
+      run: ninja -C "${GITHUB_WORKSPACE}/build"
+    - name: Test
+      run: ninja -C "${GITHUB_WORKSPACE}/build" test
+
+  windows-build:
+    name: Build and test on ${{ matrix.os }}
+    runs-on: ${{ matrix. os }}
+    strategy:
+      matrix:
+        os: [windows-latest]
+    
+    steps:
+    - uses: actions/checkout@v2
+    - name: Configure
+      run: |
+        cmake -S "$Env:GITHUB_WORKSPACE" -B "$Env:GITHUB_WORKSPACE\\build"
+    - name: Build
+      run: cmake --build "$Env:GITHUB_WORKSPACE\\build"
+    - name: Test
+      run: cmake --build "$Env:GITHUB_WORKSPACE\\build" --target RUN_TESTS
+
