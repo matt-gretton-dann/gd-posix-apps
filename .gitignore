@@ -41,3 +41,6 @@ build*/
 
 # Python
 __pycache__/
+
+# VS Code:
+.vscode/c_cpp_properties.json
