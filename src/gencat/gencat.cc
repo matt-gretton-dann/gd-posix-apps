@@ -24,7 +24,43 @@
 #include <vector>
 
 namespace {
-std::string_view program_name; ///< Program name - somewhere global for all.
+std::string_view program_name;  ///< Program name - somewhere global for all.
+
+/** \brief         Wrapper around write
+ *  \param  fd     File descriptor to write to
+ *  \param  data   Pointer to data to write
+ *  \param  amount number of bytes to write.
+ *  \return        Amount of data written.
+ *  \throws        std::system_error() on an error.
+ *
+ * This wrapper on ::write handles redoing work when receiving `EINTR`, and also
+ * writing files that are larger SSIZE_MAX.
+ *
+ * On an error it throws a std::system_error exception.  Note that in this case
+ * the output file may already have some data in it.
+ */
+int xwrite(int fd, char const* data, std::uint64_t amount)
+{
+  char const* end = data + amount;
+  while (data < end) {
+    // Jump through some hoops to ensure we write at most SSIZE_MAX bytes of
+    // data, and certainly no more than requested.
+    std::uint64_t to_do = end - data;
+    std::size_t to_write =
+      static_cast<std::size_t>(std::min(static_cast<std::uint64_t>(SSIZE_MAX), to_do));
+    ssize_t written = ::write(fd, data, to_write);
+    if (written == -1) {
+      // EINTR means 'try again'.
+      if (errno != EINTR) {
+        throw std::system_error(std::make_error_code(static_cast<std::errc>(errno)));
+      }
+    }
+    else {
+      data += written;
+    }
+  }
+  return amount;
+}
 
 /** \brief A basic location recorder.
  *
@@ -33,24 +69,29 @@ std::string_view program_name; ///< Program name - somewhere global for all.
  *
  * Can be used to throw error messages, or get warning messages.
  */
-class Location {
+class Location
+{
 public:
   /** \brief          Constructor
    *  \param filename File name
    *  \param loc      Initial location (defaults to 0).
    */
   explicit Location(std::string filename, std::uint64_t loc = 0) noexcept
-      : filename_(std::move(filename)), loc_(loc) {}
+      : filename_(std::move(filename)), loc_(loc)
+  {
+  }
 
   /** \brief          Constructor
    *  \param filename File name
    *  \param loc      Initial location (defaults to 0).
    */
   explicit Location(std::string_view filename, std::uint64_t loc = 0)
-      : filename_(filename), loc_(loc) {}
+      : filename_(filename), loc_(loc)
+  {
+  }
 
   /** \brief  Get the filename. */
-  std::string const &filename() const noexcept { return filename_; }
+  std::string const& filename() const noexcept { return filename_; }
 
   /** \brief  Get the current location. */
   std::uint64_t loc() const noexcept { return loc_; }
@@ -59,7 +100,8 @@ public:
   void loc(std::uint64_t l) noexcept { loc_ = l; }
 
   /** \brief  Increase the location value. */
-  void inc_loc(std::uint64_t inc) noexcept {
+  void inc_loc(std::uint64_t inc) noexcept
+  {
     assert(loc_ < SIZE_MAX - inc);
     loc_ += inc;
   }
@@ -72,8 +114,9 @@ public:
    * location followed by the error message specified, and formatted through
    * fmt::format.
    */
-  template <typename... Ts>
-  [[noreturn]] void error(std::string const &f, Ts... args) {
+  template<typename... Ts>
+  [[noreturn]] void error(std::string const& f, Ts... args) const
+  {
     std::string result = ::fmt::format("{}:{}:ERROR: ", filename_, loc_);
     result += ::fmt::format(f, args...);
     throw std::runtime_error(result);
@@ -88,16 +131,17 @@ public:
    * location followed by the error message specified, and formatted through
    * fmt::format.
    */
-  template <typename... Ts>
-  std::string warning(std::string const &f, Ts... args) {
+  template<typename... Ts>
+  std::string warning(std::string const& f, Ts... args) const
+  {
     std::string result = ::fmt::format("{}:{}:WARNING: ", filename_, loc_);
     result += ::fmt::format(f, args...);
     return result;
   }
 
 private:
-  std::string filename_; ///< File name
-  std::uint64_t loc_;    ///< Current location
+  std::string filename_;  ///< File name
+  std::uint64_t loc_;     ///< Current location
 };
 
 /** \brief       Read a little-endian integer from a data block.
@@ -107,16 +151,17 @@ private:
  *
  * Caller is responsible for ensuring \a data points to valid memory.
  *
- * If the system being compiled for is big-endian, or the data is not naturally
- * aligned a slow byte-by-byte read is done.  Otherwise we just do a type
- * conversion.
+ * If the system being compiled for is big-endian, or the data is not
+ * naturally aligned a slow byte-by-byte read is done.  Otherwise we just do a
+ * type conversion.
  */
-template <typename T, std::enable_if_t<std::is_integral<T>::value, bool> = true>
-T read(std::uint8_t const *data) {
+template<typename T, std::enable_if_t<std::is_integral<T>::value, bool> = true>
+T read(std::uint8_t const* data)
+{
   // Fast path - no endian conversion, and data is appropriately aligned.
   if constexpr (std::endian::native == std::endian::little) {
     if (((uintptr_t)data) % sizeof(T) == 0) {
-      return *(reinterpret_cast<T const *>(data));
+      return *(reinterpret_cast<T const*>(data));
     }
   }
 
@@ -128,12 +173,13 @@ T read(std::uint8_t const *data) {
   return result;
 }
 
-template <typename T, std::enable_if_t<std::is_integral<T>::value, bool> = true>
-void write(std::uint8_t *data, T value) {
+template<typename T, std::enable_if_t<std::is_integral<T>::value, bool> = true>
+void write(std::uint8_t* data, T value)
+{
   // Fast path - no endian conversion, and data is appropriately aligned.
   if constexpr (std::endian::native == std::endian::little) {
     if (((uintptr_t)data) % sizeof(T) == 0) {
-      *(reinterpret_cast<T *>(data)) = value;
+      *(reinterpret_cast<T*>(data)) = value;
     }
   }
 
@@ -144,136 +190,79 @@ void write(std::uint8_t *data, T value) {
   }
 }
 
-class MessageCatalogue {
+/** \brief  A message catalogue.
+ *
+ * This class represents the majority of the working logic of the code.  It
+ * handles loading binary catalogue files, and textual message files merging
+ * them together, and then writing out the combined result at the end.
+ */
+class MessageCatalogue
+{
 public:
-  using MessageSet = std::map<std::uint32_t, std::string>;
-  using SetMap = std::map<std::uint32_t, MessageSet>;
-
-  void load_catfile(std::string_view const &file) {
-
-    if (!sets_.empty()) {
-      throw std::runtime_error(
-          "Calling load_catfile on non-empty MessageCatalogue");
-    }
-
+  /** \brief      Load a catalogue file.
+   *  \param file File to load from.
+   */
+  void load_catfile(std::string_view const& file)
+  {
     std::ifstream is(file.data(), std::ios::binary | std::ios::in);
-    std::vector<std::uint8_t> data;
-    char tmp[4096];
+    Data data;
     Location loc(file, 0);
 
     // Read the header
-    if (!is.read(tmp, 24)) {
-      throw std::runtime_error("File is too short for a message catalogue.");
-    }
-    data.insert(data.end(), tmp, tmp + is.gcount());
-
-    // Check header
-    if (data[0] != 'M' || data[1] != 'S' || data[2] != 'G' || data[3] != '\0') {
-      loc.error("File does not start with message catalogue magic.");
-    }
-    if (data[4] != 1) {
-      loc.error("File is not a version 1 message catalogue.");
-    }
-    for (auto i = 5; i < 12; ++i) {
-      if (data[i] != 0) {
-        loc.loc(i);
-        loc.error("Reserved field is not 0.");
-      }
-    }
-    std::uint32_t set_count = read<std::uint32_t>(data.data() + 12);
-    std::uint64_t file_size = read<std::uint64_t>(data.data() + 16);
+    load_header(is, loc, data);
+    std::uint32_t set_count = read<std::uint32_t>(data.data() + set_count_off);
+    std::uint64_t file_size = read<std::uint64_t>(data.data() + file_size_off);
     data.reserve(file_size);
 
     // Read the rest of the file.
-    while (is.read(tmp, 4096)) {
-      data.insert(data.end(), tmp, tmp + 4096);
-      if (data.size() > file_size) {
-        loc.loc(file_size);
-        loc.error("File is larger than it claims.");
-      }
-    }
-    data.insert(data.end(), tmp, tmp + is.gcount());
-    if (data.size() > file_size) {
-      loc.loc(file_size);
-      loc.error("File is larger than it claims.");
-    }
-
-    std::uint64_t set_offset = 24;
+    load_data(is, loc, data, file_size);
+    std::uint64_t set_offset = hdr_size;
     auto raw_data = data.data();
+
+    // Process each set.
     for (std::uint32_t set = 0; set < set_count; ++set) {
-      loc.loc(set_offset);
-      if (set_offset > file_size - 16) {
-        loc.error("File is not big enough for set table.");
-      }
-      std::uint32_t set_id = read<std::uint32_t>(raw_data + set_offset + 0);
-      std::uint32_t set_msg_count =
-          read<std::uint32_t>(raw_data + set_offset + 4);
-      std::uint64_t set_msg_array_offset =
-          read<std::uint64_t>(raw_data + set_offset + 8);
-      set_offset += 16;
+      TableEntry set_te = read_table_entry(loc, data, set_offset);
+      set_offset += table_entry_size;
 
-      auto [set_it, success] = sets_.insert({set_id, MessageSet()});
+      auto [set_it, success] = sets_.insert({set_te.id, MessageSet()});
       if (!success) {
-        loc.error("Message catalogue contains multiple definitions of set {}",
-                  set_id);
+        loc.error("Message catalogue contains multiple definitions of set {}", set_te.id);
       }
 
-      if (set_msg_array_offset >= file_size) {
-        loc.loc(set_msg_array_offset);
+      if (set_te.offset >= file_size) {
+        loc.loc(set_te.offset);
         loc.error("Message array offset outside bounds of message catalogue.");
       }
-      for (std::uint32_t msg = 0; msg < set_msg_count; ++msg) {
-        loc.loc(set_msg_array_offset);
-        if (set_msg_array_offset > file_size - 16) {
-          loc.error("Message Catalogue for set {} is not big enough for "
-                    "message table.",
-                    set_id);
-        }
-        std::uint32_t msg_id =
-            read<std::uint32_t>(raw_data + set_msg_array_offset + 0);
-        std::uint32_t msg_length =
-            read<std::uint32_t>(raw_data + set_msg_array_offset + 4);
-        std::uint64_t msg_offset =
-            read<std::uint64_t>(raw_data + set_msg_array_offset + 8);
-        set_msg_array_offset += 16;
 
-        loc.loc(msg_offset);
-        if (msg_offset >= file_size) {
-          loc.error(
-              "Message {}.{} starts beyond the end of the message catalogue.",
-              set_id, msg_id);
-        }
-        if (msg_length > file_size) {
-          loc.error("Message {}.{} is longer than the length of the message "
-                    "catalogue.",
-                    set_id, msg_id);
-        }
-        if (msg_offset > file_size - msg_length) {
-          loc.error("Message {}.{} overflows the end of the file.", set_id,
-                    msg_id);
-        }
+      // Process each message within each set.
+      for (std::uint32_t msg = 0; msg < set_te.len; ++msg) {
+        TableEntry msg_te = read_table_entry(loc, data, set_te.offset);
+        set_te.offset += table_entry_size;
 
-        auto [msg_it, success] = set_it->second.insert(
-            {msg_id,
-             std::string(reinterpret_cast<char const *>(raw_data + msg_offset),
-                         msg_length)});
+        auto msg_str = read_string(loc, data, set_te.id, msg_te);
+
+        auto [msg_it, success] = set_it->second.insert({msg_te.id, msg_str});
         if (!success) {
-          loc.error("Multiple definitions of message with ID: {}.{}.", set_id,
-                    msg_id);
+          loc.error("Multiple definitions of message with ID: {}.{}.", set_te.id, msg_te.id);
         }
       }
     }
   }
 
-  void load_msgfile(std::string_view const &file) {
+  /** \brief      Handle loading a message file.
+   *  \param file File name to load
+   */
+  void load_msgfile(std::string_view const& file)
+  {
     std::ifstream ifs;
     if (file != "-") {
       ifs.open(file.data());
     }
-    std::istream &is = (file == "-") ? std::cin : ifs;
+    std::istream& is = (file == "-") ? std::cin : ifs;
 
     std::string line;
     Location loc(file, 0);
+
     auto set_it = sets_.insert({NL_SETD, MessageSet()}).first;
     int quote = -1;
     while (std::getline(ifs, line)) {
@@ -292,110 +281,109 @@ public:
       // Interpret the line.
       if (line.substr(0, 5) == "$set ") {
         auto r = std::stoul(line.substr(5));
-        if (r > std::numeric_limits<std::uint32_t>::max()) {
-          loc.error("Set number {} is too large.", r);
-        } else if (r > NL_SETMAX) {
-          std::cerr << loc.warning("Set number {} is larger than NL_SETD ({}).",
-                                   r, NL_SETD)
-                    << '\n';
-        } else if (r < 1) {
-          loc.error("Set number {} is too small, must be at least 1.", r);
-        }
-
+        validate_id(loc, r, "NL_SETD", NL_SETD);
         set_it = sets_.insert({r, MessageSet()}).first;
-      } else if (line.substr(0, 8) == "$delset ") {
+      }
+      else if (line.substr(0, 8) == "$delset ") {
         auto r = std::stoul(line.substr(8));
+        validate_id(loc, r, "NL_SETD", NL_SETD);
         auto it = sets_.find(r);
         if (it != sets_.end()) {
+          // We only clear (and not erase) just in case $set is set to the same
+          // value that we've just erased.
           it->second.clear();
         }
-      } else if (line.substr(0, 2) == "$ ") {
+      }
+      else if (line.substr(0, 2) == "$ ") {
         /* Do nothing: Comment.  */
-      } else if (line.substr(0, 7) == "$quote ") {
+      }
+      else if (line.substr(0, 7) == "$quote ") {
         if (line.size() > 8) {
           loc.error("Quote should be a single character, or empty to clear.");
-        } else if (line.size() == 7) {
+        }
+        else if (line.size() == 7) {
           quote = -1;
-        } else {
+        }
+        else {
           quote = line[7];
         }
-      } else if (line == "$quote") {
+      }
+      else if (line == "$quote") {
         quote = -1;
-      } else if (std::isdigit(line[0])) {
+      }
+      else if (std::isdigit(line[0])) {
         std::size_t pos = 0;
         auto r = std::stoul(line, &pos);
-        if (r > std::numeric_limits<std::uint32_t>::max()) {
-          loc.error("Message number {} is too large.", r);
-        } else if (r > NL_MSGMAX) {
-          std::cerr << loc.warning(
-                           "Message number {} is larger than NL_MSGMAX ({}).",
-                           r, NL_MSGMAX)
-                    << '\n';
-        } else if (r < 1) {
-          loc.error("Message number {} is too small, must be at least 1.", r);
-        }
+        validate_id(loc, r, "NL_MSGMAX", NL_MSGMAX);
 
         if (line.size() == pos) {
           set_it->second.erase(r);
-        } else if (line[pos] != ' ') {
+        }
+        else if (line[pos] != ' ') {
           loc.error("Message number should be followed by a space.");
-        } else {
+        }
+        else {
           std::string value(line.substr(pos + 1));
-          if (!value.empty() && quote != -1 &&
-              value[0] == (char)(quote & 0xff)) {
+          if (!value.empty() && quote != -1 && value[0] == (char)(quote & 0xff)) {
             if (value[value.size() - 1] != (char)(quote & 0xff)) {
-              std::cerr << loc.warning(
-                  "String starts with a quote but does not end with one.");
-            } else {
+              std::cerr << loc.warning("String starts with a quote but does not end with one.");
+            }
+            else {
               value = value.substr(1, value.size() - 2);
             }
           }
           auto [it, success] = set_it->second.insert({r, std::string(value)});
           if (!success) {
-            std::cerr << loc.warning("Replacing existing message ID {}.{}",
-                                     set_it->first, r)
+            std::cerr << loc.warning("Replacing existing message ID {}.{}", set_it->first, r)
                       << "\n";
             it->second = std::string(value);
           }
         }
-      } else {
+      }
+      else {
         loc.error("Unrecognised line contents.");
       }
     }
 
-    // Delete any empty sets.
+    // Delete any empty sets.  When we handle deleting sets above we merely
+    // clear the message map We don't delete any actual messages.
     auto it = sets_.begin();
     while (it != sets_.end()) {
       if (it->second.empty()) {
         it = sets_.erase(it);
-      } else {
+      }
+      else {
         ++it;
       }
     }
   }
 
-  void emit(int fd) {
-    std::vector<std::uint8_t> data{'M', 'S', 'G', '\0', 1, 0, 0, 0, 0, 0, 0, 0};
-    data.resize(24);
-    write(data.data() + 12, std::uint32_t(sets_.size()));
-    // Can't write file size yet.
+  /** \brief    Save out a cat file to the indicated file descriptor.
+   *  \param fd File descriptor.
+   */
+  void save_catfile(int fd) const
+  {
+    Data data{'M', 'S', 'G', '\0', 1, 0, 0, 0, 0, 0, 0, 0};
+    data.resize(hdr_size);
+    write(data.data() + set_count_off, std::uint32_t(sets_.size()));
+    // Can't write file size yet - as we don't know it.
 
-    data.resize(24 + sets_.size() * 16);
-    std::uint64_t set_offset = 24;
-    for (auto const &kv : sets_) {
-      write(data.data() + set_offset, kv.first);
-      write(data.data() + set_offset + 4, std::uint32_t(kv.second.size()));
+    data.resize(hdr_size + sets_.size() * table_entry_size);
+    std::uint64_t set_offset = hdr_size;
+    for (auto const& kv : sets_) {
       std::uint64_t msg_array_offset = data.size();
-      write(data.data() + set_offset + 8, msg_array_offset);
-      set_offset += 16;
+      write_table_entry(
+        data, set_offset,
+        TableEntry{kv.first, static_cast<std::uint32_t>(kv.second.size()), msg_array_offset});
+      set_offset += table_entry_size;
 
       data.resize(data.size() + kv.second.size() * 16);
-      for (auto const &kv2 : kv.second) {
-        write(data.data() + msg_array_offset, kv2.first);
-        write(data.data() + msg_array_offset + 4, kv2.second.size());
+      for (auto const& kv2 : kv.second) {
         std::uint64_t msg_offset = data.size();
-        write(data.data() + msg_array_offset + 8, msg_offset);
-        msg_array_offset += 16;
+        write_table_entry(
+          data, msg_array_offset,
+          TableEntry{kv2.first, static_cast<std::uint32_t>(kv2.second.size()), msg_offset});
+        msg_array_offset += table_entry_size;
         for (auto c : kv2.second) {
           data.push_back(std::uint8_t(c));
         }
@@ -403,31 +391,176 @@ public:
     }
 
     // Now we can write the file size.
-    write(data.data() + 16, std::uint64_t(data.size()));
+    write(data.data() + file_size_off, std::uint64_t(data.size()));
 
     // Now write data to the file.
-    std::uint64_t offset = 0;
-    while (offset < data.size()) {
-      std::uint64_t left = data.size() - offset;
-      ssize_t written = ::write(fd, data.data() + offset,
-                                std::min(std::uint64_t(SSIZE_MAX), left));
-      if (written == -1) {
-        if (errno != EINTR) {
-          throw std::system_error(
-              std::make_error_code(static_cast<std::errc>(errno)));
-        }
-      } else {
-        offset += written;
+    xwrite(fd, reinterpret_cast<char const*>(data.data()), data.size());
+  }
+
+private:
+  using Id = std::uint32_t;                      ///< Id integer type
+  using Length = std::uint32_t;                  ///< Length integer type
+  using Offset = std::uint64_t;                  ///< Offset type
+  using MessageSet = std::map<Id, std::string>;  ///< Map of Message IDs to strings
+  using SetMap = std::map<Id, MessageSet>;       ///< Map of Set Ids to Messages
+  using Data = std::vector<std::uint8_t>;        ///< Type for storing arrays of bytes
+
+  /** \brief  Simple structure to represent a table entry.
+   *
+   * Because of the design of the catfile format the tables all have similar
+   * layouts: Entry ID, a length (which may be bytes or number of entries in
+   * subtable) and offset to the entry's data.
+   */
+  struct TableEntry
+  {
+    Id id;
+    Length len;
+    Offset offset;
+  };
+
+  /** \brief      Load the initial header into a data structure.
+   *  \param is   Input stream to ready from
+   *  \param loc  Location object to use.
+   *  \param data Data location to store header in.
+   *
+   * Will validate the header.
+   */
+  static void load_header(std::istream& is, Location& loc, Data& data)
+  {
+    char buf[hdr_size];
+    if (!is.read(buf, hdr_size)) {
+      throw std::runtime_error("Message catalogue is too short to be valid.");
+    }
+    data.insert(data.end(), buf, buf + is.gcount());
+
+    if (data[0] != 'M' || data[1] != 'S' || data[2] != 'G' || data[3] != '\0') {
+      loc.error("File does not start with message catalogue magic.");
+    }
+    if (data[4] != 1) {
+      loc.error("File is not a version 1 message catalogue.");
+    }
+    for (auto i = 5; i < 12; ++i) {
+      if (data[i] != 0) {
+        loc.loc(i);
+        loc.error("Reserved field is not 0.");
       }
     }
   }
 
-private:
-  SetMap sets_;
-};
-} // namespace
+  /** \brief      Load the rest of a catfile into a data block
+   *  \param is   Input stream to ready from
+   *  \param loc  Location object to use.
+   *  \param data Data location to store header in.
+   *  \param file_size Expected file size (including already loaded header).
+   *
+   * Will validate the size of the file.
+   */
+  static void load_data(std::istream& is, Location& loc, Data& data, Offset file_size)
+  {
+    constexpr std::size_t bufsize = 4096;
+    char buf[bufsize];
+    while (is.read(buf, bufsize)) {
+      data.insert(data.end(), buf, buf + is.gcount());
+      if (data.size() > file_size) {
+        loc.loc(file_size);
+        loc.error("Message catalogue is larger than it claims.");
+      }
+    }
+    data.insert(data.end(), buf, buf + is.gcount());
+    if (data.size() > file_size) {
+      loc.loc(file_size);
+      loc.error("Message Catalogue is larger than it claims.");
+    }
+    if (data.size() < file_size) {
+      loc.loc(data.size());
+      loc.error("Message catalogue is not as large as it claims.");
+    }
+  }
 
-int main(int argc, char **argv) try {
+  /** \brief         Read a table entry
+   *  \param  loc    Location object
+   *  \param  data   Data to be read.
+   *  \param  offset Offset of table entry within data.
+   *  \return        A table entry.
+   */
+  TableEntry read_table_entry(Location& loc, Data const& data, Offset offset) const
+  {
+    if (offset > data.size() - table_entry_size) {
+      loc.loc(offset);
+      loc.error("Table is outside bounds of message catalogue.");
+    }
+    auto raw_data = data.data() + offset;
+    Id id = read<std::uint32_t>(raw_data + table_entry_id_off);
+    Length len = read<std::uint32_t>(raw_data + table_entry_len_off);
+    Offset off = read<std::uint64_t>(raw_data + table_entry_off_off);
+    return TableEntry{id, len, off};
+  }
+
+  /** \brief        Write a table entry
+   *  \param data   Data to write into
+   *  \param offset Offset to write at
+   *  \param te     Table entry to write
+   */
+  void write_table_entry(Data& data, Offset offset, TableEntry const& te) const
+  {
+    write(data.data() + offset + table_entry_id_off, te.id);
+    write(data.data() + offset + table_entry_len_off, te.len);
+    write(data.data() + offset + table_entry_off_off, te.offset);
+  }
+
+  /** \brief         Read a string
+   *  \param  loc    Location object
+   *  \param  data   Data to read from.
+   *  \param  set_id ID of set string belongs to.
+   *  \param  te     Message table entry giving location of string to read.
+   *  \return        Read string.
+   */
+  std::string read_string(Location& loc, Data const& data, Id set_id, TableEntry const& te) const
+  {
+    loc.loc(te.offset);
+    if (te.offset >= data.size()) {
+      loc.error("Message {}.{} starts beyond the end of the message catalogue.", set_id, te.id);
+    }
+    if (te.len > data.size()) {
+      loc.error("Message {}.{} is longer than the length of the message "
+                "catalogue.",
+                set_id, te.id);
+    }
+    if (te.offset > data.size() - te.len) {
+      loc.error("Message {}.{} overflows the end of the message catalogue.", set_id, te.id);
+    }
+
+    return std::string(reinterpret_cast<char const*>(data.data() + te.offset), te.len);
+  }
+
+  static void validate_id(Location& loc, Id id, const char* soft_limit_name, Id soft_limit)
+  {
+    if (id > std::numeric_limits<Id>::max()) {
+      loc.error("Id {} is too large.", id);
+    }
+    else if (id > soft_limit) {
+      std::cerr << loc.warning("Id {} is larger than {} ({}).", id, soft_limit_name, soft_limit)
+                << '\n';
+    }
+    else if (id < 1) {
+      loc.error("Id {} is too small, must be at least 1.", id);
+    }
+  }
+
+  static constexpr Offset hdr_size = 24;            ///< Size of the header.
+  static constexpr Offset set_count_off = 12;       ///< Offset in header of count of sets
+  static constexpr Offset file_size_off = 16;       ///< Offset in header of file size
+  static constexpr Offset table_entry_size = 16;    ///< Size of a table entry
+  static constexpr Offset table_entry_id_off = 0;   ///< Table entry ID offset
+  static constexpr Offset table_entry_len_off = 4;  ///< Table entry length offset
+  static constexpr Offset table_entry_off_off = 8;  ///< Table entry offset offset
+
+  SetMap sets_;  ///< Set ID -> Messages map.
+};
+}  // namespace
+
+int main(int argc, char** argv)
+try {
   program_name = ::basename(argv[0]);
 
   if (argc < 3) {
@@ -458,20 +591,22 @@ int main(int argc, char **argv) try {
       outfile += ".XXXXXX";
       remove_outfile = true;
       fd = ::mkstemp(outfile.data());
-    } else if (outfile == "-") {
+    }
+    else if (outfile == "-") {
       fd = STDOUT_FILENO;
-    } else {
+    }
+    else {
       fd = ::open(outfile.c_str(), O_CREAT | O_WRONLY | O_TRUNC,
                   S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
     }
 
     if (fd == -1) {
-      throw std::system_error(
-          std::make_error_code(static_cast<std::errc>(errno)));
+      throw std::system_error(std::make_error_code(static_cast<std::errc>(errno)));
     }
 
-    cat.emit(fd);
-  } catch (std::exception &e) {
+    cat.save_catfile(fd);
+  }
+  catch (std::exception& e) {
     std::cerr << e.what() << "\n";
     failed = true;
     remove_outfile = (fd != -1 && fd != STDOUT_FILENO);
@@ -483,14 +618,13 @@ int main(int argc, char **argv) try {
 
   if (updating) {
     if (unlink(catfile.data()) == -1) {
-      std::cerr << fmt::format("{}: Unable to remove file: {}\n", program_name,
-                               catfile);
+      std::cerr << fmt::format("{}: Unable to remove file: {}\n", program_name, catfile);
       failed = true;
-    } else if (rename(outfile.data(), catfile.data()) == -1) {
-      std::cerr << fmt::format("{}: Unable to remame file {} to {}\n",
-                               program_name, outfile, catfile);
-      std::cerr << fmt::format("{}: Leaving temporary file in place.\n",
-                               program_name);
+    }
+    else if (rename(outfile.data(), catfile.data()) == -1) {
+      std::cerr << fmt::format("{}: Unable to remame file {} to {}\n", program_name, outfile,
+                               catfile);
+      std::cerr << fmt::format("{}: Leaving temporary file in place.\n", program_name);
       remove_outfile = false;
       failed = true;
     }
@@ -502,9 +636,11 @@ int main(int argc, char **argv) try {
   }
 
   return failed ? EXIT_FAILURE : EXIT_SUCCESS;
-} catch (std::exception const &e) {
+}
+catch (std::exception const& e) {
   std::cerr << fmt::format("{}: {}\n", program_name, e.what());
   std::exit(EXIT_FAILURE);
-} catch (...) {
+}
+catch (...) {
   std::cerr << fmt::format("Unrecognised exception");
 }
