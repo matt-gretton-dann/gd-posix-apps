@@ -55,4 +55,5 @@ function(add_utility)
     endif()
 endfunction()
 
+add_subdirectory(gencat)
 add_subdirectory(true-false)
