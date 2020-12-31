@@ -6,6 +6,7 @@
 
 #include "gd/filesystem.hh"
 #include "gd/format.hh"
+#include "gd/libgen.h"
 
 #include <bit>
 #include <cassert>
@@ -14,6 +15,7 @@
 #include <fcntl.h>
 #include <fstream>
 #include <iostream>
+#include <libgen.h>
 #include <limits>
 #include <map>
 #include <nl_types.h>
