@@ -5,7 +5,10 @@
  */
 
 #include "gd/filesystem.hh"
+#include "gd/format.hh"
+
 #include <bit>
+#include <cassert>
 #include <climits>
 #include <cstdlib>
 #include <fcntl.h>
@@ -21,27 +24,80 @@
 #include <vector>
 
 namespace {
-std::string_view program_name;
+std::string_view program_name; ///< Program name - somewhere global for all.
 
-class ErrorReporter {
+/** \brief A basic location recorder.
+ *
+ * Records a filename and location (which may be line number, offset, or some
+ * other mechanism of recoridng the location in a file).
+ *
+ * Can be used to throw error messages, or get warning messages.
+ */
+class Location {
 public:
-  ErrorReporter(std::string_view const &file, std::size_t lineno,
-                bool error = true)
-      : exit_on_destruction_(error) {
-    std::cerr << file << ":" << lineno << ":" << (error ? "ERROR" : "WARNING")
-              << ": ";
+  /** \brief          Constructor
+   *  \param filename File name
+   *  \param loc      Initial location (defaults to 0).
+   */
+  explicit Location(std::string filename, std::uint64_t loc = 0) noexcept
+      : filename_(std::move(filename)), loc_(loc) {}
+
+  /** \brief          Constructor
+   *  \param filename File name
+   *  \param loc      Initial location (defaults to 0).
+   */
+  explicit Location(std::string_view filename, std::uint64_t loc = 0)
+      : filename_(filename), loc_(loc) {}
+
+  /** \brief  Get the filename. */
+  std::string const &filename() const noexcept { return filename_; }
+
+  /** \brief  Get the current location. */
+  std::uint64_t loc() const noexcept { return loc_; }
+
+  /** \brief  Set the location. */
+  void loc(std::uint64_t l) noexcept { loc_ = l; }
+
+  /** \brief  Increase the location value. */
+  void inc_loc(std::uint64_t inc) noexcept {
+    assert(loc_ < SIZE_MAX - inc);
+    loc_ += inc;
   }
 
-  ~ErrorReporter() {
-    if (exit_on_destruction_) {
-      std::exit(1);
-    }
+  /** \brief      Throw a runtime_error
+   *  \param f    Format for error message
+   *  \param args Args to apply to error message.
+   *
+   * Throws a std::runtime_error with the what() being a prefix giving the
+   * location followed by the error message specified, and formatted through
+   * fmt::format.
+   */
+  template <typename... Ts>
+  [[noreturn]] void error(std::string const &f, Ts... args) {
+    std::string result = ::fmt::format("{}:{}:ERROR: ", filename_, loc_);
+    result += ::fmt::format(f, args...);
+    throw std::runtime_error(result);
   }
 
-  std::ostream &stream() const noexcept { return std::cerr; }
+  /** \brief       Get a warning message
+   *  \param  f    Format for warning message
+   *  \param  args Args to apply to warning message.
+   *  \return      String with warning message.
+   *
+   * Returns a string consisting of a prefix giving the
+   * location followed by the error message specified, and formatted through
+   * fmt::format.
+   */
+  template <typename... Ts>
+  std::string warning(std::string const &f, Ts... args) {
+    std::string result = ::fmt::format("{}:{}:WARNING: ", filename_, loc_);
+    result += ::fmt::format(f, args...);
+    return result;
+  }
 
 private:
-  bool exit_on_destruction_;
+  std::string filename_; ///< File name
+  std::uint64_t loc_;    ///< Current location
 };
 
 /** \brief       Read a little-endian integer from a data block.
@@ -94,13 +150,16 @@ public:
   using SetMap = std::map<std::uint32_t, MessageSet>;
 
   void load_catfile(std::string_view const &file) {
+
     if (!sets_.empty()) {
       throw std::runtime_error(
           "Calling load_catfile on non-empty MessageCatalogue");
     }
+
     std::ifstream is(file.data(), std::ios::binary | std::ios::in);
     std::vector<std::uint8_t> data;
     char tmp[4096];
+    Location loc(file, 0);
 
     // Read the header
     if (!is.read(tmp, 24)) {
@@ -110,37 +169,41 @@ public:
 
     // Check header
     if (data[0] != 'M' || data[1] != 'S' || data[2] != 'G' || data[3] != '\0') {
-      throw std::runtime_error("File not a message catalogue.");
+      loc.error("File does not start with message catalogue magic.");
     }
-    if (data[4] != '1') {
-      throw std::runtime_error("File not version 1 message catalogue.");
+    if (data[4] != 1) {
+      loc.error("File is not a version 1 message catalogue.");
     }
     for (auto i = 5; i < 12; ++i) {
       if (data[i] != 0) {
-        throw std::runtime_error("Reserved field not 0");
+        loc.loc(i);
+        loc.error("Reserved field is not 0.");
       }
     }
     std::uint32_t set_count = read<std::uint32_t>(data.data() + 12);
     std::uint64_t file_size = read<std::uint64_t>(data.data() + 16);
     data.reserve(file_size);
 
-    // Read the rets of the file.
+    // Read the rest of the file.
     while (is.read(tmp, 4096)) {
       data.insert(data.end(), tmp, tmp + 4096);
       if (data.size() > file_size) {
-        throw std::runtime_error("File is larger than documented ");
+        loc.loc(file_size);
+        loc.error("File is larger than it claims.");
       }
     }
     data.insert(data.end(), tmp, tmp + is.gcount());
     if (data.size() > file_size) {
-      throw std::runtime_error("File is larger than documented.");
+      loc.loc(file_size);
+      loc.error("File is larger than it claims.");
     }
 
     std::uint64_t set_offset = 24;
     auto raw_data = data.data();
     for (std::uint32_t set = 0; set < set_count; ++set) {
+      loc.loc(set_offset);
       if (set_offset > file_size - 16) {
-        throw std::runtime_error("File is not big enough for set table");
+        loc.error("File is not big enough for set table.");
       }
       std::uint32_t set_id = read<std::uint32_t>(raw_data + set_offset + 0);
       std::uint32_t set_msg_count =
@@ -151,15 +214,20 @@ public:
 
       auto [set_it, success] = sets_.insert({set_id, MessageSet()});
       if (!success) {
-        throw std::runtime_error("File contains duplicate sets.");
+        loc.error("Message catalogue contains multiple definitions of set {}",
+                  set_id);
       }
 
-      if (set_msg_array_offset < file_size) {
-        throw std::runtime_error("Message array offset not in file");
+      if (set_msg_array_offset >= file_size) {
+        loc.loc(set_msg_array_offset);
+        loc.error("Message array offset outside bounds of message catalogue.");
       }
       for (std::uint32_t msg = 0; msg < set_msg_count; ++msg) {
+        loc.loc(set_msg_array_offset);
         if (set_msg_array_offset > file_size - 16) {
-          throw std::runtime_error("Message array overflows file size");
+          loc.error("Message Catalogue for set {} is not big enough for "
+                    "message table.",
+                    set_id);
         }
         std::uint32_t msg_id =
             read<std::uint32_t>(raw_data + set_msg_array_offset + 0);
@@ -169,14 +237,20 @@ public:
             read<std::uint64_t>(raw_data + set_msg_array_offset + 8);
         set_msg_array_offset += 16;
 
+        loc.loc(msg_offset);
         if (msg_offset >= file_size) {
-          throw std::runtime_error("Message starts beyond end of file.");
+          loc.error(
+              "Message {}.{} starts beyond the end of the message catalogue.",
+              set_id, msg_id);
         }
         if (msg_length > file_size) {
-          throw std::runtime_error("Message length is way too long.");
+          loc.error("Message {}.{} is longer than the length of the message "
+                    "catalogue.",
+                    set_id, msg_id);
         }
         if (msg_offset > file_size - msg_length) {
-          throw std::runtime_error("Message overflows end of file.");
+          loc.error("Message {}.{} overflows the end of the file.", set_id,
+                    msg_id);
         }
 
         auto [msg_it, success] = set_it->second.insert(
@@ -184,7 +258,8 @@ public:
              std::string(reinterpret_cast<char const *>(raw_data + msg_offset),
                          msg_length)});
         if (!success) {
-          throw std::runtime_error("Duplicate messages");
+          loc.error("Multiple definitions of message with ID: {}.{}.", set_id,
+                    msg_id);
         }
       }
     }
@@ -198,19 +273,18 @@ public:
     std::istream &is = (file == "-") ? std::cin : ifs;
 
     std::string line;
-    std::size_t lineno = 0;
+    Location loc(file, 0);
     auto set_it = sets_.insert({NL_SETD, MessageSet()}).first;
     int quote = -1;
     while (std::getline(ifs, line)) {
-      ++lineno;
+      loc.inc_loc(1);
 
       // Handle line continuations
       while (line[line.size() - 1] == '\\') {
         std::string line2;
-        ++lineno;
+        loc.inc_loc(1);
         if (!std::getline(ifs, line2)) {
-          ErrorReporter err(file, lineno);
-          err.stream() << "Unexpected EOF.\n";
+          loc.error("Unexpected end of file indicator.");
         }
         line = line.substr(0, line.size() - 1) + line2;
       }
@@ -219,16 +293,13 @@ public:
       if (line.substr(0, 5) == "$set ") {
         auto r = std::stoul(line.substr(5));
         if (r > std::numeric_limits<std::uint32_t>::max()) {
-          ErrorReporter err(file, lineno);
-          err.stream() << "Set number " << r << " is too large.\n";
+          loc.error("Set number {} is too large.", r);
         } else if (r > NL_SETMAX) {
-          ErrorReporter err(file, lineno, false);
-          err.stream() << "Set number " << r << " is larger than NL_SETD ("
-                       << NL_SETD << ").\n";
+          std::cerr << loc.warning("Set number {} is larger than NL_SETD ({}).",
+                                   r, NL_SETD)
+                    << '\n';
         } else if (r < 1) {
-          ErrorReporter err(file, lineno);
-          err.stream() << "Set number " << r
-                       << " is too small (must be at least 1).\n";
+          loc.error("Set number {} is too small, must be at least 1.", r);
         }
 
         set_it = sets_.insert({r, MessageSet()}).first;
@@ -242,9 +313,7 @@ public:
         /* Do nothing: Comment.  */
       } else if (line.substr(0, 7) == "$quote ") {
         if (line.size() > 8) {
-          std::cerr << file << ":" << lineno
-                    << ":ERROR: Quote should only be one character.\n";
-          std::exit(1);
+          loc.error("Quote should be a single character, or empty to clear.");
         } else if (line.size() == 7) {
           quote = -1;
         } else {
@@ -256,45 +325,41 @@ public:
         std::size_t pos = 0;
         auto r = std::stoul(line, &pos);
         if (r > std::numeric_limits<std::uint32_t>::max()) {
-          std::cerr << file << ":" << lineno << ":ERROR: Message number " << r
-                    << " is too large.\n";
-          std::exit(1);
+          loc.error("Message number {} is too large.", r);
         } else if (r > NL_MSGMAX) {
-          std::cerr << file << ":" << lineno << ":WARNING: Message number " << r
-                    << " is larger than NL_MSGMAX (" << NL_MSGMAX << ").\n";
+          std::cerr << loc.warning(
+                           "Message number {} is larger than NL_MSGMAX ({}).",
+                           r, NL_MSGMAX)
+                    << '\n';
         } else if (r < 1) {
-          std::cerr << file << ":" << lineno << ":ERROR: Message number " << r
-                    << " is too small (must be at least 1).\n";
-          std::exit(1);
+          loc.error("Message number {} is too small, must be at least 1.", r);
         }
 
         if (line.size() == pos) {
           set_it->second.erase(r);
         } else if (line[pos] != ' ') {
-          std::cerr
-              << file << ":" << lineno
-              << ":ERROR: Message number should be followed by a space.\n";
-          std::exit(1);
+          loc.error("Message number should be followed by a space.");
         } else {
-          std::string_view value(line.substr(pos + 1));
+          std::string value(line.substr(pos + 1));
           if (!value.empty() && quote != -1 &&
               value[0] == (char)(quote & 0xff)) {
             if (value[value.size() - 1] != (char)(quote & 0xff)) {
-              std::cerr << file << ":" << lineno
-                        << ":WARNING: Non-terminated quoted string.\n";
+              std::cerr << loc.warning(
+                  "String starts with a quote but does not end with one.");
             } else {
               value = value.substr(1, value.size() - 2);
             }
           }
           auto [it, success] = set_it->second.insert({r, std::string(value)});
           if (!success) {
-            std::cerr << file << ":" << lineno
-                      << ":WARNING: Replacing existing ID " << r << "\n";
+            std::cerr << loc.warning("Replacing existing message ID {}.{}",
+                                     set_it->first, r)
+                      << "\n";
+            it->second = std::string(value);
           }
         }
       } else {
-        std::cerr << file << ":" << lineno << ":ERROR: Unrecognised line.\n";
-        std::exit(1);
+        loc.error("Unrecognised line contents.");
       }
     }
 
@@ -322,7 +387,7 @@ public:
       write(data.data() + set_offset + 4, std::uint32_t(kv.second.size()));
       std::uint64_t msg_array_offset = data.size();
       write(data.data() + set_offset + 8, msg_array_offset);
-      ++set_offset;
+      set_offset += 16;
 
       data.resize(data.size() + kv.second.size() * 16);
       for (auto const &kv2 : kv.second) {
@@ -330,12 +395,15 @@ public:
         write(data.data() + msg_array_offset + 4, kv2.second.size());
         std::uint64_t msg_offset = data.size();
         write(data.data() + msg_array_offset + 8, msg_offset);
-        data.resize(msg_offset + kv2.second.size());
+        msg_array_offset += 16;
         for (auto c : kv2.second) {
-          data[msg_offset++] = std::uint8_t(c);
+          data.push_back(std::uint8_t(c));
         }
       }
     }
+
+    // Now we can write the file size.
+    write(data.data() + 16, std::uint64_t(data.size()));
 
     // Now write data to the file.
     std::uint64_t offset = 0;
@@ -359,12 +427,13 @@ private:
 };
 } // namespace
 
-int main(int argc, char **argv) {
-  program_name = argv[0];
+int main(int argc, char **argv) try {
+  program_name = ::basename(argv[0]);
 
   if (argc < 3) {
-    std::cerr << program_name
-              << ": Need to specify catalog and at least one message file.\n";
+    std::cerr << fmt::format("{}: Need to specify a message catalogue and at "
+                             "least one message file.",
+                             program_name);
     std::exit(EXIT_FAILURE);
   }
 
@@ -379,47 +448,50 @@ int main(int argc, char **argv) {
     cat.load_msgfile(*msgfile);
   }
 
-  std::string outfile(catfile);
-  int fd = -1;
-  if (updating) {
-    outfile += ".XXXXXX";
-    fd = ::mkstemp(outfile.data());
-  } else if (outfile == "-") {
-    fd = STDOUT_FILENO;
-  } else {
-    fd = ::open(outfile.c_str(), O_CREAT | O_WRONLY | O_TRUNC,
-                S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-  }
-
-  if (fd == -1) {
-    std::cerr << program_name << ": Unable to open file: " << outfile << "\n";
-  }
-
   bool failed = false;
   bool remove_outfile = false;
+  std::string outfile(catfile);
+  int fd = -1;
+
   try {
+    if (updating) {
+      outfile += ".XXXXXX";
+      remove_outfile = true;
+      fd = ::mkstemp(outfile.data());
+    } else if (outfile == "-") {
+      fd = STDOUT_FILENO;
+    } else {
+      fd = ::open(outfile.c_str(), O_CREAT | O_WRONLY | O_TRUNC,
+                  S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+    }
+
+    if (fd == -1) {
+      throw std::system_error(
+          std::make_error_code(static_cast<std::errc>(errno)));
+    }
+
     cat.emit(fd);
   } catch (std::exception &e) {
     std::cerr << e.what() << "\n";
     failed = true;
-    remove_outfile = true;
-    std::exit(EXIT_FAILURE);
+    remove_outfile = (fd != -1 && fd != STDOUT_FILENO);
   }
 
-  if (fd != STDOUT_FILENO) {
+  if (fd != -1 && fd != STDOUT_FILENO) {
     close(fd);
   }
 
   if (updating) {
     if (unlink(catfile.data()) == -1) {
-      std::cerr << program_name << ": Unable to remove file: " << catfile
-                << "\n";
+      std::cerr << fmt::format("{}: Unable to remove file: {}\n", program_name,
+                               catfile);
       failed = true;
-      remove_outfile = true;
     } else if (rename(outfile.data(), catfile.data()) == -1) {
-      std::cerr << program_name << ": Unable to rename file: " << outfile
-                << " to " << catfile << "\n";
-      std::cerr << "Leaving temporary file in place.\n";
+      std::cerr << fmt::format("{}: Unable to remame file {} to {}\n",
+                               program_name, outfile, catfile);
+      std::cerr << fmt::format("{}: Leaving temporary file in place.\n",
+                               program_name);
+      remove_outfile = false;
       failed = true;
     }
   }
@@ -430,4 +502,9 @@ int main(int argc, char **argv) {
   }
 
   return failed ? EXIT_FAILURE : EXIT_SUCCESS;
+} catch (std::exception const &e) {
+  std::cerr << fmt::format("{}: {}\n", program_name, e.what());
+  std::exit(EXIT_FAILURE);
+} catch (...) {
+  std::cerr << fmt::format("Unrecognised exception");
 }
