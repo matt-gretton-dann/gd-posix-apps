@@ -6,6 +6,7 @@
 root = true
 
 # We default to 2-spaces at tabs
+[*]
 indent_style = space
 indent_size = 2
 tab_width = 8
