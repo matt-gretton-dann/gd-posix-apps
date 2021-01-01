@@ -565,6 +565,12 @@ int main(int argc, char** argv)
 try {
   program_name = ::basename(argv[0]);
 
+  // Skip '--' if present as the first argument.
+  if (argc > 1 && argv[1][0] == '-' && argv[1][1] == '-' && argv[1][2] == '\0') {
+    ++argv;
+    --argc;
+  }
+
   if (argc < 3) {
     std::cerr << fmt::format("{}: Need to specify a message catalogue and at "
                              "least one message file.",
