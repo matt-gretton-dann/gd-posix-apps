@@ -168,9 +168,9 @@ T read(std::uint8_t const* data)
   }
 
   // Slow path - read data byte by byte.
-  T result;
+  T result = 0;
   for (unsigned i = 0; i < sizeof(T); ++i) {
-    result = result | (data[i] << (i * 8));
+    result |= static_cast<T>(data[i]) << (i * 8);
   }
   return result;
 }
@@ -283,12 +283,12 @@ public:
       // Interpret the line.
       if (line.substr(0, 5) == "$set ") {
         auto r = std::stoul(line.substr(5));
-        validate_id(loc, r, "NL_SETD", NL_SETD);
+        validate_id(loc, r, "NL_SETMAX", NL_SETMAX);
         set_it = sets_.insert({r, MessageSet()}).first;
       }
       else if (line.substr(0, 8) == "$delset ") {
         auto r = std::stoul(line.substr(8));
-        validate_id(loc, r, "NL_SETD", NL_SETD);
+        validate_id(loc, r, "NL_TEXTMAX", NL_TEXTMAX);
         auto it = sets_.find(r);
         if (it != sets_.end()) {
           // We only clear (and not erase) just in case $set is set to the same
@@ -296,7 +296,7 @@ public:
           it->second.clear();
         }
       }
-      else if (line.substr(0, 2) == "$ ") {
+      else if (line.substr(0, 2) == "$ " || line.empty()) {
         /* Do nothing: Comment.  */
       }
       else if (line.substr(0, 7) == "$quote ") {
@@ -363,9 +363,10 @@ public:
   /** \brief    Save out a cat file to the indicated file descriptor.
    *  \param fd File descriptor.
    */
-  void save_catfile(int fd) const
+  void save_catfile(std::string_view const& filename, int fd) const
   {
     Data data{'M', 'S', 'G', '\0', 1, 0, 0, 0, 0, 0, 0, 0};
+    Location loc(filename);
     data.resize(hdr_size);
     write(data.data() + set_count_off, std::uint32_t(sets_.size()));
     // Can't write file size yet - as we don't know it.
@@ -373,17 +374,21 @@ public:
     data.resize(hdr_size + sets_.size() * table_entry_size);
     std::uint64_t set_offset = hdr_size;
     for (auto const& kv : sets_) {
-      std::uint64_t msg_array_offset = data.size();
+      // Msg Array needs to be aligned to 8 byte boundary - and goes at current end of file.
+      std::uint64_t msg_array_offset = (data.size() + 7) & ~Data::size_type(7);
+      data.resize(msg_array_offset + kv.second.size() * 16);
+
+      // Write set entry pointing to message array.
       write_table_entry(
-        data, set_offset,
+        loc, data, set_offset,
         TableEntry{kv.first, static_cast<std::uint32_t>(kv.second.size()), msg_array_offset});
       set_offset += table_entry_size;
 
-      data.resize(data.size() + kv.second.size() * 16);
+      // Write message array entries.
       for (auto const& kv2 : kv.second) {
         std::uint64_t msg_offset = data.size();
         write_table_entry(
-          data, msg_array_offset,
+          loc, data, msg_array_offset,
           TableEntry{kv2.first, static_cast<std::uint32_t>(kv2.second.size()), msg_offset});
         msg_array_offset += table_entry_size;
         for (auto c : kv2.second) {
@@ -491,6 +496,10 @@ private:
       loc.loc(offset);
       loc.error("Table is outside bounds of message catalogue.");
     }
+    if (offset % 8 != 0) {
+      loc.loc(offset);
+      loc.error("Table entry is not aligned to 8-byte boundary.");
+    }
     auto raw_data = data.data() + offset;
     Id id = read<std::uint32_t>(raw_data + table_entry_id_off);
     Length len = read<std::uint32_t>(raw_data + table_entry_len_off);
@@ -503,8 +512,12 @@ private:
    *  \param offset Offset to write at
    *  \param te     Table entry to write
    */
-  void write_table_entry(Data& data, Offset offset, TableEntry const& te) const
+  void write_table_entry(Location& loc, Data& data, Offset offset, TableEntry const& te) const
   {
+    if (offset % 8 != 0) {
+      loc.loc(offset);
+      loc.error("Table entry is not aligned ot 8-byte boundary.");
+    }
     write(data.data() + offset + table_entry_id_off, te.id);
     write(data.data() + offset + table_entry_len_off, te.len);
     write(data.data() + offset + table_entry_off_off, te.offset);
@@ -612,7 +625,7 @@ try {
       throw std::system_error(std::make_error_code(static_cast<std::errc>(errno)));
     }
 
-    cat.save_catfile(fd);
+    cat.save_catfile(outfile, fd);
   }
   catch (std::exception& e) {
     std::cerr << e.what() << "\n";
