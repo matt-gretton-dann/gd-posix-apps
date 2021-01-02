@@ -20,11 +20,12 @@ tester.run_test(
 
 test_output = tester.output_file('test.msg')
 test_input = tester.input_file('basic-input.cat')
-success = tester.run_test(
+skip_next = tester.run_test(
     [tester.exe(), test_output, test_input],
     test_name="Basic catalogue",
     expected_rc=0,
     expected_stdout='', expected_stderr='', files=[test_output])
 tester.compare_files(
-    test_output, tester.input_file('basic-input.msg'), skip=not success)
+    test_output, tester.input_file('basic-input.msg'), skip=skip_next)
+
 tester.summarize()

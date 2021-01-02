@@ -80,12 +80,14 @@ class TestRunner:
         self._files[file] = False
 
     def run_test(self, cmdline, expected_rc=0, expected_stdout=None,
-                 expected_stderr=None, test_name=None, stdin=None, files=None):
+                 expected_stderr=None, test_name=None, stdin=None, files=None, skip=False):
         """Run a test
 
         Runs the executable given in the list CMDLINE and checks for the expected
         return code EXPECTED_RC.  If EXPECTED_STDOUT or EXPECTED_STDERR are not
         None then they are also checked.
+
+        If SKIP is True the test is skipped.
 
         Specify STDIN if there is a standard input to use.
 
@@ -100,7 +102,7 @@ class TestRunner:
         Outputs a PASS/FAIL line to stdout.  The test name is given as TEST_NAME or
         the basename of cmdline[0]
 
-        returns 1 on success, 0 on failure.
+        Returns True if dependent tests should be skipped or False if not.
         """
         capture_output = expected_stdout is not None or expected_stderr is not None
         capture_output = subprocess.PIPE if capture_output else None
@@ -117,6 +119,10 @@ class TestRunner:
                 files = [files]
             for file in files:
                 self.register_file(file)
+
+        if skip:
+            print(f"SKIP: {test_name}")
+            return True
 
         success = True
         rc = subprocess.run(
@@ -148,7 +154,7 @@ class TestRunner:
                 for file in files:
                     self.deregister_file(file)
 
-        return success
+        return not success
 
     def exe(self):
         """Get the exectuable path we are testing."""
@@ -199,7 +205,11 @@ class TestRunner:
         """Compare two files.
 
         If SKIP is True this is recorded as a skip, and the comparison is not
-        done.  Otherwise the absence of the files is recorded as a fail."""
+        done.  Otherwise the absence of the files is recorded as a fail.
+
+        Returns True if dependent tests should be skipped, otherwise returns
+        False.
+        """
         if skip:
             self._skips += 1
             result = "SKIP"
@@ -219,7 +229,7 @@ class TestRunner:
         file1out = self._strip_inout_dirs(file1)
         file2out = self._strip_inout_dirs(file2)
         print(f"{result}: File comparison {file1out} <-> {file2out}")
-        return identical
+        return not identical
 
     def summarize(self):
         print(
