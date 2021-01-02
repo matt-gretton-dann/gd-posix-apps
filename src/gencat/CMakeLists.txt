@@ -3,5 +3,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 add_utility(NAME gencat
-            SOURCES gencat.cc
-            NO_INT_TEST)
+            SOURCES gencat.cc)
