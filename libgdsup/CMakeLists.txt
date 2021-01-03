@@ -186,6 +186,7 @@ endif()
 target_include_directories(gdsup PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_sources(gdsup PRIVATE
                include/gd/bits/defines.h
+               include/gd/bit.hh
                include/gd/filesystem.hh
                include/gd/format.hh
                include/gd/libgen.h)

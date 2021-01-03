@@ -4,6 +4,7 @@
  *  SPDX-License-Identifier: Apache-2.0
  */
 
+#include "gd/bit.hh"
 #include "gd/filesystem.hh"
 #include "gd/format.hh"
 #include "gd/libgen.h"
@@ -161,7 +162,7 @@ template<typename T, std::enable_if_t<std::is_integral<T>::value, bool> = true>
 T read(std::uint8_t const* data)
 {
   // Fast path - no endian conversion, and data is appropriately aligned.
-  if constexpr (std::endian::native == std::endian::little) {
+  if constexpr (::bit::endian::native == ::bit::endian::little) {
     if (((uintptr_t)data) % sizeof(T) == 0) {
       return *(reinterpret_cast<T const*>(data));
     }
@@ -179,7 +180,7 @@ template<typename T, std::enable_if_t<std::is_integral<T>::value, bool> = true>
 void write(std::uint8_t* data, T value)
 {
   // Fast path - no endian conversion, and data is appropriately aligned.
-  if constexpr (std::endian::native == std::endian::little) {
+  if constexpr (bit::endian::native == bit::endian::little) {
     if (((uintptr_t)data) % sizeof(T) == 0) {
       *(reinterpret_cast<T*>(data)) = value;
     }
