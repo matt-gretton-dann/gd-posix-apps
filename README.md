@@ -17,42 +17,18 @@ but instead are downloaded in the configuration steps of the build.
 
 See [Copyright and Licensing](./docs/copyright-and-licensing.md) for more details.
 
-## Build Process
+## Build & Test
 
-### Dependencies
+The full build and test process is documented in the [Build and Test](./docs/build-and-test.md)
+documents.
 
-### Pre-configure dependencies
-
-The build process requires the following tools and libraries to be installed
-before building:
-
- * [Git](https://git-scm.com/).
- * [CMake](www.cmake.org) - at least version 3.15.
- * A C/C++ Compiler
- * A Make system compatible with CMake.
- * [Python](www.python.org) - at least version 3.8.
-
-### Configure dependencies
-
-During the configuration process the build system will download and install
-the following dependencies:
-
- * TBD
-
-### Building
+In summary: Ensure you have `git`, `cmake`, a sensible C/C++ compiler, and `Python` installed. Then
+execute:
 
 ```sh
-git clone https://github.com/matt-gretton-dann/gd-posix-apps.git
+git clone https://github.com/matt-gretton-dann/gd-posix-apps
 cd gd-posix-apps
 cmake -Bbuild
 cmake --build build
+cmake --build build test
 ```
-
-### Testing
-
-To test a build do:
-
-```sh
-cmake --build build --target test
-```
-
