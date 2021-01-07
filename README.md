@@ -1,6 +1,6 @@
 # POSIX Applications
 
-This repository is an implementation of the 
+This repository is an implementation of the
 [POSIX Utilities and Shell](https://pubs.opengroup.org/onlinepubs/9699919799/).
 
 Why?  Because.  Mostly to understand the POSIX interface better, and also
@@ -12,46 +12,27 @@ implemented.  And those that aren't easy to implement are interesting.
 The code in this repository copyright Matthew Gretton-Dann, and licensed under
 the [Apache License 2.0](./LICENSE).
 
-### Third-Party Code
+There is also some usage of third-party libraries and code.  These are not shipped in this repo
+but instead are downloaded in the configuration steps of the build.
 
-TBD:
+See [Copyright and Licensing](./docs/copyright-and-licensing.md) for more details.
 
-## Build Process
+## Build & Test
 
-### Dependencies
+The full build and test process is documented in the [Build and Test](./docs/build-and-test.md)
+documents.
 
-### Pre-configure dependencies
-
-The build process requires the following tools and libraries to be installed
-before building:
-
- * [Git](https://git-scm.com/).
- * [CMake](www.cmake.org) - at least version 3.15.
- * A C/C++ Compiler
- * A Make system compatible with CMake.
- * [Python](www.python.org) - at least version 3.8.
-
-### Configure dependencies
-
-During the configuration process the build system will download and install
-the following dependencies:
-
- * TBD
-
-### Building
+In summary: Ensure you have `git`, `cmake`, a sensible C/C++ compiler, and `Python` installed. Then
+execute:
 
 ```sh
-git clone https://github.com/matt-gretton-dann/gd-posix-apps.git
+git clone https://github.com/matt-gretton-dann/gd-posix-apps
 cd gd-posix-apps
 cmake -Bbuild
 cmake --build build
+cmake --build build test
 ```
 
-### Testing
+## Further Documentation
 
-To test a build do:
-
-```sh
-cmake --build build --target test
-```
-
+Further documentation can be found in the [docs](./docs/index.md) directory.
