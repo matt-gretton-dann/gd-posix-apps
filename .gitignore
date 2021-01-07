@@ -43,4 +43,8 @@ build*/
 __pycache__/
 
 # VS Code:
-.vscode/c_cpp_properties.json
+.vscode/*
+!.vscode/settings.json
+
+# GDB
+.gdb_history
