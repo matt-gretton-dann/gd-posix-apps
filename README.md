@@ -32,3 +32,7 @@ cmake -Bbuild
 cmake --build build
 cmake --build build test
 ```
+
+## Further Documentation
+
+Further documentation can be found in the [docs](./docs/index.md) directory.
