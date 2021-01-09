@@ -146,7 +146,11 @@ target_compile_definitions(gdsup PUBLIC "$CACHE{FORCE_SUPPLEMENTAL_LIBRARY}")
 endif()
 
 target_include_directories(gdsup PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
-target_sources(gdsup PRIVATE include/gd/filesystem.hh include/gd/format.hh)
+target_sources(gdsup PRIVATE
+               include/gd/bits/defines.h
+               include/gd/filesystem.hh
+               include/gd/format.hh
+               include/gd/libgen.h)
 
 find_std_filesystem()
 find_std_format()
@@ -158,6 +162,7 @@ if(CXX_STD_FORMAT_LIB)
   target_link_libraries(gdsub PUBLIC "${CXX_STD_FORMAT_LIB}")
 endif()
 
+add_subdirectory(libgen)
 add_subdirectory(support)
 
 target_add_clang_format(gdsup)
