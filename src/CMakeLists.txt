@@ -27,6 +27,7 @@ function(add_utility)
 
     # Add the executable target
     add_executable("${_au_NAME}" "${_au_SOURCES}")
+    target_link_libraries("${_au_NAME}" PUBLIC gdsup)
     target_add_clang_format("${_au_NAME}")
 
     # Add the integration test

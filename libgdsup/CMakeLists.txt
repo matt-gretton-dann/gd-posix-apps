@@ -1,0 +1,158 @@
+# \file   libgdsup/CMakeLists.txt
+# \brief  CMakeLists.txt for gdsup Supplemental Standard Library
+# \author Copyright 2021, Matthew Gretton-Dann
+#         SPDX-License-Identifier: Apache-2.0
+
+include(FetchContent)
+
+function(check_start MSG)
+  if ("CMAKE_VERSION" VERSION_LESS 3.17)
+    message(STATUS "Checking ${MSG}")
+    set(_check_message_cache "${MSG}" PARENT_SCOPE)
+  else()
+    message(CHECK_START "${MSG}")
+  endif()
+endfunction()
+
+function(check_pass MSG)
+  if ("CMAKE_VERSION" VERSION_LESS 3.17)
+    message(STATUS "Checking ${_check_message_cache} - ${MSG}")
+  else()
+    message(CHECK_PASS "${MSG}")
+  endif()
+endfunction()
+
+function(check_fail MSG)
+  if ("CMAKE_VERSION" VERSION_LESS 3.17)
+    message(STATUS "Checking ${_check_message_cache} - ${MSG}")
+  else()
+    message(CHECK_FAIL "${MSG}")
+  endif()
+endfunction()
+
+# Download and instal fmtlib/fmt
+function(include_external_fmtlib)
+  message(STATUS "Fetching fmtlib/fmt 7.1.3")
+  FetchContent_Declare(fmt
+                       GIT_REPOSITORY https://github.com/fmtlib/fmt
+                       GIT_TAG 7.1.3)
+  FetchContent_GetProperties(fmt)
+  if(NOT fmt_POPULATED)
+    FetchContent_Populate(fmt)
+    add_subdirectory(${fmt_SOURCE_DIR} ${fmt_BINARY_DIR})
+  endif()
+endfunction()
+# External libraries
+
+# Sets the variable CXX_STD_FILESYSTEM_LIB to the library you need to link to to add filesystem
+# support
+function(find_std_filesystem)
+  check_start("Looking for Library for <filesystem>")
+
+  if (DEFINED CACHE{CXX_STD_FILESYSTEM_LIBRARY})
+    if (CXX_STD_FILESYSTEM_LIBRARY)
+      check_pass("found: ${CXX_STD_FILESYSTEM_LIBRARY} (cached)")
+    else()
+      check_pass("found: No extra library needed (cached)")
+    endif()
+    return()
+  endif()
+
+  foreach(_ccxxfs_lib "" "stdc++fs" "c++fs" "c++fs;c++experimental")
+    try_compile(_ccxxfs_present
+                "${CMAKE_CURRENT_BINARY_DIR}/cmake-test"
+                SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/cmake/check-filesystem.cc"
+                CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON
+                LINK_LIBRARIES "${_ccxxfs_lib}")
+    if(_ccxxfs_present)
+      set(CXX_STD_FILESYSTEM_LIBRARY "${_ccxxfs_lib}" CACHE INTERNAL "Libraries for <filesystem>")
+      if (CXX_STD_FILESYSTEM_LIBRARY)
+        check_pass("found: ${CXX_STD_FILESYSTEM_LIBRARY}")
+      else()
+        check_pass("found: No extra library needed")
+      endif()
+      return()
+    endif()
+  endforeach()
+
+  unset(CXX_STD_FILESYSTEM_LIBRARY CACHE)
+  check_fail("not found")
+  message(FATAL_ERROR "Unable to find library needed to use std::filesystem")
+endfunction()
+
+# Sets the vairable CXX_STD_FORMAT_LIB to the library you need to add <format> support
+function(find_std_format)
+  check_start("Looking for library for <format>")
+
+  if (DEFINED CACHE{CXX_DOWNLOAD_FORMAT_LIBRARY})
+    if(CXX_DOWNLOAD_FORMAT_LIBRARY)
+      if(NOT ALLOW_THIRD_PARTY_DOWNLOADS)
+        message(FATAL_ERROR "Inconsistency in Cmake cache, please reconfigure from scratch")
+      endif()
+      include_external_fmtlib()
+    endif()
+  endif()
+
+  if (DEFINED CACHE{CXX_STD_FORMAT_LIBRARY})
+    if(CXX_STD_FORMAT_LIBRARY)
+      check_pass("found: ${CXX_STD_FORMAT_LIBRARY} (cached)")
+    else()
+      check_pass("found: No extra library needed (cached)")
+    endif()
+    return()
+  endif()
+
+  # Unless forced to use the supplemental library we prefer to use a builtin library.
+  if (NOT FORCE_SUPPLEMENTAL_LIBRARY)
+    try_compile(_ccxxfmt_present
+                "${CMAKE_CURRENT_BINARY_DIR}/cmake-test"
+                SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/cmake/check-format.cc"
+                CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON)
+    if(_ccxxfmt_present)
+      check_pass("found: Using standard library")
+      set(CXX_STD_FORMAT_LIB "" CACHE INTERNAL "Library needed for <format>")
+      unset(CXX_DOWNLOAD_FORMAT_LIBRARY CACHE)
+      return()
+    endif()
+  endif()
+
+  if(ALLOW_THIRD_PARTY_DOWNLOADS)
+    include_external_fmtlib()
+    check_pass("found: Using downloaded library fmt::fmt")
+    set(CXX_STD_FORMAT_LIB "fmt::fmt" CACHED INTERNAL "Libray needed for <format>")
+    set(CXX_DOWNLOAD_FORMAT_LIBRARY ON CACHED INTERNAL "Do we need to include fmtlib subproject?")
+    return()
+  endif()
+
+  unset(CXX_DOWNLOAD_FORMAT_LIBRARY CACHE)
+
+  find_package(fmt)
+  if (NOT fmt_Found)
+    check_fail("not found: Either set ALLOW_THIRD_PARTY_DOWNLOADS to on, or install fmt library")
+    unset(CXX_STD_FORMAT_LIB CACHE)
+    return()
+  endif()
+
+  set(CXX_STD_FORMAT_LIB "fmt::fmt" CACHED INTERNAL "Libray needed for <format>")
+
+endfunction()
+
+add_library(gdsup)
+set_property(TARGET gdsup PROPERTY CXX_STANDARD 20)
+set_property(TARGET gdsup PROPERTY CXX_STANDARD_REQUITED ON)
+
+if($CACHE{FORCE_SUPPLEMENTAL_LIBRARY})
+target_compile_definitions(gdsup PUBLIC "$CACHE{FORCE_SUPPLEMENTAL_LIBRARY}")
+endif()
+
+find_std_filesystem()
+find_std_format()
+
+if(CXX_STD_FILESYSTEM_LIB)
+  target_link_libraries(gdsub PUBLIC "${CXX_STD_FILESYSTEM_LIB}")
+endif()
+if(CXX_STD_FORMAT_LIB)
+  target_link_libraries(gdsub PUBLIC "${CXX_STD_FORMAT_LIB}")
+endif()
+
+add_subdirectory(support)

@@ -11,6 +11,8 @@ project(gd-posix-apps
         LANGUAGES C CXX)
 
 # Cached variables
+set(ALLOW_THIRD_PARTY_DOWNLOADS ON CACHE BOOL "Do we allow third-party downloads?")
+set(FORCE_SUPPLEMENTAL_LIBRARY OFF CACHE BOOL "Force use of libgdsup?")
 set(ENABLE_TESTS ON CACHE BOOL "Do we enable testing?")
 
 # Package inclusions
@@ -38,6 +40,7 @@ set(RUN_INTEGRATION_TESTS OFF)
 endif()
 
 # And recurse to the subdirectories
+add_subdirectory(libgdsup)
 add_subdirectory(src)
 
 # Display summary information
