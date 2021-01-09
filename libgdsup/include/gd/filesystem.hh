@@ -8,13 +8,13 @@
 #define _LIBGDSUP_INCLUDE_GD_FILESYSTEM_HH_INCLUDED
 
 #if __has_include(<filesystem>)
-#include <filesystem>
+#  include <filesystem>
 namespace fs = std::filesystem;
 #elif __has_include(<experimental/filesystem>)
-#include <experimental/filesystem>
+#  include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
 #else
-#error "Unable to locate an appropriate filesystem library"
-#endif // Pick a filesystem header.
+#  error "Unable to locate an appropriate filesystem library"
+#endif  // Pick a filesystem header.
 
-#endif // _LIBGDSUP_INCLUDE_GD_FILESYSTEM_HH_INCLUDED
+#endif  // _LIBGDSUP_INCLUDE_GD_FILESYSTEM_HH_INCLUDED

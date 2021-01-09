@@ -145,6 +145,9 @@ if($CACHE{FORCE_SUPPLEMENTAL_LIBRARY})
 target_compile_definitions(gdsup PUBLIC "$CACHE{FORCE_SUPPLEMENTAL_LIBRARY}")
 endif()
 
+target_include_directories(gdsup PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_sources(gdsup PRIVATE include/gd/filesystem.hh include/gd/format.hh)
+
 find_std_filesystem()
 find_std_format()
 
@@ -156,3 +159,5 @@ if(CXX_STD_FORMAT_LIB)
 endif()
 
 add_subdirectory(support)
+
+target_add_clang_format(gdsup)
