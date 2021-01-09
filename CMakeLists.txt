@@ -13,7 +13,7 @@ project(gd-posix-apps
 # Cached variables
 set(ALLOW_THIRD_PARTY_DOWNLOADS ON CACHE BOOL "Do we allow third-party downloads?")
 set(FORCE_SUPPLEMENTAL_LIBRARY OFF CACHE BOOL "Force use of libgdsup?")
-set(ENABLE_TESTS ON CACHE BOOL "Do we enable testing?")
+set(BUILD_TESTING ON CACHE BOOL "Enable testing")
 
 # Package inclusions
 list(PREPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
@@ -24,12 +24,12 @@ find_package(ClangFormat)
 find_package(Python 3.8 COMPONENTS Interpreter)
 
 # Global testing setup
-if (ENABLE_TESTS)
+if (BUILD_TESTING)
 enable_testing()
 endif()
 
 # Integration testing setup
-if(ENABLE_TESTS)
+if(BUILD_TESTING)
 set(RUN_INTEGRATION_TESTS ON)
 if(NOT Python_FOUND)
 message(WARNING
@@ -41,7 +41,7 @@ set(RUN_INTEGRATION_TESTS OFF)
 endif()
 
 # Unit testing setup
-if(ENABLE_TESTS)
+if(BUILD_TESTING)
   if($CACHE{ALLOW_THIRD_PARTY_DOWNLOADS})
     message(STATUS "Downloading Catch2 v2.13.1")
     FetchContent_Declare(

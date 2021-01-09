@@ -42,8 +42,8 @@ The following options can be passed to CMake to change the build behaviour:
 | Cmake Option | Type | Default | Meaning |
 | :----------- | :--- | :------ | :------ |
 | `ALLOW_THIRD_PARTY_DOWNLOADS` | BOOL | ON | Are we allowed to download third-party tools?  If set to no, may cause build-failures on some systems. |
+| `BUILD_TESTING` | BOOL | ON | Is testing enabled? |
 | `CMAKE_INSTALL_PREFIX` | STRING | /usr/local | Where to install things to. |
-| `ENABLE_TESTS` | BOOL | ON | Is testing enabled? |
 | `FORCE_SUPPLEMENTAL_LIBRARY` | BOOL | OFF | Force use of the [standard supplemental](./libgdsup/index.md) library even in cases where it is not needed. |
 
 To specify these options either use `ccmake` to set them graphically or add `-D<OPT>:<TYPE>=<VALUE>`
