@@ -8,10 +8,10 @@
 #define _LIBGDSUP_INCLUDE_GD_FORMAT_HH_INCLUDED
 
 #if !defined(FORCE_SUPPLEMENTAL_LIBRARY) && __has_include(<format>)
-#include <format>
+#  include <format>
 namespace fmt = std;
-#elif __has_include(<fmt/core.h>)
-#include <fmt/core.h>
-#endif // Pick a Format header.
+#elif __has_include("fmt/core.h")
+#  include "fmt/core.h"
+#endif  // Pick a Format header.
 
-#endif // _LIBGDSUP_INCLUDE_GD_FORMAT_HH_INCLUDED
+#endif  // _LIBGDSUP_INCLUDE_GD_FORMAT_HH_INCLUDED
