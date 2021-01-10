@@ -49,6 +49,8 @@ if(BUILD_TESTING)
       GIT_REPOSITORY https://github.com/catchorg/Catch2.git
       GIT_TAG        v2.13.1)
     FetchContent_MakeAvailable(Catch2)
+    message(STATUS "Catch2 sources: ${Catch2_SOURCE_DIR}")
+    list(PREPEND CMAKE_MODULE_PATH "${Catch2_SOURCE_DIR}/contrib")
     set(RUN_UNIT_TESTS ON)
   else()
     find_packacge(Catch2 2.13.1)
@@ -61,6 +63,10 @@ if(BUILD_TESTING)
   endif()
 else()
   set(RUN_UNIT_TESTS OFF)
+endif()
+
+if(RUN_UNIT_TESTS)
+  include(Catch)
 endif()
 
 # And recurse to the subdirectories

@@ -137,9 +137,49 @@ function(find_std_format)
 
 endfunction()
 
+function(add_gdsup_source)
+  cmake_parse_arguments(_ags "" "DISABLE_VAR;UNIT_TEST" "SOURCES" ${ARGN})
+
+  if(NOT DEFINED _ags_SOURCES)
+    message(FATAL_ERROR "Must specify SOURCES to add_gdsup_source")
+  endif()
+
+
+  if(NOT DEFINED _ags_DISABLE_VAR)
+    set(_ags_DISABLED OFF)
+  else()
+    if(NOT DEFINED CACHE{${_ags_DISABLE_VAR}})
+      message(FATAL_ERROR "${_ags_DISABLE_VAR} needs to be defined in the cache")
+    endif()
+    set(_ags_DISABLED "$CACHE{${_ags_DISABLE_VAR}}")
+  endif()
+
+  if($CACHE{FORCE_SUPPLEMENTAL_LIBRARY} OR NOT _ags_DISABLED)
+    target_sources(gdsup PRIVATE ${_ags_SOURCES})
+
+    if(DEFINED _ags_UNIT_TEST)
+      if(RUN_UNIT_TESTS)
+        target_sources(test-gdsup PRIVATE ${_ags_UNIT_TEST})
+      else()
+        target_add_clang_format_extra(${_ags_UNIT_TEST})
+      endif()
+    endif()
+  else()
+    target_add_clang_format_extra(${_ags_SOURCES})
+    target_add_clang_format_extra(${_ags_UNIT_TEST})
+  endif()
+endfunction()
+
+# Library
 add_library(gdsup)
 set_property(TARGET gdsup PROPERTY CXX_STANDARD 20)
 set_property(TARGET gdsup PROPERTY CXX_STANDARD_REQUITED ON)
+
+# Unit test executable
+add_executable(test-gdsup)
+target_link_libraries(test-gdsup PUBLIC gdsup Catch2::Catch2)
+set_property(TARGET test-gdsup PROPERTY CXX_STANDARD 20)
+set_property(TARGET test-gdsup PROPERTY CXX_STANDARD_REQUITED ON)
 
 if($CACHE{FORCE_SUPPLEMENTAL_LIBRARY})
 target_compile_definitions(gdsup PUBLIC "$CACHE{FORCE_SUPPLEMENTAL_LIBRARY}")
@@ -165,4 +205,9 @@ endif()
 add_subdirectory(libgen)
 add_subdirectory(support)
 
+# Ensure everything gets clang formatted and found.
 target_add_clang_format(gdsup)
+if(TARGET test-gdsup)
+  target_add_clang_format(test-gdsup)
+  catch_discover_tests(test-gdsup)
+endif()
