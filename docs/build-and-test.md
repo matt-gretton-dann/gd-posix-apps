@@ -16,7 +16,7 @@ before building:
 
 The following tools and libraries will be used if installed:
 
- * [Python](www.python.org) - at least version 3.8.  If not installed the testing will not be
+ * [Python](www.python.org) - at least version 3.6.  If not installed the testing will not be
    available.
  * [ClangFormat](https://clang.llvm.org/docs/ClangFormat.html).  If using version 9 or earlier then
    Python must also be installed.

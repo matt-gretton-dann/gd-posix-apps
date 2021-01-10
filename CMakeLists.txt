@@ -21,7 +21,7 @@ include(FetchContent)
 
 # Find packages
 find_package(ClangFormat)
-find_package(Python 3.8 COMPONENTS Interpreter)
+find_package(Python 3.6 COMPONENTS Interpreter)
 
 # Global testing setup
 if (BUILD_TESTING)
@@ -33,7 +33,7 @@ if(BUILD_TESTING)
 set(RUN_INTEGRATION_TESTS ON)
 if(NOT Python_FOUND)
 message(WARNING
-        "Unable to find appropriate Python 3 module (require 3.8+) - integration testing disabled.")
+        "Unable to find appropriate Python 3 module (require 3.6+) - integration testing disabled.")
 set(RUN_INTEGRATION_TESTS OFF)
 endif()
 else()
