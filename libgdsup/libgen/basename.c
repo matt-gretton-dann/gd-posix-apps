@@ -9,19 +9,24 @@
 #include <stddef.h>
 #include <string.h>
 
+// Characters we must return.
+static char dot[] = ".";
+static char slash[] = "/";
+
 char* basename(char* s)
 {
   // Empty returns '.'
   if (s == NULL || *s == '\0') {
-    return ".";
+    return dot;
   }
 
   size_t end = strlen(s);
 
   // Remove trailing /s
-  while (end-- > 0) {
-    if (s[end] != '/')
+  for (--end; end > 0; --end) {
+    if (s[end] != '/') {
       break;
+    }
   }
 
   // If its just a sequence of /s return / or // in a special case
@@ -29,7 +34,7 @@ char* basename(char* s)
     return s;
   }
   if (end == 0 && s[0] == '/') {
-    return "/";
+    return slash;
   }
 
   // Terminate the string.
@@ -40,9 +45,10 @@ char* basename(char* s)
   }
 
   // Now lets find the beginning.
-  while (end-- > 0) {
-    if (s[end] == '/')
+  for (--end; end > 0; --end) {
+    if (s[end] == '/') {
       break;
+    }
   }
 
   if (end == 0 && s[0] != '/') {

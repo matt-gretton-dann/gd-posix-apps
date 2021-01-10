@@ -9,10 +9,30 @@
 #include <catch2/catch.hpp>
 #include <cstring>
 
+namespace {
+void test_basename(char const* in, char const* expected)
+{
+  REQUIRE(in != nullptr);
+  REQUIRE(expected != nullptr);
+  char* dup = strdup(in);
+  REQUIRE(dup != nullptr);
+  char* out = basename(dup);
+  CHECK(std::strcmp(out, expected) == 0);
+}
+
+}  // namespace
+
 TEST_CASE("basename - POSIX Examples", "[libgen][basename]")
 {
-  char* dup = strdup("");
-  REQUIRE(dup != nullptr);
   REQUIRE(std::strcmp(basename(nullptr), ".") == 0);
-  REQUIRE(std::strcmp(basename(dup), ".") == 0);
+  test_basename("", ".");
+  test_basename("usr", "usr");
+  test_basename("usr/", "usr");
+  test_basename("/", "/");
+  test_basename("//", "//");
+  test_basename("///", "/");
+  test_basename("/usr/", "usr");
+  test_basename("/usr/lib", "lib");
+  test_basename("//usr//lib//", "lib");
+  test_basename("/home//dwc//test", "test");
 }
