@@ -20,7 +20,7 @@ def run_test(cmdline, expected_rc=0, expected_stdout=None, expected_stderr=None,
     """Run a test
 
     Runs the executable given in the list CMDLINE and checks for the expected
-    return code EXPECTED_RC.  If EXPECTED_STDOUT or EXPECTED_STDERR are not 
+    return code EXPECTED_RC.  If EXPECTED_STDOUT or EXPECTED_STDERR are not
     None then they are also checked.
 
     Outputs a PASS/FAIL line to stdout.  The test name is given as TEST_NAME or
@@ -29,10 +29,15 @@ def run_test(cmdline, expected_rc=0, expected_stdout=None, expected_stderr=None,
     returns 1 on success, 0 on failure.
     """
     capture_output = expected_stdout is not None or expected_stderr is not None
+    if capture_output:
+        output_pipe = subprocess.PIPE
+    else:
+        output_pipe = None
     if test_name is None:
         test_name = os.path.basename(cmdline[0])
 
-    rc = subprocess.run(cmdline, capture_output=capture_output, text=True)
+    rc = subprocess.run(cmdline, stderr=output_pipe,
+                        stdout=output_pipe, universal_newlines=True)
 
     if rc.returncode != expected_rc:
         print(
