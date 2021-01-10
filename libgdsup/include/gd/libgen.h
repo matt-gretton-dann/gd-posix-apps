@@ -36,6 +36,30 @@
  * \todo: Make '//' handling platform specific.
  */
 EXTERN_C char* basename(char* path);
+
+/** \brief       Report the parent directory name of \a path - a file pathname
+ *  \param  path File pathname to report parent directory name of.
+ *  \return      Parent directory name.
+ *
+ * \a path may be NULL.  In which case we return ".".
+ *
+ * \a path may be modified.
+ *
+ * \subsection Errors
+ *
+ * \fn dirname() does not return any errors.
+ *
+ * \subsection Implementation Notes
+ *
+ * POSIX allows us to modify \a path.  Which we do in the majority of cases.  In the cases we don't
+ * we ensure the output points to modifiable memory.
+ *
+ * This implementation is thread-safe.
+ *
+ * For '//' we return '//' - POSIX allows '//' or '/'.
+ *
+ * \todo: Make '//' handling platform specific.
+ */
 EXTERN_C char* dirname(char*);
 #endif  // Pick a libgen header
 

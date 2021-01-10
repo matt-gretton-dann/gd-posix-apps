@@ -9,17 +9,20 @@
 #include <stddef.h>
 #include <string.h>
 
+static char dot[] = ".";
+static char slash[] = "/";
+
 char* dirname(char* s)
 {
   // Empty returns '.'
   if (s == NULL || *s == '\0') {
-    return ".";
+    return dot;
   }
 
   size_t end = strlen(s);
 
   // Remove trailing /s
-  while (end-- > 0) {
+  for (--end; end > 0; --end) {
     if (s[end] != '/')
       break;
   }
@@ -29,32 +32,32 @@ char* dirname(char* s)
     return s;
   }
   if (end == 0 && s[0] == '/') {
-    return "/";
+    return slash;
   }
   if (end == 0) {
-    return ".";
+    return dot;
   }
 
   // Now lets find the beginning.
-  while (end-- > 0) {
+  for (--end; end > 0; --end) {
     if (s[end] == '/')
       break;
   }
 
   if (end == 0 && s[0] != '/') {
-    return ".";
+    return dot;
   }
   if (end == 0) {
-    return "/";
+    return slash;
   }
 
-  while (end-- > 0) {
+  for (--end; end > 0; --end) {
     if (s[end] != '/')
       break;
   }
 
   if (end == 0 & s[0] == '/') {
-    return "/";
+    return slash;
   }
 
   s[end + 1] = '\0';

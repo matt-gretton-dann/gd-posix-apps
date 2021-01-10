@@ -18,4 +18,4 @@ check_cxx_source_compiles(
   }" LIBC_PROVIDES_DIRNAME)
 
 add_gdsup_source(DISABLE_VAR LIBC_PROVIDES_BASENAME UNIT_TEST test-basename.cc SOURCES basename.c)
-add_gdsup_source(DISABLE_VAR LIBC_PROVIDES_DIRNAME SOURCES dirname.c)
+add_gdsup_source(DISABLE_VAR LIBC_PROVIDES_DIRNAME UNIT_TEST test-dirname.cc SOURCES dirname.c)
