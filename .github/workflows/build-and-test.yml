@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-    
+
     steps:
     - uses: actions/checkout@v2
     - name: Configure
@@ -24,7 +24,9 @@ jobs:
     - name: Build
       run: cmake --build "${GITHUB_WORKSPACE}/build"
     - name: Test
-      run: cmake --build "${GITHUB_WORKSPACE}/build" --target test
+      run: |
+        cd "${GITHUB_WORKSPACE}/build"
+        ctest -V
 
   macos-build:
     name: Build and test on ${{ matrix.os }}
@@ -32,7 +34,7 @@ jobs:
     strategy:
       matrix:
         os: [macos-latest]
-    
+
     steps:
     - uses: actions/checkout@v2
     - name: Configure
@@ -51,7 +53,7 @@ jobs:
     strategy:
       matrix:
         os: [windows-latest]
-    
+
     steps:
     - uses: actions/checkout@v2
     - name: Configure
