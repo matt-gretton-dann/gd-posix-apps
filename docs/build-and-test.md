@@ -13,17 +13,32 @@ before building:
  * [CMake](www.cmake.org) - at least version 3.15.
  * A C/C++ Compiler
  * A Make system compatible with CMake.
- * [Python](www.python.org) - at least version 3.8.
+
+The following tools and libraries will be used if installed:
+
+ * [Python](www.python.org) - at least version 3.6.  If not installed the testing will not be
+   available.
+ * [ClangFormat](https://clang.llvm.org/docs/ClangFormat.html).  If using version 9 or earlier then
+   Python must also be installed.
 
 ### Configure dependencies
 
-During the configuration process the build system will download and install
-the following dependencies:
+During the configuration process the build system will download and install the following
+dependencies:
 
- * TBD
+ * [fmt](https://fmt.dev/).  If the configure process decides that the system's C++ Standard Library
+   does not support the `<format>` header we will use `fmt` instead.  This library will be shipped
+   in the install package.
+ * [Catch2](https://github.com/catchorg/Catch2).  If unit testing is enabled we use `Catch2` as the
+   testing framework.
 
 For more information on the licensing of these tools see the
 [Copyright and Licensing](./copyright-and-licensing.md) page.
+
+To disable the downloading of these third-party libraries pass
+`-DALLOW_THIRD_PARTY_DOWNLOADS:BOOL=OFF` on the `cmake` configure command line.  If third-party
+downloads are not allowed an attempt will be made to use versions of the libraries/tools already
+installed on the machine.
 
 ## Building
 
@@ -42,8 +57,8 @@ The following options can be passed to CMake to change the build behaviour:
 | Cmake Option | Type | Default | Meaning |
 | :----------- | :--- | :------ | :------ |
 | `ALLOW_THIRD_PARTY_DOWNLOADS` | BOOL | ON | Are we allowed to download third-party tools?  If set to no, may cause build-failures on some systems. |
+| `BUILD_TESTING` | BOOL | ON | Is testing enabled? |
 | `CMAKE_INSTALL_PREFIX` | STRING | /usr/local | Where to install things to. |
-| `ENABLE_TESTS` | BOOL | ON | Is testing enabled? |
 | `FORCE_SUPPLEMENTAL_LIBRARY` | BOOL | OFF | Force use of the [standard supplemental](./libgdsup/index.md) library even in cases where it is not needed. |
 
 To specify these options either use `ccmake` to set them graphically or add `-D<OPT>:<TYPE>=<VALUE>`
@@ -75,14 +90,19 @@ directly.
 To test a build when CMake uses Ninja or Makefiles as its target (default for macOS and Linux):
 
 ```sh
+cmake --build build
 cmake --build build --target test
 ```
 
 To test a build when CMake is using MS Build or MS Visual Studio:
 
 ```sh
+cmake --build build
 cmake --build build --target RUN_TESTS
 ```
+
+:warning: The `test` and `RUN_TESTS` targets do not depend on the `all` target and so you need to
+have explicitly ensured that the main build has been executed before running tests.
 
 You can also invoke ctest directly by doing:
 

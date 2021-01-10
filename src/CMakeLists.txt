@@ -13,7 +13,7 @@ function(add_utility)
     set(_au_options NO_INT_TEST)
     set(_au_single_options NAME)
     set(_au_multi_options SOURCES UNIT_TESTS)
-    cmake_parse_arguments(_au 
+    cmake_parse_arguments(_au
                           "${_au_options}"
                           "${_au_single_options}"
                           "${_au_multi_options}"
@@ -27,6 +27,8 @@ function(add_utility)
 
     # Add the executable target
     add_executable("${_au_NAME}" "${_au_SOURCES}")
+    target_link_libraries("${_au_NAME}" PUBLIC gdsup)
+    target_add_clang_format("${_au_NAME}")
 
     # Add the integration test
     if(RUN_INTEGRATION_TESTS AND NOT NO_INT_TEST)
@@ -47,8 +49,8 @@ function(add_utility)
         add_test(NAME "${_au_INT_TEST}"
                  COMMAND "${Python_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/${_au_INT_TEST}.py"
                          "$<TARGET_FILE:${_au_NAME}>")
-        set_tests_properties("${_au_INT_TEST}" 
-                             PROPERTIES ENVIRONMENT 
+        set_tests_properties("${_au_INT_TEST}"
+                             PROPERTIES ENVIRONMENT
                                         "PYTHONPATH=${_au_python_lib};PYTHONPYCACHEPREFIX=${_au_python_cache}")
     endif()
 endfunction()
