@@ -1,5 +1,5 @@
 /** \file   libgdsup/libgen/test-basename.cc
- *  \brief  Main file for gdsup unit tests
+ *  \brief  Unit tests for basename()
  *  \author Copyright 2021, Matthew Gretton-Dann
  *          SPDX-License-Identifier: Apache-2.0
  */
