@@ -119,8 +119,8 @@ function(find_std_format)
   if(ALLOW_THIRD_PARTY_DOWNLOADS)
     include_external_fmtlib()
     check_pass("found: Using downloaded library fmt::fmt")
-    set(CXX_STD_FORMAT_LIB "fmt::fmt" CACHED INTERNAL "Libray needed for <format>")
-    set(CXX_DOWNLOAD_FORMAT_LIBRARY ON CACHED INTERNAL "Do we need to include fmtlib subproject?")
+    set(CXX_STD_FORMAT_LIB "fmt::fmt" CACHE INTERNAL "Libray needed for <format>")
+    set(CXX_DOWNLOAD_FORMAT_LIBRARY ON CACHE INTERNAL "Do we need to include fmtlib subproject?")
     return()
   endif()
 
@@ -133,7 +133,7 @@ function(find_std_format)
     return()
   endif()
 
-  set(CXX_STD_FORMAT_LIB "fmt::fmt" CACHED INTERNAL "Libray needed for <format>")
+  set(CXX_STD_FORMAT_LIB "fmt::fmt" CACHE INTERNAL "Libray needed for <format>")
 
 endfunction()
 
@@ -197,10 +197,10 @@ find_std_filesystem()
 find_std_format()
 
 if(CXX_STD_FILESYSTEM_LIBRARY)
-  target_link_libraries(gdsub PUBLIC "${CXX_STD_FILESYSTEM_LIBRARY}")
+  target_link_libraries(gdsup PUBLIC "${CXX_STD_FILESYSTEM_LIBRARY}")
 endif()
 if(CXX_STD_FORMAT_LIB)
-  target_link_libraries(gdsub PUBLIC "${CXX_STD_FORMAT_LIB}")
+  target_link_libraries(gdsup PUBLIC "${CXX_STD_FORMAT_LIB}")
 endif()
 
 add_subdirectory(libgen)
