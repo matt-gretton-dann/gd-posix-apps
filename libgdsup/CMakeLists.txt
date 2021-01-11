@@ -196,8 +196,8 @@ target_sources(gdsup PRIVATE
 find_std_filesystem()
 find_std_format()
 
-if(CXX_STD_FILESYSTEM_LIB)
-  target_link_libraries(gdsub PUBLIC "${CXX_STD_FILESYSTEM_LIB}")
+if(CXX_STD_FILESYSTEM_LIBRARY)
+  target_link_libraries(gdsub PUBLIC "${CXX_STD_FILESYSTEM_LIBRARY}")
 endif()
 if(CXX_STD_FORMAT_LIB)
   target_link_libraries(gdsub PUBLIC "${CXX_STD_FORMAT_LIB}")
