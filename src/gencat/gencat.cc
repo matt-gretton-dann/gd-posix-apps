@@ -8,17 +8,16 @@
 #include "gd/filesystem.hh"
 #include "gd/format.hh"
 #include "gd/libgen.h"
+#include "gd/limits.h"
+#include "gd/nl_types.h"
 
 #include <bit>
 #include <cassert>
-#include <climits>
 #include <cstdlib>
 #include <fcntl.h>
 #include <fstream>
 #include <iostream>
-#include <limits>
 #include <map>
-#include <nl_types.h>
 #include <string>
 #include <string_view>
 #include <system_error>
