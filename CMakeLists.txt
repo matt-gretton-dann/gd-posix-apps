@@ -69,6 +69,21 @@ if(RUN_UNIT_TESTS)
   include(Catch)
 endif()
 
+# Detect C++ version
+list(FIND CMAKE_CXX_COMPILE_FEATURES "cxx_std_20" _has_cxx20)
+if(NOT _has_cxx20 EQUAL -1)
+  set(CMAKE_CXX_STANDARD 20)
+  message(STATUS "Using C++20 Standard")
+else()
+  list(FIND CMAKE_CXX_COMPILE_FEATURES "cxx_std_17" _has_cxx17)
+  if(NOT _has_cxx17 EQUAL -1)
+    set(CMAKE_CXX_STANDARD 17)
+    message(STATUS "Using C++17 Standard")
+    else()
+    message(FATAL_ERROR "Require C++17 compiler at least.")
+  endif()
+endif()
+
 # And recurse to the subdirectories
 add_subdirectory(libgdsup)
 add_subdirectory(src)

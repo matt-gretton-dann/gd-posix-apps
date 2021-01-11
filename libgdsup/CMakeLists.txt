@@ -62,7 +62,7 @@ function(find_std_filesystem)
     try_compile(_ccxxfs_present
                 "${CMAKE_CURRENT_BINARY_DIR}/cmake-test"
                 SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/cmake/check-filesystem.cc"
-                CXX_STANDARD 17
+                CXX_STANDARD "${CMAKE_CXX_STANDARD}" CXX_STANDARD_REQUIRED ON
                 LINK_LIBRARIES "${_ccxxfs_lib}")
     if(_ccxxfs_present)
       set(CXX_STD_FILESYSTEM_LIBRARY "${_ccxxfs_lib}" CACHE INTERNAL "Libraries for <filesystem>")
@@ -107,7 +107,7 @@ function(find_std_format)
     try_compile(_ccxxfmt_present
                 "${CMAKE_CURRENT_BINARY_DIR}/cmake-test"
                 SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/cmake/check-format.cc"
-                CXX_STANDARD 20)
+                CXX_STANDARD "${CMAKE_CXX_STANDARD}" CXX_STANDARD_REQUIRED ON)
     if(_ccxxfmt_present)
       check_pass("found: Using standard library")
       set(CXX_STD_FORMAT_LIB "" CACHE INTERNAL "Library needed for <format>")
@@ -172,12 +172,14 @@ endfunction()
 
 # Library
 add_library(gdsup)
-set_property(TARGET gdsup PROPERTY CXX_STANDARD 20)
+set_property(TARGET gdsup PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
+set_property(TARGET gdsup PROPERTY CXX_STANDARD_REQUIRED ON)
 
 # Unit test executable
 add_executable(test-gdsup)
 target_link_libraries(test-gdsup PUBLIC gdsup Catch2::Catch2)
-set_property(TARGET test-gdsup PROPERTY CXX_STANDARD 20)
+set_property(TARGET test-gdsup PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
+set_property(TARGET test-gdsup PROPERTY CXX_STANDARD_REQUIRED ON)
 
 if($CACHE{FORCE_SUPPLEMENTAL_LIBRARY})
 target_compile_definitions(gdsup PUBLIC "$CACHE{FORCE_SUPPLEMENTAL_LIBRARY}")
