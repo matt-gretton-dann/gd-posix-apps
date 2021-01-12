@@ -10,8 +10,8 @@
 #include "gd/libgen.h"
 #include "gd/limits.h"
 #include "gd/nl_types.h"
+#include "gd/unistd.h"
 
-#include <bit>
 #include <cassert>
 #include <cstdlib>
 #include <fcntl.h>
@@ -21,7 +21,6 @@
 #include <string>
 #include <string_view>
 #include <system_error>
-#include <unistd.h>
 #include <vector>
 
 namespace {

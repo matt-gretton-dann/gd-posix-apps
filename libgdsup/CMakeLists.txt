@@ -193,7 +193,8 @@ target_sources(gdsup PRIVATE
                include/gd/format.hh
                include/gd/libgen.h
                include/gd/limits.h
-               include/gd/nl_types.h)
+               include/gd/nl_types.h
+               include/gd/unistd.h)
 
 find_std_filesystem()
 find_std_format()
