@@ -5,17 +5,18 @@
  */
 
 #include "gd/bit.hh"
+#include "gd/fcntl.h"
 #include "gd/filesystem.hh"
 #include "gd/format.hh"
 #include "gd/libgen.h"
 #include "gd/limits.h"
 #include "gd/nl_types.h"
 #include "gd/stdlib.h"
+#include "gd/sys/stat.h"
 #include "gd/unistd.h"
 
 #include <cassert>
 #include <cstdlib>
-#include <fcntl.h>
 #include <fstream>
 #include <iostream>
 #include <map>
