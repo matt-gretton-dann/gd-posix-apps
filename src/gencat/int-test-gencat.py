@@ -67,4 +67,13 @@ skip_next5 = tester.run_test(
 tester.compare_files(
     test_output, test_expected, skip=skip_next5)
 
+
+# Error tests
+tester.run_test(
+    [tester.exe(), test_output, tester.input_file("THIS FILE DOESN'T EXIST")],
+    test_name="Error on non-existant input",
+    expected_rc=1,
+    expected_stdout='')
+
+
 tester.summarize()
