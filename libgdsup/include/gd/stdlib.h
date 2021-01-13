@@ -11,11 +11,13 @@
 #include <stdlib.h>
 
 #if _WIN32
+#  include "gd/bits/defines.h"
+
 /** \brief       Create a unique file
  *  \param  temp Template for filename.  Must end in six 'X' characters.
  *  \return      Open file descriptor, or -1 on error.
  */
-int mkstemp(char *temp);
-#endif // _WIN32
+EXTERN_C int mkstemp(char* temp);
+#endif  // _WIN32
 
-#endif // _LIBGDSUP_INCLUDE_GD_STDLIB_H_INCLUDED
+#endif  // _LIBGDSUP_INCLUDE_GD_STDLIB_H_INCLUDED

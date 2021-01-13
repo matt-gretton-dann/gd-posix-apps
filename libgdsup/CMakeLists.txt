@@ -188,12 +188,15 @@ endif()
 target_include_directories(gdsup PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_sources(gdsup PRIVATE
                include/gd/bits/defines.h
+               include/gd/sys/stat.h
                include/gd/bit.hh
+               include/gd/fcntl.h
                include/gd/filesystem.hh
                include/gd/format.hh
                include/gd/libgen.h
                include/gd/limits.h
                include/gd/nl_types.h
+               include/gd/stdlib.h
                include/gd/unistd.h)
 
 find_std_filesystem()
@@ -206,6 +209,7 @@ if(CXX_STD_FORMAT_LIB)
   target_link_libraries(gdsup PUBLIC "${CXX_STD_FORMAT_LIB}")
 endif()
 
+add_subdirectory(fcntl)
 add_subdirectory(libgen)
 add_subdirectory(stdlib)
 add_subdirectory(support)
