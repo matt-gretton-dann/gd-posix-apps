@@ -271,7 +271,7 @@ public:
       loc.inc_loc(1);
 
       // Handle line continuations
-      while (line[line.size() - 1] == '\\') {
+      while (line.size() != 0 && line[line.size() - 1] == '\\') {
         std::string line2;
         loc.inc_loc(1);
         if (!std::getline(ifs, line2)) {
