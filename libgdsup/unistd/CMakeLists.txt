@@ -4,5 +4,5 @@
 #         SPDX-License-Identifier: Apache-2.0
 
 if (WIN32)
-  add_gdsup_source(SOURCES close-win32.c read-win32.c write-win32.c)
+  add_gdsup_source(SOURCES close-win32.c read-win32.c unlink-win32.c write-win32.c)
 endif()
