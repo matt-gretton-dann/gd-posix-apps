@@ -6,6 +6,7 @@
 
 #include "gd/unistd.h"
 
+#define _CRT_DECLARE_NONSTDC_NAMES 0
 #include <io.h>
 
 /* Just call underlying _close(). */
