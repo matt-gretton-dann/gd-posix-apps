@@ -208,6 +208,7 @@ endif()
 
 add_subdirectory(libgen)
 add_subdirectory(support)
+add_subdirectory(unistd)
 
 # Ensure everything gets clang formatted and found.
 target_add_clang_format(gdsup)
