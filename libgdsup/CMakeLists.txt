@@ -207,6 +207,7 @@ if(CXX_STD_FORMAT_LIB)
 endif()
 
 add_subdirectory(libgen)
+add_subdirectory(stdlib)
 add_subdirectory(support)
 add_subdirectory(unistd)
 
