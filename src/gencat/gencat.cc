@@ -206,9 +206,13 @@ public:
    */
   void load_catfile(std::string_view const& file)
   {
-    std::ifstream is(file.data(), std::ios::binary | std::ios::in);
-    Data data;
     Location loc(file, 0);
+    Data data;
+
+    std::ifstream is(file.data(), std::ios::binary | std::ios::in);
+    if (!is) {
+      loc.error("Unable to open {} for reading.", file);
+    }
 
     // Read the header
     load_header(is, loc, data);
@@ -256,14 +260,17 @@ public:
    */
   void load_msgfile(std::string_view const& file)
   {
+    Location loc(file, 0);
     std::ifstream ifs;
     if (file != "-") {
       ifs.open(file.data());
+      if (!ifs) {
+        loc.error("Unable to open {} for reading.", file);
+      }
     }
     std::istream& is = (file == "-") ? std::cin : ifs;
 
     std::string line;
-    Location loc(file, 0);
 
     auto set_it = sets_.insert({NL_SETD, MessageSet()}).first;
     int quote = -1;
