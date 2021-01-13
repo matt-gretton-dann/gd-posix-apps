@@ -55,7 +55,7 @@
  *  \brief Maximum value for an object of type \c ssize_t.
  */
 #  if _WIN64
-#    define SSIZE_MAX LONG_LONG_MAX
+#    define SSIZE_MAX LLONG_MAX
 #  elif _WIN32
 #    define SSIZE_MAX INT_MAX
 #  elif defined(__WORDSIZE) && __WORDSIZE == 64
