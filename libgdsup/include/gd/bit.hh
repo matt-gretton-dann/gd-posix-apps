@@ -26,9 +26,15 @@ using endian = std::endian;
 
 #if _USE_OUR_BIT_IMPLEMENTATION
 #  ifdef _WIN32
-#    define __BYTE_ORDER__ __ORDER_LITTLE_ENDIAN__
-#    define __ORDER_LITTLE_ENDIAN__ 1
-#    define __ORDER_BIG_ENDIAN__ 0
+#    ifndef __BYTE_ORDER__
+#      define __BYTE_ORDER__ __ORDER_LITTLE_ENDIAN__
+#    endif
+#    ifndef __ORDER_LITTLE_ENDIAN__
+#      define __ORDER_LITTLE_ENDIAN__ 1
+#    endif
+#    ifndef __ORDER_BIG_ENDIAN__
+#      define __ORDER_BIG_ENDIAN__ 0
+#    endif
 #  endif
 
 #  if !defined(__BYTE_ORDER__) || !defined(__ORDER_LITTLE_ENDIAN__) ||                             \
