@@ -34,3 +34,9 @@ To expose functionality in you C/C++ source do:
 ```
 
 These will redirect to the appropriate standard header if necessary.
+
+## Further Documentation
+
+ * [Header file detail](./header-files.md)
+ * [Limits](./limits.md)
+ * [Windows Support](./windows-support.md)
