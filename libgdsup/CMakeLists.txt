@@ -62,7 +62,7 @@ function(find_std_filesystem)
     try_compile(_ccxxfs_present
                 "${CMAKE_CURRENT_BINARY_DIR}/cmake-test"
                 SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/cmake/check-filesystem.cc"
-                CXX_STANDARD 17
+                CXX_STANDARD "${CMAKE_CXX_STANDARD}" CXX_STANDARD_REQUIRED ON
                 LINK_LIBRARIES "${_ccxxfs_lib}")
     if(_ccxxfs_present)
       set(CXX_STD_FILESYSTEM_LIBRARY "${_ccxxfs_lib}" CACHE INTERNAL "Libraries for <filesystem>")
@@ -107,7 +107,7 @@ function(find_std_format)
     try_compile(_ccxxfmt_present
                 "${CMAKE_CURRENT_BINARY_DIR}/cmake-test"
                 SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/cmake/check-format.cc"
-                CXX_STANDARD 20)
+                CXX_STANDARD "${CMAKE_CXX_STANDARD}" CXX_STANDARD_REQUIRED ON)
     if(_ccxxfmt_present)
       check_pass("found: Using standard library")
       set(CXX_STD_FORMAT_LIB "" CACHE INTERNAL "Library needed for <format>")
@@ -119,8 +119,8 @@ function(find_std_format)
   if(ALLOW_THIRD_PARTY_DOWNLOADS)
     include_external_fmtlib()
     check_pass("found: Using downloaded library fmt::fmt")
-    set(CXX_STD_FORMAT_LIB "fmt::fmt" CACHED INTERNAL "Libray needed for <format>")
-    set(CXX_DOWNLOAD_FORMAT_LIBRARY ON CACHED INTERNAL "Do we need to include fmtlib subproject?")
+    set(CXX_STD_FORMAT_LIB "fmt::fmt" CACHE INTERNAL "Libray needed for <format>")
+    set(CXX_DOWNLOAD_FORMAT_LIBRARY ON CACHE INTERNAL "Do we need to include fmtlib subproject?")
     return()
   endif()
 
@@ -133,7 +133,7 @@ function(find_std_format)
     return()
   endif()
 
-  set(CXX_STD_FORMAT_LIB "fmt::fmt" CACHED INTERNAL "Libray needed for <format>")
+  set(CXX_STD_FORMAT_LIB "fmt::fmt" CACHE INTERNAL "Libray needed for <format>")
 
 endfunction()
 
@@ -172,12 +172,14 @@ endfunction()
 
 # Library
 add_library(gdsup)
-set_property(TARGET gdsup PROPERTY CXX_STANDARD 20)
+set_property(TARGET gdsup PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
+set_property(TARGET gdsup PROPERTY CXX_STANDARD_REQUIRED ON)
 
 # Unit test executable
 add_executable(test-gdsup)
 target_link_libraries(test-gdsup PUBLIC gdsup Catch2::Catch2)
-set_property(TARGET test-gdsup PROPERTY CXX_STANDARD 20)
+set_property(TARGET test-gdsup PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
+set_property(TARGET test-gdsup PROPERTY CXX_STANDARD_REQUIRED ON)
 
 if($CACHE{FORCE_SUPPLEMENTAL_LIBRARY})
 target_compile_definitions(gdsup PUBLIC "$CACHE{FORCE_SUPPLEMENTAL_LIBRARY}")
@@ -186,22 +188,32 @@ endif()
 target_include_directories(gdsup PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_sources(gdsup PRIVATE
                include/gd/bits/defines.h
+               include/gd/sys/stat.h
+               include/gd/bit.hh
+               include/gd/fcntl.h
                include/gd/filesystem.hh
                include/gd/format.hh
-               include/gd/libgen.h)
+               include/gd/libgen.h
+               include/gd/limits.h
+               include/gd/nl_types.h
+               include/gd/stdlib.h
+               include/gd/unistd.h)
 
 find_std_filesystem()
 find_std_format()
 
-if(CXX_STD_FILESYSTEM_LIB)
-  target_link_libraries(gdsub PUBLIC "${CXX_STD_FILESYSTEM_LIB}")
+if(CXX_STD_FILESYSTEM_LIBRARY)
+  target_link_libraries(gdsup PUBLIC "${CXX_STD_FILESYSTEM_LIBRARY}")
 endif()
 if(CXX_STD_FORMAT_LIB)
-  target_link_libraries(gdsub PUBLIC "${CXX_STD_FORMAT_LIB}")
+  target_link_libraries(gdsup PUBLIC "${CXX_STD_FORMAT_LIB}")
 endif()
 
+add_subdirectory(fcntl)
 add_subdirectory(libgen)
+add_subdirectory(stdlib)
 add_subdirectory(support)
+add_subdirectory(unistd)
 
 # Ensure everything gets clang formatted and found.
 target_add_clang_format(gdsup)

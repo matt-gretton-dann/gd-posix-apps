@@ -46,13 +46,18 @@ function(add_utility)
             set(_au_python_lib "${_au_python_lib}${_au_path_sep}$ENV{PYTHONPATH}")
         endif()
 
+        file(TO_NATIVE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${_au_INT_TEST}.py" _au_TEST_PATH)
+        file(TO_NATIVE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/test-data" _au_TEST_DATA)
+        file(TO_NATIVE_PATH "${CMAKE_CURRENT_BINARY_DIR}" _au_TEST_OUTPUT)
+
         add_test(NAME "${_au_INT_TEST}"
-                 COMMAND "${Python_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/${_au_INT_TEST}.py"
-                         "$<TARGET_FILE:${_au_NAME}>")
+                 COMMAND "${Python_EXECUTABLE}" "${_au_TEST_PATH}" "$<TARGET_FILE:${_au_NAME}>"
+                         "--input-dir" "${_au_TEST_DATA}" "--output-dir" "${_au_TEST_OUTPUT}")
         set_tests_properties("${_au_INT_TEST}"
                              PROPERTIES ENVIRONMENT
                                         "PYTHONPATH=${_au_python_lib};PYTHONPYCACHEPREFIX=${_au_python_cache}")
     endif()
 endfunction()
 
+add_subdirectory(gencat)
 add_subdirectory(true-false)

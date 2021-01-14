@@ -14,7 +14,7 @@
 
 int main(void)
 {
-  /* Whilst not specified by POSIX most true/false implementations ignore command line
-   * arguments. We do the same.  */
+  /* Whilst not specified by POSIX most true/false implementations ignore command line arguments.
+     We do the same.  */
   return TRUE_FALSE_EXIT_CODE;
 }

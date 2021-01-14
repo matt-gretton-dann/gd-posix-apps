@@ -8,3 +8,7 @@
 ## Standard Supplement Library (libgdsup)
 
  * [Overview of libgdsup](./libgdsup/index.md)
+
+## File Formats
+
+ * [Message Catalogues](./file-formats/message-catalogues.md)
