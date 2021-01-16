@@ -6,3 +6,5 @@
 if (WIN32)
   add_gdsup_source(SOURCES close-win32.c read-win32.c unlink-win32.c write-win32.c)
 endif()
+
+add_gdsup_source(SOURCES __unistd_read.c unistd.h)
