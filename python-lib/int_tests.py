@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
+import difflib
 import filecmp
 import subprocess
 import sys
@@ -74,9 +75,6 @@ class TestRunner:
 
         It is not an error if FILE has not been previously registered - we
         just register it and mark it to not be removed."""
-        if file not in self._files:
-            self.register_file(file)
-
         self._files[file] = False
 
     def run_test(self, cmdline, expected_rc=0, expected_stdout=None,
