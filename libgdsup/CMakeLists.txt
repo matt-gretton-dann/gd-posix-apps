@@ -174,18 +174,22 @@ endfunction()
 add_library(gdsup)
 set_property(TARGET gdsup PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
 set_property(TARGET gdsup PROPERTY CXX_STANDARD_REQUIRED ON)
+target_include_directories(gdsup PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_include_directories(gdsup PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+target_include_directories(gdsup PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 
 # Unit test executable
 add_executable(test-gdsup)
 target_link_libraries(test-gdsup PUBLIC gdsup Catch2::Catch2)
 set_property(TARGET test-gdsup PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
 set_property(TARGET test-gdsup PROPERTY CXX_STANDARD_REQUIRED ON)
+target_include_directories(test-gdsup PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+target_include_directories(test-gdsup PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 
 if($CACHE{FORCE_SUPPLEMENTAL_LIBRARY})
 target_compile_definitions(gdsup PUBLIC "$CACHE{FORCE_SUPPLEMENTAL_LIBRARY}")
 endif()
 
-target_include_directories(gdsup PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_sources(gdsup PRIVATE
                include/gd/bits/defines.h
                include/gd/sys/stat.h
@@ -211,6 +215,7 @@ endif()
 
 add_subdirectory(fcntl)
 add_subdirectory(libgen)
+add_subdirectory(nl_types)
 add_subdirectory(stdlib)
 add_subdirectory(support)
 add_subdirectory(unistd)
