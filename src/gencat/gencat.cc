@@ -396,11 +396,13 @@ public:
         std::uint64_t msg_offset = data.size();
         write_table_entry(
           loc, data, msg_array_offset,
-          TableEntry{kv2.first, static_cast<std::uint32_t>(kv2.second.size()), msg_offset});
+          TableEntry{kv2.first, static_cast<std::uint32_t>(kv2.second.size()) + 1, msg_offset});
         msg_array_offset += table_entry_size;
         for (auto c : kv2.second) {
           data.push_back(std::uint8_t(c));
         }
+        // Null terminate the string.
+        data.push_back(0);
       }
     }
 
@@ -551,8 +553,11 @@ private:
     if (te.offset > data.size() - te.len) {
       loc.error("Message {}.{} overflows the end of the message catalogue.", set_id, te.id);
     }
+    if (data.data()[te.offset + te.len - 1] != '\0') {
+      loc.error("Message {}.{} is not terminated by a NUL character.", set_id, te.id);
+    }
 
-    return std::string(reinterpret_cast<char const*>(data.data() + te.offset), te.len);
+    return std::string(reinterpret_cast<char const*>(data.data() + te.offset), te.len - 1);
   }
 
   static void validate_id(Location& loc, Id id, const char* soft_limit_name, Id soft_limit)

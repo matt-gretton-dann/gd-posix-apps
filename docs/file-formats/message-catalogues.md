@@ -60,7 +60,7 @@ Each element of the array is in the following format:
 | +4 | 4 | `uint32_t` | msg_length | Legth of message (including terminating NUL). |
 | +8 | 8 | `uint64_t` | msg_offset | Offset to start of message text |
 
-Following all message arrays are the strings.  Strings are stored without a terminating NUL
+Following all message arrays are the strings.  Strings are stored with a terminating NUL
 character.
 
 It can be assumed that these will be treated as read only and so string pointers can be overlapped to
