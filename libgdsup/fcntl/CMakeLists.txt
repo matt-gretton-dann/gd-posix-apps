@@ -6,3 +6,5 @@
 if (WIN32)
   add_gdsup_source(SOURCES open-win32.c)
 endif()
+
+add_gdsup_source(SOURCES __fcntl_open.c fcntl.h)
