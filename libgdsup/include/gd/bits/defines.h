@@ -9,8 +9,12 @@
 
 #ifdef __cplusplus
 #  define EXTERN_C extern "C"
+#  define EXTERN_C_BEGIN extern "C" {
+#  define EXTERN_C_END }
 #else
 #  define EXTERN_C
+#  define EXTERN_C_BEGIN
+#  define EXTERN_C_END
 #endif
 
 #endif  // _LIBGDSUP_INCLUDE_GD_BITS_DEFINES_H_INCLUDED
