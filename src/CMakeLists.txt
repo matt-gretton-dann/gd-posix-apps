@@ -29,6 +29,7 @@ function(add_utility)
     add_executable("${_au_NAME}" "${_au_SOURCES}")
     target_link_libraries("${_au_NAME}" PUBLIC gdsup)
     target_add_clang_format("${_au_NAME}")
+    set_warnings("${_au_NAME}")
 
     # Add the integration test
     if(RUN_INTEGRATION_TESTS AND NOT NO_INT_TEST)

@@ -177,6 +177,7 @@ set_property(TARGET gdsup PROPERTY CXX_STANDARD_REQUIRED ON)
 target_include_directories(gdsup PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_include_directories(gdsup PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_include_directories(gdsup PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+set_warnings(gdsup)
 
 # Unit test executable
 add_executable(test-gdsup)
@@ -185,6 +186,7 @@ set_property(TARGET test-gdsup PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
 set_property(TARGET test-gdsup PROPERTY CXX_STANDARD_REQUIRED ON)
 target_include_directories(test-gdsup PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_include_directories(test-gdsup PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+set_warnings(test-gdsup)
 
 if($CACHE{FORCE_SUPPLEMENTAL_LIBRARY})
 target_compile_definitions(gdsup PUBLIC "$CACHE{FORCE_SUPPLEMENTAL_LIBRARY}")

@@ -19,6 +19,7 @@ set(BUILD_TESTING ON CACHE BOOL "Enable testing")
 list(PREPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 include(FetchContent)
 include(GNUInstallDirs)
+include(Warnings)
 
 # Find packages
 find_package(ClangFormat)
