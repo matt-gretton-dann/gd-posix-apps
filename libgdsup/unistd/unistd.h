@@ -20,6 +20,6 @@
  *  - Having read \c SSIZE_MAX bytes
  *  - Another error.
  */
-EXTERN_C ssize_t __unistd_read(int fd, void* buf, size_t nbyte);
+__EXTERN_C ssize_t __unistd_read(int fd, void* buf, size_t nbyte);
 
 #endif  //  _GDSUP_UNITSTD_UNISTD_H_INCLUDED

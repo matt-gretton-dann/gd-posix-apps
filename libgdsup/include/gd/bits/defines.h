@@ -8,13 +8,13 @@
 #define _LIBGDSUP_INCLUDE_GD_BITS_DEFINES_H_INCLUDED
 
 #ifdef __cplusplus
-#  define EXTERN_C extern "C"
-#  define EXTERN_C_BEGIN extern "C" {
-#  define EXTERN_C_END }
+#  define __EXTERN_C extern "C"
+#  define __EXTERN_C_BEGIN extern "C" {
+#  define __EXTERN_C_END }
 #else
-#  define EXTERN_C
-#  define EXTERN_C_BEGIN
-#  define EXTERN_C_END
+#  define __EXTERN_C
+#  define __EXTERN_C_BEGIN
+#  define __EXTERN_C_END
 #endif
 
 #ifdef _WIN32

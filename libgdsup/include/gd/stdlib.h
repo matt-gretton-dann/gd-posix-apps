@@ -17,7 +17,7 @@
  *  \param  temp Template for filename.  Must end in six 'X' characters.
  *  \return      Open file descriptor, or -1 on error.
  */
-EXTERN_C int mkstemp(char* temp);
+__EXTERN_C int mkstemp(char* temp);
 #endif  // _WIN32
 
 #endif  // _LIBGDSUP_INCLUDE_GD_STDLIB_H_INCLUDED

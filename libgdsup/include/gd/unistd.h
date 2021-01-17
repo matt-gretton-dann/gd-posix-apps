@@ -44,7 +44,7 @@ typedef long ssize_t;
  *  \param  fd File descriptor
  *  \return    -1 on error, 0 otherwise
  */
-EXTERN_C int close(int fd);
+__EXTERN_C int close(int fd);
 
 /** \brief         Read from a file
  *  \param  fd     file descriptor
@@ -54,13 +54,13 @@ EXTERN_C int close(int fd);
  *
  * Windows implementation won't write more than 2^32 bytes at once.
  */
-EXTERN_C ssize_t read(int fd, void* buf, size_t nbytes);
+__EXTERN_C ssize_t read(int fd, void* buf, size_t nbytes);
 
 /** \brief       Remove a directory entry.
  *  \param  path Path to remove.
  *  \return      0 on success, -1 on failure - updating \c errno.
  */
-EXTERN_C int unlink(char const* path);
+__EXTERN_C int unlink(char const* path);
 
 /** \brief         Write to a file
  *  \param  int    file descriptor
@@ -68,7 +68,7 @@ EXTERN_C int unlink(char const* path);
  *  \param  nbytes Number of bytes to write into file
  *  \return        Number of bytes written, or -1 on error. \c errno will be updated.
  */
-EXTERN_C ssize_t write(int fd, const void* buf, size_t nbytes);
+__EXTERN_C ssize_t write(int fd, const void* buf, size_t nbytes);
 
 #else  // ^ Win32 v POSIX
 #  include <unistd.h>

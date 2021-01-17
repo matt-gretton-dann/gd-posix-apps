@@ -54,7 +54,7 @@
  *  \param  perm  User permissions
  *  \return       File descriptor or -1 on failure, \c errno updated.
  */
-EXTERN_C int open(const char* path, int oflag, ...);
+__EXTERN_C int open(const char* path, int oflag, ...);
 
 #endif
 
