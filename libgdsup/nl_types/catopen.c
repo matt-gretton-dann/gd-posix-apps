@@ -59,7 +59,7 @@ static nl_catd do_catopen(char const* path)
 
   uint64_t size = __support_read_le_u64(buffer + CAT_HDR_FILE_SIZE_OFFSET);
   char* full_buffer = malloc((size_t)size);
-  if (full_buffer = NULL) {
+  if (full_buffer == NULL) {
     error_return(ENOMEM, fd);
   }
 
