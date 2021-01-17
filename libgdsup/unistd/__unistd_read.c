@@ -13,7 +13,7 @@ ssize_t __unistd_read(int fd, void* buf, size_t nbyte)
 {
   ssize_t r = 0;
   while (r < nbyte) {
-    ssize_t r2 = read(fd, buf + r, nbyte - r);
+    ssize_t r2 = read(fd, ((char*)buf) + r, nbyte - r);
     if (r2 == 0) {
       return r;
     }

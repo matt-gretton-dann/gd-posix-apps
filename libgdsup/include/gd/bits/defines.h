@@ -17,4 +17,16 @@
 #  define EXTERN_C_END
 #endif
 
+#ifdef _WIN32
+#  ifndef __BYTE_ORDER__
+#    define __BYTE_ORDER__ __ORDER_LITTLE_ENDIAN__
+#  endif
+#  ifndef __ORDER_LITTLE_ENDIAN__
+#    define __ORDER_LITTLE_ENDIAN__ 1
+#  endif
+#  ifndef __ORDER_BIG_ENDIAN__
+#    define __ORDER_BIG_ENDIAN__ 0
+#  endif
+#endif
+
 #endif  // _LIBGDSUP_INCLUDE_GD_BITS_DEFINES_H_INCLUDED
