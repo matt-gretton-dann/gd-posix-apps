@@ -12,15 +12,32 @@
 
 #include "gd/bits/defines.h"
 
+/* macOS headers include <nl_types.h> randomly (and incorrectly), which leads us to multiple-
+ * definition errors.  We fix this by doing what you should never do and defining include macros
+ * etc.
+ */
+#ifdef __APPLE__
+#  ifdef _NL_TYPES_H_
+#    error "<nl_types.h> has already been included please include gd/nl_types.h early"
+#  endif
+#  define _NL_TYPES_H_
+#  include <_types.h>
+#  include <_types/_nl_item.h>
+#  include <sys/cdefs.h>
+#  include <sys/types.h>
+#endif  // __APPLE__
+
 #include <stdint.h>
 
 /** \brief Opaque type representing a Catalogue ID.  */
 typedef intptr_t nl_catd;
 
 /** \brief  Default set ID used by gencat.  */
+#undef NL_SETD
 #define NL_SETD ((int)1)
 
 /** \brief  Flag to indicate \c LC_MESSAGES environment should be used for locale setting.  */
+#undef NL_CAT_LOCALE
 #define NL_CAT_LOCALE ((int)1)
 
 /** \brief       Close a message catalogue descriptor.

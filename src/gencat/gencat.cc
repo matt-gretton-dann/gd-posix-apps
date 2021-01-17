@@ -4,13 +4,16 @@
  *  SPDX-License-Identifier: Apache-2.0
  */
 
+/* clang-format off We need to include nl-types.h early for macOS. */
+#include "gd/nl_types.h"
+/* clang-format on */
+
 #include "gd/bit.hh"
 #include "gd/fcntl.h"
 #include "gd/filesystem.hh"
 #include "gd/format.hh"
 #include "gd/libgen.h"
 #include "gd/limits.h"
-#include "gd/nl_types.h"
 #include "gd/stdlib.h"
 #include "gd/sys/stat.h"
 #include "gd/unistd.h"
