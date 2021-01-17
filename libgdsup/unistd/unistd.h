@@ -15,7 +15,10 @@
  *  \param  nbyte  Maximum number of bytes of read.
  *  \return        Number of bytes read, or -1 on error.
  *
- * This wrapper handles interrupted reads by trying again until we reach EOF or another error.
+ * This wrapper handles interrupted reads by trying again until we reach one of:
+ *  - end-of file,
+ *  - Having read \c SSIZE_MAX bytes
+ *  - Another error.
  */
 EXTERN_C ssize_t __unistd_read(int fd, void* buf, size_t nbyte);
 

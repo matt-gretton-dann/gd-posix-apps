@@ -226,7 +226,6 @@ public:
     // Read the rest of the file.
     load_data(is, loc, data, file_size);
     std::uint64_t set_offset = hdr_size;
-    auto raw_data = data.data();
 
     // Process each set.
     for (std::uint32_t set = 0; set < set_count; ++set) {
@@ -277,14 +276,14 @@ public:
 
     auto set_it = sets_.insert({NL_SETD, MessageSet()}).first;
     int quote = -1;
-    while (std::getline(ifs, line)) {
+    while (std::getline(is, line)) {
       loc.inc_loc(1);
 
       // Handle line continuations
       while (line.size() != 0 && line[line.size() - 1] == '\\') {
         std::string line2;
         loc.inc_loc(1);
-        if (!std::getline(ifs, line2)) {
+        if (!std::getline(is, line2)) {
           loc.error("Unexpected end of file indicator.");
         }
         line = line.substr(0, line.size() - 1) + line2;

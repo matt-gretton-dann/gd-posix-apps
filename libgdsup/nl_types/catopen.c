@@ -65,7 +65,7 @@ static nl_catd do_catopen(char const* path)
 
   memcpy(full_buffer, buffer, CAT_HDR_SIZE);
   read = __unistd_read(fd, full_buffer + CAT_HDR_SIZE, size - CAT_HDR_SIZE);
-  if (read != size - CAT_HDR_SIZE) {
+  if (read == -1 || (size_t)read != size - CAT_HDR_SIZE) {
     __support_log("Catalogue size on disk does not match recorded size: %s", path);
     error_return(EINVAL, fd);
   }

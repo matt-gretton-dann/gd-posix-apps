@@ -42,7 +42,7 @@ char* catgets(nl_catd catd, int set_id, int msg_id, char const* s)
   char const* off = buf + CAT_HDR_SIZE;
   unsigned i = 0;
   for (; i < num_sets; ++i) {
-    if (__support_read_le_u32(off + CAT_ARRAY_ID_OFFSET) == set_id) {
+    if (__support_read_le_u32(off + CAT_ARRAY_ID_OFFSET) == (uint32_t)set_id) {
       break;
     }
     off += CAT_ARRAY_ENTRY_SIZE;
@@ -73,7 +73,7 @@ char* catgets(nl_catd catd, int set_id, int msg_id, char const* s)
   off = buf + msg_offset;
   unsigned j = 0;
   for (; j < num_msgs; ++j) {
-    if (__support_read_le_u32(off + CAT_ARRAY_ID_OFFSET) == msg_id) {
+    if (__support_read_le_u32(off + CAT_ARRAY_ID_OFFSET) == (uint32_t)msg_id) {
       break;
     }
   }
