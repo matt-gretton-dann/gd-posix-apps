@@ -191,7 +191,7 @@ static char* expand_nlspath_entry(char const* begin, char const* end, char const
         assert(false && "Unexpected character following %");
         errno = ENOENT;
         free(result);
-        return NULL;
+        result = NULL;
       }
 
       if (result == NULL) {
@@ -199,6 +199,8 @@ static char* expand_nlspath_entry(char const* begin, char const* end, char const
       }
     }
   }
+
+  return result;
 }
 
 /** \brief          Iterate through all NLSPATH entries attempting to open the catalogue file.
@@ -282,8 +284,18 @@ nl_catd catopen(char const* name, int oflag)
     return generate_result(do_catopen(name));
   }
 
-  /* Determine the locale identifier to use.  */
-  char const* locale = oflag == 0 ? getenv("LANG") : setlocale(LC_MESSAGES, NULL);
+  /* Determine the locale identifier to use:
+   * Windows doesn't support LC_MESSAGES - use LC_ALL instead as a safe alternative.
+   * #160 tracks this.
+   */
+  int lc_id =
+#ifdef _WIN32
+    LC_ALL
+#else
+    LC_MESSAGES
+#endif
+    ;
+  char const* locale = oflag == 0 ? getenv("LANG") : setlocale(lc_id, NULL);
   if (locale == NULL || locale[0] == '\0') {
     locale = "C";
   }
