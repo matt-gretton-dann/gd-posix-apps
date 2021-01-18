@@ -203,6 +203,7 @@ target_sources(gdsup PRIVATE
                include/gd/limits.h
                include/gd/nl_types.h
                include/gd/stdlib.h
+               include/gd/string.h
                include/gd/unistd.h)
 
 find_std_filesystem()
@@ -219,6 +220,7 @@ add_subdirectory(fcntl)
 add_subdirectory(libgen)
 add_subdirectory(nl_types)
 add_subdirectory(stdlib)
+add_subdirectory(string)
 add_subdirectory(support)
 add_subdirectory(unistd)
 
