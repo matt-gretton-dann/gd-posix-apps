@@ -13,8 +13,9 @@
 ssize_t read(int fd, void* buf, size_t nbytes)
 {
   /* Win32 _read returns int not ssize_t, so we clamp to INT_MAX.  */
-  if (nbytes > INT_MAX) {
-    nbytes = INT_MAX;
+  unsigned int amt = INT_MAX;
+  if (nbytes < INT_MAX) {
+    amt = (unsigned int)nbytes;
   }
-  return _read(fd, buf, nbytes);
+  return _read(fd, buf, amt);
 }
