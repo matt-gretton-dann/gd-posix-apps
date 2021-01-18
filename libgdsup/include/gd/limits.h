@@ -7,6 +7,7 @@
 #ifndef _LIBGDSUP_INCLUDE_GD_LIMITS_H_INCLUDED
 #define _LIBGDSUP_INCLUDE_GD_LIMITS_H_INCLUDED
 
+#include "gd/bits/defines.h"
 /* Everyone has a limits.h.  */
 #include <limits.h>
 
