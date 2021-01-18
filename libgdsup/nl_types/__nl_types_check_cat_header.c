@@ -38,6 +38,7 @@ bool __nl_types_check_cat_header(char const buffer[CAT_HDR_SIZE])
   uint32_t num_sets = __support_read_le_u32(buffer + CAT_HDR_NUM_SET_OFFSET);
   if (((uint64_t)num_sets) * CAT_ARRAY_ENTRY_SIZE > (size - CAT_HDR_SIZE)) {
     __support_log("Number of sets exceeds size of file: got %" PRIu32 "\n", num_sets);
+    return false;
   }
 
   return true;

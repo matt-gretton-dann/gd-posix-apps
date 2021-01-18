@@ -10,6 +10,6 @@ configure_file(nl_types.h.in nl_types.h)
 target_add_clang_format_extra(nl_types.h.in)
 
 add_gdsup_source(UNIT_TEST test-catclose.cc SOURCES catclose.c)
-add_gdsup_source(SOURCES catclose.c catgets.c catopen.c)
-add_gdsup_source(SOURCES __nl_types_check_cat_header.c)
+add_gdsup_source(SOURCES catgets.c catopen.c)
+add_gdsup_source(UNIT_TEST test-__nl_types_check_cat_header.cc SOURCES __nl_types_check_cat_header.c)
 
