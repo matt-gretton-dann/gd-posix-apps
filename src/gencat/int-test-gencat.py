@@ -70,7 +70,8 @@ tester.compare_files(
 
 # Error tests
 tester.run_test(
-    [tester.exe(), test_output, tester.input_file("THIS FILE DOESN'T EXIST")],
+    [tester.exe(), test_output, tester.input_file(
+        "THIS FILE DOESN'T EXIST", file_exists=False)],
     test_name="Error on non-existant input",
     expected_rc=1,
     expected_stdout='')

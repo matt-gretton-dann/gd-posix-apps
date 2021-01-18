@@ -163,16 +163,21 @@ class TestRunner:
 
         If --output-dir was not specified on the command line this raises a
         RuntimeError.
+
+        Ensures that the directory that filename points to exists.
         """
         if self._args.output_dir is None:
             raise RuntimeError(
                 "Need --output-dir specified on the command line.")
-        return os.path.join(self._args.output_dir, filename)
+        result = os.path.join(self._args.output_dir, filename)
+        os.makedirs(os.path.dirname(result), exist_ok=True)
+        return result
 
-    def input_file(self, filename):
+    def input_file(self, filename, file_exists=True):
         """Get the path to use for an input file.
 
-        Filename is the basename we want to use.
+        Filename is the basename we want to use.  If file_exists is True will
+        ensure file exists (or raise a RuntimeError).
 
         If --input-dir was not specified on the command line this raises a
         RuntimeError.
@@ -180,7 +185,12 @@ class TestRunner:
         if self._args.input_dir is None:
             raise RuntimeError(
                 "Need --input-dir specified on the command line.")
-        return os.path.join(self._args.input_dir, filename)
+        result = os.path.join(self._args.input_dir, filename)
+        if file_exists and not os.path.exists(result):
+            raise RuntimeError(
+                "Cannot find input file: {}".format(result))
+
+        return result
 
     def _strip_inout_dirs(self, file):
         """Strip the input/output directories from the start of a filename.
