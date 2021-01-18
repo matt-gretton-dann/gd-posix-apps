@@ -44,7 +44,7 @@ std::string_view program_name;  ///< Program name - somewhere global for all.
  * On an error it throws a std::system_error exception.  Note that in this case
  * the output file may already have some data in it.
  */
-int xwrite(int fd, char const* data, std::uint64_t amount)
+void xwrite(int fd, char const* data, std::uint64_t amount)
 {
   char const* end = data + amount;
   while (data < end) {
@@ -64,7 +64,6 @@ int xwrite(int fd, char const* data, std::uint64_t amount)
       data += written;
     }
   }
-  return amount;
 }
 
 /** \brief A basic location recorder.
