@@ -47,4 +47,10 @@
 #  pragma warning(disable : 4820 5045)
 #endif /* _MSC_VER */
 
+#ifdef _MSC_VER
+#  define __SUPPRESS_CONSTANT_CONDITIONAL _Pragma("warning(suppress: 4127)")
+#else
+#  define __SUPPRESS_CONSTANT_CONDITIONAL
+#endif
+
 #endif  // _LIBGDSUP_INCLUDE_GD_BITS_DEFINES_H_INCLUDED

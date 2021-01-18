@@ -4,12 +4,14 @@
  *          SPDX-License-Identifier: Apache-2.0
  */
 
+#include "gd/bits/defines.h"
 #include "support/support.h"
 
 #include <stdint.h>
 
 uint32_t __support_read_le_u32(char const* buf)
 {
+  __SUPPRESS_CONSTANT_CONDITIONAL
   if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) {
     return *((uint32_t*)buf);
   }
