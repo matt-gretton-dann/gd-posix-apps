@@ -7,12 +7,12 @@
 #ifndef _LIBGDSUP_INCLUDE_GD_STDLIB_H_INCLUDED
 #define _LIBGDSUP_INCLUDE_GD_STDLIB_H_INCLUDED
 
+#include "gd/bits/defines.h"
+
 /* Everyone has a stdlib.h.  */
 #include <stdlib.h>
 
 #if _WIN32
-#  include "gd/bits/defines.h"
-
 /** \brief       Create a unique file
  *  \param  temp Template for filename.  Must end in six 'X' characters.
  *  \return      Open file descriptor, or -1 on error.
