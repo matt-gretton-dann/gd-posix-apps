@@ -6,6 +6,7 @@
 
 #include "fcntl/fcntl.h"
 #include "gd/fcntl.h"
+#include "gd/libgen.h"
 #include "gd/nl_types.h"
 #include "gd/stdlib.h"
 #include "gd/unistd.h"
@@ -146,7 +147,8 @@ static char* expand_nlspath_entry(char const* begin, char const* end, char const
   }
   size_t codeset_len = 0;
   if (*codeset == '.') {
-    codeset_len = strlen(codeset + 1);
+    ++codeset;
+    codeset_len = strlen(codeset);
   }
 
   size_t p = 0;
@@ -200,6 +202,7 @@ static char* expand_nlspath_entry(char const* begin, char const* end, char const
     }
   }
 
+  result = copy_to_result("\0", 1, result, &p, &capacity);
   return result;
 }
 
@@ -219,11 +222,11 @@ static nl_catd do_catopen_path(char const* nlspath, char const* name, char const
   int saved_errno = errno;
 
   char const* p = nlspath;
-  while (p != NULL) {
-    char const* end = strchr(p, ':');
+  char const* end = nlspath;
+  while (*end != '\0') {
+    end = strchr(p, ':');
     if (end == NULL) {
-      p = NULL;
-      continue;
+      end = p + strlen(p);
     }
 
     if (p == end) {
@@ -237,7 +240,7 @@ static nl_catd do_catopen_path(char const* nlspath, char const* name, char const
       if (expanded_name == NULL) {
         return CATD_ERROR;
       }
-      nl_catd result = do_catopen(name);
+      nl_catd result = do_catopen(expanded_name);
       free(expanded_name);
       if (result != CATD_NOTFOUND) {
         return result;
@@ -245,7 +248,7 @@ static nl_catd do_catopen_path(char const* nlspath, char const* name, char const
     }
 
     errno = saved_errno;
-    p = end + 1;
+    p = *end == '\0' ? end : end + 1;
   }
 
   return CATD_NOTFOUND;
@@ -295,9 +298,15 @@ nl_catd catopen(char const* name, int oflag)
     LC_MESSAGES
 #endif
     ;
-  char const* locale = oflag == 0 ? getenv("LANG") : setlocale(lc_id, NULL);
+  char* locale = oflag == 0 ? getenv("LANG") : setlocale(lc_id, NULL);
+  bool need_free = false;
   if (locale == NULL || locale[0] == '\0') {
     locale = "C";
+  }
+  /* If the Locale contains a '/' we treat it as if the basename name provides the locale name.  */
+  if (strchr(locale, '/') != NULL) {
+    locale = basename(strdup(locale));
+    need_free = true;
   }
 
   /* Find the NLSPATH.  */
@@ -305,15 +314,21 @@ nl_catd catopen(char const* name, int oflag)
 
   /* Do lookup on the NLSPATH.  */
   if (nlspath != NULL && nlspath[0] != '\0') {
-    assert(strchr(nlspath, '/') == NULL);
     int saved_errno = errno;
     nl_catd result = do_catopen_path(nlspath, name, locale);
     if (result != CATD_NOTFOUND) {
-      return result;
+      if (need_free) {
+        free(locale);
+      }
+      return generate_result(result);
     }
     errno = saved_errno;
   }
 
   /* NLSPATH lookup failed - try the default NLSPATH instead.  */
-  return generate_result(do_catopen_path(DEFAULT_NLSPATH, name, locale));
+  nl_catd result = do_catopen_path(DEFAULT_NLSPATH, name, locale);
+  if (need_free) {
+    free(locale);
+  }
+  return generate_result(result);
 }

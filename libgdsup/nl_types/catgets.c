@@ -76,6 +76,7 @@ char* catgets(nl_catd catd, int set_id, int msg_id, char const* s)
     if (__support_read_le_u32(off + CAT_ARRAY_ID_OFFSET) == (uint32_t)msg_id) {
       break;
     }
+    off += CAT_ARRAY_ENTRY_SIZE;
   }
   if (j == num_msgs) {
     error_return(ENOMSG, "catgets: Message ID does not exist in catalogue [%p, %d, %d]\n", catd,
