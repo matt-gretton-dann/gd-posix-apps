@@ -86,9 +86,9 @@ else()
   endif()
 endif()
 
-# And recurse to the subdirectories
-add_subdirectory(libgdsup)
+# And recurse to the subdirectories - order here is important.
 add_subdirectory(src)
+add_subdirectory(libgdsup)
 
 # Display summary information
 message("Integration testing: ${RUN_INTEGRATION_TESTS}")
