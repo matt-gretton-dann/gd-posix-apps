@@ -37,7 +37,7 @@ TEST_CASE("__nl_types_check_cat_header", "[nl_types][nl_types_check_cat_header]"
   REQUIRE(__nl_types_check_cat_header(buf5) == false);
 
   /* File size too big (run only when SIZE_MAX < UINT64_MAX).  */
-  if (SIZE_MAX < UINT64_MAX) {
+  if constexpr (SIZE_MAX < UINT64_MAX) {
     char buf6[24] = {'M',    'S',    'G',    '\0',   '\1',   '\0',   '\0',   '\0',
                      '\0',   '\0',   '\0',   '\0',   '\0',   '\0',   '\0',   '\0',
                      '\xff', '\xff', '\xff', '\xff', '\xff', '\xff', '\xff', '\xff'};
