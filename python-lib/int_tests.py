@@ -159,7 +159,7 @@ class TestRunner:
         return self._args.exe
 
     def output_file(self, filename):
-        """Get the path to use for an output file.
+        """Get the path to use for an output file.  And registers the path
 
         If --output-dir was not specified on the command line this raises a
         RuntimeError.
@@ -171,6 +171,7 @@ class TestRunner:
                 "Need --output-dir specified on the command line.")
         result = os.path.join(self._args.output_dir, filename)
         os.makedirs(os.path.dirname(result), exist_ok=True)
+        self.register_file(result)
         return result
 
     def input_file(self, filename, file_exists=True):
