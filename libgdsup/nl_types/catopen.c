@@ -9,6 +9,7 @@
 #include "gd/libgen.h"
 #include "gd/nl_types.h"
 #include "gd/stdlib.h"
+#include "gd/string.h"
 #include "gd/unistd.h"
 #include "nl_types/nl_types.h"
 #include "support/support.h"
@@ -22,7 +23,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <string.h>
 
 /** \brief       Attempt to open a catalogue file
  *  \param  path Path of file to attempt to open.
