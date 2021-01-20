@@ -248,8 +248,8 @@ public:
 
         auto msg_str = read_string(loc, data, set_te.id, msg_te);
 
-        [[maybe_unused]] auto [msg_it, success2] = set_it->second.insert({msg_te.id, msg_str});
-        if (!success2) {
+        auto result = set_it->second.insert({msg_te.id, msg_str});
+        if (!result.second) {
           loc.error("Multiple definitions of message with ID: {}.{}.", set_te.id, msg_te.id);
         }
       }
