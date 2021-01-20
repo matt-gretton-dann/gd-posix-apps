@@ -137,7 +137,7 @@ function(target_add_clang_format_extra)
     get_filename_component(abs_source "${source}" ABSOLUTE)
     file(RELATIVE_PATH rel_source "${CMAKE_SOURCE_DIR}" "${abs_source}")
     string(MAKE_C_IDENTIFIER "${rel_source}" c_id)
-    set(target "clang-format-${c_id}")
+    set(target "format-${c_id}")
 
     # Will run clang-format over the sources for this target
     if(NOT TARGET "${target}")
@@ -151,12 +151,12 @@ function(target_add_clang_format_extra)
     # Update all to do a dry-run of clang-format to highlight any issues.
     if(ClangFormat_VERSION VERSION_LESS 10)
       add_custom_target(
-        "${target}.clang-format-check" ALL
+        "${target}.check" ALL
         COMMAND "${Python_EXECUTABLE}" "${_cf_CHECK_SCRIPT}" "${ClangFormat_COMMAND}" -style=file "${abs_source}"
         COMMENT "Checking formatting of: ${rel_source}")
     else()
       add_custom_target(
-        "${target}.clang-format-check" ALL
+        "${target}.check" ALL
         COMMAND "${ClangFormat_COMMAND}" -style=file --dry-run --ferror-limit=1 "${abs_source}"
         COMMENT "Checking formatting of: ${rel_source}")
     endif()
