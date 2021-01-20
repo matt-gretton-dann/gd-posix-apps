@@ -31,6 +31,34 @@
 #  endif
 #endif
 
+/** \macro __PATH_SEP
+ *  \brief Separator character for paths in environment variables. (':' or ';')
+ */
+
+/** \macro __PATH_SEPSTR
+ *  \brief Separator character as a string for paths in environment variables. (":" or ";")
+ */
+
+/** \macro __DIR_SEP
+ *  \brief Separator character for directories. ('/' or '\')
+ */
+
+/** \macro __DIR_SEPSTR
+ *  \brief Separator character as a string for directories. ("/" or "\")
+ */
+
+#ifdef _WIN32
+#  define __PATH_SEP ';'
+#  define __PATH_SEPSTR ";"
+#  define __DIR_SEP '\\'
+#  define __DIR_SEPSTR "\\"
+#else
+#  define __PATH_SEP ':'
+#  define __PATH_SEPSTR ":"
+#  define __DIR_SEP '/'
+#  define __DIR_SEPSTR "/"
+#endif
+
 /* Disable various Windows warnings about function usage.
  * Ideally we wouldn't turn off the _CRT_SECURE_NO_WARNINGS
  */

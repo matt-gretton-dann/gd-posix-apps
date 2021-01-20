@@ -4,9 +4,9 @@
  *  SPDX-License-Identifier: Apache-2.0
  */
 
+#include "gd/bits/defines.h"
 #include "gd/stdlib.h"
 
-#define _CRT_DECLARE_NONSTDC_NAMES 0
 #include <errno.h>
 #include <fcntl.h>
 #include <io.h>
