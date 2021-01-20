@@ -5,6 +5,7 @@
  */
 
 #include "gd/nl_types.h"
+#include "gd/stdlib.h"
 #include "gd/string.h"
 #include "nl_types/nl_types.h"
 #include "nl_types/test-config.h"
@@ -78,7 +79,7 @@ TEST_CASE("catopen bad catalogues", "[nl_types][catopen]")
   REQUIRE(errno != 0);
 
   // Fail to find a non-existent file by nls path lookup.
-  REQUIRE(setenv("NLSPATH", TEST_NLSPATH_ROOT "/%N/%L", 1) == 0);
+  REQUIRE(setenv("NLSPATH", TEST_NLSPATH_ROOT __DIR_SEPSTR "%N" __DIR_SEPSTR "%L", 1) == 0);
   errno = 0;
   result = catopen("non-existent-file", 0);
   REQUIRE(result == CATD_ERROR);
@@ -87,7 +88,7 @@ TEST_CASE("catopen bad catalogues", "[nl_types][catopen]")
 
 TEST_CASE("catopen NLSPATH lookup", "[nl_types][catopen]")
 {
-  REQUIRE(setenv("NLSPATH", TEST_NLSPATH_ROOT "/%L.%N.msg", 1) == 0);
+  REQUIRE(setenv("NLSPATH", TEST_NLSPATH_ROOT __DIR_SEPSTR "%L.%N.msg", 1) == 0);
   REQUIRE(setenv("LANG", "en_US.UTF-8", 1) == 0);
 
   errno = 0;
@@ -111,7 +112,11 @@ namespace {
 
 void test_locale_lookup(char const* locale)
 {
-  locale = setlocale(LC_MESSAGES, locale);
+  char const* l2 = setlocale(LC_MESSAGES, locale);
+  if (strcmp(l2, locale) != 0) {
+    INFO("SKIP: test_locale_lookup(" << locale << ") - locale does not exist.\n");
+    return;
+  }
 
   errno = 0;
   nl_catd result = catopen("messages", NL_CAT_LOCALE);
@@ -131,8 +136,10 @@ void test_locale_lookup(char const* locale)
 TEST_CASE("catopen NLSPATH lookup 2", "[nl_types][catopen]")
 {
   REQUIRE(setenv("NLSPATH",
-                 TEST_NLSPATH_ROOT "/%N.msg:" TEST_NLSPATH_ROOT
-                                   "/%l/%t/%c/%N.msg:" TEST_NLSPATH_ROOT "/%N.msg",
+                 TEST_NLSPATH_ROOT __DIR_SEPSTR
+                 "%N.msg" __PATH_SEPSTR TEST_NLSPATH_ROOT __DIR_SEPSTR "%l" __DIR_SEPSTR
+                 "%t" __DIR_SEPSTR "%c" __DIR_SEPSTR
+                 "%N.msg" __PATH_SEPSTR TEST_NLSPATH_ROOT __DIR_SEPSTR "%N.msg",
                  1) == 0);
   REQUIRE(setenv("LANG", "fr_FR", 1) == 0);
 

@@ -12,11 +12,12 @@
 #include "gd/bits/defines.h"
 
 /** \brief  Test value to set NLSPATH to.  */
-#define TEST_NLSPATH_ROOT "@CMAKE_CURRENT_BINARY_DIR@"
+#define TEST_NLSPATH_ROOT "@CMAKE_CURRENT_BINARY_DIR_NATIVE@"
 
 /** \brief  Name of large file used for testing.  */
-#define LARGE_FILE "@CMAKE_CURRENT_BINARY_DIR@/en/large.msg"
+#define LARGE_FILE "@CMAKE_CURRENT_BINARY_DIR_NATIVE@@DIR_SEP@en@DIR_SEP@large.msg"
 
 /** \brief  Name of a non-existent file.  */
-#define NON_EXISTANT_FILE "@CMAKE_CURRENT_BINARY_DIR@/messages/I-DO-NOT-EXIST.msg"
+#define NON_EXISTANT_FILE                                                                          \
+  "@CMAKE_CURRENT_BINARY_DIR_NATIVE@@DIR_SEP@messages@DIR_SEP@I-DO-NOT-EXIST.msg"
 #endif  // _LIBGDSUP_NL_TYPES_TEST_CONFIG_H_INCLUDED

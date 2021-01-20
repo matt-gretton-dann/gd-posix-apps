@@ -224,7 +224,7 @@ static nl_catd do_catopen_path(char const* nlspath, char const* name, char const
   char const* p = nlspath;
   char const* end = nlspath;
   while (*end != '\0') {
-    end = strchr(p, ':');
+    end = strchr(p, __PATH_SEP);
     if (end == NULL) {
       end = p + strlen(p);
     }
@@ -283,7 +283,7 @@ nl_catd catopen(char const* name, int oflag)
   }
 
   /* If name has a / we don't use a NLSPATH lookup.  */
-  if (strchr(name, '/') != NULL) {
+  if (strchr(name, __DIR_SEP) != NULL) {
     return generate_result(do_catopen(name));
   }
 
@@ -303,8 +303,9 @@ nl_catd catopen(char const* name, int oflag)
   if (locale == NULL || locale[0] == '\0') {
     locale = "C";
   }
-  /* If the Locale contains a '/' we treat it as if the basename name provides the locale name.  */
-  if (strchr(locale, '/') != NULL) {
+  /* If the Locale contains a __DIR_SEP we treat it as if the basename name provides the locale
+   * name.  */
+  if (strchr(locale, __DIR_SEP) != NULL) {
     locale = basename(strdup(locale));
     need_free = true;
   }
