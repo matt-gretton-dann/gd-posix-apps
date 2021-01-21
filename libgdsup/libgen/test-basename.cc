@@ -5,6 +5,7 @@
  */
 
 #include "gd/libgen.h"
+#include "gd/string.h"
 
 #include <catch2/catch.hpp>
 #include <cstring>
@@ -14,7 +15,7 @@ void test_basename(char const* in, char const* expected)
 {
   REQUIRE(in != nullptr);
   REQUIRE(expected != nullptr);
-  char* dup = strdup(in);
+  char* dup = ::strdup(in);
   REQUIRE(dup != nullptr);
   char* out = basename(dup);
   CHECK(std::strcmp(out, expected) == 0);

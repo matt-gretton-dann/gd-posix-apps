@@ -4,7 +4,16 @@
  *          SPDX-License-Identifier: Apache-2.0
  */
 
-#define CATCH_CONFIG_MAIN
+#include "support/support.h"
+
+#define CATCH_CONFIG_RUNNER
 #include <catch2/catch.hpp>
 
-TEST_CASE("Ensure we have a test", "[support]") { REQUIRE(1 == 1); }
+int main(int argc, char* argv[])
+{
+  __support_logging_enabled = 0;
+
+  int result = Catch::Session().run(argc, argv);
+
+  return result;
+}

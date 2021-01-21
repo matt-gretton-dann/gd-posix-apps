@@ -56,7 +56,7 @@ char* dirname(char* s)
       break;
   }
 
-  if (end == 0 & s[0] == '/') {
+  if (end == 0 && s[0] == '/') {
     return slash;
   }
 

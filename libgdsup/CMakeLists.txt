@@ -138,12 +138,23 @@ function(find_std_format)
 endfunction()
 
 function(add_gdsup_source)
-  cmake_parse_arguments(_ags "" "DISABLE_VAR;UNIT_TEST" "SOURCES" ${ARGN})
+  cmake_parse_arguments(_ags "" "DISABLE_VAR;UNIT_TEST;TEST_SETUP;SETUP_EXE" "SOURCES" ${ARGN})
 
   if(NOT DEFINED _ags_SOURCES)
     message(FATAL_ERROR "Must specify SOURCES to add_gdsup_source")
   endif()
 
+  if(DEFINED _ags_TEST_SETUP AND NOT DEFINED _ags_UNIT_TEST)
+    message(FATAL_ERROR "TEST_SETUP makes no sense without UNIT_TEST in add_gdsup_source")
+  endif()
+
+  if(DEFINED _ags_TEST_SETUP AND NOT DEFINED _ags_SETUP_EXE)
+    message(FATAL_ERROR "Must specify both (or none) of TEST_SETUP and SETUP_EXE to add_gdsup_source")
+  endif()
+
+  if(NOT DEFINED _ags_TEST_SETUP AND DEFINED _ags_SETUP_EXE)
+    message(FATAL_ERROR "Must specify both (or none) of TEST_SETUP and SETUP_EXE to add_gdsup_source")
+  endif()
 
   if(NOT DEFINED _ags_DISABLE_VAR)
     set(_ags_DISABLED OFF)
@@ -160,6 +171,33 @@ function(add_gdsup_source)
     if(DEFINED _ags_UNIT_TEST)
       if(RUN_UNIT_TESTS)
         target_sources(test-gdsup PRIVATE ${_ags_UNIT_TEST})
+        if(DEFINED _ags_TEST_SETUP)
+          file(TO_NATIVE_PATH "${CMAKE_SOURCE_DIR}/python-lib" _ags_python_lib)
+          file(TO_NATIVE_PATH "${CMAKE_BINARY_DIR}/pycache" _ags_python_cache)
+          if($ENV{PYTHONPATH})
+              if(CMAKE_HOST_UNIX)
+                  set(_ags_path_sep ":")
+              elseif(CMAKE_HOST_WIN32)
+                  set(_ags_path_sep ";")
+              else()
+                  message(FATAL_ERROR "Unable to determine path separator - host is not UNIX or WIN32")
+              endif()
+              set(_ags_python_lib "${_ags_python_lib}${_ags_path_sep}$ENV{PYTHONPATH}")
+          endif()
+
+          file(TO_NATIVE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${_ags_TEST_SETUP}" _ags_TEST_PATH)
+          file(TO_NATIVE_PATH "${_ags_SETUP_EXE}" _ags_SETUP_EXE)
+          file(TO_NATIVE_PATH "${CMAKE_CURRENT_BINARY_DIR}" _ags_TEST_OUTPUT)
+
+          add_test(NAME "${_ags_TEST_SETUP}"
+                  COMMAND "${Python_EXECUTABLE}" "${_ags_TEST_PATH}" "$<TARGET_FILE:${_ags_SETUP_EXE}>"
+                          "--output-dir" "${_ags_TEST_OUTPUT}" --keep)
+          set_tests_properties("${_ags_TEST_SETUP}"
+                               PROPERTIES ENVIRONMENT
+                               "PYTHONPATH=${_ags_python_lib};PYTHONPYCACHEPREFIX=${_ags_python_cache}")
+          set_tests_properties("${_ags_TEST_SETUP}"
+                               PROPERTIES FIXTURES_SETUP "gdsup_setup")
+        endif()
       else()
         target_add_clang_format_extra(${_ags_UNIT_TEST})
       endif()
@@ -174,18 +212,24 @@ endfunction()
 add_library(gdsup)
 set_property(TARGET gdsup PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
 set_property(TARGET gdsup PROPERTY CXX_STANDARD_REQUIRED ON)
+target_include_directories(gdsup PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_include_directories(gdsup PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+target_include_directories(gdsup PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+set_warnings(gdsup)
 
 # Unit test executable
 add_executable(test-gdsup)
 target_link_libraries(test-gdsup PUBLIC gdsup Catch2::Catch2)
 set_property(TARGET test-gdsup PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
 set_property(TARGET test-gdsup PROPERTY CXX_STANDARD_REQUIRED ON)
+target_include_directories(test-gdsup PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+target_include_directories(test-gdsup PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+set_warnings(test-gdsup)
 
 if($CACHE{FORCE_SUPPLEMENTAL_LIBRARY})
 target_compile_definitions(gdsup PUBLIC "$CACHE{FORCE_SUPPLEMENTAL_LIBRARY}")
 endif()
 
-target_include_directories(gdsup PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_sources(gdsup PRIVATE
                include/gd/bits/defines.h
                include/gd/sys/stat.h
@@ -197,6 +241,7 @@ target_sources(gdsup PRIVATE
                include/gd/limits.h
                include/gd/nl_types.h
                include/gd/stdlib.h
+               include/gd/string.h
                include/gd/unistd.h)
 
 find_std_filesystem()
@@ -211,7 +256,9 @@ endif()
 
 add_subdirectory(fcntl)
 add_subdirectory(libgen)
+add_subdirectory(nl_types)
 add_subdirectory(stdlib)
+add_subdirectory(string)
 add_subdirectory(support)
 add_subdirectory(unistd)
 
@@ -219,5 +266,5 @@ add_subdirectory(unistd)
 target_add_clang_format(gdsup)
 if(TARGET test-gdsup)
   target_add_clang_format(test-gdsup)
-  catch_discover_tests(test-gdsup)
+  catch_discover_tests(test-gdsup PROPERTIES FIXTURES_REQUIRED gdsup_setup EXTRA_ARGS "-s")
 endif()

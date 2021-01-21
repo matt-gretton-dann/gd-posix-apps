@@ -13,8 +13,9 @@
 ssize_t write(int fd, void const* buf, size_t nbytes)
 {
   /* Win32 _write returns int not ssize_t, so we clamp to INT_MAX.  */
-  if (nbytes > INT_MAX) {
-    nbytes = INT_MAX;
+  unsigned int amt = INT_MAX;
+  if (nbytes < INT_MAX) {
+    amt = (unsigned int)nbytes;
   }
-  return _write(fd, buf, nbytes);
+  return _write(fd, buf, amt);
 }

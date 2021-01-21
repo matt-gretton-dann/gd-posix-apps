@@ -4,13 +4,16 @@
  *  SPDX-License-Identifier: Apache-2.0
  */
 
+/* clang-format off We need to include nl-types.h early for macOS. */
+#include "gd/nl_types.h"
+/* clang-format on */
+
 #include "gd/bit.hh"
 #include "gd/fcntl.h"
 #include "gd/filesystem.hh"
 #include "gd/format.hh"
 #include "gd/libgen.h"
 #include "gd/limits.h"
-#include "gd/nl_types.h"
 #include "gd/stdlib.h"
 #include "gd/sys/stat.h"
 #include "gd/unistd.h"
@@ -41,7 +44,7 @@ std::string_view program_name;  ///< Program name - somewhere global for all.
  * On an error it throws a std::system_error exception.  Note that in this case
  * the output file may already have some data in it.
  */
-int xwrite(int fd, char const* data, std::uint64_t amount)
+void xwrite(int fd, char const* data, std::uint64_t amount)
 {
   char const* end = data + amount;
   while (data < end) {
@@ -61,7 +64,6 @@ int xwrite(int fd, char const* data, std::uint64_t amount)
       data += written;
     }
   }
-  return amount;
 }
 
 /** \brief A basic location recorder.
@@ -223,7 +225,6 @@ public:
     // Read the rest of the file.
     load_data(is, loc, data, file_size);
     std::uint64_t set_offset = hdr_size;
-    auto raw_data = data.data();
 
     // Process each set.
     for (std::uint32_t set = 0; set < set_count; ++set) {
@@ -247,8 +248,8 @@ public:
 
         auto msg_str = read_string(loc, data, set_te.id, msg_te);
 
-        auto [msg_it, success] = set_it->second.insert({msg_te.id, msg_str});
-        if (!success) {
+        auto result = set_it->second.insert({msg_te.id, msg_str});
+        if (!result.second) {
           loc.error("Multiple definitions of message with ID: {}.{}.", set_te.id, msg_te.id);
         }
       }
@@ -274,14 +275,14 @@ public:
 
     auto set_it = sets_.insert({NL_SETD, MessageSet()}).first;
     int quote = -1;
-    while (std::getline(ifs, line)) {
+    while (std::getline(is, line)) {
       loc.inc_loc(1);
 
       // Handle line continuations
       while (line.size() != 0 && line[line.size() - 1] == '\\') {
         std::string line2;
         loc.inc_loc(1);
-        if (!std::getline(ifs, line2)) {
+        if (!std::getline(is, line2)) {
           loc.error("Unexpected end of file indicator.");
         }
         line = line.substr(0, line.size() - 1) + line2;
@@ -396,11 +397,13 @@ public:
         std::uint64_t msg_offset = data.size();
         write_table_entry(
           loc, data, msg_array_offset,
-          TableEntry{kv2.first, static_cast<std::uint32_t>(kv2.second.size()), msg_offset});
+          TableEntry{kv2.first, static_cast<std::uint32_t>(kv2.second.size()) + 1, msg_offset});
         msg_array_offset += table_entry_size;
         for (auto c : kv2.second) {
           data.push_back(std::uint8_t(c));
         }
+        // Null terminate the string.
+        data.push_back(0);
       }
     }
 
@@ -551,8 +554,11 @@ private:
     if (te.offset > data.size() - te.len) {
       loc.error("Message {}.{} overflows the end of the message catalogue.", set_id, te.id);
     }
+    if (data.data()[te.offset + te.len - 1] != '\0') {
+      loc.error("Message {}.{} is not terminated by a NUL character.", set_id, te.id);
+    }
 
-    return std::string(reinterpret_cast<char const*>(data.data() + te.offset), te.len);
+    return std::string(reinterpret_cast<char const*>(data.data() + te.offset), te.len - 1);
   }
 
   static void validate_id(Location& loc, Id id, const char* soft_limit_name, Id soft_limit)

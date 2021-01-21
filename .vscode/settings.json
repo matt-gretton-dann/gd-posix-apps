@@ -1,10 +1,20 @@
 {
+  "editor.rulers": [
+    100
+  ],
+  "[python]": {
     "editor.rulers": [
-        100
-    ],
-    "[python]": {
-        "editor.rulers": [
-            79
-        ]
-    }
+      79
+    ]
+  },
+  "python.autoComplete.extraPaths": [
+    "${workspaceFolder}/python-lib"
+  ],
+  "cmake.configureSettings": {
+    "FORCE_SUPPLEMENTAL_LIBRARY": true
+  },
+  "files.associations": {
+    "clocale": "c",
+    "cstdlib": "cpp"
+  }
 }

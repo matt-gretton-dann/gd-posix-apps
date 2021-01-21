@@ -18,6 +18,8 @@ set(BUILD_TESTING ON CACHE BOOL "Enable testing")
 # Package inclusions
 list(PREPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 include(FetchContent)
+include(GNUInstallDirs)
+include(Warnings)
 
 # Find packages
 find_package(ClangFormat)
@@ -84,9 +86,9 @@ else()
   endif()
 endif()
 
-# And recurse to the subdirectories
-add_subdirectory(libgdsup)
+# And recurse to the subdirectories - order here is important.
 add_subdirectory(src)
+add_subdirectory(libgdsup)
 
 # Display summary information
 message("Integration testing: ${RUN_INTEGRATION_TESTS}")
