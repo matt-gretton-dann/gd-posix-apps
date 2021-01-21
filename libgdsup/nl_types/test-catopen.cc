@@ -113,7 +113,7 @@ namespace {
 void test_locale_lookup(char const* locale)
 {
   char const* l2 = setlocale(LC_MESSAGES, locale);
-  if (l2 != NULL && strcmp(l2, locale) != 0) {
+  if (l2 == NULL || strcmp(l2, locale) != 0) {
     INFO("SKIP: test_locale_lookup(" << locale << ") - locale does not exist ("
                                      << (l2 == NULL ? "(NULL)" : l2) << ").\n");
     REQUIRE(0 == 0);
