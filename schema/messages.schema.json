@@ -1,0 +1,81 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "$id": "https://www.gretton-dann.org.uk/schema/messages.schema.json",
+  "title": "Message Catalogue",
+  "description": "Message Catalogue schema",
+  "type": "array",
+  "items": {
+    "$ref": "#/definitions/set"
+  },
+  "definitions": {
+    "set": {
+      "type": "object",
+      "required": [
+        "set",
+        "id",
+        "messages"
+      ],
+      "properties": {
+        "set": {
+          "type": "string",
+          "description": "Name of the set, should be a valid C identifier",
+          "pattern": "^[a-zA-Z_][a-zA-Z_0-9]*$"
+        },
+        "id": {
+          "type": "integer",
+          "description": "Numeric identifier of the set.",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "messages": {
+          "type": "array",
+          "description": "List of messages in the set.",
+          "items": {
+            "$ref": "#/definitions/msg"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "msg": {
+      "type": "object",
+      "required": [
+        "msg",
+        "id",
+        "description"
+      ],
+      "properties": {
+        "msg": {
+          "type": "string",
+          "description": "Name of the message, should be a valid C identifier",
+          "pattern": "^[a-zA-Z_][a-zA-Z_0-9]*$"
+        },
+        "id": {
+          "type": "integer",
+          "description": "Numeric identifier of the message.",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the message.  Should describe all formatted parameters, and provide enough info for translators."
+        },
+        "C": {
+          "type": "string",
+          "description": "Default value for the message."
+        }
+      },
+      "patternProperties": {
+        "^[a-z][a-z]$": {
+          "type": "string",
+          "description": "Generic translation for given locale language."
+        },
+        "^[a-z][a-z]_[A-Z][A-Z]$": {
+          "type": "string",
+          "description": "Translation for given locale language and territory."
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

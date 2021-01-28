@@ -16,5 +16,13 @@
   "files.associations": {
     "clocale": "c",
     "cstdlib": "cpp"
-  }
+  },
+  "json.schemas": [
+    {
+      "fileMatch": [
+        "/*.messages.json"
+      ],
+      "url": "./schema/messages.schema.json"
+    }
+  ]
 }
