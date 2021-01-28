@@ -225,11 +225,11 @@ class Messages:
 
 namespace GD::{catalogue_id.title()}
 {{
-enum Set
+enum class Set
 {{{"".join(set_ids)}
 }};
 
-enum Msg
+enum class Msg
 {{{"".join(msg_ids)}
 }};
 

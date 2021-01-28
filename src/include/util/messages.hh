@@ -78,7 +78,7 @@ public:
    */
   std::string_view get(typename Data::MessageEnum msg) const noexcept
   {
-    return get(Data::default_set_);
+    return get(Data::default_set_, msg);
   }
 
   /** \brief      Get a string_view of the message associated with (\a set, \a msg) pair.
@@ -91,12 +91,13 @@ public:
    */
   std::string_view get(typename Data::SetEnum set, typename Data::MessageEnum msg) const noexcept
   {
-    auto val = Data::messages_[set - 1][msg - 1];
+    auto val =
+      Data::messages_[static_cast<std::size_t>(set) - 1][static_cast<std::size_t>(msg) - 1];
     if (catd_ == (nl_catd)-1) {
       return val;
     }
 
-    auto p = ::catgets(catd_, set, msg, val);
+    auto p = ::catgets(catd_, static_cast<int>(set), static_cast<int>(msg), val);
     return std::string_view(p);
   }
 
