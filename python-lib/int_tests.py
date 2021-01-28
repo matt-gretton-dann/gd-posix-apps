@@ -53,6 +53,7 @@ class TestRunner:
             "--output-dir", help="Directory which contains output files.  If not specified will fail if we try to write output.")
         parser.add_argument("--keep", action='store_true',
                             help="Keep all output files even if tests pass.")
+        parser.add_argument("--nls-path", help="Base of NLS path")
         self._args = parser.parse_args()
         self._passes = 0
         self._fails = 0
@@ -122,10 +123,17 @@ class TestRunner:
             print(f"SKIP: {test_name}")
             return True
 
+        e = os.environ.copy()
+        e['LC_ALL'] = 'C'
+        if self._args.nls_path is not None:
+            e['NLSPATH'] = os.path.join(self._args.nls_path, "%N.%l_%t.msg")\
+                + os.pathsep + os.path.join(self._args.nls_path, "%N.%l.msg") \
+                + os.pathsep + os.path.join(self._args.nls_path, "%N.msg")
+
         success = True
         rc = subprocess.run(
             cmdline, stdout=capture_output, stderr=capture_output,
-            universal_newlines=text, input=stdin)
+            universal_newlines=text, input=stdin, env=e)
 
         if rc.returncode != expected_rc:
             print(
