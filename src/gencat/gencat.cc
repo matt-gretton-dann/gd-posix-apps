@@ -17,6 +17,7 @@
 #include "gd/stdlib.h"
 #include "gd/sys/stat.h"
 #include "gd/unistd.h"
+#include "message-data.hh"
 
 #include <cassert>
 #include <cstdlib>
@@ -27,6 +28,8 @@
 #include <string_view>
 #include <system_error>
 #include <vector>
+
+namespace Gencat = GD::Gencat;
 
 namespace {
 std::string_view program_name;  ///< Program name - somewhere global for all.
@@ -119,10 +122,11 @@ public:
    * fmt::format.
    */
   template<typename... Ts>
-  [[noreturn]] void error(std::string const& f, Ts... args) const
+  [[noreturn]] void error(Gencat::Msg msg, Ts... args) const
   {
-    std::string result = ::fmt::format("{}:{}:ERROR: ", filename_, loc_);
-    result += ::fmt::format(f, args...);
+    auto error = Gencat::Messages::get().get(Gencat::Set::generic, Gencat::Msg::error);
+    std::string result = ::fmt::format("{}:{}:{}: ", filename_, loc_, error);
+    result += Gencat::Messages::get().format(Gencat::Set::gencat, msg, args...);
     throw std::runtime_error(result);
   }
 
@@ -136,10 +140,11 @@ public:
    * fmt::format.
    */
   template<typename... Ts>
-  std::string warning(std::string const& f, Ts... args) const
+  std::string warning(Gencat::Msg msg, Ts... args) const
   {
-    std::string result = ::fmt::format("{}:{}:WARNING: ", filename_, loc_);
-    result += ::fmt::format(f, args...);
+    auto warning = Gencat::Messages::get().get(Gencat::Set::generic, Gencat::Msg::warning);
+    std::string result = ::fmt::format("{}:{}:{}: ", filename_, loc_, warning);
+    result += Gencat::Messages::get().format(Gencat::Set::gencat, msg, args...);
     return result;
   }
 
@@ -213,7 +218,7 @@ public:
 
     std::ifstream is(file.data(), std::ios::binary | std::ios::in);
     if (!is) {
-      loc.error("Unable to open {} for reading.", file);
+      loc.error(Gencat::Msg::unable_to_open, file);
     }
 
     // Read the header
@@ -233,12 +238,12 @@ public:
 
       auto [set_it, success] = sets_.insert({set_te.id, MessageSet()});
       if (!success) {
-        loc.error("Message catalogue contains multiple definitions of set {}", set_te.id);
+        loc.error(Gencat::Msg::multiple_set_definitions, set_te.id);
       }
 
       if (set_te.offset >= file_size) {
         loc.loc(set_te.offset);
-        loc.error("Message array offset outside bounds of message catalogue.");
+        loc.error(Gencat::Msg::message_array_offset_out_of_bounds);
       }
 
       // Process each message within each set.
@@ -250,7 +255,7 @@ public:
 
         auto result = set_it->second.insert({msg_te.id, msg_str});
         if (!result.second) {
-          loc.error("Multiple definitions of message with ID: {}.{}.", set_te.id, msg_te.id);
+          loc.error(Gencat::Msg::message_multiple_definition, set_te.id, msg_te.id);
         }
       }
     }
@@ -266,7 +271,7 @@ public:
     if (file != "-") {
       ifs.open(file.data());
       if (!ifs) {
-        loc.error("Unable to open {} for reading.", file);
+        loc.error(Gencat::Msg::unable_to_open, file);
       }
     }
     std::istream& is = (file == "-") ? std::cin : ifs;
@@ -283,7 +288,7 @@ public:
         std::string line2;
         loc.inc_loc(1);
         if (!std::getline(is, line2)) {
-          loc.error("Unexpected end of file indicator.");
+          loc.error(Gencat::Msg::unexpected_eof);
         }
         line = line.substr(0, line.size() - 1) + line2;
       }
@@ -309,7 +314,7 @@ public:
       }
       else if (line.substr(0, 7) == "$quote ") {
         if (line.size() > 8) {
-          loc.error("Quote should be a single character, or empty to clear.");
+          loc.error(Gencat::Msg::bad_quote_character);
         }
         else if (line.size() == 7) {
           quote = -1;
@@ -330,13 +335,13 @@ public:
           set_it->second.erase(r);
         }
         else if (line[pos] != ' ') {
-          loc.error("Message number should be followed by a space.");
+          loc.error(Gencat::Msg::message_should_be_followed_by_space);
         }
         else {
           std::string value(line.substr(pos + 1));
           if (!value.empty() && quote != -1 && value[0] == (char)(quote & 0xff)) {
             if (value[value.size() - 1] != (char)(quote & 0xff)) {
-              std::cerr << loc.warning("String starts with a quote but does not end with one.");
+              std::cerr << loc.warning(Gencat::Msg::quoted_string_not_terminated);
             }
             else {
               value = value.substr(1, value.size() - 2);
@@ -344,14 +349,13 @@ public:
           }
           auto [it, success] = set_it->second.insert({r, std::string(value)});
           if (!success) {
-            std::cerr << loc.warning("Replacing existing message ID {}.{}", set_it->first, r)
-                      << "\n";
+            std::cerr << loc.warning(Gencat::Msg::replacing_message, set_it->first, r) << "\n";
             it->second = std::string(value);
           }
         }
       }
       else {
-        loc.error("Unrecognised line contents.");
+        loc.error(Gencat::Msg::unrecognised_line);
       }
     }
 
@@ -446,20 +450,20 @@ private:
   {
     char buf[hdr_size];
     if (!is.read(buf, hdr_size)) {
-      throw std::runtime_error("Message catalogue is too short to be valid.");
+      loc.error(Gencat::Msg::catalogue_too_short);
     }
     data.insert(data.end(), buf, buf + is.gcount());
 
     if (data[0] != 'M' || data[1] != 'S' || data[2] != 'G' || data[3] != '\0') {
-      loc.error("File does not start with message catalogue magic.");
+      loc.error(Gencat::Msg::catalogue_magic_missing);
     }
     if (data[4] != 1) {
-      loc.error("File is not a version 1 message catalogue.");
+      loc.error(Gencat::Msg::catalogue_not_version1);
     }
     for (auto i = 5; i < 12; ++i) {
       if (data[i] != 0) {
         loc.loc(i);
-        loc.error("Reserved field is not 0.");
+        loc.error(Gencat::Msg::header_non0_reserved_fields);
       }
     }
   }
@@ -480,17 +484,17 @@ private:
       data.insert(data.end(), buf, buf + is.gcount());
       if (data.size() > file_size) {
         loc.loc(file_size);
-        loc.error("Message catalogue is larger than it claims.");
+        loc.error(Gencat::Msg::message_catalogue_too_large);
       }
     }
     data.insert(data.end(), buf, buf + is.gcount());
     if (data.size() > file_size) {
       loc.loc(file_size);
-      loc.error("Message Catalogue is larger than it claims.");
+      loc.error(Gencat::Msg::message_catalogue_too_large);
     }
     if (data.size() < file_size) {
       loc.loc(data.size());
-      loc.error("Message catalogue is not as large as it claims.");
+      loc.error(Gencat::Msg::catalogue_size_not_consistent_small);
     }
   }
 
@@ -504,11 +508,11 @@ private:
   {
     if (offset > data.size() - table_entry_size) {
       loc.loc(offset);
-      loc.error("Table is outside bounds of message catalogue.");
+      loc.error(Gencat::Msg::table_entry_outside_bounds);
     }
     if (offset % 8 != 0) {
       loc.loc(offset);
-      loc.error("Table entry is not aligned to 8-byte boundary.");
+      loc.error(Gencat::Msg::table_entry_not_aligned);
     }
     auto raw_data = data.data() + offset;
     Id id = read<std::uint32_t>(raw_data + table_entry_id_off);
@@ -526,7 +530,7 @@ private:
   {
     if (offset % 8 != 0) {
       loc.loc(offset);
-      loc.error("Table entry is not aligned ot 8-byte boundary.");
+      loc.error(Gencat::Msg::table_entry_not_aligned);
     }
     write(data.data() + offset + table_entry_id_off, te.id);
     write(data.data() + offset + table_entry_len_off, te.len);
@@ -544,34 +548,33 @@ private:
   {
     loc.loc(te.offset);
     if (te.offset >= data.size()) {
-      loc.error("Message {}.{} starts beyond the end of the message catalogue.", set_id, te.id);
+      loc.error(Gencat::Msg::message_starts_beyond_end, set_id, te.id);
     }
     if (te.len > data.size()) {
-      loc.error("Message {}.{} is longer than the length of the message "
-                "catalogue.",
-                set_id, te.id);
+      loc.error(Gencat::Msg::message_bigger_than_file, set_id, te.id);
     }
     if (te.offset > data.size() - te.len) {
-      loc.error("Message {}.{} overflows the end of the message catalogue.", set_id, te.id);
+      loc.error(Gencat::Msg::message_ends_beyond_end, set_id, te.id);
     }
     if (data.data()[te.offset + te.len - 1] != '\0') {
-      loc.error("Message {}.{} is not terminated by a NUL character.", set_id, te.id);
+      loc.error(Gencat::Msg::message_no_nul, set_id, te.id);
     }
 
     return std::string(reinterpret_cast<char const*>(data.data() + te.offset), te.len - 1);
   }
 
-  static void validate_id(Location& loc, Id id, const char* soft_limit_name, Id soft_limit)
+  static void validate_id(Location& loc, unsigned long id, const char* soft_limit_name,
+                          Id soft_limit)
   {
     if (id > std::numeric_limits<Id>::max()) {
-      loc.error("Id {} is too large.", id);
+      loc.error(Gencat::Msg::id_too_big_hard, id);
     }
     else if (id > soft_limit) {
-      std::cerr << loc.warning("Id {} is larger than {} ({}).", id, soft_limit_name, soft_limit)
+      std::cerr << loc.warning(Gencat::Msg::id_too_big_soft, id, soft_limit_name, soft_limit)
                 << '\n';
     }
     else if (id < 1) {
-      loc.error("Id {} is too small, must be at least 1.", id);
+      loc.error(Gencat::Msg::id_too_small, id);
     }
   }
 
@@ -589,6 +592,8 @@ private:
 
 int main(int argc, char** argv)
 try {
+  ::setlocale(LC_ALL, "");
+
   program_name = ::basename(argv[0]);
 
   // Skip '--' if present as the first argument.
@@ -598,9 +603,8 @@ try {
   }
 
   if (argc < 3) {
-    std::cerr << fmt::format("{}: Need to specify a message catalogue and at "
-                             "least one message file.",
-                             program_name);
+    std::cerr << Gencat::Messages::get().format(Gencat::Set::gencat, Gencat::Msg::missing_arguments,
+                                                program_name);
     std::exit(EXIT_FAILURE);
   }
 
@@ -652,13 +656,13 @@ try {
 
   if (updating) {
     if (unlink(catfile.data()) == -1) {
-      std::cerr << fmt::format("{}: Unable to remove file: {}\n", program_name, catfile);
+      std::cerr << Gencat::Messages::get().format(
+        Gencat::Set::gencat, Gencat::Msg::unable_to_remove, program_name, catfile);
       failed = true;
     }
     else if (rename(outfile.data(), catfile.data()) == -1) {
-      std::cerr << fmt::format("{}: Unable to remame file {} to {}\n", program_name, outfile,
-                               catfile);
-      std::cerr << fmt::format("{}: Leaving temporary file in place.\n", program_name);
+      std::cerr << Gencat::Messages::get().format(
+        Gencat::Set::gencat, Gencat::Msg::unable_to_rename, program_name, outfile, catfile);
       remove_outfile = false;
       failed = true;
     }
@@ -676,5 +680,6 @@ catch (std::exception const& e) {
   std::exit(EXIT_FAILURE);
 }
 catch (...) {
-  std::cerr << fmt::format("Unrecognised exception");
+  std::cerr << Gencat::Messages::get().format(Gencat::Set::generic,
+                                              Gencat::Msg::unrecognised_exception);
 }
