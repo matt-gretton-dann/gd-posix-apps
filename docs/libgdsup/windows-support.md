@@ -58,3 +58,14 @@ a full Security Descriptor.  We currently don't have a fix for this.
 The mkstemp() wrapper may be too basic as it only allows 26 files per root/process.
 
  [Issue #158](https://github.com/matt-gretton-dann/gd-posix-apps/issues/158) tracks fixing this.
+
+## `setlocale(LC_MESSAGES, ...)`
+
+Windows doesn't support the `LC_MESSAGES` locale identifier.  Because of the effort required to make
+this work properly we currently map it to `LC_ALL` as we shouldn't be setting it in any utilities.
+
+The correct way to fix this is to implement our own locale routines from scratch, or to use
+something like [Detours](https://www.microsoft.com/en-us/research/project/detours/) to intercept
+the calls to `setlocale()` and do the right thing.
+
+[Issue #160](https://github.com/matt-gretton-dann/gd-posix-apps/issues/160) tracks this.
