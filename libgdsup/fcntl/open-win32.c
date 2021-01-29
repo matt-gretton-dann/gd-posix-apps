@@ -22,7 +22,7 @@ int open(char const* path, int oflags, ...)
   }
 
   int fd;
-  errno_t err = _sopen_s(&fd, path, oflags, _SH_DENYNO, mode);
+  errno_t err = _sopen_s(&fd, path, oflags | _O_BINARY, _SH_DENYNO, mode);
   if (err != 0) {
     errno = err;
     return -1;
