@@ -212,6 +212,12 @@
         "id": 30,
         "description": "Unable to rename the file {1} to {2}. We will leave the temporary file ({1}) in place.  {0} is the program name.",
         "C": "{0}: Unable to rename file {1} to {2}.\n{0}: Leaving temporary file in place.\n"
+      },
+      {
+        "msg": "bad_escape_character",
+        "id": 31,
+        "description": "The character {0} is not valid following a \\ in an escaped string.",
+        "C": "Illegal string escape.  The sequence \\{0} is not valid."
       }
     ]
   }
