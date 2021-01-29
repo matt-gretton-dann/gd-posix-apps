@@ -1,0 +1,218 @@
+[
+  {
+    "set": "generic",
+    "id": 1,
+    "messages": [
+      {
+        "msg": "warning",
+        "id": 1,
+        "description": "Tag for a warning message",
+        "C": "WARNING"
+      },
+      {
+        "msg": "error",
+        "id": 2,
+        "description": "Tag for an error message",
+        "C": "ERROR"
+      },
+      {
+        "msg": "unrecognised_exception",
+        "id": 3,
+        "description": "Tag for an unrecognised exception",
+        "C": "Unrecognized exception",
+        "en_GB": "Unrecognised exception"
+      }
+    ]
+  },
+  {
+    "set": "gencat",
+    "id": 2,
+    "messages": [
+      {
+        "msg": "unable_to_open",
+        "id": 1,
+        "description": "Unable to open the file called {0} for reading.",
+        "C": "Unable to open file {0} for reading."
+      },
+      {
+        "msg": "multiple_set_definitions",
+        "id": 2,
+        "description": "The message catalogue being processed contains multiple definitions of the set {0}",
+        "C": "Message catalog contains multiple definitions of set {0}.",
+        "en_GB": "Message catalogue contains multiple definitions of set {0}."
+      },
+      {
+        "msg": "message_array_offset_out_of_bounds",
+        "id": 3,
+        "description": "The offset of the given message array is out side the bounds of the catalogue file.",
+        "C": "Message array offset outside bounds of message catalog.",
+        "en_GB": "Message array offset outside bounds of message catalogue."
+      },
+      {
+        "msg": "message_multiple_definition",
+        "id": 4,
+        "description": "The message in set {0} with message ID {1} has been defined multiple times.",
+        "C": "Multiple definitions of message with ID {0}.{1}."
+      },
+      {
+        "msg": "unexpected_eof",
+        "id": 6,
+        "description": "We encountered an unexpected end-of-file indicator",
+        "C": "Unexpected end of file indicator."
+      },
+      {
+        "msg": "bad_quote_character",
+        "id": 7,
+        "description": "Quote characters should be a single character, or left empty to clear quoting.",
+        "C": "Quote should be a single character or empty to clear."
+      },
+      {
+        "msg": "message_should_be_followed_by_space",
+        "id": 8,
+        "description": "A message number should be followed by a space.",
+        "C": "Message number should be followed by a space."
+      },
+      {
+        "msg": "quoted_string_not_terminated",
+        "id": 9,
+        "description": "A string that begins with a quote character does not have one at the end.",
+        "C": "String starts with a quote but does not end with one."
+      },
+      {
+        "msg": "replacing_message",
+        "id": 10,
+        "description": "Warns that we are replacing the text for the existing message in set {0} with message ID {1}.",
+        "C": "Replacing existing message ID {0}.{1}."
+      },
+      {
+        "msg": "catalogue_size_not_consistent_small",
+        "id": 11,
+        "description": "The catalogue is not as large as the header claims.",
+        "C": "Message catalogue is not as large as it claims."
+      },
+      {
+        "msg": "unrecognised_line",
+        "id": 12,
+        "description": "The format of the input line is unrecognised.",
+        "C": "Unrecognised line contents."
+      },
+      {
+        "msg": "catalogue_too_short",
+        "id": 13,
+        "description": "A message catalogue is too short to contain a valid header.",
+        "C": "Message catalog is too short to be valid.",
+        "en_GB": "Message catalogue is too short to be valid."
+      },
+      {
+        "msg": "catalogue_magic_missing",
+        "id": 14,
+        "description": "The message catalogue does not start with the appropriate magic header.",
+        "C": "File does not start with message catalog magic.",
+        "en_GB": "File does not start with message catalogue magic."
+      },
+      {
+        "msg": "catalogue_not_version1",
+        "id": 15,
+        "description": "The message catalogue is not marked as being version 1.",
+        "C": "File is not a version 1 message catalog.",
+        "en_GB": "File is not a version 1 message catalogue."
+      },
+      {
+        "msg": "header_non0_reserved_fields",
+        "id": 16,
+        "description": "One of the reserved fields in the header is not 0.",
+        "C": "Reserved field is not 0."
+      },
+      {
+        "msg": "message_catalogue_too_large",
+        "id": 17,
+        "description": "The message catalogue size on disk is larger than the size claimed in the header.",
+        "C": "Message catalog is larger than it claims.",
+        "en_GB": "Message catalogue is larger than it claims."
+      },
+      {
+        "msg": "table_entry_outside_bounds",
+        "id": 18,
+        "description": "A table entry in a message catalogue is outside the bounds of the file.",
+        "C": "Table is outside bounds of message catalog.",
+        "en_GB": "Table is outside bounds of message catalogue."
+      },
+      {
+        "msg": "table_entry_not_aligned",
+        "id": 19,
+        "description": "A table entry in a message catalogue is not aligned to an eight byte boundary within the file.",
+        "C": "Table entry is not aligned to 8-byte boundary."
+      },
+      {
+        "msg": "message_starts_beyond_end",
+        "id": 20,
+        "description": "The message (set {0}, message {1}) starts beyond the end of the message catalogue.",
+        "C": "Message {0}.{1} starts beyond the end of the message catalog.",
+        "en_GB": "Message {0}.{1} starts beyond the end of the message catalogue."
+      },
+      {
+        "msg": "message_ends_beyond_end",
+        "id": 21,
+        "description": "The message (set {0}, message{1}) ends beyond the end of the message cataloguue.",
+        "C": "Message {0}.{1} overflows the end of the message catalog.",
+        "en_GB": "Message {0}.{1} overflows the end of the message catalogue."
+      },
+      {
+        "msg": "message_bigger_than_file",
+        "id": 22,
+        "description": "The message (set {0}, message{1}) is longer than the entire length of the message file.",
+        "C": "Message {0}.{1} is longer than the length of the message catalog.",
+        "en_GB": "Message {0}.{1} is longer than the length of the message catalogue."
+      },
+      {
+        "msg": "message_no_nul",
+        "id": 23,
+        "description": "The message (set {0}, message{1}) does not have a terminating NUL-character.",
+        "C": "Message {0}.{1} is not terminated by a NUL-character."
+      },
+      {
+        "msg": "id_too_big_hard",
+        "id": 24,
+        "description": "A given ID {0} is too large for the Id data type.  This is a hard error.",
+        "C": "ID {0} is too large."
+      },
+      {
+        "msg": "id_too_big_soft",
+        "id": 25,
+        "description": "A given ID {0} is larger than the soft limit {2}.  The soft limit is called {1} - which is a symbolic name.  This is a soft-error.",
+        "C": "ID {0} is larger than {1} ({2})."
+      },
+      {
+        "msg": "id_too_small",
+        "id": 26,
+        "description": "All IDs must be greater than or equal to 1. ID {0} isn't.",
+        "C": "ID {0} is too small, must be at least 1."
+      },
+      {
+        "msg": "missing_arguments",
+        "id": 27,
+        "description": "The command line takes at least one message catalogue and one message file as arguments.  {0} is the display version of the program name.",
+        "C": "{0}: Need to specify a message catalog and at least one message file.\n",
+        "en_GB": "{0}: Need to specify a message catalogue and at least one message file.\n"
+      },
+      {
+        "msg": "usage",
+        "id": 28,
+        "description": "Command line usage of the programme.",
+        "C": "Usage: {0} <msg_file> <cat_file>..."
+      },
+      {
+        "msg": "unable_to_remove",
+        "id": 29,
+        "description": "Unable to remove the file {1}. {0} is the programme name.",
+        "C": "{0}: Unable to remove file: {1}.\n"
+      },
+      {
+        "msg": "unable_to_rename",
+        "id": 30,
+        "description": "Unable to rename the file {1} to {2}. We will leave the temporary file ({1}) in place.  {0} is the program name.",
+        "C": "{0}: Unable to rename file {1} to {2}.\n{0}: Leaving temporary file in place.\n"
+      }
+    ]
+  }
+]
