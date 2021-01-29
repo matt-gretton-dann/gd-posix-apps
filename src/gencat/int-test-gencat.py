@@ -67,6 +67,15 @@ skip_next5 = tester.run_test(
 tester.compare_files(
     test_output, test_expected, skip=skip_next5)
 
+# Test escape strings
+test_output6 = tester.output_file('test6.msg')
+test_input6 = tester.input_file('escaped-input.cat')
+test_expected6 = tester.input_file('escaped-input.msg')
+skip_next6 = tester.run_test(
+    [tester.exe(), test_output6, test_input6],
+    test_name="Check escape characters",
+    expected_stdout='', expected_stderr='', files=[test_output6])
+tester.compare_files(test_output6, test_expected6, skip=skip_next6)
 
 # Error tests
 tester.run_test(

@@ -1,0 +1,9 @@
+$ Check string escapes work
+$set 1
+1 Message with \n
+2 Message with \f
+3 Message with \123
+4 Message with \r
+5 Message with \b
+6 Message with \v
+7 Message with \\.
