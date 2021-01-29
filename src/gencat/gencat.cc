@@ -347,6 +347,7 @@ public:
               value = value.substr(1, value.size() - 2);
             }
           }
+          value = parse_escaped_string(value, loc);
           auto [it, success] = set_it->second.insert({r, std::string(value)});
           if (!success) {
             std::cerr << loc.warning(Gencat::Msg::replacing_message, set_it->first, r) << "\n";
@@ -438,6 +439,103 @@ private:
     Length len;
     Offset offset;
   };
+
+  /** \brief      Parse an escaped string and interpret the escapes.
+   *  \param  s   String to escape
+   *  \param  loc Location of string
+   *  \return     Escaped string
+   *  \throws     runtime_errors if the string is not properly escaped.
+   */
+  static std::string parse_escaped_string(std::string const& s, Location& loc)
+  {
+    enum class State { normal, backslash, octal1, octal2 };
+    std::string result;
+    State state = State::normal;
+    char o = 0;
+    for (auto c : s) {
+      if (state == State::normal) {
+        if (c == '\\') {
+          state = State::backslash;
+        }
+        else {
+          result += c;
+        }
+      }
+      else if (state == State::octal1) {
+        if (c >= '0' && c <= '7') {
+          o = (o << 3) + (c - '0');
+          state = State::octal2;
+        }
+        else {
+          result += o;
+          result += c;
+          state = State::normal;
+        }
+      }
+      else if (state == State::octal2) {
+        if (c >= '0' && c <= '7') {
+          o = (o << 3) + (c - '0');
+          result += o;
+        }
+        else {
+          result += o;
+          result += c;
+        }
+        state = State::normal;
+      }
+      else if (state == State::backslash) {
+        switch (c) {
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+          o = c - '0';
+          state = State::octal1;
+          break;
+        case '\\':
+          result += '\\';
+          state = State::normal;
+          break;
+        case 'n':
+          result += '\n';
+          state = State::normal;
+          break;
+        case 't':
+          result += '\t';
+          state = State::normal;
+          break;
+        case 'v':
+          result += '\v';
+          state = State::normal;
+          break;
+        case 'b':
+          result += '\b';
+          state = State::normal;
+          break;
+        case 'r':
+          result += '\r';
+          state = State::normal;
+          break;
+        case 'f':
+          result += '\f';
+          state = State::normal;
+          break;
+        default:
+          loc.error(Gencat::Msg::bad_escape_character, c);
+          break;
+        }
+      }
+      else {
+        assert(false && "Unhandled escape state.");
+      }
+    }
+
+    return result;
+  }
 
   /** \brief      Load the initial header into a data structure.
    *  \param is   Input stream to ready from
