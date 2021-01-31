@@ -92,5 +92,8 @@ function(add_utility)
     endif()
 endfunction()
 
+# Gencat must come first
 add_subdirectory(gencat)
+
+add_subdirectory(asa)
 add_subdirectory(true-false)
