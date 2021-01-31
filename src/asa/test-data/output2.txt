@@ -1,0 +1,2 @@
+Carriage return as first line.
+Did the above get output properly?

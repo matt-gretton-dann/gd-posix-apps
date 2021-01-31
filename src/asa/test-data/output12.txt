@@ -1,0 +1,3 @@
+Rest of line output without change
+NewlinejoinedForm feedCarriage returnTreat random as ' '.Carriage return as first line.
+Did the above get output properly?
