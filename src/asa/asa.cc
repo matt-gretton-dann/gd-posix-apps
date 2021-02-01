@@ -13,6 +13,7 @@
 #include <locale.h>
 #include <string>
 #include <string_view>
+#include <system_error>
 
 class InputStream
 {
@@ -20,9 +21,10 @@ public:
   InputStream(std::string_view fname) : use_stdin_(fname == "-")
   {
     if (!use_stdin_) {
-      is_.exceptions(std::ios_base::failbit | std::ios_base::badbit);
       is_.open(fname.data());
-      is_.exceptions(std::ios_base::badbit);
+      if (!is_.is_open()) {
+        throw std::system_error(std::make_error_code(static_cast<std::errc>(errno)));
+      }
     }
   }
 
@@ -128,6 +130,7 @@ int main(int argc, char** argv)
 {
   ::setlocale(LC_ALL, "");
   State state(argv[0]);
+  std::string fname;
 
   if (argc > 1 && argv[1][0] == '-' && argv[1][1] == '-' && argv[1][2] == '\0') {
     ++argv;
@@ -135,15 +138,18 @@ int main(int argc, char** argv)
   }
 
   try {
-    for_each_file(argc - 1, argv + 1, [&state](std::string_view file) { state.output(file); });
+    for_each_file(argc - 1, argv + 1, [&state, &fname](std::string_view file) {
+      fname = file;
+      state.output(file);
+    });
     state.output_term();
     return EXIT_SUCCESS;
   }
   catch (std::exception& e) {
-    std::cout << "\n" << std::flush;
+    state.output_term();
     std::cerr << state.program_name();
     if (*argv != NULL) {
-      std::cerr << ":" << *argv;
+      std::cerr << ":" << fname;
     }
     std::cerr << ": " << e.what() << "\n";
     return EXIT_FAILURE;
