@@ -1,0 +1,6 @@
+ Rest of line output without change
+0Newline
+ joined
+1Form feed
++Carriage return
+-Treat random as ' '.
