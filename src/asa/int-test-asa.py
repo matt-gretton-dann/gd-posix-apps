@@ -14,9 +14,9 @@ tester.run_test(
 
 tester.run_test(
     [tester.exe(), '-'], test_name="Standard input",
-    stdin=b' Hello\n',
-    expected_stdout=b'Hello\n',
-    expected_stderr=b'')
+    stdin=' Hello\n',
+    expected_stdout='Hello\n',
+    expected_stderr='')
 
 # Test we generate expected outputs:
 test_input1 = tester.input_file('input1.txt')
