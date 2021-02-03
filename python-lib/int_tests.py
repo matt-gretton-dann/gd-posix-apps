@@ -142,7 +142,7 @@ class TestRunner:
             success = False
         elif expected_stdout is not None and rc.stdout != expected_stdout:
             print(
-                f"FAIL: {test_name} (stdout)\n---- EXPECTED: ----\n{expected_stdout}\n---- ACTUAL: ----\n{rc.stdout}\n")
+                f"FAIL: {test_name} (stdout)\n---- EXPECTED: ----\n{expected_stdout}\n----- ACTUAL: -----\n{rc.stdout}\n-------------------\n")
             self._fails += 1
             success = False
         elif expected_stderr is not None and rc.stderr != expected_stderr:
