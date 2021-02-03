@@ -37,7 +37,7 @@ def _use_text(stdout, stderr, stdin):
         raise TypeError(
             "Mixed use of str & bytes objects for stdout, stderr, and stdin.")
 
-    return seen_str
+    return not seen_bytes
 
 
 class TestRunner:
@@ -77,6 +77,40 @@ class TestRunner:
         It is not an error if FILE has not been previously registered - we
         just register it and mark it to not be removed."""
         self._files[file] = False
+
+    def _check_expected_output(self, actual, expected, name, stream):
+        """Check whether actual and expected match.
+
+        Reports an error if actual & expected don't match.  name and stream are
+        used in any error message to identify the stream.
+
+        If expected is None then no checking is done and success is returned
+        immediately.
+
+        actual is bytes or a string.  If actual is bytes then expected should
+        also be bytes.  If actual is a string expected can by a string or
+        compiled regular expression.
+
+        Returns True if match is successful.  Does not update _passes count.
+
+        If match is not successful, updates the _fails count, and returns
+        False.
+        """
+        if expected is None:
+            return True
+        elif isinstance(expected, bytes) or isinstance(expected, str):
+            # Direct comparisons
+            if actual == expected:
+                return True
+        else:
+            # Regular expression
+            if expected.match(actual):
+                return True
+
+                # By this point we know we've failed.
+        print(f"FAIL: {name} ({stream})\n---- EXPECTED: ----\n{expected}\n"
+              f"----- ACTUAL: -----\n{actual}\n-------------------\n")
+        self._fails += 1
 
     def run_test(self, cmdline, expected_rc=0, expected_stdout=None,
                  expected_stderr=None, test_name=None, stdin=None, files=None, skip=False):
@@ -140,15 +174,9 @@ class TestRunner:
                 f"FAIL: {test_name} (incorrect exit code: expected {expected_rc} got {rc.returncode})")
             self._fails += 1
             success = False
-        elif expected_stdout is not None and rc.stdout != expected_stdout:
-            print(
-                f"FAIL: {test_name} (stdout)\n---- EXPECTED: ----\n{expected_stdout}\n---- ACTUAL: ----\n{rc.stdout}\n")
-            self._fails += 1
+        elif not self._check_expected_output(rc.stdout, expected_stdout, test_name, "stdout"):
             success = False
-        elif expected_stderr is not None and rc.stderr != expected_stderr:
-            print(
-                f"FAIL: {test_name} (stderr)\n---- EXPECTED: ----\n{expected_stderr}\n---- ACTUAL: ----\n{rc.stderr}\n")
-            self._fails += 1
+        elif not self._check_expected_output(rc.stderr, expected_stderr, test_name, "stderr"):
             success = False
         else:
             print(f"PASS: {test_name}")
@@ -169,7 +197,7 @@ class TestRunner:
     def output_file(self, filename):
         """Get the path to use for an output file.  And registers the path
 
-        If --output-dir was not specified on the command line this raises a
+        If - -output-dir was not specified on the command line this raises a
         RuntimeError.
 
         Ensures that the directory that filename points to exists.
@@ -186,9 +214,9 @@ class TestRunner:
         """Get the path to use for an input file.
 
         Filename is the basename we want to use.  If file_exists is True will
-        ensure file exists (or raise a RuntimeError).
+        ensure file exists ( or raise a RuntimeError).
 
-        If --input-dir was not specified on the command line this raises a
+        If - -input-dir was not specified on the command line this raises a
         RuntimeError.
         """
         if self._args.input_dir is None:

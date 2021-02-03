@@ -2,6 +2,24 @@
 # \author Copyright 2020, Matthew Gretton-Dann
 # SPDX-License-Identifier: Apache-2.0
 
+add_library(util)
+target_include_directories(util PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+set_property(TARGET util PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
+set_property(TARGET util PROPERTY CXX_STANDARD_REQUIRED ON)
+target_link_libraries(util PUBLIC gdsup)
+set_warnings(util)
+
+if(RUN_UNIT_TESTS)
+  add_executable(test-util)
+  target_link_libraries(test-util PUBLIC util Catch2::Catch2)
+  set_property(TARGET test-util PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
+  set_property(TARGET test-util PROPERTY CXX_STANDARD_REQUIRED ON)
+  target_include_directories(test-util PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+  target_include_directories(test-util PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+  set_warnings(test-util)
+endif()
+
+
 # Add a utility executable along with integration tests.
 # Parameters:
 #    NAME <utiltiy name>
@@ -28,7 +46,7 @@ function(add_utility)
 
     # Add the executable target
     add_executable("${_au_NAME}" "${_au_SOURCES}")
-    target_link_libraries("${_au_NAME}" PUBLIC gdsup)
+    target_link_libraries("${_au_NAME}" PUBLIC gdsup util)
     target_include_directories("${_au_NAME}" PRIVATE "${CMAKE_SOURCE_DIR}/src/include")
     target_add_clang_format("${_au_NAME}")
     set_warnings("${_au_NAME}")
@@ -37,7 +55,7 @@ function(add_utility)
       # Done after the call to target_add_clang_format so that we don't try to format
       # message-data.hh
       add_custom_command(
-        OUTPUT message-data.hh
+        OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/message-data.hh"
         COMMAND "${Python_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/python-lib/generate-messages.py"
                 --cat-id "${_au_CAT_ID}" --header "${CMAKE_CURRENT_BINARY_DIR}/message-data.hh"
                 "${_au_CAT_ID}.messages.json"
@@ -45,8 +63,8 @@ function(add_utility)
         DEPENDS "${CMAKE_SOURCE_DIR}/python-lib/generate-messages.py"
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         COMMENT "Generating i18n header for ${_au_CAT_ID}")
-      target_include_directories(gencat PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-      target_sources(gencat PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/message-data.hh")
+      target_include_directories("${_au_NAME}" PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+      target_sources("${_au_NAME}" PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/message-data.hh")
 
       add_custom_command(
         OUTPUT "${_au_CAT_ID}.msg.stamp"
@@ -92,8 +110,17 @@ function(add_utility)
     endif()
 endfunction()
 
-# Gencat must come first
+# Order is important
 add_subdirectory(gencat)
 
 add_subdirectory(asa)
+add_subdirectory(basename)
 add_subdirectory(true-false)
+add_subdirectory(util)
+
+# Update util library settings
+target_add_clang_format(util)
+if(TARGET test-util)
+  target_add_clang_format(test-util)
+  catch_discover_tests(test-util PROPERTIES FIXTURES_REQUIRED testutil_setup EXTRA_ARGS "-s")
+endif()

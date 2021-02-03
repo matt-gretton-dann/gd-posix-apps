@@ -1,7 +1,7 @@
 /** \file   util/messages.hh
  *  \brief  Messages utility classes and functions
  *  \author Copyright 2021, Matthew Gretton-Dann
- *  SPDX-License-Identifier: Apache-2.0
+ *          SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef _SRC_INCLUDE_UTIL_MESSAGES_HH_INCLUDED
