@@ -115,6 +115,7 @@ add_subdirectory(gencat)
 
 add_subdirectory(asa)
 add_subdirectory(basename)
+add_subdirectory(dirname)
 add_subdirectory(true-false)
 add_subdirectory(util)
 

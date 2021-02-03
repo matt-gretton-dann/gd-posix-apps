@@ -1,0 +1,32 @@
+[
+  {
+    "set": "dirname",
+    "id": 1,
+    "messages": [
+      {
+        "msg": "missing_arguments",
+        "id": 1,
+        "description": "No arguments have been specified on the command line",
+        "C": "Missing arguments, expect a path."
+      },
+      {
+        "msg": "too_many_arguments",
+        "id": 2,
+        "description": "Too many arguments have been specified on the command line",
+        "C": "Too many arguments have been specified."
+      },
+      {
+        "msg": "usage",
+        "id": 3,
+        "description": "Usage message for the program. {0} is the program name.",
+        "C": "Usage: {0} string"
+      },
+      {
+        "msg": "out_of_memory",
+        "id": 4,
+        "description": "We have not been able to allocate expected amount of memory.",
+        "C": "Unable to successfulyy allocate memory."
+      }
+    ]
+  }
+]
