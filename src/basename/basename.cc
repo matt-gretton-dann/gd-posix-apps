@@ -21,6 +21,9 @@ template<typename... Ts>
 {
   std::cerr << GD::program_name() << ": "
             << GD::Basename::Messages::get().format(GD::Basename::Set::basename, msg, args...)
+            << '\n'
+            << GD::Basename::Messages::get().format(GD::Basename::Set::basename,
+                                                    GD::Basename::Msg::usage, GD::program_name())
             << '\n';
   ::exit(EXIT_FAILURE);
 }
