@@ -20,23 +20,6 @@ int opterr = 1;
 int optind = 1;
 int optopt = 0;
 
-void __gd_getopt_reset(void) __NOEXCEPT
-{
-#if defined(FORCE_SUPPLEMENTAL_LIBRARY) || defined(_WIN32)
-  optarg = NULL;
-  opterr = 1;
-  optind = 1;
-  optopt = 0;
-#elif defined(__GLIBC__)
-  optind = 0;
-#elif defined(__APPLE__)
-  extern int optreset;
-  optreset = 1;
-#else
-#  error "Unable to implement __gd_getopt_reset"
-#endif
-}
-
 static void update_for_next_call(char* opt) __NOEXCEPT
 {
   optarg = opt + 1;

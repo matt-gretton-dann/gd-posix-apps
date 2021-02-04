@@ -30,14 +30,13 @@ __EXTERN_C int optopt;
  *  \return          Matched option, or -1 for complete.
  */
 __EXTERN_C int getopt(int argc, char* const argv[], const char* optstring) __NOEXCEPT;
+#endif
 
 /** \brief Reset the getopt state to enable multiple passes of getopt.
  *
  * Resets optarg, opterr, optind, and optopt to their default values.
  */
 __EXTERN_C void __gd_getopt_reset(void) __NOEXCEPT;
-
-#endif
 
 #if defined(_WIN32)
 #  ifdef STDIN_FILENO

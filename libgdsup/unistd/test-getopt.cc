@@ -10,7 +10,11 @@ using ArgV = std::array<char*, N>;
 template<std::size_t N>
 void check_getopt(ArgV<N> const& args, char const* stropt, int ec)
 {
-  int c = getopt(N - 1, args.data(), stropt);
+  char* argv[N];
+  for (unsigned i = 0; i < N; ++i) {
+    argv[i] = args[i];
+  }
+  int c = getopt(N - 1, argv, stropt);
   REQUIRE(ec == c);
 }
 
