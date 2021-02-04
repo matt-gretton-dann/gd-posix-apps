@@ -9,7 +9,7 @@ endif()
 
 check_cxx_source_compiles(
   "#include <unistd.h>
-  int main(char argc, char** argv) {
+  int main(int argc, char** argv) {
     return getopt(argc, argv, \":v:\") != -1;
   }" LIBC_PROVIDES_GETOPT)
 
