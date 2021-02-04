@@ -13,9 +13,9 @@
 #  define __EXTERN_C_BEGIN extern "C" {
 #  define __EXTERN_C_END }
 #  if defined(__APPLE__) && !defined(FORCE_SUPPLEMENTAL_LIBRARY)
-#    define __NOEXCEPT noexcept
-#  else
 #    define __NOEXCEPT
+#  else
+#    define __NOEXCEPT noexcept
 #  endif
 #else
 #  define __EXTERN_C
