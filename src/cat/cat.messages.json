@@ -1,0 +1,45 @@
+[
+  {
+    "set": "cat",
+    "id": 1,
+    "messages": [
+      {
+        "msg": "unrecognised_option",
+        "id": 1,
+        "description": "The option -{0} is not recognised.",
+        "C": "Unrecognized option: -{0}.",
+        "en_GB": "Unrecognised option: -{0}."
+      },
+      {
+        "msg": "usage",
+        "id": 2,
+        "description": "Usage message for the program. {0} is the program name.",
+        "C": "Usage: {0} [-u] [file...]"
+      },
+      {
+        "msg": "file_read_error",
+        "id": 3,
+        "description": "We were unable to read from file {0}.  Errno is {1}, and the string message related to it is {2}.",
+        "C": "Unable to read from '{0}'.  Error code {1}: {2}"
+      },
+      {
+        "msg": "file_write_error",
+        "id": 4,
+        "description": "We were unable to write to standard output.  Errno is {0}, and the string message related to it is {1}.",
+        "C": "Unable to write to standard output.  Error code {1}: {2}"
+      },
+      {
+        "msg": "file_open_error",
+        "id": 5,
+        "description": "We were unable to open the file called {0}.  Errno is {0}, and the string message related to it is {1}.",
+        "C": "Unable to open the file '{0}'.  Error code {1}: {2}"
+      },
+      {
+        "msg": "stdin_name",
+        "id": 6,
+        "description": "The display name for standard input",
+        "C": "(standard input)"
+      }
+    ]
+  }
+]

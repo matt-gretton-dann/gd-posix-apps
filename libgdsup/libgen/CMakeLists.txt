@@ -7,13 +7,13 @@ include(CheckCXXSourceCompiles)
 
 check_cxx_source_compiles(
   "#include <libgen.h>
-  int main(char argc, char** argv) {
+  int main(int argc, char** argv) {
     return basename(argv[0]) != 0;
   }" LIBC_PROVIDES_BASENAME)
 
 check_cxx_source_compiles(
   "#include <libgen.h>
-  int main(char argc, char** argv) {
+  int main(int argc, char** argv) {
     return dirname(argv[0]) != 0;
   }" LIBC_PROVIDES_DIRNAME)
 

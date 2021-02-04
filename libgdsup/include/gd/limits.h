@@ -63,6 +63,8 @@
 #    define SSIZE_MAX LONG_MAX
 #  elif defined(__WORDSIZE) && __WORDSIZE == 32
 #    define SSIZE_MAX INT_MAX
+#  elif defined(__APPLE__)
+#    define SSIZE_MAX LONG_MAX
 #  else
 #    error "Unable to determine definition of SSIZE_MAX"
 #  endif

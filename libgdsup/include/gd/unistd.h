@@ -7,9 +7,38 @@
 #ifndef _LIBGDSUP_INCLUDE_GD_UNISTD_H_INCLUDED
 #define _LIBGDSUP_INCLUDE_GD_UNISTD_H_INCLUDED
 
-#if defined(_WIN32)
-#  include "gd/bits/defines.h"
+#include "gd/bits/defines.h"
 
+#if defined(_WIN32) || defined(FORCE_SUPPLEMENTAL_LIBRARY)
+
+/** \brief Pointer to argument - used by \fn getopt.  */
+__EXTERN_C char* optarg;
+
+/** \brief Set to 0 to turn error reporting by \fn getopt off.  */
+__EXTERN_C int opterr;
+
+/** \brief Index of current parameter for \fn getopt.  */
+__EXTERN_C int optind;
+
+/** \brief Invalid option character reported by \fn getopt.  */
+__EXTERN_C int optopt;
+
+/** \brief           Process options
+ *  \param argc      Argument cont
+ *  \param argv      Argument vector
+ *  \param optstring Option string
+ *  \return          Matched option, or -1 for complete.
+ */
+__EXTERN_C int getopt(int argc, char* const argv[], const char* optstring) __NOEXCEPT;
+#endif
+
+/** \brief Reset the getopt state to enable multiple passes of getopt.
+ *
+ * Resets optarg, opterr, optind, and optopt to their default values.
+ */
+__EXTERN_C void __gd_getopt_reset(void) __NOEXCEPT;
+
+#if defined(_WIN32)
 #  ifdef STDIN_FILENO
 #    undef STDIN_FILENO
 #  endif

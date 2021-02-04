@@ -35,7 +35,10 @@
  *
  * \todo: Make '//' handling platform specific.
  */
-__EXTERN_C char* basename(char* path);
+__EXTERN_C char* basename(char* path) __NOEXCEPT;
+/* Work around some GLIBC definitions.  */
+#  undef basename
+#  define basename basename
 
 /** \brief       Report the parent directory name of \a path - a file pathname
  *  \param  path File pathname to report parent directory name of.
@@ -60,7 +63,7 @@ __EXTERN_C char* basename(char* path);
  *
  * \todo: Make '//' handling platform specific.
  */
-__EXTERN_C char* dirname(char*);
+__EXTERN_C char* dirname(char*) __NOEXCEPT;
 #endif  // Pick a libgen header
 
 #endif  // _LIBGDSUP_INCLUDE_GD_LIBGEN_H_INCLUDED

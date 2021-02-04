@@ -5,6 +5,7 @@
  */
 
 /* clang-format off We need to include nl-types.h early for macOS. */
+#include "gd/libgen.h"
 #include "gd/nl_types.h"
 /* clang-format on */
 
@@ -12,7 +13,6 @@
 #include "gd/fcntl.h"
 #include "gd/filesystem.hh"
 #include "gd/format.hh"
-#include "gd/libgen.h"
 #include "gd/limits.h"
 #include "gd/stdlib.h"
 #include "gd/sys/stat.h"
