@@ -4,6 +4,7 @@
  *          SPDX-License-Identifier: Apache-2.0
  */
 #include "gd/bits/defines.h"
+#include "gd/stdlib.h"
 #include "gd/unistd.h"
 
 void __gd_getopt_reset(void) __NOEXCEPT
