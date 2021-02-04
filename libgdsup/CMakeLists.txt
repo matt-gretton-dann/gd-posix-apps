@@ -227,7 +227,8 @@ target_include_directories(test-gdsup PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 set_warnings(test-gdsup)
 
 if($CACHE{FORCE_SUPPLEMENTAL_LIBRARY})
-target_compile_definitions(gdsup PUBLIC "$CACHE{FORCE_SUPPLEMENTAL_LIBRARY}")
+target_compile_definitions(gdsup PUBLIC
+                           "-DFORCE_SUPPLEMENTAL_LIBRARY=$CACHE{FORCE_SUPPLEMENTAL_LIBRARY}")
 endif()
 
 target_sources(gdsup PRIVATE
