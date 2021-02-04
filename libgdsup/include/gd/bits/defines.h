@@ -12,10 +12,12 @@
 #  define __EXTERN_C extern "C"
 #  define __EXTERN_C_BEGIN extern "C" {
 #  define __EXTERN_C_END }
+#  define __NOEXCEPT noexcept
 #else
 #  define __EXTERN_C
 #  define __EXTERN_C_BEGIN
 #  define __EXTERN_C_END
+#  define __NOEXCEPT
 #endif
 
 /* Byte order on Windows.  */
