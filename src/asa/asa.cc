@@ -6,6 +6,8 @@
 
 #include "gd/libgen.h"
 #include "gd/string.h"
+#include "util/file.hh"
+#include "util/utils.hh"
 
 #include <cassert>
 #include <fstream>
@@ -51,22 +53,9 @@ private:
 class State
 {
 public:
-  State(std::string_view program_name) : program_name_(program_name), first_input_(true)
-  {
-    char* s = ::strdup(program_name.data());
-    if (s != nullptr) {
-      char* pn = ::strdup(::basename(s));
-      if (pn != nullptr) {
-        program_name_ = pn;
-        ::free(pn);
-      }
-      ::free(s);
-    }
-  }
+  State() : first_input_(true) {}
 
-  std::string_view program_name() const noexcept { return program_name_; }
-
-  void output(std::string_view input_file)
+  bool output(std::string_view input_file)
   {
     InputStream is(input_file);
     std::string line;
@@ -93,6 +82,8 @@ public:
       }
       first_input_ = false;
     }
+
+    return true;
   }
 
   void output_term() const
@@ -103,33 +94,15 @@ public:
   }
 
 private:
-  std::string program_name_;
   bool first_input_;
 };
-
-template<typename F>
-void for_each_file(int argc, char** argv, F apply_fn)
-{
-  if (argc == 0) {
-    apply_fn("-");
-  }
-  else {
-    while (argc > 0) {
-      assert(*argv != nullptr);
-      apply_fn(*argv);
-      ++argv;
-      --argc;
-    }
-  }
-
-  assert(argc == 0);
-  assert(*argv == nullptr);
-}
 
 int main(int argc, char** argv)
 {
   ::setlocale(LC_ALL, "");
-  State state(argv[0]);
+  GD::program_name(argv[0]);
+
+  State state;
   std::string fname;
 
   if (argc > 1 && argv[1][0] == '-' && argv[1][1] == '-' && argv[1][2] == '\0') {
@@ -138,16 +111,16 @@ int main(int argc, char** argv)
   }
 
   try {
-    for_each_file(argc - 1, argv + 1, [&state, &fname](std::string_view file) {
+    bool success = GD::for_each_file(argc - 1, argv + 1, [&state, &fname](std::string_view file) {
       fname = file;
-      state.output(file);
+      return state.output(file);
     });
     state.output_term();
-    return EXIT_SUCCESS;
+    return success ? EXIT_SUCCESS : EXIT_FAILURE;
   }
   catch (std::exception& e) {
     state.output_term();
-    std::cerr << state.program_name();
+    std::cerr << GD::program_name();
     if (*argv != NULL) {
       std::cerr << ":" << fname;
     }
