@@ -7,8 +7,8 @@
         "msg": "unrecognised_option",
         "id": 1,
         "description": "The option -{0} is not recognised.",
-        "C": "Unrecognized option: -{0}",
-        "en_GB": "Unrecognised option: -{0}"
+        "C": "Unrecognized option: -{0}.",
+        "en_GB": "Unrecognised option: -{0}."
       },
       {
         "msg": "usage",

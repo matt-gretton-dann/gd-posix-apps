@@ -28,7 +28,7 @@ tester.run_test(
     expected_stderr='')
 
 input_file1 = tester.input_file('jabberwocky.txt')
-with open(input_file1, "r") as fp:
+with open(input_file1, "rb") as fp:
     expected_output = fp.read()
 
 tester.run_test(
@@ -41,13 +41,13 @@ tester.run_test(
 
 tester.run_test(
     [tester.exe(), '-', input_file1], test_name="Stdin and input_file",
-    stdin="Hello\n",
-    expected_stdout=("Hello\n"+expected_output))
+    stdin=b"Hello",
+    expected_stdout=(b"Hello"+expected_output))
 
 tester.run_test(
     [tester.exe(), '-', input_file1, '-'], test_name="Stdin twice and input_file",
-    stdin="Hello\n",
-    expected_stdout=("Hello\n"+expected_output))
+    stdin=b"Hello",
+    expected_stdout=(b"Hello"+expected_output))
 
 tester.run_test(
     [tester.exe(), '-d'], test_name="Bad option",
