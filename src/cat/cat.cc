@@ -36,6 +36,18 @@ public:
     }
   }
 
+  ~InputFile()
+  {
+    if (!is_stdin_ && file_ != 0) {
+      fclose(file_);
+    }
+  }
+
+  InputFile(InputFile const&) = delete;
+  InputFile& operator=(InputFile const&) = delete;
+  InputFile(InputFile&&) = delete;
+  InputFile& operator=(InputFile&&) = delete;
+
   FILE* handle() { return file_; }
   std::string_view filename() const { return filename_; }
 
