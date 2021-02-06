@@ -1,6 +1,7 @@
 target_sources(util PRIVATE
   input-file/input-file-constructor.cc
   input-file/input-file-getc.cc
+  input-file/input-file-getline.cc
   input-file/input-file-queries.cc
   input-file/input-file-report-error.cc
   program-name.cc

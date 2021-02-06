@@ -44,7 +44,7 @@ auto do_cksum(std::string_view fname) -> bool
   ::size_t len = 0;
   ::uint32_t crc = 0;
   int c;
-  GD::InputFile fh(fname);
+  GD::InputFile fh(fname, "rb");
   if (fh.error()) {
     return false;
   }

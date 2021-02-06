@@ -53,6 +53,13 @@ public:
    */
   int getc();
 
+  /** \brief  Get a line of text.  Strips off the \n terminator.
+   *  \return Found line.
+   *
+   * On error, sets error flag.  On EOF set EOF flag.  In both cases may return valid string.
+   */
+  std::string getline();
+
   /** \brief  Is the error flag set on the stream?
    *  \return \c true if the error flag is set.
    */
