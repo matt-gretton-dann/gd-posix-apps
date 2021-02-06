@@ -55,16 +55,16 @@ function(add_utility)
       # Done after the call to target_add_clang_format so that we don't try to format
       # message-data.hh
       add_custom_command(
-        OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/message-data.hh"
+        OUTPUT "message-data.hh"
         COMMAND "${Python_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/python-lib/generate-messages.py"
                 --cat-id "${_au_CAT_ID}" --header "${CMAKE_CURRENT_BINARY_DIR}/message-data.hh"
-                "${_au_CAT_ID}.messages.json"
+                "${CMAKE_CURRENT_SOURCE_DIR}/${_au_CAT_ID}.messages.json"
         MAIN_DEPENDENCY "${_au_CAT_ID}.messages.json"
         DEPENDS "${CMAKE_SOURCE_DIR}/python-lib/generate-messages.py"
-        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         COMMENT "Generating i18n header for ${_au_CAT_ID}")
       target_include_directories("${_au_NAME}" PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-      target_sources("${_au_NAME}" PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/message-data.hh")
+      add_custom_target("${_au_CAT_ID}_messages_header" DEPENDS "message-data.hh")
+      add_dependencies("${_au_NAME}" "${_au_CAT_ID}_messages_header")
 
       add_custom_command(
         OUTPUT "${_au_CAT_ID}.msg.stamp"
