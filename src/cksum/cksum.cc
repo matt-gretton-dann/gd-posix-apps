@@ -39,74 +39,12 @@ auto update_crc(::uint32_t crc, ::uint8_t c) -> ::uint32_t
   return (crc << uint8_bits) ^ GD::Cksum::cksum_table[(crc >> uint24_bits) ^ c];
 }
 
-class InputFile
-{
-public:
-  InputFile(std::string_view filename) : filename_(filename), file_(nullptr), is_stdin_(false)
-  {
-    if (filename_ == "-") {
-      filename_ = GD::Cksum::Messages::get().get(GD::Cksum::Set::cksum, GD::Cksum::Msg::stdin_name);
-      is_stdin_ = true;
-      file_ = stdin;
-    }
-    else {
-      file_ = ::fopen(filename_.data(), "rb");
-      if (file_ == nullptr) {
-        report_error(GD::Cksum::Msg::file_open_error, filename_, errno, ::strerror(errno));
-        return;
-      }
-    }
-  }
-
-  ~InputFile()
-  {
-    if (!is_stdin_ && file_ != nullptr) {
-      fclose(file_);
-    }
-  }
-
-  InputFile(InputFile const&) = delete;
-  InputFile& operator=(InputFile const&) = delete;
-  InputFile(InputFile&&) = delete;
-  InputFile& operator=(InputFile&&) = delete;
-
-  int getc()
-  {
-    assert(file_ != nullptr);
-    int c;
-    while ((c = fgetc(file_)) == EOF) {
-      if (feof(file_)) {
-        return EOF;
-      }
-      else {
-        assert(ferror(file_));
-        if (errno == EINTR || errno == EAGAIN) {
-          ::clearerr(file_);
-        }
-        else {
-          report_error(GD::Cksum::Msg::file_read_error, filename_, errno, ::strerror(errno));
-          return EOF;
-        }
-      }
-    }
-
-    return c;
-  }
-
-  bool error() const { return file_ == nullptr ? true : ::ferror(file_); }
-
-private:
-  std::string filename_;
-  FILE* file_;
-  bool is_stdin_;
-};
-
 auto do_cksum(std::string_view fname) -> bool
 {
   ::size_t len = 0;
   ::uint32_t crc = 0;
   int c;
-  InputFile fh(fname);
+  GD::InputFile fh(fname);
   if (fh.error()) {
     return false;
   }
