@@ -7,6 +7,7 @@ target_include_directories(util PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set_property(TARGET util PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
 set_property(TARGET util PROPERTY CXX_STANDARD_REQUIRED ON)
 target_link_libraries(util PUBLIC gdsup)
+target_compile_definitions(util PRIVATE _CRT_SECURE_NO_WARNINGS)
 set_warnings(util)
 
 if(RUN_UNIT_TESTS)
