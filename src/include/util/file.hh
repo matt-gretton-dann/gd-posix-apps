@@ -7,12 +7,14 @@
 #ifndef _SRC_INCLUDE_UTIL_FILE_HH_INCLUDED
 #define _SRC_INCLUDE_UTIL_FILE_HH_INCLUDED
 
-#include "util-messages.hh"
-
-#include <cassert>
+#include <assert.h>
 #include <fstream>
 #include <string>
 #include <string_view>
+
+namespace GD::Util {
+enum class Msg;
+}
 
 namespace GD {
 

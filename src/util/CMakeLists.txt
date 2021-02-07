@@ -16,7 +16,7 @@ add_custom_command(
   DEPENDS "${CMAKE_SOURCE_DIR}/python-lib/generate-messages.py"
   COMMENT "Generating i18n header for util")
 add_custom_target("util_messages_header" ALL DEPENDS "util-messages.hh")
-target_include_directories(util PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(util PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 add_dependencies(util util_messages_header)
 
 add_custom_command(

@@ -4,6 +4,7 @@
  *          SPDX-License-Identifier: Apache-2.0
  */
 
+#include "util-messages.hh"
 #include "util/file.hh"
 
 #include <assert.h>

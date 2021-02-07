@@ -5,6 +5,7 @@
  */
 
 #include "gd/string.h"
+#include "util-messages.hh"
 #include "util/file.hh"
 #include "util/utils.hh"
 
