@@ -9,8 +9,11 @@
 
 #include <assert.h>
 #include <fstream>
+#include <memory>
+#include <stdio.h>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace GD::Util {
 enum class Msg;
@@ -75,6 +78,20 @@ public:
   /** \brief  Get the printable name of the file.  */
   std::string_view filename() const;
 
+  enum class Buffering { none = _IONBF, line = _IOLBF, full = _IOFBF };
+  /** \brief  Set the buffering type to no buffering.  */
+  void setbuf();
+
+  /** \brief     Set full buffering with the given vector of data.
+   *  \param ptr Vector of data - should be set to the size of buffer we want.
+   */
+  void setbuf(std::unique_ptr<std::vector<char>>&& ptr);
+
+  /** \brief     Set buffering with the given type and a vector vector of data.
+   *  \param ptr Vector of data - should be set to the size of buffer we want.
+   */
+  void setbuf(Buffering type, std::unique_ptr<std::vector<char>>&& ptr);
+
 private:
   using Msg = GD::Util::Msg;
 
@@ -83,9 +100,10 @@ private:
    */
   void report_error(Msg msg);
 
-  std::string filename_; /**< File name.  */
-  FILE* file_;           /**< File handle.  */
-  bool is_stdin_;        /**< Is the File handle standard input?  */
+  std::string filename_;                      /**< File name.  */
+  FILE* file_;                                /**< File handle.  */
+  bool is_stdin_;                             /**< Is the File handle standard input?  */
+  std::unique_ptr<std::vector<char>> buffer_; /**< Buffer of data we use.  */
 };
 
 /** \brief           Call a function for all files named on the command-line, handling '-' as stdin.

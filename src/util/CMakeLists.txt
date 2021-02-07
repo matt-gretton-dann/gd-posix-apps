@@ -4,6 +4,7 @@ target_sources(util PRIVATE
   input-file/input-file-getline.cc
   input-file/input-file-queries.cc
   input-file/input-file-report-error.cc
+  input-file/input-file-setbuf.cc
   program-name.cc
 )
 

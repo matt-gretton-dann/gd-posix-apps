@@ -9,7 +9,7 @@
 #include <stdio.h>
 
 GD::InputFile::InputFile(std::string_view filename, std::string_view mode)
-    : filename_(filename), file_(nullptr), is_stdin_(false)
+    : filename_(filename), file_(nullptr), is_stdin_(false), buffer_(nullptr)
 {
   if (filename_ == "-") {
     filename_ = GD::Util::Messages::get().get(GD::Util::Set::util, Msg::stdin_name);

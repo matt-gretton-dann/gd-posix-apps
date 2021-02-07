@@ -14,74 +14,21 @@ void report_error(GD::Cat::Msg msg, Ts... args)
             << GD::Cat::Messages::get().format(GD::Cat::Set::cat, msg, args...) << '\n';
 }
 
-class InputFile
-{
-public:
-  InputFile(std::string_view filename, bool unbuffered) : filename_(filename), is_stdin_(false)
-  {
-    if (filename_ == "-") {
-      filename_ = GD::Cat::Messages::get().get(GD::Cat::Set::cat, GD::Cat::Msg::stdin_name);
-      is_stdin_ = true;
-      file_ = stdin;
-    }
-    else {
-      file_ = ::fopen(filename_.data(), "r");
-      if (file_ == nullptr) {
-        report_error(GD::Cat::Msg::file_open_error, filename_, errno, ::strerror(errno));
-        return;
-      }
-    }
-    if (unbuffered) {
-      setvbuf(file_, nullptr, _IONBF, 0);
-    }
-  }
-
-  ~InputFile()
-  {
-    if (!is_stdin_ && file_ != 0) {
-      fclose(file_);
-    }
-  }
-
-  InputFile(InputFile const&) = delete;
-  InputFile& operator=(InputFile const&) = delete;
-  InputFile(InputFile&&) = delete;
-  InputFile& operator=(InputFile&&) = delete;
-
-  FILE* handle() { return file_; }
-  std::string_view filename() const { return filename_; }
-
-private:
-  std::string filename_;
-  FILE* file_;
-  bool is_stdin_;
-};
-
 bool do_cat(std::string_view fname, bool unbuffered)
 {
-  InputFile fp(fname, unbuffered);
-  if (fp.handle() == nullptr) {
+  GD::InputFile fp(fname);
+  if (fp.error()) {
     return false;
+  }
+  if (unbuffered) {
+    fp.setbuf();
   }
 
   do {
     /* Read a byte. */
-    int c = fgetc(fp.handle());
+    int c = fp.getc();
     if (c == EOF) {
-      if (feof(fp.handle())) {
-        return true;
-      }
-      else {
-        assert(ferror(fp.handle()));
-        if (errno == EINTR || errno == EAGAIN) {
-          ::clearerr(fp.handle());
-          continue;
-        }
-        else {
-          report_error(GD::Cat::Msg::file_read_error, fp.filename(), errno, ::strerror(errno));
-          return false;
-        }
-      }
+      return !fp.error();
     }
 
     /* Write the byte. */
@@ -96,6 +43,7 @@ bool do_cat(std::string_view fname, bool unbuffered)
     }
   } while (true);
 }
+
 int main(int argc, char** argv)
 {
   ::setlocale(LC_ALL, "");
