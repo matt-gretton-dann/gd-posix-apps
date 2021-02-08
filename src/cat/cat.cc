@@ -4,10 +4,10 @@
 #include "util/file.hh"
 #include "util/utils.hh"
 
+#include "cat-messages.hh"
+
 #include <iostream>
 #include <stdio.h>
-
-#include "cat-messages.hh"
 
 template<typename... Ts>
 void report_error(GD::Cat::Msg msg, Ts... args)

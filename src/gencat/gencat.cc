@@ -16,6 +16,8 @@
 #include "gd/sys/stat.h"
 #include "gd/unistd.h"
 
+#include "gencat-messages.hh"
+
 #include <cassert>
 #include <cstdlib>
 #include <fstream>
@@ -24,7 +26,6 @@
 #include <string>
 #include <vector>
 
-#include "gencat-messages.hh"
 #include <string_view>
 #include <system_error>
 

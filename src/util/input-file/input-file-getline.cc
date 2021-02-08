@@ -6,11 +6,11 @@
 
 #include "util/file.hh"
 
+#include "util-messages.hh"
+
 #include <assert.h>
 #include <stdio.h>
 #include <string>
-
-#include "util-messages.hh"
 
 std::string GD::InputFile::getline()
 {

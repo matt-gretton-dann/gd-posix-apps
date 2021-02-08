@@ -12,11 +12,11 @@
 
 #include "util/utils.hh"
 
+#include "basename-messages.hh"
+
 #include <iostream>
 #include <locale.h>
 #include <stdio.h>
-
-#include "basename-messages.hh"
 
 namespace {
 template<typename... Ts>

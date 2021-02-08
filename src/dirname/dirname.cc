@@ -12,11 +12,11 @@
 
 #include "util/utils.hh"
 
+#include "dirname-messages.hh"
+
 #include <iostream>
 #include <locale.h>
 #include <stdio.h>
-
-#include "dirname-messages.hh"
 
 namespace {
 template<typename... Ts>

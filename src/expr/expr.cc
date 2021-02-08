@@ -1,5 +1,7 @@
 #include "util/utils.hh"
 
+#include "expr-messages.hh"
+
 #include <assert.h>
 #include <functional>
 #include <iostream>
@@ -10,7 +12,6 @@
 #include <string>
 #include <vector>
 
-#include "expr-messages.hh"
 #include <string_view>
 
 using Msg = GD::Expr::Msg;

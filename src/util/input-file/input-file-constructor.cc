@@ -5,9 +5,9 @@
  */
 #include "util/file.hh"
 
-#include <stdio.h>
-
 #include "util-messages.hh"
+
+#include <stdio.h>
 
 GD::InputFile::InputFile(std::string_view filename, std::string_view mode)
     : filename_(filename), file_(nullptr), is_stdin_(false), buffer_(nullptr)

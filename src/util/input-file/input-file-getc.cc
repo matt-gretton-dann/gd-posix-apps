@@ -6,10 +6,10 @@
 
 #include "util/file.hh"
 
+#include "util-messages.hh"
+
 #include <assert.h>
 #include <stdio.h>
-
-#include "util-messages.hh"
 
 int GD::InputFile::getc()
 {

@@ -9,10 +9,10 @@
 #include "util/file.hh"
 #include "util/utils.hh"
 
+#include "util-messages.hh"
+
 #include <errno.h>
 #include <iostream>
-
-#include "util-messages.hh"
 
 void GD::InputFile::report_error(GD::Util::Msg msg)
 {

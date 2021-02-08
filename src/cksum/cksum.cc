@@ -9,14 +9,14 @@
 #include "util/file.hh"
 #include "util/utils.hh"
 
+#include "cksum-messages.hh"
+
 #include <array>
 #include <iostream>
 #include <istream>
 #include <limits>
 #include <locale.h>
 #include <stdint.h>
-
-#include "cksum-messages.hh"
 
 namespace {
 constexpr unsigned uint8_max = std::numeric_limits<::uint8_t>::max();
