@@ -50,6 +50,8 @@ tests = [
     {"cmdline": ['111112', ':', r'\(1*\)2'], "output": '11111', "result": 0},
     {"cmdline": ['3111112', ':', r'\(1*\)2'], "output": '', "result": 1},
     {"cmdline": ['3111112', ':', '1*2'], "output": '0', "result": 1},
+    {"cmdline": ['1', '-', '2', '-', '3'], "output": '-4', "result": 0},
+    {"cmdline": ['1', '+', '2', '*', '3'], "output": '7', "result": 0}
 ]
 
 for test in tests:

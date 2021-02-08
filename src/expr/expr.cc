@@ -2,6 +2,7 @@
 #include "util/utils.hh"
 
 #include <assert.h>
+#include <functional>
 #include <iostream>
 #include <locale.h>
 #include <ostream>
@@ -14,6 +15,10 @@
 using Msg = GD::Expr::Msg;
 
 namespace {
+/** \brief       Report an error and exit with exit code 3.
+ *  \param  msg  Message ID
+ *  \param  args Arguments for the message.
+ */
 template<typename... Ts>
 [[noreturn]] void error(Msg msg, Ts... args)
 {
@@ -24,6 +29,10 @@ template<typename... Ts>
   ::exit(3);
 }
 
+/** \brief       Report an invalid_expr and exit with exit code 2.
+ *  \param  msg  Message ID
+ *  \param  args Arguments for the message.
+ */
 template<typename... Ts>
 [[noreturn]] void invalid_expr(Msg msg, Ts... args)
 {
@@ -32,6 +41,10 @@ template<typename... Ts>
   ::exit(2);
 }
 
+/** \brief       Report a warning
+ *  \param  msg  Message ID
+ *  \param  args Arguments for the message.
+ */
 template<typename... Ts>
 void warn(Msg msg, Ts... args)
 {
@@ -39,109 +52,111 @@ void warn(Msg msg, Ts... args)
             << GD::Expr::Messages::get().format(GD::Expr::Set::expr, msg, args...) << '\n';
 }
 
+/** \brief  Class that represents a token.  */
 class Token
 {
 public:
+  /** \brief Token Type.  */
   enum class Type {
-    number,
-    string,
-    lparens,
-    rparens,
-    logical_or,
-    logical_and,
-    equal,
-    greater_than,
-    greater_than_equal,
-    less_than,
-    less_than_equal,
-    not_equal,
-    add,
-    subtract,
-    multiply,
-    divide,
-    modulo,
-    match
+    number,             /**< Number.  */
+    string,             /**< String.  */
+    lparens,            /**< (.  */
+    rparens,            /**< ).  */
+    logical_or,         /**< |.  */
+    logical_and,        /**< &.  */
+    equal,              /**< =.  */
+    greater_than,       /**< >.  */
+    greater_than_equal, /**< >=.  */
+    less_than,          /**< <.  */
+    less_than_equal,    /**< <=.  */
+    not_equal,          /**< !=.  */
+    add,                /**< +.  */
+    subtract,           /**< -.  */
+    multiply,           /**< *.  */
+    divide,             /**< /.  */
+    modulo,             /**< %.  */
+    match,              /**< :.  */
   };
 
+  /** \brief      Construct a token.
+   *  \param type Type of token - should not be Type::number
+   *  \param str  String representation
+   */
   Token(Type type, std::string_view str) : type_(type), number_(0), str_(str)
   {
     assert(type_ != Type::number);
   }
 
-  /** \brief  Construct a number token.
+  /** \brief        Construct a number token.
+   *  \param type   Should be Type::number
+   *  \param number Number to represent.
+   *  \param str    String representation of number
    *
    * Because of the match operator we need to be able to keep the original string representation
-   * of the token to use as appropriate.
+   * of the token to use as appropriate, and not just the numbers canonical representation.
    */
   Token(Type type, int32_t number, std::string_view str) : type_(type), number_(number), str_(str)
   {
     assert(type_ == Type::number);
   }
 
+  /** \brief        Construct a number token.
+   *  \param type   Should be Type::number
+   *  \param number Number to represent.
+   *
+   * This generates a number token with the number represented in the canonical manner.
+   */
   Token(Type type, int32_t number) : Token(type, number, std::to_string(number)) {}
 
+  /** \brief  Get the token type.  */
   Type type() const noexcept { return type_; }
+
+  /** \brief  Get the number stored in this token.  */
   int32_t number() const noexcept
   {
     assert(type_ == Type::number);
     return number_;
   }
+
+  /** \brief  Get the string for the token.  */
   std::string const& string() const noexcept { return str_; }
 
+  /** \brief  Get the precedence of this token.  Lower numbers mean a higher precedence.  */
+  unsigned precedence() const noexcept { return actions_[static_cast<size_t>(type_)].precedence_; }
+
+  /** \brief  Apply this token to the two tokens passed in.  */
+  Token apply(Token const& lhs, Token const& rhs) const noexcept
+  {
+    assert(actions_[static_cast<size_t>(type_)].apply_ != nullptr);
+    return actions_[static_cast<size_t>(type_)].apply_(lhs, rhs);
+  }
+
+  /** \brief  Is this token 0 or an empty string?  */
+  bool null_or_zero() const noexcept
+  {
+    if (type_ == Token::Type::number) {
+      return number_ == 0;
+    }
+
+    return str_.empty();
+  }
+
 private:
-  Type type_;
-  int32_t number_;
-  std::string str_;
+  /** \brief Internal structure describing actions.  */
+  struct Actions
+  {
+    unsigned precedence_;                                    /**< Precedence of operator.  */
+    std::function<Token(Token const&, Token const&)> apply_; /**< Application function. */
+  };
+
+  Type type_;                /**< Token type.  */
+  int32_t number_;           /**< Number.  */
+  std::string str_;          /**< String.  */
+  static Actions actions_[]; /**< Array (indexed by type of Token). */
 };
 
 using Tokens = std::vector<Token>;
 using TokenIt = std::vector<Token>::const_iterator;
-
-#if 0
-std::ostream& operator<<(std::ostream& os, Token const& token)
-{
-  switch (token.type()) {
-  case Token::Type::number:
-    return os << "number(" << token.number() << ")";
-  case Token::Type::string:
-    return os << "string(" << token.string() << ")";
-  case Token::Type::lparens:
-    return os << "lparens";
-  case Token::Type::rparens:
-    return os << "rparens";
-  case Token::Type::logical_or:
-    return os << "logical_or";
-  case Token::Type::logical_and:
-    return os << "logical_and";
-  case Token::Type::equal:
-    return os << "equal";
-  case Token::Type::greater_than:
-    return os << "greater_than";
-  case Token::Type::greater_than_equal:
-    return os << "greater_than_equal";
-  case Token::Type::less_than:
-    return os << "less_than";
-  case Token::Type::less_than_equal:
-    return os << "less_than_equal";
-  case Token::Type::not_equal:
-    return os << "not_equal";
-  case Token::Type::add:
-    return os << "add";
-  case Token::Type::subtract:
-    return os << "subtract";
-  case Token::Type::multiply:
-    return os << "multiply";
-  case Token::Type::divide:
-    return os << "divide";
-  case Token::Type::modulo:
-    return os << "modulo";
-  case Token::Type::match:
-    return os << "match";
-  default:
-    return os << "unrecognised";
-  }
-}
-#endif
 
 /** \brief        Tokenise something that looks like a number.
  *  \param  token String to tokenise.
@@ -309,6 +324,11 @@ Token tokenise(char const* token)
   return Token(type, token);
 }
 
+/** \brief       Tokenise the command line arguments.
+ *  \param  argc Argument count.
+ *  \param  argv Argument vector.
+ *  \return      Vector of tokens.
+ */
 Tokens tokenise(int argc, char** argv)
 {
   assert(argc >= 0);
@@ -445,18 +465,9 @@ Token do_comparison(Token const& lhs, Token const& rhs, Fn comparitor)
   return Token(Token::Type::number, comparitor(comparison) ? 1 : 0);
 }
 
-bool null_or_zero(Token const& token)
-{
-  if (token.type() == Token::Type::number) {
-    return token.number() == 0;
-  }
-
-  return token.string().empty();
-}
-
 Token do_and(Token const& lhs, Token const& rhs)
 {
-  if (!null_or_zero(lhs) && !null_or_zero(rhs)) {
+  if (!lhs.null_or_zero() && !rhs.null_or_zero()) {
     return lhs;
   }
   else {
@@ -466,7 +477,7 @@ Token do_and(Token const& lhs, Token const& rhs)
 
 Token do_or(Token const& lhs, Token const& rhs)
 {
-  if (!null_or_zero(lhs)) {
+  if (!lhs.null_or_zero()) {
     return lhs;
   }
   else if (!rhs.string().empty()) {
@@ -508,128 +519,61 @@ Token parse_parens(TokenIt& begin, TokenIt end)
   return parse_primary(begin, end);
 }
 
-Token parse_match(TokenIt& begin, TokenIt end)
+Token::Actions Token::actions_[] = {
+  {100, nullptr},  // number,
+  {100, nullptr},  // string,
+  {100, nullptr},  // lparens,
+  {100, nullptr},  // rparens,
+  {6, do_or},      // logical_or,
+  {5, do_and},     // logical_and,
+  {4,
+   [](Token const& l, Token const& r) {
+     return do_comparison(l, r, [](int cmp) { return cmp == 0; });
+   }},  // equal
+  {4,
+   [](Token const& l, Token const& r) {
+     return do_comparison(l, r, [](int cmp) { return cmp > 0; });
+   }},  // greater_than,
+  {4,
+   [](Token const& l, Token const& r) {
+     return do_comparison(l, r, [](int cmp) { return cmp >= 0; });
+   }},  // greater_than_equal,
+  {4,
+   [](Token const& l, Token const& r) {
+     return do_comparison(l, r, [](int cmp) { return cmp < 0; });
+   }},  // less_than,
+  {4,
+   [](Token const& l, Token const& r) {
+     return do_comparison(l, r, [](int cmp) { return cmp <= 0; });
+   }},  // less_than_equal,
+  {4,
+   [](Token const& l, Token const& r) {
+     return do_comparison(l, r, [](int cmp) { return cmp != 0; });
+   }},               // not_equal,
+  {3, do_add},       // add,
+  {3, do_subtract},  // subtract,
+  {2, do_multiply},  // multiply,
+  {2, do_divide},    // divide,
+  {2, do_modulo},    // modulo,
+  {1, do_match},     // match
+};
+
+Token parse_expr(TokenIt& begin, TokenIt end, unsigned int precedence)
 {
-  Token lhs = parse_parens(begin, end);
-  while (begin != end && begin->type() == Token::Type::match) {
-    ++begin;
-    Token rhs = parse_parens(begin, end);
-    lhs = do_match(lhs, rhs);
+  if (precedence == 0) {
+    return parse_parens(begin, end);
+  }
+
+  Token lhs = parse_expr(begin, end, precedence - 1);
+  while (begin != end && begin->precedence() == precedence) {
+    TokenIt op = begin++;
+    Token rhs = parse_expr(begin, end, precedence - 1);
+    lhs = op->apply(lhs, rhs);
   }
   return lhs;
 }
 
-Token parse_multiplicative(TokenIt& begin, TokenIt end)
-{
-  Token lhs = parse_match(begin, end);
-  while (begin != end &&
-         (begin->type() == Token::Type::multiply || begin->type() == Token::Type::divide ||
-          begin->type() == Token::Type::modulo)) {
-    Token::Type type = begin->type();
-    ++begin;
-    Token rhs = parse_match(begin, end);
-    switch (type) {
-    case Token::Type::multiply:
-      lhs = do_multiply(lhs, rhs);
-      break;
-    case Token::Type::divide:
-      lhs = do_divide(lhs, rhs);
-      break;
-    case Token::Type::modulo:
-      lhs = do_modulo(lhs, rhs);
-      break;
-    default:
-      assert(false);
-    }
-  }
-  return lhs;
-}
-
-Token parse_additive(TokenIt& begin, TokenIt end)
-{
-  Token lhs = parse_multiplicative(begin, end);
-  while (begin != end &&
-         (begin->type() == Token::Type::add || begin->type() == Token::Type::subtract)) {
-    Token::Type type = begin->type();
-    ++begin;
-    Token rhs = parse_multiplicative(begin, end);
-    switch (type) {
-    case Token::Type::add:
-      lhs = do_add(lhs, rhs);
-      break;
-    case Token::Type::subtract:
-      lhs = do_subtract(lhs, rhs);
-      break;
-    default:
-      assert(false);
-    }
-  }
-  return lhs;
-}
-
-Token parse_comparison(TokenIt& begin, TokenIt end)
-{
-  Token lhs = parse_additive(begin, end);
-  while (begin != end &&
-         (begin->type() == Token::Type::equal || begin->type() == Token::Type::not_equal ||
-          begin->type() == Token::Type::less_than ||
-          begin->type() == Token::Type::less_than_equal ||
-          begin->type() == Token::Type::greater_than ||
-          begin->type() == Token::Type::greater_than_equal)) {
-    Token::Type type = begin->type();
-    ++begin;
-    Token rhs = parse_additive(begin, end);
-    switch (type) {
-    case Token::Type::equal:
-      lhs = do_comparison(lhs, rhs, [](int relation) { return relation == 0; });
-      break;
-    case Token::Type::not_equal:
-      lhs = do_comparison(lhs, rhs, [](int relation) { return relation != 0; });
-      break;
-    case Token::Type::less_than:
-      lhs = do_comparison(lhs, rhs, [](int relation) { return relation < 0; });
-      break;
-    case Token::Type::less_than_equal:
-      lhs = do_comparison(lhs, rhs, [](int relation) { return relation <= 0; });
-      break;
-      break;
-    case Token::Type::greater_than:
-      lhs = do_comparison(lhs, rhs, [](int relation) { return relation > 0; });
-      break;
-    case Token::Type::greater_than_equal:
-      lhs = do_comparison(lhs, rhs, [](int relation) { return relation >= 0; });
-      break;
-    default:
-      assert(false);
-    }
-  }
-
-  return lhs;
-}
-
-Token parse_and(TokenIt& begin, TokenIt end)
-{
-  Token lhs = parse_comparison(begin, end);
-  while (begin != end && begin->type() == Token::Type::logical_and) {
-    ++begin;
-    Token rhs = parse_comparison(begin, end);
-    lhs = do_and(lhs, rhs);
-  }
-  return lhs;
-}
-
-Token parse_or(TokenIt& begin, TokenIt end)
-{
-  Token lhs = parse_and(begin, end);
-  while (begin != end && begin->type() == Token::Type::logical_or) {
-    ++begin;
-    Token rhs = parse_and(begin, end);
-    lhs = do_or(lhs, rhs);
-  }
-  return lhs;
-}
-
-Token parse(TokenIt& begin, TokenIt end) { return parse_or(begin, end); }
+Token parse(TokenIt& begin, TokenIt end) { return parse_expr(begin, end, 6); }
 }  // namespace
 
 int main(int argc, char** argv)
@@ -658,7 +602,7 @@ int main(int argc, char** argv)
 
   std::cout << result.string() << '\n';
 
-  if (null_or_zero(result)) {
+  if (result.null_or_zero()) {
     return 1;
   }
   else {
