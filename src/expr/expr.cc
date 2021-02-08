@@ -333,11 +333,12 @@ Token do_match(Token const& lhs, Token const& rhs)
   if (res.size() > 0 && res[0] != '^') {
     res = '^' + res;
   }
-  std::regex re(rhs.string(), std::regex_constants::basic);
+  std::regex re(res, std::regex_constants::basic);
   std::smatch m;
   bool matched = std::regex_search(lhs.string(), m, re);
   if (re.mark_count() > 0) {
-    return matched ? tokenise(m.str(1).data()) : Token(Token::Type::string, "");
+    std::string s = matched ? m.str(1) : "";
+    return tokenise(s.c_str());
   }
   else {
     return Token(Token::Type::number, matched ? m.length(0) : 0);
