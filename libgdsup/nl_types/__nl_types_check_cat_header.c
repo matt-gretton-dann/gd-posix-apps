@@ -4,14 +4,16 @@
  *  SPDX-License-Identifier: Apache-2.0
  */
 
-#include "gd/limits.h"
 #include "gd/nl_types.h"
-#include "nl_types/nl_types.h"
-#include "support/support.h"
+
+#include "gd/limits.h"
 
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdint.h>
+
+#include "nl_types/nl_types.h"
+#include "support/support.h"
 
 bool __nl_types_check_cat_header(char const buffer[CAT_HDR_SIZE])
 {

@@ -1,8 +1,10 @@
 #include "gd/string.h"
 #include "gd/unistd.h"
-#include "message-data.hh"
+
 #include "util/file.hh"
 #include "util/utils.hh"
+
+#include "cat-messages.hh"
 
 #include <iostream>
 #include <stdio.h>

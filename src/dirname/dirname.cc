@@ -5,11 +5,14 @@
  */
 
 #include "gd/libgen.h"
+
 #include "gd/limits.h"
 #include "gd/stdlib.h"
 #include "gd/string.h"
-#include "message-data.hh"
+
 #include "util/utils.hh"
+
+#include "dirname-messages.hh"
 
 #include <iostream>
 #include <locale.h>

@@ -3,8 +3,9 @@
  *  \author Copyright 2021, Matthew Grett-Dann
  *          SPDX-License-Identifier: Apache-2.0
  */
-#include "util-messages.hh"
 #include "util/file.hh"
+
+#include "util-messages.hh"
 
 #include <stdio.h>
 

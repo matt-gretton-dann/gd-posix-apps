@@ -7,13 +7,16 @@
 #ifndef _SRC_INCLUDE_UTIL_FILE_HH_INCLUDED
 #define _SRC_INCLUDE_UTIL_FILE_HH_INCLUDED
 
+#include "gd/nl_types.h"
+
 #include <assert.h>
 #include <fstream>
 #include <memory>
 #include <stdio.h>
 #include <string>
-#include <string_view>
 #include <vector>
+
+#include <string_view>
 
 namespace GD::Util {
 enum class Msg;

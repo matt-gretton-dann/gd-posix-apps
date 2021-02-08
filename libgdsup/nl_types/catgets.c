@@ -5,13 +5,15 @@
  */
 
 #include "gd/nl_types.h"
+
 #include "gd/stdlib.h"
-#include "nl_types/nl_types.h"
-#include "support/support.h"
 
 #include <errno.h>
 #include <inttypes.h>
 #include <stdint.h>
+
+#include "nl_types/nl_types.h"
+#include "support/support.h"
 
 /* See /docs/file-formats/message-catalogues.md for a description of the file format we are reading.
  */

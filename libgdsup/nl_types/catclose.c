@@ -5,11 +5,13 @@
  */
 
 #include "gd/nl_types.h"
+
 #include "gd/stdlib.h"
-#include "nl_types/nl_types.h"
-#include "support/support.h"
 
 #include <errno.h>
+
+#include "nl_types/nl_types.h"
+#include "support/support.h"
 
 int catclose(nl_catd catd)
 {

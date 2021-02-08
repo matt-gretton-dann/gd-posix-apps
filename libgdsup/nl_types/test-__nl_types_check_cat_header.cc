@@ -5,9 +5,10 @@
  */
 
 #include "gd/nl_types.h"
-#include "nl_types/nl_types.h"
 
 #include <catch2/catch.hpp>
+
+#include "nl_types/nl_types.h"
 
 TEST_CASE("__nl_types_check_cat_header", "[nl_types][nl_types_check_cat_header]")
 {

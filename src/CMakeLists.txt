@@ -9,6 +9,10 @@ set_property(TARGET util PROPERTY CXX_STANDARD_REQUIRED ON)
 target_link_libraries(util PUBLIC gdsup)
 target_compile_definitions(util PRIVATE _CRT_SECURE_NO_WARNINGS)
 set_warnings(util)
+target_sources(util PRIVATE
+  include/util/file.hh
+  include/util/messages.hh
+  include/util/utils.hh)
 
 if(RUN_UNIT_TESTS)
   add_executable(test-util)
@@ -54,17 +58,18 @@ function(add_utility)
 
     if(DEFINED _au_CAT_ID)
       # Done after the call to target_add_clang_format so that we don't try to format
-      # message-data.hh
+      # *-messages.hh
       add_custom_command(
-        OUTPUT "message-data.hh"
+        OUTPUT "${_au_CAT_ID}-messages.hh"
         COMMAND "${Python_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/python-lib/generate-messages.py"
-                --cat-id "${_au_CAT_ID}" --header "${CMAKE_CURRENT_BINARY_DIR}/message-data.hh"
+                --cat-id "${_au_CAT_ID}"
+                --header "${CMAKE_CURRENT_BINARY_DIR}/${_au_CAT_ID}-messages.hh"
                 "${CMAKE_CURRENT_SOURCE_DIR}/${_au_CAT_ID}.messages.json"
         MAIN_DEPENDENCY "${_au_CAT_ID}.messages.json"
         DEPENDS "${CMAKE_SOURCE_DIR}/python-lib/generate-messages.py"
-        COMMENT "Generating i18n header for ${_au_CAT_ID}")
+        COMMENT "Generating i18n header for ${_au_CAT_ID}: ${_au_CAT_ID}-messages.hh")
       target_include_directories("${_au_NAME}" PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-      add_custom_target("${_au_CAT_ID}_messages_header" DEPENDS "message-data.hh")
+      add_custom_target("${_au_CAT_ID}_messages_header" DEPENDS "${_au_CAT_ID}-messages.hh")
       add_dependencies("${_au_NAME}" "${_au_CAT_ID}_messages_header")
 
       add_custom_command(

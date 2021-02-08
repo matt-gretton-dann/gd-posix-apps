@@ -5,9 +5,11 @@
  */
 
 #include "gd/string.h"
-#include "message-data.hh"
+
 #include "util/file.hh"
 #include "util/utils.hh"
+
+#include "cksum-messages.hh"
 
 #include <array>
 #include <iostream>

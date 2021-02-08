@@ -10,7 +10,9 @@
   "python.autoComplete.extraPaths": [
     "${workspaceFolder}/python-lib"
   ],
-  "cmake.configureSettings": {},
+  "cmake.configureSettings": {
+    "FORCE_SUPPLEMENTAL_LIBRARY": true
+  },
   "files.associations": {
     "clocale": "c",
     "cstdlib": "cpp"

@@ -4,16 +4,13 @@
  *  SPDX-License-Identifier: Apache-2.0
  */
 
-#include "fcntl/fcntl.h"
-#include "gd/fcntl.h"
 #include "gd/libgen.h"
 #include "gd/nl_types.h"
+
+#include "gd/fcntl.h"
 #include "gd/stdlib.h"
 #include "gd/string.h"
 #include "gd/unistd.h"
-#include "nl_types/nl_types.h"
-#include "support/support.h"
-#include "unistd/unistd.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -23,6 +20,11 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+
+#include "fcntl/fcntl.h"
+#include "nl_types/nl_types.h"
+#include "support/support.h"
+#include "unistd/unistd.h"
 
 /** \brief       Attempt to open a catalogue file
  *  \param  path Path of file to attempt to open.

@@ -5,9 +5,11 @@
  */
 
 #include "gd/string.h"
-#include "util-messages.hh"
+
 #include "util/file.hh"
 #include "util/utils.hh"
+
+#include "util-messages.hh"
 
 #include <errno.h>
 #include <iostream>

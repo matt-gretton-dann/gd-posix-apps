@@ -7,6 +7,7 @@
 #include "util/file.hh"
 
 #include <catch2/catch.hpp>
+
 #include <string_view>
 
 TEST_CASE("for_each_file", "[util][file][for_each_file]")
