@@ -17,10 +17,10 @@ Cpp11BracedListStyle: true
 FixNamespaceComments: true
 IncludeBlocks: Regroup
 IncludeCategories:
-  - Regex:           '^"[:alnum:]+-messages\.hh"$'
-    Priority:        10
-  - Regex:           '<catch2/'
+  - Regex:           '^".*-messages\.hh"$'
     Priority:        3
+  - Regex:           '<catch2/'
+    Priority:        20
   - Regex:           '^"util/'
     Priority:        2
   - Regex:           '^"gd/(libgen|nl_types)\.h"$'
@@ -28,7 +28,7 @@ IncludeCategories:
   - Regex:           '^"gd/'
     Priority:        1
   - Regex:           '<[[:alnum:].]+>'
-    Priority:        4
+    Priority:        100
 IndentPPDirectives: AfterHash
 IndentWidth: 2
 IndentWrappedFunctionNames: false
