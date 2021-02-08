@@ -361,7 +361,11 @@ Token do_match(Token const& lhs, Token const& rhs)
     return tokenise(s.c_str());
   }
   else {
-    return Token(Token::Type::number, matched ? m.length(0) : 0);
+    auto len = m.length();
+    if (len > INT32_MAX) {
+      warn(Msg::match_too_long, lhs.string(), rhs.string(), len);
+    }
+    return Token(Token::Type::number, matched ? static_cast<int32_t>(m.length(0)) : 0);
   }
 }
 

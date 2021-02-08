@@ -62,6 +62,12 @@
         "id": 10,
         "description": "The operation {1} {0} {2} will overflow.",
         "C": "Warning: overflow when calculating: {1} {0} {2}"
+      },
+      {
+        "msg": "match_too_long",
+        "id": 11,
+        "description": "The length of the result of {0} : {1} is too long to represent as an integer. {2} is length of result as int64.",
+        "C": "Warning: The result of '{0} : {1}' is too long to represent as a number ({2})."
       }
     ]
   }
