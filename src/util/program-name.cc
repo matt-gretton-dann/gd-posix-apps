@@ -4,10 +4,13 @@
  *          SPDX-License-Identifier: Apache-2.0
  */
 #include "gd/libgen.h"
+
 #include "gd/string.h"
+
 #include "util/utils.hh"
 
 #include <string>
+
 #include <string_view>
 
 namespace {

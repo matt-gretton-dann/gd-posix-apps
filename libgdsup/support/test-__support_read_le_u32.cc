@@ -4,10 +4,11 @@
  *          SPDX-License-Identifier: Apache-2.0
  */
 
-#include "support/support.h"
-
 #include <catch2/catch.hpp>
+
 #include <cstdint>
+
+#include "support/support.h"
 
 TEST_CASE("__support_read_le_u32", "[support][support_read_le_u32]")
 {

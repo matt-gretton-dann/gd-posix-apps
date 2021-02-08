@@ -4,12 +4,13 @@
  *          SPDX-License-Identifier: Apache-2.0
  */
 
-#include "fcntl/fcntl.h"
 #include "gd/fcntl.h"
 
 #include <assert.h>
 #include <errno.h>
 #include <stdbool.h>
+
+#include "fcntl/fcntl.h"
 
 int __fcntl_open(char const* path, int oflags)
 {

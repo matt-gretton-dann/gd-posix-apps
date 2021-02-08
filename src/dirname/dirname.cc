@@ -4,19 +4,19 @@
  *          SPDX-License-Identifier: Apache-2.0
  */
 
-/* clang-format off */
 #include "gd/libgen.h"
-/* clang-format on */
 
-#include "dirname-messages.hh"
 #include "gd/limits.h"
 #include "gd/stdlib.h"
 #include "gd/string.h"
+
 #include "util/utils.hh"
 
 #include <iostream>
 #include <locale.h>
 #include <stdio.h>
+
+#include "dirname-messages.hh"
 
 namespace {
 template<typename... Ts>

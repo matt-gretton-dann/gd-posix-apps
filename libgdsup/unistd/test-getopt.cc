@@ -1,8 +1,9 @@
 #include "gd/string.h"
 #include "gd/unistd.h"
 
-#include <array>
 #include <catch2/catch.hpp>
+
+#include <array>
 
 template<std::size_t N>
 using ArgV = std::array<char*, N>;

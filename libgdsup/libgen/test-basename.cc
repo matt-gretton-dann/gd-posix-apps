@@ -5,9 +5,11 @@
  */
 
 #include "gd/libgen.h"
+
 #include "gd/string.h"
 
 #include <catch2/catch.hpp>
+
 #include <cstring>
 
 namespace {

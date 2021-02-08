@@ -4,10 +4,8 @@
  *  SPDX-License-Identifier: Apache-2.0
  */
 
-/* clang-format off We need to include nl-types.h early for macOS. */
 #include "gd/libgen.h"
 #include "gd/nl_types.h"
-/* clang-format on */
 
 #include "gd/bit.hh"
 #include "gd/fcntl.h"
@@ -17,7 +15,6 @@
 #include "gd/stdlib.h"
 #include "gd/sys/stat.h"
 #include "gd/unistd.h"
-#include "gencat-messages.hh"
 
 #include <cassert>
 #include <cstdlib>
@@ -25,9 +22,11 @@
 #include <iostream>
 #include <map>
 #include <string>
+#include <vector>
+
+#include "gencat-messages.hh"
 #include <string_view>
 #include <system_error>
-#include <vector>
 
 namespace Gencat = GD::Gencat;
 

@@ -5,7 +5,9 @@
  */
 
 #include "gd/libgen.h"
+
 #include "gd/string.h"
+
 #include "util/file.hh"
 #include "util/utils.hh"
 
@@ -14,6 +16,7 @@
 #include <iostream>
 #include <locale.h>
 #include <string>
+
 #include <string_view>
 #include <system_error>
 

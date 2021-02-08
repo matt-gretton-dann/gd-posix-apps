@@ -4,10 +4,10 @@
  *          SPDX-License-Identifier: Apache-2.0
  */
 
-#include "support/support.h"
-
 #include <stdarg.h>
 #include <stdio.h>
+
+#include "support/support.h"
 
 int __support_logging_enabled = 1;
 

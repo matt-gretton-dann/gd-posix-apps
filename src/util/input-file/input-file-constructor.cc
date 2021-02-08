@@ -3,10 +3,11 @@
  *  \author Copyright 2021, Matthew Grett-Dann
  *          SPDX-License-Identifier: Apache-2.0
  */
-#include "util-messages.hh"
 #include "util/file.hh"
 
 #include <stdio.h>
+
+#include "util-messages.hh"
 
 GD::InputFile::InputFile(std::string_view filename, std::string_view mode)
     : filename_(filename), file_(nullptr), is_stdin_(false), buffer_(nullptr)

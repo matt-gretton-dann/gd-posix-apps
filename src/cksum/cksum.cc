@@ -4,8 +4,8 @@
  *          SPDX-License-Identifier: Apache-2.0
  */
 
-#include "cksum-messages.hh"
 #include "gd/string.h"
+
 #include "util/file.hh"
 #include "util/utils.hh"
 
@@ -15,6 +15,8 @@
 #include <limits>
 #include <locale.h>
 #include <stdint.h>
+
+#include "cksum-messages.hh"
 
 namespace {
 constexpr unsigned uint8_max = std::numeric_limits<::uint8_t>::max();

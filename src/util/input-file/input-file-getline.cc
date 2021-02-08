@@ -4,12 +4,13 @@
  *          SPDX-License-Identifier: Apache-2.0
  */
 
-#include "util-messages.hh"
 #include "util/file.hh"
 
 #include <assert.h>
 #include <stdio.h>
 #include <string>
+
+#include "util-messages.hh"
 
 std::string GD::InputFile::getline()
 {

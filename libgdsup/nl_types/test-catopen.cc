@@ -5,13 +5,16 @@
  */
 
 #include "gd/nl_types.h"
+
 #include "gd/stdlib.h"
 #include "gd/string.h"
-#include "nl_types/nl_types.h"
-#include "nl_types/test-config.h"
 
 #include <catch2/catch.hpp>
+
 #include <errno.h>
+
+#include "nl_types/nl_types.h"
+#include "nl_types/test-config.h"
 
 TEST_CASE("catgets", "[nl_types][catopen][catgets]")
 {

@@ -5,9 +5,10 @@
  */
 
 #include "gd/bits/defines.h"
-#include "support/support.h"
 
 #include <stdint.h>
+
+#include "support/support.h"
 
 uint32_t __support_read_le_u32(char const* buf)
 {
