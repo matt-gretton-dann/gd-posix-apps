@@ -7,13 +7,15 @@
 #ifndef _SRC_INCLUDE_UTIL_MESSAGES_HH_INCLUDED
 #define _SRC_INCLUDE_UTIL_MESSAGES_HH_INCLUDED
 
-#include "gd/format.hh"
 #include "gd/nl_types.h"
+
+#include "gd/format.hh"
 
 #include <array>
 #include <string>
-#include <string_view>
 #include <vector>
+
+#include <string_view>
 
 namespace GD {
 
