@@ -1,6 +1,6 @@
+#include "cat-messages.hh"
 #include "gd/string.h"
 #include "gd/unistd.h"
-#include "message-data.hh"
 #include "util/file.hh"
 #include "util/utils.hh"
 

@@ -4,11 +4,14 @@
  *          SPDX-License-Identifier: Apache-2.0
  */
 
+/* clang-format off - we need to include libgen.h first */
 #include "gd/libgen.h"
+/* clang-format on */
+
+#include "basename-messages.hh"
 #include "gd/limits.h"
 #include "gd/stdlib.h"
 #include "gd/string.h"
-#include "message-data.hh"
 #include "util/utils.hh"
 
 #include <iostream>

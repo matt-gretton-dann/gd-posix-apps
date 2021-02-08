@@ -4,8 +4,8 @@
  *          SPDX-License-Identifier: Apache-2.0
  */
 
+#include "cksum-messages.hh"
 #include "gd/string.h"
-#include "message-data.hh"
 #include "util/file.hh"
 #include "util/utils.hh"
 

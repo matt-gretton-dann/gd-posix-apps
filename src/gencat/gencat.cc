@@ -17,7 +17,7 @@
 #include "gd/stdlib.h"
 #include "gd/sys/stat.h"
 #include "gd/unistd.h"
-#include "message-data.hh"
+#include "gencat-messages.hh"
 
 #include <cassert>
 #include <cstdlib>
