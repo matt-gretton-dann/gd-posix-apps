@@ -9,6 +9,10 @@ set_property(TARGET util PROPERTY CXX_STANDARD_REQUIRED ON)
 target_link_libraries(util PUBLIC gdsup)
 target_compile_definitions(util PRIVATE _CRT_SECURE_NO_WARNINGS)
 set_warnings(util)
+target_sources(util PRIVATE
+  include/util/file.hh
+  include/util/messages.hh
+  include/util/utils.hh)
 
 if(RUN_UNIT_TESTS)
   add_executable(test-util)
