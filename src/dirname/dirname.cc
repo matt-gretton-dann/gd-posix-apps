@@ -4,8 +4,11 @@
  *          SPDX-License-Identifier: Apache-2.0
  */
 
-#include "dirname-messages.hh"
+/* clang-format off */
 #include "gd/libgen.h"
+/* clang-format on */
+
+#include "dirname-messages.hh"
 #include "gd/limits.h"
 #include "gd/stdlib.h"
 #include "gd/string.h"
