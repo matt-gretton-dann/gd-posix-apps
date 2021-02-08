@@ -16,6 +16,19 @@ ContinuationIndentWidth: 2
 Cpp11BracedListStyle: true
 FixNamespaceComments: true
 IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex:           '^"[:alnum:]+-messages\.hh"$'
+    Priority:        10
+  - Regex:           '<catch2/'
+    Priority:        3
+  - Regex:           '^"util/'
+    Priority:        2
+  - Regex:           '^"gd/(libgen|nl_types)\.h"$'
+    Priority:        0
+  - Regex:           '^"gd/'
+    Priority:        1
+  - Regex:           '<[[:alnum:].]+>'
+    Priority:        4
 IndentPPDirectives: AfterHash
 IndentWidth: 2
 IndentWrappedFunctionNames: false
@@ -38,5 +51,4 @@ SpaceBeforeParens: ControlStatements
 SpacesBeforeTrailingComments: 2
 SpacesInAngles: false
 Standard: Cpp11
-
 ...
