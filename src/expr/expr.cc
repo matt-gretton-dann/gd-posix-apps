@@ -5,6 +5,7 @@
 #include <iostream>
 #include <locale.h>
 #include <ostream>
+#include <regex>
 #include <stdint.h>
 #include <string>
 #include <string_view>
@@ -326,38 +327,22 @@ Tokens tokenise(int argc, char** argv)
   return result;
 }
 
-Token parse(TokenIt& begin, TokenIt end);
-
-Token parse_primary(TokenIt& begin, TokenIt end)
+Token do_match(Token const& lhs, Token const& rhs)
 {
-  if (begin == end) {
-    invalid_expr(Msg::expected_token);
+  std::string res = rhs.string();
+  if (res.size() > 0 && res[0] != '^') {
+    res = '^' + res;
   }
-
-  return *(begin++);
-}
-
-Token parse_parens(TokenIt& begin, TokenIt end)
-{
-  if (begin != end) {
-    if (begin->type() == Token::Type::lparens) {
-      ++begin;
-      auto result = parse(begin, end);
-      if (begin == end) {
-        invalid_expr(Msg::expected_rparens_at_end);
-      }
-      if (begin->type() != Token::Type::rparens) {
-        invalid_expr(Msg::expected_rparens, begin->string());
-      }
-      ++begin;
-      return result;
-    }
+  std::regex re(rhs.string(), std::regex_constants::basic);
+  std::smatch m;
+  bool matched = std::regex_search(lhs.string(), m, re);
+  if (re.mark_count() > 0) {
+    return matched ? tokenise(m.str(1).data()) : Token(Token::Type::string, "");
   }
-
-  return parse_primary(begin, end);
+  else {
+    return Token(Token::Type::number, matched ? m.length(0) : 0);
+  }
 }
-
-Token do_match(Token const&, Token const&) { assert(false); }
 
 Token do_multiply(Token const& lhs, Token const& rhs)
 {
@@ -489,6 +474,37 @@ Token do_or(Token const& lhs, Token const& rhs)
   else {
     return Token(Token::Type::number, 0);
   }
+}
+
+Token parse(TokenIt& begin, TokenIt end);
+
+Token parse_primary(TokenIt& begin, TokenIt end)
+{
+  if (begin == end) {
+    invalid_expr(Msg::expected_token);
+  }
+
+  return *(begin++);
+}
+
+Token parse_parens(TokenIt& begin, TokenIt end)
+{
+  if (begin != end) {
+    if (begin->type() == Token::Type::lparens) {
+      ++begin;
+      auto result = parse(begin, end);
+      if (begin == end) {
+        invalid_expr(Msg::expected_rparens_at_end);
+      }
+      if (begin->type() != Token::Type::rparens) {
+        invalid_expr(Msg::expected_rparens, begin->string());
+      }
+      ++begin;
+      return result;
+    }
+  }
+
+  return parse_primary(begin, end);
 }
 
 Token parse_match(TokenIt& begin, TokenIt end)
