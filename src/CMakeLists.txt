@@ -119,6 +119,7 @@ add_subdirectory(basename)
 add_subdirectory(cat)
 add_subdirectory(cksum)
 add_subdirectory(dirname)
+add_subdirectory(expr)
 add_subdirectory(true-false)
 add_subdirectory(util)
 

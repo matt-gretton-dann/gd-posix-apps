@@ -1,0 +1,74 @@
+[
+  {
+    "set": "expr",
+    "id": 1,
+    "messages": [
+      {
+        "msg": "missing_operand",
+        "id": 1,
+        "description": "No operands have been specified on the command line.",
+        "C": "Missing operands."
+      },
+      {
+        "msg": "usage",
+        "id": 2,
+        "description": "Usage message for the program. {0} is the program name.",
+        "C": "Usage: {0} operand..."
+      },
+      {
+        "msg": "number_parse_overflow",
+        "id": 3,
+        "description": "We cannot represent the operand ({0}) as a number.  We will treat it as a string instead.",
+        "C": "Warning: Operand '{0}' is not representable as a number."
+      },
+      {
+        "msg": "expected_token",
+        "id": 4,
+        "description": "We expected another token in the stream, but didn't find one.",
+        "C": "Missing token at end of operand list."
+      },
+      {
+        "msg": "expected_rparens_at_end",
+        "id": 5,
+        "description": "We expected a closing right bracket at the end of the operand list.",
+        "C": "Missing ')' at end of operand list."
+      },
+      {
+        "msg": "expected_rparens",
+        "id": 6,
+        "description": "We expected a ) at the current token, but instead got {0}.",
+        "C": "Expected ')' but instead found '{0}'."
+      },
+      {
+        "msg": "extra_tokens_at_end",
+        "id": 7,
+        "description": "We have extra tokens at the end beginning with {0}.",
+        "C": "Extra tokens on command line: {0}"
+      },
+      {
+        "msg": "expected_number_lhs",
+        "id": 8,
+        "description": "We expected an integer on the LHS of operator {0} but got {1}.",
+        "C": "Expected integer on left hand side of '{0}' but found '{1}'."
+      },
+      {
+        "msg": "expected_number_rhs",
+        "id": 9,
+        "description": "We expected an integer on the RHS of operator {0} but got {1}.",
+        "C": "Expected integer on right hand side of '{0}' but found '{1}'."
+      },
+      {
+        "msg": "overflow",
+        "id": 10,
+        "description": "The operation {1} {0} {2} will overflow.",
+        "C": "Warning: overflow when calculating: {1} {0} {2}"
+      },
+      {
+        "msg": "match_too_long",
+        "id": 11,
+        "description": "The length of the result of {0} : {1} is too long to represent as an integer. {2} is length of result as int64.",
+        "C": "Warning: The result of '{0} : {1}' is too long to represent as a number ({2})."
+      }
+    ]
+  }
+]
