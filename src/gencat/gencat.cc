@@ -451,40 +451,44 @@ private:
     enum class State { normal, backslash, octal1, octal2 };
     std::string result;
     State state = State::normal;
-    char o = 0;
-    for (auto c : s) {
+    unsigned int o = 0;
+    for (auto c = s.begin(); c != s.end(); ++c) {
       if (state == State::normal) {
-        if (c == '\\') {
+        if (*c == '\\') {
           state = State::backslash;
         }
         else {
-          result += c;
+          result += *c;
         }
       }
       else if (state == State::octal1) {
-        if (c >= '0' && c <= '7') {
-          o = (o << 3) + (c - '0');
+        if (*c >= '0' && *c <= '7') {
+          o = (o << 3) + (*c - '0');
           state = State::octal2;
         }
         else {
-          result += o;
-          result += c;
+          result += (char)o;
           state = State::normal;
+          /* Need to rescan C.  */
+          --c;
         }
       }
       else if (state == State::octal2) {
-        if (c >= '0' && c <= '7') {
-          o = (o << 3) + (c - '0');
-          result += o;
+        if (*c >= '0' && *c <= '7') {
+          o = (o << 3) + (*c - '0');
+          if (o < 256) {
+            result += (char)o;
+          }
         }
         else {
-          result += o;
-          result += c;
+          result += (char)o;
+          --c;
         }
         state = State::normal;
       }
       else if (state == State::backslash) {
-        switch (c) {
+        state = State::normal;
+        switch (*c) {
         case '0':
         case '1':
         case '2':
@@ -493,45 +497,51 @@ private:
         case '5':
         case '6':
         case '7':
-          o = c - '0';
+          o = *c - '0';
           state = State::octal1;
           break;
         case '\\':
           result += '\\';
-          state = State::normal;
           break;
         case 'n':
           result += '\n';
-          state = State::normal;
           break;
         case 't':
           result += '\t';
-          state = State::normal;
           break;
         case 'v':
           result += '\v';
-          state = State::normal;
           break;
         case 'b':
           result += '\b';
-          state = State::normal;
           break;
         case 'r':
           result += '\r';
-          state = State::normal;
           break;
         case 'f':
           result += '\f';
-          state = State::normal;
           break;
         default:
-          loc.error(Gencat::Msg::bad_escape_character, c);
+          loc.error(Gencat::Msg::bad_escape_character, *c);
           break;
         }
       }
       else {
         assert(false && "Unhandled escape state.");
       }
+    }
+
+    switch (state) {
+    case State::backslash:
+      loc.error(Gencat::Msg::unterminated_escape, s);
+      break;
+    case State::octal1:
+    case State::octal2:
+      result += (char)o;
+    case State::normal:
+      break;
+    default:
+      assert(false && "Unhandled switch case.");
     }
 
     return result;

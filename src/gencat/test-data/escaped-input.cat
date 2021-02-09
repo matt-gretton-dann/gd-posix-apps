@@ -7,3 +7,5 @@ $set 1
 5 Message with \b
 6 Message with \v
 7 Message with \\.
+8 Message with \40.
+9 Message with \41\56

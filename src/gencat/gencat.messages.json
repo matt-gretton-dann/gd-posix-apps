@@ -218,6 +218,12 @@
         "id": 31,
         "description": "The character {0} is not valid following a \\ in an escaped string.",
         "C": "Illegal string escape.  The sequence \\{0} is not valid."
+      },
+      {
+        "msg": "unterminated_escape",
+        "id": 32,
+        "description": "The string {0} ends in an unterminated escape sequence.",
+        "C": "Unterminated escape sequence at the end of string: {0}."
       }
     ]
   }
