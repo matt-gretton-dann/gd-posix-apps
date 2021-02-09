@@ -1,0 +1,26 @@
+[
+  {
+    "set": "echo",
+    "id": 1,
+    "messages": [
+      {
+        "msg": "unrecognised_escape_sequence",
+        "id": 1,
+        "description": "The escape sequence \\{0} is unrecognised.",
+        "C": "Unrecognised escape sequence '\\{0}'.  Treating as normal text."
+      },
+      {
+        "msg": "octal_number_out_of_range",
+        "id": 2,
+        "description": "The octal value specified as \\0nnn is larger than 255. {0} is value.",
+        "C": "Escape sequence \\0{0:o} is greater than 255.  Ignoring it."
+      },
+      {
+        "msg": "missing_escape_sequence",
+        "id": 3,
+        "description": "The argument {0} ends with an unterminated escape sequence.",
+        "C": "Escape sequence is not finished at end of argument '{0}'."
+      }
+    ]
+  }
+]
