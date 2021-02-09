@@ -1,4 +1,8 @@
-
+/** \file   src/echo/echo.cc
+ *  \brief  Implement `echo` utility
+ *  \author Copyright 2021, Matthew Gretton-Dann
+ *          SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "gd/stdlib.h"
 
