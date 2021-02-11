@@ -422,7 +422,7 @@ int32_t parse_int(char const* arg)
  * print_string for alignment and width.
  */
 void print_number(FormatState const& format_state, std::string&& v, const char* prefix,
-                  unsigned leading_zero_precision)
+                  std::string::size_type leading_zero_precision)
 {
   assert(prefix != nullptr);
 
@@ -463,7 +463,7 @@ void process_decimal(FormatState const& format_state, char const* arg)
     sv = -sv;
   }
 
-  unsigned leading_zero_precision =
+  std::string::size_type leading_zero_precision =
     *sign == '\0' ? format_state.min_width_
                   : (format_state.min_width_ > 1 ? format_state.min_width_ - 1 : 1);
   print_number(format_state, std::to_string(sv), sign, leading_zero_precision);
@@ -499,7 +499,12 @@ void process_octal(FormatState& format_state, char const* arg)
   if ((format_state.precision_ == -1 ||
        static_cast<std::string::size_type>(format_state.precision_) <= s.length()) &&
       format_state.alternative_form_) {
-    format_state.precision_ = s.length() + 1;
+    if (s.length() >= INT32_MAX) {
+      format_state.precision_ = INT32_MAX;
+    }
+    else {
+      format_state.precision_ = static_cast<uint32_t>(s.length()) + 1;
+    }
   }
   print_number(format_state, std::move(s), "", format_state.min_width_);
 }
