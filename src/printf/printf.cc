@@ -372,10 +372,12 @@ int32_t parse_int(char const* arg)
     }
   }
 
-  auto p = strchr(digits, *c);
-  if (p == nullptr || ((p - digits) & 0xf) >= base) {
-    warn(Msg::expected_decimal_argument, arg);
-    return 0;
+  {
+    auto p = strchr(digits, *c);
+    if (p == nullptr || ((p - digits) & 0xf) >= base) {
+      warn(Msg::expected_decimal_argument, arg);
+      return 0;
+    }
   }
 
   for (; *c != '\0'; ++c) {
@@ -392,8 +394,8 @@ int32_t parse_int(char const* arg)
       v = INT32_MAX;
       /* Skip any remaining digits.  */
       for (++c; *c != '\0'; ++c) {
-        auto p = strchr(digits, *c);
-        if (p == nullptr || ((p - digits) & 0xf) >= base) {
+        auto p2 = strchr(digits, *c);
+        if (p2 == nullptr || ((p2 - digits) & 0xf) >= base) {
           break;
         }
       }
