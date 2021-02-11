@@ -1,0 +1,110 @@
+[
+  {
+    "set": "printf",
+    "id": 1,
+    "messages": [
+      {
+        "msg": "usage",
+        "id": 1,
+        "description": "Usage message, {0} is the executable name.",
+        "C": "Usage: {0} format [argument...]"
+      },
+      {
+        "msg": "unexpected_argument",
+        "id": 2,
+        "description": "Argument {0}, was not expected.  printf takes no arguments.",
+        "C": "Operand '{0}' was treated as an argument as it starts with a '-'.  Use '--' to indicate this is an argument."
+      },
+      {
+        "msg": "missing_format",
+        "id": 3,
+        "description": "Missing the format argument.",
+        "C": "Missing format argument."
+      },
+      {
+        "msg": "no_format_characters",
+        "id": 4,
+        "description": "Format string contained no % specifiers, and arguments were specified.",
+        "C": "Format string contains no % format specifiers, but arguments specified."
+      },
+      {
+        "msg": "unterminated_escape",
+        "id": 5,
+        "description": "Format string ends in an unterminated escape sequence.  Format in {0}.",
+        "C": "Format string ends with an unterminated escape sequence: {0}"
+      },
+      {
+        "msg": "unterminated_format_specifier",
+        "id": 6,
+        "description": "Format string ends in an unterminated format specifier.  Format in {0}.",
+        "C": "Format string ends with an unterminated format specifier: {0}"
+      },
+      {
+        "msg": "bad_format_specifier",
+        "id": 7,
+        "description": "The character {0} is not a valid format specifier.",
+        "C": "Bad format specifier '{0}'."
+      },
+      {
+        "msg": "width_overflow",
+        "id": 8,
+        "description": "Format string contains a width that overflows INT32_MAX.",
+        "C": "Format specifier width overflows maximum."
+      },
+      {
+        "msg": "precision_overflow",
+        "id": 9,
+        "description": "Format string contains a precision that overflows INT32_MAX.",
+        "C": "Format specifier precision overflows maximum."
+      },
+      {
+        "msg": "bad_escape_character",
+        "id": 10,
+        "description": "The character {0} is not a valid escape character.",
+        "C": "Escape sequence '\\{0}' is not valid."
+      },
+      {
+        "msg": "octal_overflow",
+        "id": 11,
+        "description": "The octal escape {0} overflows a byte.",
+        "C": "The escape sequence \\{0:o} is larger than 255."
+      },
+      {
+        "msg": "expected_decimal_argument",
+        "id": 12,
+        "description": "We expected a decimal argument but got {0}.",
+        "C": "Expected decimal argument.  Got {0}."
+      },
+      {
+        "msg": "decimal_argument_overflow",
+        "id": 13,
+        "description": "Can't represent decimal argument without overflow. {0} is arg.",
+        "C": "Decimal argument magnitude too large: {0}."
+      },
+      {
+        "msg": "extra_characters_in_decimal_argument",
+        "id": 15,
+        "description": "Extra characters in the decimal argument: {0}.",
+        "C": "Unexpected characters in decimal argument: {0}."
+      },
+      {
+        "msg": "negative_decimal_to_unsigned",
+        "id": 16,
+        "description": "Passed a negative integer ({0}) to %u format specifier.",
+        "C": "Negative decimal argument passed to %u format specifier: {0}."
+      },
+      {
+        "msg": "decimal_argument_underflow",
+        "id": 17,
+        "description": "Can't represent decimal argument without underflow. {0} is arg.",
+        "C": "Decimal argument magnitude too large: {0}."
+      },
+      {
+        "msg": "missing_character_after_quote",
+        "id": 18,
+        "description": "We are interpreting a decimal character value but don't have one after the quote {0}.",
+        "C": "Quote character '{0}' should be followed by at least one more character."
+      }
+    ]
+  }
+]

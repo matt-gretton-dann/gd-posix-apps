@@ -6,6 +6,10 @@
  * [Copyright and Licensing](./copyright-and-licensing.md)
  * [Internationalization](./i18n.md)
 
+## Utility Documentation
+
+ * [Undefined and Unspecified behaviour](./utilities/imp-def-behaviour.md)
+
 ## Standard Supplement Library (libgdsup)
 
  * [Overview of libgdsup](./libgdsup/index.md)
