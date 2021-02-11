@@ -9,8 +9,6 @@
 
 #include "gd/bits/defines.h"
 
-#if defined(_WIN32) || defined(FORCE_SUPPLEMENTAL_LIBRARY)
-
 /** \brief Pointer to argument - used by \fn getopt.  */
 __EXTERN_C char* optarg;
 
@@ -30,7 +28,6 @@ __EXTERN_C int optopt;
  *  \return          Matched option, or -1 for complete.
  */
 __EXTERN_C int getopt(int argc, char* const argv[], const char* optstring) __NOEXCEPT;
-#endif
 
 /** \brief Reset the getopt state to enable multiple passes of getopt.
  *

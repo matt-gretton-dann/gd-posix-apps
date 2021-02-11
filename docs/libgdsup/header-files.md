@@ -57,3 +57,6 @@ Currently exposes Windows wrappers around `close()`, `read()`, `unlink()`, and `
 `read()` and `write()` we ensure that we don't pass the underlying Win32 API functions more data
 than they can handle.  We should consider doing the same on other platforms (see
 [#159](https://github.com/matt-gretton-dann/gd-posix-apps/issues/159)).
+
+We also supply a mandatory implementation of `getopt()`.  We can't use the platform ones as those
+will rearrange arguments in some cases.
