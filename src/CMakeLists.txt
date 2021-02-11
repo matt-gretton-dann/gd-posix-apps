@@ -126,6 +126,7 @@ add_subdirectory(cksum)
 add_subdirectory(dirname)
 add_subdirectory(echo)
 add_subdirectory(expr)
+add_subdirectory(printf)
 add_subdirectory(true-false)
 add_subdirectory(util)
 
