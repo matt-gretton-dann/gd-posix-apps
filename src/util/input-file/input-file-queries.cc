@@ -12,4 +12,6 @@
 bool GD::InputFile::error() const { return file_ == nullptr || ::ferror(file_); }
 bool GD::InputFile::eof() const { return file_ == nullptr || ::feof(file_); }
 
-std::string_view GD::InputFile::filename() const { return filename_; }
+std::string const& GD::InputFile::filename() const { return filename_; }
+
+bool GD::InputFile::is_stdin() const noexcept { return is_stdin_; }

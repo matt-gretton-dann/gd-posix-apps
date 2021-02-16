@@ -57,7 +57,7 @@ public:
    *
    * Reports an error if we can't read from the file.
    *
-   * Returnns EOF on error or end-of-file.
+   * Returns EOF on error or end-of-file.
    */
   int getc();
 
@@ -79,7 +79,10 @@ public:
   bool eof() const;
 
   /** \brief  Get the printable name of the file.  */
-  std::string_view filename() const;
+  std::string const& filename() const;
+
+  /** \brief  Are we standard input?  */
+  bool is_stdin() const noexcept;
 
   enum class Buffering { none = _IONBF, line = _IOLBF, full = _IOFBF };
   /** \brief  Set the buffering type to no buffering.  */
