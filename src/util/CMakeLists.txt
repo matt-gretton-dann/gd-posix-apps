@@ -7,7 +7,10 @@ target_sources(util PRIVATE
   input-file/input-file-setbuf.cc
   make-stdin-binary.cc
   make-stdout-binary.cc
+  mkstemp.cc
   program-name.cc
+  rename.cc
+  unlink.cc
 )
 
 add_custom_command(

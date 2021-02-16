@@ -12,7 +12,7 @@
       {
         "msg": "file_open_error",
         "id": 2,
-        "description": "We were unable to open the file called {0}.  Errno is {0}, and the string message related to it is {1}.",
+        "description": "We were unable to open the file called {0}.  Errno is {1}, and the string message related to it is {2}.",
         "C": "Unable to open the file '{0}'.  Error code {1}: {2}"
       },
       {
@@ -20,6 +20,18 @@
         "id": 3,
         "description": "The display name for standard input",
         "C": "(standard input)"
+      },
+      {
+        "msg": "file_unlink_error",
+        "id": 4,
+        "description": "We were unable to unlink the file called {0}.  Errno is {1}, and the string message related to it is {2}.",
+        "C": "Unable to remove the file '{0}'.  Error code {1}: {2}"
+      },
+      {
+        "msg": "file_rename_error",
+        "id": 5,
+        "description": "We were unable to rename the file called {0} to {1}.  Errno is {2}, and the string message related to it is {3}.",
+        "C": "Unable to rename the file '{0}' to '{1}'.  Error code {2}: {3}"
       }
     ]
   }

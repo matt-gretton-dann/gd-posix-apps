@@ -112,6 +112,26 @@ private:
   std::unique_ptr<std::vector<char>> buffer_; /**< Buffer of data we use.  */
 };
 
+/** \brief                Unlink a file
+ *  \param  filename      File to unlink.
+ *  \param  report_errors Report any errors.
+ *  \return               True if successful.
+ */
+bool unlink(std::string const& filename, bool report_errors = true);
+
+/** \brief       Rename a file
+ *  \param  from Name of file to reanme
+ *  \param  to   New filename
+ *  \return      True if successful.  Will report errors.
+ */
+bool rename(std::string const& from, std::string const& to);
+
+/** \brief       Open a unique temporary file
+ *  \param  base Base of name (no need for XXXXXX extensions).
+ *  \return      Pair, first is file descriptor or -1 on error, second is file name.
+ */
+std::pair<int, std::string> mkstemp(std::string_view base);
+
 /** \brief           Call a function for all files named on the command-line, handling '-' as stdin.
  *  \tparam Fn       Type of \a apply_fn.
  *  \param  argc     Argument count (>= 0).
