@@ -20,5 +20,11 @@ void program_name(std::string_view argv0);
  */
 std::string_view program_name();
 
+/** \brief      Confirm an action.
+ *  \param  msg Message to display
+ *  \return     True if answer is confirmatory (matches YESEXPR regular expression).
+ */
+bool confirm_action(std::string_view msg);
+
 }  // namespace GD
 #endif  // _SRC_INCLUDE_UTIL_UTILS_HH_INCLUDED
