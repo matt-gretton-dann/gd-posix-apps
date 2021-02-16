@@ -4,6 +4,7 @@
 
 add_library(util)
 target_include_directories(util PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_include_directories(util PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/util")
 set_property(TARGET util PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
 set_property(TARGET util PROPERTY CXX_STANDARD_REQUIRED ON)
 target_link_libraries(util PUBLIC gdsup)

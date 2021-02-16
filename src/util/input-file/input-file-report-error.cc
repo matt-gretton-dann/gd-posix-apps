@@ -9,15 +9,12 @@
 #include "util/file.hh"
 #include "util/utils.hh"
 
-#include "util-messages.hh"
-
 #include <errno.h>
 #include <iostream>
 
+#include "util-internals.hh"
+
 void GD::InputFile::report_error(GD::Util::Msg msg)
 {
-  std::cerr << GD::program_name() << ": "
-            << GD::Util::Messages::get().format(GD::Util::Set::util, msg, filename_, errno,
-                                                ::strerror(errno))
-            << '\n';
+  GD::Util::message(msg, filename_, errno, ::strerror(errno));
 }
