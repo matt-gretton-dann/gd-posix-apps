@@ -1,0 +1,80 @@
+[
+  {
+    "set": "compress",
+    "id": 1,
+    "messages": [
+      {
+        "id": 1,
+        "msg": "usage",
+        "description": "Usage string",
+        "C": "compress [-fv]  [-b bits] [file...]\ncompress [-cfv] [-b bits] [file]\n"
+      },
+      {
+        "id": 2,
+        "msg": "missing_argument",
+        "description": "Error message when command line option -{0:c} was not given an argument.",
+        "C": "-{0:c} expects an argument."
+      },
+      {
+        "id": 3,
+        "msg": "invalid_option",
+        "description": "Error message when command line option -{0:c} is invalid.",
+        "C": "-{0:c} is not a valid command-line option."
+      },
+      {
+        "id": 4,
+        "msg": "argument_out_of_range",
+        "description": "Error message when command line option -{0:c}'s argument ({1}) is out of range for an integer.",
+        "C": "Argument passed to -{0:c} overflows range of integer: {1}"
+      },
+      {
+        "id": 5,
+        "msg": "argument_not_integer",
+        "description": "Error message when command line option -{0:c}'s argument ({1}) is not an integer.",
+        "C": "Argument passed to -{0:c} is not an integer: {1}"
+      },
+      {
+        "id": 6,
+        "msg": "bits_out_of_range",
+        "description": "Expect the value passed to -b to be in range [9, 16].",
+        "C": "Number of bits specified to -b is out of range.  Expect [9, 16], got {0}."
+      },
+      {
+        "id": 7,
+        "msg": "warn_bits_not_portable",
+        "description": "The value passed to bits may not be portable.",
+        "C": "Number of bits specified to -b may not be portable. Portable options [9, 14], got {0}."
+      },
+      {
+        "id": 8,
+        "msg": "one_file_with_c_option",
+        "description": "At most we can specify one file argument with the -c option.",
+        "C": "Can specify at most one file to compress with -c on the command line."
+      },
+      {
+        "id": 9,
+        "msg": "compression_ratio",
+        "description": "Message to output for -v, {0} is filename, {1} decompressed size, {2} compressed size, {3} %age as a ",
+        "C": "Original:{1:10d} Compressed:{2:10d} Ratio:{3:7.2f}%\t{0}\n"
+      },
+      {
+        "id": 10,
+        "msg": "confirm_replace",
+        "description": "Confirm that we want to replace file {0}.",
+        "C": "Replace file {0}?"
+      },
+      {
+        "id": 11,
+        "msg": "file_write_error",
+        "description": "Unable to write to file.",
+        "C": "Error writing to file."
+      },
+      {
+        "id": 12,
+        "msg": "file_already_exists",
+        "description": "File with name {0} already exists.",
+        "C": "File already exists: {0}.  Use '-f' to force overwriting."
+      }
+    ]
+  }
+]
