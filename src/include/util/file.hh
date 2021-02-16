@@ -148,6 +148,18 @@ bool for_each_file(int argc, char** argv, Fn apply_fn)
   return success;
 }
 
+/** \brief  Make the standard output file into binary mode.
+ *
+ * This is really a Windows only thing...
+ */
+void make_stdout_binary(void);
+
+/** \brief  Make the standard input file into binary mode.
+ *
+ * This is really a Windows only thing...
+ */
+void make_stdin_binary(void);
+
 }  // namespace GD
 
 #endif  // _SRC_INCLUDE_UTIL_FILE_HH_INCLUDED
