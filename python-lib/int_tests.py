@@ -138,7 +138,7 @@ class TestRunner:
         Returns True if dependent tests should be skipped or False if not.
         """
         capture_output = expected_stdout is not None or expected_stderr is not None
-        capture_output = subprocess.PIPE if capture_output else None
+        capture_output = subprocess.PIPE if capture_output else subprocess.DEVNULL
         text = _use_text(expected_stdout, expected_stderr, stdin)
 
         if test_name is None:
