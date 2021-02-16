@@ -10,11 +10,11 @@
 #include <assert.h>
 #include <functional>
 #include <iostream>
-#include <map>
 #include <string>
 #include <variant>
 
 #include <string_view>
+#include <unordered_map>
 
 using Msg = GD::Compress::Msg;
 
@@ -166,7 +166,7 @@ private:
   /** \brief  Variant of all supported function types.  */
   using AllFns = std::variant<OptFn, ArgFn>;
   /** \brief  Map type from character to function to call.  */
-  using OptMap = std::map<int, AllFns>;
+  using OptMap = std::unordered_map<int, AllFns>;
 
   /** \brief    Handle a missing argument.
    *  \param  c Option with the missing argument.
