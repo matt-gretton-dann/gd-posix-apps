@@ -4,7 +4,6 @@
 #include <langinfo.h>
 #include <regex>
 #include <string>
-
 #include <string_view>
 
 bool GD::confirm_action(std::string_view msg)

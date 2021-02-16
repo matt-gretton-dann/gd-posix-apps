@@ -5,8 +5,8 @@
  */
 
 #include <stdio.h>
-
 #include <string_view>
+
 #include <util/file.hh>
 
 bool GD::InputFile::error() const { return file_ == nullptr || ::ferror(file_); }

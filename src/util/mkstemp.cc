@@ -4,10 +4,10 @@
 
 #include <errno.h>
 #include <string>
+#include <string_view>
 #include <utility>
 
 #include "util-internals.hh"
-#include <string_view>
 
 std::pair<int, std::string> GD::mkstemp(std::string_view base)
 {

@@ -14,9 +14,8 @@
 #include <memory>
 #include <stdio.h>
 #include <string>
-#include <vector>
-
 #include <string_view>
+#include <vector>
 
 namespace GD::Util {
 enum class Msg;

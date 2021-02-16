@@ -10,9 +10,8 @@
 #include <regex>
 #include <stdint.h>
 #include <string>
-#include <vector>
-
 #include <string_view>
+#include <vector>
 
 using Msg = GD::Expr::Msg;
 

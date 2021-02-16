@@ -11,10 +11,9 @@
 #include <functional>
 #include <iostream>
 #include <string>
-#include <variant>
-
 #include <string_view>
 #include <unordered_map>
+#include <variant>
 
 using Msg = GD::Compress::Msg;
 
