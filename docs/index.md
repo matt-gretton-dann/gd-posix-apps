@@ -19,5 +19,6 @@
 
 ## File Formats
 
+ * [Compress .Z LZW](./file-formats/compress.md)
  * [Message Catalogues](./file-formats/message-catalogues.md)
  * [Messages JSON](./file-formats/messages-json.md)
