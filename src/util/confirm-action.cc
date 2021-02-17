@@ -1,3 +1,10 @@
+/**
+ * \file      src/util/confirm-action.cc
+ * \brief     Print a message and read a yes/no answer
+ * \author    Matthew Gretton-Dann (matt@gretton-dann.org.uk)
+ * \copyright 2021 Matthew Gretton-Dann
+ *            SPDX-License-Identifier: Apache-2.0
+ */
 #include "util/utils.hh"
 
 #include <iostream>

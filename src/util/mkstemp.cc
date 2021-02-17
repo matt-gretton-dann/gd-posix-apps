@@ -1,7 +1,7 @@
 /**
  * \file      mkstemp.cc
  * \brief     Wrapper around ::mkstemp()
- * \author    Matthew Gretton-Dann (matt@gretton-dann.org.uk)
+ * \author    Matthew Gretton-Dann
  * \copyright 2021 Matthew Gretton-Dann
  *            SPDX-License-Identifier: Apache-2.0
  */

@@ -6,11 +6,12 @@
 
 #include "gd/bits/defines.h"
 #include "gd/stdlib.h"
-#include "support/support.h"
 
 #include <errno.h>
 #include <stddef.h>
 #include <string.h>
+
+#include "support/support.h"
 
 int setenv(char const* envname, char const* envval, int overwrite)
 {

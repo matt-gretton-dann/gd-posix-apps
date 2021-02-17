@@ -1,3 +1,10 @@
+/**
+ * \file      src/util/make-stdout-binary.cc
+ * \brief     Make standard output a binary file.
+ * \author    Matthew Gretton-Dann
+ * \copyright 2021 Matthew Gretton-Dann
+ *            SPDX-License-Identifier: Apache-2.0
+ */
 #include "util/file.hh"
 
 #ifdef _WIN32

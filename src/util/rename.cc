@@ -1,7 +1,9 @@
-/** \file   src/util/unlink.cc
- *  \brief  Unlink a file.
- *  \author Copyright 2021, Matthew Grett-Dann
- *          SPDX-License-Identifier: Apache-2.0
+/**
+ * \file      src/util/rename.cc
+ * \brief     Wrapper around rename()
+ * \author    Matthew Gretton-Dann
+ * \copyright 2021, Matthew Gretton-Dann
+ *            SPDX-License-Identifier: Apache-2.0
  */
 #include "gd/unistd.h"
 

@@ -1,3 +1,10 @@
+/**
+ * \file      compress-uncompress-zcat/compress.cc
+ * \brief     Implement `compress` utility
+ * \author    Matthew Gretton-Dann
+ * \copyright 2021 Matthew Gretton-Dann
+ *            SPDX-License-Identifier: Apache-2.0
+ */
 #include "gd/fcntl.h"
 #include "gd/stdlib.h"
 #include "gd/unistd.h"
