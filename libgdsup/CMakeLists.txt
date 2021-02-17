@@ -238,6 +238,7 @@ target_sources(gdsup PRIVATE
                include/gd/fcntl.h
                include/gd/filesystem.hh
                include/gd/format.hh
+               include/gd/langinfo.h
                include/gd/libgen.h
                include/gd/limits.h
                include/gd/nl_types.h
@@ -256,6 +257,7 @@ if(CXX_STD_FORMAT_LIB)
 endif()
 
 add_subdirectory(fcntl)
+add_subdirectory(langinfo)
 add_subdirectory(libgen)
 add_subdirectory(nl_types)
 add_subdirectory(stdlib)

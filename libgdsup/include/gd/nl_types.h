@@ -30,6 +30,9 @@
 
 #include <stdint.h>
 
+/** \brief  Type for a NL_item. */
+typedef int nl_item;
+
 /** \brief Opaque type representing a Catalogue ID.  */
 typedef intptr_t nl_catd;
 
