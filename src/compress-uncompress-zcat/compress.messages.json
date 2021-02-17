@@ -6,20 +6,8 @@
       {
         "id": 1,
         "msg": "usage",
-        "description": "Usage string",
-        "C": "compress [-fv]  [-b bits] [file...]\ncompress [-cfv] [-b bits] [file]\n"
-      },
-      {
-        "id": 2,
-        "msg": "missing_argument",
-        "description": "Error message when command line option -{0:c} was not given an argument.",
-        "C": "-{0:c} expects an argument."
-      },
-      {
-        "id": 3,
-        "msg": "invalid_option",
-        "description": "Error message when command line option -{0:c} is invalid.",
-        "C": "-{0:c} is not a valid command-line option."
+        "description": "Usage string, {0} is program name.",
+        "C": "Usage: {0} [-fv]  [-b bits] [file...]\n       {0} [-cfv] [-b bits] [file]\n"
       },
       {
         "id": 4,

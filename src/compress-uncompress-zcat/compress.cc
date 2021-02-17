@@ -10,6 +10,7 @@
 #include "gd/sys/stat.h"
 #include "gd/unistd.h"
 
+#include "util/cmdline.hh"
 #include "util/file.hh"
 #include "util/utils.hh"
 
@@ -36,168 +37,6 @@ void error(Msg msg, Ts... args)
             << GD::Compress::Messages::get().format(GD::Compress::Set::compress, msg, args...)
             << '\n';
 }
-
-/** \brief  Helper for std::visit */
-template<class... Ts>
-struct overloaded : Ts...
-{
-  using Ts::operator()...;
-};
-template<class... Ts>
-overloaded(Ts...) -> overloaded<Ts...>;
-
-/** \brief  Command line parser
- *
- * \subsection Usage
- *
- * There are two stages to usage.  Firstly building the option list.  Secondly parsing.
- *
- * Building the option list is done by calling the various `add_option()` overloads, which add
- * support for flag and argument options.
- *
- * Parsing is done by calling `parse_args()` and giving `argc` and `argv` as passed into `main()`.
- * This returns either:
- *  * the index in the `argv` vector of the first operand to be processed,
- *  * `argc` if there are no operands to process.
- *  * a value greater than `argc` if there was an error.
- *
- * Errors during parsing are reported and a usage message is displayed.
- */
-class CmdlineParser
-{
-public:
-  /** \brief  Function type that parses a flag option.
-   *
-   * Types of OptFn must be able to be called with a `char` parameter indicating the option letter
-   * given on the command line, and return a success flag.
-   */
-  using OptFn = std::function<bool(char)>;
-
-  /** \brief  Function type that parses an argument option.
-   *
-   * Types of OptFn must be able to be called with a `char` parameter indicating the option letter
-   * given on the command line, and a `char const*` parameter giving the argument.  They return a
-   * success flag.
-   */
-  using ArgFn =
-    std::function<bool(char, char const*)>; /* Function that process option with argument.  */
-
-  /** \brief  Default constructor. */
-  CmdlineParser() : args_(":")
-  {
-    /* We cheat and handle the 'error' characters ':' and '?' as normal options, except they don't
-     * appear in the \c args_ list.
-     */
-    opts_.insert({':', [&](char) { return missing_argument(static_cast<char>(optopt)); }});
-    opts_.insert({'?', [&](char) { return invalid_option(static_cast<char>(optopt)); }});
-  }
-
-  /** \brief    Add support for a flag option.
-   *  \param c  Option character
-   *  \param fn Function which handles processing option.
-   *
-   * `fn` should be able to be called as `bool fn(char c)` where the parameter is the character of
-   * the flag.  The return value should be `true` for success and `false` otherwise.  If the parsing
-   * fails `fn` should report any errors, but not the usage message.
-   */
-  void add_option(char c, OptFn fn)
-  {
-    auto [it, success] = opts_.insert({c, fn});
-    assert(success);
-    args_.push_back(c);
-  }
-
-  /** \brief    Add support for an argument option.
-   *  \param c  Option character
-   *  \param fn Function which handles processing option.
-   *
-   * `fn` should be able to be called as `bool fn(char c, char const* a)` where the first parameter
-   * is the character of the flag, and the second argument is the argument for the option.  The
-   * return value should be `true` for success and `false` otherwise.  If the parsing fails `fn`
-   * should report any errors, but not the usage message.
-   */
-  void add_option(char c, ArgFn fn)
-  {
-    auto [it, success] = opts_.insert({c, fn});
-    assert(success);
-    args_.push_back(c);
-    args_.push_back(':');
-  }
-
-  /** \brief      Add support for a flag option (helper - just set the flag).
-   *  \param c    Option character
-   *  \param flag Variable to set (by non-const reference)
-   *
-   * Will set \a flag to \c true whenever \a c is passed as an option on the command line.
-   */
-  void add_option(char c, bool& flag)
-  {
-    auto fn = [&flag](char) {
-      flag = true;
-      return true;
-    };
-    add_option(c, fn);
-  }
-
-  /** \brief       Parse the command line
-   *  \param  argc Argument count
-   *  \param  argv Argument vector
-   *  \return      See below.
-   *
-   * The return value is one of three values:
-   *
-   *  * < \a argc Index of first operand after all arguments have been processed.
-   *  * == \a argc No operands to process.
-   *  * > \a argc An error occured.
-   */
-  int parse_args(int argc, char** argv) const
-  {
-    int c;
-    bool success = true;
-    while ((c = ::getopt(argc, argv, args_.data())) != -1) {
-      auto it = opts_.find(c);
-      assert(it != opts_.end());
-      success &= std::visit(overloaded{[c](OptFn fn) { return fn(static_cast<char>(c)); },
-                                       [c](ArgFn fn) { return fn(static_cast<char>(c), optarg); }},
-                            it->second);
-    }
-
-    if (!success) {
-      std::cerr << GD::Compress::Messages::get().format(Msg::usage, GD::program_name()) << '\n';
-    }
-
-    return success ? optind : argc + 1;
-  }
-
-private:
-  /** \brief  Variant of all supported function types.  */
-  using AllFns = std::variant<OptFn, ArgFn>;
-  /** \brief  Map type from character to function to call.  */
-  using OptMap = std::unordered_map<int, AllFns>;
-
-  /** \brief    Handle a missing argument.
-   *  \param  c Option with the missing argument.
-   *  \return   \c false
-   */
-  bool missing_argument(char c) const
-  {
-    error(Msg::missing_argument, c);
-    return false;
-  }
-
-  /** \brief    Handle an invalid option
-   *  \param  c Invalid option.
-   *  \return   \c false
-   */
-  bool invalid_option(char c) const
-  {
-    error(Msg::invalid_option, c);
-    return false;
-  }
-
-  std::string args_; /**< Argument string.  */
-  OptMap opts_;      /**< Option map.  */
-};
 
 /** \brief  Basic options structure. */
 struct Options
@@ -248,8 +87,9 @@ class Writer
 public:
   /** \brief  Construct a writer that will output to standard output.  */
   explicit Writer()
-      : tmp_fname_(), dest_fname_(), bytes_output_(0), file_(STDOUT_FILENO), three_bytes_(0),
-        bit_offset_(0), need_confirmation_(false)
+      : tmp_fname_(), dest_fname_(), bytes_output_(0), file_(STDOUT_FILENO), uid_(-1), gid_(-1),
+        atime_({0, 0}), mtime_({0, 0}), mode_(0), three_bytes_(0), bit_offset_(0),
+        need_confirmation_(false)
   {
     GD::make_stdout_binary();
   }
@@ -258,9 +98,10 @@ public:
    *  \param fname File name to output to
    *  \param force Set to true to force output to the file even if it already exists.
    */
-  Writer(std::string_view fname, bool force)
-      : tmp_fname_(), dest_fname_(fname), bytes_output_(0), file_(-1), three_bytes_(0),
-        bit_offset_(0), need_confirmation_(!force)
+  Writer(std::string_view fname, GD::InputFile const& in, bool force)
+      : tmp_fname_(), dest_fname_(fname), bytes_output_(0), file_(-1), uid_(in.owner()),
+        gid_(in.group()), atime_(in.access_time()), mtime_(in.modification_time()),
+        mode_(in.mode()), three_bytes_(0), bit_offset_(0), need_confirmation_(!force)
   {
     assert(!fname.empty());
 
@@ -293,7 +134,8 @@ public:
   /** \brief  Move constructor.   */
   Writer(Writer&& rhs)
       : tmp_fname_(std::move(rhs.tmp_fname_)), dest_fname_(std::move(rhs.dest_fname_)),
-        bytes_output_(rhs.bytes_output_), file_(rhs.file_), three_bytes_(rhs.three_bytes_),
+        bytes_output_(rhs.bytes_output_), file_(rhs.file_), uid_(rhs.uid_), gid_(rhs.gid_),
+        atime_(rhs.atime_), mtime_(rhs.mtime_), mode_(rhs.mode_), three_bytes_(rhs.three_bytes_),
         bit_offset_(rhs.bit_offset_), need_confirmation_(rhs.need_confirmation_)
   {
     rhs.file_ = -1;
@@ -311,6 +153,11 @@ public:
       dest_fname_ = std::move(rhs.dest_fname_);
       bytes_output_ = rhs.bytes_output_;
       file_ = rhs.file_;
+      uid_ = rhs.uid_;
+      gid_ = rhs.gid_;
+      atime_ = rhs.atime_;
+      mtime_ = rhs.mtime_;
+      mode_ = rhs.mode_;
       three_bytes_ = rhs.three_bytes_;
       bit_offset_ = rhs.bit_offset_;
       need_confirmation_ = rhs.need_confirmation_;
@@ -392,6 +239,7 @@ public:
       if (!rename()) {
         return false;
       }
+      set_dest_perms();
     }
     file_ = -1;
 
@@ -441,17 +289,48 @@ private:
         if (!GD::confirm_action(GD::Compress::Messages::get().format(
               GD::Compress::Set::compress, Msg::confirm_replace, dest_fname_))) {
           GD::unlink(tmp_fname_.data());
+          tmp_fname_.clear();
           return false;
         }
       }
 
       if (!GD::rename(tmp_fname_.data(), dest_fname_.data())) {
         GD::unlink(tmp_fname_.data());
+        tmp_fname_.clear();
         return false;
       }
     }
 
     return true;
+  }
+
+  /**
+   * \brief Set destination permissions
+   *
+   * Does not report errors as this is a best effort affair.
+   */
+  void set_dest_perms()
+  {
+    if (dest_fname_.empty()) {
+      return;
+    }
+    bool success = true;
+
+    struct timespec times[2] = {atime_, mtime_};
+    int r = utimensat(AT_FDCWD, dest_fname_.data(), times, 0);
+    success &= (r != -1);
+
+    r = chmod(dest_fname_.data(), mode_ & 0666);
+    success &= (r != -1);
+
+#if !defined(_WIN32)
+    r = chown(dest_fname_.data(), uid_, gid_);
+    success &= (r != -1);
+#endif
+
+    if (!success) {
+      error(Msg::unable_to_change_perms, dest_fname_);
+    }
   }
 
   /** \brief       Write a byte
@@ -483,6 +362,11 @@ private:
   std::string dest_fname_;   /**< Destination file name, if empty using standard output. */
   std::size_t bytes_output_; /**< Number of bytes output.   */
   int file_;                 /**< Output file descriptor. */
+  uid_t uid_;                /**< User ID to set us to.  */
+  gid_t gid_;                /**< Group ID to set to.  */
+  struct timespec atime_;    /**< Access time to set.  */
+  struct timespec mtime_;    /**< Modification time to set.  */
+  mode_t mode_;              /**< Access permissions.  */
   uint32_t three_bytes_;     /**< Current Pending three bytes of output. */
   unsigned bit_offset_;      /**< Bit offset within three_bytes_ for insertion of next code.  */
   bool need_confirmation_;   /**< Do we need to get confirmation of rename?  */
@@ -498,7 +382,7 @@ bool do_compress(Options const& opts, std::string_view fname)
 
   GD::InputFile input(fname, "rb");
   Writer output =
-    opts.use_stdout_ ? Writer() : Writer(std::string(fname) + ".Z", opts.force_compression_);
+    opts.use_stdout_ ? Writer() : Writer(std::string(fname) + ".Z", input, opts.force_compression_);
 
   if (!output.good()) {
     return false;
@@ -602,7 +486,7 @@ int main(int argc, char** argv)
 
   Options opts;
 
-  CmdlineParser parser;
+  GD::CmdlineParser parser;
   parser.add_option('c', opts.use_stdout_);
   parser.add_option('f', opts.force_compression_);
   parser.add_option('v', opts.verbose_);
@@ -610,17 +494,20 @@ int main(int argc, char** argv)
 
   int ind = parser.parse_args(argc, argv);
 
+  if (opts.use_stdout_ && ind < argc - 1) {
+    error(Msg::one_file_with_c_option);
+    ind = argc + 1;
+  }
+
   if (ind > argc) {
+    std::cerr << GD::Compress::Messages::get().format(GD::Compress::Set::compress, Msg::usage,
+                                                      GD::program_name())
+              << '\n';
     return EXIT_FAILURE;
   }
 
   argc -= ind;
   argv += ind;
-
-  if (opts.use_stdout_ && argc > 1) {
-    error(Msg::one_file_with_c_option);
-    return EXIT_FAILURE;
-  }
 
   if (opts.use_stdout_) {
     GD::make_stdout_binary();
