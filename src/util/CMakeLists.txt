@@ -5,6 +5,7 @@ target_sources(util PRIVATE
   input-file/input-file-queries.cc
   input-file/input-file-report-error.cc
   input-file/input-file-setbuf.cc
+  cmdline.cc
   confirm-action.cc
   make-stdin-binary.cc
   make-stdout-binary.cc
