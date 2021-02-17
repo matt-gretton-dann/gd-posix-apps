@@ -7,6 +7,7 @@
  */
 #include "gd/fcntl.h"
 #include "gd/stdlib.h"
+#include "gd/sys/stat.h"
 #include "gd/unistd.h"
 
 #include "util/file.hh"
@@ -87,8 +88,8 @@ public:
     /* We cheat and handle the 'error' characters ':' and '?' as normal options, except they don't
      * appear in the \c args_ list.
      */
-    opts_.insert({':', [&](char) { return missing_argument(optopt); }});
-    opts_.insert({'?', [&](char) { return invalid_option(optopt); }});
+    opts_.insert({':', [&](char) { return missing_argument(static_cast<char>(optopt)); }});
+    opts_.insert({'?', [&](char) { return invalid_option(static_cast<char>(optopt)); }});
   }
 
   /** \brief    Add support for a flag option.
@@ -508,10 +509,10 @@ bool do_compress(Options const& opts, std::string_view fname)
   static constexpr bool do_reset = true; /* true as it will save space even if we never use it. */
 
   /* Header.  */
-  output.write_bits(magic, 16);     /* Magic idetifier. */
-  output.write_bits(opts.bits_, 5); /* Max number of bits. (who would use 31?)  */
-  output.write_bits(0, 2);          /* Two SBZ.  */
-  output.write_bits(do_reset, 1);   /* Do we have a reset symbol?  */
+  output.write_bits(magic, 16);                            /* Magic idetifier. */
+  output.write_bits(static_cast<uint16_t>(opts.bits_), 5); /* Max number of bits.  */
+  output.write_bits(0, 2);                                 /* Two SBZ.  */
+  output.write_bits(do_reset, 1);                          /* Do we have a reset symbol?  */
 
   int c = input.getc();
   if (c == EOF) {
@@ -562,7 +563,7 @@ bool do_compress(Options const& opts, std::string_view fname)
 
       /* Insert the string we have currently into the index.  */
       if (next_code <= max_code) {
-        index.insert({next_str, next_code++});
+        index.insert({next_str, static_cast<uint16_t>(next_code++)});
       }
 
       /* And reset the index to just the character ch. */

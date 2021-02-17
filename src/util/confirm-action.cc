@@ -5,10 +5,11 @@
  * \copyright 2021 Matthew Gretton-Dann
  *            SPDX-License-Identifier: Apache-2.0
  */
+#include "gd/langinfo.h"
+
 #include "util/utils.hh"
 
 #include <iostream>
-#include <langinfo.h>
 #include <regex>
 #include <string>
 #include <string_view>
