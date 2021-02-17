@@ -1,3 +1,12 @@
+/**
+ * \file      mkstemp.cc
+ * \brief     Wrapper around ::mkstemp()
+ * \author    Matthew Gretton-Dann (matt@gretton-dann.org.uk)
+ * \copyright 2021 Matthew Gretton-Dann
+ *            SPDX-License-Identifier: Apache-2.0
+ */
+#include "gd/stdlib.h"
+
 #include "util/file.hh"
 
 #include "util-messages.hh"
