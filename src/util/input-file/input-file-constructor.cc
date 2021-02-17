@@ -3,6 +3,8 @@
  *  \author Copyright 2021, Matthew Grett-Dann
  *          SPDX-License-Identifier: Apache-2.0
  */
+#include "gd/sys/stat.h"
+
 #include "util/file.hh"
 
 #include "util-messages.hh"
@@ -28,6 +30,8 @@ GD::InputFile::InputFile(std::string_view filename, std::string_view mode)
       report_error(Msg::file_open_error);
       return;
     }
+    stat_.emplace();
+    ::fstat(::fileno(file_), &stat_.value());
   }
 }
 

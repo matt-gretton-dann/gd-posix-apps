@@ -9,9 +9,12 @@
 
 #include "gd/nl_types.h"
 
+#include "gd/sys/stat.h"
+
 #include <assert.h>
 #include <fstream>
 #include <memory>
+#include <optional>
 #include <stdio.h>
 #include <string>
 #include <string_view>
@@ -97,6 +100,27 @@ public:
    */
   void setbuf(Buffering type, std::unique_ptr<std::vector<char>>&& ptr);
 
+  /**
+   * \brief                  Get the access time for the file.
+   * \return struct timespec Access time.
+   */
+  struct timespec access_time() const noexcept;
+
+  /**
+   * \brief                  Get the modification time for the file.
+   * \return struct timespec Access time.
+   */
+  struct timespec modification_time() const noexcept;
+
+  /** \brief Get the file mode.  */
+  mode_t mode() const noexcept;
+
+  /** \brief Get owner of the file.  */
+  uid_t owner() const noexcept;
+
+  /** \brief  Get group of the file.  */
+  gid_t group() const noexcept;
+
 private:
   using Msg = GD::Util::Msg;
 
@@ -108,6 +132,7 @@ private:
   std::string filename_;                      /**< File name.  */
   FILE* file_;                                /**< File handle.  */
   bool is_stdin_;                             /**< Is the File handle standard input?  */
+  std::optional<struct ::stat> stat_;         /**< Stat of file - if not stdin */
   std::unique_ptr<std::vector<char>> buffer_; /**< Buffer of data we use.  */
 };
 
