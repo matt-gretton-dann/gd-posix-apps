@@ -96,6 +96,13 @@ __EXTERN_C int unlink(char const* path);
  */
 __EXTERN_C ssize_t write(int fd, const void* buf, size_t nbytes);
 
+/**
+ * \brief           Test for a terminal device
+ * \param  __fildes File descriptor to test
+ * \return int      1 if __filedes is associated with a terminal, 0 otherwise, \c errno updated.
+ */
+__EXTERN_C int isatty(int __fd);
+
 #else  // ^ Win32 v POSIX
 #  include <unistd.h>
 #endif  // Win32 or POSIX
