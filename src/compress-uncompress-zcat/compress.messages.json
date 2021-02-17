@@ -74,6 +74,12 @@
         "msg": "file_already_exists",
         "description": "File with name {0} already exists.",
         "C": "File already exists: {0}.  Use '-f' to force overwriting."
+      },
+      {
+        "id": 13,
+        "msg": "unable_to_change_perms",
+        "description": "Unable to change some of the permissions on {0}",
+        "C": "Warning: Unable to update {0} with appropriate permissions."
       }
     ]
   }
