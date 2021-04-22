@@ -109,12 +109,31 @@ private:
   std::unique_ptr<std::vector<char>> buffer_; /**< Buffer of data we use.  */
 };
 
+/** \brief  Bitwise class of flags for for_each_file().  */
+enum class FEFFlags {
+  none = 0,         ///< No flags
+  empty_stdin = 1,  ///< No files passed to for_each_file() means use standard input.
+};
+
+inline FEFFlags operator|(FEFFlags l, FEFFlags r)
+{
+  using UT = std::underlying_type<FEFFlags>::type;
+  return static_cast<FEFFlags>(static_cast<UT>(l) | static_cast<UT>(r));
+}
+
+inline FEFFlags operator&(FEFFlags l, FEFFlags r)
+{
+  using UT = std::underlying_type<FEFFlags>::type;
+  return static_cast<FEFFlags>(static_cast<UT>(l) & static_cast<UT>(r));
+}
+
 /** \brief           Call a function for all files named on the command-line, handling '-' as stdin.
  *  \tparam Fn       Type of \a apply_fn.
  *  \param  argc     Argument count (>= 0).
  *  \param  argv     Argument vector, argv[0...argc - 1] should be file names, argv[argc] a nullptr.
  *  \param  apply_fn Function to apply.
- *  \return          True if all applications succeed.
+ *  \param  flags    Flags (default: Handle empty as calling stdin.)
+ *  \return          True if all applications succeed, or no applications made.
  *
  * If \a argc is zero, then \a apply_fn is called with the file name "-".  Otherwise it is called
  * on every element in \a argv.  If an application fails we still carry on with all the rest.
@@ -124,13 +143,13 @@ private:
  * succeeded or not.
  */
 template<typename Fn>
-bool for_each_file(int argc, char** argv, Fn apply_fn)
+bool for_each_file(int argc, char** argv, Fn apply_fn, FEFFlags flags = FEFFlags::empty_stdin)
 {
   assert(argv != nullptr);
   assert(argc >= 0);
 
   bool success = true;
-  if (argc == 0) {
+  if (argc == 0 && ((flags & FEFFlags::empty_stdin) == FEFFlags::empty_stdin)) {
     success &= apply_fn("-");
   }
   else {

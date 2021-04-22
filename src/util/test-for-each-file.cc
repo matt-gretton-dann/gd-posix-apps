@@ -38,3 +38,23 @@ TEST_CASE("for_each_file", "[util][file][for_each_file]")
   REQUIRE(success == false);
   REQUIRE(call_count == 2);
 }
+
+TEST_CASE("for_each_file flags", "[util][file][for_each_file]")
+{
+  char* files[] = {nullptr};
+  int call_count = 0;
+  std::string fnames;
+  bool success = GD::for_each_file(0, files, [&call_count, &fnames](std::string_view fname) {
+    ++call_count;
+    fnames += fname;
+    return true;
+  });
+
+  REQUIRE(success == true);
+  REQUIRE(call_count == 1);
+  REQUIRE(fnames == "-");
+
+  success = GD::for_each_file(
+    0, files, [](std::string_view) { return false; }, GD::FEFFlags::none);
+  REQUIRE(success == true);
+}
