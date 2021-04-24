@@ -20,5 +20,29 @@ void program_name(std::string_view argv0);
  */
 std::string_view program_name();
 
+/** \brief     Class to provide 'overloaded' lambdas.
+ *  \tparam Ts Lambdas to combine
+ *
+ * This is often used in std::visit calls, for example:
+ *
+ * \code
+ * std::visit(Overloaded{
+ *                       [](Type t) { return t; },
+ *                       [](GD::Util::Number const&) { return Type::number; },
+ *                       [](std::string const&) { return Type::string; },
+ *                       [](char) { return Type::letter; },
+ *                      }, value_);
+ * \endcode
+ */
+template<class... Ts>
+struct Overloaded : Ts...
+{
+  using Ts::operator()...;
+};
+
+// Template guide.
+template<class... Ts>
+Overloaded(Ts...) -> Overloaded<Ts...>;
+
 }  // namespace GD
 #endif  // _SRC_INCLUDE_UTIL_UTILS_HH_INCLUDED
