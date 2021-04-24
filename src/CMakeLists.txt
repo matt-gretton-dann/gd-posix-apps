@@ -121,6 +121,7 @@ add_subdirectory(gencat)
 
 add_subdirectory(asa)
 add_subdirectory(basename)
+add_subdirectory(bc)
 add_subdirectory(cat)
 add_subdirectory(cksum)
 add_subdirectory(dirname)

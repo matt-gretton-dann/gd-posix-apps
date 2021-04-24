@@ -1,0 +1,56 @@
+[
+  {
+    "set": "bc",
+    "id": 1,
+    "messages": [
+      {
+        "msg": "usage",
+        "id": 1,
+        "description": "Usage message for the program. {0} is the program name.",
+        "C": "Usage: {0} [-l] [file...]"
+      },
+      {
+        "msg": "unrecognised_option",
+        "id": 2,
+        "description": "Option -{0} is unrecognised.",
+        "C": "Option '-{0}' is not valid."
+      },
+      {
+        "msg": "file_error",
+        "id": 3,
+        "description": "Error whilst parsing file {0}, aborting.",
+        "C": "Abort: File system error whilst parsing '{0}'."
+      },
+      {
+        "msg": "unexpected_token",
+        "id": 4,
+        "description": "Unexpected token {0}",
+        "C": "Unexpected token: '{0}'"
+      },
+      {
+        "msg": "error_label",
+        "id": 5,
+        "description": "How to label an error",
+        "C": "Error"
+      },
+      {
+        "msg": "unexpected_eof_string",
+        "id": 6,
+        "description": "Unexpected End-of-file whilst parsing a string",
+        "C": "Unexpected end of file encountered, whilst parsing a string."
+      },
+      {
+        "msg": "unexpected_eof_comment",
+        "id": 7,
+        "description": "Unexpected End-of-file whilst parsing a comment",
+        "C": "Unexpected end of file encountered, whilst parsing a comment."
+      },
+      {
+        "msg": "digit_out_of_range",
+        "id": 8,
+        "description": "The digit {0} is not in range for the base {1}",
+        "C": "Numeric digit {0} is not valid in base {1}."
+      }
+    ]
+  }
+]
