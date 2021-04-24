@@ -20,7 +20,6 @@ if(RUN_UNIT_TESTS)
   set_property(TARGET test-util PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
   set_property(TARGET test-util PROPERTY CXX_STANDARD_REQUIRED ON)
   target_include_directories(test-util PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
-  target_include_directories(test-util PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
   set_warnings(test-util)
 endif()
 
@@ -87,7 +86,7 @@ function(add_utility)
     endif()
 
     # Add the integration test
-    if(RUN_INTEGRATION_TESTS AND NOT NO_INT_TEST)
+    if(RUN_INTEGRATION_TESTS AND NOT _au_NO_INT_TEST)
         file(TO_NATIVE_PATH "${CMAKE_SOURCE_DIR}/python-lib" _au_python_lib)
         file(TO_NATIVE_PATH "${CMAKE_BINARY_DIR}/pycache" _au_python_cache)
         set(_au_INT_TEST "int-test-${_au_NAME}")
