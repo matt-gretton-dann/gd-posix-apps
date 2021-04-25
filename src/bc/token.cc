@@ -16,13 +16,17 @@ GD::Bc::Token::Token(Type type) : value_(type)
   assert(type != Type::number);
   assert(type != Type::string);
   assert(type != Type::letter);
+  assert(type != Type::error);
 }
 
 GD::Bc::Token::Token(Type type, std::string const& s) : value_(s)
 {
-  assert(type == Type::string || type == Type::number);
+  assert(type == Type::string || type == Type::number || type == Type::error);
   if (type == Type::number) {
     value_ = NumInt{s};
+  }
+  else if (type == Type::error) {
+    value_ = ErrorInt{s};
   }
 }
 
@@ -33,6 +37,7 @@ GD::Bc::Token::Type GD::Bc::Token::type() const
   return std::visit(
     GD::Overloaded{[](Type t) { return t; }, [](std::string const&) { return Type::string; },
                    [](NumInt const&) { return Type::number; }, [](char) { return Type::letter; },
+                   [](ErrorInt const&) { return Type::error; },
                    [](auto) {
                      assert(false);
                      return Type::eof;
@@ -44,11 +49,16 @@ std::string const& GD::Bc::Token::string() const { return std::get<std::string>(
 
 std::string const& GD::Bc::Token::number() const { return std::get<NumInt>(value_).num_; }
 
+std::string const& GD::Bc::Token::error() const { return std::get<ErrorInt>(value_).error_; }
+
 char GD::Bc::Token::letter() const { return std::get<char>(value_); }
 
 std::ostream& GD::Bc::operator<<(std::ostream& os, Token::Type t)
 {
   switch (t) {
+  case Token::Type::error:
+    os << "error";
+    break;
   case Token::Type::eof:
     os << "eof";
     break;
@@ -200,6 +210,7 @@ void GD::Bc::Token::Token::debug(std::ostream& os) const
 {
   os << "Token::";
   std::visit(GD::Overloaded{[&os](Type t) { os << t; },
+                            [&os](ErrorInt const& e) { os << "error(" << e.error_ << ")"; },
                             [&os](NumInt const& n) { os << "number(" << n.num_ << ")"; },
                             [&os](std::string const& s) { os << "string(" << s << ")"; },
                             [&os](char l) { os << "letter(" << l << ")"; }},

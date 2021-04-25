@@ -53,8 +53,8 @@ void GD::Bc::Lexer::lex_string()
       t_.emplace(Token::Type::string, value);
       return;
     case EOF:
-      r_->error(Msg::unexpected_eof_string);
-      break;
+      t_.emplace(Token::Type::error, r_->error(Msg::unexpected_eof_string));
+      return;
     default:
       value += r_->peek();
       r_->chew();
@@ -103,8 +103,9 @@ void GD::Bc::Lexer::lex_number()
     case '\\':
       r_->chew();
       if (r_->peek() != '\n') {
-        r_->error(Msg::unexpected_token, '\\');
+        t_.emplace(Token::Type::error, r_->error(Msg::unexpected_token, '\\'));
         cont = false;
+        break;
       }
 
       r_->chew();
@@ -182,7 +183,7 @@ void GD::Bc::Lexer::lex_letter_or_keyword()
     return;
   }
 
-  r_->error(Msg::unexpected_token, value);
+  t_.emplace(Token::Type::error, r_->error(Msg::unexpected_token, value));
 }
 
 void GD::Bc::Lexer::lex_symbol(Token::Type plain, char next1, Token::Type tok1)
@@ -226,7 +227,7 @@ void GD::Bc::Lexer::lex_not_equals()
     return;
   }
 
-  r_->error(Msg::unexpected_token, r_->peek());
+  t_.emplace(Token::Type::error, r_->error(Msg::unexpected_token, r_->peek()));
 }
 
 void GD::Bc::Lexer::lex_comment()
@@ -245,8 +246,8 @@ void GD::Bc::Lexer::lex_comment()
       }
       break;
     case EOF:
-      error(Msg::unexpected_eof_comment);
-      break;
+      t_.emplace(Token::Type::error, r_->error(Msg::unexpected_eof_comment));
+      return;
     default:
       break;
     }
@@ -370,11 +371,13 @@ void GD::Bc::Lexer::lex()
     case '\\':
       r_->chew();
       if (r_->peek() != '\n') {
-        r_->error(Msg::unexpected_token, "\\");
+        t_.emplace(Token::Type::error, r_->error(Msg::unexpected_token, "\\"));
+        return;
       }
       break;
     default:
-      r_->error(Msg::unexpected_token, r_->peek());
+      t_.emplace(Token::Type::error, r_->error(Msg::unexpected_token, r_->peek()));
+      return;
     }
   }
 }

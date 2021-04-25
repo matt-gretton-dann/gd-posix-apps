@@ -36,6 +36,10 @@ public:
       GD::Bc::Token const& t = l.peek();
       t.debug(std::cout);
       std::cout << "\n";
+      if (t.type() == GD::Bc::Token::Type::error) {
+        std::cerr << t.error();
+        ::exit(1);
+      }
       cont = (t.type() != GD::Bc::Token::Type::eof);
       l.chew();
     } while (cont);

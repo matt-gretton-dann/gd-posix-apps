@@ -15,6 +15,7 @@
 #include <iostream>
 #include <memory>
 #include <optional>
+#include <sstream>
 #include <string>
 #include <variant>
 
@@ -42,6 +43,7 @@ struct Token
 {
   /** \brief  Enum listing token types.  */
   enum class Type {
+    error,
     eof,
     newline,
     string,
@@ -96,7 +98,7 @@ struct Token
    */
   explicit Token(Type type);
 
-  /** \brief      Construct a token of type Type::number or Type::string.
+  /** \brief      Construct a token of type Type::number, Type::string, or Type::error.
    *  \param type Token type
    *  \param s    Value of number or string
    *
@@ -123,16 +125,26 @@ struct Token
   /** \brief Get letter stored in token. */
   char letter() const;
 
+  /** \brief  Get the error message.  */
+  std::string const& error() const;
+
   /** \brief  Output debug form of token. */
   void debug(std::ostream& os) const;
 
 private:
+  /** Internal type to hold a number and diferentiate it from string and error.  */
   struct NumInt
   {
     std::string num_;
   };
 
-  std::variant<Type, std::string, NumInt, char> value_;
+  /** Internal type to hold an error string and differentiate it from string and number.  */
+  struct ErrorInt
+  {
+    std::string error_;
+  };
+
+  std::variant<Type, std::string, NumInt, ErrorInt, char> value_;
 };
 
 /** \brief Output operator for token type.  */
@@ -166,12 +178,13 @@ public:
 
   /** \brief  Report an error giving source location. */
   template<typename... Ts>
-  [[noreturn]] void error(Msg msg, Ts... args)
+  std::string error(Msg msg, Ts... args)
   {
-    std::cerr << GD::Bc::Messages::get().get(GD::Bc::Set::bc, Msg::error_label) << ":" << name_
-              << ':' << line_ << ':' << column_ << ": "
-              << GD::Bc::Messages::get().format(GD::Bc::Set::bc, msg, args...) << '\n';
-    ::exit(1);
+    std::ostringstream os;
+    os << GD::Bc::Messages::get().get(GD::Bc::Set::bc, Msg::error_label) << ":" << name_ << ':'
+       << line_ << ':' << column_ << ": "
+       << GD::Bc::Messages::get().format(GD::Bc::Set::bc, msg, args...) << '\n';
+    return os.str();
   }
 
 private:
