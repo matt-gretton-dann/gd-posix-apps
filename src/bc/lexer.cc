@@ -359,6 +359,10 @@ void GD::Bc::Lexer::lex()
     case '!':
       lex_not_equals();
       return;
+    case ' ':
+    case '\t':
+      r_->chew();
+      break;
     case '\n':
       r_->chew();
       t_.emplace(Token::Type::newline);
