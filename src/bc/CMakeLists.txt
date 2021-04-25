@@ -20,6 +20,8 @@ if(RUN_UNIT_TESTS)
   set_property(TARGET test-libbc PROPERTY CXX_STANDARD_REQUIRED ON)
   target_include_directories(test-libbc PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
   set_warnings(test-libbc)
+  target_sources(test-libbc PRIVATE
+                 test-lexer.cc
                  test-libbc-main.cc
                  test-reader.cc)
   target_add_clang_format(test-libbc)
