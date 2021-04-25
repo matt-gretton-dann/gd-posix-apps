@@ -9,6 +9,7 @@
 #include <catch2/catch.hpp>
 
 #include <memory>
+#include <string>
 
 #include "bc.hh"
 #include <string_view>
@@ -67,4 +68,80 @@ TEST_CASE("GD::Bc::Lexer - Symbol Tokenizing", "[bc][lexer]")
   lexer.chew();
   auto t2 = lexer.peek();
   REQUIRE(t2.type() == GD::Bc::Token::Type::eof);
+}
+
+TEST_CASE("GD::Bc::Lexer - Number", "[bc][lexer]")
+{
+  auto number = GENERATE("1234567890", "ABCDEF1", ".1", "2.0", "3.");
+  auto lexer = GD::Bc::Lexer(std::make_unique<GD::Bc::StringReader>(number));
+  auto t1 = lexer.peek();
+  REQUIRE(t1.type() == GD::Bc::Token::Type::number);
+  REQUIRE(t1.number() == number);
+  lexer.chew();
+  REQUIRE(lexer.peek().type() == GD::Bc::Token::Type::eof);
+}
+
+TEST_CASE("GD::Bc::Lexer - Letter", "[bc][lexer]")
+{
+  auto letter = GENERATE('a', 'z');
+  std::string s(1, letter);
+  auto lexer = GD::Bc::Lexer(std::make_unique<GD::Bc::StringReader>(s));
+  auto t1 = lexer.peek();
+  REQUIRE(t1.type() == GD::Bc::Token::Type::letter);
+  REQUIRE(t1.letter() == letter);
+  lexer.chew();
+  REQUIRE(lexer.peek().type() == GD::Bc::Token::Type::eof);
+}
+
+TEST_CASE("GD::Bc::Lexer - String", "[bc][lexer]")
+{
+  auto string = GENERATE("Hello, world!", "A\\\nB");
+  std::string s = std::string("\"") + string + std::string("\"");
+  auto lexer = GD::Bc::Lexer(std::make_unique<GD::Bc::StringReader>(s));
+  auto t1 = lexer.peek();
+  REQUIRE(t1.type() == GD::Bc::Token::Type::string);
+  REQUIRE(t1.string() == string);
+  lexer.chew();
+  REQUIRE(lexer.peek().type() == GD::Bc::Token::Type::eof);
+}
+
+TEST_CASE("GD::Bc::Lexer - Two numbers", "[bc][lexer]")
+{
+  std::string input("123.456.789");
+  auto lexer = GD::Bc::Lexer(std::make_unique<GD::Bc::StringReader>(input));
+  auto t1 = lexer.peek();
+  REQUIRE(t1.type() == GD::Bc::Token::Type::number);
+  REQUIRE(t1.number() == "123.456");
+  lexer.chew();
+  auto t2 = lexer.peek();
+  REQUIRE(t2.type() == GD::Bc::Token::Type::number);
+  REQUIRE(t2.number() == ".789");
+  lexer.chew();
+  REQUIRE(lexer.peek().type() == GD::Bc::Token::Type::eof);
+}
+
+TEST_CASE("GD::Bc::Lexer - number on multiple lines", "[bc][lexer]")
+{
+  std::string input("123\\\n456");
+  auto lexer = GD::Bc::Lexer(std::make_unique<GD::Bc::StringReader>(input));
+  auto t1 = lexer.peek();
+  REQUIRE(t1.type() == GD::Bc::Token::Type::number);
+  REQUIRE(t1.number() == "123456");
+  lexer.chew();
+  REQUIRE(lexer.peek().type() == GD::Bc::Token::Type::eof);
+}
+
+TEST_CASE("GD::Bc::Lexer - line merging", "[bc][lexer]")
+{
+  std::string input("a\\\nb");
+  auto lexer = GD::Bc::Lexer(std::make_unique<GD::Bc::StringReader>(input));
+  auto t1 = lexer.peek();
+  REQUIRE(t1.type() == GD::Bc::Token::Type::letter);
+  REQUIRE(t1.letter() == 'a');
+  lexer.chew();
+  auto t2 = lexer.peek();
+  REQUIRE(t2.type() == GD::Bc::Token::Type::letter);
+  REQUIRE(t2.letter() == 'b');
+  lexer.chew();
+  REQUIRE(lexer.peek().type() == GD::Bc::Token::Type::eof);
 }
