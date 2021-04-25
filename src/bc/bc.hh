@@ -21,20 +21,6 @@
 
 namespace GD::Bc {
 
-/** \brief       Report an error and exit with exit code 1.
- *  \param  msg  Message ID
- *  \param  args Arguments for the message.
- */
-template<typename... Ts>
-[[noreturn]] void error(Msg msg, Ts... args)
-{
-  std::cerr << GD::program_name() << ": "
-            << GD::Bc::Messages::get().format(GD::Bc::Set::bc, msg, args...) << '\n'
-            << GD::Bc::Messages::get().format(GD::Bc::Set::bc, Msg::usage, GD::program_name())
-            << '\n';
-  ::exit(1);
-}
-
 /** \brief  Token type.
  *
  * Very basic token type stores type along with any extra info needed.
