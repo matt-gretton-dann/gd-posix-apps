@@ -246,6 +246,7 @@ private:
   void lex_string();
   void lex_number();
   void lex_letter_or_keyword();
+  void lex_assign_or_equals();
   void lex_not_equals();
   void lex_comment();
 

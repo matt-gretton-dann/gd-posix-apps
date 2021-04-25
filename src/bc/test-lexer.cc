@@ -145,3 +145,11 @@ TEST_CASE("GD::Bc::Lexer - line merging", "[bc][lexer]")
   lexer.chew();
   REQUIRE(lexer.peek().type() == GD::Bc::Token::Type::eof);
 }
+
+TEST_CASE("GD::Bc::Lexer - =- is an error", "[bc][lexer]")
+{
+  std::string input("=-");
+  auto lexer = GD::Bc::Lexer(std::make_unique<GD::Bc::StringReader>(input));
+  auto t1 = lexer.peek();
+  REQUIRE(t1.type() == GD::Bc::Token::Type::error);
+}

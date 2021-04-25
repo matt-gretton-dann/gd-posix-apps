@@ -187,6 +187,23 @@ void GD::Bc::Lexer::lex_letter_or_keyword()
   t_.emplace(Token::Type::error, r_->error(Msg::unexpected_token, value));
 }
 
+void GD::Bc::Lexer::lex_assign_or_equals()
+{
+  r_->chew();
+  if (r_->peek() == '=') {
+    r_->chew();
+    t_.emplace(Token::Type::equals);
+    return;
+  }
+
+  if (r_->peek() == '-') {
+    t_.emplace(Token::Type::error, r_->error(Msg::assign_minus_undefined));
+    return;
+  }
+
+  t_.emplace(Token::Type::assign);
+}
+
 void GD::Bc::Lexer::lex_symbol(Token::Type plain, char next1, Token::Type tok1)
 {
   r_->chew();
@@ -316,7 +333,7 @@ void GD::Bc::Lexer::lex()
       lex_letter_or_keyword();
       return;
     case '=':
-      lex_symbol(Token::Type::assign, '=', Token::Type::equals);
+      lex_assign_or_equals();
       return;
     case '+':
       lex_symbol(Token::Type::add, '=', Token::Type::add_assign, '+', Token::Type::increment);

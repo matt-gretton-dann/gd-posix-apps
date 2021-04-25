@@ -50,6 +50,12 @@
         "id": 8,
         "description": "The digit {0} is not in range for the base {1}",
         "C": "Numeric digit {0} is not valid in base {1}."
+      },
+      {
+        "msg": "assign_minus_undefined",
+        "id": 9,
+        "description": "The token =- results in underfined behaviour, report it as an error.",
+        "C": "Token '=-' is not recognised."
       }
     ]
   }
