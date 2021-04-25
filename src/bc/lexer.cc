@@ -14,6 +14,7 @@
 
 #include "bc.hh"
 #include <string_view>
+#include <unordered_map>
 
 GD::Bc::Lexer::Lexer(std::unique_ptr<Reader>&& r) : r_(std::move(r)), t_(std::nullopt) {}
 

@@ -7,6 +7,8 @@
 #ifndef _SRC_INCLUDE_UTIL_UTILS_HH_INCLUDED
 #define _SRC_INCLUDE_UTIL_UTILS_HH_INCLUDED
 
+#include "gd/nl_types.h"
+
 #include <string_view>
 
 namespace GD {
