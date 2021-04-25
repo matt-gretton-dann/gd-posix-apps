@@ -331,6 +331,7 @@ void GD::Bc::Lexer::lex()
     case '/': {
       r_->chew();
       if (r_->peek() == '=') {
+        r_->chew();
         t_.emplace(Token::Type::divide_assign);
         return;
       }
@@ -364,6 +365,38 @@ void GD::Bc::Lexer::lex()
     case '\t':
       r_->chew();
       break;
+    case ';':
+      r_->chew();
+      t_.emplace(Token::Type::semicolon);
+      return;
+    case '[':
+      r_->chew();
+      t_.emplace(Token::Type::lsquare);
+      return;
+    case ']':
+      r_->chew();
+      t_.emplace(Token::Type::rsquare);
+      return;
+    case '{':
+      r_->chew();
+      t_.emplace(Token::Type::lbrace);
+      return;
+    case '}':
+      r_->chew();
+      t_.emplace(Token::Type::rbrace);
+      return;
+    case '(':
+      r_->chew();
+      t_.emplace(Token::Type::lparens);
+      return;
+    case ')':
+      r_->chew();
+      t_.emplace(Token::Type::rparens);
+      return;
+    case ',':
+      r_->chew();
+      t_.emplace(Token::Type::comma);
+      return;
     case '\n':
       r_->chew();
       t_.emplace(Token::Type::newline);
