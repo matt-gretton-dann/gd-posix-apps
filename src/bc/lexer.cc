@@ -408,6 +408,7 @@ void GD::Bc::Lexer::lex()
         t_.emplace(Token::Type::error, r_->error(Msg::unexpected_token, "\\"));
         return;
       }
+      r_->chew();
       break;
     default:
       t_.emplace(Token::Type::error, r_->error(Msg::unexpected_token, r_->peek()));
