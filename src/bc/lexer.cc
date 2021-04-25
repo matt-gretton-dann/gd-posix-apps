@@ -221,6 +221,7 @@ void GD::Bc::Lexer::lex_not_equals()
   assert(r_->peek() == '!');
   r_->chew();
   if (r_->peek() == '=') {
+    r_->chew();
     t_.emplace(Token::Type::not_equals);
     return;
   }
