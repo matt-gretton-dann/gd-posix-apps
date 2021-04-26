@@ -7,6 +7,8 @@
 #ifndef _SRC_BC_BC_HH_INCLUDED
 #define _SRC_BC_BC_HH_INCLUDED
 
+#include "gd/format.hh"
+
 #include "util/file.hh"
 #include "util/utils.hh"
 
@@ -18,6 +20,8 @@
 #include <sstream>
 #include <string>
 #include <variant>
+
+#include <type_traits>
 
 namespace GD::Bc {
 
@@ -271,4 +275,24 @@ private:
 };
 
 }  // namespace GD::Bc
+
+template<>
+struct fmt::formatter<GD::Bc::Token>
+{
+  constexpr auto parse(format_parse_context& ctx)
+  {
+    if (ctx.begin() != ctx.end() && *ctx.begin() != '}') {
+      throw format_error("invalid format");
+    }
+    return ctx.begin();
+  }
+
+  template<typename FormatContext>
+  auto format(GD::Bc::Token const& token, FormatContext& ctx)
+  {
+    std::ostringstream os;
+    os << token;
+    return format_to(ctx.out(), "{0}", os.str());
+  }
+};
 #endif  //  _SRC_BC_BC_HH_INCLUDED

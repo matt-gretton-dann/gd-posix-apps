@@ -216,3 +216,161 @@ void GD::Bc::Token::Token::debug(std::ostream& os) const
                             [&os](char l) { os << "letter(" << l << ")"; }},
              value_);
 }
+
+std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Token const& token)
+{
+  switch (token.type()) {
+  case Token::Type::error:
+    os << "ERROR(" << token.error() << ")";
+    break;
+  case Token::Type::eof:
+    os << "EOF";
+    break;
+  case Token::Type::newline:
+    os << "NEWLINE";
+    break;
+  case Token::Type::string:
+    os << '"' << token.string() << '"';
+    break;
+  case Token::Type::letter:
+    os << token.letter();
+    break;
+  case Token::Type::number:
+    os << token.number();
+    break;
+  case Token::Type::power:
+    os << '^';
+    break;
+  case Token::Type::multiply:
+    os << '*';
+    break;
+  case Token::Type::divide:
+    os << '/';
+    break;
+  case Token::Type::modulo:
+    os << '%';
+    break;
+  case Token::Type::add:
+    os << '+';
+    break;
+  case Token::Type::subtract:
+    os << '-';
+    break;
+  case Token::Type::assign:
+    os << '=';
+    break;
+  case Token::Type::add_assign:
+    os << "+=";
+    break;
+  case Token::Type::subtract_assign:
+    os << "-=";
+    break;
+  case Token::Type::multiply_assign:
+    os << "*=";
+    break;
+  case Token::Type::divide_assign:
+    os << "/=";
+    break;
+  case Token::Type::modulo_assign:
+    os << "%=";
+    break;
+  case Token::Type::power_assign:
+    os << "^=";
+    break;
+  case Token::Type::equals:
+    os << "==";
+    break;
+  case Token::Type::less_than_equals:
+    os << "<=";
+    break;
+  case Token::Type::greater_than_equals:
+    os << ">=";
+    break;
+  case Token::Type::not_equals:
+    os << "!=";
+    break;
+  case Token::Type::less_than:
+    os << '<';
+    break;
+  case Token::Type::greater_than:
+    os << '>';
+    break;
+  case Token::Type::increment:
+    os << "++";
+    break;
+  case Token::Type::decrement:
+    os << "--";
+    break;
+  case Token::Type::define:
+    os << "define";
+    break;
+  case Token::Type::break_:
+    os << "break";
+    break;
+  case Token::Type::quit:
+    os << "quit";
+    break;
+  case Token::Type::length:
+    os << "length";
+    break;
+  case Token::Type::return_:
+    os << "return";
+    break;
+  case Token::Type::for_:
+    os << "for";
+    break;
+  case Token::Type::if_:
+    os << "if";
+    break;
+  case Token::Type::while_:
+    os << "while";
+    break;
+  case Token::Type::sqrt:
+    os << "sqrt";
+    break;
+  case Token::Type::scale:
+    os << "scale";
+    break;
+  case Token::Type::ibase:
+    os << "ibase";
+    break;
+  case Token::Type::obase:
+    os << "obase";
+    break;
+  case Token::Type::auto_:
+    os << "auto";
+    break;
+  case Token::Type::lparens:
+    os << '(';
+    break;
+  case Token::Type::rparens:
+    os << ')';
+    break;
+  case Token::Type::lsquare:
+    os << '[';
+    break;
+  case Token::Type::rsquare:
+    os << ']';
+    break;
+  case Token::Type::lbrace:
+    os << '{';
+    break;
+  case Token::Type::rbrace:
+    os << '}';
+    break;
+  case Token::Type::comma:
+    os << ',';
+    break;
+  case Token::Type::semicolon:
+    os << ';';
+    break;
+  default:
+    assert(false);
+  }
+  return os;
+}
+
+bool GD::Bc::operator==(Token const& token, Token::Type type) { return token.type() == type; }
+bool GD::Bc::operator==(Token::Type type, Token const& token) { return token == type; }
+bool GD::Bc::operator!=(Token const& token, Token::Type type) { return !(token == type); }
+bool GD::Bc::operator!=(Token::Type type, Token const& token) { return !(token == type); }
