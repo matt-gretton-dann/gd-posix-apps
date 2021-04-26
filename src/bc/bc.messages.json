@@ -56,6 +56,24 @@
         "id": 9,
         "description": "The token =- results in underfined behaviour, report it as an error.",
         "C": "Token '=-' is not recognised."
+      },
+      {
+        "msg": "expected_statement",
+        "id": 10,
+        "description": "We expected a statement but instead got the token {0}",
+        "C": "Expected <statement>, found: {0}"
+      },
+      {
+        "msg": "expected_rbrace",
+        "id": 11,
+        "description": "We expected a } but instead got the token {0}",
+        "C": "Expected '}', found: {0}"
+      },
+      {
+        "msg": "missing_newline_at_end_of_semicolon_list",
+        "id": 12,
+        "description": "Expected a new line at the end of a semicolon list",
+        "C": "Expected new-line, found: {0}"
       }
     ]
   }

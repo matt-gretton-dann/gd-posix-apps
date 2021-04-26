@@ -44,18 +44,16 @@ class State
 public:
   void execute(std::unique_ptr<GD::Bc::Reader>&& r)
   {
-    GD::Bc::Lexer l(std::move(r));
+    GD::Bc::Parser parser(std::make_unique<GD::Bc::Lexer>(std::move(r)), true);
     bool cont = true;
     do {
-      GD::Bc::Token const& t = l.peek();
-      t.debug(std::cout);
-      std::cout << "\n";
-      if (t.type() == GD::Bc::Token::Type::error) {
-        std::cerr << t.error();
-        ::exit(1);
+      auto instructions = parser.parse();
+      std::cout << *instructions;
+      for (auto i : *instructions) {
+        if (i.opcode() == GD::Bc::Instruction::Opcode::eof) {
+          cont = false;
+        }
       }
-      cont = (t.type() != GD::Bc::Token::Type::eof);
-      l.chew();
     } while (cont);
   }
 };
