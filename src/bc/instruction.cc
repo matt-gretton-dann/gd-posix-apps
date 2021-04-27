@@ -17,21 +17,21 @@
 
 GD::Bc::Instruction::Instruction(Opcode opcode) : opcode_(opcode)
 {
-  assert(!has_op1(opcode));
-  assert(!has_op2(opcode));
+  assert(op_count(opcode) == 0);
+  validate_operands();
 }
 
 GD::Bc::Instruction::Instruction(Opcode opcode, Operand const& op1) : opcode_(opcode), op1_(op1)
 {
-  assert(has_op1(opcode));
-  assert(!has_op2(opcode));
+  assert(op_count(opcode) == 1);
+  validate_operands();
 }
 
 GD::Bc::Instruction::Instruction(Opcode opcode, Operand const& op1, Operand const& op2)
     : opcode_(opcode), op1_(op1), op2_(op2)
 {
-  assert(has_op1(opcode));
-  assert(has_op2(opcode));
+  assert(op_count(opcode) == 2);
+  validate_operands();
 }
 
 GD::Bc::Instruction::Opcode GD::Bc::Instruction::opcode() const { return opcode_; }
@@ -39,26 +39,21 @@ GD::Bc::Instruction::Opcode GD::Bc::Instruction::opcode() const { return opcode_
 GD::Bc::Instruction::Operand const& GD::Bc::Instruction::op1() const
 {
   assert(has_op1());
-  assert(op1_.has_value());
   return *op1_;
 }
 
 GD::Bc::Instruction::Operand const& GD::Bc::Instruction::op2() const
 {
   assert(has_op2());
-  assert(op2_.has_value());
   return *op2_;
 }
 
 bool GD::Bc::Instruction::has_op1() const { return has_op1(opcode_); }
 bool GD::Bc::Instruction::has_op2() const { return has_op2(opcode_); }
 
-bool GD::Bc::Instruction::has_op1(Opcode opcode)
-{
-  return opcode == Opcode::print || opcode == Opcode::quit || opcode == Opcode::string;
-}
+bool GD::Bc::Instruction::has_op1(Opcode opcode) { return op_count(opcode) >= 1; }
 
-bool GD::Bc::Instruction::has_op2(Opcode opcode) { return opcode == Opcode::print; }
+bool GD::Bc::Instruction::has_op2(Opcode opcode) { return op_count(opcode) >= 2; }
 
 std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Instruction::Stream s)
 {
@@ -88,8 +83,167 @@ std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Instruction::Opcode o
   case GD::Bc::Instruction::Opcode::string:
     os << "string";
     break;
+  case GD::Bc::Instruction::Opcode::number:
+    os << "number";
+    break;
+  case GD::Bc::Instruction::Opcode::variable:
+    os << "variable";
+    break;
+  case GD::Bc::Instruction::Opcode::array_element:
+    os << "array_element";
+    break;
+  case GD::Bc::Instruction::Opcode::array:
+    os << "array";
+    break;
+  case GD::Bc::Instruction::Opcode::scale:
+    os << "scale";
+    break;
+  case GD::Bc::Instruction::Opcode::ibase:
+    os << "ibase";
+    break;
+  case GD::Bc::Instruction::Opcode::obase:
+    os << "obase";
+    break;
+  case GD::Bc::Instruction::Opcode::add:
+    os << "add";
+    break;
+  case GD::Bc::Instruction::Opcode::subtract:
+    os << "subtract";
+    break;
+  case GD::Bc::Instruction::Opcode::negate:
+    os << "negate";
+    break;
+  case GD::Bc::Instruction::Opcode::multiply:
+    os << "multiply";
+    break;
+  case GD::Bc::Instruction::Opcode::divide:
+    os << "divide";
+    break;
+  case GD::Bc::Instruction::Opcode::modulo:
+    os << "modulo";
+    break;
+  case GD::Bc::Instruction::Opcode::power:
+    os << "power";
+    break;
+  case GD::Bc::Instruction::Opcode::load:
+    os << "load";
+    break;
+  case GD::Bc::Instruction::Opcode::store:
+    os << "store";
+    break;
+  case GD::Bc::Instruction::Opcode::scale_expr:
+    os << "scale_expr";
+    break;
+  case GD::Bc::Instruction::Opcode::sqrt:
+    os << "sqrt";
+    break;
+  case GD::Bc::Instruction::Opcode::length:
+    os << "length";
+    break;
+  case GD::Bc::Instruction::Opcode::call:
+    os << "call";
+    break;
   }
   return os;
+}
+
+unsigned GD::Bc::Instruction::op_count(Opcode opcode)
+{
+  switch (opcode) {
+  case GD::Bc::Instruction::Opcode::eof:
+  case GD::Bc::Instruction::Opcode::scale:
+  case GD::Bc::Instruction::Opcode::ibase:
+  case GD::Bc::Instruction::Opcode::obase:
+    return 0;
+  case GD::Bc::Instruction::Opcode::quit:
+  case GD::Bc::Instruction::Opcode::string:
+  case GD::Bc::Instruction::Opcode::number:
+  case GD::Bc::Instruction::Opcode::variable:
+  case GD::Bc::Instruction::Opcode::array:
+  case GD::Bc::Instruction::Opcode::negate:
+  case GD::Bc::Instruction::Opcode::load:
+  case GD::Bc::Instruction::Opcode::scale_expr:
+  case GD::Bc::Instruction::Opcode::sqrt:
+  case GD::Bc::Instruction::Opcode::length:
+    return 1;
+  case GD::Bc::Instruction::Opcode::print:
+  case GD::Bc::Instruction::Opcode::array_element:
+  case GD::Bc::Instruction::Opcode::add:
+  case GD::Bc::Instruction::Opcode::subtract:
+  case GD::Bc::Instruction::Opcode::multiply:
+  case GD::Bc::Instruction::Opcode::divide:
+  case GD::Bc::Instruction::Opcode::modulo:
+  case GD::Bc::Instruction::Opcode::power:
+  case GD::Bc::Instruction::Opcode::store:
+  case GD::Bc::Instruction::Opcode::call:
+    return 2;
+  }
+
+  assert(false);
+}
+
+void GD::Bc::Instruction::validate_operands() const
+{
+  switch (opcode_) {
+  case GD::Bc::Instruction::Opcode::eof:
+  case GD::Bc::Instruction::Opcode::scale:
+  case GD::Bc::Instruction::Opcode::ibase:
+  case GD::Bc::Instruction::Opcode::obase:
+    assert(!op1_.has_value());
+    assert(!op2_.has_value());
+    break;
+  case GD::Bc::Instruction::Opcode::quit:
+    assert(op1_.has_value());
+    assert(!op2_.has_value());
+    assert(std::holds_alternative<unsigned>(*op1_));
+    break;
+  case GD::Bc::Instruction::Opcode::string:
+  case GD::Bc::Instruction::Opcode::number:
+    assert(op1_.has_value());
+    assert(!op2_.has_value());
+    assert(std::holds_alternative<std::string>(*op1_));
+    break;
+  case GD::Bc::Instruction::Opcode::variable:
+  case GD::Bc::Instruction::Opcode::array:
+    assert(op1_.has_value());
+    assert(!op2_.has_value());
+    assert(std::holds_alternative<char>(*op1_));
+    break;
+  case GD::Bc::Instruction::Opcode::negate:
+  case GD::Bc::Instruction::Opcode::load:
+  case GD::Bc::Instruction::Opcode::scale_expr:
+  case GD::Bc::Instruction::Opcode::sqrt:
+  case GD::Bc::Instruction::Opcode::length:
+    assert(op1_.has_value());
+    assert(!op2_.has_value());
+    assert(std::holds_alternative<Offset>(*op1_));
+    break;
+  case GD::Bc::Instruction::Opcode::print:
+    assert(op1_.has_value());
+    assert(op2_.has_value());
+    assert(std::holds_alternative<Offset>(*op1_));
+    assert(std::holds_alternative<Stream>(*op2_));
+    break;
+  case GD::Bc::Instruction::Opcode::array_element:
+  case GD::Bc::Instruction::Opcode::call:
+    assert(op1_.has_value());
+    assert(op2_.has_value());
+    assert(std::holds_alternative<char>(*op1_));
+    assert(std::holds_alternative<Offset>(*op2_));
+    break;
+  case GD::Bc::Instruction::Opcode::add:
+  case GD::Bc::Instruction::Opcode::subtract:
+  case GD::Bc::Instruction::Opcode::multiply:
+  case GD::Bc::Instruction::Opcode::divide:
+  case GD::Bc::Instruction::Opcode::modulo:
+  case GD::Bc::Instruction::Opcode::power:
+  case GD::Bc::Instruction::Opcode::store:
+    assert(op1_.has_value());
+    assert(op2_.has_value());
+    assert(std::holds_alternative<Offset>(*op1_));
+    assert(std::holds_alternative<Offset>(*op2_));
+    break;
+  }
 }
 
 std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Instruction::Operand operand)

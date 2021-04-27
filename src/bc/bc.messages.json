@@ -74,6 +74,48 @@
         "id": 12,
         "description": "Expected a new line at the end of a semicolon list",
         "C": "Expected new-line, found: {0}"
+      },
+      {
+        "msg": "expected_expression",
+        "id": 13,
+        "description": "Expected an expression, found: {0}",
+        "C": "Expected <expression>, found: {0}"
+      },
+      {
+        "msg": "expected_assign_expression",
+        "id": 14,
+        "description": "Expected an assignment expression, found: {0}",
+        "C": "Expected <assignment expression>, found: {0}"
+      },
+      {
+        "msg": "expected_named_expression",
+        "id": 15,
+        "description": "Expected a named expression, found: {0}",
+        "C": "Expected variable or array access, found: {0}"
+      },
+      {
+        "msg": "expected_rsquare",
+        "id": 16,
+        "description": "Expected ']', found: {0}",
+        "C": "Expected ']', found: {0}"
+      },
+      {
+        "msg": "expected_lparens",
+        "id": 17,
+        "description": "Expected '(', found: {0}",
+        "C": "Expected '(', found: {0}"
+      },
+      {
+        "msg": "expected_rparens",
+        "id": 18,
+        "description": "Expected a ')', found: {0}",
+        "C": "Expected ')', found: {0}"
+      },
+      {
+        "msg": "expected_primary_expression",
+        "id": 18,
+        "description": "Expected a primary expression, found: {0}",
+        "C": "Expected primary expression, found: {0}"
       }
     ]
   }

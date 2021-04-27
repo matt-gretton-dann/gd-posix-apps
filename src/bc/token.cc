@@ -370,6 +370,25 @@ std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Token const& token)
   return os;
 }
 
+bool GD::Bc::Token::is_assign_op() const
+{
+  return type() == Type::assign || type() == Type::add_assign || type() == Type::subtract_assign ||
+         type() == Type::multiply_assign || type() == Type::divide_assign ||
+         type() == Type::modulo_assign || type() == Type::power_assign;
+}
+
+bool GD::Bc::Token::is_incr_decr_op() const
+{
+  return type() == Type::increment || type() == Type::decrement;
+}
+
+bool GD::Bc::Token::is_mul_op() const
+{
+  return type() == Type::multiply || type() == Type::divide || type() == Type::modulo;
+}
+
+bool GD::Bc::Token::is_add_op() const { return type() == Type::add || type() == Type::subtract; }
+
 bool GD::Bc::operator==(Token const& token, Token::Type type) { return token.type() == type; }
 bool GD::Bc::operator==(Token::Type type, Token const& token) { return token == type; }
 bool GD::Bc::operator!=(Token const& token, Token::Type type) { return !(token == type); }
