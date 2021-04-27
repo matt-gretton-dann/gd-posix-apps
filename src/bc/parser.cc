@@ -165,7 +165,11 @@ GD::Bc::Parser::Parser(std::unique_ptr<Lexer>&& lexer, bool interactive)
 
 std::shared_ptr<GD::Bc::Instructions> GD::Bc::Parser::parse()
 {
+  /* reset everything - assuming we may be in error recovery. */
   instructions_ = std::make_shared<Instructions>();
+  while (!loop_breaks_.empty()) {
+    loop_breaks_.pop();
+  }
   parse_program();
   return instructions_;
 }
@@ -312,7 +316,21 @@ bool GD::Bc::Parser::parse_opt_statement()
   }
   }
 }
-void GD::Bc::Parser::parse_break_statement() { assert(false); }
+
+void GD::Bc::Parser::parse_break_statement()
+{
+  assert(lexer_->peek() == Token::Type::break_);
+  lexer_->chew();
+
+  if (!in_loop()) {
+    insert_error(Msg::break_outside_of_loop);
+    return;
+  }
+
+  auto branch = insert_branch(ExprIndex(0));
+  add_loop_exit(branch.index());
+}
+
 void GD::Bc::Parser::parse_return_statement() { assert(false); }
 void GD::Bc::Parser::parse_for_statement() { assert(false); }
 
@@ -365,12 +383,39 @@ void GD::Bc::Parser::parse_while_statement()
   lexer_->chew();
 
   auto bz = insert_branch_zero(rel_expr, ExprIndex(0));
+  push_loop();
+  add_loop_exit(bz.index());
 
   parse_statement();
   insert_branch(begin);
-  ExprIndex end(instructions_->size());
-  instructions_->at(bz.index()).op2(end - bz);
+  update_loop_exits(instructions_->size());
+  pop_loop();
 }
+
+void GD::Bc::Parser::push_loop() { loop_breaks_.push({}); }
+
+void GD::Bc::Parser::add_loop_exit(Index idx) { loop_breaks_.top().push_back(idx); }
+
+void GD::Bc::Parser::update_loop_exits(Index dest)
+{
+  for (auto idx : loop_breaks_.top()) {
+    auto& i = instructions_->at(idx);
+    Offset o = dest - idx;
+    if (i.opcode() == Instruction::Opcode::branch) {
+      i.op1(o);
+    }
+    else if (i.opcode() == Instruction::Opcode::branch_zero) {
+      i.op2(o);
+    }
+    else {
+      assert(false);
+    }
+  }
+}
+
+void GD::Bc::Parser::pop_loop() { loop_breaks_.pop(); }
+
+bool GD::Bc::Parser::in_loop() const { return !loop_breaks_.empty(); }
 
 void GD::Bc::Parser::parse_function() { assert(false); }
 

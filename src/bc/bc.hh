@@ -15,9 +15,11 @@
 #include "bc-messages.hh"
 
 #include <iostream>
+#include <list>
 #include <memory>
 #include <optional>
 #include <sstream>
+#include <stack>
 #include <string>
 #include <variant>
 
@@ -817,8 +819,15 @@ private:
    */
   ExprIndex insert_branch(ExprIndex dest);
 
+  void push_loop();
+  void add_loop_exit(Index idx);
+  void update_loop_exits(Index idx);
+  void pop_loop();
+  bool in_loop() const;
+
   std::unique_ptr<Lexer> lexer_;                ///< Lexer
   std::shared_ptr<Instructions> instructions_;  ///< Current set of instructions
+  std::stack<std::list<Index>> loop_breaks_;    ///< Stack of loop breaks.
   bool interactive_;                            ///< Are we interactive?
   bool error_;                                  ///< Has there been an error?
 };

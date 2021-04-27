@@ -67,7 +67,7 @@
         "msg": "expected_rbrace",
         "id": 11,
         "description": "We expected a } but instead got the token {0}",
-        "C": "Expected '}', found: {0}"
+        "C": "Expected '}}', found: {0}"
       },
       {
         "msg": "missing_newline_at_end_of_semicolon_list",
@@ -113,9 +113,15 @@
       },
       {
         "msg": "expected_primary_expression",
-        "id": 18,
+        "id": 19,
         "description": "Expected a primary expression, found: {0}",
         "C": "Expected primary expression, found: {0}"
+      },
+      {
+        "msg": "break_outside_of_loop",
+        "id": 20,
+        "description": "Encountered a break when not in a loop",
+        "C": "Encountered break whilst not in a for/while loop."
       }
     ]
   }
