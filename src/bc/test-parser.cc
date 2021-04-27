@@ -304,6 +304,16 @@ TEST_CASE("GD::Bc::Parser - basic parsing", "[bc][parser]")
       {GD::Bc::Instruction::Opcode::branch, -14},
       {GD::Bc::Instruction::Opcode::number, "8"},
       {GD::Bc::Instruction::Opcode::print, -1, GD::Bc::Instruction::Stream::stdout}}},
+    {"for (1;2;3) { 4 }\n",
+     {{GD::Bc::Instruction::Opcode::number, "1"},
+      {GD::Bc::Instruction::Opcode::number, "2"},
+      {GD::Bc::Instruction::Opcode::branch_zero, -1, 7},
+      {GD::Bc::Instruction::Opcode::branch, 3},
+      {GD::Bc::Instruction::Opcode::number, "3"},
+      {GD::Bc::Instruction::Opcode::branch, -4},
+      {GD::Bc::Instruction::Opcode::number, "4"},
+      {GD::Bc::Instruction::Opcode::print, -1, GD::Bc::Instruction::Stream::stdout},
+      {GD::Bc::Instruction::Opcode::branch, -4}}},
   }));
 
   auto parser = GD::Bc::Parser(

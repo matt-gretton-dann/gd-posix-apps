@@ -332,7 +332,78 @@ void GD::Bc::Parser::parse_break_statement()
 }
 
 void GD::Bc::Parser::parse_return_statement() { assert(false); }
-void GD::Bc::Parser::parse_for_statement() { assert(false); }
+
+void GD::Bc::Parser::parse_for_statement()
+{
+  /* Because we generate code as we parse it we end up with a bit of a mess here but for the loop
+   *
+   * for(init; rel; update) { body }
+   *
+   * We should end up with the code:
+   *
+   *    <init>
+   * begin:
+   *    <rel>
+   *    bz exit
+   *    b  body
+   * update:
+   *    <update>
+   *    b  begin
+   * body:
+   *    <body>
+   *    b  update
+   */
+  assert(lexer_->peek() == Token::Type::for_);
+  lexer_->chew();
+
+  if (lexer_->peek() != Token::Type::lparens) {
+    insert_error(Msg::expected_lparens, lexer_->peek());
+    return;
+  }
+  lexer_->chew();
+
+  /* Initializer.  */
+  parse_expression();
+
+  if (lexer_->peek() != Token::Type::semicolon) {
+    insert_error(Msg::expected_semicolon, lexer_->peek());
+    return;
+  }
+  lexer_->chew();
+
+  /* Relational expression. */
+  ExprIndex begin(instructions_->size());
+  auto rel_expr = parse_relational_expression();
+
+  if (lexer_->peek() != Token::Type::semicolon) {
+    insert_error(Msg::expected_semicolon, lexer_->peek());
+    return;
+  }
+  lexer_->chew();
+
+  auto bz = insert_branch_zero(rel_expr, ExprIndex(0));
+  push_loop();
+  add_loop_exit(bz.index());
+  auto b_to_body = insert_branch(ExprIndex(0));
+
+  /* Update expression. */
+  ExprIndex update(instructions_->size());
+  parse_expression();
+  insert_branch(begin);
+  if (lexer_->peek() != Token::Type::rparens) {
+    insert_error(Msg::expected_rparens, lexer_->peek());
+    return;
+  }
+  lexer_->chew();
+
+  ExprIndex body(instructions_->size());
+  parse_statement();
+  insert_branch(update);
+
+  instructions_->at(b_to_body.index()).op1(body - b_to_body);
+  update_loop_exits(instructions_->size());
+  pop_loop();
+}
 
 void GD::Bc::Parser::parse_if_statement()
 {

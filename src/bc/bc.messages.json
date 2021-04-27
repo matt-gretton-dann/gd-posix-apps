@@ -122,6 +122,12 @@
         "id": 20,
         "description": "Encountered a break when not in a loop",
         "C": "Encountered break whilst not in a for/while loop."
+      },
+      {
+        "msg": "expected_semicolon",
+        "id": 21,
+        "description": "Expected an ';', found: {0}",
+        "C": "Expected ';', found: {0}"
       }
     ]
   }
