@@ -42,10 +42,24 @@ GD::Bc::Instruction::Operand const& GD::Bc::Instruction::op1() const
   return *op1_;
 }
 
+void GD::Bc::Instruction::op1(Operand const& operand)
+{
+  assert(has_op1());
+  op1_ = operand;
+  validate_operands();
+}
+
 GD::Bc::Instruction::Operand const& GD::Bc::Instruction::op2() const
 {
   assert(has_op2());
   return *op2_;
+}
+
+void GD::Bc::Instruction::op2(Operand const& operand)
+{
+  assert(has_op2());
+  op2_ = operand;
+  validate_operands();
 }
 
 bool GD::Bc::Instruction::has_op1() const { return has_op1(opcode_); }
@@ -143,6 +157,30 @@ std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Instruction::Opcode o
   case GD::Bc::Instruction::Opcode::call:
     os << "call";
     break;
+  case GD::Bc::Instruction::Opcode::equals:
+    os << "equals";
+    break;
+  case GD::Bc::Instruction::Opcode::less_than_equals:
+    os << "less_than_equals";
+    break;
+  case GD::Bc::Instruction::Opcode::greater_than_equals:
+    os << "greater_than_equals";
+    break;
+  case GD::Bc::Instruction::Opcode::not_equals:
+    os << "not_equals";
+    break;
+  case GD::Bc::Instruction::Opcode::less_than:
+    os << "less_than";
+    break;
+  case GD::Bc::Instruction::Opcode::greater_than:
+    os << "greater_than";
+    break;
+  case GD::Bc::Instruction::Opcode::branch:
+    os << "branch";
+    break;
+  case GD::Bc::Instruction::Opcode::branch_zero:
+    os << "branch_zero";
+    break;
   }
   return os;
 }
@@ -165,6 +203,7 @@ unsigned GD::Bc::Instruction::op_count(Opcode opcode)
   case GD::Bc::Instruction::Opcode::scale_expr:
   case GD::Bc::Instruction::Opcode::sqrt:
   case GD::Bc::Instruction::Opcode::length:
+  case GD::Bc::Instruction::Opcode::branch:
     return 1;
   case GD::Bc::Instruction::Opcode::print:
   case GD::Bc::Instruction::Opcode::array_element:
@@ -176,6 +215,13 @@ unsigned GD::Bc::Instruction::op_count(Opcode opcode)
   case GD::Bc::Instruction::Opcode::power:
   case GD::Bc::Instruction::Opcode::store:
   case GD::Bc::Instruction::Opcode::call:
+  case GD::Bc::Instruction::Opcode::equals:
+  case GD::Bc::Instruction::Opcode::less_than_equals:
+  case GD::Bc::Instruction::Opcode::greater_than_equals:
+  case GD::Bc::Instruction::Opcode::not_equals:
+  case GD::Bc::Instruction::Opcode::less_than:
+  case GD::Bc::Instruction::Opcode::greater_than:
+  case GD::Bc::Instruction::Opcode::branch_zero:
     return 2;
   }
 
@@ -214,6 +260,7 @@ void GD::Bc::Instruction::validate_operands() const
   case GD::Bc::Instruction::Opcode::scale_expr:
   case GD::Bc::Instruction::Opcode::sqrt:
   case GD::Bc::Instruction::Opcode::length:
+  case GD::Bc::Instruction::Opcode::branch:
     assert(op1_.has_value());
     assert(!op2_.has_value());
     assert(std::holds_alternative<Offset>(*op1_));
@@ -238,6 +285,13 @@ void GD::Bc::Instruction::validate_operands() const
   case GD::Bc::Instruction::Opcode::modulo:
   case GD::Bc::Instruction::Opcode::power:
   case GD::Bc::Instruction::Opcode::store:
+  case GD::Bc::Instruction::Opcode::equals:
+  case GD::Bc::Instruction::Opcode::less_than_equals:
+  case GD::Bc::Instruction::Opcode::greater_than_equals:
+  case GD::Bc::Instruction::Opcode::not_equals:
+  case GD::Bc::Instruction::Opcode::less_than:
+  case GD::Bc::Instruction::Opcode::greater_than:
+  case GD::Bc::Instruction::Opcode::branch_zero:
     assert(op1_.has_value());
     assert(op2_.has_value());
     assert(std::holds_alternative<Offset>(*op1_));

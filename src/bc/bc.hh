@@ -133,6 +133,9 @@ struct Token
   /** \brief  Is this an addition style op?  */
   bool is_add_op() const;
 
+  /** \brief  Is this a relation op? */
+  bool is_rel_op() const;
+
 private:
   /** Internal type to hold a number and diferentiate it from string and error.  */
   struct NumInt
@@ -307,62 +310,78 @@ private:
  * References to other instructions are always PC relative - so that we can extract function
  * definitions easily.
  *
- * | Opcode        |  Operand 1  |  Operand 2  |  Description                                      |
- * | :------------ | :---------- | :---------- | :------------------------------------------------ |
- * | eof           |             |             | end of file.                                      |
- * | print         | Offset      | Stream      | Print the value at op1 to stream op2.             |
- * | quit          | unsigned    |             | Quit - using exit code Op1.                       |
- * | string        | String      |             | A string value                                    |
- * | number        | String      |             | A number value (as yet uninterpreted).            |
- * | variable      | Letter      |             | A variable                                        |
- * | array         | Letter      |             | Array op1                                         |
- * | array_element | Letter      | Offset      | Element op2 of Array op1                          |
- * | scale         |             |             | Scale variable                                    |
- * | ibase         |             |             | ibase variable                                    |
- * | obase         |             |             | obase variable                                    |
- * | add           | Offset      | Offset      | Op1 + Op2                                         |
- * | subtact       | Offset      | Offset      | Op1 - Op2                                         |
- * | multiply      | Offset      | Offset      | Op1 - Op2                                         |
- * | negate        | Offset      |             | -Op1                                              |
- * | divide        | Offset      | Offset      | Op1 - Op2                                         |
- * | modulo        | Offset      | Offset      | Op1 - Op2                                         |
- * | power         | Offset      | Offset      | Op1 - Op2                                         |
- * | load          | Offset      |             | Load value pointed to by named expression at Op1. |
- * | store         | Offset      | Offset      | Store value Op2 into named expression Op1.        |
- * | scale_expr    | Offset      |             | Calculate scale(op1)                              |
- * | sqrt          | Offset      |             | Calculate sqrt(op1)                               |
- * | length        | Offset      |             | Calculate length(op1)                             |
- * | call          | Letter      | Offset      | Call a op1(op2...)                                |
+ * | Opcode              |  Operand 1  |  Operand 2  |  Description                               |
+ * | :------------------ | :---------- | :---------- | :----------------------------------------- |
+ * | eof                 |             |             | end of file.                               |
+ * | print               | Offset      | Stream      | Print the value at op1 to stream op2.      |
+ * | quit                | unsigned    |             | Quit - using exit code Op1.                |
+ * | string              | String      |             | A string value                             |
+ * | number              | String      |             | A number value (as yet uninterpreted).     |
+ * | variable            | Letter      |             | A variable                                 |
+ * | array               | Letter      |             | Array op1                                  |
+ * | array_element       | Letter      | Offset      | Element op2 of Array op1                   |
+ * | scale               |             |             | Scale variable                             |
+ * | ibase               |             |             | ibase variable                             |
+ * | obase               |             |             | obase variable                             |
+ * | add                 | Offset      | Offset      | Op1 + Op2                                  |
+ * | subtact             | Offset      | Offset      | Op1 - Op2                                  |
+ * | multiply            | Offset      | Offset      | Op1 - Op2                                  |
+ * | negate              | Offset      |             | -Op1                                       |
+ * | divide              | Offset      | Offset      | Op1 - Op2                                  |
+ * | modulo              | Offset      | Offset      | Op1 - Op2                                  |
+ * | power               | Offset      | Offset      | Op1 - Op2                                  |
+ * | load                | Offset      |             | Load value stored in named-expr op1.       |
+ * | store               | Offset      | Offset      | Store value Op2 into named expression Op1. |
+ * | scale_expr          | Offset      |             | Calculate scale(op1)                       |
+ * | sqrt                | Offset      |             | Calculate sqrt(op1)                        |
+ * | length              | Offset      |             | Calculate length(op1)                      |
+ * | call                | Letter      | Offset      | Call a op1(op2...)                         |
+ * | equals              | Offset      | Offset      | 1 if op1 == op2, 0 otherwise               |
+ * | less_than_equals    | Offset      | Offset      | 1 if op1 <= op2, 0 otherwise               |
+ * | greater_than_equals | Offset      | Offset      | 1 if op1 >= op2, 0 otherwise               |
+ * | not_equals          | Offset      | Offset      | 1 if op1 != op2, 0 otherwise               |
+ * | less_than           | Offset      | Offset      | 1 if op1 < op2, 0 otherwise                |
+ * | greater_than        | Offset      | Offset      | 1 if op1 > op2, 0 otherwise                |
+ * | branch              | Offset      |             | Unconditional branch to op1                |
+ * | branch_zero         | Offset      | Offset      | Branch to op2 if op1 is 0.                 |
  */
 class Instruction
 {
 public:
   /** Opcodes. */
   enum class Opcode {
-    eof,            ///< Reached the end of the current file.
-    print,          ///< Print.  op1: Index of thing to print, op2: Stream
-    quit,           ///< Quit. op1: Exit code
-    string,         ///< String. op1: String to print.
-    number,         ///< Number. op1: Stringified version of number
-    variable,       ///< Variable. op1: Var
-    array_element,  ///< Element of array: op1[op2]
-    array,          ///< Array
-    scale,          ///< Scale variable.
-    ibase,          ///< ibase variable.
-    obase,          ///< Obase variable.
-    add,            ///< Add. op1 + op2
-    subtract,       ///< Subtract. op1 - op2
-    negate,         ///< Negate. -op1
-    multiply,       ///< Multiply. op1 * op2
-    divide,         ///< Divide. op1 / op2
-    modulo,         ///< Modulo. op1 % op2
-    power,          ///< Power. op1 ^ op2
-    load,           ///< Load. Load from op1
-    store,          ///< Store.  Store op2 into op1.
-    scale_expr,     ///< scale(expr).
-    sqrt,           ///< sqrt(expr).
-    length,         ///< length(expr).
-    call,           ///< call letter(expr)
+    eof,                  ///< Reached the end of the current file.
+    print,                ///< Print.  op1: Index of thing to print, op2: Stream
+    quit,                 ///< Quit. op1: Exit code
+    string,               ///< String. op1: String to print.
+    number,               ///< Number. op1: Stringified version of number
+    variable,             ///< Variable. op1: Var
+    array_element,        ///< Element of array: op1[op2]
+    array,                ///< Array
+    scale,                ///< Scale variable.
+    ibase,                ///< ibase variable.
+    obase,                ///< Obase variable.
+    add,                  ///< Add. op1 + op2
+    subtract,             ///< Subtract. op1 - op2
+    negate,               ///< Negate. -op1
+    multiply,             ///< Multiply. op1 * op2
+    divide,               ///< Divide. op1 / op2
+    modulo,               ///< Modulo. op1 % op2
+    power,                ///< Power. op1 ^ op2
+    load,                 ///< Load. Load from op1
+    store,                ///< Store.  Store op2 into op1.
+    scale_expr,           ///< scale(expr).
+    sqrt,                 ///< sqrt(expr).
+    length,               ///< length(expr).
+    call,                 ///< call letter(expr)
+    equals,               ///< op1 == op2.
+    less_than_equals,     ///< op1 <= op2.
+    greater_than_equals,  ///< op1 >= op2.
+    not_equals,           ///< op1 != op2.
+    less_than,            ///< op1 < op2.
+    greater_than,         ///< op1 > op2.
+    branch,               ///< Branch to op1
+    branch_zero,          ///< Branch to op1 if op2 is zero.
   };
 
   /** Stream identifiers.  */
@@ -404,8 +423,14 @@ public:
   /** Get operand 1.  */
   Operand const& op1() const;
 
+  /** Update operand 1.  */
+  void op1(Operand const& operand);
+
   /** Get operand 2.  */
   Operand const& op2() const;
+
+  /** Update operand 2.  */
+  void op2(Operand const& operand);
 
   /** Do we have op1? */
   bool has_op1() const;
@@ -509,6 +534,21 @@ private:
   /** Parse statement production.  */
   void parse_statement();
 
+  /** Parse a break statement production.  */
+  void parse_break_statement();
+
+  /** Parse a return statement production.  */
+  void parse_return_statement();
+
+  /** Parse a for statement production.  */
+  void parse_for_statement();
+
+  /** Parse an if statement production.  */
+  void parse_if_statement();
+
+  /** Parse a while statement production.  */
+  void parse_while_statement();
+
   /** Parse function production. */
   void parse_function();
 
@@ -534,13 +574,13 @@ private:
   ExprIndex parse_opt_argument_list();
 
   /** Parse argument list.  */
-  void parse_argument_list();
+  ExprIndex parse_argument_list();
 
   /** Parse relational expression.  */
-  void parse_relational_expression();
+  ExprIndex parse_relational_expression();
 
   /** Parse return expression.  */
-  void parse_return_expression();
+  ExprIndex parse_return_expression();
 
   /** \brief        Parse an optional expression
    *  \param  flags Flags of type of expressions to accept, default primary.
@@ -623,11 +663,6 @@ private:
    *  \return       Expression index.
    */
   ExprIndex parse_primary_expression(POPEFlags flags = POPEFlags::parse_primary);
-
-  /** Parse a named expression.  */
-  ExprIndex parse_opt_named_expression();
-
-  ExprIndex parse_named_expression();
 
   /** \brief      Ensure that the value of the expression pointed to by \a idx has been loaded.
    *  \param  idx Index to check the loadedness of
@@ -774,6 +809,17 @@ private:
    *  \return      Index of inserted instruction
    */
   ExprIndex insert_call(char v, ExprIndex args);
+
+  /** \brief      Insert branch if zero
+   *  \param dest Destination
+   *  \param cmp  Comparison index
+   */
+  ExprIndex insert_branch_zero(ExprIndex dest, ExprIndex cmp);
+
+  /** \brief      Insert branch
+   *  \param dest Destination
+   */
+  ExprIndex insert_branch(ExprIndex dest);
 
   std::unique_ptr<Lexer> lexer_;                ///< Lexer
   std::shared_ptr<Instructions> instructions_;  ///< Current set of instructions

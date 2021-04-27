@@ -389,6 +389,13 @@ bool GD::Bc::Token::is_mul_op() const
 
 bool GD::Bc::Token::is_add_op() const { return type() == Type::add || type() == Type::subtract; }
 
+bool GD::Bc::Token::is_rel_op() const
+{
+  return type() == Type::equals || type() == Type::less_than_equals ||
+         type() == Type::greater_than_equals || type() == Type::not_equals ||
+         type() == Type::less_than || type() == Type::greater_than;
+}
+
 bool GD::Bc::operator==(Token const& token, Token::Type type) { return token.type() == type; }
 bool GD::Bc::operator==(Token::Type type, Token const& token) { return token == type; }
 bool GD::Bc::operator!=(Token const& token, Token::Type type) { return !(token == type); }

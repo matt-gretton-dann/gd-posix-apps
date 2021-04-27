@@ -257,6 +257,19 @@ TEST_CASE("GD::Bc::Parser - basic parsing", "[bc][parser]")
       {GD::Bc::Instruction::Opcode::scale_expr, -1},
       {GD::Bc::Instruction::Opcode::add, -5, -1},
       {GD::Bc::Instruction::Opcode::print, -1, GD::Bc::Instruction::Stream::stdout}}},
+    {"while (a < 10) ++a;\n",
+     {{GD::Bc::Instruction::Opcode::variable, 'a'},
+      {GD::Bc::Instruction::Opcode::number, "10"},
+      {GD::Bc::Instruction::Opcode::load, -2},
+      {GD::Bc::Instruction::Opcode::less_than, -1, -2},
+      {GD::Bc::Instruction::Opcode::branch_zero, -1, 8},
+      {GD::Bc::Instruction::Opcode::variable, 'a'},
+      {GD::Bc::Instruction::Opcode::load, -1},
+      {GD::Bc::Instruction::Opcode::number, "1"},
+      {GD::Bc::Instruction::Opcode::add, -2, -1},
+      {GD::Bc::Instruction::Opcode::store, -4, -1},
+      {GD::Bc::Instruction::Opcode::print, -2, GD::Bc::Instruction::Stream::stdout},
+      {GD::Bc::Instruction::Opcode::branch, -11}}},
   }));
 
   auto parser = GD::Bc::Parser(

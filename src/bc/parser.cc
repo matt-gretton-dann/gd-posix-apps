@@ -270,19 +270,24 @@ bool GD::Bc::Parser::parse_opt_statement()
     return true;
   }
   case Token::Type::break_:
-    assert(false);
+    parse_break_statement();
+    return true;
   case Token::Type::quit:
     insert_quit(0);
     lexer_->chew();
     return true;
   case Token::Type::return_:
-    assert(false);
+    parse_return_statement();
+    return true;
   case Token::Type::for_:
-    assert(false);
+    parse_for_statement();
+    return true;
   case Token::Type::if_:
-    assert(false);
+    parse_if_statement();
+    return true;
   case Token::Type::while_:
-    assert(false);
+    parse_while_statement();
+    return true;
   case Token::Type::lbrace:
     lexer_->chew();
     parse_statement_list();
@@ -307,6 +312,39 @@ bool GD::Bc::Parser::parse_opt_statement()
   }
   }
 }
+void GD::Bc::Parser::parse_break_statement() { assert(false); }
+void GD::Bc::Parser::parse_return_statement() { assert(false); }
+void GD::Bc::Parser::parse_for_statement() { assert(false); }
+void GD::Bc::Parser::parse_if_statement() { assert(false); }
+
+void GD::Bc::Parser::parse_while_statement()
+{
+  assert(lexer_->peek() == Token::Type::while_);
+
+  lexer_->chew();
+
+  if (lexer_->peek() != Token::Type::lparens) {
+    insert_error(Msg::expected_lparens, lexer_->peek());
+    return;
+  }
+  lexer_->chew();
+
+  ExprIndex begin(instructions_->size());
+  auto rel_expr = parse_relational_expression();
+
+  if (lexer_->peek() != Token::Type::rparens) {
+    insert_error(Msg::expected_rparens, lexer_->peek());
+    return;
+  }
+  lexer_->chew();
+
+  auto bz = insert_branch_zero(rel_expr, ExprIndex(0));
+
+  parse_statement();
+  insert_branch(begin);
+  ExprIndex end(instructions_->size());
+  instructions_->at(bz.index()).op2(end - bz);
+}
 
 void GD::Bc::Parser::parse_function() { assert(false); }
 
@@ -314,6 +352,39 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_argument_list()
 {
   assert(false);
   return ExprIndex(0, ExprType::missing);
+}
+
+GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_relational_expression()
+{
+  auto lhs = parse_expression();
+
+  if (!lexer_->peek().is_rel_op()) {
+    return lhs;
+  }
+  auto type = lexer_->peek().type();
+  lexer_->chew();
+  auto rhs = parse_expression();
+  switch (type) {
+  case Token::Type::equals:
+    return insert_arith(Instruction::Opcode::equals, lhs, rhs);
+  case Token::Type::less_than_equals:
+    return insert_arith(Instruction::Opcode::less_than_equals, lhs, rhs);
+  case Token::Type::greater_than_equals:
+    return insert_arith(Instruction::Opcode::greater_than_equals, lhs, rhs);
+  case Token::Type::not_equals:
+    return insert_arith(Instruction::Opcode::not_equals, lhs, rhs);
+  case Token::Type::less_than:
+    return insert_arith(Instruction::Opcode::less_than, lhs, rhs);
+  case Token::Type::greater_than:
+    return insert_arith(Instruction::Opcode::greater_than, lhs, rhs);
+  default:
+    assert(false);
+  }
+}
+
+GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_return_expression()
+{
+  return parse_opt_expression();
 }
 
 GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_expression(POPEFlags flags)
@@ -694,16 +765,6 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_primary_expression(POPEFlags fla
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_named_expression()
-{
-  return parse_opt_primary_expression(POPEFlags::parse_named);
-}
-
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_named_expression()
-{
-  return parse_primary_expression(POPEFlags::parse_named);
-}
-
 GD::Bc::Parser::ExprIndex GD::Bc::Parser::ensure_expr_loaded(ExprIndex idx)
 {
   assert(idx != ExprType::missing);
@@ -853,5 +914,22 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_call(char v, ExprIndex args)
   args = ensure_expr_loaded(args);
   ExprIndex result(instructions_->size(), ExprType::primary);
   instructions_->emplace_back(Instruction::Opcode::call, v, args - result);
+  return result;
+}
+
+GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_branch_zero(ExprIndex dest, ExprIndex cmp)
+{
+  dest = ensure_expr_loaded(dest);
+  cmp = ensure_expr_loaded(cmp);
+  ExprIndex result(instructions_->size());
+  instructions_->emplace_back(Instruction::Opcode::branch_zero, dest - result, cmp - result);
+  return result;
+}
+
+GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_branch(ExprIndex dest)
+{
+  dest = ensure_expr_loaded(dest);
+  ExprIndex result(instructions_->size());
+  instructions_->emplace_back(Instruction::Opcode::branch, dest - result);
   return result;
 }
