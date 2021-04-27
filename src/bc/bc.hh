@@ -338,10 +338,8 @@ private:
  * | call                | Letter      | Offset      | Call a op1(op2...)                         |
  * | equals              | Offset      | Offset      | 1 if op1 == op2, 0 otherwise               |
  * | less_than_equals    | Offset      | Offset      | 1 if op1 <= op2, 0 otherwise               |
- * | greater_than_equals | Offset      | Offset      | 1 if op1 >= op2, 0 otherwise               |
  * | not_equals          | Offset      | Offset      | 1 if op1 != op2, 0 otherwise               |
  * | less_than           | Offset      | Offset      | 1 if op1 < op2, 0 otherwise                |
- * | greater_than        | Offset      | Offset      | 1 if op1 > op2, 0 otherwise                |
  * | branch              | Offset      |             | Unconditional branch to op1                |
  * | branch_zero         | Offset      | Offset      | Branch to op2 if op1 is 0.                 |
  */
@@ -350,38 +348,36 @@ class Instruction
 public:
   /** Opcodes. */
   enum class Opcode {
-    eof,                  ///< Reached the end of the current file.
-    print,                ///< Print.  op1: Index of thing to print, op2: Stream
-    quit,                 ///< Quit. op1: Exit code
-    string,               ///< String. op1: String to print.
-    number,               ///< Number. op1: Stringified version of number
-    variable,             ///< Variable. op1: Var
-    array_element,        ///< Element of array: op1[op2]
-    array,                ///< Array
-    scale,                ///< Scale variable.
-    ibase,                ///< ibase variable.
-    obase,                ///< Obase variable.
-    add,                  ///< Add. op1 + op2
-    subtract,             ///< Subtract. op1 - op2
-    negate,               ///< Negate. -op1
-    multiply,             ///< Multiply. op1 * op2
-    divide,               ///< Divide. op1 / op2
-    modulo,               ///< Modulo. op1 % op2
-    power,                ///< Power. op1 ^ op2
-    load,                 ///< Load. Load from op1
-    store,                ///< Store.  Store op2 into op1.
-    scale_expr,           ///< scale(expr).
-    sqrt,                 ///< sqrt(expr).
-    length,               ///< length(expr).
-    call,                 ///< call letter(expr)
-    equals,               ///< op1 == op2.
-    less_than_equals,     ///< op1 <= op2.
-    greater_than_equals,  ///< op1 >= op2.
-    not_equals,           ///< op1 != op2.
-    less_than,            ///< op1 < op2.
-    greater_than,         ///< op1 > op2.
-    branch,               ///< Branch to op1
-    branch_zero,          ///< Branch to op1 if op2 is zero.
+    eof,               ///< Reached the end of the current file.
+    print,             ///< Print.  op1: Index of thing to print, op2: Stream
+    quit,              ///< Quit. op1: Exit code
+    string,            ///< String. op1: String to print.
+    number,            ///< Number. op1: Stringified version of number
+    variable,          ///< Variable. op1: Var
+    array_element,     ///< Element of array: op1[op2]
+    array,             ///< Array
+    scale,             ///< Scale variable.
+    ibase,             ///< ibase variable.
+    obase,             ///< Obase variable.
+    add,               ///< Add. op1 + op2
+    subtract,          ///< Subtract. op1 - op2
+    negate,            ///< Negate. -op1
+    multiply,          ///< Multiply. op1 * op2
+    divide,            ///< Divide. op1 / op2
+    modulo,            ///< Modulo. op1 % op2
+    power,             ///< Power. op1 ^ op2
+    load,              ///< Load. Load from op1
+    store,             ///< Store.  Store op2 into op1.
+    scale_expr,        ///< scale(expr).
+    sqrt,              ///< sqrt(expr).
+    length,            ///< length(expr).
+    call,              ///< call letter(expr)
+    equals,            ///< op1 == op2.
+    less_than_equals,  ///< op1 <= op2.
+    not_equals,        ///< op1 != op2.
+    less_than,         ///< op1 < op2.
+    branch,            ///< Branch to op1
+    branch_zero,       ///< Branch to op1 if op2 is zero.
   };
 
   /** Stream identifiers.  */

@@ -274,7 +274,7 @@ TEST_CASE("GD::Bc::Parser - basic parsing", "[bc][parser]")
      {{GD::Bc::Instruction::Opcode::variable, 'a'},
       {GD::Bc::Instruction::Opcode::number, "0"},
       {GD::Bc::Instruction::Opcode::load, -2},
-      {GD::Bc::Instruction::Opcode::greater_than_equals, -1, -2},
+      {GD::Bc::Instruction::Opcode::less_than, -2, -1},
       {GD::Bc::Instruction::Opcode::branch_zero, -1, 4},
       {GD::Bc::Instruction::Opcode::variable, 'a'},
       {GD::Bc::Instruction::Opcode::number, "0"},

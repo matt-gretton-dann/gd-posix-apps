@@ -163,17 +163,11 @@ std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Instruction::Opcode o
   case GD::Bc::Instruction::Opcode::less_than_equals:
     os << "less_than_equals";
     break;
-  case GD::Bc::Instruction::Opcode::greater_than_equals:
-    os << "greater_than_equals";
-    break;
   case GD::Bc::Instruction::Opcode::not_equals:
     os << "not_equals";
     break;
   case GD::Bc::Instruction::Opcode::less_than:
     os << "less_than";
-    break;
-  case GD::Bc::Instruction::Opcode::greater_than:
-    os << "greater_than";
     break;
   case GD::Bc::Instruction::Opcode::branch:
     os << "branch";
@@ -217,10 +211,8 @@ unsigned GD::Bc::Instruction::op_count(Opcode opcode)
   case GD::Bc::Instruction::Opcode::call:
   case GD::Bc::Instruction::Opcode::equals:
   case GD::Bc::Instruction::Opcode::less_than_equals:
-  case GD::Bc::Instruction::Opcode::greater_than_equals:
   case GD::Bc::Instruction::Opcode::not_equals:
   case GD::Bc::Instruction::Opcode::less_than:
-  case GD::Bc::Instruction::Opcode::greater_than:
   case GD::Bc::Instruction::Opcode::branch_zero:
     return 2;
   }
@@ -287,10 +279,8 @@ void GD::Bc::Instruction::validate_operands() const
   case GD::Bc::Instruction::Opcode::store:
   case GD::Bc::Instruction::Opcode::equals:
   case GD::Bc::Instruction::Opcode::less_than_equals:
-  case GD::Bc::Instruction::Opcode::greater_than_equals:
   case GD::Bc::Instruction::Opcode::not_equals:
   case GD::Bc::Instruction::Opcode::less_than:
-  case GD::Bc::Instruction::Opcode::greater_than:
   case GD::Bc::Instruction::Opcode::branch_zero:
     assert(op1_.has_value());
     assert(op2_.has_value());
