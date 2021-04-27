@@ -315,7 +315,33 @@ bool GD::Bc::Parser::parse_opt_statement()
 void GD::Bc::Parser::parse_break_statement() { assert(false); }
 void GD::Bc::Parser::parse_return_statement() { assert(false); }
 void GD::Bc::Parser::parse_for_statement() { assert(false); }
-void GD::Bc::Parser::parse_if_statement() { assert(false); }
+
+void GD::Bc::Parser::parse_if_statement()
+{
+  assert(lexer_->peek() == Token::Type::if_);
+  lexer_->chew();
+
+  if (lexer_->peek() != Token::Type::lparens) {
+    insert_error(Msg::expected_lparens, lexer_->peek());
+    return;
+  }
+  lexer_->chew();
+
+  ExprIndex begin(instructions_->size());
+  auto rel_expr = parse_relational_expression();
+
+  if (lexer_->peek() != Token::Type::rparens) {
+    insert_error(Msg::expected_rparens, lexer_->peek());
+    return;
+  }
+  lexer_->chew();
+
+  auto bz = insert_branch_zero(rel_expr, ExprIndex(0));
+
+  parse_statement();
+  ExprIndex end(instructions_->size());
+  instructions_->at(bz.index()).op2(end - bz);
+}
 
 void GD::Bc::Parser::parse_while_statement()
 {
@@ -484,8 +510,8 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_assign_expression(POPEFlags 
     }
   }
 
-  /* If we've reached here we're definitely some form of expression and we have its left hand side.
-   * We just need to walk up the parsing stack to see what are.
+  /* If we've reached here we're definitely some form of expression and we have its left hand
+   * side. We just need to walk up the parsing stack to see what are.
    */
   auto result = parse_power_expression(primary_expr);
   result = parse_mul_expression(result);
