@@ -11,18 +11,6 @@
 
 #include "bc.hh"
 
-GD::Bc::Parser::POPEFlags GD::Bc::operator&(Parser::POPEFlags lhs, Parser::POPEFlags rhs)
-{
-  using UT = std::underlying_type_t<Parser::POPEFlags>;
-  return static_cast<Parser::POPEFlags>(static_cast<UT>(lhs) & static_cast<UT>(rhs));
-}
-
-GD::Bc::Parser::POPEFlags GD::Bc::operator|(Parser::POPEFlags lhs, Parser::POPEFlags rhs)
-{
-  using UT = std::underlying_type_t<Parser::POPEFlags>;
-  return static_cast<Parser::POPEFlags>(static_cast<UT>(lhs) | static_cast<UT>(rhs));
-}
-
 bool GD::Bc::operator==(Parser::ExprIndex const& lhs, Parser::ExprIndex const& rhs)
 {
   if (lhs.type() != rhs.type()) {
@@ -692,7 +680,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_define_element(ExprIndex functio
 
 GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_argument_list()
 {
-  ExprIndex expr = parse_opt_expression(POPEFlags::parse_array_slices | POPEFlags::parse_primary);
+  ExprIndex expr = parse_opt_expression(POPEFlags::parse_array_slices);
   if (expr == ExprType::missing) {
     return expr;
   }
@@ -700,7 +688,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_argument_list()
 
   while (lexer_->peek() == Token::Type::comma && !error_) {
     lexer_->chew();
-    expr = parse_expression(POPEFlags::parse_array_slices | POPEFlags::parse_primary);
+    expr = parse_expression(POPEFlags::parse_array_slices);
     insert_push_param(expr);
   }
 
@@ -989,9 +977,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_incr_decr_expression()
 
 GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_primary_expression(POPEFlags flags)
 {
-  bool parse_primary = (flags & POPEFlags::parse_primary) == POPEFlags::parse_primary;
-  bool parse_array_slices =
-    (flags & POPEFlags::parse_array_slices) == POPEFlags::parse_array_slices;
+  bool parse_array_slices = (flags == POPEFlags::parse_array_slices);
 
   /* Because of the number of special cases for named_expression vs primary_expression we do
    * both in here.  */
@@ -1016,7 +1002,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_primary_expression(POPEFlags
       return insert_array_element(letter, elt);
     }
 
-    if (parse_primary && lexer_->peek() == Token::Type::lparens) {
+    if (lexer_->peek() == Token::Type::lparens) {
       Location loc = lexer_->location();
       lexer_->chew();
 
@@ -1035,7 +1021,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_primary_expression(POPEFlags
   }
   case Token::Type::scale: {
     lexer_->chew();
-    if (parse_primary && lexer_->peek() == Token::Type::lparens) {
+    if (lexer_->peek() == Token::Type::lparens) {
       lexer_->chew();
       auto elt = parse_expression();
       if (lexer_->peek() != Token::Type::rparens) {
@@ -1058,55 +1044,43 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_primary_expression(POPEFlags
     lexer_->chew();
     return idx;
   }
-  case Token::Type::lparens:
-    if (parse_primary) {
-      lexer_->chew();
-      auto idx = parse_expression();
-      if (lexer_->peek() != Token::Type::rparens) {
-        return insert_error(Msg::expected_rparens, lexer_->peek());
-      }
-      lexer_->chew();
-      return idx;
+  case Token::Type::lparens: {
+    lexer_->chew();
+    auto idx = parse_expression();
+    if (lexer_->peek() != Token::Type::rparens) {
+      return insert_error(Msg::expected_rparens, lexer_->peek());
     }
-    else {
-      return ExprIndex::missing();
+    lexer_->chew();
+    return idx;
+  }
+  case Token::Type::sqrt: {
+    lexer_->chew();
+    if (lexer_->peek() != Token::Type::lparens) {
+      return insert_error(Msg::expected_lparens);
     }
-  case Token::Type::sqrt:
-    if (parse_primary) {
-      lexer_->chew();
-      if (lexer_->peek() != Token::Type::lparens) {
-        return insert_error(Msg::expected_lparens);
-      }
-      lexer_->chew();
-      auto elt = parse_expression();
+    lexer_->chew();
+    auto elt = parse_expression();
 
-      if (lexer_->peek() != Token::Type::rparens) {
-        return insert_error(Msg::expected_rparens, lexer_->peek());
-      }
-      lexer_->chew();
-      return insert_sqrt(elt);
+    if (lexer_->peek() != Token::Type::rparens) {
+      return insert_error(Msg::expected_rparens, lexer_->peek());
     }
-    else {
-      return ExprIndex::missing();
+    lexer_->chew();
+    return insert_sqrt(elt);
+  }
+  case Token::Type::length: {
+    lexer_->chew();
+    if (lexer_->peek() != Token::Type::lparens) {
+      return insert_error(Msg::expected_lparens);
     }
-  case Token::Type::length:
-    if (parse_primary) {
-      lexer_->chew();
-      if (lexer_->peek() != Token::Type::lparens) {
-        return insert_error(Msg::expected_lparens);
-      }
-      lexer_->chew();
-      auto elt = parse_expression();
+    lexer_->chew();
+    auto elt = parse_expression();
 
-      if (lexer_->peek() != Token::Type::rparens) {
-        return insert_error(Msg::expected_rparens, lexer_->peek());
-      }
-      lexer_->chew();
-      return insert_length(elt);
+    if (lexer_->peek() != Token::Type::rparens) {
+      return insert_error(Msg::expected_rparens, lexer_->peek());
     }
-    else {
-      return ExprIndex::missing();
-    }
+    lexer_->chew();
+    return insert_length(elt);
+  }
   default:
     return ExprIndex::missing();
   }

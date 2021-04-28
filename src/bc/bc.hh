@@ -601,9 +601,8 @@ public:
 
   /** Flags for parse_opt_primary_expression.  */
   enum class POPEFlags {
-    parse_named = 0x0,        ///< Named expressions only
-    parse_primary = 0x1,      ///< Primary expressions.
-    parse_array_slices = 0x2  ///< Array slices
+    parse_primary = 0x0,      ///< Primary and named expressions.
+    parse_array_slices = 0x1  ///< Array slices, primary and named expressions.
   };
 
   /* Root expression type returned by parse_opt_epxression().  */
@@ -830,9 +829,16 @@ private:
    */
   ExprIndex parse_opt_primary_expression(POPEFlags flags = POPEFlags::parse_primary);
 
-  /** \brief        Parse primary and named expressions
-   *  \param  flags Bit mask of flags.
+  /** \brief        Parse primary, named and optionally array_slice expressions
+   *  \param  flags Flags - match array slices as well as primary & named expressions?
    *  \return       Expression index.
+   *
+   * This is the most complicated of the parsing functions.  Everywhere the grammar accepts a
+   * named_expression it also accepts a primary_expression, and the recognisers are intertwined.
+   * Therefore we recognise both in one function and return the type in the result.
+   *
+   * Array_slices are only used in function calls as the top-level expression for a parameter, but
+   * it is easiest to include recognising them in this function.
    */
   ExprIndex parse_primary_expression(POPEFlags flags = POPEFlags::parse_primary);
 
@@ -1027,10 +1033,23 @@ private:
    */
   ExprIndex insert_function_end(char letter, ExprIndex begin);
 
+  /** \brief Push a new loop state.  */
   void push_loop();
+
+  /** \brief     Add an loop break/exit instruction to the list for the current loop.
+   *  \param idx Index of loop exit instruction.
+   */
   void add_loop_exit(Index idx);
+
+  /** \brief     Update the break/exit instructions for the current loop to point to idx.
+   *  \param idx Index of first instruction after the end of the loop.
+   */
   void update_loop_exits(Index idx);
+
+  /** \brief  Pop the loop state.  */
   void pop_loop();
+
+  /** \brief  Are we currently in a loop? */
   bool in_loop() const;
 
   std::unique_ptr<Lexer> lexer_;                ///< Lexer
@@ -1040,9 +1059,6 @@ private:
   bool error_;                                  ///< Has there been an error?
   bool in_function_;                            ///< Are we in a function?
 };
-
-Parser::POPEFlags operator&(Parser::POPEFlags lhs, Parser::POPEFlags rhs);
-Parser::POPEFlags operator|(Parser::POPEFlags lhs, Parser::POPEFlags rhs);
 
 bool operator==(Parser::ExprIndex const& lhs, Parser::ExprIndex const& rhs);
 bool operator==(Parser::ExprIndex const& lhs, Parser::Index rhs);
