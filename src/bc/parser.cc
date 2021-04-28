@@ -521,8 +521,19 @@ void GD::Bc::Parser::parse_function() { assert(false); }
 
 GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_argument_list()
 {
-  assert(false);
-  return ExprIndex(0, ExprType::missing);
+  ExprIndex expr = parse_opt_expression(POPEFlags::parse_array_slices | POPEFlags::parse_primary);
+  if (expr == ExprType::missing) {
+    return expr;
+  }
+  insert_push_param(expr);
+
+  while (lexer_->peek() == Token::Type::comma && !error_) {
+    lexer_->chew();
+    expr = parse_expression(POPEFlags::parse_array_slices | POPEFlags::parse_primary);
+    insert_push_param(expr);
+  }
+
+  return expr;
 }
 
 GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_relational_expression()
@@ -785,8 +796,6 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_incr_decr_expression()
       return insert_error(Msg::expected_named_expression);
     }
     return named_expr;
-
-    return parse_primary_expression();
   }
 
   /* Now we know we have a named expression, if it could be post increment/decrement check.  */
@@ -837,13 +846,18 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_primary_expression(POPEFlags
     }
 
     if (parse_primary && lexer_->peek() == Token::Type::lparens) {
+      Location loc = lexer_->location();
       lexer_->chew();
-      auto elt = parse_opt_argument_list();
+
+      insert_push_param_mark();
+      parse_opt_argument_list();
+
       if (lexer_->peek() != Token::Type::rparens) {
         return insert_error(Msg::expected_rparens, lexer_->peek());
       }
       lexer_->chew();
-      return insert_call(letter, elt);
+
+      return insert_call(letter, loc);
     }
 
     return insert_variable(letter);
@@ -939,7 +953,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_primary_expression(POPEFlags fla
 GD::Bc::Parser::ExprIndex GD::Bc::Parser::ensure_expr_loaded(ExprIndex idx)
 {
   assert(idx != ExprType::missing);
-  if (idx == ExprType::named) {
+  if (idx == ExprType::named || idx == ExprType::array_slice) {
     idx = insert_load(idx);
   }
   return idx;
@@ -973,7 +987,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_quit(unsigned exit_code)
 
 GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_load(ExprIndex idx)
 {
-  assert(idx == ExprType::named);
+  assert(idx == ExprType::named || idx == ExprType::array_slice);
   ExprIndex result(instructions_->size());
   instructions_->emplace_back(Instruction::Opcode::load, idx - result);
   return result;
@@ -981,7 +995,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_load(ExprIndex idx)
 
 GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_store(ExprIndex var, ExprIndex value)
 {
-  assert(var == ExprType::named);
+  assert(var == ExprType::named || var == ExprType::array_slice);
   value = ensure_expr_loaded(value);
   ExprIndex end(instructions_->size());
   instructions_->emplace_back(Instruction::Opcode::store, var - end, value - end);
@@ -1080,14 +1094,6 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_length(ExprIndex expr)
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_call(char v, ExprIndex args)
-{
-  args = ensure_expr_loaded(args);
-  ExprIndex result(instructions_->size(), ExprType::primary);
-  instructions_->emplace_back(Instruction::Opcode::call, v, args - result);
-  return result;
-}
-
 GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_branch_zero(ExprIndex dest, ExprIndex cmp)
 {
   cmp = ensure_expr_loaded(cmp);
@@ -1108,5 +1114,41 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_return(ExprIndex expr)
   expr = ensure_expr_loaded(expr);
   ExprIndex result(instructions_->size());
   instructions_->emplace_back(Instruction::Opcode::branch, expr - result);
+  return result;
+}
+
+GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_call(char v, Location const& loc)
+{
+  ExprIndex result(instructions_->size(), ExprType::primary);
+  instructions_->emplace_back(Instruction::Opcode::call, v, loc);
+  return result;
+}
+
+GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_push_param_mark()
+{
+  ExprIndex result(instructions_->size());
+  instructions_->emplace_back(Instruction::Opcode::push_param_mark);
+  return result;
+}
+
+GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_pop_param_mark()
+{
+  ExprIndex result(instructions_->size());
+  instructions_->emplace_back(Instruction::Opcode::pop_param_mark);
+  return result;
+}
+
+GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_push_param(ExprIndex expr)
+{
+  expr = ensure_expr_loaded(expr);
+  ExprIndex result(instructions_->size());
+  instructions_->emplace_back(Instruction::Opcode::push_param, expr - result);
+  return result;
+}
+
+GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_pop_param()
+{
+  ExprIndex result(instructions_->size());
+  instructions_->emplace_back(Instruction::Opcode::pop_param);
   return result;
 }

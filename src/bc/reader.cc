@@ -18,6 +18,11 @@ GD::Bc::Location::Location(std::string_view file_name) : file_name_(file_name), 
 {
 }
 
+GD::Bc::Location::Location(std::string_view file_name, Line line, Column column)
+    : file_name_(file_name), column_(column), line_(line)
+{
+}
+
 std::string const& GD::Bc::Location::file_name() const { return file_name_; }
 
 GD::Bc::Location::Column GD::Bc::Location::column() const { return column_; }
@@ -45,6 +50,17 @@ std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Location const& locat
   return os;
 }
 
+bool GD::Bc::operator==(GD::Bc::Location const& lhs, GD::Bc::Location const& rhs)
+{
+  return lhs.file_name() == rhs.file_name() && lhs.line() == rhs.line() &&
+         lhs.column() == rhs.column();
+}
+
+bool GD::Bc::operator!=(GD::Bc::Location const& lhs, GD::Bc::Location const& rhs)
+{
+  return !(lhs == rhs);
+}
+
 GD::Bc::Reader::Reader(std::string_view name) : location_(name) {}
 
 void GD::Bc::Reader::chew()
@@ -58,6 +74,8 @@ void GD::Bc::Reader::chew()
 
   do_chew();
 }
+
+GD::Bc::Location const& GD::Bc::Reader::location() const { return location_; }
 
 GD::Bc::Reader::~Reader() {}
 

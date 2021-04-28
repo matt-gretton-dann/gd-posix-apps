@@ -40,6 +40,8 @@ void GD::Bc::Lexer::chew()
   }
 }
 
+GD::Bc::Location const& GD::Bc::Lexer::location() const { return r_->location(); }
+
 void GD::Bc::Lexer::lex_string()
 {
   assert(r_->peek() == '"');

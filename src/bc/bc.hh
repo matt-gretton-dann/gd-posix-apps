@@ -176,6 +176,9 @@ public:
    */
   explicit Location(std::string_view file_name);
 
+  /** \brief Location constructor.  */
+  Location(std::string_view file_name, Line line, Column column);
+
   /** Get file name. */
   std::string const& file_name() const;
 
@@ -204,6 +207,9 @@ private:
 };
 
 std::ostream& operator<<(std::ostream& os, Location const& location);
+
+bool operator==(Location const& lhs, Location const& rhs);
+bool operator!=(Location const& lhs, Location const& rhs);
 
 /** \brief  Reader base class.
  *
@@ -306,6 +312,9 @@ public:
   /** \brief  Chew the current token. */
   void chew();
 
+  /** \brief  Get the current location. */
+  Location const& location() const;
+
   /** \brief  Generate an error message with current location information added.  */
   template<typename... Ts>
   std::string error(Msg msg, Ts... args)
@@ -378,7 +387,6 @@ private:
  * | scale_expr          | Offset      |             | Calculate scale(op1)                       |
  * | sqrt                | Offset      |             | Calculate sqrt(op1)                        |
  * | length              | Offset      |             | Calculate length(op1)                      |
- * | call                | Letter      | Offset      | Call a op1(op2...)                         |
  * | equals              | Offset      | Offset      | 1 if op1 == op2, 0 otherwise               |
  * | less_than_equals    | Offset      | Offset      | 1 if op1 <= op2, 0 otherwise               |
  * | not_equals          | Offset      | Offset      | 1 if op1 != op2, 0 otherwise               |
@@ -386,6 +394,12 @@ private:
  * | branch              | Offset      |             | Unconditional branch to op1                |
  * | branch_zero         | Offset      | Offset      | Branch to op2 if op1 is 0.                 |
  * | return_             | Offset      |             | return from function with value Op1        |
+ * | call                | Letter      | Location    | Call fn op1, op2 is source loc of call     |
+ * | push_param_mark     |             |             | Push fn separator marker onto param stack  |
+ * | pop_param_mark      |             |             | Pop fn separator marker from param stack   |
+ * | push_param          | Offset      |             | Push parameter onto param stack            |
+ * | pop_param           |             |             | Pop parameter from param stack             |
+ *
  */
 class Instruction
 {
@@ -415,7 +429,6 @@ public:
     scale_expr,        ///< scale(expr).
     sqrt,              ///< sqrt(expr).
     length,            ///< length(expr).
-    call,              ///< call letter(expr)
     equals,            ///< op1 == op2.
     less_than_equals,  ///< op1 <= op2.
     not_equals,        ///< op1 != op2.
@@ -423,6 +436,15 @@ public:
     branch,            ///< Branch to op1
     branch_zero,       ///< Branch to op1 if op2 is zero.
     return_,           ///< return(op1)
+    call,              ///< call function op1, source location of call in Op2.
+    push_param_mark,   ///< Push a "function separator" marker onto the parameter stack
+    pop_param_mark,    ///< Pop a "function separator" marker onto the parameter stack
+    push_param,        ///< Push op1 onto the parameter stack
+    pop_param,         ///< Pop op1 off the parameter stack.
+    /*
+    function_start,    ///< Start of function definition.  Op2: Definition location, Op1: local vars
+    function_end,      ///< End of function definition, Op1: function name.
+    */
   };
 
   /** Stream identifiers.  */
@@ -438,7 +460,7 @@ public:
   using Offset = std::make_signed_t<Index>;
 
   /** Valid operand types.  */
-  using Operand = std::variant<std::string, Stream, Offset, unsigned, char>;
+  using Operand = std::variant<std::string, Stream, Offset, Location, unsigned, char>;
 
   /** \brief        Constructor
    *  \param opcode Opcode
@@ -844,13 +866,6 @@ private:
    */
   ExprIndex insert_length(ExprIndex expr);
 
-  /** \brief       Insert call() call
-   *  \param  v    Function to call
-   *  \param  args Index of first function argument.
-   *  \return      Index of inserted instruction
-   */
-  ExprIndex insert_call(char v, ExprIndex args);
-
   /** \brief      Insert branch if zero
    *  \param dest Destination
    *  \param cmp  Comparison index
@@ -866,6 +881,30 @@ private:
    *  \param expr Result of function
    */
   ExprIndex insert_return(ExprIndex expr);
+
+  /** \brief       Insert call() call
+   *  \param  v    Function to call
+   *  \param  loc  Source location of call (for error reporting purposes).
+   *  \return      Index of inserted instruction
+   */
+  ExprIndex insert_call(char v, Location const& loc);
+
+  /** \brief   Insert push_param_mark instruction.
+   */
+  ExprIndex insert_push_param_mark();
+
+  /** \brief   Insert pop_param_mark instruction.
+   */
+  ExprIndex insert_pop_param_mark();
+
+  /** \brief   Insert push_param instruction.
+   *  \param expr Expression to push
+   */
+  ExprIndex insert_push_param(ExprIndex expr);
+
+  /** \brief   Insert pop_param instruction.
+   */
+  ExprIndex insert_pop_param();
 
   void push_loop();
   void add_loop_exit(Index idx);

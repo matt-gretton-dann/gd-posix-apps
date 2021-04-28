@@ -154,9 +154,6 @@ std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Instruction::Opcode o
   case GD::Bc::Instruction::Opcode::length:
     os << "length";
     break;
-  case GD::Bc::Instruction::Opcode::call:
-    os << "call";
-    break;
   case GD::Bc::Instruction::Opcode::equals:
     os << "equals";
     break;
@@ -178,6 +175,21 @@ std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Instruction::Opcode o
   case GD::Bc::Instruction::Opcode::return_:
     os << "return";
     break;
+  case GD::Bc::Instruction::Opcode::call:
+    os << "call";
+    break;
+  case GD::Bc::Instruction::Opcode::push_param_mark:
+    os << "push_param_mark";
+    break;
+  case GD::Bc::Instruction::Opcode::pop_param_mark:
+    os << "pop_param_mark";
+    break;
+  case GD::Bc::Instruction::Opcode::push_param:
+    os << "push_param";
+    break;
+  case GD::Bc::Instruction::Opcode::pop_param:
+    os << "pop_param";
+    break;
   }
   return os;
 }
@@ -189,6 +201,9 @@ unsigned GD::Bc::Instruction::op_count(Opcode opcode)
   case GD::Bc::Instruction::Opcode::scale:
   case GD::Bc::Instruction::Opcode::ibase:
   case GD::Bc::Instruction::Opcode::obase:
+  case GD::Bc::Instruction::Opcode::push_param_mark:
+  case GD::Bc::Instruction::Opcode::pop_param_mark:
+  case GD::Bc::Instruction::Opcode::pop_param:
     return 0;
   case GD::Bc::Instruction::Opcode::quit:
   case GD::Bc::Instruction::Opcode::string:
@@ -202,6 +217,7 @@ unsigned GD::Bc::Instruction::op_count(Opcode opcode)
   case GD::Bc::Instruction::Opcode::length:
   case GD::Bc::Instruction::Opcode::branch:
   case GD::Bc::Instruction::Opcode::return_:
+  case GD::Bc::Instruction::Opcode::push_param:
     return 1;
   case GD::Bc::Instruction::Opcode::print:
   case GD::Bc::Instruction::Opcode::array_element:
@@ -212,12 +228,12 @@ unsigned GD::Bc::Instruction::op_count(Opcode opcode)
   case GD::Bc::Instruction::Opcode::modulo:
   case GD::Bc::Instruction::Opcode::power:
   case GD::Bc::Instruction::Opcode::store:
-  case GD::Bc::Instruction::Opcode::call:
   case GD::Bc::Instruction::Opcode::equals:
   case GD::Bc::Instruction::Opcode::less_than_equals:
   case GD::Bc::Instruction::Opcode::not_equals:
   case GD::Bc::Instruction::Opcode::less_than:
   case GD::Bc::Instruction::Opcode::branch_zero:
+  case GD::Bc::Instruction::Opcode::call:
     return 2;
   }
 
@@ -231,6 +247,9 @@ void GD::Bc::Instruction::validate_operands() const
   case GD::Bc::Instruction::Opcode::scale:
   case GD::Bc::Instruction::Opcode::ibase:
   case GD::Bc::Instruction::Opcode::obase:
+  case GD::Bc::Instruction::Opcode::push_param_mark:
+  case GD::Bc::Instruction::Opcode::pop_param_mark:
+  case GD::Bc::Instruction::Opcode::pop_param:
     assert(!op1_.has_value());
     assert(!op2_.has_value());
     break;
@@ -258,6 +277,7 @@ void GD::Bc::Instruction::validate_operands() const
   case GD::Bc::Instruction::Opcode::length:
   case GD::Bc::Instruction::Opcode::branch:
   case GD::Bc::Instruction::Opcode::return_:
+  case GD::Bc::Instruction::Opcode::push_param:
     assert(op1_.has_value());
     assert(!op2_.has_value());
     assert(std::holds_alternative<Offset>(*op1_));
@@ -269,7 +289,6 @@ void GD::Bc::Instruction::validate_operands() const
     assert(std::holds_alternative<Stream>(*op2_));
     break;
   case GD::Bc::Instruction::Opcode::array_element:
-  case GD::Bc::Instruction::Opcode::call:
     assert(op1_.has_value());
     assert(op2_.has_value());
     assert(std::holds_alternative<char>(*op1_));
@@ -291,6 +310,12 @@ void GD::Bc::Instruction::validate_operands() const
     assert(op2_.has_value());
     assert(std::holds_alternative<Offset>(*op1_));
     assert(std::holds_alternative<Offset>(*op2_));
+    break;
+  case GD::Bc::Instruction::Opcode::call:
+    assert(op1_.has_value());
+    assert(op2_.has_value());
+    assert(std::holds_alternative<char>(*op1_));
+    assert(std::holds_alternative<Location>(*op2_));
     break;
   }
 }
