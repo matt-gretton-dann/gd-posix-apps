@@ -8,21 +8,54 @@
 
 #include "bc-messages.hh"
 
+#include <limits>
 #include <stdint.h>
 
 #include "bc.hh"
 #include <string_view>
 
-GD::Bc::Reader::Reader(std::string_view name) : name_(name), line_(1), column_(1) {}
+GD::Bc::Location::Location(std::string_view file_name) : file_name_(file_name), column_(1), line_(1)
+{
+}
+
+std::string const& GD::Bc::Location::file_name() const { return file_name_; }
+
+GD::Bc::Location::Column GD::Bc::Location::column() const { return column_; }
+
+GD::Bc::Location::Line GD::Bc::Location::line() const { return line_; }
+
+void GD::Bc::Location::next_column()
+{
+  if (column_ < std::numeric_limits<Column>::max()) {
+    ++column_;
+  }
+}
+
+void GD::Bc::Location::next_line()
+{
+  if (line_ < std::numeric_limits<Line>::max()) {
+    ++line_;
+  }
+  column_ = 1;
+}
+
+std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Location const& location)
+{
+  os << location.file_name() << ':' << location.line() << ':' << location.column();
+  return os;
+}
+
+GD::Bc::Reader::Reader(std::string_view name) : location_(name) {}
 
 void GD::Bc::Reader::chew()
 {
   if (peek() == '\n') {
-    ++line_;
-    column_ = 0;
+    location_.next_line();
+  }
+  else {
+    location_.next_column();
   }
 
-  ++column_;
   do_chew();
 }
 

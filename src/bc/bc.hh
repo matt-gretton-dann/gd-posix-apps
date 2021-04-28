@@ -164,6 +164,47 @@ bool operator==(Token::Type type, Token const& token);
 bool operator!=(Token const& token, Token::Type type);
 bool operator!=(Token::Type type, Token const& token);
 
+/** \brief  A source location.  */
+class Location
+{
+public:
+  using Column = unsigned;
+  using Line = unsigned;
+
+  /** \brief  Construct a source location at the first column of the first line of a file.
+   *  \param file_name Name of file being processed.
+   */
+  explicit Location(std::string_view file_name);
+
+  /** Get file name. */
+  std::string const& file_name() const;
+
+  /** Get column.  */
+  Column column() const;
+
+  /** Get line.  */
+  Line line() const;
+
+  /** \brief Move to next column.
+   *
+   * We silently saturate to the maximum value of Column.
+   */
+  void next_column();
+
+  /** \brief Move to next line, and reset column to 1.
+   *
+   * We silently saturate to the maximum value of Line.
+   */
+  void next_line();
+
+private:
+  std::string file_name_;  ///< File name
+  Column column_;          ///< Column number
+  Line line_;              ///< Line number
+};
+
+std::ostream& operator<<(std::ostream& os, Location const& location);
+
 /** \brief  Reader base class.
  *
  * Base class that allows us to read characters from an input stream (either string or file).
@@ -190,13 +231,15 @@ public:
   /** \brief  Chew the current character. */
   void chew();
 
+  /** \brief  Get the current source location.  */
+  Location const& location() const;
+
   /** \brief  Report an error giving source location. */
   template<typename... Ts>
   std::string error(Msg msg, Ts... args)
   {
     std::ostringstream os;
-    os << GD::Bc::Messages::get().get(GD::Bc::Set::bc, Msg::error_label) << ":" << name_ << ':'
-       << line_ << ':' << column_ << ": "
+    os << GD::Bc::Messages::get().get(GD::Bc::Set::bc, Msg::error_label) << ":" << location_ << ": "
        << GD::Bc::Messages::get().format(GD::Bc::Set::bc, msg, args...) << '\n';
     return os.str();
   }
@@ -205,9 +248,7 @@ private:
   /** \brief  Do the actual chew of a character.  */
   virtual void do_chew() = 0;
 
-  std::string name_;  ///< Name of thing we're parsing.
-  ::size_t line_;     ///< Current line number.
-  ::size_t column_;   ///< Current column number
+  Location location_;  ///< Current source location.
 };
 
 /** \brief Parse a string. */
