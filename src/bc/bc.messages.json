@@ -134,6 +134,60 @@
         "id": 22,
         "description": "Encountered a return statement outside of a function.",
         "C": "Encountered a return statement outside of a function."
+      },
+      {
+        "msg": "expected_letter",
+        "id": 23,
+        "description": "Expected a letter, found: {0}",
+        "C": "Expected <letter>, found: {0}"
+      },
+      {
+        "msg": "expected_lbrace",
+        "id": 24,
+        "description": "Expected a '{', found: {0}",
+        "C": "Expected '{', found: {0}"
+      },
+      {
+        "msg": "expected_newline",
+        "id": 25,
+        "description": "Expected a newline, found: {0}",
+        "C": "Expected a newline, found: {0}"
+      },
+      {
+        "msg": "unable_to_nest_function_definitions",
+        "id": 26,
+        "description": "Not allowed to nest function definitions",
+        "C": "Can't define one function inside another."
+      },
+      {
+        "msg": "expected_semicolon_or_newline",
+        "id": 27,
+        "description": "Expected a semicolon or newline, found: {0}",
+        "C": "Expected a semicolon or newline, found: {0}"
+      },
+      {
+        "msg": "duplicate_variables_in_function_definition",
+        "id": 28,
+        "description": "Variable {0} appears more than once in the definition of a function.",
+        "C": "Repeated variable names in function definition: {0}"
+      },
+      {
+        "msg": "duplicate_arrays_in_function_definition",
+        "id": 29,
+        "description": "Array {0} appears more than once in the definition of a function.",
+        "C": "Repeated array names in function definition: {0}[]"
+      },
+      {
+        "msg": "expected_define_list",
+        "id": 30,
+        "description": "Expected define list not: {0}",
+        "C": "Expected a list of variable and array names, found: {0}"
+      },
+      {
+        "msg": "expected_define_element",
+        "id": 31,
+        "description": "Expected define element not: {0}",
+        "C": "Expected a variable or array name, found: {0}"
       }
     ]
   }

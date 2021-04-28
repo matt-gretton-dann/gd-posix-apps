@@ -517,7 +517,178 @@ void GD::Bc::Parser::pop_loop() { loop_breaks_.pop(); }
 
 bool GD::Bc::Parser::in_loop() const { return !loop_breaks_.empty(); }
 
-void GD::Bc::Parser::parse_function() { assert(false); }
+void GD::Bc::Parser::parse_function()
+{
+  if (in_function_) {
+    insert_error(Msg::unable_to_nest_function_definitions);
+    return;
+  }
+  in_function_ = true;
+  assert(lexer_->peek() == Token::Type::define);
+  Location loc = lexer_->location();
+  lexer_->chew();
+
+  if (lexer_->peek() != Token::Type::letter) {
+    insert_error(Msg::expected_letter, lexer_->peek());
+    return;
+  }
+  auto letter = lexer_->peek().letter();
+  lexer_->chew();
+  ExprIndex function_begin = insert_function_begin(VariableMask(), loc);
+
+  if (lexer_->peek() != Token::Type::lparens) {
+    insert_error(Msg::expected_lparens, lexer_->peek());
+    return;
+  }
+  lexer_->chew();
+
+  parse_opt_parameter_list(function_begin);
+
+  if (lexer_->peek() != Token::Type::rparens) {
+    insert_error(Msg::expected_rparens, lexer_->peek());
+    return;
+  }
+  lexer_->chew();
+
+  if (lexer_->peek() != Token::Type::lbrace) {
+    insert_error(Msg::expected_lbrace, lexer_->peek());
+    return;
+  }
+  lexer_->chew();
+
+  if (lexer_->peek() != Token::Type::newline) {
+    insert_error(Msg::expected_newline, lexer_->peek());
+    return;
+  }
+  lexer_->chew();
+
+  parse_opt_auto_define_list(function_begin);
+  parse_statement_list();
+
+  if (lexer_->peek() != Token::Type::rbrace) {
+    insert_error(Msg::expected_rbrace, lexer_->peek());
+    return;
+  }
+  lexer_->chew();
+
+  /* Ensure there's a return at the end (may be dead code).  */
+  auto number = insert_number("0");
+  insert_return(number);
+
+  insert_function_end(letter, function_begin);
+  in_function_ = false;
+}
+
+GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_parameter_list(ExprIndex function_begin)
+{
+  return parse_opt_define_list(function_begin, false);
+}
+
+GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_auto_define_list(ExprIndex function_begin)
+{
+  if (lexer_->peek() != Token::Type::auto_) {
+    return ExprIndex(0, ExprType::missing);
+  }
+  lexer_->chew();
+
+  ExprIndex result = parse_define_list(function_begin, true);
+
+  if (lexer_->peek() != Token::Type::semicolon && lexer_->peek() != Token::Type::newline) {
+    insert_error(Msg::expected_semicolon_or_newline, lexer_->peek());
+    return ExprIndex(0, ExprType::missing);
+  }
+  lexer_->chew();
+
+  return result;
+}
+
+GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_define_list(ExprIndex function_begin,
+                                                                bool allow_duplicates)
+{
+  ExprIndex expr = parse_opt_define_element(function_begin, allow_duplicates);
+  if (expr == ExprType::missing) {
+    return expr;
+  }
+
+  while (lexer_->peek() == Token::Type::comma && !error_) {
+    lexer_->chew();
+    expr = parse_define_element(function_begin, allow_duplicates);
+  }
+
+  return expr;
+}
+
+GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_define_list(ExprIndex function_begin,
+                                                            bool allow_duplicates)
+{
+  auto result = parse_opt_define_list(function_begin, allow_duplicates);
+  if (result == ExprType::missing) {
+    return insert_error(Msg::expected_define_list, lexer_->peek());
+  }
+  return result;
+}
+
+GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_define_element(ExprIndex function_begin,
+                                                                   bool allow_duplicates)
+{
+  if (lexer_->peek() != Token::Type::letter) {
+    return ExprIndex(0, ExprType::missing);
+  }
+
+  VariableMask mask = std::get<VariableMask>(instructions_->at(function_begin.index()).op1());
+  auto letter = lexer_->peek().letter();
+  lexer_->chew();
+
+  if (lexer_->peek() != Token::Type::lsquare) {
+    if (!allow_duplicates) {
+      if (mask.contains_variable(letter)) {
+        insert_error(Msg::duplicate_variables_in_function_definition, letter);
+        return ExprIndex(0, ExprType::missing);
+      }
+
+      auto pop = insert_pop_param();
+      auto var = insert_variable(letter);
+      insert_store(var, pop);
+    }
+
+    mask.add_variable(letter);
+    instructions_->at(function_begin.index()).op1(mask);
+    return function_begin;
+  }
+
+  lexer_->chew();
+
+  if (lexer_->peek() != Token::Type::rsquare) {
+    insert_error(Msg::expected_rsquare, lexer_->peek());
+    return ExprIndex(0, ExprType::missing);
+  }
+  lexer_->chew();
+
+  if (!allow_duplicates) {
+    if (mask.contains_array(letter)) {
+      insert_error(Msg::duplicate_arrays_in_function_definition, letter);
+      return ExprIndex(0, ExprType::missing);
+    }
+
+    auto pop = insert_pop_param();
+    auto var = insert_array_slice(letter);
+    insert_store(var, pop);
+  }
+
+  mask.add_array(letter);
+  instructions_->at(function_begin.index()).op1(mask);
+  return function_begin;
+}
+
+GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_define_element(ExprIndex function_begin,
+                                                               bool allow_duplicates)
+{
+  auto result = parse_opt_define_element(function_begin, allow_duplicates);
+  if (result == ExprType::missing) {
+    return insert_error(Msg::expected_define_element, lexer_->peek());
+  }
+  return result;
+}
 
 GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_argument_list()
 {
@@ -1113,7 +1284,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_return(ExprIndex expr)
 {
   expr = ensure_expr_loaded(expr);
   ExprIndex result(instructions_->size());
-  instructions_->emplace_back(Instruction::Opcode::branch, expr - result);
+  instructions_->emplace_back(Instruction::Opcode::return_, expr - result);
   return result;
 }
 
@@ -1150,5 +1321,20 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_pop_param()
 {
   ExprIndex result(instructions_->size());
   instructions_->emplace_back(Instruction::Opcode::pop_param);
+  return result;
+}
+
+GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_function_begin(VariableMask mask,
+                                                                Location const& loc)
+{
+  ExprIndex result(instructions_->size());
+  instructions_->emplace_back(Instruction::Opcode::function_begin, mask, loc);
+  return result;
+}
+
+GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_function_end(char letter, ExprIndex begin)
+{
+  ExprIndex result(instructions_->size());
+  instructions_->emplace_back(Instruction::Opcode::function_end, letter, begin - result);
   return result;
 }

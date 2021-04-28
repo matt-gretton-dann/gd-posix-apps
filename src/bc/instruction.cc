@@ -14,6 +14,81 @@
 #include <vector>
 
 #include "bc.hh"
+#include <unordered_map>
+
+namespace {
+/* Can't assume letters are contiguous code-points.  */
+std::unordered_map<char, ::uint32_t> letter_mask_map = {
+  {'a', 1 << 0},  {'b', 1 << 1},  {'c', 1 << 2},  {'d', 1 << 3},  {'e', 1 << 4},  {'f', 1 << 5},
+  {'g', 1 << 6},  {'h', 1 << 7},  {'i', 1 << 8},  {'j', 1 << 9},  {'k', 1 << 10}, {'l', 1 << 11},
+  {'m', 1 << 12}, {'n', 1 << 13}, {'o', 1 << 14}, {'p', 1 << 15}, {'q', 1 << 16}, {'r', 1 << 17},
+  {'s', 1 << 18}, {'t', 1 << 19}, {'u', 1 << 20}, {'v', 1 << 21}, {'w', 1 << 22}, {'x', 1 << 23},
+  {'y', 1 << 24}, {'z', 1 << 25},
+};
+}  // namespace
+
+GD::Bc::VariableMask::VariableMask() : variable_mask_(0), array_mask_(0) {}
+
+GD::Bc::VariableMask::VariableMask(std::string_view vars, std::string_view arrays)
+    : variable_mask_(0), array_mask_(0)
+{
+  for (auto l : vars) {
+    add_variable(l);
+  }
+  for (auto l : arrays) {
+    add_array(l);
+  }
+}
+
+void GD::Bc::VariableMask::add_variable(char letter)
+{
+  auto it = letter_mask_map.find(letter);
+  assert(it != letter_mask_map.end());
+  variable_mask_ |= it->second;
+}
+
+void GD::Bc::VariableMask::add_array(char letter)
+{
+  auto it = letter_mask_map.find(letter);
+  assert(it != letter_mask_map.end());
+  array_mask_ |= it->second;
+}
+
+bool GD::Bc::VariableMask::contains_variable(char letter) const
+{
+  auto it = letter_mask_map.find(letter);
+  assert(it != letter_mask_map.end());
+  return (variable_mask_ & it->second) != 0;
+}
+
+bool GD::Bc::VariableMask::contains_array(char letter) const
+{
+  auto it = letter_mask_map.find(letter);
+  assert(it != letter_mask_map.end());
+  return (array_mask_ & it->second) != 0;
+}
+
+bool GD::Bc::VariableMask::operator==(VariableMask rhs) const
+{
+  return variable_mask_ == rhs.variable_mask_ && array_mask_ == rhs.array_mask_;
+}
+
+bool GD::Bc::operator!=(VariableMask lhs, VariableMask rhs) { return !(lhs == rhs); }
+
+std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::VariableMask mask)
+{
+  bool need_comma = false;
+  mask.for_each_variable([&need_comma, &os](char letter) {
+    os << (need_comma ? ", " : "") << letter;
+    need_comma = true;
+  });
+  mask.for_each_array([&need_comma, &os](char letter) {
+    os << (need_comma ? ", " : "") << letter << "[]";
+    need_comma = true;
+  });
+
+  return os;
+}
 
 GD::Bc::Instruction::Instruction(Opcode opcode) : opcode_(opcode)
 {
@@ -190,6 +265,12 @@ std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Instruction::Opcode o
   case GD::Bc::Instruction::Opcode::pop_param:
     os << "pop_param";
     break;
+  case GD::Bc::Instruction::Opcode::function_begin:
+    os << "function_begin";
+    break;
+  case GD::Bc::Instruction::Opcode::function_end:
+    os << "function_end";
+    break;
   }
   return os;
 }
@@ -234,6 +315,8 @@ unsigned GD::Bc::Instruction::op_count(Opcode opcode)
   case GD::Bc::Instruction::Opcode::less_than:
   case GD::Bc::Instruction::Opcode::branch_zero:
   case GD::Bc::Instruction::Opcode::call:
+  case GD::Bc::Instruction::Opcode::function_begin:
+  case GD::Bc::Instruction::Opcode::function_end:
     return 2;
   }
 
@@ -289,6 +372,7 @@ void GD::Bc::Instruction::validate_operands() const
     assert(std::holds_alternative<Stream>(*op2_));
     break;
   case GD::Bc::Instruction::Opcode::array_element:
+  case GD::Bc::Instruction::Opcode::function_end:
     assert(op1_.has_value());
     assert(op2_.has_value());
     assert(std::holds_alternative<char>(*op1_));
@@ -315,6 +399,12 @@ void GD::Bc::Instruction::validate_operands() const
     assert(op1_.has_value());
     assert(op2_.has_value());
     assert(std::holds_alternative<char>(*op1_));
+    assert(std::holds_alternative<Location>(*op2_));
+    break;
+  case GD::Bc::Instruction::Opcode::function_begin:
+    assert(op1_.has_value());
+    assert(op2_.has_value());
+    assert(std::holds_alternative<VariableMask>(*op1_));
     assert(std::holds_alternative<Location>(*op2_));
     break;
   }

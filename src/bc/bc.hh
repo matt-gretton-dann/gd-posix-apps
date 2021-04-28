@@ -355,6 +355,70 @@ private:
   std::optional<Token> t_;     ///< Pending token.
 };
 
+/** \brief  A mask of variables and arrays.  Used for indicating the local variables of a function.
+ */
+class VariableMask
+{
+public:
+  VariableMask();
+
+  /** \brief COnstructor (mainly for testing purposes). */
+  VariableMask(std::string_view vars, std::string_view arrays);
+
+  /** \brief  Add variable \a letter to the mask.  */
+  void add_variable(char letter);
+
+  /** \brief  Add array \a letter to the mask.  */
+  void add_array(char letter);
+
+  /** \brief  Does the mask contain variable \a letter?  */
+  bool contains_variable(char letter) const;
+
+  /** \brief  Does the mask contain array \a letter?  */
+  bool contains_array(char letter) const;
+
+  /** Equality operator. */
+  bool operator==(VariableMask rhs) const;
+
+  /** \brief  Call \a f for each variable in the mask.  */
+  template<typename Fn>
+  void for_each_variable(Fn f) const
+  {
+    for_each_internal(f, variable_mask_);
+  }
+
+  /** \brief  Call \a f for each array in the mask.  */
+  template<typename Fn>
+  void for_each_array(Fn f) const
+  {
+    for_each_internal(f, array_mask_);
+  }
+
+private:
+  /* Internal implementation of for_each_*. */
+  template<typename Fn>
+  static void for_each_internal(Fn fn, ::uint32_t mask)
+  {
+    /* Can't assume letters are contiguous code-points.  */
+    char const* letters = "abcdefghijklmnopqrstuvwxyz";
+    char const* letter = letters;
+    while (*letter != '\0' && mask != 0) {
+      if (mask & 1) {
+        fn(*letter);
+      }
+      mask >>= 1;
+      ++letter;
+    }
+  }
+
+  ::uint32_t variable_mask_ = 0;  ///< Mask of variables
+  ::uint32_t array_mask_ = 0;     ///< Mask of arrays.
+};
+
+std::ostream& operator<<(std::ostream& os, VariableMask mask);
+
+bool operator!=(VariableMask lhs, VariableMask rhs);
+
 /** \brief  An Instruction.
  *
  * Instructions contrain an opcode and up to two operands.
@@ -377,11 +441,11 @@ private:
  * | obase               |             |             | obase variable                             |
  * | add                 | Offset      | Offset      | Op1 + Op2                                  |
  * | subtact             | Offset      | Offset      | Op1 - Op2                                  |
- * | multiply            | Offset      | Offset      | Op1 - Op2                                  |
  * | negate              | Offset      |             | -Op1                                       |
- * | divide              | Offset      | Offset      | Op1 - Op2                                  |
- * | modulo              | Offset      | Offset      | Op1 - Op2                                  |
- * | power               | Offset      | Offset      | Op1 - Op2                                  |
+ * | multiply            | Offset      | Offset      | Op1 * Op2                                  |
+ * | divide              | Offset      | Offset      | Op1 / Op2                                  |
+ * | modulo              | Offset      | Offset      | Op1 % Op2                                  |
+ * | power               | Offset      | Offset      | Op1 ^ Op2                                  |
  * | load                | Offset      |             | Load value stored in named-expr op1.       |
  * | store               | Offset      | Offset      | Store value Op2 into named expression Op1. |
  * | scale_expr          | Offset      |             | Calculate scale(op1)                       |
@@ -399,6 +463,11 @@ private:
  * | pop_param_mark      |             |             | Pop fn separator marker from param stack   |
  * | push_param          | Offset      |             | Push parameter onto param stack            |
  * | pop_param           |             |             | Pop parameter from param stack             |
+ * | function_begin      | SavedVars   | Location    | Start of function definition               |
+ * | function_end        | Letter      | Offset      | End of function definition                 |
+ *
+ * function_begin contains mask of local variables in op1, and location of definition in op2.
+ * function_end contains name of function in op1 and offset to function_begin in op2.
  *
  */
 class Instruction
@@ -441,10 +510,8 @@ public:
     pop_param_mark,    ///< Pop a "function separator" marker onto the parameter stack
     push_param,        ///< Push op1 onto the parameter stack
     pop_param,         ///< Pop op1 off the parameter stack.
-    /*
-    function_start,    ///< Start of function definition.  Op2: Definition location, Op1: local vars
+    function_begin,    ///< Start of function definition.  Op2: Definition location, Op1: local vars
     function_end,      ///< End of function definition, Op1: function name.
-    */
   };
 
   /** Stream identifiers.  */
@@ -460,7 +527,7 @@ public:
   using Offset = std::make_signed_t<Index>;
 
   /** Valid operand types.  */
-  using Operand = std::variant<std::string, Stream, Offset, Location, unsigned, char>;
+  using Operand = std::variant<std::string, Stream, Offset, Location, VariableMask, unsigned, char>;
 
   /** \brief        Constructor
    *  \param opcode Opcode
@@ -615,21 +682,45 @@ private:
   /** Parse function production. */
   void parse_function();
 
-  /** \brief  Parse optional parameter list
-   *  \return \a true if production was non-empty
+  /** \brief                Parse optional parameter list
+   *  \param function_begin index of function begin instruction
+   *  \return               Expression of last entry in list
    */
-  bool parse_opt_parameter_list();
+  ExprIndex parse_opt_parameter_list(ExprIndex function_begin);
 
-  /** Parse a parameter list.  */
-  void parse_parameter_list();
-
-  /** \brief  Parse optional auto define list
-   *  \return \a true if production was non-empty
+  /** \brief                Parse optional auto define list
+   *  \param function_begin index of function begin instruction
+   *  \return               Expression of last entry in list
    */
-  bool parse_opt_auto_define_list();
+  ExprIndex parse_opt_auto_define_list(ExprIndex function_begin);
 
-  /** Parse define list.  */
-  void parse_define_list();
+  /** \brief                  Parse an optional define list.
+   *  \param function_begin   index of function begin instruction
+   *  \param allow_duplicates Do we allow multiple entries of the same variable/array?
+   *  \return                 Expression of last entry in list
+   */
+  ExprIndex parse_opt_define_list(ExprIndex function_begin, bool allow_duplicates);
+
+  /** \brief                  Parse a define list.
+   *  \param function_begin   index of function begin instruction
+   *  \param allow_duplicates Do we allow multiple entries of the same variable/array?
+   *  \return                 Expression of last entry in list
+   */
+  ExprIndex parse_define_list(ExprIndex function_begin, bool allow_duplicates);
+
+  /** \brief                  Parse an optional define element.
+   *  \param function_begin   index of function begin instruction
+   *  \param allow_duplicates Do we allow multiple entries of the same variable/array?
+   *  \return                 Expression of last entry in list
+   */
+  ExprIndex parse_opt_define_element(ExprIndex function_begin, bool allow_duplicates);
+
+  /** \brief                  Parse a define element.
+   *  \param function_begin   index of function begin instruction
+   *  \param allow_duplicates Do we allow multiple entries of the same variable/array?
+   *  \return                 Expression of last entry in list
+   */
+  ExprIndex parse_define_element(ExprIndex function_begin, bool allow_duplicates);
 
   /** \brief  Parse optional argument list
    *  \return \a true if production was non-empty
@@ -731,8 +822,8 @@ private:
    *  \param  idx Index to check the loadedness of
    *  \return     Index of loaded value (may be same as \a idx).
    *
-   * Named expressions point to names and not values.  This function ensures that we have loaded the
-   * value of the name.
+   * Named expressions point to names and not values.  This function ensures that we have loaded
+   * the value of the name.
    */
   ExprIndex ensure_expr_loaded(ExprIndex idx);
 
@@ -905,6 +996,18 @@ private:
   /** \brief   Insert pop_param instruction.
    */
   ExprIndex insert_pop_param();
+
+  /** \brief      Insert function begin
+   *  \param mask Mask of local variables to save
+   *  \param loc  Location of function definition
+   */
+  ExprIndex insert_function_begin(VariableMask mask, Location const& loc);
+
+  /** \brief        Insert function end
+   *  \param letter Function we're finishing
+   *  \param begin  Index of beginning of function.
+   */
+  ExprIndex insert_function_end(char letter, ExprIndex begin);
 
   void push_loop();
   void add_loop_exit(Index idx);
