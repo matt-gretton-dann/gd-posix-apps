@@ -620,11 +620,29 @@ public:
   class ExprIndex
   {
   public:
+    /** \brief  Construct an Expression index
+     *  \param index Index
+     *  \param type  Type of expression
+     */
     constexpr ExprIndex(Index index, ExprType type) : index_(index), type_(type) {}
+
+    /** \brief       Construct an Expression index of type other.
+     *  \param index Index
+     */
     constexpr explicit ExprIndex(Index index) : index_(index), type_(ExprType::other) {}
 
+    /** Get the index.  */
     constexpr Index index() const { return index_; }
+
+    /** Get the type.  */
     constexpr ExprType type() const { return type_; }
+
+    /** \brief Get a canonical "missing" expression index.  */
+    static ExprIndex const& missing()
+    {
+      static ExprIndex missing(0, ExprType::missing);
+      return missing;
+    }
 
   private:
     Index index_;

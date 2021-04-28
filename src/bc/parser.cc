@@ -342,7 +342,7 @@ void GD::Bc::Parser::parse_return_statement()
   assert(lexer_->peek() == Token::Type::return_);
   lexer_->chew();
 
-  ExprIndex expr(0, ExprType::missing);
+  ExprIndex expr = ExprIndex::missing();
 
   if (lexer_->peek() == Token::Type::lparens) {
     lexer_->chew();
@@ -587,7 +587,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_parameter_list(ExprIndex fun
 GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_auto_define_list(ExprIndex function_begin)
 {
   if (lexer_->peek() != Token::Type::auto_) {
-    return ExprIndex(0, ExprType::missing);
+    return ExprIndex::missing();
   }
   lexer_->chew();
 
@@ -595,7 +595,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_auto_define_list(ExprIndex f
 
   if (lexer_->peek() != Token::Type::semicolon && lexer_->peek() != Token::Type::newline) {
     insert_error(Msg::expected_semicolon_or_newline, lexer_->peek());
-    return ExprIndex(0, ExprType::missing);
+    return ExprIndex::missing();
   }
   lexer_->chew();
 
@@ -632,7 +632,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_define_element(ExprIndex fun
                                                                    bool allow_duplicates)
 {
   if (lexer_->peek() != Token::Type::letter) {
-    return ExprIndex(0, ExprType::missing);
+    return ExprIndex::missing();
   }
 
   VariableMask mask = std::get<VariableMask>(instructions_->at(function_begin.index()).op1());
@@ -643,7 +643,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_define_element(ExprIndex fun
     if (!allow_duplicates) {
       if (mask.contains_variable(letter)) {
         insert_error(Msg::duplicate_variables_in_function_definition, letter);
-        return ExprIndex(0, ExprType::missing);
+        return ExprIndex::missing();
       }
 
       auto pop = insert_pop_param();
@@ -660,14 +660,14 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_define_element(ExprIndex fun
 
   if (lexer_->peek() != Token::Type::rsquare) {
     insert_error(Msg::expected_rsquare, lexer_->peek());
-    return ExprIndex(0, ExprType::missing);
+    return ExprIndex::missing();
   }
   lexer_->chew();
 
   if (!allow_duplicates) {
     if (mask.contains_array(letter)) {
       insert_error(Msg::duplicate_arrays_in_function_definition, letter);
-      return ExprIndex(0, ExprType::missing);
+      return ExprIndex::missing();
     }
 
     auto pop = insert_pop_param();
@@ -1069,7 +1069,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_primary_expression(POPEFlags
       return idx;
     }
     else {
-      return ExprIndex(0, ExprType::missing);
+      return ExprIndex::missing();
     }
   case Token::Type::sqrt:
     if (parse_primary) {
@@ -1087,7 +1087,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_primary_expression(POPEFlags
       return insert_sqrt(elt);
     }
     else {
-      return ExprIndex(0, ExprType::missing);
+      return ExprIndex::missing();
     }
   case Token::Type::length:
     if (parse_primary) {
@@ -1105,10 +1105,10 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_primary_expression(POPEFlags
       return insert_length(elt);
     }
     else {
-      return ExprIndex(0, ExprType::missing);
+      return ExprIndex::missing();
     }
   default:
-    return ExprIndex(0, ExprType::missing);
+    return ExprIndex::missing();
   }
 }
 
