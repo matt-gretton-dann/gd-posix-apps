@@ -344,6 +344,7 @@ private:
  * | less_than           | Offset      | Offset      | 1 if op1 < op2, 0 otherwise                |
  * | branch              | Offset      |             | Unconditional branch to op1                |
  * | branch_zero         | Offset      | Offset      | Branch to op2 if op1 is 0.                 |
+ * | return_             | Offset      |             | return from function with value Op1        |
  */
 class Instruction
 {
@@ -380,6 +381,7 @@ public:
     less_than,         ///< op1 < op2.
     branch,            ///< Branch to op1
     branch_zero,       ///< Branch to op1 if op2 is zero.
+    return_,           ///< return(op1)
   };
 
   /** Stream identifiers.  */
@@ -819,6 +821,11 @@ private:
    */
   ExprIndex insert_branch(ExprIndex dest);
 
+  /** \brief      Insert return
+   *  \param expr Result of function
+   */
+  ExprIndex insert_return(ExprIndex expr);
+
   void push_loop();
   void add_loop_exit(Index idx);
   void update_loop_exits(Index idx);
@@ -830,6 +837,7 @@ private:
   std::stack<std::list<Index>> loop_breaks_;    ///< Stack of loop breaks.
   bool interactive_;                            ///< Are we interactive?
   bool error_;                                  ///< Has there been an error?
+  bool in_function_;                            ///< Are we in a function?
 };
 
 Parser::POPEFlags operator&(Parser::POPEFlags lhs, Parser::POPEFlags rhs);

@@ -128,6 +128,12 @@
         "id": 21,
         "description": "Expected an ';', found: {0}",
         "C": "Expected ';', found: {0}"
+      },
+      {
+        "msg": "return_outside_function",
+        "id": 22,
+        "description": "Encountered a return statement outside of a function.",
+        "C": "Encountered a return statement outside of a function."
       }
     ]
   }

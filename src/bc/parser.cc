@@ -170,6 +170,7 @@ std::shared_ptr<GD::Bc::Instructions> GD::Bc::Parser::parse()
   while (!loop_breaks_.empty()) {
     loop_breaks_.pop();
   }
+  in_function_ = false;
   parse_program();
   return instructions_;
 }
@@ -331,7 +332,35 @@ void GD::Bc::Parser::parse_break_statement()
   add_loop_exit(branch.index());
 }
 
-void GD::Bc::Parser::parse_return_statement() { assert(false); }
+void GD::Bc::Parser::parse_return_statement()
+{
+  if (!in_function_) {
+    insert_error(Msg::return_outside_function);
+    return;
+  }
+
+  assert(lexer_->peek() == Token::Type::return_);
+  lexer_->chew();
+
+  ExprIndex expr(0, ExprType::missing);
+
+  if (lexer_->peek() == Token::Type::lparens) {
+    lexer_->chew();
+    expr = parse_return_expression();
+
+    if (lexer_->peek() != Token::Type::rparens) {
+      insert_error(Msg::expected_rparens, lexer_->peek());
+      return;
+    }
+    lexer_->chew();
+  }
+
+  if (expr == ExprType::missing) {
+    expr = insert_number("0");
+  }
+
+  insert_return(expr);
+}
 
 void GD::Bc::Parser::parse_for_statement()
 {
@@ -1061,7 +1090,6 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_call(char v, ExprIndex args)
 
 GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_branch_zero(ExprIndex dest, ExprIndex cmp)
 {
-  dest = ensure_expr_loaded(dest);
   cmp = ensure_expr_loaded(cmp);
   ExprIndex result(instructions_->size());
   instructions_->emplace_back(Instruction::Opcode::branch_zero, dest - result, cmp - result);
@@ -1070,8 +1098,15 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_branch_zero(ExprIndex dest, Exp
 
 GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_branch(ExprIndex dest)
 {
-  dest = ensure_expr_loaded(dest);
   ExprIndex result(instructions_->size());
   instructions_->emplace_back(Instruction::Opcode::branch, dest - result);
+  return result;
+}
+
+GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_return(ExprIndex expr)
+{
+  expr = ensure_expr_loaded(expr);
+  ExprIndex result(instructions_->size());
+  instructions_->emplace_back(Instruction::Opcode::branch, expr - result);
   return result;
 }

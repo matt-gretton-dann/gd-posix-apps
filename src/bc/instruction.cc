@@ -175,6 +175,9 @@ std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Instruction::Opcode o
   case GD::Bc::Instruction::Opcode::branch_zero:
     os << "branch_zero";
     break;
+  case GD::Bc::Instruction::Opcode::return_:
+    os << "return";
+    break;
   }
   return os;
 }
@@ -198,6 +201,7 @@ unsigned GD::Bc::Instruction::op_count(Opcode opcode)
   case GD::Bc::Instruction::Opcode::sqrt:
   case GD::Bc::Instruction::Opcode::length:
   case GD::Bc::Instruction::Opcode::branch:
+  case GD::Bc::Instruction::Opcode::return_:
     return 1;
   case GD::Bc::Instruction::Opcode::print:
   case GD::Bc::Instruction::Opcode::array_element:
@@ -253,6 +257,7 @@ void GD::Bc::Instruction::validate_operands() const
   case GD::Bc::Instruction::Opcode::sqrt:
   case GD::Bc::Instruction::Opcode::length:
   case GD::Bc::Instruction::Opcode::branch:
+  case GD::Bc::Instruction::Opcode::return_:
     assert(op1_.has_value());
     assert(!op2_.has_value());
     assert(std::holds_alternative<Offset>(*op1_));
