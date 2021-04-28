@@ -46,5 +46,21 @@ struct Overloaded : Ts...
 template<class... Ts>
 Overloaded(Ts...) -> Overloaded<Ts...>;
 
+/** \brief Helper to wrap types when we need to differentiate between the same underlying type.
+ */
+template<typename T, typename TId = T>
+class TypeWrapper
+{
+public:
+  explicit TypeWrapper(T const& t) : t_(t) {}
+  explicit TypeWrapper(T&& t) : t_(std::move(t)) {}
+
+  T& get() { return t_; }
+  T const& get() const { return t_; }
+
+private:
+  T t_;
+};
+
 }  // namespace GD
 #endif  // _SRC_INCLUDE_UTIL_UTILS_HH_INCLUDED
