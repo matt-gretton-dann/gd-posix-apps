@@ -14,8 +14,10 @@
 
 #include "bc-messages.hh"
 
+#include <array>
 #include <iostream>
 #include <list>
+#include <map>
 #include <memory>
 #include <optional>
 #include <sstream>
@@ -23,6 +25,7 @@
 #include <string>
 #include <variant>
 
+#include "number.hh"
 #include <type_traits>
 
 namespace GD::Bc {
@@ -34,6 +37,8 @@ namespace GD::Bc {
 class Letter
 {
 public:
+  static constexpr unsigned count_ = 26;
+
   /** \brief  Construct letter from char. */
   explicit Letter(char l);
 
@@ -383,6 +388,9 @@ using Variable = TypeWrapper<Letter, struct VariableTag>;
 /** Wrapper around Array representing a Variable */
 using Array = TypeWrapper<Letter, struct ArrayTag>;
 
+/** An array element - the array and index.  */
+using ArrayElement = std::pair<Array, Number>;
+
 template<typename T>
 bool operator==(TypeWrapper<Letter, T> lhs, TypeWrapper<Letter, T> rhs)
 {
@@ -458,6 +466,15 @@ private:
 std::ostream& operator<<(std::ostream& os, VariableMask mask);
 
 bool operator!=(VariableMask lhs, VariableMask rhs);
+
+/** Tag class for an ibase.  */
+enum class Ibase : int;
+
+/** Tag class for an obase.  */
+enum class Obase : int;
+
+/** Tag class for an scale.  */
+enum class Scale : int;
 
 /** \brief  An Instruction.
  *
@@ -561,9 +578,6 @@ public:
     stderr   ///< Standard error.
   };
 
-  using Number = unsigned;
-  using ArrayElement = std::pair<Array, Number>;
-
   /** Type representing an index into the list of instructions.  */
   using Index = std::vector<Instruction>::size_type;
 
@@ -574,8 +588,16 @@ public:
   using Operand = std::variant<std::string, Stream, Offset, Location, VariableMask, unsigned,
                                Letter, Variable, Array>;
 
-  /** Valid result types for an instruction.  */
-  using Result = std::variant<Number, std::string, Variable, Array, ArrayElement>;
+  /** Valid result types for an instruction:
+   *
+   * Number: A number
+   * string_view: a string, legal as it should only point to the string in op1().
+   * Variable: Variable name
+   * Array: Array name
+   * ArrayElement: Array element.
+   */
+  using Result =
+    std::variant<Number, std::string_view, Variable, Array, ArrayElement, Ibase, Obase, Scale>;
 
   /** \brief        Constructor
    *  \param opcode Opcode
@@ -598,11 +620,17 @@ public:
   /** Get opcode */
   Opcode opcode() const;
 
+  /** Do we have op1? */
+  bool has_op1() const;
+
   /** Get operand 1.  */
   Operand const& op1() const;
 
   /** Update operand 1.  */
   void op1(Operand const& operand);
+
+  /** Do we have op2? */
+  bool has_op2() const;
 
   /** Get operand 2.  */
   Operand const& op2() const;
@@ -610,11 +638,14 @@ public:
   /** Update operand 2.  */
   void op2(Operand const& operand);
 
-  /** Do we have op1? */
-  bool has_op1() const;
+  /** Do we have result? */
+  bool has_result() const;
 
-  /** Do we have op2? */
-  bool has_op2() const;
+  /** Get the result.  */
+  Result const& result() const;
+
+  /** Set the result.  */
+  void result(Result const& result);
 
   /** Does \a opcode have op1? */
   static bool has_op1(Opcode opcode);
@@ -629,6 +660,9 @@ private:
   /** \brief  Validate the operands.  */
   void validate_operands() const;
 
+  /** \brief  Validate the result.  */
+  void validate_result() const;
+
   Opcode opcode_;                 ///< Opcode
   std::optional<Operand> op1_;    ///< Operand 1
   std::optional<Operand> op2_;    ///< Operand 2
@@ -640,7 +674,8 @@ using Instructions = std::vector<Instruction>;
 
 std::ostream& operator<<(std::ostream& os, Instruction::Stream s);
 std::ostream& operator<<(std::ostream& os, Instruction::Opcode opcode);
-std::ostream& operator<<(std::ostream& os, Instruction::Operand operand);
+std::ostream& operator<<(std::ostream& os, Instruction::Operand const& operand);
+std::ostream& operator<<(std::ostream& os, Instruction::Result const& result);
 std::ostream& operator<<(std::ostream& os, Instruction const& instruction);
 std::ostream& operator<<(std::ostream& os, Instructions const& instruction);
 
@@ -986,19 +1021,19 @@ private:
    *  \param element Index of expr to calculate element
    *  \return         Index of inserted instruction
    */
-  ExprIndex insert_array_element(char v, ExprIndex element);  // Type = named
+  ExprIndex insert_array_element(Array v, ExprIndex element);  // Type = named
 
   /** \brief         Insert an array
    *  \param v       Array
    *  \return         Index of inserted instruction
    */
-  ExprIndex insert_array_slice(char v);
+  ExprIndex insert_array_slice(Array v);
 
   /** \brief          Insert a variable
    *  \param  v       Variable
    *  \return         Index of inserted instruction
    */
-  ExprIndex insert_variable(char v);  // Type = named
+  ExprIndex insert_variable(Variable v);  // Type = named
 
   /** \brief  Insert scale variable - not scale()
    *  \return Index of inserted instruction
@@ -1054,7 +1089,7 @@ private:
    *  \param  loc  Source location of call (for error reporting purposes).
    *  \return      Index of inserted instruction
    */
-  ExprIndex insert_call(char v, Location const& loc);
+  ExprIndex insert_call(Letter v, Location const& loc);
 
   /** \brief   Insert push_param_mark instruction.
    */
@@ -1083,7 +1118,7 @@ private:
    *  \param letter Function we're finishing
    *  \param begin  Index of beginning of function.
    */
-  ExprIndex insert_function_end(char letter, ExprIndex begin);
+  ExprIndex insert_function_end(Letter letter, ExprIndex begin);
 
   /** \brief Push a new loop state.  */
   void push_loop();

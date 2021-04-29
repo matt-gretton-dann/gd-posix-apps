@@ -1,3 +1,9 @@
+/** \file   parser.cc
+ *  \brief  Implementation of GD::BC::Parser and related classes
+ *  \author Copyright 2021, Matthew Gretton-Dann
+ *  SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "gd/stdlib.h"
 
 #include "bc-messages.hh"
