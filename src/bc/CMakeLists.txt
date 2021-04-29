@@ -10,7 +10,7 @@ set_property(TARGET libbc PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
 set_property(TARGET libbc PROPERTY CXX_STANDARD_REQUIRED ON)
 target_compile_definitions(libbc PRIVATE _CRT_SECURE_NO_WARNINGS)
 set_warnings(libbc)
-target_sources(libbc PRIVATE instruction.cc lexer.cc parser.cc reader.cc token.cc)
+target_sources(libbc PRIVATE instruction.cc lexer.cc parser.cc reader.cc token.cc vm.cc)
 target_add_clang_format(libbc)
 
 if(RUN_UNIT_TESTS)

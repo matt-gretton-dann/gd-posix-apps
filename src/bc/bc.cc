@@ -39,24 +39,18 @@ template<typename... Ts>
   ::exit(1);
 }
 
-class State
+void execute(std::unique_ptr<GD::Bc::Reader>&& r)
 {
-public:
-  void execute(std::unique_ptr<GD::Bc::Reader>&& r)
-  {
-    GD::Bc::Parser parser(std::make_unique<GD::Bc::Lexer>(std::move(r)), true);
-    bool cont = true;
-    do {
-      auto instructions = parser.parse();
-      std::cout << *instructions;
-      for (auto i : *instructions) {
-        if (i.opcode() == GD::Bc::Instruction::Opcode::eof) {
-          cont = false;
-        }
-      }
-    } while (cont);
+  GD::Bc::VM vm(std::cout, std::clog);
+  GD::Bc::Parser parser(std::make_unique<GD::Bc::Lexer>(std::move(r)), true);
+
+  while (true) {
+    auto instructions = parser.parse();
+    if (instructions) {
+      vm.execute(*instructions);
+    }
   }
-};
+}
 }  // namespace
 
 int main(int argc, char** argv)
@@ -79,22 +73,21 @@ int main(int argc, char** argv)
     }
   }
 
-  State state;
   if (load_library) {
     auto r = std::make_unique<GD::Bc::StringReader>(library_script);
-    state.execute(std::move(r));
+    execute(std::move(r));
   }
 
-  auto process = [&state](std::string_view fname) -> bool {
+  auto process = [](std::string_view fname) -> bool {
     auto r = std::make_unique<GD::Bc::FileReader>(fname);
-    state.execute(std::move(r));
+    execute(std::move(r));
     return true;
   };
 
   bool success = GD::for_each_file(argc - optind, argv + optind, process, GD::FEFFlags::none);
   if (success) {
     auto r = std::make_unique<GD::Bc::FileReader>("-");
-    state.execute(std::move(r));
+    execute(std::move(r));
   }
 
   return success ? 0 : 1;

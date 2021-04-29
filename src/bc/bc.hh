@@ -1155,6 +1155,35 @@ bool operator!=(Parser::ExprIndex const& lhs, Parser::Index rhs);
 bool operator!=(Parser::ExprIndex const& lhs, Parser::ExprType rhs);
 Parser::Offset operator-(Parser::ExprIndex const& lhs, Parser::ExprIndex const& rhs);
 
+class VM
+{
+public:
+  VM(std::ostream& stdout, std::ostream& stderr);
+  void execute(Instructions& instructions);
+
+private:
+  using ArrayValues = std::shared_ptr<std::unordered_map<Number, Number>>;
+
+  using Param = std::variant<ArrayValues, Number>;
+  using Params = std::list<Param>;
+  using ParamStack = std::list<Params>;
+  using Index = Instruction::Index;
+  using Offset = Instruction::Offset;
+
+  void execute_string(Instructions& instructions, Index i);
+  void execute_number(Instructions& instructions, Index i);
+  void execute_print(Instructions& instructions, Index i);
+  void execute_quit(Instructions& instructions, Index i);
+
+  std::ostream& stdout_;
+  std::ostream& stderr_;
+  std::array<ArrayValues, Letter::count_> arrays_;
+  std::array<std::optional<Instructions>, Letter::count_> functions_;
+  std::array<Number, Letter::count_> variables_;
+  unsigned ibase_ = 10;
+  unsigned obase_ = 10;
+  Number scale_;
+};
 }  // namespace GD::Bc
 
 template<>
@@ -1174,6 +1203,25 @@ struct fmt::formatter<GD::Bc::Token>
     std::ostringstream os;
     os << token;
     return format_to(ctx.out(), "{0}", os.str());
+  }
+};
+
+template<>
+struct fmt::formatter<GD::Bc::Letter>
+{
+  constexpr auto parse(format_parse_context& ctx)
+  {
+    if (ctx.begin() != ctx.end() && *ctx.begin() != '}') {
+      throw format_error("invalid format");
+    }
+    return ctx.begin();
+  }
+
+  template<typename FormatContext>
+  auto format(GD::Bc::Letter letter, FormatContext& ctx)
+  {
+    static std::string_view letters = "abcdefghijklmnopqrstuvwxyz";
+    return format_to(ctx.out(), "{0}", letters[static_cast<unsigned>(letter)]);
   }
 };
 #endif  //  _SRC_BC_BC_HH_INCLUDED
