@@ -11,6 +11,36 @@
 
 #include "bc.hh"
 
+GD::Bc::Letter::Letter(char l) : letter_(encode(l)) {}
+GD::Bc::Letter::operator unsigned() const { return letter_; }
+bool GD::Bc::Letter::operator==(Letter l) const { return letter_ == l.letter_; }
+bool GD::Bc::Letter::operator==(char l) const { return letter_ == encode(l); }
+
+std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Letter l)
+{
+  static char const* letters = "abcdefghijklmnopqrstuvwxyz";
+  os << letters[static_cast<unsigned>(l)];
+  return os;
+}
+
+bool GD::Bc::operator!=(Letter lhs, Letter rhs) { return !(lhs == rhs); }
+bool GD::Bc::operator!=(Letter lhs, char rhs) { return !(lhs == rhs); }
+bool GD::Bc::operator!=(char lhs, Letter rhs) { return !(rhs == lhs); }
+
+unsigned GD::Bc::Letter::encode(char l)
+{
+  /* Can't assume letters are contiguous code-points.  */
+  static std::unordered_map<char, unsigned> letter_map = {
+    {'a', 0},  {'b', 1},  {'c', 2},  {'d', 3},  {'e', 4},  {'f', 5},  {'g', 6},
+    {'h', 7},  {'i', 8},  {'j', 9},  {'k', 10}, {'l', 11}, {'m', 12}, {'n', 13},
+    {'o', 14}, {'p', 15}, {'q', 16}, {'r', 17}, {'s', 18}, {'t', 19}, {'u', 20},
+    {'v', 21}, {'w', 22}, {'x', 23}, {'y', 24}, {'z', 25},
+  };
+  auto it = letter_map.find(l);
+  assert(it != letter_map.end());
+  return it->second;
+}
+
 GD::Bc::Token::Token(Type type) : value_(type)
 {
   assert(type != Type::number);
@@ -30,13 +60,13 @@ GD::Bc::Token::Token(Type type, std::string const& s) : value_(s)
   }
 }
 
-GD::Bc::Token::Token(Type type, char l) : value_(l) { assert(type == Type::letter); }
+GD::Bc::Token::Token(Type type, Letter l) : value_(l) { assert(type == Type::letter); }
 
 GD::Bc::Token::Type GD::Bc::Token::type() const
 {
   return std::visit(
     GD::Overloaded{[](Type t) { return t; }, [](std::string const&) { return Type::string; },
-                   [](NumInt const&) { return Type::number; }, [](char) { return Type::letter; },
+                   [](NumInt const&) { return Type::number; }, [](Letter) { return Type::letter; },
                    [](ErrorInt const&) { return Type::error; },
                    [](auto) {
                      assert(false);
@@ -47,11 +77,11 @@ GD::Bc::Token::Type GD::Bc::Token::type() const
 
 std::string const& GD::Bc::Token::string() const { return std::get<std::string>(value_); }
 
-std::string const& GD::Bc::Token::number() const { return std::get<NumInt>(value_).num_; }
+std::string const& GD::Bc::Token::number() const { return std::get<NumInt>(value_).get(); }
 
-std::string const& GD::Bc::Token::error() const { return std::get<ErrorInt>(value_).error_; }
+std::string const& GD::Bc::Token::error() const { return std::get<ErrorInt>(value_).get(); }
 
-char GD::Bc::Token::letter() const { return std::get<char>(value_); }
+GD::Bc::Letter GD::Bc::Token::letter() const { return std::get<Letter>(value_); }
 
 std::ostream& GD::Bc::operator<<(std::ostream& os, Token::Type t)
 {
@@ -210,10 +240,10 @@ void GD::Bc::Token::Token::debug(std::ostream& os) const
 {
   os << "Token::";
   std::visit(GD::Overloaded{[&os](Type t) { os << t; },
-                            [&os](ErrorInt const& e) { os << "error(" << e.error_ << ")"; },
-                            [&os](NumInt const& n) { os << "number(" << n.num_ << ")"; },
+                            [&os](ErrorInt const& e) { os << "error(" << e.get() << ")"; },
+                            [&os](NumInt const& n) { os << "number(" << n.get() << ")"; },
                             [&os](std::string const& s) { os << "string(" << s << ")"; },
-                            [&os](char l) { os << "letter(" << l << ")"; }},
+                            [&os](Letter l) { os << "letter(" << l << ")"; }},
              value_);
 }
 

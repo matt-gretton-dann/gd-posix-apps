@@ -176,7 +176,7 @@ void GD::Bc::Lexer::lex_letter_or_keyword()
 
   assert(!value.empty());
   if (value.size() == 1) {
-    t_.emplace(Token::Type::letter, value[0]);
+    t_.emplace(Token::Type::letter, Letter(value[0]));
     return;
   }
 

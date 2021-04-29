@@ -55,6 +55,11 @@ public:
   explicit TypeWrapper(T const& t) : t_(t) {}
   explicit TypeWrapper(T&& t) : t_(std::move(t)) {}
 
+  template<typename Arg>
+  explicit TypeWrapper(Arg arg) : t_(T(arg))
+  {
+  }
+
   T& get() { return t_; }
   T const& get() const { return t_; }
 

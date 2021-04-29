@@ -629,17 +629,17 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_define_element(ExprIndex fun
 
   if (lexer_->peek() != Token::Type::lsquare) {
     if (!allow_duplicates) {
-      if (mask.contains_variable(letter)) {
+      if (mask.contains(Variable(letter))) {
         insert_error(Msg::duplicate_variables_in_function_definition, letter);
         return ExprIndex::missing();
       }
 
       auto pop = insert_pop_param();
-      auto var = insert_variable(letter);
+      auto var = insert_variable(Variable(letter));
       insert_store(var, pop);
     }
 
-    mask.add_variable(letter);
+    mask.add(Variable(letter));
     instructions_->at(function_begin.index()).op1(mask);
     return function_begin;
   }
@@ -653,17 +653,17 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_define_element(ExprIndex fun
   lexer_->chew();
 
   if (!allow_duplicates) {
-    if (mask.contains_array(letter)) {
+    if (mask.contains(Array(letter))) {
       insert_error(Msg::duplicate_arrays_in_function_definition, letter);
       return ExprIndex::missing();
     }
 
     auto pop = insert_pop_param();
-    auto var = insert_array_slice(letter);
+    auto var = insert_array_slice(Array(letter));
     insert_store(var, pop);
   }
 
-  mask.add_array(letter);
+  mask.add(Array(letter));
   instructions_->at(function_begin.index()).op1(mask);
   return function_begin;
 }
@@ -996,10 +996,10 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_primary_expression(POPEFlags
       }
       lexer_->chew();
       if (elt == ExprType::missing) {
-        return insert_array_slice(letter);
+        return insert_array_slice(Array(letter));
       }
 
-      return insert_array_element(letter, elt);
+      return insert_array_element(Array(letter), elt);
     }
 
     if (lexer_->peek() == Token::Type::lparens) {
@@ -1017,7 +1017,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_primary_expression(POPEFlags
       return insert_call(letter, loc);
     }
 
-    return insert_variable(letter);
+    return insert_variable(Variable(letter));
   }
   case Token::Type::scale: {
     lexer_->chew();
@@ -1172,7 +1172,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_number(std::string const& numbe
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_array_element(char v, ExprIndex element)
+GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_array_element(Array v, ExprIndex element)
 {
   element = ensure_expr_loaded(element);
   ExprIndex result(instructions_->size(), ExprType::named);
@@ -1180,14 +1180,14 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_array_element(char v, ExprIndex
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_array_slice(char v)
+GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_array_slice(Array v)
 {
   ExprIndex result(instructions_->size(), ExprType::array_slice);
   instructions_->emplace_back(Instruction::Opcode::array, v);
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_variable(char v)
+GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_variable(Variable v)
 {
   ExprIndex result(instructions_->size(), ExprType::named);
   instructions_->emplace_back(Instruction::Opcode::variable, v);
@@ -1262,7 +1262,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_return(ExprIndex expr)
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_call(char v, Location const& loc)
+GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_call(Letter v, Location const& loc)
 {
   ExprIndex result(instructions_->size(), ExprType::primary);
   instructions_->emplace_back(Instruction::Opcode::call, v, loc);
@@ -1306,7 +1306,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_function_begin(VariableMask mas
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_function_end(char letter, ExprIndex begin)
+GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_function_end(Letter letter, ExprIndex begin)
 {
   ExprIndex result(instructions_->size());
   instructions_->emplace_back(Instruction::Opcode::function_end, letter, begin - result);

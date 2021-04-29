@@ -27,6 +27,34 @@
 
 namespace GD::Bc {
 
+/** \brief A letter
+ *
+ * Used for variable, function, and array names.
+ */
+class Letter
+{
+public:
+  /** \brief  Construct letter from char. */
+  explicit Letter(char l);
+
+  /** \brief Convert to unsigned.  */
+  explicit operator unsigned() const;
+
+  /* Comparison operators.  */
+  bool operator==(Letter l) const;
+  bool operator==(char l) const;
+
+private:
+  static unsigned encode(char l);
+  unsigned letter_;  ///< The letter.
+};
+
+std::ostream& operator<<(std::ostream&, Letter l);
+
+bool operator!=(Letter lhs, Letter rhs);
+bool operator!=(Letter lhs, char rhs);
+bool operator!=(char lhs, Letter rhs);
+
 /** \brief  Token type.
  *
  * Very basic token type stores type along with any extra info needed.
@@ -103,7 +131,7 @@ struct Token
    *  \param type Type::letter
    *  \param l    Letter
    */
-  Token(Type type, char l);
+  Token(Type type, Letter l);
 
   /** \brief Get token type.  */
   Type type() const;
@@ -115,7 +143,7 @@ struct Token
   std::string const& number() const;
 
   /** \brief Get letter stored in token. */
-  char letter() const;
+  Letter letter() const;
 
   /** \brief  Get the error message.  */
   std::string const& error() const;
@@ -140,18 +168,12 @@ struct Token
 
 private:
   /** Internal type to hold a number and diferentiate it from string and error.  */
-  struct NumInt
-  {
-    std::string num_;
-  };
+  using NumInt = TypeWrapper<std::string, struct NumIntType>;
 
   /** Internal type to hold an error string and differentiate it from string and number.  */
-  struct ErrorInt
-  {
-    std::string error_;
-  };
+  using ErrorInt = TypeWrapper<std::string, struct ErrorIntType>;
 
-  std::variant<Type, std::string, NumInt, ErrorInt, char> value_;
+  std::variant<Type, std::string, NumInt, ErrorInt, Letter> value_;
 };
 
 /** \brief Output operator for token type.  */
@@ -355,6 +377,24 @@ private:
   std::optional<Token> t_;     ///< Pending token.
 };
 
+/** Wrapper around Letter representing a Variable */
+using Variable = TypeWrapper<Letter, struct VariableTag>;
+
+/** Wrapper around Array representing a Variable */
+using Array = TypeWrapper<Letter, struct ArrayTag>;
+
+template<typename T>
+bool operator==(TypeWrapper<Letter, T> lhs, TypeWrapper<Letter, T> rhs)
+{
+  return lhs.get() == rhs.get();
+}
+
+template<typename T>
+std::ostream& operator<<(std::ostream& os, TypeWrapper<Letter, T> l)
+{
+  return (os << l.get());
+}
+
 /** \brief  A mask of variables and arrays.  Used for indicating the local variables of a function.
  */
 class VariableMask
@@ -366,16 +406,16 @@ public:
   VariableMask(std::string_view vars, std::string_view arrays);
 
   /** \brief  Add variable \a letter to the mask.  */
-  void add_variable(char letter);
+  void add(Variable v);
 
   /** \brief  Add array \a letter to the mask.  */
-  void add_array(char letter);
+  void add(Array a);
 
   /** \brief  Does the mask contain variable \a letter?  */
-  bool contains_variable(char letter) const;
+  bool contains(Variable v) const;
 
   /** \brief  Does the mask contain array \a letter?  */
-  bool contains_array(char letter) const;
+  bool contains(Array a) const;
 
   /** Equality operator. */
   bool operator==(VariableMask rhs) const;
@@ -404,7 +444,7 @@ private:
     char const* letter = letters;
     while (*letter != '\0' && mask != 0) {
       if (mask & 1) {
-        fn(*letter);
+        fn(Letter(*letter));
       }
       mask >>= 1;
       ++letter;
@@ -421,7 +461,8 @@ bool operator!=(VariableMask lhs, VariableMask rhs);
 
 /** \brief  An Instruction.
  *
- * Instructions contrain an opcode and up to two operands.
+ * Instructions contrain an opcode, up to two operands, and an optional result (once the instruction
+ * has been executed.
  *
  * References to other instructions are always PC relative - so that we can extract function
  * definitions easily.
@@ -433,9 +474,9 @@ bool operator!=(VariableMask lhs, VariableMask rhs);
  * | quit                | unsigned    |             | Quit - using exit code Op1.                |
  * | string              | String      |             | A string value                             |
  * | number              | String      |             | A number value (as yet uninterpreted).     |
- * | variable            | Letter      |             | A variable                                 |
- * | array               | Letter      |             | Array op1                                  |
- * | array_element       | Letter      | Offset      | Element op2 of Array op1                   |
+ * | variable            | Variable    |             | A variable                                 |
+ * | array               | Array       |             | Array op1                                  |
+ * | array_element       | Array       | Offset      | Element op2 of Array op1                   |
  * | scale               |             |             | Scale variable                             |
  * | ibase               |             |             | ibase variable                             |
  * | obase               |             |             | obase variable                             |
@@ -520,6 +561,9 @@ public:
     stderr   ///< Standard error.
   };
 
+  using Number = unsigned;
+  using ArrayElement = std::pair<Array, Number>;
+
   /** Type representing an index into the list of instructions.  */
   using Index = std::vector<Instruction>::size_type;
 
@@ -527,7 +571,11 @@ public:
   using Offset = std::make_signed_t<Index>;
 
   /** Valid operand types.  */
-  using Operand = std::variant<std::string, Stream, Offset, Location, VariableMask, unsigned, char>;
+  using Operand = std::variant<std::string, Stream, Offset, Location, VariableMask, unsigned,
+                               Letter, Variable, Array>;
+
+  /** Valid result types for an instruction.  */
+  using Result = std::variant<Number, std::string, Variable, Array, ArrayElement>;
 
   /** \brief        Constructor
    *  \param opcode Opcode
@@ -575,12 +623,16 @@ public:
   static bool has_op2(Opcode opcode);
 
 private:
+  /** \brief  How many operands does \a opcode take? */
   static unsigned op_count(Opcode opcode);
+
+  /** \brief  Validate the operands.  */
   void validate_operands() const;
 
-  Opcode opcode_;               ///< Opcode
-  std::optional<Operand> op1_;  ///< Operand 1
-  std::optional<Operand> op2_;  ///< Operand 2
+  Opcode opcode_;                 ///< Opcode
+  std::optional<Operand> op1_;    ///< Operand 1
+  std::optional<Operand> op2_;    ///< Operand 2
+  std::optional<Result> result_;  ///< The result.
 };
 
 /** Vector of instructions.  */
