@@ -27,6 +27,7 @@
 
 #include "number.hh"
 #include <type_traits>
+#include <unordered_map>
 
 namespace GD::Bc {
 
@@ -387,9 +388,13 @@ using Variable = TypeWrapper<Letter, struct VariableTag>;
 
 /** Wrapper around Array representing a Variable */
 using Array = TypeWrapper<Letter, struct ArrayTag>;
+using ArrayIndex = Number::NumType;
 
 /** An array element - the array and index.  */
-using ArrayElement = std::pair<Array, Number>;
+using ArrayElement = std::pair<Array, ArrayIndex>;
+
+/** Array values. */
+using ArrayValues = std::shared_ptr<std::unordered_map<ArrayIndex, Number>>;
 
 template<typename T>
 bool operator==(TypeWrapper<Letter, T> lhs, TypeWrapper<Letter, T> rhs)
@@ -596,8 +601,8 @@ public:
    * Array: Array name
    * ArrayElement: Array element.
    */
-  using Result =
-    std::variant<Number, std::string_view, Variable, Array, ArrayElement, Ibase, Obase, Scale>;
+  using Result = std::variant<Number, ArrayValues, std::string_view, Variable, Array, ArrayElement,
+                              Ibase, Obase, Scale>;
 
   /** \brief        Constructor
    *  \param opcode Opcode
@@ -1162,27 +1167,41 @@ public:
   void execute(Instructions& instructions);
 
 private:
-  using ArrayValues = std::shared_ptr<std::unordered_map<Number, Number>>;
-
   using Param = std::variant<ArrayValues, Number>;
   using Params = std::list<Param>;
   using ParamStack = std::list<Params>;
   using Index = Instruction::Index;
   using Offset = Instruction::Offset;
+  using NumType = Number::NumType;
 
   void execute_string(Instructions& instructions, Index i);
   void execute_number(Instructions& instructions, Index i);
+  void execute_variable(Instructions& instructions, Index i);
+  void execute_array(Instructions& instructions, Index i);
+  void execute_array_element(Instructions& instructions, Index i);
+  void execute_ibase(Instructions& instructions, Index i);
+  void execute_obase(Instructions& instructions, Index i);
+  void execute_scale(Instructions& instructions, Index i);
   void execute_print(Instructions& instructions, Index i);
   void execute_quit(Instructions& instructions, Index i);
+  void execute_load(Instructions& instructions, Index i);
+  void execute_store(Instructions& instructions, Index i);
+
+  void set_ibase(Number num);
+  void set_obase(Number num);
+  void set_scale(Number num);
+
+  Number get(ArrayElement const& ae) const;
+  void set(ArrayElement const& ae, Number num);
 
   std::ostream& stdout_;
   std::ostream& stderr_;
   std::array<ArrayValues, Letter::count_> arrays_;
   std::array<std::optional<Instructions>, Letter::count_> functions_;
   std::array<Number, Letter::count_> variables_;
-  unsigned ibase_ = 10;
-  unsigned obase_ = 10;
-  Number scale_;
+  NumType ibase_ = 10;
+  NumType obase_ = 10;
+  NumType scale_ = 0;
 };
 }  // namespace GD::Bc
 

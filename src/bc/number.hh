@@ -50,6 +50,30 @@ struct NumberTraits8
 
 namespace Details {
 
+/** \brief  calculate 10 ^ \a pow. */
+template<typename NumType>
+NumType pow10(NumType pow)
+{
+  NumType r = 1;
+  while (pow-- > 0) {
+    r *= 10;
+  }
+  return r;
+}
+
+/** \brief       Report an error and exit with exit code 1.
+ *  \param  msg  Message ID
+ *  \param  args Arguments for the message.
+ */
+template<typename... Ts>
+[[noreturn]] void error(Msg msg, Ts... args)
+{
+  std::cerr << GD::Bc::Messages::get().format(GD::Bc::Set::bc, msg, args...) << '\n';
+  ::exit(1);
+}
+
+enum class ComparisonResult { less_than, equality, greater_than };
+
 template<typename Traits>
 class BasicDigits
 {
@@ -65,6 +89,99 @@ public:
   BasicDigits& operator=(BasicDigits const&) = default;
   BasicDigits(BasicDigits&&) = default;
   BasicDigits& operator=(BasicDigits&&) = default;
+
+  /** \brief Is this zero?  */
+  bool is_zero() const
+  {
+    /* We're zero if we have no digits_ vector or all the digits in it are zero.  */
+    if (!digits_) {
+      return true;
+    }
+
+    for (auto d : *digits_) {
+      if (d != 0) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  Details::ComparisonResult compare(BasicDigits const& rhs, NumType scale) const
+  {
+    assert(digits_);
+    assert(rhs.digits_);
+    Details::ComparisonResult result = Details::ComparisonResult::equality;
+    for_each(rhs, scale, [&result](NumType lhs, NumType rhs) {
+      if (lhs < rhs) {
+        result = Details::ComparisonResult::less_than;
+      }
+      else if (lhs > rhs) {
+        result = Details::ComparisonResult::greater_than;
+      }
+    });
+    return result;
+  }
+
+  /** \brief  Get the number as the unsigned value.  Errors if out of range or not an integer.
+   *  \param scale Scale to treat the number as having.
+   */
+  NumType to_unsigned(NumType scale) const
+  {
+    if (!digits_) {
+      return 0;
+    }
+
+    auto it = digits_->begin();
+    while (scale >= base_log10_) {
+      if (it == digits_->end()) {
+        return 0;
+      }
+      if (*it != 0) {
+        error(Msg::number_to_unsigned_failed_fractional, "<NUMBER>");
+      }
+      ++it;
+      scale -= base_log10_;
+    }
+
+    if (it == digits_->end()) {
+      return 0;
+    }
+
+    auto pow10_scale = pow10(scale);
+    NumType result = *it / pow10_scale;
+
+    ++it;
+    if (it == digits_->end()) {
+      return result;
+    }
+
+    NumType temp = *it;
+    auto t2 = temp % pow10_scale;
+    result += t2 * (base_ / pow10_scale);
+    temp -= t2;
+    if (temp > std::numeric_limits<NumType>::max() / pow10_scale) {
+      error(Msg::number_to_unsigned_failed_too_large, "<NUMBER>");
+    }
+
+    ++it;
+    if (it == digits_->end()) {
+      return result;
+    }
+
+    error(Msg::number_to_unsigned_failed_too_large, "<NUMBER>");
+  }
+
+  void debug(std::ostream& os) const
+  {
+    char const* sep = "{";
+    if (digits_) {
+      for (auto d : *digits_) {
+        os << sep << d;
+        sep = ", ";
+      }
+    }
+    os << "}";
+  }
 
   /** \brief      Multiply-accumulate of over the underlying digits.
    *  \param  mul Number to multiply by
@@ -90,18 +207,6 @@ public:
     }
   }
 
-  void debug(std::ostream& os) const
-  {
-    char const* sep = "{";
-    if (digits_) {
-      for (auto d : *digits_) {
-        os << sep << d;
-        sep = ", ";
-      }
-    }
-    os << "}";
-  }
-
 private:
   using DigitVector = std::vector<NumType>;
 
@@ -114,6 +219,64 @@ private:
     }
     if (digits_.use_count() > 1) {
       digits_ = std::make_shared<DigitVector>(*digits_);
+    }
+  }
+
+  /** \brief       Iterate over the digits of \c *this & \a rhs calling \a fn.
+   *  \param rhs   Right hand side set of digits to iterate over.
+   *  \param scale Scale differnce between \c *this & \a rhs.
+   *  \param fn    Function to call, prototype compatable with void Fn(NumType lhs, NumType rhs);
+   *
+   * \a scale is how many more fractional digits \c *this has compared to \a rhs.
+   *
+   * \c *this and \a rhs are lined up so that they have the same scale, and then \a Fn is called for
+   * every set of digits.
+   *
+   * It is required that the caller has checked that \c digits_ & \c rhs.digits_ are not \c nullptr
+   * before calling.
+   */
+  template<typename Fn>
+  void for_each(BasicDigits const& rhs, NumType scale, Fn fn) const
+  {
+    assert(digits_ && rhs.digits_);
+
+    auto it_lhs = digits_->begin();
+    auto it_rhs = rhs.digits_->begin();
+
+    while (scale >= base_log10_) {
+      NumType d_lhs = (it_lhs == digits_->end()) ? 0 : *it_lhs;
+      Fn(d_lhs, 0);
+      if (it_lhs != digits_->end()) {
+        ++it_lhs;
+      }
+      scale -= base_log10_;
+    }
+
+    auto pow10_scale = pow10(scale);
+    WideType carry = 0;
+    for (auto it_rhs : *rhs.digits_) {
+      carry += it_rhs * pow10_scale;
+      NumType d_rhs = static_cast<NumType>(carry % base_);
+      carry /= base_;
+
+      NumType d_lhs = (it_lhs == digits_->end()) ? 0 : *it_lhs;
+      assert(carry < base_);
+      Fn(d_lhs, d_rhs);
+      if (it_lhs != digits_->end()) {
+        ++it_lhs;
+      }
+    }
+
+    if (carry != 0) {
+      NumType d_lhs = (it_lhs == digits_->end()) ? 0 : *it_lhs;
+      Fn(d_lhs, static_cast<NumType>(carry));
+      if (it_lhs != digits_->end()) {
+        ++it_lhs;
+      }
+    }
+
+    while (it_lhs != digits_->end()) {
+      Fn(*it_lhs, 0);
     }
   }
 
@@ -210,7 +373,7 @@ public:
 
       auto digit = ::strchr(digits, c);
       if (digit != nullptr) {
-        assert(digit - digits < ibase);
+        assert((digit - digits < ibase) || s.size() == 1);
         digits_.mac(ibase, digit - digits);
       }
       else if (c == '.') {
@@ -223,6 +386,21 @@ public:
     }
   }
 
+  /** \brief  Construct a basic number based upon the underlying type. */
+  BasicNumber(NumType value) : digits_(), sign_(Sign::positive), scale_(0)
+  {
+    digits_.mac(base_, value);
+  }
+
+  NumType to_unsigned() const
+  {
+    if (sign_ == Sign::negative) {
+      Details::error(Msg::number_to_unsigned_failed_negative, "<NUMBER>");
+      return 0;
+    }
+    return digits_.to_unsigned(scale_);
+  }
+
   /** \brief  Debug output of a number.  */
   void debug(std::ostream& os) const
   {
@@ -231,11 +409,73 @@ public:
     os << ", sign=" << (sign_ == Sign::positive ? "+" : "-") << ", scale=" << scale_ << ")";
   }
 
+  bool operator==(BasicNumber const& rhs) const
+  {
+    return compare(rhs) == Details::ComparisonResult::equality;
+  }
+
+  bool operator<(BasicNumber const& rhs) const
+  {
+    return compare(rhs) == Details::ComparisonResult::less_than;
+  }
+
+  bool operator>(BasicNumber const& rhs) const
+  {
+    return compare(rhs) == Details::ComparisonResult::greater_than;
+  }
+
 private:
+  Details::ComparisonResult compare(BasicNumber const& rhs) const
+  {
+    bool lhs_zero = digits_.is_zero();
+    bool rhs_zero = digits_.is_zero();
+
+    if (lhs_zero && rhs_zero) {
+      return Details::ComparisonResult::equality;
+    }
+    if (lhs_zero) {
+      return rhs.sign_ == Sign::positive ? Details::ComparisonResult::less_than
+                                         : Details::ComparisonResult::greater_than;
+    }
+    if (rhs_zero || (sign_ != rhs.sign_)) {
+      return sign_ == Sign::negative ? Details::ComparisonResult::less_than
+                                     : Details::ComparisonResult::greater_than;
+    }
+
+    bool lhs_scale_bigger = scale_ >= rhs.scale_;
+    auto result = lhs_scale_bigger ? digits_.compare(rhs.digits_, scale_ - rhs.scale_)
+                                   : rhs.digits_.compare(digits_, rhs.scale_ - scale_);
+    if (result == Details::ComparisonResult::equality) {
+      return result;
+    }
+    return lhs_scale_bigger ? result
+                            : (result == Details::ComparisonResult::less_than
+                                 ? Details::ComparisonResult::greater_than
+                                 : Details::ComparisonResult::less_than);
+  }
+
   Details::BasicDigits<Traits> digits_;  ///< The digits.
   Sign sign_ = Sign::positive;           ///< Sign (+/-1).
   NumType scale_ = 0;                    ///< Scale.
 };
+
+template<typename Traits>
+bool operator!=(BasicNumber<Traits> const& lhs, BasicNumber<Traits> const& rhs)
+{
+  return !(lhs == rhs);
+}
+
+template<typename Traits>
+bool operator>=(BasicNumber<Traits> const& lhs, BasicNumber<Traits> const& rhs)
+{
+  return !(lhs < rhs);
+}
+
+template<typename Traits>
+bool operator<=(BasicNumber<Traits> const& lhs, BasicNumber<Traits> const& rhs)
+{
+  return !(lhs > rhs);
+}
 
 /** Number using efficient machine format for storage.
  *

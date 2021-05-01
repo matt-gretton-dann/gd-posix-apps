@@ -492,6 +492,7 @@ std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Instruction::Result c
                [&os](Variable v) { os << v; },
                [&os](Array a) { os << a << "[]"; },
                [&os](ArrayElement const& ae) { os << ae.first << '[' << ae.second << ']'; },
+               [&os](ArrayValues const&) { os << "<ARRAY VALUES>"; },
                [&os](Ibase) { os << "ibase"; },
                [&os](Obase) { os << "obase"; },
                [&os](Scale) { os << "scale"; },

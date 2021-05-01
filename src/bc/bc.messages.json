@@ -188,6 +188,30 @@
         "id": 31,
         "description": "Expected define element not: {0}",
         "C": "Expected a variable or array name, found: {0}"
+      },
+      {
+        "msg": "base_out_of_range",
+        "id": 32,
+        "description": "Special variable {0} (ibase/obase - names are not translated) is out of range, should be [2, 16] we got {1}",
+        "C": "{0} set to an out of range value {1}.  Should be in range 2 <= {0} <= 16."
+      },
+      {
+        "msg": "number_to_unsigned_failed_negative",
+        "id": 33,
+        "description": "Failed to convert number {0} to unsigned integer as it was negative.",
+        "C": "Cannot convert {0} to unsigned integer, as it is negative."
+      },
+      {
+        "msg": "number_to_unsigned_failed_fractional",
+        "id": 34,
+        "description": "Failed to convert number {0} to unsigned integer as it was fractional.",
+        "C": "Cannot convert {0} to unsigned integer, as it has a fraction component."
+      },
+      {
+        "msg": "number_to_unsigned_failed_too_large",
+        "id": 35,
+        "description": "Failed to convert number {0} to unsigned integer as it is too big.",
+        "C": "Cannot convert {0} to unsigned integer, as it is larger than the underlying type."
       }
     ]
   }

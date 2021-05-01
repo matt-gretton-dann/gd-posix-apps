@@ -25,11 +25,32 @@ void GD::Bc::VM::execute(Instructions& instructions)
     case Instruction::Opcode::number:
       execute_number(instructions, i);
       break;
+    case Instruction::Opcode::variable:
+      execute_variable(instructions, i);
+      break;
+    case Instruction::Opcode::array:
+      execute_array(instructions, i);
+      break;
+    case Instruction::Opcode::array_element:
+      execute_array_element(instructions, i);
+      break;
+    case Instruction::Opcode::ibase:
+      execute_ibase(instructions, i);
+      break;
+    case Instruction::Opcode::obase:
+      execute_obase(instructions, i);
+      break;
+    case Instruction::Opcode::scale:
+      execute_scale(instructions, i);
+      break;
     case Instruction::Opcode::print:
       execute_print(instructions, i);
       break;
     case Instruction::Opcode::quit:
       execute_quit(instructions, i);
+      break;
+    case Instruction::Opcode::load:
+      execute_load(instructions, i);
       break;
     case Instruction::Opcode::eof:
       break;
@@ -52,6 +73,45 @@ void GD::Bc::VM::execute_number(Instructions& instructions, Index i)
   instructions[i].result(Number(std::get<std::string>(instructions[i].op1()), ibase_));
 }
 
+void GD::Bc::VM::execute_variable(Instructions& instructions, Index i)
+{
+  assert(instructions.at(i).opcode() == Instruction::Opcode::variable);
+  instructions[i].result(std::get<Variable>(instructions[i].op1()));
+}
+
+void GD::Bc::VM::execute_array(Instructions& instructions, Index i)
+{
+  assert(instructions.at(i).opcode() == Instruction::Opcode::array);
+  instructions[i].result(std::get<Array>(instructions[i].op1()));
+}
+
+void GD::Bc::VM::execute_array_element(Instructions& instructions, Index i)
+{
+  assert(instructions.at(i).opcode() == Instruction::Opcode::array_element);
+  Index elt_expr = std::get<Offset>(instructions[i].op2()) + i;
+  assert(elt_expr < instructions.size());
+  Number elt = std::get<Number>(instructions[elt_expr].result());
+  instructions[i].result(ArrayElement(std::get<Array>(instructions[i].op1()), elt.to_unsigned()));
+}
+
+void GD::Bc::VM::execute_scale(Instructions& instructions, Index i)
+{
+  assert(instructions.at(i).opcode() == Instruction::Opcode::scale);
+  instructions[i].result(Scale());
+}
+
+void GD::Bc::VM::execute_ibase(Instructions& instructions, Index i)
+{
+  assert(instructions.at(i).opcode() == Instruction::Opcode::ibase);
+  instructions[i].result(Ibase());
+}
+
+void GD::Bc::VM::execute_obase(Instructions& instructions, Index i)
+{
+  assert(instructions.at(i).opcode() == Instruction::Opcode::obase);
+  instructions[i].result(Obase());
+}
+
 void GD::Bc::VM::execute_print(Instructions& instructions, Index i)
 {
   assert(instructions.at(i).opcode() == Instruction::Opcode::print);
@@ -69,11 +129,8 @@ void GD::Bc::VM::execute_print(Instructions& instructions, Index i)
                },
                [&os](Variable v) { os << v << '\n'; },
                [&os](Array a) { os << a << '\n'; },
-               [&os](ArrayElement const& ae) {
-                 os << ae.first << '[';
-                 ae.second.debug(os);
-                 os << ']' << '\n';
-               },
+               [&os](ArrayElement const& ae) { os << ae.first << '[' << ae.second << "]\n"; },
+               [&os](ArrayValues const&) { os << "<ARRAY VALUES>\n"; },
                [&os](Ibase) { os << "ibase\n"; },
                [&os](Obase) { os << "obase\n"; },
                [&os](Scale) { os << "scale\n"; },
@@ -85,4 +142,101 @@ void GD::Bc::VM::execute_quit(Instructions& instructions, Index i)
 {
   assert(instructions.at(i).opcode() == Instruction::Opcode::quit);
   ::exit(std::get<unsigned>(instructions[i].op1()));
+}
+
+void GD::Bc::VM::execute_load(Instructions& instructions, Index i)
+{
+  assert(instructions.at(i).opcode() == Instruction::Opcode::load);
+  Index from_idx = std::get<Offset>(instructions[i].op1()) + i;
+  auto& expr = instructions[i];
+
+  std::visit(
+    Overloaded{
+      [](std::string_view) { assert(false); },
+      [](Number) { assert(false); },
+      [](ArrayValues const&) { assert(false); },
+      [&expr, this](Variable v) { expr.result(variables_[static_cast<unsigned>(v.get())]); },
+      [&expr, this](Array a) { expr.result(arrays_[static_cast<unsigned>(a.get())]); },
+      [&expr, this](ArrayElement const& ae) { expr.result(get(ae)); },
+      [&expr, this](Ibase) { expr.result(Number(ibase_)); },
+      [&expr, this](Obase) { expr.result(Number(obase_)); },
+      [&expr, this](Scale) { expr.result(Number(scale_)); },
+    },
+    instructions[from_idx].result());
+}
+
+void GD::Bc::VM::execute_store(Instructions& instructions, Index i)
+{
+  assert(instructions.at(i).opcode() == Instruction::Opcode::store);
+  Index to = std::get<Offset>(instructions[i].op1()) + i;
+  assert(to < instructions.size());
+  Index expr_idx = std::get<Offset>(instructions[i].op2()) + i;
+  assert(expr_idx < instructions.size());
+
+  auto& expr = instructions[expr_idx];
+
+  std::visit(Overloaded{
+               [](std::string_view) { assert(false); },
+               [](Number) { assert(false); },
+               [](ArrayValues const&) { assert(false); },
+               [&instructions, expr, this](Variable v) {
+                 variables_[static_cast<unsigned>(v.get())] = std::get<Number>(expr.result());
+               },
+               [&instructions, expr, this](Array a) {
+                 arrays_[static_cast<unsigned>(a.get())] = std::get<ArrayValues>(expr.result());
+               },
+               [&instructions, expr, this](ArrayElement const& ae) {
+                 set(ae, std::get<Number>(expr.result()));
+               },
+               [&instructions, expr, this](Ibase) { set_ibase(std::get<Number>(expr.result())); },
+               [&instructions, expr, this](Obase) { set_obase(std::get<Number>(expr.result())); },
+               [&instructions, expr, this](Scale) { set_scale(std::get<Number>(expr.result())); },
+             },
+             instructions[to].result());
+}
+
+void GD::Bc::VM::set_ibase(Number num)
+{
+  NumType n = num.to_unsigned();
+  if (n < 2 || n > 16) {
+    Details::error(Msg::base_out_of_range, "ibase", "<NUMBER>");
+  }
+  ibase_ = n;
+}
+
+void GD::Bc::VM::set_obase(Number num)
+{
+  NumType n = num.to_unsigned();
+  if (n < 2 || n > 16) {
+    Details::error(Msg::base_out_of_range, "obase", "<NUMBER>");
+  }
+  obase_ = n;
+}
+
+void GD::Bc::VM::set_scale(Number num) { scale_ = num.to_unsigned(); }
+
+void GD::Bc::VM::set(ArrayElement const& ae, Number num)
+{
+  ArrayValues a = arrays_[static_cast<unsigned>(ae.first.get())];
+  if (!a) {
+    arrays_[static_cast<unsigned>(ae.first.get())] = a =
+      std::make_shared<ArrayValues::element_type>();
+  }
+
+  a->insert_or_assign(ae.second, num);
+}
+
+GD::Bc::Number GD::Bc::VM::get(ArrayElement const& ae) const
+{
+  ArrayValues a = arrays_[static_cast<unsigned>(ae.first.get())];
+  if (!a) {
+    return Number();
+  }
+
+  auto it = a->find(ae.second);
+  if (it == a->end()) {
+    return Number();
+  }
+
+  return it->second;
 }
