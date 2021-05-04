@@ -236,9 +236,11 @@ public:
       }
       if (it != result.end()) {
         os << std::setfill('0') << std::left << std::setw(scale)
-           << result.substr(it - result.begin()) << '\n';
+           << result.substr(it - result.begin());
       }
     }
+
+    os << '\n';
   }
 
   void debug(std::ostream& os) const
