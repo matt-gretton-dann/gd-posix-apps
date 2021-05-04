@@ -7,6 +7,8 @@
 #ifndef _SRC_BC_BC_HH_INCLUDED
 #define _SRC_BC_BC_HH_INCLUDED
 
+#include "gd/nl_types.h"
+
 #include "gd/format.hh"
 
 #include "util/file.hh"
