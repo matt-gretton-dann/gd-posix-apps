@@ -123,8 +123,8 @@ void GD::Bc::VM::execute_print(Instructions& instructions, Index i)
 
   std::visit(Overloaded{
                [&os](std::string_view sv) { os << sv << '\n'; },
-               [&os](Number n) {
-                 n.debug(os);
+               [&os, this](Number n) {
+                 n.output(os, obase_);
                  os << '\n';
                },
                [&os](Variable v) { os << v << '\n'; },
@@ -179,18 +179,16 @@ void GD::Bc::VM::execute_store(Instructions& instructions, Index i)
                [](std::string_view) { assert(false); },
                [](Number) { assert(false); },
                [](ArrayValues const&) { assert(false); },
-               [&instructions, expr, this](Variable v) {
+               [expr, this](Variable v) {
                  variables_[static_cast<unsigned>(v.get())] = std::get<Number>(expr.result());
                },
-               [&instructions, expr, this](Array a) {
+               [expr, this](Array a) {
                  arrays_[static_cast<unsigned>(a.get())] = std::get<ArrayValues>(expr.result());
                },
-               [&instructions, expr, this](ArrayElement const& ae) {
-                 set(ae, std::get<Number>(expr.result()));
-               },
-               [&instructions, expr, this](Ibase) { set_ibase(std::get<Number>(expr.result())); },
-               [&instructions, expr, this](Obase) { set_obase(std::get<Number>(expr.result())); },
-               [&instructions, expr, this](Scale) { set_scale(std::get<Number>(expr.result())); },
+               [expr, this](ArrayElement const& ae) { set(ae, std::get<Number>(expr.result())); },
+               [expr, this](Ibase) { set_ibase(std::get<Number>(expr.result())); },
+               [expr, this](Obase) { set_obase(std::get<Number>(expr.result())); },
+               [expr, this](Scale) { set_scale(std::get<Number>(expr.result())); },
              },
              instructions[to].result());
 }

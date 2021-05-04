@@ -9,8 +9,10 @@
 
 #include "gd/string.h"
 
+#include <iomanip>
 #include <memory>
 #include <ostream>
+#include <sstream>
 #include <stdint.h>
 #include <vector>
 
@@ -78,8 +80,9 @@ template<typename Traits>
 class BasicDigits
 {
 public:
-  using NumType = Traits::NumType;    ///< Underlying storage type.
-  using WideType = Traits::WideType;  ///< Type able to hold result of NumType::max * NumType::max
+  using NumType = typename Traits::NumType;  ///< Underlying storage type.
+  using WideType =
+    typename Traits::WideType;  ///< Type able to hold result of NumType::max * NumType::max
   static constexpr WideType base_ = Traits::base_;              ///< Base we're storing in.
   static constexpr unsigned base_log10_ = Traits::base_log10_;  ///< Log10 of base_.
 
@@ -171,6 +174,62 @@ public:
     error(Msg::number_to_unsigned_failed_too_large, "<NUMBER>");
   }
 
+  void output(std::ostream&, [[maybe_unused]] NumType obase, [[maybe_unused]] NumType scale) const
+  {
+    assert(false);
+  }
+
+  void output_base10(std::ostream& os, NumType scale) const
+  {
+    assert(!is_zero());
+
+    std::ostringstream ss;
+    unsigned width = 0;
+    for (auto rit = digits_->rbegin(); rit != digits_->rend(); ++rit) {
+      ss << std::setfill('0') << std::setw(width) << *rit;
+      width = base_log10_;
+    }
+    std::string result = ss.str();
+    auto it = result.begin();
+    bool print = false;
+    NumType digits_printed = 0;
+    while (result.end() - it > scale) {
+      if (*it != '0') {
+        print = true;
+      }
+      if (print) {
+        os << *it;
+        if (++digits_printed == 70) {
+          digits_printed = 0;
+          os << "\\\n";
+        }
+      }
+      ++it;
+    }
+
+    if (!print) {
+      ++digits_printed;
+      os << '0';
+    }
+
+    if (it != result.end()) {
+      os << '.';
+      ++digits_printed;
+      if (digits_printed >= 70) {
+        os << "\\\n";
+        digits_printed = 0;
+      }
+      while (result.end() - it > 70 - digits_printed) {
+        os << result.substr(result.end() - it, 70 - digits_printed) << "\\\n";
+        it += 70 - digits_printed;
+        digits_printed = 0;
+      }
+      while (result.end())
+        os << std::setfill('0') << std::left << std::setw(scale) << result.substr(result.end() - it)
+           << '\n';
+    }
+  }
+
   void debug(std::ostream& os) const
   {
     char const* sep = "{";
@@ -245,7 +304,7 @@ private:
 
     while (scale >= base_log10_) {
       NumType d_lhs = (it_lhs == digits_->end()) ? 0 : *it_lhs;
-      Fn(d_lhs, 0);
+      fn(d_lhs, 0);
       if (it_lhs != digits_->end()) {
         ++it_lhs;
       }
@@ -261,7 +320,7 @@ private:
 
       NumType d_lhs = (it_lhs == digits_->end()) ? 0 : *it_lhs;
       assert(carry < base_);
-      Fn(d_lhs, d_rhs);
+      fn(d_lhs, d_rhs);
       if (it_lhs != digits_->end()) {
         ++it_lhs;
       }
@@ -269,14 +328,14 @@ private:
 
     if (carry != 0) {
       NumType d_lhs = (it_lhs == digits_->end()) ? 0 : *it_lhs;
-      Fn(d_lhs, static_cast<NumType>(carry));
+      fn(d_lhs, static_cast<NumType>(carry));
       if (it_lhs != digits_->end()) {
         ++it_lhs;
       }
     }
 
     while (it_lhs != digits_->end()) {
-      Fn(*it_lhs, 0);
+      fn(*it_lhs, 0);
     }
   }
 
@@ -334,8 +393,9 @@ template<typename Traits>
 class BasicNumber
 {
 public:
-  using NumType = Traits::NumType;    ///< Underlying storage type.
-  using WideType = Traits::WideType;  ///< Type able to hold result of NumType::max * NumType::max
+  using NumType = typename Traits::NumType;  ///< Underlying storage type.
+  using WideType =
+    typename Traits::WideType;  ///< Type able to hold result of NumType::max * NumType::max
   static constexpr WideType base_ = Traits::base_;              ///< Base we're storing in.
   static constexpr unsigned base_log10_ = Traits::base_log10_;  ///< Log10 of base_.
 
@@ -399,6 +459,23 @@ public:
       return 0;
     }
     return digits_.to_unsigned(scale_);
+  }
+
+  void output(std::ostream& os, NumType obase) const
+  {
+    if (digits_.is_zero()) {
+      os << "0\n";
+      return;
+    }
+    if (sign_ == Sign::negative) {
+      os << "-";
+    }
+    if (obase == 10) {
+      digits_.output_base10(os, scale_);
+    }
+    else {
+      digits_.output(os, obase, scale_);
+    }
   }
 
   /** \brief  Debug output of a number.  */
