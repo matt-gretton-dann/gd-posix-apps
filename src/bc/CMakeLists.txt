@@ -24,6 +24,7 @@ if(RUN_UNIT_TESTS)
   target_sources(test-libbc PRIVATE
                  test-lexer.cc
                  test-libbc-main.cc
+                 test-number.cc
                  test-parser.cc
                  test-reader.cc)
   target_add_clang_format(test-libbc)
