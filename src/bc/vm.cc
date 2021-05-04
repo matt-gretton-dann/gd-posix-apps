@@ -52,6 +52,9 @@ bool GD::Bc::VM::execute(Instructions& instructions)
     case Instruction::Opcode::load:
       execute_load(instructions, i);
       break;
+    case Instruction::Opcode::store:
+      execute_store(instructions, i);
+      break;
     case Instruction::Opcode::eof:
       assert(i == instructions.size() - 1);
       return false;
