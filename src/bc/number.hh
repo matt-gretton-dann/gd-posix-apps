@@ -219,14 +219,18 @@ public:
         os << "\\\n";
         digits_printed = 0;
       }
+
+      assert(scale >= result.end() - it);
       while (result.end() - it > 70 - digits_printed) {
         os << result.substr(result.end() - it, 70 - digits_printed) << "\\\n";
+        scale -= 70 - digits_printed;
         it += 70 - digits_printed;
         digits_printed = 0;
       }
-      while (result.end())
+      if (it != result.end()) {
         os << std::setfill('0') << std::left << std::setw(scale) << result.substr(result.end() - it)
            << '\n';
+      }
     }
   }
 
