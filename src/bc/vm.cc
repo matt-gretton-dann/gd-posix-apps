@@ -204,14 +204,7 @@ void GD::Bc::VM::set_ibase(Number num)
   ibase_ = n;
 }
 
-void GD::Bc::VM::set_obase(Number num)
-{
-  NumType n = num.to_unsigned();
-  if (n < 2 || n > 16) {
-    Details::error(Msg::base_out_of_range, "obase", "<NUMBER>");
-  }
-  obase_ = n;
-}
+void GD::Bc::VM::set_obase(Number num) { obase_ = num.to_unsigned(); }
 
 void GD::Bc::VM::set_scale(Number num) { scale_ = num.to_unsigned(); }
 
