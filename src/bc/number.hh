@@ -181,8 +181,15 @@ public:
 
   void output_base10(std::ostream& os, NumType scale) const
   {
+    /* For base 10 we can rely on the underlying system-library's output routines the only corner
+     * cases are to: 1) Ensure we pad with zeroes where necessary; and 2) Insert the decimal point
+     * in the correct place.
+     */
     assert(!is_zero());
 
+    /* Generate string without radix point. Note we reverse through the digits as we want to print
+     * big-endian, but numbers are stored little-endian.
+     */
     std::ostringstream ss;
     unsigned width = 0;
     for (auto rit = digits_->rbegin(); rit != digits_->rend(); ++rit) {
@@ -228,8 +235,8 @@ public:
         digits_printed = 0;
       }
       if (it != result.end()) {
-        os << std::setfill('0') << std::left << std::setw(scale) << result.substr(result.end() - it)
-           << '\n';
+        os << std::setfill('0') << std::left << std::setw(scale)
+           << result.substr(it - result.begin()) << '\n';
       }
     }
   }
@@ -426,6 +433,7 @@ public:
   {
     assert(ibase >= 2);
     assert(ibase <= 16);
+    assert(ibase == 10);
 
     static constexpr char const* digits = "0123456789ABCDEF"; /* Acceptable input characters.  */
     bool seen_period = false;                                 /* Have we seen the radix-point. */
