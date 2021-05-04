@@ -15,7 +15,7 @@
 
 GD::Bc::VM::VM(std::ostream& stdout, std::ostream& stderr) : stdout_(stdout), stderr_(stderr) {}
 
-void GD::Bc::VM::execute(Instructions& instructions)
+bool GD::Bc::VM::execute(Instructions& instructions)
 {
   for (Instruction::Index i = 0; i < instructions.size(); ++i) {
     switch (instructions[i].opcode()) {
@@ -53,12 +53,16 @@ void GD::Bc::VM::execute(Instructions& instructions)
       execute_load(instructions, i);
       break;
     case Instruction::Opcode::eof:
+      assert(i == instructions.size() - 1);
+      return false;
       break;
     default:
       assert(false);
       break;
     }
   }
+
+  return true;
 }
 
 void GD::Bc::VM::execute_string(Instructions& instructions, Index i)

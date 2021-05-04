@@ -44,10 +44,11 @@ void execute(std::unique_ptr<GD::Bc::Reader>&& r)
   GD::Bc::VM vm(std::cout, std::clog);
   GD::Bc::Parser parser(std::make_unique<GD::Bc::Lexer>(std::move(r)), true);
 
-  while (true) {
+  bool cont = true;
+  while (cont) {
     auto instructions = parser.parse();
     if (instructions) {
-      vm.execute(*instructions);
+      cont = vm.execute(*instructions);
     }
   }
 }

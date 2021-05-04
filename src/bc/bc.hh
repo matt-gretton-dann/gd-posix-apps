@@ -1162,11 +1162,24 @@ bool operator!=(Parser::ExprIndex const& lhs, Parser::Index rhs);
 bool operator!=(Parser::ExprIndex const& lhs, Parser::ExprType rhs);
 Parser::Offset operator-(Parser::ExprIndex const& lhs, Parser::ExprIndex const& rhs);
 
+/** \brief  Virtual Machine
+ *
+ * This is the object that executes instructions.
+ */
 class VM
 {
 public:
+  /** \brief Constructor
+   *  \param stdout Stream to use for standard output.
+   *  \param stderr Stream to use for standard error.
+   */
   VM(std::ostream& stdout, std::ostream& stderr);
-  void execute(Instructions& instructions);
+
+  /** \brief              Execute instructions.
+   *  \param instructions Instructions to execute
+   *  \return             \c true if we should continue, or \c false if we have reached EOF.
+   */
+  bool execute(Instructions& instructions);
 
 private:
   using Param = std::variant<ArrayValues, Number>;
