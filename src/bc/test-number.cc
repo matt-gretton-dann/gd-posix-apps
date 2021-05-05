@@ -14,7 +14,7 @@
 #include "bc.hh"
 #include <string_view>
 
-TEST_CASE("GD::Bc::Number - Number construction", "[bc][number]")
+TEST_CASE("GD::Bc::Number - Number construction, directed", "[bc][number]")
 {
   /* Test input in one base is output correctly in another. */
   auto [in_num, ibase, out_num, obase] = GENERATE(
@@ -22,10 +22,17 @@ TEST_CASE("GD::Bc::Number - Number construction", "[bc][number]")
       {"0", 10, "0", 10},
       {"0.0", 10, "0", 10},
       {"1.0", 10, "1.0", 10},
+      {".", 10, "0", 10},
+      {".1", 10, "0.1", 10},
+      {".0", 10, "0", 10},
       {"1", 10, "1", 10},
       {"00000000000000000000000000000000000000000000000000000000000000001", 10, "1", 10},
       {"123456789012345678901234567890", 10, "123456789012345678901234567890", 10},
       {"F", 10, "15", 10},
+      {"0.A", 16, "0.6", 10},
+      {"0.A0", 16, "0.62", 10},
+      {"0.A00", 16, "0.625", 10},
+      {"0.A000", 16, "0.6250", 10},
     }));
   GD::Bc::Number num(in_num, ibase);
   std::ostringstream ss;

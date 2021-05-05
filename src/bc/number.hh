@@ -279,6 +279,46 @@ public:
     }
   }
 
+  /** Multiply by 10^ \a scale. */
+  void mul_pow10(NumType scale)
+  {
+    copy_on_write();
+
+    /* Do the whole digit steps first as this is just memory shuffling.  */
+    NumType extra_digits = scale / base_log10_;
+    auto init_size = digits_->size();
+    digits_->resize(init_size + extra_digits);
+    for (auto i = init_size; i > 0; --i) {
+      (*digits_)[i + extra_digits - 1] = (*digits_)[i - 1];
+    }
+    for (typename DigitVector::size_type i = 0; i < extra_digits; ++i) {
+      (*digits_)[i] = 0;
+    }
+
+    /* Now we have to multply by a number < base so can just use mac.  */
+    mac(pow10(scale % base_log10_), 0);
+
+    tidy();
+  }
+
+  /** \brief  Divide by the number \a div.  */
+  void divide(NumType div)
+  {
+    copy_on_write();
+
+    WideType carry = 0;
+    for (auto d = digits_->rbegin(); d != digits_->rend(); ++d) {
+      carry += *d;
+      assert(carry / div < base_);
+      *d = static_cast<NumType>(carry / div);
+      carry = (carry % div) * base_;
+    }
+
+    /* Division truncates so we just leave the carry behind... */
+
+    tidy();
+  }
+
 private:
   using DigitVector = std::vector<NumType>;
 
@@ -294,6 +334,16 @@ private:
     }
   }
 
+  /** Tidy up the digits_ vector (remove trailing 0 entries). */
+  void tidy()
+  {
+    if (digits_) {
+      while (digits_->back() == 0) {
+        digits_->pop_back();
+      }
+    }
+  }
+
   /** \brief       Iterate over the digits of \c *this & \a rhs calling \a fn.
    *  \param rhs   Right hand side set of digits to iterate over.
    *  \param scale Scale differnce between \c *this & \a rhs.
@@ -301,11 +351,11 @@ private:
    *
    * \a scale is how many more fractional digits \c *this has compared to \a rhs.
    *
-   * \c *this and \a rhs are lined up so that they have the same scale, and then \a Fn is called for
-   * every set of digits.
+   * \c *this and \a rhs are lined up so that they have the same scale, and then \a Fn is called
+   * for every set of digits.
    *
-   * It is required that the caller has checked that \c digits_ & \c rhs.digits_ are not \c nullptr
-   * before calling.
+   * It is required that the caller has checked that \c digits_ & \c rhs.digits_ are not \c
+   * nullptr before calling.
    */
   template<typename Fn>
   void for_each(BasicDigits const& rhs, NumType scale, Fn fn) const
@@ -435,8 +485,13 @@ public:
   {
     assert(ibase >= 2);
     assert(ibase <= 16);
-    assert(ibase == 10);
 
+    /* Construct the basic number a digit at a time, working out the scale when we see digits after
+     * the radix point.
+     *
+     * Ultimately we want this to be digits_ * 10 ^ scale_.
+     * But we start by calculating digits_ * ibase ^ scale_.
+     */
     static constexpr char const* digits = "0123456789ABCDEF"; /* Acceptable input characters.  */
     bool seen_period = false;                                 /* Have we seen the radix-point. */
 
@@ -458,6 +513,44 @@ public:
         assert(false);
       }
     }
+
+    /* We now have number as digits_ * ibase ^ scale_.  If we're in base 10 or the scale is zero
+     * or the digits are zero we have finished.  */
+    if (ibase == 10 || scale_ == 0 || digits_.is_zero()) {
+      return;
+    }
+
+    /* The number is now scaled by a power of not-10.  We need to convert it to the appropriate
+     * power of 10.  To do this we multiply by 10^scale and divide by ibase ^ scale.
+     */
+    digits_.mul_pow10(scale_);
+
+    /* We divide by ibase ^ scale_ using a sequence of NumType sized divides, assuming these to be
+     * quicker than calculating an arbitrary precision ibase^scale_ value and then using arbitrary
+     * precision divide.
+     *
+     * To reduce the number of divides we work out the largest power of ibase which is less than
+     * base_.
+     */
+    NumType t = base_;
+    NumType pw = 1;
+    NumType pwc = 0;
+    while (t > ibase && pwc < scale_) {
+      t /= ibase;
+      pw *= ibase;
+      ++pwc;
+    }
+
+    NumType i = scale_;
+    while (i >= pwc) {
+      digits_.divide(pw);
+      i -= pwc;
+    }
+    pw = 1;
+    while (i-- > 0) {
+      pw *= ibase;
+    }
+    digits_.divide(pw);
   }
 
   /** \brief  Construct a basic number based upon the underlying type. */
