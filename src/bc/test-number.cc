@@ -47,10 +47,95 @@ TEST_CASE("GD::Bc::Number - Number construction, directed", "[bc][number]")
       {"FFFFFFFFFFFFFFFF", 16, " 255 255 255 255 255 255 255 255", 256},
       {"FFFFFFFFFFFFFFFF", 16, " 65535 65535 65535 65535", 65536},
       {"FFFFFFFFFFFFFFFF", 16, " 00065535 16777215 16777215", 16777216},
+      {".12345678", 10, "0. 12 34 56 78", 100},
+      {".12345678", 10, "0. 123 456 780", 1000},
+      {".123456789", 10, "0. 123 456 789", 1000},
     }));
   GD::Bc::Number num(in_num, ibase);
   std::ostringstream ss;
   std::string expected(out_num);
   num.output(ss, obase);
   REQUIRE(ss.str() == expected);
+}
+
+/* Make a number from a potentially signed string.
+ *
+ * GD::Bc::Number doesn't handle the sign.
+ */
+GD::Bc::Number make_number(std::string_view s)
+{
+  bool negate = false;
+  if (s[0] == '-') {
+    negate = true;
+    s = s.substr(1);
+  }
+  GD::Bc::Number n(s, 10);
+  if (negate) {
+    n.negate();
+  }
+  return n;
+}
+
+void test_add_subtract(GD::Bc::Number lhs, GD::Bc::Number rhs, GD::Bc::Number expected_add,
+                       GD::Bc::Number expected_sub)
+{
+  INFO("lhs = " << lhs << " rhs = " << rhs << " expected_add = " << expected_add
+                << " expected_sub = " << expected_sub);
+
+  GD::Bc::Number result = lhs;
+  result.add(rhs);
+  REQUIRE(result == expected_add);
+
+  result.sub(rhs);
+  REQUIRE(result == lhs);
+
+  result.sub(rhs);
+  REQUIRE(result == expected_sub);
+
+  result.add(rhs);
+  REQUIRE(result == lhs);
+
+  result = rhs;
+  expected_sub.negate();
+  result.add(lhs);
+  REQUIRE(result == expected_add);
+
+  result.sub(lhs);
+  REQUIRE(result == rhs);
+
+  result.sub(lhs);
+  REQUIRE(result == expected_sub);
+
+  result.add(lhs);
+  REQUIRE(result == rhs);
+}
+
+TEST_CASE("GD::Bc::Number - Addition and subtraction, directed", "[bc][number]")
+{
+  /* Test input in one base is output correctly in another. */
+  auto [lhs, rhs, expected_add, expected_sub] =
+    GENERATE(table<std::string_view, std::string_view, std::string_view, std::string_view>({
+      {"1", "2", "3", "-1"},
+      {"0", "0", "0", "0"},
+      {"1", "0", "1", "1"},
+      {"0", "1", "1", "-1"},
+      {"1", "0.2", "1.2", "0.8"},
+      {"999999999", "1", "1000000000", "999999998"},
+      {"0.999999999", "0.000000001", "1.000000000", "0.999999998"},
+      {"999999999999999999", "1000000000000000000", "1999999999999999999", "-1"},
+    }));
+  GD::Bc::Number lhs_num = make_number(lhs);
+  GD::Bc::Number rhs_num = make_number(rhs);
+  GD::Bc::Number expected_add_num = make_number(expected_add);
+  GD::Bc::Number expected_sub_num = make_number(expected_sub);
+
+  test_add_subtract(lhs_num, rhs_num, expected_add_num, expected_sub_num);
+  rhs_num.negate();
+  test_add_subtract(lhs_num, rhs_num, expected_sub_num, expected_add_num);
+  lhs_num.negate();
+  expected_add_num.negate();
+  expected_sub_num.negate();
+  test_add_subtract(lhs_num, rhs_num, expected_add_num, expected_sub_num);
+  rhs_num.negate();
+  test_add_subtract(lhs_num, rhs_num, expected_sub_num, expected_add_num);
 }
