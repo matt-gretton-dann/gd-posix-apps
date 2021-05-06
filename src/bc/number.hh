@@ -185,6 +185,14 @@ public:
     error(Msg::number_to_unsigned_failed_too_large, "<NUMBER>");
   }
 
+  /** \brief       Output to stream
+   *  \param os    Stream to output to
+   *  \param obase Output base
+   *  \param scale Output scale.
+   *
+   * Use output_base10() if output is base-10, as that uses significantly less memory to do the
+   * output.
+   */
   void output(std::ostream& os, NumType obase, NumType scale) const
   {
     assert(obase >= 2);
@@ -206,6 +214,7 @@ public:
       number += '.';
       BasicDigits s(1);
       s.mul_pow10(scale);
+      s.sub(NumType{1}, 0);
       while (!s.is_zero()) {
         number += to_string(frac.mul_mod_pow10(obase, scale), obase);
         s.divide(obase);
@@ -224,120 +233,12 @@ public:
     }
   }
 
-  /** \brief       Convert \a num to a string in base \a obase.
-   *  \param num   Number to convert, must be less than \a obase.
-   *  \param obase Base for output
-   *  \return      String representation of number.
-   */
-  static std::string to_string(NumType num, NumType obase)
-  {
-    assert(num < obase);
-    static char const* nums = "0123456789ABCDEF";
-    if (obase <= 16) {
-      return std::string(1, nums[num]);
-    }
-    else {
-      auto obase_width = std::to_string(obase - 1).size();
-      std::string str = std::to_string(num);
-      return std::string(" ") + std::string(obase_width - str.size(), '0') + str;
-    }
-  }
-
-  /** \brief        Multiply by \a mul mod 10 ^ \a scale.
-   *  \param  mul   Multiplicand
-   *  \param  scale Power of ten to mod by
-   *  \return       The "remainder" that falls off the most significant end.
+  /** \brief       Output number in base 10
+   *  \param os    Stream to output to
+   *  \param scale Scale of number.
    *
-   * Basically this sets digits_ to (digits_ * mul) % (10 ^ scale) and returns
-   * (digits_ * mul) / (10 ^ scale).
-   *
-   * We assume that the result is less than base_.
+   * This is slightly more efficient than output(os, 10, scale) would be in terms of memory usage.
    */
-  NumType mul_mod_pow10(NumType mul, NumType scale)
-  {
-    if (!digits_) {
-      return 0;
-    }
-
-    mac(mul, 0);
-    auto it = digits_->begin();
-    if (it == digits_->end()) {
-      return 0;
-    }
-    while (scale >= base_log10_) {
-      if (++it == digits_->end()) {
-        return 0;
-      }
-      scale -= base_log10_;
-    }
-
-    WideType scale_pow10 = pow10(scale);
-    WideType result = *it / scale_pow10;
-    *it++ -= static_cast<NumType>(result * scale_pow10);
-
-    if (it != digits_->end()) {
-      result += *it++ * (base_ / scale_pow10);
-      assert(it == digits_->end());
-      assert(result < base_);
-      digits_->pop_back();
-    }
-
-    tidy();
-    return static_cast<NumType>(result);
-  }
-
-  /**               Split ourselves into the whole number part and the fractional part.
-   *  \param  scale Digit to do the split at.
-   *  \return       {whole, frac} pair. \c whole has effective scale 0, and \c frac has effective
-   *                scale \a scale.
-   */
-  std::pair<BasicDigits, BasicDigits> split_frac(NumType scale) const
-  {
-    BasicDigits whole;
-    BasicDigits frac;
-
-    if (is_zero()) {
-      return std::make_pair(whole, frac);
-    }
-
-    whole.copy_on_write();
-    frac.copy_on_write();
-
-    /* Handle digits_ entries that are completely in the fraction.  */
-    auto it = digits_->begin();
-    while (scale >= base_log10_) {
-      frac.digits_->push_back(it == digits_->end() ? 0 : *it++);
-      scale -= base_log10_;
-    }
-
-    WideType scale_pow10 = pow10(scale);
-
-    /* Handle the one (and only) digits_ entry that has both fractional and whole part.  */
-    if (scale > 0) {
-      if (it == digits_->end()) {
-        /* Guarantee that frac has the correct number of digits available for the scale.  */
-        frac.digits_->push_back(0);
-        return std::make_pair(whole, frac);
-      }
-
-      frac.digits_->push_back(*it % scale_pow10);
-    }
-
-    /* Handle the digits_ entries that are whole numbers.  */
-    WideType carry = it == digits_->end() ? 0 : *it++ / scale_pow10;
-    while (it != digits_->end()) {
-      carry += (*it++) * (base_ / scale_pow10);
-      whole.digits_->push_back(static_cast<NumType>(carry % base_));
-      carry /= base_;
-    }
-
-    whole.digits_->push_back(static_cast<NumType>(carry));
-    whole.tidy();
-    /* We don't tidy frac as we want it to have the correct number of scale units.  */
-
-    return std::make_pair(whole, frac);
-  }
-
   void output_base10(std::ostream& os, NumType scale) const
   {
     /* For base 10 we can rely on the underlying system-library's output routines the only corner
@@ -400,6 +301,7 @@ public:
     }
   }
 
+  /** \brief  Output a debug form of the digits to \a os. */
   void debug(std::ostream& os) const
   {
     char const* sep = "{";
@@ -410,6 +312,157 @@ public:
       }
     }
     os << "}";
+  }
+
+  /** \brief        Add a NumType value to the digits_ at a given scale
+   *  \param add    Addend.
+   *  \param scale  Scale to add it at.
+   *
+   * digits_ += add * 10 ^ scale.
+   */
+  void add(NumType add, NumType scale)
+  {
+    BasicDigits add_d(add);
+    add_d.mul_pow10(scale);
+    add(add_d, 0);
+  }
+
+  /** \brief       Do \c *this += \a rhs * 10 ^ \a scale.
+   *  \param rhs   Right hand side
+   *  \param scale Number of digits to scale \a rhs by.
+   */
+  void add(BasicDigits const& rhs, NumType scale)
+  {
+    copy_on_write();
+
+    /* Get the scale below base_log10_ by skipping digits.  */
+    auto it = digits_->begin();
+    while (scale >= base_log10_) {
+      scale -= base_log10_;
+      if (it == digits_->end()) {
+        it = digits_->insert(it, 0);
+      }
+      ++it;
+    }
+
+    WideType scale_pow10 = pow10(scale);
+    WideType carry = 0;
+
+    /* Process the right-hand side.  */
+    for (auto rhs_d : *rhs.digits_) {
+      carry += rhs_d * scale_pow10;
+      if (it == digits_->end()) {
+        it = digits_->insert(it, 0);
+      }
+      WideType result = *it + carry;
+      *it++ = result % base_;
+      carry = result / base_;
+      assert(carry < base_);
+    }
+
+    /* Complete propagating the carry through any remaining entries in *this.  */
+    while (it != digits_->end() && carry != 0) {
+      WideType result = *it + carry;
+      *it++ = result % base_;
+      carry = result / base_;
+      assert(carry < base_);
+    }
+
+    /* And add a final digit for the carry.  */
+    if (carry != 0) {
+      assert(it == digits_->end());
+      digits_->push_back(carry);
+    }
+
+    tidy();
+  }
+
+  /** \brief         Add a NumType value to the digits_ at a given scale
+   *  \param  s      Subtractend ?.
+   *  \param  scale  Scale to subtract it at.
+   *  \return        True if the sign has changed.
+   *
+   * digits_ = abs(digits_ - sub * 10 ^ scale).
+   *
+   * If *this (on entry) is less than sub * 10 ^ scale we return true.  Otherwise we return false.
+   */
+  bool sub(NumType s, NumType scale)
+  {
+    BasicDigits sub_d(s);
+    sub_d.mul_pow10(scale);
+    return sub(sub_d, 0);
+  }
+
+  /** \brief        Do \c *this = abs(\a rhs * 10 ^ \a scale), return true if sign flipped.
+   *  \param  rhs   Right hand side
+   *  \param  scale Number of digits to scale \a rhs by.
+   *  \return       True if *this was less than rhs
+   *
+   * If *this (on entry) is less than sub * 10 ^ scale we return true.  Otherwise we return false.
+   */
+  bool sub(BasicDigits const& rhs, NumType scale)
+  {
+    copy_on_write();
+
+    /* Get the scale below base_log10_ by skipping digits.  */
+    auto it = digits_->begin();
+    while (scale >= base_log10_) {
+      scale -= base_log10_;
+      if (it == digits_->end()) {
+        it = digits_->insert(it, 0);
+      }
+      ++it;
+    }
+
+    WideType scale_pow10 = pow10(scale);
+    WideType carry = 0;
+
+    /* Process the right-hand side.*/
+    for (auto rhs_d : *rhs.digits_) {
+      if (it == digits_->end()) {
+        it = digits_->insert(it, 0);
+      }
+
+      carry += rhs_d * scale_pow10;
+      WideType rhs_value = carry % base_;
+      carry /= base_;
+      if (rhs_value > *it) {
+        *it = base_ + *it - rhs_value;
+        ++carry;
+      }
+      else {
+        *it = *it - rhs_value;
+      }
+      it++;
+    }
+
+    /* Complete propagating the carry through any remaining entries in *this.  */
+    while (it != digits_->end() && carry != 0) {
+      if (carry > *it) {
+        *it = base_ + *it - carry;
+        carry = 1;
+      }
+      else {
+        *it = *it - carry;
+        carry = 0;
+      }
+      it++;
+    }
+
+    /* If we've fallen off the end and still have a carry - then we invert the number. */
+    if (carry != 0) {
+      assert(it == digits_->end());
+
+      WideType c2 = 0;
+      for (it = digits_->begin(); it != digits_->end(); ++it) {
+        WideType result = (c2 < *it ? base_ : 0) + c2 - *it;
+        *it = result % base_;
+        c2 = result / base_;
+      }
+    }
+
+    tidy();
+    return carry != 0;
   }
 
   /** \brief      Multiply-accumulate of over the underlying digits.
@@ -458,6 +511,49 @@ public:
     tidy();
   }
 
+  /** \brief        Multiply by \a mul mod 10 ^ \a scale.
+   *  \param  mul   Multiplicand
+   *  \param  scale Power of ten to mod by
+   *  \return       The "remainder" that falls off the most significant end.
+   *
+   * Basically this sets digits_ to (digits_ * mul) % (10 ^ scale) and returns
+   * (digits_ * mul) / (10 ^ scale).
+   *
+   * We assume that the result is less than base_.
+   */
+  NumType mul_mod_pow10(NumType mul, NumType scale)
+  {
+    if (!digits_) {
+      return 0;
+    }
+
+    mac(mul, 0);
+    auto it = digits_->begin();
+    if (it == digits_->end()) {
+      return 0;
+    }
+    while (scale >= base_log10_) {
+      if (++it == digits_->end()) {
+        return 0;
+      }
+      scale -= base_log10_;
+    }
+
+    WideType scale_pow10 = pow10(scale);
+    WideType result = *it / scale_pow10;
+    *it++ -= static_cast<NumType>(result * scale_pow10);
+
+    if (it != digits_->end()) {
+      result += *it++ * (base_ / scale_pow10);
+      assert(it == digits_->end());
+      assert(result < base_);
+      digits_->pop_back();
+    }
+
+    tidy();
+    return static_cast<NumType>(result);
+  }
+
   /** \brief  Divide by the number \a div.  Returns remainder.  */
   NumType divide(NumType div)
   {
@@ -499,6 +595,77 @@ private:
         digits_->pop_back();
       }
     }
+  }
+
+  /** \brief       Convert \a num to a string in base \a obase.
+   *  \param num   Number to convert, must be less than \a obase.
+   *  \param obase Base for output
+   *  \return      String representation of number.
+   */
+  static std::string to_string(NumType num, NumType obase)
+  {
+    assert(num < obase);
+    static char const* nums = "0123456789ABCDEF";
+    if (obase <= 16) {
+      return std::string(1, nums[num]);
+    }
+    else {
+      auto obase_width = std::to_string(obase - 1).size();
+      std::string str = std::to_string(num);
+      return std::string(" ") + std::string(obase_width - str.size(), '0') + str;
+    }
+  }
+
+  /**               Split ourselves into the whole number part and the fractional part.
+   *  \param  scale Digit to do the split at.
+   *  \return       {whole, frac} pair. \c whole has effective scale 0, and \c frac has effective
+   *                scale \a scale.
+   */
+  std::pair<BasicDigits, BasicDigits> split_frac(NumType scale) const
+  {
+    BasicDigits whole;
+    BasicDigits frac;
+
+    if (is_zero()) {
+      return std::make_pair(whole, frac);
+    }
+
+    whole.copy_on_write();
+    frac.copy_on_write();
+
+    /* Handle digits_ entries that are completely in the fraction.  */
+    auto it = digits_->begin();
+    while (scale >= base_log10_) {
+      frac.digits_->push_back(it == digits_->end() ? 0 : *it++);
+      scale -= base_log10_;
+    }
+
+    WideType scale_pow10 = pow10(scale);
+
+    /* Handle the one (and only) digits_ entry that has both fractional and whole part.  */
+    if (scale > 0) {
+      if (it == digits_->end()) {
+        /* Guarantee that frac has the correct number of digits available for the scale.  */
+        frac.digits_->push_back(0);
+        return std::make_pair(whole, frac);
+      }
+
+      frac.digits_->push_back(*it % scale_pow10);
+    }
+
+    /* Handle the digits_ entries that are whole numbers.  */
+    WideType carry = it == digits_->end() ? 0 : *it++ / scale_pow10;
+    while (it != digits_->end()) {
+      carry += (*it++) * (base_ / scale_pow10);
+      whole.digits_->push_back(static_cast<NumType>(carry % base_));
+      carry /= base_;
+    }
+
+    whole.digits_->push_back(static_cast<NumType>(carry));
+    whole.tidy();
+    /* We don't tidy frac as we want it to have the correct number of scale units.  */
+
+    return std::make_pair(whole, frac);
   }
 
   /** \brief       Iterate over the digits of \c *this & \a rhs calling \a fn.
@@ -748,6 +915,88 @@ public:
     os << "Number(";
     digits_.debug(os);
     os << ", sign=" << (sign_ == Sign::positive ? "+" : "-") << ", scale=" << scale_ << ")";
+  }
+
+  /** \brief  Negate \c *this.  */
+  void negate() { sign_ = (sign_ == Sign::positive) ? Sign::negative : Sign::positive; }
+
+  /** \brief  Add \a rhs to *this.
+   *
+   * Scale on exit is max of rhs scale and *this scale.
+   */
+  void add(BasicNumber const& rhs)
+  {
+    if (rhs.digits_.is_zero()) {
+      return;
+    }
+    if (digits_.is_zero()) {
+      *this = rhs;
+      return;
+    }
+
+    Details::BasicDigits<Traits> rhs_digits;
+    NumType scale_diff;
+    Sign rhs_sign;
+    if (scale_ >= rhs.scale_) {
+      rhs_digits = rhs.digits_;
+      rhs_sign = rhs.sign_;
+      scale_diff = scale_ - rhs.scale_;
+    }
+    else {
+      rhs_digits = digits_;
+      rhs_sign = sign_;
+      scale_diff = rhs.scale_ - scale_;
+      *this = rhs;
+    }
+
+    if (sign_ == rhs_sign) {
+      digits_.add(rhs_digits, scale_diff);
+    }
+    else {
+      if (digits_.sub(rhs_digits, scale_diff)) {
+        negate();
+      }
+    }
+  }
+
+  /** \brief  Subtract \a rhs from *this.
+   *
+   * Scale on exit is max of rhs scale and *this scale.
+   */
+  void sub(BasicNumber const& rhs)
+  {
+    if (rhs.digits_.is_zero()) {
+      return;
+    }
+    if (digits_.is_zero()) {
+      *this = rhs;
+      negate();
+      return;
+    }
+
+    Details::BasicDigits<Traits> rhs_digits;
+    NumType scale_diff;
+    Sign rhs_sign;
+    if (scale_ >= rhs.scale_) {
+      rhs_digits = rhs.digits_;
+      rhs_sign = rhs.sign_;
+      scale_diff = scale_ - rhs.scale_;
+    }
+    else {
+      rhs_digits = digits_;
+      rhs_sign = sign_;
+      scale_diff = rhs.scale_ - scale_;
+      *this = rhs;
+    }
+
+    if (sign_ == rhs_sign) {
+      if (digits_.sub(rhs_digits, scale_diff)) {
+        negate();
+      }
+    }
+    else {
+      digits_.add(rhs_digits, scale_diff);
+    }
   }
 
   bool operator==(BasicNumber const& rhs) const
