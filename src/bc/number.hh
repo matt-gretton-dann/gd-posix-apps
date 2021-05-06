@@ -86,7 +86,18 @@ public:
   static constexpr WideType base_ = Traits::base_;              ///< Base we're storing in.
   static constexpr unsigned base_log10_ = Traits::base_log10_;  ///< Log10 of base_.
 
+  /** \brief  Basic constructor.  */
   BasicDigits() : digits_(nullptr) {}
+
+  /** \brief   Construct holding the single digit \a num
+   *  \param num Number to hold.  Must be less than \c base_.
+   */
+  explicit BasicDigits(NumType num)
+      : digits_(std::make_shared<DigitVector>(std::initializer_list{num}))
+  {
+    assert(num < base_);
+  }
+
   ~BasicDigits() = default;
   BasicDigits(BasicDigits const&) = default;
   BasicDigits& operator=(BasicDigits const&) = default;
@@ -174,9 +185,157 @@ public:
     error(Msg::number_to_unsigned_failed_too_large, "<NUMBER>");
   }
 
-  void output(std::ostream&, [[maybe_unused]] NumType obase, [[maybe_unused]] NumType scale) const
+  void output(std::ostream& os, NumType obase, NumType scale) const
   {
-    assert(false);
+    assert(obase >= 2);
+    auto [whole, frac] = split_frac(scale);
+    DigitVector whole_digits;
+    while (!whole.is_zero()) {
+      whole_digits.push_back(whole.divide(obase));
+    }
+    std::string number;
+    for (auto it = whole_digits.rbegin(); it != whole_digits.rend(); ++it) {
+      number += to_string(*it, obase);
+    }
+
+    if (number.empty()) {
+      number = "0";
+    }
+
+    if (scale != 0) {
+      number += '.';
+      BasicDigits s(1);
+      s.mul_pow10(scale);
+      while (!s.is_zero()) {
+        number += to_string(frac.mul_mod_pow10(obase, scale), obase);
+        s.divide(obase);
+      }
+    }
+
+    std::string::size_type p = 0;
+    if (number.length() > 70) {
+      while (p >= number.length() - 70) {
+        os << number.substr(p, 70) << "\\\n";
+        p += 70;
+      }
+    }
+    if (p != number.length()) {
+      os << number.substr(p);
+    }
+  }
+
+  /** \brief       Convert \a num to a string in base \a obase.
+   *  \param num   Number to convert, must be less than \a obase.
+   *  \param obase Base for output
+   *  \return      String representation of number.
+   */
+  static std::string to_string(NumType num, NumType obase)
+  {
+    assert(num < obase);
+    static char const* nums = "0123456789ABCDEF";
+    if (obase <= 16) {
+      return std::string(1, nums[num]);
+    }
+    else {
+      auto obase_width = std::to_string(obase - 1).size();
+      std::string str = std::to_string(num);
+      return std::string(" ") + std::string(obase_width - str.size(), '0') + str;
+    }
+  }
+
+  /** \brief        Multiply by \a mul mod 10 ^ \a scale.
+   *  \param  mul   Multiplicand
+   *  \param  scale Power of ten to mod by
+   *  \return       The "remainder" that falls off the most significant end.
+   *
+   * Basically this sets digits_ to (digits_ * mul) % (10 ^ scale) and returns
+   * (digits_ * mul) / (10 ^ scale).
+   *
+   * We assume that the result is less than base_.
+   */
+  NumType mul_mod_pow10(NumType mul, NumType scale)
+  {
+    if (!digits_) {
+      return 0;
+    }
+
+    mac(mul, 0);
+    auto it = digits_->begin();
+    if (it == digits_->end()) {
+      return 0;
+    }
+    while (scale >= base_log10_) {
+      if (++it == digits_->end()) {
+        return 0;
+      }
+      scale -= base_log10_;
+    }
+
+    WideType scale_pow10 = pow10(scale);
+    WideType result = *it / scale_pow10;
+    *it++ -= static_cast<NumType>(result * scale_pow10);
+
+    if (it != digits_->end()) {
+      result += *it++ * (base_ / scale_pow10);
+      assert(it == digits_->end());
+      assert(result < base_);
+      digits_->pop_back();
+    }
+
+    tidy();
+    return static_cast<NumType>(result);
+  }
+
+  /**               Split ourselves into the whole number part and the fractional part.
+   *  \param  scale Digit to do the split at.
+   *  \return       {whole, frac} pair. \c whole has effective scale 0, and \c frac has effective
+   *                scale \a scale.
+   */
+  std::pair<BasicDigits, BasicDigits> split_frac(NumType scale) const
+  {
+    BasicDigits whole;
+    BasicDigits frac;
+
+    if (is_zero()) {
+      return std::make_pair(whole, frac);
+    }
+
+    whole.copy_on_write();
+    frac.copy_on_write();
+
+    /* Handle digits_ entries that are completely in the fraction.  */
+    auto it = digits_->begin();
+    while (scale >= base_log10_) {
+      frac.digits_->push_back(it == digits_->end() ? 0 : *it++);
+      scale -= base_log10_;
+    }
+
+    WideType scale_pow10 = pow10(scale);
+
+    /* Handle the one (and only) digits_ entry that has both fractional and whole part.  */
+    if (scale > 0) {
+      if (it == digits_->end()) {
+        /* Guarantee that frac has the correct number of digits available for the scale.  */
+        frac.digits_->push_back(0);
+        return std::make_pair(whole, frac);
+      }
+
+      frac.digits_->push_back(*it % scale_pow10);
+    }
+
+    /* Handle the digits_ entries that are whole numbers.  */
+    WideType carry = it == digits_->end() ? 0 : *it++ / scale_pow10;
+    while (it != digits_->end()) {
+      carry += (*it++) * (base_ / scale_pow10);
+      whole.digits_->push_back(static_cast<NumType>(carry % base_));
+      carry /= base_;
+    }
+
+    whole.digits_->push_back(static_cast<NumType>(carry));
+    whole.tidy();
+    /* We don't tidy frac as we want it to have the correct number of scale units.  */
+
+    return std::make_pair(whole, frac);
   }
 
   void output_base10(std::ostream& os, NumType scale) const
@@ -235,12 +394,10 @@ public:
         digits_printed = 0;
       }
       if (it != result.end()) {
-        os << std::setfill('0') << std::left << std::setw(scale)
+        os << std::setfill('0') << std::right << std::setw(scale)
            << result.substr(it - result.begin());
       }
     }
-
-    os << '\n';
   }
 
   void debug(std::ostream& os) const
@@ -301,8 +458,8 @@ public:
     tidy();
   }
 
-  /** \brief  Divide by the number \a div.  */
-  void divide(NumType div)
+  /** \brief  Divide by the number \a div.  Returns remainder.  */
+  NumType divide(NumType div)
   {
     copy_on_write();
 
@@ -313,10 +470,9 @@ public:
       *d = static_cast<NumType>(carry / div);
       carry = (carry % div) * base_;
     }
-
-    /* Division truncates so we just leave the carry behind... */
-
     tidy();
+
+    return static_cast<NumType>(carry / base_);
   }
 
 private:
@@ -334,11 +490,12 @@ private:
     }
   }
 
-  /** Tidy up the digits_ vector (remove trailing 0 entries). */
+  /** \brief        Tidy up the digits_ vector.
+   */
   void tidy()
   {
     if (digits_) {
-      while (digits_->back() == 0) {
+      while (!digits_->empty() && digits_->back() == 0) {
         digits_->pop_back();
       }
     }
@@ -571,7 +728,7 @@ public:
   void output(std::ostream& os, NumType obase) const
   {
     if (digits_.is_zero()) {
-      os << "0\n";
+      os << "0";
       return;
     }
     if (sign_ == Sign::negative) {
