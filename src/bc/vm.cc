@@ -55,6 +55,15 @@ bool GD::Bc::VM::execute(Instructions& instructions)
     case Instruction::Opcode::store:
       execute_store(instructions, i);
       break;
+    case Instruction::Opcode::negate:
+      execute_negate(instructions, i);
+      break;
+    case Instruction::Opcode::add:
+      execute_add(instructions, i);
+      break;
+    case Instruction::Opcode::subtract:
+      execute_sub(instructions, i);
+      break;
     case Instruction::Opcode::eof:
       assert(i == instructions.size() - 1);
       return false;
@@ -200,6 +209,32 @@ void GD::Bc::VM::execute_store(Instructions& instructions, Index i)
              instructions[to].result());
 }
 
+void GD::Bc::VM::execute_negate(Instructions& instructions, Index i)
+{
+  assert(instructions.at(i).opcode() == Instruction::Opcode::negate);
+  Number n = get_op1_expr(instructions, i);
+  n.negate();
+  instructions[i].result(n);
+}
+
+void GD::Bc::VM::execute_add(Instructions& instructions, Index i)
+{
+  assert(instructions.at(i).opcode() == Instruction::Opcode::add);
+  Number lhs = get_op1_expr(instructions, i);
+  Number rhs = get_op2_expr(instructions, i);
+  lhs.add(rhs);
+  instructions[i].result(lhs);
+}
+
+void GD::Bc::VM::execute_sub(Instructions& instructions, Index i)
+{
+  assert(instructions.at(i).opcode() == Instruction::Opcode::subtract);
+  Number lhs = get_op1_expr(instructions, i);
+  Number rhs = get_op2_expr(instructions, i);
+  lhs.sub(rhs);
+  instructions[i].result(lhs);
+}
+
 void GD::Bc::VM::set_ibase(Number num)
 {
   NumType n = num.to_unsigned();
@@ -237,4 +272,18 @@ GD::Bc::Number GD::Bc::VM::get(ArrayElement const& ae) const
   }
 
   return it->second;
+}
+
+GD::Bc::Number GD::Bc::VM::get_op1_expr(Instructions& instructions, Index i)
+{
+  Index expr_idx = std::get<Offset>(instructions[i].op1()) + i;
+  assert(expr_idx < instructions.size());
+  return std::get<Number>(instructions[expr_idx].result());
+}
+
+GD::Bc::Number GD::Bc::VM::get_op2_expr(Instructions& instructions, Index i)
+{
+  Index expr_idx = std::get<Offset>(instructions[i].op2()) + i;
+  assert(expr_idx < instructions.size());
+  return std::get<Number>(instructions[expr_idx].result());
 }

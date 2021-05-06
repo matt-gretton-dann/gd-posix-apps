@@ -1201,6 +1201,12 @@ private:
   void execute_quit(Instructions& instructions, Index i);
   void execute_load(Instructions& instructions, Index i);
   void execute_store(Instructions& instructions, Index i);
+  void execute_negate(Instructions& instructions, Index i);
+  void execute_add(Instructions& instructions, Index i);
+  void execute_sub(Instructions& instructions, Index i);
+
+  Number get_op1_expr(Instructions& instructions, Index i);
+  Number get_op2_expr(Instructions& instructions, Index i);
 
   void set_ibase(Number num);
   void set_obase(Number num);
