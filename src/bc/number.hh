@@ -687,7 +687,6 @@ private:
     assert(digits_ && rhs.digits_);
 
     auto it_lhs = digits_->begin();
-    auto it_rhs = rhs.digits_->begin();
 
     while (scale >= base_log10_) {
       NumType d_lhs = (it_lhs == digits_->end()) ? 0 : *it_lhs;
