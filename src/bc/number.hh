@@ -323,8 +323,7 @@ public:
   void add(NumType add, NumType scale)
   {
     BasicDigits add_d(add);
-    add_d.mul_pow10(scale);
-    add(add_d, 0);
+    add(add_d, scale);
   }
 
   /** \brief       Do \c *this += \a rhs * 10 ^ \a scale.
@@ -335,42 +334,13 @@ public:
   {
     copy_on_write();
 
-    /* Get the scale below base_log10_ by skipping digits.  */
-    auto it = digits_->begin();
-    while (scale >= base_log10_) {
-      scale -= base_log10_;
-      if (it == digits_->end()) {
-        it = digits_->insert(it, 0);
-      }
-      ++it;
-    }
-
-    WideType scale_pow10 = pow10(scale);
-    WideType carry = 0;
-
-    /* Process the right-hand side.  */
-    for (auto rhs_d : *rhs.digits_) {
-      carry += rhs_d * scale_pow10;
-      if (it == digits_->end()) {
-        it = digits_->insert(it, 0);
-      }
+    NumType carry = for_each(rhs, scale, [](DigitVector::iterator it, WideType carry) {
       WideType result = *it + carry;
-      *it++ = result % base_;
-      carry = result / base_;
-      assert(carry < base_);
-    }
+      *it = result % base_;
+      return result / base_;
+    });
 
-    /* Complete propagating the carry through any remaining entries in *this.  */
-    while (it != digits_->end() && carry != 0) {
-      WideType result = *it + carry;
-      *it++ = result % base_;
-      carry = result / base_;
-      assert(carry < base_);
-    }
-
-    /* And add a final digit for the carry.  */
     if (carry != 0) {
-      assert(it == digits_->end());
       digits_->push_back(carry);
     }
 
@@ -389,8 +359,7 @@ public:
   bool sub(NumType s, NumType scale)
   {
     BasicDigits sub_d(s);
-    sub_d.mul_pow10(scale);
-    return sub(sub_d, 0);
+    return sub(sub_d, scale);
   }
 
   /** \brief        Do \c *this = abs(\a rhs * 10 ^ \a scale), return true if sign flipped.
@@ -404,60 +373,39 @@ public:
   {
     copy_on_write();
 
-    /* Get the scale below base_log10_ by skipping digits.  */
-    auto it = digits_->begin();
-    while (scale >= base_log10_) {
-      scale -= base_log10_;
-      if (it == digits_->end()) {
-        it = digits_->insert(it, 0);
-      }
-      ++it;
-    }
-
-    WideType scale_pow10 = pow10(scale);
-    WideType carry = 0;
-
-    /* Process the right-hand side.*/
-    for (auto rhs_d : *rhs.digits_) {
-      if (it == digits_->end()) {
-        it = digits_->insert(it, 0);
-      }
-
-      carry += rhs_d * scale_pow10;
+    NumType carry = for_each(rhs, scale, [](DigitVector::iterator it, WideType carry) {
       WideType rhs_value = carry % base_;
       carry /= base_;
       if (rhs_value > *it) {
-        *it = base_ + *it - rhs_value;
+        *it += base_;
         ++carry;
       }
-      else {
-        *it = *it - rhs_value;
-      }
-      it++;
-    }
+      *it -= rhs_value;
+      return carry;
+    });
 
-    /* Complete propagating the carry through any remaining entries in *this.  */
-    while (it != digits_->end() && carry != 0) {
-      if (carry > *it) {
-        *it = base_ + *it - carry;
-        carry = 1;
-      }
-      else {
-        *it = *it - carry;
-        carry = 0;
-      }
-      it++;
-    }
-
-    /* If we've fallen off the end and still have a carry - then we invert the number. */
     if (carry != 0) {
-      assert(it == digits_->end());
-
-      WideType c2 = 0;
-      for (it = digits_->begin(); it != digits_->end(); ++it) {
-        WideType result = (c2 < *it ? base_ : 0) + c2 - *it;
-        *it = result % base_;
-        c2 = result / base_;
+      /* Having a carry here means that we've flipped the sign - so digits_ holds
+       * result - 1 * 10^(digits_.size_ * base_log10_).  We do
+       * 1 - 10^(digits_.size() * base_log10_) - digits_ to get the result back.
+       *
+       * We do this by hand as its a constant number and so we don't have to waste memory on a
+       * temporary large number.
+       */
+      bool have_borrowed = false; /* Have we borrowed yet?  */
+      for (auto it = digits_->begin(); it != digits_->end(); ++it) {
+        /* Until we've encountered a non-zero digit the operation is 0 - 0 = 0 so don't need to
+         * do anything.  Once we have a non-zero digit we've had to borrow.  For that first digit
+         * the result is base_ - D, and for every other digit it is base_ - 1 - D.  Where the 1
+         * is the borrow.
+         */
+        if (!have_borrowed && *it != 0) {
+          *it = base_ - *it;
+          have_borrowed = true;
+        }
+        else if (have_borrowed) {
+          *it = base_ - 1 - *it;
+        }
       }
     }
 
@@ -618,8 +566,8 @@ private:
 
   /**               Split ourselves into the whole number part and the fractional part.
    *  \param  scale Digit to do the split at.
-   *  \return       {whole, frac} pair. \c whole has effective scale 0, and \c frac has effective
-   *                scale \a scale.
+   *  \return       {whole, frac} pair. \c whole has effective scale 0, and \c frac has
+   * effective scale \a scale.
    */
   std::pair<BasicDigits, BasicDigits> split_frac(NumType scale) const
   {
@@ -671,12 +619,13 @@ private:
   /** \brief       Iterate over the digits of \c *this & \a rhs calling \a fn.
    *  \param rhs   Right hand side set of digits to iterate over.
    *  \param scale Scale differnce between \c *this & \a rhs.
-   *  \param fn    Function to call, prototype compatable with void Fn(NumType lhs, NumType rhs);
+   *  \param fn    Function to call, prototype compatable with void Fn(NumType lhs, NumType
+   * rhs);
    *
    * \a scale is how many more fractional digits \c *this has compared to \a rhs.
    *
-   * \c *this and \a rhs are lined up so that they have the same scale, and then \a Fn is called
-   * for every set of digits.
+   * \c *this and \a rhs are lined up so that they have the same scale, and then \a Fn is
+   * called for every set of digits.
    *
    * It is required that the caller has checked that \c digits_ & \c rhs.digits_ are not \c
    * nullptr before calling.
@@ -721,8 +670,62 @@ private:
     }
 
     while (it_lhs != digits_->end()) {
-      fn(*it_lhs, 0);
+      fn(*it_lhs++, 0);
     }
+  }
+
+  DigitVector::iterator ensure_it_valid(DigitVector::iterator it)
+  {
+    if (it == digits_->end()) {
+      it = digits_->insert(it, 0);
+    }
+    return it;
+  }
+
+  /** \brief       Iterate over the digits of \c *this & \a rhs calling \a fn.
+   *  \param rhs   Right hand side set of digits to iterate over.
+   *  \param scale Scale differnce between \c *this & \a rhs.
+   *  \param fn    Function to call, prototype compatable with void Fn(NumType lhs, NumType
+   * rhs);
+   *
+   * \a scale is how many more fractional digits \c *this has compared to \a rhs.
+   *
+   * \c *this and \a rhs are lined up so that they have the same scale, and then \a Fn is
+   * called for every set of digits.
+   *
+   * It is required that the caller has checked that \c digits_ & \c rhs.digits_ are not \c
+   * nullptr before calling.
+   */
+  template<typename Fn>
+  NumType for_each(BasicDigits const& rhs, NumType scale, Fn fn, NumType initial_carry = 0)
+  {
+    assert(digits_ && rhs.digits_);
+
+    auto it = digits_->begin();
+    WideType carry = initial_carry;
+
+    while (scale >= base_log10_) {
+      it = ensure_it_valid(it);
+      carry = fn(it, carry);
+      assert(carry < base_);
+      scale -= base_log10_;
+    }
+
+    auto pow10_scale = pow10(scale);
+    for (auto it_rhs : *rhs.digits_) {
+      carry += it_rhs * pow10_scale;
+      it = ensure_it_valid(it);
+      carry = fn(it++, carry);
+      assert(carry < base_);
+    }
+
+    while (it != digits_->end()) {
+      carry = fn(it++, carry);
+      assert(carry < base_);
+    }
+
+    assert(carry < base_);
+    return static_cast<NumType>(carry);
   }
 
   std::shared_ptr<DigitVector> digits_ = nullptr;  ///< BasicDigits in number.
@@ -741,10 +744,10 @@ private:
  *
  * The traits type supplied for the template needs to provide the following using/typedefs:
  *
- *  * `NumType`: Underlying arithmetic type used for storage - an unsigned integral type.  Must be
- *     able to hold `base_` without overflow.
- *  * `WideType`: Type able to store `base_ * base_` without overflow.  Normally double the width of
- *    `NumType`.
+ *  * `NumType`: Underlying arithmetic type used for storage - an unsigned integral type.  Must
+ * be able to hold `base_` without overflow.
+ *  * `WideType`: Type able to store `base_ * base_` without overflow.  Normally double the
+ * width of `NumType`.
  *
  * It should also define the following values:
  *
@@ -772,8 +775,8 @@ private:
  *
  * Where `x ** y` means `x` to the power of `y`, and `n` is `digits_.size()`.
  *
- * `digits_` is stored as a shared pointer so that we don't need to keep duplicating it when we're
- * not going to change the values.
+ * `digits_` is stored as a shared pointer so that we don't need to keep duplicating it when
+ * we're not going to change the values.
  */
 template<typename Traits>
 class BasicNumber
@@ -809,8 +812,8 @@ public:
     assert(ibase >= 2);
     assert(ibase <= 16);
 
-    /* Construct the basic number a digit at a time, working out the scale when we see digits after
-     * the radix point.
+    /* Construct the basic number a digit at a time, working out the scale when we see digits
+     * after the radix point.
      *
      * Ultimately we want this to be digits_ * 10 ^ scale_.
      * But we start by calculating digits_ * ibase ^ scale_.
@@ -848,9 +851,9 @@ public:
      */
     digits_.mul_pow10(scale_);
 
-    /* We divide by ibase ^ scale_ using a sequence of NumType sized divides, assuming these to be
-     * quicker than calculating an arbitrary precision ibase^scale_ value and then using arbitrary
-     * precision divide.
+    /* We divide by ibase ^ scale_ using a sequence of NumType sized divides, assuming these to
+     * be quicker than calculating an arbitrary precision ibase^scale_ value and then using
+     * arbitrary precision divide.
      *
      * To reduce the number of divides we work out the largest power of ibase which is less than
      * base_.
@@ -973,28 +976,19 @@ public:
       return;
     }
 
-    Details::BasicDigits<Traits> rhs_digits;
-    NumType scale_diff;
-    Sign rhs_sign;
-    if (scale_ >= rhs.scale_) {
-      rhs_digits = rhs.digits_;
-      rhs_sign = rhs.sign_;
-      scale_diff = scale_ - rhs.scale_;
+    if (scale_ < rhs.scale_) {
+      negate();
+      add(rhs);
+      negate();
+      return;
     }
-    else {
-      rhs_digits = digits_;
-      rhs_sign = sign_;
-      scale_diff = rhs.scale_ - scale_;
-      *this = rhs;
-    }
-
-    if (sign_ == rhs_sign) {
-      if (digits_.sub(rhs_digits, scale_diff)) {
+    else if (sign_ == rhs.sign_) {
+      if (digits_.sub(rhs.digits_, scale_ - rhs.scale_)) {
         negate();
       }
     }
     else {
-      digits_.add(rhs_digits, scale_diff);
+      digits_.add(rhs.digits_, scale_ - rhs.scale_);
     }
   }
 
