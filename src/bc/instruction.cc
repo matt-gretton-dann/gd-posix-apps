@@ -257,6 +257,9 @@ std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Instruction::Opcode o
   case GD::Bc::Instruction::Opcode::pop_param:
     os << "pop_param";
     break;
+  case GD::Bc::Instruction::Opcode::pop_param_array:
+    os << "pop_param_array";
+    break;
   case GD::Bc::Instruction::Opcode::function_begin:
     os << "function_begin";
     break;
@@ -277,6 +280,7 @@ unsigned GD::Bc::Instruction::op_count(Opcode opcode)
   case GD::Bc::Instruction::Opcode::push_param_mark:
   case GD::Bc::Instruction::Opcode::pop_param_mark:
   case GD::Bc::Instruction::Opcode::pop_param:
+  case GD::Bc::Instruction::Opcode::pop_param_array:
     return 0;
   case GD::Bc::Instruction::Opcode::quit:
   case GD::Bc::Instruction::Opcode::string:
@@ -326,6 +330,7 @@ void GD::Bc::Instruction::validate_operands() const
   case GD::Bc::Instruction::Opcode::push_param_mark:
   case GD::Bc::Instruction::Opcode::pop_param_mark:
   case GD::Bc::Instruction::Opcode::pop_param:
+  case GD::Bc::Instruction::Opcode::pop_param_array:
     assert(!op1_.has_value());
     assert(!op2_.has_value());
     break;
@@ -418,7 +423,6 @@ void GD::Bc::Instruction::validate_result() const
   case GD::Bc::Instruction::Opcode::eof:
   case GD::Bc::Instruction::Opcode::push_param_mark:
   case GD::Bc::Instruction::Opcode::pop_param_mark:
-  case GD::Bc::Instruction::Opcode::pop_param:
   case GD::Bc::Instruction::Opcode::quit:
   case GD::Bc::Instruction::Opcode::branch:
   case GD::Bc::Instruction::Opcode::push_param:
@@ -463,6 +467,7 @@ void GD::Bc::Instruction::validate_result() const
   case GD::Bc::Instruction::Opcode::not_equals:
   case GD::Bc::Instruction::Opcode::less_than:
   case GD::Bc::Instruction::Opcode::call:
+  case GD::Bc::Instruction::Opcode::pop_param:
     assert(result_.has_value());
     assert(std::holds_alternative<Number>(*result_));
     break;
@@ -471,6 +476,7 @@ void GD::Bc::Instruction::validate_result() const
     assert(std::holds_alternative<Variable>(*result_));
     break;
   case GD::Bc::Instruction::Opcode::array:
+  case GD::Bc::Instruction::Opcode::pop_param_array:
     assert(result_.has_value());
     assert(std::holds_alternative<Array>(*result_));
     break;

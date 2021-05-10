@@ -664,7 +664,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_define_element(ExprIndex fun
       return ExprIndex::missing();
     }
 
-    auto pop = insert_pop_param();
+    auto pop = insert_pop_param_array();
     auto var = insert_array_slice(Array(letter));
     insert_store(var, pop);
   }
@@ -1302,6 +1302,13 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_pop_param()
 {
   ExprIndex result(instructions_->size());
   instructions_->emplace_back(Instruction::Opcode::pop_param);
+  return result;
+}
+
+GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_pop_param_array()
+{
+  ExprIndex result(instructions_->size());
+  instructions_->emplace_back(Instruction::Opcode::pop_param_array);
   return result;
 }
 

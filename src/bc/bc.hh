@@ -527,7 +527,8 @@ enum class Scale : int;
  * | push_param_mark     |             |             | Push fn separator marker onto param stack  |
  * | pop_param_mark      |             |             | Pop fn separator marker from param stack   |
  * | push_param          | Offset      |             | Push parameter onto param stack            |
- * | pop_param           |             |             | Pop parameter from param stack             |
+ * | pop_param           |             |             | Pop scalar parameter from param stack      |
+ * | pop_param_array     |             |             | Pop array parameter from param stack       |
  * | function_begin      | SavedVars   | Location    | Start of function definition               |
  * | function_end        | Letter      | Offset      | End of function definition                 |
  *
@@ -575,6 +576,7 @@ public:
     pop_param_mark,    ///< Pop a "function separator" marker onto the parameter stack
     push_param,        ///< Push op1 onto the parameter stack
     pop_param,         ///< Pop op1 off the parameter stack.
+    pop_param_array,   ///< Pop op1 off the parameter stack.
     function_begin,    ///< Start of function definition.  Op2: Definition location, Op1: local vars
     function_end,      ///< End of function definition, Op1: function name.
   };
@@ -1114,6 +1116,10 @@ private:
   /** \brief   Insert pop_param instruction.
    */
   ExprIndex insert_pop_param();
+
+  /** \brief   Insert pop_param_array instruction.
+   */
+  ExprIndex insert_pop_param_array();
 
   /** \brief      Insert function begin
    *  \param mask Mask of local variables to save
