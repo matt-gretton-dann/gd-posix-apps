@@ -82,6 +82,9 @@ bool GD::Bc::VM::execute(Instructions& instructions)
     case Instruction::Opcode::branch_zero:
       i = execute_branch_zero(instructions, i) - 1;
       break;
+    case Instruction::Opcode::function_begin:
+      i = execute_function_begin(instructions, i) - 1;
+      break;
     case Instruction::Opcode::eof:
       assert(i == instructions.size() - 1);
       return false;
@@ -298,6 +301,31 @@ GD::Bc::VM::Index GD::Bc::VM::execute_branch_zero(Instructions& instructions, In
   Number c = get_op1_expr(instructions, i);
   Index dest_idx = std::get<Offset>(instructions[i].op2()) + i;
   return c.is_zero() ? dest_idx : i + 1;
+}
+
+GD::Bc::VM::Index GD::Bc::VM::execute_function_begin(Instructions& instructions, Index i)
+{
+  assert(instructions.at(i).opcode() == Instruction::Opcode::function_begin);
+  VariableMask mask = std::get<VariableMask>(instructions[i].op1());
+  Location loc = std::get<Location>(instructions[i].op2());
+  stderr_ << instructions[i] << "\n";
+  auto it = instructions.begin() + i + 1;
+  auto ite = it;
+  while (ite != instructions.end() && ite->opcode() != Instruction::Opcode::function_end) {
+    stderr_ << *ite << "\n";
+    ++ite;
+  }
+  if (ite == instructions.end()) {
+    Details::error(Msg::no_end_to_function_definition, loc.file_name(), loc.line(), loc.column());
+  }
+  Letter func = std::get<Letter>(ite->op1());
+  Offset dist = std::get<Offset>(ite->op2());
+  assert(-dist == ite - it + 1);
+
+  functions_[static_cast<unsigned int>(func)] =
+    std::make_optional(std::make_tuple(Instructions(it, ite), mask, loc));
+  ++ite;
+  return ite - instructions.begin();
 }
 
 void GD::Bc::VM::set_ibase(Number num)

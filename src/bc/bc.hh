@@ -25,6 +25,7 @@
 #include <sstream>
 #include <stack>
 #include <string>
+#include <tuple>
 #include <variant>
 
 #include "number.hh"
@@ -1194,6 +1195,7 @@ private:
   using Index = Instruction::Index;
   using Offset = Instruction::Offset;
   using NumType = Number::NumType;
+  using FunctionDefinition = std::tuple<Instructions, VariableMask, Location>;
 
   void execute_string(Instructions& instructions, Index i);
   void execute_number(Instructions& instructions, Index i);
@@ -1216,6 +1218,7 @@ private:
   void execute_not_equals(Instructions& instructions, Index i);
   Index execute_branch(Instructions& instructions, Index i);
   Index execute_branch_zero(Instructions& instructions, Index i);
+  Index execute_function_begin(Instructions& instructions, Index i);
 
   Number get_op1_expr(Instructions& instructions, Index i);
   Number get_op2_expr(Instructions& instructions, Index i);
@@ -1230,8 +1233,11 @@ private:
   std::ostream& stdout_;
   std::ostream& stderr_;
   std::array<ArrayValues, Letter::count_> arrays_;
-  std::array<std::optional<Instructions>, Letter::count_> functions_;
+  std::array<std::optional<FunctionDefinition>, Letter::count_> functions_;
   std::array<Number, Letter::count_> variables_;
+  ParamStack param_stack_;  ///< Stack of parameters
+  ParamStack local_stack_;  ///< Stack of locals.
+
   NumType ibase_ = 10;
   NumType obase_ = 10;
   NumType scale_ = 0;

@@ -212,6 +212,12 @@
         "id": 35,
         "description": "Failed to convert number {0} to unsigned integer as it is too big.",
         "C": "Cannot convert {0} to unsigned integer, as it is larger than the underlying type."
+      },
+      {
+        "msg": "no_end_to_function_definition",
+        "id": 36,
+        "description": "Error:{0}:{1}:{2}: Function defined at location has no end of definition..",
+        "C": "Error:{0}:{1}:{2}: No end to function definition."
       }
     ]
   }
