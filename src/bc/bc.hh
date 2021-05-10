@@ -1204,6 +1204,12 @@ private:
   void execute_negate(Instructions& instructions, Index i);
   void execute_add(Instructions& instructions, Index i);
   void execute_sub(Instructions& instructions, Index i);
+  void execute_less_than(Instructions& instructions, Index i);
+  void execute_less_than_equals(Instructions& instructions, Index i);
+  void execute_equals(Instructions& instructions, Index i);
+  void execute_not_equals(Instructions& instructions, Index i);
+  Index execute_branch(Instructions& instructions, Index i);
+  Index execute_branch_zero(Instructions& instructions, Index i);
 
   Number get_op1_expr(Instructions& instructions, Index i);
   Number get_op2_expr(Instructions& instructions, Index i);

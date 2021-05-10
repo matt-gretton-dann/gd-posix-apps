@@ -64,6 +64,24 @@ bool GD::Bc::VM::execute(Instructions& instructions)
     case Instruction::Opcode::subtract:
       execute_sub(instructions, i);
       break;
+    case Instruction::Opcode::less_than:
+      execute_less_than(instructions, i);
+      break;
+    case Instruction::Opcode::less_than_equals:
+      execute_less_than_equals(instructions, i);
+      break;
+    case Instruction::Opcode::equals:
+      execute_equals(instructions, i);
+      break;
+    case Instruction::Opcode::not_equals:
+      execute_not_equals(instructions, i);
+      break;
+    case Instruction::Opcode::branch:
+      i = execute_branch(instructions, i) - 1;
+      break;
+    case Instruction::Opcode::branch_zero:
+      i = execute_branch_zero(instructions, i) - 1;
+      break;
     case Instruction::Opcode::eof:
       assert(i == instructions.size() - 1);
       return false;
@@ -233,6 +251,53 @@ void GD::Bc::VM::execute_sub(Instructions& instructions, Index i)
   Number rhs = get_op2_expr(instructions, i);
   lhs.sub(rhs);
   instructions[i].result(lhs);
+}
+
+void GD::Bc::VM::execute_less_than(Instructions& instructions, Index i)
+{
+  assert(instructions.at(i).opcode() == Instruction::Opcode::less_than);
+  Number lhs = get_op1_expr(instructions, i);
+  Number rhs = get_op2_expr(instructions, i);
+  instructions[i].result(Number(lhs < rhs ? 1 : 0));
+}
+
+void GD::Bc::VM::execute_less_than_equals(Instructions& instructions, Index i)
+{
+  assert(instructions.at(i).opcode() == Instruction::Opcode::less_than_equals);
+  Number lhs = get_op1_expr(instructions, i);
+  Number rhs = get_op2_expr(instructions, i);
+  instructions[i].result(Number(lhs <= rhs ? 1 : 0));
+}
+
+void GD::Bc::VM::execute_equals(Instructions& instructions, Index i)
+{
+  assert(instructions.at(i).opcode() == Instruction::Opcode::equals);
+  Number lhs = get_op1_expr(instructions, i);
+  Number rhs = get_op2_expr(instructions, i);
+  instructions[i].result(Number(lhs == rhs ? 1 : 0));
+}
+
+void GD::Bc::VM::execute_not_equals(Instructions& instructions, Index i)
+{
+  assert(instructions.at(i).opcode() == Instruction::Opcode::not_equals);
+  Number lhs = get_op1_expr(instructions, i);
+  Number rhs = get_op2_expr(instructions, i);
+  instructions[i].result(Number(lhs != rhs ? 1 : 0));
+}
+
+GD::Bc::VM::Index GD::Bc::VM::execute_branch(Instructions& instructions, Index i)
+{
+  assert(instructions.at(i).opcode() == Instruction::Opcode::branch);
+  Index dest_idx = std::get<Offset>(instructions[i].op1()) + i;
+  return dest_idx;
+}
+
+GD::Bc::VM::Index GD::Bc::VM::execute_branch_zero(Instructions& instructions, Index i)
+{
+  assert(instructions.at(i).opcode() == Instruction::Opcode::branch_zero);
+  Number c = get_op1_expr(instructions, i);
+  Index dest_idx = std::get<Offset>(instructions[i].op2()) + i;
+  return c.is_zero() ? dest_idx : i + 1;
 }
 
 void GD::Bc::VM::set_ibase(Number num)
