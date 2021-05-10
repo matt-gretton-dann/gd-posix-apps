@@ -726,6 +726,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_relational_expression()
     return insert_arith(Instruction::Opcode::less_than_equals, rhs, lhs);
   default:
     assert(false);
+    abort();
   }
 }
 

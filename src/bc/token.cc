@@ -60,7 +60,10 @@ GD::Bc::Token::Token(Type type, std::string const& s) : value_(s)
   }
 }
 
-GD::Bc::Token::Token(Type type, Letter l) : value_(l) { assert(type == Type::letter); }
+GD::Bc::Token::Token([[maybe_unused]] Type type, Letter l) : value_(l)
+{
+  assert(type == Type::letter);
+}
 
 GD::Bc::Token::Type GD::Bc::Token::type() const
 {

@@ -313,6 +313,7 @@ unsigned GD::Bc::Instruction::op_count(Opcode opcode)
   }
 
   assert(false);
+  abort();
 }
 
 void GD::Bc::Instruction::validate_operands() const
