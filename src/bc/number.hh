@@ -1011,7 +1011,7 @@ private:
   Details::ComparisonResult compare(BasicNumber const& rhs) const
   {
     bool lhs_zero = digits_.is_zero();
-    bool rhs_zero = digits_.is_zero();
+    bool rhs_zero = rhs.digits_.is_zero();
 
     if (lhs_zero && rhs_zero) {
       return Details::ComparisonResult::equality;
