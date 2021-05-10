@@ -992,6 +992,11 @@ public:
     }
   }
 
+  /** \brief  Are we equal to zero?
+   *  \return True iff equal to zero.
+   */
+  bool is_zero() const { return digits_.is_zero(); }
+
   bool operator==(BasicNumber const& rhs) const
   {
     return compare(rhs) == Details::ComparisonResult::equality;
