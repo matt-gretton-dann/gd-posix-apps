@@ -10,6 +10,7 @@
 #include "gd/string.h"
 
 #include <iomanip>
+#include <iterator>
 #include <memory>
 #include <ostream>
 #include <sstream>
@@ -444,6 +445,45 @@ public:
     return carry != 0;
   }
 
+  void multiply(BasicDigits const& rhs, NumType rescale)
+  {
+    /* Multiplying by zero is easy.  */
+    if (is_zero() || rhs.is_zero()) {
+      digits_.reset();
+      return;
+    }
+
+    std::shared_ptr<DigitVector> result = std::make_shared<DigitVector>();
+    result->reserve(digits_->size() + rhs.digits_->size());
+
+    for (auto lhs_it = digits_->begin(); lhs_it != digits_->end(); ++lhs_it) {
+      WideType carry = 0;
+      typename DigitVector::size_type dist = std::distance(digits_->begin(), lhs_it);
+      if (result->size() <= dist) {
+        result->resize(dist, 0);
+      }
+      auto result_it = result->begin() + dist;
+      for (auto rhs_it = rhs.digits_->begin(); rhs_it != rhs.digits_->end(); ++rhs_it) {
+        result_it = ensure_it_valid(result_it, result);
+        WideType lhs_d = *lhs_it;
+        WideType rhs_d = *rhs_it;
+        carry += lhs_d * rhs_d + *result_it;
+        *result_it++ = static_cast<NumType>(carry % base_);
+        carry /= base_;
+      }
+
+      while (carry != 0) {
+        result_it = ensure_it_valid(result_it, result);
+        carry += *result_it;
+        *result_it++ = static_cast<NumType>(carry % base_);
+        carry /= base_;
+      }
+    }
+
+    std::swap(digits_, result);
+    div_pow10(rescale);
+  }
+
   /** \brief      Multiply-accumulate of over the underlying digits.
    *  \param  mul Number to multiply by
    *  \param  acc Number to add.
@@ -647,6 +687,39 @@ private:
     return std::make_pair(whole, frac);
   }
 
+  /** Divide by 10^ \a scale. */
+  void div_pow10(NumType scale)
+  {
+    copy_on_write();
+
+    /* Do the whole digit steps first as this is just memory shuffling.  */
+    auto init_size = digits_->size();
+    NumType offset = scale / base_log10_;
+    if (offset > init_size) {
+      offset = init_size;
+    }
+    if (offset != 0) {
+      for (decltype(offset) i = 0; i < init_size - offset; ++i) {
+        (*digits_)[i] = (*digits_)[i + offset];
+      }
+    }
+    digits_->resize(init_size - offset);
+    if (digits_->empty()) {
+      return;
+    }
+
+    WideType scale_pow10 = pow10(scale % base_log10_);
+    auto it = digits_->begin();
+    WideType carry = *it / scale_pow10;
+    while (++it != digits_->end()) {
+      carry += static_cast<WideType>(*it) * (base_ / scale_pow10);
+      *(it - 1) = carry % base_;
+      carry /= base_;
+    }
+    *(it - 1) = carry % base_;
+    tidy();
+  }
+
   /** \brief       Iterate over the digits of \c *this & \a rhs calling \a fn.
    *  \param rhs   Right hand side set of digits to iterate over.
    *  \param scale Scale differnce between \c *this & \a rhs.
@@ -705,10 +778,11 @@ private:
     }
   }
 
-  DigitVector::iterator ensure_it_valid(DigitVector::iterator it)
+  DigitVector::iterator ensure_it_valid(DigitVector::iterator it,
+                                        std::shared_ptr<DigitVector> digits)
   {
-    if (it == digits_->end()) {
-      it = digits_->insert(it, 0);
+    if (it == digits->end()) {
+      it = digits->insert(it, 0);
     }
     return it;
   }
@@ -736,7 +810,7 @@ private:
     WideType carry = initial_carry;
 
     while (scale >= base_log10_) {
-      it = ensure_it_valid(it);
+      it = ensure_it_valid(it, digits_);
       carry = fn(it, carry);
       assert(carry < base_);
       scale -= base_log10_;
@@ -745,7 +819,7 @@ private:
     auto pow10_scale = pow10(scale);
     for (auto it_rhs : *rhs.digits_) {
       carry += it_rhs * pow10_scale;
-      it = ensure_it_valid(it);
+      it = ensure_it_valid(it, digits_);
       carry = fn(it++, carry);
       assert(carry < base_);
     }
@@ -1031,6 +1105,15 @@ public:
     else {
       digits_.add(rhs.digits_, scale_ - rhs.scale_);
     }
+  }
+
+  void multiply(BasicNumber const& rhs, NumType target_scale)
+  {
+    NumType result_scale = scale() + rhs.scale();
+    scale_ = std::min(result_scale, std::max({scale(), rhs.scale(), target_scale}));
+    NumType rescale = result_scale - scale_;
+    digits_.multiply(rhs.digits_, rescale);
+    sign_ = sign_ == rhs.sign_ ? Sign::positive : Sign::negative;
   }
 
   /** \brief  Are we equal to zero?
