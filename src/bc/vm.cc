@@ -349,6 +349,7 @@ void GD::Bc::VM::execute_pop_param_mark(Instructions& instructions, Index i)
 {
   assert(instructions.at(i).opcode() == Instruction::Opcode::pop_param_mark);
   assert(!param_stack_.empty());
+  assert(param_stack_.back().empty());
   param_stack_.pop_back();
 }
 
@@ -364,8 +365,28 @@ void GD::Bc::VM::execute_call(Instructions& instructions, Index i)
 
   FunctionDefinition const& def = functions_[static_cast<unsigned>(func)].value();
   auto func_instructions = std::get<0>(def);
+  auto locals = std::get<1>(def);
+
+  /* Save the locals.  */
+  Params p;
+  locals.for_each_variable(
+    [&p, this](Letter l) { p.push_back(variables_[static_cast<unsigned>(l)]); });
+  locals.for_each_array([&p, this](Letter l) { p.push_back(arrays_[static_cast<unsigned>(l)]); });
+  local_stack_.push_back(p);
 
   auto [result, cont] = execute(func_instructions);
+
+  /* Restore the locals. */
+  locals.for_each_variable([&p, this](Letter l) {
+    variables_[static_cast<unsigned>(l)] = std::get<Number>(p.front());
+    p.pop_front();
+  });
+  locals.for_each_array([&p, this](Letter l) {
+    arrays_[static_cast<unsigned>(l)] = std::get<ArrayValues>(p.front());
+    p.pop_front();
+  });
+  local_stack_.pop_back();
+
   /* Clear results so that we don't have hanging references to data we no longer need.
    */
   std::for_each(func_instructions.begin(), func_instructions.end(),
