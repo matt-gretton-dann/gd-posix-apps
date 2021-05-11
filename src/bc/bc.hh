@@ -1215,6 +1215,10 @@ private:
   void execute_negate(Instructions& instructions, Index i);
   void execute_add(Instructions& instructions, Index i);
   void execute_sub(Instructions& instructions, Index i);
+  void execute_multiply(Instructions& instructions, Index i);
+  void execute_divide(Instructions& instructions, Index i);
+  void execute_modulo(Instructions& instructions, Index i);
+  void execute_power(Instructions& instructions, Index i);
   void execute_scale_expr(Instructions& instructions, Index i);
   void execute_length(Instructions& instructions, Index i);
   void execute_less_than(Instructions& instructions, Index i);
