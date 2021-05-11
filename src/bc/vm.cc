@@ -64,6 +64,12 @@ std::pair<GD::Bc::Number, bool> GD::Bc::VM::execute(Instructions& instructions)
     case Instruction::Opcode::subtract:
       execute_sub(instructions, i);
       break;
+    case Instruction::Opcode::scale_expr:
+      execute_scale_expr(instructions, i);
+      break;
+    case Instruction::Opcode::length:
+      execute_length(instructions, i);
+      break;
     case Instruction::Opcode::less_than:
       execute_less_than(instructions, i);
       break;
@@ -276,6 +282,20 @@ void GD::Bc::VM::execute_sub(Instructions& instructions, Index i)
   Number rhs = get_op2_expr(instructions, i);
   lhs.sub(rhs);
   instructions[i].result(lhs);
+}
+
+void GD::Bc::VM::execute_scale_expr(Instructions& instructions, Index i)
+{
+  assert(instructions.at(i).opcode() == Instruction::Opcode::scale_expr);
+  Number expr = get_op1_expr(instructions, i);
+  instructions[i].result(Number{expr.scale()});
+}
+
+void GD::Bc::VM::execute_length(Instructions& instructions, Index i)
+{
+  assert(instructions.at(i).opcode() == Instruction::Opcode::length);
+  Number expr = get_op1_expr(instructions, i);
+  instructions[i].result(Number{expr.length()});
 }
 
 void GD::Bc::VM::execute_less_than(Instructions& instructions, Index i)
