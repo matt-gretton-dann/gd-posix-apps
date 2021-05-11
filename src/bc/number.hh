@@ -314,6 +314,37 @@ public:
     os << "}";
   }
 
+  /** \brief  Get the number of significant digits.
+   *  \return Number of significant digits
+   */
+  NumType length() const
+  {
+    if (!digits_) {
+      return 1;
+    }
+
+    /* The length is at most the number of entries in the digits_ vector times the log base.  We
+     * then correct by reducing length by the number of leading zeros.
+     */
+    NumType length = digits_->size() * base_log10_;
+    auto rit = digits_->rbegin();
+    while (rit != digits_->rend() && *rit == 0) {
+      --rit;
+      length -= base_log10_;
+    }
+    if (rit != digits_->rend()) {
+      length -= base_log10_;
+      NumType d = *rit;
+      assert(d != 0);
+      while (d != 0) {
+        length += 1;
+        d /= 10;
+      }
+    }
+
+    return std::max(NumType{1}, length);
+  }
+
   /** \brief        Add a NumType value to the digits_ at a given scale
    *  \param add    Addend.
    *  \param scale  Scale to add it at.
@@ -917,6 +948,16 @@ public:
     os << "Number(";
     digits_.debug(os);
     os << ", sign=" << (sign_ == Sign::positive ? "+" : "-") << ", scale=" << scale_ << ")";
+  }
+
+  /* Get the scale of the number.  */
+  NumType scale() const { return scale_; }
+
+  /* Get the number of significant digits.  */
+  NumType length() const
+  {
+    /* Note that length(x) >= scale(x) so length(0.00) is 2. */
+    return std::max(scale(), digits_.length());
   }
 
   /** \brief  Negate \c *this.  */

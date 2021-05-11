@@ -139,3 +139,20 @@ TEST_CASE("GD::Bc::Number - Addition and subtraction, directed", "[bc][number]")
   rhs_num.negate();
   test_add_subtract(lhs_num, rhs_num, expected_sub_num, expected_add_num);
 }
+
+TEST_CASE("GD::Bc::Number - Scale and length, directed", "[bc][number]")
+{
+  /* Test input in one base is output correctly in another. */
+  auto [num, scale, length] =
+    GENERATE(table<std::string_view, GD::Bc::Number::NumType, GD::Bc::Number::NumType>(
+      {{"1", 0, 1},
+       {"0", 0, 1},
+       {"00000000000000000000000000000000000000001", 0, 1},
+       {"0.00000000000", 11, 11},
+       {"1.0000", 4, 5},
+       {"123456789123456789123456789", 0, 27}}));
+
+  GD::Bc::Number n(num, 10);
+  REQUIRE(n.scale() == scale);
+  REQUIRE(n.length() == length);
+}
