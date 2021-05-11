@@ -538,6 +538,8 @@ void GD::Bc::Parser::parse_function()
 
   parse_opt_parameter_list(function_begin);
 
+  insert_pop_param_mark();
+
   if (lexer_->peek() != Token::Type::rparens) {
     insert_error(Msg::expected_rparens, lexer_->peek());
     return;
