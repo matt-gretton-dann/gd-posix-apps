@@ -1225,7 +1225,10 @@ private:
   void execute_call(Instructions& instructions, Index i);
   Number execute_return(Instructions& instructions, Index i);
   void execute_push_param_mark(Instructions& instructions, Index i);
+  void execute_push_param(Instructions& instructions, Index i);
   void execute_pop_param_mark(Instructions& instructions, Index i);
+  void execute_pop_param(Instructions& instructions, Index i);
+  void execute_pop_param_array(Instructions& instructions, Index i);
 
   Number get_op1_expr(Instructions& instructions, Index i);
   Number get_op2_expr(Instructions& instructions, Index i);

@@ -88,8 +88,17 @@ std::pair<GD::Bc::Number, bool> GD::Bc::VM::execute(Instructions& instructions)
     case Instruction::Opcode::push_param_mark:
       execute_push_param_mark(instructions, i);
       break;
+    case Instruction::Opcode::push_param:
+      execute_push_param(instructions, i);
+      break;
     case Instruction::Opcode::pop_param_mark:
       execute_pop_param_mark(instructions, i);
+      break;
+    case Instruction::Opcode::pop_param:
+      execute_pop_param(instructions, i);
+      break;
+    case Instruction::Opcode::pop_param_array:
+      execute_pop_param_array(instructions, i);
       break;
     case Instruction::Opcode::call:
       execute_call(instructions, i);
@@ -345,12 +354,46 @@ void GD::Bc::VM::execute_push_param_mark(Instructions& instructions, Index i)
   param_stack_.emplace_back(Params{});
 }
 
+void GD::Bc::VM::execute_push_param(Instructions& instructions, Index i)
+{
+  assert(instructions.at(i).opcode() == Instruction::Opcode::push_param);
+  assert(!param_stack_.empty());
+  Index expr_idx = std::get<Offset>(instructions[i].op1()) + i;
+  assert(expr_idx < instructions.size());
+  auto expr = instructions[expr_idx].result();
+
+  std::visit(Overloaded{
+               [this](Number n) { param_stack_.back().push_back(n); },
+               [this](ArrayValues const& av) { param_stack_.back().push_back(av); },
+               []([[maybe_unused]] auto a) { assert(false); },
+             },
+             expr);
+}
+
 void GD::Bc::VM::execute_pop_param_mark(Instructions& instructions, Index i)
 {
   assert(instructions.at(i).opcode() == Instruction::Opcode::pop_param_mark);
   assert(!param_stack_.empty());
   assert(param_stack_.back().empty());
   param_stack_.pop_back();
+}
+
+void GD::Bc::VM::execute_pop_param(Instructions& instructions, Index i)
+{
+  assert(instructions.at(i).opcode() == Instruction::Opcode::pop_param);
+  assert(!param_stack_.empty());
+  assert(!param_stack_.back().empty());
+  instructions[i].result(std::get<Number>(param_stack_.back().front()));
+  param_stack_.back().pop_front();
+}
+
+void GD::Bc::VM::execute_pop_param_array(Instructions& instructions, Index i)
+{
+  assert(instructions.at(i).opcode() == Instruction::Opcode::pop_param_array);
+  assert(!param_stack_.empty());
+  assert(!param_stack_.back().empty());
+  instructions[i].result(std::get<ArrayValues>(param_stack_.back().front()));
+  param_stack_.back().pop_front();
 }
 
 void GD::Bc::VM::execute_call(Instructions& instructions, Index i)
