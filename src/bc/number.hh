@@ -445,6 +445,30 @@ public:
     return carry != 0;
   }
 
+  void power_mul(BasicDigits const& power_in)
+  {
+    if (is_zero()) {
+      digits_.reset();
+    }
+
+    BasicDigits<Traits> power(power_in);
+    power.copy_on_write();
+    BasicDigits<Traits> result(1);
+
+    /* Divide and conquer to make number of multiplications needed O(lg2(power)).  */
+    BasicDigits<Traits> one(1);
+    while (!power.is_zero()) {
+      if (((*power.digits_)[0] & 1) != 0) {
+        result.multiply(*this, 0);
+        power.sub(one, 0);
+      }
+      multiply(*this, 0);
+      power.divide(2);
+    }
+
+    std::swap(digits_, result.digits_);
+  }
+
   void multiply(BasicDigits const& rhs, NumType rescale)
   {
     /* Multiplying by zero is easy.  */
@@ -590,49 +614,37 @@ public:
     return static_cast<NumType>(carry / base_);
   }
 
-private:
-  using DigitVector = std::vector<NumType>;
-
-  /** \brief  Ensure digits_ is populated in a way that is modifiable.
-   */
-  void copy_on_write()
+  /** Divide by 10^ \a scale. */
+  void div_pow10(NumType scale)
   {
-    if (!digits_) {
-      digits_ = std::make_shared<DigitVector>();
-    }
-    if (digits_.use_count() > 1) {
-      digits_ = std::make_shared<DigitVector>(*digits_);
-    }
-  }
+    copy_on_write();
 
-  /** \brief        Tidy up the digits_ vector.
-   */
-  void tidy()
-  {
-    if (digits_) {
-      while (!digits_->empty() && digits_->back() == 0) {
-        digits_->pop_back();
+    /* Do the whole digit steps first as this is just memory shuffling.  */
+    auto init_size = digits_->size();
+    NumType offset = scale / base_log10_;
+    if (offset > init_size) {
+      offset = init_size;
+    }
+    if (offset != 0) {
+      for (decltype(offset) i = 0; i < init_size - offset; ++i) {
+        (*digits_)[i] = (*digits_)[i + offset];
       }
     }
-  }
+    digits_->resize(init_size - offset);
+    if (digits_->empty()) {
+      return;
+    }
 
-  /** \brief       Convert \a num to a string in base \a obase.
-   *  \param num   Number to convert, must be less than \a obase.
-   *  \param obase Base for output
-   *  \return      String representation of number.
-   */
-  static std::string to_string(NumType num, NumType obase)
-  {
-    assert(num < obase);
-    static char const* nums = "0123456789ABCDEF";
-    if (obase <= 16) {
-      return std::string(1, nums[num]);
+    WideType scale_pow10 = pow10(scale % base_log10_);
+    auto it = digits_->begin();
+    WideType carry = *it / scale_pow10;
+    while (++it != digits_->end()) {
+      carry += static_cast<WideType>(*it) * (base_ / scale_pow10);
+      *(it - 1) = carry % base_;
+      carry /= base_;
     }
-    else {
-      auto obase_width = std::to_string(obase - 1).size();
-      std::string str = std::to_string(num);
-      return std::string(" ") + std::string(obase_width - str.size(), '0') + str;
-    }
+    *(it - 1) = carry % base_;
+    tidy();
   }
 
   /**               Split ourselves into the whole number part and the fractional part.
@@ -687,37 +699,49 @@ private:
     return std::make_pair(whole, frac);
   }
 
-  /** Divide by 10^ \a scale. */
-  void div_pow10(NumType scale)
-  {
-    copy_on_write();
+private:
+  using DigitVector = std::vector<NumType>;
 
-    /* Do the whole digit steps first as this is just memory shuffling.  */
-    auto init_size = digits_->size();
-    NumType offset = scale / base_log10_;
-    if (offset > init_size) {
-      offset = init_size;
+  /** \brief  Ensure digits_ is populated in a way that is modifiable.
+   */
+  void copy_on_write()
+  {
+    if (!digits_) {
+      digits_ = std::make_shared<DigitVector>();
     }
-    if (offset != 0) {
-      for (decltype(offset) i = 0; i < init_size - offset; ++i) {
-        (*digits_)[i] = (*digits_)[i + offset];
+    if (digits_.use_count() > 1) {
+      digits_ = std::make_shared<DigitVector>(*digits_);
+    }
+  }
+
+  /** \brief        Tidy up the digits_ vector.
+   */
+  void tidy()
+  {
+    if (digits_) {
+      while (!digits_->empty() && digits_->back() == 0) {
+        digits_->pop_back();
       }
     }
-    digits_->resize(init_size - offset);
-    if (digits_->empty()) {
-      return;
-    }
+  }
 
-    WideType scale_pow10 = pow10(scale % base_log10_);
-    auto it = digits_->begin();
-    WideType carry = *it / scale_pow10;
-    while (++it != digits_->end()) {
-      carry += static_cast<WideType>(*it) * (base_ / scale_pow10);
-      *(it - 1) = carry % base_;
-      carry /= base_;
+  /** \brief       Convert \a num to a string in base \a obase.
+   *  \param num   Number to convert, must be less than \a obase.
+   *  \param obase Base for output
+   *  \return      String representation of number.
+   */
+  static std::string to_string(NumType num, NumType obase)
+  {
+    assert(num < obase);
+    static char const* nums = "0123456789ABCDEF";
+    if (obase <= 16) {
+      return std::string(1, nums[num]);
     }
-    *(it - 1) = carry % base_;
-    tidy();
+    else {
+      auto obase_width = std::to_string(obase - 1).size();
+      std::string str = std::to_string(num);
+      return std::string(" ") + std::string(obase_width - str.size(), '0') + str;
+    }
   }
 
   /** \brief       Iterate over the digits of \c *this & \a rhs calling \a fn.
@@ -1105,6 +1129,60 @@ public:
     else {
       digits_.add(rhs.digits_, scale_ - rhs.scale_);
     }
+  }
+
+  void power(BasicNumber const& rhs, NumType target_scale)
+  {
+    auto [power_whole, power_frac] = rhs.digits_.split_frac(rhs.scale());
+    target_scale = std::max(scale(), target_scale);
+
+    if (!power_frac.is_zero()) {
+      std::ostringstream ss;
+      output(ss, 10);
+      Details::error(Msg::raising_to_fractional_power, ss.str());
+      return;
+    }
+
+    auto one = BasicNumber(1);
+    if (power_whole.is_zero()) {
+      *this = one;
+      return;
+    }
+
+    if (power_whole.compare(one.digits_, 0) == Details::ComparisonResult::equality) {
+      return;
+    }
+
+    if (power_whole.compare(one.digits_, 0) != Details::ComparisonResult::less_than) {
+      digits_.power_mul(power_whole);
+      /* digits_ now has scale: scale_ * power_whole.  We want to rescale to the target_scale if
+       * that is less than the new scale.  But we have to cope with the fact that the new scale
+       * may be larger than we can publicly cope with.  */
+      power_whole.mac(scale_, 0);
+      auto base = BasicNumber(base_);
+      if (power_whole.compare(base.digits_, 0) == Details::ComparisonResult::less_than) {
+        target_scale = std::min(power_whole.to_unsigned(0), target_scale);
+      }
+
+      auto base_plus_target_scale = BasicNumber(base_);
+      base_plus_target_scale.add(BasicNumber(target_scale));
+      while (power_whole.compare(base_plus_target_scale.digits_, 0) !=
+             Details::ComparisonResult::less_than) {
+        /* Scale is significantly larger than we can deal with - scale down by base_ until we get
+         * to the level we want.  Expect this to only be hit if using very small data types as
+         * having a scale > 1_000_000_000 is likely to mean we've run out of memory elsewhere.
+         */
+        digits_.div_pow10(base_);
+        power_whole.sub(base.digits_, 0);
+      }
+      power_whole.sub(Details::BasicDigits<Traits>(target_scale), 0);
+      digits_.div_pow10(power_whole.to_unsigned(0));
+      scale_ = target_scale;
+      return;
+    }
+
+    /* power_whole < 0 */
+    abort();
   }
 
   void multiply(BasicNumber const& rhs, NumType target_scale)

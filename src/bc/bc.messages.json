@@ -224,6 +224,12 @@
         "id": 37,
         "description": "Tried to call function {0} which is not defined, location {1}{2}{3}",
         "C": "Error:{1}:{2}:{3}: Function {0} is not defined."
+      },
+      {
+        "msg": "raising_to_fractional_power",
+        "id": 38,
+        "description": "Cannot raise a number to the fractional power {0}.",
+        "C": "Attempted to raise to fractional power {0}."
       }
     ]
   }
