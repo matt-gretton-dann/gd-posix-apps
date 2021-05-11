@@ -218,6 +218,12 @@
         "id": 36,
         "description": "Error:{0}:{1}:{2}: Function defined at location has no end of definition..",
         "C": "Error:{0}:{1}:{2}: No end to function definition."
+      },
+      {
+        "msg": "function_not_defined",
+        "id": 37,
+        "description": "Tried to call function {0} which is not defined, location {1}{2}{3}",
+        "C": "Error:{1}:{2}:{3}: Function {0} is not defined."
       }
     ]
   }

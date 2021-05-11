@@ -122,6 +122,8 @@ GD::Bc::Instruction::Result const& GD::Bc::Instruction::result() const
   return *result_;
 }
 
+void GD::Bc::Instruction::clear_result() { result_.reset(); }
+
 void GD::Bc::Instruction::result(Result const& r)
 {
   result_ = r;

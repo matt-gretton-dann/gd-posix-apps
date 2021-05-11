@@ -15,7 +15,7 @@
 
 GD::Bc::VM::VM(std::ostream& stdout, std::ostream& stderr) : stdout_(stdout), stderr_(stderr) {}
 
-bool GD::Bc::VM::execute(Instructions& instructions)
+std::pair<GD::Bc::Number, bool> GD::Bc::VM::execute(Instructions& instructions)
 {
   for (Instruction::Index i = 0; i < instructions.size(); ++i) {
     switch (instructions[i].opcode()) {
@@ -85,17 +85,30 @@ bool GD::Bc::VM::execute(Instructions& instructions)
     case Instruction::Opcode::function_begin:
       i = execute_function_begin(instructions, i) - 1;
       break;
+    case Instruction::Opcode::push_param_mark:
+      execute_push_param_mark(instructions, i);
+      break;
+    case Instruction::Opcode::pop_param_mark:
+      execute_pop_param_mark(instructions, i);
+      break;
+    case Instruction::Opcode::call:
+      execute_call(instructions, i);
+      break;
+    case Instruction::Opcode::return_:
+      return std::make_pair(execute_return(instructions, i), true);
     case Instruction::Opcode::eof:
       assert(i == instructions.size() - 1);
-      return false;
+      return std::make_pair(Number(0), false);
       break;
+    case Instruction::Opcode::function_end: /* Should never been seen here.  */
     default:
       assert(false);
+      abort();
       break;
     }
   }
 
-  return true;
+  return std::make_pair(Number(0), true);
 }
 
 void GD::Bc::VM::execute_string(Instructions& instructions, Index i)
@@ -308,11 +321,9 @@ GD::Bc::VM::Index GD::Bc::VM::execute_function_begin(Instructions& instructions,
   assert(instructions.at(i).opcode() == Instruction::Opcode::function_begin);
   VariableMask mask = std::get<VariableMask>(instructions[i].op1());
   Location loc = std::get<Location>(instructions[i].op2());
-  stderr_ << instructions[i] << "\n";
   auto it = instructions.begin() + i + 1;
   auto ite = it;
   while (ite != instructions.end() && ite->opcode() != Instruction::Opcode::function_end) {
-    stderr_ << *ite << "\n";
     ++ite;
   }
   if (ite == instructions.end()) {
@@ -326,6 +337,46 @@ GD::Bc::VM::Index GD::Bc::VM::execute_function_begin(Instructions& instructions,
     std::make_optional(std::make_tuple(Instructions(it, ite), mask, loc));
   ++ite;
   return ite - instructions.begin();
+}
+
+void GD::Bc::VM::execute_push_param_mark(Instructions& instructions, Index i)
+{
+  assert(instructions.at(i).opcode() == Instruction::Opcode::push_param_mark);
+  param_stack_.emplace_back(Params{});
+}
+
+void GD::Bc::VM::execute_pop_param_mark(Instructions& instructions, Index i)
+{
+  assert(instructions.at(i).opcode() == Instruction::Opcode::pop_param_mark);
+  assert(!param_stack_.empty());
+  param_stack_.pop_back();
+}
+
+void GD::Bc::VM::execute_call(Instructions& instructions, Index i)
+{
+  assert(instructions.at(i).opcode() == Instruction::Opcode::call);
+  Letter func = std::get<Letter>(instructions[i].op1());
+  Location loc = std::get<Location>(instructions[i].op2());
+
+  if (!functions_[static_cast<unsigned>(func)].has_value()) {
+    Details::error(Msg::function_not_defined, func, loc.file_name(), loc.line(), loc.column());
+  }
+
+  FunctionDefinition const& def = functions_[static_cast<unsigned>(func)].value();
+  auto func_instructions = std::get<0>(def);
+
+  auto [result, cont] = execute(func_instructions);
+  /* Clear results so that we don't have hanging references to data we no longer need.
+   */
+  std::for_each(func_instructions.begin(), func_instructions.end(),
+                [](Instruction& i) { i.clear_result(); });
+  instructions[i].result(result);
+}
+
+GD::Bc::Number GD::Bc::VM::execute_return(Instructions& instructions, Index i)
+{
+  assert(instructions.at(i).opcode() == Instruction::Opcode::return_);
+  return get_op1_expr(instructions, i);
 }
 
 void GD::Bc::VM::set_ibase(Number num)

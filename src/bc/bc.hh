@@ -654,6 +654,9 @@ public:
   /** Get the result.  */
   Result const& result() const;
 
+  /** Clear the result value.  */
+  void clear_result();
+
   /** Set the result.  */
   void result(Result const& result);
 
@@ -1186,7 +1189,7 @@ public:
    *  \param instructions Instructions to execute
    *  \return             \c true if we should continue, or \c false if we have reached EOF.
    */
-  bool execute(Instructions& instructions);
+  std::pair<Number, bool> execute(Instructions& instructions);
 
 private:
   using Param = std::variant<ArrayValues, Number>;
@@ -1219,6 +1222,10 @@ private:
   Index execute_branch(Instructions& instructions, Index i);
   Index execute_branch_zero(Instructions& instructions, Index i);
   Index execute_function_begin(Instructions& instructions, Index i);
+  void execute_call(Instructions& instructions, Index i);
+  Number execute_return(Instructions& instructions, Index i);
+  void execute_push_param_mark(Instructions& instructions, Index i);
+  void execute_pop_param_mark(Instructions& instructions, Index i);
 
   Number get_op1_expr(Instructions& instructions, Index i);
   Number get_op2_expr(Instructions& instructions, Index i);
