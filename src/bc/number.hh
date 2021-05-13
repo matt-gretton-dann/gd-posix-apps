@@ -109,6 +109,9 @@ public:
   BasicDigits(BasicDigits&&) = default;
   BasicDigits& operator=(BasicDigits&&) = default;
 
+  /** \brief  Reset the digits - sets us to zero. */
+  void reset() { digits_.reset(); }
+
   /** \brief Is this zero?  */
   bool is_zero() const
   {
@@ -599,6 +602,136 @@ public:
 
     tidy();
     return static_cast<NumType>(result);
+  }
+
+  /** Return modulo.  */
+  void divide(BasicDigits v)
+  {
+    /* Algorithm D of Knuth TAOCP 4.3.1.  */
+
+    /* D1. Normalise.  */
+    /* u =*this; */
+    copy_on_write();
+    tidy();
+    v.copy_on_write();
+    v.tidy();
+    assert(digits_->size() >= v.digits_->size());
+
+    if (v.digits_->size() == 1) {
+      divide(v.digits_->at(0));
+      return;
+    }
+
+    if (digits_->size() == 2) {
+      assert(v.digits_->size() == 2);
+      WideType u2 = (*digits_)[0] + (base_ * (*digits_)[1]);
+      WideType v2 = (*v.digits_)[0] + (base_ * (*v.digits_)[1]);
+      WideType q = u2 / v2;
+
+      digits_ = std::make_shared<DigitVector>(std::initializer_list<NumType>{
+        static_cast<NumType>(q % base_), static_cast<NumType>(q / base_)});
+      return;
+    }
+
+    /* D1. Normalize.  */
+    /* Note this is not the number Knuth picks as that one causes me problems.  This choice still
+     * guarantees that d > b/2, but that we don't extend the v vector at all.
+     */
+    auto n = v.digits_->size();
+    auto m = digits_->size() - n;
+
+    auto d = (base_ / 2 - 1) / v.digits_->back();
+    d += 1;
+    if (d != 1) {
+      mac(d, 0);
+      v.mac(d, 0);
+    }
+    digits_->push_back(0);
+
+    BasicDigits q;
+    q.digits_ = std::make_shared<DigitVector>(m + 1, 0);
+
+    /* D2. Initialize j.  */
+    auto j = m;
+
+    do {
+      /* D3. Calculate q_hat. */
+      WideType t = digits_->at(n + j) * base_ + digits_->at(n + j - 1);
+      WideType q_hat = t / v.digits_->at(n - 1);
+      WideType r_hat = t % v.digits_->at(n - 1);
+
+      bool cont = true;
+
+      while (cont) {
+        cont = false;
+        WideType q_hat_v_n2 = q_hat * v.digits_->at(n - 2);
+        WideType b_r_hat_u_j_n2 = base_ * r_hat + digits_->at(j + n - 2);
+        if (q_hat == base_ || q_hat_v_n2 > b_r_hat_u_j_n2) {
+          --q_hat;
+          r_hat += v.digits_->at(n - 1);
+          if (r_hat < base_) {
+            cont = true;
+          }
+        }
+      }
+
+      /* D4. Multiply and subtract.   */
+      WideType carry = 0;
+      for (unsigned i = 0; i < n; ++i) {
+        carry += v.digits_->at(i) * q_hat;
+        NumType rhs_d = carry % base_;
+        carry /= base_;
+        if (rhs_d > digits_->at(j + i)) {
+          digits_->at(j + i) += base_;
+          carry += 1;
+        }
+        digits_->at(j + i) -= rhs_d;
+      }
+      if (carry != 0) {
+        NumType rhs_d = carry % base_;
+        carry /= base_;
+        if (rhs_d > digits_->at(j + n)) {
+          digits_->at(j + n) += base_;
+          carry += 1;
+        }
+        digits_->at(j + n) -= rhs_d;
+      }
+      bool borrowed = (carry != 0);
+
+      if (borrowed) {
+        bool have_borrowed = false;
+        for (typename DigitVector::size_type i = 0; i <= n; ++i) {
+          /* Until we've encountered a non-zero digit the operation is 0 - 0 = 0 so don't need to
+           * do anything.  Once we have a non-zero digit we've had to borrow.  For that first
+           * digit the result is base_ - D, and for every other digit it is base_ - 1 - D.  Where
+           * the 1 is the borrow.
+           */
+          if (!have_borrowed && digits_->at(i) != 0) {
+            digits_->at(j + i) = base_ - digits_->at(j + i);
+            have_borrowed = true;
+          }
+          else if (have_borrowed) {
+            digits_->at(j + i) = base_ - 1 - digits_->at(j + i);
+          }
+        }
+
+        /* D6. Add back.  Do this now as it is simpler. */
+        WideType carry = 0;
+        for (typename DigitVector::size_type i = 0; i < n; ++i) {
+          carry += v.digits_->at(i) + digits_->at(j + i);
+          digits_->at(j + i) = carry % base_;
+          carry %= base_;
+        }
+        q_hat -= 1;
+      }
+
+      /* D5. Test remainder.  */
+      q.digits_->at(j) = q_hat;
+
+    } while (j-- > 0);
+
+    /* D7. Unormalise.  */
+    std::swap(q.digits_, digits_);
   }
 
   /** \brief  Divide by the number \a div.  Returns remainder.  */
@@ -1200,6 +1333,40 @@ public:
     sign_ = sign_ == rhs.sign_ ? Sign::positive : Sign::negative;
   }
 
+  void divide(BasicNumber rhs, NumType target_scale)
+  {
+    if (rhs.is_zero()) {
+      Details::error(Msg::divide_by_zero);
+      return;
+    }
+
+    /* We want both sides to have the same scale.  */
+    if (scale() > rhs.scale()) {
+      rhs.digits_.mul_pow10(scale() - rhs.scale());
+    }
+    else if (scale() < rhs.scale()) {
+      digits_.mul_pow10(rhs.scale() - scale());
+    }
+
+    digits_.mul_pow10(target_scale);
+    auto comparison = digits_.compare(rhs.digits_, 0);
+    switch (comparison) {
+    case Details::ComparisonResult::less_than:
+      digits_.reset();
+      break;
+    case Details::ComparisonResult::equality:
+      digits_ = Details::BasicDigits<Traits>(1);
+      digits_.mul_pow10(target_scale);
+      break;
+    case Details::ComparisonResult::greater_than:
+      digits_.divide(rhs.digits_);
+      break;
+    }
+
+    scale_ = target_scale;
+    sign_ = sign_ == rhs.sign_ ? Sign::positive : Sign::negative;
+  }
+
   /** \brief  Are we equal to zero?
    *  \return True iff equal to zero.
    */
@@ -1277,7 +1444,7 @@ bool operator<=(BasicNumber<Traits> const& lhs, BasicNumber<Traits> const& rhs)
  *
  * Currently we assume 32-bit storage.
  */
-using Number = BasicNumber<NumberTraits32>;
+using Number = BasicNumber<NumberTraits8>;
 
 }  // namespace GD::Bc
 

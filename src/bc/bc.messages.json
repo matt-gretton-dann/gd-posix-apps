@@ -230,6 +230,12 @@
         "id": 38,
         "description": "Cannot raise a number to the fractional power {0}.",
         "C": "Attempted to raise to fractional power {0}."
+      },
+      {
+        "msg": "divide_by_zero",
+        "id": 39,
+        "description": "Attempt to divide by zero",
+        "C": "Attempt to divide by zero."
       }
     ]
   }

@@ -8,9 +8,11 @@
 
 #include <catch2/catch.hpp>
 
+#include <random>
 #include <sstream>
 #include <stdint.h>
 #include <string>
+#include <utility>
 
 #include "bc.hh"
 #include <string_view>
@@ -159,4 +161,54 @@ TEST_CASE("GD::Bc::Number - Scale and length, directed", "[bc][number]")
   GD::Bc::Number n(num, 10);
   REQUIRE(n.scale() == scale);
   REQUIRE(n.length() == length);
+}
+
+namespace {
+
+using Number8 = GD::Bc::BasicNumber<GD::Bc::NumberTraits8>;
+using UInt64Pair = std::pair<uint64_t, uint64_t>;
+
+class RandomUIntPairGenerator : public Catch::Generators::IGenerator<UInt64Pair>
+{
+public:
+  RandomUIntPairGenerator() : rand_(), dist_(0, std::numeric_limits<uint64_t>::max()) { next(); }
+
+  UInt64Pair const& get() const override { return pair_; }
+
+  bool next() override
+  {
+    pair_ = std::make_pair<uint64_t, uint64_t>(dist_(rand_), dist_(rand_));
+    return true;
+  }
+
+private:
+  std::mt19937_64 rand_;
+  std::uniform_int_distribution<uint64_t> dist_;
+  UInt64Pair pair_;
+};
+
+Catch::Generators::GeneratorWrapper<UInt64Pair> random_pair()
+{
+  return Catch::Generators::GeneratorWrapper<UInt64Pair>(
+    std::make_unique<RandomUIntPairGenerator>());
+}
+
+}  // namespace
+
+TEST_CASE("GD::Bc::Number - division, random", "[bc][number]")
+{
+  auto nums = GENERATE(take(100, random_pair()));
+  uint64_t mask = ~uint64_t{0};
+
+  while (mask != 0) {
+    Number8 u(std::to_string(nums.first), 10);
+    Number8 v(std::to_string(nums.second & mask), 10);
+    auto q = nums.first / (nums.second & mask);
+    Number8 expected(std::to_string(q), 10);
+
+    INFO("u = " << nums.first << " v = " << (nums.second & mask) << " q = " << q);
+    u.divide(v, 0);
+    REQUIRE(u == expected);
+    mask >>= 8;
+  }
 }
