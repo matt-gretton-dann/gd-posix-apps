@@ -48,7 +48,8 @@ void execute(std::unique_ptr<GD::Bc::Reader>&& r)
   while (cont) {
     auto instructions = parser.parse();
     if (instructions) {
-      auto [result, cont] = vm.execute(*instructions);
+      auto r = vm.execute(*instructions);
+      cont = r.second;
     }
   }
 }
