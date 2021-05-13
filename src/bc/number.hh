@@ -27,6 +27,7 @@ struct NumberTraits32
 {
   using NumType = ::uint32_t;
   using WideType = ::uint64_t;
+  using PrintType = NumType;
   static constexpr WideType base_ = 1000000000U;
   static constexpr unsigned base_log10_ = 9;
 };
@@ -37,6 +38,7 @@ struct NumberTraits16
 {
   using NumType = ::uint16_t;
   using WideType = ::uint32_t;
+  using PrintType = NumType;
   static constexpr WideType base_ = 10000U;
   static constexpr unsigned base_log10_ = 4;
 };
@@ -47,6 +49,7 @@ struct NumberTraits8
 {
   using NumType = ::uint8_t;
   using WideType = ::uint16_t;
+  using PrintType = unsigned;
   static constexpr WideType base_ = 100U;
   static constexpr unsigned base_log10_ = 2;
 };
@@ -84,6 +87,7 @@ public:
   using NumType = typename Traits::NumType;  ///< Underlying storage type.
   using WideType =
     typename Traits::WideType;  ///< Type able to hold result of NumType::max * NumType::max
+  using PrintType = typename Traits::PrintType;                 ///< Type to use to print
   static constexpr WideType base_ = Traits::base_;              ///< Base we're storing in.
   static constexpr unsigned base_log10_ = Traits::base_log10_;  ///< Log10 of base_.
 
@@ -254,7 +258,7 @@ public:
     std::ostringstream ss;
     unsigned width = 0;
     for (auto rit = digits_->rbegin(); rit != digits_->rend(); ++rit) {
-      ss << std::setfill('0') << std::setw(width) << *rit;
+      ss << std::setfill('0') << std::setw(width) << static_cast<typename Traits::PrintType>(*rit);
       width = base_log10_;
     }
     std::string result = ss.str();
@@ -308,7 +312,7 @@ public:
     char const* sep = "{";
     if (digits_) {
       for (auto d : *digits_) {
-        os << sep << d;
+        os << sep << static_cast<typename Traits::PrintType>(d);
         sep = ", ";
       }
     }
@@ -914,6 +918,7 @@ public:
   using NumType = typename Traits::NumType;  ///< Underlying storage type.
   using WideType =
     typename Traits::WideType;  ///< Type able to hold result of NumType::max * NumType::max
+  using PrintType = typename Traits::PrintType;                 ///< Type to use to print
   static constexpr WideType base_ = Traits::base_;              ///< Base we're storing in.
   static constexpr unsigned base_log10_ = Traits::base_log10_;  ///< Log10 of base_.
 
@@ -1045,7 +1050,8 @@ public:
   {
     os << "Number(";
     digits_.debug(os);
-    os << ", sign=" << (sign_ == Sign::positive ? "+" : "-") << ", scale=" << scale_ << ")";
+    os << ", sign=" << (sign_ == Sign::positive ? "+" : "-")
+       << ", scale=" << static_cast<typename Traits::PrintType>(scale_) << ")";
   }
 
   /* Get the scale of the number.  */
