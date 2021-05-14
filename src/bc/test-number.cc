@@ -197,18 +197,23 @@ Catch::Generators::GeneratorWrapper<UInt64Pair> random_pair()
 
 TEST_CASE("GD::Bc::Number - division, random", "[bc][number]")
 {
-  auto nums = GENERATE(take(100, random_pair()));
-  uint64_t mask = ~uint64_t{0};
+  auto nums = GENERATE(take(1000, random_pair()));
+  uint64_t mask = std::numeric_limits<uint64_t>::max();
 
+  auto ud = nums.first % mask;
   while (mask != 0) {
-    Number8 u(std::to_string(nums.first), 10);
-    Number8 v(std::to_string(nums.second & mask), 10);
-    auto q = nums.first / (nums.second & mask);
-    Number8 expected(std::to_string(q), 10);
+    auto vd = nums.second % mask;
+    Number8 u(std::to_string(ud), 10);
+    if (vd != 0) {
+      Number8 v(std::to_string(vd), 10);
+      Number8 result(u);
+      auto q = ud / vd;
+      Number8 expected(std::to_string(q), 10);
 
-    INFO("u = " << nums.first << " v = " << (nums.second & mask) << " q = " << q);
-    u.divide(v, 0);
-    REQUIRE(u == expected);
-    mask >>= 8;
+      INFO("u = " << ud << " v = " << vd << " q = " << q);
+      result.divide(v, 0);
+      REQUIRE(result == expected);
+    }
+    mask /= Number8::base_;
   }
 }
