@@ -70,6 +70,9 @@ std::pair<GD::Bc::Number, bool> GD::Bc::VM::execute(Instructions& instructions)
     case Instruction::Opcode::multiply:
       execute_multiply(instructions, i);
       break;
+    case Instruction::Opcode::divide:
+      execute_divide(instructions, i);
+      break;
     case Instruction::Opcode::scale_expr:
       execute_scale_expr(instructions, i);
       break;
