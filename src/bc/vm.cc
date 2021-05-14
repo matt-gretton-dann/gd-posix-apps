@@ -308,6 +308,15 @@ void GD::Bc::VM::execute_multiply(Instructions& instructions, Index i)
   instructions[i].result(lhs);
 }
 
+void GD::Bc::VM::execute_divide(Instructions& instructions, Index i)
+{
+  assert(instructions.at(i).opcode() == Instruction::Opcode::divide);
+  Number lhs = get_op1_expr(instructions, i);
+  Number rhs = get_op2_expr(instructions, i);
+  lhs.divide(rhs, scale_);
+  instructions[i].result(lhs);
+}
+
 void GD::Bc::VM::execute_scale_expr(Instructions& instructions, Index i)
 {
   assert(instructions.at(i).opcode() == Instruction::Opcode::scale_expr);
