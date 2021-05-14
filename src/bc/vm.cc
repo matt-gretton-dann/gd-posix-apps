@@ -395,7 +395,7 @@ GD::Bc::VM::Index GD::Bc::VM::execute_function_begin(Instructions& instructions,
     Details::error(Msg::no_end_to_function_definition, loc.file_name(), loc.line(), loc.column());
   }
   Letter func = std::get<Letter>(ite->op1());
-  Offset dist = std::get<Offset>(ite->op2());
+  [[maybe_unused]] Offset dist = std::get<Offset>(ite->op2());
   assert(-dist == ite - it + 1);
 
   functions_[static_cast<unsigned int>(func)] =
@@ -404,7 +404,8 @@ GD::Bc::VM::Index GD::Bc::VM::execute_function_begin(Instructions& instructions,
   return ite - instructions.begin();
 }
 
-void GD::Bc::VM::execute_push_param_mark(Instructions& instructions, Index i)
+void GD::Bc::VM::execute_push_param_mark([[maybe_unused]] Instructions& instructions,
+                                         [[maybe_unused]] Index i)
 {
   assert(instructions.at(i).opcode() == Instruction::Opcode::push_param_mark);
   param_stack_.emplace_back(Params{});
@@ -426,7 +427,8 @@ void GD::Bc::VM::execute_push_param(Instructions& instructions, Index i)
              expr);
 }
 
-void GD::Bc::VM::execute_pop_param_mark(Instructions& instructions, Index i)
+void GD::Bc::VM::execute_pop_param_mark([[maybe_unused]] Instructions& instructions,
+                                        [[maybe_unused]] Index i)
 {
   assert(instructions.at(i).opcode() == Instruction::Opcode::pop_param_mark);
   assert(!param_stack_.empty());
