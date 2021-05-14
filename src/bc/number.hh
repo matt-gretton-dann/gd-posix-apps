@@ -646,6 +646,8 @@ public:
       mac(d, 0);
       v.mac(d, 0);
     }
+    assert(n == v.digits_->size());
+    assert(v.digits_->back() >= base_ / 2);
     digits_->push_back(0);
 
     BasicDigits q;
@@ -699,33 +701,23 @@ public:
       bool borrowed = (carry != 0);
 
       if (borrowed) {
-        bool have_borrowed = false;
-        for (typename DigitVector::size_type i = 0; i <= n; ++i) {
-          /* Until we've encountered a non-zero digit the operation is 0 - 0 = 0 so don't need to
-           * do anything.  Once we have a non-zero digit we've had to borrow.  For that first
-           * digit the result is base_ - D, and for every other digit it is base_ - 1 - D.  Where
-           * the 1 is the borrow.
-           */
-          if (!have_borrowed && digits_->at(i) != 0) {
-            digits_->at(j + i) = base_ - digits_->at(j + i);
-            have_borrowed = true;
-          }
-          else if (have_borrowed) {
-            digits_->at(j + i) = base_ - 1 - digits_->at(j + i);
-          }
-        }
-
         /* D6. Add back.  Do this now as it is simpler. */
         WideType carry = 0;
         for (typename DigitVector::size_type i = 0; i < n; ++i) {
           carry += v.digits_->at(i) + digits_->at(j + i);
           digits_->at(j + i) = carry % base_;
-          carry %= base_;
+          carry /= base_;
         }
+        carry += digits_->at(j + n);
+        digits_->at(j + n) = carry % base_;
+        carry /= base_;
+        assert(carry == 1);
         q_hat -= 1;
       }
 
       /* D5. Test remainder.  */
+      assert(q_hat < base_);
+      assert(digits_->at(n + j) == 0);
       q.digits_->at(j) = q_hat;
 
     } while (j-- > 0);
@@ -1444,7 +1436,7 @@ bool operator<=(BasicNumber<Traits> const& lhs, BasicNumber<Traits> const& rhs)
  *
  * Currently we assume 32-bit storage.
  */
-using Number = BasicNumber<NumberTraits8>;
+using Number = BasicNumber<NumberTraits32>;
 
 }  // namespace GD::Bc
 
