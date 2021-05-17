@@ -1350,7 +1350,6 @@ public:
       break;
     case Details::ComparisonResult::equality:
       digits_ = Details::BasicDigits<Traits>(1);
-      digits_.mul_pow10(target_scale);
       break;
     case Details::ComparisonResult::greater_than:
       digits_.divide(rhs.digits_);
