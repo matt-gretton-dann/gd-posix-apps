@@ -97,10 +97,12 @@ public:
   /** \brief   Construct holding the single digit \a num
    *  \param num Number to hold.  Must be less than \c base_.
    */
-  explicit BasicDigits(NumType num)
-      : digits_(std::make_shared<DigitVector>(std::initializer_list{num}))
+  explicit BasicDigits(NumType num) : digits_(std::make_shared<DigitVector>())
   {
-    assert(num < base_);
+    while (num != 0) {
+      digits_->push_back(static_cast<NumType>(num % base_));
+      num /= static_cast<NumType>(base_);
+    }
   }
 
   ~BasicDigits() = default;
