@@ -130,6 +130,16 @@ public:
     return true;
   }
 
+  /** Is this an even number? */
+  bool is_even() const
+  {
+    if (!digits_) {
+      return true;
+    }
+
+    return ((*digits_)[0] & 1) == 0;
+  }
+
   Details::ComparisonResult compare(BasicDigits const& rhs, NumType scale) const
   {
     assert(digits_);
@@ -457,7 +467,8 @@ public:
   void power_mul(BasicDigits const& power_in)
   {
     if (is_zero()) {
-      digits_.reset();
+      reset();
+      return;
     }
 
     BasicDigits<Traits> power(power_in);
@@ -1267,7 +1278,6 @@ public:
   void power(BasicNumber const& rhs, NumType target_scale)
   {
     auto [power_whole, power_frac] = rhs.digits_.split_frac(rhs.scale());
-    target_scale = std::max(scale(), target_scale);
 
     if (!power_frac.is_zero()) {
       std::ostringstream ss;
@@ -1278,15 +1288,21 @@ public:
 
     auto one = BasicNumber(1);
     if (power_whole.is_zero()) {
+      /* x ^ 0 = 1.  Scale = min (scale(x) * 0, max(target_scale, scale(x))) = 0.  */
       *this = one;
       return;
     }
 
-    if (power_whole.compare(one.digits_, 0) == Details::ComparisonResult::equality) {
+    if (rhs.sign_ == Sign::positive &&
+        power_whole.compare(one.digits_, 0) == Details::ComparisonResult::equality) {
+      /* x ^ 1.  Scale = min (scale(x) * 1, max(target_scale, scale(x))) = scale(x).  */
       return;
     }
 
-    if (power_whole.compare(one.digits_, 0) != Details::ComparisonResult::less_than) {
+    if (rhs.sign_ == Sign::positive) {
+      /* x ^ +p.  Scale = min(scale(x) * p, max(target_scale, scale(x)))
+       *                = min(scale(x) * p, target_scale). (p > 1)
+       */
       digits_.power_mul(power_whole);
       /* digits_ now has scale: scale_ * power_whole.  We want to rescale to the target_scale if
        * that is less than the new scale.  But we have to cope with the fact that the new scale
@@ -1294,11 +1310,14 @@ public:
       power_whole.mac(scale_, 0);
       auto base = BasicNumber(base_);
       if (power_whole.compare(base.digits_, 0) == Details::ComparisonResult::less_than) {
+        /* If power_whole is <= base_ then we may already be at the scale we want.  Otherwise we
+         * definitely will need to scale down (as target_scale < base_ < power_whole).
+         */
         target_scale = std::min(power_whole.to_unsigned(0), target_scale);
       }
 
-      auto base_plus_target_scale = BasicNumber(base_);
-      base_plus_target_scale.add(BasicNumber(target_scale));
+      auto base_plus_target_scale = BasicNumber(target_scale);
+      base_plus_target_scale.add(base_);
       while (power_whole.compare(base_plus_target_scale.digits_, 0) !=
              Details::ComparisonResult::less_than) {
         /* Scale is significantly larger than we can deal with - scale down by base_ until we get
@@ -1314,8 +1333,37 @@ public:
       return;
     }
 
-    /* power_whole < 0 */
-    abort();
+    assert(rhs.sign_ == Sign::negative);
+    /* x ^ -p.  Scale = target_scale.  */
+    digits_.power_mul(power_whole);
+    power_whole.mac(scale_, 0);
+    /* digits_ now has scale: scale_ * power_whole.  */
+    /* We need to do 1.0/digits_ with resultant scale target_scale.
+     * Scale digits_ to 2 * target_scale, and 1 to target_scale and then do the division.
+     */
+    auto target_scale_num = Details::BasicDigits<Traits>(target_scale);
+
+    if (power_whole.compare(target_scale_num, 0) != Details::ComparisonResult::greater_than) {
+      scale_ = power_whole.to_unsigned(0);
+    }
+    else {
+      Details::BasicDigits<Traits> base(base_);
+      auto target_scale_base = Details::BasicDigits<Traits>(base_);
+      target_scale_base.add(target_scale_num, 0);
+      while (power_whole.compare(target_scale_base, 0) != Details::ComparisonResult::less_than) {
+        digits_.div_pow10(base_);
+        power_whole.sub(base, 0);
+      }
+
+      if (power_whole.compare(target_scale_num, 0) == Details::ComparisonResult::greater_than) {
+        power_whole.sub(target_scale_num, 0);
+        digits_.div_pow10(power_whole.to_unsigned(0));
+      }
+      scale_ = target_scale;
+    }
+
+    one.divide(*this, target_scale);
+    std::swap(one, *this);
   }
 
   void multiply(BasicNumber const& rhs, NumType target_scale)
