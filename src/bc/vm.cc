@@ -73,6 +73,9 @@ std::pair<GD::Bc::Number, bool> GD::Bc::VM::execute(Instructions& instructions)
     case Instruction::Opcode::divide:
       execute_divide(instructions, i);
       break;
+    case Instruction::Opcode::modulo:
+      execute_modulo(instructions, i);
+      break;
     case Instruction::Opcode::scale_expr:
       execute_scale_expr(instructions, i);
       break;
@@ -317,6 +320,15 @@ void GD::Bc::VM::execute_divide(Instructions& instructions, Index i)
   Number lhs = get_op1_expr(instructions, i);
   Number rhs = get_op2_expr(instructions, i);
   lhs.divide(rhs, scale_);
+  instructions[i].result(lhs);
+}
+
+void GD::Bc::VM::execute_modulo(Instructions& instructions, Index i)
+{
+  assert(instructions.at(i).opcode() == Instruction::Opcode::modulo);
+  Number lhs = get_op1_expr(instructions, i);
+  Number rhs = get_op2_expr(instructions, i);
+  lhs.modulo(rhs, scale_);
   instructions[i].result(lhs);
 }
 

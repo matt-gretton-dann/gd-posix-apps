@@ -206,13 +206,20 @@ TEST_CASE("GD::Bc::Number - division, random", "[bc][number]")
     Number8 u(std::to_string(ud), 10);
     if (vd != 0) {
       Number8 v(std::to_string(vd), 10);
-      Number8 result(u);
       auto q = ud / vd;
-      Number8 expected(std::to_string(q), 10);
+      auto r = ud % vd;
+      Number8 expected_q(std::to_string(q), 10);
+      Number8 expected_r(std::to_string(r), 10);
 
-      INFO("u = " << ud << " v = " << vd << " q = " << q);
-      result.divide(v, 0);
-      REQUIRE(result == expected);
+      INFO("u = " << ud << " v = " << vd << " q = " << q << " r = " << r);
+      Number8 div(u);
+      div.divide(v, 0);
+
+      Number8 mod(u);
+      mod.modulo(v, 0);
+
+      REQUIRE(div == expected_q);
+      REQUIRE(mod == expected_r);
     }
     mask /= Number8::base_;
   }

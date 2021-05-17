@@ -1408,6 +1408,14 @@ public:
     sign_ = sign_ == rhs.sign_ ? Sign::positive : Sign::negative;
   }
 
+  void modulo(BasicNumber rhs, NumType target_scale)
+  {
+    BasicNumber u(*this);
+    u.divide(rhs, target_scale);
+    u.multiply(rhs, target_scale);
+    sub(u);
+  }
+
   /** \brief  Are we equal to zero?
    *  \return True iff equal to zero.
    */
