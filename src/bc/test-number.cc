@@ -226,8 +226,6 @@ public:
     }
 
     number_ = GD::Bc::Number(num, 10);
-    number_.output(std::cout, 10);
-    std::cout << '\n';
     return true;
   }
 
