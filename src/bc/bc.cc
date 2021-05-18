@@ -39,9 +39,8 @@ template<typename... Ts>
   ::exit(1);
 }
 
-void execute(std::unique_ptr<GD::Bc::Reader>&& r)
+void execute(GD::Bc::VM& vm, std::unique_ptr<GD::Bc::Reader>&& r)
 {
-  GD::Bc::VM vm(std::cout, std::clog);
   GD::Bc::Parser parser(std::make_unique<GD::Bc::Lexer>(std::move(r)), true);
 
   bool cont = true;
@@ -75,21 +74,22 @@ int main(int argc, char** argv)
     }
   }
 
+  GD::Bc::VM vm(std::cout, std::clog);
   if (load_library) {
     auto r = std::make_unique<GD::Bc::StringReader>(library_script);
-    execute(std::move(r));
+    execute(vm, std::move(r));
   }
 
-  auto process = [](std::string_view fname) -> bool {
+  auto process = [&vm](std::string_view fname) -> bool {
     auto r = std::make_unique<GD::Bc::FileReader>(fname);
-    execute(std::move(r));
+    execute(vm, std::move(r));
     return true;
   };
 
   bool success = GD::for_each_file(argc - optind, argv + optind, process, GD::FEFFlags::none);
   if (success) {
     auto r = std::make_unique<GD::Bc::FileReader>("-");
-    execute(std::move(r));
+    execute(vm, std::move(r));
   }
 
   return success ? 0 : 1;
