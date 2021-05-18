@@ -436,6 +436,10 @@ public:
     });
 
     if (carry != 0) {
+      if (carry != 1) {
+        digits_->push_back(base_ - carry);
+      }
+
       /* Having a carry here means that we've flipped the sign - so digits_ holds
        * result - 1 * 10^(digits_.size_ * base_log10_).  We do
        * 1 - 10^(digits_.size() * base_log10_) - digits_ to get the result back.
@@ -916,7 +920,7 @@ private:
       scale -= base_log10_;
     }
 
-    auto pow10_scale = pow10(scale);
+    WideType pow10_scale = pow10(scale);
     WideType carry = 0;
     for (auto it_rhs : *rhs.digits_) {
       carry += it_rhs * pow10_scale;
@@ -977,12 +981,12 @@ private:
 
     while (scale >= base_log10_) {
       it = ensure_it_valid(it, digits_);
-      carry = fn(it, carry);
+      carry = fn(it++, carry);
       assert(carry < base_);
       scale -= base_log10_;
     }
 
-    auto pow10_scale = pow10(scale);
+    WideType pow10_scale = pow10(scale);
     for (auto it_rhs : *rhs.digits_) {
       carry += it_rhs * pow10_scale;
       it = ensure_it_valid(it, digits_);

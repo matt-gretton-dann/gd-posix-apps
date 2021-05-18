@@ -719,13 +719,13 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_relational_expression()
   case Token::Type::less_than_equals:
     return insert_arith(Instruction::Opcode::less_than_equals, lhs, rhs);
   case Token::Type::greater_than_equals:
-    return insert_arith(Instruction::Opcode::less_than, rhs, lhs);
+    return insert_arith(Instruction::Opcode::less_than_equals, rhs, lhs);
   case Token::Type::not_equals:
     return insert_arith(Instruction::Opcode::not_equals, lhs, rhs);
   case Token::Type::less_than:
     return insert_arith(Instruction::Opcode::less_than, lhs, rhs);
   case Token::Type::greater_than:
-    return insert_arith(Instruction::Opcode::less_than_equals, rhs, lhs);
+    return insert_arith(Instruction::Opcode::less_than, rhs, lhs);
   default:
     assert(false);
     abort();
