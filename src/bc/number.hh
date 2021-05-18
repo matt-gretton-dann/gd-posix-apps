@@ -1420,6 +1420,68 @@ public:
     sub(u);
   }
 
+  void sqrt(NumType target_scale)
+  {
+    /* Scale we want to end up at.  */
+    target_scale = std::max(target_scale, scale());
+
+    if (is_zero()) {
+      scale_ = target_scale;
+      return;
+    }
+
+    if (sign_ == Sign::negative) {
+      std::ostringstream ss;
+      output(ss, 10);
+      Details::error(Msg::square_root_of_negative_number, ss.str());
+      return;
+    }
+
+    /* We work to a scale which provides an extra block or two of digits at the bottom.  We also
+     * rescale *this to the working_scale to save work later.
+     */
+    NumType working_scale = target_scale + base_log10_ + 1;
+    digits_.mul_pow10(working_scale - scale());
+    scale_ = working_scale;
+
+    /* Initial guess = 10^floor(N/2+1). N = number of integer digits (=length - scale)
+     * This gives us something in the correct ball-park.  We also store this at the working_scale.
+     */
+    NumType initial_guess = (length() - scale()) / 2;
+    BasicNumber c(1);
+    c.digits_.mul_pow10(initial_guess);
+    c.digits_.mul_pow10(working_scale);
+    c.scale_ = working_scale;
+    BasicNumber p;
+
+    /* c is the current guess,
+     * p is the previous guess.
+     *
+     * According to Newton Rhapson c = p - f(p) / f'(p)  where f(x) = x * x - *this
+     *                               = p - (p * p - *this) / (2 * p)
+     *                               = (p * p + *this) / (2 * p)
+     *                               = (p + *this / p) / 2
+     *                               = (*this / p + p) / 2
+     *
+     * We loop until the previous and current guesses are the same.
+     */
+    do {
+      p = c;
+      c = *this;
+      c.divide(p, working_scale);
+      assert(c.scale_ == p.scale_);
+      c.digits_.add(p.digits_, 0);
+      c.digits_.divide(2);
+    } while (p != c);
+
+    *this = c;
+    if (scale() > target_scale) {
+      digits_.div_pow10(scale() - target_scale);
+      scale_ = target_scale;
+    }
+    return;
+  }
+
   /** \brief  Are we equal to zero?
    *  \return True iff equal to zero.
    */
