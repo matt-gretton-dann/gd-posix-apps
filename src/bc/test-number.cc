@@ -210,7 +210,7 @@ public:
     auto int_len = dist_(rand_) % (digit_count + 1);
 
     std::string num;
-    GD::Bc::Number::NumType digits;
+    GD::Bc::Number::NumType digits = 0;
     for (decltype(digit_count) i = 0; i < digit_count; ++i) {
       if (i % GD::Bc::Number::base_log10_ == 0) {
         digits = dist_(rand_);
