@@ -131,8 +131,6 @@ std::pair<GD::Bc::Number, bool> GD::Bc::VM::execute(Instructions& instructions)
       return std::make_pair(Number(0), false);
       break;
     case Instruction::Opcode::function_end: /* Should never been seen here.  */
-    default:
-      assert(false);
       abort();
       break;
     }
