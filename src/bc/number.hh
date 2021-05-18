@@ -1248,6 +1248,20 @@ public:
     }
   }
 
+  /** \brief  Add 10^-scale() to this number.
+   *
+   * This is generally only useful for testing.
+   */
+  void add_epsilon()
+  {
+    if (is_zero()) {
+      digits_ = Details::BasicDigits<Traits>(1);
+      return;
+    }
+
+    digits_.add(Details::BasicDigits<Traits>(1), 0);
+  }
+
   /** \brief  Subtract \a rhs from *this.
    *
    * Scale on exit is max of rhs scale and *this scale.
