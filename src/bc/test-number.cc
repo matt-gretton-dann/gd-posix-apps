@@ -197,6 +197,52 @@ Catch::Generators::GeneratorWrapper<UInt64Pair> random_pair()
     std::make_unique<RandomUIntPairGenerator>());
 }
 
+class RandomNumberGenerator : public Catch::Generators::IGenerator<GD::Bc::Number>
+{
+public:
+  RandomNumberGenerator() : rand_(), dist_(0, GD::Bc::Number::base_) { next(); }
+
+  GD::Bc::Number const& get() const override { return number_; }
+
+  bool next() override
+  {
+    auto digit_count = dist_(rand_) % (40 * GD::Bc::Number::base_log10_);
+    auto int_len = dist_(rand_) % (digit_count + 1);
+
+    std::string num;
+    GD::Bc::Number::NumType digits;
+    for (decltype(digit_count) i = 0; i < digit_count; ++i) {
+      if (i % GD::Bc::Number::base_log10_ == 0) {
+        digits = dist_(rand_);
+      }
+      auto digit = digits / (GD::Bc::Number::base_ / 10);
+      digits = (digits % (GD::Bc::Number::base_ / 10)) * 10;
+      assert(digit < 10);
+
+      if (num.size() == int_len) {
+        num += '.';
+      }
+      num += static_cast<char>('0' + digit);
+    }
+
+    number_ = GD::Bc::Number(num, 10);
+    number_.output(std::cout, 10);
+    std::cout << '\n';
+    return true;
+  }
+
+private:
+  std::mt19937_64 rand_;
+  std::uniform_int_distribution<uint64_t> dist_;
+  GD::Bc::Number number_;
+};
+
+Catch::Generators::GeneratorWrapper<GD::Bc::Number> random_number()
+{
+  return Catch::Generators::GeneratorWrapper<GD::Bc::Number>(
+    std::make_unique<RandomNumberGenerator>());
+}
+
 }  // namespace
 
 TEST_CASE("GD::Bc::Number - division, random", "[bc][number]")
@@ -227,4 +273,28 @@ TEST_CASE("GD::Bc::Number - division, random", "[bc][number]")
     }
     mask /= Number8::base_;
   }
+}
+
+TEST_CASE("GD::Bc::Number - square root, random", "[bc][number]")
+{
+  /* Test square rooting by taking the square root and multiplying it up again to see if we have the
+   * correct result.
+   */
+  auto num = GENERATE(take(1000, random_number()));
+
+  auto sqrt = num;
+  sqrt.sqrt(0);
+
+  /* sqrt is the truncated square root so sqrt * sqrt <= num.  */
+  auto square = sqrt;
+  square.multiply(sqrt, sqrt.scale() * 2);
+  REQUIRE(square <= num);
+
+  /* ... and (sqrt + epsilon) * (sqrt + epsilon) > num.
+   * Where epsilon is 10^-sqrt.scale().
+   */
+  sqrt.add_epsilon();
+  square = sqrt;
+  square.multiply(sqrt, sqrt.scale() * 2);
+  REQUIRE(square > num);
 }
