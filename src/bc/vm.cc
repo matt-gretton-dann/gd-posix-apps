@@ -20,28 +20,39 @@ std::pair<GD::Bc::Number, bool> GD::Bc::VM::execute(Instructions& instructions)
   for (Instruction::Index i = 0; i < instructions.size(); ++i) {
     switch (instructions[i].opcode()) {
     case Instruction::Opcode::string:
-      execute_string(instructions, i);
+      execute_unary(instructions, i, [](Instruction::Operand const& o) {
+        return std::string_view(std::get<std::string>(o));
+      });
       break;
     case Instruction::Opcode::number:
-      execute_number(instructions, i);
+      execute_unary(instructions, i, [this](Instruction::Operand const& o) {
+        return Number(std::get<std::string>(o), ibase_);
+      });
       break;
     case Instruction::Opcode::variable:
-      execute_variable(instructions, i);
+      execute_unary(instructions, i,
+                    [this](Instruction::Operand const& o) { return std::get<Variable>(o); });
       break;
     case Instruction::Opcode::array:
-      execute_array(instructions, i);
+      execute_unary(instructions, i,
+                    [this](Instruction::Operand const& o) { return std::get<Array>(o); });
       break;
     case Instruction::Opcode::array_element:
-      execute_array_element(instructions, i);
+      execute_binary(
+        instructions, i,
+        [this, &instructions, i](Instruction::Operand const& o1, Instruction::Operand const& o2) {
+          Number elt = get_op_expr(instructions, i, o2);
+          return ArrayElement(std::get<Array>(o1), elt.to_unsigned());
+        });
       break;
     case Instruction::Opcode::ibase:
-      execute_ibase(instructions, i);
+      execute_nonary(instructions, i, []() { return Ibase(); });
       break;
     case Instruction::Opcode::obase:
-      execute_obase(instructions, i);
+      execute_nonary(instructions, i, []() { return Obase(); });
       break;
     case Instruction::Opcode::scale:
-      execute_scale(instructions, i);
+      execute_nonary(instructions, i, []() { return Scale(); });
       break;
     case Instruction::Opcode::print:
       execute_print(instructions, i);
@@ -56,46 +67,53 @@ std::pair<GD::Bc::Number, bool> GD::Bc::VM::execute(Instructions& instructions)
       execute_store(instructions, i);
       break;
     case Instruction::Opcode::negate:
-      execute_negate(instructions, i);
+      execute_unary_op(instructions, i, [](Number& lhs) { lhs.negate(); });
       break;
     case Instruction::Opcode::add:
-      execute_add(instructions, i);
+      execute_bin_op(instructions, i, [](Number& lhs, Number& rhs) { lhs.add(rhs); });
       break;
     case Instruction::Opcode::subtract:
-      execute_sub(instructions, i);
+      execute_bin_op(instructions, i, [](Number& lhs, Number& rhs) { lhs.sub(rhs); });
       break;
     case Instruction::Opcode::power:
-      execute_power(instructions, i);
+      execute_bin_op(instructions, i, [this](Number& lhs, Number& rhs) { lhs.power(rhs, scale_); });
       break;
     case Instruction::Opcode::multiply:
-      execute_multiply(instructions, i);
+      execute_bin_op(instructions, i,
+                     [this](Number& lhs, Number& rhs) { lhs.multiply(rhs, scale_); });
       break;
     case Instruction::Opcode::divide:
-      execute_divide(instructions, i);
+      execute_bin_op(instructions, i,
+                     [this](Number& lhs, Number& rhs) { lhs.divide(rhs, scale_); });
       break;
     case Instruction::Opcode::modulo:
-      execute_modulo(instructions, i);
-      break;
-    case Instruction::Opcode::scale_expr:
-      execute_scale_expr(instructions, i);
+      execute_bin_op(instructions, i,
+                     [this](Number& lhs, Number& rhs) { lhs.modulo(rhs, scale_); });
       break;
     case Instruction::Opcode::sqrt:
-      execute_sqrt(instructions, i);
+      execute_unary_op(instructions, i, [this](Number& lhs) { lhs.sqrt(scale_); });
+      break;
+    case Instruction::Opcode::scale_expr:
+      execute_unary_op(instructions, i, [](Number& lhs) { lhs = Number(lhs.scale()); });
       break;
     case Instruction::Opcode::length:
-      execute_length(instructions, i);
+      execute_unary_op(instructions, i, [](Number& lhs) { lhs = Number(lhs.length()); });
       break;
     case Instruction::Opcode::less_than:
-      execute_less_than(instructions, i);
+      execute_bin_op(instructions, i,
+                     [](Number& lhs, Number& rhs) { lhs = Number(lhs < rhs ? 1 : 0); });
       break;
     case Instruction::Opcode::less_than_equals:
-      execute_less_than_equals(instructions, i);
+      execute_bin_op(instructions, i,
+                     [](Number& lhs, Number& rhs) { lhs = Number(lhs <= rhs ? 1 : 0); });
       break;
     case Instruction::Opcode::equals:
-      execute_equals(instructions, i);
+      execute_bin_op(instructions, i,
+                     [](Number& lhs, Number& rhs) { lhs = Number(lhs == rhs ? 1 : 0); });
       break;
     case Instruction::Opcode::not_equals:
-      execute_not_equals(instructions, i);
+      execute_bin_op(instructions, i,
+                     [](Number& lhs, Number& rhs) { lhs = Number(lhs != rhs ? 1 : 0); });
       break;
     case Instruction::Opcode::branch:
       i = execute_branch(instructions, i) - 1;
@@ -116,13 +134,16 @@ std::pair<GD::Bc::Number, bool> GD::Bc::VM::execute(Instructions& instructions)
       execute_pop_param_mark(instructions, i);
       break;
     case Instruction::Opcode::pop_param:
-      execute_pop_param(instructions, i);
+      execute_nonary(instructions, i, [this]() { return do_pop_param(); });
       break;
     case Instruction::Opcode::pop_param_array:
-      execute_pop_param_array(instructions, i);
+      execute_nonary(instructions, i, [this]() { return do_pop_param_array(); });
       break;
     case Instruction::Opcode::call:
-      execute_call(instructions, i);
+      execute_binary(instructions, i,
+                     [this](Instruction::Operand const& o1, Instruction::Operand const& o2) {
+                       return do_call(std::get<Letter>(o1), std::get<Location>(o2));
+                     });
       break;
     case Instruction::Opcode::return_:
       return std::make_pair(execute_return(instructions, i), true);
@@ -137,57 +158,6 @@ std::pair<GD::Bc::Number, bool> GD::Bc::VM::execute(Instructions& instructions)
   }
 
   return std::make_pair(Number(0), true);
-}
-
-void GD::Bc::VM::execute_string(Instructions& instructions, Index i)
-{
-  assert(instructions.at(i).opcode() == Instruction::Opcode::string);
-  instructions[i].result(std::string_view(std::get<std::string>(instructions[i].op1())));
-}
-
-void GD::Bc::VM::execute_number(Instructions& instructions, Index i)
-{
-  assert(instructions.at(i).opcode() == Instruction::Opcode::number);
-  instructions[i].result(Number(std::get<std::string>(instructions[i].op1()), ibase_));
-}
-
-void GD::Bc::VM::execute_variable(Instructions& instructions, Index i)
-{
-  assert(instructions.at(i).opcode() == Instruction::Opcode::variable);
-  instructions[i].result(std::get<Variable>(instructions[i].op1()));
-}
-
-void GD::Bc::VM::execute_array(Instructions& instructions, Index i)
-{
-  assert(instructions.at(i).opcode() == Instruction::Opcode::array);
-  instructions[i].result(std::get<Array>(instructions[i].op1()));
-}
-
-void GD::Bc::VM::execute_array_element(Instructions& instructions, Index i)
-{
-  assert(instructions.at(i).opcode() == Instruction::Opcode::array_element);
-  Index elt_expr = std::get<Offset>(instructions[i].op2()) + i;
-  assert(elt_expr < instructions.size());
-  Number elt = std::get<Number>(instructions[elt_expr].result());
-  instructions[i].result(ArrayElement(std::get<Array>(instructions[i].op1()), elt.to_unsigned()));
-}
-
-void GD::Bc::VM::execute_scale(Instructions& instructions, Index i)
-{
-  assert(instructions.at(i).opcode() == Instruction::Opcode::scale);
-  instructions[i].result(Scale());
-}
-
-void GD::Bc::VM::execute_ibase(Instructions& instructions, Index i)
-{
-  assert(instructions.at(i).opcode() == Instruction::Opcode::ibase);
-  instructions[i].result(Ibase());
-}
-
-void GD::Bc::VM::execute_obase(Instructions& instructions, Index i)
-{
-  assert(instructions.at(i).opcode() == Instruction::Opcode::obase);
-  instructions[i].result(Obase());
 }
 
 void GD::Bc::VM::execute_print(Instructions& instructions, Index i)
@@ -271,122 +241,6 @@ void GD::Bc::VM::execute_store(Instructions& instructions, Index i)
              instructions[to].result());
 }
 
-void GD::Bc::VM::execute_negate(Instructions& instructions, Index i)
-{
-  assert(instructions.at(i).opcode() == Instruction::Opcode::negate);
-  Number n = get_op1_expr(instructions, i);
-  n.negate();
-  instructions[i].result(n);
-}
-
-void GD::Bc::VM::execute_add(Instructions& instructions, Index i)
-{
-  assert(instructions.at(i).opcode() == Instruction::Opcode::add);
-  Number lhs = get_op1_expr(instructions, i);
-  Number rhs = get_op2_expr(instructions, i);
-  lhs.add(rhs);
-  instructions[i].result(lhs);
-}
-
-void GD::Bc::VM::execute_sub(Instructions& instructions, Index i)
-{
-  assert(instructions.at(i).opcode() == Instruction::Opcode::subtract);
-  Number lhs = get_op1_expr(instructions, i);
-  Number rhs = get_op2_expr(instructions, i);
-  lhs.sub(rhs);
-  instructions[i].result(lhs);
-}
-
-void GD::Bc::VM::execute_power(Instructions& instructions, Index i)
-{
-  assert(instructions.at(i).opcode() == Instruction::Opcode::power);
-  Number lhs = get_op1_expr(instructions, i);
-  Number rhs = get_op2_expr(instructions, i);
-  lhs.power(rhs, scale_);
-  instructions[i].result(lhs);
-}
-
-void GD::Bc::VM::execute_multiply(Instructions& instructions, Index i)
-{
-  assert(instructions.at(i).opcode() == Instruction::Opcode::multiply);
-  Number lhs = get_op1_expr(instructions, i);
-  Number rhs = get_op2_expr(instructions, i);
-  lhs.multiply(rhs, scale_);
-  instructions[i].result(lhs);
-}
-
-void GD::Bc::VM::execute_divide(Instructions& instructions, Index i)
-{
-  assert(instructions.at(i).opcode() == Instruction::Opcode::divide);
-  Number lhs = get_op1_expr(instructions, i);
-  Number rhs = get_op2_expr(instructions, i);
-  lhs.divide(rhs, scale_);
-  instructions[i].result(lhs);
-}
-
-void GD::Bc::VM::execute_modulo(Instructions& instructions, Index i)
-{
-  assert(instructions.at(i).opcode() == Instruction::Opcode::modulo);
-  Number lhs = get_op1_expr(instructions, i);
-  Number rhs = get_op2_expr(instructions, i);
-  lhs.modulo(rhs, scale_);
-  instructions[i].result(lhs);
-}
-
-void GD::Bc::VM::execute_sqrt(Instructions& instructions, Index i)
-{
-  assert(instructions.at(i).opcode() == Instruction::Opcode::sqrt);
-  Number expr = get_op1_expr(instructions, i);
-  expr.sqrt(scale_);
-  instructions[i].result(expr);
-}
-
-void GD::Bc::VM::execute_scale_expr(Instructions& instructions, Index i)
-{
-  assert(instructions.at(i).opcode() == Instruction::Opcode::scale_expr);
-  Number expr = get_op1_expr(instructions, i);
-  instructions[i].result(Number{expr.scale()});
-}
-
-void GD::Bc::VM::execute_length(Instructions& instructions, Index i)
-{
-  assert(instructions.at(i).opcode() == Instruction::Opcode::length);
-  Number expr = get_op1_expr(instructions, i);
-  instructions[i].result(Number{expr.length()});
-}
-
-void GD::Bc::VM::execute_less_than(Instructions& instructions, Index i)
-{
-  assert(instructions.at(i).opcode() == Instruction::Opcode::less_than);
-  Number lhs = get_op1_expr(instructions, i);
-  Number rhs = get_op2_expr(instructions, i);
-  instructions[i].result(Number(lhs < rhs ? 1 : 0));
-}
-
-void GD::Bc::VM::execute_less_than_equals(Instructions& instructions, Index i)
-{
-  assert(instructions.at(i).opcode() == Instruction::Opcode::less_than_equals);
-  Number lhs = get_op1_expr(instructions, i);
-  Number rhs = get_op2_expr(instructions, i);
-  instructions[i].result(Number(lhs <= rhs ? 1 : 0));
-}
-
-void GD::Bc::VM::execute_equals(Instructions& instructions, Index i)
-{
-  assert(instructions.at(i).opcode() == Instruction::Opcode::equals);
-  Number lhs = get_op1_expr(instructions, i);
-  Number rhs = get_op2_expr(instructions, i);
-  instructions[i].result(Number(lhs == rhs ? 1 : 0));
-}
-
-void GD::Bc::VM::execute_not_equals(Instructions& instructions, Index i)
-{
-  assert(instructions.at(i).opcode() == Instruction::Opcode::not_equals);
-  Number lhs = get_op1_expr(instructions, i);
-  Number rhs = get_op2_expr(instructions, i);
-  instructions[i].result(Number(lhs != rhs ? 1 : 0));
-}
-
 GD::Bc::VM::Index GD::Bc::VM::execute_branch(Instructions& instructions, Index i)
 {
   assert(instructions.at(i).opcode() == Instruction::Opcode::branch);
@@ -457,30 +311,26 @@ void GD::Bc::VM::execute_pop_param_mark([[maybe_unused]] Instructions& instructi
   param_stack_.pop_back();
 }
 
-void GD::Bc::VM::execute_pop_param(Instructions& instructions, Index i)
+GD::Bc::Number GD::Bc::VM::do_pop_param()
 {
-  assert(instructions.at(i).opcode() == Instruction::Opcode::pop_param);
   assert(!param_stack_.empty());
   assert(!param_stack_.back().empty());
-  instructions[i].result(std::get<Number>(param_stack_.back().front()));
+  auto result(std::get<Number>(param_stack_.back().front()));
   param_stack_.back().pop_front();
+  return result;
 }
 
-void GD::Bc::VM::execute_pop_param_array(Instructions& instructions, Index i)
+GD::Bc::ArrayValues GD::Bc::VM::do_pop_param_array()
 {
-  assert(instructions.at(i).opcode() == Instruction::Opcode::pop_param_array);
   assert(!param_stack_.empty());
   assert(!param_stack_.back().empty());
-  instructions[i].result(std::get<ArrayValues>(param_stack_.back().front()));
+  auto result(std::get<ArrayValues>(param_stack_.back().front()));
   param_stack_.back().pop_front();
+  return result;
 }
 
-void GD::Bc::VM::execute_call(Instructions& instructions, Index i)
+GD::Bc::Number GD::Bc::VM::do_call(Letter func, Location const& loc)
 {
-  assert(instructions.at(i).opcode() == Instruction::Opcode::call);
-  Letter func = std::get<Letter>(instructions[i].op1());
-  Location loc = std::get<Location>(instructions[i].op2());
-
   if (!functions_[static_cast<unsigned>(func)].has_value()) {
     Details::error(Msg::function_not_defined, func, loc.file_name(), loc.line(), loc.column());
   }
@@ -513,7 +363,7 @@ void GD::Bc::VM::execute_call(Instructions& instructions, Index i)
    */
   std::for_each(func_instructions.begin(), func_instructions.end(),
                 [](Instruction& i) { i.clear_result(); });
-  instructions[i].result(result);
+  return result;
 }
 
 GD::Bc::Number GD::Bc::VM::execute_return(Instructions& instructions, Index i)
@@ -561,16 +411,22 @@ GD::Bc::Number GD::Bc::VM::get(ArrayElement const& ae) const
   return it->second;
 }
 
+GD::Bc::Number GD::Bc::VM::get_op_expr(Instructions const& instructions, Index i,
+                                       Instruction::Operand const& op)
+{
+  auto offset = std::get<Offset>(op);
+  assert(offset <= i);
+  assert(offset < instructions.size() - i);
+  Index expr_idx = i + offset;
+  return std::get<Number>(instructions[expr_idx].result());
+}
+
 GD::Bc::Number GD::Bc::VM::get_op1_expr(Instructions& instructions, Index i)
 {
-  Index expr_idx = std::get<Offset>(instructions[i].op1()) + i;
-  assert(expr_idx < instructions.size());
-  return std::get<Number>(instructions[expr_idx].result());
+  return get_op_expr(instructions, i, instructions[i].op1());
 }
 
 GD::Bc::Number GD::Bc::VM::get_op2_expr(Instructions& instructions, Index i)
 {
-  Index expr_idx = std::get<Offset>(instructions[i].op2()) + i;
-  assert(expr_idx < instructions.size());
-  return std::get<Number>(instructions[expr_idx].result());
+  return get_op_expr(instructions, i, instructions[i].op2());
 }

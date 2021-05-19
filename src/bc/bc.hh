@@ -1200,43 +1200,57 @@ private:
   using NumType = Number::NumType;
   using FunctionDefinition = std::tuple<Instructions, VariableMask, Location>;
 
-  void execute_string(Instructions& instructions, Index i);
-  void execute_number(Instructions& instructions, Index i);
-  void execute_variable(Instructions& instructions, Index i);
-  void execute_array(Instructions& instructions, Index i);
-  void execute_array_element(Instructions& instructions, Index i);
-  void execute_ibase(Instructions& instructions, Index i);
-  void execute_obase(Instructions& instructions, Index i);
-  void execute_scale(Instructions& instructions, Index i);
   void execute_print(Instructions& instructions, Index i);
   void execute_quit(Instructions& instructions, Index i);
   void execute_load(Instructions& instructions, Index i);
   void execute_store(Instructions& instructions, Index i);
-  void execute_negate(Instructions& instructions, Index i);
-  void execute_add(Instructions& instructions, Index i);
-  void execute_sub(Instructions& instructions, Index i);
-  void execute_multiply(Instructions& instructions, Index i);
-  void execute_divide(Instructions& instructions, Index i);
-  void execute_modulo(Instructions& instructions, Index i);
-  void execute_power(Instructions& instructions, Index i);
-  void execute_sqrt(Instructions& instructions, Index i);
-  void execute_scale_expr(Instructions& instructions, Index i);
-  void execute_length(Instructions& instructions, Index i);
-  void execute_less_than(Instructions& instructions, Index i);
-  void execute_less_than_equals(Instructions& instructions, Index i);
-  void execute_equals(Instructions& instructions, Index i);
-  void execute_not_equals(Instructions& instructions, Index i);
   Index execute_branch(Instructions& instructions, Index i);
   Index execute_branch_zero(Instructions& instructions, Index i);
   Index execute_function_begin(Instructions& instructions, Index i);
-  void execute_call(Instructions& instructions, Index i);
+  Number do_call(Letter func, Location const& loc);
   Number execute_return(Instructions& instructions, Index i);
   void execute_push_param_mark(Instructions& instructions, Index i);
   void execute_push_param(Instructions& instructions, Index i);
   void execute_pop_param_mark(Instructions& instructions, Index i);
-  void execute_pop_param(Instructions& instructions, Index i);
-  void execute_pop_param_array(Instructions& instructions, Index i);
+  Number do_pop_param();
+  ArrayValues do_pop_param_array();
 
+  template<typename Fn>
+  void execute_nonary(Instructions& instructions, Index i, Fn f)
+  {
+    instructions[i].result(f());
+  }
+
+  template<typename Fn>
+  void execute_unary(Instructions& instructions, Index i, Fn f)
+  {
+    instructions[i].result(f(instructions[i].op1()));
+  }
+
+  template<typename Fn>
+  void execute_binary(Instructions& instructions, Index i, Fn f)
+  {
+    instructions[i].result(f(instructions[i].op1(), instructions[i].op2()));
+  }
+
+  template<typename Fn>
+  void execute_bin_op(Instructions& instructions, Index i, Fn f)
+  {
+    Number lhs = get_op1_expr(instructions, i);
+    Number rhs = get_op2_expr(instructions, i);
+    f(lhs, rhs);
+    instructions[i].result(lhs);
+  }
+
+  template<typename Fn>
+  void execute_unary_op(Instructions& instructions, Index i, Fn f)
+  {
+    Number lhs = get_op1_expr(instructions, i);
+    f(lhs);
+    instructions[i].result(lhs);
+  }
+
+  Number get_op_expr(Instructions const& instructions, Index i, Instruction::Operand const& op);
   Number get_op1_expr(Instructions& instructions, Index i);
   Number get_op2_expr(Instructions& instructions, Index i);
 
