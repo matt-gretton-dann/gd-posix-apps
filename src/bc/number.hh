@@ -7,6 +7,7 @@
 #ifndef _SRC_INCLUDE_UTIL_NUMBER_HH_INCLUDED
 #define _SRC_INCLUDE_UTIL_NUMBER_HH_INCLUDED
 
+#include "gd/format.hh"
 #include "gd/string.h"
 
 #include <iomanip>
@@ -156,8 +157,17 @@ public:
     return result;
   }
 
-  /** \brief  Get the number as the unsigned value.  Errors if out of range or not an integer.
-   *  \param scale Scale to treat the number as having.
+  static constexpr NumType to_unsigned_error_too_large_ = base_;  /// Error code for to_unsigned()
+  static constexpr NumType to_unsigned_error_fractional_ =
+    base_ + 1;  /// Error code for to_unsigned()
+
+  /** \brief        Get the number as the unsigned value.  Errors if out of range or not an integer.
+   *  \param  scale Scale to treat the number as having.
+   *  \return       Value or an error code.
+   *
+   * Error codes are:
+   *  * to_unsigned_error_too_large_: Number too large to fit in unisgned type.
+   *  * to_unsigned_error_fractional_: Number had a fractional component.
    */
   NumType to_unsigned(NumType scale) const
   {
@@ -171,7 +181,7 @@ public:
         return 0;
       }
       if (*it != 0) {
-        error(Msg::number_to_unsigned_failed_fractional, "<NUMBER>");
+        return to_unsigned_error_fractional_;
       }
       ++it;
       scale -= base_log10_;
@@ -194,7 +204,7 @@ public:
     result += t2 * (base_ / pow10_scale);
     temp -= t2;
     if (temp > std::numeric_limits<NumType>::max() / pow10_scale) {
-      error(Msg::number_to_unsigned_failed_too_large, "<NUMBER>");
+      return to_unsigned_error_too_large_;
     }
 
     ++it;
@@ -202,7 +212,7 @@ public:
       return result;
     }
 
-    error(Msg::number_to_unsigned_failed_too_large, "<NUMBER>");
+    return to_unsigned_error_too_large_;
   }
 
   /** \brief       Output to stream
@@ -1052,6 +1062,14 @@ private:
  *
  * `digits_` is stored as a shared pointer so that we don't need to keep duplicating it when
  * we're not going to change the values.
+ *
+ * \brief Printing
+ *
+ * There is basic fmt::format support implemented, along with stream output.
+ *
+ * The format specifier has the following options:
+ *
+ *  {:d} - output in debug mode.
  */
 template<typename Traits>
 class BasicNumber
@@ -1164,10 +1182,17 @@ public:
   NumType to_unsigned() const
   {
     if (sign_ == Sign::negative) {
-      Details::error(Msg::number_to_unsigned_failed_negative, "<NUMBER>");
-      return 0;
+      Details::error(Msg::number_to_unsigned_failed_negative, *this);
     }
-    return digits_.to_unsigned(scale_);
+    NumType result = digits_.to_unsigned(scale_);
+    if (result == digits_.to_unsigned_error_too_large_) {
+      Details::error(Msg::number_to_unsigned_failed_too_large, *this);
+    }
+    if (result == digits_.to_unsigned_error_fractional_) {
+      Details::error(Msg::number_to_unsigned_failed_fractional, *this);
+    }
+
+    return result;
   }
 
   void output(std::ostream& os, NumType obase) const
@@ -1576,5 +1601,43 @@ bool operator<=(BasicNumber<Traits> const& lhs, BasicNumber<Traits> const& rhs)
 using Number = BasicNumber<NumberTraits32>;
 
 }  // namespace GD::Bc
+
+template<typename NumberTraits>
+struct fmt::formatter<GD::Bc::BasicNumber<NumberTraits>>
+{
+  using Number = GD::Bc::BasicNumber<NumberTraits>;
+
+  constexpr auto parse(format_parse_context& ctx)
+  {
+    for (auto it = ctx.begin(); it != ctx.end(); ++it) {
+      switch (*it) {
+      case 'd':
+        debug_ = true;
+        break;
+      case '}':
+        return it;
+      default:
+        throw format_error("invalid format");
+      }
+    }
+
+    throw format_error("invalid_format - not terminated");
+  }
+
+  template<typename FormatContext>
+  auto format(Number const& number, FormatContext& ctx)
+  {
+    std::ostringstream os;
+    if (debug_) {
+      number.debug(os);
+    }
+    else {
+      number.output(os, 10);
+    }
+    return format_to(ctx.out(), "{0}", os.str());
+  }
+
+  bool debug_ = false;
+};
 
 #endif  // _SRC_INCLUDE_UTIL_NUMBER_HH_INCLUDED

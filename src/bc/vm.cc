@@ -70,25 +70,26 @@ std::pair<GD::Bc::Number, bool> GD::Bc::VM::execute(Instructions& instructions)
       execute_unary_op(instructions, i, [](Number& lhs) { lhs.negate(); });
       break;
     case Instruction::Opcode::add:
-      execute_bin_op(instructions, i, [](Number& lhs, Number& rhs) { lhs.add(rhs); });
+      execute_binary_op(instructions, i, [](Number& lhs, Number const& rhs) { lhs.add(rhs); });
       break;
     case Instruction::Opcode::subtract:
-      execute_bin_op(instructions, i, [](Number& lhs, Number& rhs) { lhs.sub(rhs); });
+      execute_binary_op(instructions, i, [](Number& lhs, Number const& rhs) { lhs.sub(rhs); });
       break;
     case Instruction::Opcode::power:
-      execute_bin_op(instructions, i, [this](Number& lhs, Number& rhs) { lhs.power(rhs, scale_); });
+      execute_binary_op(instructions, i,
+                        [this](Number& lhs, Number const& rhs) { lhs.power(rhs, scale_); });
       break;
     case Instruction::Opcode::multiply:
-      execute_bin_op(instructions, i,
-                     [this](Number& lhs, Number& rhs) { lhs.multiply(rhs, scale_); });
+      execute_binary_op(instructions, i,
+                        [this](Number& lhs, Number const& rhs) { lhs.multiply(rhs, scale_); });
       break;
     case Instruction::Opcode::divide:
-      execute_bin_op(instructions, i,
-                     [this](Number& lhs, Number& rhs) { lhs.divide(rhs, scale_); });
+      execute_binary_op(instructions, i,
+                        [this](Number& lhs, Number const& rhs) { lhs.divide(rhs, scale_); });
       break;
     case Instruction::Opcode::modulo:
-      execute_bin_op(instructions, i,
-                     [this](Number& lhs, Number& rhs) { lhs.modulo(rhs, scale_); });
+      execute_binary_op(instructions, i,
+                        [this](Number& lhs, Number const& rhs) { lhs.modulo(rhs, scale_); });
       break;
     case Instruction::Opcode::sqrt:
       execute_unary_op(instructions, i, [this](Number& lhs) { lhs.sqrt(scale_); });
@@ -100,20 +101,20 @@ std::pair<GD::Bc::Number, bool> GD::Bc::VM::execute(Instructions& instructions)
       execute_unary_op(instructions, i, [](Number& lhs) { lhs = Number(lhs.length()); });
       break;
     case Instruction::Opcode::less_than:
-      execute_bin_op(instructions, i,
-                     [](Number& lhs, Number& rhs) { lhs = Number(lhs < rhs ? 1 : 0); });
+      execute_binary_op(instructions, i,
+                        [](Number& lhs, Number const& rhs) { lhs = Number(lhs < rhs ? 1 : 0); });
       break;
     case Instruction::Opcode::less_than_equals:
-      execute_bin_op(instructions, i,
-                     [](Number& lhs, Number& rhs) { lhs = Number(lhs <= rhs ? 1 : 0); });
+      execute_binary_op(instructions, i,
+                        [](Number& lhs, Number const& rhs) { lhs = Number(lhs <= rhs ? 1 : 0); });
       break;
     case Instruction::Opcode::equals:
-      execute_bin_op(instructions, i,
-                     [](Number& lhs, Number& rhs) { lhs = Number(lhs == rhs ? 1 : 0); });
+      execute_binary_op(instructions, i,
+                        [](Number& lhs, Number const& rhs) { lhs = Number(lhs == rhs ? 1 : 0); });
       break;
     case Instruction::Opcode::not_equals:
-      execute_bin_op(instructions, i,
-                     [](Number& lhs, Number& rhs) { lhs = Number(lhs != rhs ? 1 : 0); });
+      execute_binary_op(instructions, i,
+                        [](Number& lhs, Number const& rhs) { lhs = Number(lhs != rhs ? 1 : 0); });
       break;
     case Instruction::Opcode::branch:
       i = execute_branch(instructions, i) - 1;
@@ -411,8 +412,8 @@ GD::Bc::Number GD::Bc::VM::get(ArrayElement const& ae) const
   return it->second;
 }
 
-GD::Bc::Number GD::Bc::VM::get_op_expr(Instructions const& instructions, Index i,
-                                       Instruction::Operand const& op)
+GD::Bc::Number const& GD::Bc::VM::get_op_expr(Instructions const& instructions, Index i,
+                                              Instruction::Operand const& op) const
 {
   auto offset = std::get<Offset>(op);
   assert(offset <= i);
@@ -421,12 +422,12 @@ GD::Bc::Number GD::Bc::VM::get_op_expr(Instructions const& instructions, Index i
   return std::get<Number>(instructions[expr_idx].result());
 }
 
-GD::Bc::Number GD::Bc::VM::get_op1_expr(Instructions& instructions, Index i)
+GD::Bc::Number const& GD::Bc::VM::get_op1_expr(Instructions& instructions, Index i) const
 {
   return get_op_expr(instructions, i, instructions[i].op1());
 }
 
-GD::Bc::Number GD::Bc::VM::get_op2_expr(Instructions& instructions, Index i)
+GD::Bc::Number const& GD::Bc::VM::get_op2_expr(Instructions& instructions, Index i) const
 {
   return get_op_expr(instructions, i, instructions[i].op2());
 }

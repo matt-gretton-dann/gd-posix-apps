@@ -1192,86 +1192,180 @@ public:
   std::pair<Number, bool> execute(Instructions& instructions);
 
 private:
-  using Param = std::variant<ArrayValues, Number>;
-  using Params = std::list<Param>;
-  using ParamStack = std::list<Params>;
-  using Index = Instruction::Index;
-  using Offset = Instruction::Offset;
-  using NumType = Number::NumType;
-  using FunctionDefinition = std::tuple<Instructions, VariableMask, Location>;
+  using Param = std::variant<ArrayValues, Number>;  ///< Parameter to a function
+  using Params = std::list<Param>;                  ///< List of parameters
+  using ParamStack = std::list<Params>;             ///< Stack of current function parameters
+  using Index = Instruction::Index;                 ///< Index into the instructions
+  using Offset = Instruction::Offset;               ///< Offset from current instruction
+  using NumType = Number::NumType;                  ///< Number type
+  using FunctionDefinition =
+    std::tuple<Instructions, VariableMask, Location>;  ///< Function definition.
 
+  /** Execute print instruction.  */
   void execute_print(Instructions& instructions, Index i);
-  void execute_quit(Instructions& instructions, Index i);
-  void execute_load(Instructions& instructions, Index i);
-  void execute_store(Instructions& instructions, Index i);
-  Index execute_branch(Instructions& instructions, Index i);
-  Index execute_branch_zero(Instructions& instructions, Index i);
-  Index execute_function_begin(Instructions& instructions, Index i);
-  Number do_call(Letter func, Location const& loc);
-  Number execute_return(Instructions& instructions, Index i);
-  void execute_push_param_mark(Instructions& instructions, Index i);
-  void execute_push_param(Instructions& instructions, Index i);
-  void execute_pop_param_mark(Instructions& instructions, Index i);
-  Number do_pop_param();
-  ArrayValues do_pop_param_array();
 
+  /** Execute quit instruction.  */
+  void execute_quit(Instructions& instructions, Index i);
+
+  /** Execute load instruction.  */
+  void execute_load(Instructions& instructions, Index i);
+
+  /** Execute store instruction.  */
+  void execute_store(Instructions& instructions, Index i);
+
+  /** Execute branch instruction.  Returns index of next instruction to execute.  */
+  Index execute_branch(Instructions& instructions, Index i);
+
+  /** Execute branch_zero instruction.  Returns index of next instruction to execute.  */
+  Index execute_branch_zero(Instructions& instructions, Index i);
+
+  /** Execute function_begin instruction.  Returns index of next instruction to execute.  */
+  Index execute_function_begin(Instructions& instructions, Index i);
+
+  /** Execute the return instruction. Returns value to return.  */
+  Number execute_return(Instructions& instructions, Index i);
+
+  /** Execute push_param_mark instruction.  */
+  void execute_push_param_mark(Instructions& instructions, Index i);
+
+  /** Execute push_param instruction.  */
+  void execute_push_param(Instructions& instructions, Index i);
+
+  /** Execute pop_param_mark instruction.  */
+  void execute_pop_param_mark(Instructions& instructions, Index i);
+
+  /** \brief              Execute an instruction with no operands, but which sets a result.
+   *  \param instructions Instruction stream
+   *  \param i            Index of instruction in stream
+   *  \param f            Function to call to do the execution
+   *
+   * \a f should take no parameters and return a value castable to Result.
+   */
   template<typename Fn>
   void execute_nonary(Instructions& instructions, Index i, Fn f)
   {
     instructions[i].result(f());
   }
 
+  /** \brief              Execute an instruction with one operand, and which sets a result.
+   *  \param instructions Instruction stream
+   *  \param i            Index of instruction in stream
+   *  \param f            Function to call to do the execution
+   *
+   * \a f should take one Operand parameter and return a value castable to Result.
+   *
+   * If both the operand is an Offset to an expression result and the result is a Number then
+   * use `execute_unary_op()` instead.
+   */
   template<typename Fn>
   void execute_unary(Instructions& instructions, Index i, Fn f)
   {
     instructions[i].result(f(instructions[i].op1()));
   }
 
+  /** \brief              Execute an instruction with two operands, and which sets a result.
+   *  \param instructions Instruction stream
+   *  \param i            Index of instruction in stream
+   *  \param f            Function to call to do the execution
+   *
+   * \a f should have a signature like `Result f(Operand const& op1, Operand const& op2)`
+   *
+   * If both of the operands is an Offset to an expression result and the result is a Number then
+   * use `execute_binary_op()` instead.
+   */
   template<typename Fn>
   void execute_binary(Instructions& instructions, Index i, Fn f)
   {
     instructions[i].result(f(instructions[i].op1(), instructions[i].op2()));
   }
 
-  template<typename Fn>
-  void execute_bin_op(Instructions& instructions, Index i, Fn f)
-  {
-    Number lhs = get_op1_expr(instructions, i);
-    Number rhs = get_op2_expr(instructions, i);
-    f(lhs, rhs);
-    instructions[i].result(lhs);
-  }
-
+  /** \brief              Execute an instruction with one expression operand, and has a Number
+   *                      result.
+   *  \param instructions Instruction stream
+   *  \param i            Index of instruction in stream
+   *  \param f            Function to call to do the execution
+   *
+   * \a f should have a signature like `void f(Number& op)`.  It should update op with the result.
+   */
   template<typename Fn>
   void execute_unary_op(Instructions& instructions, Index i, Fn f)
   {
     Number lhs = get_op1_expr(instructions, i);
     f(lhs);
-    instructions[i].result(lhs);
+    instructions[i].result(std::move(lhs));
   }
 
-  Number get_op_expr(Instructions const& instructions, Index i, Instruction::Operand const& op);
-  Number get_op1_expr(Instructions& instructions, Index i);
-  Number get_op2_expr(Instructions& instructions, Index i);
+  /** \brief              Execute an instruction with two expression operands, and has a Number
+   *                      result.
+   *  \param instructions Instruction stream
+   *  \param i            Index of instruction in stream
+   *  \param f            Function to call to do the execution
+   *
+   * \a f should have a signature like `void f(Number& op1, Number const& op2)`.  It should update
+   * op1 with the result.
+   */
+  template<typename Fn>
+  void execute_binary_op(Instructions& instructions, Index i, Fn f)
+  {
+    Number lhs = get_op1_expr(instructions, i);
+    Number const& rhs = get_op2_expr(instructions, i);
+    f(lhs, rhs);
+    instructions[i].result(std::move(lhs));
+  }
 
+  /** \brief       Do a call
+   *  \param  func Function to call.
+   *  \param  loc  Location of call.
+   *  \return      Result of call.
+   */
+  Number do_call(Letter func, Location const& loc);
+
+  /** \brief  Pop a scalar param.
+   *  \return Value of parameter
+   */
+  Number do_pop_param();
+
+  /** \brief  Pop a scalar param.
+   *  \return Value of parameter
+   */
+  ArrayValues do_pop_param_array();
+
+  /** \brief  Get the value pointed to by op.  */
+  Number const& get_op_expr(Instructions const& instructions, Index i,
+                            Instruction::Operand const& op) const;
+
+  /** \brief Get the value pointed to by op1.  */
+  Number const& get_op1_expr(Instructions& instructions, Index i) const;
+
+  /** \brief Get the value pointed to by op2.  */
+  Number const& get_op2_expr(Instructions& instructions, Index i) const;
+
+  /** \brief  Set the input base.  */
   void set_ibase(Number num);
+
+  /** \brief  Set the output base.  */
   void set_obase(Number num);
+
+  /** \brief  Set the scale.  */
   void set_scale(Number num);
 
+  /** \brief  Get the number stored in the array element ae.  */
   Number get(ArrayElement const& ae) const;
+
+  /** \brief  Store a number in an array eleemnt.  */
   void set(ArrayElement const& ae, Number num);
 
-  std::ostream& stdout_;
-  std::ostream& stderr_;
-  std::array<ArrayValues, Letter::count_> arrays_;
-  std::array<std::optional<FunctionDefinition>, Letter::count_> functions_;
-  std::array<Number, Letter::count_> variables_;
-  ParamStack param_stack_;  ///< Stack of parameters
-  ParamStack local_stack_;  ///< Stack of locals.
-
-  NumType ibase_ = 10;
-  NumType obase_ = 10;
-  NumType scale_ = 0;
+  std::ostream& stdout_;                            ///< Stream for "normal output."
+  std::ostream& stderr_;                            ///< Stream for error output.
+  std::array<ArrayValues, Letter::count_> arrays_;  ///< Array of arrays, indexed by Letter.
+  std::array<std::optional<FunctionDefinition>, Letter::count_>
+    functions_;  ///< Array of (optional) functions, indexed by letter.
+  std::array<Number, Letter::count_> variables_;  ///< Array of scalar variables, indexed by Letter.
+  ParamStack param_stack_;                        ///< Stack of parameters
+  ParamStack local_stack_;                        ///< Stack of locals.
+  NumType ibase_ = 10;                            ///< Input base, range [2, 16]
+  NumType obase_ = 10;                            ///< Output base, range: [2, base_)
+  NumType scale_ = 0;                             ///< Scale, range: [0, base_)
 };
 }  // namespace GD::Bc
 
