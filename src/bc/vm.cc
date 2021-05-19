@@ -423,8 +423,9 @@ GD::Bc::Number const& GD::Bc::VM::get_op_expr(Instructions const& instructions, 
                                               Instruction::Operand const& op) const
 {
   auto offset = std::get<Offset>(op);
-  assert(offset <= i);
-  assert(offset < instructions.size() - i);
+  /* Check that the offset will be in range. */
+  assert(offset >= 0 || static_cast<Index>(-offset) <= i);
+  assert(offset < 0 || static_cast<Index>(offset) < instructions.size() - i);
   Index expr_idx = i + offset;
   return std::get<Number>(instructions[expr_idx].result());
 }
