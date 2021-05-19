@@ -1621,7 +1621,11 @@ struct fmt::formatter<GD::Bc::BasicNumber<NumberTraits>>
       }
     }
 
-    throw format_error("invalid_format - not terminated");
+    if (ctx.begin() != ctx.end()) {
+      throw format_error("invalid_format - not terminated");
+    }
+
+    return ctx.begin();
   }
 
   template<typename FormatContext>
