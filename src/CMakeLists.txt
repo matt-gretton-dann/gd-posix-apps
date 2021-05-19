@@ -54,6 +54,9 @@ function(add_utility)
     target_include_directories("${_au_NAME}" PRIVATE "${CMAKE_SOURCE_DIR}/src/include")
     target_add_clang_format("${_au_NAME}")
     set_warnings("${_au_NAME}")
+    if (ENABLE_IPO)
+      set_property(TARGET "${_au_NAME}" PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+    endif()
 
     if(DEFINED _au_CAT_ID)
       # Done after the call to target_add_clang_format so that we don't try to format
