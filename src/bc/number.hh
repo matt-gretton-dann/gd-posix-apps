@@ -12,6 +12,7 @@
 
 #include <iomanip>
 #include <iterator>
+#include <limits>
 #include <memory>
 #include <ostream>
 #include <sstream>
@@ -22,44 +23,9 @@
 
 namespace GD::Bc {
 
-/** \brief  Traits for BasicNumber when uint32_t is a good storage format.  Usual for P64 machines.
- */
-struct NumberTraits32
-{
-  using NumType = ::uint32_t;
-  using WideType = ::uint64_t;
-  using PrintType = NumType;
-  static constexpr WideType base_ = 1000000000U;
-  static constexpr unsigned base_log10_ = 9;
-};
-
-/** \brief  Traits for BasicNumber when uint16_t is a good storage format.  Usual for P32 machines.
- */
-struct NumberTraits16
-{
-  using NumType = ::uint16_t;
-  using WideType = ::uint32_t;
-  using PrintType = NumType;
-  static constexpr WideType base_ = 10000U;
-  static constexpr unsigned base_log10_ = 4;
-};
-
-/** \brief  Traits for BasicNumber when uint8_t is a good storage format.  Usual for testing.
- */
-struct NumberTraits8
-{
-  using NumType = ::uint8_t;
-  using WideType = ::uint16_t;
-  using PrintType = unsigned;
-  static constexpr WideType base_ = 100U;
-  static constexpr unsigned base_log10_ = 2;
-};
-
-namespace Details {
-
 /** \brief  calculate 10 ^ \a pow. */
 template<typename NumType>
-NumType pow10(NumType pow)
+constexpr NumType pow10(NumType pow)
 {
   NumType r = 1;
   while (pow-- > 0) {
@@ -67,6 +33,40 @@ NumType pow10(NumType pow)
   }
   return r;
 }
+
+/** \brief       NumberTraits base class
+ *  \tparam NT   Number type.
+ *  \tparam WT   Wide type - should be twice the size of NT.
+ *  \tparam bl10 Number of base10 digits to use (default: std::numeric_limits<NT>::digits10).
+ *
+ * This provides all the types and constants needed to implement the NumberTraits class as required
+ * by BasicNumber<>.
+ */
+template<typename NT, typename WT, unsigned bl10 = std::numeric_limits<NT>::digits10>
+struct NumberTraitsBase
+{
+  using NumType = NT;
+  using WideType = WT;
+  using PrintType = std::conditional_t<sizeof(NT) == 1, unsigned, NT>;
+  static constexpr WideType base_ = pow10(bl10);
+  static constexpr unsigned base_log10_ = bl10;
+
+  /* Check types are wide enough.  */
+  static_assert(std::numeric_limits<NT>::digits10 >= bl10);
+  /* Wide type should be wide enough to hold twice the number of digits as NT.  */
+  static_assert(std::numeric_limits<WT>::digits10 >= bl10 * 2);
+};
+
+/** Number traits with underlying 32-bit Number type.  */
+using NumberTraits32 = NumberTraitsBase<::uint32_t, ::uint64_t>;
+
+/** Number traits with underlying 32-bit Number type.  */
+using NumberTraits16 = NumberTraitsBase<::uint16_t, ::uint32_t>;
+
+/** Number traits with underlying 32-bit Number type.  */
+using NumberTraits8 = NumberTraitsBase<::uint8_t, ::uint16_t>;
+
+namespace Details {
 
 /** \brief       Report an error and exit with exit code 1.
  *  \param  msg  Message ID
