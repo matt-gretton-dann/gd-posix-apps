@@ -922,11 +922,8 @@ private:
     auto it_lhs = digits_->begin();
 
     while (scale >= base_log10_) {
-      NumType d_lhs = (it_lhs == digits_->end()) ? 0 : *it_lhs;
+      NumType d_lhs = (it_lhs == digits_->end()) ? 0 : *it_lhs++;
       fn(d_lhs, 0);
-      if (it_lhs != digits_->end()) {
-        ++it_lhs;
-      }
       scale -= base_log10_;
     }
 
@@ -937,20 +934,14 @@ private:
       NumType d_rhs = static_cast<NumType>(carry % base_);
       carry /= base_;
 
-      NumType d_lhs = (it_lhs == digits_->end()) ? 0 : *it_lhs;
+      NumType d_lhs = (it_lhs == digits_->end()) ? 0 : *it_lhs++;
       assert(carry < base_);
       fn(d_lhs, d_rhs);
-      if (it_lhs != digits_->end()) {
-        ++it_lhs;
-      }
     }
 
     if (carry != 0) {
-      NumType d_lhs = (it_lhs == digits_->end()) ? 0 : *it_lhs;
+      NumType d_lhs = (it_lhs == digits_->end()) ? 0 : *it_lhs++;
       fn(d_lhs, static_cast<NumType>(carry));
-      if (it_lhs != digits_->end()) {
-        ++it_lhs;
-      }
     }
 
     while (it_lhs != digits_->end()) {
