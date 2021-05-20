@@ -4,11 +4,14 @@
  *  SPDX-License-Identifier: Apache-2.0
  */
 
+#include "gd/bits/defines.h"
+
 #include "bc-messages.hh"
 
 #include <array>
 #include <assert.h>
 #include <ostream>
+#include <signal.h>
 
 #include "bc.hh"
 #include "number.hh"
@@ -289,6 +292,35 @@ private:
 std::ostream& operator<<(std::ostream& os, InstructionPack const& instrs);
 std::ostream& operator<<(std::ostream& os, InstructionPack::Result const& result);
 
+/** Interrupt handler globals */
+bool have_been_interrupted = false;
+
+/** Handle receiving SIGINT.  */
+__EXTERN_C void handle_sigint(int) { have_been_interrupted = true; }
+
+/** Install the signal handler for SIGINT.  */
+void install_interrupt_handler()
+{
+  have_been_interrupted = false;
+  struct sigaction sa;
+  sa.sa_handler = handle_sigint;
+  sigemptyset(&sa.sa_mask);
+  sa.sa_flags = SA_RESTART | SA_RESETHAND; /* Restart functions if interrupted by handler.  */
+  /* We don't care if this fails as users will still be able to ^C out but just with a worse
+   * experience.  */
+  sigaction(SIGINT, &sa, nullptr);
+}
+
+/* Reset the SIGINT signal handler.  */
+void reset_interrupt_handler()
+{
+  struct sigaction sa;
+  sa.sa_handler = SIG_DFL;
+  sigemptyset(&sa.sa_mask);
+  sigaction(SIGINT, &sa, nullptr);
+  // We assume this has worked for usefulness sake.
+}
+
 }  // namespace GD::Bc::Details
 
 GD::Bc::Details::VMState::VMState(std::ostream& out, std::ostream& err) : stdout_(out), stderr_(err)
@@ -469,6 +501,9 @@ GD::Bc::Details::InstructionPack::InstructionPack(VMState* vm, Instructions cons
 std::pair<GD::Bc::Number, bool> GD::Bc::Details::InstructionPack::execute()
 {
   for (; pc_ < instrs_.size(); ++pc_) {
+    if (Details::have_been_interrupted) {
+      return std::make_pair(Number(0), true);
+    }
     auto i = pc_;
     switch (instrs_[pc_].opcode()) {
     case Instruction::Opcode::string:
@@ -884,6 +919,15 @@ bool GD::Bc::VM::execute(Instructions& instructions)
 {
   validate(instructions);
   Details::InstructionPack instrs(state_, instructions);
+  /* We want a way for people to interrupt execution - so install a SIGINT handler
+   * but only whilst executing instructions.
+   */
+  Details::install_interrupt_handler();
   auto result = instrs.execute();
+  Details::reset_interrupt_handler();
+  if (Details::have_been_interrupted) {
+    state_->stream(Instruction::Stream::stderr) << Messages::get().format(Msg::interrupted) << '\n';
+    Details::have_been_interrupted = false;
+  }
   return result.second;
 }

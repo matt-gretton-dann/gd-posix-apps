@@ -320,6 +320,12 @@
         "id": 53,
         "description": "The result value at {0} is the wrong type - it should be {1}.",
         "C": "Result at location {0} is not the correct type (it should be {1})."
+      },
+      {
+        "msg": "interrupted",
+        "id": 54,
+        "description": "Execution was interrupted (by ^C or SIGINT)",
+        "C": "Execution interrupted."
       }
     ]
   }
