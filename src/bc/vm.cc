@@ -13,324 +13,343 @@
 #include "bc.hh"
 #include "number.hh"
 
-GD::Bc::VM::VM(std::ostream& stdout, std::ostream& stderr) : stdout_(stdout), stderr_(stderr) {}
+#define STRINGIFY2(a) #a
+#define STRINGIFY(a) STRINGIFY2(a)
 
-std::pair<GD::Bc::Number, bool> GD::Bc::VM::execute(Instructions& instructions)
-{
-  for (Instruction::Index i = 0; i < instructions.size(); ++i) {
-    switch (instructions[i].opcode()) {
-    case Instruction::Opcode::string:
-      execute_unary(instructions, i, [](Instruction::Operand const& o) {
-        return std::string_view(std::get<std::string>(o));
-      });
-      break;
-    case Instruction::Opcode::number:
-      execute_unary(instructions, i, [this](Instruction::Operand const& o) {
-        return Number(std::get<std::string>(o), ibase_);
-      });
-      break;
-    case Instruction::Opcode::variable:
-      execute_unary(instructions, i,
-                    [this](Instruction::Operand const& o) { return std::get<Variable>(o); });
-      break;
-    case Instruction::Opcode::array:
-      execute_unary(instructions, i,
-                    [this](Instruction::Operand const& o) { return std::get<Array>(o); });
-      break;
-    case Instruction::Opcode::array_element:
-      execute_binary(
-        instructions, i,
-        [this, &instructions, i](Instruction::Operand const& o1, Instruction::Operand const& o2) {
-          Number elt = get_op_expr(instructions, i, o2);
-          return ArrayElement(std::get<Array>(o1), elt.to_unsigned());
-        });
-      break;
-    case Instruction::Opcode::ibase:
-      execute_nonary(instructions, i, []() { return Ibase(); });
-      break;
-    case Instruction::Opcode::obase:
-      execute_nonary(instructions, i, []() { return Obase(); });
-      break;
-    case Instruction::Opcode::scale:
-      execute_nonary(instructions, i, []() { return Scale(); });
-      break;
-    case Instruction::Opcode::print:
-      execute_print(instructions, i);
-      break;
-    case Instruction::Opcode::quit:
-      execute_quit(instructions, i);
-      break;
-    case Instruction::Opcode::load:
-      execute_load(instructions, i);
-      break;
-    case Instruction::Opcode::store:
-      execute_store(instructions, i);
-      break;
-    case Instruction::Opcode::negate:
-      execute_unary_op(instructions, i, [](Number& lhs) { lhs.negate(); });
-      break;
-    case Instruction::Opcode::add:
-      execute_binary_op(instructions, i, [](Number& lhs, Number const& rhs) { lhs.add(rhs); });
-      break;
-    case Instruction::Opcode::subtract:
-      execute_binary_op(instructions, i, [](Number& lhs, Number const& rhs) { lhs.sub(rhs); });
-      break;
-    case Instruction::Opcode::power:
-      execute_binary_op(instructions, i,
-                        [this](Number& lhs, Number const& rhs) { lhs.power(rhs, scale_); });
-      break;
-    case Instruction::Opcode::multiply:
-      execute_binary_op(instructions, i,
-                        [this](Number& lhs, Number const& rhs) { lhs.multiply(rhs, scale_); });
-      break;
-    case Instruction::Opcode::divide:
-      execute_binary_op(instructions, i,
-                        [this](Number& lhs, Number const& rhs) { lhs.divide(rhs, scale_); });
-      break;
-    case Instruction::Opcode::modulo:
-      execute_binary_op(instructions, i,
-                        [this](Number& lhs, Number const& rhs) { lhs.modulo(rhs, scale_); });
-      break;
-    case Instruction::Opcode::sqrt:
-      execute_unary_op(instructions, i, [this](Number& lhs) { lhs.sqrt(scale_); });
-      break;
-    case Instruction::Opcode::scale_expr:
-      execute_unary_op(instructions, i, [](Number& lhs) { lhs = Number(lhs.scale()); });
-      break;
-    case Instruction::Opcode::length:
-      execute_unary_op(instructions, i, [](Number& lhs) { lhs = Number(lhs.length()); });
-      break;
-    case Instruction::Opcode::less_than:
-      execute_binary_op(instructions, i,
-                        [](Number& lhs, Number const& rhs) { lhs = Number(lhs < rhs ? 1 : 0); });
-      break;
-    case Instruction::Opcode::less_than_equals:
-      execute_binary_op(instructions, i,
-                        [](Number& lhs, Number const& rhs) { lhs = Number(lhs <= rhs ? 1 : 0); });
-      break;
-    case Instruction::Opcode::equals:
-      execute_binary_op(instructions, i,
-                        [](Number& lhs, Number const& rhs) { lhs = Number(lhs == rhs ? 1 : 0); });
-      break;
-    case Instruction::Opcode::not_equals:
-      execute_binary_op(instructions, i,
-                        [](Number& lhs, Number const& rhs) { lhs = Number(lhs != rhs ? 1 : 0); });
-      break;
-    case Instruction::Opcode::branch:
-      i = execute_branch(instructions, i) - 1;
-      break;
-    case Instruction::Opcode::branch_zero:
-      i = execute_branch_zero(instructions, i) - 1;
-      break;
-    case Instruction::Opcode::function_begin:
-      i = execute_function_begin(instructions, i) - 1;
-      break;
-    case Instruction::Opcode::push_param_mark:
-      execute_push_param_mark(instructions, i);
-      break;
-    case Instruction::Opcode::push_param:
-      execute_push_param(instructions, i);
-      break;
-    case Instruction::Opcode::pop_param_mark:
-      execute_pop_param_mark(instructions, i);
-      break;
-    case Instruction::Opcode::pop_param:
-      execute_nonary(instructions, i, [this]() { return do_pop_param(); });
-      break;
-    case Instruction::Opcode::pop_param_array:
-      execute_nonary(instructions, i, [this]() { return do_pop_param_array(); });
-      break;
-    case Instruction::Opcode::call:
-      execute_binary(instructions, i,
-                     [this](Instruction::Operand const& o1, Instruction::Operand const& o2) {
-                       return do_call(std::get<Letter>(o1), std::get<Location>(o2));
-                     });
-      break;
-    case Instruction::Opcode::return_:
-      return std::make_pair(execute_return(instructions, i), true);
-    case Instruction::Opcode::eof:
-      assert(i == instructions.size() - 1);
-      return std::make_pair(Number(0), false);
-      break;
-    case Instruction::Opcode::function_end: /* Should never been seen here.  */
-      abort();
-      break;
-    }
+#define assert_error(TEST, MSG, ...)                                                               \
+  if (!(TEST)) {                                                                                   \
+    error(MSG, __func__, __FILE__, __LINE__, STRINGIFY(TEST) __VA_OPT__(, __VA_ARGS__));           \
   }
 
-  return std::make_pair(Number(0), true);
-}
-
-void GD::Bc::VM::execute_print(Instructions& instructions, Index i)
+namespace GD::Bc::Details {
+/** \brief Hold virtual machine state.
+ */
+struct VMState
 {
-  assert(instructions.at(i).opcode() == Instruction::Opcode::print);
-  Index expr = std::get<Offset>(instructions[i].op1()) + i;
-  assert(expr < instructions.size());
-  std::ostream& os =
-    (std::get<Instruction::Stream>(instructions[i].op2()) == Instruction::Stream::stdout) ? stdout_
-                                                                                          : stderr_;
+  /** \brief  Constructor.  */
+  VMState(std::ostream& out, std::ostream& err);
 
-  std::visit(Overloaded{
-               [&os](std::string_view sv) { os << sv << '\n'; },
-               [&os, this](Number n) {
-                 n.output(os, obase_);
-                 os << '\n';
-               },
-               [&os](Variable v) { os << v << '\n'; },
-               [&os](Array a) { os << a << '\n'; },
-               [&os](ArrayElement const& ae) { os << ae.first << '[' << ae.second << "]\n"; },
-               [&os](ArrayValues const&) { os << "<ARRAY VALUES>\n"; },
-               [&os](Ibase) { os << "ibase\n"; },
-               [&os](Obase) { os << "obase\n"; },
-               [&os](Scale) { os << "scale\n"; },
-             },
-             instructions[expr].result());
-}
+  /** \brief  Get the appropriate output stream for \a stream.  */
+  std::ostream& stream(Instruction::Stream stream) const;
 
-void GD::Bc::VM::execute_quit(Instructions& instructions, Index i)
-{
-  assert(instructions.at(i).opcode() == Instruction::Opcode::quit);
-  ::exit(std::get<unsigned>(instructions[i].op1()));
-}
+  /** \brief  Set the input base.  */
+  void ibase(Number num);
 
-void GD::Bc::VM::execute_load(Instructions& instructions, Index i)
-{
-  assert(instructions.at(i).opcode() == Instruction::Opcode::load);
-  Index from_idx = std::get<Offset>(instructions[i].op1()) + i;
-  auto& expr = instructions[i];
+  /** Get the input base.  */
+  Number::NumType ibase() const;
 
-  std::visit(
-    Overloaded{
-      [](std::string_view) { assert(false); },
-      [](Number) { assert(false); },
-      [](ArrayValues const&) { assert(false); },
-      [&expr, this](Variable v) { expr.result(variables_[static_cast<unsigned>(v.get())]); },
-      [&expr, this](Array a) { expr.result(arrays_[static_cast<unsigned>(a.get())]); },
-      [&expr, this](ArrayElement const& ae) { expr.result(get(ae)); },
-      [&expr, this](Ibase) { expr.result(Number(ibase_)); },
-      [&expr, this](Obase) { expr.result(Number(obase_)); },
-      [&expr, this](Scale) { expr.result(Number(scale_)); },
-    },
-    instructions[from_idx].result());
-}
+  /** \brief  Set the output base.  */
+  void obase(Number num);
 
-void GD::Bc::VM::execute_store(Instructions& instructions, Index i)
-{
-  assert(instructions.at(i).opcode() == Instruction::Opcode::store);
-  Index to = std::get<Offset>(instructions[i].op1()) + i;
-  assert(to < instructions.size());
-  Index expr_idx = std::get<Offset>(instructions[i].op2()) + i;
-  assert(expr_idx < instructions.size());
+  /** Get the output base.  */
+  Number::NumType obase() const;
 
-  auto& expr = instructions[expr_idx];
+  /** \brief  Set the scale.  */
+  void scale(Number num);
 
-  std::visit(Overloaded{
-               [](std::string_view) { assert(false); },
-               [](Number) { assert(false); },
-               [](ArrayValues const&) { assert(false); },
-               [expr, this](Variable v) {
-                 variables_[static_cast<unsigned>(v.get())] = std::get<Number>(expr.result());
-               },
-               [expr, this](Array a) {
-                 arrays_[static_cast<unsigned>(a.get())] = std::get<ArrayValues>(expr.result());
-               },
-               [expr, this](ArrayElement const& ae) { set(ae, std::get<Number>(expr.result())); },
-               [expr, this](Ibase) { set_ibase(std::get<Number>(expr.result())); },
-               [expr, this](Obase) { set_obase(std::get<Number>(expr.result())); },
-               [expr, this](Scale) { set_scale(std::get<Number>(expr.result())); },
-             },
-             instructions[to].result());
-}
+  /** Get the scale base.  */
+  Number::NumType scale() const;
 
-GD::Bc::VM::Index GD::Bc::VM::execute_branch(Instructions& instructions, Index i)
-{
-  assert(instructions.at(i).opcode() == Instruction::Opcode::branch);
-  Index dest_idx = std::get<Offset>(instructions[i].op1()) + i;
-  return dest_idx;
-}
+  /** \brief  Get the number stored in the array element ae.  */
+  Number array_element(ArrayElement const& ae) const;
 
-GD::Bc::VM::Index GD::Bc::VM::execute_branch_zero(Instructions& instructions, Index i)
-{
-  assert(instructions.at(i).opcode() == Instruction::Opcode::branch_zero);
-  Number c = get_op1_expr(instructions, i);
-  Index dest_idx = std::get<Offset>(instructions[i].op2()) + i;
-  return c.is_zero() ? dest_idx : i + 1;
-}
+  /** \brief  Store a number in an array eleemnt.  */
+  void array_element(ArrayElement const& ae, Number num);
 
-GD::Bc::VM::Index GD::Bc::VM::execute_function_begin(Instructions& instructions, Index i)
-{
-  assert(instructions.at(i).opcode() == Instruction::Opcode::function_begin);
-  VariableMask mask = std::get<VariableMask>(instructions[i].op1());
-  Location loc = std::get<Location>(instructions[i].op2());
-  auto it = instructions.begin() + i + 1;
-  auto ite = it;
-  while (ite != instructions.end() && ite->opcode() != Instruction::Opcode::function_end) {
-    ++ite;
+  Number const& variable(Variable v) const;
+  void variable(Variable v, Number const& num);
+
+  ArrayValues array(Array a) const;
+  void array(Array a, ArrayValues av);
+
+  void function(Letter func, Instructions::const_iterator begin, Instructions::const_iterator end,
+                VariableMask mask, Location const& loc);
+
+  /** \brief       Do a call
+   *  \param  func Function to call.
+   *  \param  loc  Location of call.
+   *  \return      Result of call.
+   */
+  Number call(Letter func, Location const& loc);
+
+  void push_param_pack();
+  void push_param(Number const& num);
+  void push_param(ArrayValues av);
+  void pop_param_pack();
+
+  /** \brief  Pop a scalar param.
+   *  \return Value of parameter
+   */
+  Number pop_param();
+
+  /** \brief  Pop a scalar param.
+   *  \return Value of parameter
+   */
+  ArrayValues pop_param_array();
+
+private:
+  template<typename... Ts>
+  [[noreturn]] void error(Msg msg, char const* func, char const* file, unsigned line,
+                          char const* test, Ts... args) const
+  {
+    std::cerr << Messages::get().format(Set::bc, Msg::internal_error, func, file, line, test)
+              << '\n'
+              << Messages::get().format(Set::bc, msg, args...) << '\n';
+    ::exit(1);
   }
-  if (ite == instructions.end()) {
-    Details::error(Msg::no_end_to_function_definition, loc.file_name(), loc.line(), loc.column());
+
+  using Param = std::variant<ArrayValues, Number>;  ///< Parameter to a function
+  using Params = std::list<Param>;                  ///< List of parameters
+  using ParamStack = std::list<Params>;             ///< Stack of current function parameters
+  using Index = Instruction::Index;                 ///< Index into the instructions
+  using Offset = Instruction::Offset;               ///< Offset from current instruction
+  using NumType = Number::NumType;                  ///< Number type
+  using FunctionDefinition =
+    std::tuple<Instructions, VariableMask, Location>;  ///< Function definition.
+
+  std::ostream& stdout_;                            ///< Stream for "normal output."
+  std::ostream& stderr_;                            ///< Stream for error output.
+  std::array<ArrayValues, Letter::count_> arrays_;  ///< Array of arrays, indexed by Letter.
+  std::array<std::optional<FunctionDefinition>, Letter::count_>
+    functions_;  ///< Array of (optional) functions, indexed by letter.
+  std::array<Number, Letter::count_> variables_;  ///< Array of scalar variables, indexed by Letter.
+  ParamStack param_stack_;                        ///< Stack of parameters
+  ParamStack local_stack_;                        ///< Stack of locals.
+  NumType ibase_ = 10;                            ///< Input base, range [2, 16]
+  NumType obase_ = 10;                            ///< Output base, range: [2, base_)
+  NumType scale_ = 0;                             ///< Scale, range: [0, base_)
+};
+
+/** \brief  An executable instruction pack.
+ *
+ * This holds a set of instructions to be executed along with the results and a current program
+ * counter.
+ */
+struct InstructionPack
+{
+public:
+  /** Valid result types for an instruction:
+   *
+   * Number: A number
+   * string_view: a string, legal as it should only point to the string in op1().
+   * Variable: Variable name
+   * Array: Array name
+   * ArrayElement: Array element.
+   */
+  using Index = Instruction::Index;
+  using Result = std::variant<Number, ArrayValues, std::string_view, Variable, Array, ArrayElement,
+                              Ibase, Obase, Scale>;
+
+  /** \brief        Constructor
+   *  \param vm     VM state to modify
+   *  \param instrs Instructions to hold.
+   */
+  InstructionPack(VMState* vm, Instructions const& instrs);
+
+  /** \brief  Execute the instruction pack
+   *  \return Pair of returned value, and whether we should execute more instruction packs.
+   */
+  std::pair<Number, bool> execute();
+
+private:
+  friend std::ostream& operator<<(std::ostream& os, InstructionPack const& instrs);
+
+  template<typename... Ts>
+  [[noreturn]] void error(Msg msg, char const* func, char const* file, unsigned line,
+                          char const* test, Ts... args) const
+  {
+    std::cerr << Messages::get().format(Set::bc, Msg::internal_error, func, file, line, test)
+              << '\n'
+              << Messages::get().format(Set::bc, Msg::instruction_header) << '\n'
+              << *this << Messages::get().format(Set::bc, msg, args...) << '\n';
+    ::exit(1);
   }
-  Letter func = std::get<Letter>(ite->op1());
-  [[maybe_unused]] Offset dist = std::get<Offset>(ite->op2());
-  assert(-dist == ite - it + 1);
 
-  functions_[static_cast<unsigned int>(func)] =
-    std::make_optional(std::make_tuple(Instructions(it, ite), mask, loc));
-  ++ite;
-  return ite - instructions.begin();
+  /** Execute print instruction.  */
+  void execute_print();
+
+  /** Execute quit instruction.  */
+  void execute_quit();
+
+  /** Execute load instruction.  */
+  void execute_load();
+
+  /** Execute store instruction.  */
+  void execute_store();
+
+  /** Execute branch instruction.  Returns index of next instruction to execute.  */
+  Index execute_branch();
+
+  /** Execute branch_zero instruction.  Returns index of next instruction to execute.  */
+  Index execute_branch_zero();
+
+  /** Execute function_begin instruction.  Returns index of next instruction to execute.  */
+  Index execute_function_begin();
+
+  /** Execute the return instruction. Returns value to return.  */
+  Number execute_return();
+
+  /** Execute push_param_mark instruction.  */
+  void execute_push_param_mark();
+
+  /** Execute push_param instruction.  */
+  void execute_push_param();
+
+  /** Execute pop_param_mark instruction.  */
+  void execute_pop_param_mark();
+
+  /** \brief        Execute an instruction with no operands, but which sets a result.
+   *  \param f      Function to call to do the execution
+   *
+   * \a f should take no parameters and return a value castable to Result.
+   */
+  template<typename Fn>
+  void execute_nonary(Fn f)
+  {
+    results_[pc_] = f();
+  }
+
+  /** \brief        Execute an instruction with one operand, and which sets a result.
+   *  \param f      Function to call to do the execution
+   *
+   * \a f should take one Operand parameter and return a value castable to Result.
+   *
+   * If both the operand is an Offset to an expression result and the result is a Number then
+   * use `execute_unary_op()` instead.
+   */
+  template<typename Fn>
+  void execute_unary(Fn f)
+  {
+    results_[pc_] = f(instrs_[pc_].op1());
+  }
+
+  /** \brief              Execute an instruction with two operands, and which sets a result.
+   *  \param f            Function to call to do the execution
+   *
+   * \a f should have a signature like `Result f(Operand const& op1, Operand const& op2)`
+   *
+   * If both of the operands is an Offset to an expression result and the result is a Number then
+   * use `execute_binary_op()` instead.
+   */
+  template<typename Fn>
+  void execute_binary(Fn f)
+  {
+    results_[pc_] = f(instrs_[pc_].op1(), instrs_[pc_].op2());
+  }
+
+  /** \brief   Execute an instruction with one expression operand, and has a Number result.
+   *  \param f Function to call to do the execution
+   *
+   * \a f should have a signature like `void f(Number& op)`.  It should update op with the result.
+   */
+  template<typename Fn>
+  void execute_unary_op(Fn f)
+  {
+    Number lhs = get_op1_expr();
+    f(lhs);
+    results_[pc_] = std::move(lhs);
+  }
+
+  /** \brief   Execute an instruction with two expression operands, and has a Number result.
+   *  \param f Function to call to do the execution
+   *
+   * \a f should have a signature like `void f(Number& op1, Number const& op2)`.  It should update
+   * op1 with the result.
+   */
+  template<typename Fn>
+  void execute_binary_op(Fn f)
+  {
+    Number lhs = get_op1_expr();
+    Number const& rhs = get_op2_expr();
+    f(lhs, rhs);
+    results_[pc_] = std::move(lhs);
+  }
+
+  /** \brief  Conver the offset in the index  */
+  Index get_offset_index(Instruction::Operand const& op) const;
+
+  /** \brief  Get the value pointed to by op relative to the current PC.  */
+  Number const& get_op_expr(Instruction::Operand const& op) const;
+
+  /** \brief Get the value pointed to by op1 of the current instruction.  */
+  Number const& get_op1_expr() const;
+
+  /** \brief Get the value pointed to by op2 of the current instruction.  */
+  Number const& get_op2_expr() const;
+
+  /** Validate the result in the current pc. */
+  void validate_result(Instructions::size_type i) const;
+
+  VMState* vm_;                                 ///< Virtual Machine state
+  Instructions const& instrs_;                  ///< Instructions to execute
+  Instruction::Index pc_;                       ///< Current program counter
+  std::vector<std::optional<Result>> results_;  ///< Results of instructions.
+};
+
+std::ostream& operator<<(std::ostream& os, InstructionPack const& instrs);
+std::ostream& operator<<(std::ostream& os, InstructionPack::Result const& result);
+
+}  // namespace GD::Bc::Details
+
+GD::Bc::Details::VMState::VMState(std::ostream& out, std::ostream& err) : stdout_(out), stderr_(err)
+{
 }
 
-void GD::Bc::VM::execute_push_param_mark([[maybe_unused]] Instructions& instructions,
-                                         [[maybe_unused]] Index i)
+std::ostream& GD::Bc::Details::VMState::stream(Instruction::Stream stream) const
 {
-  assert(instructions.at(i).opcode() == Instruction::Opcode::push_param_mark);
-  param_stack_.emplace_back(Params{});
+  return stream == Instruction::Stream::stdout ? stdout_ : stderr_;
 }
 
-void GD::Bc::VM::execute_push_param(Instructions& instructions, Index i)
+void GD::Bc::Details::VMState::push_param(Number const& n)
 {
-  assert(instructions.at(i).opcode() == Instruction::Opcode::push_param);
-  assert(!param_stack_.empty());
-  Index expr_idx = std::get<Offset>(instructions[i].op1()) + i;
-  assert(expr_idx < instructions.size());
-  auto expr = instructions[expr_idx].result();
-
-  std::visit(Overloaded{
-               [this](Number n) { param_stack_.back().push_back(n); },
-               [this](ArrayValues const& av) { param_stack_.back().push_back(av); },
-               []([[maybe_unused]] auto a) { assert(false); },
-             },
-             expr);
+  assert_error(!param_stack_.empty(), Msg::parameter_stack_empty);
+  param_stack_.back().push_back(n);
 }
 
-void GD::Bc::VM::execute_pop_param_mark([[maybe_unused]] Instructions& instructions,
-                                        [[maybe_unused]] Index i)
+void GD::Bc::Details::VMState::push_param(ArrayValues av)
 {
-  assert(instructions.at(i).opcode() == Instruction::Opcode::pop_param_mark);
-  assert(!param_stack_.empty());
-  assert(param_stack_.back().empty());
+  assert_error(!param_stack_.empty(), Msg::parameter_stack_empty);
+  param_stack_.back().push_back(av);
+}
+
+void GD::Bc::Details::VMState::push_param_pack() { param_stack_.push_back(Params{}); }
+
+void GD::Bc::Details::VMState::pop_param_pack()
+{
+  assert_error(!param_stack_.empty(), Msg::parameter_stack_empty);
+  assert_error(param_stack_.back().empty(), Msg::parameter_pack_not_empty);
   param_stack_.pop_back();
 }
 
-GD::Bc::Number GD::Bc::VM::do_pop_param()
+GD::Bc::Number GD::Bc::Details::VMState::pop_param()
 {
-  assert(!param_stack_.empty());
-  assert(!param_stack_.back().empty());
+  assert_error(!param_stack_.empty(), Msg::parameter_stack_empty);
+  assert_error(!param_stack_.back().empty(), Msg::parameter_pack_empty);
   auto result(std::get<Number>(param_stack_.back().front()));
   param_stack_.back().pop_front();
   return result;
 }
 
-GD::Bc::ArrayValues GD::Bc::VM::do_pop_param_array()
+GD::Bc::ArrayValues GD::Bc::Details::VMState::pop_param_array()
 {
-  assert(!param_stack_.empty());
-  assert(!param_stack_.back().empty());
+  assert_error(!param_stack_.empty(), Msg::parameter_stack_empty);
+  assert_error(!param_stack_.back().empty(), Msg::parameter_pack_empty);
   auto result(std::get<ArrayValues>(param_stack_.back().front()));
   param_stack_.back().pop_front();
   return result;
 }
 
-GD::Bc::Number GD::Bc::VM::do_call(Letter func, Location const& loc)
+void GD::Bc::Details::VMState::function(Letter func, Instructions::const_iterator begin,
+                                        Instructions::const_iterator end, VariableMask mask,
+                                        Location const& loc)
+{
+  Instructions instrs(begin, end);
+  validate(instrs);
+  functions_[static_cast<unsigned>(func)] =
+    std::make_optional(std::make_tuple(std::move(instrs), mask, loc));
+}
+
+GD::Bc::Number GD::Bc::Details::VMState::call(Letter func, Location const& loc)
 {
   if (!functions_[static_cast<unsigned>(func)].has_value()) {
     Details::error(Msg::function_not_defined, func, loc.file_name(), loc.line(), loc.column());
@@ -342,12 +361,18 @@ GD::Bc::Number GD::Bc::VM::do_call(Letter func, Location const& loc)
 
   /* Save the locals.  */
   Params p;
-  locals.for_each_variable(
-    [&p, this](Letter l) { p.push_back(variables_[static_cast<unsigned>(l)]); });
-  locals.for_each_array([&p, this](Letter l) { p.push_back(arrays_[static_cast<unsigned>(l)]); });
+  locals.for_each_variable([&p, this](Letter l) {
+    p.push_back(variables_[static_cast<unsigned>(l)]);
+    variables_[static_cast<unsigned>(l)] = Number(0);
+  });
+  locals.for_each_array([&p, this](Letter l) {
+    p.push_back(arrays_[static_cast<unsigned>(l)]);
+    arrays_[static_cast<unsigned>(l)].reset();
+  });
   local_stack_.push_back(p);
 
-  auto [result, cont] = execute(func_instructions);
+  InstructionPack fn(this, func_instructions);
+  auto [result, cont] = fn.execute();
 
   /* Restore the locals. */
   locals.for_each_variable([&p, this](Letter l) {
@@ -360,20 +385,10 @@ GD::Bc::Number GD::Bc::VM::do_call(Letter func, Location const& loc)
   });
   local_stack_.pop_back();
 
-  /* Clear results so that we don't have hanging references to data we no longer need.
-   */
-  std::for_each(func_instructions.begin(), func_instructions.end(),
-                [](Instruction& i) { i.clear_result(); });
   return result;
 }
 
-GD::Bc::Number GD::Bc::VM::execute_return(Instructions& instructions, Index i)
-{
-  assert(instructions.at(i).opcode() == Instruction::Opcode::return_);
-  return get_op1_expr(instructions, i);
-}
-
-void GD::Bc::VM::set_ibase(Number num)
+void GD::Bc::Details::VMState::ibase(Number num)
 {
   NumType n = num.to_unsigned();
   if (n < 2 || n > 16) {
@@ -382,7 +397,9 @@ void GD::Bc::VM::set_ibase(Number num)
   ibase_ = n;
 }
 
-void GD::Bc::VM::set_obase(Number num)
+GD::Bc::Number::NumType GD::Bc::Details::VMState::ibase() const { return ibase_; }
+
+void GD::Bc::Details::VMState::obase(Number num)
 {
   NumType n = num.to_unsigned();
   if (n < 2) {
@@ -391,9 +408,13 @@ void GD::Bc::VM::set_obase(Number num)
   obase_ = num.to_unsigned();
 }
 
-void GD::Bc::VM::set_scale(Number num) { scale_ = num.to_unsigned(); }
+GD::Bc::Number::NumType GD::Bc::Details::VMState::obase() const { return obase_; }
 
-void GD::Bc::VM::set(ArrayElement const& ae, Number num)
+void GD::Bc::Details::VMState::scale(Number num) { scale_ = num.to_unsigned(); }
+
+GD::Bc::Number::NumType GD::Bc::Details::VMState::scale() const { return scale_; }
+
+void GD::Bc::Details::VMState::array_element(ArrayElement const& ae, Number num)
 {
   ArrayValues a = arrays_[static_cast<unsigned>(ae.first.get())];
   if (!a) {
@@ -404,7 +425,7 @@ void GD::Bc::VM::set(ArrayElement const& ae, Number num)
   a->insert_or_assign(ae.second, num);
 }
 
-GD::Bc::Number GD::Bc::VM::get(ArrayElement const& ae) const
+GD::Bc::Number GD::Bc::Details::VMState::array_element(ArrayElement const& ae) const
 {
   ArrayValues a = arrays_[static_cast<unsigned>(ae.first.get())];
   if (!a) {
@@ -419,23 +440,450 @@ GD::Bc::Number GD::Bc::VM::get(ArrayElement const& ae) const
   return it->second;
 }
 
-GD::Bc::Number const& GD::Bc::VM::get_op_expr(Instructions const& instructions, Index i,
-                                              Instruction::Operand const& op) const
+GD::Bc::Number const& GD::Bc::Details::VMState::variable(Variable v) const
 {
-  auto offset = std::get<Offset>(op);
-  /* Check that the offset will be in range. */
-  assert(offset >= 0 || static_cast<Index>(-offset) <= i);
-  assert(offset < 0 || static_cast<Index>(offset) < instructions.size() - i);
-  Index expr_idx = i + offset;
-  return std::get<Number>(instructions[expr_idx].result());
+  return variables_[static_cast<unsigned>(v.get())];
 }
 
-GD::Bc::Number const& GD::Bc::VM::get_op1_expr(Instructions& instructions, Index i) const
+void GD::Bc::Details::VMState::variable(Variable v, Number const& num)
 {
-  return get_op_expr(instructions, i, instructions[i].op1());
+  variables_[static_cast<unsigned>(v.get())] = num;
 }
 
-GD::Bc::Number const& GD::Bc::VM::get_op2_expr(Instructions& instructions, Index i) const
+GD::Bc::ArrayValues GD::Bc::Details::VMState::array(Array a) const
 {
-  return get_op_expr(instructions, i, instructions[i].op2());
+  return arrays_[static_cast<unsigned>(a.get())];
+}
+
+void GD::Bc::Details::VMState::array(Array a, ArrayValues av)
+{
+  arrays_[static_cast<unsigned>(a.get())] = av;
+}
+
+GD::Bc::Details::InstructionPack::InstructionPack(VMState* vm, Instructions const& instrs)
+    : vm_(vm), instrs_(instrs), pc_(0), results_(instrs.size())
+{
+  assert(vm_ != nullptr);
+}
+
+std::pair<GD::Bc::Number, bool> GD::Bc::Details::InstructionPack::execute()
+{
+  for (; pc_ < instrs_.size(); ++pc_) {
+    auto i = pc_;
+    switch (instrs_[pc_].opcode()) {
+    case Instruction::Opcode::string:
+      execute_unary(
+        [](Instruction::Operand const& o) { return std::string_view(std::get<std::string>(o)); });
+      break;
+    case Instruction::Opcode::number:
+      execute_unary([this](Instruction::Operand const& o) {
+        return Number(std::get<std::string>(o), vm_->ibase());
+      });
+      break;
+    case Instruction::Opcode::variable:
+      execute_unary([](Instruction::Operand const& o) { return std::get<Variable>(o); });
+      break;
+    case Instruction::Opcode::array:
+      execute_unary([](Instruction::Operand const& o) { return std::get<Array>(o); });
+      break;
+    case Instruction::Opcode::array_element:
+      execute_binary([this](Instruction::Operand const& o1, Instruction::Operand const& o2) {
+        return ArrayElement(std::get<Array>(o1), get_op_expr(o2).to_unsigned());
+      });
+      break;
+    case Instruction::Opcode::ibase:
+      execute_nonary([]() { return Ibase(); });
+      break;
+    case Instruction::Opcode::obase:
+      execute_nonary([]() { return Obase(); });
+      break;
+    case Instruction::Opcode::scale:
+      execute_nonary([]() { return Scale(); });
+      break;
+    case Instruction::Opcode::print:
+      execute_print();
+      break;
+    case Instruction::Opcode::quit:
+      execute_quit();
+      break;
+    case Instruction::Opcode::load:
+      execute_load();
+      break;
+    case Instruction::Opcode::store:
+      execute_store();
+      break;
+    case Instruction::Opcode::negate:
+      execute_unary_op([](Number& lhs) { lhs.negate(); });
+      break;
+    case Instruction::Opcode::add:
+      execute_binary_op([](Number& lhs, Number const& rhs) { lhs.add(rhs); });
+      break;
+    case Instruction::Opcode::subtract:
+      execute_binary_op([](Number& lhs, Number const& rhs) { lhs.sub(rhs); });
+      break;
+    case Instruction::Opcode::power:
+      execute_binary_op([this](Number& lhs, Number const& rhs) { lhs.power(rhs, vm_->scale()); });
+      break;
+    case Instruction::Opcode::multiply:
+      execute_binary_op(
+        [this](Number& lhs, Number const& rhs) { lhs.multiply(rhs, vm_->scale()); });
+      break;
+    case Instruction::Opcode::divide:
+      execute_binary_op([this](Number& lhs, Number const& rhs) { lhs.divide(rhs, vm_->scale()); });
+      break;
+    case Instruction::Opcode::modulo:
+      execute_binary_op([this](Number& lhs, Number const& rhs) { lhs.modulo(rhs, vm_->scale()); });
+      break;
+    case Instruction::Opcode::sqrt:
+      execute_unary_op([this](Number& lhs) { lhs.sqrt(vm_->scale()); });
+      break;
+    case Instruction::Opcode::scale_expr:
+      execute_unary_op([](Number& lhs) { lhs = Number(lhs.scale()); });
+      break;
+    case Instruction::Opcode::length:
+      execute_unary_op([](Number& lhs) { lhs = Number(lhs.length()); });
+      break;
+    case Instruction::Opcode::less_than:
+      execute_binary_op([](Number& lhs, Number const& rhs) { lhs = Number(lhs < rhs ? 1 : 0); });
+      break;
+    case Instruction::Opcode::less_than_equals:
+      execute_binary_op([](Number& lhs, Number const& rhs) { lhs = Number(lhs <= rhs ? 1 : 0); });
+      break;
+    case Instruction::Opcode::equals:
+      execute_binary_op([](Number& lhs, Number const& rhs) { lhs = Number(lhs == rhs ? 1 : 0); });
+      break;
+    case Instruction::Opcode::not_equals:
+      execute_binary_op([](Number& lhs, Number const& rhs) { lhs = Number(lhs != rhs ? 1 : 0); });
+      break;
+    case Instruction::Opcode::branch:
+      pc_ = execute_branch() - 1;
+      break;
+    case Instruction::Opcode::branch_zero:
+      pc_ = execute_branch_zero() - 1;
+      break;
+    case Instruction::Opcode::function_begin:
+      pc_ = execute_function_begin() - 1;
+      break;
+    case Instruction::Opcode::push_param_mark:
+      execute_push_param_mark();
+      break;
+    case Instruction::Opcode::push_param:
+      execute_push_param();
+      break;
+    case Instruction::Opcode::pop_param_mark:
+      execute_pop_param_mark();
+      break;
+    case Instruction::Opcode::pop_param:
+      execute_nonary([this]() { return vm_->pop_param(); });
+      break;
+    case Instruction::Opcode::pop_param_array:
+      execute_nonary([this]() { return vm_->pop_param_array(); });
+      break;
+    case Instruction::Opcode::call:
+      execute_binary([this](Instruction::Operand const& o1, Instruction::Operand const& o2) {
+        return vm_->call(std::get<Letter>(o1), std::get<Location>(o2));
+      });
+      break;
+    case Instruction::Opcode::return_:
+      return std::make_pair(get_op1_expr(), true);
+    case Instruction::Opcode::eof:
+      assert(pc_ == instrs_.size() - 1);
+      return std::make_pair(Number(0), false);
+      break;
+    case Instruction::Opcode::function_end: /* Should never been seen here.  */
+      abort();
+      break;
+    }
+
+    /* Validate the results.  */
+    validate_result(i);
+  }
+
+  /* Fall off the end assume 'return (0);' */
+  return std::make_pair(Number(0), true);
+}
+
+void GD::Bc::Details::InstructionPack::execute_print()
+{
+  assert(instrs_[pc_].opcode() == Instruction::Opcode::print);
+  Index result_idx = get_offset_index(instrs_[pc_].op1());
+  std::ostream& os = vm_->stream(std::get<Instruction::Stream>(instrs_[pc_].op2()));
+  auto& result = results_[result_idx];
+  assert_error(result.has_value(), Msg::empty_result, result_idx);
+  std::visit(Overloaded{
+               [&os](std::string_view sv) { os << sv; },
+               [&os, this](Number n) {
+                 n.output(os, vm_->obase());
+                 os << '\n';
+               },
+               [&os](Variable v) { os << v << '\n'; },
+               [&os](Array a) { os << a << '\n'; },
+               [&os](ArrayElement const& ae) { os << ae.first << '[' << ae.second << "]\n"; },
+               [&os](ArrayValues const&) { os << "<ARRAY VALUES>\n"; },
+               [&os](Ibase) { os << "ibase\n"; },
+               [&os](Obase) { os << "obase\n"; },
+               [&os](Scale) { os << "scale\n"; },
+             },
+             *result);
+}
+
+void GD::Bc::Details::InstructionPack::execute_quit()
+{
+  assert(instrs_[pc_].opcode() == Instruction::Opcode::quit);
+  ::exit(std::get<unsigned>(instrs_[pc_].op1()));
+}
+
+void GD::Bc::Details::InstructionPack::execute_load()
+{
+  assert(instrs_[pc_].opcode() == Instruction::Opcode::load);
+  Index loc_idx = get_offset_index(instrs_[pc_].op1());
+  auto& result = results_[pc_];
+  auto const& loc = results_[loc_idx];
+  assert_error(loc.has_value(), Msg::empty_result, loc_idx);
+
+  std::visit(Overloaded{
+               [this](std::string_view) { assert_error(false, Msg::cannot_load, "string_view"); },
+               [this](Number) { assert_error(false, Msg::cannot_load, "Number"); },
+               [this](ArrayValues const&) { assert_error(false, Msg::cannot_load, "ArrayValues"); },
+               [&result, this](Variable v) { result = vm_->variable(v); },
+               [&result, this](Array a) { result = vm_->array(a); },
+               [&result, this](ArrayElement const& ae) { result = vm_->array_element(ae); },
+               [&result, this](Ibase) { result = Number(vm_->ibase()); },
+               [&result, this](Obase) { result = Number(vm_->obase()); },
+               [&result, this](Scale) { result = Number(vm_->scale()); },
+             },
+             *loc);
+}
+
+void GD::Bc::Details::InstructionPack::execute_store()
+{
+  assert(instrs_[pc_].opcode() == Instruction::Opcode::store);
+  Index loc_idx = get_offset_index(instrs_[pc_].op1());
+  auto& loc = results_[loc_idx];
+  assert_error(loc.has_value(), Msg::empty_result, loc_idx);
+  Index expr_idx = get_offset_index(instrs_[pc_].op2());
+  auto& result = results_[expr_idx];
+  assert_error(result.has_value(), Msg::empty_result, expr_idx);
+  auto& expr = *result;
+
+  std::visit(
+    Overloaded{
+      [this](std::string_view) { assert_error(false, Msg::cannot_store, "string_view"); },
+      [this](Number) { assert_error(false, Msg::cannot_store, "Number"); },
+      [this](ArrayValues const&) { assert_error(false, Msg::cannot_store, "ArrayValues"); },
+      [&expr, this](Variable v) { vm_->variable(v, std::get<Number>(expr)); },
+      [&expr, this](Array a) { vm_->array(a, std::get<ArrayValues>(expr)); },
+      [&expr, this](ArrayElement const& ae) { vm_->array_element(ae, std::get<Number>(expr)); },
+      [&expr, this](Ibase) { vm_->ibase(std::get<Number>(expr)); },
+      [&expr, this](Obase) { vm_->obase(std::get<Number>(expr)); },
+      [&expr, this](Scale) { vm_->scale(std::get<Number>(expr)); },
+    },
+    *loc);
+}
+
+GD::Bc::Instruction::Index GD::Bc::Details::InstructionPack::execute_branch()
+{
+  assert(instrs_[pc_].opcode() == Instruction::Opcode::branch);
+  return get_offset_index(instrs_[pc_].op1());
+}
+
+GD::Bc::Instruction::Index GD::Bc::Details::InstructionPack::execute_branch_zero()
+{
+  assert(instrs_[pc_].opcode() == Instruction::Opcode::branch_zero);
+  Number c = get_op1_expr();
+  Index dest_idx = get_offset_index(instrs_[pc_].op2());
+  return c.is_zero() ? dest_idx : pc_ + 1;
+}
+
+GD::Bc::Instruction::Index GD::Bc::Details::InstructionPack::execute_function_begin()
+{
+  assert(instrs_[pc_].opcode() == Instruction::Opcode::function_begin);
+  VariableMask mask = std::get<VariableMask>(instrs_[pc_].op1());
+  Location loc = std::get<Location>(instrs_[pc_].op2());
+  [[maybe_unused]] Index start = pc_++;
+  while (pc_ != instrs_.size() && instrs_[pc_].opcode() != Instruction::Opcode::function_end) {
+    ++pc_;
+  }
+  assert_error(pc_ != instrs_.size(), Msg::no_end_to_function_definition, loc.file_name(),
+               loc.line(), loc.column());
+
+  Letter func = std::get<Letter>(instrs_[pc_].op1());
+  Index given_start = get_offset_index(instrs_[pc_].op2());
+  assert_error(start == given_start, Msg::bad_function_definition);
+
+  vm_->function(func, instrs_.begin() + start + 1, instrs_.begin() + pc_, mask, loc);
+  return pc_ + 1;
+}
+
+void GD::Bc::Details::InstructionPack::execute_push_param_mark()
+{
+  assert(instrs_[pc_].opcode() == Instruction::Opcode::push_param_mark);
+  vm_->push_param_pack();
+}
+
+void GD::Bc::Details::InstructionPack::execute_push_param()
+{
+  assert(instrs_[pc_].opcode() == Instruction::Opcode::push_param);
+  Index expr_idx = get_offset_index(instrs_[pc_].op1());
+  auto& expr = results_[expr_idx];
+  assert_error(expr.has_value(), Msg::empty_result, expr_idx);
+
+  std::visit(Overloaded{
+               [this](Number const& n) { vm_->push_param(n); },
+               [this](ArrayValues const& av) { vm_->push_param(av); },
+               []([[maybe_unused]] auto a) { assert(false); },
+             },
+             *expr);
+}
+
+void GD::Bc::Details::InstructionPack::execute_pop_param_mark()
+{
+  assert(instrs_[pc_].opcode() == Instruction::Opcode::pop_param_mark);
+  vm_->pop_param_pack();
+}
+
+GD::Bc::Instruction::Index
+GD::Bc::Details::InstructionPack::get_offset_index(Instruction::Operand const& op) const
+{
+  auto offset = std::get<Instruction::Offset>(op);
+  /* We know the following is safe as we checked in validate().  */
+  Index expr_idx = pc_ + offset;
+  return expr_idx;
+}
+
+GD::Bc::Number const&
+GD::Bc::Details::InstructionPack::get_op_expr(Instruction::Operand const& op) const
+{
+  auto const& result = results_[get_offset_index(op)];
+  assert_error(result.has_value(), Msg::empty_result, get_offset_index(op));
+  return std::get<Number>(*result);
+}
+
+GD::Bc::Number const& GD::Bc::Details::InstructionPack::get_op1_expr() const
+{
+  return get_op_expr(instrs_[pc_].op1());
+}
+
+GD::Bc::Number const& GD::Bc::Details::InstructionPack::get_op2_expr() const
+{
+  return get_op_expr(instrs_[pc_].op2());
+}
+
+std::ostream& GD::Bc::Details::operator<<(std::ostream& os,
+                                          GD::Bc::Details::InstructionPack::Result const& result)
+{
+  std::visit(Overloaded{
+               [&os](std::string_view s) { os << "String(" << s << ')'; },
+               [&os](Number n) { n.debug(os); },
+               [&os](Variable v) { os << v; },
+               [&os](Array a) { os << a << "[]"; },
+               [&os](ArrayElement const& ae) { os << ae.first << '[' << ae.second << ']'; },
+               [&os](ArrayValues const&) { os << "<ARRAY VALUES>"; },
+               [&os](Ibase) { os << "ibase"; },
+               [&os](Obase) { os << "obase"; },
+               [&os](Scale) { os << "scale"; },
+             },
+             result);
+  return os;
+}
+
+std::ostream& GD::Bc::Details::operator<<(std::ostream& os,
+                                          GD::Bc::Details::InstructionPack const& instrs)
+{
+  for (::size_t i = 0; i < instrs.instrs_.size(); ++i) {
+    os << i;
+    if (i == instrs.pc_) {
+      os << "**";
+    }
+    os << '\t' << instrs.instrs_[i];
+    if (instrs.results_[i].has_value()) {
+      os << " = " << *(instrs.results_[i]);
+    }
+    os << '\n';
+  }
+  return os;
+}
+
+void GD::Bc::Details::InstructionPack::validate_result(Index i) const
+{
+  [[maybe_unused]] auto const& result = results_[i];
+  switch (instrs_[i].opcode()) {
+  case GD::Bc::Instruction::Opcode::eof:
+  case GD::Bc::Instruction::Opcode::push_param_mark:
+  case GD::Bc::Instruction::Opcode::pop_param_mark:
+  case GD::Bc::Instruction::Opcode::quit:
+  case GD::Bc::Instruction::Opcode::branch:
+  case GD::Bc::Instruction::Opcode::push_param:
+  case GD::Bc::Instruction::Opcode::print:
+  case GD::Bc::Instruction::Opcode::function_end:
+  case GD::Bc::Instruction::Opcode::store:
+  case GD::Bc::Instruction::Opcode::branch_zero:
+  case GD::Bc::Instruction::Opcode::function_begin:
+    assert_error(!result.has_value(), Msg::non_empty_result, i);
+    break;
+  case GD::Bc::Instruction::Opcode::scale:
+    assert_error(result.has_value(), Msg::empty_result, i);
+    assert_error(std::holds_alternative<Scale>(*result), Msg::wrong_result_type, i, "Scale");
+    break;
+  case GD::Bc::Instruction::Opcode::ibase:
+    assert_error(result.has_value(), Msg::empty_result, i);
+    assert_error(std::holds_alternative<Ibase>(*result), Msg::wrong_result_type, i, "Ibase");
+    break;
+  case GD::Bc::Instruction::Opcode::obase:
+    assert_error(result.has_value(), Msg::empty_result, i);
+    assert_error(std::holds_alternative<Obase>(*result), Msg::wrong_result_type, i, "Obase");
+    break;
+  case GD::Bc::Instruction::Opcode::string:
+    assert_error(result.has_value(), Msg::empty_result, i);
+    assert_error(std::holds_alternative<std::string_view>(*result), Msg::wrong_result_type, i,
+                 "string_view");
+
+    break;
+  case GD::Bc::Instruction::Opcode::number:
+  case GD::Bc::Instruction::Opcode::negate:
+  case GD::Bc::Instruction::Opcode::load:
+  case GD::Bc::Instruction::Opcode::scale_expr:
+  case GD::Bc::Instruction::Opcode::sqrt:
+  case GD::Bc::Instruction::Opcode::length:
+  case GD::Bc::Instruction::Opcode::return_:
+  case GD::Bc::Instruction::Opcode::add:
+  case GD::Bc::Instruction::Opcode::subtract:
+  case GD::Bc::Instruction::Opcode::multiply:
+  case GD::Bc::Instruction::Opcode::divide:
+  case GD::Bc::Instruction::Opcode::modulo:
+  case GD::Bc::Instruction::Opcode::power:
+  case GD::Bc::Instruction::Opcode::equals:
+  case GD::Bc::Instruction::Opcode::less_than_equals:
+  case GD::Bc::Instruction::Opcode::not_equals:
+  case GD::Bc::Instruction::Opcode::less_than:
+  case GD::Bc::Instruction::Opcode::call:
+  case GD::Bc::Instruction::Opcode::pop_param:
+    assert_error(result.has_value(), Msg::empty_result, i);
+    assert_error(std::holds_alternative<Number>(*result), Msg::wrong_result_type, i, "Number");
+    break;
+  case GD::Bc::Instruction::Opcode::variable:
+    assert_error(result.has_value(), Msg::empty_result, i);
+    assert_error(std::holds_alternative<Variable>(*result), Msg::wrong_result_type, i, "Variable");
+    break;
+  case GD::Bc::Instruction::Opcode::array:
+  case GD::Bc::Instruction::Opcode::pop_param_array:
+    assert_error(result.has_value(), Msg::empty_result, i);
+    assert_error(std::holds_alternative<Array>(*result), Msg::wrong_result_type, i, "Array");
+    break;
+  case GD::Bc::Instruction::Opcode::array_element:
+    assert_error(result.has_value(), Msg::empty_result, i);
+    assert_error(std::holds_alternative<ArrayElement>(*result), Msg::wrong_result_type, i,
+                 "ArrayElement");
+    break;
+  }
+}
+
+GD::Bc::VM::VM(std::ostream& out, std::ostream& err) : state_(new Details::VMState(out, err)) {}
+
+bool GD::Bc::VM::execute(Instructions& instructions)
+{
+  validate(instructions);
+  Details::InstructionPack instrs(state_, instructions);
+  auto result = instrs.execute();
+  return result.second;
 }

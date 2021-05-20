@@ -75,7 +75,7 @@ NumType pow10(NumType pow)
 template<typename... Ts>
 [[noreturn]] void error(Msg msg, Ts... args)
 {
-  std::cerr << GD::Bc::Messages::get().format(GD::Bc::Set::bc, msg, args...) << '\n';
+  std::cerr << Messages::get().format(Set::bc, msg, args...) << '\n';
   ::exit(1);
 }
 
@@ -1575,6 +1575,13 @@ private:
   Sign sign_ = Sign::positive;           ///< Sign (+/-1).
   NumType scale_ = 0;                    ///< Scale.
 };
+
+template<typename Traits>
+std::ostream& operator<<(std::ostream& os, BasicNumber<Traits> const& num)
+{
+  num.debug(os);
+  return os;
+}
 
 template<typename Traits>
 bool operator!=(BasicNumber<Traits> const& lhs, BasicNumber<Traits> const& rhs)

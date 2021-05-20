@@ -254,6 +254,72 @@
         "id": 42,
         "description": "Obase is set to an out of range value {0}.  Valid values are [2, {1})",
         "C": "{0} is not a valid obase.  obase should be in the range [2, {1})."
+      },
+      {
+        "msg": "internal_error",
+        "id": 43,
+        "description": "We encountered an internal error in function {0}, file {1}, line {2}, {3} is test.",
+        "C": "Unrecoverable internal error in {0} (file: {1}, line {2}): {3}"
+      },
+      {
+        "msg": "instruction_header",
+        "id": 44,
+        "description": "Text to say next output is current instruction stream",
+        "C": "Error occured whilst executing the following instruction stream:"
+      },
+      {
+        "msg": "parameter_stack_empty",
+        "id": 45,
+        "description": "No active parameter pack - when attemptting to push a value into it",
+        "C": "Parameter stack unexpectedly empty. Trying to push parameters before marking a parameter block."
+      },
+      {
+        "msg": "parameter_pack_not_empty",
+        "id": 46,
+        "description": "The current parameter pack is not empty when we say it should be",
+        "C": "Parameter pack has not been completely used by function."
+      },
+      {
+        "msg": "parameter_pack_empty",
+        "id": 47,
+        "description": "The current parameter pack is empty when we say it should not be",
+        "C": "Parameter pack is empty when trying to pop a parameter."
+      },
+      {
+        "msg": "empty_result",
+        "id": 48,
+        "description": "The result value at {0} has not been set when we want to read it",
+        "C": "Result at location {0} has not been set."
+      },
+      {
+        "msg": "cannot_load",
+        "id": 49,
+        "description": "Cannot load a value of type {0}",
+        "C": "Cannot load a value of type {0}."
+      },
+      {
+        "msg": "cannot_store",
+        "id": 50,
+        "description": "Cannot store into a value of type {0}.",
+        "C": "Cannot store a value of type {1}."
+      },
+      {
+        "msg": "bad_function_definition",
+        "id": 51,
+        "description": "Function definition start does not line up properly",
+        "C": "Function definition is not valid."
+      },
+      {
+        "msg": "non_empty_result",
+        "id": 52,
+        "description": "The result value at {0} has been set when it shouldn't have.",
+        "C": "Result at location {0} has been set."
+      },
+      {
+        "msg": "wrong_result_type",
+        "id": 53,
+        "description": "The result value at {0} is the wrong type - it should be {1}.",
+        "C": "Result at location {0} is not the correct type (it should be {1})."
       }
     ]
   }

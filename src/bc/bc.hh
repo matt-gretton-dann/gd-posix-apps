@@ -276,8 +276,8 @@ public:
   std::string error(Msg msg, Ts... args)
   {
     std::ostringstream os;
-    os << GD::Bc::Messages::get().get(GD::Bc::Set::bc, Msg::error_label) << ":" << location_ << ": "
-       << GD::Bc::Messages::get().format(GD::Bc::Set::bc, msg, args...) << '\n';
+    os << Messages::get().get(Set::bc, Msg::error_label) << ":" << location_ << ": "
+       << Messages::get().format(Set::bc, msg, args...) << '\n';
     return os.str();
   }
 
@@ -486,8 +486,7 @@ enum class Scale : int;
 
 /** \brief  An Instruction.
  *
- * Instructions contrain an opcode, up to two operands, and an optional result (once the instruction
- * has been executed.
+ * Instructions contrain an opcode, up to two operands.
  *
  * References to other instructions are always PC relative - so that we can extract function
  * definitions easily.
@@ -598,17 +597,6 @@ public:
   using Operand = std::variant<std::string, Stream, Offset, Location, VariableMask, unsigned,
                                Letter, Variable, Array>;
 
-  /** Valid result types for an instruction:
-   *
-   * Number: A number
-   * string_view: a string, legal as it should only point to the string in op1().
-   * Variable: Variable name
-   * Array: Array name
-   * ArrayElement: Array element.
-   */
-  using Result = std::variant<Number, ArrayValues, std::string_view, Variable, Array, ArrayElement,
-                              Ibase, Obase, Scale>;
-
   /** \brief        Constructor
    *  \param opcode Opcode
    */
@@ -651,15 +639,6 @@ public:
   /** Do we have result? */
   bool has_result() const;
 
-  /** Get the result.  */
-  Result const& result() const;
-
-  /** Clear the result value.  */
-  void clear_result();
-
-  /** Set the result.  */
-  void result(Result const& result);
-
   /** Does \a opcode have op1? */
   static bool has_op1(Opcode opcode);
 
@@ -673,22 +652,20 @@ private:
   /** \brief  Validate the operands.  */
   void validate_operands() const;
 
-  /** \brief  Validate the result.  */
-  void validate_result() const;
-
-  Opcode opcode_;                 ///< Opcode
-  std::optional<Operand> op1_;    ///< Operand 1
-  std::optional<Operand> op2_;    ///< Operand 2
-  std::optional<Result> result_;  ///< The result.
+  Opcode opcode_;               ///< Opcode
+  std::optional<Operand> op1_;  ///< Operand 1
+  std::optional<Operand> op2_;  ///< Operand 2
 };
 
 /** Vector of instructions.  */
 using Instructions = std::vector<Instruction>;
 
+/** \brief  Validate an instruction vectore.  */
+void validate(Instructions const& instrs);
+
 std::ostream& operator<<(std::ostream& os, Instruction::Stream s);
 std::ostream& operator<<(std::ostream& os, Instruction::Opcode opcode);
 std::ostream& operator<<(std::ostream& os, Instruction::Operand const& operand);
-std::ostream& operator<<(std::ostream& os, Instruction::Result const& result);
 std::ostream& operator<<(std::ostream& os, Instruction const& instruction);
 std::ostream& operator<<(std::ostream& os, Instructions const& instruction);
 
@@ -1172,6 +1149,11 @@ bool operator!=(Parser::ExprIndex const& lhs, Parser::Index rhs);
 bool operator!=(Parser::ExprIndex const& lhs, Parser::ExprType rhs);
 Parser::Offset operator-(Parser::ExprIndex const& lhs, Parser::ExprIndex const& rhs);
 
+namespace Details {
+/* Forward declaration of class that holds VMState.  */
+struct VMState;
+}  // namespace Details
+
 /** \brief  Virtual Machine
  *
  * This is the object that executes instructions.
@@ -1179,194 +1161,22 @@ Parser::Offset operator-(Parser::ExprIndex const& lhs, Parser::ExprIndex const& 
 class VM
 {
 public:
-  /** \brief Constructor
-   *  \param stdout Stream to use for standard output.
-   *  \param stderr Stream to use for standard error.
+  /** \brief     Constructor
+   *  \param out Stream to use for standard output.
+   *  \param err Stream to use for standard error.
    */
-  VM(std::ostream& stdout, std::ostream& stderr);
+  VM(std::ostream& out, std::ostream& err);
 
   /** \brief              Execute instructions.
    *  \param instructions Instructions to execute
    *  \return             \c true if we should continue, or \c false if we have reached EOF.
    */
-  std::pair<Number, bool> execute(Instructions& instructions);
+  bool execute(Instructions& instructions);
 
 private:
-  using Param = std::variant<ArrayValues, Number>;  ///< Parameter to a function
-  using Params = std::list<Param>;                  ///< List of parameters
-  using ParamStack = std::list<Params>;             ///< Stack of current function parameters
-  using Index = Instruction::Index;                 ///< Index into the instructions
-  using Offset = Instruction::Offset;               ///< Offset from current instruction
-  using NumType = Number::NumType;                  ///< Number type
-  using FunctionDefinition =
-    std::tuple<Instructions, VariableMask, Location>;  ///< Function definition.
-
-  /** Execute print instruction.  */
-  void execute_print(Instructions& instructions, Index i);
-
-  /** Execute quit instruction.  */
-  void execute_quit(Instructions& instructions, Index i);
-
-  /** Execute load instruction.  */
-  void execute_load(Instructions& instructions, Index i);
-
-  /** Execute store instruction.  */
-  void execute_store(Instructions& instructions, Index i);
-
-  /** Execute branch instruction.  Returns index of next instruction to execute.  */
-  Index execute_branch(Instructions& instructions, Index i);
-
-  /** Execute branch_zero instruction.  Returns index of next instruction to execute.  */
-  Index execute_branch_zero(Instructions& instructions, Index i);
-
-  /** Execute function_begin instruction.  Returns index of next instruction to execute.  */
-  Index execute_function_begin(Instructions& instructions, Index i);
-
-  /** Execute the return instruction. Returns value to return.  */
-  Number execute_return(Instructions& instructions, Index i);
-
-  /** Execute push_param_mark instruction.  */
-  void execute_push_param_mark(Instructions& instructions, Index i);
-
-  /** Execute push_param instruction.  */
-  void execute_push_param(Instructions& instructions, Index i);
-
-  /** Execute pop_param_mark instruction.  */
-  void execute_pop_param_mark(Instructions& instructions, Index i);
-
-  /** \brief              Execute an instruction with no operands, but which sets a result.
-   *  \param instructions Instruction stream
-   *  \param i            Index of instruction in stream
-   *  \param f            Function to call to do the execution
-   *
-   * \a f should take no parameters and return a value castable to Result.
-   */
-  template<typename Fn>
-  void execute_nonary(Instructions& instructions, Index i, Fn f)
-  {
-    instructions[i].result(f());
-  }
-
-  /** \brief              Execute an instruction with one operand, and which sets a result.
-   *  \param instructions Instruction stream
-   *  \param i            Index of instruction in stream
-   *  \param f            Function to call to do the execution
-   *
-   * \a f should take one Operand parameter and return a value castable to Result.
-   *
-   * If both the operand is an Offset to an expression result and the result is a Number then
-   * use `execute_unary_op()` instead.
-   */
-  template<typename Fn>
-  void execute_unary(Instructions& instructions, Index i, Fn f)
-  {
-    instructions[i].result(f(instructions[i].op1()));
-  }
-
-  /** \brief              Execute an instruction with two operands, and which sets a result.
-   *  \param instructions Instruction stream
-   *  \param i            Index of instruction in stream
-   *  \param f            Function to call to do the execution
-   *
-   * \a f should have a signature like `Result f(Operand const& op1, Operand const& op2)`
-   *
-   * If both of the operands is an Offset to an expression result and the result is a Number then
-   * use `execute_binary_op()` instead.
-   */
-  template<typename Fn>
-  void execute_binary(Instructions& instructions, Index i, Fn f)
-  {
-    instructions[i].result(f(instructions[i].op1(), instructions[i].op2()));
-  }
-
-  /** \brief              Execute an instruction with one expression operand, and has a Number
-   *                      result.
-   *  \param instructions Instruction stream
-   *  \param i            Index of instruction in stream
-   *  \param f            Function to call to do the execution
-   *
-   * \a f should have a signature like `void f(Number& op)`.  It should update op with the result.
-   */
-  template<typename Fn>
-  void execute_unary_op(Instructions& instructions, Index i, Fn f)
-  {
-    Number lhs = get_op1_expr(instructions, i);
-    f(lhs);
-    instructions[i].result(std::move(lhs));
-  }
-
-  /** \brief              Execute an instruction with two expression operands, and has a Number
-   *                      result.
-   *  \param instructions Instruction stream
-   *  \param i            Index of instruction in stream
-   *  \param f            Function to call to do the execution
-   *
-   * \a f should have a signature like `void f(Number& op1, Number const& op2)`.  It should update
-   * op1 with the result.
-   */
-  template<typename Fn>
-  void execute_binary_op(Instructions& instructions, Index i, Fn f)
-  {
-    Number lhs = get_op1_expr(instructions, i);
-    Number const& rhs = get_op2_expr(instructions, i);
-    f(lhs, rhs);
-    instructions[i].result(std::move(lhs));
-  }
-
-  /** \brief       Do a call
-   *  \param  func Function to call.
-   *  \param  loc  Location of call.
-   *  \return      Result of call.
-   */
-  Number do_call(Letter func, Location const& loc);
-
-  /** \brief  Pop a scalar param.
-   *  \return Value of parameter
-   */
-  Number do_pop_param();
-
-  /** \brief  Pop a scalar param.
-   *  \return Value of parameter
-   */
-  ArrayValues do_pop_param_array();
-
-  /** \brief  Get the value pointed to by op.  */
-  Number const& get_op_expr(Instructions const& instructions, Index i,
-                            Instruction::Operand const& op) const;
-
-  /** \brief Get the value pointed to by op1.  */
-  Number const& get_op1_expr(Instructions& instructions, Index i) const;
-
-  /** \brief Get the value pointed to by op2.  */
-  Number const& get_op2_expr(Instructions& instructions, Index i) const;
-
-  /** \brief  Set the input base.  */
-  void set_ibase(Number num);
-
-  /** \brief  Set the output base.  */
-  void set_obase(Number num);
-
-  /** \brief  Set the scale.  */
-  void set_scale(Number num);
-
-  /** \brief  Get the number stored in the array element ae.  */
-  Number get(ArrayElement const& ae) const;
-
-  /** \brief  Store a number in an array eleemnt.  */
-  void set(ArrayElement const& ae, Number num);
-
-  std::ostream& stdout_;                            ///< Stream for "normal output."
-  std::ostream& stderr_;                            ///< Stream for error output.
-  std::array<ArrayValues, Letter::count_> arrays_;  ///< Array of arrays, indexed by Letter.
-  std::array<std::optional<FunctionDefinition>, Letter::count_>
-    functions_;  ///< Array of (optional) functions, indexed by letter.
-  std::array<Number, Letter::count_> variables_;  ///< Array of scalar variables, indexed by Letter.
-  ParamStack param_stack_;                        ///< Stack of parameters
-  ParamStack local_stack_;                        ///< Stack of locals.
-  NumType ibase_ = 10;                            ///< Input base, range [2, 16]
-  NumType obase_ = 10;                            ///< Output base, range: [2, base_)
-  NumType scale_ = 0;                             ///< Scale, range: [0, base_)
+  Details::VMState* state_;
 };
+
 }  // namespace GD::Bc
 
 template<>
