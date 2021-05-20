@@ -1,6 +1,6 @@
 define f(a) {
-  auto b,i
+  auto b
   b = 1
-  for (i = 0; i < a; ++i) b *= i
+  while (a > 0) b *= a--
   return (b)
 }
