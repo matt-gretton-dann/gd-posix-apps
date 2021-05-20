@@ -95,9 +95,8 @@ private:
   [[noreturn]] void error(Msg msg, char const* func, char const* file, unsigned line,
                           char const* test, Ts... args) const
   {
-    std::cerr << Messages::get().format(Set::bc, Msg::internal_error, func, file, line, test)
-              << '\n'
-              << Messages::get().format(Set::bc, msg, args...) << '\n';
+    stderr_ << Messages::get().format(Set::bc, Msg::internal_error, func, file, line, test) << '\n'
+            << Messages::get().format(Set::bc, msg, args...) << '\n';
     ::exit(1);
   }
 
@@ -161,10 +160,10 @@ private:
   [[noreturn]] void error(Msg msg, char const* func, char const* file, unsigned line,
                           char const* test, Ts... args) const
   {
-    std::cerr << Messages::get().format(Set::bc, Msg::internal_error, func, file, line, test)
-              << '\n'
-              << Messages::get().format(Set::bc, Msg::instruction_header) << '\n'
-              << *this << Messages::get().format(Set::bc, msg, args...) << '\n';
+    vm_->stream(Instruction::Stream::stderr)
+      << Messages::get().format(Set::bc, Msg::internal_error, func, file, line, test) << '\n'
+      << Messages::get().format(Set::bc, Msg::instruction_header) << '\n'
+      << *this << Messages::get().format(Set::bc, msg, args...) << '\n';
     ::exit(1);
   }
 
