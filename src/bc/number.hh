@@ -245,6 +245,8 @@ public:
       BasicDigits s(1);
       s.mul_pow10(scale);
       s.sub(NumType{1}, 0);
+      number += to_string(frac.mul_mod_pow10(obase, scale), obase, false);
+      s.divide(obase);
       while (!s.is_zero()) {
         number += to_string(frac.mul_mod_pow10(obase, scale), obase);
         s.divide(obase);
@@ -884,9 +886,10 @@ private:
   /** \brief       Convert \a num to a string in base \a obase.
    *  \param num   Number to convert, must be less than \a obase.
    *  \param obase Base for output
+   *  \param lspace Do we need leading space (default true)
    *  \return      String representation of number.
    */
-  static std::string to_string(NumType num, NumType obase)
+  static std::string to_string(NumType num, NumType obase, bool lspace = true)
   {
     assert(num < obase);
     static char const* nums = "0123456789ABCDEF";
@@ -896,7 +899,12 @@ private:
     else {
       auto obase_width = std::to_string(obase - 1).size();
       std::string str = std::to_string(num);
-      return std::string(" ") + std::string(obase_width - str.size(), '0') + str;
+      if (lspace) {
+        return std::string(" ") + std::string(obase_width - str.size(), '0') + str;
+      }
+      else {
+        return std::string(obase_width - str.size(), '0') + str;
+      }
     }
   }
 
