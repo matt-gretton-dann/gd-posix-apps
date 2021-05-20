@@ -1596,7 +1596,7 @@ bool operator<=(BasicNumber<Traits> const& lhs, BasicNumber<Traits> const& rhs)
  *
  * Currently we assume 32-bit storage.
  */
-using Number = BasicNumber<NumberTraits32>;
+using Number = BasicNumber<std::conditional_t<sizeof(void*) == 8, NumberTraits32, NumberTraits8>>;
 
 }  // namespace GD::Bc
 
