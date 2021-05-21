@@ -53,5 +53,15 @@ if (ENABLE_IPO)
   set_property(TARGET find-multiply-split-point PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 target_link_libraries(find-multiply-split-point PUBLIC libbc)
-add_dependencies("find-multiply-split-point" "bc_messages_header")
+add_dependencies(find-multiply-split-point "bc_messages_header")
 target_add_clang_format(find-multiply-split-point)
+
+
+add_custom_command(
+  OUTPUT "find-multiply-split-point.hh"
+  COMMAND "$<TARGET_FILE:find-multiply-split-point>"
+          "${CMAKE_CURRENT_BINARY_DIR}/find-multiply-split-point.hh"
+  DEPENDS find-multiply-split-point
+  COMMENT "Generating find-multiply-split-point.hh")
+add_custom_target(find_multiply_split_point_header DEPENDS find-multiply-split-point.hh)
+add_dependencies(bc find_multiply_split_point_header)

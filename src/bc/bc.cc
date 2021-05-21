@@ -19,6 +19,8 @@
 #include <memory>
 #include <variant>
 
+#include "find-multiply-split-point.hh"
+
 using Msg = GD::Bc::Msg;
 
 namespace {
@@ -77,6 +79,10 @@ int main(int argc, char** argv)
   }
 
   GD::Bc::VM vm(std::cout, std::clog);
+
+  /* Configure where we do multiplication splits.  */
+  GD::Bc::Number::multiply_split_point(BC_MULTIPLY_SPLIT_POINT);
+
   if (load_library) {
     auto r = std::make_unique<GD::Bc::StringReader>(library_script);
     execute(vm, std::move(r));
