@@ -513,34 +513,9 @@ public:
       return;
     }
 
-    std::shared_ptr<DigitVector> result = std::make_shared<DigitVector>();
-    result->reserve(digits_->size() + rhs.digits_->size());
-
-    for (auto lhs_it = digits_->begin(); lhs_it != digits_->end(); ++lhs_it) {
-      WideType carry = 0;
-      typename DigitVector::size_type dist = std::distance(digits_->begin(), lhs_it);
-      if (result->size() <= dist) {
-        result->resize(dist, 0);
-      }
-      auto result_it = result->begin() + dist;
-      for (auto rhs_it = rhs.digits_->begin(); rhs_it != rhs.digits_->end(); ++rhs_it) {
-        result_it = ensure_it_valid(result_it, result);
-        WideType lhs_d = *lhs_it;
-        WideType rhs_d = *rhs_it;
-        carry += lhs_d * rhs_d + *result_it;
-        *result_it++ = static_cast<NumType>(carry % base_);
-        carry /= base_;
-      }
-
-      while (carry != 0) {
-        result_it = ensure_it_valid(result_it, result);
-        carry += *result_it;
-        *result_it++ = static_cast<NumType>(carry % base_);
-        carry /= base_;
-      }
-    }
-
-    std::swap(digits_, result);
+    BasicDigits result =
+      multiply(digits_->begin(), digits_->end(), rhs.digits_->begin(), rhs.digits_->end());
+    std::swap(*this, result);
     div_pow10(rescale);
   }
 
@@ -860,6 +835,12 @@ public:
 private:
   using DigitVector = std::vector<NumType>;
 
+  /** Construct basic digits based on an iterator range [begin, end).  */
+  BasicDigits(typename DigitVector::const_iterator begin, typename DigitVector::const_iterator end)
+      : digits_(std::make_shared<DigitVector>(begin, end))
+  {
+  }
+
   /** \brief  Ensure digits_ is populated in a way that is modifiable.
    */
   void copy_on_write()
@@ -1012,6 +993,81 @@ private:
     return static_cast<NumType>(carry);
   }
 
+  static BasicDigits multiply(typename DigitVector::const_iterator lhs_begin,
+                              typename DigitVector::const_iterator lhs_end,
+                              typename DigitVector::const_iterator rhs_begin,
+                              typename DigitVector::const_iterator rhs_end)
+  {
+    if (lhs_end - lhs_begin < multiply_split_point || rhs_end - rhs_begin < multiply_split_point) {
+      return multiply_basic(lhs_begin, lhs_end, rhs_begin, rhs_end);
+    }
+    return multiply_karatsuba(lhs_begin, lhs_end, rhs_begin, rhs_end);
+  }
+
+  static BasicDigits multiply_basic(typename DigitVector::const_iterator lhs_begin,
+                                    typename DigitVector::const_iterator lhs_end,
+                                    typename DigitVector::const_iterator rhs_begin,
+                                    typename DigitVector::const_iterator rhs_end)
+  {
+    /* Handle the case of nothing to multiply by - equivalent to multiplying by zero.  */
+    if (lhs_begin == lhs_end || rhs_begin == rhs_end) {
+      return BasicDigits();
+    }
+
+    if (lhs_end == lhs_begin + 1) {
+      /* LHS is one digit use the Multiply accumulate function.  */
+      BasicDigits r(rhs_begin, rhs_end);
+      r.mac(*lhs_begin, 0);
+      return r;
+    }
+
+    if (rhs_end == rhs_begin + 1) {
+      /* RHS is one digit use the Multiply accumulate function.  */
+      BasicDigits r(lhs_begin, lhs_end);
+      r.mac(*rhs_begin, 0);
+      return r;
+    }
+
+    /* Have to do the full thing... */
+    BasicDigits result;
+    result.copy_on_write();
+    auto result_size = (lhs_end - lhs_begin) + (rhs_end - rhs_begin) + 2;
+    result.digits_->resize(result_size, 0);
+    auto result_begin = result.digits_->begin();
+
+    for (auto lhs_it = lhs_begin; lhs_it != lhs_end; ++lhs_it) {
+      WideType carry = 0;
+      auto result_it = result_begin++;
+      assert(result_begin != result.digits_->end());
+      for (auto rhs_it = rhs_begin; rhs_it != rhs_end; ++rhs_it) {
+        assert(result_it != result.digits_->end());
+        WideType lhs_d = *lhs_it;
+        WideType rhs_d = *rhs_it;
+        carry += lhs_d * rhs_d + *result_it;
+        *result_it++ = static_cast<NumType>(carry % base_);
+        carry /= base_;
+      }
+
+      while (carry != 0) {
+        assert(result_it != result.digits_->end());
+        carry += *result_it;
+        *result_it++ = static_cast<NumType>(carry % base_);
+        carry /= base_;
+      }
+    }
+
+    return result;
+  }
+
+  static BasicDigits multiply_karatsuba(typename DigitVector::const_iterator lhs_begin,
+                                        typename DigitVector::const_iterator lhs_end,
+                                        typename DigitVector::const_iterator rhs_begin,
+                                        typename DigitVector::const_iterator rhs_end)
+  {
+    return multiply_basic(lhs_begin, lhs_end, rhs_begin, rhs_end);
+  }
+
+  static constexpr NumType multiply_split_point = 10;
   std::shared_ptr<DigitVector> digits_ = nullptr;  ///< BasicDigits in number.
 };
 
