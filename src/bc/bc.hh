@@ -660,9 +660,6 @@ private:
 /** Vector of instructions.  */
 using Instructions = std::vector<Instruction>;
 
-/** \brief  Validate an instruction vectore.  */
-void validate(Instructions const& instrs);
-
 std::ostream& operator<<(std::ostream& os, Instruction::Stream s);
 std::ostream& operator<<(std::ostream& os, Instruction::Opcode opcode);
 std::ostream& operator<<(std::ostream& os, Instruction::Operand const& operand);

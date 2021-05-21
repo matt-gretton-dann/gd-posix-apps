@@ -404,28 +404,6 @@ void GD::Bc::Instruction::validate_operands() const
   }
 }
 
-void GD::Bc::validate(Instructions const& instrs)
-{
-  for (Instructions::size_type i = 0; i < instrs.size(); ++i) {
-    if (instrs[i].has_op1()) {
-      auto const& op = instrs[i].op1();
-      if (std::holds_alternative<Instruction::Offset>(op)) {
-        [[maybe_unused]] Instruction::Offset offset = std::get<Instruction::Offset>(op);
-        assert(offset >= 0 || static_cast<Instruction::Index>(-offset) <= i);
-        assert(offset < 0 || static_cast<Instruction::Index>(offset) <= instrs_.size() - i);
-      }
-    }
-    if (instrs[i].has_op2()) {
-      auto const& op = instrs[i].op1();
-      if (std::holds_alternative<Instruction::Offset>(op)) {
-        [[maybe_unused]] Instruction::Offset offset = std::get<Instruction::Offset>(op);
-        assert(offset >= 0 || static_cast<Instruction::Index>(-offset) <= i);
-        assert(offset < 0 || static_cast<Instruction::Index>(offset) <= instrs_.size() - i);
-      }
-    }
-  }
-}
-
 std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Instruction::Operand const& operand)
 {
   std::visit([&os](auto const& o) { os << o; }, operand);

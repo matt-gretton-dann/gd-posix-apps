@@ -75,9 +75,16 @@ struct VMState
    */
   Number call(Letter func, Location const& loc);
 
+  /** Push a new parameter pack onto the parameter stack.  */
   void push_param_pack();
+
+  /** Push a scalar parameter into the current parameter pack.  */
   void push_param(Number const& num);
+
+  /** Push a vector parameter into the current parameter pack.  */
   void push_param(ArrayValues av);
+
+  /** Pop the current parameter pack.  */
   void pop_param_pack();
 
   /** \brief  Pop a scalar param.
@@ -89,6 +96,9 @@ struct VMState
    *  \return Value of parameter
    */
   ArrayValues pop_param_array();
+
+  /** \brief  Validate an instruction vectore.  */
+  void validate(Instructions const& instrs) const;
 
 private:
   template<typename... Ts>
@@ -489,6 +499,32 @@ GD::Bc::ArrayValues GD::Bc::Details::VMState::array(Array a) const
 void GD::Bc::Details::VMState::array(Array a, ArrayValues av)
 {
   arrays_[static_cast<unsigned>(a.get())] = av;
+}
+
+void GD::Bc::Details::VMState::validate(Instructions const& instrs) const
+{
+  for (Instructions::size_type i = 0; i < instrs.size(); ++i) {
+    if (instrs[i].has_op1()) {
+      auto const& op = instrs[i].op1();
+      if (std::holds_alternative<Instruction::Offset>(op)) {
+        Instruction::Offset offset = std::get<Instruction::Offset>(op);
+        assert_error(offset >= 0 || static_cast<Instruction::Index>(-offset) <= i,
+                     Msg::op1_offset_underflow, i, offset);
+        assert_error(offset < 0 || static_cast<Instruction::Index>(offset) <= instrs.size() - i,
+                     Msg::op1_offset_overflow, i, offset);
+      }
+    }
+    if (instrs[i].has_op2()) {
+      auto const& op = instrs[i].op1();
+      if (std::holds_alternative<Instruction::Offset>(op)) {
+        Instruction::Offset offset = std::get<Instruction::Offset>(op);
+        assert_error(offset >= 0 || static_cast<Instruction::Index>(-offset) <= i,
+                     Msg::op2_offset_underflow, i, offset);
+        assert_error(offset < 0 || static_cast<Instruction::Index>(offset) <= instrs.size() - i,
+                     Msg::op2_offset_overflow, i, offset);
+      }
+    }
+  }
 }
 
 GD::Bc::Details::InstructionPack::InstructionPack(VMState* vm, Instructions const& instrs)
@@ -916,7 +952,7 @@ GD::Bc::VM::VM(std::ostream& out, std::ostream& err) : state_(new Details::VMSta
 
 bool GD::Bc::VM::execute(Instructions& instructions)
 {
-  validate(instructions);
+  state_->validate(instructions);
   Details::InstructionPack instrs(state_, instructions);
   /* We want a way for people to interrupt execution - so install a SIGINT handler
    * but only whilst executing instructions.
