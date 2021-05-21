@@ -397,7 +397,7 @@ public:
   {
     copy_on_write();
 
-    NumType carry = for_each(rhs, scale, [](DigitVector::iterator it, WideType carry) {
+    NumType carry = for_each(rhs, scale, [](typename DigitVector::iterator it, WideType carry) {
       WideType result = *it + carry;
       *it = result % base_;
       return result / base_;
@@ -436,7 +436,7 @@ public:
   {
     copy_on_write();
 
-    NumType carry = for_each(rhs, scale, [](DigitVector::iterator it, WideType carry) {
+    NumType carry = for_each(rhs, scale, [](typename DigitVector::iterator it, WideType carry) {
       WideType rhs_value = carry % base_;
       carry /= base_;
       if (rhs_value > *it) {
@@ -957,8 +957,8 @@ private:
     }
   }
 
-  DigitVector::iterator ensure_it_valid(DigitVector::iterator it,
-                                        std::shared_ptr<DigitVector> digits)
+  typename DigitVector::iterator ensure_it_valid(typename DigitVector::iterator it,
+                                                 std::shared_ptr<DigitVector> digits)
   {
     if (it == digits->end()) {
       it = digits->insert(it, 0);
