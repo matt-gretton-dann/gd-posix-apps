@@ -505,6 +505,8 @@ public:
     std::swap(digits_, result.digits_);
   }
 
+  static void multiply_split_point(NumType point) { multiply_split_point_ = point; }
+
   void multiply(BasicDigits const& rhs, NumType rescale)
   {
     /* Multiplying by zero is easy.  */
@@ -998,8 +1000,8 @@ private:
                               typename DigitVector::const_iterator rhs_begin,
                               typename DigitVector::const_iterator rhs_end)
   {
-    if (std::distance(lhs_begin, lhs_end) <= multiply_split_point ||
-        std::distance(rhs_begin, rhs_end) <= multiply_split_point) {
+    if (std::distance(lhs_begin, lhs_end) <= multiply_split_point_ ||
+        std::distance(rhs_begin, rhs_end) <= multiply_split_point_) {
       return multiply_basic(lhs_begin, lhs_end, rhs_begin, rhs_end);
     }
     return multiply_karatsuba(lhs_begin, lhs_end, rhs_begin, rhs_end);
@@ -1065,8 +1067,8 @@ private:
                                         typename DigitVector::const_iterator rhs_begin,
                                         typename DigitVector::const_iterator rhs_end)
   {
-    assert(std::distance(lhs_begin, lhs_end) > multiply_split_point);
-    assert(std::distance(lhs_begin, lhs_end) > multiply_split_point);
+    assert(std::distance(lhs_begin, lhs_end) > multiply_split_point_);
+    assert(std::distance(lhs_begin, lhs_end) > multiply_split_point_);
 
     auto lhs_size = std::distance(lhs_begin, lhs_end);
     auto rhs_size = std::distance(rhs_begin, rhs_end);
@@ -1133,9 +1135,13 @@ private:
     return result;
   }
 
-  static constexpr NumType multiply_split_point = 1;
+  static typename DigitVector::difference_type multiply_split_point_;
   std::shared_ptr<DigitVector> digits_ = nullptr;  ///< BasicDigits in number.
 };
+
+template<typename Traits>
+typename BasicDigits<Traits>::DigitVector::difference_type
+  BasicDigits<Traits>::multiply_split_point_ = 1;
 
 }  // namespace Details
 
@@ -1528,6 +1534,17 @@ public:
 
     one.divide(*this, target_scale);
     std::swap(one, *this);
+  }
+
+  /** \brief  Set the split point for choosing which multiplication algorithm to use.
+   *  \param point New point (in range [1, base_]), unit is number of base_ digits.
+   *
+   * At and below the value of \a point basic (O(n^3)) multiplication will be done, above \a point
+   * we will do Karatsuba multiplication.
+   */
+  static void multiply_split_point(NumType point)
+  {
+    Details::BasicDigits<Traits>::multiply_split_point(point);
   }
 
   void multiply(BasicNumber const& rhs, NumType target_scale)
