@@ -175,7 +175,11 @@ using UInt64Pair = std::pair<uint64_t, uint64_t>;
 class RandomUIntPairGenerator : public Catch::Generators::IGenerator<UInt64Pair>
 {
 public:
-  RandomUIntPairGenerator() : rand_(), dist_(0, std::numeric_limits<uint64_t>::max()) { next(); }
+  RandomUIntPairGenerator()
+      : rand_(Catch::rngSeed()), dist_(0, std::numeric_limits<uint64_t>::max())
+  {
+    next();
+  }
 
   UInt64Pair const& get() const override { return pair_; }
 
@@ -200,7 +204,7 @@ Catch::Generators::GeneratorWrapper<UInt64Pair> random_pair()
 class RandomNumberGenerator : public Catch::Generators::IGenerator<GD::Bc::Number>
 {
 public:
-  RandomNumberGenerator() : rand_(), dist_(0, GD::Bc::Number::base_) { next(); }
+  RandomNumberGenerator() : rand_(Catch::rngSeed() + 1), dist_(0, GD::Bc::Number::base_) { next(); }
 
   GD::Bc::Number const& get() const override { return number_; }
 
@@ -241,11 +245,66 @@ Catch::Generators::GeneratorWrapper<GD::Bc::Number> random_number()
     std::make_unique<RandomNumberGenerator>());
 }
 
+class RandomNumberPairGenerator
+    : public Catch::Generators::IGenerator<std::pair<GD::Bc::Number, GD::Bc::Number>>
+{
+public:
+  RandomNumberPairGenerator(GD::Bc::Number::NumType max_digits = 40)
+      : rand_(Catch::rngSeed() + 2), dist_(0, GD::Bc::Number::base_), max_digits_(max_digits)
+  {
+    next();
+  }
+
+  std::pair<GD::Bc::Number, GD::Bc::Number> const& get() const override { return pair_; }
+
+  GD::Bc::Number get_a_number()
+  {
+    auto digit_count = dist_(rand_) % (max_digits_ * GD::Bc::Number::base_log10_);
+    auto int_len = dist_(rand_) % (digit_count + 1);
+
+    std::string num;
+    GD::Bc::Number::NumType digits = 0;
+    for (decltype(digit_count) i = 0; i < digit_count; ++i) {
+      if (i % GD::Bc::Number::base_log10_ == 0) {
+        digits = dist_(rand_);
+      }
+      auto digit = digits / (GD::Bc::Number::base_ / 10);
+      digits = (digits % (GD::Bc::Number::base_ / 10)) * 10;
+      assert(digit < 10);
+
+      if (num.size() == int_len) {
+        num += '.';
+      }
+      num += static_cast<char>('0' + digit);
+    }
+    return GD::Bc::Number(num, 10);
+  }
+
+  bool next() override
+  {
+    pair_ = std::make_pair(get_a_number(), get_a_number());
+    return true;
+  }
+
+private:
+  std::mt19937_64 rand_;
+  std::uniform_int_distribution<uint64_t> dist_;
+  std::pair<GD::Bc::Number, GD::Bc::Number> pair_;
+  GD::Bc::Number::NumType max_digits_;
+};
+
+Catch::Generators::GeneratorWrapper<std::pair<GD::Bc::Number, GD::Bc::Number>>
+random_number_pair(GD::Bc::Number::NumType max_digits = 40)
+{
+  return Catch::Generators::GeneratorWrapper<std::pair<GD::Bc::Number, GD::Bc::Number>>(
+    std::make_unique<RandomNumberPairGenerator>(max_digits));
+}
+
 }  // namespace
 
 TEST_CASE("GD::Bc::Number - division, random", "[bc][number]")
 {
-  auto nums = GENERATE(take(1000, random_pair()));
+  auto nums = GENERATE(take(5000, random_pair()));
   uint64_t mask = std::numeric_limits<uint64_t>::max();
 
   auto ud = nums.first % mask;
@@ -278,7 +337,7 @@ TEST_CASE("GD::Bc::Number - square root, random", "[bc][number]")
   /* Test square rooting by taking the square root and multiplying it up again to see if we have the
    * correct result.
    */
-  auto num = GENERATE(take(1000, random_number()));
+  auto num = GENERATE(take(5000, random_number()));
 
   auto sqrt = num;
   sqrt.sqrt(0);
@@ -295,4 +354,29 @@ TEST_CASE("GD::Bc::Number - square root, random", "[bc][number]")
   square = sqrt;
   square.multiply(sqrt, sqrt.scale() * 2);
   REQUIRE(square > num);
+}
+
+TEST_CASE("GD::Bc::Number - multiplication, random", "[bc][number]")
+{
+  /* Test square rooting by taking the square root and multiplying it up again to see if we have the
+   * correct result.
+   */
+  auto nums = GENERATE(take(500, random_number_pair(200)));
+
+  /* Always do basic multiplication.  */
+  auto res1 = nums.first;
+  GD::Bc::Number::multiply_split_point(GD::Bc::Number::base_);
+  res1.multiply(nums.second, 0);
+
+  /* Always do Karatsuba multiplication.  */
+  auto res2 = nums.first;
+  GD::Bc::Number::multiply_split_point(1);
+  res2.multiply(nums.second, 0);
+  REQUIRE(res1 == res2);
+
+  /* Do a mix.  */
+  auto res3 = nums.second;
+  GD::Bc::Number::multiply_split_point(100);
+  res3.multiply(nums.second, 0);
+  REQUIRE(res1 == res2);
 }
