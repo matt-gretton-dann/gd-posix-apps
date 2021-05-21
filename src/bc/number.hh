@@ -998,7 +998,8 @@ private:
                               typename DigitVector::const_iterator rhs_begin,
                               typename DigitVector::const_iterator rhs_end)
   {
-    if (lhs_end - lhs_begin < multiply_split_point || rhs_end - rhs_begin < multiply_split_point) {
+    if (std::distance(lhs_begin, lhs_end) <= multiply_split_point ||
+        std::distance(rhs_begin, rhs_end) <= multiply_split_point) {
       return multiply_basic(lhs_begin, lhs_end, rhs_begin, rhs_end);
     }
     return multiply_karatsuba(lhs_begin, lhs_end, rhs_begin, rhs_end);
@@ -1064,10 +1065,75 @@ private:
                                         typename DigitVector::const_iterator rhs_begin,
                                         typename DigitVector::const_iterator rhs_end)
   {
-    return multiply_basic(lhs_begin, lhs_end, rhs_begin, rhs_end);
+    assert(std::distance(lhs_begin, lhs_end) > multiply_split_point);
+    assert(std::distance(lhs_begin, lhs_end) > multiply_split_point);
+
+    auto lhs_size = std::distance(lhs_begin, lhs_end);
+    auto rhs_size = std::distance(rhs_begin, rhs_end);
+    auto half_size = std::min(lhs_size, rhs_size) / 2;
+    half_size = std::max(half_size, decltype(half_size){1});
+
+    auto lhs_mid = lhs_begin + std::min(half_size, lhs_size);
+    auto rhs_mid = rhs_begin + std::min(half_size, rhs_size);
+
+    BasicDigits z0 = multiply(lhs_begin, lhs_mid, rhs_begin, rhs_mid);
+    BasicDigits z2 = multiply(lhs_mid, lhs_end, rhs_mid, rhs_end);
+
+    BasicDigits z1lhs_sum = add(lhs_begin, lhs_mid, lhs_mid, lhs_end);
+    BasicDigits z1rhs_sum = add(rhs_begin, rhs_mid, rhs_mid, rhs_end);
+    auto z1lhs_sum_begin = z1lhs_sum.digits_->begin();
+    auto z1rhs_sum_begin = z1rhs_sum.digits_->begin();
+    auto z1lhs_sum_end = z1lhs_sum.digits_->end();
+    auto z1rhs_sum_end = z1rhs_sum.digits_->end();
+    BasicDigits z1 = multiply(z1lhs_sum_begin, z1lhs_sum_end, z1rhs_sum_begin, z1rhs_sum_end);
+    z1.sub(z0, 0);
+    z1.sub(z2, 0);
+
+    BasicDigits result;
+    result.copy_on_write();
+    result.digits_->resize(lhs_size + rhs_size + 2);
+    result.add(z0, 0);
+    result.add(z1, half_size * base_log10_);
+    result.add(z2, half_size * 2 * base_log10_);
+    result.tidy();
+
+    return result;
   }
 
-  static constexpr NumType multiply_split_point = 10;
+  static BasicDigits add(typename DigitVector::const_iterator lhs_begin,
+                         typename DigitVector::const_iterator lhs_end,
+                         typename DigitVector::const_iterator rhs_begin,
+                         typename DigitVector::const_iterator rhs_end)
+  {
+    BasicDigits result;
+    result.copy_on_write();
+    result.digits_->resize(
+      std::max(std::distance(lhs_begin, lhs_end), std::distance(rhs_begin, rhs_end)) + 1, 0);
+    auto result_insert = result.digits_->begin();
+
+    WideType carry = 0;
+    while (lhs_begin != lhs_end && rhs_begin != rhs_end) {
+      carry += *lhs_begin++ + *rhs_begin++;
+      *result_insert++ = static_cast<NumType>(carry % base_);
+      carry /= base_;
+    }
+    while (lhs_begin != lhs_end) {
+      carry += *lhs_begin++;
+      *result_insert++ = static_cast<NumType>(carry % base_);
+      carry /= base_;
+    }
+    while (rhs_begin != rhs_end) {
+      carry += *rhs_begin++;
+      *result_insert++ = static_cast<NumType>(carry % base_);
+      carry /= base_;
+    }
+    *result_insert = carry;
+
+    result.tidy();
+    return result;
+  }
+
+  static constexpr NumType multiply_split_point = 1;
   std::shared_ptr<DigitVector> digits_ = nullptr;  ///< BasicDigits in number.
 };
 
