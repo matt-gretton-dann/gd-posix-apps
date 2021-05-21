@@ -8,9 +8,12 @@
 function(set_warnings TARGET)
 
 if(MSVC)
-target_compile_options(${TARGET} PRIVATE /W4 /WX)
+  target_compile_options(${TARGET} PRIVATE /W4 /WX)
 else()
-target_compile_options(${TARGET} PRIVATE -Wall -Wextra -Wpedantic -Werror)
+  target_compile_options(${TARGET} PRIVATE -Wall -Wextra -Wpedantic -Werror)
+  if (APPLE)
+  target_compile_options(${TARGET} PRIVATE -Wno-gnu-zero-variadic-macro-arguments)
+  endif()
 endif()
 
 endfunction()
