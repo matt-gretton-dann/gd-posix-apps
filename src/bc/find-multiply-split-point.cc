@@ -30,8 +30,7 @@ public:
 
   bool next()
   {
-    auto digit_count =
-      (digit_count_ - dist_(rand_) % GD::Bc::Number::base_log10_) * GD::Bc::Number::base_log10_;
+    auto digit_count = dist_(rand_) % (digit_count_ * GD::Bc::Number::base_log10_);
 
     std::string num;
     GD::Bc::Number::NumType digits = 0;
@@ -84,7 +83,7 @@ Number::NumType check(Number::NumType initial_digit)
 {
   std::vector<Number> canon_numbers;
   RandomNumberGenerator rng(initial_digit);
-  for (unsigned i = 0; i < 1000; ++i) {
+  for (unsigned i = 0; i < 2000; ++i) {
     canon_numbers.push_back(rng.get());
     rng.next();
   }
@@ -137,7 +136,7 @@ void output(std::ostream& os, Number::NumType value)
 
 int main(int argc, char** argv)
 {
-  auto result = check(500);
+  auto result = check(1000);
   if (argc == 1) {
     output(std::cout, result);
   }
