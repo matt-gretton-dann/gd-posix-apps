@@ -5,6 +5,7 @@
  */
 
 #include "gd/nl_types.h"
+
 #include "gd/time.h"
 
 #include <random>
@@ -83,7 +84,7 @@ Number::NumType check(Number::NumType initial_digit)
 {
   std::vector<Number> canon_numbers;
   RandomNumberGenerator rng(initial_digit);
-  for (unsigned i = 0; i < 2000; ++i) {
+  for (unsigned i = 0; i < 500; ++i) {
     canon_numbers.push_back(rng.get());
     rng.next();
   }
@@ -136,7 +137,7 @@ void output(std::ostream& os, Number::NumType value)
 
 int main(int argc, char** argv)
 {
-  auto result = check(1000);
+  auto result = check(500);
   if (argc == 1) {
     output(std::cout, result);
   }
