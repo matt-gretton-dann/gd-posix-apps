@@ -19,11 +19,13 @@
 #define STRINGIFY2(a) #a
 #define STRINGIFY(a) STRINGIFY2(a)
 
+__DISABLE_NARROWING_WARNING
+
 /* Assert an error.
  * To work around some awkward compilers ther first ... argument is a message ID. */
-#define assert_error(TEST, ...)                                                               \
+#define assert_error(TEST, ...)                                                                    \
   if (!(TEST)) {                                                                                   \
-    error(__func__, __FILE__, __LINE__, STRINGIFY(TEST) , __VA_ARGS__);           \
+    error(__func__, __FILE__, __LINE__, STRINGIFY(TEST), __VA_ARGS__);                             \
   }
 
 namespace GD::Bc::Details {

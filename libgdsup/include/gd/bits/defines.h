@@ -83,8 +83,10 @@
 
 #ifdef _MSC_VER
 #  define __SUPPRESS_CONSTANT_CONDITIONAL _Pragma("warning(suppress: 4127)")
+#  define __DISABLE_NARROWING_WARNING _Pragma("warning(disable: 4267)")
 #else
 #  define __SUPPRESS_CONSTANT_CONDITIONAL
+#  define __DISABLE_NARROWING_WARNING
 #endif
 
 #endif  // _LIBGDSUP_INCLUDE_GD_BITS_DEFINES_H_INCLUDED
