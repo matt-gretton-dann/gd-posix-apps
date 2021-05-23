@@ -24,12 +24,12 @@ static int convert_file_time_to_timespec(struct timespec* ts, FILETIME ft, LONGL
 
   /* file_time is in units of 100 nano-seconds (10^-4).  tv_nsec is in micro-seconds (10^-9). */
   ts->tv_sec = (time_t)(file_time / HNS_PER_SEC);
-  if (((int64_t)ts->tv_sec) * HNS_PER_SEC != file_time) {
+  ts->tv_nsec = (long)((file_time % HNS_PER_SEC) * HNS_PER_NSEC);
+  if (((int64_t)ts->tv_sec) * HNS_PER_SEC + ts->tv_nsec / HNS_PER_NSEC != file_time) {
     errno = EOVERFLOW;
     __support_log("convert_file_to_timespec: Overflow when converting file time to time_t.\n");
     return -1;
   }
-  ts->tv_nsec = (long)((file_time % HNS_PER_SEC) * HNS_PER_NSEC);
   return 0;
 }
 
@@ -43,8 +43,9 @@ int clock_gettime(clockid_t clock, struct timespec* ts)
 
   switch (clock) {
   case CLOCK_PROCESS_CPUTIME_ID: {
-    FILETIME user_time;
-    BOOL success = GetProcessTimes(GetCurrentProcess(), NULL, NULL, NULL, &user_time);
+    FILETIME start_time, end_time, user_time, kernel_time;
+    BOOL success =
+      GetProcessTimes(GetCurrentProcess(), &start_time, &end_time, &kernel_time, &user_time);
     if (!success) {
       __support_log("clock_gettime: Failed to get process time: %08x\n", GetLastError());
       errno = ENOTSUP;
@@ -54,8 +55,9 @@ int clock_gettime(clockid_t clock, struct timespec* ts)
     return convert_file_time_to_timespec(ts, user_time, 0);
   }
   case CLOCK_THREAD_CPUTIME_ID: {
-    FILETIME user_time;
-    BOOL success = GetThreadTimes(GetCurrentThread(), NULL, NULL, NULL, &user_time);
+    FILETIME start_time, end_time, user_time, kernel_time;
+    BOOL success =
+      GetProcessTimes(GetCurrentProcess(), &start_time, &end_time, &kernel_time, &user_time);
     if (!success) {
       __support_log("clock_gettime: Failed to get thread time: %08x\n", GetLastError());
       errno = ENOTSUP;
