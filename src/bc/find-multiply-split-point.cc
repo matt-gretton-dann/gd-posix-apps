@@ -5,12 +5,12 @@
  */
 
 #include "gd/nl_types.h"
+#include "gd/time.h"
 
 #include <random>
 #include <sstream>
 #include <stdint.h>
 #include <string>
-#include <time.h>
 #include <utility>
 
 #include "bc.hh"
@@ -51,7 +51,7 @@ public:
 
 private:
   std::mt19937_64 rand_;
-  std::uniform_int_distribution<uint64_t> dist_;
+  std::uniform_int_distribution<GD::Bc::Number::NumType> dist_;
   GD::Bc::Number::NumType digit_count_;
   GD::Bc::Number number_;
 };
