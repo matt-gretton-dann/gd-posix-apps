@@ -46,5 +46,8 @@ __pycache__/
 .vscode/*
 !.vscode/settings.json
 
+# Visual Studio
+.vs
+
 # GDB
 .gdb_history
