@@ -126,11 +126,11 @@ bool GD::Bc::Instruction::has_op2(Opcode opcode) { return op_count(opcode) >= 2;
 std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Instruction::Stream s)
 {
   switch (s) {
-  case GD::Bc::Instruction::Stream::stdout:
-    os << "stdout";
+  case GD::Bc::Instruction::Stream::output:
+    os << "output";
     break;
-  case GD::Bc::Instruction::Stream::stderr:
-    os << "stderr";
+  case GD::Bc::Instruction::Stream::error:
+    os << "error";
     break;
   }
   return os;

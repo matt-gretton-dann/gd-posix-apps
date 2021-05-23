@@ -19,9 +19,11 @@
 #define STRINGIFY2(a) #a
 #define STRINGIFY(a) STRINGIFY2(a)
 
-#define assert_error(TEST, MSG, ...)                                                               \
+/* Assert an error.
+ * To work around some awkward compilers ther first ... argument is a message ID. */
+#define assert_error(TEST, ...)                                                               \
   if (!(TEST)) {                                                                                   \
-    error(MSG, __func__, __FILE__, __LINE__, STRINGIFY(TEST) __VA_OPT__(, __VA_ARGS__));           \
+    error(__func__, __FILE__, __LINE__, STRINGIFY(TEST) , __VA_ARGS__);           \
   }
 
 namespace GD::Bc::Details {
@@ -102,11 +104,11 @@ struct VMState
 
 private:
   template<typename... Ts>
-  [[noreturn]] void error(Msg msg, char const* func, char const* file, unsigned line,
-                          char const* test, Ts... args) const
+  [[noreturn]] void error(char const* func, char const* file, unsigned line, char const* test,
+                          Msg msg, Ts... args) const
   {
-    stderr_ << Messages::get().format(Set::bc, Msg::internal_error, func, file, line, test) << '\n'
-            << Messages::get().format(Set::bc, msg, args...) << '\n';
+    error_ << Messages::get().format(Set::bc, Msg::internal_error, func, file, line, test) << '\n'
+           << Messages::get().format(Set::bc, msg, args...) << '\n';
     ::exit(1);
   }
 
@@ -119,8 +121,8 @@ private:
   using FunctionDefinition =
     std::tuple<Instructions, VariableMask, Location>;  ///< Function definition.
 
-  std::ostream& stdout_;                            ///< Stream for "normal output."
-  std::ostream& stderr_;                            ///< Stream for error output.
+  std::ostream& output_;                            ///< Stream for "normal output."
+  std::ostream& error_;                             ///< Stream for error output.
   std::array<ArrayValues, Letter::count_> arrays_;  ///< Array of arrays, indexed by Letter.
   std::array<std::optional<FunctionDefinition>, Letter::count_>
     functions_;  ///< Array of (optional) functions, indexed by letter.
@@ -167,10 +169,10 @@ private:
   friend std::ostream& operator<<(std::ostream& os, InstructionPack const& instrs);
 
   template<typename... Ts>
-  [[noreturn]] void error(Msg msg, char const* func, char const* file, unsigned line,
-                          char const* test, Ts... args) const
+  [[noreturn]] void error(char const* func, char const* file, unsigned line, char const* test,
+                          Msg msg, Ts... args) const
   {
-    vm_->stream(Instruction::Stream::stderr)
+    vm_->stream(Instruction::Stream::error)
       << Messages::get().format(Set::bc, Msg::internal_error, func, file, line, test) << '\n'
       << Messages::get().format(Set::bc, Msg::instruction_header) << '\n'
       << *this << Messages::get().format(Set::bc, msg, args...) << '\n';
@@ -310,6 +312,7 @@ __EXTERN_C void handle_sigint(int) { have_been_interrupted = true; }
 /** Install the signal handler for SIGINT.  */
 void install_interrupt_handler()
 {
+#ifndef _WIN32
   have_been_interrupted = false;
   struct sigaction sa;
   sa.sa_handler = handle_sigint;
@@ -318,27 +321,30 @@ void install_interrupt_handler()
   /* We don't care if this fails as users will still be able to ^C out but just with a worse
    * experience.  */
   sigaction(SIGINT, &sa, nullptr);
+#endif
 }
 
 /* Reset the SIGINT signal handler.  */
 void reset_interrupt_handler()
 {
+#ifndef _WIN32
   struct sigaction sa;
   sa.sa_handler = SIG_DFL;
   sigemptyset(&sa.sa_mask);
   sigaction(SIGINT, &sa, nullptr);
-  // We assume this has worked for usefulness sake.
+// We assume this has worked for usefulness sake.
+#endif
 }
 
 }  // namespace GD::Bc::Details
 
-GD::Bc::Details::VMState::VMState(std::ostream& out, std::ostream& err) : stdout_(out), stderr_(err)
+GD::Bc::Details::VMState::VMState(std::ostream& out, std::ostream& err) : output_(out), error_(err)
 {
 }
 
 std::ostream& GD::Bc::Details::VMState::stream(Instruction::Stream stream) const
 {
-  return stream == Instruction::Stream::stdout ? stdout_ : stderr_;
+  return stream == Instruction::Stream::output ? output_ : error_;
 }
 
 void GD::Bc::Details::VMState::push_param(Number const& n)
@@ -961,7 +967,7 @@ bool GD::Bc::VM::execute(Instructions& instructions)
   auto result = instrs.execute();
   Details::reset_interrupt_handler();
   if (Details::have_been_interrupted) {
-    state_->stream(Instruction::Stream::stderr) << Messages::get().format(Msg::interrupted) << '\n';
+    state_->stream(Instruction::Stream::error) << Messages::get().format(Msg::interrupted) << '\n';
     Details::have_been_interrupted = false;
   }
   return result.second;

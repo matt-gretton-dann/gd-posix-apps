@@ -59,7 +59,7 @@ void GD::Bc::Lexer::lex_string()
       t_.emplace(Token::Type::error, r_->error(Msg::unexpected_eof_string));
       return;
     default:
-      value += r_->peek();
+      value += static_cast<char>(r_->peek());
       r_->chew();
       break;
     }
@@ -90,12 +90,12 @@ void GD::Bc::Lexer::lex_number()
     case '2':
     case '1':
     case '0':
-      value += r_->peek();
+      value += static_cast<char>(r_->peek());
       r_->chew();
       break;
     case '.':
       if (!seen_period) {
-        value += r_->peek();
+        value += static_cast<char>(r_->peek());
         r_->chew();
         seen_period = true;
       }
@@ -165,7 +165,7 @@ void GD::Bc::Lexer::lex_letter_or_keyword()
     case 'x':
     case 'y':
     case 'z':
-      value += r_->peek();
+      value += static_cast<char>(r_->peek());
       r_->chew();
       break;
     default:

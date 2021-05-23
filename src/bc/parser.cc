@@ -264,7 +264,7 @@ bool GD::Bc::Parser::parse_opt_statement()
   switch (token.type()) {
   case Token::Type::string: {
     auto s = insert_string(token.string());
-    insert_print(s, Instruction::Stream::stdout);
+    insert_print(s, Instruction::Stream::output);
     lexer_->chew();
     return true;
   }
@@ -305,7 +305,7 @@ bool GD::Bc::Parser::parse_opt_statement()
     case ExprType::assignment:
       return true;
     default:
-      insert_print(idx, Instruction::Stream::stdout);
+      insert_print(idx, Instruction::Stream::output);
       return true;
     }
   }

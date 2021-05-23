@@ -48,7 +48,7 @@ struct NumberTraitsBase
   using NumType = NT;
   using WideType = WT;
   using PrintType = std::conditional_t<sizeof(NT) == 1, unsigned, NT>;
-  static constexpr WideType base_ = pow10(bl10);
+  static constexpr WideType base_ = static_cast<WideType>(pow10(bl10));
   static constexpr unsigned base_log10_ = bl10;
 
   /* Check types are wide enough.  */
@@ -358,7 +358,7 @@ public:
     /* The length is at most the number of entries in the digits_ vector times the log base.  We
      * then correct by reducing length by the number of leading zeros.
      */
-    NumType length = digits_->size() * base_log10_;
+    auto length = digits_->size() * base_log10_;
     auto rit = digits_->rbegin();
     while (rit != digits_->rend() && *rit == 0) {
       --rit;
@@ -374,7 +374,9 @@ public:
       }
     }
 
-    return std::max(NumType{1}, length);
+    assert(length < base_);
+
+    return std::max(NumType{1}, static_cast<NumType>(length));
   }
 
   /** \brief        Add a NumType value to the digits_ at a given scale
@@ -443,7 +445,7 @@ public:
         *it += base_;
         ++carry;
       }
-      *it -= rhs_value;
+      *it -= static_cast<NumType>(rhs_value);
       return carry;
     });
 
@@ -541,7 +543,7 @@ public:
     }
 
     if (carry != 0) {
-      digits_->push_back(carry);
+      digits_->push_back(static_cast<NumType>(carry));
     }
   }
 
@@ -562,7 +564,7 @@ public:
     }
 
     /* Now we have to multply by a number < base so can just use mac.  */
-    mac(pow10(scale % base_log10_), 0);
+    mac(static_cast<NumType>(pow10(scale % base_log10_)), 0);
 
     tidy();
   }
@@ -646,7 +648,7 @@ public:
     auto n = v.digits_->size();
     auto m = digits_->size() - n;
 
-    auto d = (base_ / 2 - 1) / v.digits_->back();
+    NumType d = (static_cast<NumType>(base_) / 2 - 1) / v.digits_->back();
     d += 1;
     if (d != 1) {
       mac(d, 0);
@@ -657,7 +659,7 @@ public:
     digits_->push_back(0);
 
     BasicDigits q;
-    q.digits_ = std::make_shared<DigitVector>(m + 1, 0);
+    q.digits_ = std::make_shared<DigitVector>(m + 1, static_cast<NumType>(0));
 
     /* D2. Initialize j.  */
     auto j = m;
@@ -708,7 +710,7 @@ public:
 
       if (borrowed) {
         /* D6. Add back.  Do this now as it is simpler. */
-        WideType carry = 0;
+        carry = 0;
         for (typename DigitVector::size_type i = 0; i < n; ++i) {
           carry += v.digits_->at(i) + digits_->at(j + i);
           digits_->at(j + i) = carry % base_;
@@ -724,7 +726,7 @@ public:
       /* D5. Test remainder.  */
       assert(q_hat < base_);
       assert(digits_->at(n + j) == 0);
-      q.digits_->at(j) = q_hat;
+      q.digits_->at(j) = static_cast<NumType>(q_hat);
 
     } while (j-- > 0);
 
@@ -756,7 +758,7 @@ public:
 
     /* Do the whole digit steps first as this is just memory shuffling.  */
     auto init_size = digits_->size();
-    NumType offset = scale / base_log10_;
+    decltype(init_size) offset = scale / base_log10_;
     if (offset > init_size) {
       offset = init_size;
     }
@@ -770,7 +772,7 @@ public:
       return;
     }
 
-    WideType scale_pow10 = pow10(scale % base_log10_);
+    WideType scale_pow10 = static_cast<WideType>(pow10(scale % base_log10_));
     auto it = digits_->begin();
     WideType carry = *it / scale_pow10;
     while (++it != digits_->end()) {
@@ -973,7 +975,7 @@ private:
 
     while (scale >= base_log10_) {
       it = ensure_it_valid(it, digits_);
-      carry = fn(it++, carry);
+      carry = static_cast<WideType>(fn(it++, carry));
       assert(carry < base_);
       scale -= base_log10_;
     }
@@ -982,12 +984,12 @@ private:
     for (auto it_rhs : *rhs.digits_) {
       carry += it_rhs * pow10_scale;
       it = ensure_it_valid(it, digits_);
-      carry = fn(it++, carry);
+      carry = static_cast<WideType>(fn(it++, carry));
       assert(carry < base_);
     }
 
     while (it != digits_->end()) {
-      carry = fn(it++, carry);
+      carry = static_cast<WideType>(fn(it++, carry));
       assert(carry < base_);
     }
 
@@ -1095,8 +1097,8 @@ private:
     result.copy_on_write();
     result.digits_->resize(lhs_size + rhs_size + 2);
     result.add(z0, 0);
-    result.add(z1, half_size * base_log10_);
-    result.add(z2, half_size * 2 * base_log10_);
+    result.add(z1, static_cast<NumType>(half_size * base_log10_));
+    result.add(z2, static_cast<NumType>(half_size * 2 * base_log10_));
     result.tidy();
 
     return result;
@@ -1129,7 +1131,7 @@ private:
       *result_insert++ = static_cast<NumType>(carry % base_);
       carry /= base_;
     }
-    *result_insert = carry;
+    *result_insert = static_cast<NumType>(carry);
 
     result.tidy();
     return result;
@@ -1249,8 +1251,8 @@ public:
 
       auto digit = ::strchr(digits, c);
       if (digit != nullptr) {
-        assert((digit - digits < ibase) || s.size() == 1);
-        digits_.mac(ibase, digit - digits);
+        assert((digit - digits < ibase) || (s.size() == 1 && digit - digits < 16));
+        digits_.mac(ibase, static_cast<NumType>(digit - digits));
       }
       else if (c == '.') {
         assert(!seen_period);

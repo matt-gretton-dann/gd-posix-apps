@@ -583,8 +583,8 @@ public:
 
   /** Stream identifiers.  */
   enum class Stream {
-    stdout,  ///< Standard output
-    stderr   ///< Standard error.
+    output,  ///< Use normal output stream
+    error   ///< Use error stream.
   };
 
   /** Type representing an index into the list of instructions.  */
@@ -942,7 +942,7 @@ private:
     if (lexer_error) {
       lexer_->chew();
     }
-    insert_print(s, Instruction::Stream::stderr);
+    insert_print(s, Instruction::Stream::error);
     return insert_quit(1);
   }
 

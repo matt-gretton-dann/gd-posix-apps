@@ -235,7 +235,7 @@ public:
 
 private:
   std::mt19937_64 rand_;
-  std::uniform_int_distribution<uint64_t> dist_;
+  std::uniform_int_distribution<GD::Bc::Number::NumType> dist_;
   GD::Bc::Number number_;
 };
 
@@ -288,7 +288,7 @@ public:
 
 private:
   std::mt19937_64 rand_;
-  std::uniform_int_distribution<uint64_t> dist_;
+  std::uniform_int_distribution<GD::Bc::Number::NumType> dist_;
   std::pair<GD::Bc::Number, GD::Bc::Number> pair_;
   GD::Bc::Number::NumType max_digits_;
 };
