@@ -243,6 +243,7 @@ target_sources(gdsup PRIVATE
                include/gd/nl_types.h
                include/gd/stdlib.h
                include/gd/string.h
+               include/gd/time.h
                include/gd/unistd.h)
 
 find_std_filesystem()
@@ -261,6 +262,7 @@ add_subdirectory(nl_types)
 add_subdirectory(stdlib)
 add_subdirectory(string)
 add_subdirectory(support)
+add_subdirectory(time)
 add_subdirectory(unistd)
 
 # Ensure everything gets clang formatted and found.
