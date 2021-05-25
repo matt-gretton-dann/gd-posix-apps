@@ -4,8 +4,8 @@
  *  SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _LIBGDSUP_INCLUDE_GD_STRING_H_INCLUDED
-#define _LIBGDSUP_INCLUDE_GD_STRING_H_INCLUDED
+#ifndef _LIBGDSUP_INCLUDE_GD_TIME_H_INCLUDED
+#define _LIBGDSUP_INCLUDE_GD_TIME_H_INCLUDED
 
 #include "gd/bits/defines.h"
 
@@ -72,4 +72,4 @@ __EXTERN_C int clock_settime(clockid_t _clock, struct timespec const* _ts);
 
 #endif  // _WIN32
 
-#endif  // _LIBGDSUP_INCLUDE_GD_STDLIB_H_INCLUDED
+#endif  // _LIBGDSUP_INCLUDE_GD_TIME_H_INCLUDED
