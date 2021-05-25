@@ -66,14 +66,14 @@ typedef struct
 } siginfo_t;
 
 #  define SA_NOCLDSTOP 0x01 /**< Do not generate SIGCHLD when children stop.  Not implemented. */
-#  define SA_ONSTACK 0x02 /**< Use an alternative stack.  Always active.  */
+#  define SA_ONSTACK 0x02   /**< Use an alternative stack.  Always active.  */
 #  define SA_RESETHAND 0x04 /**< Reset handler to default on entry. */
-#  define SA_RESTART 0x08 /**< Enable kernel restartable functions. Not implemented. */
-#  define SA_SIGINFO 0x10 /**< Use sa_siginfo instead of sa_handler. */
+#  define SA_RESTART 0x08   /**< Enable kernel restartable functions. Not implemented. */
+#  define SA_SIGINFO 0x10   /**< Use sa_siginfo instead of sa_handler. */
 #  define SA_NOCLDWAIT 0x20 /**< Do not wait for children */
-#  define SA_NODEFER 0x40 /**< Do not block this signal on entry to the handler. */
-#  define SS_ONSTACK 0x02 /**< Alternate stack enable. */
-#  define SS_DISABLE 0x80 /**< Alternate stack disable. */
+#  define SA_NODEFER 0x40   /**< Do not block this signal on entry to the handler. */
+#  define SS_ONSTACK 0x02   /**< Alternate stack enable. */
+#  define SS_DISABLE 0x80   /**< Alternate stack disable. */
 
 /** \brief Signal action. */
 struct sigaction
