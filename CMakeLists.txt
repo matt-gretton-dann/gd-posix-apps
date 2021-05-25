@@ -72,6 +72,9 @@ if(RUN_UNIT_TESTS)
   include(Catch)
 endif()
 
+set(CMAKE_C_STANDAD 11)
+set(CMAKE_C_STANDARD_REQUIRED 11)
+
 # Detect C++ version
 list(FIND CMAKE_CXX_COMPILE_FEATURES "cxx_std_20" _has_cxx20)
 if(NOT _has_cxx20 EQUAL -1)

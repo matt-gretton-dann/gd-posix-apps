@@ -5,13 +5,13 @@
  */
 
 #include "gd/bits/defines.h"
+#include "gd/signal.h"
 
 #include "bc-messages.hh"
 
 #include <array>
 #include <assert.h>
 #include <ostream>
-#include <signal.h>
 
 #include "bc.hh"
 #include "number.hh"
@@ -306,7 +306,7 @@ std::ostream& operator<<(std::ostream& os, InstructionPack const& instrs);
 std::ostream& operator<<(std::ostream& os, InstructionPack::Result const& result);
 
 /** Interrupt handler globals */
-bool have_been_interrupted = false;
+sig_atomic_t have_been_interrupted = false;
 
 /** Handle receiving SIGINT.  */
 __EXTERN_C void handle_sigint(int) { have_been_interrupted = true; }
@@ -314,7 +314,6 @@ __EXTERN_C void handle_sigint(int) { have_been_interrupted = true; }
 /** Install the signal handler for SIGINT.  */
 void install_interrupt_handler()
 {
-#ifndef _WIN32
   have_been_interrupted = false;
   struct sigaction sa;
   sa.sa_handler = handle_sigint;
@@ -323,19 +322,16 @@ void install_interrupt_handler()
   /* We don't care if this fails as users will still be able to ^C out but just with a worse
    * experience.  */
   sigaction(SIGINT, &sa, nullptr);
-#endif
 }
 
 /* Reset the SIGINT signal handler.  */
 void reset_interrupt_handler()
 {
-#ifndef _WIN32
   struct sigaction sa;
   sa.sa_handler = SIG_DFL;
   sigemptyset(&sa.sa_mask);
   sigaction(SIGINT, &sa, nullptr);
-// We assume this has worked for usefulness sake.
-#endif
+  // We assume this has worked for usefulness sake.
 }
 
 }  // namespace GD::Bc::Details
