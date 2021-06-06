@@ -21,6 +21,7 @@ include(FetchContent)
 include(GNUInstallDirs)
 include(Warnings)
 include(CheckIPOSupported)
+include(GDPosixAppsTests)
 
 # Find packages
 find_package(ClangFormat)
