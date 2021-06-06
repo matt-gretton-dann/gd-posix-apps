@@ -65,3 +65,5 @@ add_custom_command(
   COMMENT "Generating find-multiply-split-point.hh")
 add_custom_target(find_multiply_split_point_header DEPENDS find-multiply-split-point.hh)
 add_dependencies(bc find_multiply_split_point_header)
+
+add_gdpat_test(bc)
