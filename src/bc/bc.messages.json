@@ -1,0 +1,356 @@
+[
+  {
+    "set": "bc",
+    "id": 1,
+    "messages": [
+      {
+        "msg": "usage",
+        "id": 1,
+        "description": "Usage message for the program. {0} is the program name.",
+        "C": "Usage: {0} [-l] [file...]"
+      },
+      {
+        "msg": "unrecognised_option",
+        "id": 2,
+        "description": "Option -{0} is unrecognised.",
+        "C": "Option '-{0}' is not valid."
+      },
+      {
+        "msg": "file_error",
+        "id": 3,
+        "description": "Error whilst parsing file {0}, aborting.",
+        "C": "Abort: File system error whilst parsing '{0}'."
+      },
+      {
+        "msg": "unexpected_token",
+        "id": 4,
+        "description": "Unexpected token {0}",
+        "C": "Unexpected token: '{0}'"
+      },
+      {
+        "msg": "error_label",
+        "id": 5,
+        "description": "How to label an error",
+        "C": "Error"
+      },
+      {
+        "msg": "unexpected_eof_string",
+        "id": 6,
+        "description": "Unexpected End-of-file whilst parsing a string",
+        "C": "Unexpected end of file encountered, whilst parsing a string."
+      },
+      {
+        "msg": "unexpected_eof_comment",
+        "id": 7,
+        "description": "Unexpected End-of-file whilst parsing a comment",
+        "C": "Unexpected end of file encountered, whilst parsing a comment."
+      },
+      {
+        "msg": "digit_out_of_range",
+        "id": 8,
+        "description": "The digit {0} is not in range for the base {1}",
+        "C": "Numeric digit {0} is not valid in base {1}."
+      },
+      {
+        "msg": "assign_minus_undefined",
+        "id": 9,
+        "description": "The token =- results in underfined behaviour, report it as an error.",
+        "C": "Token '=-' is not recognised."
+      },
+      {
+        "msg": "expected_statement",
+        "id": 10,
+        "description": "We expected a statement but instead got the token {0}",
+        "C": "Expected <statement>, found: {0}"
+      },
+      {
+        "msg": "expected_rbrace",
+        "id": 11,
+        "description": "We expected a } but instead got the token {0}",
+        "C": "Expected '}}', found: {0}"
+      },
+      {
+        "msg": "missing_newline_at_end_of_semicolon_list",
+        "id": 12,
+        "description": "Expected a new line at the end of a semicolon list",
+        "C": "Expected new-line, found: {0}"
+      },
+      {
+        "msg": "expected_expression",
+        "id": 13,
+        "description": "Expected an expression, found: {0}",
+        "C": "Expected <expression>, found: {0}"
+      },
+      {
+        "msg": "expected_assign_expression",
+        "id": 14,
+        "description": "Expected an assignment expression, found: {0}",
+        "C": "Expected <assignment expression>, found: {0}"
+      },
+      {
+        "msg": "expected_named_expression",
+        "id": 15,
+        "description": "Expected a named expression, found: {0}",
+        "C": "Expected variable or array access, found: {0}"
+      },
+      {
+        "msg": "expected_rsquare",
+        "id": 16,
+        "description": "Expected ']', found: {0}",
+        "C": "Expected ']', found: {0}"
+      },
+      {
+        "msg": "expected_lparens",
+        "id": 17,
+        "description": "Expected '(', found: {0}",
+        "C": "Expected '(', found: {0}"
+      },
+      {
+        "msg": "expected_rparens",
+        "id": 18,
+        "description": "Expected a ')', found: {0}",
+        "C": "Expected ')', found: {0}"
+      },
+      {
+        "msg": "expected_primary_expression",
+        "id": 19,
+        "description": "Expected a primary expression, found: {0}",
+        "C": "Expected primary expression, found: {0}"
+      },
+      {
+        "msg": "break_outside_of_loop",
+        "id": 20,
+        "description": "Encountered a break when not in a loop",
+        "C": "Encountered break whilst not in a for/while loop."
+      },
+      {
+        "msg": "expected_semicolon",
+        "id": 21,
+        "description": "Expected an ';', found: {0}",
+        "C": "Expected ';', found: {0}"
+      },
+      {
+        "msg": "return_outside_function",
+        "id": 22,
+        "description": "Encountered a return statement outside of a function.",
+        "C": "Encountered a return statement outside of a function."
+      },
+      {
+        "msg": "expected_letter",
+        "id": 23,
+        "description": "Expected a letter, found: {0}",
+        "C": "Expected <letter>, found: {0}"
+      },
+      {
+        "msg": "expected_lbrace",
+        "id": 24,
+        "description": "Expected a '{', found: {0}",
+        "C": "Expected '{', found: {0}"
+      },
+      {
+        "msg": "expected_newline",
+        "id": 25,
+        "description": "Expected a newline, found: {0}",
+        "C": "Expected a newline, found: {0}"
+      },
+      {
+        "msg": "unable_to_nest_function_definitions",
+        "id": 26,
+        "description": "Not allowed to nest function definitions",
+        "C": "Can't define one function inside another."
+      },
+      {
+        "msg": "expected_semicolon_or_newline",
+        "id": 27,
+        "description": "Expected a semicolon or newline, found: {0}",
+        "C": "Expected a semicolon or newline, found: {0}"
+      },
+      {
+        "msg": "duplicate_variables_in_function_definition",
+        "id": 28,
+        "description": "Variable {0} appears more than once in the definition of a function.",
+        "C": "Repeated variable names in function definition: {0}"
+      },
+      {
+        "msg": "duplicate_arrays_in_function_definition",
+        "id": 29,
+        "description": "Array {0} appears more than once in the definition of a function.",
+        "C": "Repeated array names in function definition: {0}[]"
+      },
+      {
+        "msg": "expected_define_list",
+        "id": 30,
+        "description": "Expected define list not: {0}",
+        "C": "Expected a list of variable and array names, found: {0}"
+      },
+      {
+        "msg": "expected_define_element",
+        "id": 31,
+        "description": "Expected define element not: {0}",
+        "C": "Expected a variable or array name, found: {0}"
+      },
+      {
+        "msg": "UNUSED1",
+        "id": 32,
+        "description": "NO LONGER USED - was base_out_of_range: Special variable {0} (ibase/obase - names are not translated) is out of range, should be [2, 16] we got {1}",
+        "C": "{0} set to an out of range value {1}.  Should be in range 2 <= {0} <= 16."
+      },
+      {
+        "msg": "number_to_unsigned_failed_negative",
+        "id": 33,
+        "description": "Failed to convert number {0} to unsigned integer as it was negative.",
+        "C": "Cannot convert {0} to unsigned integer, as it is negative."
+      },
+      {
+        "msg": "number_to_unsigned_failed_fractional",
+        "id": 34,
+        "description": "Failed to convert number {0} to unsigned integer as it was fractional.",
+        "C": "Cannot convert {0} to unsigned integer, as it has a fraction component."
+      },
+      {
+        "msg": "number_to_unsigned_failed_too_large",
+        "id": 35,
+        "description": "Failed to convert number {0} to unsigned integer as it is too big.",
+        "C": "Cannot convert {0} to unsigned integer, as it is larger than the underlying type."
+      },
+      {
+        "msg": "no_end_to_function_definition",
+        "id": 36,
+        "description": "Error:{0}:{1}:{2}: Function defined at location has no end of definition..",
+        "C": "Error:{0}:{1}:{2}: No end to function definition."
+      },
+      {
+        "msg": "function_not_defined",
+        "id": 37,
+        "description": "Tried to call function {0} which is not defined, location {1}{2}{3}",
+        "C": "Error:{1}:{2}:{3}: Function {0} is not defined."
+      },
+      {
+        "msg": "raising_to_fractional_power",
+        "id": 38,
+        "description": "Cannot raise a number to the fractional power {0}.",
+        "C": "Attempted to raise to fractional power {0}."
+      },
+      {
+        "msg": "divide_by_zero",
+        "id": 39,
+        "description": "Attempt to divide by zero",
+        "C": "Attempt to divide by zero."
+      },
+      {
+        "msg": "square_root_of_negative_number",
+        "id": 40,
+        "description": "Attempt to take square root of a negative number {0}",
+        "C": "Attempted to take square root of the negative number {0}."
+      },
+      {
+        "msg": "ibase_out_of_range",
+        "id": 41,
+        "description": "Ibase is set to an out of range value {0}",
+        "C": "{0} is not a valid ibase.  ibase should be in the range [2, 16]."
+      },
+      {
+        "msg": "obase_out_of_range",
+        "id": 42,
+        "description": "Obase is set to an out of range value {0}.  Valid values are [2, {1})",
+        "C": "{0} is not a valid obase.  obase should be in the range [2, {1})."
+      },
+      {
+        "msg": "internal_error",
+        "id": 43,
+        "description": "We encountered an internal error in function {0}, file {1}, line {2}, {3} is test.",
+        "C": "Unrecoverable internal error in {0} (file: {1}, line {2}): {3}"
+      },
+      {
+        "msg": "instruction_header",
+        "id": 44,
+        "description": "Text to say next output is current instruction stream",
+        "C": "Error occured whilst executing the following instruction stream:"
+      },
+      {
+        "msg": "parameter_stack_empty",
+        "id": 45,
+        "description": "No active parameter pack - when attemptting to push a value into it",
+        "C": "Parameter stack unexpectedly empty. Trying to push parameters before marking a parameter block."
+      },
+      {
+        "msg": "parameter_pack_not_empty",
+        "id": 46,
+        "description": "The current parameter pack is not empty when we say it should be",
+        "C": "Parameter pack has not been completely used by function."
+      },
+      {
+        "msg": "parameter_pack_empty",
+        "id": 47,
+        "description": "The current parameter pack is empty when we say it should not be",
+        "C": "Parameter pack is empty when trying to pop a parameter."
+      },
+      {
+        "msg": "empty_result",
+        "id": 48,
+        "description": "The result value at {0} has not been set when we want to read it",
+        "C": "Result at location {0} has not been set."
+      },
+      {
+        "msg": "cannot_load",
+        "id": 49,
+        "description": "Cannot load a value of type {0}",
+        "C": "Cannot load a value of type {0}."
+      },
+      {
+        "msg": "cannot_store",
+        "id": 50,
+        "description": "Cannot store into a value of type {0}.",
+        "C": "Cannot store a value of type {1}."
+      },
+      {
+        "msg": "bad_function_definition",
+        "id": 51,
+        "description": "Function definition start does not line up properly",
+        "C": "Function definition is not valid."
+      },
+      {
+        "msg": "non_empty_result",
+        "id": 52,
+        "description": "The result value at {0} has been set when it shouldn't have.",
+        "C": "Result at location {0} has been set."
+      },
+      {
+        "msg": "wrong_result_type",
+        "id": 53,
+        "description": "The result value at {0} is the wrong type - it should be {1}.",
+        "C": "Result at location {0} is not the correct type (it should be {1})."
+      },
+      {
+        "msg": "interrupted",
+        "id": 54,
+        "description": "Execution was interrupted (by ^C or SIGINT)",
+        "C": "Execution interrupted."
+      },
+      {
+        "msg": "op1_offset_underflow",
+        "id": 55,
+        "description": "The offset {1} in the first operand of instruction {0} underflows the array of instructions",
+        "C": "Operand 1 of instruction {0} has an offset ({1}) that points before the start of the instruction stream."
+      },
+      {
+        "msg": "op1_offset_overflow",
+        "id": 56,
+        "description": "The offset {1} in the first operand of instruction {0} overflows the array of instructions",
+        "C": "Operand 1 of instruction {0} has an offset ({1}) that points after the end of the instruction stream."
+      },
+      {
+        "msg": "op2_offset_underflow",
+        "id": 57,
+        "description": "The offset {1} in the second operand of instruction {0} underflows the array of instructions",
+        "C": "Operand 2 of instruction {0} has an offset ({1}) that points before the start of the instruction stream."
+      },
+      {
+        "msg": "op2_offset_overflow",
+        "id": 58,
+        "description": "The offset {1} in the second operand of instruction {0} overflows the array of instructions",
+        "C": "Operand 2 of instruction {0} has an offset ({1}) that points after the end of the instruction stream."
+      }
+    ]
+  }
+]

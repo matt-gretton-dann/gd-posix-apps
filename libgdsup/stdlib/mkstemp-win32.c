@@ -13,6 +13,7 @@
 #include <share.h>
 #include <stddef.h>
 #include <string.h>
+
 #include <sys/stat.h>
 
 int mkstemp(char* temp)

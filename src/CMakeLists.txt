@@ -20,7 +20,6 @@ if(RUN_UNIT_TESTS)
   set_property(TARGET test-util PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
   set_property(TARGET test-util PROPERTY CXX_STANDARD_REQUIRED ON)
   target_include_directories(test-util PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
-  target_include_directories(test-util PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
   set_warnings(test-util)
 endif()
 
@@ -55,19 +54,22 @@ function(add_utility)
     target_include_directories("${_au_NAME}" PRIVATE "${CMAKE_SOURCE_DIR}/src/include")
     target_add_clang_format("${_au_NAME}")
     set_warnings("${_au_NAME}")
+    if (ENABLE_IPO)
+      set_property(TARGET "${_au_NAME}" PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+    endif()
 
     if(DEFINED _au_CAT_ID)
-      # Done after the call to target_add_clang_format so that we don't try to format
-      # *-messages.hh
-      add_custom_command(
-        OUTPUT "${_au_CAT_ID}-messages.hh"
-        COMMAND "${Python_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/python-lib/generate-messages.py"
-                --cat-id "${_au_CAT_ID}"
-                --header "${CMAKE_CURRENT_BINARY_DIR}/${_au_CAT_ID}-messages.hh"
-                "${CMAKE_CURRENT_SOURCE_DIR}/${_au_CAT_ID}.messages.json"
-        MAIN_DEPENDENCY "${_au_CAT_ID}.messages.json"
-        DEPENDS "${CMAKE_SOURCE_DIR}/python-lib/generate-messages.py"
-        COMMENT "Generating i18n header for ${_au_CAT_ID}: ${_au_CAT_ID}-messages.hh")
+        # Done after the call to target_add_clang_format so that we don't try to format
+        # *-messages.hh
+        add_custom_command(
+          OUTPUT "${_au_CAT_ID}-messages.hh"
+          COMMAND "${Python_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/python-lib/generate-messages.py"
+                  --cat-id "${_au_CAT_ID}"
+                  --header "${CMAKE_CURRENT_BINARY_DIR}/${_au_CAT_ID}-messages.hh"
+                  "${CMAKE_CURRENT_SOURCE_DIR}/${_au_CAT_ID}.messages.json"
+          MAIN_DEPENDENCY "${_au_CAT_ID}.messages.json"
+          DEPENDS "${CMAKE_SOURCE_DIR}/python-lib/generate-messages.py"
+          COMMENT "Generating i18n header for ${_au_CAT_ID}: ${_au_CAT_ID}-messages.hh")
       target_include_directories("${_au_NAME}" PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
       add_custom_target("${_au_CAT_ID}_messages_header" DEPENDS "${_au_CAT_ID}-messages.hh")
       add_dependencies("${_au_NAME}" "${_au_CAT_ID}_messages_header")
@@ -87,7 +89,7 @@ function(add_utility)
     endif()
 
     # Add the integration test
-    if(RUN_INTEGRATION_TESTS AND NOT NO_INT_TEST)
+    if(RUN_INTEGRATION_TESTS AND NOT _au_NO_INT_TEST)
         file(TO_NATIVE_PATH "${CMAKE_SOURCE_DIR}/python-lib" _au_python_lib)
         file(TO_NATIVE_PATH "${CMAKE_BINARY_DIR}/pycache" _au_python_cache)
         set(_au_INT_TEST "int-test-${_au_NAME}")
@@ -121,6 +123,7 @@ add_subdirectory(gencat)
 
 add_subdirectory(asa)
 add_subdirectory(basename)
+add_subdirectory(bc)
 add_subdirectory(cat)
 add_subdirectory(cksum)
 add_subdirectory(dirname)
@@ -134,5 +137,5 @@ add_subdirectory(util)
 target_add_clang_format(util)
 if(TARGET test-util)
   target_add_clang_format(test-util)
-  catch_discover_tests(test-util PROPERTIES FIXTURES_REQUIRED testutil_setup EXTRA_ARGS "-s")
+  catch_discover_tests(test-util PROPERTIES FIXTURES_REQUIRED testutil_setup)
 endif()

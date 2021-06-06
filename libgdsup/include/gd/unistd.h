@@ -9,17 +9,20 @@
 
 #include "gd/bits/defines.h"
 
+__EXTERN_C_BEGIN
 /** \brief Pointer to argument - used by \fn getopt.  */
-__EXTERN_C char* optarg;
+extern char* optarg;
 
 /** \brief Set to 0 to turn error reporting by \fn getopt off.  */
-__EXTERN_C int opterr;
+extern int opterr;
 
 /** \brief Index of current parameter for \fn getopt.  */
-__EXTERN_C int optind;
+extern int optind;
 
 /** \brief Invalid option character reported by \fn getopt.  */
-__EXTERN_C int optopt;
+extern int optopt;
+
+__EXTERN_C_END
 
 /** \brief           Process options
  *  \param argc      Argument cont

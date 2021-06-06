@@ -1,3 +1,9 @@
+/** \file   expr.cc
+ *  \brief  Main program for expr
+ *  \author Copyright 2020, Matthew Gretton-Dann
+ *  SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "util/utils.hh"
 
 #include "expr-messages.hh"

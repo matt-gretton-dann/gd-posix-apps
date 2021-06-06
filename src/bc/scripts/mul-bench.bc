@@ -1,0 +1,6 @@
+define f(a) {
+  auto b
+  b = 1
+  while (a > 0) b *= a--
+  return (b)
+}

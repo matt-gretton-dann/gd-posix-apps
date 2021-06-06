@@ -13,7 +13,22 @@
   "cmake.configureSettings": {},
   "files.associations": {
     "clocale": "c",
-    "cstdlib": "cpp"
+    "cstdlib": "cpp",
+    "bitset": "cpp",
+    "*.tcc": "cpp",
+    "system_error": "cpp",
+    "random": "cpp",
+    "fstream": "cpp",
+    "iostream": "cpp",
+    "istream": "cpp",
+    "limits": "cpp",
+    "new": "cpp",
+    "ostream": "cpp",
+    "ratio": "cpp",
+    "stdexcept": "cpp",
+    "streambuf": "cpp",
+    "functional": "cpp",
+    "regex": "cpp"
   },
   "json.schemas": [
     {

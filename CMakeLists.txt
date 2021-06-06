@@ -20,6 +20,7 @@ list(PREPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 include(FetchContent)
 include(GNUInstallDirs)
 include(Warnings)
+include(CheckIPOSupported)
 
 # Find packages
 find_package(ClangFormat)
@@ -71,6 +72,9 @@ if(RUN_UNIT_TESTS)
   include(Catch)
 endif()
 
+set(CMAKE_C_STANDAD 11)
+set(CMAKE_C_STANDARD_REQUIRED 11)
+
 # Detect C++ version
 list(FIND CMAKE_CXX_COMPILE_FEATURES "cxx_std_20" _has_cxx20)
 if(NOT _has_cxx20 EQUAL -1)
@@ -84,6 +88,14 @@ else()
     else()
     message(FATAL_ERROR "Require C++17 compiler at least.")
   endif()
+endif()
+
+# Enable IPO support if possible:
+check_ipo_supported(RESULT ENABLE_IPO OUTPUT IPO_WARNINGS LANGUAGES C CXX)
+if (ENABLE_IPO)
+message(STATUS "Inter-procedural optimizations are enabled.")
+else()
+  message(WARNING "Inter-procedural optimizations are not supported for this build.")
 endif()
 
 # And recurse to the subdirectories - order here is important.

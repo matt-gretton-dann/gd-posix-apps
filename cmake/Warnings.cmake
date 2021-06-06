@@ -8,9 +8,14 @@
 function(set_warnings TARGET)
 
 if(MSVC)
-target_compile_options(${TARGET} PRIVATE /W4 /WX)
+  # We enable all warnings at level 4, but disable the following:
+  #  4201 - Anonymous unions - this is legal C11.
+  target_compile_options(${TARGET} PRIVATE /W4 /WX /wd4201)
 else()
-target_compile_options(${TARGET} PRIVATE -Wall -Wextra -Wpedantic -Werror)
+  target_compile_options(${TARGET} PRIVATE -Wall -Wextra -Wpedantic -Werror)
+  if (APPLE)
+  target_compile_options(${TARGET} PRIVATE -Wno-gnu-zero-variadic-macro-arguments)
+  endif()
 endif()
 
 endfunction()
