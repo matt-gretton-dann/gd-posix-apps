@@ -66,4 +66,10 @@ add_custom_command(
 add_custom_target(find_multiply_split_point_header DEPENDS find-multiply-split-point.hh)
 add_dependencies(bc find_multiply_split_point_header)
 
-add_gdpat_test(bc)
+if(NOT ENABLE_NON_POSIX_EXTENSIONS)
+set(bc_xfails bc/gavinhoward-bc)
+else()
+set(bc_xfails bc/gavinhoward-bc)
+endif()
+
+add_gdpat_test(NAME bc XFAILS "${bc_xfails}")

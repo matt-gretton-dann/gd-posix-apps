@@ -14,6 +14,7 @@ project(gd-posix-apps
 set(ALLOW_THIRD_PARTY_DOWNLOADS ON CACHE BOOL "Do we allow third-party downloads?")
 set(FORCE_SUPPLEMENTAL_LIBRARY OFF CACHE BOOL "Force use of libgdsup?")
 set(BUILD_TESTING ON CACHE BOOL "Enable testing")
+set(ENABLE_NON_POSIX_EXTENSIONS ON CACHE BOOL "Enable non-POSIX extensions")
 
 # Package inclusions
 list(PREPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
