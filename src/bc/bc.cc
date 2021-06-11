@@ -34,10 +34,14 @@ char const* library_script = "";
 template<typename... Ts>
 [[noreturn]] void error(Msg msg, Ts... args)
 {
+#if ENABLE_EXTENSIONS
+  constexpr auto usage = Msg::usage_extensions;
+#else
+  constexpr auto usage = Msg::usage;
+#endif
   std::cerr << GD::program_name() << ": "
             << GD::Bc::Messages::get().format(GD::Bc::Set::bc, msg, args...) << '\n'
-            << GD::Bc::Messages::get().format(GD::Bc::Set::bc, Msg::usage, GD::program_name())
-            << '\n';
+            << GD::Bc::Messages::get().format(GD::Bc::Set::bc, usage, GD::program_name()) << '\n';
   ::exit(1);
 }
 
@@ -65,10 +69,17 @@ int main(int argc, char** argv)
 
   int c;
   bool load_library = false;
-  while ((c = ::getopt(argc, argv, ":l")) != -1) {
+#if ENABLE_EXTENSIONS
+  char const* opts = ":lq";
+#else
+  char const* opts = ":l";
+#endif
+  while ((c = ::getopt(argc, argv, opts)) != -1) {
     switch (c) {
     case 'l':
       load_library = true;
+      break;
+    case 'q':
       break;
     case ':':
     case '?':

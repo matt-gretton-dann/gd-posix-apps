@@ -32,6 +32,11 @@
 #include <type_traits>
 #include <unordered_map>
 
+#ifndef ENABLE_EXTENSIONS
+/** Are the non-POSIX extensions enabled? */
+#  define ENABLE_EXTENSIONS 0
+#endif
+
 namespace GD::Bc {
 
 /** \brief A letter

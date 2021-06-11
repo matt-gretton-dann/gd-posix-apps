@@ -10,6 +10,16 @@ There is also the implementation of arbitrary precision arithmetic to consider.
 The majority of the code is implemented as a stand-alone library (`libbc`) to ease unit testing of
 the various components.
 
+## Non-POSIX Extensions
+
+To enable use of the gavinhoward-bc testsuite a small number of extensions have been added as
+follows:
+
+If built with non-POSIX extensions enabled the following functionality is added:
+
+ * `-q` command line option.  This does nothing in `bc` but is a GNU bc option to stop a copyright
+   header being printed.
+
 ## Lexing & Parsing
 
 There is not much to say about the lexer and parser as they are fairly standard.
