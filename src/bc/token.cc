@@ -176,6 +176,9 @@ std::ostream& GD::Bc::operator<<(std::ostream& os, Token::Type t)
   case Token::Type::break_:
     os << "break";
     break;
+  case Token::Type::halt:
+    os << "halt";
+    break;
   case Token::Type::quit:
     os << "quit";
     break;
@@ -339,6 +342,9 @@ std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Token const& token)
     break;
   case Token::Type::break_:
     os << "break";
+    break;
+  case Token::Type::halt:
+    os << "halt";
     break;
   case Token::Type::quit:
     os << "quit";

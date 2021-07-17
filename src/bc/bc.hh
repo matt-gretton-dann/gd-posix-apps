@@ -106,6 +106,7 @@ struct Token
     decrement,
     define,
     break_,
+    halt,
     quit,
     length,
     return_,
@@ -389,6 +390,7 @@ private:
 
   std::unique_ptr<Reader> r_;  ///< Reader
   std::optional<Token> t_;     ///< Pending token.
+  bool seen_quit_;             ///< Have we seen a quit token?
 };
 
 /** Wrapper around Letter representing a Variable */
@@ -589,7 +591,7 @@ public:
   /** Stream identifiers.  */
   enum class Stream {
     output,  ///< Use normal output stream
-    error   ///< Use error stream.
+    error    ///< Use error stream.
   };
 
   /** Type representing an index into the list of instructions.  */
@@ -736,6 +738,9 @@ public:
   /** \brief  Do the next stage of a parse.
    */
   std::shared_ptr<Instructions> parse();
+
+  /** \brief  Have we seen a `quit` statement.  */
+  bool seen_quit() const noexcept;
 
 private:
   /** Parse the main program production. */
@@ -938,6 +943,10 @@ private:
   template<typename... Ts>
   ExprIndex insert_error(Msg msg, Ts... args)
   {
+    if (seen_quit_) {
+      return ExprIndex::missing();
+    }
+
     error_ = true;
     /* If the lexer holds an error token we report that rather than the error message we've been
      * asked to report.
@@ -1141,6 +1150,7 @@ private:
   bool interactive_;                            ///< Are we interactive?
   bool error_;                                  ///< Has there been an error?
   bool in_function_;                            ///< Are we in a function?
+  bool seen_quit_;                              ///< Have we seen a quit token?
 };
 
 bool operator==(Parser::ExprIndex const& lhs, Parser::ExprIndex const& rhs);

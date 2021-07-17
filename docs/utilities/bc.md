@@ -20,6 +20,9 @@ If built with non-POSIX extensions enabled the following functionality is added:
  * `-q` command line option.  This does nothing in `bc` but is a GNU bc option to stop a copyright
    header being printed.
 
+ * `halt` statement.  This does a `quit` when executed.  Unlike `quit` which quits the code when
+   parsed (which is virtually never what you want).
+
 ## Lexing & Parsing
 
 There is not much to say about the lexer and parser as they are fairly standard.

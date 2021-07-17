@@ -152,7 +152,8 @@ GD::Bc::Parser::Offset GD::Bc::operator-(Parser::ExprIndex const& lhs, Parser::E
  */
 
 GD::Bc::Parser::Parser(std::unique_ptr<Lexer>&& lexer, bool interactive)
-    : lexer_(std::move(lexer)), interactive_(interactive), error_(false)
+    : lexer_(std::move(lexer)), interactive_(interactive), error_(false), in_function_(false),
+      seen_quit_(false)
 {
   assert(lexer_ != nullptr);
 }
@@ -168,6 +169,8 @@ std::shared_ptr<GD::Bc::Instructions> GD::Bc::Parser::parse()
   parse_program();
   return instructions_;
 }
+
+bool GD::Bc::Parser::seen_quit() const noexcept { return seen_quit_; }
 
 void GD::Bc::Parser::parse_program()
 {
@@ -258,6 +261,8 @@ bool GD::Bc::Parser::parse_opt_statement()
                | If '(' relational_expression ')' statement
                | While '(' relational_expression ')' statement
                | '{' statement_list '}'
+     If extensions enabled:
+               | Halt
   */
 
   auto const& token = lexer_->peek();
@@ -272,6 +277,10 @@ bool GD::Bc::Parser::parse_opt_statement()
     parse_break_statement();
     return true;
   case Token::Type::quit:
+    seen_quit_ = true;
+    lexer_->chew();
+    return true;
+  case Token::Type::halt:
     insert_quit(0);
     lexer_->chew();
     return true;

@@ -53,7 +53,8 @@ void execute(GD::Bc::VM& vm, std::unique_ptr<GD::Bc::Reader>&& r)
   while (cont) {
     auto instructions = parser.parse();
     if (instructions) {
-      cont = vm.execute(*instructions);
+      cont = parser.seen_quit();
+      cont |= vm.execute(*instructions);
     }
     else {
       cont = false;
