@@ -7,60 +7,51 @@ on:
     branches: [ main ]
 
 jobs:
-  linux-build:
-    name: Build and test on ${{ matrix.os }}
-    runs-on: ${{ matrix. os }}
+  posix-build:
+    name: Build and test on ${{ matrix.os }} - extensions enabled - ${{matrix.extensions}}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, macos-latest]
+        extensions: [OFF, ON]
 
     steps:
     - uses: actions/checkout@v2
-    - name: Configure
+    - name: Packed install (Ubuntu)
+      if: {{ matrix.os == "ubuntu-latest" }}
       run: |
         sudo apt install ninja-build
+    - name: Packed install (Ubuntu)
+      if: {{ matrix.os == "macos-latest" }}
+      run: |
+        brew install ninja
+    - name: Configure
+      run: |
         mkdir -p "${GITHUB_WORKSPACE}/build"
-        cmake -S "${GITHUB_WORKSPACE}" -B "${GITHUB_WORKSPACE}/build" -G Ninja -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo
+        cmake -S "${GITHUB_WORKSPACE}" -B "${GITHUB_WORKSPACE}/build" -G Ninja -DCMAKE_BUILD_TYPE:STRING=Release -DENABLE_NON_POSIX_EXTENSIONS:BOOL=${{matrix.extensions}}
     - name: Build
-      run: cmake --build "${GITHUB_WORKSPACE}/build" --config RelWithDebInfo
+      run: cmake --build "${GITHUB_WORKSPACE}/build" --config Release
     - name: Test
       run: |
         cd "${GITHUB_WORKSPACE}/build"
         ctest
 
-  macos-build:
-    name: Build and test on ${{ matrix.os }}
-    runs-on: ${{ matrix. os }}
-    strategy:
-      matrix:
-        os: [macos-latest]
-
-    steps:
-    - uses: actions/checkout@v2
-    - name: Configure
-      run: |
-        brew install ninja
-        mkdir -p "${GITHUB_WORKSPACE}/build"
-        cmake -S "${GITHUB_WORKSPACE}" -B "${GITHUB_WORKSPACE}/build" -G Ninja -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo
-    - name: Build
-      run: ninja -C "${GITHUB_WORKSPACE}/build"
-    - name: Test
-      run: ninja -C "${GITHUB_WORKSPACE}/build" test
 
   windows-build:
-    name: Build and test on ${{ matrix.os }}
+    name: Build and test on ${{ matrix.os }} - extensions enabled - ${{matrix.extensions}}
     runs-on: ${{ matrix. os }}
     strategy:
       matrix:
         os: [windows-latest]
+        extensions: [0, 1]
 
     steps:
     - uses: actions/checkout@v2
     - name: Configure
       run: |
-        cmake -S "$Env:GITHUB_WORKSPACE" -B "$Env:GITHUB_WORKSPACE\\build" -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo
+        cmake -S "$Env:GITHUB_WORKSPACE" -B "$Env:GITHUB_WORKSPACE\\build" -DCMAKE_BUILD_TYPE:STRING=Release -DENABLE_NON_POSIX_EXTENSIONS:BOOL=${{matrix.extensions}}
     - name: Build
-      run: cmake --build "$Env:GITHUB_WORKSPACE\\build" --config RelWithDebInfo
+      run: cmake --build "$Env:GITHUB_WORKSPACE\\build" --config Release
     - name: Test
-      run: cmake --build "$Env:GITHUB_WORKSPACE\\build" --config RelWithDebInfo  --target RUN_TESTS
+      run: cmake --build "$Env:GITHUB_WORKSPACE\\build" --config Release  --target RUN_TESTS
 
