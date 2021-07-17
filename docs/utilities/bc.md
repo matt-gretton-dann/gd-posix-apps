@@ -23,6 +23,13 @@ If built with non-POSIX extensions enabled the following functionality is added:
  * `halt` statement.  This does a `quit` when executed.  Unlike `quit` which quits the code when
    parsed (which is virtually never what you want).
 
+ * Numbers which are written over two-or more lines may have white-space at the start of the
+   continuation lines.
+
+ * If POSIX extensions are enabled numbers with a magnitude of less than 1 will not have a 0 printed
+   before the radix pointed.  When disabled a character will always be printed before the radix
+   point.
+
 ## Lexing & Parsing
 
 There is not much to say about the lexer and parser as they are fairly standard.

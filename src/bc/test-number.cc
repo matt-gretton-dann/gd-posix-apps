@@ -57,7 +57,10 @@ TEST_CASE("GD::Bc::Number - Number construction, directed", "[bc][number]")
     GD::Bc::Number num(in_num, static_cast<GD::Bc::Number::NumType>(ibase));
     std::ostringstream ss;
     std::string expected(out_num);
-    num.output(ss, static_cast<GD::Bc::Number::NumType>(obase));
+    if (GD::Bc::extensions_enabled() && expected.substr(0, 2) == "0.") {
+      expected = expected.substr(1);
+    }
+    num.output(ss, static_cast<GD::Bc::Number::NumType>(obase), 0);
     INFO("in_num = " << in_num << " ibase = " << ibase << " out_num = " << out_num
                      << " obase = " << obase);
     REQUIRE(ss.str() == expected);

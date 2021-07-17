@@ -28,6 +28,19 @@
 #include <tuple>
 #include <variant>
 
+namespace GD::Bc {
+// Needed for number.hh
+inline constexpr bool extensions_enabled()
+{
+#if ENABLE_EXTENSIONS
+  return true;
+#else
+  return false;
+#endif  // ENABLE_EXTENSIONS
+}
+
+}  // namespace GD::Bc
+
 #include "number.hh"
 #include <type_traits>
 #include <unordered_map>
@@ -38,15 +51,6 @@
 #endif
 
 namespace GD::Bc {
-
-inline constexpr bool extensions_enabled()
-{
-#if ENABLE_EXTENSIONS
-  return true;
-#else
-  return false;
-#endif  // ENABLE_EXTENSIONS
-}
 
 /** \brief A letter
  *

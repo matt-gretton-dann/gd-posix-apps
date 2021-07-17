@@ -687,7 +687,7 @@ void GD::Bc::Details::InstructionPack::execute_print()
   std::visit(Overloaded{
                [&os](std::string_view sv) { os << sv; },
                [&os, this](Number n) {
-                 n.output(os, vm_->obase());
+                 n.output(os, vm_->obase(), 0);
                  os << '\n';
                },
                [&os](Variable v) { os << v << '\n'; },

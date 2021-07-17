@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <vector>
 
+#include "bc.hh"
 #include <string_view>
 
 namespace GD::Bc {
@@ -91,6 +92,7 @@ public:
   using PrintType = typename Traits::PrintType;                 ///< Type to use to print
   static constexpr WideType base_ = Traits::base_;              ///< Base we're storing in.
   static constexpr unsigned base_log10_ = Traits::base_log10_;  ///< Log10 of base_.
+  static constexpr unsigned line_length = 69;                   ///< Length of a line in output.
 
   /** \brief  Basic constructor.  */
   BasicDigits() : digits_(nullptr) {}
@@ -215,16 +217,20 @@ public:
     return to_unsigned_error_too_large_;
   }
 
-  /** \brief       Output to stream
-   *  \param os    Stream to output to
-   *  \param obase Output base
-   *  \param scale Output scale.
+  /** \brief          Output to stream
+   *  \param os       Stream to output to
+   *  \param obase    Output base
+   *  \param scale    Output scale.
+   *  \param line_pos Current position on the line
    *
    * Use output_base10() if output is base-10, as that uses significantly less memory to do the
    * output.
+   *
+   * Assumes that zero output has already been handled.
    */
-  void output(std::ostream& os, NumType obase, NumType scale) const
+  void output(std::ostream& os, NumType obase, NumType scale, unsigned line_pos) const
   {
+    assert(!is_zero());
     assert(obase >= 2);
     auto [whole, frac] = split_frac(scale);
     DigitVector whole_digits;
@@ -236,7 +242,8 @@ public:
       number += to_string(*it, obase);
     }
 
-    if (number.empty()) {
+    if (!extensions_enabled() && number.empty()) {
+      // In extensions mode we don't add a zero before the radix point.
       number = "0";
     }
 
@@ -254,10 +261,12 @@ public:
     }
 
     std::string::size_type p = 0;
-    if (number.length() > 70) {
-      while (p >= number.length() - 70) {
-        os << number.substr(p, 70) << "\\\n";
-        p += 70;
+    // Ensure we handle line breaks appropriately.  Note that line_length includes the \\.
+    if (number.length() > line_length - line_pos) {
+      while (p > number.length() - (line_length - line_pos - 1)) {
+        os << number.substr(p, line_length - line_pos - 1) << "\\\n";
+        p += line_length - line_pos - 1;
+        line_pos = 0;
       }
     }
     if (p != number.length()) {
@@ -265,13 +274,14 @@ public:
     }
   }
 
-  /** \brief       Output number in base 10
-   *  \param os    Stream to output to
-   *  \param scale Scale of number.
+  /** \brief                Output number in base 10
+   *  \param os             Stream to output to
+   *  \param scale          Scale of number.
+   *  \param digits_printed Number of digits printed so far.
    *
    * This is slightly more efficient than output(os, 10, scale) would be in terms of memory usage.
    */
-  void output_base10(std::ostream& os, NumType scale) const
+  void output_base10(std::ostream& os, NumType scale, unsigned digits_printed) const
   {
     /* For base 10 we can rely on the underlying system-library's output routines the only corner
      * cases are to: 1) Ensure we pad with zeroes where necessary; and 2) Insert the decimal point
@@ -289,16 +299,16 @@ public:
       width = base_log10_;
     }
     std::string result = ss.str();
+    unsigned break_at = (result.length() <= line_length) ? line_length : (line_length - 1);
     auto it = result.begin();
     bool print = false;
-    NumType digits_printed = 0;
     while (result.end() - it > scale) {
       if (*it != '0') {
         print = true;
       }
       if (print) {
         os << *it;
-        if (++digits_printed == 70) {
+        if (++digits_printed == break_at) {
           digits_printed = 0;
           os << "\\\n";
         }
@@ -306,7 +316,7 @@ public:
       ++it;
     }
 
-    if (!print) {
+    if (!extensions_enabled() && !print) {
       ++digits_printed;
       os << '0';
     }
@@ -314,16 +324,16 @@ public:
     if (it != result.end()) {
       os << '.';
       ++digits_printed;
-      if (digits_printed >= 70) {
+      if (digits_printed > break_at) {
         os << "\\\n";
         digits_printed = 0;
       }
 
       assert(scale >= result.end() - it);
-      while (result.end() - it > 70 - digits_printed) {
-        os << result.substr(it - result.begin(), 70 - digits_printed) << "\\\n";
-        scale -= 70 - digits_printed;
-        it += 70 - digits_printed;
+      while (result.end() - it > break_at - digits_printed) {
+        os << result.substr(it - result.begin(), break_at - digits_printed) << "\\\n";
+        scale -= break_at - digits_printed;
+        it += break_at - digits_printed;
         digits_printed = 0;
       }
       if (it != result.end()) {
@@ -1324,20 +1334,39 @@ public:
     return result;
   }
 
-  void output(std::ostream& os, NumType obase) const
+  /** \brief          Output the value to a stream.
+   *  \param os       Output stream
+   *  \param obase    Base to output in
+   *  \param line_pos Current position on output line (default = 0).
+   */
+  void output(std::ostream& os, NumType obase, unsigned line_pos) const
   {
+    if (line_pos > digits_.line_length) {
+      os << '\n';
+      line_pos = 0;
+    }
+
     if (digits_.is_zero()) {
       os << "0";
       return;
     }
     if (sign_ == Sign::negative) {
-      os << "-";
+      if (line_pos > digits_.line_length - 1) {
+        line_pos = 0;
+        os << '\n';
+      }
+      os << '-';
+      ++line_pos;
+      if (line_pos > digits_.line_length - 1) {
+        line_pos = 0;
+        os << "\\\n";
+      }
     }
     if (obase == 10) {
-      digits_.output_base10(os, scale_);
+      digits_.output_base10(os, scale_, line_pos);
     }
     else {
-      digits_.output(os, obase, scale_);
+      digits_.output(os, obase, scale_, line_pos);
     }
   }
 
@@ -1453,7 +1482,7 @@ public:
 
     if (!power_frac.is_zero()) {
       std::ostringstream ss;
-      output(ss, 10);
+      output(ss, 10, 0);
       Details::error(Msg::raising_to_fractional_power, ss.str());
       return;
     }
@@ -1611,7 +1640,7 @@ public:
 
     if (sign_ == Sign::negative) {
       std::ostringstream ss;
-      output(ss, 10);
+      output(ss, 10, 0);
       Details::error(Msg::square_root_of_negative_number, ss.str());
       return;
     }
@@ -1783,7 +1812,7 @@ struct fmt::formatter<GD::Bc::BasicNumber<NumberTraits>>
       number.debug(os);
     }
     else {
-      number.output(os, 10);
+      number.output(os, 10, 0);
     }
     return format_to(ctx.out(), "{0}", os.str());
   }
