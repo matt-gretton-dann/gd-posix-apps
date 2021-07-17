@@ -72,10 +72,69 @@ add_custom_command(
 add_custom_target(find_multiply_split_point_header DEPENDS find-multiply-split-point.hh)
 add_dependencies(bc find_multiply_split_point_header)
 
-if(NOT ENABLE_NON_POSIX_EXTENSIONS)
-set(bc_xfails bc/gavinhoward-bc)
+if(ENABLE_NON_POSIX_EXTENSIONS)
+set(bc_xfails
+    bc/gavinhoward-bc/extra/stdin
+    bc/gavinhoward-bc/extra/read
+    bc/gavinhoward-bc/extra/errors
+    bc/gavinhoward-bc/extra/other
+    bc/gavinhoward-bc/tests/decimal
+    bc/gavinhoward-bc/tests/print
+    bc/gavinhoward-bc/tests/print2
+    bc/gavinhoward-bc/tests/parse
+    bc/gavinhoward-bc/tests/length
+    bc/gavinhoward-bc/tests/shift
+    bc/gavinhoward-bc/tests/add
+    bc/gavinhoward-bc/tests/subtract
+    bc/gavinhoward-bc/tests/multiply
+    bc/gavinhoward-bc/tests/divide
+    bc/gavinhoward-bc/tests/power
+    bc/gavinhoward-bc/tests/trunc
+    bc/gavinhoward-bc/tests/places
+    bc/gavinhoward-bc/tests/vars
+    bc/gavinhoward-bc/tests/boolean
+    bc/gavinhoward-bc/tests/comp
+    bc/gavinhoward-bc/tests/abs
+    bc/gavinhoward-bc/tests/assignments
+    bc/gavinhoward-bc/tests/functions
+    bc/gavinhoward-bc/tests/scientific
+    bc/gavinhoward-bc/tests/engineering
+    bc/gavinhoward-bc/tests/globals
+    bc/gavinhoward-bc/tests/strings
+    bc/gavinhoward-bc/tests/letters
+    bc/gavinhoward-bc/tests/exponent
+    bc/gavinhoward-bc/tests/log
+    bc/gavinhoward-bc/tests/pi
+    bc/gavinhoward-bc/tests/arctangent
+    bc/gavinhoward-bc/tests/sine
+    bc/gavinhoward-bc/tests/cosine
+    bc/gavinhoward-bc/tests/bessel
+    bc/gavinhoward-bc/tests/misc1
+    bc/gavinhoward-bc/tests/misc2
+    bc/gavinhoward-bc/tests/misc3
+    bc/gavinhoward-bc/tests/misc4
+    bc/gavinhoward-bc/tests/misc5
+    bc/gavinhoward-bc/tests/misc6
+    bc/gavinhoward-bc/tests/void
+    bc/gavinhoward-bc/tests/rand
+    bc/gavinhoward-bc/tests/lib2
+    bc/gavinhoward-bc/script/print
+    bc/gavinhoward-bc/script/parse
+    bc/gavinhoward-bc/script/add
+    bc/gavinhoward-bc/script/subtract
+    bc/gavinhoward-bc/script/multiply
+    bc/gavinhoward-bc/script/divide
+    bc/gavinhoward-bc/script/array
+    bc/gavinhoward-bc/script/atan
+    bc/gavinhoward-bc/script/bessel
+    bc/gavinhoward-bc/script/functions
+    bc/gavinhoward-bc/script/globals
+    bc/gavinhoward-bc/script/len
+    bc/gavinhoward-bc/script/rand
+    bc/gavinhoward-bc/script/references
+    bc/gavinhoward-bc/script/screen)
 else()
 set(bc_xfails bc/gavinhoward-bc)
 endif()
 
-add_gdpat_test(NAME bc XFAILS "${bc_xfails}")
+add_gdpat_test(NAME bc SKIPS "${bc_xfails}")

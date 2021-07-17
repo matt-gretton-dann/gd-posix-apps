@@ -57,28 +57,32 @@ function(add_gdpat_test)
       if(DEFINED _agt_SKIPS)
         set(_agt_SKIP_TEST OFF)
         foreach(_agt_SKIP IN LISTS _agt_SKIPS)
-          if("${_agt_TEST}" MATCHES "^${_agt_SKIP}[/$]")
+          if("${_agt_TEST}" MATCHES "^${_agt_SKIP}/" OR "${_agt_TEST}" STREQUAL "${_agt_SKIP}")
             message(STATUS "Skipping ${_agt_TEST} as it matches skip: ${_agt_SKIP}")
             set(_agt_SKIP_TEST ON)
             break()
           endif()
         endforeach()
-        if(_agt_SKIP_TEST)
-          continue()
-        endif()
       endif()
-      set(_agt_XFAIL_OPTS)
-      add_test(
-        NAME "${_agt_TEST}"
-        COMMAND "${Python_EXECUTABLE}" "${gdpat_SOURCE_DIR}/run-tests.py"
-                "--utility" "$<TARGET_FILE:${_agt_NAME}>"
-                "${_agt_TEST}" ${_agt_XFAIL_OPTS})
-      if(DEFINED _agt_XFAILS)
-        foreach(_agt_XFAIL IN LISTS _agt_XFAILS)
-          if("${_agt_TEST}" MATCHES "^${_agt_XFAIL}[/$]")
-            set_tests_properties("${_agt_TEST}" PROPERTIES WILL_FAIL ON)
-          endif()
-        endforeach()
+      if(_agt_SKIP_TEST)
+        add_test(
+          NAME "${_agt_TEST}"
+          COMMAND "${CMAKE_COMMAND}" -E echo "SKIP: ${_agt_TEST}")
+        set_property(TEST ${_agt_TEST} PROPERTY SKIP_REGULAR_EXPRESSION "SKIP:")
+      else()
+        set(_agt_XFAIL_OPTS)
+        if(DEFINED _agt_XFAILS)
+          foreach(_agt_XFAIL IN LISTS _agt_XFAILS)
+            if("${_agt_TEST}" MATCHES "^${_agt_XFAIL}/" OR "${_agt_TEST}" STREQUAL "${_agt_XFAIL}")
+              set(_agt_XFAIL_OPTS "--expected-fail=${_agt_TEST}")
+            endif()
+          endforeach()
+        endif()
+        add_test(
+          NAME "${_agt_TEST}"
+          COMMAND "${Python_EXECUTABLE}" "${gdpat_SOURCE_DIR}/run-tests.py"
+                  "--utility" "$<TARGET_FILE:${_agt_NAME}>"
+                  "${_agt_TEST}" ${_agt_XFAIL_OPTS})
       endif()
     endif()
   endforeach()
