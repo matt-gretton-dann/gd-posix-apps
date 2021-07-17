@@ -113,8 +113,13 @@ void GD::Bc::Lexer::lex_number()
         cont = false;
         break;
       }
-
-      r_->chew();
+      r_->chew();  // Chew new-line
+      if (extensions_enabled()) {
+        // Chew any-whitespcae - non-POSIX extension
+        while (r_->peek() == ' ' || r_->peek() == '\t') {
+          r_->chew();
+        }
+      }
       break;
     default:
       cont = false;

@@ -14,15 +14,6 @@
 #include "bc.hh"
 #include <string_view>
 
-constexpr bool extensions_enabled()
-{
-#if defined(ENABLE_EXTENSIONS) && ENABLE_EXTENSIONS == 1
-  return 1;
-#else
-  return 0;
-#endif
-}
-
 TEST_CASE("Parser - quit parsing", "[bc][parser]")
 {
   using namespace GD::Bc;
@@ -69,7 +60,7 @@ TEST_CASE("Parser - extension parsing", "[bc][parser]")
   INFO("Parsing: " << input);
   INFO("Expected:\n" << expected);
   INFO("Actual:\n" << *instructions);
-  if (extensions_enabled()) {
+  if (GD::Bc::extensions_enabled()) {
     /* If extensions are enabled we expect these tests to pass with the given instruction stream.
      */
     REQUIRE(instructions != nullptr);

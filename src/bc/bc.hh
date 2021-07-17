@@ -39,6 +39,15 @@
 
 namespace GD::Bc {
 
+inline constexpr bool extensions_enabled()
+{
+#if ENABLE_EXTENSIONS
+  return true;
+#else
+  return false;
+#endif  // ENABLE_EXTENSIONS
+}
+
 /** \brief A letter
  *
  * Used for variable, function, and array names.

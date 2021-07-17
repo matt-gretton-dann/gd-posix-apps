@@ -8,6 +8,7 @@
 
 #include <catch2/catch.hpp>
 
+#include <algorithm>
 #include <memory>
 #include <string>
 
@@ -72,13 +73,42 @@ TEST_CASE("GD::Bc::Lexer - Symbol Tokenizing", "[bc][lexer]")
 
 TEST_CASE("GD::Bc::Lexer - Number", "[bc][lexer]")
 {
-  auto number = GENERATE("1234567890", "ABCDEF1", ".1", "2.0", "3.");
+  auto number = GENERATE("1234567890", "ABCDEF1", ".1", "2.0", "3.", "1\\\n2");
   auto lexer = GD::Bc::Lexer(std::make_unique<GD::Bc::StringReader>(number));
   auto t1 = lexer.peek();
   REQUIRE(t1.type() == GD::Bc::Token::Type::number);
-  REQUIRE(t1.number() == number);
+  std::string result = number;
+  // Remove escaped new-lines
+  result.erase(
+    std::remove_if(result.begin(), result.end(), [](char c) { return c == '\\' || c == '\n'; }),
+    result.end());
+  REQUIRE(t1.number() == result);
   lexer.chew();
   REQUIRE(lexer.peek().type() == GD::Bc::Token::Type::eof);
+}
+
+TEST_CASE("GD::Bc::Lexer - Number Extensions", "[bc][lexer][extensions]")
+{
+  auto number = GENERATE("1\\\n    2");
+  auto lexer = GD::Bc::Lexer(std::make_unique<GD::Bc::StringReader>(number));
+  auto t1 = lexer.peek();
+  if (GD::Bc::extensions_enabled()) {
+    // As an extension we remove spaces are escaped newlines.
+    std::string result(number);
+    result.erase(
+      std::remove_if(result.begin(), result.end(),
+                     [](char c) { return c == '\\' || c == '\n' || c == ' ' || c == '\t'; }),
+      result.end());
+    REQUIRE(t1.type() == GD::Bc::Token::Type::number);
+    REQUIRE(t1.number() == result);
+    lexer.chew();
+    REQUIRE(lexer.peek().type() == GD::Bc::Token::Type::eof);
+  }
+  else {
+    REQUIRE(t1.type() == GD::Bc::Token::Type::number);
+    lexer.chew();
+    REQUIRE(lexer.peek().type() != GD::Bc::Token::Type::eof);
+  }
 }
 
 TEST_CASE("GD::Bc::Lexer - Letter", "[bc][lexer]")
