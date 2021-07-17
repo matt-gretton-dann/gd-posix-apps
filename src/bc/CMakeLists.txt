@@ -73,23 +73,20 @@ add_custom_target(find_multiply_split_point_header DEPENDS find-multiply-split-p
 add_dependencies(bc find_multiply_split_point_header)
 
 if(ENABLE_NON_POSIX_EXTENSIONS)
-set(bc_xfails
-    bc/gavinhoward-bc/extra/stdin
-    bc/gavinhoward-bc/extra/read
-    bc/gavinhoward-bc/extra/errors
-    bc/gavinhoward-bc/extra/other
-    bc/gavinhoward-bc/tests/decimal
+set(bc_skips
+    bc/gavinhoward-bc/extra/stdin # Don't support -i command-line option
+    bc/gavinhoward-bc/extra/read # Don't support read
+    bc/gavinhoward-bc/extra/errors # Errors are implementation specific
+    bc/gavinhoward-bc/extra/other # Don't support other extensions
     bc/gavinhoward-bc/tests/print
     bc/gavinhoward-bc/tests/print2
     bc/gavinhoward-bc/tests/parse
-    bc/gavinhoward-bc/tests/length
-    bc/gavinhoward-bc/tests/shift
-    bc/gavinhoward-bc/tests/add
-    bc/gavinhoward-bc/tests/subtract
-    bc/gavinhoward-bc/tests/multiply
-    bc/gavinhoward-bc/tests/divide
-    bc/gavinhoward-bc/tests/power
-    bc/gavinhoward-bc/tests/trunc
+    bc/gavinhoward-bc/tests/length # Needs further investigation
+    bc/gavinhoward-bc/tests/shift # Needs further investigation
+    bc/gavinhoward-bc/tests/multiply # Should pass
+    bc/gavinhoward-bc/tests/divide # Should pass
+    bc/gavinhoward-bc/tests/power # Needs further investigation
+    bc/gavinhoward-bc/tests/trunc # Needs further investigation
     bc/gavinhoward-bc/tests/places
     bc/gavinhoward-bc/tests/vars
     bc/gavinhoward-bc/tests/boolean
@@ -134,7 +131,7 @@ set(bc_xfails
     bc/gavinhoward-bc/script/references
     bc/gavinhoward-bc/script/screen)
 else()
-set(bc_xfails bc/gavinhoward-bc)
+set(bc_skips bc/gavinhoward-bc)
 endif()
 
-add_gdpat_test(NAME bc SKIPS "${bc_xfails}")
+add_gdpat_test(NAME bc SKIPS "${bc_skips}")
