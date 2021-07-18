@@ -263,7 +263,7 @@ public:
     std::string::size_type p = 0;
     // Ensure we handle line breaks appropriately.  Note that line_length includes the \\.
     if (number.length() > line_length - line_pos) {
-      while (p > number.length() - (line_length - line_pos - 1)) {
+      while (p < number.length() - (line_length - line_pos - 1)) {
         os << number.substr(p, line_length - line_pos - 1) << "\\\n";
         p += line_length - line_pos - 1;
         line_pos = 0;
