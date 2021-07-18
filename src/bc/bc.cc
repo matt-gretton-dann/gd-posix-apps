@@ -70,13 +70,17 @@ int main(int argc, char** argv)
 
   int c;
   bool load_library = false;
+  bool save_specials = false;
 #if ENABLE_EXTENSIONS
-  char const* opts = ":lq";
+  char const* opts = ":glq";
 #else
   char const* opts = ":l";
 #endif
   while ((c = ::getopt(argc, argv, opts)) != -1) {
     switch (c) {
+    case 'g':
+      save_specials = true;
+      break;
     case 'l':
       load_library = true;
       break;
@@ -90,7 +94,7 @@ int main(int argc, char** argv)
     }
   }
 
-  GD::Bc::VM vm(std::cout, std::clog);
+  GD::Bc::VM vm(std::cout, std::clog, save_specials);
 
   /* Configure where we do multiplication splits.  */
   GD::Bc::Number::multiply_split_point(BC_MULTIPLY_SPLIT_POINT);

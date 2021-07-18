@@ -34,7 +34,7 @@ namespace GD::Bc::Details {
 struct VMState
 {
   /** \brief  Constructor.  */
-  VMState(std::ostream& out, std::ostream& err);
+  VMState(std::ostream& out, std::ostream& err, bool save_specials);
 
   /** \brief  Get the appropriate output stream for \a stream.  */
   std::ostream& stream(Instruction::Stream stream) const;
@@ -135,6 +135,7 @@ private:
   NumType ibase_ = 10;                            ///< Input base, range [2, 16]
   NumType obase_ = 10;                            ///< Output base, range: [2, base_)
   NumType scale_ = 0;                             ///< Scale, range: [0, base_)
+  bool save_specials_;                            ///< Save specials on function entry?
 };
 
 /** \brief  An executable instruction pack.
@@ -340,7 +341,8 @@ void reset_interrupt_handler()
 
 }  // namespace GD::Bc::Details
 
-GD::Bc::Details::VMState::VMState(std::ostream& out, std::ostream& err) : output_(out), error_(err)
+GD::Bc::Details::VMState::VMState(std::ostream& out, std::ostream& err, bool save_specials)
+    : output_(out), error_(err), save_specials_(save_specials)
 {
 }
 
@@ -420,6 +422,11 @@ GD::Bc::Number GD::Bc::Details::VMState::call(Letter func, Location const& loc)
   });
   local_stack_.push_back(p);
 
+  /* Save specials.  */
+  auto saved_scale = scale_;
+  auto saved_ibase = ibase_;
+  auto saved_obase = obase_;
+
   InstructionPack fn(this, func_instructions);
   auto [result, cont] = fn.execute();
 
@@ -433,6 +440,13 @@ GD::Bc::Number GD::Bc::Details::VMState::call(Letter func, Location const& loc)
     p.pop_front();
   });
   local_stack_.pop_back();
+
+  /* Restore specials.  */
+  if (save_specials_) {
+    scale_ = saved_scale;
+    ibase_ = saved_ibase;
+    obase_ = saved_obase;
+  }
 
   return result;
 }
@@ -817,7 +831,7 @@ GD::Bc::Instruction::Index GD::Bc::Details::InstructionPack::execute_function_be
   assert(instrs_[pc_].opcode() == Instruction::Opcode::function_begin);
   VariableMask mask = std::get<VariableMask>(instrs_[pc_].op1());
   Location loc = std::get<Location>(instrs_[pc_].op2());
-  [[maybe_unused]] Index start = pc_++;
+  Index start = pc_++;
   while (pc_ != instrs_.size() && instrs_[pc_].opcode() != Instruction::Opcode::function_end) {
     ++pc_;
   }
@@ -996,7 +1010,10 @@ void GD::Bc::Details::InstructionPack::validate_result(Index i) const
   }
 }
 
-GD::Bc::VM::VM(std::ostream& out, std::ostream& err) : state_(new Details::VMState(out, err)) {}
+GD::Bc::VM::VM(std::ostream& out, std::ostream& err, bool save_specials)
+    : state_(new Details::VMState(out, err, save_specials))
+{
+}
 
 bool GD::Bc::VM::execute(Instructions& instructions)
 {

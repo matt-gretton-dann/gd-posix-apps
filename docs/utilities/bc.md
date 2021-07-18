@@ -20,6 +20,9 @@ If built with non-POSIX extensions enabled the following functionality is added:
  * `-q` command line option.  This does nothing in `bc` but is a GNU bc option to stop a copyright
    header being printed.
 
+ * `-g` command line option.  This causes function invocations to push `ibase`, `obase`, and
+   `scale` onto a stack (i.e. treat them as locals to functions).
+
  * `halt` statement.  This does a `quit` when executed.  Unlike `quit` which quits the code when
    parsed (which is virtually never what you want).
 
@@ -34,6 +37,10 @@ If built with non-POSIX extensions enabled the following functionality is added:
    the array.
 
  * The absolute form of a number may be calculated using the `abs()` expression.
+
+ * `return foo;` is valid.
+
+ * No newline needed after opening brace of a function definition.
 
 ## Lexing & Parsing
 

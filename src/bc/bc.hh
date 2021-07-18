@@ -405,6 +405,7 @@ private:
   std::unique_ptr<Reader> r_;  ///< Reader
   std::optional<Token> t_;     ///< Pending token.
   bool seen_quit_;             ///< Have we seen a quit token?
+  bool first_character_;       ///< Have we lexed anything yet?
 };
 
 /** Wrapper around Letter representing a Variable */
@@ -1195,11 +1196,12 @@ struct VMState;
 class VM
 {
 public:
-  /** \brief     Constructor
-   *  \param out Stream to use for standard output.
-   *  \param err Stream to use for standard error.
+  /** \brief               Constructor
+   *  \param out           Stream to use for standard output.
+   *  \param err           Stream to use for standard error.
+   *  \param save_specials Should we save ibase, obase, scale on entry to a function?
    */
-  VM(std::ostream& out, std::ostream& err);
+  VM(std::ostream& out, std::ostream& err, bool save_specials);
 
   /** \brief              Execute instructions.
    *  \param instructions Instructions to execute

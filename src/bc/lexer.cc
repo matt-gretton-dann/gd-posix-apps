@@ -17,7 +17,7 @@
 #include <unordered_map>
 
 GD::Bc::Lexer::Lexer(std::unique_ptr<Reader>&& r)
-    : r_(std::move(r)), t_(std::nullopt), seen_quit_(false)
+    : r_(std::move(r)), t_(std::nullopt), seen_quit_(false), first_character_(true)
 {
 }
 
@@ -294,6 +294,20 @@ void GD::Bc::Lexer::lex()
   if (seen_quit_) {
     t_.emplace(Token::Type::eof);
     return;
+  }
+
+  /* If this is the first character and extensions are enabled then we chew a #! line.  */
+  if (extensions_enabled() && first_character_ && r_->peek() == '#') {
+    r_->chew();
+    if (r_->peek() == '!') {
+      while (r_->peek() != EOF && r_->peek() != '\n') {
+        r_->chew();
+      }
+    }
+    else {
+      t_.emplace(Token::Type::error, r_->error(Msg::unexpected_token, '#'));
+      return;
+    }
   }
 
   /* Loop forever - this enables us to treat \ followed by \n and comments as just another go
