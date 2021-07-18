@@ -80,8 +80,7 @@ set(bc_skips
     bc/gavinhoward-bc/extra/other # Don't support other extensions
     bc/gavinhoward-bc/tests/print2 # No support for multi char function names
     bc/gavinhoward-bc/tests/shift # We don't support <<, >>, <<=, >>=
-    bc/gavinhoward-bc/tests/power # Needs further investigation
-    bc/gavinhoward-bc/tests/trunc # Needs further investigation
+    bc/gavinhoward-bc/tests/trunc # No support for truncation
     bc/gavinhoward-bc/tests/places # Don't support places extensions
     bc/gavinhoward-bc/tests/vars # Don't support arbitary variable names
     bc/gavinhoward-bc/tests/boolean # Don't support booleans outside of conditional statements
