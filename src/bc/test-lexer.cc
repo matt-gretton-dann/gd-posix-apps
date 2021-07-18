@@ -71,6 +71,26 @@ TEST_CASE("GD::Bc::Lexer - Symbol Tokenizing", "[bc][lexer]")
   REQUIRE(t2.type() == GD::Bc::Token::Type::eof);
 }
 
+TEST_CASE("GD::Bc::Lexer - Token extensions", "[bc][lexer][extensions]")
+{
+  auto [input, expected] = GENERATE(table<std::string_view, GD::Bc::Token::Type>({
+    {"halt", GD::Bc::Token::Type::halt},
+    {"abs", GD::Bc::Token::Type::abs},
+  }));
+  auto lexer = GD::Bc::Lexer(std::make_unique<GD::Bc::StringReader>(input));
+  INFO("Parsing " << input);
+  auto t1 = lexer.peek();
+  if (GD::Bc::extensions_enabled()) {
+    REQUIRE(t1.type() == expected);
+    lexer.chew();
+    auto t2 = lexer.peek();
+    REQUIRE(t2.type() == GD::Bc::Token::Type::eof);
+  }
+  else {
+    REQUIRE(t1.type() != expected);
+  }
+}
+
 TEST_CASE("GD::Bc::Lexer - Number", "[bc][lexer]")
 {
   auto number = GENERATE("1234567890", "ABCDEF1", ".1", "2.0", "3.", "1\\\n2");

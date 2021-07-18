@@ -1085,6 +1085,20 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_primary_expression(POPEFlags
     lexer_->chew();
     return insert_sqrt(elt);
   }
+  case Token::Type::abs: {
+    lexer_->chew();
+    if (lexer_->peek() != Token::Type::lparens) {
+      return insert_error(Msg::expected_lparens);
+    }
+    lexer_->chew();
+    auto elt = parse_expression();
+
+    if (lexer_->peek() != Token::Type::rparens) {
+      return insert_error(Msg::expected_rparens, lexer_->peek());
+    }
+    lexer_->chew();
+    return insert_abs(elt);
+  }
   case Token::Type::length: {
     lexer_->chew();
     if (lexer_->peek() != Token::Type::lparens) {
@@ -1248,6 +1262,14 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_sqrt(ExprIndex expr)
   expr = ensure_expr_loaded(expr);
   ExprIndex result(instructions_->size(), ExprType::primary);
   instructions_->emplace_back(Instruction::Opcode::sqrt, expr - result);
+  return result;
+}
+
+GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_abs(ExprIndex expr)
+{
+  expr = ensure_expr_loaded(expr);
+  ExprIndex result(instructions_->size(), ExprType::primary);
+  instructions_->emplace_back(Instruction::Opcode::abs, expr - result);
   return result;
 }
 

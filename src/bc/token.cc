@@ -197,6 +197,9 @@ std::ostream& GD::Bc::operator<<(std::ostream& os, Token::Type t)
   case Token::Type::while_:
     os << "while";
     break;
+  case Token::Type::abs:
+    os << "abs";
+    break;
   case Token::Type::sqrt:
     os << "sqrt";
     break;
@@ -363,6 +366,9 @@ std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Token const& token)
     break;
   case Token::Type::while_:
     os << "while";
+    break;
+  case Token::Type::abs:
+    os << "abs";
     break;
   case Token::Type::sqrt:
     os << "sqrt";

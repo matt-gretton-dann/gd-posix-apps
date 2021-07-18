@@ -141,7 +141,7 @@ void GD::Bc::Lexer::lex_letter_or_keyword()
       {"return", Token::Type::return_}, {"scale", Token::Type::scale}, {"sqrt", Token::Type::sqrt},
       {"while", Token::Type::while_},
 #if ENABLE_EXTENSIONS
-      {"halt", Token::Type::halt},
+      {"abs", Token::Type::abs}, {"halt", Token::Type::halt},
 #endif
   };
   std::string value;

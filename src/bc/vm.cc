@@ -626,6 +626,9 @@ std::pair<GD::Bc::Number, bool> GD::Bc::Details::InstructionPack::execute()
     case Instruction::Opcode::sqrt:
       execute_unary_op([this](Number& lhs) { lhs.sqrt(vm_->scale()); });
       break;
+    case Instruction::Opcode::abs:
+      execute_unary_op([this](Number& lhs) { lhs.abs(); });
+      break;
     case Instruction::Opcode::scale_expr:
       execute_unary_op([](Number& lhs) { lhs = Number(lhs.scale()); });
       break;
@@ -958,6 +961,7 @@ void GD::Bc::Details::InstructionPack::validate_result(Index i) const
   case GD::Bc::Instruction::Opcode::load:
   case GD::Bc::Instruction::Opcode::scale_expr:
   case GD::Bc::Instruction::Opcode::sqrt:
+  case GD::Bc::Instruction::Opcode::abs:
   case GD::Bc::Instruction::Opcode::length:
   case GD::Bc::Instruction::Opcode::return_:
   case GD::Bc::Instruction::Opcode::add:

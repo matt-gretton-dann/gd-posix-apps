@@ -33,6 +33,8 @@ If built with non-POSIX extensions enabled the following functionality is added:
  * Length can be called on an array slice (`length(a[])`).  This returns the number of elements in
    the array.
 
+ * The absolute form of a number may be calculated using the `abs()` expression.
+
 ## Lexing & Parsing
 
 There is not much to say about the lexer and parser as they are fairly standard.

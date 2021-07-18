@@ -58,6 +58,11 @@ TEST_CASE("Parser - extension parsing", "[bc][parser][extensions]")
       Instruction(Instruction::Opcode::length, Instruction::Offset(-1)),
       Instruction(Instruction::Opcode::print, Instruction::Offset(-1),
                   Instruction::Stream::output)}},
+    {"abs(1)\n",
+     {Instruction(Instruction::Opcode::number, "1"),
+      Instruction(Instruction::Opcode::abs, Instruction::Offset(-1)),
+      Instruction(Instruction::Opcode::print, Instruction::Offset(-1),
+                  Instruction::Stream::output)}},
   }));
 
   auto parser = Parser(std::make_unique<Lexer>(std::make_unique<StringReader>(input)), false);

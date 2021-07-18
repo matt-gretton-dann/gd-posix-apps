@@ -126,6 +126,7 @@ struct Token
     for_,
     if_,
     while_,
+    abs,
     sqrt,
     scale,
     ibase,
@@ -535,6 +536,7 @@ enum class Scale : int;
  * | store               | Offset      | Offset      | Store value Op2 into named expression Op1. |
  * | scale_expr          | Offset      |             | Calculate scale(op1)                       |
  * | sqrt                | Offset      |             | Calculate sqrt(op1)                        |
+ * | abs                 | Offset      |             | Calculate abs(op1)                         |
  * | length              | Offset      |             | Calculate length(op1)                      |
  * | equals              | Offset      | Offset      | 1 if op1 == op2, 0 otherwise               |
  * | less_than_equals    | Offset      | Offset      | 1 if op1 <= op2, 0 otherwise               |
@@ -583,6 +585,7 @@ public:
     store,             ///< Store.  Store op2 into op1.
     scale_expr,        ///< scale(expr).
     sqrt,              ///< sqrt(expr).
+    abs,               ///< abs(expr).
     length,            ///< length(expr).
     equals,            ///< op1 == op2.
     less_than_equals,  ///< op1 <= op2.
@@ -1075,6 +1078,12 @@ private:
    *  \return      Index of inserted instruction
    */
   ExprIndex insert_sqrt(ExprIndex expr);
+
+  /** \brief       Insert abs() call
+   *  \param  expr Expression to pass
+   *  \return      Index of inserted instruction
+   */
+  ExprIndex insert_abs(ExprIndex expr);
 
   /** \brief       Insert length() call
    *  \param  expr Expression to pass

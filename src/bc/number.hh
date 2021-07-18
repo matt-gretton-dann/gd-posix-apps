@@ -1391,6 +1391,9 @@ public:
     return digits_.length();
   }
 
+  /** \brief  Get the absolute value of \c *this.  */
+  void abs() { sign_ = Sign::positive; }
+
   /** \brief  Negate \c *this.  */
   void negate() { sign_ = (sign_ == Sign::positive) ? Sign::negative : Sign::positive; }
 
