@@ -18,11 +18,11 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Packed install (Ubuntu)
-      if: ${{ matrix.os }} == "ubuntu-latest"
+      if: ${{ matrix.os  == "ubuntu-latest" }}
       run: |
         sudo apt install ninja-build
     - name: Packed install (Ubuntu)
-      if: ${{ matrix.os }} == "macos-latest"
+      if: ${{ matrix.os == "macos-latest" }}
       run: |
         brew install ninja
     - name: Configure
