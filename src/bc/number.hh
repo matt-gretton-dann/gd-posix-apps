@@ -1383,7 +1383,13 @@ public:
   NumType scale() const { return scale_; }
 
   /* Get the number of significant digits.  */
-  NumType length() const { return digits_.length(); }
+  NumType length() const
+  {
+    if (digits_.is_zero()) {
+      return std::max(NumType(1), scale());
+    }
+    return digits_.length();
+  }
 
   /** \brief  Negate \c *this.  */
   void negate() { sign_ = (sign_ == Sign::positive) ? Sign::negative : Sign::positive; }
