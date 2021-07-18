@@ -81,7 +81,7 @@ set(bc_skips
     bc/gavinhoward-bc/tests/print
     bc/gavinhoward-bc/tests/print2
     bc/gavinhoward-bc/tests/parse
-    bc/gavinhoward-bc/tests/length # Needs further investigation
+#    bc/gavinhoward-bc/tests/length # Needs further investigation
     bc/gavinhoward-bc/tests/shift # Needs further investigation
     bc/gavinhoward-bc/tests/multiply # Should pass
     bc/gavinhoward-bc/tests/divide # Should pass
