@@ -68,6 +68,7 @@ struct VMState
 
   ArrayValues array(Array a) const;
   void array(Array a, ArrayValues av);
+  Number::NumType array_length(Array a) const;
 
   void function(Letter func, Instructions::const_iterator begin, Instructions::const_iterator end,
                 VariableMask mask, Location const& loc);
@@ -186,6 +187,9 @@ private:
 
   /** Execute quit instruction.  */
   void execute_quit();
+
+  /** Execute length instruction.  */
+  void execute_length();
 
   /** Execute load instruction.  */
   void execute_load();
@@ -505,6 +509,17 @@ void GD::Bc::Details::VMState::array(Array a, ArrayValues av)
   arrays_[static_cast<unsigned>(a.get())] = av;
 }
 
+GD::Bc::Number::NumType GD::Bc::Details::VMState::array_length(Array a) const
+{
+  auto arr = array(a);
+  if (arr->empty()) {
+    return 0;
+  }
+
+  auto rit = arr->rbegin();
+  return rit->first + 1;
+}
+
 void GD::Bc::Details::VMState::validate(Instructions const& instrs) const
 {
   for (Instructions::size_type i = 0; i < instrs.size(); ++i) {
@@ -615,7 +630,7 @@ std::pair<GD::Bc::Number, bool> GD::Bc::Details::InstructionPack::execute()
       execute_unary_op([](Number& lhs) { lhs = Number(lhs.scale()); });
       break;
     case Instruction::Opcode::length:
-      execute_unary_op([](Number& lhs) { lhs = Number(lhs.length()); });
+      execute_length();
       break;
     case Instruction::Opcode::less_than:
       execute_binary_op([](Number& lhs, Number const& rhs) { lhs = Number(lhs < rhs ? 1 : 0); });
@@ -705,6 +720,31 @@ void GD::Bc::Details::InstructionPack::execute_quit()
 {
   assert(instrs_[pc_].opcode() == Instruction::Opcode::quit);
   ::exit(std::get<unsigned>(instrs_[pc_].op1()));
+}
+
+void GD::Bc::Details::InstructionPack::execute_length()
+{
+  assert(instrs_[pc_].opcode() == Instruction::Opcode::length);
+  Index loc_idx = get_offset_index(instrs_[pc_].op1());
+  auto& result = results_[pc_];
+  auto const& loc = results_[loc_idx];
+  assert_error(loc.has_value(), Msg::empty_result, loc_idx);
+
+  std::visit(
+    Overloaded{
+      [this](std::string_view) { assert_error(false, Msg::cannot_get_length, "string_view"); },
+      [&result, this](Number n) { result = Number(n.length()); },
+      [this](ArrayValues const&) { assert_error(false, Msg::cannot_get_length, "ArrayValues"); },
+      [&result, this](Variable) { assert_error(false, Msg::cannot_get_length, "Variable"); },
+      [&result, this](Array a) { result = vm_->array_length(a); },
+      [&result, this](ArrayElement const&) {
+        assert_error(false, Msg::cannot_get_length, "ArrayElement");
+      },
+      [&result, this](Ibase) { assert_error(false, Msg::cannot_get_length, "ibase"); },
+      [&result, this](Obase) { assert_error(false, Msg::cannot_get_length, "obase"); },
+      [&result, this](Scale) { assert_error(false, Msg::cannot_get_length, "scale"); },
+    },
+    *loc);
 }
 
 void GD::Bc::Details::InstructionPack::execute_load()

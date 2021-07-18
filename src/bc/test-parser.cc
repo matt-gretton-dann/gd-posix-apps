@@ -48,11 +48,16 @@ TEST_CASE("Parser - quit parsing", "[bc][parser]")
   REQUIRE(instructions->at(expected.size()).opcode() == Instruction::Opcode::eof);
 }
 
-TEST_CASE("Parser - extension parsing", "[bc][parser]")
+TEST_CASE("Parser - extension parsing", "[bc][parser][extensions]")
 {
   using namespace GD::Bc;
   auto [input, expected] = GENERATE(table<std::string_view, Instructions>({
     {"halt\n", {Instruction(Instruction::Opcode::quit, 0U)}},
+    {"length(a[])\n",
+     {Instruction(Instruction::Opcode::array, Array('a')),
+      Instruction(Instruction::Opcode::length, Instruction::Offset(-1)),
+      Instruction(Instruction::Opcode::print, Instruction::Offset(-1),
+                  Instruction::Stream::output)}},
   }));
 
   auto parser = Parser(std::make_unique<Lexer>(std::make_unique<StringReader>(input)), false);

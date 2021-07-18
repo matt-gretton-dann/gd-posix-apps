@@ -1091,7 +1091,9 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_primary_expression(POPEFlags
       return insert_error(Msg::expected_lparens);
     }
     lexer_->chew();
-    auto elt = parse_expression();
+    POPEFlags flags =
+      extensions_enabled() ? POPEFlags::parse_array_slices : POPEFlags::parse_primary;
+    auto elt = parse_expression(flags);
 
     if (lexer_->peek() != Token::Type::rparens) {
       return insert_error(Msg::expected_rparens, lexer_->peek());
@@ -1251,7 +1253,9 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_sqrt(ExprIndex expr)
 
 GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_length(ExprIndex expr)
 {
-  expr = ensure_expr_loaded(expr);
+  if (expr != ExprType::array_slice) {
+    expr = ensure_expr_loaded(expr);
+  }
   ExprIndex result(instructions_->size(), ExprType::primary);
   instructions_->emplace_back(Instruction::Opcode::length, expr - result);
   return result;

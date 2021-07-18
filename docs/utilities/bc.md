@@ -30,6 +30,9 @@ If built with non-POSIX extensions enabled the following functionality is added:
    before the radix pointed.  When disabled a character will always be printed before the radix
    point.
 
+ * Length can be called on an array slice (`length(a[])`).  This returns the number of elements in
+   the array.
+
 ## Lexing & Parsing
 
 There is not much to say about the lexer and parser as they are fairly standard.

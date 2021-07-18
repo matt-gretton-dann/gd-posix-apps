@@ -356,6 +356,12 @@
         "id": 59,
         "description": "Usage message for the program with non-POSIX extensions. {0} is the program name.",
         "C": "Usage: {0} [-lq] [file...]"
+      },
+      {
+        "msg": "cannot_get_length",
+        "id": 60,
+        "description": "Cannot get the length of an object to type {0}.",
+        "C": "Cannot get length of object of type {0}."
       }
     ]
   }

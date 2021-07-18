@@ -417,7 +417,7 @@ using ArrayIndex = Number::NumType;
 using ArrayElement = std::pair<Array, ArrayIndex>;
 
 /** Array values. */
-using ArrayValues = std::shared_ptr<std::unordered_map<ArrayIndex, Number>>;
+using ArrayValues = std::shared_ptr<std::map<ArrayIndex, Number>>;
 
 template<typename T>
 bool operator==(TypeWrapper<Letter, T> lhs, TypeWrapper<Letter, T> rhs)
