@@ -1383,11 +1383,7 @@ public:
   NumType scale() const { return scale_; }
 
   /* Get the number of significant digits.  */
-  NumType length() const
-  {
-    /* Note that length(x) >= scale(x) so length(0.00) is 2. */
-    return std::max(scale(), digits_.length());
-  }
+  NumType length() const { return digits_.length(); }
 
   /** \brief  Negate \c *this.  */
   void negate() { sign_ = (sign_ == Sign::positive) ? Sign::negative : Sign::positive; }
@@ -1655,7 +1651,7 @@ public:
     /* Initial guess = 10^floor(N/2+1). N = number of integer digits (=length - scale)
      * This gives us something in the correct ball-park.  We also store this at the working_scale.
      */
-    NumType initial_guess = (length() - scale()) / 2;
+    NumType initial_guess = (std::max(length(), scale()) - scale()) / 2;
     BasicNumber c(1);
     c.digits_.mul_pow10(initial_guess);
     c.digits_.mul_pow10(working_scale);

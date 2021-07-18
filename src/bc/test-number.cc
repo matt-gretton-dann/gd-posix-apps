@@ -158,10 +158,12 @@ TEST_CASE("GD::Bc::Number - Scale and length, directed", "[bc][number]")
   /* Test input in one base is output correctly in another. */
   auto [num, scale, length] =
     GENERATE(table<std::string_view, GD::Bc::Number::NumType, GD::Bc::Number::NumType>(
-      {{"1", 0, 1},
+      {{"0.01", 2, 1},
+       {".1", 1, 1},
+       {"1", 0, 1},
        {"0", 0, 1},
        {"00000000000000000000000000000000000000001", 0, 1},
-       {"0.00000000000", 11, 11},
+       {"0.00000000000", 11, 1},
        {"1.0000", 4, 5},
        {"123456789123456789123456789", 0, 27}}));
 
