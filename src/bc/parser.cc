@@ -347,7 +347,10 @@ void GD::Bc::Parser::parse_return_statement()
 
   ExprIndex expr = ExprIndex::missing();
 
-  if (lexer_->peek() == Token::Type::lparens) {
+  if (extensions_enabled()) {
+    expr = parse_return_expression();
+  }
+  else if (lexer_->peek() == Token::Type::lparens) {
     lexer_->chew();
     expr = parse_return_expression();
 
