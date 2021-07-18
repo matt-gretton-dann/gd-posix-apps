@@ -1498,6 +1498,10 @@ public:
       *this = one;
       return;
     }
+    /* Ensure we end up with the right sign.  */
+    if (power_whole.is_even()) {
+      sign_ = Sign::positive;
+    }
 
     if (rhs.sign_ == Sign::positive &&
         power_whole.compare(one.digits_, 0) == Details::ComparisonResult::equality) {
