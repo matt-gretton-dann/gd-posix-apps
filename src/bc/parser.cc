@@ -569,11 +569,13 @@ void GD::Bc::Parser::parse_function()
   }
   lexer_->chew();
 
-  if (lexer_->peek() != Token::Type::newline) {
+  if (lexer_->peek() == Token::Type::newline) {
+    lexer_->chew();
+  }
+  else if (!extensions_enabled()) {
     insert_error(Msg::expected_newline, lexer_->peek());
     return;
   }
-  lexer_->chew();
 
   parse_opt_auto_define_list(function_begin);
   parse_statement_list();
