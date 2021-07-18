@@ -25,7 +25,9 @@ using Msg = GD::Bc::Msg;
 
 namespace {
 /** \brief  Library script loaded with -l. */
-char const* library_script = "";
+char const* library_script = R"EOF(
+scale=20
+)EOF";
 
 /** \brief       Report an error and exit with exit code 1.
  *  \param  msg  Message ID
