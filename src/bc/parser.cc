@@ -347,13 +347,18 @@ void GD::Bc::Parser::parse_return_statement()
 
   ExprIndex expr = ExprIndex::missing();
 
-  if (extensions_enabled()) {
+  bool need_lparens = !extensions_enabled();
+  bool found_lparens = false;
+  if (lexer_->peek() == Token::Type::lparens) {
+    lexer_->chew();
+    found_lparens = true;
+  }
+
+  if (!need_lparens || found_lparens) {
     expr = parse_return_expression();
   }
-  else if (lexer_->peek() == Token::Type::lparens) {
-    lexer_->chew();
-    expr = parse_return_expression();
 
+  if (found_lparens) {
     if (lexer_->peek() != Token::Type::rparens) {
       insert_error(Msg::expected_rparens, lexer_->peek());
       return;
@@ -973,7 +978,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_incr_decr_expression()
   ExprIndex named_expr = parse_primary_expression();
   if (named_expr != ExprType::named) {
     if (pre) {
-      return insert_error(Msg::expected_named_expression);
+      return insert_error(Msg::expected_named_expression, lexer_->peek());
     }
     return named_expr;
   }
