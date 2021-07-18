@@ -1546,32 +1546,13 @@ public:
     assert(rhs.sign_ == Sign::negative);
     /* x ^ -p.  Scale = target_scale.  */
     digits_.power_mul(power_whole);
-    power_whole.mac(scale_, 0);
+    scale_ *= power_whole.to_unsigned(0);
     /* digits_ now has scale: scale_ * power_whole.  */
     /* We need to do 1.0/digits_ with resultant scale target_scale.
-     * Scale digits_ to 2 * target_scale, and 1 to target_scale and then do the division.
+     * Multiply one by 10^(scale_ + target_scale) and do the division.
      */
-    auto target_scale_num = Details::BasicDigits<Traits>(target_scale);
-
-    if (power_whole.compare(target_scale_num, 0) != Details::ComparisonResult::greater_than) {
-      scale_ = power_whole.to_unsigned(0);
-    }
-    else {
-      Details::BasicDigits<Traits> base(base_);
-      auto target_scale_base = Details::BasicDigits<Traits>(base_);
-      target_scale_base.add(target_scale_num, 0);
-      while (power_whole.compare(target_scale_base, 0) != Details::ComparisonResult::less_than) {
-        digits_.div_pow10(base_);
-        power_whole.sub(base, 0);
-      }
-
-      if (power_whole.compare(target_scale_num, 0) == Details::ComparisonResult::greater_than) {
-        power_whole.sub(target_scale_num, 0);
-        digits_.div_pow10(power_whole.to_unsigned(0));
-      }
-      scale_ = target_scale;
-    }
-
+    one.digits_.mul_pow10(scale_ + target_scale);
+    one.scale_ = scale_ + target_scale;
     one.divide(*this, target_scale);
     std::swap(one, *this);
   }
@@ -1752,7 +1733,7 @@ private:
   Details::BasicDigits<Traits> digits_;  ///< The digits.
   Sign sign_ = Sign::positive;           ///< Sign (+/-1).
   NumType scale_ = 0;                    ///< Scale.
-};
+};                                       // namespace GD::Bc
 
 template<typename Traits>
 std::ostream& operator<<(std::ostream& os, BasicNumber<Traits> const& num)
