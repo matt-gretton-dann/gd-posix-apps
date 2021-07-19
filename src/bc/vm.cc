@@ -641,7 +641,7 @@ std::pair<GD::Bc::Number, bool> GD::Bc::Details::InstructionPack::execute()
       execute_unary_op([this](Number& lhs) { lhs.sqrt(vm_->scale()); });
       break;
     case Instruction::Opcode::abs:
-      execute_unary_op([this](Number& lhs) { lhs.abs(); });
+      execute_unary_op([](Number& lhs) { lhs.abs(); });
       break;
     case Instruction::Opcode::scale_expr:
       execute_unary_op([](Number& lhs) { lhs = Number(lhs.scale()); });
@@ -750,16 +750,14 @@ void GD::Bc::Details::InstructionPack::execute_length()
   std::visit(
     Overloaded{
       [this](std::string_view) { assert_error(false, Msg::cannot_get_length, "string_view"); },
-      [&result, this](Number n) { result = Number(n.length()); },
+      [&result](Number n) { result = Number(n.length()); },
       [this](ArrayValues const&) { assert_error(false, Msg::cannot_get_length, "ArrayValues"); },
-      [&result, this](Variable) { assert_error(false, Msg::cannot_get_length, "Variable"); },
+      [this](Variable) { assert_error(false, Msg::cannot_get_length, "Variable"); },
       [&result, this](Array a) { result = vm_->array_length(a); },
-      [&result, this](ArrayElement const&) {
-        assert_error(false, Msg::cannot_get_length, "ArrayElement");
-      },
-      [&result, this](Ibase) { assert_error(false, Msg::cannot_get_length, "ibase"); },
-      [&result, this](Obase) { assert_error(false, Msg::cannot_get_length, "obase"); },
-      [&result, this](Scale) { assert_error(false, Msg::cannot_get_length, "scale"); },
+      [this](ArrayElement const&) { assert_error(false, Msg::cannot_get_length, "ArrayElement"); },
+      [this](Ibase) { assert_error(false, Msg::cannot_get_length, "ibase"); },
+      [this](Obase) { assert_error(false, Msg::cannot_get_length, "obase"); },
+      [this](Scale) { assert_error(false, Msg::cannot_get_length, "scale"); },
     },
     *loc);
 }
