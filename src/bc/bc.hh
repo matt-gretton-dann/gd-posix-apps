@@ -1250,7 +1250,9 @@ struct fmt::formatter<GD::Bc::Letter>
   auto format(GD::Bc::Letter letter, FormatContext& ctx)
   {
     static std::string_view letters = "abcdefghijklmnopqrstuvwxyz";
-    return format_to(ctx.out(), "{0}", letters[static_cast<unsigned>(letter)]);
+    std::ostringstream os;
+    os << letters[static_cast<unsigned>(letter)];
+    return format_to(ctx.out(), "{0}", os.str());
   }
 };
 #endif  //  _SRC_BC_BC_HH_INCLUDED

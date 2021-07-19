@@ -867,7 +867,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_assign_expression(POPEFlags flag
 {
   auto idx = parse_opt_assign_expression(flags);
   if (idx == ExprType::missing) {
-    idx = ExprIndex(insert_error(Msg::expected_assign_expression, lexer_->peek(), ExprType::other));
+    idx = insert_error(Msg::expected_assign_expression, lexer_->peek());
   }
 
   return idx;
