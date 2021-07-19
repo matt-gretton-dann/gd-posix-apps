@@ -1231,7 +1231,8 @@ struct fmt::formatter<GD::Bc::Token>
   {
     std::ostringstream os;
     os << token;
-    return format_to(ctx.out(), "{0}", os.str());
+    // Work around Win32 STL bug:
+    return fmt::vformat_to(ctx.out(), "{0}", fmt::make_format_args(os.str()));
   }
 };
 
@@ -1250,9 +1251,9 @@ struct fmt::formatter<GD::Bc::Letter>
   auto format(GD::Bc::Letter letter, FormatContext& ctx)
   {
     static std::string_view letters = "abcdefghijklmnopqrstuvwxyz";
-    std::ostringstream os;
-    os << letters[static_cast<unsigned>(letter)];
-    return format_to(ctx.out(), "{0}", os.str());
+    // Work around Win32 STL bug:
+    return fmt::vformat_to(ctx.out(), "{0}",
+                           fmt::make_format_args(letters[static_cast<unsigned>(letter)]));
   }
 };
 #endif  //  _SRC_BC_BC_HH_INCLUDED
