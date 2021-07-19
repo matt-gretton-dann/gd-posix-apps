@@ -103,8 +103,7 @@ function(find_std_format)
   endif()
 
   # Unless forced to use the supplemental library we prefer to use a builtin library.
-  # The Win32 builtin fmt library also has issues.
-  if (NOT FORCE_SUPPLEMENTAL_LIBRARY AND NOT WIN32)
+  if (NOT FORCE_SUPPLEMENTAL_LIBRARY)
     try_compile(_ccxxfmt_present
                 "${CMAKE_CURRENT_BINARY_DIR}/cmake-test"
                 SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/cmake/check-format.cc"
