@@ -766,7 +766,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_expression(POPEFlags flags)
 {
   auto idx = parse_opt_expression(flags);
   if (idx == ExprType::missing) {
-    idx = ExprIndex(insert_error(Msg::expected_expression, lexer_->peek(), ExprType::other));
+    idx = insert_error(Msg::expected_expression, lexer_->peek());
   }
 
   return idx;
@@ -1115,9 +1115,9 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_primary_expression(POPEFlags
       return insert_error(Msg::expected_lparens);
     }
     lexer_->chew();
-    POPEFlags flags =
+    POPEFlags expr_flags =
       extensions_enabled() ? POPEFlags::parse_array_slices : POPEFlags::parse_primary;
-    auto elt = parse_expression(flags);
+    auto elt = parse_expression(expr_flags);
 
     if (lexer_->peek() != Token::Type::rparens) {
       return insert_error(Msg::expected_rparens, lexer_->peek());
