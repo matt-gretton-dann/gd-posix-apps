@@ -1804,7 +1804,8 @@ struct fmt::formatter<GD::Bc::BasicNumber<NumberTraits>>
     else {
       number.output(os, 10, 0);
     }
-    return format_to(ctx.out(), "{0}", os.str());
+    // Work around Win32 STL bug:
+    return vformat_to(ctx.out(), "{0}", fmt::make_format_args(os.str()));
   }
 
   bool debug_ = false;
