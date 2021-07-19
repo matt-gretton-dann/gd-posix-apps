@@ -28,9 +28,27 @@
 #include <tuple>
 #include <variant>
 
+namespace GD::Bc {
+// Needed for number.hh
+inline constexpr bool extensions_enabled()
+{
+#if ENABLE_EXTENSIONS
+  return true;
+#else
+  return false;
+#endif  // ENABLE_EXTENSIONS
+}
+
+}  // namespace GD::Bc
+
 #include "number.hh"
 #include <type_traits>
 #include <unordered_map>
+
+#ifndef ENABLE_EXTENSIONS
+/** Are the non-POSIX extensions enabled? */
+#  define ENABLE_EXTENSIONS 0
+#endif
 
 namespace GD::Bc {
 
@@ -101,12 +119,14 @@ struct Token
     decrement,
     define,
     break_,
+    halt,
     quit,
     length,
     return_,
     for_,
     if_,
     while_,
+    abs,
     sqrt,
     scale,
     ibase,
@@ -384,6 +404,8 @@ private:
 
   std::unique_ptr<Reader> r_;  ///< Reader
   std::optional<Token> t_;     ///< Pending token.
+  bool seen_quit_;             ///< Have we seen a quit token?
+  bool first_character_;       ///< Have we lexed anything yet?
 };
 
 /** Wrapper around Letter representing a Variable */
@@ -397,7 +419,7 @@ using ArrayIndex = Number::NumType;
 using ArrayElement = std::pair<Array, ArrayIndex>;
 
 /** Array values. */
-using ArrayValues = std::shared_ptr<std::unordered_map<ArrayIndex, Number>>;
+using ArrayValues = std::shared_ptr<std::map<ArrayIndex, Number>>;
 
 template<typename T>
 bool operator==(TypeWrapper<Letter, T> lhs, TypeWrapper<Letter, T> rhs)
@@ -515,6 +537,7 @@ enum class Scale : int;
  * | store               | Offset      | Offset      | Store value Op2 into named expression Op1. |
  * | scale_expr          | Offset      |             | Calculate scale(op1)                       |
  * | sqrt                | Offset      |             | Calculate sqrt(op1)                        |
+ * | abs                 | Offset      |             | Calculate abs(op1)                         |
  * | length              | Offset      |             | Calculate length(op1)                      |
  * | equals              | Offset      | Offset      | 1 if op1 == op2, 0 otherwise               |
  * | less_than_equals    | Offset      | Offset      | 1 if op1 <= op2, 0 otherwise               |
@@ -563,6 +586,7 @@ public:
     store,             ///< Store.  Store op2 into op1.
     scale_expr,        ///< scale(expr).
     sqrt,              ///< sqrt(expr).
+    abs,               ///< abs(expr).
     length,            ///< length(expr).
     equals,            ///< op1 == op2.
     less_than_equals,  ///< op1 <= op2.
@@ -584,7 +608,7 @@ public:
   /** Stream identifiers.  */
   enum class Stream {
     output,  ///< Use normal output stream
-    error   ///< Use error stream.
+    error    ///< Use error stream.
   };
 
   /** Type representing an index into the list of instructions.  */
@@ -731,6 +755,9 @@ public:
   /** \brief  Do the next stage of a parse.
    */
   std::shared_ptr<Instructions> parse();
+
+  /** \brief  Have we seen a `quit` statement.  */
+  bool seen_quit() const noexcept;
 
 private:
   /** Parse the main program production. */
@@ -933,6 +960,10 @@ private:
   template<typename... Ts>
   ExprIndex insert_error(Msg msg, Ts... args)
   {
+    if (seen_quit_) {
+      return ExprIndex::missing();
+    }
+
     error_ = true;
     /* If the lexer holds an error token we report that rather than the error message we've been
      * asked to report.
@@ -1049,6 +1080,12 @@ private:
    */
   ExprIndex insert_sqrt(ExprIndex expr);
 
+  /** \brief       Insert abs() call
+   *  \param  expr Expression to pass
+   *  \return      Index of inserted instruction
+   */
+  ExprIndex insert_abs(ExprIndex expr);
+
   /** \brief       Insert length() call
    *  \param  expr Expression to pass
    *  \return      Index of inserted instruction
@@ -1136,6 +1173,7 @@ private:
   bool interactive_;                            ///< Are we interactive?
   bool error_;                                  ///< Has there been an error?
   bool in_function_;                            ///< Are we in a function?
+  bool seen_quit_;                              ///< Have we seen a quit token?
 };
 
 bool operator==(Parser::ExprIndex const& lhs, Parser::ExprIndex const& rhs);
@@ -1158,11 +1196,12 @@ struct VMState;
 class VM
 {
 public:
-  /** \brief     Constructor
-   *  \param out Stream to use for standard output.
-   *  \param err Stream to use for standard error.
+  /** \brief               Constructor
+   *  \param out           Stream to use for standard output.
+   *  \param err           Stream to use for standard error.
+   *  \param save_specials Should we save ibase, obase, scale on entry to a function?
    */
-  VM(std::ostream& out, std::ostream& err);
+  VM(std::ostream& out, std::ostream& err, bool save_specials);
 
   /** \brief              Execute instructions.
    *  \param instructions Instructions to execute
@@ -1192,7 +1231,8 @@ struct fmt::formatter<GD::Bc::Token>
   {
     std::ostringstream os;
     os << token;
-    return format_to(ctx.out(), "{0}", os.str());
+    // Work around Win32 STL bug:
+    return fmt::vformat_to(ctx.out(), "{0}", fmt::make_format_args(os.str()));
   }
 };
 
@@ -1211,7 +1251,9 @@ struct fmt::formatter<GD::Bc::Letter>
   auto format(GD::Bc::Letter letter, FormatContext& ctx)
   {
     static std::string_view letters = "abcdefghijklmnopqrstuvwxyz";
-    return format_to(ctx.out(), "{0}", letters[static_cast<unsigned>(letter)]);
+    // Work around Win32 STL bug:
+    return fmt::vformat_to(ctx.out(), "{0}",
+                           fmt::make_format_args(letters[static_cast<unsigned>(letter)]));
   }
 };
 #endif  //  _SRC_BC_BC_HH_INCLUDED

@@ -350,6 +350,18 @@
         "id": 58,
         "description": "The offset {1} in the second operand of instruction {0} overflows the array of instructions",
         "C": "Operand 2 of instruction {0} has an offset ({1}) that points after the end of the instruction stream."
+      },
+      {
+        "msg": "usage_extensions",
+        "id": 59,
+        "description": "Usage message for the program with non-POSIX extensions. {0} is the program name.",
+        "C": "Usage: {0} [-lq] [file...]"
+      },
+      {
+        "msg": "cannot_get_length",
+        "id": 60,
+        "description": "Cannot get the length of an object to type {0}.",
+        "C": "Cannot get length of object of type {0}."
       }
     ]
   }

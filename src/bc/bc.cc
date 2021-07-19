@@ -25,7 +25,9 @@ using Msg = GD::Bc::Msg;
 
 namespace {
 /** \brief  Library script loaded with -l. */
-char const* library_script = "";
+char const* library_script = R"EOF(
+scale=20
+)EOF";
 
 /** \brief       Report an error and exit with exit code 1.
  *  \param  msg  Message ID
@@ -34,10 +36,14 @@ char const* library_script = "";
 template<typename... Ts>
 [[noreturn]] void error(Msg msg, Ts... args)
 {
+#if ENABLE_EXTENSIONS
+  constexpr auto usage = Msg::usage_extensions;
+#else
+  constexpr auto usage = Msg::usage;
+#endif
   std::cerr << GD::program_name() << ": "
             << GD::Bc::Messages::get().format(GD::Bc::Set::bc, msg, args...) << '\n'
-            << GD::Bc::Messages::get().format(GD::Bc::Set::bc, Msg::usage, GD::program_name())
-            << '\n';
+            << GD::Bc::Messages::get().format(GD::Bc::Set::bc, usage, GD::program_name()) << '\n';
   ::exit(1);
 }
 
@@ -49,7 +55,8 @@ void execute(GD::Bc::VM& vm, std::unique_ptr<GD::Bc::Reader>&& r)
   while (cont) {
     auto instructions = parser.parse();
     if (instructions) {
-      cont = vm.execute(*instructions);
+      cont = parser.seen_quit();
+      cont |= vm.execute(*instructions);
     }
     else {
       cont = false;
@@ -65,10 +72,21 @@ int main(int argc, char** argv)
 
   int c;
   bool load_library = false;
-  while ((c = ::getopt(argc, argv, ":l")) != -1) {
+  bool save_specials = false;
+#if ENABLE_EXTENSIONS
+  char const* opts = ":glq";
+#else
+  char const* opts = ":l";
+#endif
+  while ((c = ::getopt(argc, argv, opts)) != -1) {
     switch (c) {
+    case 'g':
+      save_specials = true;
+      break;
     case 'l':
       load_library = true;
+      break;
+    case 'q':
       break;
     case ':':
     case '?':
@@ -78,7 +96,7 @@ int main(int argc, char** argv)
     }
   }
 
-  GD::Bc::VM vm(std::cout, std::clog);
+  GD::Bc::VM vm(std::cout, std::clog, save_specials);
 
   /* Configure where we do multiplication splits.  */
   GD::Bc::Number::multiply_split_point(BC_MULTIPLY_SPLIT_POINT);

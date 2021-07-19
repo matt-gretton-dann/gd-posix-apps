@@ -205,6 +205,9 @@ std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Instruction::Opcode o
   case GD::Bc::Instruction::Opcode::sqrt:
     os << "sqrt";
     break;
+  case GD::Bc::Instruction::Opcode::abs:
+    os << "abs";
+    break;
   case GD::Bc::Instruction::Opcode::length:
     os << "length";
     break;
@@ -277,6 +280,7 @@ unsigned GD::Bc::Instruction::op_count(Opcode opcode)
   case GD::Bc::Instruction::Opcode::negate:
   case GD::Bc::Instruction::Opcode::load:
   case GD::Bc::Instruction::Opcode::scale_expr:
+  case GD::Bc::Instruction::Opcode::abs:
   case GD::Bc::Instruction::Opcode::sqrt:
   case GD::Bc::Instruction::Opcode::length:
   case GD::Bc::Instruction::Opcode::branch:
@@ -346,6 +350,7 @@ void GD::Bc::Instruction::validate_operands() const
   case GD::Bc::Instruction::Opcode::load:
   case GD::Bc::Instruction::Opcode::scale_expr:
   case GD::Bc::Instruction::Opcode::sqrt:
+  case GD::Bc::Instruction::Opcode::abs:
   case GD::Bc::Instruction::Opcode::length:
   case GD::Bc::Instruction::Opcode::branch:
   case GD::Bc::Instruction::Opcode::return_:

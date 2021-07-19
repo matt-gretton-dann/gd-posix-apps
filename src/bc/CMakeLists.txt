@@ -9,6 +9,9 @@ target_link_libraries(libbc PUBLIC gdsup util)
 set_property(TARGET libbc PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
 set_property(TARGET libbc PROPERTY CXX_STANDARD_REQUIRED ON)
 target_compile_definitions(libbc PRIVATE _CRT_SECURE_NO_WARNINGS)
+if(ENABLE_NON_POSIX_EXTENSIONS)
+  target_compile_definitions(libbc PRIVATE ENABLE_EXTENSIONS=1)
+endif()
 set_warnings(libbc)
 if (ENABLE_IPO)
   set_property(TARGET libbc PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
@@ -20,6 +23,9 @@ target_add_clang_format(libbc)
 
 if(RUN_UNIT_TESTS)
   add_executable(test-libbc)
+  if(ENABLE_NON_POSIX_EXTENSIONS)
+    target_compile_definitions(test-libbc PRIVATE ENABLE_EXTENSIONS=1)
+  endif()
   target_link_libraries(test-libbc PUBLIC libbc Catch2::Catch2)
   set_property(TARGET test-libbc PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
   set_property(TARGET test-libbc PROPERTY CXX_STANDARD_REQUIRED ON)
@@ -65,3 +71,59 @@ add_custom_command(
   COMMENT "Generating find-multiply-split-point.hh")
 add_custom_target(find_multiply_split_point_header DEPENDS find-multiply-split-point.hh)
 add_dependencies(bc find_multiply_split_point_header)
+
+if(ENABLE_NON_POSIX_EXTENSIONS)
+set(bc_skips
+    bc/gavinhoward-bc/extra/stdin # Don't support -i command-line option
+    bc/gavinhoward-bc/extra/read # Don't support read
+    bc/gavinhoward-bc/extra/errors # Errors are implementation specific
+    bc/gavinhoward-bc/extra/other # Don't support other extensions
+    bc/gavinhoward-bc/tests/print2 # No support for multi char function names
+    bc/gavinhoward-bc/tests/shift # We don't support <<, >>, <<=, >>=
+    bc/gavinhoward-bc/tests/trunc # No support for truncation
+    bc/gavinhoward-bc/tests/places # Don't support places extensions
+    bc/gavinhoward-bc/tests/vars # Don't support arbitary variable names
+    bc/gavinhoward-bc/tests/boolean # Don't support booleans outside of conditional statements
+    bc/gavinhoward-bc/tests/comp # Don't support comparisons outside of conditional statements
+    bc/gavinhoward-bc/tests/assignments # Don't support print.
+    bc/gavinhoward-bc/tests/scientific # Don't support scientific notation
+    bc/gavinhoward-bc/tests/engineering # Don't support engineering obase
+    bc/gavinhoward-bc/tests/strings # Don't support print.
+    bc/gavinhoward-bc/tests/letters # Don't support letters G-Z.
+    bc/gavinhoward-bc/tests/exponent # Library not yet written
+    bc/gavinhoward-bc/tests/log # Library not yet written
+    bc/gavinhoward-bc/tests/pi # Library not yet written
+    bc/gavinhoward-bc/tests/arctangent # Library not yet written
+    bc/gavinhoward-bc/tests/sine # Library not yet written
+    bc/gavinhoward-bc/tests/cosine # Library not yet written
+    bc/gavinhoward-bc/tests/bessel # Library not yet written
+    bc/gavinhoward-bc/tests/misc1 # No support for last
+    bc/gavinhoward-bc/tests/misc2 # We're strict about presence of newlines.
+    bc/gavinhoward-bc/tests/misc3 # We're strict about presence of newlines, and no support for print
+    bc/gavinhoward-bc/tests/misc4 # Don't support maxibase, maxscale
+    bc/gavinhoward-bc/tests/misc5 # We're strict about presence of newlines.
+    bc/gavinhoward-bc/tests/misc6 # We're strict about presence of newlines.
+    bc/gavinhoward-bc/tests/void # Don't support void
+    bc/gavinhoward-bc/tests/rand # Don't support rand
+    bc/gavinhoward-bc/tests/lib2 # No extended library support
+    bc/gavinhoward-bc/script/print # Don't support print
+    bc/gavinhoward-bc/script/parse # Do not support continue
+    bc/gavinhoward-bc/script/add # Don't support multi-char variables
+    bc/gavinhoward-bc/script/subtract # Don't support multi-char variables
+    bc/gavinhoward-bc/script/multiply # Don't support multi-char variables
+    bc/gavinhoward-bc/script/divide # Don't support multi-char variables
+    bc/gavinhoward-bc/script/array # No support for comments
+    bc/gavinhoward-bc/script/atan # No support for library
+    bc/gavinhoward-bc/script/bessel # No support for library
+    bc/gavinhoward-bc/script/functions # No support for library
+    bc/gavinhoward-bc/script/len # No support for multi-char function names.
+    bc/gavinhoward-bc/script/rand # No support for random numbers.
+    bc/gavinhoward-bc/script/references # No support for references
+  )
+else()
+set(bc_skips bc/gavinhoward-bc)
+endif()
+
+if (NOT WIN32)
+add_gdpat_test(NAME bc SKIPS "${bc_skips}")
+endif()

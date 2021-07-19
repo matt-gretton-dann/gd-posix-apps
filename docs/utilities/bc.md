@@ -10,6 +10,38 @@ There is also the implementation of arbitrary precision arithmetic to consider.
 The majority of the code is implemented as a stand-alone library (`libbc`) to ease unit testing of
 the various components.
 
+## Non-POSIX Extensions
+
+To enable use of the gavinhoward-bc testsuite a small number of extensions have been added as
+follows:
+
+If built with non-POSIX extensions enabled the following functionality is added:
+
+ * `-q` command line option.  This does nothing in `bc` but is a GNU bc option to stop a copyright
+   header being printed.
+
+ * `-g` command line option.  This causes function invocations to push `ibase`, `obase`, and
+   `scale` onto a stack (i.e. treat them as locals to functions).
+
+ * `halt` statement.  This does a `quit` when executed.  Unlike `quit` which quits the code when
+   parsed (which is virtually never what you want).
+
+ * Numbers which are written over two-or more lines may have white-space at the start of the
+   continuation lines.
+
+ * If POSIX extensions are enabled numbers with a magnitude of less than 1 will not have a 0 printed
+   before the radix pointed.  When disabled a character will always be printed before the radix
+   point.
+
+ * Length can be called on an array slice (`length(a[])`).  This returns the number of elements in
+   the array.
+
+ * The absolute form of a number may be calculated using the `abs()` expression.
+
+ * `return foo;` is valid.
+
+ * No newline needed after opening brace of a function definition.
+
 ## Lexing & Parsing
 
 There is not much to say about the lexer and parser as they are fairly standard.

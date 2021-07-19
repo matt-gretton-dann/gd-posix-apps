@@ -13,3 +13,8 @@ and provides links to their licenses.
  * [Catch2](https://github.com/catchorg/Catch2):  Used if unit testing is enabled.  Currently
    shipped in the install package.  Licensed under the
    [Boost v1 license](https://github.com/catchorg/Catch2/blob/devel/LICENSE.txt).
+ * [GD Posix Apps Tests](https://github.com/matt-gretton-dann/gd-posix-apps-tests):  Used if
+   integration testing is enabled.  This contains a variety of test-suites from multiple third
+   party sources.  Licensed under a wide-variety of licenses.  See the
+   [gd-posix-apps-tests repository](https://github.com/matt-gretton-dann/gd-posix-apps-tests)
+   for more details.

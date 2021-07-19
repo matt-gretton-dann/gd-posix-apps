@@ -16,7 +16,10 @@
 #include <string_view>
 #include <unordered_map>
 
-GD::Bc::Lexer::Lexer(std::unique_ptr<Reader>&& r) : r_(std::move(r)), t_(std::nullopt) {}
+GD::Bc::Lexer::Lexer(std::unique_ptr<Reader>&& r)
+    : r_(std::move(r)), t_(std::nullopt), seen_quit_(false), first_character_(true)
+{
+}
 
 GD::Bc::Token const& GD::Bc::Lexer::peek()
 {
@@ -110,8 +113,13 @@ void GD::Bc::Lexer::lex_number()
         cont = false;
         break;
       }
-
-      r_->chew();
+      r_->chew();  // Chew new-line
+      if (extensions_enabled()) {
+        // Chew any-whitespcae - non-POSIX extension
+        while (r_->peek() == ' ' || r_->peek() == '\t') {
+          r_->chew();
+        }
+      }
       break;
     default:
       cont = false;
@@ -125,14 +133,16 @@ void GD::Bc::Lexer::lex_number()
 
 void GD::Bc::Lexer::lex_letter_or_keyword()
 {
-  static const std::unordered_map<std::string, Token::Type> token_map{
-    {"auto", Token::Type::auto_},    {"break", Token::Type::break_},
-    {"define", Token::Type::define}, {"ibase", Token::Type::ibase},
-    {"if", Token::Type::if_},        {"for", Token::Type::for_},
-    {"length", Token::Type::length}, {"obase", Token::Type::obase},
-    {"quit", Token::Type::quit},     {"return", Token::Type::return_},
-    {"scale", Token::Type::scale},   {"sqrt", Token::Type::sqrt},
-    {"while", Token::Type::while_},
+  static const std::unordered_map<std::string, Token::Type> token_map
+  {
+    {"auto", Token::Type::auto_}, {"break", Token::Type::break_}, {"define", Token::Type::define},
+      {"ibase", Token::Type::ibase}, {"if", Token::Type::if_}, {"for", Token::Type::for_},
+      {"length", Token::Type::length}, {"obase", Token::Type::obase}, {"quit", Token::Type::quit},
+      {"return", Token::Type::return_}, {"scale", Token::Type::scale}, {"sqrt", Token::Type::sqrt},
+      {"while", Token::Type::while_},
+#if ENABLE_EXTENSIONS
+      {"abs", Token::Type::abs}, {"halt", Token::Type::halt},
+#endif
   };
   std::string value;
   bool cont = true;
@@ -183,6 +193,9 @@ void GD::Bc::Lexer::lex_letter_or_keyword()
   auto it = token_map.find(value);
   if (it != token_map.end()) {
     t_.emplace(it->second);
+    if (it->second == Token::Type::quit) {
+      seen_quit_ = true;
+    }
     return;
   }
 
@@ -277,6 +290,26 @@ void GD::Bc::Lexer::lex_comment()
 
 void GD::Bc::Lexer::lex()
 {
+  /* If we've seen a `quit` token we stop parsing immediately.  */
+  if (seen_quit_) {
+    t_.emplace(Token::Type::eof);
+    return;
+  }
+
+  /* If this is the first character and extensions are enabled then we chew a #! line.  */
+  if (extensions_enabled() && first_character_ && r_->peek() == '#') {
+    r_->chew();
+    if (r_->peek() == '!') {
+      while (r_->peek() != EOF && r_->peek() != '\n') {
+        r_->chew();
+      }
+    }
+    else {
+      t_.emplace(Token::Type::error, r_->error(Msg::unexpected_token, '#'));
+      return;
+    }
+  }
+
   /* Loop forever - this enables us to treat \ followed by \n and comments as just another go
      round the loop.  */
   while (true) {

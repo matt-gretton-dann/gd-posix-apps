@@ -57,7 +57,10 @@ TEST_CASE("GD::Bc::Number - Number construction, directed", "[bc][number]")
     GD::Bc::Number num(in_num, static_cast<GD::Bc::Number::NumType>(ibase));
     std::ostringstream ss;
     std::string expected(out_num);
-    num.output(ss, static_cast<GD::Bc::Number::NumType>(obase));
+    if (GD::Bc::extensions_enabled() && expected.substr(0, 2) == "0.") {
+      expected = expected.substr(1);
+    }
+    num.output(ss, static_cast<GD::Bc::Number::NumType>(obase), 0);
     INFO("in_num = " << in_num << " ibase = " << ibase << " out_num = " << out_num
                      << " obase = " << obase);
     REQUIRE(ss.str() == expected);
@@ -155,7 +158,9 @@ TEST_CASE("GD::Bc::Number - Scale and length, directed", "[bc][number]")
   /* Test input in one base is output correctly in another. */
   auto [num, scale, length] =
     GENERATE(table<std::string_view, GD::Bc::Number::NumType, GD::Bc::Number::NumType>(
-      {{"1", 0, 1},
+      {{"0.01", 2, 1},
+       {".1", 1, 1},
+       {"1", 0, 1},
        {"0", 0, 1},
        {"00000000000000000000000000000000000000001", 0, 1},
        {"0.00000000000", 11, 11},

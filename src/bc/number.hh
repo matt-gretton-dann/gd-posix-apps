@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <vector>
 
+#include "bc.hh"
 #include <string_view>
 
 namespace GD::Bc {
@@ -91,6 +92,7 @@ public:
   using PrintType = typename Traits::PrintType;                 ///< Type to use to print
   static constexpr WideType base_ = Traits::base_;              ///< Base we're storing in.
   static constexpr unsigned base_log10_ = Traits::base_log10_;  ///< Log10 of base_.
+  static constexpr unsigned line_length = 69;                   ///< Length of a line in output.
 
   /** \brief  Basic constructor.  */
   BasicDigits() : digits_(nullptr) {}
@@ -215,16 +217,20 @@ public:
     return to_unsigned_error_too_large_;
   }
 
-  /** \brief       Output to stream
-   *  \param os    Stream to output to
-   *  \param obase Output base
-   *  \param scale Output scale.
+  /** \brief          Output to stream
+   *  \param os       Stream to output to
+   *  \param obase    Output base
+   *  \param scale    Output scale.
+   *  \param line_pos Current position on the line
    *
    * Use output_base10() if output is base-10, as that uses significantly less memory to do the
    * output.
+   *
+   * Assumes that zero output has already been handled.
    */
-  void output(std::ostream& os, NumType obase, NumType scale) const
+  void output(std::ostream& os, NumType obase, NumType scale, unsigned line_pos) const
   {
+    assert(!is_zero());
     assert(obase >= 2);
     auto [whole, frac] = split_frac(scale);
     DigitVector whole_digits;
@@ -236,7 +242,8 @@ public:
       number += to_string(*it, obase);
     }
 
-    if (number.empty()) {
+    if (!extensions_enabled() && number.empty()) {
+      // In extensions mode we don't add a zero before the radix point.
       number = "0";
     }
 
@@ -254,10 +261,12 @@ public:
     }
 
     std::string::size_type p = 0;
-    if (number.length() > 70) {
-      while (p >= number.length() - 70) {
-        os << number.substr(p, 70) << "\\\n";
-        p += 70;
+    // Ensure we handle line breaks appropriately.  Note that line_length includes the \\.
+    if (number.length() > line_length - line_pos) {
+      while (p < number.length() - (line_length - line_pos - 1)) {
+        os << number.substr(p, line_length - line_pos - 1) << "\\\n";
+        p += line_length - line_pos - 1;
+        line_pos = 0;
       }
     }
     if (p != number.length()) {
@@ -265,13 +274,14 @@ public:
     }
   }
 
-  /** \brief       Output number in base 10
-   *  \param os    Stream to output to
-   *  \param scale Scale of number.
+  /** \brief                Output number in base 10
+   *  \param os             Stream to output to
+   *  \param scale          Scale of number.
+   *  \param digits_printed Number of digits printed so far.
    *
    * This is slightly more efficient than output(os, 10, scale) would be in terms of memory usage.
    */
-  void output_base10(std::ostream& os, NumType scale) const
+  void output_base10(std::ostream& os, NumType scale, unsigned digits_printed) const
   {
     /* For base 10 we can rely on the underlying system-library's output routines the only corner
      * cases are to: 1) Ensure we pad with zeroes where necessary; and 2) Insert the decimal point
@@ -289,16 +299,16 @@ public:
       width = base_log10_;
     }
     std::string result = ss.str();
+    unsigned break_at = (result.length() <= line_length) ? line_length : (line_length - 1);
     auto it = result.begin();
     bool print = false;
-    NumType digits_printed = 0;
     while (result.end() - it > scale) {
       if (*it != '0') {
         print = true;
       }
       if (print) {
         os << *it;
-        if (++digits_printed == 70) {
+        if (++digits_printed == break_at) {
           digits_printed = 0;
           os << "\\\n";
         }
@@ -306,7 +316,7 @@ public:
       ++it;
     }
 
-    if (!print) {
+    if (!extensions_enabled() && !print) {
       ++digits_printed;
       os << '0';
     }
@@ -314,16 +324,16 @@ public:
     if (it != result.end()) {
       os << '.';
       ++digits_printed;
-      if (digits_printed >= 70) {
+      if (digits_printed > break_at) {
         os << "\\\n";
         digits_printed = 0;
       }
 
       assert(scale >= result.end() - it);
-      while (result.end() - it > 70 - digits_printed) {
-        os << result.substr(it - result.begin(), 70 - digits_printed) << "\\\n";
-        scale -= 70 - digits_printed;
-        it += 70 - digits_printed;
+      while (result.end() - it > break_at - digits_printed) {
+        os << result.substr(it - result.begin(), break_at - digits_printed) << "\\\n";
+        scale -= break_at - digits_printed;
+        it += break_at - digits_printed;
         digits_printed = 0;
       }
       if (it != result.end()) {
@@ -1324,20 +1334,39 @@ public:
     return result;
   }
 
-  void output(std::ostream& os, NumType obase) const
+  /** \brief          Output the value to a stream.
+   *  \param os       Output stream
+   *  \param obase    Base to output in
+   *  \param line_pos Current position on output line (default = 0).
+   */
+  void output(std::ostream& os, NumType obase, unsigned line_pos) const
   {
+    if (line_pos > digits_.line_length) {
+      os << '\n';
+      line_pos = 0;
+    }
+
     if (digits_.is_zero()) {
       os << "0";
       return;
     }
     if (sign_ == Sign::negative) {
-      os << "-";
+      if (line_pos > digits_.line_length - 1) {
+        line_pos = 0;
+        os << '\n';
+      }
+      os << '-';
+      ++line_pos;
+      if (line_pos > digits_.line_length - 1) {
+        line_pos = 0;
+        os << "\\\n";
+      }
     }
     if (obase == 10) {
-      digits_.output_base10(os, scale_);
+      digits_.output_base10(os, scale_, line_pos);
     }
     else {
-      digits_.output(os, obase, scale_);
+      digits_.output(os, obase, scale_, line_pos);
     }
   }
 
@@ -1356,9 +1385,14 @@ public:
   /* Get the number of significant digits.  */
   NumType length() const
   {
-    /* Note that length(x) >= scale(x) so length(0.00) is 2. */
-    return std::max(scale(), digits_.length());
+    if (digits_.is_zero()) {
+      return std::max(NumType(1), scale());
+    }
+    return digits_.length();
   }
+
+  /** \brief  Get the absolute value of \c *this.  */
+  void abs() { sign_ = Sign::positive; }
 
   /** \brief  Negate \c *this.  */
   void negate() { sign_ = (sign_ == Sign::positive) ? Sign::negative : Sign::positive; }
@@ -1453,7 +1487,7 @@ public:
 
     if (!power_frac.is_zero()) {
       std::ostringstream ss;
-      output(ss, 10);
+      output(ss, 10, 0);
       Details::error(Msg::raising_to_fractional_power, ss.str());
       return;
     }
@@ -1463,6 +1497,10 @@ public:
       /* x ^ 0 = 1.  Scale = min (scale(x) * 0, max(target_scale, scale(x))) = 0.  */
       *this = one;
       return;
+    }
+    /* Ensure we end up with the right sign.  */
+    if (power_whole.is_even()) {
+      sign_ = Sign::positive;
     }
 
     if (rhs.sign_ == Sign::positive &&
@@ -1508,32 +1546,13 @@ public:
     assert(rhs.sign_ == Sign::negative);
     /* x ^ -p.  Scale = target_scale.  */
     digits_.power_mul(power_whole);
-    power_whole.mac(scale_, 0);
+    scale_ *= power_whole.to_unsigned(0);
     /* digits_ now has scale: scale_ * power_whole.  */
     /* We need to do 1.0/digits_ with resultant scale target_scale.
-     * Scale digits_ to 2 * target_scale, and 1 to target_scale and then do the division.
+     * Multiply one by 10^(scale_ + target_scale) and do the division.
      */
-    auto target_scale_num = Details::BasicDigits<Traits>(target_scale);
-
-    if (power_whole.compare(target_scale_num, 0) != Details::ComparisonResult::greater_than) {
-      scale_ = power_whole.to_unsigned(0);
-    }
-    else {
-      Details::BasicDigits<Traits> base(base_);
-      auto target_scale_base = Details::BasicDigits<Traits>(base_);
-      target_scale_base.add(target_scale_num, 0);
-      while (power_whole.compare(target_scale_base, 0) != Details::ComparisonResult::less_than) {
-        digits_.div_pow10(base_);
-        power_whole.sub(base, 0);
-      }
-
-      if (power_whole.compare(target_scale_num, 0) == Details::ComparisonResult::greater_than) {
-        power_whole.sub(target_scale_num, 0);
-        digits_.div_pow10(power_whole.to_unsigned(0));
-      }
-      scale_ = target_scale;
-    }
-
+    one.digits_.mul_pow10(scale_ + target_scale);
+    one.scale_ = scale_ + target_scale;
     one.divide(*this, target_scale);
     std::swap(one, *this);
   }
@@ -1552,7 +1571,9 @@ public:
   void multiply(BasicNumber const& rhs, NumType target_scale)
   {
     NumType result_scale = scale() + rhs.scale();
-    scale_ = std::min(result_scale, std::max({scale(), rhs.scale(), target_scale}));
+    // Win32 doesn't support std::max({...});
+    auto max_scale = std::max(scale(), rhs.scale());
+    scale_ = std::min(result_scale, std::max(max_scale, target_scale));
     NumType rescale = result_scale - scale_;
     digits_.multiply(rhs.digits_, rescale);
     sign_ = sign_ == rhs.sign_ ? Sign::positive : Sign::negative;
@@ -1611,7 +1632,7 @@ public:
 
     if (sign_ == Sign::negative) {
       std::ostringstream ss;
-      output(ss, 10);
+      output(ss, 10, 0);
       Details::error(Msg::square_root_of_negative_number, ss.str());
       return;
     }
@@ -1626,7 +1647,7 @@ public:
     /* Initial guess = 10^floor(N/2+1). N = number of integer digits (=length - scale)
      * This gives us something in the correct ball-park.  We also store this at the working_scale.
      */
-    NumType initial_guess = (length() - scale()) / 2;
+    NumType initial_guess = (std::max(length(), scale()) - scale()) / 2;
     BasicNumber c(1);
     c.digits_.mul_pow10(initial_guess);
     c.digits_.mul_pow10(working_scale);
@@ -1714,7 +1735,7 @@ private:
   Details::BasicDigits<Traits> digits_;  ///< The digits.
   Sign sign_ = Sign::positive;           ///< Sign (+/-1).
   NumType scale_ = 0;                    ///< Scale.
-};
+};                                       // namespace GD::Bc
 
 template<typename Traits>
 std::ostream& operator<<(std::ostream& os, BasicNumber<Traits> const& num)
@@ -1783,9 +1804,10 @@ struct fmt::formatter<GD::Bc::BasicNumber<NumberTraits>>
       number.debug(os);
     }
     else {
-      number.output(os, 10);
+      number.output(os, 10, 0);
     }
-    return format_to(ctx.out(), "{0}", os.str());
+    // Work around Win32 STL bug:
+    return vformat_to(ctx.out(), "{0}", fmt::make_format_args(os.str()));
   }
 
   bool debug_ = false;

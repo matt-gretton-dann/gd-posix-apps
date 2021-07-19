@@ -176,6 +176,9 @@ std::ostream& GD::Bc::operator<<(std::ostream& os, Token::Type t)
   case Token::Type::break_:
     os << "break";
     break;
+  case Token::Type::halt:
+    os << "halt";
+    break;
   case Token::Type::quit:
     os << "quit";
     break;
@@ -193,6 +196,9 @@ std::ostream& GD::Bc::operator<<(std::ostream& os, Token::Type t)
     break;
   case Token::Type::while_:
     os << "while";
+    break;
+  case Token::Type::abs:
+    os << "abs";
     break;
   case Token::Type::sqrt:
     os << "sqrt";
@@ -340,6 +346,9 @@ std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Token const& token)
   case Token::Type::break_:
     os << "break";
     break;
+  case Token::Type::halt:
+    os << "halt";
+    break;
   case Token::Type::quit:
     os << "quit";
     break;
@@ -357,6 +366,9 @@ std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Token const& token)
     break;
   case Token::Type::while_:
     os << "while";
+    break;
+  case Token::Type::abs:
+    os << "abs";
     break;
   case Token::Type::sqrt:
     os << "sqrt";

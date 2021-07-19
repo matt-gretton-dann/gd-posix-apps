@@ -152,7 +152,8 @@ GD::Bc::Parser::Offset GD::Bc::operator-(Parser::ExprIndex const& lhs, Parser::E
  */
 
 GD::Bc::Parser::Parser(std::unique_ptr<Lexer>&& lexer, bool interactive)
-    : lexer_(std::move(lexer)), interactive_(interactive), error_(false)
+    : lexer_(std::move(lexer)), interactive_(interactive), error_(false), in_function_(false),
+      seen_quit_(false)
 {
   assert(lexer_ != nullptr);
 }
@@ -168,6 +169,8 @@ std::shared_ptr<GD::Bc::Instructions> GD::Bc::Parser::parse()
   parse_program();
   return instructions_;
 }
+
+bool GD::Bc::Parser::seen_quit() const noexcept { return seen_quit_; }
 
 void GD::Bc::Parser::parse_program()
 {
@@ -258,6 +261,8 @@ bool GD::Bc::Parser::parse_opt_statement()
                | If '(' relational_expression ')' statement
                | While '(' relational_expression ')' statement
                | '{' statement_list '}'
+     If extensions enabled:
+               | Halt
   */
 
   auto const& token = lexer_->peek();
@@ -272,6 +277,10 @@ bool GD::Bc::Parser::parse_opt_statement()
     parse_break_statement();
     return true;
   case Token::Type::quit:
+    seen_quit_ = true;
+    lexer_->chew();
+    return true;
+  case Token::Type::halt:
     insert_quit(0);
     lexer_->chew();
     return true;
@@ -338,10 +347,18 @@ void GD::Bc::Parser::parse_return_statement()
 
   ExprIndex expr = ExprIndex::missing();
 
+  bool need_lparens = !extensions_enabled();
+  bool found_lparens = false;
   if (lexer_->peek() == Token::Type::lparens) {
     lexer_->chew();
-    expr = parse_return_expression();
+    found_lparens = true;
+  }
 
+  if (!need_lparens || found_lparens) {
+    expr = parse_return_expression();
+  }
+
+  if (found_lparens) {
     if (lexer_->peek() != Token::Type::rparens) {
       insert_error(Msg::expected_rparens, lexer_->peek());
       return;
@@ -552,11 +569,13 @@ void GD::Bc::Parser::parse_function()
   }
   lexer_->chew();
 
-  if (lexer_->peek() != Token::Type::newline) {
+  if (lexer_->peek() == Token::Type::newline) {
+    lexer_->chew();
+  }
+  else if (!extensions_enabled()) {
     insert_error(Msg::expected_newline, lexer_->peek());
     return;
   }
-  lexer_->chew();
 
   parse_opt_auto_define_list(function_begin);
   parse_statement_list();
@@ -747,7 +766,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_expression(POPEFlags flags)
 {
   auto idx = parse_opt_expression(flags);
   if (idx == ExprType::missing) {
-    idx = ExprIndex(insert_error(Msg::expected_expression, lexer_->peek(), ExprType::other));
+    idx = insert_error(Msg::expected_expression, lexer_->peek());
   }
 
   return idx;
@@ -848,7 +867,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_assign_expression(POPEFlags flag
 {
   auto idx = parse_opt_assign_expression(flags);
   if (idx == ExprType::missing) {
-    idx = ExprIndex(insert_error(Msg::expected_assign_expression, lexer_->peek(), ExprType::other));
+    idx = insert_error(Msg::expected_assign_expression, lexer_->peek());
   }
 
   return idx;
@@ -961,7 +980,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_incr_decr_expression()
   ExprIndex named_expr = parse_primary_expression();
   if (named_expr != ExprType::named) {
     if (pre) {
-      return insert_error(Msg::expected_named_expression);
+      return insert_error(Msg::expected_named_expression, lexer_->peek());
     }
     return named_expr;
   }
@@ -1076,13 +1095,29 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_primary_expression(POPEFlags
     lexer_->chew();
     return insert_sqrt(elt);
   }
-  case Token::Type::length: {
+  case Token::Type::abs: {
     lexer_->chew();
     if (lexer_->peek() != Token::Type::lparens) {
       return insert_error(Msg::expected_lparens);
     }
     lexer_->chew();
     auto elt = parse_expression();
+
+    if (lexer_->peek() != Token::Type::rparens) {
+      return insert_error(Msg::expected_rparens, lexer_->peek());
+    }
+    lexer_->chew();
+    return insert_abs(elt);
+  }
+  case Token::Type::length: {
+    lexer_->chew();
+    if (lexer_->peek() != Token::Type::lparens) {
+      return insert_error(Msg::expected_lparens);
+    }
+    lexer_->chew();
+    POPEFlags expr_flags =
+      extensions_enabled() ? POPEFlags::parse_array_slices : POPEFlags::parse_primary;
+    auto elt = parse_expression(expr_flags);
 
     if (lexer_->peek() != Token::Type::rparens) {
       return insert_error(Msg::expected_rparens, lexer_->peek());
@@ -1240,9 +1275,19 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_sqrt(ExprIndex expr)
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_length(ExprIndex expr)
+GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_abs(ExprIndex expr)
 {
   expr = ensure_expr_loaded(expr);
+  ExprIndex result(instructions_->size(), ExprType::primary);
+  instructions_->emplace_back(Instruction::Opcode::abs, expr - result);
+  return result;
+}
+
+GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_length(ExprIndex expr)
+{
+  if (expr != ExprType::array_slice) {
+    expr = ensure_expr_loaded(expr);
+  }
   ExprIndex result(instructions_->size(), ExprType::primary);
   instructions_->emplace_back(Instruction::Opcode::length, expr - result);
   return result;
