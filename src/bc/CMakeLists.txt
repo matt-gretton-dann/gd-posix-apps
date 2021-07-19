@@ -72,7 +72,7 @@ add_custom_command(
 add_custom_target(find_multiply_split_point_header DEPENDS find-multiply-split-point.hh)
 add_dependencies(bc find_multiply_split_point_header)
 
-if(ENABLE_NON_POSIX_EXTENSIONS AND NOT WIN32)
+if(ENABLE_NON_POSIX_EXTENSIONS)
 set(bc_skips
     bc/gavinhoward-bc/extra/stdin # Don't support -i command-line option
     bc/gavinhoward-bc/extra/read # Don't support read
@@ -124,4 +124,6 @@ else()
 set(bc_skips bc/gavinhoward-bc)
 endif()
 
+if (NOT WIN32)
 add_gdpat_test(NAME bc SKIPS "${bc_skips}")
+endif()
