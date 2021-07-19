@@ -1571,7 +1571,9 @@ public:
   void multiply(BasicNumber const& rhs, NumType target_scale)
   {
     NumType result_scale = scale() + rhs.scale();
-    scale_ = std::min(result_scale, std::max({scale(), rhs.scale(), target_scale}));
+    // Win32 doesn't support std::max({...});
+    auto max_scale = std::max(scale(), rhs.scale());
+    scale_ = std::min(result_scale, std::max(max_scale, target_scale));
     NumType rescale = result_scale - scale_;
     digits_.multiply(rhs.digits_, rescale);
     sign_ = sign_ == rhs.sign_ ? Sign::positive : Sign::negative;
