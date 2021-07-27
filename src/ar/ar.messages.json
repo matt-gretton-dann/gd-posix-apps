@@ -1,0 +1,20 @@
+[
+  {
+    "set": "ar",
+    "id": 1,
+    "messages": [
+      {
+        "msg": "usage",
+        "id": 1,
+        "description": "Usage message for the program. {0} is the program name.",
+        "C": "Usage: {0} -d [-v] archive file...\n       {0} -m [-a|-b|-i] [-v] archive file...\n       {0} -p [-sv] archive file...\n       {0} -q [-cv] archive file...\n       {0} -r [-a|-b|-i] [-cuv] archive file...\n       {0} -t [-sv] archive file...\n       {0} -x [svCT] archive file...\n"
+      },
+      {
+        "msg": "unrecognised_option",
+        "id": 2,
+        "description": "Option -{0} is unrecognised.",
+        "C": "Option '-{0}' is not valid."
+      }
+    ]
+  }
+]
