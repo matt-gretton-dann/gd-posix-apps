@@ -207,10 +207,10 @@ public:
    *  \tparam FType      Class that implements IFType concept
    *  \param  file       Reference to input file
    *  \param  format     Format of archive
-   *  \param  long_names Pointer to string table of long names (if used)
+   *  \param  long_names Ttring table of long names (if used)
    */
   template<typename IFType>
-  MemberHeader(IFType& file, Format format, std::shared_ptr<Member const> long_names)
+  MemberHeader(IFType& file, Format format, Member const* long_names)
   {
     read_header(file);
     format_ = format;
@@ -380,13 +380,13 @@ private:
    *  \tparam FType      Class that implements IFType concept
    *  \param  file       Reference to input file
    *  \param  format     Archive format.
-   *  \param  long_names Member with string table of long names.
+   *  \param  long_names Member with string table of long names, may be null.
    *
    * Updates the member archive name to its full name handling however the format produces long
    * names.
    */
   template<typename FType>
-  void update_name(FType& file, std::shared_ptr<Member const> long_names);
+  void update_name(FType& file, Member const* long_names);
 
   /** \brief  Guess the value for format_ given the member header.  */
   void guess_format();
@@ -531,8 +531,8 @@ template<typename FType>
 class ReadIterator
 {
 public:
-  using reference = Member const&;                ///< Reference to iterator
-  using pointer = std::shared_ptr<Member const>;  ///< Pointer to iterator.
+  using reference = Member const&;  ///< Reference to iterator
+  using pointer = Member const*;    ///< Pointer to iterator.
 
   /** \brief  Equality comparison operator.  */
   bool operator==(ReadIterator const& rhs) const { return member_ = rhs.member_; }
@@ -540,15 +540,15 @@ public:
   /** \brief Pointer dereference.  */
   reference operator*() const
   {
-    assert(member_ != nullptr);
+    assert(member_ != std::nullopt);
     return *member_;
   }
 
   /** \brief  Member access. */
   pointer operator->() const
   {
-    assert(member_ != nullptr);
-    return member_;
+    assert(member_ != std::nullopt);
+    return &member_.value();
   }
 
   /** \brief Pre-increment.  */
@@ -580,22 +580,20 @@ private:
    * All of \a first_member, \a symbol_table1, \a symbol_table2, and \a string_table may be null.
    */
   ReadIterator(FType&& file, std::size_t offset, Format format,
-               std::shared_ptr<Member const> first_member,
-               std::shared_ptr<Member const> symbol_table1,
-               std::shared_ptr<Member const> symbol_table2,
-               std::shared_ptr<Member const> string_table)
+               std::optional<Member const> first_member, std::optional<Member const> symbol_table1,
+               std::optional<Member const> symbol_table2, std::optional<Member const> string_table)
       : file_(std::move(file)), offset_(offset), format_(format), member_(first_member),
         symbol_table1_(symbol_table1), symbol_table2_(symbol_table2), long_names_(string_table)
   {
-    if (member_ == nullptr) {
+    if (member_ == std::nullopt) {
       read_next_member();
     }
   }
 
   /** \brief  Construct the end tag.  */
   explicit ReadIterator(EndTag)
-      : file_(std::nullopt), offset_(0), format_(Format::bsd), member_(nullptr),
-        symbol_table1_(nullptr), symbol_table2_(nullptr), long_names_(nullptr)
+      : file_(std::nullopt), offset_(0), format_(Format::bsd), member_(std::nullopt),
+        symbol_table1_(std::nullopt), symbol_table2_(std::nullopt), long_names_(std::nullopt)
   {
   }
 
@@ -603,7 +601,7 @@ private:
   void read_next_member()
   {
     if (!file_.has_value() || file_.eof()) {
-      member_ = nullptr;
+      member_.reset();
       return;
     }
 
@@ -618,17 +616,17 @@ private:
     auto hdr = Details::MemberHeader(file_, format_);
     auto data = std::vector<std::byte>(hdr.size());
     file_.read(std::span(data.begin(), hdr.size()));
-    member_ = std::make_shared<Member>(hdr, id, data);
+    member_ = Member(hdr, id, data);
     offset_ += hdr.header_size() + hdr.size();
   }
 
   std::optional<FType> file_;
   std::size_t offset_;
   Format format_;
-  std::shared_ptr<Member const> member_;
-  std::shared_ptr<Member const> symbol_table1_;
-  std::shared_ptr<Member const> symbol_table2_;
-  std::shared_ptr<Member const> long_names_;
+  std::optional<Member const> member_;
+  std::optional<Member const> symbol_table1_;
+  std::optional<Member const> symbol_table2_;
+  std::optional<Member const> long_names_;
 };
 
 /** \brief  Input file based on a memory span.
@@ -682,7 +680,7 @@ public:
   template<typename T, std::size_t Count>
   void read_at(std::span<T, Count> dest, std::size_t offset) const
   {
-    if (offset >= size_bytes()) {
+    if (offset > size_bytes()) {
       throw std::runtime_error("Reading outside of data.");
     }
     if (size_bytes() - offset < dest.size_bytes()) {
@@ -707,6 +705,14 @@ private:
   std::size_t offset_;               ///< Current offset into the file.
 };
 
+/** \brief  Return the end of the archive reading iteration.  */
+template<typename FType>
+ReadIterator<FType> read_archive_end()
+{
+  return ReadIterator<FType>(ReadIterator<FType>::EndTag);
+}
+
+/** \brief  Start reading through an archive file.  */
 template<typename FType>
 ReadIterator<FType> read_archive_begin(FType&& f)
 {
@@ -720,78 +726,72 @@ ReadIterator<FType> read_archive_begin(FType&& f)
   }
   std::size_t offset = magic_len;
 
-  std::shared_ptr<Member> symbol_table1 = nullptr;
-  std::shared_ptr<Member> symbol_table2 = nullptr;
-  std::shared_ptr<Member> long_names = nullptr;
+  std::optional<Member const> symbol_table1 = nullptr;
+  std::optional<Member const> symbol_table2 = nullptr;
+  std::optional<Member const> long_names = nullptr;
+
+  /* Read first - header need to guess the format type.  */
+  if (file.eof()) {
+    return read_archive_end<FType>();
+  }
 
   auto hdr = Details::MemberHeader(file);
   Format format = hdr.format();
   MemberID id(offset);
   auto data = std::vector<std::byte>(hdr.size());
   file.read(data.begin(), hdr.size());
-  auto member = std::make_shared<Member>(hdr, id, data);
+  auto member = std::make_optional<Member const>(hdr, id, data);
   offset += hdr.header_size() + hdr.size();
-  if (offset & 1) {
-    char c;
-    file.read(&c, 1);
-    ++offset;
-  }
+
+  auto read_next_member = [&offset, &file, format]() -> std::optional<Member const> {
+    if (offset & 1) {
+      char c;
+      offset += file.read_upto(&c, 1);
+    }
+
+    if (file.eof()) {
+      return std::nullopt;
+    }
+
+    auto id = MemberID(offset);
+    auto hdr = Details::MemberHeader(file, format);
+    auto data = std::make_shared<std::vector<std::byte>>();
+    data->resize(hdr.size());
+    file.read(std::span(data->begin(), hdr.size()));
+    offset += hdr.header_size() + hdr.size();
+    return Member(hdr, id, data);
+  };
 
   if (member->name() == Details::symbol_table_name(format)) {
     symbol_table1 = member;
-    member = nullptr;
+    member = read_next_member();
   }
-
-  hdr = Details::MemberHeader(file, format);
-  id = MemberID(offset);
-  data.resize(hdr.size());
-  file.read(data.begin(), hdr.size());
-  member = std::make_shared<Member>(hdr, id, data);
-  offset += hdr.header_size() + hdr.size();
-  if (offset & 1) {
-    char c;
-    file.read(&c, 1);
-    ++offset;
+  if (!member.has_value()) {
+    return read_archive_end<FType>();
   }
 
   if (Details::has_two_symbol_tables(format) &&
       member->name() == Details::symbol_table_name(format)) {
     symbol_table2 = member;
-    member = nullptr;
+    member = read_next_member();
   }
-
-  hdr = Details::MemberHeader(file, format);
-  id = MemberID(offset);
-  data.resize(hdr.size());
-  file.read(data.begin(), hdr.size());
-  member = std::make_shared<Member>(hdr, id, data);
-  offset += hdr.header_size() + hdr.size();
-  if (offset & 1) {
-    char c;
-    file.read(&c, 1);
-    ++offset;
+  if (!member.has_value()) {
+    return read_archive_end<FType>();
   }
 
   if (member->name() == Details::string_table_name(format)) {
     long_names = member;
-    member = nullptr;
+    member = read_next_member();
   }
 
   return ReadIterator(file, offset, format, member, symbol_table1, symbol_table2, long_names);
-}
-
-template<typename FType>
-ReadIterator<FType> read_archive_end()
-{
-  return ReadIterator<FType>(ReadIterator<FType>::EndTag);
-}
+}  // namespace GD::Ar
 
 // OutputIterator write_archive(fs::path const& fname);
 }  // namespace GD::Ar
 
 template<typename FType>
-void GD::Ar::Details::MemberHeader::update_name(FType& file,
-                                                std::shared_ptr<GD::Ar::Member const> long_names)
+void GD::Ar::Details::MemberHeader::update_name(FType& file, GD::Ar::Member const* long_names)
 {
   if (Details::inline_long_names(format_)) {
     /* Long name is represented by #1/<Len> in name field with name immediately following header.
