@@ -215,12 +215,17 @@ public:
   /** \brief             Construct header from file with known archive format
    *  \tparam FType      Class that implements IFType concept
    *  \param  file       Reference to input file
+   *  \param  name       Name part of the header
    *  \param  format     Format of archive
    *  \param  long_names Ttring table of long names (if used)
+   *
+   * Constructor expects file to contain enough information to read whole of header from the current
+   * offset.
    */
   template<typename IFType>
-  MemberHeader(IFType& file, Format format, Member const* long_names)
+  MemberHeader(IFType& file, std::string const& name, Format format, Member const* long_names)
   {
+    name_ = name;
     read_header(file);
     format_ = format;
     update_name(file, long_names);
@@ -229,10 +234,12 @@ public:
   /** \brief        Construct header from file with unknown archive format
    *  \tparam FType Class that implements IFType concept
    *  \param  file  Reference to input file
+   *  \param  name Name part of the header.
    */
   template<typename IFType>
-  explicit MemberHeader(IFType& file)
+  explicit MemberHeader(IFType& file, std::string const& name)
   {
+    name_ = name;
     read_header(file);
     guess_format();
     update_name(file, nullptr);
@@ -375,8 +382,7 @@ private:
   template<typename FType>
   void read_header(FType& file)
   {
-    header_size_ = 0;
-    name_ = read_str(file, name_len);
+    header_size_ = name_len;
     mtime_ = read_uint<uint64_t>(file, mtime_len);
     uid_ = read_uint<uid_t>(file, uid_len, -1);
     gid_ = read_uint<uid_t>(file, gid_len, -1);
@@ -403,6 +409,7 @@ private:
   /** \brief  Guess the value for format_ given the member header.  */
   void guess_format();
 
+public:
   static constexpr std::size_t name_len = 16;   ///< Length of name field
   static constexpr std::size_t mtime_len = 12;  ///< Length of the mtime field
   static constexpr std::size_t uid_len = 6;     ///< Length of the User-ID field
@@ -411,6 +418,7 @@ private:
   static constexpr std::size_t size_len = 10;   ///< Length of the size field.
   static constexpr std::size_t fmag_len = 2;    ///< Length of the header terminator field.
 
+private:
   std::string name_;         ///< Member name
   uint64_t mtime_;           ///< Member modification time (seconds since 1 Jan 1970)
   uid_t uid_;                ///< User ID
@@ -663,7 +671,14 @@ private:
     }
 
     auto id = MemberID(offset_);
-    auto hdr = Details::MemberHeader(*file_, format_,
+    std::string name(Details::MemberHeader::name_len, '\0');
+    auto len = file_->read_upto(std::span(name.begin(), name.end()));
+    if (file_->eof()) {
+      member_.reset();
+      return;
+    }
+    assert(len == 16);
+    auto hdr = Details::MemberHeader(*file_, name, format_,
                                      long_names_.has_value() ? &long_names_.value() : nullptr);
     auto data = std::make_shared<std::vector<std::byte>>(hdr.size());
     file_->read(std::span(data->begin(), hdr.size()));
@@ -890,7 +905,13 @@ ReadIterator<typename std::remove_reference<FType1>::type> read_archive_begin(FT
     return read_archive_end<FType>();
   }
 
-  auto hdr = Details::MemberHeader(file);
+  std::string name(Details::MemberHeader::name_len, '\0');
+  auto len = file.read_upto(std::span(name.begin(), name.end()));
+  if (file.eof()) {
+    return read_archive_end<FType>();
+  }
+  assert(len == 16);
+  auto hdr = Details::MemberHeader(file, name);
   Format format = hdr.format();
   auto id = MemberID(offset);
   auto data = std::make_shared<std::vector<std::byte>>(hdr.size());
@@ -906,10 +927,18 @@ ReadIterator<typename std::remove_reference<FType1>::type> read_archive_begin(FT
 
     if (file.eof()) {
       member.reset();
+      return;
     }
 
     auto id = MemberID(offset);
-    auto hdr = Details::MemberHeader(file, format, nullptr);
+    std::string name(Details::MemberHeader::name_len, '\0');
+    auto len = file.read_upto(std::span(name.begin(), name.end()));
+    if (file.eof()) {
+      member.reset();
+      return;
+    }
+    assert(len == 16);
+    auto hdr = Details::MemberHeader(file, name, format, nullptr);
     auto data = std::make_shared<std::vector<std::byte>>();
     data->resize(hdr.size());
     file.read(std::span(data->begin(), hdr.size()));
@@ -934,9 +963,9 @@ ReadIterator<typename std::remove_reference<FType1>::type> read_archive_begin(FT
     return read_archive_end<FType>();
   }
 
-  if (member->name() == Details::string_table_name(format)) {
+  if (!Details::inline_long_names(format) && member->name() == Details::string_table_name(format)) {
     long_names.emplace(std::move(member.value()));
-    read_next_member();
+    member.reset();
   }
 
   return ReadIterator(std::move(file), offset, format, member, symbol_table1, symbol_table2,
@@ -965,13 +994,13 @@ void GD::Ar::Details::MemberHeader::update_name(FType& file, GD::Ar::Member cons
     /* Out of line long names: Represented by /<offset> in name field.  With name at <offset> in
      * long names field.  Terminated by the long_name_terminator character.  */
     if (name_[0] == '/') {
-      auto offset = to_number<std::size_t>(name_.substr(1), std::string::npos);
-      if (offset == std::string::npos) {
-        if (long_names != nullptr) {
-          throw std::runtime_error("Bad string offset into long names");
-        }
+      if (name_[1] == ' ' || (name_[1] == '/' && name_[2] == ' ')) {
         name_.erase(name_.find(' '), name_.size());
         return;
+      }
+      auto offset = to_number<std::size_t>(name_.substr(1), std::string::npos);
+      if (offset == std::string::npos) {
+        throw std::runtime_error("Bad string offset into long names");
       }
 
       if (long_names == nullptr) {
