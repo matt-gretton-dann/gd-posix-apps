@@ -14,6 +14,30 @@
         "id": 2,
         "description": "Option -{0} is unrecognised.",
         "C": "Option '-{0}' is not valid."
+      },
+      {
+        "msg": "cannot_specify_more_than_one_action",
+        "id": 3,
+        "description": "Cannot specify more than one action on the command line. {0} is the duplicate action..",
+        "C": "Cannot specify more than one action on the command line: -{0} is the duplicate."
+      },
+      {
+        "msg": "missing_position_name",
+        "id": 4,
+        "description": "Missing file name for -a, -b, and -i argument.",
+        "C": "Missing position file name for -a, -b, or -i."
+      },
+      {
+        "msg": "missing_archive_name",
+        "id": 5,
+        "description": "Missing archive file name.",
+        "C": "Missing archive file name."
+      },
+      {
+        "msg": "missing_action",
+        "id": 6,
+        "description": "Missing action option.",
+        "C": "Missing action on command line.  Must specify one of -d, -m, -p, -q, -r, -t, or -x."
       }
     ]
   }
