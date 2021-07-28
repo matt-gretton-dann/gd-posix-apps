@@ -7,14 +7,23 @@
 #ifndef SRC_AR_AR_HH_INCLUDED_
 #define SRC_AR_AR_HH_INCLUDED_
 
-#include "gd/filesystem.hh"
+#include "gd/fcntl.h"
+#include "gd/stdlib.h"
 #include "gd/string.h"
+#include "gd/sys/stat.h"
+#include "gd/unistd.h"
 
-#include <cstddef>
+#include <assert.h>
+#include <memory>
 #include <optional>
 #include <span>
+#include <stddef.h>
+#include <stdexcept>
 #include <string>
 #include <vector>
+
+//#include <system_error>
+//#include <type_traits>
 
 /** \brief  Namespcae for archive library.
  *
@@ -59,7 +68,7 @@
  * std::size_t size_bytes() const;
  *
  * // Current offset in the file.
- * std::size_t offset_bytes() const;
+ * std::size_t offset_bytes(std::enable_if_t<seekable> = 0) const;
  *
  * // Set the current offset in the file.  Only required if the file is seekable.
  * void offset_bytes(std::size_t offset, std::enable_if_t<seekable> = 0);
@@ -77,7 +86,7 @@
  *  // not enough bytes to fille the span or offset is after the end of the file.  Should not affect
  *  // the result of offset_bytes().
  * template<typename T, std::size_t E>
- * void read_at(std::span<T, E> s, std::size_t offset);
+ * void read_at(std::span<T, E> s, std::size_t offset, std::enable_if_t<seekable> = 0);
  *
  * // Read up to s.size_bytes() from offset_bytes() into the given span.  Returns the number of
  * // bytes actually read.  Updates offset_bytes() by the number of bytes read.
@@ -263,6 +272,9 @@ public:
   /** \brief  Get the archive format.  */
   Format format() const noexcept;
 
+  /** Equality comparison.  */
+  bool operator==(MemberHeader const& rhs) const noexcept;
+
 private:
   /** \brief                    Check there is no trailing non-space in a range.
    *  \tparam It                Iterator type. *it must be cv-convertible to char.
@@ -409,6 +421,8 @@ private:
   Format format_;            ///< Header format.
 };
 
+bool operator!=(MemberHeader const& lhs, MemberHeader const& rhs) noexcept;
+
 }  // namespace Details
 
 /** \brief  ID for a member. */
@@ -447,6 +461,9 @@ public:
 
   /** \brief Member ID.  */
   MemberID id() const noexcept;
+
+  /** \brief Equality comparison.  */
+  bool operator==(Member const& rhs) const noexcept;
 
   /** \brief Object is seekable.  */
   static constexpr bool seekable = true;
@@ -505,10 +522,6 @@ public:
     return count;
   }
 
-private:
-  template<typename FType>
-  friend class ReadIterator;
-
   /** \brief        Constructor.
    *  \param header Header
    *  \param id     ID of member
@@ -516,11 +529,14 @@ private:
    */
   Member(Details::MemberHeader&& header, MemberID id, Data data);
 
+private:
   Details::MemberHeader header_;  ///< Header
   MemberID id_;                   ///< ID
   std::size_t offset_;            ///< Current offset
   Data data_;                     ///< Data.
 };
+
+bool operator!=(Member const& lhs, Member const& rhs) noexcept;
 
 /** \brief        Forward iterator used to iterate through reading an archive
  *  \tparam FType underlying file type being read from.
@@ -534,8 +550,39 @@ public:
   using reference = Member const&;  ///< Reference to iterator
   using pointer = Member const*;    ///< Pointer to iterator.
 
+  ReadIterator(ReadIterator&& rhs)
+      : file_(std::move(rhs.file_)), offset_(std::move(rhs.offset_)),
+        format_(std::move(rhs.format_)), symbol_table1_(std::move(rhs.symbol_table1_)),
+        symbol_table2_(std::move(rhs.symbol_table2_)), long_names_(std::move(rhs.long_names_))
+  {
+    rhs.file_.reset();
+  }
+
+  ReadIterator& operator=(ReadIterator&& rhs)
+  {
+    if (this != &rhs) {
+      file_ = std::move(rhs.file_);
+      offset_ = std::move(rhs.offset_);
+      format_ = std::move(rhs.format_);
+      symbol_table1_ = std::move(rhs.symbol_table1_);
+      symbol_table2_ = std::move(rhs.symbol_table2_);
+      long_names_ = std::move(rhs.long_names_);
+
+      rhs.file_.reset();
+    }
+    return *this;
+  }
+
+  ReadIterator(ReadIterator const&) = delete;
+  ReadIterator& operator=(ReadIterator const&) = delete;
   /** \brief  Equality comparison operator.  */
-  bool operator==(ReadIterator const& rhs) const { return member_ = rhs.member_; }
+  bool operator==(ReadIterator const& rhs) const
+  {
+    if (member_.has_value()) {
+      return rhs.member_.has_value() && *member_ == *rhs.member_;
+    }
+    return !rhs.member_.has_value();
+  }
 
   /** \brief Pointer dereference.  */
   reference operator*() const
@@ -565,8 +612,11 @@ private:
   /** \brief Tag used to indicate we want to construct end.  */
   enum class EndTag : int {};
 
-  friend ReadIterator read_archive_begin<FType>(fs::path const& fname);
-  friend ReadIterator read_archive_end<FType>(fs::path const& fname);
+  template<typename FType1>
+  friend ReadIterator<typename std::remove_reference<FType1>::type> read_archive_begin(FType1&& f);
+
+  template<typename FType1>
+  friend ReadIterator<FType1> read_archive_end();
 
   /** \brief                Construct iterator begin element.
    *  \param  file          File to read from
@@ -600,7 +650,7 @@ private:
   /** \brief Read the next member from the file. */
   void read_next_member()
   {
-    if (!file_.has_value() || file_.eof()) {
+    if (!file_.has_value() || file_->eof()) {
       member_.reset();
       return;
     }
@@ -608,16 +658,17 @@ private:
     /* Ensure we're aligned before we try to read.  */
     if (offset_ & 1) {
       char c;
-      file_.read(&c, 1);
+      file_->read(std::span(&c, 1));
       ++offset_;
     }
 
     auto id = MemberID(offset_);
-    auto hdr = Details::MemberHeader(file_, format_);
-    auto data = std::vector<std::byte>(hdr.size());
-    file_.read(std::span(data.begin(), hdr.size()));
-    member_ = Member(hdr, id, data);
+    auto hdr = Details::MemberHeader(*file_, format_,
+                                     long_names_.has_value() ? &long_names_.value() : nullptr);
+    auto data = std::make_shared<std::vector<std::byte>>(hdr.size());
+    file_->read(std::span(data->begin(), hdr.size()));
     offset_ += hdr.header_size() + hdr.size();
+    member_.emplace(Member(std::move(hdr), id, data));
   }
 
   std::optional<FType> file_;
@@ -627,6 +678,109 @@ private:
   std::optional<Member const> symbol_table1_;
   std::optional<Member const> symbol_table2_;
   std::optional<Member const> long_names_;
+};
+
+template<typename FType>
+bool operator!=(ReadIterator<FType> const& lhs, ReadIterator<FType> const& rhs)
+{
+  return !(lhs == rhs);
+}
+
+/** \brief  Input file based on a file.
+ *
+ * Implements the IFType concept - this object may be treated as a non-seekable input file.
+ */
+class InputFile
+{
+public:
+  /** \brief The file is seekable.  */
+  static constexpr bool seekable = false;
+
+  /** \brief  The size of the file is fixed.  */
+  static constexpr bool size_fixed = false;
+
+  /** \brief      Construct the input file.
+   *  \param name Name of the file.
+   */
+  InputFile(std::string name) : name_(name), fd_(::open(name.c_str(), O_RDONLY)), eof_(false)
+  {
+    if (fd_ == -1) {
+      throw std::runtime_error("Unable to open file.");
+    }
+  }
+
+  ~InputFile()
+  {
+    if (fd_ != -1) {
+      ::close(fd_);
+    }
+  }
+
+  InputFile(InputFile const&) = delete;
+  InputFile(InputFile&& rhs) noexcept : name_(rhs.name_), fd_(rhs.fd_), eof_(rhs.eof_)
+  {
+    rhs.fd_ = -1;
+  }
+
+  InputFile& operator=(InputFile const&) = delete;
+  InputFile& operator=(InputFile&& rhs)
+  {
+    if (&rhs != this) {
+      name_ = std::move(rhs.name_);
+      fd_ = std::move(rhs.fd_);
+      eof_ = std::move(rhs.eof_);
+      rhs.fd_ = -1;
+
+      return *this;
+    }
+  }
+
+  std::size_t size_bytes() const noexcept { return ~std::size_t(0); }
+
+  template<typename T, std::size_t Count>
+  void read(std::span<T, Count> dest)
+  {
+    auto res = read_upto(dest);
+    if (res != dest.size_bytes()) {
+      throw std::runtime_error("Unable to read enough bytes.");
+    }
+  }
+
+  template<typename T, std::size_t Count>
+  std::size_t read_upto(std::span<T, Count> dest)
+  {
+    auto saved_errno = errno;
+    ::ssize_t res;
+    std::byte* data = std::as_writable_bytes(dest).data();
+    std::size_t count = dest.size_bytes();
+    while (count > 0) {
+      errno = 0;
+      res = ::read(fd_, data, count);
+      if (res < 0) {
+        if (errno != EINTR) {
+          throw std::system_error(errno, std::generic_category(), "Whilst reading.");
+        }
+        continue;
+      }
+      if (res == 0) {
+        eof_ = true;
+        break;
+      }
+      assert(res > 0);
+      count -= res;
+      data += res;
+    };
+
+    errno = saved_errno;
+    return dest.size_bytes() - count;
+  }
+
+  bool eof() const noexcept { return eof_; }
+
+private:
+  std::string name_;  ///< File name.
+  int fd_;            ///< File descriptor
+  bool eof_;          ///< Have we reached end of file.
 };
 
 /** \brief  Input file based on a memory span.
@@ -709,26 +863,27 @@ private:
 template<typename FType>
 ReadIterator<FType> read_archive_end()
 {
-  return ReadIterator<FType>(ReadIterator<FType>::EndTag);
+  return ReadIterator<FType>(typename ReadIterator<FType>::EndTag());
 }
 
 /** \brief  Start reading through an archive file.  */
-template<typename FType>
-ReadIterator<FType> read_archive_begin(FType&& f)
+template<typename FType1>
+ReadIterator<typename std::remove_reference<FType1>::type> read_archive_begin(FType1&& f)
 {
+  using FType = std::remove_reference<FType1>::type;
   FType file(std::move(f));
   constexpr std::size_t magic_len = 8;
   constexpr char const* expected_magic = "!<arch>\n";
-  std::string magic(magic_len);
-  file.read(magic.begin(), magic.end());
+  std::string magic(magic_len, '\0');
+  file.read(std::span(magic.begin(), magic.end()));
   if (magic != expected_magic) {
     throw std::runtime_error("Missing archive magic");
   }
   std::size_t offset = magic_len;
 
-  std::optional<Member const> symbol_table1 = nullptr;
-  std::optional<Member const> symbol_table2 = nullptr;
-  std::optional<Member const> long_names = nullptr;
+  std::optional<Member const> symbol_table1 = std::nullopt;
+  std::optional<Member const> symbol_table2 = std::nullopt;
+  std::optional<Member const> long_names = std::nullopt;
 
   /* Read first - header need to guess the format type.  */
   if (file.eof()) {
@@ -737,34 +892,34 @@ ReadIterator<FType> read_archive_begin(FType&& f)
 
   auto hdr = Details::MemberHeader(file);
   Format format = hdr.format();
-  MemberID id(offset);
-  auto data = std::vector<std::byte>(hdr.size());
-  file.read(data.begin(), hdr.size());
-  auto member = std::make_optional<Member const>(hdr, id, data);
+  auto id = MemberID(offset);
+  auto data = std::make_shared<std::vector<std::byte>>(hdr.size());
+  file.read(std::span(data->begin(), hdr.size()));
   offset += hdr.header_size() + hdr.size();
+  auto member = std::make_optional<Member const>(std::move(hdr), id, data);
 
-  auto read_next_member = [&offset, &file, format]() -> std::optional<Member const> {
+  auto read_next_member = [&offset, &file, &member, format]() {
     if (offset & 1) {
       char c;
-      offset += file.read_upto(&c, 1);
+      offset += file.read_upto(std::span(&c, 1));
     }
 
     if (file.eof()) {
-      return std::nullopt;
+      member.reset();
     }
 
     auto id = MemberID(offset);
-    auto hdr = Details::MemberHeader(file, format);
+    auto hdr = Details::MemberHeader(file, format, nullptr);
     auto data = std::make_shared<std::vector<std::byte>>();
     data->resize(hdr.size());
     file.read(std::span(data->begin(), hdr.size()));
     offset += hdr.header_size() + hdr.size();
-    return Member(hdr, id, data);
+    member.emplace(std::move(hdr), id, data);
   };
 
   if (member->name() == Details::symbol_table_name(format)) {
-    symbol_table1 = member;
-    member = read_next_member();
+    symbol_table1.emplace(std::move(member.value()));
+    read_next_member();
   }
   if (!member.has_value()) {
     return read_archive_end<FType>();
@@ -772,20 +927,21 @@ ReadIterator<FType> read_archive_begin(FType&& f)
 
   if (Details::has_two_symbol_tables(format) &&
       member->name() == Details::symbol_table_name(format)) {
-    symbol_table2 = member;
-    member = read_next_member();
+    symbol_table2.emplace(std::move(member.value()));
+    read_next_member();
   }
   if (!member.has_value()) {
     return read_archive_end<FType>();
   }
 
   if (member->name() == Details::string_table_name(format)) {
-    long_names = member;
-    member = read_next_member();
+    long_names.emplace(std::move(member.value()));
+    read_next_member();
   }
 
-  return ReadIterator(file, offset, format, member, symbol_table1, symbol_table2, long_names);
-}  // namespace GD::Ar
+  return ReadIterator(std::move(file), offset, format, member, symbol_table1, symbol_table2,
+                      long_names);
+}
 
 // OutputIterator write_archive(fs::path const& fname);
 }  // namespace GD::Ar
@@ -811,8 +967,13 @@ void GD::Ar::Details::MemberHeader::update_name(FType& file, GD::Ar::Member cons
     if (name_[0] == '/') {
       auto offset = to_number<std::size_t>(name_.substr(1), std::string::npos);
       if (offset == std::string::npos) {
-        throw std::runtime_error("Bad string offset into long names");
+        if (long_names != nullptr) {
+          throw std::runtime_error("Bad string offset into long names");
+        }
+        name_.erase(name_.find(' '), name_.size());
+        return;
       }
+
       if (long_names == nullptr) {
         throw std::runtime_error("No long name archive found.");
       }
