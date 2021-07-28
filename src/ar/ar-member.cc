@@ -15,9 +15,6 @@
 
 #include "ar.hh"
 
-namespace {
-}  // namespace
-
 void GD::Ar::Details::MemberHeader::guess_format()
 {
   if (name_ == Details::symbol_table_name(Format::bsd)) {
@@ -51,6 +48,7 @@ void GD::Ar::Details::MemberHeader::guess_format()
     }
   }
 }
+
 std::string const& GD::Ar::Details::MemberHeader::name() const noexcept { return name_; }
 uint64_t GD::Ar::Details::MemberHeader::mtime() const noexcept { return mtime_; }
 uid_t GD::Ar::Details::MemberHeader::uid() const noexcept { return uid_; }
