@@ -88,7 +88,7 @@ size_t GD::Ar::Member::offset_bytes() const noexcept { return offset_; }
 size_t GD::Ar::Member::size_bytes() const noexcept { return header_.size(); }
 std::span<std::byte const> GD::Ar::Member::data() const noexcept
 {
-  return std::span(data_->begin(), header_.size());
+  return std::span<std::byte const>(*data_);
 }
 
 void GD::Ar::Member::offset_bytes(std::size_t offset)

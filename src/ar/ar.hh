@@ -22,6 +22,8 @@
 #include <string>
 #include <vector>
 
+#include <system_error>
+
 //#include <system_error>
 //#include <type_traits>
 
@@ -308,7 +310,7 @@ private:
    * Valid numbers start with zero or more space, followed by the number, terminated by zero or more
    * space.
    */
-  template<typename T, unsigned Base = 10>
+  template<typename T, char Base = 10>
   static T to_number(std::string_view v, T def = 0)
   {
     static_assert(Base <= 10);
@@ -349,7 +351,7 @@ private:
   std::string read_str(IFType& file, std::size_t len)
   {
     std::string s(len, '\0');
-    file.read(std::span(s.begin(), len));
+    file.read(std::span<char>(s.data(), len));
     header_size_ += len;
     return s;
   }
@@ -672,7 +674,7 @@ private:
 
     auto id = MemberID(offset_);
     std::string name(Details::MemberHeader::name_len, '\0');
-    auto len = file_->read_upto(std::span(name.begin(), name.end()));
+    auto len = file_->read_upto(std::span<char>(name));
     if (file_->eof()) {
       member_.reset();
       return;
@@ -681,7 +683,7 @@ private:
     auto hdr = Details::MemberHeader(*file_, name, format_,
                                      long_names_.has_value() ? &long_names_.value() : nullptr);
     auto data = std::make_shared<std::vector<std::byte>>(hdr.size());
-    file_->read(std::span(data->begin(), hdr.size()));
+    file_->read(std::span<std::byte>(*data));
     offset_ += hdr.header_size() + hdr.size();
     member_.emplace(Member(std::move(hdr), id, data));
   }
@@ -745,9 +747,9 @@ public:
       fd_ = std::move(rhs.fd_);
       eof_ = std::move(rhs.eof_);
       rhs.fd_ = -1;
-
-      return *this;
     }
+
+    return *this;
   }
 
   std::size_t size_bytes() const noexcept { return ~std::size_t(0); }
@@ -885,12 +887,12 @@ ReadIterator<FType> read_archive_end()
 template<typename FType1>
 ReadIterator<typename std::remove_reference<FType1>::type> read_archive_begin(FType1&& f)
 {
-  using FType = std::remove_reference<FType1>::type;
+  using FType = typename std::remove_reference<FType1>::type;
   FType file(std::move(f));
   constexpr std::size_t magic_len = 8;
   constexpr char const* expected_magic = "!<arch>\n";
   std::string magic(magic_len, '\0');
-  file.read(std::span(magic.begin(), magic.end()));
+  file.read(std::span<char>(magic));
   if (magic != expected_magic) {
     throw std::runtime_error("Missing archive magic");
   }
@@ -906,7 +908,7 @@ ReadIterator<typename std::remove_reference<FType1>::type> read_archive_begin(FT
   }
 
   std::string name(Details::MemberHeader::name_len, '\0');
-  auto len = file.read_upto(std::span(name.begin(), name.end()));
+  auto len = file.read_upto(std::span<char>(name));
   if (file.eof()) {
     return read_archive_end<FType>();
   }
@@ -915,7 +917,7 @@ ReadIterator<typename std::remove_reference<FType1>::type> read_archive_begin(FT
   Format format = hdr.format();
   auto id = MemberID(offset);
   auto data = std::make_shared<std::vector<std::byte>>(hdr.size());
-  file.read(std::span(data->begin(), hdr.size()));
+  file.read(std::span<std::byte>(*data));
   offset += hdr.header_size() + hdr.size();
   auto member = std::make_optional<Member const>(std::move(hdr), id, data);
 
@@ -932,7 +934,7 @@ ReadIterator<typename std::remove_reference<FType1>::type> read_archive_begin(FT
 
     auto id = MemberID(offset);
     std::string name(Details::MemberHeader::name_len, '\0');
-    auto len = file.read_upto(std::span(name.begin(), name.end()));
+    auto len = file.read_upto(std::span<char>(name));
     if (file.eof()) {
       member.reset();
       return;
@@ -941,7 +943,7 @@ ReadIterator<typename std::remove_reference<FType1>::type> read_archive_begin(FT
     auto hdr = Details::MemberHeader(file, name, format, nullptr);
     auto data = std::make_shared<std::vector<std::byte>>();
     data->resize(hdr.size());
-    file.read(std::span(data->begin(), hdr.size()));
+    file.read(std::span<std::byte>(*data));
     offset += hdr.header_size() + hdr.size();
     member.emplace(std::move(hdr), id, data);
   };
@@ -1016,7 +1018,7 @@ void GD::Ar::Details::MemberHeader::update_name(FType& file, GD::Ar::Member cons
         throw std::runtime_error("Unterminated string in long names table.");
       }
       name_.resize(it_end - it);
-      long_names->read_at(std::span(name_.begin(), name_.end()), offset);
+      long_names->read_at(std::span<char>(name_), offset);
       return;
     }
   }
