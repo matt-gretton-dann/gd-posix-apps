@@ -16,11 +16,11 @@ TEST_CASE("GD::Ar::Details::MemberHeader - Construction BSD", "[ar][member-heade
                            "123456789012"
                            "1     "
                            "    10"
-                           "0660  "
+                           "0660    "
                            "1234567890"
                            "`\n";
-  std::istringstream is(bsd_header);
-  GD::Ar::Details::MemberHeader mh(is, GD::Ar::Format::bsd, nullptr);
+  GD::Ar::MemorySpanInputFile file(std::span(bsd_header.begin(), bsd_header.end()));
+  GD::Ar::Details::MemberHeader mh(file, GD::Ar::Format::bsd, nullptr);
 
   REQUIRE(mh.name() == std::string("file"));
   REQUIRE(mh.mtime() == 123456789012);
@@ -37,12 +37,12 @@ TEST_CASE("GD::Ar::Details::MemberHeader - Construction BSD Long", "[ar][member-
                            "123456789012"
                            "1     "
                            "    10"
-                           "0660  "
+                           "  0660  "
                            "1234567890"
                            "`\n"
                            "12345678901234567890";
-  std::istringstream is(bsd_header);
-  GD::Ar::Details::MemberHeader mh(is, GD::Ar::Format::bsd, nullptr);
+  GD::Ar::MemorySpanInputFile file(std::span(bsd_header.begin(), bsd_header.end()));
+  GD::Ar::Details::MemberHeader mh(file, GD::Ar::Format::bsd, nullptr);
 
   REQUIRE(mh.name() == std::string("12345678901234567890"));
   REQUIRE(mh.mtime() == 123456789012);
@@ -59,11 +59,11 @@ TEST_CASE("GD::Ar::Details::MemberHeader - Construction GNU", "[ar][member-heade
                            "123456789012"
                            "1     "
                            "    10"
-                           "0660  "
+                           "0660    "
                            "1234567890"
                            "`\n";
-  std::istringstream is(gnu_header);
-  GD::Ar::Details::MemberHeader mh(is, GD::Ar::Format::gnu, nullptr);
+  GD::Ar::MemorySpanInputFile file(std::span(gnu_header.begin(), gnu_header.end()));
+  GD::Ar::Details::MemberHeader mh(file, GD::Ar::Format::gnu, nullptr);
 
   REQUIRE(mh.name() == std::string("Fred in a shed"));
   REQUIRE(mh.mtime() == 123456789012);
