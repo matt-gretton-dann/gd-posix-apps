@@ -117,8 +117,9 @@ constexpr char const* symbol_table_name(Format format)
 {
   switch (format) {
   case Format::bsd:
+    return "__.SYMDEF";
   case Format::darwin:
-    return ".__SYMDEF";
+    return "__.SYMDEF SORTED";
   case Format::gnu:
   case Format::gnu_thin:
   case Format::svr4:
@@ -242,9 +243,10 @@ public:
   explicit MemberHeader(IFType& file, std::string const& name)
   {
     name_ = name;
+    format_ = Format::bsd;  // An initial guess
     read_header(file);
-    guess_format();
     update_name(file, nullptr);
+    update_format();
   }
 
   ~MemberHeader() = default;
@@ -409,7 +411,7 @@ private:
   void update_name(FType& file, Member const* long_names);
 
   /** \brief  Guess the value for format_ given the member header.  */
-  void guess_format();
+  void update_format();
 
 public:
   static constexpr std::size_t name_len = 16;   ///< Length of name field
@@ -980,6 +982,11 @@ ReadIterator<typename std::remove_reference<FType1>::type> read_archive_begin(FT
 template<typename FType>
 void GD::Ar::Details::MemberHeader::update_name(FType& file, GD::Ar::Member const* long_names)
 {
+  /* Some names may not obey the rules about spaces.  Leave them as is.  */
+  if (name_ == symbol_table_name(format_)) {
+    return;
+  }
+
   if (Details::inline_long_names(format_)) {
     /* Long name is represented by #1/<Len> in name field with name immediately following header.
      */
@@ -988,7 +995,12 @@ void GD::Ar::Details::MemberHeader::update_name(FType& file, GD::Ar::Member cons
       if (length == std::string::npos) {
         throw std::runtime_error("Bad string length");
       }
+      if (length > size_) {
+        throw std::runtime_error("Long name longer than data");
+      }
       name_ = read_str(file, length);
+      size_ -= length;
+      name_.erase(name_.find('\0'), name_.size());
       return;
     }
   }

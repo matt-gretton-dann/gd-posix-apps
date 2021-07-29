@@ -15,29 +15,29 @@
 
 #include "ar.hh"
 
-void GD::Ar::Details::MemberHeader::guess_format()
+void GD::Ar::Details::MemberHeader::update_format()
 {
-  std::string name(name_.substr(0, name_.find(' ')));
-  if (name == Details::symbol_table_name(Format::bsd)) {
+  if (name_ == Details::symbol_table_name(Format::bsd)) {
     format_ = Format::bsd;
   }
-  else if (name == Details::symbol_table_name(Format::darwin)) {
+  else if (name_ == Details::symbol_table_name(Format::darwin)) {
     format_ = Format::darwin;
   }
-  else if (name == Details::symbol_table_name(Format::svr4)) {
+  else if (name_ == Details::symbol_table_name(Format::svr4)) {
     format_ = Format::svr4;
   }
-  else if (name == Details::symbol_table_name(Format::gnu)) {
+  else if (name_ == Details::symbol_table_name(Format::gnu)) {
     format_ = Format::gnu;
   }
-  else if (name == Details::symbol_table_name(Format::gnu_thin)) {
+  else if (name_ == Details::symbol_table_name(Format::gnu_thin)) {
     format_ = Format::gnu_thin;
   }
-  else if (name == Details::symbol_table_name(Format::win32)) {
+  else if (name_ == Details::symbol_table_name(Format::win32)) {
     format_ = Format::win32;
   }
-  else if (name.back() == '/') {
+  else if (name_.back() == '/') {
     format_ = Format::svr4;
+    name_.erase(name_.length() - 1);
   }
   else {
     format_ = Format::bsd;
