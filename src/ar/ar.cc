@@ -21,152 +21,11 @@
 #include <iostream>
 #include <vector>
 
+#include "ar-files.hh"
+
 using Msg = GD::Ar::Msg;
 
 namespace {
-/** \brief  Implement a transactional file writer.
- *
- * By "transactional" we mean that the destination file is either completely written with the new
- * data, or the previous file state is left.
- *
- * Example usage:
- *
- * \code {.c++}
- * TxnWriteFile file("file.txt", 06440);
- * file.write("This is some text\n");
- * file.commit(); // Needed to show we've finished writing.
- * \endcode
- *
- */
-class TxnWriteFile
-{
-public:
-  /** \brief  Constructor
-   *  \param dest Destination file
-   *  \param mode Mode to give destination file.
-   */
-  TxnWriteFile(fs::path const& dest, mode_t mode)
-      : fd_(-1), dest_(dest), temp_(), mode_(mode & 01777)
-  {
-    // Use a temporary file if the destination already exists.
-    if (fs::exists(dest_)) {
-      temp_ = dest_ + "XXXXXX";
-      while (fd_ == -1) {
-        fd_ = ::mkstemp(temp_.data());
-        if (fd_ == -1 && errno != EINTR) {
-          throw std::system_error(errno, std::generic_category(), "Whilst opening temp file.");
-        }
-      }
-      return;
-    }
-
-    temp_ = dest_;
-    while (fd_ == -1) {
-      fd_ = ::open(dest_.c_str(), O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR);
-      if (fd_ == -1 && errno != EINTR) {
-        throw std::system_error(errno, std::generic_category(), "Whilst opening.");
-      }
-    }
-  }
-
-  /** \brief Destructor
-   *
-   * If TxnWriteFile::commit() has *not* been called this will abort the file write.
-   */
-  ~TxnWriteFile() { abort(); }
-
-  /** Cannot copy.  */
-  TxnWriteFile(TxnWriteFile const&) = delete;
-  TxnWriteFile& operator=(TxnWriteFile const&) = delete;
-
-  /** \brief Move constructor.  */
-  TxnWriteFile(TxnWriteFile&& rhs)
-      : fd_(std::move(rhs.fd_)), dest_(std::move(rhs.dest_)), temp_(std::move(temp_))
-  {
-    rhs.has_moved();
-  }
-
-  /** \brief Move assignment.  */
-  TxnWriteFile& operator=(TxnWriteFile&& rhs)
-  {
-    if (this != &rhs) {
-      fd_ = std::move(rhs.fd_);
-      dest_ = std::move(rhs.dest_);
-      temp_ = std::move(rhs.temp_);
-      rhs.has_moved();
-    }
-    return *this;
-  }
-
-  /** \brief Write
-   *  \tparam T Type of data in span
-   *  \tparam E Extent of span
-   *  \param span Span to output.
-   */
-  template<typename T, std::size_t E>
-  void write(std::span<T, E> span)
-  {
-    if (fd_ == -1) {
-      throw std::runtime_error("Writing after file has been committed.");
-    }
-    auto data = std::as_bytes(span).data();
-    auto count = span.size_bytes();
-    while (count != 0) {
-      auto res =
-        ::write(fd_, data, std::min((std::size_t)std::numeric_limits<::ssize_t>::max(), count));
-      if (res == -1) {
-        if (errno != EINTR) {
-          throw std::system_error(errno, std::generic_category(), "Whilst writing.");
-        }
-      }
-      else {
-        data += res;
-        count -= res;
-      }
-    }
-  }
-
-  /** \brief Commit transaction.  */
-  void commit()
-  {
-    assert(fd_ != -1);
-    ::close(fd_);
-    fd_ = -1;
-    if (temp_ != dest_) {
-      if (::rename(temp_.c_str(), dest_.c_str()) == -1) {
-        throw std::system_error(errno, std::generic_category(), "Whilst committing a write.");
-      }
-    }
-    temp_.clear();
-    /* And set the mode bits appropriately.  */
-    chmod(dest_.c_str(), mode_);
-  }
-
-  /** \brief  Abort transaction.  */
-  void abort()
-  {
-    if (fd_ != -1) {
-      ::close(fd_);
-      fd_ = -1;
-    }
-    if (!temp_.empty())
-      ::remove(temp_.c_str());
-    temp_.clear();
-  }
-
-private:
-  /** \brief Mark the object as having been moved. */
-  void has_moved()
-  {
-    fd_ = -1;
-    temp_.clear();
-  }
-
-  int fd_;            ///< File descriptor.
-  std::string dest_;  ///< Final destination file.
-  std::string temp_;  ///< File we actually write to.
-  mode_t mode_;       ///< Final mode to give file.
-};
 
 /** \brief       Report an error and exit with exit code 1.
  *  \param  msg  Message ID
@@ -212,7 +71,7 @@ void do_extract(GD::Ar::Member const& member, It files_begin, It files_end, bool
     return;
   }
 
-  auto wf = TxnWriteFile(fs::path(name), member.mode());
+  auto wf = GD::Ar::TxnWriteFile(fs::path(name), member.mode());
   wf.write(member.data());
   wf.commit();
 

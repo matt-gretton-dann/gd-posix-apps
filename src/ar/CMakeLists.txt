@@ -15,7 +15,11 @@ if(ENABLE_NON_POSIX_EXTENSIONS)
 endif()
 set_warnings(libar)
 
-target_sources(libar PRIVATE ar-member.cc)
+target_sources(
+    libar
+    PRIVATE ar-member.cc
+            ar.hh
+            ar-files.hh)
 add_dependencies(libar ar_messages_header)
 target_add_clang_format(libar)
 
