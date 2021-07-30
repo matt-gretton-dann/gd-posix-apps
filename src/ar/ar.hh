@@ -562,31 +562,12 @@ public:
   using reference = Member const&;  ///< Reference to iterator
   using pointer = Member const*;    ///< Pointer to iterator.
 
-  ReadIterator(ReadIterator&& rhs)
-      : file_(std::move(rhs.file_)), offset_(std::move(rhs.offset_)),
-        format_(std::move(rhs.format_)), symbol_table1_(std::move(rhs.symbol_table1_)),
-        symbol_table2_(std::move(rhs.symbol_table2_)), long_names_(std::move(rhs.long_names_))
-  {
-    rhs.file_.reset();
-  }
+  ~ReadIterator() = default;
+  ReadIterator(ReadIterator&& rhs) = default;
+  ReadIterator& operator=(ReadIterator&& rhs) = default;
+  ReadIterator(ReadIterator const&) = default;
+  ReadIterator& operator=(ReadIterator const&) = default;
 
-  ReadIterator& operator=(ReadIterator&& rhs)
-  {
-    if (this != &rhs) {
-      file_ = std::move(rhs.file_);
-      offset_ = std::move(rhs.offset_);
-      format_ = std::move(rhs.format_);
-      symbol_table1_ = std::move(rhs.symbol_table1_);
-      symbol_table2_ = std::move(rhs.symbol_table2_);
-      long_names_ = std::move(rhs.long_names_);
-
-      rhs.file_.reset();
-    }
-    return *this;
-  }
-
-  ReadIterator(ReadIterator const&) = delete;
-  ReadIterator& operator=(ReadIterator const&) = delete;
   /** \brief  Equality comparison operator.  */
   bool operator==(ReadIterator const& rhs) const
   {
@@ -644,8 +625,9 @@ private:
   ReadIterator(FType&& file, std::size_t offset, Format format,
                std::optional<Member const> first_member, std::optional<Member const> symbol_table1,
                std::optional<Member const> symbol_table2, std::optional<Member const> string_table)
-      : file_(std::move(file)), offset_(offset), format_(format), member_(first_member),
-        symbol_table1_(symbol_table1), symbol_table2_(symbol_table2), long_names_(string_table)
+      : state_(std::make_shared<State>(std::move(file), offset, format, symbol_table1,
+                                       symbol_table2, string_table)),
+        member_(first_member)
   {
     if (member_ == std::nullopt) {
       read_next_member();
@@ -653,50 +635,67 @@ private:
   }
 
   /** \brief  Construct the end tag.  */
-  explicit ReadIterator(EndTag)
-      : file_(std::nullopt), offset_(0), format_(Format::bsd), member_(std::nullopt),
-        symbol_table1_(std::nullopt), symbol_table2_(std::nullopt), long_names_(std::nullopt)
-  {
-  }
+  explicit ReadIterator(EndTag) : state_(nullptr), member_(std::nullopt) {}
 
   /** \brief Read the next member from the file. */
   void read_next_member()
   {
-    if (!file_.has_value() || file_->eof()) {
+    if (state_->file_.eof()) {
       member_.reset();
       return;
     }
 
     /* Ensure we're aligned before we try to read.  */
-    if (offset_ & 1) {
+    if (state_->offset_ & 1) {
       char c;
-      file_->read(std::span(&c, 1));
-      ++offset_;
+      state_->file_.read(std::span(&c, 1));
+      ++state_->offset_;
     }
 
-    auto id = MemberID(offset_);
+    auto id = MemberID(state_->offset_);
     std::string name(Details::MemberHeader::name_len, '\0');
-    auto len = file_->read_upto(std::span<char>(name));
-    if (file_->eof()) {
+    auto len = state_->file_.read_upto(std::span<char>(name));
+    if (len == 0) {
       member_.reset();
       return;
     }
-    assert(len == 16);
-    auto hdr = Details::MemberHeader(*file_, name, format_,
-                                     long_names_.has_value() ? &long_names_.value() : nullptr);
+    else if (len < Details::MemberHeader::name_len) {
+      throw std::runtime_error("Incorrect header.");
+    }
+    auto hdr = Details::MemberHeader(
+      state_->file_, name, state_->format_,
+      state_->string_table_.has_value() ? &state_->string_table_.value() : nullptr);
     auto data = std::make_shared<std::vector<std::byte>>(hdr.size());
-    file_->read(std::span<std::byte>(*data));
-    offset_ += hdr.header_size() + hdr.size();
+    state_->file_.read(std::span<std::byte>(*data));
+    state_->offset_ += hdr.header_size() + hdr.size();
     member_.emplace(Member(std::move(hdr), id, data));
   }
 
-  std::optional<FType> file_;
-  std::size_t offset_;
-  Format format_;
+  struct State
+  {
+    State(FType&& file, std::size_t offset, Format format,
+          std::optional<Member const> symbol_table1, std::optional<Member const> symbol_table2,
+          std::optional<Member const> string_table)
+        : file_(std::move(file)), offset_(offset), format_(format), symbol_table1_(symbol_table1),
+          symbol_table2_(symbol_table2), string_table_(string_table)
+    {
+    }
+    ~State() = default;
+    State(State const&) = delete;
+    State(State&&) = delete;
+    State& operator=(State const&) = delete;
+    State& operator=(State&&) = delete;
+
+    FType file_;
+    std::size_t offset_;
+    Format format_;
+    std::optional<Member const> symbol_table1_;
+    std::optional<Member const> symbol_table2_;
+    std::optional<Member const> string_table_;
+  };
+
+  std::shared_ptr<State> state_;
   std::optional<Member const> member_;
-  std::optional<Member const> symbol_table1_;
-  std::optional<Member const> symbol_table2_;
-  std::optional<Member const> long_names_;
 };
 
 template<typename FType>
@@ -1000,7 +999,10 @@ void GD::Ar::Details::MemberHeader::update_name(FType& file, GD::Ar::Member cons
       }
       name_ = read_str(file, length);
       size_ -= length;
-      name_.erase(name_.find('\0'), name_.size());
+      auto nul_pos = name_.find('\0');
+      if (nul_pos != std::string::npos) {
+        name_.erase(name_.find('\0'), name_.size());
+      }
       return;
     }
   }
