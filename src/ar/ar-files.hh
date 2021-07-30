@@ -15,15 +15,11 @@
 #include "gd/unistd.h"
 
 #include <assert.h>
-#include <ctime>
-#include <memory>
-#include <optional>
 #include <span>
 #include <stddef.h>
 #include <stdexcept>
 #include <string>
 #include <system_error>
-#include <type_traits>
 #include <vector>
 
 /** \brief  Namespcae for archive library.
@@ -293,11 +289,13 @@ public:
     std::copy(raw_data.begin(), raw_data.end(), std::back_inserter(data_));
   }
 
+  /** \brief  Get the data that has been written to this memory file.  */
   std::span<std::byte const> data() const noexcept { return std::span<std::byte const>(data_); }
 
 private:
   std::vector<std::byte> data_;
 };
+
 /** \brief  Implement a transactional file writer.
  *
  * By "transactional" we mean that the destination file is either completely written with the new
