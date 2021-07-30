@@ -11,9 +11,9 @@
 #include <algorithm>
 #include <memory>
 #include <string>
+#include <string_view>
 
 #include "bc.hh"
-#include <string_view>
 
 TEST_CASE("GD::Bc::Lexer - Symbol Tokenizing", "[bc][lexer]")
 {

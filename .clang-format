@@ -27,7 +27,7 @@ IncludeCategories:
     Priority:        0
   - Regex:           '^"gd/'
     Priority:        1
-  - Regex:           '<[[:alnum:].]+>'
+  - Regex:           '<[[:alnum:]_.]+>'
     Priority:        100
 IndentPPDirectives: AfterHash
 IndentWidth: 2

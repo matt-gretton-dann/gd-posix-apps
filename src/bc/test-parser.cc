@@ -10,9 +10,9 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
 
 #include "bc.hh"
-#include <string_view>
 
 TEST_CASE("Parser - quit parsing", "[bc][parser]")
 {

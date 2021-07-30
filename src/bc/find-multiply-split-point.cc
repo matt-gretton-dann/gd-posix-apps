@@ -12,10 +12,10 @@
 #include <sstream>
 #include <stdint.h>
 #include <string>
+#include <string_view>
 #include <utility>
 
 #include "bc.hh"
-#include <string_view>
 
 using Number = GD::Bc::Number;
 class RandomNumberGenerator

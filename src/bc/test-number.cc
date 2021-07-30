@@ -12,10 +12,10 @@
 #include <sstream>
 #include <stdint.h>
 #include <string>
+#include <string_view>
 #include <utility>
 
 #include "bc.hh"
-#include <string_view>
 
 TEST_CASE("GD::Bc::Number - Number construction, directed", "[bc][number]")
 {

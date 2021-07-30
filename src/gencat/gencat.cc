@@ -24,10 +24,9 @@
 #include <iostream>
 #include <map>
 #include <string>
-#include <vector>
-
 #include <string_view>
 #include <system_error>
+#include <vector>
 
 namespace Gencat = GD::Gencat;
 

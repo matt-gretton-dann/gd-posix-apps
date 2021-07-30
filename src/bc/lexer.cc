@@ -11,10 +11,10 @@
 #include <memory>
 #include <optional>
 #include <stdint.h>
-
-#include "bc.hh"
 #include <string_view>
 #include <unordered_map>
+
+#include "bc.hh"
 
 GD::Bc::Lexer::Lexer(std::unique_ptr<Reader>&& r)
     : r_(std::move(r)), t_(std::nullopt), seen_quit_(false), first_character_(true)
