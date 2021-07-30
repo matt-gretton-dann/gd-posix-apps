@@ -24,9 +24,7 @@
 #include <vector>
 
 #include <system_error>
-
-//#include <system_error>
-//#include <type_traits>
+#include <type_traits>
 
 /** \brief  Namespcae for archive library.
  *
