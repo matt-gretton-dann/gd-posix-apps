@@ -38,6 +38,40 @@ template<typename... Ts>
 }
 
 template<typename It>
+void do_print(GD::Ar::Member const& member, It files_begin, It files_end, bool verbose)
+{
+  std::string name = member.name();
+  if (files_begin != files_end) {
+    auto found = std::find(files_begin, files_end, member.name());
+    if (found == files_end) {
+      return;
+    }
+    name = *found;
+  }
+
+  if (verbose) {
+    std::cout << "\n<" << name << ">\n\n";
+  }
+
+  auto data = member.data();
+  auto raw_data = data.data();
+  auto count = data.size_bytes();
+  while (count != 0) {
+    auto res = ::write(STDOUT_FILENO, raw_data,
+                       std::min((std::size_t)std::numeric_limits<::ssize_t>::max(), count));
+    if (res == -1) {
+      if (errno != EINTR) {
+        throw std::system_error(errno, std::generic_category(), "Whilst reading.");
+      }
+    }
+    else {
+      raw_data += res;
+      count -= res;
+    }
+  }
+}
+
+template<typename It>
 void do_toc(GD::Ar::Member const& member, It files_begin, It files_end)
 {
   /* POSIX says that we should print the name of the files from the command-line if we are
@@ -221,6 +255,11 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
   auto ar_end = GD::Ar::read_archive_end<GD::Ar::InputFile>();
 
   switch (action) {
+  case Action::print:
+    std::for_each(ar_begin, ar_end, [argv, argc, verbose](GD::Ar::Member const& member) {
+      do_print(member, argv + optind, argv + argc, verbose);
+    });
+    break;
   case Action::toc:
     std::for_each(ar_begin, ar_end, [argv, argc, verbose](GD::Ar::Member const& member) {
       if (verbose) {
