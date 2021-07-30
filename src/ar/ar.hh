@@ -14,6 +14,7 @@
 #include "gd/unistd.h"
 
 #include <assert.h>
+#include <ctime>
 #include <memory>
 #include <optional>
 #include <span>
@@ -259,7 +260,7 @@ public:
   std::string const& name() const noexcept;
 
   /** Get archive member modification time (secs since 1 Jan 1970).  */
-  uint64_t mtime() const noexcept;
+  std::time_t mtime() const noexcept;
 
   /** \brief  Get archive member User ID.
    *  \return Returns -1 if no user ID was set.
@@ -387,7 +388,7 @@ private:
   void read_header(FType& file)
   {
     header_size_ = name_len;
-    mtime_ = read_uint<uint64_t>(file, mtime_len);
+    mtime_ = read_uint<std::time_t>(file, mtime_len);
     uid_ = read_uint<uid_t>(file, uid_len, -1);
     gid_ = read_uint<uid_t>(file, gid_len, -1);
     mode_ = read_uint<mode_t, FType, 8>(file, mode_len);
@@ -424,7 +425,7 @@ public:
 
 private:
   std::string name_;         ///< Member name
-  uint64_t mtime_;           ///< Member modification time (seconds since 1 Jan 1970)
+  std::time_t mtime_;        ///< Member modification time (seconds since 1 Jan 1970)
   uid_t uid_;                ///< User ID
   gid_t gid_;                ///< Group ID
   mode_t mode_;              ///< Mode
@@ -460,7 +461,7 @@ public:
   std::string const& name() const noexcept;
 
   /** \brief Member modification time.  */
-  uint64_t mtime() const noexcept;
+  std::time_t mtime() const noexcept;
 
   /** \brief Member User ID.  */
   uid_t uid() const noexcept;

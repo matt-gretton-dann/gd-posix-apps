@@ -57,7 +57,7 @@ bool GD::Ar::Details::operator!=(MemberHeader const& lhs, MemberHeader const& rh
 }
 
 std::string const& GD::Ar::Details::MemberHeader::name() const noexcept { return name_; }
-uint64_t GD::Ar::Details::MemberHeader::mtime() const noexcept { return mtime_; }
+std::time_t GD::Ar::Details::MemberHeader::mtime() const noexcept { return mtime_; }
 uid_t GD::Ar::Details::MemberHeader::uid() const noexcept { return uid_; }
 gid_t GD::Ar::Details::MemberHeader::gid() const noexcept { return gid_; }
 mode_t GD::Ar::Details::MemberHeader::mode() const noexcept { return mode_; }
@@ -80,7 +80,7 @@ bool GD::Ar::Member::operator==(Member const& rhs) const noexcept
 bool GD::Ar::operator!=(Member const& lhs, Member const& rhs) noexcept { return !(lhs == rhs); }
 
 std::string const& GD::Ar::Member::name() const noexcept { return header_.name(); }
-uint64_t GD::Ar::Member::mtime() const noexcept { return header_.mtime(); }
+std::time_t GD::Ar::Member::mtime() const noexcept { return header_.mtime(); }
 uid_t GD::Ar::Member::uid() const noexcept { return header_.uid(); }
 gid_t GD::Ar::Member::gid() const noexcept { return header_.gid(); }
 mode_t GD::Ar::Member::mode() const noexcept { return header_.mode(); }
