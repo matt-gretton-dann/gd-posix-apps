@@ -49,7 +49,7 @@ TEST_CASE("GD::Ar::Details::MemberHeader - Construction BSD Long", "[ar][member-
   REQUIRE(mh.uid() == 1);
   REQUIRE(mh.gid() == 10);
   REQUIRE(mh.mode() == 0660);
-  REQUIRE(mh.size() == 1234567890);
+  REQUIRE(mh.size() == 1234567890 - 20);
   REQUIRE(mh.header_size() == bsd_header.size() + name.size());
 }
 
