@@ -15,6 +15,8 @@
 #include "ar-messages.hh"
 
 #include <assert.h>
+#include <ctime>
+#include <iomanip>
 #include <iostream>
 #include <vector>
 
@@ -35,7 +37,85 @@ template<typename... Ts>
   ::exit(1);
 }
 
-void do_toc(GD::Ar::Member const& member) { std::cout << member.name() << '\n'; }
+template<typename It>
+void do_toc(GD::Ar::Member const& member, It files_begin, It files_end)
+{
+  /* POSIX says that we should print the name of the files from the command-line if we are
+   * filtering.  */
+  if (files_begin == files_end) {
+    std::cout << member.name() << '\n';
+  }
+  else {
+    auto found = std::find(files_begin, files_end, member.name());
+    if (found != files_end) {
+      std::cout << *found << '\n';
+    }
+  }
+}
+
+std::string to_mode_string(mode_t mode)
+{
+  std::string result(9, '-');
+
+  if (mode & S_IRUSR) {
+    result[0] = 'r';
+  }
+  if (mode & S_IWUSR) {
+    result[1] = 'w';
+  }
+  if ((mode & S_ISUID)) {
+    result[2] = (mode & S_IXUSR) ? 's' : 'S';
+  }
+  else if (mode & S_IXUSR) {
+    result[2] = 'x';
+  }
+  if (mode & S_IRGRP) {
+    result[3] = 'r';
+  }
+  if (mode & S_IWGRP) {
+    result[4] = 'w';
+  }
+  if ((mode & S_ISGID)) {
+    result[5] = (mode & S_IXGRP) ? 's' : 'S';
+  }
+  else if (mode & S_IXGRP) {
+    result[5] = 'x';
+  }
+  if (mode & S_IROTH) {
+    result[6] = 'r';
+  }
+  if (mode & S_IWOTH) {
+    result[7] = 'w';
+  }
+  if ((mode & S_ISVTX) && S_ISDIR(mode)) {
+    result[8] = (mode & S_IXOTH) ? 't' : 'T';
+  }
+  else if (mode & S_IXOTH) {
+    result[8] = 'x';
+  }
+
+  return result;
+}
+
+template<typename It>
+void do_verbose_toc(GD::Ar::Member const& member, It files_begin, It files_end)
+{
+  /* POSIX says that we should print the name of the files from the command-line if we are
+   * filtering.  */
+  std::string name = member.name();
+  if (files_begin != files_end) {
+    auto found = std::find(files_begin, files_end, member.name());
+    if (found == files_end) {
+      return;
+    }
+    name = *found;
+  }
+  auto m = member.mtime();
+  std::tm* mtime = std::localtime(&m);
+  std::cout << to_mode_string(member.mode()) << ' ' << member.uid() << '/' << member.gid() << ' '
+            << member.size_bytes() << ' ' << std::put_time(mtime, "%b %e %H:%M %Y") << ' ' << name
+            << '\n';
+}
 
 enum class Action { none, del, move, print, quick, replace, toc, extract };
 enum class Position { end, before, after };
@@ -51,7 +131,6 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
   Position pos = Position::end;
   std::string pos_file;
   std::string archive;
-  std::vector<std::string> files;
   [[maybe_unused]] bool suppress_diagnostics = false;
   [[maybe_unused]] bool force_ranlib = false;
   [[maybe_unused]] bool verbose = false;
@@ -141,14 +220,16 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
   auto ar_begin = GD::Ar::read_archive_begin(file);
   auto ar_end = GD::Ar::read_archive_end<GD::Ar::InputFile>();
 
-  std::copy(argv + optind, argv + argc, std::back_inserter(files));
-
   switch (action) {
   case Action::toc:
-    while (ar_begin != ar_end) {
-      do_toc(*ar_begin);
-      ++ar_begin;
-    }
+    std::for_each(ar_begin, ar_end, [argv, argc, verbose](GD::Ar::Member const& member) {
+      if (verbose) {
+        do_verbose_toc(member, argv + optind, argv + argc);
+      }
+      else {
+        do_toc(member, argv + optind, argv + argc);
+      }
+    });
     break;
   default:
   case Action::none:
