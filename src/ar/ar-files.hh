@@ -113,6 +113,9 @@ public:
     if (fd_ == -1) {
       throw std::runtime_error("Unable to open file.");
     }
+    if (::fstat(fd_, &stat_) == -1) {
+      throw std::runtime_error("Unable to stat file.");
+    }
   }
 
   ~InputFile()
@@ -123,7 +126,9 @@ public:
   }
 
   InputFile(InputFile const&) = delete;
-  InputFile(InputFile&& rhs) noexcept : name_(rhs.name_), fd_(rhs.fd_), eof_(rhs.eof_)
+  InputFile(InputFile&& rhs) noexcept
+      : name_(std::move(rhs.name_)), stat_(std::move(rhs.stat_)), fd_(std::move(rhs.fd_)),
+        eof_(std::move(rhs.eof_))
   {
     rhs.fd_ = -1;
   }
@@ -133,6 +138,7 @@ public:
   {
     if (&rhs != this) {
       name_ = std::move(rhs.name_);
+      stat_ = std::move(rhs.stat_);
       fd_ = std::move(rhs.fd_);
       eof_ = std::move(rhs.eof_);
       rhs.fd_ = -1;
@@ -141,7 +147,7 @@ public:
     return *this;
   }
 
-  std::size_t size_bytes() const noexcept { return ~std::size_t(0); }
+  std::size_t size_bytes() const noexcept { return stat_.st_size; }
 
   template<typename T, std::size_t Count>
   void read(std::span<T, Count> dest)
@@ -183,8 +189,19 @@ public:
 
   bool eof() const noexcept { return eof_; }
 
+  std::string const& name() const { return name_; }
+
+  time_t mtime() const { return stat_.st_mtim.tv_sec; }
+
+  uid_t uid() const { return stat_.st_uid; }
+
+  gid_t gid() const { return stat_.st_gid; }
+
+  mode_t mode() const { return stat_.st_mode; }
+
 private:
   std::string name_;  ///< File name.
+  struct stat stat_;  ///< File stats.
   int fd_;            ///< File descriptor
   bool eof_;          ///< Have we reached end of file.
 };
