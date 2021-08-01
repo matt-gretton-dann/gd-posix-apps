@@ -559,14 +559,21 @@ template<typename FType>
 class ReadIterator
 {
 public:
-  using reference = Member const&;  ///< Reference to iterator
-  using pointer = Member const*;    ///< Pointer to iterator.
+  using iterator_category = std::input_iterator_tag;  ///< Iterator category.
+  using value_type = Member const;                    ///< Member type.
+  using reference = Member const&;                    ///< Reference to iterator
+  using pointer = Member const*;                      ///< Pointer to iterator.
+  using difference_type = std::ptrdiff_t;             ///< Difference type.
 
   ~ReadIterator() = default;
   ReadIterator(ReadIterator&& rhs) = default;
   ReadIterator& operator=(ReadIterator&& rhs) = default;
   ReadIterator(ReadIterator const&) = default;
   ReadIterator& operator=(ReadIterator const&) = default;
+
+  Format format() const { return state_->format_; }
+  std::optional<Member const> symbol_table1() const { return state_->symbol_table1_; }
+  std::optional<Member const> symbol_table2() const { return state_->symbol_table2_; }
 
   /** \brief  Equality comparison operator.  */
   bool operator==(ReadIterator const& rhs) const
@@ -599,7 +606,12 @@ public:
   }
 
   /** \brief Post-increment.  */
-  void operator++(int) { read_next_member(); }
+  ReadIterator operator++(int)
+  {
+    auto temp = *this;
+    ++(*this);
+    return temp;
+  }
 
 private:
   /** \brief Tag used to indicate we want to construct end.  */
@@ -642,6 +654,7 @@ private:
   {
     if (state_->file_.eof()) {
       member_.reset();
+      state_ = nullptr;
       return;
     }
 
@@ -657,6 +670,7 @@ private:
     auto len = state_->file_.read_upto(std::span<char>(name));
     if (len == 0) {
       member_.reset();
+      state_ = nullptr;
       return;
     }
     else if (len < Details::MemberHeader::name_len) {
@@ -703,6 +717,277 @@ bool operator!=(ReadIterator<FType> const& lhs, ReadIterator<FType> const& rhs)
 {
   return !(lhs == rhs);
 }
+
+template<typename OFType>
+class WriteIterator
+{
+public:
+  using iterator_category = std::output_iterator_tag;  ///< Iterator category.
+  using value_type = void;                             ///< Member type.
+  using reference = void;                              ///< Reference to iterator
+  using pointer = void;                                ///< Pointer to iterator.
+  using difference_type = void;                        ///< Difference type.
+
+  enum class CommitTag : int {};
+
+  class Proxy
+  {
+  public:
+    Proxy(WriteIterator& wi) : wi_(wi) {}
+    ~Proxy() = default;
+
+    Proxy& operator=(Member const& obj)
+    {
+      wi_.write_member(obj,
+                       [&obj](auto it) { std::copy(obj.data().begin(), obj.data().end(), it); });
+      return *this;
+    }
+
+    template<typename IFType>
+    Proxy& operator=(IFType& obj)
+    {
+      wi_.write_member(obj, [&obj](auto it) {
+        std::vector<std::byte> data(4096);
+        while (!obj.eof()) {
+          auto amount = obj.read_upto(std::span(data));
+          std::copy(data.begin(), data.begin() + amount, it);
+        }
+      });
+      return *this;
+    }
+
+    Proxy& operator=(WriteIterator::CommitTag)
+    {
+      wi_.commit();
+      return *this;
+    }
+
+  private:
+    template<typename T>
+    std::size_t write_header(T const& obj)
+    {
+      auto long_name = wi_.add_name(obj.name(), Details::MemberHeader::name_len);
+      wi_.add_number(obj.mtime(), Details::MemberHeader::mtime_len);
+      wi_.add_ugid(obj.uid(), Details::MemberHeader::uid_len);
+      wi_.add_ugid(obj.gid(), Details::MemberHeader::gid_len);
+      wi_.add_mode(obj.mode(), Details::MemberHeader::mode_len);
+      auto size_begin_offset = wi_.offset();
+      wi_.add_str("", Details::MemberHeader::size_len);
+      wi_.add_str("`\n", Details::MemberHeader::fmag_len);
+      wi_.add_data(std::span(long_name));
+      return size_begin_offset;
+    }
+
+    void write_tail(std::size_t size_begin_offset)
+    {
+      auto size_end_offset = wi_.offset();
+      wi_.add_number_at(size_begin_offset,
+                        size_end_offset - size_begin_offset + Details::MemberHeader::size_len +
+                          Details::MemberHeader::fmag_len,
+                        Details::MemberHeader::size_len);
+      wi_.add_padding();
+    }
+
+    WriteIterator& wi_;
+  };
+
+  WriteIterator(OFType&& file, Format format, std::optional<Member> symbol_table1,
+                std::optional<Member> symbol_table2)
+      : state_(std::make_shared<State>(std::move(file), format, symbol_table1, symbol_table2))
+  {
+  }
+
+  ~WriteIterator() = default;
+  WriteIterator(WriteIterator const&) = default;
+  WriteIterator(WriteIterator&&) = default;
+  WriteIterator& operator=(WriteIterator const&) = default;
+  WriteIterator& operator=(WriteIterator&&) = default;
+
+  Proxy operator*() { return Proxy(*this); }
+
+  WriteIterator operator++(int) { return *this; }
+
+  WriteIterator& operator++() { return *this; }
+
+  static WriteIterator::CommitTag commit_tag() { return CommitTag(); }
+
+private:
+  friend class Proxy;
+
+  std::size_t offset() const noexcept { return state_->data_.size(); }
+
+  template<typename Store, typename T, std::size_t E>
+  void add_data(Store& out, std::span<T, E> span)
+  {
+    auto raw_span = std::as_bytes(span);
+    out.reserve(out.size() + raw_span.size_bytes());
+    std::copy(raw_span.begin(), raw_span.end(), std::back_inserter(out));
+  }
+
+  template<typename Store>
+  void add_str(Store& out, std::string const& val, std::size_t len)
+  {
+    std::string output = val + std::string(len, ' ');
+    add_data(out, std::span(output.begin(), output.begin() + len));
+  }
+
+  template<typename It, typename T, unsigned Base = 10>
+  void add_number_at(It where, T val, std::size_t len)
+  {
+    auto res = std::string();
+    while (val != 0) {
+      res += std::string(1, '0' + (val % Base));
+      val /= Base;
+    }
+    std::reverse(res.begin(), res.end());
+    if (res.empty()) {
+      res = "0";
+    }
+    res += std::string(len, ' ');
+    std::transform(res.begin(), res.begin() + len, where, [](char c) { return std::byte(c); });
+  }
+
+  template<typename Store, typename T, unsigned Base = 10>
+  void add_number(Store& out, T val, std::size_t len)
+  {
+    auto it = std::back_inserter(out);
+    add_number_at<decltype(it), T, Base>(it, val, len);
+  }
+
+  template<typename Store>
+  std::string add_name(Store& out, std::string const& name, std::size_t len)
+  {
+    if (Details::inline_long_names(state_->format_) &&
+        (name.size() > len || name.find(' ') != std::string::npos)) {
+      auto prefix = std::string(Details::long_name_prefix(state_->format_));
+      add_str(out, prefix, prefix.size());
+      auto name_len = name.size();
+      add_number(out, name_len, len - prefix.size());
+      return name;
+    }
+
+    if (!Details::inline_long_names(state_->format_) && name.size() > len - 1) {
+      auto prefix = std::string(Details::long_name_prefix(state_->format_));
+      add_str(out, prefix, prefix.size());
+      auto name_offset = state_->string_table_.size();
+      std::transform(name.begin(), name.end(), std::back_inserter(state_->string_table_),
+                     [](char c) { return static_cast<std::byte>(c); });
+      state_->string_table_.push_back(
+        static_cast<std::byte>(Details::long_name_terminator(state_->format_)));
+      add_number(out, name_offset, len - prefix.size());
+      return std::string();
+    }
+
+    auto out_name = name + Details::short_name_terminator(state_->format_);
+    add_str(out, out_name, len);
+    return std::string();
+  }
+
+  template<typename T, typename Store>
+  void add_ugid(Store& out, T id, std::size_t len)
+  {
+    if (id == ~T(0)) {
+      add_str(out, "", len);
+    }
+    else {
+      add_number(out, id, len);
+    }
+  }
+
+  template<typename T>
+  void add_mode(T& out, mode_t mode, std::size_t len)
+  {
+    add_number<T, mode_t, 8>(out, mode & 07777, len);
+  }
+
+  template<typename T>
+  void add_padding(T& out)
+  {
+    if (offset() & 1) {
+      out.push_back(std::byte('\n'));
+    }
+  }
+
+  void commit()
+  {
+    static std::string header("!<arch>\n");
+    state_->file_.write(std::span(header));
+    if (!state_->string_table_.empty()) {
+      std::vector<std::byte> string_table_data;
+      write_member(
+        string_table_data, StringTableHeader(state_->format_),
+        [data = state_->string_table_](auto it) { std::copy(data.begin(), data.end(), it); });
+      state_->file_.write(std::span(string_table_data));
+    }
+    state_->file_.write(std::span(state_->data_));
+    state_->file_.commit();
+    state_ = nullptr;
+  }
+
+  struct StringTableHeader
+  {
+    explicit StringTableHeader(Format format) : format_(format) {}
+    std::string name() const { return Details::string_table_name(format_); }
+    time_t mtime() const { return std::time(nullptr); }
+    mode_t mode() const { return 0644; }
+    uid_t uid() const { return 0; }
+    gid_t gid() const { return 0; }
+
+  private:
+    Format format_;
+  };
+
+  template<typename T, typename DataWriter, typename Store>
+  void write_member(Store& out, T const& obj, DataWriter dw)
+  {
+    auto long_name = add_name(out, obj.name(), Details::MemberHeader::name_len);
+    add_number(out, obj.mtime(), Details::MemberHeader::mtime_len);
+    add_ugid(out, obj.uid(), Details::MemberHeader::uid_len);
+    add_ugid(out, obj.gid(), Details::MemberHeader::gid_len);
+    add_mode(out, obj.mode(), Details::MemberHeader::mode_len);
+    auto size_offset = out.size();
+    add_str(out, "", Details::MemberHeader::size_len);
+    add_str(out, "`\n", Details::MemberHeader::fmag_len);
+    auto data_begin_offset = out.size();
+    add_data(out, std::span(long_name));
+    dw(std::back_inserter(out));
+    auto data_end_offset = out.size();
+    add_number_at(out.begin() + size_offset, data_end_offset - data_begin_offset,
+                  Details::MemberHeader::size_len);
+    add_padding(out);
+  }
+
+  template<typename T, typename DataWriter>
+  void write_member(T const& obj, DataWriter dw)
+  {
+    write_member(state_->data_, obj, dw);
+  }
+
+  struct State
+  {
+    State(OFType&& file, Format format, std::optional<Member> symbol_table1,
+          std::optional<Member> symbol_table2)
+        : file_(std::move(file)), format_(format), symbol_table1_(symbol_table1),
+          symbol_table2_(symbol_table2)
+    {
+    }
+
+    ~State() = default;
+    State(State const&) = delete;
+    State(State&&) = delete;
+    State& operator=(State const&) = delete;
+    State& operator=(State&&) = delete;
+
+    OFType file_;
+    Format format_;
+    std::optional<Member> symbol_table1_;
+    std::optional<Member> symbol_table2_;
+    std::vector<std::byte> string_table_;
+    std::vector<std::byte> data_;
+  };
+
+  std::shared_ptr<State> state_;
+};
 
 /** \brief  Return the end of the archive reading iteration.  */
 template<typename FType>
@@ -802,7 +1087,22 @@ ReadIterator<typename std::remove_reference<FType1>::type> read_archive_begin(FT
                       long_names);
 }
 
-// OutputIterator write_archive(fs::path const& fname);
+inline WriteIterator<TxnWriteFile> archive_inserter(fs::path const& fname, Format format)
+{
+  TxnWriteFile wf(fname, 0644);
+  return WriteIterator(std::move(wf), format, std::nullopt, std::nullopt);
+}
+
+template<typename T>
+WriteIterator<TxnWriteFile> archive_inserter(fs::path const& fname, mode_t mode,
+                                             ReadIterator<T> begin, ReadIterator<T> end)
+{
+  TxnWriteFile wf(fname, mode);
+  auto wi =
+    WriteIterator(std::move(wf), begin.format(), begin.symbol_table1(), begin.symbol_table2());
+  std::copy(begin, end, wi);
+  return wi;
+}
 }  // namespace GD::Ar
 
 template<typename FType>
@@ -871,6 +1171,6 @@ void GD::Ar::Details::MemberHeader::update_name(FType& file, GD::Ar::Member cons
   }
   name_.erase(it, name_.end());
   return;
-}  // namespace GD::Ar
+}
 
 #endif  // SRC_AR_AR_HH_INCLUDED_
