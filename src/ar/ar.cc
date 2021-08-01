@@ -47,6 +47,21 @@ It find_name(It begin, It end, SV const& name)
   return std::find_if(begin, end, [name](auto e) { return fs::path(e).filename() == name; });
 }
 
+template<typename ArIt, typename FIt>
+void do_quick_append(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end,
+                     FIt files_begin, FIt files_end, bool verbose)
+{
+  auto out_it = GD::Ar::archive_inserter(archive, mode, ar_begin, ar_end);
+  std::for_each(files_begin, files_end, [&out_it, verbose](auto fname) {
+    auto file = GD::Ar::InputFile(fname);
+    if (verbose) {
+      std::cout << "a - " << fname << '\n';
+    }
+    *out_it++ = file;
+  });
+  *out_it++ = out_it.commit_tag();
+}
+
 template<typename It>
 void do_extract(GD::Ar::Member const& member, It files_begin, It files_end, bool verbose,
                 bool allow_replacement, bool truncate_names)
@@ -196,6 +211,12 @@ void do_verbose_toc(GD::Ar::Member const& member, It files_begin, It files_end)
 
 enum class Action { none, del, move, print, quick, replace, toc, extract };
 enum class Position { end, before, after };
+
+constexpr bool is_read_only_action(Action action)
+{
+  return action == Action::print || action == Action::toc || action == Action::extract;
+}
+
 }  // namespace
 
 int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
@@ -207,13 +228,12 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
   Action action = Action::none;
   Position pos = Position::end;
   std::string pos_file;
-  std::string archive;
-  [[maybe_unused]] bool suppress_diagnostics = false;
+  bool message_on_creation = true;
   [[maybe_unused]] bool force_ranlib = false;
-  [[maybe_unused]] bool verbose = false;
+  bool verbose = false;
   [[maybe_unused]] bool update_only = false;
-  [[maybe_unused]] bool allow_replacement = true;
-  [[maybe_unused]] bool truncate_names = false;
+  bool allow_replacement = true;
+  bool truncate_names = false;
 
   auto set_action = [&action, &c](Action act) {
     if (action != Action::none) {
@@ -238,7 +258,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
       pos = Position::before;
       break;
     case 'c':
-      suppress_diagnostics = true;
+      message_on_creation = false;
       break;
     case 'd':
       set_action(Action::del);
@@ -292,9 +312,27 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
   if (optind >= argc) {
     error(Msg::missing_archive_name);
   }
-  auto file = GD::Ar::InputFile(argv[optind++]);
 
-  auto ar_begin = GD::Ar::read_archive_begin(file);
+  std::optional<GD::Ar::InputFile> file = std::nullopt;
+  auto archive = fs::path(argv[optind++]);
+  mode_t mode = umask(0);
+  umask(mode);
+  if (!fs::exists(archive)) {
+    if (is_read_only_action(action)) {
+      throw std::runtime_error("Missing input archive.");
+    }
+    if (message_on_creation) {
+      std::cerr << "Creating file: " << archive << '\n';
+    }
+    mode = (~mode) & 0644;
+  }
+  else {
+    file.emplace(GD::Ar::InputFile(archive));
+    mode = file->mode();
+  }
+
+  auto ar_begin = file.has_value() ? GD::Ar::read_archive_begin(file.value())
+                                   : GD::Ar::read_archive_end<GD::Ar::InputFile>();
   auto ar_end = GD::Ar::read_archive_end<GD::Ar::InputFile>();
 
   switch (action) {
@@ -302,6 +340,9 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
     std::for_each(ar_begin, ar_end, [argv, argc, verbose](GD::Ar::Member const& member) {
       do_print(member, argv + optind, argv + argc, verbose);
     });
+    break;
+  case Action::quick:
+    do_quick_append(archive, mode, ar_begin, ar_end, argv + optind, argv + argc, verbose);
     break;
   case Action::toc:
     std::for_each(ar_begin, ar_end, [argv, argc, verbose](GD::Ar::Member const& member) {
