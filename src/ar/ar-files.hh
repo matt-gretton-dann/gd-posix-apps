@@ -370,7 +370,8 @@ public:
 
   /** \brief Move constructor.  */
   TxnWriteFile(TxnWriteFile&& rhs)
-      : fd_(std::move(rhs.fd_)), dest_(std::move(rhs.dest_)), temp_(std::move(temp_))
+      : fd_(std::move(rhs.fd_)), dest_(std::move(rhs.dest_)), temp_(std::move(rhs.temp_)),
+        mode_(std::move(rhs.mode_))
   {
     rhs.has_moved();
   }
@@ -382,6 +383,7 @@ public:
       fd_ = std::move(rhs.fd_);
       dest_ = std::move(rhs.dest_);
       temp_ = std::move(rhs.temp_);
+      mode_ = std::move(rhs.mode_);
       rhs.has_moved();
     }
     return *this;
@@ -395,7 +397,7 @@ public:
   template<typename T, std::size_t E>
   void write(std::span<T, E> span)
   {
-    if (fd_ == -1) {
+    if (fd_ == -1 || temp_.empty()) {
       throw std::runtime_error("Writing after file has been committed.");
     }
     auto data = std::as_bytes(span).data();
@@ -418,7 +420,9 @@ public:
   /** \brief Commit transaction.  */
   void commit()
   {
-    assert(fd_ != -1);
+    if (fd_ == -1 || temp_.empty()) {
+      throw std::runtime_error("Committing empty txn.");
+    }
     ::close(fd_);
     fd_ = -1;
     if (temp_ != dest_) {
