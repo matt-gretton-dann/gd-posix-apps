@@ -23,6 +23,7 @@
 #include <string>
 #include <system_error>
 #include <type_traits>
+#include <unordered_map>
 #include <vector>
 
 #include "ar-files.hh"
@@ -108,6 +109,12 @@ enum class Format {
 };
 
 class Member;
+
+/** \brief  ID for a member. */
+enum class MemberID : std::size_t {};
+
+/** \brief  Type used to map MemberIDs to symbols.  */
+using SymbolMap = std::unordered_map<MemberID, std::shared_ptr<std::vector<std::string>>>;
 
 /** \brief  Internal Namespace - API not stable. */
 namespace Details {
@@ -210,6 +217,9 @@ constexpr char const* long_name_prefix(GD::Ar::Format format)
     abort();
   }
 }
+
+SymbolMap get_symbols(Member symbol_table);
+SymbolMap get_symbols(Member symbol_table1, Member symbol_table2);
 
 /** \brief  Header of an archive member.  */
 class MemberHeader
@@ -437,9 +447,6 @@ bool operator!=(MemberHeader const& lhs, MemberHeader const& rhs) noexcept;
 
 }  // namespace Details
 
-/** \brief  ID for a member. */
-enum class MemberID : std::size_t {};
-
 /** \brief Archive member.
  *
  * Implements IFType concept.  Can be treated as an input file.
@@ -473,6 +480,9 @@ public:
 
   /** \brief Member ID.  */
   MemberID id() const noexcept;
+
+  /** \brief Format.  */
+  Format format() const noexcept;
 
   /** \brief Equality comparison.  */
   bool operator==(Member const& rhs) const noexcept;

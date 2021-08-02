@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <istream>
 #include <limits>
+#include <map>
 #include <stddef.h>
 #include <string>
 #include <vector>
@@ -86,6 +87,9 @@ gid_t GD::Ar::Member::gid() const noexcept { return header_.gid(); }
 mode_t GD::Ar::Member::mode() const noexcept { return header_.mode(); }
 size_t GD::Ar::Member::offset_bytes() const noexcept { return offset_; }
 size_t GD::Ar::Member::size_bytes() const noexcept { return header_.size(); }
+GD::Ar::MemberID GD::Ar::Member::id() const noexcept { return id_; }
+GD::Ar::Format GD::Ar::Member::format() const noexcept { return header_.format(); }
+
 std::span<std::byte const> GD::Ar::Member::data() const noexcept
 {
   return std::span<std::byte const>(*data_);
@@ -97,4 +101,92 @@ void GD::Ar::Member::offset_bytes(std::size_t offset)
     throw std::runtime_error("Tried to set offset outside member.");
   }
   offset_ = offset;
+}
+
+namespace {
+template<typename R, typename It>
+R from_be(It begin, It end)
+{
+  R result = 0;
+  R shift = 0;
+  while (begin != end) {
+    result |= static_cast<R>(*begin++) << shift;
+    shift += 8;
+    assert(shift != 0);
+  }
+  return result;
+}
+
+GD::Ar::SymbolMap get_symbols_bsd([[maybe_unused]] GD::Ar::Member symbol_table)
+{
+  return GD::Ar::SymbolMap{};
+}
+
+GD::Ar::SymbolMap get_symbols_svr4(GD::Ar::Member symbol_table)
+{
+  auto data = symbol_table.data();
+  auto data_it = data.begin();
+  uint32_t count = from_be<uint32_t>(data_it, data_it + 4);
+  data_it += 4;
+  auto strings_it = data_it + count * 4;
+  GD::Ar::SymbolMap symbol_map;
+  for (uint32_t i = 0; i < count; ++i) {
+    GD::Ar::MemberID mid(static_cast<GD::Ar::MemberID>(from_be<uint32_t>(data_it, data_it + 4)));
+    data_it += 4;
+    auto it = symbol_map.find(mid);
+    if (it == symbol_map.end()) {
+      auto result =
+        symbol_map.insert(std::make_pair(mid, std::make_shared<std::vector<std::string>>()));
+      it = result.first;
+    }
+    std::string ins;
+    auto strings_it2 = std::find(data_it, data.end(), std::byte(0));
+    assert(strings_it2 != data.end());
+    std::transform(strings_it, strings_it2, std::back_inserter(ins),
+                   [](std::byte b) { return static_cast<char>(b); });
+    it->second->push_back(ins);
+    strings_it = strings_it2 + 1;
+  }
+
+  return symbol_map;
+}
+
+GD::Ar::SymbolMap get_symbols_win32_new([[maybe_unused]] GD::Ar::Member symbol_table1,
+                                        [[maybe_unused]] GD::Ar::Member symbol_table2)
+{
+  return GD::Ar::SymbolMap{};
+}
+}  // namespace
+
+GD::Ar::SymbolMap GD::Ar::Details::get_symbols(Member symbol_table)
+{
+  switch (symbol_table.format()) {
+  case Format::bsd:
+  case Format::darwin:
+    return get_symbols_bsd(symbol_table);
+  case Format::gnu:
+  case Format::gnu_thin:
+  case Format::svr4:
+  case Format::win32:
+    return get_symbols_svr4(symbol_table);
+  default:
+    abort();
+  }
+}
+
+GD::Ar::SymbolMap GD::Ar::Details::get_symbols([[maybe_unused]] Member symbol_table1,
+                                               Member symbol_table2)
+{
+  switch (symbol_table2.format()) {
+  case Format::bsd:
+  case Format::darwin:
+  case Format::gnu:
+  case Format::gnu_thin:
+  case Format::svr4:
+    throw std::runtime_error("Unexpected number of symbol tables.");
+  case Format::win32:
+    return get_symbols_win32_new(symbol_table1, symbol_table2);
+  default:
+    abort();
+  }
 }
