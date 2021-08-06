@@ -130,9 +130,8 @@ constexpr char const* symbol_table_name(Format format)
   case Format::gnu:
   case Format::gnu_thin:
   case Format::svr4:
-    return "/";
   case Format::win32:
-    return "\\";
+    return "/";
   default:
     std::abort();
   }
@@ -148,9 +147,8 @@ constexpr char const* string_table_name(Format format)
   case Format::gnu:
   case Format::gnu_thin:
   case Format::svr4:
-    return "//";
   case Format::win32:
-    return "\\\\";
+    return "//";
   default:
     std::abort();
   }
