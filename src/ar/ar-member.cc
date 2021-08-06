@@ -151,8 +151,8 @@ GD::Ar::SymbolMap get_symbols_svr4(GD::Ar::Member symbol_table)
   return symbol_map;
 }
 
-GD::Ar::SymbolMap get_symbols_win32_new([[maybe_unused]] GD::Ar::Member symbol_table1,
-                                        [[maybe_unused]] GD::Ar::Member symbol_table2)
+GD::Ar::SymbolMap get_symbols_win32([[maybe_unused]] GD::Ar::SymbolMap const& symbol_table1,
+                                    [[maybe_unused]] GD::Ar::Member symbol_table2)
 {
   return GD::Ar::SymbolMap{};
 }
@@ -174,7 +174,7 @@ GD::Ar::SymbolMap GD::Ar::Details::get_symbols(Member symbol_table)
   }
 }
 
-GD::Ar::SymbolMap GD::Ar::Details::get_symbols([[maybe_unused]] Member symbol_table1,
+GD::Ar::SymbolMap GD::Ar::Details::get_symbols([[maybe_unused]] SymbolMap const& symbol_table1,
                                                Member symbol_table2)
 {
   switch (symbol_table2.format()) {
@@ -185,7 +185,7 @@ GD::Ar::SymbolMap GD::Ar::Details::get_symbols([[maybe_unused]] Member symbol_ta
   case Format::svr4:
     throw std::runtime_error("Unexpected number of symbol tables.");
   case Format::win32:
-    return get_symbols_win32_new(symbol_table1, symbol_table2);
+    return get_symbols_win32(symbol_table1, symbol_table2);
   default:
     abort();
   }

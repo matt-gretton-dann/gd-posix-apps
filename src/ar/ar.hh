@@ -219,7 +219,7 @@ constexpr char const* long_name_prefix(GD::Ar::Format format)
 }
 
 SymbolMap get_symbols(Member symbol_table);
-SymbolMap get_symbols(Member symbol_table1, Member symbol_table2);
+SymbolMap get_symbols(SymbolMap const& symbol_table1, Member symbol_table2);
 
 /** \brief  Header of an archive member.  */
 class MemberHeader
@@ -582,8 +582,6 @@ public:
   ReadIterator& operator=(ReadIterator const&) = default;
 
   Format format() const { return state_->format_; }
-  std::optional<Member const> symbol_table1() const { return state_->symbol_table1_; }
-  std::optional<Member const> symbol_table2() const { return state_->symbol_table2_; }
 
   /** \brief  Equality comparison operator.  */
   bool operator==(ReadIterator const& rhs) const
@@ -645,10 +643,10 @@ private:
    * All of \a first_member, \a symbol_table1, \a symbol_table2, and \a string_table may be null.
    */
   ReadIterator(FType&& file, std::size_t offset, Format format,
-               std::optional<Member const> first_member, std::optional<Member const> symbol_table1,
-               std::optional<Member const> symbol_table2, std::optional<Member const> string_table)
-      : state_(std::make_shared<State>(std::move(file), offset, format, symbol_table1,
-                                       symbol_table2, string_table)),
+               std::optional<Member const> first_member, SymbolMap&& symbol_map,
+               std::optional<Member const> string_table)
+      : state_(std::make_shared<State>(std::move(file), offset, format, std::move(symbol_map),
+                                       string_table)),
         member_(first_member)
   {
     if (member_ == std::nullopt) {
@@ -697,11 +695,10 @@ private:
 
   struct State
   {
-    State(FType&& file, std::size_t offset, Format format,
-          std::optional<Member const> symbol_table1, std::optional<Member const> symbol_table2,
+    State(FType&& file, std::size_t offset, Format format, SymbolMap&& symbol_map,
           std::optional<Member const> string_table)
-        : file_(std::move(file)), offset_(offset), format_(format), symbol_table1_(symbol_table1),
-          symbol_table2_(symbol_table2), string_table_(string_table)
+        : file_(std::move(file)), offset_(offset), format_(format), symbol_map_(symbol_map),
+          string_table_(string_table)
     {
     }
     ~State() = default;
@@ -713,8 +710,7 @@ private:
     FType file_;
     std::size_t offset_;
     Format format_;
-    std::optional<Member const> symbol_table1_;
-    std::optional<Member const> symbol_table2_;
+    SymbolMap symbol_map_;
     std::optional<Member const> string_table_;
   };
 
@@ -801,9 +797,8 @@ public:
     WriteIterator& wi_;
   };
 
-  WriteIterator(OFType&& file, Format format, std::optional<Member> symbol_table1,
-                std::optional<Member> symbol_table2)
-      : state_(std::make_shared<State>(std::move(file), format, symbol_table1, symbol_table2))
+  WriteIterator(OFType&& file, Format format)
+      : state_(std::make_shared<State>(std::move(file), format))
   {
   }
 
@@ -975,12 +970,7 @@ private:
 
   struct State
   {
-    State(OFType&& file, Format format, std::optional<Member> symbol_table1,
-          std::optional<Member> symbol_table2)
-        : file_(std::move(file)), format_(format), symbol_table1_(symbol_table1),
-          symbol_table2_(symbol_table2)
-    {
-    }
+    State(OFType&& file, Format format) : file_(std::move(file)), format_(format) {}
 
     ~State() = default;
     State(State const&) = delete;
@@ -990,8 +980,6 @@ private:
 
     OFType file_;
     Format format_;
-    std::optional<Member> symbol_table1_;
-    std::optional<Member> symbol_table2_;
     std::vector<std::byte> string_table_;
     std::vector<std::byte> data_;
   };
@@ -1021,9 +1009,8 @@ ReadIterator<typename std::remove_reference<FType1>::type> read_archive_begin(FT
   }
   std::size_t offset = magic_len;
 
-  std::optional<Member const> symbol_table1 = std::nullopt;
-  std::optional<Member const> symbol_table2 = std::nullopt;
   std::optional<Member const> long_names = std::nullopt;
+  SymbolMap symbol_map;
 
   /* Read first - header need to guess the format type.  */
   if (file.eof()) {
@@ -1071,48 +1058,38 @@ ReadIterator<typename std::remove_reference<FType1>::type> read_archive_begin(FT
     member.emplace(std::move(hdr), id, data);
   };
 
+  /* Handle the symbol table(s) if present.  */
   if (member->name() == Details::symbol_table_name(format)) {
-    symbol_table1.emplace(std::move(member.value()));
+    Member symbol_table1 = member.value();
+    symbol_map = Details::get_symbols(member.value());
     read_next_member();
+    if (member.has_value() && Details::symbol_table_name(format)) {
+      /* If we have two headers we are Win32 format.  */
+      format = Format::win32;
+      symbol_map = Details::get_symbols(symbol_map, member.value());
+      read_next_member();
+    }
   }
   if (!member.has_value()) {
     return read_archive_end<FType>();
   }
 
-  if (Details::has_two_symbol_tables(format) &&
-      member->name() == Details::symbol_table_name(format)) {
-    symbol_table2.emplace(std::move(member.value()));
-    read_next_member();
-  }
-  if (!member.has_value()) {
-    return read_archive_end<FType>();
-  }
-
+  /* Handle string table.  */
   if (!Details::inline_long_names(format) && member->name() == Details::string_table_name(format)) {
     long_names.emplace(std::move(member.value()));
     member.reset();
   }
 
-  return ReadIterator(std::move(file), offset, format, member, symbol_table1, symbol_table2,
-                      long_names);
+  return ReadIterator(std::move(file), offset, format, member, std::move(symbol_map), long_names);
 }
 
-inline WriteIterator<TxnWriteFile> archive_inserter(fs::path const& fname, Format format)
-{
-  TxnWriteFile wf(fname, 0644);
-  return WriteIterator(std::move(wf), format, std::nullopt, std::nullopt);
-}
-
-template<typename T>
-WriteIterator<TxnWriteFile> archive_inserter(fs::path const& fname, mode_t mode,
-                                             ReadIterator<T> begin, ReadIterator<T> end)
+inline WriteIterator<TxnWriteFile> archive_inserter(fs::path const& fname, Format format,
+                                                    mode_t mode = 0644)
 {
   TxnWriteFile wf(fname, mode);
-  auto wi =
-    WriteIterator(std::move(wf), begin.format(), begin.symbol_table1(), begin.symbol_table2());
-  std::copy(begin, end, wi);
-  return wi;
+  return WriteIterator(std::move(wf), format);
 }
+
 }  // namespace GD::Ar
 
 template<typename FType>
