@@ -751,6 +751,9 @@ public:
 
     Proxy& operator=(Member const& obj)
     {
+      if (obj.symbols() != nullptr) {
+        wi_.add_symbols(obj.symbols());
+      }
       wi_.write_member(obj,
                        [&obj](auto it) { std::copy(obj.data().begin(), obj.data().end(), it); });
       return *this;
@@ -924,6 +927,13 @@ private:
     Format format_;
   };
 
+  void add_symbols(Symbols symbols)
+  {
+    auto id = static_cast<MemberID>(offset());
+    auto [it, success] = state_->symbol_map_.insert(std::make_pair(id, symbols));
+    assert(success);
+  }
+
   template<typename T, typename DataWriter, typename Store>
   void write_member(Store& out, T const& obj, DataWriter dw)
   {
@@ -964,6 +974,7 @@ private:
     Format format_;
     std::vector<std::byte> string_table_;
     std::vector<std::byte> data_;
+    SymbolMap symbol_map_;
   };
 
   std::shared_ptr<State> state_;
