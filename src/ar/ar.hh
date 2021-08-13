@@ -1061,7 +1061,7 @@ ReadIterator<typename std::remove_reference<FType1>::type> read_archive_begin(FT
     Member symbol_table1 = member.value();
     symbol_map = Details::get_symbols(member.value());
     read_next_member();
-    if (member.has_value() && Details::symbol_table_name(format)) {
+    if (member.has_value() && member->name() == Details::symbol_table_name(format)) {
       /* If we have two headers we are Win32 format.  */
       format = Format::win32;
       symbol_map = Details::get_symbols(symbol_map, member.value());
