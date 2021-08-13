@@ -108,11 +108,11 @@ template<typename R, typename It>
 R from_be(It begin, It end)
 {
   R result = 0;
-  R shift = 0;
+  R shift = sizeof(R) * 8;
   while (begin != end) {
-    result |= static_cast<R>(*begin++) << shift;
-    shift += 8;
     assert(shift != 0);
+    shift -= 8;
+    result |= static_cast<R>(*begin++) << shift;
   }
   return result;
 }
@@ -140,7 +140,7 @@ GD::Ar::SymbolMap get_symbols_svr4(GD::Ar::Member symbol_table)
       it = result.first;
     }
     std::string ins;
-    auto strings_it2 = std::find(data_it, data.end(), std::byte(0));
+    auto strings_it2 = std::find(strings_it, data.end(), std::byte(0));
     assert(strings_it2 != data.end());
     std::transform(strings_it, strings_it2, std::back_inserter(ins),
                    [](std::byte b) { return static_cast<char>(b); });
