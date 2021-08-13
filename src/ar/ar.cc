@@ -192,7 +192,7 @@ std::string to_mode_string(mode_t mode)
 }
 
 template<typename It>
-void do_verbose_toc(GD::Ar::Member const& member, It files_begin, It files_end)
+void do_verbose_toc(GD::Ar::Member const& member, It files_begin, It files_end, bool print_symbols)
 {
   /* POSIX says that we should print the name of the files from the command-line if we are
    * filtering.  */
@@ -209,6 +209,17 @@ void do_verbose_toc(GD::Ar::Member const& member, It files_begin, It files_end)
   std::cout << to_mode_string(member.mode()) << ' ' << member.uid() << '/' << member.gid() << ' '
             << member.size_bytes() << ' ' << std::put_time(mtime, "%b %e %H:%M %Y") << ' ' << name
             << '\n';
+  if (print_symbols) {
+    auto syms = member.symbols();
+    if (syms != nullptr) {
+      for (auto sym : *syms) {
+        std::cout << "  " << sym << '\n';
+      }
+    }
+    else {
+      std::cout << "  <NO SYMBOLS>\n";
+    }
+  }
 }
 
 enum class Action { none, del, move, print, quick, replace, toc, extract };
@@ -236,6 +247,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
   [[maybe_unused]] bool update_only = false;
   bool allow_replacement = true;
   bool truncate_names = false;
+  bool print_symbols = false;
 
   auto set_action = [&action, &c](Action act) {
     if (action != Action::none) {
@@ -244,7 +256,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
     action = act;
   };
 
-  while ((c = ::getopt(argc, argv, ":CTabcdimpqrstuvx")) != -1) {
+  while ((c = ::getopt(argc, argv, ":CTabcdimpqrstuvxW:")) != -1) {
     switch (c) {
     case 'C':
       allow_replacement = false;
@@ -291,6 +303,15 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
       break;
     case 'x':
       set_action(Action::extract);
+      break;
+    case 'W':
+      for (auto c : std::string_view{static_cast<char const*>(optarg)}) {
+        switch (c) {
+        case 's':
+          print_symbols = true;
+          break;
+        }
+      }
       break;
     case ':':
     case '?':
@@ -347,14 +368,15 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
     do_quick_append(archive, mode, ar_begin, ar_end, argv + optind, argv + argc, verbose);
     break;
   case Action::toc:
-    std::for_each(ar_begin, ar_end, [argv, argc, verbose](GD::Ar::Member const& member) {
-      if (verbose) {
-        do_verbose_toc(member, argv + optind, argv + argc);
-      }
-      else {
-        do_toc(member, argv + optind, argv + argc);
-      }
-    });
+    std::for_each(ar_begin, ar_end,
+                  [argv, argc, verbose, print_symbols](GD::Ar::Member const& member) {
+                    if (verbose) {
+                      do_verbose_toc(member, argv + optind, argv + argc, print_symbols);
+                    }
+                    else {
+                      do_toc(member, argv + optind, argv + argc);
+                    }
+                  });
     break;
   case Action::extract:
     std::for_each(
