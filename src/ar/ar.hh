@@ -15,6 +15,7 @@
 
 #include <assert.h>
 #include <ctime>
+#include <map>
 #include <memory>
 #include <optional>
 #include <span>
@@ -23,7 +24,6 @@
 #include <string>
 #include <system_error>
 #include <type_traits>
-#include <unordered_map>
 #include <vector>
 
 #include "ar-files.hh"
@@ -113,8 +113,11 @@ class Member;
 /** \brief  ID for a member. */
 enum class MemberID : std::size_t {};
 
+/** \brief  Type used to copy symbol names around.  */
+using Symbols = std::shared_ptr<std::vector<std::string>>;
+
 /** \brief  Type used to map MemberIDs to symbols.  */
-using SymbolMap = std::unordered_map<MemberID, std::shared_ptr<std::vector<std::string>>>;
+using SymbolMap = std::map<MemberID, Symbols>;
 
 /** \brief  Internal Namespace - API not stable. */
 namespace Details {
@@ -454,6 +457,13 @@ class Member
 public:
   /** \brief Data type we store - used to save typing.  */
   using Data = std::shared_ptr<std::vector<std::byte> const>;
+  /** \brief         Constructor.
+   *  \param header  Header
+   *  \param id      ID of member
+   *  \param data    Archive data.
+   *  \param symbols Symbols in the symbol map.
+   */
+  Member(Details::MemberHeader&& header, MemberID id, Data data, Symbols symbols);
 
   ~Member() = default;
   Member(Member const&) = default;
@@ -493,6 +503,9 @@ public:
 
   /** \brief Span containing all the data in the member.  */
   std::span<std::byte const> data() const noexcept;
+
+  /** \brief  Get the symbols.  */
+  Symbols symbols() const noexcept;
 
   /** \brief Size of member header in bytes.  */
   std::size_t size_bytes() const noexcept;
@@ -542,18 +555,12 @@ public:
     return count;
   }
 
-  /** \brief        Constructor.
-   *  \param header Header
-   *  \param id     ID of member
-   *  \param data   Archive data.
-   */
-  Member(Details::MemberHeader&& header, MemberID id, Data data);
-
 private:
   Details::MemberHeader header_;  ///< Header
   MemberID id_;                   ///< ID
   std::size_t offset_;            ///< Current offset
   Data data_;                     ///< Data.
+  Symbols symbols_;               ///< Symbols.
 };
 
 bool operator!=(Member const& lhs, Member const& rhs) noexcept;
@@ -688,7 +695,9 @@ private:
     auto data = std::make_shared<std::vector<std::byte>>(hdr.size());
     state_->file_.read(std::span<std::byte>(*data));
     state_->offset_ += hdr.header_size() + hdr.size();
-    member_.emplace(Member(std::move(hdr), id, data));
+    auto it = state_->symbol_map_.find(id);
+    auto syms = it != state_->symbol_map_.end() ? it->second : nullptr;
+    member_.emplace(Member(std::move(hdr), id, data, syms));
   }
 
   struct State
@@ -767,31 +776,6 @@ public:
     }
 
   private:
-    template<typename T>
-    std::size_t write_header(T const& obj)
-    {
-      auto long_name = wi_.add_name(obj.name(), Details::MemberHeader::name_len);
-      wi_.add_number(obj.mtime(), Details::MemberHeader::mtime_len);
-      wi_.add_ugid(obj.uid(), Details::MemberHeader::uid_len);
-      wi_.add_ugid(obj.gid(), Details::MemberHeader::gid_len);
-      wi_.add_mode(obj.mode(), Details::MemberHeader::mode_len);
-      auto size_begin_offset = wi_.offset();
-      wi_.add_str("", Details::MemberHeader::size_len);
-      wi_.add_str("`\n", Details::MemberHeader::fmag_len);
-      wi_.add_data(std::span(long_name));
-      return size_begin_offset;
-    }
-
-    void write_tail(std::size_t size_begin_offset)
-    {
-      auto size_end_offset = wi_.offset();
-      wi_.add_number_at(size_begin_offset,
-                        size_end_offset - size_begin_offset + Details::MemberHeader::size_len +
-                          Details::MemberHeader::fmag_len,
-                        Details::MemberHeader::size_len);
-      wi_.add_padding();
-    }
-
     WriteIterator& wi_;
   };
 
@@ -1027,9 +1011,9 @@ ReadIterator<typename std::remove_reference<FType1>::type> read_archive_begin(FT
   auto data = std::make_shared<std::vector<std::byte>>(hdr.size());
   file.read(std::span<std::byte>(*data));
   offset += hdr.header_size() + hdr.size();
-  auto member = std::make_optional<Member const>(std::move(hdr), id, data);
+  auto member = std::make_optional<Member const>(std::move(hdr), id, data, nullptr);
 
-  auto read_next_member = [&offset, &file, &member, format]() {
+  auto read_next_member = [&offset, &file, &member, &symbol_map, format]() {
     if (offset & 1) {
       char c;
       offset += file.read_upto(std::span(&c, 1));
@@ -1053,12 +1037,13 @@ ReadIterator<typename std::remove_reference<FType1>::type> read_archive_begin(FT
     data->resize(hdr.size());
     file.read(std::span<std::byte>(*data));
     offset += hdr.header_size() + hdr.size();
-    member.emplace(std::move(hdr), id, data);
+    auto it = symbol_map.find(id);
+    auto symbols = it != symbol_map.end() ? it->second : nullptr;
+    member.emplace(std::move(hdr), id, data, symbols);
   };
 
   /* Handle the symbol table(s) if present.  */
   if (member->name() == Details::symbol_table_name(format)) {
-    Member symbol_table1 = member.value();
     symbol_map = Details::get_symbols(member.value());
     read_next_member();
     if (member.has_value() && member->name() == Details::symbol_table_name(format)) {

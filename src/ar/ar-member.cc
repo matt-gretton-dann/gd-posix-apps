@@ -66,8 +66,8 @@ size_t GD::Ar::Details::MemberHeader::size() const noexcept { return size_; }
 size_t GD::Ar::Details::MemberHeader::header_size() const noexcept { return header_size_; }
 GD::Ar::Format GD::Ar::Details::MemberHeader::format() const noexcept { return format_; }
 
-GD::Ar::Member::Member(Details::MemberHeader&& header, MemberID id, Data data)
-    : header_(std::move(header)), id_(id), data_(data)
+GD::Ar::Member::Member(Details::MemberHeader&& header, MemberID id, Data data, Symbols symbols)
+    : header_(std::move(header)), id_(id), data_(data), symbols_(symbols)
 {
   assert(data_ != nullptr);
   assert(header_.size() == data_->size());
@@ -89,6 +89,7 @@ size_t GD::Ar::Member::offset_bytes() const noexcept { return offset_; }
 size_t GD::Ar::Member::size_bytes() const noexcept { return header_.size(); }
 GD::Ar::MemberID GD::Ar::Member::id() const noexcept { return id_; }
 GD::Ar::Format GD::Ar::Member::format() const noexcept { return header_.format(); }
+GD::Ar::Symbols GD::Ar::Member::symbols() const noexcept { return symbols_; }
 
 std::span<std::byte const> GD::Ar::Member::data() const noexcept
 {
