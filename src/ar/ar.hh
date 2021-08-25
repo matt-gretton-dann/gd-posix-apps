@@ -17,6 +17,7 @@
 #include <ctime>
 #include <map>
 #include <memory>
+#include <numeric>
 #include <optional>
 #include <span>
 #include <stddef.h>
@@ -118,6 +119,16 @@ using Symbols = std::shared_ptr<std::vector<std::string>>;
 
 /** \brief  Type used to map MemberIDs to symbols.  */
 using SymbolMap = std::map<MemberID, Symbols>;
+
+template<typename T, typename It>
+void to_be(It inserter, T v)
+{
+  T shift = sizeof(T) * 8;
+  while (shift != 0) {
+    shift -= 8;
+    *inserter++ = static_cast<std::byte>((v >> shift) & 0xff);
+  }
+}
 
 /** \brief  Internal Namespace - API not stable. */
 namespace Details {
@@ -233,8 +244,8 @@ public:
    *  \param  format     Format of archive
    *  \param  long_names Ttring table of long names (if used)
    *
-   * Constructor expects file to contain enough information to read whole of header from the current
-   * offset.
+   * Constructor expects file to contain enough information to read whole of header from the
+   * current offset.
    */
   template<typename IFType>
   MemberHeader(IFType& file, std::string const& name, Format format, Member const* long_names)
@@ -320,8 +331,8 @@ private:
    *  \return                   Value read.
    *  \throw std::runtime_error Number is not in a valid format.
    *
-   * Valid numbers start with zero or more space, followed by the number, terminated by zero or more
-   * space.
+   * Valid numbers start with zero or more space, followed by the number, terminated by zero or
+   * more space.
    */
   template<typename T, char Base = 10>
   static T to_number(std::string_view v, T def = 0)
@@ -902,29 +913,103 @@ private:
   {
     static std::string header("!<arch>\n");
     state_->file_.write(std::span(header));
+    std::vector<std::byte> string_table_data;
+    std::vector<std::byte> symbol_table_data;
     if (!state_->string_table_.empty()) {
-      std::vector<std::byte> string_table_data;
       write_member(
-        string_table_data, StringTableHeader(state_->format_),
+        string_table_data, SpecialMemberHeader::string_table(state_->format_),
         [data = state_->string_table_](auto it) { std::copy(data.begin(), data.end(), it); });
-      state_->file_.write(std::span(string_table_data));
     }
+    if (!state_->symbol_map_.empty()) {
+      write_member(
+        symbol_table_data, SpecialMemberHeader::symbol_table(state_->format_),
+        [&](auto it) { write_symbol_map(it, state_->symbol_map_, 68 + string_table_data.size()); });
+    }
+    state_->file_.write(std::span(symbol_table_data));
+    state_->file_.write(std::span(string_table_data));
     state_->file_.write(std::span(state_->data_));
     state_->file_.commit();
     state_ = nullptr;
   }
 
-  struct StringTableHeader
+  template<typename It>
+  static void write_symbol_map(It inserter, SymbolMap const& symbol_map,
+                               std::uint32_t offset_addend)
   {
-    explicit StringTableHeader(Format format) : format_(format) {}
-    std::string name() const { return Details::string_table_name(format_); }
-    time_t mtime() const { return std::time(nullptr); }
-    mode_t mode() const { return 0644; }
+    auto [count, string_size] =
+      std::accumulate(symbol_map.begin(), symbol_map.end(),
+                      std::make_pair(std::uint32_t{0}, std::uint32_t{0}), [](auto acc, auto value) {
+                        acc.first += (value.second != nullptr) ? value.second->size() : 0;
+                        acc.second = std::accumulate(
+                          value.second->begin(), value.second->end(), acc.second,
+                          [](auto acc2, auto value2) { return acc2 + value2.size() + 1; });
+                        return acc;
+                      });
+
+    if (count > std::numeric_limits<std::uint32_t>::max()) {
+      throw std::runtime_error("Too many symbols.");
+    }
+
+    offset_addend += 4 + count * 4 + string_size;
+    if (offset_addend & 1) {
+      ++offset_addend;
+    }
+
+    to_be(inserter, count);
+
+    std::for_each(symbol_map.begin(), symbol_map.end(), [&inserter, offset_addend](auto it) {
+      if (it.second == nullptr) {
+        return;
+      }
+      std::uint32_t offset = static_cast<std::uint32_t>(it.first) + offset_addend;
+      for (std::size_t i = 0; i < it.second->size(); ++i) {
+        to_be(inserter, offset);
+      }
+    });
+    std::for_each(symbol_map.begin(), symbol_map.end(), [&inserter](auto it) {
+      if (it.second == nullptr) {
+        return;
+      }
+      std::for_each(it.second->begin(), it.second->end(), [&inserter](auto it2) {
+        std::transform(it2.begin(), it2.end(), inserter,
+                       [](char c) { return static_cast<std::byte>(c); });
+        *inserter++ = std::byte{0};
+      });
+    });
+
+    /* Add a trailing NUL to pad to even number of bytes if necessary.  */
+    if (string_size & 1) {
+      *inserter++ = std::byte{0};
+    }
+  }
+
+  struct SpecialMemberHeader
+  {
+    static SpecialMemberHeader string_table(Format format)
+    {
+      return SpecialMemberHeader(Details::string_table_name(format),
+                                 Details::short_name_terminator(format));
+    }
+    static SpecialMemberHeader symbol_table(Format format)
+    {
+      return SpecialMemberHeader(Details::symbol_table_name(format),
+                                 Details::short_name_terminator(format));
+    }
+
+    std::string name() const { return name_; }
+    time_t mtime() const { return 0; }
+    mode_t mode() const { return 0; }
     uid_t uid() const { return 0; }
     gid_t gid() const { return 0; }
 
   private:
-    Format format_;
+    explicit SpecialMemberHeader(std::string const& name, char terminator) : name_(name)
+    {
+      if (name_.back() == terminator) {
+        name_.pop_back();
+      }
+    }
+    std::string name_;
   };
 
   void add_symbols(Symbols symbols)
