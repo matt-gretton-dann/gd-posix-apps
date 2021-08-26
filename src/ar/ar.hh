@@ -13,6 +13,8 @@
 #include "gd/sys/stat.h"
 #include "gd/unistd.h"
 
+#include "util/utils.hh"
+
 #include <assert.h>
 #include <ctime>
 #include <map>
@@ -119,16 +121,6 @@ using Symbols = std::shared_ptr<std::vector<std::string>>;
 
 /** \brief  Type used to map MemberIDs to symbols.  */
 using SymbolMap = std::map<MemberID, Symbols>;
-
-template<typename T, typename It>
-void to_be(It inserter, T v)
-{
-  T shift = sizeof(T) * 8;
-  while (shift != 0) {
-    shift -= 8;
-    *inserter++ = static_cast<std::byte>((v >> shift) & 0xff);
-  }
-}
 
 /** \brief  Internal Namespace - API not stable. */
 namespace Details {
@@ -955,7 +947,7 @@ private:
       ++offset_addend;
     }
 
-    to_be(inserter, count);
+    write_be(inserter, count);
 
     std::for_each(symbol_map.begin(), symbol_map.end(), [&inserter, offset_addend](auto it) {
       if (it.second == nullptr) {
@@ -963,7 +955,7 @@ private:
       }
       std::uint32_t offset = static_cast<std::uint32_t>(it.first) + offset_addend;
       for (std::size_t i = 0; i < it.second->size(); ++i) {
-        to_be(inserter, offset);
+        write_be(inserter, offset);
       }
     });
     std::for_each(symbol_map.begin(), symbol_map.end(), [&inserter](auto it) {

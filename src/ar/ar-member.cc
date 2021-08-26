@@ -6,6 +6,8 @@
 
 #include "gd/filesystem.hh"
 
+#include "util/utils.hh"
+
 #include <assert.h>
 #include <istream>
 #include <limits>
@@ -105,18 +107,6 @@ void GD::Ar::Member::offset_bytes(std::size_t offset)
 }
 
 namespace {
-template<typename R, typename It>
-R from_be(It begin, It end)
-{
-  R result = 0;
-  R shift = sizeof(R) * 8;
-  while (begin != end) {
-    assert(shift != 0);
-    shift -= 8;
-    result |= static_cast<R>(*begin++) << shift;
-  }
-  return result;
-}
 
 GD::Ar::SymbolMap get_symbols_bsd([[maybe_unused]] GD::Ar::Member symbol_table)
 {
@@ -127,12 +117,12 @@ GD::Ar::SymbolMap get_symbols_svr4(GD::Ar::Member symbol_table)
 {
   auto data = symbol_table.data();
   auto data_it = data.begin();
-  uint32_t count = from_be<uint32_t>(data_it, data_it + 4);
+  uint32_t count = GD::read_be<std::uint32_t>(data_it);
   data_it += 4;
   auto strings_it = data_it + count * 4;
   GD::Ar::SymbolMap symbol_map;
   for (uint32_t i = 0; i < count; ++i) {
-    GD::Ar::MemberID mid(static_cast<GD::Ar::MemberID>(from_be<uint32_t>(data_it, data_it + 4)));
+    GD::Ar::MemberID mid(static_cast<GD::Ar::MemberID>(GD::read_be<std::uint32_t>(data_it)));
     data_it += 4;
     auto it = symbol_map.find(mid);
     if (it == symbol_map.end()) {
