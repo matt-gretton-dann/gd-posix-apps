@@ -36,5 +36,6 @@ if(RUN_UNIT_TESTS)
   target_sources(test-util PRIVATE
     test-for-each-file.cc
     test-program-name.cc
+    test-read-write-endian.cc
     test-util-main.cc)
 endif()
