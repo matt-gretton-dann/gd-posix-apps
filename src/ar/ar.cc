@@ -48,6 +48,22 @@ It find_name(It begin, It end, SV const& name)
 }
 
 template<typename ArIt, typename FIt>
+void do_delete(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end, FIt files_begin,
+               FIt files_end, bool verbose)
+{
+  GD::Ar::Format format = (ar_begin != ar_end) ? ar_begin.format() : GD::Ar::Format::gnu;
+  auto out_it = GD::Ar::archive_inserter(archive, format, mode);
+  std::remove_copy_if(ar_begin, ar_end, out_it, [files_begin, files_end, verbose](auto member) {
+    auto found = find_name(files_begin, files_end, member.name());
+    if (found != files_end && verbose) {
+      std::cout << "d - " << *found << '\n';
+    }
+    return found != files_end;
+  });
+  *out_it++ = out_it.commit_tag();
+}
+
+template<typename ArIt, typename FIt>
 void do_quick_append(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end,
                      FIt files_begin, FIt files_end, bool verbose)
 {
@@ -359,6 +375,9 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
   auto ar_end = GD::Ar::read_archive_end<GD::Ar::InputFile>();
 
   switch (action) {
+  case Action::del:
+    do_delete(archive, mode, ar_begin, ar_end, argv + optind, argv + argc, verbose);
+    break;
   case Action::print:
     std::for_each(ar_begin, ar_end, [argv, argc, verbose](GD::Ar::Member const& member) {
       do_print(member, argv + optind, argv + argc, verbose);
