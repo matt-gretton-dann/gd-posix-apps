@@ -222,7 +222,17 @@ constexpr char const* long_name_prefix(GD::Ar::Format format)
   }
 }
 
+/** \brief               Interpret a symbol table member into a symbol table map for the archive.
+ *  \param  symbol_table Symbol table member.
+ *  \return              Map of members to symbols.
+ */
 SymbolMap get_symbols(Member symbol_table);
+
+/** \brief                Read the second symbol table
+ *  \param  symbol_table1 the symbol map from reading the first symbol table.
+ *  \param  symbol_table2 The member containing the second symbol table.
+ *  \return               Updated symbol table.
+ */
 SymbolMap get_symbols(SymbolMap const& symbol_table1, Member symbol_table2);
 
 /** \brief  Header of an archive member.  */
@@ -254,20 +264,17 @@ public:
    *  \param  name Name part of the header.
    */
   template<typename IFType>
-  explicit MemberHeader(IFType& file, std::string const& name)
+  MemberHeader(IFType& file, std::string const& name)
+      : MemberHeader(file, name, Format::bsd, nullptr)
   {
-    name_ = name;
-    format_ = Format::bsd;  // An initial guess
-    read_header(file);
-    update_name(file, nullptr);
     update_format();
   }
 
   ~MemberHeader() = default;
   MemberHeader(MemberHeader const&) = default;
-  MemberHeader(MemberHeader&&) = default;
+  MemberHeader(MemberHeader&&) noexcept = default;
   MemberHeader& operator=(MemberHeader const&) = default;
-  MemberHeader& operator=(MemberHeader&&) = default;
+  MemberHeader& operator=(MemberHeader&&) noexcept = default;
 
   /** Get archive member name.  */
   std::string const& name() const noexcept;
@@ -428,13 +435,14 @@ private:
   void update_format();
 
 public:
-  static constexpr std::size_t name_len = 16;   ///< Length of name field
-  static constexpr std::size_t mtime_len = 12;  ///< Length of the mtime field
-  static constexpr std::size_t uid_len = 6;     ///< Length of the User-ID field
-  static constexpr std::size_t gid_len = 6;     ///< Length of the group-id field
-  static constexpr std::size_t mode_len = 8;    ///< Length of the mode field
-  static constexpr std::size_t size_len = 10;   ///< Length of the size field.
-  static constexpr std::size_t fmag_len = 2;    ///< Length of the header terminator field.
+  static constexpr std::size_t name_len = 16;    ///< Length of name field
+  static constexpr std::size_t mtime_len = 12;   ///< Length of the mtime field
+  static constexpr std::size_t uid_len = 6;      ///< Length of the User-ID field
+  static constexpr std::size_t gid_len = 6;      ///< Length of the group-id field
+  static constexpr std::size_t mode_len = 8;     ///< Length of the mode field
+  static constexpr std::size_t size_len = 10;    ///< Length of the size field.
+  static constexpr std::size_t fmag_len = 2;     ///< Length of the header terminator field.
+  static constexpr std::size_t header_len = 60;  ///< Length of header in table.
 
 private:
   std::string name_;         ///< Member name
@@ -447,8 +455,8 @@ private:
   Format format_;            ///< Header format.
 };
 
+/** \brief Inequality operator.  */
 bool operator!=(MemberHeader const& lhs, MemberHeader const& rhs) noexcept;
-
 }  // namespace Details
 
 /** \brief Archive member.
@@ -585,9 +593,9 @@ public:
 
   ~ReadIterator() = default;
   ReadIterator(ReadIterator&& rhs) = default;
-  ReadIterator& operator=(ReadIterator&& rhs) = default;
+  ReadIterator& operator=(ReadIterator&& rhs) noexcept = default;
   ReadIterator(ReadIterator const&) = default;
-  ReadIterator& operator=(ReadIterator const&) = default;
+  ReadIterator& operator=(ReadIterator const&) noexcept = default;
 
   Format format() const { return state_->format_; }
 
@@ -703,6 +711,7 @@ private:
     member_.emplace(Member(std::move(hdr), id, data, syms));
   }
 
+  /** \brief  State structure. */
   struct State
   {
     State(FType&& file, std::size_t offset, Format format, SymbolMap&& symbol_map,
@@ -713,9 +722,9 @@ private:
     }
     ~State() = default;
     State(State const&) = delete;
-    State(State&&) = delete;
+    State(State&&) noexcept = delete;
     State& operator=(State const&) = delete;
-    State& operator=(State&&) = delete;
+    State& operator=(State&&) noexcept = delete;
 
     FType file_;
     std::size_t offset_;
@@ -734,6 +743,25 @@ bool operator!=(ReadIterator<FType> const& lhs, ReadIterator<FType> const& rhs)
   return !(lhs == rhs);
 }
 
+/** \brief  Output iterator to write to an archive.
+ *  \tparam OFType File type to write to.
+ *
+ * \subsection Usage
+ *
+ * General usage looks like:
+ *
+ * \code
+ * WriteFile archive("archive.a");
+ * auto it = GD::Ar::archive_inserter(std::move(archive), format, mode);
+ * *it++ = member; // Write members from another iterator
+ * *it++ = file; // Write files into archive.
+ * // Write more things as approprate.
+ * // Commit changes at the end:
+ * *it++ = it.commit_tag();
+ * \endcode
+ *
+ * Not commiting changes will mean nothing gets written out to the file.
+ */
 template<typename OFType>
 class WriteIterator
 {
@@ -744,14 +772,27 @@ public:
   using pointer = void;                                ///< Pointer to iterator.
   using difference_type = void;                        ///< Difference type.
 
+  /** \brief Tag ot use to say we've finished writing to the output iterator.  */
   enum class CommitTag : int {};
 
+  /** Proxy class.  This is what gets returned by *it.  */
   class Proxy
   {
   public:
-    Proxy(WriteIterator& wi) : wi_(wi) {}
+    /** \brief    Constructor
+     *  \param wi Write iterator we're proxying.
+     */
+    explicit Proxy(WriteIterator& wi) : wi_(wi) {}
     ~Proxy() = default;
+    Proxy(Proxy const&) = delete;
+    Proxy(Proxy&&) noexcept = delete;
+    Proxy& operator=(Proxy const&) = delete;
+    Proxy& operator=(Proxy&&) noexcept = delete;
 
+    /** \brief      Write a member from another archive into this archive.
+     *  \param  obj Object to write.
+     *  \return     \c *this
+     */
     Proxy& operator=(Member const& obj)
     {
       if (obj.symbols() != nullptr) {
@@ -762,6 +803,10 @@ public:
       return *this;
     }
 
+    /** \brief      Write a file into this archive.
+     *  \param  obj Object to write.
+     *  \return     \c *this
+     */
     template<typename IFType>
     Proxy& operator=(IFType& obj)
     {
@@ -775,6 +820,9 @@ public:
       return *this;
     }
 
+    /** \brief  Commit this archive.
+     *  \return \c *this.
+     */
     Proxy& operator=(WriteIterator::CommitTag)
     {
       wi_.commit();
@@ -782,9 +830,13 @@ public:
     }
 
   private:
-    WriteIterator& wi_;
+    WriteIterator& wi_;  ///< Iterator we're writing to.
   };
 
+  /** \brief        Constructur
+   *  \param file   File to write to
+   *  \param format Archive format to use.
+   */
   WriteIterator(OFType&& file, Format format)
       : state_(std::make_shared<State>(std::move(file), format))
   {
@@ -792,23 +844,34 @@ public:
 
   ~WriteIterator() = default;
   WriteIterator(WriteIterator const&) = default;
-  WriteIterator(WriteIterator&&) = default;
+  WriteIterator(WriteIterator&&) noexcept = default;
   WriteIterator& operator=(WriteIterator const&) = default;
-  WriteIterator& operator=(WriteIterator&&) = default;
+  WriteIterator& operator=(WriteIterator&&) noexcept = default;
 
+  /** \brief Dereference iterator. */
   Proxy operator*() { return Proxy(*this); }
 
+  /** \brief Move forward.  */
   WriteIterator operator++(int) { return *this; }
 
+  /** \brief Move forward.  */
   WriteIterator& operator++() { return *this; }
 
+  /** \brief  Get the commit tag.  */
   static WriteIterator::CommitTag commit_tag() { return CommitTag(); }
 
 private:
   friend class Proxy;
 
+  /** \brief  Get the current offset.  */
   std::size_t offset() const noexcept { return state_->data_.size(); }
 
+  /** \brief      Write \a span into \a out.
+   *  \param out  Output object to store into.
+   *  \param span Data to write.
+   *
+   * \a out should implement size() and push_back() methods.
+   */
   template<typename Store, typename T, std::size_t E>
   void add_data(Store& out, std::span<T, E> span)
   {
@@ -817,6 +880,13 @@ private:
     std::copy(raw_span.begin(), raw_span.end(), std::back_inserter(out));
   }
 
+  /** \brief     Write a string into an output object.
+   *  \param out Output store.
+   *  \param val String to write.
+   *  \param len How long output should be.
+   *
+   * Output is padded with spaces to reach \a len, or truncated.
+   */
   template<typename Store>
   void add_str(Store& out, std::string const& val, std::size_t len)
   {
@@ -824,6 +894,16 @@ private:
     add_data(out, std::span(output.begin(), output.begin() + len));
   }
 
+  /** \brief  Write a number at a particular offset.
+   *  \tparam It    Iterator
+   *  \tparam T     Type of number
+   *  \tparam Base  Output base.
+   *  \param  where Where to insert number
+   *  \param  val   Value to output
+   *  \param  len   Number of characters to output.
+   *
+   * Output string to right padded with ' '.
+   */
   template<typename It, typename T, unsigned Base = 10>
   void add_number_at(It where, T val, std::size_t len)
   {
@@ -836,10 +916,23 @@ private:
     if (res.empty()) {
       res = "0";
     }
+    if (res.size() > len) {
+      throw std::runtime_error("Number too big for output.");
+    }
     res += std::string(len, ' ');
     std::transform(res.begin(), res.begin() + len, where, [](char c) { return std::byte(c); });
   }
 
+  /** \brief        Write a number at the end of a store
+   *  \tparam Store Output store type
+   *  \tparam T     Type of number
+   *  \tparam Base  Output base.
+   *  \param  out   Output.
+   *  \param  val   Value to output
+   *  \param  len   Number of characters to output.
+   *
+   * Output string to right padded with ' '.
+   */
   template<typename Store, typename T, unsigned Base = 10>
   void add_number(Store& out, T val, std::size_t len)
   {
@@ -847,11 +940,18 @@ private:
     add_number_at<decltype(it), T, Base>(it, val, len);
   }
 
+  /** \brief       Write an archive members name.
+   *  \param  out  Output to write to
+   *  \param  name Member name
+   *  \param  len  Length of buffer to write to.
+   *  \return      Value to write at end of header if name is too long (may be empty).
+   */
   template<typename Store>
   std::string add_name(Store& out, std::string const& name, std::size_t len)
   {
     if (Details::inline_long_names(state_->format_) &&
         (name.size() > len || name.find(' ') != std::string::npos)) {
+      /* This is an inline long name: Either name is too long or contains a space. */
       auto prefix = std::string(Details::long_name_prefix(state_->format_));
       add_str(out, prefix, prefix.size());
       auto name_len = name.size();
@@ -860,6 +960,7 @@ private:
     }
 
     if (!Details::inline_long_names(state_->format_) && name.size() > len - 1) {
+      /* This is an out of line long name.  */
       auto prefix = std::string(Details::long_name_prefix(state_->format_));
       add_str(out, prefix, prefix.size());
       auto name_offset = state_->string_table_.size();
@@ -871,11 +972,19 @@ private:
       return std::string();
     }
 
+    /* Inline name.  */
     auto out_name = name + Details::short_name_terminator(state_->format_);
     add_str(out, out_name, len);
     return std::string();
   }
 
+  /** \brief     Output a User or Group ID.
+   *  \param out Store to output to.
+   *  \param id  ID
+   *  \param len Length.
+   *
+   * If \a if is \c ~T(0) then all spaces are output.
+   */
   template<typename T, typename Store>
   void add_ugid(Store& out, T id, std::size_t len)
   {
@@ -887,12 +996,22 @@ private:
     }
   }
 
+  /** \brief     Output file mode
+   *  \param out Store to output to.
+   *  \param id  mode
+   *  \param len Length.
+   *
+   * If \a if is \c ~T(0) then all spaces are output.
+   */
   template<typename T>
   void add_mode(T& out, mode_t mode, std::size_t len)
   {
     add_number<T, mode_t, 8>(out, mode & 07777, len);
   }
 
+  /** \brief   Add any necessary padding.
+   *  \param out Store to output to.
+   */
   template<typename T>
   void add_padding(T& out)
   {
@@ -901,26 +1020,39 @@ private:
     }
   }
 
+  /** \brief  Commit the archive.
+   *
+   * This does symbol map and string table generation.
+   */
   void commit()
   {
     static std::string header("!<arch>\n");
     state_->file_.write(std::span(header));
     std::vector<std::byte> string_table_data;
-    std::vector<std::byte> symbol_table_data;
+    /* Generate the string table.  We need to know how long it is here so that we can put the
+     * correct offsets in the symbol table IDs.
+     */
     if (!state_->string_table_.empty()) {
       write_member(
         string_table_data, SpecialMemberHeader::string_table(state_->format_),
         [data = state_->string_table_](auto it) { std::copy(data.begin(), data.end(), it); });
     }
+
+    std::vector<std::byte> symbol_table_data;
     if (!state_->symbol_map_.empty()) {
-      write_member(
-        symbol_table_data, SpecialMemberHeader::symbol_table(state_->format_),
-        [&](auto it) { write_symbol_map(it, state_->symbol_map_, 68 + string_table_data.size()); });
+      write_member(symbol_table_data, SpecialMemberHeader::symbol_table(state_->format_),
+                   [&](auto it) {
+                     write_symbol_map(it, state_->symbol_map_,
+                                      header.size() + Details::MemberHeader::header_len +
+                                        string_table_data.size());
+                   });
     }
+    /* Write the file. */
     state_->file_.write(std::span(symbol_table_data));
     state_->file_.write(std::span(string_table_data));
     state_->file_.write(std::span(state_->data_));
     state_->file_.commit();
+    /* And don't allow any further.  */
     state_ = nullptr;
   }
 
