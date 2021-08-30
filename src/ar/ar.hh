@@ -539,7 +539,7 @@ public:
   void offset_bytes(std::size_t offset);
 
   /** \brief  Have we reached the end of the file?  */
-  bool eof() const noexcept;
+  bool eof() const noexcept { return offset_ == data_->size(); };
 
   /** \brief Read into \a dest.  */
   template<typename T, std::size_t Count>
