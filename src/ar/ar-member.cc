@@ -69,7 +69,7 @@ size_t GD::Ar::Details::MemberHeader::header_size() const noexcept { return head
 GD::Ar::Format GD::Ar::Details::MemberHeader::format() const noexcept { return format_; }
 
 GD::Ar::Member::Member(Details::MemberHeader&& header, MemberID id, Data data, Symbols symbols)
-    : header_(std::move(header)), id_(id), data_(data), symbols_(symbols)
+    : header_(std::move(header)), id_(id), offset_(0), data_(data), symbols_(symbols)
 {
   assert(data_ != nullptr);
   assert(header_.size() == data_->size());
