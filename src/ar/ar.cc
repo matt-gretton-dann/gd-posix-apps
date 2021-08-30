@@ -27,6 +27,9 @@ using Msg = GD::Ar::Msg;
 
 namespace {
 
+enum class Action { none, del, move, print, quick, replace, toc, extract };
+enum class Position { end, before, after };
+
 /** \brief       Report an error and exit with exit code 1.
  *  \param  msg  Message ID
  *  \param  args Arguments for the message.
@@ -60,6 +63,46 @@ void do_delete(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end,
     }
     return found != files_end;
   });
+  *out_it++ = out_it.commit_tag();
+}
+
+template<typename ArIt, typename FIt>
+void do_move(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end, FIt files_begin,
+             FIt files_end, Position pos, std::optional<std::string> const& posname, bool verbose)
+{
+  GD::Ar::Format format = (ar_begin != ar_end) ? ar_begin.format() : GD::Ar::Format::gnu;
+  auto out_it = GD::Ar::archive_inserter(archive, format, mode);
+  std::vector<GD::Ar::Member> moved;
+  std::vector<GD::Ar::Member> tail;
+  bool pending = false;
+  std::for_each(
+    ar_begin, ar_end,
+    [&pending, &out_it, &moved, &tail, files_begin, files_end, posname, pos, verbose](auto member) {
+      auto found = find_name(files_begin, files_end, member.name());
+      if (found != files_end) {
+        if (verbose) {
+          std::cout << "m - " << *found << '\n';
+        }
+        moved.push_back(member);
+      }
+      else if (pending) {
+        tail.push_back(member);
+      }
+      else if (pos != Position::end && member.name() == fs::path(*posname).filename()) {
+        pending = true;
+        if (pos == Position::after) {
+          *out_it++ = member;
+        }
+        else {
+          tail.push_back(member);
+        }
+      }
+      else {
+        *out_it++ = member;
+      }
+    });
+  std::copy(moved.begin(), moved.end(), out_it);
+  std::copy(tail.begin(), tail.end(), out_it);
   *out_it++ = out_it.commit_tag();
 }
 
@@ -238,9 +281,6 @@ void do_verbose_toc(GD::Ar::Member const& member, It files_begin, It files_end, 
   }
 }
 
-enum class Action { none, del, move, print, quick, replace, toc, extract };
-enum class Position { end, before, after };
-
 constexpr bool is_read_only_action(Action action)
 {
   return action == Action::print || action == Action::toc || action == Action::extract;
@@ -256,7 +296,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
   int c;
   Action action = Action::none;
   Position pos = Position::end;
-  std::string pos_file;
+  std::optional<std::string> pos_file;
   bool message_on_creation = true;
   [[maybe_unused]] bool force_ranlib = false;
   bool verbose = false;
@@ -377,6 +417,9 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
   switch (action) {
   case Action::del:
     do_delete(archive, mode, ar_begin, ar_end, argv + optind, argv + argc, verbose);
+    break;
+  case Action::move:
+    do_move(archive, mode, ar_begin, ar_end, argv + optind, argv + argc, pos, pos_file, verbose);
     break;
   case Action::print:
     std::for_each(ar_begin, ar_end, [argv, argc, verbose](GD::Ar::Member const& member) {
