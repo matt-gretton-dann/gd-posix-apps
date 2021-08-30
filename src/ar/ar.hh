@@ -125,7 +125,11 @@ using SymbolMap = std::map<MemberID, Symbols>;
 /** \brief  Internal Namespace - API not stable. */
 namespace Details {
 
-/** \brief  Get the symbol table name for a given format.  */
+/** \brief        Get the symbol table name for a given format.
+ *  \param format Format to get symbol table name for.
+ *
+ * \note For SVR4 the returned name is without the trailing short name terminator (/).
+ */
 constexpr char const* symbol_table_name(Format format)
 {
   switch (format) {
@@ -137,13 +141,17 @@ constexpr char const* symbol_table_name(Format format)
   case Format::gnu_thin:
   case Format::svr4:
   case Format::win32:
-    return "/";
+    return "";
   default:
     std::abort();
   }
 }
 
-/** \brief  Get the string table name for a given format.  */
+/** \brief        Get the string table name for a given format.
+ *  \param format Format to get string table name for.
+ *
+ * \note For SVR4 the returned name is without the trailing short name terminator (/).
+ */
 constexpr char const* string_table_name(Format format)
 {
   switch (format) {
@@ -154,7 +162,7 @@ constexpr char const* string_table_name(Format format)
   case Format::gnu_thin:
   case Format::svr4:
   case Format::win32:
-    return "//";
+    return "/";
   default:
     std::abort();
   }
@@ -1111,13 +1119,11 @@ private:
   {
     static SpecialMemberHeader string_table(Format format)
     {
-      return SpecialMemberHeader(Details::string_table_name(format),
-                                 Details::short_name_terminator(format));
+      return SpecialMemberHeader(Details::string_table_name(format));
     }
     static SpecialMemberHeader symbol_table(Format format)
     {
-      return SpecialMemberHeader(Details::symbol_table_name(format),
-                                 Details::short_name_terminator(format));
+      return SpecialMemberHeader(Details::symbol_table_name(format));
     }
 
     std::string name() const { return name_; }
@@ -1127,12 +1133,7 @@ private:
     gid_t gid() const { return 0; }
 
   private:
-    explicit SpecialMemberHeader(std::string const& name, char terminator) : name_(name)
-    {
-      if (name_.back() == terminator) {
-        name_.pop_back();
-      }
-    }
+    explicit SpecialMemberHeader(std::string const& name) : name_(name) {}
     std::string name_;
   };
 
