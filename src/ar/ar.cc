@@ -107,6 +107,85 @@ void do_move(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end, F
 }
 
 template<typename ArIt, typename FIt>
+void do_replace(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end, FIt files_begin,
+                FIt files_end, Position pos, std::optional<std::string> const& posname,
+                bool verbose, bool update_newer)
+{
+  GD::Ar::Format format = (ar_begin != ar_end) ? ar_begin.format() : GD::Ar::Format::gnu;
+  auto out_it = GD::Ar::archive_inserter(archive, format, mode);
+  std::vector<std::string> files;
+  std::copy(files_begin, files_end, std::back_inserter(files));
+
+  for (; ar_begin != ar_end; ++ar_begin) {
+    auto member = *ar_begin;
+    if (pos == Position::before && member.name() == *posname) {
+      break;
+    }
+    auto found = find_name(files.begin(), files.end(), member.name());
+    bool updated = false;
+    if (found != files.end()) {
+      auto file = GD::Ar::InputFile(*found);
+      if (!update_newer || file.mtime() > member.mtime()) {
+        *out_it++ = file;
+        if (verbose) {
+          std::cout << "r - " << *found << '\n';
+        }
+        updated = true;
+      }
+      while ((found = find_name(files.erase(found), files.end(), member.name())) != files.end()) {
+        std::cerr << "Warning: Skipping due to duplicate member name " << *found << '\n';
+      }
+    }
+    if (!updated) {
+      *out_it++ = member;
+    }
+    if (pos == Position::after && member.name() == *posname) {
+      break;
+    }
+  }
+
+  std::vector<GD::Ar::Member> tail;
+  std::copy(ar_begin, ar_end, std::back_inserter(tail));
+
+  for (auto const& file : files) {
+    auto found = std::find_if(tail.begin(), tail.end(),
+                              [basename = fs::path(file).filename()](auto const& member) {
+                                return member.name() == basename;
+                              });
+    if (found == tail.end()) {
+      auto f = GD::Ar::InputFile(file);
+      *out_it++ = f;
+      if (verbose) {
+        std::cout << "a - " << file << '\n';
+      }
+    }
+  }
+
+  for (auto const& member : tail) {
+    auto found = find_name(files.begin(), files.end(), member.name());
+    bool updated = false;
+    if (found != files.end()) {
+      auto file = GD::Ar::InputFile(*found);
+      if (!update_newer || file.mtime() > member.mtime()) {
+        *out_it++ = file;
+        if (verbose) {
+          std::cout << "r - " << *found << '\n';
+        }
+        updated = true;
+      }
+      while ((found = find_name(files.erase(found), files.end(), member.name())) != files.end()) {
+        std::cerr << "Warning: Skipping due to duplicate member name " << *found << '\n';
+      }
+    }
+    if (!updated) {
+      *out_it++ = member;
+    }
+  }
+
+  *out_it++ = out_it.commit_tag();
+}
+
+template<typename ArIt, typename FIt>
 void do_quick_append(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end,
                      FIt files_begin, FIt files_end, bool verbose)
 {
@@ -300,7 +379,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
   bool message_on_creation = true;
   [[maybe_unused]] bool force_ranlib = false;
   bool verbose = false;
-  [[maybe_unused]] bool update_only = false;
+  bool update_newer = false;
   bool allow_replacement = true;
   bool truncate_names = false;
   bool print_symbols = false;
@@ -352,7 +431,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
       set_action(Action::toc);
       break;
     case 'u':
-      update_only = true;
+      update_newer = true;
       break;
     case 'v':
       verbose = true;
@@ -428,6 +507,10 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
     break;
   case Action::quick:
     do_quick_append(archive, mode, ar_begin, ar_end, argv + optind, argv + argc, verbose);
+    break;
+  case Action::replace:
+    do_replace(archive, mode, ar_begin, ar_end, argv + optind, argv + argc, pos, pos_file, verbose,
+               update_newer);
     break;
   case Action::toc:
     std::for_each(ar_begin, ar_end,
