@@ -63,9 +63,9 @@ else()
 set(CMAKE_CXX_CLANG_TIDY
   "${ClangTidy_COMMAND}"
   "-p=${CMAKE_BINARY_DIR}"
-  "-header-filter='${CMAKE_SOURCE_DIR}/.*'")
+  "--header-filter=/(src|libgdsup)/.*")
 set(CMAKE_C_CLANG_TIDY
   "${ClangTidy_COMMAND}"
   "-p=${CMAKE_BINARY_DIR}"
-  "-header-filter='${CMAKE_SOURCE_DIR}/.*'")
+  "--header-filter=/(src|libgdsup)/.*")
 endif()
