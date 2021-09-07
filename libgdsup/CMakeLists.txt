@@ -40,6 +40,8 @@ function(include_external_fmtlib)
   if(NOT fmt_POPULATED)
     FetchContent_Populate(fmt)
     add_subdirectory(${fmt_SOURCE_DIR} ${fmt_BINARY_DIR})
+    set_property(TARGET fmt PROPERTY CXX_CLANG_TIDY "")
+    set_property(TARGET fmt PROPERTY C_CLANG_TIDY "")
   endif()
 endfunction()
 # External libraries
