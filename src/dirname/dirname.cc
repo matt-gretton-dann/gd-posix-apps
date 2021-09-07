@@ -31,7 +31,7 @@ template<typename... Ts>
 }
 
 }  // namespace
-int main(int argc, char** argv)
+auto main(int argc, char** argv) -> int
 {
   ::setlocale(LC_ALL, "");
   GD::program_name(argv[0]);
@@ -53,11 +53,11 @@ int main(int argc, char** argv)
     report_error(GD::Dirname::Msg::too_many_arguments);
   }
 
-  char* bname = ::strdup(argv[0]);
-  if (bname == 0) {
+  char* bname_to_free = ::strdup(argv[0]);
+  if (bname_to_free == 0) {
     report_error(GD::Dirname::Msg::out_of_memory);
   }
-  bname = ::dirname(bname);
+  char* bname = ::dirname(bname_to_free);
   ::size_t base_len = ::strlen(bname);
 
   while (base_len > INT_MAX) {
@@ -66,5 +66,6 @@ int main(int argc, char** argv)
     base_len -= INT_MAX;
   }
   ::printf("%.*s\n", static_cast<int>(base_len), bname);
+  free(bname_to_free);
   return EXIT_SUCCESS;
 }
