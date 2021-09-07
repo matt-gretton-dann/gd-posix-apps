@@ -26,6 +26,7 @@ include(GDPosixAppsTests)
 
 # Find packages
 find_package(ClangFormat)
+find_package(ClangTidy)
 find_package(Python 3.6 COMPONENTS Interpreter)
 
 # Global testing setup
