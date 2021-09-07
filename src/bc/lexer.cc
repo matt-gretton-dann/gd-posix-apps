@@ -21,7 +21,7 @@ GD::Bc::Lexer::Lexer(std::unique_ptr<Reader>&& r)
 {
 }
 
-GD::Bc::Token const& GD::Bc::Lexer::peek()
+auto GD::Bc::Lexer::peek() -> GD::Bc::Token const&
 {
   if (!t_.has_value()) {
     lex();
@@ -43,7 +43,7 @@ void GD::Bc::Lexer::chew()
   }
 }
 
-GD::Bc::Location const& GD::Bc::Lexer::location() const { return r_->location(); }
+auto GD::Bc::Lexer::location() const -> GD::Bc::Location const& { return r_->location(); }
 
 void GD::Bc::Lexer::lex_string()
 {

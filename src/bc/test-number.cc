@@ -71,7 +71,7 @@ TEST_CASE("GD::Bc::Number - Number construction, directed", "[bc][number]")
  *
  * GD::Bc::Number doesn't handle the sign.
  */
-GD::Bc::Number make_number(std::string_view s)
+auto make_number(std::string_view s) -> GD::Bc::Number
 {
   bool negate = false;
   if (s[0] == '-') {
@@ -186,9 +186,9 @@ public:
     RandomUIntPairGenerator::next();
   }
 
-  UInt64Pair const& get() const override { return pair_; }
+  auto get() const -> UInt64Pair const& override { return pair_; }
 
-  bool next() override
+  auto next() -> bool override
   {
     pair_ = std::make_pair<uint64_t, uint64_t>(dist_(rand_), dist_(rand_));
     return true;
@@ -200,7 +200,7 @@ private:
   UInt64Pair pair_;
 };
 
-Catch::Generators::GeneratorWrapper<UInt64Pair> random_pair()
+auto random_pair() -> Catch::Generators::GeneratorWrapper<UInt64Pair>
 {
   return Catch::Generators::GeneratorWrapper<UInt64Pair>(
     std::make_unique<RandomUIntPairGenerator>());
@@ -214,9 +214,9 @@ public:
     RandomNumberGenerator::next();
   }
 
-  GD::Bc::Number const& get() const override { return number_; }
+  auto get() const -> GD::Bc::Number const& override { return number_; }
 
-  bool next() override
+  auto next() -> bool override
   {
     auto digit_count = dist_(rand_) % (40 * GD::Bc::Number::base_log10_);
     auto int_len = dist_(rand_) % (digit_count + 1);
@@ -247,7 +247,7 @@ private:
   GD::Bc::Number number_;
 };
 
-Catch::Generators::GeneratorWrapper<GD::Bc::Number> random_number()
+auto random_number() -> Catch::Generators::GeneratorWrapper<GD::Bc::Number>
 {
   return Catch::Generators::GeneratorWrapper<GD::Bc::Number>(
     std::make_unique<RandomNumberGenerator>());
@@ -263,9 +263,9 @@ public:
     next();
   }
 
-  std::pair<GD::Bc::Number, GD::Bc::Number> const& get() const override { return pair_; }
+  auto get() const -> std::pair<GD::Bc::Number, GD::Bc::Number> const& override { return pair_; }
 
-  GD::Bc::Number get_a_number()
+  auto get_a_number() -> GD::Bc::Number
   {
     auto digit_count = dist_(rand_) % (max_digits_ * GD::Bc::Number::base_log10_);
     auto int_len = dist_(rand_) % (digit_count + 1);
@@ -288,7 +288,7 @@ public:
     return GD::Bc::Number(num, 10);
   }
 
-  bool next() override
+  auto next() -> bool override
   {
     pair_ = std::make_pair(get_a_number(), get_a_number());
     return true;
@@ -301,8 +301,9 @@ private:
   GD::Bc::Number::NumType max_digits_;
 };
 
-Catch::Generators::GeneratorWrapper<std::pair<GD::Bc::Number, GD::Bc::Number>>
-random_number_pair(GD::Bc::Number::NumType max_digits = 40)
+auto random_number_pair(GD::Bc::Number::NumType max_digits = 40)
+  -> Catch::Generators::GeneratorWrapper<std::pair<GD::Bc::Number, GD::Bc::Number>>
+
 {
   return Catch::Generators::GeneratorWrapper<std::pair<GD::Bc::Number, GD::Bc::Number>>(
     std::make_unique<RandomNumberPairGenerator>(max_digits));

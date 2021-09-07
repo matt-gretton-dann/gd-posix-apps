@@ -36,7 +36,7 @@ void warn(Msg msg, Ts... args)
  *  \param  arg Argument to echo.
  *  \return     \c true to continue processing, \c false to stop processing and suppress newline.
  */
-bool echo_arg(char const* arg)
+auto echo_arg(char const* arg) -> bool
 {
   if (!DO_XSI_IMPLEMENTATION) {
     /* Non-XSI implementation is just output the args given.  */
@@ -163,7 +163,7 @@ bool echo_arg(char const* arg)
 }
 }  // namespace
 
-int main(int argc, char** argv)
+auto main(int argc, char** argv) -> int
 {
   GD::program_name(argv[0]);
   ::setlocale(LC_ALL, "");

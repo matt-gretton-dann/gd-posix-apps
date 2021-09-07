@@ -11,7 +11,7 @@
 #include <assert.h>
 #include <stdio.h>
 
-int GD::InputFile::getc()
+auto GD::InputFile::getc() -> int
 {
   assert(file_ != nullptr);
   int c;

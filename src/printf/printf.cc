@@ -84,7 +84,7 @@ enum class State {
  * If \a extended is false we allow any octal digit to start and octal sequence, and 'c' is a bad
  * escape sequence.
  */
-std::pair<State, unsigned> parse_escape_char(char c, std::ostream& os, bool extended)
+auto parse_escape_char(char c, std::ostream& os, bool extended) -> std::pair<State, unsigned>
 {
   State state = State::normal;
   int o = 0;
@@ -204,7 +204,7 @@ void process_char(FormatState const& format_state, char const* arg)
  * Will return \c State::terminated if we encounter a \\c escape string.  Otherwise will return
  * \c State::normal.
  */
-State process_escaped_string(FormatState const& format_state, char const* arg)
+auto process_escaped_string(FormatState const& format_state, char const* arg) -> State
 {
   std::ostringstream os;       /* Build output string in here.  */
   State state = State::normal; /* State for parsing output.  */
@@ -294,7 +294,7 @@ State process_escaped_string(FormatState const& format_state, char const* arg)
  *
  * Returned string has no leading zeroes, and will return an empty string if v is zero.
  */
-std::string to_based_string(uint32_t v, unsigned log2base, bool use_upper)
+auto to_based_string(uint32_t v, unsigned log2base, bool use_upper) -> std::string
 {
   assert(log2base >= 1 && "log2base must be in range [1, 4]");
   assert(log2base <= 4 && "log2base must be in range [1, 4]");
@@ -331,7 +331,7 @@ std::string to_based_string(uint32_t v, unsigned log2base, bool use_upper)
  * Will warn if \a arg isn't a pure 32-bit integer.
  *
  */
-int32_t parse_int(char const* arg)
+auto parse_int(char const* arg) -> int32_t
 {
   if (arg == nullptr) {
     return 0;
@@ -535,7 +535,7 @@ void process_hex(FormatState const& format_state, char const* arg, bool upper)
  *  \param  argv   Arguments to the format string
  *  \return        Pointer to first unused argument.
  */
-char** process_format(char const* format, char** argv)
+auto process_format(char const* format, char** argv) -> char**
 {
   assert(format != nullptr);
   assert(argv != nullptr);
@@ -768,7 +768,7 @@ char** process_format(char const* format, char** argv)
 }
 }  // namespace
 
-int main(int argc, char** argv)
+auto main(int argc, char** argv) -> int
 {
   GD::program_name(argv[0]);
   ::setlocale(LC_ALL, "");

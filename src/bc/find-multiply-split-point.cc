@@ -27,9 +27,9 @@ public:
     next();
   }
 
-  GD::Bc::Number const& get() const { return number_; }
+  auto get() const -> GD::Bc::Number const& { return number_; }
 
-  bool next()
+  auto next() -> bool
   {
     auto digit_count = dist_(rand_) % (digit_count_ * GD::Bc::Number::base_log10_);
 
@@ -69,7 +69,7 @@ void multiply(std::vector<Number>& n)
 using Time = struct timespec;
 constexpr decltype(Time::tv_nsec) sec_as_nsec = 1000000000;
 
-constexpr Time operator-(Time const& lhs, Time const& rhs)
+constexpr auto operator-(Time const& lhs, Time const& rhs) -> Time
 {
   Time result{lhs.tv_sec - rhs.tv_sec, lhs.tv_nsec - rhs.tv_nsec};
   if (rhs.tv_nsec > lhs.tv_nsec) {
@@ -79,7 +79,7 @@ constexpr Time operator-(Time const& lhs, Time const& rhs)
   return result;
 }
 
-constexpr Time operator+(Time const& lhs, Time const& rhs)
+constexpr auto operator+(Time const& lhs, Time const& rhs) -> Time
 {
   Time result{lhs.tv_sec + rhs.tv_sec, lhs.tv_nsec + lhs.tv_nsec};
   if (lhs.tv_nsec + rhs.tv_nsec > sec_as_nsec) {
@@ -89,24 +89,24 @@ constexpr Time operator+(Time const& lhs, Time const& rhs)
   return result;
 }
 
-std::ostream& operator<<(std::ostream& os, Time const& t)
+auto operator<<(std::ostream& os, Time const& t) -> std::ostream&
 {
   os << t.tv_sec << '.' << std::setw(9) << std::setfill('0') << std::right << t.tv_nsec;
   return os;
 }
 
-constexpr bool operator<(Time const& lhs, Time const& rhs)
+constexpr auto operator<(Time const& lhs, Time const& rhs) -> bool
 {
   return lhs.tv_sec < rhs.tv_sec || (lhs.tv_sec == rhs.tv_sec && lhs.tv_nsec < rhs.tv_nsec);
 }
 
-constexpr int64_t as_nsec(Time const& t)
+constexpr auto as_nsec(Time const& t) -> int64_t
 {
   return static_cast<int64_t>(t.tv_sec) * sec_as_nsec + t.tv_nsec;
 }
 
 template<typename Fn>
-Time time_run(Fn f)
+auto time_run(Fn f) -> Time
 {
   Time start, end;
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
@@ -116,7 +116,7 @@ Time time_run(Fn f)
   return end - start;
 }
 
-Number::NumType check(Number::NumType initial_digit)
+auto check(Number::NumType initial_digit) -> Number::NumType
 {
   std::vector<Number> canon_numbers;
   RandomNumberGenerator rng(initial_digit);
@@ -190,7 +190,7 @@ void output(std::ostream& os, Number::NumType value)
      << value << "\n";
 }
 
-int main(int argc, char** argv)
+auto main(int argc, char** argv) -> int
 {
   auto result = check(500);
   if (argc == 1) {

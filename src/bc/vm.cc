@@ -37,38 +37,38 @@ struct VMState
   VMState(std::ostream& out, std::ostream& err, bool save_specials);
 
   /** \brief  Get the appropriate output stream for \a stream.  */
-  std::ostream& stream(Instruction::Stream stream) const;
+  auto stream(Instruction::Stream stream) const -> std::ostream&;
 
   /** \brief  Set the input base.  */
   void ibase(Number num);
 
   /** Get the input base.  */
-  Number::NumType ibase() const;
+  auto ibase() const -> Number::NumType;
 
   /** \brief  Set the output base.  */
   void obase(Number num);
 
   /** Get the output base.  */
-  Number::NumType obase() const;
+  auto obase() const -> Number::NumType;
 
   /** \brief  Set the scale.  */
   void scale(Number num);
 
   /** Get the scale base.  */
-  Number::NumType scale() const;
+  auto scale() const -> Number::NumType;
 
   /** \brief  Get the number stored in the array element ae.  */
-  Number array_element(ArrayElement const& ae) const;
+  auto array_element(ArrayElement const& ae) const -> Number;
 
   /** \brief  Store a number in an array eleemnt.  */
   void array_element(ArrayElement const& ae, Number num);
 
-  Number const& variable(Variable v) const;
+  auto variable(Variable v) const -> Number const&;
   void variable(Variable v, Number const& num);
 
-  ArrayValues array(Array a) const;
+  auto array(Array a) const -> ArrayValues;
   void array(Array a, ArrayValues av);
-  Number::NumType array_length(Array a) const;
+  auto array_length(Array a) const -> Number::NumType;
 
   void function(Letter func, Instructions::const_iterator begin, Instructions::const_iterator end,
                 VariableMask mask, Location const& loc);
@@ -78,7 +78,7 @@ struct VMState
    *  \param  loc  Location of call.
    *  \return      Result of call.
    */
-  Number call(Letter func, Location const& loc);
+  auto call(Letter func, Location const& loc) -> Number;
 
   /** Push a new parameter pack onto the parameter stack.  */
   void push_param_pack();
@@ -95,12 +95,12 @@ struct VMState
   /** \brief  Pop a scalar param.
    *  \return Value of parameter
    */
-  Number pop_param();
+  auto pop_param() -> Number;
 
   /** \brief  Pop a scalar param.
    *  \return Value of parameter
    */
-  ArrayValues pop_param_array();
+  auto pop_param_array() -> ArrayValues;
 
   /** \brief  Validate an instruction vectore.  */
   void validate(Instructions const& instrs) const;
@@ -167,10 +167,10 @@ public:
   /** \brief  Execute the instruction pack
    *  \return Pair of returned value, and whether we should execute more instruction packs.
    */
-  std::pair<Number, bool> execute();
+  auto execute() -> std::pair<Number, bool>;
 
 private:
-  friend std::ostream& operator<<(std::ostream& os, InstructionPack const& instrs);
+  friend auto operator<<(std::ostream& os, InstructionPack const& instrs) -> std::ostream&;
 
   template<typename... Ts>
   [[noreturn]] void error(char const* func, char const* file, unsigned line, char const* test,
@@ -199,16 +199,16 @@ private:
   void execute_store();
 
   /** Execute branch instruction.  Returns index of next instruction to execute.  */
-  Index execute_branch();
+  auto execute_branch() -> Index;
 
   /** Execute branch_zero instruction.  Returns index of next instruction to execute.  */
-  Index execute_branch_zero();
+  auto execute_branch_zero() -> Index;
 
   /** Execute function_begin instruction.  Returns index of next instruction to execute.  */
-  Index execute_function_begin();
+  auto execute_function_begin() -> Index;
 
   /** Execute the return instruction. Returns value to return.  */
-  Number execute_return();
+  auto execute_return() -> Number;
 
   /** Execute push_param_mark instruction.  */
   void execute_push_param_mark();
@@ -287,16 +287,16 @@ private:
   }
 
   /** \brief  Conver the offset in the index  */
-  Index get_offset_index(Instruction::Operand const& op) const;
+  auto get_offset_index(Instruction::Operand const& op) const -> Index;
 
   /** \brief  Get the value pointed to by op relative to the current PC.  */
-  Number const& get_op_expr(Instruction::Operand const& op) const;
+  auto get_op_expr(Instruction::Operand const& op) const -> Number const&;
 
   /** \brief Get the value pointed to by op1 of the current instruction.  */
-  Number const& get_op1_expr() const;
+  auto get_op1_expr() const -> Number const&;
 
   /** \brief Get the value pointed to by op2 of the current instruction.  */
-  Number const& get_op2_expr() const;
+  auto get_op2_expr() const -> Number const&;
 
   /** Validate the result in the current pc. */
   void validate_result(Instructions::size_type i) const;
@@ -307,8 +307,8 @@ private:
   std::vector<std::optional<Result>> results_;  ///< Results of instructions.
 };
 
-std::ostream& operator<<(std::ostream& os, InstructionPack const& instrs);
-std::ostream& operator<<(std::ostream& os, InstructionPack::Result const& result);
+auto operator<<(std::ostream& os, InstructionPack const& instrs) -> std::ostream&;
+auto operator<<(std::ostream& os, InstructionPack::Result const& result) -> std::ostream&;
 
 /** Interrupt handler globals */
 sig_atomic_t have_been_interrupted = false;
@@ -346,7 +346,7 @@ GD::Bc::Details::VMState::VMState(std::ostream& out, std::ostream& err, bool sav
 {
 }
 
-std::ostream& GD::Bc::Details::VMState::stream(Instruction::Stream stream) const
+auto GD::Bc::Details::VMState::stream(Instruction::Stream stream) const -> std::ostream&
 {
   return stream == Instruction::Stream::output ? output_ : error_;
 }
@@ -372,7 +372,7 @@ void GD::Bc::Details::VMState::pop_param_pack()
   param_stack_.pop_back();
 }
 
-GD::Bc::Number GD::Bc::Details::VMState::pop_param()
+auto GD::Bc::Details::VMState::pop_param() -> GD::Bc::Number
 {
   assert_error(!param_stack_.empty(), Msg::parameter_stack_empty);
   assert_error(!param_stack_.back().empty(), Msg::parameter_pack_empty);
@@ -381,7 +381,7 @@ GD::Bc::Number GD::Bc::Details::VMState::pop_param()
   return result;
 }
 
-GD::Bc::ArrayValues GD::Bc::Details::VMState::pop_param_array()
+auto GD::Bc::Details::VMState::pop_param_array() -> GD::Bc::ArrayValues
 {
   assert_error(!param_stack_.empty(), Msg::parameter_stack_empty);
   assert_error(!param_stack_.back().empty(), Msg::parameter_pack_empty);
@@ -400,7 +400,7 @@ void GD::Bc::Details::VMState::function(Letter func, Instructions::const_iterato
     std::make_optional(std::make_tuple(std::move(instrs), mask, loc));
 }
 
-GD::Bc::Number GD::Bc::Details::VMState::call(Letter func, Location const& loc)
+auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc::Number
 {
   if (!functions_[static_cast<unsigned>(func)].has_value()) {
     Details::error(Msg::function_not_defined, func, loc.file_name(), loc.line(), loc.column());
@@ -460,7 +460,7 @@ void GD::Bc::Details::VMState::ibase(Number num)
   ibase_ = n;
 }
 
-GD::Bc::Number::NumType GD::Bc::Details::VMState::ibase() const { return ibase_; }
+auto GD::Bc::Details::VMState::ibase() const -> GD::Bc::Number::NumType { return ibase_; }
 
 void GD::Bc::Details::VMState::obase(Number num)
 {
@@ -471,11 +471,11 @@ void GD::Bc::Details::VMState::obase(Number num)
   obase_ = num.to_unsigned();
 }
 
-GD::Bc::Number::NumType GD::Bc::Details::VMState::obase() const { return obase_; }
+auto GD::Bc::Details::VMState::obase() const -> GD::Bc::Number::NumType { return obase_; }
 
 void GD::Bc::Details::VMState::scale(Number num) { scale_ = num.to_unsigned(); }
 
-GD::Bc::Number::NumType GD::Bc::Details::VMState::scale() const { return scale_; }
+auto GD::Bc::Details::VMState::scale() const -> GD::Bc::Number::NumType { return scale_; }
 
 void GD::Bc::Details::VMState::array_element(ArrayElement const& ae, Number num)
 {
@@ -488,7 +488,7 @@ void GD::Bc::Details::VMState::array_element(ArrayElement const& ae, Number num)
   a->insert_or_assign(ae.second, num);
 }
 
-GD::Bc::Number GD::Bc::Details::VMState::array_element(ArrayElement const& ae) const
+auto GD::Bc::Details::VMState::array_element(ArrayElement const& ae) const -> GD::Bc::Number
 {
   ArrayValues a = arrays_[static_cast<unsigned>(ae.first.get())];
   if (!a) {
@@ -503,7 +503,7 @@ GD::Bc::Number GD::Bc::Details::VMState::array_element(ArrayElement const& ae) c
   return it->second;
 }
 
-GD::Bc::Number const& GD::Bc::Details::VMState::variable(Variable v) const
+auto GD::Bc::Details::VMState::variable(Variable v) const -> GD::Bc::Number const&
 {
   return variables_[static_cast<unsigned>(v.get())];
 }
@@ -513,7 +513,7 @@ void GD::Bc::Details::VMState::variable(Variable v, Number const& num)
   variables_[static_cast<unsigned>(v.get())] = num;
 }
 
-GD::Bc::ArrayValues GD::Bc::Details::VMState::array(Array a) const
+auto GD::Bc::Details::VMState::array(Array a) const -> GD::Bc::ArrayValues
 {
   return arrays_[static_cast<unsigned>(a.get())];
 }
@@ -523,7 +523,7 @@ void GD::Bc::Details::VMState::array(Array a, ArrayValues av)
   arrays_[static_cast<unsigned>(a.get())] = av;
 }
 
-GD::Bc::Number::NumType GD::Bc::Details::VMState::array_length(Array a) const
+auto GD::Bc::Details::VMState::array_length(Array a) const -> GD::Bc::Number::NumType
 {
   auto arr = array(a);
   if (arr->empty()) {
@@ -566,7 +566,7 @@ GD::Bc::Details::InstructionPack::InstructionPack(VMState* vm, Instructions cons
   assert(vm_ != nullptr);
 }
 
-std::pair<GD::Bc::Number, bool> GD::Bc::Details::InstructionPack::execute()
+auto GD::Bc::Details::InstructionPack::execute() -> std::pair<GD::Bc::Number, bool>
 {
   for (; pc_ < instrs_.size(); ++pc_) {
     if (Details::have_been_interrupted) {
@@ -810,13 +810,13 @@ void GD::Bc::Details::InstructionPack::execute_store()
     *loc);
 }
 
-GD::Bc::Instruction::Index GD::Bc::Details::InstructionPack::execute_branch()
+auto GD::Bc::Details::InstructionPack::execute_branch() -> GD::Bc::Instruction::Index
 {
   assert(instrs_[pc_].opcode() == Instruction::Opcode::branch);
   return get_offset_index(instrs_[pc_].op1());
 }
 
-GD::Bc::Instruction::Index GD::Bc::Details::InstructionPack::execute_branch_zero()
+auto GD::Bc::Details::InstructionPack::execute_branch_zero() -> GD::Bc::Instruction::Index
 {
   assert(instrs_[pc_].opcode() == Instruction::Opcode::branch_zero);
   Number c = get_op1_expr();
@@ -824,7 +824,7 @@ GD::Bc::Instruction::Index GD::Bc::Details::InstructionPack::execute_branch_zero
   return c.is_zero() ? dest_idx : pc_ + 1;
 }
 
-GD::Bc::Instruction::Index GD::Bc::Details::InstructionPack::execute_function_begin()
+auto GD::Bc::Details::InstructionPack::execute_function_begin() -> GD::Bc::Instruction::Index
 {
   assert(instrs_[pc_].opcode() == Instruction::Opcode::function_begin);
   VariableMask mask = std::get<VariableMask>(instrs_[pc_].op1());
@@ -871,8 +871,8 @@ void GD::Bc::Details::InstructionPack::execute_pop_param_mark()
   vm_->pop_param_pack();
 }
 
-GD::Bc::Instruction::Index
-GD::Bc::Details::InstructionPack::get_offset_index(Instruction::Operand const& op) const
+auto GD::Bc::Details::InstructionPack::get_offset_index(Instruction::Operand const& op) const
+  -> GD::Bc::Instruction::Index
 {
   auto offset = std::get<Instruction::Offset>(op);
   /* We know the following is safe as we checked in validate().  */
@@ -880,26 +880,27 @@ GD::Bc::Details::InstructionPack::get_offset_index(Instruction::Operand const& o
   return expr_idx;
 }
 
-GD::Bc::Number const&
-GD::Bc::Details::InstructionPack::get_op_expr(Instruction::Operand const& op) const
+auto GD::Bc::Details::InstructionPack::get_op_expr(Instruction::Operand const& op) const
+  -> GD::Bc::Number const&
 {
   auto const& result = results_[get_offset_index(op)];
   assert_error(result.has_value(), Msg::empty_result, get_offset_index(op));
   return std::get<Number>(*result);
 }
 
-GD::Bc::Number const& GD::Bc::Details::InstructionPack::get_op1_expr() const
+auto GD::Bc::Details::InstructionPack::get_op1_expr() const -> GD::Bc::Number const&
 {
   return get_op_expr(instrs_[pc_].op1());
 }
 
-GD::Bc::Number const& GD::Bc::Details::InstructionPack::get_op2_expr() const
+auto GD::Bc::Details::InstructionPack::get_op2_expr() const -> GD::Bc::Number const&
 {
   return get_op_expr(instrs_[pc_].op2());
 }
 
-std::ostream& GD::Bc::Details::operator<<(std::ostream& os,
-                                          GD::Bc::Details::InstructionPack::Result const& result)
+auto GD::Bc::Details::operator<<(std::ostream& os,
+                                 GD::Bc::Details::InstructionPack::Result const& result)
+  -> std::ostream&
 {
   std::visit(Overloaded{
                [&os](std::string_view s) { os << "String(" << s << ')'; },
@@ -916,8 +917,8 @@ std::ostream& GD::Bc::Details::operator<<(std::ostream& os,
   return os;
 }
 
-std::ostream& GD::Bc::Details::operator<<(std::ostream& os,
-                                          GD::Bc::Details::InstructionPack const& instrs)
+auto GD::Bc::Details::operator<<(std::ostream& os, GD::Bc::Details::InstructionPack const& instrs)
+  -> std::ostream&
 {
   for (::size_t i = 0; i < instrs.instrs_.size(); ++i) {
     os << i;
@@ -1013,7 +1014,7 @@ GD::Bc::VM::VM(std::ostream& out, std::ostream& err, bool save_specials)
 {
 }
 
-bool GD::Bc::VM::execute(Instructions& instructions)
+auto GD::Bc::VM::execute(Instructions& instructions) -> bool
 {
   state_->validate(instructions);
   Details::InstructionPack instrs(state_, instructions);

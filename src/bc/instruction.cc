@@ -37,24 +37,24 @@ void GD::Bc::VariableMask::add(Variable v)
 
 void GD::Bc::VariableMask::add(Array a) { array_mask_ |= 1 << static_cast<unsigned>(a.get()); }
 
-bool GD::Bc::VariableMask::contains(Variable v) const
+auto GD::Bc::VariableMask::contains(Variable v) const -> bool
 {
   return (variable_mask_ & (1 << static_cast<unsigned>(v.get()))) != 0;
 }
 
-bool GD::Bc::VariableMask::contains(Array a) const
+auto GD::Bc::VariableMask::contains(Array a) const -> bool
 {
   return (array_mask_ & (1 << static_cast<unsigned>(a.get()))) != 0;
 }
 
-bool GD::Bc::VariableMask::operator==(VariableMask rhs) const
+auto GD::Bc::VariableMask::operator==(VariableMask rhs) const -> bool
 {
   return variable_mask_ == rhs.variable_mask_ && array_mask_ == rhs.array_mask_;
 }
 
-bool GD::Bc::operator!=(VariableMask lhs, VariableMask rhs) { return !(lhs == rhs); }
+auto GD::Bc::operator!=(VariableMask lhs, VariableMask rhs) -> bool { return !(lhs == rhs); }
 
-std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::VariableMask mask)
+auto GD::Bc::operator<<(std::ostream& os, GD::Bc::VariableMask mask) -> std::ostream&
 {
   bool need_comma = false;
   mask.for_each_variable([&need_comma, &os](Letter letter) {
@@ -88,9 +88,9 @@ GD::Bc::Instruction::Instruction(Opcode opcode, Operand const& op1, Operand cons
   validate_operands();
 }
 
-GD::Bc::Instruction::Opcode GD::Bc::Instruction::opcode() const { return opcode_; }
+auto GD::Bc::Instruction::opcode() const -> GD::Bc::Instruction::Opcode { return opcode_; }
 
-GD::Bc::Instruction::Operand const& GD::Bc::Instruction::op1() const
+auto GD::Bc::Instruction::op1() const -> GD::Bc::Instruction::Operand const&
 {
   assert(has_op1());
   return *op1_;
@@ -103,7 +103,7 @@ void GD::Bc::Instruction::op1(Operand const& operand)
   validate_operands();
 }
 
-GD::Bc::Instruction::Operand const& GD::Bc::Instruction::op2() const
+auto GD::Bc::Instruction::op2() const -> GD::Bc::Instruction::Operand const&
 {
   assert(has_op2());
   return *op2_;
@@ -116,14 +116,14 @@ void GD::Bc::Instruction::op2(Operand const& operand)
   validate_operands();
 }
 
-bool GD::Bc::Instruction::has_op1() const { return has_op1(opcode_); }
-bool GD::Bc::Instruction::has_op2() const { return has_op2(opcode_); }
+auto GD::Bc::Instruction::has_op1() const -> bool { return has_op1(opcode_); }
+auto GD::Bc::Instruction::has_op2() const -> bool { return has_op2(opcode_); }
 
-bool GD::Bc::Instruction::has_op1(Opcode opcode) { return op_count(opcode) >= 1; }
+auto GD::Bc::Instruction::has_op1(Opcode opcode) -> bool { return op_count(opcode) >= 1; }
 
-bool GD::Bc::Instruction::has_op2(Opcode opcode) { return op_count(opcode) >= 2; }
+auto GD::Bc::Instruction::has_op2(Opcode opcode) -> bool { return op_count(opcode) >= 2; }
 
-std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Instruction::Stream s)
+auto GD::Bc::operator<<(std::ostream& os, GD::Bc::Instruction::Stream s) -> std::ostream&
 {
   switch (s) {
   case GD::Bc::Instruction::Stream::output:
@@ -136,7 +136,7 @@ std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Instruction::Stream s
   return os;
 }
 
-std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Instruction::Opcode opcode)
+auto GD::Bc::operator<<(std::ostream& os, GD::Bc::Instruction::Opcode opcode) -> std::ostream&
 {
   switch (opcode) {
   case GD::Bc::Instruction::Opcode::eof:
@@ -260,7 +260,7 @@ std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Instruction::Opcode o
   return os;
 }
 
-unsigned GD::Bc::Instruction::op_count(Opcode opcode)
+auto GD::Bc::Instruction::op_count(Opcode opcode) -> unsigned
 {
   switch (opcode) {
   case GD::Bc::Instruction::Opcode::eof:
@@ -409,13 +409,14 @@ void GD::Bc::Instruction::validate_operands() const
   }
 }
 
-std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Instruction::Operand const& operand)
+auto GD::Bc::operator<<(std::ostream& os, GD::Bc::Instruction::Operand const& operand)
+  -> std::ostream&
 {
   std::visit([&os](auto const& o) { os << o; }, operand);
   return os;
 }
 
-std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Instruction const& instruction)
+auto GD::Bc::operator<<(std::ostream& os, GD::Bc::Instruction const& instruction) -> std::ostream&
 {
   os << instruction.opcode();
   if (instruction.has_op1()) {
@@ -427,7 +428,7 @@ std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Instruction const& in
   return os;
 }
 
-std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Instructions const& instructions)
+auto GD::Bc::operator<<(std::ostream& os, GD::Bc::Instructions const& instructions) -> std::ostream&
 {
   for (::size_t i = 0; i < instructions.size(); ++i) {
     os << i << '\t' << instructions[i] << '\n';

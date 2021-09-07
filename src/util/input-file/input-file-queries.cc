@@ -9,7 +9,7 @@
 #include <string_view>
 #include <util/file.hh>
 
-bool GD::InputFile::error() const { return file_ == nullptr || ::ferror(file_); }
-bool GD::InputFile::eof() const { return file_ == nullptr || ::feof(file_); }
+auto GD::InputFile::error() const -> bool { return file_ == nullptr || ::ferror(file_); }
+auto GD::InputFile::eof() const -> bool { return file_ == nullptr || ::feof(file_); }
 
-std::string_view GD::InputFile::filename() const { return filename_; }
+auto GD::InputFile::filename() const -> std::string_view { return filename_; }

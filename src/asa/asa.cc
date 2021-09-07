@@ -25,7 +25,7 @@ class State
 public:
   State() : first_input_(true) {}
 
-  bool output(std::string_view input_file)
+  auto output(std::string_view input_file) -> bool
   {
     GD::InputFile is(input_file);
     while (!is.eof() && !is.error()) {
@@ -67,7 +67,7 @@ private:
   bool first_input_;
 };
 
-int main(int argc, char** argv)
+auto main(int argc, char** argv) -> int
 {
   ::setlocale(LC_ALL, "");
   GD::program_name(argv[0]);

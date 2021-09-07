@@ -17,7 +17,7 @@
 
 #include "bc.hh"
 
-bool GD::Bc::operator==(Parser::ExprIndex const& lhs, Parser::ExprIndex const& rhs)
+auto GD::Bc::operator==(Parser::ExprIndex const& lhs, Parser::ExprIndex const& rhs) -> bool
 {
   if (lhs.type() != rhs.type()) {
     return false;
@@ -25,29 +25,33 @@ bool GD::Bc::operator==(Parser::ExprIndex const& lhs, Parser::ExprIndex const& r
   return lhs.type() == Parser::ExprType::missing || lhs.index() == rhs.index();
 }
 
-bool GD::Bc::operator==(Parser::ExprIndex const& lhs, Parser::Index rhs)
+auto GD::Bc::operator==(Parser::ExprIndex const& lhs, Parser::Index rhs) -> bool
 {
   return lhs.type() != Parser::ExprType::missing && lhs.index() == rhs;
 }
 
-bool GD::Bc::operator==(Parser::ExprIndex const& lhs, Parser::ExprType rhs)
+auto GD::Bc::operator==(Parser::ExprIndex const& lhs, Parser::ExprType rhs) -> bool
 {
   return lhs.type() == rhs;
 }
 
-bool GD::Bc::operator!=(Parser::ExprIndex const& lhs, Parser::ExprIndex const& rhs)
+auto GD::Bc::operator!=(Parser::ExprIndex const& lhs, Parser::ExprIndex const& rhs) -> bool
 {
   return !(lhs == rhs);
 }
 
-bool GD::Bc::operator!=(Parser::ExprIndex const& lhs, Parser::Index rhs) { return !(lhs == rhs); }
-
-bool GD::Bc::operator!=(Parser::ExprIndex const& lhs, Parser::ExprType rhs)
+auto GD::Bc::operator!=(Parser::ExprIndex const& lhs, Parser::Index rhs) -> bool
 {
   return !(lhs == rhs);
 }
 
-GD::Bc::Parser::Offset GD::Bc::operator-(Parser::ExprIndex const& lhs, Parser::ExprIndex const& rhs)
+auto GD::Bc::operator!=(Parser::ExprIndex const& lhs, Parser::ExprType rhs) -> bool
+{
+  return !(lhs == rhs);
+}
+
+auto GD::Bc::operator-(Parser::ExprIndex const& lhs, Parser::ExprIndex const& rhs)
+  -> GD::Bc::Parser::Offset
 {
   return lhs.index() - rhs.index();
 }
@@ -158,7 +162,7 @@ GD::Bc::Parser::Parser(std::unique_ptr<Lexer>&& lexer, bool interactive)
   assert(lexer_ != nullptr);
 }
 
-std::shared_ptr<GD::Bc::Instructions> GD::Bc::Parser::parse()
+auto GD::Bc::Parser::parse() -> std::shared_ptr<GD::Bc::Instructions>
 {
   /* reset everything - assuming we may be in error recovery. */
   instructions_ = std::make_shared<Instructions>();
@@ -170,7 +174,7 @@ std::shared_ptr<GD::Bc::Instructions> GD::Bc::Parser::parse()
   return instructions_;
 }
 
-bool GD::Bc::Parser::seen_quit() const noexcept { return seen_quit_; }
+auto GD::Bc::Parser::seen_quit() const noexcept -> bool { return seen_quit_; }
 
 void GD::Bc::Parser::parse_program()
 {
@@ -192,7 +196,7 @@ void GD::Bc::Parser::parse_program()
   }
 }
 
-bool GD::Bc::Parser::parse_input_item()
+auto GD::Bc::Parser::parse_input_item() -> bool
 { /* input_item : semicolon_list NEWLINE | function */
   if (lexer_->peek() == Token::Type::define) {
     parse_function();
@@ -254,7 +258,7 @@ void GD::Bc::Parser::parse_statement()
   }
 }
 
-bool GD::Bc::Parser::parse_opt_statement()
+auto GD::Bc::Parser::parse_opt_statement() -> bool
 {
   /* statement : expression | STRING | Break | Quit | Return | Return '(' return_expression ')'
                | For '(' expression ';' relational_expression ';' expression ')' statement
@@ -526,7 +530,7 @@ void GD::Bc::Parser::update_loop_exits(Index dest)
 
 void GD::Bc::Parser::pop_loop() { loop_breaks_.pop(); }
 
-bool GD::Bc::Parser::in_loop() const { return !loop_breaks_.empty(); }
+auto GD::Bc::Parser::in_loop() const -> bool { return !loop_breaks_.empty(); }
 
 void GD::Bc::Parser::parse_function()
 {
@@ -594,12 +598,13 @@ void GD::Bc::Parser::parse_function()
   in_function_ = false;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_parameter_list(ExprIndex function_begin)
+auto GD::Bc::Parser::parse_opt_parameter_list(ExprIndex function_begin) -> GD::Bc::Parser::ExprIndex
 {
   return parse_opt_define_list(function_begin, false);
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_auto_define_list(ExprIndex function_begin)
+auto GD::Bc::Parser::parse_opt_auto_define_list(ExprIndex function_begin)
+  -> GD::Bc::Parser::ExprIndex
 {
   if (lexer_->peek() != Token::Type::auto_) {
     return ExprIndex::missing();
@@ -617,8 +622,8 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_auto_define_list(ExprIndex f
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_define_list(ExprIndex function_begin,
-                                                                bool allow_duplicates)
+auto GD::Bc::Parser::parse_opt_define_list(ExprIndex function_begin, bool allow_duplicates)
+  -> GD::Bc::Parser::ExprIndex
 {
   ExprIndex expr = parse_opt_define_element(function_begin, allow_duplicates);
   if (expr == ExprType::missing) {
@@ -633,8 +638,8 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_define_list(ExprIndex functi
   return expr;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_define_list(ExprIndex function_begin,
-                                                            bool allow_duplicates)
+auto GD::Bc::Parser::parse_define_list(ExprIndex function_begin, bool allow_duplicates)
+  -> GD::Bc::Parser::ExprIndex
 {
   auto result = parse_opt_define_list(function_begin, allow_duplicates);
   if (result == ExprType::missing) {
@@ -643,8 +648,8 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_define_list(ExprIndex function_b
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_define_element(ExprIndex function_begin,
-                                                                   bool allow_duplicates)
+auto GD::Bc::Parser::parse_opt_define_element(ExprIndex function_begin, bool allow_duplicates)
+  -> GD::Bc::Parser::ExprIndex
 {
   if (lexer_->peek() != Token::Type::letter) {
     return ExprIndex::missing();
@@ -695,8 +700,8 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_define_element(ExprIndex fun
   return function_begin;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_define_element(ExprIndex function_begin,
-                                                               bool allow_duplicates)
+auto GD::Bc::Parser::parse_define_element(ExprIndex function_begin, bool allow_duplicates)
+  -> GD::Bc::Parser::ExprIndex
 {
   auto result = parse_opt_define_element(function_begin, allow_duplicates);
   if (result == ExprType::missing) {
@@ -705,7 +710,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_define_element(ExprIndex functio
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_argument_list()
+auto GD::Bc::Parser::parse_opt_argument_list() -> GD::Bc::Parser::ExprIndex
 {
   ExprIndex expr = parse_opt_expression(POPEFlags::parse_array_slices);
   if (expr == ExprType::missing) {
@@ -722,7 +727,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_argument_list()
   return expr;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_relational_expression()
+auto GD::Bc::Parser::parse_relational_expression() -> GD::Bc::Parser::ExprIndex
 {
   auto lhs = parse_expression();
 
@@ -751,18 +756,18 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_relational_expression()
   }
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_return_expression()
+auto GD::Bc::Parser::parse_return_expression() -> GD::Bc::Parser::ExprIndex
 {
   return parse_opt_expression();
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_expression(POPEFlags flags)
+auto GD::Bc::Parser::parse_opt_expression(POPEFlags flags) -> GD::Bc::Parser::ExprIndex
 {
   /* expression : assign_expression */
   return parse_opt_assign_expression(flags);
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_expression(POPEFlags flags)
+auto GD::Bc::Parser::parse_expression(POPEFlags flags) -> GD::Bc::Parser::ExprIndex
 {
   auto idx = parse_opt_expression(flags);
   if (idx == ExprType::missing) {
@@ -772,7 +777,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_expression(POPEFlags flags)
   return idx;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_assign_expression(POPEFlags flags)
+auto GD::Bc::Parser::parse_opt_assign_expression(POPEFlags flags) -> GD::Bc::Parser::ExprIndex
 {
   /* assign_expression : named_exprssion ASSIGN_OP assign_expression | add_expression
    *
@@ -863,7 +868,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_assign_expression(POPEFlags 
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_assign_expression(POPEFlags flags)
+auto GD::Bc::Parser::parse_assign_expression(POPEFlags flags) -> GD::Bc::Parser::ExprIndex
 {
   auto idx = parse_opt_assign_expression(flags);
   if (idx == ExprType::missing) {
@@ -873,12 +878,13 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_assign_expression(POPEFlags flag
   return idx;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_add_expression()
+auto GD::Bc::Parser::parse_add_expression() -> GD::Bc::Parser::ExprIndex
 {
   return parse_add_expression(parse_mul_expression());
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_add_expression(GD::Bc::Parser::ExprIndex lhs)
+auto GD::Bc::Parser::parse_add_expression(GD::Bc::Parser::ExprIndex lhs)
+  -> GD::Bc::Parser::ExprIndex
 {
   /* add_expression : mul_expression ADD_OP add_expression | mul_expression */
 
@@ -900,12 +906,13 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_add_expression(GD::Bc::Parser::E
   return lhs;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_mul_expression()
+auto GD::Bc::Parser::parse_mul_expression() -> GD::Bc::Parser::ExprIndex
 {
   return parse_mul_expression(parse_power_expression());
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_mul_expression(GD::Bc::Parser::ExprIndex lhs)
+auto GD::Bc::Parser::parse_mul_expression(GD::Bc::Parser::ExprIndex lhs)
+  -> GD::Bc::Parser::ExprIndex
 {
   /* mul_expression : power_expression MUL_OP mul_expression | power_expression */
 
@@ -930,12 +937,13 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_mul_expression(GD::Bc::Parser::E
   return lhs;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_power_expression()
+auto GD::Bc::Parser::parse_power_expression() -> GD::Bc::Parser::ExprIndex
 {
   return parse_power_expression(parse_unary_minus_expression());
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_power_expression(GD::Bc::Parser::ExprIndex lhs)
+auto GD::Bc::Parser::parse_power_expression(GD::Bc::Parser::ExprIndex lhs)
+  -> GD::Bc::Parser::ExprIndex
 {
   /* power_expression : unary_minus_expression '^' power_expression | unary_minus_expression */
 
@@ -947,7 +955,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_power_expression(GD::Bc::Parser:
   return lhs;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_unary_minus_expression()
+auto GD::Bc::Parser::parse_unary_minus_expression() -> GD::Bc::Parser::ExprIndex
 {
   /* unary_minus_expr : '-' unary_minus_expression | incr_decr_expression */
 
@@ -959,7 +967,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_unary_minus_expression()
   return parse_incr_decr_expression();
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_incr_decr_expression()
+auto GD::Bc::Parser::parse_incr_decr_expression() -> GD::Bc::Parser::ExprIndex
 {
   /* incr_decr_expression : INCR_DECR named_expression | named_expression INCR_DECR
    *                      | primary_expression.
@@ -1003,7 +1011,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_incr_decr_expression()
   return pre ? op_idx : load_idx;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_primary_expression(POPEFlags flags)
+auto GD::Bc::Parser::parse_opt_primary_expression(POPEFlags flags) -> GD::Bc::Parser::ExprIndex
 {
   bool parse_array_slices = (flags == POPEFlags::parse_array_slices);
 
@@ -1130,7 +1138,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_opt_primary_expression(POPEFlags
   }
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_primary_expression(POPEFlags flags)
+auto GD::Bc::Parser::parse_primary_expression(POPEFlags flags) -> GD::Bc::Parser::ExprIndex
 {
   auto result = parse_opt_primary_expression(flags);
   if (result == ExprType::missing) {
@@ -1139,7 +1147,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::parse_primary_expression(POPEFlags fla
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::ensure_expr_loaded(ExprIndex idx)
+auto GD::Bc::Parser::ensure_expr_loaded(ExprIndex idx) -> GD::Bc::Parser::ExprIndex
 {
   assert(idx != ExprType::missing);
   if (idx == ExprType::named || idx == ExprType::array_slice) {
@@ -1148,19 +1156,20 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::ensure_expr_loaded(ExprIndex idx)
   return idx;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_eof()
+auto GD::Bc::Parser::insert_eof() -> GD::Bc::Parser::ExprIndex
 {
   instructions_->emplace_back(Instruction::Opcode::eof);
   return ExprIndex(instructions_->size() - 1);
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_string(std::string const& s)
+auto GD::Bc::Parser::insert_string(std::string const& s) -> GD::Bc::Parser::ExprIndex
 {
   instructions_->emplace_back(Instruction::Opcode::string, s);
   return ExprIndex(instructions_->size() - 1);
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_print(ExprIndex idx, Instruction::Stream stream)
+auto GD::Bc::Parser::insert_print(ExprIndex idx, Instruction::Stream stream)
+  -> GD::Bc::Parser::ExprIndex
 {
   idx = ensure_expr_loaded(idx);
   ExprIndex result(instructions_->size());
@@ -1168,13 +1177,13 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_print(ExprIndex idx, Instructio
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_quit(unsigned exit_code)
+auto GD::Bc::Parser::insert_quit(unsigned exit_code) -> GD::Bc::Parser::ExprIndex
 {
   instructions_->emplace_back(Instruction::Opcode::quit, exit_code);
   return ExprIndex(instructions_->size() - 1);
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_load(ExprIndex idx)
+auto GD::Bc::Parser::insert_load(ExprIndex idx) -> GD::Bc::Parser::ExprIndex
 {
   assert(idx == ExprType::named || idx == ExprType::array_slice);
   ExprIndex result(instructions_->size());
@@ -1182,7 +1191,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_load(ExprIndex idx)
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_store(ExprIndex var, ExprIndex value)
+auto GD::Bc::Parser::insert_store(ExprIndex var, ExprIndex value) -> GD::Bc::Parser::ExprIndex
 {
   assert(var == ExprType::named || var == ExprType::array_slice);
   value = ensure_expr_loaded(value);
@@ -1191,8 +1200,8 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_store(ExprIndex var, ExprIndex 
   return ExprIndex(value.index(), ExprType::assignment);
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_arith(Instruction::Opcode opcode, ExprIndex lhs,
-                                                       ExprIndex rhs)
+auto GD::Bc::Parser::insert_arith(Instruction::Opcode opcode, ExprIndex lhs, ExprIndex rhs)
+  -> GD::Bc::Parser::ExprIndex
 {
   lhs = ensure_expr_loaded(lhs);
   rhs = ensure_expr_loaded(rhs);
@@ -1201,7 +1210,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_arith(Instruction::Opcode opcod
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_negate(ExprIndex expr)
+auto GD::Bc::Parser::insert_negate(ExprIndex expr) -> GD::Bc::Parser::ExprIndex
 {
   expr = ensure_expr_loaded(expr);
   ExprIndex result(instructions_->size());
@@ -1209,14 +1218,14 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_negate(ExprIndex expr)
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_number(std::string const& number)
+auto GD::Bc::Parser::insert_number(std::string const& number) -> GD::Bc::Parser::ExprIndex
 {
   ExprIndex result(instructions_->size(), ExprType::primary);
   instructions_->emplace_back(Instruction::Opcode::number, number);
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_array_element(Array v, ExprIndex element)
+auto GD::Bc::Parser::insert_array_element(Array v, ExprIndex element) -> GD::Bc::Parser::ExprIndex
 {
   element = ensure_expr_loaded(element);
   ExprIndex result(instructions_->size(), ExprType::named);
@@ -1224,42 +1233,42 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_array_element(Array v, ExprInde
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_array_slice(Array v)
+auto GD::Bc::Parser::insert_array_slice(Array v) -> GD::Bc::Parser::ExprIndex
 {
   ExprIndex result(instructions_->size(), ExprType::array_slice);
   instructions_->emplace_back(Instruction::Opcode::array, v);
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_variable(Variable v)
+auto GD::Bc::Parser::insert_variable(Variable v) -> GD::Bc::Parser::ExprIndex
 {
   ExprIndex result(instructions_->size(), ExprType::named);
   instructions_->emplace_back(Instruction::Opcode::variable, v);
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_scale()
+auto GD::Bc::Parser::insert_scale() -> GD::Bc::Parser::ExprIndex
 {
   ExprIndex result(instructions_->size(), ExprType::named);
   instructions_->emplace_back(Instruction::Opcode::scale);
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_obase()
+auto GD::Bc::Parser::insert_obase() -> GD::Bc::Parser::ExprIndex
 {
   ExprIndex result(instructions_->size(), ExprType::named);
   instructions_->emplace_back(Instruction::Opcode::obase);
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_ibase()
+auto GD::Bc::Parser::insert_ibase() -> GD::Bc::Parser::ExprIndex
 {
   ExprIndex result(instructions_->size(), ExprType::named);
   instructions_->emplace_back(Instruction::Opcode::ibase);
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_scale_expr(ExprIndex expr)
+auto GD::Bc::Parser::insert_scale_expr(ExprIndex expr) -> GD::Bc::Parser::ExprIndex
 {
   expr = ensure_expr_loaded(expr);
   ExprIndex result(instructions_->size(), ExprType::primary);
@@ -1267,7 +1276,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_scale_expr(ExprIndex expr)
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_sqrt(ExprIndex expr)
+auto GD::Bc::Parser::insert_sqrt(ExprIndex expr) -> GD::Bc::Parser::ExprIndex
 {
   expr = ensure_expr_loaded(expr);
   ExprIndex result(instructions_->size(), ExprType::primary);
@@ -1275,7 +1284,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_sqrt(ExprIndex expr)
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_abs(ExprIndex expr)
+auto GD::Bc::Parser::insert_abs(ExprIndex expr) -> GD::Bc::Parser::ExprIndex
 {
   expr = ensure_expr_loaded(expr);
   ExprIndex result(instructions_->size(), ExprType::primary);
@@ -1283,7 +1292,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_abs(ExprIndex expr)
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_length(ExprIndex expr)
+auto GD::Bc::Parser::insert_length(ExprIndex expr) -> GD::Bc::Parser::ExprIndex
 {
   if (expr != ExprType::array_slice) {
     expr = ensure_expr_loaded(expr);
@@ -1293,7 +1302,7 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_length(ExprIndex expr)
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_branch_zero(ExprIndex dest, ExprIndex cmp)
+auto GD::Bc::Parser::insert_branch_zero(ExprIndex dest, ExprIndex cmp) -> GD::Bc::Parser::ExprIndex
 {
   cmp = ensure_expr_loaded(cmp);
   ExprIndex result(instructions_->size());
@@ -1301,14 +1310,14 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_branch_zero(ExprIndex dest, Exp
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_branch(ExprIndex dest)
+auto GD::Bc::Parser::insert_branch(ExprIndex dest) -> GD::Bc::Parser::ExprIndex
 {
   ExprIndex result(instructions_->size());
   instructions_->emplace_back(Instruction::Opcode::branch, dest - result);
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_return(ExprIndex expr)
+auto GD::Bc::Parser::insert_return(ExprIndex expr) -> GD::Bc::Parser::ExprIndex
 {
   expr = ensure_expr_loaded(expr);
   ExprIndex result(instructions_->size());
@@ -1316,28 +1325,28 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_return(ExprIndex expr)
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_call(Letter v, Location const& loc)
+auto GD::Bc::Parser::insert_call(Letter v, Location const& loc) -> GD::Bc::Parser::ExprIndex
 {
   ExprIndex result(instructions_->size(), ExprType::primary);
   instructions_->emplace_back(Instruction::Opcode::call, v, loc);
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_push_param_mark()
+auto GD::Bc::Parser::insert_push_param_mark() -> GD::Bc::Parser::ExprIndex
 {
   ExprIndex result(instructions_->size());
   instructions_->emplace_back(Instruction::Opcode::push_param_mark);
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_pop_param_mark()
+auto GD::Bc::Parser::insert_pop_param_mark() -> GD::Bc::Parser::ExprIndex
 {
   ExprIndex result(instructions_->size());
   instructions_->emplace_back(Instruction::Opcode::pop_param_mark);
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_push_param(ExprIndex expr)
+auto GD::Bc::Parser::insert_push_param(ExprIndex expr) -> GD::Bc::Parser::ExprIndex
 {
   expr = ensure_expr_loaded(expr);
   ExprIndex result(instructions_->size());
@@ -1345,29 +1354,30 @@ GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_push_param(ExprIndex expr)
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_pop_param()
+auto GD::Bc::Parser::insert_pop_param() -> GD::Bc::Parser::ExprIndex
 {
   ExprIndex result(instructions_->size());
   instructions_->emplace_back(Instruction::Opcode::pop_param);
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_pop_param_array()
+auto GD::Bc::Parser::insert_pop_param_array() -> GD::Bc::Parser::ExprIndex
 {
   ExprIndex result(instructions_->size());
   instructions_->emplace_back(Instruction::Opcode::pop_param_array);
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_function_begin(VariableMask mask,
-                                                                Location const& loc)
+auto GD::Bc::Parser::insert_function_begin(VariableMask mask, Location const& loc)
+  -> GD::Bc::Parser::ExprIndex
 {
   ExprIndex result(instructions_->size());
   instructions_->emplace_back(Instruction::Opcode::function_begin, mask, loc);
   return result;
 }
 
-GD::Bc::Parser::ExprIndex GD::Bc::Parser::insert_function_end(Letter letter, ExprIndex begin)
+auto GD::Bc::Parser::insert_function_end(Letter letter, ExprIndex begin)
+  -> GD::Bc::Parser::ExprIndex
 {
   ExprIndex result(instructions_->size());
   instructions_->emplace_back(Instruction::Opcode::function_end, letter, begin - result);

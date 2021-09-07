@@ -16,7 +16,7 @@ void report_error(GD::Cat::Msg msg, Ts... args)
             << GD::Cat::Messages::get().format(GD::Cat::Set::cat, msg, args...) << '\n';
 }
 
-bool do_cat(std::string_view fname, bool unbuffered)
+auto do_cat(std::string_view fname, bool unbuffered) -> bool
 {
   GD::InputFile fp(fname);
   if (fp.error()) {
@@ -46,7 +46,7 @@ bool do_cat(std::string_view fname, bool unbuffered)
   } while (true);
 }
 
-int main(int argc, char** argv)
+auto main(int argc, char** argv) -> int
 {
   ::setlocale(LC_ALL, "");
   GD::program_name(argv[0]);

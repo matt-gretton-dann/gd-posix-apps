@@ -65,7 +65,7 @@ void execute(GD::Bc::VM& vm, std::unique_ptr<GD::Bc::Reader>&& r)
 }
 }  // namespace
 
-int main(int argc, char** argv)
+auto main(int argc, char** argv) -> int
 {
   ::setlocale(LC_ALL, "");
   GD::program_name(argv[0]);

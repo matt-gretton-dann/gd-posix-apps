@@ -20,7 +20,7 @@ class ProgramName
 {
 public:
   /** Get the static program name object.  */
-  static ProgramName& get()
+  static auto get() -> ProgramName&
   {
     static ProgramName pn;
     return pn;
@@ -28,7 +28,7 @@ public:
 
   /** \brief Get the program name.
    */
-  std::string_view program_name() const noexcept { return name_; }
+  auto program_name() const noexcept -> std::string_view { return name_; }
 
   /** \brief Set the program name.
    *
@@ -63,6 +63,6 @@ private:
 };
 }  // namespace
 
-std::string_view GD::program_name() { return ProgramName::get().program_name(); }
+auto GD::program_name() -> std::string_view { return ProgramName::get().program_name(); }
 
 void GD::program_name(std::string_view argv0) { ProgramName::get().program_name(argv0); }

@@ -117,30 +117,33 @@ public:
   Token(Type type, int32_t number) : Token(type, number, std::to_string(number)) {}
 
   /** \brief  Get the token type.  */
-  Type type() const noexcept { return type_; }
+  auto type() const noexcept -> Type { return type_; }
 
   /** \brief  Get the number stored in this token.  */
-  int32_t number() const noexcept
+  auto number() const noexcept -> int32_t
   {
     assert(type_ == Type::number);
     return number_;
   }
 
   /** \brief  Get the string for the token.  */
-  std::string const& string() const noexcept { return str_; }
+  auto string() const noexcept -> std::string const& { return str_; }
 
   /** \brief  Get the precedence of this token.  Lower numbers mean a higher precedence.  */
-  unsigned precedence() const noexcept { return actions_[static_cast<size_t>(type_)].precedence_; }
+  auto precedence() const noexcept -> unsigned
+  {
+    return actions_[static_cast<size_t>(type_)].precedence_;
+  }
 
   /** \brief  Apply this token to the two tokens passed in.  */
-  Token apply(Token const& lhs, Token const& rhs) const noexcept
+  auto apply(Token const& lhs, Token const& rhs) const noexcept -> Token
   {
     assert(actions_[static_cast<size_t>(type_)].apply_ != nullptr);
     return actions_[static_cast<size_t>(type_)].apply_(lhs, rhs);
   }
 
   /** \brief  Is this token 0 or an empty string?  */
-  bool null_or_zero() const noexcept
+  auto null_or_zero() const noexcept -> bool
   {
     if (type_ == Token::Type::number) {
       return number_ == 0;
@@ -176,7 +179,7 @@ using TokenIt = std::vector<Token>::const_iterator;
  * We do this by hand because there actually isn't a sensible C/C++ parse function that guarantees
  * an int32_t result.
  */
-Token tokenise_number(char const* token)
+auto tokenise_number(char const* token) -> Token
 {
   int32_t number = 0;
   int32_t sign = 1;
@@ -210,7 +213,7 @@ Token tokenise_number(char const* token)
  * We manually iterate through up to the first three characters to identify what type of token we
  * have.
  */
-Token tokenise(char const* token)
+auto tokenise(char const* token) -> Token
 {
   Token::Type type = Token::Type::string; /* What we think the token type is currently.  */
 
@@ -337,7 +340,7 @@ Token tokenise(char const* token)
  *  \param  argv Argument vector.
  *  \return      Vector of tokens.
  */
-Tokens tokenise(int argc, char** argv)
+auto tokenise(int argc, char** argv) -> Tokens
 {
   assert(argc >= 0);
   assert(argv != nullptr);
@@ -355,7 +358,7 @@ Tokens tokenise(int argc, char** argv)
   return result;
 }
 
-Token do_match(Token const& lhs, Token const& rhs)
+auto do_match(Token const& lhs, Token const& rhs) -> Token
 {
   std::string res = rhs.string();
   if (res.size() > 0 && res[0] != '^') {
@@ -377,7 +380,7 @@ Token do_match(Token const& lhs, Token const& rhs)
   }
 }
 
-Token do_multiply(Token const& lhs, Token const& rhs)
+auto do_multiply(Token const& lhs, Token const& rhs) -> Token
 {
   if (lhs.type() != Token::Type::number) {
     invalid_expr(Msg::expected_number_lhs, '*', lhs.string());
@@ -393,7 +396,7 @@ Token do_multiply(Token const& lhs, Token const& rhs)
   return Token(Token::Type::number, lhs.number() * rhs.number());
 }
 
-Token do_divide(Token const& lhs, Token const& rhs)
+auto do_divide(Token const& lhs, Token const& rhs) -> Token
 {
   if (lhs.type() != Token::Type::number) {
     invalid_expr(Msg::expected_number_lhs, '/', lhs.string());
@@ -405,7 +408,7 @@ Token do_divide(Token const& lhs, Token const& rhs)
   return Token(Token::Type::number, lhs.number() / rhs.number());
 }
 
-Token do_modulo(Token const& lhs, Token const& rhs)
+auto do_modulo(Token const& lhs, Token const& rhs) -> Token
 {
   if (lhs.type() != Token::Type::number) {
     invalid_expr(Msg::expected_number_lhs, '%', lhs.string());
@@ -417,7 +420,7 @@ Token do_modulo(Token const& lhs, Token const& rhs)
   return Token(Token::Type::number, lhs.number() % rhs.number());
 }
 
-Token do_add(Token const& lhs, Token const& rhs)
+auto do_add(Token const& lhs, Token const& rhs) -> Token
 {
   if (lhs.type() != Token::Type::number) {
     invalid_expr(Msg::expected_number_lhs, '+', lhs.string());
@@ -436,7 +439,7 @@ Token do_add(Token const& lhs, Token const& rhs)
   return Token(Token::Type::number, lhs.number() + rhs.number());
 }
 
-Token do_subtract(Token const& lhs, Token const& rhs)
+auto do_subtract(Token const& lhs, Token const& rhs) -> Token
 {
   if (lhs.type() != Token::Type::number) {
     invalid_expr(Msg::expected_number_lhs, '-', lhs.string());
@@ -456,7 +459,7 @@ Token do_subtract(Token const& lhs, Token const& rhs)
 }
 
 template<typename Fn>
-Token do_comparison(Token const& lhs, Token const& rhs, Fn comparitor)
+auto do_comparison(Token const& lhs, Token const& rhs, Fn comparitor) -> Token
 {
   int comparison;
   if (lhs.type() == Token::Type::number && rhs.type() == Token::Type::number) {
@@ -477,7 +480,7 @@ Token do_comparison(Token const& lhs, Token const& rhs, Fn comparitor)
   return Token(Token::Type::number, comparitor(comparison) ? 1 : 0);
 }
 
-Token do_and(Token const& lhs, Token const& rhs)
+auto do_and(Token const& lhs, Token const& rhs) -> Token
 {
   if (!lhs.null_or_zero() && !rhs.null_or_zero()) {
     return lhs;
@@ -487,7 +490,7 @@ Token do_and(Token const& lhs, Token const& rhs)
   }
 }
 
-Token do_or(Token const& lhs, Token const& rhs)
+auto do_or(Token const& lhs, Token const& rhs) -> Token
 {
   if (!lhs.null_or_zero()) {
     return lhs;
@@ -500,9 +503,9 @@ Token do_or(Token const& lhs, Token const& rhs)
   }
 }
 
-Token parse(TokenIt& begin, TokenIt end);
+auto parse(TokenIt& begin, TokenIt end) -> Token;
 
-Token parse_primary(TokenIt& begin, TokenIt end)
+auto parse_primary(TokenIt& begin, TokenIt end) -> Token
 {
   if (begin == end) {
     invalid_expr(Msg::expected_token);
@@ -511,7 +514,7 @@ Token parse_primary(TokenIt& begin, TokenIt end)
   return *(begin++);
 }
 
-Token parse_parens(TokenIt& begin, TokenIt end)
+auto parse_parens(TokenIt& begin, TokenIt end) -> Token
 {
   if (begin != end) {
     if (begin->type() == Token::Type::lparens) {
@@ -570,7 +573,7 @@ Token::Actions Token::actions_[] = {
   {1, do_match},     // match
 };
 
-Token parse_expr(TokenIt& begin, TokenIt end, unsigned int precedence)
+auto parse_expr(TokenIt& begin, TokenIt end, unsigned int precedence) -> Token
 {
   if (precedence == 0) {
     return parse_parens(begin, end);
@@ -585,10 +588,10 @@ Token parse_expr(TokenIt& begin, TokenIt end, unsigned int precedence)
   return lhs;
 }
 
-Token parse(TokenIt& begin, TokenIt end) { return parse_expr(begin, end, 6); }
+auto parse(TokenIt& begin, TokenIt end) -> Token { return parse_expr(begin, end, 6); }
 }  // namespace
 
-int main(int argc, char** argv)
+auto main(int argc, char** argv) -> int
 {
   ::setlocale(LC_ALL, "");
   GD::program_name(argv[0]);

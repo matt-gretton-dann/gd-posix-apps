@@ -7,7 +7,7 @@
 #include <format>
 #include <iostream>
 
-int main(int argc, char *argv) {
+auto main(int argc, char *argv) -> int {
   for (int i = 0; i < argc; ++i) {
     std::cout << std::format("ARGV[{}] = {}\n", i, argv[i]);
   }

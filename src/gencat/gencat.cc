@@ -98,10 +98,10 @@ public:
   }
 
   /** \brief  Get the filename. */
-  std::string const& filename() const noexcept { return filename_; }
+  auto filename() const noexcept -> std::string const& { return filename_; }
 
   /** \brief  Get the current location. */
-  std::uint64_t loc() const noexcept { return loc_; }
+  auto loc() const noexcept -> std::uint64_t { return loc_; }
 
   /** \brief  Set the location. */
   void loc(std::uint64_t l) noexcept { loc_ = l; }
@@ -140,7 +140,7 @@ public:
    * fmt::format.
    */
   template<typename... Ts>
-  std::string warning(Gencat::Msg msg, Ts... args) const
+  auto warning(Gencat::Msg msg, Ts... args) const -> std::string
   {
     auto warning = Gencat::Messages::get().get(Gencat::Set::generic, Gencat::Msg::warning);
     std::string result = ::fmt::format("{}:{}:{}: ", filename_, loc_, warning);
@@ -165,7 +165,7 @@ private:
  * type conversion.
  */
 template<typename T, std::enable_if_t<std::is_integral<T>::value, bool> = true>
-T read(std::uint8_t const* data)
+auto read(std::uint8_t const* data) -> T
 {
   // Fast path - no endian conversion, and data is appropriately aligned.
   if constexpr (::bit::endian::native == ::bit::endian::little) {
@@ -446,7 +446,7 @@ private:
    *  \return     Escaped string
    *  \throws     runtime_errors if the string is not properly escaped.
    */
-  static std::string parse_escaped_string(std::string const& s, Location& loc)
+  static auto parse_escaped_string(std::string const& s, Location& loc) -> std::string
   {
     enum class State { normal, backslash, octal1, octal2 };
     std::string result;
@@ -612,7 +612,7 @@ private:
    *  \param  offset Offset of table entry within data.
    *  \return        A table entry.
    */
-  TableEntry read_table_entry(Location& loc, Data const& data, Offset offset) const
+  auto read_table_entry(Location& loc, Data const& data, Offset offset) const -> TableEntry
   {
     if (offset > data.size() - table_entry_size) {
       loc.loc(offset);
@@ -652,7 +652,8 @@ private:
    *  \param  te     Message table entry giving location of string to read.
    *  \return        Read string.
    */
-  std::string read_string(Location& loc, Data const& data, Id set_id, TableEntry const& te) const
+  auto read_string(Location& loc, Data const& data, Id set_id, TableEntry const& te) const
+    -> std::string
   {
     loc.loc(te.offset);
     if (te.offset >= data.size()) {
@@ -698,7 +699,7 @@ private:
 };
 }  // namespace
 
-int main(int argc, char** argv)
+auto main(int argc, char** argv) -> int
 try {
   ::setlocale(LC_ALL, "");
 
