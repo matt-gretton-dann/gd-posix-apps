@@ -151,7 +151,6 @@ auto for_each_file(It begin, It end, Fn apply_fn, FEFFlags flags = FEFFlags::emp
   }
   else {
     while (begin != end) {
-      assert(*begin != nullptr);
       success &= apply_fn(*begin++);
     }
   }
