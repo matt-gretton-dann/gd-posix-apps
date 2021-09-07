@@ -63,10 +63,10 @@ else()
 set(CMAKE_CXX_CLANG_TIDY
   "${ClangTidy_COMMAND}"
   "-p=${CMAKE_BINARY_DIR}"
-  "--header-filter=/(src|libgdsup)/.*")
+  "--header-filter=/(src|libgdsup)/.*(([^.]h)|(\.[^h]))$")
 set(CMAKE_C_CLANG_TIDY
   "${ClangTidy_COMMAND}"
   "-checks=-cppcoreguidelines-*"
   "-p=${CMAKE_BINARY_DIR}"
-  "--header-filter=/(src|libgdsup)/.*")
+  "--header-filter=/(src|libgdsup)/.*$")
 endif()
