@@ -212,6 +212,8 @@ endfunction()
 add_library(gdsup)
 set_property(TARGET gdsup PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
 set_property(TARGET gdsup PROPERTY CXX_STANDARD_REQUIRED ON)
+target_compile_definitions(gdsup PRIVATE
+                           "-D__STDC_WANT_LIB_EXT1__=1")
 target_include_directories(gdsup PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_include_directories(gdsup PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_include_directories(gdsup PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
