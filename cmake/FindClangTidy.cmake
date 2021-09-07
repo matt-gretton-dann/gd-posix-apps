@@ -66,6 +66,7 @@ set(CMAKE_CXX_CLANG_TIDY
   "--header-filter=/(src|libgdsup)/.*")
 set(CMAKE_C_CLANG_TIDY
   "${ClangTidy_COMMAND}"
+  "-checks=-cppcoreguidelines-*"
   "-p=${CMAKE_BINARY_DIR}"
   "--header-filter=/(src|libgdsup)/.*")
 endif()
