@@ -4,8 +4,8 @@
  *          SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _SRC_INCLUDE_UTIL_UTILS_HH_INCLUDED
-#define _SRC_INCLUDE_UTIL_UTILS_HH_INCLUDED
+#ifndef UTIL_UTILS_HH
+#define UTIL_UTILS_HH
 
 #include "gd/nl_types.h"
 
@@ -68,4 +68,4 @@ private:
 };
 
 }  // namespace GD
-#endif  // _SRC_INCLUDE_UTIL_UTILS_HH_INCLUDED
+#endif  // UTIL_UTILS_HH
