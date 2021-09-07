@@ -58,14 +58,14 @@ public:
   }
 
   Messages(Messages const&) = delete;
-  Messages& operator=(Messages const&) = delete;
+  auto operator=(Messages const&) -> Messages& = delete;
   Messages(Messages&&) = delete;
-  Messages& operator=(Messages&&) = delete;
+  auto operator=(Messages&&) -> Messages& = delete;
 
   /** \brief  Get the one instance of this class.
    *  \return Reference to the Messages class.
    */
-  static Messages const& get()
+  static auto get() -> Messages const&
   {
     static Messages the_messages;
     return the_messages;
@@ -78,7 +78,7 @@ public:
    * This function is not necessarily thread safe, and future calls to any \c Messages function may
    * invalidate the returned string view.
    */
-  std::string_view get(typename Data::MessageEnum msg) const noexcept
+  auto get(typename Data::MessageEnum msg) const noexcept -> std::string_view
   {
     return get(Data::default_set_, msg);
   }
@@ -91,7 +91,8 @@ public:
    * This function is not necessarily thread safe, and future calls to any \c Messages function may
    * invalidate the returned string view.
    */
-  std::string_view get(typename Data::SetEnum set, typename Data::MessageEnum msg) const noexcept
+  auto get(typename Data::SetEnum set, typename Data::MessageEnum msg) const noexcept
+    -> std::string_view
   {
     auto val =
       Data::messages_[static_cast<std::size_t>(set) - 1][static_cast<std::size_t>(msg) - 1];
@@ -109,7 +110,10 @@ public:
    *
    * This function is not necessarily thread safe.
    */
-  std::string get_copy(typename Data::MessageEnum msg) const { return std::string(get(msg)); }
+  auto get_copy(typename Data::MessageEnum msg) const -> std::string
+  {
+    return std::string(get(msg));
+  }
 
   /** \brief      Get a std::string copy of the message associated with (\a set, \a msg) pair.
    *  \param  set Set ID
@@ -118,7 +122,7 @@ public:
    *
    * This function is not necessarily thread safe.
    */
-  std::string get_copy(typename Data::SetEnum set, typename Data::MessageEnum msg) const
+  auto get_copy(typename Data::SetEnum set, typename Data::MessageEnum msg) const -> std::string
   {
     return std::string(get(set, msg));
   }
@@ -131,7 +135,7 @@ public:
    * This function is not necessarily thread safe.
    */
   template<typename... Ts>
-  std::string format(typename Data::MessageEnum msg, Ts... args) const
+  auto format(typename Data::MessageEnum msg, Ts... args) const -> std::string
   {
     return format(Data::default_set_, msg, args...);
   }
@@ -145,7 +149,8 @@ public:
    * This function is not necessarily thread safe.
    */
   template<typename... Ts>
-  std::string format(typename Data::SetEnum set, typename Data::MessageEnum msg, Ts... args) const
+  auto format(typename Data::SetEnum set, typename Data::MessageEnum msg, Ts... args) const
+    -> std::string
   {
     return fmt::format(get(set, msg), args...);
   }

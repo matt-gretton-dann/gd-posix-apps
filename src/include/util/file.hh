@@ -48,9 +48,9 @@ public:
   ~InputFile();
 
   InputFile(InputFile const&) = delete;
-  InputFile& operator=(InputFile const&) = delete;
+  auto operator=(InputFile const&) -> InputFile& = delete;
   InputFile(InputFile&&) = delete;
-  InputFile& operator=(InputFile&&) = delete;
+  auto operator=(InputFile&&) -> InputFile& = delete;
 
   /** \brief  Get the next character in the stream.
    *  \return EOF on end-of-file or error.
@@ -59,27 +59,27 @@ public:
    *
    * Returnns EOF on error or end-of-file.
    */
-  int getc();
+  auto getc() -> int;
 
   /** \brief  Get a line of text.  Strips off the \n terminator.
    *  \return Found line.
    *
    * On error, sets error flag.  On EOF set EOF flag.  In both cases may return valid string.
    */
-  std::string getline();
+  auto getline() -> std::string;
 
   /** \brief  Is the error flag set on the stream?
    *  \return \c true if the error flag is set.
    */
-  bool error() const;
+  auto error() const -> bool;
 
   /** \brief  Is the EOF flag set on the stream?
    *  \return \c true iff the end-of-file flag is set.
    */
-  bool eof() const;
+  auto eof() const -> bool;
 
   /** \brief  Get the printable name of the file.  */
-  std::string_view filename() const;
+  auto filename() const -> std::string_view;
 
   enum class Buffering { none = _IONBF, line = _IOLBF, full = _IOFBF };
   /** \brief  Set the buffering type to no buffering.  */
@@ -115,13 +115,13 @@ enum class FEFFlags {
   empty_stdin = 1,  ///< No files passed to for_each_file() means use standard input.
 };
 
-inline FEFFlags operator|(FEFFlags l, FEFFlags r)
+inline auto operator|(FEFFlags l, FEFFlags r) -> FEFFlags
 {
   using UT = std::underlying_type<FEFFlags>::type;
   return static_cast<FEFFlags>(static_cast<UT>(l) | static_cast<UT>(r));
 }
 
-inline FEFFlags operator&(FEFFlags l, FEFFlags r)
+inline auto operator&(FEFFlags l, FEFFlags r) -> FEFFlags
 {
   using UT = std::underlying_type<FEFFlags>::type;
   return static_cast<FEFFlags>(static_cast<UT>(l) & static_cast<UT>(r));
@@ -143,7 +143,8 @@ inline FEFFlags operator&(FEFFlags l, FEFFlags r)
  * succeeded or not.
  */
 template<typename Fn>
-bool for_each_file(int argc, char** argv, Fn apply_fn, FEFFlags flags = FEFFlags::empty_stdin)
+auto for_each_file(int argc, char** argv, Fn apply_fn, FEFFlags flags = FEFFlags::empty_stdin)
+  -> bool
 {
   assert(argv != nullptr);
   assert(argc >= 0);

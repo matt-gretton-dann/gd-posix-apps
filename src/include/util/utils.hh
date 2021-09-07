@@ -20,7 +20,7 @@ void program_name(std::string_view argv0);
 /** \brief  Get the program name.
  *  \return Program name.
  */
-std::string_view program_name();
+auto program_name() -> std::string_view;
 
 /** \brief     Class to provide 'overloaded' lambdas.
  *  \tparam Ts Lambdas to combine
@@ -60,8 +60,8 @@ public:
   {
   }
 
-  T& get() { return t_; }
-  T const& get() const { return t_; }
+  auto get() -> T& { return t_; }
+  auto get() const -> T const& { return t_; }
 
 private:
   T t_;

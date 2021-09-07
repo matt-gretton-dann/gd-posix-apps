@@ -26,7 +26,7 @@ namespace GD::Bc {
 
 /** \brief  calculate 10 ^ \a pow. */
 template<typename NumType>
-constexpr NumType pow10(NumType pow)
+constexpr auto pow10(NumType pow) -> NumType
 {
   NumType r = 1;
   while (pow-- > 0) {
@@ -110,15 +110,15 @@ public:
 
   ~BasicDigits() = default;
   BasicDigits(BasicDigits const&) = default;
-  BasicDigits& operator=(BasicDigits const&) = default;
+  auto operator=(BasicDigits const&) -> BasicDigits& = default;
   BasicDigits(BasicDigits&&) = default;
-  BasicDigits& operator=(BasicDigits&&) = default;
+  auto operator=(BasicDigits&&) -> BasicDigits& = default;
 
   /** \brief  Reset the digits - sets us to zero. */
   void reset() { digits_.reset(); }
 
   /** \brief Is this zero?  */
-  bool is_zero() const
+  auto is_zero() const -> bool
   {
     /* We're zero if we have no digits_ vector or all the digits in it are zero.  */
     if (!digits_) {
@@ -134,7 +134,7 @@ public:
   }
 
   /** Is this an even number? */
-  bool is_even() const
+  auto is_even() const -> bool
   {
     if (!digits_) {
       return true;
@@ -143,7 +143,7 @@ public:
     return ((*digits_)[0] & 1) == 0;
   }
 
-  Details::ComparisonResult compare(BasicDigits const& rhs, NumType scale) const
+  auto compare(BasicDigits const& rhs, NumType scale) const -> Details::ComparisonResult
   {
     assert(digits_);
     assert(rhs.digits_);
@@ -171,7 +171,7 @@ public:
    *  * to_unsigned_error_too_large_: Number too large to fit in unisgned type.
    *  * to_unsigned_error_fractional_: Number had a fractional component.
    */
-  NumType to_unsigned(NumType scale) const
+  auto to_unsigned(NumType scale) const -> NumType
   {
     if (!digits_) {
       return 0;
@@ -359,7 +359,7 @@ public:
   /** \brief  Get the number of significant digits.
    *  \return Number of significant digits
    */
-  NumType length() const
+  auto length() const -> NumType
   {
     if (!digits_) {
       return 1;
@@ -431,7 +431,7 @@ public:
    *
    * If *this (on entry) is less than sub * 10 ^ scale we return true.  Otherwise we return false.
    */
-  bool sub(NumType s, NumType scale)
+  auto sub(NumType s, NumType scale) -> bool
   {
     BasicDigits sub_d(s);
     return sub(sub_d, scale);
@@ -444,7 +444,7 @@ public:
    *
    * If *this (on entry) is less than sub * 10 ^ scale we return true.  Otherwise we return false.
    */
-  bool sub(BasicDigits const& rhs, NumType scale)
+  auto sub(BasicDigits const& rhs, NumType scale) -> bool
   {
     copy_on_write();
 
@@ -589,7 +589,7 @@ public:
    *
    * We assume that the result is less than base_.
    */
-  NumType mul_mod_pow10(NumType mul, NumType scale)
+  auto mul_mod_pow10(NumType mul, NumType scale) -> NumType
   {
     if (!digits_) {
       return 0;
@@ -745,7 +745,7 @@ public:
   }
 
   /** \brief  Divide by the number \a div.  Returns remainder.  */
-  NumType divide(NumType div)
+  auto divide(NumType div) -> NumType
   {
     copy_on_write();
 
@@ -799,7 +799,7 @@ public:
    *  \return       {whole, frac} pair. \c whole has effective scale 0, and \c frac has
    * effective scale \a scale.
    */
-  std::pair<BasicDigits, BasicDigits> split_frac(NumType scale) const
+  auto split_frac(NumType scale) const -> std::pair<BasicDigits, BasicDigits>
   {
     BasicDigits whole;
     BasicDigits frac;
@@ -884,7 +884,7 @@ private:
    *  \param lspace Do we need leading space (default true)
    *  \return      String representation of number.
    */
-  static std::string to_string(NumType num, NumType obase, bool lspace = true)
+  static auto to_string(NumType num, NumType obase, bool lspace = true) -> std::string
   {
     assert(num < obase);
     static char const* nums = "0123456789ABCDEF";
@@ -952,8 +952,8 @@ private:
     }
   }
 
-  typename DigitVector::iterator ensure_it_valid(typename DigitVector::iterator it,
-                                                 std::shared_ptr<DigitVector> digits)
+  auto ensure_it_valid(typename DigitVector::iterator it, std::shared_ptr<DigitVector> digits) ->
+    typename DigitVector::iterator
   {
     if (it == digits->end()) {
       it = digits->insert(it, 0);
@@ -976,7 +976,7 @@ private:
    * nullptr before calling.
    */
   template<typename Fn>
-  NumType for_each(BasicDigits const& rhs, NumType scale, Fn fn, NumType initial_carry = 0)
+  auto for_each(BasicDigits const& rhs, NumType scale, Fn fn, NumType initial_carry = 0) -> NumType
   {
     assert(digits_ && rhs.digits_);
 
@@ -1007,10 +1007,10 @@ private:
     return static_cast<NumType>(carry);
   }
 
-  static BasicDigits multiply(typename DigitVector::const_iterator lhs_begin,
-                              typename DigitVector::const_iterator lhs_end,
-                              typename DigitVector::const_iterator rhs_begin,
-                              typename DigitVector::const_iterator rhs_end)
+  static auto multiply(typename DigitVector::const_iterator lhs_begin,
+                       typename DigitVector::const_iterator lhs_end,
+                       typename DigitVector::const_iterator rhs_begin,
+                       typename DigitVector::const_iterator rhs_end) -> BasicDigits
   {
     if (std::distance(lhs_begin, lhs_end) <= multiply_split_point_ ||
         std::distance(rhs_begin, rhs_end) <= multiply_split_point_) {
@@ -1019,10 +1019,10 @@ private:
     return multiply_karatsuba(lhs_begin, lhs_end, rhs_begin, rhs_end);
   }
 
-  static BasicDigits multiply_basic(typename DigitVector::const_iterator lhs_begin,
-                                    typename DigitVector::const_iterator lhs_end,
-                                    typename DigitVector::const_iterator rhs_begin,
-                                    typename DigitVector::const_iterator rhs_end)
+  static auto multiply_basic(typename DigitVector::const_iterator lhs_begin,
+                             typename DigitVector::const_iterator lhs_end,
+                             typename DigitVector::const_iterator rhs_begin,
+                             typename DigitVector::const_iterator rhs_end) -> BasicDigits
   {
     /* Handle the case of nothing to multiply by - equivalent to multiplying by zero.  */
     if (lhs_begin == lhs_end || rhs_begin == rhs_end) {
@@ -1074,10 +1074,10 @@ private:
     return result;
   }
 
-  static BasicDigits multiply_karatsuba(typename DigitVector::const_iterator lhs_begin,
-                                        typename DigitVector::const_iterator lhs_end,
-                                        typename DigitVector::const_iterator rhs_begin,
-                                        typename DigitVector::const_iterator rhs_end)
+  static auto multiply_karatsuba(typename DigitVector::const_iterator lhs_begin,
+                                 typename DigitVector::const_iterator lhs_end,
+                                 typename DigitVector::const_iterator rhs_begin,
+                                 typename DigitVector::const_iterator rhs_end) -> BasicDigits
   {
     assert(std::distance(lhs_begin, lhs_end) > multiply_split_point_);
     assert(std::distance(lhs_begin, lhs_end) > multiply_split_point_);
@@ -1114,10 +1114,10 @@ private:
     return result;
   }
 
-  static BasicDigits add(typename DigitVector::const_iterator lhs_begin,
-                         typename DigitVector::const_iterator lhs_end,
-                         typename DigitVector::const_iterator rhs_begin,
-                         typename DigitVector::const_iterator rhs_end)
+  static auto add(typename DigitVector::const_iterator lhs_begin,
+                  typename DigitVector::const_iterator lhs_end,
+                  typename DigitVector::const_iterator rhs_begin,
+                  typename DigitVector::const_iterator rhs_end) -> BasicDigits
   {
     BasicDigits result;
     result.copy_on_write();
@@ -1230,9 +1230,9 @@ public:
   BasicNumber() : digits_(), sign_(Sign::positive), scale_(0) {}
   ~BasicNumber() = default;
   BasicNumber(BasicNumber const&) = default;
-  BasicNumber& operator=(BasicNumber const&) = default;
+  auto operator=(BasicNumber const&) -> BasicNumber& = default;
   BasicNumber(BasicNumber&&) = default;
-  BasicNumber& operator=(BasicNumber&&) = default;
+  auto operator=(BasicNumber&&) -> BasicNumber& = default;
 
   /** \brief       Construct a number.
    *  \param s     String representing the number.
@@ -1318,7 +1318,7 @@ public:
     digits_.mac(base_, value);
   }
 
-  NumType to_unsigned() const
+  auto to_unsigned() const -> NumType
   {
     if (sign_ == Sign::negative) {
       Details::error(Msg::number_to_unsigned_failed_negative, *this);
@@ -1380,10 +1380,10 @@ public:
   }
 
   /* Get the scale of the number.  */
-  NumType scale() const { return scale_; }
+  auto scale() const -> NumType { return scale_; }
 
   /* Get the number of significant digits.  */
-  NumType length() const
+  auto length() const -> NumType
   {
     if (digits_.is_zero()) {
       return std::max(NumType(1), scale());
@@ -1685,25 +1685,25 @@ public:
   /** \brief  Are we equal to zero?
    *  \return True iff equal to zero.
    */
-  bool is_zero() const { return digits_.is_zero(); }
+  auto is_zero() const -> bool { return digits_.is_zero(); }
 
-  bool operator==(BasicNumber const& rhs) const
+  auto operator==(BasicNumber const& rhs) const -> bool
   {
     return compare(rhs) == Details::ComparisonResult::equality;
   }
 
-  bool operator<(BasicNumber const& rhs) const
+  auto operator<(BasicNumber const& rhs) const -> bool
   {
     return compare(rhs) == Details::ComparisonResult::less_than;
   }
 
-  bool operator>(BasicNumber const& rhs) const
+  auto operator>(BasicNumber const& rhs) const -> bool
   {
     return compare(rhs) == Details::ComparisonResult::greater_than;
   }
 
 private:
-  Details::ComparisonResult compare(BasicNumber const& rhs) const
+  auto compare(BasicNumber const& rhs) const -> Details::ComparisonResult
   {
     bool lhs_zero = digits_.is_zero();
     bool rhs_zero = rhs.digits_.is_zero();
@@ -1738,26 +1738,26 @@ private:
 };                                       // namespace GD::Bc
 
 template<typename Traits>
-std::ostream& operator<<(std::ostream& os, BasicNumber<Traits> const& num)
+auto operator<<(std::ostream& os, BasicNumber<Traits> const& num) -> std::ostream&
 {
   num.debug(os);
   return os;
 }
 
 template<typename Traits>
-bool operator!=(BasicNumber<Traits> const& lhs, BasicNumber<Traits> const& rhs)
+auto operator!=(BasicNumber<Traits> const& lhs, BasicNumber<Traits> const& rhs) -> bool
 {
   return !(lhs == rhs);
 }
 
 template<typename Traits>
-bool operator>=(BasicNumber<Traits> const& lhs, BasicNumber<Traits> const& rhs)
+auto operator>=(BasicNumber<Traits> const& lhs, BasicNumber<Traits> const& rhs) -> bool
 {
   return !(lhs < rhs);
 }
 
 template<typename Traits>
-bool operator<=(BasicNumber<Traits> const& lhs, BasicNumber<Traits> const& rhs)
+auto operator<=(BasicNumber<Traits> const& lhs, BasicNumber<Traits> const& rhs) -> bool
 {
   return !(lhs > rhs);
 }

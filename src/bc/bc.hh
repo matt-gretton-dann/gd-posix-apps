@@ -30,7 +30,7 @@
 
 namespace GD::Bc {
 // Needed for number.hh
-inline constexpr bool extensions_enabled()
+inline constexpr auto extensions_enabled() -> bool
 {
 #if ENABLE_EXTENSIONS
   return true;
@@ -68,19 +68,19 @@ public:
   explicit operator unsigned() const;
 
   /* Comparison operators.  */
-  bool operator==(Letter l) const;
-  bool operator==(char l) const;
+  auto operator==(Letter l) const -> bool;
+  auto operator==(char l) const -> bool;
 
 private:
-  static unsigned encode(char l);
+  static auto encode(char l) -> unsigned;
   unsigned letter_;  ///< The letter.
 };
 
-std::ostream& operator<<(std::ostream&, Letter l);
+auto operator<<(std::ostream&, Letter l) -> std::ostream&;
 
-bool operator!=(Letter lhs, Letter rhs);
-bool operator!=(Letter lhs, char rhs);
-bool operator!=(char lhs, Letter rhs);
+auto operator!=(Letter lhs, Letter rhs) -> bool;
+auto operator!=(Letter lhs, char rhs) -> bool;
+auto operator!=(char lhs, Letter rhs) -> bool;
 
 /** \brief  Token type.
  *
@@ -163,37 +163,37 @@ struct Token
   Token(Type type, Letter l);
 
   /** \brief Get token type.  */
-  Type type() const;
+  auto type() const -> Type;
 
   /** \brief  Get string stored in token. */
-  std::string const& string() const;
+  auto string() const -> std::string const&;
 
   /** \brief  Get number stored in token. */
-  std::string const& number() const;
+  auto number() const -> std::string const&;
 
   /** \brief Get letter stored in token. */
-  Letter letter() const;
+  auto letter() const -> Letter;
 
   /** \brief  Get the error message.  */
-  std::string const& error() const;
+  auto error() const -> std::string const&;
 
   /** \brief  Output debug form of token. */
   void debug(std::ostream& os) const;
 
   /** \brief  Is this an assignment op? */
-  bool is_assign_op() const;
+  auto is_assign_op() const -> bool;
 
   /** \brief  Is this an increment/decrement op?  */
-  bool is_incr_decr_op() const;
+  auto is_incr_decr_op() const -> bool;
 
   /** \brief  Is this a multiplication style op?  */
-  bool is_mul_op() const;
+  auto is_mul_op() const -> bool;
 
   /** \brief  Is this an addition style op?  */
-  bool is_add_op() const;
+  auto is_add_op() const -> bool;
 
   /** \brief  Is this a relation op? */
-  bool is_rel_op() const;
+  auto is_rel_op() const -> bool;
 
 private:
   /** Internal type to hold a number and diferentiate it from string and error.  */
@@ -206,14 +206,14 @@ private:
 };
 
 /** \brief Output operator for token type.  */
-std::ostream& operator<<(std::ostream& os, Token::Type t);
-std::ostream& operator<<(std::ostream& os, Token const& token);
+auto operator<<(std::ostream& os, Token::Type t) -> std::ostream&;
+auto operator<<(std::ostream& os, Token const& token) -> std::ostream&;
 
 /* Comparison operators.  */
-bool operator==(Token const& token, Token::Type type);
-bool operator==(Token::Type type, Token const& token);
-bool operator!=(Token const& token, Token::Type type);
-bool operator!=(Token::Type type, Token const& token);
+auto operator==(Token const& token, Token::Type type) -> bool;
+auto operator==(Token::Type type, Token const& token) -> bool;
+auto operator!=(Token const& token, Token::Type type) -> bool;
+auto operator!=(Token::Type type, Token const& token) -> bool;
 
 /** \brief  A source location.  */
 class Location
@@ -231,13 +231,13 @@ public:
   Location(std::string_view file_name, Line line, Column column);
 
   /** Get file name. */
-  std::string const& file_name() const;
+  auto file_name() const -> std::string const&;
 
   /** Get column.  */
-  Column column() const;
+  auto column() const -> Column;
 
   /** Get line.  */
-  Line line() const;
+  auto line() const -> Line;
 
   /** \brief Move to next column.
    *
@@ -257,10 +257,10 @@ private:
   Line line_;              ///< Line number
 };
 
-std::ostream& operator<<(std::ostream& os, Location const& location);
+auto operator<<(std::ostream& os, Location const& location) -> std::ostream&;
 
-bool operator==(Location const& lhs, Location const& rhs);
-bool operator!=(Location const& lhs, Location const& rhs);
+auto operator==(Location const& lhs, Location const& rhs) -> bool;
+auto operator!=(Location const& lhs, Location const& rhs) -> bool;
 
 /** \brief  Reader base class.
  *
@@ -283,17 +283,17 @@ public:
    * Implementations should be lazy - that is not do the peeking until called, hence this method
    * not being `const`.
    */
-  virtual int peek() = 0;
+  virtual auto peek() -> int = 0;
 
   /** \brief  Chew the current character. */
   void chew();
 
   /** \brief  Get the current source location.  */
-  Location const& location() const;
+  auto location() const -> Location const&;
 
   /** \brief  Report an error giving source location. */
   template<typename... Ts>
-  std::string error(Msg msg, Ts... args)
+  auto error(Msg msg, Ts... args) -> std::string
   {
     std::ostringstream os;
     os << Messages::get().get(Set::bc, Msg::error_label) << ":" << location_ << ": "
@@ -317,7 +317,7 @@ public:
    */
   StringReader(std::string_view s);
 
-  int peek() override final;
+  auto peek() -> int override final;
 
 private:
   void do_chew() override final;
@@ -335,7 +335,7 @@ public:
    */
   FileReader(std::string_view f);
 
-  int peek() override final;
+  auto peek() -> int override final;
 
 private:
   void do_chew() override final;
@@ -358,17 +358,17 @@ public:
    *
    * Not const as we peek lazily.
    */
-  Token const& peek();
+  auto peek() -> Token const&;
 
   /** \brief  Chew the current token. */
   void chew();
 
   /** \brief  Get the current location. */
-  Location const& location() const;
+  auto location() const -> Location const&;
 
   /** \brief  Generate an error message with current location information added.  */
   template<typename... Ts>
-  std::string error(Msg msg, Ts... args)
+  auto error(Msg msg, Ts... args) -> std::string
   {
     return r_->error(msg, args...);
   }
@@ -422,13 +422,13 @@ using ArrayElement = std::pair<Array, ArrayIndex>;
 using ArrayValues = std::shared_ptr<std::map<ArrayIndex, Number>>;
 
 template<typename T>
-bool operator==(TypeWrapper<Letter, T> lhs, TypeWrapper<Letter, T> rhs)
+auto operator==(TypeWrapper<Letter, T> lhs, TypeWrapper<Letter, T> rhs) -> bool
 {
   return lhs.get() == rhs.get();
 }
 
 template<typename T>
-std::ostream& operator<<(std::ostream& os, TypeWrapper<Letter, T> l)
+auto operator<<(std::ostream& os, TypeWrapper<Letter, T> l) -> std::ostream&
 {
   return (os << l.get());
 }
@@ -450,13 +450,13 @@ public:
   void add(Array a);
 
   /** \brief  Does the mask contain variable \a letter?  */
-  bool contains(Variable v) const;
+  auto contains(Variable v) const -> bool;
 
   /** \brief  Does the mask contain array \a letter?  */
-  bool contains(Array a) const;
+  auto contains(Array a) const -> bool;
 
   /** Equality operator. */
-  bool operator==(VariableMask rhs) const;
+  auto operator==(VariableMask rhs) const -> bool;
 
   /** \brief  Call \a f for each variable in the mask.  */
   template<typename Fn>
@@ -493,9 +493,9 @@ private:
   ::uint32_t array_mask_ = 0;     ///< Mask of arrays.
 };
 
-std::ostream& operator<<(std::ostream& os, VariableMask mask);
+auto operator<<(std::ostream& os, VariableMask mask) -> std::ostream&;
 
-bool operator!=(VariableMask lhs, VariableMask rhs);
+auto operator!=(VariableMask lhs, VariableMask rhs) -> bool;
 
 /** Tag class for an ibase.  */
 enum class Ibase : int;
@@ -640,38 +640,38 @@ public:
   Instruction(Opcode opcode, Operand const& op1, Operand const& op2);
 
   /** Get opcode */
-  Opcode opcode() const;
+  auto opcode() const -> Opcode;
 
   /** Do we have op1? */
-  bool has_op1() const;
+  auto has_op1() const -> bool;
 
   /** Get operand 1.  */
-  Operand const& op1() const;
+  auto op1() const -> Operand const&;
 
   /** Update operand 1.  */
   void op1(Operand const& operand);
 
   /** Do we have op2? */
-  bool has_op2() const;
+  auto has_op2() const -> bool;
 
   /** Get operand 2.  */
-  Operand const& op2() const;
+  auto op2() const -> Operand const&;
 
   /** Update operand 2.  */
   void op2(Operand const& operand);
 
   /** Do we have result? */
-  bool has_result() const;
+  auto has_result() const -> bool;
 
   /** Does \a opcode have op1? */
-  static bool has_op1(Opcode opcode);
+  static auto has_op1(Opcode opcode) -> bool;
 
   /** Does \a opcode have op2? */
-  static bool has_op2(Opcode opcode);
+  static auto has_op2(Opcode opcode) -> bool;
 
 private:
   /** \brief  How many operands does \a opcode take? */
-  static unsigned op_count(Opcode opcode);
+  static auto op_count(Opcode opcode) -> unsigned;
 
   /** \brief  Validate the operands.  */
   void validate_operands() const;
@@ -684,11 +684,11 @@ private:
 /** Vector of instructions.  */
 using Instructions = std::vector<Instruction>;
 
-std::ostream& operator<<(std::ostream& os, Instruction::Stream s);
-std::ostream& operator<<(std::ostream& os, Instruction::Opcode opcode);
-std::ostream& operator<<(std::ostream& os, Instruction::Operand const& operand);
-std::ostream& operator<<(std::ostream& os, Instruction const& instruction);
-std::ostream& operator<<(std::ostream& os, Instructions const& instruction);
+auto operator<<(std::ostream& os, Instruction::Stream s) -> std::ostream&;
+auto operator<<(std::ostream& os, Instruction::Opcode opcode) -> std::ostream&;
+auto operator<<(std::ostream& os, Instruction::Operand const& operand) -> std::ostream&;
+auto operator<<(std::ostream& os, Instruction const& instruction) -> std::ostream&;
+auto operator<<(std::ostream& os, Instructions const& instruction) -> std::ostream&;
 
 /** \brief Parsing class.  */
 class Parser
@@ -729,13 +729,13 @@ public:
     constexpr explicit ExprIndex(Index index) : index_(index), type_(ExprType::other) {}
 
     /** Get the index.  */
-    constexpr Index index() const { return index_; }
+    constexpr auto index() const -> Index { return index_; }
 
     /** Get the type.  */
-    constexpr ExprType type() const { return type_; }
+    constexpr auto type() const -> ExprType { return type_; }
 
     /** \brief Get a canonical "missing" expression index.  */
-    static ExprIndex const& missing()
+    static auto missing() -> ExprIndex const&
     {
       static ExprIndex missing(0, ExprType::missing);
       return missing;
@@ -754,10 +754,10 @@ public:
 
   /** \brief  Do the next stage of a parse.
    */
-  std::shared_ptr<Instructions> parse();
+  auto parse() -> std::shared_ptr<Instructions>;
 
   /** \brief  Have we seen a `quit` statement.  */
-  bool seen_quit() const noexcept;
+  auto seen_quit() const noexcept -> bool;
 
 private:
   /** Parse the main program production. */
@@ -766,7 +766,7 @@ private:
   /** \brief  Parse input_item production
    *  \return \a true If we need to stop after this production (to execute the code).
    */
-  bool parse_input_item();
+  auto parse_input_item() -> bool;
 
   /** Parse semicolon_list production. */
   void parse_semicolon_list();
@@ -777,7 +777,7 @@ private:
   /** \brief  Parse optional statement
    *  \return \a true if production was non-empty.
    */
-  bool parse_opt_statement();
+  auto parse_opt_statement() -> bool;
 
   /** Parse statement production.  */
   void parse_statement();
@@ -804,122 +804,122 @@ private:
    *  \param function_begin index of function begin instruction
    *  \return               Expression of last entry in list
    */
-  ExprIndex parse_opt_parameter_list(ExprIndex function_begin);
+  auto parse_opt_parameter_list(ExprIndex function_begin) -> ExprIndex;
 
   /** \brief                Parse optional auto define list
    *  \param function_begin index of function begin instruction
    *  \return               Expression of last entry in list
    */
-  ExprIndex parse_opt_auto_define_list(ExprIndex function_begin);
+  auto parse_opt_auto_define_list(ExprIndex function_begin) -> ExprIndex;
 
   /** \brief                  Parse an optional define list.
    *  \param function_begin   index of function begin instruction
    *  \param allow_duplicates Do we allow multiple entries of the same variable/array?
    *  \return                 Expression of last entry in list
    */
-  ExprIndex parse_opt_define_list(ExprIndex function_begin, bool allow_duplicates);
+  auto parse_opt_define_list(ExprIndex function_begin, bool allow_duplicates) -> ExprIndex;
 
   /** \brief                  Parse a define list.
    *  \param function_begin   index of function begin instruction
    *  \param allow_duplicates Do we allow multiple entries of the same variable/array?
    *  \return                 Expression of last entry in list
    */
-  ExprIndex parse_define_list(ExprIndex function_begin, bool allow_duplicates);
+  auto parse_define_list(ExprIndex function_begin, bool allow_duplicates) -> ExprIndex;
 
   /** \brief                  Parse an optional define element.
    *  \param function_begin   index of function begin instruction
    *  \param allow_duplicates Do we allow multiple entries of the same variable/array?
    *  \return                 Expression of last entry in list
    */
-  ExprIndex parse_opt_define_element(ExprIndex function_begin, bool allow_duplicates);
+  auto parse_opt_define_element(ExprIndex function_begin, bool allow_duplicates) -> ExprIndex;
 
   /** \brief                  Parse a define element.
    *  \param function_begin   index of function begin instruction
    *  \param allow_duplicates Do we allow multiple entries of the same variable/array?
    *  \return                 Expression of last entry in list
    */
-  ExprIndex parse_define_element(ExprIndex function_begin, bool allow_duplicates);
+  auto parse_define_element(ExprIndex function_begin, bool allow_duplicates) -> ExprIndex;
 
   /** \brief  Parse optional argument list
    *  \return \a true if production was non-empty
    */
-  ExprIndex parse_opt_argument_list();
+  auto parse_opt_argument_list() -> ExprIndex;
 
   /** Parse argument list.  */
-  ExprIndex parse_argument_list();
+  auto parse_argument_list() -> ExprIndex;
 
   /** Parse relational expression.  */
-  ExprIndex parse_relational_expression();
+  auto parse_relational_expression() -> ExprIndex;
 
   /** Parse return expression.  */
-  ExprIndex parse_return_expression();
+  auto parse_return_expression() -> ExprIndex;
 
   /** \brief        Parse an optional expression
    *  \param  flags Flags of type of expressions to accept, default primary.
    *  \return       Index of expression (if one given) and type of expression parsed).
    */
-  ExprIndex parse_opt_expression(POPEFlags flags = POPEFlags::parse_primary);
+  auto parse_opt_expression(POPEFlags flags = POPEFlags::parse_primary) -> ExprIndex;
 
   /** \brief        Parse expression.
    *  \param  flags Flags of type of expressions to accept, default primary.
    *  \return       Index of expression's value.
    */
-  ExprIndex parse_expression(POPEFlags flags = POPEFlags::parse_primary);
+  auto parse_expression(POPEFlags flags = POPEFlags::parse_primary) -> ExprIndex;
 
   /** \brief        Parse an optional assignment expression
    *  \param  flags Flags of type of expressions to accept, default primary.
    *  \return       Index of expression, and type of expression.
    */
-  ExprIndex parse_opt_assign_expression(POPEFlags flags = POPEFlags::parse_primary);
+  auto parse_opt_assign_expression(POPEFlags flags = POPEFlags::parse_primary) -> ExprIndex;
 
   /** \brief        Parse an optional assignment expression
    *  \param  flags Flags of type of expressions to accept, default primary.
    *  \return       Index of expression, and type of expression.
    */
-  ExprIndex parse_assign_expression(POPEFlags flags = POPEFlags::parse_primary);
+  auto parse_assign_expression(POPEFlags flags = POPEFlags::parse_primary) -> ExprIndex;
 
   /** \brief  Parse a unary minus expression.
    *  \return  Index of expression, and type of expression.
    */
-  ExprIndex parse_unary_minus_expression();
+  auto parse_unary_minus_expression() -> ExprIndex;
 
   /** \brief  Parse an inrement/decrement expression.
    *  \return  Index of expression, and type of expression.
    */
-  ExprIndex parse_incr_decr_expression();
+  auto parse_incr_decr_expression() -> ExprIndex;
 
   /** \brief      Parse an add expression
    *  \return     Index of result
    */
-  ExprIndex parse_add_expression();
+  auto parse_add_expression() -> ExprIndex;
 
   /** \brief      Parse a mul expression
    *  \return     Index of result
    */
-  ExprIndex parse_mul_expression();
+  auto parse_mul_expression() -> ExprIndex;
 
   /** \brief      Parse a power expression
    *  \return     Index of result, may be \a lhs if this isn't a power expression.
    */
-  ExprIndex parse_power_expression();
+  auto parse_power_expression() -> ExprIndex;
 
   /** \brief      Parse an add expression
    *  \param  lhs Left hand side of expression
    *  \return     Index of result, may be \a lhs if this isn't an add expression.
    */
-  ExprIndex parse_add_expression(ExprIndex lhs);
+  auto parse_add_expression(ExprIndex lhs) -> ExprIndex;
 
   /** \brief      Parse a mul expression
    *  \param  lhs Left hand side of expression
    *  \return     Index of result, may be \a lhs if this isn't a mul expression.
    */
-  ExprIndex parse_mul_expression(ExprIndex lhs);
+  auto parse_mul_expression(ExprIndex lhs) -> ExprIndex;
 
   /** \brief      Parse a power expression
    *  \param  lhs Left hand side of expression
    *  \return     Index of result, may be \a lhs if this isn't a power expression.
    */
-  ExprIndex parse_power_expression(ExprIndex lhs);
+  auto parse_power_expression(ExprIndex lhs) -> ExprIndex;
 
   /** \brief        Parse primary and named expressions
    *  \param  flags Bit mask of flags - default parse primary and named expressions
@@ -928,7 +928,7 @@ private:
    * This function will always parse named expression.  The flags will add primary expressions and
    * array slices to the parsing.
    */
-  ExprIndex parse_opt_primary_expression(POPEFlags flags = POPEFlags::parse_primary);
+  auto parse_opt_primary_expression(POPEFlags flags = POPEFlags::parse_primary) -> ExprIndex;
 
   /** \brief        Parse primary, named and optionally array_slice expressions
    *  \param  flags Flags - match array slices as well as primary & named expressions?
@@ -941,7 +941,7 @@ private:
    * Array_slices are only used in function calls as the top-level expression for a parameter, but
    * it is easiest to include recognising them in this function.
    */
-  ExprIndex parse_primary_expression(POPEFlags flags = POPEFlags::parse_primary);
+  auto parse_primary_expression(POPEFlags flags = POPEFlags::parse_primary) -> ExprIndex;
 
   /** \brief      Ensure that the value of the expression pointed to by \a idx has been loaded.
    *  \param  idx Index to check the loadedness of
@@ -950,7 +950,7 @@ private:
    * Named expressions point to names and not values.  This function ensures that we have loaded
    * the value of the name.
    */
-  ExprIndex ensure_expr_loaded(ExprIndex idx);
+  auto ensure_expr_loaded(ExprIndex idx) -> ExprIndex;
 
   /** \brief       Insert error message into stream.
    *  \param  msg  Message ID
@@ -958,7 +958,7 @@ private:
    *  \return      Offset of last instruction of error.
    */
   template<typename... Ts>
-  ExprIndex insert_error(Msg msg, Ts... args)
+  auto insert_error(Msg msg, Ts... args) -> ExprIndex
   {
     if (seen_quit_) {
       return ExprIndex::missing();
@@ -980,39 +980,39 @@ private:
   /** \brief    Insert end of file instruction
    *  \return   Index of inserted string
    */
-  ExprIndex insert_eof();
+  auto insert_eof() -> ExprIndex;
 
   /** \brief    Insert string at end of instruction stream.
    *  \param  s String to insert
    *  \return   Index of inserted string
    */
-  ExprIndex insert_string(std::string const& s);
+  auto insert_string(std::string const& s) -> ExprIndex;
 
   /** \brief         Insert print at end of instruction stream.
    *  \param  index  Index of thing to print.
    *  \param  stream Stream to print to.
    *  \return        Index of inserted print
    */
-  ExprIndex insert_print(ExprIndex index, Instruction::Stream stream);
+  auto insert_print(ExprIndex index, Instruction::Stream stream) -> ExprIndex;
 
   /** \brief         Insert quit at end of instruction stream.
    *  \param  code   Exit code
    *  \return        Index of inserted print
    */
-  ExprIndex insert_quit(unsigned code);
+  auto insert_quit(unsigned code) -> ExprIndex;
 
   /** \brief        Insert a load.
    *  \param  named Named expression to load
    *  \return       Index to value loaded.
    */
-  ExprIndex insert_load(ExprIndex named);
+  auto insert_load(ExprIndex named) -> ExprIndex;
 
   /** \brief        Insert a store.
    *  \param  named Named expression to store to
    *  \param  value Value to store.
    *  \return       Index to value stored, but with expression type of assignment.
    */
-  ExprIndex insert_store(ExprIndex var, ExprIndex value);  // Type == assignment
+  auto insert_store(ExprIndex var, ExprIndex value) -> ExprIndex;  // Type == assignment
 
   /** \brief         Insert an arithmetic operation.
    *  \param  opcode Arithmetic opcode to use
@@ -1020,133 +1020,133 @@ private:
    *  \param  rhs    Right-hand side expression
    *  \return        Index of result value.
    */
-  ExprIndex insert_arith(Instruction::Opcode opcode, ExprIndex lhs, ExprIndex rhs);
+  auto insert_arith(Instruction::Opcode opcode, ExprIndex lhs, ExprIndex rhs) -> ExprIndex;
 
   /** \brief         Insert a negation op
    *  \param  expr   Expression to negate
    *  \return        Index of result value.
    */
-  ExprIndex insert_negate(ExprIndex expr);
+  auto insert_negate(ExprIndex expr) -> ExprIndex;
 
   /** \brief         Insert a number
    *  \param  number Number to store
    *  \return        Index of number.
    */
-  ExprIndex insert_number(std::string const& number);
+  auto insert_number(std::string const& number) -> ExprIndex;
 
   /** \brief         Insert an array element
    *  \param v       Array
    *  \param element Index of expr to calculate element
    *  \return         Index of inserted instruction
    */
-  ExprIndex insert_array_element(Array v, ExprIndex element);  // Type = named
+  auto insert_array_element(Array v, ExprIndex element) -> ExprIndex;  // Type = named
 
   /** \brief         Insert an array
    *  \param v       Array
    *  \return         Index of inserted instruction
    */
-  ExprIndex insert_array_slice(Array v);
+  auto insert_array_slice(Array v) -> ExprIndex;
 
   /** \brief          Insert a variable
    *  \param  v       Variable
    *  \return         Index of inserted instruction
    */
-  ExprIndex insert_variable(Variable v);  // Type = named
+  auto insert_variable(Variable v) -> ExprIndex;  // Type = named
 
   /** \brief  Insert scale variable - not scale()
    *  \return Index of inserted instruction
    */
-  ExprIndex insert_scale();  // Type = named
+  auto insert_scale() -> ExprIndex;  // Type = named
 
   /** \brief  Insert obase variable
    *  \return Index of inserted instruction
    */
-  ExprIndex insert_obase();  // Type = named
+  auto insert_obase() -> ExprIndex;  // Type = named
 
   /** \brief  Insert ibase variable
    *  \return Index of inserted instruction
    */
-  ExprIndex insert_ibase();  // Type = named
+  auto insert_ibase() -> ExprIndex;  // Type = named
 
   /** \brief       Insert scale() call
    *  \param  expr Expression to pass
    *  \return      Index of inserted instruction
    */
-  ExprIndex insert_scale_expr(ExprIndex expr);
+  auto insert_scale_expr(ExprIndex expr) -> ExprIndex;
 
   /** \brief       Insert sqrt() call
    *  \param  expr Expression to pass
    *  \return      Index of inserted instruction
    */
-  ExprIndex insert_sqrt(ExprIndex expr);
+  auto insert_sqrt(ExprIndex expr) -> ExprIndex;
 
   /** \brief       Insert abs() call
    *  \param  expr Expression to pass
    *  \return      Index of inserted instruction
    */
-  ExprIndex insert_abs(ExprIndex expr);
+  auto insert_abs(ExprIndex expr) -> ExprIndex;
 
   /** \brief       Insert length() call
    *  \param  expr Expression to pass
    *  \return      Index of inserted instruction
    */
-  ExprIndex insert_length(ExprIndex expr);
+  auto insert_length(ExprIndex expr) -> ExprIndex;
 
   /** \brief      Insert branch if zero
    *  \param dest Destination
    *  \param cmp  Comparison index
    */
-  ExprIndex insert_branch_zero(ExprIndex dest, ExprIndex cmp);
+  auto insert_branch_zero(ExprIndex dest, ExprIndex cmp) -> ExprIndex;
 
   /** \brief      Insert branch
    *  \param dest Destination
    */
-  ExprIndex insert_branch(ExprIndex dest);
+  auto insert_branch(ExprIndex dest) -> ExprIndex;
 
   /** \brief      Insert return
    *  \param expr Result of function
    */
-  ExprIndex insert_return(ExprIndex expr);
+  auto insert_return(ExprIndex expr) -> ExprIndex;
 
   /** \brief       Insert call() call
    *  \param  v    Function to call
    *  \param  loc  Source location of call (for error reporting purposes).
    *  \return      Index of inserted instruction
    */
-  ExprIndex insert_call(Letter v, Location const& loc);
+  auto insert_call(Letter v, Location const& loc) -> ExprIndex;
 
   /** \brief   Insert push_param_mark instruction.
    */
-  ExprIndex insert_push_param_mark();
+  auto insert_push_param_mark() -> ExprIndex;
 
   /** \brief   Insert pop_param_mark instruction.
    */
-  ExprIndex insert_pop_param_mark();
+  auto insert_pop_param_mark() -> ExprIndex;
 
   /** \brief   Insert push_param instruction.
    *  \param expr Expression to push
    */
-  ExprIndex insert_push_param(ExprIndex expr);
+  auto insert_push_param(ExprIndex expr) -> ExprIndex;
 
   /** \brief   Insert pop_param instruction.
    */
-  ExprIndex insert_pop_param();
+  auto insert_pop_param() -> ExprIndex;
 
   /** \brief   Insert pop_param_array instruction.
    */
-  ExprIndex insert_pop_param_array();
+  auto insert_pop_param_array() -> ExprIndex;
 
   /** \brief      Insert function begin
    *  \param mask Mask of local variables to save
    *  \param loc  Location of function definition
    */
-  ExprIndex insert_function_begin(VariableMask mask, Location const& loc);
+  auto insert_function_begin(VariableMask mask, Location const& loc) -> ExprIndex;
 
   /** \brief        Insert function end
    *  \param letter Function we're finishing
    *  \param begin  Index of beginning of function.
    */
-  ExprIndex insert_function_end(Letter letter, ExprIndex begin);
+  auto insert_function_end(Letter letter, ExprIndex begin) -> ExprIndex;
 
   /** \brief Push a new loop state.  */
   void push_loop();
@@ -1165,7 +1165,7 @@ private:
   void pop_loop();
 
   /** \brief  Are we currently in a loop? */
-  bool in_loop() const;
+  auto in_loop() const -> bool;
 
   std::unique_ptr<Lexer> lexer_;                ///< Lexer
   std::shared_ptr<Instructions> instructions_;  ///< Current set of instructions
@@ -1176,13 +1176,13 @@ private:
   bool seen_quit_;                              ///< Have we seen a quit token?
 };
 
-bool operator==(Parser::ExprIndex const& lhs, Parser::ExprIndex const& rhs);
-bool operator==(Parser::ExprIndex const& lhs, Parser::Index rhs);
-bool operator==(Parser::ExprIndex const& lhs, Parser::ExprType rhs);
-bool operator!=(Parser::ExprIndex const& lhs, Parser::ExprIndex const& rhs);
-bool operator!=(Parser::ExprIndex const& lhs, Parser::Index rhs);
-bool operator!=(Parser::ExprIndex const& lhs, Parser::ExprType rhs);
-Parser::Offset operator-(Parser::ExprIndex const& lhs, Parser::ExprIndex const& rhs);
+auto operator==(Parser::ExprIndex const& lhs, Parser::ExprIndex const& rhs) -> bool;
+auto operator==(Parser::ExprIndex const& lhs, Parser::Index rhs) -> bool;
+auto operator==(Parser::ExprIndex const& lhs, Parser::ExprType rhs) -> bool;
+auto operator!=(Parser::ExprIndex const& lhs, Parser::ExprIndex const& rhs) -> bool;
+auto operator!=(Parser::ExprIndex const& lhs, Parser::Index rhs) -> bool;
+auto operator!=(Parser::ExprIndex const& lhs, Parser::ExprType rhs) -> bool;
+auto operator-(Parser::ExprIndex const& lhs, Parser::ExprIndex const& rhs) -> Parser::Offset;
 
 namespace Details {
 /* Forward declaration of class that holds VMState.  */
@@ -1207,7 +1207,7 @@ public:
    *  \param instructions Instructions to execute
    *  \return             \c true if we should continue, or \c false if we have reached EOF.
    */
-  bool execute(Instructions& instructions);
+  auto execute(Instructions& instructions) -> bool;
 
 private:
   Details::VMState* state_;
