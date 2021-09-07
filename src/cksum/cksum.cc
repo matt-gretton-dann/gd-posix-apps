@@ -91,7 +91,7 @@ try {
     --argc;
   }
 
-  return GD::for_each_file(argc - 1, argv + 1, do_cksum) ? EXIT_SUCCESS : EXIT_FAILURE;
+  return GD::for_each_file(argv + 1, argv + argc, do_cksum) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 catch (std::exception const& e) {
   report_error(GD::Cksum::Msg::unhandled_std_exception, e.what());

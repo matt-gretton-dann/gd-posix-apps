@@ -14,24 +14,26 @@ TEST_CASE("for_each_file", "[util][file][for_each_file]")
 {
   char file1[] = "file1";
   char file2[] = "file2";
-  char* file12[] = {file1, file2, nullptr};
+  std::array<char*, 2> file12 = {file1, file2};
 
   int call_count = 0;
   std::string files;
-  bool success = GD::for_each_file(2, file12, [&call_count, &files](std::string_view fname) {
-    ++call_count;
-    files += fname;
-    return true;
-  });
+  bool success =
+    GD::for_each_file(file12.begin(), file12.end(), [&call_count, &files](std::string_view fname) {
+      ++call_count;
+      files += fname;
+      return true;
+    });
   REQUIRE(success == true);
   REQUIRE(files == "file1file2");
   REQUIRE(call_count == 2);
 
-  success = GD::for_each_file(0, file12 + 2, [](std::string_view fname) { return fname == "-"; });
+  success = GD::for_each_file(file12.end(), file12.end(),
+                              [](std::string_view fname) { return fname == "-"; });
   REQUIRE(success == true);
 
   call_count = 0;
-  success = GD::for_each_file(2, file12, [&call_count](std::string_view) {
+  success = GD::for_each_file(file12.begin(), file12.end(), [&call_count](std::string_view) {
     ++call_count;
     return false;
   });
@@ -41,20 +43,21 @@ TEST_CASE("for_each_file", "[util][file][for_each_file]")
 
 TEST_CASE("for_each_file flags", "[util][file][for_each_file]")
 {
-  char* files[] = {nullptr};
+  std::array<char*, 0> files;
   int call_count = 0;
   std::string fnames;
-  bool success = GD::for_each_file(0, files, [&call_count, &fnames](std::string_view fname) {
-    ++call_count;
-    fnames += fname;
-    return true;
-  });
+  bool success =
+    GD::for_each_file(files.begin(), files.end(), [&call_count, &fnames](std::string_view fname) {
+      ++call_count;
+      fnames += fname;
+      return true;
+    });
 
   REQUIRE(success == true);
   REQUIRE(call_count == 1);
   REQUIRE(fnames == "-");
 
   success = GD::for_each_file(
-    0, files, [](std::string_view) { return false; }, GD::FEFFlags::none);
+    files.begin(), files.end(), [](std::string_view) { return false; }, GD::FEFFlags::none);
   REQUIRE(success == true);
 }

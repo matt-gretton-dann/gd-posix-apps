@@ -12,9 +12,10 @@
 #include "util/utils.hh"
 
 #include <cassert>
+#include <clocale>
 #include <fstream>
 #include <iostream>
-#include <locale.h>
+#include <span>
 #include <string>
 
 #include <string_view>
@@ -23,8 +24,6 @@
 class State
 {
 public:
-  State() : first_input_(true) {}
-
   auto output(std::string_view input_file) -> bool
   {
     GD::InputFile is(input_file);
@@ -64,24 +63,26 @@ public:
   }
 
 private:
-  bool first_input_;
+  bool first_input_{true};
 };
 
 auto main(int argc, char** argv) -> int
 {
-  ::setlocale(LC_ALL, "");
-  GD::program_name(argv[0]);
+  // NOLINTNEXTLINE(concurrency-mt-unsafe)
+  std::setlocale(LC_ALL, "");
+  std::span<char*> args(argv, argc);
+  GD::program_name(args[0]);
 
   State state;
   std::string fname;
 
-  if (argc > 1 && argv[1][0] == '-' && argv[1][1] == '-' && argv[1][2] == '\0') {
-    ++argv;
-    --argc;
+  auto begin = args.begin() + 1;
+  if (begin != args.end() && *begin != nullptr && ::strcmp(*begin, "--") == 0) {
+    ++begin;
   }
 
   try {
-    bool success = GD::for_each_file(argc - 1, argv + 1, [&state, &fname](std::string_view file) {
+    bool success = GD::for_each_file(begin, args.end(), [&state, &fname](std::string_view file) {
       fname = file;
       return state.output(file);
     });
@@ -91,7 +92,7 @@ auto main(int argc, char** argv) -> int
   catch (std::exception& e) {
     state.output_term();
     std::cerr << GD::program_name();
-    if (*argv != NULL) {
+    if (!args.empty()) {
       std::cerr << ":" << fname;
     }
     std::cerr << ": " << e.what() << "\n";

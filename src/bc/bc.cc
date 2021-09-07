@@ -112,7 +112,7 @@ auto main(int argc, char** argv) -> int
     return true;
   };
 
-  bool success = GD::for_each_file(argc - optind, argv + optind, process, GD::FEFFlags::none);
+  bool success = GD::for_each_file(argv + optind, argv + argc, process, GD::FEFFlags::none);
   if (success) {
     auto r = std::make_unique<GD::Bc::FileReader>("-");
     execute(vm, std::move(r));

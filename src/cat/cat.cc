@@ -80,7 +80,7 @@ auto main(int argc, char** argv) -> int
   }
 
   bool success =
-    GD::for_each_file(argc - optind, argv + optind, [unbuffered](std::string_view fname) -> bool {
+    GD::for_each_file(argv + optind, argv + argc, [unbuffered](std::string_view fname) -> bool {
       return do_cat(fname, unbuffered);
     });
 

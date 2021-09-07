@@ -4,15 +4,15 @@
  *          SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _SRC_INCLUDE_UTIL_FILE_HH_INCLUDED
-#define _SRC_INCLUDE_UTIL_FILE_HH_INCLUDED
+#ifndef UTIL_FILE_HH
+#define UTIL_FILE_HH
 
 #include "gd/nl_types.h"
 
-#include <assert.h>
+#include <cassert>
+#include <cstdio>
 #include <fstream>
 #include <memory>
-#include <stdio.h>
 #include <string>
 #include <vector>
 
@@ -20,7 +20,7 @@
 
 namespace GD::Util {
 enum class Msg;
-}
+}  // namespace GD::Util
 
 namespace GD {
 
@@ -39,7 +39,7 @@ public:
    *
    * Reports an erorr if we can't open the file.
    */
-  InputFile(std::string_view filename, std::string_view mode = "r");
+  explicit InputFile(std::string_view filename, std::string_view mode = "r");
 
   /** \brief Destructor
    *
@@ -71,15 +71,15 @@ public:
   /** \brief  Is the error flag set on the stream?
    *  \return \c true if the error flag is set.
    */
-  auto error() const -> bool;
+  [[nodiscard]] auto error() const -> bool;
 
   /** \brief  Is the EOF flag set on the stream?
    *  \return \c true iff the end-of-file flag is set.
    */
-  auto eof() const -> bool;
+  [[nodiscard]] auto eof() const -> bool;
 
   /** \brief  Get the printable name of the file.  */
-  auto filename() const -> std::string_view;
+  [[nodiscard]] auto filename() const -> std::string_view;
 
   enum class Buffering { none = _IONBF, line = _IOLBF, full = _IOFBF };
   /** \brief  Set the buffering type to no buffering.  */
@@ -117,13 +117,13 @@ enum class FEFFlags {
 
 inline auto operator|(FEFFlags l, FEFFlags r) -> FEFFlags
 {
-  using UT = std::underlying_type<FEFFlags>::type;
+  using UT = std::make_unsigned_t<std::underlying_type_t<FEFFlags>>;
   return static_cast<FEFFlags>(static_cast<UT>(l) | static_cast<UT>(r));
 }
 
 inline auto operator&(FEFFlags l, FEFFlags r) -> FEFFlags
 {
-  using UT = std::underlying_type<FEFFlags>::type;
+  using UT = std::make_unsigned_t<std::underlying_type_t<FEFFlags>>;
   return static_cast<FEFFlags>(static_cast<UT>(l) & static_cast<UT>(r));
 }
 
@@ -142,32 +142,23 @@ inline auto operator&(FEFFlags l, FEFFlags r) -> FEFFlags
  * passed value is the name of the file, and the return value should be whether the application
  * succeeded or not.
  */
-template<typename Fn>
-auto for_each_file(int argc, char** argv, Fn apply_fn, FEFFlags flags = FEFFlags::empty_stdin)
-  -> bool
+template<typename It, typename Fn>
+auto for_each_file(It begin, It end, Fn apply_fn, FEFFlags flags = FEFFlags::empty_stdin) -> bool
 {
-  assert(argv != nullptr);
-  assert(argc >= 0);
-
   bool success = true;
-  if (argc == 0 && ((flags & FEFFlags::empty_stdin) == FEFFlags::empty_stdin)) {
+  if (begin == end && ((flags & FEFFlags::empty_stdin) == FEFFlags::empty_stdin)) {
     success &= apply_fn("-");
   }
   else {
-    while (argc > 0) {
-      assert(*argv != nullptr);
-      success &= apply_fn(*argv);
-      ++argv;
-      --argc;
+    while (begin != end) {
+      assert(*begin != nullptr);
+      success &= apply_fn(*begin++);
     }
   }
-
-  assert(argc == 0);
-  assert(*argv == nullptr);
 
   return success;
 }
 
 }  // namespace GD
 
-#endif  // _SRC_INCLUDE_UTIL_FILE_HH_INCLUDED
+#endif  // UTIL_FILE_HH
