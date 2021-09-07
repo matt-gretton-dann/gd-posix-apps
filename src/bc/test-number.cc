@@ -260,7 +260,7 @@ public:
   RandomNumberPairGenerator(GD::Bc::Number::NumType max_digits = 40)
       : rand_(Catch::rngSeed() + 2), dist_(0, GD::Bc::Number::base_), max_digits_(max_digits)
   {
-    next();
+    RandomNumberPairGenerator::next();
   }
 
   auto get() const -> std::pair<GD::Bc::Number, GD::Bc::Number> const& override { return pair_; }
