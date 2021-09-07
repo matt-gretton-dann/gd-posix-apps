@@ -183,7 +183,7 @@ public:
   RandomUIntPairGenerator()
       : rand_(Catch::rngSeed()), dist_(0, std::numeric_limits<uint64_t>::max())
   {
-    next();
+    RandomUIntPairGenerator::next();
   }
 
   UInt64Pair const& get() const override { return pair_; }
@@ -209,7 +209,10 @@ Catch::Generators::GeneratorWrapper<UInt64Pair> random_pair()
 class RandomNumberGenerator : public Catch::Generators::IGenerator<GD::Bc::Number>
 {
 public:
-  RandomNumberGenerator() : rand_(Catch::rngSeed() + 1), dist_(0, GD::Bc::Number::base_) { next(); }
+  RandomNumberGenerator() : rand_(Catch::rngSeed() + 1), dist_(0, GD::Bc::Number::base_)
+  {
+    RandomNumberGenerator::next();
+  }
 
   GD::Bc::Number const& get() const override { return number_; }
 
