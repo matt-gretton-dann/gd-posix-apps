@@ -30,12 +30,14 @@ __EXTERN_C_END
  *  \param optstring Option string
  *  \return          Matched option, or -1 for complete.
  */
+// NOLINTNEXTLINE(modernize-use-trailing-return-type)
 __EXTERN_C int getopt(int argc, char* const argv[], const char* optstring) __NOEXCEPT;
 
 /** \brief Reset the getopt state to enable multiple passes of getopt.
  *
  * Resets optarg, opterr, optind, and optopt to their default values.
  */
+// NOLINTNEXTLINE(modernize-use-trailing-return-type)
 __EXTERN_C void __gd_getopt_reset(void) __NOEXCEPT;
 
 #if defined(_WIN32)
