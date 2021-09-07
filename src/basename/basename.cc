@@ -54,11 +54,11 @@ int main(int argc, char** argv)
     report_error(GD::Basename::Msg::too_many_arguments);
   }
 
-  char* bname = ::strdup(argv[0]);
-  if (bname == 0) {
+  char* bname_to_free = ::strdup(argv[0]);
+  if (bname_to_free == 0) {
     report_error(GD::Basename::Msg::out_of_memory);
   }
-  bname = ::basename(bname);
+  char* bname = ::basename(bname_to_free);
   ::size_t base_len = ::strlen(bname);
 
   if (argc == 2) {
@@ -74,5 +74,7 @@ int main(int argc, char** argv)
     base_len -= INT_MAX;
   }
   ::printf("%.*s\n", static_cast<int>(base_len), bname);
+  free(bname_to_free);
+
   return EXIT_SUCCESS;
 }
