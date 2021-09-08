@@ -1,5 +1,5 @@
 ---
-Checks:          '*,-fuchsia-*,-llvmlibc-*,-cppcoreguidelines-pro-type-vararg,-hicpp-*'
+Checks:          '*,-altera-*,-fuchsia-*,-hicpp-*,-llvmlibc-*,-cppcoreguidelines-pro-type-vararg'
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
 AnalyzeTemporaryDtors: false
