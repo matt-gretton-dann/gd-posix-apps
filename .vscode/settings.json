@@ -28,7 +28,8 @@
     "stdexcept": "cpp",
     "streambuf": "cpp",
     "functional": "cpp",
-    "regex": "cpp"
+    "regex": "cpp",
+    "format": "cpp"
   },
   "json.schemas": [
     {

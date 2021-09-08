@@ -4,8 +4,8 @@
  *          SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _SRC_INCLUDE_UTIL_MESSAGES_HH_INCLUDED
-#define _SRC_INCLUDE_UTIL_MESSAGES_HH_INCLUDED
+#ifndef UTIL_MESSAGES_HH
+#define UTIL_MESSAGES_HH
 
 #include "gd/nl_types.h"
 
@@ -78,7 +78,7 @@ public:
    * This function is not necessarily thread safe, and future calls to any \c Messages function may
    * invalidate the returned string view.
    */
-  auto get(typename Data::MessageEnum msg) const noexcept -> std::string_view
+  [[nodiscard]] auto get(typename Data::MessageEnum msg) const noexcept -> std::string_view
   {
     return get(Data::default_set_, msg);
   }
@@ -91,16 +91,17 @@ public:
    * This function is not necessarily thread safe, and future calls to any \c Messages function may
    * invalidate the returned string view.
    */
-  auto get(typename Data::SetEnum set, typename Data::MessageEnum msg) const noexcept
+  [[nodiscard]] auto get(typename Data::SetEnum set, typename Data::MessageEnum msg) const noexcept
     -> std::string_view
   {
     auto val =
       Data::messages_[static_cast<std::size_t>(set) - 1][static_cast<std::size_t>(msg) - 1];
-    if (catd_ == (nl_catd)-1) {
+    if (catd_ == static_cast<nl_catd>(-1)) {
       return val;
     }
 
-    auto p = ::catgets(catd_, static_cast<int>(set), static_cast<int>(msg), val);
+    // NOLINTNEXTLINE(concurrency-mt-unsafe)
+    char* p = ::catgets(catd_, static_cast<int>(set), static_cast<int>(msg), val);
     return std::string_view(p);
   }
 
@@ -110,7 +111,7 @@ public:
    *
    * This function is not necessarily thread safe.
    */
-  auto get_copy(typename Data::MessageEnum msg) const -> std::string
+  [[nodiscard]] auto get_copy(typename Data::MessageEnum msg) const -> std::string
   {
     return std::string(get(msg));
   }
@@ -122,7 +123,8 @@ public:
    *
    * This function is not necessarily thread safe.
    */
-  auto get_copy(typename Data::SetEnum set, typename Data::MessageEnum msg) const -> std::string
+  [[nodiscard]] auto get_copy(typename Data::SetEnum set, typename Data::MessageEnum msg) const
+    -> std::string
   {
     return std::string(get(set, msg));
   }
@@ -149,7 +151,8 @@ public:
    * This function is not necessarily thread safe.
    */
   template<typename... Ts>
-  auto format(typename Data::SetEnum set, typename Data::MessageEnum msg, Ts... args) const
+  [[nodiscard]] [[nodiscard]] auto format(typename Data::SetEnum set,
+                                          typename Data::MessageEnum msg, Ts... args) const
     -> std::string
   {
     return fmt::format(get(set, msg), args...);
@@ -164,4 +167,4 @@ private:
 
 }  // namespace GD
 
-#endif  // _SRC_INCLUDE_UTIL_MESSAGES_HH_INCLUDED
+#endif  // UTIL_MESSAGES_HH
