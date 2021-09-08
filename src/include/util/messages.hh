@@ -95,7 +95,7 @@ public:
     -> std::string_view
   {
     auto val =
-      Data::messages_[static_cast<std::size_t>(set) - 1][static_cast<std::size_t>(msg) - 1];
+      Data::messages_.at(static_cast<std::size_t>(set) - 1)[static_cast<std::size_t>(msg) - 1];
     if (catd_ == static_cast<nl_catd>(-1)) {
       return val;
     }
