@@ -8,9 +8,9 @@
 
 #include "gd/time.h"
 
+#include <cstdint>
 #include <random>
 #include <sstream>
-#include <stdint.h>
 #include <string>
 #include <utility>
 
@@ -21,13 +21,13 @@ using Number = GD::Bc::Number;
 class RandomNumberGenerator
 {
 public:
-  RandomNumberGenerator(GD::Bc::Number::NumType digit_count)
-      : rand_(), dist_(0, GD::Bc::Number::base_), digit_count_(digit_count)
+  explicit RandomNumberGenerator(GD::Bc::Number::NumType digit_count)
+      : dist_(0, GD::Bc::Number::base_), digit_count_(digit_count)
   {
     next();
   }
 
-  auto get() const -> GD::Bc::Number const& { return number_; }
+  [[nodiscard]] auto get() const -> GD::Bc::Number const& { return number_; }
 
   auto next() -> bool
   {
@@ -108,7 +108,8 @@ constexpr auto as_nsec(Time const& t) -> int64_t
 template<typename Fn>
 auto time_run(Fn f) -> Time
 {
-  Time start, end;
+  Time start;
+  Time end;
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
   f();
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end);

@@ -9,6 +9,8 @@
 
 #include "gd/nl_types.h"
 
+#include <utility>
+
 #include <string_view>
 
 namespace GD {
@@ -52,7 +54,7 @@ template<typename T, typename TId = T>
 class TypeWrapper
 {
 public:
-  explicit TypeWrapper(T const& t) : t_(t) {}
+  explicit TypeWrapper(T t) : t_(std::move(t)) {}
   explicit TypeWrapper(T&& t) : t_(std::move(t)) {}
 
   template<typename Arg>
@@ -61,7 +63,7 @@ public:
   }
 
   auto get() -> T& { return t_; }
-  auto get() const -> T const& { return t_; }
+  [[nodiscard]] auto get() const -> T const& { return t_; }
 
 private:
   T t_;

@@ -8,9 +8,9 @@
 
 #include <catch2/catch.hpp>
 
+#include <cstdint>
 #include <random>
 #include <sstream>
-#include <stdint.h>
 #include <string>
 #include <utility>
 
@@ -85,8 +85,8 @@ auto make_number(std::string_view s) -> GD::Bc::Number
   return n;
 }
 
-void test_add_subtract(GD::Bc::Number lhs, GD::Bc::Number rhs, GD::Bc::Number expected_add,
-                       GD::Bc::Number expected_sub)
+void test_add_subtract(const GD::Bc::Number& lhs, const GD::Bc::Number& rhs,
+                       const GD::Bc::Number& expected_add, GD::Bc::Number expected_sub)
 {
   INFO("lhs = " << lhs << " rhs = " << rhs << " expected_add = " << expected_add
                 << " expected_sub = " << expected_sub);
@@ -186,11 +186,11 @@ public:
     RandomUIntPairGenerator::next();
   }
 
-  auto get() const -> UInt64Pair const& override { return pair_; }
+  [[nodiscard]] auto get() const -> UInt64Pair const& override { return pair_; }
 
   auto next() -> bool override
   {
-    pair_ = std::make_pair<uint64_t, uint64_t>(dist_(rand_), dist_(rand_));
+    pair_ = std::make_pair(dist_(rand_), dist_(rand_));
     return true;
   }
 
@@ -214,7 +214,7 @@ public:
     RandomNumberGenerator::next();
   }
 
-  auto get() const -> GD::Bc::Number const& override { return number_; }
+  [[nodiscard]] auto get() const -> GD::Bc::Number const& override { return number_; }
 
   auto next() -> bool override
   {
@@ -257,13 +257,16 @@ class RandomNumberPairGenerator
     : public Catch::Generators::IGenerator<std::pair<GD::Bc::Number, GD::Bc::Number>>
 {
 public:
-  RandomNumberPairGenerator(GD::Bc::Number::NumType max_digits = 40)
+  explicit RandomNumberPairGenerator(GD::Bc::Number::NumType max_digits = 40)
       : rand_(Catch::rngSeed() + 2), dist_(0, GD::Bc::Number::base_), max_digits_(max_digits)
   {
     RandomNumberPairGenerator::next();
   }
 
-  auto get() const -> std::pair<GD::Bc::Number, GD::Bc::Number> const& override { return pair_; }
+  [[nodiscard]] auto get() const -> std::pair<GD::Bc::Number, GD::Bc::Number> const& override
+  {
+    return pair_;
+  }
 
   auto get_a_number() -> GD::Bc::Number
   {

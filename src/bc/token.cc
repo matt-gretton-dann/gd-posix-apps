@@ -6,7 +6,7 @@
 
 #include "util/utils.hh"
 
-#include <assert.h>
+#include <cassert>
 #include <iostream>
 
 #include "bc.hh"
@@ -67,15 +67,16 @@ GD::Bc::Token::Token([[maybe_unused]] Type type, Letter l) : value_(l)
 
 auto GD::Bc::Token::type() const -> GD::Bc::Token::Type
 {
-  return std::visit(
-    GD::Overloaded{[](Type t) { return t; }, [](std::string const&) { return Type::string; },
-                   [](NumInt const&) { return Type::number; }, [](Letter) { return Type::letter; },
-                   [](ErrorInt const&) { return Type::error; },
-                   [](auto) {
-                     assert(false);
-                     return Type::eof;
-                   }},
-    value_);
+  return std::visit(GD::Overloaded{[](Type t) { return t; },
+                                   [](std::string const& /*unused*/) { return Type::string; },
+                                   [](NumInt const& /*unused*/) { return Type::number; },
+                                   [](Letter /*unused*/) { return Type::letter; },
+                                   [](ErrorInt const& /*unused*/) { return Type::error; },
+                                   [](auto /*unused*/) {
+                                     assert(false);
+                                     return Type::eof;
+                                   }},
+                    value_);
 }
 
 auto GD::Bc::Token::string() const -> std::string const& { return std::get<std::string>(value_); }

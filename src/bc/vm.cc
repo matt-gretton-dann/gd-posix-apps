@@ -10,8 +10,9 @@
 #include "bc-messages.hh"
 
 #include <array>
-#include <assert.h>
+#include <cassert>
 #include <ostream>
+#include <utility>
 
 #include "bc.hh"
 #include "number.hh"
@@ -37,38 +38,38 @@ struct VMState
   VMState(std::ostream& out, std::ostream& err, bool save_specials);
 
   /** \brief  Get the appropriate output stream for \a stream.  */
-  auto stream(Instruction::Stream stream) const -> std::ostream&;
+  [[nodiscard]] auto stream(Instruction::Stream stream) const -> std::ostream&;
 
   /** \brief  Set the input base.  */
   void ibase(Number num);
 
   /** Get the input base.  */
-  auto ibase() const -> Number::NumType;
+  [[nodiscard]] auto ibase() const -> Number::NumType;
 
   /** \brief  Set the output base.  */
   void obase(Number num);
 
   /** Get the output base.  */
-  auto obase() const -> Number::NumType;
+  [[nodiscard]] auto obase() const -> Number::NumType;
 
   /** \brief  Set the scale.  */
   void scale(Number num);
 
   /** Get the scale base.  */
-  auto scale() const -> Number::NumType;
+  [[nodiscard]] auto scale() const -> Number::NumType;
 
   /** \brief  Get the number stored in the array element ae.  */
-  auto array_element(ArrayElement const& ae) const -> Number;
+  [[nodiscard]] auto array_element(ArrayElement const& ae) const -> Number;
 
   /** \brief  Store a number in an array eleemnt.  */
   void array_element(ArrayElement const& ae, Number num);
 
-  auto variable(Variable v) const -> Number const&;
+  [[nodiscard]] auto variable(Variable v) const -> Number const&;
   void variable(Variable v, Number const& num);
 
-  auto array(Array a) const -> ArrayValues;
+  [[nodiscard]] auto array(Array a) const -> ArrayValues;
   void array(Array a, ArrayValues av);
-  auto array_length(Array a) const -> Number::NumType;
+  [[nodiscard]] auto array_length(Array a) const -> Number::NumType;
 
   void function(Letter func, Instructions::const_iterator begin, Instructions::const_iterator end,
                 VariableMask mask, Location const& loc);
@@ -287,16 +288,16 @@ private:
   }
 
   /** \brief  Conver the offset in the index  */
-  auto get_offset_index(Instruction::Operand const& op) const -> Index;
+  [[nodiscard]] auto get_offset_index(Instruction::Operand const& op) const -> Index;
 
   /** \brief  Get the value pointed to by op relative to the current PC.  */
-  auto get_op_expr(Instruction::Operand const& op) const -> Number const&;
+  [[nodiscard]] auto get_op_expr(Instruction::Operand const& op) const -> Number const&;
 
   /** \brief Get the value pointed to by op1 of the current instruction.  */
-  auto get_op1_expr() const -> Number const&;
+  [[nodiscard]] auto get_op1_expr() const -> Number const&;
 
   /** \brief Get the value pointed to by op2 of the current instruction.  */
-  auto get_op2_expr() const -> Number const&;
+  [[nodiscard]] auto get_op2_expr() const -> Number const&;
 
   /** Validate the result in the current pc. */
   void validate_result(Instructions::size_type i) const;
@@ -725,10 +726,10 @@ void GD::Bc::Details::InstructionPack::execute_print()
                [&os](Variable v) { os << v << '\n'; },
                [&os](Array a) { os << a << '\n'; },
                [&os](ArrayElement const& ae) { os << ae.first << '[' << ae.second << "]\n"; },
-               [&os](ArrayValues const&) { os << "<ARRAY VALUES>\n"; },
-               [&os](Ibase) { os << "ibase\n"; },
-               [&os](Obase) { os << "obase\n"; },
-               [&os](Scale) { os << "scale\n"; },
+               [&os](ArrayValues const& /*unused*/) { os << "<ARRAY VALUES>\n"; },
+               [&os](Ibase /*unused*/) { os << "ibase\n"; },
+               [&os](Obase /*unused*/) { os << "obase\n"; },
+               [&os](Scale /*unused*/) { os << "scale\n"; },
              },
              *result);
 }
@@ -753,7 +754,7 @@ void GD::Bc::Details::InstructionPack::execute_length()
       [&result](Number n) { result = Number(n.length()); },
       [this](ArrayValues const&) { assert_error(false, Msg::cannot_get_length, "ArrayValues"); },
       [this](Variable) { assert_error(false, Msg::cannot_get_length, "Variable"); },
-      [&result, this](Array a) { result = vm_->array_length(a); },
+      [&result, this](Array a) { result = Number(vm_->array_length(a)); },
       [this](ArrayElement const&) { assert_error(false, Msg::cannot_get_length, "ArrayElement"); },
       [this](Ibase) { assert_error(false, Msg::cannot_get_length, "ibase"); },
       [this](Obase) { assert_error(false, Msg::cannot_get_length, "obase"); },
@@ -803,9 +804,9 @@ void GD::Bc::Details::InstructionPack::execute_store()
       [&expr, this](Variable v) { vm_->variable(v, std::get<Number>(expr)); },
       [&expr, this](Array a) { vm_->array(a, std::get<ArrayValues>(expr)); },
       [&expr, this](ArrayElement const& ae) { vm_->array_element(ae, std::get<Number>(expr)); },
-      [&expr, this](Ibase) { vm_->ibase(std::get<Number>(expr)); },
-      [&expr, this](Obase) { vm_->obase(std::get<Number>(expr)); },
-      [&expr, this](Scale) { vm_->scale(std::get<Number>(expr)); },
+      [&expr, this](Ibase /*unused*/) { vm_->ibase(std::get<Number>(expr)); },
+      [&expr, this](Obase /*unused*/) { vm_->obase(std::get<Number>(expr)); },
+      [&expr, this](Scale /*unused*/) { vm_->scale(std::get<Number>(expr)); },
     },
     *loc);
 }
@@ -908,10 +909,10 @@ auto GD::Bc::Details::operator<<(std::ostream& os,
                [&os](Variable v) { os << v; },
                [&os](Array a) { os << a << "[]"; },
                [&os](ArrayElement const& ae) { os << ae.first << '[' << ae.second << ']'; },
-               [&os](ArrayValues const&) { os << "<ARRAY VALUES>"; },
-               [&os](Ibase) { os << "ibase"; },
-               [&os](Obase) { os << "obase"; },
-               [&os](Scale) { os << "scale"; },
+               [&os](ArrayValues const& /*unused*/) { os << "<ARRAY VALUES>"; },
+               [&os](Ibase /*unused*/) { os << "ibase"; },
+               [&os](Obase /*unused*/) { os << "obase"; },
+               [&os](Scale /*unused*/) { os << "scale"; },
              },
              result);
   return os;

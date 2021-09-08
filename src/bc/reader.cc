@@ -8,8 +8,8 @@
 
 #include "bc-messages.hh"
 
+#include <cstdint>
 #include <limits>
-#include <stdint.h>
 
 #include "bc.hh"
 #include <string_view>
@@ -77,7 +77,7 @@ void GD::Bc::Reader::chew()
 
 auto GD::Bc::Reader::location() const -> GD::Bc::Location const& { return location_; }
 
-GD::Bc::Reader::~Reader() {}
+GD::Bc::Reader::~Reader() = default;
 
 GD::Bc::StringReader::StringReader(std::string_view s) : Reader("Library"), s_(s), pos_(0) {}
 

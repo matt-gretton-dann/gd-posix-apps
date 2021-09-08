@@ -10,13 +10,13 @@
 #include "gd/format.hh"
 #include "gd/string.h"
 
+#include <cstdint>
 #include <iomanip>
 #include <iterator>
 #include <limits>
 #include <memory>
 #include <ostream>
 #include <sstream>
-#include <stdint.h>
 #include <vector>
 
 #include "bc.hh"
@@ -111,14 +111,14 @@ public:
   ~BasicDigits() = default;
   BasicDigits(BasicDigits const&) = default;
   auto operator=(BasicDigits const&) -> BasicDigits& = default;
-  BasicDigits(BasicDigits&&) = default;
-  auto operator=(BasicDigits&&) -> BasicDigits& = default;
+  BasicDigits(BasicDigits&&) noexcept = default;
+  auto operator=(BasicDigits&&) noexcept -> BasicDigits& = default;
 
   /** \brief  Reset the digits - sets us to zero. */
   void reset() { digits_.reset(); }
 
   /** \brief Is this zero?  */
-  auto is_zero() const -> bool
+  [[nodiscard]] auto is_zero() const -> bool
   {
     /* We're zero if we have no digits_ vector or all the digits in it are zero.  */
     if (!digits_) {
@@ -134,7 +134,7 @@ public:
   }
 
   /** Is this an even number? */
-  auto is_even() const -> bool
+  [[nodiscard]] auto is_even() const -> bool
   {
     if (!digits_) {
       return true;
@@ -143,7 +143,8 @@ public:
     return ((*digits_)[0] & 1) == 0;
   }
 
-  auto compare(BasicDigits const& rhs, NumType scale) const -> Details::ComparisonResult
+  [[nodiscard]] auto compare(BasicDigits const& rhs, NumType scale) const
+    -> Details::ComparisonResult
   {
     assert(digits_);
     assert(rhs.digits_);
@@ -171,7 +172,7 @@ public:
    *  * to_unsigned_error_too_large_: Number too large to fit in unisgned type.
    *  * to_unsigned_error_fractional_: Number had a fractional component.
    */
-  auto to_unsigned(NumType scale) const -> NumType
+  [[nodiscard]] auto to_unsigned(NumType scale) const -> NumType
   {
     if (!digits_) {
       return 0;
@@ -359,7 +360,7 @@ public:
   /** \brief  Get the number of significant digits.
    *  \return Number of significant digits
    */
-  auto length() const -> NumType
+  [[nodiscard]] auto length() const -> NumType
   {
     if (!digits_) {
       return 1;
@@ -782,7 +783,7 @@ public:
       return;
     }
 
-    WideType scale_pow10 = static_cast<WideType>(pow10(scale % base_log10_));
+    auto scale_pow10 = static_cast<WideType>(pow10(scale % base_log10_));
     auto it = digits_->begin();
     WideType carry = *it / scale_pow10;
     while (++it != digits_->end()) {
@@ -799,7 +800,7 @@ public:
    *  \return       {whole, frac} pair. \c whole has effective scale 0, and \c frac has
    * effective scale \a scale.
    */
-  auto split_frac(NumType scale) const -> std::pair<BasicDigits, BasicDigits>
+  [[nodiscard]] auto split_frac(NumType scale) const -> std::pair<BasicDigits, BasicDigits>
   {
     BasicDigits whole;
     BasicDigits frac;
@@ -891,16 +892,12 @@ private:
     if (obase <= 16) {
       return std::string(1, nums[num]);
     }
-    else {
-      auto obase_width = std::to_string(obase - 1).size();
-      std::string str = std::to_string(num);
-      if (lspace) {
-        return std::string(" ") + std::string(obase_width - str.size(), '0') + str;
-      }
-      else {
-        return std::string(obase_width - str.size(), '0') + str;
-      }
+    auto obase_width = std::to_string(obase - 1).size();
+    std::string str = std::to_string(num);
+    if (lspace) {
+      return std::string(" ") + std::string(obase_width - str.size(), '0') + str;
     }
+    return std::string(obase_width - str.size(), '0') + str;
   }
 
   /** \brief       Iterate over the digits of \c *this & \a rhs calling \a fn.
@@ -934,7 +931,7 @@ private:
     WideType carry = 0;
     for (auto it_rhs : *rhs.digits_) {
       carry += it_rhs * pow10_scale;
-      NumType d_rhs = static_cast<NumType>(carry % base_);
+      auto d_rhs = static_cast<NumType>(carry % base_);
       carry /= base_;
 
       NumType d_lhs = (it_lhs == digits_->end()) ? 0 : *it_lhs++;
@@ -1231,8 +1228,8 @@ public:
   ~BasicNumber() = default;
   BasicNumber(BasicNumber const&) = default;
   auto operator=(BasicNumber const&) -> BasicNumber& = default;
-  BasicNumber(BasicNumber&&) = default;
-  auto operator=(BasicNumber&&) -> BasicNumber& = default;
+  BasicNumber(BasicNumber&&) noexcept = default;
+  auto operator=(BasicNumber&&) noexcept -> BasicNumber& = default;
 
   /** \brief       Construct a number.
    *  \param s     String representing the number.
@@ -1259,7 +1256,7 @@ public:
         ++scale_;
       }
 
-      auto digit = ::strchr(digits, c);
+      const auto* digit = ::strchr(digits, c);
       if (digit != nullptr) {
         assert((digit - digits < ibase) || (s.size() == 1 && digit - digits < 16));
         digits_.mac(ibase, static_cast<NumType>(digit - digits));
@@ -1313,12 +1310,12 @@ public:
   }
 
   /** \brief  Construct a basic number based upon the underlying type. */
-  BasicNumber(NumType value) : digits_(), sign_(Sign::positive), scale_(0)
+  explicit BasicNumber(NumType value) : digits_(), sign_(Sign::positive), scale_(0)
   {
     digits_.mac(base_, value);
   }
 
-  auto to_unsigned() const -> NumType
+  [[nodiscard]] auto to_unsigned() const -> NumType
   {
     if (sign_ == Sign::negative) {
       Details::error(Msg::number_to_unsigned_failed_negative, *this);
@@ -1380,10 +1377,10 @@ public:
   }
 
   /* Get the scale of the number.  */
-  auto scale() const -> NumType { return scale_; }
+  [[nodiscard]] auto scale() const -> NumType { return scale_; }
 
   /* Get the number of significant digits.  */
-  auto length() const -> NumType
+  [[nodiscard]] auto length() const -> NumType
   {
     if (digits_.is_zero()) {
       return std::max(NumType(1), scale());
@@ -1471,7 +1468,7 @@ public:
       negate();
       return;
     }
-    else if (sign_ == rhs.sign_) {
+    if (sign_ == rhs.sign_) {
       if (digits_.sub(rhs.digits_, scale_ - rhs.scale_)) {
         negate();
       }
@@ -1527,7 +1524,7 @@ public:
       }
 
       auto base_plus_target_scale = BasicNumber(target_scale);
-      base_plus_target_scale.add(base_);
+      base_plus_target_scale.add(BasicNumber(base_));
       while (power_whole.compare(base_plus_target_scale.digits_, 0) !=
              Details::ComparisonResult::less_than) {
         /* Scale is significantly larger than we can deal with - scale down by base_ until we get
@@ -1679,13 +1676,12 @@ public:
       digits_.div_pow10(scale() - target_scale);
       scale_ = target_scale;
     }
-    return;
   }
 
   /** \brief  Are we equal to zero?
    *  \return True iff equal to zero.
    */
-  auto is_zero() const -> bool { return digits_.is_zero(); }
+  [[nodiscard]] auto is_zero() const -> bool { return digits_.is_zero(); }
 
   auto operator==(BasicNumber const& rhs) const -> bool
   {
@@ -1703,7 +1699,7 @@ public:
   }
 
 private:
-  auto compare(BasicNumber const& rhs) const -> Details::ComparisonResult
+  [[nodiscard]] auto compare(BasicNumber const& rhs) const -> Details::ComparisonResult
   {
     bool lhs_zero = digits_.is_zero();
     bool rhs_zero = rhs.digits_.is_zero();
@@ -1777,7 +1773,7 @@ struct fmt::formatter<GD::Bc::BasicNumber<NumberTraits>>
 
   constexpr auto parse(format_parse_context& ctx)
   {
-    for (auto it = ctx.begin(); it != ctx.end(); ++it) {
+    for (const auto* it = ctx.begin(); it != ctx.end(); ++it) {
       switch (*it) {
       case 'd':
         debug_ = true;

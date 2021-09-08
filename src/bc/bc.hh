@@ -76,7 +76,7 @@ private:
   unsigned letter_;  ///< The letter.
 };
 
-auto operator<<(std::ostream&, Letter l) -> std::ostream&;
+auto operator<<(std::ostream& /*os*/, Letter l) -> std::ostream&;
 
 auto operator!=(Letter lhs, Letter rhs) -> bool;
 auto operator!=(Letter lhs, char rhs) -> bool;
@@ -163,37 +163,37 @@ struct Token
   Token(Type type, Letter l);
 
   /** \brief Get token type.  */
-  auto type() const -> Type;
+  [[nodiscard]] auto type() const -> Type;
 
   /** \brief  Get string stored in token. */
-  auto string() const -> std::string const&;
+  [[nodiscard]] auto string() const -> std::string const&;
 
   /** \brief  Get number stored in token. */
-  auto number() const -> std::string const&;
+  [[nodiscard]] auto number() const -> std::string const&;
 
   /** \brief Get letter stored in token. */
-  auto letter() const -> Letter;
+  [[nodiscard]] auto letter() const -> Letter;
 
   /** \brief  Get the error message.  */
-  auto error() const -> std::string const&;
+  [[nodiscard]] auto error() const -> std::string const&;
 
   /** \brief  Output debug form of token. */
   void debug(std::ostream& os) const;
 
   /** \brief  Is this an assignment op? */
-  auto is_assign_op() const -> bool;
+  [[nodiscard]] auto is_assign_op() const -> bool;
 
   /** \brief  Is this an increment/decrement op?  */
-  auto is_incr_decr_op() const -> bool;
+  [[nodiscard]] auto is_incr_decr_op() const -> bool;
 
   /** \brief  Is this a multiplication style op?  */
-  auto is_mul_op() const -> bool;
+  [[nodiscard]] auto is_mul_op() const -> bool;
 
   /** \brief  Is this an addition style op?  */
-  auto is_add_op() const -> bool;
+  [[nodiscard]] auto is_add_op() const -> bool;
 
   /** \brief  Is this a relation op? */
-  auto is_rel_op() const -> bool;
+  [[nodiscard]] auto is_rel_op() const -> bool;
 
 private:
   /** Internal type to hold a number and diferentiate it from string and error.  */
@@ -231,13 +231,13 @@ public:
   Location(std::string_view file_name, Line line, Column column);
 
   /** Get file name. */
-  auto file_name() const -> std::string const&;
+  [[nodiscard]] auto file_name() const -> std::string const&;
 
   /** Get column.  */
-  auto column() const -> Column;
+  [[nodiscard]] auto column() const -> Column;
 
   /** Get line.  */
-  auto line() const -> Line;
+  [[nodiscard]] auto line() const -> Line;
 
   /** \brief Move to next column.
    *
@@ -272,7 +272,7 @@ public:
   /** \brief      Constructor a parser
    *  \param name Name to use for file in error messages.
    */
-  Reader(std::string_view name);
+  explicit Reader(std::string_view name);
 
   /** \brief Abstract destructor.  */
   virtual ~Reader() = 0;
@@ -289,7 +289,7 @@ public:
   void chew();
 
   /** \brief  Get the current source location.  */
-  auto location() const -> Location const&;
+  [[nodiscard]] auto location() const -> Location const&;
 
   /** \brief  Report an error giving source location. */
   template<typename... Ts>
@@ -315,12 +315,12 @@ public:
   /** \brief Constructor
    *  \param s String to parse - it must stay valid for length of life of object.
    */
-  StringReader(std::string_view s);
+  explicit StringReader(std::string_view s);
 
-  auto peek() -> int override final;
+  auto peek() -> int final;
 
 private:
-  void do_chew() override final;
+  void do_chew() final;
 
   std::string_view s_;               ///< String
   std::string_view::size_type pos_;  ///< Current position in string.
@@ -333,12 +333,12 @@ public:
   /** \brief Constructor.
    *  \param f File name.
    */
-  FileReader(std::string_view f);
+  explicit FileReader(std::string_view f);
 
-  auto peek() -> int override final;
+  auto peek() -> int final;
 
 private:
-  void do_chew() override final;
+  void do_chew() final;
 
   GD::InputFile file_;  ///< File
   int c_;               ///< Current character (EOF means needs peeking or EOF)
@@ -364,7 +364,7 @@ public:
   void chew();
 
   /** \brief  Get the current location. */
-  auto location() const -> Location const&;
+  [[nodiscard]] auto location() const -> Location const&;
 
   /** \brief  Generate an error message with current location information added.  */
   template<typename... Ts>
@@ -450,10 +450,10 @@ public:
   void add(Array a);
 
   /** \brief  Does the mask contain variable \a letter?  */
-  auto contains(Variable v) const -> bool;
+  [[nodiscard]] auto contains(Variable v) const -> bool;
 
   /** \brief  Does the mask contain array \a letter?  */
-  auto contains(Array a) const -> bool;
+  [[nodiscard]] auto contains(Array a) const -> bool;
 
   /** Equality operator. */
   auto operator==(VariableMask rhs) const -> bool;
@@ -640,28 +640,28 @@ public:
   Instruction(Opcode opcode, Operand const& op1, Operand const& op2);
 
   /** Get opcode */
-  auto opcode() const -> Opcode;
+  [[nodiscard]] auto opcode() const -> Opcode;
 
   /** Do we have op1? */
-  auto has_op1() const -> bool;
+  [[nodiscard]] auto has_op1() const -> bool;
 
   /** Get operand 1.  */
-  auto op1() const -> Operand const&;
+  [[nodiscard]] auto op1() const -> Operand const&;
 
   /** Update operand 1.  */
   void op1(Operand const& operand);
 
   /** Do we have op2? */
-  auto has_op2() const -> bool;
+  [[nodiscard]] auto has_op2() const -> bool;
 
   /** Get operand 2.  */
-  auto op2() const -> Operand const&;
+  [[nodiscard]] auto op2() const -> Operand const&;
 
   /** Update operand 2.  */
   void op2(Operand const& operand);
 
   /** Do we have result? */
-  auto has_result() const -> bool;
+  [[nodiscard]] auto has_result() const -> bool;
 
   /** Does \a opcode have op1? */
   static auto has_op1(Opcode opcode) -> bool;
@@ -729,10 +729,10 @@ public:
     constexpr explicit ExprIndex(Index index) : index_(index), type_(ExprType::other) {}
 
     /** Get the index.  */
-    constexpr auto index() const -> Index { return index_; }
+    [[nodiscard]] constexpr auto index() const -> Index { return index_; }
 
     /** Get the type.  */
-    constexpr auto type() const -> ExprType { return type_; }
+    [[nodiscard]] constexpr auto type() const -> ExprType { return type_; }
 
     /** \brief Get a canonical "missing" expression index.  */
     static auto missing() -> ExprIndex const&
@@ -757,7 +757,7 @@ public:
   auto parse() -> std::shared_ptr<Instructions>;
 
   /** \brief  Have we seen a `quit` statement.  */
-  auto seen_quit() const noexcept -> bool;
+  [[nodiscard]] auto seen_quit() const noexcept -> bool;
 
 private:
   /** Parse the main program production. */
@@ -1165,7 +1165,7 @@ private:
   void pop_loop();
 
   /** \brief  Are we currently in a loop? */
-  auto in_loop() const -> bool;
+  [[nodiscard]] auto in_loop() const -> bool;
 
   std::unique_ptr<Lexer> lexer_;                ///< Lexer
   std::shared_ptr<Instructions> instructions_;  ///< Current set of instructions

@@ -17,10 +17,9 @@
 
 #include "bc.hh"
 
-GD::Bc::VariableMask::VariableMask() : variable_mask_(0), array_mask_(0) {}
+GD::Bc::VariableMask::VariableMask() = default;
 
 GD::Bc::VariableMask::VariableMask(std::string_view vars, std::string_view arrays)
-    : variable_mask_(0), array_mask_(0)
 {
   for (auto l : vars) {
     add(Variable(l));

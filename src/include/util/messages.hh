@@ -137,7 +137,7 @@ public:
    * This function is not necessarily thread safe.
    */
   template<typename... Ts>
-  auto format(typename Data::MessageEnum msg, Ts... args) const -> std::string
+  [[nodiscard]] auto format(typename Data::MessageEnum msg, Ts... args) const -> std::string
   {
     return format(Data::default_set_, msg, args...);
   }

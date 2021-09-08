@@ -93,7 +93,7 @@ TEST_CASE("GD::Bc::Lexer - Token extensions", "[bc][lexer][extensions]")
 
 TEST_CASE("GD::Bc::Lexer - Number", "[bc][lexer]")
 {
-  auto number = GENERATE("1234567890", "ABCDEF1", ".1", "2.0", "3.", "1\\\n2");
+  const auto* number = GENERATE("1234567890", "ABCDEF1", ".1", "2.0", "3.", "1\\\n2");
   auto lexer = GD::Bc::Lexer(std::make_unique<GD::Bc::StringReader>(number));
   auto t1 = lexer.peek();
   REQUIRE(t1.type() == GD::Bc::Token::Type::number);
@@ -109,7 +109,7 @@ TEST_CASE("GD::Bc::Lexer - Number", "[bc][lexer]")
 
 TEST_CASE("GD::Bc::Lexer - Number Extensions", "[bc][lexer][extensions]")
 {
-  auto number = GENERATE("1\\\n    2");
+  const auto* number = GENERATE("1\\\n    2");
   auto lexer = GD::Bc::Lexer(std::make_unique<GD::Bc::StringReader>(number));
   auto t1 = lexer.peek();
   if (GD::Bc::extensions_enabled()) {
@@ -145,7 +145,7 @@ TEST_CASE("GD::Bc::Lexer - Letter", "[bc][lexer]")
 
 TEST_CASE("GD::Bc::Lexer - String", "[bc][lexer]")
 {
-  auto string = GENERATE("Hello, world!", "A\\\nB");
+  const auto* string = GENERATE("Hello, world!", "A\\\nB");
   std::string s = std::string("\"") + string + std::string("\"");
   auto lexer = GD::Bc::Lexer(std::make_unique<GD::Bc::StringReader>(s));
   auto t1 = lexer.peek();

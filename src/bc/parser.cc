@@ -202,16 +202,14 @@ auto GD::Bc::Parser::parse_input_item() -> bool
     parse_function();
     return true;
   }
-  else {
-    parse_semicolon_list();
-    if (lexer_->peek() != Token::Type::newline) {
-      insert_error(Msg::missing_newline_at_end_of_semicolon_list, lexer_->peek());
-    }
-    else {
-      lexer_->chew();
-    }
-    return !interactive_ && !error_;
+  parse_semicolon_list();
+  if (lexer_->peek() != Token::Type::newline) {
+    insert_error(Msg::missing_newline_at_end_of_semicolon_list, lexer_->peek());
   }
+  else {
+    lexer_->chew();
+  }
+  return !interactive_ && !error_;
 }
 
 void GD::Bc::Parser::parse_semicolon_list()

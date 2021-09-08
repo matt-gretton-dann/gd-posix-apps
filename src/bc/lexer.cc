@@ -8,9 +8,9 @@
 
 #include "bc-messages.hh"
 
+#include <cstdint>
 #include <memory>
 #include <optional>
-#include <stdint.h>
 
 #include "bc.hh"
 #include <string_view>

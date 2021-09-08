@@ -14,7 +14,7 @@
 
 #include "bc-messages.hh"
 
-#include <assert.h>
+#include <cassert>
 #include <iostream>
 #include <memory>
 #include <variant>
@@ -70,7 +70,7 @@ auto main(int argc, char** argv) -> int
   ::setlocale(LC_ALL, "");
   GD::program_name(argv[0]);
 
-  int c;
+  int c = 0;
   bool load_library = false;
   bool save_specials = false;
 #if ENABLE_EXTENSIONS
@@ -91,7 +91,7 @@ auto main(int argc, char** argv) -> int
     case ':':
     case '?':
     default:
-      error(Msg::unrecognised_option, (char)optopt);
+      error(Msg::unrecognised_option, static_cast<char>(optopt));
       break;
     }
   }
