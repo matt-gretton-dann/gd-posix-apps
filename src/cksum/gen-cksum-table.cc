@@ -5,6 +5,7 @@
  */
 
 #include "gd/libgen.h"
+
 #include "gd/limits.h"
 #include "gd/stdlib.h"
 
@@ -14,6 +15,7 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
+#include <span>
 
 namespace {
 constexpr unsigned uint8_max = std::numeric_limits<std::uint8_t>::max();
@@ -28,12 +30,14 @@ auto main(int argc, char** argv) -> int
   constexpr std::uint32_t table_size = uint8_max + 1;
   constexpr std::uint32_t bit31 = 1U << 31;
 
-  if (argc != 2) {
-    std::cerr << ::basename(argv[0]) << ": Need to specify output file.\n";
+  std::span<char*> args(argv, argc);
+  if (args.size() != 2) {
+    // NOLINTNEXTLINE(concurrency-mt-unsafe)
+    std::cerr << ::basename(args[0]) << ": Need to specify output file.\n";
     return EXIT_FAILURE;
   }
 
-  std::ofstream of(argv[1]);
+  std::ofstream of(args[1]);
 
   of << "/** \\file   cksum-table.cc\n"
         " *  \\brief  Checksum table\n"
@@ -48,7 +52,8 @@ auto main(int argc, char** argv) -> int
         "\n"
         "namespace GD::Cksum {\n"
         "\n"
-        "std::array<std::uint32_t, std::numeric_limits<std::uint8_t>::max() + 1> cksum_table = {\n"
+        "extern const std::array<std::uint32_t, std::numeric_limits<std::uint8_t>::max() + 1> "
+        "  cksum_table = {\n"
         "\n"
         "  ";
 
