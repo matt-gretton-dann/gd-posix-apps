@@ -44,7 +44,7 @@ template<typename... Ts>
   std::cerr << GD::program_name() << ": "
             << GD::Bc::Messages::get().format(GD::Bc::Set::bc, msg, args...) << '\n'
             << GD::Bc::Messages::get().format(GD::Bc::Set::bc, usage, GD::program_name()) << '\n';
-  ::exit(1);
+  std::exit(1);  // NOLINT(concurrency-mt-unsafe)
 }
 
 void execute(GD::Bc::VM& vm, std::unique_ptr<GD::Bc::Reader>&& r)
@@ -67,6 +67,7 @@ void execute(GD::Bc::VM& vm, std::unique_ptr<GD::Bc::Reader>&& r)
 
 auto main(int argc, char** argv) -> int
 {
+  std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
   ::setlocale(LC_ALL, "");
   GD::program_name(argv[0]);
 
@@ -78,7 +79,7 @@ auto main(int argc, char** argv) -> int
 #else
   char const* opts = ":l";
 #endif
-  while ((c = ::getopt(argc, argv, opts)) != -1) {
+  while ((c = ::getopt(argc, argv, opts)) != -1) {  // NOLINT(concurrency-mt-unsafe)
     switch (c) {
     case 'g':
       save_specials = true;

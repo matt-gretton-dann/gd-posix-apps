@@ -47,7 +47,7 @@ inline constexpr auto extensions_enabled() -> bool
 
 #ifndef ENABLE_EXTENSIONS
 /** Are the non-POSIX extensions enabled? */
-#  define ENABLE_EXTENSIONS 0
+#  define ENABLE_EXTENSIONS 0  // NOLINT(cppcoreguidelines-macro-usage)
 #endif
 
 namespace GD::Bc {

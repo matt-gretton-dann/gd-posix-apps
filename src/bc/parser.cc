@@ -159,7 +159,7 @@ GD::Bc::Parser::Parser(std::unique_ptr<Lexer>&& lexer, bool interactive)
     : lexer_(std::move(lexer)), interactive_(interactive), error_(false), in_function_(false),
       seen_quit_(false)
 {
-  assert(lexer_ != nullptr);
+  assert(lexer_ != nullptr);  // NOLINT
 }
 
 auto GD::Bc::Parser::parse() -> std::shared_ptr<GD::Bc::Instructions>
@@ -325,7 +325,7 @@ auto GD::Bc::Parser::parse_opt_statement() -> bool
 
 void GD::Bc::Parser::parse_break_statement()
 {
-  assert(lexer_->peek() == Token::Type::break_);
+  assert(lexer_->peek() == Token::Type::break_);  // NOLINT
   lexer_->chew();
 
   if (!in_loop()) {
@@ -344,7 +344,7 @@ void GD::Bc::Parser::parse_return_statement()
     return;
   }
 
-  assert(lexer_->peek() == Token::Type::return_);
+  assert(lexer_->peek() == Token::Type::return_);  // NOLINT
   lexer_->chew();
 
   ExprIndex expr = ExprIndex::missing();
@@ -395,7 +395,7 @@ void GD::Bc::Parser::parse_for_statement()
    *    <body>
    *    b  update
    */
-  assert(lexer_->peek() == Token::Type::for_);
+  assert(lexer_->peek() == Token::Type::for_);  // NOLINT
   lexer_->chew();
 
   if (lexer_->peek() != Token::Type::lparens) {
@@ -449,7 +449,7 @@ void GD::Bc::Parser::parse_for_statement()
 
 void GD::Bc::Parser::parse_if_statement()
 {
-  assert(lexer_->peek() == Token::Type::if_);
+  assert(lexer_->peek() == Token::Type::if_);  // NOLINT
   lexer_->chew();
 
   if (lexer_->peek() != Token::Type::lparens) {
@@ -476,7 +476,7 @@ void GD::Bc::Parser::parse_if_statement()
 
 void GD::Bc::Parser::parse_while_statement()
 {
-  assert(lexer_->peek() == Token::Type::while_);
+  assert(lexer_->peek() == Token::Type::while_);  // NOLINT
 
   lexer_->chew();
 
@@ -521,7 +521,7 @@ void GD::Bc::Parser::update_loop_exits(Index dest)
       i.op2(o);
     }
     else {
-      assert(false);
+      assert(false);  // NOLINT
     }
   }
 }
@@ -537,7 +537,7 @@ void GD::Bc::Parser::parse_function()
     return;
   }
   in_function_ = true;
-  assert(lexer_->peek() == Token::Type::define);
+  assert(lexer_->peek() == Token::Type::define);  // NOLINT
   Location loc = lexer_->location();
   lexer_->chew();
 
@@ -1147,7 +1147,7 @@ auto GD::Bc::Parser::parse_primary_expression(POPEFlags flags) -> GD::Bc::Parser
 
 auto GD::Bc::Parser::ensure_expr_loaded(ExprIndex idx) -> GD::Bc::Parser::ExprIndex
 {
-  assert(idx != ExprType::missing);
+  assert(idx != ExprType::missing);  // NOLINT
   if (idx == ExprType::named || idx == ExprType::array_slice) {
     idx = insert_load(idx);
   }
@@ -1183,7 +1183,7 @@ auto GD::Bc::Parser::insert_quit(unsigned exit_code) -> GD::Bc::Parser::ExprInde
 
 auto GD::Bc::Parser::insert_load(ExprIndex idx) -> GD::Bc::Parser::ExprIndex
 {
-  assert(idx == ExprType::named || idx == ExprType::array_slice);
+  assert(idx == ExprType::named || idx == ExprType::array_slice);  // NOLINT
   ExprIndex result(instructions_->size());
   instructions_->emplace_back(Instruction::Opcode::load, idx - result);
   return result;
@@ -1191,7 +1191,7 @@ auto GD::Bc::Parser::insert_load(ExprIndex idx) -> GD::Bc::Parser::ExprIndex
 
 auto GD::Bc::Parser::insert_store(ExprIndex var, ExprIndex value) -> GD::Bc::Parser::ExprIndex
 {
-  assert(var == ExprType::named || var == ExprType::array_slice);
+  assert(var == ExprType::named || var == ExprType::array_slice);  // NOLINT
   value = ensure_expr_loaded(value);
   ExprIndex end(instructions_->size());
   instructions_->emplace_back(Instruction::Opcode::store, var - end, value - end);

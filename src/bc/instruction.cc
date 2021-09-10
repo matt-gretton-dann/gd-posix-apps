@@ -70,20 +70,20 @@ auto GD::Bc::operator<<(std::ostream& os, GD::Bc::VariableMask mask) -> std::ost
 
 GD::Bc::Instruction::Instruction(Opcode opcode) : opcode_(opcode)
 {
-  assert(op_count(opcode) == 0);
+  assert(op_count(opcode) == 0);  // NOLINT
   validate_operands();
 }
 
 GD::Bc::Instruction::Instruction(Opcode opcode, Operand const& op1) : opcode_(opcode), op1_(op1)
 {
-  assert(op_count(opcode) == 1);
+  assert(op_count(opcode) == 1);  // NOLINT
   validate_operands();
 }
 
 GD::Bc::Instruction::Instruction(Opcode opcode, Operand const& op1, Operand const& op2)
     : opcode_(opcode), op1_(op1), op2_(op2)
 {
-  assert(op_count(opcode) == 2);
+  assert(op_count(opcode) == 2);  // NOLINT
   validate_operands();
 }
 
@@ -91,26 +91,26 @@ auto GD::Bc::Instruction::opcode() const -> GD::Bc::Instruction::Opcode { return
 
 auto GD::Bc::Instruction::op1() const -> GD::Bc::Instruction::Operand const&
 {
-  assert(has_op1());
+  assert(has_op1());  // NOLINT
   return *op1_;
 }
 
 void GD::Bc::Instruction::op1(Operand const& operand)
 {
-  assert(has_op1());
+  assert(has_op1());  // NOLINT
   op1_ = operand;
   validate_operands();
 }
 
 auto GD::Bc::Instruction::op2() const -> GD::Bc::Instruction::Operand const&
 {
-  assert(has_op2());
+  assert(has_op2());  // NOLINT
   return *op2_;
 }
 
 void GD::Bc::Instruction::op2(Operand const& operand)
 {
-  assert(has_op2());
+  assert(has_op2());  // NOLINT
   op2_ = operand;
   validate_operands();
 }
@@ -321,29 +321,29 @@ void GD::Bc::Instruction::validate_operands() const
   case GD::Bc::Instruction::Opcode::pop_param_mark:
   case GD::Bc::Instruction::Opcode::pop_param:
   case GD::Bc::Instruction::Opcode::pop_param_array:
-    assert(!op1_.has_value());
-    assert(!op2_.has_value());
+    assert(!op1_.has_value());  // NOLINT
+    assert(!op2_.has_value());  // NOLINT
     break;
   case GD::Bc::Instruction::Opcode::quit:
-    assert(op1_.has_value());
-    assert(!op2_.has_value());
-    assert(std::holds_alternative<unsigned>(*op1_));
+    assert(op1_.has_value());                         // NOLINT
+    assert(!op2_.has_value());                        // NOLINT
+    assert(std::holds_alternative<unsigned>(*op1_));  // NOLINT
     break;
   case GD::Bc::Instruction::Opcode::string:
   case GD::Bc::Instruction::Opcode::number:
-    assert(op1_.has_value());
-    assert(!op2_.has_value());
-    assert(std::holds_alternative<std::string>(*op1_));
+    assert(op1_.has_value());                            // NOLINT
+    assert(!op2_.has_value());                           // NOLINT
+    assert(std::holds_alternative<std::string>(*op1_));  // NOLINT
     break;
   case GD::Bc::Instruction::Opcode::variable:
-    assert(op1_.has_value());
-    assert(!op2_.has_value());
-    assert(std::holds_alternative<Variable>(*op1_));
+    assert(op1_.has_value());                         // NOLINT
+    assert(!op2_.has_value());                        // NOLINT
+    assert(std::holds_alternative<Variable>(*op1_));  // NOLINT
     break;
   case GD::Bc::Instruction::Opcode::array:
-    assert(op1_.has_value());
-    assert(!op2_.has_value());
-    assert(std::holds_alternative<Array>(*op1_));
+    assert(op1_.has_value());                      // NOLINT
+    assert(!op2_.has_value());                     // NOLINT
+    assert(std::holds_alternative<Array>(*op1_));  // NOLINT
     break;
   case GD::Bc::Instruction::Opcode::negate:
   case GD::Bc::Instruction::Opcode::load:
@@ -354,27 +354,27 @@ void GD::Bc::Instruction::validate_operands() const
   case GD::Bc::Instruction::Opcode::branch:
   case GD::Bc::Instruction::Opcode::return_:
   case GD::Bc::Instruction::Opcode::push_param:
-    assert(op1_.has_value());
-    assert(!op2_.has_value());
-    assert(std::holds_alternative<Offset>(*op1_));
+    assert(op1_.has_value());                       // NOLINT
+    assert(!op2_.has_value());                      // NOLINT
+    assert(std::holds_alternative<Offset>(*op1_));  // NOLINT
     break;
   case GD::Bc::Instruction::Opcode::print:
-    assert(op1_.has_value());
-    assert(op2_.has_value());
-    assert(std::holds_alternative<Offset>(*op1_));
-    assert(std::holds_alternative<Stream>(*op2_));
+    assert(op1_.has_value());                       // NOLINT
+    assert(op2_.has_value());                       // NOLINT
+    assert(std::holds_alternative<Offset>(*op1_));  // NOLINT
+    assert(std::holds_alternative<Stream>(*op2_));  // NOLINT
     break;
   case GD::Bc::Instruction::Opcode::array_element:
-    assert(op1_.has_value());
-    assert(op2_.has_value());
-    assert(std::holds_alternative<Array>(*op1_));
-    assert(std::holds_alternative<Offset>(*op2_));
+    assert(op1_.has_value());                       // NOLINT
+    assert(op2_.has_value());                       // NOLINT
+    assert(std::holds_alternative<Array>(*op1_));   // NOLINT
+    assert(std::holds_alternative<Offset>(*op2_));  // NOLINT
     break;
   case GD::Bc::Instruction::Opcode::function_end:
-    assert(op1_.has_value());
-    assert(op2_.has_value());
-    assert(std::holds_alternative<Letter>(*op1_));
-    assert(std::holds_alternative<Offset>(*op2_));
+    assert(op1_.has_value());                       // NOLINT
+    assert(op2_.has_value());                       // NOLINT
+    assert(std::holds_alternative<Letter>(*op1_));  // NOLINT
+    assert(std::holds_alternative<Offset>(*op2_));  // NOLINT
     break;
   case GD::Bc::Instruction::Opcode::add:
   case GD::Bc::Instruction::Opcode::subtract:
@@ -388,22 +388,22 @@ void GD::Bc::Instruction::validate_operands() const
   case GD::Bc::Instruction::Opcode::not_equals:
   case GD::Bc::Instruction::Opcode::less_than:
   case GD::Bc::Instruction::Opcode::branch_zero:
-    assert(op1_.has_value());
-    assert(op2_.has_value());
-    assert(std::holds_alternative<Offset>(*op1_));
-    assert(std::holds_alternative<Offset>(*op2_));
+    assert(op1_.has_value());                       // NOLINT
+    assert(op2_.has_value());                       // NOLINT
+    assert(std::holds_alternative<Offset>(*op1_));  // NOLINT
+    assert(std::holds_alternative<Offset>(*op2_));  // NOLINT
     break;
   case GD::Bc::Instruction::Opcode::call:
-    assert(op1_.has_value());
-    assert(op2_.has_value());
-    assert(std::holds_alternative<Letter>(*op1_));
-    assert(std::holds_alternative<Location>(*op2_));
+    assert(op1_.has_value());                         // NOLINT
+    assert(op2_.has_value());                         // NOLINT
+    assert(std::holds_alternative<Letter>(*op1_));    // NOLINT
+    assert(std::holds_alternative<Location>(*op2_));  // NOLINT
     break;
   case GD::Bc::Instruction::Opcode::function_begin:
-    assert(op1_.has_value());
-    assert(op2_.has_value());
-    assert(std::holds_alternative<VariableMask>(*op1_));
-    assert(std::holds_alternative<Location>(*op2_));
+    assert(op1_.has_value());                             // NOLINT
+    assert(op2_.has_value());                             // NOLINT
+    assert(std::holds_alternative<VariableMask>(*op1_));  // NOLINT
+    assert(std::holds_alternative<Location>(*op2_));      // NOLINT
     break;
   }
 }

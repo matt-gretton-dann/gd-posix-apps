@@ -39,9 +39,7 @@ public:
       if (i % GD::Bc::Number::base_log10_ == 0) {
         digits = dist_(rand_);
       }
-      auto digit = digits / (GD::Bc::Number::base_ / 10);
-      digits = (digits % (GD::Bc::Number::base_ / 10)) * 10;
-      assert(digit < 10);
+      assert(digit < base10);  // NOLINT
 
       num += static_cast<char>('0' + digit);
     }
@@ -133,8 +131,8 @@ auto check(Number::NumType initial_digit) -> Number::NumType
   /* Generate enough numbers that the initial run takes >3 secs.
    * We expect the best time to be ~50% of initial run - so this ensures we get good numbers.
    */
-  constexpr Time min_time{3, 0};
-  constexpr Time half_sec{0, 500000000};
+  constexpr Time min_time{3, 0};          // NOLINT - we're defining numbers here they're not magic
+  constexpr Time half_sec{0, 500000000};  // NOLINT - ditto
   while (base_time < min_time) {
     std::vector<Number> numbers = canon_numbers;
     base_time = time_run([&numbers]() { multiply(numbers); });

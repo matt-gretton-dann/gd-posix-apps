@@ -17,13 +17,16 @@
 #include "bc.hh"
 #include "number.hh"
 
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define STRINGIFY2(a) #a
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define STRINGIFY(a) STRINGIFY2(a)
 
 __DISABLE_NARROWING_WARNING
 
 /* Assert an error.
- * To work around some awkward compilers ther first ... argument is a message ID. */
+ * To work around some awkward compilers the first ... argument is a message ID. */
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define assert_error(TEST, ...)                                                                    \
   if (!(TEST)) {                                                                                   \
     error(__func__, __FILE__, __LINE__, STRINGIFY(TEST), __VA_ARGS__);                             \
@@ -113,7 +116,7 @@ private:
   {
     error_ << Messages::get().format(Set::bc, Msg::internal_error, func, file, line, test) << '\n'
            << Messages::get().format(Set::bc, msg, args...) << '\n';
-    ::exit(1);
+    std::exit(1);  // NOLINT(concurrency-mt-unsafe)
   }
 
   using Param = std::variant<ArrayValues, Number>;  ///< Parameter to a function
@@ -181,7 +184,7 @@ private:
       << Messages::get().format(Set::bc, Msg::internal_error, func, file, line, test) << '\n'
       << Messages::get().format(Set::bc, Msg::instruction_header) << '\n'
       << *this << Messages::get().format(Set::bc, msg, args...) << '\n';
-    ::exit(1);
+    std::exit(1);  // NOLINT(concurrency-mt-unsafe)
   }
 
   /** Execute print instruction.  */
@@ -312,7 +315,7 @@ auto operator<<(std::ostream& os, InstructionPack const& instrs) -> std::ostream
 auto operator<<(std::ostream& os, InstructionPack::Result const& result) -> std::ostream&;
 
 /** Interrupt handler globals */
-sig_atomic_t have_been_interrupted = false;
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 
 /** Handle receiving SIGINT.  */
 __EXTERN_C void handle_sigint(int) { have_been_interrupted = true; }
@@ -354,13 +357,13 @@ auto GD::Bc::Details::VMState::stream(Instruction::Stream stream) const -> std::
 
 void GD::Bc::Details::VMState::push_param(Number const& n)
 {
-  assert_error(!param_stack_.empty(), Msg::parameter_stack_empty);
+  assert_error(!param_stack_.empty(), Msg::parameter_stack_empty);  // NOLINT
   param_stack_.back().push_back(n);
 }
 
 void GD::Bc::Details::VMState::push_param(ArrayValues av)
 {
-  assert_error(!param_stack_.empty(), Msg::parameter_stack_empty);
+  assert_error(!param_stack_.empty(), Msg::parameter_stack_empty);  // NOLINT
   param_stack_.back().push_back(av);
 }
 
@@ -368,15 +371,15 @@ void GD::Bc::Details::VMState::push_param_pack() { param_stack_.push_back(Params
 
 void GD::Bc::Details::VMState::pop_param_pack()
 {
-  assert_error(!param_stack_.empty(), Msg::parameter_stack_empty);
-  assert_error(param_stack_.back().empty(), Msg::parameter_pack_not_empty);
+  assert_error(!param_stack_.empty(), Msg::parameter_stack_empty);           // NOLINT
+  assert_error(param_stack_.back().empty(), Msg::parameter_pack_not_empty);  // NOLINT
   param_stack_.pop_back();
 }
 
 auto GD::Bc::Details::VMState::pop_param() -> GD::Bc::Number
 {
-  assert_error(!param_stack_.empty(), Msg::parameter_stack_empty);
-  assert_error(!param_stack_.back().empty(), Msg::parameter_pack_empty);
+  assert_error(!param_stack_.empty(), Msg::parameter_stack_empty);        // NOLINT
+  assert_error(!param_stack_.back().empty(), Msg::parameter_pack_empty);  // NOLINT
   auto result(std::get<Number>(param_stack_.back().front()));
   param_stack_.back().pop_front();
   return result;
@@ -384,8 +387,8 @@ auto GD::Bc::Details::VMState::pop_param() -> GD::Bc::Number
 
 auto GD::Bc::Details::VMState::pop_param_array() -> GD::Bc::ArrayValues
 {
-  assert_error(!param_stack_.empty(), Msg::parameter_stack_empty);
-  assert_error(!param_stack_.back().empty(), Msg::parameter_pack_empty);
+  assert_error(!param_stack_.empty(), Msg::parameter_stack_empty);        // NOLINT
+  assert_error(!param_stack_.back().empty(), Msg::parameter_pack_empty);  // NOLINT
   auto result(std::get<ArrayValues>(param_stack_.back().front()));
   param_stack_.back().pop_front();
   return result;
@@ -455,7 +458,7 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
 void GD::Bc::Details::VMState::ibase(Number num)
 {
   NumType n = num.to_unsigned();
-  if (n < 2 || n > 16) {
+  if (n < 2 || n > 16) {  // NOLINT - 16 is not magic
     Details::error(Msg::ibase_out_of_range, n);
   }
   ibase_ = n;
@@ -544,6 +547,7 @@ void GD::Bc::Details::VMState::validate(Instructions const& instrs) const
         Instruction::Offset offset = std::get<Instruction::Offset>(op);
         assert_error(offset >= 0 || static_cast<Instruction::Index>(-offset) <= i,
                      Msg::op1_offset_underflow, i, offset);
+        // NOLINTNEXTLINE
         assert_error(offset < 0 || static_cast<Instruction::Index>(offset) <= instrs.size() - i,
                      Msg::op1_offset_overflow, i, offset);
       }
@@ -552,8 +556,10 @@ void GD::Bc::Details::VMState::validate(Instructions const& instrs) const
       auto const& op = instrs[i].op1();
       if (std::holds_alternative<Instruction::Offset>(op)) {
         Instruction::Offset offset = std::get<Instruction::Offset>(op);
+        // NOLINTNEXTLINE
         assert_error(offset >= 0 || static_cast<Instruction::Index>(-offset) <= i,
                      Msg::op2_offset_underflow, i, offset);
+        // NOLINTNEXTLINE
         assert_error(offset < 0 || static_cast<Instruction::Index>(offset) <= instrs.size() - i,
                      Msg::op2_offset_overflow, i, offset);
       }
@@ -564,7 +570,7 @@ void GD::Bc::Details::VMState::validate(Instructions const& instrs) const
 GD::Bc::Details::InstructionPack::InstructionPack(VMState* vm, Instructions const& instrs)
     : vm_(vm), instrs_(instrs), pc_(0), results_(instrs.size())
 {
-  assert(vm_ != nullptr);
+  assert(vm_ != nullptr);  // NOLINT
 }
 
 auto GD::Bc::Details::InstructionPack::execute() -> std::pair<GD::Bc::Number, bool>
@@ -712,11 +718,11 @@ auto GD::Bc::Details::InstructionPack::execute() -> std::pair<GD::Bc::Number, bo
 
 void GD::Bc::Details::InstructionPack::execute_print()
 {
-  assert(instrs_[pc_].opcode() == Instruction::Opcode::print);
+  assert(instrs_[pc_].opcode() == Instruction::Opcode::print);  // NOLINT
   Index result_idx = get_offset_index(instrs_[pc_].op1());
   std::ostream& os = vm_->stream(std::get<Instruction::Stream>(instrs_[pc_].op2()));
   auto& result = results_[result_idx];
-  assert_error(result.has_value(), Msg::empty_result, result_idx);
+  assert_error(result.has_value(), Msg::empty_result, result_idx);  // NOLINT
   std::visit(Overloaded{
                [&os](std::string_view sv) { os << sv; },
                [&os, this](Number n) {
@@ -736,17 +742,18 @@ void GD::Bc::Details::InstructionPack::execute_print()
 
 void GD::Bc::Details::InstructionPack::execute_quit()
 {
-  assert(instrs_[pc_].opcode() == Instruction::Opcode::quit);
-  ::exit(std::get<unsigned>(instrs_[pc_].op1()));
+  assert(instrs_[pc_].opcode() == Instruction::Opcode::quit);  // NOLINT
+  std::exit(                                                   // NOLINT(concurrency-mt-unsafe)
+    static_cast<int>(std::get<unsigned>(instrs_.at(pc_).op1())));
 }
 
 void GD::Bc::Details::InstructionPack::execute_length()
 {
-  assert(instrs_[pc_].opcode() == Instruction::Opcode::length);
+  assert(instrs_[pc_].opcode() == Instruction::Opcode::length);  // NOLINT
   Index loc_idx = get_offset_index(instrs_[pc_].op1());
   auto& result = results_[pc_];
   auto const& loc = results_[loc_idx];
-  assert_error(loc.has_value(), Msg::empty_result, loc_idx);
+  assert_error(loc.has_value(), Msg::empty_result, loc_idx);  // NOLINT
 
   std::visit(
     Overloaded{
@@ -765,11 +772,10 @@ void GD::Bc::Details::InstructionPack::execute_length()
 
 void GD::Bc::Details::InstructionPack::execute_load()
 {
-  assert(instrs_[pc_].opcode() == Instruction::Opcode::load);
-  Index loc_idx = get_offset_index(instrs_[pc_].op1());
+  assert(instrs_[pc_].opcode() == Instruction::Opcode::load);  // NOLINT
   auto& result = results_[pc_];
   auto const& loc = results_[loc_idx];
-  assert_error(loc.has_value(), Msg::empty_result, loc_idx);
+  assert_error(loc.has_value(), Msg::empty_result, loc_idx);  // NOLINT
 
   std::visit(Overloaded{
                [this](std::string_view) { assert_error(false, Msg::cannot_load, "string_view"); },
@@ -787,13 +793,13 @@ void GD::Bc::Details::InstructionPack::execute_load()
 
 void GD::Bc::Details::InstructionPack::execute_store()
 {
-  assert(instrs_[pc_].opcode() == Instruction::Opcode::store);
+  assert(instrs_[pc_].opcode() == Instruction::Opcode::store);  // NOLINT
   Index loc_idx = get_offset_index(instrs_[pc_].op1());
   auto& loc = results_[loc_idx];
-  assert_error(loc.has_value(), Msg::empty_result, loc_idx);
+  assert_error(loc.has_value(), Msg::empty_result, loc_idx);  // NOLINT
   Index expr_idx = get_offset_index(instrs_[pc_].op2());
   auto& result = results_[expr_idx];
-  assert_error(result.has_value(), Msg::empty_result, expr_idx);
+  assert_error(result.has_value(), Msg::empty_result, expr_idx);  // NOLINT
   auto& expr = *result;
 
   std::visit(
@@ -813,13 +819,13 @@ void GD::Bc::Details::InstructionPack::execute_store()
 
 auto GD::Bc::Details::InstructionPack::execute_branch() -> GD::Bc::Instruction::Index
 {
-  assert(instrs_[pc_].opcode() == Instruction::Opcode::branch);
+  assert(instrs_[pc_].opcode() == Instruction::Opcode::branch);  // NOLINT
   return get_offset_index(instrs_[pc_].op1());
 }
 
 auto GD::Bc::Details::InstructionPack::execute_branch_zero() -> GD::Bc::Instruction::Index
 {
-  assert(instrs_[pc_].opcode() == Instruction::Opcode::branch_zero);
+  assert(instrs_[pc_].opcode() == Instruction::Opcode::branch_zero);  // NOLINT
   Number c = get_op1_expr();
   Index dest_idx = get_offset_index(instrs_[pc_].op2());
   return c.is_zero() ? dest_idx : pc_ + 1;
@@ -827,13 +833,14 @@ auto GD::Bc::Details::InstructionPack::execute_branch_zero() -> GD::Bc::Instruct
 
 auto GD::Bc::Details::InstructionPack::execute_function_begin() -> GD::Bc::Instruction::Index
 {
-  assert(instrs_[pc_].opcode() == Instruction::Opcode::function_begin);
+  assert(instrs_[pc_].opcode() == Instruction::Opcode::function_begin);  // NOLINT
   VariableMask mask = std::get<VariableMask>(instrs_[pc_].op1());
   Location loc = std::get<Location>(instrs_[pc_].op2());
   Index start = pc_++;
   while (pc_ != instrs_.size() && instrs_[pc_].opcode() != Instruction::Opcode::function_end) {
     ++pc_;
   }
+  // NOLINTNEXTLINE
   assert_error(pc_ != instrs_.size(), Msg::no_end_to_function_definition, loc.file_name(),
                loc.line(), loc.column());
 
@@ -847,16 +854,16 @@ auto GD::Bc::Details::InstructionPack::execute_function_begin() -> GD::Bc::Instr
 
 void GD::Bc::Details::InstructionPack::execute_push_param_mark()
 {
-  assert(instrs_[pc_].opcode() == Instruction::Opcode::push_param_mark);
+  assert(instrs_[pc_].opcode() == Instruction::Opcode::push_param_mark);  // NOLINT
   vm_->push_param_pack();
 }
 
 void GD::Bc::Details::InstructionPack::execute_push_param()
 {
-  assert(instrs_[pc_].opcode() == Instruction::Opcode::push_param);
+  assert(instrs_[pc_].opcode() == Instruction::Opcode::push_param);  // NOLINT
   Index expr_idx = get_offset_index(instrs_[pc_].op1());
   auto& expr = results_[expr_idx];
-  assert_error(expr.has_value(), Msg::empty_result, expr_idx);
+  assert_error(expr.has_value(), Msg::empty_result, expr_idx);  // NOLINT
 
   std::visit(Overloaded{
                [this](Number const& n) { vm_->push_param(n); },
@@ -868,7 +875,7 @@ void GD::Bc::Details::InstructionPack::execute_push_param()
 
 void GD::Bc::Details::InstructionPack::execute_pop_param_mark()
 {
-  assert(instrs_[pc_].opcode() == Instruction::Opcode::pop_param_mark);
+  assert(instrs_[pc_].opcode() == Instruction::Opcode::pop_param_mark);  // NOLINT
   vm_->pop_param_pack();
 }
 
@@ -885,7 +892,7 @@ auto GD::Bc::Details::InstructionPack::get_op_expr(Instruction::Operand const& o
   -> GD::Bc::Number const&
 {
   auto const& result = results_[get_offset_index(op)];
-  assert_error(result.has_value(), Msg::empty_result, get_offset_index(op));
+  assert_error(result.has_value(), Msg::empty_result, get_offset_index(op));  // NOLINT
   return std::get<Number>(*result);
 }
 
@@ -950,22 +957,26 @@ void GD::Bc::Details::InstructionPack::validate_result(Index i) const
   case GD::Bc::Instruction::Opcode::store:
   case GD::Bc::Instruction::Opcode::branch_zero:
   case GD::Bc::Instruction::Opcode::function_begin:
-    assert_error(!result.has_value(), Msg::non_empty_result, i);
+    assert_error(!result.has_value(), Msg::non_empty_result, i);  // NOLINT
     break;
   case GD::Bc::Instruction::Opcode::scale:
-    assert_error(result.has_value(), Msg::empty_result, i);
+    assert_error(result.has_value(), Msg::empty_result, i);  // NOLINT
+    // NOLINTNEXTLINE
     assert_error(std::holds_alternative<Scale>(*result), Msg::wrong_result_type, i, "Scale");
     break;
   case GD::Bc::Instruction::Opcode::ibase:
-    assert_error(result.has_value(), Msg::empty_result, i);
+    assert_error(result.has_value(), Msg::empty_result, i);  // NOLINT
+    // NOLINTNEXTLINE
     assert_error(std::holds_alternative<Ibase>(*result), Msg::wrong_result_type, i, "Ibase");
     break;
   case GD::Bc::Instruction::Opcode::obase:
-    assert_error(result.has_value(), Msg::empty_result, i);
+    assert_error(result.has_value(), Msg::empty_result, i);  // NOLINT
+    // NOLINTNEXTLINE
     assert_error(std::holds_alternative<Obase>(*result), Msg::wrong_result_type, i, "Obase");
     break;
   case GD::Bc::Instruction::Opcode::string:
-    assert_error(result.has_value(), Msg::empty_result, i);
+    assert_error(result.has_value(), Msg::empty_result, i);  // NOLINT
+    // NOLINTNEXTLINE
     assert_error(std::holds_alternative<std::string_view>(*result), Msg::wrong_result_type, i,
                  "string_view");
 
@@ -990,20 +1001,24 @@ void GD::Bc::Details::InstructionPack::validate_result(Index i) const
   case GD::Bc::Instruction::Opcode::less_than:
   case GD::Bc::Instruction::Opcode::call:
   case GD::Bc::Instruction::Opcode::pop_param:
-    assert_error(result.has_value(), Msg::empty_result, i);
+    assert_error(result.has_value(), Msg::empty_result, i);  // NOLINT
+    // NOLINTNEXTLINE
     assert_error(std::holds_alternative<Number>(*result), Msg::wrong_result_type, i, "Number");
     break;
   case GD::Bc::Instruction::Opcode::variable:
-    assert_error(result.has_value(), Msg::empty_result, i);
+    assert_error(result.has_value(), Msg::empty_result, i);  // NOLINT
+    // NOLINTNEXTLINE
     assert_error(std::holds_alternative<Variable>(*result), Msg::wrong_result_type, i, "Variable");
     break;
   case GD::Bc::Instruction::Opcode::array:
   case GD::Bc::Instruction::Opcode::pop_param_array:
-    assert_error(result.has_value(), Msg::empty_result, i);
+    assert_error(result.has_value(), Msg::empty_result, i);  // NOLINT
+    // NOLINTNEXTLINE
     assert_error(std::holds_alternative<Array>(*result), Msg::wrong_result_type, i, "Array");
     break;
   case GD::Bc::Instruction::Opcode::array_element:
-    assert_error(result.has_value(), Msg::empty_result, i);
+    assert_error(result.has_value(), Msg::empty_result, i);  // NOLINT
+    // NOLINTNEXTLINE
     assert_error(std::holds_alternative<ArrayElement>(*result), Msg::wrong_result_type, i,
                  "ArrayElement");
     break;

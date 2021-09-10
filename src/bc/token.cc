@@ -62,7 +62,7 @@ GD::Bc::Token::Token(Type type, std::string const& s) : value_(s)
 
 GD::Bc::Token::Token([[maybe_unused]] Type type, Letter l) : value_(l)
 {
-  assert(type == Type::letter);
+  assert(type == Type::letter);  // NOLINT
 }
 
 auto GD::Bc::Token::type() const -> GD::Bc::Token::Type

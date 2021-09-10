@@ -279,9 +279,7 @@ public:
       if (i % GD::Bc::Number::base_log10_ == 0) {
         digits = dist_(rand_);
       }
-      auto digit = digits / (GD::Bc::Number::base_ / 10);
-      digits = (digits % (GD::Bc::Number::base_ / 10)) * 10;
-      assert(digit < 10);
+      assert(digit < working_base);  // NOLINT
 
       if (num.size() == int_len) {
         num += '.';
@@ -388,7 +386,7 @@ TEST_CASE("GD::Bc::Number - multiplication, random", "[bc][number]")
 
   /* Do a mix.  */
   auto res3 = nums.second;
-  GD::Bc::Number::multiply_split_point(100);
+  GD::Bc::Number::multiply_split_point(100);  // NOLINT - explicit magic
   res3.multiply(nums.second, 0);
   REQUIRE(res1 == res2);
 }

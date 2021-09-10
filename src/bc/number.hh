@@ -77,7 +77,7 @@ template<typename... Ts>
 [[noreturn]] void error(Msg msg, Ts... args)
 {
   std::cerr << Messages::get().format(Set::bc, msg, args...) << '\n';
-  ::exit(1);
+  std::exit(1);  // NOLINT(concurrency-mt-unsafe)
 }
 
 enum class ComparisonResult { less_than, equality, greater_than };
@@ -146,8 +146,8 @@ public:
   [[nodiscard]] auto compare(BasicDigits const& rhs, NumType scale) const
     -> Details::ComparisonResult
   {
-    assert(digits_);
-    assert(rhs.digits_);
+    assert(digits_);      // NOLINT
+    assert(rhs.digits_);  // NOLINT
     Details::ComparisonResult result = Details::ComparisonResult::equality;
     for_each(rhs, scale, [&result](NumType lhs, NumType rhs) {
       if (lhs < rhs) {
@@ -231,8 +231,8 @@ public:
    */
   void output(std::ostream& os, NumType obase, NumType scale, unsigned line_pos) const
   {
-    assert(!is_zero());
-    assert(obase >= 2);
+    assert(!is_zero());  // NOLINT
+    assert(obase >= 2);  // NOLINT
     auto [whole, frac] = split_frac(scale);
     DigitVector whole_digits;
     while (!whole.is_zero()) {
@@ -288,7 +288,7 @@ public:
      * cases are to: 1) Ensure we pad with zeroes where necessary; and 2) Insert the decimal point
      * in the correct place.
      */
-    assert(!is_zero());
+    assert(!is_zero());  // NOLINT
 
     /* Generate string without radix point. Note we reverse through the digits as we want to print
      * big-endian, but numbers are stored little-endian.
@@ -330,7 +330,7 @@ public:
         digits_printed = 0;
       }
 
-      assert(scale >= result.end() - it);
+      assert(scale >= result.end() - it);  // NOLINT
       while (result.end() - it > break_at - digits_printed) {
         os << result.substr(it - result.begin(), break_at - digits_printed) << "\\\n";
         scale -= break_at - digits_printed;
@@ -378,14 +378,14 @@ public:
     if (rit != digits_->rend()) {
       length -= base_log10_;
       NumType d = *rit;
-      assert(d != 0);
+      assert(d != 0);  // NOLINT
       while (d != 0) {
         length += 1;
-        d /= 10;
+        d /= 10;  // NOLINT - 10 is not a magic number
       }
     }
 
-    assert(length < base_);
+    assert(length < base_);  // NOLINT
 
     return std::max(NumType{1}, static_cast<NumType>(length));
   }
@@ -614,8 +614,8 @@ public:
 
     if (it != digits_->end()) {
       result += *it++ * (base_ / scale_pow10);
-      assert(it == digits_->end());
-      assert(result < base_);
+      assert(it == digits_->end());  // NOLINT
+      assert(result < base_);        // NOLINT
       digits_->pop_back();
     }
 
@@ -634,7 +634,7 @@ public:
     tidy();
     v.copy_on_write();
     v.tidy();
-    assert(digits_->size() >= v.digits_->size());
+    assert(digits_->size() >= v.digits_->size());  // NOLINT
 
     if (v.digits_->size() == 1) {
       divide(v.digits_->at(0));
@@ -642,7 +642,7 @@ public:
     }
 
     if (digits_->size() == 2) {
-      assert(v.digits_->size() == 2);
+      assert(v.digits_->size() == 2);  // NOLINT
       WideType u2 = (*digits_)[0] + (base_ * (*digits_)[1]);
       WideType v2 = (*v.digits_)[0] + (base_ * (*v.digits_)[1]);
       WideType q = u2 / v2;
@@ -665,8 +665,8 @@ public:
       mac(d, 0);
       v.mac(d, 0);
     }
-    assert(n == v.digits_->size());
-    assert(v.digits_->back() >= base_ / 2);
+    assert(n == v.digits_->size());          // NOLINT
+    assert(v.digits_->back() >= base_ / 2);  // NOLINT
     digits_->push_back(0);
 
     BasicDigits q;
@@ -730,13 +730,13 @@ public:
         carry += digits_->at(j + n);
         digits_->at(j + n) = carry % base_;
         carry /= base_;
-        assert(carry == 1);
+        assert(carry == 1);  // NOLINT
         q_hat -= 1;
       }
 
       /* D5. Test remainder.  */
-      assert(q_hat < base_);
-      assert(digits_->at(n + j) == 0);
+      assert(q_hat < base_);            // NOLINT
+      assert(digits_->at(n + j) == 0);  // NOLINT
       q.digits_->at(j) = static_cast<NumType>(q_hat);
 
     } while (j-- > 0);
@@ -753,7 +753,7 @@ public:
     WideType carry = 0;
     for (auto d = digits_->rbegin(); d != digits_->rend(); ++d) {
       carry += *d;
-      assert(carry / div < base_);
+      assert(carry / div < base_);  // NOLINT
       *d = static_cast<NumType>(carry / div);
       carry = (carry % div) * base_;
     }
@@ -887,9 +887,7 @@ private:
    */
   static auto to_string(NumType num, NumType obase, bool lspace = true) -> std::string
   {
-    assert(num < obase);
-    static char const* nums = "0123456789ABCDEF";
-    if (obase <= 16) {
+    assert(num < obase);  // NOLINT
       return std::string(1, nums[num]);
     }
     auto obase_width = std::to_string(obase - 1).size();
@@ -917,7 +915,7 @@ private:
   template<typename Fn>
   void for_each(BasicDigits const& rhs, NumType scale, Fn fn) const
   {
-    assert(digits_ && rhs.digits_);
+    assert(digits_ && rhs.digits_);  // NOLINT
 
     auto it_lhs = digits_->begin();
 
@@ -935,7 +933,7 @@ private:
       carry /= base_;
 
       NumType d_lhs = (it_lhs == digits_->end()) ? 0 : *it_lhs++;
-      assert(carry < base_);
+      assert(carry < base_);  // NOLINT
       fn(d_lhs, d_rhs);
     }
 
@@ -975,7 +973,7 @@ private:
   template<typename Fn>
   auto for_each(BasicDigits const& rhs, NumType scale, Fn fn, NumType initial_carry = 0) -> NumType
   {
-    assert(digits_ && rhs.digits_);
+    assert(digits_ && rhs.digits_);  // NOLINT
 
     auto it = digits_->begin();
     WideType carry = initial_carry;
@@ -983,7 +981,7 @@ private:
     while (scale >= base_log10_) {
       it = ensure_it_valid(it, digits_);
       carry = static_cast<WideType>(fn(it++, carry));
-      assert(carry < base_);
+      assert(carry < base_);  // NOLINT
       scale -= base_log10_;
     }
 
@@ -992,15 +990,15 @@ private:
       carry += it_rhs * pow10_scale;
       it = ensure_it_valid(it, digits_);
       carry = static_cast<WideType>(fn(it++, carry));
-      assert(carry < base_);
+      assert(carry < base_);  // NOLINT
     }
 
     while (it != digits_->end()) {
       carry = static_cast<WideType>(fn(it++, carry));
-      assert(carry < base_);
+      assert(carry < base_);  // NOLINT
     }
 
-    assert(carry < base_);
+    assert(carry < base_);  // NOLINT
     return static_cast<NumType>(carry);
   }
 
@@ -1050,9 +1048,9 @@ private:
     for (auto lhs_it = lhs_begin; lhs_it != lhs_end; ++lhs_it) {
       WideType carry = 0;
       auto result_it = result_begin++;
-      assert(result_begin != result.digits_->end());
+      assert(result_begin != result.digits_->end());  // NOLINT
       for (auto rhs_it = rhs_begin; rhs_it != rhs_end; ++rhs_it) {
-        assert(result_it != result.digits_->end());
+        assert(result_it != result.digits_->end());  // NOLINT
         WideType lhs_d = *lhs_it;
         WideType rhs_d = *rhs_it;
         carry += lhs_d * rhs_d + *result_it;
@@ -1061,7 +1059,7 @@ private:
       }
 
       while (carry != 0) {
-        assert(result_it != result.digits_->end());
+        assert(result_it != result.digits_->end());  // NOLINT
         carry += *result_it;
         *result_it++ = static_cast<NumType>(carry % base_);
         carry /= base_;
@@ -1076,8 +1074,8 @@ private:
                                  typename DigitVector::const_iterator rhs_begin,
                                  typename DigitVector::const_iterator rhs_end) -> BasicDigits
   {
-    assert(std::distance(lhs_begin, lhs_end) > multiply_split_point_);
-    assert(std::distance(lhs_begin, lhs_end) > multiply_split_point_);
+    assert(std::distance(lhs_begin, lhs_end) > multiply_split_point_);  // NOLINT
+    assert(std::distance(lhs_begin, lhs_end) > multiply_split_point_);  // NOLINT
 
     auto lhs_size = std::distance(lhs_begin, lhs_end);
     auto rhs_size = std::distance(rhs_begin, rhs_end);
@@ -1144,12 +1142,14 @@ private:
     return result;
   }
 
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
   static typename DigitVector::difference_type multiply_split_point_;
   std::shared_ptr<DigitVector> digits_ = nullptr;  ///< BasicDigits in number.
 };
 
 template<typename Traits>
 typename BasicDigits<Traits>::DigitVector::difference_type
+  // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
   BasicDigits<Traits>::multiply_split_point_ = 1;
 
 }  // namespace Details
@@ -1272,7 +1272,7 @@ public:
 
     /* We now have number as digits_ * ibase ^ scale_.  If we're in base 10 or the scale is zero
      * or the digits are zero we have finished.  */
-    if (ibase == 10 || scale_ == 0 || digits_.is_zero()) {
+    if (ibase == 10 || scale_ == 0 || digits_.is_zero()) {  // NOLINT - 10 isn't magic
       return;
     }
 
@@ -1359,7 +1359,7 @@ public:
         os << "\\\n";
       }
     }
-    if (obase == 10) {
+    if (obase == 10) {  // NOLINT - 10 isn't magic
       digits_.output_base10(os, scale_, line_pos);
     }
     else {
@@ -1372,7 +1372,7 @@ public:
   {
     os << "Number(";
     digits_.debug(os);
-    os << ", sign=" << (sign_ == Sign::positive ? "+" : "-")
+    os << ", sign=" << (sign_ == Sign::positive ? "+" : "-")  // NOLINT
        << ", scale=" << static_cast<typename Traits::PrintType>(scale_) << ")";
   }
 
@@ -1484,7 +1484,7 @@ public:
 
     if (!power_frac.is_zero()) {
       std::ostringstream ss;
-      output(ss, 10, 0);
+      output(ss, 10, 0);  // NOLINT - 10 isn't magic
       Details::error(Msg::raising_to_fractional_power, ss.str());
       return;
     }
@@ -1540,7 +1540,7 @@ public:
       return;
     }
 
-    assert(rhs.sign_ == Sign::negative);
+    assert(rhs.sign_ == Sign::negative);  // NOLINT
     /* x ^ -p.  Scale = target_scale.  */
     digits_.power_mul(power_whole);
     scale_ *= power_whole.to_unsigned(0);
@@ -1629,7 +1629,7 @@ public:
 
     if (sign_ == Sign::negative) {
       std::ostringstream ss;
-      output(ss, 10, 0);
+      output(ss, 10, 0);  // NOLINT - 10 isn't magic
       Details::error(Msg::square_root_of_negative_number, ss.str());
       return;
     }
@@ -1666,7 +1666,7 @@ public:
       p = c;
       c = *this;
       c.divide(p, working_scale);
-      assert(c.scale_ == p.scale_);
+      assert(c.scale_ == p.scale_);  // NOLINT
       c.digits_.add(p.digits_, 0);
       c.digits_.divide(2);
     } while (p != c);
@@ -1762,6 +1762,7 @@ auto operator<=(BasicNumber<Traits> const& lhs, BasicNumber<Traits> const& rhs) 
  *
  * Currently we assume 32-bit storage.
  */
+// NOLINTNEXTLINE
 using Number = BasicNumber<std::conditional_t<sizeof(void*) == 8, NumberTraits32, NumberTraits16>>;
 
 }  // namespace GD::Bc
@@ -1800,7 +1801,7 @@ struct fmt::formatter<GD::Bc::BasicNumber<NumberTraits>>
       number.debug(os);
     }
     else {
-      number.output(os, 10, 0);
+      number.output(os, 10, 0);  // NOLINT - 10 isn't magic
     }
     // Work around Win32 STL bug:
     return vformat_to(ctx.out(), "{0}", fmt::make_format_args(os.str()));
