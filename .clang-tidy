@@ -1,5 +1,24 @@
 ---
-Checks:          '*,-altera-*,-fuchsia-*,-hicpp-*,-llvmlibc-*,-cppcoreguidelines-pro-type-vararg'
+# abseil-*, altera-*, android-*, fuchsia-*, hicpp-*, llvmlibc-*, zircon-*: Applicable to specific code bases only, not this one.
+# objc-*: Not an Objective C codebase
+# cppcoreguidelines-pro-type-vararg triggers on all char* which we can't avoid
+# llvm-header-guard: is not the style we use
+# misc-no-recursion: We do not mind recursion (and we need to recurse)
+# readability-function-cognitive-complexity: Too many asserts trigger this one unnecessarily
+Checks:          >-
+ *,
+ -abseil-*,
+ -altera-*,
+ -android-*,
+ -fuchsia-*,
+ -hicpp-*,
+ -llvmlibc-*,
+ -objc-*,
+ -zircon-*,
+ -cppcoreguidelines-pro-type-vararg,
+ -llvm-header-guard,
+ -misc-no-recursion,
+ -readability-function-cognitive-complexity
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
 AnalyzeTemporaryDtors: false
