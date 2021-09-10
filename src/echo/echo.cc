@@ -10,9 +10,9 @@
 
 #include "echo-messages.hh"
 
-#include <assert.h>
+#include <cassert>
+#include <clocale>
 #include <iostream>
-#include <locale.h>
 
 namespace {
 using Messages = GD::Echo::Messages;
@@ -32,169 +32,179 @@ void warn(Msg msg, Ts... args)
             << Messages::get().format(GD::Echo::Set::echo, msg, args...) << '\n';
 }
 
-/** \brief      Echo a given argument.
- *  \param  arg Argument to echo.
- *  \return     \c true to continue processing, \c false to stop processing and suppress newline.
- */
-auto echo_arg(char const* arg) -> bool
+/** \brief  Functor to echo an argument. */
+class EchoArg
 {
-  if (!DO_XSI_IMPLEMENTATION) {
-    /* Non-XSI implementation is just output the args given.  */
-    std::cout << arg;
-    return true;
-  }
+public:
+  /** \brief      Echo a given argument.
+   *  \param  arg Argument to echo.
+   *  \return     \c true to continue processing, \c false to stop processing and suppress newline.
+   */
+  void operator()(std::string_view arg)
+  {
+    if (early_terminate_) {
+      return;
+    }
 
-  /* On an XSI implementation we need to process escape sequences.  */
-  enum class State { normal, escape, octal1, octal2, octal3 };
-  State state = State::normal;
-  unsigned int c = 0;
-  char const* whole_arg = arg;
+    if (need_early_space_) {
+      std::cout << ' ';
+    }
 
-  for (; *arg != '\0'; ++arg) {
-    switch (state) {
-    case State::normal:
-      if (*arg == '\\') {
-        state = State::escape;
-      }
-      else {
-        std::cout << *arg;
-      }
-      break;
-    case State::escape:
-      state = State::normal;
-      switch (*arg) {
-      case 'a':
-        std::cout << '\a';
-        break;
-      case 'b':
-        std::cout << '\b';
-        break;
-      case 'c':
-        return false;
-      case 'f':
-        std::cout << '\f';
-        break;
-      case 'n':
-        std::cout << '\n';
-        break;
-      case 'r':
-        std::cout << '\r';
-        break;
-      case 't':
-        std::cout << '\t';
-        break;
-      case 'v':
-        std::cout << '\v';
-        break;
-      case '\\':
-        std::cout << '\\';
-        break;
-      case '0':
-        c = 0;
-        state = State::octal1;
-        break;
-      default:
-        warn(Msg::unrecognised_escape_sequence, *arg);
-        std::cout << '\\' << *arg;
-        break;
-      }
-      break;
-    case State::octal1:
-      if (*arg >= '0' && *arg <= '7') {
-        c = c * 8 + (*arg - '0');
-        state = State::octal2;
-      }
-      else {
-        std::cout << (char)c;
-        state = State::normal;
-        --arg; /* Reprocess the current argument.  */
-      }
-      break;
-    case State::octal2:
-      if (*arg >= '0' && *arg <= '7') {
-        c = c * 8 + (*arg - '0');
-        state = State::octal3;
-      }
-      else {
-        std::cout << (char)c;
-        state = State::normal;
-        --arg; /* Reprocess the current argument.  */
-      }
-      break;
-    case State::octal3:
-      state = State::normal;
-      if (*arg >= '0' && *arg <= '7') {
-        c = c * 8 + (*arg - '0');
-        if (c > 255) {
-          warn(Msg::octal_number_out_of_range, c);
+    if (!DO_XSI_IMPLEMENTATION) {
+      /* Non-XSI implementation is just output the args given.  */
+      std::cout << arg;
+    }
+
+    /* On an XSI implementation we need to process escape sequences.  */
+    enum class State { normal, escape, octal1, octal2, octal3 };
+    State state = State::normal;
+    unsigned int c = 0;
+    constexpr int base_octal = 8;
+
+    for (std::string_view::iterator it = arg.begin(); it != arg.end(); ++it) {
+      switch (state) {
+      case State::normal:
+        if (*it == '\\') {
+          state = State::escape;
         }
         else {
-          std::cout << (char)c;
+          std::cout << *it;
         }
+        break;
+      case State::escape:
+        state = State::normal;
+        switch (*it) {
+        case 'a':
+          std::cout << '\a';
+          break;
+        case 'b':
+          std::cout << '\b';
+          break;
+        case 'c':
+          early_terminate_ = true;
+          break;
+        case 'f':
+          std::cout << '\f';
+          break;
+        case 'n':
+          std::cout << '\n';
+          break;
+        case 'r':
+          std::cout << '\r';
+          break;
+        case 't':
+          std::cout << '\t';
+          break;
+        case 'v':
+          std::cout << '\v';
+          break;
+        case '\\':
+          std::cout << '\\';
+          break;
+        case '0':
+          c = 0;
+          state = State::octal1;
+          break;
+        default:
+          warn(Msg::unrecognised_escape_sequence, *it);
+          std::cout << '\\' << *it;
+          break;
+        }
+        break;
+      case State::octal1:
+        if (*it >= '0' && *it < '0' + base_octal) {
+          c = c * base_octal + (*it - '0');
+          state = State::octal2;
+        }
+        else {
+          std::cout << static_cast<char>(c);
+          state = State::normal;
+          --it; /* Reprocess the current argument.  */
+        }
+        break;
+      case State::octal2:
+        if (*it >= '0' && *it < '0' + base_octal) {
+          c = c * base_octal + (*it - '0');
+          state = State::octal3;
+        }
+        else {
+          std::cout << static_cast<char>(c);
+          state = State::normal;
+          --it; /* Reprocess the current argument.  */
+        }
+        break;
+      case State::octal3:
+        state = State::normal;
+        if (*it >= '0' && *it < '0' + base_octal) {
+          c = c * base_octal + (*it - '0');
+          if (c > std::numeric_limits<unsigned char>::max()) {
+            warn(Msg::octal_number_out_of_range, c);
+          }
+          else {
+            std::cout << static_cast<char>(c);
+          }
+        }
+        else {
+          --it; /* Reprocess the current argument.  */
+          std::cout << static_cast<char>(c);
+        }
+        break;
+      default:
+        abort();
       }
-      else {
-        --arg; /* Reprocess the current argument.  */
-        std::cout << (char)c;
-      }
+    }
+
+    /* Ensure we've emitted any final characters.  */
+    switch (state) {
+    case State::octal1:
+    case State::octal2:
+    case State::octal3:
+      std::cout << static_cast<char>(c);
+      break;
+    case State::escape:
+      warn(Msg::missing_escape_sequence, arg);
+      std::cout << '\\';
+      break;
+    case State::normal:
       break;
     default:
-      assert(false);
+      abort();
+    }
+
+    need_early_space_ = true;
+  }
+
+  void emit_final_newline() const
+  {
+    if (!early_terminate_) {
+      std::cout << '\n';
     }
   }
 
-  /* Ensure we've emitted any final characters.  */
-  switch (state) {
-  case State::octal1:
-  case State::octal2:
-  case State::octal3:
-    std::cout << (char)c;
-    break;
-  case State::escape:
-    warn(Msg::missing_escape_sequence, whole_arg);
-    std::cout << '\\';
-    break;
-  case State::normal:
-    break;
-  default:
-    assert(false);
-  }
+private:
+  /// Have we stopped processing args, and not echoing a newline? (i.e. seen \c)
+  bool early_terminate_ = false;
+  /// Do we need to emit a space before anything else? (i.e. is not the first argument?)
+  bool need_early_space_ = false;
+};
 
-  return true;
-}
 }  // namespace
 
 auto main(int argc, char** argv) -> int
 {
-  GD::program_name(argv[0]);
-  ::setlocale(LC_ALL, "");
-
-  --argc;
-  ++argv;
+  std::span<char*> args(argv, argc);
+  std::span<char*>::iterator it = args.begin();
+  GD::program_name(*it++);
+  std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
 
   /* POSIX spec explicitly says to treat everything as something to print, so no argument or --
    * special handling.
    */
 
-  bool emit_newline = true; /* Do we emit a newline at the end? */
+  EchoArg processor;
 
-  while (argc > 0) {
-    assert(*argv != nullptr);
-    emit_newline = echo_arg(*argv);
-    if (!emit_newline) {
-      break;
-    }
-    --argc;
-    ++argv;
-    if (argc != 0) {
-      std::cout << ' ';
-    }
-  }
-
-  if (emit_newline) {
-    std::cout << '\n';
-  }
-
-  assert(argc > 0 || *argv == nullptr);
+  processor = std::for_each(it, args.end(), processor);
+  processor.emit_final_newline();
 
   return EXIT_SUCCESS;
 }
