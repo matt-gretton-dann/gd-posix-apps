@@ -10,6 +10,7 @@
 
 #include <cstdint>
 #include <random>
+#include <span>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -22,7 +23,7 @@ class RandomNumberGenerator
 {
 public:
   explicit RandomNumberGenerator(GD::Bc::Number::NumType digit_count)
-      : dist_(0, GD::Bc::Number::base_), digit_count_(digit_count)
+      : rand_(std::random_device{}()), dist_(0, GD::Bc::Number::base_), digit_count_(digit_count)
   {
     next();
   }
@@ -32,6 +33,7 @@ public:
   auto next() -> bool
   {
     auto digit_count = dist_(rand_) % (digit_count_ * GD::Bc::Number::base_log10_);
+    constexpr int base10 = 10;
 
     std::string num;
     GD::Bc::Number::NumType digits = 0;
@@ -39,12 +41,14 @@ public:
       if (i % GD::Bc::Number::base_log10_ == 0) {
         digits = dist_(rand_);
       }
+      auto digit = digits / (GD::Bc::Number::base_ / base10);
+      digits = (digits % (GD::Bc::Number::base_ / base10)) * base10;
       assert(digit < base10);  // NOLINT
 
       num += static_cast<char>('0' + digit);
     }
 
-    number_ = GD::Bc::Number(num, 10);
+    number_ = GD::Bc::Number(num, base10);
     return true;
   }
 
@@ -89,7 +93,8 @@ constexpr auto operator+(Time const& lhs, Time const& rhs) -> Time
 
 auto operator<<(std::ostream& os, Time const& t) -> std::ostream&
 {
-  os << t.tv_sec << '.' << std::setw(9) << std::setfill('0') << std::right << t.tv_nsec;
+  constexpr int nsec_digits = 9;
+  os << t.tv_sec << '.' << std::setw(nsec_digits) << std::setfill('0') << std::right << t.tv_nsec;
   return os;
 }
 
@@ -122,7 +127,8 @@ auto check(Number::NumType initial_digit) -> Number::NumType
 
   Time base_time{0, 0};
 
-  for (unsigned i = 0; i < 100; ++i) {
+  constexpr unsigned num_numbers = 100;
+  for (unsigned i = 0; i < num_numbers; ++i) {
     canon_numbers.push_back(rng.get());
     rng.next();
   }
@@ -191,12 +197,14 @@ void output(std::ostream& os, Number::NumType value)
 
 auto main(int argc, char** argv) -> int
 {
-  auto result = check(500);
-  if (argc == 1) {
+  constexpr Number::NumType start_at = 500;
+  auto result = check(start_at);
+  std::span<char*> args(argv, argc);
+  if (args.size() == 1) {
     output(std::cout, result);
   }
   else {
-    std::ofstream of(argv[1]);
+    std::ofstream of(args[1]);
     output(of, result);
   }
   return 0;

@@ -306,7 +306,6 @@ auto GD::Bc::Instruction::op_count(Opcode opcode) -> unsigned
     return 2;
   }
 
-  assert(false);
   abort();
 }
 

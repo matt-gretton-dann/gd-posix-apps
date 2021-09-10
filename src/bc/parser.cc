@@ -53,7 +53,7 @@ auto GD::Bc::operator!=(Parser::ExprIndex const& lhs, Parser::ExprType rhs) -> b
 auto GD::Bc::operator-(Parser::ExprIndex const& lhs, Parser::ExprIndex const& rhs)
   -> GD::Bc::Parser::Offset
 {
-  return lhs.index() - rhs.index();
+  return static_cast<Parser::Offset>(lhs.index() - rhs.index());
 }
 
 /** \subsection Accepted grammar:
@@ -513,7 +513,7 @@ void GD::Bc::Parser::update_loop_exits(Index dest)
 {
   for (auto idx : loop_breaks_.top()) {
     auto& i = instructions_->at(idx);
-    Offset o = dest - idx;
+    auto o = static_cast<Offset>(dest - idx);
     if (i.opcode() == Instruction::Opcode::branch) {
       i.op1(o);
     }
@@ -521,7 +521,7 @@ void GD::Bc::Parser::update_loop_exits(Index dest)
       i.op2(o);
     }
     else {
-      assert(false);  // NOLINT
+      abort();
     }
   }
 }
@@ -749,7 +749,6 @@ auto GD::Bc::Parser::parse_relational_expression() -> GD::Bc::Parser::ExprIndex
   case Token::Type::greater_than:
     return insert_arith(Instruction::Opcode::less_than, rhs, lhs);
   default:
-    assert(false);
     abort();
   }
 }
@@ -821,7 +820,7 @@ auto GD::Bc::Parser::parse_opt_assign_expression(POPEFlags flags) -> GD::Bc::Par
           assign_index = insert_arith(Instruction::Opcode::power, primary_expr, assign_index);
           break;
         default:
-          assert(false);
+          abort();
         }
       }
       return insert_store(primary_expr, assign_index);
@@ -898,7 +897,7 @@ auto GD::Bc::Parser::parse_add_expression(GD::Bc::Parser::ExprIndex lhs)
       lhs = insert_arith(Instruction::Opcode::subtract, lhs, rhs);
       break;
     default:
-      assert(false);
+      abort();
     }
   }
   return lhs;
@@ -929,7 +928,7 @@ auto GD::Bc::Parser::parse_mul_expression(GD::Bc::Parser::ExprIndex lhs)
       lhs = insert_arith(Instruction::Opcode::modulo, lhs, rhs);
       break;
     default:
-      assert(false);
+      abort();
     }
   }
   return lhs;

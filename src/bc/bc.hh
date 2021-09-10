@@ -4,8 +4,8 @@
  *  SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _SRC_BC_BC_HH_INCLUDED
-#define _SRC_BC_BC_HH_INCLUDED
+#ifndef SRC_BC_BC_HH_INCLUDED
+#define SRC_BC_BC_HH_INCLUDED
 
 #include "gd/nl_types.h"
 
@@ -277,6 +277,11 @@ public:
   /** \brief Abstract destructor.  */
   virtual ~Reader() = 0;
 
+  Reader(Reader const&) = default;
+  Reader(Reader&&) noexcept = default;
+  auto operator=(Reader const&) -> Reader& = default;
+  auto operator=(Reader&&) noexcept -> Reader& = default;
+
   /** \brief  Peek at the current character.
    *  \return Current character or EOF on end-of-file.
    *
@@ -478,9 +483,9 @@ private:
   static void for_each_internal(Fn fn, ::uint32_t mask)
   {
     /* Can't assume letters are contiguous code-points.  */
-    char const* letters = "abcdefghijklmnopqrstuvwxyz";
-    char const* letter = letters;
-    while (*letter != '\0' && mask != 0) {
+    std::string_view letters = "abcdefghijklmnopqrstuvwxyz";
+    std::string_view::const_iterator letter = letters.begin();
+    while (letter != letters.end() && mask != 0) {
       if (mask & 1) {
         fn(Letter(*letter));
       }
@@ -989,11 +994,11 @@ private:
   auto insert_string(std::string const& s) -> ExprIndex;
 
   /** \brief         Insert print at end of instruction stream.
-   *  \param  index  Index of thing to print.
+   *  \param  idx    Index of thing to print.
    *  \param  stream Stream to print to.
    *  \return        Index of inserted print
    */
-  auto insert_print(ExprIndex index, Instruction::Stream stream) -> ExprIndex;
+  auto insert_print(ExprIndex idx, Instruction::Stream stream) -> ExprIndex;
 
   /** \brief         Insert quit at end of instruction stream.
    *  \param  code   Exit code
@@ -1002,10 +1007,10 @@ private:
   auto insert_quit(unsigned code) -> ExprIndex;
 
   /** \brief        Insert a load.
-   *  \param  named Named expression to load
+   *  \param  idx   Named expression to load
    *  \return       Index to value loaded.
    */
-  auto insert_load(ExprIndex named) -> ExprIndex;
+  auto insert_load(ExprIndex idx) -> ExprIndex;
 
   /** \brief        Insert a store.
    *  \param  named Named expression to store to
@@ -1156,10 +1161,10 @@ private:
    */
   void add_loop_exit(Index idx);
 
-  /** \brief     Update the break/exit instructions for the current loop to point to idx.
-   *  \param idx Index of first instruction after the end of the loop.
+  /** \brief      Update the break/exit instructions for the current loop to point to idx.
+   *  \param dest Index of first instruction after the end of the loop.
    */
-  void update_loop_exits(Index idx);
+  void update_loop_exits(Index dest);
 
   /** \brief  Pop the loop state.  */
   void pop_loop();
@@ -1218,7 +1223,7 @@ private:
 template<>
 struct fmt::formatter<GD::Bc::Token>
 {
-  constexpr auto parse(format_parse_context& ctx)
+  static constexpr auto parse(format_parse_context& ctx)
   {
     if (ctx.begin() != ctx.end() && *ctx.begin() != '}') {
       throw format_error("invalid format");
@@ -1239,7 +1244,7 @@ struct fmt::formatter<GD::Bc::Token>
 template<>
 struct fmt::formatter<GD::Bc::Letter>
 {
-  constexpr auto parse(format_parse_context& ctx)
+  static constexpr auto parse(format_parse_context& ctx)
   {
     if (ctx.begin() != ctx.end() && *ctx.begin() != '}') {
       throw format_error("invalid format");
@@ -1256,4 +1261,4 @@ struct fmt::formatter<GD::Bc::Letter>
                            fmt::make_format_args(letters[static_cast<unsigned>(letter)]));
   }
 };
-#endif  //  _SRC_BC_BC_HH_INCLUDED
+#endif  // SRC_BC_BC_HH_INCLUDED

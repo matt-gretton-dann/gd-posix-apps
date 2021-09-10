@@ -44,19 +44,19 @@ struct VMState
   [[nodiscard]] auto stream(Instruction::Stream stream) const -> std::ostream&;
 
   /** \brief  Set the input base.  */
-  void ibase(Number num);
+  void ibase(Number const& num);
 
   /** Get the input base.  */
   [[nodiscard]] auto ibase() const -> Number::NumType;
 
   /** \brief  Set the output base.  */
-  void obase(Number num);
+  void obase(Number const& num);
 
   /** Get the output base.  */
   [[nodiscard]] auto obase() const -> Number::NumType;
 
   /** \brief  Set the scale.  */
-  void scale(Number num);
+  void scale(Number const& num);
 
   /** Get the scale base.  */
   [[nodiscard]] auto scale() const -> Number::NumType;
@@ -65,7 +65,7 @@ struct VMState
   [[nodiscard]] auto array_element(ArrayElement const& ae) const -> Number;
 
   /** \brief  Store a number in an array eleemnt.  */
-  void array_element(ArrayElement const& ae, Number num);
+  void array_element(ArrayElement const& ae, Number const& num);
 
   [[nodiscard]] auto variable(Variable v) const -> Number const&;
   void variable(Variable v, Number const& num);
@@ -128,6 +128,7 @@ private:
   using FunctionDefinition =
     std::tuple<Instructions, VariableMask, Location>;  ///< Function definition.
 
+  static constexpr NumType default_base_ = 10;
   std::ostream& output_;                            ///< Stream for "normal output."
   std::ostream& error_;                             ///< Stream for error output.
   std::array<ArrayValues, Letter::count_> arrays_;  ///< Array of arrays, indexed by Letter.
@@ -136,8 +137,8 @@ private:
   std::array<Number, Letter::count_> variables_;  ///< Array of scalar variables, indexed by Letter.
   ParamStack param_stack_;                        ///< Stack of parameters
   ParamStack local_stack_;                        ///< Stack of locals.
-  NumType ibase_ = 10;                            ///< Input base, range [2, 16]
-  NumType obase_ = 10;                            ///< Output base, range: [2, base_)
+  NumType ibase_ = default_base_;                 ///< Input base, range [2, 16]
+  NumType obase_ = default_base_;                 ///< Output base, range: [2, base_)
   NumType scale_ = 0;                             ///< Scale, range: [0, base_)
   bool save_specials_;                            ///< Save specials on function entry?
 };
@@ -316,16 +317,19 @@ auto operator<<(std::ostream& os, InstructionPack::Result const& result) -> std:
 
 /** Interrupt handler globals */
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
+sig_atomic_t have_been_interrupted = 0;
 
 /** Handle receiving SIGINT.  */
-__EXTERN_C void handle_sigint(int) { have_been_interrupted = true; }
+__EXTERN_C void handle_sigint(int /*signal*/) { have_been_interrupted = 1; }
 
 /** Install the signal handler for SIGINT.  */
 void install_interrupt_handler()
 {
-  have_been_interrupted = false;
-  struct sigaction sa;
-  sa.sa_handler = handle_sigint;
+  have_been_interrupted = 0;
+  struct sigaction sa
+  {
+    .sa_handler = handle_sigint  // NOLINT - this is a safe union access on macOS
+  };
   sigemptyset(&sa.sa_mask);
   sa.sa_flags = SA_RESTART | SA_RESETHAND; /* Restart functions if interrupted by handler.  */
   /* We don't care if this fails as users will still be able to ^C out but just with a worse
@@ -336,8 +340,10 @@ void install_interrupt_handler()
 /* Reset the SIGINT signal handler.  */
 void reset_interrupt_handler()
 {
-  struct sigaction sa;
-  sa.sa_handler = SIG_DFL;
+  struct sigaction sa
+  {
+    .sa_handler = SIG_DFL  // NOLINT - this is a safe union access on macOS
+  };
   sigemptyset(&sa.sa_mask);
   sigaction(SIGINT, &sa, nullptr);
   // We assume this has worked for usefulness sake.
@@ -400,29 +406,29 @@ void GD::Bc::Details::VMState::function(Letter func, Instructions::const_iterato
 {
   Instructions instrs(begin, end);
   validate(instrs);
-  functions_[static_cast<unsigned>(func)] =
+  functions_.at(static_cast<unsigned>(func)) =
     std::make_optional(std::make_tuple(std::move(instrs), mask, loc));
 }
 
 auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc::Number
 {
-  if (!functions_[static_cast<unsigned>(func)].has_value()) {
+  if (!functions_.at(static_cast<unsigned>(func)).has_value()) {
     Details::error(Msg::function_not_defined, func, loc.file_name(), loc.line(), loc.column());
   }
 
-  FunctionDefinition const& def = functions_[static_cast<unsigned>(func)].value();
+  FunctionDefinition const& def = functions_.at(static_cast<unsigned>(func)).value();
   auto func_instructions = std::get<0>(def);
   auto locals = std::get<1>(def);
 
   /* Save the locals.  */
   Params p;
   locals.for_each_variable([&p, this](Letter l) {
-    p.push_back(variables_[static_cast<unsigned>(l)]);
-    variables_[static_cast<unsigned>(l)] = Number(0);
+    p.push_back(variables_.at(static_cast<unsigned>(l)));
+    variables_.at(static_cast<unsigned>(l)) = Number(0);
   });
   locals.for_each_array([&p, this](Letter l) {
-    p.push_back(arrays_[static_cast<unsigned>(l)]);
-    arrays_[static_cast<unsigned>(l)].reset();
+    p.push_back(arrays_.at(static_cast<unsigned>(l)));
+    arrays_.at(static_cast<unsigned>(l)).reset();
   });
   local_stack_.push_back(p);
 
@@ -436,11 +442,11 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
 
   /* Restore the locals. */
   locals.for_each_variable([&p, this](Letter l) {
-    variables_[static_cast<unsigned>(l)] = std::get<Number>(p.front());
+    variables_.at(static_cast<unsigned>(l)) = std::get<Number>(p.front());
     p.pop_front();
   });
   locals.for_each_array([&p, this](Letter l) {
-    arrays_[static_cast<unsigned>(l)] = std::get<ArrayValues>(p.front());
+    arrays_.at(static_cast<unsigned>(l)) = std::get<ArrayValues>(p.front());
     p.pop_front();
   });
   local_stack_.pop_back();
@@ -455,7 +461,7 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
   return result;
 }
 
-void GD::Bc::Details::VMState::ibase(Number num)
+void GD::Bc::Details::VMState::ibase(Number const& num)
 {
   NumType n = num.to_unsigned();
   if (n < 2 || n > 16) {  // NOLINT - 16 is not magic
@@ -466,7 +472,7 @@ void GD::Bc::Details::VMState::ibase(Number num)
 
 auto GD::Bc::Details::VMState::ibase() const -> GD::Bc::Number::NumType { return ibase_; }
 
-void GD::Bc::Details::VMState::obase(Number num)
+void GD::Bc::Details::VMState::obase(Number const& num)
 {
   NumType n = num.to_unsigned();
   if (n < 2) {
@@ -477,15 +483,15 @@ void GD::Bc::Details::VMState::obase(Number num)
 
 auto GD::Bc::Details::VMState::obase() const -> GD::Bc::Number::NumType { return obase_; }
 
-void GD::Bc::Details::VMState::scale(Number num) { scale_ = num.to_unsigned(); }
+void GD::Bc::Details::VMState::scale(Number const& num) { scale_ = num.to_unsigned(); }
 
 auto GD::Bc::Details::VMState::scale() const -> GD::Bc::Number::NumType { return scale_; }
 
-void GD::Bc::Details::VMState::array_element(ArrayElement const& ae, Number num)
+void GD::Bc::Details::VMState::array_element(ArrayElement const& ae, Number const& num)
 {
-  ArrayValues a = arrays_[static_cast<unsigned>(ae.first.get())];
+  ArrayValues a = arrays_.at(static_cast<unsigned>(ae.first.get()));
   if (!a) {
-    arrays_[static_cast<unsigned>(ae.first.get())] = a =
+    arrays_.at(static_cast<unsigned>(ae.first.get())) = a =
       std::make_shared<ArrayValues::element_type>();
   }
 
@@ -494,7 +500,7 @@ void GD::Bc::Details::VMState::array_element(ArrayElement const& ae, Number num)
 
 auto GD::Bc::Details::VMState::array_element(ArrayElement const& ae) const -> GD::Bc::Number
 {
-  ArrayValues a = arrays_[static_cast<unsigned>(ae.first.get())];
+  ArrayValues a = arrays_.at(static_cast<unsigned>(ae.first.get()));
   if (!a) {
     return Number();
   }
@@ -509,22 +515,22 @@ auto GD::Bc::Details::VMState::array_element(ArrayElement const& ae) const -> GD
 
 auto GD::Bc::Details::VMState::variable(Variable v) const -> GD::Bc::Number const&
 {
-  return variables_[static_cast<unsigned>(v.get())];
+  return variables_.at(static_cast<unsigned>(v.get()));
 }
 
 void GD::Bc::Details::VMState::variable(Variable v, Number const& num)
 {
-  variables_[static_cast<unsigned>(v.get())] = num;
+  variables_.at(static_cast<unsigned>(v.get())) = num;
 }
 
 auto GD::Bc::Details::VMState::array(Array a) const -> GD::Bc::ArrayValues
 {
-  return arrays_[static_cast<unsigned>(a.get())];
+  return arrays_.at(static_cast<unsigned>(a.get()));
 }
 
 void GD::Bc::Details::VMState::array(Array a, ArrayValues av)
 {
-  arrays_[static_cast<unsigned>(a.get())] = av;
+  arrays_.at(static_cast<unsigned>(a.get())) = std::move(av);
 }
 
 auto GD::Bc::Details::VMState::array_length(Array a) const -> GD::Bc::Number::NumType
@@ -545,7 +551,7 @@ void GD::Bc::Details::VMState::validate(Instructions const& instrs) const
       auto const& op = instrs[i].op1();
       if (std::holds_alternative<Instruction::Offset>(op)) {
         Instruction::Offset offset = std::get<Instruction::Offset>(op);
-        assert_error(offset >= 0 || static_cast<Instruction::Index>(-offset) <= i,
+        assert_error(offset >= 0 || static_cast<Instruction::Index>(-offset) <= i,  // NOLINT
                      Msg::op1_offset_underflow, i, offset);
         // NOLINTNEXTLINE
         assert_error(offset < 0 || static_cast<Instruction::Index>(offset) <= instrs.size() - i,
@@ -576,7 +582,7 @@ GD::Bc::Details::InstructionPack::InstructionPack(VMState* vm, Instructions cons
 auto GD::Bc::Details::InstructionPack::execute() -> std::pair<GD::Bc::Number, bool>
 {
   for (; pc_ < instrs_.size(); ++pc_) {
-    if (Details::have_been_interrupted) {
+    if (Details::have_been_interrupted != 0) {
       return std::make_pair(Number(0), true);
     }
     auto i = pc_;
@@ -700,7 +706,7 @@ auto GD::Bc::Details::InstructionPack::execute() -> std::pair<GD::Bc::Number, bo
     case Instruction::Opcode::return_:
       return std::make_pair(get_op1_expr(), true);
     case Instruction::Opcode::eof:
-      assert(pc_ == instrs_.size() - 1);
+      assert(pc_ == instrs_.size() - 1);  // NOLINT
       return std::make_pair(Number(0), false);
       break;
     case Instruction::Opcode::function_end: /* Should never been seen here.  */
@@ -725,7 +731,7 @@ void GD::Bc::Details::InstructionPack::execute_print()
   assert_error(result.has_value(), Msg::empty_result, result_idx);  // NOLINT
   std::visit(Overloaded{
                [&os](std::string_view sv) { os << sv; },
-               [&os, this](Number n) {
+               [&os, this](Number const& n) {
                  n.output(os, vm_->obase(), 0);
                  os << '\n';
                },
@@ -755,38 +761,52 @@ void GD::Bc::Details::InstructionPack::execute_length()
   auto const& loc = results_[loc_idx];
   assert_error(loc.has_value(), Msg::empty_result, loc_idx);  // NOLINT
 
-  std::visit(
-    Overloaded{
-      [this](std::string_view) { assert_error(false, Msg::cannot_get_length, "string_view"); },
-      [&result](Number n) { result = Number(n.length()); },
-      [this](ArrayValues const&) { assert_error(false, Msg::cannot_get_length, "ArrayValues"); },
-      [this](Variable) { assert_error(false, Msg::cannot_get_length, "Variable"); },
-      [&result, this](Array a) { result = Number(vm_->array_length(a)); },
-      [this](ArrayElement const&) { assert_error(false, Msg::cannot_get_length, "ArrayElement"); },
-      [this](Ibase) { assert_error(false, Msg::cannot_get_length, "ibase"); },
-      [this](Obase) { assert_error(false, Msg::cannot_get_length, "obase"); },
-      [this](Scale) { assert_error(false, Msg::cannot_get_length, "scale"); },
-    },
-    *loc);
+  std::visit(Overloaded{
+               [this](std::string_view /*s*/) {
+                 assert_error(false, Msg::cannot_get_length, "string_view");  // NOLINT
+               },
+               [&result](Number const& n) { result = Number(n.length()); },
+               [this](ArrayValues const& /*av*/) {
+                 assert_error(false, Msg::cannot_get_length, "ArrayValues");  // NOLINT
+               },
+               [this](Variable /*v*/) {
+                 // NOLINTNEXTLINE
+                 assert_error(false, Msg::cannot_get_length, "Variable");
+               },
+               [&result, this](Array a) { result = Number(vm_->array_length(a)); },
+               [this](ArrayElement const& /*ae*/) {
+                 // NOLINTNEXTLINE
+                 assert_error(false, Msg::cannot_get_length, "ArrayElement");
+               },
+               [this](Ibase) { assert_error(false, Msg::cannot_get_length, "ibase"); },  // NOLINT
+               [this](Obase) { assert_error(false, Msg::cannot_get_length, "obase"); },  // NOLINT
+               [this](Scale) { assert_error(false, Msg::cannot_get_length, "scale"); },  // NOLINT
+             },
+             *loc);
 }
 
 void GD::Bc::Details::InstructionPack::execute_load()
 {
   assert(instrs_[pc_].opcode() == Instruction::Opcode::load);  // NOLINT
+  Index loc_idx = get_offset_index(instrs_.at(pc_).op1());
   auto& result = results_[pc_];
   auto const& loc = results_[loc_idx];
   assert_error(loc.has_value(), Msg::empty_result, loc_idx);  // NOLINT
 
   std::visit(Overloaded{
-               [this](std::string_view) { assert_error(false, Msg::cannot_load, "string_view"); },
-               [this](Number) { assert_error(false, Msg::cannot_load, "Number"); },
-               [this](ArrayValues const&) { assert_error(false, Msg::cannot_load, "ArrayValues"); },
+               [this](std::string_view /*sv*/) {
+                 assert_error(false, Msg::cannot_load, "string_view");  // NOLINT
+               },
+               [this](Number) { assert_error(false, Msg::cannot_load, "Number"); },  // NOLINT
+               [this](ArrayValues const& /*av*/) {
+                 assert_error(false, Msg::cannot_load, "ArrayValues");  // NOLINT
+               },
                [&result, this](Variable v) { result = vm_->variable(v); },
                [&result, this](Array a) { result = vm_->array(a); },
                [&result, this](ArrayElement const& ae) { result = vm_->array_element(ae); },
-               [&result, this](Ibase) { result = Number(vm_->ibase()); },
-               [&result, this](Obase) { result = Number(vm_->obase()); },
-               [&result, this](Scale) { result = Number(vm_->scale()); },
+               [&result, this](Ibase /*ib*/) { result = Number(vm_->ibase()); },
+               [&result, this](Obase /*ob*/) { result = Number(vm_->obase()); },
+               [&result, this](Scale /*s*/) { result = Number(vm_->scale()); },
              },
              *loc);
 }
@@ -804,9 +824,13 @@ void GD::Bc::Details::InstructionPack::execute_store()
 
   std::visit(
     Overloaded{
-      [this](std::string_view) { assert_error(false, Msg::cannot_store, "string_view"); },
-      [this](Number) { assert_error(false, Msg::cannot_store, "Number"); },
-      [this](ArrayValues const&) { assert_error(false, Msg::cannot_store, "ArrayValues"); },
+      [this](std::string_view /*sv*/) {
+        assert_error(false, Msg::cannot_store, "string_view");  // NOLINT
+      },
+      [this](Number) { assert_error(false, Msg::cannot_store, "Number"); },  // NOLINT
+      [this](ArrayValues const& /*av*/) {
+        assert_error(false, Msg::cannot_store, "ArrayValues");  // NOLINT
+      },
       [&expr, this](Variable v) { vm_->variable(v, std::get<Number>(expr)); },
       [&expr, this](Array a) { vm_->array(a, std::get<ArrayValues>(expr)); },
       [&expr, this](ArrayElement const& ae) { vm_->array_element(ae, std::get<Number>(expr)); },
@@ -846,9 +870,10 @@ auto GD::Bc::Details::InstructionPack::execute_function_begin() -> GD::Bc::Instr
 
   Letter func = std::get<Letter>(instrs_[pc_].op1());
   Index given_start = get_offset_index(instrs_[pc_].op2());
-  assert_error(start == given_start, Msg::bad_function_definition);
+  assert_error(start == given_start, Msg::bad_function_definition);  // NOLINT
 
-  vm_->function(func, instrs_.begin() + start + 1, instrs_.begin() + pc_, mask, loc);
+  vm_->function(func, instrs_.begin() + static_cast<Instruction::Offset>(start) + 1,
+                instrs_.begin() + static_cast<Instruction::Offset>(pc_), mask, loc);
   return pc_ + 1;
 }
 
@@ -868,7 +893,7 @@ void GD::Bc::Details::InstructionPack::execute_push_param()
   std::visit(Overloaded{
                [this](Number const& n) { vm_->push_param(n); },
                [this](ArrayValues const& av) { vm_->push_param(av); },
-               []([[maybe_unused]] auto a) { assert(false); },
+               []([[maybe_unused]] auto a) { abort(); },
              },
              *expr);
 }
@@ -912,7 +937,7 @@ auto GD::Bc::Details::operator<<(std::ostream& os,
 {
   std::visit(Overloaded{
                [&os](std::string_view s) { os << "String(" << s << ')'; },
-               [&os](Number n) { n.debug(os); },
+               [&os](Number const& n) { n.debug(os); },
                [&os](Variable v) { os << v; },
                [&os](Array a) { os << a << "[]"; },
                [&os](ArrayElement const& ae) { os << ae.first << '[' << ae.second << ']'; },
@@ -1040,9 +1065,9 @@ auto GD::Bc::VM::execute(Instructions& instructions) -> bool
   Details::install_interrupt_handler();
   auto result = instrs.execute();
   Details::reset_interrupt_handler();
-  if (Details::have_been_interrupted) {
+  if (Details::have_been_interrupted != 0) {
     state_->stream(Instruction::Stream::error) << Messages::get().format(Msg::interrupted) << '\n';
-    Details::have_been_interrupted = false;
+    Details::have_been_interrupted = 0;
   }
   return result.second;
 }

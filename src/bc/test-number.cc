@@ -71,14 +71,14 @@ TEST_CASE("GD::Bc::Number - Number construction, directed", "[bc][number]")
  *
  * GD::Bc::Number doesn't handle the sign.
  */
-auto make_number(std::string_view s) -> GD::Bc::Number
+auto make_number(std::string_view s, unsigned base) -> GD::Bc::Number
 {
   bool negate = false;
   if (s[0] == '-') {
     negate = true;
     s = s.substr(1);
   }
-  GD::Bc::Number n(s, 10);
+  GD::Bc::Number n(s, base);
   if (negate) {
     n.negate();
   }
@@ -137,10 +137,11 @@ TEST_CASE("GD::Bc::Number - Addition and subtraction, directed", "[bc][number]")
       {"31.6859590355097190", "0.000000000000000030", "31.685959035509719030",
        "31.685959035509718970"},
     }));
-  GD::Bc::Number lhs_num = make_number(lhs);
-  GD::Bc::Number rhs_num = make_number(rhs);
-  GD::Bc::Number expected_add_num = make_number(expected_add);
-  GD::Bc::Number expected_sub_num = make_number(expected_sub);
+  constexpr unsigned working_base = 10;
+  GD::Bc::Number lhs_num = make_number(lhs, working_base);
+  GD::Bc::Number rhs_num = make_number(rhs, working_base);
+  GD::Bc::Number expected_add_num = make_number(expected_add, working_base);
+  GD::Bc::Number expected_sub_num = make_number(expected_sub, working_base);
 
   test_add_subtract(lhs_num, rhs_num, expected_add_num, expected_sub_num);
   rhs_num.negate();
@@ -166,8 +167,8 @@ TEST_CASE("GD::Bc::Number - Scale and length, directed", "[bc][number]")
        {"0.00000000000", 11, 11},
        {"1.0000", 4, 5},
        {"123456789123456789123456789", 0, 27}}));
-
-  GD::Bc::Number n(num, 10);
+  constexpr unsigned working_base = 10;
+  GD::Bc::Number n(num, working_base);
   REQUIRE(n.scale() == scale);
   REQUIRE(n.length() == length);
 }
@@ -218,7 +219,9 @@ public:
 
   auto next() -> bool override
   {
-    auto digit_count = dist_(rand_) % (40 * GD::Bc::Number::base_log10_);
+    constexpr auto max_digits = 40 * GD::Bc::Number::base_log10_;
+    constexpr unsigned working_base = 10;
+    auto digit_count = dist_(rand_) % max_digits;
     auto int_len = dist_(rand_) % (digit_count + 1);
 
     std::string num;
@@ -227,9 +230,9 @@ public:
       if (i % GD::Bc::Number::base_log10_ == 0) {
         digits = dist_(rand_);
       }
-      auto digit = digits / (GD::Bc::Number::base_ / 10);
-      digits = (digits % (GD::Bc::Number::base_ / 10)) * 10;
-      assert(digit < 10);
+      auto digit = digits / (GD::Bc::Number::base_ / working_base);
+      digits = (digits % (GD::Bc::Number::base_ / working_base)) * working_base;
+      assert(digit < working_base);  // NOLINT
 
       if (num.size() == int_len) {
         num += '.';
@@ -237,7 +240,7 @@ public:
       num += static_cast<char>('0' + digit);
     }
 
-    number_ = GD::Bc::Number(num, 10);
+    number_ = GD::Bc::Number(num, working_base);
     return true;
   }
 
@@ -257,7 +260,7 @@ class RandomNumberPairGenerator
     : public Catch::Generators::IGenerator<std::pair<GD::Bc::Number, GD::Bc::Number>>
 {
 public:
-  explicit RandomNumberPairGenerator(GD::Bc::Number::NumType max_digits = 40)
+  explicit RandomNumberPairGenerator(GD::Bc::Number::NumType max_digits = default_max_digits_)
       : rand_(Catch::rngSeed() + 2), dist_(0, GD::Bc::Number::base_), max_digits_(max_digits)
   {
     RandomNumberPairGenerator::next();
@@ -270,6 +273,7 @@ public:
 
   auto get_a_number() -> GD::Bc::Number
   {
+    constexpr auto working_base = 10;
     auto digit_count = dist_(rand_) % (max_digits_ * GD::Bc::Number::base_log10_);
     auto int_len = dist_(rand_) % (digit_count + 1);
 
@@ -279,6 +283,8 @@ public:
       if (i % GD::Bc::Number::base_log10_ == 0) {
         digits = dist_(rand_);
       }
+      auto digit = digits / (GD::Bc::Number::base_ / working_base);
+      digits = (digits % (GD::Bc::Number::base_ / working_base)) * working_base;
       assert(digit < working_base);  // NOLINT
 
       if (num.size() == int_len) {
@@ -286,7 +292,7 @@ public:
       }
       num += static_cast<char>('0' + digit);
     }
-    return GD::Bc::Number(num, 10);
+    return GD::Bc::Number(num, working_base);
   }
 
   auto next() -> bool override
@@ -295,6 +301,8 @@ public:
     return true;
   }
 
+  static constexpr GD::Bc::Number::NumType default_max_digits_ = 40;
+
 private:
   std::mt19937_64 rand_;
   std::uniform_int_distribution<GD::Bc::Number::NumType> dist_;
@@ -302,7 +310,8 @@ private:
   GD::Bc::Number::NumType max_digits_;
 };
 
-auto random_number_pair(GD::Bc::Number::NumType max_digits = 40)
+auto random_number_pair(
+  GD::Bc::Number::NumType max_digits = RandomNumberPairGenerator::default_max_digits_)
   -> Catch::Generators::GeneratorWrapper<std::pair<GD::Bc::Number, GD::Bc::Number>>
 
 {
@@ -314,19 +323,20 @@ auto random_number_pair(GD::Bc::Number::NumType max_digits = 40)
 
 TEST_CASE("GD::Bc::Number - division, random", "[bc][number]")
 {
+  constexpr unsigned working_base = 10;
   auto nums = GENERATE(take(5000, random_pair()));
   uint64_t mask = std::numeric_limits<uint64_t>::max();
 
   auto ud = nums.first % mask;
   while (mask != 0) {
     auto vd = nums.second % mask;
-    Number8 u(std::to_string(ud), 10);
+    Number8 u(std::to_string(ud), working_base);
     if (vd != 0) {
-      Number8 v(std::to_string(vd), 10);
+      Number8 v(std::to_string(vd), working_base);
       auto q = ud / vd;
       auto r = ud % vd;
-      Number8 expected_q(std::to_string(q), 10);
-      Number8 expected_r(std::to_string(r), 10);
+      Number8 expected_q(std::to_string(q), working_base);
+      Number8 expected_r(std::to_string(r), working_base);
 
       INFO("u = " << ud << " v = " << vd << " q = " << q << " r = " << r);
       Number8 div(u);

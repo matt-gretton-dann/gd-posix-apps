@@ -18,7 +18,7 @@ auto GD::Bc::Letter::operator==(char l) const -> bool { return letter_ == encode
 
 auto GD::Bc::operator<<(std::ostream& os, GD::Bc::Letter l) -> std::ostream&
 {
-  static char const* letters = "abcdefghijklmnopqrstuvwxyz";
+  static std::string_view letters = "abcdefghijklmnopqrstuvwxyz";
   os << letters[static_cast<unsigned>(l)];
   return os;
 }
@@ -30,28 +30,23 @@ auto GD::Bc::operator!=(char lhs, Letter rhs) -> bool { return !(rhs == lhs); }
 auto GD::Bc::Letter::encode(char l) -> unsigned
 {
   /* Can't assume letters are contiguous code-points.  */
-  static std::unordered_map<char, unsigned> letter_map = {
-    {'a', 0},  {'b', 1},  {'c', 2},  {'d', 3},  {'e', 4},  {'f', 5},  {'g', 6},
-    {'h', 7},  {'i', 8},  {'j', 9},  {'k', 10}, {'l', 11}, {'m', 12}, {'n', 13},
-    {'o', 14}, {'p', 15}, {'q', 16}, {'r', 17}, {'s', 18}, {'t', 19}, {'u', 20},
-    {'v', 21}, {'w', 22}, {'x', 23}, {'y', 24}, {'z', 25},
-  };
-  auto it = letter_map.find(l);
-  assert(it != letter_map.end());
-  return it->second;
+  std::string_view letters = "abcdefghijklmnopqrstuvwxyz";
+  auto it = letters.find(l);
+  assert(it != std::string_view::npos);  // NOLINT
+  return static_cast<unsigned>(it);
 }
 
 GD::Bc::Token::Token(Type type) : value_(type)
 {
-  assert(type != Type::number);
-  assert(type != Type::string);
-  assert(type != Type::letter);
-  assert(type != Type::error);
+  assert(type != Type::number);  // NOLINT
+  assert(type != Type::string);  // NOLINT
+  assert(type != Type::letter);  // NOLINT
+  assert(type != Type::error);   // NOLINT
 }
 
 GD::Bc::Token::Token(Type type, std::string const& s) : value_(s)
 {
-  assert(type == Type::string || type == Type::number || type == Type::error);
+  assert(type == Type::string || type == Type::number || type == Type::error);  // NOLINT
   if (type == Type::number) {
     value_ = NumInt{s};
   }
@@ -241,7 +236,7 @@ auto GD::Bc::operator<<(std::ostream& os, Token::Type t) -> std::ostream&
     os << "semicolon";
     break;
   default:
-    assert(false);
+    abort();
   }
   return os;
 }
@@ -411,7 +406,7 @@ auto GD::Bc::operator<<(std::ostream& os, GD::Bc::Token const& token) -> std::os
     os << ';';
     break;
   default:
-    assert(false);
+    abort();
   }
   return os;
 }

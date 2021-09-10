@@ -94,10 +94,11 @@ TEST_CASE("GD::Bc::Lexer - Token extensions", "[bc][lexer][extensions]")
 TEST_CASE("GD::Bc::Lexer - Number", "[bc][lexer]")
 {
   // NOLINTNEXTLINE
+  std::string_view number = GENERATE("1234567890", "ABCDEF1", ".1", "2.0", "3.", "1\\\n2");
   auto lexer = GD::Bc::Lexer(std::make_unique<GD::Bc::StringReader>(number));
   auto t1 = lexer.peek();
   REQUIRE(t1.type() == GD::Bc::Token::Type::number);
-  std::string result = number;
+  std::string result(number);
   // Remove escaped new-lines
   result.erase(
     std::remove_if(result.begin(), result.end(), [](char c) { return c == '\\' || c == '\n'; }),

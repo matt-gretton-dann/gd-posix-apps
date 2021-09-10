@@ -4,8 +4,8 @@
  *          SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _SRC_INCLUDE_UTIL_NUMBER_HH_INCLUDED
-#define _SRC_INCLUDE_UTIL_NUMBER_HH_INCLUDED
+#ifndef SRC_INCLUDE_UTIL_NUMBER_HH_INCLUDED
+#define SRC_INCLUDE_UTIL_NUMBER_HH_INCLUDED
 
 #include "gd/format.hh"
 #include "gd/string.h"
@@ -30,7 +30,7 @@ constexpr auto pow10(NumType pow) -> NumType
 {
   NumType r = 1;
   while (pow-- > 0) {
-    r *= 10;
+    r *= 10;  // NOLINT - 10 is obvious what we're doing here.
   }
   return r;
 }
@@ -125,12 +125,7 @@ public:
       return true;
     }
 
-    for (auto d : *digits_) {
-      if (d != 0) {
-        return false;
-      }
-    }
-    return true;
+    return std::all_of(digits_->begin(), digits_->end(), [](auto d) { return d == 0; });
   }
 
   /** Is this an even number? */
@@ -294,10 +289,10 @@ public:
      * big-endian, but numbers are stored little-endian.
      */
     std::ostringstream ss;
-    unsigned width = 0;
+    int width = 0;
     for (auto rit = digits_->rbegin(); rit != digits_->rend(); ++rit) {
       ss << std::setfill('0') << std::setw(width) << static_cast<typename Traits::PrintType>(*rit);
-      width = base_log10_;
+      width = static_cast<int>(base_log10_);
     }
     std::string result = ss.str();
     unsigned break_at = (result.length() <= line_length) ? line_length : (line_length - 1);
@@ -888,6 +883,8 @@ private:
   static auto to_string(NumType num, NumType obase, bool lspace = true) -> std::string
   {
     assert(num < obase);  // NOLINT
+    constexpr std::string_view nums = "0123456789ABCDEF";
+    if (obase <= nums.size()) {
       return std::string(1, nums[num]);
     }
     auto obase_width = std::to_string(obase - 1).size();
@@ -1239,8 +1236,8 @@ public:
    */
   BasicNumber(std::string_view s, NumType ibase) : digits_(), sign_(Sign::positive), scale_(0)
   {
-    assert(ibase >= 2);
-    assert(ibase <= 16);
+    assert(ibase >= 2);   // NOLINT
+    assert(ibase <= 16);  // NOLINT
 
     /* Construct the basic number a digit at a time, working out the scale when we see digits
      * after the radix point.
@@ -1258,15 +1255,15 @@ public:
 
       const auto* digit = ::strchr(digits, c);
       if (digit != nullptr) {
-        assert((digit - digits < ibase) || (s.size() == 1 && digit - digits < 16));
+        assert((digit - digits < ibase) || (s.size() == 1 && digit - digits < 16));  // NOLINT
         digits_.mac(ibase, static_cast<NumType>(digit - digits));
       }
       else if (c == '.') {
-        assert(!seen_period);
+        assert(!seen_period);  // NOLINT
         seen_period = true;
       }
       else {
-        assert(false);
+        abort();
       }
     }
 
@@ -1774,7 +1771,7 @@ struct fmt::formatter<GD::Bc::BasicNumber<NumberTraits>>
 
   constexpr auto parse(format_parse_context& ctx)
   {
-    for (const auto* it = ctx.begin(); it != ctx.end(); ++it) {
+    for (format_parse_context::iterator it = ctx.begin(); it != ctx.end(); ++it) {
       switch (*it) {
       case 'd':
         debug_ = true;
@@ -1807,7 +1804,8 @@ struct fmt::formatter<GD::Bc::BasicNumber<NumberTraits>>
     return vformat_to(ctx.out(), "{0}", fmt::make_format_args(os.str()));
   }
 
+private:
   bool debug_ = false;
 };
 
-#endif  // _SRC_INCLUDE_UTIL_NUMBER_HH_INCLUDED
+#endif  // SRC_INCLUDE_UTIL_NUMBER_HH_INCLUDED

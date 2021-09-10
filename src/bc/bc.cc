@@ -15,6 +15,7 @@
 #include "bc-messages.hh"
 
 #include <cassert>
+#include <clocale>
 #include <iostream>
 #include <memory>
 #include <variant>
@@ -25,7 +26,7 @@ using Msg = GD::Bc::Msg;
 
 namespace {
 /** \brief  Library script loaded with -l. */
-char const* library_script = R"EOF(
+char const* const library_script = R"EOF(
 scale=20
 )EOF";
 
@@ -68,8 +69,8 @@ void execute(GD::Bc::VM& vm, std::unique_ptr<GD::Bc::Reader>&& r)
 auto main(int argc, char** argv) -> int
 {
   std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
-  ::setlocale(LC_ALL, "");
-  GD::program_name(argv[0]);
+  std::span<char*> args(argv, argc);
+  GD::program_name(args[0]);
 
   int c = 0;
   bool load_library = false;
@@ -113,7 +114,7 @@ auto main(int argc, char** argv) -> int
     return true;
   };
 
-  bool success = GD::for_each_file(argv + optind, argv + argc, process, GD::FEFFlags::none);
+  bool success = GD::for_each_file(args.begin() + optind, args.end(), process, GD::FEFFlags::none);
   if (success) {
     auto r = std::make_unique<GD::Bc::FileReader>("-");
     execute(vm, std::move(r));
