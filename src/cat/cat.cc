@@ -6,8 +6,10 @@
 
 #include "cat-messages.hh"
 
+#include <clocale>
+#include <cstdio>
 #include <iostream>
-#include <stdio.h>
+#include <span>
 
 template<typename... Ts>
 void report_error(GD::Cat::Msg msg, Ts... args)
@@ -39,7 +41,8 @@ auto do_cat(std::string_view fname, bool unbuffered) -> bool
         ::clearerr(stdout);
       }
       else {
-        report_error(GD::Cat::Msg::file_write_error, errno, ::strerror(errno));
+        // NOLINTNEXTLINE(concurrency-mt-unsafe)
+        report_error(GD::Cat::Msg::file_write_error, errno, std::strerror(errno));
         return false;
       }
     }
@@ -48,13 +51,15 @@ auto do_cat(std::string_view fname, bool unbuffered) -> bool
 
 auto main(int argc, char** argv) -> int
 {
-  ::setlocale(LC_ALL, "");
-  GD::program_name(argv[0]);
+  std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
+  std::span<char*> args(argv, argc);
+  GD::program_name(args[0]);
 
-  int c;
+  int c = 0;
   bool unbuffered = false;
   bool error = false;
-  while ((c = ::getopt(argc, argv, ":u")) != -1) {
+  // NOLINTNEXTLINE(concurrency-mt-unsafe)
+  while ((c = ::getopt(static_cast<int>(args.size()), args.data(), ":u")) != -1) {
     switch (c) {
     case 'u':
       unbuffered = true;
@@ -62,7 +67,7 @@ auto main(int argc, char** argv) -> int
     case ':':
     case '?':
     default:
-      report_error(GD::Cat::Msg::unrecognised_option, (char)optopt);
+      report_error(GD::Cat::Msg::unrecognised_option, static_cast<char>(optopt));
       error = true;
       break;
     }
@@ -79,10 +84,9 @@ auto main(int argc, char** argv) -> int
     setvbuf(stdout, nullptr, _IONBF, 0);
   }
 
-  bool success =
-    GD::for_each_file(argv + optind, argv + argc, [unbuffered](std::string_view fname) -> bool {
-      return do_cat(fname, unbuffered);
-    });
+  bool success = GD::for_each_file(
+    args.begin() + optind, args.end(),
+    [unbuffered](std::string_view fname) -> bool { return do_cat(fname, unbuffered); });
 
   return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }
