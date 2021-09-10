@@ -8,13 +8,13 @@
 
 #include "expr-messages.hh"
 
-#include <assert.h>
+#include <cassert>
+#include <clocale>
+#include <cstdint>
 #include <functional>
 #include <iostream>
-#include <locale.h>
 #include <ostream>
 #include <regex>
-#include <stdint.h>
 #include <string>
 #include <vector>
 
@@ -117,33 +117,33 @@ public:
   Token(Type type, int32_t number) : Token(type, number, std::to_string(number)) {}
 
   /** \brief  Get the token type.  */
-  auto type() const noexcept -> Type { return type_; }
+  [[nodiscard]] auto type() const noexcept -> Type { return type_; }
 
   /** \brief  Get the number stored in this token.  */
-  auto number() const noexcept -> int32_t
+  [[nodiscard]] auto number() const noexcept -> int32_t
   {
     assert(type_ == Type::number);
     return number_;
   }
 
   /** \brief  Get the string for the token.  */
-  auto string() const noexcept -> std::string const& { return str_; }
+  [[nodiscard]] auto string() const noexcept -> std::string const& { return str_; }
 
   /** \brief  Get the precedence of this token.  Lower numbers mean a higher precedence.  */
-  auto precedence() const noexcept -> unsigned
+  [[nodiscard]] auto precedence() const noexcept -> unsigned
   {
     return actions_[static_cast<size_t>(type_)].precedence_;
   }
 
   /** \brief  Apply this token to the two tokens passed in.  */
-  auto apply(Token const& lhs, Token const& rhs) const noexcept -> Token
+  [[nodiscard]] auto apply(Token const& lhs, Token const& rhs) const noexcept -> Token
   {
     assert(actions_[static_cast<size_t>(type_)].apply_ != nullptr);
     return actions_[static_cast<size_t>(type_)].apply_(lhs, rhs);
   }
 
   /** \brief  Is this token 0 or an empty string?  */
-  auto null_or_zero() const noexcept -> bool
+  [[nodiscard]] auto null_or_zero() const noexcept -> bool
   {
     if (type_ == Token::Type::number) {
       return number_ == 0;
@@ -361,7 +361,7 @@ auto tokenise(int argc, char** argv) -> Tokens
 auto do_match(Token const& lhs, Token const& rhs) -> Token
 {
   std::string res = rhs.string();
-  if (res.size() > 0 && res[0] != '^') {
+  if (!res.empty() && res[0] != '^') {
     res = '^' + res;
   }
   std::regex re(res, std::regex_constants::basic);
@@ -371,13 +371,11 @@ auto do_match(Token const& lhs, Token const& rhs) -> Token
     std::string s = matched ? m.str(1) : "";
     return tokenise(s.c_str());
   }
-  else {
-    auto len = m.length();
-    if (len > INT32_MAX) {
-      warn(Msg::match_too_long, lhs.string(), rhs.string(), len);
-    }
-    return Token(Token::Type::number, matched ? static_cast<int32_t>(m.length(0)) : 0);
+  auto len = m.length();
+  if (len > INT32_MAX) {
+    warn(Msg::match_too_long, lhs.string(), rhs.string(), len);
   }
+  return Token(Token::Type::number, matched ? static_cast<int32_t>(m.length(0)) : 0);
 }
 
 auto do_multiply(Token const& lhs, Token const& rhs) -> Token
@@ -461,7 +459,7 @@ auto do_subtract(Token const& lhs, Token const& rhs) -> Token
 template<typename Fn>
 auto do_comparison(Token const& lhs, Token const& rhs, Fn comparitor) -> Token
 {
-  int comparison;
+  int comparison = 0;
   if (lhs.type() == Token::Type::number && rhs.type() == Token::Type::number) {
     if (lhs.number() > rhs.number()) {
       comparison = 1;
@@ -485,9 +483,7 @@ auto do_and(Token const& lhs, Token const& rhs) -> Token
   if (!lhs.null_or_zero() && !rhs.null_or_zero()) {
     return lhs;
   }
-  else {
-    return Token(Token::Type::number, 0);
-  }
+  return Token(Token::Type::number, 0);
 }
 
 auto do_or(Token const& lhs, Token const& rhs) -> Token
@@ -495,7 +491,7 @@ auto do_or(Token const& lhs, Token const& rhs) -> Token
   if (!lhs.null_or_zero()) {
     return lhs;
   }
-  else if (!rhs.string().empty()) {
+  if (!rhs.string().empty()) {
     return rhs;
   }
   else {
@@ -581,7 +577,7 @@ auto parse_expr(TokenIt& begin, TokenIt end, unsigned int precedence) -> Token
 
   Token lhs = parse_expr(begin, end, precedence - 1);
   while (begin != end && begin->precedence() == precedence) {
-    TokenIt op = begin++;
+    auto op = begin++;
     Token rhs = parse_expr(begin, end, precedence - 1);
     lhs = op->apply(lhs, rhs);
   }
@@ -620,7 +616,5 @@ auto main(int argc, char** argv) -> int
   if (result.null_or_zero()) {
     return 1;
   }
-  else {
-    return 0;
-  }
+  return 0;
 }
