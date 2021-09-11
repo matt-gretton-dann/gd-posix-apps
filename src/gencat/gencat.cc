@@ -24,6 +24,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -33,7 +34,8 @@
 namespace Gencat = GD::Gencat;
 
 namespace {
-std::string_view program_name;  ///< Program name - somewhere global for all.
+// NOLINTNEXTLINE
+std::string program_name;  ///< Program name - somewhere global for all.
 
 /** \brief         Wrapper around write
  *  \param  fd     File descriptor to write to
@@ -703,31 +705,37 @@ private:
 auto main(int argc, char** argv) -> int
 try {
   std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
+  std::span<char*> args(argv, argc);
+  std::span<char*>::iterator it = args.begin();
 
-  program_name = ::basename(argv[0]);  // NOLINT(concurrency-mt-unsafe)
+  program_name = ::basename(*it++);  // NOLINT(concurrency-mt-unsafe)
 
   // Skip '--' if present as the first argument.
-  if (argc > 1 && argv[1][0] == '-' && argv[1][1] == '-' && argv[1][2] == '\0') {
-    ++argv;
-    --argc;
+  if (it != args.end() && std::strcmp(*it, "--") == 0) {
+    ++it;
   }
 
-  if (argc < 3) {
+  if (it == args.end()) {
     std::cerr << Gencat::Messages::get().format(Gencat::Set::gencat, Gencat::Msg::missing_arguments,
                                                 program_name);
     std::exit(EXIT_FAILURE);  // NOLINT(concurrency-mt-unsafe)
   }
 
-  std::string_view catfile(argv[1]);
+  std::string_view catfile(*it++);
   MessageCatalogue cat;
+
+  if (it == args.end()) {
+    std::cerr << Gencat::Messages::get().format(Gencat::Set::gencat, Gencat::Msg::missing_arguments,
+                                                program_name);
+    std::exit(EXIT_FAILURE);  // NOLINT(concurrency-mt-unsafe)
+  }
+
   bool updating = catfile != "-" && fs::exists(catfile);
   if (updating) {
     cat.load_catfile(catfile);
   }
 
-  for (auto* msgfile = argv + 2; *msgfile != nullptr; ++msgfile) {
-    cat.load_msgfile(*msgfile);
-  }
+  std::for_each(it, args.end(), [&cat](auto msgfile) { cat.load_msgfile(msgfile); });
 
   bool failed = false;
   bool remove_outfile = false;
