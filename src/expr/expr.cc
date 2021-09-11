@@ -100,7 +100,7 @@ public:
    */
   Token(Type type, std::string_view str) : type_(type), number_(0), str_(str)
   {
-    assert(type_ != Type::number);
+    assert(type_ != Type::number);  // NOLINT
   }
 
   /** \brief        Construct a number token.
@@ -113,7 +113,7 @@ public:
    */
   Token(Type type, int32_t number, std::string_view str) : type_(type), number_(number), str_(str)
   {
-    assert(type_ == Type::number);
+    assert(type_ == Type::number);  // NOLINT
   }
 
   /** \brief        Construct a number token.
@@ -130,7 +130,7 @@ public:
   /** \brief  Get the number stored in this token.  */
   [[nodiscard]] auto number() const noexcept -> int32_t
   {
-    assert(type_ == Type::number);
+    assert(type_ == Type::number);  // NOLINT
     return number_;
   }
 
@@ -146,7 +146,7 @@ public:
   /** \brief  Apply this token to the two tokens passed in.  */
   [[nodiscard]] auto apply(Token const& lhs, Token const& rhs) const noexcept -> Token
   {
-    assert(actions_[static_cast<size_t>(type_)].apply_ != nullptr);
+    assert(actions_[static_cast<size_t>(type_)].apply_ != nullptr);  // NOLINT
     return actions_[static_cast<size_t>(type_)].apply_(lhs, rhs);
   }
 
