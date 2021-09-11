@@ -98,10 +98,10 @@ public:
   }
 
   /** \brief  Get the filename. */
-  auto filename() const noexcept -> std::string const& { return filename_; }
+  [[nodiscard]] auto filename() const noexcept -> std::string const& { return filename_; }
 
   /** \brief  Get the current location. */
-  auto loc() const noexcept -> std::uint64_t { return loc_; }
+  [[nodiscard]] auto loc() const noexcept -> std::uint64_t { return loc_; }
 
   /** \brief  Set the location. */
   void loc(std::uint64_t l) noexcept { loc_ = l; }
@@ -140,7 +140,7 @@ public:
    * fmt::format.
    */
   template<typename... Ts>
-  auto warning(Gencat::Msg msg, Ts... args) const -> std::string
+  [[nodiscard]] [[nodiscard]] auto warning(Gencat::Msg msg, Ts... args) const -> std::string
   {
     auto warning = Gencat::Messages::get().get(Gencat::Set::generic, Gencat::Msg::warning);
     std::string result = ::fmt::format("{}:{}:{}: ", filename_, loc_, warning);
@@ -223,8 +223,8 @@ public:
 
     // Read the header
     load_header(is, loc, data);
-    std::uint32_t set_count = read<std::uint32_t>(data.data() + set_count_off);
-    std::uint64_t file_size = read<std::uint64_t>(data.data() + file_size_off);
+    auto set_count = read<std::uint32_t>(data.data() + set_count_off);
+    auto file_size = read<std::uint64_t>(data.data() + file_size_off);
     data.reserve(file_size);
 
     // Read the rest of the file.
@@ -284,7 +284,7 @@ public:
       loc.inc_loc(1);
 
       // Handle line continuations
-      while (line.size() != 0 && line[line.size() - 1] == '\\') {
+      while (!line.empty() && line[line.size() - 1] == '\\') {
         std::string line2;
         loc.inc_loc(1);
         if (!std::getline(is, line2)) {
@@ -326,7 +326,7 @@ public:
       else if (line == "$quote") {
         quote = -1;
       }
-      else if (std::isdigit(line[0])) {
+      else if (std::isdigit(line[0]) != 0) {
         std::size_t pos = 0;
         auto r = std::stoul(line, &pos);
         validate_id(loc, r, "NL_MSGMAX", NL_MSGMAX);
@@ -339,8 +339,8 @@ public:
         }
         else {
           std::string value(line.substr(pos + 1));
-          if (!value.empty() && quote != -1 && value[0] == (char)(quote & 0xff)) {
-            if (value[value.size() - 1] != (char)(quote & 0xff)) {
+          if (!value.empty() && quote != -1 && value[0] == static_cast<char>(quote & 0xff)) {
+            if (value[value.size() - 1] != static_cast<char>(quote & 0xff)) {
               std::cerr << loc.warning(Gencat::Msg::quoted_string_not_terminated);
             }
             else {
@@ -467,7 +467,7 @@ private:
           state = State::octal2;
         }
         else {
-          result += (char)o;
+          result += static_cast<char>(o);
           state = State::normal;
           /* Need to rescan C.  */
           --c;
@@ -477,11 +477,11 @@ private:
         if (*c >= '0' && *c <= '7') {
           o = (o << 3) + (*c - '0');
           if (o < 256) {
-            result += (char)o;
+            result += static_cast<char>(o);
           }
         }
         else {
-          result += (char)o;
+          result += static_cast<char>(o);
           --c;
         }
         state = State::normal;
@@ -537,7 +537,7 @@ private:
       break;
     case State::octal1:
     case State::octal2:
-      result += (char)o;
+      result += static_cast<char>(o);
     case State::normal:
       break;
     default:
@@ -612,7 +612,7 @@ private:
    *  \param  offset Offset of table entry within data.
    *  \return        A table entry.
    */
-  auto read_table_entry(Location& loc, Data const& data, Offset offset) const -> TableEntry
+  static auto read_table_entry(Location& loc, Data const& data, Offset offset) -> TableEntry
   {
     if (offset > data.size() - table_entry_size) {
       loc.loc(offset);
@@ -622,10 +622,10 @@ private:
       loc.loc(offset);
       loc.error(Gencat::Msg::table_entry_not_aligned);
     }
-    auto raw_data = data.data() + offset;
+    const auto* raw_data = data.data() + offset;
     Id id = read<std::uint32_t>(raw_data + table_entry_id_off);
-    Length len = read<std::uint32_t>(raw_data + table_entry_len_off);
-    Offset off = read<std::uint64_t>(raw_data + table_entry_off_off);
+    auto len = read<std::uint32_t>(raw_data + table_entry_len_off);
+    auto off = read<std::uint64_t>(raw_data + table_entry_off_off);
     return TableEntry{id, len, off};
   }
 
@@ -634,7 +634,7 @@ private:
    *  \param offset Offset to write at
    *  \param te     Table entry to write
    */
-  void write_table_entry(Location& loc, Data& data, Offset offset, TableEntry const& te) const
+  static void write_table_entry(Location& loc, Data& data, Offset offset, TableEntry const& te)
   {
     if (offset % 8 != 0) {
       loc.loc(offset);
@@ -652,7 +652,7 @@ private:
    *  \param  te     Message table entry giving location of string to read.
    *  \return        Read string.
    */
-  auto read_string(Location& loc, Data const& data, Id set_id, TableEntry const& te) const
+  static auto read_string(Location& loc, Data const& data, Id set_id, TableEntry const& te)
     -> std::string
   {
     loc.loc(te.offset);
@@ -665,7 +665,7 @@ private:
     if (te.offset > data.size() - te.len) {
       loc.error(Gencat::Msg::message_ends_beyond_end, set_id, te.id);
     }
-    if (data.data()[te.offset + te.len - 1] != '\0') {
+    if (data[te.offset + te.len - 1] != '\0') {
       loc.error(Gencat::Msg::message_no_nul, set_id, te.id);
     }
 
@@ -724,7 +724,7 @@ try {
     cat.load_catfile(catfile);
   }
 
-  for (auto msgfile = argv + 2; *msgfile != nullptr; ++msgfile) {
+  for (auto* msgfile = argv + 2; *msgfile != nullptr; ++msgfile) {
     cat.load_msgfile(*msgfile);
   }
 

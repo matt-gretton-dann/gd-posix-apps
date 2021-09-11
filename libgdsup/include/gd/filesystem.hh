@@ -4,8 +4,8 @@
  *  SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _LIBGDSUP_INCLUDE_GD_FILESYSTEM_HH_INCLUDED
-#define _LIBGDSUP_INCLUDE_GD_FILESYSTEM_HH_INCLUDED
+#ifndef LIBGDSUP_INCLUDE_GD_FILESYSTEM_HH_INCLUDED
+#define LIBGDSUP_INCLUDE_GD_FILESYSTEM_HH_INCLUDED
 
 #if __has_include(<filesystem>)
 #  include <filesystem>
@@ -17,4 +17,4 @@ namespace fs = std::experimental::filesystem;
 #  error "Unable to locate an appropriate filesystem library"
 #endif  // Pick a filesystem header.
 
-#endif  // _LIBGDSUP_INCLUDE_GD_FILESYSTEM_HH_INCLUDED
+#endif  // LIBGDSUP_INCLUDE_GD_FILESYSTEM_HH_INCLUDED
