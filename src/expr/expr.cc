@@ -144,7 +144,7 @@ public:
   }
 
   /** \brief  Apply this token to the two tokens passed in.  */
-  [[nodiscard]] auto apply(Token const& lhs, Token const& rhs) const noexcept -> Token
+  [[nodiscard]] auto apply(Token const& lhs, Token const& rhs) const -> Token
   {
     assert(actions_[static_cast<size_t>(type_)].apply_ != nullptr);  // NOLINT
     return actions_[static_cast<size_t>(type_)].apply_(lhs, rhs);
@@ -393,7 +393,7 @@ auto do_match(Token const& lhs, Token const& rhs) -> Token
   return Token(Token::Type::number, matched ? static_cast<int32_t>(m.length(0)) : 0);
 }
 
-auto do_multiply(Token const& lhs, Token const& rhs) -> Token
+auto do_multiply(Token const& lhs, Token const& rhs) noexcept -> Token
 {
   if (lhs.type() != Token::Type::number) {
     invalid_expr(Msg::expected_number_lhs, '*', lhs.string());
