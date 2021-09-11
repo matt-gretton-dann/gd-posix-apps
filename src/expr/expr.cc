@@ -23,6 +23,14 @@
 using Msg = GD::Expr::Msg;
 
 namespace {
+/** \brief  Exit codes. */
+enum class ExitCode { success, zero_or_null_result, invalid_expr, error };
+
+[[noreturn]] void exit(ExitCode code)
+{
+  std::exit(static_cast<int>(code));  // NOLINT(concurrency-mt-unsafe)
+}
+
 /** \brief       Report an error and exit with exit code 3.
  *  \param  msg  Message ID
  *  \param  args Arguments for the message.
@@ -34,7 +42,7 @@ template<typename... Ts>
             << GD::Expr::Messages::get().format(GD::Expr::Set::expr, msg, args...) << '\n'
             << GD::Expr::Messages::get().format(GD::Expr::Set::expr, Msg::usage, GD::program_name())
             << '\n';
-  ::exit(3);
+  exit(ExitCode::error);  // NOLINT(concurrency-mt-unsafe)
 }
 
 /** \brief       Report an invalid_expr and exit with exit code 2.
@@ -46,7 +54,7 @@ template<typename... Ts>
 {
   std::cerr << GD::program_name() << ": "
             << GD::Expr::Messages::get().format(GD::Expr::Set::expr, msg, args...) << '\n';
-  ::exit(2);
+  exit(ExitCode::invalid_expr);  // NOLINT(concurrency-mt-unsafe)
 }
 
 /** \brief       Report a warning
@@ -612,9 +620,6 @@ auto main(int argc, char** argv) -> int
   }
 
   std::cout << result.string() << '\n';
-
-  if (result.null_or_zero()) {
-    return 1;
-  }
-  return 0;
+  // NOLINTNEXTLINE(concurrency-mt-unsafe)
+  exit(result.null_or_zero() ? ExitCode::zero_or_null_result : ExitCode::success);
 }
