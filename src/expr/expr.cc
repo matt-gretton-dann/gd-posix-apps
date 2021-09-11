@@ -187,11 +187,11 @@ using TokenIt = std::vector<Token>::const_iterator;
  * We do this by hand because there actually isn't a sensible C/C++ parse function that guarantees
  * an int32_t result.
  */
-auto tokenise_number(char const* token) -> Token
+auto tokenise_number(std::string_view token) -> Token
 {
   int32_t number = 0;
   int32_t sign = 1;
-  char const* p = token;
+  std::string_view::iterator p = token.begin();
   if (*p == '-') {
     sign = -1;
     ++p;
@@ -207,8 +207,8 @@ auto tokenise_number(char const* token) -> Token
     ++p;
   }
 
-  return *p == '\0' ? Token(Token::Type::number, number * sign, token)
-                    : Token(Token::Type::string, token);
+  return p == token.end() ? Token(Token::Type::number, number * sign, token)
+                          : Token(Token::Type::string, token);
 }
 
 /** \brief  Tokenise a string into a token.
@@ -221,12 +221,16 @@ auto tokenise_number(char const* token) -> Token
  * We manually iterate through up to the first three characters to identify what type of token we
  * have.
  */
-auto tokenise(char const* token) -> Token
+auto tokenise(std::string_view token) -> Token
 {
   Token::Type type = Token::Type::string; /* What we think the token type is currently.  */
+  std::string_view::iterator it = token.begin();
+  if (it == token.end()) {
+    return Token(type, token);
+  }
 
   /* Examine the first character and make a guess about the token type.  */
-  switch (*token) {
+  switch (*it) {
   case '(':
     type = Token::Type::lparens;
     break;
@@ -285,17 +289,19 @@ auto tokenise(char const* token) -> Token
   }
 
   /* Now parse second character.  */
+  ++it;
   if (type == Token::Type::not_equal) {
-    if (token[1] != '=') {
+    if (it == token.end() || *it != '=') {
       /* ! is the only character that means something in a two character sequence but not a 1
          character one.  */
       type = Token::Type::string;
     }
   }
   else {
-    switch (token[1]) {
-    case '\0':
+    if (it == token.end()) {
       return Token(type, token);
+    }
+    switch (*it) {
     case '=':
       if (type == Token::Type::greater_than) {
         type = Token::Type::greater_than_equal;
@@ -336,7 +342,8 @@ auto tokenise(char const* token) -> Token
 
   /* Now for the third character: If the token is more than 2 characters long its definitely a
      string at this point.  */
-  if (token[2] != '\0') {
+  ++it;
+  if (it != token.end()) {
     type = Token::Type::string;
   }
 
