@@ -19,9 +19,9 @@
 namespace bit {
 using endian = std::endian;
 }  // namespace bit
-#  define USE_OUR_BIT_IMPLEMENTATION 0
+#  define USE_OUR_BIT_IMPLEMENTATION 0  // NOLINT(cppcoreguidelines-macro-usage)
 #else
-#  define USE_OUR_BIT_IMPLEMENTATION 1
+#  define USE_OUR_BIT_IMPLEMENTATION 1  // NOLINT(cppcoreguidelines-macro-usage)
 #endif
 
 #if USE_OUR_BIT_IMPLEMENTATION

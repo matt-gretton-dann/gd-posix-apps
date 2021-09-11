@@ -19,6 +19,7 @@
 #include "gencat-messages.hh"
 
 #include <cassert>
+#include <clocale>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -109,7 +110,7 @@ public:
   /** \brief  Increase the location value. */
   void inc_loc(std::uint64_t inc) noexcept
   {
-    assert(loc_ < SIZE_MAX - inc);
+    assert(loc_ < SIZE_MAX - inc);  // NOLINT
     loc_ += inc;
   }
 
@@ -527,7 +528,7 @@ private:
         }
       }
       else {
-        assert(false && "Unhandled escape state.");
+        assert(false && "Unhandled escape state.");  // NOLINT
       }
     }
 
@@ -541,7 +542,7 @@ private:
     case State::normal:
       break;
     default:
-      assert(false && "Unhandled switch case.");
+      assert(false && "Unhandled switch case.");  // NOLINT
     }
 
     return result;
@@ -701,9 +702,9 @@ private:
 
 auto main(int argc, char** argv) -> int
 try {
-  ::setlocale(LC_ALL, "");
+  std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
 
-  program_name = ::basename(argv[0]);
+  program_name = ::basename(argv[0]);  // NOLINT(concurrency-mt-unsafe)
 
   // Skip '--' if present as the first argument.
   if (argc > 1 && argv[1][0] == '-' && argv[1][1] == '-' && argv[1][2] == '\0') {
@@ -714,7 +715,7 @@ try {
   if (argc < 3) {
     std::cerr << Gencat::Messages::get().format(Gencat::Set::gencat, Gencat::Msg::missing_arguments,
                                                 program_name);
-    std::exit(EXIT_FAILURE);
+    std::exit(EXIT_FAILURE);  // NOLINT(concurrency-mt-unsafe)
   }
 
   std::string_view catfile(argv[1]);
@@ -786,7 +787,7 @@ try {
 }
 catch (std::exception const& e) {
   std::cerr << fmt::format("{}: {}\n", program_name, e.what());
-  std::exit(EXIT_FAILURE);
+  std::exit(EXIT_FAILURE);  // NOLINT(concurrency-mt-unsafe)
 }
 catch (...) {
   std::cerr << Gencat::Messages::get().format(Gencat::Set::generic,
