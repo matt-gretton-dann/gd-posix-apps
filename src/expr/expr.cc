@@ -8,6 +8,7 @@
 
 #include "expr-messages.hh"
 
+#include <algorithm>
 #include <cassert>
 #include <clocale>
 #include <cstdint>
@@ -15,6 +16,7 @@
 #include <iostream>
 #include <ostream>
 #include <regex>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -351,25 +353,17 @@ auto tokenise(std::string_view token) -> Token
 }
 
 /** \brief       Tokenise the command line arguments.
- *  \param  argc Argument count.
- *  \param  argv Argument vector.
+ *  \param  args Arguments.
  *  \return      Vector of tokens.
  */
-auto tokenise(int argc, char** argv) -> Tokens
+auto tokenise(std::span<char*>::iterator begin, std::span<char*>::iterator end) -> Tokens
 {
-  assert(argc >= 0);
-  assert(argv != nullptr);
-
   Tokens result;
-  result.reserve(argc);
+  result.reserve(std::distance(begin, end));
 
-  while (argc > 0) {
-    assert(*argv != nullptr);
-    result.emplace_back(tokenise(*argv));
-    ++argv;
-    --argc;
-  }
+  auto out = std::back_inserter(result);
 
+  std::transform(begin, end, out, [](auto arg) { return tokenise(arg); });
   return result;
 }
 
@@ -604,23 +598,21 @@ auto parse(TokenIt& begin, TokenIt end) -> Token { return parse_expr(begin, end,
 
 auto main(int argc, char** argv) -> int
 {
-  ::setlocale(LC_ALL, "");
-  GD::program_name(argv[0]);
+  std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
+  std::span<char*> args(argv, argc);
+  auto it = args.begin();
+  GD::program_name(*it++);
 
-  --argc;
-  ++argv;
-
-  if (argc > 0 && argv[0][0] == '-' && argv[0][1] == '-' && argv[0][2] == '\0') {
-    ++argv;
-    --argc;
+  if (it != args.end() && std::strcmp(*it, "--") == 0) {
+    ++it;
   }
 
-  if (argc == 0) {
+  if (it == args.end()) {
     error(Msg::missing_operand);
   }
 
-  auto tokens = tokenise(argc, argv);
-  TokenIt begin = tokens.begin();
+  auto tokens = tokenise(it, args.end());
+  auto begin = tokens.cbegin();
   auto result = parse(begin, tokens.end());
   if (begin != tokens.end()) {
     invalid_expr(Msg::extra_tokens_at_end, begin->string());
