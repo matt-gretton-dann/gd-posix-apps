@@ -100,7 +100,8 @@ public:
    *  \param type Type of token - should not be Type::number
    *  \param str  String representation
    */
-  Token(Type type, std::string_view str) : type_(type), number_(0), str_(str)
+  Token(Type type, std::string_view str)
+      : type_(type), number_(0), str_(str), action_(get_action(type))
   {
     assert(type_ != Type::number);  // NOLINT
   }
@@ -113,7 +114,8 @@ public:
    * Because of the match operator we need to be able to keep the original string representation
    * of the token to use as appropriate, and not just the numbers canonical representation.
    */
-  Token(Type type, int32_t number, std::string_view str) : type_(type), number_(number), str_(str)
+  Token(Type type, int32_t number, std::string_view str)
+      : type_(type), number_(number), str_(str), action_(get_action(type))
   {
     assert(type_ == Type::number);  // NOLINT
   }
@@ -140,16 +142,13 @@ public:
   [[nodiscard]] auto string() const noexcept -> std::string const& { return str_; }
 
   /** \brief  Get the precedence of this token.  Lower numbers mean a higher precedence.  */
-  [[nodiscard]] auto precedence() const noexcept -> unsigned
-  {
-    return actions_[static_cast<size_t>(type_)].precedence_;
-  }
+  [[nodiscard]] auto precedence() const noexcept -> unsigned { return action_.precedence_; }
 
   /** \brief  Apply this token to the two tokens passed in.  */
   [[nodiscard]] auto apply(Token const& lhs, Token const& rhs) const -> Token
   {
-    assert(actions_[static_cast<size_t>(type_)].apply_ != nullptr);  // NOLINT
-    return actions_[static_cast<size_t>(type_)].apply_(lhs, rhs);
+    assert(action_.apply_ != nullptr);  // NOLINT
+    return action_.apply_(lhs, rhs);
   }
 
   /** \brief  Is this token 0 or an empty string?  */
@@ -162,18 +161,31 @@ public:
     return str_.empty();
   }
 
+  /** \brief  Get the maximum precedence.  */
+  static constexpr auto max_precedence() noexcept -> unsigned { return max_precedence_; }
+
 private:
+  static constexpr unsigned max_precedence_ = 6;
+
   /** \brief Internal structure describing actions.  */
-  struct Actions
+  struct Action
   {
     unsigned precedence_;                                    /**< Precedence of operator.  */
     std::function<Token(Token const&, Token const&)> apply_; /**< Application function. */
   };
 
-  Type type_;                /**< Token type.  */
-  int32_t number_;           /**< Number.  */
-  std::string str_;          /**< String.  */
-  static Actions actions_[]; /**< Array (indexed by type of Token). */
+  /** \brief      Get action object for a token.
+   *  \param type Type of token
+   *  \return     Reference to action object.
+   *
+   * Action object has application lifetime.
+   */
+  static auto get_action(Type type) -> Action const&;
+
+  Type type_;       /**< Token type.  */
+  int32_t number_;  /**< Number.  */
+  std::string str_; /**< String.  */
+  Action action_;   /**< Precedence and action for this token.  */
 };
 
 using Tokens = std::vector<Token>;
@@ -539,44 +551,49 @@ auto parse_parens(TokenIt& begin, TokenIt end) -> Token
   return parse_primary(begin, end);
 }
 
-Token::Actions Token::actions_[] = {
-  {100, nullptr},  // number,
-  {100, nullptr},  // string,
-  {100, nullptr},  // lparens,
-  {100, nullptr},  // rparens,
-  {6, do_or},      // logical_or,
-  {5, do_and},     // logical_and,
-  {4,
-   [](Token const& l, Token const& r) {
-     return do_comparison(l, r, [](int cmp) { return cmp == 0; });
-   }},  // equal
-  {4,
-   [](Token const& l, Token const& r) {
-     return do_comparison(l, r, [](int cmp) { return cmp > 0; });
-   }},  // greater_than,
-  {4,
-   [](Token const& l, Token const& r) {
-     return do_comparison(l, r, [](int cmp) { return cmp >= 0; });
-   }},  // greater_than_equal,
-  {4,
-   [](Token const& l, Token const& r) {
-     return do_comparison(l, r, [](int cmp) { return cmp < 0; });
-   }},  // less_than,
-  {4,
-   [](Token const& l, Token const& r) {
-     return do_comparison(l, r, [](int cmp) { return cmp <= 0; });
-   }},  // less_than_equal,
-  {4,
-   [](Token const& l, Token const& r) {
-     return do_comparison(l, r, [](int cmp) { return cmp != 0; });
-   }},               // not_equal,
-  {3, do_add},       // add,
-  {3, do_subtract},  // subtract,
-  {2, do_multiply},  // multiply,
-  {2, do_divide},    // divide,
-  {2, do_modulo},    // modulo,
-  {1, do_match},     // match
-};
+auto Token::get_action(Type type) -> Token::Action const&
+{
+  static std::array<Action, 18> const actions = {
+    Action{max_precedence_ + 1, nullptr},  // number,
+    Action{max_precedence_ + 1, nullptr},  // string,
+    Action{max_precedence_ + 1, nullptr},  // lparens,
+    Action{max_precedence_ + 1, nullptr},  // rparens,
+    Action{max_precedence_ + 0, do_or},    // logical_or,
+    Action{max_precedence_ - 1, do_and},   // logical_and,
+    Action{max_precedence_ - 2,
+           [](Token const& l, Token const& r) {
+             return do_comparison(l, r, [](int cmp) { return cmp == 0; });
+           }},  // equal
+    Action{max_precedence_ - 2,
+           [](Token const& l, Token const& r) {
+             return do_comparison(l, r, [](int cmp) { return cmp > 0; });
+           }},  // greater_than,
+    Action{max_precedence_ - 2,
+           [](Token const& l, Token const& r) {
+             return do_comparison(l, r, [](int cmp) { return cmp >= 0; });
+           }},  // greater_than_equal,
+    Action{max_precedence_ - 2,
+           [](Token const& l, Token const& r) {
+             return do_comparison(l, r, [](int cmp) { return cmp < 0; });
+           }},  // less_than,
+    Action{max_precedence_ - 2,
+           [](Token const& l, Token const& r) {
+             return do_comparison(l, r, [](int cmp) { return cmp <= 0; });
+           }},  // less_than_equal,
+    Action{max_precedence_ - 2,
+           [](Token const& l, Token const& r) {
+             return do_comparison(l, r, [](int cmp) { return cmp != 0; });
+           }},                                 // not_equal,
+    Action{max_precedence_ - 3, do_add},       // add,
+    Action{max_precedence_ - 3, do_subtract},  // subtract,
+    Action{max_precedence_ - 4, do_multiply},  // multiply,
+    Action{max_precedence_ - 4, do_divide},    // divide,
+    Action{max_precedence_ - 4, do_modulo},    // modulo,
+    Action{max_precedence_ - 5, do_match},     // match
+  };
+
+  return actions.at(static_cast<size_t>(type));
+}
 
 auto parse_expr(TokenIt& begin, TokenIt end, unsigned int precedence) -> Token
 {
@@ -593,7 +610,10 @@ auto parse_expr(TokenIt& begin, TokenIt end, unsigned int precedence) -> Token
   return lhs;
 }
 
-auto parse(TokenIt& begin, TokenIt end) -> Token { return parse_expr(begin, end, 6); }
+auto parse(TokenIt& begin, TokenIt end) -> Token
+{
+  return parse_expr(begin, end, Token::max_precedence());
+}
 }  // namespace
 
 auto main(int argc, char** argv) -> int
