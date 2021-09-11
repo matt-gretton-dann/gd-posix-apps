@@ -193,15 +193,16 @@ auto tokenise_number(std::string_view token) -> Token
 {
   int32_t number = 0;
   int32_t sign = 1;
+  constexpr int input_base = 10;
   std::string_view::iterator p = token.begin();
   if (*p == '-') {
     sign = -1;
     ++p;
   }
 
-  while (*p >= '0' && *p <= '9') {
-    int32_t new_number = number * 10 + (*p - '0');
-    if (new_number / 10 != number) {
+  while (*p >= '0' && *p <= '0' + input_base - 1) {
+    int32_t new_number = number * input_base + (*p - '0');
+    if (new_number / input_base != number) {
       warn(Msg::number_parse_overflow, token);
       break;
     }
@@ -477,7 +478,7 @@ auto do_comparison(Token const& lhs, Token const& rhs, Fn comparitor) -> Token
       comparison = -1;
     }
     else {
-      assert(lhs.number() == rhs.number());
+      assert(lhs.number() == rhs.number());  // NOLINT
       comparison = 0;
     }
   }
@@ -503,9 +504,8 @@ auto do_or(Token const& lhs, Token const& rhs) -> Token
   if (!rhs.string().empty()) {
     return rhs;
   }
-  else {
-    return Token(Token::Type::number, 0);
-  }
+
+  return Token(Token::Type::number, 0);
 }
 
 auto parse(TokenIt& begin, TokenIt end) -> Token;
