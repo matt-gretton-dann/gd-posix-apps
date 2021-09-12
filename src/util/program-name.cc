@@ -28,7 +28,7 @@ public:
 
   /** \brief Get the program name.
    */
-  auto program_name() const noexcept -> std::string_view { return name_; }
+  [[nodiscard]] auto program_name() const noexcept -> std::string_view { return name_; }
 
   /** \brief Set the program name.
    *
@@ -57,7 +57,7 @@ public:
   }
 
 private:
-  ProgramName() {}
+  ProgramName() = default;
 
   std::string name_;
 };

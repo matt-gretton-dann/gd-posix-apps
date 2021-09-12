@@ -35,17 +35,18 @@ TEST_CASE("for_each_file", "[util][file][for_each_file]")
   REQUIRE(success == true);
 
   call_count = 0;
-  success = GD::for_each_file(file12.begin(), file12.end(), [&call_count](std::string_view) {
-    ++call_count;
-    return false;
-  });
+  success =
+    GD::for_each_file(file12.begin(), file12.end(), [&call_count](std::string_view /*unused*/) {
+      ++call_count;
+      return false;
+    });
   REQUIRE(success == false);
   REQUIRE(call_count == 2);
 }
 
 TEST_CASE("for_each_file flags", "[util][file][for_each_file]")
 {
-  std::array<char*, 0> files;
+  std::array<char*, 0> files{};
   int call_count = 0;
   std::string fnames;
   bool success =
@@ -60,6 +61,7 @@ TEST_CASE("for_each_file flags", "[util][file][for_each_file]")
   REQUIRE(fnames == "-");
 
   success = GD::for_each_file(
-    files.begin(), files.end(), [](std::string_view) { return false; }, GD::FEFFlags::none);
+    files.begin(), files.end(), [](std::string_view /*unused*/) { return false; },
+    GD::FEFFlags::none);
   REQUIRE(success == true);
 }
