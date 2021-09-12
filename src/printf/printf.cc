@@ -11,9 +11,9 @@
 
 #include "printf-messages.hh"
 
-#include <assert.h>
+#include <cassert>
+#include <clocale>
 #include <iostream>
-#include <locale.h>
 #include <sstream>
 #include <utility>
 
@@ -250,12 +250,12 @@ auto process_escaped_string(FormatState const& format_state, char const* arg) ->
         }
         else {
           state = State::normal;
-          os << (char)o;
+          os << static_cast<char>(o);
         }
       }
       else {
         state = State::normal;
-        os << (char)o;
+        os << static_cast<char>(o);
         --c;
       }
       break;
@@ -268,7 +268,7 @@ auto process_escaped_string(FormatState const& format_state, char const* arg) ->
   case State::octal1:
   case State::octal2:
   case State::octal3:
-    os << (char)o;
+    os << static_cast<char>(o);
     state = State::normal;
     break;
   case State::escape:
@@ -373,7 +373,7 @@ auto parse_int(char const* arg) -> int32_t
   }
 
   {
-    auto p = strchr(digits, *c);
+    const auto* p = strchr(digits, *c);
     if (p == nullptr || ((p - digits) & 0xf) >= base) {
       warn(Msg::expected_decimal_argument, arg);
       return 0;
@@ -381,7 +381,7 @@ auto parse_int(char const* arg) -> int32_t
   }
 
   for (; *c != '\0'; ++c) {
-    auto p = strchr(digits, *c);
+    const auto* p = strchr(digits, *c);
     if (p == nullptr || ((p - digits) & 0xf) >= base) {
       break;
     }
@@ -394,7 +394,7 @@ auto parse_int(char const* arg) -> int32_t
       v = INT32_MAX;
       /* Skip any remaining digits.  */
       for (++c; *c != '\0'; ++c) {
-        auto p2 = strchr(digits, *c);
+        const auto* p2 = strchr(digits, *c);
         if (p2 == nullptr || ((p2 - digits) & 0xf) >= base) {
           break;
         }
@@ -479,7 +479,7 @@ void process_unsigned(FormatState const& format_state, char const* arg)
   if (vs < 0) {
     warn(Msg::negative_decimal_to_unsigned, arg, 'u');
   }
-  uint32_t v = static_cast<uint32_t>(vs);
+  auto v = static_cast<uint32_t>(vs);
   print_number(format_state, std::to_string(v), "", format_state.min_width_);
 }
 
@@ -494,7 +494,7 @@ void process_octal(FormatState& format_state, char const* arg)
     warn(Msg::negative_decimal_to_unsigned, arg, 'o');
   }
 
-  uint32_t v = static_cast<uint32_t>(vs);
+  auto v = static_cast<uint32_t>(vs);
   std::string s = to_based_string(v, 3, false);
   if ((format_state.precision_ == -1 ||
        static_cast<std::string::size_type>(format_state.precision_) <= s.length()) &&
@@ -521,7 +521,7 @@ void process_hex(FormatState const& format_state, char const* arg, bool upper)
     warn(Msg::negative_decimal_to_unsigned, arg, upper ? 'X' : 'x');
   }
 
-  uint32_t v = static_cast<uint32_t>(vs);
+  auto v = static_cast<uint32_t>(vs);
   bool has_prefix = v != 0 && format_state.alternative_form_;
   char const* prefix = !has_prefix ? "" : (upper ? "0X" : "0x");
   std::string::size_type leading_zero_precision =
@@ -576,12 +576,12 @@ auto process_format(char const* format, char** argv) -> char**
         }
         else {
           state = State::normal;
-          std::cout << (char)o;
+          std::cout << static_cast<char>(o);
         }
       }
       else {
         state = State::normal;
-        std::cout << (char)o;
+        std::cout << static_cast<char>(o);
         --c;
       }
       break;
@@ -741,7 +741,7 @@ auto process_format(char const* format, char** argv) -> char**
   switch (state) {
   case State::octal2:
   case State::octal3:
-    std::cout << (char)o;
+    std::cout << static_cast<char>(o);
     break;
   case State::escape:
     error(Msg::unterminated_escape, format);
@@ -773,7 +773,7 @@ auto main(int argc, char** argv) -> int
   GD::program_name(argv[0]);
   ::setlocale(LC_ALL, "");
 
-  int c;
+  int c = 0;
   while ((c = ::getopt(argc, argv, ":")) != -1) {
     if (c == '?' || c == ':') {
       error(Msg::unexpected_argument, optopt);
