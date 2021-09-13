@@ -7,8 +7,8 @@
  * format.
  */
 
-#ifndef _LIBGDSUP_INCLUDE_GD_NL_TYPES_H_INCLUDED
-#define _LIBGDSUP_INCLUDE_GD_NL_TYPES_H_INCLUDED
+#ifndef LIBGDSUP_INCLUDE_GD_NL_TYPES_H_INCLUDED
+#define LIBGDSUP_INCLUDE_GD_NL_TYPES_H_INCLUDED
 
 #include "gd/bits/defines.h"
 
@@ -105,6 +105,6 @@ __EXTERN_C char* catgets(nl_catd catd, int set_id, int msg_id, char const* s);
  * As a POSIX extension: \c EINVAL is set if the \a oflag field is set to an invalid value.
  */
 // NOLINTNEXTLINE(modernize-use-trailing-return-type)
-__EXTERN_C nl_catd catopen(char const*, int);
+__EXTERN_C nl_catd catopen(char const* /*name*/, int /*oflag*/);
 
-#endif  // _LIBGDSUP_INCLUDE_GD_NL_TYPES_H_INCLUDED
+#endif  // LIBGDSUP_INCLUDE_GD_NL_TYPES_H_INCLUDED

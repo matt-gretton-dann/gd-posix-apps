@@ -4,8 +4,8 @@
  *  SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _LIBGDSUP_INCLUDE_GD_LIBGEN_H_INCLUDED
-#define _LIBGDSUP_INCLUDE_GD_LIBGEN_H_INCLUDED
+#ifndef LIBGDSUP_INCLUDE_GD_LIBGEN_H_INCLUDED
+#define LIBGDSUP_INCLUDE_GD_LIBGEN_H_INCLUDED
 
 #if !defined(FORCE_SUPPLEMENTAL_LIBRARY) && __has_include(<libgen.h>)
 #  include <libgen.h>
@@ -66,4 +66,4 @@ __EXTERN_C char* basename(char* path) __NOEXCEPT;
 __EXTERN_C char* dirname(char*) __NOEXCEPT;
 #endif  // Pick a libgen header
 
-#endif  // _LIBGDSUP_INCLUDE_GD_LIBGEN_H_INCLUDED
+#endif  // LIBGDSUP_INCLUDE_GD_LIBGEN_H_INCLUDED
