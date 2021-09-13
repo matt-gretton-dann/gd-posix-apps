@@ -50,16 +50,18 @@ std::string program_name;  ///< Program name - somewhere global for all.
  * On an error it throws a std::system_error exception.  Note that in this case
  * the output file may already have some data in it.
  */
-void xwrite(int fd, char const* data, std::uint64_t amount)
+template<typename T, std::size_t E>
+void xwrite(int fd, std::span<T, E> data)
 {
-  char const* end = data + amount;
-  while (data < end) {
+  auto d = std::as_bytes(data);
+  std::size_t amount_done = 0;
+  while (amount_done < d.size()) {
     // Jump through some hoops to ensure we write at most SSIZE_MAX bytes of
     // data, and certainly no more than requested.
-    std::uint64_t to_do = end - data;
+    std::uint64_t to_do = d.size() - amount_done;
     std::size_t to_write =
       static_cast<std::size_t>(std::min(static_cast<std::uint64_t>(SSIZE_MAX), to_do));
-    ssize_t written = ::write(fd, data, to_write);
+    ssize_t written = ::write(fd, data.data() + amount_done, to_write);
     if (written == -1) {
       // EINTR means 'try again'.
       if (errno != EINTR) {
@@ -67,7 +69,7 @@ void xwrite(int fd, char const* data, std::uint64_t amount)
       }
     }
     else {
-      data += written;
+      amount_done += written;
     }
   }
 }
@@ -167,38 +169,24 @@ private:
  * naturally aligned a slow byte-by-byte read is done.  Otherwise we just do a
  * type conversion.
  */
-template<typename T, std::enable_if_t<std::is_integral<T>::value, bool> = true>
-auto read(std::uint8_t const* data) -> T
+template<typename T, typename It, std::enable_if_t<std::is_integral<T>::value, bool> = true>
+auto read(It data) -> T
 {
-  // Fast path - no endian conversion, and data is appropriately aligned.
-  if constexpr (::bit::endian::native == ::bit::endian::little) {
-    if (((uintptr_t)data) % sizeof(T) == 0) {
-      return *(reinterpret_cast<T const*>(data));
-    }
-  }
-
   // Slow path - read data byte by byte.
   T result = 0;
   for (unsigned i = 0; i < sizeof(T); ++i) {
-    result |= static_cast<T>(data[i]) << (i * 8);
+    result |= static_cast<T>(*data++) << (i * CHAR_BIT);
   }
   return result;
 }
 
-template<typename T, std::enable_if_t<std::is_integral<T>::value, bool> = true>
-void write(std::uint8_t* data, T value)
+template<typename T, typename It, std::enable_if_t<std::is_integral<T>::value, bool> = true>
+void write(It data, T value)
 {
-  // Fast path - no endian conversion, and data is appropriately aligned.
-  if constexpr (bit::endian::native == bit::endian::little) {
-    if (((uintptr_t)data) % sizeof(T) == 0) {
-      *(reinterpret_cast<T*>(data)) = value;
-    }
-  }
-
   // Slow path - write data byte by byte.
   for (unsigned i = 0; i < sizeof(T); ++i) {
-    data[i] = std::uint8_t(value & 0xff);
-    value >>= 8;
+    *data++ = static_cast<std::uint8_t>(value);
+    value >>= CHAR_BIT;
   }
 }
 
@@ -226,8 +214,8 @@ public:
 
     // Read the header
     load_header(is, loc, data);
-    auto set_count = read<std::uint32_t>(data.data() + set_count_off);
-    auto file_size = read<std::uint64_t>(data.data() + file_size_off);
+    auto set_count = read<std::uint32_t>(data.begin() + set_count_off);
+    auto file_size = read<std::uint64_t>(data.begin() + file_size_off);
     data.reserve(file_size);
 
     // Read the rest of the file.
@@ -419,7 +407,7 @@ public:
     write(data.data() + file_size_off, std::uint64_t(data.size()));
 
     // Now write data to the file.
-    xwrite(fd, reinterpret_cast<char const*>(data.data()), data.size());
+    xwrite(fd, std::span(data.data(), data.size()));
   }
 
 private:
@@ -559,11 +547,11 @@ private:
    */
   static void load_header(std::istream& is, Location& loc, Data& data)
   {
-    char buf[hdr_size];
-    if (!is.read(buf, hdr_size)) {
+    std::vector<char> buf(hdr_size);
+    if (!is.read(buf.data(), buf.size())) {
       loc.error(Gencat::Msg::catalogue_too_short);
     }
-    data.insert(data.end(), buf, buf + is.gcount());
+    std::copy(buf.begin(), buf.begin() + is.gcount(), std::back_inserter(data));
 
     if (data[0] != 'M' || data[1] != 'S' || data[2] != 'G' || data[3] != '\0') {
       loc.error(Gencat::Msg::catalogue_magic_missing);
@@ -590,15 +578,15 @@ private:
   static void load_data(std::istream& is, Location& loc, Data& data, Offset file_size)
   {
     constexpr std::size_t bufsize = 4096;
-    char buf[bufsize];
-    while (is.read(buf, bufsize)) {
-      data.insert(data.end(), buf, buf + is.gcount());
+    std::array<char, bufsize> buf;
+    while (is.read(buf.data(), buf.size())) {
+      std::copy(buf.begin(), buf.begin() + is.gcount(), std::back_inserter(data));
       if (data.size() > file_size) {
         loc.loc(file_size);
         loc.error(Gencat::Msg::message_catalogue_too_large);
       }
     }
-    data.insert(data.end(), buf, buf + is.gcount());
+    std::copy(buf.begin(), buf.begin() + is.gcount(), std::back_inserter(data));
     if (data.size() > file_size) {
       loc.loc(file_size);
       loc.error(Gencat::Msg::message_catalogue_too_large);
@@ -625,7 +613,7 @@ private:
       loc.loc(offset);
       loc.error(Gencat::Msg::table_entry_not_aligned);
     }
-    const auto* raw_data = data.data() + offset;
+    auto raw_data = data.begin() + offset;
     Id id = read<std::uint32_t>(raw_data + table_entry_id_off);
     auto len = read<std::uint32_t>(raw_data + table_entry_len_off);
     auto off = read<std::uint64_t>(raw_data + table_entry_off_off);
@@ -643,9 +631,9 @@ private:
       loc.loc(offset);
       loc.error(Gencat::Msg::table_entry_not_aligned);
     }
-    write(data.data() + offset + table_entry_id_off, te.id);
-    write(data.data() + offset + table_entry_len_off, te.len);
-    write(data.data() + offset + table_entry_off_off, te.offset);
+    write(data.begin() + offset + table_entry_id_off, te.id);
+    write(data.begin() + offset + table_entry_len_off, te.len);
+    write(data.begin() + offset + table_entry_off_off, te.offset);
   }
 
   /** \brief         Read a string
@@ -672,9 +660,13 @@ private:
       loc.error(Gencat::Msg::message_no_nul, set_id, te.id);
     }
 
-    return std::string(reinterpret_cast<char const*>(data.data() + te.offset), te.len - 1);
+    std::string r;
+    std::transform(data.begin() + te.offset, data.begin() + te.offset + te.len - 1,
+                   std::back_inserter(r), [](auto c) { return static_cast<char>(c); });
+    return r;
   }
 
+  // NOLINTNEXTLINE
   static void validate_id(Location& loc, unsigned long id, const char* soft_limit_name,
                           Id soft_limit)
   {
