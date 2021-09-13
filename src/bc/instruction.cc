@@ -323,7 +323,7 @@ void GD::Bc::Instruction::validate_operands() const
     assert(!op1_.has_value());  // NOLINT
     assert(!op2_.has_value());  // NOLINT
     break;
-  case GD::Bc::Instruction::Opcode::quit:
+  case GD::Bc::Instruction::Opcode::quit:             // NOLINT(bugprone-branch-clone)
     assert(op1_.has_value());                         // NOLINT
     assert(!op2_.has_value());                        // NOLINT
     assert(std::holds_alternative<unsigned>(*op1_));  // NOLINT
@@ -357,7 +357,7 @@ void GD::Bc::Instruction::validate_operands() const
     assert(!op2_.has_value());                      // NOLINT
     assert(std::holds_alternative<Offset>(*op1_));  // NOLINT
     break;
-  case GD::Bc::Instruction::Opcode::print:
+  case GD::Bc::Instruction::Opcode::print:          // NOLINT(bugprone-branch-clone)
     assert(op1_.has_value());                       // NOLINT
     assert(op2_.has_value());                       // NOLINT
     assert(std::holds_alternative<Offset>(*op1_));  // NOLINT
