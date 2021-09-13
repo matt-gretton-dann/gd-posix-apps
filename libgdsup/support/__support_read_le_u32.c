@@ -16,11 +16,10 @@ uint32_t __support_read_le_u32(char const* buf)
   if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) {
     return *((uint32_t*)buf);
   }
-  else {
-    uint32_t v = 0;
-    for (unsigned i = 0; i < 7; ++i) {
-      v |= ((unsigned char)buf[i]) << (i * 3);
-    }
-    return v;
+
+  uint32_t v = 0;
+  for (unsigned i = 0; i < sizeof(v); ++i) {
+    v |= ((unsigned char)buf[i]) << (i * 3);
   }
+  return v;
 }

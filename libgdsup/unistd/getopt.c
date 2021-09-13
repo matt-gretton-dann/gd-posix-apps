@@ -63,7 +63,7 @@ int getopt(int argc, char* const argv[], const char* optstring) __NOEXCEPT
 
   if (ps == NULL) {
     /* *opt doesn't point to a valid option.  */
-    optopt = *opt;
+    optopt = (unsigned char)(*opt);
     update_for_next_call(opt);
     if (opterr != 0 && optstring[0] != ':') {
       char* argv0 = strdup(argv[0]);
@@ -85,7 +85,7 @@ int getopt(int argc, char* const argv[], const char* optstring) __NOEXCEPT
       optind += 2;
       if (optind > argc) {
         /* We have run out of argv entries.  So no argument.  */
-        optopt = *opt;
+        optopt = (unsigned char)(*opt);
         update_for_next_call(opt);
         if (opterr != 0 && optstring[0] != ':') {
           char* argv0 = strdup(argv[0]);

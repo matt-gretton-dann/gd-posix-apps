@@ -135,7 +135,8 @@ static char* expand_nlspath_entry(char const* begin, char const* end, char const
   /* Guess an initial capacity for the string.  Make it length of the NLSPATH entry we're looking
      at, plus the name length + length of locale * 5.
    */
-  size_t capacity = end - begin + strlen(end) + strlen(locale) * 5 + 2;
+  const size_t locale_count = 5;
+  size_t capacity = end - begin + strlen(end) + strlen(locale) * locale_count + 2;
 
   char* result = malloc(capacity);
   if (result == NULL) {
@@ -311,6 +312,7 @@ nl_catd catopen(char const* name, int oflag)
     LC_MESSAGES
 #endif
     ;
+  // NOLINTNEXTLINE(concurrency-mt-unsafe)
   char* locale = oflag == 0 ? getenv("LANG") : setlocale(lc_id, NULL);
   char* locale_to_free = NULL;
   if (locale == NULL || locale[0] == '\0') {
@@ -324,7 +326,7 @@ nl_catd catopen(char const* name, int oflag)
   }
 
   /* Find the NLSPATH.  */
-  char const* nlspath = getenv("NLSPATH");
+  char const* nlspath = getenv("NLSPATH");  // NOLINT(concurrency-mt-unsafe)
 
   /* Do lookup on the NLSPATH.  */
   if (nlspath != NULL && nlspath[0] != '\0') {

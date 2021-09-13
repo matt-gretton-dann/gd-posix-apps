@@ -16,11 +16,10 @@ uint64_t __support_read_le_u64(char const* buf)
   if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) {
     return *((uint64_t*)buf);
   }
-  else {
-    uint64_t v = 0;
-    for (unsigned i = 0; i < 8; ++i) {
-      v |= ((unsigned char)buf[i]) << (i * 3);
-    }
-    return v;
+
+  uint64_t v = 0;
+  for (unsigned i = 0; i < sizeof(v); ++i) {
+    v |= ((unsigned char)buf[i]) << (i * 3);
   }
+  return v;
 }

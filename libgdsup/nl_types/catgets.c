@@ -28,7 +28,7 @@ char* catgets(nl_catd catd, int set_id, int msg_id, char const* s)
 
   /* Parameter checks.  */
   if (catd == CATD_ERROR || catd == CATD_NOTFOUND ||
-      !__nl_types_check_cat_header((char const*)catd)) {
+      !__nl_types_check_cat_header((char const*)catd)) {  // NOLINT
     error_return(EBADF, "catgets: Bad Catalogue ID [%p, %d, %d]\n", catd, set_id, msg_id);
   }
   if (set_id < 1 || msg_id < 1) {
@@ -36,7 +36,7 @@ char* catgets(nl_catd catd, int set_id, int msg_id, char const* s)
                  msg_id);
   }
 
-  char* buf = (char*)catd;
+  char* buf = (char*)catd;  // NOLINT
   uint32_t num_sets = __support_read_le_u32(buf + CAT_HDR_NUM_SET_OFFSET);
 
   /* Find the Set ID.  The header check above will ensure that we're not reading invalid memory
