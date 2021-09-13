@@ -326,10 +326,8 @@ __EXTERN_C void handle_sigint(int /*signal*/) { have_been_interrupted = 1; }
 void install_interrupt_handler()
 {
   have_been_interrupted = 0;
-  struct sigaction sa
-  {
-    .sa_handler = handle_sigint  // NOLINT - this is a safe union access on macOS
-  };
+  struct sigaction sa;            // NOLINT(cppcoreguidelines-pro-type-member-init) - inited below
+  sa.sa_handler = handle_sigint;  // NOLINT - this is a safe union access on macOS
   sigemptyset(&sa.sa_mask);
   sa.sa_flags = SA_RESTART | SA_RESETHAND; /* Restart functions if interrupted by handler.  */
   /* We don't care if this fails as users will still be able to ^C out but just with a worse
@@ -340,10 +338,8 @@ void install_interrupt_handler()
 /* Reset the SIGINT signal handler.  */
 void reset_interrupt_handler()
 {
-  struct sigaction sa
-  {
-    .sa_handler = SIG_DFL  // NOLINT - this is a safe union access on macOS
-  };
+  struct sigaction sa;            // NOLINT(cppcoreguidelines-pro-type-member-init) - inited below
+  sa.sa_handler = handle_sigint;  // NOLINT - this is a safe union access on macOS
   sigemptyset(&sa.sa_mask);
   sigaction(SIGINT, &sa, nullptr);
   // We assume this has worked for usefulness sake.
