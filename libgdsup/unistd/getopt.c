@@ -30,7 +30,7 @@ static void update_for_next_call(char* opt) __NOEXCEPT
   }
 }
 
-int getopt(int argc, char* const argv[], const char* optstring) __NOEXCEPT
+int getopt(int argc, char* const argv[], const char* optstring) __NOEXCEPT  // NOLINT
 {
   /* Don't go off the end of the array.  */
   if (optind >= argc) {

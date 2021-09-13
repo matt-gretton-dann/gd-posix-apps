@@ -8,31 +8,30 @@
 
 #include "util-messages.hh"
 
-#include <assert.h>
-#include <stdio.h>
+#include <cassert>
+#include <cstdio>
 #include <string>
 
 auto GD::InputFile::getline() -> std::string
 {
   assert(file_ != nullptr);
-  char buf[1024];
+  constexpr unsigned buf_size = 1024;
+  std::array<char, buf_size> buf{};
   std::string result;
   while (true) {
-    if (::fgets(buf, 1024, file_) == nullptr) {
-      if (ferror(file_)) {
+    if (std::fgets(buf.data(), buf.size(), file_) == nullptr) {
+      if (std::ferror(file_) != 0) {
         if (errno == EINTR || errno == EAGAIN) {
-          ::clearerr(file_);
+          std::clearerr(file_);
           continue;
         }
-        else {
-          report_error(Msg::file_read_error);
-        }
+        report_error(Msg::file_read_error);
       }
 
       return result;
     }
 
-    result += buf;
+    result += buf.data();
     if (result[result.size() - 1] == '\n') {
       return result.substr(0, result.size() - 1);
     }

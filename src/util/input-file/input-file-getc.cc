@@ -8,26 +8,25 @@
 
 #include "util-messages.hh"
 
-#include <assert.h>
-#include <stdio.h>
+#include <cassert>
+#include <cstdio>
 
 auto GD::InputFile::getc() -> int
 {
   assert(file_ != nullptr);
-  int c;
-  while ((c = fgetc(file_)) == EOF) {
-    if (feof(file_)) {
+  int c = 0;
+  while ((c = std::fgetc(file_)) == EOF) {
+    if (std::feof(file_) != 0) {
       return EOF;
     }
+
+    assert(std::ferror(file_));
+    if (errno == EINTR || errno == EAGAIN) {
+      std::clearerr(file_);
+    }
     else {
-      assert(ferror(file_));
-      if (errno == EINTR || errno == EAGAIN) {
-        ::clearerr(file_);
-      }
-      else {
-        report_error(Msg::file_read_error);
-        return EOF;
-      }
+      report_error(Msg::file_read_error);
+      return EOF;
     }
   }
 

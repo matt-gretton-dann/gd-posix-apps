@@ -11,16 +11,16 @@
 
 __EXTERN_C_BEGIN
 /** \brief Pointer to argument - used by \fn getopt.  */
-extern char* optarg;
+extern char* optarg;  // NOLINT
 
 /** \brief Set to 0 to turn error reporting by \fn getopt off.  */
-extern int opterr;
+extern int opterr;  // NOLINT
 
 /** \brief Index of current parameter for \fn getopt.  */
-extern int optind;
+extern int optind;  // NOLINT
 
 /** \brief Invalid option character reported by \fn getopt.  */
-extern int optopt;
+extern int optopt;  // NOLINT
 
 __EXTERN_C_END
 
