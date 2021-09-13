@@ -14,9 +14,9 @@
 
 TEST_CASE("for_each_file", "[util][file][for_each_file]")
 {
-  char file1[] = "file1";
-  char file2[] = "file2";
-  std::array<char*, 2> file12 = {file1, file2};
+  std::string file1 = "file1";
+  std::string file2 = "file2";
+  std::array<std::string, 2> file12 = {file1, file2};
 
   int call_count = 0;
   std::string files;
@@ -27,8 +27,8 @@ TEST_CASE("for_each_file", "[util][file][for_each_file]")
       return true;
     });
   REQUIRE(success == true);
-  REQUIRE(files == "file1file2");
-  REQUIRE(call_count == 2);
+  REQUIRE(files == file1 + file2);
+  REQUIRE(call_count == file12.size());
 
   success = GD::for_each_file(file12.end(), file12.end(),
                               [](std::string_view fname) { return fname == "-"; });
@@ -41,7 +41,7 @@ TEST_CASE("for_each_file", "[util][file][for_each_file]")
       return false;
     });
   REQUIRE(success == false);
-  REQUIRE(call_count == 2);
+  REQUIRE(call_count == file12.size());
 }
 
 TEST_CASE("for_each_file flags", "[util][file][for_each_file]")

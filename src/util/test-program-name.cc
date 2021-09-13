@@ -10,11 +10,11 @@
 
 TEST_CASE("program_name", "[util][program_name]")
 {
-  char test1[] = "A/B";
-  char test2[] = "SED";
-  GD::program_name(test1);
+  std::string test1 = "A/B";
+  std::string test2 = "SED";
+  GD::program_name(test1.data());
   REQUIRE(GD::program_name() == "B");
 
-  GD::program_name(test2);
+  GD::program_name(test2.data());
   REQUIRE(GD::program_name() == "SED");
 }

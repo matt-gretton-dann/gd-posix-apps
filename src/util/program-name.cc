@@ -40,17 +40,8 @@ public:
    */
   void program_name(std::string_view argv0)
   {
-    name_.clear();
-    char* s = ::strdup(argv0.data());
-    if (s != nullptr) {
-      char* pn = ::strdup(::basename(s));
-      if (pn != nullptr) {
-        name_ = pn;
-        ::free(pn);
-      }
-      ::free(s);
-    }
-
+    std::string n(argv0);
+    name_ = ::basename(n.data());
     if (name_.empty()) {
       name_ = argv0;
     }

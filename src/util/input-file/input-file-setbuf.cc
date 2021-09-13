@@ -5,16 +5,16 @@
  */
 #include "util/file.hh"
 
-#include <assert.h>
+#include <cassert>
+#include <cstdio>
 #include <memory>
-#include <stdio.h>
 #include <utility>
 #include <vector>
 
 void GD::InputFile::setbuf()
 {
   assert(file_ != nullptr);
-  ::setvbuf(file_, nullptr, _IONBF, 0);
+  std::setvbuf(file_, nullptr, _IONBF, 0);
 }
 
 void GD::InputFile::setbuf(std::unique_ptr<std::vector<char>>&& ptr)
@@ -22,7 +22,7 @@ void GD::InputFile::setbuf(std::unique_ptr<std::vector<char>>&& ptr)
   assert(file_ != nullptr);
 
   buffer_ = std::move(ptr);
-  ::setvbuf(file_, buffer_->data(), _IOFBF, buffer_->size());
+  std::setvbuf(file_, buffer_->data(), _IOFBF, buffer_->size());
 }
 
 void GD::InputFile::setbuf(Buffering type, std::unique_ptr<std::vector<char>>&& ptr)
@@ -30,5 +30,5 @@ void GD::InputFile::setbuf(Buffering type, std::unique_ptr<std::vector<char>>&& 
   assert(file_ != nullptr);
 
   buffer_ = std::move(ptr);
-  ::setvbuf(file_, buffer_->data(), static_cast<int>(type), buffer_->size());
+  std::setvbuf(file_, buffer_->data(), static_cast<int>(type), buffer_->size());
 }

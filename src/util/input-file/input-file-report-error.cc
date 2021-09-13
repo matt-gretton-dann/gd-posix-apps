@@ -11,13 +11,14 @@
 
 #include "util-messages.hh"
 
-#include <errno.h>
+#include <cerrno>
 #include <iostream>
 
 void GD::InputFile::report_error(GD::Util::Msg msg)
 {
   std::cerr << GD::program_name() << ": "
-            << GD::Util::Messages::get().format(GD::Util::Set::util, msg, filename_, errno,
-                                                ::strerror(errno))
+            << GD::Util::Messages::get().format(
+                 GD::Util::Set::util, msg, filename_, errno,
+                 std::strerror(errno))  // NOLINT(concurrency-mt-unsafe)
             << '\n';
 }
