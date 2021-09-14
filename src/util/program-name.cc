@@ -41,7 +41,7 @@ public:
   void program_name(std::string_view argv0)
   {
     std::string n(argv0);
-    name_ = ::basename(n.data());
+    name_ = ::basename(n.data());  // NOLINT(concurrency-mt-unsafe)
     if (name_.empty()) {
       name_ = argv0;
     }

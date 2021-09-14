@@ -19,7 +19,7 @@ auto GD::InputFile::getline() -> std::string
   std::array<char, buf_size> buf{};
   std::string result;
   while (true) {
-    if (std::fgets(buf.data(), buf.size(), file_) == nullptr) {
+    if (std::fgets(buf.data(), static_cast<int>(buf.size()), file_) == nullptr) {
       if (std::ferror(file_) != 0) {
         if (errno == EINTR || errno == EAGAIN) {
           std::clearerr(file_);

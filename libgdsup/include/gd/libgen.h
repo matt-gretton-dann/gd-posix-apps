@@ -35,7 +35,7 @@
  *
  * \todo: Make '//' handling platform specific.
  */
-__EXTERN_C char* basename(char* path) __NOEXCEPT;
+__EXTERN_C char* basename(char* path) __NOEXCEPT;  // NOLINT
 /* Work around some GLIBC definitions.  */
 #  undef basename
 #  define basename basename

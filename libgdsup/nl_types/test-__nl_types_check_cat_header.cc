@@ -6,6 +6,8 @@
 
 #include "gd/nl_types.h"
 
+#include <array>
+
 #include <catch2/catch.hpp>
 
 #include "nl_types/nl_types.h"
