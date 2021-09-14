@@ -43,7 +43,7 @@ void error(Msg msg, Ts... args)
             << Messages::get().format(GD::Printf::Set::printf, msg, args...) << '\n'
             << Messages::get().format(GD::Printf::Set::printf, Msg::usage, GD::program_name())
             << '\n';
-  ::exit(EXIT_FAILURE);
+  std::exit(EXIT_FAILURE);  // NOLINT(concurrency-mt-unsafe)
 }
 
 /** \brief  A decoded formatting_specifier.  */
@@ -154,7 +154,7 @@ auto parse_escape_char(char c, std::ostream& os, bool extended) -> std::pair<Sta
  * Prints the string \a s ensuring that it prints at least the minimum width given in the
  * \a format_state and aligning to left or right as appropriate.
  */
-void print_string(FormatState const& format_state, std::string const& s)
+void print_string(FormatState const& format_state, std::string_view s)
 {
   if (s.length() >= format_state.min_width_) {
     std::cout << s;
@@ -171,7 +171,7 @@ void print_string(FormatState const& format_state, std::string const& s)
  *  \param format_state Formatting state
  *  \param s            String to print
  */
-void process_string(FormatState const& format_state, std::string const& s)
+void process_string(FormatState const& format_state, std::string_view s)
 {
   if (format_state.precision_ != -1 &&
       s.length() > static_cast<unsigned int>(format_state.precision_)) {
@@ -186,14 +186,14 @@ void process_string(FormatState const& format_state, std::string const& s)
  *  \param format_state Formatting state
  *  \param arg          Argument to process
  */
-void process_char(FormatState const& format_state, char const* arg)
+void process_char(FormatState const& format_state, std::string_view arg)
 {
   /* Unspecified behaviour we show nothing.  */
-  if (arg == nullptr) {
+  if (arg.empty()) {
     return;
   }
 
-  print_string(format_state, std::string(1, arg[0]));
+  print_string(format_state, arg.substr(0, 1));
 }
 
 /** \brief               Process a %c format specifier.
@@ -204,19 +204,20 @@ void process_char(FormatState const& format_state, char const* arg)
  * Will return \c State::terminated if we encounter a \\c escape string.  Otherwise will return
  * \c State::normal.
  */
-auto process_escaped_string(FormatState const& format_state, char const* arg) -> State
+auto process_escaped_string(FormatState const& format_state, std::string_view arg) -> State
 {
   std::ostringstream os;       /* Build output string in here.  */
   State state = State::normal; /* State for parsing output.  */
   unsigned int o = 0;          /* Octal character.  */
 
   /* Handle the simple case where the argument is null.  */
-  if (arg == nullptr) {
+  if (arg.empty()) {
     process_string(format_state, "");
     return State::normal;
   }
 
-  for (char const* c = arg; *c != '\0' && state != State::terminated; ++c) {
+  for (std::string_view::const_iterator c = arg.cbegin();
+       c != arg.end() && state != State::terminated; ++c) {
     switch (state) {
     case State::normal:
       switch (*c) {
@@ -300,9 +301,9 @@ auto to_based_string(uint32_t v, unsigned log2base, bool use_upper) -> std::stri
   assert(log2base <= 4 && "log2base must be in range [1, 4]");
 
   /* Lookup table of digits to use.  */
-  static char const values_lower[] = "0123456789abcdef";
-  static char const values_upper[] = "0123456789ABCDEF";
-  char const* values = use_upper ? values_upper : values_lower;
+  constexpr std::string_view values_lower = "0123456789abcdef";
+  constexpr std::string_view values_upper = "0123456789ABCDEF";
+  const std::string_view values = use_upper ? values_upper : values_lower;
 
   std::string result;
   bool adding_digits = false;
@@ -331,19 +332,30 @@ auto to_based_string(uint32_t v, unsigned log2base, bool use_upper) -> std::stri
  * Will warn if \a arg isn't a pure 32-bit integer.
  *
  */
-auto parse_int(char const* arg) -> int32_t
+auto parse_int(std::string_view arg) -> int32_t
 {
-  if (arg == nullptr) {
+  if (arg.empty()) {
     return 0;
   }
   int32_t sign = 1;
   int32_t v = 0;
 
-  static char const* digits = "0123456789abcdef"
-                              "0123456789ABCDEF";
-  char const* c = arg;
+  constexpr std::string_view digits = "0123456789abcdef"
+                                      "0123456789ABCDEF";
+  std::string_view::const_iterator c = arg.cbegin();
 
-  /* Check first character for sign and quotes.  */
+  /* Check first character for quotes.  */
+  if (*c == '\'' || *c == '"') {
+    ++c;
+    if (c == arg.end()) {
+      /* TBD: Handle MBCS.  */
+      warn(Msg::missing_character_after_quote, arg.front());
+      return 0;
+    }
+    return *c;
+  }
+
+  /* Check first character for sign.  */
   if (*c == '-') {
     sign = -1;
     ++c;
@@ -351,51 +363,50 @@ auto parse_int(char const* arg) -> int32_t
   else if (*c == '+') {
     ++c;
   }
-  else if (*c == '\'' || *c == '"') {
-    if (c[1] == '\0') {
-      /* TBD: Handle MBCS.  */
-      warn(Msg::missing_character_after_quote, *c);
-      return 0;
-    }
-    return c[1];
-  }
 
-  int base = 10;
-  if (*c == '0') {
-    ++c;
-    if (*c == 'x' || *c == 'X') {
-      base = 16;
+  /* Calculate base.  */
+  unsigned base = 10;
+  if (c != arg.end()) {
+    if (*c == '0') {
       ++c;
-    }
-    else {
-      base = 8;
+      if (c == arg.end()) {
+        return 0;
+      }
+
+      if (*c == 'x' || *c == 'X') {
+        base = 16;
+        ++c;
+      }
+      else {
+        base = 8;
+      }
     }
   }
 
   {
-    const auto* p = strchr(digits, *c);
-    if (p == nullptr || ((p - digits) & 0xf) >= base) {
+    auto p = c == arg.end() ? std::string_view::npos : digits.find(*c);
+    if (p == std::string_view::npos || (p & 0xf) >= base) {
       warn(Msg::expected_decimal_argument, arg);
       return 0;
     }
   }
 
-  for (; *c != '\0'; ++c) {
-    const auto* p = strchr(digits, *c);
-    if (p == nullptr || ((p - digits) & 0xf) >= base) {
+  for (; c != arg.end(); ++c) {
+    auto p = digits.find(*c);
+    if (p == std::string_view::npos || (p & 0xf) >= base) {
       break;
     }
 
-    int d = (p - digits) & 0xf;
+    int d = p & 0xf;
 
-    if (INT32_MAX / base < v) {
+    if (INT32_MAX / static_cast<int32_t>(base) < v) {
       /* For overflow we warn and clamp to INT32_MAX.  */
       warn(sign == 1 ? Msg::decimal_argument_overflow : Msg::decimal_argument_underflow, arg);
       v = INT32_MAX;
       /* Skip any remaining digits.  */
-      for (++c; *c != '\0'; ++c) {
-        const auto* p2 = strchr(digits, *c);
-        if (p2 == nullptr || ((p2 - digits) & 0xf) >= base) {
+      for (++c; c != arg.end(); ++c) {
+        auto p2 = digits.find(*c);
+        if (p2 == std::string_view::npos || (p2 & 0xf) >= base) {
           break;
         }
       }
@@ -405,7 +416,7 @@ auto parse_int(char const* arg) -> int32_t
     v = v * base + d;
   }
 
-  if (*c != '\0') {
+  if (c != arg.end()) {
     warn(Msg::extra_characters_in_decimal_argument, arg);
   }
 
@@ -421,7 +432,7 @@ auto parse_int(char const* arg) -> int32_t
  * This handles formatting a number: ensuring it has enough digits, and then delegates to
  * print_string for alignment and width.
  */
-void print_number(FormatState const& format_state, std::string&& v, const char* prefix,
+void print_number(FormatState const& format_state, std::string&& v, std::string_view prefix,
                   std::string::size_type leading_zero_precision)
 {
   assert(prefix != nullptr);
@@ -444,7 +455,7 @@ void print_number(FormatState const& format_state, std::string&& v, const char* 
     s = std::string(precision - s.length(), '0') + s;
   }
 
-  s = prefix + s;
+  s = std::string(prefix) + s;
   print_string(format_state, s);
 }
 
@@ -452,9 +463,9 @@ void print_number(FormatState const& format_state, std::string&& v, const char* 
  *  \param format_state Formatting state
  *  \param arg          Argument to format.  Maybe NULL.
  */
-void process_decimal(FormatState const& format_state, char const* arg)
+void process_decimal(FormatState const& format_state, std::string_view arg)
 {
-  char const* sign =
+  std::string_view sign =
     format_state.force_positive_ ? "+" : (format_state.force_positive_space_ ? " " : "");
 
   int32_t sv = parse_int(arg);
@@ -464,16 +475,16 @@ void process_decimal(FormatState const& format_state, char const* arg)
   }
 
   std::string::size_type leading_zero_precision =
-    *sign == '\0' ? format_state.min_width_
-                  : (format_state.min_width_ > 1 ? format_state.min_width_ - 1 : 1);
+    sign.empty() ? format_state.min_width_
+                 : (format_state.min_width_ > 1 ? format_state.min_width_ - 1 : 1);
   print_number(format_state, std::to_string(sv), sign, leading_zero_precision);
 }
 
 /** \brief              Process the %u format specifier
  *  \param format_state Formatting state
- *  \param arg          Argument to format.  Maybe NULL.
+ *  \param arg          Argument to format.
  */
-void process_unsigned(FormatState const& format_state, char const* arg)
+void process_unsigned(FormatState const& format_state, std::string_view arg)
 {
   int32_t vs = parse_int(arg);
   if (vs < 0) {
@@ -485,9 +496,9 @@ void process_unsigned(FormatState const& format_state, char const* arg)
 
 /** \brief              Process the %o format specifier
  *  \param format_state Formatting state (may be modified)
- *  \param arg          Argument to format.  Maybe NULL.
+ *  \param arg          Argument to format.
  */
-void process_octal(FormatState& format_state, char const* arg)
+void process_octal(FormatState& format_state, std::string_view arg)
 {
   int32_t vs = parse_int(arg);
   if (vs < 0) {
@@ -514,7 +525,7 @@ void process_octal(FormatState& format_state, char const* arg)
  *  \param arg          Argument to format.  Maybe NULL.
  *  \param upper        Use upper case characters or lower case ones?
  */
-void process_hex(FormatState const& format_state, char const* arg, bool upper)
+void process_hex(FormatState const& format_state, std::string_view arg, bool upper)
 {
   int32_t vs = parse_int(arg);
   if (vs < 0) {
@@ -523,7 +534,7 @@ void process_hex(FormatState const& format_state, char const* arg, bool upper)
 
   auto v = static_cast<uint32_t>(vs);
   bool has_prefix = v != 0 && format_state.alternative_form_;
-  char const* prefix = !has_prefix ? "" : (upper ? "0X" : "0x");
+  std::string_view prefix = !has_prefix ? "" : (upper ? "0X" : "0x");
   std::string::size_type leading_zero_precision =
     !has_prefix ? format_state.min_width_
                 : (format_state.min_width_ > 2 ? format_state.min_width_ - 2 : 1);
@@ -535,7 +546,7 @@ void process_hex(FormatState const& format_state, char const* arg, bool upper)
  *  \param  argv   Arguments to the format string
  *  \return        Pointer to first unused argument.
  */
-auto process_format(char const* format, char** argv) -> char**
+auto process_format(std::string_view format, char** argv) -> char**
 {
   assert(format != nullptr);
   assert(argv != nullptr);
@@ -544,7 +555,8 @@ auto process_format(char const* format, char** argv) -> char**
   FormatState format_state;
   unsigned int o = 0;
 
-  for (char const* c = format; *c != '\0' && state != State::terminated; ++c) {
+  for (std::string_view::const_iterator c = format.cbegin();
+       c != format.end() && state != State::terminated; ++c) {
     switch (state) {
     case State::normal:
       switch (*c) {
@@ -695,7 +707,7 @@ auto process_format(char const* format, char** argv) -> char**
         format_state = FormatState();
         break;
       }
-      char const* arg = *argv;
+      std::string_view arg = *argv == nullptr ? "" : *argv;
       if (*argv != nullptr) {
         ++argv;
       }
@@ -771,10 +783,10 @@ auto process_format(char const* format, char** argv) -> char**
 auto main(int argc, char** argv) -> int
 {
   GD::program_name(argv[0]);
-  ::setlocale(LC_ALL, "");
+  ::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
 
   int c = 0;
-  while ((c = ::getopt(argc, argv, ":")) != -1) {
+  while ((c = ::getopt(argc, argv, ":")) != -1) {  // NOLINT(concurrency-mt-unsafe)
     if (c == '?' || c == ':') {
       error(Msg::unexpected_argument, optopt);
     }
