@@ -14,7 +14,7 @@
 
 auto GD::InputFile::getline() -> std::string
 {
-  assert(file_ != nullptr);
+  assert(file_ != nullptr);  // NOLINT
   constexpr unsigned buf_size = 1024;
   std::array<char, buf_size> buf{};
   std::string result;

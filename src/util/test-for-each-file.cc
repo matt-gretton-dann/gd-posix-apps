@@ -18,7 +18,7 @@ TEST_CASE("for_each_file", "[util][file][for_each_file]")
   std::string file2 = "file2";
   std::array<std::string, 2> file12 = {file1, file2};
 
-  int call_count = 0;
+  unsigned call_count = 0;
   std::string files;
   bool success =
     GD::for_each_file(file12.begin(), file12.end(), [&call_count, &files](std::string_view fname) {

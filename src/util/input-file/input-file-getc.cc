@@ -13,14 +13,14 @@
 
 auto GD::InputFile::getc() -> int
 {
-  assert(file_ != nullptr);
+  assert(file_ != nullptr);  // NOLINT
   int c = 0;
   while ((c = std::fgetc(file_)) == EOF) {
     if (std::feof(file_) != 0) {
       return EOF;
     }
 
-    assert(std::ferror(file_));
+    assert(std::ferror(file_));  // NOLINT
     if (errno == EINTR || errno == EAGAIN) {
       std::clearerr(file_);
     }

@@ -266,7 +266,7 @@ auto process_escaped_string(FormatState const& format_state, std::string_view ar
       }
       break;
     default:
-      assert(false);
+      abort();
     }
   }
 
@@ -285,7 +285,7 @@ auto process_escaped_string(FormatState const& format_state, std::string_view ar
   case State::terminated:
     break;
   default:
-    assert(false);
+    abort();
   }
 
   process_string(format_state, os.str());
@@ -302,8 +302,8 @@ auto process_escaped_string(FormatState const& format_state, std::string_view ar
  */
 auto to_based_string(uint32_t v, unsigned log2base, bool use_upper) -> std::string
 {
-  assert(log2base >= 1 && "log2base must be in range [1, 4]");
-  assert(log2base <= 4 && "log2base must be in range [1, 4]");
+  assert(log2base >= 1 && "log2base must be in range [1, 4]");  // NOLINT
+  assert(log2base <= 4 && "log2base must be in range [1, 4]");  // NOLINT
 
   /* Lookup table of digits to use.  */
   constexpr std::string_view values_lower = "0123456789abcdef";
@@ -440,8 +440,6 @@ auto parse_int(std::string_view arg) -> int32_t
 void print_number(FormatState const& format_state, std::string&& v, std::string_view prefix,
                   std::string::size_type leading_zero_precision)
 {
-  assert(prefix != nullptr);
-
   std::string s(std::move(v));
 
   /* Do we need to do leading zero justification?  */
@@ -558,7 +556,7 @@ void process_hex(FormatState const& format_state, std::string_view arg, bool upp
 auto process_format(std::string_view format, std::span<char*>::iterator argv,
                     std::span<char*>::iterator argv_end) -> std::span<char*>::iterator
 {
-  assert(!format.empty());
+  assert(!format.empty());  // NOLINT
 
   State state = State::normal;
   FormatState format_state;
@@ -752,7 +750,7 @@ auto process_format(std::string_view format, std::span<char*>::iterator argv,
     }
 
     default:
-      assert(false);
+      abort();
     }
   }
 
@@ -777,7 +775,7 @@ auto process_format(std::string_view format, std::span<char*>::iterator argv,
     argv = argv_end;
     break;
   default:
-    assert(false);
+    abort();
   }
 
   return argv;

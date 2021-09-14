@@ -13,13 +13,13 @@
 
 void GD::InputFile::setbuf()
 {
-  assert(file_ != nullptr);
+  assert(file_ != nullptr);  // NOLINT
   std::setvbuf(file_, nullptr, _IONBF, 0);
 }
 
 void GD::InputFile::setbuf(std::unique_ptr<std::vector<char>>&& ptr)
 {
-  assert(file_ != nullptr);
+  assert(file_ != nullptr);  // NOLINT
 
   buffer_ = std::move(ptr);
   std::setvbuf(file_, buffer_->data(), _IOFBF, buffer_->size());
@@ -27,7 +27,7 @@ void GD::InputFile::setbuf(std::unique_ptr<std::vector<char>>&& ptr)
 
 void GD::InputFile::setbuf(Buffering type, std::unique_ptr<std::vector<char>>&& ptr)
 {
-  assert(file_ != nullptr);
+  assert(file_ != nullptr);  // NOLINT
 
   buffer_ = std::move(ptr);
   std::setvbuf(file_, buffer_->data(), static_cast<int>(type), buffer_->size());
