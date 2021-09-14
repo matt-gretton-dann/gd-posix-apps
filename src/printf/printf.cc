@@ -14,6 +14,7 @@
 #include <cassert>
 #include <clocale>
 #include <iostream>
+#include <span>
 #include <sstream>
 #include <utility>
 
@@ -548,15 +549,16 @@ void process_hex(FormatState const& format_state, std::string_view arg, bool upp
   print_number(format_state, to_based_string(v, 4, upper), prefix, leading_zero_precision);
 }
 
-/** \brief         Process a format string
- *  \param  format The format string
- *  \param  argv   Arguments to the format string
- *  \return        Pointer to first unused argument.
+/** \brief           Process a format string
+ *  \param  format   The format string
+ *  \param  argv     First argument to format string
+ *  \param  argv_end One past end of arguments
+ *  \return          Pointer to first unused argument.
  */
-auto process_format(std::string_view format, char** argv) -> char**
+auto process_format(std::string_view format, std::span<char*>::iterator argv,
+                    std::span<char*>::iterator argv_end) -> std::span<char*>::iterator
 {
-  assert(format != nullptr);
-  assert(argv != nullptr);
+  assert(!format.empty());
 
   State state = State::normal;
   FormatState format_state;
@@ -714,10 +716,7 @@ auto process_format(std::string_view format, char** argv) -> char**
         format_state = FormatState();
         break;
       }
-      std::string_view arg = *argv == nullptr ? "" : *argv;
-      if (*argv != nullptr) {
-        ++argv;
-      }
+      std::string_view arg = (argv == argv_end) ? "" : *argv++;
       switch (*c) {
       case 'b':
         state = process_escaped_string(format_state, arg);
@@ -775,9 +774,7 @@ auto process_format(std::string_view format, char** argv) -> char**
     break;
   case State::terminated:
     /* Swallow the argument vector so that we show no more work needing to be done.  */
-    while (*argv != nullptr) {
-      ++argv;
-    }
+    argv = argv_end;
     break;
   default:
     assert(false);
@@ -789,7 +786,9 @@ auto process_format(std::string_view format, char** argv) -> char**
 
 auto main(int argc, char** argv) -> int
 {
-  GD::program_name(argv[0]);
+  std::span<char*> args(argv, argc);
+
+  GD::program_name(args[0]);
   ::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
 
   int c = 0;
@@ -799,23 +798,21 @@ auto main(int argc, char** argv) -> int
     }
   }
 
-  argc -= optind;
-  argv += optind;
+  std::span<char*>::iterator it = args.begin() + optind;
 
-  if (argc == 0) {
+  if (it == args.end()) {
     error(Msg::missing_format);
   }
 
-  char const* format = *(argv++);
-  --argc;
+  std::string_view format = *(it++);
 
   do {
-    char** initial_argv = argv;
-    argv = process_format(format, argv);
-    if (argv == initial_argv && *argv != nullptr) {
+    std::span<char*>::iterator initial_argv = it;
+    it = process_format(format, it, args.end());
+    if (it == initial_argv && it != args.end()) {
       error(Msg::no_format_characters);
     }
-  } while (*argv != nullptr);
+  } while (it != args.end());
 
   return EXIT_SUCCESS;
 }
