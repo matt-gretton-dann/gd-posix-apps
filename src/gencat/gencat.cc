@@ -281,41 +281,56 @@ public:
         if (!std::getline(is, line2)) {
           loc.error(Gencat::Msg::unexpected_eof);
         }
-        line = line.substr(0, line.size() - 1) + line2;
+        line = line.substr(0, line.size() - 1);
+        line += line2;
+      }
+
+      if (line.empty()) {
+        continue;
       }
 
       // Interpret the line.
-      if (line.substr(0, 5) == "$set ") {
-        auto r = std::stoul(line.substr(5));
-        validate_id(loc, r, "NL_SETMAX", NL_SETMAX);
-        set_it = sets_.insert({r, MessageSet()}).first;
-      }
-      else if (line.substr(0, 8) == "$delset ") {
-        auto r = std::stoul(line.substr(8));
-        validate_id(loc, r, "NL_TEXTMAX", NL_TEXTMAX);
-        auto it = sets_.find(r);
-        if (it != sets_.end()) {
-          // We only clear (and not erase) just in case $set is set to the same
-          // value that we've just erased.
-          it->second.clear();
+      constexpr std::string_view set_cmd = "set";
+      constexpr std::string_view delset_cmd = "delset";
+      constexpr std::string_view quote_cmd = "quote";
+
+      if (line[0] == '$') {
+        auto split = line.find(' ');
+        auto cmd = line.substr(1, split - 1);
+        auto value = split == std::string::npos ? std::string() : line.substr(split + 1);
+        if (cmd == set_cmd && !value.empty()) {
+          auto r = std::stoul(value);
+          validate_id(loc, r, "NL_SETMAX", NL_SETMAX);
+          set_it = sets_.insert({r, MessageSet()}).first;
         }
-      }
-      else if (line.substr(0, 2) == "$ " || line.empty()) {
-        /* Do nothing: Comment.  */
-      }
-      else if (line.substr(0, 7) == "$quote ") {
-        if (line.size() > 8) {
-          loc.error(Gencat::Msg::bad_quote_character);
+        else if (cmd == delset_cmd && !value.empty()) {
+          auto r = std::stoul(value);
+          validate_id(loc, r, "NL_TEXTMAX", NL_TEXTMAX);
+          auto it = sets_.find(r);
+          if (it != sets_.end()) {
+            // We only clear (and not erase) just in case $set is set to the same
+            // value that we've just erased.
+            it->second.clear();
+          }
         }
-        else if (line.size() == 7) {
-          quote = -1;
+        else if (cmd == quote_cmd) {
+          if (value.empty()) {
+            quote = -1;
+          }
+          else if (value.size() > 1) {
+            loc.error(Gencat::Msg::bad_quote_character);
+          }
+          else {
+            quote = static_cast<unsigned char>(value[0]);
+          }
+        }
+        else if (cmd.empty()) {
+          /* Comment.  */
+          continue;
         }
         else {
-          quote = line[7];
+          loc.error(Gencat::Msg::unrecognised_line);
         }
-      }
-      else if (line == "$quote") {
-        quote = -1;
       }
       else if (std::isdigit(line[0]) != 0) {
         std::size_t pos = 0;
@@ -330,8 +345,8 @@ public:
         }
         else {
           std::string value(line.substr(pos + 1));
-          if (!value.empty() && quote != -1 && value[0] == static_cast<char>(quote & 0xff)) {
-            if (value[value.size() - 1] != static_cast<char>(quote & 0xff)) {
+          if (!value.empty() && quote != -1 && value[0] == static_cast<char>(quote)) {
+            if (value[value.size() - 1] != static_cast<char>(quote)) {
               std::cerr << loc.warning(Gencat::Msg::quoted_string_not_terminated);
             }
             else {
