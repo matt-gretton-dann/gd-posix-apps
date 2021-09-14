@@ -21,6 +21,10 @@ namespace {
 using Messages = GD::Printf::Messages;
 using Msg = GD::Printf::Msg;
 
+constexpr int base_decimal = 10;
+constexpr int base_octal = 8;
+constexpr int base_hex = 16;
+
 /** \brief       Report a warning
  *  \param  msg  Message ID
  *  \param  args Arguments for the message.
@@ -237,9 +241,9 @@ auto process_escaped_string(FormatState const& format_state, std::string_view ar
     case State::octal1:
     case State::octal2:
     case State::octal3:
-      if (*c >= '0' && *c <= '7') {
-        o = o * 8 + (*c - '0');
-        if (o > 255) {
+      if (*c >= '0' && *c <= '0' + base_octal - 1) {
+        o = o * base_octal + (*c - '0');
+        if (o > std::numeric_limits<unsigned char>::max()) {
           warn(Msg::octal_overflow, o);
           state = State::normal;
         }
@@ -308,7 +312,7 @@ auto to_based_string(uint32_t v, unsigned log2base, bool use_upper) -> std::stri
   std::string result;
   bool adding_digits = false;
   const unsigned basem1 = (1 << log2base) - 1;
-  unsigned shift = ((31 + log2base) / log2base) * log2base;
+  unsigned shift = ((std::numeric_limits<uint32_t>::digits - 1 + log2base) / log2base) * log2base;
   while (shift > 0) {
     shift -= log2base;
     unsigned c = (v >> shift) & (basem1);
@@ -365,7 +369,7 @@ auto parse_int(std::string_view arg) -> int32_t
   }
 
   /* Calculate base.  */
-  unsigned base = 10;
+  unsigned base = base_decimal;
   if (c != arg.end()) {
     if (*c == '0') {
       ++c;
@@ -374,18 +378,18 @@ auto parse_int(std::string_view arg) -> int32_t
       }
 
       if (*c == 'x' || *c == 'X') {
-        base = 16;
+        base = base_hex;
         ++c;
       }
       else {
-        base = 8;
+        base = base_octal;
       }
     }
   }
 
   {
     auto p = c == arg.end() ? std::string_view::npos : digits.find(*c);
-    if (p == std::string_view::npos || (p & 0xf) >= base) {
+    if (p == std::string_view::npos || (p % base_hex) >= base) {
       warn(Msg::expected_decimal_argument, arg);
       return 0;
     }
@@ -393,11 +397,11 @@ auto parse_int(std::string_view arg) -> int32_t
 
   for (; c != arg.end(); ++c) {
     auto p = digits.find(*c);
-    if (p == std::string_view::npos || (p & 0xf) >= base) {
+    if (p == std::string_view::npos || (p % base_hex) >= base) {
       break;
     }
 
-    int d = p & 0xf;
+    int d = static_cast<int>(p) % base_hex;
 
     if (INT32_MAX / static_cast<int32_t>(base) < v) {
       /* For overflow we warn and clamp to INT32_MAX.  */
@@ -406,14 +410,14 @@ auto parse_int(std::string_view arg) -> int32_t
       /* Skip any remaining digits.  */
       for (++c; c != arg.end(); ++c) {
         auto p2 = digits.find(*c);
-        if (p2 == std::string_view::npos || (p2 & 0xf) >= base) {
+        if (p2 == std::string_view::npos || (p2 % base_hex) >= base) {
           break;
         }
       }
       break;
     }
 
-    v = v * base + d;
+    v = v * static_cast<int>(base) + d;
   }
 
   if (c != arg.end()) {
@@ -510,11 +514,11 @@ void process_octal(FormatState& format_state, std::string_view arg)
   if ((format_state.precision_ == -1 ||
        static_cast<std::string::size_type>(format_state.precision_) <= s.length()) &&
       format_state.alternative_form_) {
-    if (s.length() >= INT32_MAX) {
+    if (s.length() >= static_cast<std::size_t>(INT32_MAX)) {
       format_state.precision_ = INT32_MAX;
     }
     else {
-      format_state.precision_ = static_cast<uint32_t>(s.length()) + 1;
+      format_state.precision_ = static_cast<int32_t>(s.length()) + 1;
     }
   }
   print_number(format_state, std::move(s), "", format_state.min_width_);
@@ -534,7 +538,10 @@ void process_hex(FormatState const& format_state, std::string_view arg, bool upp
 
   auto v = static_cast<uint32_t>(vs);
   bool has_prefix = v != 0 && format_state.alternative_form_;
-  std::string_view prefix = !has_prefix ? "" : (upper ? "0X" : "0x");
+  constexpr std::string_view no_prefix = "";  // NOLINT
+  constexpr std::string_view upper_prefix = "0X";
+  constexpr std::string_view lower_prefix = "0x";
+  std::string_view prefix = !has_prefix ? no_prefix : (upper ? upper_prefix : lower_prefix);
   std::string::size_type leading_zero_precision =
     !has_prefix ? format_state.min_width_
                 : (format_state.min_width_ > 2 ? format_state.min_width_ - 2 : 1);
@@ -578,9 +585,9 @@ auto process_format(std::string_view format, char** argv) -> char**
     } break;
     case State::octal2:
     case State::octal3:
-      if (*c >= '0' && *c <= '7') {
-        o = o * 8 + (*c - '0');
-        if (o > 255) {
+      if (*c >= '0' && *c <= '0' + base_octal - 1) {
+        o = o * base_octal + (*c - '0');
+        if (o >= std::numeric_limits<unsigned char>::max()) {
           error(Msg::octal_overflow, o);
         }
         else if (state == State::octal2) {
@@ -648,7 +655,7 @@ auto process_format(std::string_view format, char** argv) -> char**
       case '7':
       case '8':
       case '9':
-        if ((INT32_MAX / 10) < format_state.min_width_) {
+        if ((INT32_MAX / base_decimal) < format_state.min_width_) {
           warn(Msg::width_overflow);
           format_state.min_width_ = INT32_MAX;
           while (c[1] >= '0' && c[1] <= '9') {
@@ -656,7 +663,7 @@ auto process_format(std::string_view format, char** argv) -> char**
           }
         }
         else {
-          format_state.min_width_ *= 10;
+          format_state.min_width_ *= base_decimal;
           format_state.min_width_ += *c - '0';
         }
         break;
@@ -682,7 +689,7 @@ auto process_format(std::string_view format, char** argv) -> char**
       case '7':
       case '8':
       case '9':
-        if ((INT32_MAX / 10) < format_state.precision_) {
+        if ((INT32_MAX / base_decimal) < format_state.precision_) {
           warn(Msg::precision_overflow);
           format_state.precision_ = INT32_MAX;
           while (c[1] >= '0' && c[1] <= '9') {
@@ -690,7 +697,7 @@ auto process_format(std::string_view format, char** argv) -> char**
           }
         }
         else {
-          format_state.precision_ *= 10;
+          format_state.precision_ *= base_decimal;
           format_state.precision_ += *c - '0';
         }
         break;
