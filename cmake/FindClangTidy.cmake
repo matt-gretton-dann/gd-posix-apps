@@ -59,6 +59,23 @@ find_package_handle_standard_args(ClangTidy
 if(NOT ClangTidy_COMMAND)
 set(CMAKE_CXX_CLANG_TIDY "" CACHE STRING "" FORCE)
 set(CMAKE_C_CLANG_TIDY "" CACHE STRING "" FORCE)
+elseif(WIN32)
+file(TO_NATIVE_PATH "${ClangTidy_COMMAND}" _ct_ClangTidy_COMMAND)
+file(TO_NATIVE_PATH "${CMAKE_BINARY_DIR}" _ct_CMAKE_BINARY_DIR)
+file(TO_NATIVE_PATH "${CMAKE_SOURCE_DIR}" _ct_CMAKE_SOURCE_DIR)
+string(REPLACE "\\" "\\\\" _ct_CMAKE_SOURCE_DIR "${_ct_CMAKE_SOURCE_DIR}")
+# Clang-tidy doesn't pick up MSVC's exception settings so ensure they are enabled.
+set(CMAKE_CXX_CLANG_TIDY
+  "${_ct_ClangTidy_COMMAND}"
+  "-p=${_ct_CMAKE_BINARY_DIR}"
+  "--extra-arg-before=-Xclang"
+  "--extra-arg-before=-fcxx-exceptions"
+  "--header-filter=^${_ct_CMAKE_SOURCE_DIR}\\(src|libgdsup)\\.*(([^.]h)|(\.[^h]))$")
+set(CMAKE_C_CLANG_TIDY
+  "${_ct_ClangTidy_COMMAND}"
+  "-checks=-cppcoreguidelines-*"
+  "-p=${_ct_CMAKE_BINARY_DIR}"
+  "--header-filter=/(src|libgdsup)/.*$")
 else()
 set(CMAKE_CXX_CLANG_TIDY
   "${ClangTidy_COMMAND}"
