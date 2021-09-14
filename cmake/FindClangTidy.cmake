@@ -60,6 +60,8 @@ if(NOT ClangTidy_COMMAND)
 set(CMAKE_CXX_CLANG_TIDY "" CACHE STRING "" FORCE)
 set(CMAKE_C_CLANG_TIDY "" CACHE STRING "" FORCE)
 elseif(WIN32)
+# Win32 needs to use native paths, and the source directory needs the \'s escaped so that they're
+# Used in the regex properly.
 file(TO_NATIVE_PATH "${ClangTidy_COMMAND}" _ct_ClangTidy_COMMAND)
 file(TO_NATIVE_PATH "${CMAKE_BINARY_DIR}" _ct_CMAKE_BINARY_DIR)
 file(TO_NATIVE_PATH "${CMAKE_SOURCE_DIR}" _ct_CMAKE_SOURCE_DIR)
@@ -75,7 +77,7 @@ set(CMAKE_C_CLANG_TIDY
   "${_ct_ClangTidy_COMMAND}"
   "-checks=-cppcoreguidelines-*"
   "-p=${_ct_CMAKE_BINARY_DIR}"
-  "--header-filter=/(src|libgdsup)/.*$")
+  "--header-filter=^${_ct_CMAKE_SOURCE_DIR}\\(src|libgdsup)\\.*$")
 else()
 set(CMAKE_CXX_CLANG_TIDY
   "${ClangTidy_COMMAND}"
@@ -85,5 +87,5 @@ set(CMAKE_C_CLANG_TIDY
   "${ClangTidy_COMMAND}"
   "-checks=-cppcoreguidelines-*"
   "-p=${CMAKE_BINARY_DIR}"
-  "--header-filter=/(src|libgdsup)/.*$")
+  "--header-filter=^${CMAKE_SOURCE_DIR}/(src|libgdsup)/.*$")
 endif()
