@@ -387,15 +387,15 @@ public:
     Data data{'M', 'S', 'G', '\0', 1, 0, 0, 0, 0, 0, 0, 0};
     Location loc(filename);
     data.resize(hdr_size);
-    write(data.data() + set_count_off, std::uint32_t(sets_.size()));
+    write(data.begin() + set_count_off, std::uint32_t(sets_.size()));
     // Can't write file size yet - as we don't know it.
 
     data.resize(hdr_size + sets_.size() * table_entry_size);
-    std::uint64_t set_offset = hdr_size;
+    Offset set_offset = hdr_size;
     for (auto const& kv : sets_) {
       // Msg Array needs to be aligned to 8 byte boundary - and goes at current end of file.
-      std::uint64_t msg_array_offset = (data.size() + 7) & ~Data::size_type(7);
-      data.resize(msg_array_offset + kv.second.size() * 16);
+      Offset msg_array_offset = (data.size() + off_align - 1) & ~Data::size_type(off_align - 1);
+      data.resize(msg_array_offset + kv.second.size() * table_entry_size);
 
       // Write set entry pointing to message array.
       write_table_entry(
@@ -419,7 +419,7 @@ public:
     }
 
     // Now we can write the file size.
-    write(data.data() + file_size_off, std::uint64_t(data.size()));
+    write(data.begin() + file_size_off, std::uint64_t(data.size()));
 
     // Now write data to the file.
     xwrite(fd, std::span(data.data(), data.size()));
@@ -482,7 +482,7 @@ private:
       else if (state == State::octal2) {
         if (*c >= '0' && *c <= '7') {
           o = (o << 3) + (*c - '0');
-          if (o < 256) {
+          if (o <= std::numeric_limits<unsigned char>::max()) {
             result += static_cast<char>(o);
           }
         }
@@ -563,7 +563,7 @@ private:
   static void load_header(std::istream& is, Location& loc, Data& data)
   {
     std::vector<char> buf(hdr_size);
-    if (!is.read(buf.data(), buf.size())) {
+    if (!is.read(buf.data(), static_cast<std::streamsize>(buf.size()))) {
       loc.error(Gencat::Msg::catalogue_too_short);
     }
     std::copy(buf.begin(), buf.begin() + is.gcount(), std::back_inserter(data));
@@ -574,7 +574,7 @@ private:
     if (data[4] != 1) {
       loc.error(Gencat::Msg::catalogue_not_version1);
     }
-    for (auto i = 5; i < 12; ++i) {
+    for (auto i = version_off + 1; i < magic_size; ++i) {
       if (data[i] != 0) {
         loc.loc(i);
         loc.error(Gencat::Msg::header_non0_reserved_fields);
@@ -593,7 +593,7 @@ private:
   static void load_data(std::istream& is, Location& loc, Data& data, Offset file_size)
   {
     constexpr std::size_t bufsize = 4096;
-    std::array<char, bufsize> buf;
+    std::array<char, bufsize> buf{};
     while (is.read(buf.data(), buf.size())) {
       std::copy(buf.begin(), buf.begin() + is.gcount(), std::back_inserter(data));
       if (data.size() > file_size) {
@@ -624,11 +624,11 @@ private:
       loc.loc(offset);
       loc.error(Gencat::Msg::table_entry_outside_bounds);
     }
-    if (offset % 8 != 0) {
+    if (offset % off_align != 0) {
       loc.loc(offset);
       loc.error(Gencat::Msg::table_entry_not_aligned);
     }
-    auto raw_data = data.begin() + offset;
+    auto raw_data = data.begin() + static_cast<Data::difference_type>(offset);
     Id id = read<std::uint32_t>(raw_data + table_entry_id_off);
     auto len = read<std::uint32_t>(raw_data + table_entry_len_off);
     auto off = read<std::uint64_t>(raw_data + table_entry_off_off);
@@ -642,13 +642,14 @@ private:
    */
   static void write_table_entry(Location& loc, Data& data, Offset offset, TableEntry const& te)
   {
-    if (offset % 8 != 0) {
+    if (offset % off_align != 0) {
       loc.loc(offset);
       loc.error(Gencat::Msg::table_entry_not_aligned);
     }
-    write(data.begin() + offset + table_entry_id_off, te.id);
-    write(data.begin() + offset + table_entry_len_off, te.len);
-    write(data.begin() + offset + table_entry_off_off, te.offset);
+    write(data.begin() + static_cast<Data::difference_type>(offset + table_entry_id_off), te.id);
+    write(data.begin() + static_cast<Data::difference_type>(offset + table_entry_len_off), te.len);
+    write(data.begin() + static_cast<Data::difference_type>(offset + table_entry_off_off),
+          te.offset);
   }
 
   /** \brief         Read a string
@@ -676,7 +677,8 @@ private:
     }
 
     std::string r;
-    std::transform(data.begin() + te.offset, data.begin() + te.offset + te.len - 1,
+    std::transform(data.begin() + static_cast<Data::difference_type>(te.offset),
+                   data.begin() + static_cast<Data::difference_type>(te.offset + te.len - 1),
                    std::back_inserter(r), [](auto c) { return static_cast<char>(c); });
     return r;
   }
@@ -697,6 +699,9 @@ private:
     }
   }
 
+  static constexpr Offset off_align = 8;            ///< Offset alignments
+  static constexpr Offset version_off = 4;          ///< Offset of version number
+  static constexpr Offset magic_size = 12;          ///< Size of header magic
   static constexpr Offset hdr_size = 24;            ///< Size of the header.
   static constexpr Offset set_count_off = 12;       ///< Offset in header of count of sets
   static constexpr Offset file_size_off = 16;       ///< Offset in header of file size
