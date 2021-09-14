@@ -6,7 +6,7 @@
 
 #include "gd/fcntl.h"
 
-#define _CRT_DECLARE_NONSTDC_NAMES 0
+#define _CRT_DECLARE_NONSTDC_NAMES 0  // NOLINT
 #include <errno.h>
 #include <io.h>
 #include <share.h>
@@ -23,6 +23,7 @@ int open(char const* path, int oflags, ...)
 
   int fd;
   errno_t err = _sopen_s(&fd, path, oflags | _O_BINARY, _SH_DENYNO, mode);
+  va_end(ap);
   if (err != 0) {
     errno = err;
     return -1;
