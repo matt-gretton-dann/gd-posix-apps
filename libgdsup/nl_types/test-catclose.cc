@@ -6,9 +6,9 @@
 
 #include "gd/nl_types.h"
 
-#include <array>
-
 #include <catch2/catch.hpp>
+
+#include <array>
 
 TEST_CASE("catclose", "[nl_types][catclose]")
 {

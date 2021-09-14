@@ -322,7 +322,7 @@ nl_catd catopen(char const* name, int oflag)
    * name.  */
   if (strchr(locale, __DIR_SEP) != NULL) {
     locale_to_free = strdup(locale);
-    locale = basename(locale_to_free); // NOLINT(concurrency-mt-unsafe)
+    locale = basename(locale_to_free);  // NOLINT(concurrency-mt-unsafe)
   }
 
   /* Find the NLSPATH.  */
