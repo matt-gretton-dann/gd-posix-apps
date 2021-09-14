@@ -67,6 +67,7 @@ int getopt(int argc, char* const argv[], const char* optstring) __NOEXCEPT  // N
     update_for_next_call(opt);
     if (opterr != 0 && optstring[0] != ':') {
       char* argv0 = strdup(argv[0]);
+      // NOLINTNEXTLINE(concurrency-mt-unsafe)
       char const* program_name = argv0 != NULL ? basename(argv0) : argv[0];
       int r = fprintf(stderr, "%s: Invalid option '-%c'\n", program_name, (char)optopt);
       free(argv0);
@@ -89,6 +90,7 @@ int getopt(int argc, char* const argv[], const char* optstring) __NOEXCEPT  // N
         update_for_next_call(opt);
         if (opterr != 0 && optstring[0] != ':') {
           char* argv0 = strdup(argv[0]);
+          // NOLINTNEXTLINE(concurrency-mt-unsafe)
           char const* program_name = argv0 != NULL ? basename(argv0) : argv[0];
           int r =
             fprintf(stderr, "%s: No argument provided for '-%c'\n", program_name, (char)optopt);

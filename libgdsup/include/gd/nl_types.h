@@ -17,10 +17,10 @@
  * etc.
  */
 #ifdef __APPLE__
-#  ifdef _NL_TYPES_H_
+#  ifdef _NL_TYPES_H_  // NOLINT
 #    error "<nl_types.h> has already been included please include gd/nl_types.h early"
 #  endif
-#  define _NL_TYPES_H_
+#  define _NL_TYPES_H_  // NOLINT
 #  include <_types.h>
 #  include <_types/_nl_item.h>
 #  include <sys/cdefs.h>
