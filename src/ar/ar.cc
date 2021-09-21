@@ -73,9 +73,10 @@ It find_name(It begin, It end, SV const& name)
 
 template<typename ArIt, typename FIt>
 void do_delete(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end, FIt files_begin,
-               FIt files_end, bool verbose)
+               FIt files_end, Flags flags)
 {
   GD::Ar::Format format = (ar_begin != ar_end) ? ar_begin.format() : GD::Ar::Format::gnu;
+  bool verbose = (flags & Flags::verbose) == Flags::verbose;
   auto out_it = GD::Ar::archive_inserter(archive, format, mode);
   std::remove_copy_if(ar_begin, ar_end, out_it, [files_begin, files_end, verbose](auto member) {
     auto found = find_name(files_begin, files_end, member.name());
@@ -89,9 +90,10 @@ void do_delete(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end,
 
 template<typename ArIt, typename FIt>
 void do_move(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end, FIt files_begin,
-             FIt files_end, Position pos, std::optional<std::string> const& posname, bool verbose)
+             FIt files_end, Position pos, std::optional<std::string> const& posname, Flags flags)
 {
   GD::Ar::Format format = (ar_begin != ar_end) ? ar_begin.format() : GD::Ar::Format::gnu;
+  bool verbose = (flags & Flags::verbose) == Flags::verbose;
   auto out_it = GD::Ar::archive_inserter(archive, format, mode);
   std::vector<GD::Ar::Member> moved;
   std::vector<GD::Ar::Member> tail;
@@ -129,10 +131,11 @@ void do_move(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end, F
 
 template<typename ArIt, typename FIt>
 void do_replace(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end, FIt files_begin,
-                FIt files_end, Position pos, std::optional<std::string> const& posname,
-                bool verbose, bool update_newer)
+                FIt files_end, Position pos, std::optional<std::string> const& posname, Flags flags)
 {
   GD::Ar::Format format = (ar_begin != ar_end) ? ar_begin.format() : GD::Ar::Format::gnu;
+  bool verbose = (flags & Flags::verbose) == Flags::verbose;
+  bool update_newer = (flags & Flags::update_newer) == Flags::update_newer;
   auto out_it = GD::Ar::archive_inserter(archive, format, mode);
   std::vector<std::string> files;
   std::copy(files_begin, files_end, std::back_inserter(files));
@@ -208,9 +211,10 @@ void do_replace(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end
 
 template<typename ArIt, typename FIt>
 void do_quick_append(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end,
-                     FIt files_begin, FIt files_end, bool verbose)
+                     FIt files_begin, FIt files_end, Flags flags)
 {
   GD::Ar::Format format = (ar_begin != ar_end) ? ar_begin.format() : GD::Ar::Format::gnu;
+  bool verbose = (flags & Flags::verbose) == Flags::verbose;
   auto out_it = GD::Ar::archive_inserter(archive, format, mode);
   std::copy(ar_begin, ar_end, out_it);
   std::for_each(files_begin, files_end, [&out_it, verbose](auto fname) {
@@ -482,24 +486,21 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
                                    : GD::Ar::read_archive_end<GD::Ar::InputFile>();
   auto ar_end = GD::Ar::read_archive_end<GD::Ar::InputFile>();
 
-  bool verbose = (flags & Flags::verbose) == Flags::verbose;
-  bool update_newer = (flags & Flags::update_newer) == Flags::update_newer;
   switch (action) {
   case Action::del:
-    do_delete(archive, mode, ar_begin, ar_end, argv + optind, argv + argc, verbose);
+    do_delete(archive, mode, ar_begin, ar_end, argv + optind, argv + argc, flags);
     break;
   case Action::move:
-    do_move(archive, mode, ar_begin, ar_end, argv + optind, argv + argc, pos, pos_file, verbose);
+    do_move(archive, mode, ar_begin, ar_end, argv + optind, argv + argc, pos, pos_file, flags);
     break;
   case Action::print:
     do_action(archive, mode, ar_begin, ar_end, argv + optind, argv + argc, flags, do_print);
     break;
   case Action::quick:
-    do_quick_append(archive, mode, ar_begin, ar_end, argv + optind, argv + argc, verbose);
+    do_quick_append(archive, mode, ar_begin, ar_end, argv + optind, argv + argc, flags);
     break;
   case Action::replace:
-    do_replace(archive, mode, ar_begin, ar_end, argv + optind, argv + argc, pos, pos_file, verbose,
-               update_newer);
+    do_replace(archive, mode, ar_begin, ar_end, argv + optind, argv + argc, pos, pos_file, flags);
     break;
   case Action::toc:
     do_action(archive, mode, ar_begin, ar_end, argv + optind, argv + argc, flags, do_toc);
