@@ -38,6 +38,24 @@
         "id": 6,
         "description": "Missing action option.",
         "C": "Missing action on command line.  Must specify one of -d, -m, -p, -q, -r, -t, or -x."
+      },
+      {
+        "msg": "missing_input_archive",
+        "id": 7,
+        "description": "The archove {0} is misisng.",
+        "C": "Missing archive: {0}"
+      },
+      {
+        "msg": "creating_archive",
+        "id": 8,
+        "description": "Creating the archive {0}.",
+        "C": "Creating archive: {0}"
+      },
+      {
+        "msg": "stdout_write_failed",
+        "id": 9,
+        "description": "Write to stdout failed with message {0}.",
+        "C": "Failed to write to standard output: {0}"
       }
     ]
   }

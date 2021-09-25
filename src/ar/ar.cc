@@ -27,16 +27,33 @@ using Msg = GD::Ar::Msg;
 
 namespace {
 
-enum class Action { none, del, move, print, quick, replace, toc, extract };
-enum class Position { end, before, after };
+/** \brief  Actions we will do on an archive.  Comes from command line options. */
+enum class Action {
+  none,     ///< No action
+  del,      ///< Delete (-d)
+  move,     ///< Move (-m)
+  print,    ///< Print (-p)
+  quick,    ///< Quick qppend (-q)
+  replace,  ///< Replace (-r)
+  toc,      ///< Table of contents (-t)
+  extract   ///< Extract (-x)
+};
 
+/** \brief  Where to put new archive members.  */
+enum class Position {
+  end,     ///< At end of archive
+  before,  ///< Before a named member (-b, -i)
+  after    ///< After a named member (-a)
+};
+
+/** \brief  Archive management flags */
 enum class Flags : unsigned {
-  message_on_creation = 0x1,
-  force_ranlib = 0x2,
-  verbose = 0x4,
-  update_newer = 0x8,
-  allow_replacement = 0x10,
-  truncate_names = 0x20
+  message_on_creation = 0x1,  ///< Give a message on archive creation
+  force_ranlib = 0x2,         ///< Force regeneration of symbol table
+  verbose = 0x4,              ///< Be vebose
+  update_newer = 0x8,         ///< Only update if file is newer than member.
+  allow_replacement = 0x10,   ///< Allow replacement of existing members
+  truncate_names = 0x20       ///< Truncate names if needed.
 };
 
 Flags operator|(Flags l, Flags r)
@@ -65,12 +82,32 @@ template<typename... Ts>
   ::exit(1);
 }
 
+/** \brief        Find if a given name is in the list of files.
+ *  \tparam It    Iterator type
+ *  \tparam SV    String view type
+ *  \param  begin First iterator to examine
+ *  \param  end   One past the end
+ *  \param  name  Name to check
+ *
+ * Returns iterator to file whose filename component matches \a name, or \a end if none found.
+ */
 template<typename It, typename SV>
 It find_name(It begin, It end, SV const& name)
 {
   return std::find_if(begin, end, [name](auto e) { return fs::path(e).filename() == name; });
 }
 
+/** \brief              Do the delete action
+ *  \tparam ArIt        Archive iterator type
+ *  \tparam FIt         File Iterator type
+ *  \param  archive     Filename of output archive.
+ *  \param  mode        Mode to create archive with
+ *  \param  ar_begin    First archive member to process
+ *  \param  ar_end      One past end of archive members
+ *  \param  files_begin First file name to process
+ *  \param  files_end   First past end of file names
+ *  \param  flags       Flags.
+ */
 template<typename ArIt, typename FIt>
 void do_delete(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end, FIt files_begin,
                FIt files_end, Flags flags)
@@ -88,6 +125,19 @@ void do_delete(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end,
   *out_it++ = out_it.commit_tag();
 }
 
+/** \brief              Do the move action
+ *  \tparam ArIt        Archive iterator type
+ *  \tparam FIt         File Iterator type
+ *  \param  archive     Filename of output archive.
+ *  \param  mode        Mode to create archive with
+ *  \param  ar_begin    First archive member to process
+ *  \param  ar_end      One past end of archive members
+ *  \param  files_begin First file name to process
+ *  \param  files_end   First past end of file names
+ *  \param  pos         Where to insert moved members (end, before, after)
+ *  \param  posname     Name of member to insert beside (if pos is before or after)
+ *  \param  flags       Flags.
+ */
 template<typename ArIt, typename FIt>
 void do_move(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end, FIt files_begin,
              FIt files_end, Position pos, std::optional<std::string> const& posname, Flags flags)
@@ -129,6 +179,19 @@ void do_move(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end, F
   *out_it++ = out_it.commit_tag();
 }
 
+/** \brief              Do the replace action
+ *  \tparam ArIt        Archive iterator type
+ *  \tparam FIt         File Iterator type
+ *  \param  archive     Filename of output archive.
+ *  \param  mode        Mode to create archive with
+ *  \param  ar_begin    First archive member to process
+ *  \param  ar_end      One past end of archive members
+ *  \param  files_begin First file name to process
+ *  \param  files_end   First past end of file names
+ *  \param  pos         Where to insert moved members (end, before, after)
+ *  \param  posname     Name of member to insert beside (if pos is before or after)
+ *  \param  flags       Flags.
+ */
 template<typename ArIt, typename FIt>
 void do_replace(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end, FIt files_begin,
                 FIt files_end, Position pos, std::optional<std::string> const& posname, Flags flags)
@@ -209,6 +272,17 @@ void do_replace(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end
   *out_it++ = out_it.commit_tag();
 }
 
+/** \brief              Do the replace action
+ *  \tparam ArIt        Archive iterator type
+ *  \tparam FIt         File Iterator type
+ *  \param  archive     Filename of output archive.
+ *  \param  mode        Mode to create archive with
+ *  \param  ar_begin    First archive member to process
+ *  \param  ar_end      One past end of archive members
+ *  \param  files_begin First file name to process
+ *  \param  files_end   First past end of file names
+ *  \param  flags       Flags.
+ */
 template<typename ArIt, typename FIt>
 void do_quick_append(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end,
                      FIt files_begin, FIt files_end, Flags flags)
@@ -227,6 +301,11 @@ void do_quick_append(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt a
   *out_it++ = out_it.commit_tag();
 }
 
+/** \brief        Extract a member
+ *  \param fname  Filename of member
+ *  \param member  Member details
+ *  \param flag   Flags
+ */
 void do_extract(std::string const& fname, GD::Ar::Member const& member, Flags flags)
 {
   auto name = fname;
@@ -257,6 +336,11 @@ void do_extract(std::string const& fname, GD::Ar::Member const& member, Flags fl
   }
 }
 
+/** \brief        Print a member
+ *  \param fname  Filename of member
+ *  \param member  Member details
+ *  \param flag   Flags
+ */
 void do_print(std::string const& fname, GD::Ar::Member const& member, Flags flags)
 {
   if ((flags & Flags::verbose) == Flags::verbose) {
@@ -271,7 +355,7 @@ void do_print(std::string const& fname, GD::Ar::Member const& member, Flags flag
                        std::min((std::size_t)std::numeric_limits<::ssize_t>::max(), count));
     if (res == -1) {
       if (errno != EINTR) {
-        throw std::system_error(errno, std::generic_category(), "Whilst reading.");
+        error(Msg::stdout_write_failed, std::strerror(errno));
       }
     }
     else {
@@ -281,6 +365,7 @@ void do_print(std::string const& fname, GD::Ar::Member const& member, Flags flag
   }
 }
 
+/** \brief  Convert a mode_t to a mode string.  */
 std::string to_mode_string(mode_t mode)
 {
   std::string result(9, '-');
@@ -325,6 +410,11 @@ std::string to_mode_string(mode_t mode)
   return result;
 }
 
+/** \brief        Print the ToC for a member
+ *  \param fname  Filename of member
+ *  \param member  Member details
+ *  \param flag   Flags
+ */
 void do_toc(std::string const& fname, GD::Ar::Member const& member, Flags flags)
 {
   if ((flags & Flags::verbose) == Flags::verbose) {
@@ -339,6 +429,18 @@ void do_toc(std::string const& fname, GD::Ar::Member const& member, Flags flags)
   }
 }
 
+/** \brief              Do a 'simple' action
+ *  \tparam ArIt        Archive iterator type
+ *  \tparam FIt         File Iterator type
+ *  \param  archive     Filename of output archive.
+ *  \param  mode        Mode to create archive with
+ *  \param  ar_begin    First archive member to process
+ *  \param  ar_end      One past end of archive members
+ *  \param  files_begin First file name to process
+ *  \param  files_end   First past end of file names
+ *  \param  flags       Flags.
+ *  \param  act_fn      Action function to do on members that we want to process
+ */
 template<typename ArIt, typename FileIt, typename ActFn>
 void do_action(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end, FileIt files_begin,
                FileIt files_end, Flags flags, ActFn act_fn)
@@ -368,48 +470,51 @@ void do_action(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end,
   }
 }
 
+/** \brief Is \a action a readonly action?  */
 constexpr bool is_read_only_action(Action action)
 {
   return action == Action::print || action == Action::toc || action == Action::extract;
 }
 
-}  // namespace
-
-int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
+struct State
 {
-  ::setlocale(LC_ALL, "");
-  GD::program_name(argv[0]);
-
-  int c;
   Action action = Action::none;
   Position pos = Position::end;
   Flags flags = Flags::message_on_creation | Flags::allow_replacement;
   std::optional<std::string> pos_file;
+  fs::path archive;
+  char** file_begin;
+  char** file_end;
+};
 
-  auto set_action = [&action, &c](Action act) {
-    if (action != Action::none) {
+State process_command_line(int argc, char** argv)
+{
+  State state;
+  int c = 0;
+  auto set_action = [&state, &c](Action act) {
+    if (state.action != Action::none) {
       error(Msg::cannot_specify_more_than_one_action, c);
     }
-    action = act;
+    state.action = act;
   };
 
   while ((c = ::getopt(argc, argv, ":CTabcdimpqrstuvx:")) != -1) {
     switch (c) {
     case 'C':
-      flags = flags | ~Flags::allow_replacement;
+      state.flags = state.flags | ~Flags::allow_replacement;
       break;
     case 'T':
-      flags = flags | Flags::truncate_names;
+      state.flags = state.flags | Flags::truncate_names;
       break;
     case 'a':
-      pos = Position::after;
+      state.pos = Position::after;
       break;
     case 'b':
     case 'i':
-      pos = Position::before;
+      state.pos = Position::before;
       break;
     case 'c':
-      flags = flags | ~Flags::message_on_creation;
+      state.flags = state.flags | ~Flags::message_on_creation;
       break;
     case 'd':
       set_action(Action::del);
@@ -427,16 +532,16 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
       set_action(Action::replace);
       break;
     case 's':
-      flags = flags | Flags::force_ranlib;
+      state.flags = state.flags | Flags::force_ranlib;
       break;
     case 't':
       set_action(Action::toc);
       break;
     case 'u':
-      flags = flags | Flags::update_newer;
+      state.flags = state.flags | Flags::update_newer;
       break;
     case 'v':
-      flags = flags | Flags::verbose;
+      state.flags = state.flags | Flags::verbose;
       break;
     case 'x':
       set_action(Action::extract);
@@ -449,36 +554,51 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
     }
   }
 
-  if (action == Action::none) {
+  if (state.action == Action::none) {
     error(Msg::missing_action);
   }
 
-  if (pos != Position::end) {
+  if (state.pos != Position::end) {
     if (optind >= argc) {
       error(Msg::missing_position_name);
     }
-    pos_file = argv[optind++];
+    state.pos_file = argv[optind++];
   }
 
   if (optind >= argc) {
     error(Msg::missing_archive_name);
   }
 
+  state.archive = fs::path(argv[optind++]);
+  state.file_begin = argv + optind;
+  state.file_end = argv + argc;
+
+  return state;
+}
+}  // namespace
+
+int main(int argc, char** argv)
+{
+  ::setlocale(LC_ALL, "");
+  GD::program_name(argv[0]);
+
+  State state = process_command_line(argc, argv);
+
   std::optional<GD::Ar::InputFile> file = std::nullopt;
-  auto archive = fs::path(argv[optind++]);
   mode_t mode = umask(0);
   umask(mode);
-  if (!fs::exists(archive)) {
-    if (is_read_only_action(action)) {
-      throw std::runtime_error("Missing input archive.");
+  if (!fs::exists(state.archive)) {
+    if (is_read_only_action(state.action)) {
+      error(Msg::missing_input_archive, state.archive.native());
     }
-    if ((flags & Flags::message_on_creation) == Flags::message_on_creation) {
-      std::cerr << "Creating file: " << archive << '\n';
+    if ((state.flags & Flags::message_on_creation) == Flags::message_on_creation) {
+      std::cerr << GD::Ar::Messages::get().format(GD::Ar::Set::ar, Msg::creating_archive,
+                                                  state.archive.native());
     }
     mode = (~mode) & 0644;
   }
   else {
-    file.emplace(GD::Ar::InputFile(archive));
+    file.emplace(GD::Ar::InputFile(state.archive));
     mode = file->mode();
   }
 
@@ -486,27 +606,33 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
                                    : GD::Ar::read_archive_end<GD::Ar::InputFile>();
   auto ar_end = GD::Ar::read_archive_end<GD::Ar::InputFile>();
 
-  switch (action) {
+  switch (state.action) {
   case Action::del:
-    do_delete(archive, mode, ar_begin, ar_end, argv + optind, argv + argc, flags);
+    do_delete(state.archive, mode, ar_begin, ar_end, state.file_begin, state.file_end, state.flags);
     break;
   case Action::move:
-    do_move(archive, mode, ar_begin, ar_end, argv + optind, argv + argc, pos, pos_file, flags);
+    do_move(state.archive, mode, ar_begin, ar_end, state.file_begin, state.file_end, state.pos,
+            state.pos_file, state.flags);
     break;
   case Action::print:
-    do_action(archive, mode, ar_begin, ar_end, argv + optind, argv + argc, flags, do_print);
+    do_action(state.archive, mode, ar_begin, ar_end, state.file_begin, state.file_end, state.flags,
+              do_print);
     break;
   case Action::quick:
-    do_quick_append(archive, mode, ar_begin, ar_end, argv + optind, argv + argc, flags);
+    do_quick_append(state.archive, mode, ar_begin, ar_end, state.file_begin, state.file_end,
+                    state.flags);
     break;
   case Action::replace:
-    do_replace(archive, mode, ar_begin, ar_end, argv + optind, argv + argc, pos, pos_file, flags);
+    do_replace(state.archive, mode, ar_begin, ar_end, state.file_begin, state.file_end, state.pos,
+               state.pos_file, state.flags);
     break;
   case Action::toc:
-    do_action(archive, mode, ar_begin, ar_end, argv + optind, argv + argc, flags, do_toc);
+    do_action(state.archive, mode, ar_begin, ar_end, state.file_begin, state.file_end, state.flags,
+              do_toc);
     break;
   case Action::extract:
-    do_action(archive, mode, ar_begin, ar_end, argv + optind, argv + argc, flags, do_extract);
+    do_action(state.archive, mode, ar_begin, ar_end, state.file_begin, state.file_end, state.flags,
+              do_extract);
     break;
   default:
   case Action::none:
