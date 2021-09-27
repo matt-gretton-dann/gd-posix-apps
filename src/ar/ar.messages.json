@@ -49,7 +49,7 @@
         "msg": "creating_archive",
         "id": 8,
         "description": "Creating the archive {0}.",
-        "C": "Creating archive: {0}"
+        "C": "Creating archive: {0}\n"
       },
       {
         "msg": "stdout_write_failed",
