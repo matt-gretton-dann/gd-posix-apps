@@ -41,5 +41,5 @@ if(RUN_UNIT_TESTS)
   catch_discover_tests(test-libar PROPERTIES FIXTURES_REQUIRED testutil_setup EXTRA_ARGS "-s")
 endif()
 
-add_utility(NAME ar NO_INT_TEST CAT_ID ar SOURCES ar.cc)
+add_utility(NAME ar CAT_ID ar SOURCES ar.cc)
 target_link_libraries(ar PUBLIC libar)
