@@ -514,7 +514,7 @@ State process_command_line(int argc, char** argv)
       state.pos = Position::before;
       break;
     case 'c':
-      state.flags = state.flags | ~Flags::message_on_creation;
+      state.flags = state.flags & ~Flags::message_on_creation;
       break;
     case 'd':
       set_action(Action::del);
