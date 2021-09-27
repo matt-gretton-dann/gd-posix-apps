@@ -1140,7 +1140,7 @@ private:
   void add_symbols(Symbols symbols)
   {
     auto id = static_cast<MemberID>(offset());
-    auto [it, success] = state_->symbol_map_.insert(std::make_pair(id, symbols));
+    [[maybe_unused]] auto [it, success] = state_->symbol_map_.insert(std::make_pair(id, symbols));
     assert(success);
   }
 
@@ -1221,7 +1221,7 @@ ReadIterator<typename std::remove_reference<FType1>::type> read_archive_begin(FT
   }
 
   std::string name(Details::MemberHeader::name_len, '\0');
-  auto len = file.read_upto(std::span<char>(name));
+  [[maybe_unused]] auto len = file.read_upto(std::span<char>(name));
   if (file.eof()) {
     return read_archive_end<FType>();
   }
@@ -1247,7 +1247,7 @@ ReadIterator<typename std::remove_reference<FType1>::type> read_archive_begin(FT
 
     auto id = MemberID(offset);
     std::string name(Details::MemberHeader::name_len, '\0');
-    auto len = file.read_upto(std::span<char>(name));
+    [[maybe_unused]] auto len = file.read_upto(std::span<char>(name));
     if (file.eof()) {
       member.reset();
       return;
