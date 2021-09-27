@@ -1147,7 +1147,8 @@ private:
   template<typename T, typename DataWriter, typename Store>
   void write_member(Store& out, T const& obj, DataWriter dw)
   {
-    auto long_name = add_name(out, obj.name(), Details::MemberHeader::name_len);
+    auto long_name =
+      add_name(out, fs::path{obj.name()}.filename(), Details::MemberHeader::name_len);
     add_number(out, obj.mtime(), Details::MemberHeader::mtime_len);
     add_ugid(out, obj.uid(), Details::MemberHeader::uid_len);
     add_ugid(out, obj.gid(), Details::MemberHeader::gid_len);
