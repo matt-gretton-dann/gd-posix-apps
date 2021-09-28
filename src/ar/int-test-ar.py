@@ -15,7 +15,11 @@ tester.run_test(
     [tester.exe()], test_name="Empty command line", expected_rc=1, stdin="", expected_stdout="")
 
 test_input1 = tester.input_file('input1.txt')
+with open(test_input1) as f:
+    contents_input1 = f.read()
 test_input2 = tester.input_file('input2.txt')
+with open(test_input2) as f:
+    contents_input2 = f.read()
 test_ar1 = tester.output_file('ar1.ar')
 test_ar2 = tester.output_file('ar2.ar')
 test_ar3 = tester.output_file('ar3.ar')
@@ -44,5 +48,29 @@ tester.run_test(
     [tester.exe(), "-t", test_ar1],
     test_name="ar1 ToC",
     expected_rc=0, expected_stdout="input1.txt\ninput2.txt\n", expected_stderr="")
+tester.run_test(
+    [tester.exe(), "-p", test_ar1, "input1.txt"],
+    test_name="ar1 print input1.txt",
+    expected_rc=0, expected_stdout=contents_input1)
+tester.run_test(
+    [tester.exe(), "-p", test_ar1, test_input2],
+    test_name="ar1 print input2.txt",
+    expected_rc=0, expected_stdout=contents_input2)
+tester.run_test(
+    [tester.exe(), "-pv", test_ar1, "input1.txt"],
+    test_name="ar1 print input1.txt verbose",
+    expected_rc=0, expected_stdout=f"\n<input1.txt>\n\n{contents_input1}")
+tester.run_test(
+    [tester.exe(), "-pv", test_ar1, test_input2],
+    test_name="ar1 print input2.txt verbose",
+    expected_rc=0, expected_stdout=f"\n<{test_input2}>\n\n{contents_input2}")
+tester.run_test(
+    [tester.exe(), "-p", test_ar1],
+    test_name="ar1 print",
+    expected_rc=0, expected_stdout=f"{contents_input1}{contents_input2}")
+tester.run_test(
+    [tester.exe(), "-pv", test_ar1],
+    test_name="ar1 print verbose",
+    expected_rc=0, expected_stdout=f"\n<input1.txt>\n\n{contents_input1}\n<input2.txt>\n\n{contents_input2}")
 
 tester.summarize()
