@@ -344,7 +344,9 @@ void do_extract(std::string const& fname, GD::Ar::Member const& member, Flags fl
 void do_print(std::string const& fname, GD::Ar::Member const& member, Flags flags)
 {
   if ((flags & Flags::verbose) == Flags::verbose) {
-    std::cout << "\n<" << fname << ">\n\n";
+    // Use printf to ensure we sync with the write below.
+    std::printf("\n<%s>\n\n", fname.c_str());
+    std::fflush(stdout);
   }
 
   auto data = member.data();
@@ -581,6 +583,7 @@ int main(int argc, char** argv)
 {
   ::setlocale(LC_ALL, "");
   GD::program_name(argv[0]);
+  std::ios::sync_with_stdio(true);
 
   State state = process_command_line(argc, argv);
 
