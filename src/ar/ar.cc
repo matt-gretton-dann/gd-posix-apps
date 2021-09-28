@@ -152,16 +152,7 @@ void do_move(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end, F
     ar_begin, ar_end,
     [&pending, &out_it, &moved, &tail, files_begin, files_end, posname, pos, verbose](auto member) {
       auto found = find_name(files_begin, files_end, member.name());
-      if (found != files_end) {
-        if (verbose) {
-          std::cout << "m - " << *found << '\n';
-        }
-        moved.push_back(member);
-      }
-      else if (pending) {
-        tail.push_back(member);
-      }
-      else if (pos != Position::end && member.name() == fs::path(*posname).filename()) {
+      if (pos != Position::end && member.name() == fs::path(*posname).filename()) {
         pending = true;
         if (pos == Position::after) {
           *out_it++ = member;
@@ -169,6 +160,15 @@ void do_move(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end, F
         else {
           tail.push_back(member);
         }
+      }
+      else if (found != files_end) {
+        if (verbose) {
+          std::cout << "m - " << *found << '\n';
+        }
+        moved.push_back(member);
+      }
+      else if (pending) {
+        tail.push_back(member);
       }
       else {
         *out_it++ = member;
@@ -200,16 +200,19 @@ void do_replace(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end
   bool verbose = (flags & Flags::verbose) == Flags::verbose;
   bool update_newer = (flags & Flags::update_newer) == Flags::update_newer;
   auto out_it = GD::Ar::archive_inserter(archive, format, mode);
+  auto anchor = posname.has_value() ? fs::path(*posname).filename() : "";
   std::vector<std::string> files;
   std::copy(files_begin, files_end, std::back_inserter(files));
 
   for (; ar_begin != ar_end; ++ar_begin) {
     auto member = *ar_begin;
-    if (pos == Position::before && member.name() == *posname) {
-      break;
-    }
     auto found = find_name(files.begin(), files.end(), member.name());
     bool updated = false;
+    bool is_anchor = (posname.has_value() && member.name() == anchor);
+
+    if (pos == Position::before && is_anchor) {
+      break;
+    }
     if (found != files.end()) {
       auto file = GD::Ar::InputFile(*found);
       if (!update_newer || file.mtime() > member.mtime()) {
@@ -219,14 +222,20 @@ void do_replace(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end
         }
         updated = true;
       }
-      while ((found = find_name(files.erase(found), files.end(), member.name())) != files.end()) {
+      files.erase(found);
+      found = find_name(files.begin(), files.end(), member.name());
+      while (found != files.end()) {
         std::cerr << "Warning: Skipping due to duplicate member name " << *found << '\n';
+        files.erase(found);
+        found = find_name(files.begin(), files.end(), member.name());
       }
     }
     if (!updated) {
       *out_it++ = member;
     }
-    if (pos == Position::after && member.name() == *posname) {
+
+    if (pos == Position::after && is_anchor) {
+      ++ar_begin;
       break;
     }
   }
@@ -235,6 +244,10 @@ void do_replace(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end
   std::copy(ar_begin, ar_end, std::back_inserter(tail));
 
   for (auto const& file : files) {
+    auto basename = fs::path(file).filename();
+    if (basename == anchor) {
+      continue;
+    }
     auto found = std::find_if(tail.begin(), tail.end(),
                               [basename = fs::path(file).filename()](auto const& member) {
                                 return member.name() == basename;
@@ -260,8 +273,12 @@ void do_replace(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end
         }
         updated = true;
       }
-      while ((found = find_name(files.erase(found), files.end(), member.name())) != files.end()) {
+      files.erase(found);
+      found = find_name(files.begin(), files.end(), member.name());
+      while (found != files.end()) {
         std::cerr << "Warning: Skipping due to duplicate member name " << *found << '\n';
+        files.erase(found);
+        found = find_name(files.begin(), files.end(), member.name());
       }
     }
     if (!updated) {
