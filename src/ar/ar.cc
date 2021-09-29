@@ -21,8 +21,6 @@
 #include <iostream>
 #include <vector>
 
-#include "ar-files.hh"
-
 using Msg = GD::Ar::Msg;
 
 namespace {
@@ -214,7 +212,7 @@ void do_replace(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end
       break;
     }
     if (found != files.end()) {
-      auto file = GD::Ar::InputFile(*found);
+      auto file = GD::InputFile(*found);
       if (!update_newer || file.mtime() > member.mtime()) {
         *out_it++ = file;
         if (verbose) {
@@ -253,7 +251,7 @@ void do_replace(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end
                                 return member.name() == basename;
                               });
     if (found == tail.end()) {
-      auto f = GD::Ar::InputFile(file);
+      auto f = GD::InputFile(file);
       *out_it++ = f;
       if (verbose) {
         std::cout << "a - " << file << '\n';
@@ -265,7 +263,7 @@ void do_replace(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end
     auto found = find_name(files.begin(), files.end(), member.name());
     bool updated = false;
     if (found != files.end()) {
-      auto file = GD::Ar::InputFile(*found);
+      auto file = GD::InputFile(*found);
       if (!update_newer || file.mtime() > member.mtime()) {
         *out_it++ = file;
         if (verbose) {
@@ -312,7 +310,7 @@ void do_quick_append(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt a
     if (verbose) {
       std::cout << "a - " << fname << '\n';
     }
-    auto file = GD::Ar::InputFile(fname);
+    auto file = GD::InputFile(fname);
     *out_it++ = file;
   });
   *out_it++ = out_it.commit_tag();
@@ -344,7 +342,7 @@ void do_extract(std::string const& fname, GD::Ar::Member const& member, Flags fl
     return;
   }
 
-  auto wf = GD::Ar::TxnWriteFile(fs::path(name), member.mode());
+  auto wf = GD::TxnWriteFile(fs::path(name), member.mode());
   wf.write(member.data());
   wf.commit();
 
@@ -604,7 +602,7 @@ int main(int argc, char** argv)
 
   State state = process_command_line(argc, argv);
 
-  std::optional<GD::Ar::InputFile> file = std::nullopt;
+  std::optional<GD::InputFile> file = std::nullopt;
   mode_t mode = umask(0);
   umask(mode);
   if (!fs::exists(state.archive)) {
@@ -618,13 +616,13 @@ int main(int argc, char** argv)
     mode = (~mode) & 0644;
   }
   else {
-    file.emplace(GD::Ar::InputFile(state.archive));
+    file.emplace(GD::InputFile(state.archive));
     mode = file->mode();
   }
 
   auto ar_begin = file.has_value() ? GD::Ar::read_archive_begin(file.value())
-                                   : GD::Ar::read_archive_end<GD::Ar::InputFile>();
-  auto ar_end = GD::Ar::read_archive_end<GD::Ar::InputFile>();
+                                   : GD::Ar::read_archive_end<GD::InputFile>();
+  auto ar_end = GD::Ar::read_archive_end<GD::InputFile>();
 
   switch (state.action) {
   case Action::del:

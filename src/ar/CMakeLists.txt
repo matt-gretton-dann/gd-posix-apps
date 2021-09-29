@@ -18,8 +18,7 @@ set_warnings(libar)
 target_sources(
     libar
     PRIVATE ar-member.cc
-            ar.hh
-            ar-files.hh)
+            ar.hh)
 add_dependencies(libar ar_messages_header)
 target_add_clang_format(libar)
 

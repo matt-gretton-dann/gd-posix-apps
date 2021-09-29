@@ -13,6 +13,7 @@
 #include "gd/sys/stat.h"
 #include "gd/unistd.h"
 
+#include "util/file.hh"
 #include "util/utils.hh"
 
 #include <assert.h>
@@ -28,8 +29,6 @@
 #include <system_error>
 #include <type_traits>
 #include <vector>
-
-#include "ar-files.hh"
 
 /** \brief  Namespcae for archive library.
  *
@@ -56,48 +55,6 @@
  * }
  * *it = GD::Ar::write_archive_commit();
  * \endcode
- *
- * \subsection Concepts Concepts
- *
- * \subsubsection ConceptIFType IFType Concept
- *
- * The IFType Concept provides file reading functions.  Types implementing the concept need to
- * implement the following member variables and functions:
- *
- * // Can we change the offset of the file?
- * static constexpr bool seekable;
- *
- * // Is the size always known?
- * static constexpr bool fixed_size;
- *
- * // Return the number of bytes in a file.  If the size is unknown return size_t(-1)
- * std::size_t size_bytes() const;
- *
- * // Current offset in the file.
- * std::size_t offset_bytes(std::enable_if_t<seekable> = 0) const;
- *
- * // Set the current offset in the file.  Only required if the file is seekable.
- * void offset_bytes(std::size_t offset, std::enable_if_t<seekable> = 0);
- *
- * // Have we reached end of file?
- * bool eof() const;
- *
- * // Read the next s.size_bytes() starting at offset_bytes() into the given span.  An exception is
- * // to be raised if there are not enough bytes to fill the span.  Updates offset_bytes() by
- * // s.size_bytes() bytes.
- * template<typename T, std::size_t E>
- * void read(std::span<T, E> s);
- *
- *  // Read s.size_bytes() from offset into the span s.  An exception is to be raised if there are
- *  // not enough bytes to fille the span or offset is after the end of the file.  Should not affect
- *  // the result of offset_bytes().
- * template<typename T, std::size_t E>
- * void read_at(std::span<T, E> s, std::size_t offset, std::enable_if_t<seekable> = 0);
- *
- * // Read up to s.size_bytes() from offset_bytes() into the given span.  Returns the number of
- * // bytes actually read.  Updates offset_bytes() by the number of bytes read.
- * template<typename T, std::size_t E>
- * std::size_t read_upto(std::span<T, E> s);
  */
 namespace GD::Ar {
 
