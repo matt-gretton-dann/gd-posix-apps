@@ -29,7 +29,7 @@ namespace GD {
  * to handle the "-" maps to standard input magic.
  *
  */
-class InputFile
+class StreamInputFile
 {
 public:
   /** \brief          Constructor
@@ -38,18 +38,18 @@ public:
    *
    * Reports an erorr if we can't open the file.
    */
-  InputFile(std::string_view filename, std::string_view mode = "r");
+  StreamInputFile(std::string_view filename, std::string_view mode = "r");
 
   /** \brief Destructor
    *
    * Will close the open file if we're not stdin.
    */
-  ~InputFile();
+  ~StreamInputFile();
 
-  InputFile(InputFile const&) = delete;
-  InputFile& operator=(InputFile const&) = delete;
-  InputFile(InputFile&&) = delete;
-  InputFile& operator=(InputFile&&) = delete;
+  StreamInputFile(StreamInputFile const&) = delete;
+  StreamInputFile& operator=(StreamInputFile const&) = delete;
+  StreamInputFile(StreamInputFile&&) = delete;
+  StreamInputFile& operator=(StreamInputFile&&) = delete;
 
   /** \brief  Get the next character in the stream.
    *  \return EOF on end-of-file or error.

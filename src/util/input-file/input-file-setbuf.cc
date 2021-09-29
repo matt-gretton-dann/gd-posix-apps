@@ -11,13 +11,13 @@
 #include <utility>
 #include <vector>
 
-void GD::InputFile::setbuf()
+void GD::StreamInputFile::setbuf()
 {
   assert(file_ != nullptr);
   ::setvbuf(file_, nullptr, _IONBF, 0);
 }
 
-void GD::InputFile::setbuf(std::unique_ptr<std::vector<char>>&& ptr)
+void GD::StreamInputFile::setbuf(std::unique_ptr<std::vector<char>>&& ptr)
 {
   assert(file_ != nullptr);
 
@@ -25,7 +25,7 @@ void GD::InputFile::setbuf(std::unique_ptr<std::vector<char>>&& ptr)
   ::setvbuf(file_, buffer_->data(), _IOFBF, buffer_->size());
 }
 
-void GD::InputFile::setbuf(Buffering type, std::unique_ptr<std::vector<char>>&& ptr)
+void GD::StreamInputFile::setbuf(Buffering type, std::unique_ptr<std::vector<char>>&& ptr)
 {
   assert(file_ != nullptr);
 

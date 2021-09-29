@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <string>
 
-std::string GD::InputFile::getline()
+std::string GD::StreamInputFile::getline()
 {
   assert(file_ != nullptr);
   char buf[1024];
