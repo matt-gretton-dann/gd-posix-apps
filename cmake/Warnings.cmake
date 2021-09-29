@@ -11,6 +11,7 @@ if(MSVC)
   # We enable all warnings at level 4, but disable the following:
   #  4201 - Anonymous unions - this is legal C11.
   target_compile_options(${TARGET} PRIVATE /W4 /WX /wd4201)
+  target_compile_definitions(${TARGET} PUBLIC _CRT_DECLARE_NONSTDC_NAMES=0 _CRT_SECURE_NO_WARNINGS=1 __STDC_WANT_SECURE_LIB__=1)
 else()
   target_compile_options(${TARGET} PRIVATE -Wall -Wextra -Wpedantic -Werror)
   if (APPLE)
