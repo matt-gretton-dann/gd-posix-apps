@@ -14,15 +14,15 @@
 #include <sys/stat.h>
 
 #if _WIN32
-#include "gd/bits/types/blkcnt_t.h"
-#include "gd/bits/types/blksize_t.h"
-#include "gd/bits/types/dev_t.h"
-#include "gd/bits/types/gid_t.h"
-#include "gd/bits/types/ino_t.h"
-#include "gd/bits/types/mode_t.h"
-#include "gd/bits/types/nlink_t.h"
-#include "gd/bits/types/off_t.h"
-#include "gd/bits/types/uid_t.h"
+#  include "gd/bits/types/blkcnt_t.h"
+#  include "gd/bits/types/blksize_t.h"
+#  include "gd/bits/types/dev_t.h"
+#  include "gd/bits/types/gid_t.h"
+#  include "gd/bits/types/ino_t.h"
+#  include "gd/bits/types/mode_t.h"
+#  include "gd/bits/types/nlink_t.h"
+#  include "gd/bits/types/off_t.h"
+#  include "gd/bits/types/uid_t.h"
 
 #  define S_IRUSR _S_IREAD
 #  define S_IRGRP _S_IREAD
