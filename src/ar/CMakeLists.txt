@@ -18,8 +18,7 @@ set_warnings(libar)
 target_sources(
     libar
     PRIVATE ar-member.cc
-            ar.hh
-            ar-files.hh)
+            ar.hh)
 add_dependencies(libar ar_messages_header)
 target_add_clang_format(libar)
 
@@ -41,5 +40,5 @@ if(RUN_UNIT_TESTS)
   catch_discover_tests(test-libar PROPERTIES FIXTURES_REQUIRED testutil_setup EXTRA_ARGS "-s")
 endif()
 
-add_utility(NAME ar NO_INT_TEST CAT_ID ar SOURCES ar.cc)
+add_utility(NAME ar CAT_ID ar SOURCES ar.cc)
 target_link_libraries(ar PUBLIC libar)

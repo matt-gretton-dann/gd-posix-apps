@@ -26,7 +26,7 @@ public:
 
   bool output(std::string_view input_file)
   {
-    GD::InputFile is(input_file);
+    GD::StreamInputFile is(input_file);
     while (!is.eof() && !is.error()) {
       std::string line = is.getline();
       if (!line.empty()) {

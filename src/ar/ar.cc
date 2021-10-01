@@ -21,14 +21,50 @@
 #include <iostream>
 #include <vector>
 
-#include "ar-files.hh"
-
 using Msg = GD::Ar::Msg;
 
 namespace {
 
-enum class Action { none, del, move, print, quick, replace, toc, extract };
-enum class Position { end, before, after };
+/** \brief  Actions we will do on an archive.  Comes from command line options. */
+enum class Action {
+  none,     ///< No action
+  del,      ///< Delete (-d)
+  move,     ///< Move (-m)
+  print,    ///< Print (-p)
+  quick,    ///< Quick qppend (-q)
+  replace,  ///< Replace (-r)
+  toc,      ///< Table of contents (-t)
+  extract   ///< Extract (-x)
+};
+
+/** \brief  Where to put new archive members.  */
+enum class Position {
+  end,     ///< At end of archive
+  before,  ///< Before a named member (-b, -i)
+  after    ///< After a named member (-a)
+};
+
+/** \brief  Archive management flags */
+enum class Flags : unsigned {
+  message_on_creation = 0x1,  ///< Give a message on archive creation
+  force_ranlib = 0x2,         ///< Force regeneration of symbol table
+  verbose = 0x4,              ///< Be vebose
+  update_newer = 0x8,         ///< Only update if file is newer than member.
+  allow_replacement = 0x10,   ///< Allow replacement of existing members
+  truncate_names = 0x20       ///< Truncate names if needed.
+};
+
+Flags operator|(Flags l, Flags r)
+{
+  return static_cast<Flags>(static_cast<unsigned>(l) | static_cast<unsigned>(r));
+}
+
+Flags operator&(Flags l, Flags r)
+{
+  return static_cast<Flags>(static_cast<unsigned>(l) & static_cast<unsigned>(r));
+}
+
+Flags operator~(Flags f) { return static_cast<Flags>(~static_cast<unsigned>(f)); }
 
 /** \brief       Report an error and exit with exit code 1.
  *  \param  msg  Message ID
@@ -44,17 +80,38 @@ template<typename... Ts>
   ::exit(1);
 }
 
+/** \brief        Find if a given name is in the list of files.
+ *  \tparam It    Iterator type
+ *  \tparam SV    String view type
+ *  \param  begin First iterator to examine
+ *  \param  end   One past the end
+ *  \param  name  Name to check
+ *
+ * Returns iterator to file whose filename component matches \a name, or \a end if none found.
+ */
 template<typename It, typename SV>
 It find_name(It begin, It end, SV const& name)
 {
   return std::find_if(begin, end, [name](auto e) { return fs::path(e).filename() == name; });
 }
 
+/** \brief              Do the delete action
+ *  \tparam ArIt        Archive iterator type
+ *  \tparam FIt         File Iterator type
+ *  \param  archive     Filename of output archive.
+ *  \param  mode        Mode to create archive with
+ *  \param  ar_begin    First archive member to process
+ *  \param  ar_end      One past end of archive members
+ *  \param  files_begin First file name to process
+ *  \param  files_end   First past end of file names
+ *  \param  flags       Flags.
+ */
 template<typename ArIt, typename FIt>
 void do_delete(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end, FIt files_begin,
-               FIt files_end, bool verbose)
+               FIt files_end, Flags flags)
 {
   GD::Ar::Format format = (ar_begin != ar_end) ? ar_begin.format() : GD::Ar::Format::gnu;
+  bool verbose = (flags & Flags::verbose) == Flags::verbose;
   auto out_it = GD::Ar::archive_inserter(archive, format, mode);
   std::remove_copy_if(ar_begin, ar_end, out_it, [files_begin, files_end, verbose](auto member) {
     auto found = find_name(files_begin, files_end, member.name());
@@ -66,11 +123,25 @@ void do_delete(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end,
   *out_it++ = out_it.commit_tag();
 }
 
+/** \brief              Do the move action
+ *  \tparam ArIt        Archive iterator type
+ *  \tparam FIt         File Iterator type
+ *  \param  archive     Filename of output archive.
+ *  \param  mode        Mode to create archive with
+ *  \param  ar_begin    First archive member to process
+ *  \param  ar_end      One past end of archive members
+ *  \param  files_begin First file name to process
+ *  \param  files_end   First past end of file names
+ *  \param  pos         Where to insert moved members (end, before, after)
+ *  \param  posname     Name of member to insert beside (if pos is before or after)
+ *  \param  flags       Flags.
+ */
 template<typename ArIt, typename FIt>
 void do_move(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end, FIt files_begin,
-             FIt files_end, Position pos, std::optional<std::string> const& posname, bool verbose)
+             FIt files_end, Position pos, std::optional<std::string> const& posname, Flags flags)
 {
   GD::Ar::Format format = (ar_begin != ar_end) ? ar_begin.format() : GD::Ar::Format::gnu;
+  bool verbose = (flags & Flags::verbose) == Flags::verbose;
   auto out_it = GD::Ar::archive_inserter(archive, format, mode);
   std::vector<GD::Ar::Member> moved;
   std::vector<GD::Ar::Member> tail;
@@ -79,16 +150,7 @@ void do_move(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end, F
     ar_begin, ar_end,
     [&pending, &out_it, &moved, &tail, files_begin, files_end, posname, pos, verbose](auto member) {
       auto found = find_name(files_begin, files_end, member.name());
-      if (found != files_end) {
-        if (verbose) {
-          std::cout << "m - " << *found << '\n';
-        }
-        moved.push_back(member);
-      }
-      else if (pending) {
-        tail.push_back(member);
-      }
-      else if (pos != Position::end && member.name() == fs::path(*posname).filename()) {
+      if (pos != Position::end && member.name() == fs::path(*posname).filename()) {
         pending = true;
         if (pos == Position::after) {
           *out_it++ = member;
@@ -96,6 +158,15 @@ void do_move(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end, F
         else {
           tail.push_back(member);
         }
+      }
+      else if (found != files_end) {
+        if (verbose) {
+          std::cout << "m - " << *found << '\n';
+        }
+        moved.push_back(member);
+      }
+      else if (pending) {
+        tail.push_back(member);
       }
       else {
         *out_it++ = member;
@@ -106,25 +177,42 @@ void do_move(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end, F
   *out_it++ = out_it.commit_tag();
 }
 
+/** \brief              Do the replace action
+ *  \tparam ArIt        Archive iterator type
+ *  \tparam FIt         File Iterator type
+ *  \param  archive     Filename of output archive.
+ *  \param  mode        Mode to create archive with
+ *  \param  ar_begin    First archive member to process
+ *  \param  ar_end      One past end of archive members
+ *  \param  files_begin First file name to process
+ *  \param  files_end   First past end of file names
+ *  \param  pos         Where to insert moved members (end, before, after)
+ *  \param  posname     Name of member to insert beside (if pos is before or after)
+ *  \param  flags       Flags.
+ */
 template<typename ArIt, typename FIt>
 void do_replace(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end, FIt files_begin,
-                FIt files_end, Position pos, std::optional<std::string> const& posname,
-                bool verbose, bool update_newer)
+                FIt files_end, Position pos, std::optional<std::string> const& posname, Flags flags)
 {
   GD::Ar::Format format = (ar_begin != ar_end) ? ar_begin.format() : GD::Ar::Format::gnu;
+  bool verbose = (flags & Flags::verbose) == Flags::verbose;
+  bool update_newer = (flags & Flags::update_newer) == Flags::update_newer;
   auto out_it = GD::Ar::archive_inserter(archive, format, mode);
+  auto anchor = posname.has_value() ? fs::path(*posname).filename() : "";
   std::vector<std::string> files;
   std::copy(files_begin, files_end, std::back_inserter(files));
 
   for (; ar_begin != ar_end; ++ar_begin) {
     auto member = *ar_begin;
-    if (pos == Position::before && member.name() == *posname) {
-      break;
-    }
     auto found = find_name(files.begin(), files.end(), member.name());
     bool updated = false;
+    bool is_anchor = (posname.has_value() && member.name() == anchor);
+
+    if (pos == Position::before && is_anchor) {
+      break;
+    }
     if (found != files.end()) {
-      auto file = GD::Ar::InputFile(*found);
+      auto file = GD::InputFile(*found);
       if (!update_newer || file.mtime() > member.mtime()) {
         *out_it++ = file;
         if (verbose) {
@@ -132,14 +220,20 @@ void do_replace(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end
         }
         updated = true;
       }
-      while ((found = find_name(files.erase(found), files.end(), member.name())) != files.end()) {
+      files.erase(found);
+      found = find_name(files.begin(), files.end(), member.name());
+      while (found != files.end()) {
         std::cerr << "Warning: Skipping due to duplicate member name " << *found << '\n';
+        files.erase(found);
+        found = find_name(files.begin(), files.end(), member.name());
       }
     }
     if (!updated) {
       *out_it++ = member;
     }
-    if (pos == Position::after && member.name() == *posname) {
+
+    if (pos == Position::after && is_anchor) {
+      ++ar_begin;
       break;
     }
   }
@@ -148,12 +242,16 @@ void do_replace(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end
   std::copy(ar_begin, ar_end, std::back_inserter(tail));
 
   for (auto const& file : files) {
+    auto basename = fs::path(file).filename();
+    if (basename == anchor) {
+      continue;
+    }
     auto found = std::find_if(tail.begin(), tail.end(),
                               [basename = fs::path(file).filename()](auto const& member) {
                                 return member.name() == basename;
                               });
     if (found == tail.end()) {
-      auto f = GD::Ar::InputFile(file);
+      auto f = GD::InputFile(file);
       *out_it++ = f;
       if (verbose) {
         std::cout << "a - " << file << '\n';
@@ -165,7 +263,7 @@ void do_replace(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end
     auto found = find_name(files.begin(), files.end(), member.name());
     bool updated = false;
     if (found != files.end()) {
-      auto file = GD::Ar::InputFile(*found);
+      auto file = GD::InputFile(*found);
       if (!update_newer || file.mtime() > member.mtime()) {
         *out_it++ = file;
         if (verbose) {
@@ -173,8 +271,12 @@ void do_replace(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end
         }
         updated = true;
       }
-      while ((found = find_name(files.erase(found), files.end(), member.name())) != files.end()) {
+      files.erase(found);
+      found = find_name(files.begin(), files.end(), member.name());
+      while (found != files.end()) {
         std::cerr << "Warning: Skipping due to duplicate member name " << *found << '\n';
+        files.erase(found);
+        found = find_name(files.begin(), files.end(), member.name());
       }
     }
     if (!updated) {
@@ -185,32 +287,46 @@ void do_replace(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end
   *out_it++ = out_it.commit_tag();
 }
 
+/** \brief              Do the replace action
+ *  \tparam ArIt        Archive iterator type
+ *  \tparam FIt         File Iterator type
+ *  \param  archive     Filename of output archive.
+ *  \param  mode        Mode to create archive with
+ *  \param  ar_begin    First archive member to process
+ *  \param  ar_end      One past end of archive members
+ *  \param  files_begin First file name to process
+ *  \param  files_end   First past end of file names
+ *  \param  flags       Flags.
+ */
 template<typename ArIt, typename FIt>
 void do_quick_append(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end,
-                     FIt files_begin, FIt files_end, bool verbose)
+                     FIt files_begin, FIt files_end, Flags flags)
 {
   GD::Ar::Format format = (ar_begin != ar_end) ? ar_begin.format() : GD::Ar::Format::gnu;
+  bool verbose = (flags & Flags::verbose) == Flags::verbose;
   auto out_it = GD::Ar::archive_inserter(archive, format, mode);
   std::copy(ar_begin, ar_end, out_it);
   std::for_each(files_begin, files_end, [&out_it, verbose](auto fname) {
     if (verbose) {
       std::cout << "a - " << fname << '\n';
     }
-    auto file = GD::Ar::InputFile(fname);
+    auto file = GD::InputFile(fname);
     *out_it++ = file;
   });
   *out_it++ = out_it.commit_tag();
 }
 
-template<typename It>
-void do_extract(GD::Ar::Member const& member, It files_begin, It files_end, bool verbose,
-                bool allow_replacement, bool truncate_names)
+/** \brief        Extract a member
+ *  \param fname  Filename of member
+ *  \param member  Member details
+ *  \param flag   Flags
+ */
+void do_extract(std::string const& fname, GD::Ar::Member const& member, Flags flags)
 {
-  auto name = member.name();
-
-  if (files_begin != files_end && find_name(files_begin, files_end, name) == files_end) {
-    return;
-  }
+  auto name = fname;
+  bool truncate_names = (flags & Flags::truncate_names) == Flags::truncate_names;
+  bool allow_replacement = (flags & Flags::allow_replacement) == Flags::allow_replacement;
+  bool verbose = (flags & Flags::verbose) == Flags::verbose;
 
   if (truncate_names) {
     /* Truncate the name to the longest possible.  We ignore an error here and just assume the name
@@ -226,7 +342,7 @@ void do_extract(GD::Ar::Member const& member, It files_begin, It files_end, bool
     return;
   }
 
-  auto wf = GD::Ar::TxnWriteFile(fs::path(name), member.mode());
+  auto wf = GD::TxnWriteFile(fs::path(name), member.mode());
   wf.write(member.data());
   wf.commit();
 
@@ -235,20 +351,17 @@ void do_extract(GD::Ar::Member const& member, It files_begin, It files_end, bool
   }
 }
 
-template<typename It>
-void do_print(GD::Ar::Member const& member, It files_begin, It files_end, bool verbose)
+/** \brief        Print a member
+ *  \param fname  Filename of member
+ *  \param member  Member details
+ *  \param flag   Flags
+ */
+void do_print(std::string const& fname, GD::Ar::Member const& member, Flags flags)
 {
-  std::string name = member.name();
-  if (files_begin != files_end) {
-    auto found = std::find(files_begin, files_end, member.name());
-    if (found == files_end) {
-      return;
-    }
-    name = *found;
-  }
-
-  if (verbose) {
-    std::cout << "\n<" << name << ">\n\n";
+  if ((flags & Flags::verbose) == Flags::verbose) {
+    // Use printf to ensure we sync with the write below.
+    std::printf("\n<%s>\n\n", fname.c_str());
+    std::fflush(stdout);
   }
 
   auto data = member.data();
@@ -259,7 +372,7 @@ void do_print(GD::Ar::Member const& member, It files_begin, It files_end, bool v
                        std::min((std::size_t)std::numeric_limits<::ssize_t>::max(), count));
     if (res == -1) {
       if (errno != EINTR) {
-        throw std::system_error(errno, std::generic_category(), "Whilst reading.");
+        error(Msg::stdout_write_failed, std::strerror(errno));
       }
     }
     else {
@@ -269,22 +382,7 @@ void do_print(GD::Ar::Member const& member, It files_begin, It files_end, bool v
   }
 }
 
-template<typename It>
-void do_toc(GD::Ar::Member const& member, It files_begin, It files_end)
-{
-  /* POSIX says that we should print the name of the files from the command-line if we are
-   * filtering.  */
-  if (files_begin == files_end) {
-    std::cout << member.name() << '\n';
-  }
-  else {
-    auto found = std::find(files_begin, files_end, member.name());
-    if (found != files_end) {
-      std::cout << *found << '\n';
-    }
-  }
-}
-
+/** \brief  Convert a mode_t to a mode string.  */
 std::string to_mode_string(mode_t mode)
 {
   std::string result(9, '-');
@@ -329,73 +427,111 @@ std::string to_mode_string(mode_t mode)
   return result;
 }
 
-template<typename It>
-void do_verbose_toc(GD::Ar::Member const& member, It files_begin, It files_end)
+/** \brief        Print the ToC for a member
+ *  \param fname  Filename of member
+ *  \param member  Member details
+ *  \param flag   Flags
+ */
+void do_toc(std::string const& fname, GD::Ar::Member const& member, Flags flags)
 {
-  /* POSIX says that we should print the name of the files from the command-line if we are
-   * filtering.  */
-  std::string name = member.name();
-  if (files_begin != files_end) {
-    auto found = std::find(files_begin, files_end, member.name());
-    if (found == files_end) {
-      return;
-    }
-    name = *found;
+  if ((flags & Flags::verbose) == Flags::verbose) {
+    auto m = member.mtime();
+    std::tm* mtime = std::localtime(&m);
+    std::cout << to_mode_string(member.mode()) << ' ' << member.uid() << '/' << member.gid() << ' '
+              << member.size_bytes() << ' ' << std::put_time(mtime, "%b %e %H:%M %Y") << ' '
+              << fname << '\n';
   }
-  auto m = member.mtime();
-  std::tm* mtime = std::localtime(&m);
-  std::cout << to_mode_string(member.mode()) << ' ' << member.uid() << '/' << member.gid() << ' '
-            << member.size_bytes() << ' ' << std::put_time(mtime, "%b %e %H:%M %Y") << ' ' << name
-            << '\n';
+  else {
+    std::cout << fname << '\n';
+  }
 }
 
+/** \brief              Do a 'simple' action
+ *  \tparam ArIt        Archive iterator type
+ *  \tparam FIt         File Iterator type
+ *  \param  archive     Filename of output archive.
+ *  \param  mode        Mode to create archive with
+ *  \param  ar_begin    First archive member to process
+ *  \param  ar_end      One past end of archive members
+ *  \param  files_begin First file name to process
+ *  \param  files_end   First past end of file names
+ *  \param  flags       Flags.
+ *  \param  act_fn      Action function to do on members that we want to process
+ */
+template<typename ArIt, typename FileIt, typename ActFn>
+void do_action(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end, FileIt files_begin,
+               FileIt files_end, Flags flags, ActFn act_fn)
+{
+  std::vector<GD::Ar::Member> members;
+  while (ar_begin != ar_end) {
+    auto const member = *ar_begin++;
+    if ((flags & Flags::force_ranlib) == Flags::force_ranlib) {
+      members.push_back(member);
+    }
+    if (files_begin != files_end) {
+      auto found = find_name(files_begin, files_end, member.name());
+      if (found != files_end) {
+        act_fn(*found, member, flags);
+      }
+    }
+    else {
+      act_fn(member.name(), member, flags);
+    }
+  }
+
+  if (!members.empty()) {
+    GD::Ar::Format format = members.front().format();
+    auto out_it = GD::Ar::archive_inserter(archive, format, mode);
+    std::copy(members.begin(), members.end(), out_it);
+    *out_it++ = out_it.commit_tag();
+  }
+}
+
+/** \brief Is \a action a readonly action?  */
 constexpr bool is_read_only_action(Action action)
 {
   return action == Action::print || action == Action::toc || action == Action::extract;
 }
 
-}  // namespace
-
-int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
+struct State
 {
-  ::setlocale(LC_ALL, "");
-  GD::program_name(argv[0]);
-
-  int c;
   Action action = Action::none;
   Position pos = Position::end;
+  Flags flags = Flags::message_on_creation | Flags::allow_replacement;
   std::optional<std::string> pos_file;
-  bool message_on_creation = true;
-  [[maybe_unused]] bool force_ranlib = false;
-  bool verbose = false;
-  bool update_newer = false;
-  bool allow_replacement = true;
-  bool truncate_names = false;
+  fs::path archive;
+  char** file_begin;
+  char** file_end;
+};
 
-  auto set_action = [&action, &c](Action act) {
-    if (action != Action::none) {
+State process_command_line(int argc, char** argv)
+{
+  State state;
+  int c = 0;
+  auto set_action = [&state, &c](Action act) {
+    if (state.action != Action::none) {
       error(Msg::cannot_specify_more_than_one_action, c);
     }
-    action = act;
+    state.action = act;
   };
 
   while ((c = ::getopt(argc, argv, ":CTabcdimpqrstuvx:")) != -1) {
     switch (c) {
     case 'C':
-      allow_replacement = false;
+      state.flags = state.flags | ~Flags::allow_replacement;
       break;
     case 'T':
-      truncate_names = true;
+      state.flags = state.flags | Flags::truncate_names;
       break;
     case 'a':
-      pos = Position::after;
+      state.pos = Position::after;
       break;
     case 'b':
     case 'i':
-      pos = Position::before;
+      state.pos = Position::before;
       break;
     case 'c':
-      message_on_creation = false;
+      state.flags = state.flags & ~Flags::message_on_creation;
       break;
     case 'd':
       set_action(Action::del);
@@ -413,16 +549,16 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
       set_action(Action::replace);
       break;
     case 's':
-      force_ranlib = true;
+      state.flags = state.flags | Flags::force_ranlib;
       break;
     case 't':
       set_action(Action::toc);
       break;
     case 'u':
-      update_newer = true;
+      state.flags = state.flags | Flags::update_newer;
       break;
     case 'v':
-      verbose = true;
+      state.flags = state.flags | Flags::verbose;
       break;
     case 'x':
       set_action(Action::extract);
@@ -435,78 +571,86 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
     }
   }
 
-  if (action == Action::none) {
+  if (state.action == Action::none) {
     error(Msg::missing_action);
   }
 
-  if (pos != Position::end) {
+  if (state.pos != Position::end) {
     if (optind >= argc) {
       error(Msg::missing_position_name);
     }
-    pos_file = argv[optind++];
+    state.pos_file = argv[optind++];
   }
 
   if (optind >= argc) {
     error(Msg::missing_archive_name);
   }
 
-  std::optional<GD::Ar::InputFile> file = std::nullopt;
-  auto archive = fs::path(argv[optind++]);
+  state.archive = fs::path(argv[optind++]);
+  state.file_begin = argv + optind;
+  state.file_end = argv + argc;
+
+  return state;
+}
+}  // namespace
+
+int main(int argc, char** argv)
+{
+  ::setlocale(LC_ALL, "");
+  GD::program_name(argv[0]);
+  std::ios::sync_with_stdio(true);
+
+  State state = process_command_line(argc, argv);
+
+  std::optional<GD::InputFile> file = std::nullopt;
   mode_t mode = umask(0);
   umask(mode);
-  if (!fs::exists(archive)) {
-    if (is_read_only_action(action)) {
-      throw std::runtime_error("Missing input archive.");
+  if (!fs::exists(state.archive)) {
+    if (is_read_only_action(state.action)) {
+      error(Msg::missing_input_archive, state.archive.native());
     }
-    if (message_on_creation) {
-      std::cerr << "Creating file: " << archive << '\n';
+    if ((state.flags & Flags::message_on_creation) == Flags::message_on_creation) {
+      std::cerr << GD::Ar::Messages::get().format(GD::Ar::Set::ar, Msg::creating_archive,
+                                                  state.archive.native());
     }
     mode = (~mode) & 0644;
   }
   else {
-    file.emplace(GD::Ar::InputFile(archive));
+    file.emplace(GD::InputFile(state.archive));
     mode = file->mode();
   }
 
   auto ar_begin = file.has_value() ? GD::Ar::read_archive_begin(file.value())
-                                   : GD::Ar::read_archive_end<GD::Ar::InputFile>();
-  auto ar_end = GD::Ar::read_archive_end<GD::Ar::InputFile>();
+                                   : GD::Ar::read_archive_end<GD::InputFile>();
+  auto ar_end = GD::Ar::read_archive_end<GD::InputFile>();
 
-  switch (action) {
+  switch (state.action) {
   case Action::del:
-    do_delete(archive, mode, ar_begin, ar_end, argv + optind, argv + argc, verbose);
+    do_delete(state.archive, mode, ar_begin, ar_end, state.file_begin, state.file_end, state.flags);
     break;
   case Action::move:
-    do_move(archive, mode, ar_begin, ar_end, argv + optind, argv + argc, pos, pos_file, verbose);
+    do_move(state.archive, mode, ar_begin, ar_end, state.file_begin, state.file_end, state.pos,
+            state.pos_file, state.flags);
     break;
   case Action::print:
-    std::for_each(ar_begin, ar_end, [argv, argc, verbose](GD::Ar::Member const& member) {
-      do_print(member, argv + optind, argv + argc, verbose);
-    });
+    do_action(state.archive, mode, ar_begin, ar_end, state.file_begin, state.file_end, state.flags,
+              do_print);
     break;
   case Action::quick:
-    do_quick_append(archive, mode, ar_begin, ar_end, argv + optind, argv + argc, verbose);
+    do_quick_append(state.archive, mode, ar_begin, ar_end, state.file_begin, state.file_end,
+                    state.flags);
     break;
   case Action::replace:
-    do_replace(archive, mode, ar_begin, ar_end, argv + optind, argv + argc, pos, pos_file, verbose,
-               update_newer);
+    do_replace(state.archive, mode, ar_begin, ar_end, state.file_begin, state.file_end, state.pos,
+               state.pos_file, state.flags);
     break;
   case Action::toc:
-    std::for_each(ar_begin, ar_end, [argv, argc, verbose](GD::Ar::Member const& member) {
-      if (verbose) {
-        do_verbose_toc(member, argv + optind, argv + argc);
-      }
-      else {
-        do_toc(member, argv + optind, argv + argc);
-      }
-    });
+    do_action(state.archive, mode, ar_begin, ar_end, state.file_begin, state.file_end, state.flags,
+              do_toc);
     break;
   case Action::extract:
-    std::for_each(
-      ar_begin, ar_end,
-      [argv, argc, verbose, allow_replacement, truncate_names](GD::Ar::Member const& member) {
-        do_extract(member, argv + optind, argv + argc, verbose, allow_replacement, truncate_names);
-      });
+    do_action(state.archive, mode, ar_begin, ar_end, state.file_begin, state.file_end, state.flags,
+              do_extract);
     break;
   default:
   case Action::none:

@@ -18,7 +18,7 @@ void report_error(GD::Cat::Msg msg, Ts... args)
 
 bool do_cat(std::string_view fname, bool unbuffered)
 {
-  GD::InputFile fp(fname);
+  GD::StreamInputFile fp(fname);
   if (fp.error()) {
     return false;
   }

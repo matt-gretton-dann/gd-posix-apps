@@ -41,9 +41,10 @@ inline constexpr bool extensions_enabled()
 
 }  // namespace GD::Bc
 
-#include "number.hh"
 #include <type_traits>
 #include <unordered_map>
+
+#include "number.hh"
 
 #ifndef ENABLE_EXTENSIONS
 /** Are the non-POSIX extensions enabled? */
@@ -340,8 +341,8 @@ public:
 private:
   void do_chew() override final;
 
-  GD::InputFile file_;  ///< File
-  int c_;               ///< Current character (EOF means needs peeking or EOF)
+  GD::StreamInputFile file_;  ///< File
+  int c_;                     ///< Current character (EOF means needs peeking or EOF)
 };
 
 /** Lexer.  */

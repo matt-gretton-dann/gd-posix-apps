@@ -8,6 +8,10 @@
 #define _LIBGDSUP_INCLUDE_GD_UNISTD_H_INCLUDED
 
 #include "gd/bits/defines.h"
+#include "gd/bits/types/pid_t.h"
+#include "gd/bits/types/uid_t.h"
+#include "gd/bits/types/gid_t.h"
+
 
 __EXTERN_C_BEGIN
 /** \brief Pointer to argument - used by \fn getopt.  */
