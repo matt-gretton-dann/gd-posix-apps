@@ -4,6 +4,8 @@
  *          SPDX-License-Identifier: Apache-2.0
  */
 
+#include "gd/nl_types.h"
+
 #include "gd/filesystem.hh"
 
 #include "util/utils.hh"

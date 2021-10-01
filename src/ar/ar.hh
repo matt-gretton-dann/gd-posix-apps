@@ -7,6 +7,8 @@
 #ifndef SRC_AR_AR_HH_INCLUDED_
 #define SRC_AR_AR_HH_INCLUDED_
 
+#include "gd/nl_types.h"
+
 #include "gd/fcntl.h"
 #include "gd/stdlib.h"
 #include "gd/string.h"
@@ -856,7 +858,7 @@ private:
   void add_str(Store& out, std::string const& val, std::size_t len)
   {
     std::string output = val + std::string(len, ' ');
-    add_data(out, std::span(output.begin(), output.begin() + len));
+    add_data(out, std::span<char>(output.data(), len));
   }
 
   /** \brief  Write a number at a particular offset.
