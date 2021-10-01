@@ -177,7 +177,14 @@ public:
 
   std::string const& name() const { return name_; }
 
-  time_t mtime() const { return stat_.st_mtim.tv_sec; }
+  time_t mtime() const
+  {
+#ifdef __APPLE__
+    return stat_.st_mtimespec.tv_sec;
+#else
+    return stat_.st_mtim.tv_sec;
+#endif  // __APPLE__
+  }
 
   uid_t uid() const { return stat_.st_uid; }
 
