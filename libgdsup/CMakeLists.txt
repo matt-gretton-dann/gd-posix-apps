@@ -231,8 +231,8 @@ target_include_directories(test-gdsup PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 set_warnings(test-gdsup)
 
 if($CACHE{FORCE_SUPPLEMENTAL_LIBRARY})
-target_compile_definitions(gdsup PUBLIC
-                           "-DFORCE_SUPPLEMENTAL_LIBRARY=1")
+  target_compile_definitions(gdsup PUBLIC
+                             "-DFORCE_SUPPLEMENTAL_LIBRARY=1")
 endif()
 
 target_sources(gdsup PRIVATE
@@ -259,6 +259,7 @@ if(CXX_STD_FILESYSTEM_LIBRARY)
 endif()
 if(CXX_STD_FORMAT_LIB)
   target_link_libraries(gdsup PUBLIC "${CXX_STD_FORMAT_LIB}")
+  target_compile_definitions(gdsup PUBLIC "-DUSE_OWN_FMTLIB=1")
 endif()
 
 add_subdirectory(fcntl)

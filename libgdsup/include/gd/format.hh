@@ -7,7 +7,7 @@
 #ifndef GD_FORMAT_HH
 #define GD_FORMAT_HH
 
-#if !defined(FORCE_SUPPLEMENTAL_LIBRARY) && __has_include(<format>)
+#if !defined(FORCE_SUPPLEMENTAL_LIBRARY) && !defined(USE_OWN_FMTLIB) && __has_include(<format>)
 #  include <format>
 namespace fmt = std;
 #elif __has_include(<fmt/format.h>)
