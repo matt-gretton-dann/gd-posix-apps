@@ -125,7 +125,7 @@ TEST_CASE("catopen NLSPATH lookup", "[nl_types][catopen]")
 
 namespace {
 #ifdef _WIN32
-#  define LC_MESSAGES LC_ALL
+#  define LC_MESSAGES LC_ALL  // NOLINT
 #endif
 
 void test_locale_lookup(char const* locale)

@@ -68,6 +68,18 @@
         "id": 11,
         "description": "The length of the result of {0} : {1} is too long to represent as an integer. {2} is length of result as int64.",
         "C": "Warning: The result of '{0} : {1}' is too long to represent as a number ({2})."
+      },
+      {
+        "msg": "uncaught_std_exception",
+        "id": 12,
+        "description": "We have an uncaught exception of type std::exception, {0} is the what.",
+        "C": "Internal error: {0}."
+      },
+      {
+        "msg": "uncaught_exception",
+        "id": 13,
+        "description": "We have an uncaught exception of unknown type.",
+        "C": "Internal error: Unknown cause."
       }
     ]
   }

@@ -81,24 +81,26 @@ auto do_cksum(std::string_view fname) -> bool
 }  // namespace
 
 auto main(int argc, char** argv) -> int
-try {
-  std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
-  std::span<char*> args(argv, argc);
-  GD::program_name(args[0]);
+{
+  try {
+    std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
+    std::span<char*> args(argv, argc);
+    GD::program_name(args[0]);
 
-  // Skip a '--' option
-  std::span<char*>::iterator it = args.begin() + 1;
-  if (it != args.end() && std::strcmp(*it, "--") == 0) {
-    ++it;
+    // Skip a '--' option
+    std::span<char*>::iterator it = args.begin() + 1;
+    if (it != args.end() && std::strcmp(*it, "--") == 0) {
+      ++it;
+    }
+
+    return GD::for_each_file(it, args.end(), do_cksum) ? EXIT_SUCCESS : EXIT_FAILURE;
   }
-
-  return GD::for_each_file(it, args.end(), do_cksum) ? EXIT_SUCCESS : EXIT_FAILURE;
-}
-catch (std::exception const& e) {
-  report_error(GD::Cksum::Msg::unhandled_std_exception, e.what());
-  std::exit(EXIT_FAILURE);  // NOLINT(concurrency-mt-unsafe)
-}
-catch (...) {
-  report_error(GD::Cksum::Msg::unhandled_exception);
-  std::exit(EXIT_FAILURE);  // NOLINT(concurrency-mt-unsafe)
+  catch (std::exception const& e) {
+    report_error(GD::Cksum::Msg::unhandled_std_exception, e.what());
+    std::exit(EXIT_FAILURE);  // NOLINT(concurrency-mt-unsafe)
+  }
+  catch (...) {
+    report_error(GD::Cksum::Msg::unhandled_exception);
+    std::exit(EXIT_FAILURE);  // NOLINT(concurrency-mt-unsafe)
+  }
 }

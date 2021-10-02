@@ -74,8 +74,8 @@ struct VMState
   void array(Array a, ArrayValues av);
   [[nodiscard]] auto array_length(Array a) const -> Number::NumType;
 
-  void function(Letter func, Instructions::const_iterator begin, Instructions::const_iterator end,
-                VariableMask mask, Location const& loc);
+  void function(Letter func, Instructions::const_iterator const& begin,
+                Instructions::const_iterator const& end, VariableMask mask, Location const& loc);
 
   /** \brief       Do a call
    *  \param  func Function to call.
@@ -396,8 +396,8 @@ auto GD::Bc::Details::VMState::pop_param_array() -> GD::Bc::ArrayValues
   return result;
 }
 
-void GD::Bc::Details::VMState::function(Letter func, Instructions::const_iterator begin,
-                                        Instructions::const_iterator end, VariableMask mask,
+void GD::Bc::Details::VMState::function(Letter func, Instructions::const_iterator const& begin,
+                                        Instructions::const_iterator const& end, VariableMask mask,
                                         Location const& loc)
 {
   Instructions instrs(begin, end);

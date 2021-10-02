@@ -212,7 +212,7 @@ auto tokenise_number(std::string_view token) -> Token
     ++p;
   }
 
-  while (*p >= '0' && *p <= '0' + input_base - 1) {
+  while (p != token.end() && *p >= '0' && *p <= '0' + input_base - 1) {
     int32_t new_number = number * input_base + (*p - '0');
     if (new_number / input_base != number) {
       warn(Msg::number_parse_overflow, token);
@@ -520,9 +520,9 @@ auto do_or(Token const& lhs, Token const& rhs) -> Token
   return Token(Token::Type::number, 0);
 }
 
-auto parse(TokenIt& begin, TokenIt end) -> Token;
+auto parse(TokenIt& begin, TokenIt const& end) -> Token;
 
-auto parse_primary(TokenIt& begin, TokenIt end) -> Token
+auto parse_primary(TokenIt& begin, TokenIt const& end) -> Token
 {
   if (begin == end) {
     invalid_expr(Msg::expected_token);
@@ -531,7 +531,7 @@ auto parse_primary(TokenIt& begin, TokenIt end) -> Token
   return *(begin++);
 }
 
-auto parse_parens(TokenIt& begin, TokenIt end) -> Token
+auto parse_parens(TokenIt& begin, TokenIt const& end) -> Token
 {
   if (begin != end) {
     if (begin->type() == Token::Type::lparens) {
@@ -595,7 +595,7 @@ auto Token::get_action(Type type) -> Token::Action const&
   return actions.at(static_cast<size_t>(type));
 }
 
-auto parse_expr(TokenIt& begin, TokenIt end, unsigned int precedence) -> Token
+auto parse_expr(TokenIt& begin, TokenIt const& end, unsigned int precedence) -> Token
 {
   if (precedence == 0) {
     return parse_parens(begin, end);
@@ -610,7 +610,7 @@ auto parse_expr(TokenIt& begin, TokenIt end, unsigned int precedence) -> Token
   return lhs;
 }
 
-auto parse(TokenIt& begin, TokenIt end) -> Token
+auto parse(TokenIt& begin, TokenIt const& end) -> Token
 {
   return parse_expr(begin, end, Token::max_precedence());
 }
@@ -618,27 +618,35 @@ auto parse(TokenIt& begin, TokenIt end) -> Token
 
 auto main(int argc, char** argv) -> int
 {
-  std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
-  std::span<char*> args(argv, argc);
-  auto it = args.begin();
-  GD::program_name(*it++);
+  try {
+    std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
+    std::span<char*> args(argv, argc);
+    auto it = args.begin();
+    GD::program_name(*it++);
 
-  if (it != args.end() && std::strcmp(*it, "--") == 0) {
-    ++it;
+    if (it != args.end() && std::strcmp(*it, "--") == 0) {
+      ++it;
+    }
+
+    if (it == args.end()) {
+      error(Msg::missing_operand);
+    }
+
+    auto tokens = tokenise(it, args.end());
+    auto begin = tokens.cbegin();
+    auto result = parse(begin, tokens.end());
+    if (begin != tokens.end()) {
+      invalid_expr(Msg::extra_tokens_at_end, begin->string());
+    }
+
+    std::cout << result.string() << '\n';
+    // NOLINTNEXTLINE(concurrency-mt-unsafe)
+    exit(result.null_or_zero() ? ExitCode::zero_or_null_result : ExitCode::success);
   }
-
-  if (it == args.end()) {
-    error(Msg::missing_operand);
+  catch (std::exception& e) {
+    error(Msg::uncaught_std_exception, e.what());
   }
-
-  auto tokens = tokenise(it, args.end());
-  auto begin = tokens.cbegin();
-  auto result = parse(begin, tokens.end());
-  if (begin != tokens.end()) {
-    invalid_expr(Msg::extra_tokens_at_end, begin->string());
+  catch (...) {
+    error(Msg::uncaught_exception);
   }
-
-  std::cout << result.string() << '\n';
-  // NOLINTNEXTLINE(concurrency-mt-unsafe)
-  exit(result.null_or_zero() ? ExitCode::zero_or_null_result : ExitCode::success);
 }

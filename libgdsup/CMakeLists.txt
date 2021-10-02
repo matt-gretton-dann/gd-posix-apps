@@ -232,7 +232,7 @@ set_warnings(test-gdsup)
 
 if($CACHE{FORCE_SUPPLEMENTAL_LIBRARY})
 target_compile_definitions(gdsup PUBLIC
-                           "-DFORCE_SUPPLEMENTAL_LIBRARY=$CACHE{FORCE_SUPPLEMENTAL_LIBRARY}")
+                           "-DFORCE_SUPPLEMENTAL_LIBRARY=1")
 endif()
 
 target_sources(gdsup PRIVATE

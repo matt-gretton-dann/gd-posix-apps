@@ -764,8 +764,9 @@ try {
       fd = STDOUT_FILENO;
     }
     else {
+      // We know on Windows that the following line will have equivalent values
       fd = ::open(outfile.c_str(), O_CREAT | O_WRONLY | O_TRUNC,
-                  S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+                  S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);  // NOLINT
     }
 
     if (fd == -1) {
