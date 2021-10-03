@@ -3,6 +3,7 @@
 # objc-*: Not an Objective C codebase
 # cppcoreguidelines-owning-memory: We don't want to use gsl.
 # cppcoreguidelines-pro-type-vararg triggers on all char* which we can't avoid
+# google-runtime-references: Triggers incorrectly
 # llvm-header-guard: is not the style we use
 # misc-no-recursion: We do not mind recursion (and we need to recurse)
 # readability-function-cognitive-complexity: Too many asserts trigger this one unnecessarily
@@ -18,10 +19,11 @@ Checks:          >-
  -zircon-*,
  -cppcoreguidelines-owning-memory,
  -cppcoreguidelines-pro-type-vararg,
+ -google-runtime-references,
  -llvm-header-guard,
  -misc-no-recursion,
  -readability-function-cognitive-complexity
-WarningsAsErrors: ''
+WarningsAsErrors: '*'
 HeaderFilterRegex: ''
 AnalyzeTemporaryDtors: false
 FormatStyle:     file
