@@ -39,7 +39,7 @@ public:
   constexpr SpanBase(SpanBase&&) noexcept = delete;
   constexpr SpanBase& operator=(SpanBase const&) noexcept = default;
   constexpr SpanBase& operator=(SpanBase&&) noexcept = delete;
-  constexpr ~SpanBase() noexcept = default;
+  ~SpanBase() noexcept = default;
 
   constexpr SpanBase(T* begin, [[maybe_unused]] size_t extent) noexcept : begin_(begin) {}
   constexpr T* begin() const noexcept { return begin_; }
@@ -58,7 +58,7 @@ public:
   constexpr SpanBase(SpanBase&&) noexcept = delete;
   constexpr SpanBase& operator=(SpanBase const&) noexcept = default;
   constexpr SpanBase& operator=(SpanBase&&) noexcept = delete;
-  constexpr ~SpanBase() noexcept = default;
+  ~SpanBase() noexcept = default;
 
   constexpr SpanBase(T* begin, [[maybe_unused]] size_t extent) noexcept : begin_(begin) {}
   constexpr T* begin() const noexcept { return begin_; }
@@ -77,7 +77,7 @@ public:
   constexpr SpanBase(SpanBase&&) noexcept = delete;
   constexpr SpanBase& operator=(SpanBase const&) noexcept = default;
   constexpr SpanBase& operator=(SpanBase&&) noexcept = delete;
-  constexpr ~SpanBase() noexcept = default;
+  ~SpanBase() noexcept = default;
 
   constexpr SpanBase(T* begin, size_t extent) noexcept : begin_(begin), extent_(extent) {}
   constexpr T* begin() const noexcept { return begin_; }
@@ -87,6 +87,146 @@ private:
   T* begin_ = nullptr;
   size_t extent_ = 0;
 };
+
+template<typename T>
+class SpanIterator
+{
+public:
+  using iterator_category = std::random_access_iterator_tag;
+  using value_type = ::std::remove_cv_t<T>;
+  using difference_type = std::ptrdiff_t;
+  using pointer = T*;
+  using reference = T&;
+
+  constexpr explicit SpanIterator(T* it) noexcept : p_(it) {}
+  constexpr SpanIterator() noexcept = delete;
+  constexpr SpanIterator(SpanIterator const&) noexcept = default;
+  constexpr SpanIterator(SpanIterator&&) noexcept = default;
+  constexpr SpanIterator& operator=(SpanIterator const&) noexcept = default;
+  constexpr SpanIterator& operator=(SpanIterator&&) noexcept = default;
+  ~SpanIterator() noexcept = default;
+
+  [[nodiscard]] constexpr reference operator*() const noexcept { return *p_; }
+  [[nodiscard]] constexpr pointer operator->() const noexcept { return p_; }
+
+  constexpr SpanIterator& operator++() noexcept
+  {
+    ++p_;
+    return *this;
+  }
+
+  constexpr SpanIterator operator++(int) noexcept
+  {
+    auto temp = *this;
+    ++p_;
+    return temp;
+  }
+
+  constexpr SpanIterator& operator--() noexcept
+  {
+    --p_;
+    return *this;
+  }
+
+  constexpr SpanIterator operator--(int) noexcept
+  {
+    auto temp = *this;
+    --p_;
+    return temp;
+  }
+
+  constexpr SpanIterator& operator+=(difference_type const offset) noexcept
+  {
+    p_ += offset;
+    return *this;
+  }
+
+  constexpr SpanIterator& operator-=(difference_type const offset) noexcept
+  {
+    p_ -= offset;
+    return *this;
+  }
+
+  [[nodiscard]] constexpr difference_type operator-(SpanIterator rhs) const noexcept
+  {
+    return rhs.p_ - this->p_;
+  }
+
+  [[nodiscard]] constexpr reference operator[](difference_type const offset) const noexcept
+  {
+    return p_[offset];
+  }
+
+  [[nodiscard]] constexpr bool operator==(SpanIterator rhs) const noexcept
+  {
+    return rhs.p_ == this->p_;
+  }
+
+#  if defined(__cpp_impl_three_way_comparison) && __cpp_impl_three_way_comparison >= 201907L
+  [[nodiscard]] constexpr std::strong_ordering operator<=>(SpanIterator rhs) const noexcept
+  {
+    return this->p_ <=> rhs.p_;
+  }
+#  else
+  [[nodiscard]] constexpr bool operator<(SpanIterator rhs) const noexcept
+  {
+    return this->p_ < rhs.p_;
+  }
+#  endif
+
+private:
+  T* p_;
+};
+
+template<typename T>
+[[nodiscard]] constexpr SpanIterator<T>
+operator+(SpanIterator<T> it, typename SpanIterator<T>::difference_type const offset) noexcept
+{
+  it += offset;
+  return it;
+}
+
+template<typename T>
+[[nodiscard]] constexpr SpanIterator<T>
+operator+(typename SpanIterator<T>::difference_type const offset, SpanIterator<T> it) noexcept
+{
+  it += offset;
+  return it;
+}
+
+template<typename T>
+[[nodiscard]] constexpr SpanIterator<T>
+operator-(SpanIterator<T> it, typename SpanIterator<T>::difference_type const offset) noexcept
+{
+  it -= offset;
+  return it;
+}
+
+#  if !defined(__cpp_impl_three_way_comparison) || __cpp_impl_three_way_comparison < 201907L
+template<typename T>
+[[nodiscard]] constexpr bool operator!=(SpanIterator<T> lhs, SpanIterator<T> rhs) const noexcept
+{
+  return !(lhs == rhs);
+}
+
+template<typename T>
+[[nodiscard]] constexpr bool operator<=(SpanIterator<T> lhs, SpanIterator<T> rhs) const noexcept
+{
+  return (lhs == rhs) || (lhs < rhs);
+}
+
+template<typename T>
+[[nodiscard]] constexpr bool operator>(SpanIterator<T> lhs, SpanIterator<T> rhs) const noexcept
+{
+  return !(lhs == rhs) && !(lhs < rhs);
+}
+
+template<typename T>
+[[nodiscard]] constexpr bool operator>=(SpanIterator<T> lhs, SpanIterator<T> rhs) const noexcept
+{
+  return !(lhs < rhs);
+}
+#  endif  // Implement comparisons in absence of <=>
 
 }  // namespace Details
 
@@ -102,7 +242,7 @@ public:
   using const_pointer = T const*;
   using reference = T&;
   using const_reference = T const&;
-  using iterator = T*;
+  using iterator = Details::SpanIterator<T>;
   using reverse_iterator = ::std::reverse_iterator<iterator>;
 
   static constexpr size_t extent = Extent;
@@ -150,9 +290,12 @@ public:
   constexpr span& operator=(span const&) noexcept = default;
   constexpr span& operator=(span&&) noexcept = delete;
 
-  constexpr ~span() noexcept = default;
+  ~span() noexcept = default;
 
-  constexpr iterator begin() const noexcept { return Details::SpanBase<T, Extent>::begin(); }
+  constexpr iterator begin() const noexcept
+  {
+    return Details::SpanIterator<T>(Details::SpanBase<T, Extent>::begin());
+  }
   constexpr iterator end() const noexcept { return begin() + size(); }
   constexpr iterator rbegin() const noexcept { return begin() + size(); }
   constexpr iterator rend() const noexcept { return begin(); }
@@ -160,7 +303,7 @@ public:
   constexpr reference front() const { return *begin(); }
   constexpr reference back() const { return *(begin() + size() - 1); }
   constexpr reference operator[](size_type idx) const { return begin()[idx]; }
-  constexpr pointer data() const noexcept { return begin(); }
+  constexpr pointer data() const noexcept { return Details::SpanBase<T, Extent>::begin(); }
 
   constexpr size_type size() const noexcept { return Details::SpanBase<T, Extent>::size(); }
 
@@ -216,8 +359,6 @@ public:
   }
 };
 
-template<typename It, typename EndOrSize>
-span(It, EndOrSize) -> span<::std::remove_reference_t<std::iter_reference_t<It>>>;
 template<typename T, size_t N>
 span(T (&)[N]) -> span<T, N>;
 template<typename T, size_t N>
@@ -252,6 +393,6 @@ span<std::byte, (N == dynamic_extent ? N : N * sizeof(T))> as_writable_bytes(spa
 }
 
 }  // namespace GD::Std
-#endif  // Pick a spanheader.
+#endif    // Pick a spanheader.
 
 #endif  // GD_SPAN_HH
