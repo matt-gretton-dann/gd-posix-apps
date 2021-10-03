@@ -413,7 +413,7 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
   }
 
   FunctionDefinition const& def = functions_.at(static_cast<unsigned>(func)).value();
-  auto func_instructions = std::get<0>(def);
+  auto const& func_instructions = std::get<0>(def);
   auto locals = std::get<1>(def);
 
   /* Save the locals.  */
@@ -855,7 +855,7 @@ auto GD::Bc::Details::InstructionPack::execute_function_begin() -> GD::Bc::Instr
 {
   assert(instrs_[pc_].opcode() == Instruction::Opcode::function_begin);  // NOLINT
   VariableMask mask = std::get<VariableMask>(instrs_[pc_].op1());
-  Location loc = std::get<Location>(instrs_[pc_].op2());
+  auto const& loc = std::get<Location>(instrs_[pc_].op2());
   Index start = pc_++;
   while (pc_ != instrs_.size() && instrs_[pc_].opcode() != Instruction::Opcode::function_end) {
     ++pc_;
