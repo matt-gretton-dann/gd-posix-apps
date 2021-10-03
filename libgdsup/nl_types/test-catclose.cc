@@ -8,6 +8,8 @@
 
 #include <catch2/catch.hpp>
 
+#include <array>
+
 TEST_CASE("catclose", "[nl_types][catclose]")
 {
   errno = 0;
@@ -18,8 +20,10 @@ TEST_CASE("catclose", "[nl_types][catclose]")
   REQUIRE(::catclose((nl_catd)NULL) == -1);
   REQUIRE(errno == EBADF);
 
-  char buf[24] = {0};
+  constexpr size_t buf_size = 24;
+  std::array<char, buf_size> buf = {0};
   errno = 0;
-  REQUIRE(::catclose((nl_catd)buf) == -1);
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+  REQUIRE(::catclose(reinterpret_cast<nl_catd>(buf.data())) == -1);
   REQUIRE(errno == EBADF);
 }

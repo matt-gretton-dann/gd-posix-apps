@@ -7,7 +7,7 @@
 #include "gd/limits.h"
 #include "gd/unistd.h"
 
-#define _CRT_DECLARE_NONSTDC_NAMES 0
+#define _CRT_DECLARE_NONSTDC_NAMES 0  // NOLINT
 #include <io.h>
 
 ssize_t read(int fd, void* buf, size_t nbytes)

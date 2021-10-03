@@ -12,11 +12,11 @@
 #include "cksum-messages.hh"
 
 #include <array>
+#include <clocale>
+#include <cstdint>
 #include <iostream>
 #include <istream>
 #include <limits>
-#include <locale.h>
-#include <stdint.h>
 
 namespace {
 constexpr unsigned uint8_max = std::numeric_limits<::uint8_t>::max();
@@ -25,8 +25,8 @@ constexpr unsigned uint24_bits = 24;
 }  // namespace
 
 namespace GD::Cksum {
-extern std::array<::uint32_t, uint8_max + 1> cksum_table;
-}
+extern const std::array<::uint32_t, uint8_max + 1> cksum_table;
+}  // namespace GD::Cksum
 
 namespace {
 template<typename... Ts>
@@ -38,14 +38,14 @@ void report_error(GD::Cksum::Msg msg, Ts... args)
 
 auto update_crc(::uint32_t crc, ::uint8_t c) -> ::uint32_t
 {
-  return (crc << uint8_bits) ^ GD::Cksum::cksum_table[(crc >> uint24_bits) ^ c];
+  return (crc << uint8_bits) ^ GD::Cksum::cksum_table.at((crc >> uint24_bits) ^ c);
 }
 
 auto do_cksum(std::string_view fname) -> bool
 {
   ::size_t len = 0;
   ::uint32_t crc = 0;
-  int c;
+  int c = 0;
   GD::StreamInputFile fh(fname, "rb");
   if (fh.error()) {
     return false;
@@ -81,23 +81,26 @@ auto do_cksum(std::string_view fname) -> bool
 }  // namespace
 
 auto main(int argc, char** argv) -> int
-try {
-  ::setlocale(LC_ALL, "");
-  GD::program_name(argv[0]);
+{
+  try {
+    std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
+    GD::Span::span<char*> args(argv, argc);
+    GD::program_name(args[0]);
 
-  // Skip a '--' option
-  if (argc > 1 && std::strcmp(argv[1], "--") == 0) {
-    ++argv;
-    --argc;
+    // Skip a '--' option
+    GD::Span::span<char*>::iterator it = args.begin() + 1;
+    if (it != args.end() && std::strcmp(*it, "--") == 0) {
+      ++it;
+    }
+
+    return GD::for_each_file(it, args.end(), do_cksum) ? EXIT_SUCCESS : EXIT_FAILURE;
   }
-
-  return GD::for_each_file(argc - 1, argv + 1, do_cksum) ? EXIT_SUCCESS : EXIT_FAILURE;
-}
-catch (std::exception const& e) {
-  report_error(GD::Cksum::Msg::unhandled_std_exception, e.what());
-  ::exit(EXIT_FAILURE);
-}
-catch (...) {
-  report_error(GD::Cksum::Msg::unhandled_exception);
-  ::exit(EXIT_FAILURE);
+  catch (std::exception const& e) {
+    report_error(GD::Cksum::Msg::unhandled_std_exception, e.what());
+    std::exit(EXIT_FAILURE);  // NOLINT(concurrency-mt-unsafe)
+  }
+  catch (...) {
+    report_error(GD::Cksum::Msg::unhandled_exception);
+    std::exit(EXIT_FAILURE);  // NOLINT(concurrency-mt-unsafe)
+  }
 }

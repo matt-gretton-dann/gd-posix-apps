@@ -30,7 +30,7 @@ static void update_for_next_call(char* opt) __NOEXCEPT
   }
 }
 
-int getopt(int argc, char* const argv[], const char* optstring) __NOEXCEPT
+int getopt(int argc, char* const argv[], const char* optstring) __NOEXCEPT  // NOLINT
 {
   /* Don't go off the end of the array.  */
   if (optind >= argc) {
@@ -63,10 +63,11 @@ int getopt(int argc, char* const argv[], const char* optstring) __NOEXCEPT
 
   if (ps == NULL) {
     /* *opt doesn't point to a valid option.  */
-    optopt = *opt;
+    optopt = (unsigned char)(*opt);
     update_for_next_call(opt);
     if (opterr != 0 && optstring[0] != ':') {
       char* argv0 = strdup(argv[0]);
+      // NOLINTNEXTLINE(concurrency-mt-unsafe)
       char const* program_name = argv0 != NULL ? basename(argv0) : argv[0];
       int r = fprintf(stderr, "%s: Invalid option '-%c'\n", program_name, (char)optopt);
       free(argv0);
@@ -85,10 +86,11 @@ int getopt(int argc, char* const argv[], const char* optstring) __NOEXCEPT
       optind += 2;
       if (optind > argc) {
         /* We have run out of argv entries.  So no argument.  */
-        optopt = *opt;
+        optopt = (unsigned char)(*opt);
         update_for_next_call(opt);
         if (opterr != 0 && optstring[0] != ':') {
           char* argv0 = strdup(argv[0]);
+          // NOLINTNEXTLINE(concurrency-mt-unsafe)
           char const* program_name = argv0 != NULL ? basename(argv0) : argv[0];
           int r =
             fprintf(stderr, "%s: No argument provided for '-%c'\n", program_name, (char)optopt);

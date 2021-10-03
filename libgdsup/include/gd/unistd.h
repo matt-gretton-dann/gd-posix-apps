@@ -4,8 +4,8 @@
  *  SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _LIBGDSUP_INCLUDE_GD_UNISTD_H_INCLUDED
-#define _LIBGDSUP_INCLUDE_GD_UNISTD_H_INCLUDED
+#ifndef LIBGDSUP_INCLUDE_GD_UNISTD_H_INCLUDED
+#define LIBGDSUP_INCLUDE_GD_UNISTD_H_INCLUDED
 
 #include "gd/bits/defines.h"
 #include "gd/bits/types/gid_t.h"
@@ -14,16 +14,16 @@
 
 __EXTERN_C_BEGIN
 /** \brief Pointer to argument - used by \fn getopt.  */
-extern char* optarg;
+extern char* optarg;  // NOLINT
 
 /** \brief Set to 0 to turn error reporting by \fn getopt off.  */
-extern int opterr;
+extern int opterr;  // NOLINT
 
 /** \brief Index of current parameter for \fn getopt.  */
-extern int optind;
+extern int optind;  // NOLINT
 
 /** \brief Invalid option character reported by \fn getopt.  */
-extern int optopt;
+extern int optopt;  // NOLINT
 
 __EXTERN_C_END
 
@@ -33,12 +33,14 @@ __EXTERN_C_END
  *  \param optstring Option string
  *  \return          Matched option, or -1 for complete.
  */
+// NOLINTNEXTLINE
 __EXTERN_C int getopt(int argc, char* const argv[], const char* optstring) __NOEXCEPT;
 
 /** \brief Reset the getopt state to enable multiple passes of getopt.
  *
  * Resets optarg, opterr, optind, and optopt to their default values.
  */
+// NOLINTNEXTLINE
 __EXTERN_C void __gd_getopt_reset(void) __NOEXCEPT;
 
 #if defined(_WIN32)
@@ -106,4 +108,4 @@ __EXTERN_C ssize_t write(int fd, const void* buf, size_t nbytes);
 #  include <unistd.h>
 #endif  // Win32 or POSIX
 
-#endif  // _LIBGDSUP_INCLUDE_GD_UNISTD_H_INCLUDED
+#endif  // LIBGDSUP_INCLUDE_GD_UNISTD_H_INCLUDED

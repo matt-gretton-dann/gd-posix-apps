@@ -193,20 +193,21 @@ class Messages:
             for m in s['messages']:
                 msg_ids.append(f"\n  {m['msg']} = {m['id']},"),
                 strs[m['id'] - 1] = self._find_msg_for_locale(m, "C")
+            max_s = max(strs.keys()) + 1
             msg_strs += \
-                f"  static constexpr char const* {set_str_var}[] = {{\n"
-            max_s = max(strs.keys())
-            for i in range(max_s + 1):
+                f"  static constexpr std::array<char const*, {max_s}> {set_str_var} = {{\n"
+            for i in range(max_s):
                 if i in strs:
                     msg_strs += f"    \"{strs[i]}\",\n"
                 else:
                     msg_strs += f"    nullptr,\n"
             msg_strs += f"  }};\n\n"
 
-        max_s = max(set_strs.keys())
+        max_s = max(set_strs.keys()) + 1
         set_str_array = ""
-        for i in range(max_s + 1):
-            set_str_array += f"\n    {set_strs.get(i, 'nullptr')},"
+        for i in range(max_s):
+            msgset = set_strs.get(i, 'empty_')
+            set_str_array += f"\n    GD::Span::span({msgset}),"
 
         hash_object = hashlib.md5(header_file.encode())
         include_guard = f"_{hash_object.hexdigest()}_INCLUDED".upper()
@@ -218,10 +219,13 @@ class Messages:
  * {' '.join(sys.argv)}
  */
 
-# ifndef {include_guard}
-# define {include_guard}
+#ifndef {include_guard}
+#define {include_guard}
 
-# include "util/messages.hh"
+#include "util/messages.hh"
+
+#include <array>
+#include "gd/span.hh"
 
 namespace GD::{catalogue_id.title()}
 {{
@@ -237,13 +241,14 @@ struct MessageData
 {{
 private:
 {msg_strs}
+  static constexpr std::array<char const*, 0> empty_ = {{}};
 public:
   using SetEnum = Set;
   using MessageEnum = Msg;
 
   static constexpr char const * catalogue_ = "{catalogue_id.lower()}";
   static SetEnum const default_set_ = Set:: {default};
-  static constexpr char const * const * messages_[] = {{{set_str_array}
+  static constexpr std::array<GD::Span::span<char const* const>, {max_s}> messages_ = {{{set_str_array}
   }};
 }};
 

@@ -8,9 +8,9 @@
 
 #include "bc-messages.hh"
 
+#include <cstdint>
 #include <memory>
 #include <optional>
-#include <stdint.h>
 #include <string_view>
 #include <unordered_map>
 
@@ -21,13 +21,13 @@ GD::Bc::Lexer::Lexer(std::unique_ptr<Reader>&& r)
 {
 }
 
-GD::Bc::Token const& GD::Bc::Lexer::peek()
+auto GD::Bc::Lexer::peek() -> GD::Bc::Token const&
 {
   if (!t_.has_value()) {
     lex();
   }
 
-  assert(t_.has_value());
+  assert(t_.has_value());  // NOLINT
   return *t_;
 }
 
@@ -43,11 +43,11 @@ void GD::Bc::Lexer::chew()
   }
 }
 
-GD::Bc::Location const& GD::Bc::Lexer::location() const { return r_->location(); }
+auto GD::Bc::Lexer::location() const -> GD::Bc::Location const& { return r_->location(); }
 
 void GD::Bc::Lexer::lex_string()
 {
-  assert(r_->peek() == '"');
+  assert(r_->peek() == '"');  // NOLINT
   r_->chew();
 
   std::string value;
@@ -127,7 +127,7 @@ void GD::Bc::Lexer::lex_number()
     }
   }
 
-  assert(!value.empty());
+  assert(!value.empty());  // NOLINT
   t_.emplace(Token::Type::number, value);
 }
 
@@ -184,7 +184,7 @@ void GD::Bc::Lexer::lex_letter_or_keyword()
     }
   }
 
-  assert(!value.empty());
+  assert(!value.empty());  // NOLINT
   if (value.size() == 1) {
     t_.emplace(Token::Type::letter, Letter(value[0]));
     return;
@@ -252,7 +252,7 @@ void GD::Bc::Lexer::lex_symbol(Token::Type plain, char next1, Token::Type tok1, 
 
 void GD::Bc::Lexer::lex_not_equals()
 {
-  assert(r_->peek() == '!');
+  assert(r_->peek() == '!');  // NOLINT
   r_->chew();
   if (r_->peek() == '=') {
     r_->chew();
@@ -394,7 +394,7 @@ void GD::Bc::Lexer::lex()
         return;
       }
 
-      assert(r_->peek() == '*');
+      assert(r_->peek() == '*');  // NOLINT
       r_->chew();
       lex_comment();
       break;

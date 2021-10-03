@@ -4,12 +4,13 @@
  *          SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _SRC_INCLUDE_UTIL_UTILS_HH_INCLUDED
-#define _SRC_INCLUDE_UTIL_UTILS_HH_INCLUDED
+#ifndef UTIL_UTILS_HH
+#define UTIL_UTILS_HH
 
 #include "gd/nl_types.h"
 
 #include <string_view>
+#include <utility>
 
 namespace GD {
 /** \brief       Set the program name.
@@ -20,7 +21,7 @@ void program_name(std::string_view argv0);
 /** \brief  Get the program name.
  *  \return Program name.
  */
-std::string_view program_name();
+auto program_name() -> std::string_view;
 
 /** \brief     Class to provide 'overloaded' lambdas.
  *  \tparam Ts Lambdas to combine
@@ -52,7 +53,7 @@ template<typename T, typename TId = T>
 class TypeWrapper
 {
 public:
-  explicit TypeWrapper(T const& t) : t_(t) {}
+  explicit TypeWrapper(T t) : t_(std::move(t)) {}
   explicit TypeWrapper(T&& t) : t_(std::move(t)) {}
 
   template<typename Arg>
@@ -60,8 +61,8 @@ public:
   {
   }
 
-  T& get() { return t_; }
-  T const& get() const { return t_; }
+  auto get() -> T& { return t_; }
+  [[nodiscard]] auto get() const -> T const& { return t_; }
 
 private:
   T t_;
@@ -146,4 +147,4 @@ T read_le(It it)
 }
 
 }  // namespace GD
-#endif  // _SRC_INCLUDE_UTIL_UTILS_HH_INCLUDED
+#endif  // UTIL_UTILS_HH

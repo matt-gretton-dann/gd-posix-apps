@@ -6,4 +6,4 @@
  * Empty source file to ensure there's at least one source file in libgdsup
  */
 
-int __random_var = 0;
+int __random_var = 0;  // NOLINT

@@ -6,11 +6,12 @@
 
 #include "gd/nl_types.h"
 
+#include "gd/span.hh"
 #include "gd/time.h"
 
+#include <cstdint>
 #include <random>
 #include <sstream>
-#include <stdint.h>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -21,17 +22,18 @@ using Number = GD::Bc::Number;
 class RandomNumberGenerator
 {
 public:
-  RandomNumberGenerator(GD::Bc::Number::NumType digit_count)
-      : rand_(), dist_(0, GD::Bc::Number::base_), digit_count_(digit_count)
+  explicit RandomNumberGenerator(GD::Bc::Number::NumType digit_count)
+      : rand_(std::random_device{}()), dist_(0, GD::Bc::Number::base_), digit_count_(digit_count)
   {
     next();
   }
 
-  GD::Bc::Number const& get() const { return number_; }
+  [[nodiscard]] auto get() const -> GD::Bc::Number const& { return number_; }
 
-  bool next()
+  auto next() -> bool
   {
     auto digit_count = dist_(rand_) % (digit_count_ * GD::Bc::Number::base_log10_);
+    constexpr int base10 = 10;
 
     std::string num;
     GD::Bc::Number::NumType digits = 0;
@@ -39,14 +41,14 @@ public:
       if (i % GD::Bc::Number::base_log10_ == 0) {
         digits = dist_(rand_);
       }
-      auto digit = digits / (GD::Bc::Number::base_ / 10);
-      digits = (digits % (GD::Bc::Number::base_ / 10)) * 10;
-      assert(digit < 10);
+      auto digit = digits / (GD::Bc::Number::base_ / base10);
+      digits = (digits % (GD::Bc::Number::base_ / base10)) * base10;
+      assert(digit < base10);  // NOLINT
 
       num += static_cast<char>('0' + digit);
     }
 
-    number_ = GD::Bc::Number(num, 10);
+    number_ = GD::Bc::Number(num, base10);
     return true;
   }
 
@@ -69,7 +71,7 @@ void multiply(std::vector<Number>& n)
 using Time = struct timespec;
 constexpr decltype(Time::tv_nsec) sec_as_nsec = 1000000000;
 
-constexpr Time operator-(Time const& lhs, Time const& rhs)
+constexpr auto operator-(Time const& lhs, Time const& rhs) -> Time
 {
   Time result{lhs.tv_sec - rhs.tv_sec, lhs.tv_nsec - rhs.tv_nsec};
   if (rhs.tv_nsec > lhs.tv_nsec) {
@@ -79,7 +81,7 @@ constexpr Time operator-(Time const& lhs, Time const& rhs)
   return result;
 }
 
-constexpr Time operator+(Time const& lhs, Time const& rhs)
+constexpr auto operator+(Time const& lhs, Time const& rhs) -> Time
 {
   Time result{lhs.tv_sec + rhs.tv_sec, lhs.tv_nsec + lhs.tv_nsec};
   if (lhs.tv_nsec + rhs.tv_nsec > sec_as_nsec) {
@@ -89,26 +91,28 @@ constexpr Time operator+(Time const& lhs, Time const& rhs)
   return result;
 }
 
-std::ostream& operator<<(std::ostream& os, Time const& t)
+auto operator<<(std::ostream& os, Time const& t) -> std::ostream&
 {
-  os << t.tv_sec << '.' << std::setw(9) << std::setfill('0') << std::right << t.tv_nsec;
+  constexpr int nsec_digits = 9;
+  os << t.tv_sec << '.' << std::setw(nsec_digits) << std::setfill('0') << std::right << t.tv_nsec;
   return os;
 }
 
-constexpr bool operator<(Time const& lhs, Time const& rhs)
+constexpr auto operator<(Time const& lhs, Time const& rhs) -> bool
 {
   return lhs.tv_sec < rhs.tv_sec || (lhs.tv_sec == rhs.tv_sec && lhs.tv_nsec < rhs.tv_nsec);
 }
 
-constexpr int64_t as_nsec(Time const& t)
+constexpr auto as_nsec(Time const& t) -> int64_t
 {
   return static_cast<int64_t>(t.tv_sec) * sec_as_nsec + t.tv_nsec;
 }
 
 template<typename Fn>
-Time time_run(Fn f)
+auto time_run(Fn f) -> Time
 {
-  Time start, end;
+  Time start;
+  Time end;
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
   f();
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end);
@@ -116,14 +120,15 @@ Time time_run(Fn f)
   return end - start;
 }
 
-Number::NumType check(Number::NumType initial_digit)
+auto check(Number::NumType initial_digit) -> Number::NumType
 {
   std::vector<Number> canon_numbers;
   RandomNumberGenerator rng(initial_digit);
 
   Time base_time{0, 0};
 
-  for (unsigned i = 0; i < 100; ++i) {
+  constexpr unsigned num_numbers = 100;
+  for (unsigned i = 0; i < num_numbers; ++i) {
     canon_numbers.push_back(rng.get());
     rng.next();
   }
@@ -132,8 +137,8 @@ Number::NumType check(Number::NumType initial_digit)
   /* Generate enough numbers that the initial run takes >3 secs.
    * We expect the best time to be ~50% of initial run - so this ensures we get good numbers.
    */
-  constexpr Time min_time{3, 0};
-  constexpr Time half_sec{0, 500000000};
+  constexpr Time min_time{3, 0};          // NOLINT - we're defining numbers here they're not magic
+  constexpr Time half_sec{0, 500000000};  // NOLINT - ditto
   while (base_time < min_time) {
     std::vector<Number> numbers = canon_numbers;
     base_time = time_run([&numbers]() { multiply(numbers); });
@@ -190,14 +195,16 @@ void output(std::ostream& os, Number::NumType value)
      << value << "\n";
 }
 
-int main(int argc, char** argv)
+auto main(int argc, char** argv) -> int
 {
-  auto result = check(500);
-  if (argc == 1) {
+  constexpr Number::NumType start_at = 500;
+  auto result = check(start_at);
+  GD::Span::span<char*> args(argv, argc);
+  if (args.size() == 1) {
     output(std::cout, result);
   }
   else {
-    std::ofstream of(argv[1]);
+    std::ofstream of(args[1]);
     output(of, result);
   }
   return 0;

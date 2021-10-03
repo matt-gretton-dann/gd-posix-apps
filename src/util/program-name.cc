@@ -19,7 +19,7 @@ class ProgramName
 {
 public:
   /** Get the static program name object.  */
-  static ProgramName& get()
+  static auto get() -> ProgramName&
   {
     static ProgramName pn;
     return pn;
@@ -27,7 +27,7 @@ public:
 
   /** \brief Get the program name.
    */
-  std::string_view program_name() const noexcept { return name_; }
+  [[nodiscard]] auto program_name() const noexcept -> std::string_view { return name_; }
 
   /** \brief Set the program name.
    *
@@ -39,29 +39,20 @@ public:
    */
   void program_name(std::string_view argv0)
   {
-    name_.clear();
-    char* s = ::strdup(argv0.data());
-    if (s != nullptr) {
-      char* pn = ::strdup(::basename(s));
-      if (pn != nullptr) {
-        name_ = pn;
-        ::free(pn);
-      }
-      ::free(s);
-    }
-
+    std::string n(argv0);
+    name_ = ::basename(n.data());  // NOLINT(concurrency-mt-unsafe)
     if (name_.empty()) {
       name_ = argv0;
     }
   }
 
 private:
-  ProgramName() {}
+  ProgramName() = default;
 
   std::string name_;
 };
 }  // namespace
 
-std::string_view GD::program_name() { return ProgramName::get().program_name(); }
+auto GD::program_name() -> std::string_view { return ProgramName::get().program_name(); }
 
 void GD::program_name(std::string_view argv0) { ProgramName::get().program_name(argv0); }

@@ -14,7 +14,8 @@
 
 #include "bc-messages.hh"
 
-#include <assert.h>
+#include <cassert>
+#include <clocale>
 #include <iostream>
 #include <memory>
 #include <variant>
@@ -25,7 +26,7 @@ using Msg = GD::Bc::Msg;
 
 namespace {
 /** \brief  Library script loaded with -l. */
-char const* library_script = R"EOF(
+char const* const library_script = R"EOF(
 scale=20
 )EOF";
 
@@ -44,7 +45,7 @@ template<typename... Ts>
   std::cerr << GD::program_name() << ": "
             << GD::Bc::Messages::get().format(GD::Bc::Set::bc, msg, args...) << '\n'
             << GD::Bc::Messages::get().format(GD::Bc::Set::bc, usage, GD::program_name()) << '\n';
-  ::exit(1);
+  std::exit(1);  // NOLINT(concurrency-mt-unsafe)
 }
 
 void execute(GD::Bc::VM& vm, std::unique_ptr<GD::Bc::Reader>&& r)
@@ -65,12 +66,13 @@ void execute(GD::Bc::VM& vm, std::unique_ptr<GD::Bc::Reader>&& r)
 }
 }  // namespace
 
-int main(int argc, char** argv)
+auto main(int argc, char** argv) -> int
 {
-  ::setlocale(LC_ALL, "");
-  GD::program_name(argv[0]);
+  std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
+  GD::Span::span<char*> args(argv, argc);
+  GD::program_name(args[0]);
 
-  int c;
+  int c = 0;
   bool load_library = false;
   bool save_specials = false;
 #if ENABLE_EXTENSIONS
@@ -78,7 +80,7 @@ int main(int argc, char** argv)
 #else
   char const* opts = ":l";
 #endif
-  while ((c = ::getopt(argc, argv, opts)) != -1) {
+  while ((c = ::getopt(argc, argv, opts)) != -1) {  // NOLINT(concurrency-mt-unsafe)
     switch (c) {
     case 'g':
       save_specials = true;
@@ -91,7 +93,7 @@ int main(int argc, char** argv)
     case ':':
     case '?':
     default:
-      error(Msg::unrecognised_option, (char)optopt);
+      error(Msg::unrecognised_option, static_cast<char>(optopt));
       break;
     }
   }
@@ -112,7 +114,7 @@ int main(int argc, char** argv)
     return true;
   };
 
-  bool success = GD::for_each_file(argc - optind, argv + optind, process, GD::FEFFlags::none);
+  bool success = GD::for_each_file(args.begin() + optind, args.end(), process, GD::FEFFlags::none);
   if (success) {
     auto r = std::make_unique<GD::Bc::FileReader>("-");
     execute(vm, std::move(r));

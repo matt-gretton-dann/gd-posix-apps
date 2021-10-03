@@ -11,18 +11,14 @@ using ArgV = std::array<char*, N>;
 template<std::size_t N>
 void check_getopt(ArgV<N> const& args, char const* stropt, int ec)
 {
-  char* argv[N];
-  for (unsigned i = 0; i < N; ++i) {
-    argv[i] = args[i];
-  }
-  int c = getopt(N - 1, argv, stropt);
+  int c = getopt(N - 1, args.data(), stropt);  // NOLINT(concurrency-mt-unsafe)
   REQUIRE(ec == c);
 }
 
 template<std::size_t N>
 void check_getopt(ArgV<N> const& args, char const* stropt, int ec, char const* eoptarg)
 {
-  int c = getopt(N - 1, args.data(), stropt);
+  int c = getopt(N - 1, args.data(), stropt);  // NOLINT(concurrency-mt-unsafe)
   REQUIRE(ec == c);
   REQUIRE(strcmp(optarg, eoptarg) == 0);
 }

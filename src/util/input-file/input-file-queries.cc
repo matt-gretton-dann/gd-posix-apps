@@ -4,12 +4,19 @@
  *          SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdio.h>
+#include <cstdio>
 #include <string_view>
 
 #include <util/file.hh>
 
-bool GD::StreamInputFile::error() const { return file_ == nullptr || ::ferror(file_); }
-bool GD::StreamInputFile::eof() const { return file_ == nullptr || ::feof(file_); }
+auto GD::StreamInputFile::error() const -> bool
+{
+  return file_ == nullptr || (std::ferror(file_) != 0);
+}
 
-std::string_view GD::StreamInputFile::filename() const { return filename_; }
+auto GD::StreamInputFile::eof() const -> bool
+{
+  return file_ == nullptr || (std::feof(file_) != 0);
+}
+
+auto GD::StreamInputFile::filename() const -> std::string_view { return filename_; }

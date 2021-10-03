@@ -66,7 +66,12 @@ static nl_catd do_catopen(char const* path)
     error_return(ENOMEM, fd);
   }
 
+#if defined(__STDC_LIB_EXT1__)
+  memcpy_s(full_buffer, size, buffer, CAT_HDR_SIZE);
+#else
+  // NOLINTNEXTLINE
   memcpy(full_buffer, buffer, CAT_HDR_SIZE);
+#endif
   read = __unistd_read(fd, full_buffer + CAT_HDR_SIZE, size - CAT_HDR_SIZE);
   if (read == -1 || (size_t)read != size - CAT_HDR_SIZE) {
     __support_log("Catalogue size on disk does not match recorded size: %s", path);
@@ -106,7 +111,13 @@ static char* copy_to_result(char const* src, size_t src_len, char* result, size_
     result = t;
   }
 
+#if defined(__STDC_LIB_EXT1__)
+  memcpy_s(result + *off, capacity - *off, src, src_len);
+#else
+  // NOLINTNEXTLINE
   memcpy(result + *off, src, src_len);
+#endif
+
   *off += src_len;
   return result;
 }
@@ -124,7 +135,8 @@ static char* expand_nlspath_entry(char const* begin, char const* end, char const
   /* Guess an initial capacity for the string.  Make it length of the NLSPATH entry we're looking
      at, plus the name length + length of locale * 5.
    */
-  size_t capacity = end - begin + strlen(end) + strlen(locale) * 5 + 2;
+  const size_t locale_count = 5;
+  size_t capacity = end - begin + strlen(end) + strlen(locale) * locale_count + 2;
 
   char* result = malloc(capacity);
   if (result == NULL) {
@@ -300,29 +312,28 @@ nl_catd catopen(char const* name, int oflag)
     LC_MESSAGES
 #endif
     ;
+  // NOLINTNEXTLINE(concurrency-mt-unsafe)
   char* locale = oflag == 0 ? getenv("LANG") : setlocale(lc_id, NULL);
-  bool need_free = false;
+  char* locale_to_free = NULL;
   if (locale == NULL || locale[0] == '\0') {
     locale = "C";
   }
   /* If the Locale contains a __DIR_SEP we treat it as if the basename name provides the locale
    * name.  */
   if (strchr(locale, __DIR_SEP) != NULL) {
-    locale = basename(strdup(locale));
-    need_free = true;
+    locale_to_free = strdup(locale);
+    locale = basename(locale_to_free);  // NOLINT(concurrency-mt-unsafe)
   }
 
   /* Find the NLSPATH.  */
-  char const* nlspath = getenv("NLSPATH");
+  char const* nlspath = getenv("NLSPATH");  // NOLINT(concurrency-mt-unsafe)
 
   /* Do lookup on the NLSPATH.  */
   if (nlspath != NULL && nlspath[0] != '\0') {
     int saved_errno = errno;
     nl_catd result = do_catopen_path(nlspath, name, locale);
     if (result != CATD_NOTFOUND) {
-      if (need_free) {
-        free(locale);
-      }
+      free(locale_to_free);
       return generate_result(result);
     }
     errno = saved_errno;
@@ -330,8 +341,6 @@ nl_catd catopen(char const* name, int oflag)
 
   /* NLSPATH lookup failed - try the default NLSPATH instead.  */
   nl_catd result = do_catopen_path(DEFAULT_NLSPATH, name, locale);
-  if (need_free) {
-    free(locale);
-  }
+  free(locale_to_free);
   return generate_result(result);
 }

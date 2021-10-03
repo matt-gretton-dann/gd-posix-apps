@@ -4,8 +4,8 @@
  *          SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _GDSUP_UNITSTD_UNISTD_H_INCLUDED
-#define _GDSUP_UNITSTD_UNISTD_H_INCLUDED
+#ifndef GDSUP_UNITSTD_UNISTD_H_INCLUDED
+#define GDSUP_UNITSTD_UNISTD_H_INCLUDED
 
 #include "gd/bits/defines.h"
 
@@ -20,6 +20,6 @@
  *  - Having read \c SSIZE_MAX bytes
  *  - Another error.
  */
-__EXTERN_C ssize_t __unistd_read(int fd, void* buf, size_t nbyte);
+__EXTERN_C ssize_t __unistd_read(int fd, void* buf, size_t nbyte);  // NOLINT
 
 #endif  //  _GDSUP_UNITSTD_UNISTD_H_INCLUDED

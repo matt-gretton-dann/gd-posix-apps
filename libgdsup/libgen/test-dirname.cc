@@ -19,7 +19,7 @@ void test_dirname(char const* in, char const* expected)
   REQUIRE(expected != nullptr);
   char* dup = ::strdup(in);
   REQUIRE(dup != nullptr);
-  char* out = dirname(dup);
+  char* out = dirname(dup);  // NOLINT(concurrency-mt-unsafe)
   CHECK(std::strcmp(out, expected) == 0);
 }
 
@@ -27,7 +27,7 @@ void test_dirname(char const* in, char const* expected)
 
 TEST_CASE("dirname - POSIX Examples", "[libgen][dirname]")
 {
-  REQUIRE(std::strcmp(dirname(nullptr), ".") == 0);
+  REQUIRE(std::strcmp(dirname(nullptr), ".") == 0);  // NOLINT(concurrency-mt-unsafe)
   test_dirname("", ".");
   test_dirname("usr", ".");
   test_dirname("usr/", ".");
