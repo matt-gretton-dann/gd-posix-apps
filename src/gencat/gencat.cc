@@ -422,7 +422,7 @@ public:
     write(data.begin() + file_size_off, std::uint64_t(data.size()));
 
     // Now write data to the file.
-    xwrite(fd, GD::Std::span(data.data(), data.size()));
+    xwrite(fd, GD::Std::span<uint8_t>(data.data(), data.size()));
   }
 
 private:
