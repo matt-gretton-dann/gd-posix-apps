@@ -12,6 +12,7 @@
 #include "gd/filesystem.hh"
 #include "gd/format.hh"
 #include "gd/limits.h"
+#include "gd/span.hh"
 #include "gd/stdlib.h"
 #include "gd/sys/stat.h"
 #include "gd/unistd.h"
@@ -24,7 +25,6 @@
 #include <fstream>
 #include <iostream>
 #include <map>
-#include <span>
 #include <string>
 #include <vector>
 
@@ -51,9 +51,9 @@ std::string program_name;  ///< Program name - somewhere global for all.
  * the output file may already have some data in it.
  */
 template<typename T, std::size_t E>
-void xwrite(int fd, std::span<T, E> data)
+void xwrite(int fd, GD::Std::span<T, E> data)
 {
-  auto d = std::as_bytes(data);
+  auto d = GD::Std::as_bytes(data);
   std::size_t amount_done = 0;
   while (amount_done < d.size()) {
     // Jump through some hoops to ensure we write at most SSIZE_MAX bytes of
@@ -422,7 +422,7 @@ public:
     write(data.begin() + file_size_off, std::uint64_t(data.size()));
 
     // Now write data to the file.
-    xwrite(fd, std::span(data.data(), data.size()));
+    xwrite(fd, GD::Std::span(data.data(), data.size()));
   }
 
 private:
@@ -717,8 +717,8 @@ private:
 auto main(int argc, char** argv) -> int
 try {
   std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
-  std::span<char*> args(argv, argc);
-  std::span<char*>::iterator it = args.begin();
+  GD::Std::span<char*> args(argv, argc);
+  GD::Std::span<char*>::iterator it = args.begin();
 
   program_name = ::basename(*it++);  // NOLINT(concurrency-mt-unsafe)
 

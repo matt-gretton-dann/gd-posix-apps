@@ -246,6 +246,7 @@ target_sources(gdsup PRIVATE
                include/gd/limits.h
                include/gd/nl_types.h
                include/gd/signal.h
+               include/gd/span.hh
                include/gd/stdlib.h
                include/gd/string.h
                include/gd/time.h

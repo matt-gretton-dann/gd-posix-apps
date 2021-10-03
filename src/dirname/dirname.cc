@@ -7,6 +7,7 @@
 #include "gd/libgen.h"
 
 #include "gd/limits.h"
+#include "gd/span.hh"
 #include "gd/stdlib.h"
 #include "gd/string.h"
 
@@ -17,7 +18,6 @@
 #include <clocale>
 #include <cstdio>
 #include <iostream>
-#include <span>
 
 namespace {
 template<typename... Ts>
@@ -35,11 +35,11 @@ template<typename... Ts>
 auto main(int argc, char** argv) -> int
 {
   std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
-  std::span<char*> args(argv, argc);
+  GD::Std::span<char*> args(argv, argc);
   GD::program_name(args[0]);
 
   // Skip argv[0].
-  std::span<char*>::iterator it = args.begin() + 1;
+  GD::Std::span<char*>::iterator it = args.begin() + 1;
 
   // Skip optional `--`.
   if (it != args.end() && std::strcmp(*it, "--") == 0) {

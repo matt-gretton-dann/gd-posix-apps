@@ -4,6 +4,8 @@
  *          SPDX-License-Identifier: Apache-2.0
  */
 
+#include "gd/bits/defines.h"
+#include "gd/span.hh"
 #include "gd/stdlib.h"
 #include "gd/unistd.h"
 
@@ -14,7 +16,6 @@
 #include <cassert>
 #include <clocale>
 #include <iostream>
-#include <span>
 #include <sstream>
 #include <utility>
 
@@ -553,8 +554,8 @@ void process_hex(FormatState const& format_state, std::string_view arg, bool upp
  *  \param  argv_end One past end of arguments
  *  \return          Pointer to first unused argument.
  */
-auto process_format(std::string_view format, std::span<char*>::iterator argv,
-                    std::span<char*>::iterator argv_end) -> std::span<char*>::iterator
+auto process_format(std::string_view format, GD::Std::span<char*>::iterator argv,
+                    GD::Std::span<char*>::iterator argv_end) -> GD::Std::span<char*>::iterator
 {
   assert(!format.empty());  // NOLINT
 
@@ -784,7 +785,7 @@ auto process_format(std::string_view format, std::span<char*>::iterator argv,
 
 auto main(int argc, char** argv) -> int
 {
-  std::span<char*> args(argv, argc);
+  GD::Std::span<char*> args(argv, argc);
 
   GD::program_name(args[0]);
   ::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
@@ -796,7 +797,7 @@ auto main(int argc, char** argv) -> int
     }
   }
 
-  std::span<char*>::iterator it = args.begin() + optind;
+  GD::Std::span<char*>::iterator it = args.begin() + optind;
 
   if (it == args.end()) {
     error(Msg::missing_format);
@@ -805,7 +806,7 @@ auto main(int argc, char** argv) -> int
   std::string_view format = *(it++);
 
   do {
-    std::span<char*>::iterator initial_argv = it;
+    GD::Std::span<char*>::iterator initial_argv = it;
     it = process_format(format, it, args.end());
     if (it == initial_argv && it != args.end()) {
       error(Msg::no_format_characters);

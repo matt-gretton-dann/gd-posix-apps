@@ -6,6 +6,7 @@
 
 #include "gd/libgen.h"
 
+#include "gd/span.hh"
 #include "gd/string.h"
 
 #include "util/file.hh"
@@ -15,7 +16,6 @@
 #include <clocale>
 #include <fstream>
 #include <iostream>
-#include <span>
 #include <string>
 
 #include <string_view>
@@ -70,7 +70,7 @@ auto main(int argc, char** argv) -> int
 {
   // NOLINTNEXTLINE(concurrency-mt-unsafe)
   std::setlocale(LC_ALL, "");
-  std::span<char*> args(argv, argc);
+  GD::Std::span<char*> args(argv, argc);
   GD::program_name(args[0]);
 
   State state;

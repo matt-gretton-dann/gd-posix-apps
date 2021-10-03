@@ -69,7 +69,7 @@ void execute(GD::Bc::VM& vm, std::unique_ptr<GD::Bc::Reader>&& r)
 auto main(int argc, char** argv) -> int
 {
   std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
-  std::span<char*> args(argv, argc);
+  GD::Std::span<char*> args(argv, argc);
   GD::program_name(args[0]);
 
   int c = 0;

@@ -4,6 +4,8 @@
  *  SPDX-License-Identifier: Apache-2.0
  */
 
+#include "gd/span.hh"
+
 #include "util/utils.hh"
 
 #include "expr-messages.hh"
@@ -16,7 +18,6 @@
 #include <iostream>
 #include <ostream>
 #include <regex>
-#include <span>
 #include <string>
 #include <vector>
 
@@ -369,7 +370,7 @@ auto tokenise(std::string_view token) -> Token
  *  \param  args Arguments.
  *  \return      Vector of tokens.
  */
-auto tokenise(std::span<char*>::iterator begin, std::span<char*>::iterator end) -> Tokens
+auto tokenise(GD::Std::span<char*>::iterator begin, GD::Std::span<char*>::iterator end) -> Tokens
 {
   Tokens result;
   result.reserve(std::distance(begin, end));
@@ -620,7 +621,7 @@ auto main(int argc, char** argv) -> int
 {
   try {
     std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
-    std::span<char*> args(argv, argc);
+    GD::Std::span<char*> args(argv, argc);
     auto it = args.begin();
     GD::program_name(*it++);
 

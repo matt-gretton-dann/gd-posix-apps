@@ -4,10 +4,10 @@
  *  SPDX-License-Identifier: Apache-2.0
  */
 
+#include "gd/bits/defines.h"
 #include "gd/limits.h"
 #include "gd/unistd.h"
 
-#define _CRT_DECLARE_NONSTDC_NAMES 0
 #include <io.h>
 
 ssize_t write(int fd, void const* buf, size_t nbytes)

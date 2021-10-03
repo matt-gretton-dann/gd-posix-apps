@@ -1,3 +1,5 @@
+#include "gd/bits/defines.h"
+#include "gd/span.hh"
 #include "gd/string.h"
 #include "gd/unistd.h"
 
@@ -9,7 +11,6 @@
 #include <clocale>
 #include <cstdio>
 #include <iostream>
-#include <span>
 
 template<typename... Ts>
 void report_error(GD::Cat::Msg msg, Ts... args)
@@ -52,7 +53,7 @@ auto do_cat(std::string_view fname, bool unbuffered) -> bool
 auto main(int argc, char** argv) -> int
 {
   std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
-  std::span<char*> args(argv, argc);
+  GD::Std::span<char*> args(argv, argc);
   GD::program_name(args[0]);
 
   int c = 0;

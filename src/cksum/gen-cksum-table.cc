@@ -7,6 +7,7 @@
 #include "gd/libgen.h"
 
 #include "gd/limits.h"
+#include "gd/span.hh"
 #include "gd/stdlib.h"
 
 #include <cinttypes>
@@ -15,7 +16,6 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
-#include <span>
 
 namespace {
 constexpr unsigned uint8_max = std::numeric_limits<std::uint8_t>::max();
@@ -30,7 +30,7 @@ auto main(int argc, char** argv) -> int
   constexpr std::uint32_t table_size = uint8_max + 1;
   constexpr std::uint32_t bit31 = 1U << 31;
 
-  std::span<char*> args(argv, argc);
+  GD::Std::span<char*> args(argv, argc);
   if (args.size() != 2) {
     // NOLINTNEXTLINE(concurrency-mt-unsafe)
     std::cerr << ::basename(args[0]) << ": Need to specify output file.\n";

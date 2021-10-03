@@ -6,11 +6,11 @@
 
 #include "gd/nl_types.h"
 
+#include "gd/span.hh"
 #include "gd/time.h"
 
 #include <cstdint>
 #include <random>
-#include <span>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -199,7 +199,7 @@ auto main(int argc, char** argv) -> int
 {
   constexpr Number::NumType start_at = 500;
   auto result = check(start_at);
-  std::span<char*> args(argv, argc);
+  GD::Std::span<char*> args(argv, argc);
   if (args.size() == 1) {
     output(std::cout, result);
   }
