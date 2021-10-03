@@ -77,7 +77,7 @@ template<typename... Ts>
   std::cerr << GD::program_name() << ": "
             << GD::Ar::Messages::get().format(GD::Ar::Set::ar, msg, args...) << '\n'
             << GD::Ar::Messages::get().format(GD::Ar::Set::ar, usage, GD::program_name()) << '\n';
-  ::exit(1);
+  std::exit(1);  // NOLINT(concurrency-mt-unsafe)
 }
 
 /** \brief        Find if a given name is in the list of files.
@@ -373,11 +373,11 @@ void do_print(std::string const& fname, GD::Ar::Member const& member, Flags flag
               std::min(static_cast<std::size_t>(std::numeric_limits<::ssize_t>::max()), count));
     if (res == -1) {
       if (errno != EINTR) {
-        error(Msg::stdout_write_failed, std::strerror(errno));
+        error(Msg::stdout_write_failed, std::strerror(errno));  // NOLINT(concurrency-mt-unsafe)
       }
     }
     else {
-      raw_data += res;
+      raw_data += res;  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
       count -= res;
     }
   }
@@ -437,7 +437,7 @@ void do_toc(std::string const& fname, GD::Ar::Member const& member, Flags flags)
 {
   if ((flags & Flags::verbose) == Flags::verbose) {
     auto m = member.mtime();
-    std::tm* mtime = std::localtime(&m);
+    std::tm* mtime = std::localtime(&m);  // NOLINT(concurrency-mt-unsafe)
     std::cout << to_mode_string(member.mode()) << ' ' << member.uid() << '/' << member.gid() << ' '
               << member.size_bytes() << ' ' << std::put_time(mtime, "%b %e %H:%M %Y") << ' '
               << fname << '\n';
@@ -501,11 +501,10 @@ struct State
   Flags flags = Flags::message_on_creation | Flags::allow_replacement;
   std::optional<std::string> pos_file;
   fs::path archive;
-  char** file_begin{};
-  char** file_end{};
+  std::span<char*> files;
 };
 
-auto process_command_line(int argc, char** argv) -> State
+auto process_command_line(GD::Span::span<char*> args) -> State
 {
   State state;
   int c = 0;
@@ -516,7 +515,8 @@ auto process_command_line(int argc, char** argv) -> State
     state.action = act;
   };
 
-  while ((c = ::getopt(argc, argv, ":CTabcdimpqrstuvx:")) != -1) {
+  // NOLINTNEXTLINE(concurrency-mt-unsafe)
+  while ((c = ::getopt(static_cast<int>(args.size()), args.data(), ":CTabcdimpqrstuvx:")) != -1) {
     switch (c) {
     case 'C':
       state.flags = state.flags | ~Flags::allow_replacement;
@@ -577,19 +577,18 @@ auto process_command_line(int argc, char** argv) -> State
   }
 
   if (state.pos != Position::end) {
-    if (optind >= argc) {
+    if (static_cast<std::size_t>(optind) >= args.size()) {
       error(Msg::missing_position_name);
     }
-    state.pos_file = argv[optind++];
+    state.pos_file = args[optind++];
   }
 
-  if (optind >= argc) {
+  if (static_cast<std::size_t>(optind) >= args.size()) {
     error(Msg::missing_archive_name);
   }
 
-  state.archive = fs::path(argv[optind++]);
-  state.file_begin = argv + optind;
-  state.file_end = argv + argc;
+  state.archive = fs::path(args[optind++]);
+  state.files = args.subspan(optind);
 
   return state;
 }
@@ -597,11 +596,12 @@ auto process_command_line(int argc, char** argv) -> State
 
 auto main(int argc, char** argv) -> int
 {
-  ::setlocale(LC_ALL, "");
-  GD::program_name(argv[0]);
+  std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
+  GD::Span::span<char*> args(argv, argc);
+  GD::program_name(args[0]);
   std::ios::sync_with_stdio(true);
 
-  State state = process_command_line(argc, argv);
+  State state = process_command_line(args);
 
   std::optional<GD::InputFile> file = std::nullopt;
   mode_t mode = umask(0);
@@ -627,31 +627,32 @@ auto main(int argc, char** argv) -> int
 
   switch (state.action) {
   case Action::del:
-    do_delete(state.archive, mode, ar_begin, ar_end, state.file_begin, state.file_end, state.flags);
+    do_delete(state.archive, mode, ar_begin, ar_end, state.files.begin(), state.files.end(),
+              state.flags);
     break;
   case Action::move:
-    do_move(state.archive, mode, ar_begin, ar_end, state.file_begin, state.file_end, state.pos,
-            state.pos_file, state.flags);
+    do_move(state.archive, mode, ar_begin, ar_end, state.files.begin(), state.files.end(),
+            state.pos, state.pos_file, state.flags);
     break;
   case Action::print:
-    do_action(state.archive, mode, ar_begin, ar_end, state.file_begin, state.file_end, state.flags,
-              do_print);
+    do_action(state.archive, mode, ar_begin, ar_end, state.files.begin(), state.files.end(),
+              state.flags, do_print);
     break;
   case Action::quick:
-    do_quick_append(state.archive, mode, ar_begin, ar_end, state.file_begin, state.file_end,
+    do_quick_append(state.archive, mode, ar_begin, ar_end, state.files.begin(), state.files.end(),
                     state.flags);
     break;
   case Action::replace:
-    do_replace(state.archive, mode, ar_begin, ar_end, state.file_begin, state.file_end, state.pos,
-               state.pos_file, state.flags);
+    do_replace(state.archive, mode, ar_begin, ar_end, state.files.begin(), state.files.end(),
+               state.pos, state.pos_file, state.flags);
     break;
   case Action::toc:
-    do_action(state.archive, mode, ar_begin, ar_end, state.file_begin, state.file_end, state.flags,
-              do_toc);
+    do_action(state.archive, mode, ar_begin, ar_end, state.files.begin(), state.files.end(),
+              state.flags, do_toc);
     break;
   case Action::extract:
-    do_action(state.archive, mode, ar_begin, ar_end, state.file_begin, state.file_end, state.flags,
-              do_extract);
+    do_action(state.archive, mode, ar_begin, ar_end, state.files.begin(), state.files.end(),
+              state.flags, do_extract);
     break;
   default:
   case Action::none:

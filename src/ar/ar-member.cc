@@ -23,7 +23,7 @@
 
 void GD::Ar::Details::MemberHeader::update_format()
 {
-  if (name_ == Details::symbol_table_name(Format::bsd)) {
+  if (name_ == Details::symbol_table_name(Format::bsd)) {  // NOLINT(bugprone-branch-clone)
     format_ = Format::bsd;
   }
   else if (name_ == Details::symbol_table_name(Format::darwin)) {
@@ -75,8 +75,8 @@ GD::Ar::Member::Member(Details::MemberHeader&& header, MemberID id, Data data, S
     : header_(std::move(header)), id_(id), offset_(0), data_(std::move(std::move(data))),
       symbols_(std::move(std::move(symbols)))
 {
-  assert(data_ != nullptr);
-  assert(header_.size() == data_->size());
+  assert(data_ != nullptr);                 // NOLINT
+  assert(header_.size() == data_->size());  // NOLINT
 }
 
 auto GD::Ar::Member::operator==(Member const& rhs) const noexcept -> bool
@@ -139,7 +139,7 @@ auto get_symbols_svr4(GD::Ar::Member const& symbol_table) -> GD::Ar::SymbolMap
     }
     std::string ins;
     auto strings_it2 = std::find(strings_it, data.end(), std::byte(0));
-    assert(strings_it2 != data.end());
+    assert(strings_it2 != data.end());  // NOLINT
     std::transform(strings_it, strings_it2, std::back_inserter(ins),
                    [](std::byte b) { return static_cast<char>(b); });
     it->second->push_back(ins);
