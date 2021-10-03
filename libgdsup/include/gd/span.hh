@@ -145,7 +145,7 @@ public:
 
   [[nodiscard]] constexpr difference_type operator-(SpanIterator rhs) const noexcept
   {
-    return rhs.p_ - this->p_;
+    return this->p_ - rhs.p_;
   }
 
   [[nodiscard]] constexpr reference operator[](difference_type const offset) const noexcept
