@@ -10,12 +10,13 @@
 
 #include "util/utils.hh"
 
-#include <assert.h>
+#include <cassert>
+#include <cstddef>
 #include <istream>
 #include <limits>
 #include <map>
-#include <stddef.h>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "ar.hh"
@@ -49,53 +50,57 @@ void GD::Ar::Details::MemberHeader::update_format()
   }
 }
 
-bool GD::Ar::Details::MemberHeader::operator==(MemberHeader const& rhs) const noexcept
+auto GD::Ar::Details::MemberHeader::operator==(MemberHeader const& rhs) const noexcept -> bool
 {
   return name_ == rhs.name_ && mtime_ == rhs.mtime_ && uid_ == rhs.uid_ && gid_ == rhs.gid_ &&
          mode_ == rhs.mode_ && size_ == rhs.size_ && header_size_ == rhs.header_size_ &&
          format_ == rhs.format_;
 }
 
-bool GD::Ar::Details::operator!=(MemberHeader const& lhs, MemberHeader const& rhs) noexcept
+auto GD::Ar::Details::operator!=(MemberHeader const& lhs, MemberHeader const& rhs) noexcept -> bool
 {
   return !(lhs == rhs);
 }
 
-std::string const& GD::Ar::Details::MemberHeader::name() const noexcept { return name_; }
-std::time_t GD::Ar::Details::MemberHeader::mtime() const noexcept { return mtime_; }
-uid_t GD::Ar::Details::MemberHeader::uid() const noexcept { return uid_; }
-gid_t GD::Ar::Details::MemberHeader::gid() const noexcept { return gid_; }
-mode_t GD::Ar::Details::MemberHeader::mode() const noexcept { return mode_; }
-size_t GD::Ar::Details::MemberHeader::size() const noexcept { return size_; }
-size_t GD::Ar::Details::MemberHeader::header_size() const noexcept { return header_size_; }
-GD::Ar::Format GD::Ar::Details::MemberHeader::format() const noexcept { return format_; }
+auto GD::Ar::Details::MemberHeader::name() const noexcept -> std::string const& { return name_; }
+auto GD::Ar::Details::MemberHeader::mtime() const noexcept -> std::time_t { return mtime_; }
+auto GD::Ar::Details::MemberHeader::uid() const noexcept -> uid_t { return uid_; }
+auto GD::Ar::Details::MemberHeader::gid() const noexcept -> gid_t { return gid_; }
+auto GD::Ar::Details::MemberHeader::mode() const noexcept -> mode_t { return mode_; }
+auto GD::Ar::Details::MemberHeader::size() const noexcept -> size_t { return size_; }
+auto GD::Ar::Details::MemberHeader::header_size() const noexcept -> size_t { return header_size_; }
+auto GD::Ar::Details::MemberHeader::format() const noexcept -> GD::Ar::Format { return format_; }
 
 GD::Ar::Member::Member(Details::MemberHeader&& header, MemberID id, Data data, Symbols symbols)
-    : header_(std::move(header)), id_(id), offset_(0), data_(data), symbols_(symbols)
+    : header_(std::move(header)), id_(id), offset_(0), data_(std::move(std::move(data))),
+      symbols_(std::move(std::move(symbols)))
 {
   assert(data_ != nullptr);
   assert(header_.size() == data_->size());
 }
 
-bool GD::Ar::Member::operator==(Member const& rhs) const noexcept
+auto GD::Ar::Member::operator==(Member const& rhs) const noexcept -> bool
 {
   return header_ == rhs.header_ && id_ == rhs.id_ && data_ == rhs.data_;
 }
 
-bool GD::Ar::operator!=(Member const& lhs, Member const& rhs) noexcept { return !(lhs == rhs); }
+auto GD::Ar::operator!=(Member const& lhs, Member const& rhs) noexcept -> bool
+{
+  return !(lhs == rhs);
+}
 
-std::string const& GD::Ar::Member::name() const noexcept { return header_.name(); }
-std::time_t GD::Ar::Member::mtime() const noexcept { return header_.mtime(); }
-uid_t GD::Ar::Member::uid() const noexcept { return header_.uid(); }
-gid_t GD::Ar::Member::gid() const noexcept { return header_.gid(); }
-mode_t GD::Ar::Member::mode() const noexcept { return header_.mode(); }
-size_t GD::Ar::Member::offset_bytes() const noexcept { return offset_; }
-size_t GD::Ar::Member::size_bytes() const noexcept { return header_.size(); }
-GD::Ar::MemberID GD::Ar::Member::id() const noexcept { return id_; }
-GD::Ar::Format GD::Ar::Member::format() const noexcept { return header_.format(); }
-GD::Ar::Symbols GD::Ar::Member::symbols() const noexcept { return symbols_; }
+auto GD::Ar::Member::name() const noexcept -> std::string const& { return header_.name(); }
+auto GD::Ar::Member::mtime() const noexcept -> std::time_t { return header_.mtime(); }
+auto GD::Ar::Member::uid() const noexcept -> uid_t { return header_.uid(); }
+auto GD::Ar::Member::gid() const noexcept -> gid_t { return header_.gid(); }
+auto GD::Ar::Member::mode() const noexcept -> mode_t { return header_.mode(); }
+auto GD::Ar::Member::offset_bytes() const noexcept -> size_t { return offset_; }
+auto GD::Ar::Member::size_bytes() const noexcept -> size_t { return header_.size(); }
+auto GD::Ar::Member::id() const noexcept -> GD::Ar::MemberID { return id_; }
+auto GD::Ar::Member::format() const noexcept -> GD::Ar::Format { return header_.format(); }
+auto GD::Ar::Member::symbols() const noexcept -> GD::Ar::Symbols { return symbols_; }
 
-std::span<std::byte const> GD::Ar::Member::data() const noexcept
+auto GD::Ar::Member::data() const noexcept -> std::span<std::byte const>
 {
   return std::span<std::byte const>(*data_);
 }
@@ -110,21 +115,21 @@ void GD::Ar::Member::offset_bytes(std::size_t offset)
 
 namespace {
 
-GD::Ar::SymbolMap get_symbols_bsd([[maybe_unused]] GD::Ar::Member symbol_table)
+auto get_symbols_bsd([[maybe_unused]] GD::Ar::Member const& symbol_table) -> GD::Ar::SymbolMap
 {
   return GD::Ar::SymbolMap{};
 }
 
-GD::Ar::SymbolMap get_symbols_svr4(GD::Ar::Member symbol_table)
+auto get_symbols_svr4(GD::Ar::Member const& symbol_table) -> GD::Ar::SymbolMap
 {
   auto data = symbol_table.data();
   auto data_it = data.begin();
-  uint32_t count = GD::read_be<std::uint32_t>(data_it);
+  auto count = GD::read_be<std::uint32_t>(data_it);
   data_it += 4;
   auto strings_it = data_it + count * 4;
   GD::Ar::SymbolMap symbol_map;
   for (uint32_t i = 0; i < count; ++i) {
-    GD::Ar::MemberID mid(static_cast<GD::Ar::MemberID>(GD::read_be<std::uint32_t>(data_it)));
+    auto mid(static_cast<GD::Ar::MemberID>(GD::read_be<std::uint32_t>(data_it)));
     data_it += 4;
     auto it = symbol_map.find(mid);
     if (it == symbol_map.end()) {
@@ -144,14 +149,14 @@ GD::Ar::SymbolMap get_symbols_svr4(GD::Ar::Member symbol_table)
   return symbol_map;
 }
 
-GD::Ar::SymbolMap get_symbols_win32([[maybe_unused]] GD::Ar::SymbolMap const& symbol_table1,
-                                    [[maybe_unused]] GD::Ar::Member symbol_table2)
+auto get_symbols_win32([[maybe_unused]] GD::Ar::SymbolMap const& symbol_table1,
+                       [[maybe_unused]] GD::Ar::Member const& symbol_table2) -> GD::Ar::SymbolMap
 {
   return GD::Ar::SymbolMap{};
 }
 }  // namespace
 
-GD::Ar::SymbolMap GD::Ar::Details::get_symbols(Member symbol_table)
+auto GD::Ar::Details::get_symbols(Member const& symbol_table) -> GD::Ar::SymbolMap
 {
   switch (symbol_table.format()) {
   case Format::bsd:
@@ -167,8 +172,8 @@ GD::Ar::SymbolMap GD::Ar::Details::get_symbols(Member symbol_table)
   }
 }
 
-GD::Ar::SymbolMap GD::Ar::Details::get_symbols([[maybe_unused]] SymbolMap const& symbol_table1,
-                                               Member symbol_table2)
+auto GD::Ar::Details::get_symbols([[maybe_unused]] SymbolMap const& symbol_table1,
+                                  Member const& symbol_table2) -> GD::Ar::SymbolMap
 {
   switch (symbol_table2.format()) {
   case Format::bsd:

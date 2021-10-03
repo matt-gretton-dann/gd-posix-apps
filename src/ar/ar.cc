@@ -15,7 +15,7 @@
 
 #include "ar-messages.hh"
 
-#include <assert.h>
+#include <cassert>
 #include <ctime>
 #include <iomanip>
 #include <iostream>
@@ -54,17 +54,17 @@ enum class Flags : unsigned {
   truncate_names = 0x20       ///< Truncate names if needed.
 };
 
-Flags operator|(Flags l, Flags r)
+auto operator|(Flags l, Flags r) noexcept -> Flags
 {
   return static_cast<Flags>(static_cast<unsigned>(l) | static_cast<unsigned>(r));
 }
 
-Flags operator&(Flags l, Flags r)
+auto operator&(Flags l, Flags r) noexcept -> Flags
 {
   return static_cast<Flags>(static_cast<unsigned>(l) & static_cast<unsigned>(r));
 }
 
-Flags operator~(Flags f) { return static_cast<Flags>(~static_cast<unsigned>(f)); }
+auto operator~(Flags f) noexcept -> Flags { return static_cast<Flags>(~static_cast<unsigned>(f)); }
 
 /** \brief       Report an error and exit with exit code 1.
  *  \param  msg  Message ID
@@ -90,7 +90,7 @@ template<typename... Ts>
  * Returns iterator to file whose filename component matches \a name, or \a end if none found.
  */
 template<typename It, typename SV>
-It find_name(It begin, It end, SV const& name)
+auto find_name(It begin, It end, SV const& name) -> It
 {
   return std::find_if(begin, end, [name](auto e) { return fs::path(e).filename() == name; });
 }
@@ -120,7 +120,7 @@ void do_delete(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end,
     }
     return found != files_end;
   });
-  *out_it++ = out_it.commit_tag();
+  *out_it++ = GD::Ar::WriteIterator<GD::TxnWriteFile>::commit_tag();
 }
 
 /** \brief              Do the move action
@@ -174,7 +174,7 @@ void do_move(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end, F
     });
   std::copy(moved.begin(), moved.end(), out_it);
   std::copy(tail.begin(), tail.end(), out_it);
-  *out_it++ = out_it.commit_tag();
+  *out_it++ = GD::Ar::WriteIterator<GD::TxnWriteFile>::commit_tag();
 }
 
 /** \brief              Do the replace action
@@ -284,7 +284,7 @@ void do_replace(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end
     }
   }
 
-  *out_it++ = out_it.commit_tag();
+  *out_it++ = GD::Ar::WriteIterator<GD::TxnWriteFile>::commit_tag();
 }
 
 /** \brief              Do the replace action
@@ -313,7 +313,7 @@ void do_quick_append(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt a
     auto file = GD::InputFile(fname);
     *out_it++ = file;
   });
-  *out_it++ = out_it.commit_tag();
+  *out_it++ = GD::Ar::WriteIterator<GD::TxnWriteFile>::commit_tag();
 }
 
 /** \brief        Extract a member
@@ -365,11 +365,12 @@ void do_print(std::string const& fname, GD::Ar::Member const& member, Flags flag
   }
 
   auto data = member.data();
-  auto raw_data = data.data();
+  auto const* raw_data = data.data();
   auto count = data.size_bytes();
   while (count != 0) {
-    auto res = ::write(STDOUT_FILENO, raw_data,
-                       std::min((std::size_t)std::numeric_limits<::ssize_t>::max(), count));
+    auto res =
+      ::write(STDOUT_FILENO, raw_data,
+              std::min(static_cast<std::size_t>(std::numeric_limits<::ssize_t>::max()), count));
     if (res == -1) {
       if (errno != EINTR) {
         error(Msg::stdout_write_failed, std::strerror(errno));
@@ -383,44 +384,44 @@ void do_print(std::string const& fname, GD::Ar::Member const& member, Flags flag
 }
 
 /** \brief  Convert a mode_t to a mode string.  */
-std::string to_mode_string(mode_t mode)
+auto to_mode_string(mode_t mode) -> std::string
 {
   std::string result(9, '-');
 
-  if (mode & S_IRUSR) {
+  if ((mode & S_IRUSR) != 0U) {
     result[0] = 'r';
   }
-  if (mode & S_IWUSR) {
+  if ((mode & S_IWUSR) != 0U) {
     result[1] = 'w';
   }
-  if ((mode & S_ISUID)) {
-    result[2] = (mode & S_IXUSR) ? 's' : 'S';
+  if ((mode & S_ISUID) != 0U) {
+    result[2] = (mode & S_IXUSR) != 0U ? 's' : 'S';
   }
-  else if (mode & S_IXUSR) {
+  else if ((mode & S_IXUSR) != 0U) {
     result[2] = 'x';
   }
-  if (mode & S_IRGRP) {
+  if ((mode & S_IRGRP) != 0U) {
     result[3] = 'r';
   }
-  if (mode & S_IWGRP) {
+  if ((mode & S_IWGRP) != 0U) {
     result[4] = 'w';
   }
-  if ((mode & S_ISGID)) {
-    result[5] = (mode & S_IXGRP) ? 's' : 'S';
+  if ((mode & S_ISGID) != 0U) {
+    result[5] = (mode & S_IXGRP) != 0U ? 's' : 'S';
   }
-  else if (mode & S_IXGRP) {
+  else if ((mode & S_IXGRP) != 0U) {
     result[5] = 'x';
   }
-  if (mode & S_IROTH) {
+  if ((mode & S_IROTH) != 0U) {
     result[6] = 'r';
   }
-  if (mode & S_IWOTH) {
+  if ((mode & S_IWOTH) != 0U) {
     result[7] = 'w';
   }
-  if ((mode & S_ISVTX) && S_ISDIR(mode)) {
-    result[8] = (mode & S_IXOTH) ? 't' : 'T';
+  if (((mode & S_ISVTX) != 0U) && S_ISDIR(mode)) {
+    result[8] = (mode & S_IXOTH) != 0U ? 't' : 'T';
   }
-  else if (mode & S_IXOTH) {
+  else if ((mode & S_IXOTH) != 0U) {
     result[8] = 'x';
   }
 
@@ -483,12 +484,12 @@ void do_action(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end,
     GD::Ar::Format format = members.front().format();
     auto out_it = GD::Ar::archive_inserter(archive, format, mode);
     std::copy(members.begin(), members.end(), out_it);
-    *out_it++ = out_it.commit_tag();
+    *out_it++ = GD::Ar::WriteIterator<GD::TxnWriteFile>::commit_tag();
   }
 }
 
 /** \brief Is \a action a readonly action?  */
-constexpr bool is_read_only_action(Action action)
+constexpr auto is_read_only_action(Action action) -> bool
 {
   return action == Action::print || action == Action::toc || action == Action::extract;
 }
@@ -500,11 +501,11 @@ struct State
   Flags flags = Flags::message_on_creation | Flags::allow_replacement;
   std::optional<std::string> pos_file;
   fs::path archive;
-  char** file_begin;
-  char** file_end;
+  char** file_begin{};
+  char** file_end{};
 };
 
-State process_command_line(int argc, char** argv)
+auto process_command_line(int argc, char** argv) -> State
 {
   State state;
   int c = 0;
@@ -566,7 +567,7 @@ State process_command_line(int argc, char** argv)
     case ':':
     case '?':
     default:
-      error(Msg::unrecognised_option, (char)optopt);
+      error(Msg::unrecognised_option, static_cast<char>(optopt));
       break;
     }
   }
@@ -594,7 +595,7 @@ State process_command_line(int argc, char** argv)
 }
 }  // namespace
 
-int main(int argc, char** argv)
+auto main(int argc, char** argv) -> int
 {
   ::setlocale(LC_ALL, "");
   GD::program_name(argv[0]);

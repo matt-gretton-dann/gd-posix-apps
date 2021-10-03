@@ -193,14 +193,14 @@ constexpr char const* long_name_prefix(GD::Ar::Format format)
  *  \param  symbol_table Symbol table member.
  *  \return              Map of members to symbols.
  */
-SymbolMap get_symbols(Member symbol_table);
+SymbolMap get_symbols(Member const& symbol_table);
 
 /** \brief                Read the second symbol table
  *  \param  symbol_table1 the symbol map from reading the first symbol table.
  *  \param  symbol_table2 The member containing the second symbol table.
  *  \return               Updated symbol table.
  */
-SymbolMap get_symbols(SymbolMap const& symbol_table1, Member symbol_table2);
+SymbolMap get_symbols(SymbolMap const& symbol_table1, Member const& symbol_table2);
 
 /** \brief  Header of an archive member.  */
 class MemberHeader
