@@ -4,8 +4,8 @@
  *  SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _LIBGDSUP_INCLUDE_GD_STDLIB_H_INCLUDED
-#define _LIBGDSUP_INCLUDE_GD_STDLIB_H_INCLUDED
+#ifndef LIBGDSUP_INCLUDE_GD_STDLIB_H_INCLUDED
+#define LIBGDSUP_INCLUDE_GD_STDLIB_H_INCLUDED
 
 #include "gd/bits/defines.h"
 
@@ -37,4 +37,4 @@ __EXTERN_C int mkstemp(char* temp);
 __EXTERN_C int setenv(char const* envname, char const* envval, int overwrite);
 #endif  // _WIN32
 
-#endif  // _LIBGDSUP_INCLUDE_GD_STDLIB_H_INCLUDED
+#endif  // LIBGDSUP_INCLUDE_GD_STDLIB_H_INCLUDED

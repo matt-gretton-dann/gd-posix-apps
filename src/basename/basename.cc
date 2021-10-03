@@ -7,6 +7,7 @@
 #include "gd/libgen.h"
 
 #include "gd/limits.h"
+#include "gd/span.hh"
 #include "gd/stdlib.h"
 #include "gd/string.h"
 
@@ -14,9 +15,9 @@
 
 #include "basename-messages.hh"
 
+#include <clocale>
+#include <cstdio>
 #include <iostream>
-#include <locale.h>
-#include <stdio.h>
 
 namespace {
 template<typename... Ts>
@@ -28,51 +29,42 @@ template<typename... Ts>
             << GD::Basename::Messages::get().format(GD::Basename::Set::basename,
                                                     GD::Basename::Msg::usage, GD::program_name())
             << '\n';
-  ::exit(EXIT_FAILURE);
+  std::exit(EXIT_FAILURE);  // NOLINT(concurrency-mt-unsafe)
 }
 
 }  // namespace
-int main(int argc, char** argv)
-{
-  ::setlocale(LC_ALL, "");
-  GD::program_name(argv[0]);
 
-  // Skip argv[0].
-  ++argv;
-  --argc;
+auto main(int argc, char** argv) -> int
+{
+  std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
+  GD::Span::span<char*> args(argv, argc);
+  GD::program_name(args[0]);
+
+  auto begin = args.begin() + 1;
 
   // Skip optional `--`.
-  if (argc > 0 && argv[0][0] == '-' && argv[0][1] == '-' && argv[0][2] == '\0') {
-    ++argv;
-    --argc;
+  if (begin != args.end() && std::strcmp(*begin, "--") == 0) {
+    ++begin;
   }
 
-  if (argc == 0) {
+  if (begin == args.end()) {
     report_error(GD::Basename::Msg::missing_arguments);
   }
-  if (argc > 2) {
+  if (std::distance(begin, args.end()) > 2) {
     report_error(GD::Basename::Msg::too_many_arguments);
   }
 
-  char* bname = ::strdup(argv[0]);
-  if (bname == 0) {
-    report_error(GD::Basename::Msg::out_of_memory);
-  }
-  bname = ::basename(bname);
-  ::size_t base_len = ::strlen(bname);
+  std::string bname(*begin);
+  bname = ::basename(bname.data());  // NOLINT(concurrency-mt-unsafe)
 
-  if (argc == 2) {
-    ::size_t suffix_len = ::strlen(argv[1]);
-    if (base_len > suffix_len && ::strcmp(bname + base_len - suffix_len, argv[1]) == 0) {
-      base_len -= suffix_len;
+  ++begin;
+  if (begin != args.end()) {
+    std::string_view suffix(*begin);
+    if (bname.ends_with(suffix)) {
+      bname.resize(bname.size() - suffix.size());
     }
   }
 
-  while (base_len > INT_MAX) {
-    ::printf("%.*s", INT_MAX, bname);
-    bname += INT_MAX;
-    base_len -= INT_MAX;
-  }
-  ::printf("%.*s\n", static_cast<int>(base_len), bname);
+  std::cout << bname << '\n';
   return EXIT_SUCCESS;
 }

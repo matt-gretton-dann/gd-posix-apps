@@ -23,8 +23,9 @@ char* dirname(char* s)
 
   // Remove trailing /s
   for (--end; end > 0; --end) {
-    if (s[end] != '/')
+    if (s[end] != '/') {
       break;
+    }
   }
 
   // If its just a sequence of /s return / or // in a special case
@@ -40,8 +41,9 @@ char* dirname(char* s)
 
   // Now lets find the beginning.
   for (--end; end > 0; --end) {
-    if (s[end] == '/')
+    if (s[end] == '/') {
       break;
+    }
   }
 
   if (end == 0 && s[0] != '/') {
@@ -52,8 +54,9 @@ char* dirname(char* s)
   }
 
   for (--end; end > 0; --end) {
-    if (s[end] != '/')
+    if (s[end] != '/') {
       break;
+    }
   }
 
   if (end == 0 && s[0] == '/') {

@@ -8,8 +8,8 @@
 
 #include "bc-messages.hh"
 
+#include <cstdint>
 #include <limits>
-#include <stdint.h>
 
 #include "bc.hh"
 #include <string_view>
@@ -23,11 +23,11 @@ GD::Bc::Location::Location(std::string_view file_name, Line line, Column column)
 {
 }
 
-std::string const& GD::Bc::Location::file_name() const { return file_name_; }
+auto GD::Bc::Location::file_name() const -> std::string const& { return file_name_; }
 
-GD::Bc::Location::Column GD::Bc::Location::column() const { return column_; }
+auto GD::Bc::Location::column() const -> GD::Bc::Location::Column { return column_; }
 
-GD::Bc::Location::Line GD::Bc::Location::line() const { return line_; }
+auto GD::Bc::Location::line() const -> GD::Bc::Location::Line { return line_; }
 
 void GD::Bc::Location::next_column()
 {
@@ -44,19 +44,19 @@ void GD::Bc::Location::next_line()
   column_ = 1;
 }
 
-std::ostream& GD::Bc::operator<<(std::ostream& os, GD::Bc::Location const& location)
+auto GD::Bc::operator<<(std::ostream& os, GD::Bc::Location const& location) -> std::ostream&
 {
   os << location.file_name() << ':' << location.line() << ':' << location.column();
   return os;
 }
 
-bool GD::Bc::operator==(GD::Bc::Location const& lhs, GD::Bc::Location const& rhs)
+auto GD::Bc::operator==(GD::Bc::Location const& lhs, GD::Bc::Location const& rhs) -> bool
 {
   return lhs.file_name() == rhs.file_name() && lhs.line() == rhs.line() &&
          lhs.column() == rhs.column();
 }
 
-bool GD::Bc::operator!=(GD::Bc::Location const& lhs, GD::Bc::Location const& rhs)
+auto GD::Bc::operator!=(GD::Bc::Location const& lhs, GD::Bc::Location const& rhs) -> bool
 {
   return !(lhs == rhs);
 }
@@ -75,13 +75,13 @@ void GD::Bc::Reader::chew()
   do_chew();
 }
 
-GD::Bc::Location const& GD::Bc::Reader::location() const { return location_; }
+auto GD::Bc::Reader::location() const -> GD::Bc::Location const& { return location_; }
 
-GD::Bc::Reader::~Reader() {}
+GD::Bc::Reader::~Reader() = default;
 
 GD::Bc::StringReader::StringReader(std::string_view s) : Reader("Library"), s_(s), pos_(0) {}
 
-int GD::Bc::StringReader::peek()
+auto GD::Bc::StringReader::peek() -> int
 {
   if (pos_ >= s_.length()) {
     return EOF;
@@ -104,7 +104,7 @@ GD::Bc::FileReader::FileReader(std::string_view f) : Reader(f), file_(f), c_(EOF
   }
 }
 
-int GD::Bc::FileReader::peek()
+auto GD::Bc::FileReader::peek() -> int
 {
   /* We only read from the file when we know we need to - which is indicated by c_ being EOF.  */
   if (c_ == EOF && !file_.eof()) {

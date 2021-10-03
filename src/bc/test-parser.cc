@@ -14,9 +14,19 @@
 #include "bc.hh"
 #include <string_view>
 
+using GD::Bc::Array;
+using GD::Bc::Instruction;
+using GD::Bc::Instructions;
+using GD::Bc::Letter;
+using GD::Bc::Lexer;
+using GD::Bc::Location;
+using GD::Bc::Parser;
+using GD::Bc::StringReader;
+using GD::Bc::Variable;
+using GD::Bc::VariableMask;
+
 TEST_CASE("Parser - quit parsing", "[bc][parser]")
 {
-  using namespace GD::Bc;
   auto [input, expected] = GENERATE(table<std::string_view, Instructions>({
     {"quit\n", {}},
     {"\"Hello\"\nquit\n\"Good bye\"\n",
@@ -50,7 +60,6 @@ TEST_CASE("Parser - quit parsing", "[bc][parser]")
 
 TEST_CASE("Parser - extension parsing", "[bc][parser][extensions]")
 {
-  using namespace GD::Bc;
   auto [input, expected] = GENERATE(table<std::string_view, Instructions>({
     {"halt\n", {Instruction(Instruction::Opcode::quit, 0U)}},
     {"length(a[])\n",
@@ -103,7 +112,6 @@ TEST_CASE("Parser - extension parsing", "[bc][parser][extensions]")
 
 TEST_CASE("Parser - basic parsing", "[bc][parser]")
 {
-  using namespace GD::Bc;
   auto [input, expected] = GENERATE(table<std::string_view, Instructions>({
     {"\"Hello\"\n",
      {Instruction(Instruction::Opcode::string, "Hello"),

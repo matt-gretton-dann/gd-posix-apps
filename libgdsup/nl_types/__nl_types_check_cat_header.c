@@ -15,11 +15,14 @@
 #include "nl_types/nl_types.h"
 #include "support/support.h"
 
+#define expected_size 12
+
 bool __nl_types_check_cat_header(char const buffer[CAT_HDR_SIZE])
 {
   /* Check the first 12 bytes of the header. */
-  char expected[12] = {'M', 'S', 'G', '\0', '\1', '\0', '\0', '\0', '\0', '\0', '\0', '\0'};
-  for (unsigned i = 0; i < 12; ++i) {
+  const char expected[expected_size] = {'M',  'S',  'G',  '\0', '\1', '\0',
+                                        '\0', '\0', '\0', '\0', '\0', '\0'};
+  for (unsigned i = 0; i < expected_size; ++i) {
     if (buffer[i] != expected[i]) {
       __support_log("Catalogue header invalid at byte %u: got %u expected %u\n", i,
                     (unsigned)buffer[i], (unsigned)expected[i]);

@@ -93,11 +93,12 @@ TEST_CASE("GD::Bc::Lexer - Token extensions", "[bc][lexer][extensions]")
 
 TEST_CASE("GD::Bc::Lexer - Number", "[bc][lexer]")
 {
-  auto number = GENERATE("1234567890", "ABCDEF1", ".1", "2.0", "3.", "1\\\n2");
+  // NOLINTNEXTLINE
+  std::string_view number = GENERATE("1234567890", "ABCDEF1", ".1", "2.0", "3.", "1\\\n2");
   auto lexer = GD::Bc::Lexer(std::make_unique<GD::Bc::StringReader>(number));
   auto t1 = lexer.peek();
   REQUIRE(t1.type() == GD::Bc::Token::Type::number);
-  std::string result = number;
+  std::string result(number);
   // Remove escaped new-lines
   result.erase(
     std::remove_if(result.begin(), result.end(), [](char c) { return c == '\\' || c == '\n'; }),
@@ -109,7 +110,7 @@ TEST_CASE("GD::Bc::Lexer - Number", "[bc][lexer]")
 
 TEST_CASE("GD::Bc::Lexer - Number Extensions", "[bc][lexer][extensions]")
 {
-  auto number = GENERATE("1\\\n    2");
+  std::string_view number = GENERATE("1\\\n    2");  // NOLINT
   auto lexer = GD::Bc::Lexer(std::make_unique<GD::Bc::StringReader>(number));
   auto t1 = lexer.peek();
   if (GD::Bc::extensions_enabled()) {
@@ -145,8 +146,8 @@ TEST_CASE("GD::Bc::Lexer - Letter", "[bc][lexer]")
 
 TEST_CASE("GD::Bc::Lexer - String", "[bc][lexer]")
 {
-  auto string = GENERATE("Hello, world!", "A\\\nB");
-  std::string s = std::string("\"") + string + std::string("\"");
+  std::string_view string = GENERATE("Hello, world!", "A\\\nB");  // NOLINT
+  std::string s = std::string("\"") + std::string(string) + std::string("\"");
   auto lexer = GD::Bc::Lexer(std::make_unique<GD::Bc::StringReader>(s));
   auto t1 = lexer.peek();
   REQUIRE(t1.type() == GD::Bc::Token::Type::string);

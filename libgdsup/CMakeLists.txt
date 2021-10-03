@@ -40,6 +40,8 @@ function(include_external_fmtlib)
   if(NOT fmt_POPULATED)
     FetchContent_Populate(fmt)
     add_subdirectory(${fmt_SOURCE_DIR} ${fmt_BINARY_DIR})
+    set_property(TARGET fmt PROPERTY CXX_CLANG_TIDY "")
+    set_property(TARGET fmt PROPERTY C_CLANG_TIDY "")
   endif()
 endfunction()
 # External libraries
@@ -212,6 +214,8 @@ endfunction()
 add_library(gdsup)
 set_property(TARGET gdsup PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
 set_property(TARGET gdsup PROPERTY CXX_STANDARD_REQUIRED ON)
+target_compile_definitions(gdsup PRIVATE
+                           "-D__STDC_WANT_LIB_EXT1__=1")
 target_include_directories(gdsup PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_include_directories(gdsup PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_include_directories(gdsup PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -227,8 +231,8 @@ target_include_directories(test-gdsup PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 set_warnings(test-gdsup)
 
 if($CACHE{FORCE_SUPPLEMENTAL_LIBRARY})
-target_compile_definitions(gdsup PUBLIC
-                           "-DFORCE_SUPPLEMENTAL_LIBRARY=$CACHE{FORCE_SUPPLEMENTAL_LIBRARY}")
+  target_compile_definitions(gdsup PUBLIC
+                             "-DFORCE_SUPPLEMENTAL_LIBRARY=1")
 endif()
 
 target_sources(gdsup PRIVATE
@@ -242,6 +246,7 @@ target_sources(gdsup PRIVATE
                include/gd/limits.h
                include/gd/nl_types.h
                include/gd/signal.h
+               include/gd/span.hh
                include/gd/stdlib.h
                include/gd/string.h
                include/gd/time.h
@@ -255,6 +260,7 @@ if(CXX_STD_FILESYSTEM_LIBRARY)
 endif()
 if(CXX_STD_FORMAT_LIB)
   target_link_libraries(gdsup PUBLIC "${CXX_STD_FORMAT_LIB}")
+  target_compile_definitions(gdsup PUBLIC "-DUSE_OWN_FMTLIB=1")
 endif()
 
 add_subdirectory(fcntl)

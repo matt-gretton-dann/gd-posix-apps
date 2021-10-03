@@ -9,7 +9,7 @@
 
 #ifdef _WIN32
 /** On Windows we map process IDs to ints (as everywhere else does really..  */
-typedef int pid_t;
+typedef long pid_t;
 #endif
 
 #endif  // _LIBGDSUP_INCLUDE_BITS_TYPES_PID_T_H_INCLUDED

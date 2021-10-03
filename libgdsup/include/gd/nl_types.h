@@ -7,8 +7,8 @@
  * format.
  */
 
-#ifndef _LIBGDSUP_INCLUDE_GD_NL_TYPES_H_INCLUDED
-#define _LIBGDSUP_INCLUDE_GD_NL_TYPES_H_INCLUDED
+#ifndef LIBGDSUP_INCLUDE_GD_NL_TYPES_H_INCLUDED
+#define LIBGDSUP_INCLUDE_GD_NL_TYPES_H_INCLUDED
 
 #include "gd/bits/defines.h"
 
@@ -17,10 +17,10 @@
  * etc.
  */
 #ifdef __APPLE__
-#  ifdef _NL_TYPES_H_
+#  ifdef _NL_TYPES_H_  // NOLINT
 #    error "<nl_types.h> has already been included please include gd/nl_types.h early"
 #  endif
-#  define _NL_TYPES_H_
+#  define _NL_TYPES_H_  // NOLINT
 #  include <_types.h>
 #  include <_types/_nl_item.h>
 #  include <sys/cdefs.h>
@@ -53,6 +53,7 @@ typedef intptr_t nl_catd;
  * POSIX also allows us to return \c EINTR if we were interrupted by a signal.  However, this
  * implementation of catclose() will not do that.
  */
+// NOLINTNEXTLINE(modernize-use-trailing-return-type)
 __EXTERN_C int catclose(nl_catd catd);
 
 /** \brief         Read a program message
@@ -77,6 +78,7 @@ __EXTERN_C int catclose(nl_catd catd);
  *
  * We do not return messages that do not end in a NULL character.
  */
+// NOLINTNEXTLINE(modernize-use-trailing-return-type)
 __EXTERN_C char* catgets(nl_catd catd, int set_id, int msg_id, char const* s);
 
 /** \brief        Open a message catalogue
@@ -102,6 +104,7 @@ __EXTERN_C char* catgets(nl_catd catd, int set_id, int msg_id, char const* s);
  *
  * As a POSIX extension: \c EINVAL is set if the \a oflag field is set to an invalid value.
  */
-__EXTERN_C nl_catd catopen(char const*, int);
+// NOLINTNEXTLINE(modernize-use-trailing-return-type)
+__EXTERN_C nl_catd catopen(char const* /*name*/, int /*oflag*/);
 
-#endif  // _LIBGDSUP_INCLUDE_GD_NL_TYPES_H_INCLUDED
+#endif  // LIBGDSUP_INCLUDE_GD_NL_TYPES_H_INCLUDED

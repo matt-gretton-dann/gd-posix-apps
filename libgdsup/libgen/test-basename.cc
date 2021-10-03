@@ -19,7 +19,7 @@ void test_basename(char const* in, char const* expected)
   REQUIRE(expected != nullptr);
   char* dup = ::strdup(in);
   REQUIRE(dup != nullptr);
-  char* out = basename(dup);
+  char* out = basename(dup);  // NOLINT(concurrency-mt-unsafe)
   CHECK(std::strcmp(out, expected) == 0);
 }
 
@@ -27,7 +27,7 @@ void test_basename(char const* in, char const* expected)
 
 TEST_CASE("basename - POSIX Examples", "[libgen][basename]")
 {
-  REQUIRE(std::strcmp(basename(nullptr), ".") == 0);
+  REQUIRE(std::strcmp(basename(nullptr), ".") == 0);  // NOLINT(concurrency-mt-unsafe)
   test_basename("", ".");
   test_basename("usr", "usr");
   test_basename("usr/", "usr");

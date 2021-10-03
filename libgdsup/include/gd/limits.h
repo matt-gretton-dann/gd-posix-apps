@@ -4,8 +4,8 @@
  *  SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _LIBGDSUP_INCLUDE_GD_LIMITS_H_INCLUDED
-#define _LIBGDSUP_INCLUDE_GD_LIMITS_H_INCLUDED
+#ifndef LIBGDSUP_INCLUDE_GD_LIMITS_H_INCLUDED
+#define LIBGDSUP_INCLUDE_GD_LIMITS_H_INCLUDED
 
 #include "gd/bits/defines.h"
 /* Everyone has a limits.h.  */
@@ -20,7 +20,7 @@
 #if defined(FORCE_SUPPLEMENTAL_LIBRARY) || !defined(_POSIX2_SSIZE_MAX)
 #  undef _POSIX2_SSIZE_MAX
 /** \brief The minimum acceptable maximum value for an object of type \c ssize_t.  */
-#  define _POSIX2_SSIZE_MAX 32767
+#  define _POSIX2_SSIZE_MAX 32767  // NOLINT
 #endif
 
 #if defined(FORCE_SUPPLEMENTAL_LIBRARY) || !defined(NL_MSGMAX)
@@ -74,4 +74,4 @@
 #  endif
 #endif  // SSIZE_MAX
 
-#endif  // _LIBGDSUP_INCLUDE_GD_LIMITS_H_INCLUDED
+#endif  // LIBGDSUP_INCLUDE_GD_LIMITS_H_INCLUDED

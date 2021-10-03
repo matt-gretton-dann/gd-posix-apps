@@ -13,5 +13,6 @@
 TEST_CASE("__support_read_le_u32", "[support][support_read_le_u32]")
 {
   uint64_t test_value = UINT32_C(0x01020304);
-  REQUIRE(__support_read_le_u32(reinterpret_cast<const char*>(&test_value)) == test_value);
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+  REQUIRE(__support_read_le_u32(reinterpret_cast<char const*>(&test_value)) == test_value);
 }

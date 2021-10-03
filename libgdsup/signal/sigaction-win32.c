@@ -53,7 +53,7 @@ static BOOL WINAPI ctrl_c_handler(DWORD dwCtrlType)
   siginfo_t si;
   si.si_signo = SIGINT;
   si.si_code = SI_USER;
-  si.si_pid = GetCurrentProcessId();
+  si.si_pid = (pid_t)GetCurrentProcessId();
   si.si_uid = 0;
   si.si_addr = NULL;
   sigactionhandler(SIGINT, &si, NULL);

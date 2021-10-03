@@ -4,38 +4,38 @@
  *          SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _LIBGDSUP_INCLUDE_GD_BITS_DEFINES_H_INCLUDED
-#define _LIBGDSUP_INCLUDE_GD_BITS_DEFINES_H_INCLUDED
+#ifndef LIBGDSUP_INCLUDE_GD_BITS_DEFINES_H_INCLUDED
+#define LIBGDSUP_INCLUDE_GD_BITS_DEFINES_H_INCLUDED
 
 /* Extern "C" blocks. */
 #ifdef __cplusplus
-#  define __EXTERN_C extern "C"
-#  define __EXTERN_C_BEGIN extern "C" {
-#  define __EXTERN_C_END }
-#  define __RESTRICT
+#  define __EXTERN_C extern "C"          // NOLINT
+#  define __EXTERN_C_BEGIN extern "C" {  // NOLINT
+#  define __EXTERN_C_END }               // NOLINT
+#  define __RESTRICT                     // NOLINT
 #  if defined(__APPLE__) && !defined(FORCE_SUPPLEMENTAL_LIBRARY)
-#    define __NOEXCEPT
+#    define __NOEXCEPT  // NOLINT
 #  else
-#    define __NOEXCEPT noexcept
+#    define __NOEXCEPT noexcept  // NOLINT
 #  endif
 #else
-#  define __EXTERN_C
-#  define __EXTERN_C_BEGIN
-#  define __EXTERN_C_END
-#  define __RESTRICT restrict
-#  define __NOEXCEPT
+#  define __EXTERN_C           // NOLINT
+#  define __EXTERN_C_BEGIN     // NOLINT
+#  define __EXTERN_C_END       // NOLINT
+#  define __RESTRICT restrict  // NOLINT
+#  define __NOEXCEPT           // NOLINT
 #endif
 
 /* Byte order on Windows.  */
 #ifdef _WIN32
 #  ifndef __BYTE_ORDER__
-#    define __BYTE_ORDER__ __ORDER_LITTLE_ENDIAN__
+#    define __BYTE_ORDER__ __ORDER_LITTLE_ENDIAN__  // NOLINT
 #  endif
 #  ifndef __ORDER_LITTLE_ENDIAN__
-#    define __ORDER_LITTLE_ENDIAN__ 1
+#    define __ORDER_LITTLE_ENDIAN__ 1  // NOLINT
 #  endif
 #  ifndef __ORDER_BIG_ENDIAN__
-#    define __ORDER_BIG_ENDIAN__ 0
+#    define __ORDER_BIG_ENDIAN__ 0  // NOLINT
 #  endif
 #endif
 
@@ -56,24 +56,24 @@
  */
 
 #ifdef _WIN32
-#  define __PATH_SEP ';'
-#  define __PATH_SEPSTR ";"
-#  define __DIR_SEP '\\'
-#  define __DIR_SEPSTR "\\"
+#  define __PATH_SEP ';'     // NOLINT
+#  define __PATH_SEPSTR ";"  // NOLINT
+#  define __DIR_SEP '\\'     // NOLINT
+#  define __DIR_SEPSTR "\\"  // NOLINT
 #else
-#  define __PATH_SEP ':'
-#  define __PATH_SEPSTR ":"
-#  define __DIR_SEP '/'
-#  define __DIR_SEPSTR "/"
+#  define __PATH_SEP ':'     // NOLINT
+#  define __PATH_SEPSTR ":"  // NOLINT
+#  define __DIR_SEP '/'      // NOLINT
+#  define __DIR_SEPSTR "/"   // NOLINT
 #endif
 
 /* Disable various Windows warnings about function usage.
  * Ideally we wouldn't turn off the _CRT_SECURE_NO_WARNINGS
  */
 #if _WIN32
-#  define _CRT_DECLARE_NONSTDC_NAMES 0
-#  define _CRT_SECURE_NO_WARNINGS 1
-#  define __STDC_WANT_SECURE_LIB__ 1
+#  define _CRT_DECLARE_NONSTDC_NAMES 0  // NOLINT
+#  define _CRT_SECURE_NO_WARNINGS 1     // NOLINT
+#  define __STDC_WANT_SECURE_LIB__ 1    // NOLINT
 #endif
 
 #ifdef _MSC_VER
@@ -84,11 +84,11 @@
 #endif /* _MSC_VER */
 
 #ifdef _MSC_VER
-#  define __SUPPRESS_CONSTANT_CONDITIONAL _Pragma("warning(suppress: 4127)")
-#  define __DISABLE_NARROWING_WARNING _Pragma("warning(disable: 4267)")
+#  define __SUPPRESS_CONSTANT_CONDITIONAL _Pragma("warning(suppress: 4127)")  // NOLINT
+#  define __DISABLE_NARROWING_WARNING _Pragma("warning(disable: 4267)")       // NOLINT
 #else
-#  define __SUPPRESS_CONSTANT_CONDITIONAL
-#  define __DISABLE_NARROWING_WARNING
+#  define __SUPPRESS_CONSTANT_CONDITIONAL  // NOLINT
+#  define __DISABLE_NARROWING_WARNING      // NOLINT
 #endif
 
-#endif  // _LIBGDSUP_INCLUDE_GD_BITS_DEFINES_H_INCLUDED
+#endif  // LIBGDSUP_INCLUDE_GD_BITS_DEFINES_H_INCLUDED

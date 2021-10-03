@@ -13,5 +13,6 @@
 TEST_CASE("__support_read_le_u64", "[support][support_read_le_u64]")
 {
   uint64_t test_value = UINT64_C(0x0102030405060708);
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
   REQUIRE(__support_read_le_u64(reinterpret_cast<const char*>(&test_value)) == test_value);
 }

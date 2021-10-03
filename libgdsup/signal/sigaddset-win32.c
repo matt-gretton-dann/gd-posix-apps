@@ -10,21 +10,21 @@
 
 #include "support/support.h"
 
-int sigaddset(sigset_t* set, int signo)
+int sigaddset(sigset_t* _set, int _sig)
 {
-  if (set == NULL) {
+  if (_set == NULL) {
     __support_log("sigaddset: Called with NULL set.\n");
     errno = EINVAL;
     return -1;
   }
-  uint32_t entry = signo / __GD_SS_FLAGS_BITS;
+  uint32_t entry = _sig / __GD_SS_FLAGS_BITS;
   if (entry >= __GD_SS_FLAGS_SIZE) {
-    __support_log("sigaddset: Signal %d doesn't fit in sigset...\n", signo);
+    __support_log("sigaddset: Signal %d doesn't fit in sigset...\n", _sig);
     errno = EINVAL;
     return -1;
   }
 
-  uint32_t bit = ((uint32_t)1) << (signo % __GD_SS_FLAGS_BITS);
-  set->__gd_ss_flags[entry] |= bit;
+  uint32_t bit = ((uint32_t)1) << (_sig % __GD_SS_FLAGS_BITS);
+  _set->__gd_ss_flags[entry] |= bit;
   return 0;
 }

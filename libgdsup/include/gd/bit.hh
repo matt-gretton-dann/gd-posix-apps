@@ -9,8 +9,8 @@
  *
  * Note that this isn't a complete implementation - only the bits we need.
  */
-#ifndef _LIBGDSUP_INCLUDE_GD_BIT_HH_INCLUDED
-#define _LIBGDSUP_INCLUDE_GD_BIT_HH_INCLUDED
+#ifndef LIBGDSUP_INCLUDE_GD_BIT_HH_INCLUDED
+#define LIBGDSUP_INCLUDE_GD_BIT_HH_INCLUDED
 
 #if defined(FORCE_SUPPLEMENTAL_LIBRARY)
 #  define _USE_OUR_BIT_IMPLEMENTATION 1
@@ -19,12 +19,12 @@
 namespace bit {
 using endian = std::endian;
 }  // namespace bit
-#  define _USE_OUR_BIT_IMPLEMENTATION 0
+#  define USE_OUR_BIT_IMPLEMENTATION 0  // NOLINT(cppcoreguidelines-macro-usage)
 #else
-#  define _USE_OUR_BIT_IMPLEMENTATION 1
+#  define USE_OUR_BIT_IMPLEMENTATION 1  // NOLINT(cppcoreguidelines-macro-usage)
 #endif
 
-#if _USE_OUR_BIT_IMPLEMENTATION
+#if USE_OUR_BIT_IMPLEMENTATION
 #  include "gd/bits/defines.h"
 
 #  if !defined(__BYTE_ORDER__) || !defined(__ORDER_LITTLE_ENDIAN__) ||                             \
@@ -49,6 +49,6 @@ enum class endian {
 }  // namespace bit
 #endif
 
-#undef _USE_OUR_BIT_IMPLEMENTATION
+#undef USE_OUR_BIT_IMPLEMENTATION
 
-#endif  // _LIBGDSUP_INCLUDE_GD_BIT_HH_INCLUDED
+#endif  // LIBGDSUP_INCLUDE_GD_BIT_HH_INCLUDED

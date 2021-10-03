@@ -17,7 +17,7 @@ endif()
 
 if(RUN_CLANG_FORMAT)
   if(NOT ClangFormat_COMMAND)
-    foreach(_cf_N RANGE 6 12)
+    foreach(_cf_N RANGE 6 20)
       list(PREPEND _cf_NAMES "clang-format-${_cf_N}")
     endforeach()
     list(APPEND _cf_NAMES "clang-format")

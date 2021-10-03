@@ -4,8 +4,8 @@
  *          SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _GDSUP_FCNTL_FCNTL_H_INCLUDED
-#define _GDSUP_FCNTL_FCNTL_H_INCLUDED
+#ifndef GDSUP_FCNTL_FCNTL_H_INCLUDED
+#define GDSUP_FCNTL_FCNTL_H_INCLUDED
 
 /** \brief         \c open() wrapper
  *  \param  path   Path to open
@@ -14,6 +14,6 @@
  *
  * This wrapper handles \c EINTR to repeat.
  */
-int __fcntl_open(char const* path, int oflags);
+int __fcntl_open(char const* path, int oflags);  // NOLINT
 
-#endif  //  _GDSUP_FCNTL_FCNTL_H_INCLUDED
+#endif  //  GDSUP_FCNTL_FCNTL_H_INCLUDED

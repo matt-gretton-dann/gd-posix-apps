@@ -4,17 +4,20 @@
  *  SPDX-License-Identifier: Apache-2.0
  */
 
+#include "gd/span.hh"
+
 #include "util/utils.hh"
 
 #include "expr-messages.hh"
 
-#include <assert.h>
+#include <algorithm>
+#include <cassert>
+#include <clocale>
+#include <cstdint>
 #include <functional>
 #include <iostream>
-#include <locale.h>
 #include <ostream>
 #include <regex>
-#include <stdint.h>
 #include <string>
 #include <vector>
 
@@ -23,6 +26,14 @@
 using Msg = GD::Expr::Msg;
 
 namespace {
+/** \brief  Exit codes. */
+enum class ExitCode { success, zero_or_null_result, invalid_expr, error };
+
+[[noreturn]] void exit(ExitCode code)
+{
+  std::exit(static_cast<int>(code));  // NOLINT(concurrency-mt-unsafe)
+}
+
 /** \brief       Report an error and exit with exit code 3.
  *  \param  msg  Message ID
  *  \param  args Arguments for the message.
@@ -34,7 +45,7 @@ template<typename... Ts>
             << GD::Expr::Messages::get().format(GD::Expr::Set::expr, msg, args...) << '\n'
             << GD::Expr::Messages::get().format(GD::Expr::Set::expr, Msg::usage, GD::program_name())
             << '\n';
-  ::exit(3);
+  exit(ExitCode::error);  // NOLINT(concurrency-mt-unsafe)
 }
 
 /** \brief       Report an invalid_expr and exit with exit code 2.
@@ -46,7 +57,7 @@ template<typename... Ts>
 {
   std::cerr << GD::program_name() << ": "
             << GD::Expr::Messages::get().format(GD::Expr::Set::expr, msg, args...) << '\n';
-  ::exit(2);
+  exit(ExitCode::invalid_expr);  // NOLINT(concurrency-mt-unsafe)
 }
 
 /** \brief       Report a warning
@@ -90,9 +101,10 @@ public:
    *  \param type Type of token - should not be Type::number
    *  \param str  String representation
    */
-  Token(Type type, std::string_view str) : type_(type), number_(0), str_(str)
+  Token(Type type, std::string_view str)
+      : type_(type), number_(0), str_(str), action_(get_action(type))
   {
-    assert(type_ != Type::number);
+    assert(type_ != Type::number);  // NOLINT
   }
 
   /** \brief        Construct a number token.
@@ -103,9 +115,10 @@ public:
    * Because of the match operator we need to be able to keep the original string representation
    * of the token to use as appropriate, and not just the numbers canonical representation.
    */
-  Token(Type type, int32_t number, std::string_view str) : type_(type), number_(number), str_(str)
+  Token(Type type, int32_t number, std::string_view str)
+      : type_(type), number_(number), str_(str), action_(get_action(type))
   {
-    assert(type_ == Type::number);
+    assert(type_ == Type::number);  // NOLINT
   }
 
   /** \brief        Construct a number token.
@@ -117,30 +130,30 @@ public:
   Token(Type type, int32_t number) : Token(type, number, std::to_string(number)) {}
 
   /** \brief  Get the token type.  */
-  Type type() const noexcept { return type_; }
+  [[nodiscard]] auto type() const noexcept -> Type { return type_; }
 
   /** \brief  Get the number stored in this token.  */
-  int32_t number() const noexcept
+  [[nodiscard]] auto number() const noexcept -> int32_t
   {
-    assert(type_ == Type::number);
+    assert(type_ == Type::number);  // NOLINT
     return number_;
   }
 
   /** \brief  Get the string for the token.  */
-  std::string const& string() const noexcept { return str_; }
+  [[nodiscard]] auto string() const noexcept -> std::string const& { return str_; }
 
   /** \brief  Get the precedence of this token.  Lower numbers mean a higher precedence.  */
-  unsigned precedence() const noexcept { return actions_[static_cast<size_t>(type_)].precedence_; }
+  [[nodiscard]] auto precedence() const noexcept -> unsigned { return action_.precedence_; }
 
   /** \brief  Apply this token to the two tokens passed in.  */
-  Token apply(Token const& lhs, Token const& rhs) const noexcept
+  [[nodiscard]] auto apply(Token const& lhs, Token const& rhs) const -> Token
   {
-    assert(actions_[static_cast<size_t>(type_)].apply_ != nullptr);
-    return actions_[static_cast<size_t>(type_)].apply_(lhs, rhs);
+    assert(action_.apply_ != nullptr);  // NOLINT
+    return action_.apply_(lhs, rhs);
   }
 
   /** \brief  Is this token 0 or an empty string?  */
-  bool null_or_zero() const noexcept
+  [[nodiscard]] auto null_or_zero() const noexcept -> bool
   {
     if (type_ == Token::Type::number) {
       return number_ == 0;
@@ -149,18 +162,31 @@ public:
     return str_.empty();
   }
 
+  /** \brief  Get the maximum precedence.  */
+  static constexpr auto max_precedence() noexcept -> unsigned { return max_precedence_; }
+
 private:
+  static constexpr unsigned max_precedence_ = 6;
+
   /** \brief Internal structure describing actions.  */
-  struct Actions
+  struct Action
   {
     unsigned precedence_;                                    /**< Precedence of operator.  */
     std::function<Token(Token const&, Token const&)> apply_; /**< Application function. */
   };
 
-  Type type_;                /**< Token type.  */
-  int32_t number_;           /**< Number.  */
-  std::string str_;          /**< String.  */
-  static Actions actions_[]; /**< Array (indexed by type of Token). */
+  /** \brief      Get action object for a token.
+   *  \param type Type of token
+   *  \return     Reference to action object.
+   *
+   * Action object has application lifetime.
+   */
+  static auto get_action(Type type) -> Action const&;
+
+  Type type_;       /**< Token type.  */
+  int32_t number_;  /**< Number.  */
+  std::string str_; /**< String.  */
+  Action action_;   /**< Precedence and action for this token.  */
 };
 
 using Tokens = std::vector<Token>;
@@ -176,19 +202,20 @@ using TokenIt = std::vector<Token>::const_iterator;
  * We do this by hand because there actually isn't a sensible C/C++ parse function that guarantees
  * an int32_t result.
  */
-Token tokenise_number(char const* token)
+auto tokenise_number(std::string_view token) -> Token
 {
   int32_t number = 0;
   int32_t sign = 1;
-  char const* p = token;
+  constexpr int input_base = 10;
+  std::string_view::iterator p = token.begin();
   if (*p == '-') {
     sign = -1;
     ++p;
   }
 
-  while (*p >= '0' && *p <= '9') {
-    int32_t new_number = number * 10 + (*p - '0');
-    if (new_number / 10 != number) {
+  while (p != token.end() && *p >= '0' && *p <= '0' + input_base - 1) {
+    int32_t new_number = number * input_base + (*p - '0');
+    if (new_number / input_base != number) {
       warn(Msg::number_parse_overflow, token);
       break;
     }
@@ -196,8 +223,8 @@ Token tokenise_number(char const* token)
     ++p;
   }
 
-  return *p == '\0' ? Token(Token::Type::number, number * sign, token)
-                    : Token(Token::Type::string, token);
+  return p == token.end() ? Token(Token::Type::number, number * sign, token)
+                          : Token(Token::Type::string, token);
 }
 
 /** \brief  Tokenise a string into a token.
@@ -210,12 +237,16 @@ Token tokenise_number(char const* token)
  * We manually iterate through up to the first three characters to identify what type of token we
  * have.
  */
-Token tokenise(char const* token)
+auto tokenise(std::string_view token) -> Token
 {
   Token::Type type = Token::Type::string; /* What we think the token type is currently.  */
+  std::string_view::iterator it = token.begin();
+  if (it == token.end()) {
+    return Token(type, token);
+  }
 
   /* Examine the first character and make a guess about the token type.  */
-  switch (*token) {
+  switch (*it) {
   case '(':
     type = Token::Type::lparens;
     break;
@@ -274,17 +305,19 @@ Token tokenise(char const* token)
   }
 
   /* Now parse second character.  */
+  ++it;
   if (type == Token::Type::not_equal) {
-    if (token[1] != '=') {
+    if (it == token.end() || *it != '=') {
       /* ! is the only character that means something in a two character sequence but not a 1
          character one.  */
       type = Token::Type::string;
     }
   }
   else {
-    switch (token[1]) {
-    case '\0':
+    if (it == token.end()) {
       return Token(type, token);
+    }
+    switch (*it) {
     case '=':
       if (type == Token::Type::greater_than) {
         type = Token::Type::greater_than_equal;
@@ -325,7 +358,8 @@ Token tokenise(char const* token)
 
   /* Now for the third character: If the token is more than 2 characters long its definitely a
      string at this point.  */
-  if (token[2] != '\0') {
+  ++it;
+  if (it != token.end()) {
     type = Token::Type::string;
   }
 
@@ -333,32 +367,24 @@ Token tokenise(char const* token)
 }
 
 /** \brief       Tokenise the command line arguments.
- *  \param  argc Argument count.
- *  \param  argv Argument vector.
+ *  \param  args Arguments.
  *  \return      Vector of tokens.
  */
-Tokens tokenise(int argc, char** argv)
+auto tokenise(GD::Span::span<char*>::iterator begin, GD::Span::span<char*>::iterator end) -> Tokens
 {
-  assert(argc >= 0);
-  assert(argv != nullptr);
-
   Tokens result;
-  result.reserve(argc);
+  result.reserve(std::distance(begin, end));
 
-  while (argc > 0) {
-    assert(*argv != nullptr);
-    result.emplace_back(tokenise(*argv));
-    ++argv;
-    --argc;
-  }
+  auto out = std::back_inserter(result);
 
+  std::transform(begin, end, out, [](auto arg) { return tokenise(arg); });
   return result;
 }
 
-Token do_match(Token const& lhs, Token const& rhs)
+auto do_match(Token const& lhs, Token const& rhs) -> Token
 {
   std::string res = rhs.string();
-  if (res.size() > 0 && res[0] != '^') {
+  if (!res.empty() && res[0] != '^') {
     res = '^' + res;
   }
   std::regex re(res, std::regex_constants::basic);
@@ -368,16 +394,14 @@ Token do_match(Token const& lhs, Token const& rhs)
     std::string s = matched ? m.str(1) : "";
     return tokenise(s.c_str());
   }
-  else {
-    auto len = m.length();
-    if (len > INT32_MAX) {
-      warn(Msg::match_too_long, lhs.string(), rhs.string(), len);
-    }
-    return Token(Token::Type::number, matched ? static_cast<int32_t>(m.length(0)) : 0);
+  auto len = m.length();
+  if (len > INT32_MAX) {
+    warn(Msg::match_too_long, lhs.string(), rhs.string(), len);
   }
+  return Token(Token::Type::number, matched ? static_cast<int32_t>(m.length(0)) : 0);
 }
 
-Token do_multiply(Token const& lhs, Token const& rhs)
+auto do_multiply(Token const& lhs, Token const& rhs) noexcept -> Token
 {
   if (lhs.type() != Token::Type::number) {
     invalid_expr(Msg::expected_number_lhs, '*', lhs.string());
@@ -393,7 +417,7 @@ Token do_multiply(Token const& lhs, Token const& rhs)
   return Token(Token::Type::number, lhs.number() * rhs.number());
 }
 
-Token do_divide(Token const& lhs, Token const& rhs)
+auto do_divide(Token const& lhs, Token const& rhs) -> Token
 {
   if (lhs.type() != Token::Type::number) {
     invalid_expr(Msg::expected_number_lhs, '/', lhs.string());
@@ -405,7 +429,7 @@ Token do_divide(Token const& lhs, Token const& rhs)
   return Token(Token::Type::number, lhs.number() / rhs.number());
 }
 
-Token do_modulo(Token const& lhs, Token const& rhs)
+auto do_modulo(Token const& lhs, Token const& rhs) -> Token
 {
   if (lhs.type() != Token::Type::number) {
     invalid_expr(Msg::expected_number_lhs, '%', lhs.string());
@@ -417,7 +441,7 @@ Token do_modulo(Token const& lhs, Token const& rhs)
   return Token(Token::Type::number, lhs.number() % rhs.number());
 }
 
-Token do_add(Token const& lhs, Token const& rhs)
+auto do_add(Token const& lhs, Token const& rhs) -> Token
 {
   if (lhs.type() != Token::Type::number) {
     invalid_expr(Msg::expected_number_lhs, '+', lhs.string());
@@ -436,7 +460,7 @@ Token do_add(Token const& lhs, Token const& rhs)
   return Token(Token::Type::number, lhs.number() + rhs.number());
 }
 
-Token do_subtract(Token const& lhs, Token const& rhs)
+auto do_subtract(Token const& lhs, Token const& rhs) -> Token
 {
   if (lhs.type() != Token::Type::number) {
     invalid_expr(Msg::expected_number_lhs, '-', lhs.string());
@@ -456,9 +480,9 @@ Token do_subtract(Token const& lhs, Token const& rhs)
 }
 
 template<typename Fn>
-Token do_comparison(Token const& lhs, Token const& rhs, Fn comparitor)
+auto do_comparison(Token const& lhs, Token const& rhs, Fn comparitor) -> Token
 {
-  int comparison;
+  int comparison = 0;
   if (lhs.type() == Token::Type::number && rhs.type() == Token::Type::number) {
     if (lhs.number() > rhs.number()) {
       comparison = 1;
@@ -467,7 +491,7 @@ Token do_comparison(Token const& lhs, Token const& rhs, Fn comparitor)
       comparison = -1;
     }
     else {
-      assert(lhs.number() == rhs.number());
+      assert(lhs.number() == rhs.number());  // NOLINT
       comparison = 0;
     }
   }
@@ -477,32 +501,29 @@ Token do_comparison(Token const& lhs, Token const& rhs, Fn comparitor)
   return Token(Token::Type::number, comparitor(comparison) ? 1 : 0);
 }
 
-Token do_and(Token const& lhs, Token const& rhs)
+auto do_and(Token const& lhs, Token const& rhs) -> Token
 {
   if (!lhs.null_or_zero() && !rhs.null_or_zero()) {
     return lhs;
   }
-  else {
-    return Token(Token::Type::number, 0);
-  }
+  return Token(Token::Type::number, 0);
 }
 
-Token do_or(Token const& lhs, Token const& rhs)
+auto do_or(Token const& lhs, Token const& rhs) -> Token
 {
   if (!lhs.null_or_zero()) {
     return lhs;
   }
-  else if (!rhs.string().empty()) {
+  if (!rhs.string().empty()) {
     return rhs;
   }
-  else {
-    return Token(Token::Type::number, 0);
-  }
+
+  return Token(Token::Type::number, 0);
 }
 
-Token parse(TokenIt& begin, TokenIt end);
+auto parse(TokenIt& begin, TokenIt const& end) -> Token;
 
-Token parse_primary(TokenIt& begin, TokenIt end)
+auto parse_primary(TokenIt& begin, TokenIt const& end) -> Token
 {
   if (begin == end) {
     invalid_expr(Msg::expected_token);
@@ -511,7 +532,7 @@ Token parse_primary(TokenIt& begin, TokenIt end)
   return *(begin++);
 }
 
-Token parse_parens(TokenIt& begin, TokenIt end)
+auto parse_parens(TokenIt& begin, TokenIt const& end) -> Token
 {
   if (begin != end) {
     if (begin->type() == Token::Type::lparens) {
@@ -531,46 +552,51 @@ Token parse_parens(TokenIt& begin, TokenIt end)
   return parse_primary(begin, end);
 }
 
-Token::Actions Token::actions_[] = {
-  {100, nullptr},  // number,
-  {100, nullptr},  // string,
-  {100, nullptr},  // lparens,
-  {100, nullptr},  // rparens,
-  {6, do_or},      // logical_or,
-  {5, do_and},     // logical_and,
-  {4,
-   [](Token const& l, Token const& r) {
-     return do_comparison(l, r, [](int cmp) { return cmp == 0; });
-   }},  // equal
-  {4,
-   [](Token const& l, Token const& r) {
-     return do_comparison(l, r, [](int cmp) { return cmp > 0; });
-   }},  // greater_than,
-  {4,
-   [](Token const& l, Token const& r) {
-     return do_comparison(l, r, [](int cmp) { return cmp >= 0; });
-   }},  // greater_than_equal,
-  {4,
-   [](Token const& l, Token const& r) {
-     return do_comparison(l, r, [](int cmp) { return cmp < 0; });
-   }},  // less_than,
-  {4,
-   [](Token const& l, Token const& r) {
-     return do_comparison(l, r, [](int cmp) { return cmp <= 0; });
-   }},  // less_than_equal,
-  {4,
-   [](Token const& l, Token const& r) {
-     return do_comparison(l, r, [](int cmp) { return cmp != 0; });
-   }},               // not_equal,
-  {3, do_add},       // add,
-  {3, do_subtract},  // subtract,
-  {2, do_multiply},  // multiply,
-  {2, do_divide},    // divide,
-  {2, do_modulo},    // modulo,
-  {1, do_match},     // match
-};
+auto Token::get_action(Type type) -> Token::Action const&
+{
+  static std::array<Action, 18> const actions = {
+    Action{max_precedence_ + 1, nullptr},  // number,
+    Action{max_precedence_ + 1, nullptr},  // string,
+    Action{max_precedence_ + 1, nullptr},  // lparens,
+    Action{max_precedence_ + 1, nullptr},  // rparens,
+    Action{max_precedence_ + 0, do_or},    // logical_or,
+    Action{max_precedence_ - 1, do_and},   // logical_and,
+    Action{max_precedence_ - 2,
+           [](Token const& l, Token const& r) {
+             return do_comparison(l, r, [](int cmp) { return cmp == 0; });
+           }},  // equal
+    Action{max_precedence_ - 2,
+           [](Token const& l, Token const& r) {
+             return do_comparison(l, r, [](int cmp) { return cmp > 0; });
+           }},  // greater_than,
+    Action{max_precedence_ - 2,
+           [](Token const& l, Token const& r) {
+             return do_comparison(l, r, [](int cmp) { return cmp >= 0; });
+           }},  // greater_than_equal,
+    Action{max_precedence_ - 2,
+           [](Token const& l, Token const& r) {
+             return do_comparison(l, r, [](int cmp) { return cmp < 0; });
+           }},  // less_than,
+    Action{max_precedence_ - 2,
+           [](Token const& l, Token const& r) {
+             return do_comparison(l, r, [](int cmp) { return cmp <= 0; });
+           }},  // less_than_equal,
+    Action{max_precedence_ - 2,
+           [](Token const& l, Token const& r) {
+             return do_comparison(l, r, [](int cmp) { return cmp != 0; });
+           }},                                 // not_equal,
+    Action{max_precedence_ - 3, do_add},       // add,
+    Action{max_precedence_ - 3, do_subtract},  // subtract,
+    Action{max_precedence_ - 4, do_multiply},  // multiply,
+    Action{max_precedence_ - 4, do_divide},    // divide,
+    Action{max_precedence_ - 4, do_modulo},    // modulo,
+    Action{max_precedence_ - 5, do_match},     // match
+  };
 
-Token parse_expr(TokenIt& begin, TokenIt end, unsigned int precedence)
+  return actions.at(static_cast<size_t>(type));
+}
+
+auto parse_expr(TokenIt& begin, TokenIt const& end, unsigned int precedence) -> Token
 {
   if (precedence == 0) {
     return parse_parens(begin, end);
@@ -578,46 +604,50 @@ Token parse_expr(TokenIt& begin, TokenIt end, unsigned int precedence)
 
   Token lhs = parse_expr(begin, end, precedence - 1);
   while (begin != end && begin->precedence() == precedence) {
-    TokenIt op = begin++;
+    auto op = begin++;
     Token rhs = parse_expr(begin, end, precedence - 1);
     lhs = op->apply(lhs, rhs);
   }
   return lhs;
 }
 
-Token parse(TokenIt& begin, TokenIt end) { return parse_expr(begin, end, 6); }
+auto parse(TokenIt& begin, TokenIt const& end) -> Token
+{
+  return parse_expr(begin, end, Token::max_precedence());
+}
 }  // namespace
 
-int main(int argc, char** argv)
+auto main(int argc, char** argv) -> int
 {
-  ::setlocale(LC_ALL, "");
-  GD::program_name(argv[0]);
+  try {
+    std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
+    GD::Span::span<char*> args(argv, argc);
+    auto it = args.begin();
+    GD::program_name(*it++);
 
-  --argc;
-  ++argv;
+    if (it != args.end() && std::strcmp(*it, "--") == 0) {
+      ++it;
+    }
 
-  if (argc > 0 && argv[0][0] == '-' && argv[0][1] == '-' && argv[0][2] == '\0') {
-    ++argv;
-    --argc;
+    if (it == args.end()) {
+      error(Msg::missing_operand);
+    }
+
+    auto tokens = tokenise(it, args.end());
+    auto begin = tokens.cbegin();
+    auto result = parse(begin, tokens.end());
+    if (begin != tokens.end()) {
+      invalid_expr(Msg::extra_tokens_at_end, begin->string());
+    }
+
+    std::cout << result.string() << '\n';
+    // NOLINTNEXTLINE(concurrency-mt-unsafe)
+    exit(result.null_or_zero() ? ExitCode::zero_or_null_result : ExitCode::success);
   }
-
-  if (argc == 0) {
-    error(Msg::missing_operand);
+  catch (std::exception& e) {
+    error(Msg::uncaught_std_exception, e.what());
   }
-
-  auto tokens = tokenise(argc, argv);
-  TokenIt begin = tokens.begin();
-  auto result = parse(begin, tokens.end());
-  if (begin != tokens.end()) {
-    invalid_expr(Msg::extra_tokens_at_end, begin->string());
-  }
-
-  std::cout << result.string() << '\n';
-
-  if (result.null_or_zero()) {
-    return 1;
-  }
-  else {
-    return 0;
+  catch (...) {
+    error(Msg::uncaught_exception);
   }
 }

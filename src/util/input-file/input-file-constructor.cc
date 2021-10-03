@@ -7,7 +7,7 @@
 
 #include "util-messages.hh"
 
-#include <stdio.h>
+#include <cstdio>
 
 GD::InputFile::InputFile(std::string_view filename, std::string_view mode)
     : filename_(filename), file_(nullptr), is_stdin_(false), buffer_(nullptr)
@@ -18,7 +18,7 @@ GD::InputFile::InputFile(std::string_view filename, std::string_view mode)
     file_ = stdin;
   }
   else {
-    file_ = ::fopen(filename_.data(), mode.data());
+    file_ = std::fopen(filename_.data(), mode.data());
     if (file_ == nullptr) {
       report_error(Msg::file_open_error);
       return;
@@ -29,6 +29,6 @@ GD::InputFile::InputFile(std::string_view filename, std::string_view mode)
 GD::InputFile::~InputFile()
 {
   if (!is_stdin_ && file_ != nullptr) {
-    ::fclose(file_);
+    std::fclose(file_);
   }
 }

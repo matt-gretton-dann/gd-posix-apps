@@ -12,7 +12,7 @@ namespace fs = ::std::filesystem;
 namespace fs = ::std::experimental::filesystem;
 #endif
 
-int main(int argc, char **argv) {
+auto main(int argc, char **argv) -> int {
   fs::path p(argv[0]);
   return fs::exists(p);
 }

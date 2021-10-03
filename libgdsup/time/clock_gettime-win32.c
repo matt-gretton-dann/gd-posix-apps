@@ -18,8 +18,8 @@
 static int convert_file_time_to_timespec(struct timespec* ts, FILETIME ft, LONGLONG bias)
 {
   LARGE_INTEGER li;
-  li.HighPart = ft.dwHighDateTime;
-  li.LowPart = ft.dwLowDateTime;
+  li.HighPart = (LONG)ft.dwHighDateTime;
+  li.LowPart = (LONG)ft.dwLowDateTime;
   uint64_t file_time = li.QuadPart - bias;
 
   /* file_time is in units of 100 nano-seconds (10^-4).  tv_nsec is in micro-seconds (10^-9). */
@@ -43,7 +43,10 @@ int clock_gettime(clockid_t clock, struct timespec* ts)
 
   switch (clock) {
   case CLOCK_PROCESS_CPUTIME_ID: {
-    FILETIME start_time, end_time, user_time, kernel_time;
+    FILETIME start_time;
+    FILETIME end_time;
+    FILETIME user_time;
+    FILETIME kernel_time;
     BOOL success =
       GetProcessTimes(GetCurrentProcess(), &start_time, &end_time, &kernel_time, &user_time);
     if (!success) {
@@ -55,7 +58,10 @@ int clock_gettime(clockid_t clock, struct timespec* ts)
     return convert_file_time_to_timespec(ts, user_time, 0);
   }
   case CLOCK_THREAD_CPUTIME_ID: {
-    FILETIME start_time, end_time, user_time, kernel_time;
+    FILETIME start_time;
+    FILETIME end_time;
+    FILETIME user_time;
+    FILETIME kernel_time;
     BOOL success =
       GetProcessTimes(GetCurrentProcess(), &start_time, &end_time, &kernel_time, &user_time);
     if (!success) {

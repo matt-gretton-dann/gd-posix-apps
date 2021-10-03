@@ -7,6 +7,7 @@
 #include "gd/libgen.h"
 
 #include "gd/limits.h"
+#include "gd/span.hh"
 #include "gd/stdlib.h"
 #include "gd/string.h"
 
@@ -14,9 +15,9 @@
 
 #include "dirname-messages.hh"
 
+#include <clocale>
+#include <cstdio>
 #include <iostream>
-#include <locale.h>
-#include <stdio.h>
 
 namespace {
 template<typename... Ts>
@@ -27,44 +28,33 @@ template<typename... Ts>
             << GD::Dirname::Messages::get().format(GD::Dirname::Set::dirname,
                                                    GD::Dirname::Msg::usage, GD::program_name())
             << '\n';
-  ::exit(EXIT_FAILURE);
+  std::exit(EXIT_FAILURE);  // NOLINT(concurrency-mt-unsafe)
 }
 
 }  // namespace
-int main(int argc, char** argv)
+auto main(int argc, char** argv) -> int
 {
-  ::setlocale(LC_ALL, "");
-  GD::program_name(argv[0]);
+  std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
+  GD::Span::span<char*> args(argv, argc);
+  GD::program_name(args[0]);
 
   // Skip argv[0].
-  ++argv;
-  --argc;
+  GD::Span::span<char*>::iterator it = args.begin() + 1;
 
   // Skip optional `--`.
-  if (argc > 0 && argv[0][0] == '-' && argv[0][1] == '-' && argv[0][2] == '\0') {
-    ++argv;
-    --argc;
+  if (it != args.end() && std::strcmp(*it, "--") == 0) {
+    ++it;
   }
 
-  if (argc == 0) {
+  if (it == args.end()) {
     report_error(GD::Dirname::Msg::missing_arguments);
   }
-  if (argc > 1) {
+  if (it + 1 != args.end()) {
     report_error(GD::Dirname::Msg::too_many_arguments);
   }
 
-  char* bname = ::strdup(argv[0]);
-  if (bname == 0) {
-    report_error(GD::Dirname::Msg::out_of_memory);
-  }
-  bname = ::dirname(bname);
-  ::size_t base_len = ::strlen(bname);
-
-  while (base_len > INT_MAX) {
-    ::printf("%.*s", INT_MAX, bname);
-    bname += INT_MAX;
-    base_len -= INT_MAX;
-  }
-  ::printf("%.*s\n", static_cast<int>(base_len), bname);
+  std::string bname(*it);
+  bname = ::dirname(bname.data());  // NOLINT(concurrency-mt-unsafe)
+  std::cout << bname << '\n';
   return EXIT_SUCCESS;
 }
