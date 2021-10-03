@@ -17,11 +17,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Packed install (Ubuntu)
+    - name: Package install (Ubuntu)
       if: ${{ matrix.os  == 'ubuntu-latest' }}
       run: |
-        sudo apt install ninja-build
-    - name: Packed install (Ubuntu)
+        sudo apt install ninja-build clang-tidy
+    - name: Package install (macOS)
       if: ${{ matrix.os == 'macos-latest' }}
       run: |
         brew install ninja
@@ -34,7 +34,7 @@ jobs:
     - name: Test
       run: |
         cd "${GITHUB_WORKSPACE}/build"
-        ctest
+        ctest -V
 
 
   windows-build:
