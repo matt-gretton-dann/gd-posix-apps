@@ -200,25 +200,25 @@ operator-(SpanIterator<T> it, typename SpanIterator<T>::difference_type const of
 
 #  if !defined(__cpp_impl_three_way_comparison) || __cpp_impl_three_way_comparison < 201907L
 template<typename T>
-[[nodiscard]] constexpr bool operator!=(SpanIterator<T> lhs, SpanIterator<T> rhs) const noexcept
+[[nodiscard]] constexpr bool operator!=(SpanIterator<T> lhs, SpanIterator<T> rhs) noexcept
 {
   return !(lhs == rhs);
 }
 
 template<typename T>
-[[nodiscard]] constexpr bool operator<=(SpanIterator<T> lhs, SpanIterator<T> rhs) const noexcept
+[[nodiscard]] constexpr bool operator<=(SpanIterator<T> lhs, SpanIterator<T> rhs) noexcept
 {
   return (lhs == rhs) || (lhs < rhs);
 }
 
 template<typename T>
-[[nodiscard]] constexpr bool operator>(SpanIterator<T> lhs, SpanIterator<T> rhs) const noexcept
+[[nodiscard]] constexpr bool operator>(SpanIterator<T> lhs, SpanIterator<T> rhs) noexcept
 {
   return !(lhs == rhs) && !(lhs < rhs);
 }
 
 template<typename T>
-[[nodiscard]] constexpr bool operator>=(SpanIterator<T> lhs, SpanIterator<T> rhs) const noexcept
+[[nodiscard]] constexpr bool operator>=(SpanIterator<T> lhs, SpanIterator<T> rhs) noexcept
 {
   return !(lhs < rhs);
 }
