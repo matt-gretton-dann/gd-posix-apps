@@ -386,43 +386,47 @@ void do_print(std::string const& fname, GD::Ar::Member const& member, Flags flag
 /** \brief  Convert a mode_t to a mode string.  */
 auto to_mode_string(mode_t mode) -> std::string
 {
-  std::string result(9, '-');
+  std::string result;
 
-  if ((mode & S_IRUSR) != 0U) {
-    result[0] = 'r';
+  result.push_back(((mode & S_IRUSR) != 0U) ? 'r' : '-');
+  result.push_back(((mode & S_IWUSR) != 0U) ? 'w' : '-');
+  switch (mode & (S_ISUID | S_IXUSR)) {
+  case S_ISUID:
+    result.push_back('s');
+    break;
+  case S_ISUID | S_IXUSR:
+    result.push_back('S');
+    break;
+  case S_IXUSR:
+    result.push_back('x');
+    break;
+  default:
+    result.push_back('-');
+    break;
   }
-  if ((mode & S_IWUSR) != 0U) {
-    result[1] = 'w';
+  result.push_back(((mode & S_IRGRP) != 0U) ? 'r' : '-');
+  result.push_back(((mode & S_IWGRP) != 0U) ? 'w' : '-');
+  switch (mode & (S_ISGID | S_IXGRP)) {
+  case S_ISGID:
+    result.push_back('s');
+    break;
+  case S_ISGID | S_IXGRP:
+    result.push_back('S');
+    break;
+  case S_IXGRP:
+    result.push_back('x');
+    break;
+  default:
+    result.push_back('-');
+    break;
   }
-  if ((mode & S_ISUID) != 0U) {
-    result[2] = (mode & S_IXUSR) != 0U ? 's' : 'S';
-  }
-  else if ((mode & S_IXUSR) != 0U) {
-    result[2] = 'x';
-  }
-  if ((mode & S_IRGRP) != 0U) {
-    result[3] = 'r';
-  }
-  if ((mode & S_IWGRP) != 0U) {
-    result[4] = 'w';
-  }
-  if ((mode & S_ISGID) != 0U) {
-    result[5] = (mode & S_IXGRP) != 0U ? 's' : 'S';
-  }
-  else if ((mode & S_IXGRP) != 0U) {
-    result[5] = 'x';
-  }
-  if ((mode & S_IROTH) != 0U) {
-    result[6] = 'r';
-  }
-  if ((mode & S_IWOTH) != 0U) {
-    result[7] = 'w';
-  }
+  result.push_back(((mode & S_IROTH) != 0U) ? 'r' : '-');
+  result.push_back(((mode & S_IWOTH) != 0U) ? 'w' : '-');
   if (((mode & S_ISVTX) != 0U) && S_ISDIR(mode)) {
-    result[8] = (mode & S_IXOTH) != 0U ? 't' : 'T';
+    result.push_back(((mode & S_IXOTH) != 0U) ? 't' : 'T');
   }
-  else if ((mode & S_IXOTH) != 0U) {
-    result[8] = 'x';
+  else {
+    result.push_back(((mode & S_IXOTH) != 0U) ? 'x' : '-');
   }
 
   return result;
@@ -595,7 +599,7 @@ auto process_command_line(GD::Span::span<char*> args) -> State
 }  // namespace
 
 auto main(int argc, char** argv) -> int
-{
+try {
   std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
   GD::Span::span<char*> args(argv, argc);
   GD::program_name(args[0]);
@@ -614,7 +618,7 @@ auto main(int argc, char** argv) -> int
       std::cerr << GD::Ar::Messages::get().format(GD::Ar::Set::ar, Msg::creating_archive,
                                                   state.archive.native());
     }
-    mode = (~mode) & 0644;
+    mode = (~mode) & (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
   }
   else {
     file.emplace(GD::InputFile(state.archive));
@@ -659,4 +663,10 @@ auto main(int argc, char** argv) -> int
     abort();
   }
   return EXIT_SUCCESS;
+}
+catch (std::exception& e) {
+  error(Msg::uncaught_std_exception, e.what());
+}
+catch (...) {
+  error(Msg::uncaught_exception);
 }

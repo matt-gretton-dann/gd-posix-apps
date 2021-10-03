@@ -56,6 +56,18 @@
         "id": 9,
         "description": "Write to stdout failed with message {0}.",
         "C": "Failed to write to standard output: {0}"
+      },
+      {
+        "msg": "uncaught_std_exception",
+        "id": 10,
+        "description": "We have an uncaught exception of type std::exception, {0} is the what.",
+        "C": "Internal error: {0}."
+      },
+      {
+        "msg": "uncaught_exception",
+        "id": 11,
+        "description": "We have an uncaught exception of unknown type.",
+        "C": "Internal error: Unknown cause."
       }
     ]
   }
