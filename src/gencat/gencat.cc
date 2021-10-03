@@ -51,9 +51,9 @@ std::string program_name;  ///< Program name - somewhere global for all.
  * the output file may already have some data in it.
  */
 template<typename T, std::size_t E>
-void xwrite(int fd, GD::Std::span<T, E> data)
+void xwrite(int fd, GD::Span::span<T, E> data)
 {
-  auto d = GD::Std::as_bytes(data);
+  auto d = GD::Span::as_bytes(data);
   std::size_t amount_done = 0;
   while (amount_done < d.size()) {
     // Jump through some hoops to ensure we write at most SSIZE_MAX bytes of
@@ -422,7 +422,7 @@ public:
     write(data.begin() + file_size_off, std::uint64_t(data.size()));
 
     // Now write data to the file.
-    xwrite(fd, GD::Std::span<uint8_t>(data.data(), data.size()));
+    xwrite(fd, GD::Span::span<uint8_t>(data.data(), data.size()));
   }
 
 private:
@@ -717,8 +717,8 @@ private:
 auto main(int argc, char** argv) -> int
 try {
   std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
-  GD::Std::span<char*> args(argv, argc);
-  GD::Std::span<char*>::iterator it = args.begin();
+  GD::Span::span<char*> args(argv, argc);
+  GD::Span::span<char*>::iterator it = args.begin();
 
   program_name = ::basename(*it++);  // NOLINT(concurrency-mt-unsafe)
 

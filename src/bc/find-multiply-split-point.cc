@@ -199,7 +199,7 @@ auto main(int argc, char** argv) -> int
 {
   constexpr Number::NumType start_at = 500;
   auto result = check(start_at);
-  GD::Std::span<char*> args(argv, argc);
+  GD::Span::span<char*> args(argv, argc);
   if (args.size() == 1) {
     output(std::cout, result);
   }

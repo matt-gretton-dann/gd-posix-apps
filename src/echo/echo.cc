@@ -192,8 +192,8 @@ private:
 
 auto main(int argc, char** argv) -> int
 {
-  GD::Std::span<char*> args(argv, argc);
-  GD::Std::span<char*>::iterator it = args.begin();
+  GD::Span::span<char*> args(argv, argc);
+  GD::Span::span<char*>::iterator it = args.begin();
   GD::program_name(*it++);
   std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
 

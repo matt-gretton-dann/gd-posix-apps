@@ -9,13 +9,9 @@
 
 #if !defined(FORCE_SUPPLEMENTAL_LIBRARY) && __has_include(<span>)
 #  include <span>
-namespace GD::Std {
-using dynamic_extent = std::dynamic_extent;
-template<typename T, std::size_t Extent = std::dynamic_extent>
-using span = std::span<T, Extent>;
-using as_bytes = std::as_bytes;
-using as_writable_bytes = std::as_writable_bytes;
-}  // namespace GD::Std
+namespace GD::Span {
+using namespace std;  // NOLINT(google-build-using-namespace)
+}  // namespace GD::Span
 #else
 #  include <array>
 #  include <cstddef>
@@ -24,7 +20,7 @@ using as_writable_bytes = std::as_writable_bytes;
 
 #  include <type_traits>
 
-namespace GD::Std {
+namespace GD::Span {
 
 using size_t = ::std::size_t;
 inline constexpr size_t dynamic_extent = ::std::numeric_limits<size_t>::max();
@@ -69,7 +65,7 @@ private:
 };
 
 template<typename T>
-struct SpanBase<T, GD::Std::dynamic_extent>
+struct SpanBase<T, GD::Span::dynamic_extent>
 {
 public:
   constexpr SpanBase() noexcept = default;
@@ -392,7 +388,7 @@ span<std::byte, (N == dynamic_extent ? N : N * sizeof(T))> as_writable_bytes(spa
   }
 }
 
-}  // namespace GD::Std
+}  // namespace GD::Span
 #endif    // Pick a spanheader.
 
 #endif  // GD_SPAN_HH

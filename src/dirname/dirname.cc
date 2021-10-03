@@ -35,11 +35,11 @@ template<typename... Ts>
 auto main(int argc, char** argv) -> int
 {
   std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
-  GD::Std::span<char*> args(argv, argc);
+  GD::Span::span<char*> args(argv, argc);
   GD::program_name(args[0]);
 
   // Skip argv[0].
-  GD::Std::span<char*>::iterator it = args.begin() + 1;
+  GD::Span::span<char*>::iterator it = args.begin() + 1;
 
   // Skip optional `--`.
   if (it != args.end() && std::strcmp(*it, "--") == 0) {

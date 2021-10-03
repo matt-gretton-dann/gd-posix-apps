@@ -53,7 +53,7 @@ auto do_cat(std::string_view fname, bool unbuffered) -> bool
 auto main(int argc, char** argv) -> int
 {
   std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
-  GD::Std::span<char*> args(argv, argc);
+  GD::Span::span<char*> args(argv, argc);
   GD::program_name(args[0]);
 
   int c = 0;

@@ -37,7 +37,7 @@ template<typename... Ts>
 auto main(int argc, char** argv) -> int
 {
   std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
-  GD::Std::span<char*> args(argv, argc);
+  GD::Span::span<char*> args(argv, argc);
   GD::program_name(args[0]);
 
   auto begin = args.begin() + 1;

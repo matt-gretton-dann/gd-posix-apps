@@ -207,7 +207,7 @@ class Messages:
         set_str_array = ""
         for i in range(max_s):
             msgset = set_strs.get(i, 'empty_')
-            set_str_array += f"\n    GD::Std::span({msgset}),"
+            set_str_array += f"\n    GD::Span::span({msgset}),"
 
         hash_object = hashlib.md5(header_file.encode())
         include_guard = f"_{hash_object.hexdigest()}_INCLUDED".upper()
@@ -248,7 +248,7 @@ public:
 
   static constexpr char const * catalogue_ = "{catalogue_id.lower()}";
   static SetEnum const default_set_ = Set:: {default};
-  static constexpr std::array<GD::Std::span<char const* const>, {max_s}> messages_ = {{{set_str_array}
+  static constexpr std::array<GD::Span::span<char const* const>, {max_s}> messages_ = {{{set_str_array}
   }};
 }};
 

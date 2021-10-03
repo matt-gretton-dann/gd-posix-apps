@@ -70,7 +70,7 @@ auto main(int argc, char** argv) -> int
 {
   // NOLINTNEXTLINE(concurrency-mt-unsafe)
   std::setlocale(LC_ALL, "");
-  GD::Std::span<char*> args(argv, argc);
+  GD::Span::span<char*> args(argv, argc);
   GD::program_name(args[0]);
 
   State state;

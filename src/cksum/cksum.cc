@@ -84,11 +84,11 @@ auto main(int argc, char** argv) -> int
 {
   try {
     std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
-    GD::Std::span<char*> args(argv, argc);
+    GD::Span::span<char*> args(argv, argc);
     GD::program_name(args[0]);
 
     // Skip a '--' option
-    GD::Std::span<char*>::iterator it = args.begin() + 1;
+    GD::Span::span<char*>::iterator it = args.begin() + 1;
     if (it != args.end() && std::strcmp(*it, "--") == 0) {
       ++it;
     }
