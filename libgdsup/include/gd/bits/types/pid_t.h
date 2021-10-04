@@ -4,12 +4,12 @@
  *  SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _LIBGDSUP_INCLUDE_BITS_TYPES_PID_T_H_INCLUDED
-#  define _LIBGDSUP_INCLUDE_BITS_TYPES_PID_T_H_INCLUDED
+#ifndef LIBGDSUP_INCLUDE_BITS_TYPES_PID_T_H_INCLUDED
+#define LIBGDSUP_INCLUDE_BITS_TYPES_PID_T_H_INCLUDED
 
 #ifdef _WIN32
 /** On Windows we map process IDs to ints (as everywhere else does really..  */
 typedef int pid_t;
 #endif
 
-#endif  // _LIBGDSUP_INCLUDE_BITS_TYPES_UID_T_H_INCLUDED
+#endif  // LIBGDSUP_INCLUDE_BITS_TYPES_PID_T_H_INCLUDED

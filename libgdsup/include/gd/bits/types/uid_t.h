@@ -4,12 +4,12 @@
  *  SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _LIBGDSUP_INCLUDE_BITS_TYPES_UID_T_H_INCLUDED
-#define _LIBGDSUP_INCLUDE_BITS_TYPES_UID_T_H_INCLUDED
+#ifndef LIBGDSUP_INCLUDE_BITS_TYPES_UID_T_H_INCLUDED
+#define LIBGDSUP_INCLUDE_BITS_TYPES_UID_T_H_INCLUDED
 
 #ifdef _WIN32
 /** On Windows we map group IDs to intptrs so we can handle them as Pointers too.  */
 typedef intptr_t uid_t;
 #endif
 
-#endif  // _LIBGDSUP_INCLUDE_BITS_TYPES_UID_T_H_INCLUDED
+#endif  // LIBGDSUP_INCLUDE_BITS_TYPES_UID_T_H_INCLUDED
