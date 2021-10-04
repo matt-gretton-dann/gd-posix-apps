@@ -79,10 +79,10 @@ private:
 template<typename T, typename It>
 void write_be(It it, T v)
 {
-  T shift = sizeof(T) * 8;
+  T shift = sizeof(T) * CHAR_BIT;
   while (shift != 0) {
-    shift -= 8;
-    *it++ = static_cast<std::byte>((v >> shift) & 0xff);
+    shift -= CHAR_BIT;
+    *it++ = static_cast<std::byte>(v >> shift);
   }
 }
 
@@ -98,9 +98,9 @@ template<typename T, typename It>
 void write_le(It it, T v)
 {
   T shift = 0;
-  while (shift != sizeof(T) * 8) {
-    *it++ = static_cast<std::byte>((v >> shift) & 0xff);
-    shift += 8;
+  while (shift != sizeof(T) * CHAR_BIT) {
+    *it++ = static_cast<std::byte>(v >> shift);
+    shift += CHAR_BIT;
   }
 }
 
@@ -114,12 +114,12 @@ void write_le(It it, T v)
  * \c *it will be read from sizeof(T) times.
  */
 template<typename T, typename It>
-T read_be(It it)
+auto read_be(It it) -> T
 {
   T result = 0;
-  T shift = sizeof(T) * 8;
+  T shift = sizeof(T) * CHAR_BIT;
   while (shift != 0) {
-    shift -= 8;
+    shift -= CHAR_BIT;
     result |= static_cast<T>(*it++) << shift;
   }
   return result;
@@ -135,13 +135,13 @@ T read_be(It it)
  * \c *it will be read from sizeof(T) times.
  */
 template<typename T, typename It>
-T read_le(It it)
+auto read_le(It it) -> T
 {
   T result = 0;
   T shift = 0;
-  while (shift != sizeof(T) * 8) {
+  while (shift != sizeof(T) * CHAR_BIT) {
     result |= static_cast<T>(*it++) << shift;
-    shift += 8;
+    shift += CHAR_BIT;
   }
   return result;
 }
