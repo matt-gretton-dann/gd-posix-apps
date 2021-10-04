@@ -18,14 +18,14 @@
 #include "util/file.hh"
 #include "util/utils.hh"
 
-#include <assert.h>
+#include <cassert>
+#include <cstddef>
 #include <ctime>
 #include <map>
 #include <memory>
 #include <numeric>
 #include <optional>
 #include <span>
-#include <stddef.h>
 #include <stdexcept>
 #include <string>
 #include <system_error>
@@ -89,7 +89,7 @@ namespace Details {
  *
  * \note For SVR4 the returned name is without the trailing short name terminator (/).
  */
-constexpr char const* symbol_table_name(Format format)
+constexpr auto symbol_table_name(Format format) noexcept -> char const*
 {
   switch (format) {
   case Format::bsd:
@@ -111,7 +111,7 @@ constexpr char const* symbol_table_name(Format format)
  *
  * \note For SVR4 the returned name is without the trailing short name terminator (/).
  */
-constexpr char const* string_table_name(Format format)
+constexpr auto string_table_name(Format format) noexcept -> char const*
 {
   switch (format) {
   case Format::bsd:
@@ -128,16 +128,19 @@ constexpr char const* string_table_name(Format format)
 }
 
 /** \brief  Can the format have two symbol tables? */
-constexpr bool has_two_symbol_tables(Format format) { return format == Format::win32; }
+constexpr auto has_two_symbol_tables(Format format) noexcept -> bool
+{
+  return format == Format::win32;
+}
 
 /** \brief  Does the format have the long name inline after the main header? */
-constexpr bool inline_long_names(Format format)
+constexpr auto inline_long_names(Format format) noexcept -> bool
 {
   return format == GD::Ar::Format::bsd || format == GD::Ar::Format::darwin;
 }
 
 /** \brief  What is the fina; character of an out of line long name? */
-constexpr char long_name_terminator(GD::Ar::Format format)
+constexpr auto long_name_terminator(GD::Ar::Format format) noexcept -> char
 {
   switch (format) {
   case Format::bsd:
@@ -156,7 +159,7 @@ constexpr char long_name_terminator(GD::Ar::Format format)
 }
 
 /** \brief  What is the final character of a name that is stored inline in the name field.  */
-constexpr char short_name_terminator(GD::Ar::Format format)
+constexpr auto short_name_terminator(GD::Ar::Format format) noexcept -> char
 {
   switch (format) {
   case GD::Ar::Format::bsd:
@@ -173,7 +176,7 @@ constexpr char short_name_terminator(GD::Ar::Format format)
 }
 
 /** \brief  Get the prefix that identifies a long name.  */
-constexpr char const* long_name_prefix(GD::Ar::Format format)
+constexpr auto long_name_prefix(GD::Ar::Format format) noexcept -> char const*
 {
   switch (format) {
   case GD::Ar::Format::bsd:
@@ -193,14 +196,14 @@ constexpr char const* long_name_prefix(GD::Ar::Format format)
  *  \param  symbol_table Symbol table member.
  *  \return              Map of members to symbols.
  */
-SymbolMap get_symbols(Member const& symbol_table);
+auto get_symbols(Member const& symbol_table) -> SymbolMap;
 
 /** \brief                Read the second symbol table
  *  \param  symbol_table1 the symbol map from reading the first symbol table.
  *  \param  symbol_table2 The member containing the second symbol table.
  *  \return               Updated symbol table.
  */
-SymbolMap get_symbols(SymbolMap const& symbol_table1, Member const& symbol_table2);
+auto get_symbols(SymbolMap const& symbol_table1, Member const& symbol_table2) -> SymbolMap;
 
 /** \brief  Header of an archive member.  */
 class MemberHeader
@@ -240,39 +243,39 @@ public:
   ~MemberHeader() = default;
   MemberHeader(MemberHeader const&) = default;
   MemberHeader(MemberHeader&&) noexcept = default;
-  MemberHeader& operator=(MemberHeader const&) = default;
-  MemberHeader& operator=(MemberHeader&&) noexcept = default;
+  auto operator=(MemberHeader const&) -> MemberHeader& = default;
+  auto operator=(MemberHeader&&) noexcept -> MemberHeader& = default;
 
   /** Get archive member name.  */
-  std::string const& name() const noexcept;
+  [[nodiscard]] auto name() const noexcept -> std::string const&;
 
   /** Get archive member modification time (secs since 1 Jan 1970).  */
-  std::time_t mtime() const noexcept;
+  [[nodiscard]] auto mtime() const noexcept -> std::time_t;
 
   /** \brief  Get archive member User ID.
    *  \return Returns -1 if no user ID was set.
    */
-  uid_t uid() const noexcept;
+  [[nodiscard]] auto uid() const noexcept -> uid_t;
 
   /** \brief  Get archive member Group ID.
    *  \return Returns -1 if no group ID was set.
    */
-  gid_t gid() const noexcept;
+  [[nodiscard]] auto gid() const noexcept -> gid_t;
 
   /** \brief  Get archive member mode. */
-  mode_t mode() const noexcept;
+  [[nodiscard]] auto mode() const noexcept -> mode_t;
 
   /** \brief  Get archive member size.  */
-  size_t size() const noexcept;
+  [[nodiscard]] auto size() const noexcept -> std::size_t;
 
   /** \brief  Get header size.  */
-  size_t header_size() const noexcept;
+  [[nodiscard]] auto header_size() const noexcept -> std::size_t;
 
   /** \brief  Get the archive format.  */
-  Format format() const noexcept;
+  [[nodiscard]] auto format() const noexcept -> Format;
 
   /** Equality comparison.  */
-  bool operator==(MemberHeader const& rhs) const noexcept;
+  auto operator==(MemberHeader const& rhs) const noexcept -> bool;
 
 private:
   /** \brief                    Check there is no trailing non-space in a range.
@@ -300,10 +303,10 @@ private:
    * Valid numbers start with zero or more space, followed by the number, terminated by zero or
    * more space.
    */
-  template<typename T, char Base = 10>
-  static T to_number(std::string_view v, T def = 0)
+  template<typename T, char Base = 10>  // NOLINT
+  static auto to_number(std::string_view v, T def = 0) -> T
   {
-    static_assert(Base <= 10);
+    static_assert(Base <= 10);  // NOLINT
 
     if (v.length() > std::numeric_limits<T>::digits) {
       throw std::logic_error("String can overflow digit type.");
@@ -338,7 +341,7 @@ private:
    *  \throw        std::runtime_error If file contains less than \a len bytes to read.
    */
   template<typename IFType>
-  std::string read_str(IFType& file, std::size_t len)
+  auto read_str(IFType& file, std::size_t len) -> std::string
   {
     std::string s(len, '\0');
     file.read(std::span<char>(s.data(), len));
@@ -359,8 +362,8 @@ private:
    *   " *[0-9]* *"
    * That is zero or more spaces followed by zero or more digits followed by zero or more spaces.
    */
-  template<typename T, typename FType, unsigned Base = 10>
-  T read_uint(FType& file, std::size_t len, T def = 0)
+  template<typename T, typename FType, unsigned Base = 10>  // NOLINT
+  auto read_uint(FType& file, std::size_t len, T def = 0) -> T
   {
     std::string v = read_str(file, len);
     return to_number<T, Base>(v, def);
@@ -374,15 +377,18 @@ private:
   template<typename FType>
   void read_header(FType& file)
   {
+    constexpr std::array<char, fmag_len> magic = {96, 10};
     header_size_ = name_len;
     mtime_ = read_uint<std::time_t>(file, mtime_len);
     uid_ = read_uint<uid_t>(file, uid_len, -1);
     gid_ = read_uint<uid_t>(file, gid_len, -1);
-    mode_ = read_uint<mode_t, FType, 8>(file, mode_len);
+    mode_ = read_uint<mode_t, FType, 8>(file, mode_len);  // NOLINT
     size_ = read_uint<std::size_t>(file, size_len);
     std::string fmag = read_str(file, fmag_len);
-    if (fmag[0] != 96 || fmag[1] != 10) {
-      throw std::runtime_error("Bad end of header magic");
+    for (unsigned i = 0; i < fmag_len; ++i) {
+      if (fmag[i] != magic.at(i)) {
+        throw std::runtime_error("Bad end of header magic");
+      }
     }
   }
 
@@ -412,18 +418,18 @@ public:
   static constexpr std::size_t header_len = 60;  ///< Length of header in table.
 
 private:
-  std::string name_;         ///< Member name
-  std::time_t mtime_;        ///< Member modification time (seconds since 1 Jan 1970)
-  uid_t uid_;                ///< User ID
-  gid_t gid_;                ///< Group ID
-  mode_t mode_;              ///< Mode
-  std::size_t size_;         ///< Size of member
-  std::size_t header_size_;  ///< Size of header.
-  Format format_;            ///< Header format.
+  std::string name_;             ///< Member name
+  std::time_t mtime_ = 0;        ///< Member modification time (seconds since 1 Jan 1970)
+  uid_t uid_ = 0;                ///< User ID
+  gid_t gid_ = 0;                ///< Group ID
+  mode_t mode_ = 0;              ///< Mode
+  std::size_t size_ = 0;         ///< Size of member
+  std::size_t header_size_ = 0;  ///< Size of header.
+  Format format_ = Format::gnu;  ///< Header format.
 };
 
 /** \brief Inequality operator.  */
-bool operator!=(MemberHeader const& lhs, MemberHeader const& rhs) noexcept;
+auto operator!=(MemberHeader const& lhs, MemberHeader const& rhs) noexcept -> bool;
 }  // namespace Details
 
 /** \brief Archive member.
@@ -445,33 +451,33 @@ public:
 
   ~Member() = default;
   Member(Member const&) = default;
-  Member(Member&&) = default;
-  Member& operator=(Member const&) = default;
-  Member& operator=(Member&&) = default;
+  Member(Member&&) noexcept = default;
+  auto operator=(Member const&) -> Member& = default;
+  auto operator=(Member&&) noexcept -> Member& = default;
 
   /** \brief Member file name.  */
-  std::string const& name() const noexcept;
+  [[nodiscard]] auto name() const noexcept -> std::string const&;
 
   /** \brief Member modification time.  */
-  std::time_t mtime() const noexcept;
+  [[nodiscard]] auto mtime() const noexcept -> std::time_t;
 
   /** \brief Member User ID.  */
-  uid_t uid() const noexcept;
+  [[nodiscard]] auto uid() const noexcept -> uid_t;
 
   /** \brief Member Group ID.  */
-  gid_t gid() const noexcept;
+  [[nodiscard]] auto gid() const noexcept -> gid_t;
 
   /** \brief Member mode.  */
-  mode_t mode() const noexcept;
+  [[nodiscard]] auto mode() const noexcept -> mode_t;
 
   /** \brief Member ID.  */
-  MemberID id() const noexcept;
+  [[nodiscard]] auto id() const noexcept -> MemberID;
 
   /** \brief Format.  */
-  Format format() const noexcept;
+  [[nodiscard]] auto format() const noexcept -> Format;
 
   /** \brief Equality comparison.  */
-  bool operator==(Member const& rhs) const noexcept;
+  auto operator==(Member const& rhs) const noexcept -> bool;
 
   /** \brief Object is seekable.  */
   static constexpr bool seekable = true;
@@ -480,16 +486,16 @@ public:
   static constexpr bool size_fixed = true;
 
   /** \brief Span containing all the data in the member.  */
-  std::span<std::byte const> data() const noexcept;
+  [[nodiscard]] auto data() const noexcept -> std::span<std::byte const>;
 
   /** \brief  Get the symbols.  */
-  Symbols symbols() const noexcept;
+  [[nodiscard]] auto symbols() const noexcept -> Symbols;
 
   /** \brief Size of member header in bytes.  */
-  std::size_t size_bytes() const noexcept;
+  [[nodiscard]] auto size_bytes() const noexcept -> std::size_t;
 
   /** \brief  Current offset in bytes.  */
-  std::size_t offset_bytes() const noexcept;
+  [[nodiscard]] auto offset_bytes() const noexcept -> std::size_t;
 
   /** \brief Set the current offset
    *  \param offset new offset
@@ -498,7 +504,7 @@ public:
   void offset_bytes(std::size_t offset);
 
   /** \brief  Have we reached the end of the file?  */
-  bool eof() const noexcept { return offset_ == data_->size(); };
+  [[nodiscard]] auto eof() const noexcept -> bool { return offset_ == data_->size(); };
 
   /** \brief Read into \a dest.  */
   template<typename T, std::size_t Count>
@@ -518,17 +524,17 @@ public:
     if (size_bytes() - offset < dest.size_bytes()) {
       throw std::runtime_error("Trying to read too many bytes");
     }
-    memcpy(dest.data(), data_->data() + offset, dest.size_bytes());
+    memcpy(dest.data(), data_->data() + offset, dest.size_bytes());  // NOLINT
   }
 
   /** \brief  Read as many bytes as possible into \a dest.
    *  \return Number of bytes read.
    */
   template<typename T, std::size_t Count>
-  std::size_t read_upto(std::span<T, Count> dest)
+  [[nodiscard]] auto read_upto(std::span<T, Count> dest) -> std::size_t
   {
     auto count = std::min(dest.size_bytes(), data_->size() - offset_);
-    memcpy(dest.data(), data_->data() + offset_, count);
+    memcpy(dest.data(), data_->data() + offset_, count);  // NOLINT
     offset_ += count;
     return count;
   }
@@ -541,7 +547,7 @@ private:
   Symbols symbols_;               ///< Symbols.
 };
 
-bool operator!=(Member const& lhs, Member const& rhs) noexcept;
+auto operator!=(Member const& lhs, Member const& rhs) noexcept -> bool;
 
 /** \brief        Forward iterator used to iterate through reading an archive
  *  \tparam FType underlying file type being read from.
@@ -559,15 +565,15 @@ public:
   using difference_type = std::ptrdiff_t;             ///< Difference type.
 
   ~ReadIterator() = default;
-  ReadIterator(ReadIterator&& rhs) = default;
-  ReadIterator& operator=(ReadIterator&& rhs) noexcept = default;
+  ReadIterator(ReadIterator&& rhs) noexcept = default;
+  auto operator=(ReadIterator&& rhs) noexcept -> ReadIterator& = default;
   ReadIterator(ReadIterator const&) = default;
-  ReadIterator& operator=(ReadIterator const&) noexcept = default;
+  auto operator=(ReadIterator const&) noexcept -> ReadIterator& = default;
 
-  Format format() const { return state_->format_; }
+  [[nodiscard]] auto format() const noexcept -> Format { return state_->format_; }
 
   /** \brief  Equality comparison operator.  */
-  bool operator==(ReadIterator const& rhs) const
+  auto operator==(ReadIterator const& rhs) const -> bool
   {
     if (member_.has_value()) {
       return rhs.member_.has_value() && *member_ == *rhs.member_;
@@ -576,28 +582,28 @@ public:
   }
 
   /** \brief Pointer dereference.  */
-  reference operator*() const
+  auto operator*() const -> reference
   {
     assert(member_ != std::nullopt);
     return *member_;
   }
 
   /** \brief  Member access. */
-  pointer operator->() const
+  auto operator->() const -> pointer
   {
     assert(member_ != std::nullopt);
     return &member_.value();
   }
 
   /** \brief Pre-increment.  */
-  ReadIterator& operator++()
+  auto operator++() -> ReadIterator&
   {
     read_next_member();
     return *this;
   }
 
   /** \brief Post-increment.  */
-  ReadIterator operator++(int)
+  auto operator++(int) -> ReadIterator
   {
     auto temp = *this;
     ++(*this);
@@ -609,10 +615,11 @@ private:
   enum class EndTag : int {};
 
   template<typename FType1>
-  friend ReadIterator<typename std::remove_reference<FType1>::type> read_archive_begin(FType1&& f);
+  friend auto read_archive_begin(FType1&& f)  // NOLINT
+    -> ReadIterator<typename std::remove_reference_t<FType1>>;
 
   template<typename FType1>
-  friend ReadIterator<FType1> read_archive_end();
+  friend auto read_archive_end() -> ReadIterator<FType1>;  // NOLINT
 
   /** \brief                Construct iterator begin element.
    *  \param  file          File to read from
@@ -630,7 +637,7 @@ private:
                std::optional<Member const> string_table)
       : state_(std::make_shared<State>(std::move(file), offset, format, std::move(symbol_map),
                                        string_table)),
-        member_(first_member)
+        member_(std::move(first_member))
   {
     if (member_ == std::nullopt) {
       read_next_member();
@@ -638,7 +645,7 @@ private:
   }
 
   /** \brief  Construct the end tag.  */
-  explicit ReadIterator(EndTag) : state_(nullptr), member_(std::nullopt) {}
+  explicit ReadIterator(EndTag /*unused*/) : state_(nullptr), member_(std::nullopt) {}
 
   /** \brief Read the next member from the file. */
   void read_next_member()
@@ -651,7 +658,7 @@ private:
 
     /* Ensure we're aligned before we try to read.  */
     if (state_->offset_ & 1) {
-      char c;
+      char c = 0;
       state_->file_.read(std::span(&c, 1));
       ++state_->offset_;
     }
@@ -664,9 +671,11 @@ private:
       state_ = nullptr;
       return;
     }
-    else if (len < Details::MemberHeader::name_len) {
+
+    if (len < Details::MemberHeader::name_len) {
       throw std::runtime_error("Incorrect header.");
     }
+
     auto hdr = Details::MemberHeader(
       state_->file_, name, state_->format_,
       state_->string_table_.has_value() ? &state_->string_table_.value() : nullptr);
@@ -684,20 +693,20 @@ private:
     State(FType&& file, std::size_t offset, Format format, SymbolMap&& symbol_map,
           std::optional<Member const> string_table)
         : file_(std::move(file)), offset_(offset), format_(format), symbol_map_(symbol_map),
-          string_table_(string_table)
+          string_table_(std::move(string_table))
     {
     }
     ~State() = default;
     State(State const&) = delete;
     State(State&&) noexcept = delete;
-    State& operator=(State const&) = delete;
-    State& operator=(State&&) noexcept = delete;
+    auto operator=(State const&) -> State& = delete;
+    auto operator=(State&&) noexcept -> State& = delete;
 
-    FType file_;
-    std::size_t offset_;
-    Format format_;
-    SymbolMap symbol_map_;
-    std::optional<Member const> string_table_;
+    FType file_;                                // NOLINT
+    std::size_t offset_;                        // NOLINT
+    Format format_;                             // NOLINT
+    SymbolMap symbol_map_;                      // NOLINT
+    std::optional<Member const> string_table_;  // NOLINT
   };
 
   std::shared_ptr<State> state_;
@@ -705,7 +714,7 @@ private:
 };
 
 template<typename FType>
-bool operator!=(ReadIterator<FType> const& lhs, ReadIterator<FType> const& rhs)
+auto operator!=(ReadIterator<FType> const& lhs, ReadIterator<FType> const& rhs) -> bool
 {
   return !(lhs == rhs);
 }
@@ -753,14 +762,14 @@ public:
     ~Proxy() = default;
     Proxy(Proxy const&) = delete;
     Proxy(Proxy&&) noexcept = delete;
-    Proxy& operator=(Proxy const&) = delete;
-    Proxy& operator=(Proxy&&) noexcept = delete;
+    auto operator=(Proxy const&) -> Proxy& = delete;
+    auto operator=(Proxy&&) noexcept -> Proxy& = delete;
 
     /** \brief      Write a member from another archive into this archive.
      *  \param  obj Object to write.
      *  \return     \c *this
      */
-    Proxy& operator=(Member const& obj)
+    auto operator=(Member const& obj) -> Proxy&
     {
       if (obj.symbols() != nullptr) {
         wi_.add_symbols(obj.symbols());
@@ -775,10 +784,11 @@ public:
      *  \return     \c *this
      */
     template<typename IFType>
-    Proxy& operator=(IFType& obj)
+    auto operator=(IFType& obj) -> Proxy&
     {
+      constexpr std::size_t read_size = 4096;
       wi_.write_member(obj, [&obj](auto it) {
-        std::vector<std::byte> data(4096);
+        std::vector<std::byte> data(read_size);
         while (!obj.eof()) {
           auto amount = obj.read_upto(std::span(data));
           std::copy(data.begin(), data.begin() + amount, it);
@@ -790,7 +800,7 @@ public:
     /** \brief  Commit this archive.
      *  \return \c *this.
      */
-    Proxy& operator=(WriteIterator::CommitTag)
+    auto operator=(WriteIterator::CommitTag /*unused*/) -> Proxy&
     {
       wi_.commit();
       return *this;
@@ -812,26 +822,26 @@ public:
   ~WriteIterator() = default;
   WriteIterator(WriteIterator const&) = default;
   WriteIterator(WriteIterator&&) noexcept = default;
-  WriteIterator& operator=(WriteIterator const&) = default;
-  WriteIterator& operator=(WriteIterator&&) noexcept = default;
+  auto operator=(WriteIterator const&) -> WriteIterator& = default;
+  auto operator=(WriteIterator&&) noexcept -> WriteIterator& = default;
 
   /** \brief Dereference iterator. */
-  Proxy operator*() { return Proxy(*this); }
+  auto operator*() -> Proxy { return Proxy(*this); }
 
   /** \brief Move forward.  */
-  WriteIterator operator++(int) { return *this; }
+  auto operator++(int) -> WriteIterator { return *this; }
 
   /** \brief Move forward.  */
-  WriteIterator& operator++() { return *this; }
+  auto operator++() -> WriteIterator& { return *this; }
 
   /** \brief  Get the commit tag.  */
-  static WriteIterator::CommitTag commit_tag() { return CommitTag(); }
+  static auto commit_tag() -> WriteIterator::CommitTag { return CommitTag(); }
 
 private:
   friend class Proxy;
 
   /** \brief  Get the current offset.  */
-  std::size_t offset() const noexcept { return state_->data_.size(); }
+  [[nodiscard]] auto offset() const noexcept -> std::size_t { return state_->data_.size(); }
 
   /** \brief      Write \a span into \a out.
    *  \param out  Output object to store into.
@@ -871,7 +881,7 @@ private:
    *
    * Output string to right padded with ' '.
    */
-  template<typename It, typename T, unsigned Base = 10>
+  template<typename It, typename T, unsigned Base = 10>  // NOLINT
   void add_number_at(It where, T val, std::size_t len)
   {
     auto res = std::string();
@@ -887,7 +897,8 @@ private:
       throw std::runtime_error("Number too big for output.");
     }
     res += std::string(len, ' ');
-    std::transform(res.begin(), res.begin() + len, where, [](char c) { return std::byte(c); });
+    std::transform(res.begin(), res.begin() + static_cast<std::ptrdiff_t>(len), where,
+                   [](char c) { return std::byte(c); });
   }
 
   /** \brief        Write a number at the end of a store
@@ -900,7 +911,7 @@ private:
    *
    * Output string to right padded with ' '.
    */
-  template<typename Store, typename T, unsigned Base = 10>
+  template<typename Store, typename T, unsigned Base = 10>  // NOLINT
   void add_number(Store& out, T val, std::size_t len)
   {
     auto it = std::back_inserter(out);
@@ -914,7 +925,7 @@ private:
    *  \return      Value to write at end of header if name is too long (may be empty).
    */
   template<typename Store>
-  std::string add_name(Store& out, std::string const& name, std::size_t len)
+  auto add_name(Store& out, std::string const& name, std::size_t len) -> std::string
   {
     if (Details::inline_long_names(state_->format_) &&
         (name.size() > len || name.find(' ') != std::string::npos)) {
@@ -973,7 +984,7 @@ private:
   template<typename T>
   void add_mode(T& out, mode_t mode, std::size_t len)
   {
-    add_number<T, mode_t, 8>(out, mode & 07777, len);
+    add_number<T, mode_t, 8>(out, mode & 07777, len);  // NOLINT
   }
 
   /** \brief   Add any necessary padding.
@@ -1076,27 +1087,27 @@ private:
 
   struct SpecialMemberHeader
   {
-    static SpecialMemberHeader string_table(Format format)
+    static auto string_table(Format format) -> SpecialMemberHeader
     {
       return SpecialMemberHeader(Details::string_table_name(format));
     }
-    static SpecialMemberHeader symbol_table(Format format)
+    static auto symbol_table(Format format) -> SpecialMemberHeader
     {
       return SpecialMemberHeader(Details::symbol_table_name(format));
     }
 
-    std::string name() const { return name_; }
-    time_t mtime() const { return 0; }
-    mode_t mode() const { return 0; }
-    uid_t uid() const { return 0; }
-    gid_t gid() const { return 0; }
+    [[nodiscard]] auto name() const noexcept -> std::string const& { return name_; }
+    [[nodiscard]] auto mtime() const noexcept -> time_t { return 0; }
+    [[nodiscard]] auto mode() const noexcept -> mode_t { return 0; }
+    [[nodiscard]] auto uid() const noexcept -> uid_t { return 0; }
+    [[nodiscard]] auto gid() const noexcept -> gid_t { return 0; }
 
   private:
-    explicit SpecialMemberHeader(std::string const& name) : name_(name) {}
+    explicit SpecialMemberHeader(std::string name) : name_(std::move(name)) {}
     std::string name_;
   };
 
-  void add_symbols(Symbols symbols)
+  void add_symbols(Symbols const& symbols)
   {
     auto id = static_cast<MemberID>(offset());
     [[maybe_unused]] auto [it, success] = state_->symbol_map_.insert(std::make_pair(id, symbols));
@@ -1136,15 +1147,15 @@ private:
 
     ~State() = default;
     State(State const&) = delete;
-    State(State&&) = delete;
-    State& operator=(State const&) = delete;
-    State& operator=(State&&) = delete;
+    State(State&&) noexcept = delete;
+    auto operator=(State const&) -> State& = delete;
+    auto operator=(State&&) noexcept -> State&& = delete;
 
-    OFType file_;
-    Format format_;
-    std::vector<std::byte> string_table_;
-    std::vector<std::byte> data_;
-    SymbolMap symbol_map_;
+    OFType file_;                          // NOLINT
+    Format format_;                        // NOLINT
+    std::vector<std::byte> string_table_;  // NOLINT
+    std::vector<std::byte> data_;          // NOLINT
+    SymbolMap symbol_map_;                 // NOLINT
   };
 
   std::shared_ptr<State> state_;
@@ -1152,17 +1163,17 @@ private:
 
 /** \brief  Return the end of the archive reading iteration.  */
 template<typename FType>
-ReadIterator<FType> read_archive_end()
+auto read_archive_end() -> ReadIterator<FType>
 {
   return ReadIterator<FType>(typename ReadIterator<FType>::EndTag());
 }
 
 /** \brief  Start reading through an archive file.  */
 template<typename FType1>
-ReadIterator<typename std::remove_reference<FType1>::type> read_archive_begin(FType1&& f)
+auto read_archive_begin(FType1&& f) -> ReadIterator<typename std::remove_reference<FType1>::type>
 {
-  using FType = typename std::remove_reference<FType1>::type;
-  FType file(std::move(f));
+  using FType = typename std::remove_reference_t<FType1>;
+  FType file(std::move(f));  // NOLINT
   constexpr std::size_t magic_len = 8;
   constexpr char const* expected_magic = "!<arch>\n";
   std::string magic(magic_len, '\0');
@@ -1196,7 +1207,7 @@ ReadIterator<typename std::remove_reference<FType1>::type> read_archive_begin(FT
 
   auto read_next_member = [&offset, &file, &member, &symbol_map, format]() {
     if (offset & 1) {
-      char c;
+      char c = 0;
       offset += file.read_upto(std::span(&c, 1));
     }
 
@@ -1240,15 +1251,15 @@ ReadIterator<typename std::remove_reference<FType1>::type> read_archive_begin(FT
 
   /* Handle string table.  */
   if (!Details::inline_long_names(format) && member->name() == Details::string_table_name(format)) {
-    long_names.emplace(std::move(member.value()));
+    long_names.emplace(member.value());
     member.reset();
   }
 
   return ReadIterator(std::move(file), offset, format, member, std::move(symbol_map), long_names);
 }
 
-inline WriteIterator<TxnWriteFile> archive_inserter(fs::path const& fname, Format format,
-                                                    mode_t mode = 0644)
+inline auto archive_inserter(fs::path const& fname, Format format, mode_t mode = 0644)  // NOLINT
+  -> WriteIterator<TxnWriteFile>
 {
   TxnWriteFile wf(fname, mode);
   return WriteIterator(std::move(wf), format);
@@ -1304,7 +1315,7 @@ void GD::Ar::Details::MemberHeader::update_name(FType& file, GD::Ar::Member cons
       if (data.size() < offset) {
         throw std::runtime_error("Offset out of range for long names.");
       }
-      auto it = data.begin() + offset;
+      auto it = data.begin() + static_cast<std::ptrdiff_t>(offset);
       auto it_end = std::find(it, data.end(), std::byte(long_name_terminator(format_)));
       if (it_end == data.end()) {
         throw std::runtime_error("Unterminated string in long names table.");
@@ -1321,7 +1332,6 @@ void GD::Ar::Details::MemberHeader::update_name(FType& file, GD::Ar::Member cons
     check_no_trailing_nonspace(it + 1, name_.end());
   }
   name_.erase(it, name_.end());
-  return;
 }
 
 #endif  // SRC_AR_AR_HH_INCLUDED_
