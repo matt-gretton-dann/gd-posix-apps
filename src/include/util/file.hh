@@ -94,7 +94,8 @@ public:
   /** \brief      Construct the input file.
    *  \param name Name of the file.
    */
-  InputFile(std::string name) : name_(name), fd_(::open(name.c_str(), O_RDONLY)), eof_(false)
+  explicit InputFile(std::string const& name)
+      : name_(name), fd_(::open(name.c_str(), O_RDONLY)), eof_(false)
   {
     if (fd_ == -1) {
       throw std::runtime_error("Unable to open file.");
@@ -113,27 +114,26 @@ public:
 
   InputFile(InputFile const&) = delete;
   InputFile(InputFile&& rhs) noexcept
-      : name_(std::move(rhs.name_)), stat_(std::move(rhs.stat_)), fd_(std::move(rhs.fd_)),
-        eof_(std::move(rhs.eof_))
+      : name_(std::move(rhs.name_)), stat_(rhs.stat_), fd_(rhs.fd_), eof_(rhs.eof_)
   {
     rhs.fd_ = -1;
   }
 
-  InputFile& operator=(InputFile const&) = delete;
-  InputFile& operator=(InputFile&& rhs)
+  auto operator=(InputFile const&) -> InputFile& = delete;
+  auto operator=(InputFile&& rhs) noexcept -> InputFile&
   {
     if (&rhs != this) {
       name_ = std::move(rhs.name_);
-      stat_ = std::move(rhs.stat_);
-      fd_ = std::move(rhs.fd_);
-      eof_ = std::move(rhs.eof_);
+      stat_ = rhs.stat_;
+      fd_ = rhs.fd_;
+      eof_ = rhs.eof_;
       rhs.fd_ = -1;
     }
 
     return *this;
   }
 
-  std::size_t size_bytes() const noexcept { return stat_.st_size; }
+  [[nodiscard]] auto size_bytes() const noexcept -> std::size_t { return stat_.st_size; }
 
   template<typename T, std::size_t Count>
   void read(std::span<T, Count> dest)
@@ -145,10 +145,10 @@ public:
   }
 
   template<typename T, std::size_t Count>
-  std::size_t read_upto(std::span<T, Count> dest)
+  [[nodiscard]] auto read_upto(std::span<T, Count> dest) -> std::size_t
   {
     auto saved_errno = errno;
-    ::ssize_t res;
+    ::ssize_t res = 0;
     std::byte* data = std::as_writable_bytes(dest).data();
     std::size_t count = dest.size_bytes();
     while (count > 0) {
@@ -166,18 +166,18 @@ public:
       }
       assert(res > 0);
       count -= res;
-      data += res;
+      data += res;  // NOLINT
     };
 
     errno = saved_errno;
     return dest.size_bytes() - count;
   }
 
-  bool eof() const noexcept { return eof_; }
+  [[nodiscard]] auto eof() const noexcept -> bool { return eof_; }
 
-  std::string const& name() const { return name_; }
+  [[nodiscard]] auto name() const noexcept -> std::string const& { return name_; }
 
-  time_t mtime() const
+  [[nodiscard]] auto mtime() const noexcept -> time_t
   {
 #ifdef __APPLE__
     return stat_.st_mtimespec.tv_sec;
@@ -186,17 +186,19 @@ public:
 #endif  // __APPLE__
   }
 
-  uid_t uid() const { return stat_.st_uid; }
+  [[nodiscard]] auto uid() const noexcept -> uid_t { return stat_.st_uid; }
 
-  gid_t gid() const { return stat_.st_gid; }
+  [[nodiscard]] auto gid() const noexcept -> gid_t { return stat_.st_gid; }
 
-  mode_t mode() const { return stat_.st_mode; }
+  [[nodiscard]] auto mode() const noexcept -> mode_t { return stat_.st_mode; }
 
 private:
   std::string name_;  ///< File name.
-  struct stat stat_;  ///< File stats.
-  int fd_;            ///< File descriptor
-  bool eof_;          ///< Have we reached end of file.
+  struct stat stat_
+  {
+  };          ///< File stats.
+  int fd_;    ///< File descriptor
+  bool eof_;  ///< Have we reached end of file.
 };
 
 /** \brief  Input file based on a memory span.
@@ -218,19 +220,19 @@ public:
    * \a mem must remain valid for the lifetime of this MemorySpanInputFile object.
    */
   template<typename T, std::size_t E>
-  MemorySpanInputFile(std::span<T, E> mem) : data_(std::as_bytes(mem)), offset_(0)
+  explicit MemorySpanInputFile(std::span<T, E> mem) : data_(std::as_bytes(mem)), offset_(0)
   {
   }
 
   ~MemorySpanInputFile() = default;
   MemorySpanInputFile(MemorySpanInputFile const&) = default;
-  MemorySpanInputFile(MemorySpanInputFile&&) = default;
-  MemorySpanInputFile& operator=(MemorySpanInputFile const&) = default;
-  MemorySpanInputFile& operator=(MemorySpanInputFile&&) = default;
+  MemorySpanInputFile(MemorySpanInputFile&&) noexcept = default;
+  auto operator=(MemorySpanInputFile const&) -> MemorySpanInputFile& = default;
+  auto operator=(MemorySpanInputFile&&) noexcept -> MemorySpanInputFile& = default;
 
-  std::size_t size_bytes() const noexcept { return data_.size_bytes(); }
+  [[nodiscard]] auto size_bytes() const noexcept -> std::size_t { return data_.size_bytes(); }
 
-  std::size_t offset_bytes() const noexcept { return offset_; }
+  [[nodiscard]] auto offset_bytes() const noexcept -> std::size_t { return offset_; }
 
   void offset_bytes(std::size_t offset)
   {
@@ -260,7 +262,7 @@ public:
   }
 
   template<typename T, std::size_t Count>
-  std::size_t read_upto(std::span<T, Count> dest)
+  [[nodiscard]] auto read_upto(std::span<T, Count> dest) noexcept -> std::size_t
   {
     std::size_t count = std::min(dest.size_bytes(), size_bytes() - offset_);
     memcpy(dest.data(), data_.data() + offset_, count);
@@ -268,7 +270,7 @@ public:
     return count;
   }
 
-  bool eof() const noexcept { return size_bytes() == offset_; }
+  [[nodiscard]] auto eof() const noexcept -> bool { return size_bytes() == offset_; }
 
 private:
   std::span<std::byte const> data_;  ///< Data we're using
@@ -282,9 +284,9 @@ public:
   ~MemoryFileWriter() = default;
 
   MemoryFileWriter(MemoryFileWriter const&) = delete;
-  MemoryFileWriter(MemoryFileWriter&&) = default;
-  MemoryFileWriter& operator=(MemoryFileWriter const&) = delete;
-  MemoryFileWriter& operator=(MemoryFileWriter&&) = default;
+  MemoryFileWriter(MemoryFileWriter&&) noexcept = default;
+  auto operator=(MemoryFileWriter const&) -> MemoryFileWriter& = delete;
+  auto operator=(MemoryFileWriter&&) noexcept -> MemoryFileWriter& = default;
 
   /** \brief Write
    *  \tparam T Type of data in span
@@ -300,7 +302,10 @@ public:
   }
 
   /** \brief  Get the data that has been written to this memory file.  */
-  std::span<std::byte const> data() const noexcept { return std::span<std::byte const>(data_); }
+  [[nodiscard]] auto data() const noexcept -> std::span<std::byte const>
+  {
+    return std::span<std::byte const>(data_);
+  }
 
 private:
   std::vector<std::byte> data_;
@@ -327,8 +332,7 @@ public:
    *  \param dest Destination file
    *  \param mode Mode to give destination file.
    */
-  TxnWriteFile(fs::path const& dest, mode_t mode)
-      : fd_(-1), dest_(dest), temp_(), mode_(mode & 01777)
+  TxnWriteFile(fs::path const& dest, mode_t mode) : fd_(-1), dest_(dest), mode_(mode & mode_mask_)
   {
     // Use a temporary file if the destination already exists.
     if (fs::exists(dest_)) {
@@ -359,24 +363,23 @@ public:
 
   /** Cannot copy.  */
   TxnWriteFile(TxnWriteFile const&) = delete;
-  TxnWriteFile& operator=(TxnWriteFile const&) = delete;
+  auto operator=(TxnWriteFile const&) -> TxnWriteFile& = delete;
 
   /** \brief Move constructor.  */
-  TxnWriteFile(TxnWriteFile&& rhs)
-      : fd_(std::move(rhs.fd_)), dest_(std::move(rhs.dest_)), temp_(std::move(rhs.temp_)),
-        mode_(std::move(rhs.mode_))
+  TxnWriteFile(TxnWriteFile&& rhs) noexcept
+      : fd_(rhs.fd_), dest_(std::move(rhs.dest_)), temp_(std::move(rhs.temp_)), mode_(rhs.mode_)
   {
     rhs.has_moved();
   }
 
   /** \brief Move assignment.  */
-  TxnWriteFile& operator=(TxnWriteFile&& rhs)
+  auto operator=(TxnWriteFile&& rhs) noexcept -> TxnWriteFile&
   {
     if (this != &rhs) {
-      fd_ = std::move(rhs.fd_);
+      fd_ = rhs.fd_;
       dest_ = std::move(rhs.dest_);
       temp_ = std::move(rhs.temp_);
-      mode_ = std::move(rhs.mode_);
+      mode_ = rhs.mode_;
       rhs.has_moved();
     }
     return *this;
@@ -393,18 +396,19 @@ public:
     if (fd_ == -1 || temp_.empty()) {
       throw std::runtime_error("Writing after file has been committed.");
     }
-    auto data = std::as_bytes(span).data();
+    auto const* data = std::as_bytes(span).data();
     auto count = span.size_bytes();
     while (count != 0) {
       auto res =
-        ::write(fd_, data, std::min((std::size_t)std::numeric_limits<::ssize_t>::max(), count));
+        ::write(fd_, data,
+                std::min(static_cast<std::size_t>(std::numeric_limits<::ssize_t>::max()), count));
       if (res == -1) {
         if (errno != EINTR) {
           throw std::system_error(errno, std::generic_category(), "Whilst writing.");
         }
       }
       else {
-        data += res;
+        data += res;  // NOLINT
         count -= res;
       }
     }
@@ -435,8 +439,9 @@ public:
       ::close(fd_);
       fd_ = -1;
     }
-    if (!temp_.empty())
+    if (!temp_.empty()) {
       ::remove(temp_.c_str());
+    }
     temp_.clear();
   }
 
@@ -447,6 +452,8 @@ private:
     fd_ = -1;
     temp_.clear();
   }
+
+  static constexpr mode_t mode_mask_ = 01777;  ///< Mask for input mode.
 
   int fd_;            ///< File descriptor.
   std::string dest_;  ///< Final destination file.
