@@ -145,7 +145,7 @@ constexpr auto long_name_terminator(GD::Ar::Format format) noexcept -> char
   switch (format) {
   case Format::bsd:
   case Format::darwin:
-    assert(false);
+    assert(false);  // NOLINT
     return std::numeric_limits<char>::max();
   case Format::svr4:
   case Format::gnu:
@@ -584,14 +584,14 @@ public:
   /** \brief Pointer dereference.  */
   auto operator*() const -> reference
   {
-    assert(member_ != std::nullopt);
+    assert(member_ != std::nullopt);  // NOLINT
     return *member_;
   }
 
   /** \brief  Member access. */
   auto operator->() const -> pointer
   {
-    assert(member_ != std::nullopt);
+    assert(member_ != std::nullopt);  // NOLINT
     return &member_.value();
   }
 
@@ -1111,7 +1111,7 @@ private:
   {
     auto id = static_cast<MemberID>(offset());
     [[maybe_unused]] auto [it, success] = state_->symbol_map_.insert(std::make_pair(id, symbols));
-    assert(success);
+    assert(success);  // NOLINT
   }
 
   template<typename T, typename DataWriter, typename Store>
@@ -1196,7 +1196,7 @@ auto read_archive_begin(FType1&& f) -> ReadIterator<typename std::remove_referen
   if (file.eof()) {
     return read_archive_end<FType>();
   }
-  assert(len == 16);
+  assert(len == 16);  // NOLINT
   auto hdr = Details::MemberHeader(file, name);
   Format format = hdr.format();
   auto id = MemberID(offset);
@@ -1223,7 +1223,7 @@ auto read_archive_begin(FType1&& f) -> ReadIterator<typename std::remove_referen
       member.reset();
       return;
     }
-    assert(len == 16);
+    assert(len == 16);  // NOLINT
     auto hdr = Details::MemberHeader(file, name, format, nullptr);
     auto data = std::make_shared<std::vector<std::byte>>();
     data->resize(hdr.size());

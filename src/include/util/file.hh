@@ -164,7 +164,7 @@ public:
         eof_ = true;
         break;
       }
-      assert(res > 0);
+      assert(res > 0);  // NOLINT
       count -= res;
       data += res;  // NOLINT
     };
