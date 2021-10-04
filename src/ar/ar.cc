@@ -16,6 +16,7 @@
 #include "ar-messages.hh"
 
 #include <cassert>
+#include <clocale>
 #include <ctime>
 #include <iomanip>
 #include <iostream>
