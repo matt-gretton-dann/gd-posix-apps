@@ -10,6 +10,7 @@
 #include "gd/nl_types.h"
 
 #include "gd/fcntl.h"
+#include "gd/span.hh"
 #include "gd/stdlib.h"
 #include "gd/string.h"
 #include "gd/sys/stat.h"
@@ -25,7 +26,6 @@
 #include <memory>
 #include <numeric>
 #include <optional>
-#include <span>
 #include <stdexcept>
 #include <string>
 #include <system_error>
@@ -344,7 +344,7 @@ private:
   auto read_str(IFType& file, std::size_t len) -> std::string
   {
     std::string s(len, '\0');
-    file.read(std::span<char>(s.data(), len));
+    file.read(GD::Span::span<char>(s.data(), len));
     header_size_ += len;
     return s;
   }
@@ -486,7 +486,7 @@ public:
   static constexpr bool size_fixed = true;
 
   /** \brief Span containing all the data in the member.  */
-  [[nodiscard]] auto data() const noexcept -> std::span<std::byte const>;
+  [[nodiscard]] auto data() const noexcept -> GD::Span::span<std::byte const>;
 
   /** \brief  Get the symbols.  */
   [[nodiscard]] auto symbols() const noexcept -> Symbols;
@@ -508,7 +508,7 @@ public:
 
   /** \brief Read into \a dest.  */
   template<typename T, std::size_t Count>
-  void read(std::span<T, Count> dest)
+  void read(GD::Span::span<T, Count> dest)
   {
     read_at(dest, offset_);
     offset_ += dest.size_bytes();
@@ -516,7 +516,7 @@ public:
 
   /** \brief Read from offset \a offset into \a dest. */
   template<typename T, std::size_t Count>
-  void read_at(std::span<T, Count> dest, std::size_t offset) const
+  void read_at(GD::Span::span<T, Count> dest, std::size_t offset) const
   {
     if (size_bytes() < offset) {
       throw std::runtime_error("Offset not within member data.");
@@ -531,7 +531,7 @@ public:
    *  \return Number of bytes read.
    */
   template<typename T, std::size_t Count>
-  [[nodiscard]] auto read_upto(std::span<T, Count> dest) -> std::size_t
+  [[nodiscard]] auto read_upto(GD::Span::span<T, Count> dest) -> std::size_t
   {
     auto count = std::min(dest.size_bytes(), data_->size() - offset_);
     memcpy(dest.data(), data_->data() + offset_, count);  // NOLINT
@@ -659,13 +659,13 @@ private:
     /* Ensure we're aligned before we try to read.  */
     if (state_->offset_ & 1) {
       char c = 0;
-      state_->file_.read(std::span(&c, 1));
+      state_->file_.read(GD::Span::span<char>(&c, 1));
       ++state_->offset_;
     }
 
     auto id = MemberID(state_->offset_);
     std::string name(Details::MemberHeader::name_len, '\0');
-    auto len = state_->file_.read_upto(std::span<char>(name));
+    auto len = state_->file_.read_upto(GD::Span::span<char>(name.data(), name.size()));
     if (len == 0) {
       member_.reset();
       state_ = nullptr;
@@ -680,7 +680,7 @@ private:
       state_->file_, name, state_->format_,
       state_->string_table_.has_value() ? &state_->string_table_.value() : nullptr);
     auto data = std::make_shared<std::vector<std::byte>>(hdr.size());
-    state_->file_.read(std::span<std::byte>(*data));
+    state_->file_.read(GD::Span::span<std::byte>(data->data(), data->size()));
     state_->offset_ += hdr.header_size() + hdr.size();
     auto it = state_->symbol_map_.find(id);
     auto syms = it != state_->symbol_map_.end() ? it->second : nullptr;
@@ -790,7 +790,7 @@ public:
       wi_.write_member(obj, [&obj](auto it) {
         std::vector<std::byte> data(read_size);
         while (!obj.eof()) {
-          auto amount = obj.read_upto(std::span(data));
+          auto amount = obj.read_upto(GD::Span::span<std::byte>(data.data(), data.size()));
           std::copy(data.begin(), data.begin() + amount, it);
         }
       });
@@ -850,9 +850,9 @@ private:
    * \a out should implement size() and push_back() methods.
    */
   template<typename Store, typename T, std::size_t E>
-  void add_data(Store& out, std::span<T, E> span)
+  void add_data(Store& out, GD::Span::span<T, E> span)
   {
-    auto raw_span = std::as_bytes(span);
+    auto raw_span = GD::Span::as_bytes(span);
     out.reserve(out.size() + raw_span.size_bytes());
     std::copy(raw_span.begin(), raw_span.end(), std::back_inserter(out));
   }
@@ -868,7 +868,7 @@ private:
   void add_str(Store& out, std::string const& val, std::size_t len)
   {
     std::string output = val + std::string(len, ' ');
-    add_data(out, std::span<char>(output.data(), len));
+    add_data(out, GD::Span::span<char>(output.data(), len));
   }
 
   /** \brief  Write a number at a particular offset.
@@ -1005,7 +1005,7 @@ private:
   void commit()
   {
     static std::string header("!<arch>\n");
-    state_->file_.write(std::span(header));
+    state_->file_.write(GD::Span::span<char>(header.data(), header.size()));
     std::vector<std::byte> string_table_data;
     /* Generate the string table.  We need to know how long it is here so that we can put the
      * correct offsets in the symbol table IDs.
@@ -1026,9 +1026,11 @@ private:
                    });
     }
     /* Write the file. */
-    state_->file_.write(std::span(symbol_table_data));
-    state_->file_.write(std::span(string_table_data));
-    state_->file_.write(std::span(state_->data_));
+    state_->file_.write(
+      GD::Span::span<std::byte>(symbol_table_data.data(), symbol_table_data.size()));
+    state_->file_.write(
+      GD::Span::span<std::byte>(string_table_data.data(), string_table_data.size()));
+    state_->file_.write(GD::Span::span<std::byte>(state_->data_.data(), state_->data_.size()));
     state_->file_.commit();
     /* And don't allow any further.  */
     state_ = nullptr;
@@ -1127,7 +1129,7 @@ private:
     add_str(out, "", Details::MemberHeader::size_len);
     add_str(out, "`\n", Details::MemberHeader::fmag_len);
     auto data_begin_offset = out.size();
-    add_data(out, std::span(long_name));
+    add_data(out, GD::Span::span<char>(long_name.data(), long_name.size()));
     dw(std::back_inserter(out));
     auto data_end_offset = out.size();
     add_number_at(out.begin() + size_offset, data_end_offset - data_begin_offset,
@@ -1177,7 +1179,7 @@ auto read_archive_begin(FType1&& f) -> ReadIterator<typename std::remove_referen
   constexpr std::size_t magic_len = 8;
   constexpr char const* expected_magic = "!<arch>\n";
   std::string magic(magic_len, '\0');
-  file.read(std::span<char>(magic));
+  file.read(GD::Span::span<char>(magic.data(), magic.size()));
   if (magic != expected_magic) {
     throw std::runtime_error("Missing archive magic");
   }
@@ -1192,7 +1194,7 @@ auto read_archive_begin(FType1&& f) -> ReadIterator<typename std::remove_referen
   }
 
   std::string name(Details::MemberHeader::name_len, '\0');
-  [[maybe_unused]] auto len = file.read_upto(std::span<char>(name));
+  [[maybe_unused]] auto len = file.read_upto(GD::Span::span<char>(name.data(), name.size()));
   if (file.eof()) {
     return read_archive_end<FType>();
   }
@@ -1201,14 +1203,14 @@ auto read_archive_begin(FType1&& f) -> ReadIterator<typename std::remove_referen
   Format format = hdr.format();
   auto id = MemberID(offset);
   auto data = std::make_shared<std::vector<std::byte>>(hdr.size());
-  file.read(std::span<std::byte>(*data));
+  file.read(GD::Span::span<std::byte>(data->data(), data->size()));
   offset += hdr.header_size() + hdr.size();
   auto member = std::make_optional<Member const>(std::move(hdr), id, data, nullptr);
 
   auto read_next_member = [&offset, &file, &member, &symbol_map, format]() {
     if (offset & 1) {
       char c = 0;
-      offset += file.read_upto(std::span(&c, 1));
+      offset += file.read_upto(GD::Span::span<char>(&c, 1));
     }
 
     if (file.eof()) {
@@ -1218,7 +1220,7 @@ auto read_archive_begin(FType1&& f) -> ReadIterator<typename std::remove_referen
 
     auto id = MemberID(offset);
     std::string name(Details::MemberHeader::name_len, '\0');
-    [[maybe_unused]] auto len = file.read_upto(std::span<char>(name));
+    [[maybe_unused]] auto len = file.read_upto(GD::Span::span<char>(name.data(), name.size()));
     if (file.eof()) {
       member.reset();
       return;
@@ -1227,7 +1229,7 @@ auto read_archive_begin(FType1&& f) -> ReadIterator<typename std::remove_referen
     auto hdr = Details::MemberHeader(file, name, format, nullptr);
     auto data = std::make_shared<std::vector<std::byte>>();
     data->resize(hdr.size());
-    file.read(std::span<std::byte>(*data));
+    file.read(GD::Span::span<std::byte>(data->data(), data->size()));
     offset += hdr.header_size() + hdr.size();
     auto it = symbol_map.find(id);
     auto symbols = it != symbol_map.end() ? it->second : nullptr;
@@ -1321,7 +1323,7 @@ void GD::Ar::Details::MemberHeader::update_name(FType& file, GD::Ar::Member cons
         throw std::runtime_error("Unterminated string in long names table.");
       }
       name_.resize(it_end - it);
-      long_names->read_at(std::span<char>(name_), offset);
+      long_names->read_at(GD::Span::span<char>(name_.data(), name_.size()), offset);
       return;
     }
   }

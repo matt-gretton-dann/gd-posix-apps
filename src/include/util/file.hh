@@ -11,6 +11,7 @@
 
 #include "gd/fcntl.h"
 #include "gd/filesystem.hh"
+#include "gd/span.hh"
 #include "gd/stdlib.h"
 #include "gd/string.h"
 #include "gd/sys/stat.h"
@@ -21,7 +22,6 @@
 #include <cstdio>
 #include <fstream>
 #include <memory>
-#include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -64,18 +64,18 @@ namespace GD {
  * // to be raised if there are not enough bytes to fill the span.  Updates offset_bytes() by
  * // s.size_bytes() bytes.
  * template<typename T, std::size_t E>
- * void read(std::span<T, E> s);
+ * void read(GD::Span::span<T, E> s);
  *
  *  // Read s.size_bytes() from offset into the span s.  An exception is to be raised if there are
  *  // not enough bytes to fille the span or offset is after the end of the file.  Should not affect
  *  // the result of offset_bytes().
  * template<typename T, std::size_t E>
- * void read_at(std::span<T, E> s, std::size_t offset, std::enable_if_t<seekable> = 0);
+ * void read_at(GD::Span::span<T, E> s, std::size_t offset, std::enable_if_t<seekable> = 0);
  *
  * // Read up to s.size_bytes() from offset_bytes() into the given span.  Returns the number of
  * // bytes actually read.  Updates offset_bytes() by the number of bytes read.
  * template<typename T, std::size_t E>
- * std::size_t read_upto(std::span<T, E> s);
+ * std::size_t read_upto(GD::Span::span<T, E> s);
  */
 
 /** \brief  Input file based on a file.
@@ -136,7 +136,7 @@ public:
   [[nodiscard]] auto size_bytes() const noexcept -> std::size_t { return stat_.st_size; }
 
   template<typename T, std::size_t Count>
-  void read(std::span<T, Count> dest)
+  void read(GD::Span::span<T, Count> dest)
   {
     auto res = read_upto(dest);
     if (res != dest.size_bytes()) {
@@ -145,11 +145,11 @@ public:
   }
 
   template<typename T, std::size_t Count>
-  [[nodiscard]] auto read_upto(std::span<T, Count> dest) -> std::size_t
+  [[nodiscard]] auto read_upto(GD::Span::span<T, Count> dest) -> std::size_t
   {
     auto saved_errno = errno;
     ::ssize_t res = 0;
-    std::byte* data = std::as_writable_bytes(dest).data();
+    std::byte* data = Span::as_writable_bytes(dest).data();
     std::size_t count = dest.size_bytes();
     while (count > 0) {
       errno = 0;
@@ -220,7 +220,7 @@ public:
    * \a mem must remain valid for the lifetime of this MemorySpanInputFile object.
    */
   template<typename T, std::size_t E>
-  explicit MemorySpanInputFile(std::span<T, E> mem) : data_(std::as_bytes(mem)), offset_(0)
+  explicit MemorySpanInputFile(GD::Span::span<T, E> mem) : data_(Span::as_bytes(mem)), offset_(0)
   {
   }
 
@@ -243,14 +243,14 @@ public:
   }
 
   template<typename T, std::size_t Count>
-  void read(std::span<T, Count> dest)
+  void read(GD::Span::span<T, Count> dest)
   {
     read_at(dest, offset_);
     offset_ += dest.size_bytes();
   }
 
   template<typename T, std::size_t Count>
-  void read_at(std::span<T, Count> dest, std::size_t offset) const
+  void read_at(GD::Span::span<T, Count> dest, std::size_t offset) const
   {
     if (offset > size_bytes()) {
       throw std::runtime_error("Reading outside of data.");
@@ -262,7 +262,7 @@ public:
   }
 
   template<typename T, std::size_t Count>
-  [[nodiscard]] auto read_upto(std::span<T, Count> dest) noexcept -> std::size_t
+  [[nodiscard]] auto read_upto(GD::Span::span<T, Count> dest) noexcept -> std::size_t
   {
     std::size_t count = std::min(dest.size_bytes(), size_bytes() - offset_);
     memcpy(dest.data(), data_.data() + offset_, count);
@@ -273,8 +273,8 @@ public:
   [[nodiscard]] auto eof() const noexcept -> bool { return size_bytes() == offset_; }
 
 private:
-  std::span<std::byte const> data_;  ///< Data we're using
-  std::size_t offset_;               ///< Current offset into the file.
+  GD::Span::span<std::byte const> data_;  ///< Data we're using
+  std::size_t offset_;                    ///< Current offset into the file.
 };
 
 class MemoryFileWriter
@@ -294,17 +294,17 @@ public:
    *  \param span Span to output.
    */
   template<typename T, std::size_t E>
-  void write(std::span<T, E> span)
+  void write(GD::Span::span<T, E> span)
   {
-    auto raw_data = std::as_bytes(span);
+    auto raw_data = Span::as_bytes(span);
     data_.reserve(data_.size() + raw_data.size_bytes());
     std::copy(raw_data.begin(), raw_data.end(), std::back_inserter(data_));
   }
 
   /** \brief  Get the data that has been written to this memory file.  */
-  [[nodiscard]] auto data() const noexcept -> std::span<std::byte const>
+  [[nodiscard]] auto data() const noexcept -> GD::Span::span<std::byte const>
   {
-    return std::span<std::byte const>(data_);
+    return GD::Span::span<std::byte const>(data_.data(), data_.size());
   }
 
 private:
@@ -391,12 +391,12 @@ public:
    *  \param span Span to output.
    */
   template<typename T, std::size_t E>
-  void write(std::span<T, E> span)
+  void write(GD::Span::span<T, E> span)
   {
     if (fd_ == -1 || temp_.empty()) {
       throw std::runtime_error("Writing after file has been committed.");
     }
-    auto const* data = std::as_bytes(span).data();
+    auto const* data = Span::as_bytes(span).data();
     auto count = span.size_bytes();
     while (count != 0) {
       auto res =

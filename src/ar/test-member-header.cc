@@ -6,6 +6,8 @@
 
 #include "gd/nl_types.h"
 
+#include "gd/span.hh"
+
 #include <catch2/catch.hpp>
 
 #include <sstream>
@@ -21,7 +23,7 @@ TEST_CASE("GD::Ar::Details::MemberHeader - Construction BSD", "[ar][member-heade
                            "0660    "
                            "1234567890"
                            "`\n";
-  GD::MemorySpanInputFile file((std::span<char>(bsd_header)));
+  GD::MemorySpanInputFile file((GD::Span::span<char>(bsd_header.data(), bsd_header.size())));
   GD::Ar::Details::MemberHeader mh(file, name, GD::Ar::Format::bsd, nullptr);
 
   REQUIRE(mh.name() == std::string("file"));
@@ -43,7 +45,7 @@ TEST_CASE("GD::Ar::Details::MemberHeader - Construction BSD Long", "[ar][member-
                            "1234567890"
                            "`\n"
                            "12345678901234567890";
-  GD::MemorySpanInputFile file((std::span<char>(bsd_header)));
+  GD::MemorySpanInputFile file((GD::Span::span<char>(bsd_header.data(), bsd_header.size())));
   GD::Ar::Details::MemberHeader mh(file, name, GD::Ar::Format::bsd, nullptr);
 
   REQUIRE(mh.name() == std::string("12345678901234567890"));
@@ -64,7 +66,7 @@ TEST_CASE("GD::Ar::Details::MemberHeader - Construction GNU", "[ar][member-heade
                            "0660    "
                            "1234567890"
                            "`\n";
-  GD::MemorySpanInputFile file((std::span<char>(gnu_header)));
+  GD::MemorySpanInputFile file((GD::Span::span<char>(gnu_header.data(), gnu_header.size())));
   GD::Ar::Details::MemberHeader mh(file, name, GD::Ar::Format::gnu, nullptr);
 
   REQUIRE(mh.name() == std::string("Fred in a shed"));

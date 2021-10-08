@@ -100,9 +100,9 @@ auto GD::Ar::Member::id() const noexcept -> GD::Ar::MemberID { return id_; }
 auto GD::Ar::Member::format() const noexcept -> GD::Ar::Format { return header_.format(); }
 auto GD::Ar::Member::symbols() const noexcept -> GD::Ar::Symbols { return symbols_; }
 
-auto GD::Ar::Member::data() const noexcept -> std::span<std::byte const>
+auto GD::Ar::Member::data() const noexcept -> GD::Span::span<std::byte const>
 {
-  return std::span<std::byte const>(*data_);
+  return GD::Span::span<std::byte const>(data_->data(), data_->size());
 }
 
 void GD::Ar::Member::offset_bytes(std::size_t offset)

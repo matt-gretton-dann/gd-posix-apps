@@ -7,6 +7,7 @@
 #include "ar.hh"
 
 #include "gd/filesystem.hh"
+#include "gd/span.hh"
 #include "gd/stdlib.h"
 #include "gd/unistd.h"
 
@@ -506,7 +507,7 @@ struct State
   Flags flags = Flags::message_on_creation | Flags::allow_replacement;
   std::optional<std::string> pos_file;
   fs::path archive;
-  std::span<char*> files;
+  GD::Span::span<char*> files;
 };
 
 auto process_command_line(GD::Span::span<char*> args) -> State
