@@ -304,7 +304,7 @@ public:
   /** \brief  Get the data that has been written to this memory file.  */
   [[nodiscard]] auto data() const noexcept -> GD::Span::span<std::byte const>
   {
-    return GD::Span::span<std::byte const>(data_.data(), data_.size());
+    return {data_.data(), data_.size()};
   }
 
 private:

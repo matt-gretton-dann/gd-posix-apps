@@ -220,11 +220,10 @@ public:
    * current offset.
    */
   template<typename IFType>
-  MemberHeader(IFType& file, std::string const& name, Format format, Member const* long_names)
+  MemberHeader(IFType& file, std::string name, Format format, Member const* long_names)
+      : name_(std::move(name)), format_(format)
   {
-    name_ = name;
     read_header(file);
-    format_ = format;
     update_name(file, long_names);
   }
 
@@ -947,13 +946,13 @@ private:
       state_->string_table_.push_back(
         static_cast<std::byte>(Details::long_name_terminator(state_->format_)));
       add_number(out, name_offset, len - prefix.size());
-      return std::string();
+      return {};
     }
 
     /* Inline name.  */
     auto out_name = name + Details::short_name_terminator(state_->format_);
     add_str(out, out_name, len);
-    return std::string();
+    return {};
   }
 
   /** \brief     Output a User or Group ID.
@@ -1264,7 +1263,7 @@ inline auto archive_inserter(fs::path const& fname, Format format, mode_t mode =
   -> WriteIterator<TxnWriteFile>
 {
   TxnWriteFile wf(fname, mode);
-  return WriteIterator(std::move(wf), format);
+  return {std::move(wf), format};
 }
 
 }  // namespace GD::Ar

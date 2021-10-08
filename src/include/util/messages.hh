@@ -101,7 +101,7 @@ public:
 
     // NOLINTNEXTLINE(concurrency-mt-unsafe)
     char* p = ::catgets(catd_, static_cast<int>(set), static_cast<int>(msg), val);
-    return std::string_view(p);
+    return {p};
   }
 
   /** \brief      Get a std::string copy of the message associated with \a msg in the default set.

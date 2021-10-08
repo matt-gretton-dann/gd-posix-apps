@@ -102,7 +102,7 @@ auto GD::Ar::Member::symbols() const noexcept -> GD::Ar::Symbols { return symbol
 
 auto GD::Ar::Member::data() const noexcept -> GD::Span::span<std::byte const>
 {
-  return GD::Span::span<std::byte const>(data_->data(), data_->size());
+  return {data_->data(), data_->size()};
 }
 
 void GD::Ar::Member::offset_bytes(std::size_t offset)
@@ -126,7 +126,7 @@ auto get_symbols_svr4(GD::Ar::Member const& symbol_table) -> GD::Ar::SymbolMap
   auto data_it = data.begin();
   auto count = GD::read_be<std::uint32_t>(data_it);
   data_it += 4;
-  auto strings_it = data_it + count * 4;
+  auto strings_it = data_it + static_cast<decltype(data_it)::difference_type>(count) * 4;
   GD::Ar::SymbolMap symbol_map;
   for (uint32_t i = 0; i < count; ++i) {
     auto mid(static_cast<GD::Ar::MemberID>(GD::read_be<std::uint32_t>(data_it)));

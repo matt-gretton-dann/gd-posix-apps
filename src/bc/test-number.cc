@@ -145,12 +145,14 @@ TEST_CASE("GD::Bc::Number - Addition and subtraction, directed", "[bc][number]")
 
   test_add_subtract(lhs_num, rhs_num, expected_add_num, expected_sub_num);
   rhs_num.negate();
+  // NOLINTNEXTLINE(readability-suspicious-call-argument)
   test_add_subtract(lhs_num, rhs_num, expected_sub_num, expected_add_num);
   lhs_num.negate();
   expected_add_num.negate();
   expected_sub_num.negate();
   test_add_subtract(lhs_num, rhs_num, expected_add_num, expected_sub_num);
   rhs_num.negate();
+  // NOLINTNEXTLINE(readability-suspicious-call-argument)
   test_add_subtract(lhs_num, rhs_num, expected_sub_num, expected_add_num);
 }
 
@@ -203,8 +205,7 @@ private:
 
 auto random_pair() -> Catch::Generators::GeneratorWrapper<UInt64Pair>
 {
-  return Catch::Generators::GeneratorWrapper<UInt64Pair>(
-    std::make_unique<RandomUIntPairGenerator>());
+  return {std::make_unique<RandomUIntPairGenerator>()};
 }
 
 class RandomNumberGenerator : public Catch::Generators::IGenerator<GD::Bc::Number>
@@ -252,8 +253,7 @@ private:
 
 auto random_number() -> Catch::Generators::GeneratorWrapper<GD::Bc::Number>
 {
-  return Catch::Generators::GeneratorWrapper<GD::Bc::Number>(
-    std::make_unique<RandomNumberGenerator>());
+  return {std::make_unique<RandomNumberGenerator>()};
 }
 
 class RandomNumberPairGenerator
@@ -292,7 +292,7 @@ public:
       }
       num += static_cast<char>('0' + digit);
     }
-    return GD::Bc::Number(num, working_base);
+    return {num, working_base};
   }
 
   auto next() -> bool override
@@ -315,8 +315,7 @@ auto random_number_pair(
   -> Catch::Generators::GeneratorWrapper<std::pair<GD::Bc::Number, GD::Bc::Number>>
 
 {
-  return Catch::Generators::GeneratorWrapper<std::pair<GD::Bc::Number, GD::Bc::Number>>(
-    std::make_unique<RandomNumberPairGenerator>(max_digits));
+  return {std::make_unique<RandomNumberPairGenerator>(max_digits)};
 }
 
 }  // namespace

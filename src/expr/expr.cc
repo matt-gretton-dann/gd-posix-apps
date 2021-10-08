@@ -241,7 +241,7 @@ auto tokenise(std::string_view token) -> Token
   Token::Type type = Token::Type::string; /* What we think the token type is currently.  */
   std::string_view::iterator it = token.begin();
   if (it == token.end()) {
-    return Token(type, token);
+    return {type, token};
   }
 
   /* Examine the first character and make a guess about the token type.  */
@@ -300,7 +300,7 @@ auto tokenise(std::string_view token) -> Token
   case '9': /* Possibly a number.  */
     return tokenise_number(token);
   default: /* Definitely not a special token. */
-    return Token(type, token);
+    return {type, token};
   }
 
   /* Now parse second character.  */
@@ -314,7 +314,7 @@ auto tokenise(std::string_view token) -> Token
   }
   else {
     if (it == token.end()) {
-      return Token(type, token);
+      return {type, token};
     }
     switch (*it) {
     case '=':
@@ -352,7 +352,7 @@ auto tokenise(std::string_view token) -> Token
   }
 
   if (type == Token::Type::string) {
-    return Token(type, token);
+    return {type, token};
   }
 
   /* Now for the third character: If the token is more than 2 characters long its definitely a
@@ -362,7 +362,7 @@ auto tokenise(std::string_view token) -> Token
     type = Token::Type::string;
   }
 
-  return Token(type, token);
+  return {type, token};
 }
 
 /** \brief       Tokenise the command line arguments.
@@ -397,7 +397,7 @@ auto do_match(Token const& lhs, Token const& rhs) -> Token
   if (len > INT32_MAX) {
     warn(Msg::match_too_long, lhs.string(), rhs.string(), len);
   }
-  return Token(Token::Type::number, matched ? static_cast<int32_t>(m.length(0)) : 0);
+  return {Token::Type::number, matched ? static_cast<int32_t>(m.length(0)) : 0};
 }
 
 auto do_multiply(Token const& lhs, Token const& rhs) noexcept -> Token
@@ -413,7 +413,7 @@ auto do_multiply(Token const& lhs, Token const& rhs) noexcept -> Token
     warn(Msg::overflow, '*', lhs.number(), rhs.number());
   }
 
-  return Token(Token::Type::number, lhs.number() * rhs.number());
+  return {Token::Type::number, lhs.number() * rhs.number()};
 }
 
 auto do_divide(Token const& lhs, Token const& rhs) -> Token
@@ -425,7 +425,7 @@ auto do_divide(Token const& lhs, Token const& rhs) -> Token
     invalid_expr(Msg::expected_number_rhs, '/', lhs.string());
   }
 
-  return Token(Token::Type::number, lhs.number() / rhs.number());
+  return {Token::Type::number, lhs.number() / rhs.number()};
 }
 
 auto do_modulo(Token const& lhs, Token const& rhs) -> Token
@@ -437,7 +437,7 @@ auto do_modulo(Token const& lhs, Token const& rhs) -> Token
     invalid_expr(Msg::expected_number_rhs, '%', lhs.string());
   }
 
-  return Token(Token::Type::number, lhs.number() % rhs.number());
+  return {Token::Type::number, lhs.number() % rhs.number()};
 }
 
 auto do_add(Token const& lhs, Token const& rhs) -> Token
@@ -456,7 +456,7 @@ auto do_add(Token const& lhs, Token const& rhs) -> Token
     warn(Msg::overflow, '+', lhs.number(), rhs.number());
   }
 
-  return Token(Token::Type::number, lhs.number() + rhs.number());
+  return {Token::Type::number, lhs.number() + rhs.number()};
 }
 
 auto do_subtract(Token const& lhs, Token const& rhs) -> Token
@@ -475,7 +475,7 @@ auto do_subtract(Token const& lhs, Token const& rhs) -> Token
     warn(Msg::overflow, '-', lhs.number(), rhs.number());
   }
 
-  return Token(Token::Type::number, lhs.number() - rhs.number());
+  return {Token::Type::number, lhs.number() - rhs.number()};
 }
 
 template<typename Fn>
@@ -505,7 +505,7 @@ auto do_and(Token const& lhs, Token const& rhs) -> Token
   if (!lhs.null_or_zero() && !rhs.null_or_zero()) {
     return lhs;
   }
-  return Token(Token::Type::number, 0);
+  return {Token::Type::number, 0};
 }
 
 auto do_or(Token const& lhs, Token const& rhs) -> Token
@@ -517,7 +517,7 @@ auto do_or(Token const& lhs, Token const& rhs) -> Token
     return rhs;
   }
 
-  return Token(Token::Type::number, 0);
+  return {Token::Type::number, 0};
 }
 
 auto parse(TokenIt& begin, TokenIt const& end) -> Token;

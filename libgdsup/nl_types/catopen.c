@@ -231,6 +231,7 @@ static char* expand_nlspath_entry(char const* begin, char const* end, char const
  * attempt.  Use \c generate_result() to convert the result of this function to an appropriate one
  * for \c catopen().
  */
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 static nl_catd do_catopen_path(char const* nlspath, char const* name, char const* locale)
 {
   int saved_errno = errno;

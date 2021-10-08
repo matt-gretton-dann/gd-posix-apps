@@ -9,6 +9,7 @@
 
 #include <cstdio>
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 GD::StreamInputFile::StreamInputFile(std::string_view filename, std::string_view mode)
     : filename_(filename), file_(nullptr), is_stdin_(false), buffer_(nullptr)
 {

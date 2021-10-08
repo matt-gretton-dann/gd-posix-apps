@@ -18,6 +18,7 @@ GD::Bc::Location::Location(std::string_view file_name) : file_name_(file_name), 
 {
 }
 
+// NOLINTNEXTLINE
 GD::Bc::Location::Location(std::string_view file_name, Line line, Column column)
     : file_name_(file_name), column_(column), line_(line)
 {
