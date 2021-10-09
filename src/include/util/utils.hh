@@ -9,6 +9,7 @@
 
 #include "gd/nl_types.h"
 
+#include <climits>
 #include <string_view>
 #include <utility>
 

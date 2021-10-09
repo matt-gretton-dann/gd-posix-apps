@@ -785,8 +785,8 @@ public:
     template<typename IFType>
     auto operator=(IFType& obj) -> Proxy&
     {
-      constexpr std::size_t read_size = 4096;
       wi_.write_member(obj, [&obj](auto it) {
+        constexpr std::vector<std::byte>::size_type read_size = 4096;
         std::vector<std::byte> data(read_size);
         while (!obj.eof()) {
           auto amount = obj.read_upto(GD::Span::span<std::byte>(data.data(), data.size()));

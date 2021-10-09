@@ -13,7 +13,7 @@
 #  define __EXTERN_C_BEGIN extern "C" {  // NOLINT
 #  define __EXTERN_C_END }               // NOLINT
 #  define __RESTRICT                     // NOLINT
-#  if defined(__APPLE__) || !defined(FORCE_SUPPLEMENTAL_LIBRARY)
+#  if defined(__APPLE__)
 #    define __NOEXCEPT  // NOLINT
 #  else
 #    define __NOEXCEPT noexcept  // NOLINT
