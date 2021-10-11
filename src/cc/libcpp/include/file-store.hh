@@ -46,7 +46,8 @@ private:
 class FileStore
 {
 public:
-  FileStore();
+  FileStore(ErrorManager& error_manager);
+  FileStore() = delete;
   FileStore(FileStore const&) = delete;
   FileStore(FileStore&&) noexcept = delete;
   auto operator=(FileStore const&) -> FileStore& = delete;
@@ -87,19 +88,6 @@ private:
     std::size_t logical_file_;
     std::size_t logical_line_;
     std::size_t logical_column_;
-
-    constexpr auto operator==(LineDetails const& rhs) const noexcept -> bool
-    {
-      return begin_ == rhs.begin_;
-    }
-    constexpr auto operator<=>(LineDetails const& rhs) const noexcept -> std::strong_ordering
-    {
-      return begin_ <=> rhs.begin_;
-    }
-    constexpr auto operator<=>(Location const& rhs) const noexcept -> std::strong_ordering
-    {
-      return begin_ <=> rhs;
-    }
   };
 
   struct LocationDetails
@@ -126,12 +114,14 @@ private:
   auto error() const -> std::optional<std::pair<Location, Error>>;
   auto next_line() -> std::pair<Location, char const*>;
 
+  ErrorManager& error_manager_;
   Files physical_files_;
   Location next_;
   std::vector<std::string> file_names_;
   LocationDetails cmd_line_location_;
   std::stack<StackStatus> location_stack_;
   std::vector<std::fstream> streams_;
+  std::string error_message_;
 };
 
 }  // namespace GD::CPP

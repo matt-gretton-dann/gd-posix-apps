@@ -14,7 +14,7 @@
 #include <variant>
 #include <vector>
 
-GD::CPP::FileStore::FileStore()
+GD::CPP::FileStore::FileStore(ErrorManager& error_manager) : error_manager_(error_manager)
 {
   file_names_.emplace_back("(command line)");
   next_ = Location{1};
@@ -38,6 +38,8 @@ auto GD::CPP::FileStore::push_stream(std::string const& name, std::istream& is) 
   // Ensure we have somewhere to put the lines we read.
   auto it2 = physical_files_.find(index);
   if (it2 == physical_files_.end()) {
+    // Ensure we turn exceptions on for the stream.
+    is.exceptions(std::ifstream::failbit | std::ifstream::badbit);
     auto [it3, success] =
       physical_files_.insert(std::make_pair(index, FileLines{is, std::vector<std::string>{}}));
     it2 = it3;
@@ -70,7 +72,14 @@ auto GD::CPP::FileStore::push_file(std::string const& fname) -> FileTokenizer
   }
 
   // Create the stream and put it somewhere that will live long enough.
-  streams_.emplace_back(fname);
+  streams_.emplace_back();
+  streams_.back().exceptions(std::ifstream::failbit | std::ifstream::badbit);
+  try {
+    streams_.back().open(fname);
+  }
+  catch (std::exception const& e) {
+    error_message_ = e.what();
+  }
   return push_stream(fname, streams_.back());
 }
 
@@ -95,10 +104,11 @@ auto GD::CPP::FileStore::cmd_line_location() const noexcept -> Location { return
 
 auto GD::CPP::FileStore::line(Location loc) const -> std::string const&
 {
-  static std::string empty{""};
+  static std::string empty{};
   auto const* loc_details = find_loc_details(loc);
   auto const& file = physical_files_.at(loc_details->physical_file_);
-  auto it = std::upper_bound(loc_details->lines_.begin(), loc_details->lines_.end(), loc);
+  auto it = std::upper_bound(loc_details->lines_.begin(), loc_details->lines_.end(), loc,
+                             [](Location loc, LineDetails const& rhs) { return loc < rhs.begin_; });
 
   if (it == loc_details->lines_.begin()) {
     return empty;
@@ -183,13 +193,54 @@ auto GD::CPP::FileStore::eof() const -> bool
   if (!physical_file.first.eof()) {
     return false;
   }
-  if (current_line >= physical_file.second.size()) {
-    return true;
-  }
-
-  return false;
+  return (current_line >= physical_file.second.size());
 }
 
-auto GD::CPP::FileStore::error() const -> std::optional<std::pair<Location, Error>> { abort(); }
+auto GD::CPP::FileStore::error() const -> std::optional<std::pair<Location, Error>>
+{
+  if (error_message_.empty()) {
+    return std::nullopt;
+  }
+  return std::make_pair(next_, error_manager_.error(ErrorCode::file_error, error_message_));
+}
 
-auto GD::CPP::FileStore::next_line() -> std::pair<Location, char const*> { abort(); }
+auto GD::CPP::FileStore::next_line() -> std::pair<Location, char const*>
+{
+  auto& current = location_stack_.top();
+  auto& physical_file = physical_files_.at(current.second->physical_file_);
+  auto& current_line = current.first;
+  std::istream& is = physical_file.first;
+
+  if (current_line == physical_file.second.size()) {
+    /* Get the next line from the stream.  */
+    if (!error_message_.empty() || is.eof()) {
+      return {next_, nullptr};
+    }
+    std::string s;
+
+    try {
+      std::getline(is, s);
+    }
+    catch (std::exception const& e) {
+      error_message_ = e.what();
+      return {next_, nullptr};
+    }
+
+    if (!is.eof()) {
+      s.push_back('\n');
+    }
+
+    physical_file.second.push_back(s);
+  }
+
+  auto const& str = physical_file.second.at(current_line);
+  auto const* line_start = str.data();
+  Location loc = next_;
+  LineDetails line = {loc, current.second->physical_file_, current_line, 0};
+
+  ++current_line;
+  next_ = next_ + Column{str.size()};
+  current.second->lines_.push_back(line);
+
+  return {loc, line_start};
+}

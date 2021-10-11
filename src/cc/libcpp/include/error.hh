@@ -13,6 +13,7 @@ namespace GD::CPP {
 /** \brief  List of error codes.  */
 enum class ErrorCode {
   no_error,
+  file_error,
 };
 
 /** \brief List of error severities.  */
