@@ -61,7 +61,7 @@ public:
 
   void map_next_logical_location(std::string const& filename, Line line);
 
-  auto cmd_line_location() const noexcept -> Location;
+  static auto cmd_line_location() noexcept -> Location;
 
   auto line(Location loc) const -> std::string const&;
   auto line(Range range) const -> std::string const&;
@@ -112,11 +112,15 @@ private:
 
   auto find_filename_id(std::string const& filename) -> std::size_t;
   auto find_loc_details(Location) const -> LocationDetails const*;
+  static auto find_line(LocationDetails const* location_details, Location loc) -> Line;
+  static auto find_line_details(LocationDetails const* location_details, Location loc)
+    -> LineDetails const*;
 
   auto eof() const -> bool;
   auto error() const -> std::optional<std::pair<Location, Error>>;
   auto next_line() -> std::pair<Location, char const*>;
 
+  static constexpr auto illegal_line = Line{std::numeric_limits<std::size_t>::max()};
   ErrorManager& error_manager_;
   Files physical_files_;
   Location next_;
