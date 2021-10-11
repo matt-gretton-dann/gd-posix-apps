@@ -86,8 +86,8 @@ private:
   {
     Location begin_;
     std::size_t logical_file_;
-    std::size_t logical_line_;
-    std::size_t logical_column_;
+    Line logical_line_;
+    Column logical_column_;
   };
 
   struct LocationDetails
@@ -98,6 +98,8 @@ private:
     Location begin_;
     Location end_;
     std::size_t physical_file_;
+    std::size_t logical_file_;
+    Line logical_line_;
     std::vector<LineDetails> lines_;
     std::vector<LocationDetails*> children_;
   };
@@ -106,8 +108,9 @@ private:
 
   using FileLines = std::pair<std::istream&, std::vector<std::string>>;
   using Files = std::map<std::size_t, FileLines>;
-  using StackStatus = std::pair<std::size_t, LocationDetails*>;
+  using StackStatus = std::pair<Line, LocationDetails*>;
 
+  auto find_filename_id(std::string const& filename) -> std::size_t;
   auto find_loc_details(Location) const -> LocationDetails const*;
 
   auto eof() const -> bool;
@@ -124,6 +127,7 @@ private:
   std::string error_message_;
 };
 
+auto operator==(Line lhs, std::size_t rhs) -> bool { return static_cast<std::size_t>(lhs) == rhs; }
 }  // namespace GD::CPP
 
 #endif  // CC_LIBCPP_FILETOKENIZER_H_INCLUDED_

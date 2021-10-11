@@ -23,17 +23,12 @@ GD::CPP::FileStore::FileStore(ErrorManager& error_manager) : error_manager_(erro
   cmd_line_location_.end_ = Location(std::numeric_limits<std::underlying_type_t<Location>>::max());
   cmd_line_location_.physical_file_ = 0;
 
-  location_stack_.push(std::make_pair(0, &cmd_line_location_));
+  location_stack_.push(std::make_pair(Line{0}, &cmd_line_location_));
 }
 
 auto GD::CPP::FileStore::push_stream(std::string const& name, std::istream& is) -> FileTokenizer
 {
-  // Ensure we have a file name index.
-  auto it = std::find(file_names_.begin(), file_names_.end(), name);
-  if (it == file_names_.end()) {
-    it = file_names_.insert(file_names_.end(), name);
-  }
-  std::size_t index = it - file_names_.begin();
+  std::size_t index = find_filename_id(name);
 
   // Ensure we have somewhere to put the lines we read.
   auto it2 = physical_files_.find(index);
@@ -54,7 +49,7 @@ auto GD::CPP::FileStore::push_stream(std::string const& name, std::istream& is) 
   new_file->physical_file_ = index;
 
   current.second->children_.push_back(new_file);
-  location_stack_.push(std::make_pair(0, new_file));
+  location_stack_.push(std::make_pair(Line{0}, new_file));
 
   return FileTokenizer{*this};
 }
@@ -97,7 +92,8 @@ void GD::CPP::FileStore::pop_file()
 
 void GD::CPP::FileStore::map_next_logical_location(std::string const& filename, Line line)
 {
-  abort();
+  location_stack_.top().second->logical_file_ = find_filename_id(filename);
+  location_stack_.top().second->logical_line_ = line;
 }
 
 auto GD::CPP::FileStore::cmd_line_location() const noexcept -> Location { return Location{0}; }
@@ -193,7 +189,7 @@ auto GD::CPP::FileStore::eof() const -> bool
   if (!physical_file.first.eof()) {
     return false;
   }
-  return (current_line >= physical_file.second.size());
+  return (current_line >= static_cast<Line>(physical_file.second.size()));
 }
 
 auto GD::CPP::FileStore::error() const -> std::optional<std::pair<Location, Error>>
@@ -233,14 +229,28 @@ auto GD::CPP::FileStore::next_line() -> std::pair<Location, char const*>
     physical_file.second.push_back(s);
   }
 
-  auto const& str = physical_file.second.at(current_line);
+  auto const& str = physical_file.second.at(static_cast<std::size_t>(current_line));
   auto const* line_start = str.data();
   Location loc = next_;
-  LineDetails line = {loc, current.second->physical_file_, current_line, 0};
+  LineDetails line = {loc, current.second->logical_file_, current.second->logical_line_, Column{0}};
 
-  ++current_line;
+  using UT = std::underlying_type_t<Line>;
+  current_line = static_cast<Line>(static_cast<UT>(current_line) + 1);
+  current.second->logical_line_ =
+    static_cast<Line>(static_cast<UT>(current.second->logical_line_) + 1);
   next_ = next_ + Column{str.size()};
   current.second->lines_.push_back(line);
 
   return {loc, line_start};
+}
+
+auto GD::CPP::FileStore::find_filename_id(std::string const& filename) -> std::size_t
+{
+  auto it = std::find(file_names_.begin(), file_names_.end(), filename);
+  std::size_t index = it - file_names_.end();
+  if (index == file_names_.size()) {
+    file_names_.emplace_back(filename);
+  }
+
+  return index;
 }
