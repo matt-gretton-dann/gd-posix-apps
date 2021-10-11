@@ -81,7 +81,7 @@ void GD::CPP::FileTokenizer::peek_character()
 {
   assert(line_ != nullptr);  // NOLINT
   auto const* end = line_;
-  constexpr char utf8_continuation = 0x80;
+  constexpr auto utf8_continuation = static_cast<char>(0x80);
   while (*end != '\0' && (*end & utf8_continuation) != 0) {
     ++end;  // NOLINT
   }
