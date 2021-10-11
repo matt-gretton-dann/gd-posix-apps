@@ -4,6 +4,8 @@
 #include "gd/format.hh"
 
 #include <cstdint>
+#include <fstream>
+#include <iosfwd>
 #include <map>
 #include <stack>
 #include <string>
@@ -51,6 +53,7 @@ public:
   auto operator=(FileStore&&) noexcept -> FileStore& = delete;
   ~FileStore() = default;
 
+  auto push_stream(std::string const& name, std::istream& is) -> FileTokenizer;
   auto push_file(std::string const& fname) -> FileTokenizer;
   auto push_standard_input() -> FileTokenizer;
   void pop_file();
@@ -85,12 +88,15 @@ private:
     std::size_t logical_line_;
     std::size_t logical_column_;
 
-    auto operator==(LineDetails const& rhs) const noexcept -> bool { return begin_ == rhs.begin_; }
-    auto operator<=>(LineDetails const& rhs) const noexcept -> std::strong_ordering
+    constexpr auto operator==(LineDetails const& rhs) const noexcept -> bool
+    {
+      return begin_ == rhs.begin_;
+    }
+    constexpr auto operator<=>(LineDetails const& rhs) const noexcept -> std::strong_ordering
     {
       return begin_ <=> rhs.begin_;
     }
-    auto operator<=>(Location const& rhs) const noexcept -> std::strong_ordering
+    constexpr auto operator<=>(Location const& rhs) const noexcept -> std::strong_ordering
     {
       return begin_ <=> rhs;
     }
@@ -103,7 +109,6 @@ private:
 
     Location begin_;
     Location end_;
-    std::size_t length_;
     std::size_t physical_file_;
     std::vector<LineDetails> lines_;
     std::vector<LocationDetails*> children_;
@@ -111,20 +116,22 @@ private:
 
   friend class FileTokenizer;
 
-  using FileLines = std::pair<int, std::vector<std::string>>;
+  using FileLines = std::pair<std::istream&, std::vector<std::string>>;
   using Files = std::map<std::size_t, FileLines>;
+  using StackStatus = std::pair<std::size_t, LocationDetails*>;
 
   auto find_loc_details(Location) const -> LocationDetails const*;
 
-  auto eof() -> std::optional<Location>;
-  auto error() -> std::optional<std::pair<Location, Error>>;
+  auto eof() const -> bool;
+  auto error() const -> std::optional<std::pair<Location, Error>>;
   auto next_line() -> std::pair<Location, char const*>;
 
   Files physical_files_;
   Location next_;
   std::vector<std::string> file_names_;
   LocationDetails cmd_line_location_;
-  std::stack<LocationDetails*> location_stack_;
+  std::stack<StackStatus> location_stack_;
+  std::vector<std::fstream> streams_;
 };
 
 }  // namespace GD::CPP

@@ -53,7 +53,6 @@ void GD::CPP::FileTokenizer::peek_special_conditions()
 
   auto eof = fs_.eof();
   if (eof) {
-    location_ = *eof;
     line_ = nullptr;
     token_.emplace(TokenType::eof, Range{location_});
   }
@@ -73,7 +72,7 @@ void GD::CPP::FileTokenizer::do_peek()
     auto [location, line] = fs_.next_line();
     location_ = location;
     line_ = line;
-    assert(line_ != nullptr || fs_.error().has_value() || fs_.eof().has_value());  // NOLINT
+    assert(line_ != nullptr || fs_.error().has_value() || fs_.eof());  // NOLINT
     do_peek();
   }
 }

@@ -3,6 +3,8 @@
 
 #include <cassert>
 #include <cstdint>
+#include <fstream>
+#include <iostream>
 #include <limits>
 #include <map>
 #include <optional>
@@ -21,16 +23,27 @@ GD::CPP::FileStore::FileStore()
   cmd_line_location_.end_ = Location(std::numeric_limits<std::underlying_type_t<Location>>::max());
   cmd_line_location_.physical_file_ = 0;
 
-  location_stack_.push(&cmd_line_location_);
+  location_stack_.push(std::make_pair(0, &cmd_line_location_));
 }
 
-auto GD::CPP::FileStore::push_file(std::string const& fname) -> FileTokenizer
+auto GD::CPP::FileStore::push_stream(std::string const& name, std::istream& is) -> FileTokenizer
 {
-  auto it = std::find(file_names_.begin(), file_names_.end(), fname);
+  // Ensure we have a file name index.
+  auto it = std::find(file_names_.begin(), file_names_.end(), name);
   if (it == file_names_.end()) {
-    it = file_names_.insert(file_names_.end(), fname);
+    it = file_names_.insert(file_names_.end(), name);
   }
-  auto index = it - file_names_.begin();
+  std::size_t index = it - file_names_.begin();
+
+  // Ensure we have somewhere to put the lines we read.
+  auto it2 = physical_files_.find(index);
+  if (it2 == physical_files_.end()) {
+    auto [it3, success] =
+      physical_files_.insert(std::make_pair(index, FileLines{is, std::vector<std::string>{}}));
+    it2 = it3;
+  }
+
+  // Add the location to the location stack.
   auto& current = location_stack_.top();
 
   auto* new_file = new LocationDetails();
@@ -38,18 +51,38 @@ auto GD::CPP::FileStore::push_file(std::string const& fname) -> FileTokenizer
   new_file->end_ = Location(std::numeric_limits<std::underlying_type_t<Location>>::max());
   new_file->physical_file_ = index;
 
-  current->children_.push_back(new_file);
-  location_stack_.push(new_file);
+  current.second->children_.push_back(new_file);
+  location_stack_.push(std::make_pair(0, new_file));
 
   return FileTokenizer{*this};
 }
 
-auto GD::CPP::FileStore::push_standard_input() -> FileTokenizer { abort(); }
+auto GD::CPP::FileStore::push_file(std::string const& fname) -> FileTokenizer
+{
+  // Look the file name up to see if we've already opened it - and if so
+  auto it = std::find(file_names_.begin(), file_names_.end(), fname);
+  std::size_t index = it - file_names_.end();
+  if (index != file_names_.size()) {
+    auto it2 = physical_files_.find(index);
+    if (it2 != physical_files_.end()) {
+      return push_stream(fname, it2->second.first);
+    }
+  }
+
+  // Create the stream and put it somewhere that will live long enough.
+  streams_.emplace_back(fname);
+  return push_stream(fname, streams_.back());
+}
+
+auto GD::CPP::FileStore::push_standard_input() -> FileTokenizer
+{
+  return push_stream("(standard input)", std::cin);
+}
 
 void GD::CPP::FileStore::pop_file()
 {
   auto& current = location_stack_.top();
-  current->end_ = next_;
+  current.second->end_ = next_;
   location_stack_.pop();
 }
 
@@ -111,4 +144,52 @@ auto GD::CPP::FileStore::physical_filename(Location loc) const noexcept -> std::
 auto GD::CPP::FileStore::physical_line(Location loc) const noexcept -> Line { abort(); }
 auto GD::CPP::FileStore::physical_column(Location loc) const noexcept -> Column { abort(); }
 
-auto GD::CPP::FileStore::find_loc_details(Location) const -> LocationDetails const* { abort(); }
+auto GD::CPP::FileStore::find_loc_details(Location loc) const -> LocationDetails const*
+{
+  auto const* loc_details = &cmd_line_location_;
+  while (!loc_details->children_.empty()) {
+    /* Find first child where child.begin_ > loc_.  The location *may* be in the child *before* the
+     * found one. */
+    auto it =
+      std::upper_bound(loc_details->children_.begin(), loc_details->children_.end(), loc,
+                       [](Location loc, auto const& details) { return loc < details->begin_; });
+
+    /* If we found at the beginning then the current loc_details are the ones we want.  */
+    if (it == loc_details->children_.begin()) {
+      break;
+    }
+
+    /* Now check to see if the location we are searching for is actually in the child.  */
+    --it;
+    if ((*it)->end_ < loc) {
+      /* No - so break.  */
+      break;
+    }
+
+    /* Recurse into the child. */
+    loc_details = *it;
+  }
+
+  return loc_details;
+}
+
+auto GD::CPP::FileStore::eof() const -> bool
+{
+  auto const& current = location_stack_.top();
+  auto const& physical_file = physical_files_.at(current.second->physical_file_);
+  auto current_line = current.first;
+
+  /* Have we reached the end of the file we're reading?  */
+  if (!physical_file.first.eof()) {
+    return false;
+  }
+  if (current_line >= physical_file.second.size()) {
+    return true;
+  }
+
+  return false;
+}
+
+auto GD::CPP::FileStore::error() const -> std::optional<std::pair<Location, Error>> { abort(); }
+
+auto GD::CPP::FileStore::next_line() -> std::pair<Location, char const*> { abort(); }
