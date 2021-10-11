@@ -81,12 +81,20 @@ void GD::CPP::FileTokenizer::peek_character()
 {
   assert(line_ != nullptr);  // NOLINT
   auto const* end = line_;
-  constexpr auto utf8_continuation = static_cast<char>(0x80);
-  while (*end != '\0' && (*end & utf8_continuation) != 0) {
+  constexpr auto top_bit = static_cast<char>(0x80);
+  constexpr auto cont_mask = static_cast<char>(0xe0);
+  if (*end == '\0') {
+    line_ = nullptr;
+    return;
+  }
+
+  if ((*end & top_bit) == 0) {
     ++end;  // NOLINT
   }
-  if (end == line_) {  // NOLINT
-    ++end;             // NOLINT
+  else {
+    do {
+      ++end;  // NOLINT
+    } while (*end != '\0' && (*end & cont_mask) == top_bit);
   }
 
   Range range(location_, end - line_);
