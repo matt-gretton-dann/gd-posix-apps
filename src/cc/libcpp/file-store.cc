@@ -14,6 +14,18 @@
 #include <variant>
 #include <vector>
 
+namespace {
+auto count_chars(std::string::const_iterator begin, std::string::const_iterator end) noexcept
+  -> GD::CPP::Column
+{
+  return static_cast<GD::CPP::Column>(std::count_if(begin, end, [](char c) {
+    constexpr auto mask = static_cast<char>(0xe0);
+    constexpr auto reject = static_cast<char>(0x80);
+    return (c & mask) != reject;
+  }));
+}
+}  // namespace
+
 GD::CPP::FileStore::FileStore(ErrorManager& error_manager) : error_manager_(error_manager)
 {
   file_names_.emplace_back("(command line)");
@@ -186,16 +198,20 @@ auto GD::CPP::FileStore::logical_line(Location loc) const noexcept -> Line
 auto GD::CPP::FileStore::logical_column(Location loc) const noexcept -> Column
 {
   auto const* loc_details = find_loc_details(loc);
+  auto const& file = physical_files_.at(loc_details->physical_file_);
   auto const* line_details = find_line_details(loc_details, loc);
   if (line_details == nullptr) {
     return Column{0};
   }
-
+  auto line = find_line(loc_details, loc);
+  assert(line != illegal_line);  // NOLINT
+  auto const& str = file.second.at(static_cast<std::size_t>(line));
+  auto column = static_cast<std::size_t>(loc) - static_cast<std::size_t>(line_details->begin_);
   auto physical_column =
-    static_cast<std::size_t>(loc) - static_cast<std::size_t>(line_details->begin_);
+    count_chars(str.begin(), str.begin() + static_cast<std::string::difference_type>(column));
 
   return static_cast<Column>(1 + static_cast<std::size_t>(line_details->logical_column_) +
-                             physical_column);
+                             static_cast<std::size_t>(physical_column));
 }
 
 auto GD::CPP::FileStore::physical_filename(Location loc) const noexcept -> std::string const&
@@ -214,14 +230,18 @@ auto GD::CPP::FileStore::physical_line(Location loc) const noexcept -> Line
 auto GD::CPP::FileStore::physical_column(Location loc) const noexcept -> Column
 {
   auto const* loc_details = find_loc_details(loc);
+  auto const& file = physical_files_.at(loc_details->physical_file_);
   auto const* line_details = find_line_details(loc_details, loc);
   if (line_details == nullptr) {
     return Column{0};
   }
-
+  auto line = find_line(loc_details, loc);
+  assert(line != illegal_line);  // NOLINT
+  auto const& str = file.second.at(static_cast<std::size_t>(line));
+  auto column = static_cast<std::size_t>(loc) - static_cast<std::size_t>(line_details->begin_);
   auto physical_column =
-    1 + static_cast<std::size_t>(loc) - static_cast<std::size_t>(line_details->begin_);
-  return Column{physical_column};
+    count_chars(str.begin(), str.begin() + static_cast<std::string::difference_type>(column));
+  return Column{1 + static_cast<std::size_t>(physical_column)};
 }
 
 auto GD::CPP::FileStore::find_loc_details(Location loc) const -> LocationDetails const*
