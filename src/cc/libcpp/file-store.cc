@@ -42,14 +42,18 @@ auto GD::CPP::FileStore::push_stream(std::string const& name, std::istream& is) 
 
   // Add the location to the location stack.
   auto& current = location_stack_.top();
+  if (current.second->begin_ == next_) {
+    error_message_ = "Can't push twice at the same location.";
+  }
+  else {
+    auto* new_file = new LocationDetails();
+    new_file->begin_ = next_;
+    new_file->end_ = Location(std::numeric_limits<std::underlying_type_t<Location>>::max());
+    new_file->physical_file_ = index;
 
-  auto* new_file = new LocationDetails();
-  new_file->begin_ = next_;
-  new_file->end_ = Location(std::numeric_limits<std::underlying_type_t<Location>>::max());
-  new_file->physical_file_ = index;
-
-  current.second->children_.push_back(new_file);
-  location_stack_.push(std::make_pair(Line{0}, new_file));
+    current.second->children_.push_back(new_file);
+    location_stack_.push(std::make_pair(Line{0}, new_file));
+  }
 
   return FileTokenizer{*this};
 }
@@ -122,7 +126,18 @@ auto GD::CPP::FileStore::is_top_level(Location loc) const noexcept -> bool
   return find_loc_details(loc) == &cmd_line_location_;
 }
 
-auto GD::CPP::FileStore::parent_location(Location loc) const noexcept -> Location { abort(); }
+auto GD::CPP::FileStore::parent_location(Location loc) const noexcept -> Location
+{
+  /* The parent location of a given location is 1 less than the beginning of the first location in
+   * the file.  This works because we insist that you can't push multiple files at the same
+   * location.
+   */
+  auto const* loc_details = find_loc_details(loc);
+  Location begin = loc_details->begin_;
+  return begin == cmd_line_location()
+           ? begin
+           : static_cast<Location>(static_cast<std::uint64_t>(begin) - 1);
+}
 
 auto GD::CPP::FileStore::logical_filename(Location loc) const noexcept -> std::string const&
 {
