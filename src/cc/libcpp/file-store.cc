@@ -118,8 +118,37 @@ auto GD::CPP::FileStore::line(Range range) const -> std::string const&
 
 auto GD::CPP::FileStore::caret(Range range) const -> std::string { abort(); }
 
-auto GD::CPP::FileStore::range_begin(Range range) const -> std::string::const_iterator { abort(); }
-auto GD::CPP::FileStore::range_end(Range range) const -> std::string::const_iterator { abort(); }
+auto GD::CPP::FileStore::range_begin(Range range) const -> std::string::const_iterator
+{
+  auto loc = range.begin();
+  auto const* loc_details = find_loc_details(loc);
+  auto const& file = physical_files_.at(loc_details->physical_file_);
+  auto const* line_details = find_line_details(loc_details, loc);
+  if (line_details == nullptr) {
+    return empty_.end();
+  }
+  auto line = find_line(loc_details, loc);
+  assert(line != illegal_line);  // NOLINT
+  auto const& str = file.second.at(static_cast<std::size_t>(line));
+  auto column = static_cast<std::size_t>(loc) - static_cast<std::size_t>(line_details->begin_);
+  return str.begin() + static_cast<std::string::difference_type>(column);
+}
+
+auto GD::CPP::FileStore::range_end(Range range) const -> std::string::const_iterator
+{
+  auto loc = range.end();
+  auto const* loc_details = find_loc_details(loc);
+  auto const& file = physical_files_.at(loc_details->physical_file_);
+  auto const* line_details = find_line_details(loc_details, loc);
+  if (line_details == nullptr) {
+    return empty_.end();
+  }
+  auto line = find_line(loc_details, loc);
+  assert(line != illegal_line);  // NOLINT
+  auto const& str = file.second.at(static_cast<std::size_t>(line));
+  auto column = static_cast<std::size_t>(loc) - static_cast<std::size_t>(line_details->begin_);
+  return str.begin() + static_cast<std::string::difference_type>(column);
+}
 
 auto GD::CPP::FileStore::is_top_level(Location loc) const noexcept -> bool
 {

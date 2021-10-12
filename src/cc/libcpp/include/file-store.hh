@@ -121,6 +121,8 @@ private:
   auto next_line() -> std::pair<Location, char const*>;
 
   static constexpr auto illegal_line = Line{std::numeric_limits<std::size_t>::max()};
+  static std::string empty_;
+
   ErrorManager& error_manager_;
   Files physical_files_;
   Location next_;
