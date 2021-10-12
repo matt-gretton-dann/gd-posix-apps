@@ -7,6 +7,7 @@
 #include <iostream>
 #include <limits>
 #include <map>
+#include <numeric>
 #include <optional>
 #include <string>
 #include <type_traits>
@@ -128,7 +129,34 @@ auto GD::CPP::FileStore::line(Range range) const -> std::string const&
   return line(range.begin());
 }
 
-auto GD::CPP::FileStore::caret(Range range) const -> std::string { abort(); }
+auto GD::CPP::FileStore::caret(Range range) const -> std::string
+{
+  auto loc = range.begin();
+  auto const* loc_details = find_loc_details(loc);
+  auto const& file = physical_files_.at(loc_details->physical_file_);
+  auto const* line_details = find_line_details(loc_details, loc);
+  if (line_details == nullptr) {
+    return empty_;
+  }
+  auto line = find_line(loc_details, loc);
+  assert(line != illegal_line);  // NOLINT
+  auto const& str = file.second.at(static_cast<std::size_t>(line));
+  auto column_begin =
+    str.begin() + static_cast<std::ptrdiff_t>(static_cast<std::size_t>(loc) -
+                                              static_cast<std::size_t>(line_details->begin_));
+  auto column_end = column_begin + static_cast<std::ptrdiff_t>(range.size());
+  std::string s =
+    std::accumulate(str.begin(), column_begin, std::string{}, [](std::string const& s, char c) {
+      if (std::isspace(c) == 0) {
+        c = ' ';
+      }
+      return s + c;
+    });
+  s += '^';
+  auto len =
+    std::max(std::size_t{1}, static_cast<std::size_t>(count_chars(column_begin, column_end))) - 1;
+  return s + std::string(len, '=');
+}
 
 auto GD::CPP::FileStore::range_begin(Range range) const -> std::string::const_iterator
 {
