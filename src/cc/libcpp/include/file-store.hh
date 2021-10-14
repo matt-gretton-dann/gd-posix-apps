@@ -241,15 +241,21 @@ private:
     Location begin_;                          ///< Location of the first character in the file
     Location end_;                            ///< One past end location of this file.
     std::size_t physical_file_;               ///< Physical File ID.
-    std::size_t logical_file_;                ///< Logical File of the next line
-    Line logical_line_;                       ///< Logical line number of the next line.
     std::vector<LineDetails> lines_;          ///< Details for each line.
     std::vector<LocationDetails*> children_;  ///< Details for each child.
   };
 
+  /** \brief Location stack for includes.  */
+  struct LocationStack
+  {
+    LocationDetails* loc_details_;  ///< Location details of include file
+    Line physical_line_;            ///< Next physical line
+    std::size_t logical_file_;      ///< Logical File of the next line
+    Line logical_line_;             ///< Logical line number of the next line.
+  };
+
   using FileLines = std::pair<std::istream&, std::vector<std::string>>;
   using Files = std::map<std::size_t, FileLines>;
-  using StackStatus = std::pair<Line, LocationDetails*>;
 
   /** \brief           Get the filename ID for a filename.
    *  \param  filename File name to get ID of.
@@ -283,17 +289,17 @@ private:
   static constexpr auto illegal_line = Line{std::numeric_limits<std::size_t>::max()};
   static const std::string empty_;  ///< An empty string.
 
-  ErrorManager& error_manager_;             ///< Error manager
-  Files physical_files_;                    ///< Map of read files
-  std::vector<std::string> file_names_;     ///< Array of file names
-  LocationDetails cmd_line_location_;       ///< Location details for the command line
-  std::stack<StackStatus> location_stack_;  ///< Stack of include locations
-  std::vector<std::fstream> streams_;       ///< The streams we own.
-  std::optional<Error> error_;              ///< Current error.
-  Location next_;                           ///< Location for the next token.
-  std::string::const_iterator next_begin_;  ///< Pointer to the first character of the next token.
-  std::string::const_iterator line_end_;    ///< End of current line being parsed
-  std::optional<Token> token_;              ///< Current token (if we have one)
+  ErrorManager& error_manager_;               ///< Error manager
+  Files physical_files_;                      ///< Map of read files
+  std::vector<std::string> file_names_;       ///< Array of file names
+  LocationDetails cmd_line_location_;         ///< Location details for the command line
+  std::stack<LocationStack> location_stack_;  ///< Stack of include locations
+  std::vector<std::fstream> streams_;         ///< The streams we own.
+  std::optional<Error> error_;                ///< Current error.
+  Location next_;                             ///< Location for the next token.
+  std::string::const_iterator next_begin_;    ///< Pointer to the first character of the next token.
+  std::string::const_iterator line_end_;      ///< End of current line being parsed
+  std::optional<Token> token_;                ///< Current token (if we have one)
 };
 }  // namespace GD::CPP
 

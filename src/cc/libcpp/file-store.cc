@@ -16,6 +16,11 @@
 #include <vector>
 
 namespace {
+/** \brief  Count the number of characters in a string.
+ *
+ * This treats the characters as UTF-8 code-points.  So multiple bytes may turn into a fewer
+ * number of characters.
+ */
 auto count_chars(std::string::const_iterator begin, std::string::const_iterator end) noexcept
   -> GD::CPP::Column
 {
@@ -110,7 +115,12 @@ GD::CPP::FileStore::FileStore(ErrorManager& error_manager) : error_manager_(erro
   cmd_line_location_.end_ = Location(std::numeric_limits<std::underlying_type_t<Location>>::max());
   cmd_line_location_.physical_file_ = 0;
 
-  location_stack_.push(std::make_pair(Line{0}, &cmd_line_location_));
+  LocationStack loc_stack;
+  loc_stack.loc_details_ = &cmd_line_location_;
+  loc_stack.physical_line_ = Line{0};
+  loc_stack.logical_file_ = 0;
+  loc_stack.logical_line_ = Line{0};
+  location_stack_.push(loc_stack);
 }
 
 void GD::CPP::FileStore::push_stream(std::string const& name, std::istream& is)
@@ -129,7 +139,7 @@ void GD::CPP::FileStore::push_stream(std::string const& name, std::istream& is)
 
   // Add the location to the location stack.
   auto& current = location_stack_.top();
-  if (current.second->begin_ == next_) {
+  if (current.loc_details_->begin_ == next_) {
     error_.emplace(error_manager_.error(ErrorCode::bad_location_push));
   }
   else {
@@ -138,8 +148,15 @@ void GD::CPP::FileStore::push_stream(std::string const& name, std::istream& is)
     new_file->end_ = Location(std::numeric_limits<std::underlying_type_t<Location>>::max());
     new_file->physical_file_ = index;
 
-    current.second->children_.push_back(new_file);
-    location_stack_.push(std::make_pair(Line{0}, new_file));
+    current.loc_details_->children_.push_back(new_file);
+
+    LocationStack loc_stack;
+    loc_stack.loc_details_ = new_file;
+    loc_stack.physical_line_ = Line{0};
+    loc_stack.logical_file_ = index;
+    loc_stack.logical_line_ = Line{0};
+
+    location_stack_.push(loc_stack);
   }
 }
 
@@ -173,14 +190,14 @@ void GD::CPP::FileStore::push_standard_input() { push_stream("(standard input)",
 void GD::CPP::FileStore::pop_file()
 {
   auto& current = location_stack_.top();
-  current.second->end_ = next_;
+  current.loc_details_->end_ = next_;
   location_stack_.pop();
 }
 
 void GD::CPP::FileStore::map_next_logical_location(std::string const& filename, Line line)
 {
-  location_stack_.top().second->logical_file_ = find_filename_id(filename);
-  location_stack_.top().second->logical_line_ = line;
+  location_stack_.top().logical_file_ = find_filename_id(filename);
+  location_stack_.top().logical_line_ = line;
 }
 
 auto GD::CPP::FileStore::cmd_line_location() noexcept -> Location { return Location{0}; }
@@ -371,13 +388,13 @@ void GD::CPP::FileStore::peek_next_line()
 {
   auto& current = location_stack_.top();
 
-  if (current.second == &cmd_line_location_) {
+  if (current.loc_details_ == &cmd_line_location_) {
     token_.emplace(TokenType::end_of_source, Range{next_, 0});
     return;
   }
 
-  auto& physical_file = physical_files_.at(current.second->physical_file_);
-  auto& current_line = current.first;
+  auto& physical_file = physical_files_.at(current.loc_details_->physical_file_);
+  auto& current_line = current.physical_line_;
   std::istream& is = physical_file.first;
 
   if (current_line == physical_file.second.size()) {
@@ -406,14 +423,12 @@ void GD::CPP::FileStore::peek_next_line()
   }
 
   auto const& str = physical_file.second.at(static_cast<std::size_t>(current_line));
-  LineDetails line = {next_, current.second->logical_file_, current.second->logical_line_,
-                      Column{0}};
+  LineDetails line = {next_, current.logical_file_, current.logical_line_, Column{0}};
 
   using UT = std::underlying_type_t<Line>;
-  current_line = static_cast<Line>(static_cast<UT>(current_line) + 1);
-  current.second->logical_line_ =
-    static_cast<Line>(static_cast<UT>(current.second->logical_line_) + 1);
-  current.second->lines_.push_back(line);
+  current.physical_line_ = static_cast<Line>(static_cast<UT>(current_line) + 1);
+  current.logical_line_ = static_cast<Line>(static_cast<UT>(current.logical_line_) + 1);
+  current.loc_details_->lines_.push_back(line);
 
   next_begin_ = str.begin();
   line_end_ = str.end();
