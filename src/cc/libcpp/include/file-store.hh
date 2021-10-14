@@ -196,47 +196,92 @@ public:
   auto physical_column(Location loc) const noexcept -> Column;
 
 private:
+  /** \brief  Information about a particular line of code.
+   *
+   * This stores details about a line of code - including the logical (flile, line, column) triple
+   * of the first character, and the location ID of the first character.
+   *
+   * The physical file is stored in the parent details, the physical line number is 1 + the index
+   * of this entry in LocationDetails::lines_.
+   */
   struct LineDetails
   {
-    Location begin_;
-    std::size_t logical_file_;
-    Line logical_line_;
-    Column logical_column_;
+    Location begin_;            ///< Location of first character in the line.
+    std::size_t logical_file_;  ///< ID of the logical file.
+    Line logical_line_;         ///< Logical line number
+    Column logical_column_;     ///< Logical column number of first character
   };
 
+  /** \brief Details for each line in an included file.
+   *
+   * Each instance of this refers to an included file - so the same file may have multiple
+   * LocationDetails objects, once for every time it has been included.
+   */
   struct LocationDetails
   {
     LocationDetails() = default;
-    ~LocationDetails() = default;
 
-    Location begin_;
-    Location end_;
-    std::size_t physical_file_;
-    std::size_t logical_file_;
-    Line logical_line_;
-    std::vector<LineDetails> lines_;
-    std::vector<LocationDetails*> children_;
+    /** \brief Destructor.  */
+    ~LocationDetails();
+
+    /** \brief      Find the line number associated with a given location.
+     *  \param  loc Location to query.
+     *  \return     Line number associated with the location, or \c illegal_line if location isn't
+     *              in the range for this object.
+     */
+    auto find_line(Location loc) const -> Line;
+
+    /** \brief      Find the line details associated with a given location.
+     *  \param  loc Location to query.
+     *  \return     Line details associated with the location, or \c nullptr if location isn't
+     *              in the range for this object.
+     */
+    auto find_line_details(Location loc) const -> LineDetails const*;
+
+    Location begin_;                          ///< Location of the first character in the file
+    Location end_;                            ///< One past end location of this file.
+    std::size_t physical_file_;               ///< Physical File ID.
+    std::size_t logical_file_;                ///< Logical File of the next line
+    Line logical_line_;                       ///< Logical line number of the next line.
+    std::vector<LineDetails> lines_;          ///< Details for each line.
+    std::vector<LocationDetails*> children_;  ///< Details for each child.
   };
 
   using FileLines = std::pair<std::istream&, std::vector<std::string>>;
   using Files = std::map<std::size_t, FileLines>;
   using StackStatus = std::pair<Line, LocationDetails*>;
 
+  /** \brief           Get the filename ID for a filename.
+   *  \param  filename File name to get ID of.
+   *  \return          ID.
+   *
+   * Will always succeed, adding a new ID if necessary.
+   */
   auto find_filename_id(std::string const& filename) -> std::size_t;
-  auto find_loc_details(Location) const -> LocationDetails const*;
-  static auto find_line(LocationDetails const* location_details, Location loc) -> Line;
-  static auto find_line_details(LocationDetails const* location_details, Location loc)
-    -> LineDetails const*;
 
-  /** \brief  Populate the next token.  */
+  /** \brief      Find the location details object for a given location.
+   *  \param  loc Location to look up.
+   *  \return     Location details.
+   */
+  auto find_loc_details(Location loc) const -> LocationDetails const*;
+
+  /** \brief  Peek the next token.  */
   void do_peek();
 
+  /** \brief  Update token_ with the next character.
+   *
+   * Assumes that the current line has more bytes to go through.
+   */
   void peek_character();
+
+  /** \brief  Read the next line.  */
   void peek_next_line();
+
+  /** \brief Pop a file.  */
   void pop_file();
 
   static constexpr auto illegal_line = Line{std::numeric_limits<std::size_t>::max()};
-  static std::string empty_;  ///< An empty string.
+  static const std::string empty_;  ///< An empty string.
 
   ErrorManager& error_manager_;             ///< Error manager
   Files physical_files_;                    ///< Map of read files
