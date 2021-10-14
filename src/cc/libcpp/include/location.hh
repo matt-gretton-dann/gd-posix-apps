@@ -13,16 +13,17 @@
 namespace GD::CPP {
 
 /** \brief  Represents a line number.  */
-enum class Line : std::uint64_t {};
+enum class Line : std::size_t {};
 
 /** \brief  Represents a column number.  */
-enum class Column : std::uint64_t {};
+enum class Column : std::size_t {};
 
 /** \brief Represents a location
  *
- * A location consists of:
+ * A location represents:
  *  * A physical (file, line, column) triple,
  *  * A logical (file, line, column) triple.
+ *  * Stack of inclusions.
  *
  * The physical triple refers to the file/stream/pipe that data was read from.  The logical triple
  * refers to the value as given by #line directives.
@@ -30,6 +31,16 @@ enum class Column : std::uint64_t {};
  * Location values are managed by GD::CPP::FileStore objects.
  */
 enum class Location : std::uint64_t {};
+
+constexpr inline auto operator==(Line lhs, std::size_t rhs) noexcept -> bool
+{
+  return static_cast<std::size_t>(lhs) == rhs;
+}
+
+constexpr inline auto operator==(std::size_t rhs, Line line) noexcept -> bool
+{
+  return static_cast<std::size_t>(line) == rhs;
+}
 
 /** \brief  Add a column number to a location.  */
 constexpr inline auto operator+(Location loc, Column col) noexcept -> Location

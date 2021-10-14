@@ -19,66 +19,180 @@
 
 namespace GD::CPP {
 
-class FileStore;
-
-class FileTokenizer
-{
-public:
-  FileTokenizer(FileStore& fs);
-  auto peek() -> Token const&;
-
-  auto chew();
-  auto chew(TokenType type_);
-  template<typename It>
-  auto chew(It type_begin_, It type_end_);
-
-private:
-  void do_peek();
-  void peek_character();
-  void peek_special_conditions();
-
-  FileStore& fs_;
-  Location location_;
-  char const* line_;
-  std::optional<Token> token_;
-};
-
+/** \brief  Manages files and reading from them.
+ *
+ * The file store gets you a tokenizer which produces character tokens, and manages the stack of
+ * files being read.  It only reads each file/stream once, assuming that the contents will not
+ * change during a compilation step.
+ *
+ * File stores can not be copied, but they can be moved.
+ *
+ * It provides peek()/chew() methods to read characters from the streams.
+ */
 class FileStore
 {
 public:
+  /** \brief               Construct a file store
+   *  \param error_manager Error Manager to use for error generation.
+   */
   FileStore(ErrorManager& error_manager);
+
   FileStore() = delete;
   FileStore(FileStore const&) = delete;
-  FileStore(FileStore&&) noexcept = delete;
+  FileStore(FileStore&&) noexcept = default;
   auto operator=(FileStore const&) -> FileStore& = delete;
-  auto operator=(FileStore&&) noexcept -> FileStore& = delete;
+  auto operator=(FileStore&&) noexcept -> FileStore& = default;
   ~FileStore() = default;
 
-  auto push_stream(std::string const& name, std::istream& is) -> FileTokenizer;
-  auto push_file(std::string const& fname) -> FileTokenizer;
-  auto push_standard_input() -> FileTokenizer;
-  void pop_file();
+  /** \brief  Peek the next token from the token stream.
+   *  \return Next token in the stream.
+   */
+  auto peek() -> Token const&;
 
+  /** \brief  Chew the current token, accepting any.
+   */
+  void chew();
+
+  /** \brief        Chew the current token, it must have the given token type.
+   *  \param  type_ Expected token type.
+   */
+  void chew(TokenType type_);
+
+  /** \brief             Chew the current token, it must have one of the given token types.
+   *  \param type_begin_ Begin iterator for types we accept
+   *  \param type_end_   End iterator for types we accept.
+   */
+  template<typename It>
+  void chew(It type_begin, It type_end)
+  {
+    if (!token_) {
+      do_peek();
+    }
+    if (std::none_of(type_begin, type_end, token_->type())) {
+      token_.emplace(TokenType::error, token_->range(),
+                     error_manager_.error(ErrorCode::token_chew_error, token_->type()));
+      return;
+    }
+    token_.reset();
+  }
+
+  /** \brief       Push a stream.
+   *  \param  name Name to give the stream.
+   *  \param  is   Input stream.
+   *
+   * This is mostly used by testing - but may have a use if you want to parse a generated text
+   * string of data.
+   */
+  void push_stream(std::string const& name, std::istream& is);
+
+  /** \brief        Push a file into the tokenizer stack
+   *  \param  fname File name.
+   */
+  void push_file(std::string const& fname);
+
+  /** \brief  Push the standard input onto the tokenizer stack.
+   *  \return Tokenizer for the stream.
+   */
+  void push_standard_input();
+
+  /** \brief          State the logical location of the next line
+   *  \param filename File name
+   *  \param line     Line number for next line
+   */
   void map_next_logical_location(std::string const& filename, Line line);
 
+  /** \brief  Get the location that identifies the command line. */
   static auto cmd_line_location() noexcept -> Location;
 
+  /** \brief      Get the physical source code line for the given location.
+   *  \param  loc Location
+   *  \return     Source code line.
+   *
+   * Empty string is returned if there is no source code for a given location.
+   */
   auto line(Location loc) const -> std::string const&;
+
+  /** \brief        Get the physical souce code line that contains the range.
+   *  \param  range Range
+   *  \return       Source code line.
+   *
+   * An empty string is returned if there is no source code for the range.
+   */
   auto line(Range range) const -> std::string const&;
+
+  /** \brief        Get a 'caret' string that highlights a range of code.
+   *  \param  range Range to highlight
+   *  \return       Caret string.
+   *
+   * \subsection CaretUsage Usage
+   *
+   * The following code sequence will display a line of source code with a following line
+   * highlighting the range.
+   *
+   * \code
+   * std::cout << line(range) << caret(range);
+   * \endcode
+   */
   auto caret(Range range) const -> std::string;
 
+  /** \brief        Get an iterator to the first character in a range.
+   *  \param  range Range to query
+   *  \return       Iterator to beginning of range.
+   */
   auto range_begin(Range range) const -> std::string::const_iterator;
+
+  /** \brief        Get an iterator to one past the end of a character in a range.
+   *  \param  range Range to query
+   *  \return       Iterator to beginning of range.
+   */
   auto range_end(Range range) const -> std::string::const_iterator;
 
+  /** \brief      Is a location in the top-level?
+   *  \param  loc Location
+   *  \return     True iff \a loc is a location.
+   */
   auto is_top_level(Location loc) const noexcept -> bool;
+
+  /** \brief      Get the parent location of a given location.
+   *  \param  loc Location
+   *  \return     Paremt location.  Top-level location returns itself.
+   */
   auto parent_location(Location loc) const noexcept -> Location;
 
+  /** \brief      Get the logical filename for a given location.
+   *  \param  loc Location
+   *  \return     Filename, or empty.
+   */
   auto logical_filename(Location loc) const noexcept -> std::string const&;
+
+  /** \brief      Get the logical line number for a given location.
+   *  \param  loc Location
+   *  \return     1-based Line number, 0 if location is illegal.
+   */
   auto logical_line(Location loc) const noexcept -> Line;
+
+  /** \brief      Get the logical column for a given location.
+   *  \param  loc Location
+   *  \return     Column number, starting at 1 for the first column. 0 if illegal location.
+   */
   auto logical_column(Location loc) const noexcept -> Column;
 
+  /** \brief      Get the physical filename for a given location.
+   *  \param  loc Location
+   *  \return     Filename, or empty.
+   */
   auto physical_filename(Location loc) const noexcept -> std::string const&;
+
+  /** \brief      Get the logical line number for a given location.
+   *  \param  loc Location
+   *  \return     1-based Line number, 0 if location is illegal.
+   */
   auto physical_line(Location loc) const noexcept -> Line;
+
+  /** \brief      Get the logical column for a given location.
+   *  \param  loc Location
+   *  \return     Column number, starting at 1 for the first column. 0 if illegal location.
+   */
   auto physical_column(Location loc) const noexcept -> Column;
 
 private:
@@ -104,8 +218,6 @@ private:
     std::vector<LocationDetails*> children_;
   };
 
-  friend class FileTokenizer;
-
   using FileLines = std::pair<std::istream&, std::vector<std::string>>;
   using Files = std::map<std::size_t, FileLines>;
   using StackStatus = std::pair<Line, LocationDetails*>;
@@ -116,24 +228,28 @@ private:
   static auto find_line_details(LocationDetails const* location_details, Location loc)
     -> LineDetails const*;
 
-  auto eof() const -> bool;
-  auto error() const -> std::optional<std::pair<Location, Error>>;
-  auto next_line() -> std::pair<Location, char const*>;
+  /** \brief  Populate the next token.  */
+  void do_peek();
+
+  void peek_character();
+  void peek_next_line();
+  void pop_file();
 
   static constexpr auto illegal_line = Line{std::numeric_limits<std::size_t>::max()};
-  static std::string empty_;
+  static std::string empty_;  ///< An empty string.
 
-  ErrorManager& error_manager_;
-  Files physical_files_;
-  Location next_;
-  std::vector<std::string> file_names_;
-  LocationDetails cmd_line_location_;
-  std::stack<StackStatus> location_stack_;
-  std::vector<std::fstream> streams_;
-  std::string error_message_;
+  ErrorManager& error_manager_;             ///< Error manager
+  Files physical_files_;                    ///< Map of read files
+  std::vector<std::string> file_names_;     ///< Array of file names
+  LocationDetails cmd_line_location_;       ///< Location details for the command line
+  std::stack<StackStatus> location_stack_;  ///< Stack of include locations
+  std::vector<std::fstream> streams_;       ///< The streams we own.
+  std::optional<Error> error_;              ///< Current error.
+  Location next_;                           ///< Location for the next token.
+  std::string::const_iterator next_begin_;  ///< Pointer to the first character of the next token.
+  std::string::const_iterator line_end_;    ///< End of current line being parsed
+  std::optional<Token> token_;              ///< Current token (if we have one)
 };
-
-auto operator==(Line lhs, std::size_t rhs) -> bool { return static_cast<std::size_t>(lhs) == rhs; }
 }  // namespace GD::CPP
 
 #endif  // CC_LIBCPP_FILETOKENIZER_H_INCLUDED_

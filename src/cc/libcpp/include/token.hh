@@ -18,9 +18,10 @@ namespace GD::CPP {
 
 /** \brief  Token type */
 enum class TokenType {
-  eof,       ///< End-of-file
-  error,     ///< Error (stores an Error)
-  character  ///< Character
+  end_of_source,   ///< End of all source
+  end_of_include,  ///< End of a particular file (main file is included from command line)
+  error,           ///< Error (stores an Error)
+  character        ///< Character
 };
 
 /** \brief  A token
@@ -32,11 +33,12 @@ enum class TokenType {
  *
  * Valid token types and the union contents are:
  *
- * | TokenType  | Data load |  Contents                                                    |
- * | :--------- | :-------- | :---------                                                   |
- * | eof        |           | End of file                                                  |
- * | error      | Error     | Error                                                        |
- * | character  |           | A character, use the range to get the character represented. |
+ * | TokenType      | Data load |  Contents                                                        |
+ * | :------------- | :-------- | :---------                                                       |
+ * | end_of_source  |           | End of all sources                                               |
+ * | end_of_include |           | End of the current source file.                                  |
+ * | error          | Error     | Error                                                            |
+ * | character      |           | A character, use the range to get the character represented.     |
  */
 class Token
 {
@@ -105,8 +107,10 @@ struct fmt::formatter<GD::CPP::Token>
   auto format(GD::CPP::Token const& token, FormatContext& ctx)
   {
     switch (token.type()) {
-    case GD::CPP::TokenType::eof:
-      return vformat_to(ctx.out(), "<end-of-file>", fmt::make_format_args());
+    case GD::CPP::TokenType::end_of_source:
+      return vformat_to(ctx.out(), "<end-of-source>", fmt::make_format_args());
+    case GD::CPP::TokenType::end_of_include:
+      return vformat_to(ctx.out(), "<end-of-include>", fmt::make_format_args());
     case GD::CPP::TokenType::error: {
       auto const& error = token.get<GD::CPP::Error>();
       return vformat_to(ctx.out(), "ERROR({0}, {1})",

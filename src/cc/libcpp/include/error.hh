@@ -14,6 +14,8 @@ namespace GD::CPP {
 enum class ErrorCode {
   no_error,
   file_error,
+  token_chew_error,
+  bad_location_push,
 };
 
 /** \brief List of error severities.  */

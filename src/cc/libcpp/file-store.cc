@@ -27,6 +27,78 @@ auto count_chars(std::string::const_iterator begin, std::string::const_iterator 
 }
 }  // namespace
 
+auto GD::CPP::FileStore::peek() -> Token const&
+{
+  if (!token_) {
+    do_peek();
+  }
+  assert(token_.has_value());  // NOLINT
+  return *token_;
+}
+
+void GD::CPP::FileStore::chew()
+{
+  if (!token_) {
+    do_peek();
+  }
+  token_.reset();
+}
+
+void GD::CPP::FileStore::chew(TokenType type_)
+{
+  if (!token_) {
+    do_peek();
+  }
+  if (token_->type() != type_) {
+    token_.emplace(TokenType::error, Range{next_},
+                   error_manager_.error(ErrorCode::token_chew_error, token_->type()));
+    return;
+  }
+  token_.reset();
+}
+
+void GD::CPP::FileStore::do_peek()
+{
+  assert(!token_.has_value());  // NOLINT
+  if (error_.has_value()) {
+    token_.emplace(TokenType::error, Range(next_), error_.value());
+    error_.reset();
+    return;
+  }
+
+  if (next_begin_ == line_end_) {
+    peek_next_line();
+  }
+
+  if (!token_) {
+    peek_character();
+  }
+}
+
+void GD::CPP::FileStore::peek_character()
+{
+  assert(next_begin_ != line_end_);  // NOLINT
+  auto end = next_begin_;
+  constexpr auto top_bit = static_cast<char>(0x80);
+  constexpr auto cont_mask = static_cast<char>(0xe0);
+
+  if ((*end & top_bit) == 0) {
+    ++end;  // NOLINT
+  }
+  else {
+    do {
+      ++end;  // NOLINT
+    } while (end != line_end_ && (*end & cont_mask) == top_bit);
+  }
+
+  auto len = end - next_begin_;
+  Range range(next_, len);
+  token_.emplace(TokenType::character, range);
+
+  next_ = next_ + static_cast<Column>(len);
+  next_begin_ = end;
+}
+
 GD::CPP::FileStore::FileStore(ErrorManager& error_manager) : error_manager_(error_manager)
 {
   file_names_.emplace_back("(command line)");
@@ -39,7 +111,7 @@ GD::CPP::FileStore::FileStore(ErrorManager& error_manager) : error_manager_(erro
   location_stack_.push(std::make_pair(Line{0}, &cmd_line_location_));
 }
 
-auto GD::CPP::FileStore::push_stream(std::string const& name, std::istream& is) -> FileTokenizer
+void GD::CPP::FileStore::push_stream(std::string const& name, std::istream& is)
 {
   std::size_t index = find_filename_id(name);
 
@@ -56,7 +128,7 @@ auto GD::CPP::FileStore::push_stream(std::string const& name, std::istream& is) 
   // Add the location to the location stack.
   auto& current = location_stack_.top();
   if (current.second->begin_ == next_) {
-    error_message_ = "Can't push twice at the same location.";
+    error_.emplace(error_manager_.error(ErrorCode::bad_location_push));
   }
   else {
     auto* new_file = new LocationDetails();
@@ -67,11 +139,9 @@ auto GD::CPP::FileStore::push_stream(std::string const& name, std::istream& is) 
     current.second->children_.push_back(new_file);
     location_stack_.push(std::make_pair(Line{0}, new_file));
   }
-
-  return FileTokenizer{*this};
 }
 
-auto GD::CPP::FileStore::push_file(std::string const& fname) -> FileTokenizer
+void GD::CPP::FileStore::push_file(std::string const& fname)
 {
   // Look the file name up to see if we've already opened it - and if so
   auto it = std::find(file_names_.begin(), file_names_.end(), fname);
@@ -79,7 +149,8 @@ auto GD::CPP::FileStore::push_file(std::string const& fname) -> FileTokenizer
   if (index != file_names_.size()) {
     auto it2 = physical_files_.find(index);
     if (it2 != physical_files_.end()) {
-      return push_stream(fname, it2->second.first);
+      push_stream(fname, it2->second.first);
+      return;
     }
   }
 
@@ -90,15 +161,12 @@ auto GD::CPP::FileStore::push_file(std::string const& fname) -> FileTokenizer
     streams_.back().open(fname);
   }
   catch (std::exception const& e) {
-    error_message_ = e.what();
+    error_.emplace(error_manager_.error(ErrorCode::file_error, e.what()));
   }
-  return push_stream(fname, streams_.back());
+  push_stream(fname, streams_.back());
 }
 
-auto GD::CPP::FileStore::push_standard_input() -> FileTokenizer
-{
-  return push_stream("(standard input)", std::cin);
-}
+void GD::CPP::FileStore::push_standard_input() { push_stream("(standard input)", std::cin); }
 
 void GD::CPP::FileStore::pop_file()
 {
@@ -301,47 +369,35 @@ auto GD::CPP::FileStore::find_loc_details(Location loc) const -> LocationDetails
   return loc_details;
 }
 
-auto GD::CPP::FileStore::eof() const -> bool
-{
-  auto const& current = location_stack_.top();
-  auto const& physical_file = physical_files_.at(current.second->physical_file_);
-  auto current_line = current.first;
-
-  /* Have we reached the end of the file we're reading?  */
-  if (!physical_file.first.eof()) {
-    return false;
-  }
-  return (current_line >= static_cast<Line>(physical_file.second.size()));
-}
-
-auto GD::CPP::FileStore::error() const -> std::optional<std::pair<Location, Error>>
-{
-  if (error_message_.empty()) {
-    return std::nullopt;
-  }
-  return std::make_pair(next_, error_manager_.error(ErrorCode::file_error, error_message_));
-}
-
-auto GD::CPP::FileStore::next_line() -> std::pair<Location, char const*>
+void GD::CPP::FileStore::peek_next_line()
 {
   auto& current = location_stack_.top();
+
+  if (current.second == &cmd_line_location_) {
+    token_.emplace(TokenType::end_of_source, Range{next_, 0});
+    return;
+  }
+
   auto& physical_file = physical_files_.at(current.second->physical_file_);
   auto& current_line = current.first;
   std::istream& is = physical_file.first;
 
   if (current_line == physical_file.second.size()) {
     /* Get the next line from the stream.  */
-    if (!error_message_.empty() || is.eof()) {
-      return {next_, nullptr};
+    if (is.eof()) {
+      token_.emplace(TokenType::end_of_include, Range{next_, 0});
+      pop_file();
+      return;
     }
+
     std::string s;
 
     try {
       std::getline(is, s);
     }
     catch (std::exception const& e) {
-      error_message_ = e.what();
-      return {next_, nullptr};
+      token_.emplace(TokenType::error, Range{next_},
+                     error_manager_.error(ErrorCode::file_error, e.what()));
     }
 
     if (!is.eof()) {
@@ -352,18 +408,17 @@ auto GD::CPP::FileStore::next_line() -> std::pair<Location, char const*>
   }
 
   auto const& str = physical_file.second.at(static_cast<std::size_t>(current_line));
-  auto const* line_start = str.data();
-  Location loc = next_;
-  LineDetails line = {loc, current.second->logical_file_, current.second->logical_line_, Column{0}};
+  LineDetails line = {next_, current.second->logical_file_, current.second->logical_line_,
+                      Column{0}};
 
   using UT = std::underlying_type_t<Line>;
   current_line = static_cast<Line>(static_cast<UT>(current_line) + 1);
   current.second->logical_line_ =
     static_cast<Line>(static_cast<UT>(current.second->logical_line_) + 1);
-  next_ = next_ + Column{str.size()};
   current.second->lines_.push_back(line);
 
-  return {loc, line_start};
+  next_begin_ = str.begin();
+  line_end_ = str.end();
 }
 
 auto GD::CPP::FileStore::find_filename_id(std::string const& filename) -> std::size_t
