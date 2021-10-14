@@ -263,7 +263,7 @@ private:
    *  \param  loc Location to look up.
    *  \return     Location details.
    */
-  auto find_loc_details(Location loc) const -> LocationDetails const*;
+  auto find_loc_details(Location loc) const -> LocationDetails const&;
 
   /** \brief  Peek the next token.  */
   void do_peek();
