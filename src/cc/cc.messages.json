@@ -1,0 +1,14 @@
+[
+  {
+    "set": "cc",
+    "id": 1,
+    "messages": [
+      {
+        "msg": "usage",
+        "id": 1,
+        "description": "Usage message for the program. {0} is the program name.",
+        "C": "Usage: {0} [file...]"
+      }
+    ]
+  }
+]
