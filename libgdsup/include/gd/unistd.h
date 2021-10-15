@@ -80,6 +80,19 @@ typedef long ssize_t;
  */
 __EXTERN_C int close(int fd);
 
+#  define _PC_NAME_MAX 4
+
+/** \brief  Get configurable pathname variables.
+ *  \param  _path Path name
+ *  \param  _name _PC_* value to query.
+ *  \return       -1 on error, otherwise value.
+ *
+ * Supported _PC_* values:
+ *
+ * _PC_NAME_MAX: Maximum number of bytes in a filename.
+ */
+__EXTERN_C long pathconf(char const* _path, int _name);
+
 /** \brief         Read from a file
  *  \param  fd     file descriptor
  *  \param  buf    Buffer to write to
