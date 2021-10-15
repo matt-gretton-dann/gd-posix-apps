@@ -332,7 +332,8 @@ public:
    *  \param dest Destination file
    *  \param mode Mode to give destination file.
    */
-  TxnWriteFile(fs::path const& dest, mode_t mode) : fd_(-1), dest_(dest), mode_(mode & mode_mask_)
+  TxnWriteFile(fs::path const& dest, mode_t mode)
+      : fd_(-1), dest_(dest.generic_string()), mode_(mode & mode_mask_)
   {
     // Use a temporary file if the destination already exists.
     if (fs::exists(dest_)) {
@@ -429,7 +430,7 @@ public:
     }
     temp_.clear();
     /* And set the mode bits appropriately.  */
-    chmod(dest_.c_str(), mode_);
+    ::chmod(dest_.c_str(), mode_);
   }
 
   /** \brief  Abort transaction.  */
