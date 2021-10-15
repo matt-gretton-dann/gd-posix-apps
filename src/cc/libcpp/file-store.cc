@@ -404,12 +404,18 @@ void GD::CPP::FileStore::peek_next_line()
       std::getline(is, s);
     }
     catch (std::exception const& e) {
-      token_.emplace(TokenType::error, Range{next_},
-                     error_manager_.error(ErrorCode::file_error, e.what()));
+      if (!is.eof()) {
+        token_.emplace(TokenType::error, Range{next_, 0},
+                       error_manager_.error(ErrorCode::file_error, e.what()));
+      }
     }
 
     if (!is.eof()) {
       s.push_back('\n');
+    }
+    else if (s.empty()) {
+      token_.emplace(TokenType::end_of_include, Range{next_, 0});
+      return;
     }
 
     physical_file.second.push_back(s);
