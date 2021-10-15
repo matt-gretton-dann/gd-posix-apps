@@ -1,5 +1,11 @@
-#ifndef CC_LIBCPP_FILE_STORE_H_INCLUDED_
-#define CC_LIBCPP_FILE_STORE_H_INCLUDED_
+/** \file   libcpp/include/file-store.hh
+ *  \brief  File Management
+ *  \author Copyright 2021, Matthew Gretton-Dann
+ *          SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef CC_LIBCPP_FILE_STORE_HH_INCLUDED_
+#define CC_LIBCPP_FILE_STORE_HH_INCLUDED_
 
 #include "gd/format.hh"
 
@@ -248,7 +254,12 @@ private:
   /** \brief Location stack for includes.  */
   struct LocationStack
   {
-    LocationDetails* loc_details_;  ///< Location details of include file
+    /** \brief  Construct stack entry.
+     *  \param loc_details Location details for current included file
+     */
+    LocationStack(LocationDetails& loc_details);
+
+    LocationDetails& loc_details_;  ///< Location details of include file
     Line physical_line_;            ///< Next physical line
     std::size_t logical_file_;      ///< Logical File of the next line
     Line logical_line_;             ///< Logical line number of the next line.
@@ -303,4 +314,4 @@ private:
 };
 }  // namespace GD::CPP
 
-#endif  // CC_LIBCPP_FILETOKENIZER_H_INCLUDED_
+#endif  // CC_LIBCPP_FILE_STORE_HH_INCLUDED_
