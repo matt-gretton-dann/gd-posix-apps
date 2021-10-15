@@ -83,6 +83,9 @@ private:
   std::variant<std::nullopt_t, Error> contents_;  ///< Payload
 };
 
+auto operator==(Token const& token, TokenType type) noexcept -> bool;
+auto operator==(TokenType type, Token const& token) noexcept -> bool;
+
 }  // namespace GD::CPP
 
 /** \brief  Format a token (mostly for debug purposes.
