@@ -1,3 +1,8 @@
+/** \file   libcpp/include/file-store.hh
+ *  \brief  File storage class
+ *  \author Copyright 2021, Matthew Gretton-Dann
+ *          SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "file-store.hh"
 

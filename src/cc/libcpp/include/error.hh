@@ -1,4 +1,4 @@
-/** \file   include/error.hh
+/** \file   libcpp/include/error.hh
  *  \brief  Error handling class
  *  \author Copyright 2021, Matthew Gretton-Dann
  *          SPDX-License-Identifier: Apache-2.0

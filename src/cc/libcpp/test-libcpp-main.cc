@@ -1,4 +1,4 @@
-/** \file   libgdsup/support/test-util-main.cc
+/** \file   libcpp/test-util-main.cc
  *  \brief  Main file for gdsup unit tests
  *  \author Copyright 2021, Matthew Gretton-Dann
  *          SPDX-License-Identifier: Apache-2.0

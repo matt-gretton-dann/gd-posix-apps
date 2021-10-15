@@ -1,3 +1,9 @@
+/** \file   libcpp/include/token.hh
+ *  \brief  Token class
+ *  \author Copyright 2021, Matthew Gretton-Dann
+ *          SPDX-License-Identifier: Apache-2.0
+ */
+
 #ifndef CC_LIBCPP_TOKEN_HH_INCLUDED_
 #define CC_LIBCPP_TOKEN_HH_INCLUDED_
 
