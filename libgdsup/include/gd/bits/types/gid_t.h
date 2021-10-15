@@ -8,6 +8,7 @@
 #define LIBGDSUP_INCLUDE_BITS_TYPES_GID_T_H_INCLUDED
 
 #ifdef _WIN32
+#  include <stdint.h>
 /** On Windows we map group IDs to intptrs so we can handle them as Pointers too.  */
 typedef intptr_t gid_t;
 #endif
