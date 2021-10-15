@@ -12,7 +12,8 @@ set_warnings(libcpp)
 
 target_sources(libcpp PRIVATE
     error.cc
-    file-store.cc)
+    file-store.cc
+    token.cc)
 target_sources(libcpp PRIVATE
     include/error.hh
     include/file-store.hh
