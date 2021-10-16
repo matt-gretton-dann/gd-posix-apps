@@ -9,7 +9,7 @@
 #define _LIBGDSUP_INCLUDE_BITS_TYPES_OFF_T_H_INCLUDED
 
 #ifdef _WIN32
-typedef long off_t;
+typedef long long off_t;
 #endif
 
 #endif  // _LIBGDSUP_INCLUDE_BITS_TYPES_OFF_T_H_INCLUDED

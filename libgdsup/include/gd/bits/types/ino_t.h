@@ -8,7 +8,7 @@
 #define _LIBGDSUP_INCLUDE_BITS_TYPES_INO_T_H_INCLUDED
 
 #ifdef _WIN32
-typedef unsigned short ino_t;
+typedef unsigned long long ino_t;
 #endif
 
 #endif  // _LIBGDSUP_INCLUDE_BITS_TYPES_INO_T_H_INCLUDED
