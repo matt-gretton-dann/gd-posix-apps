@@ -6,17 +6,18 @@
 
 #include "token.hh"
 
-#include <cassert>
+#include "error.hh"
 
 GD::CPP::Token::Token(TokenType type, Range range)
     : type_(type), range_(range), contents_(std::nullopt)
 {
+  assert_ice(type != TokenType::error, "TokenType::error needs contents");
 }
 
 GD::CPP::Token::Token(TokenType type, Range range, Error contents)
     : type_(type), range_(range), contents_(contents)
 {
-  assert(type == TokenType::error);  // NOLINT
+  assert_ice(type == TokenType::error, "Only TokenType::error takes Error as its contents");
 }
 
 auto GD::CPP::Token::type() const noexcept -> TokenType { return type_; }

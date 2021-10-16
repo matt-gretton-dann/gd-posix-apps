@@ -69,10 +69,8 @@ try {
   return 0;
 }
 catch (std::exception const& e) {
-  std::cerr << "Exception: " << e.what() << '\n';
-  return 1;
+  GD::CPP::ErrorManager::ice("Uncaught standard exception: {0}\n", e.what());
 }
 catch (...) {
-  std::cerr << "Uncaught exception\n";
-  return 1;
+  GD::CPP::ErrorManager::ice("Uncaught exception\n");
 }

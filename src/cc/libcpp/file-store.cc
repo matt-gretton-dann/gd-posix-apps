@@ -6,7 +6,6 @@
 
 #include "file-store.hh"
 
-#include <cassert>
 #include <cstdint>
 #include <fstream>
 #include <iostream>
@@ -44,7 +43,7 @@ auto GD::CPP::FileStore::peek() -> Token const&
   if (!token_) {
     do_peek();
   }
-  assert(token_.has_value());  // NOLINT
+  assert_ice(token_.has_value(), "Should have a token");
   return *token_;
 }
 
@@ -71,7 +70,7 @@ void GD::CPP::FileStore::chew(TokenType type_)
 
 void GD::CPP::FileStore::do_peek()
 {
-  assert(!token_.has_value());  // NOLINT
+  assert_ice(!token_.has_value(), "Peek shouldn't overwrite a token");
   if (error_.has_value()) {
     token_.emplace(TokenType::error, Range(next_), error_.value());
     error_.reset();
@@ -89,7 +88,7 @@ void GD::CPP::FileStore::do_peek()
 
 void GD::CPP::FileStore::peek_character()
 {
-  assert(next_begin_ != line_end_);  // NOLINT
+  assert_ice(next_begin_ != line_end_, "Need a character to peek");
   auto end = next_begin_;
   constexpr auto top_bit = static_cast<char>(0x80);
   constexpr auto cont_mask = static_cast<char>(0xe0);
@@ -219,7 +218,8 @@ auto GD::CPP::FileStore::caret(Range range) const -> std::string
     return empty_;
   }
   auto line = loc_details.find_line(loc);
-  assert(line != illegal_line);  // NOLINT
+  assert_ice(line != illegal_line,
+             "Shouldn't have an illegal line number as we found the line details");
   auto const& str = file.second.at(static_cast<std::size_t>(line));
   auto column_begin =
     str.begin() + static_cast<std::ptrdiff_t>(static_cast<std::size_t>(loc) -
@@ -248,7 +248,8 @@ auto GD::CPP::FileStore::range_begin(Range range) const -> std::string::const_it
     return empty_.end();
   }
   auto line = loc_details.find_line(loc);
-  assert(line != illegal_line);  // NOLINT
+  assert_ice(line != illegal_line,
+             "Shouldn't have an illegal line number as we found the line details");
   auto const& str = file.second.at(static_cast<std::size_t>(line));
   auto column = static_cast<std::size_t>(loc) - static_cast<std::size_t>(line_details->begin_);
   return str.begin() + static_cast<std::string::difference_type>(column);
@@ -264,7 +265,8 @@ auto GD::CPP::FileStore::range_end(Range range) const -> std::string::const_iter
     return empty_.end();
   }
   auto line = loc_details.find_line(loc);
-  assert(line != illegal_line);  // NOLINT
+  assert_ice(line != illegal_line,
+             "Shouldn't have an illegal line number as we found the line details");
   auto const& str = file.second.at(static_cast<std::size_t>(line));
   auto column = static_cast<std::size_t>(loc) - static_cast<std::size_t>(line_details->begin_);
   return str.begin() + static_cast<std::string::difference_type>(column);
@@ -309,7 +311,8 @@ auto GD::CPP::FileStore::logical_column(Location loc) const noexcept -> Column
     return Column{0};
   }
   auto line = loc_details.find_line(loc);
-  assert(line != illegal_line);  // NOLINT
+  assert_ice(line != illegal_line,
+             "Shouldn't have an illegal line number as we found the line details");
   auto const& str = file.second.at(static_cast<std::size_t>(line));
   auto column = static_cast<std::size_t>(loc) - static_cast<std::size_t>(line_details->begin_);
   auto physical_column =
@@ -340,7 +343,8 @@ auto GD::CPP::FileStore::physical_column(Location loc) const noexcept -> Column
     return Column{0};
   }
   auto line = loc_details.find_line(loc);
-  assert(line != illegal_line);  // NOLINT
+  assert_ice(line != illegal_line,
+             "Shouldn't have an illegal line number as we found the line details");
   auto const& str = file.second.at(static_cast<std::size_t>(line));
   auto column = static_cast<std::size_t>(loc) - static_cast<std::size_t>(line_details->begin_);
   auto physical_column =

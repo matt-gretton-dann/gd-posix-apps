@@ -9,6 +9,9 @@
 
 #include "gd/format.hh"
 
+#include <iostream>
+#include <utility>
+
 namespace GD::CPP {
 /** \brief  List of error codes.  */
 enum class ErrorCode {
@@ -75,6 +78,21 @@ public:
   auto operator=(ErrorManager&&) noexcept -> ErrorManager& = default;
   ~ErrorManager() = default;
 
+  /** \brief Report an internal compiler error.
+   *  \param format Format string for error message
+   *  \param args   Arguments
+   *
+   * Does not return instead aborts the code.
+   */
+  template<typename... Args>
+  [[noreturn]] static void ice(std::string const& format, Args&&... args)
+  {
+    std::cerr << "!!! INTERNAL COMPILER ERROR !!!\n";
+    std::cerr << fmt::format(format, args...);
+    std::cerr << "Aborting compiler.\n";
+    std::abort();
+  }
+
   /** \brief         Generate an error
    *  \param   code  Error code
    *  \param   args  Arguments for error message
@@ -101,4 +119,9 @@ private:
 };
 }  // namespace GD::CPP
 
+#define assert_ice(CHECK, MSG)                                                                     \
+  if (!(CHECK)) {                                                                                  \
+    ::GD::CPP::ErrorManager::ice("Assertion failed in {0} line {1}: {2}\nExplanation: {3}\n",      \
+                                 __FILE__, __LINE__, #CHECK, MSG);                                 \
+  }
 #endif  // CC_LIBCPP_ERROR_HH_INCLUDED_
