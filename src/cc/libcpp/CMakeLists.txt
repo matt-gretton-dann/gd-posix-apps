@@ -1,6 +1,7 @@
 add_library(libcpp)
 target_include_directories(libcpp PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_include_directories(libcpp PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+target_include_directories(libcpp PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/..")
 target_link_libraries(libcpp PUBLIC gdsup util)
 set_property(TARGET libcpp PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
 set_property(TARGET libcpp PROPERTY CXX_STANDARD_REQUIRED ON)

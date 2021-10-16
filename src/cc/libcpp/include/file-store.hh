@@ -75,9 +75,8 @@ public:
       do_peek();
     }
     if (std::none_of(type_begin, type_end, token_->type())) {
-      token_.emplace(TokenType::error, token_->range(),
-                     error_manager_.error(ErrorCode::token_chew_error, token_->type()));
-      return;
+      assert_ice(std::any_of(type_begin, type_end, token_->type()),
+                 "Token must be one of specified types.");
     }
     token_.reset();
   }

@@ -9,17 +9,14 @@
 
 #include "gd/format.hh"
 
+#include "cc-messages.hh"
+
 #include <iostream>
 #include <utility>
 
 namespace GD::CPP {
 /** \brief  List of error codes.  */
-enum class ErrorCode {
-  no_error,
-  file_error,
-  token_chew_error,
-  bad_location_push,
-};
+using ErrorCode = GD::Cc::Msg;
 
 /** \brief List of error severities.  */
 enum class ErrorSeverity {
@@ -101,11 +98,7 @@ public:
   template<typename... Args>
   auto error([[maybe_unused]] ErrorCode code, [[maybe_unused]] Args&&... args) -> Error
   {
-    if (error_count_++ >= max_error_count_) {
-      return {"X2000", ErrorSeverity::fatal_error, "Too many errors."};
-    }
-
-    return {"UNKNOWN", ErrorSeverity::error, "UNKNOWN"};
+    return do_error(code, GD::Cc::Messages::get().format(GD::Cc::Set::errors, code, args...));
   }
 
   /** \brief                 Set the maximum number of errors before we stop producing errors.
@@ -114,6 +107,13 @@ public:
   void max_error_count(std::uint32_t max_error_count);
 
 private:
+  /** \brief        Generic part of implementation of ErrorManager::error()
+   *  \param  code  Error code
+   *  \param  msg   Error message
+   *  \return       Error object.
+   */
+  auto do_error(ErrorCode code, std::string msg) -> Error;
+
   std::uint32_t error_count_ = 0;        ///< Number of errors produced
   std::uint32_t max_error_count_ = 128;  ///< Maximum number of errors
 };
@@ -124,4 +124,56 @@ private:
     ::GD::CPP::ErrorManager::ice("Assertion failed in {0} line {1}: {2}\nExplanation: {3}\n",      \
                                  __FILE__, __LINE__, #CHECK, MSG);                                 \
   }
+
+/** \brief  Format a error severity
+ */
+template<>
+struct fmt::formatter<GD::CPP::ErrorSeverity>
+{
+  constexpr auto parse(format_parse_context& ctx)
+  {
+    auto it = ctx.begin();
+    for (; it != ctx.end(); ++it) {
+      switch (*it) {
+      case '}':
+        return it;
+      default:
+        assert_ice(false, "Invalid parse format.");
+      }
+    }
+
+    if (it != ctx.end()) {
+      assert_ice(false, "Invalid parse format - not terminated.");
+    }
+
+    return it;
+  }
+
+  template<typename FormatContext>
+  auto format(GD::CPP::ErrorSeverity severity, FormatContext& ctx)
+  {
+    GD::Cc::Msg msg = GD::Cc::Msg::ice;
+    switch (severity) {
+    case GD::CPP::ErrorSeverity::note:
+      msg = GD::Cc::Msg::note;
+      break;
+    case GD::CPP::ErrorSeverity::info:
+      msg = GD::Cc::Msg::info;
+      break;
+    case GD::CPP::ErrorSeverity::warning:
+      msg = GD::Cc::Msg::warning;
+      break;
+    case GD::CPP::ErrorSeverity::error:
+      msg = GD::Cc::Msg::error;
+      break;
+    case GD::CPP::ErrorSeverity::fatal_error:
+      msg = GD::Cc::Msg::fatal_error;
+      break;
+    default:
+      break;
+    }
+    return vformat_to(ctx.out(), "{0}", fmt::make_format_args(GD::Cc::Messages::get().get(msg)));
+  }
+};
+
 #endif  // CC_LIBCPP_ERROR_HH_INCLUDED_

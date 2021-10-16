@@ -8,6 +8,72 @@
         "id": 1,
         "description": "Usage message for the program. {0} is the program name.",
         "C": "Usage: {0} [file...]"
+      },
+      {
+        "msg": "note",
+        "id": 2,
+        "description": "Label for a Note - extra information associated with a message",
+        "C": "Note"
+      },
+      {
+        "msg": "info",
+        "id": 3,
+        "description": "Label for an Info message - informational message which is not a warning/error",
+        "C": "Information"
+      },
+      {
+        "msg": "warning",
+        "id": 4,
+        "description": "Label for a Warning - code issue which isn't an error but can produce a 'code-smell'.",
+        "C": "Warning"
+      },
+      {
+        "msg": "error",
+        "id": 5,
+        "description": "Label for an Error - error in the code, but compilation can attempt to continue.",
+        "C": "Error"
+      },
+      {
+        "msg": "fatal_error",
+        "id": 6,
+        "description": "Label for a fatal error - an error in the code which stops compilation immediately.",
+        "C": "Serious Error"
+      },
+      {
+        "msg": "ice",
+        "id": 7,
+        "description": "Label for an internal compiler error - error in the compiler itself.",
+        "C": "INTERNAL COMPILER ERROR"
+      },
+      {
+        "msg": "command_line_file",
+        "id": 8,
+        "description": "Name to give the file that represents the command line.",
+        "C": "(command line)"
+      },
+      {
+        "msg": "standard_input_file",
+        "id": 9,
+        "description": "Name to give the file that represents the standard input",
+        "C": "(standard input)"
+      }
+    ]
+  },
+  {
+    "set": "errors",
+    "id": 2,
+    "messages": [
+      {
+        "msg": "too_many_errors",
+        "id": 1,
+        "description": "Too many errors have occured, stopping compilation. {0} is the number of errors.",
+        "C": "Too many errors (have seen {0} error reports)."
+      },
+      {
+        "msg": "file_error",
+        "id": 2,
+        "description": "Error whilst trying to read from a file, {0} is the file, {1} is the error message",
+        "C": "File handling error in {0}: {1}"
       }
     ]
   }

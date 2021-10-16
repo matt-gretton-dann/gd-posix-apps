@@ -61,9 +61,7 @@ void GD::CPP::FileStore::chew(TokenType type_)
     do_peek();
   }
   if (token_->type() != type_) {
-    token_.emplace(TokenType::error, Range{next_},
-                   error_manager_.error(ErrorCode::token_chew_error, token_->type()));
-    return;
+    assert_ice(token_->type() == type_, "Unexpected token type to chew.");
   }
   token_.reset();
 }
@@ -112,12 +110,13 @@ void GD::CPP::FileStore::peek_character()
 
 GD::CPP::FileStore::FileStore(ErrorManager& error_manager) : error_manager_(error_manager)
 {
-  file_names_.emplace_back("(command line)");
+  file_names_.emplace_back(GD::Cc::Messages::get().get(GD::Cc::Msg::command_line_file));
   next_ = Location{1};
 
   cmd_line_location_.begin_ = Location(0);
   cmd_line_location_.end_ = Location(std::numeric_limits<std::underlying_type_t<Location>>::max());
   cmd_line_location_.physical_file_ = 0;
+  cmd_line_location_.lines_.emplace_back(LineDetails{Location{0}, 0, Line{0}, Column{0}});
 
   location_stack_.emplace(cmd_line_location_);
 }
@@ -138,18 +137,16 @@ void GD::CPP::FileStore::push_stream(std::string const& name, std::istream& is)
 
   // Add the location to the location stack.
   auto& current = location_stack_.top();
-  if (current.loc_details_.begin_ == next_) {
-    error_.emplace(error_manager_.error(ErrorCode::bad_location_push));
-  }
-  else {
-    auto* new_file = new LocationDetails();
-    new_file->begin_ = next_;
-    new_file->end_ = Location(std::numeric_limits<std::underlying_type_t<Location>>::max());
-    new_file->physical_file_ = index;
+  assert_ice(current.loc_details_.begin_ != next_,
+             "Must have at least one line between includes of files.")
 
-    current.loc_details_.children_.push_back(new_file);
-    location_stack_.emplace(*new_file);
-  }
+    auto* new_file = new LocationDetails();
+  new_file->begin_ = next_;
+  new_file->end_ = Location(std::numeric_limits<std::underlying_type_t<Location>>::max());
+  new_file->physical_file_ = index;
+
+  current.loc_details_.children_.push_back(new_file);
+  location_stack_.emplace(*new_file);
 }
 
 void GD::CPP::FileStore::push_file(std::string const& fname)
@@ -172,12 +169,16 @@ void GD::CPP::FileStore::push_file(std::string const& fname)
     streams_.back().open(fname);
   }
   catch (std::exception const& e) {
-    error_.emplace(error_manager_.error(ErrorCode::file_error, e.what()));
+    error_.emplace(error_manager_.error(ErrorCode::file_error, fname, e.what()));
+    return;
   }
   push_stream(fname, streams_.back());
 }
 
-void GD::CPP::FileStore::push_standard_input() { push_stream("(standard input)", std::cin); }
+void GD::CPP::FileStore::push_standard_input()
+{
+  push_stream(std::string(GD::Cc::Messages::get().get(GD::Cc::Msg::standard_input_file)), std::cin);
+}
 
 void GD::CPP::FileStore::pop_file()
 {
@@ -305,7 +306,11 @@ auto GD::CPP::FileStore::logical_line(Location loc) const noexcept -> Line
 auto GD::CPP::FileStore::logical_column(Location loc) const noexcept -> Column
 {
   auto const& loc_details = find_loc_details(loc);
-  auto const& file = physical_files_.at(loc_details.physical_file_);
+  auto it = physical_files_.find(loc_details.physical_file_);
+  if (it == physical_files_.end()) {
+    return Column{0};
+  }
+  auto const& file = it->second;
   auto const* line_details = loc_details.find_line_details(loc);
   if (line_details == nullptr) {
     return Column{0};
@@ -337,7 +342,11 @@ auto GD::CPP::FileStore::physical_line(Location loc) const noexcept -> Line
 auto GD::CPP::FileStore::physical_column(Location loc) const noexcept -> Column
 {
   auto const& loc_details = find_loc_details(loc);
-  auto const& file = physical_files_.at(loc_details.physical_file_);
+  auto it = physical_files_.find(loc_details.physical_file_);
+  if (it == physical_files_.end()) {
+    return Column{0};
+  }
+  auto const& file = it->second;
   auto const* line_details = loc_details.find_line_details(loc);
   if (line_details == nullptr) {
     return Column{0};

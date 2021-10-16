@@ -101,12 +101,12 @@ struct fmt::formatter<GD::CPP::Token>
       case '}':
         return it;
       default:
-        throw format_error("invalid format");
+        assert_ice(false, "Invalid parse format.");
       }
     }
 
     if (it != ctx.end()) {
-      throw format_error("invalid_format - not terminated");
+      assert_ice(false, "Invalid parse format - not terminated.");
     }
 
     return it;
