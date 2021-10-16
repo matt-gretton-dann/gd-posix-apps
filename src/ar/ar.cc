@@ -620,7 +620,7 @@ try {
       std::cerr << GD::Ar::Messages::get().format(GD::Ar::Set::ar, Msg::creating_archive,
                                                   state.archive.string());
     }
-    mode = (~mode) & (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);  // NOLINT(misc-redundant-expression)
+    mode = (~mode) & (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
   }
   else {
     file.emplace(GD::InputFile(state.archive.string()));

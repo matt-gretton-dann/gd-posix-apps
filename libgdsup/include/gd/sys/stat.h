@@ -14,6 +14,7 @@
 #include <sys/stat.h>
 
 #if _WIN32
+#  include "gd/bits/defines.h"
 #  include "gd/bits/types/blkcnt_t.h"
 #  include "gd/bits/types/blksize_t.h"
 #  include "gd/bits/types/dev_t.h"
@@ -24,15 +25,25 @@
 #  include "gd/bits/types/off_t.h"
 #  include "gd/bits/types/uid_t.h"
 
-#  define S_IRUSR _S_IREAD
-#  define S_IRGRP _S_IREAD
-#  define S_IROTH _S_IREAD
-#  define S_IWUSR _S_IWRITE
-#  define S_IWGRP _S_IWRITE
-#  define S_IWOTH _S_IWRITE
-#  define S_IXUSR _S_IEXEC
-#  define S_IXGRP _S_IEXEC
-#  define S_IXOTH _S_IEXEC
+#  include <time.h>
+
+#  define S_IRUSR 00400
+#  define S_IRGRP 00040
+#  define S_IROTH 00004
+#  define S_IWUSR 00200
+#  define S_IWGRP 00020
+#  define S_IWOTH 00002
+#  define S_IXUSR 00100
+#  define S_IXGRP 00010
+#  define S_IXOTH 00001
+#  define S_ISUID 04000
+#  define S_ISGID 02000
+#  define S_ISVTX 01000
+
+#  define S_ISDIR(m) (((m)&_S_IFMT) == _S_IFDIR)
+#  define S_ISCHR(m) (((m)&_S_IFMT) == _S_IFCHR)
+#  define S_ISFIFO(m) (((m)&_S_IFMT) == _S_IFIFO)
+#  define S_ISREG(m) (((m)&_S_IFMT) == _S_IFREG)
 
 __EXTERN_C_BEGIN
 struct stat
@@ -54,12 +65,26 @@ struct stat
 
 __EXTERN_C_END
 
+/** \brief        Change the mode of a file
+ *  \param  _path Path to file
+ *  \param  _mode New mode
+ *  \return       0 on success, -1 on failure.
+ */
+__EXTERN_C int chmod(char const* _path, int _mode);
+
 /** \brief        Stat a file based in its file handle.
  *  \param  _fd   File descriptor
  *  \param  _stat Status object to put results in
  *  \return       0 on success, -1 on failure.
  */
 __EXTERN_C int fstat(int _fd, struct stat* _stat);
-#endif
+
+/** \brief         set and get the file mode creation mask.
+ *  \param  _cmask New mask
+ *  \return        Old mask
+ */
+__EXTERN_C mode_t umask(mode_t _cmask);
+
+#endif  // ^ _WIN32
 
 #endif  // _LIBGDSUP_INCLUDE_GD_SYS_STAT_H_INCLUDED
