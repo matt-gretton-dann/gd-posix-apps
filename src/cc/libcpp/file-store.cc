@@ -451,7 +451,8 @@ auto GD::CPP::FileStore::find_filename_id(std::string const& filename) -> std::s
 {
   auto it = std::find(file_names_.begin(), file_names_.end(), filename);
   std::size_t index = it - file_names_.end();
-  if (index == file_names_.size()) {
+  if (it == file_names_.end()) {
+    index = file_names_.size();
     file_names_.emplace_back(filename);
   }
 
