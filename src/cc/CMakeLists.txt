@@ -4,5 +4,5 @@
 
 add_subdirectory(libcpp)
 
-add_utility(NAME c99 NO_INT_TEST CAT_ID cc SOURCES cc.cc)
+add_utility(NAME c99 CAT_ID cc SOURCES cc.cc)
 target_link_libraries(c99 PUBLIC libcpp)
