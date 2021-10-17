@@ -428,6 +428,7 @@ void GD::CPP::FileStore::peek_next_line()
     }
     else if (s.empty()) {
       token_.emplace(TokenType::end_of_include, Range{next_, 0});
+      pop_file();
       return;
     }
 
