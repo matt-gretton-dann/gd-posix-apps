@@ -484,6 +484,6 @@ auto GD::CPP::FileStore::LocationDetails::find_line_details(Location loc) const
 
 GD::CPP::FileStore::LocationStack::LocationStack(LocationDetails& loc_details)
     : loc_details_(loc_details), physical_line_(Line{0}), logical_file_(loc_details.physical_file_),
-      logical_line_(Line{0})
+      logical_line_(Line{1})
 {
 }
