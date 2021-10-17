@@ -378,7 +378,7 @@ auto GD::CPP::FileStore::find_loc_details(Location loc) const -> LocationDetails
 
     /* Now check to see if the location we are searching for is actually in the child.  */
     --it;
-    if ((*it)->end_ < loc) {
+    if ((*it)->end_ <= loc) {
       /* No - so break.  */
       break;
     }
