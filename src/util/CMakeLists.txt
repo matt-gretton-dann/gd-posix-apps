@@ -6,6 +6,7 @@ target_sources(util PRIVATE
   input-file/input-file-report-error.cc
   input-file/input-file-setbuf.cc
   program-name.cc
+  rename.cc
 )
 
 add_custom_command(

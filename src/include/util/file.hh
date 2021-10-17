@@ -30,6 +30,9 @@
 
 namespace GD::Util {
 enum class Msg;
+
+int rename(char const* _old, char const* _new) __NOEXCEPT;
+
 }  // namespace GD::Util
 
 namespace GD {
@@ -109,6 +112,14 @@ public:
   {
     if (fd_ != -1) {
       ::close(fd_);
+    }
+  }
+
+  void close()
+  {
+    if (fd_ != -1) {
+      ::close(fd_);
+      fd_ = -1;
     }
   }
 
@@ -229,6 +240,8 @@ public:
   MemorySpanInputFile(MemorySpanInputFile&&) noexcept = default;
   auto operator=(MemorySpanInputFile const&) -> MemorySpanInputFile& = default;
   auto operator=(MemorySpanInputFile&&) noexcept -> MemorySpanInputFile& = default;
+
+  void close() {}
 
   [[nodiscard]] auto size_bytes() const noexcept -> std::size_t { return data_.size_bytes(); }
 
@@ -424,7 +437,7 @@ public:
     ::close(fd_);
     fd_ = -1;
     if (temp_ != dest_) {
-      if (::rename(temp_.c_str(), dest_.c_str()) == -1) {
+      if (GD::Util::rename(temp_.c_str(), dest_.c_str()) == -1) {
         throw std::system_error(errno, std::generic_category(), "Whilst committing a write.");
       }
     }
