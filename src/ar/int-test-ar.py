@@ -73,7 +73,7 @@ tester.run_test(
     skip=failed_ar1_creation)
 tester.run_test(
     [tester.exe(), "-pv", test_ar1, inputs[1]['fname']],
-    test_name="ar1 print {inputs[1]['base']} verbose",
+    test_name=f"ar1 print {inputs[1]['base']} verbose",
     expected_rc=0, expected_stdout=f"\n<{inputs[1]['fname']}>\n\n{inputs[1]['contents']}\n",
     skip=failed_ar1_creation)
 tester.run_test(
