@@ -1,7 +1,7 @@
 add_library(libcpp)
 target_include_directories(libcpp PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_include_directories(libcpp PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/..")
 target_include_directories(libcpp PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
-target_include_directories(libcpp PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/..")
 target_link_libraries(libcpp PUBLIC gdsup util)
 set_property(TARGET libcpp PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
 set_property(TARGET libcpp PROPERTY CXX_STANDARD_REQUIRED ON)
@@ -34,6 +34,7 @@ if(RUN_UNIT_TESTS)
   target_include_directories(test-libcpp PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
   set_warnings(test-libcpp)
   target_sources(test-libcpp PRIVATE
+                 test-file-store.cc
                  test-location.cc
                  test-libcpp-main.cc)
   target_add_clang_format(test-libcpp)
