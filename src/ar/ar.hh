@@ -20,6 +20,7 @@
 #include "util/file.hh"
 #include "util/utils.hh"
 
+#include <array>
 #include <cassert>
 #include <cstddef>
 #include <ctime>
