@@ -652,6 +652,7 @@ private:
   {
     if (state_->file_.eof()) {
       member_.reset();
+      state_->file_.close();
       state_ = nullptr;
       return;
     }
@@ -668,6 +669,7 @@ private:
     auto len = state_->file_.read_upto(GD::Span::span<char>(name.data(), name.size()));
     if (len == 0) {
       member_.reset();
+      state_->file_.close();
       state_ = nullptr;
       return;
     }
