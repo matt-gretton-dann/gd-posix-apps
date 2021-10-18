@@ -86,7 +86,7 @@ public:
   {
     std::cerr << "!!! INTERNAL COMPILER ERROR !!!\n";
     std::cerr << fmt::format(format, args...);
-    std::cerr << "Aborting compiler.\n";
+    std::cerr << "\nAborting compiler.\n";
     std::abort();
   }
 
