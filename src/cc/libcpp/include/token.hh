@@ -27,7 +27,8 @@ enum class TokenType {
   end_of_source,   ///< End of all source
   end_of_include,  ///< End of a particular file (main file is included from command line)
   error,           ///< Error (stores an Error)
-  character        ///< Character
+  character,       ///< Character
+  end_of_line,     ///< End of line.
 };
 
 /** \brief  A token
@@ -45,6 +46,7 @@ enum class TokenType {
  * | end_of_include |           | End of the current source file.                                  |
  * | error          | Error     | Error                                                            |
  * | character      |           | A character, use the range to get the character represented.     |
+ * | end_of_lien    |           | End of line                                                      |
  */
 class Token
 {
@@ -122,11 +124,13 @@ struct fmt::formatter<GD::CPP::Token>
       return vformat_to(ctx.out(), "<end-of-include>", fmt::make_format_args());
     case GD::CPP::TokenType::error: {
       auto const& error = token.get<GD::CPP::Error>();
-      return vformat_to(ctx.out(), "ERROR({0}, {1})",
-                        fmt::make_format_args(error.id(), error.message()));
+      return vformat_to(ctx.out(), "ERROR({0}, {1}, {2})",
+                        fmt::make_format_args(error.id(), error.severity(), error.message()));
     }
     case GD::CPP::TokenType::character:
       return vformat_to(ctx.out(), "<Character>", fmt::make_format_args());
+    case GD::CPP::TokenType::end_of_line:
+      return vformat_to(ctx.out(), "\n", fmt::make_format_args());
     default:
       return vformat_to(ctx.out(), "UNKNOWN", fmt::make_format_args());
     }
