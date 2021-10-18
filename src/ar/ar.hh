@@ -1023,7 +1023,7 @@ private:
     if (!state_->symbol_map_.empty()) {
       write_member(
         symbol_table_data, SpecialMemberHeader::symbol_table(state_->format_), [&](auto it) {
-          uint32_t offset_addend = static_cast<uint32_t>(
+          auto offset_addend = static_cast<uint32_t>(
             header.size() + Details::MemberHeader::header_len + string_table_data.size());
           write_symbol_map(it, state_->symbol_map_, offset_addend);
         });
