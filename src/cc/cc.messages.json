@@ -74,6 +74,18 @@
         "id": 2,
         "description": "Error whilst trying to read from a file, {0} is the file, {1} is the error message",
         "C": "File handling error in {0}: {1}"
+      },
+      {
+        "msg": "missing_newline_at_end_of_file",
+        "id": 3,
+        "description": "Missing new line at end of non-empty file. (C2018-5.1.1.2-1-2)",
+        "C": "Missing new line at end of non-empty file (C2018-5.1.1.2-1-2)."
+      },
+      {
+        "msg": "splice_followed_by_end_of_file",
+        "id": 4,
+        "description": "We have a splice ('\\' followed by newline) immediately followed by end of file.  This is not permitted by C2018-5.1.1.2-1-2.",
+        "C": "'\\' followed by newline, may not be the last characters in a file (C2018-5.1.1.2-1-2)."
       }
     ]
   }
