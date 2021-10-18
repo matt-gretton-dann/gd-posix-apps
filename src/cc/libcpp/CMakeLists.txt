@@ -19,7 +19,8 @@ target_sources(libcpp PRIVATE
     include/error.hh
     include/file-store.hh
     include/location.hh
-    include/token.hh)
+    include/token.hh
+    include/tokenizers.hh)
 #add_dependencies("libcpp" "cc_messages_header")
 target_add_clang_format(libcpp)
 
@@ -36,7 +37,8 @@ if(RUN_UNIT_TESTS)
   target_sources(test-libcpp PRIVATE
                  test-file-store.cc
                  test-location.cc
-                 test-libcpp-main.cc)
+                 test-libcpp-main.cc
+                 test-newline-chewer.cc)
   target_add_clang_format(test-libcpp)
   catch_discover_tests(test-libcpp PROPERTIES FIXTURES_REQUIRED testutil_setup EXTRA_ARGS "-s")
 endif()
