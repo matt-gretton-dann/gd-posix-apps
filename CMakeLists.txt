@@ -49,11 +49,11 @@ endif()
 # Unit testing setup
 if(BUILD_TESTING)
   if($CACHE{ALLOW_THIRD_PARTY_DOWNLOADS})
-    message(STATUS "Downloading Catch2 v2.13.1")
+    message(STATUS "Downloading Catch2 v2.13.7")
     FetchContent_Declare(
       Catch2
       GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-      GIT_TAG        v2.13.1)
+      GIT_TAG        v2.13.7)
     FetchContent_MakeAvailable(Catch2)
     message(STATUS "Catch2 sources: ${Catch2_SOURCE_DIR}")
     list(PREPEND CMAKE_MODULE_PATH "${Catch2_SOURCE_DIR}/contrib")

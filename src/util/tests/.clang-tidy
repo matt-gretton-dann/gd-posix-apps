@@ -23,8 +23,9 @@ Checks:          >-
  -google-runtime-references,
  -llvm-header-guard,
  -misc-no-recursion,
- -readability-function-cognitive-complexity
-WarningsAsErrors: '*'
+ -readability-function-cognitive-complexity,
+ -clang-diagnostic-ignored-optimization-argument
+WarningsAsErrors: '*,-clang-diagnostic-ignored-optimization-argument'
 HeaderFilterRegex: ''
 AnalyzeTemporaryDtors: false
 FormatStyle:     file
