@@ -13,6 +13,7 @@
 #include "error.hh"
 #include "file-store.hh"
 #include "token.hh"
+#include "tokenizers.hh"
 
 namespace {
 void report_error(GD::CPP::FileStore const& fs, GD::CPP::Location loc, GD::CPP::Error const& error)
@@ -23,10 +24,12 @@ void report_error(GD::CPP::FileStore const& fs, GD::CPP::Location loc, GD::CPP::
   std::exit(1);  // NOLINT(concurrency-mt-unsafe)
 }
 
-void dump_tokens(GD::CPP::FileStore& file_store)
+void dump_tokens(GD::CPP::FileStore& file_store, GD::CPP::ErrorManager& em)
 {
-  while (file_store.peek() != GD::CPP::TokenType::end_of_source) {
-    auto const& token = file_store.peek();
+  auto tokenizer = GD::CPP::NewLineChewer(file_store, em);
+
+  while (tokenizer.peek() != GD::CPP::TokenType::end_of_source) {
+    auto const& token = tokenizer.peek();
     switch (token.type()) {
     case GD::CPP::TokenType::error:
       report_error(file_store, token.range().begin(), token.get<GD::CPP::Error>());
@@ -41,10 +44,10 @@ void dump_tokens(GD::CPP::FileStore& file_store)
     default:
       std::cout << fmt::format("{0}", token);
     }
-    file_store.chew(token.type());
+    tokenizer.chew(token.type());
   }
 
-  file_store.chew(GD::CPP::TokenType::end_of_source);
+  tokenizer.chew(GD::CPP::TokenType::end_of_source);
 }
 }  // namespace
 
@@ -57,12 +60,12 @@ try {
 
   if (args.empty()) {
     file_store.push_standard_input();
-    dump_tokens(file_store);
+    dump_tokens(file_store, error_manager);
   }
   else {
     for (auto const* file : args) {
       file_store.push_file(file);
-      dump_tokens(file_store);
+      dump_tokens(file_store, error_manager);
     }
   }
 
