@@ -614,16 +614,16 @@ try {
   umask(mode);
   if (!fs::exists(state.archive)) {
     if (is_read_only_action(state.action)) {
-      error(Msg::missing_input_archive, state.archive.native());
+      error(Msg::missing_input_archive, state.archive.string());
     }
     if ((state.flags & Flags::message_on_creation) == Flags::message_on_creation) {
       std::cerr << GD::Ar::Messages::get().format(GD::Ar::Set::ar, Msg::creating_archive,
-                                                  state.archive.native());
+                                                  state.archive.string());
     }
     mode = (~mode) & (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
   }
   else {
-    file.emplace(GD::InputFile(state.archive));
+    file.emplace(GD::InputFile(state.archive.string()));
     mode = file->mode();
   }
 

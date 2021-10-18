@@ -10,6 +10,7 @@
 #include "gd/nl_types.h"
 
 #include "gd/fcntl.h"
+#include "gd/filesystem.hh"
 #include "gd/span.hh"
 #include "gd/stdlib.h"
 #include "gd/string.h"
@@ -19,6 +20,7 @@
 #include "util/file.hh"
 #include "util/utils.hh"
 
+#include <array>
 #include <cassert>
 #include <cstddef>
 #include <ctime>
@@ -651,6 +653,7 @@ private:
   {
     if (state_->file_.eof()) {
       member_.reset();
+      state_->file_.close();
       state_ = nullptr;
       return;
     }
@@ -667,6 +670,7 @@ private:
     auto len = state_->file_.read_upto(GD::Span::span<char>(name.data(), name.size()));
     if (len == 0) {
       member_.reset();
+      state_->file_.close();
       state_ = nullptr;
       return;
     }
@@ -1017,12 +1021,12 @@ private:
 
     std::vector<std::byte> symbol_table_data;
     if (!state_->symbol_map_.empty()) {
-      write_member(symbol_table_data, SpecialMemberHeader::symbol_table(state_->format_),
-                   [&](auto it) {
-                     write_symbol_map(it, state_->symbol_map_,
-                                      header.size() + Details::MemberHeader::header_len +
-                                        string_table_data.size());
-                   });
+      write_member(
+        symbol_table_data, SpecialMemberHeader::symbol_table(state_->format_), [&](auto it) {
+          auto offset_addend = static_cast<uint32_t>(
+            header.size() + Details::MemberHeader::header_len + string_table_data.size());
+          write_symbol_map(it, state_->symbol_map_, offset_addend);
+        });
     }
     /* Write the file. */
     state_->file_.write(
@@ -1041,7 +1045,7 @@ private:
   {
     auto [count, string_size] =
       std::accumulate(symbol_map.begin(), symbol_map.end(),
-                      std::make_pair(std::uint32_t{0}, std::uint32_t{0}), [](auto acc, auto value) {
+                      std::make_pair(std::size_t{0}, std::size_t{0}), [](auto acc, auto value) {
                         acc.first += (value.second != nullptr) ? value.second->size() : 0;
                         acc.second = std::accumulate(
                           value.second->begin(), value.second->end(), acc.second,
@@ -1053,7 +1057,8 @@ private:
       throw std::runtime_error("Too many symbols.");
     }
 
-    offset_addend += 4 + count * 4 + string_size;
+    offset_addend +=
+      4 + static_cast<std::uint32_t>(count) * 4 + static_cast<std::uint32_t>(string_size);
     if (offset_addend & 1) {
       ++offset_addend;
     }
@@ -1118,8 +1123,8 @@ private:
   template<typename T, typename DataWriter, typename Store>
   void write_member(Store& out, T const& obj, DataWriter dw)
   {
-    auto long_name =
-      add_name(out, fs::path{obj.name()}.filename(), Details::MemberHeader::name_len);
+    auto path = fs::path{obj.name()};
+    auto long_name = add_name(out, path.filename().string(), Details::MemberHeader::name_len);
     add_number(out, obj.mtime(), Details::MemberHeader::mtime_len);
     add_ugid(out, obj.uid(), Details::MemberHeader::uid_len);
     add_ugid(out, obj.gid(), Details::MemberHeader::gid_len);

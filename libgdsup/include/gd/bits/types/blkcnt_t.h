@@ -8,7 +8,7 @@
 #define _LIBGDSUP_INCLUDE_BITS_TYPES_BLKCNT_T_H_INCLUDED
 
 #ifdef _WIN32
-typedef unsigned long blkcnt_t;
+typedef unsigned long long blkcnt_t;
 #endif
 
 #endif  // _LIBGDSUP_INCLUDE_BITS_TYPES_BLKCNT_T_H_INCLUDED

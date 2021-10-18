@@ -34,7 +34,8 @@ int mkstemp(char* temp)
     }
 
     int fd;
-    err = _sopen_s(&fd, temp, _O_RDWR | _O_CREAT | _O_EXCL, _SH_DENYNO, _S_IREAD | _S_IWRITE);
+    err = _sopen_s(&fd, temp, _O_RDWR | _O_CREAT | _O_EXCL | _O_BINARY, _SH_DENYNO,
+                   _S_IREAD | _S_IWRITE);
     if (fd != -1 || err != EEXIST) {
       if (fd == -1) {
         errno = err;

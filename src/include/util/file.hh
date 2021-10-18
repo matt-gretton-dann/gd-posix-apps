@@ -30,6 +30,9 @@
 
 namespace GD::Util {
 enum class Msg;
+
+auto rename(char const* _old, char const* _new) __NOEXCEPT -> int;
+
 }  // namespace GD::Util
 
 namespace GD {
@@ -109,6 +112,14 @@ public:
   {
     if (fd_ != -1) {
       ::close(fd_);
+    }
+  }
+
+  void close()
+  {
+    if (fd_ != -1) {
+      ::close(fd_);
+      fd_ = -1;
     }
   }
 
@@ -230,6 +241,8 @@ public:
   auto operator=(MemorySpanInputFile const&) -> MemorySpanInputFile& = default;
   auto operator=(MemorySpanInputFile&&) noexcept -> MemorySpanInputFile& = default;
 
+  void close() {}
+
   [[nodiscard]] auto size_bytes() const noexcept -> std::size_t { return data_.size_bytes(); }
 
   [[nodiscard]] auto offset_bytes() const noexcept -> std::size_t { return offset_; }
@@ -332,7 +345,8 @@ public:
    *  \param dest Destination file
    *  \param mode Mode to give destination file.
    */
-  TxnWriteFile(fs::path const& dest, mode_t mode) : fd_(-1), dest_(dest), mode_(mode & mode_mask_)
+  TxnWriteFile(fs::path const& dest, mode_t mode)
+      : fd_(-1), dest_(dest.generic_string()), mode_(mode & mode_mask_)
   {
     // Use a temporary file if the destination already exists.
     if (fs::exists(dest_)) {
@@ -423,13 +437,13 @@ public:
     ::close(fd_);
     fd_ = -1;
     if (temp_ != dest_) {
-      if (::rename(temp_.c_str(), dest_.c_str()) == -1) {
+      if (GD::Util::rename(temp_.c_str(), dest_.c_str()) == -1) {
         throw std::system_error(errno, std::generic_category(), "Whilst committing a write.");
       }
     }
     temp_.clear();
     /* And set the mode bits appropriately.  */
-    chmod(dest_.c_str(), mode_);
+    ::chmod(dest_.c_str(), mode_);
   }
 
   /** \brief  Abort transaction.  */
