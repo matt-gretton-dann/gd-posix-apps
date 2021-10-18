@@ -108,10 +108,10 @@ void GD::CPP::FileStore::peek_character()
   next_begin_ = end;
 }
 
-GD::CPP::FileStore::FileStore(ErrorManager& error_manager) : error_manager_(error_manager)
+GD::CPP::FileStore::FileStore(ErrorManager& error_manager)
+    : error_manager_(error_manager), next_(Location{1})
 {
   file_names_.emplace_back(GD::Cc::Messages::get().get(GD::Cc::Msg::command_line_file));
-  next_ = Location{1};
 
   cmd_line_location_.begin_ = Location(0);
   cmd_line_location_.end_ = Location(std::numeric_limits<std::underlying_type_t<Location>>::max());
