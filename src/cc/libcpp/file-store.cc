@@ -182,6 +182,8 @@ void GD::CPP::FileStore::push_standard_input()
 
 void GD::CPP::FileStore::pop_file()
 {
+  token_.emplace(TokenType::end_of_include, Range{next_, 0});
+  next_ = next_ + Column{1};
   auto& current = location_stack_.top();
   current.loc_details_.end_ = next_;
   location_stack_.pop();
@@ -406,7 +408,6 @@ void GD::CPP::FileStore::peek_next_line()
   if (current_line == physical_file.second.size()) {
     /* Get the next line from the stream.  */
     if (is.eof()) {
-      token_.emplace(TokenType::end_of_include, Range{next_, 0});
       pop_file();
       return;
     }
@@ -427,7 +428,6 @@ void GD::CPP::FileStore::peek_next_line()
       s.push_back('\n');
     }
     else if (s.empty()) {
-      token_.emplace(TokenType::end_of_include, Range{next_, 0});
       pop_file();
       return;
     }
