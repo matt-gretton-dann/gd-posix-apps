@@ -5,11 +5,18 @@
  */
 
 #include <cstdio>
-
 #include <string_view>
+
 #include <util/file.hh>
 
-auto GD::InputFile::error() const -> bool { return file_ == nullptr || (std::ferror(file_) != 0); }
-auto GD::InputFile::eof() const -> bool { return file_ == nullptr || (std::feof(file_) != 0); }
+auto GD::StreamInputFile::error() const -> bool
+{
+  return file_ == nullptr || (std::ferror(file_) != 0);
+}
 
-auto GD::InputFile::filename() const -> std::string_view { return filename_; }
+auto GD::StreamInputFile::eof() const -> bool
+{
+  return file_ == nullptr || (std::feof(file_) != 0);
+}
+
+auto GD::StreamInputFile::filename() const -> std::string_view { return filename_; }

@@ -26,10 +26,9 @@
 #include <iostream>
 #include <map>
 #include <string>
-#include <vector>
-
 #include <string_view>
 #include <system_error>
+#include <vector>
 
 namespace Gencat = GD::Gencat;
 
@@ -766,7 +765,7 @@ try {
     else {
       // We know on Windows that the following line will have equivalent values
       fd = ::open(outfile.c_str(), O_CREAT | O_WRONLY | O_TRUNC,
-                  S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);  // NOLINT
+                  S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
     }
 
     if (fd == -1) {

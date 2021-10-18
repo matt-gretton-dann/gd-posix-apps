@@ -14,7 +14,7 @@
 #include <cerrno>
 #include <iostream>
 
-void GD::InputFile::report_error(GD::Util::Msg msg)
+void GD::StreamInputFile::report_error(GD::Util::Msg msg)
 {
   std::cerr << GD::program_name() << ": "
             << GD::Util::Messages::get().format(

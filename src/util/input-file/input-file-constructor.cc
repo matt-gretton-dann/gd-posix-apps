@@ -1,5 +1,5 @@
 /** \file  src/util/input-file/input-file-constructor.cc
- *  \brief Constructors for InputFile
+ *  \brief Constructors for StreamInputFile
  *  \author Copyright 2021, Matthew Grett-Dann
  *          SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,8 @@
 
 #include <cstdio>
 
-GD::InputFile::InputFile(std::string_view filename, std::string_view mode)
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+GD::StreamInputFile::StreamInputFile(std::string_view filename, std::string_view mode)
     : filename_(filename), file_(nullptr), is_stdin_(false), buffer_(nullptr)
 {
   if (filename_ == "-") {
@@ -26,7 +27,7 @@ GD::InputFile::InputFile(std::string_view filename, std::string_view mode)
   }
 }
 
-GD::InputFile::~InputFile()
+GD::StreamInputFile::~StreamInputFile()
 {
   if (!is_stdin_ && file_ != nullptr) {
     std::fclose(file_);

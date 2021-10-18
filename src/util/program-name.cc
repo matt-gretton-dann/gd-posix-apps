@@ -10,7 +10,6 @@
 #include "util/utils.hh"
 
 #include <string>
-
 #include <string_view>
 
 namespace {

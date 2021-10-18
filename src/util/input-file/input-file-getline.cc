@@ -12,7 +12,7 @@
 #include <cstdio>
 #include <string>
 
-auto GD::InputFile::getline() -> std::string
+auto GD::StreamInputFile::getline() -> std::string
 {
   assert(file_ != nullptr);  // NOLINT
   constexpr unsigned buf_size = 1024;

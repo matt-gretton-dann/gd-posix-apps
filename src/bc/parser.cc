@@ -741,13 +741,14 @@ auto GD::Bc::Parser::parse_relational_expression() -> GD::Bc::Parser::ExprIndex
   case Token::Type::less_than_equals:
     return insert_arith(Instruction::Opcode::less_than_equals, lhs, rhs);
   case Token::Type::greater_than_equals:
-    return insert_arith(Instruction::Opcode::less_than_equals, rhs, lhs);
+
+    return insert_arith(Instruction::Opcode::less_than_equals, rhs, lhs);  // NOLINT
   case Token::Type::not_equals:
     return insert_arith(Instruction::Opcode::not_equals, lhs, rhs);
   case Token::Type::less_than:
     return insert_arith(Instruction::Opcode::less_than, lhs, rhs);
   case Token::Type::greater_than:
-    return insert_arith(Instruction::Opcode::less_than, rhs, lhs);
+    return insert_arith(Instruction::Opcode::less_than, rhs, lhs);  // NOLINT
   default:
     abort();
   }
@@ -1194,7 +1195,7 @@ auto GD::Bc::Parser::insert_store(ExprIndex var, ExprIndex value) -> GD::Bc::Par
   value = ensure_expr_loaded(value);
   ExprIndex end(instructions_->size());
   instructions_->emplace_back(Instruction::Opcode::store, var - end, value - end);
-  return ExprIndex(value.index(), ExprType::assignment);
+  return {value.index(), ExprType::assignment};
 }
 
 auto GD::Bc::Parser::insert_arith(Instruction::Opcode opcode, ExprIndex lhs, ExprIndex rhs)

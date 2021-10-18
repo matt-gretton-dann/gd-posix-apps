@@ -13,7 +13,7 @@
 #define LIBGDSUP_INCLUDE_GD_BIT_HH_INCLUDED
 
 #if defined(FORCE_SUPPLEMENTAL_LIBRARY)
-#  define _USE_OUR_BIT_IMPLEMENTATION 1
+#  define _USE_OUR_BIT_IMPLEMENTATION 1  // NOLINT
 #elif defined(__cpp_lib_endian) && __cpp_lib_endian >= 201907L && __has_include(<bit>)
 #  include <bit>
 namespace bit {

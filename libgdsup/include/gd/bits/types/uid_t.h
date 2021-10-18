@@ -1,15 +1,16 @@
-/** \file   libgdsup/include/bits/types/pid_t.h
+/** \file   libgdsup/include/bits/types/gid_t.h
  *  \brief  Define the pid_t type.
  *  \author Copyright 2021, Matthew Gretton-Dann
  *  SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _LIBGDSUP_INCLUDE_BITS_TYPES_PID_T_H_INCLUDED
-#  define _LIBGDSUP_INCLUDE_BITS_TYPES_PID_T_H_INCLUDED
+#ifndef LIBGDSUP_INCLUDE_BITS_TYPES_UID_T_H_INCLUDED
+#define LIBGDSUP_INCLUDE_BITS_TYPES_UID_T_H_INCLUDED
 
 #ifdef _WIN32
-/** On Windows we map process IDs to ints (as everywhere else does really..  */
-typedef long pid_t;
+#  include <stdint.h>
+/** On Windows we map group IDs to intptrs so we can handle them as Pointers too.  */
+typedef intptr_t uid_t;
 #endif
 
-#endif  // _LIBGDSUP_INCLUDE_BITS_TYPES_PID_T_H_INCLUDED
+#endif  // LIBGDSUP_INCLUDE_BITS_TYPES_UID_T_H_INCLUDED

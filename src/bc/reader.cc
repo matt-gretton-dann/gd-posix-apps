@@ -10,14 +10,15 @@
 
 #include <cstdint>
 #include <limits>
+#include <string_view>
 
 #include "bc.hh"
-#include <string_view>
 
 GD::Bc::Location::Location(std::string_view file_name) : file_name_(file_name), column_(1), line_(1)
 {
 }
 
+// NOLINTNEXTLINE
 GD::Bc::Location::Location(std::string_view file_name, Line line, Column column)
     : file_name_(file_name), column_(column), line_(line)
 {

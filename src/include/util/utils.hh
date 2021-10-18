@@ -9,9 +9,9 @@
 
 #include "gd/nl_types.h"
 
-#include <utility>
-
+#include <climits>
 #include <string_view>
+#include <utility>
 
 namespace GD {
 /** \brief       Set the program name.
@@ -68,6 +68,84 @@ public:
 private:
   T t_;
 };
+
+/** \brief      Write a value out in big endian form a byte at a time.
+ *  \tparam T   Integer type to write
+ *  \tparam It  Output iterator to write to.
+ *  \param  it  Output iterator to write to
+ *  \param  v   Value to write
+ *
+ * sizeof(T) writes are made to *it.  *it must accept std::byte values.
+ */
+template<typename T, typename It>
+void write_be(It it, T v)
+{
+  T shift = sizeof(T) * CHAR_BIT;
+  while (shift != 0) {
+    shift -= CHAR_BIT;
+    *it++ = static_cast<std::byte>(v >> shift);
+  }
+}
+
+/** \brief      Write a value out in little endian form a byte at a time.
+ *  \tparam T   Integer type to write
+ *  \tparam It  Output iterator to write to.
+ *  \param  it  Output iterator to write to
+ *  \param  v   Value to write
+ *
+ * sizeof(T) writes are made to *it.  *it must accept std::byte values.
+ */
+template<typename T, typename It>
+void write_le(It it, T v)
+{
+  T shift = 0;
+  while (shift != sizeof(T) * CHAR_BIT) {
+    *it++ = static_cast<std::byte>(v >> shift);
+    shift += CHAR_BIT;
+  }
+}
+
+/** \brief     Read a value from a std::byte input iterator, treating it as big endian.
+ *  \tparam T  Integer type to read
+ *  \tparam It Input iterator to read from.
+ *  \param  it Input iterator to read
+ *  \return    Read value.
+ *
+ * \a Reading from *it must return values that can be converted to std::byte.
+ * \c *it will be read from sizeof(T) times.
+ */
+template<typename T, typename It>
+auto read_be(It it) -> T
+{
+  T result = 0;
+  T shift = sizeof(T) * CHAR_BIT;
+  while (shift != 0) {
+    shift -= CHAR_BIT;
+    result |= static_cast<T>(*it++) << shift;
+  }
+  return result;
+}
+
+/** \brief     Read a value from a std::byte input iterator, treating it as little endian.
+ *  \tparam T  Integer type to read
+ *  \tparam It Input iterator to read from.
+ *  \param  it Input iterator to read
+ *  \return    Read value.
+ *
+ * \a Reading from *it must return values that can be converted to std::byte.
+ * \c *it will be read from sizeof(T) times.
+ */
+template<typename T, typename It>
+auto read_le(It it) -> T
+{
+  T result = 0;
+  T shift = 0;
+  while (shift != sizeof(T) * CHAR_BIT) {
+    result |= static_cast<T>(*it++) << shift;
+    shift += CHAR_BIT;
+  }
+  return result;
+}
 
 }  // namespace GD
 #endif  // UTIL_UTILS_HH

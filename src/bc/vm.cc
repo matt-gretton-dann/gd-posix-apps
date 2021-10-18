@@ -347,6 +347,7 @@ void reset_interrupt_handler()
 
 }  // namespace GD::Bc::Details
 
+// NOLINTNEXTLINE
 GD::Bc::Details::VMState::VMState(std::ostream& out, std::ostream& err, bool save_specials)
     : output_(out), error_(err), save_specials_(save_specials)
 {
@@ -498,12 +499,12 @@ auto GD::Bc::Details::VMState::array_element(ArrayElement const& ae) const -> GD
 {
   ArrayValues a = arrays_.at(static_cast<unsigned>(ae.first.get()));
   if (!a) {
-    return Number();
+    return {};
   }
 
   auto it = a->find(ae.second);
   if (it == a->end()) {
-    return Number();
+    return {};
   }
 
   return it->second;

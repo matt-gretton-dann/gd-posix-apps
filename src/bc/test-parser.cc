@@ -10,9 +10,9 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
 
 #include "bc.hh"
-#include <string_view>
 
 using GD::Bc::Array;
 using GD::Bc::Instruction;

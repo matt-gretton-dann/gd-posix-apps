@@ -17,10 +17,10 @@
 #include <memory>
 #include <ostream>
 #include <sstream>
+#include <string_view>
 #include <vector>
 
 #include "bc.hh"
-#include <string_view>
 
 namespace GD::Bc {
 
@@ -427,7 +427,7 @@ public:
    *
    * If *this (on entry) is less than sub * 10 ^ scale we return true.  Otherwise we return false.
    */
-  auto sub(NumType s, NumType scale) -> bool
+  auto sub(NumType s, NumType scale) -> bool  // NOLINT
   {
     BasicDigits sub_d(s);
     return sub(sub_d, scale);
@@ -535,7 +535,7 @@ public:
    *
    * Does `digits_ * mul + acc`.  Treating `digits_` as an integer.
    */
-  void mac(NumType mul, NumType acc)
+  void mac(NumType mul, NumType acc)  // NOLINT
   {
     copy_on_write();
 
@@ -585,7 +585,7 @@ public:
    *
    * We assume that the result is less than base_.
    */
-  auto mul_mod_pow10(NumType mul, NumType scale) -> NumType
+  auto mul_mod_pow10(NumType mul, NumType scale) -> NumType  // NOLINT
   {
     if (!digits_) {
       return 0;
@@ -880,7 +880,7 @@ private:
    *  \param lspace Do we need leading space (default true)
    *  \return      String representation of number.
    */
-  static auto to_string(NumType num, NumType obase, bool lspace = true) -> std::string
+  static auto to_string(NumType num, NumType obase, bool lspace = true) -> std::string  // NOLINT
   {
     assert(num < obase);  // NOLINT
     constexpr std::string_view nums = "0123456789ABCDEF";
@@ -1085,7 +1085,9 @@ private:
     BasicDigits z0 = multiply(lhs_begin, lhs_mid, rhs_begin, rhs_mid);
     BasicDigits z2 = multiply(lhs_mid, lhs_end, rhs_mid, rhs_end);
 
+    // NOLINTNEXTLINE(readability-suspicious-call-argument)
     BasicDigits z1lhs_sum = add(lhs_begin, lhs_mid, lhs_mid, lhs_end);
+    // NOLINTNEXTLINE(readability-suspicious-call-argument)
     BasicDigits z1rhs_sum = add(rhs_begin, rhs_mid, rhs_mid, rhs_end);
     auto z1lhs_sum_begin = z1lhs_sum.digits_->begin();
     auto z1rhs_sum_begin = z1rhs_sum.digits_->begin();
@@ -1407,7 +1409,7 @@ public:
 
     Details::BasicDigits<Traits> rhs_digits;
     NumType scale_diff;
-    Sign rhs_sign;
+    Sign rhs_sign = Sign::positive;
     if (scale_ >= rhs.scale_) {
       rhs_digits = rhs.digits_;
       rhs_sign = rhs.sign_;

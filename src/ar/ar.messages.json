@@ -1,0 +1,74 @@
+[
+  {
+    "set": "ar",
+    "id": 1,
+    "messages": [
+      {
+        "msg": "usage",
+        "id": 1,
+        "description": "Usage message for the program. {0} is the program name.",
+        "C": "Usage: {0} -d [-v] archive file...\n       {0} -m [-a|-b|-i] [-v] archive file...\n       {0} -p [-sv] archive file...\n       {0} -q [-cv] archive file...\n       {0} -r [-a|-b|-i] [-cuv] archive file...\n       {0} -t [-sv] archive file...\n       {0} -x [svCT] archive file...\n"
+      },
+      {
+        "msg": "unrecognised_option",
+        "id": 2,
+        "description": "Option -{0} is unrecognised.",
+        "C": "Option '-{0}' is not valid."
+      },
+      {
+        "msg": "cannot_specify_more_than_one_action",
+        "id": 3,
+        "description": "Cannot specify more than one action on the command line. {0} is the duplicate action..",
+        "C": "Cannot specify more than one action on the command line: -{0} is the duplicate."
+      },
+      {
+        "msg": "missing_position_name",
+        "id": 4,
+        "description": "Missing file name for -a, -b, and -i argument.",
+        "C": "Missing position file name for -a, -b, or -i."
+      },
+      {
+        "msg": "missing_archive_name",
+        "id": 5,
+        "description": "Missing archive file name.",
+        "C": "Missing archive file name."
+      },
+      {
+        "msg": "missing_action",
+        "id": 6,
+        "description": "Missing action option.",
+        "C": "Missing action on command line.  Must specify one of -d, -m, -p, -q, -r, -t, or -x."
+      },
+      {
+        "msg": "missing_input_archive",
+        "id": 7,
+        "description": "The archove {0} is misisng.",
+        "C": "Missing archive: {0}"
+      },
+      {
+        "msg": "creating_archive",
+        "id": 8,
+        "description": "Creating the archive {0}.",
+        "C": "Creating archive: {0}\n"
+      },
+      {
+        "msg": "stdout_write_failed",
+        "id": 9,
+        "description": "Write to stdout failed with message {0}.",
+        "C": "Failed to write to standard output: {0}"
+      },
+      {
+        "msg": "uncaught_std_exception",
+        "id": 10,
+        "description": "We have an uncaught exception of type std::exception, {0} is the what.",
+        "C": "Internal error: {0}."
+      },
+      {
+        "msg": "uncaught_exception",
+        "id": 11,
+        "description": "We have an uncaught exception of unknown type.",
+        "C": "Internal error: Unknown cause."
+      }
+    ]
+  }
+]

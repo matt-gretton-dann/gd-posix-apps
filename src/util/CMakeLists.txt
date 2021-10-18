@@ -6,6 +6,7 @@ target_sources(util PRIVATE
   input-file/input-file-report-error.cc
   input-file/input-file-setbuf.cc
   program-name.cc
+  rename.cc
 )
 
 add_custom_command(
@@ -34,7 +35,8 @@ add_custom_target("util_messages" ALL DEPENDS "util.msg.stamp")
 
 if(RUN_UNIT_TESTS)
   target_sources(test-util PRIVATE
-    test-for-each-file.cc
-    test-program-name.cc
-    test-util-main.cc)
+    tests/test-for-each-file.cc
+    tests/test-program-name.cc
+    tests/test-read-write-endian.cc
+    tests/test-util-main.cc)
 endif()

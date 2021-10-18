@@ -14,7 +14,7 @@
 #if defined(FORCE_SUPPLEMENTAL_LIBRARY) || !defined(_POSIX2_LINE_MAX)
 #  undef _POSIX2_LINE_MAX
 /** \brief Maximum acceptable length, in bytes, of a line of input from a text file.  */
-#  define _POSIX2_LINE_MAX 2048
+#  define _POSIX2_LINE_MAX 2048  // NOLINT
 #endif
 
 #if defined(FORCE_SUPPLEMENTAL_LIBRARY) || !defined(_POSIX2_SSIZE_MAX)

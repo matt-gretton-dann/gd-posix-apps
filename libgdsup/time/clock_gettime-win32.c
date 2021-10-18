@@ -15,7 +15,7 @@
 /* Convert a value stored as a file time to a timespec
  *  Does not do the rebias for different epochs.
  */
-static int convert_file_time_to_timespec(struct timespec* ts, FILETIME ft, LONGLONG bias)
+int __convert_file_time_to_timespec(struct timespec* ts, FILETIME ft, LONGLONG bias)
 {
   LARGE_INTEGER li;
   li.HighPart = (LONG)ft.dwHighDateTime;
@@ -55,7 +55,7 @@ int clock_gettime(clockid_t clock, struct timespec* ts)
       return -1;
     }
 
-    return convert_file_time_to_timespec(ts, user_time, 0);
+    return __convert_file_time_to_timespec(ts, user_time, 0);
   }
   case CLOCK_THREAD_CPUTIME_ID: {
     FILETIME start_time;
@@ -70,12 +70,12 @@ int clock_gettime(clockid_t clock, struct timespec* ts)
       return -1;
     }
 
-    return convert_file_time_to_timespec(ts, user_time, 0);
+    return __convert_file_time_to_timespec(ts, user_time, 0);
   }
   case CLOCK_REALTIME: {
     FILETIME system_time;
     GetSystemTimeAsFileTime(&system_time);
-    return convert_file_time_to_timespec(ts, system_time, WINDOWS_TO_POSIX_BIAS);
+    return __convert_file_time_to_timespec(ts, system_time, WINDOWS_TO_POSIX_BIAS);
   }
   case CLOCK_MONOTONIC: {
     int64_t query_frequency = __support_performance_frequency();

@@ -301,6 +301,7 @@ auto process_escaped_string(FormatState const& format_state, std::string_view ar
  *
  * Returned string has no leading zeroes, and will return an empty string if v is zero.
  */
+// NOLINTNEXTLINE
 auto to_based_string(uint32_t v, unsigned log2base, bool use_upper) -> std::string
 {
   assert(log2base >= 1 && "log2base must be in range [1, 4]");  // NOLINT

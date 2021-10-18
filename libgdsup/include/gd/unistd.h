@@ -8,6 +8,9 @@
 #define LIBGDSUP_INCLUDE_GD_UNISTD_H_INCLUDED
 
 #include "gd/bits/defines.h"
+#include "gd/bits/types/gid_t.h"
+#include "gd/bits/types/pid_t.h"
+#include "gd/bits/types/uid_t.h"
 
 __EXTERN_C_BEGIN
 /** \brief Pointer to argument - used by \fn getopt.  */
@@ -76,6 +79,19 @@ typedef long ssize_t;
  *  \return    -1 on error, 0 otherwise
  */
 __EXTERN_C int close(int fd);
+
+#  define _PC_NAME_MAX 4
+
+/** \brief  Get configurable pathname variables.
+ *  \param  _path Path name
+ *  \param  _name _PC_* value to query.
+ *  \return       -1 on error, otherwise value.
+ *
+ * Supported _PC_* values:
+ *
+ * _PC_NAME_MAX: Maximum number of bytes in a filename.
+ */
+__EXTERN_C long pathconf(char const* _path, int _name);
 
 /** \brief         Read from a file
  *  \param  fd     file descriptor

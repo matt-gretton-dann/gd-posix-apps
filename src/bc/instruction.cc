@@ -19,6 +19,7 @@
 
 GD::Bc::VariableMask::VariableMask() = default;
 
+// NOLINTNEXTLINE
 GD::Bc::VariableMask::VariableMask(std::string_view vars, std::string_view arrays)
 {
   for (auto l : vars) {

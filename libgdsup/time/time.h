@@ -10,6 +10,7 @@
 
 #include <errno.h>
 #include <stdint.h>
+#include <windows.h>
 
 #include "support/support.h"
 
@@ -35,5 +36,13 @@
  *  \return Performance frequency.
  */
 int64_t __support_performance_frequency();
+
+/* \brief       Convert a value stored as a file time to a timespec
+ * \param  ts   Time spec to output to
+ * \param  ft   File time to convert from
+ * \param  bias Bias to apply (usually WINDOWS_TO_POSIX_BIAS)
+ * \return      0 on success, -1 on failure.
+ */
+int __convert_file_time_to_timespec(struct timespec* ts, FILETIME ft, LONGLONG bias);  // NOLINT
 
 #endif  //__LIBGDSUP_TIME_TIME_H_INCLUDED

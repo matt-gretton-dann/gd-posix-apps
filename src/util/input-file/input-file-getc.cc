@@ -11,7 +11,7 @@
 #include <cassert>
 #include <cstdio>
 
-auto GD::InputFile::getc() -> int
+auto GD::StreamInputFile::getc() -> int
 {
   assert(file_ != nullptr);  // NOLINT
   int c = 0;

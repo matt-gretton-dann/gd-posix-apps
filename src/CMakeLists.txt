@@ -124,6 +124,7 @@ endfunction()
 # Order is important
 add_subdirectory(gencat)
 
+add_subdirectory(ar)
 add_subdirectory(asa)
 add_subdirectory(basename)
 add_subdirectory(bc)

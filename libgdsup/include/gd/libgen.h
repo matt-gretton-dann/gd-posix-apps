@@ -63,7 +63,7 @@ __EXTERN_C char* basename(char* path) __NOEXCEPT;  // NOLINT
  *
  * \todo: Make '//' handling platform specific.
  */
-__EXTERN_C char* dirname(char*) __NOEXCEPT;
+__EXTERN_C char* dirname(char* /*path*/) __NOEXCEPT;
 #endif  // Pick a libgen header
 
 #endif  // LIBGDSUP_INCLUDE_GD_LIBGEN_H_INCLUDED

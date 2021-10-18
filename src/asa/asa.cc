@@ -17,7 +17,6 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-
 #include <string_view>
 #include <system_error>
 
@@ -26,7 +25,7 @@ class State
 public:
   auto output(std::string_view input_file) -> bool
   {
-    GD::InputFile is(input_file);
+    GD::StreamInputFile is(input_file);
     while (!is.eof() && !is.error()) {
       std::string line = is.getline();
       if (!line.empty()) {

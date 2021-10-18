@@ -17,8 +17,10 @@ using namespace std;  // NOLINT(google-build-using-namespace)
 #  include <cstddef>
 #  include <iterator>
 #  include <limits>
-
 #  include <type_traits>
+#  if defined(__cpp_impl_three_way_comparison) && __cpp_impl_three_way_comparison >= 201907L
+#    include <compare>
+#  endif
 
 namespace GD::Span {
 
@@ -27,57 +29,51 @@ inline constexpr size_t dynamic_extent = ::std::numeric_limits<size_t>::max();
 
 namespace Details {
 template<typename T, size_t Extent>
-struct SpanBase
+struct SpanBase  // NOLINT
 {
 public:
   constexpr SpanBase() noexcept = delete;
   constexpr SpanBase(SpanBase const&) noexcept = default;
-  constexpr SpanBase(SpanBase&&) noexcept = delete;
-  constexpr SpanBase& operator=(SpanBase const&) noexcept = default;
-  constexpr SpanBase& operator=(SpanBase&&) noexcept = delete;
+  constexpr auto operator=(SpanBase const&) noexcept -> SpanBase& = default;
   ~SpanBase() noexcept = default;
 
   constexpr SpanBase(T* begin, [[maybe_unused]] size_t extent) noexcept : begin_(begin) {}
-  constexpr T* begin() const noexcept { return begin_; }
-  constexpr size_t size() const noexcept { return Extent; }
+  [[nodiscard]] constexpr auto begin() const noexcept -> T* { return begin_; }
+  [[nodiscard]] constexpr auto size() const noexcept -> size_t { return Extent; }
 
 private:
   T* begin_;
 };
 
 template<typename T>
-struct SpanBase<T, 0>
+struct SpanBase<T, 0>  // NOLINT
 {
 public:
   constexpr SpanBase() noexcept = default;
   constexpr SpanBase(SpanBase const&) noexcept = default;
-  constexpr SpanBase(SpanBase&&) noexcept = delete;
-  constexpr SpanBase& operator=(SpanBase const&) noexcept = default;
-  constexpr SpanBase& operator=(SpanBase&&) noexcept = delete;
+  constexpr auto operator=(SpanBase const&) noexcept -> SpanBase& = default;
   ~SpanBase() noexcept = default;
 
   constexpr SpanBase(T* begin, [[maybe_unused]] size_t extent) noexcept : begin_(begin) {}
-  constexpr T* begin() const noexcept { return begin_; }
-  constexpr size_t size() const noexcept { return 0; }
+  [[nodiscard]] constexpr auto begin() const noexcept -> T* { return begin_; }
+  [[nodiscard]] constexpr auto size() const noexcept -> size_t { return 0; }
 
 private:
   T* begin_ = nullptr;
 };
 
 template<typename T>
-struct SpanBase<T, GD::Span::dynamic_extent>
+struct SpanBase<T, GD::Span::dynamic_extent>  // NOLINT
 {
 public:
   constexpr SpanBase() noexcept = default;
   constexpr SpanBase(SpanBase const&) noexcept = default;
-  constexpr SpanBase(SpanBase&&) noexcept = delete;
-  constexpr SpanBase& operator=(SpanBase const&) noexcept = default;
-  constexpr SpanBase& operator=(SpanBase&&) noexcept = delete;
+  constexpr auto operator=(SpanBase const&) noexcept -> SpanBase& = default;
   ~SpanBase() noexcept = default;
 
   constexpr SpanBase(T* begin, size_t extent) noexcept : begin_(begin), extent_(extent) {}
-  constexpr T* begin() const noexcept { return begin_; }
-  constexpr size_t size() const noexcept { return extent_; }
+  [[nodiscard]] constexpr auto begin() const noexcept -> T* { return begin_; }
+  [[nodiscard]] constexpr auto size() const noexcept -> size_t { return extent_; }
 
 private:
   T* begin_ = nullptr;
@@ -98,73 +94,73 @@ public:
   constexpr SpanIterator() noexcept = delete;
   constexpr SpanIterator(SpanIterator const&) noexcept = default;
   constexpr SpanIterator(SpanIterator&&) noexcept = default;
-  constexpr SpanIterator& operator=(SpanIterator const&) noexcept = default;
-  constexpr SpanIterator& operator=(SpanIterator&&) noexcept = default;
+  constexpr auto operator=(SpanIterator const&) noexcept -> SpanIterator& = default;
+  constexpr auto operator=(SpanIterator&&) noexcept -> SpanIterator& = default;
   ~SpanIterator() noexcept = default;
 
-  [[nodiscard]] constexpr reference operator*() const noexcept { return *p_; }
-  [[nodiscard]] constexpr pointer operator->() const noexcept { return p_; }
+  [[nodiscard]] constexpr auto operator*() const noexcept -> reference { return *p_; }
+  [[nodiscard]] constexpr auto operator->() const noexcept -> pointer { return p_; }
 
-  constexpr SpanIterator& operator++() noexcept
+  constexpr auto operator++() noexcept -> SpanIterator&
   {
-    ++p_;
+    ++p_;  // NOLINT
     return *this;
   }
 
-  constexpr SpanIterator operator++(int) noexcept
+  constexpr auto operator++(int) noexcept -> SpanIterator
   {
     auto temp = *this;
-    ++p_;
+    ++p_;  // NOLINT
     return temp;
   }
 
-  constexpr SpanIterator& operator--() noexcept
+  constexpr auto operator--() noexcept -> SpanIterator&
   {
     --p_;
     return *this;
   }
 
-  constexpr SpanIterator operator--(int) noexcept
+  constexpr auto operator--(int) noexcept -> SpanIterator
   {
     auto temp = *this;
     --p_;
     return temp;
   }
 
-  constexpr SpanIterator& operator+=(difference_type const offset) noexcept
+  constexpr auto operator+=(difference_type const offset) noexcept -> SpanIterator&
   {
-    p_ += offset;
+    p_ += offset;  // NOLINT
     return *this;
   }
 
-  constexpr SpanIterator& operator-=(difference_type const offset) noexcept
+  constexpr auto operator-=(difference_type const offset) noexcept -> SpanIterator&
   {
     p_ -= offset;
     return *this;
   }
 
-  [[nodiscard]] constexpr difference_type operator-(SpanIterator rhs) const noexcept
+  [[nodiscard]] constexpr auto operator-(SpanIterator rhs) const noexcept -> difference_type
   {
     return this->p_ - rhs.p_;
   }
 
-  [[nodiscard]] constexpr reference operator[](difference_type const offset) const noexcept
+  [[nodiscard]] constexpr auto operator[](difference_type const offset) const noexcept -> reference
   {
-    return p_[offset];
+    return p_[offset];  // NOLINT
   }
 
-  [[nodiscard]] constexpr bool operator==(SpanIterator rhs) const noexcept
+  [[nodiscard]] constexpr auto operator==(SpanIterator rhs) const noexcept -> bool
   {
     return rhs.p_ == this->p_;
   }
 
 #  if defined(__cpp_impl_three_way_comparison) && __cpp_impl_three_way_comparison >= 201907L
-  [[nodiscard]] constexpr std::strong_ordering operator<=>(SpanIterator rhs) const noexcept
+  [[nodiscard]] constexpr auto operator<=>(SpanIterator rhs) const noexcept -> std::strong_ordering
   {
     return this->p_ <=> rhs.p_;
   }
 #  else
-  [[nodiscard]] constexpr bool operator<(SpanIterator rhs) const noexcept
+  [[nodiscard]] constexpr auto operator<(SpanIterator rhs) const noexcept -> bool
   {
     return this->p_ < rhs.p_;
   }
@@ -175,24 +171,26 @@ private:
 };
 
 template<typename T>
-[[nodiscard]] constexpr SpanIterator<T>
+[[nodiscard]] constexpr auto
 operator+(SpanIterator<T> it, typename SpanIterator<T>::difference_type const offset) noexcept
+  -> SpanIterator<T>
 {
   it += offset;
   return it;
 }
 
 template<typename T>
-[[nodiscard]] constexpr SpanIterator<T>
-operator+(typename SpanIterator<T>::difference_type const offset, SpanIterator<T> it) noexcept
+[[nodiscard]] constexpr auto operator+(typename SpanIterator<T>::difference_type const offset,
+                                       SpanIterator<T> it) noexcept -> SpanIterator<T>
 {
   it += offset;
   return it;
 }
 
 template<typename T>
-[[nodiscard]] constexpr SpanIterator<T>
-operator-(SpanIterator<T> it, typename SpanIterator<T>::difference_type const offset) noexcept
+[[nodiscard]] constexpr auto operator-(SpanIterator<T> it,
+                                       typename SpanIterator<T>::difference_type offset) noexcept
+  -> SpanIterator<T>
 {
   it -= offset;
   return it;
@@ -200,25 +198,25 @@ operator-(SpanIterator<T> it, typename SpanIterator<T>::difference_type const of
 
 #  if !defined(__cpp_impl_three_way_comparison) || __cpp_impl_three_way_comparison < 201907L
 template<typename T>
-[[nodiscard]] constexpr bool operator!=(SpanIterator<T> lhs, SpanIterator<T> rhs) noexcept
+[[nodiscard]] constexpr auto operator!=(SpanIterator<T> lhs, SpanIterator<T> rhs) noexcept -> bool
 {
   return !(lhs == rhs);
 }
 
 template<typename T>
-[[nodiscard]] constexpr bool operator<=(SpanIterator<T> lhs, SpanIterator<T> rhs) noexcept
+[[nodiscard]] constexpr auto operator<=(SpanIterator<T> lhs, SpanIterator<T> rhs) noexcept -> bool
 {
   return (lhs == rhs) || (lhs < rhs);
 }
 
 template<typename T>
-[[nodiscard]] constexpr bool operator>(SpanIterator<T> lhs, SpanIterator<T> rhs) noexcept
+[[nodiscard]] constexpr auto operator>(SpanIterator<T> lhs, SpanIterator<T> rhs) noexcept -> bool
 {
   return !(lhs == rhs) && !(lhs < rhs);
 }
 
 template<typename T>
-[[nodiscard]] constexpr bool operator>=(SpanIterator<T> lhs, SpanIterator<T> rhs) noexcept
+[[nodiscard]] constexpr auto operator>=(SpanIterator<T> lhs, SpanIterator<T> rhs) noexcept -> bool
 {
   return !(lhs < rhs);
 }
@@ -227,7 +225,7 @@ template<typename T>
 }  // namespace Details
 
 template<typename T, size_t Extent = dynamic_extent>
-class span : public Details::SpanBase<T, Extent>
+class span : public Details::SpanBase<T, Extent>  // NOLINT
 {
 public:
   using element_type = T;
@@ -258,81 +256,90 @@ public:
   }
 
   template<std::size_t N>
-  constexpr span(element_type (&arr)[N]) noexcept : Details::SpanBase<T, Extent>(arr, N)
+  constexpr span(element_type (&arr)[N]) noexcept  // NOLINT
+      : Details::SpanBase<T, Extent>(arr, N)
   {
   }
 
   template<typename U, std::size_t N>
-  constexpr span(::std::array<U, N>& arr) noexcept : Details::SpanBase<T, Extent>(arr.data(), N)
-  {
-  }
-
-  template<typename U, std::size_t N>
-  constexpr span(::std::array<U, N> const& arr) noexcept
+  constexpr span(::std::array<U, N>& arr) noexcept  // NOLINT
       : Details::SpanBase<T, Extent>(arr.data(), N)
   {
   }
 
   template<typename U, std::size_t N>
-  explicit(extent != dynamic_extent &&
-           N == dynamic_extent) constexpr span(span<U, N> const& source) noexcept
+  constexpr span(::std::array<U, N> const& arr) noexcept  // NOLINT
+      : Details::SpanBase<T, Extent>(arr.data(), N)
+  {
+  }
+
+  template<typename U, std::size_t N>
+  explicit(extent != dynamic_extent &&                                             // NOLINT
+           N == dynamic_extent) constexpr span(span<U, N> const& source) noexcept  // NOLINT
       : Details::SpanBase<T, Extent>(source.data(), source.size())
   {
   }
 
   constexpr span(span const&) noexcept = default;
-  constexpr span(span&&) noexcept = delete;
 
-  constexpr span& operator=(span const&) noexcept = default;
-  constexpr span& operator=(span&&) noexcept = delete;
+  constexpr auto operator=(span const&) noexcept -> span& = default;
 
   ~span() noexcept = default;
 
-  constexpr iterator begin() const noexcept
+  [[nodiscard]] constexpr auto begin() const noexcept -> iterator
   {
     return Details::SpanIterator<T>(Details::SpanBase<T, Extent>::begin());
   }
-  constexpr iterator end() const noexcept { return begin() + size(); }
-  constexpr iterator rbegin() const noexcept { return begin() + size(); }
-  constexpr iterator rend() const noexcept { return begin(); }
+  [[nodiscard]] constexpr auto end() const noexcept -> iterator { return begin() + size(); }
+  [[nodiscard]] constexpr auto rbegin() const noexcept -> iterator { return begin() + size(); }
+  [[nodiscard]] constexpr auto rend() const noexcept -> iterator { return begin(); }
 
-  constexpr reference front() const { return *begin(); }
-  constexpr reference back() const { return *(begin() + size() - 1); }
-  constexpr reference operator[](size_type idx) const { return begin()[idx]; }
-  constexpr pointer data() const noexcept { return Details::SpanBase<T, Extent>::begin(); }
+  [[nodiscard]] constexpr auto front() const -> reference { return *begin(); }
+  [[nodiscard]] constexpr auto back() const -> reference { return *(begin() + size() - 1); }
+  [[nodiscard]] constexpr auto operator[](size_type idx) const -> reference { return begin()[idx]; }
+  [[nodiscard]] constexpr auto data() const noexcept -> pointer
+  {
+    return Details::SpanBase<T, Extent>::begin();
+  }
 
-  constexpr size_type size() const noexcept { return Details::SpanBase<T, Extent>::size(); }
+  [[nodiscard]] constexpr auto size() const noexcept -> size_type
+  {
+    return Details::SpanBase<T, Extent>::size();
+  }
 
-  constexpr size_type size_bytes() const noexcept { return size() * sizeof(T); }
-  [[nodiscard]] constexpr bool empty() const noexcept { return size() == 0; }
+  [[nodiscard]] constexpr auto size_bytes() const noexcept -> size_type
+  {
+    return size() * sizeof(T);
+  }
+  [[nodiscard]] constexpr auto empty() const noexcept -> bool { return size() == 0; }
 
   template<std::size_t Count>
-  constexpr span<element_type, Count> first() const
+  constexpr auto first() const -> span<element_type, Count>
   {
     return span<element_type, Count>(begin(), Count);
   }
 
-  constexpr span<element_type, dynamic_extent> first(size_type count) const
+  [[nodiscard]] constexpr auto first(size_type count) const -> span<element_type, dynamic_extent>
   {
     return span<element_type, dynamic_extent>(begin(), count);
   }
 
   template<std::size_t Count>
-  constexpr span<element_type, Count> last() const
+  constexpr auto last() const -> span<element_type, Count>
   {
     return span<element_type, Count>(begin() + size() - Count, Count);
   }
 
-  constexpr span<element_type, dynamic_extent> last(size_type count) const
+  [[nodiscard]] constexpr auto last(size_type count) const -> span<element_type, dynamic_extent>
   {
     return span<element_type, dynamic_extent>(begin() + size() - count, count);
   }
 
   template<size_t Offset, size_t Count = dynamic_extent>
-  constexpr span<element_type, (Count == dynamic_extent
-                                  ? (Extent == dynamic_extent ? dynamic_extent : Extent - Offset)
-                                  : Count)>
-  subspan() const
+  constexpr auto subspan() const
+    -> span<element_type,
+            (Count == dynamic_extent ? (Extent == dynamic_extent ? dynamic_extent : Extent - Offset)
+                                     : Count)>
   {
     if constexpr (Count == dynamic_extent) {
       if constexpr (Extent == dynamic_extent) {
@@ -347,42 +354,48 @@ public:
     }
   }
 
-  constexpr span<element_type, dynamic_extent> subspan(size_type Offset,
-                                                       size_type Count = dynamic_extent) const
+  [[nodiscard]] constexpr auto subspan(size_type Offset, size_type Count = dynamic_extent) const
+    -> span<element_type, dynamic_extent>
   {
-    return span<element_type, dynamic_extent>(begin() + Offset,
+    return span<element_type, dynamic_extent>(data() + Offset,
                                               Count == dynamic_extent ? size() - Offset : Count);
   }
 };
 
 template<typename T, size_t N>
-span(T (&)[N]) -> span<T, N>;
+span(T (&)[N]) -> span<T, N>;  // NOLINT
 template<typename T, size_t N>
 span(::std::array<T, N>&) -> span<T, N>;
 template<typename T, size_t N>
 span(const ::std::array<T, N>&) -> span<const T, N>;
 
 template<typename T, size_t N>
-span<std::byte const, (N == dynamic_extent ? N : N * sizeof(T))> as_bytes(span<T, N> s) noexcept
+auto as_bytes(span<T, N> s) noexcept
+  -> span<std::byte const, (N == dynamic_extent ? N : N * sizeof(T))>
 {
   if constexpr (N == dynamic_extent) {
+    // NOLINTNEXTLINE
     return span<std::byte const, dynamic_extent>(reinterpret_cast<std::byte const*>(s.data()),
                                                  s.size() * sizeof(T));
   }
   else if constexpr (N != dynamic_extent) {
+    // NOLINTNEXTLINE
     return span<std::byte const, N * sizeof(T)>(reinterpret_cast<std::byte const*>(s.data()),
                                                 s.size() * sizeof(T));
   }
 }
 
 template<typename T, size_t N>
-span<std::byte, (N == dynamic_extent ? N : N * sizeof(T))> as_writable_bytes(span<T, N> s) noexcept
+auto as_writable_bytes(span<T, N> s) noexcept
+  -> span<std::byte, (N == dynamic_extent ? N : N * sizeof(T))>
 {
   if constexpr (N == dynamic_extent) {
+    // NOLINTNEXTLINE
     return span<std::byte, dynamic_extent>(reinterpret_cast<std::byte*>(s.data()),
                                            s.size() * sizeof(T));
   }
   else if constexpr (N != dynamic_extent) {
+    // NOLINTNEXTLINE
     return span<std::byte, N * sizeof(T)>(reinterpret_cast<std::byte*>(s.data()),
                                           s.size() * sizeof(T));
   }
