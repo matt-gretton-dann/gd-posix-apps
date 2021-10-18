@@ -61,7 +61,7 @@ auto main(int argc, char** argv) -> int
   if (begin != args.end()) {
     std::string_view suffix(*begin);
     if (bname.ends_with(suffix)) {
-      bname.resize(bname.size() - suffix.size());
+      bname = bname.substr(0, bname.size() - suffix.size());
     }
   }
 
