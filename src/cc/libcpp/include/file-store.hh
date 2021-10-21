@@ -305,7 +305,6 @@ private:
   LocationDetails cmd_line_location_;         ///< Location details for the command line
   std::stack<LocationStack> location_stack_;  ///< Stack of include locations
   std::vector<std::fstream> streams_;         ///< The streams we own.
-  std::optional<Error> error_;                ///< Current error.
   Location next_;                             ///< Location for the next token.
   std::string::const_iterator next_begin_;    ///< Pointer to the first character of the next token.
   std::string::const_iterator line_end_;      ///< End of current line being parsed

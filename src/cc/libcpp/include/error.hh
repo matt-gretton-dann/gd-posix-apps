@@ -14,7 +14,11 @@
 #include <iostream>
 #include <utility>
 
+#include "location.hh"
+
 namespace GD::CPP {
+class FileStore;
+
 /** \brief  List of error codes.  */
 using ErrorCode = GD::Cc::Msg;
 
@@ -28,39 +32,6 @@ enum class ErrorSeverity {
   ice           ///< Internal Compiler Error
 };
 
-/** \brief  Class containing error information.
- *
- * Use ErrorManager to create these an error.
- */
-class Error
-{
-public:
-  Error() = delete;
-  Error(Error const&) = default;
-  Error(Error&&) noexcept = default;
-  ~Error() = default;
-
-  auto operator=(Error const&) -> Error& = default;
-  auto operator=(Error&&) noexcept -> Error& = default;
-
-  auto id() const noexcept -> std::string const&;
-  auto severity() const noexcept -> ErrorSeverity;
-  auto message() const noexcept -> std::string const&;
-
-private:
-  friend class ErrorManager;
-  /** \brief          Construct an error
-   *  \param id       Error ID
-   *  \param severity Severity
-   *  \param msg      Message string
-   */
-  Error(std::string id, ErrorSeverity severity, std::string msg);
-
-  std::string id_;          ///< Error ID.
-  ErrorSeverity severity_;  ///< Error severity.
-  std::string msg_;         ///< Error message.
-};
-
 /** \brief  Error Manager
  *
  * This manages errors, handling translation of error codes into error messages, and their severity.
@@ -68,7 +39,12 @@ private:
 class ErrorManager
 {
 public:
-  ErrorManager() = default;
+  /** \brief    Construct the error manager
+   *  \param os Stream to output errors on.
+   */
+  ErrorManager(std::ostream& os);
+
+  ErrorManager() = delete;
   ErrorManager(ErrorManager const&) = delete;
   ErrorManager(ErrorManager&&) noexcept = default;
   auto operator=(ErrorManager const&) -> ErrorManager& = delete;
@@ -90,15 +66,22 @@ public:
     std::abort();
   }
 
+  /** \brief  Set the file store to use when looking up locations.  */
+  void file_store(FileStore& fs);
+
   /** \brief         Generate an error
    *  \param   code  Error code
    *  \param   args  Arguments for error message
    *  \return        Error object
+   *
+   * If the error has severity ICE we will abort, if the error has severity fatal_error then we
+   * will exit with a failure code.  Otherwise the function will return after printing the error.
    */
   template<typename... Args>
-  auto error([[maybe_unused]] ErrorCode code, [[maybe_unused]] Args&&... args) -> Error
+  void error([[maybe_unused]] ErrorCode code, Range range, [[maybe_unused]] Args&&... args)
   {
-    return do_error(code, GD::Cc::Messages::get().format(GD::Cc::Set::errors, code, args...));
+    return do_error(code, range,
+                    GD::Cc::Messages::get().format(GD::Cc::Set::errors, code, args...));
   }
 
   /** \brief                 Set the maximum number of errors before we stop producing errors.
@@ -112,8 +95,10 @@ private:
    *  \param  msg   Error message
    *  \return       Error object.
    */
-  auto do_error(ErrorCode code, std::string msg) -> Error;
+  void do_error(ErrorCode code, Range range, std::string msg);
 
+  std::ostream& os_;                     ///< Output stream for errors
+  FileStore* file_store_ = nullptr;      ///< File store to use to find locations.
   std::uint32_t error_count_ = 0;        ///< Number of errors produced
   std::uint32_t max_error_count_ = 128;  ///< Maximum number of errors
 };

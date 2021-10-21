@@ -38,6 +38,7 @@ tester.run_test(
 # Test bad options
 tester.run_test(
     [tester.exe(), "a non existent file"],
+    test_name="Non existent file",
     expected_stdout="",
     expected_stderr=re.compile(
         r"^\(command line\):0:0:.0002:Serious Error:.*$"),

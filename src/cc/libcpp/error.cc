@@ -9,6 +9,9 @@
 #include <map>
 #include <string>
 
+#include "file-store.hh"
+#include "location.hh"
+
 namespace {
 /** \brief  Get the string ID of an error.  */
 auto get_id(GD::CPP::ErrorCode code) -> std::string
@@ -40,21 +43,16 @@ auto get_severity(GD::CPP::ErrorCode code) -> GD::CPP::ErrorSeverity
 }
 }  // namespace
 
-auto GD::CPP::Error::id() const noexcept -> std::string const& { return id_; }
-auto GD::CPP::Error::severity() const noexcept -> ErrorSeverity { return severity_; }
-auto GD::CPP::Error::message() const noexcept -> std::string const& { return msg_; }
+GD::CPP::ErrorManager::ErrorManager(std::ostream& os) : os_(os) {}
 
-GD::CPP::Error::Error(std::string id, ErrorSeverity severity, std::string msg)
-    : id_(std::move(id)), severity_(severity), msg_(std::move(msg))
-{
-}
+void GD::CPP::ErrorManager::file_store(FileStore& fs) { file_store_ = std::addressof(fs); }
 
 void GD::CPP::ErrorManager::max_error_count(std::uint32_t max_error_count)
 {
   max_error_count_ = max_error_count;
 }
 
-auto GD::CPP::ErrorManager::do_error(ErrorCode code, std::string msg) -> Error
+void GD::CPP::ErrorManager::do_error(ErrorCode code, Range range, std::string msg)
 {
   if (error_count_++ >= max_error_count_) {
     code = ErrorCode::too_many_errors;
@@ -63,8 +61,18 @@ auto GD::CPP::ErrorManager::do_error(ErrorCode code, std::string msg) -> Error
 
   auto id = get_id(code);
   auto severity = get_severity(code);
+  auto loc = range.begin();
+  std::string fname = file_store_ != nullptr ? file_store_->logical_filename(loc) : "??";
+  Line line = file_store_ != nullptr ? file_store_->logical_line(loc) : Line{0};
+  Column column = file_store_ != nullptr ? file_store_->logical_column(loc) : Column{0};
+  auto to_output = fmt::format("{0}:{1}:{2}:{3}:{4}:{5}", fname, line, column, id, severity, msg);
   if (severity == ErrorSeverity::ice) {
-    ice("{0} - {1}", id, msg);
+    ice("{0}", to_output);
   }
-  return {id, severity, std::move(msg)};
+  else {
+    os_ << to_output << '\n';
+  }
+  if (severity == ErrorSeverity::fatal_error) {
+    std::exit(1);  // NOLINT(concurrency-mt-unsafe)
+  }
 }

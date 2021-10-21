@@ -108,8 +108,8 @@ class TestRunner:
                 return True
             if sys.platform.startswith('win32'):
                 # Hack to cope with Windows random newlines
-                actual2 = actual.replace('\n','')
-                expected2 = expected.replace('\n','')
+                actual2 = actual.replace('\n', '')
+                expected2 = expected.replace('\n', '')
                 if actual2 == expected2:
                     return True
         else:
@@ -118,8 +118,8 @@ class TestRunner:
                 return True
 
                 # By this point we know we've failed.
-        print(f"FAIL: {name} ({stream})\n---- EXPECTED: ----\n{expected.encode('unicode_escape')}\n"
-              f"----- ACTUAL: -----\n{actual.encode('unicode_escape')}\n-------------------\n")
+        print(f"FAIL: {name} ({stream})\n---- EXPECTED: ----\n{expected}\n"
+              f"----- ACTUAL: -----\n{actual}\n-------------------\n")
         self._fails += 1
 
     def run_test(self, cmdline, expected_rc=0, expected_stdout=None,

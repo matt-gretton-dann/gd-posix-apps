@@ -17,8 +17,11 @@ TEST_CASE("GD::CPP::FileStore - Simple", "[cpp][file-store]")
   /* This test has a simple ASCII input and checks that we can handle new-lines and token generation
    * correctly.
    */
-  GD::CPP::ErrorManager error_manager;
+  std::string errs;
+  std::ostringstream os(errs);
+  GD::CPP::ErrorManager error_manager(os);
   GD::CPP::FileStore file_store(error_manager);
+  error_manager.file_store(file_store);
 
   auto fname = std::string("Test");
   auto input = std::string("This is a test\nThis is a second line\n");
@@ -52,4 +55,5 @@ TEST_CASE("GD::CPP::FileStore - Simple", "[cpp][file-store]")
   file_store.chew(GD::CPP::TokenType::end_of_include);
   REQUIRE(file_store.peek().type() == GD::CPP::TokenType::end_of_source);
   REQUIRE(file_store.physical_filename(file_store.peek().range().begin()) == "(command line)");
+  REQUIRE(errs.empty());
 }

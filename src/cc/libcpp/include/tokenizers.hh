@@ -168,11 +168,6 @@ private:
 
   auto do_peek(Parent& parent) -> std::optional<Token>
   {
-    if (newline_state_ == NewLineState::pending_newline) {
-      newline_state_ = NewLineState::after_newline;
-      return Token{TokenType::end_of_line, error_range_};
-    }
-
     while (true) {
       Token const& t = parent.peek();
       Range r = t.range();
@@ -186,15 +181,13 @@ private:
           /* No change of newline state.  */
           continue;
         case NewLineState::after_splice:
-          error_range_ = r;
-          newline_state_ = NewLineState::pending_newline;
-          return Token{TokenType::error, error_range_,
-                       error_manager_.error(ErrorCode::splice_followed_by_end_of_file)};
+          error_manager_.error(ErrorCode::splice_followed_by_end_of_file, r);
+          newline_state_ = NewLineState::after_newline;
+          return Token{TokenType::end_of_line, r};
         case NewLineState::normal:
-          error_range_ = r;
-          newline_state_ = NewLineState::pending_newline;
-          return Token{TokenType::error, error_range_,
-                       error_manager_.error(ErrorCode::missing_newline_at_end_of_file)};
+          error_manager_.error(ErrorCode::splice_followed_by_end_of_file, r);
+          newline_state_ = NewLineState::after_newline;
+          return Token{TokenType::end_of_line, r};
         default:
           assert_ice(false, "Unexpected value in switch.");
         }
@@ -233,15 +226,12 @@ private:
 
   /** \brief Description of state in processing newlines. */
   enum class NewLineState {
-    normal,          ///< We have seen a 'normal' non-newline character.
-    after_newline,   ///< We are at the character after a newline (also true for initial
-                     ///< state)
-    after_splice,    ///< We have just seen a splice
-    pending_newline  ///< We have produced an error token and now need to add a newline
-                     ///< before resuming
+    normal,         ///< We have seen a 'normal' non-newline character.
+    after_newline,  ///< We are at the character after a newline (also true for initial
+                    ///< state)
+    after_splice    ///< We have just seen a splice
   };
   ErrorManager& error_manager_;
-  Range error_range_ = Range(Location{0});
   NewLineState newline_state_ = NewLineState::after_newline;
 };
 

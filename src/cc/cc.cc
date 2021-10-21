@@ -16,14 +16,6 @@
 #include "tokenizers.hh"
 
 namespace {
-void report_error(GD::CPP::FileStore const& fs, GD::CPP::Location loc, GD::CPP::Error const& error)
-{
-  std::cerr << fmt::format("{0}:{1}:{2}:{3}:{4}:{5}\n", fs.logical_filename(loc),
-                           fs.logical_line(loc), fs.logical_column(loc), error.id(),
-                           error.severity(), error.message());
-  std::exit(1);  // NOLINT(concurrency-mt-unsafe)
-}
-
 void dump_tokens(GD::CPP::FileStore& file_store, GD::CPP::ErrorManager& em)
 {
   auto tokenizer = GD::CPP::NewLineChewer(file_store, em);
@@ -31,9 +23,6 @@ void dump_tokens(GD::CPP::FileStore& file_store, GD::CPP::ErrorManager& em)
   while (tokenizer.peek() != GD::CPP::TokenType::end_of_source) {
     auto const& token = tokenizer.peek();
     switch (token.type()) {
-    case GD::CPP::TokenType::error:
-      report_error(file_store, token.range().begin(), token.get<GD::CPP::Error>());
-      break;
     case GD::CPP::TokenType::character:
       std::copy(file_store.range_begin(token.range()), file_store.range_end(token.range()),
                 std::ostream_iterator<char>(std::cout));
@@ -55,8 +44,9 @@ auto main(int argc, char** argv) -> int
 try {
   auto args = GD::Span::span<char*>(argv + 1, argc - 1);  // NOLINT
 
-  GD::CPP::ErrorManager error_manager;
+  GD::CPP::ErrorManager error_manager(std::cerr);
   GD::CPP::FileStore file_store(error_manager);
+  error_manager.file_store(file_store);
 
   if (args.empty()) {
     file_store.push_standard_input();

@@ -69,11 +69,6 @@ void GD::CPP::FileStore::chew(TokenType type_)
 void GD::CPP::FileStore::do_peek()
 {
   assert_ice(!token_.has_value(), "Peek shouldn't overwrite a token");
-  if (error_.has_value()) {
-    token_.emplace(TokenType::error, Range(next_), error_.value());
-    error_.reset();
-    return;
-  }
 
   if (next_begin_ == line_end_) {
     peek_next_line();
@@ -169,7 +164,7 @@ void GD::CPP::FileStore::push_file(std::string const& fname)
     streams_.back().open(fname);
   }
   catch (std::exception const& e) {
-    error_.emplace(error_manager_.error(ErrorCode::file_error, fname, e.what()));
+    error_manager_.error(ErrorCode::file_error, Range{next_, 0}, fname, e.what());
     return;
   }
   push_stream(fname, streams_.back());
@@ -419,8 +414,7 @@ void GD::CPP::FileStore::peek_next_line()
     }
     catch (std::exception const& e) {
       if (!is.eof()) {
-        token_.emplace(TokenType::error, Range{next_, 0},
-                       error_manager_.error(ErrorCode::file_error, e.what()));
+        error_manager_.error(ErrorCode::file_error, Range{next_, 0}, e.what());
       }
     }
 

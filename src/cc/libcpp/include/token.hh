@@ -26,7 +26,6 @@ namespace GD::CPP {
 enum class TokenType {
   end_of_source,   ///< End of all source
   end_of_include,  ///< End of a particular file (main file is included from command line)
-  error,           ///< Error (stores an Error)
   character,       ///< Character
   end_of_line,     ///< End of line.
 };
@@ -57,32 +56,15 @@ public:
    */
   Token(TokenType type, Range range);
 
-  /** \brief       Construct a token for the Error token type
-   *  \param type  Token type (TokenType::error)
-   *  \param range Source code range for the token.
-   */
-  Token(TokenType type, Range range, Error contents);
-
   /** \brief  Get the token type.  */
   auto type() const noexcept -> TokenType;
 
   /** \brief  Get the token range.  */
   auto range() const noexcept -> Range;
 
-  /** \brief  Get the payload for the token.
-   *  \tparam Payload type
-   *  \return Payload
-   */
-  template<typename FieldT>
-  auto get() const -> FieldT const&
-  {
-    return std::get<FieldT>(contents_);
-  }
-
 private:
-  TokenType type_;                                ///< Token type
-  Range range_;                                   ///< Range
-  std::variant<std::nullopt_t, Error> contents_;  ///< Payload
+  TokenType type_;  ///< Token type
+  Range range_;     ///< Range
 };
 
 auto operator==(Token const& token, TokenType type) noexcept -> bool;
@@ -122,11 +104,6 @@ struct fmt::formatter<GD::CPP::Token>
       return vformat_to(ctx.out(), "<end-of-source>", fmt::make_format_args());
     case GD::CPP::TokenType::end_of_include:
       return vformat_to(ctx.out(), "<end-of-include>", fmt::make_format_args());
-    case GD::CPP::TokenType::error: {
-      auto const& error = token.get<GD::CPP::Error>();
-      return vformat_to(ctx.out(), "ERROR({0}, {1}, {2})",
-                        fmt::make_format_args(error.id(), error.severity(), error.message()));
-    }
     case GD::CPP::TokenType::character:
       return vformat_to(ctx.out(), "<Character>", fmt::make_format_args());
     case GD::CPP::TokenType::end_of_line:
