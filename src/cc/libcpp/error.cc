@@ -26,11 +26,16 @@ using EC = GD::CPP::ErrorCode;
 using ES = GD::CPP::ErrorSeverity;
 
 /* Map of error codes to severities - should really be auto-generated.  */
-std::map<GD::CPP::ErrorCode, GD::CPP::ErrorSeverity> severities = {  // NOLINT
+// NOLINTNEXTLINE
+std::map<GD::CPP::ErrorCode, GD::CPP::ErrorSeverity> severities = {
   {EC::too_many_errors, ES::fatal_error},
   {EC::file_error, ES::fatal_error},
   {EC::missing_newline_at_end_of_file, ES::error},
-  {EC::splice_followed_by_end_of_file, ES::error}};
+  {EC::splice_followed_by_end_of_file, ES::error},
+  {EC::malformed_character_80, ES::error},
+  {EC::malformed_character_not_80, ES::error},
+  {EC::malformed_character_early_line_end, ES::error},
+};
 
 auto get_severity(GD::CPP::ErrorCode code) -> GD::CPP::ErrorSeverity
 {

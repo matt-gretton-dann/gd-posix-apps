@@ -10,6 +10,7 @@
 #include "gd/format.hh"
 
 #include <cstdint>
+#include <locale>
 #include <map>
 #include <optional>
 #include <string>
@@ -27,7 +28,6 @@ enum class TokenType {
   end_of_source,   ///< End of all source
   end_of_include,  ///< End of a particular file (main file is included from command line)
   character,       ///< Character
-  end_of_line,     ///< End of line.
 };
 
 /** \brief  A token
@@ -35,17 +35,13 @@ enum class TokenType {
  * A token is effectively a discriminated union of values.  The \a type says what is in the union.
  * All tokens have a range, which maps to the source code location they come from.
  *
- * Use get() to access token loads
- *
  * Valid token types and the union contents are:
  *
- * | TokenType      | Data load |  Contents                                                        |
+ * | TokenType      | Payload   |  Contents                                                        |
  * | :------------- | :-------- | :---------                                                       |
  * | end_of_source  |           | End of all sources                                               |
  * | end_of_include |           | End of the current source file.                                  |
- * | error          | Error     | Error                                                            |
- * | character      |           | A character, use the range to get the character represented.     |
- * | end_of_lien    |           | End of line                                                      |
+ * | character      | char32_t  | A character.                                                     |
  */
 class Token
 {
@@ -56,19 +52,35 @@ public:
    */
   Token(TokenType type, Range range);
 
+  /** \brief       Construct a token with a Unicode character payload
+   *  \param type  Token type(TokenType::character)
+   *  \param range Source code range for the tokne.
+   *  \param c     Character the token represents.
+   */
+  Token(TokenType type, Range range, char32_t c);
+
   /** \brief  Get the token type.  */
   auto type() const noexcept -> TokenType;
 
   /** \brief  Get the token range.  */
   auto range() const noexcept -> Range;
 
+  /** \brief  Get the character (if type() == TokenType::character).  */
+  auto character() const noexcept -> char32_t;
+
 private:
-  TokenType type_;  ///< Token type
   Range range_;     ///< Range
+  TokenType type_;  ///< Token type
+  union
+  {
+    char32_t c_;  ///< Character;
+  } payload_;
 };
 
 auto operator==(Token const& token, TokenType type) noexcept -> bool;
 auto operator==(TokenType type, Token const& token) noexcept -> bool;
+auto operator==(Token const& token, char32_t c) noexcept -> bool;
+auto operator==(char32_t c, Token const& token) noexcept -> bool;
 
 }  // namespace GD::CPP
 
@@ -104,10 +116,21 @@ struct fmt::formatter<GD::CPP::Token>
       return vformat_to(ctx.out(), "<end-of-source>", fmt::make_format_args());
     case GD::CPP::TokenType::end_of_include:
       return vformat_to(ctx.out(), "<end-of-include>", fmt::make_format_args());
-    case GD::CPP::TokenType::character:
-      return vformat_to(ctx.out(), "<Character>", fmt::make_format_args());
-    case GD::CPP::TokenType::end_of_line:
-      return vformat_to(ctx.out(), "\n", fmt::make_format_args());
+    case GD::CPP::TokenType::character: {
+      auto& facet = std::use_facet<std::codecvt<char32_t, char, std::mbstate_t>>(std::locale());
+      char32_t i = token.character();
+      auto mbstate = std::mbstate_t{};
+      std::string e(facet.max_length(), '\0');
+      char32_t const* i_next;
+      char* e_next;
+      if (facet.out(mbstate, &i, &i + 1, i_next, e.data(), e.data() + e.size(), e_next) ==
+          std::codecvt_base::ok) {
+        e.resize(e_next - e.data());
+        return vformat_to(ctx.out(), "{0}", fmt::make_format_args(e));
+      }
+      return vformat_to(ctx.out(), "CHARACTER({0:08x})",
+                        fmt::make_format_args(static_cast<uint32_t>(i)));
+    }
     default:
       return vformat_to(ctx.out(), "UNKNOWN", fmt::make_format_args());
     }

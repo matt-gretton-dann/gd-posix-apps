@@ -85,19 +85,52 @@ void GD::CPP::FileStore::peek_character()
   auto end = next_begin_;
   constexpr auto top_bit = static_cast<char>(0x80);
   constexpr auto cont_mask = static_cast<char>(0xe0);
+  constexpr auto char_bits = static_cast<char>(0xff);
+  constexpr unsigned shift_step = 6;
+  constexpr std::uint32_t unicode_unrecognised_character = 0xfffd;
+  std::uint32_t c = 0;
 
   if ((*end & top_bit) == 0) {
+    c = *end;
     ++end;  // NOLINT
   }
   else {
-    do {
-      ++end;  // NOLINT
-    } while (end != line_end_ && (*end & cont_mask) == top_bit);
+    unsigned bit_count = 0;
+    for (char c2 = *end; (c2 & top_bit) != 0; c2 <<= 1) {
+      ++bit_count;
+    }
+    if (bit_count == 1) {
+      error_manager_.error(ErrorCode::malformed_character_80, Range{next_, 1});
+      c = unicode_unrecognised_character;
+    }
+    else {
+      c = *end & (char_bits >> bit_count);
+      ++end;
+      --bit_count;
+      while (end != line_end_ && bit_count != 0) {
+        c <<= shift_step;
+        c |= *end & ~static_cast<std::uint32_t>(cont_mask);
+        if ((*end & cont_mask) != top_bit) {
+          error_manager_.error(ErrorCode::malformed_character_not_80,
+                               Range{next_, static_cast<std::size_t>(end - next_begin_)});
+          c = unicode_unrecognised_character;
+          bit_count = 0;
+          break;
+        }
+        --bit_count;
+        ++end;
+      }
+      if (bit_count != 0) {
+        error_manager_.error(ErrorCode::malformed_character_early_line_end,
+                             Range{next_, static_cast<std::size_t>(end - next_begin_)});
+        c = unicode_unrecognised_character;
+      }
+    }
   }
 
   auto len = end - next_begin_;
   Range range(next_, len);
-  token_.emplace(TokenType::character, range);
+  token_.emplace(TokenType::character, range, static_cast<char32_t>(c));
 
   next_ = next_ + static_cast<Column>(len);
   next_begin_ = end;

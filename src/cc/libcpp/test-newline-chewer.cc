@@ -60,7 +60,9 @@ TEST_CASE("GD::CPP::NewLineChewer - Missing new line", "[cpp][new-line-chewer]")
   REQUIRE(os.str().empty());
   GD::CPP::Token const& t3 = tokenizer.peek();
   GD::CPP::Range r3 = t3.range();
-  REQUIRE(t3.type() == GD::CPP::TokenType::end_of_line);
+  REQUIRE(t3.type() == GD::CPP::TokenType::character);
+  REQUIRE(t3.character() == U'\n');
+  REQUIRE(t3 == U'\n');
   REQUIRE(file_store.physical_filename(r3.begin()) == fname);
   auto errs{os.str()};
   REQUIRE(!errs.empty());
@@ -97,7 +99,9 @@ TEST_CASE("GD::CPP::NewLineChewer - new line", "[cpp][new-line-chewer]")
   REQUIRE(os.str().empty());
   GD::CPP::Token const& t3 = tokenizer.peek();
   GD::CPP::Range r3 = t3.range();
-  REQUIRE(t3.type() == GD::CPP::TokenType::end_of_line);
+  REQUIRE(t3.type() == GD::CPP::TokenType::character);
+  REQUIRE(t3.character() == U'\n');
+  REQUIRE(t3 == U'\n');
   REQUIRE(file_store.physical_filename(r3.begin()) == fname);
 
   tokenizer.chew();
@@ -132,7 +136,9 @@ TEST_CASE("GD::CPP::NewLineChewer - splice at eof is an error", "[cpp][new-line-
   tokenizer.chew();
   GD::CPP::Token const& t3 = tokenizer.peek();
   GD::CPP::Range r3 = t3.range();
-  REQUIRE(t3.type() == GD::CPP::TokenType::end_of_line);
+  REQUIRE(t3.type() == GD::CPP::TokenType::character);
+  REQUIRE(t3.character() == U'\n');
+  REQUIRE(t3 == U'\n');
   REQUIRE(file_store.physical_filename(r3.begin()) == fname);
   auto errs{os.str()};
   REQUIRE(!errs.empty());
@@ -175,7 +181,9 @@ TEST_CASE("GD::CPP::NewLineChewer - splice working", "[cpp][new-line-chewer]")
   tokenizer.chew();
   GD::CPP::Token const& t3 = tokenizer.peek();
   GD::CPP::Range r3 = t3.range();
-  REQUIRE(t3.type() == GD::CPP::TokenType::end_of_line);
+  REQUIRE(t3.type() == GD::CPP::TokenType::character);
+  REQUIRE(t3.character() == U'\n');
+  REQUIRE(t3 == U'\n');
   REQUIRE(file_store.physical_filename(r3.begin()) == fname);
 
   tokenizer.chew();
@@ -223,7 +231,9 @@ TEST_CASE("GD::CPP::NewLineChewer - not a splice", "[cpp][new-line-chewer]")
   tokenizer.chew();
   GD::CPP::Token const& t3 = tokenizer.peek();
   GD::CPP::Range r3 = t3.range();
-  REQUIRE(t3.type() == GD::CPP::TokenType::end_of_line);
+  REQUIRE(t3.type() == GD::CPP::TokenType::character);
+  REQUIRE(t3.character() == U'\n');
+  REQUIRE(t3 == U'\n');
   REQUIRE(file_store.physical_filename(r3.begin()) == fname);
 
   tokenizer.chew();

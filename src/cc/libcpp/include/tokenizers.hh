@@ -171,6 +171,7 @@ private:
     while (true) {
       Token const& t = parent.peek();
       Range r = t.range();
+
       if (t == TokenType::end_of_include) {
         /* As long as everything is OK we just chew the end of an include, as this is the only place
          * it makes a difference.  */
@@ -183,32 +184,28 @@ private:
         case NewLineState::after_splice:
           error_manager_.error(ErrorCode::splice_followed_by_end_of_file, r);
           newline_state_ = NewLineState::after_newline;
-          return Token{TokenType::end_of_line, r};
+          return Token{TokenType::character, r, U'\n'};
         case NewLineState::normal:
           error_manager_.error(ErrorCode::splice_followed_by_end_of_file, r);
           newline_state_ = NewLineState::after_newline;
-          return Token{TokenType::end_of_line, r};
+          return Token{TokenType::character, r, U'\n'};
         default:
           assert_ice(false, "Unexpected value in switch.");
         }
       }
 
-      if (t == TokenType::character && r.size() == 1) {
-        char c = *parent.range_begin(r);
-        if (c == '\n') {
-          /* Convert a new-line to a end_of_line token. */
-          parent.chew();
+      if (t == TokenType::character) {
+        if (t == U'\n') {
           newline_state_ = NewLineState::after_newline;
-          return Token{TokenType::end_of_line, r};
+          return std::nullopt;
         }
 
-        if (c == '\\') {
+        if (t == U'\\') {
           Token pending{t};
           /* See if we have a splice. */
           parent.chew();
           Token const& t2 = parent.peek();
-          Range r2 = t2.range();
-          if (t2 == TokenType::character && r2.size() == 1 && *parent.range_begin(r2) == '\n') {
+          if (t2 == U'\n') {
             parent.chew();
             newline_state_ = NewLineState::after_splice;
             continue;
