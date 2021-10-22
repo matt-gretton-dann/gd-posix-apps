@@ -44,4 +44,15 @@ tester.run_test(
         r"^\(command line\):0:0:.0002:Serious Error:.*$"),
     expected_rc=1)
 
+# Trigraph tester
+input2 = tester.input_file("5_2_1_1-trigraph-sequences.c")
+expected2 = tester.input_file("5_2_1_1-trigraph-sequences.expected")
+with open(expected2, "r") as f:
+    expected_output2 = f.read()
+tester.run_test(
+    [tester.exe(), input2],
+    test_name="cc -E 5_2_1_1-trigraph-sequences.c",
+    expected_stdout=expected_output2,
+    expected_stderr=None)
+
 tester.summarize()

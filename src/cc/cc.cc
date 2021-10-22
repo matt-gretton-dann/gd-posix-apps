@@ -18,15 +18,12 @@
 namespace {
 void dump_tokens(GD::CPP::FileStore& file_store, GD::CPP::ErrorManager& em)
 {
-  auto tokenizer = GD::CPP::NewLineChewer(file_store, em);
+  auto trigraph_tokenizer = GD::CPP::TrigraphParser(file_store, em);
+  auto tokenizer = GD::CPP::NewLineChewer(trigraph_tokenizer, em);
 
   while (tokenizer.peek() != GD::CPP::TokenType::end_of_source) {
     auto const& token = tokenizer.peek();
     switch (token.type()) {
-    case GD::CPP::TokenType::character:
-      std::copy(file_store.range_begin(token.range()), file_store.range_end(token.range()),
-                std::ostream_iterator<char>(std::cout));
-      break;
     case GD::CPP::TokenType::end_of_include:
     case GD::CPP::TokenType::end_of_source:
       break;
