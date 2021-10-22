@@ -74,6 +74,15 @@ public:
    */
   constexpr Range(Location begin, std::size_t len) noexcept : begin_(begin), len_(len) {}
 
+  /** \brief  Create a range
+   *  \param begin  First location in range
+   *  \param end    Location one past end of range.
+   */
+  constexpr Range(Location begin, Location end) noexcept
+      : begin_(begin), len_(static_cast<std::size_t>(end) - static_cast<std::size_t>(begin))
+  {
+  }
+
   /** \brief  Get the beginning of a range.
    *  \return Range beginning
    */
