@@ -14,7 +14,8 @@ set_warnings(libcpp)
 target_sources(libcpp PRIVATE
     error.cc
     file-store.cc
-    token.cc)
+    token.cc
+    trigraph-parser.cc)
 target_sources(libcpp PRIVATE
     include/error.hh
     include/file-store.hh
@@ -38,7 +39,8 @@ if(RUN_UNIT_TESTS)
                  test-file-store.cc
                  test-location.cc
                  test-libcpp-main.cc
-                 test-newline-chewer.cc)
+                 test-newline-chewer.cc
+                 test-trigraph-parser.cc)
   target_add_clang_format(test-libcpp)
   catch_discover_tests(test-libcpp PROPERTIES FIXTURES_REQUIRED testutil_setup EXTRA_ARGS "-s")
 endif()
