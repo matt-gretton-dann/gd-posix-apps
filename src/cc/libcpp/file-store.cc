@@ -102,6 +102,7 @@ void GD::CPP::FileStore::peek_character()
     if (bit_count == 1) {
       error_manager_.error(ErrorCode::malformed_character_80, Range{next_, 1});
       c = unicode_unrecognised_character;
+      ++end;
     }
     else {
       c = *end & (char_bits >> bit_count);
