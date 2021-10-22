@@ -104,6 +104,12 @@
         "id": 7,
         "description": "We have a malformed UTF-8 character, ran out of continuation characters before the end of the line.",
         "C": "Malformed UTF-8 character.  Not enough continuation characters before the end of the line."
+      },
+      {
+        "msg": "trigraph_replacement",
+        "id": 8,
+        "description": "We have replaced the trigraph character sequence '??{0}' with {1}, this may be a surprise.  How this happens is described in C2018-5.1.1.2-1-1 and C2018-5.2.1.1-1.",
+        "C": "Trigraph character sequence encountered.  '??{0}' has been replaced by '{1}' (see C2018-5.1.1.2-1-1 and C2018-5.2.1.1-1).  This behaviour is deprecated, and not applied in C++20."
       }
     ]
   }
