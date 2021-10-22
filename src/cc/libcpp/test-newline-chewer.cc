@@ -17,8 +17,7 @@ TEST_CASE("GD::CPP::NewLineChewer - Empty include", "[cpp][new-line-chewer]")
 {
   /* Check that we don't error on an empty file.
    */
-  std::string errs;
-  std::ostringstream os(errs);
+  std::ostringstream os;
   GD::CPP::ErrorManager error_manager(os);
   GD::CPP::FileStore file_store(error_manager);
   error_manager.file_store(file_store);
@@ -33,7 +32,7 @@ TEST_CASE("GD::CPP::NewLineChewer - Empty include", "[cpp][new-line-chewer]")
   GD::CPP::Range r = t.range();
   REQUIRE(t.type() == GD::CPP::TokenType::end_of_source);
   REQUIRE(file_store.physical_filename(r.begin()) == "(command line)");
-  REQUIRE(errs.empty());
+  REQUIRE(os.str().empty());
 }
 
 TEST_CASE("GD::CPP::NewLineChewer - Missing new line", "[cpp][new-line-chewer]")
