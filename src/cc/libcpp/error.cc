@@ -60,13 +60,14 @@ void GD::CPP::ErrorManager::max_error_count(std::uint32_t max_error_count)
 
 void GD::CPP::ErrorManager::do_error(ErrorCode code, Range range, std::string msg)
 {
-  if (error_count_++ >= max_error_count_) {
+  auto severity = get_severity(code);
+
+  if (severity == ErrorSeverity::error && ++error_count_ > max_error_count_) {
     code = ErrorCode::too_many_errors;
     msg = GD::Cc::Messages::get().format(GD::Cc::Set::errors, code, max_error_count_);
   }
 
   auto id = get_id(code);
-  auto severity = get_severity(code);
   auto loc = range.begin();
   std::string fname = file_store_ != nullptr ? file_store_->logical_filename(loc) : "??";
   Line line = file_store_ != nullptr ? file_store_->logical_line(loc) : Line{0};
