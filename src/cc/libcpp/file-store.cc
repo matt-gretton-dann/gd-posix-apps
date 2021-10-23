@@ -4,7 +4,7 @@
  *          SPDX-License-Identifier: Apache-2.0
  */
 
-#include "file-store.hh"
+#include "gd/nl_types.h"
 
 #include <cstdint>
 #include <fstream>

@@ -4,9 +4,10 @@
  *          SPDX-License-Identifier: Apache-2.0
  */
 
-#include "token.hh"
+#include "gd/nl_types.h"
 
 #include "error.hh"
+#include "token.hh"
 
 GD::CPP::Token::Token(TokenType type, Range range) : range_(range), type_(type)  // NOLINT
 {
