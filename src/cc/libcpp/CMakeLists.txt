@@ -20,6 +20,7 @@ target_sources(libcpp PRIVATE
     include/error.hh
     include/file-store.hh
     include/location.hh
+    include/preprocessor-tokenizer.hh
     include/simple-tokenizers.hh
     include/token.hh
     include/tokenizer.hh)
@@ -41,6 +42,7 @@ if(RUN_UNIT_TESTS)
                  test-location.cc
                  test-libcpp-main.cc
                  test-newline-chewer.cc
+                 test-preprocessor-tokenizer.cc
                  test-trigraph-parser.cc)
   target_add_clang_format(test-libcpp)
   catch_discover_tests(test-libcpp PROPERTIES FIXTURES_REQUIRED testutil_setup EXTRA_ARGS "-s")
