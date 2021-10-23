@@ -42,13 +42,13 @@ public:
   /** \brief    Construct the error manager
    *  \param os Stream to output errors on.
    */
-  ErrorManager(std::ostream& os);
+  explicit ErrorManager(std::ostream& os);
 
   ErrorManager() = delete;
   ErrorManager(ErrorManager const&) = delete;
-  ErrorManager(ErrorManager&&) noexcept = default;
+  ErrorManager(ErrorManager&&) noexcept = delete;
   auto operator=(ErrorManager const&) -> ErrorManager& = delete;
-  auto operator=(ErrorManager&&) noexcept -> ErrorManager& = default;
+  auto operator=(ErrorManager&&) noexcept -> ErrorManager& = delete;
   ~ErrorManager() = default;
 
   /** \brief Report an internal compiler error.
@@ -97,13 +97,20 @@ private:
    */
   void do_error(ErrorCode code, Range range, std::string msg);
 
-  std::ostream& os_;                     ///< Output stream for errors
-  FileStore* file_store_ = nullptr;      ///< File store to use to find locations.
-  std::uint32_t error_count_ = 0;        ///< Number of errors produced
-  std::uint32_t max_error_count_ = 128;  ///< Maximum number of errors
+  constexpr static std::uint32_t default_max_error_count_ = 128;
+
+  std::ostream& os_;                 ///< Output stream for errors
+  FileStore* file_store_ = nullptr;  ///< File store to use to find locations.
+  std::uint32_t error_count_ = 0;    ///< Number of errors produced
+  std::uint32_t max_error_count_ = default_max_error_count_;  ///< Maximum number of errors
 };
 }  // namespace GD::CPP
 
+/** \brief       assert() equivalent that ICE's on failure
+ *  \param CHECK Boolean expression to check
+ *  \param MSG   Message to help understand the check.
+ */
+// NOLINTNEXTLINE
 #define assert_ice(CHECK, MSG)                                                                     \
   if (!(CHECK)) {                                                                                  \
     ::GD::CPP::ErrorManager::ice("Assertion failed in {0} line {1}: {2}\nExplanation: {3}\n",      \
@@ -115,9 +122,9 @@ private:
 template<>
 struct fmt::formatter<GD::CPP::ErrorSeverity>
 {
-  constexpr auto parse(format_parse_context& ctx)
+  static constexpr auto parse(format_parse_context& ctx)
   {
-    auto it = ctx.begin();
+    auto it = ctx.begin();  // NOLINT
     for (; it != ctx.end(); ++it) {
       switch (*it) {
       case '}':

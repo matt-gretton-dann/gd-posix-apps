@@ -41,13 +41,13 @@ public:
   /** \brief               Construct a file store
    *  \param error_manager Error Manager to use for error generation.
    */
-  FileStore(ErrorManager& error_manager);
+  explicit FileStore(ErrorManager& error_manager);
 
   FileStore() = delete;
   FileStore(FileStore const&) = delete;
-  FileStore(FileStore&&) noexcept = default;
+  FileStore(FileStore&&) noexcept = delete;
   auto operator=(FileStore const&) -> FileStore& = delete;
-  auto operator=(FileStore&&) noexcept -> FileStore& = default;
+  auto operator=(FileStore&&) noexcept -> FileStore& = delete;
   ~FileStore() = default;
 
   /** \brief  Peek the next token from the token stream.
@@ -115,7 +115,7 @@ public:
    *
    * Empty string is returned if there is no source code for a given location.
    */
-  auto line(Location loc) const -> std::string const&;
+  [[nodiscard]] auto line(Location loc) const -> std::string const&;
 
   /** \brief        Get the physical souce code line that contains the range.
    *  \param  range Range
@@ -123,7 +123,7 @@ public:
    *
    * An empty string is returned if there is no source code for the range.
    */
-  auto line(Range range) const -> std::string const&;
+  [[nodiscard]] auto line(Range range) const -> std::string const&;
 
   /** \brief        Get a 'caret' string that highlights a range of code.
    *  \param  range Range to highlight
@@ -138,67 +138,67 @@ public:
    * std::cout << line(range) << caret(range);
    * \endcode
    */
-  auto caret(Range range) const -> std::string;
+  [[nodiscard]] auto caret(Range range) const -> std::string;
 
   /** \brief        Get an iterator to the first character in a range.
    *  \param  range Range to query
    *  \return       Iterator to beginning of range.
    */
-  auto range_begin(Range range) const -> std::string::const_iterator;
+  [[nodiscard]] auto range_begin(Range range) const -> std::string::const_iterator;
 
   /** \brief        Get an iterator to one past the end of a character in a range.
    *  \param  range Range to query
    *  \return       Iterator to beginning of range.
    */
-  auto range_end(Range range) const -> std::string::const_iterator;
+  [[nodiscard]] auto range_end(Range range) const -> std::string::const_iterator;
 
   /** \brief      Is a location in the top-level?
    *  \param  loc Location
    *  \return     True iff \a loc is a location.
    */
-  auto is_top_level(Location loc) const noexcept -> bool;
+  [[nodiscard]] auto is_top_level(Location loc) const noexcept -> bool;
 
   /** \brief      Get the parent location of a given location.
    *  \param  loc Location
    *  \return     Paremt location.  Top-level location returns itself.
    */
-  auto parent_location(Location loc) const noexcept -> Location;
+  [[nodiscard]] auto parent_location(Location loc) const noexcept -> Location;
 
   /** \brief      Get the logical filename for a given location.
    *  \param  loc Location
    *  \return     Filename, or empty.
    */
-  auto logical_filename(Location loc) const noexcept -> std::string const&;
+  [[nodiscard]] auto logical_filename(Location loc) const noexcept -> std::string const&;
 
   /** \brief      Get the logical line number for a given location.
    *  \param  loc Location
    *  \return     1-based Line number, 0 if location is illegal.
    */
-  auto logical_line(Location loc) const noexcept -> Line;
+  [[nodiscard]] auto logical_line(Location loc) const noexcept -> Line;
 
   /** \brief      Get the logical column for a given location.
    *  \param  loc Location
    *  \return     Column number, starting at 1 for the first column. 0 if illegal location.
    */
-  auto logical_column(Location loc) const noexcept -> Column;
+  [[nodiscard]] auto logical_column(Location loc) const noexcept -> Column;
 
   /** \brief      Get the physical filename for a given location.
    *  \param  loc Location
    *  \return     Filename, or empty.
    */
-  auto physical_filename(Location loc) const noexcept -> std::string const&;
+  [[nodiscard]] auto physical_filename(Location loc) const noexcept -> std::string const&;
 
   /** \brief      Get the logical line number for a given location.
    *  \param  loc Location
    *  \return     1-based Line number, 0 if location is illegal.
    */
-  auto physical_line(Location loc) const noexcept -> Line;
+  [[nodiscard]] auto physical_line(Location loc) const noexcept -> Line;
 
   /** \brief      Get the logical column for a given location.
    *  \param  loc Location
    *  \return     Column number, starting at 1 for the first column. 0 if illegal location.
    */
-  auto physical_column(Location loc) const noexcept -> Column;
+  [[nodiscard]] auto physical_column(Location loc) const noexcept -> Column;
 
 private:
   /** \brief  Information about a particular line of code.
@@ -225,6 +225,10 @@ private:
   struct LocationDetails
   {
     LocationDetails() = default;
+    LocationDetails(LocationDetails const&) = default;
+    LocationDetails(LocationDetails&&) noexcept = default;
+    auto operator=(LocationDetails const&) -> LocationDetails& = default;
+    auto operator=(LocationDetails&&) noexcept -> LocationDetails& = default;
 
     /** \brief Destructor.  */
     ~LocationDetails();
@@ -234,19 +238,24 @@ private:
      *  \return     Line number associated with the location, or \c illegal_line if location isn't
      *              in the range for this object.
      */
-    auto find_line(Location loc) const -> Line;
+    [[nodiscard]] auto find_line(Location loc) const -> Line;
 
     /** \brief      Find the line details associated with a given location.
      *  \param  loc Location to query.
      *  \return     Line details associated with the location, or \c nullptr if location isn't
      *              in the range for this object.
      */
-    auto find_line_details(Location loc) const -> LineDetails const*;
+    [[nodiscard]] auto find_line_details(Location loc) const -> LineDetails const*;
 
-    Location begin_;                          ///< Location of the first character in the file
-    Location end_;                            ///< One past end location of this file.
-    std::size_t physical_file_;               ///< Physical File ID.
+    // NOLINTNEXTLINE
+    Location begin_{0};                       ///< Location of the first character in the file
+                                              // NOLINTNEXTLINE
+    Location end_{0};                         ///< One past end location of this file.
+                                              // NOLINTNEXTLINE
+    std::size_t physical_file_{0};            ///< Physical File ID.
+                                              // NOLINTNEXTLINE
     std::vector<LineDetails> lines_;          ///< Details for each line.
+                                              // NOLINTNEXTLINE
     std::vector<LocationDetails*> children_;  ///< Details for each child.
   };
 
@@ -256,11 +265,15 @@ private:
     /** \brief  Construct stack entry.
      *  \param loc_details Location details for current included file
      */
-    LocationStack(LocationDetails& loc_details);
+    explicit LocationStack(LocationDetails& loc_details);
 
+    // NOLINTNEXTLINE
     LocationDetails& loc_details_;  ///< Location details of include file
+                                    // NOLINTNEXTLINE
     Line physical_line_;            ///< Next physical line
+                                    // NOLINTNEXTLINE
     std::size_t logical_file_;      ///< Logical File of the next line
+                                    // NOLINTNEXTLINE
     Line logical_line_;             ///< Logical line number of the next line.
   };
 
@@ -279,7 +292,7 @@ private:
    *  \param  loc Location to look up.
    *  \return     Location details.
    */
-  auto find_loc_details(Location loc) const -> LocationDetails const&;
+  [[nodiscard]] auto find_loc_details(Location loc) const -> LocationDetails const&;
 
   /** \brief  Peek the next token.  */
   void do_peek();

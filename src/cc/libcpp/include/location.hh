@@ -86,17 +86,20 @@ public:
   /** \brief  Get the beginning of a range.
    *  \return Range beginning
    */
-  constexpr auto begin() const noexcept -> Location { return begin_; }
+  [[nodiscard]] constexpr auto begin() const noexcept -> Location { return begin_; }
 
   /** \brief  Get one past the end of the range.
    *  \return Range end
    */
-  constexpr auto end() const noexcept -> Location { return begin_ + static_cast<Column>(len_); }
+  [[nodiscard]] constexpr auto end() const noexcept -> Location
+  {
+    return begin_ + static_cast<Column>(len_);
+  }
 
   /** \brief  Get the length/size a range.
    *  \return Size of a range
    */
-  constexpr auto size() const noexcept -> std::size_t { return len_; }
+  [[nodiscard]] constexpr auto size() const noexcept -> std::size_t { return len_; }
 
 private:
   Location begin_;   ///< Beginning location

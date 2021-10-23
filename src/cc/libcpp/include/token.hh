@@ -60,13 +60,13 @@ public:
   Token(TokenType type, Range range, char32_t c);
 
   /** \brief  Get the token type.  */
-  auto type() const noexcept -> TokenType;
+  [[nodiscard]] auto type() const noexcept -> TokenType;
 
   /** \brief  Get the token range.  */
-  auto range() const noexcept -> Range;
+  [[nodiscard]] auto range() const noexcept -> Range;
 
   /** \brief  Get the character (if type() == TokenType::character).  */
-  auto character() const noexcept -> char32_t;
+  [[nodiscard]] auto character() const noexcept -> char32_t;
 
 private:
   Range range_;     ///< Range
@@ -89,9 +89,9 @@ auto operator==(char32_t c, Token const& token) noexcept -> bool;
 template<>
 struct fmt::formatter<GD::CPP::Token>
 {
-  constexpr auto parse(format_parse_context& ctx)
+  static constexpr auto parse(format_parse_context& ctx)
   {
-    auto it = ctx.begin();
+    auto it = ctx.begin();  // NOLINT
     for (; it != ctx.end(); ++it) {
       switch (*it) {
       case '}':
@@ -117,12 +117,14 @@ struct fmt::formatter<GD::CPP::Token>
     case GD::CPP::TokenType::end_of_include:
       return vformat_to(ctx.out(), "<end-of-include>", fmt::make_format_args());
     case GD::CPP::TokenType::character: {
-      auto& facet = std::use_facet<std::codecvt<char32_t, char, std::mbstate_t>>(std::locale());
+      auto const& facet =
+        std::use_facet<std::codecvt<char32_t, char, std::mbstate_t>>(std::locale());  // NOLINT
       char32_t i = token.character();
       auto mbstate = std::mbstate_t{};
       std::string e(facet.max_length(), '\0');
-      char32_t const* i_next;
-      char* e_next;
+      char32_t const* i_next = nullptr;
+      char* e_next = nullptr;
+      // NOLINTNEXTLINE
       if (facet.out(mbstate, &i, &i + 1, i_next, e.data(), e.data() + e.size(), e_next) ==
           std::codecvt_base::ok) {
         e.resize(e_next - e.data());

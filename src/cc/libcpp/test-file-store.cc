@@ -44,8 +44,8 @@ TEST_CASE("GD::CPP::FileStore - Simple", "[cpp][file-store]")
     REQUIRE(file_store.logical_line(loc) == line);
     REQUIRE(file_store.logical_column(loc) == column);
     REQUIRE(*file_store.range_begin(range) == c);
-    REQUIRE(static_cast<std::uint32_t>(*file_store.range_begin(range)) ==
-            static_cast<std::uint32_t>(t.character()));
+    REQUIRE(static_cast<std::uint32_t>(static_cast<unsigned char>(
+              *file_store.range_begin(range))) == static_cast<std::uint32_t>(t.character()));
     if (c == '\n') {
       line = static_cast<GD::CPP::Line>(static_cast<std::size_t>(line) + 1);
       column = GD::CPP::Column{1};

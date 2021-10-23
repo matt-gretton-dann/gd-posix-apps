@@ -126,26 +126,17 @@ public:
    *  \param  range Range to query
    *  \return       Iterator to beginning of range.
    */
-  auto range_begin(Range range) const -> std::string::const_iterator
+  [[nodiscard]] auto range_begin(Range range) const -> std::string::const_iterator
   {
     return parent_.range_begin(range);
   }
 
-  /** \brief        Get an iterator to one past the end of a character in a range.
-   *  \param  range Range to query
-   *  \return       Iterator to beginning of range.
-   */
-  auto range_end(Range range) const -> std::string::const_iterator
-  {
-    return parent_.range_end(range);
-  }
-
 private:
   friend Impl;
-  Tokenizer(Parent& parent) : parent_(parent), token_(std::nullopt) {}
+  explicit Tokenizer(Parent& parent) : parent_(parent), token_(std::nullopt) {}
 
-  auto impl() noexcept -> Impl* { return static_cast<Impl*>(this); }
-  auto impl() const noexcept -> Impl const* { return static_cast<Impl const*>(this); }
+  [[nodiscard]] auto impl() noexcept -> Impl* { return static_cast<Impl*>(this); }
+  [[nodiscard]] auto impl() const noexcept -> Impl const* { return static_cast<Impl const*>(this); }
 
   Parent& parent_;
   std::optional<Token> token_;
@@ -281,7 +272,7 @@ private:
           newline_state_ = NewLineState::after_newline;
           return Token{TokenType::character, r, U'\n'};
         case NewLineState::normal:
-          error_manager_.error(ErrorCode::splice_followed_by_end_of_file, r);
+          error_manager_.error(ErrorCode::missing_newline_at_end_of_file, r);
           newline_state_ = NewLineState::after_newline;
           return Token{TokenType::character, r, U'\n'};
         default:
