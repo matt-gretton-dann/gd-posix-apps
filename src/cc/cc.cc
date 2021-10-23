@@ -14,6 +14,7 @@
 
 #include "error.hh"
 #include "file-store.hh"
+#include "preprocessor-tokenizer.hh"
 #include "simple-tokenizers.hh"
 #include "token.hh"
 
@@ -21,7 +22,8 @@ namespace {
 void dump_tokens(GD::CPP::FileStore& file_store, GD::CPP::ErrorManager& em)
 {
   auto trigraph_tokenizer = GD::CPP::TrigraphParser(file_store, em);
-  auto tokenizer = GD::CPP::NewLineChewer(trigraph_tokenizer, em);
+  auto slice_tokenizer = GD::CPP::NewLineChewer(trigraph_tokenizer, em);
+  auto tokenizer = GD::CPP::PreprocessorTokenizer(slice_tokenizer, em);
 
   while (tokenizer.peek() != GD::CPP::TokenType::end_of_source) {
     auto const& token = tokenizer.peek();
