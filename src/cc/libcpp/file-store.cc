@@ -19,6 +19,8 @@
 #include <variant>
 #include <vector>
 
+#include "file-store.hh"
+
 namespace {
 /** \brief  Count the number of characters in a string.
  *
@@ -85,13 +87,13 @@ void GD::CPP::FileStore::peek_character()
   auto end = next_begin_;
   constexpr auto top_bit = static_cast<char>(0x80);
   constexpr auto cont_mask = static_cast<char>(0xe0);
-  constexpr auto char_bits = static_cast<char>(0xff);
+  constexpr auto char_bits = static_cast<unsigned char>(0xff);
   constexpr unsigned shift_step = 6;
   constexpr std::uint32_t unicode_unrecognised_character = 0xfffd;
   std::uint32_t c = 0;
 
   if ((*end & top_bit) == 0) {
-    c = *end;
+    c = static_cast<std::uint32_t>(static_cast<unsigned char>(*end));
     ++end;  // NOLINT
   }
   else {
@@ -105,7 +107,7 @@ void GD::CPP::FileStore::peek_character()
       ++end;
     }
     else {
-      c = *end & (char_bits >> bit_count);
+      c = static_cast<unsigned char>(*end) & (char_bits >> bit_count);
       ++end;
       --bit_count;
       while (end != line_end_ && bit_count != 0) {
