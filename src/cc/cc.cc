@@ -14,8 +14,8 @@
 
 #include "error.hh"
 #include "file-store.hh"
+#include "simple-tokenizers.hh"
 #include "token.hh"
-#include "tokenizers.hh"
 
 namespace {
 void dump_tokens(GD::CPP::FileStore& file_store, GD::CPP::ErrorManager& em)

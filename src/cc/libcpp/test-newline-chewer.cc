@@ -13,7 +13,7 @@
 #include "error.hh"
 #include "file-store.hh"
 #include "location.hh"
-#include "tokenizers.hh"
+#include "simple-tokenizers.hh"
 
 TEST_CASE("GD::CPP::NewLineChewer - Empty include", "[cpp][new-line-chewer]")
 {

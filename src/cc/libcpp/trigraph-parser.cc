@@ -6,8 +6,8 @@
 
 #include "gd/nl_types.h"
 
+#include "simple-tokenizers.hh"
 #include "token.hh"
-#include "tokenizers.hh"
 
 auto GD::CPP::Details::trigraph_replacement(Token const& t) noexcept -> char32_t
 {

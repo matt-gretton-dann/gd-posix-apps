@@ -20,8 +20,9 @@ target_sources(libcpp PRIVATE
     include/error.hh
     include/file-store.hh
     include/location.hh
+    include/simple-tokenizers.hh
     include/token.hh
-    include/tokenizers.hh)
+    include/tokenizer.hh)
 #add_dependencies("libcpp" "cc_messages_header")
 target_add_clang_format(libcpp)
 
