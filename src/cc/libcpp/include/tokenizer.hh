@@ -4,6 +4,9 @@
  *          SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef LIBCPP_INCLUDE_TOKENIZER_HH_
+#define LIBCPP_INCLUDE_TOKENIZER_HH_
+
 #include <optional>
 
 #include "error.hh"
@@ -141,3 +144,4 @@ private:
 };
 
 }  // namespace GD::CPP
+#endif  //  LIBCPP_INCLUDE_TOKENIZER_HH_
