@@ -28,6 +28,7 @@ enum class TokenType {
   end_of_source,   ///< End of all source
   end_of_include,  ///< End of a particular file (main file is included from command line)
   character,       ///< Character
+  white_space,     ///< White space
 };
 
 /** \brief  A token
@@ -42,6 +43,7 @@ enum class TokenType {
  * | end_of_source  |           | End of all sources                                               |
  * | end_of_include |           | End of the current source file.                                  |
  * | character      | char32_t  | A character.                                                     |
+ * | white_space    |           | White space.                                                     |
  */
 class Token
 {
@@ -133,6 +135,8 @@ struct fmt::formatter<GD::CPP::Token>
       return vformat_to(ctx.out(), "CHARACTER({0:08x})",
                         fmt::make_format_args(static_cast<uint32_t>(i)));
     }
+    case GD::CPP::TokenType::white_space:
+      return vformat_to(ctx.out(), " ", fmt::make_format_args());
     default:
       return vformat_to(ctx.out(), "UNKNOWN", fmt::make_format_args());
     }
