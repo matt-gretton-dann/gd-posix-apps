@@ -45,7 +45,7 @@ enum class TokenType {
  * | character      | char32_t  | A character.                                                     |
  * | white_space    |           | White space.                                                     |
  */
-class Token
+class Token  // NOLINT
 {
 public:
   /** \brief       Construct a token with no payload

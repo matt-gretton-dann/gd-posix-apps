@@ -1,14 +1,14 @@
-/* clang-format off */
-/* C2018-5.2.1.1 Trigraph sequences. */
+ 
+ 
 # ] |
 [ ^ }
 \ { ~
 
-/* EXAMPLE 1 */
+ 
 #define arraycheck(a, b) a[b] || b[a]
 
-/* EXAMPLE 2 */
+ 
 printf("Eh?\n");
 
-/* Test line splicing interactions: */
+ 
 ab
