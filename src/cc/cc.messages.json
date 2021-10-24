@@ -110,6 +110,18 @@
         "id": 8,
         "description": "We have replaced the trigraph character sequence '??{0}' with {1}, this may be a surprise.  How this happens is described in C2018-5.1.1.2-1-1 and C2018-5.2.1.1-1.",
         "C": "Trigraph character sequence encountered.  '??{0}' has been replaced by '{1}' (see C2018-5.1.1.2-1-1 and C2018-5.2.1.1-1).  This behaviour is deprecated, and not applied in C++20."
+      },
+      {
+        "msg": "unterminated_line_comment",
+        "id": 9,
+        "description": "A line comment (//) has not been terminated by a newline character.  Usually by end of include or source.  This should not occur in normal use, as the NewlineChewer would have ensured we have newlines at end of lines.",
+        "C": "Line comment (// ...) needs a terminating newline."
+      },
+      {
+        "msg": "unterminated_multiline_comment",
+        "id": 10,
+        "description": "A multi-line comment (/* */) has not been terminated before the end of a file.",
+        "C": "Multi-line commnet (/* */) has not been terminated correctly."
       }
     ]
   }

@@ -36,6 +36,8 @@ std::map<GD::CPP::ErrorCode, GD::CPP::ErrorSeverity> severities = {
   {EC::malformed_character_not_80, ES::error},
   {EC::malformed_character_early_line_end, ES::error},
   {EC::trigraph_replacement, ES::warning},
+  {EC::unterminated_line_comment, ES::error},
+  {EC::unterminated_multiline_comment, ES::error},
 };
 
 auto get_severity(GD::CPP::ErrorCode code) -> GD::CPP::ErrorSeverity
