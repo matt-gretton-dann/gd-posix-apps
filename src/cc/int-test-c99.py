@@ -45,14 +45,15 @@ tester.run_test(
     expected_rc=1)
 
 # Trigraph tester
-input2 = tester.input_file("5_2_1_1-trigraph-sequences.c")
-expected2 = tester.input_file("5_2_1_1-trigraph-sequences.expected")
-with open(expected2, "r") as f:
-    expected_output2 = f.read()
-tester.run_test(
-    [tester.exe(), input2],
-    test_name="cc -E 5_2_1_1-trigraph-sequences.c",
-    expected_stdout=expected_output2,
-    expected_stderr=None)
+for test in ["5_2_1_1-trigraph-sequences", "6_4_9-comments"]:
+    input = tester.input_file(f"{test}.c")
+    expected = tester.input_file(f"{test}.expected")
+    with open(expected, "r") as f:
+        expected_output = f.read()
+    tester.run_test(
+        [tester.exe(), input],
+        test_name=f"cc -E {test}.c",
+        expected_stdout=expected_output,
+        expected_stderr=None)
 
 tester.summarize()
