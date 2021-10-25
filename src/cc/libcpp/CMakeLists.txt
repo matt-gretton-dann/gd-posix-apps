@@ -14,11 +14,13 @@ set_warnings(libcpp)
 target_sources(libcpp PRIVATE
     error.cc
     file-store.cc
+    identifier-manager.cc
     token.cc
     trigraph-parser.cc)
 target_sources(libcpp PRIVATE
     include/error.hh
     include/file-store.hh
+    include/identifier-manager.hh
     include/location.hh
     include/preprocessor-tokenizer.hh
     include/simple-tokenizers.hh
@@ -39,6 +41,7 @@ if(RUN_UNIT_TESTS)
   set_warnings(test-libcpp)
   target_sources(test-libcpp PRIVATE
                  test-file-store.cc
+                 test-identifier-manager.cc
                  test-location.cc
                  test-libcpp-main.cc
                  test-newline-chewer.cc
