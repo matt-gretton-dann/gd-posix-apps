@@ -14,11 +14,9 @@
 #include <cstdint>
 #include <iostream>
 #include <string>
-#include <unordered_map>
 #include <utility>
-#include <vector>
 
-#include "location.hh"
+#include "id-map.hh"
 
 namespace GD::CPP {
 
@@ -64,8 +62,7 @@ public:
   [[nodiscard]] auto display_name(IdentID id) const -> std::string;
 
 private:
-  std::unordered_map<std::u32string, IdentID> id_map_;  ///< Mapping from string to ID
-  std::vector<std::u32string> ids_;                     ///< Vector of strings.  ID is index.
+  IdMap<IdentID> map_;  ///< Identifier map
 };
 
 }  // namespace GD::CPP

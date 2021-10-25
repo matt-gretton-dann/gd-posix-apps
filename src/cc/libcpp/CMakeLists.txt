@@ -20,6 +20,7 @@ target_sources(libcpp PRIVATE
 target_sources(libcpp PRIVATE
     include/error.hh
     include/file-store.hh
+    include/id-map.hh
     include/identifier-manager.hh
     include/location.hh
     include/preprocessor-tokenizer.hh
