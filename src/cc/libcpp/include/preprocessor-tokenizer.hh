@@ -23,6 +23,13 @@ constexpr inline auto is_whitespace(char32_t c) -> bool
   return c == U' ' || c == U'\t' || c == U'\f' || c == U'\v';
 }
 
+/** \brief  Is this a valid UCN character? */
+constexpr inline auto is_ucn(char32_t c) -> bool
+{
+  return c == U'\u0024' || c == U'\u0040' || c == U'\u0060' || (c >= U'\u00a0' && c <= U'\ud7ff') ||
+         c >= U'\ue000';
+}
+
 /** \brief  Is this a valid Universal Character name identifier?  */
 constexpr inline auto is_ucn_identifier(char32_t c) -> bool
 {
@@ -73,34 +80,40 @@ constexpr inline auto is_digit(char32_t c) -> bool
 {
   /* This range check is safe because char32_t is a Unicode encoded set where A-Z & a-z are
    * contiguous.  */
-  return c >= '0' && c <= '9';
+  return c >= U'0' && c <= U'9';
 }
 
 constexpr inline auto is_hex_digit(char32_t c) -> bool
 {
-  return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f');
+  return (c >= U'0' && c <= U'9') || (c >= U'A' && c <= U'F') || (c >= U'a' && c <= U'f');
 }
 
 constexpr inline auto hex_digit_value(char32_t c) -> unsigned
 {
   constexpr unsigned offset = 10;
-  if (c >= '0' && c <= '9') {
-    return c - '0';
+  if (c >= U'0' && c <= U'9') {
+    return c - U'0';
   }
-  if (c >= 'A' && c <= 'F') {
-    return c - 'A' + offset;
+  if (c >= U'A' && c <= U'F') {
+    return c - U'A' + offset;
   }
-  if (c >= 'a' && c <= 'f') {
-    return c - 'a' + offset;
+  if (c >= U'a' && c <= U'f') {
+    return c - U'a' + offset;
   }
 
   return std::numeric_limits<unsigned>::max();
 }
 
+constexpr inline auto is_sign(char32_t c) -> bool { return c == U'+' || c == U'-'; }
+
 }  // namespace Details
 
 /** \brief         Preprocessor tokenizer
  *  \tparam Parent Parent class type to call to get tokens.
+ *  \param  parent Parent tokenizer
+ *  \param  em     Error manager
+ *  \param  id     Identifier manager
+ *  \param  ppm    PPNumber manager
  *
  * Parses everything into one of the preprocessing-tokens.  Will also generate white_space tokens.
  *
@@ -110,9 +123,10 @@ template<typename Parent>
 class PreprocessorTokenizer : public Tokenizer<PreprocessorTokenizer<Parent>, Parent>
 {
 public:
-  PreprocessorTokenizer(Parent& parent, ErrorManager& em, IdentifierManager& id)
+  PreprocessorTokenizer(Parent& parent, ErrorManager& em, IdentifierManager& id,
+                        PPNumberManager& ppm)
       : Tokenizer<PreprocessorTokenizer<Parent>, Parent>(parent), error_manager_(em),
-        identifier_manager_(id)
+        identifier_manager_(id), ppnumber_manager_(ppm)
   {
   }
 
@@ -253,6 +267,13 @@ private:
     return {TokenType::white_space, Range{begin, end}};
   }
 
+  /** \brief         Read hex digits returning the characters they represent.
+   *  \param  parent Parent tokenizer
+   *  \param  count  Number of digits to read in range [1, 8].
+   *  \return        Character read.
+   *
+   * On entry the parent should point to first character to read.
+   */
   auto read_char32_hex_digits(Parent& parent, unsigned count) -> char32_t
   {
     assert_ice(count > 0 && count < 9, "Can only read up to 8 hex digits.");
@@ -272,6 +293,70 @@ private:
     }
 
     return result;
+  }
+
+  /** \brief         Parse a PP-number.
+   *  \param  parent Parent tokenizer.
+   *  \param  first  First token in PPNumber.
+   *  \return        Token to return.
+   *
+   * parent should point to one past first.
+   */
+  auto parse_ppnumber(Parent& parent, Token const& first) -> Token
+  {
+    assert_ice(first == TokenType::character, "First token must be a character");
+    std::u32string id{};
+    auto begin = first.range().begin();
+    auto end = first.range().end();
+    id.push_back(first.character());
+    bool sign_allowed = false;
+    while (true) {
+      auto const& t = parent.peek();
+      if (t != TokenType::character) {
+        break;
+      }
+      char32_t c = t.character();
+      if (Details::is_ucn_identifier(c)) {
+        error_manager_.error(ErrorCode::explicit_ucn_implementation_defined, t.range(),
+                             to_string(c));
+        parent.chew();
+      }
+      else if (c == U'\\') {
+        Token back_slash{t};
+        parent.chew();
+        if (parent.peek() != U'U' && parent.peek() != U'u') {
+          pending_ = back_slash;
+          break;
+        }
+
+        constexpr unsigned Ulen = 8;
+        constexpr unsigned ulen = 4;
+        unsigned count = parent.peek() == U'U' ? Ulen : ulen;
+        parent.chew();
+        c = read_char32_hex_digits(parent, count);
+        if (!Details::is_ucn_identifier(c)) {
+          /* This is not a UCN identifier, terminate the in-progress ID and return it.  Or if we
+           * have an empty identifier return the character.
+           */
+          pending_.emplace(TokenType::character,
+                           Range{back_slash.range().begin(), parent.peek().range().begin()}, c);
+          break;
+        }
+      }
+      else if (Details::is_digit(c) || Details::is_nondigit(c) || c == U'.' ||
+               (sign_allowed && Details::is_sign(c))) {
+        parent.chew();
+      }
+      else {
+        break;
+      }
+
+      sign_allowed = c == U'E' || c == U'P' || c == U'e' || c == U'p';
+      id.push_back(c);
+      end = t.range().end();
+    }
+
+    return Token{TokenType::ppnumber, Range{begin, end}, ppnumber_manager_.id(id)};
   }
 
   /** \brief         Parse an identifier.
@@ -362,12 +447,27 @@ private:
       if (c == U'\\' || Details::is_nondigit(c) || Details::is_ucn_initial_identifier(c)) {
         return parse_identifier(parent);
       }
+      if (Details::is_digit(c)) {
+        auto first{t};
+        parent.chew();
+        return parse_ppnumber(parent, first);
+      }
+      if (c == U'.') {
+        auto first{t};
+        parent.chew();
+        if (parent.peek() == TokenType::character && Details::is_digit(parent.peek().character())) {
+          return parse_ppnumber(parent, first);
+        }
+
+        return first;
+      }
     }
     return std::nullopt;
   }
 
   ErrorManager& error_manager_;                 ///< Error manager
   IdentifierManager& identifier_manager_;       ///< Identifier manager
+  PPNumberManager& ppnumber_manager_;           ///< PPNumber manager
   std::optional<Token> pending_{std::nullopt};  ///< Pending token
 };
 
