@@ -21,9 +21,10 @@
 namespace {
 void dump_tokens(GD::CPP::FileStore& file_store, GD::CPP::ErrorManager& em)
 {
+  GD::CPP::IdentifierManager id_manager;
   auto trigraph_tokenizer = GD::CPP::TrigraphParser(file_store, em);
   auto slice_tokenizer = GD::CPP::NewLineChewer(trigraph_tokenizer, em);
-  auto tokenizer = GD::CPP::PreprocessorTokenizer(slice_tokenizer, em);
+  auto tokenizer = GD::CPP::PreprocessorTokenizer(slice_tokenizer, em, id_manager);
 
   while (tokenizer.peek() != GD::CPP::TokenType::end_of_source) {
     auto const& token = tokenizer.peek();
@@ -31,8 +32,12 @@ void dump_tokens(GD::CPP::FileStore& file_store, GD::CPP::ErrorManager& em)
     case GD::CPP::TokenType::end_of_include:
     case GD::CPP::TokenType::end_of_source:
       break;
+    case GD::CPP::TokenType::identifier:
+      std::cout << id_manager.display_name(token.identifier());
+      break;
     default:
       std::cout << fmt::format("{0}", token);
+      break;
     }
     tokenizer.chew(token.type());
   }
