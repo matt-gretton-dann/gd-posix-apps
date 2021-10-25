@@ -13,6 +13,7 @@ GD::CPP::Token::Token(TokenType type, Range range) : range_(range), type_(type) 
 {
   assert_ice(type_ != TokenType::character, "character tokens need a char32_t payload");
   assert_ice(type_ != TokenType::identifier, "identifier tokens need an identifier payload");
+  assert_ice(type_ != TokenType::ppnumber, "PPnumber tokens need a PPnumber payload");
 }
 
 // NOLINTNEXTLINE
@@ -25,8 +26,15 @@ GD::CPP::Token::Token(TokenType type, Range range, char32_t c) : range_(range), 
 // NOLINTNEXTLINE
 GD::CPP::Token::Token(TokenType type, Range range, IdentID id) : range_(range), type_(type)
 {
-  assert_ice(type_ == TokenType::identifier, "Only character tokens take a identifier payload");
+  assert_ice(type_ == TokenType::identifier, "Only identifier tokens take a identifier payload");
   payload_.identifier_ = id;  // NOLINT
+}
+
+// NOLINTNEXTLINE
+GD::CPP::Token::Token(TokenType type, Range range, PPNumberID ppn) : range_(range), type_(type)
+{
+  assert_ice(type_ == TokenType::ppnumber, "Only PPNumber tokens take a PPNumber payload");
+  payload_.ppnumber_ = ppn;  // NOLINT
 }
 
 auto GD::CPP::Token::type() const noexcept -> TokenType { return type_; }
@@ -44,6 +52,12 @@ auto GD::CPP::Token::identifier() const noexcept -> IdentID
   assert_ice(type() == TokenType::identifier,
              "identifier() can only be called on identifier Tokens.");
   return payload_.identifier_;  // NOLINT
+}
+
+auto GD::CPP::Token::ppnumber() const noexcept -> PPNumberID
+{
+  assert_ice(type() == TokenType::ppnumber, "ppnumber() can only be called on PPNumber Tokens.");
+  return payload_.ppnumber_;  // NOLINT
 }
 
 auto GD::CPP::operator==(Token const& token, TokenType type) noexcept -> bool

@@ -21,6 +21,7 @@
 #include "error.hh"
 #include "identifier-manager.hh"
 #include "location.hh"
+#include "ppnumber-manager.hh"
 
 namespace GD::CPP {
 
@@ -31,6 +32,7 @@ enum class TokenType {
   character,       ///< Character
   white_space,     ///< White space
   identifier,      ///< An identifier
+  ppnumber,        ///< A PPNumber
 };
 
 /** \brief  A token
@@ -40,13 +42,14 @@ enum class TokenType {
  *
  * Valid token types and the union contents are:
  *
- * | TokenType      | Payload   |  Contents                                                        |
- * | :------------- | :-------- | :---------                                                       |
- * | end_of_source  |           | End of all sources                                               |
- * | end_of_include |           | End of the current source file.                                  |
- * | character      | char32_t  | A character.                                                     |
- * | white_space    |           | White space.                                                     |
- * | identifier     | IdentID   | Identifier                                                       |
+ * | TokenType      | Payload    |  Contents                                                       |
+ * | :------------- | :--------- | :---------                                                      |
+ * | end_of_source  |            | End of all sources                                              |
+ * | end_of_include |            | End of the current source file.                                 |
+ * | character      | char32_t   | A character.                                                    |
+ * | white_space    |            | White space.                                                    |
+ * | identifier     | IdentID    | Identifier.                                                     |
+ * | ppnumber       | PPNumberID | PPNumber.                                                       |
  */
 class Token  // NOLINT
 {
@@ -71,6 +74,13 @@ public:
    */
   Token(TokenType type, Range range, IdentID id);
 
+  /** \brief       Construct a token with a PPNumber
+   *  \param type  Token type(TokenType::ppnumber)
+   *  \param range Source code range for the token.
+   *  \param ppn   PPNumber the token represents
+   */
+  Token(TokenType type, Range range, PPNumberID ppn);
+
   /** \brief  Get the token type.  */
   [[nodiscard]] auto type() const noexcept -> TokenType;
 
@@ -83,13 +93,17 @@ public:
   /** \brief  Get the identifier (if type() == TokenType::identifier).  */
   [[nodiscard]] auto identifier() const noexcept -> IdentID;
 
+  /** \brief  Get the PPNumber (if type() == TokenType::ppnumber).  */
+  [[nodiscard]] auto ppnumber() const noexcept -> PPNumberID;
+
 private:
   Range range_;     ///< Range
   TokenType type_;  ///< Token type
   union
   {
-    char32_t c_;          ///< Character
-    IdentID identifier_;  ///< Identifier
+    char32_t c_;           ///< Character
+    IdentID identifier_;   ///< Identifier
+    PPNumberID ppnumber_;  ///< PPNumber
   } payload_;
 };
 
@@ -139,6 +153,8 @@ struct fmt::formatter<GD::CPP::Token>
       return vformat_to(ctx.out(), " ", fmt::make_format_args());
     case GD::CPP::TokenType::identifier:
       return vformat_to(ctx.out(), "IDENTIFIER({0})", fmt::make_format_args(token.identifier()));
+    case GD::CPP::TokenType::ppnumber:
+      return vformat_to(ctx.out(), "PPNUMBER({0})", fmt::make_format_args(token.identifier()));
     default:
       return vformat_to(ctx.out(), "UNKNOWN", fmt::make_format_args());
     }
