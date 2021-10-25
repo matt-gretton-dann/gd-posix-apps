@@ -15,6 +15,7 @@ target_sources(libcpp PRIVATE
     error.cc
     file-store.cc
     identifier-manager.cc
+    ppnumber-manager.cc
     token.cc
     trigraph-parser.cc)
 target_sources(libcpp PRIVATE
@@ -23,6 +24,7 @@ target_sources(libcpp PRIVATE
     include/id-map.hh
     include/identifier-manager.hh
     include/location.hh
+    include/ppnumber-manager.hh
     include/preprocessor-tokenizer.hh
     include/simple-tokenizers.hh
     include/token.hh
