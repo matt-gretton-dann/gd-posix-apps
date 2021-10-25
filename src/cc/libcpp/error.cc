@@ -38,6 +38,8 @@ std::map<GD::CPP::ErrorCode, GD::CPP::ErrorSeverity> severities = {
   {EC::trigraph_replacement, ES::warning},
   {EC::unterminated_line_comment, ES::error},
   {EC::unterminated_multiline_comment, ES::error},
+  {EC::explicit_ucn_implementation_defined, ES::warning},
+  {EC::not_enough_hex_digits, ES::error},
 };
 
 auto get_severity(GD::CPP::ErrorCode code) -> GD::CPP::ErrorSeverity

@@ -122,6 +122,18 @@
         "id": 10,
         "description": "A multi-line comment (/* */) has not been terminated before the end of a file.",
         "C": "Multi-line commnet (/* */) has not been terminated correctly."
+      },
+      {
+        "msg": "explicit_ucn_implementation_defined",
+        "id": 11,
+        "description": "Using a Unicode character outside the basic character set is implementation defined behaviour. {0} has the character used.  C2018-6.4.2.1.",
+        "C": "The character {0} is not in the basic character set.  Using it directly in an identifier is implementation defined behaviour.  See C2018-6.4.2.1."
+      },
+      {
+        "msg": "not_enough_hex_digits",
+        "id": 12,
+        "description": "We were passing a string of hex digits and there were not as many as expected.  {0} is how many characters were expected {1} is how many we got.",
+        "C": "Not enough hex digits found.  Expected {0} found {1}."
       }
     ]
   }
