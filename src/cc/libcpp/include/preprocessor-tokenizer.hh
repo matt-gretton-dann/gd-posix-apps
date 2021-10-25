@@ -274,6 +274,13 @@ private:
     return result;
   }
 
+  /** \brief         Parse an identifier.
+   *  \param  parent Parent tokenizer.
+   *  \return        Token to pass.
+   *
+   * If the first character being parsed is a '\' may return a character token if it doesn't become
+   * a proper UCN.
+   */
   auto parse_identifier(Parent& parent) -> Token
   {
     std::u32string id{};
@@ -294,6 +301,10 @@ private:
         Token back_slash{t};
         parent.chew();
         if (parent.peek() != U'U' && parent.peek() != U'u') {
+          if (id.empty()) {
+            return back_slash;
+          }
+
           pending_ = back_slash;
           break;
         }
@@ -303,9 +314,19 @@ private:
         unsigned count = parent.peek() == U'U' ? Ulen : ulen;
         parent.chew();
         c = read_char32_hex_digits(parent, count);
-        if (!Details::is_ucn_identifier(c)) {
-          pending_ = Token{TokenType::character,
-                           Range{back_slash.range().begin(), parent.peek().range().begin()}, c};
+        bool valid =
+          id.empty() ? Details::is_ucn_initial_identifier(c) : Details::is_ucn_identifier(c);
+        if (!valid) {
+          /* This is not a UCN identifier, terminate the in-progress ID and return it.  Or if we
+           * have an empty identifier return the character.
+           */
+          auto result = Token{TokenType::character,
+                              Range{back_slash.range().begin(), parent.peek().range().begin()}, c};
+          if (id.empty()) {
+            return result;
+          }
+
+          pending_ = result;
           break;
         }
       }
@@ -338,7 +359,7 @@ private:
       if (Details::is_whitespace(c) || c == U'/') {
         return parse_whitespace_and_slash(parent);
       }
-      if (Details::is_nondigit(c) || Details::is_ucn_initial_identifier(c)) {
+      if (c == U'\\' || Details::is_nondigit(c) || Details::is_ucn_initial_identifier(c)) {
         return parse_identifier(parent);
       }
     }

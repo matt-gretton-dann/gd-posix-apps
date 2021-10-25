@@ -236,3 +236,51 @@ TEST_CASE("GD::CPP::PreprocessorTokenizer - identifier UCN not enough hex",
   REQUIRE(tokenizer.peek() == GD::CPP::TokenType::end_of_source);
   REQUIRE(errs == os.str());
 }
+
+TEST_CASE("GD::CPP::PreprocessorTokenizer - starts UCN", "[cpp][preprocessor-tokenizer]")
+{
+  std::ostringstream os;
+  GD::CPP::ErrorManager error_manager(os);
+  GD::CPP::IdentifierManager id_manager;
+  GD::CPP::FileStore file_store(error_manager);
+  error_manager.file_store(file_store);
+  auto tokenizer = GD::CPP::PreprocessorTokenizer(file_store, error_manager, id_manager);
+
+  auto fname = std::string("Test");
+  auto input = std::string("\\U0001f601z");
+  auto is = std::istringstream(input);
+  tokenizer.push_stream(fname, is);
+
+  REQUIRE(tokenizer.peek() == GD::CPP::TokenType::identifier);
+  REQUIRE(id_manager.display_name(tokenizer.peek().identifier()) == "\\U0001f601z");
+  tokenizer.chew();
+  REQUIRE(tokenizer.peek() == GD::CPP::TokenType::end_of_include);
+  tokenizer.chew();
+  REQUIRE(tokenizer.peek() == GD::CPP::TokenType::end_of_source);
+  REQUIRE(os.str().empty());
+}
+
+TEST_CASE("GD::CPP::PreprocessorTokenizer - starts \\ not UCN", "[cpp][preprocessor-tokenizer]")
+{
+  std::ostringstream os;
+  GD::CPP::ErrorManager error_manager(os);
+  GD::CPP::IdentifierManager id_manager;
+  GD::CPP::FileStore file_store(error_manager);
+  error_manager.file_store(file_store);
+  auto tokenizer = GD::CPP::PreprocessorTokenizer(file_store, error_manager, id_manager);
+
+  auto fname = std::string("Test");
+  auto input = std::string("\\z");
+  auto is = std::istringstream(input);
+  tokenizer.push_stream(fname, is);
+
+  REQUIRE(tokenizer.peek() == U'\\');
+  tokenizer.chew();
+  REQUIRE(tokenizer.peek() == GD::CPP::TokenType::identifier);
+  REQUIRE(id_manager.display_name(tokenizer.peek().identifier()) == "z");
+  tokenizer.chew();
+  REQUIRE(tokenizer.peek() == GD::CPP::TokenType::end_of_include);
+  tokenizer.chew();
+  REQUIRE(tokenizer.peek() == GD::CPP::TokenType::end_of_source);
+  REQUIRE(os.str().empty());
+}
