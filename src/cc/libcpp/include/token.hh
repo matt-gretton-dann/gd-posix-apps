@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "error.hh"
+#include "identifier-manager.hh"
 #include "location.hh"
 
 namespace GD::CPP {
@@ -29,6 +30,7 @@ enum class TokenType {
   end_of_include,  ///< End of a particular file (main file is included from command line)
   character,       ///< Character
   white_space,     ///< White space
+  identifier,      ///< An identifier
 };
 
 /** \brief  A token
@@ -44,6 +46,7 @@ enum class TokenType {
  * | end_of_include |           | End of the current source file.                                  |
  * | character      | char32_t  | A character.                                                     |
  * | white_space    |           | White space.                                                     |
+ * | identifier     | IdentID   | Identifier                                                       |
  */
 class Token  // NOLINT
 {
@@ -61,6 +64,13 @@ public:
    */
   Token(TokenType type, Range range, char32_t c);
 
+  /** \brief       Construct a token with an Identifier
+   *  \param type  Token type(TokenType::identifier)
+   *  \param range Source code range for the token.
+   *  \param id    Identifier the token represents
+   */
+  Token(TokenType type, Range range, IdentID id);
+
   /** \brief  Get the token type.  */
   [[nodiscard]] auto type() const noexcept -> TokenType;
 
@@ -70,12 +80,16 @@ public:
   /** \brief  Get the character (if type() == TokenType::character).  */
   [[nodiscard]] auto character() const noexcept -> char32_t;
 
+  /** \brief  Get the identifier (if type() == TokenType::identifier).  */
+  [[nodiscard]] auto identifier() const noexcept -> IdentID;
+
 private:
   Range range_;     ///< Range
   TokenType type_;  ///< Token type
   union
   {
-    char32_t c_;  ///< Character;
+    char32_t c_;          ///< Character
+    IdentID identifier_;  ///< Identifier
   } payload_;
 };
 
@@ -118,25 +132,13 @@ struct fmt::formatter<GD::CPP::Token>
       return vformat_to(ctx.out(), "<end-of-source>", fmt::make_format_args());
     case GD::CPP::TokenType::end_of_include:
       return vformat_to(ctx.out(), "<end-of-include>", fmt::make_format_args());
-    case GD::CPP::TokenType::character: {
-      auto const& facet =
-        std::use_facet<std::codecvt<char32_t, char, std::mbstate_t>>(std::locale());  // NOLINT
-      char32_t i = token.character();
-      auto mbstate = std::mbstate_t{};
-      std::string e(facet.max_length(), '\0');
-      char32_t const* i_next = nullptr;
-      char* e_next = nullptr;
-      // NOLINTNEXTLINE
-      if (facet.out(mbstate, &i, &i + 1, i_next, e.data(), e.data() + e.size(), e_next) ==
-          std::codecvt_base::ok) {
-        e.resize(e_next - e.data());
-        return vformat_to(ctx.out(), "{0}", fmt::make_format_args(e));
-      }
-      return vformat_to(ctx.out(), "CHARACTER({0:08x})",
-                        fmt::make_format_args(static_cast<uint32_t>(i)));
-    }
+    case GD::CPP::TokenType::character:
+      return vformat_to(ctx.out(), "{0}",
+                        fmt::make_format_args(GD::CPP::to_string(token.character())));
     case GD::CPP::TokenType::white_space:
       return vformat_to(ctx.out(), " ", fmt::make_format_args());
+    case GD::CPP::TokenType::identifier:
+      return vformat_to(ctx.out(), "IDENTIFIER({0})", fmt::make_format_args(token.identifier()));
     default:
       return vformat_to(ctx.out(), "UNKNOWN", fmt::make_format_args());
     }

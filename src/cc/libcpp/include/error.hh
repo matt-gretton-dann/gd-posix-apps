@@ -12,6 +12,7 @@
 #include "cc-messages.hh"
 
 #include <iostream>
+#include <locale>
 #include <utility>
 
 #include "location.hh"
@@ -104,6 +105,27 @@ private:
   std::uint32_t error_count_ = 0;    ///< Number of errors produced
   std::uint32_t max_error_count_ = default_max_error_count_;  ///< Maximum number of errors
 };
+
+/** \brief   To string for a char32_t.  Here as mostly used in debugging.
+ *  \param i Character to convert
+ *  \return  String representing character.
+ */
+inline auto to_string(char32_t i) -> std::string
+{
+  auto const& facet =
+    std::use_facet<std::codecvt<char32_t, char, std::mbstate_t>>(std::locale());  // NOLINT
+  auto mbstate = std::mbstate_t{};
+  std::string e(facet.max_length(), '\0');
+  char32_t const* i_next = nullptr;
+  char* e_next = nullptr;
+  // NOLINTNEXTLINE
+  if (facet.out(mbstate, &i, &i + 1, i_next, e.data(), e.data() + e.size(), e_next) ==
+      std::codecvt_base::ok) {
+    e.resize(e_next - e.data());
+    return e;
+  }
+  return fmt::format("CHARACTER({0:08x})", static_cast<uint32_t>(i));
+}
 }  // namespace GD::CPP
 
 /** \brief       assert() equivalent that ICE's on failure
