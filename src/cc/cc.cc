@@ -14,6 +14,8 @@
 
 #include "error.hh"
 #include "file-store.hh"
+#include "identifier-manager.hh"
+#include "ppnumber-manager.hh"
 #include "preprocessor-tokenizer.hh"
 #include "simple-tokenizers.hh"
 #include "token.hh"
@@ -22,9 +24,10 @@ namespace {
 void dump_tokens(GD::CPP::FileStore& file_store, GD::CPP::ErrorManager& em)
 {
   GD::CPP::IdentifierManager id_manager;
+  GD::CPP::PPNumberManager ppn_manager;
   auto trigraph_tokenizer = GD::CPP::TrigraphParser(file_store, em);
   auto slice_tokenizer = GD::CPP::NewLineChewer(trigraph_tokenizer, em);
-  auto tokenizer = GD::CPP::PreprocessorTokenizer(slice_tokenizer, em, id_manager);
+  auto tokenizer = GD::CPP::PreprocessorTokenizer(slice_tokenizer, em, id_manager, ppn_manager);
 
   while (tokenizer.peek() != GD::CPP::TokenType::end_of_source) {
     auto const& token = tokenizer.peek();
@@ -34,6 +37,9 @@ void dump_tokens(GD::CPP::FileStore& file_store, GD::CPP::ErrorManager& em)
       break;
     case GD::CPP::TokenType::identifier:
       std::cout << id_manager.display_name(token.identifier());
+      break;
+    case GD::CPP::TokenType::ppnumber:
+      std::cout << ppn_manager.display_name(token.ppnumber());
       break;
     default:
       std::cout << fmt::format("{0}", token);
