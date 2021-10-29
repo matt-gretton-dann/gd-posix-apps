@@ -40,6 +40,13 @@ std::map<GD::CPP::ErrorCode, GD::CPP::ErrorSeverity> severities = {
   {EC::unterminated_multiline_comment, ES::error},
   {EC::explicit_ucn_implementation_defined, ES::warning},
   {EC::not_enough_hex_digits, ES::error},
+  {EC::unrecognised_escape_sequence, ES::error},
+  {EC::literal_quote_not_valid_in_character_literal, ES::error},
+  {EC::empty_character_literal_not_valid, ES::error},
+  {EC::newline_not_valid_in_character_literal, ES::error},
+  {EC::too_many_characters_in_character_literal, ES::error},
+  {EC::unterminated_character_literal, ES::fatal_error},
+  {EC::character_literal_out_of_range, ES::error},
 };
 
 auto get_severity(GD::CPP::ErrorCode code) -> GD::CPP::ErrorSeverity

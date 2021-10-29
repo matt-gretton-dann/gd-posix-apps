@@ -134,6 +134,48 @@
         "id": 12,
         "description": "We were passing a string of hex digits and there were not as many as expected.  {0} is how many characters were expected {1} is how many we got.",
         "C": "Not enough hex digits found.  Expected {0} found {1}."
+      },
+      {
+        "msg": "unrecognised_escape_sequence",
+        "id": 13,
+        "description": "The escape sequence \\{0} is not recognised.",
+        "C": "Unrecognised escape sequence: \\{0}."
+      },
+      {
+        "msg": "literal_quote_not_valid_in_character_literal",
+        "id": 14,
+        "description": "A literal quote is not valid in a character literal.",
+        "C": "A literal quote is not valid in a character literal, use \\' instead.  (C2018-6.4.4.4)"
+      },
+      {
+        "msg": "empty_character_literal_not_valid",
+        "id": 15,
+        "description": "A character literal must not be empty. (C2018-6.4.4.4)",
+        "C": "A character literal must not be empty. (C2018-6.4.4.4)"
+      },
+      {
+        "msg": "newline_not_valid_in_character_literal",
+        "id": 16,
+        "description": "A literal newline is not valid in a character literal. (C2018-6.4.4.4)",
+        "C": "A literal newline is not valid in a character literal, use \\n instead. (C2018-6.4.4.4)"
+      },
+      {
+        "msg": "too_many_characters_in_character_literal",
+        "id": 17,
+        "description": "A character literal describes only one character. (C2018-6.4.4.4)",
+        "C": "Too many characters in the character literal. (C2018-6.4.4.4)"
+      },
+      {
+        "msg": "unterminated_character_literal",
+        "id": 18,
+        "description": "Could not find closing ' for character literal.. (C2018-6.4.4.4)",
+        "C": "Could not find closing \\' for character literal. (C2018-6.4.4.4)"
+      },
+      {
+        "msg": "character_literal_out_of_range",
+        "id": 19,
+        "description": "Character literal is out of range.  {0} is value of literal, {1} is max value allowed.",
+        "C": "Character literal is out of range.  Given value '\\x{0:x}' is not in the range [0, 0x{1:x}]."
       }
     ]
   }
