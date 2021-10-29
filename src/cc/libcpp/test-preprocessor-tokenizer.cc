@@ -388,7 +388,9 @@ TEST_CASE("GD::CPP::PreprocessorTokenizer - PPNumber signs", "[cpp][preprocessor
 TEST_CASE("GD::CPP::PreprocessorTokenizer - Character literals", "[cpp][character-tokenizer]")
 {
   auto [prefix, type] =
-    GENERATE(table<std::string, GD::CPP::TokenType>({{"", GD::CPP::TokenType::char_literal}}));
+    GENERATE(table<std::string, GD::CPP::TokenType>({{"", GD::CPP::TokenType::char_literal},
+                                                     {"U", GD::CPP::TokenType::char32_literal},
+                                                     {"u", GD::CPP::TokenType::char16_literal}}));
   auto [in, out] = GENERATE(table<std::string, std::uint32_t>(
     {{"a", U'a'}, {"\\?", U'?'}, {"\\'", U'\''}, {"\\\\", U'\\'}}));
 
@@ -403,6 +405,7 @@ TEST_CASE("GD::CPP::PreprocessorTokenizer - Character literals", "[cpp][characte
 
   auto fname = std::string("Test");
   std::string input = prefix + "'" + in + "'";
+  INFO("Input = " << input);
   auto is = std::istringstream(input);
   tokenizer.push_stream(fname, is);
 

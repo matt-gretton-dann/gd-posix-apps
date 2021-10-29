@@ -361,15 +361,18 @@ private:
 
   /** \brief         Parse an identifier.
    *  \param  parent Parent tokenizer.
-   *  \return        Token to pass.
+   *  \param  id     Already parsed part of identifier
+   *  \param  begin  Location of start of token
+   *  \return        Token to return
    *
    * If the first character being parsed is a '\' may return a character token if it doesn't become
    * a proper UCN.
+   *
+   * Maybe called when we've had to disambiguate a token from being an identifier or something else
+   * (for example: Usa).
    */
-  auto parse_identifier(Parent& parent) -> Token
+  auto parse_identifier(Parent& parent, std::u32string id, Location begin) -> Token
   {
-    std::u32string id{};
-    auto begin = parent.peek().range().begin();
     auto end = begin;
     while (true) {
       auto const& t = parent.peek();
@@ -544,6 +547,48 @@ private:
     return {type, Range{begin, end}, result};
   }
 
+  /** \brief  Parse tokens that begin with a U.  */
+  auto parse_L(Parent& parent) -> Token
+  {
+    assert_ice(parent.peek() == U'L', "L parsing needs to start by pointing at L.");
+    auto begin{parent.peek().range().begin()};
+    parent.chew();
+
+    if (parent.peek() == '\'') {
+      return parse_char_literal(parent, TokenType::wchar_literal, begin);
+    }
+
+    return parse_identifier(parent, U"L", begin);
+  }
+
+  /** \brief  Parse tokens that begin with a U.  */
+  auto parse_U(Parent& parent) -> Token
+  {
+    assert_ice(parent.peek() == U'U', "U parsing needs to start by pointing at U.");
+    auto begin{parent.peek().range().begin()};
+    parent.chew();
+
+    if (parent.peek() == '\'') {
+      return parse_char_literal(parent, TokenType::char32_literal, begin);
+    }
+
+    return parse_identifier(parent, U"U", begin);
+  }
+
+  /** \brief  Parse tokens that begin with a u.  */
+  auto parse_u(Parent& parent) -> Token
+  {
+    assert_ice(parent.peek() == U'u', "u parsing needs to start by pointing at u.");
+    auto begin{parent.peek().range().begin()};
+    parent.chew();
+
+    if (parent.peek() == '\'') {
+      return parse_char_literal(parent, TokenType::char16_literal, begin);
+    }
+
+    return parse_identifier(parent, U"u", begin);
+  }
+
   auto do_peek(Parent& parent) -> std::optional<Token>
   {
     if (pending_) {
@@ -559,14 +604,13 @@ private:
       if (Details::is_whitespace(c) || c == U'/') {
         return parse_whitespace_and_slash(parent);
       }
-      if (c == U'\\' || Details::is_nondigit(c) || Details::is_ucn_initial_identifier(c)) {
-        return parse_identifier(parent);
-      }
+
       if (Details::is_digit(c)) {
         auto first{t};
         parent.chew();
         return parse_ppnumber(parent, first);
       }
+
       if (c == U'.') {
         auto first{t};
         parent.chew();
@@ -576,8 +620,25 @@ private:
 
         return first;
       }
+
       if (c == U'\'') {
         return parse_char_literal(parent, TokenType::char_literal, t.range().begin());
+      }
+
+      if (c == U'L') {
+        return parse_L(parent);
+      }
+
+      if (c == U'U') {
+        return parse_U(parent);
+      }
+
+      if (c == U'u') {
+        return parse_u(parent);
+      }
+
+      if (c == U'\\' || Details::is_nondigit(c) || Details::is_ucn_initial_identifier(c)) {
+        return parse_identifier(parent, U"", parent.peek().range().begin());
       }
     }
     return std::nullopt;
