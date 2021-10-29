@@ -384,3 +384,34 @@ TEST_CASE("GD::CPP::PreprocessorTokenizer - PPNumber signs", "[cpp][preprocessor
   REQUIRE(tokenizer.peek() == GD::CPP::TokenType::end_of_source);
   REQUIRE(os.str().empty());
 }
+
+TEST_CASE("GD::CPP::PreprocessorTokenizer - Character literals", "[cpp][character-tokenizer]")
+{
+  auto [prefix, type] =
+    GENERATE(table<std::string, GD::CPP::TokenType>({{"", GD::CPP::TokenType::char_literal}}));
+  auto [in, out] = GENERATE(table<std::string, std::uint32_t>(
+    {{"a", U'a'}, {"\\?", U'?'}, {"\\'", U'\''}, {"\\\\", U'\\'}}));
+
+  std::ostringstream os;
+  GD::CPP::ErrorManager error_manager(os);
+  GD::CPP::PPNumberManager ppn_manager;
+  GD::CPP::IdentifierManager id_manager;
+  GD::CPP::FileStore file_store(error_manager);
+  error_manager.file_store(file_store);
+  auto tokenizer =
+    GD::CPP::PreprocessorTokenizer(file_store, error_manager, id_manager, ppn_manager);
+
+  auto fname = std::string("Test");
+  std::string input = prefix + "'" + in + "'";
+  auto is = std::istringstream(input);
+  tokenizer.push_stream(fname, is);
+
+  REQUIRE(tokenizer.peek() == type);
+  REQUIRE(tokenizer.peek().is_char_literal());
+  REQUIRE(tokenizer.peek().char_literal() == out);
+  tokenizer.chew();
+  REQUIRE(tokenizer.peek() == GD::CPP::TokenType::end_of_include);
+  tokenizer.chew();
+  REQUIRE(tokenizer.peek() == GD::CPP::TokenType::end_of_source);
+  REQUIRE(os.str().empty());
+}

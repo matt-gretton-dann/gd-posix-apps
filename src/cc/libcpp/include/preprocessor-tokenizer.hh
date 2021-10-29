@@ -429,6 +429,121 @@ private:
     return Token{TokenType::identifier, Range{begin, end}, identifier_manager_.id(id)};
   }
 
+  auto parse_escape_sequence(Parent& parent) -> std::uint32_t
+  {
+    assert_ice(parent.peek() == U'\\', "Escape sequence parsing should point to opening \\.");
+    auto begin = parent.peek().range().begin();
+    parent.chew(TokenType::character);
+
+    auto const& t = parent.peek();
+    if (t == U'\'') {
+      parent.chew();
+      return static_cast<unsigned char>('\'');
+    }
+    if (t == U'\"') {
+      parent.chew();
+      return static_cast<unsigned char>('\"');
+    }
+    if (t == U'\?') {
+      parent.chew();
+      return static_cast<unsigned char>('\?');
+    }
+    if (t == U'\\') {
+      parent.chew();
+      return static_cast<unsigned char>('\\');
+    }
+
+    error_manager_.error(ErrorCode::unrecognised_escape_sequence, Range{begin, t.range().end()}, t);
+    parent.chew();
+    return static_cast<unsigned char>('\\');
+  }
+
+  auto parse_char_literal(Parent& parent, TokenType type, Location begin) -> Token
+  {
+    assert_ice(parent.peek() == U'\'', "Char literal parsing should point to opening \'.");
+    parent.chew(TokenType::character);
+
+    std::uint32_t result = 0;
+    Location end = parent.peek().range().end();
+    auto const& t = parent.peek();
+    if (t == U'\\') {
+      result = parse_escape_sequence(parent);
+    }
+    else if (t == U'\'') {
+      auto end = t.range().end();
+      parent.chew();
+      if (parent.peek() == U'\'') {
+        result = static_cast<unsigned char>('\'');
+        error_manager_.error(ErrorCode::literal_quote_not_valid_in_character_literal,
+                             Range{begin, parent.peek().range().end()});
+      }
+      else {
+        result = 0;
+        error_manager_.error(ErrorCode::empty_character_literal_not_valid,
+                             Range{begin, parent.peek().range().end()});
+        /* Don't want to do any of the other tidy up - just return.  */
+        return {type, Range{begin, end}, std::uint32_t{0}};
+      }
+    }
+    else if (t == U'\n') {
+      result = static_cast<unsigned char>('\n');
+      error_manager_.error(ErrorCode::newline_not_valid_in_character_literal,
+                           Range{begin, parent.peek().range().end()});
+      parent.chew();
+    }
+    else if (t == TokenType::character) {
+      result = static_cast<unsigned char>(t.character());
+      parent.chew();
+      if (parent.peek() != U'\'') {
+        error_manager_.error(ErrorCode::too_many_characters_in_character_literal,
+                             Range{begin, parent.peek().range().end()});
+      }
+    }
+
+    /* Find the closing '.  This may not be the most immediate token if we're in an error condition.
+     */
+    while (parent.peek() != U'\'' && parent.peek() != TokenType::end_of_include &&
+           parent.peek() != TokenType::end_of_source) {
+      parent.chew();
+    }
+
+    if (parent.peek() == TokenType::end_of_include || parent.peek() == TokenType::end_of_source) {
+      error_manager_.error(ErrorCode::unterminated_character_literal,
+                           Range{begin, parent.peek().range().end()});
+    }
+    else {
+      /* Chew the closing quote. */
+      parent.chew();
+    }
+
+    std::uint32_t max{0};
+    switch (type) {
+    case TokenType::char_literal:
+      max = std::numeric_limits<unsigned char>::max();
+      break;
+    case TokenType::char16_literal:
+      max = std::numeric_limits<char16_t>::max();
+      break;
+    case TokenType::char32_literal:
+      max = std::numeric_limits<char32_t>::max();
+      break;
+    case TokenType::wchar_literal:
+      assert_ice(false, "TARGET NOT YET IMPLEMENTED");
+      max = std::numeric_limits<wchar_t>::max();
+      break;
+    default:
+      max = 0;
+      break;
+    }
+
+    if (result > max) {
+      error_manager_.error(ErrorCode::character_literal_out_of_range, Range{begin, end}, result,
+                           max);
+    }
+
+    return {type, Range{begin, end}, result};
+  }
+
   auto do_peek(Parent& parent) -> std::optional<Token>
   {
     if (pending_) {
@@ -460,6 +575,9 @@ private:
         }
 
         return first;
+      }
+      if (c == U'\'') {
+        return parse_char_literal(parent, TokenType::char_literal, t.range().begin());
       }
     }
     return std::nullopt;
