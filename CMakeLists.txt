@@ -94,11 +94,16 @@ else()
 endif()
 
 # Enable IPO support if possible:
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+set(ENABLE_IPO OFF)
+message(STATUS "!! Disabling IPO for debug builds")
+else()
 check_ipo_supported(RESULT ENABLE_IPO OUTPUT IPO_WARNINGS LANGUAGES C CXX)
+endif()
 if (ENABLE_IPO)
 message(STATUS "Inter-procedural optimizations are enabled.")
 else()
-  message(WARNING "Inter-procedural optimizations are not supported for this build.")
+  message(STATUS "!! Inter-procedural optimizations are not supported for this build.")
 endif()
 
 # And recurse to the subdirectories - order here is important.
@@ -106,5 +111,5 @@ add_subdirectory(src)
 add_subdirectory(libgdsup)
 
 # Display summary information
-message("Integration testing: ${RUN_INTEGRATION_TESTS}")
-message("Unit testing: ${RUN_UNIT_TESTS}")
+message(STATUS "Integration testing: ${RUN_INTEGRATION_TESTS}")
+message(STATUS "Unit testing: ${RUN_UNIT_TESTS}")
