@@ -15,7 +15,7 @@ if(MSVC)
 else()
   target_compile_options(${TARGET} PRIVATE -Wall -Wextra -Wpedantic -Werror)
   if (APPLE)
-  target_compile_options(${TARGET} PRIVATE -Wno-gnu-zero-variadic-macro-arguments)
+  target_compile_options(${TARGET} PRIVATE -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations)
   endif()
 endif()
 
