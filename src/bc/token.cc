@@ -68,7 +68,7 @@ auto GD::Bc::Token::type() const -> GD::Bc::Token::Type
                                    [](Letter /*unused*/) { return Type::letter; },
                                    [](ErrorInt const& /*unused*/) { return Type::error; },
                                    [](auto /*unused*/) {
-                                     assert(false);
+                                     assert(false);  // NOLINT
                                      return Type::eof;
                                    }},
                     value_);
