@@ -37,7 +37,20 @@ GD::CPP::Token::Token(TokenType type, Range range, PPNumberID ppn) : range_(rang
   payload_.ppnumber_ = ppn;  // NOLINT
 }
 
+// NOLINTNEXTLINE
+GD::CPP::Token::Token(TokenType type, Range range, std::uint32_t c) : range_(range), type_(type)
+{
+  assert_ice(is_char_literal(), "Only Character literal tokens take a character literal payload");
+  payload_.char_lit_ = c;  // NOLINT
+}
+
 auto GD::CPP::Token::type() const noexcept -> TokenType { return type_; }
+
+auto GD::CPP::Token::is_char_literal() const noexcept -> bool
+{
+  return type_ == TokenType::char_literal || type_ == TokenType::char16_literal ||
+         type_ == TokenType::char32_literal || type_ == TokenType::wchar_literal;
+}
 
 auto GD::CPP::Token::range() const noexcept -> Range { return range_; }
 
@@ -58,6 +71,12 @@ auto GD::CPP::Token::ppnumber() const noexcept -> PPNumberID
 {
   assert_ice(type() == TokenType::ppnumber, "ppnumber() can only be called on PPNumber Tokens.");
   return payload_.ppnumber_;  // NOLINT
+}
+
+auto GD::CPP::Token::char_literal() const noexcept -> std::uint32_t
+{
+  assert_ice(is_char_literal(), "char_literal() can only be called on character literals.");
+  return payload_.char_lit_;  // NOLINT
 }
 
 auto GD::CPP::operator==(Token const& token, TokenType type) noexcept -> bool

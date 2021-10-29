@@ -33,6 +33,10 @@ enum class TokenType {
   white_space,     ///< White space
   identifier,      ///< An identifier
   ppnumber,        ///< A PPNumber
+  char_literal,    ///< A Character Literal
+  char16_literal,  ///< A UTF-16 Character Literal
+  char32_literal,  ///< A UTF-32 Character Literal
+  wchar_literal,   ///< A wide character Literal
 };
 
 /** \brief  A token
@@ -50,6 +54,10 @@ enum class TokenType {
  * | white_space    |            | White space.                                                    |
  * | identifier     | IdentID    | Identifier.                                                     |
  * | ppnumber       | PPNumberID | PPNumber.                                                       |
+ * | char_literal   | uint32_t   | '' Character literal.                                           |
+ * | char16_literal | uint16_t   | u'' Character literal.                                          |
+ * | char32_literal | uint32_t   | U'' Character literal.                                          |
+ * | wchar_literal  | uint32_t   | L'' character literal.                                          |
  */
 class Token  // NOLINT
 {
@@ -81,6 +89,16 @@ public:
    */
   Token(TokenType type, Range range, PPNumberID ppn);
 
+  /** \brief       Construct a character literal token
+   *  \param type  Token type (A variety of Token::char_literal)
+   *  \param range Source code range for the token.
+   *  \param c     Character
+   */
+  Token(TokenType type, Range range, std::uint32_t c);
+
+  /** \brief  Is this a character literal of some form?  */
+  [[nodiscard]] auto is_char_literal() const noexcept -> bool;
+
   /** \brief  Get the token type.  */
   [[nodiscard]] auto type() const noexcept -> TokenType;
 
@@ -96,15 +114,19 @@ public:
   /** \brief  Get the PPNumber (if type() == TokenType::ppnumber).  */
   [[nodiscard]] auto ppnumber() const noexcept -> PPNumberID;
 
+  /** \brief  Get the character literal value.  */
+  [[nodiscard]] auto char_literal() const noexcept -> std::uint32_t;
+
 private:
   Range range_;     ///< Range
   TokenType type_;  ///< Token type
   union
   {
-    char32_t c_;           ///< Character
-    IdentID identifier_;   ///< Identifier
-    PPNumberID ppnumber_;  ///< PPNumber
-  } payload_;
+    char32_t c_;              ///< Character
+    IdentID identifier_;      ///< Identifier
+    PPNumberID ppnumber_;     ///< PPNumber
+    std::uint32_t char_lit_;  ///< Character literal
+  } payload_;                 ///< Payload
 };
 
 auto operator==(Token const& token, TokenType type) noexcept -> bool;
@@ -155,6 +177,20 @@ struct fmt::formatter<GD::CPP::Token>
       return vformat_to(ctx.out(), "IDENTIFIER({0})", fmt::make_format_args(token.identifier()));
     case GD::CPP::TokenType::ppnumber:
       return vformat_to(ctx.out(), "PPNUMBER({0})", fmt::make_format_args(token.identifier()));
+    case GD::CPP::TokenType::char_literal:
+      if (std::isprint(static_cast<int>(token.char_literal())) != 0) {
+        return vformat_to(ctx.out(), "'{0}'",
+                          fmt::make_format_args(static_cast<char>(token.char_literal())));
+      }
+      return vformat_to(ctx.out(), "'\\x{0:02x}'",
+                        fmt::make_format_args(static_cast<char>(token.char_literal())));
+    case GD::CPP::TokenType::char16_literal:
+    case GD::CPP::TokenType::char32_literal:
+      return vformat_to(ctx.out(), "{0}",
+                        fmt::make_format_args(GD::CPP::to_string(token.char_literal())));
+    case GD::CPP::TokenType::wchar_literal:
+      return vformat_to(ctx.out(), "'\\x{0:08x}'",
+                        fmt::make_format_args(static_cast<char>(token.char_literal())));
     default:
       return vformat_to(ctx.out(), "UNKNOWN", fmt::make_format_args());
     }
