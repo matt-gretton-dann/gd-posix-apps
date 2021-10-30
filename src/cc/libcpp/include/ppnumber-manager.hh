@@ -62,7 +62,7 @@ public:
   [[nodiscard]] auto display_name(PPNumberID id) const -> std::string;
 
 private:
-  IdMap<PPNumberID> map_;  ///< PPNumber map
+  IdMap<PPNumberID, std::u32string> map_;  ///< PPNumber map
 };
 
 }  // namespace GD::CPP
