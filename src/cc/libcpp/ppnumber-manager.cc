@@ -31,20 +31,5 @@ auto GD::CPP::PPNumberManager::id(std::u32string const& id) -> PPNumberID
 
 auto GD::CPP::PPNumberManager::display_name(PPNumberID id) const -> std::string
 {
-  constexpr char32_t uU_split = 0x10000;  // At uU_split and above we use \U otherwise \u.
-
-  std::string result;
-  for (auto c : map_.get(id)) {
-    if (!Details::is_ucn(c)) {
-      result.push_back(static_cast<char>(c));
-    }
-    else if (c < uU_split) {
-      result += fmt::format("\\u{0:04x}", static_cast<uint32_t>(c));
-    }
-    else {
-      result += fmt::format("\\U{0:08x}", static_cast<uint32_t>(c));
-    }
-  }
-
-  return result;
+  return map_.display_name(id);
 }

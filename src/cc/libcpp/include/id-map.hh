@@ -7,11 +7,13 @@
 #ifndef CC_LIBCPP_ID_MAP_HH_INCLUDED_
 #define CC_LIBCPP_ID_MAP_HH_INCLUDED_
 
+#include <cctype>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
 
+#include "character-classifiers.hh"
 #include "error.hh"
 
 namespace GD::CPP {
@@ -95,6 +97,43 @@ public:
   {
     assert_ice(static_cast<std::size_t>(id) < ids_.size(), "ID out of range.");
     return ids_[static_cast<std::size_t>(id)];
+  }
+
+  /** \brief     Get a displayable name for the given entry.
+   *  \param  id ID to look up
+   *  \return    Display value
+   *
+   * This uses printable characters if the character is printable, \u or \U escapes if it is a UCN
+   * name, and if not it uses a \x escape.
+   */
+  [[nodiscard]] auto display_name(Id id) const noexcept -> std::string
+  {
+    constexpr char32_t uU_split = 0x10000;  // At uU_split and above we use \U otherwise \u.
+
+    std::string result;
+    bool last_hex = false;
+    for (auto c : get(id)) {
+      if (!Details::is_ucn(c)) {
+        if (std::isprint(c) && (!last_hex || !Details::is_hex_digit(c))) {
+          result.push_back(static_cast<char>(c));
+          last_hex = false;
+        }
+        else {
+          result += fmt::format("\\x{0:x}", static_cast<uint32_t>(c));
+          last_hex = true;
+        }
+      }
+      else if (c < uU_split) {
+        result += fmt::format("\\u{0:04x}", static_cast<uint32_t>(c));
+        last_hex = false;
+      }
+      else {
+        result += fmt::format("\\U{0:08x}", static_cast<uint32_t>(c));
+        last_hex = false;
+      }
+    }
+
+    return result;
   }
 
 private:
