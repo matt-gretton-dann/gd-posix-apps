@@ -20,6 +20,7 @@ target_sources(libcpp PRIVATE
     trigraph-parser.cc)
 target_sources(libcpp PRIVATE
     include/error.hh
+    include/character-classifiers.hh
     include/file-store.hh
     include/id-map.hh
     include/identifier-manager.hh
