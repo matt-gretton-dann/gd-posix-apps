@@ -391,8 +391,22 @@ TEST_CASE("GD::CPP::PreprocessorTokenizer - Character literals", "[cpp][characte
     GENERATE(table<std::string, GD::CPP::TokenType>({{"", GD::CPP::TokenType::char_literal},
                                                      {"U", GD::CPP::TokenType::char32_literal},
                                                      {"u", GD::CPP::TokenType::char16_literal}}));
-  auto [in, out] = GENERATE(table<std::string, std::uint32_t>(
-    {{"a", U'a'}, {"\\?", U'?'}, {"\\'", U'\''}, {"\\\\", U'\\'}}));
+  auto [in, out] = GENERATE(table<std::string, std::uint32_t>({{"a", U'a'},
+                                                               {"\\?", U'?'},
+                                                               {"\\'", U'\''},
+                                                               {"\\\\", U'\\'},
+                                                               {"\\a", 0x07},
+                                                               {"\\b", 0x08},
+                                                               {"\\f", 0x0c},
+                                                               {"\\n", 0x0a},
+                                                               {"\\r", 0x0d},
+                                                               {"\\t", 0x09},
+                                                               {"\\v", 0x0b},
+                                                               {"\\x0000000000000f", 0x0f},
+                                                               {"\\377", 0xff},
+                                                               {"\\0", 0},
+                                                               {"\\u00a0", 0xa0},
+                                                               {"\\U000000a0", 0xa0}}));
 
   std::ostringstream os;
   GD::CPP::ErrorManager error_manager(os);

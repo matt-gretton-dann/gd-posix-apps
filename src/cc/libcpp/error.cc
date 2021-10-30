@@ -47,6 +47,8 @@ std::map<GD::CPP::ErrorCode, GD::CPP::ErrorSeverity> severities = {
   {EC::too_many_characters_in_character_literal, ES::error},
   {EC::unterminated_character_literal, ES::fatal_error},
   {EC::character_literal_out_of_range, ES::error},
+  {EC::overflow_in_hex_escape, ES::error},
+  {EC::overlong_octal_escape, ES::warning},
 };
 
 auto get_severity(GD::CPP::ErrorCode code) -> GD::CPP::ErrorSeverity

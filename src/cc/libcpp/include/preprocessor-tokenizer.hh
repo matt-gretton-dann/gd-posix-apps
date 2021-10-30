@@ -83,6 +83,8 @@ constexpr inline auto is_digit(char32_t c) -> bool
   return c >= U'0' && c <= U'9';
 }
 
+constexpr inline auto is_octal_digit(char32_t c) -> bool { return (c >= U'0' && c <= U'7'); }
+
 constexpr inline auto is_hex_digit(char32_t c) -> bool
 {
   return (c >= U'0' && c <= U'9') || (c >= U'A' && c <= U'F') || (c >= U'a' && c <= U'f');
@@ -295,6 +297,66 @@ private:
     return result;
   }
 
+  /** \brief         Read hex digits returning the number they represent.
+   *  \param  parent Parent tokenizer
+   *  \return        Character read.
+   *
+   * On entry the parent should point to first character to read.
+   */
+  auto read_hex_escape(Parent& parent, Location begin) -> std::uint32_t
+  {
+    std::uint32_t result = 0;
+    while (true) {
+      auto const& t = parent.peek();
+      if (t != TokenType::character || !Details::is_hex_digit(t.character())) {
+        return result;
+      }
+
+      std::uint32_t temp = result;
+      result *= 16;               // NOLINT
+      if (result / 16 != temp) {  // NOLINT
+        error_manager_.error(ErrorCode::overflow_in_hex_escape, Range{begin, t.range().end()});
+        return temp;
+      }
+
+      result += Details::hex_digit_value(t.character());
+      parent.chew();
+    }
+
+    return result;
+  }
+
+  /** \brief         Read hex digits returning the number they represent.
+   *  \param  parent Parent tokenizer
+   *  \return        Character read.
+   *
+   * On entry the parent should point to first character to read.
+   */
+  auto read_octal_escape(Parent& parent, Location begin) -> std::uint32_t
+  {
+    std::uint32_t result = 0;
+    unsigned count = 0;
+    while (count < 3) {
+      auto const& t = parent.peek();
+      if (t != TokenType::character || !Details::is_octal_digit(t.character())) {
+        return result;
+      }
+
+      result *= 8;  // NOLINT
+      result += t.character() - U'0';
+      parent.chew();
+      ++count;
+    }
+
+    if (count == 3 && parent.peek() == TokenType::character &&
+        Details::is_octal_digit(parent.peek().character())) {
+      error_manager_.error(ErrorCode::overlong_octal_escape,
+                           Range{begin, parent.peek().range().end()});
+    }
+
+    return result;
+  }
+
   /** \brief         Parse a PP-number.
    *  \param  parent Parent tokenizer.
    *  \param  first  First token in PPNumber.
@@ -439,26 +501,72 @@ private:
     parent.chew(TokenType::character);
 
     auto const& t = parent.peek();
-    if (t == U'\'') {
-      parent.chew();
-      return static_cast<unsigned char>('\'');
-    }
-    if (t == U'\"') {
-      parent.chew();
-      return static_cast<unsigned char>('\"');
-    }
-    if (t == U'\?') {
-      parent.chew();
-      return static_cast<unsigned char>('\?');
-    }
-    if (t == U'\\') {
-      parent.chew();
-      return static_cast<unsigned char>('\\');
+    auto end = t.range().end();
+
+    if (t != TokenType::character) {
+      error_manager_.error(ErrorCode::unrecognised_escape_sequence, Range{begin, end}, t);
+      return U'\\';
     }
 
-    error_manager_.error(ErrorCode::unrecognised_escape_sequence, Range{begin, t.range().end()}, t);
-    parent.chew();
-    return static_cast<unsigned char>('\\');
+    auto c = t.character();
+
+    switch (c) {
+    case U'\'':
+      parent.chew();
+      return static_cast<unsigned char>('\'');
+    case U'\"':
+      parent.chew();
+      return static_cast<unsigned char>('\"');
+    case U'\?':
+      parent.chew();
+      return static_cast<unsigned char>('\?');
+    case U'\\':
+      parent.chew();
+      return static_cast<unsigned char>('\\');
+    case U'a':
+      parent.chew();
+      return static_cast<unsigned char>('\a');
+    case U'b':
+      parent.chew();
+      return static_cast<unsigned char>('\b');
+    case U'f':
+      parent.chew();
+      return static_cast<unsigned char>('\f');
+    case U'n':
+      parent.chew();
+      return static_cast<unsigned char>('\n');
+    case U'r':
+      parent.chew();
+      return static_cast<unsigned char>('\r');
+    case U't':
+      parent.chew();
+      return static_cast<unsigned char>('\t');
+    case U'u':
+      parent.chew();
+      return static_cast<std::uint32_t>(read_char32_hex_digits(parent, 4));
+    case U'U':
+      parent.chew();
+      return static_cast<std::uint32_t>(read_char32_hex_digits(parent, 8));  // NOLINT
+    case U'v':
+      parent.chew();
+      return static_cast<unsigned char>('\v');
+    case U'x':
+      parent.chew();
+      return read_hex_escape(parent, begin);
+    case U'0':
+    case U'1':
+    case U'2':
+    case U'3':
+    case U'4':
+    case U'5':
+    case U'6':
+    case U'7':
+      return read_octal_escape(parent, begin);
+    default:
+      error_manager_.error(ErrorCode::unrecognised_escape_sequence, Range{begin, end}, t);
+      parent.chew();
+      return static_cast<unsigned char>(c);
+    }
   }
 
   auto parse_char_literal(Parent& parent, TokenType type, Location begin) -> Token
@@ -503,7 +611,8 @@ private:
       }
     }
 
-    /* Find the closing '.  This may not be the most immediate token if we're in an error condition.
+    /* Find the closing '.  This may not be the most immediate token if we're in an error
+     * condition.
      */
     while (parent.peek() != U'\'' && parent.peek() != TokenType::end_of_include &&
            parent.peek() != TokenType::end_of_source) {
