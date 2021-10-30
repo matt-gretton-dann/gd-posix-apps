@@ -16,6 +16,7 @@ target_sources(libcpp PRIVATE
     file-store.cc
     identifier-manager.cc
     ppnumber-manager.cc
+    string-literal-manager.cc
     token.cc
     trigraph-parser.cc)
 target_sources(libcpp PRIVATE
@@ -28,6 +29,7 @@ target_sources(libcpp PRIVATE
     include/ppnumber-manager.hh
     include/preprocessor-tokenizer.hh
     include/simple-tokenizers.hh
+    include/string-literal-manager.hh
     include/token.hh
     include/tokenizer.hh)
 #add_dependencies("libcpp" "cc_messages_header")

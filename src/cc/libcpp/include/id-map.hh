@@ -62,7 +62,7 @@ public:
    */
   [[nodiscard]] auto find_or_insert(Value const& value) -> Id
   {
-    auto it = map_.find(&value);
+    auto it = map_.find(std::addressof(value));
     if (it != map_.end()) {
       return it->second;
     }
