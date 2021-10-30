@@ -182,15 +182,13 @@ struct fmt::formatter<GD::CPP::Token>
         return vformat_to(ctx.out(), "'{0}'",
                           fmt::make_format_args(static_cast<char>(token.char_literal())));
       }
-      return vformat_to(ctx.out(), "'\\x{0:02x}'",
-                        fmt::make_format_args(static_cast<char>(token.char_literal())));
+      return vformat_to(ctx.out(), "'\\x{0:02x}'", fmt::make_format_args(token.char_literal()));
     case GD::CPP::TokenType::char16_literal:
+      return vformat_to(ctx.out(), "u'\\x{0:x}'", fmt::make_format_args(token.char_literal()));
     case GD::CPP::TokenType::char32_literal:
-      return vformat_to(ctx.out(), "{0}",
-                        fmt::make_format_args(GD::CPP::to_string(token.char_literal())));
+      return vformat_to(ctx.out(), "U'\\x{0:x}'", fmt::make_format_args(token.char_literal()));
     case GD::CPP::TokenType::wchar_literal:
-      return vformat_to(ctx.out(), "'\\x{0:08x}'",
-                        fmt::make_format_args(static_cast<char>(token.char_literal())));
+      return vformat_to(ctx.out(), "L'\\x{0:08x}'", fmt::make_format_args(token.char_literal()));
     default:
       return vformat_to(ctx.out(), "UNKNOWN", fmt::make_format_args());
     }
