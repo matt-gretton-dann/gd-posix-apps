@@ -34,7 +34,43 @@ auto GD::CPP::StringLiteralManager::display_name(StringLiteralID id) const -> st
   std::string result = "\"";
   bool last_hex = false;
   for (auto c : map_.get(id)) {
-    if (std::isprint(static_cast<int>(c)) != 0 && (!last_hex || !Details::is_hex_digit(c))) {
+    if (c == U'\n') {
+      result += "\\n";
+      last_hex = false;
+    }
+    else if (c == U'\a') {
+      result += "\\a";
+      last_hex = false;
+    }
+    else if (c == '\b') {
+      result += "\\b";
+      last_hex = false;
+    }
+    else if (c == '\f') {
+      result += "\\f";
+      last_hex = false;
+    }
+    else if (c == '\t') {
+      result += "\\t";
+      last_hex = false;
+    }
+    else if (c == '\r') {
+      result += "\\r";
+      last_hex = false;
+    }
+    else if (c == '\v') {
+      result += "\\v";
+      last_hex = false;
+    }
+    else if (c == '\\') {
+      result += "\\\\";
+      last_hex = false;
+    }
+    else if (c == '"') {
+      result += "\\\"";
+      last_hex = false;
+    }
+    else if (std::isprint(static_cast<int>(c)) != 0 && (!last_hex || !Details::is_hex_digit(c))) {
       result.push_back(static_cast<char>(c));
       last_hex = false;
     }
@@ -61,7 +97,43 @@ auto GD::CPP::WideStringLiteralManager::display_name(WideStringLiteralID id) con
   std::string result = "\"";
   bool last_hex = false;
   for (auto c : map_.get(id)) {
-    if (!Details::is_ucn(c)) {
+    if (c == U'\n') {
+      result += "\\n";
+      last_hex = false;
+    }
+    else if (c == U'\a') {
+      result += "\\a";
+      last_hex = false;
+    }
+    else if (c == U'\b') {
+      result += "\\b";
+      last_hex = false;
+    }
+    else if (c == U'\f') {
+      result += "\\f";
+      last_hex = false;
+    }
+    else if (c == U'\t') {
+      result += "\\t";
+      last_hex = false;
+    }
+    else if (c == U'\r') {
+      result += "\\r";
+      last_hex = false;
+    }
+    else if (c == U'\v') {
+      result += "\\v";
+      last_hex = false;
+    }
+    else if (c == U'\\') {
+      result += "\\\\";
+      last_hex = false;
+    }
+    else if (c == U'"') {
+      result += "\\\"";
+      last_hex = false;
+    }
+    else if (!Details::is_ucn(c)) {
       if (std::isprint(static_cast<int>(c)) != 0 && (!last_hex || !Details::is_hex_digit(c))) {
         result.push_back(static_cast<char>(c));
         last_hex = false;

@@ -48,7 +48,7 @@ public:
   ~StringLiteralManager() = default;
 
   /** \brief     Get the ID for and identifier.
-   *  \param  id Identifier string.
+   *  \param  id String literal.
    *  \return    ID.
    *
    * If \a id has already been seen the same ID as previously will be returned, otherwise there will
