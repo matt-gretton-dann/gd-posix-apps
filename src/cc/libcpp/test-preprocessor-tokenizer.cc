@@ -16,16 +16,37 @@
 #include "location.hh"
 #include "preprocessor-tokenizer.hh"
 
+class TokenizerMaker
+{
+public:
+  TokenizerMaker()
+      : error_manager_(os_), file_store_(error_manager_),
+        tokenizer_(file_store_, error_manager_, id_manager_, ppn_manager_, str_lit_manager_)
+  {
+    error_manager_.file_store(file_store_);
+  }
+
+  auto tokenizer() -> GD::CPP::PreprocessorTokenizer<GD::CPP::FileStore>& { return tokenizer_; }
+  auto os() -> std::ostringstream& { return os_; }
+  auto id_manager() -> GD::CPP::IdentifierManager& { return id_manager_; }
+  auto ppn_manager() -> GD::CPP::PPNumberManager& { return ppn_manager_; }
+  auto str_lit_manager() -> GD::CPP::StringLiteralManager& { return str_lit_manager_; }
+
+private:
+  std::ostringstream os_;
+  GD::CPP::ErrorManager error_manager_;
+  GD::CPP::PPNumberManager ppn_manager_;
+  GD::CPP::IdentifierManager id_manager_;
+  GD::CPP::StringLiteralManager str_lit_manager_;
+  GD::CPP::FileStore file_store_;
+  GD::CPP::PreprocessorTokenizer<GD::CPP::FileStore> tokenizer_;
+};
+
 TEST_CASE("GD::CPP::PreprocessorTokenizer - Whitespace", "[cpp][preprocessor-tokenizer]")
 {
-  std::ostringstream os;
-  GD::CPP::ErrorManager error_manager(os);
-  GD::CPP::PPNumberManager ppn_manager;
-  GD::CPP::IdentifierManager id_manager;
-  GD::CPP::FileStore file_store(error_manager);
-  error_manager.file_store(file_store);
-  auto tokenizer =
-    GD::CPP::PreprocessorTokenizer(file_store, error_manager, id_manager, ppn_manager);
+  TokenizerMaker tm;
+  auto& tokenizer = tm.tokenizer();
+  auto& id_manager = tm.id_manager();
 
   auto fname = std::string("Test");
   auto input = std::string("a \t \f \v b");
@@ -47,14 +68,10 @@ TEST_CASE("GD::CPP::PreprocessorTokenizer - Whitespace", "[cpp][preprocessor-tok
 
 TEST_CASE("GD::CPP::PreprocessorTokenizer - multi-line comment", "[cpp][preprocessor-tokenizer]")
 {
-  std::ostringstream os;
-  GD::CPP::ErrorManager error_manager(os);
-  GD::CPP::PPNumberManager ppn_manager;
-  GD::CPP::IdentifierManager id_manager;
-  GD::CPP::FileStore file_store(error_manager);
-  error_manager.file_store(file_store);
-  auto tokenizer =
-    GD::CPP::PreprocessorTokenizer(file_store, error_manager, id_manager, ppn_manager);
+  TokenizerMaker tm;
+  auto& tokenizer = tm.tokenizer();
+  auto& os = tm.os();
+  auto& id_manager = tm.id_manager();
 
   auto fname = std::string("Test");
   auto input = std::string("a/**/b");
@@ -77,14 +94,10 @@ TEST_CASE("GD::CPP::PreprocessorTokenizer - multi-line comment", "[cpp][preproce
 
 TEST_CASE("GD::CPP::PreprocessorTokenizer - line comment", "[cpp][preprocessor-tokenizer]")
 {
-  std::ostringstream os;
-  GD::CPP::ErrorManager error_manager(os);
-  GD::CPP::PPNumberManager ppn_manager;
-  GD::CPP::IdentifierManager id_manager;
-  GD::CPP::FileStore file_store(error_manager);
-  error_manager.file_store(file_store);
-  auto tokenizer =
-    GD::CPP::PreprocessorTokenizer(file_store, error_manager, id_manager, ppn_manager);
+  TokenizerMaker tm;
+  auto& tokenizer = tm.tokenizer();
+  auto& os = tm.os();
+  auto& id_manager = tm.id_manager();
 
   auto fname = std::string("Test");
   auto input = std::string("a// b\nc");
@@ -110,14 +123,10 @@ TEST_CASE("GD::CPP::PreprocessorTokenizer - line comment", "[cpp][preprocessor-t
 TEST_CASE("GD::CPP::PreprocessorTokenizer - unterminated multi-line comment",
           "[cpp][preprocessor-tokenizer]")
 {
-  std::ostringstream os;
-  GD::CPP::ErrorManager error_manager(os);
-  GD::CPP::PPNumberManager ppn_manager;
-  GD::CPP::IdentifierManager id_manager;
-  GD::CPP::FileStore file_store(error_manager);
-  error_manager.file_store(file_store);
-  auto tokenizer =
-    GD::CPP::PreprocessorTokenizer(file_store, error_manager, id_manager, ppn_manager);
+  TokenizerMaker tm;
+  auto& tokenizer = tm.tokenizer();
+  auto& os = tm.os();
+  auto& id_manager = tm.id_manager();
 
   auto fname = std::string("Test");
   auto input = std::string("a/**b");
@@ -141,14 +150,10 @@ TEST_CASE("GD::CPP::PreprocessorTokenizer - unterminated multi-line comment",
 TEST_CASE("GD::CPP::PreprocessorTokenizer - unterminated line comment",
           "[cpp][preprocessor-tokenizer]")
 {
-  std::ostringstream os;
-  GD::CPP::ErrorManager error_manager(os);
-  GD::CPP::PPNumberManager ppn_manager;
-  GD::CPP::IdentifierManager id_manager;
-  GD::CPP::FileStore file_store(error_manager);
-  error_manager.file_store(file_store);
-  auto tokenizer =
-    GD::CPP::PreprocessorTokenizer(file_store, error_manager, id_manager, ppn_manager);
+  TokenizerMaker tm;
+  auto& tokenizer = tm.tokenizer();
+  auto& os = tm.os();
+  auto& id_manager = tm.id_manager();
 
   auto fname = std::string("Test");
   auto input = std::string("a// bc");
@@ -172,14 +177,10 @@ TEST_CASE("GD::CPP::PreprocessorTokenizer - unterminated line comment",
 TEST_CASE("GD::CPP::PreprocessorTokenizer - identifier big literal",
           "[cpp][preprocessor-tokenizer]")
 {
-  std::ostringstream os;
-  GD::CPP::ErrorManager error_manager(os);
-  GD::CPP::PPNumberManager ppn_manager;
-  GD::CPP::IdentifierManager id_manager;
-  GD::CPP::FileStore file_store(error_manager);
-  error_manager.file_store(file_store);
-  auto tokenizer =
-    GD::CPP::PreprocessorTokenizer(file_store, error_manager, id_manager, ppn_manager);
+  TokenizerMaker tm;
+  auto& tokenizer = tm.tokenizer();
+  auto& os = tm.os();
+  auto& id_manager = tm.id_manager();
 
   auto fname = std::string("Test");
   auto input = std::string("a\xF0\x9F\x98\x81z1");
@@ -200,14 +201,10 @@ TEST_CASE("GD::CPP::PreprocessorTokenizer - identifier big literal",
 
 TEST_CASE("GD::CPP::PreprocessorTokenizer - identifier UCN", "[cpp][preprocessor-tokenizer]")
 {
-  std::ostringstream os;
-  GD::CPP::ErrorManager error_manager(os);
-  GD::CPP::PPNumberManager ppn_manager;
-  GD::CPP::IdentifierManager id_manager;
-  GD::CPP::FileStore file_store(error_manager);
-  error_manager.file_store(file_store);
-  auto tokenizer =
-    GD::CPP::PreprocessorTokenizer(file_store, error_manager, id_manager, ppn_manager);
+  TokenizerMaker tm;
+  auto& tokenizer = tm.tokenizer();
+  auto& os = tm.os();
+  auto& id_manager = tm.id_manager();
 
   auto fname = std::string("Test");
   auto input = std::string("a\\U0001f601z");
@@ -226,14 +223,10 @@ TEST_CASE("GD::CPP::PreprocessorTokenizer - identifier UCN", "[cpp][preprocessor
 TEST_CASE("GD::CPP::PreprocessorTokenizer - identifier UCN not enough hex",
           "[cpp][preprocessor-tokenizer]")
 {
-  std::ostringstream os;
-  GD::CPP::ErrorManager error_manager(os);
-  GD::CPP::PPNumberManager ppn_manager;
-  GD::CPP::IdentifierManager id_manager;
-  GD::CPP::FileStore file_store(error_manager);
-  error_manager.file_store(file_store);
-  auto tokenizer =
-    GD::CPP::PreprocessorTokenizer(file_store, error_manager, id_manager, ppn_manager);
+  TokenizerMaker tm;
+  auto& tokenizer = tm.tokenizer();
+  auto& os = tm.os();
+  auto& id_manager = tm.id_manager();
 
   auto fname = std::string("Test");
   auto input = std::string("a\\U0001f60z");
@@ -254,14 +247,10 @@ TEST_CASE("GD::CPP::PreprocessorTokenizer - identifier UCN not enough hex",
 
 TEST_CASE("GD::CPP::PreprocessorTokenizer - starts UCN", "[cpp][preprocessor-tokenizer]")
 {
-  std::ostringstream os;
-  GD::CPP::ErrorManager error_manager(os);
-  GD::CPP::PPNumberManager ppn_manager;
-  GD::CPP::IdentifierManager id_manager;
-  GD::CPP::FileStore file_store(error_manager);
-  error_manager.file_store(file_store);
-  auto tokenizer =
-    GD::CPP::PreprocessorTokenizer(file_store, error_manager, id_manager, ppn_manager);
+  TokenizerMaker tm;
+  auto& tokenizer = tm.tokenizer();
+  auto& os = tm.os();
+  auto& id_manager = tm.id_manager();
 
   auto fname = std::string("Test");
   auto input = std::string("\\U0001f601z");
@@ -279,14 +268,10 @@ TEST_CASE("GD::CPP::PreprocessorTokenizer - starts UCN", "[cpp][preprocessor-tok
 
 TEST_CASE("GD::CPP::PreprocessorTokenizer - starts \\ not UCN", "[cpp][preprocessor-tokenizer]")
 {
-  std::ostringstream os;
-  GD::CPP::ErrorManager error_manager(os);
-  GD::CPP::PPNumberManager ppn_manager;
-  GD::CPP::IdentifierManager id_manager;
-  GD::CPP::FileStore file_store(error_manager);
-  error_manager.file_store(file_store);
-  auto tokenizer =
-    GD::CPP::PreprocessorTokenizer(file_store, error_manager, id_manager, ppn_manager);
+  TokenizerMaker tm;
+  auto& tokenizer = tm.tokenizer();
+  auto& os = tm.os();
+  auto& id_manager = tm.id_manager();
 
   auto fname = std::string("Test");
   auto input = std::string("\\z");
@@ -306,14 +291,10 @@ TEST_CASE("GD::CPP::PreprocessorTokenizer - starts \\ not UCN", "[cpp][preproces
 
 TEST_CASE("GD::CPP::PreprocessorTokenizer - PPNumber simple", "[cpp][preprocessor-tokenizer]")
 {
-  std::ostringstream os;
-  GD::CPP::ErrorManager error_manager(os);
-  GD::CPP::PPNumberManager ppn_manager;
-  GD::CPP::IdentifierManager id_manager;
-  GD::CPP::FileStore file_store(error_manager);
-  error_manager.file_store(file_store);
-  auto tokenizer =
-    GD::CPP::PreprocessorTokenizer(file_store, error_manager, id_manager, ppn_manager);
+  TokenizerMaker tm;
+  auto& tokenizer = tm.tokenizer();
+  auto& os = tm.os();
+  auto& ppn_manager = tm.ppn_manager();
 
   auto fname = std::string("Test");
   auto input = std::string("1234");
@@ -332,14 +313,10 @@ TEST_CASE("GD::CPP::PreprocessorTokenizer - PPNumber simple", "[cpp][preprocesso
 TEST_CASE("GD::CPP::PreprocessorTokenizer - PPNumber starts with .",
           "[cpp][preprocessor-tokenizer]")
 {
-  std::ostringstream os;
-  GD::CPP::ErrorManager error_manager(os);
-  GD::CPP::PPNumberManager ppn_manager;
-  GD::CPP::IdentifierManager id_manager;
-  GD::CPP::FileStore file_store(error_manager);
-  error_manager.file_store(file_store);
-  auto tokenizer =
-    GD::CPP::PreprocessorTokenizer(file_store, error_manager, id_manager, ppn_manager);
+  TokenizerMaker tm;
+  auto& tokenizer = tm.tokenizer();
+  auto& os = tm.os();
+  auto& ppn_manager = tm.ppn_manager();
 
   auto fname = std::string("Test");
   auto input = std::string(".1234.");
@@ -357,14 +334,10 @@ TEST_CASE("GD::CPP::PreprocessorTokenizer - PPNumber starts with .",
 
 TEST_CASE("GD::CPP::PreprocessorTokenizer - PPNumber signs", "[cpp][preprocessor-tokenizer]")
 {
-  std::ostringstream os;
-  GD::CPP::ErrorManager error_manager(os);
-  GD::CPP::PPNumberManager ppn_manager;
-  GD::CPP::IdentifierManager id_manager;
-  GD::CPP::FileStore file_store(error_manager);
-  error_manager.file_store(file_store);
-  auto tokenizer =
-    GD::CPP::PreprocessorTokenizer(file_store, error_manager, id_manager, ppn_manager);
+  TokenizerMaker tm;
+  auto& tokenizer = tm.tokenizer();
+  auto& os = tm.os();
+  auto& ppn_manager = tm.ppn_manager();
 
   auto fname = std::string("Test");
   auto input = std::string("1234E+5e+6P+7p+8A+9");
@@ -408,14 +381,9 @@ TEST_CASE("GD::CPP::PreprocessorTokenizer - Character literals", "[cpp][characte
                                                                {"\\u00a0", 0xa0},
                                                                {"\\U000000a0", 0xa0}}));
 
-  std::ostringstream os;
-  GD::CPP::ErrorManager error_manager(os);
-  GD::CPP::PPNumberManager ppn_manager;
-  GD::CPP::IdentifierManager id_manager;
-  GD::CPP::FileStore file_store(error_manager);
-  error_manager.file_store(file_store);
-  auto tokenizer =
-    GD::CPP::PreprocessorTokenizer(file_store, error_manager, id_manager, ppn_manager);
+  TokenizerMaker tm;
+  auto& tokenizer = tm.tokenizer();
+  auto& os = tm.os();
 
   auto fname = std::string("Test");
   std::string input = prefix + "'" + in + "'";
@@ -426,6 +394,27 @@ TEST_CASE("GD::CPP::PreprocessorTokenizer - Character literals", "[cpp][characte
   REQUIRE(tokenizer.peek() == type);
   REQUIRE(tokenizer.peek().is_char_literal());
   REQUIRE(tokenizer.peek().char_literal() == out);
+  tokenizer.chew();
+  REQUIRE(tokenizer.peek() == GD::CPP::TokenType::end_of_include);
+  tokenizer.chew();
+  REQUIRE(tokenizer.peek() == GD::CPP::TokenType::end_of_source);
+  REQUIRE(os.str().empty());
+}
+
+TEST_CASE("GD::CPP::PreprocessorTokenizer - String Literal", "[cpp][preprocessor-tokenizer]")
+{
+  TokenizerMaker tm;
+  auto& tokenizer = tm.tokenizer();
+  auto& os = tm.os();
+  auto& sl_manager = tm.str_lit_manager();
+
+  auto fname = std::string("Test");
+  auto input = std::string(R"("a\"b'\"0\xff\x30")");
+  auto is = std::istringstream(input);
+  tokenizer.push_stream(fname, is);
+
+  REQUIRE(tokenizer.peek() == GD::CPP::TokenType::string_literal);
+  REQUIRE(sl_manager.display_name(tokenizer.peek().string_literal()) == R"("a\"b'\"0\xff\x30")");
   tokenizer.chew();
   REQUIRE(tokenizer.peek() == GD::CPP::TokenType::end_of_include);
   tokenizer.chew();

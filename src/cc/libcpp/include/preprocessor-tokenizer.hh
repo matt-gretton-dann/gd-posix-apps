@@ -12,6 +12,7 @@
 #include "error.hh"
 #include "file-store.hh"
 #include "identifier-manager.hh"
+#include "string-literal-manager.hh"
 #include "token.hh"
 #include "tokenizer.hh"
 
@@ -33,9 +34,9 @@ class PreprocessorTokenizer : public Tokenizer<PreprocessorTokenizer<Parent>, Pa
 {
 public:
   PreprocessorTokenizer(Parent& parent, ErrorManager& em, IdentifierManager& id,
-                        PPNumberManager& ppm)
+                        PPNumberManager& ppm, StringLiteralManager& slm)
       : Tokenizer<PreprocessorTokenizer<Parent>, Parent>(parent), error_manager_(em),
-        identifier_manager_(id), ppnumber_manager_(ppm)
+        identifier_manager_(id), ppnumber_manager_(ppm), str_lit_manager_(slm)
   {
   }
 
@@ -563,6 +564,48 @@ private:
     return {type, Range{begin, end}, result};
   }
 
+  auto parse_string_literal(Parent& parent) -> Token
+  {
+    assert_ice(parent.peek() == U'"', "String literal parsing should point to opening \".");
+    auto begin = parent.peek().range().begin();
+    parent.chew(TokenType::character);
+
+    std::string result{};
+
+    while (true) {
+      std::uint32_t next_char{0};
+      auto const& t = parent.peek();
+      auto char_begin = t.range().begin();
+      auto end = t.range().end();
+      if (t == U'\\') {
+        next_char = parse_escape_sequence(parent);
+        end = parent.peek().range().end();
+      }
+      else if (t == U'"') {
+        parent.chew();
+        return Token{TokenType::string_literal, Range{begin, end}, str_lit_manager_.id(result)};
+      }
+      else if (t == U'\n') {
+        error_manager_.error(ErrorCode::newline_not_valid_in_string_literal,
+                             Range{begin, parent.peek().range().end()});
+        return Token{TokenType::string_literal, Range{begin, end}, str_lit_manager_.id(result)};
+      }
+      else if (t == TokenType::character) {
+        next_char = t.character();
+        parent.chew();
+      }
+
+      if (next_char > std::numeric_limits<unsigned char>::max()) {
+        error_manager_.error(ErrorCode::character_out_of_range_in_string_literal,
+                             Range{char_begin, end}, next_char,
+                             std::numeric_limits<unsigned char>::max());
+        next_char = static_cast<unsigned char>(next_char);
+      }
+
+      result += static_cast<char>(next_char);
+    }
+  }
+
   /** \brief  Parse tokens that begin with a U.  */
   auto parse_L(Parent& parent) -> Token
   {
@@ -637,6 +680,10 @@ private:
         return first;
       }
 
+      if (c == U'"') {
+        return parse_string_literal(parent);
+      }
+
       if (c == U'\'') {
         return parse_char_literal(parent, TokenType::char_literal, t.range().begin());
       }
@@ -663,6 +710,7 @@ private:
   ErrorManager& error_manager_;                 ///< Error manager
   IdentifierManager& identifier_manager_;       ///< Identifier manager
   PPNumberManager& ppnumber_manager_;           ///< PPNumber manager
+  StringLiteralManager& str_lit_manager_;       ///< String literal manager
   std::optional<Token> pending_{std::nullopt};  ///< Pending token
 };
 
