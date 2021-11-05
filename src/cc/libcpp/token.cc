@@ -14,6 +14,8 @@ GD::CPP::Token::Token(TokenType type, Range range) : range_(range), type_(type) 
   assert_ice(type_ != TokenType::character, "character tokens need a char32_t payload");
   assert_ice(type_ != TokenType::identifier, "identifier tokens need an identifier payload");
   assert_ice(type_ != TokenType::ppnumber, "PPnumber tokens need a PPnumber payload");
+  assert_ice(!is_char_literal(), "character literals need a uint32_t payload.");
+  assert_ice(!is_string_literal(), "String literals need a (Wide)?StringLiteralID payload.");
 }
 
 // NOLINTNEXTLINE
@@ -44,12 +46,37 @@ GD::CPP::Token::Token(TokenType type, Range range, std::uint32_t c) : range_(ran
   payload_.char_lit_ = c;  // NOLINT
 }
 
+// NOLINTNEXTLINE
+GD::CPP::Token::Token(TokenType type, Range range, StringLiteralID lit_id)
+    : range_(range), type_(type)
+{
+  assert_ice(type_ == TokenType::string_literal,
+             "Only String literal tokens take a narrow string literal payload");
+  payload_.str_lit_ = lit_id;  // NOLINT
+}
+
+// NOLINTNEXTLINE
+GD::CPP::Token::Token(TokenType type, Range range, WideStringLiteralID lit_id)
+    : range_(range), type_(type)
+{
+  assert_ice(is_string_literal() && type_ != TokenType::string_literal,
+             "Only Wide string literal tokens take a wide string literal payload");
+  payload_.wstr_lit_ = lit_id;  // NOLINT
+}
+
 auto GD::CPP::Token::type() const noexcept -> TokenType { return type_; }
 
 auto GD::CPP::Token::is_char_literal() const noexcept -> bool
 {
   return type_ == TokenType::char_literal || type_ == TokenType::char16_literal ||
          type_ == TokenType::char32_literal || type_ == TokenType::wchar_literal;
+}
+
+auto GD::CPP::Token::is_string_literal() const noexcept -> bool
+{
+  return type_ == TokenType::string_literal || type_ == TokenType::string8_literal ||
+         type_ == TokenType::string16_literal || type_ == TokenType::string32_literal ||
+         type_ == TokenType::wstring_literal;
 }
 
 auto GD::CPP::Token::range() const noexcept -> Range { return range_; }
@@ -77,6 +104,20 @@ auto GD::CPP::Token::char_literal() const noexcept -> std::uint32_t
 {
   assert_ice(is_char_literal(), "char_literal() can only be called on character literals.");
   return payload_.char_lit_;  // NOLINT
+}
+
+auto GD::CPP::Token::string_literal() const noexcept -> StringLiteralID
+{
+  assert_ice(type_ == TokenType::string_literal,
+             "string_literal() can only be called on narrow string literals.");
+  return payload_.str_lit_;  // NOLINT
+}
+
+auto GD::CPP::Token::wide_string_literal() const noexcept -> WideStringLiteralID
+{
+  assert_ice(is_string_literal() && type_ != TokenType::string_literal,
+             "wide_string_literal() can only be called on wide string literals.");
+  return payload_.wstr_lit_;  // NOLINT
 }
 
 auto GD::CPP::operator==(Token const& token, TokenType type) noexcept -> bool

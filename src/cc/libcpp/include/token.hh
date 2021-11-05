@@ -22,21 +22,27 @@
 #include "identifier-manager.hh"
 #include "location.hh"
 #include "ppnumber-manager.hh"
+#include "string-literal-manager.hh"
 
 namespace GD::CPP {
 
 /** \brief  Token type */
 enum class TokenType {
-  end_of_source,   ///< End of all source
-  end_of_include,  ///< End of a particular file (main file is included from command line)
-  character,       ///< Character
-  white_space,     ///< White space
-  identifier,      ///< An identifier
-  ppnumber,        ///< A PPNumber
-  char_literal,    ///< A Character Literal
-  char16_literal,  ///< A UTF-16 Character Literal
-  char32_literal,  ///< A UTF-32 Character Literal
-  wchar_literal,   ///< A wide character Literal
+  end_of_source,     ///< End of all source
+  end_of_include,    ///< End of a particular file (main file is included from command line)
+  character,         ///< Character
+  white_space,       ///< White space
+  identifier,        ///< An identifier
+  ppnumber,          ///< A PPNumber
+  char_literal,      ///< A Character Literal
+  char16_literal,    ///< A UTF-16 Character Literal
+  char32_literal,    ///< A UTF-32 Character Literal
+  wchar_literal,     ///< A wide character Literal
+  string_literal,    ///< A narrow string literal
+  wstring_literal,   ///< A wide string literal
+  string8_literal,   ///< UTF-8 String literal
+  string16_literal,  ///< UTF-16 String literal
+  string32_literal,  ///< UTF-32 String literal
 };
 
 /** \brief  A token
@@ -96,8 +102,25 @@ public:
    */
   Token(TokenType type, Range range, std::uint32_t c);
 
+  /** \brief        Construct a narrow string literal token
+   *  \param type   Token type (A variety of Token::char_literal)
+   *  \param range  Source code range for the token.
+   *  \param lit_id Literal ID
+   */
+  Token(TokenType type, Range range, StringLiteralID lit_id);
+
+  /** \brief        Construct a wide/unicode string literal token
+   *  \param type   Token type (A variety of Token::char_literal)
+   *  \param range  Source code range for the token.
+   *  \param lit_id Literal ID
+   */
+  Token(TokenType type, Range range, WideStringLiteralID lit_id);
+
   /** \brief  Is this a character literal of some form?  */
   [[nodiscard]] auto is_char_literal() const noexcept -> bool;
+
+  /** \brief  Is this a string literal of some form? */
+  [[nodiscard]] auto is_string_literal() const noexcept -> bool;
 
   /** \brief  Get the token type.  */
   [[nodiscard]] auto type() const noexcept -> TokenType;
@@ -117,16 +140,24 @@ public:
   /** \brief  Get the character literal value.  */
   [[nodiscard]] auto char_literal() const noexcept -> std::uint32_t;
 
+  /** \brief  Get the narrow string literal value.  */
+  [[nodiscard]] auto string_literal() const noexcept -> StringLiteralID;
+
+  /** \brief  Get the wide string literal value.  */
+  [[nodiscard]] auto wide_string_literal() const noexcept -> WideStringLiteralID;
+
 private:
   Range range_;     ///< Range
   TokenType type_;  ///< Token type
   union
   {
-    char32_t c_;              ///< Character
-    IdentID identifier_;      ///< Identifier
-    PPNumberID ppnumber_;     ///< PPNumber
-    std::uint32_t char_lit_;  ///< Character literal
-  } payload_;                 ///< Payload
+    char32_t c_;                    ///< Character
+    IdentID identifier_;            ///< Identifier
+    PPNumberID ppnumber_;           ///< PPNumber
+    std::uint32_t char_lit_;        ///< Character literal
+    StringLiteralID str_lit_;       ///< String literal
+    WideStringLiteralID wstr_lit_;  ///< Wide string literal
+  } payload_;                       ///< Payload
 };
 
 auto operator==(Token const& token, TokenType type) noexcept -> bool;
@@ -189,6 +220,21 @@ struct fmt::formatter<GD::CPP::Token>
       return vformat_to(ctx.out(), "U'\\x{0:x}'", fmt::make_format_args(token.char_literal()));
     case GD::CPP::TokenType::wchar_literal:
       return vformat_to(ctx.out(), "L'\\x{0:08x}'", fmt::make_format_args(token.char_literal()));
+    case GD::CPP::TokenType::string_literal:
+      return vformat_to(ctx.out(), "STRING_LITERAL({0})",
+                        fmt::make_format_args(token.string_literal()));
+    case GD::CPP::TokenType::wstring_literal:
+      return vformat_to(ctx.out(), "WIDE_STRING_LITERAL(L,{0})",
+                        fmt::make_format_args(token.wide_string_literal()));
+    case GD::CPP::TokenType::string8_literal:
+      return vformat_to(ctx.out(), "WIDE_STRING_LITERAL(u8,{0})",
+                        fmt::make_format_args(token.wide_string_literal()));
+    case GD::CPP::TokenType::string16_literal:
+      return vformat_to(ctx.out(), "WIDE_STRING_LITERAL(u16,{0})",
+                        fmt::make_format_args(token.wide_string_literal()));
+    case GD::CPP::TokenType::string32_literal:
+      return vformat_to(ctx.out(), "WIDE_STRING_LITERAL(u32,{0})",
+                        fmt::make_format_args(token.wide_string_literal()));
     default:
       return vformat_to(ctx.out(), "UNKNOWN", fmt::make_format_args());
     }
