@@ -188,6 +188,18 @@
         "id": 21,
         "description": "We have an octal escape that looks like it has more than three digits.  This is valid but may indicate an error.",
         "C": "Octal escapes are limited to a maximum of three digits.  Fourth digit onwards will not be considered part of escape. (C2018-6.4.4.4)."
+      },
+      {
+        "msg": "newline_not_valid_in_string_literal",
+        "id": 22,
+        "description": "A literal newline is not valid in a string literal. (C2018-6.4.5)",
+        "C": "A literal newline is not valid in a character literal, use \\n instead. (C2018-6.4.5)"
+      },
+      {
+        "msg": "character_out_of_range_in_string_literal",
+        "id": 23,
+        "description": "Character is out of range is string literal.  {0} is value of character, {1} is max value allowed.",
+        "C": "Character is out of range in string literal.  Given value '\\x{0:x}' is not in the range [0, 0x{1:x}]."
       }
     ]
   }
