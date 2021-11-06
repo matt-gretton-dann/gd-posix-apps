@@ -60,31 +60,32 @@ if(NOT ClangTidy_COMMAND)
   set(CMAKE_CXX_CLANG_TIDY "" CACHE STRING "" FORCE)
   set(CMAKE_C_CLANG_TIDY "" CACHE STRING "" FORCE)
 elseif(WIN32)
-if(NOT FORCE_SUPPLEMENTAL_LIBRARY)
-  message(WARNING Disabling clang-tidy on Windows as FORCE_SUPPLEMENTAL_LIBRARY is not set)
-  set(CMAKE_CXX_CLANG_TIDY "" CACHE STRING "" FORCE)
-  set(CMAKE_C_CLANG_TIDY "" CACHE STRING "" FORCE)
-endif()
-  # Win32 needs to use native paths, and the source directory needs the \'s escaped so that they're
-  # Used in the regex properly.
-  file(TO_NATIVE_PATH "${ClangTidy_COMMAND}" _ct_ClangTidy_COMMAND)
-  file(TO_NATIVE_PATH "${CMAKE_BINARY_DIR}" _ct_CMAKE_BINARY_DIR)
-  file(TO_NATIVE_PATH "${CMAKE_SOURCE_DIR}" _ct_CMAKE_SOURCE_DIR)
-  string(REPLACE "\\" "\\\\" _ct_CMAKE_SOURCE_DIR "${_ct_CMAKE_SOURCE_DIR}")
-  # Clang-tidy doesn't pick up MSVC's exception settings so ensure they are enabled.
-  # Windows makes it very hard to avoid bugprone-exception-escape so ignore at the moment.
-  set(CMAKE_CXX_CLANG_TIDY
-    "${_ct_ClangTidy_COMMAND}"
-    "-p=${_ct_CMAKE_BINARY_DIR}"
-    "--extra-arg-before=-Xclang"
-    "--extra-arg-before=-fcxx-exceptions"
-    "-checks=-bugprone-exception-escape"
-    "--header-filter=^${_ct_CMAKE_SOURCE_DIR}\\(src|libgdsup)\\.*(([^.]h)|(\.[^h]))$")
-  set(CMAKE_C_CLANG_TIDY
-    "${_ct_ClangTidy_COMMAND}"
-    "-checks=-cppcoreguidelines-*"
-    "-p=${_ct_CMAKE_BINARY_DIR}"
-    "--header-filter=^${_ct_CMAKE_SOURCE_DIR}\\(src|libgdsup)\\.*$")
+  if(NOT FORCE_SUPPLEMENTAL_LIBRARY)
+    message(STATUS "!! Disabling clang-tidy on Windows as FORCE_SUPPLEMENTAL_LIBRARY is not set")
+    set(CMAKE_CXX_CLANG_TIDY "" CACHE STRING "" FORCE)
+    set(CMAKE_C_CLANG_TIDY "" CACHE STRING "" FORCE)
+  else()
+    # Win32 needs to use native paths, and the source directory needs the \'s escaped so that they're
+    # Used in the regex properly.
+    file(TO_NATIVE_PATH "${ClangTidy_COMMAND}" _ct_ClangTidy_COMMAND)
+    file(TO_NATIVE_PATH "${CMAKE_BINARY_DIR}" _ct_CMAKE_BINARY_DIR)
+    file(TO_NATIVE_PATH "${CMAKE_SOURCE_DIR}" _ct_CMAKE_SOURCE_DIR)
+    string(REPLACE "\\" "\\\\" _ct_CMAKE_SOURCE_DIR "${_ct_CMAKE_SOURCE_DIR}")
+    # Clang-tidy doesn't pick up MSVC's exception settings so ensure they are enabled.
+    # Windows makes it very hard to avoid bugprone-exception-escape so ignore at the moment.
+    set(CMAKE_CXX_CLANG_TIDY
+      "${_ct_ClangTidy_COMMAND}"
+      "-p=${_ct_CMAKE_BINARY_DIR}"
+      "--extra-arg-before=-Xclang"
+      "--extra-arg-before=-fcxx-exceptions"
+      "-checks=-bugprone-exception-escape"
+      "--header-filter=^${_ct_CMAKE_SOURCE_DIR}\\(src|libgdsup)\\.*(([^.]h)|(\.[^h]))$")
+    set(CMAKE_C_CLANG_TIDY
+      "${_ct_ClangTidy_COMMAND}"
+      "-checks=-cppcoreguidelines-*"
+      "-p=${_ct_CMAKE_BINARY_DIR}"
+      "--header-filter=^${_ct_CMAKE_SOURCE_DIR}\\(src|libgdsup)\\.*$")
+  endif()
 else()
   set(CMAKE_CXX_CLANG_TIDY
     "${ClangTidy_COMMAND}"
