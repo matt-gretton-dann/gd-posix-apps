@@ -414,7 +414,8 @@ TEST_CASE("GD::CPP::PreprocessorTokenizer - String Literal", "[cpp][preprocessor
   tokenizer.push_stream(fname, is);
 
   REQUIRE(tokenizer.peek() == GD::CPP::TokenType::string_literal);
-  REQUIRE(sl_manager.display_name(tokenizer.peek().string_literal()) == R"("a\"b'\"0\xff\x30")");
+  REQUIRE(sl_manager.display_name(tokenizer.peek().string_literal()) ==
+          "\"a\\\"b'\\\"0\\xff\\x30\"");
   tokenizer.chew();
   REQUIRE(tokenizer.peek() == GD::CPP::TokenType::end_of_include);
   tokenizer.chew();

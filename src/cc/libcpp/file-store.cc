@@ -27,6 +27,7 @@ namespace {
  * This treats the characters as UTF-8 code-points.  So multiple bytes may turn into a fewer
  * number of characters.
  */
+// NOLINTNEXTLINE - warns on not using const& iterators for Win32 Debug builds.
 auto count_chars(std::string::const_iterator begin, std::string::const_iterator end) noexcept
   -> GD::CPP::Column
 {

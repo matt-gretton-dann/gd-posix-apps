@@ -489,7 +489,7 @@ private:
       result = parse_escape_sequence(parent);
     }
     else if (t == U'\'') {
-      auto end = t.range().end();
+      end = t.range().end();
       parent.chew();
       if (parent.peek() == U'\'') {
         result = static_cast<unsigned char>('\'');
