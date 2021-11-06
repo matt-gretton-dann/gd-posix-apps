@@ -12,6 +12,7 @@ if(MSVC)
   #  4201 - Anonymous unions - this is legal C11.
   target_compile_options(${TARGET} PRIVATE /W4 /WX /wd4201)
   target_compile_definitions(${TARGET} PUBLIC _CRT_DECLARE_NONSTDC_NAMES=0 _CRT_SECURE_NO_WARNINGS=1 __STDC_WANT_SECURE_LIB__=1)
+  target_compile_definitions(${TARGET} PUBLIC _SILENCE_ALL_CXX20_DEPRECATION_WARNINGS)
 else()
   target_compile_options(${TARGET} PRIVATE -Wall -Wextra -Wpedantic -Werror)
   if (APPLE)
