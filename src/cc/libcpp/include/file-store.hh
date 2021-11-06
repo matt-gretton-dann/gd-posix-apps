@@ -9,6 +9,7 @@
 
 #include "gd/format.hh"
 
+#include <algorithm>
 #include <cstdint>
 #include <fstream>
 #include <iosfwd>

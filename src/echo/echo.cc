@@ -10,6 +10,7 @@
 
 #include "echo-messages.hh"
 
+#include <algorithm>
 #include <cassert>
 #include <clocale>
 #include <iostream>
