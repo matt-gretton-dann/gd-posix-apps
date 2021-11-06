@@ -32,7 +32,7 @@ target_sources(libcpp PRIVATE
     include/string-literal-manager.hh
     include/token.hh
     include/tokenizer.hh)
-#add_dependencies("libcpp" "cc_messages_header")
+add_dependencies("libcpp" "cc_messages_header")
 target_add_clang_format(libcpp)
 
 if(RUN_UNIT_TESTS)
