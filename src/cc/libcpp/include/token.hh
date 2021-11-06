@@ -205,9 +205,11 @@ struct fmt::formatter<GD::CPP::Token>
     case GD::CPP::TokenType::white_space:
       return vformat_to(ctx.out(), " ", fmt::make_format_args());
     case GD::CPP::TokenType::identifier:
-      return vformat_to(ctx.out(), "IDENTIFIER({0})", fmt::make_format_args(token.identifier()));
+      return vformat_to(ctx.out(), "IDENTIFIER({0})",
+                        fmt::make_format_args(to_underlying_type(token.identifier())));
     case GD::CPP::TokenType::ppnumber:
-      return vformat_to(ctx.out(), "PPNUMBER({0})", fmt::make_format_args(token.identifier()));
+      return vformat_to(ctx.out(), "PPNUMBER({0})",
+                        fmt::make_format_args(to_underlying_type(token.ppnumber())));
     case GD::CPP::TokenType::char_literal:
       if (std::isprint(static_cast<int>(token.char_literal())) != 0) {
         return vformat_to(ctx.out(), "'{0}'",
@@ -222,19 +224,19 @@ struct fmt::formatter<GD::CPP::Token>
       return vformat_to(ctx.out(), "L'\\x{0:08x}'", fmt::make_format_args(token.char_literal()));
     case GD::CPP::TokenType::string_literal:
       return vformat_to(ctx.out(), "STRING_LITERAL({0})",
-                        fmt::make_format_args(token.string_literal()));
+                        fmt::make_format_args(to_underlying_type(token.string_literal())));
     case GD::CPP::TokenType::wstring_literal:
       return vformat_to(ctx.out(), "WIDE_STRING_LITERAL(L,{0})",
-                        fmt::make_format_args(token.wide_string_literal()));
+                        fmt::make_format_args(to_underlying_type(token.wide_string_literal())));
     case GD::CPP::TokenType::string8_literal:
       return vformat_to(ctx.out(), "WIDE_STRING_LITERAL(u8,{0})",
-                        fmt::make_format_args(token.wide_string_literal()));
+                        fmt::make_format_args(to_underlying_type(token.wide_string_literal())));
     case GD::CPP::TokenType::string16_literal:
       return vformat_to(ctx.out(), "WIDE_STRING_LITERAL(u16,{0})",
-                        fmt::make_format_args(token.wide_string_literal()));
+                        fmt::make_format_args(to_underlying_type(token.wide_string_literal())));
     case GD::CPP::TokenType::string32_literal:
       return vformat_to(ctx.out(), "WIDE_STRING_LITERAL(u32,{0})",
-                        fmt::make_format_args(token.wide_string_literal()));
+                        fmt::make_format_args(to_underlying_type(token.wide_string_literal())));
     default:
       return vformat_to(ctx.out(), "UNKNOWN", fmt::make_format_args());
     }

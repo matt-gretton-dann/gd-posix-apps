@@ -87,7 +87,8 @@ void GD::CPP::ErrorManager::do_error(ErrorCode code, Range range, std::string ms
   std::string fname = file_store_ != nullptr ? file_store_->logical_filename(loc) : "??";
   Line line = file_store_ != nullptr ? file_store_->logical_line(loc) : Line{0};
   Column column = file_store_ != nullptr ? file_store_->logical_column(loc) : Column{0};
-  auto to_output = fmt::format("{0}:{1}:{2}:{3}:{4}:{5}", fname, line, column, id, severity, msg);
+  auto to_output = fmt::format("{0}:{1}:{2}:{3}:{4}:{5}", fname, to_underlying_type(line),
+                               to_underlying_type(column), id, severity, msg);
   if (severity == ErrorSeverity::ice) {
     ice("{0}", to_output);
   }

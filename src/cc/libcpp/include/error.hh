@@ -18,6 +18,14 @@
 #include "location.hh"
 
 namespace GD::CPP {
+
+/** \brief  Convert an enumeration to its underlying type.  */
+template<typename E>
+constexpr auto to_underlying_type(E e) -> std::underlying_type_t<E>
+{
+  return static_cast<std::underlying_type_t<E>>(e);
+}
+
 class FileStore;
 
 /** \brief  List of error codes.  */
