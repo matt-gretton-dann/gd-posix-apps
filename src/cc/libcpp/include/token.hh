@@ -52,18 +52,23 @@ enum class TokenType {
  *
  * Valid token types and the union contents are:
  *
- * | TokenType      | Payload    |  Contents                                                       |
- * | :------------- | :--------- | :---------                                                      |
- * | end_of_source  |            | End of all sources                                              |
- * | end_of_include |            | End of the current source file.                                 |
- * | character      | char32_t   | A character.                                                    |
- * | white_space    |            | White space.                                                    |
- * | identifier     | IdentID    | Identifier.                                                     |
- * | ppnumber       | PPNumberID | PPNumber.                                                       |
- * | char_literal   | uint32_t   | '' Character literal.                                           |
- * | char16_literal | uint16_t   | u'' Character literal.                                          |
- * | char32_literal | uint32_t   | U'' Character literal.                                          |
- * | wchar_literal  | uint32_t   | L'' character literal.                                          |
+ * | TokenType         | Payload             |  Contents                                           |
+ * | :---------------- | :------------------ | :-------------------------------------------------- |
+ * | end_of_source     |                     | End of all sources                                  |
+ * | end_of_include    |                     | End of the current source file.                     |
+ * | character         | char32_t            | A character.                                        |
+ * | white_space       |                     | White space.                                        |
+ * | identifier        | IdentID             | Identifier.                                         |
+ * | ppnumber          | PPNumberID          | PPNumber.                                           |
+ * | char_literal      | uint32_t            | '' Character literal.                               |
+ * | char16_literal    | uint16_t            | u'' Character literal.                              |
+ * | char32_literal    | uint32_t            | U'' Character literal.                              |
+ * | wchar_literal     | uint32_t            | L'' character literal.                              |
+ * | string_literal    | StringLiteralID     | "" String literal.                                  |
+ * | string8_literal   | WideStringLiteralID | u8"" String literal.                                |
+ * | string16_literal  | WideStringLiteralID | u16"" String literal.                               |
+ * | string32_literal  | WideStringLiteralID | u32"" String literal.                               |
+ * | wstring_literal   | WideStringLiteralID | Wide string literal                                 |
  */
 class Token  // NOLINT
 {
