@@ -51,6 +51,7 @@ std::map<GD::CPP::ErrorCode, GD::CPP::ErrorSeverity> severities = {
   {EC::overlong_octal_escape, ES::warning},
   {EC::newline_not_valid_in_string_literal, ES::error},
   {EC::character_out_of_range_in_string_literal, ES::error},
+  {EC::illegal_unicode_character, ES::error},
 };
 
 auto get_severity(GD::CPP::ErrorCode code) -> GD::CPP::ErrorSeverity

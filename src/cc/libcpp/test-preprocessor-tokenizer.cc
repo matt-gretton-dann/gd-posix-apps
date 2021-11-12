@@ -21,7 +21,8 @@ class TokenizerMaker
 public:
   TokenizerMaker()
       : error_manager_(os_), file_store_(error_manager_),
-        tokenizer_(file_store_, error_manager_, id_manager_, ppn_manager_, str_lit_manager_)
+        tokenizer_(file_store_, error_manager_, id_manager_, ppn_manager_, str_lit_manager_,
+                   wstr_lit_manager_)
   {
     error_manager_.file_store(file_store_);
   }
@@ -31,6 +32,7 @@ public:
   auto id_manager() -> GD::CPP::IdentifierManager& { return id_manager_; }
   auto ppn_manager() -> GD::CPP::PPNumberManager& { return ppn_manager_; }
   auto str_lit_manager() -> GD::CPP::StringLiteralManager& { return str_lit_manager_; }
+  auto wstr_lit_manager() -> GD::CPP::WideStringLiteralManager& { return wstr_lit_manager_; }
 
 private:
   std::ostringstream os_;
@@ -38,6 +40,7 @@ private:
   GD::CPP::PPNumberManager ppn_manager_;
   GD::CPP::IdentifierManager id_manager_;
   GD::CPP::StringLiteralManager str_lit_manager_;
+  GD::CPP::WideStringLiteralManager wstr_lit_manager_;
   GD::CPP::FileStore file_store_;
   GD::CPP::PreprocessorTokenizer<GD::CPP::FileStore> tokenizer_;
 };

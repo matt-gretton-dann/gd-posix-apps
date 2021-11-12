@@ -200,6 +200,12 @@
         "id": 23,
         "description": "Character is out of range is string literal.  {0} is value of character, {1} is max value allowed.",
         "C": "Character is out of range in string literal.  Given value '\\x{0:x}' is not in the range [0, 0x{1:x}]."
+      },
+      {
+        "msg": "illegal_unicode_character",
+        "id": 24,
+        "description": "The character with value {0} is not a valid unicode character.",
+        "C": "\\U{0:8.8x} is not a valid Unicode character."
       }
     ]
   }

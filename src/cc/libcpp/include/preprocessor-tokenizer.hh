@@ -18,6 +18,61 @@
 
 namespace GD::CPP {
 
+namespace Details {
+/** \brief    Convert a Unicode character
+ *  \param  c Character
+ *  \return   String representing the characters.
+ */
+inline auto to_utf8(std::uint32_t c) -> std::string
+{
+  constexpr int shift = 6;
+  constexpr unsigned int mask = 0x3f;
+  constexpr unsigned int top_bit = 0x80;
+
+  if (c >= 0xd800 && c <= 0xdfff) {  // NOLINT
+    /* UTF-16 surrogate pairs - don't encode.  */
+    return {};
+  }
+
+  if (c <= 0x7f) {  // NOLINT
+    return {1, static_cast<char>(c)};
+  }
+
+  if (c <= 0x7ff) {  // NOLINT
+    std::string s(2, '\0');
+    s[0] = static_cast<char>(c >> shift);
+    s[1] = static_cast<char>((c & mask) | top_bit);
+    return s;
+  }
+
+  if (c <= 0xffff) {  // NOLINT
+    std::string s(3, '\0');
+    s[0] = static_cast<char>(c >> (shift * 2));
+    s[1] = static_cast<char>(((c >> shift) & mask) | top_bit);
+    s[2] = static_cast<char>((c & mask) | top_bit);
+    return s;
+  }
+
+  if (c <= 0x10ffff) {  // NOLINT
+    std::string s(4, '\0');
+    s[0] = static_cast<char>(c >> (shift * 3));
+    s[1] = static_cast<char>(((c >> (shift * 2)) & mask) | top_bit);
+    s[1] = static_cast<char>(((c >> shift) & mask) | top_bit);
+    s[2] = static_cast<char>((c & mask) | top_bit);
+    return s;
+  }
+
+  return {};
+}
+
+constexpr auto is_valid_unicode(std::uint32_t c) -> bool
+{
+  /* Valid Unicode characters are in the range [0, 10ffff] but exclude the surrogate pairs between
+   * 0xd800 and 0xdfff. */
+  return c < 0xd800 || (c >= 0xe000 && c <= 0x10ffff);  // NOLINT
+}
+}  // namespace Details
+
 /** \brief         Preprocessor tokenizer
  *  \tparam Parent Parent class type to call to get tokens.
  *  \param  parent Parent tokenizer
@@ -34,9 +89,11 @@ class PreprocessorTokenizer : public Tokenizer<PreprocessorTokenizer<Parent>, Pa
 {
 public:
   PreprocessorTokenizer(Parent& parent, ErrorManager& em, IdentifierManager& id,
-                        PPNumberManager& ppm, StringLiteralManager& slm)
+                        PPNumberManager& ppm, StringLiteralManager& slm,
+                        WideStringLiteralManager& wslm)
       : Tokenizer<PreprocessorTokenizer<Parent>, Parent>(parent), error_manager_(em),
-        identifier_manager_(id), ppnumber_manager_(ppm), str_lit_manager_(slm)
+        identifier_manager_(id), ppnumber_manager_(ppm), str_lit_manager_(slm),
+        wstr_lit_manager_(wslm)
   {
   }
 
@@ -164,7 +221,7 @@ private:
             return slash_token;
           }
 
-          /* We have a white-space token to return, so make this token pending, and then break.  */
+          /* We have a white-space token to return, so make this token pending, and then break. */
           pending_ = slash_token;
           break;
         }
@@ -335,11 +392,11 @@ private:
    *  \param  begin  Location of start of token
    *  \return        Token to return
    *
-   * If the first character being parsed is a '\' may return a character token if it doesn't become
-   * a proper UCN.
+   * If the first character being parsed is a '\' may return a character token if it doesn't
+   * become a proper UCN.
    *
-   * Maybe called when we've had to disambiguate a token from being an identifier or something else
-   * (for example: Usa).
+   * Maybe called when we've had to disambiguate a token from being an identifier or something
+   * else (for example: Usa).
    */
   auto parse_identifier(Parent& parent, std::u32string id, Location begin) -> Token
   {
@@ -606,12 +663,58 @@ private:
     }
   }
 
+  auto parse_wstring_literal(Parent& parent, TokenType type) -> Token
+  {
+    assert_ice(parent.peek() == U'"', "String literal parsing should point to opening \".");
+    auto begin = parent.peek().range().begin();
+    parent.chew(TokenType::character);
+
+    std::u32string result{};
+
+    while (true) {
+      std::uint32_t next_char{0};
+      auto const& t = parent.peek();
+      auto char_begin = t.range().begin();
+      auto end = t.range().end();
+      if (t == U'\\') {
+        next_char = parse_escape_sequence(parent);
+        end = parent.peek().range().end();
+      }
+      else if (t == U'"') {
+        parent.chew();
+        return {type, Range{begin, end}, wstr_lit_manager_.id(result)};
+      }
+      else if (t == U'\n') {
+        error_manager_.error(ErrorCode::newline_not_valid_in_string_literal,
+                             Range{begin, parent.peek().range().end()});
+        return {type, Range{begin, end}, wstr_lit_manager_.id(result)};
+      }
+      else if (t == TokenType::character) {
+        next_char = t.character();
+        parent.chew();
+      }
+      else {
+        if (!Details::is_valid_unicode(next_char)) {
+          error_manager_.error(ErrorCode::illegal_unicode_character, Range{char_begin, end},
+                               next_char);
+          next_char = U'\ufffd';
+        }
+      }
+
+      result += static_cast<char32_t>(next_char);
+    }
+  }
+
   /** \brief  Parse tokens that begin with a U.  */
   auto parse_L(Parent& parent) -> Token
   {
     assert_ice(parent.peek() == U'L', "L parsing needs to start by pointing at L.");
     auto begin{parent.peek().range().begin()};
     parent.chew();
+
+    if (parent.peek() == '"') {
+      return parse_wstring_literal(parent, TokenType::wstring_literal);
+    }
 
     if (parent.peek() == '\'') {
       return parse_char_literal(parent, TokenType::wchar_literal, begin);
@@ -627,6 +730,10 @@ private:
     auto begin{parent.peek().range().begin()};
     parent.chew();
 
+    if (parent.peek() == '"') {
+      return parse_wstring_literal(parent, TokenType::string32_literal);
+    }
+
     if (parent.peek() == '\'') {
       return parse_char_literal(parent, TokenType::char32_literal, begin);
     }
@@ -640,6 +747,19 @@ private:
     assert_ice(parent.peek() == U'u', "u parsing needs to start by pointing at u.");
     auto begin{parent.peek().range().begin()};
     parent.chew();
+
+    if (parent.peek() == '8') {
+      parent.chew();
+      if (parent.peek() == '\"') {
+        return parse_wstring_literal(parent, TokenType::string8_literal);
+      }
+
+      return parse_identifier(parent, U"u8", begin);
+    }
+
+    if (parent.peek() == '"') {
+      return parse_wstring_literal(parent, TokenType::string16_literal);
+    }
 
     if (parent.peek() == '\'') {
       return parse_char_literal(parent, TokenType::char16_literal, begin);
@@ -711,6 +831,7 @@ private:
   IdentifierManager& identifier_manager_;       ///< Identifier manager
   PPNumberManager& ppnumber_manager_;           ///< PPNumber manager
   StringLiteralManager& str_lit_manager_;       ///< String literal manager
+  WideStringLiteralManager& wstr_lit_manager_;  ///< Wide String literal manager
   std::optional<Token> pending_{std::nullopt};  ///< Pending token
 };
 

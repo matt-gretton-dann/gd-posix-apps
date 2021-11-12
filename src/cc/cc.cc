@@ -26,10 +26,11 @@ void dump_tokens(GD::CPP::FileStore& file_store, GD::CPP::ErrorManager& em)
   GD::CPP::IdentifierManager id_manager;
   GD::CPP::PPNumberManager ppn_manager;
   GD::CPP::StringLiteralManager sl_manager;
+  GD::CPP::WideStringLiteralManager wsl_manager;
   auto trigraph_tokenizer = GD::CPP::TrigraphParser(file_store, em);
   auto slice_tokenizer = GD::CPP::NewLineChewer(trigraph_tokenizer, em);
-  auto tokenizer =
-    GD::CPP::PreprocessorTokenizer(slice_tokenizer, em, id_manager, ppn_manager, sl_manager);
+  auto tokenizer = GD::CPP::PreprocessorTokenizer(slice_tokenizer, em, id_manager, ppn_manager,
+                                                  sl_manager, wsl_manager);
 
   while (tokenizer.peek() != GD::CPP::TokenType::end_of_source) {
     auto const& token = tokenizer.peek();
@@ -45,6 +46,18 @@ void dump_tokens(GD::CPP::FileStore& file_store, GD::CPP::ErrorManager& em)
       break;
     case GD::CPP::TokenType::string_literal:
       std::cout << sl_manager.display_name(token.string_literal());
+      break;
+    case GD::CPP::TokenType::string8_literal:
+      std::cout << "u8" << wsl_manager.display_name(token.wide_string_literal());
+      break;
+    case GD::CPP::TokenType::string16_literal:
+      std::cout << 'u' << wsl_manager.display_name(token.wide_string_literal());
+      break;
+    case GD::CPP::TokenType::string32_literal:
+      std::cout << 'U' << wsl_manager.display_name(token.wide_string_literal());
+      break;
+    case GD::CPP::TokenType::wstring_literal:
+      std::cout << 'L' << wsl_manager.display_name(token.wide_string_literal());
       break;
     default:
       std::cout << fmt::format("{0}", token);
