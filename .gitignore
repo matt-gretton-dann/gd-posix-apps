@@ -1,6 +1,6 @@
 # \file   .gitignore
 # \brief  Files for git to ignore
-# \author Copyright 2020, Matthew Gretton-Dann
+# \author Copyright 2020-2022, Matthew Gretton-Dann
 # SPDX-License-Identifier: Apache-2.0
 
 # Prerequisites
@@ -51,3 +51,7 @@ __pycache__/
 
 # GDB
 .gdb_history
+
+# CLion
+cmake-build-*/
+
