@@ -31,8 +31,7 @@
 namespace GD::Util {
 enum class Msg;
 
-auto rename(char const* _old, char const* _new) __NOEXCEPT -> int;
-
+auto rename(char const* _old, char const* _new) __NOEXCEPT->int;
 }  // namespace GD::Util
 
 namespace GD {

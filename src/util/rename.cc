@@ -15,7 +15,7 @@
 
 extern "C" void __support_log(char const* format, ...);  // NOLINT
 
-auto GD::Util::rename(char const* _old, char const* _new) __NOEXCEPT -> int
+auto GD::Util::rename(char const* _old, char const* _new) __NOEXCEPT->int
 {
   BOOL success = ::ReplaceFileA(_new, _old, nullptr, 0, nullptr, nullptr);
   if (success == 0) {
@@ -28,7 +28,7 @@ auto GD::Util::rename(char const* _old, char const* _new) __NOEXCEPT -> int
 }
 #else
 #  include <cstdio>
-auto GD::Util::rename(char const* _old, char const* _new) __NOEXCEPT -> int
+auto GD::Util::rename(char const* _old, char const* _new) __NOEXCEPT->int
 {
   return ::rename(_old, _new);
 }
