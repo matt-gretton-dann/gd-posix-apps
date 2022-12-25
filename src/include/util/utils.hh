@@ -22,7 +22,7 @@ void program_name(std::string_view argv0);
 /** \brief  Get the program name.
  *  \return Program name.
  */
-auto program_name() -> std::string_view;
+auto program_name() noexcept -> std::string_view;
 
 /** \brief     Class to provide 'overloaded' lambdas.
  *  \tparam Ts Lambdas to combine

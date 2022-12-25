@@ -66,7 +66,7 @@ public:
    */
   static auto get() -> Messages const&
   {
-    static Messages the_messages;
+    static Messages const the_messages;
     return the_messages;
   }
 

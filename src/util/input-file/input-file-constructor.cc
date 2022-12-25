@@ -11,7 +11,7 @@
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 GD::StreamInputFile::StreamInputFile(std::string_view filename, std::string_view mode)
-    : filename_(filename), file_(nullptr), is_stdin_(false), buffer_(nullptr)
+    : filename_(filename), buffer_(nullptr)
 {
   if (filename_ == "-") {
     filename_ = GD::Util::Messages::get().get(GD::Util::Set::util, Msg::stdin_name);
@@ -30,6 +30,7 @@ GD::StreamInputFile::StreamInputFile(std::string_view filename, std::string_view
 GD::StreamInputFile::~StreamInputFile()
 {
   if (!is_stdin_ && file_ != nullptr) {
-    std::fclose(file_);
+    // Too late to do anything if this goes wrong now.
+    (void)std::fclose(file_);
   }
 }
