@@ -15,7 +15,7 @@
 #include "nl_types/nl_types.h"
 #include "support/support.h"
 
-#define expected_size 12
+enum { expected_size = 12 };
 
 bool __nl_types_check_cat_header(char const buffer[CAT_HDR_SIZE])
 {
