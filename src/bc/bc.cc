@@ -68,8 +68,8 @@ void execute(GD::Bc::VM& vm, std::unique_ptr<GD::Bc::Reader>&& r)
 
 auto main(int argc, char** argv) -> int
 {
-  std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
-  GD::Span::span<char*> args(argv, argc);
+  (void)std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
+  GD::Span::span<char*> const args(argv, argc);
   GD::program_name(args[0]);
 
   int c = 0;
@@ -114,7 +114,8 @@ auto main(int argc, char** argv) -> int
     return true;
   };
 
-  bool success = GD::for_each_file(args.begin() + optind, args.end(), process, GD::FEFFlags::none);
+  bool const success =
+    GD::for_each_file(args.begin() + optind, args.end(), process, GD::FEFFlags::none);
   if (success) {
     auto r = std::make_unique<GD::Bc::FileReader>("-");
     execute(vm, std::move(r));
