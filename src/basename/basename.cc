@@ -35,9 +35,9 @@ template<typename... Ts>
 }  // namespace
 
 auto main(int argc, char** argv) -> int
-{
-  std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
-  GD::Span::span<char*> args(argv, argc);
+try {
+  (void)std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
+  GD::Span::span<char*> const args(argv, argc);
   GD::program_name(args[0]);
 
   auto begin = args.begin() + 1;
@@ -59,7 +59,7 @@ auto main(int argc, char** argv) -> int
 
   ++begin;
   if (begin != args.end()) {
-    std::string_view suffix(*begin);
+    std::string_view const suffix(*begin);
     if (bname.ends_with(suffix)) {
       bname = bname.substr(0, bname.size() - suffix.size());
     }
@@ -67,4 +67,7 @@ auto main(int argc, char** argv) -> int
 
   std::cout << bname << '\n';
   return EXIT_SUCCESS;
+}
+catch (...) {
+  return EXIT_FAILURE;
 }
