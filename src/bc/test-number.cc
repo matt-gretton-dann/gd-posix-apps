@@ -54,7 +54,7 @@ TEST_CASE("GD::Bc::Number - Number construction, directed", "[bc][number]")
     {".123456789", 10, "0.123 456 789", 1000},
   }));
   if (obase < GD::Bc::Number::base_) {
-    GD::Bc::Number num(in_num, static_cast<GD::Bc::Number::NumType>(ibase));
+    GD::Bc::Number const num(in_num, static_cast<GD::Bc::Number::NumType>(ibase));
     std::ostringstream ss;
     std::string expected(out_num);
     if (GD::Bc::extensions_enabled() && expected.substr(0, 2) == "0.") {
@@ -170,7 +170,7 @@ TEST_CASE("GD::Bc::Number - Scale and length, directed", "[bc][number]")
        {"1.0000", 4, 5},
        {"123456789123456789123456789", 0, 27}}));
   constexpr unsigned working_base = 10;
-  GD::Bc::Number n(num, working_base);
+  GD::Bc::Number const n(num, working_base);
   REQUIRE(n.scale() == scale);
   REQUIRE(n.length() == length);
 }
@@ -329,13 +329,13 @@ TEST_CASE("GD::Bc::Number - division, random", "[bc][number]")
   auto ud = nums.first % mask;
   while (mask != 0) {
     auto vd = nums.second % mask;
-    Number8 u(std::to_string(ud), working_base);
+    Number8 const u(std::to_string(ud), working_base);
     if (vd != 0) {
-      Number8 v(std::to_string(vd), working_base);
+      Number8 const v(std::to_string(vd), working_base);
       auto q = ud / vd;
       auto r = ud % vd;
-      Number8 expected_q(std::to_string(q), working_base);
-      Number8 expected_r(std::to_string(r), working_base);
+      Number8 const expected_q(std::to_string(q), working_base);
+      Number8 const expected_r(std::to_string(r), working_base);
 
       INFO("u = " << ud << " v = " << vd << " q = " << q << " r = " << r);
       Number8 div(u);

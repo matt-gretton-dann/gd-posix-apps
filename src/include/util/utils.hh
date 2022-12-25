@@ -55,14 +55,20 @@ class TypeWrapper
 {
 public:
   explicit TypeWrapper(T t) : t_(std::move(t)) {}
-  explicit TypeWrapper(T&& t) : t_(std::move(t)) {}
+  explicit TypeWrapper(T&& t) noexcept : t_(std::move(t)) {}
+  TypeWrapper(TypeWrapper&&) noexcept = default;  // NOLINT(bugprone-exception-escape)
+  TypeWrapper(TypeWrapper const&) = default;
+  auto operator=(TypeWrapper&&) noexcept  // NOLINT(bugprone-exception-escape)
+    -> TypeWrapper& = default;
+  auto operator=(TypeWrapper const&) -> TypeWrapper& = default;
+  ~TypeWrapper() noexcept = default;
 
   template<typename Arg>
   explicit TypeWrapper(Arg arg) : t_(T(arg))
   {
   }
 
-  auto get() -> T& { return t_; }
+  [[nodiscard]] auto get() -> T& { return t_; }
   [[nodiscard]] auto get() const -> T const& { return t_; }
 
 private:

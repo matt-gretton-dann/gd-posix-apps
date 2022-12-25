@@ -156,8 +156,7 @@ auto GD::Bc::operator-(Parser::ExprIndex const& lhs, Parser::ExprIndex const& rh
  */
 
 GD::Bc::Parser::Parser(std::unique_ptr<Lexer>&& lexer, bool interactive)
-    : lexer_(std::move(lexer)), interactive_(interactive), error_(false), in_function_(false),
-      seen_quit_(false)
+    : lexer_(std::move(lexer)), interactive_(interactive)
 {
   assert(lexer_ != nullptr);  // NOLINT
 }
@@ -309,7 +308,7 @@ auto GD::Bc::Parser::parse_opt_statement() -> bool
     }
     return true;
   default: {
-    ExprIndex idx = parse_opt_expression();
+    ExprIndex const idx = parse_opt_expression();
     switch (idx.type()) {
     case ExprType::missing:
       return false;
@@ -349,7 +348,7 @@ void GD::Bc::Parser::parse_return_statement()
 
   ExprIndex expr = ExprIndex::missing();
 
-  bool need_lparens = !extensions_enabled();
+  bool const need_lparens = !extensions_enabled();
   bool found_lparens = false;
   if (lexer_->peek() == Token::Type::lparens) {
     lexer_->chew();
@@ -414,7 +413,7 @@ void GD::Bc::Parser::parse_for_statement()
   lexer_->chew();
 
   /* Relational expression. */
-  ExprIndex begin(instructions_->size());
+  ExprIndex const begin(instructions_->size());
   auto rel_expr = parse_relational_expression();
 
   if (lexer_->peek() != Token::Type::semicolon) {
@@ -429,7 +428,7 @@ void GD::Bc::Parser::parse_for_statement()
   auto b_to_body = insert_branch(ExprIndex(0));
 
   /* Update expression. */
-  ExprIndex update(instructions_->size());
+  ExprIndex const update(instructions_->size());
   parse_expression();
   insert_branch(begin);
   if (lexer_->peek() != Token::Type::rparens) {
@@ -438,7 +437,7 @@ void GD::Bc::Parser::parse_for_statement()
   }
   lexer_->chew();
 
-  ExprIndex body(instructions_->size());
+  ExprIndex const body(instructions_->size());
   parse_statement();
   insert_branch(update);
 
@@ -458,7 +457,7 @@ void GD::Bc::Parser::parse_if_statement()
   }
   lexer_->chew();
 
-  ExprIndex begin(instructions_->size());
+  ExprIndex const begin(instructions_->size());
   auto rel_expr = parse_relational_expression();
 
   if (lexer_->peek() != Token::Type::rparens) {
@@ -467,10 +466,10 @@ void GD::Bc::Parser::parse_if_statement()
   }
   lexer_->chew();
 
-  auto bz = insert_branch_zero(rel_expr, ExprIndex(0));
+  auto const bz = insert_branch_zero(rel_expr, ExprIndex(0));
 
   parse_statement();
-  ExprIndex end(instructions_->size());
+  ExprIndex const end(instructions_->size());
   instructions_->at(bz.index()).op2(end - bz);
 }
 
@@ -486,8 +485,8 @@ void GD::Bc::Parser::parse_while_statement()
   }
   lexer_->chew();
 
-  ExprIndex begin(instructions_->size());
-  auto rel_expr = parse_relational_expression();
+  ExprIndex const begin(instructions_->size());
+  auto const rel_expr = parse_relational_expression();
 
   if (lexer_->peek() != Token::Type::rparens) {
     insert_error(Msg::expected_rparens, lexer_->peek());
@@ -538,7 +537,7 @@ void GD::Bc::Parser::parse_function()
   }
   in_function_ = true;
   assert(lexer_->peek() == Token::Type::define);  // NOLINT
-  Location loc = lexer_->location();
+  Location const loc = lexer_->location();
   lexer_->chew();
 
   if (lexer_->peek() != Token::Type::letter) {
@@ -547,7 +546,7 @@ void GD::Bc::Parser::parse_function()
   }
   auto letter = lexer_->peek().letter();
   lexer_->chew();
-  ExprIndex function_begin = insert_function_begin(VariableMask(), loc);
+  ExprIndex const function_begin = insert_function_begin(VariableMask(), loc);
 
   if (lexer_->peek() != Token::Type::lparens) {
     insert_error(Msg::expected_lparens, lexer_->peek());
@@ -797,7 +796,7 @@ auto GD::Bc::Parser::parse_opt_assign_expression(POPEFlags flags) -> GD::Bc::Par
   /* It was a named expression so see if we are an assign op and handle that if we are.  */
   if (primary_expr == ExprType::named) {
     if (lexer_->peek().is_assign_op()) {
-      Token::Type assign_type = lexer_->peek().type();
+      Token::Type const assign_type = lexer_->peek().type();
       lexer_->chew();
       ExprIndex assign_index = parse_assign_expression();
       if (assign_type != Token::Type::assign) {
@@ -829,11 +828,11 @@ auto GD::Bc::Parser::parse_opt_assign_expression(POPEFlags flags) -> GD::Bc::Par
 
     /* Not an assign op but may be an post increment/decrement that needs dealing with.  */
     if (lexer_->peek().is_incr_decr_op()) {
-      bool incr = lexer_->peek() == Token::Type::increment;
+      bool const incr = lexer_->peek() == Token::Type::increment;
       lexer_->chew();
-      ExprIndex load = insert_load(primary_expr);
-      ExprIndex num1 = insert_number("1");
-      ExprIndex assign_index =
+      ExprIndex const load = insert_load(primary_expr);
+      ExprIndex const num1 = insert_number("1");
+      ExprIndex const assign_index =
         insert_arith(incr ? Instruction::Opcode::add : Instruction::Opcode::subtract, load, num1);
       insert_store(primary_expr, assign_index);
       primary_expr = load;
@@ -887,9 +886,9 @@ auto GD::Bc::Parser::parse_add_expression(GD::Bc::Parser::ExprIndex lhs)
   /* add_expression : mul_expression ADD_OP add_expression | mul_expression */
 
   while (lexer_->peek().is_add_op()) {
-    Token::Type type = lexer_->peek().type();
+    Token::Type const type = lexer_->peek().type();
     lexer_->chew();
-    ExprIndex rhs = parse_mul_expression();
+    ExprIndex const rhs = parse_mul_expression();
     switch (type) {
     case Token::Type::add:
       lhs = insert_arith(Instruction::Opcode::add, lhs, rhs);
@@ -915,9 +914,9 @@ auto GD::Bc::Parser::parse_mul_expression(GD::Bc::Parser::ExprIndex lhs)
   /* mul_expression : power_expression MUL_OP mul_expression | power_expression */
 
   while (lexer_->peek().is_mul_op()) {
-    Token::Type type = lexer_->peek().type();
+    Token::Type const type = lexer_->peek().type();
     lexer_->chew();
-    ExprIndex rhs = parse_power_expression();
+    ExprIndex const rhs = parse_power_expression();
     switch (type) {
     case Token::Type::multiply:
       lhs = insert_arith(Instruction::Opcode::multiply, lhs, rhs);
@@ -947,7 +946,7 @@ auto GD::Bc::Parser::parse_power_expression(GD::Bc::Parser::ExprIndex lhs)
 
   while (lexer_->peek() == Token::Type::power) {
     lexer_->chew();
-    ExprIndex rhs = parse_power_expression();
+    ExprIndex const rhs = parse_power_expression();
     lhs = insert_arith(Instruction::Opcode::power, lhs, rhs);
   }
   return lhs;
@@ -1001,17 +1000,17 @@ auto GD::Bc::Parser::parse_incr_decr_expression() -> GD::Bc::Parser::ExprIndex
     lexer_->chew();
   }
 
-  ExprIndex load_idx = insert_load(named_expr);
-  ExprIndex num_idx = insert_number("1");
-  ExprIndex op_idx = insert_arith(incr ? Instruction::Opcode::add : Instruction::Opcode::subtract,
-                                  load_idx, num_idx);
+  ExprIndex const load_idx = insert_load(named_expr);
+  ExprIndex const num_idx = insert_number("1");
+  ExprIndex const op_idx = insert_arith(
+    incr ? Instruction::Opcode::add : Instruction::Opcode::subtract, load_idx, num_idx);
   insert_store(named_expr, op_idx);
   return pre ? op_idx : load_idx;
 }
 
 auto GD::Bc::Parser::parse_opt_primary_expression(POPEFlags flags) -> GD::Bc::Parser::ExprIndex
 {
-  bool parse_array_slices = (flags == POPEFlags::parse_array_slices);
+  bool const parse_array_slices = (flags == POPEFlags::parse_array_slices);
 
   /* Because of the number of special cases for named_expression vs primary_expression we do
    * both in here.  */
@@ -1037,7 +1036,7 @@ auto GD::Bc::Parser::parse_opt_primary_expression(POPEFlags flags) -> GD::Bc::Pa
     }
 
     if (lexer_->peek() == Token::Type::lparens) {
-      Location loc = lexer_->location();
+      Location const loc = lexer_->location();
       lexer_->chew();
 
       insert_push_param_mark();
@@ -1121,7 +1120,7 @@ auto GD::Bc::Parser::parse_opt_primary_expression(POPEFlags flags) -> GD::Bc::Pa
       return insert_error(Msg::expected_lparens);
     }
     lexer_->chew();
-    POPEFlags expr_flags =
+    POPEFlags const expr_flags =
       extensions_enabled() ? POPEFlags::parse_array_slices : POPEFlags::parse_primary;
     auto elt = parse_expression(expr_flags);
 
@@ -1193,7 +1192,7 @@ auto GD::Bc::Parser::insert_store(ExprIndex var, ExprIndex value) -> GD::Bc::Par
 {
   assert(var == ExprType::named || var == ExprType::array_slice);  // NOLINT
   value = ensure_expr_loaded(value);
-  ExprIndex end(instructions_->size());
+  ExprIndex const end(instructions_->size());
   instructions_->emplace_back(Instruction::Opcode::store, var - end, value - end);
   return {value.index(), ExprType::assignment};
 }

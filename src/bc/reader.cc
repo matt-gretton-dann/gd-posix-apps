@@ -80,7 +80,7 @@ auto GD::Bc::Reader::location() const -> GD::Bc::Location const& { return locati
 
 GD::Bc::Reader::~Reader() = default;
 
-GD::Bc::StringReader::StringReader(std::string_view s) : Reader("Library"), s_(s), pos_(0) {}
+GD::Bc::StringReader::StringReader(std::string_view s) : Reader("Library"), s_(s) {}
 
 auto GD::Bc::StringReader::peek() -> int
 {
@@ -98,7 +98,7 @@ void GD::Bc::StringReader::do_chew()
   }
 }
 
-GD::Bc::FileReader::FileReader(std::string_view f) : Reader(f), file_(f), c_(EOF)
+GD::Bc::FileReader::FileReader(std::string_view f) : Reader(f), file_(f)
 {
   if (file_.error()) {
     error(Msg::file_error, file_.filename());

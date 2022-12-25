@@ -217,7 +217,7 @@ auto operator!=(Token const& token, Token::Type type) -> bool;
 auto operator!=(Token::Type type, Token const& token) -> bool;
 
 /** \brief  A source location.  */
-class Location
+class Location  // NOLINT(bugprone-exception-escape)
 {
 public:
   using Column = unsigned;
@@ -328,8 +328,8 @@ public:
 private:
   void do_chew() final;
 
-  std::string_view s_;               ///< String
-  std::string_view::size_type pos_;  ///< Current position in string.
+  std::string_view s_;                  ///< String
+  std::string_view::size_type pos_{0};  ///< Current position in string.
 };
 
 /** \brief File parser. */
@@ -347,7 +347,7 @@ private:
   void do_chew() final;
 
   GD::StreamInputFile file_;  ///< File
-  int c_;                     ///< Current character (EOF means needs peeking or EOF)
+  int c_{EOF};                ///< Current character (EOF means needs peeking or EOF)
 };
 
 /** Lexer.  */
@@ -408,10 +408,10 @@ private:
    */
   void lex_symbol(Token::Type plain, char next1, Token::Type tok1, char next2, Token::Type tok2);
 
-  std::unique_ptr<Reader> r_;  ///< Reader
-  std::optional<Token> t_;     ///< Pending token.
-  bool seen_quit_;             ///< Have we seen a quit token?
-  bool first_character_;       ///< Have we lexed anything yet?
+  std::unique_ptr<Reader> r_;   ///< Reader
+  std::optional<Token> t_;      ///< Pending token.
+  bool seen_quit_{false};       ///< Have we seen a quit token?
+  bool first_character_{true};  ///< Have we lexed anything yet?
 };
 
 /** Wrapper around Letter representing a Variable */
@@ -484,7 +484,7 @@ private:
   static void for_each_internal(Fn fn, ::uint32_t mask)
   {
     /* Can't assume letters are contiguous code-points.  */
-    std::string_view letters = "abcdefghijklmnopqrstuvwxyz";
+    std::string_view const letters = "abcdefghijklmnopqrstuvwxyz";
     std::string_view::const_iterator letter = letters.begin();
     while (letter != letters.end() && mask != 0) {
       if (mask & 1) {
@@ -743,7 +743,7 @@ public:
     /** \brief Get a canonical "missing" expression index.  */
     static auto missing() -> ExprIndex const&
     {
-      static ExprIndex missing(0, ExprType::missing);
+      static ExprIndex const missing(0, ExprType::missing);
       return missing;
     }
 
@@ -974,7 +974,7 @@ private:
     /* If the lexer holds an error token we report that rather than the error message we've been
      * asked to report.
      */
-    bool lexer_error = lexer_->peek() == Token::Type::error;
+    bool const lexer_error = lexer_->peek() == Token::Type::error;
     auto s = insert_string(lexer_error ? lexer_->peek().error() : lexer_->error(msg, args...));
     if (lexer_error) {
       lexer_->chew();
@@ -1177,9 +1177,9 @@ private:
   std::shared_ptr<Instructions> instructions_;  ///< Current set of instructions
   std::stack<std::list<Index>> loop_breaks_;    ///< Stack of loop breaks.
   bool interactive_;                            ///< Are we interactive?
-  bool error_;                                  ///< Has there been an error?
-  bool in_function_;                            ///< Are we in a function?
-  bool seen_quit_;                              ///< Have we seen a quit token?
+  bool error_{false};                           ///< Has there been an error?
+  bool in_function_{false};                     ///< Are we in a function?
+  bool seen_quit_{false};                       ///< Have we seen a quit token?
 };
 
 auto operator==(Parser::ExprIndex const& lhs, Parser::ExprIndex const& rhs) -> bool;
@@ -1256,7 +1256,7 @@ struct fmt::formatter<GD::Bc::Letter>
   template<typename FormatContext>
   auto format(GD::Bc::Letter letter, FormatContext& ctx)
   {
-    static std::string_view letters = "abcdefghijklmnopqrstuvwxyz";
+    static std::string_view const letters = "abcdefghijklmnopqrstuvwxyz";
     // Work around Win32 STL bug:
     return fmt::vformat_to(ctx.out(), "{0}",
                            fmt::make_format_args(letters[static_cast<unsigned>(letter)]));

@@ -18,7 +18,7 @@ auto GD::Bc::Letter::operator==(char l) const -> bool { return letter_ == encode
 
 auto GD::Bc::operator<<(std::ostream& os, GD::Bc::Letter l) -> std::ostream&
 {
-  static std::string_view letters = "abcdefghijklmnopqrstuvwxyz";
+  static std::string_view const letters = "abcdefghijklmnopqrstuvwxyz";
   os << letters[static_cast<unsigned>(l)];
   return os;
 }
@@ -30,7 +30,7 @@ auto GD::Bc::operator!=(char lhs, Letter rhs) -> bool { return !(rhs == lhs); }
 auto GD::Bc::Letter::encode(char l) -> unsigned
 {
   /* Can't assume letters are contiguous code-points.  */
-  std::string_view letters = "abcdefghijklmnopqrstuvwxyz";
+  std::string_view const letters = "abcdefghijklmnopqrstuvwxyz";
   auto it = letters.find(l);
   assert(it != std::string_view::npos);  // NOLINT
   return static_cast<unsigned>(it);

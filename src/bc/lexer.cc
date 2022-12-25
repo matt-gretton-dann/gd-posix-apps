@@ -16,10 +16,7 @@
 
 #include "bc.hh"
 
-GD::Bc::Lexer::Lexer(std::unique_ptr<Reader>&& r)
-    : r_(std::move(r)), t_(std::nullopt), seen_quit_(false), first_character_(true)
-{
-}
+GD::Bc::Lexer::Lexer(std::unique_ptr<Reader>&& r) : r_(std::move(r)), t_(std::nullopt) {}
 
 auto GD::Bc::Lexer::peek() -> GD::Bc::Token const&
 {
@@ -36,6 +33,10 @@ void GD::Bc::Lexer::chew()
   /* If we have nothing to chew we need to find something.  */
   if (!t_.has_value()) {
     lex();
+  }
+
+  if (!t_.has_value()) {
+    throw std::logic_error("Lexing failed");
   }
 
   if (t_->type() != Token::Type::eof) {
