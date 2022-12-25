@@ -348,14 +348,14 @@ void GD::Bc::Parser::parse_return_statement()
 
   ExprIndex expr = ExprIndex::missing();
 
-  bool const need_lparens = !extensions_enabled();
+  bool constexpr need_lparens = !extensions_enabled();
   bool found_lparens = false;
   if (lexer_->peek() == Token::Type::lparens) {
     lexer_->chew();
     found_lparens = true;
   }
 
-  if (!need_lparens || found_lparens) {
+  if (found_lparens || !need_lparens) {
     expr = parse_return_expression();
   }
 
