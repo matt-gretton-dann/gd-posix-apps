@@ -10,6 +10,7 @@
 
 #include "util/utils.hh"
 
+#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <istream>
