@@ -192,10 +192,10 @@ private:
 
 auto main(int argc, char** argv) -> int
 {
-  GD::Span::span<char*> args(argv, argc);
+  GD::Span::span<char*> const args(argv, argc);
   GD::Span::span<char*>::iterator it = args.begin();
   GD::program_name(*it++);
-  std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
+  (void)std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
 
   /* POSIX spec explicitly says to treat everything as something to print, so no argument or --
    * special handling.
