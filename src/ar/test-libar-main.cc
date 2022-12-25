@@ -9,7 +9,7 @@
 
 auto main(int argc, char* argv[]) -> int
 {
-  int result = Catch::Session().run(argc, argv);
+  int const result = Catch::Session().run(argc, argv);
 
   return result;
 }

@@ -16,15 +16,15 @@
 
 TEST_CASE("GD::Ar::Details::MemberHeader - Construction BSD", "[ar][member-header]")
 {
-  std::string name = "file            ";
-  std::string bsd_header = "123456789012"
-                           "1     "
-                           "    10"
-                           "0660    "
-                           "1234567890"
-                           "`\n";
-  GD::MemorySpanInputFile file((GD::Span::span<char>(bsd_header.data(), bsd_header.size())));
-  GD::Ar::Details::MemberHeader mh(file, name, GD::Ar::Format::bsd, nullptr);
+  std::string const name = "file            ";
+  std::string const bsd_header = "123456789012"
+                                 "1     "
+                                 "    10"
+                                 "0660    "
+                                 "1234567890"
+                                 "`\n";
+  GD::MemorySpanInputFile file((GD::Span::span<char const>(bsd_header.data(), bsd_header.size())));
+  GD::Ar::Details::MemberHeader const mh(file, name, GD::Ar::Format::bsd, nullptr);
 
   REQUIRE(mh.name() == std::string("file"));
   REQUIRE(mh.mtime() == 123456789012);
@@ -37,16 +37,16 @@ TEST_CASE("GD::Ar::Details::MemberHeader - Construction BSD", "[ar][member-heade
 
 TEST_CASE("GD::Ar::Details::MemberHeader - Construction BSD Long", "[ar][member-header]")
 {
-  std::string name = "#1/20           ";
-  std::string bsd_header = "123456789012"
-                           "1     "
-                           "    10"
-                           "  0660  "
-                           "1234567890"
-                           "`\n"
-                           "12345678901234567890";
-  GD::MemorySpanInputFile file((GD::Span::span<char>(bsd_header.data(), bsd_header.size())));
-  GD::Ar::Details::MemberHeader mh(file, name, GD::Ar::Format::bsd, nullptr);
+  std::string const name = "#1/20           ";
+  std::string const bsd_header = "123456789012"
+                                 "1     "
+                                 "    10"
+                                 "  0660  "
+                                 "1234567890"
+                                 "`\n"
+                                 "12345678901234567890";
+  GD::MemorySpanInputFile file((GD::Span::span<char const>(bsd_header.data(), bsd_header.size())));
+  GD::Ar::Details::MemberHeader const mh(file, name, GD::Ar::Format::bsd, nullptr);
 
   REQUIRE(mh.name() == std::string("12345678901234567890"));
   REQUIRE(mh.mtime() == 123456789012);
@@ -59,15 +59,15 @@ TEST_CASE("GD::Ar::Details::MemberHeader - Construction BSD Long", "[ar][member-
 
 TEST_CASE("GD::Ar::Details::MemberHeader - Construction GNU", "[ar][member-header]")
 {
-  std::string name = "Fred in a shed/ ";
-  std::string gnu_header = "123456789012"
-                           "1     "
-                           "    10"
-                           "0660    "
-                           "1234567890"
-                           "`\n";
-  GD::MemorySpanInputFile file((GD::Span::span<char>(gnu_header.data(), gnu_header.size())));
-  GD::Ar::Details::MemberHeader mh(file, name, GD::Ar::Format::gnu, nullptr);
+  std::string const name = "Fred in a shed/ ";
+  std::string const gnu_header = "123456789012"
+                                 "1     "
+                                 "    10"
+                                 "0660    "
+                                 "1234567890"
+                                 "`\n";
+  GD::MemorySpanInputFile file((GD::Span::span<char const>(gnu_header.data(), gnu_header.size())));
+  GD::Ar::Details::MemberHeader const mh(file, name, GD::Ar::Format::gnu, nullptr);
 
   REQUIRE(mh.name() == std::string("Fred in a shed"));
   REQUIRE(mh.mtime() == 123456789012);

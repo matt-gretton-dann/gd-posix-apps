@@ -243,9 +243,10 @@ public:
 
   ~MemberHeader() = default;
   MemberHeader(MemberHeader const&) = default;
-  MemberHeader(MemberHeader&&) noexcept = default;
+  MemberHeader(MemberHeader&&) noexcept = default;  // NOLINT(bugprone-exception-escape)
   auto operator=(MemberHeader const&) -> MemberHeader& = default;
-  auto operator=(MemberHeader&&) noexcept -> MemberHeader& = default;
+  auto operator=(MemberHeader&&) noexcept  // NOLINT(bugprone-exception-escape)
+    -> MemberHeader& = default;
 
   /** Get archive member name.  */
   [[nodiscard]] auto name() const noexcept -> std::string const&;
@@ -366,7 +367,7 @@ private:
   template<typename T, typename FType, unsigned Base = 10>  // NOLINT
   auto read_uint(FType& file, std::size_t len, T def = 0) -> T
   {
-    std::string v = read_str(file, len);
+    std::string const v = read_str(file, len);
     return to_number<T, Base>(v, def);
   }
 
@@ -452,9 +453,9 @@ public:
 
   ~Member() = default;
   Member(Member const&) = default;
-  Member(Member&&) noexcept = default;
+  Member(Member&&) noexcept = default;  // NOLINT(bugprone-exception-escape)
   auto operator=(Member const&) -> Member& = default;
-  auto operator=(Member&&) noexcept -> Member& = default;
+  auto operator=(Member&&) noexcept -> Member& = default;  // NOLINT(bugprone-exception-escape)
 
   /** \brief Member file name.  */
   [[nodiscard]] auto name() const noexcept -> std::string const&;
@@ -543,7 +544,7 @@ public:
 private:
   Details::MemberHeader header_;  ///< Header
   MemberID id_;                   ///< ID
-  std::size_t offset_;            ///< Current offset
+  std::size_t offset_{0};         ///< Current offset
   Data data_;                     ///< Data.
   Symbols symbols_;               ///< Symbols.
 };
@@ -566,8 +567,8 @@ public:
   using difference_type = std::ptrdiff_t;             ///< Difference type.
 
   ~ReadIterator() = default;
-  ReadIterator(ReadIterator&& rhs) noexcept = default;
-  auto operator=(ReadIterator&& rhs) noexcept -> ReadIterator& = default;
+  ReadIterator(ReadIterator&& rhs) noexcept = default;                     // NOLINT
+  auto operator=(ReadIterator&& rhs) noexcept -> ReadIterator& = default;  // NOLINT
   ReadIterator(ReadIterator const&) = default;
   auto operator=(ReadIterator const&) noexcept -> ReadIterator& = default;
 
@@ -586,6 +587,10 @@ public:
   auto operator*() const -> reference
   {
     assert(member_ != std::nullopt);  // NOLINT
+    if (!member_.has_value()) {
+      throw std::logic_error("Try to read past end.");
+    }
+
     return *member_;
   }
 
@@ -593,7 +598,7 @@ public:
   auto operator->() const -> pointer
   {
     assert(member_ != std::nullopt);  // NOLINT
-    return &member_.value();
+    return member_.has_value() ? &member_.value() : nullptr;
   }
 
   /** \brief Pre-increment.  */
@@ -665,7 +670,7 @@ private:
       ++state_->offset_;
     }
 
-    auto id = MemberID(state_->offset_);
+    MemberID const id{state_->offset_};
     std::string name(Details::MemberHeader::name_len, '\0');
     auto len = state_->file_.read_upto(GD::Span::span<char>(name.data(), name.size()));
     if (len == 0) {
@@ -679,9 +684,9 @@ private:
       throw std::runtime_error("Incorrect header.");
     }
 
-    auto hdr = Details::MemberHeader(
-      state_->file_, name, state_->format_,
-      state_->string_table_.has_value() ? &state_->string_table_.value() : nullptr);
+    auto& string_table = state_->string_table_;
+    auto table_value = string_table.has_value() ? &string_table.value() : nullptr;
+    auto hdr = Details::MemberHeader(state_->file_, name, state_->format_, table_value);
     auto data = std::make_shared<std::vector<std::byte>>(hdr.size());
     state_->file_.read(GD::Span::span<std::byte>(data->data(), data->size()));
     state_->offset_ += hdr.header_size() + hdr.size();
@@ -901,7 +906,7 @@ private:
     }
     res += std::string(len, ' ');
     std::transform(res.begin(), res.begin() + static_cast<std::ptrdiff_t>(len), where,
-                   [](char c) { return std::byte(c); });
+                   [](char c) { return static_cast<std::byte>(c); });
   }
 
   /** \brief        Write a number at the end of a store
@@ -969,7 +974,7 @@ private:
   template<typename T, typename Store>
   void add_ugid(Store& out, T id, std::size_t len)
   {
-    if (id == ~T(0)) {
+    if (id == ~static_cast<T>(0)) {
       add_str(out, "", len);
     }
     else {
@@ -997,7 +1002,7 @@ private:
   void add_padding(T& out)
   {
     if (offset() & 1) {
-      out.push_back(std::byte('\n'));
+      out.push_back(static_cast<std::byte>('\n'));
     }
   }
 
@@ -1069,7 +1074,7 @@ private:
       if (it.second == nullptr) {
         return;
       }
-      std::uint32_t offset = static_cast<std::uint32_t>(it.first) + offset_addend;
+      std::uint32_t const offset = static_cast<std::uint32_t>(it.first) + offset_addend;
       for (std::size_t i = 0; i < it.second->size(); ++i) {
         write_be(inserter, offset);
       }
@@ -1205,7 +1210,7 @@ auto read_archive_begin(FType1&& f) -> ReadIterator<typename std::remove_referen
   assert(len == 16);  // NOLINT
   auto hdr = Details::MemberHeader(file, name);
   Format format = hdr.format();
-  auto id = MemberID(offset);
+  MemberID id{offset};
   auto data = std::make_shared<std::vector<std::byte>>(hdr.size());
   file.read(GD::Span::span<std::byte>(data->data(), data->size()));
   offset += hdr.header_size() + hdr.size();
@@ -1222,7 +1227,7 @@ auto read_archive_begin(FType1&& f) -> ReadIterator<typename std::remove_referen
       return;
     }
 
-    auto id = MemberID(offset);
+    MemberID const id{offset};
     std::string name(Details::MemberHeader::name_len, '\0');
     [[maybe_unused]] auto len = file.read_upto(GD::Span::span<char>(name.data(), name.size()));
     if (file.eof()) {
@@ -1322,7 +1327,8 @@ void GD::Ar::Details::MemberHeader::update_name(FType& file, GD::Ar::Member cons
         throw std::runtime_error("Offset out of range for long names.");
       }
       auto it = data.begin() + static_cast<std::ptrdiff_t>(offset);
-      auto it_end = std::find(it, data.end(), std::byte(long_name_terminator(format_)));
+      auto it_end =
+        std::find(it, data.end(), static_cast<std::byte>(long_name_terminator(format_)));
       if (it_end == data.end()) {
         throw std::runtime_error("Unterminated string in long names table.");
       }
