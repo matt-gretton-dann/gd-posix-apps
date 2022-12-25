@@ -56,6 +56,7 @@ find_package_handle_standard_args(ClangTidy
         VERSION_VAR ClangTidy_VERSION
         )
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 if (NOT ClangTidy_COMMAND)
   set(CMAKE_CXX_CLANG_TIDY "" CACHE STRING "" FORCE)
   set(CMAKE_C_CLANG_TIDY "" CACHE STRING "" FORCE)
