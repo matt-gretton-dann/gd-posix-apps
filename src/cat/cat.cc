@@ -31,7 +31,7 @@ auto do_cat(std::string_view fname, bool unbuffered) -> bool
 
   do {
     /* Read a byte. */
-    int c = fp.getc();
+    int const c = fp.getc();
     if (c == EOF) {
       return !fp.error();
     }
@@ -52,8 +52,8 @@ auto do_cat(std::string_view fname, bool unbuffered) -> bool
 
 auto main(int argc, char** argv) -> int
 {
-  std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
-  GD::Span::span<char*> args(argv, argc);
+  (void)std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
+  GD::Span::span<char*> const args(argv, argc);
   GD::program_name(args[0]);
 
   int c = 0;
@@ -82,10 +82,11 @@ auto main(int argc, char** argv) -> int
   }
 
   if (unbuffered) {
-    setvbuf(stdout, nullptr, _IONBF, 0);
+    // We ignore if this fails.
+    (void)setvbuf(stdout, nullptr, _IONBF, 0);
   }
 
-  bool success = GD::for_each_file(
+  bool const success = GD::for_each_file(
     args.begin() + optind, args.end(),
     [unbuffered](std::string_view fname) -> bool { return do_cat(fname, unbuffered); });
 
