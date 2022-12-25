@@ -40,7 +40,8 @@ jobs:
       - name: Configure
         run: |
           sudo apt update
-          sudo apt --yes install build-essential cmake clang-format clang-tidy ninja-build
+          sudo apt --yes -u dist-upgrade
+          sudo apt --yes install build-essential cmake clang-format ninja-build
           mkdir -p "${GITHUB_WORKSPACE}/build"
           cmake -S "${GITHUB_WORKSPACE}" -B "${GITHUB_WORKSPACE}/build" -G Ninja -D FORCE_SUPPLEMENTAL_LIBRARY:BOOL=TRUE  -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo
 

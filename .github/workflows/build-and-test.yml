@@ -21,6 +21,7 @@ jobs:
         if: ${{ matrix.os  == 'ubuntu-latest' }}
         run: |
           sudo apt update
+          sudo apt --yes -u dist-upgrade
           sudo apt --yes install build-essential cmake clang-format ninja-build clang-tidy
       - name: Package install (macOS)
         if: ${{ matrix.os == 'macos-latest' }}
