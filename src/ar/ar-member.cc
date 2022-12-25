@@ -138,7 +138,7 @@ auto get_symbols_svr4(GD::Ar::Member const& symbol_table) -> GD::Ar::SymbolMap
       it = result.first;
     }
     std::string ins;
-    auto strings_it2 = std::find(strings_it, data.end(), static_cast<std::byte>(0));
+    auto strings_it2 = std::find(strings_it, data.end(), std::byte{0});
     assert(strings_it2 != data.end());  // NOLINT
     std::transform(strings_it, strings_it2, std::back_inserter(ins),
                    [](std::byte b) { return static_cast<char>(b); });
