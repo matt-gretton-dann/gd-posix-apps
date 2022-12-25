@@ -101,7 +101,7 @@ public:
 
     // NOLINTNEXTLINE(concurrency-mt-unsafe)
     char* p = ::catgets(catd_, static_cast<int>(set), static_cast<int>(msg), val);
-    return {p};
+    return p;
   }
 
   /** \brief      Get a std::string copy of the message associated with \a msg in the default set.
@@ -150,11 +150,11 @@ public:
    * This function is not necessarily thread safe.
    */
   template<typename... Ts>
-  [[nodiscard]] [[nodiscard]] auto format(typename Data::SetEnum set,
-                                          typename Data::MessageEnum msg, Ts... args) const
-    -> std::string
+  [[nodiscard]] auto format(typename Data::SetEnum set, typename Data::MessageEnum msg,
+                            Ts... args) const -> std::string
   {
-    return fmt::format(get(set, msg), args...);
+    std::string const fmt{get(set, msg)};
+    return fmt::vformat(fmt, fmt::make_format_args(args...));
   }
 
 private:
