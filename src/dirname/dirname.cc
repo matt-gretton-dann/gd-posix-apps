@@ -33,9 +33,9 @@ template<typename... Ts>
 
 }  // namespace
 auto main(int argc, char** argv) -> int
-{
-  std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
-  GD::Span::span<char*> args(argv, argc);
+try {
+  (void)std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
+  GD::Span::span<char*> const args(argv, argc);
   GD::program_name(args[0]);
 
   // Skip argv[0].
@@ -57,4 +57,12 @@ auto main(int argc, char** argv) -> int
   bname = ::dirname(bname.data());  // NOLINT(concurrency-mt-unsafe)
   std::cout << bname << '\n';
   return EXIT_SUCCESS;
+}
+catch (std::exception const& e) {
+  report_error(GD::Dirname::Msg::unhandled_std_exception, e.what());
+  return EXIT_FAILURE;
+}
+catch (...) {
+  report_error(GD::Dirname::Msg::unhandled_exception);
+  return EXIT_FAILURE;
 }
