@@ -160,10 +160,10 @@ auto check(Number::NumType initial_digit) -> Number::NumType
   Time best_time = base_time;
 
   while (split_point_top - 1 > split_point_bottom) {
-    Number::NumType split_point = (split_point_bottom + split_point_top) / 2;
+    Number::NumType const split_point = (split_point_bottom + split_point_top) / 2;
     std::vector<Number> numbers = canon_numbers;
     Number::multiply_split_point(split_point);
-    Time st = time_run([&numbers]() { multiply(numbers); });
+    Time const st = time_run([&numbers]() { multiply(numbers); });
     std::cout << "Split [" << split_point_bottom << ", " << split_point_top << "] at "
               << split_point << " has speed = " << st << "\n";
     if (st < best_time) {
@@ -196,10 +196,10 @@ void output(std::ostream& os, Number::NumType value)
 }
 
 auto main(int argc, char** argv) -> int
-{
+try {
   constexpr Number::NumType start_at = 500;
   auto result = check(start_at);
-  GD::Span::span<char*> args(argv, argc);
+  GD::Span::span<char*> const args(argv, argc);
   if (args.size() == 1) {
     output(std::cout, result);
   }
@@ -208,4 +208,8 @@ auto main(int argc, char** argv) -> int
     output(of, result);
   }
   return 0;
+}
+catch (...) {
+  std::cerr << "Error!\n";
+  return EXIT_SUCCESS;
 }

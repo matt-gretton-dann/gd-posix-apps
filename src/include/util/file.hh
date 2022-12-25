@@ -31,8 +31,7 @@
 namespace GD::Util {
 enum class Msg;
 
-auto rename(char const* _old, char const* _new) __NOEXCEPT -> int;
-
+auto rename(char const* _old, char const* _new) __NOEXCEPT->int;
 }  // namespace GD::Util
 
 namespace GD {
@@ -97,8 +96,7 @@ public:
   /** \brief      Construct the input file.
    *  \param name Name of the file.
    */
-  explicit InputFile(std::string const& name)
-      : name_(name), fd_(::open(name.c_str(), O_RDONLY)), eof_(false)
+  explicit InputFile(std::string const& name) : name_(name), fd_(::open(name.c_str(), O_RDONLY))
   {
     if (fd_ == -1) {
       throw std::runtime_error("Unable to open file.");
@@ -123,15 +121,15 @@ public:
     }
   }
 
-  InputFile(InputFile const&) = delete;
-  InputFile(InputFile&& rhs) noexcept
+  InputFile(InputFile const&) noexcept = delete;
+  InputFile(InputFile&& rhs) noexcept  // NOLINT(bugprone-exception-escape)
       : name_(std::move(rhs.name_)), stat_(rhs.stat_), fd_(rhs.fd_), eof_(rhs.eof_)
   {
     rhs.fd_ = -1;
   }
 
-  auto operator=(InputFile const&) -> InputFile& = delete;
-  auto operator=(InputFile&& rhs) noexcept -> InputFile&
+  auto operator=(InputFile const&) noexcept -> InputFile& = delete;
+  auto operator=(InputFile&& rhs) noexcept -> InputFile&  // NOLINT(bugprone-exception-escape)
   {
     if (&rhs != this) {
       name_ = std::move(rhs.name_);
@@ -207,9 +205,9 @@ private:
   std::string name_;  ///< File name.
   struct stat stat_
   {
-  };          ///< File stats.
-  int fd_;    ///< File descriptor
-  bool eof_;  ///< Have we reached end of file.
+  };                 ///< File stats.
+  int fd_{-1};       ///< File descriptor
+  bool eof_{false};  ///< Have we reached end of file.
 };
 
 /** \brief  Input file based on a memory span.
@@ -231,17 +229,17 @@ public:
    * \a mem must remain valid for the lifetime of this MemorySpanInputFile object.
    */
   template<typename T, std::size_t E>
-  explicit MemorySpanInputFile(GD::Span::span<T, E> mem) : data_(Span::as_bytes(mem)), offset_(0)
+  explicit MemorySpanInputFile(GD::Span::span<T, E> mem) noexcept : data_(Span::as_bytes(mem))
   {
   }
 
-  ~MemorySpanInputFile() = default;
-  MemorySpanInputFile(MemorySpanInputFile const&) = default;
+  ~MemorySpanInputFile() noexcept = default;
+  MemorySpanInputFile(MemorySpanInputFile const&) noexcept = default;
   MemorySpanInputFile(MemorySpanInputFile&&) noexcept = default;
-  auto operator=(MemorySpanInputFile const&) -> MemorySpanInputFile& = default;
+  auto operator=(MemorySpanInputFile const&) noexcept -> MemorySpanInputFile& = default;
   auto operator=(MemorySpanInputFile&&) noexcept -> MemorySpanInputFile& = default;
 
-  void close() {}
+  void close() noexcept {}
 
   [[nodiscard]] auto size_bytes() const noexcept -> std::size_t { return data_.size_bytes(); }
 
@@ -287,14 +285,14 @@ public:
 
 private:
   GD::Span::span<std::byte const> data_;  ///< Data we're using
-  std::size_t offset_;                    ///< Current offset into the file.
+  std::size_t offset_{0};                 ///< Current offset into the file.
 };
 
 class MemoryFileWriter
 {
 public:
-  explicit MemoryFileWriter() = default;
-  ~MemoryFileWriter() = default;
+  explicit MemoryFileWriter() noexcept = default;
+  ~MemoryFileWriter() noexcept = default;
 
   MemoryFileWriter(MemoryFileWriter const&) = delete;
   MemoryFileWriter(MemoryFileWriter&&) noexcept = default;
@@ -346,7 +344,7 @@ public:
    *  \param mode Mode to give destination file.
    */
   TxnWriteFile(fs::path const& dest, mode_t mode)
-      : fd_(-1), dest_(dest.generic_string()), mode_(mode & mode_mask_)
+      : dest_(dest.generic_string()), mode_(mode & mode_mask_)
   {
     // Use a temporary file if the destination already exists.
     if (fs::exists(dest_)) {
@@ -380,14 +378,14 @@ public:
   auto operator=(TxnWriteFile const&) -> TxnWriteFile& = delete;
 
   /** \brief Move constructor.  */
-  TxnWriteFile(TxnWriteFile&& rhs) noexcept
+  TxnWriteFile(TxnWriteFile&& rhs) noexcept  // NOLINT(bugprone-exception-escape)
       : fd_(rhs.fd_), dest_(std::move(rhs.dest_)), temp_(std::move(rhs.temp_)), mode_(rhs.mode_)
   {
     rhs.has_moved();
   }
 
   /** \brief Move assignment.  */
-  auto operator=(TxnWriteFile&& rhs) noexcept -> TxnWriteFile&
+  auto operator=(TxnWriteFile&& rhs) noexcept -> TxnWriteFile&  // NOLINT(bugprone-exception-escape)
   {
     if (this != &rhs) {
       fd_ = rhs.fd_;
@@ -454,7 +452,7 @@ public:
       fd_ = -1;
     }
     if (!temp_.empty()) {
-      ::remove(temp_.c_str());
+      (void)::remove(temp_.c_str());
     }
     temp_.clear();
   }
@@ -469,10 +467,10 @@ private:
 
   static constexpr mode_t mode_mask_ = 01777;  ///< Mask for input mode.
 
-  int fd_;            ///< File descriptor.
+  int fd_{-1};        ///< File descriptor.
   std::string dest_;  ///< Final destination file.
   std::string temp_;  ///< File we actually write to.
-  mode_t mode_;       ///< Final mode to give file.
+  mode_t mode_{0};    ///< Final mode to give file.
 };
 
 /** \brief An input file FILE*.
@@ -555,8 +553,8 @@ private:
   void report_error(Msg msg);
 
   std::string filename_;                      /**< File name.  */
-  FILE* file_;                                /**< File handle.  */
-  bool is_stdin_;                             /**< Is the File handle standard input?  */
+  FILE* file_{nullptr};                       /**< File handle.  */
+  bool is_stdin_{false};                      /**< Is the File handle standard input?  */
   std::unique_ptr<std::vector<char>> buffer_; /**< Buffer of data we use.  */
 };
 

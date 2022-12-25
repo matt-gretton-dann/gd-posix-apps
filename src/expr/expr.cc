@@ -71,7 +71,7 @@ void warn(Msg msg, Ts... args)
 }
 
 /** \brief  Class that represents a token.  */
-class Token
+class Token  // NOLINT(bugprone-exception-escape)
 {
 public:
   /** \brief Token Type.  */
@@ -213,7 +213,7 @@ auto tokenise_number(std::string_view token) -> Token
   }
 
   while (p != token.end() && *p >= '0' && *p <= '0' + input_base - 1) {
-    int32_t new_number = number * input_base + (*p - '0');
+    int32_t const new_number = number * input_base + (*p - '0');
     if (new_number / input_base != number) {
       warn(Msg::number_parse_overflow, token);
       break;
@@ -386,11 +386,11 @@ auto do_match(Token const& lhs, Token const& rhs) -> Token
   if (!res.empty() && res[0] != '^') {
     res = '^' + res;
   }
-  std::regex re(res, std::regex_constants::basic);
+  std::regex const re(res, std::regex_constants::basic);
   std::smatch m;
-  bool matched = std::regex_search(lhs.string(), m, re);
+  bool const matched = std::regex_search(lhs.string(), m, re);
   if (re.mark_count() > 0) {
-    std::string s = matched ? m.str(1) : "";
+    std::string const s = matched ? m.str(1) : "";
     return tokenise(s.c_str());
   }
   auto len = m.length();
@@ -400,7 +400,7 @@ auto do_match(Token const& lhs, Token const& rhs) -> Token
   return {Token::Type::number, matched ? static_cast<int32_t>(m.length(0)) : 0};
 }
 
-auto do_multiply(Token const& lhs, Token const& rhs) noexcept -> Token
+auto do_multiply(Token const& lhs, Token const& rhs) -> Token
 {
   if (lhs.type() != Token::Type::number) {
     invalid_expr(Msg::expected_number_lhs, '*', lhs.string());
@@ -604,7 +604,7 @@ auto parse_expr(TokenIt& begin, TokenIt const& end, unsigned int precedence) -> 
   Token lhs = parse_expr(begin, end, precedence - 1);
   while (begin != end && begin->precedence() == precedence) {
     auto op = begin++;
-    Token rhs = parse_expr(begin, end, precedence - 1);
+    Token const rhs = parse_expr(begin, end, precedence - 1);
     lhs = op->apply(lhs, rhs);
   }
   return lhs;
@@ -619,8 +619,8 @@ auto parse(TokenIt& begin, TokenIt const& end) -> Token
 auto main(int argc, char** argv) -> int
 {
   try {
-    std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
-    GD::Span::span<char*> args(argv, argc);
+    (void)std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
+    GD::Span::span<char*> const args(argv, argc);
     auto it = args.begin();
     GD::program_name(*it++);
 

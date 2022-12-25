@@ -13,7 +13,7 @@ auto main(int argc, char* argv[]) -> int
 {
   __support_logging_enabled = 0;
 
-  int result = Catch::Session().run(argc, argv);
+  int const result = Catch::Session().run(argc, argv);
 
   return result;
 }

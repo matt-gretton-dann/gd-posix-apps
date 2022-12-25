@@ -65,6 +65,51 @@ def open_maybe_stdout(fname):
         return open(fname, "w")
 
 
+def _check_identifier(d, pk, k):
+    """Check that an identifier is valid.  Raising errors if not.
+
+    This will check that the key k is in the dictionary d.  Also, if pk
+    is not None then it will also check that d[k] is unique.
+    """
+    if k not in d:
+        raise RuntimeError(f"No '{d}' identifier in dict {d}")
+    if pk is not None:
+        if k in pk:
+            raise RuntimeError(
+                f"Identifier '{d}' with value {k} has been repeated.")
+
+
+def _check_locale(locale):
+    """Raise a runtime error if the given locale is not valid."""
+    if not validate_locale(locale):
+        raise RuntimeError(f"Locale {locale} is not valid in input files.")
+
+
+def _get_locale_key(m, locale):
+    """Get the key to use to get the message for locale out of m."""
+    if locale in m:
+        return locale
+    elif lang(locale) in m:
+        return lang(locale)
+    else:
+        return 'C'
+
+
+def _find_msg_for_locale(m, locale):
+    """Get the message for the given locale out of m."""
+    return m[_get_locale_key(m, locale)] \
+        .encode('unicode-escape') \
+        .decode('ASCII')
+
+
+def _update_file(dest, src):
+    """Copy src to dest but only if there is an update."""
+    if not os.path.isfile(dest) or not filecmp.cmp(dest, src,
+                                                   shallow=False):
+        shutil.copy2(src=src, dst=dest)
+    os.remove(src)
+
+
 class Messages:
     """Messages structure."""
 
@@ -77,48 +122,30 @@ class Messages:
         This will raise a RuntimeError if the contents of the base file are
         not valid.
         """
-        with open(base_file) as fp:
-            self._data = json.load(fp)
+        with open(base_file) as bfh:
+            self._data = json.load(bfh)
         self._validate()
-
-    def _check_identifier(self, d, pk, k):
-        """Check that an identifier is valid.  Raising errors if not.
-
-        This will check that the key k is in the dictionary d.  Also, if pk
-        is not None then it will also check that d[k] is unique.
-        """
-        if k not in d:
-            raise RuntimeError(f"No '{d}' identifier in dict {d}")
-        if pk is not None:
-            if k in pk:
-                raise RuntimeError(
-                    f"Identifier '{d}' with value {k} has been repeated.")
-
-    def _check_locale(self, l):
-        """Raise a runtime error if the given locale is not valid."""
-        if not validate_locale(l):
-            raise RuntimeError(f"Locale {l} is not valid in input files.")
 
     def _validate(self):
         """Validate our contents."""
         sets = []
         for s in self._data:
-            self._check_identifier(s, sets, 'set')
-            self._check_identifier(s, sets, 'id')
-            self._check_identifier(s, None, 'messages')
+            _check_identifier(s, sets, 'set')
+            _check_identifier(s, sets, 'id')
+            _check_identifier(s, None, 'messages')
             sets.extend([s['id'], s['set']])
 
             for m in s['messages']:
-                msgs = []
-                self._check_identifier(m, msgs, 'msg')
-                self._check_identifier(m, msgs, 'id')
-                self._check_identifier(m, None, 'description')
-                self._check_identifier(m, None, 'C')
-                msgs.extend([m['id'], m['msg']])
+                messages = []
+                _check_identifier(m, messages, 'msg')
+                _check_identifier(m, messages, 'id')
+                _check_identifier(m, None, 'description')
+                _check_identifier(m, None, 'C')
+                messages.extend([m['id'], m['msg']])
 
                 for k in m.keys():
                     if k not in ['msg', 'id', 'description', 'C']:
-                        self._check_locale(k)
+                        _check_locale(k)
 
     def add_file(self, additional_file):
         """Merge in contents of additional_file.
@@ -148,26 +175,12 @@ class Messages:
             s2['messages'] = []
             for m in s['messages']:
                 m2 = {k: v for k, v in m.items() if k in [
-                    'msg', 'id', 'description', self._get_locale_key(m, locale)]}
+                    'msg', 'id', 'description',
+                    _get_locale_key(m, locale)]}
                 s2['messages'].append(m2)
             data.append(s2)
 
         json.dump(data, json_fp, ensure_ascii=True, indent=2)
-
-    def _get_locale_key(self, m, locale):
-        """Get the key to use to get the message for locale out of m."""
-        if locale in m:
-            return locale
-        elif lang(locale) in m:
-            return lang(locale)
-        else:
-            return 'C'
-
-    def _find_msg_for_locale(self, m, locale):
-        """Get the message for the given locale out of m."""
-        return m[self._get_locale_key(m, locale)] \
-            .encode('unicode-escape') \
-            .decode('ASCII')
 
     def output_header(self, fp, header_file, catalogue_id):
         """Output a C/C++ header to the given file handle.
@@ -192,10 +205,11 @@ class Messages:
             strs = dict()
             for m in s['messages']:
                 msg_ids.append(f"\n  {m['msg']} = {m['id']},"),
-                strs[m['id'] - 1] = self._find_msg_for_locale(m, "C")
+                strs[m['id'] - 1] = _find_msg_for_locale(m, "C")
             max_s = max(strs.keys()) + 1
             msg_strs += \
-                f"  static constexpr std::array<char const*, {max_s}> {set_str_var} = {{\n"
+                f"  static constexpr std::array<char const*, {max_s}>" \
+                f"{set_str_var} = {{\n"
             for i in range(max_s):
                 if i in strs:
                     msg_strs += f"    \"{strs[i]}\",\n"
@@ -248,7 +262,8 @@ public:
 
   static constexpr char const * catalogue_ = "{catalogue_id.lower()}";
   static SetEnum const default_set_ = Set:: {default};
-  static constexpr std::array<GD::Span::span<char const* const>, {max_s}> messages_ = {{{set_str_array}
+  static constexpr std::array<GD::Span::span<char const* const>, {max_s}>
+      messages_ = {{{set_str_array}
   }};
 }};
 
@@ -266,7 +281,7 @@ using Messages = GD::Messages<MessageData>;
         for s in self._data:
             result += f"\n$set {s['id']}\n"
             for m in s['messages']:
-                result += f"{m['id']} {self._find_msg_for_locale(m, locale)}\n"
+                result += f"{m['id']} {_find_msg_for_locale(m, locale)}\n"
         return result
 
     def _get_locales(self):
@@ -294,12 +309,6 @@ using Messages = GD::Messages<MessageData>;
         subprocess.run([gencat_exe, fname, "-"], input=cat,
                        check=True, universal_newlines=True)
 
-    def _update_file(self, dest, src):
-        """Copy src to dest but only if there is an update."""
-        if not os.path.isfile(dest) or not filecmp.cmp(dest, src, shallow=False):
-            shutil.copy2(src=src, dst=dest)
-        os.remove(src)
-
     def _output_locale_files(self, root, cat_id, extension, action):
         """Iterate over the locales calling action on each one.
 
@@ -315,16 +324,17 @@ using Messages = GD::Messages<MessageData>;
         /root/cat_id.extension.stamp - Stamp saying we have been successful
         /root/cat_id.locale.extension.temp - Temporary file, removed after use.
         """
-        def output_file(locale):
-            if locale == "C":
+
+        def output_file(locale_id):
+            if locale_id == "C":
                 f = os.path.join(root, f"{cat_id}.{extension}")
                 tf = os.path.join(root, f"{cat_id}.{extension}.temp")
             else:
                 f = os.path.join(root, f"{cat_id}.{locale}.{extension}")
                 tf = os.path.join(root, f"{cat_id}.{locale}.{extension}.temp")
             print(f"{f}")
-            action(tf, locale)
-            self._update_file(dest=f, src=tf)
+            action(tf, locale_id)
+            _update_file(dest=f, src=tf)
 
         for locale in self._get_locales():
             output_file(locale)
@@ -345,6 +355,7 @@ using Messages = GD::Messages<MessageData>;
         root/cat_id.cat - Catalogue for C locale.
         root/cat_id.cat.stamp - Timestamped file for dependency tracking.
         """
+
         def output_cat(f, locale):
             with open(f, "w") as fp:
                 self.output_cat(fp, locale)
@@ -399,7 +410,6 @@ if args.additional_file is not None:
     for additional_file in args.additional_file:
         msgs.add_file(additional_file)
 
-
 # Output JSON if requested.
 if args.json is not None:
     with open_maybe_stdout(args.json) as fp:
@@ -412,7 +422,8 @@ if args.json is not None:
 if args.header is not None:
     if args.cat_id is None:
         raise RuntimeError(
-            f"{os.path.basename(sys.argv[0])}: --header must be specified with --cat-id.\n")
+            f"{os.path.basename(sys.argv[0])}: "
+            f"--header must be specified with --cat-id.\n")
     with open_maybe_stdout(args.header) as fp:
         msgs.output_header(
             fp,

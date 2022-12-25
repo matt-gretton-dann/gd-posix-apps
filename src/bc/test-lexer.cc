@@ -135,7 +135,7 @@ TEST_CASE("GD::Bc::Lexer - Number Extensions", "[bc][lexer][extensions]")
 TEST_CASE("GD::Bc::Lexer - Letter", "[bc][lexer]")
 {
   auto letter = GENERATE('a', 'z');
-  std::string s(1, letter);
+  std::string const s(1, letter);
   auto lexer = GD::Bc::Lexer(std::make_unique<GD::Bc::StringReader>(s));
   auto t1 = lexer.peek();
   REQUIRE(t1.type() == GD::Bc::Token::Type::letter);
@@ -147,7 +147,7 @@ TEST_CASE("GD::Bc::Lexer - Letter", "[bc][lexer]")
 TEST_CASE("GD::Bc::Lexer - String", "[bc][lexer]")
 {
   std::string_view string = GENERATE("Hello, world!", "A\\\nB");  // NOLINT
-  std::string s = std::string("\"") + std::string(string) + std::string("\"");
+  std::string const s = std::string("\"") + std::string(string) + std::string("\"");
   auto lexer = GD::Bc::Lexer(std::make_unique<GD::Bc::StringReader>(s));
   auto t1 = lexer.peek();
   REQUIRE(t1.type() == GD::Bc::Token::Type::string);
@@ -158,7 +158,7 @@ TEST_CASE("GD::Bc::Lexer - String", "[bc][lexer]")
 
 TEST_CASE("GD::Bc::Lexer - Two numbers", "[bc][lexer]")
 {
-  std::string input("123.456.789");
+  std::string const input("123.456.789");
   auto lexer = GD::Bc::Lexer(std::make_unique<GD::Bc::StringReader>(input));
   auto t1 = lexer.peek();
   REQUIRE(t1.type() == GD::Bc::Token::Type::number);
@@ -173,7 +173,7 @@ TEST_CASE("GD::Bc::Lexer - Two numbers", "[bc][lexer]")
 
 TEST_CASE("GD::Bc::Lexer - number on multiple lines", "[bc][lexer]")
 {
-  std::string input("123\\\n456");
+  std::string const input("123\\\n456");
   auto lexer = GD::Bc::Lexer(std::make_unique<GD::Bc::StringReader>(input));
   auto t1 = lexer.peek();
   REQUIRE(t1.type() == GD::Bc::Token::Type::number);
@@ -184,7 +184,7 @@ TEST_CASE("GD::Bc::Lexer - number on multiple lines", "[bc][lexer]")
 
 TEST_CASE("GD::Bc::Lexer - line merging", "[bc][lexer]")
 {
-  std::string input("a\\\nb");
+  std::string const input("a\\\nb");
   auto lexer = GD::Bc::Lexer(std::make_unique<GD::Bc::StringReader>(input));
   auto t1 = lexer.peek();
   REQUIRE(t1.type() == GD::Bc::Token::Type::letter);
@@ -199,7 +199,7 @@ TEST_CASE("GD::Bc::Lexer - line merging", "[bc][lexer]")
 
 TEST_CASE("GD::Bc::Lexer - =- is an error", "[bc][lexer]")
 {
-  std::string input("=-");
+  std::string const input("=-");
   auto lexer = GD::Bc::Lexer(std::make_unique<GD::Bc::StringReader>(input));
   auto t1 = lexer.peek();
   REQUIRE(t1.type() == GD::Bc::Token::Type::error);

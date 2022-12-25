@@ -16,7 +16,8 @@ void __support_log(char const* format, ...)
   if (__support_logging_enabled) {
     va_list args;
     va_start(args, format);
-    vfprintf(stderr, format, args);
+    // Ignore error as where do we log a failure to log?
+    (void)vfprintf(stderr, format, args);
     va_end(args);
   }
 }

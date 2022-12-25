@@ -92,7 +92,9 @@ auto GD::Bc::Instruction::opcode() const -> GD::Bc::Instruction::Opcode { return
 
 auto GD::Bc::Instruction::op1() const -> GD::Bc::Instruction::Operand const&
 {
-  assert(has_op1());  // NOLINT
+  if (!op1_.has_value()) {
+    throw std::logic_error("Op 1 has no value.");
+  }
   return *op1_;
 }
 
@@ -105,7 +107,9 @@ void GD::Bc::Instruction::op1(Operand const& operand)
 
 auto GD::Bc::Instruction::op2() const -> GD::Bc::Instruction::Operand const&
 {
-  assert(has_op2());  // NOLINT
+  if (!op2_.has_value()) {
+    throw std::logic_error("Op 2 has no value.");
+  }
   return *op2_;
 }
 

@@ -19,7 +19,7 @@
 TEST_CASE("catgets", "[nl_types][catopen][catgets]")
 {
   errno = 0;
-  nl_catd cat = catopen(LARGE_FILE, 0);
+  nl_catd const cat = catopen(LARGE_FILE, 0);
   REQUIRE(cat != CATD_ERROR);
   REQUIRE(errno == 0);
 
@@ -110,7 +110,7 @@ TEST_CASE("catopen NLSPATH lookup", "[nl_types][catopen]")
   REQUIRE(setenv("LANG", "en_US.UTF-8", 1) == 0);  // NOLINT(concurrency-mt-unsafe)
 
   errno = 0;
-  nl_catd result = catopen("messages", 0);
+  nl_catd const result = catopen("messages", 0);
   REQUIRE(result != CATD_ERROR);
   REQUIRE(errno == 0);
 
@@ -139,7 +139,7 @@ void test_locale_lookup(char const* locale)
   }
 
   errno = 0;
-  nl_catd result = catopen("messages", NL_CAT_LOCALE);
+  nl_catd const result = catopen("messages", NL_CAT_LOCALE);
   REQUIRE(result != CATD_ERROR);
   REQUIRE(errno == 0);
 

@@ -295,7 +295,7 @@ public:
       width = static_cast<int>(base_log10_);
     }
     std::string result = ss.str();
-    unsigned break_at = (result.length() <= line_length) ? line_length : (line_length - 1);
+    unsigned const break_at = (result.length() <= line_length) ? line_length : (line_length - 1);
     auto it = result.begin();
     bool print = false;
     while (result.end() - it > scale) {
@@ -405,11 +405,12 @@ public:
   {
     copy_on_write();
 
-    NumType carry = for_each(rhs, scale, [](typename DigitVector::iterator it, WideType carry) {
-      WideType result = *it + carry;
-      *it = result % base_;
-      return result / base_;
-    });
+    NumType const carry =
+      for_each(rhs, scale, [](typename DigitVector::iterator it, WideType carry) {
+        WideType const result = *it + carry;
+        *it = result % base_;
+        return result / base_;
+      });
 
     if (carry != 0) {
       digits_->push_back(carry);
@@ -429,7 +430,7 @@ public:
    */
   auto sub(NumType s, NumType scale) -> bool  // NOLINT
   {
-    BasicDigits sub_d(s);
+    BasicDigits const sub_d(s);
     return sub(sub_d, scale);
   }
 
@@ -444,16 +445,17 @@ public:
   {
     copy_on_write();
 
-    NumType carry = for_each(rhs, scale, [](typename DigitVector::iterator it, WideType carry) {
-      WideType rhs_value = carry % base_;
-      carry /= base_;
-      if (rhs_value > *it) {
-        *it += base_;
-        ++carry;
-      }
-      *it -= static_cast<NumType>(rhs_value);
-      return carry;
-    });
+    NumType const carry =
+      for_each(rhs, scale, [](typename DigitVector::iterator it, WideType carry) {
+        WideType const rhs_value = carry % base_;
+        carry /= base_;
+        if (rhs_value > *it) {
+          *it += base_;
+          ++carry;
+        }
+        *it -= static_cast<NumType>(rhs_value);
+        return carry;
+      });
 
     if (carry != 0) {
       if (carry != 1) {
@@ -500,7 +502,7 @@ public:
     BasicDigits<Traits> result(1);
 
     /* Divide and conquer to make number of multiplications needed O(lg2(power)).  */
-    BasicDigits<Traits> one(1);
+    BasicDigits<Traits> const one(1);
     while (!power.is_zero()) {
       if (((*power.digits_)[0] & 1) != 0) {
         result.multiply(*this, 0);
@@ -559,8 +561,8 @@ public:
     copy_on_write();
 
     /* Do the whole digit steps first as this is just memory shuffling.  */
-    NumType extra_digits = scale / base_log10_;
-    auto init_size = digits_->size();
+    NumType const extra_digits = scale / base_log10_;
+    auto const init_size = digits_->size();
     digits_->resize(init_size + extra_digits);
     for (auto i = init_size; i > 0; --i) {
       (*digits_)[i + extra_digits - 1] = (*digits_)[i - 1];
@@ -603,7 +605,7 @@ public:
       scale -= base_log10_;
     }
 
-    WideType scale_pow10 = pow10(scale);
+    WideType const scale_pow10 = pow10(scale);
     WideType result = *it / scale_pow10;
     *it++ -= static_cast<NumType>(result * scale_pow10);
 
@@ -638,9 +640,9 @@ public:
 
     if (digits_->size() == 2) {
       assert(v.digits_->size() == 2);  // NOLINT
-      WideType u2 = (*digits_)[0] + (base_ * (*digits_)[1]);
-      WideType v2 = (*v.digits_)[0] + (base_ * (*v.digits_)[1]);
-      WideType q = u2 / v2;
+      WideType const u2 = (*digits_)[0] + (base_ * (*digits_)[1]);
+      WideType const v2 = (*v.digits_)[0] + (base_ * (*v.digits_)[1]);
+      WideType const q = u2 / v2;
 
       digits_ = std::make_shared<DigitVector>(std::initializer_list<NumType>{
         static_cast<NumType>(q % base_), static_cast<NumType>(q / base_)});
@@ -651,8 +653,8 @@ public:
     /* Note this is not the number Knuth picks as that one causes me problems.  This choice still
      * guarantees that d > b/2, but that we don't extend the v vector at all.
      */
-    auto n = v.digits_->size();
-    auto m = digits_->size() - n;
+    auto const n = v.digits_->size();
+    auto const m = digits_->size() - n;
 
     NumType d = (static_cast<NumType>(base_) / 2 - 1) / v.digits_->back();
     d += 1;
@@ -672,7 +674,7 @@ public:
 
     do {
       /* D3. Calculate q_hat. */
-      WideType t = digits_->at(n + j) * base_ + digits_->at(n + j - 1);
+      WideType const t = digits_->at(n + j) * base_ + digits_->at(n + j - 1);
       WideType q_hat = t / v.digits_->at(n - 1);
       WideType r_hat = t % v.digits_->at(n - 1);
 
@@ -680,8 +682,8 @@ public:
 
       while (cont) {
         cont = false;
-        WideType q_hat_v_n2 = q_hat * v.digits_->at(n - 2);
-        WideType b_r_hat_u_j_n2 = base_ * r_hat + digits_->at(j + n - 2);
+        WideType const q_hat_v_n2 = q_hat * v.digits_->at(n - 2);
+        WideType const b_r_hat_u_j_n2 = base_ * r_hat + digits_->at(j + n - 2);
         if (q_hat == base_ || q_hat_v_n2 > b_r_hat_u_j_n2) {
           --q_hat;
           r_hat += v.digits_->at(n - 1);
@@ -695,7 +697,7 @@ public:
       WideType carry = 0;
       for (unsigned i = 0; i < n; ++i) {
         carry += v.digits_->at(i) * q_hat;
-        NumType rhs_d = carry % base_;
+        NumType const rhs_d = carry % base_;
         carry /= base_;
         if (rhs_d > digits_->at(j + i)) {
           digits_->at(j + i) += base_;
@@ -704,7 +706,7 @@ public:
         digits_->at(j + i) -= rhs_d;
       }
       if (carry != 0) {
-        NumType rhs_d = carry % base_;
+        NumType const rhs_d = carry % base_;
         carry /= base_;
         if (rhs_d > digits_->at(j + n)) {
           digits_->at(j + n) += base_;
@@ -712,7 +714,7 @@ public:
         }
         digits_->at(j + n) -= rhs_d;
       }
-      bool borrowed = (carry != 0);
+      bool const borrowed = (carry != 0);
 
       if (borrowed) {
         /* D6. Add back.  Do this now as it is simpler. */
@@ -778,7 +780,7 @@ public:
       return;
     }
 
-    auto scale_pow10 = static_cast<WideType>(pow10(scale % base_log10_));
+    auto const scale_pow10 = static_cast<WideType>(pow10(scale % base_log10_));
     auto it = digits_->begin();
     WideType carry = *it / scale_pow10;
     while (++it != digits_->end()) {
@@ -814,7 +816,7 @@ public:
       scale -= base_log10_;
     }
 
-    WideType scale_pow10 = pow10(scale);
+    WideType const scale_pow10 = pow10(scale);
 
     /* Handle the one (and only) digits_ entry that has both fractional and whole part.  */
     if (scale > 0) {
@@ -887,8 +889,8 @@ private:
     if (obase <= nums.size()) {
       return std::string(1, nums[num]);
     }
-    auto obase_width = std::to_string(obase - 1).size();
-    std::string str = std::to_string(num);
+    auto const obase_width = std::to_string(obase - 1).size();
+    std::string const str = std::to_string(num);
     if (lspace) {
       return std::string(" ") + std::string(obase_width - str.size(), '0') + str;
     }
@@ -917,25 +919,25 @@ private:
     auto it_lhs = digits_->begin();
 
     while (scale >= base_log10_) {
-      NumType d_lhs = (it_lhs == digits_->end()) ? 0 : *it_lhs++;
+      NumType const d_lhs = (it_lhs == digits_->end()) ? 0 : *it_lhs++;
       fn(d_lhs, 0);
       scale -= base_log10_;
     }
 
-    WideType pow10_scale = pow10(scale);
+    WideType const pow10_scale = pow10(scale);
     WideType carry = 0;
     for (auto it_rhs : *rhs.digits_) {
       carry += it_rhs * pow10_scale;
-      auto d_rhs = static_cast<NumType>(carry % base_);
+      auto const d_rhs = static_cast<NumType>(carry % base_);
       carry /= base_;
 
-      NumType d_lhs = (it_lhs == digits_->end()) ? 0 : *it_lhs++;
+      NumType const d_lhs = (it_lhs == digits_->end()) ? 0 : *it_lhs++;
       assert(carry < base_);  // NOLINT
       fn(d_lhs, d_rhs);
     }
 
     if (carry != 0) {
-      NumType d_lhs = (it_lhs == digits_->end()) ? 0 : *it_lhs++;
+      NumType const d_lhs = (it_lhs == digits_->end()) ? 0 : *it_lhs++;
       fn(d_lhs, static_cast<NumType>(carry));
     }
 
@@ -982,7 +984,7 @@ private:
       scale -= base_log10_;
     }
 
-    WideType pow10_scale = pow10(scale);
+    WideType const pow10_scale = pow10(scale);
     for (auto it_rhs : *rhs.digits_) {
       carry += it_rhs * pow10_scale;
       it = ensure_it_valid(it, digits_);
@@ -1038,7 +1040,7 @@ private:
     /* Have to do the full thing... */
     BasicDigits result;
     result.copy_on_write();
-    auto result_size = (lhs_end - lhs_begin) + (rhs_end - rhs_begin) + 2;
+    auto const result_size = (lhs_end - lhs_begin) + (rhs_end - rhs_begin) + 2;
     result.digits_->resize(result_size, 0);
     auto result_begin = result.digits_->begin();
 
@@ -1048,8 +1050,8 @@ private:
       assert(result_begin != result.digits_->end());  // NOLINT
       for (auto rhs_it = rhs_begin; rhs_it != rhs_end; ++rhs_it) {
         assert(result_it != result.digits_->end());  // NOLINT
-        WideType lhs_d = *lhs_it;
-        WideType rhs_d = *rhs_it;
+        WideType const lhs_d = *lhs_it;
+        WideType const rhs_d = *rhs_it;
         carry += lhs_d * rhs_d + *result_it;
         *result_it++ = static_cast<NumType>(carry % base_);
         carry /= base_;
@@ -1074,25 +1076,25 @@ private:
     assert(std::distance(lhs_begin, lhs_end) > multiply_split_point_);  // NOLINT
     assert(std::distance(lhs_begin, lhs_end) > multiply_split_point_);  // NOLINT
 
-    auto lhs_size = std::distance(lhs_begin, lhs_end);
-    auto rhs_size = std::distance(rhs_begin, rhs_end);
+    auto const lhs_size = std::distance(lhs_begin, lhs_end);
+    auto const rhs_size = std::distance(rhs_begin, rhs_end);
     auto half_size = std::min(lhs_size, rhs_size) / 2;
     half_size = std::max(half_size, decltype(half_size){1});
 
-    auto lhs_mid = lhs_begin + std::min(half_size, lhs_size);
-    auto rhs_mid = rhs_begin + std::min(half_size, rhs_size);
+    auto const lhs_mid = lhs_begin + std::min(half_size, lhs_size);
+    auto const rhs_mid = rhs_begin + std::min(half_size, rhs_size);
 
-    BasicDigits z0 = multiply(lhs_begin, lhs_mid, rhs_begin, rhs_mid);
-    BasicDigits z2 = multiply(lhs_mid, lhs_end, rhs_mid, rhs_end);
+    BasicDigits const z0 = multiply(lhs_begin, lhs_mid, rhs_begin, rhs_mid);
+    BasicDigits const z2 = multiply(lhs_mid, lhs_end, rhs_mid, rhs_end);
 
     // NOLINTNEXTLINE(readability-suspicious-call-argument)
-    BasicDigits z1lhs_sum = add(lhs_begin, lhs_mid, lhs_mid, lhs_end);
+    BasicDigits const z1lhs_sum = add(lhs_begin, lhs_mid, lhs_mid, lhs_end);
     // NOLINTNEXTLINE(readability-suspicious-call-argument)
-    BasicDigits z1rhs_sum = add(rhs_begin, rhs_mid, rhs_mid, rhs_end);
-    auto z1lhs_sum_begin = z1lhs_sum.digits_->begin();
-    auto z1rhs_sum_begin = z1rhs_sum.digits_->begin();
-    auto z1lhs_sum_end = z1lhs_sum.digits_->end();
-    auto z1rhs_sum_end = z1rhs_sum.digits_->end();
+    BasicDigits const z1rhs_sum = add(rhs_begin, rhs_mid, rhs_mid, rhs_end);
+    auto const z1lhs_sum_begin = z1lhs_sum.digits_->begin();
+    auto const z1rhs_sum_begin = z1rhs_sum.digits_->begin();
+    auto const z1lhs_sum_end = z1lhs_sum.digits_->end();
+    auto const z1rhs_sum_end = z1rhs_sum.digits_->end();
     BasicDigits z1 = multiply(z1lhs_sum_begin, z1lhs_sum_end, z1rhs_sum_begin, z1rhs_sum_end);
     z1.sub(z0, 0);
     z1.sub(z2, 0);
@@ -1224,7 +1226,7 @@ public:
   };
 
   BasicNumber() : digits_(), sign_(Sign::positive), scale_(0) {}
-  ~BasicNumber() = default;
+  ~BasicNumber() noexcept = default;
   BasicNumber(BasicNumber const&) = default;
   auto operator=(BasicNumber const&) -> BasicNumber& = default;
   BasicNumber(BasicNumber&&) noexcept = default;
@@ -1319,7 +1321,7 @@ public:
     if (sign_ == Sign::negative) {
       Details::error(Msg::number_to_unsigned_failed_negative, *this);
     }
-    NumType result = digits_.to_unsigned(scale_);
+    NumType const result = digits_.to_unsigned(scale_);
     if (result == digits_.to_unsigned_error_too_large_) {
       Details::error(Msg::number_to_unsigned_failed_too_large, *this);
     }
@@ -1382,7 +1384,7 @@ public:
   [[nodiscard]] auto length() const -> NumType
   {
     if (digits_.is_zero()) {
-      return std::max(NumType(1), scale());
+      return std::max(static_cast<NumType>(1), scale());
     }
     return digits_.length();
   }
@@ -1566,11 +1568,11 @@ public:
 
   void multiply(BasicNumber const& rhs, NumType target_scale)
   {
-    NumType result_scale = scale() + rhs.scale();
+    NumType const result_scale = scale() + rhs.scale();
     // Win32 doesn't support std::max({...});
     auto max_scale = std::max(scale(), rhs.scale());
     scale_ = std::min(result_scale, std::max(max_scale, target_scale));
-    NumType rescale = result_scale - scale_;
+    NumType const rescale = result_scale - scale_;
     digits_.multiply(rhs.digits_, rescale);
     sign_ = sign_ == rhs.sign_ ? Sign::positive : Sign::negative;
   }
@@ -1636,14 +1638,14 @@ public:
     /* We work to a scale which provides an extra block or two of digits at the bottom.  We also
      * rescale *this to the working_scale to save work later.
      */
-    NumType working_scale = target_scale + base_log10_ + 1;
+    NumType const working_scale = target_scale + base_log10_ + 1;
     digits_.mul_pow10(working_scale - scale());
     scale_ = working_scale;
 
     /* Initial guess = 10^floor(N/2+1). N = number of integer digits (=length - scale)
      * This gives us something in the correct ball-park.  We also store this at the working_scale.
      */
-    NumType initial_guess = (std::max(length(), scale()) - scale()) / 2;
+    NumType const initial_guess = (std::max(length(), scale()) - scale()) / 2;
     BasicNumber c(1);
     c.digits_.mul_pow10(initial_guess);
     c.digits_.mul_pow10(working_scale);
@@ -1700,8 +1702,8 @@ public:
 private:
   [[nodiscard]] auto compare(BasicNumber const& rhs) const -> Details::ComparisonResult
   {
-    bool lhs_zero = digits_.is_zero();
-    bool rhs_zero = rhs.digits_.is_zero();
+    bool const lhs_zero = digits_.is_zero();
+    bool const rhs_zero = rhs.digits_.is_zero();
 
     if (lhs_zero && rhs_zero) {
       return Details::ComparisonResult::equality;
@@ -1715,7 +1717,7 @@ private:
                                      : Details::ComparisonResult::greater_than;
     }
 
-    bool lhs_scale_bigger = scale_ >= rhs.scale_;
+    bool const lhs_scale_bigger = scale_ >= rhs.scale_;
     auto result = lhs_scale_bigger ? digits_.compare(rhs.digits_, scale_ - rhs.scale_)
                                    : rhs.digits_.compare(digits_, rhs.scale_ - scale_);
     if (result == Details::ComparisonResult::equality) {

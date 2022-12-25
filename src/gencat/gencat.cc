@@ -57,10 +57,10 @@ void xwrite(int fd, GD::Span::span<T, E> data)
   while (amount_done < d.size()) {
     // Jump through some hoops to ensure we write at most SSIZE_MAX bytes of
     // data, and certainly no more than requested.
-    std::uint64_t to_do = d.size() - amount_done;
-    std::size_t to_write =
+    std::uint64_t const to_do = d.size() - amount_done;
+    std::size_t const to_write =
       static_cast<std::size_t>(std::min(static_cast<std::uint64_t>(SSIZE_MAX), to_do));
-    ssize_t written = ::write(fd, data.data() + amount_done, to_write);
+    ssize_t const written = ::write(fd, data.data() + amount_done, to_write);
     if (written == -1) {
       // EINTR means 'try again'.
       if (errno != EINTR) {
@@ -87,7 +87,8 @@ public:
    *  \param filename File name
    *  \param loc      Initial location (defaults to 0).
    */
-  explicit Location(std::string filename, std::uint64_t loc = 0) noexcept
+  explicit Location(std::string filename,  // NOLINT(bugprone-exception-escape)
+                    std::uint64_t loc = 0) noexcept
       : filename_(std::move(filename)), loc_(loc)
   {
   }
@@ -238,7 +239,7 @@ public:
 
       // Process each message within each set.
       for (std::uint32_t msg = 0; msg < set_te.len; ++msg) {
-        TableEntry msg_te = read_table_entry(loc, data, set_te.offset);
+        TableEntry const msg_te = read_table_entry(loc, data, set_te.offset);
         set_te.offset += table_entry_size;
 
         auto msg_str = read_string(loc, data, set_te.id, msg_te);
@@ -386,14 +387,15 @@ public:
     Data data{'M', 'S', 'G', '\0', 1, 0, 0, 0, 0, 0, 0, 0};
     Location loc(filename);
     data.resize(hdr_size);
-    write(data.begin() + set_count_off, std::uint32_t(sets_.size()));
+    write(data.begin() + set_count_off, static_cast<std::uint32_t>(sets_.size()));
     // Can't write file size yet - as we don't know it.
 
     data.resize(hdr_size + sets_.size() * table_entry_size);
     Offset set_offset = hdr_size;
     for (auto const& kv : sets_) {
       // Msg Array needs to be aligned to 8 byte boundary - and goes at current end of file.
-      Offset msg_array_offset = (data.size() + off_align - 1) & ~Data::size_type(off_align - 1);
+      Offset msg_array_offset =
+        (data.size() + off_align - 1) & ~static_cast<Data::size_type>(off_align - 1);
       data.resize(msg_array_offset + kv.second.size() * table_entry_size);
 
       // Write set entry pointing to message array.
@@ -404,13 +406,13 @@ public:
 
       // Write message array entries.
       for (auto const& kv2 : kv.second) {
-        std::uint64_t msg_offset = data.size();
+        std::uint64_t const msg_offset = data.size();
         write_table_entry(
           loc, data, msg_array_offset,
           TableEntry{kv2.first, static_cast<std::uint32_t>(kv2.second.size()) + 1, msg_offset});
         msg_array_offset += table_entry_size;
         for (auto c : kv2.second) {
-          data.push_back(std::uint8_t(c));
+          data.push_back(static_cast<std::uint8_t>(c));
         }
         // Null terminate the string.
         data.push_back(0);
@@ -418,7 +420,7 @@ public:
     }
 
     // Now we can write the file size.
-    write(data.begin() + file_size_off, std::uint64_t(data.size()));
+    write(data.begin() + file_size_off, static_cast<std::uint64_t>(data.size()));
 
     // Now write data to the file.
     xwrite(fd, GD::Span::span<uint8_t>(data.data(), data.size()));
@@ -628,7 +630,7 @@ private:
       loc.error(Gencat::Msg::table_entry_not_aligned);
     }
     auto raw_data = data.begin() + static_cast<Data::difference_type>(offset);
-    Id id = read<std::uint32_t>(raw_data + table_entry_id_off);
+    Id const id = read<std::uint32_t>(raw_data + table_entry_id_off);
     auto len = read<std::uint32_t>(raw_data + table_entry_len_off);
     auto off = read<std::uint64_t>(raw_data + table_entry_off_off);
     return TableEntry{id, len, off};
@@ -715,7 +717,7 @@ private:
 
 auto main(int argc, char** argv) -> int
 try {
-  std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
+  (void)std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
   GD::Span::span<char*> args(argv, argc);
   GD::Span::span<char*>::iterator it = args.begin();
 

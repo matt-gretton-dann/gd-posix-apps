@@ -47,12 +47,13 @@ public:
   }
 
 private:
-  ProgramName() = default;
+  // This is safe from exceptions: std::string's default constructor does not throw.
+  ProgramName() noexcept = default;  // NOLINT(bugprone-exception-escape)
 
-  std::string name_;
+  std::string name_{};
 };
 }  // namespace
 
-auto GD::program_name() -> std::string_view { return ProgramName::get().program_name(); }
+auto GD::program_name() noexcept -> std::string_view { return ProgramName::get().program_name(); }
 
 void GD::program_name(std::string_view argv0) { ProgramName::get().program_name(argv0); }

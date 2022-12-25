@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" remoteFilesAllowedToDisappearOnAutoupload="false">
+    <serverData>
+      <paths name="gdconsult-arm64-linux (947394aa-8a30-4820-a25d-625f5f10f36a)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/tmp/tmp.DKkkVT7Tm6" local="$PROJECT_DIR$" />
+          </mappings>
+          <excludedPaths>
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-relwithdebinfo" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-force-libgdsup" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-linux-remote---azure" />
+          </excludedPaths>
+        </serverdata>
+      </paths>
+    </serverData>
+  </component>
+</project>

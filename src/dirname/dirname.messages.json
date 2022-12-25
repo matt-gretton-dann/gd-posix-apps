@@ -26,6 +26,18 @@
         "id": 4,
         "description": "We have not been able to allocate expected amount of memory.",
         "C": "Unable to successfulyy allocate memory."
+      },
+      {
+        "msg": "unhandled_std_exception",
+        "id": 5,
+        "description": "We have an uncaught exception of type std::exception, {0} is the what.",
+        "C": "Internal error: {0}."
+      },
+      {
+        "msg": "unhandled_exception",
+        "id": 6,
+        "description": "We have an uncaught exception of unknown type.",
+        "C": "Internal error: Unknown cause."
       }
     ]
   }

@@ -10,6 +10,7 @@
 
 #include "util/utils.hh"
 
+#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <istream>
@@ -72,7 +73,7 @@ auto GD::Ar::Details::MemberHeader::header_size() const noexcept -> size_t { ret
 auto GD::Ar::Details::MemberHeader::format() const noexcept -> GD::Ar::Format { return format_; }
 
 GD::Ar::Member::Member(Details::MemberHeader&& header, MemberID id, Data data, Symbols symbols)
-    : header_(std::move(header)), id_(id), offset_(0), data_(std::move(std::move(data))),
+    : header_(std::move(header)), id_(id), data_(std::move(std::move(data))),
       symbols_(std::move(std::move(symbols)))
 {
   assert(data_ != nullptr);                 // NOLINT
@@ -138,7 +139,7 @@ auto get_symbols_svr4(GD::Ar::Member const& symbol_table) -> GD::Ar::SymbolMap
       it = result.first;
     }
     std::string ins;
-    auto strings_it2 = std::find(strings_it, data.end(), std::byte(0));
+    auto strings_it2 = std::find(strings_it, data.end(), std::byte{0});
     assert(strings_it2 != data.end());  // NOLINT
     std::transform(strings_it, strings_it2, std::back_inserter(ins),
                    [](std::byte b) { return static_cast<char>(b); });

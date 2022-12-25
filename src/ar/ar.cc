@@ -112,8 +112,8 @@ template<typename ArIt, typename FIt>
 void do_delete(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end, FIt files_begin,
                FIt files_end, Flags flags)
 {
-  GD::Ar::Format format = (ar_begin != ar_end) ? ar_begin.format() : GD::Ar::Format::gnu;
-  bool verbose = (flags & Flags::verbose) == Flags::verbose;
+  GD::Ar::Format const format = (ar_begin != ar_end) ? ar_begin.format() : GD::Ar::Format::gnu;
+  bool const verbose = (flags & Flags::verbose) == Flags::verbose;
   auto out_it = GD::Ar::archive_inserter(archive, format, mode);
   std::remove_copy_if(ar_begin, ar_end, out_it, [files_begin, files_end, verbose](auto member) {
     auto found = find_name(files_begin, files_end, member.name());
@@ -142,14 +142,14 @@ template<typename ArIt, typename FIt>
 void do_move(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end, FIt files_begin,
              FIt files_end, Position pos, std::optional<std::string> const& posname, Flags flags)
 {
-  GD::Ar::Format format = (ar_begin != ar_end) ? ar_begin.format() : GD::Ar::Format::gnu;
-  bool verbose = (flags & Flags::verbose) == Flags::verbose;
+  GD::Ar::Format const format = (ar_begin != ar_end) ? ar_begin.format() : GD::Ar::Format::gnu;
+  bool const verbose = (flags & Flags::verbose) == Flags::verbose;
   auto out_it = GD::Ar::archive_inserter(archive, format, mode);
   std::vector<GD::Ar::Member> moved;
   std::vector<GD::Ar::Member> tail;
   bool pending = false;
   std::for_each(
-    ar_begin, ar_end,
+    ar_begin, ar_end,  // NOLINTNEXTLINE(bugprone-exception-escape)
     [&pending, &out_it, &moved, &tail, files_begin, files_end, posname, pos, verbose](auto member) {
       auto found = find_name(files_begin, files_end, member.name());
       if (pos != Position::end && member.name() == fs::path(*posname).filename()) {
@@ -196,9 +196,9 @@ template<typename ArIt, typename FIt>
 void do_replace(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end, FIt files_begin,
                 FIt files_end, Position pos, std::optional<std::string> const& posname, Flags flags)
 {
-  GD::Ar::Format format = (ar_begin != ar_end) ? ar_begin.format() : GD::Ar::Format::gnu;
-  bool verbose = (flags & Flags::verbose) == Flags::verbose;
-  bool update_newer = (flags & Flags::update_newer) == Flags::update_newer;
+  GD::Ar::Format const format = (ar_begin != ar_end) ? ar_begin.format() : GD::Ar::Format::gnu;
+  bool const verbose = (flags & Flags::verbose) == Flags::verbose;
+  bool const update_newer = (flags & Flags::update_newer) == Flags::update_newer;
   auto out_it = GD::Ar::archive_inserter(archive, format, mode);
   auto anchor = posname.has_value() ? fs::path(*posname).filename() : "";
   std::vector<std::string> files;
@@ -208,7 +208,7 @@ void do_replace(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end
     auto member = *ar_begin;
     auto found = find_name(files.begin(), files.end(), member.name());
     bool updated = false;
-    bool is_anchor = (posname.has_value() && member.name() == anchor);
+    bool const is_anchor = (posname.has_value() && member.name() == anchor);
 
     if (pos == Position::before && is_anchor) {
       break;
@@ -304,8 +304,8 @@ template<typename ArIt, typename FIt>
 void do_quick_append(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end,
                      FIt files_begin, FIt files_end, Flags flags)
 {
-  GD::Ar::Format format = (ar_begin != ar_end) ? ar_begin.format() : GD::Ar::Format::gnu;
-  bool verbose = (flags & Flags::verbose) == Flags::verbose;
+  GD::Ar::Format const format = (ar_begin != ar_end) ? ar_begin.format() : GD::Ar::Format::gnu;
+  bool const verbose = (flags & Flags::verbose) == Flags::verbose;
   auto out_it = GD::Ar::archive_inserter(archive, format, mode);
   std::copy(ar_begin, ar_end, out_it);
   std::for_each(files_begin, files_end, [&out_it, verbose](auto fname) {
@@ -326,9 +326,9 @@ void do_quick_append(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt a
 void do_extract(std::string const& fname, GD::Ar::Member const& member, Flags flags)
 {
   auto name = fname;
-  bool truncate_names = (flags & Flags::truncate_names) == Flags::truncate_names;
-  bool allow_replacement = (flags & Flags::allow_replacement) == Flags::allow_replacement;
-  bool verbose = (flags & Flags::verbose) == Flags::verbose;
+  bool const truncate_names = (flags & Flags::truncate_names) == Flags::truncate_names;
+  bool const allow_replacement = (flags & Flags::allow_replacement) == Flags::allow_replacement;
+  bool const verbose = (flags & Flags::verbose) == Flags::verbose;
 
   if (truncate_names) {
     /* Truncate the name to the longest possible.  We ignore an error here and just assume the name
@@ -363,7 +363,7 @@ void do_print(std::string const& fname, GD::Ar::Member const& member, Flags flag
   if ((flags & Flags::verbose) == Flags::verbose) {
     // Use printf to ensure we sync with the write below.
     std::printf("\n<%s>\n\n", fname.c_str());
-    std::fflush(stdout);
+    (void)std::fflush(stdout);
   }
 
   auto data = member.data();
@@ -487,7 +487,7 @@ void do_action(fs::path const& archive, mode_t mode, ArIt ar_begin, ArIt ar_end,
   }
 
   if (!members.empty()) {
-    GD::Ar::Format format = members.front().format();
+    GD::Ar::Format const format = members.front().format();
     auto out_it = GD::Ar::archive_inserter(archive, format, mode);
     std::copy(members.begin(), members.end(), out_it);
     *out_it++ = GD::Ar::WriteIterator<GD::TxnWriteFile>::commit_tag();
@@ -500,7 +500,7 @@ constexpr auto is_read_only_action(Action action) -> bool
   return action == Action::print || action == Action::toc || action == Action::extract;
 }
 
-struct State
+struct State  // NOLINT(bugprone-exception-escape)
 {
   Action action = Action::none;
   Position pos = Position::end;
@@ -602,7 +602,7 @@ auto process_command_line(GD::Span::span<char*> args) -> State
 
 auto main(int argc, char** argv) -> int
 try {
-  std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
+  (void)std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
   GD::Span::span<char*> args(argv, argc);
   GD::program_name(args[0]);
   std::ios::sync_with_stdio(true);

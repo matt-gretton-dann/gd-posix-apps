@@ -318,7 +318,7 @@ auto to_based_string(uint32_t v, unsigned log2base, bool use_upper) -> std::stri
   unsigned shift = ((std::numeric_limits<uint32_t>::digits - 1 + log2base) / log2base) * log2base;
   while (shift > 0) {
     shift -= log2base;
-    unsigned c = (v >> shift) & (basem1);
+    unsigned const c = (v >> shift) & (basem1);
     if (c != 0) {
       adding_digits = true;
     }
@@ -404,7 +404,7 @@ auto parse_int(std::string_view arg) -> int32_t
       break;
     }
 
-    int d = static_cast<int>(p) % base_hex;
+    int const d = static_cast<int>(p) % base_hex;
 
     if (INT32_MAX / static_cast<int32_t>(base) < v) {
       /* For overflow we warn and clamp to INT32_MAX.  */
@@ -448,7 +448,7 @@ void print_number(FormatState const& format_state, std::string&& v, std::string_
   const bool leading_zeroes =
     format_state.precision_ == -1 && format_state.leading_zeroes_ && !format_state.left_justified_;
   /* How many digits must we have? */
-  std::string::size_type precision =
+  std::string::size_type const precision =
     format_state.precision_ > -1 ? static_cast<std::string::size_type>(format_state.precision_)
                                  : (leading_zeroes ? leading_zero_precision : 1);
 
@@ -479,7 +479,7 @@ void process_decimal(FormatState const& format_state, std::string_view arg)
     sv = -sv;
   }
 
-  std::string::size_type leading_zero_precision =
+  std::string::size_type const leading_zero_precision =
     sign.empty() ? format_state.min_width_
                  : (format_state.min_width_ > 1 ? format_state.min_width_ - 1 : 1);
   print_number(format_state, std::to_string(sv), sign, leading_zero_precision);
@@ -491,7 +491,7 @@ void process_decimal(FormatState const& format_state, std::string_view arg)
  */
 void process_unsigned(FormatState const& format_state, std::string_view arg)
 {
-  int32_t vs = parse_int(arg);
+  int32_t const vs = parse_int(arg);
   if (vs < 0) {
     warn(Msg::negative_decimal_to_unsigned, arg, 'u');
   }
@@ -505,7 +505,7 @@ void process_unsigned(FormatState const& format_state, std::string_view arg)
  */
 void process_octal(FormatState& format_state, std::string_view arg)
 {
-  int32_t vs = parse_int(arg);
+  int32_t const vs = parse_int(arg);
   if (vs < 0) {
     warn(Msg::negative_decimal_to_unsigned, arg, 'o');
   }
@@ -532,18 +532,18 @@ void process_octal(FormatState& format_state, std::string_view arg)
  */
 void process_hex(FormatState const& format_state, std::string_view arg, bool upper)
 {
-  int32_t vs = parse_int(arg);
+  int32_t const vs = parse_int(arg);
   if (vs < 0) {
     warn(Msg::negative_decimal_to_unsigned, arg, upper ? 'X' : 'x');
   }
 
   auto v = static_cast<uint32_t>(vs);
-  bool has_prefix = v != 0 && format_state.alternative_form_;
+  bool const has_prefix = v != 0 && format_state.alternative_form_;
   constexpr std::string_view no_prefix = "";  // NOLINT
   constexpr std::string_view upper_prefix = "0X";
   constexpr std::string_view lower_prefix = "0x";
-  std::string_view prefix = !has_prefix ? no_prefix : (upper ? upper_prefix : lower_prefix);
-  std::string::size_type leading_zero_precision =
+  std::string_view const prefix = !has_prefix ? no_prefix : (upper ? upper_prefix : lower_prefix);
+  std::string::size_type const leading_zero_precision =
     !has_prefix ? format_state.min_width_
                 : (format_state.min_width_ > 2 ? format_state.min_width_ - 2 : 1);
   print_number(format_state, to_based_string(v, 4, upper), prefix, leading_zero_precision);
@@ -716,7 +716,7 @@ auto process_format(std::string_view format, GD::Span::span<char*>::iterator arg
         format_state = FormatState();
         break;
       }
-      std::string_view arg = (argv == argv_end) ? "" : *argv++;
+      std::string_view const arg = (argv == argv_end) ? "" : *argv++;
       switch (*c) {
       case 'b':
         state = process_escaped_string(format_state, arg);
@@ -786,10 +786,10 @@ auto process_format(std::string_view format, GD::Span::span<char*>::iterator arg
 
 auto main(int argc, char** argv) -> int
 {
-  GD::Span::span<char*> args(argv, argc);
+  GD::Span::span<char*> const args(argv, argc);
 
   GD::program_name(args[0]);
-  ::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
+  (void)::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
 
   int c = 0;
   while ((c = ::getopt(argc, argv, ":")) != -1) {  // NOLINT(concurrency-mt-unsafe)
@@ -804,10 +804,10 @@ auto main(int argc, char** argv) -> int
     error(Msg::missing_format);
   }
 
-  std::string_view format = *(it++);
+  std::string_view const format = *(it++);
 
   do {
-    GD::Span::span<char*>::iterator initial_argv = it;
+    GD::Span::span<char*>::iterator const initial_argv = it;
     it = process_format(format, it, args.end());
     if (it == initial_argv && it != args.end()) {
       error(Msg::no_format_characters);
