@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
-import difflib
 import filecmp
 import subprocess
 import sys
@@ -48,9 +47,13 @@ class TestRunner:
         parser = argparse.ArgumentParser()
         parser.add_argument("exe", help="Executable to test")
         parser.add_argument(
-            "--input-dir", help="Directory which conatins input files.  If not specified will fail if we try to use input files.")
+            "--input-dir",
+            help="Directory which conatins input files.  If not specified "
+                 "will fail if we try to use input files.")
         parser.add_argument(
-            "--output-dir", help="Directory which contains output files.  If not specified will fail if we try to write output.")
+            "--output-dir",
+            help="Directory which contains output files.  If not specified "
+                 "will fail if we try to write output.")
         parser.add_argument("--keep", action='store_true',
                             help="Keep all output files even if tests pass.")
         parser.add_argument("--nls-path", help="Base of NLS path")
@@ -108,8 +111,8 @@ class TestRunner:
                 return True
             if sys.platform.startswith('win32'):
                 # Hack to cope with Windows random newlines
-                actual2 = actual.replace('\n','')
-                expected2 = expected.replace('\n','')
+                actual2 = actual.replace('\n', '')
+                expected2 = expected.replace('\n', '')
                 if actual2 == expected2:
                     return True
         else:
@@ -118,17 +121,20 @@ class TestRunner:
                 return True
 
                 # By this point we know we've failed.
-        print(f"FAIL: {name} ({stream})\n---- EXPECTED: ----\n{expected.encode('unicode_escape')}\n"
-              f"----- ACTUAL: -----\n{actual.encode('unicode_escape')}\n-------------------\n")
+        print(
+            f"FAIL: {name} ({stream})\n---- EXPECTED: ----\n"
+            f"{expected.encode('unicode_escape')}\n----- ACTUAL: -----\n"
+            f"{actual.encode('unicode_escape')}\n-------------------\n")
         self._fails += 1
 
     def run_test(self, cmdline, expected_rc=0, expected_stdout=None,
-                 expected_stderr=None, test_name=None, stdin=None, files=None, skip=False):
+                 expected_stderr=None, test_name=None, stdin=None, files=None,
+                 skip=False):
         """Run a test
 
-        Runs the executable given in the list CMDLINE and checks for the expected
-        return code EXPECTED_RC.  If EXPECTED_STDOUT or EXPECTED_STDERR are not
-        None then they are also checked.
+        Runs the executable given in the list CMDLINE and checks for the
+        expected return code EXPECTED_RC.  If EXPECTED_STDOUT or
+        EXPECTED_STDERR are not None then they are also checked.
 
         If SKIP is True the test is skipped.
 
@@ -138,16 +144,17 @@ class TestRunner:
         These files will be removed at the end of the test run if all tests
         which use them have been successful.
 
-        EXPECTED_STDOUT, EXPECTED_STDERR, and STDIN may be specified as `str`s or
-        `byte`s.  But it must be consistent within a call you cannoy specify STDIN
-        as a byte and EXPECTED_STDOUT as a str for instace.
+        EXPECTED_STDOUT, EXPECTED_STDERR, and STDIN may be specified as `str`s
+        or `byte`s.  But it must be consistent within a call you cannoy specify
+        STDIN as a byte and EXPECTED_STDOUT as a str for instace.
 
-        Outputs a PASS/FAIL line to stdout.  The test name is given as TEST_NAME or
-        the basename of cmdline[0]
+        Outputs a PASS/FAIL line to stdout.  The test name is given as
+        TEST_NAME or the basename of cmdline[0]
 
         Returns True if dependent tests should be skipped or False if not.
         """
-        capture_output = expected_stdout is not None or expected_stderr is not None
+        capture_output = \
+            expected_stdout is not None or expected_stderr is not None
         capture_output = subprocess.PIPE if capture_output else None
         text = _use_text(expected_stdout, expected_stderr, stdin)
 
@@ -171,9 +178,11 @@ class TestRunner:
         e = os.environ.copy()
         e['LC_ALL'] = 'C'
         if self._args.nls_path is not None:
-            e['NLSPATH'] = os.path.join(self._args.nls_path, "%N.%l_%t.msg")\
-                + os.pathsep + os.path.join(self._args.nls_path, "%N.%l.msg") \
-                + os.pathsep + os.path.join(self._args.nls_path, "%N.msg")
+            e['NLSPATH'] = os.path.join(self._args.nls_path, "%N.%l_%t.msg") \
+                           + os.pathsep + os.path.join(self._args.nls_path,
+                                                       "%N.%l.msg") \
+                           + os.pathsep + os.path.join(self._args.nls_path,
+                                                       "%N.msg")
 
         success = True
         rc = subprocess.run(
@@ -182,12 +191,17 @@ class TestRunner:
 
         if rc.returncode != expected_rc:
             print(
-                f"FAIL: {test_name} (incorrect exit code: expected {expected_rc} got {rc.returncode})")
+                f"FAIL: {test_name} (incorrect exit code: expected "
+                f"{expected_rc} got {rc.returncode})")
             self._fails += 1
             success = False
-        elif not self._check_expected_output(rc.stdout, expected_stdout, test_name, "stdout"):
+        elif not self._check_expected_output(rc.stdout,
+                                             expected_stdout,
+                                             test_name, "stdout"):
             success = False
-        elif not self._check_expected_output(rc.stderr, expected_stderr, test_name, "stderr"):
+        elif not self._check_expected_output(rc.stderr,
+                                             expected_stderr,
+                                             test_name, "stderr"):
             success = False
         else:
             print(f"PASS: {test_name}")
@@ -244,6 +258,7 @@ class TestRunner:
         """Strip the input/output directories from the start of a filename.
 
         This is used to get consistent output in test names/messages."""
+
         def rp(s, p):
             """str.removeprefix replacement if we don't have Python 3.9"""
             if s.startswith(p):
@@ -289,7 +304,8 @@ class TestRunner:
 
     def summarize(self):
         print(
-            f"======== SUMMARY ========\nPASS: {self._passes}\nFAIL: {self._fails}\nSKIP: {self._skips}")
+            f"======== SUMMARY ========\nPASS: {self._passes}\n"
+            f"FAIL: {self._fails}\nSKIP: {self._skips}")
         if self._fails > 0:
             sys.exit(1)
         else:
