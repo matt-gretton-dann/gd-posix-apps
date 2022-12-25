@@ -83,8 +83,8 @@ auto do_cksum(std::string_view fname) -> bool
 auto main(int argc, char** argv) -> int
 {
   try {
-    std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
-    GD::Span::span<char*> args(argv, argc);
+    (void)std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
+    GD::Span::span<char*> const args(argv, argc);
     GD::program_name(args[0]);
 
     // Skip a '--' option
@@ -97,10 +97,10 @@ auto main(int argc, char** argv) -> int
   }
   catch (std::exception const& e) {
     report_error(GD::Cksum::Msg::unhandled_std_exception, e.what());
-    std::exit(EXIT_FAILURE);  // NOLINT(concurrency-mt-unsafe)
+    return EXIT_FAILURE;
   }
   catch (...) {
     report_error(GD::Cksum::Msg::unhandled_exception);
-    std::exit(EXIT_FAILURE);  // NOLINT(concurrency-mt-unsafe)
+    return EXIT_FAILURE;
   }
 }

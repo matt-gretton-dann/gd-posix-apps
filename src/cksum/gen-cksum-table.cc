@@ -30,7 +30,7 @@ auto main(int argc, char** argv) -> int
   constexpr std::uint32_t table_size = uint8_max + 1;
   constexpr std::uint32_t bit31 = 1U << 31;
 
-  GD::Span::span<char*> args(argv, argc);
+  GD::Span::span<char*> const args(argv, argc);
   if (args.size() != 2) {
     // NOLINTNEXTLINE(concurrency-mt-unsafe)
     std::cerr << ::basename(args[0]) << ": Need to specify output file.\n";
