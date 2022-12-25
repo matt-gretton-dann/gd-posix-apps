@@ -23,7 +23,8 @@ Checks:          >-
  -llvm-header-guard,
  -misc-no-recursion,
  -readability-function-cognitive-complexity,
- -clang-diagnostic-ignored-optimization-argument
+ -clang-diagnostic-ignored-optimization-argument,
+ -readability-identifier-length
 WarningsAsErrors: '*,-clang-diagnostic-ignored-optimization-argument'
 HeaderFilterRegex: ''
 AnalyzeTemporaryDtors: false
