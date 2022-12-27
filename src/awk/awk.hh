@@ -29,6 +29,7 @@
 #include <type_traits>
 #include <unordered_map>
 #include <variant>
+#include <vector>
 
 namespace GD::Awk {
 
@@ -235,7 +236,7 @@ public:
   void chew();
 
   /** \brief  Get the current source location.  */
-  [[nodiscard]] auto location() const -> Location const&;
+  [[nodiscard]] virtual auto location() const -> Location const&;
 
   /** \brief  Report an error giving source location. */
   template<typename... Ts>
@@ -288,6 +289,30 @@ private:
 
   GD::StreamInputFile file_;  ///< File
   int c_{EOF};                ///< Current character (EOF means needs peeking or EOF)
+};
+
+/** \brief Read from multiple files as if they were one. */
+class FilesReader : public Reader
+{
+public:
+  /** \brief   Constructor.
+   *  \param f Vector of files.
+   */
+  explicit FilesReader(std::vector<std::string> f);
+
+  auto peek() -> int final;
+  [[nodiscard]] auto location() const -> Location const& override;
+
+private:
+  void do_chew() final;
+
+  /** \brief  Open the file at the top of files_.  */
+  void open_front_file();
+
+  std::unique_ptr<GD::StreamInputFile> current_file_;  ///< File
+  std::vector<std::string> files_;                     ///< List of files we're reading from.
+  Location location_;                                  ///< Current location
+  int c_{EOF};  ///< Current character (EOF means needs peeking or EOF)
 };
 
 /** Lexer.  */

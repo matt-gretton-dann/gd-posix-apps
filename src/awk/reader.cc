@@ -127,3 +127,66 @@ void GD::Awk::FileReader::do_chew()
   /* And then clear it... */
   c_ = EOF;
 }
+
+GD::Awk::FilesReader::FilesReader(std::vector<std::string> f)
+    : Reader(""), current_file_(nullptr), files_(std::move(f)), location_("")
+{
+  open_front_file();
+}
+
+void GD::Awk::FilesReader::open_front_file()
+{
+  if (files_.empty()) {
+    return;
+  }
+
+  current_file_ = std::make_unique<GD::StreamInputFile>(files_.front());
+  location_ = Location(files_.front());
+
+  if (current_file_->error()) {
+    error(Msg::file_error, files_.front());
+  }
+
+  files_.erase(files_.begin());
+}
+
+auto GD::Awk::FilesReader::peek() -> int
+{
+  /* We only read from the file when we know we need to - which is indicated by c_ being EOF.  */
+  if (c_ != EOF) {
+    return c_;
+  }
+
+  /* At the end of the current file - then open the next and use that.  */
+  if (current_file_->eof() && !files_.empty()) {
+    open_front_file();
+  }
+
+  if (!current_file_->eof()) {
+    c_ = current_file_->getc();
+
+    if (c_ == '\n') {
+      location_.next_line();
+    }
+    else {
+      location_.next_column();
+    }
+  }
+
+  if (current_file_->error()) {
+    error(Msg::file_error, current_file_->filename());
+  }
+
+  return c_;
+}
+
+void GD::Awk::FilesReader::do_chew()
+{
+  /* Ensure we have something to chew.  */
+  (void)peek();
+
+  /* And then clear it... */
+  c_ = EOF;
+}
+
+auto GD::Awk::FilesReader::location() const -> GD::Awk::Location const& { return location_; }
