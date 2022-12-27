@@ -39,58 +39,98 @@ namespace GD::Awk {
  */
 struct Token
 {
+  /** \brief  Enum listing builtin functions. */
+  enum class BuiltinFunc {
+    atan2,
+    close,
+    cos,
+    exp,
+    gsub,
+    index,
+    int_,
+    length,
+    log,
+    match,
+    rand,
+    sin,
+    split,
+    sprintf,
+    sqrt,
+    srand,
+    sub,
+    substr,
+    system,
+    tolower,
+    toupper,
+  };
+
   /** \brief  Enum listing token types.  */
   enum class Type {
     error,
     eof,
     newline,
-    string,
-    letter,
+    name,
+    func_name,
+    builtin_func_name,
     number,
-    power,
-    multiply,
-    divide,
-    modulo,
-    add,
-    subtract,
-    assign,
-    add_assign,
-    subtract_assign,
-    multiply_assign,
-    divide_assign,
-    modulo_assign,
-    power_assign,
-    equals,
-    less_than_equals,
-    greater_than_equals,
-    not_equals,
-    less_than,
-    greater_than,
-    increment,
-    decrement,
-    define,
+    ere,
+    begin,
     break_,
-    halt,
-    quit,
-    length,
-    return_,
+    continue_,
+    delete_,
+    do_,
+    else_,
+    end,
+    exit,
     for_,
+    function,
+    getline,
     if_,
+    in,
+    next,
+    print,
+    printf,
+    return_,
     while_,
-    abs,
-    sqrt,
-    scale,
-    ibase,
-    obase,
-    auto_,
+    add_assign,
+    sub_assign,
+    mul_assign,
+    div_assign,
+    mod_assign,
+    pow_assign,
+    or_,
+    and_,
+    no_match,
+    eq,
+    le,
+    ge,
+    ne,
+    incr,
+    decr,
+    append,
+    lbrace,
+    rbrace,
     lparens,
     rparens,
     lsquare,
     rsquare,
-    lbrace,
-    rbrace,
     comma,
     semicolon,
+    add,
+    subtract,
+    multiply,
+    divide,
+    modulo,
+    power,
+    not_,
+    greater_than,
+    less_than,
+    pipe,
+    query,
+    colon,
+    tilde,
+    dollar,
+    assign,
   };
 
   /** \brief      Construct a token of basic type
@@ -110,8 +150,14 @@ struct Token
   /** \brief Get token type.  */
   [[nodiscard]] auto type() const -> Type;
 
-  /** \brief  Get string stored in token. */
-  [[nodiscard]] auto string() const -> std::string const&;
+  /** \brief  Get name stored in token. */
+  [[nodiscard]] auto name() const -> std::string const&;
+
+  /** \brief  Get the function name stored in token. */
+  [[nodiscard]] auto func_name() const -> std::string const&;
+
+  /** \brief  Get the ERE name stored in token. */
+  [[nodiscard]] auto ere() const -> std::string const&;
 
   /** \brief  Get number stored in token. */
   [[nodiscard]] auto number() const -> std::string const&;
@@ -119,42 +165,43 @@ struct Token
   /** \brief  Get the error message.  */
   [[nodiscard]] auto error() const -> std::string const&;
 
+  /** \brief  Get the builtin function type.  */
+  [[nodiscard]] auto builtin_func_name() const -> BuiltinFunc;
+
   /** \brief  Output debug form of token. */
   void debug(std::ostream& os) const;
 
-  /** \brief  Is this an assignment op? */
-  [[nodiscard]] auto is_assign_op() const -> bool;
-
-  /** \brief  Is this an increment/decrement op?  */
-  [[nodiscard]] auto is_incr_decr_op() const -> bool;
-
-  /** \brief  Is this a multiplication style op?  */
-  [[nodiscard]] auto is_mul_op() const -> bool;
-
-  /** \brief  Is this an addition style op?  */
-  [[nodiscard]] auto is_add_op() const -> bool;
-
-  /** \brief  Is this a relation op? */
-  [[nodiscard]] auto is_rel_op() const -> bool;
-
 private:
+  /** Internal type to differentiate a name.  */
+  using Name = TypeWrapper<std::string, struct NameType>;
+
+  /** Internal type to differentiate an ERE.  */
+  using ERE = TypeWrapper<std::string, struct EREType>;
+
+  /** Internal type to differentiate a function name.  */
+  using FuncName = TypeWrapper<std::string, struct FuncName>;
+
   /** Internal type to hold a number and diferentiate it from string and error.  */
-  using NumInt = TypeWrapper<std::string, struct NumIntType>;
+  using Number = TypeWrapper<std::string, struct NumberType>;
 
   /** Internal type to hold an error string and differentiate it from string and number.  */
-  using ErrorInt = TypeWrapper<std::string, struct ErrorIntType>;
+  using Error = TypeWrapper<std::string, struct ErrorIntType>;
 
-  std::variant<Type, std::string, NumInt, ErrorInt> value_;
+  /** The value of thos token.  */
+  std::variant<Type, BuiltinFunc, Name, ERE, FuncName, Number, Error> value_;
 };
 
 /** \brief Output operator for token type.  */
 auto operator<<(std::ostream& os, Token::Type t) -> std::ostream&;
+auto operator<<(std::ostream& os, Token::BuiltinFunc bf) -> std::ostream&;
 auto operator<<(std::ostream& os, Token const& token) -> std::ostream&;
 
 /* Comparison operators.  */
 auto operator==(Token const& token, Token::Type type) -> bool;
+auto operator==(Token const& token, Token::BuiltinFunc builtin_func) -> bool;
 auto operator==(Token::Type type, Token const& token) -> bool;
 auto operator!=(Token const& token, Token::Type type) -> bool;
+auto operator!=(Token const& token, Token::BuiltinFunc builtin_func) -> bool;
 auto operator!=(Token::Type type, Token const& token) -> bool;
 
 /** \brief  A source location.  */
