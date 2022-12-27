@@ -44,6 +44,12 @@
         "id": 7,
         "description": "We have an uncaught exception of unknown type.",
         "C": "Internal error: Unknown cause."
+      },
+      {
+        "msg": "missing_program",
+        "id": 8,
+        "description": "No program has been specified.",
+        "C": "No program specified.  Either specify a file via '-f program', or as the first command-line argument."
       }
     ]
   }

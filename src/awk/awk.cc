@@ -41,6 +41,11 @@ template<typename... Ts>
 [[maybe_unused]] void parse(std::unique_ptr<GD::Awk::Reader>&& r)
 {
   auto lexer{std::make_unique<GD::Awk::Lexer>(std::move(r))};
+  while (lexer->peek() != GD::Awk::Token::Type::eof) {
+    std::cout << lexer->peek();
+    lexer->chew();
+  }
+
   // GD::Bc::Parser parser(std::make_unique<GD::Bc::Lexer>(std::move(r)), true);
 }
 }  // namespace
@@ -75,6 +80,19 @@ try {
       break;
     }
   }
+
+  std::unique_ptr<GD::Awk::Reader> reader{nullptr};
+  if (files.empty()) {
+    if (optind >= argc) {
+      error(Msg::missing_program);
+    }
+    reader = std::make_unique<GD::Awk::StringReader>(args[optind]);
+  }
+  else {
+    reader = std::make_unique<GD::Awk::FilesReader>(files);
+  }
+
+  parse(std::move(reader));
 
   return EXIT_SUCCESS;
 }  // namespace
