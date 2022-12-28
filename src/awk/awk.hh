@@ -408,7 +408,9 @@ private:
    * All lexing routines end up by calling t_.emplace() to construct an appropriate token. */
   void lex();
 
+  /* Various lexing internal routines. */
   void lex_word();
+  void lex_comment();
 
   /**              Lex a symbol
    *  \param plain Token type to use if the next character isn't matched

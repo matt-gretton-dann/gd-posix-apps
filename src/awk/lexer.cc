@@ -175,7 +175,7 @@ void GD::Awk::Lexer::lex_word()
   }
 
   if (maybe_func_name) {
-    chew();
+    r_->chew();
     t_.emplace(Token::Type::func_name, word);
     return;
   }
@@ -183,74 +183,111 @@ void GD::Awk::Lexer::lex_word()
   t_.emplace(Token::Type::name, word);
 }
 
+void GD::Awk::Lexer::lex_comment()
+{
+  assert(r_->peek() == '#');
+
+  // Comments continue to the end of a line (or file).  However, we need to handle new-lines which
+  // may have been escaped.
+  bool seen_escape{false};
+  while (true) {
+    switch (r_->peek()) {
+    case EOF:
+      return;
+    case '\n':
+      if (!seen_escape) {
+        return;
+      }
+      seen_escape = false;
+      break;
+    case '\\':
+      seen_escape = true;
+      break;
+    default:
+      seen_escape = false;
+      break;
+    }
+
+    r_->chew();
+  }
+}
+
 void GD::Awk::Lexer::lex()
 {
-  switch (r_->peek()) {
-  case EOF:
-    t_.emplace(Token::Type::eof);
-    return;
-  case '\n':
-    r_->chew();
-    t_.emplace(Token::Type::newline);
-    return;
-  case 'A':
-  case 'B':
-  case 'C':
-  case 'D':
-  case 'E':
-  case 'F':
-  case 'G':
-  case 'H':
-  case 'I':
-  case 'J':
-  case 'K':
-  case 'L':
-  case 'M':
-  case 'N':
-  case 'O':
-  case 'P':
-  case 'Q':
-  case 'R':
-  case 'S':
-  case 'T':
-  case 'U':
-  case 'V':
-  case 'W':
-  case 'X':
-  case 'Y':
-  case 'Z':
-  case 'a':
-  case 'b':
-  case 'c':
-  case 'd':
-  case 'e':
-  case 'f':
-  case 'g':
-  case 'h':
-  case 'i':
-  case 'j':
-  case 'k':
-  case 'l':
-  case 'm':
-  case 'n':
-  case 'o':
-  case 'p':
-  case 'q':
-  case 'r':
-  case 's':
-  case 't':
-  case 'u':
-  case 'v':
-  case 'w':
-  case 'x':
-  case 'y':
-  case 'z':
-  case '_':
-    lex_word();
-    return;
-  default:
-    t_.emplace(Token::Type::error, r_->error(Msg::unexpected_token, r_->peek()));
-    r_->chew();
-    return;
+  while (true) {
+    switch (r_->peek()) {
+    case EOF:
+      t_.emplace(Token::Type::eof);
+      return;
+    case '\n':
+      r_->chew();
+      t_.emplace(Token::Type::newline);
+      return;
+    case ' ':
+      r_->chew();  // We just chew ' '.
+      break;
+    case '#':
+      lex_comment();
+      break;
+    case 'A':
+    case 'B':
+    case 'C':
+    case 'D':
+    case 'E':
+    case 'F':
+    case 'G':
+    case 'H':
+    case 'I':
+    case 'J':
+    case 'K':
+    case 'L':
+    case 'M':
+    case 'N':
+    case 'O':
+    case 'P':
+    case 'Q':
+    case 'R':
+    case 'S':
+    case 'T':
+    case 'U':
+    case 'V':
+    case 'W':
+    case 'X':
+    case 'Y':
+    case 'Z':
+    case 'a':
+    case 'b':
+    case 'c':
+    case 'd':
+    case 'e':
+    case 'f':
+    case 'g':
+    case 'h':
+    case 'i':
+    case 'j':
+    case 'k':
+    case 'l':
+    case 'm':
+    case 'n':
+    case 'o':
+    case 'p':
+    case 'q':
+    case 'r':
+    case 's':
+    case 't':
+    case 'u':
+    case 'v':
+    case 'w':
+    case 'x':
+    case 'y':
+    case 'z':
+    case '_':
+      lex_word();
+      return;
+    default:
+      t_.emplace(Token::Type::error, r_->error(Msg::unexpected_token, r_->peek()));
+      r_->chew();
+      return;
+    }
   }
 }
