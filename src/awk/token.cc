@@ -63,7 +63,7 @@ auto GD::Awk::Token::string() const -> std::string const& { return std::get<std:
 
 auto GD::Awk::Token::func_name() const -> std::string const&
 {
-  return std::get<Name>(value_).get();
+  return std::get<FuncName>(value_).get();
 }
 
 auto GD::Awk::Token::builtin_func_name() const -> BuiltinFunc
