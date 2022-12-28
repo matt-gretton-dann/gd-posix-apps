@@ -39,10 +39,16 @@ GD::Awk::Token::Token(Type type, std::string const& s) : value_(Name(s))
   }
 }
 
+GD::Awk::Token::Token([[maybe_unused]] Type type, BuiltinFunc func) : value_(func)
+{
+  assert(type == Type::builtin_func_name);
+}
+
 auto GD::Awk::Token::type() const -> Token::Type
 {
   return std::visit(GD::Overloaded{[](Type t) { return t; },
                                    [](Name const& /*unused*/) { return Type::name; },
+                                   [](std::string const& /*unused*/) { return Type::string; },
                                    [](FuncName const& /*unused*/) { return Type::func_name; },
                                    [](BuiltinFunc /*unused*/) { return Type::builtin_func_name; },
                                    [](Number const& /*unused*/) { return Type::number; },
@@ -52,6 +58,8 @@ auto GD::Awk::Token::type() const -> Token::Type
 }
 
 auto GD::Awk::Token::name() const -> std::string const& { return std::get<Name>(value_).get(); }
+
+auto GD::Awk::Token::string() const -> std::string const& { return std::get<std::string>(value_); }
 
 auto GD::Awk::Token::func_name() const -> std::string const&
 {
@@ -82,6 +90,9 @@ auto GD::Awk::operator<<(std::ostream& os, Token::Type t) -> std::ostream&
     os << "newline";
     break;
   case Token::Type::name:
+    os << "name";
+    break;
+  case Token::Type::string:
     os << "string";
     break;
   case Token::Type::func_name:
@@ -351,7 +362,8 @@ void GD::Awk::Token::Token::debug(std::ostream& os) const
                             [&os](FuncName const& n) { os << "func_name(" << n.get() << ")"; },
                             [&os](BuiltinFunc const& n) { os << "builtin_func_name(" << n << ")"; },
                             [&os](ERE const& n) { os << "ere(" << n.get() << ")"; },
-                            [&os](Name const& n) { os << "name(" << n.get() << ")"; }},
+                            [&os](Name const& n) { os << "name(" << n.get() << ")"; },
+                            [&os](std::string const& n) { os << "string(" << n << ")"; }},
              value_);
 }
 
@@ -374,7 +386,10 @@ auto GD::Awk::operator<<(std::ostream& os, Token const& token) -> std::ostream&
     os << token.func_name() << "(";
     break;
   case Token::Type::builtin_func_name:
-    os << token.builtin_func_name() << "(";
+    os << token.builtin_func_name();
+    break;
+  case Token::Type::string:
+    os << "\"" << token.string() << "\"";
     break;
   case Token::Type::number:
     os << token.number();
@@ -482,7 +497,7 @@ auto GD::Awk::operator<<(std::ostream& os, Token const& token) -> std::ostream&
     os << "--";
     break;
   case Token::Type::append:
-    os << "*/";
+    os << ">>";
     break;
   case Token::Type::lbrace:
     os << "{";

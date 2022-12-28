@@ -72,6 +72,7 @@ struct Token
     name,
     func_name,
     builtin_func_name,
+    string,
     number,
     ere,
     begin,
@@ -134,11 +135,12 @@ struct Token
   };
 
   /** \brief      Construct a token of basic type
-   *  \param type Token type (shouldn't be Type::letter, Type::number or Type::string)
+   *  \param type Token type
    */
   explicit Token(Type type);
 
-  /** \brief      Construct a token of type Type::number, Type::string, or Type::error.
+  /** \brief      Construct a token of type Type::number, Type::name, Type::func_name,
+   *              Type::ere, Type::string, or Type::error.
    *  \param type Token type
    *  \param s    Value of number or string
    *
@@ -146,6 +148,12 @@ struct Token
    * until execution time.
    */
   Token(Type type, std::string const& s);
+
+  /** \brief  Construct a token of Type::builtin_func.
+   *  \param type Token type (Builtin_func)
+   *  \param func Builtin function
+   */
+  Token(Type type, BuiltinFunc func);
 
   /** \brief Get token type.  */
   [[nodiscard]] auto type() const -> Type;
@@ -161,6 +169,9 @@ struct Token
 
   /** \brief  Get number stored in token. */
   [[nodiscard]] auto number() const -> std::string const&;
+
+  /** \brief  Get string stored in token. */
+  [[nodiscard]] auto string() const -> std::string const&;
 
   /** \brief  Get the error message.  */
   [[nodiscard]] auto error() const -> std::string const&;
@@ -188,7 +199,7 @@ private:
   using Error = TypeWrapper<std::string, struct ErrorIntType>;
 
   /** The value of thos token.  */
-  std::variant<Type, BuiltinFunc, Name, ERE, FuncName, Number, Error> value_;
+  std::variant<Type, BuiltinFunc, std::string, Name, ERE, FuncName, Number, Error> value_;
 };
 
 /** \brief Output operator for token type.  */
