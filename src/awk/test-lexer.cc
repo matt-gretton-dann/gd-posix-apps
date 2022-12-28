@@ -196,3 +196,26 @@ TEST_CASE("GD::Awk::Lexer - Strings errors - nul-byte", "[awk][lexer]")
   auto t3{lexer.peek()};
   REQUIRE(t3.type() == GD::Awk::Token::Type::eof);
 }
+
+TEST_CASE("GD::Awk::Lexer - ERE", "[awk][lexer]")
+{
+  auto [input, expected] = GENERATE(
+    table<std::string_view, std::string_view>({{"/a string/", "a string"},
+                                               {"/\\//", "/"},
+                                               {"/a\\\nb/", "ab"},
+                                               {"/\\\"/", "\""},
+                                               {"/\"/", "\""},
+                                               {"/\\\\/", "\\"},
+                                               {"/\\040/", "\040"},
+                                               {"/\\0401/", "\0401"},
+                                               {"/\\a\\b\\f\\n\\r\\t\\v/", "\a\b\f\n\r\t\v"},
+                                               {"/abfnrtv/", "abfnrtv"}}));
+  auto lexer = GD::Awk::Lexer(std::make_unique<GD::Awk::StringReader>(input));
+  INFO("Parsing " << input);
+  auto t1 = lexer.peek();
+  REQUIRE(t1.type() == GD::Awk::Token::Type::ere);
+  REQUIRE(t1.ere() == expected);
+  lexer.chew();
+  auto t2 = lexer.peek();
+  REQUIRE(t2.type() == GD::Awk::Token::Type::eof);
+}

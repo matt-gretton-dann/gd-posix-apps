@@ -104,24 +104,25 @@ auto GD::Awk::Lexer::lex_octal_escape() -> char
   return static_cast<char>(c);
 }
 
-void GD::Awk::Lexer::lex_string()
+void GD::Awk::Lexer::lex_string_or_ere(bool is_string)
 {
-  assert(r_->peek() == '"');
+  assert(r_->peek() == (is_string ? '"' : '/'));
   r_->chew();
 
+  Token::Type const type{is_string ? Token::Type::string : Token::Type::ere};
   std::string str;
   bool seen_escape{false};
 
   while (true) {
     switch (r_->peek()) {
     case EOF:
-      t_.emplace(Token::Type::string, str);
+      t_.emplace(type, str);
       t2_.emplace(Token::Type::error, r_->error(Msg::unexpected_eof_in_string));
       return;
     case '\n':
       if (!seen_escape) {
         // Don't chew the newline.
-        t_.emplace(Token::Type::string, str);
+        t_.emplace(type, str);
         t2_.emplace(Token::Type::error, r_->error(Msg::unexpected_nl_in_string));
         return;
       }
@@ -131,8 +132,8 @@ void GD::Awk::Lexer::lex_string()
       break;
     case '"':
       r_->chew();
-      if (!seen_escape) {
-        t_.emplace(Token::Type::string, str);
+      if (is_string && !seen_escape) {
+        t_.emplace(type, str);
         return;
       }
 
@@ -140,8 +141,13 @@ void GD::Awk::Lexer::lex_string()
       str += '"';
       break;
     case '/':
-      seen_escape = false;
       r_->chew();
+      if (!is_string && !seen_escape) {
+        t_.emplace(type, str);
+        return;
+      }
+
+      seen_escape = false;
       str += '/';
       break;
     case '\\':
@@ -381,7 +387,10 @@ void GD::Awk::Lexer::lex()
       lex_comment();
       break;
     case '"':
-      lex_string();
+      lex_string_or_ere(true);
+      return;
+    case '/':
+      lex_string_or_ere(false);
       return;
     case 'A':
     case 'B':

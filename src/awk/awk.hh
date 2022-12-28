@@ -411,7 +411,7 @@ private:
   /* Various lexing internal routines. */
   void lex_comment();
   auto lex_octal_escape() -> char;
-  void lex_string();
+  void lex_string_or_ere(bool is_string);
   void lex_word();
 
   /**              Lex a symbol
