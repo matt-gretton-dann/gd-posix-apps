@@ -408,12 +408,7 @@ private:
    * All lexing routines end up by calling t_.emplace() to construct an appropriate token. */
   void lex();
 
-  void lex_string();
-  void lex_number();
-  void lex_letter_or_keyword();
-  void lex_assign_or_equals();
-  void lex_not_equals();
-  void lex_comment();
+  void lex_word();
 
   /**              Lex a symbol
    *  \param plain Token type to use if the next character isn't matched
@@ -480,11 +475,6 @@ private:
   bool in_function_{false};       ///< Are we in a function?
   bool seen_quit_{false};         ///< Have we seen a quit token?
 };
-
-namespace Details {
-/* Forward declaration of class that holds VMState.  */
-struct VMState;
-}  // namespace Details
 
 }  // namespace GD::Awk
 
