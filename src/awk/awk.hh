@@ -409,8 +409,10 @@ private:
   void lex();
 
   /* Various lexing internal routines. */
-  void lex_word();
   void lex_comment();
+  auto lex_octal_escape() -> char;
+  void lex_string();
+  void lex_word();
 
   /**              Lex a symbol
    *  \param plain Token type to use if the next character isn't matched
@@ -430,6 +432,7 @@ private:
 
   std::unique_ptr<Reader> r_;   ///< Reader
   std::optional<Token> t_;      ///< Pending token.
+  std::optional<Token> t2_;     ///< Second pending token.
   bool first_character_{true};  ///< Have we lexed anything yet?
 };
 

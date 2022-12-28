@@ -121,3 +121,78 @@ TEST_CASE("GD::Awk::Lexer - Name", "[awk][lexer]")
   auto t10{lexer.peek()};
   REQUIRE(t10.type() == GD::Awk::Token::Type::eof);
 }
+
+TEST_CASE("GD::Awk::Lexer - Strings", "[awk][lexer]")
+{
+  auto [input, expected] = GENERATE(
+    table<std::string_view, std::string_view>({{"\"a string\"", "a string"},
+                                               {"\"\\/\"", "/"},
+                                               {"\"a\\\nb\"", "ab"},
+                                               {"\"\\\"\"", "\""},
+                                               {"\"/\"", "/"},
+                                               {"\"\\\\\"", "\\"},
+                                               {"\"\\040\"", "\040"},
+                                               {"\"\\0401\"", "\0401"},
+                                               {"\"\\a\\b\\f\\n\\r\\t\\v\"", "\a\b\f\n\r\t\v"},
+                                               {"\"abfnrtv\"", "abfnrtv"}}));
+  auto lexer = GD::Awk::Lexer(std::make_unique<GD::Awk::StringReader>(input));
+  INFO("Parsing " << input);
+  auto t1 = lexer.peek();
+  REQUIRE(t1.type() == GD::Awk::Token::Type::string);
+  REQUIRE(t1.string() == expected);
+  lexer.chew();
+  auto t2 = lexer.peek();
+  REQUIRE(t2.type() == GD::Awk::Token::Type::eof);
+}
+
+TEST_CASE("GD::Awk::Lexer - Strings errors", "[awk][lexer]")
+{
+  auto [input, expected] = GENERATE(table<std::string_view, std::string_view>(
+    {{"\"a", "a"}, {"\"c\\Q\"", "cQ"}, {"\"e\\777\"", "e\377"}}));
+  auto lexer = GD::Awk::Lexer(std::make_unique<GD::Awk::StringReader>(input));
+  INFO("Parsing " << input);
+  auto t1{lexer.peek()};
+  REQUIRE(t1.type() == GD::Awk::Token::Type::string);
+  REQUIRE(t1.string() == expected);
+  lexer.chew();
+  auto t2{lexer.peek()};
+  REQUIRE(t2.type() == GD::Awk::Token::Type::error);
+  lexer.chew();
+  auto t3{lexer.peek()};
+  REQUIRE(t3.type() == GD::Awk::Token::Type::eof);
+}
+
+TEST_CASE("GD::Awk::Lexer - Strings errors - newline", "[awk][lexer]")
+{
+  std::string_view const input{"\"b\n"};
+  auto lexer = GD::Awk::Lexer(std::make_unique<GD::Awk::StringReader>(input));
+  INFO("Parsing " << input);
+  auto t1 = lexer.peek();
+  REQUIRE(t1.type() == GD::Awk::Token::Type::string);
+  REQUIRE(t1.string() == "b");
+  lexer.chew();
+  auto t2{lexer.peek()};
+  REQUIRE(t2.type() == GD::Awk::Token::Type::error);
+  lexer.chew();
+  auto t3{lexer.peek()};
+  REQUIRE(t3.type() == GD::Awk::Token::Type::newline);
+  lexer.chew();
+  auto t4{lexer.peek()};
+  REQUIRE(t4.type() == GD::Awk::Token::Type::eof);
+}
+
+TEST_CASE("GD::Awk::Lexer - Strings errors - nul-byte", "[awk][lexer]")
+{
+  std::string_view const input{R"("d\000")"};
+  auto lexer = GD::Awk::Lexer(std::make_unique<GD::Awk::StringReader>(input));
+  INFO("Parsing " << input);
+  auto t1 = lexer.peek();
+  REQUIRE(t1.type() == GD::Awk::Token::Type::string);
+  REQUIRE(t1.string() == std::string{'d', '\000'});
+  lexer.chew();
+  auto t2{lexer.peek()};
+  REQUIRE(t2.type() == GD::Awk::Token::Type::error);
+  lexer.chew();
+  auto t3{lexer.peek()};
+  REQUIRE(t3.type() == GD::Awk::Token::Type::eof);
+}

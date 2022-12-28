@@ -50,6 +50,36 @@
         "id": 8,
         "description": "No program has been specified.",
         "C": "No program specified.  Either specify a file via '-f program', or as the first command-line argument."
+      },
+      {
+        "msg": "unexpected_eof_in_string",
+        "id": 9,
+        "description": "String contains an EOF - this is not allowed.",
+        "C": "String is not terminated before the end of file."
+      },
+      {
+        "msg": "unexpected_nl_in_string",
+        "id": 10,
+        "description": "String is not terminated before the end of a line.",
+        "C": "String is not terminated before end of line."
+      },
+      {
+        "msg": "bad_escape_sequence",
+        "id": 11,
+        "description": "Bad escape sequence. \\{0} is what was presented.",
+        "C": "Bad escape sequence. \\{0} is not valid."
+      },
+      {
+        "msg": "octal_escape_too_big",
+        "id": 12,
+        "description": "The octal escape sequence does not fit into a character. {0} contains the number.",
+        "C": "Octal escape sequence '\\{0}' produces a number that is too large."
+      },
+      {
+        "msg": "octal_escape_0_undefined",
+        "id": 13,
+        "description": "NUL character is an undefined Octal escape sequence.  {0} contains what the user wrote.",
+        "C": "NUL byte (\\{0}) is undefined behaviour in a string."
       }
     ]
   }
