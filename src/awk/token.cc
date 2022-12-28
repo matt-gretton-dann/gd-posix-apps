@@ -19,14 +19,18 @@ GD::Awk::Token::Token(Type type) : value_(type)
   assert(type != Type::builtin_func_name);  // NOLINT
   assert(type != Type::ere);                // NOLINT
   assert(type != Type::error);              // NOLINT
+  assert(type != Type::string);             // NOLINT
 }
 
-GD::Awk::Token::Token(Type type, std::string const& s) : value_(Name(s))
+GD::Awk::Token::Token(Type type, std::string const& s) : value_(s)
 {
   assert(type == Type::name || type == Type::func_name || type == Type::ere ||
-         type == Type::number || type == Type::error);  // NOLINT
+         type == Type::number || type == Type::error || type == Type::string);  // NOLINT
   if (type == Type::number) {
     value_ = Number{s};
+  }
+  else if (type == Type::name) {
+    value_ = Name{s};
   }
   else if (type == Type::func_name) {
     value_ = FuncName{s};
