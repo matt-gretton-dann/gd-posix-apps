@@ -645,7 +645,8 @@ public:
    *  \param  name Function name.
    *  \return      pair of begin, end iterators.
    */
-  [[nodiscard]] auto function_instructions(std::string const& name) const -> InstructionIterators;
+  [[nodiscard]] auto function_instructions(std::string const& name) const noexcept
+    -> InstructionIterators;
 
 private:
   friend class Parser;
@@ -672,18 +673,18 @@ private:
    *  \param  name Function name.
    *  \return      Instructions.
    */
-  [[nodiscard]] auto function() noexcept -> Instructions&;
+  [[nodiscard]] auto function(std::string const& name) noexcept -> Instructions&;
 
   /** \brief       Get the instructions for the named function.
    *  \param  name Function name.
    *  \return      Instructions.
    */
-  [[nodiscard]] auto function() const -> Instructions const&;
+  [[nodiscard]] auto function(std::string const& name) const -> Instructions const&;
 
-  Instructions begin_;
-  Instructions per_record_;
-  Instructions end_;
-  std::map<std::string, Instructions> functions_;
+  Instructions begin_;                             ///< BEGIN block instructions.
+  Instructions per_record_;                        ///< Per record instructions.
+  Instructions end_;                               ///< END block instructions.
+  std::map<std::string, Instructions> functions_;  ///< Instructions for functions.
 };
 
 /** \brief Parsing class.  */
