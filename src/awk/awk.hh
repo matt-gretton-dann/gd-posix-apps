@@ -479,6 +479,213 @@ private:
   std::optional<Token> t2_;    ///< Second pending token.
 };
 
+/** \brief A variable name.  Just a tagged string. */
+using VariableName = GD::TypeWrapper<std::string, struct VariableNameTag>;
+
+/** \brief  An Instruction.
+ *
+ * Instructions contain an opcode, and up to two, statically typed, operands.
+ *
+ * References to other instructions are always PC relative - so that we can extract function
+ * definitions easily.
+ *
+ * When executing instructions we assume we have a side-array that contains the result for the last
+ * time each instruction was executed.  For example om how this works if we have:
+ *
+ *   0: load_num_var a
+ *   1: load_num_var b
+ *   2: add -1, -2
+ *
+ *  Then the contents of the array after execution will be:
+ *   0: numeric value of variable a
+ *   1: numeric value of variable b
+ *   2: value of a + b
+ *
+ * | Opcode             |  Operand 1   |  Operand 2  |  Description                               |
+ * | :----------------- | :----------- | :---------- | :----------------------------------------- |
+ * | load_literal_int   | Integer      |             | Result is the integer operand.             |
+ * | load_literal_float | Floating     |             | Result is the floating-point operand.      |
+ * | load_literal_str   | String       |             | Load the literal string.                   |
+ * | load_field_str     | Offset       |             | Load the field indicated by off1.          |
+ * | load_rec_str       |              |             | Load the current value of $0 as a string.  |
+ * | load_variable_str  | VariableName |             | Load the string value of var <op1>         |
+ * | load_variable_int  | VariableName |             | Load the integer value of var <op1>        |
+ * | print_str          | offset       |             | Print the value <op1>                      |
+ */
+class Instruction
+{
+public:
+  /** Opcodes. */
+  enum class Opcode {
+    load_literal_int,    ///< Load a literal integer
+    load_literal_float,  ///< Load a literal float
+    load_literal_str,    ///< Load a literal string
+    load_field_str,      ///< Load the current value of field $<op1> as a string
+    load_rec_str,        ///< Load the value of the current record as a string.
+    load_variable_str,   ///< Load the value of the variable <op1> as a string.
+    load_variable_int,   ///< Load the value of the variable <op1> as an integer.
+    print_str,           ///< Print the string referenced by <op1>.
+  };
+
+  /** Type representing an index into the list of instructions.  */
+  using Index = std::vector<Instruction>::size_type;
+
+  /** Type representing an offset of to an instruction. */
+  using Offset = std::make_signed_t<Index>;
+
+  /** Valid operand types.  */
+  using Operand = std::variant<std::string, VariableName, Offset, std::uint64_t, double>;
+
+  /** \brief        Constructor
+   *  \param opcode Opcode
+   */
+  explicit Instruction(Opcode opcode);
+
+  /** \brief        Constructor
+   *  \param opcode Opcode
+   *  \param op1    First operand
+   */
+  Instruction(Opcode opcode, Operand const& op1);
+
+  /** \brief        Constructor
+   *  \param opcode Opcode
+   *  \param op1    First  operand
+   *  \param op2    Second operand
+   */
+  Instruction(Opcode opcode, Operand const& op1, Operand const& op2);
+
+  /** Get opcode */
+  [[nodiscard]] auto opcode() const -> Opcode;
+
+  /** Do we have op1? */
+  [[nodiscard]] auto has_op1() const -> bool;
+
+  /** Get operand 1.  */
+  [[nodiscard]] auto op1() const -> Operand const&;
+
+  /** Update operand 1.  */
+  void op1(Operand const& operand);
+
+  /** Do we have op2? */
+  [[nodiscard]] auto has_op2() const -> bool;
+
+  /** Get operand 2.  */
+  [[nodiscard]] auto op2() const -> Operand const&;
+
+  /** Update operand 2.  */
+  void op2(Operand const& operand);
+
+  /** Do we have result? */
+  [[nodiscard]] auto has_result() const -> bool;
+
+  /** Does \a opcode have op1? */
+  static auto has_op1(Opcode opcode) -> bool;
+
+  /** Does \a opcode have op2? */
+  static auto has_op2(Opcode opcode) -> bool;
+
+private:
+  /** \brief  How many operands does \a opcode take? */
+  static auto op_count(Opcode opcode) -> unsigned;
+
+  /** \brief  Validate the operands.  */
+  void validate_operands() const;
+
+  Opcode opcode_;               ///< Opcode
+  std::optional<Operand> op1_;  ///< Operand 1
+  std::optional<Operand> op2_;  ///< Operand 2
+};
+
+/** Vector of instructions.  */
+using Instructions = std::vector<Instruction>;
+
+auto operator<<(std::ostream& os, Instruction::Opcode opcode) -> std::ostream&;
+auto operator<<(std::ostream& os, Instruction::Operand const& operand) -> std::ostream&;
+auto operator<<(std::ostream& os, Instruction const& instruction) -> std::ostream&;
+auto operator<<(std::ostream& os, Instructions const& instruction) -> std::ostream&;
+
+/** \brief A parsed program.
+ *
+ * A parsed program contains instruction sequences for:
+ *    * The BEGIN block
+ *    * The END block
+ *    * The pattern matching block - executed for each record.
+ *    * Any function definitions.
+ */
+class ParsedProgram
+{
+public:
+  ParsedProgram() noexcept = default;
+  ~ParsedProgram() noexcept = default;
+
+  ParsedProgram(ParsedProgram const&) = delete;
+  ParsedProgram(ParsedProgram&&) noexcept = default;
+  auto operator=(ParsedProgram const&) -> ParsedProgram& = delete;
+  auto operator=(ParsedProgram&&) noexcept -> ParsedProgram& = default;
+
+  using InstructionIterators =
+    std::pair<Instructions::const_iterator, Instructions::const_iterator>;
+
+  /** \brief  Get the begin and end iterators for the BEGIN block instructions.
+   *  \return pair of begin, end iterators.
+   */
+  [[nodiscard]] auto begin_instructions() const noexcept -> InstructionIterators;
+
+  /** \brief  Get the begin and end iterators for the instructions to run over each record.
+   *  \return pair of begin, end iterators.
+   */
+  [[nodiscard]] auto per_record_instructions() const noexcept -> InstructionIterators;
+
+  /** \brief  Get the begin and end iterators for the END block instructions.
+   *  \return pair of begin, end iterators.
+   */
+  [[nodiscard]] auto end_instructions() const noexcept -> InstructionIterators;
+
+  /** \brief       Get the begin and end iterators for the given function.
+   *  \param  name Function name.
+   *  \return      pair of begin, end iterators.
+   */
+  [[nodiscard]] auto function_instructions(std::string const& name) const -> InstructionIterators;
+
+private:
+  friend class Parser;
+
+  /** \brief Get BEGIN instructions for editing. */
+  [[nodiscard]] auto begin() noexcept -> Instructions&;
+
+  /** \brief Get BEGIN instructions for reference. */
+  [[nodiscard]] auto begin() const noexcept -> Instructions const&;
+
+  /** \brief Get per-record instructions for editing. */
+  [[nodiscard]] auto per_record() noexcept -> Instructions&;
+
+  /** \brief Get per-record instructions for reference. */
+  [[nodiscard]] auto per_record() const noexcept -> Instructions const&;
+
+  /** \brief Get END instructions for editing. */
+  [[nodiscard]] auto end() noexcept -> Instructions&;
+
+  /** \brief Get END instructions for reference. */
+  [[nodiscard]] auto end() const noexcept -> Instructions const&;
+
+  /** \brief       Get the instructions for the named function.  Creating it if it doesn't exist.
+   *  \param  name Function name.
+   *  \return      Instructions.
+   */
+  [[nodiscard]] auto function() noexcept -> Instructions&;
+
+  /** \brief       Get the instructions for the named function.
+   *  \param  name Function name.
+   *  \return      Instructions.
+   */
+  [[nodiscard]] auto function() const -> Instructions const&;
+
+  Instructions begin_;
+  Instructions per_record_;
+  Instructions end_;
+  std::map<std::string, Instructions> functions_;
+};
+
 /** \brief Parsing class.  */
 class Parser
 {

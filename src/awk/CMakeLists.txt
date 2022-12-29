@@ -14,7 +14,7 @@ if (ENABLE_NON_POSIX_EXTENSIONS)
 endif ()
 set_warnings(libawk)
 
-target_sources(libawk PRIVATE lexer.cc reader.cc token.cc)
+target_sources(libawk PRIVATE instruction.cc lexer.cc reader.cc token.cc)
 target_sources(libawk PUBLIC awk.hh)
 add_dependencies(libawk awk_messages_header)
 target_add_clang_format(libawk)
