@@ -396,15 +396,18 @@ public:
    */
   explicit Lexer(std::unique_ptr<Reader>&& r);
 
-  /** \brief   Peek the current token.
-   *  \return  Peeked token.
+  /** \brief                Peek the current token.
+   *  \param  enable_divide Enable the divide tokens.
+   *  \return               Peeked token.
    *
    * Not const as we peek lazily.
    */
-  auto peek() -> Token const&;
+  auto peek(bool enable_divide) -> Token const&;
 
-  /** \brief  Chew the current token. */
-  void chew();
+  /** \brief                Chew the current token.
+   *  \param  enable_divide Enable the divide tokens.
+   */
+  void chew(bool enable_divide);
 
   /** \brief  Get the current location. */
   [[nodiscard]] auto location() const -> Location const&;
@@ -417,10 +420,15 @@ public:
   }
 
 private:
-  /** Lexer.
+  /** @brief              Lexer.  Main entry point
+   *  @param allow_divide are / and /= allowed?
    *
-   * All lexing routines end up by calling t_.emplace() to construct an appropriate token. */
-  void lex();
+   * All lexing routines end up by calling t_.emplace() to construct an appropriate token.
+   */
+  void lex(bool allow_divide);
+
+  /** Lex the &&. */
+  void lex_and();
 
   /** Lex a comment.
    *
@@ -466,10 +474,9 @@ private:
    */
   void lex_symbol(Token::Type plain, char next1, Token::Type tok1, char next2, Token::Type tok2);
 
-  std::unique_ptr<Reader> r_;   ///< Reader
-  std::optional<Token> t_;      ///< Pending token.
-  std::optional<Token> t2_;     ///< Second pending token.
-  bool first_character_{true};  ///< Have we lexed anything yet?
+  std::unique_ptr<Reader> r_;  ///< Reader
+  std::optional<Token> t_;     ///< Pending token.
+  std::optional<Token> t2_;    ///< Second pending token.
 };
 
 /** \brief Parsing class.  */
@@ -479,7 +486,7 @@ public:
   using Offset = std::size_t;  ///< Offset into instructions list.
   using Index = std::size_t;   ///< Index into instructions list.
 
-  /** \brief             Constructor
+  /** \brief             Constructo`r
    *  \param lexer       Lexer.
    *  \param interactive Do we need to execute after every top-level input?
    */
@@ -502,10 +509,10 @@ private:
     /* If the lexer holds an error token we report that rather than the error message we've been
      * asked to report.
      */
-    bool const lexer_error = lexer_->peek() == Token::Type::error;
-    auto s = insert_string(lexer_error ? lexer_->peek().error() : lexer_->error(msg, args...));
+    bool const lexer_error = lexer_->peek(false) == Token::Type::error;
+    auto s = insert_string(lexer_error ? lexer_->peek(false).error() : lexer_->error(msg, args...));
     if (lexer_error) {
-      lexer_->chew();
+      lexer_->chew(false);
     }
     // insert_print(s, Instruction::Stream::error);
     // return insert_quit(1);

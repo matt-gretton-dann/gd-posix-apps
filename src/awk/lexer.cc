@@ -19,7 +19,7 @@
 
 GD::Awk::Lexer::Lexer(std::unique_ptr<Reader>&& r) : r_(std::move(r)), t_(std::nullopt) {}
 
-auto GD::Awk::Lexer::peek() -> GD::Awk::Token const&
+auto GD::Awk::Lexer::peek(bool enable_divide) -> GD::Awk::Token const&
 {
   // Sometimes we create a second pending token - usually when we have an error and the correction
   // for that error.
@@ -29,18 +29,18 @@ auto GD::Awk::Lexer::peek() -> GD::Awk::Token const&
   }
 
   if (!t_.has_value()) {
-    lex();
+    lex(enable_divide);
   }
 
   assert(t_.has_value());  // NOLINT
   return *t_;
 }
 
-void GD::Awk::Lexer::chew()
+void GD::Awk::Lexer::chew(bool enable_divide)
 {
   /* If we have nothing to chew we need to find something.  */
   if (!t_.has_value()) {
-    lex();
+    lex(enable_divide);
   }
 
   assert(t_.has_value());  // NOLINT
@@ -50,6 +50,20 @@ void GD::Awk::Lexer::chew()
 }
 
 auto GD::Awk::Lexer::location() const -> GD::Awk::Location const& { return r_->location(); }
+
+void GD::Awk::Lexer::lex_and()
+{
+  assert(r_->peek() == '&');
+  r_->chew();
+
+  if (r_->peek() == '&') {
+    t_.emplace(Token::Type::and_);
+    r_->chew();
+  }
+  else {
+    t_.emplace(Token::Type::error, r_->error(Msg::unexpected_token, static_cast<char>('&')));
+  }
+}
 
 void GD::Awk::Lexer::lex_comment()
 {
@@ -376,6 +390,37 @@ void GD::Awk::Lexer::lex_string_or_ere()
   }
 }
 
+void GD::Awk::Lexer::lex_symbol(Token::Type plain, char next1, Token::Type tok1)
+{
+  r_->chew();
+  if (r_->peek() == next1) {
+    r_->chew();
+    t_.emplace(tok1);
+    return;
+  }
+
+  t_.emplace(plain);
+}
+
+void GD::Awk::Lexer::lex_symbol(Token::Type plain, char next1, Token::Type tok1, char next2,
+                                Token::Type tok2)
+{
+  r_->chew();
+  if (r_->peek() == next1) {
+    r_->chew();
+    t_.emplace(tok1);
+    return;
+  }
+
+  if (r_->peek() == next2) {
+    r_->chew();
+    t_.emplace(tok2);
+    return;
+  }
+
+  t_.emplace(plain);
+}
+
 void GD::Awk::Lexer::lex_word()
 {
   static const std::unordered_map<std::string, Token::Type> token_map{
@@ -516,7 +561,7 @@ void GD::Awk::Lexer::lex_word()
   t_.emplace(Token::Type::name, word);
 }
 
-void GD::Awk::Lexer::lex()
+void GD::Awk::Lexer::lex(bool allow_divide)
 {
   while (true) {
     switch (r_->peek()) {
@@ -534,8 +579,15 @@ void GD::Awk::Lexer::lex()
       lex_comment();
       break;
     case '"':
-    case '/':
       lex_string_or_ere();
+      return;
+    case '/':
+      if (allow_divide) {
+        lex_symbol(Token::Type::divide, '=', Token::Type::div_assign);
+      }
+      else {
+        lex_string_or_ere();
+      }
       return;
     case '.':
     case '0':
@@ -605,8 +657,90 @@ void GD::Awk::Lexer::lex()
     case '_':
       lex_word();
       return;
+    case '&':
+      lex_and();
+      return;
+    case '{':
+      t_.emplace(Token::Type::lbrace);
+      r_->chew();
+      return;
+    case '}':
+      t_.emplace(Token::Type::rbrace);
+      r_->chew();
+      return;
+    case '(':
+      t_.emplace(Token::Type::lparens);
+      r_->chew();
+      return;
+    case ')':
+      t_.emplace(Token::Type::rparens);
+      r_->chew();
+      return;
+    case '[':
+      t_.emplace(Token::Type::lsquare);
+      r_->chew();
+      return;
+    case ']':
+      t_.emplace(Token::Type::rsquare);
+      r_->chew();
+      return;
+    case ',':
+      t_.emplace(Token::Type::comma);
+      r_->chew();
+      return;
+    case ';':
+      t_.emplace(Token::Type::semicolon);
+      r_->chew();
+      return;
+    case '+':
+      lex_symbol(Token::Type::add, '=', Token::Type::add_assign, '+', Token::Type::incr);
+      return;
+    case '-':
+      lex_symbol(Token::Type::subtract, '=', Token::Type::sub_assign, '-', Token::Type::decr);
+      return;
+    case '*':
+      lex_symbol(Token::Type::multiply, '=', Token::Type::mul_assign);
+      return;
+    case '%':
+      lex_symbol(Token::Type::modulo, '=', Token::Type::mod_assign);
+      return;
+    case '^':
+      lex_symbol(Token::Type::power, '=', Token::Type::pow_assign);
+      return;
+    case '!':
+      lex_symbol(Token::Type::not_, '=', Token::Type::ne, '~', Token::Type::no_match);
+      return;
+    case '>':
+      lex_symbol(Token::Type::greater_than, '=', Token::Type::ge, '>', Token::Type::append);
+      return;
+    case '<':
+      lex_symbol(Token::Type::less_than, '=', Token::Type::le);
+      return;
+    case '|':
+      lex_symbol(Token::Type::pipe, '|', Token::Type::or_);
+      return;
+    case '?':
+      t_.emplace(Token::Type::query);
+      r_->chew();
+      return;
+    case ':':
+      t_.emplace(Token::Type::colon);
+      r_->chew();
+      return;
+    case '~':
+      t_.emplace(Token::Type::tilde);
+      r_->chew();
+      return;
+    case '$':
+      t_.emplace(Token::Type::dollar);
+      r_->chew();
+      return;
+    case '=':
+      lex_symbol(Token::Type::assign, '=', Token::Type::eq);
+      return;
     default:
-      t_.emplace(Token::Type::error, r_->error(Msg::unexpected_token, r_->peek()));
+      t_.emplace(Token::Type::error,
+                 r_->error(Msg::unexpected_token, static_cast<char>(r_->peek())));
       r_->chew();
       return;
     }
