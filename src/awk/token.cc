@@ -13,7 +13,8 @@
 
 GD::Awk::Token::Token(Type type) : value_(type)
 {
-  assert(type != Type::number);             // NOLINT
+  assert(type != Type::integer);            // NOLINT
+  assert(type != Type::floating);           // NOLINT
   assert(type != Type::name);               // NOLINT
   assert(type != Type::func_name);          // NOLINT
   assert(type != Type::builtin_func_name);  // NOLINT
@@ -25,11 +26,8 @@ GD::Awk::Token::Token(Type type) : value_(type)
 GD::Awk::Token::Token(Type type, std::string const& s) : value_(s)
 {
   assert(type == Type::name || type == Type::func_name || type == Type::ere ||
-         type == Type::number || type == Type::error || type == Type::string);  // NOLINT
-  if (type == Type::number) {
-    value_ = Number{s};
-  }
-  else if (type == Type::name) {
+         type == Type::error || type == Type::string);  // NOLINT
+  if (type == Type::name) {
     value_ = Name{s};
   }
   else if (type == Type::func_name) {
@@ -48,6 +46,16 @@ GD::Awk::Token::Token([[maybe_unused]] Type type, BuiltinFunc func) : value_(fun
   assert(type == Type::builtin_func_name);
 }
 
+GD::Awk::Token::Token([[maybe_unused]] Type type, std::uint64_t integer) : value_(integer)
+{
+  assert(type == Type::integer);
+}
+
+GD::Awk::Token::Token([[maybe_unused]] Type type, double floating) : value_(floating)
+{
+  assert(type == Type::floating);
+}
+
 auto GD::Awk::Token::type() const -> Token::Type
 {
   return std::visit(GD::Overloaded{[](Type t) { return t; },
@@ -55,7 +63,8 @@ auto GD::Awk::Token::type() const -> Token::Type
                                    [](std::string const& /*unused*/) { return Type::string; },
                                    [](FuncName const& /*unused*/) { return Type::func_name; },
                                    [](BuiltinFunc /*unused*/) { return Type::builtin_func_name; },
-                                   [](Number const& /*unused*/) { return Type::number; },
+                                   [](std::uint64_t /*unused*/) { return Type::integer; },
+                                   [](double /*unused*/) { return Type::floating; },
                                    [](ERE const& /*unused*/) { return Type::ere; },
                                    [](Error const& /*unused*/) { return Type::error; }},
                     value_);
@@ -77,7 +86,9 @@ auto GD::Awk::Token::builtin_func_name() const -> BuiltinFunc
 
 auto GD::Awk::Token::ere() const -> std::string const& { return std::get<ERE>(value_).get(); }
 
-auto GD::Awk::Token::number() const -> std::string const& { return std::get<Number>(value_).get(); }
+auto GD::Awk::Token::integer() const -> std::uint64_t { return std::get<std::uint64_t>(value_); }
+
+auto GD::Awk::Token::floating() const -> double { return std::get<double>(value_); }
 
 auto GD::Awk::Token::error() const -> std::string const& { return std::get<Error>(value_).get(); }
 
@@ -105,8 +116,11 @@ auto GD::Awk::operator<<(std::ostream& os, Token::Type t) -> std::ostream&
   case Token::Type::builtin_func_name:
     os << "builtin_func_name";
     break;
-  case Token::Type::number:
-    os << "number";
+  case Token::Type::integer:
+    os << "integer";
+    break;
+  case Token::Type::floating:
+    os << "floating";
     break;
   case Token::Type::ere:
     os << "ere";
@@ -362,7 +376,8 @@ void GD::Awk::Token::Token::debug(std::ostream& os) const
   os << "Token::";
   std::visit(GD::Overloaded{[&os](Type t) { os << t; },
                             [&os](Error const& e) { os << "error(" << e.get() << ")"; },
-                            [&os](Number const& n) { os << "number(" << n.get() << ")"; },
+                            [&os](std::uint64_t n) { os << "integer(" << n << ")"; },
+                            [&os](double n) { os << "floating(" << n << ")"; },
                             [&os](FuncName const& n) { os << "func_name(" << n.get() << ")"; },
                             [&os](BuiltinFunc const& n) { os << "builtin_func_name(" << n << ")"; },
                             [&os](ERE const& n) { os << "ere(" << n.get() << ")"; },
@@ -395,8 +410,11 @@ auto GD::Awk::operator<<(std::ostream& os, Token const& token) -> std::ostream&
   case Token::Type::string:
     os << "\"" << token.string() << "\"";
     break;
-  case Token::Type::number:
-    os << token.number();
+  case Token::Type::integer:
+    os << token.integer();
+    break;
+  case Token::Type::floating:
+    os << token.floating();
     break;
   case Token::Type::ere:
     os << "/" << token.ere() << "/";

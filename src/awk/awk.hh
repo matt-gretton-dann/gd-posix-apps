@@ -73,7 +73,8 @@ struct Token
     func_name,
     builtin_func_name,
     string,
-    number,
+    floating,
+    integer,
     ere,
     begin,
     break_,
@@ -139,7 +140,7 @@ struct Token
    */
   explicit Token(Type type);
 
-  /** \brief      Construct a token of type Type::number, Type::name, Type::func_name,
+  /** \brief      Construct a token of type Type::name, Type::func_name,
    *              Type::ere, Type::string, or Type::error.
    *  \param type Token type
    *  \param s    Value of number or string
@@ -155,6 +156,18 @@ struct Token
    */
   Token(Type type, BuiltinFunc func);
 
+  /** @brief         Construct a token of Type::integer
+   *  @param type    Type::integer
+   *  @param integer Integer to store
+   */
+  Token(Type type, std::uint64_t integer);
+
+  /** @brief          Construct a token of Type::floating
+   *  @param type     Type::floating
+   *  @param floating Floating point number to store
+   */
+  Token(Type type, double floating);
+
   /** \brief Get token type.  */
   [[nodiscard]] auto type() const -> Type;
 
@@ -167,8 +180,11 @@ struct Token
   /** \brief  Get the ERE name stored in token. */
   [[nodiscard]] auto ere() const -> std::string const&;
 
-  /** \brief  Get number stored in token. */
-  [[nodiscard]] auto number() const -> std::string const&;
+  /** \brief  Get integer number stored in token. */
+  [[nodiscard]] auto integer() const -> std::uint64_t;
+
+  /** \brief  Get floating-point number stored in token. */
+  [[nodiscard]] auto floating() const -> double;
 
   /** \brief  Get string stored in token. */
   [[nodiscard]] auto string() const -> std::string const&;
@@ -199,7 +215,8 @@ private:
   using Error = TypeWrapper<std::string, struct ErrorIntType>;
 
   /** The value of thos token.  */
-  std::variant<Type, BuiltinFunc, std::string, Name, ERE, FuncName, Number, Error> value_;
+  std::variant<Type, BuiltinFunc, std::string, Name, ERE, FuncName, std::uint64_t, double, Error>
+    value_;
 };
 
 /** \brief Output operator for token type.  */
