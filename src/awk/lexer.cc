@@ -8,9 +8,10 @@
 
 #include "awk-messages.hh"
 
+#include <charconv>
+#include <clocale>
 #include <cstdint>
 #include <memory>
-#include <optional>
 #include <string_view>
 #include <unordered_map>
 
@@ -79,6 +80,151 @@ void GD::Awk::Lexer::lex_comment()
   }
 }
 
+void GD::Awk::Lexer::lex_number()
+{
+  assert(r_->peek() >= '0' && r_->peek() <= '9');
+
+  std::string num;
+  bool hex{false};
+  bool floating{false};
+  bool cont{true};
+  std::size_t exponent_pos{std::string::npos};
+
+  while (cont) {
+    switch (r_->peek()) {
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+      num += static_cast<char>(r_->peek());
+      r_->chew();
+      break;
+    case '.':
+      if (floating) {
+        cont = false;
+        break;
+      }
+      num += '.';
+      r_->chew();
+      floating = true;
+      break;
+    case 'a':
+    case 'A':
+    case 'b':
+    case 'B':
+    case 'c':
+    case 'C':
+    case 'd':
+    case 'D':
+    case 'f':
+    case 'F':
+      if (hex) {
+        num += static_cast<char>(r_->peek());
+        r_->chew();
+      }
+      else {
+        cont = false;
+      }
+      break;
+    case 'e':
+    case 'E':
+      if (!hex) {
+        if (exponent_pos != std::string::npos) {
+          cont = false;
+          break;
+        }
+        floating = true;
+        exponent_pos = num.size();
+      }
+      num += static_cast<char>(r_->peek());
+      r_->chew();
+      break;
+    case 'p':
+    case 'P':
+      if (!hex || exponent_pos != std::string::npos) {
+        cont = false;
+        break;
+      }
+
+      floating = true;
+      exponent_pos = num.size();
+      num += static_cast<char>(r_->peek());
+      r_->chew();
+      break;
+    case 'x':
+    case 'X':
+      if (!hex && num.length() == 1 && num[0] == '0') {
+        num.clear();
+        r_->chew();
+        hex = true;
+      }
+      else {
+        cont = false;
+      }
+      break;
+    case '+':
+    case '-':
+      if (!floating || exponent_pos != num.size() + 1) {
+        cont = false;
+        break;
+      }
+
+      num += static_cast<char>(r_->peek());
+      r_->chew();
+      break;
+    default:
+      cont = false;
+      break;
+    }
+  }
+
+  std::from_chars_result fcr{};
+  if (floating) {
+    double number{0.0};
+    if (hex) {
+      num.insert(num.begin(), {'0', 'x'});
+    };
+    char const* old_locale{std::setlocale(LC_NUMERIC, "C")};  // NOLINT(concurrency-mt-unsafe)
+    errno = 0;
+    try {
+      std::size_t pos{0};
+      number = std::stod(num, &pos);
+      fcr.ptr = num.data() + pos;  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+    }
+    catch (std::invalid_argument const& e) {
+      fcr.ec = std::errc::invalid_argument;
+    }
+    catch (std::out_of_range const& e) {
+      fcr.ec = std::errc::result_out_of_range;
+    }
+    (void)std::setlocale(LC_NUMERIC, old_locale);  // NOLINT(concurrency-mt-unsafe)
+    t_.emplace(Token::Type::floating, number);
+  }
+  else {
+    std::uint64_t number{0};
+    int const base = hex ? 16 : 10;  // NOLINT
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+    fcr = std::from_chars(num.data(), num.data() + num.size(), number, base);
+    t_.emplace(Token::Type::integer, number);
+  }
+
+  if (fcr.ec == std::errc::invalid_argument) {
+    t2_.emplace(Token::Type::error, r_->error(Msg::invalid_number, num));
+  }
+  else if (fcr.ec == std::errc::result_out_of_range) {
+    t2_.emplace(Token::Type::error, r_->error(Msg::number_out_of_range, num));
+  }
+  else {
+    assert(fcr.ptr == num.data() + num.size());  // NOLINT
+  }
+}
+
 auto GD::Awk::Lexer::lex_octal_escape() -> char
 {
   assert(r_->peek() >= '0' && r_->peek() < '8');
@@ -104,9 +250,10 @@ auto GD::Awk::Lexer::lex_octal_escape() -> char
   return static_cast<char>(c);
 }
 
-void GD::Awk::Lexer::lex_string_or_ere(bool is_string)
+void GD::Awk::Lexer::lex_string_or_ere()
 {
-  assert(r_->peek() == (is_string ? '"' : '/'));
+  assert(r_->peek() == '"' || r_->peek() == '/');
+  bool const is_string = r_->peek() == '"';
   r_->chew();
 
   Token::Type const type{is_string ? Token::Type::string : Token::Type::ere};
@@ -387,10 +534,21 @@ void GD::Awk::Lexer::lex()
       lex_comment();
       break;
     case '"':
-      lex_string_or_ere(true);
-      return;
     case '/':
-      lex_string_or_ere(false);
+      lex_string_or_ere();
+      return;
+    case '.':
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+      lex_number();
       return;
     case 'A':
     case 'B':

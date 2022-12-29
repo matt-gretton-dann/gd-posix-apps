@@ -80,6 +80,18 @@
         "id": 13,
         "description": "NUL character is an undefined Octal escape sequence.  {0} contains what the user wrote.",
         "C": "NUL byte (\\{0}) is undefined behaviour in a string."
+      },
+      {
+        "msg": "invalid_number",
+        "id": 14,
+        "description": "The number {0} is not a valid number",
+        "C": "Number {0} is not valid."
+      },
+      {
+        "msg": "number_out_of_range",
+        "id": 15,
+        "description": "The number {0} is out of range. {0} is number input (as a string).",
+        "C": "Number {0} is out of range."
       }
     ]
   }

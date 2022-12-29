@@ -208,9 +208,6 @@ private:
   /** Internal type to differentiate a function name.  */
   using FuncName = TypeWrapper<std::string, struct FuncName>;
 
-  /** Internal type to hold a number and diferentiate it from string and error.  */
-  using Number = TypeWrapper<std::string, struct NumberType>;
-
   /** Internal type to hold an error string and differentiate it from string and number.  */
   using Error = TypeWrapper<std::string, struct ErrorIntType>;
 
@@ -425,10 +422,32 @@ private:
    * All lexing routines end up by calling t_.emplace() to construct an appropriate token. */
   void lex();
 
-  /* Various lexing internal routines. */
+  /** Lex a comment.
+   *
+   * On entry t_->peek() should point to the # at the start of the comment.
+   */
   void lex_comment();
+
+  /** Lex a number.
+   *
+   * On entry t_->peek() should point to the first digit of the number.
+   */
+  void lex_number();
+
+  /**         Lex an octal-escape.
+   *  @return Character encoded in octal sequence.
+   *
+   * On entry t_->peek() should point to the first digit of the escape sequence.
+   */
   auto lex_octal_escape() -> char;
-  void lex_string_or_ere(bool is_string);
+
+  /** Lex a string or regular expression.
+   *
+   * On entry, t_->peek() should point to the opening " or / of the escape sequence.
+   */
+  void lex_string_or_ere();
+
+  /** Lex a word (name, func_name, or builtin_func_name). */
   void lex_word();
 
   /**              Lex a symbol

@@ -219,3 +219,35 @@ TEST_CASE("GD::Awk::Lexer - ERE", "[awk][lexer]")
   auto t2 = lexer.peek();
   REQUIRE(t2.type() == GD::Awk::Token::Type::eof);
 }
+
+TEST_CASE("GD::Awk::Lexer - integers", "[awk][lexer]")
+{
+  auto [input, expected] = GENERATE(table<std::string_view, std::uint64_t>({
+    {"012", UINT64_C(12)},
+    {"0x12", UINT64_C(0x12)},
+  }));
+  auto lexer = GD::Awk::Lexer(std::make_unique<GD::Awk::StringReader>(input));
+  INFO("Parsing " << input);
+  auto t1 = lexer.peek();
+  REQUIRE(t1.type() == GD::Awk::Token::Type::integer);
+  REQUIRE(t1.integer() == expected);
+  lexer.chew();
+  auto t2 = lexer.peek();
+  REQUIRE(t2.type() == GD::Awk::Token::Type::eof);
+}
+
+TEST_CASE("GD::Awk::Lexer - floating", "[awk][lexer]")
+{
+  auto [input, expected] = GENERATE(table<std::string_view, double>({
+    {"0.0", 0.0},
+    {"0x1p0", 1.0},
+  }));
+  auto lexer = GD::Awk::Lexer(std::make_unique<GD::Awk::StringReader>(input));
+  INFO("Parsing " << input);
+  auto t1 = lexer.peek();
+  REQUIRE(t1.type() == GD::Awk::Token::Type::floating);
+  REQUIRE(t1.floating() == expected);
+  lexer.chew();
+  auto t2 = lexer.peek();
+  REQUIRE(t2.type() == GD::Awk::Token::Type::eof);
+}
