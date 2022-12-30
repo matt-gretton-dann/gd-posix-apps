@@ -38,15 +38,9 @@ template<typename... Ts>
   std::exit(1);  // NOLINT(concurrency-mt-unsafe)
 }
 
-[[maybe_unused]] void parse(std::unique_ptr<GD::Awk::Reader>&& r)
+void parse(std::unique_ptr<GD::Awk::Reader>&& r)
 {
-  auto lexer{std::make_unique<GD::Awk::Lexer>(std::move(r))};
-  while (lexer->peek() != GD::Awk::Token::Type::eof) {
-    std::cout << lexer->peek();
-    lexer->chew();
-  }
-
-  // GD::Bc::Parser parser(std::make_unique<GD::Bc::Lexer>(std::move(r)), true);
+  auto program{parse(std::make_unique<GD::Awk::Lexer>(std::move(r)))};
 }
 }  // namespace
 

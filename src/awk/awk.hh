@@ -653,7 +653,7 @@ public:
     -> InstructionIterators;
 
 private:
-  friend class Parser;
+  friend class Details::ParseState;
 
   /** \brief Get BEGIN instructions for editing. */
   [[nodiscard]] auto begin() noexcept -> Instructions&;
@@ -691,50 +691,11 @@ private:
   std::map<std::string, Instructions> functions_;  ///< Instructions for functions.
 };
 
-/** \brief Parsing class.  */
-class Parser
-{
-public:
-  using Offset = std::size_t;  ///< Offset into instructions list.
-  using Index = std::size_t;   ///< Index into instructions list.
-
-  /** \brief             Constructo`r
-   *  \param lexer       Lexer.
-   *  \param interactive Do we need to execute after every top-level input?
-   */
-  explicit Parser(std::unique_ptr<Lexer>&& lexer);
-
-  /** \brief  Do the next stage of a parse.
-   */
-  auto parse();  //-> std::shared_ptr<Instructions>;
-
-private:
-  /** \brief       Insert error message into stream.
-   *  \param  msg  Message ID
-   *  \param  args Arguments for the message.
-   *  \return      Offset of last instruction of error.
-   */
-  template<typename... Ts>
-  auto insert_error(Msg msg, Ts... args)
-  {
-    error_ = true;
-    /* If the lexer holds an error token we report that rather than the error message we've been
-     * asked to report.
-     */
-    bool const lexer_error = lexer_->peek(false) == Token::Type::error;
-    auto s = insert_string(lexer_error ? lexer_->peek(false).error() : lexer_->error(msg, args...));
-    if (lexer_error) {
-      lexer_->chew(false);
-    }
-    // insert_print(s, Instruction::Stream::error);
-    // return insert_quit(1);
-  }
-
-  std::unique_ptr<Lexer> lexer_;  ///< Lexer
-  bool error_{false};             ///< Has there been an error?
-  bool in_function_{false};       ///< Are we in a function?
-  bool seen_quit_{false};         ///< Have we seen a quit token?
-};
+/** \brief        Parse a program.
+ *  \param  lexer The Lexer to use to read the code.
+ *  \return       The parsed program.
+ */
+auto parse(std::unique_ptr<Lexer>&& lexer) -> ParsedProgram;
 
 }  // namespace GD::Awk
 

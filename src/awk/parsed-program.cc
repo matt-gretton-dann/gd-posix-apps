@@ -4,16 +4,8 @@
  *  SPDX-License-Identifier: Apache-2.0
  */
 
-#include "gd/nl_types.h"
-
-#include "gd/stdlib.h"
-
 #include <memory>
-#include <optional>
-#include <ostream>
-#include <string>
 #include <variant>
-#include <vector>
 
 #include "awk.hh"
 

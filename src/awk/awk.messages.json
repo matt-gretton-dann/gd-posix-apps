@@ -30,8 +30,8 @@
       {
         "msg": "error_label",
         "id": 5,
-        "description": "How to label an error",
-        "C": "Error"
+        "description": "How to label an error.  {0} is program name, {1} file containing error, {2} line of error, {3} column of error.",
+        "C": "{0}: Error at {1}:{2}:{3}: "
       },
       {
         "msg": "uncaught_std_exception",
@@ -92,6 +92,48 @@
         "id": 15,
         "description": "The number {0} is out of range. {0} is number input (as a string).",
         "C": "Number {0} is out of range."
+      },
+      {
+        "msg": "missing_rbrace",
+        "id": 16,
+        "description": "We expected a '}' token but instead got '{0}'",
+        "C": "Missing '}'.  Found '{0}' instead."
+      },
+      {
+        "msg": "expected_action",
+        "id": 17,
+        "description": "We expected an action, instead got '{0}'",
+        "C": "Expected the '{' to start an action.  Found '{0}' instead."
+      },
+      {
+        "msg": "cannot_redefine_builtin_functions",
+        "id": 18,
+        "description": "Tried to define a builtin function ({0}).  This is not allowed.",
+        "C": "Cannot define builtin functions - {0}."
+      },
+      {
+        "msg": "expected_function_name",
+        "id": 18,
+        "description": "Expected the name of a function, instead got {0}",
+        "C": "Expected a function name, instead got {0}."
+      },
+      {
+        "msg": "expected_function",
+        "id": 19,
+        "description": "Expected 'function', instead got {0}",
+        "C": "Expected 'function', instead got {0}."
+      },
+      {
+        "msg": "expected_lparens",
+        "id": 20,
+        "description": "Expected '(', instead got {0}",
+        "C": "Expected '(', instead got {0}."
+      },
+      {
+        "msg": "expected_rparens",
+        "id": 21,
+        "description": "Expected ')', instead got {0}",
+        "C": "Expected ')', instead got {0}."
       }
     ]
   }
