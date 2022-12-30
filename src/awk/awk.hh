@@ -33,6 +33,19 @@
 
 namespace GD::Awk {
 
+namespace Details {
+class ParseState;
+}  // namespace Details
+
+/** Internal type to differentiate a name.  */
+using Name = TypeWrapper<std::string, struct NameType>;
+
+/** Internal type to differentiate an ERE.  */
+using ERE = TypeWrapper<std::string, struct EREType>;
+
+/** Internal type to differentiate a function name.  */
+using FuncName = TypeWrapper<std::string, struct FuncNameType>;
+
 /** \brief  Token type.
  *
  * Very basic token type stores type along with any extra info needed.
@@ -199,15 +212,6 @@ struct Token
   void debug(std::ostream& os) const;
 
 private:
-  /** Internal type to differentiate a name.  */
-  using Name = TypeWrapper<std::string, struct NameType>;
-
-  /** Internal type to differentiate an ERE.  */
-  using ERE = TypeWrapper<std::string, struct EREType>;
-
-  /** Internal type to differentiate a function name.  */
-  using FuncName = TypeWrapper<std::string, struct FuncName>;
-
   /** Internal type to hold an error string and differentiate it from string and number.  */
   using Error = TypeWrapper<std::string, struct ErrorIntType>;
 
