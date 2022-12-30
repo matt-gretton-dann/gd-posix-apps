@@ -402,7 +402,7 @@ auto GD::Awk::operator<<(std::ostream& os, Token const& token) -> std::ostream&
     os << token.name();
     break;
   case Token::Type::func_name:
-    os << token.func_name() << "(";
+    os << token.func_name();
     break;
   case Token::Type::builtin_func_name:
     os << token.builtin_func_name();

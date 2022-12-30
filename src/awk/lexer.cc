@@ -553,7 +553,6 @@ void GD::Awk::Lexer::lex_word()
   }
 
   if (maybe_func_name) {
-    r_->chew();
     t_.emplace(Token::Type::func_name, word);
     return;
   }

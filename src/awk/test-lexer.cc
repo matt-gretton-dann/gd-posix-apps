@@ -82,7 +82,7 @@ TEST_CASE("GD::Awk::Lexer - Builtin func Tokenizing", "[awk][lexer]")
 
 TEST_CASE("GD::Awk::Lexer - Name", "[awk][lexer]")
 {
-  std::string_view const input{"fred george(\nherbert # ignatious\njo # kerry\\\nlonger\nmary\n"};
+  std::string_view const input{"fred george(\nherbert ( # ignatious\njo # kerry\\\nlonger\nmary\n"};
   auto lexer{GD::Awk::Lexer(std::make_unique<GD::Awk::StringReader>(input))};
   INFO("Parsing " << input);
   auto t1{lexer.peek(false)};
@@ -94,31 +94,37 @@ TEST_CASE("GD::Awk::Lexer - Name", "[awk][lexer]")
   REQUIRE(t2.func_name() == "george");
   lexer.chew(false);
   auto t3{lexer.peek(false)};
-  REQUIRE(t3.type() == GD::Awk::Token::Type::newline);
+  REQUIRE(t3.type() == GD::Awk::Token::Type::lparens);
   lexer.chew(false);
   auto t4{lexer.peek(false)};
-  REQUIRE(t4.type() == GD::Awk::Token::Type::name);
-  REQUIRE(t4.name() == "herbert");
+  REQUIRE(t4.type() == GD::Awk::Token::Type::newline);
   lexer.chew(false);
   auto t5{lexer.peek(false)};
-  REQUIRE(t5.type() == GD::Awk::Token::Type::newline);
+  REQUIRE(t5.type() == GD::Awk::Token::Type::name);
+  REQUIRE(t5.name() == "herbert");
   lexer.chew(false);
   auto t6{lexer.peek(false)};
-  REQUIRE(t6.type() == GD::Awk::Token::Type::name);
-  REQUIRE(t6.name() == "jo");
+  REQUIRE(t6.type() == GD::Awk::Token::Type::lparens);
   lexer.chew(false);
   auto t7{lexer.peek(false)};
   REQUIRE(t7.type() == GD::Awk::Token::Type::newline);
   lexer.chew(false);
   auto t8{lexer.peek(false)};
   REQUIRE(t8.type() == GD::Awk::Token::Type::name);
-  REQUIRE(t8.name() == "mary");
+  REQUIRE(t8.name() == "jo");
   lexer.chew(false);
   auto t9{lexer.peek(false)};
   REQUIRE(t9.type() == GD::Awk::Token::Type::newline);
   lexer.chew(false);
   auto t10{lexer.peek(false)};
-  REQUIRE(t10.type() == GD::Awk::Token::Type::eof);
+  REQUIRE(t10.type() == GD::Awk::Token::Type::name);
+  REQUIRE(t10.name() == "mary");
+  lexer.chew(false);
+  auto t11{lexer.peek(false)};
+  REQUIRE(t11.type() == GD::Awk::Token::Type::newline);
+  lexer.chew(false);
+  auto t12{lexer.peek(false)};
+  REQUIRE(t12.type() == GD::Awk::Token::Type::eof);
 }
 
 TEST_CASE("GD::Awk::Lexer - Strings", "[awk][lexer]")
