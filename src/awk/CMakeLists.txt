@@ -37,7 +37,7 @@ if (RUN_UNIT_TESTS)
   catch_discover_tests(test-libawk PROPERTIES FIXTURES_REQUIRED testutil_setup EXTRA_ARGS " -s")
 endif ()
 
-add_utility(NAME awk NO_INT_TEST CAT_ID awk SOURCES awk.cc)
+add_utility(NAME awk CAT_ID awk SOURCES awk.cc)
 target_link_libraries(awk PUBLIC libawk)
 
 if (NOT WIN32)
