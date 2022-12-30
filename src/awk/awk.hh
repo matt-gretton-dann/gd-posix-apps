@@ -708,6 +708,14 @@ private:
  */
 auto parse(std::unique_ptr<Lexer>&& lexer) -> ParsedProgram;
 
+/** @brief Execute a program
+ *
+ * @param program      The program to execute
+ * @param initial_vars Initial variables string (in form 'VAR=value')
+ * @param cmd_line     Command line files & variables.
+ */
+void execute(ParsedProgram const& program, std::vector<std::string> const& initial_vars,
+             std::vector<std::string> const& cmd_line);
 }  // namespace GD::Awk
 
 template<>

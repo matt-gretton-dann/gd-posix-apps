@@ -113,27 +113,33 @@
       },
       {
         "msg": "expected_function_name",
-        "id": 18,
+        "id": 19,
         "description": "Expected the name of a function, instead got {0}",
         "C": "Expected a function name, instead got {0}."
       },
       {
         "msg": "expected_function",
-        "id": 19,
+        "id": 20,
         "description": "Expected 'function', instead got {0}",
         "C": "Expected 'function', instead got {0}."
       },
       {
         "msg": "expected_lparens",
-        "id": 20,
+        "id": 21,
         "description": "Expected '(', instead got {0}",
         "C": "Expected '(', instead got {0}."
       },
       {
         "msg": "expected_rparens",
-        "id": 21,
+        "id": 22,
         "description": "Expected ')', instead got {0}",
         "C": "Expected ')', instead got {0}."
+      },
+      {
+        "msg": "not_valid_variable_assignment",
+        "id": 23,
+        "description": "The string {0} is not a valid variable assignment on the command line.",
+        "C": "Expected a valid variable assignment.  {0} is not."
       }
     ]
   }

@@ -38,10 +38,6 @@ template<typename... Ts>
   std::exit(1);  // NOLINT(concurrency-mt-unsafe)
 }
 
-void parse(std::unique_ptr<GD::Awk::Reader>&& r)
-{
-  auto program{parse(std::make_unique<GD::Awk::Lexer>(std::move(r)))};
-}
 }  // namespace
 
 auto main(int argc, char** argv) -> int
@@ -86,7 +82,8 @@ try {
     reader = std::make_unique<GD::Awk::FilesReader>(files);
   }
 
-  parse(std::move(reader));
+  auto program{parse(std::make_unique<GD::Awk::Lexer>(std::move(reader)))};
+  execute(program, variable_assignments, files);
 
   return EXIT_SUCCESS;
 }  // namespace
