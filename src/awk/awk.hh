@@ -413,6 +413,16 @@ public:
    */
   void chew(bool enable_divide);
 
+  /** @brief  Lex a string from the command line.
+   *
+   * This basically treats the rest of the characters to be tokenized as a string which is between
+   * two quotes.  This is used to lex the second half of the VAR=NAME command line options and
+   * operands.
+   *
+   * Peeked token will have type Token::Type::String.
+   */
+  auto peek_cmdline_string() -> Token const&;
+
   /** \brief  Get the current location. */
   [[nodiscard]] auto location() const -> Location const&;
 
@@ -454,10 +464,11 @@ private:
   auto lex_octal_escape() -> char;
 
   /** Lex a string or regular expression.
+   * @param from_cmdline true if this is a string from the command line.
    *
    * On entry, t_->peek() should point to the opening " or / of the escape sequence.
    */
-  void lex_string_or_ere();
+  void lex_string_or_ere(bool from_cmdline);
 
   /** Lex a word (name, func_name, or builtin_func_name). */
   void lex_word();

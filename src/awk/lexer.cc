@@ -36,6 +36,23 @@ auto GD::Awk::Lexer::peek(bool enable_divide) -> GD::Awk::Token const&
   return *t_;
 }
 
+auto GD::Awk::Lexer::peek_cmdline_string() -> GD::Awk::Token const&
+{
+  // Sometimes we create a second pending token - usually when we have an error and the correction
+  // for that error.
+  if (!t_.has_value() && t2_.has_value()) {
+    t_ = t2_;
+    t2_.reset();
+  }
+
+  if (!t_.has_value()) {
+    lex_string_or_ere(true);
+  }
+
+  assert(t_.has_value());  // NOLINT
+  return *t_;
+}
+
 void GD::Awk::Lexer::chew(bool enable_divide)
 {
   /* If we have nothing to chew we need to find something.  */
@@ -264,10 +281,14 @@ auto GD::Awk::Lexer::lex_octal_escape() -> char
   return static_cast<char>(c);
 }
 
-void GD::Awk::Lexer::lex_string_or_ere()
+void GD::Awk::Lexer::lex_string_or_ere(bool from_cmdline)
 {
-  assert(r_->peek() == '"' || r_->peek() == '/');
-  bool const is_string = r_->peek() == '"';
+  // We are called in three circumstances:
+  //  From the command line - the string ends at EOF, need to treat a final \ as non-escaping
+  //  As a string.  First token is ".
+  //  As an ERE.  First token is /.
+  assert(from_cmdline || r_->peek() == '"' || r_->peek() == '/');
+  bool const is_string = from_cmdline || r_->peek() == '"';
   r_->chew();
 
   Token::Type const type{is_string ? Token::Type::string : Token::Type::ere};
@@ -277,8 +298,13 @@ void GD::Awk::Lexer::lex_string_or_ere()
   while (true) {
     switch (r_->peek()) {
     case EOF:
+      if (seen_escape && from_cmdline) {
+        str += '\\';
+      }
       t_.emplace(type, str);
-      t2_.emplace(Token::Type::error, r_->error(Msg::unexpected_eof_in_string));
+      if (!from_cmdline) {
+        t2_.emplace(Token::Type::error, r_->error(Msg::unexpected_eof_in_string));
+      }
       return;
     case '\n':
       if (!seen_escape) {
@@ -293,7 +319,7 @@ void GD::Awk::Lexer::lex_string_or_ere()
       break;
     case '"':
       r_->chew();
-      if (is_string && !seen_escape) {
+      if (is_string && !from_cmdline && !seen_escape) {
         t_.emplace(type, str);
         return;
       }
@@ -578,14 +604,14 @@ void GD::Awk::Lexer::lex(bool allow_divide)
       lex_comment();
       break;
     case '"':
-      lex_string_or_ere();
+      lex_string_or_ere(false);
       return;
     case '/':
       if (allow_divide) {
         lex_symbol(Token::Type::divide, '=', Token::Type::div_assign);
       }
       else {
-        lex_string_or_ere();
+        lex_string_or_ere(false);
       }
       return;
     case '.':
