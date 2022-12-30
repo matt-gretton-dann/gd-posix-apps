@@ -140,6 +140,12 @@
         "id": 23,
         "description": "The string {0} is not a valid variable assignment on the command line.",
         "C": "Expected a valid variable assignment.  {0} is not."
+      },
+      {
+        "msg": "expected_terminator",
+        "id": 24,
+        "description": "Expected ';' or '\\n', instead got {0}",
+        "C": "Expected ';' or newline at the end of a statement, instead got {0}."
       }
     ]
   }

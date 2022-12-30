@@ -49,11 +49,88 @@ public:
     }
   }
 
-  auto parse_statement_list_opt([[maybe_unused]] Instructions& instrs)  // NOLINT - temporary
-    -> bool
+  /** @brief Results from statement parsing */
+  enum class ParseStatementResult {
+    none,          ///< Nothing parsed
+    unterminated,  ///< Unterminated statement parsed
+    terminated     ///< Terminated statement parsed
+  };
+
+  // NOLINTNEXTLINE
+  auto parse_if_opt([[maybe_unused]] Instructions& instrs) -> ParseStatementResult
   {
-    // TODO(mgrettondann): Implement parse statement list.
-    return false;
+    // TODO(mgrettondann): Implement
+    return ParseStatementResult::none;
+  }
+
+  // NOLINTNEXTLINE
+  auto parse_while_opt([[maybe_unused]] Instructions& instrs) -> ParseStatementResult
+  {
+    // TODO(mgrettondann): Implement
+    return ParseStatementResult::none;
+  }
+
+  // NOLINTNEXTLINE
+  auto parse_for_opt([[maybe_unused]] Instructions& instrs) -> ParseStatementResult
+  {
+    // TODO(mgrettondann): Implement
+    return ParseStatementResult::none;
+  }
+
+  // NOLINTNEXTLINE
+  auto parse_terminatable_statement_opt([[maybe_unused]] Instructions& instrs)
+    -> ParseStatementResult
+  {
+    // TODO(mgrettondann): Implement
+    return ParseStatementResult::none;
+  }
+
+  /** @brief Parse an optional statement
+   *
+   * @param  instrs Instructions to write code into
+   * @return        Flag indicating whether anything was parsed, and if so whether it was
+   *                terminated.
+   */
+  auto parse_statement_opt(Instructions& instrs) -> ParseStatementResult
+  {
+    auto const& tok{lexer_->peek(false)};
+    if (tok == Token::Type::if_) {
+      return parse_if_opt(instrs);
+    }
+    if (tok == Token::Type::while_) {
+      return parse_while_opt(instrs);
+    }
+    if (tok == Token::Type::for_) {
+      return parse_for_opt(instrs);
+    }
+    if (tok == Token::Type::semicolon) {
+      lexer_->chew(false);
+      parse_newline_opt();
+      return ParseStatementResult::terminated;
+    }
+
+    auto res{parse_terminatable_statement_opt(instrs)};
+    if (res == ParseStatementResult::unterminated) {
+      error(Msg::expected_terminator, lexer_->location(), lexer_->peek(false));
+    }
+    return res;
+  }
+
+  /** \brief  Parse a statement list.
+   *
+   * @param  instrs Instructions block to put instructions into.
+   *
+   * statement_list_opt : statement terminator statement_list_opt
+   *                    | statement
+   *                    | *empty*
+   */
+  void parse_statement_list_opt(Instructions& instrs)
+  {
+    bool cont{true};
+    while (cont) {
+      auto res{parse_statement_opt(instrs)};
+      cont = (res == ParseStatementResult::terminated);
+    }
   }
 
   /** \brief         Parse an optional action, generating code at the end of the instructions given.
@@ -190,13 +267,11 @@ public:
    *
    * @return \c true iff we parsed any terminators.
    *
-   * terminator_optional : SEMICOLON
-   *                     | NEWLINE
-   *                     | semicolon terminator_optional
-   *                     | newline terminator_optional
+   * terminator_optional : SEMICOLON terminator_optional
+   *                     | NEWLINE terminator_optional
    *                     | empty
    */
-  auto parse_terminator_optional() -> bool
+  auto parse_terminator_opt() -> bool
   {
     bool cont{true};
     bool done{false};
@@ -220,7 +295,7 @@ public:
    */
   void parse_item_list_maybe_unterminated()
   {
-    while (parse_item_opt() && parse_terminator_optional()) {
+    while (parse_item_opt() && parse_terminator_opt()) {
       ; /* do nothing */
     }
   }
