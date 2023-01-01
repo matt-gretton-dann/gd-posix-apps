@@ -176,6 +176,12 @@
         "id": 29,
         "description": "Expected at least two items in the list",
         "C": "Expected  at least two items in the list."
+      },
+      {
+        "msg": "expected_expr_after_dollar",
+        "id": 30,
+        "description": "Expected an expression after '$', got {0} instead.",
+        "C": "Expected an expression after '$', got {0} instead."
       }
     ]
   }

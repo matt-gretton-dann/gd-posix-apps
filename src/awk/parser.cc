@@ -89,6 +89,20 @@ public:
     return instrs.size() - 1;
   }
 
+  /** @brief emit a load literal regex instruction
+   *
+   * @param instrs  Instructions to emit into
+   * @param op1     Offset of expression containing field ID.
+   * @return        Index of emitted literal.
+   */
+  static auto emit_load_field(Instructions& instrs, Instruction::Index op1) -> Instruction::Index
+  {
+    auto size{static_cast<Instruction::Offset>(instrs.size())};
+    auto off1{static_cast<Instruction::Offset>(op1 - size)};
+    instrs.emplace_back(Instruction::Opcode::load_field, off1);
+    return instrs.size() - 1;
+  }
+
   /** @brief emit a load variable instruction
    *
    * @param instrs  Instructions to emit into
@@ -299,13 +313,73 @@ public:
     both        ///< Expression could be unary or non-unary
   };
 
-  /** @brief Parse a primary expression
-   *
-   * @param instrs
+  /** @brief Parse a lvalue expression
    *
    * @param  instrs     Where to emit code to
    * @param  expr_type  Expression type
+   * @param  unary_type What expression class is this?
    * @return            Index of emitted expression, and updated expression type
+   *
+   * lvalue : NAME
+   *        | NAME LSQUARE expr_list RSQUARE
+   *        | DOLLAR expr
+   *
+   * | Pattern                             | Expr or print_expr?  | Unary or non-unary?  |
+   * | :---------------------------------- | :------------------- | :------------------- |
+   * | lvalue                              | Both                 | Non-unary            |
+   */
+  auto parse_lvalue_opt(Instructions& instrs, ExprType expr_type, UnaryType unary_type)
+    -> std::pair<ExprIndex, ExprType>
+  {
+    if (unary_type == UnaryType::unary) {
+      return {std::nullopt, expr_type};
+    }
+
+    auto const& tok{lexer_->peek(false)};
+    if (tok == Token::Type::name) {
+      std::string const var_name{tok.name()};
+      lexer_->chew(false);
+
+      auto const& tok2{lexer_->peek(false)};
+      if (tok2 != Token::Type::lsquare) {
+        return {emit_load_variable(instrs, VariableName{var_name}), expr_type};
+      }
+
+      // TODO(mgrettondann): Implement
+      std::abort();
+    }
+
+    if (tok == Token::Type::dollar) {
+      lexer_->chew(false);
+      ExprIndex idx{parse_expr_opt(instrs, ExprType::expr, UnaryType::both).first};
+      if (!idx.has_value()) {
+        error(Msg::expected_expr_after_dollar, lexer_->location(), lexer_->peek(false));
+      }
+
+      assert(idx.has_value());
+      return {emit_load_field(instrs, *idx), expr_type};
+    }
+
+    return {std::nullopt, expr_type};
+  }
+
+  /** @brief Parse a primary expression
+   *
+   * @param  instrs     Where to emit code to
+   * @param  expr_type  Expression type
+   * @param  unary_type What expression class is this?
+   * @return            Index of emitted expression, and updated expression type
+   *
+   * primary_expr : STRING
+   *              | NUMBER
+   *              | ERE
+   *              | lvalue
+   *
+   * | Pattern                             | Expr or print_expr?  | Unary or non-unary?  |
+   * | :---------------------------------- | :------------------- | :------------------- |
+   * | string                              | Both                 | Non-unary            |
+   * | number                              | Both                 | Non-unary            |
+   * | ere                                 | Both                 | Non-unary            |
    */
   auto parse_primary_expr_opt(Instructions& instrs, ExprType expr_type, UnaryType unary_type)
     -> std::pair<ExprIndex, ExprType>
@@ -329,9 +403,14 @@ public:
       idx = emit_load_literal(instrs, std::regex{tok.ere(), std::regex_constants::awk});
       lexer_->chew(false);
       break;
-    default:
+    default: {
+      auto res = parse_lvalue_opt(instrs, expr_type, unary_type);
+      idx = res.first;
+      expr_type = res.second;
       break;
     }
+    }
+
     return std::make_pair(idx, expr_type);
   }
 
@@ -377,7 +456,6 @@ public:
    * | expr && expr                        | Both                 | Both                 |
    * | expr || expr                        | Both                 | Both                 |
    * | expr ? expr : expr                  | Both                 | Both                 |
-   * | number                              | Both                 | Non-unary            |
    * | string                              | Both                 | Non-unary            |
    * | lvalue                              | Both                 | Non-unary            |
    * | number                              | Both                 | Non-unary            |
