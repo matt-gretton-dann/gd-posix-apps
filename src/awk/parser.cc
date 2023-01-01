@@ -33,10 +33,80 @@ template<typename... Ts>
 }  // namespace
 
 namespace GD::Awk::Details {
+using ExprIndex = std::optional<Instruction::Index>;
+
+/** Types of expression.
+ *
+ * There are two types of expression: print_expr, and plain expr.
+ *
+ * Unfortunately, due to parser ambiguities we can get in the situation where we don't know which
+ * we have. Therefore, we record a third type 'maybe_expr'.
+ */
+enum class ExprType {
+  print_expr,  ///< Definitely a print_expr.
+  expr,        ///< Definitely an expr.
+  maybe_expr   ///< Could be print_expr or expr.
+};
+
+/** Types of expression list.
+ *
+ * There are three types of expression list:
+ *  * print_expr_list - used in print & printf statements
+ *  * expr_list - A list of expressions that may have only one entry.
+ *  * multiple_expr_list - A list of expressions that must have at least two entries.
+ *
+ * However, print_expr_list and multiple_expr_list can appear in contexts where we don't know
+ * which we have.  So we provide a fourth 'maybe' option to be used when we are uncertain.
+ */
+enum class ExprListType {
+  print_expr_list,          ///< Definitely a print_expr_list
+  expr_list,                ///< Definitely an expr_list
+  multiple_expr_list,       ///< Definitely a multiple_expr_list
+  maybe_multiple_expr_list  ///< Could be print_expr_list or multiple_expr_list.
+};
+
+static auto to_expr_type(ExprListType t) -> ExprType
+{
+  switch (t) {
+  case ExprListType::print_expr_list:
+    return ExprType::print_expr;
+  case ExprListType::expr_list:
+  case ExprListType::multiple_expr_list:
+    return ExprType::expr;
+  case ExprListType::maybe_multiple_expr_list:
+    return ExprType::maybe_expr;
+  }
+}
+
+static auto to_expr_list_type(ExprType t, ExprListType expr_type) -> ExprListType
+{
+  switch (t) {
+  case ExprType::print_expr:
+    return ExprListType::print_expr_list;
+  case ExprType::expr:
+    return expr_type == ExprListType::expr_list ? ExprListType::expr_list
+                                                : ExprListType::multiple_expr_list;
+  case ExprType::maybe_expr:
+    return ExprListType::maybe_multiple_expr_list;
+  }
+}
+
+/** Whether an expression is unary or non-unary. */
+enum class UnaryType {
+  unary,      ///< Unary expression
+  non_unary,  ///< Non-unary expression
+  both        ///< Expression could be unary or non-unary
+};
+
+struct ExprResult
+{
+  ExprIndex index{std::nullopt};
+  ExprType type{ExprType::maybe_expr};
+  bool is_lvalue{false};
+};
+
 class ParseState
 {
-  using ExprIndex = std::optional<Instruction::Index>;
-
 public:
   explicit ParseState(std::unique_ptr<Lexer>&& lexer) : lexer_(std::move(lexer)) {}
 
@@ -89,29 +159,30 @@ public:
     return instrs.size() - 1;
   }
 
-  /** @brief emit a load literal regex instruction
+  /** @brief emit a field instruction
    *
    * @param instrs  Instructions to emit into
-   * @param op1     Offset of expression containing field ID.
+   * @param expr    Offset of expression containing field ID.
    * @return        Index of emitted literal.
    */
-  static auto emit_load_field(Instructions& instrs, Instruction::Index op1) -> Instruction::Index
+  static auto emit_field(Instructions& instrs, ExprResult op1) -> Instruction::Index
   {
+    auto idx{emit_maybe_lvalue(instrs, op1)};
     auto size{static_cast<Instruction::Offset>(instrs.size())};
-    auto off1{static_cast<Instruction::Offset>(op1 - size)};
-    instrs.emplace_back(Instruction::Opcode::load_field, off1);
+    auto off1{static_cast<Instruction::Offset>(idx - size)};
+    instrs.emplace_back(Instruction::Opcode::field, off1);
     return instrs.size() - 1;
   }
 
-  /** @brief emit a load variable instruction
+  /** @brief emit a variable instruction
    *
    * @param instrs  Instructions to emit into
    * @param vn      Variable name
    * @return        Index of emitted instruction
    */
-  static auto emit_load_variable(Instructions& instrs, VariableName const& vn) -> Instruction::Index
+  static auto emit_variable(Instructions& instrs, VariableName const& vn) -> Instruction::Index
   {
-    instrs.emplace_back(Instruction::Opcode::load_variable, vn);
+    instrs.emplace_back(Instruction::Opcode::variable, vn);
     return instrs.size() - 1;
   }
 
@@ -133,52 +204,68 @@ public:
     std::abort();
   }
 
-  static auto emit_exit([[maybe_unused]] Instructions& instrs,
-                        [[maybe_unused]] Instruction::Index op1) -> Instruction::Index
-  {
-    // TODO(mgrettondann): Implement
-    std::abort();
-  }
-
-  static auto emit_return([[maybe_unused]] Instructions& instrs,
-                          [[maybe_unused]] Instruction::Index op1) -> Instruction::Index
-  {
-    // TODO(mgrettondann): Implement
-    std::abort();
-  }
-
-  static auto emit_open([[maybe_unused]] Instructions& instrs,
-                        [[maybe_unused]] Instruction::Index op1,
-                        [[maybe_unused]] Instruction::Index op2) -> Instruction::Index
-  {
-    // TODO(mgrettondann): Implement
-    std::abort();
-  }
-
-  static auto emit_popen([[maybe_unused]] Instructions& instrs,
-                         [[maybe_unused]] Instruction::Index op1) -> Instruction::Index
-  {
-    // TODO(mgrettondann): Implement
-    std::abort();
-  }
-
-  static auto emit_print(Instructions& instrs, Instruction::Index op1, Instruction::Index op2)
+  static auto emit_exit([[maybe_unused]] Instructions& instrs, [[maybe_unused]] ExprResult op1)
     -> Instruction::Index
   {
+    // TODO(mgrettondann): Implement
+    std::abort();
+  }
+
+  static auto emit_return([[maybe_unused]] Instructions& instrs, [[maybe_unused]] ExprResult op1)
+    -> Instruction::Index
+  {
+    // TODO(mgrettondann): Implement
+    std::abort();
+  }
+
+  static auto emit_open([[maybe_unused]] Instructions& instrs, [[maybe_unused]] ExprResult op1,
+                        [[maybe_unused]] ExprResult op2) -> Instruction::Index
+  {
+    // TODO(mgrettondann): Implement
+    std::abort();
+  }
+
+  static auto emit_popen([[maybe_unused]] Instructions& instrs, [[maybe_unused]] ExprResult op1)
+    -> Instruction::Index
+  {
+    // TODO(mgrettondann): Implement
+    std::abort();
+  }
+
+  static auto emit_maybe_lvalue(Instructions& instrs, ExprResult expr) -> Instruction::Index
+  {
+    assert(expr.index.has_value());
+    if (!expr.is_lvalue) {
+      return *(expr.index);
+    }
+
     auto size{static_cast<Instruction::Offset>(instrs.size())};
-    auto off1{static_cast<Instruction::Offset>(op1 - size)};
-    auto off2{static_cast<Instruction::Offset>(op2 - size)};
+    auto off{static_cast<Instruction::Offset>(*(expr.index) - size)};
+    instrs.emplace_back(Instruction::Opcode::load_lvalue, off);
+    return instrs.size() - 1;
+  }
+
+  static auto emit_print(Instructions& instrs, ExprResult op1, ExprResult op2) -> Instruction::Index
+  {
+    auto idx1{emit_maybe_lvalue(instrs, op1)};
+    auto idx2{emit_maybe_lvalue(instrs, op2)};
+    auto size{static_cast<Instruction::Offset>(instrs.size())};
+    auto off1{static_cast<Instruction::Offset>(idx1 - size)};
+    auto off2{static_cast<Instruction::Offset>(idx2 - size)};
     instrs.emplace_back(Instruction::Opcode::print, off1, off2);
     return instrs.size() - 1;
   }
 
-  static auto emit_printf(Instructions& instrs, Instruction::Index op1, Instruction::Index op2)
+  // NOLINTNEXTLINE
+  static auto emit_printf(Instructions& instrs, ExprResult stream, ExprResult param_pack)
     -> Instruction::Index
   {
-    assert(instrs[op2].opcode() == Instruction::Opcode::open_param_pack);
+    assert(param_pack.index.has_value());
+    assert(instrs[*(param_pack.index)].opcode() == Instruction::Opcode::open_param_pack);
+    auto idx1{emit_maybe_lvalue(instrs, stream)};
     auto size{static_cast<Instruction::Offset>(instrs.size())};
-    auto off1{static_cast<Instruction::Offset>(op1 - size)};
-    auto off2{static_cast<Instruction::Offset>(op2 - size)};
+    auto off1{static_cast<Instruction::Offset>(idx1 - size)};
+    auto off2{static_cast<Instruction::Offset>(*(param_pack.index) - size)};
     instrs.emplace_back(Instruction::Opcode::printf, off1, off2);
     return instrs.size() - 1;
   }
@@ -189,13 +276,16 @@ public:
     return instrs.size() - 1;
   }
 
-  static auto emit_push_param(Instructions& instrs, Instruction::Index op1, Instruction::Index op2)
+  // NOLINTNEXTLINE
+  static auto emit_push_param(Instructions& instrs, ExprResult param_pack, ExprResult expr)
     -> Instruction::Index
   {
-    assert(instrs[op1].opcode() == Instruction::Opcode::open_param_pack);
+    assert(param_pack.index.has_value());
+    assert(instrs[*(param_pack.index)].opcode() == Instruction::Opcode::open_param_pack);
+    auto expr_idx{emit_maybe_lvalue(instrs, expr)};
     auto size{static_cast<Instruction::Offset>(instrs.size())};
-    auto off1{static_cast<Instruction::Offset>(op1 - size)};
-    auto off2{static_cast<Instruction::Offset>(op2 - size)};
+    auto off1{static_cast<Instruction::Offset>(*(param_pack.index) - size)};
+    auto off2{static_cast<Instruction::Offset>(expr_idx - size)};
     instrs.emplace_back(Instruction::Opcode::push_param, off1, off2);
     return instrs.size() - 1;
   }
@@ -250,69 +340,6 @@ public:
     return ParseStatementResult::none;
   }
 
-  /** Types of expression.
-   *
-   * There are two types of expression: print_expr, and plain expr.
-   *
-   * Unfortunately, due to parser ambiguities we can get in the situation where we don't know which
-   * we have. Therefore, we record a third type 'maybe_expr'.
-   */
-  enum class ExprType {
-    print_expr,  ///< Definitely a print_expr.
-    expr,        ///< Definitely an expr.
-    maybe_expr   ///< Could be print_expr or expr.
-  };
-
-  /** Types of expression list.
-   *
-   * There are three types of expression list:
-   *  * print_expr_list - used in print & printf statements
-   *  * expr_list - A list of expressions that may have only one entry.
-   *  * multiple_expr_list - A list of expressions that must have at least two entries.
-   *
-   * However, print_expr_list and multiple_expr_list can appear in contexts where we don't know
-   * which we have.  So we provide a fourth 'maybe' option to be used when we are uncertain.
-   */
-  enum class ExprListType {
-    print_expr_list,          ///< Definitely a print_expr_list
-    expr_list,                ///< Definitely an expr_list
-    multiple_expr_list,       ///< Definitely a multiple_expr_list
-    maybe_multiple_expr_list  ///< Could be print_expr_list or multiple_expr_list.
-  };
-
-  static auto to_expr_type(ExprListType t) -> ExprType
-  {
-    switch (t) {
-    case ExprListType::print_expr_list:
-      return ExprType::print_expr;
-    case ExprListType::expr_list:
-    case ExprListType::multiple_expr_list:
-      return ExprType::expr;
-    case ExprListType::maybe_multiple_expr_list:
-      return ExprType::maybe_expr;
-    }
-  }
-
-  static auto to_expr_list_type(ExprType t, ExprListType expr_type) -> ExprListType
-  {
-    switch (t) {
-    case ExprType::print_expr:
-      return ExprListType::print_expr_list;
-    case ExprType::expr:
-      return expr_type == ExprListType::expr_list ? ExprListType::expr_list
-                                                  : ExprListType::multiple_expr_list;
-    case ExprType::maybe_expr:
-      return ExprListType::maybe_multiple_expr_list;
-    }
-  }
-
-  /** Whether an expression is unary or non-unary. */
-  enum class UnaryType {
-    unary,      ///< Unary expression
-    non_unary,  ///< Non-unary expression
-    both        ///< Expression could be unary or non-unary
-  };
-
   /** @brief Parse a lvalue expression
    *
    * @param  instrs     Where to emit code to
@@ -329,10 +356,10 @@ public:
    * | lvalue                              | Both                 | Non-unary            |
    */
   auto parse_lvalue_opt(Instructions& instrs, ExprType expr_type, UnaryType unary_type)
-    -> std::pair<ExprIndex, ExprType>
+    -> ExprResult
   {
     if (unary_type == UnaryType::unary) {
-      return {std::nullopt, expr_type};
+      return {.type = expr_type};
     }
 
     auto const& tok{lexer_->peek(false)};
@@ -342,7 +369,9 @@ public:
 
       auto const& tok2{lexer_->peek(false)};
       if (tok2 != Token::Type::lsquare) {
-        return {emit_load_variable(instrs, VariableName{var_name}), expr_type};
+        return {.index = emit_variable(instrs, VariableName{var_name}),
+                .type = expr_type,
+                .is_lvalue = true};
       }
 
       // TODO(mgrettondann): Implement
@@ -351,16 +380,16 @@ public:
 
     if (tok == Token::Type::dollar) {
       lexer_->chew(false);
-      ExprIndex idx{parse_expr_opt(instrs, ExprType::expr, UnaryType::both).first};
-      if (!idx.has_value()) {
+      ExprResult const field_id{parse_expr_opt(instrs, ExprType::expr, UnaryType::both)};
+      if (!field_id.index.has_value()) {
         error(Msg::expected_expr_after_dollar, lexer_->location(), lexer_->peek(false));
       }
 
-      assert(idx.has_value());
-      return {emit_load_field(instrs, *idx), expr_type};
+      assert(field_id.index.has_value());
+      return {.index = emit_field(instrs, field_id), .type = expr_type, .is_lvalue = true};
     }
 
-    return {std::nullopt, expr_type};
+    return {.type = expr_type};
   }
 
   /** @brief Parse a primary expression
@@ -382,36 +411,33 @@ public:
    * | ere                                 | Both                 | Non-unary            |
    */
   auto parse_primary_expr_opt(Instructions& instrs, ExprType expr_type, UnaryType unary_type)
-    -> std::pair<ExprIndex, ExprType>
+    -> ExprResult
   {
     if (unary_type == UnaryType::unary) {
-      return std::make_pair(std::nullopt, expr_type);
+      return {.type = expr_type};
     }
 
     auto const& tok{lexer_->peek(false)};
-    ExprIndex idx{std::nullopt};
+    ExprResult result{.type = expr_type};
     switch (tok.type()) {
     case Token::Type::integer:
-      idx = emit_load_literal(instrs, static_cast<int64_t>(tok.integer()));
+      result.index = emit_load_literal(instrs, static_cast<int64_t>(tok.integer()));
       lexer_->chew(false);
       break;
     case Token::Type::string:
-      idx = emit_load_literal(instrs, tok.string());
+      result.index = emit_load_literal(instrs, tok.string());
       lexer_->chew(false);
       break;
     case Token::Type::ere:
-      idx = emit_load_literal(instrs, std::regex{tok.ere(), std::regex_constants::awk});
+      result.index = emit_load_literal(instrs, std::regex{tok.ere(), std::regex_constants::awk});
       lexer_->chew(false);
       break;
-    default: {
-      auto res = parse_lvalue_opt(instrs, expr_type, unary_type);
-      idx = res.first;
-      expr_type = res.second;
+    default:
+      result = parse_lvalue_opt(instrs, expr_type, unary_type);
       break;
     }
-    }
 
-    return std::make_pair(idx, expr_type);
+    return result;
   }
 
   /** @brief Parse an expression (of any type)
@@ -478,7 +504,7 @@ public:
    * | simple_get `<` expr                 | Expr                 | Non-unary            |
    */
   auto parse_expr_opt(Instructions& instrs, ExprType expr_type,
-                      [[maybe_unused]] UnaryType unary_type) -> std::pair<ExprIndex, ExprType>
+                      [[maybe_unused]] UnaryType unary_type) -> ExprResult
   {
     return parse_primary_expr_opt(instrs, expr_type, UnaryType::both);
   }
@@ -495,8 +521,8 @@ public:
     std::size_t element_count{0};  // Number of elements
     while (true) {
       // Parse the expression
-      auto [expr_idx, expr_type] = parse_expr_opt(instrs, to_expr_type(list_type), UnaryType::both);
-      if (!expr_idx.has_value()) {
+      auto result = parse_expr_opt(instrs, to_expr_type(list_type), UnaryType::both);
+      if (!result.index.has_value()) {
         if (element_count != 0) {
           error(Msg::expected_expr_after_comma, lexer_->location(), lexer_->peek(false));
         }
@@ -504,8 +530,8 @@ public:
       }
 
       // Insert index into list of expressions.
-      *inserter_it = expr_idx;
-      list_type = to_expr_list_type(expr_type, list_type);
+      *inserter_it = result;
+      list_type = to_expr_list_type(result.type, list_type);
       ++element_count;
 
       // Chew the comma, and newline separators.
@@ -558,7 +584,7 @@ public:
    *             | APPEND expr
    *             | PIPE expr
    */
-  auto parse_redirection_opt(Instructions& instrs) -> ExprIndex
+  auto parse_redirection_opt(Instructions& instrs, ExprType expr_type) -> ExprResult
   {
     auto tok{lexer_->peek(false)};
 
@@ -567,23 +593,24 @@ public:
     bool const is_popen{tok == Token::Type::pipe};
 
     if (!is_open && !is_append && !is_popen) {
-      return std::nullopt;
+      return {.type = expr_type};
     }
 
     lexer_->chew(false);
 
-    [[maybe_unused]] auto [out_expr, expr_type] =
-      parse_expr_opt(instrs, ExprType::expr, UnaryType::both);
-    if (!out_expr.has_value()) {
+    auto out_expr{parse_expr_opt(instrs, ExprType::expr, UnaryType::both)};
+    if (!out_expr.index.has_value()) {
       error(Msg::expected_expr_after_redirection, lexer_->location(), tok, lexer_->peek(false));
     }
 
     if (is_open) {
-      return emit_popen(instrs, *out_expr);  // NOLINT(bugprone-unchecked-optional-access)
+      return {emit_popen(instrs, out_expr),
+              expr_type};  // NOLINT(bugprone-unchecked-optional-access)
     }
 
     Instruction::Index const opt{emit_load_literal(instrs, is_append ? INT64_C(1) : INT64_C(0))};
-    return emit_open(instrs, *out_expr, opt);  // NOLINT(bugprone-unchecked-optional-access)
+    return {emit_open(instrs, out_expr, {.index = opt}),
+            expr_type};  // NOLINT(bugprone-unchecked-optional-access)
   }
 
   /** @brief Parse a print statement.
@@ -616,7 +643,7 @@ public:
     // print_expr_list or a multiple_expr_list.  Hence the maybe_multiple_expr_list where we leave
     // it to the expression parser to work it out.
     bool const maybe_multiple_expr_list{lexer_->peek(false) == Token::Type::lparens};
-    std::vector<ExprIndex> indices;
+    std::vector<ExprResult> indices;
     parse_expr_list_opt(instrs, std::back_inserter(indices),
                         maybe_multiple_expr_list ? ExprListType::maybe_multiple_expr_list
                                                  : ExprListType::print_expr_list);
@@ -628,19 +655,20 @@ public:
     if (!is_printf && indices.empty()) {
       // We have a plain print.  We want to print $0.
       auto const lit_expr{emit_load_literal(instrs, INT64_C(0))};
-      auto const field_expr{emit_load_field(instrs, lit_expr)};
-      indices.emplace_back(field_expr);
+      auto const field_expr{emit_field(instrs, {.index = lit_expr})};
+      indices.emplace_back(ExprResult{field_expr, ExprType::print_expr, true});
     }
 
     // Now get the redirection.  If we don't have a redirection we will output to standard out.
-    ExprIndex redir{parse_redirection_opt(instrs)};
-    if (!redir.has_value()) {
-      redir = emit_load_literal(instrs, static_cast<int64_t>(STDOUT_FILENO));
+    ExprResult redir{parse_redirection_opt(instrs, ExprType::expr)};
+    if (!redir.index.has_value()) {
+      redir.index = emit_load_literal(instrs, static_cast<int64_t>(STDOUT_FILENO));
     }
 
     Instruction::Index fs{0};
     if (!is_printf && indices.size() > 1) {
-      fs = emit_load_variable(instrs, VariableName{"OFS"});
+      fs = emit_variable(instrs, VariableName{"OFS"});
+      fs = emit_maybe_lvalue(instrs, {.index = fs, .is_lvalue = true});
     }
 
     if (!is_printf) {
@@ -650,24 +678,19 @@ public:
           first = false;
         }
         else {
-          assert(redir.has_value());
-          emit_print(instrs, fs, *redir);
+          emit_print(instrs, {.index = fs}, redir);
         }
-        assert(idx.has_value());
-        assert(redir.has_value());
-        emit_print(instrs, *idx, *redir);
+        emit_print(instrs, idx, redir);
       }
-      assert(redir.has_value());
-      emit_print(instrs, emit_load_variable(instrs, VariableName{"ORS"}), *redir);
+      emit_print(instrs, {.index = emit_variable(instrs, VariableName{"ORS"}), .is_lvalue = true},
+                 redir);
     }
     else {
       Instruction::Index const pp{emit_open_param_pack(instrs)};
       for (auto const idx : indices) {
-        assert(idx.has_value());
-        emit_push_param(instrs, pp, *idx);
+        emit_push_param(instrs, {pp}, idx);
       }
-      assert(redir.has_value());
-      emit_printf(instrs, emit_close_param_pack(instrs, pp), *redir);
+      emit_printf(instrs, {emit_close_param_pack(instrs, pp)}, redir);
     }
   }
 
@@ -695,7 +718,7 @@ public:
       return true;
     }
 
-    return parse_expr_opt(instrs, ExprType::expr, UnaryType::both).first.has_value();
+    return parse_expr_opt(instrs, ExprType::expr, UnaryType::both).index.has_value();
   }
 
   auto parse_terminatable_statement_opt(Instructions& instrs) -> ParseStatementResult
@@ -716,22 +739,21 @@ public:
       break;
     case Token::Type::exit: {
       lexer_->chew(false);
-      auto expr{parse_expr_opt(instrs, ExprType::expr, UnaryType::both).first};
-      if (!expr.has_value()) {
-        expr = emit_load_literal(instrs, INT64_C(0));
+      auto expr{parse_expr_opt(instrs, ExprType::expr, UnaryType::both)};
+      if (!expr.index.has_value()) {
+        expr.index = emit_load_literal(instrs, INT64_C(0));
       }
-      assert(expr.has_value());
 
-      emit_exit(instrs, *expr);
+      emit_exit(instrs, expr);
       break;
     }
     case Token::Type::return_: {
       lexer_->chew(false);
-      auto expr{parse_expr_opt(instrs, ExprType::expr, UnaryType::both).first};
-      if (!expr.has_value()) {
-        expr = emit_load_literal(instrs, INT64_C(0));
+      auto expr{parse_expr_opt(instrs, ExprType::expr, UnaryType::both)};
+      if (!expr.index.has_value()) {
+        expr.index = emit_load_literal(instrs, INT64_C(0));
       }
-      emit_return(instrs, *expr);
+      emit_return(instrs, expr);
       break;
     }
     case Token::Type::do_:

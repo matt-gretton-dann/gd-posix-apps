@@ -81,11 +81,14 @@ auto GD::Awk::operator<<(std::ostream& os, GD::Awk::Instruction::Opcode opcode) 
   case GD::Awk::Instruction::Opcode::load_literal:
     os << "load_literal";
     break;
-  case GD::Awk::Instruction::Opcode::load_field:
-    os << "load_field";
+  case GD::Awk::Instruction::Opcode::load_lvalue:
+    os << "load_lvalue";
     break;
-  case GD::Awk::Instruction::Opcode::load_variable:
-    os << "load_variable";
+  case GD::Awk::Instruction::Opcode::field:
+    os << "field";
+    break;
+  case GD::Awk::Instruction::Opcode::variable:
+    os << "variable";
     break;
   case GD::Awk::Instruction::Opcode::print:
     os << "print";
@@ -112,8 +115,9 @@ auto GD::Awk::Instruction::op_count(Opcode opcode) -> unsigned
   case GD::Awk::Instruction::Opcode::open_param_pack:
     return 0;
   case GD::Awk::Instruction::Opcode::load_literal:
-  case GD::Awk::Instruction::Opcode::load_field:
-  case GD::Awk::Instruction::Opcode::load_variable:
+  case GD::Awk::Instruction::Opcode::load_lvalue:
+  case GD::Awk::Instruction::Opcode::field:
+  case GD::Awk::Instruction::Opcode::variable:
   case GD::Awk::Instruction::Opcode::close_param_pack:
     return 1;
   case GD::Awk::Instruction::Opcode::print:
@@ -136,11 +140,12 @@ void GD::Awk::Instruction::validate_operands() const
            std::holds_alternative<std::string>(*op1_) ||  // NOLINT
            std::holds_alternative<std::regex>(*op1_));    // NOLINT
     break;
-  case GD::Awk::Instruction::Opcode::load_variable:
-  case GD::Awk::Instruction::Opcode::close_param_pack:
+  case GD::Awk::Instruction::Opcode::variable:
     assert(std::holds_alternative<VariableName>(*op1_));  // NOLINT
     break;
-  case GD::Awk::Instruction::Opcode::load_field:
+  case GD::Awk::Instruction::Opcode::close_param_pack:
+  case GD::Awk::Instruction::Opcode::field:
+  case GD::Awk::Instruction::Opcode::load_lvalue:
     assert(std::holds_alternative<Offset>(*op1_));  // NOLINT
     break;
   case GD::Awk::Instruction::Opcode::print:

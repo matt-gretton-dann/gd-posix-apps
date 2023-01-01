@@ -530,9 +530,10 @@ using VariableName = GD::TypeWrapper<std::string, struct VariableNameTag>;
  *
  * | Opcode             |  Operand 1   |  Operand 2  |  Description                               |
  * | :----------------- | :----------- | :---------- | :----------------------------------------- |
+ * | field              | O            |             | Calculate the field ID from <op1>          |
+ * | variable           | VN           |             | Name of a variable                         |
  * | load_literal       | I/F/S/R      |             | Result is the literal in <op1>             |
- * | load_field         | O            |             | Load the field indicated by <op1>          |
- * | load_variable      | VN           |             | Load the integer value of var <op1>        |
+ * | load_lvalue        | O            |             | Load the lvalue identified by <op1>        |
  * | print              | O            | O           | Print the value <op1> to stream <op2>      |
  * | printf             | O            | O           | printf the params <op1> to stream <op2>    |
  * | open_param_pack    |              |             | Open a parameter pack                      |
@@ -547,9 +548,10 @@ class Instruction
 public:
   /** Opcodes. */
   enum class Opcode {
+    field,             ///< A field lvalue
+    variable,          ///< A variable lvalue
     load_literal,      ///< Load a literal value
-    load_field,        ///< Load the current value of field $<op1>.
-    load_variable,     ///< Load the value of the variable <op1>.
+    load_lvalue,       ///< Load an lvalue
     print,             ///< Print the value referenced by <op1> to stream <op2>.
     printf,            ///< Printf the parameter pack <op1> to stream <op2>.
     open_param_pack,   ///< Open a parameter pack.  Result is parameter pack ID.

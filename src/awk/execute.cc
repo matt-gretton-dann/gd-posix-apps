@@ -41,8 +41,11 @@ template<typename... Ts>
 
 namespace GD::Awk::Details {
 
+using Field = TypeWrapper<std::int64_t, struct FieldTag>;
+
 /// A value - either string, signed integer, or double.
-using ExecutionValue = std::variant<std::string, std::int64_t, double, std::regex, std::nullopt_t>;
+using ExecutionValue =
+  std::variant<std::string, std::int64_t, double, std::regex, std::nullopt_t, VariableName, Field>;
 
 /// Mapping of variable names to values.
 using VariableMap = std::map<std::string, ExecutionValue>;
@@ -114,22 +117,28 @@ public:
                       values.at(pc + std::get<Instruction::Offset>(delta)));
   }
 
-  [[nodiscard]] auto read_variable(Instruction::Operand const& var_name) const -> ExecutionValue
+  [[nodiscard]] auto read_lvalue(std::vector<ExecutionValue> const& values,
+                                 Instructions::difference_type pc,
+                                 Instruction::Operand const& delta) const -> ExecutionValue
   {
-    return var(std::get<VariableName>(var_name).get());
+    return std::visit(GD::Overloaded{
+                        [this](VariableName v) { return var(v.get()); },
+                        [this](Field f) { return ExecutionValue{fields_.at(f.get())}; },
+                        [](auto const&) {
+                          std::abort();
+                          return ExecutionValue{std::nullopt};
+                        },
+                      },
+                      values.at(pc + std::get<Instruction::Offset>(delta)));
   }
 
-  [[nodiscard]] auto read_field(std::vector<ExecutionValue> const& values,
-                                Instructions::difference_type pc,
-                                Instruction::Operand const& delta) const -> ExecutionValue
+  [[nodiscard]] static auto read_field(std::vector<ExecutionValue> const& values,
+                                       Instructions::difference_type pc,
+                                       Instruction::Operand const& delta) -> ExecutionValue
   {
     std::int64_t const field{
       std::get<std::int64_t>(values.at(pc + std::get<Instruction::Offset>(delta)))};
-    if (field < static_cast<std::int64_t>(fields_.size())) {
-      return fields_.at(field);
-    }
-
-    return "";
+    return Field{field};
   }
 
   auto format_value(std::vector<ExecutionValue> const& values, Instructions::difference_type pc,
@@ -162,10 +171,13 @@ public:
       case Instruction::Opcode::load_literal:
         values.at(pc) = (interpret_literal(it->op1()));
         break;
-      case Instruction::Opcode::load_variable:
-        values.at(pc) = read_variable(it->op1());
+      case Instruction::Opcode::load_lvalue:
+        values.at(pc) = read_lvalue(values, pc, it->op1());
         break;
-      case Instruction::Opcode::load_field:
+      case Instruction::Opcode::variable:
+        values.at(pc) = std::get<VariableName>(it->op1());
+        break;
+      case Instruction::Opcode::field:
         values.at(pc) = read_field(values, pc, it->op1());
         break;
       case Instruction::Opcode::printf:
