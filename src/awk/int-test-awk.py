@@ -13,7 +13,7 @@ def test_awk(program, expected_stdout, in_file=None):
     if in_file is not None:
         cmd_line.append(in_file)
     tester.run_test(cmd_line, test_name=program, expected_rc=0,
-                    expected_stdout=expected_stdout)
+                    expected_stdout=expected_stdout, expected_stderr='')
 
 
 tester = int_tests.TestRunner()
@@ -26,5 +26,7 @@ test_awk('BEGIN {}\\nEND {}', '')
 test_awk('BEGIN { print "Hello world!"; }', "Hello world!\n")
 test_awk('END { print "Goodbye world!"; }', "Goodbye world!\n")
 test_awk('BEGIN { print 1, 2; }', "1 2\n")
+test_awk('BEGIN { print OFS; }', ' \n')
+test_awk('BEGIN { print ORS; }', '\n\n')
 
 tester.summarize()
