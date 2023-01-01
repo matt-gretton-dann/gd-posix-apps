@@ -22,6 +22,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <regex>
 #include <sstream>
 #include <stack>
 #include <string>
@@ -507,8 +508,8 @@ using VariableName = GD::TypeWrapper<std::string, struct VariableNameTag>;
  * When executing instructions we assume we have a side-array that contains the result for the last
  * time each instruction was executed.  For example om how this works if we have:
  *
- *   0: load_num_var a
- *   1: load_num_var b
+ *   0: load_variable a
+ *   1: load_variable b
  *   2: add -1, -2
  *
  *  Then the contents of the array after execution will be:
@@ -516,30 +517,44 @@ using VariableName = GD::TypeWrapper<std::string, struct VariableNameTag>;
  *   1: numeric value of variable b
  *   2: value of a + b
  *
+ * Key for opcode table:
+ *  * BFN: Builtin function name
+ *  * I: Integer
+ *  * F: Floating
+ *  * FN: Function name
+ *  * NS: Numeric String
+ *  * O: Offset
+ *  * R: Regex
+ *  * S: String
+ *  * VN: Variable name
+ *
  * | Opcode             |  Operand 1   |  Operand 2  |  Description                               |
  * | :----------------- | :----------- | :---------- | :----------------------------------------- |
- * | load_literal_int   | Integer      |             | Result is the integer operand.             |
- * | load_literal_float | Floating     |             | Result is the floating-point operand.      |
- * | load_literal_str   | String       |             | Load the literal string.                   |
- * | load_field_str     | Offset       |             | Load the field indicated by off1.          |
- * | load_rec_str       |              |             | Load the current value of $0 as a string.  |
- * | load_variable_str  | VariableName |             | Load the string value of var <op1>         |
- * | load_variable_int  | VariableName |             | Load the integer value of var <op1>        |
- * | print_str          | offset       |             | Print the value <op1>                      |
+ * | load_literal       | I/F/S/R      |             | Result is the literal in <op1>             |
+ * | load_field         | O            |             | Load the field indicated by <op1>          |
+ * | load_variable      | VN           |             | Load the integer value of var <op1>        |
+ * | print              | O            | O           | Print the value <op1> to stream <op2>      |
+ * | printf             | O            | O           | printf the params <op1> to stream <op2>    |
+ * | open_param_pack    |              |             | Open a parameter pack                      |
+ * | push_param         | O            | O           | Push expr <op2> onto the front of <op1>    |
+ * | close_param_pack   | O            |             | Close the parameter pack <op1>             |
+ *
+ * Parameter packs are identified by the index of the instruction corresponding to the
+ * 'open_param_pack'.
  */
 class Instruction
 {
 public:
   /** Opcodes. */
   enum class Opcode {
-    load_literal_int,    ///< Load a literal integer
-    load_literal_float,  ///< Load a literal float
-    load_literal_str,    ///< Load a literal string
-    load_field_str,      ///< Load the current value of field $<op1> as a string
-    load_rec_str,        ///< Load the value of the current record as a string.
-    load_variable_str,   ///< Load the value of the variable <op1> as a string.
-    load_variable_int,   ///< Load the value of the variable <op1> as an integer.
-    print_str,           ///< Print the string referenced by <op1>.
+    load_literal,      ///< Load a literal value
+    load_field,        ///< Load the current value of field $<op1>.
+    load_variable,     ///< Load the value of the variable <op1>.
+    print,             ///< Print the value referenced by <op1> to stream <op2>.
+    printf,            ///< Printf the parameter pack <op1> to stream <op2>.
+    open_param_pack,   ///< Open a parameter pack.  Result is parameter pack ID.
+    push_param,        ///< Push parameter <op2> onto the front of parameter pack <op1>.
+    close_param_pack,  ///< Close parameter pack <op1>.
   };
 
   /** Type representing an index into the list of instructions.  */
@@ -549,7 +564,7 @@ public:
   using Offset = std::make_signed_t<Index>;
 
   /** Valid operand types.  */
-  using Operand = std::variant<std::string, VariableName, Offset, std::uint64_t, double>;
+  using Operand = std::variant<std::string, VariableName, Offset, std::int64_t, double, std::regex>;
 
   /** \brief        Constructor
    *  \param opcode Opcode

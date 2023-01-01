@@ -11,6 +11,7 @@
 #include <memory>
 #include <optional>
 #include <ostream>
+#include <regex>
 #include <string>
 #include <variant>
 #include <vector>
@@ -77,29 +78,29 @@ auto GD::Awk::Instruction::has_op2(Opcode opcode) -> bool { return op_count(opco
 auto GD::Awk::operator<<(std::ostream& os, GD::Awk::Instruction::Opcode opcode) -> std::ostream&
 {
   switch (opcode) {
-  case GD::Awk::Instruction::Opcode::load_literal_int:
-    os << "load_literal_int";
+  case GD::Awk::Instruction::Opcode::load_literal:
+    os << "load_literal";
     break;
-  case GD::Awk::Instruction::Opcode::load_literal_float:
-    os << "load_literal_float";
+  case GD::Awk::Instruction::Opcode::load_field:
+    os << "load_field";
     break;
-  case GD::Awk::Instruction::Opcode::load_literal_str:
-    os << "load_literal_str";
+  case GD::Awk::Instruction::Opcode::load_variable:
+    os << "load_variable";
     break;
-  case GD::Awk::Instruction::Opcode::load_field_str:
-    os << "load_field_str";
+  case GD::Awk::Instruction::Opcode::print:
+    os << "print";
     break;
-  case GD::Awk::Instruction::Opcode::load_rec_str:
-    os << "load_rec_str";
+  case GD::Awk::Instruction::Opcode::printf:
+    os << "printf";
     break;
-  case GD::Awk::Instruction::Opcode::load_variable_str:
-    os << "load_variable_str";
+  case GD::Awk::Instruction::Opcode::open_param_pack:
+    os << "open_param_pack";
     break;
-  case GD::Awk::Instruction::Opcode::load_variable_int:
-    os << "load_variable_int";
+  case GD::Awk::Instruction::Opcode::push_param:
+    os << "push_param";
     break;
-  case GD::Awk::Instruction::Opcode::print_str:
-    os << "print_str";
+  case GD::Awk::Instruction::Opcode::close_param_pack:
+    os << "close_param_pack";
     break;
   }
   return os;
@@ -108,16 +109,17 @@ auto GD::Awk::operator<<(std::ostream& os, GD::Awk::Instruction::Opcode opcode) 
 auto GD::Awk::Instruction::op_count(Opcode opcode) -> unsigned
 {
   switch (opcode) {
-  case GD::Awk::Instruction::Opcode::load_rec_str:
+  case GD::Awk::Instruction::Opcode::open_param_pack:
     return 0;
-  case GD::Awk::Instruction::Opcode::load_literal_int:
-  case GD::Awk::Instruction::Opcode::load_literal_float:
-  case GD::Awk::Instruction::Opcode::load_literal_str:
-  case GD::Awk::Instruction::Opcode::load_field_str:
-  case GD::Awk::Instruction::Opcode::load_variable_str:
-  case GD::Awk::Instruction::Opcode::load_variable_int:
-  case GD::Awk::Instruction::Opcode::print_str:
+  case GD::Awk::Instruction::Opcode::load_literal:
+  case GD::Awk::Instruction::Opcode::load_field:
+  case GD::Awk::Instruction::Opcode::load_variable:
+  case GD::Awk::Instruction::Opcode::close_param_pack:
     return 1;
+  case GD::Awk::Instruction::Opcode::print:
+  case GD::Awk::Instruction::Opcode::printf:
+  case GD::Awk::Instruction::Opcode::push_param:
+    return 2;
   }
 }
 
@@ -126,26 +128,26 @@ void GD::Awk::Instruction::validate_operands() const
   assert(op1_.has_value() == (op_count(opcode_) >= 1));
   assert(op2_.has_value() == (op_count(opcode_) >= 2));
   switch (opcode_) {
-  case GD::Awk::Instruction::Opcode::load_rec_str:
-    /* No fields. */
+  case GD::Awk::Instruction::Opcode::open_param_pack:
     break;
-  case GD::Awk::Instruction::Opcode::load_literal_int:
-    assert(std::holds_alternative<std::uint64_t>(*op1_));  // NOLINT
+  case GD::Awk::Instruction::Opcode::load_literal:
+    // NOLINTNEXTLINE
+    assert(std::holds_alternative<std::int64_t>(*op1_) || std::holds_alternative<double>(*op1_) ||
+           std::holds_alternative<std::string>(*op1_) ||  // NOLINT
+           std::holds_alternative<std::regex>(*op1_));    // NOLINT
     break;
-  case GD::Awk::Instruction::Opcode::load_literal_float:
-    assert(std::holds_alternative<double>(*op1_));  // NOLINT
-    break;
-  case GD::Awk::Instruction::Opcode::load_literal_str:
-    assert(std::holds_alternative<std::string>(*op1_));  // NOLINT
-    break;
-  case GD::Awk::Instruction::Opcode::load_variable_str:
-  case GD::Awk::Instruction::Opcode::load_variable_int:
+  case GD::Awk::Instruction::Opcode::load_variable:
+  case GD::Awk::Instruction::Opcode::close_param_pack:
     assert(std::holds_alternative<VariableName>(*op1_));  // NOLINT
     break;
-  case GD::Awk::Instruction::Opcode::print_str:
-  case GD::Awk::Instruction::Opcode::load_field_str:
+  case GD::Awk::Instruction::Opcode::load_field:
     assert(std::holds_alternative<Offset>(*op1_));  // NOLINT
     break;
+  case GD::Awk::Instruction::Opcode::print:
+  case GD::Awk::Instruction::Opcode::printf:
+  case GD::Awk::Instruction::Opcode::push_param:
+    assert(std::holds_alternative<Offset>(*op1_));  // NOLINT
+    assert(std::holds_alternative<Offset>(*op2_));  // NOLINT
   }
 }
 

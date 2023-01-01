@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <memory>
+#include <regex>
 #include <variant>
 
 #include "awk.hh"
@@ -39,15 +40,64 @@ class ParseState
 public:
   explicit ParseState(std::unique_ptr<Lexer>&& lexer) : lexer_(std::move(lexer)) {}
 
-  /** @brief emit a literal instruction
+  /** @brief emit a load literal instruction
    *
    * @param instrs  Instructions to emit into
    * @param value   Literal to emit
    * @return        Index of emitted literal.
    */
-  static auto emit_lit(Instructions& instrs, std::int64_t value) -> Instruction::Index
+  static auto emit_load_literal(Instructions& instrs, std::int64_t value) -> Instruction::Index
   {
-    instrs.emplace_back(Instruction::Opcode::load_literal_int, value);
+    instrs.emplace_back(Instruction::Opcode::load_literal, value);
+    return instrs.size() - 1;
+  }
+
+  /** @brief emit a load literal instruction
+   *
+   * @param instrs  Instructions to emit into
+   * @param value   Literal to emit
+   * @return        Index of emitted literal.
+   */
+  static auto emit_load_literal(Instructions& instrs, double value) -> Instruction::Index
+  {
+    instrs.emplace_back(Instruction::Opcode::load_literal, value);
+    return instrs.size() - 1;
+  }
+
+  /** @brief emit a load literal instruction
+   *
+   * @param instrs  Instructions to emit into
+   * @param value   Literal to emit
+   * @return        Index of emitted literal.
+   */
+  static auto emit_load_literal(Instructions& instrs, std::string const& value)
+    -> Instruction::Index
+  {
+    instrs.emplace_back(Instruction::Opcode::load_literal, value);
+    return instrs.size() - 1;
+  }
+
+  /** @brief emit a load literal regex instruction
+   *
+   * @param instrs  Instructions to emit into
+   * @param value   Literal to emit
+   * @return        Index of emitted literal.
+   */
+  static auto emit_load_literal(Instructions& instrs, std::regex const& re) -> Instruction::Index
+  {
+    instrs.emplace_back(Instruction::Opcode::load_literal, re);
+    return instrs.size() - 1;
+  }
+
+  /** @brief emit a load variable instruction
+   *
+   * @param instrs  Instructions to emit into
+   * @param vn      Variable name
+   * @return        Index of emitted instruction
+   */
+  static auto emit_load_variable(Instructions& instrs, VariableName const& vn) -> Instruction::Index
+  {
+    instrs.emplace_back(Instruction::Opcode::load_variable, vn);
     return instrs.size() - 1;
   }
 
@@ -98,20 +148,52 @@ public:
     std::abort();
   }
 
-  static auto emit_print([[maybe_unused]] Instructions& instrs,
-                         [[maybe_unused]] std::vector<ExprIndex> const& op1,
-                         [[maybe_unused]] Instruction::Index op2) -> ExprIndex
+  static auto emit_print(Instructions& instrs, Instruction::Index op1, Instruction::Index op2)
+    -> Instruction::Index
   {
-    // TODO(mgrettondann): Implement
-    std::abort();
+    auto size{static_cast<Instruction::Offset>(instrs.size())};
+    auto off1{static_cast<Instruction::Offset>(op1 - size)};
+    auto off2{static_cast<Instruction::Offset>(op2 - size)};
+    instrs.emplace_back(Instruction::Opcode::print, off1, off2);
+    return instrs.size() - 1;
   }
 
-  static auto emit_printf([[maybe_unused]] Instructions& instrs,
-                          [[maybe_unused]] std::vector<ExprIndex> const& op1,
-                          [[maybe_unused]] Instruction::Index op2) -> ExprIndex
+  static auto emit_printf(Instructions& instrs, Instruction::Index op1, Instruction::Index op2)
+    -> Instruction::Index
   {
-    // TODO(mgrettondann): Implement
-    std::abort();
+    assert(instrs[op2].opcode() == Instruction::Opcode::open_param_pack);
+    auto size{static_cast<Instruction::Offset>(instrs.size())};
+    auto off1{static_cast<Instruction::Offset>(op1 - size)};
+    auto off2{static_cast<Instruction::Offset>(op2 - size)};
+    instrs.emplace_back(Instruction::Opcode::printf, off1, off2);
+    return instrs.size() - 1;
+  }
+
+  static auto emit_open_param_pack(Instructions& instrs) -> Instruction::Index
+  {
+    instrs.emplace_back(Instruction::Opcode::open_param_pack);
+    return instrs.size() - 1;
+  }
+
+  static auto emit_push_param(Instructions& instrs, Instruction::Index op1, Instruction::Index op2)
+    -> Instruction::Index
+  {
+    assert(instrs[op1].opcode() == Instruction::Opcode::open_param_pack);
+    auto size{static_cast<Instruction::Offset>(instrs.size())};
+    auto off1{static_cast<Instruction::Offset>(op1 - size)};
+    auto off2{static_cast<Instruction::Offset>(op2 - size)};
+    instrs.emplace_back(Instruction::Opcode::push_param, off1, off2);
+    return instrs.size() - 1;
+  }
+
+  static auto emit_close_param_pack(Instructions& instrs, Instruction::Index op1)
+    -> Instruction::Index
+  {
+    assert(instrs[op1].opcode() == Instruction::Opcode::open_param_pack);
+    auto size{static_cast<Instruction::Offset>(instrs.size())};
+    auto off1{static_cast<Instruction::Offset>(op1 - size)};
+    instrs.emplace_back(Instruction::Opcode::close_param_pack, off1);
+    return instrs.size() - 1;
   }
 
   /** \brief Parse optional newlines.
@@ -210,6 +292,49 @@ public:
     }
   }
 
+  /** Whether an expression is unary or non-unary. */
+  enum class UnaryType {
+    unary,      ///< Unary expression
+    non_unary,  ///< Non-unary expression
+    both        ///< Expression could be unary or non-unary
+  };
+
+  /** @brief Parse a primary expression
+   *
+   * @param instrs
+   *
+   * @param  instrs     Where to emit code to
+   * @param  expr_type  Expression type
+   * @return            Index of emitted expression, and updated expression type
+   */
+  auto parse_primary_expr_opt(Instructions& instrs, ExprType expr_type, UnaryType unary_type)
+    -> std::pair<ExprIndex, ExprType>
+  {
+    if (unary_type == UnaryType::unary) {
+      return std::make_pair(std::nullopt, expr_type);
+    }
+
+    auto const& tok{lexer_->peek(false)};
+    ExprIndex idx{std::nullopt};
+    switch (tok.type()) {
+    case Token::Type::integer:
+      idx = emit_load_literal(instrs, static_cast<int64_t>(tok.integer()));
+      lexer_->chew(false);
+      break;
+    case Token::Type::string:
+      idx = emit_load_literal(instrs, tok.string());
+      lexer_->chew(false);
+      break;
+    case Token::Type::ere:
+      idx = emit_load_literal(instrs, std::regex{tok.ere(), std::regex_constants::awk});
+      lexer_->chew(false);
+      break;
+    default:
+      break;
+    }
+    return std::make_pair(idx, expr_type);
+  }
+
   /** @brief Parse an expression (of any type)
    *
    * @param  instrs     Where to emit code to
@@ -274,12 +399,10 @@ public:
    * | expr `|` simple_get                 | Expr                 | Both                 |
    * | simple_get `<` expr                 | Expr                 | Non-unary            |
    */
-  // NOLINTNEXTLINE
-  auto parse_expr_opt([[maybe_unused]] Instructions& instrs, [[maybe_unused]] ExprType expr_type)
-    -> std::pair<ExprIndex, ExprType>
+  auto parse_expr_opt(Instructions& instrs, ExprType expr_type,
+                      [[maybe_unused]] UnaryType unary_type) -> std::pair<ExprIndex, ExprType>
   {
-    // TODO(mgrettondann): Implement
-    return std::make_pair(std::nullopt, expr_type);
+    return parse_primary_expr_opt(instrs, expr_type, UnaryType::both);
   }
 
   /** @brief Parse an expression list (of any type)
@@ -294,7 +417,7 @@ public:
     std::size_t element_count{0};  // Number of elements
     while (true) {
       // Parse the expression
-      auto [expr_idx, expr_type] = parse_expr_opt(instrs, to_expr_type(list_type));
+      auto [expr_idx, expr_type] = parse_expr_opt(instrs, to_expr_type(list_type), UnaryType::both);
       if (!expr_idx.has_value()) {
         if (element_count != 0) {
           error(Msg::expected_expr_after_comma, lexer_->location(), lexer_->peek(false));
@@ -371,7 +494,8 @@ public:
 
     lexer_->chew(false);
 
-    [[maybe_unused]] auto [out_expr, expr_type] = parse_expr_opt(instrs, ExprType::expr);
+    [[maybe_unused]] auto [out_expr, expr_type] =
+      parse_expr_opt(instrs, ExprType::expr, UnaryType::both);
     if (!out_expr.has_value()) {
       error(Msg::expected_expr_after_redirection, lexer_->location(), tok, lexer_->peek(false));
     }
@@ -380,7 +504,7 @@ public:
       return emit_popen(instrs, *out_expr);  // NOLINT(bugprone-unchecked-optional-access)
     }
 
-    Instruction::Index const opt{emit_lit(instrs, is_append ? 1 : 0)};
+    Instruction::Index const opt{emit_load_literal(instrs, is_append ? INT64_C(1) : INT64_C(0))};
     return emit_open(instrs, *out_expr, opt);  // NOLINT(bugprone-unchecked-optional-access)
   }
 
@@ -431,14 +555,39 @@ public:
     // Now get the redirection.  If we don't have a redirection we will output to standard out.
     ExprIndex redir{parse_redirection_opt(instrs)};
     if (!redir.has_value()) {
-      redir = emit_lit(instrs, STDOUT_FILENO);
+      redir = emit_load_literal(instrs, static_cast<int64_t>(STDOUT_FILENO));
     }
 
-    if (is_printf) {
-      emit_printf(instrs, indices, *redir);
+    Instruction::Index fs{0};
+    if (!is_printf && indices.size() > 1) {
+      fs = emit_load_variable(instrs, VariableName{"FS"});
+    }
+
+    if (!is_printf) {
+      bool first{true};
+      for (auto const idx : indices) {
+        if (first) {
+          first = false;
+        }
+        else {
+          assert(redir.has_value());
+          emit_print(instrs, fs, *redir);
+        }
+        assert(idx.has_value());
+        assert(redir.has_value());
+        emit_print(instrs, *idx, *redir);
+      }
+      assert(redir.has_value());
+      emit_print(instrs, emit_load_variable(instrs, VariableName{"RS"}), *redir);
     }
     else {
-      emit_print(instrs, indices, *redir);
+      Instruction::Index const pp{emit_open_param_pack(instrs)};
+      for (auto const idx : indices) {
+        assert(idx.has_value());
+        emit_push_param(instrs, pp, *idx);
+      }
+      assert(redir.has_value());
+      emit_printf(instrs, emit_close_param_pack(instrs, pp), *redir);
     }
   }
 
@@ -466,7 +615,7 @@ public:
       return true;
     }
 
-    return parse_expr_opt(instrs, ExprType::expr).first.has_value();
+    return parse_expr_opt(instrs, ExprType::expr, UnaryType::both).first.has_value();
   }
 
   auto parse_terminatable_statement_opt(Instructions& instrs) -> ParseStatementResult
@@ -487,9 +636,9 @@ public:
       break;
     case Token::Type::exit: {
       lexer_->chew(false);
-      auto expr{parse_expr_opt(instrs, ExprType::expr).first};
+      auto expr{parse_expr_opt(instrs, ExprType::expr, UnaryType::both).first};
       if (!expr.has_value()) {
-        expr = emit_lit(instrs, 0);
+        expr = emit_load_literal(instrs, INT64_C(0));
       }
       assert(expr.has_value());
 
@@ -498,9 +647,9 @@ public:
     }
     case Token::Type::return_: {
       lexer_->chew(false);
-      auto expr{parse_expr_opt(instrs, ExprType::expr).first};
+      auto expr{parse_expr_opt(instrs, ExprType::expr, UnaryType::both).first};
       if (!expr.has_value()) {
-        expr = emit_lit(instrs, 0);
+        expr = emit_load_literal(instrs, INT64_C(0));
       }
       emit_return(instrs, *expr);
       break;

@@ -90,22 +90,18 @@ public:
     while (pc != length) {
       auto it{begin + pc};
       switch (it->opcode()) {
-      case Instruction::Opcode::load_literal_int:
-        values.emplace_back(static_cast<std::int64_t>(std::get<std::uint64_t>(it->op1())));
+      case Instruction::Opcode::load_literal:
+        values.emplace_back(std::get<std::int64_t>(it->op1()));
         break;
-      case Instruction::Opcode::load_literal_float:
-        values.emplace_back(std::get<double>(it->op1()));
+      case Instruction::Opcode::load_field:
+      case Instruction::Opcode::load_variable:
+      case Instruction::Opcode::printf:
+      case Instruction::Opcode::open_param_pack:
+      case Instruction::Opcode::close_param_pack:
+      case Instruction::Opcode::push_param:
+        std::abort();
         break;
-      case Instruction::Opcode::load_literal_str:
-        values.emplace_back(std::get<std::string>(it->op1()));
-        break;
-      case Instruction::Opcode::load_field_str:
-      case Instruction::Opcode::load_rec_str:
-      case Instruction::Opcode::load_variable_str:
-      case Instruction::Opcode::load_variable_int:
-        abort();
-        break;
-      case Instruction::Opcode::print_str:
+      case Instruction::Opcode::print:
         std::cout << std::get<std::string>(
           values.at(pc + std::get<Instruction::Offset>(it->op1())));
         break;
