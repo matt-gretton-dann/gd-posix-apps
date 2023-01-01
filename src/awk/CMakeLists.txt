@@ -34,7 +34,7 @@ if (RUN_UNIT_TESTS)
           test-lexer.cc
           test-reader.cc)
   target_add_clang_format(test-libawk)
-  catch_discover_tests(test-libawk PROPERTIES FIXTURES_REQUIRED testutil_setup EXTRA_ARGS " -s")
+  catch_discover_tests(test-libawk PROPERTIES FIXTURES_REQUIRED testutil_setup EXTRA_ARGS "-s")
 endif ()
 
 add_utility(NAME awk CAT_ID awk SOURCES awk.cc)
