@@ -626,8 +626,10 @@ public:
     }
 
     if (!is_printf && indices.empty()) {
-      // TODO(mgrettondann): Implement generation of $0.
-      std::abort();
+      // We have a plain print.  We want to print $0.
+      auto const lit_expr{emit_load_literal(instrs, INT64_C(0))};
+      auto const field_expr{emit_load_field(instrs, lit_expr)};
+      indices.emplace_back(field_expr);
     }
 
     // Now get the redirection.  If we don't have a redirection we will output to standard out.

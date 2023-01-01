@@ -38,6 +38,13 @@ Mark 5.00 20
 Mary 5.50 22
 Susie 4.25 18
 """, in_file=emp_data)
+test_awk('{ print; }', """Beth 4.00 0
+Dan 3.75 0
+Kathy 4.00 10
+Mark 5.00 20
+Mary 5.50 22
+Susie 4.25 18
+""", in_file=emp_data)
 test_awk('{ print $1; }', """Beth
 Dan
 Kathy
