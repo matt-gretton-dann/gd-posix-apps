@@ -7,20 +7,24 @@
 import sys
 import int_tests
 
+
+def test_awk(program, expected_stdout, in_file=None):
+    cmd_line = [tester.exe(), program]
+    if in_file is not None:
+        cmd_line.append(in_file)
+    tester.run_test(cmd_line, test_name=program, expected_rc=0,
+                    expected_stdout=expected_stdout)
+
+
 tester = int_tests.TestRunner()
 
 tester.run_test(
     [tester.exe()], test_name="Empty command line", expected_rc=1, stdin="",
     expected_stdout="", expected_stderr=None)
 
-tester.run_test(
-    [tester.exe(), 'BEGIN {}\\nEND {}'], test_name="Empty actions",
-    expected_rc=0, stdin="", expected_stdout="", expected_stderr='')
-
-# tester.run_test(
-#    [tester.exe(), 'BEGIN { print "Hello world!\\n"}'],
-#    test_name="Hello world begin.",
-#    expected_stdout='Hello world!\n',
-#    expected_stderr='')
+test_awk('BEGIN {}\\nEND {}', '')
+test_awk('BEGIN { print "Hello world!"; }', "Hello world!\n")
+test_awk('END { print "Goodbye world!"; }', "Goodbye world!\n")
+test_awk('BEGIN { print 1, 2; }', "1 2\n")
 
 tester.summarize()

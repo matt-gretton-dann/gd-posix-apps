@@ -560,7 +560,7 @@ public:
 
     Instruction::Index fs{0};
     if (!is_printf && indices.size() > 1) {
-      fs = emit_load_variable(instrs, VariableName{"FS"});
+      fs = emit_load_variable(instrs, VariableName{"OFS"});
     }
 
     if (!is_printf) {
@@ -578,7 +578,7 @@ public:
         emit_print(instrs, *idx, *redir);
       }
       assert(redir.has_value());
-      emit_print(instrs, emit_load_variable(instrs, VariableName{"RS"}), *redir);
+      emit_print(instrs, emit_load_variable(instrs, VariableName{"ORS"}), *redir);
     }
     else {
       Instruction::Index const pp{emit_open_param_pack(instrs)};

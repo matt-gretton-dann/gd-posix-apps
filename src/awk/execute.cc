@@ -6,12 +6,15 @@
 
 #include "gd/nl_types.h"
 
+#include "gd/format.hh"
 #include "gd/stdlib.h"
+#include "gd/unistd.h"
 
 #include <map>
 #include <memory>
 #include <optional>
 #include <ostream>
+#include <regex>
 #include <string>
 #include <variant>
 #include <vector>
@@ -37,7 +40,7 @@ template<typename... Ts>
 namespace GD::Awk::Details {
 
 /// A value - either string, signed integer, or double.
-using ExecutionValue = std::variant<std::string, std::int64_t, double, std::nullopt_t>;
+using ExecutionValue = std::variant<std::string, std::int64_t, double, std::regex, std::nullopt_t>;
 
 /// Mapping of variable names to values.
 using VariableMap = std::map<std::string, ExecutionValue>;
@@ -80,7 +83,58 @@ public:
     return true;
   }
 
-  // NOLINTNEXTLINE
+  static auto interpret_literal(Instruction::Operand const& op) -> ExecutionValue
+  {
+    return std::visit(
+      GD::Overloaded{
+        [](std::string const& s) { return ExecutionValue{s}; },
+        [](std::int64_t v) { return ExecutionValue{v}; },
+        [](double v) { return ExecutionValue{static_cast<double>(v)}; },
+        [](std::regex const& re) { return ExecutionValue{static_cast<std::regex>(re)}; },
+        [](auto const&) {
+          std::abort();
+          return ExecutionValue{std::nullopt};
+        }},
+      op);
+  }
+
+  static auto read_integer(std::vector<ExecutionValue> const& values,
+                           Instructions::difference_type pc, Instruction::Operand const& delta)
+    -> std::int64_t
+  {
+    return std::visit(GD::Overloaded{
+                        [](std::int64_t v) { return v; },
+                        [](auto const&) {
+                          std::abort();
+                          return INT64_C(0);
+                        },
+                      },
+                      values.at(pc + std::get<Instruction::Offset>(delta)));
+  }
+
+  [[nodiscard]] auto read_variable(Instruction::Operand const& var_name) const -> ExecutionValue
+  {
+    return var(std::get<VariableName>(var_name).get());
+  }
+
+  auto format_value(std::vector<ExecutionValue> const& values, Instructions::difference_type pc,
+                    Instruction::Operand const& delta) -> std::string
+  {
+    return std::visit(GD::Overloaded{
+                        [](std::int64_t v) { return std::to_string(v); },
+                        [this](double v) {
+                          auto ofmt{std::get<std::string>(var("OFMT"))};
+                          return fmt::vformat(ofmt, fmt::make_format_args(v));
+                        },
+                        [](std::string const& s) { return s; },
+                        [](auto const&) {
+                          std::abort();
+                          return std::string{};
+                        },
+                      },
+                      values.at(pc + std::get<Instruction::Offset>(delta)));
+  }  // namespace GD::Awk::Details
+
   void execute([[maybe_unused]] ParsedProgram const& program, Instructions::const_iterator begin,
                Instructions::const_iterator end)
   {
@@ -91,26 +145,29 @@ public:
       auto it{begin + pc};
       switch (it->opcode()) {
       case Instruction::Opcode::load_literal:
-        values.emplace_back(std::get<std::int64_t>(it->op1()));
+        values.at(pc) = (interpret_literal(it->op1()));
+        break;
+      case Instruction::Opcode::load_variable:
+        values.at(pc) = read_variable(it->op1());
         break;
       case Instruction::Opcode::load_field:
-      case Instruction::Opcode::load_variable:
       case Instruction::Opcode::printf:
       case Instruction::Opcode::open_param_pack:
       case Instruction::Opcode::close_param_pack:
       case Instruction::Opcode::push_param:
         std::abort();
         break;
-      case Instruction::Opcode::print:
-        std::cout << std::get<std::string>(
-          values.at(pc + std::get<Instruction::Offset>(it->op1())));
+      case Instruction::Opcode::print: {
+        auto stream{read_integer(values, pc, it->op2())};
+        auto buf{format_value(values, pc, it->op1())};
+        write(static_cast<int>(stream), buf.data(), buf.size());
         break;
+      }
       }
       ++pc;
     }
   }
 
-private:
   /** @brief Read the value of the variable \a var.
    *
    * @param  var Variable to read
@@ -131,7 +188,8 @@ private:
    * @param var   Variable to set
    * @param value Value
    *
-   * If \a var does not exist then a new variable is created at the global state.
+   * If \a var does not exist then a new variable is created at the global
+   * state.
    */
   void var(std::string const& var, ExecutionValue const& value)
   {
@@ -146,16 +204,22 @@ private:
     variables_stack_.back().insert_or_assign(var, value);
   }
 
+private:
   std::list<VariableMap> variables_stack_;
 };
 
 }  // namespace GD::Awk::Details
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-void GD::Awk::execute(const ParsedProgram& program, std::vector<std::string> const& initial_vars,
+void GD::Awk::execute(ParsedProgram const& program, std::vector<std::string> const& initial_vars,
                       std::vector<std::string> const& cmd_line)
 {
   Details::ExecutionState state;
+
+  // Default values of variables
+  state.var("OFS", " ");
+  state.var("ORS", "\n");
+  state.var("OFMT", "%.6g");
 
   // Set command line variables
   for (auto const& var : initial_vars) {
