@@ -7,9 +7,11 @@
 #include "gd/nl_types.h"
 
 #include "gd/format.hh"
+#include "gd/span.hh"
 #include "gd/stdlib.h"
 #include "gd/unistd.h"
 
+#include <cctype>
 #include <map>
 #include <memory>
 #include <optional>
@@ -117,6 +119,19 @@ public:
     return var(std::get<VariableName>(var_name).get());
   }
 
+  [[nodiscard]] auto read_field(std::vector<ExecutionValue> const& values,
+                                Instructions::difference_type pc,
+                                Instruction::Operand const& delta) const -> ExecutionValue
+  {
+    std::int64_t const field{
+      std::get<std::int64_t>(values.at(pc + std::get<Instruction::Offset>(delta)))};
+    if (field < static_cast<std::int64_t>(fields_.size())) {
+      return fields_.at(field);
+    }
+
+    return "";
+  }
+
   auto format_value(std::vector<ExecutionValue> const& values, Instructions::difference_type pc,
                     Instruction::Operand const& delta) -> std::string
   {
@@ -151,6 +166,8 @@ public:
         values.at(pc) = read_variable(it->op1());
         break;
       case Instruction::Opcode::load_field:
+        values.at(pc) = read_field(values, pc, it->op1());
+        break;
       case Instruction::Opcode::printf:
       case Instruction::Opcode::open_param_pack:
       case Instruction::Opcode::close_param_pack:
@@ -204,8 +221,103 @@ public:
     variables_stack_.back().insert_or_assign(var, value);
   }
 
+  auto parse_record(StreamInputFile& input_file) -> bool
+  {
+    // Determine the record separator
+    std::string rs_var(std::get<std::string>(var("RS")));
+    if (rs_var.size() != 1) {
+      // TODO(mgrettondann): Implement
+      // Empty rs changes parsing of newlines, longer than 1 character is undefined behaviour.
+      std::abort();
+    }
+    char const rs{rs_var[0]};
+
+    // Loop round reading a byte at a time until we get to the record separator symbol.
+    std::string record;
+    int c{input_file.getc()};
+    while (c != EOF && c != rs) {
+      record += static_cast<char>(c);
+      c = input_file.getc();
+    }
+
+    // Handle end of file.
+    if (c == EOF && record.empty()) {
+      return false;
+    }
+
+    parse_record(record);
+    return true;
+  }
+
+  void parse_record(std::string const& record)
+  {
+    // Clear the current fields, and set $0.
+    fields_.clear();
+    fields_.push_back(record);
+
+    // Determine the field separator.
+    std::string fs_var(std::get<std::string>(var("FS")));
+    if (fs_var.empty()) {
+      // TODO(mgrettondann): Implement: Undefined behaviour
+      std::abort();
+    }
+
+    if (fs_var == " ") {
+      parse_record_space(record);
+    }
+    else if (fs_var.size() == 1) {
+      parse_record_char(record, fs_var[0]);
+    }
+    else {
+      parse_record_regex(record, std::regex{fs_var, std::regex_constants::awk});
+    }
+
+    var("NF", static_cast<std::int64_t>(fields_.size() - 1));
+  }
+
 private:
+  void parse_record_space(std::string const& record)
+  {
+    auto it{fields_.insert(fields_.end(), std::string{})};
+
+    for (auto c : record) {
+      if (std::isblank(c) != 0 || c == '\n') {
+        if (!it->empty()) {
+          it = fields_.insert(fields_.end(), std::string{});
+        }
+        continue;
+      }
+
+      *it += c;
+    }
+  }
+
+  void parse_record_char(std::string const& record, char fs)
+  {
+    auto it{fields_.insert(fields_.end(), std::string{})};
+
+    for (auto c : record) {
+      if (c == fs) {
+        if (!it->empty()) {
+          it = fields_.insert(fields_.end(), std::string{});
+        }
+        continue;
+      }
+
+      *it += c;
+    }
+  }
+
+  // NOLINTNEXTLINE
+  void parse_record_regex([[maybe_unused]] std::string const& record,
+                          [[maybe_unused]] std::regex const& re)
+  {
+    // TODO(mgrettondann): Implement - handling regex Field separators
+    std::abort();
+  }
+
   std::list<VariableMap> variables_stack_;
+  std::vector<std::string> fields_;
 };
 
 }  // namespace GD::Awk::Details
@@ -217,9 +329,12 @@ void GD::Awk::execute(ParsedProgram const& program, std::vector<std::string> con
   Details::ExecutionState state;
 
   // Default values of variables
+  state.var("FS", " ");
+  state.var("NR", 0);
   state.var("OFS", " ");
   state.var("ORS", "\n");
   state.var("OFMT", "%.6g");
+  state.var("RS", "\n");
 
   // Set command line variables
   for (auto const& var : initial_vars) {
@@ -238,8 +353,15 @@ void GD::Awk::execute(ParsedProgram const& program, std::vector<std::string> con
       continue;
     }
 
+    state.var("FILENAME", operand);
+    state.var("NR", 0);
+    auto file{GD::StreamInputFile(operand)};
     auto [record_begin, record_end] = program.per_record_instructions();
-    state.execute(program, record_begin, record_end);
+    while (state.parse_record(file)) {
+      std::int64_t const nr{std::get<std::int64_t>(state.var("NR"))};
+      state.var("NR", nr + 1);
+      state.execute(program, record_begin, record_end);
+    }
   }
 
   auto [end_begin, end_end] = program.end_instructions();

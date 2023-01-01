@@ -76,14 +76,19 @@ try {
     if (optind >= argc) {
       error(Msg::missing_program);
     }
-    reader = std::make_unique<GD::Awk::StringReader>(args[optind]);
+    reader = std::make_unique<GD::Awk::StringReader>(args[optind++]);
   }
   else {
     reader = std::make_unique<GD::Awk::FilesReader>(files);
   }
 
+  std::vector<std::string> data_files;
+  for (; optind < argc; ++optind) {
+    data_files.emplace_back(args[optind]);
+  }
+
   auto program{parse(std::make_unique<GD::Awk::Lexer>(std::move(reader)))};
-  execute(program, variable_assignments, files);
+  execute(program, variable_assignments, data_files);
 
   return EXIT_SUCCESS;
 }  // namespace
