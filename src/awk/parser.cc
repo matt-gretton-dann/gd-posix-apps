@@ -34,8 +34,85 @@ template<typename... Ts>
 namespace GD::Awk::Details {
 class ParseState
 {
+  using ExprIndex = std::optional<Instruction::Index>;
+
 public:
   explicit ParseState(std::unique_ptr<Lexer>&& lexer) : lexer_(std::move(lexer)) {}
+
+  /** @brief emit a literal instruction
+   *
+   * @param instrs  Instructions to emit into
+   * @param value   Literal to emit
+   * @return        Index of emitted literal.
+   */
+  static auto emit_lit(Instructions& instrs, std::int64_t value) -> Instruction::Index
+  {
+    instrs.emplace_back(Instruction::Opcode::load_literal_int, value);
+    return instrs.size() - 1;
+  }
+
+  static auto emit_break([[maybe_unused]] Instructions& instrs) -> Instruction::Index
+  {
+    // TODO(mgrettondann): Implement
+    std::abort();
+  }
+
+  static auto emit_continue([[maybe_unused]] Instructions& instrs) -> Instruction::Index
+  {
+    // TODO(mgrettondann): Implement
+    std::abort();
+  }
+
+  static auto emit_next([[maybe_unused]] Instructions& instrs) -> Instruction::Index
+  {
+    // TODO(mgrettondann): Implement
+    std::abort();
+  }
+
+  static auto emit_exit([[maybe_unused]] Instructions& instrs,
+                        [[maybe_unused]] Instruction::Index op1) -> Instruction::Index
+  {
+    // TODO(mgrettondann): Implement
+    std::abort();
+  }
+
+  static auto emit_return([[maybe_unused]] Instructions& instrs,
+                          [[maybe_unused]] Instruction::Index op1) -> Instruction::Index
+  {
+    // TODO(mgrettondann): Implement
+    std::abort();
+  }
+
+  static auto emit_open([[maybe_unused]] Instructions& instrs,
+                        [[maybe_unused]] Instruction::Index op1,
+                        [[maybe_unused]] Instruction::Index op2) -> Instruction::Index
+  {
+    // TODO(mgrettondann): Implement
+    std::abort();
+  }
+
+  static auto emit_popen([[maybe_unused]] Instructions& instrs,
+                         [[maybe_unused]] Instruction::Index op1) -> Instruction::Index
+  {
+    // TODO(mgrettondann): Implement
+    std::abort();
+  }
+
+  static auto emit_print([[maybe_unused]] Instructions& instrs,
+                         [[maybe_unused]] std::vector<ExprIndex> const& op1,
+                         [[maybe_unused]] Instruction::Index op2) -> ExprIndex
+  {
+    // TODO(mgrettondann): Implement
+    std::abort();
+  }
+
+  static auto emit_printf([[maybe_unused]] Instructions& instrs,
+                          [[maybe_unused]] std::vector<ExprIndex> const& op1,
+                          [[maybe_unused]] Instruction::Index op2) -> ExprIndex
+  {
+    // TODO(mgrettondann): Implement
+    std::abort();
+  }
 
   /** \brief Parse optional newlines.
    *
@@ -77,12 +154,374 @@ public:
     return ParseStatementResult::none;
   }
 
+  /** Types of expression.
+   *
+   * There are two types of expression: print_expr, and plain expr.
+   *
+   * Unfortunately, due to parser ambiguities we can get in the situation where we don't know which
+   * we have. Therefore, we record a third type 'maybe_expr'.
+   */
+  enum class ExprType {
+    print_expr,  ///< Definitely a print_expr.
+    expr,        ///< Definitely an expr.
+    maybe_expr   ///< Could be print_expr or expr.
+  };
+
+  /** Types of expression list.
+   *
+   * There are three types of expression list:
+   *  * print_expr_list - used in print & printf statements
+   *  * expr_list - A list of expressions that may have only one entry.
+   *  * multiple_expr_list - A list of expressions that must have at least two entries.
+   *
+   * However, print_expr_list and multiple_expr_list can appear in contexts where we don't know
+   * which we have.  So we provide a fourth 'maybe' option to be used when we are uncertain.
+   */
+  enum class ExprListType {
+    print_expr_list,          ///< Definitely a print_expr_list
+    expr_list,                ///< Definitely an expr_list
+    multiple_expr_list,       ///< Definitely a multiple_expr_list
+    maybe_multiple_expr_list  ///< Could be print_expr_list or multiple_expr_list.
+  };
+
+  static auto to_expr_type(ExprListType t) -> ExprType
+  {
+    switch (t) {
+    case ExprListType::print_expr_list:
+      return ExprType::print_expr;
+    case ExprListType::expr_list:
+    case ExprListType::multiple_expr_list:
+      return ExprType::expr;
+    case ExprListType::maybe_multiple_expr_list:
+      return ExprType::maybe_expr;
+    }
+  }
+
+  static auto to_expr_list_type(ExprType t, ExprListType expr_type) -> ExprListType
+  {
+    switch (t) {
+    case ExprType::print_expr:
+      return ExprListType::print_expr_list;
+    case ExprType::expr:
+      return expr_type == ExprListType::expr_list ? ExprListType::expr_list
+                                                  : ExprListType::multiple_expr_list;
+    case ExprType::maybe_expr:
+      return ExprListType::maybe_multiple_expr_list;
+    }
+  }
+
+  /** @brief Parse an expression (of any type)
+   *
+   * @param  instrs     Where to emit code to
+   * @param  expr_type  Expression type
+   * @return            Index of emitted expression, and updated expression type
+   *
+   * The official grammar for awk classifies expressions into two main classes: print_expr or expr.
+   * The print_expr class is a subset of expr - it basically excludes getline calls, and comparison
+   * operators.
+   *
+   * Each of these two classes is further subdivided into unary ond non-unary.  The purpose of this
+   * seems to be to exclude unary '+' and '-' from the right hand side of string concatenation.
+   *
+   * In the grammar comments before functions ignore these differences for simplicity of exposition.
+   * The following table details the classifications.
+   *
+   * | Pattern                             | Expr or print_expr?  | Unary or non-unary?  |
+   * | :---------------------------------- | :------------------- | :------------------- |
+   * | + expr                              | Both                 | Unary                |
+   * | - expr                              | Both                 | Unary                |
+   * | ( expr )                            | Both                 | Non-unary            |
+   * | ! expr                              | Both                 | Non-unary            |
+   * | expr * expr                         | Both                 | Both                 |
+   * | expr / expr                         | Both                 | Both                 |
+   * | expr % expr                         | Both                 | Both                 |
+   * | expr ^ expr                         | Both                 | Both                 |
+   * | expr + expr                         | Both                 | Both                 |
+   * | expr - expr                         | Both                 | Both                 |
+   * | expr non_unary_expr                 | Both                 | Both                 |
+   * | expr < expr                         | Expr                 | Both                 |
+   * | expr <= expr                        | Expr                 | Both                 |
+   * | expr != expr                        | Expr                 | Both                 |
+   * | expr == expr                        | Expr                 | Both                 |
+   * | expr >= expr                        | Expr                 | Both                 |
+   * | expr > expr                         | Expr                 | Both                 |
+   * | expr ~ expr                         | Both                 | Both                 |
+   * | expr !~ expr                        | Both                 | Both                 |
+   * | expr in name                        | Both                 | Both                 |
+   * | ( multiple_expr_list ) in name      | Both                 | Non-unary            |
+   * | expr && expr                        | Both                 | Both                 |
+   * | expr || expr                        | Both                 | Both                 |
+   * | expr ? expr : expr                  | Both                 | Both                 |
+   * | number                              | Both                 | Non-unary            |
+   * | string                              | Both                 | Non-unary            |
+   * | lvalue                              | Both                 | Non-unary            |
+   * | number                              | Both                 | Non-unary            |
+   * | ere                                 | Both                 | Non-unary            |
+   * | lvalue ++                           | Both                 | Non-unary            |
+   * | lvalue --                           | Both                 | Non-unary            |
+   * | ++ lvalue                           | Both                 | Non-unary            |
+   * | -- lvalue                           | Both                 | Non-unary            |
+   * | lvalue ^= expr                      | Both                 | Non-unary            |
+   * | lvalue *= expr                      | Both                 | Non-unary            |
+   * | lvalue /= expr                      | Both                 | Non-unary            |
+   * | lvalue %= expr                      | Both                 | Non-unary            |
+   * | lvalue += expr                      | Both                 | Non-unary            |
+   * | lvalue -= expr                      | Both                 | Non-unary            |
+   * | lvalue  = expr                      | Both                 | Non-unary            |
+   * | func_name( expr_list_opt )          | Both                 | Non-unary            |
+   * | builtin_func_name ( expr_list_opt ) | Both                 | Non-unary            |
+   * | builtin_func_name                   | Both                 | Non-unary            |
+   * | expr `|` simple_get                 | Expr                 | Both                 |
+   * | simple_get `<` expr                 | Expr                 | Non-unary            |
+   */
   // NOLINTNEXTLINE
-  auto parse_terminatable_statement_opt([[maybe_unused]] Instructions& instrs)
-    -> ParseStatementResult
+  auto parse_expr_opt([[maybe_unused]] Instructions& instrs, [[maybe_unused]] ExprType expr_type)
+    -> std::pair<ExprIndex, ExprType>
   {
     // TODO(mgrettondann): Implement
-    return ParseStatementResult::none;
+    return std::make_pair(std::nullopt, expr_type);
+  }
+
+  /** @brief Parse an expression list (of any type)
+   *
+   * @param instrs      Instructions to emit into
+   * @param inserter_it Iterator to use to insert the expression indices into a location
+   * @param list_type   What type of list are we processing?
+   */
+  void parse_expr_list_opt(Instructions& instrs, auto inserter_it, ExprListType list_type)
+  {
+    ExprListType const initial_list_type{list_type};
+    std::size_t element_count{0};  // Number of elements
+    while (true) {
+      // Parse the expression
+      auto [expr_idx, expr_type] = parse_expr_opt(instrs, to_expr_type(list_type));
+      if (!expr_idx.has_value()) {
+        if (element_count != 0) {
+          error(Msg::expected_expr_after_comma, lexer_->location(), lexer_->peek(false));
+        }
+        break;
+      }
+
+      // Insert index into list of expressions.
+      *inserter_it = expr_idx;
+      list_type = to_expr_list_type(expr_type, list_type);
+      ++element_count;
+
+      // Chew the comma, and newline separators.
+      if (lexer_->peek(false) != Token::Type::comma) {
+        break;
+      }
+      lexer_->chew(false);
+      parse_newline_opt();
+    }
+
+    // If on entry we didn't know what type of list this was and we now know it is a
+    // multiple_expr_list we should ensure that we have a ')' to finish the list off with.
+    if (initial_list_type == ExprListType::maybe_multiple_expr_list &&
+        list_type == ExprListType::multiple_expr_list) {
+      if (lexer_->peek(false) != Token::Type::rparens) {
+        error(Msg::expected_rparens_at_end_of_list, lexer_->location(), lexer_->peek(false));
+      }
+      lexer_->chew(false);
+    }
+
+    if (list_type == ExprListType::multiple_expr_list && element_count == 1) {
+      error(Msg::expected_two_exprs_in_list, lexer_->location(), lexer_->peek(false));
+    }
+  }
+
+  // NOLINTNEXTLINE
+  void parse_do_while([[maybe_unused]] Instructions& instrs)
+  {
+    // TODO(mgrettondann): Implement
+    std::abort();
+  }
+
+  /** @brief Parse a delete statement.
+   *
+   * @param  instrs Instructions to append to
+   *
+   * delete_statement : DELETE NAME LSQUARE expr_list RSQUARE
+   */
+  void parse_delete_statement([[maybe_unused]] Instructions& instrs)
+  {
+    assert(lexer_->peek(false) == Token::Type::delete_);
+    std::abort();
+  }
+
+  /** @brief Parse a redirection expression.
+   *
+   * @param  instrs Instructions to append to
+   *
+   * redirection : GREATER_THAN expr
+   *             | APPEND expr
+   *             | PIPE expr
+   */
+  auto parse_redirection_opt(Instructions& instrs) -> ExprIndex
+  {
+    auto tok{lexer_->peek(false)};
+
+    bool const is_open{tok == Token::Type::greater_than};
+    bool const is_append{tok == Token::Type::append};
+    bool const is_popen{tok == Token::Type::pipe};
+
+    if (!is_open && !is_append && !is_popen) {
+      return std::nullopt;
+    }
+
+    lexer_->chew(false);
+
+    [[maybe_unused]] auto [out_expr, expr_type] = parse_expr_opt(instrs, ExprType::expr);
+    if (!out_expr.has_value()) {
+      error(Msg::expected_expr_after_redirection, lexer_->location(), tok, lexer_->peek(false));
+    }
+
+    if (is_open) {
+      return emit_popen(instrs, *out_expr);  // NOLINT(bugprone-unchecked-optional-access)
+    }
+
+    Instruction::Index const opt{emit_lit(instrs, is_append ? 1 : 0)};
+    return emit_open(instrs, *out_expr, opt);  // NOLINT(bugprone-unchecked-optional-access)
+  }
+
+  /** @brief Parse a print statement.
+   *
+   * @param  instrs Instructions to append to
+   *
+   * simple_print_statement : PRINT print_expr_list_opt
+   *                        | PRINT LPARENS multiple_expr_list RPARENS
+   *                        | PRINTF print_expr_list
+   *                        | PRINTF LPARENS multiple_expr_list RPARENS
+   *
+   * redirection : GREATER_THAN expr
+   *             | APPEND expr
+   *             | PIPE expr
+   *
+   * print_statement : simple_print_statement
+   *                 | simple_print_statement redirection
+   */
+  void parse_print_statement(Instructions& instrs)
+  {
+    auto const& tok = lexer_->peek(false);
+    assert(tok == Token::Type::print || tok == Token::Type::printf);
+
+    bool const is_printf{tok == Token::Type::printf};
+
+    lexer_->chew(false);
+
+    // So the problem we have here is that the token '(' is valid is the first token in
+    // print_expr_list_opt.  So if that is the next token we have no idea whether we are parsing a
+    // print_expr_list or a multiple_expr_list.  Hence the maybe_multiple_expr_list where we leave
+    // it to the expression parser to work it out.
+    bool const maybe_multiple_expr_list{lexer_->peek(false) == Token::Type::lparens};
+    std::vector<ExprIndex> indices;
+    parse_expr_list_opt(instrs, std::back_inserter(indices),
+                        maybe_multiple_expr_list ? ExprListType::maybe_multiple_expr_list
+                                                 : ExprListType::print_expr_list);
+
+    if (is_printf && indices.empty()) {
+      error(Msg::expected_list_to_printf, lexer_->location(), lexer_->peek(false));
+    }
+
+    if (!is_printf && indices.empty()) {
+      // TODO(mgrettondann): Implement generation of $0.
+      std::abort();
+    }
+
+    // Now get the redirection.  If we don't have a redirection we will output to standard out.
+    ExprIndex redir{parse_redirection_opt(instrs)};
+    if (!redir.has_value()) {
+      redir = emit_lit(instrs, STDOUT_FILENO);
+    }
+
+    if (is_printf) {
+      emit_printf(instrs, indices, *redir);
+    }
+    else {
+      emit_print(instrs, indices, *redir);
+    }
+  }
+
+  /** @brief Parse a simple statement.
+   *
+   * @param  instrs Instructions to append to
+   * @return        Did we parse anything?
+   *
+   * simple_statement : DELETE NAME LSQUARE expr_list RSQUARE
+   *                  | expr
+   *                  | print_statement
+   *                  | empty
+   */
+  auto parse_simple_statement_opt(Instructions& instrs) -> bool
+  {
+    auto const& tok{lexer_->peek(false)};
+
+    if (tok == Token::Type::delete_) {
+      parse_delete_statement(instrs);
+      return true;
+    }
+
+    if (tok == Token::Type::print || tok == Token::Type::printf) {
+      parse_print_statement(instrs);
+      return true;
+    }
+
+    return parse_expr_opt(instrs, ExprType::expr).first.has_value();
+  }
+
+  auto parse_terminatable_statement_opt(Instructions& instrs) -> ParseStatementResult
+  {
+    auto const& tok{lexer_->peek(false)};
+    switch (tok.type()) {
+    case Token::Type::break_:
+      emit_break(instrs);
+      lexer_->chew(false);
+      break;
+    case Token::Type::continue_:
+      emit_continue(instrs);
+      lexer_->chew(false);
+      break;
+    case Token::Type::next:
+      emit_next(instrs);
+      lexer_->chew(false);
+      break;
+    case Token::Type::exit: {
+      lexer_->chew(false);
+      auto expr{parse_expr_opt(instrs, ExprType::expr).first};
+      if (!expr.has_value()) {
+        expr = emit_lit(instrs, 0);
+      }
+      assert(expr.has_value());
+
+      emit_exit(instrs, *expr);
+      break;
+    }
+    case Token::Type::return_: {
+      lexer_->chew(false);
+      auto expr{parse_expr_opt(instrs, ExprType::expr).first};
+      if (!expr.has_value()) {
+        expr = emit_lit(instrs, 0);
+      }
+      emit_return(instrs, *expr);
+      break;
+    }
+    case Token::Type::do_:
+      parse_do_while(instrs);
+      break;
+    default:
+      if (!parse_simple_statement_opt(instrs)) {
+        return ParseStatementResult::none;
+      }
+      break;
+    }
+
+    if (lexer_->peek(false) == Token::Type::semicolon ||
+        lexer_->peek(false) == Token::Type::newline) {
+      lexer_->chew(false);
+      return ParseStatementResult::terminated;
+    }
+
+    return ParseStatementResult::unterminated;
   }
 
   /** @brief Parse an optional statement
@@ -133,9 +572,8 @@ public:
     }
   }
 
-  /** \brief         Parse an optional action, generating code at the end of the instructions given.
-   *  \param  instrs Instructions to append to.
-   *  \return        True iff we parsed an action.
+  /** \brief         Parse an optional action, generating code at the end of the instructions
+   * given. \param  instrs Instructions to append to. \return        True iff we parsed an action.
    *
    * action_opt : LBRACE newline_opt statement_list_opt RBRACE
    *            | empty

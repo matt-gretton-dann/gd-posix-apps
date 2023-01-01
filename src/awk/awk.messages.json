@@ -146,6 +146,36 @@
         "id": 24,
         "description": "Expected ';' or '\\n', instead got {0}",
         "C": "Expected ';' or newline at the end of a statement, instead got {0}."
+      },
+      {
+        "msg": "expected_expr_after_redirection",
+        "id": 25,
+        "description": "Expected an expression after the redirection.  {0} contains the redirection token, {1} contains the token we got.",
+        "C": "Expected an expression after the redirection operator '{0}'.  Instead got {1}."
+      },
+      {
+        "msg": "expected_list_to_printf",
+        "id": 26,
+        "description": "Expected a list to printf, didn't get one.  Instead got {0}.",
+        "C": "Expected a list of expressions to print.  Instead got {0}."
+      },
+      {
+        "msg": "expected_expr_after_comma",
+        "id": 27,
+        "description": "Expected an expression after a comma.  Instead got {0}",
+        "C": "Expected an expression after a comma.  Instead got {0}."
+      },
+      {
+        "msg": "expected_rparens_at_end_of_list",
+        "id": 28,
+        "description": "Expected a ')' at the end of the list.  Instead got {0}",
+        "C": "Expected ')' at end of the list.  Instead got {0}."
+      },
+      {
+        "msg": "expected_two_exprs_in_list",
+        "id": 29,
+        "description": "Expected at least two items in the list",
+        "C": "Expected  at least two items in the list."
       }
     ]
   }
