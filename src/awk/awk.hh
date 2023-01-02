@@ -39,13 +39,29 @@ class ParseState;
 }  // namespace Details
 
 /** Internal type to differentiate a name.  */
-using Name = TypeWrapper<std::string, struct NameType>;
+using Name = TypeWrapper<std::string, struct NameTag>;
 
 /** Internal type to differentiate an ERE.  */
-using ERE = TypeWrapper<std::string, struct EREType>;
+using ERE = TypeWrapper<std::string, struct ERETag>;
 
 /** Internal type to differentiate a function name.  */
-using FuncName = TypeWrapper<std::string, struct FuncNameType>;
+using FuncName = TypeWrapper<std::string, struct FuncNameTag>;
+
+/** \brief A variable name.  Just a tagged string. */
+using VariableName = Name;
+
+/** What we use to represent an integer
+ *
+ * POSIX says that we should treat 'integers' as signed longs.  Even though this means different
+ * behaviours on LP64 and LLP64 systems.
+ */
+using Integer = TypeWrapper<signed long, struct IntegerTag>;  // NOLINT(google-runtime-int)
+
+/** What we use to represent a floating point number: */
+using Floating = double;
+
+/** Type to hold a file descriptor.  */
+using FileDescriptor = TypeWrapper<int, struct FDTag>;
 
 /** \brief  Token type.
  *
@@ -174,13 +190,13 @@ struct Token
    *  @param type    Type::integer
    *  @param integer Integer to store
    */
-  Token(Type type, std::uint64_t integer);
+  Token(Type type, Integer integer);
 
   /** @brief          Construct a token of Type::floating
    *  @param type     Type::floating
    *  @param floating Floating point number to store
    */
-  Token(Type type, double floating);
+  Token(Type type, Floating floating);
 
   /** \brief Get token type.  */
   [[nodiscard]] auto type() const -> Type;
@@ -195,10 +211,10 @@ struct Token
   [[nodiscard]] auto ere() const -> std::string const&;
 
   /** \brief  Get integer number stored in token. */
-  [[nodiscard]] auto integer() const -> std::uint64_t;
+  [[nodiscard]] auto integer() const -> Integer;
 
   /** \brief  Get floating-point number stored in token. */
-  [[nodiscard]] auto floating() const -> double;
+  [[nodiscard]] auto floating() const -> Floating;
 
   /** \brief  Get string stored in token. */
   [[nodiscard]] auto string() const -> std::string const&;
@@ -217,7 +233,7 @@ private:
   using Error = TypeWrapper<std::string, struct ErrorIntType>;
 
   /** The value of thos token.  */
-  std::variant<Type, BuiltinFunc, std::string, Name, ERE, FuncName, std::uint64_t, double, Error>
+  std::variant<Type, BuiltinFunc, std::string, Name, ERE, FuncName, Integer, Floating, Error>
     value_;
 };
 
@@ -495,9 +511,6 @@ private:
   std::optional<Token> t2_;    ///< Second pending token.
 };
 
-/** \brief A variable name.  Just a tagged string. */
-using VariableName = GD::TypeWrapper<std::string, struct VariableNameTag>;
-
 /** \brief  An Instruction.
  *
  * Instructions contain an opcode, and up to two, statically typed, operands.
@@ -521,24 +534,27 @@ using VariableName = GD::TypeWrapper<std::string, struct VariableNameTag>;
  *  * BFN: Builtin function name
  *  * I: Integer
  *  * F: Floating
+ *  * FD: File descriptor
+ *  * FL: Field ID
  *  * FN: Function name
  *  * NS: Numeric String
- *  * O: Offset
+ *  * PP: Parameter pack
+ *  * O(r): Offset to the result of a different instruction. r is type of result.
  *  * R: Regex
  *  * S: String
  *  * VN: Variable name
  *
  * | Opcode             |  Operand 1   |  Operand 2  |  Description                               |
  * | :----------------- | :----------- | :---------- | :----------------------------------------- |
- * | field              | O            |             | Calculate the field ID from <op1>          |
+ * | field              | O(I)         |             | Calculate the field ID from <op1>          |
  * | variable           | VN           |             | Name of a variable                         |
- * | load_literal       | I/F/S/R      |             | Result is the literal in <op1>             |
- * | load_lvalue        | O            |             | Load the lvalue identified by <op1>        |
- * | print              | O            | O           | Print the value <op1> to stream <op2>      |
- * | printf             | O            | O           | printf the params <op1> to stream <op2>    |
+ * | load_literal       | I/F/S/R/FD   |             | Result is the literal in <op1>             |
+ * | load_lvalue        | O(VN/FL)     |             | Load the lvalue identified by <op1>        |
+ * | print              | O(I/F/S)     | O(FD)       | Print the value <op1> to stream <op2>      |
+ * | printf             | O(I/F/S)     | O(FD)       | printf the params <op1> to stream <op2>    |
  * | open_param_pack    |              |             | Open a parameter pack                      |
- * | push_param         | O            | O           | Push expr <op2> onto the front of <op1>    |
- * | close_param_pack   | O            |             | Close the parameter pack <op1>             |
+ * | push_param         | O(PP)        | O(I/F/S)    | Push expr <op2> onto the front of <op1>    |
+ * | close_param_pack   | O(PP)        |             | Close the parameter pack <op1>             |
  *
  * Parameter packs are identified by the index of the instruction corresponding to the
  * 'open_param_pack'.
@@ -566,7 +582,8 @@ public:
   using Offset = std::make_signed_t<Index>;
 
   /** Valid operand types.  */
-  using Operand = std::variant<std::string, VariableName, Offset, std::int64_t, double, std::regex>;
+  using Operand =
+    std::variant<std::string, VariableName, Offset, Integer, Floating, std::regex, FileDescriptor>;
 
   /** \brief        Constructor
    *  \param opcode Opcode
