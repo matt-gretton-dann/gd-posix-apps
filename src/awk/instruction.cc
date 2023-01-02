@@ -147,13 +147,13 @@ void GD::Awk::Instruction::validate_operands() const
   case GD::Awk::Instruction::Opcode::close_param_pack:
   case GD::Awk::Instruction::Opcode::field:
   case GD::Awk::Instruction::Opcode::load_lvalue:
-    assert(std::holds_alternative<Offset>(*op1_));  // NOLINT
+    assert(std::holds_alternative<Index>(*op1_));  // NOLINT
     break;
   case GD::Awk::Instruction::Opcode::print:
   case GD::Awk::Instruction::Opcode::printf:
   case GD::Awk::Instruction::Opcode::push_param:
-    assert(std::holds_alternative<Offset>(*op1_));  // NOLINT
-    assert(std::holds_alternative<Offset>(*op2_));  // NOLINT
+    assert(std::holds_alternative<Index>(*op1_));  // NOLINT
+    assert(std::holds_alternative<Index>(*op2_));  // NOLINT
   }
 }
 

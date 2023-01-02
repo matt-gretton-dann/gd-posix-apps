@@ -515,15 +515,12 @@ private:
  *
  * Instructions contain an opcode, and up to two, statically typed, operands.
  *
- * References to other instructions are always PC relative - so that we can extract function
- * definitions easily.
- *
  * When executing instructions we assume we have a side-array that contains the result for the last
  * time each instruction was executed.  For example om how this works if we have:
  *
  *   0: load_variable a
  *   1: load_variable b
- *   2: add -1, -2
+ *   2: add 0, 1
  *
  *  Then the contents of the array after execution will be:
  *   0: numeric value of variable a
@@ -533,6 +530,7 @@ private:
  * Key for opcode table:
  *  * BFN: Builtin function name
  *  * I: Integer
+ *  * Ix(t): Index to the result of another instruction, t is the type of result expected.
  *  * F: Floating
  *  * FD: File descriptor
  *  * FL: Field ID
@@ -546,15 +544,15 @@ private:
  *
  * | Opcode             |  Operand 1   |  Operand 2  |  Description                               |
  * | :----------------- | :----------- | :---------- | :----------------------------------------- |
- * | field              | O(I)         |             | Calculate the field ID from <op1>          |
+ * | field              | Ix(I)        |             | Calculate the field ID from <op1>          |
  * | variable           | VN           |             | Name of a variable                         |
  * | load_literal       | I/F/S/R/FD   |             | Result is the literal in <op1>             |
- * | load_lvalue        | O(VN/FL)     |             | Load the lvalue identified by <op1>        |
- * | print              | O(I/F/S)     | O(FD)       | Print the value <op1> to stream <op2>      |
- * | printf             | O(I/F/S)     | O(FD)       | printf the params <op1> to stream <op2>    |
+ * | load_lvalue        | Ix(VN/FL)    |             | Load the lvalue identified by <op1>        |
+ * | print              | Ix(I/F/S)    | Ix(FD)      | Print the value <op1> to stream <op2>      |
+ * | printf             | Ix(I/F/S)    | Ix(FD)      | printf the params <op1> to stream <op2>    |
  * | open_param_pack    |              |             | Open a parameter pack                      |
- * | push_param         | O(PP)        | O(I/F/S)    | Push expr <op2> onto the front of <op1>    |
- * | close_param_pack   | O(PP)        |             | Close the parameter pack <op1>             |
+ * | push_param         | Ix(PP)       | Ix(I/F/S)   | Push expr <op2> onto the front of <op1>    |
+ * | close_param_pack   | Ix(PP)       |             | Close the parameter pack <op1>             |
  *
  * Parameter packs are identified by the index of the instruction corresponding to the
  * 'open_param_pack'.
@@ -583,7 +581,7 @@ public:
 
   /** Valid operand types.  */
   using Operand =
-    std::variant<std::string, VariableName, Offset, Integer, Floating, std::regex, FileDescriptor>;
+    std::variant<std::string, VariableName, Integer, Floating, std::regex, FileDescriptor, Index>;
 
   /** \brief        Constructor
    *  \param opcode Opcode

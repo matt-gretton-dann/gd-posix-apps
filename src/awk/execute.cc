@@ -103,34 +103,27 @@ public:
   }
 
   static auto read_integer(std::vector<ExecutionValue> const& values,
-                           Instructions::difference_type pc, Instruction::Operand const& delta)
-    -> Integer::underlying_type
+                           Instruction::Operand const& index) -> Integer::underlying_type
   {
-    ExecutionValue value{values.at(pc + std::get<Instruction::Offset>(delta))};
-    if (std::holds_alternative<Integer>(value)) {
-      return std::get<Integer>(value).get();
-    }
-
-    std::abort();
-    return Integer::underlying_type{0};
+    assert(std::holds_alternative<Instruction::Index>(index));
+    ExecutionValue value{values.at(std::get<Instruction::Index>(index))};
+    assert(std::holds_alternative<Integer>(value));
+    return std::get<Integer>(value).get();
   }
 
-  static auto read_fd(std::vector<ExecutionValue> const& values, Instructions::difference_type pc,
-                      Instruction::Operand const& delta) -> int
+  static auto read_fd(std::vector<ExecutionValue> const& values, Instruction::Operand const& index)
+    -> int
   {
-    ExecutionValue value{values.at(pc + std::get<Instruction::Offset>(delta))};
-    if (std::holds_alternative<FileDescriptor>(value)) {
-      return std::get<FileDescriptor>(value).get();
-    }
-
-    std::abort();
-    return -1;
+    assert(std::holds_alternative<Instruction::Index>(index));
+    ExecutionValue value{values.at(std::get<Instruction::Index>(index))};
+    assert(std::holds_alternative<FileDescriptor>(value));
+    return std::get<FileDescriptor>(value).get();
   }
 
   [[nodiscard]] auto read_lvalue(std::vector<ExecutionValue> const& values,
-                                 Instructions::difference_type pc,
-                                 Instruction::Operand const& delta) const -> ExecutionValue
+                                 Instruction::Operand const& index) const -> ExecutionValue
   {
+    assert(std::holds_alternative<Instruction::Index>(index));
     return std::visit(GD::Overloaded{
                         [this](VariableName v) { return var(v.get()); },
                         [this](Field f) { return ExecutionValue{fields_.at(f.get())}; },
@@ -139,21 +132,23 @@ public:
                           return ExecutionValue{std::nullopt};
                         },
                       },
-                      values.at(pc + std::get<Instruction::Offset>(delta)));
+                      values.at(std::get<Instruction::Index>(index)));
   }
 
   [[nodiscard]] static auto read_field(std::vector<ExecutionValue> const& values,
-                                       Instructions::difference_type pc,
-                                       Instruction::Operand const& delta) -> ExecutionValue
+                                       Instruction::Operand const& index) -> ExecutionValue
   {
-    ExecutionValue const& value{values.at(pc + std::get<Instruction::Offset>(delta))};
+    assert(std::holds_alternative<Instruction::Index>(index));
+    ExecutionValue const& value{values.at(std::get<Instruction::Index>(index))};
+    assert(std::holds_alternative<Integer>(value));
     Integer const& field{std::get<Integer>(value)};
     return Field{field.get()};
   }
 
-  auto format_value(std::vector<ExecutionValue> const& values, Instructions::difference_type pc,
-                    Instruction::Operand const& delta) -> std::string
+  auto format_value(std::vector<ExecutionValue> const& values, Instruction::Operand const& index)
+    -> std::string
   {
+    assert(std::holds_alternative<Instruction::Index>(index));
     return std::visit(GD::Overloaded{
                         [](Integer v) { return std::to_string(v.get()); },
                         [this](Floating v) {
@@ -166,7 +161,7 @@ public:
                           return std::string{};
                         },
                       },
-                      values.at(pc + std::get<Instruction::Offset>(delta)));
+                      values.at(std::get<Instruction::Index>(index)));
   }  // namespace GD::Awk::Details
 
   void execute([[maybe_unused]] ParsedProgram const& program, Instructions::const_iterator begin,
@@ -182,13 +177,13 @@ public:
         values.at(pc) = (interpret_literal(it->op1()));
         break;
       case Instruction::Opcode::load_lvalue:
-        values.at(pc) = read_lvalue(values, pc, it->op1());
+        values.at(pc) = read_lvalue(values, it->op1());
         break;
       case Instruction::Opcode::variable:
         values.at(pc) = std::get<VariableName>(it->op1());
         break;
       case Instruction::Opcode::field:
-        values.at(pc) = read_field(values, pc, it->op1());
+        values.at(pc) = read_field(values, it->op1());
         break;
       case Instruction::Opcode::printf:
       case Instruction::Opcode::open_param_pack:
@@ -197,8 +192,8 @@ public:
         std::abort();
         break;
       case Instruction::Opcode::print: {
-        auto stream{read_fd(values, pc, it->op2())};
-        auto buf{format_value(values, pc, it->op1())};
+        auto stream{read_fd(values, it->op2())};
+        auto buf{format_value(values, it->op1())};
         write(stream, buf.data(), buf.size());
         break;
       }

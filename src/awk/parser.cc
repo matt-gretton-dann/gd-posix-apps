@@ -180,9 +180,7 @@ public:
   static auto emit_field(Instructions& instrs, ExprResult op1) -> Instruction::Index
   {
     auto idx{emit_maybe_lvalue(instrs, op1)};
-    auto size{static_cast<Instruction::Offset>(instrs.size())};
-    auto off1{static_cast<Instruction::Offset>(idx - size)};
-    instrs.emplace_back(Instruction::Opcode::field, off1);
+    instrs.emplace_back(Instruction::Opcode::field, idx);
     return instrs.size() - 1;
   }
 
@@ -251,9 +249,7 @@ public:
       return *(expr.index);
     }
 
-    auto size{static_cast<Instruction::Offset>(instrs.size())};
-    auto off{static_cast<Instruction::Offset>(*(expr.index) - size)};
-    instrs.emplace_back(Instruction::Opcode::load_lvalue, off);
+    instrs.emplace_back(Instruction::Opcode::load_lvalue, *(expr.index));
     return instrs.size() - 1;
   }
 
@@ -261,10 +257,7 @@ public:
   {
     auto idx1{emit_maybe_lvalue(instrs, op1)};
     auto idx2{emit_maybe_lvalue(instrs, op2)};
-    auto size{static_cast<Instruction::Offset>(instrs.size())};
-    auto off1{static_cast<Instruction::Offset>(idx1 - size)};
-    auto off2{static_cast<Instruction::Offset>(idx2 - size)};
-    instrs.emplace_back(Instruction::Opcode::print, off1, off2);
+    instrs.emplace_back(Instruction::Opcode::print, idx1, idx2);
     return instrs.size() - 1;
   }
 
@@ -275,10 +268,7 @@ public:
     assert(param_pack.index.has_value());
     assert(instrs[*(param_pack.index)].opcode() == Instruction::Opcode::open_param_pack);
     auto idx1{emit_maybe_lvalue(instrs, stream)};
-    auto size{static_cast<Instruction::Offset>(instrs.size())};
-    auto off1{static_cast<Instruction::Offset>(idx1 - size)};
-    auto off2{static_cast<Instruction::Offset>(*(param_pack.index) - size)};
-    instrs.emplace_back(Instruction::Opcode::printf, off1, off2);
+    instrs.emplace_back(Instruction::Opcode::printf, idx1, *(param_pack.index));
     return instrs.size() - 1;
   }
 
@@ -295,10 +285,7 @@ public:
     assert(param_pack.index.has_value());
     assert(instrs[*(param_pack.index)].opcode() == Instruction::Opcode::open_param_pack);
     auto expr_idx{emit_maybe_lvalue(instrs, expr)};
-    auto size{static_cast<Instruction::Offset>(instrs.size())};
-    auto off1{static_cast<Instruction::Offset>(*(param_pack.index) - size)};
-    auto off2{static_cast<Instruction::Offset>(expr_idx - size)};
-    instrs.emplace_back(Instruction::Opcode::push_param, off1, off2);
+    instrs.emplace_back(Instruction::Opcode::push_param, *(param_pack.index), expr_idx);
     return instrs.size() - 1;
   }
 
@@ -306,9 +293,7 @@ public:
     -> Instruction::Index
   {
     assert(instrs[op1].opcode() == Instruction::Opcode::open_param_pack);
-    auto size{static_cast<Instruction::Offset>(instrs.size())};
-    auto off1{static_cast<Instruction::Offset>(op1 - size)};
-    instrs.emplace_back(Instruction::Opcode::close_param_pack, off1);
+    instrs.emplace_back(Instruction::Opcode::close_param_pack, op1);
     return instrs.size() - 1;
   }
 
