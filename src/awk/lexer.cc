@@ -238,11 +238,11 @@ void GD::Awk::Lexer::lex_number()
     t_.emplace(Token::Type::floating, number);
   }
   else {
-    std::uint64_t number{0};
+    Integer::underlying_type number{0};
     int const base = hex ? 16 : 10;  // NOLINT
     // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
     fcr = std::from_chars(num.data(), num.data() + num.size(), number, base);
-    t_.emplace(Token::Type::integer, number);
+    t_.emplace(Token::Type::integer, Integer{number});
   }
 
   if (fcr.ec == std::errc::invalid_argument) {

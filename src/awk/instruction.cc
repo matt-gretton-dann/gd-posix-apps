@@ -136,9 +136,10 @@ void GD::Awk::Instruction::validate_operands() const
     break;
   case GD::Awk::Instruction::Opcode::load_literal:
     // NOLINTNEXTLINE
-    assert(std::holds_alternative<std::int64_t>(*op1_) || std::holds_alternative<double>(*op1_) ||
-           std::holds_alternative<std::string>(*op1_) ||  // NOLINT
-           std::holds_alternative<std::regex>(*op1_));    // NOLINT
+    assert(std::holds_alternative<Integer>(*op1_) || std::holds_alternative<Floating>(*op1_) ||
+           std::holds_alternative<FileDescriptor>(*op1_) ||  // NOLINT
+           std::holds_alternative<std::string>(*op1_) ||     // NOLINT
+           std::holds_alternative<std::regex>(*op1_));       // NOLINT
     break;
   case GD::Awk::Instruction::Opcode::variable:
     assert(std::holds_alternative<VariableName>(*op1_));  // NOLINT

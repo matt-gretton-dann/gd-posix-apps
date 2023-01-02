@@ -41,11 +41,11 @@ template<typename... Ts>
 
 namespace GD::Awk::Details {
 
-using Field = TypeWrapper<std::int64_t, struct FieldTag>;
+using Field = TypeWrapper<Integer::underlying_type, struct FieldTag>;
 
 /// A value - either string, signed integer, or double.
-using ExecutionValue =
-  std::variant<std::string, std::int64_t, double, std::regex, std::nullopt_t, VariableName, Field>;
+using ExecutionValue = std::variant<std::string, Integer, Floating, std::regex, std::nullopt_t,
+                                    VariableName, Field, FileDescriptor>;
 
 /// Mapping of variable names to values.
 using VariableMap = std::map<std::string, ExecutionValue>;
@@ -90,31 +90,41 @@ public:
 
   static auto interpret_literal(Instruction::Operand const& op) -> ExecutionValue
   {
-    return std::visit(
-      GD::Overloaded{
-        [](std::string const& s) { return ExecutionValue{s}; },
-        [](std::int64_t v) { return ExecutionValue{v}; },
-        [](double v) { return ExecutionValue{static_cast<double>(v)}; },
-        [](std::regex const& re) { return ExecutionValue{static_cast<std::regex>(re)}; },
-        [](auto const&) {
-          std::abort();
-          return ExecutionValue{std::nullopt};
-        }},
-      op);
+    return std::visit(GD::Overloaded{[](std::string const& s) { return ExecutionValue{s}; },
+                                     [](Integer v) { return ExecutionValue{v}; },
+                                     [](Floating v) { return ExecutionValue{v}; },
+                                     [](FileDescriptor fd) { return ExecutionValue{fd}; },
+                                     [](std::regex const& re) { return ExecutionValue{re}; },
+                                     [](auto const&) {
+                                       std::abort();
+                                       return ExecutionValue{std::nullopt};
+                                     }},
+                      op);
   }
 
   static auto read_integer(std::vector<ExecutionValue> const& values,
                            Instructions::difference_type pc, Instruction::Operand const& delta)
-    -> std::int64_t
+    -> Integer::underlying_type
   {
-    return std::visit(GD::Overloaded{
-                        [](std::int64_t v) { return v; },
-                        [](auto const&) {
-                          std::abort();
-                          return INT64_C(0);
-                        },
-                      },
-                      values.at(pc + std::get<Instruction::Offset>(delta)));
+    ExecutionValue value{values.at(pc + std::get<Instruction::Offset>(delta))};
+    if (std::holds_alternative<Integer>(value)) {
+      return std::get<Integer>(value).get();
+    }
+
+    std::abort();
+    return Integer::underlying_type{0};
+  }
+
+  static auto read_fd(std::vector<ExecutionValue> const& values, Instructions::difference_type pc,
+                      Instruction::Operand const& delta) -> int
+  {
+    ExecutionValue value{values.at(pc + std::get<Instruction::Offset>(delta))};
+    if (std::holds_alternative<FileDescriptor>(value)) {
+      return std::get<FileDescriptor>(value).get();
+    }
+
+    std::abort();
+    return -1;
   }
 
   [[nodiscard]] auto read_lvalue(std::vector<ExecutionValue> const& values,
@@ -136,17 +146,17 @@ public:
                                        Instructions::difference_type pc,
                                        Instruction::Operand const& delta) -> ExecutionValue
   {
-    std::int64_t const field{
-      std::get<std::int64_t>(values.at(pc + std::get<Instruction::Offset>(delta)))};
-    return Field{field};
+    ExecutionValue const& value{values.at(pc + std::get<Instruction::Offset>(delta))};
+    Integer const& field{std::get<Integer>(value)};
+    return Field{field.get()};
   }
 
   auto format_value(std::vector<ExecutionValue> const& values, Instructions::difference_type pc,
                     Instruction::Operand const& delta) -> std::string
   {
     return std::visit(GD::Overloaded{
-                        [](std::int64_t v) { return std::to_string(v); },
-                        [this](double v) {
+                        [](Integer v) { return std::to_string(v.get()); },
+                        [this](Floating v) {
                           auto ofmt{std::get<std::string>(var("OFMT"))};
                           return fmt::vformat(ofmt, fmt::make_format_args(v));
                         },
@@ -187,9 +197,9 @@ public:
         std::abort();
         break;
       case Instruction::Opcode::print: {
-        auto stream{read_integer(values, pc, it->op2())};
+        auto stream{read_fd(values, pc, it->op2())};
         auto buf{format_value(values, pc, it->op1())};
-        write(static_cast<int>(stream), buf.data(), buf.size());
+        write(stream, buf.data(), buf.size());
         break;
       }
       }
@@ -284,7 +294,7 @@ public:
       parse_record_regex(record, std::regex{fs_var, std::regex_constants::awk});
     }
 
-    var("NF", static_cast<std::int64_t>(fields_.size() - 1));
+    var("NF", static_cast<Integer>(fields_.size() - 1));
   }
 
 private:
@@ -342,7 +352,7 @@ void GD::Awk::execute(ParsedProgram const& program, std::vector<std::string> con
 
   // Default values of variables
   state.var("FS", " ");
-  state.var("NR", 0);
+  state.var("NR", Integer{0});
   state.var("OFS", " ");
   state.var("ORS", "\n");
   state.var("OFMT", "%.6g");
@@ -366,12 +376,13 @@ void GD::Awk::execute(ParsedProgram const& program, std::vector<std::string> con
     }
 
     state.var("FILENAME", operand);
-    state.var("NR", 0);
+    state.var("NR", Integer{0});
     auto file{GD::StreamInputFile(operand)};
     auto [record_begin, record_end] = program.per_record_instructions();
     while (state.parse_record(file)) {
-      std::int64_t const nr{std::get<std::int64_t>(state.var("NR"))};
-      state.var("NR", nr + 1);
+      Integer const nr{std::get<Integer>(state.var("NR"))};
+      Integer::underlying_type const new_nr = nr.get() + 1;
+      state.var("NR", Integer{new_nr});
       state.execute(program, record_begin, record_end);
     }
   }

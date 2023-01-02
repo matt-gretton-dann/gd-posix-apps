@@ -227,15 +227,15 @@ TEST_CASE("GD::Awk::Lexer - ERE", "[awk][lexer]")
 
 TEST_CASE("GD::Awk::Lexer - integers", "[awk][lexer]")
 {
-  auto [input, expected] = GENERATE(table<std::string_view, std::uint64_t>({
-    {"012", UINT64_C(12)},
-    {"0x12", UINT64_C(0x12)},
+  auto [input, expected] = GENERATE(table<std::string_view, GD::Awk::Integer::underlying_type>({
+    {"012", 12},
+    {"0x12", 0x12},
   }));
   auto lexer = GD::Awk::Lexer(std::make_unique<GD::Awk::StringReader>(input));
   INFO("Parsing " << input);
   auto t1 = lexer.peek(false);
   REQUIRE(t1.type() == GD::Awk::Token::Type::integer);
-  REQUIRE(t1.integer() == expected);
+  REQUIRE(t1.integer().get() == expected);
   lexer.chew(false);
   auto t2 = lexer.peek(false);
   REQUIRE(t2.type() == GD::Awk::Token::Type::eof);

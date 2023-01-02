@@ -116,9 +116,21 @@ public:
    * @param value   Literal to emit
    * @return        Index of emitted literal.
    */
-  static auto emit_load_literal(Instructions& instrs, std::int64_t value) -> Instruction::Index
+  static auto emit_load_literal(Instructions& instrs, Integer value) -> Instruction::Index
   {
     instrs.emplace_back(Instruction::Opcode::load_literal, value);
+    return instrs.size() - 1;
+  }
+
+  /** @brief emit a load literal instruction
+   *
+   * @param instrs  Instructions to emit into
+   * @param fd      Literal to emit
+   * @return        Index of emitted literal.
+   */
+  static auto emit_load_literal(Instructions& instrs, FileDescriptor fd) -> Instruction::Index
+  {
+    instrs.emplace_back(Instruction::Opcode::load_literal, fd);
     return instrs.size() - 1;
   }
 
@@ -128,7 +140,7 @@ public:
    * @param value   Literal to emit
    * @return        Index of emitted literal.
    */
-  static auto emit_load_literal(Instructions& instrs, double value) -> Instruction::Index
+  static auto emit_load_literal(Instructions& instrs, Floating value) -> Instruction::Index
   {
     instrs.emplace_back(Instruction::Opcode::load_literal, value);
     return instrs.size() - 1;
@@ -421,7 +433,7 @@ public:
     ExprResult result{.type = expr_type};
     switch (tok.type()) {
     case Token::Type::integer:
-      result.index = emit_load_literal(instrs, static_cast<int64_t>(tok.integer()));
+      result.index = emit_load_literal(instrs, tok.integer());
       lexer_->chew(false);
       break;
     case Token::Type::string:
@@ -654,7 +666,7 @@ public:
 
     if (!is_printf && indices.empty()) {
       // We have a plain print.  We want to print $0.
-      auto const lit_expr{emit_load_literal(instrs, INT64_C(0))};
+      auto const lit_expr{emit_load_literal(instrs, Integer{0})};
       auto const field_expr{emit_field(instrs, {.index = lit_expr})};
       indices.emplace_back(ExprResult{field_expr, ExprType::print_expr, true});
     }
@@ -662,7 +674,8 @@ public:
     // Now get the redirection.  If we don't have a redirection we will output to standard out.
     ExprResult redir{parse_redirection_opt(instrs, ExprType::expr)};
     if (!redir.index.has_value()) {
-      redir.index = emit_load_literal(instrs, static_cast<int64_t>(STDOUT_FILENO));
+      int const fd{STDOUT_FILENO};
+      redir.index = emit_load_literal(instrs, FileDescriptor{fd});
     }
 
     Instruction::Index fs{0};
