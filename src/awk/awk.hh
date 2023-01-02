@@ -548,11 +548,14 @@ private:
  * | variable           | VN           |             | Name of a variable                         |
  * | load_literal       | I/F/S/R/FD   |             | Result is the literal in <op1>             |
  * | load_lvalue        | Ix(VN/FL)    |             | Load the lvalue identified by <op1>        |
+ * | load_svalue        | Ix(VN/FL)    | Ix(I/F/S)   | Store <op2> into <op1>                     |
  * | print              | Ix(I/F/S)    | Ix(FD)      | Print the value <op1> to stream <op2>      |
  * | printf             | Ix(I/F/S)    | Ix(FD)      | printf the params <op1> to stream <op2>    |
  * | open_param_pack    |              |             | Open a parameter pack                      |
  * | push_param         | Ix(PP)       | Ix(I/F/S)   | Push expr <op2> onto the front of <op1>    |
  * | close_param_pack   | Ix(PP)       |             | Close the parameter pack <op1>             |
+ * | add                | Ix(I/F)      | Ix(I/F)     | <op1> + <op2>                              |
+ * | sub                | Ix(I/F)      | Ix(I/F)     | <op1> - <op2>                              |
  *
  * Parameter packs are identified by the index of the instruction corresponding to the
  * 'open_param_pack'.
@@ -566,11 +569,14 @@ public:
     variable,          ///< A variable lvalue
     load_literal,      ///< Load a literal value
     load_lvalue,       ///< Load an lvalue
+    store_lvalue,      ///< Store an lvalue
     print,             ///< Print the value referenced by <op1> to stream <op2>.
     printf,            ///< Printf the parameter pack <op1> to stream <op2>.
     open_param_pack,   ///< Open a parameter pack.  Result is parameter pack ID.
     push_param,        ///< Push parameter <op2> onto the front of parameter pack <op1>.
     close_param_pack,  ///< Close parameter pack <op1>.
+    add,               ///< Numeric addition
+    sub,               ///< Numeric subtraction
   };
 
   /** Type representing an index into the list of instructions.  */

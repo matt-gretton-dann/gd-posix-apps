@@ -188,6 +188,18 @@
         "id": 31,
         "description": "Expected a ')' to match '(' surrounding an expression, got {0} instead.",
         "C": "Expected a ')' to match '(' surrounding an expression, got {0} instead."
+      },
+      {
+        "msg": "unable_to_cast_value_to_float",
+        "id": 32,
+        "description": "Unable to cast the value {0} to a floating point number.",
+        "C": "Unable to cast the value '{0} to a floating point number."
+      },
+      {
+        "msg": "failed_to_read_whole_program",
+        "id": 33,
+        "description": "Extra characters at the end of the program, starting with {0}",
+        "C": "There are extra characters after the end of the program.  First extra token: {0}"
       }
     ]
   }

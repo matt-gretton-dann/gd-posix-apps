@@ -253,6 +253,18 @@ public:
     return instrs.size() - 1;
   }
 
+  static auto emit_store_lvalue(Instructions& instrs, ExprResult lvalue, ExprResult expr)
+    -> Instruction::Index
+  {
+    assert(lvalue.index.has_value());
+    assert(lvalue.is_lvalue);
+    assert(expr.index.has_value());
+    auto expr_idx = emit_maybe_lvalue(instrs, expr);
+
+    instrs.emplace_back(Instruction::Opcode::store_lvalue, *(lvalue.index), expr_idx);
+    return instrs.size() - 1;
+  }
+
   static auto emit_print(Instructions& instrs, ExprResult op1, ExprResult op2) -> Instruction::Index
   {
     auto idx1{emit_maybe_lvalue(instrs, op1)};
@@ -294,6 +306,26 @@ public:
   {
     assert(instrs[op1].opcode() == Instruction::Opcode::open_param_pack);
     instrs.emplace_back(Instruction::Opcode::close_param_pack, op1);
+    return instrs.size() - 1;
+  }
+
+  static auto emit_add(Instructions& instrs, ExprResult lhs, ExprResult rhs) -> Instruction::Index
+  {
+    assert(lhs.index.has_value());
+    assert(rhs.index.has_value());
+    auto lhs_idx{emit_maybe_lvalue(instrs, lhs)};
+    auto rhs_idx{emit_maybe_lvalue(instrs, rhs)};
+    instrs.emplace_back(Instruction::Opcode::add, lhs_idx, rhs_idx);
+    return instrs.size() - 1;
+  }
+
+  static auto emit_sub(Instructions& instrs, ExprResult lhs, ExprResult rhs) -> Instruction::Index
+  {
+    assert(lhs.index.has_value());
+    assert(rhs.index.has_value());
+    auto lhs_idx{emit_maybe_lvalue(instrs, lhs)};
+    auto rhs_idx{emit_maybe_lvalue(instrs, rhs)};
+    instrs.emplace_back(Instruction::Opcode::sub, lhs_idx, rhs_idx);
     return instrs.size() - 1;
   }
 
@@ -457,6 +489,56 @@ public:
     return result;
   }
 
+  /** @brief Parse a post- increment/decrement expression
+   *
+   * @param  instrs     Where to emit code to
+   * @param  expr_type  Expression type
+   * @param  unary_type What expression class is this?
+   * @return            Index of emitted expression, and updated expression type
+   *
+   * post_incr_decr_expr : lvalue INCR
+   *                     | lvalue DECR
+   *                     | primary_expr
+   *
+   * | Pattern                             | Expr or print_expr?  | Unary or non-unary?  |
+   * | :---------------------------------- | :------------------- | :------------------- |
+   * | lvalue INCR                         | Both                 | Non-unary            |
+   * | rvalue INCR                         | Both                 | Non-unary            |
+   */
+  auto parse_post_incr_decr_expr_opt(Instructions& instrs, ExprType expr_type, UnaryType unary_type)
+    -> ExprResult
+  {
+    // Parse the primary expression
+    ExprResult result{parse_primary_expr_opt(instrs, expr_type, unary_type)};
+
+    if (!result.is_lvalue || unary_type == UnaryType::unary || !result.index.has_value()) {
+      return result;
+    }
+
+    auto const& token{lexer_->peek(false)};
+    if (token != Token::Type::incr && token != Token::Type::decr) {
+      return result;
+    }
+
+    bool const is_incr{token == Token::Type::incr};
+    lexer_->chew(false);
+    // Code sequence:
+    //  x: load_lvalue result.index
+    //  x + 1: load_lt 1
+    //  x + 2: add x, x + 1 (or sub)
+    //  x + 3: store_lvalue result.index
+    //  result.index = x
+    Instruction::Index lvalue_index{*(result.index)};
+    result.index = emit_maybe_lvalue(instrs, result);
+    result.is_lvalue = false;
+    auto lit1_index{emit_load_literal(instrs, Integer{1})};
+    auto mod_index{is_incr ? emit_add(instrs, result, {lit1_index})
+                           : emit_sub(instrs, result, {lit1_index})};
+    (void)emit_store_lvalue(instrs, {.index = lvalue_index, .is_lvalue = true}, {mod_index});
+
+    return result;
+  }
+
   /** @brief Parse an expression (of any type)
    *
    * @param  instrs     Where to emit code to
@@ -523,7 +605,7 @@ public:
   auto parse_expr_opt(Instructions& instrs, ExprType expr_type,
                       [[maybe_unused]] UnaryType unary_type) -> ExprResult
   {
-    return parse_primary_expr_opt(instrs, expr_type, UnaryType::both);
+    return parse_post_incr_decr_expr_opt(instrs, expr_type, UnaryType::both);
   }
 
   /** @brief Parse an expression list (of any type)
@@ -818,9 +900,6 @@ public:
     }
 
     auto res{parse_terminatable_statement_opt(instrs)};
-    if (res == ParseStatementResult::unterminated) {
-      error(Msg::expected_terminator, lexer_->location(), lexer_->peek(false));
-    }
     return res;
   }
 
@@ -1011,7 +1090,17 @@ public:
    *
    * program : item_list_maybe_unterminated
    */
-  void parse_program() { parse_item_list_maybe_unterminated(); }
+  void parse_program()
+  {
+    // Skip any initial new-lines
+    while (lexer_->peek(false) == Token::Type::newline) {
+      lexer_->chew(false);
+    }
+    parse_item_list_maybe_unterminated();
+    if (lexer_->peek(false) != Token::Type::eof) {
+      error(Msg::failed_to_read_whole_program, lexer_->location(), lexer_->peek(false));
+    }
+  }
 
   auto program() -> ParsedProgram& { return program_; }
 

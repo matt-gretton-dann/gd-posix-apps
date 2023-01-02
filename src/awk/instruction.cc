@@ -84,6 +84,9 @@ auto GD::Awk::operator<<(std::ostream& os, GD::Awk::Instruction::Opcode opcode) 
   case GD::Awk::Instruction::Opcode::load_lvalue:
     os << "load_lvalue";
     break;
+  case GD::Awk::Instruction::Opcode::store_lvalue:
+    os << "store_lvalue";
+    break;
   case GD::Awk::Instruction::Opcode::field:
     os << "field";
     break;
@@ -105,6 +108,12 @@ auto GD::Awk::operator<<(std::ostream& os, GD::Awk::Instruction::Opcode opcode) 
   case GD::Awk::Instruction::Opcode::close_param_pack:
     os << "close_param_pack";
     break;
+  case GD::Awk::Instruction::Opcode::add:
+    os << "add";
+    break;
+  case GD::Awk::Instruction::Opcode::sub:
+    os << "sub";
+    break;
   }
   return os;
 }
@@ -120,9 +129,12 @@ auto GD::Awk::Instruction::op_count(Opcode opcode) -> unsigned
   case GD::Awk::Instruction::Opcode::variable:
   case GD::Awk::Instruction::Opcode::close_param_pack:
     return 1;
+  case GD::Awk::Instruction::Opcode::store_lvalue:
   case GD::Awk::Instruction::Opcode::print:
   case GD::Awk::Instruction::Opcode::printf:
   case GD::Awk::Instruction::Opcode::push_param:
+  case GD::Awk::Instruction::Opcode::add:
+  case GD::Awk::Instruction::Opcode::sub:
     return 2;
   }
 }
@@ -141,6 +153,12 @@ void GD::Awk::Instruction::validate_operands() const
            std::holds_alternative<std::string>(*op1_) ||     // NOLINT
            std::holds_alternative<std::regex>(*op1_));       // NOLINT
     break;
+  case GD::Awk::Instruction::Opcode::store_lvalue:
+  case GD::Awk::Instruction::Opcode::add:
+  case GD::Awk::Instruction::Opcode::sub:
+    assert(std::holds_alternative<Index>(*op1_));  // NOLINT
+    assert(std::holds_alternative<Index>(*op2_));  // NOLINT
+    break;
   case GD::Awk::Instruction::Opcode::variable:
     assert(std::holds_alternative<VariableName>(*op1_));  // NOLINT
     break;
@@ -154,6 +172,7 @@ void GD::Awk::Instruction::validate_operands() const
   case GD::Awk::Instruction::Opcode::push_param:
     assert(std::holds_alternative<Index>(*op1_));  // NOLINT
     assert(std::holds_alternative<Index>(*op2_));  // NOLINT
+    break;
   }
 }
 

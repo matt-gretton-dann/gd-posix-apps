@@ -46,7 +46,55 @@ using Field = TypeWrapper<Integer::underlying_type, struct FieldTag>;
 /// A value - either string, signed integer, or double.
 using ExecutionValue = std::variant<std::string, Integer, Floating, std::regex, std::nullopt_t,
                                     VariableName, Field, FileDescriptor>;
+}  // namespace GD::Awk::Details
 
+// This needs to be in the global space
+template<>
+struct fmt::formatter<GD::Awk::Details::ExecutionValue>
+{
+  static constexpr auto parse(format_parse_context& ctx)
+  {
+    if (ctx.begin() != ctx.end() && *ctx.begin() != '}') {
+      throw format_error("invalid format");
+    }
+    return ctx.begin();
+  }
+
+  template<typename FormatContext>
+  auto format(GD::Awk::Details::ExecutionValue const& value, FormatContext& ctx)
+  {
+    return std::visit(
+      GD::Overloaded{
+        [&ctx](std::string const& s) {
+          return fmt::vformat_to(ctx.out(), "{0}", fmt::make_format_args(s));
+        },
+        [&ctx](GD::Awk::Integer i) {
+          return fmt::vformat_to(ctx.out(), "{0}", fmt::make_format_args(i.get()));
+        },
+        [&ctx](GD::Awk::Floating f) {
+          return fmt::vformat_to(ctx.out(), "{0}", fmt::make_format_args(f));
+        },
+        [&ctx](std::regex const&) {
+          return fmt::vformat_to(ctx.out(), "Regular expression", fmt::make_format_args());
+        },
+        [&ctx](std::nullopt_t) {
+          return fmt::vformat_to(ctx.out(), "unset", fmt::make_format_args());
+        },
+        [&ctx](GD::Awk::VariableName const& vn) {
+          return fmt::vformat_to(ctx.out(), "{0}", fmt::make_format_args(vn.get()));
+        },
+        [&ctx](GD::Awk::Details::Field f) {
+          return fmt::vformat_to(ctx.out(), "${0}", fmt::make_format_args(f.get()));
+        },
+        [&ctx](GD::Awk::FileDescriptor fd) {
+          return fmt::vformat_to(ctx.out(), "fd({0})", fmt::make_format_args(fd.get()));
+        },
+      },
+      value);
+  }
+};
+
+namespace GD::Awk::Details {
 /// Mapping of variable names to values.
 using VariableMap = std::map<std::string, ExecutionValue>;
 
@@ -135,6 +183,21 @@ public:
                       values.at(std::get<Instruction::Index>(index)));
   }
 
+  void store_lvalue(std::vector<ExecutionValue> const& values, Instruction::Operand const& lhs,
+                    Instruction::Operand const& rhs)
+  {
+    assert(std::holds_alternative<Instruction::Index>(lhs));
+    assert(std::holds_alternative<Instruction::Index>(rhs));
+    ExecutionValue const& value{values.at(std::get<Instruction::Index>(rhs))};
+
+    std::visit(GD::Overloaded{
+                 [&value, this](VariableName v) { var(v.get(), value); },
+                 [&value, this](Field f) { fields_.at(f.get()) = std::get<std::string>(value); },
+                 [](auto const&) { std::abort(); },
+               },
+               values.at(std::get<Instruction::Index>(lhs)));
+  }
+
   [[nodiscard]] static auto read_field(std::vector<ExecutionValue> const& values,
                                        Instruction::Operand const& index) -> ExecutionValue
   {
@@ -143,6 +206,124 @@ public:
     assert(std::holds_alternative<Integer>(value));
     Integer const& field{std::get<Integer>(value)};
     return Field{field.get()};
+  }
+
+  static auto to_integer(std::string const& s) -> std::optional<Integer::underlying_type>
+  {
+    if (s.empty()) {
+      return std::nullopt;
+    }
+    try {
+      std::size_t pos{0};
+      Integer::underlying_type num{std::stol(s, &pos)};
+      return (pos == s.size()) ? std::make_optional(num)
+                               : std::optional<Integer::underlying_type>(std::nullopt);
+    }
+    catch (...) {
+      return std::nullopt;
+    }
+  }
+
+  static auto to_integer(Floating f) -> std::optional<Integer::underlying_type>
+  {
+    auto result{static_cast<Integer::underlying_type>(f)};
+    if (f == static_cast<Floating>(result)) {
+      return result;
+    }
+
+    return std::nullopt;
+  }
+
+  static auto to_integer(ExecutionValue const& value) -> std::optional<Integer::underlying_type>
+  {
+    return std::visit(
+      GD::Overloaded{
+        [](Integer i) { return std::make_optional(i.get()); },
+        [](Floating f) { return to_integer(f); },
+        [](std::nullopt_t) { return std::make_optional(Integer::underlying_type{0}); },
+        [](std::string const& s) { return to_integer(s); },
+        [](auto const&) { return std::optional<Integer::underlying_type>{std::nullopt}; },
+      },
+      value);
+  }
+
+  [[nodiscard]] auto str_to_floating(std::string const& s) const -> std::optional<Floating>
+  {
+    auto conv_fmt{std::get<std::string>(var("CONVFMT"))};
+    std::size_t pos{0};
+    Floating f{std::stod(s, &pos)};
+    if (pos == s.size() && !s.empty()) {
+      return f;
+    }
+
+    return std::nullopt;
+  }
+
+  auto to_floating(ExecutionValue const& value) -> std::optional<Floating>
+  {
+    return std::visit(
+      GD::Overloaded{
+        [](Integer i) { return std::make_optional(static_cast<Floating>(i.get())); },
+        [](Floating f) { return std::make_optional(f); },
+        [](std::nullopt_t) { return std::make_optional(Floating{0.0}); },
+        [this](std::string const& s) { return str_to_floating(s); },
+        [](auto const&) { return std::optional<Floating>{std::nullopt}; },
+      },
+      value);
+  }
+
+  auto execute_add(std::vector<ExecutionValue> const& values, Instruction::Operand const& lhs,
+                   Instruction::Operand const& rhs) -> ExecutionValue
+  {
+    assert(std::holds_alternative<Instruction::Index>(lhs));
+    assert(std::holds_alternative<Instruction::Index>(rhs));
+    ExecutionValue const& lhs_value{values.at(std::get<Instruction::Index>(lhs))};
+    ExecutionValue const& rhs_value{values.at(std::get<Instruction::Index>(rhs))};
+    auto const lhs_int{to_integer(lhs_value)};
+    auto const rhs_int{to_integer(rhs_value)};
+    if (lhs_int.has_value() && rhs_int.has_value()) {
+      // TODO(mgrettondann): Handle overflow
+      Integer::underlying_type const res{*lhs_int + *rhs_int};
+      return Integer{res};
+    }
+
+    auto const lhs_float{to_floating(lhs_value)};
+    auto const rhs_float{to_floating(rhs_value)};
+    if (!lhs_float.has_value()) {
+      error(Msg::unable_to_cast_value_to_float, lhs_value);
+    }
+    if (!rhs_float.has_value()) {
+      error(Msg::unable_to_cast_value_to_float, rhs_value);
+    }
+
+    return Floating{*lhs_float + *rhs_float};
+  }
+
+  auto execute_sub(std::vector<ExecutionValue> const& values, Instruction::Operand const& lhs,
+                   Instruction::Operand const& rhs) -> ExecutionValue
+  {
+    assert(std::holds_alternative<Instruction::Index>(lhs));
+    assert(std::holds_alternative<Instruction::Index>(rhs));
+    ExecutionValue const& lhs_value{values.at(std::get<Instruction::Index>(lhs))};
+    ExecutionValue const& rhs_value{values.at(std::get<Instruction::Index>(rhs))};
+    auto const lhs_int{to_integer(lhs_value)};
+    auto const rhs_int{to_integer(rhs_value)};
+    if (lhs_int.has_value() && rhs_int.has_value()) {
+      // TODO(mgrettondann): Handle overflow
+      Integer::underlying_type const res{*lhs_int - *rhs_int};
+      return Integer{res};
+    }
+
+    auto const lhs_float{to_floating(lhs_value)};
+    auto const rhs_float{to_floating(rhs_value)};
+    if (!lhs_float.has_value()) {
+      error(Msg::unable_to_cast_value_to_float, lhs_value);
+    }
+    if (!rhs_float.has_value()) {
+      error(Msg::unable_to_cast_value_to_float, rhs_value);
+    }
+
+    return Floating{*lhs_float - *rhs_float};
   }
 
   auto format_value(std::vector<ExecutionValue> const& values, Instruction::Operand const& index)
@@ -179,6 +360,9 @@ public:
       case Instruction::Opcode::load_lvalue:
         values.at(pc) = read_lvalue(values, it->op1());
         break;
+      case Instruction::Opcode::store_lvalue:
+        store_lvalue(values, it->op1(), it->op2());
+        break;
       case Instruction::Opcode::variable:
         values.at(pc) = std::get<VariableName>(it->op1());
         break;
@@ -197,6 +381,12 @@ public:
         write(stream, buf.data(), buf.size());
         break;
       }
+      case Instruction::Opcode::add:
+        values.at(pc) = execute_add(values, it->op1(), it->op2());
+        break;
+      case Instruction::Opcode::sub:
+        values.at(pc) = execute_sub(values, it->op1(), it->op2());
+        break;
       }
       ++pc;
     }
