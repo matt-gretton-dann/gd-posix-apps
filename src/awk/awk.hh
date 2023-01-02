@@ -556,6 +556,7 @@ private:
  * | close_param_pack   | Ix(PP)       |             | Close the parameter pack <op1>             |
  * | add                | Ix(I/F)      | Ix(I/F)     | <op1> + <op2>                              |
  * | sub                | Ix(I/F)      | Ix(I/F)     | <op1> - <op2>                              |
+ * | power                | Ix(I/F)      | Ix(I/F)     | <op1> ^ <op2> |
  *
  * Parameter packs are identified by the index of the instruction corresponding to the
  * 'open_param_pack'.
@@ -577,6 +578,7 @@ public:
     close_param_pack,  ///< Close parameter pack <op1>.
     add,               ///< Numeric addition
     sub,               ///< Numeric subtraction
+    power,             ///< Exponentation
   };
 
   /** Type representing an index into the list of instructions.  */

@@ -97,13 +97,13 @@
         "msg": "missing_rbrace",
         "id": 16,
         "description": "We expected a '}' token but instead got '{0}'",
-        "C": "Missing '}'.  Found '{0}' instead."
+        "C": "Missing '}}'.  Found '{0}' instead."
       },
       {
         "msg": "expected_action",
         "id": 17,
         "description": "We expected an action, instead got '{0}'",
-        "C": "Expected the '{' to start an action.  Found '{0}' instead."
+        "C": "Expected the '{{' to start an action.  Found '{0}' instead."
       },
       {
         "msg": "cannot_redefine_builtin_functions",
@@ -204,8 +204,14 @@
       {
         "msg": "expected_lvalue_after_pre_incr_decr",
         "id": 34,
-        "description": "Expected an lvalue after ++ or -- (in {1}), but instead got {0}.",
-        "C": "Expected a variable, array, or field reference after {1}, but instead found {0}."
+        "description": "Expected an lvalue after ++ or -- (in {0}), but instead got {1}.",
+        "C": "Expected a variable, array, or field reference after {0}, but instead found {1}."
+      },
+      {
+        "msg": "expected_expr_after_power",
+        "id": 35,
+        "description": "Expected an expression after the power '^' operator, but instead got {0}.",
+        "C": "Expected an expression after '^', instead got {0}."
       }
     ]
   }

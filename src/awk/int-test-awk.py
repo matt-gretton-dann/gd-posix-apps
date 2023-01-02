@@ -50,10 +50,19 @@ test_awk("{ COUNT-- }\nEND { print COUNT }", '-6\n', in_file=emp_data)
 test_awk("{ print ++COUNT }\nEND { print COUNT }", '1\n2\n3\n4\n5\n6\n6\n',
          in_file=emp_data)
 test_awk("{ --COUNT }\nEND { print COUNT }", '-6\n', in_file=emp_data)
+test_awk("BEGIN { print 2 ^ 5 }", "32\n")
+test_awk("BEGIN { print 2 ^ 3 ^ 2, (2 ^ 3) ^ 2, 2 ^ (3 ^ 2) }", "512 64 512\n")
 
 # Some error tests
 test_awk('BEGIN { print (1 }', None, expected_rc=1)
 test_awk('BEGIN { print (1, }', None, expected_rc=1)
+test_awk('BEGIN { print 2 ^ }', None, expected_rc=1)
+test_awk('BEGIN { print ++ 2 }', None, expected_rc=1)
+test_awk('BEGIN { print -- 2 }', None, expected_rc=1)
+test_awk('BEGIN { print ++ FUNC ++ }', None, expected_rc=1)
+test_awk('BEGIN { print -- FUNC -- }', None, expected_rc=1)
+test_awk('BEGIN { print 3 ++ }', None, expected_rc=1)
+test_awk('BEGIN { print 3 -- }', None, expected_rc=1)
 
 # The AWK Programming Language Chapter 1 Examples
 emp_data = tester.input_file('emp.data')

@@ -98,6 +98,91 @@ namespace GD::Awk::Details {
 /// Mapping of variable names to values.
 using VariableMap = std::map<std::string, ExecutionValue>;
 
+auto do_int_add(Integer::underlying_type a, Integer::underlying_type b)
+  -> std::optional<Integer::underlying_type>
+{
+  if (a == 0) {
+    return b;
+  }
+  if (b == 0) {
+    return a;
+  }
+  if (a < 0 && b < 0 && std::numeric_limits<Integer::underlying_type>::min() - a > b) {
+    return std::nullopt;
+  }
+  if (a > 0 && b > 0 && std::numeric_limits<Integer::underlying_type>::max() - a < b) {
+    return std::nullopt;
+  }
+  return a + b;
+}
+
+auto do_int_sub(Integer::underlying_type a, Integer::underlying_type b)
+  -> std::optional<Integer::underlying_type>
+{
+  // Treat INT_MIN equivalent specially - so that we can then degenerate this into a + b.
+  if (b == std::numeric_limits<Integer::underlying_type>::min()) {
+    if (a >= 0) {
+      return std::nullopt;
+    }
+    return a - b;
+  }
+
+  return do_int_add(a, -b);
+}
+
+auto do_int_mul(Integer::underlying_type a, Integer::underlying_type b)
+  -> std::optional<Integer::underlying_type>
+{
+  if (a == 0 || b == 0) {
+    return 0;
+  }
+  if (a < 0 && b < 0 && a < std::numeric_limits<Integer::underlying_type>::max() / b) {
+    return std::nullopt;
+  }
+  if (a > 0 && b > 0 && a > std::numeric_limits<Integer::underlying_type>::max() / b) {
+    return std::nullopt;
+  }
+  if (a > 0 && b < 0 && b < -(std::numeric_limits<Integer::underlying_type>::max() / a)) {
+    return std::nullopt;
+  }
+  if (a < 0 && b > 0 && a < -(std::numeric_limits<Integer::underlying_type>::max() / b)) {
+    return std::nullopt;
+  }
+
+  return a * b;
+}
+
+auto do_int_power(Integer::underlying_type base, Integer::underlying_type exp)
+  -> std::optional<Integer::underlying_type>
+{
+  if (base == 0 && exp <= 0) {
+    return std::nullopt;
+  }
+  if (exp < 0) {
+    return std::nullopt;
+  }
+
+  // Hand-written power, in O(lg exp) time.
+  Integer::underlying_type result{1};
+  while (exp != 0) {
+    if ((exp & 1) != 0) {
+      auto tmp{do_int_mul(result, base)};
+      if (!tmp.has_value()) {
+        return std::nullopt;
+      }
+      result = *tmp;
+    }
+    exp >>= 1;
+    auto tmp{do_int_mul(base, base)};
+    if (!tmp.has_value()) {
+      return std::nullopt;
+    }
+    base = *tmp;
+  }
+
+  return result;
+}
+
 /** @brief The Execution state. */
 class ExecutionState
 {
@@ -272,8 +357,10 @@ public:
       value);
   }
 
-  auto execute_add(std::vector<ExecutionValue> const& values, Instruction::Operand const& lhs,
-                   Instruction::Operand const& rhs) -> ExecutionValue
+  template<typename IntFn, typename FloatFn>
+  auto execute_binary_op(std::vector<ExecutionValue> const& values, Instruction::Operand const& lhs,
+                         Instruction::Operand const& rhs, IntFn int_op, FloatFn float_op)
+    -> ExecutionValue
   {
     assert(std::holds_alternative<Instruction::Index>(lhs));
     assert(std::holds_alternative<Instruction::Index>(rhs));
@@ -282,9 +369,11 @@ public:
     auto const lhs_int{to_integer(lhs_value)};
     auto const rhs_int{to_integer(rhs_value)};
     if (lhs_int.has_value() && rhs_int.has_value()) {
-      // TODO(mgrettondann): Handle overflow
-      Integer::underlying_type const res{*lhs_int + *rhs_int};
-      return Integer{res};
+      auto const res{int_op(*lhs_int, *rhs_int)};
+      if (res.has_value()) {
+        Integer::underlying_type const r = *res;
+        return static_cast<Integer>(r);
+      }
     }
 
     auto const lhs_float{to_floating(lhs_value)};
@@ -296,34 +385,37 @@ public:
       error(Msg::unable_to_cast_value_to_float, rhs_value);
     }
 
-    return Floating{*lhs_float + *rhs_float};
+    return Floating{float_op(*lhs_float, *rhs_float)};
+  }
+
+  auto execute_add(std::vector<ExecutionValue> const& values, Instruction::Operand const& lhs,
+                   Instruction::Operand const& rhs) -> ExecutionValue
+  {
+    // TODO(mgrettondann): Handle overflow
+    return execute_binary_op(
+      values, lhs, rhs,
+      [](Integer::underlying_type a, Integer::underlying_type b) { return do_int_add(a, b); },
+      [](Floating a, Floating b) { return a + b; });
   }
 
   auto execute_sub(std::vector<ExecutionValue> const& values, Instruction::Operand const& lhs,
                    Instruction::Operand const& rhs) -> ExecutionValue
   {
-    assert(std::holds_alternative<Instruction::Index>(lhs));
-    assert(std::holds_alternative<Instruction::Index>(rhs));
-    ExecutionValue const& lhs_value{values.at(std::get<Instruction::Index>(lhs))};
-    ExecutionValue const& rhs_value{values.at(std::get<Instruction::Index>(rhs))};
-    auto const lhs_int{to_integer(lhs_value)};
-    auto const rhs_int{to_integer(rhs_value)};
-    if (lhs_int.has_value() && rhs_int.has_value()) {
-      // TODO(mgrettondann): Handle overflow
-      Integer::underlying_type const res{*lhs_int - *rhs_int};
-      return Integer{res};
-    }
+    // TODO(mgrettondann): Handle overflow
+    return execute_binary_op(
+      values, lhs, rhs,
+      [](Integer::underlying_type a, Integer::underlying_type b) { return do_int_sub(a, b); },
+      [](Floating a, Floating b) { return a - b; });
+  }
 
-    auto const lhs_float{to_floating(lhs_value)};
-    auto const rhs_float{to_floating(rhs_value)};
-    if (!lhs_float.has_value()) {
-      error(Msg::unable_to_cast_value_to_float, lhs_value);
-    }
-    if (!rhs_float.has_value()) {
-      error(Msg::unable_to_cast_value_to_float, rhs_value);
-    }
-
-    return Floating{*lhs_float - *rhs_float};
+  auto execute_power(std::vector<ExecutionValue> const& values, Instruction::Operand const& lhs,
+                     Instruction::Operand const& rhs) -> ExecutionValue
+  {
+    // TODO(mgrettondann): Handle overflow
+    return execute_binary_op(
+      values, lhs, rhs,
+      [](Integer::underlying_type a, Integer::underlying_type b) { return do_int_power(a, b); },
+      [](Floating a, Floating b) { return std::pow(a, b); });
   }
 
   auto format_value(std::vector<ExecutionValue> const& values, Instruction::Operand const& index)
@@ -387,6 +479,9 @@ public:
         break;
       case Instruction::Opcode::sub:
         values.at(pc) = execute_sub(values, it->op1(), it->op2());
+        break;
+      case Instruction::Opcode::power:
+        values.at(pc) = execute_power(values, it->op1(), it->op2());
         break;
       }
       ++pc;

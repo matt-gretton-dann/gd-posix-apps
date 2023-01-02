@@ -329,6 +329,16 @@ public:
     return instrs.size() - 1;
   }
 
+  static auto emit_power(Instructions& instrs, ExprResult lhs, ExprResult rhs) -> Instruction::Index
+  {
+    assert(lhs.index.has_value());
+    assert(rhs.index.has_value());
+    auto lhs_idx{emit_maybe_lvalue(instrs, lhs)};
+    auto rhs_idx{emit_maybe_lvalue(instrs, rhs)};
+    instrs.emplace_back(Instruction::Opcode::power, lhs_idx, rhs_idx);
+    return instrs.size() - 1;
+  }
+
   /** \brief Parse optional newlines.
    *
    * newline_opt : NEWLINE newline_opt
@@ -591,6 +601,37 @@ public:
     return lvalue;
   }
 
+  /** @brief Parse a power expression
+   *
+   * @param  instrs     Where to emit code to
+   * @param  expr_type  Expression type
+   * @param  unary_type What expression class is this?
+   * @return            Index of emitted expression, and updated expression type
+   *
+   * power_expr : post_incr_decr_expr ^ power_expr
+   *            | post_incr_decr_expr
+   *
+   * | Pattern                             | Expr or print_expr?  | Unary or non-unary?  |
+   * | :---------------------------------- | :------------------- | :------------------- |
+   * | expr ^ expr                         | Both                 | Both                 |
+   */
+  auto parse_power_expr_opt(Instructions& instrs, ExprType expr_type, UnaryType unary_type)
+    -> ExprResult
+  {
+    ExprResult const lhs{parse_pre_incr_decr_expr_opt(instrs, expr_type, unary_type)};
+    if (lexer_->peek(false) != Token::Type::power) {
+      return lhs;
+    }
+    lexer_->chew(false);
+
+    ExprResult const rhs{parse_power_expr_opt(instrs, expr_type, unary_type)};
+    if (!rhs.index.has_value()) {
+      error(Msg::expected_expr_after_power, lexer_->location(), lexer_->peek(false));
+    }
+
+    return {emit_power(instrs, lhs, rhs)};
+  }
+
   /** @brief Parse an expression (of any type)
    *
    * @param  instrs     Where to emit code to
@@ -657,7 +698,7 @@ public:
   auto parse_expr_opt(Instructions& instrs, ExprType expr_type,
                       [[maybe_unused]] UnaryType unary_type) -> ExprResult
   {
-    return parse_pre_incr_decr_expr_opt(instrs, expr_type, UnaryType::both);
+    return parse_power_expr_opt(instrs, expr_type, UnaryType::both);
   }
 
   /** @brief Parse an expression list (of any type)

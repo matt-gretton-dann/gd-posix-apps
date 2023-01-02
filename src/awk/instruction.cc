@@ -114,6 +114,9 @@ auto GD::Awk::operator<<(std::ostream& os, GD::Awk::Instruction::Opcode opcode) 
   case GD::Awk::Instruction::Opcode::sub:
     os << "sub";
     break;
+  case GD::Awk::Instruction::Opcode::power:
+    os << "power";
+    break;
   }
   return os;
 }
@@ -135,6 +138,7 @@ auto GD::Awk::Instruction::op_count(Opcode opcode) -> unsigned
   case GD::Awk::Instruction::Opcode::push_param:
   case GD::Awk::Instruction::Opcode::add:
   case GD::Awk::Instruction::Opcode::sub:
+  case GD::Awk::Instruction::Opcode::power:
     return 2;
   }
 }
@@ -156,6 +160,7 @@ void GD::Awk::Instruction::validate_operands() const
   case GD::Awk::Instruction::Opcode::store_lvalue:
   case GD::Awk::Instruction::Opcode::add:
   case GD::Awk::Instruction::Opcode::sub:
+  case GD::Awk::Instruction::Opcode::power:
     assert(std::holds_alternative<Index>(*op1_));  // NOLINT
     assert(std::holds_alternative<Index>(*op2_));  // NOLINT
     break;
