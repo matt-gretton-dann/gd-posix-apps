@@ -337,6 +337,7 @@ public:
                           return fmt::vformat(ofmt, fmt::make_format_args(v));
                         },
                         [](std::string const& s) { return s; },
+                        [](std::nullopt_t) { return std::string{}; },
                         [](auto const&) {
                           std::abort();
                           return std::string{};
@@ -439,7 +440,8 @@ public:
     }
     char const rs{rs_var[0]};
 
-    // Loop round reading a byte at a time until we get to the record separator symbol.
+    // Loop round reading a byte at a time until we get to the record separator
+    // symbol.
     std::string record;
     int c{input_file.getc()};
     while (c != EOF && c != rs) {

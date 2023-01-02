@@ -44,8 +44,12 @@ test_awk('BEGIN { print ORS }', '\n\n')
 test_awk('BEGIN { print (1) }', '1\n')
 test_awk('BEGIN { print (1, 2) }', '1 2\n')
 test_awk('BEGIN { print (1), 2 }', '1 2\n')
-test_awk("   { COUNT++ }\nEND { print COUNT }", '6\n', in_file=emp_data)
-test_awk("   { COUNT-- }\nEND { print COUNT }", '-6\n', in_file=emp_data)
+test_awk("{ print COUNT++ }\nEND { print COUNT }", '\n1\n2\n3\n4\n5\n6\n',
+         in_file=emp_data)
+test_awk("{ COUNT-- }\nEND { print COUNT }", '-6\n', in_file=emp_data)
+test_awk("{ print ++COUNT }\nEND { print COUNT }", '1\n2\n3\n4\n5\n6\n6\n',
+         in_file=emp_data)
+test_awk("{ --COUNT }\nEND { print COUNT }", '-6\n', in_file=emp_data)
 
 # Some error tests
 test_awk('BEGIN { print (1 }', None, expected_rc=1)

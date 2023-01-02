@@ -200,6 +200,12 @@
         "id": 33,
         "description": "Extra characters at the end of the program, starting with {0}",
         "C": "There are extra characters after the end of the program.  First extra token: {0}"
+      },
+      {
+        "msg": "expected_lvalue_after_pre_incr_decr",
+        "id": 34,
+        "description": "Expected an lvalue after ++ or -- (in {1}), but instead got {0}.",
+        "C": "Expected a variable, array, or field reference after {1}, but instead found {0}."
       }
     ]
   }

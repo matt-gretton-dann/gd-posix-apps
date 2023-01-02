@@ -539,6 +539,58 @@ public:
     return result;
   }
 
+  /** @brief Parse a pre- increment/decrement expression
+   *
+   * @param  instrs     Where to emit code to
+   * @param  expr_type  Expression type
+   * @param  unary_type What expression class is this?
+   * @return            Index of emitted expression, and updated expression type
+   *
+   * post_incr_decr_expr : INCR lvalue
+   *                     | DECR lvalue
+   *                     | primary_expr
+   *
+   * | Pattern                             | Expr or print_expr?  | Unary or non-unary?  |
+   * | :---------------------------------- | :------------------- | :------------------- |
+   * | INCR lvalue                         | Both                 | Non-unary            |
+   * | DECR rvalue                         | Both                 | Non-unary            |
+   */
+  auto parse_pre_incr_decr_expr_opt(Instructions& instrs, ExprType expr_type, UnaryType unary_type)
+    -> ExprResult
+  {
+    auto token{lexer_->peek(false)};
+    if (unary_type == UnaryType::unary ||
+        (token != Token::Type::incr && token != Token::Type::decr)) {
+      return parse_post_incr_decr_expr_opt(instrs, expr_type, unary_type);
+    }
+
+    bool const is_incr{token == Token::Type::incr};
+    lexer_->chew(false);
+
+    // Parse the primary expression
+    ExprResult lvalue{parse_post_incr_decr_expr_opt(instrs, expr_type, unary_type)};
+
+    if (!lvalue.is_lvalue || !lvalue.index.has_value()) {
+      error(Msg::expected_lvalue_after_pre_incr_decr, lexer_->location(), token,
+            lexer_->peek(false));
+    }
+
+    // Code sequence:
+    //  x: load_lvalue result.index
+    //  x + 1: load_lt 1
+    //  x + 2: add x, x + 1 (or sub)
+    //  x + 3: store_lvalue result.index
+    //  result.index = x + 2
+    Instruction::Index const val_index{emit_maybe_lvalue(instrs, lvalue)};
+    auto lit1_index{emit_load_literal(instrs, Integer{1})};
+    auto mod_index{is_incr ? emit_add(instrs, lvalue, {lit1_index})
+                           : emit_sub(instrs, {val_index}, {lit1_index})};
+    emit_store_lvalue(instrs, lvalue, {mod_index});
+    lvalue.index = mod_index;
+    lvalue.is_lvalue = false;
+    return lvalue;
+  }
+
   /** @brief Parse an expression (of any type)
    *
    * @param  instrs     Where to emit code to
@@ -605,7 +657,7 @@ public:
   auto parse_expr_opt(Instructions& instrs, ExprType expr_type,
                       [[maybe_unused]] UnaryType unary_type) -> ExprResult
   {
-    return parse_post_incr_decr_expr_opt(instrs, expr_type, UnaryType::both);
+    return parse_pre_incr_decr_expr_opt(instrs, expr_type, UnaryType::both);
   }
 
   /** @brief Parse an expression list (of any type)
