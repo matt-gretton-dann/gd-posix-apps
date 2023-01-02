@@ -8,12 +8,22 @@ import sys
 import int_tests
 
 
-def test_awk(program, expected_stdout, in_file=None):
+def test_awk(program, expected_stdout, in_file=None, expected_rc=0):
     cmd_line = [tester.exe(), program]
+    test_name = program
     if in_file is not None:
         cmd_line.append(in_file)
-    tester.run_test(cmd_line, test_name=program, expected_rc=0,
-                    expected_stdout=expected_stdout, expected_stderr='')
+        test_name += f" {in_file}"
+
+    expected_stderr = ''
+    if expected_rc != 0:
+        expected_stderr = None
+        expected_stdout = None
+        test_name += " (error)"
+
+    tester.run_test(cmd_line, test_name=test_name, expected_rc=expected_rc,
+                    expected_stdout=expected_stdout,
+                    expected_stderr=expected_stderr)
 
 
 tester = int_tests.TestRunner()
@@ -28,6 +38,13 @@ test_awk('END { print "Goodbye world!"; }', "Goodbye world!\n")
 test_awk('BEGIN { print 1, 2; }', "1 2\n")
 test_awk('BEGIN { print OFS; }', ' \n')
 test_awk('BEGIN { print ORS; }', '\n\n')
+test_awk('BEGIN { print (1); }', '1\n')
+test_awk('BEGIN { print (1, 2); }', '1 2\n')
+test_awk('BEGIN { print (1), 2; }', '1 2\n')
+
+# Some error tests
+test_awk('BEGIN { print (1; }', None, expected_rc=1)
+test_awk('BEGIN { print (1,; }', None, expected_rc=1)
 
 # The AWK Programming Language Chapter 1 Examples
 emp_data = tester.input_file('emp.data')

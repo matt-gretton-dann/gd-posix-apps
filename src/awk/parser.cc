@@ -429,6 +429,26 @@ public:
       result.index = emit_load_literal(instrs, std::regex{tok.ere(), std::regex_constants::awk});
       lexer_->chew(false);
       break;
+    case Token::Type::lparens: {
+      lexer_->chew(false);
+      auto expr{parse_expr_opt(instrs, ExprType::expr, UnaryType::both)};
+      auto const& close_tok{lexer_->peek(false)};
+      if (close_tok == Token::Type::rparens) {
+        lexer_->chew(false);
+        result.index = expr.index;
+        break;
+      }
+
+      if (close_tok == Token::Type::comma && expr_type == ExprType::maybe_expr) {
+        // We now know we're a full expression, and this comma is part of a list - so we'll update
+        // our types.  But not chew the comma - that will be done further up.
+        result.index = expr.index;
+        result.type = ExprType::expr;
+        break;
+      }
+
+      error(Msg::expected_rparens_at_end_of_expression, lexer_->location(), lexer_->peek(false));
+    }
     default:
       result = parse_lvalue_opt(instrs, expr_type, unary_type);
       break;

@@ -182,6 +182,12 @@
         "id": 30,
         "description": "Expected an expression after '$', got {0} instead.",
         "C": "Expected an expression after '$', got {0} instead."
+      },
+      {
+        "msg": "expected_rparens_at_end_of_expression",
+        "id": 31,
+        "description": "Expected a ')' to match '(' surrounding an expression, got {0} instead.",
+        "C": "Expected a ')' to match '(' surrounding an expression, got {0} instead."
       }
     ]
   }
