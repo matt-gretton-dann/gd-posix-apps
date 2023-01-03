@@ -388,6 +388,17 @@ public:
     return instrs.size() - 1;
   }
 
+  static auto emit_concat(Instructions& instrs, ExprResult lhs, ExprResult rhs)
+    -> Instruction::Index
+  {
+    assert(lhs.index.has_value());
+    assert(rhs.index.has_value());
+    auto lhs_idx{emit_maybe_lvalue(instrs, lhs)};
+    auto rhs_idx{emit_maybe_lvalue(instrs, rhs)};
+    instrs.emplace_back(Instruction::Opcode::concat, lhs_idx, rhs_idx);
+    return instrs.size() - 1;
+  }
+
   static auto emit_to_number(Instructions& instrs, ExprResult num) -> Instruction::Index
   {
     assert(num.index.has_value());
@@ -491,6 +502,10 @@ public:
     switch (tok.type()) {
     case Token::Type::integer:
       result.index = emit_load_literal(instrs, tok.integer());
+      lexer_->chew(false);
+      break;
+    case Token::Type::floating:
+      result.index = emit_load_literal(instrs, tok.floating());
       lexer_->chew(false);
       break;
     case Token::Type::string:
@@ -862,6 +877,40 @@ public:
     return lhs;
   }
 
+  /** @brief Parse an concat expression
+   *
+   * @param  instrs     Where to emit code to
+   * @param  expr_type  Expression type
+   * @param  unary_type What expression class is this?
+   * @return            Index of emitted expression, and updated expression type
+   *
+   * concat_expr : concat_expr additive_expr(Non-unary)
+   *             | additive_expr
+   *
+   * | Pattern                                 | Expr or print_expr?  | Unary or non-unary?  |
+   * | :-------------------------------------- | :------------------- | :------------------- |
+   * | concat_expr additive_expr(Non-unary)    | Both                 | Both                 |
+   */
+  auto parse_concat_expr_opt(Instructions& instrs, ExprType expr_type, UnaryType unary_type)
+    -> ExprResult
+  {
+    ExprResult lhs{parse_additive_expr_opt(instrs, expr_type, unary_type)};
+    bool cont{true};
+    while (cont) {
+      // TODO(mgrettondann): make this hack more robust/reasonable!
+      // We might want to parse the next token as a '/' so let's peek(true) now to populate the
+      // next token.
+      (void)lexer_->peek(true);
+      auto rhs{parse_additive_expr_opt(instrs, expr_type, UnaryType::non_unary)};
+      cont = rhs.index.has_value();
+      if (cont) {
+        lhs.index = emit_concat(instrs, lhs, rhs);
+      }
+    }
+
+    return lhs;
+  }
+
   /** @brief Parse an expression (of any type)
    *
    * @param  instrs     Where to emit code to
@@ -928,7 +977,7 @@ public:
   auto parse_expr_opt(Instructions& instrs, ExprType expr_type,
                       [[maybe_unused]] UnaryType unary_type) -> ExprResult
   {
-    return parse_additive_expr_opt(instrs, expr_type, UnaryType::both);
+    return parse_concat_expr_opt(instrs, expr_type, UnaryType::both);
   }
 
   /** @brief Parse an expression list (of any type)

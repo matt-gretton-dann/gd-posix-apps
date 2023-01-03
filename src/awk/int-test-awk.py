@@ -67,6 +67,8 @@ test_awk('BEGIN { print 24 % 11 % 3, (24 % 11) % 3, 24 % (11 % 3) }',
 test_awk('BEGIN { print 1 + 2, 1 - 2 }', '3 -1\n')
 test_awk('BEGIN { print 1 + 2 * 3, (1 + 2) * 3, 1 + (2 * 3) }', '7 9 7\n')
 test_awk('BEGIN { print 1 - 2 - 3, (1 - 2) - 3, 1 - (2 - 3) }', '-4 -4 2\n')
+test_awk('BEGIN { print "Hello" " " "world!" }', 'Hello world!\n')
+test_awk('BEGIN { print "Hello " 2.3 " world!" }', 'Hello 2.3 world!\n')
 
 # Some error tests
 test_awk('BEGIN { print (1 }', None, expected_rc=1)

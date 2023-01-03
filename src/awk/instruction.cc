@@ -126,6 +126,9 @@ auto GD::Awk::operator<<(std::ostream& os, GD::Awk::Instruction::Opcode opcode) 
   case GD::Awk::Instruction::Opcode::modulo:
     os << "modulo";
     break;
+  case GD::Awk::Instruction::Opcode::concat:
+    os << "concat";
+    break;
   case GD::Awk::Instruction::Opcode::to_bool:
     os << "to_bool";
     break;
@@ -167,6 +170,7 @@ auto GD::Awk::Instruction::op_count(Opcode opcode) -> unsigned
   case GD::Awk::Instruction::Opcode::multiply:
   case GD::Awk::Instruction::Opcode::divide:
   case GD::Awk::Instruction::Opcode::modulo:
+  case GD::Awk::Instruction::Opcode::concat:
     return 2;
   }
 }
@@ -192,6 +196,7 @@ void GD::Awk::Instruction::validate_operands() const
   case GD::Awk::Instruction::Opcode::multiply:
   case GD::Awk::Instruction::Opcode::divide:
   case GD::Awk::Instruction::Opcode::modulo:
+  case GD::Awk::Instruction::Opcode::concat:
   case GD::Awk::Instruction::Opcode::print:
   case GD::Awk::Instruction::Opcode::printf:
   case GD::Awk::Instruction::Opcode::push_param:

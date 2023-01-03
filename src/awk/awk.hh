@@ -564,6 +564,7 @@ private:
  * | multiply           | Ix(I/F)      | Ix(I/F)     | <op1> * <op2>                              |
  * | divide             | Ix(I/F)      | Ix(I/F)     | <op1> / <op2>                              |
  * | modulo             | Ix(I/F)      | Ix(I/F)     | <op1> % <op2>                              |
+ * | concat             | Ix(S)        | Ix(S)       | concatenate <op1> and <op2>                |
  *
  * Parameter packs are identified by the index of the instruction corresponding to the
  * 'open_param_pack'.
@@ -593,6 +594,7 @@ public:
     multiply,          ///< Multiplication
     divide,            ///< Division
     modulo,            ///< Modulous
+    concat,
   };
 
   /** Type representing an index into the list of instructions.  */

@@ -217,7 +217,6 @@ if (NOT WIN32)
           "awk/onetrueawk-awk/general/t.pp1"
           "awk/onetrueawk-awk/general/t.pp2"
           "awk/onetrueawk-awk/general/t.printf"
-          "awk/onetrueawk-awk/general/t.quote"
           "awk/onetrueawk-awk/general/t.randk"
           "awk/onetrueawk-awk/general/t.re1"
           "awk/onetrueawk-awk/general/t.re1a"
