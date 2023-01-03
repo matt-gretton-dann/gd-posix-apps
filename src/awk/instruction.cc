@@ -117,6 +117,18 @@ auto GD::Awk::operator<<(std::ostream& os, GD::Awk::Instruction::Opcode opcode) 
   case GD::Awk::Instruction::Opcode::power:
     os << "power";
     break;
+  case GD::Awk::Instruction::Opcode::to_bool:
+    os << "to_bool";
+    break;
+  case GD::Awk::Instruction::Opcode::to_number:
+    os << "to_number";
+    break;
+  case GD::Awk::Instruction::Opcode::negate:
+    os << "negate";
+    break;
+  case GD::Awk::Instruction::Opcode::logical_not:
+    os << "logical_not";
+    break;
   }
   return os;
 }
@@ -131,6 +143,10 @@ auto GD::Awk::Instruction::op_count(Opcode opcode) -> unsigned
   case GD::Awk::Instruction::Opcode::field:
   case GD::Awk::Instruction::Opcode::variable:
   case GD::Awk::Instruction::Opcode::close_param_pack:
+  case GD::Awk::Instruction::Opcode::to_number:
+  case GD::Awk::Instruction::Opcode::to_bool:
+  case GD::Awk::Instruction::Opcode::negate:
+  case GD::Awk::Instruction::Opcode::logical_not:
     return 1;
   case GD::Awk::Instruction::Opcode::store_lvalue:
   case GD::Awk::Instruction::Opcode::print:
@@ -161,6 +177,9 @@ void GD::Awk::Instruction::validate_operands() const
   case GD::Awk::Instruction::Opcode::add:
   case GD::Awk::Instruction::Opcode::sub:
   case GD::Awk::Instruction::Opcode::power:
+  case GD::Awk::Instruction::Opcode::print:
+  case GD::Awk::Instruction::Opcode::printf:
+  case GD::Awk::Instruction::Opcode::push_param:
     assert(std::holds_alternative<Index>(*op1_));  // NOLINT
     assert(std::holds_alternative<Index>(*op2_));  // NOLINT
     break;
@@ -170,13 +189,11 @@ void GD::Awk::Instruction::validate_operands() const
   case GD::Awk::Instruction::Opcode::close_param_pack:
   case GD::Awk::Instruction::Opcode::field:
   case GD::Awk::Instruction::Opcode::load_lvalue:
+  case GD::Awk::Instruction::Opcode::to_bool:
+  case GD::Awk::Instruction::Opcode::to_number:
+  case GD::Awk::Instruction::Opcode::negate:
+  case GD::Awk::Instruction::Opcode::logical_not:
     assert(std::holds_alternative<Index>(*op1_));  // NOLINT
-    break;
-  case GD::Awk::Instruction::Opcode::print:
-  case GD::Awk::Instruction::Opcode::printf:
-  case GD::Awk::Instruction::Opcode::push_param:
-    assert(std::holds_alternative<Index>(*op1_));  // NOLINT
-    assert(std::holds_alternative<Index>(*op2_));  // NOLINT
     break;
   }
 }

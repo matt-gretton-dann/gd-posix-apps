@@ -528,18 +528,18 @@ private:
  *   2: value of a + b
  *
  * Key for opcode table:
+ *  * B: castable to Boolean
  *  * BFN: Builtin function name
- *  * I: Integer
+ *  * I: castable to Integer
  *  * Ix(t): Index to the result of another instruction, t is the type of result expected.
- *  * F: Floating
+ *  * F: castable Floating
  *  * FD: File descriptor
  *  * FL: Field ID
  *  * FN: Function name
- *  * NS: Numeric String
  *  * PP: Parameter pack
  *  * O(r): Offset to the result of a different instruction. r is type of result.
  *  * R: Regex
- *  * S: String
+ *  * S: castable to String
  *  * VN: Variable name
  *
  * | Opcode             |  Operand 1   |  Operand 2  |  Description                               |
@@ -556,7 +556,11 @@ private:
  * | close_param_pack   | Ix(PP)       |             | Close the parameter pack <op1>             |
  * | add                | Ix(I/F)      | Ix(I/F)     | <op1> + <op2>                              |
  * | sub                | Ix(I/F)      | Ix(I/F)     | <op1> - <op2>                              |
- * | power                | Ix(I/F)      | Ix(I/F)     | <op1> ^ <op2> |
+ * | power              | Ix(I/F)      | Ix(I/F)     | <op1> ^ <op2>                              |
+ * | to_number          | Ix(I/F)      |             | cast op1 to a number                       |
+ * | to_bool            | Ix(B)        |             | cast op1 to a bool                         |
+ * | negate             | Ix(I/F)      |             | -<op1>                                     |
+ * | logical_not        | Ix(B)        |             | !<op1>                                     |
  *
  * Parameter packs are identified by the index of the instruction corresponding to the
  * 'open_param_pack'.
@@ -579,6 +583,10 @@ public:
     add,               ///< Numeric addition
     sub,               ///< Numeric subtraction
     power,             ///< Exponentation
+    to_number,         ///< Cast to number
+    to_bool,           ///< Cast to bool
+    negate,            ///< negation
+    logical_not,       ///< Logical not
   };
 
   /** Type representing an index into the list of instructions.  */

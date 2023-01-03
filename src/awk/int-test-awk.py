@@ -52,6 +52,12 @@ test_awk("{ print ++COUNT }\nEND { print COUNT }", '1\n2\n3\n4\n5\n6\n6\n',
 test_awk("{ --COUNT }\nEND { print COUNT }", '-6\n', in_file=emp_data)
 test_awk("BEGIN { print 2 ^ 5 }", "32\n")
 test_awk("BEGIN { print 2 ^ 3 ^ 2, (2 ^ 3) ^ 2, 2 ^ (3 ^ 2) }", "512 64 512\n")
+test_awk("BEGIN { print + 1 }", "1\n")
+test_awk("BEGIN { print - 1 }", "-1\n")
+test_awk("BEGIN { print ! 301 }", "0\n")
+test_awk("BEGIN { print ! ! 301 }", "1\n")
+test_awk('BEGIN { print ! "" }', "1\n")
+test_awk('BEGIN { print ! "1" }', "0\n")
 
 # Some error tests
 test_awk('BEGIN { print (1 }', None, expected_rc=1)

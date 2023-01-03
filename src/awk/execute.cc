@@ -45,7 +45,7 @@ using Field = TypeWrapper<Integer::underlying_type, struct FieldTag>;
 
 /// A value - either string, signed integer, or double.
 using ExecutionValue = std::variant<std::string, Integer, Floating, std::regex, std::nullopt_t,
-                                    VariableName, Field, FileDescriptor>;
+                                    VariableName, Field, FileDescriptor, bool>;
 }  // namespace GD::Awk::Details
 
 // This needs to be in the global space
@@ -293,6 +293,19 @@ public:
     return Field{field.get()};
   }
 
+  static auto to_bool(ExecutionValue const& value) -> std::optional<bool>
+  {
+    return std::visit(GD::Overloaded{
+                        [](Integer i) { return std::make_optional(i.get() != 0); },
+                        [](Floating f) { return std::make_optional(f != 0.0); },
+                        [](std::nullopt_t) { return std::make_optional(false); },
+                        [](std::string const& s) { return std::make_optional(!s.empty()); },
+                        [](bool b) { return std::make_optional(b); },
+                        [](auto const&) { return std::optional<bool>{std::nullopt}; },
+                      },
+                      value);
+  }
+
   static auto to_integer(std::string const& s) -> std::optional<Integer::underlying_type>
   {
     if (s.empty()) {
@@ -327,6 +340,7 @@ public:
         [](Floating f) { return to_integer(f); },
         [](std::nullopt_t) { return std::make_optional(Integer::underlying_type{0}); },
         [](std::string const& s) { return to_integer(s); },
+        [](bool b) { return std::optional<Integer::underlying_type>(b ? 1 : 0); },
         [](auto const&) { return std::optional<Integer::underlying_type>{std::nullopt}; },
       },
       value);
@@ -351,6 +365,7 @@ public:
         [](Integer i) { return std::make_optional(static_cast<Floating>(i.get())); },
         [](Floating f) { return std::make_optional(f); },
         [](std::nullopt_t) { return std::make_optional(Floating{0.0}); },
+        [](bool b) { return std::optional<Floating>(b ? 1.0 : 0.0); },
         [this](std::string const& s) { return str_to_floating(s); },
         [](auto const&) { return std::optional<Floating>{std::nullopt}; },
       },
@@ -391,7 +406,6 @@ public:
   auto execute_add(std::vector<ExecutionValue> const& values, Instruction::Operand const& lhs,
                    Instruction::Operand const& rhs) -> ExecutionValue
   {
-    // TODO(mgrettondann): Handle overflow
     return execute_binary_op(
       values, lhs, rhs,
       [](Integer::underlying_type a, Integer::underlying_type b) { return do_int_add(a, b); },
@@ -401,7 +415,6 @@ public:
   auto execute_sub(std::vector<ExecutionValue> const& values, Instruction::Operand const& lhs,
                    Instruction::Operand const& rhs) -> ExecutionValue
   {
-    // TODO(mgrettondann): Handle overflow
     return execute_binary_op(
       values, lhs, rhs,
       [](Integer::underlying_type a, Integer::underlying_type b) { return do_int_sub(a, b); },
@@ -411,11 +424,74 @@ public:
   auto execute_power(std::vector<ExecutionValue> const& values, Instruction::Operand const& lhs,
                      Instruction::Operand const& rhs) -> ExecutionValue
   {
-    // TODO(mgrettondann): Handle overflow
     return execute_binary_op(
       values, lhs, rhs,
       [](Integer::underlying_type a, Integer::underlying_type b) { return do_int_power(a, b); },
       [](Floating a, Floating b) { return std::pow(a, b); });
+  }
+
+  auto execute_to_number(std::vector<ExecutionValue> const& values, Instruction::Operand const& op)
+    -> ExecutionValue
+  {
+    assert(std::holds_alternative<Instruction::Index>(op));
+    ExecutionValue const& value{values.at(std::get<Instruction::Index>(op))};
+    auto integer{to_integer(value)};
+    if (integer.has_value()) {
+      return Integer{*integer};
+    }
+
+    auto floating{to_floating(value)};
+    if (floating.has_value()) {
+      return Floating{*floating};
+    }
+
+    error(Msg::unable_to_cast_value_to_number, value);
+  }
+
+  auto execute_negate(std::vector<ExecutionValue> const& values, Instruction::Operand const& op)
+    -> ExecutionValue
+  {
+    assert(std::holds_alternative<Instruction::Index>(op));
+    ExecutionValue const& value{values.at(std::get<Instruction::Index>(op))};
+    auto integer{to_integer(value)};
+    if (integer.has_value()) {
+      auto result{-*integer};
+      return Integer{result};
+    }
+
+    auto floating{to_floating(value)};
+    if (floating.has_value()) {
+      return Floating{-*floating};
+    }
+
+    error(Msg::unable_to_cast_value_to_number, value);
+  }
+
+  static auto execute_to_bool(std::vector<ExecutionValue> const& values,
+                              Instruction::Operand const& op) -> ExecutionValue
+  {
+    assert(std::holds_alternative<Instruction::Index>(op));
+    ExecutionValue const& value{values.at(std::get<Instruction::Index>(op))};
+    auto b{to_bool(value)};
+    if (b.has_value()) {
+      return Integer{*b};
+    }
+
+    error(Msg::unable_to_cast_value_to_bool, value);
+  }
+
+  static auto execute_logical_not(std::vector<ExecutionValue> const& values,
+                                  Instruction::Operand const& op) -> ExecutionValue
+  {
+    assert(std::holds_alternative<Instruction::Index>(op));
+    ExecutionValue const& value{values.at(std::get<Instruction::Index>(op))};
+    auto b{to_bool(value)};
+    if (b.has_value()) {
+      auto result{!*b};
+      return Integer{result};
+    }
+
+    error(Msg::unable_to_cast_value_to_bool, value);
   }
 
   auto format_value(std::vector<ExecutionValue> const& values, Instruction::Operand const& index)
@@ -428,6 +504,7 @@ public:
                           auto ofmt{std::get<std::string>(var("OFMT"))};
                           return fmt::vformat(ofmt, fmt::make_format_args(v));
                         },
+                        [](bool b) { return b ? std::string{"1"} : std::string{"0"}; },
                         [](std::string const& s) { return s; },
                         [](std::nullopt_t) { return std::string{}; },
                         [](auto const&) {
@@ -483,6 +560,17 @@ public:
       case Instruction::Opcode::power:
         values.at(pc) = execute_power(values, it->op1(), it->op2());
         break;
+      case Instruction::Opcode::to_number:
+        values.at(pc) = execute_to_number(values, it->op1());
+        break;
+      case Instruction::Opcode::to_bool:
+        values.at(pc) = execute_to_bool(values, it->op1());
+        break;
+      case Instruction::Opcode::negate:
+        values.at(pc) = execute_negate(values, it->op1());
+        break;
+      case Instruction::Opcode::logical_not:
+        values.at(pc) = execute_logical_not(values, it->op1());
       }
       ++pc;
     }

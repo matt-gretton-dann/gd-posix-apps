@@ -105,6 +105,11 @@ struct ExprResult
   bool is_lvalue{false};
 };
 
+constexpr auto is_unary_prefix_op(Token::Type type) -> bool
+{
+  return type == Token::Type::not_ || type == Token::Type::add || type == Token::Type::subtract;
+}
+
 class ParseState
 {
 public:
@@ -339,6 +344,34 @@ public:
     return instrs.size() - 1;
   }
 
+  static auto emit_to_number(Instructions& instrs, ExprResult num) -> Instruction::Index
+  {
+    assert(num.index.has_value());
+    instrs.emplace_back(Instruction::Opcode::to_number, *(num.index));
+    return instrs.size() - 1;
+  }
+
+  static auto emit_to_bool(Instructions& instrs, ExprResult num) -> Instruction::Index
+  {
+    assert(num.index.has_value());
+    instrs.emplace_back(Instruction::Opcode::to_bool, *(num.index));
+    return instrs.size() - 1;
+  }
+
+  static auto emit_negate(Instructions& instrs, ExprResult num) -> Instruction::Index
+  {
+    assert(num.index.has_value());
+    instrs.emplace_back(Instruction::Opcode::negate, *(num.index));
+    return instrs.size() - 1;
+  }
+
+  static auto emit_logical_not(Instructions& instrs, ExprResult num) -> Instruction::Index
+  {
+    assert(num.index.has_value());
+    instrs.emplace_back(Instruction::Opcode::logical_not, *(num.index));
+    return instrs.size() - 1;
+  }
+
   /** \brief Parse optional newlines.
    *
    * newline_opt : NEWLINE newline_opt
@@ -511,8 +544,8 @@ public:
    *
    * | Pattern                             | Expr or print_expr?  | Unary or non-unary?  |
    * | :---------------------------------- | :------------------- | :------------------- |
-   * | lvalue INCR                         | Both                 | Non-unary            |
-   * | rvalue INCR                         | Both                 | Non-unary            |
+   * | lvalue ++                           | Both                 | Non-unary            |
+   * | lvalue --                           | Both                 | Non-unary            |
    */
   auto parse_post_incr_decr_expr_opt(Instructions& instrs, ExprType expr_type, UnaryType unary_type)
     -> ExprResult
@@ -561,8 +594,8 @@ public:
    *
    * | Pattern                             | Expr or print_expr?  | Unary or non-unary?  |
    * | :---------------------------------- | :------------------- | :------------------- |
-   * | INCR lvalue                         | Both                 | Non-unary            |
-   * | DECR rvalue                         | Both                 | Non-unary            |
+   * | ++ lvalue                           | Both                 | Non-unary            |
+   * | -- rvalue                           | Both                 | Non-unary            |
    */
   auto parse_pre_incr_decr_expr_opt(Instructions& instrs, ExprType expr_type, UnaryType unary_type)
     -> ExprResult
@@ -612,7 +645,7 @@ public:
    *
    * | Pattern                             | Expr or print_expr?  | Unary or non-unary?  |
    * | :---------------------------------- | :------------------- | :------------------- |
-   * | expr ^ expr                         | Both                 | Both                 |
+   * | post_incr_decr_expr ^ power_expr    | Both                 | Both                 |
    */
   auto parse_power_expr_opt(Instructions& instrs, ExprType expr_type, UnaryType unary_type)
     -> ExprResult
@@ -629,6 +662,83 @@ public:
     }
 
     return {emit_power(instrs, lhs, rhs)};
+  }
+
+  /** @brief Parse unary prefix expressions (!, +, and -)
+   *
+   * @param  instrs     Where to emit code to
+   * @param  expr_type  Expression type
+   * @param  unary_type What expression class is this?
+   * @return            Index of emitted expression, and updated expression type
+   *
+   * Not quite the right name as ! expr is actually a non-unary expr!
+   *
+   * unary_prefix_expr : NOT unary_prefix_expr
+   *                   | PLUS unary_prefix_expr
+   *                   | SUB unary_prefix_expr
+   *                   | power_expr
+   *
+   * | Pattern                             | Expr or print_expr?  | Unary or non-unary?  |
+   * | :---------------------------------- | :------------------- | :------------------- |
+   * | ! unary_prefix_expr                 | Both                 | Non-unary            |
+   * | + unary_prefix_expr                 | Both                 | Unary                |
+   * | - unary_prefix_expr                 | Both                 | Unary                |
+   */
+  auto parse_unary_prefix_expr(Instructions& instrs, ExprType expr_type, UnaryType unary_type)
+    -> ExprResult
+  {
+    bool is_not{false};
+    bool do_not{false};
+    bool is_sign_prefix{false};
+    bool negate{false};
+
+    while (is_unary_prefix_op(lexer_->peek(false).type())) {
+      if (lexer_->peek(false) == Token::Type::not_ && unary_type != UnaryType::unary) {
+        unary_type = UnaryType::non_unary;
+        is_not = true;
+        do_not = !do_not;
+      }
+      else if (lexer_->peek(false) == Token::Type::add && unary_type != UnaryType::non_unary) {
+        unary_type = UnaryType::unary;
+        is_sign_prefix = true;
+      }
+      else if (lexer_->peek(false) == Token::Type::subtract && unary_type != UnaryType::non_unary) {
+        unary_type = UnaryType::unary;
+        is_sign_prefix = true;
+        negate = !negate;
+      }
+
+      lexer_->chew(false);
+    }
+
+    if (!is_not && !is_sign_prefix) {
+      return parse_power_expr_opt(instrs, expr_type, unary_type);
+    }
+
+    auto expr{parse_unary_prefix_expr(instrs, expr_type, UnaryType::both)};
+    if (!is_not && !is_sign_prefix) {
+      return expr;
+    }
+
+    if (!expr.index.has_value()) {
+      error(Msg::expected_expr_after_unary_prefix, lexer_->location(),
+            is_not ? "!" : (negate ? "-" : "+"), lexer_->peek(false));  // NOLINT
+    }
+
+    if (is_not) {
+      if (do_not) {
+        return {.index = emit_logical_not(instrs, expr), .type = expr_type};
+      }
+
+      return {.index = emit_to_bool(instrs, expr), .type = expr_type};
+    }
+
+    assert(is_sign_prefix);
+    if (negate) {
+      return {.index = emit_negate(instrs, expr), .type = expr_type};
+    }
+
+    return {.index = emit_to_number(instrs, expr), .type = expr_type};
   }
 
   /** @brief Parse an expression (of any type)
@@ -697,7 +807,7 @@ public:
   auto parse_expr_opt(Instructions& instrs, ExprType expr_type,
                       [[maybe_unused]] UnaryType unary_type) -> ExprResult
   {
-    return parse_power_expr_opt(instrs, expr_type, UnaryType::both);
+    return parse_unary_prefix_expr(instrs, expr_type, UnaryType::both);
   }
 
   /** @brief Parse an expression list (of any type)

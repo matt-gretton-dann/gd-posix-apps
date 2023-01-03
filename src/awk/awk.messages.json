@@ -212,6 +212,24 @@
         "id": 35,
         "description": "Expected an expression after the power '^' operator, but instead got {0}.",
         "C": "Expected an expression after '^', instead got {0}."
+      },
+      {
+        "msg": "expected_expr_after_unary_prefix",
+        "id": 36,
+        "description": "Expected an expression after the power '{0}' operator, but instead got {1}.",
+        "C": "Expected an expression after '{0}', instead got {0}."
+      },
+      {
+        "msg": "unable_to_cast_value_to_number",
+        "id": 37,
+        "description": "Unable to cast the value {0} to a number.",
+        "C": "Unable to cast the value '{0} to a number."
+      },
+      {
+        "msg": "unable_to_cast_value_to_bool",
+        "id": 38,
+        "description": "Unable to cast the value {0} to a boolean.",
+        "C": "Unable to cast the value '{0} to a boolean."
       }
     ]
   }
