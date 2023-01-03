@@ -542,29 +542,35 @@ private:
  *  * S: castable to String
  *  * VN: Variable name
  *
- * | Opcode             |  Operand 1   |  Operand 2  |  Description                               |
- * | :----------------- | :----------- | :---------- | :----------------------------------------- |
- * | field              | Ix(I)        |             | Calculate the field ID from <op1>          |
- * | variable           | VN           |             | Name of a variable                         |
- * | load_literal       | I/F/S/R/FD   |             | Result is the literal in <op1>             |
- * | load_lvalue        | Ix(VN/FL)    |             | Load the lvalue identified by <op1>        |
- * | load_svalue        | Ix(VN/FL)    | Ix(I/F/S)   | Store <op2> into <op1>                     |
- * | print              | Ix(I/F/S)    | Ix(FD)      | Print the value <op1> to stream <op2>      |
- * | printf             | Ix(I/F/S)    | Ix(FD)      | printf the params <op1> to stream <op2>    |
- * | open_param_pack    |              |             | Open a parameter pack                      |
- * | push_param         | Ix(PP)       | Ix(I/F/S)   | Push expr <op2> onto the front of <op1>    |
- * | close_param_pack   | Ix(PP)       |             | Close the parameter pack <op1>             |
- * | add                | Ix(I/F)      | Ix(I/F)     | <op1> + <op2>                              |
- * | sub                | Ix(I/F)      | Ix(I/F)     | <op1> - <op2>                              |
- * | power              | Ix(I/F)      | Ix(I/F)     | <op1> ^ <op2>                              |
- * | to_number          | Ix(I/F)      |             | cast op1 to a number                       |
- * | to_bool            | Ix(B)        |             | cast op1 to a bool                         |
- * | negate             | Ix(I/F)      |             | -<op1>                                     |
- * | logical_not        | Ix(B)        |             | !<op1>                                     |
- * | multiply           | Ix(I/F)      | Ix(I/F)     | <op1> * <op2>                              |
- * | divide             | Ix(I/F)      | Ix(I/F)     | <op1> / <op2>                              |
- * | modulo             | Ix(I/F)      | Ix(I/F)     | <op1> % <op2>                              |
- * | concat             | Ix(S)        | Ix(S)       | concatenate <op1> and <op2>                |
+ * | Opcode                |  Operand 1  |  Operand 2  |  Description                             |
+ * | :-----------------    | :---------- | :---------- | :--------------------------------------- |
+ * | field                 | Ix(I)       |             | Calculate the field ID from <op1>        |
+ * | variable              | VN          |             | Name of a variable                       |
+ * | load_literal          | I/F/S/R/FD  |             | Result is the literal in <op1>           |
+ * | load_lvalue           | Ix(VN/FL)   |             | Load the lvalue identified by <op1>      |
+ * | load_svalue           | Ix(VN/FL)   | Ix(I/F/S)   | Store <op2> into <op1>                   |
+ * | print                 | Ix(I/F/S)   | Ix(FD)      | Print the value <op1> to stream <op2>    |
+ * | printf                | Ix(I/F/S)   | Ix(FD)      | printf the params <op1> to stream <op2>  |
+ * | open_param_pack       |             |             | Open a parameter pack                    |
+ * | push_param            | Ix(PP)      | Ix(I/F/S)   | Push expr <op2> onto the front of <op1>  |
+ * | close_param_pack      | Ix(PP)      |             | Close the parameter pack <op1>           |
+ * | add                   | Ix(I/F)     | Ix(I/F)     | <op1> + <op2>                            |
+ * | sub                   | Ix(I/F)     | Ix(I/F)     | <op1> - <op2>                            |
+ * | power                 | Ix(I/F)     | Ix(I/F)     | <op1> ^ <op2>                            |
+ * | to_number             | Ix(I/F)     |             | cast op1 to a number                     |
+ * | to_bool               | Ix(B)       |             | cast op1 to a bool                       |
+ * | negate                | Ix(I/F)     |             | -<op1>                                   |
+ * | logical_not           | Ix(B)       |             | !<op1>                                   |
+ * | multiply              | Ix(I/F)     | Ix(I/F)     | <op1> * <op2>                            |
+ * | divide                | Ix(I/F)     | Ix(I/F)     | <op1> / <op2>                            |
+ * | modulo                | Ix(I/F)     | Ix(I/F)     | <op1> % <op2>                            |
+ * | concat                | Ix(S)       | Ix(S)       | concatenate <op1> and <op2>              |
+ * | is_equal              | Ix(I/F/S)   | Ix(I/F/S)   | <op1> == <op2>                           |
+ * | is_not_equal          | Ix(I/F/S)   | Ix(I/F/S)   | <op1> != <op2>                           |
+ * | is_less_than          | Ix(I/F/S)   | Ix(I/F/S)   | <op1> <  <op2>                           |
+ * | is_less_than_equal    | Ix(I/F/S)   | Ix(I/F/S)   | <op1> <= <op2>                           |
+ * | is_greater_than       | Ix(I/F/S)   | Ix(I/F/S)   | <op1> >  <op2>                           |
+ * | is_greater_than_equal | Ix(I/F/S)   | Ix(I/F/S)   | <op1> >= <op2>                           |
  *
  * Parameter packs are identified by the index of the instruction corresponding to the
  * 'open_param_pack'.
@@ -574,27 +580,33 @@ class Instruction
 public:
   /** Opcodes. */
   enum class Opcode {
-    field,             ///< A field lvalue
-    variable,          ///< A variable lvalue
-    load_literal,      ///< Load a literal value
-    load_lvalue,       ///< Load an lvalue
-    store_lvalue,      ///< Store an lvalue
-    print,             ///< Print the value referenced by <op1> to stream <op2>.
-    printf,            ///< Printf the parameter pack <op1> to stream <op2>.
-    open_param_pack,   ///< Open a parameter pack.  Result is parameter pack ID.
-    push_param,        ///< Push parameter <op2> onto the front of parameter pack <op1>.
-    close_param_pack,  ///< Close parameter pack <op1>.
-    add,               ///< Numeric addition
-    sub,               ///< Numeric subtraction
-    power,             ///< Exponentation
-    to_number,         ///< Cast to number
-    to_bool,           ///< Cast to bool
-    negate,            ///< negation
-    logical_not,       ///< Logical not
-    multiply,          ///< Multiplication
-    divide,            ///< Division
-    modulo,            ///< Modulous
-    concat,
+    field,                  ///< A field lvalue
+    variable,               ///< A variable lvalue
+    load_literal,           ///< Load a literal value
+    load_lvalue,            ///< Load an lvalue
+    store_lvalue,           ///< Store an lvalue
+    print,                  ///< Print the value referenced by <op1> to stream <op2>.
+    printf,                 ///< Printf the parameter pack <op1> to stream <op2>.
+    open_param_pack,        ///< Open a parameter pack.  Result is parameter pack ID.
+    push_param,             ///< Push parameter <op2> onto the front of parameter pack <op1>.
+    close_param_pack,       ///< Close parameter pack <op1>.
+    add,                    ///< Numeric addition
+    sub,                    ///< Numeric subtraction
+    power,                  ///< Exponentation
+    to_number,              ///< Cast to number
+    to_bool,                ///< Cast to bool
+    negate,                 ///< negation
+    logical_not,            ///< Logical not
+    multiply,               ///< Multiplication
+    divide,                 ///< Division
+    modulo,                 ///< Modulus
+    concat,                 /// String concatenation
+    is_equal,               ///< equality comparison
+    is_not_equal,           ///< inequality comparison
+    is_less_than,           ///< less than comparison
+    is_less_than_equal,     ///< <= comparison
+    is_greater_than,        ///< > comparison
+    is_greater_than_equal,  ///< >= comparison
   };
 
   /** Type representing an index into the list of instructions.  */

@@ -236,6 +236,12 @@
         "id": 39,
         "description": "Unable to cast the value {0} to a string.",
         "C": "Unable to cast the value '{0}' to a string."
+      },
+      {
+        "msg": "expected_expr_after_comparison_op",
+        "id": 40,
+        "description": "Expected an expression after the comparison op '{0}' but got {1}.",
+        "C": "Expected an expression after '{0}' but got {1}."
       }
     ]
   }

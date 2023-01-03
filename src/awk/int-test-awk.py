@@ -69,6 +69,24 @@ test_awk('BEGIN { print 1 + 2 * 3, (1 + 2) * 3, 1 + (2 * 3) }', '7 9 7\n')
 test_awk('BEGIN { print 1 - 2 - 3, (1 - 2) - 3, 1 - (2 - 3) }', '-4 -4 2\n')
 test_awk('BEGIN { print "Hello" " " "world!" }', 'Hello world!\n')
 test_awk('BEGIN { print "Hello " 2.3 " world!" }', 'Hello 2.3 world!\n')
+test_awk(
+    'BEGIN { print (1 == 2), (2 == 1), (1 == 1), ("abc" == "def"), ("def" == "abc"), ("abc" == "abc") }',
+    '0 0 1 0 0 1\n')
+test_awk(
+    'BEGIN { print (1 != 2), (2 != 1), (1 != 1), ("abc" != "def"), ("def" != "abc"), ("abc" != "abc") }',
+    '1 1 0 1 1 0\n')
+test_awk(
+    'BEGIN { print (1 < 2), (2 < 1), (1 < 1), ("abc" < "def"), ("def" < "abc"), ("abc" < "abc") }',
+    '1 0 0 1 0 0\n')
+test_awk(
+    'BEGIN { print (1 <= 2), (2 <= 1), (1 <= 1), ("abc" <= "def"), ("def" <= "abc"), ("abc" <= "abc") }',
+    '1 0 1 1 0 1\n')
+test_awk(
+    'BEGIN { print (1 > 2), (2 > 1), (1 > 1), ("abc" > "def"), ("def" > "abc"), ("abc" > "abc") }',
+    '0 1 0 0 1 0\n')
+test_awk(
+    'BEGIN { print (1 >= 2), (2 >= 1), (1 >= 1), ("abc" >= "def"), ("def" >= "abc"), ("abc" >= "abc") }',
+    '0 1 1 0 1 1\n')
 
 # Some error tests
 test_awk('BEGIN { print (1 }', None, expected_rc=1)
@@ -80,6 +98,7 @@ test_awk('BEGIN { print ++ FUNC ++ }', None, expected_rc=1)
 test_awk('BEGIN { print -- FUNC -- }', None, expected_rc=1)
 test_awk('BEGIN { print 3 ++ }', None, expected_rc=1)
 test_awk('BEGIN { print 3 -- }', None, expected_rc=1)
+test_awk('BEGIN { print 1 < 2}', None, expected_rc=1)
 
 # The AWK Programming Language Chapter 1 Examples
 emp_data = tester.input_file('emp.data')

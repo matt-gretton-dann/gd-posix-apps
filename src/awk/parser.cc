@@ -121,6 +121,12 @@ constexpr auto is_multiplicative_op(Token::Type type) -> bool
          type == Token::Type::modulo;
 }
 
+constexpr auto is_comparison_op(Token::Type type) -> bool
+{
+  return type == Token::Type::eq || type == Token::Type::ne || type == Token::Type::less_than ||
+         type == Token::Type::le || type == Token::Type::greater_than || type == Token::Type::ge;
+}
+
 class ParseState
 {
 public:
@@ -396,6 +402,41 @@ public:
     auto lhs_idx{emit_maybe_lvalue(instrs, lhs)};
     auto rhs_idx{emit_maybe_lvalue(instrs, rhs)};
     instrs.emplace_back(Instruction::Opcode::concat, lhs_idx, rhs_idx);
+    return instrs.size() - 1;
+  }
+
+  static auto emit_comparison_op(Instructions& instrs, Token::Type type, ExprResult lhs,
+                                 ExprResult rhs) -> Instruction::Index
+  {
+    assert(lhs.index.has_value());
+    assert(rhs.index.has_value());
+    Instruction::Opcode op{Instruction::Opcode::load_literal};
+    switch (type) {
+    case Token::Type::eq:
+      op = Instruction::Opcode::is_equal;
+      break;
+    case Token::Type::ne:
+      op = Instruction::Opcode::is_not_equal;
+      break;
+    case Token::Type::less_than:
+      op = Instruction::Opcode::is_less_than;
+      break;
+    case Token::Type::le:
+      op = Instruction::Opcode::is_less_than_equal;
+      break;
+    case Token::Type::greater_than:
+      op = Instruction::Opcode::is_greater_than;
+      break;
+    case Token::Type::ge:
+      op = Instruction::Opcode::is_greater_than_equal;
+      break;
+    default:
+      std::abort();
+      break;
+    }
+    auto lhs_idx{emit_maybe_lvalue(instrs, lhs)};
+    auto rhs_idx{emit_maybe_lvalue(instrs, rhs)};
+    instrs.emplace_back(op, lhs_idx, rhs_idx);
     return instrs.size() - 1;
   }
 
@@ -877,7 +918,7 @@ public:
     return lhs;
   }
 
-  /** @brief Parse an concat expression
+  /** @brief Parse a concat expression
    *
    * @param  instrs     Where to emit code to
    * @param  expr_type  Expression type
@@ -906,6 +947,47 @@ public:
       if (cont) {
         lhs.index = emit_concat(instrs, lhs, rhs);
       }
+    }
+
+    return lhs;
+  }
+
+  /** @brief Parse a comparison expression
+   *
+   * @param  instrs     Where to emit code to
+   * @param  expr_type  Expression type
+   * @param  unary_type What expression class is this?
+   * @return            Index of emitted expression, and updated expression type
+   *
+   * comparison_expr : concat_expr EQ concat_expr
+   *                 | concat_expr NE concat_expr
+   *                 | concat_expr LESS_THAN concat_expr
+   *                 | concat_expr LE concat_expr
+   *                 | concat_expr GREATER_THAN concat_expr
+   *                 | concat_expr GE concat_expr
+   *                 | concat_expr
+   *
+   * | Pattern                                 | Expr or print_expr?  | Unary or non-unary?  |
+   * | :-------------------------------------- | :------------------- | :------------------- |
+   * | concat_expr == concat_expr              | expr                 | Both                 |
+   * | concat_expr additive_expr(Non-unary)    | Both                 | Both                 |
+   */
+  auto parse_comparison_expr_opt(Instructions& instrs, ExprType expr_type, UnaryType unary_type)
+    -> ExprResult
+  {
+    ExprResult const lhs{parse_concat_expr_opt(instrs, expr_type, unary_type)};
+    if (!lhs.index.has_value() || expr_type == ExprType::print_expr) {
+      return lhs;
+    }
+
+    if (auto type{lexer_->peek(true).type()}; is_comparison_op(type)) {
+      lexer_->chew(true);
+      ExprResult const rhs{parse_concat_expr_opt(instrs, expr_type, UnaryType::both)};
+      if (!rhs.index.has_value()) {
+        error(Msg::expected_expr_after_comparison_op, lexer_->location(), type,
+              lexer_->peek(false));
+      }
+      return {emit_comparison_op(instrs, type, lhs, rhs)};
     }
 
     return lhs;
@@ -977,7 +1059,7 @@ public:
   auto parse_expr_opt(Instructions& instrs, ExprType expr_type,
                       [[maybe_unused]] UnaryType unary_type) -> ExprResult
   {
-    return parse_concat_expr_opt(instrs, expr_type, UnaryType::both);
+    return parse_comparison_expr_opt(instrs, expr_type, UnaryType::both);
   }
 
   /** @brief Parse an expression list (of any type)

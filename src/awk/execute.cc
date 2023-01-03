@@ -370,9 +370,14 @@ public:
   [[nodiscard]] static auto str_to_floating(std::string const& s) -> std::optional<Floating>
   {
     std::size_t pos{0};
-    Floating f{std::stod(s, &pos)};
-    if (pos == s.size() && !s.empty()) {
-      return f;
+    try {
+      Floating f{std::stod(s, &pos)};
+      if (pos == s.size() && !s.empty()) {
+        return f;
+      }
+    }
+    catch (...) {
+      return std::nullopt;
     }
 
     return std::nullopt;
@@ -591,6 +596,113 @@ public:
     error(Msg::unable_to_cast_value_to_string, lhs_value);
   }
 
+  template<typename NumFn, typename StringFn>
+  auto execute_comparison_op(std::vector<ExecutionValue> const& values,
+                             Instruction::Operand const& lhs, Instruction::Operand const& rhs,
+                             NumFn num_op, StringFn string_op, std::string const& conv_fmt)
+    -> ExecutionValue
+  {
+    assert(std::holds_alternative<Instruction::Index>(lhs));
+    assert(std::holds_alternative<Instruction::Index>(rhs));
+    ExecutionValue const& lhs_value{values.at(std::get<Instruction::Index>(lhs))};
+    ExecutionValue const& rhs_value{values.at(std::get<Instruction::Index>(rhs))};
+    auto const lhs_int{to_integer(lhs_value)};
+    auto const rhs_int{to_integer(rhs_value)};
+    if (lhs_int.has_value() && rhs_int.has_value()) {
+      return num_op(*lhs_int, *rhs_int);
+    }
+
+    auto const lhs_float{to_floating(lhs_value)};
+    auto const rhs_float{to_floating(rhs_value)};
+    if (lhs_float.has_value() && rhs_float.has_value()) {
+      return num_op(*lhs_float, *rhs_float);
+    }
+
+    auto const lhs_str{to_string(lhs_value, conv_fmt)};
+    auto const rhs_str{to_string(rhs_value, conv_fmt)};
+
+    if (!lhs_str.has_value()) {
+      error(Msg::unable_to_cast_value_to_string, lhs_value);
+    }
+    if (!rhs_str.has_value()) {
+      error(Msg::unable_to_cast_value_to_string, rhs_value);
+    }
+
+    return string_op(*lhs_str, *rhs_str);
+  }
+
+  auto execute_is_equal(std::vector<ExecutionValue> const& values, Instruction::Operand const& lhs,
+                        Instruction::Operand const& rhs, std::string const& conv_fmt)
+    -> ExecutionValue
+  {
+    return execute_comparison_op(
+      values, lhs, rhs, [](auto l, auto r) { return l == r; },
+      [](std::string const& l, std::string const& r) {
+        return std::strcoll(l.data(), r.data()) == 0;
+      },
+      conv_fmt);
+  }
+
+  auto execute_is_not_equal(std::vector<ExecutionValue> const& values,
+                            Instruction::Operand const& lhs, Instruction::Operand const& rhs,
+                            std::string const& conv_fmt) -> ExecutionValue
+  {
+    return execute_comparison_op(
+      values, lhs, rhs, [](auto l, auto r) { return l != r; },
+      [](std::string const& l, std::string const& r) {
+        return std::strcoll(l.data(), r.data()) != 0;
+      },
+      conv_fmt);
+  }
+
+  auto execute_is_less_than(std::vector<ExecutionValue> const& values,
+                            Instruction::Operand const& lhs, Instruction::Operand const& rhs,
+                            std::string const& conv_fmt) -> ExecutionValue
+  {
+    return execute_comparison_op(
+      values, lhs, rhs, [](auto l, auto r) { return l < r; },
+      [](std::string const& l, std::string const& r) {
+        return std::strcoll(l.data(), r.data()) < 0;
+      },
+      conv_fmt);
+  }
+
+  auto execute_is_less_than_equal(std::vector<ExecutionValue> const& values,
+                                  Instruction::Operand const& lhs, Instruction::Operand const& rhs,
+                                  std::string const& conv_fmt) -> ExecutionValue
+  {
+    return execute_comparison_op(
+      values, lhs, rhs, [](auto l, auto r) { return l <= r; },
+      [](std::string const& l, std::string const& r) {
+        return std::strcoll(l.data(), r.data()) <= 0;
+      },
+      conv_fmt);
+  }
+
+  auto execute_is_greater_than(std::vector<ExecutionValue> const& values,
+                               Instruction::Operand const& lhs, Instruction::Operand const& rhs,
+                               std::string const& conv_fmt) -> ExecutionValue
+  {
+    return execute_comparison_op(
+      values, lhs, rhs, [](auto l, auto r) { return l > r; },
+      [](std::string const& l, std::string const& r) {
+        return std::strcoll(l.data(), r.data()) > 0;
+      },
+      conv_fmt);
+  }
+
+  auto execute_greater_than_equal(std::vector<ExecutionValue> const& values,
+                                  Instruction::Operand const& lhs, Instruction::Operand const& rhs,
+                                  std::string const& conv_fmt) -> ExecutionValue
+  {
+    return execute_comparison_op(
+      values, lhs, rhs, [](auto l, auto r) { return l >= r; },
+      [](std::string const& l, std::string const& r) {
+        return std::strcoll(l.data(), r.data()) >= 0;
+      },
+      conv_fmt);
+  }
+
   auto format_value(std::vector<ExecutionValue> const& values, Instruction::Operand const& index)
     -> std::string
   {
@@ -669,6 +781,30 @@ public:
       case Instruction::Opcode::concat:
         values.at(pc) =
           execute_concat(values, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
+        break;
+      case Instruction::Opcode::is_equal:
+        values.at(pc) =
+          execute_is_equal(values, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
+        break;
+      case Instruction::Opcode::is_not_equal:
+        values.at(pc) =
+          execute_is_not_equal(values, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
+        break;
+      case Instruction::Opcode::is_less_than:
+        values.at(pc) =
+          execute_is_less_than(values, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
+        break;
+      case Instruction::Opcode::is_less_than_equal:
+        values.at(pc) = execute_is_less_than_equal(values, it->op1(), it->op2(),
+                                                   std::get<std::string>(var("CONVFMT")));
+        break;
+      case Instruction::Opcode::is_greater_than:
+        values.at(pc) = execute_is_greater_than(values, it->op1(), it->op2(),
+                                                std::get<std::string>(var("CONVFMT")));
+        break;
+      case Instruction::Opcode::is_greater_than_equal:
+        values.at(pc) = execute_greater_than_equal(values, it->op1(), it->op2(),
+                                                   std::get<std::string>(var("CONVFMT")));
         break;
       case Instruction::Opcode::to_number:
         values.at(pc) = execute_to_number(values, it->op1());
