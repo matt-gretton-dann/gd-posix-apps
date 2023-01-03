@@ -411,7 +411,7 @@ auto GD::Awk::operator<<(std::ostream& os, Token const& token) -> std::ostream&
     os << "\"" << token.string() << "\"";
     break;
   case Token::Type::integer:
-    os << token.integer();
+    os << token.integer().get();
     break;
   case Token::Type::floating:
     os << token.floating();
