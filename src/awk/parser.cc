@@ -110,6 +110,11 @@ constexpr auto is_unary_prefix_op(Token::Type type) -> bool
   return type == Token::Type::not_ || type == Token::Type::add || type == Token::Type::subtract;
 }
 
+constexpr auto is_additive_op(Token::Type type) -> bool
+{
+  return type == Token::Type::add || type == Token::Type::subtract;
+}
+
 constexpr auto is_multiplicative_op(Token::Type type) -> bool
 {
   return type == Token::Type::multiply || type == Token::Type::divide ||
@@ -723,7 +728,7 @@ public:
    * | + unary_prefix_expr                 | Both                 | Unary                |
    * | - unary_prefix_expr                 | Both                 | Unary                |
    */
-  auto parse_unary_prefix_expr(Instructions& instrs, ExprType expr_type, UnaryType unary_type)
+  auto parse_unary_prefix_expr_opt(Instructions& instrs, ExprType expr_type, UnaryType unary_type)
     -> ExprResult
   {
     bool is_not{false};
@@ -754,7 +759,7 @@ public:
       return parse_power_expr_opt(instrs, expr_type, unary_type);
     }
 
-    auto expr{parse_unary_prefix_expr(instrs, expr_type, UnaryType::both)};
+    auto expr{parse_unary_prefix_expr_opt(instrs, expr_type, UnaryType::both)};
     if (!is_not && !is_sign_prefix) {
       return expr;
     }
@@ -780,28 +785,32 @@ public:
     return {.index = emit_to_number(instrs, expr), .type = expr_type};
   }
 
-  /** @brief Parse a power expression
+  /** @brief Parse a multiplicative expression
    *
    * @param  instrs     Where to emit code to
    * @param  expr_type  Expression type
    * @param  unary_type What expression class is this?
    * @return            Index of emitted expression, and updated expression type
    *
-   * power_expr : post_incr_decr_expr ^ power_expr
-   *            | post_incr_decr_expr
+   * multiplicative_expr : multiplicative_expr * unary_prefix_expr
+   *                     | multiplicative_expr / unary_prefix_expr
+   *                     | multiplicative_expr + unary_prefix_expr
+   *                     | unary_prefix_expr
    *
-   * | Pattern                             | Expr or print_expr?  | Unary or non-unary?  |
-   * | :---------------------------------- | :------------------- | :------------------- |
-   * | post_incr_decr_expr ^ power_expr    | Both                 | Both                 |
+   * | Pattern                                 | Expr or print_expr?  | Unary or non-unary?  |
+   * | :-------------------------------------- | :------------------- | :------------------- |
+   * | multiplicative_expr * unary_prefix_expr | Both                 | Both                 |
+   * | multiplicative_expr / unary_prefix_expr | Both                 | Both                 |
+   * | multiplicative_expr % unary_prefix_expr | Both                 | Both                 |
    */
   auto parse_multiplicative_expr_opt(Instructions& instrs, ExprType expr_type, UnaryType unary_type)
     -> ExprResult
   {
-    ExprResult lhs{parse_unary_prefix_expr(instrs, expr_type, unary_type)};
+    ExprResult lhs{parse_unary_prefix_expr_opt(instrs, expr_type, unary_type)};
     while (is_multiplicative_op(lexer_->peek(true).type())) {
       auto type{lexer_->peek(true).type()};
       lexer_->chew(true);
-      ExprResult const rhs{parse_unary_prefix_expr(instrs, expr_type, UnaryType::both)};
+      ExprResult const rhs{parse_unary_prefix_expr_opt(instrs, expr_type, UnaryType::both)};
       if (type == Token::Type::multiply) {
         lhs.index = emit_multiply(instrs, lhs, rhs);
       }
@@ -811,6 +820,42 @@ public:
       else {
         assert(type == Token::Type::modulo);
         lhs.index = emit_modulo(instrs, lhs, rhs);
+      }
+    }
+
+    return lhs;
+  }
+
+  /** @brief Parse an additive expression
+   *
+   * @param  instrs     Where to emit code to
+   * @param  expr_type  Expression type
+   * @param  unary_type What expression class is this?
+   * @return            Index of emitted expression, and updated expression type
+   *
+   * additive_expr : additive_expr + multiplicative_expr
+   *                     | additive_expr - multiplicative_expr
+   *                     | multiplicative_expr
+   *
+   * | Pattern                                 | Expr or print_expr?  | Unary or non-unary?  |
+   * | :-------------------------------------- | :------------------- | :------------------- |
+   * | additive_expr + multiplicative_expr     | Both                 | Both                 |
+   * | additive_expr - multiplicative_expr     | Both                 | Both                 |
+   */
+  auto parse_additive_expr_opt(Instructions& instrs, ExprType expr_type, UnaryType unary_type)
+    -> ExprResult
+  {
+    ExprResult lhs{parse_multiplicative_expr_opt(instrs, expr_type, unary_type)};
+    while (is_additive_op(lexer_->peek(true).type())) {
+      auto type{lexer_->peek(true).type()};
+      lexer_->chew(true);
+      ExprResult const rhs{parse_multiplicative_expr_opt(instrs, expr_type, UnaryType::both)};
+      if (type == Token::Type::add) {
+        lhs.index = emit_add(instrs, lhs, rhs);
+      }
+      else {
+        assert(type == Token::Type::subtract);
+        lhs.index = emit_sub(instrs, lhs, rhs);
       }
     }
 
@@ -883,7 +928,7 @@ public:
   auto parse_expr_opt(Instructions& instrs, ExprType expr_type,
                       [[maybe_unused]] UnaryType unary_type) -> ExprResult
   {
-    return parse_multiplicative_expr_opt(instrs, expr_type, UnaryType::both);
+    return parse_additive_expr_opt(instrs, expr_type, UnaryType::both);
   }
 
   /** @brief Parse an expression list (of any type)
