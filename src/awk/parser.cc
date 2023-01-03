@@ -379,59 +379,7 @@ public:
     return ParseStatementResult::none;
   }
 
-  /** @brief Parse a lvalue expression
-   *
-   * @param  instrs     Where to emit code to
-   * @param  expr_type  Expression type
-   * @param  unary_type What expression class is this?
-   * @return            Index of emitted expression, and updated expression type
-   *
-   * lvalue : NAME
-   *        | NAME LSQUARE expr_list RSQUARE
-   *        | DOLLAR expr
-   *
-   * | Pattern                             | Expr or print_expr?  | Unary or non-unary?  |
-   * | :---------------------------------- | :------------------- | :------------------- |
-   * | lvalue                              | Both                 | Non-unary            |
-   */
-  auto parse_lvalue_opt(Instructions& instrs, ExprType expr_type, UnaryType unary_type)
-    -> ExprResult
-  {
-    if (unary_type == UnaryType::unary) {
-      return {.type = expr_type};
-    }
-
-    auto const& tok{lexer_->peek(false)};
-    if (tok == Token::Type::name) {
-      std::string const var_name{tok.name()};
-      lexer_->chew(false);
-
-      auto const& tok2{lexer_->peek(false)};
-      if (tok2 != Token::Type::lsquare) {
-        return {.index = emit_variable(instrs, VariableName{var_name}),
-                .type = expr_type,
-                .is_lvalue = true};
-      }
-
-      // TODO(mgrettondann): Implement
-      std::abort();
-    }
-
-    if (tok == Token::Type::dollar) {
-      lexer_->chew(false);
-      ExprResult const field_id{parse_expr_opt(instrs, ExprType::expr, UnaryType::both)};
-      if (!field_id.index.has_value()) {
-        error(Msg::expected_expr_after_dollar, lexer_->location(), lexer_->peek(false));
-      }
-
-      assert(field_id.index.has_value());
-      return {.index = emit_field(instrs, field_id), .type = expr_type, .is_lvalue = true};
-    }
-
-    return {.type = expr_type};
-  }
-
-  /** @brief Parse a primary expression
+  /** @brief Parse primary expressions, () and lvalues.
    *
    * @param  instrs     Where to emit code to
    * @param  expr_type  Expression type
@@ -441,13 +389,18 @@ public:
    * primary_expr : STRING
    *              | NUMBER
    *              | ERE
-   *              | lvalue
+   *              | LPARENS expr RPARENS
+   *              | NAME // LVALUE
+   *              | NAME LSQUARE expr_list RSQUARE // rvalue
    *
    * | Pattern                             | Expr or print_expr?  | Unary or non-unary?  |
    * | :---------------------------------- | :------------------- | :------------------- |
    * | string                              | Both                 | Non-unary            |
    * | number                              | Both                 | Non-unary            |
    * | ere                                 | Both                 | Non-unary            |
+   * | ( expr )                            | Both                 | Non-unary            |
+   * | name                                | Both                 | Non-unary            |
+   * | name [ expr_list ]                  | Both                 | Non-unary            |
    */
   auto parse_primary_expr_opt(Instructions& instrs, ExprType expr_type, UnaryType unary_type)
     -> ExprResult
@@ -484,6 +437,7 @@ public:
       if (close_tok == Token::Type::comma && expr_type == ExprType::maybe_expr) {
         // We now know we're a full expression, and this comma is part of a list - so we'll update
         // our types.  But not chew the comma - that will be done further up.
+        // TODO(mgrettondann): Check we are at the top level.
         result.index = expr.index;
         result.type = ExprType::expr;
         break;
@@ -491,12 +445,57 @@ public:
 
       error(Msg::expected_rparens_at_end_of_expression, lexer_->location(), lexer_->peek(false));
     }
+    case Token::Type::name: {
+      std::string const var_name{tok.name()};
+      lexer_->chew(false);
+      result.is_lvalue = true;
+
+      auto const& tok2{lexer_->peek(false)};
+      if (tok2 != Token::Type::lsquare) {
+        result.index = emit_variable(instrs, VariableName{var_name});
+        break;
+      }
+
+      // TODO(mgrettondann): Implement
+      std::abort();
+    }
     default:
-      result = parse_lvalue_opt(instrs, expr_type, unary_type);
       break;
     }
 
     return result;
+  }
+
+  /** @brief Parse a field expression
+   *
+   * @param  instrs     Where to emit code to
+   * @param  expr_type  Expression type
+   * @param  unary_type What expression class is this?
+   * @return            Index of emitted expression, and updated expression type
+   *
+   * field_opt : DOLLAR expr
+   *           | primary_expr
+   *
+   * | Pattern                             | Expr or print_expr?  | Unary or non-unary?  |
+   * | :---------------------------------- | :------------------- | :------------------- |
+   * | $ primary_expr                      | Both                 | Non-unary            |
+   */
+  auto parse_field_expr_opt(Instructions& instrs, ExprType expr_type, UnaryType unary_type)
+    -> ExprResult
+  {
+    auto const& tok{lexer_->peek(false)};
+    if (unary_type == UnaryType::unary || tok != Token::Type::dollar) {
+      return parse_primary_expr_opt(instrs, expr_type, unary_type);
+    }
+
+    lexer_->chew(false);
+    ExprResult const field_id{parse_primary_expr_opt(instrs, expr_type, unary_type)};
+    if (!field_id.index.has_value()) {
+      error(Msg::expected_expr_after_dollar, lexer_->location(), lexer_->peek(false));
+    }
+
+    assert(field_id.index.has_value());
+    return {.index = emit_field(instrs, field_id), .type = expr_type, .is_lvalue = true};
   }
 
   /** @brief Parse a post- increment/decrement expression
@@ -508,7 +507,7 @@ public:
    *
    * post_incr_decr_expr : lvalue INCR
    *                     | lvalue DECR
-   *                     | primary_expr
+   *                     | field_expr
    *
    * | Pattern                             | Expr or print_expr?  | Unary or non-unary?  |
    * | :---------------------------------- | :------------------- | :------------------- |
@@ -519,7 +518,7 @@ public:
     -> ExprResult
   {
     // Parse the primary expression
-    ExprResult result{parse_primary_expr_opt(instrs, expr_type, unary_type)};
+    ExprResult result{parse_field_expr_opt(instrs, expr_type, unary_type)};
 
     if (!result.is_lvalue || unary_type == UnaryType::unary || !result.index.has_value()) {
       return result;
