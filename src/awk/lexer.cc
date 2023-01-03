@@ -113,7 +113,7 @@ void GD::Awk::Lexer::lex_comment()
 
 void GD::Awk::Lexer::lex_number()
 {
-  assert(r_->peek() >= '0' && r_->peek() <= '9');
+  assert((r_->peek() >= '0' && r_->peek() <= '9') || r_->peek() == '.');
 
   std::string num;
   bool hex{false};
