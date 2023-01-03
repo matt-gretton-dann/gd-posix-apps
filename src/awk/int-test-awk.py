@@ -58,6 +58,12 @@ test_awk("BEGIN { print ! 301 }", "0\n")
 test_awk("BEGIN { print ! ! 301 }", "1\n")
 test_awk('BEGIN { print ! "" }', "1\n")
 test_awk('BEGIN { print ! "1" }', "0\n")
+test_awk('BEGIN { print "23" * 2 }', "46\n")
+test_awk('BEGIN { print "23" / 2 }', "11.5\n")
+test_awk('BEGIN { print "23" % 2 }', "1\n")
+test_awk('BEGIN { print 24 / 4 / 2, (24 / 4) / 2, 24 / (4 / 2) }', "3 3 12\n")
+test_awk('BEGIN { print 24 % 11 % 3, (24 % 11) % 3, 24 % (11 % 3) }',
+         "2 2 0\n")
 
 # Some error tests
 test_awk('BEGIN { print (1 }', None, expected_rc=1)

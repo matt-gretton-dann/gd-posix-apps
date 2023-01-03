@@ -110,6 +110,12 @@ constexpr auto is_unary_prefix_op(Token::Type type) -> bool
   return type == Token::Type::not_ || type == Token::Type::add || type == Token::Type::subtract;
 }
 
+constexpr auto is_multiplicative_op(Token::Type type) -> bool
+{
+  return type == Token::Type::multiply || type == Token::Type::divide ||
+         type == Token::Type::modulo;
+}
+
 class ParseState
 {
 public:
@@ -341,6 +347,39 @@ public:
     auto lhs_idx{emit_maybe_lvalue(instrs, lhs)};
     auto rhs_idx{emit_maybe_lvalue(instrs, rhs)};
     instrs.emplace_back(Instruction::Opcode::power, lhs_idx, rhs_idx);
+    return instrs.size() - 1;
+  }
+
+  static auto emit_multiply(Instructions& instrs, ExprResult lhs, ExprResult rhs)
+    -> Instruction::Index
+  {
+    assert(lhs.index.has_value());
+    assert(rhs.index.has_value());
+    auto lhs_idx{emit_maybe_lvalue(instrs, lhs)};
+    auto rhs_idx{emit_maybe_lvalue(instrs, rhs)};
+    instrs.emplace_back(Instruction::Opcode::multiply, lhs_idx, rhs_idx);
+    return instrs.size() - 1;
+  }
+
+  static auto emit_divide(Instructions& instrs, ExprResult lhs, ExprResult rhs)
+    -> Instruction::Index
+  {
+    assert(lhs.index.has_value());
+    assert(rhs.index.has_value());
+    auto lhs_idx{emit_maybe_lvalue(instrs, lhs)};
+    auto rhs_idx{emit_maybe_lvalue(instrs, rhs)};
+    instrs.emplace_back(Instruction::Opcode::divide, lhs_idx, rhs_idx);
+    return instrs.size() - 1;
+  }
+
+  static auto emit_modulo(Instructions& instrs, ExprResult lhs, ExprResult rhs)
+    -> Instruction::Index
+  {
+    assert(lhs.index.has_value());
+    assert(rhs.index.has_value());
+    auto lhs_idx{emit_maybe_lvalue(instrs, lhs)};
+    auto rhs_idx{emit_maybe_lvalue(instrs, rhs)};
+    instrs.emplace_back(Instruction::Opcode::modulo, lhs_idx, rhs_idx);
     return instrs.size() - 1;
   }
 
@@ -651,10 +690,10 @@ public:
     -> ExprResult
   {
     ExprResult const lhs{parse_pre_incr_decr_expr_opt(instrs, expr_type, unary_type)};
-    if (lexer_->peek(false) != Token::Type::power) {
+    if (lexer_->peek(true) != Token::Type::power) {
       return lhs;
     }
-    lexer_->chew(false);
+    lexer_->chew(true);
 
     ExprResult const rhs{parse_power_expr_opt(instrs, expr_type, unary_type)};
     if (!rhs.index.has_value()) {
@@ -741,6 +780,43 @@ public:
     return {.index = emit_to_number(instrs, expr), .type = expr_type};
   }
 
+  /** @brief Parse a power expression
+   *
+   * @param  instrs     Where to emit code to
+   * @param  expr_type  Expression type
+   * @param  unary_type What expression class is this?
+   * @return            Index of emitted expression, and updated expression type
+   *
+   * power_expr : post_incr_decr_expr ^ power_expr
+   *            | post_incr_decr_expr
+   *
+   * | Pattern                             | Expr or print_expr?  | Unary or non-unary?  |
+   * | :---------------------------------- | :------------------- | :------------------- |
+   * | post_incr_decr_expr ^ power_expr    | Both                 | Both                 |
+   */
+  auto parse_multiplicative_expr_opt(Instructions& instrs, ExprType expr_type, UnaryType unary_type)
+    -> ExprResult
+  {
+    ExprResult lhs{parse_unary_prefix_expr(instrs, expr_type, unary_type)};
+    while (is_multiplicative_op(lexer_->peek(true).type())) {
+      auto type{lexer_->peek(true).type()};
+      lexer_->chew(true);
+      ExprResult const rhs{parse_unary_prefix_expr(instrs, expr_type, UnaryType::both)};
+      if (type == Token::Type::multiply) {
+        lhs.index = emit_multiply(instrs, lhs, rhs);
+      }
+      else if (type == Token::Type::divide) {
+        lhs.index = emit_divide(instrs, lhs, rhs);
+      }
+      else {
+        assert(type == Token::Type::modulo);
+        lhs.index = emit_modulo(instrs, lhs, rhs);
+      }
+    }
+
+    return lhs;
+  }
+
   /** @brief Parse an expression (of any type)
    *
    * @param  instrs     Where to emit code to
@@ -807,7 +883,7 @@ public:
   auto parse_expr_opt(Instructions& instrs, ExprType expr_type,
                       [[maybe_unused]] UnaryType unary_type) -> ExprResult
   {
-    return parse_unary_prefix_expr(instrs, expr_type, UnaryType::both);
+    return parse_multiplicative_expr_opt(instrs, expr_type, UnaryType::both);
   }
 
   /** @brief Parse an expression list (of any type)

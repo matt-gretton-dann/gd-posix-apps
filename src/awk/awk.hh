@@ -561,6 +561,9 @@ private:
  * | to_bool            | Ix(B)        |             | cast op1 to a bool                         |
  * | negate             | Ix(I/F)      |             | -<op1>                                     |
  * | logical_not        | Ix(B)        |             | !<op1>                                     |
+ * | multiply           | Ix(I/F)      | Ix(I/F)     | <op1> * <op2>                              |
+ * | divide             | Ix(I/F)      | Ix(I/F)     | <op1> / <op2>                              |
+ * | modulo             | Ix(I/F)      | Ix(I/F)     | <op1> % <op2>                              |
  *
  * Parameter packs are identified by the index of the instruction corresponding to the
  * 'open_param_pack'.
@@ -587,6 +590,9 @@ public:
     to_bool,           ///< Cast to bool
     negate,            ///< negation
     logical_not,       ///< Logical not
+    multiply,          ///< Multiplication
+    divide,            ///< Division
+    modulo,            ///< Modulous
   };
 
   /** Type representing an index into the list of instructions.  */

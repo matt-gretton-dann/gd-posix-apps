@@ -152,6 +152,27 @@ auto do_int_mul(Integer::underlying_type a, Integer::underlying_type b)
   return a * b;
 }
 
+auto do_int_divide(Integer::underlying_type a, Integer::underlying_type b)
+  -> std::optional<Integer::underlying_type>
+{
+  if (b == 0) {
+    return std::nullopt;
+  }
+  if (a % b != 0) {
+    return std::nullopt;
+  }
+  return a / b;
+}
+
+auto do_int_modulo(Integer::underlying_type a, Integer::underlying_type b)
+  -> std::optional<Integer::underlying_type>
+{
+  if (b == 0) {
+    return std::nullopt;
+  }
+  return a % b;
+}
+
 auto do_int_power(Integer::underlying_type base, Integer::underlying_type exp)
   -> std::optional<Integer::underlying_type>
 {
@@ -346,9 +367,8 @@ public:
       value);
   }
 
-  [[nodiscard]] auto str_to_floating(std::string const& s) const -> std::optional<Floating>
+  [[nodiscard]] static auto str_to_floating(std::string const& s) -> std::optional<Floating>
   {
-    auto conv_fmt{std::get<std::string>(var("CONVFMT"))};
     std::size_t pos{0};
     Floating f{std::stod(s, &pos)};
     if (pos == s.size() && !s.empty()) {
@@ -358,7 +378,7 @@ public:
     return std::nullopt;
   }
 
-  auto to_floating(ExecutionValue const& value) -> std::optional<Floating>
+  static auto to_floating(ExecutionValue const& value) -> std::optional<Floating>
   {
     return std::visit(
       GD::Overloaded{
@@ -366,7 +386,7 @@ public:
         [](Floating f) { return std::make_optional(f); },
         [](std::nullopt_t) { return std::make_optional(Floating{0.0}); },
         [](bool b) { return std::optional<Floating>(b ? 1.0 : 0.0); },
-        [this](std::string const& s) { return str_to_floating(s); },
+        [](std::string const& s) { return str_to_floating(s); },
         [](auto const&) { return std::optional<Floating>{std::nullopt}; },
       },
       value);
@@ -430,8 +450,35 @@ public:
       [](Floating a, Floating b) { return std::pow(a, b); });
   }
 
-  auto execute_to_number(std::vector<ExecutionValue> const& values, Instruction::Operand const& op)
-    -> ExecutionValue
+  auto execute_multiply(std::vector<ExecutionValue> const& values, Instruction::Operand const& lhs,
+                        Instruction::Operand const& rhs) -> ExecutionValue
+  {
+    return execute_binary_op(
+      values, lhs, rhs,
+      [](Integer::underlying_type a, Integer::underlying_type b) { return do_int_mul(a, b); },
+      [](Floating a, Floating b) { return a * b; });
+  }
+
+  auto execute_divide(std::vector<ExecutionValue> const& values, Instruction::Operand const& lhs,
+                      Instruction::Operand const& rhs) -> ExecutionValue
+  {
+    return execute_binary_op(
+      values, lhs, rhs,
+      [](Integer::underlying_type a, Integer::underlying_type b) { return do_int_divide(a, b); },
+      [](Floating a, Floating b) { return a / b; });
+  }
+
+  auto execute_modulo(std::vector<ExecutionValue> const& values, Instruction::Operand const& lhs,
+                      Instruction::Operand const& rhs) -> ExecutionValue
+  {
+    return execute_binary_op(
+      values, lhs, rhs,
+      [](Integer::underlying_type a, Integer::underlying_type b) { return do_int_modulo(a, b); },
+      [](Floating a, Floating b) { return fmod(a, b); });
+  }
+
+  static auto execute_to_number(std::vector<ExecutionValue> const& values,
+                                Instruction::Operand const& op) -> ExecutionValue
   {
     assert(std::holds_alternative<Instruction::Index>(op));
     ExecutionValue const& value{values.at(std::get<Instruction::Index>(op))};
@@ -448,8 +495,8 @@ public:
     error(Msg::unable_to_cast_value_to_number, value);
   }
 
-  auto execute_negate(std::vector<ExecutionValue> const& values, Instruction::Operand const& op)
-    -> ExecutionValue
+  static auto execute_negate(std::vector<ExecutionValue> const& values,
+                             Instruction::Operand const& op) -> ExecutionValue
   {
     assert(std::holds_alternative<Instruction::Index>(op));
     ExecutionValue const& value{values.at(std::get<Instruction::Index>(op))};
@@ -474,7 +521,7 @@ public:
     ExecutionValue const& value{values.at(std::get<Instruction::Index>(op))};
     auto b{to_bool(value)};
     if (b.has_value()) {
-      return Integer{*b};
+      return bool{*b};
     }
 
     error(Msg::unable_to_cast_value_to_bool, value);
@@ -488,10 +535,19 @@ public:
     auto b{to_bool(value)};
     if (b.has_value()) {
       auto result{!*b};
-      return Integer{result};
+      return bool{result};
     }
 
     error(Msg::unable_to_cast_value_to_bool, value);
+  }
+
+  static auto to_fmt(std::string const& s)
+  {
+    // TODO(mgrettondann): Make this robust
+    std::string result{"{:"};
+    result += s.substr(1);
+    result += "}";
+    return result;
   }
 
   auto format_value(std::vector<ExecutionValue> const& values, Instruction::Operand const& index)
@@ -502,7 +558,7 @@ public:
                         [](Integer v) { return std::to_string(v.get()); },
                         [this](Floating v) {
                           auto ofmt{std::get<std::string>(var("OFMT"))};
-                          return fmt::vformat(ofmt, fmt::make_format_args(v));
+                          return fmt::vformat(to_fmt(ofmt), fmt::make_format_args(v));
                         },
                         [](bool b) { return b ? std::string{"1"} : std::string{"0"}; },
                         [](std::string const& s) { return s; },
@@ -559,6 +615,15 @@ public:
         break;
       case Instruction::Opcode::power:
         values.at(pc) = execute_power(values, it->op1(), it->op2());
+        break;
+      case Instruction::Opcode::multiply:
+        values.at(pc) = execute_multiply(values, it->op1(), it->op2());
+        break;
+      case Instruction::Opcode::divide:
+        values.at(pc) = execute_divide(values, it->op1(), it->op2());
+        break;
+      case Instruction::Opcode::modulo:
+        values.at(pc) = execute_modulo(values, it->op1(), it->op2());
         break;
       case Instruction::Opcode::to_number:
         values.at(pc) = execute_to_number(values, it->op1());
