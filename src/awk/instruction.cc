@@ -159,6 +159,9 @@ auto GD::Awk::operator<<(std::ostream& os, GD::Awk::Instruction::Opcode opcode) 
   case GD::Awk::Instruction::Opcode::is_greater_than_equal:
     os << "is_greater_than_equal";
     break;
+  case GD::Awk::Instruction::Opcode::branch_if_false:
+    os << "branch_if_false";
+    break;
   }
   return os;
 }
@@ -195,6 +198,7 @@ auto GD::Awk::Instruction::op_count(Opcode opcode) -> unsigned
   case GD::Awk::Instruction::Opcode::is_less_than_equal:
   case GD::Awk::Instruction::Opcode::is_less_than:
   case GD::Awk::Instruction::Opcode::is_not_equal:
+  case GD::Awk::Instruction::Opcode::branch_if_false:
     return 2;
   }
 }
@@ -230,6 +234,7 @@ void GD::Awk::Instruction::validate_operands() const
   case GD::Awk::Instruction::Opcode::is_greater_than:
   case GD::Awk::Instruction::Opcode::is_greater_than_equal:
   case GD::Awk::Instruction::Opcode::is_equal:
+  case GD::Awk::Instruction::Opcode::branch_if_false:
     assert(std::holds_alternative<Index>(*op1_));  // NOLINT
     assert(std::holds_alternative<Index>(*op2_));  // NOLINT
     break;

@@ -443,28 +443,40 @@ public:
   static auto emit_to_number(Instructions& instrs, ExprResult num) -> Instruction::Index
   {
     assert(num.index.has_value());
-    instrs.emplace_back(Instruction::Opcode::to_number, *(num.index));
+    auto num_idx{emit_maybe_lvalue(instrs, num)};
+    instrs.emplace_back(Instruction::Opcode::to_number, num_idx);
     return instrs.size() - 1;
   }
 
   static auto emit_to_bool(Instructions& instrs, ExprResult num) -> Instruction::Index
   {
     assert(num.index.has_value());
-    instrs.emplace_back(Instruction::Opcode::to_bool, *(num.index));
+    auto num_idx{emit_maybe_lvalue(instrs, num)};
+    instrs.emplace_back(Instruction::Opcode::to_bool, num_idx);
     return instrs.size() - 1;
   }
 
   static auto emit_negate(Instructions& instrs, ExprResult num) -> Instruction::Index
   {
     assert(num.index.has_value());
-    instrs.emplace_back(Instruction::Opcode::negate, *(num.index));
+    auto num_idx{emit_maybe_lvalue(instrs, num)};
+    instrs.emplace_back(Instruction::Opcode::negate, num_idx);
     return instrs.size() - 1;
   }
 
   static auto emit_logical_not(Instructions& instrs, ExprResult num) -> Instruction::Index
   {
     assert(num.index.has_value());
-    instrs.emplace_back(Instruction::Opcode::logical_not, *(num.index));
+    auto num_idx{emit_maybe_lvalue(instrs, num)};
+    instrs.emplace_back(Instruction::Opcode::logical_not, num_idx);
+    return instrs.size() - 1;
+  }
+
+  static auto emit_branch_if_false(Instructions& instrs, ExprResult expr, Instruction::Index dest)
+  {
+    assert(expr.index.has_value());
+    auto expr_idx{emit_maybe_lvalue(instrs, expr)};
+    instrs.emplace_back(Instruction::Opcode::branch_if_false, expr_idx, dest);
     return instrs.size() - 1;
   }
 
@@ -1459,10 +1471,18 @@ public:
     return program_.function(func_name.get());
   }
 
-  auto parse_normal_pattern_opt() -> bool  // NOLINT - temporary until implemented
+  // Returns index of comparison instruction if we emitted the pattern sequence.
+  auto parse_normal_pattern_opt(Instructions& instrs)
+    -> std::optional<Instruction::Index>  // NOLINT - temporary until implemented
   {
-    // TODO(mgrettondann): Implement pattern parsing
-    return false;
+    if (ExprResult const pat1{parse_expr_opt(instrs, ExprType::expr, UnaryType::both)};
+        pat1.index.has_value()) {
+      auto branch{emit_branch_if_false(instrs, pat1, 0)};
+      // TODO(mgrettondann): Handle pattern ranges
+      return branch;
+    }
+
+    return std::nullopt;
   }
 
   /** \brief Parse an optional item.
@@ -1493,8 +1513,29 @@ public:
       Instructions& fn{parse_function_def()};
       parse_action(fn);
     }
-    else if (parse_normal_pattern_opt()) {
-      parse_action_opt(program_.per_record_);
+    else if (auto result{parse_normal_pattern_opt(program_.per_record())}; result.has_value()) {
+      auto& instrs{program_.per_record()};
+      if (!parse_action_opt(instrs)) {
+        // We need to put a print $0 action in here.
+        // 0: emit_load_literal 0
+        // 1: field 0
+        // 2: load_lvalue 1
+        // 3: emit_load_literal STDOUT_FILENO
+        // 4: print 2, 3
+        // 5: emit_variable RS
+        // 6: load_lvalue 5
+        // 7: print 6, 3
+        int const fd{STDOUT_FILENO};
+        auto const lit{emit_load_literal(instrs, Integer{0})};
+        auto const field{emit_field(instrs, {lit})};
+        auto const fileno{emit_load_literal(instrs, FileDescriptor(fd))};
+        (void)emit_print(instrs, {.index = field, .is_lvalue = true}, {fileno});
+        auto const rs{emit_variable(instrs, VariableName{"RS"})};
+        (void)emit_print(instrs, {.index = rs, .is_lvalue = true}, {fileno});
+      }
+
+      // Set the target of the branch_if_false to the end.
+      instrs[*result].op2(instrs.size());
     }
     else {
       return false;

@@ -703,6 +703,20 @@ public:
       conv_fmt);
   }
 
+  static auto execute_branch_if_false(std::vector<ExecutionValue> const& values,
+                                      Instruction::Operand const& expr,
+                                      Instruction::Operand const& false_dest,
+                                      Instruction::Index true_dest) -> Instruction::Index
+  {
+    assert(std::holds_alternative<Instruction::Index>(expr));
+    assert(std::holds_alternative<Instruction::Index>(false_dest));
+    auto value{to_bool(values.at(std::get<Instruction::Index>(expr)))};
+    if (!value.has_value()) {
+      error(Msg::unable_to_cast_value_to_bool, values.at(std::get<Instruction::Index>(expr)));
+    }
+    return *value ? true_dest : std::get<Instruction::Index>(false_dest);
+  }
+
   auto format_value(std::vector<ExecutionValue> const& values, Instruction::Operand const& index)
     -> std::string
   {
@@ -728,10 +742,11 @@ public:
                Instructions::const_iterator end)
   {
     auto length{std::distance(begin, end)};
+    assert(length >= 0);
     std::vector<ExecutionValue> values(length, std::nullopt);
-    Instructions::difference_type pc{0};
-    while (pc != length) {
-      auto it{begin + pc};
+    Instruction::Index pc{0};
+    while (pc != static_cast<Instruction::Index>(length)) {
+      auto it{begin + static_cast<Instructions::difference_type>(pc)};
       switch (it->opcode()) {
       case Instruction::Opcode::load_literal:
         values.at(pc) = (interpret_literal(it->op1()));
@@ -817,6 +832,10 @@ public:
         break;
       case Instruction::Opcode::logical_not:
         values.at(pc) = execute_logical_not(values, it->op1());
+        break;
+      case Instruction::Opcode::branch_if_false:
+        pc = execute_branch_if_false(values, it->op1(), it->op2(), pc + 1) - 1;
+        break;
       }
       ++pc;
     }
