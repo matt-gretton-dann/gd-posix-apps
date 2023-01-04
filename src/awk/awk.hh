@@ -616,6 +616,9 @@ public:
   /** Type representing an index into the list of instructions.  */
   using Index = std::vector<Instruction>::size_type;
 
+  /** An illegal index.  */
+  static constexpr auto illegal_index{std::numeric_limits<Index>::max()};
+
   /** Type representing an offset of to an instruction. */
   using Offset = std::make_signed_t<Index>;
 

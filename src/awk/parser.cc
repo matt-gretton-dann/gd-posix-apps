@@ -101,11 +101,11 @@ enum class UnaryType {
 struct ExprResult
 {
   ExprResult() = default;
-  explicit ExprResult(ExprIndex index) : index_(index) {}
+  explicit ExprResult(Instruction::Index index) : index_(index) {}
   explicit ExprResult(ExprType type) : type_(type) {}
-  ExprResult(ExprIndex index, ExprType type) : index_(index), type_(type) {}
-  ExprResult(ExprIndex index, bool is_lvalue) : index_(index), is_lvalue_(is_lvalue) {}
-  ExprResult(ExprIndex index, ExprType type, bool is_lvalue)
+  ExprResult(Instruction::Index index, ExprType type) : index_(index), type_(type) {}
+  ExprResult(Instruction::Index index, bool is_lvalue) : index_(index), is_lvalue_(is_lvalue) {}
+  ExprResult(Instruction::Index index, ExprType type, bool is_lvalue)
       : index_(index), type_(type), is_lvalue_(is_lvalue)
   {
   }
@@ -122,8 +122,25 @@ struct ExprResult
   [[nodiscard]] auto type() const noexcept -> ExprType { return type_; }
   void type(ExprType t) noexcept { type_ = t; }
 
-  ExprIndex index_{std::nullopt};  // NOLINT
+  [[nodiscard]] auto has_value() const noexcept -> bool
+  {
+    return index_ != Instruction::illegal_index;
+  }
+
+  [[nodiscard]] auto index() const noexcept -> Instruction::Index
+  {
+    assert(index_ != Instruction::illegal_index);
+    return index_;
+  }
+
+  void index(Instruction::Index i) noexcept
+  {
+    assert(i != Instruction::illegal_index);
+    index_ = i;
+  }
+
 private:
+  Instruction::Index index_{Instruction::illegal_index};
   ExprType type_{ExprType::maybe_expr};
   bool is_lvalue_{false};
 };
@@ -293,24 +310,24 @@ public:
 
   static auto emit_maybe_lvalue(Instructions& instrs, ExprResult expr) -> Instruction::Index
   {
-    assert(expr.index_.has_value());
+    assert(expr.has_value());
     if (!expr.is_lvalue()) {
-      return *(expr.index_);
+      return expr.index();
     }
 
-    instrs.emplace_back(Instruction::Opcode::load_lvalue, *(expr.index_));
+    instrs.emplace_back(Instruction::Opcode::load_lvalue, expr.index());
     return instrs.size() - 1;
   }
 
   static auto emit_store_lvalue(Instructions& instrs, ExprResult lvalue, ExprResult expr)
     -> Instruction::Index
   {
-    assert(lvalue.index_.has_value());
+    assert(lvalue.has_value());
     assert(lvalue.is_lvalue());
-    assert(expr.index_.has_value());
+    assert(expr.has_value());
     auto expr_idx = emit_maybe_lvalue(instrs, expr);
 
-    instrs.emplace_back(Instruction::Opcode::store_lvalue, *(lvalue.index_), expr_idx);
+    instrs.emplace_back(Instruction::Opcode::store_lvalue, lvalue.index(), expr_idx);
     return instrs.size() - 1;
   }
 
@@ -326,10 +343,10 @@ public:
   static auto emit_printf(Instructions& instrs, ExprResult stream, ExprResult param_pack)
     -> Instruction::Index
   {
-    assert(param_pack.index_.has_value());
-    assert(instrs[*(param_pack.index_)].opcode() == Instruction::Opcode::open_param_pack);
+    assert(param_pack.has_value());
+    assert(instrs[param_pack.index()].opcode() == Instruction::Opcode::open_param_pack);
     auto idx1{emit_maybe_lvalue(instrs, stream)};
-    instrs.emplace_back(Instruction::Opcode::printf, idx1, *(param_pack.index_));
+    instrs.emplace_back(Instruction::Opcode::printf, idx1, param_pack.index());
     return instrs.size() - 1;
   }
 
@@ -343,10 +360,10 @@ public:
   static auto emit_push_param(Instructions& instrs, ExprResult param_pack, ExprResult expr)
     -> Instruction::Index
   {
-    assert(param_pack.index_.has_value());
-    assert(instrs[*(param_pack.index_)].opcode() == Instruction::Opcode::open_param_pack);
+    assert(param_pack.has_value());
+    assert(instrs[param_pack.index()].opcode() == Instruction::Opcode::open_param_pack);
     auto expr_idx{emit_maybe_lvalue(instrs, expr)};
-    instrs.emplace_back(Instruction::Opcode::push_param, *(param_pack.index_), expr_idx);
+    instrs.emplace_back(Instruction::Opcode::push_param, param_pack.index(), expr_idx);
     return instrs.size() - 1;
   }
 
@@ -360,8 +377,8 @@ public:
 
   static auto emit_add(Instructions& instrs, ExprResult lhs, ExprResult rhs) -> Instruction::Index
   {
-    assert(lhs.index_.has_value());
-    assert(rhs.index_.has_value());
+    assert(lhs.has_value());
+    assert(rhs.has_value());
     auto lhs_idx{emit_maybe_lvalue(instrs, lhs)};
     auto rhs_idx{emit_maybe_lvalue(instrs, rhs)};
     instrs.emplace_back(Instruction::Opcode::add, lhs_idx, rhs_idx);
@@ -370,8 +387,8 @@ public:
 
   static auto emit_sub(Instructions& instrs, ExprResult lhs, ExprResult rhs) -> Instruction::Index
   {
-    assert(lhs.index_.has_value());
-    assert(rhs.index_.has_value());
+    assert(lhs.has_value());
+    assert(rhs.has_value());
     auto lhs_idx{emit_maybe_lvalue(instrs, lhs)};
     auto rhs_idx{emit_maybe_lvalue(instrs, rhs)};
     instrs.emplace_back(Instruction::Opcode::sub, lhs_idx, rhs_idx);
@@ -380,8 +397,8 @@ public:
 
   static auto emit_power(Instructions& instrs, ExprResult lhs, ExprResult rhs) -> Instruction::Index
   {
-    assert(lhs.index_.has_value());
-    assert(rhs.index_.has_value());
+    assert(lhs.has_value());
+    assert(rhs.has_value());
     auto lhs_idx{emit_maybe_lvalue(instrs, lhs)};
     auto rhs_idx{emit_maybe_lvalue(instrs, rhs)};
     instrs.emplace_back(Instruction::Opcode::power, lhs_idx, rhs_idx);
@@ -391,8 +408,8 @@ public:
   static auto emit_multiply(Instructions& instrs, ExprResult lhs, ExprResult rhs)
     -> Instruction::Index
   {
-    assert(lhs.index_.has_value());
-    assert(rhs.index_.has_value());
+    assert(lhs.has_value());
+    assert(rhs.has_value());
     auto lhs_idx{emit_maybe_lvalue(instrs, lhs)};
     auto rhs_idx{emit_maybe_lvalue(instrs, rhs)};
     instrs.emplace_back(Instruction::Opcode::multiply, lhs_idx, rhs_idx);
@@ -402,8 +419,8 @@ public:
   static auto emit_divide(Instructions& instrs, ExprResult lhs, ExprResult rhs)
     -> Instruction::Index
   {
-    assert(lhs.index_.has_value());
-    assert(rhs.index_.has_value());
+    assert(lhs.has_value());
+    assert(rhs.has_value());
     auto lhs_idx{emit_maybe_lvalue(instrs, lhs)};
     auto rhs_idx{emit_maybe_lvalue(instrs, rhs)};
     instrs.emplace_back(Instruction::Opcode::divide, lhs_idx, rhs_idx);
@@ -413,8 +430,8 @@ public:
   static auto emit_modulo(Instructions& instrs, ExprResult lhs, ExprResult rhs)
     -> Instruction::Index
   {
-    assert(lhs.index_.has_value());
-    assert(rhs.index_.has_value());
+    assert(lhs.has_value());
+    assert(rhs.has_value());
     auto lhs_idx{emit_maybe_lvalue(instrs, lhs)};
     auto rhs_idx{emit_maybe_lvalue(instrs, rhs)};
     instrs.emplace_back(Instruction::Opcode::modulo, lhs_idx, rhs_idx);
@@ -424,8 +441,8 @@ public:
   static auto emit_concat(Instructions& instrs, ExprResult lhs, ExprResult rhs)
     -> Instruction::Index
   {
-    assert(lhs.index_.has_value());
-    assert(rhs.index_.has_value());
+    assert(lhs.has_value());
+    assert(rhs.has_value());
     auto lhs_idx{emit_maybe_lvalue(instrs, lhs)};
     auto rhs_idx{emit_maybe_lvalue(instrs, rhs)};
     instrs.emplace_back(Instruction::Opcode::concat, lhs_idx, rhs_idx);
@@ -435,8 +452,8 @@ public:
   static auto emit_comparison_op(Instructions& instrs, Token::Type type, ExprResult lhs,
                                  ExprResult rhs) -> Instruction::Index
   {
-    assert(lhs.index_.has_value());
-    assert(rhs.index_.has_value());
+    assert(lhs.has_value());
+    assert(rhs.has_value());
     Instruction::Opcode op{Instruction::Opcode::load_literal};
     switch (type) {
     case Token::Type::eq:
@@ -470,8 +487,8 @@ public:
   static auto emit_re_match_op(Instructions& instrs, ExprResult lhs, ExprResult rhs)
     -> Instruction::Index
   {
-    assert(lhs.index_.has_value());
-    assert(rhs.index_.has_value());
+    assert(lhs.has_value());
+    assert(rhs.has_value());
     auto lhs_idx{emit_maybe_lvalue(instrs, lhs)};
     auto rhs_idx{emit_maybe_lvalue(instrs, rhs)};
     instrs.emplace_back(Instruction::Opcode::re_match, lhs_idx, rhs_idx);
@@ -480,7 +497,7 @@ public:
 
   static auto emit_to_number(Instructions& instrs, ExprResult num) -> Instruction::Index
   {
-    assert(num.index_.has_value());
+    assert(num.has_value());
     auto num_idx{emit_maybe_lvalue(instrs, num)};
     instrs.emplace_back(Instruction::Opcode::to_number, num_idx);
     return instrs.size() - 1;
@@ -488,7 +505,7 @@ public:
 
   static auto emit_to_bool(Instructions& instrs, ExprResult num) -> Instruction::Index
   {
-    assert(num.index_.has_value());
+    assert(num.has_value());
     auto num_idx{emit_maybe_lvalue(instrs, num)};
     instrs.emplace_back(Instruction::Opcode::to_bool, num_idx);
     return instrs.size() - 1;
@@ -496,7 +513,7 @@ public:
 
   static auto emit_negate(Instructions& instrs, ExprResult num) -> Instruction::Index
   {
-    assert(num.index_.has_value());
+    assert(num.has_value());
     auto num_idx{emit_maybe_lvalue(instrs, num)};
     instrs.emplace_back(Instruction::Opcode::negate, num_idx);
     return instrs.size() - 1;
@@ -504,7 +521,7 @@ public:
 
   static auto emit_logical_not(Instructions& instrs, ExprResult num) -> Instruction::Index
   {
-    assert(num.index_.has_value());
+    assert(num.has_value());
     auto num_idx{emit_maybe_lvalue(instrs, num)};
     instrs.emplace_back(Instruction::Opcode::logical_not, num_idx);
     return instrs.size() - 1;
@@ -512,7 +529,7 @@ public:
 
   static auto emit_branch_if_false(Instructions& instrs, ExprResult expr, Instruction::Index dest)
   {
-    assert(expr.index_.has_value());
+    assert(expr.has_value());
     auto expr_idx{emit_maybe_lvalue(instrs, expr)};
     instrs.emplace_back(Instruction::Opcode::branch_if_false, expr_idx, dest);
     return instrs.size() - 1;
@@ -592,19 +609,19 @@ public:
     ExprResult result{expr_type};
     switch (tok.type()) {
     case Token::Type::integer:
-      result.index_ = emit_load_literal(instrs, tok.integer());
+      result.index(emit_load_literal(instrs, tok.integer()));
       lexer_->chew(false);
       break;
     case Token::Type::floating:
-      result.index_ = emit_load_literal(instrs, tok.floating());
+      result.index(emit_load_literal(instrs, tok.floating()));
       lexer_->chew(false);
       break;
     case Token::Type::string:
-      result.index_ = emit_load_literal(instrs, tok.string());
+      result.index(emit_load_literal(instrs, tok.string()));
       lexer_->chew(false);
       break;
     case Token::Type::ere:
-      result.index_ = emit_load_literal(instrs, std::regex{tok.ere(), std::regex_constants::awk});
+      result.index(emit_load_literal(instrs, std::regex{tok.ere(), std::regex_constants::awk}));
       lexer_->chew(false);
       break;
     case Token::Type::lparens: {
@@ -613,7 +630,7 @@ public:
       auto const& close_tok{lexer_->peek(false)};
       if (close_tok == Token::Type::rparens) {
         lexer_->chew(false);
-        result.index_ = expr.index_;
+        result.index(expr.index());
         break;
       }
 
@@ -621,7 +638,7 @@ public:
         // We now know we're a full expression, and this comma is part of a list - so we'll update
         // our types.  But not chew the comma - that will be done further up.
         // TODO(mgrettondann): Check we are at the top level.
-        result.index_ = expr.index_;
+        result.index(expr.index());
         result.type(ExprType::expr);
         break;
       }
@@ -635,7 +652,7 @@ public:
 
       auto const& tok2{lexer_->peek(false)};
       if (tok2 != Token::Type::lsquare) {
-        result.index_ = emit_variable(instrs, VariableName{var_name});
+        result.index(emit_variable(instrs, VariableName{var_name}));
         break;
       }
 
@@ -673,11 +690,11 @@ public:
 
     lexer_->chew(false);
     ExprResult const field_id{parse_primary_expr_opt(instrs, expr_type, unary_type)};
-    if (!field_id.index_.has_value()) {
+    if (!field_id.has_value()) {
       error(Msg::expected_expr_after_dollar, lexer_->location(), lexer_->peek(false));
     }
 
-    assert(field_id.index_.has_value());
+    assert(field_id.has_value());
     return ExprResult{emit_field(instrs, field_id), expr_type, true};
   }
 
@@ -703,7 +720,7 @@ public:
     // Parse the primary expression
     ExprResult result{parse_field_expr_opt(instrs, expr_type, unary_type)};
 
-    if (!result.is_lvalue() || unary_type == UnaryType::unary || !result.index_.has_value()) {
+    if (!result.is_lvalue() || unary_type == UnaryType::unary || !result.has_value()) {
       return result;
     }
 
@@ -720,8 +737,8 @@ public:
     //  x + 2: add x, x + 1 (or sub)
     //  x + 3: store_lvalue result.index
     //  result.index = x
-    Instruction::Index lvalue_index{*(result.index_)};
-    result.index_ = emit_maybe_lvalue(instrs, result);
+    Instruction::Index const lvalue_index{result.index()};
+    result.index(emit_maybe_lvalue(instrs, result));
     result.is_lvalue(false);
     ExprResult const lit1_index{emit_load_literal(instrs, Integer{1})};
     auto mod_index{is_incr ? emit_add(instrs, result, lit1_index)
@@ -762,7 +779,7 @@ public:
     // Parse the primary expression
     ExprResult lvalue{parse_post_incr_decr_expr_opt(instrs, expr_type, unary_type)};
 
-    if (!lvalue.is_lvalue() || !lvalue.index_.has_value()) {
+    if (!lvalue.is_lvalue() || !lvalue.has_value()) {
       error(Msg::expected_lvalue_after_pre_incr_decr, lexer_->location(), token,
             lexer_->peek(false));
     }
@@ -778,7 +795,7 @@ public:
     auto mod_index{is_incr ? emit_add(instrs, lvalue, lit1_index)
                            : emit_sub(instrs, ExprResult{val_index}, lit1_index)};
     emit_store_lvalue(instrs, lvalue, ExprResult{mod_index});
-    lvalue.index_ = mod_index;
+    lvalue.index(mod_index);
     lvalue.is_lvalue(false);
     return lvalue;
   }
@@ -807,7 +824,7 @@ public:
     lexer_->chew(true);
 
     ExprResult const rhs{parse_power_expr_opt(instrs, expr_type, unary_type)};
-    if (!rhs.index_.has_value()) {
+    if (!rhs.has_value()) {
       error(Msg::expected_expr_after_power, lexer_->location(), lexer_->peek(false));
     }
 
@@ -870,7 +887,7 @@ public:
       return expr;
     }
 
-    if (!expr.index_.has_value()) {
+    if (!expr.has_value()) {
       error(Msg::expected_expr_after_unary_prefix, lexer_->location(),
             is_not ? "!" : (negate ? "-" : "+"), lexer_->peek(false));  // NOLINT
     }
@@ -913,24 +930,24 @@ public:
     -> ExprResult
   {
     ExprResult lhs{parse_unary_prefix_expr_opt(instrs, expr_type, unary_type)};
-    if (!lhs.index_.has_value()) {
+    if (!lhs.has_value()) {
       return lhs;
     }
-    lhs.index_ = emit_maybe_lvalue(instrs, lhs);
+    lhs.index(emit_maybe_lvalue(instrs, lhs));
     lhs.is_lvalue(false);
     while (is_multiplicative_op(lexer_->peek(true).type())) {
       auto type{lexer_->peek(true).type()};
       lexer_->chew(true);
       ExprResult const rhs{parse_unary_prefix_expr_opt(instrs, expr_type, UnaryType::both)};
       if (type == Token::Type::multiply) {
-        lhs.index_ = emit_multiply(instrs, lhs, rhs);
+        lhs.index(emit_multiply(instrs, lhs, rhs));
       }
       else if (type == Token::Type::divide) {
-        lhs.index_ = emit_divide(instrs, lhs, rhs);
+        lhs.index(emit_divide(instrs, lhs, rhs));
       }
       else {
         assert(type == Token::Type::modulo);
-        lhs.index_ = emit_modulo(instrs, lhs, rhs);
+        lhs.index(emit_modulo(instrs, lhs, rhs));
       }
     }
 
@@ -957,21 +974,21 @@ public:
     -> ExprResult
   {
     ExprResult lhs{parse_multiplicative_expr_opt(instrs, expr_type, unary_type)};
-    if (!lhs.index_.has_value()) {
+    if (!lhs.has_value()) {
       return lhs;
     }
-    lhs.index_ = emit_maybe_lvalue(instrs, lhs);
+    lhs.index(emit_maybe_lvalue(instrs, lhs));
     lhs.is_lvalue(false);
     while (is_additive_op(lexer_->peek(true).type())) {
       auto type{lexer_->peek(true).type()};
       lexer_->chew(true);
       ExprResult const rhs{parse_multiplicative_expr_opt(instrs, expr_type, UnaryType::both)};
       if (type == Token::Type::add) {
-        lhs.index_ = emit_add(instrs, lhs, rhs);
+        lhs.index(emit_add(instrs, lhs, rhs));
       }
       else {
         assert(type == Token::Type::subtract);
-        lhs.index_ = emit_sub(instrs, lhs, rhs);
+        lhs.index(emit_sub(instrs, lhs, rhs));
       }
     }
 
@@ -996,10 +1013,10 @@ public:
     -> ExprResult
   {
     ExprResult lhs{parse_additive_expr_opt(instrs, expr_type, unary_type)};
-    if (!lhs.index_.has_value()) {
+    if (!lhs.has_value()) {
       return lhs;
     }
-    lhs.index_ = emit_maybe_lvalue(instrs, lhs);
+    lhs.index(emit_maybe_lvalue(instrs, lhs));
     lhs.is_lvalue(false);
     bool cont{true};
     while (cont) {
@@ -1008,9 +1025,9 @@ public:
       // next token.
       (void)lexer_->peek(true);
       auto rhs{parse_additive_expr_opt(instrs, expr_type, UnaryType::non_unary)};
-      cont = rhs.index_.has_value();
+      cont = rhs.has_value();
       if (cont) {
-        lhs.index_ = emit_concat(instrs, lhs, rhs);
+        lhs.index(emit_concat(instrs, lhs, rhs));
       }
     }
 
@@ -1045,13 +1062,13 @@ public:
     -> ExprResult
   {
     ExprResult lhs{parse_concat_expr_opt(instrs, expr_type, unary_type)};
-    if (!lhs.index_.has_value() || expr_type == ExprType::print_expr) {
+    if (!lhs.has_value() || expr_type == ExprType::print_expr) {
       return lhs;
     }
     if (auto type{lexer_->peek(true).type()}; is_comparison_op(type)) {
       lexer_->chew(true);
       ExprResult const rhs{parse_concat_expr_opt(instrs, expr_type, UnaryType::both)};
-      if (!rhs.index_.has_value()) {
+      if (!rhs.has_value()) {
         error(Msg::expected_expr_after_comparison_op, lexer_->location(), type,
               lexer_->peek(false));
       }
@@ -1081,13 +1098,13 @@ public:
     -> ExprResult
   {
     ExprResult const lhs{parse_comparison_expr_opt(instrs, expr_type, unary_type)};
-    if (!lhs.index_.has_value()) {
+    if (!lhs.has_value()) {
       return lhs;
     }
     if (auto type{lexer_->peek(true).type()}; is_re_match_op(type)) {
       lexer_->chew(true);
       ExprResult const rhs{parse_comparison_expr_opt(instrs, expr_type, UnaryType::both)};
-      if (!rhs.index_.has_value()) {
+      if (!rhs.has_value()) {
         error(Msg::expected_expr_after_re_match_op, lexer_->location(), type, lexer_->peek(false));
       }
       auto re_match{emit_re_match_op(instrs, lhs, rhs)};
@@ -1183,7 +1200,7 @@ public:
     while (true) {
       // Parse the expression
       auto result = parse_expr_opt(instrs, to_expr_type(list_type), UnaryType::both);
-      if (!result.index_.has_value()) {
+      if (!result.has_value()) {
         if (element_count != 0) {
           error(Msg::expected_expr_after_comma, lexer_->location(), lexer_->peek(false));
         }
@@ -1260,7 +1277,7 @@ public:
     lexer_->chew(false);
 
     auto out_expr{parse_expr_opt(instrs, ExprType::expr, UnaryType::both)};
-    if (!out_expr.index_.has_value()) {
+    if (!out_expr.has_value()) {
       error(Msg::expected_expr_after_redirection, lexer_->location(), tok, lexer_->peek(false));
     }
 
@@ -1322,9 +1339,9 @@ public:
 
     // Now get the redirection.  If we don't have a redirection we will output to standard out.
     ExprResult redir{parse_redirection_opt(instrs, ExprType::expr)};
-    if (!redir.index_.has_value()) {
+    if (!redir.has_value()) {
       int const fd{STDOUT_FILENO};
-      redir.index_ = emit_load_literal(instrs, FileDescriptor{fd});
+      redir.index(emit_load_literal(instrs, FileDescriptor{fd}));
     }
 
     Instruction::Index fs{0};
@@ -1379,7 +1396,7 @@ public:
       return true;
     }
 
-    return parse_expr_opt(instrs, ExprType::expr, UnaryType::both).index_.has_value();
+    return parse_expr_opt(instrs, ExprType::expr, UnaryType::both).has_value();
   }
 
   auto parse_terminatable_statement_opt(Instructions& instrs) -> ParseStatementResult
@@ -1401,8 +1418,8 @@ public:
     case Token::Type::exit: {
       lexer_->chew(false);
       auto expr{parse_expr_opt(instrs, ExprType::expr, UnaryType::both)};
-      if (!expr.index_.has_value()) {
-        expr.index_ = emit_load_literal(instrs, INT64_C(0));
+      if (!expr.has_value()) {
+        expr.index(emit_load_literal(instrs, INT64_C(0)));
       }
 
       emit_exit(instrs, expr);
@@ -1411,8 +1428,8 @@ public:
     case Token::Type::return_: {
       lexer_->chew(false);
       auto expr{parse_expr_opt(instrs, ExprType::expr, UnaryType::both)};
-      if (!expr.index_.has_value()) {
-        expr.index_ = emit_load_literal(instrs, INT64_C(0));
+      if (!expr.has_value()) {
+        expr.index(emit_load_literal(instrs, INT64_C(0)));
       }
       emit_return(instrs, expr);
       break;
@@ -1571,7 +1588,7 @@ public:
     -> std::optional<Instruction::Index>  // NOLINT - temporary until implemented
   {
     if (ExprResult const pat1{parse_expr_opt(instrs, ExprType::expr, UnaryType::both)};
-        pat1.index_.has_value()) {
+        pat1.has_value()) {
       auto branch{emit_branch_if_false(instrs, pat1, 0)};
       // TODO(mgrettondann): Handle pattern ranges
       return branch;
