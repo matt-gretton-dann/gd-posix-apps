@@ -87,6 +87,8 @@ test_awk(
 test_awk(
     'BEGIN { print (1 >= 2), (2 >= 1), (1 >= 1), ("abc" >= "def"), ("def" >= "abc"), ("abc" >= "abc") }',
     '0 1 1 0 1 1\n')
+test_awk('BEGIN { print ("ns1234sa" ~ /[0-9]+/) }', "1\n")
+test_awk('BEGIN { print ("ns1234sa" !~ /[0-9]+/) }', "0\n")
 
 # Some error tests
 test_awk('BEGIN { print (1 }', None, expected_rc=1)

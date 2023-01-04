@@ -126,6 +126,10 @@ constexpr auto is_comparison_op(Token::Type type) -> bool
   return type == Token::Type::eq || type == Token::Type::ne || type == Token::Type::less_than ||
          type == Token::Type::le || type == Token::Type::greater_than || type == Token::Type::ge;
 }
+constexpr auto is_re_match_op(Token::Type type) -> bool
+{
+  return type == Token::Type::tilde || type == Token::Type::no_match;
+}
 
 class ParseState
 {
@@ -437,6 +441,17 @@ public:
     auto lhs_idx{emit_maybe_lvalue(instrs, lhs)};
     auto rhs_idx{emit_maybe_lvalue(instrs, rhs)};
     instrs.emplace_back(op, lhs_idx, rhs_idx);
+    return instrs.size() - 1;
+  }
+
+  static auto emit_re_match_op(Instructions& instrs, ExprResult lhs, ExprResult rhs)
+    -> Instruction::Index
+  {
+    assert(lhs.index.has_value());
+    assert(rhs.index.has_value());
+    auto lhs_idx{emit_maybe_lvalue(instrs, lhs)};
+    auto rhs_idx{emit_maybe_lvalue(instrs, rhs)};
+    instrs.emplace_back(Instruction::Opcode::re_match, lhs_idx, rhs_idx);
     return instrs.size() - 1;
   }
 
@@ -997,7 +1012,11 @@ public:
    * | Pattern                                 | Expr or print_expr?  | Unary or non-unary?  |
    * | :-------------------------------------- | :------------------- | :------------------- |
    * | concat_expr == concat_expr              | expr                 | Both                 |
-   * | concat_expr additive_expr(Non-unary)    | Both                 | Both                 |
+   * | concat_expr != concat_expr              | expr                 | Both                 |
+   * | concat_expr <  concat_expr              | expr                 | Both                 |
+   * | concat_expr <= concat_expr              | expr                 | Both                 |
+   * | concat_expr >  concat_expr              | expr                 | Both                 |
+   * | concat_expr >= concat_expr              | expr                 | Both                 |
    */
   auto parse_comparison_expr_opt(Instructions& instrs, ExprType expr_type, UnaryType unary_type)
     -> ExprResult
@@ -1014,6 +1033,46 @@ public:
               lexer_->peek(false));
       }
       return {emit_comparison_op(instrs, type, lhs, rhs)};
+    }
+
+    return lhs;
+  }
+
+  /** @brief Parse a re-match expression
+   *
+   * @param  instrs     Where to emit code to
+   * @param  expr_type  Expression type
+   * @param  unary_type What expression class is this?
+   * @return            Index of emitted expression, and updated expression type
+   *
+   * re_match_expr : comparison_expr TILDE comparison_expr
+   *               | comparison_expr NO_MATCH comparison_expr
+   *               | comparison_expr
+   *
+   * | Pattern                                 | Expr or print_expr?  | Unary or non-unary?  |
+   * | :-------------------------------------- | :------------------- | :------------------- |
+   * | comparison_expr ~ comparison_expr       | Both                 | Both                 |
+   * | comparison_expr !~ comparison_expr      | Both                 | Both                 |
+   */
+  auto parse_re_match_expr_opt(Instructions& instrs, ExprType expr_type, UnaryType unary_type)
+    -> ExprResult
+  {
+    ExprResult const lhs{parse_comparison_expr_opt(instrs, expr_type, unary_type)};
+    if (!lhs.index.has_value()) {
+      return lhs;
+    }
+    if (auto type{lexer_->peek(true).type()}; is_re_match_op(type)) {
+      lexer_->chew(true);
+      ExprResult const rhs{parse_comparison_expr_opt(instrs, expr_type, UnaryType::both)};
+      if (!rhs.index.has_value()) {
+        error(Msg::expected_expr_after_re_match_op, lexer_->location(), type, lexer_->peek(false));
+      }
+      auto re_match{emit_re_match_op(instrs, lhs, rhs)};
+      if (type == Token::Type::no_match) {
+        re_match = emit_logical_not(instrs, {re_match});
+      }
+
+      return {re_match};
     }
 
     return lhs;
@@ -1085,7 +1144,7 @@ public:
   auto parse_expr_opt(Instructions& instrs, ExprType expr_type,
                       [[maybe_unused]] UnaryType unary_type) -> ExprResult
   {
-    return parse_comparison_expr_opt(instrs, expr_type, UnaryType::both);
+    return parse_re_match_expr_opt(instrs, expr_type, UnaryType::both);
   }
 
   /** @brief Parse an expression list (of any type)

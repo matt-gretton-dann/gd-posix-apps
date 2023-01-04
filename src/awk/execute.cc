@@ -567,12 +567,28 @@ public:
                         [](bool b) { return std::make_optional(std::string{b ? "1" : "0"}); },
                         [](std::string const& s) { return std::make_optional(s); },
                         [](std::nullopt_t) { return std::make_optional(std::string{}); },
-                        [](auto const&) {
-                          std::abort();
-                          return std::optional<std::string>{};
-                        },
+                        [](auto const&) { return std::optional<std::string>{}; },
                       },
                       index);
+  }
+
+  static auto to_re(ExecutionValue const& index, std::string const& fmt)
+    -> std::optional<std::regex>
+  {
+    return std::visit(
+      GD::Overloaded{
+        [](std::regex const& re) { return std::make_optional(re); },
+        [](Integer v) { return std::make_optional(std::regex{std::to_string(v.get())}); },
+        [&fmt](Floating v) {
+          return std::make_optional(
+            std::regex{fmt::vformat(to_fmt(fmt), fmt::make_format_args(v))});
+        },
+        [](bool b) { return std::make_optional(std::regex{b ? "1" : "0"}); },
+        [](std::string const& s) { return std::make_optional(std::regex{s}); },
+        [](std::nullopt_t) { return std::make_optional(std::regex{}); },
+        [](auto const&) { return std::optional<std::regex>{}; },
+      },
+      index);
   }
 
   static auto execute_concat(std::vector<ExecutionValue> const& values,
@@ -594,6 +610,30 @@ public:
     }
 
     error(Msg::unable_to_cast_value_to_string, lhs_value);
+  }
+
+  static auto execute_re_match(std::vector<ExecutionValue> const& values,
+                               Instruction::Operand const& lhs, Instruction::Operand const& rhs,
+                               std::string const& conv_fmt) -> ExecutionValue
+  {
+    assert(std::holds_alternative<Instruction::Index>(lhs));
+    assert(std::holds_alternative<Instruction::Index>(rhs));
+    ExecutionValue const& lhs_value{values.at(std::get<Instruction::Index>(lhs))};
+    ExecutionValue const& rhs_value{values.at(std::get<Instruction::Index>(rhs))};
+    auto const lhs_str{to_string(lhs_value, conv_fmt)};
+    auto const rhs_re{to_re(rhs_value, conv_fmt)};
+    if (lhs_str.has_value() && rhs_re.has_value()) {
+      return std::regex_search(*lhs_str, *rhs_re);
+    }
+
+    if (!lhs_str.has_value()) {
+      error(Msg::unable_to_cast_value_to_string, lhs_value);
+    }
+    if (rhs_re.has_value()) {
+      error(Msg::unable_to_cast_value_to_re, rhs_value);
+    }
+
+    std::abort();
   }
 
   template<typename NumFn, typename StringFn>
@@ -835,6 +875,10 @@ public:
         break;
       case Instruction::Opcode::branch_if_false:
         pc = execute_branch_if_false(values, it->op1(), it->op2(), pc + 1) - 1;
+        break;
+      case Instruction::Opcode::re_match:
+        values.at(pc) =
+          execute_re_match(values, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
         break;
       }
       ++pc;

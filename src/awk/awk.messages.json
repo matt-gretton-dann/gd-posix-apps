@@ -242,6 +242,18 @@
         "id": 40,
         "description": "Expected an expression after the comparison op '{0}' but got {1}.",
         "C": "Expected an expression after '{0}' but got {1}."
+      },
+      {
+        "msg": "expected_expr_after_re_match_op",
+        "id": 41,
+        "description": "Expected an expression after the re_match op '{0}' but got {1}.",
+        "C": "Expected an expression after '{0}' but got {1}."
+      },
+      {
+        "msg": "unable_to_cast_value_to_re",
+        "id": 42,
+        "description": "Unable to cast the value {0} to a regular expression.",
+        "C": "Unable to cast the value '{0}' to a regular expression."
       }
     ]
   }
