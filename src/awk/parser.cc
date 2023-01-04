@@ -116,9 +116,13 @@ struct ExprResult
   auto operator=(ExprResult const&) -> ExprResult& = default;
   auto operator=(ExprResult&&) noexcept -> ExprResult& = default;
 
+  [[nodiscard]] auto is_lvalue() const noexcept -> bool { return is_lvalue_; }
+  void is_lvalue(bool lvalue) noexcept { is_lvalue_ = lvalue; }
+
   ExprIndex index_{std::nullopt};        // NOLINT
   ExprType type_{ExprType::maybe_expr};  // NOLINT
-  bool is_lvalue_{false};                // NOLINT
+private:
+  bool is_lvalue_{false};  // NOLINT
 };
 
 constexpr auto is_unary_prefix_op(Token::Type type) -> bool
@@ -287,7 +291,7 @@ public:
   static auto emit_maybe_lvalue(Instructions& instrs, ExprResult expr) -> Instruction::Index
   {
     assert(expr.index_.has_value());
-    if (!expr.is_lvalue_) {
+    if (!expr.is_lvalue()) {
       return *(expr.index_);
     }
 
@@ -299,7 +303,7 @@ public:
     -> Instruction::Index
   {
     assert(lvalue.index_.has_value());
-    assert(lvalue.is_lvalue_);
+    assert(lvalue.is_lvalue());
     assert(expr.index_.has_value());
     auto expr_idx = emit_maybe_lvalue(instrs, expr);
 
@@ -624,7 +628,7 @@ public:
     case Token::Type::name: {
       std::string const var_name{tok.name()};
       lexer_->chew(false);
-      result.is_lvalue_ = true;
+      result.is_lvalue(true);
 
       auto const& tok2{lexer_->peek(false)};
       if (tok2 != Token::Type::lsquare) {
@@ -696,7 +700,7 @@ public:
     // Parse the primary expression
     ExprResult result{parse_field_expr_opt(instrs, expr_type, unary_type)};
 
-    if (!result.is_lvalue_ || unary_type == UnaryType::unary || !result.index_.has_value()) {
+    if (!result.is_lvalue() || unary_type == UnaryType::unary || !result.index_.has_value()) {
       return result;
     }
 
@@ -715,7 +719,7 @@ public:
     //  result.index = x
     Instruction::Index lvalue_index{*(result.index_)};
     result.index_ = emit_maybe_lvalue(instrs, result);
-    result.is_lvalue_ = false;
+    result.is_lvalue(false);
     ExprResult const lit1_index{emit_load_literal(instrs, Integer{1})};
     auto mod_index{is_incr ? emit_add(instrs, result, lit1_index)
                            : emit_sub(instrs, result, lit1_index)};
@@ -755,7 +759,7 @@ public:
     // Parse the primary expression
     ExprResult lvalue{parse_post_incr_decr_expr_opt(instrs, expr_type, unary_type)};
 
-    if (!lvalue.is_lvalue_ || !lvalue.index_.has_value()) {
+    if (!lvalue.is_lvalue() || !lvalue.index_.has_value()) {
       error(Msg::expected_lvalue_after_pre_incr_decr, lexer_->location(), token,
             lexer_->peek(false));
     }
@@ -772,7 +776,7 @@ public:
                            : emit_sub(instrs, ExprResult{val_index}, lit1_index)};
     emit_store_lvalue(instrs, lvalue, ExprResult{mod_index});
     lvalue.index_ = mod_index;
-    lvalue.is_lvalue_ = false;
+    lvalue.is_lvalue(false);
     return lvalue;
   }
 
@@ -910,7 +914,7 @@ public:
       return lhs;
     }
     lhs.index_ = emit_maybe_lvalue(instrs, lhs);
-    lhs.is_lvalue_ = false;
+    lhs.is_lvalue(false);
     while (is_multiplicative_op(lexer_->peek(true).type())) {
       auto type{lexer_->peek(true).type()};
       lexer_->chew(true);
@@ -954,7 +958,7 @@ public:
       return lhs;
     }
     lhs.index_ = emit_maybe_lvalue(instrs, lhs);
-    lhs.is_lvalue_ = false;
+    lhs.is_lvalue(false);
     while (is_additive_op(lexer_->peek(true).type())) {
       auto type{lexer_->peek(true).type()};
       lexer_->chew(true);
@@ -993,7 +997,7 @@ public:
       return lhs;
     }
     lhs.index_ = emit_maybe_lvalue(instrs, lhs);
-    lhs.is_lvalue_ = false;
+    lhs.is_lvalue(false);
     bool cont{true};
     while (cont) {
       // TODO(mgrettondann): make this hack more robust/reasonable!
