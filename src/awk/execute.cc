@@ -546,6 +546,56 @@ public:
     error(Msg::unable_to_cast_value_to_bool, value);
   }
 
+  static auto execute_logical_and(std::vector<ExecutionValue> const& values,
+                                  Instruction::Operand const& lhs, Instruction::Operand const& rhs)
+    -> ExecutionValue
+  {
+    assert(std::holds_alternative<Instruction::Index>(lhs));
+    assert(std::holds_alternative<Instruction::Index>(rhs));
+    ExecutionValue const& lhs_value{values.at(std::get<Instruction::Index>(lhs))};
+    ExecutionValue const& rhs_value{values.at(std::get<Instruction::Index>(rhs))};
+    auto b1{to_bool(lhs_value)};
+    auto b2{to_bool(rhs_value)};
+    if (b1.has_value() && b2.has_value()) {
+      auto result{*b1 && *b2};
+      return bool{result};
+    }
+
+    if (!b1.has_value()) {
+      error(Msg::unable_to_cast_value_to_bool, lhs_value);
+    }
+    if (!b2.has_value()) {
+      error(Msg::unable_to_cast_value_to_bool, rhs_value);
+    }
+
+    std::abort();
+  }
+
+  static auto execute_logical_or(std::vector<ExecutionValue> const& values,
+                                 Instruction::Operand const& lhs, Instruction::Operand const& rhs)
+    -> ExecutionValue
+  {
+    assert(std::holds_alternative<Instruction::Index>(lhs));
+    assert(std::holds_alternative<Instruction::Index>(rhs));
+    ExecutionValue const& lhs_value{values.at(std::get<Instruction::Index>(lhs))};
+    ExecutionValue const& rhs_value{values.at(std::get<Instruction::Index>(rhs))};
+    auto b1{to_bool(lhs_value)};
+    auto b2{to_bool(rhs_value)};
+    if (b1.has_value() && b2.has_value()) {
+      auto result{*b1 || *b2};
+      return bool{result};
+    }
+
+    if (!b1.has_value()) {
+      error(Msg::unable_to_cast_value_to_bool, lhs_value);
+    }
+    if (!b2.has_value()) {
+      error(Msg::unable_to_cast_value_to_bool, rhs_value);
+    }
+
+    std::abort();
+  }
+
   static auto to_fmt(std::string const& s)
   {
     // TODO(mgrettondann): Make this robust
@@ -879,6 +929,12 @@ public:
       case Instruction::Opcode::re_match:
         values.at(pc) =
           execute_re_match(values, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
+        break;
+      case Instruction::Opcode::logical_and:
+        values.at(pc) = execute_logical_and(values, it->op1(), it->op2());
+        break;
+      case Instruction::Opcode::logical_or:
+        values.at(pc) = execute_logical_or(values, it->op1(), it->op2());
         break;
       }
       ++pc;

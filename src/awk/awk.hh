@@ -573,6 +573,8 @@ private:
  * | is_greater_than_equal | Ix(I/F/S)   | Ix(I/F/S)   | <op1> >= <op2>                           |
  * | branch_if_false       | Ix(B)       | Ix          | Branch to <op2> if <op1> is false        |
  * | re_match              | Ix(S)       | Ix(R)       | <op1> ~ <op2>                            |
+ * | logical_or            | Ix(B)       | Ix(B)       | <op1> && <op2>                           |
+ * | logical_and           | Ix(B)       | Ix(B)       | <op1> || <op2>                           |
  *
  * Parameter packs are identified by the index of the instruction corresponding to the
  * 'open_param_pack'.
@@ -611,6 +613,8 @@ public:
     is_greater_than_equal,  ///< >= comparison
     branch_if_false,        ///< Branch to op2 if op1 is false
     re_match,               ///< Regular expression match
+    logical_and,            ///< Logical and
+    logical_or,             ///< Logical or
   };
 
   /** Type representing an index into the list of instructions.  */

@@ -266,6 +266,18 @@
         "id": 44,
         "description": "Expected an array name after in, instead found {0}.",
         "C": "Expected an array name after 'in'.  Instead found {0}."
+      },
+      {
+        "msg": "error_expected_expr_after_and",
+        "id": 45,
+        "description": "Expected an expression after &&, instead found {0}.",
+        "C": "Expected an expression after '&&'.  Instead found {0}."
+      },
+      {
+        "msg": "error_expected_expr_after_or",
+        "id": 46,
+        "description": "Expected an expression after ||, instead found {0}.",
+        "C": "Expected an expression after '||'.  Instead found {0}."
       }
     ]
   }

@@ -165,6 +165,12 @@ auto GD::Awk::operator<<(std::ostream& os, GD::Awk::Instruction::Opcode opcode) 
   case GD::Awk::Instruction::Opcode::re_match:
     os << "re_match";
     break;
+  case GD::Awk::Instruction::Opcode::logical_and:
+    os << "logical_and";
+    break;
+  case GD::Awk::Instruction::Opcode::logical_or:
+    os << "logical_or";
+    break;
   }
   return os;
 }
@@ -203,6 +209,8 @@ auto GD::Awk::Instruction::op_count(Opcode opcode) -> unsigned
   case GD::Awk::Instruction::Opcode::is_not_equal:
   case GD::Awk::Instruction::Opcode::branch_if_false:
   case GD::Awk::Instruction::Opcode::re_match:
+  case GD::Awk::Instruction::Opcode::logical_and:
+  case GD::Awk::Instruction::Opcode::logical_or:
     return 2;
   }
 }
@@ -240,6 +248,8 @@ void GD::Awk::Instruction::validate_operands() const
   case GD::Awk::Instruction::Opcode::is_equal:
   case GD::Awk::Instruction::Opcode::branch_if_false:
   case GD::Awk::Instruction::Opcode::re_match:
+  case GD::Awk::Instruction::Opcode::logical_and:
+  case GD::Awk::Instruction::Opcode::logical_or:
     assert(std::holds_alternative<Index>(*op1_));  // NOLINT
     assert(std::holds_alternative<Index>(*op2_));  // NOLINT
     break;
