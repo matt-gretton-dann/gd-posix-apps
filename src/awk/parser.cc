@@ -119,10 +119,13 @@ struct ExprResult
   [[nodiscard]] auto is_lvalue() const noexcept -> bool { return is_lvalue_; }
   void is_lvalue(bool lvalue) noexcept { is_lvalue_ = lvalue; }
 
-  ExprIndex index_{std::nullopt};        // NOLINT
-  ExprType type_{ExprType::maybe_expr};  // NOLINT
+  [[nodiscard]] auto type() const noexcept -> ExprType { return type_; }
+  void type(ExprType t) noexcept { type_ = t; }
+
+  ExprIndex index_{std::nullopt};  // NOLINT
 private:
-  bool is_lvalue_{false};  // NOLINT
+  ExprType type_{ExprType::maybe_expr};
+  bool is_lvalue_{false};
 };
 
 constexpr auto is_unary_prefix_op(Token::Type type) -> bool
@@ -619,7 +622,7 @@ public:
         // our types.  But not chew the comma - that will be done further up.
         // TODO(mgrettondann): Check we are at the top level.
         result.index_ = expr.index_;
-        result.type_ = ExprType::expr;
+        result.type(ExprType::expr);
         break;
       }
 
@@ -1189,7 +1192,7 @@ public:
 
       // Insert index into list of expressions.
       *inserter_it = result;
-      list_type = to_expr_list_type(result.type_, list_type);
+      list_type = to_expr_list_type(result.type(), list_type);
       ++element_count;
 
       // Chew the comma, and newline separators.
