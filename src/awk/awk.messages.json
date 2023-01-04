@@ -254,6 +254,12 @@
         "id": 42,
         "description": "Unable to cast the value {0} to a regular expression.",
         "C": "Unable to cast the value '{0}' to a regular expression."
+      },
+      {
+        "msg": "cannot_nest_multiple_expr_lists",
+        "id": 43,
+        "description": "Cannot nest multiple expression lists",
+        "C": "Cannot nest multiple expression lists."
       }
     ]
   }
