@@ -89,6 +89,14 @@ test_awk(
     '0 1 1 0 1 1\n')
 test_awk('BEGIN { print ("ns1234sa" ~ /[0-9]+/) }', "1\n")
 test_awk('BEGIN { print ("ns1234sa" !~ /[0-9]+/) }', "0\n")
+test_awk('BEGIN { print (0 && 0) }', "0\n")
+test_awk('BEGIN { print (0 && 1) }', "0\n")
+test_awk('BEGIN { print (1 && 0) }', "0\n")
+test_awk('BEGIN { print (1 && 1) }', "1\n")
+test_awk('BEGIN { print (0 || 0) }', "0\n")
+test_awk('BEGIN { print (0 || 1) }', "1\n")
+test_awk('BEGIN { print (1 || 0) }', "1\n")
+test_awk('BEGIN { print (1 || 1) }', "1\n")
 
 # Some error tests
 test_awk('BEGIN { print (1 }', None, expected_rc=1)

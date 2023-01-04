@@ -367,6 +367,10 @@ public:
       return Instruction::Opcode::power;
     case Token::Type::modulo:
       return Instruction::Opcode::modulo;
+    case Token::Type::and_:
+      return Instruction::Opcode::logical_and;
+    case Token::Type::or_:
+      return Instruction::Opcode::logical_or;
     default:
       std::abort();
     }
@@ -376,7 +380,8 @@ public:
                              ExprResult const& rhs) -> ExprResult
   {
     assert(is_additive_op(binary_op) || is_multiplicative_op(binary_op) ||
-           binary_op == Token::Type::power);
+           binary_op == Token::Type::power || binary_op == Token::Type::and_ ||
+           binary_op == Token::Type::or_);
     assert(lhs.has_one_value());
     assert(rhs.has_one_value());
     ExprResult const lhs1{emit_maybe_lvalue(instrs, lhs)};
@@ -1075,21 +1080,92 @@ public:
     return lhs;
   }
 
+  /** @brief Parse an and expression
+   *
+   * @param  instrs     Where to emit code to
+   * @param  expr_type  Expression type
+   * @param  unary_type What expression class is this?
+   * @return            Index of emitted expression, and updated expression type
+   *
+   * and_expr : and_expr AND newline_opt array_in_expr
+   *          | array_in_expr
+   *
+   * | Pattern                                 | Expr or print_expr?  | Unary or non-unary?  |
+   * | :-------------------------------------- | :------------------- | :------------------- |
+   * | and_expr && array_in_expr               | Both                 | Both                 |
+   */
+  auto parse_and_expr_opt(Instructions& instrs, ExprType expr_type, UnaryType unary_type)
+    -> ExprResult
+  {
+    ExprResult lhs{parse_in_array_expr_opt(instrs, expr_type, unary_type)};
+    if (!lhs.has_one_value()) {
+      return lhs;
+    }
+
+    while (lexer_->peek(true) == Token::Type::and_) {
+      lexer_->chew(true);
+      parse_newline_opt();
+      auto rhs{parse_in_array_expr_opt(instrs, expr_type, unary_type)};
+      if (!rhs.has_one_value()) {
+        error(Msg::error_expected_expr_after_and, lexer_->location(), lexer_->peek(false));
+      }
+      lhs = emit_binary_op(instrs, Token::Type::and_, lhs, rhs);
+    }
+
+    return lhs;
+  }
+
+  /** @brief Parse an or expression
+   *
+   * @param  instrs     Where to emit code to
+   * @param  expr_type  Expression type
+   * @param  unary_type What expression class is this?
+   * @return            Index of emitted expression, and updated expression type
+   *
+   * or_expr : or_expr AND newline_opt and_expr
+   *         | array_in_expr
+   *
+   * | Pattern                                 | Expr or print_expr?  | Unary or non-unary?  |
+   * | :-------------------------------------- | :------------------- | :------------------- |
+   * | or_expr && and_expr                     | Both                 | Both                 |
+   */
+  auto parse_or_expr_opt(Instructions& instrs, ExprType expr_type, UnaryType unary_type)
+    -> ExprResult
+  {
+    ExprResult lhs{parse_and_expr_opt(instrs, expr_type, unary_type)};
+    if (!lhs.has_one_value()) {
+      return lhs;
+    }
+
+    while (lexer_->peek(true) == Token::Type::or_) {
+      lexer_->chew(true);
+      parse_newline_opt();
+      auto rhs{parse_in_array_expr_opt(instrs, expr_type, unary_type)};
+      if (!rhs.has_one_value()) {
+        error(Msg::error_expected_expr_after_or, lexer_->location(), lexer_->peek(false));
+      }
+      lhs = emit_binary_op(instrs, Token::Type::or_, lhs, rhs);
+    }
+
+    return lhs;
+  }
+
   /** @brief Parse an expression (of any type)
    *
    * @param  instrs     Where to emit code to
    * @param  expr_type  Expression type
    * @return            Index of emitted expression, and updated expression type
    *
-   * The official grammar for awk classifies expressions into two main classes: print_expr or expr.
-   * The print_expr class is a subset of expr - it basically excludes getline calls, and comparison
-   * operators.
+   * The official grammar for awk classifies expressions into two main classes: print_expr or
+   * expr. The print_expr class is a subset of expr - it basically excludes getline calls, and
+   * comparison operators.
    *
-   * Each of these two classes is further subdivided into unary ond non-unary.  The purpose of this
-   * seems to be to exclude unary '+' and '-' from the right hand side of string concatenation.
+   * Each of these two classes is further subdivided into unary ond non-unary.  The purpose of
+   * this seems to be to exclude unary '+' and '-' from the right hand side of string
+   * concatenation.
    *
-   * In the grammar comments before functions ignore these differences for simplicity of exposition.
-   * The following table details the classifications.
+   * In the grammar comments before functions ignore these differences for simplicity of
+   * exposition. The following table details the classifications.
    *
    * | Pattern                             | Expr or print_expr?  | Unary or non-unary?  |
    * | :---------------------------------- | :------------------- | :------------------- |
@@ -1141,7 +1217,7 @@ public:
   auto parse_expr_opt(Instructions& instrs, ExprType expr_type,
                       [[maybe_unused]] UnaryType unary_type) -> ExprResult
   {
-    return parse_in_array_expr_opt(instrs, expr_type, UnaryType::both);
+    return parse_or_expr_opt(instrs, expr_type, UnaryType::both);
   }
 
   /** @brief Parse the second & subsequent elements of a multiple_expr_list.
@@ -1187,8 +1263,8 @@ public:
       // Parse the expression
       auto result = parse_expr_opt(instrs, to_expr_type(list_type), UnaryType::both);
       if (result.has_many_values()) {
-        // This turned out to be a multiple_expr_list - so we just lift the results up a level, and
-        // return.
+        // This turned out to be a multiple_expr_list - so we just lift the results up a level,
+        // and return.
         for (auto const& r : result) {
           *inserter_it++ = r;
         }
