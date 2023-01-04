@@ -182,10 +182,10 @@ public:
    * @param value   Literal to emit
    * @return        Index of emitted literal.
    */
-  static auto emit_load_literal(Instructions& instrs, Integer value) -> Instruction::Index
+  static auto emit_load_literal(Instructions& instrs, Integer value) -> ExprResult
   {
     instrs.emplace_back(Instruction::Opcode::load_literal, value);
-    return instrs.size() - 1;
+    return ExprResult{instrs.size() - 1};
   }
 
   /** @brief emit a load literal instruction
@@ -194,10 +194,10 @@ public:
    * @param fd      Literal to emit
    * @return        Index of emitted literal.
    */
-  static auto emit_load_literal(Instructions& instrs, FileDescriptor fd) -> Instruction::Index
+  static auto emit_load_literal(Instructions& instrs, FileDescriptor fd) -> ExprResult
   {
     instrs.emplace_back(Instruction::Opcode::load_literal, fd);
-    return instrs.size() - 1;
+    return ExprResult{instrs.size() - 1};
   }
 
   /** @brief emit a load literal instruction
@@ -206,10 +206,10 @@ public:
    * @param value   Literal to emit
    * @return        Index of emitted literal.
    */
-  static auto emit_load_literal(Instructions& instrs, Floating value) -> Instruction::Index
+  static auto emit_load_literal(Instructions& instrs, Floating value) -> ExprResult
   {
     instrs.emplace_back(Instruction::Opcode::load_literal, value);
-    return instrs.size() - 1;
+    return ExprResult{instrs.size() - 1};
   }
 
   /** @brief emit a load literal instruction
@@ -218,11 +218,10 @@ public:
    * @param value   Literal to emit
    * @return        Index of emitted literal.
    */
-  static auto emit_load_literal(Instructions& instrs, std::string const& value)
-    -> Instruction::Index
+  static auto emit_load_literal(Instructions& instrs, std::string const& value) -> ExprResult
   {
     instrs.emplace_back(Instruction::Opcode::load_literal, value);
-    return instrs.size() - 1;
+    return ExprResult{instrs.size() - 1};
   }
 
   /** @brief emit a load literal regex instruction
@@ -231,10 +230,10 @@ public:
    * @param value   Literal to emit
    * @return        Index of emitted literal.
    */
-  static auto emit_load_literal(Instructions& instrs, std::regex const& re) -> Instruction::Index
+  static auto emit_load_literal(Instructions& instrs, std::regex const& re) -> ExprResult
   {
     instrs.emplace_back(Instruction::Opcode::load_literal, re);
-    return instrs.size() - 1;
+    return ExprResult{instrs.size() - 1};
   }
 
   /** @brief emit a field instruction
@@ -606,22 +605,22 @@ public:
     }
 
     auto const& tok{lexer_->peek(false)};
-    ExprResult result{expr_type};
+    ExprResult result;
     switch (tok.type()) {
     case Token::Type::integer:
-      result.index(emit_load_literal(instrs, tok.integer()));
+      result = emit_load_literal(instrs, tok.integer());
       lexer_->chew(false);
       break;
     case Token::Type::floating:
-      result.index(emit_load_literal(instrs, tok.floating()));
+      result = emit_load_literal(instrs, tok.floating());
       lexer_->chew(false);
       break;
     case Token::Type::string:
-      result.index(emit_load_literal(instrs, tok.string()));
+      result = emit_load_literal(instrs, tok.string());
       lexer_->chew(false);
       break;
     case Token::Type::ere:
-      result.index(emit_load_literal(instrs, std::regex{tok.ere(), std::regex_constants::awk}));
+      result = emit_load_literal(instrs, std::regex{tok.ere(), std::regex_constants::awk});
       lexer_->chew(false);
       break;
     case Token::Type::lparens: {
@@ -640,7 +639,7 @@ public:
         // TODO(mgrettondann): Check we are at the top level.
         result.index(expr.index());
         result.type(ExprType::expr);
-        break;
+        return result;
       }
 
       error(Msg::expected_rparens_at_end_of_expression, lexer_->location(), lexer_->peek(false));
@@ -663,6 +662,7 @@ public:
       break;
     }
 
+    result.type(expr_type);
     return result;
   }
 
@@ -1286,8 +1286,8 @@ public:
               expr_type};  // NOLINT(bugprone-unchecked-optional-access)
     }
 
-    Instruction::Index const opt{emit_load_literal(instrs, is_append ? INT64_C(1) : INT64_C(0))};
-    return ExprResult{emit_open(instrs, out_expr, ExprResult{opt}),
+    ExprResult const opt{emit_load_literal(instrs, is_append ? INT64_C(1) : INT64_C(0))};
+    return ExprResult{emit_open(instrs, out_expr, opt),
                       expr_type};  // NOLINT(bugprone-unchecked-optional-access)
   }
 
@@ -1341,7 +1341,7 @@ public:
     ExprResult redir{parse_redirection_opt(instrs, ExprType::expr)};
     if (!redir.has_value()) {
       int const fd{STDOUT_FILENO};
-      redir.index(emit_load_literal(instrs, FileDescriptor{fd}));
+      redir = emit_load_literal(instrs, FileDescriptor{fd});
     }
 
     Instruction::Index fs{0};
@@ -1419,7 +1419,7 @@ public:
       lexer_->chew(false);
       auto expr{parse_expr_opt(instrs, ExprType::expr, UnaryType::both)};
       if (!expr.has_value()) {
-        expr.index(emit_load_literal(instrs, INT64_C(0)));
+        expr = emit_load_literal(instrs, INT64_C(0));
       }
 
       emit_exit(instrs, expr);
@@ -1429,7 +1429,7 @@ public:
       lexer_->chew(false);
       auto expr{parse_expr_opt(instrs, ExprType::expr, UnaryType::both)};
       if (!expr.has_value()) {
-        expr.index(emit_load_literal(instrs, INT64_C(0)));
+        expr = emit_load_literal(instrs, INT64_C(0));
       }
       emit_return(instrs, expr);
       break;
