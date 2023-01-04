@@ -260,6 +260,12 @@
         "id": 43,
         "description": "Cannot nest multiple expression lists",
         "C": "Cannot nest multiple expression lists."
+      },
+      {
+        "msg": "expected_name_after_in",
+        "id": 44,
+        "description": "Expected an array name after in, instead found {0}.",
+        "C": "Expected an array name after 'in'.  Instead found {0}."
       }
     ]
   }
