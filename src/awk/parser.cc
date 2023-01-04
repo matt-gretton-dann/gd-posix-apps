@@ -196,8 +196,8 @@ public:
   /** @brief emit a field instruction
    *
    * @param instrs  Instructions to emit into
-   * @param expr    Offset of expression containing field ID.
-   * @return        Index of emitted literal.
+   * @param expr    Offset of expression containing field expression
+   * @return        Index of calculated field-id.
    */
   static auto emit_field(Instructions& instrs, ExprResult op1) -> Instruction::Index
   {
@@ -875,6 +875,11 @@ public:
     -> ExprResult
   {
     ExprResult lhs{parse_unary_prefix_expr_opt(instrs, expr_type, unary_type)};
+    if (!lhs.index.has_value()) {
+      return lhs;
+    }
+    lhs.index = emit_maybe_lvalue(instrs, lhs);
+    lhs.is_lvalue = false;
     while (is_multiplicative_op(lexer_->peek(true).type())) {
       auto type{lexer_->peek(true).type()};
       lexer_->chew(true);
@@ -914,6 +919,11 @@ public:
     -> ExprResult
   {
     ExprResult lhs{parse_multiplicative_expr_opt(instrs, expr_type, unary_type)};
+    if (!lhs.index.has_value()) {
+      return lhs;
+    }
+    lhs.index = emit_maybe_lvalue(instrs, lhs);
+    lhs.is_lvalue = false;
     while (is_additive_op(lexer_->peek(true).type())) {
       auto type{lexer_->peek(true).type()};
       lexer_->chew(true);
@@ -948,6 +958,11 @@ public:
     -> ExprResult
   {
     ExprResult lhs{parse_additive_expr_opt(instrs, expr_type, unary_type)};
+    if (!lhs.index.has_value()) {
+      return lhs;
+    }
+    lhs.index = emit_maybe_lvalue(instrs, lhs);
+    lhs.is_lvalue = false;
     bool cont{true};
     while (cont) {
       // TODO(mgrettondann): make this hack more robust/reasonable!
@@ -987,11 +1002,10 @@ public:
   auto parse_comparison_expr_opt(Instructions& instrs, ExprType expr_type, UnaryType unary_type)
     -> ExprResult
   {
-    ExprResult const lhs{parse_concat_expr_opt(instrs, expr_type, unary_type)};
+    ExprResult lhs{parse_concat_expr_opt(instrs, expr_type, unary_type)};
     if (!lhs.index.has_value() || expr_type == ExprType::print_expr) {
       return lhs;
     }
-
     if (auto type{lexer_->peek(true).type()}; is_comparison_op(type)) {
       lexer_->chew(true);
       ExprResult const rhs{parse_concat_expr_opt(instrs, expr_type, UnaryType::both)};
