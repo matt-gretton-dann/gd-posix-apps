@@ -143,9 +143,18 @@ constexpr auto is_comparison_op(Token::Type type) -> bool
   return type == Token::Type::eq || type == Token::Type::ne || type == Token::Type::less_than ||
          type == Token::Type::le || type == Token::Type::greater_than || type == Token::Type::ge;
 }
+
 constexpr auto is_re_match_op(Token::Type type) -> bool
 {
   return type == Token::Type::tilde || type == Token::Type::no_match;
+}
+
+constexpr auto is_assignment_op(Token::Type type) -> bool
+{
+  return type == Token::Type::assign || type == Token::Type::pow_assign ||
+         type == Token::Type::mod_assign || type == Token::Type::mul_assign ||
+         type == Token::Type::div_assign || type == Token::Type::add_assign ||
+         type == Token::Type::sub_assign;
 }
 
 class InstructionEmitter
@@ -328,16 +337,22 @@ auto to_binary_op_opcode(Token::Type type) noexcept -> Instruction::Opcode
 {
   switch (type) {
   case Token::Type::add:
+  case Token::Type::add_assign:
     return Instruction::Opcode::add;
   case Token::Type::subtract:
+  case Token::Type::sub_assign:
     return Instruction::Opcode::sub;
   case Token::Type::multiply:
+  case Token::Type::mul_assign:
     return Instruction::Opcode::multiply;
   case Token::Type::divide:
+  case Token::Type::div_assign:
     return Instruction::Opcode::divide;
   case Token::Type::power:
+  case Token::Type::pow_assign:
     return Instruction::Opcode::power;
   case Token::Type::modulo:
+  case Token::Type::mod_assign:
     return Instruction::Opcode::modulo;
   case Token::Type::and_:
     return Instruction::Opcode::logical_and;
@@ -477,7 +492,7 @@ public:
       std::string const var_name{tok.name()};
       lexer_->chew(false);
 
-      auto const& tok2{lexer_->peek(false)};
+      auto const& tok2{lexer_->peek(true)};
       if (tok2 != Token::Type::lsquare) {
         result = emitter.emit_expr(Instruction::Opcode::variable, VariableName{var_name});
         break;
@@ -1087,6 +1102,58 @@ public:
     return true_expr;
   }
 
+  /** @brief Parse an assignment expression
+   *
+   * @param  instrs     Where to emit code to
+   * @param  expr_type  Expression type
+   * @param  unary_type What expression class is this?
+   * @return            Index of emitted expression, and updated expression type
+   *
+   * or_expr :  ternary_expr ASSIGN assignment_expr
+   *         |  ternary_expr POW_ASSIGN assignment_expr
+   *         |  ternary_expr MOD_ASSIGN assignment_expr
+   *         |  ternary_expr MUL_ASSIGN assignment_expr
+   *         |  ternary_expr DIV_ASSIGN assignment_expr
+   *         |  ternary_expr ADD_ASSIGN assignment_expr
+   *         |  ternary_expr SUB_ASSIGN assignment_expr
+   *         | ternary_expr
+   *
+   * | Pattern                                 | Expr or print_expr?  | Unary or non-unary?  |
+   * | :-------------------------------------- | :------------------- | :------------------- |
+   * | ternary_expr = assignment_expr          | Both                 | Non-unary            |
+   * | ternary_expr ^= assignment_expr         | Both                 | Non-unary            |
+   * | ternary_expr %= assignment_expr         | Both                 | Non-unary            |
+   * | ternary_expr *= assignment_expr         | Both                 | Non-unary            |
+   * | ternary_expr /= assignment_expr         | Both                 | Non-unary            |
+   * | ternary_expr += assignment_expr         | Both                 | Non-unary            |
+   * | ternary_expr -= assignment_expr         | Both                 | Non-unary            |
+   */
+  auto parse_assignment_expr_opt(InstructionEmitter& emitter, ExprType expr_type,
+                                 UnaryType unary_type) -> ExprResult
+  {
+    ExprResult lvalue{parse_ternary_expr_opt(emitter, expr_type, unary_type)};
+    if (!lvalue.has_one_value() || !lvalue.is_lvalue()) {
+      return lvalue;
+    }
+
+    Token::Type const op{lexer_->peek(true).type()};
+    if (!is_assignment_op(op)) {
+      return lvalue;
+    }
+    lexer_->chew(true);
+
+    ExprResult const rhs{parse_assignment_expr_opt(emitter, expr_type, unary_type)};
+    if (!rhs.has_one_value()) {
+      error(Msg::expected_expr_after_assignment_op, lexer_->location(), op, lexer_->peek(false));
+    }
+
+    auto lhs{emitter.dereference_lvalue(lvalue)};
+    auto result{op == Token::Type::assign ? rhs
+                                          : emitter.emit_expr(to_binary_op_opcode(op), lhs, rhs)};
+    emitter.emit_store_lvalue(lvalue, result);
+    return result;
+  }
+
   /** @brief Parse an expression (of any type)
    *
    * @param  instrs     Where to emit code to
@@ -1154,7 +1221,7 @@ public:
   auto parse_expr_opt(InstructionEmitter& emitter, ExprType expr_type,
                       [[maybe_unused]] UnaryType unary_type) -> ExprResult
   {
-    return parse_ternary_expr_opt(emitter, expr_type, UnaryType::both);
+    return parse_assignment_expr_opt(emitter, expr_type, UnaryType::both);
   }
 
   /** @brief Parse the second & subsequent elements of a multiple_expr_list.

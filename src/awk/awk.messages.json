@@ -296,6 +296,12 @@
         "id": 49,
         "description": "Expected an expression after :, instead found {0}.",
         "C": "Expected an expression after ':'.  Instead found {0}."
+      },
+      {
+        "msg": "expected_expr_after_assignment_op",
+        "id": 50,
+        "description": "Expected an expression after assignment op {0}, instead found {1}.",
+        "C": "Expected an expression after '{0}'.  Instead found {1}."
       }
     ]
   }
