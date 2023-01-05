@@ -249,6 +249,14 @@ public:
     return ExprResult{reg_++, is_lvalue_instr(opcode)};
   }
 
+  auto emit_copy(ExprResult const& dest, ExprResult const& src) -> ExprResult
+  {
+    assert(dest.has_one_value());
+    assert(src.has_one_value());
+    instrs_->emplace_back(Instruction::Opcode::copy, dest.index(), dereference_lvalue_int(src));
+    return dest;
+  }
+
   auto emit_store_lvalue(ExprResult const& lvalue, ExprResult const& expr)
   {
     assert(lvalue.has_one_value());
@@ -1018,6 +1026,67 @@ public:
     return lhs;
   }
 
+  /** @brief Parse a ternary (? :) expression
+   *
+   * @param  instrs     Where to emit code to
+   * @param  expr_type  Expression type
+   * @param  unary_type What expression class is this?
+   * @return            Index of emitted expression, and updated expression type
+   *
+   * or_expr : or_expr QUERY ternary_expr COLON ternary_expr
+   *         | or_expr
+   *
+   * | Pattern                                 | Expr or print_expr?  | Unary or non-unary?  |
+   * | :-------------------------------------- | :------------------- | :------------------- |
+   * | or_expr ? ternary_expr : ternary_expr   | Both                 | Both                 |
+   */
+  auto parse_ternary_expr_opt(InstructionEmitter& emitter, ExprType expr_type, UnaryType unary_type)
+    -> ExprResult
+  {
+    /* Generated code:
+     *   w: LHS expr
+     *      branch if false w, y
+     *   x: true_branch
+     *      branch z
+     *   y: false_branch
+     *      copy y, x
+     *   z: ....
+     */
+    ExprResult lhs{parse_or_expr_opt(emitter, expr_type, unary_type)};
+    if (!lhs.has_one_value() || lexer_->peek(true) != Token::Type::query) {
+      return lhs;
+    }
+
+    lexer_->chew(true);
+
+    Index const branch_if_false{
+      emitter.emit_statement(Instruction::Opcode::branch_if_false, lhs, illegal_index)};
+
+    ExprResult true_expr{parse_ternary_expr_opt(emitter, expr_type, unary_type)};
+    if (!true_expr.has_one_value()) {
+      error(Msg::expected_expr_after_query, lexer_->location(), lexer_->peek(false));
+    }
+
+    Index const branch_over_false{
+      emitter.emit_statement(Instruction::Opcode::branch, illegal_index)};
+
+    if (lexer_->peek(false) != Token::Type::colon) {
+      error(Msg::expected_colon_after_truth_expr, lexer_->location(), lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    emitter.at(branch_if_false).op2(emitter.next_instruction_index());
+
+    ExprResult const false_expr{parse_ternary_expr_opt(emitter, expr_type, unary_type)};
+    if (!true_expr.has_one_value()) {
+      error(Msg::expected_expr_after_colon, lexer_->location(), lexer_->peek(false));
+    }
+
+    emitter.emit_copy(true_expr, false_expr);
+    emitter.at(branch_over_false).op1(emitter.next_instruction_index());
+    return true_expr;
+  }
+
   /** @brief Parse an expression (of any type)
    *
    * @param  instrs     Where to emit code to
@@ -1085,7 +1154,7 @@ public:
   auto parse_expr_opt(InstructionEmitter& emitter, ExprType expr_type,
                       [[maybe_unused]] UnaryType unary_type) -> ExprResult
   {
-    return parse_or_expr_opt(emitter, expr_type, UnaryType::both);
+    return parse_ternary_expr_opt(emitter, expr_type, UnaryType::both);
   }
 
   /** @brief Parse the second & subsequent elements of a multiple_expr_list.

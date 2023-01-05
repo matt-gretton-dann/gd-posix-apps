@@ -584,6 +584,8 @@ private:
  * | reserve_reg           | Ix          |             | Reserve space for <op1> result registers |
  * | open                  | Ix(S)       | I           | Open <op1>, If I is 1 append             |
  * | popen                 | Ix(S)       |             | Open <op1> as a process                  |
+ * | branch                | Ix          |             | Branch to <op1>                          |
+ * | copy                  | Ix          | Ix(any)     | Copy <op2> into <op1>                    |
  *
  * Parameter packs are identified by the index of the instruction corresponding to the
  * 'open_param_pack'.
@@ -627,6 +629,8 @@ public:
     reserve_regs,           ///< Reserve space for <op1> result registers
     open,                   ///< Open a file
     popen,                  ///< Open a process
+    branch,                 ///< Unconditional branch
+    copy,                   ///< Copy op2 to op1
   };
 
   /** Type representing an offset of to an instruction. */

@@ -278,6 +278,24 @@
         "id": 46,
         "description": "Expected an expression after ||, instead found {0}.",
         "C": "Expected an expression after '||'.  Instead found {0}."
+      },
+      {
+        "msg": "expected_expr_after_query",
+        "id": 47,
+        "description": "Expected an expression after ?, instead found {0}.",
+        "C": "Expected an expression after '?'.  Instead found {0}."
+      },
+      {
+        "msg": "expected_colon_after_truth_expr",
+        "id": 48,
+        "description": "Expected a colon after the truth part of ?: instead found {0}.",
+        "C": "Expected a ':' after the truth expression in ? :.  Instead found {0}."
+      },
+      {
+        "msg": "expected_expr_after_colon",
+        "id": 49,
+        "description": "Expected an expression after :, instead found {0}.",
+        "C": "Expected an expression after ':'.  Instead found {0}."
       }
     ]
   }

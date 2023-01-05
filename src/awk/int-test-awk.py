@@ -97,6 +97,8 @@ test_awk('BEGIN { print (0 || 0) }', "0\n")
 test_awk('BEGIN { print (0 || 1) }', "1\n")
 test_awk('BEGIN { print (1 || 0) }', "1\n")
 test_awk('BEGIN { print (1 || 1) }', "1\n")
+test_awk('BEGIN { print (1 ? 2 : 3) }', "2\n")
+test_awk('BEGIN { print (0 ? 2 : 3) }', "3\n")
 
 # Some error tests
 test_awk('BEGIN { print (1 }', None, expected_rc=1)

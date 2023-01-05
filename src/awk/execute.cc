@@ -941,6 +941,11 @@ public:
       case Instruction::Opcode::logical_or:
         values.at(it->reg()) = execute_logical_or(values, it->op1(), it->op2());
         break;
+      case Instruction::Opcode::branch:
+        pc = std::get<Index>(it->op1()) - 1;
+        break;
+      case Instruction::Opcode::copy:
+        values.at(it->reg()) = values.at(std::get<Index>(it->op1()));
       }
       ++pc;
     }

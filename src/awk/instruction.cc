@@ -144,6 +144,7 @@ auto GD::Awk::Instruction::has_result(Opcode opcode) noexcept -> bool
   case GD::Awk::Instruction::Opcode::logical_or:
   case GD::Awk::Instruction::Opcode::open:
   case GD::Awk::Instruction::Opcode::popen:
+  case GD::Awk::Instruction::Opcode::copy:
     return true;
   case GD::Awk::Instruction::Opcode::close_param_pack:
   case GD::Awk::Instruction::Opcode::store_lvalue:
@@ -152,6 +153,7 @@ auto GD::Awk::Instruction::has_result(Opcode opcode) noexcept -> bool
   case GD::Awk::Instruction::Opcode::push_param:
   case GD::Awk::Instruction::Opcode::branch_if_false:
   case GD::Awk::Instruction::Opcode::reserve_regs:
+  case GD::Awk::Instruction::Opcode::branch:
     return false;
   }
 }
@@ -261,6 +263,10 @@ auto GD::Awk::operator<<(std::ostream& os, GD::Awk::Instruction::Opcode opcode) 
   case GD::Awk::Instruction::Opcode::reserve_regs:
     os << "reserve_regs";
     break;
+  case GD::Awk::Instruction::Opcode::branch:
+    os << "branch";
+  case GD::Awk::Instruction::Opcode::copy:
+    os << "copy";
   }
   return os;
 }
@@ -281,6 +287,8 @@ auto GD::Awk::Instruction::op_count(Opcode opcode) noexcept -> unsigned
   case GD::Awk::Instruction::Opcode::logical_not:
   case GD::Awk::Instruction::Opcode::reserve_regs:
   case GD::Awk::Instruction::Opcode::popen:
+  case GD::Awk::Instruction::Opcode::branch:
+  case GD::Awk::Instruction::Opcode::copy:
     return 1;
   case GD::Awk::Instruction::Opcode::store_lvalue:
   case GD::Awk::Instruction::Opcode::print:
@@ -363,6 +371,8 @@ void GD::Awk::Instruction::validate_operands() const
   case GD::Awk::Instruction::Opcode::logical_not:
   case GD::Awk::Instruction::Opcode::reserve_regs:
   case GD::Awk::Instruction::Opcode::popen:
+  case GD::Awk::Instruction::Opcode::copy:
+  case GD::Awk::Instruction::Opcode::branch:
     assert(std::holds_alternative<Index>(*op1_));  // NOLINT
     break;
   }
