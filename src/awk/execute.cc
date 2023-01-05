@@ -259,8 +259,8 @@ public:
   static auto read_integer(std::vector<ExecutionValue> const& values,
                            Instruction::Operand const& index) -> Integer::underlying_type
   {
-    assert(std::holds_alternative<Instruction::Index>(index));
-    ExecutionValue value{values.at(std::get<Instruction::Index>(index))};
+    assert(std::holds_alternative<Index>(index));
+    ExecutionValue value{values.at(std::get<Index>(index))};
     assert(std::holds_alternative<Integer>(value));
     return std::get<Integer>(value).get();
   }
@@ -268,8 +268,8 @@ public:
   static auto read_fd(std::vector<ExecutionValue> const& values, Instruction::Operand const& index)
     -> int
   {
-    assert(std::holds_alternative<Instruction::Index>(index));
-    ExecutionValue value{values.at(std::get<Instruction::Index>(index))};
+    assert(std::holds_alternative<Index>(index));
+    ExecutionValue value{values.at(std::get<Index>(index))};
     assert(std::holds_alternative<FileDescriptor>(value));
     return std::get<FileDescriptor>(value).get();
   }
@@ -277,7 +277,7 @@ public:
   [[nodiscard]] auto read_lvalue(std::vector<ExecutionValue> const& values,
                                  Instruction::Operand const& index) const -> ExecutionValue
   {
-    assert(std::holds_alternative<Instruction::Index>(index));
+    assert(std::holds_alternative<Index>(index));
     return std::visit(GD::Overloaded{
                         [this](VariableName v) { return var(v.get()); },
                         [this](Field f) { return ExecutionValue{fields_.at(f.get())}; },
@@ -286,29 +286,29 @@ public:
                           return ExecutionValue{std::nullopt};
                         },
                       },
-                      values.at(std::get<Instruction::Index>(index)));
+                      values.at(std::get<Index>(index)));
   }
 
   void store_lvalue(std::vector<ExecutionValue> const& values, Instruction::Operand const& lhs,
                     Instruction::Operand const& rhs)
   {
-    assert(std::holds_alternative<Instruction::Index>(lhs));
-    assert(std::holds_alternative<Instruction::Index>(rhs));
-    ExecutionValue const& value{values.at(std::get<Instruction::Index>(rhs))};
+    assert(std::holds_alternative<Index>(lhs));
+    assert(std::holds_alternative<Index>(rhs));
+    ExecutionValue const& value{values.at(std::get<Index>(rhs))};
 
     std::visit(GD::Overloaded{
                  [&value, this](VariableName v) { var(v.get(), value); },
                  [&value, this](Field f) { fields_.at(f.get()) = std::get<std::string>(value); },
                  [](auto const&) { std::abort(); },
                },
-               values.at(std::get<Instruction::Index>(lhs)));
+               values.at(std::get<Index>(lhs)));
   }
 
   [[nodiscard]] static auto read_field(std::vector<ExecutionValue> const& values,
                                        Instruction::Operand const& index) -> ExecutionValue
   {
-    assert(std::holds_alternative<Instruction::Index>(index));
-    ExecutionValue const& value{values.at(std::get<Instruction::Index>(index))};
+    assert(std::holds_alternative<Index>(index));
+    ExecutionValue const& value{values.at(std::get<Index>(index))};
     assert(std::holds_alternative<Integer>(value));
     Integer const& field{std::get<Integer>(value)};
     return Field{field.get()};
@@ -402,10 +402,10 @@ public:
                          Instruction::Operand const& rhs, IntFn int_op, FloatFn float_op)
     -> ExecutionValue
   {
-    assert(std::holds_alternative<Instruction::Index>(lhs));
-    assert(std::holds_alternative<Instruction::Index>(rhs));
-    ExecutionValue const& lhs_value{values.at(std::get<Instruction::Index>(lhs))};
-    ExecutionValue const& rhs_value{values.at(std::get<Instruction::Index>(rhs))};
+    assert(std::holds_alternative<Index>(lhs));
+    assert(std::holds_alternative<Index>(rhs));
+    ExecutionValue const& lhs_value{values.at(std::get<Index>(lhs))};
+    ExecutionValue const& rhs_value{values.at(std::get<Index>(rhs))};
     auto const lhs_int{to_integer(lhs_value)};
     auto const rhs_int{to_integer(rhs_value)};
     if (lhs_int.has_value() && rhs_int.has_value()) {
@@ -485,8 +485,8 @@ public:
   static auto execute_to_number(std::vector<ExecutionValue> const& values,
                                 Instruction::Operand const& op) -> ExecutionValue
   {
-    assert(std::holds_alternative<Instruction::Index>(op));
-    ExecutionValue const& value{values.at(std::get<Instruction::Index>(op))};
+    assert(std::holds_alternative<Index>(op));
+    ExecutionValue const& value{values.at(std::get<Index>(op))};
     auto integer{to_integer(value)};
     if (integer.has_value()) {
       return Integer{*integer};
@@ -503,8 +503,8 @@ public:
   static auto execute_negate(std::vector<ExecutionValue> const& values,
                              Instruction::Operand const& op) -> ExecutionValue
   {
-    assert(std::holds_alternative<Instruction::Index>(op));
-    ExecutionValue const& value{values.at(std::get<Instruction::Index>(op))};
+    assert(std::holds_alternative<Index>(op));
+    ExecutionValue const& value{values.at(std::get<Index>(op))};
     auto integer{to_integer(value)};
     if (integer.has_value()) {
       auto result{-*integer};
@@ -522,8 +522,8 @@ public:
   static auto execute_to_bool(std::vector<ExecutionValue> const& values,
                               Instruction::Operand const& op) -> ExecutionValue
   {
-    assert(std::holds_alternative<Instruction::Index>(op));
-    ExecutionValue const& value{values.at(std::get<Instruction::Index>(op))};
+    assert(std::holds_alternative<Index>(op));
+    ExecutionValue const& value{values.at(std::get<Index>(op))};
     auto b{to_bool(value)};
     if (b.has_value()) {
       return bool{*b};
@@ -535,8 +535,8 @@ public:
   static auto execute_logical_not(std::vector<ExecutionValue> const& values,
                                   Instruction::Operand const& op) -> ExecutionValue
   {
-    assert(std::holds_alternative<Instruction::Index>(op));
-    ExecutionValue const& value{values.at(std::get<Instruction::Index>(op))};
+    assert(std::holds_alternative<Index>(op));
+    ExecutionValue const& value{values.at(std::get<Index>(op))};
     auto b{to_bool(value)};
     if (b.has_value()) {
       auto result{!*b};
@@ -550,10 +550,10 @@ public:
                                   Instruction::Operand const& lhs, Instruction::Operand const& rhs)
     -> ExecutionValue
   {
-    assert(std::holds_alternative<Instruction::Index>(lhs));
-    assert(std::holds_alternative<Instruction::Index>(rhs));
-    ExecutionValue const& lhs_value{values.at(std::get<Instruction::Index>(lhs))};
-    ExecutionValue const& rhs_value{values.at(std::get<Instruction::Index>(rhs))};
+    assert(std::holds_alternative<Index>(lhs));
+    assert(std::holds_alternative<Index>(rhs));
+    ExecutionValue const& lhs_value{values.at(std::get<Index>(lhs))};
+    ExecutionValue const& rhs_value{values.at(std::get<Index>(rhs))};
     auto b1{to_bool(lhs_value)};
     auto b2{to_bool(rhs_value)};
     if (b1.has_value() && b2.has_value()) {
@@ -575,10 +575,10 @@ public:
                                  Instruction::Operand const& lhs, Instruction::Operand const& rhs)
     -> ExecutionValue
   {
-    assert(std::holds_alternative<Instruction::Index>(lhs));
-    assert(std::holds_alternative<Instruction::Index>(rhs));
-    ExecutionValue const& lhs_value{values.at(std::get<Instruction::Index>(lhs))};
-    ExecutionValue const& rhs_value{values.at(std::get<Instruction::Index>(rhs))};
+    assert(std::holds_alternative<Index>(lhs));
+    assert(std::holds_alternative<Index>(rhs));
+    ExecutionValue const& lhs_value{values.at(std::get<Index>(lhs))};
+    ExecutionValue const& rhs_value{values.at(std::get<Index>(rhs))};
     auto b1{to_bool(lhs_value)};
     auto b2{to_bool(rhs_value)};
     if (b1.has_value() && b2.has_value()) {
@@ -645,10 +645,10 @@ public:
                              Instruction::Operand const& lhs, Instruction::Operand const& rhs,
                              std::string const& conv_fmt) -> ExecutionValue
   {
-    assert(std::holds_alternative<Instruction::Index>(lhs));
-    assert(std::holds_alternative<Instruction::Index>(rhs));
-    ExecutionValue const& lhs_value{values.at(std::get<Instruction::Index>(lhs))};
-    ExecutionValue const& rhs_value{values.at(std::get<Instruction::Index>(rhs))};
+    assert(std::holds_alternative<Index>(lhs));
+    assert(std::holds_alternative<Index>(rhs));
+    ExecutionValue const& lhs_value{values.at(std::get<Index>(lhs))};
+    ExecutionValue const& rhs_value{values.at(std::get<Index>(rhs))};
     auto const lhs_str{to_string(lhs_value, conv_fmt)};
     auto const rhs_str{to_string(rhs_value, conv_fmt)};
     if (lhs_str.has_value() && rhs_str.has_value()) {
@@ -666,10 +666,10 @@ public:
                                Instruction::Operand const& lhs, Instruction::Operand const& rhs,
                                std::string const& conv_fmt) -> ExecutionValue
   {
-    assert(std::holds_alternative<Instruction::Index>(lhs));
-    assert(std::holds_alternative<Instruction::Index>(rhs));
-    ExecutionValue const& lhs_value{values.at(std::get<Instruction::Index>(lhs))};
-    ExecutionValue const& rhs_value{values.at(std::get<Instruction::Index>(rhs))};
+    assert(std::holds_alternative<Index>(lhs));
+    assert(std::holds_alternative<Index>(rhs));
+    ExecutionValue const& lhs_value{values.at(std::get<Index>(lhs))};
+    ExecutionValue const& rhs_value{values.at(std::get<Index>(rhs))};
     auto const lhs_str{to_string(lhs_value, conv_fmt)};
     auto const rhs_re{to_re(rhs_value, conv_fmt)};
     if (lhs_str.has_value() && rhs_re.has_value()) {
@@ -692,10 +692,10 @@ public:
                              NumFn num_op, StringFn string_op, std::string const& conv_fmt)
     -> ExecutionValue
   {
-    assert(std::holds_alternative<Instruction::Index>(lhs));
-    assert(std::holds_alternative<Instruction::Index>(rhs));
-    ExecutionValue const& lhs_value{values.at(std::get<Instruction::Index>(lhs))};
-    ExecutionValue const& rhs_value{values.at(std::get<Instruction::Index>(rhs))};
+    assert(std::holds_alternative<Index>(lhs));
+    assert(std::holds_alternative<Index>(rhs));
+    ExecutionValue const& lhs_value{values.at(std::get<Index>(lhs))};
+    ExecutionValue const& rhs_value{values.at(std::get<Index>(rhs))};
     auto const lhs_int{to_integer(lhs_value)};
     auto const rhs_int{to_integer(rhs_value)};
     if (lhs_int.has_value() && rhs_int.has_value()) {
@@ -795,22 +795,22 @@ public:
 
   static auto execute_branch_if_false(std::vector<ExecutionValue> const& values,
                                       Instruction::Operand const& expr,
-                                      Instruction::Operand const& false_dest,
-                                      Instruction::Index true_dest) -> Instruction::Index
+                                      Instruction::Operand const& false_dest, Index true_dest)
+    -> Index
   {
-    assert(std::holds_alternative<Instruction::Index>(expr));
-    assert(std::holds_alternative<Instruction::Index>(false_dest));
-    auto value{to_bool(values.at(std::get<Instruction::Index>(expr)))};
+    assert(std::holds_alternative<Index>(expr));
+    assert(std::holds_alternative<Index>(false_dest));
+    auto value{to_bool(values.at(std::get<Index>(expr)))};
     if (!value.has_value()) {
-      error(Msg::unable_to_cast_value_to_bool, values.at(std::get<Instruction::Index>(expr)));
+      error(Msg::unable_to_cast_value_to_bool, values.at(std::get<Index>(expr)));
     }
-    return *value ? true_dest : std::get<Instruction::Index>(false_dest);
+    return *value ? true_dest : std::get<Index>(false_dest);
   }
 
   auto format_value(std::vector<ExecutionValue> const& values, Instruction::Operand const& index)
     -> std::string
   {
-    assert(std::holds_alternative<Instruction::Index>(index));
+    assert(std::holds_alternative<Index>(index));
     return std::visit(GD::Overloaded{
                         [](Integer v) { return std::to_string(v.get()); },
                         [this](Floating v) {
@@ -825,7 +825,7 @@ public:
                           return std::string{};
                         },
                       },
-                      values.at(std::get<Instruction::Index>(index)));
+                      values.at(std::get<Index>(index)));
   }  // namespace GD::Awk::Details
 
   void execute([[maybe_unused]] ParsedProgram const& program, Instructions::const_iterator begin,
@@ -833,30 +833,35 @@ public:
   {
     auto length{std::distance(begin, end)};
     assert(length >= 0);
-    std::vector<ExecutionValue> values(length, std::nullopt);
-    Instruction::Index pc{0};
-    while (pc != static_cast<Instruction::Index>(length)) {
+    std::vector<ExecutionValue> values;
+    Index pc{0};
+    while (pc != static_cast<Index>(length)) {
       auto it{begin + static_cast<Instructions::difference_type>(pc)};
       switch (it->opcode()) {
+      case Instruction::Opcode::reserve_regs:
+        values.resize(std::get<Index>(it->op1()), std::nullopt);
+        break;
       case Instruction::Opcode::load_literal:
-        values.at(pc) = (interpret_literal(it->op1()));
+        values.at(it->reg()) = (interpret_literal(it->op1()));
         break;
       case Instruction::Opcode::load_lvalue:
-        values.at(pc) = read_lvalue(values, it->op1());
+        values.at(it->reg()) = read_lvalue(values, it->op1());
         break;
       case Instruction::Opcode::store_lvalue:
         store_lvalue(values, it->op1(), it->op2());
         break;
       case Instruction::Opcode::variable:
-        values.at(pc) = std::get<VariableName>(it->op1());
+        values.at(it->reg()) = std::get<VariableName>(it->op1());
         break;
       case Instruction::Opcode::field:
-        values.at(pc) = read_field(values, it->op1());
+        values.at(it->reg()) = read_field(values, it->op1());
         break;
       case Instruction::Opcode::printf:
       case Instruction::Opcode::open_param_pack:
       case Instruction::Opcode::close_param_pack:
       case Instruction::Opcode::push_param:
+      case Instruction::Opcode::open:
+      case Instruction::Opcode::popen:
         std::abort();
         break;
       case Instruction::Opcode::print: {
@@ -866,75 +871,75 @@ public:
         break;
       }
       case Instruction::Opcode::add:
-        values.at(pc) = execute_add(values, it->op1(), it->op2());
+        values.at(it->reg()) = execute_add(values, it->op1(), it->op2());
         break;
       case Instruction::Opcode::sub:
-        values.at(pc) = execute_sub(values, it->op1(), it->op2());
+        values.at(it->reg()) = execute_sub(values, it->op1(), it->op2());
         break;
       case Instruction::Opcode::power:
-        values.at(pc) = execute_power(values, it->op1(), it->op2());
+        values.at(it->reg()) = execute_power(values, it->op1(), it->op2());
         break;
       case Instruction::Opcode::multiply:
-        values.at(pc) = execute_multiply(values, it->op1(), it->op2());
+        values.at(it->reg()) = execute_multiply(values, it->op1(), it->op2());
         break;
       case Instruction::Opcode::divide:
-        values.at(pc) = execute_divide(values, it->op1(), it->op2());
+        values.at(it->reg()) = execute_divide(values, it->op1(), it->op2());
         break;
       case Instruction::Opcode::modulo:
-        values.at(pc) = execute_modulo(values, it->op1(), it->op2());
+        values.at(it->reg()) = execute_modulo(values, it->op1(), it->op2());
         break;
       case Instruction::Opcode::concat:
-        values.at(pc) =
+        values.at(it->reg()) =
           execute_concat(values, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
         break;
       case Instruction::Opcode::is_equal:
-        values.at(pc) =
+        values.at(it->reg()) =
           execute_is_equal(values, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
         break;
       case Instruction::Opcode::is_not_equal:
-        values.at(pc) =
+        values.at(it->reg()) =
           execute_is_not_equal(values, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
         break;
       case Instruction::Opcode::is_less_than:
-        values.at(pc) =
+        values.at(it->reg()) =
           execute_is_less_than(values, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
         break;
       case Instruction::Opcode::is_less_than_equal:
-        values.at(pc) = execute_is_less_than_equal(values, it->op1(), it->op2(),
-                                                   std::get<std::string>(var("CONVFMT")));
+        values.at(it->reg()) = execute_is_less_than_equal(values, it->op1(), it->op2(),
+                                                          std::get<std::string>(var("CONVFMT")));
         break;
       case Instruction::Opcode::is_greater_than:
-        values.at(pc) = execute_is_greater_than(values, it->op1(), it->op2(),
-                                                std::get<std::string>(var("CONVFMT")));
+        values.at(it->reg()) = execute_is_greater_than(values, it->op1(), it->op2(),
+                                                       std::get<std::string>(var("CONVFMT")));
         break;
       case Instruction::Opcode::is_greater_than_equal:
-        values.at(pc) = execute_greater_than_equal(values, it->op1(), it->op2(),
-                                                   std::get<std::string>(var("CONVFMT")));
+        values.at(it->reg()) = execute_greater_than_equal(values, it->op1(), it->op2(),
+                                                          std::get<std::string>(var("CONVFMT")));
         break;
       case Instruction::Opcode::to_number:
-        values.at(pc) = execute_to_number(values, it->op1());
+        values.at(it->reg()) = execute_to_number(values, it->op1());
         break;
       case Instruction::Opcode::to_bool:
-        values.at(pc) = execute_to_bool(values, it->op1());
+        values.at(it->reg()) = execute_to_bool(values, it->op1());
         break;
       case Instruction::Opcode::negate:
-        values.at(pc) = execute_negate(values, it->op1());
+        values.at(it->reg()) = execute_negate(values, it->op1());
         break;
       case Instruction::Opcode::logical_not:
-        values.at(pc) = execute_logical_not(values, it->op1());
+        values.at(it->reg()) = execute_logical_not(values, it->op1());
         break;
       case Instruction::Opcode::branch_if_false:
         pc = execute_branch_if_false(values, it->op1(), it->op2(), pc + 1) - 1;
         break;
       case Instruction::Opcode::re_match:
-        values.at(pc) =
+        values.at(it->reg()) =
           execute_re_match(values, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
         break;
       case Instruction::Opcode::logical_and:
-        values.at(pc) = execute_logical_and(values, it->op1(), it->op2());
+        values.at(it->reg()) = execute_logical_and(values, it->op1(), it->op2());
         break;
       case Instruction::Opcode::logical_or:
-        values.at(pc) = execute_logical_or(values, it->op1(), it->op2());
+        values.at(it->reg()) = execute_logical_or(values, it->op1(), it->op2());
         break;
       }
       ++pc;

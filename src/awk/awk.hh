@@ -63,6 +63,12 @@ using Floating = double;
 /** Type to hold a file descriptor.  */
 using FileDescriptor = TypeWrapper<int, struct FDTag>;
 
+/** Type representing an index into a list of instructions or results.  */
+using Index = std::size_t;
+
+/** An illegal index.  */
+static constexpr auto illegal_index{std::numeric_limits<Index>::max()};
+
 /** \brief  Token type.
  *
  * Very basic token type stores type along with any extra info needed.
@@ -575,6 +581,9 @@ private:
  * | re_match              | Ix(S)       | Ix(R)       | <op1> ~ <op2>                            |
  * | logical_or            | Ix(B)       | Ix(B)       | <op1> && <op2>                           |
  * | logical_and           | Ix(B)       | Ix(B)       | <op1> || <op2>                           |
+ * | reserve_reg           | Ix          |             | Reserve space for <op1> result registers |
+ * | open                  | Ix(S)       | I           | Open <op1>, If I is 1 append             |
+ * | popen                 | Ix(S)       |             | Open <op1> as a process                  |
  *
  * Parameter packs are identified by the index of the instruction corresponding to the
  * 'open_param_pack'.
@@ -615,13 +624,10 @@ public:
     re_match,               ///< Regular expression match
     logical_and,            ///< Logical and
     logical_or,             ///< Logical or
+    reserve_regs,           ///< Reserve space for <op1> result registers
+    open,                   ///< Open a file
+    popen,                  ///< Open a process
   };
-
-  /** Type representing an index into the list of instructions.  */
-  using Index = std::vector<Instruction>::size_type;
-
-  /** An illegal index.  */
-  static constexpr auto illegal_index{std::numeric_limits<Index>::max()};
 
   /** Type representing an offset of to an instruction. */
   using Offset = std::make_signed_t<Index>;
@@ -637,9 +643,22 @@ public:
 
   /** \brief        Constructor
    *  \param opcode Opcode
+   *  \param reg    Register for the result to go in
+   */
+  Instruction(Opcode opcode, Index reg);
+
+  /** \brief        Constructor
+   *  \param opcode Opcode
    *  \param op1    First operand
    */
   Instruction(Opcode opcode, Operand const& op1);
+
+  /** \brief        Constructor
+   *  \param opcode Opcode
+   *  \param reg    Register for the result to go in
+   *  \param op1    First operand
+   */
+  Instruction(Opcode opcode, Index reg, Operand const& op1);
 
   /** \brief        Constructor
    *  \param opcode Opcode
@@ -648,11 +667,25 @@ public:
    */
   Instruction(Opcode opcode, Operand const& op1, Operand const& op2);
 
+  /** \brief        Constructor
+   *  \param opcode Opcode
+   *  \param reg    Register for the result to go in
+   *  \param op1    First  operand
+   *  \param op2    Second operand
+   */
+  Instruction(Opcode opcode, Index reg, Operand const& op1, Operand const& op2);
+
   /** Get opcode */
-  [[nodiscard]] auto opcode() const -> Opcode;
+  [[nodiscard]] auto opcode() const noexcept -> Opcode;
+
+  /** Do we have a reult register? */
+  [[nodiscard]] auto has_reg() const noexcept -> bool;
+
+  /** Get the result register.  */
+  [[nodiscard]] auto reg() const noexcept -> Index;
 
   /** Do we have op1? */
-  [[nodiscard]] auto has_op1() const -> bool;
+  [[nodiscard]] auto has_op1() const noexcept -> bool;
 
   /** Get operand 1.  */
   [[nodiscard]] auto op1() const -> Operand const&;
@@ -661,7 +694,7 @@ public:
   void op1(Operand const& operand);
 
   /** Do we have op2? */
-  [[nodiscard]] auto has_op2() const -> bool;
+  [[nodiscard]] auto has_op2() const noexcept -> bool;
 
   /** Get operand 2.  */
   [[nodiscard]] auto op2() const -> Operand const&;
@@ -669,23 +702,24 @@ public:
   /** Update operand 2.  */
   void op2(Operand const& operand);
 
+private:
   /** Do we have result? */
-  [[nodiscard]] auto has_result() const -> bool;
+  [[nodiscard]] static auto has_result(Opcode opcode) noexcept -> bool;
 
   /** Does \a opcode have op1? */
-  static auto has_op1(Opcode opcode) -> bool;
+  [[nodiscard]] static auto has_op1(Opcode opcode) noexcept -> bool;
 
   /** Does \a opcode have op2? */
-  static auto has_op2(Opcode opcode) -> bool;
+  [[nodiscard]] static auto has_op2(Opcode opcode) noexcept -> bool;
 
-private:
   /** \brief  How many operands does \a opcode take? */
-  static auto op_count(Opcode opcode) -> unsigned;
+  [[nodiscard]] static auto op_count(Opcode opcode) noexcept -> unsigned;
 
   /** \brief  Validate the operands.  */
   void validate_operands() const;
 
   Opcode opcode_;               ///< Opcode
+  Index reg_{illegal_index};    ///< Result location
   std::optional<Operand> op1_;  ///< Operand 1
   std::optional<Operand> op2_;  ///< Operand 2
 };
