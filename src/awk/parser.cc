@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <memory>
+#include <ranges>
 #include <regex>
 #include <variant>
 
@@ -1425,7 +1426,7 @@ public:
     }
     else {
       auto const pp{emitter.emit_expr(Instruction::Opcode::open_param_pack)};
-      for (auto const idx : indices) {
+      for (auto const& idx : indices) {
         emitter.emit_statement(Instruction::Opcode::push_param, pp, ExprResult{idx});
       }
       emitter.emit_statement(Instruction::Opcode::close_param_pack, pp);

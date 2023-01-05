@@ -107,6 +107,7 @@ test_awk('BEGIN { a=2; a*=3; print a }', "6\n")
 test_awk('BEGIN { a=100; a/=5; print a }', "20\n")
 test_awk('BEGIN { a=100; a%=33; print a }', "1\n")
 test_awk('BEGIN { a=2; a^=10; print a }', "1024\n")
+test_awk('BEGIN { printf "%s-%d-%g", "Hello", 10, 372.2 }', "Hello-10-372.2")
 
 # Some error tests
 test_awk('BEGIN { print (1 }', None, expected_rc=1)
@@ -196,5 +197,18 @@ Total pay for Mark is 100
 Total pay for Mary is 121
 Total pay for Susie is 76.5
 """, in_file=emp_data)
-
+test_awk('{ printf("total pay for %s is $%.2f\\n", $1, $2 * $3) }', """total pay for Beth is $0.00
+total pay for Dan is $0.00
+total pay for Kathy is $40.00
+total pay for Mark is $100.00
+total pay for Mary is $121.00
+total pay for Susie is $76.50
+""", in_file=emp_data)
+test_awk('{ printf("%-8s $%6.2f\\n", $1, $2 * $3) }', """Beth     $  0.00
+Dan      $  0.00
+Kathy    $ 40.00
+Mark     $100.00
+Mary     $121.00
+Susie    $ 76.50
+""", in_file=emp_data)
 tester.summarize()

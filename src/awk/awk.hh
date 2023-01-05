@@ -603,7 +603,7 @@ public:
     print,                  ///< Print the value referenced by <op1> to stream <op2>.
     printf,                 ///< Printf the parameter pack <op1> to stream <op2>.
     open_param_pack,        ///< Open a parameter pack.  Result is parameter pack ID.
-    push_param,             ///< Push parameter <op2> onto the front of parameter pack <op1>.
+    push_param,             ///< Push parameter <op2> onto the back of parameter pack <op1>.
     close_param_pack,       ///< Close parameter pack <op1>.
     add,                    ///< Numeric addition
     sub,                    ///< Numeric subtraction

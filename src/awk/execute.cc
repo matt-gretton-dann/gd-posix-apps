@@ -43,9 +43,13 @@ namespace GD::Awk::Details {
 
 using Field = TypeWrapper<Integer::underlying_type, struct FieldTag>;
 
+using ParameterValue =
+  std::variant<std::string, Integer, Floating, FileDescriptor, bool, std::nullopt_t>;
+using ParameterPack = std::vector<ParameterValue>;
+
 /// A value - either string, signed integer, or double.
 using ExecutionValue = std::variant<std::string, Integer, Floating, std::regex, std::nullopt_t,
-                                    VariableName, Field, FileDescriptor, bool>;
+                                    VariableName, Field, FileDescriptor, bool, ParameterPack>;
 }  // namespace GD::Awk::Details
 
 // This needs to be in the global space
@@ -88,6 +92,9 @@ struct fmt::formatter<GD::Awk::Details::ExecutionValue>
         },
         [&ctx](GD::Awk::FileDescriptor fd) {
           return fmt::vformat_to(ctx.out(), "fd({0})", fmt::make_format_args(fd.get()));
+        },
+        [&ctx](GD::Awk::Details::ParameterPack const&) {
+          return fmt::vformat_to(ctx.out(), "parameter pack", fmt::make_format_args());
         },
       },
       value);
@@ -367,6 +374,20 @@ public:
       value);
   }
 
+  static auto to_integer(ParameterValue const& value) -> std::optional<Integer::underlying_type>
+  {
+    return std::visit(
+      GD::Overloaded{
+        [](Integer i) { return std::make_optional(i.get()); },
+        [](Floating f) { return to_integer(f); },
+        [](std::nullopt_t) { return std::make_optional(Integer::underlying_type{0}); },
+        [](std::string const& s) { return to_integer(s); },
+        [](bool b) { return std::optional<Integer::underlying_type>(b ? 1 : 0); },
+        [](auto const&) { return std::optional<Integer::underlying_type>{std::nullopt}; },
+      },
+      value);
+  }
+
   [[nodiscard]] static auto str_to_floating(std::string const& s) -> std::optional<Floating>
   {
     std::size_t pos{0};
@@ -384,6 +405,20 @@ public:
   }
 
   static auto to_floating(ExecutionValue const& value) -> std::optional<Floating>
+  {
+    return std::visit(
+      GD::Overloaded{
+        [](Integer i) { return std::make_optional(static_cast<Floating>(i.get())); },
+        [](Floating f) { return std::make_optional(f); },
+        [](std::nullopt_t) { return std::make_optional(Floating{0.0}); },
+        [](bool b) { return std::optional<Floating>(b ? 1.0 : 0.0); },
+        [](std::string const& s) { return str_to_floating(s); },
+        [](auto const&) { return std::optional<Floating>{std::nullopt}; },
+      },
+      value);
+  }
+
+  static auto to_floating(ParameterValue const& value) -> std::optional<Floating>
   {
     return std::visit(
       GD::Overloaded{
@@ -622,6 +657,23 @@ public:
                       index);
   }
 
+  static auto to_string(ParameterValue const& index, std::string const& fmt)
+    -> std::optional<std::string>
+  {
+    return std::visit(GD::Overloaded{
+                        [](Integer v) { return std::make_optional(std::to_string(v.get())); },
+                        [&fmt](Floating v) {
+                          return std::make_optional(
+                            fmt::vformat(to_fmt(fmt), fmt::make_format_args(v)));
+                        },
+                        [](bool b) { return std::make_optional(std::string{b ? "1" : "0"}); },
+                        [](std::string const& s) { return std::make_optional(s); },
+                        [](std::nullopt_t) { return std::make_optional(std::string{}); },
+                        [](auto const&) { return std::optional<std::string>{}; },
+                      },
+                      index);
+  }
+
   static auto to_re(ExecutionValue const& index, std::string const& fmt)
     -> std::optional<std::regex>
   {
@@ -807,6 +859,78 @@ public:
     return *value ? true_dest : std::get<Index>(false_dest);
   }
 
+  static void execute_printf(std::vector<ExecutionValue> const& values,
+                             Instruction::Operand const& parameter_pack,  // NOLINT
+                             Instruction::Operand const& fd, std::string const& ofmt)
+  {
+    auto stream{read_fd(values, fd)};
+    auto pp{std::get<ParameterPack>(values.at(std::get<Index>(parameter_pack)))};
+    auto it{pp.begin()};
+    assert(it != pp.end());
+    auto fmt_string{to_string(*it++, ofmt).value()};  // NOLINT
+    std::size_t pos{0};
+    while (pos != fmt_string.size()) {
+      auto next_pos{fmt_string.find('%', pos)};
+      if (next_pos == std::string::npos) {
+        next_pos = fmt_string.size();
+      }
+      if (next_pos != pos) {
+        write(stream, fmt_string.data() + pos, next_pos - pos);  // NOLINT
+      }
+      if (next_pos == fmt_string.size()) {
+        break;
+      }
+      pos = next_pos + 1;
+      if (pos < fmt_string.size() && fmt_string[pos] == '%') {
+        write(stream, fmt_string.data() + pos, 1);  // NOLINT
+        continue;
+      }
+      next_pos = fmt_string.find_first_of("csdioxXufFeEaAgG", pos);
+      bool is_string{false};
+      bool is_floating{false};
+      if (next_pos == std::string::npos) {
+        next_pos = fmt_string.size();
+      }
+      else {
+        auto fmtc{fmt_string[next_pos]};
+        is_string = (fmtc == 's');  // NOLINT
+        is_floating = (fmtc == 'f' || fmtc == 'g' || fmtc == 'e');
+        ++next_pos;
+      }
+      std::string new_fmt{"{:"};
+      new_fmt += fmt_string.substr(pos, next_pos - pos);
+      new_fmt += '}';
+      if (auto mp{new_fmt.find('-')}; mp != std::string::npos) {
+        new_fmt[mp] = '<';  // NOLINT
+      }
+
+      std::string to_output;
+      if (is_string) {
+        auto str{it == pp.end() ? std::string{} : *to_string(*it, ofmt)};  // NOLINT
+        to_output = fmt::vformat(new_fmt,
+                                 fmt::make_format_args(str));  // NOLINT
+      }
+      else if (it == pp.end()) {
+        to_output = fmt::vformat(new_fmt, fmt::make_format_args(0));
+      }
+      else if (auto integer{to_integer(*it)}; !is_floating && integer.has_value()) {
+        to_output = fmt::vformat(new_fmt, fmt::make_format_args(*integer));
+      }
+      else if (auto floating{to_floating(*it)}; floating.has_value()) {
+        to_output = fmt::vformat(new_fmt, fmt::make_format_args(*floating));
+      }
+      else {
+        std::abort();
+      }
+
+      write(stream, to_output.data(), to_output.size());
+      if (it != pp.end()) {
+        ++it;
+      }
+      pos = next_pos;
+    }
+  }
+
   auto format_value(std::vector<ExecutionValue> const& values, Instruction::Operand const& index)
     -> std::string
   {
@@ -826,7 +950,31 @@ public:
                         },
                       },
                       values.at(std::get<Index>(index)));
-  }  // namespace GD::Awk::Details
+  }
+
+  static auto execute_push_parameter_value(std::vector<ExecutionValue>& values,
+                                           Instruction::Operand const& parameter_pack,
+                                           Instruction::Operand const& value)
+  {
+    assert(std::holds_alternative<Index>(parameter_pack));
+    assert(std::holds_alternative<Index>(value));
+    ParameterPack& pp{std::get<ParameterPack>(values.at(std::get<Index>(parameter_pack)))};
+    ExecutionValue v{values.at(std::get<Index>(value))};
+
+    pp.push_back(std::visit(GD::Overloaded{
+                              [](Integer v) { return ParameterValue{v}; },
+                              [](Floating f) { return ParameterValue{f}; },
+                              [](bool b) { return ParameterValue{b}; },
+                              [](std::string const& s) { return ParameterValue{s}; },
+                              [](std::nullopt_t) { return ParameterValue{std::nullopt}; },
+                              [](FileDescriptor fd) { return ParameterValue{fd}; },
+                              [](auto const&) {
+                                std::abort();
+                                return ParameterValue{};
+                              },
+                            },
+                            v));
+  }
 
   void execute([[maybe_unused]] ParsedProgram const& program, Instructions::const_iterator begin,
                Instructions::const_iterator end)
@@ -856,10 +1004,20 @@ public:
       case Instruction::Opcode::field:
         values.at(it->reg()) = read_field(values, it->op1());
         break;
-      case Instruction::Opcode::printf:
       case Instruction::Opcode::open_param_pack:
+        values.at(it->reg()) = ParameterPack{};
+        break;
       case Instruction::Opcode::close_param_pack:
+        break;
       case Instruction::Opcode::push_param:
+        execute_push_parameter_value(values, it->op1(), it->op2());
+        break;
+      case Instruction::Opcode::printf: {
+        auto ofmt{var("OFMT")};
+        auto ofmts{std::get<std::string>(ofmt)};
+        execute_printf(values, it->op1(), it->op2(), ofmts);
+        break;
+      }
       case Instruction::Opcode::open:
       case Instruction::Opcode::popen:
         std::abort();
