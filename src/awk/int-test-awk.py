@@ -130,6 +130,7 @@ test_awk('BEGIN { print 1 < 2}', None, expected_rc=1)
 
 # The AWK Programming Language Chapter 1 Examples
 emp_data = tester.input_file('emp.data')
+interest_data = tester.input_file('interest.data')
 
 # Page 1, 1.1 Getting started
 test_awk('$3 > 0 { print $1, $2 * $3 }', """Kathy 40
@@ -321,5 +322,18 @@ $2 > 6 { n = n + 1; pay = pay + $2 * $3 }
             print "no employees are paid more than $6/hour"
        }
 ''', 'no employees are paid more than $6/hour\n', in_file=emp_data)
-
+# Page 15
+test_awk('''
+# interest1 - compute compound interest
+# input: amount rate years
+# output: compounded value at the end of each year
+{ print $0
+  i=1
+  while (i <= $3) {
+    printf("\\t%.2f\\n", $1 * (1 + $2) ^ i)
+    i=i+1
+  }
+}''',
+         '1000 .06 5\n\t1060.00\n\t1123.60\n\t1191.02\n\t1262.48\n\t1338.23\n1000 .12 5\n\t1120.00\n\t1254.40\n\t1404.93\n\t1573.52\n\t1762.34\n',
+         in_file=interest_data)
 tester.summarize()
