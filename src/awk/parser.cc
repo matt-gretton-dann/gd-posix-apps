@@ -1056,14 +1056,13 @@ public:
     if (!lhs.has_one_value() || expr_type == ExprType::print_expr) {
       return lhs;
     }
-    if (auto type{lexer_->peek(true).type()}; is_comparison_op(type)) {
+    if (auto tok{lexer_->peek(true)}; is_comparison_op(tok.type())) {
       lexer_->chew(true);
       ExprResult const rhs{parse_concat_expr_opt(emitter, expr_type, UnaryType::both)};
       if (!rhs.has_one_value()) {
-        error(Msg::expected_expr_after_comparison_op, lexer_->location(), type,
-              lexer_->peek(false));
+        error(Msg::expected_expr_after_comparison_op, lexer_->location(), tok, lexer_->peek(false));
       }
-      return emitter.emit_expr(to_binary_op_opcode(type), lhs, rhs);
+      return emitter.emit_expr(to_binary_op_opcode(tok.type()), lhs, rhs);
     }
 
     return lhs;
@@ -1092,14 +1091,14 @@ public:
     if (!lhs.has_one_value()) {
       return lhs;
     }
-    if (auto type{lexer_->peek(true).type()}; is_re_match_op(type)) {
+    if (auto tok{lexer_->peek(true)}; is_re_match_op(tok.type())) {
       lexer_->chew(true);
       ExprResult const rhs{parse_comparison_expr_opt(emitter, expr_type, UnaryType::both)};
       if (!rhs.has_one_value()) {
-        error(Msg::expected_expr_after_re_match_op, lexer_->location(), type, lexer_->peek(false));
+        error(Msg::expected_expr_after_re_match_op, lexer_->location(), tok, lexer_->peek(false));
       }
       auto re_match{emitter.emit_expr(Instruction::Opcode::re_match, lhs, rhs)};
-      if (type == Token::Type::no_match) {
+      if (tok.type() == Token::Type::no_match) {
         re_match = emitter.emit_expr(Instruction::Opcode::logical_not, ExprResult{re_match});
       }
 
@@ -1312,8 +1311,8 @@ public:
       return lvalue;
     }
 
-    Token::Type const op{lexer_->peek(true).type()};
-    if (!is_assignment_op(op)) {
+    Token const op{lexer_->peek(true)};
+    if (!is_assignment_op(op.type())) {
       return lvalue;
     }
     lexer_->chew(true);
@@ -1324,8 +1323,9 @@ public:
     }
 
     auto lhs{emitter.dereference_lvalue(lvalue)};
-    auto result{op == Token::Type::assign ? rhs
-                                          : emitter.emit_expr(to_binary_op_opcode(op), lhs, rhs)};
+    auto result{op == Token::Type::assign
+                  ? rhs
+                  : emitter.emit_expr(to_binary_op_opcode(op.type()), lhs, rhs)};
     emitter.emit_store_lvalue(lvalue, result);
     return result;
   }

@@ -32,10 +32,10 @@ endfunction()
 
 # Download and instal fmtlib/fmt
 function(include_external_fmtlib)
-  message(STATUS "Fetching fmtlib/fmt 7.1.3")
+  message(STATUS "Fetching fmtlib/fmt 9.1.0")
   FetchContent_Declare(fmt
                        GIT_REPOSITORY https://github.com/fmtlib/fmt
-                       GIT_TAG 7.1.3)
+                       GIT_TAG 9.1.0)
   FetchContent_GetProperties(fmt)
   if(NOT fmt_POPULATED)
     FetchContent_Populate(fmt)
