@@ -114,6 +114,7 @@ test_awk('BEGIN { if (1) { print 2 } else { print 3 } print 4 }', "2\n4\n")
 test_awk('BEGIN { if (0) { print 2 } else { print 3 } print 4 }', "3\n4\n")
 test_awk('BEGIN { if (1)  print 2 }', "2\n")
 test_awk('BEGIN { if (0)  print 2 }', "")
+test_awk('BEGIN { while (i < 4) print i++ }', '\n1\n2\n3\n')
 
 # Some error tests
 test_awk('BEGIN { print (1 }', None, expected_rc=1)

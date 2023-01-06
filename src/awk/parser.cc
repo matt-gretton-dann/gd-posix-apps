@@ -1672,8 +1672,8 @@ public:
    * @param emitter Instruction emitter class
    * @return Whether the statement was terminated or not.
    *
-   * if : IF LPARENS expr RPARENS newline_opt statement
-   *    | IF LPARENS expr RPARENS newline_opt terminated_statement ELSE statement
+   * if_stmt : IF LPARENS expr RPARENS newline_opt statement
+   *         | IF LPARENS expr RPARENS newline_opt terminated_statement ELSE statement
    */
   auto parse_if_stmt(InstructionEmitter& emitter) -> ParseStatementResult
   {
@@ -1717,6 +1717,42 @@ public:
     return else_stmt;
   }
 
+  /** @brief Parse a while statement
+   *
+   * @param emitter Instruction emitter class
+   * @return Whether the statement was terminated or not.
+   *
+   * while_stmt : WHILE LPARENS epxr RPARENS newline_opt statement
+   */
+  auto parse_while_stmt(InstructionEmitter& emitter) -> ParseStatementResult
+  {
+    assert(lexer_->peek(false) == Token::Type::while_);
+    lexer_->chew(false);
+
+    if (lexer_->peek(false) != Token::Type::lparens) {
+      error(Msg::expected_lparens_after_while, lexer_->location(), lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    Index const while_cond{emitter.next_instruction_index()};
+    ExprResult const cond{parse_expr(emitter, ExprType::expr, Msg::expected_expr_after_while)};
+    if (lexer_->peek(false) != Token::Type::rparens) {
+      error(Msg::expected_rparens_after_while_expr, lexer_->location(), lexer_->peek(false));
+    }
+    lexer_->chew(false);
+    parse_newline_opt();
+
+    Index const escape_loop{
+      emitter.emit_statement(Instruction::Opcode::branch_if_false, cond, illegal_index)};
+
+    ParseStatementResult const while_stmt{
+      parse_statement(emitter, Msg::missing_statement_after_while)};
+    emitter.emit_statement(Instruction::Opcode::branch, while_cond);
+    emitter.at(escape_loop).op2(emitter.next_instruction_index());
+
+    return while_stmt;
+  }
+
   /** @brief Parse an optional statement
    *
    * @param  instrs Instructions to write code into
@@ -1736,7 +1772,7 @@ public:
       return parse_if_stmt(emitter);
     }
     if (tok == Token::Type::while_) {
-      return parse_while_opt(emitter);
+      return parse_while_stmt(emitter);
     }
     if (tok == Token::Type::for_) {
       return parse_for_opt(emitter);

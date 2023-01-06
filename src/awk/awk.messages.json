@@ -344,6 +344,30 @@
         "id": 58,
         "description": "Missing else statement clause after an if-else.",
         "C": "Missing else statement clause after if-else."
+      },
+      {
+        "msg": "expected_lparens_after_while",
+        "id": 59,
+        "description": "We expected a '(' after a while but instead got '{0}'.",
+        "C": "Expected '(' after 'while' but instead got: {0}."
+      },
+      {
+        "msg": "expected_expr_after_while",
+        "id": 60,
+        "description": "We expected an expression after a while but instead got '{0}'.",
+        "C": "Expected an expression after 'while' but instead got: {0}."
+      },
+      {
+        "msg": "expected_rparens_after_while_expr",
+        "id": 61,
+        "description": "We expected a ')' after a while's conditional expression but instead got '{0}'.",
+        "C": "Expected a ')' after the condition expression of a 'while' but instead got: {0}."
+      },
+      {
+        "msg": "missing_statement_after_while",
+        "id": 62,
+        "description": "Missing statement clause after a 'while'.",
+        "C": "Missing statement clause after 'while'."
       }
     ]
   }
