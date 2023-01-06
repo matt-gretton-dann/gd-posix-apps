@@ -310,5 +310,15 @@ test_awk('''
     { nc = nc + length($0) + 1; nw = nw + NF; }
 END { print NR, "lines,", nw, "words,", nc, "characters" }''',
          '6 lines, 18 words, 77 characters\n', in_file=emp_data)
+# Section 1.6
+test_awk('''
+$2 > 6 { n = n + 1; pay = pay + $2 * $3 }
+   END { if (n > 0)
+            print n, "employees, total pay is", pay,
+                  "average pay is", pay/n
+         else
+            print "no employees are paid more than $6/hour"
+       }
+''', 'no employees are paid more than $6/hour\n', in_file=emp_data)
 
 tester.summarize()

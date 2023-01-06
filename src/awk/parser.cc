@@ -424,13 +424,6 @@ public:
   };
 
   // NOLINTNEXTLINE
-  auto parse_if_opt([[maybe_unused]] InstructionEmitter& emitter) -> ParseStatementResult
-  {
-    // TODO(mgrettondann): Implement
-    return ParseStatementResult::none;
-  }
-
-  // NOLINTNEXTLINE
   auto parse_while_opt([[maybe_unused]] InstructionEmitter& emitter) -> ParseStatementResult
   {
     // TODO(mgrettondann): Implement
@@ -1697,6 +1690,7 @@ public:
       error(Msg::expected_rparens_after_if_expr, lexer_->location(), lexer_->peek(false));
     }
     lexer_->chew(false);
+    parse_newline_opt();
 
     Index const false_branch{
       emitter.emit_statement(Instruction::Opcode::branch_if_false, cond, illegal_index)};
@@ -1713,6 +1707,7 @@ public:
     assert(lexer_->peek(false) == Token::Type::else_);
 
     lexer_->chew(false);
+    parse_newline_opt();
     Index const true_branch{emitter.emit_statement(Instruction::Opcode::branch, illegal_index)};
     emitter.at(false_branch).op2(emitter.next_instruction_index());
     ParseStatementResult const else_stmt{
