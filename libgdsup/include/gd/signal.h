@@ -5,7 +5,7 @@
  */
 
 #ifndef _LIBGDSUP_INCLUDE_GD_SIGNAL_H_INCLUDED
-#define _LIBGDSUP_INCLUDE_GD_SIGNAL_H_INCLUDED
+#define _LIBGDSUP_INCLUDE_GD_SIGNAL_H_INCLUDED  // NOLINT
 
 #include "gd/bits/defines.h"
 #include "gd/bits/types/pid_t.h"

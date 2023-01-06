@@ -33,7 +33,7 @@ auto GD::Awk::Lexer::peek(bool enable_divide) -> GD::Awk::Token const&
   }
 
   assert(t_.has_value());  // NOLINT
-  return *t_;
+  return *t_;              // NOLINT
 }
 
 auto GD::Awk::Lexer::peek_cmdline_string() -> GD::Awk::Token const&
@@ -50,7 +50,7 @@ auto GD::Awk::Lexer::peek_cmdline_string() -> GD::Awk::Token const&
   }
 
   assert(t_.has_value());  // NOLINT
-  return *t_;
+  return *t_;              // NOLINT
 }
 
 void GD::Awk::Lexer::chew(bool enable_divide)
@@ -60,8 +60,8 @@ void GD::Awk::Lexer::chew(bool enable_divide)
     lex(enable_divide);
   }
 
-  assert(t_.has_value());  // NOLINT
-  if (t_->type() != Token::Type::eof) {
+  assert(t_.has_value());                // NOLINT
+  if (t_->type() != Token::Type::eof) {  // NOLINT
     t_.reset();
   }
 }

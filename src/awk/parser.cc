@@ -1497,7 +1497,7 @@ public:
    *
    * delete_statement : DELETE NAME LSQUARE expr_list RSQUARE
    */
-  void parse_delete_statement([[maybe_unused]] InstructionEmitter& emitter)
+  void parse_delete_statement([[maybe_unused]] InstructionEmitter& emitter)  // NOLINT
   {
     assert(lexer_->peek(false) == Token::Type::delete_);
     std::abort();

@@ -25,7 +25,7 @@ auto GD::Bc::Lexer::peek() -> GD::Bc::Token const&
   }
 
   assert(t_.has_value());  // NOLINT
-  return *t_;
+  return *t_;              // NOLINT
 }
 
 void GD::Bc::Lexer::chew()

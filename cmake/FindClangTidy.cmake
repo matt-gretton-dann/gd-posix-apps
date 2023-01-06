@@ -81,23 +81,23 @@ elseif (WIN32)
           "--extra-arg-before=-fcxx-exceptions"
           "--extra-arg=-Wno-ignored-optimization-argument"
           "-checks=-bugprone-exception-escape"
-          "--header-filter=^${_ct_CMAKE_SOURCE_DIR}\\(src|libgdsup)\\.*(([^.]h)|(\\.[^h]))$")
+          "--header-filter=^${_ct_CMAKE_SOURCE_DIR}\\\\(src|libgdsup)\\.*((\\.hh?)|(\\\\[^.]+))$")
   set(CMAKE_C_CLANG_TIDY
           "${_ct_ClangTidy_COMMAND}"
           "--extra-arg=-Wno-ignored-optimization-argument"
           "-checks=-cppcoreguidelines-*"
           "-p=${_ct_CMAKE_BINARY_DIR}"
-          "--header-filter=^${_ct_CMAKE_SOURCE_DIR}\\(src|libgdsup)\\.*$")
+          "--header-filter=^${_ct_CMAKE_SOURCE_DIR}\\\\(src|libgdsup)\\.*\\.h$")
 else ()
   set(CMAKE_CXX_CLANG_TIDY
           "${ClangTidy_COMMAND}"
           "-p=${CMAKE_BINARY_DIR}"
           "--extra-arg=-Wno-ignored-optimization-argument"
-          "--header-filter=^${CMAKE_SOURCE_DIR}/(src|libgdsup)/.*(([^.]h)|(\\.[^h]))$")
+          "--header-filter=^${CMAKE_SOURCE_DIR}/(src|libgdsup)/.*((\\.hh?)|(/[^.]+))$")
   set(CMAKE_C_CLANG_TIDY
           "${ClangTidy_COMMAND}"
           "--extra-arg=-Wno-ignored-optimization-argument"
           "--checks=-cppcoreguidelines-*"
           "-p=${CMAKE_BINARY_DIR}"
-          "--header-filter=^${CMAKE_SOURCE_DIR}/(src|libgdsup)/.*$")
+          "--header-filter=^${CMAKE_SOURCE_DIR}/(src|libgdsup)/.*\\.h$")
 endif ()

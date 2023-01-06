@@ -13,7 +13,7 @@
 uint32_t __support_read_le_u32(char const* buf)
 {
   __SUPPRESS_CONSTANT_CONDITIONAL
-  if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) {
+  if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) {  // NOLINT(clion-simplify)
     return *((uint32_t*)buf);
   }
 

@@ -335,6 +335,7 @@ auto GD::Awk::Instruction::op_count(Opcode opcode) noexcept -> unsigned
 
 void GD::Awk::Instruction::validate_operands() const
 {
+#ifndef NDEBUG
   assert(has_reg() == has_result(opcode_));
   assert(op1_.has_value() == (op_count(opcode_) >= 1));
   assert(op2_.has_value() == (op_count(opcode_) >= 2));
@@ -401,6 +402,7 @@ void GD::Awk::Instruction::validate_operands() const
     assert(std::holds_alternative<Index>(*op1_));  // NOLINT
     break;
   }
+#endif
 }
 
 auto GD::Awk::operator<<(std::ostream& os, Instruction::Operand const& operand) -> std::ostream&

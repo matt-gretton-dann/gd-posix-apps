@@ -13,10 +13,10 @@
 TEST_CASE("write_be", "[util][write_be]")
 {
   std::vector<std::byte> result;
-  std::vector<std::byte> expected({std::byte{3}, std::byte{2}, std::byte{1}, std::byte{0},
-                                   std::byte{6}, std::byte{5}, std::byte{0x8}, std::byte{0x9},
-                                   std::byte{0xa}, std::byte{0xb}, std::byte{0xc}, std::byte{0xd},
-                                   std::byte{0xe}, std::byte{0xf}});
+  std::vector<std::byte> const expected({std::byte{3}, std::byte{2}, std::byte{1}, std::byte{0},
+                                         std::byte{6}, std::byte{5}, std::byte{0x8}, std::byte{0x9},
+                                         std::byte{0xa}, std::byte{0xb}, std::byte{0xc},
+                                         std::byte{0xd}, std::byte{0xe}, std::byte{0xf}});
   auto it = std::back_inserter(result);
   GD::write_be(it, std::uint32_t{0x03020100});
   GD::write_be(it, std::uint16_t{0x0605});
@@ -27,10 +27,10 @@ TEST_CASE("write_be", "[util][write_be]")
 TEST_CASE("write_le", "[util][write_le]")
 {
   std::vector<std::byte> result;
-  std::vector<std::byte> expected({std::byte{3}, std::byte{2}, std::byte{1}, std::byte{0},
-                                   std::byte{6}, std::byte{5}, std::byte{0x8}, std::byte{0x9},
-                                   std::byte{0xa}, std::byte{0xb}, std::byte{0xc}, std::byte{0xd},
-                                   std::byte{0xe}, std::byte{0xf}});
+  std::vector<std::byte> const expected({std::byte{3}, std::byte{2}, std::byte{1}, std::byte{0},
+                                         std::byte{6}, std::byte{5}, std::byte{0x8}, std::byte{0x9},
+                                         std::byte{0xa}, std::byte{0xb}, std::byte{0xc},
+                                         std::byte{0xd}, std::byte{0xe}, std::byte{0xf}});
   auto it = std::back_inserter(result);
   GD::write_le(it, std::uint32_t{0x00010203});
   GD::write_le(it, std::uint16_t{0x0506});

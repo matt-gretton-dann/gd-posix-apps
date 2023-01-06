@@ -13,8 +13,8 @@
 
 TEST_CASE("for_each_file", "[util][file][for_each_file]")
 {
-  std::string file1 = "file1";
-  std::string file2 = "file2";
+  std::string const file1 = "file1";
+  std::string const file2 = "file2";
   std::array<std::string, 2> file12 = {file1, file2};
 
   unsigned call_count = 0;

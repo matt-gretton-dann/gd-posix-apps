@@ -31,7 +31,7 @@
 #include <stdint.h>
 
 /** \brief Opaque type representing a Catalogue ID.  */
-typedef intptr_t nl_catd;
+typedef intptr_t nl_catd;  // NOLINT(modernize-use-using)
 
 /** \brief  Default set ID used by gencat.  */
 #undef NL_SETD
