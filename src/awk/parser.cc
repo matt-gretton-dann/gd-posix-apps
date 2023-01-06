@@ -449,14 +449,31 @@ public:
    */
   auto parse_builtin_length_expr(InstructionEmitter& emitter) -> ExprResult
   {
+    bool expect_rparens{false};
+    if (lexer_->peek(false) == Token::Type::lparens) {
+      expect_rparens = true;
+      lexer_->chew(false);
+    }
+
     ExprResult expr{parse_expr_opt(emitter, ExprType::expr, UnaryType::both)};
+
+    if (expect_rparens) {
+      if (lexer_->peek(false) != Token::Type::rparens) {
+        error(Msg::expected_rparens_after_length_parameter, lexer_->location(),
+              lexer_->peek(false));
+      }
+      lexer_->chew(false);
+    }
+
+    if (expr.has_many_values()) {
+      error(Msg::length_builtin_only_takes_one_parameter, lexer_->location());
+    }
+
     if (expr.has_no_values()) {
       expr = emitter.emit_expr(Instruction::Opcode::load_literal, Integer{0});
       expr = emitter.emit_expr(Instruction::Opcode::field, expr);
     }
-    if (expr.has_many_values()) {
-      error(Msg::length_builtin_only_takes_one_parameter, lexer_->location());
-    }
+
     return emitter.emit_expr(Instruction::Opcode::length, expr);
   }
 

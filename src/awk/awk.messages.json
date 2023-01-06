@@ -308,6 +308,12 @@
         "id": 51,
         "description": "We received more than one parameter to length builtin this is not right.",
         "C": "`length` builtin should only be called with zero or one parameter."
+      },
+      {
+        "msg": "expected_rparens_after_length_parameter",
+        "id": 52,
+        "description": "We expected a ')' to complete the length parameter list but instead got '{0}.",
+        "C": "Expected ')' after 'length(expr' but instead got: {0}."
       }
     ]
   }

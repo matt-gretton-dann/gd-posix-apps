@@ -293,5 +293,17 @@ END { print names }
 # Page 14
 test_awk('''{ last = $0 }; END { print last }''', "Susie 4.25 18\n",
          in_file=emp_data)
+# Page 14
+test_awk('{ print $1, length($1) }', '''Beth 4
+Dan 3
+Kathy 5
+Mark 4
+Mary 4
+Susie 5
+''', in_file=emp_data)
+test_awk('''
+    { nc = nc + length($0) + 1; nw = nw + NF; }
+END { print NR, "lines,", nw, "words,", nc, "characters" }''',
+         '6 lines, 18 words, 77 characters\n', in_file=emp_data)
 
 tester.summarize()
