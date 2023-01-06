@@ -1689,6 +1689,11 @@ public:
       parse_newline_opt();
       return ParseStatementResult::terminated;
     }
+    if (tok == Token::Type::lbrace) {
+      parse_action(emitter);
+      parse_newline_opt();
+      return ParseStatementResult::terminated;
+    }
 
     auto res{parse_terminatable_statement_opt(emitter)};
     return res;
@@ -1741,7 +1746,7 @@ public:
    *
    * action : action_opt (If empty error)
    */
-  auto parse_action(InstructionEmitter& emitter)
+  void parse_action(InstructionEmitter& emitter)
   {
     if (!parse_action_opt(emitter)) {
       error(Msg::expected_action, lexer_->location(), lexer_->peek(false));
