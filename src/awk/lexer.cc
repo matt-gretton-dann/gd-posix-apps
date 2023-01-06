@@ -598,6 +598,7 @@ void GD::Awk::Lexer::lex(bool allow_divide)
       t_.emplace(Token::Type::newline);
       return;
     case ' ':
+    case '\t':
       r_->chew();  // We just chew ' '.
       break;
     case '#':
