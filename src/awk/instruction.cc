@@ -146,6 +146,8 @@ auto GD::Awk::Instruction::has_result(Opcode opcode) noexcept -> bool
   case GD::Awk::Instruction::Opcode::popen:
   case GD::Awk::Instruction::Opcode::copy:
   case GD::Awk::Instruction::Opcode::length:
+  case GD::Awk::Instruction::Opcode::array:
+  case GD::Awk::Instruction::Opcode::array_element:
     return true;
   case GD::Awk::Instruction::Opcode::close_param_pack:
   case GD::Awk::Instruction::Opcode::store_lvalue:
@@ -273,6 +275,12 @@ auto GD::Awk::operator<<(std::ostream& os, GD::Awk::Instruction::Opcode opcode) 
   case GD::Awk::Instruction::Opcode::length:
     os << "length";
     break;
+  case GD::Awk::Instruction::Opcode::array:
+    os << "array";
+    break;
+  case GD::Awk::Instruction::Opcode::array_element:
+    os << "array_element";
+    break;
   }
   return os;
 }
@@ -296,6 +304,7 @@ auto GD::Awk::Instruction::op_count(Opcode opcode) noexcept -> unsigned
   case GD::Awk::Instruction::Opcode::branch:
   case GD::Awk::Instruction::Opcode::copy:
   case GD::Awk::Instruction::Opcode::length:
+  case GD::Awk::Instruction::Opcode::array:
     return 1;
   case GD::Awk::Instruction::Opcode::store_lvalue:
   case GD::Awk::Instruction::Opcode::print:
@@ -319,6 +328,7 @@ auto GD::Awk::Instruction::op_count(Opcode opcode) noexcept -> unsigned
   case GD::Awk::Instruction::Opcode::logical_and:
   case GD::Awk::Instruction::Opcode::logical_or:
   case GD::Awk::Instruction::Opcode::open:
+  case GD::Awk::Instruction::Opcode::array_element:
     return 2;
   }
 }
@@ -368,6 +378,13 @@ void GD::Awk::Instruction::validate_operands() const
     break;
   case GD::Awk::Instruction::Opcode::variable:
     assert(std::holds_alternative<VariableName>(*op1_));  // NOLINT
+    break;
+  case GD::Awk::Instruction::Opcode::array:
+    assert(std::holds_alternative<ArrayName>(*op1_));  // NOLINT
+    break;
+  case GD::Awk::Instruction::Opcode::array_element:
+    assert(std::holds_alternative<ArrayName>(*op1_));  // NOLINT
+    assert(std::holds_alternative<Index>(*op2_));      // NOLINT
     break;
   case GD::Awk::Instruction::Opcode::close_param_pack:
   case GD::Awk::Instruction::Opcode::field:

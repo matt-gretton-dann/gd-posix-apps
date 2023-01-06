@@ -253,6 +253,20 @@ public:
     return ExprResult{reg_++, ExprResult::Flags::lvalue};
   }
 
+  auto emit_expr(Instruction::Opcode opcode, ArrayName const& array) -> ExprResult
+  {
+    instrs_->emplace_back(opcode, reg_, array);
+    return ExprResult{reg_++, ExprResult::Flags::lvalue};
+  }
+
+  auto emit_expr(Instruction::Opcode opcode, ArrayName const& array, ExprResult const& expr)
+    -> ExprResult
+  {
+    assert(expr.has_one_value());
+    instrs_->emplace_back(opcode, reg_, array, dereference_lvalue_int(expr));
+    return ExprResult{reg_++, ExprResult::Flags::lvalue};
+  }
+
   auto emit_expr(Instruction::Opcode opcode, ExprResult const& expr, Integer const& op2)
     -> ExprResult
   {
@@ -629,8 +643,37 @@ public:
         break;
       }
 
-      // TODO(mgrettondann): Implement
-      std::abort();
+      lexer_->chew(true);
+
+      ExprResult subscripts;
+      parse_expr_list_opt(emitter, subscripts.back_inserter(), ExprListType::expr_list);
+      if (subscripts.has_no_values()) {
+        error(Msg::expected_exprs_in_array_element_access, lexer_->location(), lexer_->peek(false));
+      }
+
+      if (lexer_->peek(false) != Token::Type::rsquare) {
+        error(Msg::expected_rsquare_after_array_subscripts, lexer_->location(),
+              lexer_->peek(false));
+      }
+      lexer_->chew(false);
+
+      ExprResult subsep{};
+      if (subscripts.has_many_values()) {
+        subsep = emitter.emit_expr(Instruction::Opcode::variable, VariableName{"SUBSEP"});
+      }
+      ExprResult join{};
+      for (auto const& subscript : subscripts) {
+        if (join.has_no_values()) {
+          join = ExprResult{subscript};
+        }
+        else {
+          join = emitter.emit_expr(Instruction::Opcode::concat, join, subsep);
+          join = emitter.emit_expr(Instruction::Opcode::concat, join, ExprResult{subscript});
+        }
+      }
+
+      result = emitter.emit_expr(Instruction::Opcode::array_element, ArrayName{var_name}, join);
+      break;
     }
     case Token::Type::builtin_func_name:
       return parse_builtin_func_expr(emitter);

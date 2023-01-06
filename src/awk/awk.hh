@@ -50,6 +50,9 @@ using FuncName = TypeWrapper<std::string, struct FuncNameTag>;
 /** \brief A variable name.  Just a tagged string. */
 using VariableName = Name;
 
+/** \brief An array name.  Just a tagged string. */
+using ArrayName = TypeWrapper<std::string, struct ArrayNameTag>;
+
 /** What we use to represent an integer
  *
  * POSIX says that we should treat 'integers' as signed longs.  Even though this means different
@@ -587,6 +590,8 @@ private:
  * | branch                | Ix          |             | Branch to <op1>                          |
  * | copy                  | Ix          | Ix(any)     | Copy <op2> into <op1>                    |
  * | length                | Ix(S)       |             | Length of <op1>                          |
+ * | array                 | VN          |             | Array                                    |
+ * | array_element         | VN          | Ix(S)       | array element <op1>[<op2>]               |
  *
  * Parameter packs are identified by the index of the instruction corresponding to the
  * 'open_param_pack'.
@@ -633,14 +638,16 @@ public:
     branch,                 ///< Unconditional branch
     copy,                   ///< Copy op2 to op1
     length,                 ///< Length of a string
+    array,                  ///< Array
+    array_element,          ///< Element of an array
   };
 
   /** Type representing an offset of to an instruction. */
   using Offset = std::make_signed_t<Index>;
 
   /** Valid operand types.  */
-  using Operand =
-    std::variant<std::string, VariableName, Integer, Floating, std::regex, FileDescriptor, Index>;
+  using Operand = std::variant<std::string, VariableName, ArrayName, Integer, Floating, std::regex,
+                               FileDescriptor, Index>;
 
   /** \brief        Constructor
    *  \param opcode Opcode

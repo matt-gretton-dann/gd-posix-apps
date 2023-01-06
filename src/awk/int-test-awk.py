@@ -116,6 +116,12 @@ test_awk('BEGIN { if (1)  print 2 }', "2\n")
 test_awk('BEGIN { if (0)  print 2 }', "")
 test_awk('BEGIN { while (i < 4) print i++ }', '\n1\n2\n3\n')
 test_awk('BEGIN { for (i = 0; i < 4; ++i) print i }', "0\n1\n2\n3\n")
+test_awk('BEGIN { a[1] = 20; print a[1] }', "20\n")
+test_awk('BEGIN { a[1,2] = 20; print a[1,2] }', "20\n")
+test_awk('BEGIN { a[1 SUBSEP 2] = 20; print a[1, 2] }', "20\n")
+test_awk('BEGIN { SUBSEP=","; a["1,2"] = 20; print a[1, 2] }', "20\n")
+test_awk('BEGIN { for(i = 0; i < ARGC; ++i) print i, ARGV[i] }',
+         f"0 {emp_data}\n", in_file=emp_data)
 
 # Some error tests
 test_awk('BEGIN { print (1 }', None, expected_rc=1)
@@ -349,5 +355,36 @@ test_awk('''
 ''',
          '1000 .06 5\n\t1060.00\n\t1123.60\n\t1191.02\n\t1262.48\n\t1338.23\n1000 .12 5\n\t1120.00\n\t1254.40\n\t1404.93\n\t1573.52\n\t1762.34\n',
          in_file=interest_data)
+# Section 1.7
+test_awk('''
+# reverse - print input in reverse order by line
+    { line[NR] = $0 } # remember each input line
+END { i = NR
+      while (i > 0) { # print lines in reverse order
+        print line[i]
+        i = i-1
+      }
+    }
+''', '''Susie 4.25 18
+Mary 5.50 22
+Mark 5.00 20
+Kathy 4.00 10
+Dan 3.75 0
+Beth 4.00 0
+''', in_file=emp_data)
+# Page 17
+test_awk('''
+# reverse - print input in reverse order by line
+    { line[NR] = $0 } # remember each input line
+END { for (i = NR; i > 0; i = i - 1)
+        print line[i]
+    }
+''', '''Susie 4.25 18
+Mary 5.50 22
+Mark 5.00 20
+Kathy 4.00 10
+Dan 3.75 0
+Beth 4.00 0
+''', in_file=emp_data)
 
 tester.summarize()

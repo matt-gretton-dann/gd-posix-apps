@@ -23,6 +23,8 @@
 
 #include "awk.hh"
 
+extern "C" char** environ;  // NOLINT
+
 using Msg = GD::Awk::Msg;
 
 namespace {
@@ -47,9 +49,12 @@ using ParameterValue =
   std::variant<std::string, Integer, Floating, FileDescriptor, bool, std::nullopt_t>;
 using ParameterPack = std::vector<ParameterValue>;
 
+using ArrayElement = std::pair<ArrayName, std::string>;
+
 /// A value - either string, signed integer, or double.
-using ExecutionValue = std::variant<std::string, Integer, Floating, std::regex, std::nullopt_t,
-                                    VariableName, Field, FileDescriptor, bool, ParameterPack>;
+using ExecutionValue =
+  std::variant<std::string, Integer, Floating, std::regex, std::nullopt_t, VariableName, Field,
+               FileDescriptor, bool, ParameterPack, ArrayName, ArrayElement>;
 }  // namespace GD::Awk::Details
 
 // This needs to be in the global space
@@ -86,6 +91,13 @@ struct fmt::formatter<GD::Awk::Details::ExecutionValue>
         },
         [&ctx](GD::Awk::VariableName const& vn) {
           return fmt::vformat_to(ctx.out(), "{0}", fmt::make_format_args(vn.get()));
+        },
+        [&ctx](GD::Awk::ArrayName const& an) {
+          return fmt::vformat_to(ctx.out(), "{0}[]", fmt::make_format_args(an.get()));
+        },
+        [&ctx](GD::Awk::Details::ArrayElement const& ae) {
+          return fmt::vformat_to(ctx.out(), "{0}[{1}]",
+                                 fmt::make_format_args(ae.first.get(), ae.second));
         },
         [&ctx](GD::Awk::Details::Field f) {
           return fmt::vformat_to(ctx.out(), "${0}", fmt::make_format_args(f.get()));
@@ -285,15 +297,17 @@ public:
                                  Instruction::Operand const& index) const -> ExecutionValue
   {
     assert(std::holds_alternative<Index>(index));
-    return std::visit(GD::Overloaded{
-                        [this](VariableName v) { return var(v.get()); },
-                        [this](Field f) { return ExecutionValue{fields_.at(f.get())}; },
-                        [](auto const&) {
-                          std::abort();
-                          return ExecutionValue{std::nullopt};
-                        },
-                      },
-                      values.at(std::get<Index>(index)));
+    return std::visit(
+      GD::Overloaded{
+        [this](VariableName v) { return var(v.get()); },
+        [this](Field f) { return ExecutionValue{fields_.at(f.get())}; },
+        [this](ArrayElement const& elt) { return array_element(elt.first.get(), elt.second); },
+        [](auto const&) {
+          std::abort();
+          return ExecutionValue{std::nullopt};
+        },
+      },
+      values.at(std::get<Index>(index)));
   }
 
   void store_lvalue(std::vector<ExecutionValue> const& values, Instruction::Operand const& lhs,
@@ -306,6 +320,9 @@ public:
     std::visit(GD::Overloaded{
                  [&value, this](VariableName v) { var(v.get(), value); },
                  [&value, this](Field f) { fields_.at(f.get()) = std::get<std::string>(value); },
+                 [&value, this](ArrayElement const& elt) {
+                   return array_element(elt.first.get(), elt.second, value);
+                 },
                  [](auto const&) { std::abort(); },
                },
                values.at(std::get<Index>(lhs)));
@@ -995,6 +1012,19 @@ public:
     error(Msg::unable_to_cast_value_to_string, v);
   }
 
+  static auto execute_array_element(std::vector<ExecutionValue>& values,
+                                    Instruction::Operand const& array,  // NOLINT
+                                    Instruction::Operand const& subscript, std::string const& fmt)
+    -> ExecutionValue
+  {
+    ArrayName const an{std::get<ArrayName>(array)};
+    std::optional<std::string> s{to_string(values.at(std::get<Index>(subscript)), fmt)};
+    if (!s.has_value()) {
+      std::abort();
+    }
+    return ArrayElement{an, *s};
+  }
+
   void execute([[maybe_unused]] ParsedProgram const& program, Instructions::const_iterator begin,
                Instructions::const_iterator end)
   {
@@ -1019,6 +1049,13 @@ public:
         break;
       case Instruction::Opcode::variable:
         values.at(it->reg()) = std::get<VariableName>(it->op1());
+        break;
+      case Instruction::Opcode::array:
+        values.at(it->reg()) = std::get<ArrayName>(it->op1());
+        break;
+      case Instruction::Opcode::array_element:
+        values.at(it->reg()) = execute_array_element(values, it->op1(), it->op2(),
+                                                     std::get<std::string>(var("CONVFMT")));
         break;
       case Instruction::Opcode::field:
         values.at(it->reg()) = read_field(values, it->op1());
@@ -1168,6 +1205,26 @@ public:
     variables_stack_.back().insert_or_assign(var, value);
   }
 
+  // NOLINTNEXTLINE
+  [[nodiscard]] auto array_element(std::string const& name, std::string const& idx) const
+    -> ExecutionValue
+  {
+    if (auto array{arrays_.find(name)}; array != arrays_.end()) {
+      if (auto elt{array->second.find(idx)}; elt != array->second.end()) {
+        return elt->second;
+      }
+    }
+
+    return ExecutionValue{std::nullopt};
+  }
+
+  // NOLINTNEXTLINE
+  void array_element(std::string const& name, std::string const& idx, ExecutionValue const& value)
+  {
+    auto [array, success] = arrays_.insert({name, {}});
+    array->second.insert_or_assign(idx, value);
+  }
+
   auto parse_record(StreamInputFile& input_file) -> bool
   {
     // Determine the record separator
@@ -1266,6 +1323,7 @@ private:
 
   std::list<VariableMap> variables_stack_;
   std::vector<std::string> fields_;
+  std::map<std::string, std::map<std::string, ExecutionValue>> arrays_;
 };
 
 }  // namespace GD::Awk::Details
@@ -1285,6 +1343,23 @@ void GD::Awk::execute(ParsedProgram const& program, std::vector<std::string> con
   state.var("ORS", "\n");
   state.var("OFMT", "%.6g");
   state.var("RS", "\n");
+  state.var("SUBSEP", ";");
+
+  Integer::underlying_type idx{0};
+  for (auto const& operand : cmd_line) {
+    state.array_element("ARGV", std::to_string(idx++), Details::ExecutionValue{operand});
+  }
+  state.var("ARGC", Integer{idx});
+
+  for (char** env{environ}; *env != nullptr; ++env) {  // NOLINT
+    std::string const e{*env};
+    auto eq{e.find('=')};
+    if (eq == std::string::npos) {
+      eq = e.size();
+    }
+    std::size_t const vstart{eq == e.size() ? e.size() : eq + 1};
+    state.array_element("ENVIRON", e.substr(0, eq), e.substr(vstart));
+  }
 
   // Set command line variables
   for (auto const& var : initial_vars) {
@@ -1298,7 +1373,15 @@ void GD::Awk::execute(ParsedProgram const& program, std::vector<std::string> con
   state.execute(program, begin_begin, begin_end);
 
   // Now parse and execute the command line.
-  for (auto const& operand : cmd_line) {
+  for (Integer::underlying_type i{0}; i < std::get<Integer>(state.var("ARGC")).get(); ++i) {
+    Details::ExecutionValue const& operand_value{state.array_element("ARGV", std::to_string(i))};
+    auto operand_stro{Details::ExecutionState::to_string(
+      operand_value, std::get<std::string>(state.var("CONVFMT")))};
+    if (!operand_stro.has_value()) {
+      continue;
+    }
+    std::string const& operand = *operand_stro;
+
     if (state.parse_var(operand)) {
       continue;
     }

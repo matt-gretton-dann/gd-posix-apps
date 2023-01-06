@@ -398,6 +398,18 @@
         "id": 67,
         "description": "Missing statement clause after a 'for'.",
         "C": "Missing statement clause after 'for'."
+      },
+      {
+        "msg": "expected_exprs_in_array_element_access",
+        "id": 68,
+        "description": "Expected one or more subscripts in an array element access but instead got {0}.",
+        "C": "Expected one or more array subscripts between [], but instead got {0}."
+      },
+      {
+        "msg": "expected_rsquare_after_array_subscripts",
+        "id": 69,
+        "description": "Expected a ']' at the end of the array subscripts but instead got {0}.",
+        "C": "Expected ']' to complete array subscripts, but instead got {0}."
       }
     ]
   }
