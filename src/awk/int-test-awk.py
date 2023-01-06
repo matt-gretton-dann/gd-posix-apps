@@ -197,6 +197,7 @@ Total pay for Mark is 100
 Total pay for Mary is 121
 Total pay for Susie is 76.5
 """, in_file=emp_data)
+# Page 8 Section 1.3
 test_awk('{ printf("total pay for %s is $%.2f\\n", $1, $2 * $3) }', """total pay for Beth is $0.00
 total pay for Dan is $0.00
 total pay for Kathy is $40.00
@@ -211,4 +212,85 @@ Mark     $100.00
 Mary     $121.00
 Susie    $ 76.50
 """, in_file=emp_data)
+test_awk('{ printf("%6.2f  %s\\n", $2 * $3, $0) }', """  0.00  Beth 4.00 0
+  0.00  Dan 3.75 0
+ 40.00  Kathy 4.00 10
+100.00  Mark 5.00 20
+121.00  Mary 5.50 22
+ 76.50  Susie 4.25 18
+""", in_file=emp_data)
+# Page 9 Section 1.4
+test_awk('$2 >= 5', """Mark 5.00 20
+Mary 5.50 22
+""", in_file=emp_data)
+test_awk('$2 * $3 >= 50 { printf("$%.2f for %s\\n", $2 * $3, $1) }', """$100.00 for Mark
+$121.00 for Mary
+$76.50 for Susie
+""", in_file=emp_data)
+test_awk('$1 == "Susie"', """Susie 4.25 18
+""", in_file=emp_data)
+# Page 10
+test_awk('/Susie/', """Susie 4.25 18
+""", in_file=emp_data)
+test_awk('$2 >= 4 || $3 >= 20', """Beth 4.00 0
+Kathy 4.00 10
+Mark 5.00 20
+Mary 5.50 22
+Susie 4.25 18
+""", in_file=emp_data)
+test_awk('$2 >= 4\n$3 >= 20', """Beth 4.00 0
+Kathy 4.00 10
+Mark 5.00 20
+Mark 5.00 20
+Mary 5.50 22
+Mary 5.50 22
+Susie 4.25 18
+""", in_file=emp_data)
+test_awk('!($2 < 4 && $3 < 20)', """Beth 4.00 0
+Kathy 4.00 10
+Mark 5.00 20
+Mary 5.50 22
+Susie 4.25 18
+""", in_file=emp_data)
+# Page 11
+test_awk('''NF != 3 { print $0, "number of fields is not equal to 3" }
+$2 < 3.35 { print $O, "rate is below minimum wage" }
+$2 > 10 { print $0, "rate exceeds $10 per hour" }
+$3 < 0 { print $0, "negative hours worked" }
+$3 > 60{ print $0, "too many hours worked" }''', '', in_file=emp_data)
+test_awk('BEGIN { print "NAME RATE HOURS"; print "" }\n{ print }', """NAME RATE HOURS
+
+Beth 4.00 0
+Dan 3.75 0
+Kathy 4.00 10
+Mark 5.00 20
+Mary 5.50 22
+Susie 4.25 18
+""", in_file=emp_data)
+# Page 12 Section 1.5
+test_awk('''$3> 15{emp=emp+1}
+END { print emp, "employees worked more than 15 hours" }''',
+         "3 employees worked more than 15 hours\n", in_file=emp_data)
+test_awk('END { print NR, "employees" }', '6 employees\n', in_file=emp_data)
+test_awk('''
+    { pay =pay + $2 * $3 }
+END { print NR, "employees"
+      print "total pay is", pay
+      print "average pay is", pay/NR
+    }''', '''6 employees
+total pay is 337.5
+average pay is 56.25
+''', in_file=emp_data)
+test_awk('''$2 > maxrate { maxrate =$2; maxemp =$1 }
+END          { print "highest hourly rate:", maxrate, "for", maxemp }''',
+         'highest hourly rate: 5.50 for Mary\n', in_file=emp_data)
+# Page 13
+test_awk('''
+    { names = names $1 " " }
+END { print names }
+''', "Beth Dan Kathy Mark Mary Susie \n", in_file=emp_data)
+# Page 14
+test_awk('''{ last = $0 }; END { print last }''', "Susie 4.25 18\n",
+         in_file=emp_data)
+
 tester.summarize()
