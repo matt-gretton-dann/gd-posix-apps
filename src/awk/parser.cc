@@ -423,20 +423,6 @@ public:
     terminated     ///< Terminated statement parsed
   };
 
-  // NOLINTNEXTLINE
-  auto parse_while_opt([[maybe_unused]] InstructionEmitter& emitter) -> ParseStatementResult
-  {
-    // TODO(mgrettondann): Implement
-    return ParseStatementResult::none;
-  }
-
-  // NOLINTNEXTLINE
-  auto parse_for_opt([[maybe_unused]] InstructionEmitter& emitter) -> ParseStatementResult
-  {
-    // TODO(mgrettondann): Implement
-    return ParseStatementResult::none;
-  }
-
   /** @parse the expression part of length call.
    *
    */
@@ -1753,6 +1739,86 @@ public:
     return while_stmt;
   }
 
+  /** @brief Parse a for statement
+   *
+   * @param emitter Instruction emitter class
+   * @return Whether the statement was terminated or not.
+   *
+   * for_stmt : FOR LPARENS simple_statement_opt SEMICOLON expr_opt SEMICOLON simple_statement_opt
+   *                RPARENS newline_opt statement
+   *          | FOR LPARENS name IN name RPARENS newline_opt statement
+   *
+   * Because we emit code as we parse this is quite branchy but basically looks like:
+   *
+   *                  init
+   * condition_start: cond
+   *                  branch_if_false end
+   *                  branch body
+   *    update_start: update
+   *                  branch condition_start
+   *            body: body
+   *                  branch update_start
+   *             end:
+   */
+  auto parse_for_stmt(InstructionEmitter& emitter) -> ParseStatementResult
+  {
+    assert(lexer_->peek(false) == Token::Type::for_);
+    lexer_->chew(false);
+
+    if (lexer_->peek(false) != Token::Type::lparens) {
+      error(Msg::expected_lparens_after_for, lexer_->location(), lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    // Initialisation
+    (void)parse_simple_statement_opt(emitter);
+
+    // Semicolon
+    if (lexer_->peek(false) != Token::Type::semicolon) {
+      error(Msg::expected_semicolon_after_for_init_statement, lexer_->location(),
+            lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    // Condition
+    Index const condition_start{emitter.next_instruction_index()};
+    ExprResult const cond{parse_expr_opt(emitter, ExprType::expr)};
+    Index loop_escape_branch{illegal_index};
+    if (cond.has_one_value()) {
+      loop_escape_branch =
+        emitter.emit_statement(Instruction::Opcode::branch_if_false, cond, illegal_index);
+    }
+    Index const skip_update_branch{
+      emitter.emit_statement(Instruction::Opcode::branch, illegal_index)};
+
+    // Semicolon
+    if (lexer_->peek(false) != Token::Type::semicolon) {
+      error(Msg::expected_semicolon_after_for_cond_expr, lexer_->location(), lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    // Update
+    Index const update_start{emitter.next_instruction_index()};
+    (void)parse_simple_statement_opt(emitter);
+    emitter.emit_statement(Instruction::Opcode::branch, condition_start);
+
+    // Rparens
+    if (lexer_->peek(false) != Token::Type::rparens) {
+      error(Msg::expected_rparens_after_for_update_stmt, lexer_->location(), lexer_->peek(false));
+    }
+    lexer_->chew(false);
+    parse_newline_opt();
+
+    // Body
+    emitter.at(skip_update_branch).op1(emitter.next_instruction_index());
+    auto result{parse_statement(emitter, Msg::missing_statement_after_for)};
+    emitter.emit_statement(Instruction::Opcode::branch, update_start);
+
+    // End
+    emitter.at(loop_escape_branch).op2(emitter.next_instruction_index());
+    return result;
+  }
+
   /** @brief Parse an optional statement
    *
    * @param  instrs Instructions to write code into
@@ -1775,7 +1841,7 @@ public:
       return parse_while_stmt(emitter);
     }
     if (tok == Token::Type::for_) {
-      return parse_for_opt(emitter);
+      return parse_for_stmt(emitter);
     }
     if (tok == Token::Type::semicolon) {
       lexer_->chew(false);

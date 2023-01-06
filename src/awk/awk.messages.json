@@ -368,6 +368,36 @@
         "id": 62,
         "description": "Missing statement clause after a 'while'.",
         "C": "Missing statement clause after 'while'."
+      },
+      {
+        "msg": "expected_lparens_after_for",
+        "id": 63,
+        "description": "We expected a '(' after a for but instead got '{0}'.",
+        "C": "Expected '(' after 'for' but instead got: {0}."
+      },
+      {
+        "msg": "expected_semicolon_after_for_init_statement",
+        "id": 64,
+        "description": "We expected a ';' after the for initialisation statement but instead got '{0}'.",
+        "C": "Expected a ';' after the initialisation statement of 'for' but instead got: {0}."
+      },
+      {
+        "msg": "expected_semicolon_after_for_cond_expr",
+        "id": 65,
+        "description": "We expected a ';' after the for condition expression but instead got '{0}'.",
+        "C": "Expected a ';' after the condition expression of 'for' but instead got: {0}."
+      },
+      {
+        "msg": "expected_rparens_after_for_update_stmt",
+        "id": 66,
+        "description": "We expected a ')' after a for's update statement but instead got '{0}'.",
+        "C": "Expected a ')' after the update statement of a 'for' but instead got: {0}."
+      },
+      {
+        "msg": "missing_statement_after_for",
+        "id": 67,
+        "description": "Missing statement clause after a 'for'.",
+        "C": "Missing statement clause after 'for'."
       }
     ]
   }

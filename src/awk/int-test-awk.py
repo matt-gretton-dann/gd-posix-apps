@@ -115,6 +115,7 @@ test_awk('BEGIN { if (0) { print 2 } else { print 3 } print 4 }', "3\n4\n")
 test_awk('BEGIN { if (1)  print 2 }', "2\n")
 test_awk('BEGIN { if (0)  print 2 }', "")
 test_awk('BEGIN { while (i < 4) print i++ }', '\n1\n2\n3\n')
+test_awk('BEGIN { for (i = 0; i < 4; ++i) print i }', "0\n1\n2\n3\n")
 
 # Some error tests
 test_awk('BEGIN { print (1 }', None, expected_rc=1)
@@ -336,4 +337,17 @@ test_awk('''
 }''',
          '1000 .06 5\n\t1060.00\n\t1123.60\n\t1191.02\n\t1262.48\n\t1338.23\n1000 .12 5\n\t1120.00\n\t1254.40\n\t1404.93\n\t1573.52\n\t1762.34\n',
          in_file=interest_data)
+# Page 16
+test_awk('''
+# interest2 - compute compound interest
+# input: amount rate years
+# output: compounded value at the end of each year
+{ print $0
+  for (i = 1; i <= $3; i = i + 1)
+    printf("\\t%.2f\\n", $1 * (1 + $2) ^ i)
+}
+''',
+         '1000 .06 5\n\t1060.00\n\t1123.60\n\t1191.02\n\t1262.48\n\t1338.23\n1000 .12 5\n\t1120.00\n\t1254.40\n\t1404.93\n\t1573.52\n\t1762.34\n',
+         in_file=interest_data)
+
 tester.summarize()
