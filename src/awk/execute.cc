@@ -983,6 +983,18 @@ public:
                             v));
   }
 
+  static auto execute_length(std::vector<ExecutionValue>& values, Instruction::Operand const& expr,
+                             std::string const& fmt) -> ExecutionValue
+  {
+    ExecutionValue const v{values.at(std::get<Index>(expr))};
+    std::optional<std::string> s{to_string(v, fmt)};
+    if (s.has_value()) {
+      return Integer{s->size()};
+    }
+
+    error(Msg::unable_to_cast_value_to_string, v);
+  }
+
   void execute([[maybe_unused]] ParsedProgram const& program, Instructions::const_iterator begin,
                Instructions::const_iterator end)
   {
@@ -1111,6 +1123,10 @@ public:
         break;
       case Instruction::Opcode::copy:
         values.at(it->reg()) = values.at(std::get<Index>(it->op1()));
+        break;
+      case Instruction::Opcode::length:
+        values.at(it->reg()) =
+          execute_length(values, it->op1(), std::get<std::string>(var("CONVFMT")));
       }
       ++pc;
     }

@@ -586,6 +586,7 @@ private:
  * | popen                 | Ix(S)       |             | Open <op1> as a process                  |
  * | branch                | Ix          |             | Branch to <op1>                          |
  * | copy                  | Ix          | Ix(any)     | Copy <op2> into <op1>                    |
+ * | length                | Ix(S)       |             | Length of <op1>                          |
  *
  * Parameter packs are identified by the index of the instruction corresponding to the
  * 'open_param_pack'.
@@ -631,6 +632,7 @@ public:
     popen,                  ///< Open a process
     branch,                 ///< Unconditional branch
     copy,                   ///< Copy op2 to op1
+    length,                 ///< Length of a string
   };
 
   /** Type representing an offset of to an instruction. */

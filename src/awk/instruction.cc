@@ -145,6 +145,7 @@ auto GD::Awk::Instruction::has_result(Opcode opcode) noexcept -> bool
   case GD::Awk::Instruction::Opcode::open:
   case GD::Awk::Instruction::Opcode::popen:
   case GD::Awk::Instruction::Opcode::copy:
+  case GD::Awk::Instruction::Opcode::length:
     return true;
   case GD::Awk::Instruction::Opcode::close_param_pack:
   case GD::Awk::Instruction::Opcode::store_lvalue:
@@ -265,8 +266,13 @@ auto GD::Awk::operator<<(std::ostream& os, GD::Awk::Instruction::Opcode opcode) 
     break;
   case GD::Awk::Instruction::Opcode::branch:
     os << "branch";
+    break;
   case GD::Awk::Instruction::Opcode::copy:
     os << "copy";
+    break;
+  case GD::Awk::Instruction::Opcode::length:
+    os << "length";
+    break;
   }
   return os;
 }
@@ -289,6 +295,7 @@ auto GD::Awk::Instruction::op_count(Opcode opcode) noexcept -> unsigned
   case GD::Awk::Instruction::Opcode::popen:
   case GD::Awk::Instruction::Opcode::branch:
   case GD::Awk::Instruction::Opcode::copy:
+  case GD::Awk::Instruction::Opcode::length:
     return 1;
   case GD::Awk::Instruction::Opcode::store_lvalue:
   case GD::Awk::Instruction::Opcode::print:
@@ -373,6 +380,7 @@ void GD::Awk::Instruction::validate_operands() const
   case GD::Awk::Instruction::Opcode::popen:
   case GD::Awk::Instruction::Opcode::copy:
   case GD::Awk::Instruction::Opcode::branch:
+  case GD::Awk::Instruction::Opcode::length:
     assert(std::holds_alternative<Index>(*op1_));  // NOLINT
     break;
   }

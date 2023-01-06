@@ -108,6 +108,7 @@ test_awk('BEGIN { a=100; a/=5; print a }', "20\n")
 test_awk('BEGIN { a=100; a%=33; print a }', "1\n")
 test_awk('BEGIN { a=2; a^=10; print a }', "1024\n")
 test_awk('BEGIN { printf "%s-%d-%g", "Hello", 10, 372.2 }', "Hello-10-372.2")
+test_awk('BEGIN { print length "100" }', "3\n")
 
 # Some error tests
 test_awk('BEGIN { print (1 }', None, expected_rc=1)

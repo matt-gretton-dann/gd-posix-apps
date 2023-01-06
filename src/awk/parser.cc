@@ -444,6 +444,116 @@ public:
     return ParseStatementResult::none;
   }
 
+  /** @parse the expression part of length call.
+   *
+   */
+  auto parse_builtin_length_expr(InstructionEmitter& emitter) -> ExprResult
+  {
+    ExprResult expr{parse_expr_opt(emitter, ExprType::expr, UnaryType::both)};
+    if (expr.has_no_values()) {
+      expr = emitter.emit_expr(Instruction::Opcode::load_literal, Integer{0});
+      expr = emitter.emit_expr(Instruction::Opcode::field, expr);
+    }
+    if (expr.has_many_values()) {
+      error(Msg::length_builtin_only_takes_one_parameter, lexer_->location());
+    }
+    return emitter.emit_expr(Instruction::Opcode::length, expr);
+  }
+
+  /** @brief Parse builtin functions.
+   *
+   * @param  instrs     Where to emit code to
+   * @param  unary_type What expression class is this?
+   * @return            Index of emitted expression, and updated expression type
+   *
+   * builtin_func_expr : ATAN2 LPARENS expr COMMA expr RPARENS
+   *                   | COS LPARENS expr RPARENS
+   *                   | SIN LPARENS expr RPARENS
+   *                   | EXP LPARENS expr RPARENS
+   *                   | LOG LPARENS expr RPARENS
+   *                   | SQRT LPARENS expr RPARENS
+   *                   | INT LPARENS expr RPARENS
+   *                   | RAND LPARENS expr RPARENS
+   *                   | SRAND LPARENS expr_opt RPARENS
+   *                   | GSUB LPARENS expr COMMA expr RPARENS
+   *                   | GSUB LPARENS expr COMMA expr COMMA expr RPARENS
+   *                   | INDEX LPARENS expr COMMA expr RPARENS
+   *                   | LENGTH expr_opt
+   *                   | SPLIT LPARENS expr COMMA expr RPARENS
+   *                   | MATCH LPARENS expr COMMA expr COMMA expr RPARENS
+   *                   | MATCH LPARENS expr COMMA expr RPARENS
+   *                   | SPRINTF LPARENS expr_list RPARENS
+   *                   | SUB LPARENS expr COMMA expr RPARENS
+   *                   | SUB LPARENS expr COMMA expr COMMA expr RPARENS
+   *                   | SUBSTR LPARENS expr COMMA expr RPARENS
+   *                   | SUBSTR LPARENS expr COMMA expr COMMA expr RPARENS
+   *                   | TOLOWER LPARENS expr RPARENS
+   *                   | TOUPPER LPARENS expr RPARENS
+   *                   | CLOSE LPARENS expr RPARENS
+   *                   | SYSTEM LPARENS expr RPARENS
+   *
+   *
+   * | Pattern                             | Expr or print_expr?  | Unary or non-unary?  |
+   * | :---------------------------------- | :------------------- | :------------------- |
+   * | atan2 ( expr , expr )               | Both                 | Non-unary            |
+   * | cos ( expr )                        | Both                 | Non-unary            |
+   * | sin ( expr )                        | Both                 | Non-unary            |
+   * | exp ( expr )                        | Both                 | Non-unary            |
+   * | log ( expr )                        | Both                 | Non-unary            |
+   * | sqrt ( expr )                       | Both                 | Non-unary            |
+   * | int ( expr )                        | Both                 | Non-unary            |
+   * | rand (  )                           | Both                 | Non-unary            |
+   * | srand ( expr_opt )                  | Both                 | Non-unary            |
+   * | gsub ( expr , expr )                | Both                 | Non-unary            |
+   * | gsub ( expr , expr , expr )         | Both                 | Non-unary            |
+   * | index ( expr , expr )               | Both                 | Non-unary            |
+   * | length expr_opt                     | Both                 | Non-unary            |
+   * | match ( expr, expr )                | Both                 | Non-unary            |
+   * | split ( expr , expr )               | Both                 | Non-unary            |
+   * | split ( expr , expr , expr )        | Both                 | Non-unary            |
+   * | sprintf ( expr_list )               | Both                 | Non-unary            |
+   * | sub ( expr , expr )                 | Both                 | Non-unary            |
+   * | sub ( expr , expr , expr )          | Both                 | Non-unary            |
+   * | substr ( expr , expr )              | Both                 | Non-unary            |
+   * | substr ( expr , expr , expr )       | Both                 | Non-unary            |
+   * | tolower ( expr )                    | Both                 | Non-unary            |
+   * | toupper ( expr )                    | Both                 | Non-unary            |
+   * | close ( expr )                      | Both                 | Non-unary            |
+   * | system ( expr )                     | Both                 | Non-unary            |
+   */
+  auto parse_builtin_func_expr(InstructionEmitter& emitter) -> ExprResult
+  {
+    assert(lexer_->peek(false) == Token::Type::builtin_func_name);
+
+    auto func{lexer_->peek(false).builtin_func_name()};
+    lexer_->chew(false);
+    switch (func) {
+    case Token::BuiltinFunc::length:
+      return parse_builtin_length_expr(emitter);
+    case Token::BuiltinFunc::atan2:
+    case Token::BuiltinFunc::cos:
+    case Token::BuiltinFunc::sin:
+    case Token::BuiltinFunc::exp:
+    case Token::BuiltinFunc::log:
+    case Token::BuiltinFunc::sqrt:
+    case Token::BuiltinFunc::int_:
+    case Token::BuiltinFunc::rand:
+    case Token::BuiltinFunc::srand:
+    case Token::BuiltinFunc::index:
+    case Token::BuiltinFunc::gsub:
+    case Token::BuiltinFunc::match:
+    case Token::BuiltinFunc::split:
+    case Token::BuiltinFunc::sprintf:
+    case Token::BuiltinFunc::sub:
+    case Token::BuiltinFunc::substr:
+    case Token::BuiltinFunc::tolower:
+    case Token::BuiltinFunc::toupper:
+    case Token::BuiltinFunc::close:
+    case Token::BuiltinFunc::system:
+      std::abort();
+    }
+  }
+
   /** @brief Parse primary expressions, () and lvalues.
    *
    * @param  instrs     Where to emit code to
@@ -456,6 +566,7 @@ public:
    *              | LPARENS expr RPARENS
    *              | NAME // LVALUE
    *              | NAME LSQUARE expr_list RSQUARE // rvalue
+   *              | builtin_func
    *
    * | Pattern                             | Expr or print_expr?  | Unary or non-unary?  |
    * | :---------------------------------- | :------------------- | :------------------- |
@@ -525,6 +636,8 @@ public:
       // TODO(mgrettondann): Implement
       std::abort();
     }
+    case Token::Type::builtin_func_name:
+      return parse_builtin_func_expr(emitter);
     default:
       break;
     }

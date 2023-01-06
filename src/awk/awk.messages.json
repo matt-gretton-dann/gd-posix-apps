@@ -302,6 +302,12 @@
         "id": 50,
         "description": "Expected an expression after assignment op {0}, instead found {1}.",
         "C": "Expected an expression after '{0}'.  Instead found {1}."
+      },
+      {
+        "msg": "length_builtin_only_takes_one_parameter",
+        "id": 51,
+        "description": "We received more than one parameter to length builtin this is not right.",
+        "C": "`length` builtin should only be called with zero or one parameter."
       }
     ]
   }
