@@ -208,7 +208,10 @@ class TestRunner:
             self._passes += 1
 
         if not success:
-            print(f"# Command line: " + ' '.join(cmdline))
+            print("# Command line:", end='')
+            for cmd in cmdline:
+                print(" " + repr(cmd), end='')
+            print()
             if files is not None:
                 for file in files:
                     self.deregister_file(file)
