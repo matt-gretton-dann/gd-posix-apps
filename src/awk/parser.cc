@@ -455,7 +455,7 @@ public:
       lexer_->chew(false);
     }
 
-    ExprResult expr{parse_expr_opt(emitter, ExprType::expr, UnaryType::both)};
+    ExprResult expr{parse_expr_opt(emitter, ExprType::expr)};
 
     if (expect_rparens) {
       if (lexer_->peek(false) != Token::Type::rparens) {
@@ -622,7 +622,7 @@ public:
       break;
     case Token::Type::lparens: {
       lexer_->chew(false);
-      auto expr{parse_expr_opt(emitter, ExprType::expr, UnaryType::both)};
+      auto expr{parse_expr_opt(emitter, ExprType::expr)};
       auto const& close_tok{lexer_->peek(false)};
       result = expr;
 
@@ -1372,10 +1372,18 @@ public:
    * | expr `|` simple_get                 | Expr                 | Both                 |
    * | simple_get `<` expr                 | Expr                 | Non-unary            |
    */
-  auto parse_expr_opt(InstructionEmitter& emitter, ExprType expr_type,
-                      [[maybe_unused]] UnaryType unary_type) -> ExprResult
+  auto parse_expr_opt(InstructionEmitter& emitter, ExprType expr_type) -> ExprResult
   {
     ExprResult result{parse_assignment_expr_opt(emitter, expr_type, UnaryType::both)};
+    return result;
+  }
+
+  auto parse_expr(InstructionEmitter& emitter, ExprType expr_type, Msg error_msg) -> ExprResult
+  {
+    ExprResult result{parse_assignment_expr_opt(emitter, expr_type, UnaryType::both)};
+    if (result.has_no_values()) {
+      error(error_msg, lexer_->location(), lexer_->peek(false));
+    }
     return result;
   }
 
@@ -1388,7 +1396,7 @@ public:
   {
     while (true) {
       // Parse the expression
-      auto result = parse_expr_opt(emitter, ExprType::expr, UnaryType::both);
+      auto result = parse_expr_opt(emitter, ExprType::expr);
       if (result.has_many_values()) {
         error(Msg::cannot_nest_multiple_expr_lists, lexer_->location());
       }
@@ -1420,7 +1428,7 @@ public:
     std::size_t element_count{0};  // Number of elements
     while (true) {
       // Parse the expression
-      auto result = parse_expr_opt(emitter, to_expr_type(list_type), UnaryType::both);
+      auto result = parse_expr_opt(emitter, to_expr_type(list_type));
       if (result.has_many_values()) {
         // This turned out to be a multiple_expr_list - so we just lift the results up a level,
         // and return.
@@ -1495,7 +1503,7 @@ public:
 
     lexer_->chew(false);
 
-    auto out_expr{parse_expr_opt(emitter, ExprType::expr, UnaryType::both)};
+    auto out_expr{parse_expr_opt(emitter, ExprType::expr)};
     if (!out_expr.has_one_value()) {
       error(Msg::expected_expr_after_redirection, lexer_->location(), tok, lexer_->peek(false));
     }
@@ -1612,7 +1620,7 @@ public:
       return true;
     }
 
-    return parse_expr_opt(emitter, ExprType::expr, UnaryType::both).has_one_value();
+    return parse_expr_opt(emitter, ExprType::expr).has_one_value();
   }
 
   auto parse_terminatable_statement_opt(InstructionEmitter& emitter) -> ParseStatementResult
@@ -1628,7 +1636,7 @@ public:
       break;
     case Token::Type::exit: {
       lexer_->chew(false);
-      auto expr{parse_expr_opt(emitter, ExprType::expr, UnaryType::both)};
+      auto expr{parse_expr_opt(emitter, ExprType::expr)};
       if (!expr.has_one_value()) {
         expr = emitter.emit_expr(Instruction::Opcode::load_literal, Integer{INT64_C(0)});
       }
@@ -1639,7 +1647,7 @@ public:
     }
     case Token::Type::return_: {
       lexer_->chew(false);
-      auto expr{parse_expr_opt(emitter, ExprType::expr, UnaryType::both)};
+      auto expr{parse_expr_opt(emitter, ExprType::expr)};
       if (!expr.has_one_value()) {
         expr = emitter.emit_expr(Instruction::Opcode::load_literal, Integer{INT64_C(0)});
       }
@@ -1666,17 +1674,71 @@ public:
     return ParseStatementResult::unterminated;
   }
 
+  /** @brief Parse an if statement
+   *
+   * @param emitter Instruction emitter class
+   * @return Whether the statement was terminated or not.
+   *
+   * if : IF LPARENS expr RPARENS newline_opt statement
+   *    | IF LPARENS expr RPARENS newline_opt terminated_statement ELSE statement
+   */
+  auto parse_if_stmt(InstructionEmitter& emitter) -> ParseStatementResult
+  {
+    assert(lexer_->peek(false) == Token::Type::if_);
+    lexer_->chew(false);
+
+    if (lexer_->peek(false) != Token::Type::lparens) {
+      error(Msg::expected_lparens_after_if, lexer_->location(), lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    ExprResult const cond{parse_expr(emitter, ExprType::expr, Msg::expected_expr_after_if)};
+    if (lexer_->peek(false) != Token::Type::rparens) {
+      error(Msg::expected_rparens_after_if_expr, lexer_->location(), lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    Index const false_branch{
+      emitter.emit_statement(Instruction::Opcode::branch_if_false, cond, illegal_index)};
+
+    ParseStatementResult const then_stmt{parse_statement(emitter, Msg::missing_statement_after_if)};
+
+    if (then_stmt == ParseStatementResult::unterminated ||
+        lexer_->peek(false) != Token::Type::else_) {
+      emitter.at(false_branch).op2(emitter.next_instruction_index());
+      return then_stmt;
+    }
+
+    assert(then_stmt == ParseStatementResult::terminated);
+    assert(lexer_->peek(false) == Token::Type::else_);
+
+    lexer_->chew(false);
+    Index const true_branch{emitter.emit_statement(Instruction::Opcode::branch, illegal_index)};
+    emitter.at(false_branch).op2(emitter.next_instruction_index());
+    ParseStatementResult const else_stmt{
+      parse_statement(emitter, Msg::missing_statement_after_else)};
+    emitter.at(true_branch).op1(emitter.next_instruction_index());
+
+    return else_stmt;
+  }
+
   /** @brief Parse an optional statement
    *
    * @param  instrs Instructions to write code into
    * @return        Flag indicating whether anything was parsed, and if so whether it was
    *                terminated.
+   *
+   * statement : if_stmt
+   *           | while_stmt
+   *           | for_stmt
+   *           | SEMICOLON newline_opt
+   *           | action newline_opt
    */
   auto parse_statement_opt(InstructionEmitter& emitter) -> ParseStatementResult
   {
     auto const& tok{lexer_->peek(false)};
     if (tok == Token::Type::if_) {
-      return parse_if_opt(emitter);
+      return parse_if_stmt(emitter);
     }
     if (tok == Token::Type::while_) {
       return parse_while_opt(emitter);
@@ -1697,6 +1759,17 @@ public:
 
     auto res{parse_terminatable_statement_opt(emitter)};
     return res;
+  }
+
+  auto parse_statement(InstructionEmitter& emitter, Msg msg) -> ParseStatementResult
+  {
+    auto result{parse_statement_opt(emitter)};
+
+    if (result == ParseStatementResult::none) {
+      error(msg, lexer_->location());
+    }
+
+    return result;
   }
 
   /** \brief  Parse a statement list.
@@ -1804,8 +1877,7 @@ public:
   // Returns index of comparison instruction if we emitted the pattern sequence.
   auto parse_normal_pattern_opt(InstructionEmitter& emitter) -> Index
   {
-    if (ExprResult const pat1{parse_expr_opt(emitter, ExprType::expr, UnaryType::both)};
-        pat1.has_one_value()) {
+    if (ExprResult const pat1{parse_expr_opt(emitter, ExprType::expr)}; pat1.has_one_value()) {
       return emitter.emit_statement(Instruction::Opcode::branch_if_false, pat1, illegal_index);
       // TODO(mgrettondann): Handle pattern ranges
     }
