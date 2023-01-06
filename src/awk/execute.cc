@@ -888,6 +888,7 @@ public:
       next_pos = fmt_string.find_first_of("csdioxXufFeEaAgG", pos);
       bool is_string{false};
       bool is_floating{false};
+      bool is_left_aligned{false};
       if (next_pos == std::string::npos) {
         next_pos = fmt_string.size();
       }
@@ -897,8 +898,14 @@ public:
         is_floating = (fmtc == 'f' || fmtc == 'g' || fmtc == 'e');
         ++next_pos;
       }
+      std::string fmt_portion{fmt_string.substr(pos, next_pos - pos)};
+      if (auto mp{fmt_portion.find('-')}; mp != std::string::npos) {
+        is_left_aligned = true;
+        fmt_portion.erase(mp, 1);
+      }
       std::string new_fmt{"{:"};
-      new_fmt += fmt_string.substr(pos, next_pos - pos);
+      new_fmt += is_left_aligned ? '<' : '>';
+      new_fmt += fmt_portion;
       new_fmt += '}';
       if (auto mp{new_fmt.find('-')}; mp != std::string::npos) {
         new_fmt[mp] = '<';  // NOLINT

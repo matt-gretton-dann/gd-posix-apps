@@ -43,7 +43,6 @@ target_link_libraries(awk PUBLIC libawk)
 if (NOT WIN32)
   add_gdpat_test(NAME awk
           XFAILS
-          "awk/onetrueawk-awk/basic/p.3"
           "awk/onetrueawk-awk/basic/p.4"
           "awk/onetrueawk-awk/basic/p.5"
           "awk/onetrueawk-awk/basic/p.5a"
