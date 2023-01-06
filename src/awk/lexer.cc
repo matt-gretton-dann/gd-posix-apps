@@ -339,6 +339,10 @@ void GD::Awk::Lexer::lex_string_or_ere(bool from_cmdline)
       break;
     case '\\':
       if (seen_escape) {
+        if (!is_string) {
+          // For regular expressions we need to pass this escape onto the regex parser.
+          str += '\\';
+        }
         str += '\\';
         seen_escape = false;
       }
@@ -404,9 +408,15 @@ void GD::Awk::Lexer::lex_string_or_ere(bool from_cmdline)
       break;
     default:
       if (seen_escape) {
-        // We put an error in to the queue.  But we continue to parse the string as normal.
         seen_escape = false;
-        t2_.emplace(Token::Type::error, r_->error(Msg::bad_escape_sequence, r_->peek()));
+        if (is_string) {
+          // We put an error in to the queue.  But we continue to parse the string as normal.
+          t2_.emplace(Token::Type::error, r_->error(Msg::bad_escape_sequence, r_->peek()));
+        }
+        else {
+          // For regular expressions we just pass the escape onto the regex.
+          str += '\\';
+        }
       }
 
       str += static_cast<char>(r_->peek());
