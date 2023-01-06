@@ -10,7 +10,6 @@
 
 #include <iostream>
 #include <memory>
-#include <ranges>
 #include <regex>
 #include <variant>
 
@@ -81,17 +80,20 @@ enum class UnaryType {
 
 struct ExprResult
 {
+  enum class Flags { none = 0, lvalue = 0x1, regex = 0x2 };
+
   struct OneResult
   {
     Index index{illegal_index};
-    bool is_lvalue{false};
+    Flags flags{Flags::none};
   };
 
   using Indices = std::vector<OneResult>;
 
   ExprResult() = default;
   explicit ExprResult(OneResult const& r) : indices_(1, r) {}
-  ExprResult(Index index, bool is_lvalue) : indices_(1, {index, is_lvalue}) {}
+  explicit ExprResult(Index index) : indices_(1, {index, Flags::none}) {}
+  ExprResult(Index index, Flags flags) : indices_(1, {index, flags}) {}
 
   ~ExprResult() = default;
   ExprResult(ExprResult const&) = default;
@@ -103,9 +105,19 @@ struct ExprResult
   [[nodiscard]] auto has_many_values() const noexcept -> bool { return indices_.size() > 1; }
   [[nodiscard]] auto has_no_values() const noexcept -> bool { return indices_.empty(); }
 
+  [[nodiscard]] auto flags() const noexcept -> Flags
+  {
+    assert(has_one_value());
+    return indices_.front().flags;
+  }
+
   [[nodiscard]] auto is_lvalue() const noexcept -> bool
   {
-    return !indices_.empty() && indices_.front().is_lvalue;
+    return !indices_.empty() && indices_.front().flags == Flags::lvalue;
+  }
+  [[nodiscard]] auto is_regex() const noexcept -> bool
+  {
+    return !indices_.empty() && indices_.front().flags == Flags::regex;
   }
 
   [[nodiscard]] auto index() const noexcept -> Index
@@ -194,50 +206,51 @@ public:
   auto emit_expr(Instruction::Opcode opcode) -> ExprResult
   {
     instrs_->emplace_back(opcode, reg_);
-    return ExprResult{reg_++, is_lvalue_instr(opcode)};
+    return ExprResult{reg_++, ExprResult::Flags::none};
   }
 
   auto emit_expr(Instruction::Opcode opcode, Integer integer) -> ExprResult
   {
     instrs_->emplace_back(opcode, reg_, integer);
-    return ExprResult{reg_++, is_lvalue_instr(opcode)};
+    return ExprResult{reg_++};
   }
 
   auto emit_expr(Instruction::Opcode opcode, Floating floating) -> ExprResult
   {
     instrs_->emplace_back(opcode, reg_, floating);
-    return ExprResult{reg_++, is_lvalue_instr(opcode)};
+    return ExprResult{reg_++};
   }
 
   auto emit_expr(Instruction::Opcode opcode, std::string const& str) -> ExprResult
   {
     instrs_->emplace_back(opcode, reg_, str);
-    return ExprResult{reg_++, is_lvalue_instr(opcode)};
+    return ExprResult{reg_++};
   }
 
   auto emit_expr(Instruction::Opcode opcode, std::regex const& regex) -> ExprResult
   {
     instrs_->emplace_back(opcode, reg_, regex);
-    return ExprResult{reg_++, is_lvalue_instr(opcode)};
+    return ExprResult{reg_++, ExprResult::Flags::regex};
   }
 
   auto emit_expr(Instruction::Opcode opcode, FileDescriptor fd) -> ExprResult
   {
     instrs_->emplace_back(opcode, reg_, fd);
-    return ExprResult{reg_++, is_lvalue_instr(opcode)};
+    return ExprResult{reg_++};
   }
 
   auto emit_expr(Instruction::Opcode opcode, ExprResult const& expr) -> ExprResult
   {
     assert(expr.has_one_value());
     instrs_->emplace_back(opcode, reg_, dereference_lvalue_int(expr));
-    return ExprResult{reg_++, is_lvalue_instr(opcode)};
+    return ExprResult{reg_++, opcode == Instruction::Opcode::field ? ExprResult::Flags::lvalue
+                                                                   : ExprResult::Flags::none};
   }
 
   auto emit_expr(Instruction::Opcode opcode, VariableName const& var) -> ExprResult
   {
     instrs_->emplace_back(opcode, reg_, var);
-    return ExprResult{reg_++, is_lvalue_instr(opcode)};
+    return ExprResult{reg_++, ExprResult::Flags::lvalue};
   }
 
   auto emit_expr(Instruction::Opcode opcode, ExprResult const& expr, Integer const& op2)
@@ -245,7 +258,7 @@ public:
   {
     assert(expr.has_one_value());
     instrs_->emplace_back(opcode, reg_, dereference_lvalue_int(expr), op2);
-    return ExprResult{reg_++, is_lvalue_instr(opcode)};
+    return ExprResult{reg_++};
   }
 
   auto emit_expr(Instruction::Opcode opcode, ExprResult const& expr1, ExprResult const& expr2)
@@ -256,7 +269,7 @@ public:
     assert(expr2.has_one_value());
     instrs_->emplace_back(opcode, reg_, dereference_lvalue_int(expr1),
                           dereference_lvalue_int(expr2));
-    return ExprResult{reg_++, is_lvalue_instr(opcode)};
+    return ExprResult{reg_++};
   }
 
   auto emit_copy(ExprResult const& dest, ExprResult const& src) -> ExprResult
@@ -316,15 +329,10 @@ public:
       return expr;
     }
     instrs_->emplace_back(Instruction::Opcode::load_lvalue, reg_, expr.index());
-    return ExprResult{reg_++, false};
+    return ExprResult{reg_++};
   }
 
 private:
-  static auto is_lvalue_instr(Instruction::Opcode opcode) noexcept -> bool
-  {
-    return opcode == Instruction::Opcode::field || opcode == Instruction::Opcode::variable;
-  }
-
   auto dereference_lvalue_int(ExprResult const& expr) -> Instruction::Operand
   {
     return Instruction::Operand{dereference_lvalue(expr).index()};
@@ -1222,7 +1230,14 @@ public:
   auto parse_expr_opt(InstructionEmitter& emitter, ExprType expr_type,
                       [[maybe_unused]] UnaryType unary_type) -> ExprResult
   {
-    return parse_assignment_expr_opt(emitter, expr_type, UnaryType::both);
+    ExprResult result{parse_assignment_expr_opt(emitter, expr_type, UnaryType::both)};
+    if (result.is_regex()) {
+      // Bare regexes need to be converted into `$0 ~ re`
+      auto lit_0{emitter.emit_expr(Instruction::Opcode::load_literal, Integer{0})};
+      auto field{emitter.emit_expr(Instruction::Opcode::field, lit_0)};
+      result = emitter.emit_expr(Instruction::Opcode::re_match, field, result);
+    }
+    return result;
   }
 
   /** @brief Parse the second & subsequent elements of a multiple_expr_list.
@@ -1244,7 +1259,7 @@ public:
       }
 
       // Insert index into list of expressions.
-      *inserter_it++ = {result.index(), result.is_lvalue()};
+      *inserter_it++ = {result.index(), result.flags()};
 
       // Chew the comma, and newline separators.
       if (lexer_->peek(false) != Token::Type::comma) {
@@ -1284,7 +1299,7 @@ public:
       }
 
       // Insert index into list of expressions.
-      *inserter_it++ = {result.index(), result.is_lvalue()};
+      *inserter_it++ = {result.index(), result.flags()};
       ++element_count;
 
       // Chew the comma, and newline separators.
@@ -1394,7 +1409,7 @@ public:
       // We have a plain print.  We want to print $0.
       auto const lit_expr{emitter.emit_expr(Instruction::Opcode::load_literal, Integer{0})};
       auto field{emitter.emit_expr(Instruction::Opcode::field, lit_expr)};
-      *indices.back_inserter()++ = {field.index(), field.is_lvalue()};
+      *indices.back_inserter()++ = {field.index(), field.flags()};
     }
 
     // Now get the redirection.  If we don't have a redirection we will output to standard out.
