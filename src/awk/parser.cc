@@ -267,8 +267,9 @@ public:
     // Index is allowed to be illegal_index.
     assert(expr1.has_one_value());
     assert(expr2.has_one_value());
-    instrs_->emplace_back(opcode, reg_, dereference_lvalue_int(expr1),
-                          dereference_lvalue_int(expr2));
+    bool const preserve_regex = opcode == Instruction::Opcode::re_match;
+    instrs_->emplace_back(opcode, reg_, dereference_lvalue_int(expr1, preserve_regex),
+                          dereference_lvalue_int(expr2, preserve_regex));
     return ExprResult{reg_++};
   }
 
@@ -325,17 +326,31 @@ public:
 
   auto dereference_lvalue(ExprResult const& expr) -> ExprResult
   {
-    if (!expr.is_lvalue()) {
-      return expr;
-    }
+    assert(expr.is_lvalue());
     instrs_->emplace_back(Instruction::Opcode::load_lvalue, reg_, expr.index());
     return ExprResult{reg_++};
   }
 
 private:
-  auto dereference_lvalue_int(ExprResult const& expr) -> Instruction::Operand
+  auto emit_match_field_0(ExprResult const& re) -> ExprResult
   {
-    return Instruction::Operand{dereference_lvalue(expr).index()};
+    assert(re.is_regex());
+    // Bare regexes need to be converted into `$0 ~ re`
+    auto lit_0{emit_expr(Instruction::Opcode::load_literal, Integer{0})};
+    auto field{emit_expr(Instruction::Opcode::field, lit_0)};
+    return emit_expr(Instruction::Opcode::re_match, field, re);
+  }
+
+  auto dereference_lvalue_int(ExprResult const& expr, bool preserve_regex = false)
+    -> Instruction::Operand
+  {
+    if (expr.is_lvalue()) {
+      return Instruction::Operand{dereference_lvalue(expr).index()};
+    }
+    if (expr.is_regex() && !preserve_regex) {
+      return Instruction::Operand{emit_match_field_0(expr).index()};
+    }
+    return Instruction::Operand{expr.index()};
   }
 
   Instructions* instrs_{nullptr};
@@ -1231,12 +1246,6 @@ public:
                       [[maybe_unused]] UnaryType unary_type) -> ExprResult
   {
     ExprResult result{parse_assignment_expr_opt(emitter, expr_type, UnaryType::both)};
-    if (result.is_regex()) {
-      // Bare regexes need to be converted into `$0 ~ re`
-      auto lit_0{emitter.emit_expr(Instruction::Opcode::load_literal, Integer{0})};
-      auto field{emitter.emit_expr(Instruction::Opcode::field, lit_0)};
-      result = emitter.emit_expr(Instruction::Opcode::re_match, field, result);
-    }
     return result;
   }
 
