@@ -1262,6 +1262,7 @@ void GD::Awk::execute(ParsedProgram const& program, std::vector<std::string> con
 
   // Default values of variables
   state.var("CONVFMT", "%.6g");
+  state.var("FNR", Integer{0});
   state.var("FS", " ");
   state.var("NR", Integer{0});
   state.var("OFS", " ");
@@ -1287,13 +1288,18 @@ void GD::Awk::execute(ParsedProgram const& program, std::vector<std::string> con
     }
 
     state.var("FILENAME", operand);
-    state.var("NR", Integer{0});
+    state.var("FNR", Integer{0});
     auto file{GD::StreamInputFile(operand)};
     auto [record_begin, record_end] = program.per_record_instructions();
     while (state.parse_record(file)) {
       Integer const nr{std::get<Integer>(state.var("NR"))};
       Integer::underlying_type const new_nr = nr.get() + 1;
       state.var("NR", Integer{new_nr});
+
+      Integer const fnr{std::get<Integer>(state.var("FNR"))};
+      Integer::underlying_type const new_fnr = fnr.get() + 1;
+      state.var("FNR", Integer{new_fnr});
+
       state.execute(program, record_begin, record_end);
     }
   }
