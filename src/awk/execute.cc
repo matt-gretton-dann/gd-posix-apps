@@ -55,6 +55,33 @@ using ArrayElement = std::pair<ArrayName, std::string>;
 using ExecutionValue =
   std::variant<std::string, Integer, Floating, std::regex, std::nullopt_t, VariableName, Field,
                FileDescriptor, bool, ParameterPack, ArrayName, ArrayElement>;
+
+auto operator<<(std::ostream& os, ExecutionValue const& ev) -> std::ostream&
+{
+  return std::visit(
+    GD::Overloaded{
+      [&os](std::string const& s) -> std::ostream& { return os << s; },
+      [&os](GD::Awk::Integer i) -> std::ostream& { return os << i.get(); },
+      [&os](GD::Awk::Floating f) -> std::ostream& { return os << f; },
+      [&os](std::regex const&) -> std::ostream& { return os << "<regex>"; },
+      [&os](std::nullopt_t) -> std::ostream& { return os << "<empty>"; },
+      [&os](GD::Awk::VariableName const& vn) -> std::ostream& {
+        return os << "var(" << vn.get() << ")";
+      },
+      [&os](GD::Awk::ArrayName const& an) -> std::ostream& {
+        return os << "array(" << an.get() << ")";
+      },
+      [&os](GD::Awk::Details::ArrayElement const& ae) -> std::ostream& {
+        return os << ae.first.get() << "[" << ae.second << "]";
+      },
+      [&os](GD::Awk::Details::Field f) -> std::ostream& { return os << "$" << f.get(); },
+      [&os](GD::Awk::FileDescriptor fd) -> std::ostream& { return os << "fd(" << fd.get() << ")"; },
+      [&os](GD::Awk::Details::ParameterPack const&) -> std::ostream& {
+        return os << "<parameter pack>";
+      },
+    },
+    ev);
+}
 }  // namespace GD::Awk::Details
 
 // This needs to be in the global space
@@ -1028,12 +1055,16 @@ public:
   void execute([[maybe_unused]] ParsedProgram const& program, Instructions::const_iterator begin,
                Instructions::const_iterator end)
   {
+    constexpr bool debug = false;
     auto length{std::distance(begin, end)};
     assert(length >= 0);
     std::vector<ExecutionValue> values;
     Index pc{0};
     while (pc != static_cast<Index>(length)) {
       auto it{begin + static_cast<Instructions::difference_type>(pc)};
+      if constexpr (debug) {
+        std::cout << std::setw(10) << pc << ": " << *it;  // NOLINT
+      }
       switch (it->opcode()) {
       case Instruction::Opcode::reserve_regs:
         values.resize(std::get<Index>(it->op1()), std::nullopt);
@@ -1164,6 +1195,12 @@ public:
       case Instruction::Opcode::length:
         values.at(it->reg()) =
           execute_length(values, it->op1(), std::get<std::string>(var("CONVFMT")));
+      }
+      if constexpr (debug) {
+        if (it->has_reg()) {
+          std::cout << "[" << values.at(it->reg()) << "]";
+        }
+        std::cout << '\n';
       }
       ++pc;
     }

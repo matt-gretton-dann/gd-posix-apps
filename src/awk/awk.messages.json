@@ -416,6 +416,12 @@
         "id": 70,
         "description": "Expected a newline after `\\` at the end of a line.  Instead got {0}.",
         "C": "Expected a newline after '\\' instead got {0}."
+      },
+      {
+        "msg": "missing_pattern_after_comma",
+        "id": 71,
+        "description": "Expected a second pattern after the comma, instead got {0}.",
+        "C": "Expected a second pattern after the comma, instead got {0}."
       }
     ]
   }

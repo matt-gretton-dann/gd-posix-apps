@@ -43,8 +43,6 @@ target_link_libraries(awk PUBLIC libawk)
 if (NOT WIN32)
   add_gdpat_test(NAME awk
           XFAILS
-          "awk/onetrueawk-awk/basic/p.23"
-          "awk/onetrueawk-awk/basic/p.24"
           "awk/onetrueawk-awk/basic/p.29"
           "awk/onetrueawk-awk/basic/p.32"
           "awk/onetrueawk-awk/basic/p.33"
@@ -159,9 +157,6 @@ if (NOT WIN32)
           "awk/onetrueawk-awk/general/t.ofs"
           "awk/onetrueawk-awk/general/t.ors"
           "awk/onetrueawk-awk/general/t.pipe"
-          "awk/onetrueawk-awk/general/t.pp"
-          "awk/onetrueawk-awk/general/t.pp1"
-          "awk/onetrueawk-awk/general/t.pp2"
           "awk/onetrueawk-awk/general/t.printf"
           "awk/onetrueawk-awk/general/t.randk"
           "awk/onetrueawk-awk/general/t.re2"

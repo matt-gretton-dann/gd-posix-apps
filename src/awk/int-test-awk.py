@@ -527,5 +527,26 @@ Japan\t144\t120\tAsia
 Germany\t96\t61\tEurope
 England\t94\t56\tEurope
 ''', in_file=countries_data)
+test_awk('/Canada/, /USA/', '''Canada\t3852\t25\tNorth America
+China\t3705\t1032\tAsia
+USA\t3615\t237\tNorth America
+''', in_file=countries_data)
+test_awk('/Europe/, /Africa/', '''France\t211\t55\tEurope
+Japan\t144\t120\tAsia
+Germany\t96\t61\tEurope
+England\t94\t56\tEurope
+''', in_file=countries_data)
+test_awk('FNR == 1, FNR == 5 { print FILENAME ": " $0 }', f'''{countries_data}: USSR\t8649\t275\tAsia
+{countries_data}: Canada\t3852\t25\tNorth America
+{countries_data}: China\t3705\t1032\tAsia
+{countries_data}: USA\t3615\t237\tNorth America
+{countries_data}: Brazil\t3286\t134\tSouth America
+''', in_file=countries_data)
+test_awk('FNR <= 5 { print FILENAME ": " $0 }', f'''{countries_data}: USSR\t8649\t275\tAsia
+{countries_data}: Canada\t3852\t25\tNorth America
+{countries_data}: China\t3705\t1032\tAsia
+{countries_data}: USA\t3615\t237\tNorth America
+{countries_data}: Brazil\t3286\t134\tSouth America
+''', in_file=countries_data)
 
 tester.summarize()

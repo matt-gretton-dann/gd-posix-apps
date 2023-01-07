@@ -407,7 +407,12 @@ void GD::Awk::Instruction::validate_operands() const
 
 auto GD::Awk::operator<<(std::ostream& os, Instruction::Operand const& operand) -> std::ostream&
 {
-  std::visit([&os](auto const& o) { os << o; }, operand);
+  std::visit(GD::Overloaded{
+               [&os](auto const& o) { os << o; },
+               [&os]<typename T, typename U>(GD::TypeWrapper<T, U> const& t) { os << t.get(); },
+               [&os](std::regex const&) { os << "regex"; },
+             },
+             operand);
   return os;
 }
 

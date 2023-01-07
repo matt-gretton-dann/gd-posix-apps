@@ -2014,15 +2014,63 @@ public:
     return program_.function(func_name.get());
   }
 
+  auto generate_pattern_range_guard() -> VariableName
+  {
+    std::string var_name{"*pattern_guard*"};
+    var_name += std::to_string(pattern_guard_id_++);
+    return VariableName{var_name};
+  }
+
   // Returns index of comparison instruction if we emitted the pattern sequence.
   auto parse_normal_pattern_opt(InstructionEmitter& emitter) -> Index
   {
-    if (ExprResult const pat1{parse_expr_opt(emitter, ExprType::expr)}; pat1.has_one_value()) {
-      return emitter.emit_statement(Instruction::Opcode::branch_if_false, pat1, illegal_index);
-      // TODO(mgrettondann): Handle pattern ranges
+    ExprResult const pat1{parse_expr_opt(emitter, ExprType::expr)};
+    if (!pat1.has_one_value()) {
+      return illegal_index;
     }
 
-    return illegal_index;
+    if (lexer_->peek(false) != Token::Type::comma) {
+      // This is just a simple pattern.
+      return emitter.emit_statement(Instruction::Opcode::branch_if_false, pat1, illegal_index);
+    }
+    lexer_->chew(false);
+
+    // Pattern range.
+
+    //        pat1: <pat1>
+    //           1: variable range_guard
+    //           2: lit1
+    //              branch_if_false pat1, check_guard
+    //              store_lvalue 1, 2
+    // check_guard: load_lvalue 1
+    //           3: is_equal check_guard, 2
+    //        skip: branch_if_false 3, end
+    //        pat2: <pat2>
+    //              branch_if_false pat2, execute
+    //           5: lit0
+    //              store_lvalue 1, 5
+    //     execute: <statement>
+    //         end:
+    //
+    VariableName const guard_vn{generate_pattern_range_guard()};
+    ExprResult const lit1{emitter.emit_expr(Instruction::Opcode::load_literal, Integer{1})};
+    ExprResult const guard_var{emitter.emit_expr(Instruction::Opcode::variable, guard_vn)};
+    Index const skip_start{
+      emitter.emit_statement(Instruction::Opcode::branch_if_false, pat1, illegal_index)};
+    emitter.emit_store_lvalue(guard_var, lit1);
+    emitter.at(skip_start).op2(emitter.next_instruction_index());
+    ExprResult const check_guard{emitter.emit_expr(Instruction::Opcode::is_equal, guard_var, lit1)};
+    Index const skip{
+      emitter.emit_statement(Instruction::Opcode::branch_if_false, check_guard, illegal_index)};
+
+    ExprResult const pat2{parse_expr(emitter, ExprType::expr, Msg::missing_pattern_after_comma)};
+    Index const skip_guard_clear{
+      emitter.emit_statement(Instruction::Opcode::branch_if_false, pat2, illegal_index)};
+    ExprResult const lit0{emitter.emit_expr(Instruction::Opcode::load_literal, Integer{0})};
+    emitter.emit_store_lvalue(guard_var, lit0);
+    emitter.at(skip_guard_clear).op2(emitter.next_instruction_index());
+
+    return skip;
   }
 
   /** \brief Parse an optional item.
@@ -2148,6 +2196,7 @@ public:
 private:
   std::unique_ptr<Lexer> lexer_;
   ParsedProgram program_;
+  std::uint64_t pattern_guard_id_{0};
 };
 }  // namespace GD::Awk::Details
 
