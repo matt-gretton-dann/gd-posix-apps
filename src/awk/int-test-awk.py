@@ -138,6 +138,7 @@ test_awk('BEGIN { print 1 < 2}', None, expected_rc=1)
 # The AWK Programming Language Chapter 1 Examples
 emp_data = tester.input_file('emp.data')
 interest_data = tester.input_file('interest.data')
+countries_data = tester.input_file('countries.data')
 
 # Page 1, 1.1 Getting started
 test_awk('$3 > 0 { print $1, $2 * $3 }', """Kathy 40
@@ -386,5 +387,62 @@ Kathy 4.00 10
 Dan 3.75 0
 Beth 4.00 0
 ''', in_file=emp_data)
+
+# Chapter 2
+# Page 22
+test_awk('{ print $1, $3 }', '''USSR 275
+Canada 25
+China 1032
+USA 237
+Brazil 134
+India 746
+Mexico 78
+France 55
+Japan 120
+Germany 61
+England 56
+''', in_file=countries_data)
+
+test_awk('''{ print \\
+    $1,
+    $2,
+    $3 }''', '''USSR 8649 275
+Canada 3852 25
+China 3705 1032
+USA 3615 237
+Brazil 3286 134
+India 1267 746
+Mexico 762 78
+France 211 55
+Japan 144 120
+Germany 96 61
+England 94 56
+''', in_file=countries_data)
+
+# Page 24
+test_awk('''
+BEGIN { FS ="\\t" # make tab the field separator
+        printf("%10s %6s %5s   %s\\n\\n", "COUNTRY", "AREA", " POP", "CONTINENT")
+      }
+      { printf("%10s %6d %5d   %s\\n", $1, $2, $3, $4)
+        area = area + $2
+        pop = pop + $3
+      }
+END   { printf("\\n%10s %6d %5d\\n", "TOTAL", area, pop) }''', '''   COUNTRY   AREA   POP   CONTINENT
+
+      USSR   8649   275   Asia
+    Canada   3852    25   North America
+     China   3705  1032   Asia
+       USA   3615   237   North America
+    Brazil   3286   134   South America
+     India   1267   746   Asia
+    Mexico    762    78   North America
+    France    211    55   Europe
+     Japan    144   120   Asia
+   Germany     96    61   Europe
+   England     94    56   Europe
+
+     TOTAL  25681  2819
+''', in_file=countries_data)
 
 tester.summarize()
