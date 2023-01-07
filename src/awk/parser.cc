@@ -739,13 +739,13 @@ public:
       return lvalue;
     }
 
-    auto type{lexer_->peek(false).type()};
+    auto type{lexer_->peek(true).type()};
     if (type != Token::Type::incr && type != Token::Type::decr) {
       return lvalue;
     }
 
     bool const is_incr{type == Token::Type::incr};
-    lexer_->chew(false);
+    lexer_->chew(true);
     // Code sequence:
     //  x: load_lvalue result.index
     //  x + 1: load_lt 1
