@@ -445,4 +445,87 @@ END   { printf("\\n%10s %6d %5d\\n", "TOTAL", area, pop) }''', '''   COUNTRY   A
      TOTAL  25681  2819
 ''', in_file=countries_data)
 
+# Page 25
+test_awk('$3/$2 >= 0.5', '''India\t1267\t746\tAsia
+Japan\t144\t120\tAsia
+Germany\t96\t61\tEurope
+England\t94\t56\tEurope
+''', in_file=countries_data)
+
+# Page 26
+test_awk('$0 >= "M"', '''USSR\t8649\t275\tAsia
+USA\t3615\t237\tNorth America
+Mexico\t762\t78\tNorth America
+''', in_file=countries_data)
+test_awk('$1 < $4', '''Canada\t3852\t25\tNorth America
+Brazil\t3286\t134\tSouth America
+Mexico\t762\t78\tNorth America
+England\t94\t56\tEurope
+''', in_file=countries_data)
+test_awk('$2 < $3', '', in_file=countries_data)
+test_awk('/Asia/', '''USSR\t8649\t275\tAsia
+China\t3705\t1032\tAsia
+India\t1267\t746\tAsia
+Japan\t144\t120\tAsia
+''', in_file=countries_data)
+
+# Page 27
+test_awk('$4 ~ /Asia/', '''USSR\t8649\t275\tAsia
+China\t3705\t1032\tAsia
+India\t1267\t746\tAsia
+Japan\t144\t120\tAsia
+''', in_file=countries_data)
+test_awk('$4 !~ /Asia/', '''Canada\t3852\t25\tNorth America
+USA\t3615\t237\tNorth America
+Brazil\t3286\t134\tSouth America
+Mexico\t762\t78\tNorth America
+France\t211\t55\tEurope
+Germany\t96\t61\tEurope
+England\t94\t56\tEurope
+''', in_file=countries_data)
+test_awk('$0 ~ /Asia/', '''USSR\t8649\t275\tAsia
+China\t3705\t1032\tAsia
+India\t1267\t746\tAsia
+Japan\t144\t120\tAsia
+''', in_file=countries_data)
+
+# Page 31
+test_awk('$4 == "Asia" && $3 > 500', '''China\t3705\t1032\tAsia
+India\t1267\t746\tAsia
+''', in_file=countries_data)
+test_awk('$4 == "Asia" || $4 == "Europe"', '''USSR\t8649\t275\tAsia
+China\t3705\t1032\tAsia
+India\t1267\t746\tAsia
+France\t211\t55\tEurope
+Japan\t144\t120\tAsia
+Germany\t96\t61\tEurope
+England\t94\t56\tEurope
+''', in_file=countries_data)
+
+# Page 32
+test_awk('$4 ~ /^(Asia|Europe)$/', '''USSR\t8649\t275\tAsia
+China\t3705\t1032\tAsia
+India\t1267\t746\tAsia
+France\t211\t55\tEurope
+Japan\t144\t120\tAsia
+Germany\t96\t61\tEurope
+England\t94\t56\tEurope
+''', in_file=countries_data)
+test_awk('/Asia/ || /Europe/', '''USSR\t8649\t275\tAsia
+China\t3705\t1032\tAsia
+India\t1267\t746\tAsia
+France\t211\t55\tEurope
+Japan\t144\t120\tAsia
+Germany\t96\t61\tEurope
+England\t94\t56\tEurope
+''', in_file=countries_data)
+test_awk('/Asia|Europe/', '''USSR\t8649\t275\tAsia
+China\t3705\t1032\tAsia
+India\t1267\t746\tAsia
+France\t211\t55\tEurope
+Japan\t144\t120\tAsia
+Germany\t96\t61\tEurope
+England\t94\t56\tEurope
+''', in_file=countries_data)
+
 tester.summarize()
