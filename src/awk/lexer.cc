@@ -774,6 +774,16 @@ void GD::Awk::Lexer::lex(bool allow_divide)
     case '=':
       lex_symbol(Token::Type::assign, '=', Token::Type::eq);
       return;
+    case '\\':
+      // Chew escaped newlines.
+      r_->chew();
+      if (r_->peek() != '\n') {
+        t_.emplace(Token::Type::error,
+                   r_->error(Msg::expected_newline_after_escape, static_cast<char>(r_->peek())));
+        return;
+      }
+      r_->chew();
+      break;
     default:
       t_.emplace(Token::Type::error,
                  r_->error(Msg::unexpected_token, static_cast<char>(r_->peek())));

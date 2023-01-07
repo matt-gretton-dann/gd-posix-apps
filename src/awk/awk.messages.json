@@ -410,6 +410,12 @@
         "id": 69,
         "description": "Expected a ']' at the end of the array subscripts but instead got {0}.",
         "C": "Expected ']' to complete array subscripts, but instead got {0}."
+      },
+      {
+        "msg": "expected_newline_after_escape",
+        "id": 70,
+        "description": "Expected a newline after `\\` at the end of a line.  Instead got {0}.",
+        "C": "Expected a newline after '\\' instead got {0}."
       }
     ]
   }
