@@ -201,7 +201,7 @@ void GD::Awk::Lexer::lex_number()
       break;
     case '+':
     case '-':
-      if (!floating || exponent_pos != num.size() + 1) {
+      if (!floating || exponent_pos != num.size() - 1) {
         cont = false;
         break;
       }

@@ -182,7 +182,6 @@ if (NOT WIN32)
           "awk/onetrueawk-awk/general/t.split9"
           "awk/onetrueawk-awk/general/t.split9a"
           "awk/onetrueawk-awk/general/t.strcmp"
-          "awk/onetrueawk-awk/general/t.strnum"
           "awk/onetrueawk-awk/general/t.sub0"
           "awk/onetrueawk-awk/general/t.sub1"
           "awk/onetrueawk-awk/general/t.sub2"
