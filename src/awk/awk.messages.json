@@ -418,6 +418,30 @@
         "C": "Expected a newline after '\\' instead got {0}."
       },
       {
+        "msg": "expected_lparens_after_builtin_func",
+        "id": 71,
+        "description": "Expected a '(' after call to builtin func {0}.  Instead got {1}.",
+        "C": "{0} should be followed by a '('.  Instead there was {1}."
+      },
+      {
+        "msg": "expected_expr_in_builtin_func",
+        "id": 72,
+        "description": "Missing parameter in call to builtin func.  Instead got {0}.",
+        "C": "Missing parameter in call to builtin function.  Instead got {0}."
+      },
+      {
+        "msg": "expected_rparens_after_builtin_func_parameter",
+        "id": 73,
+        "description": "Expected a ')' after the parameter to builtin function {0}.  Instead got {1}.",
+        "C": "Expected a ')' after the parameter to builtin function {0}.  Instead got {1}."
+      },
+      {
+        "msg": "builtin_only_takes_one_parameter",
+        "id": 74,
+        "description": "Builtin function {0} only takes one parameter.",
+        "C": "Builtin function {0} only takes one parameter."
+      },
+      {
         "msg": "missing_pattern_after_comma",
         "id": 71,
         "description": "Expected a second pattern after the comma, instead got {0}.",

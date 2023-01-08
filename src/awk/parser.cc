@@ -413,6 +413,34 @@ auto to_binary_op_opcode(Token::Type type) noexcept -> Instruction::Opcode
   }
 }
 
+auto to_builtin_func_opcode(Token::BuiltinFunc func) -> Instruction::Opcode
+{
+  switch (func) {
+  case Token::BuiltinFunc::length:
+    return Instruction::Opcode::length;
+  case Token::BuiltinFunc::atan2:
+    return Instruction::Opcode::atan2;
+  case Token::BuiltinFunc::cos:
+    return Instruction::Opcode::cos;
+  case Token::BuiltinFunc::sin:
+    return Instruction::Opcode::sin;
+  case Token::BuiltinFunc::exp:
+    return Instruction::Opcode::exp;
+  case Token::BuiltinFunc::log:
+    return Instruction::Opcode::log;
+  case Token::BuiltinFunc::sqrt:
+    return Instruction::Opcode::sqrt;
+  case Token::BuiltinFunc::int_:
+    return Instruction::Opcode::int_;
+  case Token::BuiltinFunc::rand:
+    return Instruction::Opcode::rand;
+  case Token::BuiltinFunc::srand:
+    return Instruction::Opcode::srand;
+  default:
+    std::abort();
+  }
+}
+
 class ParseState
 {
 public:
@@ -468,6 +496,30 @@ public:
     }
 
     return emitter.emit_expr(Instruction::Opcode::length, expr);
+  }
+
+  auto parse_bultin_func_one_parm_expr(InstructionEmitter& emitter, Token::BuiltinFunc func)
+    -> ExprResult
+  {
+    if (lexer_->peek(false) != Token::Type::lparens) {
+      error(Msg::expected_lparens_after_builtin_func, lexer_->location(), func,
+            lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    ExprResult const expr{parse_expr(emitter, ExprType::expr, Msg::expected_expr_in_builtin_func)};
+
+    if (lexer_->peek(false) != Token::Type::rparens) {
+      error(Msg::expected_rparens_after_builtin_func_parameter, lexer_->location(), func,
+            lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    if (expr.has_many_values()) {
+      error(Msg::builtin_only_takes_one_parameter, lexer_->location(), func);
+    }
+
+    return emitter.emit_expr(to_builtin_func_opcode(func), expr);
   }
 
   /** @brief Parse builtin functions.
@@ -540,7 +592,6 @@ public:
     switch (func) {
     case Token::BuiltinFunc::length:
       return parse_builtin_length_expr(emitter);
-    case Token::BuiltinFunc::atan2:
     case Token::BuiltinFunc::cos:
     case Token::BuiltinFunc::sin:
     case Token::BuiltinFunc::exp:
@@ -548,6 +599,9 @@ public:
     case Token::BuiltinFunc::sqrt:
     case Token::BuiltinFunc::int_:
     case Token::BuiltinFunc::rand:
+      return parse_bultin_func_one_parm_expr(emitter, func);
+      break;
+    case Token::BuiltinFunc::atan2:
     case Token::BuiltinFunc::srand:
     case Token::BuiltinFunc::index:
     case Token::BuiltinFunc::gsub:
@@ -1400,6 +1454,7 @@ public:
     return result;
   }
 
+  template<typename... Args>
   auto parse_expr(InstructionEmitter& emitter, ExprType expr_type, Msg error_msg) -> ExprResult
   {
     ExprResult result{parse_assignment_expr_opt(emitter, expr_type, UnaryType::both)};

@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-import sys
 import int_tests
 import os.path
 
@@ -122,6 +121,13 @@ test_awk('BEGIN { a[1 SUBSEP 2] = 20; print a[1, 2] }', "20\n")
 test_awk('BEGIN { SUBSEP=","; a["1,2"] = 20; print a[1, 2] }', "20\n")
 test_awk('BEGIN { for(i = 0; i < ARGC; ++i) print i, ARGV[i] }',
          f"0 {emp_data}\n", in_file=emp_data)
+test_awk('BEGIN { print sin(0) }', '0\n')
+test_awk('BEGIN { print cos(0) }', '1\n')
+# test_awk('BEGIN { piby4 = atan2(1, 1); print (cos(piby4) = sin(piby4))  }',
+#         '1\n')
+test_awk('BEGIN { print log(exp(10)), exp(log(10)) }', '10 10\n')
+test_awk('BEGIN { print sqrt(100) }', '10\n')
+test_awk('BEGIN { print int(10.382), int(10) }', '10 10\n')
 
 # Some error tests
 test_awk('BEGIN { print (1 }', None, expected_rc=1)

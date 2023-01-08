@@ -148,6 +148,16 @@ auto GD::Awk::Instruction::has_result(Opcode opcode) noexcept -> bool
   case GD::Awk::Instruction::Opcode::length:
   case GD::Awk::Instruction::Opcode::array:
   case GD::Awk::Instruction::Opcode::array_element:
+  case GD::Awk::Instruction::Opcode::atan2:
+  case GD::Awk::Instruction::Opcode::cos:
+  case GD::Awk::Instruction::Opcode::sin:
+  case GD::Awk::Instruction::Opcode::exp:
+  case GD::Awk::Instruction::Opcode::log:
+  case GD::Awk::Instruction::Opcode::sqrt:
+  case GD::Awk::Instruction::Opcode::int_:
+  case GD::Awk::Instruction::Opcode::rand:
+  case GD::Awk::Instruction::Opcode::srand:
+  case GD::Awk::Instruction::Opcode::current_time:
     return true;
   case GD::Awk::Instruction::Opcode::close_param_pack:
   case GD::Awk::Instruction::Opcode::store_lvalue:
@@ -281,6 +291,36 @@ auto GD::Awk::operator<<(std::ostream& os, GD::Awk::Instruction::Opcode opcode) 
   case GD::Awk::Instruction::Opcode::array_element:
     os << "array_element";
     break;
+  case Instruction::Opcode::atan2:
+    os << "atan2";
+    break;
+  case Instruction::Opcode::cos:
+    os << "cos";
+    break;
+  case Instruction::Opcode::sin:
+    os << "sin";
+    break;
+  case Instruction::Opcode::exp:
+    os << "exp";
+    break;
+  case Instruction::Opcode::log:
+    os << "log";
+    break;
+  case Instruction::Opcode::sqrt:
+    os << "sqrt";
+    break;
+  case Instruction::Opcode::int_:
+    os << "int_";
+    break;
+  case Instruction::Opcode::rand:
+    os << "rand";
+    break;
+  case Instruction::Opcode::srand:
+    os << "srand";
+    break;
+  case Instruction::Opcode::current_time:
+    os << "current_time";
+    break;
   }
   return os;
 }
@@ -289,6 +329,7 @@ auto GD::Awk::Instruction::op_count(Opcode opcode) noexcept -> unsigned
 {
   switch (opcode) {
   case GD::Awk::Instruction::Opcode::open_param_pack:
+  case GD::Awk::Instruction::Opcode::current_time:
     return 0;
   case GD::Awk::Instruction::Opcode::load_literal:
   case GD::Awk::Instruction::Opcode::load_lvalue:
@@ -305,6 +346,14 @@ auto GD::Awk::Instruction::op_count(Opcode opcode) noexcept -> unsigned
   case GD::Awk::Instruction::Opcode::copy:
   case GD::Awk::Instruction::Opcode::length:
   case GD::Awk::Instruction::Opcode::array:
+  case GD::Awk::Instruction::Opcode::cos:
+  case GD::Awk::Instruction::Opcode::sin:
+  case GD::Awk::Instruction::Opcode::exp:
+  case GD::Awk::Instruction::Opcode::log:
+  case GD::Awk::Instruction::Opcode::sqrt:
+  case GD::Awk::Instruction::Opcode::int_:
+  case GD::Awk::Instruction::Opcode::rand:
+  case GD::Awk::Instruction::Opcode::srand:
     return 1;
   case GD::Awk::Instruction::Opcode::store_lvalue:
   case GD::Awk::Instruction::Opcode::print:
@@ -329,6 +378,7 @@ auto GD::Awk::Instruction::op_count(Opcode opcode) noexcept -> unsigned
   case GD::Awk::Instruction::Opcode::logical_or:
   case GD::Awk::Instruction::Opcode::open:
   case GD::Awk::Instruction::Opcode::array_element:
+  case GD::Awk::Instruction::Opcode::atan2:
     return 2;
   }
 }
@@ -341,6 +391,7 @@ void GD::Awk::Instruction::validate_operands() const
   assert(op2_.has_value() == (op_count(opcode_) >= 2));
   switch (opcode_) {
   case GD::Awk::Instruction::Opcode::open_param_pack:
+  case GD::Awk::Instruction::Opcode::current_time:
     break;
   case GD::Awk::Instruction::Opcode::load_literal:
     // NOLINTNEXTLINE
@@ -370,6 +421,7 @@ void GD::Awk::Instruction::validate_operands() const
   case GD::Awk::Instruction::Opcode::re_match:
   case GD::Awk::Instruction::Opcode::logical_and:
   case GD::Awk::Instruction::Opcode::logical_or:
+  case GD::Awk::Instruction::Opcode::atan2:
     assert(std::holds_alternative<Index>(*op1_));  // NOLINT
     assert(std::holds_alternative<Index>(*op2_));  // NOLINT
     break;
@@ -399,6 +451,14 @@ void GD::Awk::Instruction::validate_operands() const
   case GD::Awk::Instruction::Opcode::copy:
   case GD::Awk::Instruction::Opcode::branch:
   case GD::Awk::Instruction::Opcode::length:
+  case GD::Awk::Instruction::Opcode::cos:
+  case GD::Awk::Instruction::Opcode::sin:
+  case GD::Awk::Instruction::Opcode::exp:
+  case GD::Awk::Instruction::Opcode::log:
+  case GD::Awk::Instruction::Opcode::sqrt:
+  case GD::Awk::Instruction::Opcode::int_:
+  case GD::Awk::Instruction::Opcode::rand:
+  case GD::Awk::Instruction::Opcode::srand:
     assert(std::holds_alternative<Index>(*op1_));  // NOLINT
     break;
   }

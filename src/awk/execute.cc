@@ -12,6 +12,8 @@
 #include "gd/unistd.h"
 
 #include <cctype>
+#include <cmath>
+#include <ctime>
 #include <map>
 #include <memory>
 #include <optional>
@@ -143,6 +145,12 @@ struct fmt::formatter<GD::Awk::Details::ExecutionValue>
 namespace GD::Awk::Details {
 /// Mapping of variable names to values.
 using VariableMap = std::map<std::string, ExecutionValue>;
+
+auto cos(double x) -> double { return std::cos(x); }
+auto sin(double x) -> double { return std::sin(x); }
+auto exp(double x) -> double { return std::exp(x); }
+auto log(double x) -> double { return std::log(x); }
+auto sqrt(double x) -> double { return std::sqrt(x); }
 
 auto do_int_add(Integer::underlying_type a, Integer::underlying_type b)
   -> std::optional<Integer::underlying_type>
@@ -505,6 +513,46 @@ public:
     }
 
     return Floating{float_op(*lhs_float, *rhs_float)};
+  }
+
+  static auto execute_math(std::vector<ExecutionValue> const& values,
+                           Instruction::Operand const& op, std::function<double(double)> const& fn)
+    -> ExecutionValue
+  {
+    assert(std::holds_alternative<Index>(op));
+    ExecutionValue const& op_value{values.at(std::get<Index>(op))};
+
+    auto const op_float{to_floating(op_value)};
+    if (!op_float.has_value()) {
+      error(Msg::unable_to_cast_value_to_float, op_value);
+    }
+
+    return Floating{fn(*op_float)};
+  }
+
+  static auto execute_int(std::vector<ExecutionValue> const& values, Instruction::Operand const& op)
+    -> ExecutionValue
+  {
+    assert(std::holds_alternative<Index>(op));
+    ExecutionValue const& value{values.at(std::get<Index>(op))};
+
+    // See if this is already an integer.
+    auto const integer{to_integer(value)};
+    if (integer.has_value()) {
+      return Integer{*integer};
+    }
+
+    auto const floating{to_floating(value)};
+    if (!floating.has_value()) {
+      error(Msg::unable_to_cast_value_to_float, value);
+    }
+
+    Floating const fresult{std::trunc(*floating)};
+    auto const iresult{static_cast<Integer::underlying_type>(fresult)};
+    if (static_cast<Floating>(iresult) == fresult) {
+      return Integer{iresult};
+    }
+    return Floating{fresult};
   }
 
   auto execute_add(std::vector<ExecutionValue> const& values, Instruction::Operand const& lhs,
@@ -1107,6 +1155,9 @@ public:
       }
       case Instruction::Opcode::open:
       case Instruction::Opcode::popen:
+      case Instruction::Opcode::atan2:
+      case Instruction::Opcode::rand:
+      case Instruction::Opcode::srand:
         std::abort();
         break;
       case Instruction::Opcode::print: {
@@ -1195,6 +1246,29 @@ public:
       case Instruction::Opcode::length:
         values.at(it->reg()) =
           execute_length(values, it->op1(), std::get<std::string>(var("CONVFMT")));
+        break;
+      case Instruction::Opcode::cos:
+        values.at(it->reg()) = execute_math(values, it->op1(), cos);
+        break;
+      case Instruction::Opcode::sin:
+        values.at(it->reg()) = execute_math(values, it->op1(), sin);
+        break;
+      case Instruction::Opcode::exp:
+        values.at(it->reg()) = execute_math(values, it->op1(), exp);
+        break;
+      case Instruction::Opcode::log:
+        values.at(it->reg()) = execute_math(values, it->op1(), log);
+        break;
+      case Instruction::Opcode::sqrt:
+        values.at(it->reg()) = execute_math(values, it->op1(), sqrt);
+        break;
+      case Instruction::Opcode::int_:
+        values.at(it->reg()) = execute_int(values, it->op1());
+        break;
+      case Instruction::Opcode::current_time: {
+        time_t const now{std::time(nullptr)};
+        values.at(it->reg()) = Integer{now};
+      } break;
       }
       if constexpr (debug) {
         if (it->has_reg()) {

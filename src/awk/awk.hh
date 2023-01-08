@@ -592,6 +592,16 @@ private:
  * | length                | Ix(S)       |             | Length of <op1>                          |
  * | array                 | VN          |             | Array                                    |
  * | array_element         | VN          | Ix(S)       | array element <op1>[<op2>]               |
+ * | atan2                 | Ix(F)       | Ix(F)       | atan2(<op1>, <op2>)                      |
+ * | cos                   | Ix(F)       |             | cos<op1>                                 |
+ * | sin                   | Ix(F)       |             | sin<op1>                                 |
+ * | exp                   | Ix(F)       |             | exp<op1>                                 |
+ * | log                   | Ix(F)       |             | log<op1>                                 |
+ * | sqrt                  | Ix(F)       |             | sqrt<op1>                                |
+ * | int_                  | Ix(F)       |             | int<op1>                                 |
+ * | rand                  | Ix(I)       |             | rand<op1>                                |
+ * | srand                 | Ix(I)       |             | srand<op1>                               |
+ * | current_time          |             |             | numer of second since epoch              |
  *
  * Parameter packs are identified by the index of the instruction corresponding to the
  * 'open_param_pack'.
@@ -640,6 +650,16 @@ public:
     length,                 ///< Length of a string
     array,                  ///< Array
     array_element,          ///< Element of an array
+    atan2,                  ///< atan2(y, x)
+    cos,                    ///< cos
+    sin,                    ///< sin
+    exp,                    ///< exponential
+    log,                    ///< natural log
+    sqrt,                   ///< square root
+    int_,                   ///< truncation to integer
+    rand,                   ///< Random number
+    srand,                  ///< Seed random number generator
+    current_time,           ///< Get the current time.
   };
 
   /** Type representing an offset of to an instruction. */
@@ -860,6 +880,48 @@ struct fmt::formatter<GD::Awk::Token>
   {
     std::ostringstream os;
     os << token;
+    // Work around Win32 STL bug:
+    return fmt::vformat_to(ctx.out(), "{0}", fmt::make_format_args(os.str()));
+  }
+};
+
+template<>
+struct fmt::formatter<GD::Awk::Token::BuiltinFunc>
+{
+  static constexpr auto parse(format_parse_context& ctx)
+  {
+    if (ctx.begin() != ctx.end() && *ctx.begin() != '}') {
+      throw format_error("invalid format");
+    }
+    return ctx.begin();
+  }
+
+  template<typename FormatContext>
+  auto format(GD::Awk::Token::BuiltinFunc const& func, FormatContext& ctx)
+  {
+    std::ostringstream os;
+    os << func;
+    // Work around Win32 STL bug:
+    return fmt::vformat_to(ctx.out(), "{0}", fmt::make_format_args(os.str()));
+  }
+};
+
+template<>
+struct fmt::formatter<GD::Awk::Token::Type>
+{
+  static constexpr auto parse(format_parse_context& ctx)
+  {
+    if (ctx.begin() != ctx.end() && *ctx.begin() != '}') {
+      throw format_error("invalid format");
+    }
+    return ctx.begin();
+  }
+
+  template<typename FormatContext>
+  auto format(GD::Awk::Token::Type const& type, FormatContext& ctx)
+  {
+    std::ostringstream os;
+    os << type;
     // Work around Win32 STL bug:
     return fmt::vformat_to(ctx.out(), "{0}", fmt::make_format_args(os.str()));
   }
