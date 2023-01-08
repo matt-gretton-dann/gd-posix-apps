@@ -476,6 +476,42 @@
         "id": 80,
         "description": "Missing second expr in call to builtin atan2.  Instead got {0}.",
         "C": "Missing second parameter in call to atan2().  Instead got {0}."
+      },
+      {
+        "msg": "expected_lparens_after_builtin_rand",
+        "id": 81,
+        "description": "Expected a '(' after call to builtin rand().  Instead got {0}.",
+        "C": "rand should be followed by a '('.  Instead there was {0}."
+      },
+      {
+        "msg": "expected_rparens_after_builtin_rand",
+        "id": 82,
+        "description": "Expected a ')' after call to builtin rand().  Instead got {0}.",
+        "C": "rand( should be followed by a ')'.  Instead there was {0}."
+      },
+      {
+        "msg": "expected_lparens_after_builtin_srand",
+        "id": 83,
+        "description": "Expected a '(' after call to builtin srand().  Instead got {0}.",
+        "C": "rand should be followed by a '('.  Instead there was {0}."
+      },
+      {
+        "msg": "expected_rparens_after_builtin_srand",
+        "id": 84,
+        "description": "Expected a ')' after call to builtin srand().  Instead got {0}.",
+        "C": "Missing closing ')' in call to srand().  Instead there was {0}."
+      },
+      {
+        "msg": "unable_to_cast_value_to_integer",
+        "id": 85,
+        "description": "Unable to cast the value {0} to an integer.",
+        "C": "Unable to cast the value {0} to an integer."
+      },
+      {
+        "msg": "builtin_srand_only_takes_one_parameter",
+        "id": 86,
+        "description": "Builtin srand() only takes one parameter.",
+        "C": "The builtin function srand() only takes one parameter."
       }
     ]
   }

@@ -599,7 +599,7 @@ private:
  * | log                   | Ix(F)       |             | log<op1>                                 |
  * | sqrt                  | Ix(F)       |             | sqrt<op1>                                |
  * | int_                  | Ix(F)       |             | int<op1>                                 |
- * | rand                  | Ix(I)       |             | rand<op1>                                |
+ * | rand                  |             |             | Return random number on [0,1]            |
  * | srand                 | Ix(I)       |             | srand<op1>                               |
  * | current_time          |             |             | numer of second since epoch              |
  *

@@ -329,6 +329,7 @@ auto GD::Awk::Instruction::op_count(Opcode opcode) noexcept -> unsigned
 {
   switch (opcode) {
   case GD::Awk::Instruction::Opcode::open_param_pack:
+  case GD::Awk::Instruction::Opcode::rand:
   case GD::Awk::Instruction::Opcode::current_time:
     return 0;
   case GD::Awk::Instruction::Opcode::load_literal:
@@ -352,7 +353,6 @@ auto GD::Awk::Instruction::op_count(Opcode opcode) noexcept -> unsigned
   case GD::Awk::Instruction::Opcode::log:
   case GD::Awk::Instruction::Opcode::sqrt:
   case GD::Awk::Instruction::Opcode::int_:
-  case GD::Awk::Instruction::Opcode::rand:
   case GD::Awk::Instruction::Opcode::srand:
     return 1;
   case GD::Awk::Instruction::Opcode::store_lvalue:
@@ -392,6 +392,7 @@ void GD::Awk::Instruction::validate_operands() const
   switch (opcode_) {
   case GD::Awk::Instruction::Opcode::open_param_pack:
   case GD::Awk::Instruction::Opcode::current_time:
+  case GD::Awk::Instruction::Opcode::rand:
     break;
   case GD::Awk::Instruction::Opcode::load_literal:
     // NOLINTNEXTLINE
@@ -457,7 +458,6 @@ void GD::Awk::Instruction::validate_operands() const
   case GD::Awk::Instruction::Opcode::log:
   case GD::Awk::Instruction::Opcode::sqrt:
   case GD::Awk::Instruction::Opcode::int_:
-  case GD::Awk::Instruction::Opcode::rand:
   case GD::Awk::Instruction::Opcode::srand:
     assert(std::holds_alternative<Index>(*op1_));  // NOLINT
     break;

@@ -310,15 +310,6 @@ public:
                       op);
   }
 
-  static auto read_integer(std::vector<ExecutionValue> const& values,
-                           Instruction::Operand const& index) -> Integer::underlying_type
-  {
-    assert(std::holds_alternative<Index>(index));
-    ExecutionValue value{values.at(std::get<Index>(index))};
-    assert(std::holds_alternative<Integer>(value));
-    return std::get<Integer>(value).get();
-  }
-
   static auto read_fd(std::vector<ExecutionValue> const& values, Instruction::Operand const& index)
     -> int
   {
@@ -1121,6 +1112,26 @@ public:
     return ArrayElement{an, *s};
   }
 
+  static auto execute_srand(std::vector<ExecutionValue>& values, Instruction::Operand const& expr)
+    -> Integer ::underlying_type
+  {
+    ExecutionValue const v{values.at(std::get<Index>(expr))};
+    auto oseed{to_integer(v)};
+    if (!oseed.has_value()) {
+      error(Msg::unable_to_cast_value_to_integer);
+    }
+    auto seed{*oseed};
+
+    // NOLINTNEXTLINE - API specifies unsigned short.
+    std::array<unsigned short, 3> seeda{
+      static_cast<unsigned short>(seed & 0xffff),           // NOLINT
+      static_cast<unsigned short>((seed >> 16) & 0xffff),   // NOLINT
+      static_cast<unsigned short>((seed >> 24) & 0xffff)};  // NOLINT
+
+    (void)seed48(seeda.data());  // NOLINT
+    return seed;
+  }
+
   void execute([[maybe_unused]] ParsedProgram const& program, Instructions::const_iterator begin,
                Instructions::const_iterator end)
   {
@@ -1176,8 +1187,6 @@ public:
       }
       case Instruction::Opcode::open:
       case Instruction::Opcode::popen:
-      case Instruction::Opcode::rand:
-      case Instruction::Opcode::srand:
         std::abort();
         break;
       case Instruction::Opcode::print: {
@@ -1288,8 +1297,15 @@ public:
       case Instruction::Opcode::int_:
         values.at(it->reg()) = execute_int(values, it->op1());
         break;
+      case Instruction::Opcode::rand:
+        values.at(it->reg()) = Floating{drand48()};  // NOLINT
+        break;
+      case Instruction::Opcode::srand:
+        values.at(it->reg()) = Integer{rand_seed};
+        rand_seed = execute_srand(values, it->op1());
+        break;
       case Instruction::Opcode::current_time: {
-        time_t const now{std::time(nullptr)};
+        auto const now{static_cast<Integer::underlying_type>(std::time(nullptr))};
         values.at(it->reg()) = Integer{now};
       } break;
       }
@@ -1458,6 +1474,7 @@ private:
   std::list<VariableMap> variables_stack_;
   std::vector<std::string> fields_;
   std::map<std::string, std::map<std::string, ExecutionValue>> arrays_;
+  Integer::underlying_type rand_seed{0};
 };
 
 }  // namespace GD::Awk::Details

@@ -134,6 +134,9 @@ test_awk('''BEGIN { piby4 = atan2(1, 1); sqrt1_2 = 1 / sqrt(2)
          '1\n1\n')
 test_awk('BEGIN { print sqrt(100) }', '10\n')
 test_awk('BEGIN { print int(10.382), int(10) }', '10 10\n')
+test_awk('''BEGIN { x = srand(20); a = rand(); y = srand(20); b = rand()
+                    print (a == b), y }''',
+         '1 20\n')
 
 # Some error tests
 test_awk('BEGIN { print (1 }', None, expected_rc=1)

@@ -554,6 +554,45 @@ public:
     return emitter.emit_expr(Instruction::Opcode::atan2, yexpr, xexpr);
   }
 
+  auto parse_builtin_func_rand_expr(InstructionEmitter& emitter) -> ExprResult
+  {
+    if (lexer_->peek(false) != Token::Type::lparens) {
+      error(Msg::expected_lparens_after_builtin_rand, lexer_->location(), lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    if (lexer_->peek(false) != Token::Type::rparens) {
+      error(Msg::expected_rparens_after_builtin_rand, lexer_->location(), lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    return emitter.emit_expr(Instruction::Opcode::rand);
+  }
+
+  auto parse_builtin_func_srand_expr(InstructionEmitter& emitter) -> ExprResult
+  {
+    if (lexer_->peek(false) != Token::Type::lparens) {
+      error(Msg::expected_lparens_after_builtin_srand, lexer_->location(), lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    ExprResult expr{parse_expr_opt(emitter, ExprType::expr)};
+    if (expr.has_no_values()) {
+      expr = emitter.emit_expr(Instruction::Opcode::current_time);
+    }
+
+    if (lexer_->peek(false) != Token::Type::rparens) {
+      error(Msg::expected_rparens_after_builtin_srand, lexer_->location(), lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    if (expr.has_many_values()) {
+      error(Msg::builtin_srand_only_takes_one_parameter, lexer_->location());
+    }
+
+    return emitter.emit_expr(Instruction::Opcode::srand, expr);
+  }
+
   /** @brief Parse builtin functions.
    *
    * @param  instrs     Where to emit code to
@@ -633,10 +672,14 @@ public:
     case Token::BuiltinFunc::log:
     case Token::BuiltinFunc::sqrt:
     case Token::BuiltinFunc::int_:
-    case Token::BuiltinFunc::rand:
       return parse_bultin_func_one_parm_expr(emitter, func);
       break;
+    case Token::BuiltinFunc::rand:
+      return parse_builtin_func_rand_expr(emitter);
+      break;
     case Token::BuiltinFunc::srand:
+      return parse_builtin_func_srand_expr(emitter);
+      break;
     case Token::BuiltinFunc::index:
     case Token::BuiltinFunc::gsub:
     case Token::BuiltinFunc::match:
@@ -2274,6 +2317,15 @@ public:
     while (lexer_->peek(false) == Token::Type::newline) {
       lexer_->chew(false);
     }
+
+    // First of all we need to do an implicit BEGIN { srand(); }.
+    // This needs to be in a block so that emitter is detroyed before we call it again.
+    {
+      InstructionEmitter emitter{program_.begin()};
+      emitter.emit_expr(Instruction::Opcode::srand,
+                        emitter.emit_expr(Instruction::Opcode::current_time));
+    }
+
     parse_item_list_maybe_unterminated();
     if (lexer_->peek(false) != Token::Type::eof) {
       error(Msg::failed_to_read_whole_program, lexer_->location(), lexer_->peek(false));
