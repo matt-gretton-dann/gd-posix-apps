@@ -515,6 +515,27 @@ public:
     return Floating{float_op(*lhs_float, *rhs_float)};
   }
 
+  static auto execute_atan2(std::vector<ExecutionValue> const& values,
+                            Instruction::Operand const& op1, Instruction::Operand const& op2)
+    -> ExecutionValue
+  {
+    assert(std::holds_alternative<Index>(op1));
+    assert(std::holds_alternative<Index>(op2));
+    ExecutionValue const& op1_value{values.at(std::get<Index>(op1))};
+    ExecutionValue const& op2_value{values.at(std::get<Index>(op2))};
+
+    auto const op1_float{to_floating(op1_value)};
+    auto const op2_float{to_floating(op2_value)};
+    if (!op1_float.has_value()) {
+      error(Msg::unable_to_cast_value_to_float, op1_value);
+    }
+    if (!op2_float.has_value()) {
+      error(Msg::unable_to_cast_value_to_float, op2_value);
+    }
+
+    return std::atan2(*op1_float, *op2_float);
+  }
+
   static auto execute_math(std::vector<ExecutionValue> const& values,
                            Instruction::Operand const& op, std::function<double(double)> const& fn)
     -> ExecutionValue
@@ -1155,7 +1176,6 @@ public:
       }
       case Instruction::Opcode::open:
       case Instruction::Opcode::popen:
-      case Instruction::Opcode::atan2:
       case Instruction::Opcode::rand:
       case Instruction::Opcode::srand:
         std::abort();
@@ -1246,6 +1266,9 @@ public:
       case Instruction::Opcode::length:
         values.at(it->reg()) =
           execute_length(values, it->op1(), std::get<std::string>(var("CONVFMT")));
+        break;
+      case Instruction::Opcode::atan2:
+        values.at(it->reg()) = execute_atan2(values, it->op1(), it->op2());
         break;
       case Instruction::Opcode::cos:
         values.at(it->reg()) = execute_math(values, it->op1(), cos);

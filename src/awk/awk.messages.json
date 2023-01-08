@@ -443,9 +443,39 @@
       },
       {
         "msg": "missing_pattern_after_comma",
-        "id": 71,
+        "id": 75,
         "description": "Expected a second pattern after the comma, instead got {0}.",
         "C": "Expected a second pattern after the comma, instead got {0}."
+      },
+      {
+        "msg": "expected_lparens_after_builtin_atan2",
+        "id": 76,
+        "description": "Expected a '(' after call to builtin atan2().  Instead got {0}.",
+        "C": "atan2 should be followed by a '('.  Instead there was {0}."
+      },
+      {
+        "msg": "expected_expr_in_builtin_atan2",
+        "id": 77,
+        "description": "Missing parameter in call to builtin atan2.  Instead got {0}.",
+        "C": "Missing parameter in call to atan2().  Instead got {0}."
+      },
+      {
+        "msg": "expected_comma_after_builtin_atan2_parameter",
+        "id": 78,
+        "description": "Expected a ',' after the first parameter to builtin function atan2.  Instead got {0}.",
+        "C": "Expected a ',' after the first parameter to atan2().  Instead got {0}."
+      },
+      {
+        "msg": "expected_rparens_after_builtin_atan2_parameters",
+        "id": 79,
+        "description": "Expected a ')' after the second parameter to builtin function atan2.  Instead got {0}.",
+        "C": "Expected a ')' after the second parameter to atan2().  Instead got {0}."
+      },
+      {
+        "msg": "expected_second_expr_in_builtin_atan2",
+        "id": 80,
+        "description": "Missing second expr in call to builtin atan2.  Instead got {0}.",
+        "C": "Missing second parameter in call to atan2().  Instead got {0}."
       }
     ]
   }

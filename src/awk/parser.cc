@@ -522,6 +522,38 @@ public:
     return emitter.emit_expr(to_builtin_func_opcode(func), expr);
   }
 
+  auto parse_builtin_func_atan2_expr(InstructionEmitter& emitter) -> ExprResult
+  {
+    if (lexer_->peek(false) != Token::Type::lparens) {
+      error(Msg::expected_lparens_after_builtin_atan2, lexer_->location(), lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    ExprResult const yexpr{
+      parse_expr(emitter, ExprType::expr, Msg::expected_expr_in_builtin_atan2)};
+
+    if (lexer_->peek(false) != Token::Type::comma) {
+      error(Msg::expected_comma_after_builtin_atan2_parameter, lexer_->location(),
+            lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    ExprResult const xexpr{
+      parse_expr(emitter, ExprType::expr, Msg::expected_second_expr_in_builtin_atan2)};
+
+    if (lexer_->peek(false) != Token::Type::rparens) {
+      error(Msg::expected_rparens_after_builtin_atan2_parameters, lexer_->location(),
+            lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    if (yexpr.has_many_values()) {
+      error(Msg::builtin_only_takes_one_parameter, lexer_->location());
+    }
+
+    return emitter.emit_expr(Instruction::Opcode::atan2, yexpr, xexpr);
+  }
+
   /** @brief Parse builtin functions.
    *
    * @param  instrs     Where to emit code to
@@ -592,6 +624,9 @@ public:
     switch (func) {
     case Token::BuiltinFunc::length:
       return parse_builtin_length_expr(emitter);
+    case Token::BuiltinFunc::atan2:
+      return parse_builtin_func_atan2_expr(emitter);
+      break;
     case Token::BuiltinFunc::cos:
     case Token::BuiltinFunc::sin:
     case Token::BuiltinFunc::exp:
@@ -601,7 +636,6 @@ public:
     case Token::BuiltinFunc::rand:
       return parse_bultin_func_one_parm_expr(emitter, func);
       break;
-    case Token::BuiltinFunc::atan2:
     case Token::BuiltinFunc::srand:
     case Token::BuiltinFunc::index:
     case Token::BuiltinFunc::gsub:
