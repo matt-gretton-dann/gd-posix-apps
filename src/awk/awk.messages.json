@@ -557,33 +557,51 @@
       },
       {
         "msg": "expected_expr_in_builtin_sub",
-        "id": 93,
+        "id": 94,
         "description": "Missing parameter in call to builtin sub.  Instead got {0}.",
         "C": "Missing parameter in call to sub().  Instead got {0}."
       },
       {
         "msg": "expected_second_expr_in_builtin_gsub",
-        "id": 94,
+        "id": 95,
         "description": "Missing second parameter in call to builtin gsub.  Instead got {0}.",
         "C": "Missing second parameter in call to gsub().  Instead got {0}."
       },
       {
         "msg": "expected_second_expr_in_builtin_sub",
-        "id": 95,
+        "id": 96,
         "description": "Missing second parameter in call to builtin sub.  Instead got {0}.",
         "C": "Missing second parameter in call to sub().  Instead got {0}."
       },
       {
         "msg": "expected_third_expr_in_builtin_gsub",
-        "id": 96,
+        "id": 97,
         "description": "Missing third parameter in call to builtin gsub.  Instead got {0}.",
         "C": "Missing third parameter in call to gsub().  Instead got {0}."
       },
       {
         "msg": "expected_third_expr_in_builtin_sub",
-        "id": 97,
+        "id": 98,
         "description": "Missing third parameter in call to builtin sub.  Instead got {0}.",
         "C": "Missing third parameter in call to sub().  Instead got {0}."
+      },
+      {
+        "msg": "cannot_get_negative_field",
+        "id": 99,
+        "description": "Field IDs must be >=0, not {0}.",
+        "C": "Field IDs must be >=0, not {0}."
+      },
+      {
+        "msg": "cannot_set_negative_field",
+        "id": 100,
+        "description": "Field IDs must be >=0, not {0}.",
+        "C": "Field IDs must be >=0, not {0}."
+      },
+      {
+        "msg": "empty_fs_undefined_behaviour",
+        "id": 101,
+        "description": "An empty FS variable causes undefined behaviour",
+        "C": "An empty FS variable is undefined behaviour."
       }
     ]
   }

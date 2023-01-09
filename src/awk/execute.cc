@@ -146,6 +146,174 @@ namespace GD::Awk::Details {
 /// Mapping of variable names to values.
 using VariableMap = std::map<std::string, ExecutionValue>;
 
+class Fields
+{
+  using OffsetLengthPair = std::pair<std::size_t, std::size_t>;
+
+public:
+  Fields() noexcept = default;  // NOLINT(bugprone-exception-escape)
+  Fields(Fields const&) = delete;
+  Fields(Fields&&) noexcept = delete;
+  auto operator=(Fields const&) -> Fields& = delete;
+  auto operator=(Fields&&) noexcept -> Fields& = delete;
+  ~Fields() = default;
+
+  [[nodiscard]] auto size() const noexcept -> std::size_t { return fields_.size(); }
+  void resize(std::size_t size, std::string const& ofs)
+  {
+    if (size == 0) {
+      fields_.clear();
+      field0_.clear();
+      return;
+    }
+
+    if (size < fields_.size()) {
+      fields_.resize(size);
+      auto [offset, length] = fields_.back();
+      field0_.resize(offset + length);
+      return;
+    }
+
+    if (size == fields_.size()) {
+      return;
+    }
+
+    // Increase size.
+    while (fields_.size() < size) {
+      field0_ += ofs;
+      fields_.emplace_back(field0_.size(), 0);
+    }
+  }
+
+  [[nodiscard]] auto field(Field f) const -> ExecutionValue
+  {
+    if (f.get() < 0) {
+      error(Msg::cannot_get_negative_field, f.get());
+    }
+
+    auto idx{static_cast<std::size_t>(f.get())};
+
+    if (idx == 0) {
+      return field0_;
+    }
+
+    if (idx <= fields_.size()) {
+      auto [offset, length] = fields_.at(idx - 1);
+      return field0_.substr(offset, length);
+    }
+
+    return std::nullopt;
+  }
+
+  void field(Field f, std::string const& str, std::string const& fs, std::string const& ofs)
+  {
+    if (f.get() < 0) {
+      error(Msg::cannot_set_negative_field, f.get());
+    }
+
+    auto idx{static_cast<std::size_t>(f.get())};
+
+    if (idx == 0) {
+      parse_fields(str, fs);
+      return;
+    }
+
+    if (idx <= fields_.size()) {
+      auto [offset, length] = fields_.at(idx - 1);
+      field0_.replace(offset, length, str);
+      auto delta{static_cast<std::vector<OffsetLengthPair>::difference_type>(str.size())};
+      delta -= static_cast<std::vector<OffsetLengthPair>::difference_type>(length);
+      fields_.at(idx - 1).second = str.size();
+      for (; idx < field0_.size(); ++idx) {
+        fields_.at(idx).first += delta;
+      }
+      return;
+    }
+
+    // Appending to the end.
+    resize(idx, ofs);
+    field0_ += str;
+    fields_.back().second = str.size();
+  }
+
+private:
+  void parse_fields(std::string const& field, std::string const& fs)  // NOLINT
+  {
+    // Clear the current fields, and set $0.
+    fields_.clear();
+    field0_ = field;
+
+    if (fs.empty()) {
+      error(Msg::empty_fs_undefined_behaviour);
+    }
+
+    if (fs == " ") {
+      parse_fs_space();
+    }
+    else if (fs.size() == 1) {
+      parse_fs_char(fs[0]);
+    }
+    else {
+      parse_fs_regex(std::regex{fs, std::regex_constants::awk});
+    }
+  }
+
+  void parse_fs_space()
+  {
+    std::size_t offset{0};
+    while (true) {
+      while (offset < field0_.size() &&
+             (std::isblank(field0_[offset]) != 0 || field0_[offset] == '\n')) {
+        ++offset;
+      }
+      if (offset == field0_.size()) {
+        return;
+      }
+      std::size_t const space{field0_.find_first_of(" \t\n", offset)};
+      if (space == std::string::npos) {
+        fields_.emplace_back(offset, field0_.size() - offset);
+        return;
+      }
+
+      fields_.emplace_back(offset, space - offset);
+      offset = space + 1;
+    }
+  }
+
+  void parse_fs_char(char fs)
+  {
+    std::size_t offset{0};
+    while (offset < field0_.size()) {
+      std::size_t const fs_appearance(field0_.find(fs, offset));
+      if (fs_appearance == std::string::npos) {
+        fields_.emplace_back(offset, field0_.size() - offset);
+        return;
+      }
+
+      fields_.emplace_back(offset, fs_appearance - offset);
+      offset = fs_appearance + 1;
+    }
+  }
+
+  // NOLINTNEXTLINE
+  void parse_fs_regex(std::regex const& re)
+  {
+    std::smatch sm;
+    std::size_t offset{0};
+    if (std::regex_search(field0_, sm, re)) {
+      for (std::size_t i{0}; i < sm.size(); ++i) {
+        std::size_t const length{sm.position(i) - offset};
+        fields_.emplace_back(offset, length);
+        offset = sm.position(i) + sm.length(i);
+      }
+    }
+    fields_.emplace_back(offset, field0_.size() - offset);
+  }
+
+  std::string field0_{};
+  std::vector<OffsetLengthPair> fields_{};
+};  // namespace GD::Awk::Details
+
 auto cos(double x) -> double { return std::cos(x); }
 auto sin(double x) -> double { return std::sin(x); }
 auto exp(double x) -> double { return std::exp(x); }
@@ -326,7 +494,7 @@ public:
     return std::visit(
       GD::Overloaded{
         [this](VariableName v) { return var(v.get()); },
-        [this](Field f) { return ExecutionValue{fields_.at(f.get())}; },
+        [this](Field f) { return ExecutionValue{fields_.field(f)}; },
         [this](ArrayElement const& elt) { return array_element(elt.first.get(), elt.second); },
         [](auto const&) {
           std::abort();
@@ -345,7 +513,11 @@ public:
 
     std::visit(GD::Overloaded{
                  [&value, this](VariableName v) { var(v.get(), value); },
-                 [&value, this](Field f) { fields_.at(f.get()) = std::get<std::string>(value); },
+                 [&value, this](Field f) {
+                   fields_.field(f, std::get<std::string>(value), std::get<std::string>(var("FS")),
+                                 std::get<std::string>(var("OFS")));
+                   var("NF", Integer{fields_.size()});
+                 },
                  [&value, this](ArrayElement const& elt) {
                    return array_element(elt.first.get(), elt.second, value);
                  },
@@ -1370,23 +1542,32 @@ public:
 
   /** \brief Assign \a value to \a var.
    *
-   * @param var   Variable to set
+   * @param name   Variable to set
    * @param value Value
    *
    * If \a var does not exist then a new variable is created at the global
    * state.
    */
-  void var(std::string const& var, ExecutionValue const& value)
+  void var(std::string const& name, ExecutionValue const& value)
   {
+    // Updating NF requires us to reset the fields_ variable.
+    if (name == "NF") {
+      auto size{to_integer(value)};
+      if (!size.has_value()) {
+        error(Msg::unable_to_cast_value_to_integer, value);
+      }
+      fields_.resize(static_cast<std::size_t>(*size), std::get<std::string>(var("OFS")));
+    }
+
     for (auto& map : variables_stack_) {
-      if (auto it{map.find(var)}; it != map.end()) {
+      if (auto it{map.find(name)}; it != map.end()) {
         it->second = value;
         return;
       }
     }
 
     // If the variable doesn't already exist then it is made a global variable.
-    variables_stack_.back().insert_or_assign(var, value);
+    variables_stack_.back().insert_or_assign(name, value);
   }
 
   // NOLINTNEXTLINE
@@ -1434,83 +1615,18 @@ public:
       return false;
     }
 
-    parse_record(record);
+    fields_.field(Field{0}, record, std::get<std::string>(var("FS")),
+                  std::get<std::string>(var("OFS")));
+    var("NF", Integer{fields_.size()});
     return true;
   }
 
-  void parse_record(std::string const& record)
-  {
-    // Clear the current fields, and set $0.
-    fields_.clear();
-    fields_.push_back(record);
-
-    // Determine the field separator.
-    std::string fs_var(std::get<std::string>(var("FS")));
-    if (fs_var.empty()) {
-      // TODO(mgrettondann): Implement: Undefined behaviour
-      std::abort();
-    }
-
-    if (fs_var == " ") {
-      parse_record_space(record);
-    }
-    else if (fs_var.size() == 1) {
-      parse_record_char(record, fs_var[0]);
-    }
-    else {
-      parse_record_regex(record, std::regex{fs_var, std::regex_constants::awk});
-    }
-
-    var("NF", static_cast<Integer>(fields_.size() - 1));
-  }
-
 private:
-  void parse_record_space(std::string const& record)
-  {
-    auto it{fields_.insert(fields_.end(), std::string{})};
-
-    for (auto c : record) {
-      if (std::isblank(c) != 0 || c == '\n') {
-        if (!it->empty()) {
-          it = fields_.insert(fields_.end(), std::string{});
-        }
-        continue;
-      }
-
-      *it += c;
-    }
-  }
-
-  void parse_record_char(std::string const& record, char fs)
-  {
-    auto it{fields_.insert(fields_.end(), std::string{})};
-
-    for (auto c : record) {
-      if (c == fs) {
-        if (!it->empty()) {
-          it = fields_.insert(fields_.end(), std::string{});
-        }
-        continue;
-      }
-
-      *it += c;
-    }
-  }
-
-  // NOLINTNEXTLINE
-  void parse_record_regex([[maybe_unused]] std::string const& record,
-                          [[maybe_unused]] std::regex const& re)
-  {
-    // TODO(mgrettondann): Implement - handling regex Field separators
-    std::abort();
-  }
-
   std::list<VariableMap> variables_stack_;
-  std::vector<std::string> fields_;
+  Fields fields_;
   std::map<std::string, std::map<std::string, ExecutionValue>> arrays_;
   Integer::underlying_type rand_seed{0};
 };
-
 }  // namespace GD::Awk::Details
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
