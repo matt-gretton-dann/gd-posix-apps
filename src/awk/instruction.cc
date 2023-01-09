@@ -66,6 +66,25 @@ GD::Awk::Instruction::Instruction(Opcode opcode, Index reg, Operand const& op1, 
   validate_operands();
 }
 
+GD::Awk::Instruction::Instruction(Opcode opcode, Operand const& op1, Operand const& op2,
+                                  Operand const& op3)
+    : opcode_(opcode), op1_(op1), op2_(op2), op3_(op3)
+{
+  assert(op_count(opcode) == 3);  // NOLINT
+  assert(!has_result(opcode));
+  validate_operands();
+}
+
+GD::Awk::Instruction::Instruction(Opcode opcode, Index reg, Operand const& op1, Operand const& op2,
+                                  Operand const& op3)
+    : opcode_(opcode), reg_(reg), op1_(op1), op2_(op2), op3_(op3)
+{
+  assert(op_count(opcode) == 3);  // NOLINT
+  assert(has_result(opcode));
+  assert(reg != illegal_index);
+  validate_operands();
+}
+
 auto GD::Awk::Instruction::opcode() const noexcept -> GD::Awk::Instruction::Opcode
 {
   return opcode_;
@@ -109,11 +128,29 @@ void GD::Awk::Instruction::op2(Operand const& operand)
   validate_operands();
 }
 
+auto GD::Awk::Instruction::op3() const -> GD::Awk::Instruction::Operand const&
+{
+  if (!op3_.has_value()) {
+    throw std::logic_error("Op 3 has no value.");
+  }
+  return *op3_;
+}
+
+void GD::Awk::Instruction::op3(Operand const& operand)
+{
+  assert(has_op3());  // NOLINT
+  op3_ = operand;
+  validate_operands();
+}
+
 auto GD::Awk::Instruction::has_op1() const noexcept -> bool { return has_op1(opcode_); }
 auto GD::Awk::Instruction::has_op2() const noexcept -> bool { return has_op2(opcode_); }
+auto GD::Awk::Instruction::has_op3() const noexcept -> bool { return has_op3(opcode_); }
 
 auto GD::Awk::Instruction::has_op1(Opcode opcode) noexcept -> bool { return op_count(opcode) >= 1; }
 auto GD::Awk::Instruction::has_op2(Opcode opcode) noexcept -> bool { return op_count(opcode) >= 2; }
+auto GD::Awk::Instruction::has_op3(Opcode opcode) noexcept -> bool { return op_count(opcode) >= 3; }
+
 auto GD::Awk::Instruction::has_result(Opcode opcode) noexcept -> bool
 {
   switch (opcode) {
@@ -158,6 +195,8 @@ auto GD::Awk::Instruction::has_result(Opcode opcode) noexcept -> bool
   case GD::Awk::Instruction::Opcode::rand:
   case GD::Awk::Instruction::Opcode::srand:
   case GD::Awk::Instruction::Opcode::current_time:
+  case GD::Awk::Instruction::Opcode::subst:
+  case GD::Awk::Instruction::Opcode::gsubst:
     return true;
   case GD::Awk::Instruction::Opcode::close_param_pack:
   case GD::Awk::Instruction::Opcode::store_lvalue:
@@ -321,6 +360,12 @@ auto GD::Awk::operator<<(std::ostream& os, GD::Awk::Instruction::Opcode opcode) 
   case Instruction::Opcode::current_time:
     os << "current_time";
     break;
+  case Instruction::Opcode::subst:
+    os << "subst";
+    break;
+  case Instruction::Opcode::gsubst:
+    os << "gsubst";
+    break;
   }
   return os;
 }
@@ -380,6 +425,9 @@ auto GD::Awk::Instruction::op_count(Opcode opcode) noexcept -> unsigned
   case GD::Awk::Instruction::Opcode::array_element:
   case GD::Awk::Instruction::Opcode::atan2:
     return 2;
+  case GD::Awk::Instruction::Opcode::subst:
+  case GD::Awk::Instruction::Opcode::gsubst:
+    return 3;
   }
 }
 
@@ -389,6 +437,7 @@ void GD::Awk::Instruction::validate_operands() const
   assert(has_reg() == has_result(opcode_));
   assert(op1_.has_value() == (op_count(opcode_) >= 1));
   assert(op2_.has_value() == (op_count(opcode_) >= 2));
+  assert(op3_.has_value() == (op_count(opcode_) >= 3));
   switch (opcode_) {
   case GD::Awk::Instruction::Opcode::open_param_pack:
   case GD::Awk::Instruction::Opcode::current_time:
@@ -461,6 +510,12 @@ void GD::Awk::Instruction::validate_operands() const
   case GD::Awk::Instruction::Opcode::srand:
     assert(std::holds_alternative<Index>(*op1_));  // NOLINT
     break;
+  case GD::Awk::Instruction::Opcode::subst:
+  case GD::Awk::Instruction::Opcode::gsubst:
+    assert(std::holds_alternative<Index>(*op1_));  // NOLINT
+    assert(std::holds_alternative<Index>(*op2_));  // NOLINT
+    assert(std::holds_alternative<Index>(*op3_));  // NOLINT
+    break;
   }
 #endif
 }
@@ -484,6 +539,9 @@ auto GD::Awk::operator<<(std::ostream& os, Instruction const& instruction) -> st
   }
   if (instruction.has_op2()) {
     os << ", " << instruction.op2();
+  }
+  if (instruction.has_op3()) {
+    os << ", " << instruction.op3();
   }
   if (instruction.has_reg()) {
     os << " -> " << instruction.reg();

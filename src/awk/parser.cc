@@ -281,9 +281,23 @@ public:
     // Index is allowed to be illegal_index.
     assert(expr1.has_one_value());
     assert(expr2.has_one_value());
-    bool const preserve_regex = opcode == Instruction::Opcode::re_match;
-    instrs_->emplace_back(opcode, reg_, dereference_lvalue_int(expr1, preserve_regex),
+    bool const preserve_regex{opcode == Instruction::Opcode::re_match};
+    instrs_->emplace_back(opcode, reg_, dereference_lvalue_int(expr1),
                           dereference_lvalue_int(expr2, preserve_regex));
+    return ExprResult{reg_++};
+  }
+
+  auto emit_expr(Instruction::Opcode opcode, ExprResult const& expr1, ExprResult const& expr2,
+                 ExprResult const& expr3) -> ExprResult
+  {
+    // Index is allowed to be illegal_index.
+    assert(expr1.has_one_value());
+    assert(expr2.has_one_value());
+    assert(expr3.has_one_value());
+    bool const preserve_regex{opcode == Instruction::Opcode::subst ||
+                              opcode == Instruction::Opcode::gsubst};
+    instrs_->emplace_back(opcode, reg_, dereference_lvalue_int(expr1, preserve_regex),
+                          dereference_lvalue_int(expr2), dereference_lvalue_int(expr3));
     return ExprResult{reg_++};
   }
 
@@ -593,6 +607,49 @@ public:
     return emitter.emit_expr(Instruction::Opcode::srand, expr);
   }
 
+  auto parse_builtin_func_subst_expr(InstructionEmitter& emitter, bool global) -> ExprResult
+  {
+    if (lexer_->peek(false) != Token::Type::lparens) {
+      error(global ? Msg::expected_lparens_after_builtin_gsub
+                   : Msg::expected_lparens_after_builtin_sub,
+            lexer_->location(), lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    ExprResult const re{
+      parse_expr(emitter, ExprType::expr,
+                 global ? Msg::expected_expr_in_builtin_gsub : Msg::expected_expr_in_builtin_sub)};
+
+    if (lexer_->peek(false) != Token::Type::comma) {
+      error(global ? Msg::expected_comma_after_builtin_gsub_parameter
+                   : Msg::expected_comma_after_builtin_sub_parameter,
+            lexer_->location(), lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    ExprResult const repl{parse_expr(emitter, ExprType::expr,
+                                     global ? Msg::expected_second_expr_in_builtin_gsub
+                                            : Msg::expected_second_expr_in_builtin_sub)};
+
+    ExprResult in;
+    if (lexer_->peek(false) == Token::Type::comma) {
+      lexer_->chew(false);
+      in = parse_expr(emitter, ExprType::expr,
+                      global ? Msg::expected_third_expr_in_builtin_gsub
+                             : Msg::expected_third_expr_in_builtin_sub);
+    }
+
+    if (lexer_->peek(false) != Token::Type::rparens) {
+      error(global ? Msg::expected_rparens_after_builtin_gsub
+                   : Msg::expected_rparens_after_builtin_sub,
+            lexer_->location(), lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    return emitter.emit_expr(global ? Instruction::Opcode::gsubst : Instruction::Opcode::subst, re,
+                             repl, in);
+  }
+
   /** @brief Parse builtin functions.
    *
    * @param  instrs     Where to emit code to
@@ -680,12 +737,16 @@ public:
     case Token::BuiltinFunc::srand:
       return parse_builtin_func_srand_expr(emitter);
       break;
-    case Token::BuiltinFunc::index:
     case Token::BuiltinFunc::gsub:
+      return parse_builtin_func_subst_expr(emitter, true);
+      break;
+    case Token::BuiltinFunc::sub:
+      return parse_builtin_func_subst_expr(emitter, false);
+      break;
+    case Token::BuiltinFunc::index:
     case Token::BuiltinFunc::match:
     case Token::BuiltinFunc::split:
     case Token::BuiltinFunc::sprintf:
-    case Token::BuiltinFunc::sub:
     case Token::BuiltinFunc::substr:
     case Token::BuiltinFunc::tolower:
     case Token::BuiltinFunc::toupper:

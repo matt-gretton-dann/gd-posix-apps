@@ -512,6 +512,78 @@
         "id": 86,
         "description": "Builtin srand() only takes one parameter.",
         "C": "The builtin function srand() only takes one parameter."
+      },
+      {
+        "msg": "expected_lparens_after_builtin_gsub",
+        "id": 87,
+        "description": "Expected a '(' after call to builtin gsub().  Instead got {0}.",
+        "C": "gsub should be followed by a '('.  Instead there was {0}."
+      },
+      {
+        "msg": "expected_lparens_after_builtin_sub",
+        "id": 88,
+        "description": "Expected a '(' after call to builtin sub().  Instead got {0}.",
+        "C": "sub should be followed by a '('.  Instead there was {0}."
+      },
+      {
+        "msg": "expected_rparens_after_builtin_gsub",
+        "id": 89,
+        "description": "Expected a ')' after call to builtin gsub().  Instead got {0}.",
+        "C": "Missing closing ')' in call to gsub().  Instead there was {0}."
+      },
+      {
+        "msg": "expected_rparens_after_builtin_sub",
+        "id": 90,
+        "description": "Expected a ')' after call to builtin sub().  Instead got {0}.",
+        "C": "Missing closing ')' in call to sub().  Instead there was {0}."
+      },
+      {
+        "msg": "expected_comma_after_builtin_gsub_parameter",
+        "id": 91,
+        "description": "Expected a ',' after the first parameter to builtin function gsub.  Instead got {0}.",
+        "C": "Expected a ',' after the first parameter to gsub().  Instead got {0}."
+      },
+      {
+        "msg": "expected_comma_after_builtin_sub_parameter",
+        "id": 92,
+        "description": "Expected a ',' after the first parameter to builtin function sub.  Instead got {0}.",
+        "C": "Expected a ',' after the first parameter to sub().  Instead got {0}."
+      },
+      {
+        "msg": "expected_expr_in_builtin_gsub",
+        "id": 93,
+        "description": "Missing parameter in call to builtin gsub.  Instead got {0}.",
+        "C": "Missing parameter in call to gsub().  Instead got {0}."
+      },
+      {
+        "msg": "expected_expr_in_builtin_sub",
+        "id": 93,
+        "description": "Missing parameter in call to builtin sub.  Instead got {0}.",
+        "C": "Missing parameter in call to sub().  Instead got {0}."
+      },
+      {
+        "msg": "expected_second_expr_in_builtin_gsub",
+        "id": 94,
+        "description": "Missing second parameter in call to builtin gsub.  Instead got {0}.",
+        "C": "Missing second parameter in call to gsub().  Instead got {0}."
+      },
+      {
+        "msg": "expected_second_expr_in_builtin_sub",
+        "id": 95,
+        "description": "Missing second parameter in call to builtin sub.  Instead got {0}.",
+        "C": "Missing second parameter in call to sub().  Instead got {0}."
+      },
+      {
+        "msg": "expected_third_expr_in_builtin_gsub",
+        "id": 96,
+        "description": "Missing third parameter in call to builtin gsub.  Instead got {0}.",
+        "C": "Missing third parameter in call to gsub().  Instead got {0}."
+      },
+      {
+        "msg": "expected_third_expr_in_builtin_sub",
+        "id": 97,
+        "description": "Missing third parameter in call to builtin sub.  Instead got {0}.",
+        "C": "Missing third parameter in call to sub().  Instead got {0}."
       }
     ]
   }

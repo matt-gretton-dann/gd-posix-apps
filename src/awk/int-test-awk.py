@@ -137,6 +137,14 @@ test_awk('BEGIN { print int(10.382), int(10) }', '10 10\n')
 test_awk('''BEGIN { x = srand(20); a = rand(); y = srand(20); b = rand()
                     print (a == b), y }''',
          '1 20\n')
+test_awk('BEGIN { print gsub(/[aeiou]/, "*", "Hello world!") }',
+         "H*ll* w*rld!\n")
+test_awk('BEGIN { print sub(/[aeiou]/, "*", "Hello world!") }',
+         "H*llo world!\n")
+test_awk('BEGIN { print gsub(/[aeiou]/, "[&]", "Hello world!") }',
+         "H[e]ll[o] w[o]rld!\n")
+test_awk('BEGIN { print gsub(/[aeiou]/, "\\\\&", "Hello world!") }',
+         "H&ll& w&rld!\n")
 
 # Some error tests
 test_awk('BEGIN { print (1 }', None, expected_rc=1)

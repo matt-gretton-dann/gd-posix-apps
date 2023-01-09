@@ -520,6 +520,7 @@ private:
   std::optional<Token> t2_;    ///< Second pending token.
 };
 
+// clang-format off
 /** \brief  An Instruction.
  *
  * Instructions contain an opcode, and up to two, statically typed, operands.
@@ -551,61 +552,64 @@ private:
  *  * S: castable to String
  *  * VN: Variable name
  *
- * | Opcode                |  Operand 1  |  Operand 2  |  Description                             |
- * | :-----------------    | :---------- | :---------- | :--------------------------------------- |
- * | field                 | Ix(I)       |             | Calculate the field ID from <op1>        |
- * | variable              | VN          |             | Name of a variable                       |
- * | load_literal          | I/F/S/R/FD  |             | Result is the literal in <op1>           |
- * | load_lvalue           | Ix(VN/FL)   |             | Load the lvalue identified by <op1>      |
- * | load_svalue           | Ix(VN/FL)   | Ix(I/F/S)   | Store <op2> into <op1>                   |
- * | print                 | Ix(I/F/S)   | Ix(FD)      | Print the value <op1> to stream <op2>    |
- * | printf                | Ix(I/F/S)   | Ix(FD)      | printf the params <op1> to stream <op2>  |
- * | open_param_pack       |             |             | Open a parameter pack                    |
- * | push_param            | Ix(PP)      | Ix(I/F/S)   | Push expr <op2> onto the front of <op1>  |
- * | close_param_pack      | Ix(PP)      |             | Close the parameter pack <op1>           |
- * | add                   | Ix(I/F)     | Ix(I/F)     | <op1> + <op2>                            |
- * | sub                   | Ix(I/F)     | Ix(I/F)     | <op1> - <op2>                            |
- * | power                 | Ix(I/F)     | Ix(I/F)     | <op1> ^ <op2>                            |
- * | to_number             | Ix(I/F)     |             | cast op1 to a number                     |
- * | to_bool               | Ix(B)       |             | cast op1 to a bool                       |
- * | negate                | Ix(I/F)     |             | -<op1>                                   |
- * | logical_not           | Ix(B)       |             | !<op1>                                   |
- * | multiply              | Ix(I/F)     | Ix(I/F)     | <op1> * <op2>                            |
- * | divide                | Ix(I/F)     | Ix(I/F)     | <op1> / <op2>                            |
- * | modulo                | Ix(I/F)     | Ix(I/F)     | <op1> % <op2>                            |
- * | concat                | Ix(S)       | Ix(S)       | concatenate <op1> and <op2>              |
- * | is_equal              | Ix(I/F/S)   | Ix(I/F/S)   | <op1> == <op2>                           |
- * | is_not_equal          | Ix(I/F/S)   | Ix(I/F/S)   | <op1> != <op2>                           |
- * | is_less_than          | Ix(I/F/S)   | Ix(I/F/S)   | <op1> <  <op2>                           |
- * | is_less_than_equal    | Ix(I/F/S)   | Ix(I/F/S)   | <op1> <= <op2>                           |
- * | is_greater_than       | Ix(I/F/S)   | Ix(I/F/S)   | <op1> >  <op2>                           |
- * | is_greater_than_equal | Ix(I/F/S)   | Ix(I/F/S)   | <op1> >= <op2>                           |
- * | branch_if_false       | Ix(B)       | Ix          | Branch to <op2> if <op1> is false        |
- * | re_match              | Ix(S)       | Ix(R)       | <op1> ~ <op2>                            |
- * | logical_or            | Ix(B)       | Ix(B)       | <op1> && <op2>                           |
- * | logical_and           | Ix(B)       | Ix(B)       | <op1> || <op2>                           |
- * | reserve_reg           | Ix          |             | Reserve space for <op1> result registers |
- * | open                  | Ix(S)       | I           | Open <op1>, If I is 1 append             |
- * | popen                 | Ix(S)       |             | Open <op1> as a process                  |
- * | branch                | Ix          |             | Branch to <op1>                          |
- * | copy                  | Ix          | Ix(any)     | Copy <op2> into <op1>                    |
- * | length                | Ix(S)       |             | Length of <op1>                          |
- * | array                 | VN          |             | Array                                    |
- * | array_element         | VN          | Ix(S)       | array element <op1>[<op2>]               |
- * | atan2                 | Ix(F)       | Ix(F)       | atan2(<op1>, <op2>)                      |
- * | cos                   | Ix(F)       |             | cos<op1>                                 |
- * | sin                   | Ix(F)       |             | sin<op1>                                 |
- * | exp                   | Ix(F)       |             | exp<op1>                                 |
- * | log                   | Ix(F)       |             | log<op1>                                 |
- * | sqrt                  | Ix(F)       |             | sqrt<op1>                                |
- * | int_                  | Ix(F)       |             | int<op1>                                 |
- * | rand                  |             |             | Return random number on [0,1]            |
- * | srand                 | Ix(I)       |             | srand<op1>                               |
- * | current_time          |             |             | numer of second since epoch              |
+ * |  Opcode               |  Result    |  Operand 1 |  Operand 2 |  Operand 3 |  Description                              |
+ * | :-----------------    | :--------- | :--------- | :--------- | :--------- | :---------------------------------------- |
+ * | field                 | FL         | Ix(I)      |            |            | <result> = $<op1>                        |
+ * | variable              | VN         | VN         |            |            | <result> = <op1> (name of variable)      |
+ * | load_literal          | I/F/S/R/FD | I/F/S/R/FD |            |            | <result> = <op1> (literal load)          |
+ * | load_lvalue           | I/F/S      | Ix(VN/FL)  |            |            | <result> = *<op1>                        |
+ * | store_lvalue          |            | Ix(VN/FL)  | Ix(I/F/S)  |            | *<op2> = <op1>                           |
+ * | print                 |            | Ix(I/F/S)  | Ix(FD)     |            | Print the value <op1> to stream <op2>    |
+ * | printf                |            | Ix(I/F/S)  | Ix(FD)     |            | printf the params <op1> to stream <op2>  |
+ * | open_param_pack       | PP         |            |            |            | Open a parameter pack                    |
+ * | push_param            |            | Ix(PP)     | Ix(I/F/S)  |            | Push expr <op2> onto the front of <op1>  |
+ * | close_param_pack      |            | Ix(PP)     |            |            | Close the parameter pack <op1>           |
+ * | add                   | I/F        | Ix(I/F)    | Ix(I/F)    |            | <result> = <op1> + <op2>                 |
+ * | sub                   | I/F        | Ix(I/F)    | Ix(I/F)    |            | <result> = <op1> - <op2>                 |
+ * | power                 | I/F        | Ix(I/F)    | Ix(I/F)    |            | <result> = <op1> ^ <op2>                 |
+ * | to_number             | I/F        | Ix(I/F)    |            |            | <result> = number(<op1>)                 |
+ * | to_bool               | B          | Ix(B)      |            |            | <result> = bool(<op1>)                   |
+ * | negate                | I/F        | Ix(I/F)    |            |            | <result> = -<op1>                        |
+ * | logical_not           | B          | Ix(B)      |            |            | <result> = !<op1>                        |
+ * | multiply              | I/F        | Ix(I/F)    | Ix(I/F)    |            | <result> = <op1> * <op2>                 |
+ * | divide                | I/F        | Ix(I/F)    | Ix(I/F)    |            | <result> = <op1> / <op2>                 |
+ * | modulo                | I/F        | Ix(I/F)    | Ix(I/F)    |            | <result> = <op1> % <op2>                 |
+ * | concat                | S          | Ix(S)      | Ix(S)      |            | <result> = <op1> + <op2> (concatenatiom) |
+ * | is_equal              | B          | Ix(I/F/S)  | Ix(I/F/S)  |            | <result> = (<op1> == <op2>)              |
+ * | is_not_equal          | B          | Ix(I/F/S)  | Ix(I/F/S)  |            | <result> = (<op1> != <op2>)              |
+ * | is_less_than          | B          | Ix(I/F/S)  | Ix(I/F/S)  |            | <result> = (<op1> <  <op2>)              |
+ * | is_less_than_equal    | B          | Ix(I/F/S)  | Ix(I/F/S)  |            | <result> = (<op1> <= <op2>)              |
+ * | is_greater_than       | B          | Ix(I/F/S)  | Ix(I/F/S)  |            | <result> = (<op1> >  <op2>)              |
+ * | is_greater_than_equal | B          | Ix(I/F/S)  | Ix(I/F/S)  |            | <result> = (<op1> >= <op2>)              |
+ * | branch_if_false       |            | Ix(B)      | Ix         |            | Branch to <op2> if <op1> is false        |
+ * | re_match              | B          | Ix(S)      | Ix(R)      |            | <result> = (<op1> ~ <op2>)               |
+ * | logical_or            | B          | Ix(B)      | Ix(B)      |            | <result> = (<op1> && <op2>)              |
+ * | logical_and           | B          | Ix(B)      | Ix(B)      |            | <result> = (<op1> || <op2>)              |
+ * | reserve_reg           |            | Ix         |            |            | Reserve space for <op1> result registers |
+ * | open                  | FD         | Ix(S)      | I          |            | Open <op1>, If I is 1 append             |
+ * | popen                 | FD         | Ix(S)      |            |            | Open <op1> as a process                  |
+ * | branch                |            | Ix         |            |            | Branch to <op1>                          |
+ * | copy                  |            | Ix         | Ix(any)    |            | Copy <op2> into <op1>                    |
+ * | length                | I          | Ix(S)      |            |            | <result> = Length of <op1> as string     |
+ * | array                 | AN         | AN         |            |            | Array                                    |
+ * | array_element         | (AN, S)    | AN         | Ix(S)      |            | array element <op1>[<op2>]               |
+ * | atan2                 | F          | Ix(F)      | Ix(F)      |            | <result> = atan2(<op1>, <op2>)           |
+ * | cos                   | F          | Ix(F)      |            |            | <result> = cos(<op1>)                    |
+ * | sin                   | F          | Ix(F)      |            |            | <result> = sin(<op1>)                    |
+ * | exp                   | F          | Ix(F)      |            |            | <result> = exp(<op1>)                    |
+ * | log                   | F          | Ix(F)      |            |            | <result> = log(<op1>)                    |
+ * | sqrt                  | F          | Ix(F)      |            |            | <result> = sqrt(<op1>)                   |
+ * | int_                  | I/F        | Ix(F)      |            |            | <result> = int(<op1>)                    |
+ * | rand                  | F          |            |            |            | <result> = random number on [0,1]        |
+ * | srand                 | I          | Ix(I)      |            |            | <result> = srand(<op1>)                  |
+ * | current_time          | I          |            |            |            | <result> = numer of second since epoch   |
+ * | subst                 | S          | Ix(R)      | Ix(S)      | Ix(S)      | <result> = s/<op1>/<op2>/ in <op3>       |
+ * | gsubst                | S          | Ix(R)      | Ix(S)      | Ix(S)      | <result> = s/<op1>/<op2>/g in <op3>      |
  *
  * Parameter packs are identified by the index of the instruction corresponding to the
  * 'open_param_pack'.
  */
+// clang-format on
 class Instruction
 {
 public:
@@ -660,6 +664,8 @@ public:
     rand,                   ///< Random number
     srand,                  ///< Seed random number generator
     current_time,           ///< Get the current time.
+    subst,                  ///< Single replacement
+    gsubst,                 ///< Global substitution
   };
 
   /** Type representing an offset of to an instruction. */
@@ -708,6 +714,23 @@ public:
    */
   Instruction(Opcode opcode, Index reg, Operand const& op1, Operand const& op2);
 
+  /** \brief        Constructor
+   *  \param opcode Opcode
+   *  \param op1    First  operand
+   *  \param op2    Second operand
+   *  \param op3    Third operand
+   */
+  Instruction(Opcode opcode, Operand const& op1, Operand const& op2, Operand const& op3);
+
+  /** \brief        Constructor
+   *  \param opcode Opcode
+   *  \param reg    Register for the result to go in
+   *  \param op1    First  operand
+   *  \param op2    Second operand
+   *  \param op3    Third operand
+   */
+  Instruction(Opcode opcode, Index reg, Operand const& op1, Operand const& op2, Operand const& op3);
+
   /** Get opcode */
   [[nodiscard]] auto opcode() const noexcept -> Opcode;
 
@@ -735,6 +758,15 @@ public:
   /** Update operand 2.  */
   void op2(Operand const& operand);
 
+  /** Do we have op3? */
+  [[nodiscard]] auto has_op3() const noexcept -> bool;
+
+  /** Get operand 3.  */
+  [[nodiscard]] auto op3() const -> Operand const&;
+
+  /** Update operand 3.  */
+  void op3(Operand const& operand);
+
 private:
   /** Do we have result? */
   [[nodiscard]] static auto has_result(Opcode opcode) noexcept -> bool;
@@ -744,6 +776,9 @@ private:
 
   /** Does \a opcode have op2? */
   [[nodiscard]] static auto has_op2(Opcode opcode) noexcept -> bool;
+
+  /** Does \a opcode have op2? */
+  [[nodiscard]] static auto has_op3(Opcode opcode) noexcept -> bool;
 
   /** \brief  How many operands does \a opcode take? */
   [[nodiscard]] static auto op_count(Opcode opcode) noexcept -> unsigned;
@@ -755,6 +790,7 @@ private:
   Index reg_{illegal_index};    ///< Result location
   std::optional<Operand> op1_;  ///< Operand 1
   std::optional<Operand> op2_;  ///< Operand 2
+  std::optional<Operand> op3_;  ///< Operand 2
 };
 
 /** Vector of instructions.  */

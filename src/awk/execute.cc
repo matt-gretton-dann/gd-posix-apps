@@ -1132,6 +1132,31 @@ public:
     return seed;
   }
 
+  static auto execute_subst(std::vector<ExecutionValue>& values, Instruction::Operand const& op_re,
+                            Instruction::Operand const& op_repl, Instruction::Operand const& op_str,
+                            bool global, std::string const& conv_fmt) -> ExecutionValue
+  {
+    auto re{to_re(values.at(std::get<Index>(op_re)), conv_fmt)};
+    auto repl{to_string(values.at(std::get<Index>(op_repl)), conv_fmt)};
+    auto str{to_string(values.at(std::get<Index>(op_str)), conv_fmt)};
+
+    if (!re.has_value()) {
+      error(Msg::unable_to_cast_value_to_re, values.at(std::get<Index>(op_re)));
+    }
+    if (!repl.has_value()) {
+      error(Msg::unable_to_cast_value_to_string, values.at(std::get<Index>(op_repl)));
+    }
+    if (!str.has_value()) {
+      error(Msg::unable_to_cast_value_to_string, values.at(std::get<Index>(op_str)));
+    }
+
+    auto flags{std::regex_constants::format_sed};
+    if (!global) {
+      flags |= std::regex_constants::format_first_only;
+    }
+    return std::regex_replace(*str, *re, *repl, flags);
+  }
+
   void execute([[maybe_unused]] ParsedProgram const& program, Instructions::const_iterator begin,
                Instructions::const_iterator end)
   {
@@ -1307,7 +1332,16 @@ public:
       case Instruction::Opcode::current_time: {
         auto const now{static_cast<Integer::underlying_type>(std::time(nullptr))};
         values.at(it->reg()) = Integer{now};
-      } break;
+        break;
+      }
+      case Instruction::Opcode::subst:
+        values.at(it->reg()) = execute_subst(values, it->op1(), it->op2(), it->op3(), false,
+                                             std::get<std::string>(var("CONVFMT")));
+        break;
+      case Instruction::Opcode::gsubst:
+        values.at(it->reg()) = execute_subst(values, it->op1(), it->op2(), it->op3(), true,
+                                             std::get<std::string>(var("CONVFMT")));
+        break;
       }
       if constexpr (debug) {
         if (it->has_reg()) {
