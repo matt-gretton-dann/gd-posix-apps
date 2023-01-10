@@ -1329,33 +1329,29 @@ public:
     }
 
     auto flags{std::regex_constants::format_sed};
-    if (!global) {
-      flags |= std::regex_constants::format_first_only;
-    }
 
-    std::string result{std::regex_replace(*str, *re, *repl, flags)};
-    store_lvalue(values, std::get<Index>(op_in), ExecutionValue{result});
-    std::smatch m;
+    std::string result;
     Integer::underlying_type matches{0};
-    std::string s{*str};
-    while (std::regex_search(s, m, *re, std::regex_constants::match_not_null)) {
+    std::smatch sm;
+    for (auto it{std::sregex_iterator(str->begin(), str->end(), *re)}; it != std::sregex_iterator();
+         ++it) {
       ++matches;
-      if (!global) {
-        break;
+      sm = *it;
+      result += sm.prefix();
+      if (global || matches == 1) {
+        result += sm.format(*repl, flags);
       }
-      if (s == m.suffix()) {
-        break;
-      }
-      s = m.suffix();
-      if (static_cast<std::size_t>(matches) > str->size()) {
-        std::abort();
+      else {
+        result += sm.str();
       }
     }
-    // Just in case there was an empty match we do one replacement
-    if (matches == 0 && result != *str) {
+    result += sm.suffix();
+    if (!result.empty()) {
+      store_lvalue(values, std::get<Index>(op_in), ExecutionValue{result});
+    }
+    if (!global && matches > 1) {
       matches = 1;
     }
-
     return Integer{matches};
   }
 
