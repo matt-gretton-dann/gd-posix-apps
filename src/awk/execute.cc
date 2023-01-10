@@ -224,7 +224,7 @@ public:
       auto delta{static_cast<std::vector<OffsetLengthPair>::difference_type>(str.size())};
       delta -= static_cast<std::vector<OffsetLengthPair>::difference_type>(length);
       fields_.at(idx - 1).second = str.size();
-      for (; idx < field0_.size(); ++idx) {
+      for (; idx < fields_.size(); ++idx) {
         fields_.at(idx).first += delta;
       }
       return;

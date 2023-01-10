@@ -45,7 +45,6 @@ if (NOT WIN32)
           XFAILS
           "awk/onetrueawk-awk/basic/p.32"
           "awk/onetrueawk-awk/basic/p.34"
-          "awk/onetrueawk-awk/basic/p.35"
           "awk/onetrueawk-awk/basic/p.36"
           "awk/onetrueawk-awk/basic/p.41"
           "awk/onetrueawk-awk/basic/p.43"
