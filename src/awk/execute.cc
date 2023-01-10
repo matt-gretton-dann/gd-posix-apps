@@ -148,8 +148,6 @@ using VariableMap = std::map<std::string, ExecutionValue>;
 
 class Fields
 {
-  using OffsetLengthPair = std::pair<std::size_t, std::size_t>;
-
 public:
   Fields() noexcept = default;  // NOLINT(bugprone-exception-escape)
   Fields(Fields const&) = delete;
@@ -158,31 +156,21 @@ public:
   auto operator=(Fields&&) noexcept -> Fields& = delete;
   ~Fields() = default;
 
-  [[nodiscard]] auto size() const noexcept -> std::size_t { return fields_.size(); }
+  [[nodiscard]] auto size() const noexcept -> std::size_t { return fields_.size() - 1; }
   void resize(std::size_t size, std::string const& ofs)
   {
     if (size == 0) {
       fields_.clear();
-      field0_.clear();
+      fields_.emplace_back();
       return;
     }
 
-    if (size < fields_.size()) {
-      fields_.resize(size);
-      auto [offset, length] = fields_.back();
-      field0_.resize(offset + length);
+    if (size == fields_.size() - 1) {
       return;
     }
 
-    if (size == fields_.size()) {
-      return;
-    }
-
-    // Increase size.
-    while (fields_.size() < size) {
-      field0_ += ofs;
-      fields_.emplace_back(field0_.size(), 0);
-    }
+    fields_.resize(size + 1);
+    recalculate_field0(ofs);
   }
 
   [[nodiscard]] auto field(Field f) const -> ExecutionValue
@@ -193,13 +181,8 @@ public:
 
     auto idx{static_cast<std::size_t>(f.get())};
 
-    if (idx == 0) {
-      return field0_;
-    }
-
-    if (idx <= fields_.size()) {
-      auto [offset, length] = fields_.at(idx - 1);
-      return field0_.substr(offset, length);
+    if (idx < fields_.size()) {
+      return fields_[idx];
     }
 
     return std::nullopt;
@@ -218,30 +201,37 @@ public:
       return;
     }
 
-    if (idx <= fields_.size()) {
-      auto [offset, length] = fields_.at(idx - 1);
-      field0_.replace(offset, length, str);
-      auto delta{static_cast<std::vector<OffsetLengthPair>::difference_type>(str.size())};
-      delta -= static_cast<std::vector<OffsetLengthPair>::difference_type>(length);
-      fields_.at(idx - 1).second = str.size();
-      for (; idx < fields_.size(); ++idx) {
-        fields_.at(idx).first += delta;
-      }
+    if (idx < fields_.size()) {
+      fields_[idx] = str;
+      recalculate_field0(ofs);
       return;
     }
 
     // Appending to the end.
-    resize(idx, ofs);
-    field0_ += str;
-    fields_.back().second = str.size();
+    fields_.resize(idx + 1);
+    fields_[idx] = str;
+    recalculate_field0(ofs);
   }
 
 private:
+  void recalculate_field0(std::string const& ofs)
+  {
+    auto it{fields_.begin() + 1};
+    fields_[0].clear();
+    while (it != fields_.end()) {
+      if (it != fields_.begin() + 1) {
+        fields_[0] += ofs;
+      }
+      fields_[0] += *it;
+      ++it;
+    }
+  }
+
   void parse_fields(std::string const& field, std::string const& fs)  // NOLINT
   {
     // Clear the current fields, and set $0.
     fields_.clear();
-    field0_ = field;
+    fields_.emplace_back(field);
 
     if (fs.empty()) {
       error(Msg::empty_fs_undefined_behaviour);
@@ -262,20 +252,22 @@ private:
   {
     std::size_t offset{0};
     while (true) {
-      while (offset < field0_.size() &&
-             (std::isblank(field0_[offset]) != 0 || field0_[offset] == '\n')) {
+      while (offset < fields_[0].size() &&
+             (std::isblank(fields_[0][offset]) != 0 || fields_[0][offset] == '\n')) {
         ++offset;
       }
-      if (offset == field0_.size()) {
+      if (offset == fields_[0].size()) {
         return;
       }
-      std::size_t const space{field0_.find_first_of(" \t\n", offset)};
+      std::size_t const space{fields_[0].find_first_of(" \t\n", offset)};
       if (space == std::string::npos) {
-        fields_.emplace_back(offset, field0_.size() - offset);
+        // NOLINTNEXTLINE
+        fields_.emplace_back(fields_[0].data() + offset, fields_[0].size() - offset);
         return;
       }
 
-      fields_.emplace_back(offset, space - offset);
+      // NOLINTNEXTLINE
+      fields_.emplace_back(fields_[0].data() + offset, space - offset);
       offset = space + 1;
     }
   }
@@ -283,14 +275,17 @@ private:
   void parse_fs_char(char fs)
   {
     std::size_t offset{0};
-    while (offset < field0_.size()) {
-      std::size_t const fs_appearance(field0_.find(fs, offset));
+
+    while (offset < fields_[0].size()) {
+      std::size_t const fs_appearance(fields_[0].find(fs, offset));
       if (fs_appearance == std::string::npos) {
-        fields_.emplace_back(offset, field0_.size() - offset);
+        // NOLINTNEXTLINE
+        fields_.emplace_back(fields_[0].data() + offset, fields_[0].size() - offset);
         return;
       }
 
-      fields_.emplace_back(offset, fs_appearance - offset);
+      // NOLINTNEXTLINE
+      fields_.emplace_back(fields_[0].data() + offset, fs_appearance - offset);
       offset = fs_appearance + 1;
     }
   }
@@ -300,18 +295,19 @@ private:
   {
     std::smatch sm;
     std::size_t offset{0};
-    if (std::regex_search(field0_, sm, re)) {
+
+    if (std::regex_search(fields_[0], sm, re)) {
       for (std::size_t i{0}; i < sm.size(); ++i) {
         std::size_t const length{sm.position(i) - offset};
-        fields_.emplace_back(offset, length);
+        fields_.emplace_back(fields_[0].data() + offset, length);  // NOLINT
         offset = sm.position(i) + sm.length(i);
       }
     }
-    fields_.emplace_back(offset, field0_.size() - offset);
+    // NOLINTNEXTLINE
+    fields_.emplace_back(fields_[0].data() + offset, fields_[0].size() - offset);
   }
 
-  std::string field0_{};
-  std::vector<OffsetLengthPair> fields_{};
+  std::vector<std::string> fields_{};
 };  // namespace GD::Awk::Details
 
 auto cos(double x) -> double { return std::cos(x); }
