@@ -198,6 +198,7 @@ auto GD::Awk::Instruction::has_result(Opcode opcode) noexcept -> bool
   case Opcode::subst:
   case Opcode::gsubst:
   case Opcode::index:
+  case Opcode::match:
     return true;
   case Opcode::close_param_pack:
   case Opcode::store_lvalue:
@@ -370,6 +371,9 @@ auto GD::Awk::operator<<(std::ostream& os, GD::Awk::Instruction::Opcode opcode) 
   case Instruction::Opcode::index:
     os << "index";
     break;
+  case Instruction::Opcode::match:
+    os << "match";
+    break;
   }
   return os;
 }
@@ -429,6 +433,7 @@ auto GD::Awk::Instruction::op_count(Opcode opcode) noexcept -> unsigned
   case Opcode::open:
   case Opcode::array_element:
   case Opcode::index:
+  case Opcode::match:
     return 2;
   case Opcode::subst:
   case Opcode::gsubst:
@@ -478,6 +483,7 @@ void GD::Awk::Instruction::validate_operands() const
   case Opcode::logical_or:
   case Opcode::atan2:
   case Opcode::index:
+  case Opcode::match:
     assert(std::holds_alternative<Index>(*op1_));  // NOLINT
     assert(std::holds_alternative<Index>(*op2_));  // NOLINT
     break;

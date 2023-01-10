@@ -130,7 +130,6 @@ if (NOT WIN32)
           "awk/onetrueawk-awk/general/t.j.x"
           "awk/onetrueawk-awk/general/t.longstr"
           "awk/onetrueawk-awk/general/t.makef"
-          "awk/onetrueawk-awk/general/t.match1"
           "awk/onetrueawk-awk/general/t.nameval"
           "awk/onetrueawk-awk/general/t.next"
           "awk/onetrueawk-awk/general/t.null0"

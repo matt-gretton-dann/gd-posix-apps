@@ -281,7 +281,8 @@ public:
     // Index is allowed to be illegal_index.
     assert(expr1.has_one_value());
     assert(expr2.has_one_value());
-    bool const preserve_regex{opcode == Instruction::Opcode::re_match};
+    bool const preserve_regex{opcode == Instruction::Opcode::re_match ||
+                              opcode == Instruction::Opcode::match};
     instrs_->emplace_back(opcode, reg_, dereference_lvalue_int(expr1),
                           dereference_lvalue_int(expr2, preserve_regex));
     return ExprResult{reg_++};
@@ -600,6 +601,34 @@ public:
     return emitter.emit_expr(Instruction::Opcode::index, sexpr, texpr);
   }
 
+  auto parse_builtin_func_match_expr(InstructionEmitter& emitter) -> ExprResult
+  {
+    if (lexer_->peek(false) != Token::Type::lparens) {
+      error(Msg::expected_lparens_after_builtin_match, lexer_->location(), lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    ExprResult const sexpr{
+      parse_expr(emitter, ExprType::expr, Msg::expected_expr_in_builtin_match)};
+
+    if (lexer_->peek(false) != Token::Type::comma) {
+      error(Msg::expected_comma_after_builtin_match_parameter, lexer_->location(),
+            lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    ExprResult const texpr{
+      parse_expr(emitter, ExprType::expr, Msg::expected_second_expr_in_builtin_match)};
+
+    if (lexer_->peek(false) != Token::Type::rparens) {
+      error(Msg::expected_rparens_after_builtin_match_parameters, lexer_->location(),
+            lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    return emitter.emit_expr(Instruction::Opcode::match, sexpr, texpr);
+  }
+
   auto parse_builtin_func_rand_expr(InstructionEmitter& emitter) -> ExprResult
   {
     if (lexer_->peek(false) != Token::Type::lparens) {
@@ -789,6 +818,8 @@ public:
       return parse_builtin_func_index_expr(emitter);
       break;
     case Token::BuiltinFunc::match:
+      return parse_builtin_func_match_expr(emitter);
+      break;
     case Token::BuiltinFunc::split:
     case Token::BuiltinFunc::sprintf:
     case Token::BuiltinFunc::substr:

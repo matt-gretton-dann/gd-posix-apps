@@ -155,6 +155,11 @@ test_awk(
 test_awk(
     'BEGIN { print index("Hello world!", "zzz"), index("Hello world!", "o ") }',
     '0 5\n')
+test_awk(
+    'BEGIN { print match("Hello world!", /zzz/), RSTART, RLENGTH }',
+    "0 0 -1\n")
+test_awk('BEGIN { print match("Hello world!", /o wo/), RSTART, RLENGTH }',
+         "5 5 4\n")
 
 # Some error tests
 test_awk('BEGIN { print (1 }', None, expected_rc=1)

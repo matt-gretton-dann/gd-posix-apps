@@ -996,28 +996,37 @@ public:
     error(Msg::unable_to_cast_value_to_string, lhs_value);
   }
 
+  static auto execute_match(std::vector<ExecutionValue> const& values,
+                            Instruction::Operand const& op_s, Instruction::Operand const& op_re,
+                            std::string const& conv_fmt)
+    -> std::pair<ExecutionValue, ExecutionValue>
+  {
+    auto str{to_string(values.at(std::get<Index>(op_s)), conv_fmt)};
+    auto re{to_re(values.at(std::get<Index>(op_re)), conv_fmt)};
+
+    if (!re.has_value()) {
+      error(Msg::unable_to_cast_value_to_re, values.at(std::get<Index>(op_re)));
+    }
+    if (!str.has_value()) {
+      error(Msg::unable_to_cast_value_to_string, values.at(std::get<Index>(op_s)));
+    }
+
+    std::smatch sm;
+    if (!regex_search(*str, sm, *re)) {
+      return {Integer{0}, Integer{-1}};
+    }
+
+    Integer::underlying_type const pos{sm.position() + 1};
+    Integer::underlying_type const len{sm.length()};
+    return {Integer{pos}, Integer{len}};
+  }
+
   static auto execute_re_match(std::vector<ExecutionValue> const& values,
                                Instruction::Operand const& lhs, Instruction::Operand const& rhs,
                                std::string const& conv_fmt) -> ExecutionValue
   {
-    assert(std::holds_alternative<Index>(lhs));
-    assert(std::holds_alternative<Index>(rhs));
-    ExecutionValue const& lhs_value{values.at(std::get<Index>(lhs))};
-    ExecutionValue const& rhs_value{values.at(std::get<Index>(rhs))};
-    auto const lhs_str{to_string(lhs_value, conv_fmt)};
-    auto const rhs_re{to_re(rhs_value, conv_fmt)};
-    if (lhs_str.has_value() && rhs_re.has_value()) {
-      return std::regex_search(*lhs_str, *rhs_re);
-    }
-
-    if (!lhs_str.has_value()) {
-      error(Msg::unable_to_cast_value_to_string, lhs_value);
-    }
-    if (rhs_re.has_value()) {
-      error(Msg::unable_to_cast_value_to_re, rhs_value);
-    }
-
-    std::abort();
+    auto [pos, len] = execute_match(values, lhs, rhs, conv_fmt);
+    return bool{std::get<Integer>(pos).get() != 0};
   }
 
   template<typename NumFn, typename StringFn>
@@ -1567,6 +1576,14 @@ public:
         values.at(it->reg()) =
           execute_index(values, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
         break;
+      case Instruction::Opcode::match: {
+        auto [pos, len] =
+          execute_match(values, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
+        values.at(it->reg()) = pos;
+        var("RSTART", pos);
+        var("RLENGTH", len);
+        break;
+      }
       }
       if constexpr (debug) {
         if (it->has_reg()) {

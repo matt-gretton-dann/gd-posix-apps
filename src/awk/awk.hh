@@ -606,6 +606,7 @@ private:
  * | subst                 | S          | Ix(R)      | Ix(S)      | Ix(S)      | <result> = s/<op1>/<op2>/ in <op3>       |
  * | gsubst                | S          | Ix(R)      | Ix(S)      | Ix(S)      | <result> = s/<op1>/<op2>/g in <op3>      |
  * | index                 | I          | Ix(S)      | Ix(S)      |            | <result> = index(<op1>, <op2>)           |
+ * | match                 | I          | Ix(S)      | Ix(R)      |            | <result> = match(<op1>, <op2>)           |
  *
  * Parameter packs are identified by the index of the instruction corresponding to the
  * 'open_param_pack'.
@@ -668,6 +669,7 @@ public:
     subst,                  ///< Single replacement
     gsubst,                 ///< Global substitution
     index,                  ///< Index of <op2> in <op1>
+    match,                  ///< Match re <op2> with <op1>
   };
 
   /** Type representing an offset of to an instruction. */

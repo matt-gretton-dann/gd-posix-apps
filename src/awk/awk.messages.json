@@ -644,6 +644,36 @@
         "id": 108,
         "description": "Missing second expr in call to builtin index.  Instead got {0}.",
         "C": "Missing second parameter in call to index().  Instead got {0}."
+      },
+      {
+        "msg": "expected_lparens_after_builtin_match",
+        "id": 109,
+        "description": "Expected a '(' after call to builtin match().  Instead got {0}.",
+        "C": "match should be followed by a '('.  Instead there was {0}."
+      },
+      {
+        "msg": "expected_expr_in_builtin_match",
+        "id": 110,
+        "description": "Missing parameter in call to builtin match.  Instead got {0}.",
+        "C": "Missing parameter in call to match.  Instead got {0}."
+      },
+      {
+        "msg": "expected_comma_after_builtin_match_parameter",
+        "id": 111,
+        "description": "Expected a ',' after the first parameter to builtin function match.  Instead got {0}.",
+        "C": "Expected a ',' after the first parameter to match().  Instead got {0}."
+      },
+      {
+        "msg": "expected_rparens_after_builtin_match_parameters",
+        "id": 112,
+        "description": "Expected a ')' after the second parameter to builtin function match.  Instead got {0}.",
+        "C": "Expected a ')' after the second parameter to match().  Instead got {0}."
+      },
+      {
+        "msg": "expected_second_expr_in_builtin_match",
+        "id": 113,
+        "description": "Missing second expr in call to builtin match.  Instead got {0}.",
+        "C": "Missing second parameter in call to match().  Instead got {0}."
       }
     ]
   }
