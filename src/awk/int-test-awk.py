@@ -152,6 +152,9 @@ test_awk(
 test_awk(
     'BEGIN { a="Hello world!"; print gsub(/[aeiou]/, "\\\\&", a), a }',
     "3 H&ll& w&rld!\n")
+test_awk(
+    'BEGIN { print index("Hello world!", "zzz"), index("Hello world!", "o ") }',
+    '0 5\n')
 
 # Some error tests
 test_awk('BEGIN { print (1 }', None, expected_rc=1)

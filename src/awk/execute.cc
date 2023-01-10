@@ -1355,6 +1355,29 @@ public:
     return Integer{matches};
   }
 
+  static auto execute_index(std::vector<ExecutionValue>& values, Instruction::Operand const& sop,
+                            Instruction::Operand const& top, std::string const& conv_fmt) -> Integer
+  {
+    auto const& s{to_string(values.at(std::get<Index>(sop)), conv_fmt)};
+    auto const& t{to_string(values.at(std::get<Index>(top)), conv_fmt)};
+
+    if (!s.has_value()) {
+      error(Msg::unable_to_cast_value_to_string, values.at(std::get<Index>(sop)));
+    }
+    if (!t.has_value()) {
+      error(Msg::unable_to_cast_value_to_string, values.at(std::get<Index>(sop)));
+    }
+
+    auto result{s->find(*t)};
+    if (result == std::string::npos) {
+      result = 0;
+    }
+    else {
+      ++result;
+    }
+    return Integer{result};
+  }
+
   void execute([[maybe_unused]] ParsedProgram const& program, Instructions::const_iterator begin,
                Instructions::const_iterator end)
   {
@@ -1539,6 +1562,10 @@ public:
       case Instruction::Opcode::gsubst:
         values.at(it->reg()) = execute_subst(values, it->op1(), it->op2(), it->op3(), true,
                                              std::get<std::string>(var("CONVFMT")));
+        break;
+      case Instruction::Opcode::index:
+        values.at(it->reg()) =
+          execute_index(values, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
         break;
       }
       if constexpr (debug) {

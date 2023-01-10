@@ -614,6 +614,36 @@
         "id": 103,
         "description": "The third parameter of sub(re, repl, in) must be an lvalue if present",
         "C": "The third parameter of sub must be an lvalue if present."
+      },
+      {
+        "msg": "expected_lparens_after_builtin_index",
+        "id": 104,
+        "description": "Expected a '(' after call to builtin index().  Instead got {0}.",
+        "C": "index should be followed by a '('.  Instead there was {0}."
+      },
+      {
+        "msg": "expected_expr_in_builtin_index",
+        "id": 105,
+        "description": "Missing parameter in call to builtin index.  Instead got {0}.",
+        "C": "Missing parameter in call to index.  Instead got {0}."
+      },
+      {
+        "msg": "expected_comma_after_builtin_index_parameter",
+        "id": 106,
+        "description": "Expected a ',' after the first parameter to builtin function index.  Instead got {0}.",
+        "C": "Expected a ',' after the first parameter to index().  Instead got {0}."
+      },
+      {
+        "msg": "expected_rparens_after_builtin_index_parameters",
+        "id": 107,
+        "description": "Expected a ')' after the second parameter to builtin function index.  Instead got {0}.",
+        "C": "Expected a ')' after the second parameter to index().  Instead got {0}."
+      },
+      {
+        "msg": "expected_second_expr_in_builtin_index",
+        "id": 108,
+        "description": "Missing second expr in call to builtin index.  Instead got {0}.",
+        "C": "Missing second parameter in call to index().  Instead got {0}."
       }
     ]
   }

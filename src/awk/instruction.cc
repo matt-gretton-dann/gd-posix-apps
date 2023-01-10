@@ -154,58 +154,59 @@ auto GD::Awk::Instruction::has_op3(Opcode opcode) noexcept -> bool { return op_c
 auto GD::Awk::Instruction::has_result(Opcode opcode) noexcept -> bool
 {
   switch (opcode) {
-  case GD::Awk::Instruction::Opcode::open_param_pack:
-  case GD::Awk::Instruction::Opcode::load_literal:
-  case GD::Awk::Instruction::Opcode::load_lvalue:
-  case GD::Awk::Instruction::Opcode::field:
-  case GD::Awk::Instruction::Opcode::variable:
-  case GD::Awk::Instruction::Opcode::to_number:
-  case GD::Awk::Instruction::Opcode::to_bool:
-  case GD::Awk::Instruction::Opcode::negate:
-  case GD::Awk::Instruction::Opcode::logical_not:
-  case GD::Awk::Instruction::Opcode::add:
-  case GD::Awk::Instruction::Opcode::sub:
-  case GD::Awk::Instruction::Opcode::power:
-  case GD::Awk::Instruction::Opcode::multiply:
-  case GD::Awk::Instruction::Opcode::divide:
-  case GD::Awk::Instruction::Opcode::modulo:
-  case GD::Awk::Instruction::Opcode::concat:
-  case GD::Awk::Instruction::Opcode::is_equal:
-  case GD::Awk::Instruction::Opcode::is_greater_than_equal:
-  case GD::Awk::Instruction::Opcode::is_greater_than:
-  case GD::Awk::Instruction::Opcode::is_less_than_equal:
-  case GD::Awk::Instruction::Opcode::is_less_than:
-  case GD::Awk::Instruction::Opcode::is_not_equal:
-  case GD::Awk::Instruction::Opcode::re_match:
-  case GD::Awk::Instruction::Opcode::logical_and:
-  case GD::Awk::Instruction::Opcode::logical_or:
-  case GD::Awk::Instruction::Opcode::open:
-  case GD::Awk::Instruction::Opcode::popen:
-  case GD::Awk::Instruction::Opcode::copy:
-  case GD::Awk::Instruction::Opcode::length:
-  case GD::Awk::Instruction::Opcode::array:
-  case GD::Awk::Instruction::Opcode::array_element:
-  case GD::Awk::Instruction::Opcode::atan2:
-  case GD::Awk::Instruction::Opcode::cos:
-  case GD::Awk::Instruction::Opcode::sin:
-  case GD::Awk::Instruction::Opcode::exp:
-  case GD::Awk::Instruction::Opcode::log:
-  case GD::Awk::Instruction::Opcode::sqrt:
-  case GD::Awk::Instruction::Opcode::int_:
-  case GD::Awk::Instruction::Opcode::rand:
-  case GD::Awk::Instruction::Opcode::srand:
-  case GD::Awk::Instruction::Opcode::current_time:
-  case GD::Awk::Instruction::Opcode::subst:
-  case GD::Awk::Instruction::Opcode::gsubst:
+  case Opcode::open_param_pack:
+  case Opcode::load_literal:
+  case Opcode::load_lvalue:
+  case Opcode::field:
+  case Opcode::variable:
+  case Opcode::to_number:
+  case Opcode::to_bool:
+  case Opcode::negate:
+  case Opcode::logical_not:
+  case Opcode::add:
+  case Opcode::sub:
+  case Opcode::power:
+  case Opcode::multiply:
+  case Opcode::divide:
+  case Opcode::modulo:
+  case Opcode::concat:
+  case Opcode::is_equal:
+  case Opcode::is_greater_than_equal:
+  case Opcode::is_greater_than:
+  case Opcode::is_less_than_equal:
+  case Opcode::is_less_than:
+  case Opcode::is_not_equal:
+  case Opcode::re_match:
+  case Opcode::logical_and:
+  case Opcode::logical_or:
+  case Opcode::open:
+  case Opcode::popen:
+  case Opcode::copy:
+  case Opcode::length:
+  case Opcode::array:
+  case Opcode::array_element:
+  case Opcode::atan2:
+  case Opcode::cos:
+  case Opcode::sin:
+  case Opcode::exp:
+  case Opcode::log:
+  case Opcode::sqrt:
+  case Opcode::int_:
+  case Opcode::rand:
+  case Opcode::srand:
+  case Opcode::current_time:
+  case Opcode::subst:
+  case Opcode::gsubst:
+  case Opcode::index:
     return true;
-  case GD::Awk::Instruction::Opcode::close_param_pack:
-  case GD::Awk::Instruction::Opcode::store_lvalue:
-  case GD::Awk::Instruction::Opcode::print:
-  case GD::Awk::Instruction::Opcode::printf:
-  case GD::Awk::Instruction::Opcode::push_param:
-  case GD::Awk::Instruction::Opcode::branch_if_false:
-  case GD::Awk::Instruction::Opcode::reserve_regs:
-  case GD::Awk::Instruction::Opcode::branch:
+  case Opcode::close_param_pack:
+  case Opcode::store_lvalue:
+  case Opcode::print:
+  case Opcode::printf:
+  case Opcode::push_param:
+  case Opcode::branch_if_false:
+  case Opcode::reserve_regs:
+  case Opcode::branch:
     return false;
   }
 }
@@ -213,121 +214,121 @@ auto GD::Awk::Instruction::has_result(Opcode opcode) noexcept -> bool
 auto GD::Awk::operator<<(std::ostream& os, GD::Awk::Instruction::Opcode opcode) -> std::ostream&
 {
   switch (opcode) {
-  case GD::Awk::Instruction::Opcode::load_literal:
+  case Instruction::Opcode::load_literal:
     os << "load_literal";
     break;
-  case GD::Awk::Instruction::Opcode::load_lvalue:
+  case Instruction::Opcode::load_lvalue:
     os << "load_lvalue";
     break;
-  case GD::Awk::Instruction::Opcode::store_lvalue:
+  case Instruction::Opcode::store_lvalue:
     os << "store_lvalue";
     break;
-  case GD::Awk::Instruction::Opcode::field:
+  case Instruction::Opcode::field:
     os << "field";
     break;
-  case GD::Awk::Instruction::Opcode::variable:
+  case Instruction::Opcode::variable:
     os << "variable";
     break;
-  case GD::Awk::Instruction::Opcode::print:
+  case Instruction::Opcode::print:
     os << "print";
     break;
-  case GD::Awk::Instruction::Opcode::printf:
+  case Instruction::Opcode::printf:
     os << "printf";
     break;
-  case GD::Awk::Instruction::Opcode::open_param_pack:
+  case Instruction::Opcode::open_param_pack:
     os << "open_param_pack";
     break;
-  case GD::Awk::Instruction::Opcode::push_param:
+  case Instruction::Opcode::push_param:
     os << "push_param";
     break;
-  case GD::Awk::Instruction::Opcode::close_param_pack:
+  case Instruction::Opcode::close_param_pack:
     os << "close_param_pack";
     break;
-  case GD::Awk::Instruction::Opcode::add:
+  case Instruction::Opcode::add:
     os << "add";
     break;
-  case GD::Awk::Instruction::Opcode::sub:
+  case Instruction::Opcode::sub:
     os << "sub";
     break;
-  case GD::Awk::Instruction::Opcode::power:
+  case Instruction::Opcode::power:
     os << "power";
     break;
-  case GD::Awk::Instruction::Opcode::multiply:
+  case Instruction::Opcode::multiply:
     os << "multiply";
     break;
-  case GD::Awk::Instruction::Opcode::divide:
+  case Instruction::Opcode::divide:
     os << "divide";
     break;
-  case GD::Awk::Instruction::Opcode::modulo:
+  case Instruction::Opcode::modulo:
     os << "modulo";
     break;
-  case GD::Awk::Instruction::Opcode::concat:
+  case Instruction::Opcode::concat:
     os << "concat";
     break;
-  case GD::Awk::Instruction::Opcode::to_bool:
+  case Instruction::Opcode::to_bool:
     os << "to_bool";
     break;
-  case GD::Awk::Instruction::Opcode::to_number:
+  case Instruction::Opcode::to_number:
     os << "to_number";
     break;
-  case GD::Awk::Instruction::Opcode::negate:
+  case Instruction::Opcode::negate:
     os << "negate";
     break;
-  case GD::Awk::Instruction::Opcode::logical_not:
+  case Instruction::Opcode::logical_not:
     os << "logical_not";
     break;
-  case GD::Awk::Instruction::Opcode::is_equal:
+  case Instruction::Opcode::is_equal:
     os << "is_equal";
     break;
-  case GD::Awk::Instruction::Opcode::is_not_equal:
+  case Instruction::Opcode::is_not_equal:
     os << "is_not_equal";
     break;
-  case GD::Awk::Instruction::Opcode::is_less_than:
+  case Instruction::Opcode::is_less_than:
     os << "is_less_than";
     break;
-  case GD::Awk::Instruction::Opcode::is_less_than_equal:
+  case Instruction::Opcode::is_less_than_equal:
     os << "is_less_than_equal";
     break;
-  case GD::Awk::Instruction::Opcode::is_greater_than:
+  case Instruction::Opcode::is_greater_than:
     os << "is_greater_than";
     break;
-  case GD::Awk::Instruction::Opcode::is_greater_than_equal:
+  case Instruction::Opcode::is_greater_than_equal:
     os << "is_greater_than_equal";
     break;
-  case GD::Awk::Instruction::Opcode::branch_if_false:
+  case Instruction::Opcode::branch_if_false:
     os << "branch_if_false";
     break;
-  case GD::Awk::Instruction::Opcode::re_match:
+  case Instruction::Opcode::re_match:
     os << "re_match";
     break;
-  case GD::Awk::Instruction::Opcode::logical_and:
+  case Instruction::Opcode::logical_and:
     os << "logical_and";
     break;
-  case GD::Awk::Instruction::Opcode::logical_or:
+  case Instruction::Opcode::logical_or:
     os << "logical_or";
     break;
-  case GD::Awk::Instruction::Opcode::popen:
+  case Instruction::Opcode::popen:
     os << "popen";
     break;
-  case GD::Awk::Instruction::Opcode::open:
+  case Instruction::Opcode::open:
     os << "open";
     break;
-  case GD::Awk::Instruction::Opcode::reserve_regs:
+  case Instruction::Opcode::reserve_regs:
     os << "reserve_regs";
     break;
-  case GD::Awk::Instruction::Opcode::branch:
+  case Instruction::Opcode::branch:
     os << "branch";
     break;
-  case GD::Awk::Instruction::Opcode::copy:
+  case Instruction::Opcode::copy:
     os << "copy";
     break;
-  case GD::Awk::Instruction::Opcode::length:
+  case Instruction::Opcode::length:
     os << "length";
     break;
-  case GD::Awk::Instruction::Opcode::array:
+  case Instruction::Opcode::array:
     os << "array";
     break;
-  case GD::Awk::Instruction::Opcode::array_element:
+  case Instruction::Opcode::array_element:
     os << "array_element";
     break;
   case Instruction::Opcode::atan2:
@@ -366,6 +367,9 @@ auto GD::Awk::operator<<(std::ostream& os, GD::Awk::Instruction::Opcode opcode) 
   case Instruction::Opcode::gsubst:
     os << "gsubst";
     break;
+  case Instruction::Opcode::index:
+    os << "index";
+    break;
   }
   return os;
 }
@@ -373,60 +377,61 @@ auto GD::Awk::operator<<(std::ostream& os, GD::Awk::Instruction::Opcode opcode) 
 auto GD::Awk::Instruction::op_count(Opcode opcode) noexcept -> unsigned
 {
   switch (opcode) {
-  case GD::Awk::Instruction::Opcode::open_param_pack:
-  case GD::Awk::Instruction::Opcode::rand:
-  case GD::Awk::Instruction::Opcode::current_time:
+  case Opcode::open_param_pack:
+  case Opcode::rand:
+  case Opcode::current_time:
     return 0;
-  case GD::Awk::Instruction::Opcode::load_literal:
-  case GD::Awk::Instruction::Opcode::load_lvalue:
-  case GD::Awk::Instruction::Opcode::field:
-  case GD::Awk::Instruction::Opcode::variable:
-  case GD::Awk::Instruction::Opcode::close_param_pack:
-  case GD::Awk::Instruction::Opcode::to_number:
-  case GD::Awk::Instruction::Opcode::to_bool:
-  case GD::Awk::Instruction::Opcode::negate:
-  case GD::Awk::Instruction::Opcode::logical_not:
-  case GD::Awk::Instruction::Opcode::reserve_regs:
-  case GD::Awk::Instruction::Opcode::popen:
-  case GD::Awk::Instruction::Opcode::branch:
-  case GD::Awk::Instruction::Opcode::copy:
-  case GD::Awk::Instruction::Opcode::length:
-  case GD::Awk::Instruction::Opcode::array:
-  case GD::Awk::Instruction::Opcode::cos:
-  case GD::Awk::Instruction::Opcode::sin:
-  case GD::Awk::Instruction::Opcode::exp:
-  case GD::Awk::Instruction::Opcode::log:
-  case GD::Awk::Instruction::Opcode::sqrt:
-  case GD::Awk::Instruction::Opcode::int_:
-  case GD::Awk::Instruction::Opcode::srand:
+  case Opcode::load_literal:
+  case Opcode::load_lvalue:
+  case Opcode::field:
+  case Opcode::variable:
+  case Opcode::close_param_pack:
+  case Opcode::to_number:
+  case Opcode::to_bool:
+  case Opcode::negate:
+  case Opcode::logical_not:
+  case Opcode::reserve_regs:
+  case Opcode::popen:
+  case Opcode::branch:
+  case Opcode::copy:
+  case Opcode::length:
+  case Opcode::array:
+  case Opcode::cos:
+  case Opcode::sin:
+  case Opcode::exp:
+  case Opcode::log:
+  case Opcode::sqrt:
+  case Opcode::int_:
+  case Opcode::srand:
     return 1;
-  case GD::Awk::Instruction::Opcode::store_lvalue:
-  case GD::Awk::Instruction::Opcode::print:
-  case GD::Awk::Instruction::Opcode::printf:
-  case GD::Awk::Instruction::Opcode::push_param:
-  case GD::Awk::Instruction::Opcode::add:
-  case GD::Awk::Instruction::Opcode::sub:
-  case GD::Awk::Instruction::Opcode::power:
-  case GD::Awk::Instruction::Opcode::multiply:
-  case GD::Awk::Instruction::Opcode::divide:
-  case GD::Awk::Instruction::Opcode::modulo:
-  case GD::Awk::Instruction::Opcode::concat:
-  case GD::Awk::Instruction::Opcode::is_equal:
-  case GD::Awk::Instruction::Opcode::is_greater_than_equal:
-  case GD::Awk::Instruction::Opcode::is_greater_than:
-  case GD::Awk::Instruction::Opcode::is_less_than_equal:
-  case GD::Awk::Instruction::Opcode::is_less_than:
-  case GD::Awk::Instruction::Opcode::is_not_equal:
-  case GD::Awk::Instruction::Opcode::branch_if_false:
-  case GD::Awk::Instruction::Opcode::re_match:
-  case GD::Awk::Instruction::Opcode::logical_and:
-  case GD::Awk::Instruction::Opcode::logical_or:
-  case GD::Awk::Instruction::Opcode::open:
-  case GD::Awk::Instruction::Opcode::array_element:
-  case GD::Awk::Instruction::Opcode::atan2:
+  case Opcode::store_lvalue:
+  case Opcode::print:
+  case Opcode::printf:
+  case Opcode::push_param:
+  case Opcode::add:
+  case Opcode::sub:
+  case Opcode::power:
+  case Opcode::multiply:
+  case Opcode::divide:
+  case Opcode::modulo:
+  case Opcode::concat:
+  case Opcode::is_equal:
+  case Opcode::is_greater_than_equal:
+  case Opcode::is_greater_than:
+  case Opcode::is_less_than_equal:
+  case Opcode::is_less_than:
+  case Opcode::is_not_equal:
+  case Opcode::branch_if_false:
+  case Opcode::re_match:
+  case Opcode::logical_and:
+  case Opcode::logical_or:
+  case Opcode::atan2:
+  case Opcode::open:
+  case Opcode::array_element:
+  case Opcode::index:
     return 2;
-  case GD::Awk::Instruction::Opcode::subst:
-  case GD::Awk::Instruction::Opcode::gsubst:
+  case Opcode::subst:
+  case Opcode::gsubst:
     return 3;
   }
 }
@@ -439,79 +444,80 @@ void GD::Awk::Instruction::validate_operands() const
   assert(op2_.has_value() == (op_count(opcode_) >= 2));
   assert(op3_.has_value() == (op_count(opcode_) >= 3));
   switch (opcode_) {
-  case GD::Awk::Instruction::Opcode::open_param_pack:
-  case GD::Awk::Instruction::Opcode::current_time:
-  case GD::Awk::Instruction::Opcode::rand:
+  case Opcode::open_param_pack:
+  case Opcode::current_time:
+  case Opcode::rand:
     break;
-  case GD::Awk::Instruction::Opcode::load_literal:
+  case Opcode::load_literal:
     // NOLINTNEXTLINE
     assert(std::holds_alternative<Integer>(*op1_) || std::holds_alternative<Floating>(*op1_) ||
            std::holds_alternative<FileDescriptor>(*op1_) ||  // NOLINT
            std::holds_alternative<std::string>(*op1_) ||     // NOLINT
            std::holds_alternative<std::regex>(*op1_));       // NOLINT
     break;
-  case GD::Awk::Instruction::Opcode::store_lvalue:
-  case GD::Awk::Instruction::Opcode::add:
-  case GD::Awk::Instruction::Opcode::sub:
-  case GD::Awk::Instruction::Opcode::power:
-  case GD::Awk::Instruction::Opcode::multiply:
-  case GD::Awk::Instruction::Opcode::divide:
-  case GD::Awk::Instruction::Opcode::modulo:
-  case GD::Awk::Instruction::Opcode::concat:
-  case GD::Awk::Instruction::Opcode::print:
-  case GD::Awk::Instruction::Opcode::printf:
-  case GD::Awk::Instruction::Opcode::push_param:
-  case GD::Awk::Instruction::Opcode::is_less_than:
-  case GD::Awk::Instruction::Opcode::is_not_equal:
-  case GD::Awk::Instruction::Opcode::is_less_than_equal:
-  case GD::Awk::Instruction::Opcode::is_greater_than:
-  case GD::Awk::Instruction::Opcode::is_greater_than_equal:
-  case GD::Awk::Instruction::Opcode::is_equal:
-  case GD::Awk::Instruction::Opcode::branch_if_false:
-  case GD::Awk::Instruction::Opcode::re_match:
-  case GD::Awk::Instruction::Opcode::logical_and:
-  case GD::Awk::Instruction::Opcode::logical_or:
-  case GD::Awk::Instruction::Opcode::atan2:
+  case Opcode::store_lvalue:
+  case Opcode::add:
+  case Opcode::sub:
+  case Opcode::power:
+  case Opcode::multiply:
+  case Opcode::divide:
+  case Opcode::modulo:
+  case Opcode::concat:
+  case Opcode::print:
+  case Opcode::printf:
+  case Opcode::push_param:
+  case Opcode::is_less_than:
+  case Opcode::is_not_equal:
+  case Opcode::is_less_than_equal:
+  case Opcode::is_greater_than:
+  case Opcode::is_greater_than_equal:
+  case Opcode::is_equal:
+  case Opcode::branch_if_false:
+  case Opcode::re_match:
+  case Opcode::logical_and:
+  case Opcode::logical_or:
+  case Opcode::atan2:
+  case Opcode::index:
     assert(std::holds_alternative<Index>(*op1_));  // NOLINT
     assert(std::holds_alternative<Index>(*op2_));  // NOLINT
     break;
-  case GD::Awk::Instruction::Opcode::open:
+  case Opcode::open:
     assert(std::holds_alternative<Index>(*op1_));    // NOLINT
     assert(std::holds_alternative<Integer>(*op2_));  // NOLINT
     break;
-  case GD::Awk::Instruction::Opcode::variable:
+  case Opcode::variable:
     assert(std::holds_alternative<VariableName>(*op1_));  // NOLINT
     break;
-  case GD::Awk::Instruction::Opcode::array:
+  case Opcode::array:
     assert(std::holds_alternative<ArrayName>(*op1_));  // NOLINT
     break;
-  case GD::Awk::Instruction::Opcode::array_element:
+  case Opcode::array_element:
     assert(std::holds_alternative<ArrayName>(*op1_));  // NOLINT
     assert(std::holds_alternative<Index>(*op2_));      // NOLINT
     break;
-  case GD::Awk::Instruction::Opcode::close_param_pack:
-  case GD::Awk::Instruction::Opcode::field:
-  case GD::Awk::Instruction::Opcode::load_lvalue:
-  case GD::Awk::Instruction::Opcode::to_bool:
-  case GD::Awk::Instruction::Opcode::to_number:
-  case GD::Awk::Instruction::Opcode::negate:
-  case GD::Awk::Instruction::Opcode::logical_not:
-  case GD::Awk::Instruction::Opcode::reserve_regs:
-  case GD::Awk::Instruction::Opcode::popen:
-  case GD::Awk::Instruction::Opcode::copy:
-  case GD::Awk::Instruction::Opcode::branch:
-  case GD::Awk::Instruction::Opcode::length:
-  case GD::Awk::Instruction::Opcode::cos:
-  case GD::Awk::Instruction::Opcode::sin:
-  case GD::Awk::Instruction::Opcode::exp:
-  case GD::Awk::Instruction::Opcode::log:
-  case GD::Awk::Instruction::Opcode::sqrt:
-  case GD::Awk::Instruction::Opcode::int_:
-  case GD::Awk::Instruction::Opcode::srand:
+  case Opcode::close_param_pack:
+  case Opcode::field:
+  case Opcode::load_lvalue:
+  case Opcode::to_bool:
+  case Opcode::to_number:
+  case Opcode::negate:
+  case Opcode::logical_not:
+  case Opcode::reserve_regs:
+  case Opcode::popen:
+  case Opcode::copy:
+  case Opcode::branch:
+  case Opcode::length:
+  case Opcode::cos:
+  case Opcode::sin:
+  case Opcode::exp:
+  case Opcode::log:
+  case Opcode::sqrt:
+  case Opcode::int_:
+  case Opcode::srand:
     assert(std::holds_alternative<Index>(*op1_));  // NOLINT
     break;
-  case GD::Awk::Instruction::Opcode::subst:
-  case GD::Awk::Instruction::Opcode::gsubst:
+  case Opcode::subst:
+  case Opcode::gsubst:
     assert(std::holds_alternative<Index>(*op1_));  // NOLINT
     assert(std::holds_alternative<Index>(*op2_));  // NOLINT
     assert(std::holds_alternative<Index>(*op3_));  // NOLINT

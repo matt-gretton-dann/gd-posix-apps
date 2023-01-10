@@ -572,6 +572,34 @@ public:
     return emitter.emit_expr(Instruction::Opcode::atan2, yexpr, xexpr);
   }
 
+  auto parse_builtin_func_index_expr(InstructionEmitter& emitter) -> ExprResult
+  {
+    if (lexer_->peek(false) != Token::Type::lparens) {
+      error(Msg::expected_lparens_after_builtin_index, lexer_->location(), lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    ExprResult const sexpr{
+      parse_expr(emitter, ExprType::expr, Msg::expected_expr_in_builtin_index)};
+
+    if (lexer_->peek(false) != Token::Type::comma) {
+      error(Msg::expected_comma_after_builtin_index_parameter, lexer_->location(),
+            lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    ExprResult const texpr{
+      parse_expr(emitter, ExprType::expr, Msg::expected_second_expr_in_builtin_index)};
+
+    if (lexer_->peek(false) != Token::Type::rparens) {
+      error(Msg::expected_rparens_after_builtin_index_parameters, lexer_->location(),
+            lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    return emitter.emit_expr(Instruction::Opcode::index, sexpr, texpr);
+  }
+
   auto parse_builtin_func_rand_expr(InstructionEmitter& emitter) -> ExprResult
   {
     if (lexer_->peek(false) != Token::Type::lparens) {
@@ -758,6 +786,8 @@ public:
       return parse_builtin_func_subst_expr(emitter, false);
       break;
     case Token::BuiltinFunc::index:
+      return parse_builtin_func_index_expr(emitter);
+      break;
     case Token::BuiltinFunc::match:
     case Token::BuiltinFunc::split:
     case Token::BuiltinFunc::sprintf:
