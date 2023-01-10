@@ -44,7 +44,6 @@ if (NOT WIN32)
   add_gdpat_test(NAME awk
           XFAILS
           "awk/onetrueawk-awk/basic/p.32"
-          "awk/onetrueawk-awk/basic/p.33"
           "awk/onetrueawk-awk/basic/p.34"
           "awk/onetrueawk-awk/basic/p.35"
           "awk/onetrueawk-awk/basic/p.36"
@@ -116,7 +115,6 @@ if (NOT WIN32)
           "awk/onetrueawk-awk/general/t.getline1"
           "awk/onetrueawk-awk/general/t.getval"
           "awk/onetrueawk-awk/general/t.gsub1"
-          "awk/onetrueawk-awk/general/t.gsub3"
           "awk/onetrueawk-awk/general/t.gsub4"
           "awk/onetrueawk-awk/general/t.i.x"
           "awk/onetrueawk-awk/general/t.in"
@@ -158,7 +156,6 @@ if (NOT WIN32)
           "awk/onetrueawk-awk/general/t.split9"
           "awk/onetrueawk-awk/general/t.split9a"
           "awk/onetrueawk-awk/general/t.sub0"
-          "awk/onetrueawk-awk/general/t.sub3"
           "awk/onetrueawk-awk/general/t.substr"
           "awk/onetrueawk-awk/general/t.substr1"
           "awk/onetrueawk-awk/general/t.vf2"

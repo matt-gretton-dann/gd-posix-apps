@@ -721,6 +721,42 @@ public:
                              repl, in);
   }
 
+  auto parse_builtin_func_substr_expr(InstructionEmitter& emitter) -> ExprResult
+  {
+    if (lexer_->peek(false) != Token::Type::lparens) {
+      error(Msg::expected_lparens_after_builtin_substr, lexer_->location(), lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    ExprResult const str{parse_expr(emitter, ExprType::expr, Msg::expected_expr_in_builtin_substr)};
+
+    if (lexer_->peek(false) != Token::Type::comma) {
+      error(Msg::expected_comma_after_builtin_substr_parameter, lexer_->location(),
+            lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    ExprResult const pos{
+      parse_expr(emitter, ExprType::expr, Msg::expected_second_expr_in_builtin_substr)};
+
+    ExprResult len;
+    if (lexer_->peek(false) == Token::Type::comma) {
+      lexer_->chew(false);
+      len = parse_expr(emitter, ExprType::expr, Msg::expected_third_expr_in_builtin_substr);
+    }
+    else {
+      auto max{std::numeric_limits<Integer ::underlying_type>::max()};
+      len = emitter.emit_expr(Instruction::Opcode::load_literal, Integer{max});
+    }
+
+    if (lexer_->peek(false) != Token::Type::rparens) {
+      error(Msg::expected_rparens_after_builtin_substr, lexer_->location(), lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    return emitter.emit_expr(Instruction::Opcode::substr, str, pos, len);
+  }
+
   /** @brief Parse builtin functions.
    *
    * @param  instrs     Where to emit code to
@@ -820,9 +856,11 @@ public:
     case Token::BuiltinFunc::match:
       return parse_builtin_func_match_expr(emitter);
       break;
+    case Token::BuiltinFunc::substr:
+      return parse_builtin_func_substr_expr(emitter);
+      break;
     case Token::BuiltinFunc::split:
     case Token::BuiltinFunc::sprintf:
-    case Token::BuiltinFunc::substr:
     case Token::BuiltinFunc::tolower:
     case Token::BuiltinFunc::toupper:
     case Token::BuiltinFunc::close:

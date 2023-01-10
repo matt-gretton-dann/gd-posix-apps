@@ -1387,6 +1387,27 @@ public:
     return Integer{result};
   }
 
+  static auto execute_substr(std::vector<ExecutionValue>& values, Instruction::Operand const& op_s,
+                             Instruction::Operand const& op_pos, Instruction::Operand const& op_len,
+                             std::string const& conv_fmt) -> ExecutionValue
+  {
+    auto s{to_string(values.at(std::get<Index>(op_s)), conv_fmt)};
+    auto pos{to_integer(values.at(std::get<Index>(op_pos)))};
+    auto len{to_integer(values.at(std::get<Index>(op_len)))};
+
+    if (!s.has_value()) {
+      error(Msg::unable_to_cast_value_to_string, values.at(std::get<Index>(op_s)));
+    }
+    if (!pos.has_value()) {
+      error(Msg::unable_to_cast_value_to_integer, values.at(std::get<Index>(op_pos)));
+    }
+    if (!len.has_value()) {
+      error(Msg::unable_to_cast_value_to_integer, values.at(std::get<Index>(op_len)));
+    }
+
+    return s->substr(*pos - 1, *len);
+  }
+
   void execute([[maybe_unused]] ParsedProgram const& program, Instructions::const_iterator begin,
                Instructions::const_iterator end)
   {
@@ -1584,6 +1605,10 @@ public:
         var("RLENGTH", len);
         break;
       }
+      case Instruction::Opcode::substr:
+        values.at(it->reg()) = execute_substr(values, it->op1(), it->op2(), it->op3(),
+                                              std::get<std::string>(var("CONVFMT")));
+        break;
       }
       if constexpr (debug) {
         if (it->has_reg()) {
