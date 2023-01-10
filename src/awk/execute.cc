@@ -509,7 +509,13 @@ public:
   {
     assert(std::holds_alternative<Index>(lhs));
     assert(std::holds_alternative<Index>(rhs));
-    ExecutionValue const& value{values.at(std::get<Index>(rhs))};
+    store_lvalue(values, lhs, values.at(std::get<Index>(rhs)));
+  }
+
+  void store_lvalue(std::vector<ExecutionValue> const& values, Instruction::Operand const& lhs,
+                    ExecutionValue const& value)
+  {
+    assert(std::holds_alternative<Index>(lhs));
 
     std::visit(GD::Overloaded{
                  [&value, this](VariableName v) { var(v.get(), value); },
@@ -1304,13 +1310,13 @@ public:
     return seed;
   }
 
-  static auto execute_subst(std::vector<ExecutionValue>& values, Instruction::Operand const& op_re,
-                            Instruction::Operand const& op_repl, Instruction::Operand const& op_str,
-                            bool global, std::string const& conv_fmt) -> ExecutionValue
+  auto execute_subst(std::vector<ExecutionValue>& values, Instruction::Operand const& op_re,
+                     Instruction::Operand const& op_repl, Instruction::Operand const& op_in,
+                     bool global, std::string const& conv_fmt) -> ExecutionValue
   {
     auto re{to_re(values.at(std::get<Index>(op_re)), conv_fmt)};
     auto repl{to_string(values.at(std::get<Index>(op_repl)), conv_fmt)};
-    auto str{to_string(values.at(std::get<Index>(op_str)), conv_fmt)};
+    auto str{to_string(read_lvalue(values, std::get<Index>(op_in)), conv_fmt)};
 
     if (!re.has_value()) {
       error(Msg::unable_to_cast_value_to_re, values.at(std::get<Index>(op_re)));
@@ -1319,14 +1325,38 @@ public:
       error(Msg::unable_to_cast_value_to_string, values.at(std::get<Index>(op_repl)));
     }
     if (!str.has_value()) {
-      error(Msg::unable_to_cast_value_to_string, values.at(std::get<Index>(op_str)));
+      error(Msg::unable_to_cast_value_to_string, values.at(std::get<Index>(op_in)));
     }
 
     auto flags{std::regex_constants::format_sed};
     if (!global) {
       flags |= std::regex_constants::format_first_only;
     }
-    return std::regex_replace(*str, *re, *repl, flags);
+
+    std::string result{std::regex_replace(*str, *re, *repl, flags)};
+    store_lvalue(values, std::get<Index>(op_in), ExecutionValue{result});
+    std::smatch m;
+    Integer::underlying_type matches{0};
+    std::string s{*str};
+    while (std::regex_search(s, m, *re, std::regex_constants::match_not_null)) {
+      ++matches;
+      if (!global) {
+        break;
+      }
+      if (s == m.suffix()) {
+        break;
+      }
+      s = m.suffix();
+      if (static_cast<std::size_t>(matches) > str->size()) {
+        std::abort();
+      }
+    }
+    // Just in case there was an empty match we do one replacement
+    if (matches == 0 && result != *str) {
+      matches = 1;
+    }
+
+    return Integer{matches};
   }
 
   void execute([[maybe_unused]] ParsedProgram const& program, Instructions::const_iterator begin,

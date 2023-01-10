@@ -296,8 +296,12 @@ public:
     assert(expr3.has_one_value());
     bool const preserve_regex{opcode == Instruction::Opcode::subst ||
                               opcode == Instruction::Opcode::gsubst};
+    Instruction::Operand const op3{
+      (opcode == Instruction::Opcode::subst || opcode == Instruction::Opcode::gsubst)
+        ? expr3.index()
+        : dereference_lvalue_int(expr3)};
     instrs_->emplace_back(opcode, reg_, dereference_lvalue_int(expr1, preserve_regex),
-                          dereference_lvalue_int(expr2), dereference_lvalue_int(expr3));
+                          dereference_lvalue_int(expr2), op3);
     return ExprResult{reg_++};
   }
 
@@ -637,6 +641,16 @@ public:
       in = parse_expr(emitter, ExprType::expr,
                       global ? Msg::expected_third_expr_in_builtin_gsub
                              : Msg::expected_third_expr_in_builtin_sub);
+    }
+    else {
+      in = emitter.emit_expr(Instruction::Opcode::load_literal, Integer{0});
+      in = emitter.emit_expr(Instruction::Opcode::field, in);
+    }
+
+    if (!in.is_lvalue()) {
+      error(global ? Msg::in_parameter_of_gsub_must_be_lvalue
+                   : Msg::in_parameter_of_sub_must_be_lvalue,
+            lexer_->location());
     }
 
     if (lexer_->peek(false) != Token::Type::rparens) {

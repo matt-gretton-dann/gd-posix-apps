@@ -602,6 +602,18 @@
         "id": 101,
         "description": "An empty FS variable causes undefined behaviour",
         "C": "An empty FS variable is undefined behaviour."
+      },
+      {
+        "msg": "in_parameter_of_gsub_must_be_lvalue",
+        "id": 102,
+        "description": "The third parameter of gsub must be an lvalue if present",
+        "C": "The third parameter of gsub must be an lvalue if present."
+      },
+      {
+        "msg": "in_parameter_of_sub_must_be_lvalue",
+        "id": 103,
+        "description": "The third parameter of sub(re, repl, in) must be an lvalue if present",
+        "C": "The third parameter of sub must be an lvalue if present."
       }
     ]
   }
