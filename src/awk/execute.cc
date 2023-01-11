@@ -501,22 +501,22 @@ public:
   }
 
   void store_lvalue(std::vector<ExecutionValue> const& values, Instruction::Operand const& lhs,
-                    Instruction::Operand const& rhs)
+                    Instruction::Operand const& rhs, std::string const& conv_fmt)
   {
     assert(std::holds_alternative<Index>(lhs));
     assert(std::holds_alternative<Index>(rhs));
-    store_lvalue(values, lhs, values.at(std::get<Index>(rhs)));
+    store_lvalue(values, lhs, values.at(std::get<Index>(rhs)), conv_fmt);
   }
 
   void store_lvalue(std::vector<ExecutionValue> const& values, Instruction::Operand const& lhs,
-                    ExecutionValue const& value)
+                    ExecutionValue const& value, std::string const& conv_fmt)
   {
     assert(std::holds_alternative<Index>(lhs));
 
     std::visit(GD::Overloaded{
                  [&value, this](VariableName v) { var(v.get(), value); },
-                 [&value, this](Field f) {
-                   fields_.field(f, std::get<std::string>(value), std::get<std::string>(var("FS")),
+                 [&value, &conv_fmt, this](Field f) {
+                   fields_.field(f, *to_string(value, conv_fmt), std::get<std::string>(var("FS")),
                                  std::get<std::string>(var("OFS")));
                    var("NF", Integer{fields_.size()});
                  },
@@ -1352,7 +1352,7 @@ public:
     }
     result += sm.suffix();
     if (!result.empty()) {
-      store_lvalue(values, std::get<Index>(op_in), ExecutionValue{result});
+      store_lvalue(values, std::get<Index>(op_in), ExecutionValue{result}, conv_fmt);
     }
     if (!global && matches > 1) {
       matches = 1;
@@ -1428,7 +1428,7 @@ public:
         values.at(it->reg()) = read_lvalue(values, it->op1());
         break;
       case Instruction::Opcode::store_lvalue:
-        store_lvalue(values, it->op1(), it->op2());
+        store_lvalue(values, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
         break;
       case Instruction::Opcode::variable:
         values.at(it->reg()) = std::get<VariableName>(it->op1());
