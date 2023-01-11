@@ -1430,6 +1430,36 @@ public:
     return s->substr(*pos - 1, *len);
   }
 
+  static auto execute_tolower(std::vector<ExecutionValue>& values, Instruction::Operand const& op_s,
+                              std::string const& conv_fmt) -> ExecutionValue
+  {
+    auto const& s{to_string(values.at(std::get<Index>(op_s)), conv_fmt)};
+
+    if (!s.has_value()) {
+      error(Msg::unable_to_cast_value_to_string, values.at(std::get<Index>(op_s)));
+    }
+
+    std::string result;
+    std::transform(s->begin(), s->end(), std::back_inserter(result),
+                   [](char c) { return static_cast<char>(std::tolower(c)); });
+    return result;
+  }
+
+  static auto execute_toupper(std::vector<ExecutionValue>& values, Instruction::Operand const& op_s,
+                              std::string const& conv_fmt) -> ExecutionValue
+  {
+    auto const& s{to_string(values.at(std::get<Index>(op_s)), conv_fmt)};
+
+    if (!s.has_value()) {
+      error(Msg::unable_to_cast_value_to_string, values.at(std::get<Index>(op_s)));
+    }
+
+    std::string result;
+    std::transform(s->begin(), s->end(), std::back_inserter(result),
+                   [](char c) { return static_cast<char>(std::toupper(c)); });
+    return result;
+  }
+
   void execute([[maybe_unused]] ParsedProgram const& program, Instructions::const_iterator begin,
                Instructions::const_iterator end)
   {
@@ -1630,6 +1660,14 @@ public:
       case Instruction::Opcode::substr:
         values.at(it->reg()) = execute_substr(values, it->op1(), it->op2(), it->op3(),
                                               std::get<std::string>(var("CONVFMT")));
+        break;
+      case Instruction::Opcode::tolower:
+        values.at(it->reg()) =
+          execute_tolower(values, it->op1(), std::get<std::string>(var("CONVFMT")));
+        break;
+      case Instruction::Opcode::toupper:
+        values.at(it->reg()) =
+          execute_toupper(values, it->op1(), std::get<std::string>(var("CONVFMT")));
         break;
       }
       if constexpr (debug) {

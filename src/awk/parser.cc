@@ -455,6 +455,10 @@ auto to_builtin_func_opcode(Token::BuiltinFunc func) -> Instruction::Opcode
     return Instruction::Opcode::rand;
   case Token::BuiltinFunc::srand:
     return Instruction::Opcode::srand;
+  case Token::BuiltinFunc::toupper:
+    return Instruction::Opcode::toupper;
+  case Token::BuiltinFunc::tolower:
+    return Instruction::Opcode::tolower;
   default:
     std::abort();
   }
@@ -517,7 +521,7 @@ public:
     return emitter.emit_expr(Instruction::Opcode::length, expr);
   }
 
-  auto parse_bultin_func_one_parm_expr(InstructionEmitter& emitter, Token::BuiltinFunc func)
+  auto parse_bultin_func_one_param_expr(InstructionEmitter& emitter, Token::BuiltinFunc func)
     -> ExprResult
   {
     if (lexer_->peek(false) != Token::Type::lparens) {
@@ -836,7 +840,9 @@ public:
     case Token::BuiltinFunc::log:
     case Token::BuiltinFunc::sqrt:
     case Token::BuiltinFunc::int_:
-      return parse_bultin_func_one_parm_expr(emitter, func);
+    case Token::BuiltinFunc::tolower:
+    case Token::BuiltinFunc::toupper:
+      return parse_bultin_func_one_param_expr(emitter, func);
       break;
     case Token::BuiltinFunc::rand:
       return parse_builtin_func_rand_expr(emitter);
@@ -861,8 +867,6 @@ public:
       break;
     case Token::BuiltinFunc::split:
     case Token::BuiltinFunc::sprintf:
-    case Token::BuiltinFunc::tolower:
-    case Token::BuiltinFunc::toupper:
     case Token::BuiltinFunc::close:
     case Token::BuiltinFunc::system:
       std::abort();

@@ -608,6 +608,8 @@ private:
  * | index                 | I          | Ix(S)      | Ix(S)      |            | <result> = index(<op1>, <op2>)           |
  * | match                 | I          | Ix(S)      | Ix(R)      |            | <result> = match(<op1>, <op2>)           |
  * | substr                | S          | Ix(S)      | Ix(I)      | Ix(I)      | <result> = substr(<op1>, <op2>, <op3>    |
+ * | tolower               | S          | Ix(S)      |            |            | <result> = tolower(<op1>)                |
+ * | toupper               | S          | Ix(S)      |            |            | <result> = toupper(<op1>)                |
  *
  * Parameter packs are identified by the index of the instruction corresponding to the
  * 'open_param_pack'.
@@ -672,6 +674,8 @@ public:
     index,                  ///< Index of <op2> in <op1>
     match,                  ///< Match re <op2> with <op1>
     substr,                 ///< Substring
+    tolower,                ///< Convert string to lower case
+    toupper,                ///< Convert string to upper case
   };
 
   /** Type representing an offset of to an instruction. */

@@ -161,6 +161,8 @@ test_awk(
 test_awk('BEGIN { print match("Hello world!", /o.*o/), RSTART, RLENGTH }',
          "5 5 4\n")
 test_awk('BEGIN { print substr("Hello world!", 5, 4) }', "o wo\n")
+test_awk('BEGIN { print tolower("Hello world!") }', "hello world!\n")
+test_awk('BEGIN { print toupper("Hello world!") }', "HELLO WORLD!\n")
 
 # Some error tests
 test_awk('BEGIN { print (1 }', None, expected_rc=1)

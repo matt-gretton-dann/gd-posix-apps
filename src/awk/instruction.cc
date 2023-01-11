@@ -200,6 +200,8 @@ auto GD::Awk::Instruction::has_result(Opcode opcode) noexcept -> bool
   case Opcode::index:
   case Opcode::match:
   case Opcode::substr:
+  case Opcode::toupper:
+  case Opcode::tolower:
     return true;
   case Opcode::close_param_pack:
   case Opcode::store_lvalue:
@@ -378,6 +380,12 @@ auto GD::Awk::operator<<(std::ostream& os, GD::Awk::Instruction::Opcode opcode) 
   case Instruction::Opcode::substr:
     os << "substr";
     break;
+  case Instruction::Opcode::tolower:
+    os << "tolower";
+    break;
+  case Instruction::Opcode::toupper:
+    os << "toupper";
+    break;
   }
   return os;
 }
@@ -411,6 +419,8 @@ auto GD::Awk::Instruction::op_count(Opcode opcode) noexcept -> unsigned
   case Opcode::sqrt:
   case Opcode::int_:
   case Opcode::srand:
+  case Opcode::tolower:
+  case Opcode::toupper:
     return 1;
   case Opcode::store_lvalue:
   case Opcode::print:
@@ -525,6 +535,8 @@ void GD::Awk::Instruction::validate_operands() const
   case Opcode::sqrt:
   case Opcode::int_:
   case Opcode::srand:
+  case Opcode::tolower:
+  case Opcode::toupper:
     assert(std::holds_alternative<Index>(*op1_));  // NOLINT
     break;
   case Opcode::subst:
