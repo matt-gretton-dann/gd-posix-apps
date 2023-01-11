@@ -1996,6 +1996,7 @@ public:
     if (lexer_->peek(false) == Token::Type::semicolon ||
         lexer_->peek(false) == Token::Type::newline) {
       lexer_->chew(false);
+      parse_newline_opt();
       return ParseStatementResult::terminated;
     }
 

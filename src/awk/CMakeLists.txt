@@ -54,7 +54,6 @@ if (NOT WIN32)
           "awk/onetrueawk-awk/basic/p.50"
           "awk/onetrueawk-awk/basic/p.table"
 
-          "awk/onetrueawk-awk/general/t.a"
           "awk/onetrueawk-awk/general/t.addops"
           "awk/onetrueawk-awk/general/t.arith"
           "awk/onetrueawk-awk/general/t.array"
@@ -91,7 +90,6 @@ if (NOT WIN32)
           "awk/onetrueawk-awk/general/t.fun4"
           "awk/onetrueawk-awk/general/t.fun5"
           "awk/onetrueawk-awk/general/t.getline1"
-          "awk/onetrueawk-awk/general/t.getval"
           "awk/onetrueawk-awk/general/t.gsub1"
           "awk/onetrueawk-awk/general/t.gsub4"
           "awk/onetrueawk-awk/general/t.i.x"
@@ -149,7 +147,6 @@ if (NOT WIN32)
           "awk/onetrueawk-awk/advanced/T.main"
           "awk/onetrueawk-awk/advanced/T.misc"
           "awk/onetrueawk-awk/advanced/T.overflow"
-          "awk/onetrueawk-awk/advanced/T.recache"
           "awk/onetrueawk-awk/advanced/T.redir"
           "awk/onetrueawk-awk/advanced/T.split"
           "awk/onetrueawk-awk/advanced/T.system"
