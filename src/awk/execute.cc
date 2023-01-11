@@ -621,6 +621,30 @@ public:
     return std::nullopt;
   }
 
+  [[nodiscard]] static auto str_to_floating_force(std::string const& s) -> Floating
+  {
+    std::size_t pos{0};
+    try {
+      return std::stod(s, &pos);
+    }
+    catch (...) {
+      return 0.0;
+    }
+  }
+
+  static auto to_floating_force(ExecutionValue const& value) -> Floating
+  {
+    return std::visit(GD::Overloaded{
+                        [](Integer i) { return static_cast<Floating>(i.get()); },
+                        [](Floating f) { return f; },
+                        [](std::nullopt_t) { return 0.0; },
+                        [](bool b) { return b ? 1.0 : 0.0; },
+                        [](std::string const& s) { return str_to_floating_force(s); },
+                        [](auto const&) { return 0.0; },
+                      },
+                      value);
+  }
+
   static auto to_floating(ExecutionValue const& value) -> std::optional<Floating>
   {
     return std::visit(
@@ -668,16 +692,10 @@ public:
       }
     }
 
-    auto const lhs_float{to_floating(lhs_value)};
-    auto const rhs_float{to_floating(rhs_value)};
-    if (!lhs_float.has_value()) {
-      error(Msg::unable_to_cast_value_to_float, lhs_value);
-    }
-    if (!rhs_float.has_value()) {
-      error(Msg::unable_to_cast_value_to_float, rhs_value);
-    }
+    auto const lhs_float{to_floating_force(lhs_value)};
+    auto const rhs_float{to_floating_force(rhs_value)};
 
-    return Floating{float_op(*lhs_float, *rhs_float)};
+    return Floating{float_op(lhs_float, rhs_float)};
   }
 
   static auto execute_atan2(std::vector<ExecutionValue> const& values,
