@@ -165,10 +165,6 @@ public:
       return;
     }
 
-    if (size == fields_.size() - 1) {
-      return;
-    }
-
     fields_.resize(size + 1);
     recalculate_field0(ofs);
   }
@@ -514,7 +510,19 @@ public:
     assert(std::holds_alternative<Index>(lhs));
 
     std::visit(GD::Overloaded{
-                 [&value, this](VariableName v) { var(v.get(), value); },
+                 [&value, this](VariableName const& v) {
+                   // Updating NF requires us to reset the fields_ variable.
+                   if (v.get() == "NF") {
+                     auto size{to_integer(value)};
+                     if (!size.has_value()) {
+                       error(Msg::unable_to_cast_value_to_integer, value);
+                     }
+                     fields_.resize(static_cast<std::size_t>(*size),
+                                    std::get<std::string>(var("OFS")));
+                   }
+
+                   var(v.get(), value);
+                 },
                  [&value, &conv_fmt, this](Field f) {
                    fields_.field(f, *to_string(value, conv_fmt), std::get<std::string>(var("FS")),
                                  std::get<std::string>(var("OFS")));
@@ -1659,15 +1667,6 @@ public:
    */
   void var(std::string const& name, ExecutionValue const& value)
   {
-    // Updating NF requires us to reset the fields_ variable.
-    if (name == "NF") {
-      auto size{to_integer(value)};
-      if (!size.has_value()) {
-        error(Msg::unable_to_cast_value_to_integer, value);
-      }
-      fields_.resize(static_cast<std::size_t>(*size), std::get<std::string>(var("OFS")));
-    }
-
     for (auto& map : variables_stack_) {
       if (auto it{map.find(name)}; it != map.end()) {
         it->second = value;

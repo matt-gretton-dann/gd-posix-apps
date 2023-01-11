@@ -54,7 +54,6 @@ if (NOT WIN32)
           "awk/onetrueawk-awk/basic/p.50"
           "awk/onetrueawk-awk/basic/p.table"
 
-          "awk/onetrueawk-awk/general/t.NF"
           "awk/onetrueawk-awk/general/t.a"
           "awk/onetrueawk-awk/general/t.addops"
           "awk/onetrueawk-awk/general/t.arith"
