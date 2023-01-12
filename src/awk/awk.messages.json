@@ -710,6 +710,24 @@
         "id": 119,
         "description": "Missing third parameter in call to builtin substr.  Instead got {0}.",
         "C": "Missing third parameter in call to substr().  Instead got {0}."
+      },
+      {
+        "msg": "expected_lparens_after_builtin_sprintf",
+        "id": 120,
+        "description": "Expected a '(' after call to builtin sprintf().  Instead got {0}.",
+        "C": "sprintf should be followed by a '('.  Instead there was {0}."
+      },
+      {
+        "msg": "expected_rparens_after_builtin_sprintf",
+        "id": 121,
+        "description": "Expected a ')' after call to builtin sprintf().  Instead got {0}.",
+        "C": "Missing closing ')' in call to sprintf().  Instead there was {0}."
+      },
+      {
+        "msg": "expected_list_to_sprintf",
+        "id": 122,
+        "description": "Missing parameters in call to sprintf().  Instead got {0}.",
+        "C": "Missing parameters in call to sprintf().  Instead there was {0}."
       }
     ]
   }

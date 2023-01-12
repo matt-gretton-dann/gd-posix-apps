@@ -560,7 +560,7 @@ private:
  * | load_lvalue           | I/F/S      | Ix(VN/FL)  |            |            | <result> = *<op1>                        |
  * | store_lvalue          |            | Ix(VN/FL)  | Ix(I/F/S)  |            | *<op2> = <op1>                           |
  * | print                 |            | Ix(I/F/S)  | Ix(FD)     |            | Print the value <op1> to stream <op2>    |
- * | printf                |            | Ix(I/F/S)  | Ix(FD)     |            | printf the params <op1> to stream <op2>  |
+ * | sprintf               | S          | Ix(S)      | Ix(PP)     |            | printf the params <op2> by format <op1>  |
  * | open_param_pack       | PP         |            |            |            | Open a parameter pack                    |
  * | push_param            |            | Ix(PP)     | Ix(I/F/S)  |            | Push expr <op2> onto the front of <op1>  |
  * | close_param_pack      |            | Ix(PP)     |            |            | Close the parameter pack <op1>           |
@@ -626,7 +626,7 @@ public:
     load_lvalue,            ///< Load an lvalue
     store_lvalue,           ///< Store an lvalue
     print,                  ///< Print the value referenced by <op1> to stream <op2>.
-    printf,                 ///< Printf the parameter pack <op1> to stream <op2>.
+    sprintf,                ///< Printf the parameter pack <op2> according to format <op1>
     open_param_pack,        ///< Open a parameter pack.  Result is parameter pack ID.
     push_param,             ///< Push parameter <op2> onto the back of parameter pack <op1>.
     close_param_pack,       ///< Close parameter pack <op1>.

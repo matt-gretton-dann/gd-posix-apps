@@ -163,6 +163,8 @@ test_awk('BEGIN { print match("Hello world!", /o.*o/), RSTART, RLENGTH }',
 test_awk('BEGIN { print substr("Hello world!", 5, 4) }', "o wo\n")
 test_awk('BEGIN { print tolower("Hello world!") }', "hello world!\n")
 test_awk('BEGIN { print toupper("Hello world!") }', "HELLO WORLD!\n")
+test_awk('BEGIN { a=sprintf( "%s-%d-%g", "Hello", 10, 372.2); print a }',
+         "Hello-10-372.2\n")
 
 # Some error tests
 test_awk('BEGIN { print (1 }', None, expected_rc=1)

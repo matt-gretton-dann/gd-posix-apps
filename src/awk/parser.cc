@@ -761,6 +761,43 @@ public:
     return emitter.emit_expr(Instruction::Opcode::substr, str, pos, len);
   }
 
+  auto parse_builtin_func_sprintf_expr(InstructionEmitter& emitter) -> ExprResult
+  {
+    if (lexer_->peek(false) != Token::Type::lparens) {
+      error(Msg::expected_lparens_after_builtin_sprintf, lexer_->location(), lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    // So the problem we have here is that the token '(' is valid is the first token in
+    // print_expr_list_opt.  So if that is the next token we have no idea whether we are parsing a
+    // print_expr_list or a multiple_expr_list.  Hence the maybe_multiple_expr_list where we leave
+    // it to the expression parser to work it out.
+    ExprResult indices;
+    parse_expr_list_opt(emitter, indices.back_inserter(), ExprListType::expr_list);
+
+    if (indices.has_no_values()) {
+      error(Msg::expected_list_to_sprintf, lexer_->location(), lexer_->peek(false));
+    }
+
+    if (lexer_->peek(false) != Token::Type::rparens) {
+      error(Msg::expected_rparens_after_builtin_sprintf, lexer_->location(), lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    auto const pp{emitter.emit_expr(Instruction::Opcode::open_param_pack)};
+    ExprResult fmt;
+    for (auto const& idx : indices) {
+      if (fmt.has_no_values()) {
+        fmt = ExprResult{idx};
+      }
+      else {
+        emitter.emit_statement(Instruction::Opcode::push_param, pp, ExprResult{idx});
+      }
+    }
+    emitter.emit_statement(Instruction::Opcode::close_param_pack, pp);
+    return emitter.emit_expr(Instruction::Opcode::sprintf, fmt, pp);
+  }
+
   /** @brief Parse builtin functions.
    *
    * @param  instrs     Where to emit code to
@@ -865,8 +902,10 @@ public:
     case Token::BuiltinFunc::substr:
       return parse_builtin_func_substr_expr(emitter);
       break;
-    case Token::BuiltinFunc::split:
     case Token::BuiltinFunc::sprintf:
+      return parse_builtin_func_sprintf_expr(emitter);
+      break;
+    case Token::BuiltinFunc::split:
     case Token::BuiltinFunc::close:
     case Token::BuiltinFunc::system:
       std::abort();
@@ -1920,11 +1959,18 @@ public:
     }
     else {
       auto const pp{emitter.emit_expr(Instruction::Opcode::open_param_pack)};
+      ExprResult fmt;
       for (auto const& idx : indices) {
-        emitter.emit_statement(Instruction::Opcode::push_param, pp, ExprResult{idx});
+        if (fmt.has_no_values()) {
+          fmt = ExprResult{idx};
+        }
+        else {
+          emitter.emit_statement(Instruction::Opcode::push_param, pp, ExprResult{idx});
+        }
       }
       emitter.emit_statement(Instruction::Opcode::close_param_pack, pp);
-      emitter.emit_statement(Instruction::Opcode::printf, pp, redir);
+      auto sprintf{emitter.emit_expr(Instruction::Opcode::sprintf, fmt, pp)};
+      emitter.emit_statement(Instruction::Opcode::print, sprintf, redir);
     }
   }
 

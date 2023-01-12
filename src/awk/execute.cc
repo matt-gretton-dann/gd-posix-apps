@@ -1172,30 +1172,35 @@ public:
     return *value ? true_dest : std::get<Index>(false_dest);
   }
 
-  static void execute_printf(std::vector<ExecutionValue> const& values,
-                             Instruction::Operand const& parameter_pack,  // NOLINT
-                             Instruction::Operand const& fd, std::string const& ofmt)
+  static auto execute_sprintf(std::vector<ExecutionValue> const& values,
+                              Instruction::Operand const& format_op,
+                              Instruction::Operand const& parameter_pack,
+                              std::string const& conv_fmt) -> ExecutionValue
   {
-    auto stream{read_fd(values, fd)};
+    auto format{to_string(values.at(std::get<Index>(format_op)), conv_fmt)};
+    if (!format.has_value()) {
+      error(Msg::unable_to_cast_value_to_string);
+    }
     auto pp{std::get<ParameterPack>(values.at(std::get<Index>(parameter_pack)))};
     auto it{pp.begin()};
-    assert(it != pp.end());
-    auto fmt_string{to_string(*it++, ofmt).value()};  // NOLINT
+    auto fmt_string{*format};  // NOLINT
     std::size_t pos{0};
+    std::string result;
     while (pos != fmt_string.size()) {
       auto next_pos{fmt_string.find('%', pos)};
       if (next_pos == std::string::npos) {
         next_pos = fmt_string.size();
       }
       if (next_pos != pos) {
-        write(stream, fmt_string.data() + pos, next_pos - pos);  // NOLINT
+        // NOLINTNEXTLINE
+        result.insert(result.end(), fmt_string.begin() + pos, fmt_string.begin() + next_pos);
       }
       if (next_pos == fmt_string.size()) {
         break;
       }
       pos = next_pos + 1;
       if (pos < fmt_string.size() && fmt_string[pos] == '%') {
-        write(stream, fmt_string.data() + pos, 1);  // NOLINT
+        result += '%';
         continue;
       }
       next_pos = fmt_string.find_first_of("csdioxXufFeEaAgG", pos);
@@ -1224,31 +1229,31 @@ public:
         new_fmt[mp] = '<';  // NOLINT
       }
 
-      std::string to_output;
       if (is_string) {
-        auto str{it == pp.end() ? std::string{} : *to_string(*it, ofmt)};  // NOLINT
-        to_output = fmt::vformat(new_fmt,
-                                 fmt::make_format_args(str));  // NOLINT
+        auto str{it == pp.end() ? std::string{} : *to_string(*it, conv_fmt)};  // NOLINT
+        result += fmt::vformat(new_fmt,
+                               fmt::make_format_args(str));  // NOLINT
       }
       else if (it == pp.end()) {
-        to_output = fmt::vformat(new_fmt, fmt::make_format_args(0));
+        result += fmt::vformat(new_fmt, fmt::make_format_args(0));
       }
       else if (auto integer{to_integer(*it)}; !is_floating && integer.has_value()) {
-        to_output = fmt::vformat(new_fmt, fmt::make_format_args(*integer));
+        result += fmt::vformat(new_fmt, fmt::make_format_args(*integer));
       }
       else if (auto floating{to_floating(*it)}; floating.has_value()) {
-        to_output = fmt::vformat(new_fmt, fmt::make_format_args(*floating));
+        result += fmt::vformat(new_fmt, fmt::make_format_args(*floating));
       }
       else {
         std::abort();
       }
 
-      write(stream, to_output.data(), to_output.size());
       if (it != pp.end()) {
         ++it;
       }
       pos = next_pos;
     }
+
+    return result;
   }
 
   auto format_value(std::vector<ExecutionValue> const& values, Instruction::Operand const& index)
@@ -1507,10 +1512,10 @@ public:
       case Instruction::Opcode::push_param:
         execute_push_parameter_value(values, it->op1(), it->op2());
         break;
-      case Instruction::Opcode::printf: {
+      case Instruction::Opcode::sprintf: {
         auto ofmt{var("OFMT")};
         auto ofmts{std::get<std::string>(ofmt)};
-        execute_printf(values, it->op1(), it->op2(), ofmts);
+        values.at(it->reg()) = execute_sprintf(values, it->op1(), it->op2(), ofmts);
         break;
       }
       case Instruction::Opcode::open:

@@ -202,11 +202,11 @@ auto GD::Awk::Instruction::has_result(Opcode opcode) noexcept -> bool
   case Opcode::substr:
   case Opcode::toupper:
   case Opcode::tolower:
+  case Opcode::sprintf:
     return true;
   case Opcode::close_param_pack:
   case Opcode::store_lvalue:
   case Opcode::print:
-  case Opcode::printf:
   case Opcode::push_param:
   case Opcode::branch_if_false:
   case Opcode::reserve_regs:
@@ -236,8 +236,8 @@ auto GD::Awk::operator<<(std::ostream& os, GD::Awk::Instruction::Opcode opcode) 
   case Instruction::Opcode::print:
     os << "print";
     break;
-  case Instruction::Opcode::printf:
-    os << "printf";
+  case Instruction::Opcode::sprintf:
+    os << "sprintf";
     break;
   case Instruction::Opcode::open_param_pack:
     os << "open_param_pack";
@@ -424,7 +424,7 @@ auto GD::Awk::Instruction::op_count(Opcode opcode) noexcept -> unsigned
     return 1;
   case Opcode::store_lvalue:
   case Opcode::print:
-  case Opcode::printf:
+  case Opcode::sprintf:
   case Opcode::push_param:
   case Opcode::add:
   case Opcode::sub:
@@ -484,7 +484,7 @@ void GD::Awk::Instruction::validate_operands() const
   case Opcode::modulo:
   case Opcode::concat:
   case Opcode::print:
-  case Opcode::printf:
+  case Opcode::sprintf:
   case Opcode::push_param:
   case Opcode::is_less_than:
   case Opcode::is_not_equal:
