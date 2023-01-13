@@ -213,6 +213,7 @@ auto GD::Awk::Instruction::has_result(Opcode opcode) noexcept -> bool
   case Opcode::branch_if_false:
   case Opcode::reserve_regs:
   case Opcode::branch:
+  case Opcode::exit:
     return false;
   }
 }
@@ -394,6 +395,9 @@ auto GD::Awk::operator<<(std::ostream& os, GD::Awk::Instruction::Opcode opcode) 
   case Instruction::Opcode::split_re:
     os << "split_re";
     break;
+  case Instruction::Opcode::exit:
+    os << "exit";
+    break;
   }
   return os;
 }
@@ -429,6 +433,7 @@ auto GD::Awk::Instruction::op_count(Opcode opcode) noexcept -> unsigned
   case Opcode::srand:
   case Opcode::tolower:
   case Opcode::toupper:
+  case Opcode::exit:
     return 1;
   case Opcode::store_lvalue:
   case Opcode::print:
@@ -548,6 +553,7 @@ void GD::Awk::Instruction::validate_operands() const
   case Opcode::srand:
   case Opcode::tolower:
   case Opcode::toupper:
+  case Opcode::exit:
     assert(std::holds_alternative<Index>(*op1_));  // NOLINT
     break;
   case Opcode::subst:

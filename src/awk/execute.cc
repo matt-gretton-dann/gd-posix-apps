@@ -1595,8 +1595,8 @@ public:
     return Integer{result};
   }
 
-  void execute([[maybe_unused]] ParsedProgram const& program, Instructions::const_iterator begin,
-               Instructions::const_iterator end)
+  auto execute([[maybe_unused]] ParsedProgram const& program, Instructions::const_iterator begin,
+               Instructions::const_iterator end) -> std::optional<Integer::underlying_type>
   {
     constexpr bool debug = false;
     auto length{std::distance(begin, end)};
@@ -1812,6 +1812,13 @@ public:
         values.at(it->reg()) = execute_split(values, it->op1(), it->op2(), it->op3(),
                                              std::get<std::string>(var("CONVFMT")));
         break;
+      case Instruction::Opcode::exit: {
+        auto result{to_integer(values.at(std::get<Index>(it->op1())))};
+        if (!result.has_value()) {
+          error(Msg::unable_to_cast_value_to_integer, values.at(std::get<Index>(it->op1())));
+        }
+        return *result;
+      }
       }
       if constexpr (debug) {
         if (it->has_reg()) {
@@ -1821,6 +1828,8 @@ public:
       }
       ++pc;
     }
+
+    return std::nullopt;
   }
 
   /** @brief Read the value of the variable \a var.
@@ -1919,8 +1928,8 @@ private:
 }  // namespace GD::Awk::Details
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-void GD::Awk::execute(ParsedProgram const& program, std::vector<std::string> const& initial_vars,
-                      std::vector<std::string> const& cmd_line)
+auto GD::Awk::execute(ParsedProgram const& program, std::vector<std::string> const& initial_vars,
+                      std::vector<std::string> const& cmd_line) -> Integer::underlying_type
 {
   Details::ExecutionState state;
 
@@ -1960,10 +1969,11 @@ void GD::Awk::execute(ParsedProgram const& program, std::vector<std::string> con
 
   // Run the BEGIN block.
   auto [begin_begin, begin_end] = program.begin_instructions();
-  state.execute(program, begin_begin, begin_end);
+  auto exit_code{state.execute(program, begin_begin, begin_end)};
 
   // Now parse and execute the command line.
-  for (Integer::underlying_type i{0}; i < std::get<Integer>(state.var("ARGC")).get(); ++i) {
+  for (Integer::underlying_type i{0};
+       i < std::get<Integer>(state.var("ARGC")).get() && !exit_code.has_value(); ++i) {
     Details::ExecutionValue const& operand_value{state.array_element("ARGV", std::to_string(i))};
     auto operand_stro{Details::ExecutionState::to_string(
       operand_value, std::get<std::string>(state.var("CONVFMT")))};
@@ -1989,10 +1999,18 @@ void GD::Awk::execute(ParsedProgram const& program, std::vector<std::string> con
       Integer::underlying_type const new_fnr = fnr.get() + 1;
       state.var("FNR", Integer{new_fnr});
 
-      state.execute(program, record_begin, record_end);
+      exit_code = state.execute(program, record_begin, record_end);
     }
   }
 
   auto [end_begin, end_end] = program.end_instructions();
-  state.execute(program, end_begin, end_end);
+  auto end_exit_code{state.execute(program, end_begin, end_end)};
+
+  if (end_exit_code.has_value()) {
+    return *end_exit_code;
+  }
+  if (exit_code.has_value()) {
+    return *exit_code;
+  }
+  return 0;
 }

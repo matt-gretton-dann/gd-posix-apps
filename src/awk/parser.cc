@@ -2063,9 +2063,7 @@ public:
       if (!expr.has_one_value()) {
         expr = emitter.emit_expr(Instruction::Opcode::load_literal, Integer{INT64_C(0)});
       }
-
-      // TODO(mgrettondann): Implement.
-      std::abort();
+      emitter.emit_statement(Instruction::Opcode::exit, expr);
       break;
     }
     case Token::Type::return_: {

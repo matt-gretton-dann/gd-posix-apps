@@ -170,6 +170,11 @@ test_awk('BEGIN { print split("Hello world", a); print a[1]; print a[2] }',
 test_awk(
     'BEGIN { print split("Hello world", a, /[aeiou]/); print a[1]; print a[2]; print a[3]; print a[4] }',
     "4\nH\nll\n w\nrld\n")
+test_awk('BEGIN { exit; print "nothing to see here." }', "")
+
+# Have exit codes will travel...
+test_awk('BEGIN { exit 2 }', None, expected_rc=2)
+test_awk('BEGIN { exit 2 }\nEND { exit 3 }', None, expected_rc=3)
 
 # Some error tests
 test_awk('BEGIN { print (1 }', None, expected_rc=1)

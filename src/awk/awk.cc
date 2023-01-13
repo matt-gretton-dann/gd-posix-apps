@@ -88,9 +88,7 @@ try {
   }
 
   auto program{parse(std::make_unique<GD::Awk::Lexer>(std::move(reader)))};
-  execute(program, variable_assignments, data_files);
-
-  return EXIT_SUCCESS;
+  return static_cast<int>(execute(program, variable_assignments, data_files));
 }  // namespace
 catch (std::exception& e) {
   error(Msg::uncaught_std_exception, e.what());

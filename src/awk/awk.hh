@@ -612,6 +612,7 @@ private:
  * | toupper               | S          | Ix(S)      |            |            | <result> = toupper(<op1>)                |
  * | split_fs              | I          | Ix(S)      | Ix(AN)     |            | <result> = split(<op1>, <op2>)           |
  * | split_re              | I          | Ix(S)      | Ix(AN)     | Ix(R)      | <result> = split(<op1>, <op2>, <op3>)    |
+ * | exit                  |            | Ix(I)      |            |            | exit with code <op1>                     |
  *
  * Parameter packs are identified by the index of the instruction corresponding to the
  * 'open_param_pack'.
@@ -680,6 +681,7 @@ public:
     toupper,                ///< Convert string to upper case
     split_fs,               ///< Split using FS
     split_re,               ///< Split using a specified RE
+    exit,                   ///< Exit the program
   };
 
   /** Type representing an offset of to an instruction. */
@@ -909,9 +911,10 @@ auto parse(std::unique_ptr<Lexer>&& lexer) -> ParsedProgram;
  * @param program      The program to execute
  * @param initial_vars Initial variables string (in form 'VAR=value')
  * @param cmd_line     Command line files & variables.
+ * @return             Exit code.
  */
-void execute(ParsedProgram const& program, std::vector<std::string> const& initial_vars,
-             std::vector<std::string> const& cmd_line);
+auto execute(ParsedProgram const& program, std::vector<std::string> const& initial_vars,
+             std::vector<std::string> const& cmd_line) -> Integer::underlying_type;
 }  // namespace GD::Awk
 
 template<>

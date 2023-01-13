@@ -43,7 +43,6 @@ target_link_libraries(awk PUBLIC libawk)
 if (NOT WIN32)
   add_gdpat_test(NAME awk
           XFAILS
-          "awk/onetrueawk-awk/basic/p.41"
           "awk/onetrueawk-awk/basic/p.43"
           "awk/onetrueawk-awk/basic/p.44"
           "awk/onetrueawk-awk/basic/p.47"
@@ -80,7 +79,6 @@ if (NOT WIN32)
           "awk/onetrueawk-awk/general/t.for1"
           "awk/onetrueawk-awk/general/t.for2"
           "awk/onetrueawk-awk/general/t.for3"
-          "awk/onetrueawk-awk/general/t.format4"
           "awk/onetrueawk-awk/general/t.fun"
           "awk/onetrueawk-awk/general/t.fun0"
           "awk/onetrueawk-awk/general/t.fun1"
@@ -100,7 +98,6 @@ if (NOT WIN32)
           "awk/onetrueawk-awk/general/t.intest"
           "awk/onetrueawk-awk/general/t.intest2"
           "awk/onetrueawk-awk/general/t.j.x"
-          "awk/onetrueawk-awk/general/t.longstr"
           "awk/onetrueawk-awk/general/t.next"
           "awk/onetrueawk-awk/general/t.null0"
           "awk/onetrueawk-awk/general/t.pipe"
@@ -131,7 +128,6 @@ if (NOT WIN32)
           "awk/onetrueawk-awk/advanced/T.clv"
           "awk/onetrueawk-awk/advanced/T.delete"
           "awk/onetrueawk-awk/advanced/T.errmsg"
-          "awk/onetrueawk-awk/advanced/T.exprconv"
           "awk/onetrueawk-awk/advanced/T.flags"
           "awk/onetrueawk-awk/advanced/T.func"
           "awk/onetrueawk-awk/advanced/T.gawk"
