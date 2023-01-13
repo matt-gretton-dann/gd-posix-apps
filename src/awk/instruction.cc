@@ -203,6 +203,8 @@ auto GD::Awk::Instruction::has_result(Opcode opcode) noexcept -> bool
   case Opcode::toupper:
   case Opcode::tolower:
   case Opcode::sprintf:
+  case Opcode::split_fs:
+  case Opcode::split_re:
     return true;
   case Opcode::close_param_pack:
   case Opcode::store_lvalue:
@@ -386,6 +388,12 @@ auto GD::Awk::operator<<(std::ostream& os, GD::Awk::Instruction::Opcode opcode) 
   case Instruction::Opcode::toupper:
     os << "toupper";
     break;
+  case Instruction::Opcode::split_fs:
+    os << "split_fs";
+    break;
+  case Instruction::Opcode::split_re:
+    os << "split_re";
+    break;
   }
   return os;
 }
@@ -448,10 +456,12 @@ auto GD::Awk::Instruction::op_count(Opcode opcode) noexcept -> unsigned
   case Opcode::array_element:
   case Opcode::index:
   case Opcode::match:
+  case Opcode::split_fs:
     return 2;
   case Opcode::subst:
   case Opcode::gsubst:
   case Opcode::substr:
+  case Opcode::split_re:
     return 3;
   }
 }
@@ -499,6 +509,7 @@ void GD::Awk::Instruction::validate_operands() const
   case Opcode::atan2:
   case Opcode::index:
   case Opcode::match:
+  case Opcode::split_fs:
     assert(std::holds_alternative<Index>(*op1_));  // NOLINT
     assert(std::holds_alternative<Index>(*op2_));  // NOLINT
     break;
@@ -542,6 +553,7 @@ void GD::Awk::Instruction::validate_operands() const
   case Opcode::subst:
   case Opcode::gsubst:
   case Opcode::substr:
+  case Opcode::split_re:
     assert(std::holds_alternative<Index>(*op1_));  // NOLINT
     assert(std::holds_alternative<Index>(*op2_));  // NOLINT
     assert(std::holds_alternative<Index>(*op3_));  // NOLINT

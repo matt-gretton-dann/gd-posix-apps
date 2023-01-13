@@ -728,6 +728,42 @@
         "id": 122,
         "description": "Missing parameters in call to sprintf().  Instead got {0}.",
         "C": "Missing parameters in call to sprintf().  Instead there was {0}."
+      },
+      {
+        "msg": "expected_lparens_after_builtin_split",
+        "id": 123,
+        "description": "Expected a '(' after call to builtin split().  Instead got {0}.",
+        "C": "split should be followed by a '('.  Instead there was {0}."
+      },
+      {
+        "msg": "expected_rparens_after_builtin_split",
+        "id": 124,
+        "description": "Expected a ')' after call to builtin split().  Instead got {0}.",
+        "C": "Missing closing ')' in call to split().  Instead there was {0}."
+      },
+      {
+        "msg": "expected_comma_after_builtin_split_parameter",
+        "id": 125,
+        "description": "Expected a ',' after the first parameter to builtin function split.  Instead got {0}.",
+        "C": "Expected a ',' after the first parameter to split().  Instead got {0}."
+      },
+      {
+        "msg": "expected_expr_in_builtin_split",
+        "id": 126,
+        "description": "Missing parameter in call to builtin split.  Instead got {0}.",
+        "C": "Missing parameter in call to split().  Instead got {0}."
+      },
+      {
+        "msg": "expected_second_expr_in_builtin_split",
+        "id": 127,
+        "description": "Missing second parameter in call to builtin split.  Instead got {0}.",
+        "C": "Missing second parameter in call to split().  Instead got {0}."
+      },
+      {
+        "msg": "expected_third_expr_in_builtin_split",
+        "id": 128,
+        "description": "Missing third parameter in call to builtin split.  Instead got {0}.",
+        "C": "Missing third parameter in call to split().  Instead got {0}."
       }
     ]
   }

@@ -290,17 +290,13 @@ private:
   void parse_fs_regex(std::regex const& re)
   {
     std::smatch sm;
-    std::size_t offset{0};
 
-    if (std::regex_search(fields_[0], sm, re)) {
-      for (std::size_t i{0}; i < sm.size(); ++i) {
-        std::size_t const length{sm.position(i) - offset};
-        fields_.emplace_back(fields_[0].data() + offset, length);  // NOLINT
-        offset = sm.position(i) + sm.length(i);
-      }
+    for (auto it{std::sregex_iterator(fields_[0].begin(), fields_[0].end(), re)};
+         it != std::sregex_iterator(); ++it) {
+      sm = *it;
+      fields_.emplace_back(sm.prefix());
     }
-    // NOLINTNEXTLINE
-    fields_.emplace_back(fields_[0].data() + offset, fields_[0].size() - offset);
+    fields_.emplace_back(sm.suffix());
   }
 
   std::vector<std::string> fields_{};
@@ -641,6 +637,19 @@ public:
   }
 
   static auto to_floating_force(ExecutionValue const& value) -> Floating
+  {
+    return std::visit(GD::Overloaded{
+                        [](Integer i) { return static_cast<Floating>(i.get()); },
+                        [](Floating f) { return f; },
+                        [](std::nullopt_t) { return 0.0; },
+                        [](bool b) { return b ? 1.0 : 0.0; },
+                        [](std::string const& s) { return str_to_floating_force(s); },
+                        [](auto const&) { return 0.0; },
+                      },
+                      value);
+  }
+
+  static auto to_floating_force(ParameterValue const& value) -> Floating
   {
     return std::visit(GD::Overloaded{
                         [](Integer i) { return static_cast<Floating>(i.get()); },
@@ -1237,14 +1246,19 @@ public:
       else if (it == pp.end()) {
         result += fmt::vformat(new_fmt, fmt::make_format_args(0));
       }
-      else if (auto integer{to_integer(*it)}; !is_floating && integer.has_value()) {
-        result += fmt::vformat(new_fmt, fmt::make_format_args(*integer));
-      }
-      else if (auto floating{to_floating(*it)}; floating.has_value()) {
-        result += fmt::vformat(new_fmt, fmt::make_format_args(*floating));
+      else if (auto integer{to_integer(*it)}; !is_floating) {
+        if (integer.has_value()) {
+          result += fmt::vformat(new_fmt, fmt::make_format_args(*integer));
+        }
+        else {
+          result += fmt::vformat(
+            new_fmt,
+            fmt::make_format_args(static_cast<Integer::underlying_type>(to_floating_force(*it))));
+        }
       }
       else {
-        std::abort();
+        auto floating{to_floating_force(*it)};
+        result += fmt::vformat(new_fmt, fmt::make_format_args(floating));
       }
 
       if (it != pp.end()) {
@@ -1450,8 +1464,9 @@ public:
     return result;
   }
 
-  static auto execute_toupper(std::vector<ExecutionValue>& values, Instruction::Operand const& op_s,
-                              std::string const& conv_fmt) -> ExecutionValue
+  static auto execute_toupper(std::vector<ExecutionValue> const& values,
+                              Instruction::Operand const& op_s, std::string const& conv_fmt)
+    -> ExecutionValue
   {
     auto const& s{to_string(values.at(std::get<Index>(op_s)), conv_fmt)};
 
@@ -1463,6 +1478,121 @@ public:
     std::transform(s->begin(), s->end(), std::back_inserter(result),
                    [](char c) { return static_cast<char>(std::toupper(c)); });
     return result;
+  }
+
+  static auto execute_split(std::string const& str, VariableMap& array, std::string const& fs)
+    -> Integer::underlying_type
+  {
+    array.clear();
+
+    if (fs.empty()) {
+      error(Msg::empty_fs_undefined_behaviour);
+    }
+
+    if (fs == " ") {
+      execute_split_space(str, array);
+    }
+    else if (fs.size() == 1) {
+      execute_split_char(str, array, fs[0]);
+    }
+    else {
+      execute_split_re(str, array, std::regex{fs, std::regex_constants::awk});
+    }
+
+    return static_cast<Integer::underlying_type>(array.size());
+  }
+
+  static void execute_split_space(std::string const& str, VariableMap& array)
+  {
+    std::size_t offset{0};
+    std::size_t index{1};
+    while (true) {
+      while (offset < str.size() && (std::isblank(str[offset]) != 0 || str[offset] == '\n')) {
+        ++offset;
+      }
+      if (offset == str.size()) {
+        return;
+      }
+      std::size_t const space{str.find_first_of(" \t\n", offset)};
+      if (space == std::string::npos) {
+        array.insert({std::to_string(index++), str.substr(offset)});
+        return;
+      }
+
+      array.insert({std::to_string(index++), str.substr(offset, space - offset)});
+      offset = space + 1;
+    }
+  }
+
+  static void execute_split_char(std::string const& str, VariableMap& array, char fs)
+  {
+    std::size_t offset{0};
+    std::size_t index{1};
+
+    while (offset < str.size()) {
+      std::size_t const fs_appearance(str.find(fs, offset));
+      if (fs_appearance == std::string::npos) {
+        array.insert({std::to_string(index++), str.substr(offset)});
+        return;
+      }
+
+      array.insert({std::to_string(index++), str.substr(offset, fs_appearance - offset)});
+      offset = fs_appearance + 1;
+    }
+  }
+
+  static auto execute_split_re(std::string const& str, VariableMap& array, std::regex const& re)
+    -> Integer::underlying_type
+  {
+    std::smatch sm;
+    std::size_t index{1};
+
+    for (auto it{std::sregex_iterator(str.begin(), str.end(), re)}; it != std::sregex_iterator();
+         ++it) {
+      sm = *it;
+      array.insert({std::to_string(index++), sm.prefix()});
+    }
+    array.insert({std::to_string(index++), sm.suffix()});
+    return static_cast<Integer::underlying_type>(array.size());
+  }
+
+  auto execute_split(std::vector<ExecutionValue> const& values, Instruction::Operand const& op_str,
+                     Instruction::Operand const& array_op, std::string const& conv_fmt)
+    -> ExecutionValue
+  {
+    auto const& str{to_string(values.at(std::get<Index>(op_str)), conv_fmt)};
+    if (!str.has_value()) {
+      error(Msg::unable_to_cast_value_to_string, values.at(std::get<Index>(op_str)));
+    }
+
+    // TODO(mgrettondann): FIX!
+    auto const& array_name{std::get<VariableName>(values.at(std::get<Index>(array_op)))};
+
+    auto [array, flag] = arrays_.insert_or_assign(array_name.get(), VariableMap{});
+    auto result{execute_split(*str, array->second, std::get<std::string>(var("FS")))};
+    return Integer{result};
+  }
+
+  auto execute_split(std::vector<ExecutionValue> const& values, Instruction::Operand const& op_str,
+                     Instruction::Operand const& array_op, Instruction::Operand const& fs_op,
+                     std::string const& conv_fmt) -> ExecutionValue
+  {
+    auto const& str{to_string(values.at(std::get<Index>(op_str)), conv_fmt)};
+    if (!str.has_value()) {
+      error(Msg::unable_to_cast_value_to_string, values.at(std::get<Index>(op_str)));
+    }
+
+    auto const& re{to_re(values.at(std::get<Index>(fs_op)), conv_fmt)};
+    if (!re.has_value()) {
+      error(Msg::unable_to_cast_value_to_re, values.at(std::get<Index>(fs_op)));
+    }
+
+    // TODO(mgrettondann): FIX!
+    auto const& array_name{std::get<VariableName>(values.at(std::get<Index>(array_op))).get()};
+
+    auto [array, flag] = arrays_.insert_or_assign(array_name, VariableMap{});
+    auto result{execute_split_re(*str, array->second, *re)};
+    return Integer{result};
   }
 
   void execute([[maybe_unused]] ParsedProgram const& program, Instructions::const_iterator begin,
@@ -1673,6 +1803,14 @@ public:
       case Instruction::Opcode::toupper:
         values.at(it->reg()) =
           execute_toupper(values, it->op1(), std::get<std::string>(var("CONVFMT")));
+        break;
+      case Instruction::Opcode::split_fs:
+        values.at(it->reg()) =
+          execute_split(values, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
+        break;
+      case Instruction::Opcode::split_re:
+        values.at(it->reg()) = execute_split(values, it->op1(), it->op2(), it->op3(),
+                                             std::get<std::string>(var("CONVFMT")));
         break;
       }
       if constexpr (debug) {

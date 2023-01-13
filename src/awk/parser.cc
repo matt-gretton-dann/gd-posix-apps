@@ -283,8 +283,11 @@ public:
     assert(expr2.has_one_value());
     bool const preserve_regex{opcode == Instruction::Opcode::re_match ||
                               opcode == Instruction::Opcode::match};
-    instrs_->emplace_back(opcode, reg_, dereference_lvalue_int(expr1),
-                          dereference_lvalue_int(expr2, preserve_regex));
+    Instruction::Operand const op2{(opcode == Instruction::Opcode::split_fs)
+                                     ? expr2.index()
+                                     : dereference_lvalue_int(expr2, preserve_regex)};
+
+    instrs_->emplace_back(opcode, reg_, dereference_lvalue_int(expr1), op2);
     return ExprResult{reg_++};
   }
 
@@ -295,14 +298,17 @@ public:
     assert(expr1.has_one_value());
     assert(expr2.has_one_value());
     assert(expr3.has_one_value());
-    bool const preserve_regex{opcode == Instruction::Opcode::subst ||
-                              opcode == Instruction::Opcode::gsubst};
+    bool const preserve_regex_op1{opcode == Instruction::Opcode::subst ||
+                                  opcode == Instruction::Opcode::gsubst};
+    bool const preserve_regex_op3{opcode == Instruction::Opcode::split_re};
+    Instruction::Operand const op2{
+      (opcode == Instruction::Opcode::split_re) ? expr2.index() : dereference_lvalue_int(expr2)};
     Instruction::Operand const op3{
       (opcode == Instruction::Opcode::subst || opcode == Instruction::Opcode::gsubst)
         ? expr3.index()
-        : dereference_lvalue_int(expr3)};
-    instrs_->emplace_back(opcode, reg_, dereference_lvalue_int(expr1, preserve_regex),
-                          dereference_lvalue_int(expr2), op3);
+        : dereference_lvalue_int(expr3, preserve_regex_op3)};
+    instrs_->emplace_back(opcode, reg_, dereference_lvalue_int(expr1, preserve_regex_op1), op2,
+                          op3);
     return ExprResult{reg_++};
   }
 
@@ -798,6 +804,43 @@ public:
     return emitter.emit_expr(Instruction::Opcode::sprintf, fmt, pp);
   }
 
+  auto parse_builtin_func_split_expr(InstructionEmitter& emitter) -> ExprResult
+  {
+    if (lexer_->peek(false) != Token::Type::lparens) {
+      error(Msg::expected_lparens_after_builtin_split, lexer_->location(), lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    ExprResult const str{parse_expr(emitter, ExprType::expr, Msg::expected_expr_in_builtin_split)};
+
+    if (lexer_->peek(false) != Token::Type::comma) {
+      error(Msg::expected_comma_after_builtin_split_parameter, lexer_->location(),
+            lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    ExprResult const array{
+      parse_expr(emitter, ExprType::expr, Msg::expected_second_expr_in_builtin_split)};
+
+    ExprResult result;
+    if (lexer_->peek(false) == Token::Type::comma) {
+      lexer_->chew(false);
+      ExprResult const regex{
+        parse_expr(emitter, ExprType::expr, Msg::expected_third_expr_in_builtin_split)};
+      result = emitter.emit_expr(Instruction::Opcode::split_re, str, array, regex);
+    }
+    else {
+      result = emitter.emit_expr(Instruction::Opcode::split_fs, str, array);
+    }
+
+    if (lexer_->peek(false) != Token::Type::rparens) {
+      error(Msg::expected_rparens_after_builtin_split, lexer_->location(), lexer_->peek(false));
+    }
+    lexer_->chew(false);
+
+    return result;
+  }
+
   /** @brief Parse builtin functions.
    *
    * @param  instrs     Where to emit code to
@@ -866,8 +909,6 @@ public:
     auto func{lexer_->peek(false).builtin_func_name()};
     lexer_->chew(false);
     switch (func) {
-    case Token::BuiltinFunc::length:
-      return parse_builtin_length_expr(emitter);
     case Token::BuiltinFunc::atan2:
       return parse_builtin_func_atan2_expr(emitter);
       break;
@@ -881,6 +922,8 @@ public:
     case Token::BuiltinFunc::toupper:
       return parse_bultin_func_one_param_expr(emitter, func);
       break;
+    case Token::BuiltinFunc::length:
+      return parse_builtin_length_expr(emitter);
     case Token::BuiltinFunc::rand:
       return parse_builtin_func_rand_expr(emitter);
       break;
@@ -899,13 +942,15 @@ public:
     case Token::BuiltinFunc::match:
       return parse_builtin_func_match_expr(emitter);
       break;
-    case Token::BuiltinFunc::substr:
-      return parse_builtin_func_substr_expr(emitter);
+    case Token::BuiltinFunc::split:
+      return parse_builtin_func_split_expr(emitter);
       break;
     case Token::BuiltinFunc::sprintf:
       return parse_builtin_func_sprintf_expr(emitter);
       break;
-    case Token::BuiltinFunc::split:
+    case Token::BuiltinFunc::substr:
+      return parse_builtin_func_substr_expr(emitter);
+      break;
     case Token::BuiltinFunc::close:
     case Token::BuiltinFunc::system:
       std::abort();

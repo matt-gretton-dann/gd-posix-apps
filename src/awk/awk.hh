@@ -610,6 +610,8 @@ private:
  * | substr                | S          | Ix(S)      | Ix(I)      | Ix(I)      | <result> = substr(<op1>, <op2>, <op3>    |
  * | tolower               | S          | Ix(S)      |            |            | <result> = tolower(<op1>)                |
  * | toupper               | S          | Ix(S)      |            |            | <result> = toupper(<op1>)                |
+ * | split_fs              | I          | Ix(S)      | Ix(AN)     |            | <result> = split(<op1>, <op2>)           |
+ * | split_re              | I          | Ix(S)      | Ix(AN)     | Ix(R)      | <result> = split(<op1>, <op2>, <op3>)    |
  *
  * Parameter packs are identified by the index of the instruction corresponding to the
  * 'open_param_pack'.
@@ -676,6 +678,8 @@ public:
     substr,                 ///< Substring
     tolower,                ///< Convert string to lower case
     toupper,                ///< Convert string to upper case
+    split_fs,               ///< Split using FS
+    split_re,               ///< Split using a specified RE
   };
 
   /** Type representing an offset of to an instruction. */

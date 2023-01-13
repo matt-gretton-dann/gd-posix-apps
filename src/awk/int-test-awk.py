@@ -165,6 +165,11 @@ test_awk('BEGIN { print tolower("Hello world!") }', "hello world!\n")
 test_awk('BEGIN { print toupper("Hello world!") }', "HELLO WORLD!\n")
 test_awk('BEGIN { a=sprintf( "%s-%d-%g", "Hello", 10, 372.2); print a }',
          "Hello-10-372.2\n")
+test_awk('BEGIN { print split("Hello world", a); print a[1]; print a[2] }',
+         "2\nHello\nworld\n")
+test_awk(
+    'BEGIN { print split("Hello world", a, /[aeiou]/); print a[1]; print a[2]; print a[3]; print a[4] }',
+    "4\nH\nll\n w\nrld\n")
 
 # Some error tests
 test_awk('BEGIN { print (1 }', None, expected_rc=1)
