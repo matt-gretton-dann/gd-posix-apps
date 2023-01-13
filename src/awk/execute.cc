@@ -724,16 +724,10 @@ public:
     ExecutionValue const& op1_value{values.at(std::get<Index>(op1))};
     ExecutionValue const& op2_value{values.at(std::get<Index>(op2))};
 
-    auto const op1_float{to_floating(op1_value)};
-    auto const op2_float{to_floating(op2_value)};
-    if (!op1_float.has_value()) {
-      error(Msg::unable_to_cast_value_to_float, op1_value);
-    }
-    if (!op2_float.has_value()) {
-      error(Msg::unable_to_cast_value_to_float, op2_value);
-    }
+    auto const op1_float{to_floating_force(op1_value)};
+    auto const op2_float{to_floating_force(op2_value)};
 
-    return std::atan2(*op1_float, *op2_float);
+    return std::atan2(op1_float, op2_float);
   }
 
   static auto execute_math(std::vector<ExecutionValue> const& values,
@@ -743,12 +737,9 @@ public:
     assert(std::holds_alternative<Index>(op));
     ExecutionValue const& op_value{values.at(std::get<Index>(op))};
 
-    auto const op_float{to_floating(op_value)};
-    if (!op_float.has_value()) {
-      error(Msg::unable_to_cast_value_to_float, op_value);
-    }
+    auto const op_float{to_floating_force(op_value)};
 
-    return Floating{fn(*op_float)};
+    return Floating{fn(op_float)};
   }
 
   static auto execute_int(std::vector<ExecutionValue> const& values, Instruction::Operand const& op)
