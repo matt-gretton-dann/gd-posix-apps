@@ -171,6 +171,7 @@ test_awk(
     'BEGIN { print split("Hello world", a, /[aeiou]/); print a[1]; print a[2]; print a[3]; print a[4] }',
     "4\nH\nll\n w\nrld\n")
 test_awk('BEGIN { exit; print "nothing to see here." }', "")
+test_awk('BEGIN { print (2 > 10), ("2a" > 10), ("2" > 10) }', "0 1 0\n")
 
 # Have exit codes will travel...
 test_awk('BEGIN { exit 2 }', None, expected_rc=2)

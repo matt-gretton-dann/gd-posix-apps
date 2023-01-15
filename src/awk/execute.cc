@@ -142,6 +142,61 @@ struct fmt::formatter<GD::Awk::Details::ExecutionValue>
   }
 };
 
+template<>
+struct fmt::formatter<GD::Awk::Details::ParameterValue>
+{
+  static constexpr auto parse(format_parse_context& ctx)
+  {
+    if (ctx.begin() != ctx.end() && *ctx.begin() != '}') {
+      throw format_error("invalid format");
+    }
+    return ctx.begin();
+  }
+
+  template<typename FormatContext>
+  auto format(GD::Awk::Details::ParameterValue const& value, FormatContext& ctx)
+  {
+    return std::visit(
+      GD::Overloaded{
+        [&ctx](std::string const& s) {
+          return fmt::vformat_to(ctx.out(), "{0}", fmt::make_format_args(s));
+        },
+        [&ctx](GD::Awk::Integer i) {
+          return fmt::vformat_to(ctx.out(), "{0}", fmt::make_format_args(i.get()));
+        },
+        [&ctx](GD::Awk::Floating f) {
+          return fmt::vformat_to(ctx.out(), "{0}", fmt::make_format_args(f));
+        },
+        [&ctx](std::regex const&) {
+          return fmt::vformat_to(ctx.out(), "Regular expression", fmt::make_format_args());
+        },
+        [&ctx](std::nullopt_t) {
+          return fmt::vformat_to(ctx.out(), "unset", fmt::make_format_args());
+        },
+        [&ctx](GD::Awk::VariableName const& vn) {
+          return fmt::vformat_to(ctx.out(), "{0}", fmt::make_format_args(vn.get()));
+        },
+        [&ctx](GD::Awk::ArrayName const& an) {
+          return fmt::vformat_to(ctx.out(), "{0}[]", fmt::make_format_args(an.get()));
+        },
+        [&ctx](GD::Awk::Details::ArrayElement const& ae) {
+          return fmt::vformat_to(ctx.out(), "{0}[{1}]",
+                                 fmt::make_format_args(ae.first.get(), ae.second));
+        },
+        [&ctx](GD::Awk::Details::Field f) {
+          return fmt::vformat_to(ctx.out(), "${0}", fmt::make_format_args(f.get()));
+        },
+        [&ctx](GD::Awk::FileDescriptor fd) {
+          return fmt::vformat_to(ctx.out(), "fd({0})", fmt::make_format_args(fd.get()));
+        },
+        [&ctx](GD::Awk::Details::ParameterPack const&) {
+          return fmt::vformat_to(ctx.out(), "parameter pack", fmt::make_format_args());
+        },
+      },
+      value);
+  }
+};
+
 namespace GD::Awk::Details {
 /// Mapping of variable names to values.
 using VariableMap = std::map<std::string, ExecutionValue>;
@@ -505,31 +560,31 @@ public:
   {
     assert(std::holds_alternative<Index>(lhs));
 
-    std::visit(GD::Overloaded{
-                 [&value, this](VariableName const& v) {
-                   // Updating NF requires us to reset the fields_ variable.
-                   if (v.get() == "NF") {
-                     auto size{to_integer(value)};
-                     if (!size.has_value()) {
-                       error(Msg::unable_to_cast_value_to_integer, value);
-                     }
-                     fields_.resize(static_cast<std::size_t>(*size),
-                                    std::get<std::string>(var("OFS")));
-                   }
+    std::visit(
+      GD::Overloaded{
+        [&value, this](VariableName const& v) {
+          // Updating NF requires us to reset the fields_ variable.
+          if (v.get() == "NF") {
+            auto size{to_integer_exact(value)};
+            if (!size.has_value()) {
+              error(Msg::unable_to_cast_value_to_integer, value);
+            }
+            fields_.resize(static_cast<std::size_t>(*size), std::get<std::string>(var("OFS")));
+          }
 
-                   var(v.get(), value);
-                 },
-                 [&value, &conv_fmt, this](Field f) {
-                   fields_.field(f, *to_string(value, conv_fmt), std::get<std::string>(var("FS")),
-                                 std::get<std::string>(var("OFS")));
-                   var("NF", Integer{fields_.size()});
-                 },
-                 [&value, this](ArrayElement const& elt) {
-                   return array_element(elt.first.get(), elt.second, value);
-                 },
-                 [](auto const&) { std::abort(); },
-               },
-               values.at(std::get<Index>(lhs)));
+          var(v.get(), value);
+        },
+        [&value, &conv_fmt, this](Field f) {
+          fields_.field(f, *to_string_exact(value, conv_fmt), std::get<std::string>(var("FS")),
+                        std::get<std::string>(var("OFS")));
+          var("NF", Integer{fields_.size()});
+        },
+        [&value, this](ArrayElement const& elt) {
+          return array_element(elt.first.get(), elt.second, value);
+        },
+        [](auto const&) { std::abort(); },
+      },
+      values.at(std::get<Index>(lhs)));
   }
 
   [[nodiscard]] static auto read_field(std::vector<ExecutionValue> const& values,
@@ -542,7 +597,20 @@ public:
     return Field{field.get()};
   }
 
-  static auto to_bool(ExecutionValue const& value) -> std::optional<bool>
+  static auto to_bool(ExecutionValue const& value) -> bool
+  {
+    return std::visit(GD::Overloaded{
+                        [](Integer i) { return (i.get() != 0); },
+                        [](Floating f) { return (f != 0.0); },
+                        [](std::nullopt_t) { return false; },
+                        [](std::string const& s) { return !s.empty(); },
+                        [](bool b) { return b; },
+                        [](auto const&) { return false; },
+                      },
+                      value);
+  }
+
+  static auto to_bool_exact(ExecutionValue const& value) -> std::optional<bool>
   {
     return std::visit(GD::Overloaded{
                         [](Integer i) { return std::make_optional(i.get() != 0); },
@@ -555,7 +623,7 @@ public:
                       value);
   }
 
-  static auto to_integer(std::string const& s) -> std::optional<Integer::underlying_type>
+  static auto to_integer_exact(std::string const& s) -> std::optional<Integer::underlying_type>
   {
     if (s.empty()) {
       return std::nullopt;
@@ -571,7 +639,7 @@ public:
     }
   }
 
-  static auto to_integer(Floating f) -> std::optional<Integer::underlying_type>
+  static auto to_integer_exact(Floating f) -> std::optional<Integer::underlying_type>
   {
     auto result{static_cast<Integer::underlying_type>(f)};
     if (f == static_cast<Floating>(result)) {
@@ -581,35 +649,57 @@ public:
     return std::nullopt;
   }
 
-  static auto to_integer(ExecutionValue const& value) -> std::optional<Integer::underlying_type>
+  static auto to_integer_exact(ExecutionValue const& value)
+    -> std::optional<Integer::underlying_type>
   {
     return std::visit(
       GD::Overloaded{
         [](Integer i) { return std::make_optional(i.get()); },
-        [](Floating f) { return to_integer(f); },
+        [](Floating f) { return to_integer_exact(f); },
         [](std::nullopt_t) { return std::make_optional(Integer::underlying_type{0}); },
-        [](std::string const& s) { return to_integer(s); },
+        [](std::string const& s) { return to_integer_exact(s); },
         [](bool b) { return std::optional<Integer::underlying_type>(b ? 1 : 0); },
         [](auto const&) { return std::optional<Integer::underlying_type>{std::nullopt}; },
       },
       value);
   }
 
-  static auto to_integer(ParameterValue const& value) -> std::optional<Integer::underlying_type>
+  static auto to_integer_exact(ParameterValue const& value)
+    -> std::optional<Integer::underlying_type>
   {
     return std::visit(
       GD::Overloaded{
         [](Integer i) { return std::make_optional(i.get()); },
-        [](Floating f) { return to_integer(f); },
+        [](Floating f) { return to_integer_exact(f); },
         [](std::nullopt_t) { return std::make_optional(Integer::underlying_type{0}); },
-        [](std::string const& s) { return to_integer(s); },
+        [](std::string const& s) { return to_integer_exact(s); },
         [](bool b) { return std::optional<Integer::underlying_type>(b ? 1 : 0); },
         [](auto const&) { return std::optional<Integer::underlying_type>{std::nullopt}; },
       },
       value);
   }
 
-  [[nodiscard]] static auto str_to_floating(std::string const& s) -> std::optional<Floating>
+  static auto to_integer(ExecutionValue const& value) -> Integer::underlying_type
+  {
+    auto num{to_number(value)};
+    if (std::holds_alternative<Integer::underlying_type>(num)) {
+      return std::get<Integer::underlying_type>(num);
+    }
+
+    return static_cast<Integer::underlying_type>(std::get<Floating>(num));
+  }
+
+  static auto to_integer(ParameterValue const& value) -> Integer::underlying_type
+  {
+    auto num{to_number(value)};
+    if (std::holds_alternative<Integer::underlying_type>(num)) {
+      return std::get<Integer::underlying_type>(num);
+    }
+
+    return static_cast<Integer::underlying_type>(std::get<Floating>(num));
+  }
+
+  [[nodiscard]] static auto to_floating_exact(std::string const& s) -> std::optional<Floating>
   {
     std::size_t pos{0};
     try {
@@ -625,7 +715,7 @@ public:
     return std::nullopt;
   }
 
-  [[nodiscard]] static auto str_to_floating_force(std::string const& s) -> Floating
+  [[nodiscard]] static auto to_floating(std::string const& s) -> Floating
   {
     std::size_t pos{0};
     try {
@@ -636,33 +726,33 @@ public:
     }
   }
 
-  static auto to_floating_force(ExecutionValue const& value) -> Floating
+  static auto to_floating(ExecutionValue const& value) -> Floating
   {
     return std::visit(GD::Overloaded{
                         [](Integer i) { return static_cast<Floating>(i.get()); },
                         [](Floating f) { return f; },
                         [](std::nullopt_t) { return 0.0; },
                         [](bool b) { return b ? 1.0 : 0.0; },
-                        [](std::string const& s) { return str_to_floating_force(s); },
+                        [](std::string const& s) { return to_floating(s); },
                         [](auto const&) { return 0.0; },
                       },
                       value);
   }
 
-  static auto to_floating_force(ParameterValue const& value) -> Floating
+  static auto to_floating(ParameterValue const& value) -> Floating
   {
     return std::visit(GD::Overloaded{
                         [](Integer i) { return static_cast<Floating>(i.get()); },
                         [](Floating f) { return f; },
                         [](std::nullopt_t) { return 0.0; },
                         [](bool b) { return b ? 1.0 : 0.0; },
-                        [](std::string const& s) { return str_to_floating_force(s); },
+                        [](std::string const& s) { return to_floating(s); },
                         [](auto const&) { return 0.0; },
                       },
                       value);
   }
 
-  static auto to_floating(ExecutionValue const& value) -> std::optional<Floating>
+  static auto to_floating_exact(ExecutionValue const& value) -> std::optional<Floating>
   {
     return std::visit(
       GD::Overloaded{
@@ -670,13 +760,13 @@ public:
         [](Floating f) { return std::make_optional(f); },
         [](std::nullopt_t) { return std::make_optional(Floating{0.0}); },
         [](bool b) { return std::optional<Floating>(b ? 1.0 : 0.0); },
-        [](std::string const& s) { return str_to_floating(s); },
+        [](std::string const& s) { return to_floating_exact(s); },
         [](auto const&) { return std::optional<Floating>{std::nullopt}; },
       },
       value);
   }
 
-  static auto to_floating(ParameterValue const& value) -> std::optional<Floating>
+  static auto to_floating_exact(ParameterValue const& value) -> std::optional<Floating>
   {
     return std::visit(
       GD::Overloaded{
@@ -684,8 +774,109 @@ public:
         [](Floating f) { return std::make_optional(f); },
         [](std::nullopt_t) { return std::make_optional(Floating{0.0}); },
         [](bool b) { return std::optional<Floating>(b ? 1.0 : 0.0); },
-        [](std::string const& s) { return str_to_floating(s); },
+        [](std::string const& s) { return to_floating_exact(s); },
         [](auto const&) { return std::optional<Floating>{std::nullopt}; },
+      },
+      value);
+  }
+
+  using Number = std::variant<Integer::underlying_type, Floating>;
+
+  static auto to_number(Floating f) -> Number
+  {
+    auto i{static_cast<Integer::underlying_type>(f)};
+    if (static_cast<Floating>(i) == f) {
+      return Number{i};
+    }
+    return Number{f};
+  }
+
+  static auto to_number(std::string const& s) -> Number
+  {
+    Number num{Integer::underlying_type{0}};
+
+    try {
+      std::size_t fpos{0};
+      num = std::stod(s, &fpos);
+      std::size_t ipos{0};
+      Integer::underlying_type inum{std::stol(s, &ipos)};
+      if (ipos == fpos) {
+        // FP and Integer conversion produce the same number.
+        return inum;
+      }
+    }
+    catch (...) {
+      return num;
+    }
+
+    return num;
+  }
+
+  static auto to_number_exact(std::string const& s) -> std::optional<Number>
+  {
+    std::optional<Number> result{std::nullopt};
+
+    try {
+      std::size_t pos{0};
+      result = std::stod(s, &pos);
+      if (pos != s.size()) {
+        // Didn't convert the whole number.
+        return std::nullopt;
+      }
+
+      Integer::underlying_type inum{std::stol(s, &pos)};
+      if (pos == s.size()) {
+        // FP and Integer conversion produce the same number.
+        return inum;
+      }
+    }
+    catch (...) {
+      return result;
+    }
+
+    return result;
+  }
+
+  static auto to_number(ExecutionValue const& value) -> Number
+  {
+    return std::visit(
+      GD::Overloaded{
+        [](Integer i) { return Number{i.get()}; },
+        [](Floating f) { return to_number(f); },
+        [](bool b) { return Number{static_cast<Integer::underlying_type>(b)}; },
+        [](std::string const& s) { return to_number(s); },
+        [](std::nullopt_t) { return Number{Integer::underlying_type{0}}; },
+        [value](auto const&) -> Number { error(Msg::unable_to_cast_value_to_number, value); },
+      },
+      value);
+  }  // namespace GD::Awk::Details
+
+  static auto to_number(ParameterValue const& value) -> Number
+  {
+    return std::visit(
+      GD::Overloaded{
+        [](Integer i) { return Number{i.get()}; },
+        [](Floating f) { return to_number(f); },
+        [](bool b) { return Number{static_cast<Integer::underlying_type>(b)}; },
+        [](std::string const& s) { return to_number(s); },
+        [](std::nullopt_t) { return Number{Integer::underlying_type{0}}; },
+        [value](auto const&) -> Number { error(Msg::unable_to_cast_value_to_number, value); },
+      },
+      value);
+  }
+
+  static auto to_number_exact(ExecutionValue const& value) -> std::optional<Number>
+  {
+    return std::visit(
+      GD::Overloaded{
+        [](Integer i) { return std::make_optional(Number{i.get()}); },
+        [](Floating f) { return std::make_optional(to_number(f)); },
+        [](bool b) { return std::make_optional(Number{static_cast<Integer::underlying_type>(b)}); },
+        [](std::string const& s) { return to_number_exact(s); },
+        [](std::nullopt_t) { return std::make_optional(Number{Integer::underlying_type{0}}); },
+        [value](auto const&) -> std::optional<Number> {
+          error(Msg::unable_to_cast_value_to_number, value);
+        },
       },
       value);
   }
@@ -699,20 +890,25 @@ public:
     assert(std::holds_alternative<Index>(rhs));
     ExecutionValue const& lhs_value{values.at(std::get<Index>(lhs))};
     ExecutionValue const& rhs_value{values.at(std::get<Index>(rhs))};
-    auto const lhs_int{to_integer(lhs_value)};
-    auto const rhs_int{to_integer(rhs_value)};
-    if (lhs_int.has_value() && rhs_int.has_value()) {
-      auto const res{int_op(*lhs_int, *rhs_int)};
+    auto const lhs_number{to_number(lhs_value)};
+    auto const rhs_number{to_number(rhs_value)};
+    if (std::holds_alternative<Integer::underlying_type>(lhs_number) &&
+        std::holds_alternative<Integer::underlying_type>(rhs_number)) {
+      auto const res{int_op(std::get<Integer::underlying_type>(lhs_number),
+                            std::get<Integer::underlying_type>(rhs_number))};
       if (res.has_value()) {
         Integer::underlying_type const r = *res;
         return static_cast<Integer>(r);
       }
     }
+    Floating const lhsf{std::holds_alternative<Floating>(lhs_number)
+                          ? std::get<Floating>(lhs_number)
+                          : static_cast<Floating>(std::get<Integer::underlying_type>(lhs_number))};
+    Floating const rhsf{std::holds_alternative<Floating>(rhs_number)
+                          ? std::get<Floating>(rhs_number)
+                          : static_cast<Floating>(std::get<Integer::underlying_type>(rhs_number))};
 
-    auto const lhs_float{to_floating_force(lhs_value)};
-    auto const rhs_float{to_floating_force(rhs_value)};
-
-    return Floating{float_op(lhs_float, rhs_float)};
+    return float_op(lhsf, rhsf);
   }
 
   static auto execute_atan2(std::vector<ExecutionValue> const& values,
@@ -724,10 +920,7 @@ public:
     ExecutionValue const& op1_value{values.at(std::get<Index>(op1))};
     ExecutionValue const& op2_value{values.at(std::get<Index>(op2))};
 
-    auto const op1_float{to_floating_force(op1_value)};
-    auto const op2_float{to_floating_force(op2_value)};
-
-    return std::atan2(op1_float, op2_float);
+    return std::atan2(to_floating(op1_value), to_floating(op2_value));
   }
 
   static auto execute_math(std::vector<ExecutionValue> const& values,
@@ -736,10 +929,7 @@ public:
   {
     assert(std::holds_alternative<Index>(op));
     ExecutionValue const& op_value{values.at(std::get<Index>(op))};
-
-    auto const op_float{to_floating_force(op_value)};
-
-    return Floating{fn(op_float)};
+    return Floating{fn(to_floating(op_value))};
   }
 
   static auto execute_int(std::vector<ExecutionValue> const& values, Instruction::Operand const& op)
@@ -747,19 +937,13 @@ public:
   {
     assert(std::holds_alternative<Index>(op));
     ExecutionValue const& value{values.at(std::get<Index>(op))};
+    auto const num{to_number(value)};
 
-    // See if this is already an integer.
-    auto const integer{to_integer(value)};
-    if (integer.has_value()) {
-      return Integer{*integer};
+    if (std::holds_alternative<Integer::underlying_type>(num)) {
+      return Integer{std::get<Integer::underlying_type>(num)};
     }
 
-    auto const floating{to_floating(value)};
-    if (!floating.has_value()) {
-      error(Msg::unable_to_cast_value_to_float, value);
-    }
-
-    Floating const fresult{std::trunc(*floating)};
+    Floating const fresult{std::trunc(std::get<Floating>(num))};
     auto const iresult{static_cast<Integer::underlying_type>(fresult)};
     if (static_cast<Floating>(iresult) == fresult) {
       return Integer{iresult};
@@ -826,17 +1010,12 @@ public:
   {
     assert(std::holds_alternative<Index>(op));
     ExecutionValue const& value{values.at(std::get<Index>(op))};
-    auto integer{to_integer(value)};
-    if (integer.has_value()) {
-      return Integer{*integer};
+    auto num{to_number(value)};
+    if (std::holds_alternative<Integer::underlying_type>(num)) {
+      return Integer{std::get<Integer::underlying_type>(num)};
     }
 
-    auto floating{to_floating(value)};
-    if (floating.has_value()) {
-      return Floating{*floating};
-    }
-
-    error(Msg::unable_to_cast_value_to_number, value);
+    return Floating{std::get<Floating>(num)};
   }
 
   static auto execute_negate(std::vector<ExecutionValue> const& values,
@@ -844,18 +1023,16 @@ public:
   {
     assert(std::holds_alternative<Index>(op));
     ExecutionValue const& value{values.at(std::get<Index>(op))};
-    auto integer{to_integer(value)};
-    if (integer.has_value()) {
-      auto result{-*integer};
-      return Integer{result};
+    auto num{to_number(value)};
+    if (std::holds_alternative<Integer::underlying_type>(num)) {
+      auto i{std::get<Integer::underlying_type>(num)};
+      if (i != std::numeric_limits<Integer::underlying_type>::min()) {
+        i = -i;
+        return Integer{i};
+      }
     }
 
-    auto floating{to_floating(value)};
-    if (floating.has_value()) {
-      return Floating{-*floating};
-    }
-
-    error(Msg::unable_to_cast_value_to_number, value);
+    return Floating{-std::get<Floating>(num)};
   }
 
   static auto execute_to_bool(std::vector<ExecutionValue> const& values,
@@ -863,12 +1040,7 @@ public:
   {
     assert(std::holds_alternative<Index>(op));
     ExecutionValue const& value{values.at(std::get<Index>(op))};
-    auto b{to_bool(value)};
-    if (b.has_value()) {
-      return bool{*b};
-    }
-
-    error(Msg::unable_to_cast_value_to_bool, value);
+    return to_bool(value);
   }
 
   static auto execute_logical_not(std::vector<ExecutionValue> const& values,
@@ -876,13 +1048,7 @@ public:
   {
     assert(std::holds_alternative<Index>(op));
     ExecutionValue const& value{values.at(std::get<Index>(op))};
-    auto b{to_bool(value)};
-    if (b.has_value()) {
-      auto result{!*b};
-      return bool{result};
-    }
-
-    error(Msg::unable_to_cast_value_to_bool, value);
+    return !to_bool(value);
   }
 
   static auto execute_logical_and(std::vector<ExecutionValue> const& values,
@@ -893,21 +1059,7 @@ public:
     assert(std::holds_alternative<Index>(rhs));
     ExecutionValue const& lhs_value{values.at(std::get<Index>(lhs))};
     ExecutionValue const& rhs_value{values.at(std::get<Index>(rhs))};
-    auto b1{to_bool(lhs_value)};
-    auto b2{to_bool(rhs_value)};
-    if (b1.has_value() && b2.has_value()) {
-      auto result{*b1 && *b2};
-      return bool{result};
-    }
-
-    if (!b1.has_value()) {
-      error(Msg::unable_to_cast_value_to_bool, lhs_value);
-    }
-    if (!b2.has_value()) {
-      error(Msg::unable_to_cast_value_to_bool, rhs_value);
-    }
-
-    std::abort();
+    return to_bool(lhs_value) && to_bool(rhs_value);
   }
 
   static auto execute_logical_or(std::vector<ExecutionValue> const& values,
@@ -918,21 +1070,7 @@ public:
     assert(std::holds_alternative<Index>(rhs));
     ExecutionValue const& lhs_value{values.at(std::get<Index>(lhs))};
     ExecutionValue const& rhs_value{values.at(std::get<Index>(rhs))};
-    auto b1{to_bool(lhs_value)};
-    auto b2{to_bool(rhs_value)};
-    if (b1.has_value() && b2.has_value()) {
-      auto result{*b1 || *b2};
-      return bool{result};
-    }
-
-    if (!b1.has_value()) {
-      error(Msg::unable_to_cast_value_to_bool, lhs_value);
-    }
-    if (!b2.has_value()) {
-      error(Msg::unable_to_cast_value_to_bool, rhs_value);
-    }
-
-    std::abort();
+    return to_bool(lhs_value) || to_bool(rhs_value);
   }
 
   static auto to_fmt(std::string const& s)
@@ -944,7 +1082,35 @@ public:
     return result;
   }
 
-  static auto to_string(ExecutionValue const& index, std::string const& fmt)
+  static auto to_string(ExecutionValue const& index, std::string const& fmt) -> std::string
+  {
+    return std::visit(
+      GD::Overloaded{
+        [](Integer v) { return std::to_string(v.get()); },
+        [&fmt](Floating v) { return fmt::vformat(to_fmt(fmt), fmt::make_format_args(v)); },
+        [](bool b) { return std::string{b ? "1" : "0"}; },
+        [](std::string const& s) { return s; },
+        [](std::nullopt_t) { return std::string{}; },
+        [index](auto const&) -> std::string { error(Msg::unable_to_cast_value_to_string, index); },
+      },
+      index);
+  }
+
+  static auto to_string(ParameterValue const& index, std::string const& fmt) -> std::string
+  {
+    return std::visit(
+      GD::Overloaded{
+        [](Integer v) { return std::to_string(v.get()); },
+        [&fmt](Floating v) { return fmt::vformat(to_fmt(fmt), fmt::make_format_args(v)); },
+        [](bool b) { return std::string{b ? "1" : "0"}; },
+        [](std::string const& s) { return s; },
+        [](std::nullopt_t) { return std::string{}; },
+        [index](auto const&) -> std::string { error(Msg::unable_to_cast_value_to_string, index); },
+      },
+      index);
+  }
+
+  static auto to_string_exact(ExecutionValue const& index, std::string const& fmt)
     -> std::optional<std::string>
   {
     return std::visit(GD::Overloaded{
@@ -961,7 +1127,7 @@ public:
                       index);
   }
 
-  static auto to_string(ParameterValue const& index, std::string const& fmt)
+  static auto to_string_exact(ParameterValue const& index, std::string const& fmt)
     -> std::optional<std::string>
   {
     return std::visit(GD::Overloaded{
@@ -1005,8 +1171,8 @@ public:
     assert(std::holds_alternative<Index>(rhs));
     ExecutionValue const& lhs_value{values.at(std::get<Index>(lhs))};
     ExecutionValue const& rhs_value{values.at(std::get<Index>(rhs))};
-    auto const lhs_str{to_string(lhs_value, conv_fmt)};
-    auto const rhs_str{to_string(rhs_value, conv_fmt)};
+    auto const lhs_str{to_string_exact(lhs_value, conv_fmt)};
+    auto const rhs_str{to_string_exact(rhs_value, conv_fmt)};
     if (lhs_str.has_value() && rhs_str.has_value()) {
       return *lhs_str + *rhs_str;
     }
@@ -1023,7 +1189,7 @@ public:
                             std::string const& conv_fmt)
     -> std::pair<ExecutionValue, ExecutionValue>
   {
-    auto str{to_string(values.at(std::get<Index>(op_s)), conv_fmt)};
+    auto str{to_string_exact(values.at(std::get<Index>(op_s)), conv_fmt)};
     auto re{to_re(values.at(std::get<Index>(op_re)), conv_fmt)};
 
     if (!re.has_value()) {
@@ -1061,29 +1227,26 @@ public:
     assert(std::holds_alternative<Index>(rhs));
     ExecutionValue const& lhs_value{values.at(std::get<Index>(lhs))};
     ExecutionValue const& rhs_value{values.at(std::get<Index>(rhs))};
-    auto const lhs_int{to_integer(lhs_value)};
-    auto const rhs_int{to_integer(rhs_value)};
-    if (lhs_int.has_value() && rhs_int.has_value()) {
-      return num_op(*lhs_int, *rhs_int);
+    auto const lhs_num{to_number_exact(lhs_value)};
+    auto const rhs_num{to_number_exact(rhs_value)};
+    if (!lhs_num.has_value() || !rhs_num.has_value()) {
+      return string_op(to_string(lhs_value, conv_fmt), to_string(rhs_value, conv_fmt));
     }
 
-    auto const lhs_float{to_floating(lhs_value)};
-    auto const rhs_float{to_floating(rhs_value)};
-    if (lhs_float.has_value() && rhs_float.has_value()) {
-      return num_op(*lhs_float, *rhs_float);
+    if (std::holds_alternative<Integer::underlying_type>(*lhs_num) &&
+        std::holds_alternative<Integer::underlying_type>(*rhs_num)) {
+      return num_op(std::get<Integer::underlying_type>(*lhs_num),
+                    std::get<Integer::underlying_type>(*rhs_num));
     }
-
-    auto const lhs_str{to_string(lhs_value, conv_fmt)};
-    auto const rhs_str{to_string(rhs_value, conv_fmt)};
-
-    if (!lhs_str.has_value()) {
-      error(Msg::unable_to_cast_value_to_string, lhs_value);
+    if (std::holds_alternative<Integer::underlying_type>(*lhs_num)) {
+      return num_op(static_cast<Floating>(std::get<Integer::underlying_type>(*lhs_num)),
+                    std::get<Floating>(*rhs_num));
     }
-    if (!rhs_str.has_value()) {
-      error(Msg::unable_to_cast_value_to_string, rhs_value);
+    if (std::holds_alternative<Integer::underlying_type>(*rhs_num)) {
+      return num_op(std::get<Floating>(*lhs_num),
+                    static_cast<Floating>(std::get<Integer::underlying_type>(*rhs_num)));
     }
-
-    return string_op(*lhs_str, *rhs_str);
+    return num_op(std::get<Floating>(*lhs_num), std::get<Floating>(*rhs_num));
   }
 
   auto execute_is_equal(std::vector<ExecutionValue> const& values, Instruction::Operand const& lhs,
@@ -1165,11 +1328,7 @@ public:
   {
     assert(std::holds_alternative<Index>(expr));
     assert(std::holds_alternative<Index>(false_dest));
-    auto value{to_bool(values.at(std::get<Index>(expr)))};
-    if (!value.has_value()) {
-      error(Msg::unable_to_cast_value_to_bool, values.at(std::get<Index>(expr)));
-    }
-    return *value ? true_dest : std::get<Index>(false_dest);
+    return to_bool(values.at(std::get<Index>(expr))) ? true_dest : std::get<Index>(false_dest);
   }
 
   static auto execute_sprintf(std::vector<ExecutionValue> const& values,
@@ -1177,7 +1336,7 @@ public:
                               Instruction::Operand const& parameter_pack,
                               std::string const& conv_fmt) -> ExecutionValue
   {
-    auto format{to_string(values.at(std::get<Index>(format_op)), conv_fmt)};
+    auto format{to_string_exact(values.at(std::get<Index>(format_op)), conv_fmt)};
     if (!format.has_value()) {
       error(Msg::unable_to_cast_value_to_string);
     }
@@ -1230,25 +1389,25 @@ public:
       }
 
       if (is_string) {
-        auto str{it == pp.end() ? std::string{} : *to_string(*it, conv_fmt)};  // NOLINT
+        auto str{it == pp.end() ? std::string{} : to_string(*it, conv_fmt)};  // NOLINT
         result += fmt::vformat(new_fmt,
                                fmt::make_format_args(str));  // NOLINT
       }
       else if (it == pp.end()) {
         result += fmt::vformat(new_fmt, fmt::make_format_args(0));
       }
-      else if (auto integer{to_integer(*it)}; !is_floating) {
+      else if (auto integer{to_integer_exact(*it)}; !is_floating) {
         if (integer.has_value()) {
           result += fmt::vformat(new_fmt, fmt::make_format_args(*integer));
         }
         else {
           result += fmt::vformat(
             new_fmt,
-            fmt::make_format_args(static_cast<Integer::underlying_type>(to_floating_force(*it))));
+            fmt::make_format_args(static_cast<Integer::underlying_type>(to_floating(*it))));
         }
       }
       else {
-        auto floating{to_floating_force(*it)};
+        auto floating{to_floating(*it)};
         result += fmt::vformat(new_fmt, fmt::make_format_args(floating));
       }
 
@@ -1259,27 +1418,6 @@ public:
     }
 
     return result;
-  }
-
-  auto format_value(std::vector<ExecutionValue> const& values, Instruction::Operand const& index)
-    -> std::string
-  {
-    assert(std::holds_alternative<Index>(index));
-    return std::visit(GD::Overloaded{
-                        [](Integer v) { return std::to_string(v.get()); },
-                        [this](Floating v) {
-                          auto ofmt{std::get<std::string>(var("OFMT"))};
-                          return fmt::vformat(to_fmt(ofmt), fmt::make_format_args(v));
-                        },
-                        [](bool b) { return b ? std::string{"1"} : std::string{"0"}; },
-                        [](std::string const& s) { return s; },
-                        [](std::nullopt_t) { return std::string{}; },
-                        [](auto const&) {
-                          std::abort();
-                          return std::string{};
-                        },
-                      },
-                      values.at(std::get<Index>(index)));
   }
 
   static auto execute_push_parameter_value(std::vector<ExecutionValue>& values,
@@ -1310,7 +1448,7 @@ public:
                              std::string const& fmt) -> ExecutionValue
   {
     ExecutionValue const v{values.at(std::get<Index>(expr))};
-    std::optional<std::string> s{to_string(v, fmt)};
+    std::optional<std::string> s{to_string_exact(v, fmt)};
     if (s.has_value()) {
       return Integer{s->size()};
     }
@@ -1324,7 +1462,7 @@ public:
     -> ExecutionValue
   {
     ArrayName const an{std::get<ArrayName>(array)};
-    std::optional<std::string> s{to_string(values.at(std::get<Index>(subscript)), fmt)};
+    std::optional<std::string> s{to_string_exact(values.at(std::get<Index>(subscript)), fmt)};
     if (!s.has_value()) {
       std::abort();
     }
@@ -1334,12 +1472,8 @@ public:
   static auto execute_srand(std::vector<ExecutionValue>& values, Instruction::Operand const& expr)
     -> Integer ::underlying_type
   {
-    ExecutionValue const v{values.at(std::get<Index>(expr))};
-    auto oseed{to_integer(v)};
-    if (!oseed.has_value()) {
-      error(Msg::unable_to_cast_value_to_integer);
-    }
-    auto seed{*oseed};
+    ExecutionValue const& v{values.at(std::get<Index>(expr))};
+    auto seed{to_integer(v)};
 
     // NOLINTNEXTLINE - API specifies unsigned short.
     std::array<unsigned short, 3> seeda{
@@ -1356,8 +1490,8 @@ public:
                      bool global, std::string const& conv_fmt) -> ExecutionValue
   {
     auto re{to_re(values.at(std::get<Index>(op_re)), conv_fmt)};
-    auto repl{to_string(values.at(std::get<Index>(op_repl)), conv_fmt)};
-    auto str{to_string(read_lvalue(values, std::get<Index>(op_in)), conv_fmt)};
+    auto repl{to_string_exact(values.at(std::get<Index>(op_repl)), conv_fmt)};
+    auto str{to_string_exact(read_lvalue(values, std::get<Index>(op_in)), conv_fmt)};
 
     if (!re.has_value()) {
       error(Msg::unable_to_cast_value_to_re, values.at(std::get<Index>(op_re)));
@@ -1399,8 +1533,8 @@ public:
   static auto execute_index(std::vector<ExecutionValue>& values, Instruction::Operand const& sop,
                             Instruction::Operand const& top, std::string const& conv_fmt) -> Integer
   {
-    auto const& s{to_string(values.at(std::get<Index>(sop)), conv_fmt)};
-    auto const& t{to_string(values.at(std::get<Index>(top)), conv_fmt)};
+    auto const& s{to_string_exact(values.at(std::get<Index>(sop)), conv_fmt)};
+    auto const& t{to_string_exact(values.at(std::get<Index>(top)), conv_fmt)};
 
     if (!s.has_value()) {
       error(Msg::unable_to_cast_value_to_string, values.at(std::get<Index>(sop)));
@@ -1423,9 +1557,9 @@ public:
                              Instruction::Operand const& op_pos, Instruction::Operand const& op_len,
                              std::string const& conv_fmt) -> ExecutionValue
   {
-    auto s{to_string(values.at(std::get<Index>(op_s)), conv_fmt)};
-    auto pos{to_integer(values.at(std::get<Index>(op_pos)))};
-    auto len{to_integer(values.at(std::get<Index>(op_len)))};
+    auto s{to_string_exact(values.at(std::get<Index>(op_s)), conv_fmt)};
+    auto pos{to_integer_exact(values.at(std::get<Index>(op_pos)))};
+    auto len{to_integer_exact(values.at(std::get<Index>(op_len)))};
 
     if (!s.has_value()) {
       error(Msg::unable_to_cast_value_to_string, values.at(std::get<Index>(op_s)));
@@ -1443,7 +1577,7 @@ public:
   static auto execute_tolower(std::vector<ExecutionValue>& values, Instruction::Operand const& op_s,
                               std::string const& conv_fmt) -> ExecutionValue
   {
-    auto const& s{to_string(values.at(std::get<Index>(op_s)), conv_fmt)};
+    auto const& s{to_string_exact(values.at(std::get<Index>(op_s)), conv_fmt)};
 
     if (!s.has_value()) {
       error(Msg::unable_to_cast_value_to_string, values.at(std::get<Index>(op_s)));
@@ -1459,7 +1593,7 @@ public:
                               Instruction::Operand const& op_s, std::string const& conv_fmt)
     -> ExecutionValue
   {
-    auto const& s{to_string(values.at(std::get<Index>(op_s)), conv_fmt)};
+    auto const& s{to_string_exact(values.at(std::get<Index>(op_s)), conv_fmt)};
 
     if (!s.has_value()) {
       error(Msg::unable_to_cast_value_to_string, values.at(std::get<Index>(op_s)));
@@ -1551,7 +1685,7 @@ public:
                      Instruction::Operand const& array_op, std::string const& conv_fmt)
     -> ExecutionValue
   {
-    auto const& str{to_string(values.at(std::get<Index>(op_str)), conv_fmt)};
+    auto const& str{to_string_exact(values.at(std::get<Index>(op_str)), conv_fmt)};
     if (!str.has_value()) {
       error(Msg::unable_to_cast_value_to_string, values.at(std::get<Index>(op_str)));
     }
@@ -1568,7 +1702,7 @@ public:
                      Instruction::Operand const& array_op, Instruction::Operand const& fs_op,
                      std::string const& conv_fmt) -> ExecutionValue
   {
-    auto const& str{to_string(values.at(std::get<Index>(op_str)), conv_fmt)};
+    auto const& str{to_string_exact(values.at(std::get<Index>(op_str)), conv_fmt)};
     if (!str.has_value()) {
       error(Msg::unable_to_cast_value_to_string, values.at(std::get<Index>(op_str)));
     }
@@ -1645,7 +1779,8 @@ public:
         break;
       case Instruction::Opcode::print: {
         auto stream{read_fd(values, it->op2())};
-        auto buf{format_value(values, it->op1())};
+        auto buf{
+          to_string(values.at(std::get<Index>(it->op1())), std::get<std::string>(var("OFMT")))};
         write(stream, buf.data(), buf.size());
         break;
       }
@@ -1804,7 +1939,7 @@ public:
                                              std::get<std::string>(var("CONVFMT")));
         break;
       case Instruction::Opcode::exit: {
-        auto result{to_integer(values.at(std::get<Index>(it->op1())))};
+        auto result{to_integer_exact(values.at(std::get<Index>(it->op1())))};
         if (!result.has_value()) {
           error(Msg::unable_to_cast_value_to_integer, values.at(std::get<Index>(it->op1())));
         }
@@ -1966,7 +2101,7 @@ auto GD::Awk::execute(ParsedProgram const& program, std::vector<std::string> con
   for (Integer::underlying_type i{0};
        i < std::get<Integer>(state.var("ARGC")).get() && !exit_code.has_value(); ++i) {
     Details::ExecutionValue const& operand_value{state.array_element("ARGV", std::to_string(i))};
-    auto operand_stro{Details::ExecutionState::to_string(
+    auto operand_stro{Details::ExecutionState::to_string_exact(
       operand_value, std::get<std::string>(state.var("CONVFMT")))};
     if (!operand_stro.has_value()) {
       continue;
