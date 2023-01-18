@@ -175,6 +175,8 @@ test_awk('BEGIN { print (2 > 10), ("2a" > 10), ("2" > 10) }', "0 1 0\n")
 # Short circuit tests.
 test_awk('BEGIN { b = 0; (a = 1) && (b = 1); print a, b }', '1 1\n')
 test_awk('BEGIN { b = 0; (a = 0) && (b = 1); print a, b }', '0 0\n')
+test_awk('BEGIN { b = 0; (a = 0) || (b = 1); print a, b }', '0 1\n')
+test_awk('BEGIN { b = 0; (a = 1) || (b = 1); print a, b }', '1 0\n')
 
 # Have exit codes will travel...
 test_awk('BEGIN { exit 2 }', None, expected_rc=2)

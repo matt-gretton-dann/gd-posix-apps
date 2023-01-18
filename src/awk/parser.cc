@@ -1557,15 +1557,14 @@ public:
     -> ExprResult
   {
     ExprResult lhs{parse_in_array_expr_opt(emitter, expr_type, unary_type)};
-    if (!lhs.has_one_value()) {
+    if (!lhs.has_one_value() || lexer_->peek(true) != Token::Type::and_) {
       return lhs;
     }
-    ExprResult result{lhs};
 
+    ExprResult result{emitter.emit_expr(Instruction::Opcode::to_bool, lhs)};
     std::vector<Index> early_escapes;
     while (lexer_->peek(true) == Token::Type::and_) {
       lexer_->chew(true);
-      result = emitter.emit_expr(Instruction::Opcode::to_bool, lhs);
       early_escapes.push_back(
         emitter.emit_statement(Instruction::Opcode::branch_if_false, result, illegal_index));
 
@@ -1602,21 +1601,32 @@ public:
     -> ExprResult
   {
     ExprResult lhs{parse_and_expr_opt(emitter, expr_type, unary_type)};
-    if (!lhs.has_one_value()) {
+    if (!lhs.has_one_value() || lexer_->peek(true) != Token::Type::or_) {
       return lhs;
     }
+    ExprResult result{emitter.emit_expr(Instruction::Opcode::to_bool, lhs)};
 
+    std::vector<Index> early_escapes;
     while (lexer_->peek(true) == Token::Type::or_) {
       lexer_->chew(true);
       parse_newline_opt();
+
+      ExprResult const logical_not{emitter.emit_expr(Instruction::Opcode::logical_not, result)};
+      early_escapes.push_back(
+        emitter.emit_statement(Instruction::Opcode::branch_if_false, logical_not, illegal_index));
+
       auto rhs{parse_in_array_expr_opt(emitter, expr_type, unary_type)};
       if (!rhs.has_one_value()) {
         error(Msg::error_expected_expr_after_or, lexer_->location(), lexer_->peek(false));
       }
       lhs = emitter.emit_expr(Instruction::Opcode::logical_or, lhs, rhs);
+      emitter.emit_copy(result, lhs);
     }
 
-    return lhs;
+    for (auto const& idx : early_escapes) {
+      emitter.at(idx).op2(emitter.next_instruction_index());
+    }
+    return result;
   }
 
   /** @brief Parse a ternary (? :) expression
