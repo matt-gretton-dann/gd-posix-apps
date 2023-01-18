@@ -1144,21 +1144,25 @@ public:
                       index);
   }
 
-  static auto to_re(ExecutionValue const& index, std::string const& fmt)
-    -> std::optional<std::regex>
+  static auto to_re(ExecutionValue const& index, std::string const& fmt) -> std::regex
   {
     return std::visit(
       GD::Overloaded{
-        [](std::regex const& re) { return std::make_optional(re); },
-        [](Integer v) { return std::make_optional(std::regex{std::to_string(v.get())}); },
-        [&fmt](Floating v) {
-          return std::make_optional(
-            std::regex{fmt::vformat(to_fmt(fmt), fmt::make_format_args(v))});
+        [](std::regex const& re) { return re; },
+        [](Integer v) {
+          return std::regex{std::to_string(v.get()), std::regex_constants::awk};
         },
-        [](bool b) { return std::make_optional(std::regex{b ? "1" : "0"}); },
-        [](std::string const& s) { return std::make_optional(std::regex{s}); },
-        [](std::nullopt_t) { return std::make_optional(std::regex{}); },
-        [](auto const&) { return std::optional<std::regex>{}; },
+        [&fmt](Floating v) {
+          return std::regex{fmt::vformat(to_fmt(fmt), fmt::make_format_args(v)),
+                            std::regex_constants::awk};
+        },
+        [](bool b) {
+          return std::regex{b ? "1" : "0", std::regex_constants::awk};
+        },
+        [](std::string const& s) {
+          return std::regex{s, std::regex_constants::awk};
+        },
+        [&index](auto const&) -> std::regex { error(Msg::unable_to_cast_value_to_re, index); },
       },
       index);
   }
@@ -1192,15 +1196,12 @@ public:
     auto str{to_string_exact(values.at(std::get<Index>(op_s)), conv_fmt)};
     auto re{to_re(values.at(std::get<Index>(op_re)), conv_fmt)};
 
-    if (!re.has_value()) {
-      error(Msg::unable_to_cast_value_to_re, values.at(std::get<Index>(op_re)));
-    }
     if (!str.has_value()) {
       error(Msg::unable_to_cast_value_to_string, values.at(std::get<Index>(op_s)));
     }
 
     std::smatch sm;
-    if (!regex_search(*str, sm, *re)) {
+    if (!regex_search(*str, sm, re)) {
       return {Integer{0}, Integer{-1}};
     }
 
@@ -1493,9 +1494,6 @@ public:
     auto repl{to_string_exact(values.at(std::get<Index>(op_repl)), conv_fmt)};
     auto str{to_string_exact(read_lvalue(values, std::get<Index>(op_in)), conv_fmt)};
 
-    if (!re.has_value()) {
-      error(Msg::unable_to_cast_value_to_re, values.at(std::get<Index>(op_re)));
-    }
     if (!repl.has_value()) {
       error(Msg::unable_to_cast_value_to_string, values.at(std::get<Index>(op_repl)));
     }
@@ -1508,7 +1506,7 @@ public:
     std::string result;
     Integer::underlying_type matches{0};
     std::smatch sm;
-    for (auto it{std::sregex_iterator(str->begin(), str->end(), *re)}; it != std::sregex_iterator();
+    for (auto it{std::sregex_iterator(str->begin(), str->end(), re)}; it != std::sregex_iterator();
          ++it) {
       ++matches;
       sm = *it;
@@ -1708,15 +1706,12 @@ public:
     }
 
     auto const& re{to_re(values.at(std::get<Index>(fs_op)), conv_fmt)};
-    if (!re.has_value()) {
-      error(Msg::unable_to_cast_value_to_re, values.at(std::get<Index>(fs_op)));
-    }
 
     // TODO(mgrettondann): FIX!
     auto const& array_name{std::get<VariableName>(values.at(std::get<Index>(array_op))).get()};
 
     auto [array, flag] = arrays_.insert_or_assign(array_name, VariableMap{});
-    auto result{execute_split_re(*str, array->second, *re)};
+    auto result{execute_split_re(*str, array->second, re)};
     return Integer{result};
   }
 
