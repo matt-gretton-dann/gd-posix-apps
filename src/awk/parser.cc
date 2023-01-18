@@ -1560,18 +1560,28 @@ public:
     if (!lhs.has_one_value()) {
       return lhs;
     }
+    ExprResult result{lhs};
 
+    std::vector<Index> early_escapes;
     while (lexer_->peek(true) == Token::Type::and_) {
       lexer_->chew(true);
+      result = emitter.emit_expr(Instruction::Opcode::to_bool, lhs);
+      early_escapes.push_back(
+        emitter.emit_statement(Instruction::Opcode::branch_if_false, result, illegal_index));
+
       parse_newline_opt();
       auto rhs{parse_in_array_expr_opt(emitter, expr_type, unary_type)};
       if (!rhs.has_one_value()) {
         error(Msg::error_expected_expr_after_and, lexer_->location(), lexer_->peek(false));
       }
       lhs = emitter.emit_expr(Instruction::Opcode::logical_and, lhs, rhs);
+      emitter.emit_copy(result, lhs);
     }
 
-    return lhs;
+    for (auto const& idx : early_escapes) {
+      emitter.at(idx).op2(emitter.next_instruction_index());
+    }
+    return result;
   }
 
   /** @brief Parse an or expression
