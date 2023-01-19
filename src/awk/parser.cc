@@ -241,9 +241,15 @@ public:
 
   auto emit_expr(Instruction::Opcode opcode, ExprResult const& expr) -> ExprResult
   {
+    return emit_expr_to(opcode, reg_++, expr);
+  }
+
+  auto emit_expr_to(Instruction::Opcode opcode, Index result, ExprResult const& expr) -> ExprResult
+  {
     assert(expr.has_one_value());
-    instrs_->emplace_back(opcode, reg_, dereference_lvalue_int(expr));
-    return ExprResult{reg_++, opcode == Instruction::Opcode::field ? ExprResult::Flags::lvalue
+    assert(result < reg_);
+    instrs_->emplace_back(opcode, result, dereference_lvalue_int(expr));
+    return ExprResult{result, opcode == Instruction::Opcode::field ? ExprResult::Flags::lvalue
                                                                    : ExprResult::Flags::none};
   }
 
@@ -417,10 +423,6 @@ auto to_binary_op_opcode(Token::Type type) noexcept -> Instruction::Opcode
   case Token::Type::modulo:
   case Token::Type::mod_assign:
     return Instruction::Opcode::modulo;
-  case Token::Type::and_:
-    return Instruction::Opcode::logical_and;
-  case Token::Type::or_:
-    return Instruction::Opcode::logical_or;
   case Token::Type::eq:
     return Instruction::Opcode::is_equal;
   case Token::Type::ne:
@@ -1573,8 +1575,7 @@ public:
       if (!rhs.has_one_value()) {
         error(Msg::error_expected_expr_after_and, lexer_->location(), lexer_->peek(false));
       }
-      lhs = emitter.emit_expr(Instruction::Opcode::logical_and, lhs, rhs);
-      emitter.emit_copy(result, lhs);
+      (void)emitter.emit_expr_to(Instruction::Opcode::to_bool, result.index(), rhs);
     }
 
     for (auto const& idx : early_escapes) {
@@ -1619,8 +1620,7 @@ public:
       if (!rhs.has_one_value()) {
         error(Msg::error_expected_expr_after_or, lexer_->location(), lexer_->peek(false));
       }
-      lhs = emitter.emit_expr(Instruction::Opcode::logical_or, lhs, rhs);
-      emitter.emit_copy(result, lhs);
+      lhs = emitter.emit_expr_to(Instruction::Opcode::to_bool, result.index(), rhs);
     }
 
     for (auto const& idx : early_escapes) {

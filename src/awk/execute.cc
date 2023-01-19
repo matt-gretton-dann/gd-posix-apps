@@ -1844,12 +1844,6 @@ public:
         values.at(it->reg()) =
           execute_re_match(values, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
         break;
-      case Instruction::Opcode::logical_and:
-        values.at(it->reg()) = execute_logical_and(values, it->op1(), it->op2());
-        break;
-      case Instruction::Opcode::logical_or:
-        values.at(it->reg()) = execute_logical_or(values, it->op1(), it->op2());
-        break;
       case Instruction::Opcode::branch:
         pc = std::get<Index>(it->op1()) - 1;
         break;

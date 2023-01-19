@@ -583,8 +583,6 @@ private:
  * | is_greater_than_equal | B          | Ix(I/F/S)  | Ix(I/F/S)  |            | <result> = (<op1> >= <op2>)              |
  * | branch_if_false       |            | Ix(B)      | Ix         |            | Branch to <op2> if <op1> is false        |
  * | re_match              | B          | Ix(S)      | Ix(R)      |            | <result> = (<op1> ~ <op2>)               |
- * | logical_or            | B          | Ix(B)      | Ix(B)      |            | <result> = (<op1> && <op2>)              |
- * | logical_and           | B          | Ix(B)      | Ix(B)      |            | <result> = (<op1> || <op2>)              |
  * | reserve_reg           |            | Ix         |            |            | Reserve space for <op1> result registers |
  * | open                  | FD         | Ix(S)      | I          |            | Open <op1>, If I is 1 append             |
  * | popen                 | FD         | Ix(S)      |            |            | Open <op1> as a process                  |
@@ -652,8 +650,6 @@ public:
     is_greater_than_equal,  ///< >= comparison
     branch_if_false,        ///< Branch to op2 if op1 is false
     re_match,               ///< Regular expression match
-    logical_and,            ///< Logical and
-    logical_or,             ///< Logical or
     reserve_regs,           ///< Reserve space for <op1> result registers
     open,                   ///< Open a file
     popen,                  ///< Open a process

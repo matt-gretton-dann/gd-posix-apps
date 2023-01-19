@@ -177,8 +177,6 @@ auto GD::Awk::Instruction::has_result(Opcode opcode) noexcept -> bool
   case Opcode::is_less_than:
   case Opcode::is_not_equal:
   case Opcode::re_match:
-  case Opcode::logical_and:
-  case Opcode::logical_or:
   case Opcode::open:
   case Opcode::popen:
   case Opcode::copy:
@@ -307,12 +305,6 @@ auto GD::Awk::operator<<(std::ostream& os, GD::Awk::Instruction::Opcode opcode) 
     break;
   case Instruction::Opcode::re_match:
     os << "re_match";
-    break;
-  case Instruction::Opcode::logical_and:
-    os << "logical_and";
-    break;
-  case Instruction::Opcode::logical_or:
-    os << "logical_or";
     break;
   case Instruction::Opcode::popen:
     os << "popen";
@@ -454,8 +446,6 @@ auto GD::Awk::Instruction::op_count(Opcode opcode) noexcept -> unsigned
   case Opcode::is_not_equal:
   case Opcode::branch_if_false:
   case Opcode::re_match:
-  case Opcode::logical_and:
-  case Opcode::logical_or:
   case Opcode::atan2:
   case Opcode::open:
   case Opcode::array_element:
@@ -509,8 +499,6 @@ void GD::Awk::Instruction::validate_operands() const
   case Opcode::is_equal:
   case Opcode::branch_if_false:
   case Opcode::re_match:
-  case Opcode::logical_and:
-  case Opcode::logical_or:
   case Opcode::atan2:
   case Opcode::index:
   case Opcode::match:
