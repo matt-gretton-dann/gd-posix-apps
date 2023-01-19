@@ -699,22 +699,6 @@ public:
     return static_cast<Integer::underlying_type>(std::get<Floating>(num));
   }
 
-  [[nodiscard]] static auto to_floating_exact(std::string const& s) -> std::optional<Floating>
-  {
-    std::size_t pos{0};
-    try {
-      Floating f{std::stod(s, &pos)};
-      if (pos == s.size() && !s.empty()) {
-        return f;
-      }
-    }
-    catch (...) {
-      return std::nullopt;
-    }
-
-    return std::nullopt;
-  }
-
   [[nodiscard]] static auto to_floating(std::string const& s) -> Floating
   {
     std::size_t pos{0};
@@ -750,34 +734,6 @@ public:
                         [](auto const&) { return 0.0; },
                       },
                       value);
-  }
-
-  static auto to_floating_exact(ExecutionValue const& value) -> std::optional<Floating>
-  {
-    return std::visit(
-      GD::Overloaded{
-        [](Integer i) { return std::make_optional(static_cast<Floating>(i.get())); },
-        [](Floating f) { return std::make_optional(f); },
-        [](std::nullopt_t) { return std::make_optional(Floating{0.0}); },
-        [](bool b) { return std::optional<Floating>(b ? 1.0 : 0.0); },
-        [](std::string const& s) { return to_floating_exact(s); },
-        [](auto const&) { return std::optional<Floating>{std::nullopt}; },
-      },
-      value);
-  }
-
-  static auto to_floating_exact(ParameterValue const& value) -> std::optional<Floating>
-  {
-    return std::visit(
-      GD::Overloaded{
-        [](Integer i) { return std::make_optional(static_cast<Floating>(i.get())); },
-        [](Floating f) { return std::make_optional(f); },
-        [](std::nullopt_t) { return std::make_optional(Floating{0.0}); },
-        [](bool b) { return std::optional<Floating>(b ? 1.0 : 0.0); },
-        [](std::string const& s) { return to_floating_exact(s); },
-        [](auto const&) { return std::optional<Floating>{std::nullopt}; },
-      },
-      value);
   }
 
   using Number = std::variant<Integer::underlying_type, Floating>;
