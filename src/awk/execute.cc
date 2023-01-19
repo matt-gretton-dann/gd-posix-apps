@@ -560,31 +560,31 @@ public:
   {
     assert(std::holds_alternative<Index>(lhs));
 
-    std::visit(
-      GD::Overloaded{
-        [&value, this](VariableName const& v) {
-          // Updating NF requires us to reset the fields_ variable.
-          if (v.get() == "NF") {
-            auto size{to_integer_exact(value)};
-            if (!size.has_value()) {
-              error(Msg::unable_to_cast_value_to_integer, value);
-            }
-            fields_.resize(static_cast<std::size_t>(*size), std::get<std::string>(var("OFS")));
-          }
+    std::visit(GD::Overloaded{
+                 [&value, this](VariableName const& v) {
+                   // Updating NF requires us to reset the fields_ variable.
+                   if (v.get() == "NF") {
+                     auto size{to_integer_exact(value)};
+                     if (!size.has_value()) {
+                       error(Msg::unable_to_cast_value_to_integer, value);
+                     }
+                     fields_.resize(static_cast<std::size_t>(*size),
+                                    std::get<std::string>(var("OFS")));
+                   }
 
-          var(v.get(), value);
-        },
-        [&value, &conv_fmt, this](Field f) {
-          fields_.field(f, *to_string_exact(value, conv_fmt), std::get<std::string>(var("FS")),
-                        std::get<std::string>(var("OFS")));
-          var("NF", Integer{fields_.size()});
-        },
-        [&value, this](ArrayElement const& elt) {
-          return array_element(elt.first.get(), elt.second, value);
-        },
-        [](auto const&) { std::abort(); },
-      },
-      values.at(std::get<Index>(lhs)));
+                   var(v.get(), value);
+                 },
+                 [&value, &conv_fmt, this](Field f) {
+                   fields_.field(f, to_string(value, conv_fmt), std::get<std::string>(var("FS")),
+                                 std::get<std::string>(var("OFS")));
+                   var("NF", Integer{fields_.size()});
+                 },
+                 [&value, this](ArrayElement const& elt) {
+                   return array_element(elt.first.get(), elt.second, value);
+                 },
+                 [](auto const&) { std::abort(); },
+               },
+               values.at(std::get<Index>(lhs)));
   }
 
   [[nodiscard]] static auto read_field(std::vector<ExecutionValue> const& values,
@@ -1110,40 +1110,6 @@ public:
       index);
   }
 
-  static auto to_string_exact(ExecutionValue const& index, std::string const& fmt)
-    -> std::optional<std::string>
-  {
-    return std::visit(GD::Overloaded{
-                        [](Integer v) { return std::make_optional(std::to_string(v.get())); },
-                        [&fmt](Floating v) {
-                          return std::make_optional(
-                            fmt::vformat(to_fmt(fmt), fmt::make_format_args(v)));
-                        },
-                        [](bool b) { return std::make_optional(std::string{b ? "1" : "0"}); },
-                        [](std::string const& s) { return std::make_optional(s); },
-                        [](std::nullopt_t) { return std::make_optional(std::string{}); },
-                        [](auto const&) { return std::optional<std::string>{}; },
-                      },
-                      index);
-  }
-
-  static auto to_string_exact(ParameterValue const& index, std::string const& fmt)
-    -> std::optional<std::string>
-  {
-    return std::visit(GD::Overloaded{
-                        [](Integer v) { return std::make_optional(std::to_string(v.get())); },
-                        [&fmt](Floating v) {
-                          return std::make_optional(
-                            fmt::vformat(to_fmt(fmt), fmt::make_format_args(v)));
-                        },
-                        [](bool b) { return std::make_optional(std::string{b ? "1" : "0"}); },
-                        [](std::string const& s) { return std::make_optional(s); },
-                        [](std::nullopt_t) { return std::make_optional(std::string{}); },
-                        [](auto const&) { return std::optional<std::string>{}; },
-                      },
-                      index);
-  }
-
   static auto to_re(ExecutionValue const& index, std::string const& fmt) -> std::regex
   {
     return std::visit(
@@ -1175,17 +1141,9 @@ public:
     assert(std::holds_alternative<Index>(rhs));
     ExecutionValue const& lhs_value{values.at(std::get<Index>(lhs))};
     ExecutionValue const& rhs_value{values.at(std::get<Index>(rhs))};
-    auto const lhs_str{to_string_exact(lhs_value, conv_fmt)};
-    auto const rhs_str{to_string_exact(rhs_value, conv_fmt)};
-    if (lhs_str.has_value() && rhs_str.has_value()) {
-      return *lhs_str + *rhs_str;
-    }
-
-    if (lhs_str.has_value()) {
-      error(Msg::unable_to_cast_value_to_string, rhs_value);
-    }
-
-    error(Msg::unable_to_cast_value_to_string, lhs_value);
+    auto const lhs_str{to_string(lhs_value, conv_fmt)};
+    auto const rhs_str{to_string(rhs_value, conv_fmt)};
+    return lhs_str + rhs_str;
   }
 
   static auto execute_match(std::vector<ExecutionValue> const& values,
@@ -1193,15 +1151,11 @@ public:
                             std::string const& conv_fmt)
     -> std::pair<ExecutionValue, ExecutionValue>
   {
-    auto str{to_string_exact(values.at(std::get<Index>(op_s)), conv_fmt)};
+    auto str{to_string(values.at(std::get<Index>(op_s)), conv_fmt)};
     auto re{to_re(values.at(std::get<Index>(op_re)), conv_fmt)};
 
-    if (!str.has_value()) {
-      error(Msg::unable_to_cast_value_to_string, values.at(std::get<Index>(op_s)));
-    }
-
     std::smatch sm;
-    if (!regex_search(*str, sm, re)) {
+    if (!regex_search(str, sm, re)) {
       return {Integer{0}, Integer{-1}};
     }
 
@@ -1337,13 +1291,9 @@ public:
                               Instruction::Operand const& parameter_pack,
                               std::string const& conv_fmt) -> ExecutionValue
   {
-    auto format{to_string_exact(values.at(std::get<Index>(format_op)), conv_fmt)};
-    if (!format.has_value()) {
-      error(Msg::unable_to_cast_value_to_string);
-    }
+    auto fmt_string{to_string(values.at(std::get<Index>(format_op)), conv_fmt)};
     auto pp{std::get<ParameterPack>(values.at(std::get<Index>(parameter_pack)))};
     auto it{pp.begin()};
-    auto fmt_string{*format};  // NOLINT
     std::size_t pos{0};
     std::string result;
     while (pos != fmt_string.size()) {
@@ -1449,12 +1399,8 @@ public:
                              std::string const& fmt) -> ExecutionValue
   {
     ExecutionValue const v{values.at(std::get<Index>(expr))};
-    std::optional<std::string> s{to_string_exact(v, fmt)};
-    if (s.has_value()) {
-      return Integer{s->size()};
-    }
-
-    error(Msg::unable_to_cast_value_to_string, v);
+    std::string const s{to_string(v, fmt)};
+    return Integer{s.size()};
   }
 
   static auto execute_array_element(std::vector<ExecutionValue>& values,
@@ -1463,11 +1409,8 @@ public:
     -> ExecutionValue
   {
     ArrayName const an{std::get<ArrayName>(array)};
-    std::optional<std::string> s{to_string_exact(values.at(std::get<Index>(subscript)), fmt)};
-    if (!s.has_value()) {
-      std::abort();
-    }
-    return ArrayElement{an, *s};
+    std::string const s{to_string(values.at(std::get<Index>(subscript)), fmt)};
+    return ArrayElement{an, s};
   }
 
   static auto execute_srand(std::vector<ExecutionValue>& values, Instruction::Operand const& expr)
@@ -1491,28 +1434,20 @@ public:
                      bool global, std::string const& conv_fmt) -> ExecutionValue
   {
     auto re{to_re(values.at(std::get<Index>(op_re)), conv_fmt)};
-    auto repl{to_string_exact(values.at(std::get<Index>(op_repl)), conv_fmt)};
-    auto str{to_string_exact(read_lvalue(values, std::get<Index>(op_in)), conv_fmt)};
-
-    if (!repl.has_value()) {
-      error(Msg::unable_to_cast_value_to_string, values.at(std::get<Index>(op_repl)));
-    }
-    if (!str.has_value()) {
-      error(Msg::unable_to_cast_value_to_string, values.at(std::get<Index>(op_in)));
-    }
-
+    auto repl{to_string(values.at(std::get<Index>(op_repl)), conv_fmt)};
+    auto str{to_string(read_lvalue(values, std::get<Index>(op_in)), conv_fmt)};
     auto flags{std::regex_constants::format_sed};
 
     std::string result;
     Integer::underlying_type matches{0};
     std::smatch sm;
-    for (auto it{std::sregex_iterator(str->begin(), str->end(), re)}; it != std::sregex_iterator();
+    for (auto it{std::sregex_iterator(str.begin(), str.end(), re)}; it != std::sregex_iterator();
          ++it) {
       ++matches;
       sm = *it;
       result += sm.prefix();
       if (global || matches == 1) {
-        result += sm.format(*repl, flags);
+        result += sm.format(repl, flags);
       }
       else {
         result += sm.str();
@@ -1531,17 +1466,10 @@ public:
   static auto execute_index(std::vector<ExecutionValue>& values, Instruction::Operand const& sop,
                             Instruction::Operand const& top, std::string const& conv_fmt) -> Integer
   {
-    auto const& s{to_string_exact(values.at(std::get<Index>(sop)), conv_fmt)};
-    auto const& t{to_string_exact(values.at(std::get<Index>(top)), conv_fmt)};
+    auto const& s{to_string(values.at(std::get<Index>(sop)), conv_fmt)};
+    auto const& t{to_string(values.at(std::get<Index>(top)), conv_fmt)};
 
-    if (!s.has_value()) {
-      error(Msg::unable_to_cast_value_to_string, values.at(std::get<Index>(sop)));
-    }
-    if (!t.has_value()) {
-      error(Msg::unable_to_cast_value_to_string, values.at(std::get<Index>(sop)));
-    }
-
-    auto result{s->find(*t)};
+    auto result{s.find(t)};
     if (result == std::string::npos) {
       result = 0;
     }
@@ -1555,13 +1483,10 @@ public:
                              Instruction::Operand const& op_pos, Instruction::Operand const& op_len,
                              std::string const& conv_fmt) -> ExecutionValue
   {
-    auto s{to_string_exact(values.at(std::get<Index>(op_s)), conv_fmt)};
+    auto s{to_string(values.at(std::get<Index>(op_s)), conv_fmt)};
     auto pos{to_integer_exact(values.at(std::get<Index>(op_pos)))};
     auto len{to_integer_exact(values.at(std::get<Index>(op_len)))};
 
-    if (!s.has_value()) {
-      error(Msg::unable_to_cast_value_to_string, values.at(std::get<Index>(op_s)));
-    }
     if (!pos.has_value()) {
       error(Msg::unable_to_cast_value_to_integer, values.at(std::get<Index>(op_pos)));
     }
@@ -1569,20 +1494,16 @@ public:
       error(Msg::unable_to_cast_value_to_integer, values.at(std::get<Index>(op_len)));
     }
 
-    return s->substr(*pos - 1, *len);
+    return s.substr(*pos - 1, *len);
   }
 
   static auto execute_tolower(std::vector<ExecutionValue>& values, Instruction::Operand const& op_s,
                               std::string const& conv_fmt) -> ExecutionValue
   {
-    auto const& s{to_string_exact(values.at(std::get<Index>(op_s)), conv_fmt)};
-
-    if (!s.has_value()) {
-      error(Msg::unable_to_cast_value_to_string, values.at(std::get<Index>(op_s)));
-    }
+    auto const& s{to_string(values.at(std::get<Index>(op_s)), conv_fmt)};
 
     std::string result;
-    std::transform(s->begin(), s->end(), std::back_inserter(result),
+    std::transform(s.begin(), s.end(), std::back_inserter(result),
                    [](char c) { return static_cast<char>(std::tolower(c)); });
     return result;
   }
@@ -1591,14 +1512,10 @@ public:
                               Instruction::Operand const& op_s, std::string const& conv_fmt)
     -> ExecutionValue
   {
-    auto const& s{to_string_exact(values.at(std::get<Index>(op_s)), conv_fmt)};
-
-    if (!s.has_value()) {
-      error(Msg::unable_to_cast_value_to_string, values.at(std::get<Index>(op_s)));
-    }
+    auto const& s{to_string(values.at(std::get<Index>(op_s)), conv_fmt)};
 
     std::string result;
-    std::transform(s->begin(), s->end(), std::back_inserter(result),
+    std::transform(s.begin(), s.end(), std::back_inserter(result),
                    [](char c) { return static_cast<char>(std::toupper(c)); });
     return result;
   }
@@ -1683,16 +1600,13 @@ public:
                      Instruction::Operand const& array_op, std::string const& conv_fmt)
     -> ExecutionValue
   {
-    auto const& str{to_string_exact(values.at(std::get<Index>(op_str)), conv_fmt)};
-    if (!str.has_value()) {
-      error(Msg::unable_to_cast_value_to_string, values.at(std::get<Index>(op_str)));
-    }
+    auto const& str{to_string(values.at(std::get<Index>(op_str)), conv_fmt)};
 
     // TODO(mgrettondann): FIX!
     auto const& array_name{std::get<VariableName>(values.at(std::get<Index>(array_op)))};
 
     auto [array, flag] = arrays_.insert_or_assign(array_name.get(), VariableMap{});
-    auto result{execute_split(*str, array->second, std::get<std::string>(var("FS")))};
+    auto result{execute_split(str, array->second, std::get<std::string>(var("FS")))};
     return Integer{result};
   }
 
@@ -1700,10 +1614,7 @@ public:
                      Instruction::Operand const& array_op, Instruction::Operand const& fs_op,
                      std::string const& conv_fmt) -> ExecutionValue
   {
-    auto const& str{to_string_exact(values.at(std::get<Index>(op_str)), conv_fmt)};
-    if (!str.has_value()) {
-      error(Msg::unable_to_cast_value_to_string, values.at(std::get<Index>(op_str)));
-    }
+    auto const& str{to_string(values.at(std::get<Index>(op_str)), conv_fmt)};
 
     auto const& re{to_re(values.at(std::get<Index>(fs_op)), conv_fmt)};
 
@@ -1711,7 +1622,7 @@ public:
     auto const& array_name{std::get<VariableName>(values.at(std::get<Index>(array_op))).get()};
 
     auto [array, flag] = arrays_.insert_or_assign(array_name, VariableMap{});
-    auto result{execute_split_re(*str, array->second, re)};
+    auto result{execute_split_re(str, array->second, re)};
     return Integer{result};
   }
 
@@ -2090,13 +2001,8 @@ auto GD::Awk::execute(ParsedProgram const& program, std::vector<std::string> con
   for (Integer::underlying_type i{0};
        i < std::get<Integer>(state.var("ARGC")).get() && !exit_code.has_value(); ++i) {
     Details::ExecutionValue const& operand_value{state.array_element("ARGV", std::to_string(i))};
-    auto operand_stro{Details::ExecutionState::to_string_exact(
-      operand_value, std::get<std::string>(state.var("CONVFMT")))};
-    if (!operand_stro.has_value()) {
-      continue;
-    }
-    std::string const& operand = *operand_stro;
-
+    auto operand{Details::ExecutionState::to_string(operand_value,
+                                                    std::get<std::string>(state.var("CONVFMT")))};
     if (state.parse_var(operand)) {
       continue;
     }
