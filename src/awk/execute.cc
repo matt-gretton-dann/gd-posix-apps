@@ -50,6 +50,7 @@ using Field = TypeWrapper<Integer::underlying_type, struct FieldTag>;
 using ParameterValue =
   std::variant<std::string, Integer, Floating, FileDescriptor, bool, std::nullopt_t>;
 using ParameterPack = std::vector<ParameterValue>;
+using Number = std::variant<Integer::underlying_type, Floating>;
 
 using ArrayElement = std::pair<ArrayName, std::string>;
 
@@ -681,22 +682,17 @@ public:
 
   static auto to_integer(ExecutionValue const& value) -> Integer::underlying_type
   {
-    auto num{to_number(value)};
-    if (std::holds_alternative<Integer::underlying_type>(num)) {
-      return std::get<Integer::underlying_type>(num);
-    }
-
-    return static_cast<Integer::underlying_type>(std::get<Floating>(num));
+    return to_integer(to_number(value));
   }
 
   static auto to_integer(ParameterValue const& value) -> Integer::underlying_type
   {
-    auto num{to_number(value)};
-    if (std::holds_alternative<Integer::underlying_type>(num)) {
-      return std::get<Integer::underlying_type>(num);
-    }
+    return to_integer(to_number(value));
+  }
 
-    return static_cast<Integer::underlying_type>(std::get<Floating>(num));
+  static auto to_integer(Number const& num) -> Integer::underlying_type
+  {
+    return std::visit([](auto const v) { return static_cast<Integer::underlying_type>(v); }, num);
   }
 
   [[nodiscard]] static auto to_floating(std::string const& s) -> Floating
@@ -736,7 +732,10 @@ public:
                       value);
   }
 
-  using Number = std::variant<Integer::underlying_type, Floating>;
+  static auto to_floating(Number const& num) -> Floating
+  {
+    return std::visit([](auto const v) { return static_cast<Floating>(v); }, num);
+  }
 
   static auto to_number(Floating f) -> Number
   {
@@ -1303,19 +1302,11 @@ public:
       else if (it == pp.end()) {
         result += fmt::vformat(new_fmt, fmt::make_format_args(0));
       }
-      else if (auto integer{to_integer_exact(*it)}; !is_floating) {
-        if (integer.has_value()) {
-          result += fmt::vformat(new_fmt, fmt::make_format_args(*integer));
-        }
-        else {
-          result += fmt::vformat(
-            new_fmt,
-            fmt::make_format_args(static_cast<Integer::underlying_type>(to_floating(*it))));
-        }
+      else if (auto num{to_number(*it)}; is_floating) {
+        result += fmt::vformat(new_fmt, fmt::make_format_args(to_floating(num)));
       }
       else {
-        auto floating{to_floating(*it)};
-        result += fmt::vformat(new_fmt, fmt::make_format_args(floating));
+        result += fmt::vformat(new_fmt, fmt::make_format_args(to_integer(num)));
       }
 
       if (it != pp.end()) {
