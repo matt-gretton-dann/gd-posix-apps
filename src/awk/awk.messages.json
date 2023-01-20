@@ -776,6 +776,30 @@
         "id": 130,
         "description": "The value {0} is not an exact representation of a number.",
         "C": "Unable to cast '{0}' exactly to a number."
+      },
+      {
+        "msg": "operand_does_not_hold_index",
+        "id": 131,
+        "description": "Operand {0} does not hold an index.  Internal error",
+        "C": "Critical error! Operand {0} does not hold an index."
+      },
+      {
+        "msg": "operand_does_not_hold_literal",
+        "id": 132,
+        "description": "Operand {0} does not hold a literal value.  Internal error",
+        "C": "Critical error! Operand {0} does not hold a literal value."
+      },
+      {
+        "msg": "operand_does_not_hold_array_name",
+        "id": 133,
+        "description": "Operand {0} does not hold an array name.  Internal error",
+        "C": "Critical error! Operand {0} does not hold an array name."
+      },
+      {
+        "msg": "operand_does_not_hold_variable_name",
+        "id": 134,
+        "description": "Operand {0} does not hold a variable name.  Internal error",
+        "C": "Critical error! Operand {0} does not hold a variable name."
       }
     ]
   }

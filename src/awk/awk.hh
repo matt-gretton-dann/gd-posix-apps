@@ -976,4 +976,25 @@ struct fmt::formatter<GD::Awk::Token::Type>
   }
 };
 
+template<>
+struct fmt::formatter<GD::Awk::Instruction::Operand>
+{
+  static constexpr auto parse(format_parse_context& ctx)
+  {
+    if (ctx.begin() != ctx.end() && *ctx.begin() != '}') {
+      throw format_error("invalid format");
+    }
+    return ctx.begin();
+  }
+
+  template<typename FormatContext>
+  auto format(GD::Awk::Instruction::Operand const& op, FormatContext& ctx)
+  {
+    std::ostringstream os;
+    os << op;
+    // Work around Win32 STL bug:
+    return fmt::vformat_to(ctx.out(), "{0}", fmt::make_format_args(os.str()));
+  }
+};
+
 #endif  // SRC_AWK_AWK_HH_INCLUDED

@@ -508,18 +508,18 @@ public:
     return true;
   }
 
-  static auto interpret_literal(Instruction::Operand const& op) -> ExecutionValue
+  static auto to_execution_value(Instruction::Operand const& op) -> ExecutionValue
   {
-    return std::visit(GD::Overloaded{[](std::string const& s) { return ExecutionValue{s}; },
-                                     [](Integer v) { return ExecutionValue{v}; },
-                                     [](Floating v) { return ExecutionValue{v}; },
-                                     [](FileDescriptor fd) { return ExecutionValue{fd}; },
-                                     [](std::regex const& re) { return ExecutionValue{re}; },
-                                     [](auto const&) {
-                                       std::abort();
-                                       return ExecutionValue{std::nullopt};
-                                     }},
-                      op);
+    return std::visit(
+      GD::Overloaded{
+        [](std::string const& s) { return ExecutionValue{s}; },
+        [](Integer v) { return ExecutionValue{v}; },
+        [](Floating v) { return ExecutionValue{v}; },
+        [](FileDescriptor fd) { return ExecutionValue{fd}; },
+        [](std::regex const& re) { return ExecutionValue{re}; },
+        [&op](auto const&) -> ExecutionValue { error(Msg::operand_does_not_hold_literal, op); },
+      },
+      op);
   }
 
   static auto read_fd(std::vector<ExecutionValue> const& values, Instruction::Operand const& index)
@@ -531,10 +531,8 @@ public:
     return std::get<FileDescriptor>(value).get();
   }
 
-  [[nodiscard]] auto read_lvalue(std::vector<ExecutionValue> const& values,
-                                 Instruction::Operand const& index) const -> ExecutionValue
+  [[nodiscard]] auto execute_load_lvalue(ExecutionValue const& value) -> ExecutionValue
   {
-    assert(std::holds_alternative<Index>(index));
     return std::visit(
       GD::Overloaded{
         [this](VariableName v) { return var(v.get()); },
@@ -545,22 +543,12 @@ public:
           return ExecutionValue{std::nullopt};
         },
       },
-      values.at(std::get<Index>(index)));
+      value);
   }
 
-  void store_lvalue(std::vector<ExecutionValue> const& values, Instruction::Operand const& lhs,
-                    Instruction::Operand const& rhs, std::string const& conv_fmt)
+  void execute_store_lvalue(ExecutionValue const& lvalue, ExecutionValue const& value,
+                            std::string const& conv_fmt)
   {
-    assert(std::holds_alternative<Index>(lhs));
-    assert(std::holds_alternative<Index>(rhs));
-    store_lvalue(values, lhs, values.at(std::get<Index>(rhs)), conv_fmt);
-  }
-
-  void store_lvalue(std::vector<ExecutionValue> const& values, Instruction::Operand const& lhs,
-                    ExecutionValue const& value, std::string const& conv_fmt)
-  {
-    assert(std::holds_alternative<Index>(lhs));
-
     std::visit(GD::Overloaded{
                  [&value, this](VariableName const& v) {
                    // Updating NF requires us to reset the fields_ variable.
@@ -582,17 +570,13 @@ public:
                  },
                  [](auto const&) { std::abort(); },
                },
-               values.at(std::get<Index>(lhs)));
+               lvalue);
   }
 
-  [[nodiscard]] static auto read_field(std::vector<ExecutionValue> const& values,
-                                       Instruction::Operand const& index) -> ExecutionValue
+  [[nodiscard]] static auto execute_field(ExecutionValue const& id) -> ExecutionValue
   {
-    assert(std::holds_alternative<Index>(index));
-    ExecutionValue const& value{values.at(std::get<Index>(index))};
-    assert(std::holds_alternative<Integer>(value));
-    Integer const& field{std::get<Integer>(value)};
-    return Field{field.get()};
+    assert(std::holds_alternative<Integer>(id));
+    return Field{std::get<Integer>(id).get()};
   }
 
   static auto to_bool(ExecutionValue const& value) -> bool
@@ -1204,13 +1188,12 @@ public:
     return Integer{s.size()};
   }
 
-  static auto execute_array_element(std::vector<ExecutionValue>& values,
-                                    Instruction::Operand const& array,  // NOLINT
-                                    Instruction::Operand const& subscript, std::string const& fmt)
+  static auto execute_array_element(ExecutionValue const& array,  // NOLINT
+                                    ExecutionValue const& subscript, std::string const& fmt)
     -> ExecutionValue
   {
     ArrayName const an{std::get<ArrayName>(array)};
-    std::string const s{to_string(values.at(std::get<Index>(subscript)), fmt)};
+    std::string const s{to_string(subscript, fmt)};
     return ArrayElement{an, s};
   }
 
@@ -1231,12 +1214,13 @@ public:
   }
 
   auto execute_subst(std::vector<ExecutionValue>& values, Instruction::Operand const& op_re,
-                     Instruction::Operand const& op_repl, Instruction::Operand const& op_in,
+                     Instruction::Operand const& op_repl,  // NOLINT
+                     Instruction::Operand const& op_in,    // NOLINT
                      bool global, std::string const& conv_fmt) -> ExecutionValue
   {
     auto re{to_re(values.at(std::get<Index>(op_re)), conv_fmt)};
     auto repl{to_string(values.at(std::get<Index>(op_repl)), conv_fmt)};
-    auto str{to_string(read_lvalue(values, std::get<Index>(op_in)), conv_fmt)};
+    auto str{to_string(execute_load_lvalue(value(op_in)), conv_fmt)};
     auto flags{std::regex_constants::format_sed};
 
     std::string result;
@@ -1256,7 +1240,7 @@ public:
     }
     result += sm.suffix();
     if (!result.empty()) {
-      store_lvalue(values, std::get<Index>(op_in), ExecutionValue{result}, conv_fmt);
+      execute_store_lvalue(value(op_in), ExecutionValue{result}, conv_fmt);
     }
     if (!global && matches > 1) {
       matches = 1;
@@ -1426,6 +1410,40 @@ public:
 
   [[nodiscard]] auto ofmt() const -> std::string { return std::get<std::string>(var("OFMT")); }
 
+  [[nodiscard]] static auto to_index(Instruction::Operand const& op) -> Index
+  {
+    if (auto const* index{std::get_if<Index>(&op)}; index != nullptr) {
+      return *index;
+    }
+
+    error(Msg::operand_does_not_hold_index, op);
+  }
+
+  [[nodiscard]] static auto to_array_name(Instruction::Operand const& op) -> ArrayName const&
+  {
+    if (auto const* array_name{std::get_if<ArrayName>(&op)}; array_name != nullptr) {
+      return *array_name;
+    }
+
+    error(Msg::operand_does_not_hold_array_name, op);
+  }
+
+  [[nodiscard]] static auto to_variable_name(Instruction::Operand const& op) -> VariableName const&
+  {
+    if (auto const* variable_name{std::get_if<VariableName>(&op)}; variable_name != nullptr) {
+      return *variable_name;
+    }
+
+    error(Msg::operand_does_not_hold_variable_name, op);
+  }
+
+  [[nodiscard]] auto value(Instruction::Operand const& op) -> ExecutionValue const&
+  {
+    auto index{to_index(op)};
+    assert(index < values_.size());
+    return values_[index];
+  }
+
   auto execute([[maybe_unused]] ParsedProgram const& program, Instructions::const_iterator begin,
                Instructions::const_iterator end) -> std::optional<Integer::underlying_type>
   {
@@ -1436,38 +1454,38 @@ public:
     while (pc != static_cast<Index>(length)) {
       auto it{begin + static_cast<Instructions::difference_type>(pc)};
       assert(!it->has_reg() || it->reg() < values_.size());
-      auto it_res{it->has_reg() ? (values_.begin() + static_cast<std::ptrdiff_t>(it->reg()))
-                                : values_.end()};
+      auto res{it->has_reg() ? (values_.begin() + static_cast<std::ptrdiff_t>(it->reg()))
+                             : values_.end()};
       if constexpr (debug) {
         std::cout << std::setw(10) << pc << ": " << *it;  // NOLINT
       }
       switch (it->opcode()) {
       case Instruction::Opcode::reserve_regs:
-        values_.resize(std::get<Index>(it->op1()), std::nullopt);
+        values_.resize(to_index(it->op1()), std::nullopt);
         break;
       case Instruction::Opcode::load_literal:
-        *it_res = (interpret_literal(it->op1()));
+        *res = (to_execution_value(it->op1()));
         break;
       case Instruction::Opcode::load_lvalue:
-        *it_res = read_lvalue(values_, it->op1());
+        *res = execute_load_lvalue(value(it->op1()));
         break;
       case Instruction::Opcode::store_lvalue:
-        store_lvalue(values_, it->op1(), it->op2(), conv_fmt());
+        execute_store_lvalue(value(it->op1()), value(it->op2()), conv_fmt());
         break;
       case Instruction::Opcode::variable:
-        *it_res = std::get<VariableName>(it->op1());
+        *res = to_variable_name(it->op1());
         break;
       case Instruction::Opcode::array:
-        *it_res = std::get<ArrayName>(it->op1());
+        *res = to_array_name(it->op1());
         break;
       case Instruction::Opcode::array_element:
-        *it_res = execute_array_element(values_, it->op1(), it->op2(), conv_fmt());
+        *res = execute_array_element(to_array_name(it->op1()), value(it->op2()), conv_fmt());
         break;
       case Instruction::Opcode::field:
-        *it_res = read_field(values_, it->op1());
+        *res = execute_field(value(it->op1()));
         break;
       case Instruction::Opcode::open_param_pack:
-        *it_res = ParameterPack{};
+        *res = ParameterPack{};
         break;
       case Instruction::Opcode::close_param_pack:
         break;
@@ -1475,7 +1493,7 @@ public:
         execute_push_parameter_value(values_, it->op1(), it->op2());
         break;
       case Instruction::Opcode::sprintf: {
-        *it_res = execute_sprintf(values_, it->op1(), it->op2(), ofmt());
+        *res = execute_sprintf(values_, it->op1(), it->op2(), ofmt());
         break;
       }
       case Instruction::Opcode::open:
@@ -1489,141 +1507,141 @@ public:
         break;
       }
       case Instruction::Opcode::add:
-        *it_res = execute_add(values_, it->op1(), it->op2());
+        *res = execute_add(values_, it->op1(), it->op2());
         break;
       case Instruction::Opcode::sub:
-        *it_res = execute_sub(values_, it->op1(), it->op2());
+        *res = execute_sub(values_, it->op1(), it->op2());
         break;
       case Instruction::Opcode::power:
-        *it_res = execute_power(values_, it->op1(), it->op2());
+        *res = execute_power(values_, it->op1(), it->op2());
         break;
       case Instruction::Opcode::multiply:
-        *it_res = execute_multiply(values_, it->op1(), it->op2());
+        *res = execute_multiply(values_, it->op1(), it->op2());
         break;
       case Instruction::Opcode::divide:
-        *it_res = execute_divide(values_, it->op1(), it->op2());
+        *res = execute_divide(values_, it->op1(), it->op2());
         break;
       case Instruction::Opcode::modulo:
-        *it_res = execute_modulo(values_, it->op1(), it->op2());
+        *res = execute_modulo(values_, it->op1(), it->op2());
         break;
       case Instruction::Opcode::concat:
-        *it_res = execute_concat(values_, it->op1(), it->op2(), conv_fmt());
+        *res = execute_concat(values_, it->op1(), it->op2(), conv_fmt());
         break;
       case Instruction::Opcode::is_equal:
-        *it_res = execute_is_equal(values_, it->op1(), it->op2(), conv_fmt());
+        *res = execute_is_equal(values_, it->op1(), it->op2(), conv_fmt());
         break;
       case Instruction::Opcode::is_not_equal:
-        *it_res = execute_is_not_equal(values_, it->op1(), it->op2(), conv_fmt());
+        *res = execute_is_not_equal(values_, it->op1(), it->op2(), conv_fmt());
         break;
       case Instruction::Opcode::is_less_than:
-        *it_res = execute_is_less_than(values_, it->op1(), it->op2(), conv_fmt());
+        *res = execute_is_less_than(values_, it->op1(), it->op2(), conv_fmt());
         break;
       case Instruction::Opcode::is_less_than_equal:
-        *it_res = execute_is_less_than_equal(values_, it->op1(), it->op2(), conv_fmt());
+        *res = execute_is_less_than_equal(values_, it->op1(), it->op2(), conv_fmt());
         break;
       case Instruction::Opcode::is_greater_than:
-        *it_res = execute_is_greater_than(values_, it->op1(), it->op2(), conv_fmt());
+        *res = execute_is_greater_than(values_, it->op1(), it->op2(), conv_fmt());
         break;
       case Instruction::Opcode::is_greater_than_equal:
-        *it_res = execute_greater_than_equal(values_, it->op1(), it->op2(), conv_fmt());
+        *res = execute_greater_than_equal(values_, it->op1(), it->op2(), conv_fmt());
         break;
       case Instruction::Opcode::to_number:
-        *it_res = execute_to_number(values_, it->op1());
+        *res = execute_to_number(values_, it->op1());
         break;
       case Instruction::Opcode::to_bool:
-        *it_res = execute_to_bool(values_, it->op1());
+        *res = execute_to_bool(values_, it->op1());
         break;
       case Instruction::Opcode::negate:
-        *it_res = execute_negate(values_, it->op1());
+        *res = execute_negate(values_, it->op1());
         break;
       case Instruction::Opcode::logical_not:
-        *it_res = execute_logical_not(values_, it->op1());
+        *res = execute_logical_not(values_, it->op1());
         break;
       case Instruction::Opcode::branch_if_false:
         pc = execute_branch_if_false(values_, it->op1(), it->op2(), pc + 1) - 1;
         break;
       case Instruction::Opcode::re_match:
-        *it_res = execute_re_match(values_, it->op1(), it->op2(), conv_fmt());
+        *res = execute_re_match(values_, it->op1(), it->op2(), conv_fmt());
         break;
       case Instruction::Opcode::branch:
         pc = std::get<Index>(it->op1()) - 1;
         break;
       case Instruction::Opcode::copy:
-        *it_res = values_.at(std::get<Index>(it->op1()));
+        *res = values_.at(std::get<Index>(it->op1()));
         break;
       case Instruction::Opcode::length:
-        *it_res = execute_length(values_, it->op1(), conv_fmt());
+        *res = execute_length(values_, it->op1(), conv_fmt());
         break;
       case Instruction::Opcode::atan2:
-        *it_res = execute_atan2(values_, it->op1(), it->op2());
+        *res = execute_atan2(values_, it->op1(), it->op2());
         break;
       case Instruction::Opcode::cos:
-        *it_res = execute_math(values_, it->op1(), cos);
+        *res = execute_math(values_, it->op1(), cos);
         break;
       case Instruction::Opcode::sin:
-        *it_res = execute_math(values_, it->op1(), sin);
+        *res = execute_math(values_, it->op1(), sin);
         break;
       case Instruction::Opcode::exp:
-        *it_res = execute_math(values_, it->op1(), exp);
+        *res = execute_math(values_, it->op1(), exp);
         break;
       case Instruction::Opcode::log:
-        *it_res = execute_math(values_, it->op1(), log);
+        *res = execute_math(values_, it->op1(), log);
         break;
       case Instruction::Opcode::sqrt:
-        *it_res = execute_math(values_, it->op1(), sqrt);
+        *res = execute_math(values_, it->op1(), sqrt);
         break;
       case Instruction::Opcode::int_:
-        *it_res = execute_int(values_, it->op1());
+        *res = execute_int(values_, it->op1());
         break;
       case Instruction::Opcode::rand:
-        *it_res = Floating{drand48()};  // NOLINT
+        *res = Floating{drand48()};  // NOLINT
         break;
       case Instruction::Opcode::srand:
-        *it_res = Integer{rand_seed};
+        *res = Integer{rand_seed};
         rand_seed = execute_srand(values_, it->op1());
         break;
       case Instruction::Opcode::current_time: {
         auto const now{static_cast<Integer::underlying_type>(std::time(nullptr))};
-        *it_res = Integer{now};
+        *res = Integer{now};
         break;
       }
       case Instruction::Opcode::subst:
-        *it_res = execute_subst(values_, it->op1(), it->op2(), it->op3(), false, conv_fmt());
+        *res = execute_subst(values_, it->op1(), it->op2(), it->op3(), false, conv_fmt());
         break;
       case Instruction::Opcode::gsubst:
-        *it_res = execute_subst(values_, it->op1(), it->op2(), it->op3(), true, conv_fmt());
+        *res = execute_subst(values_, it->op1(), it->op2(), it->op3(), true, conv_fmt());
         break;
       case Instruction::Opcode::index:
-        *it_res = execute_index(values_, it->op1(), it->op2(), conv_fmt());
+        *res = execute_index(values_, it->op1(), it->op2(), conv_fmt());
         break;
       case Instruction::Opcode::match: {
         auto [pos, len] = execute_match(values_, it->op1(), it->op2(), conv_fmt());
-        *it_res = pos;
+        *res = pos;
         var("RSTART", pos);
         var("RLENGTH", len);
         break;
       }
       case Instruction::Opcode::substr:
-        *it_res = execute_substr(values_, it->op1(), it->op2(), it->op3(), conv_fmt());
+        *res = execute_substr(values_, it->op1(), it->op2(), it->op3(), conv_fmt());
         break;
       case Instruction::Opcode::tolower:
-        *it_res = execute_tolower(values_, it->op1(), conv_fmt());
+        *res = execute_tolower(values_, it->op1(), conv_fmt());
         break;
       case Instruction::Opcode::toupper:
-        *it_res = execute_toupper(values_, it->op1(), conv_fmt());
+        *res = execute_toupper(values_, it->op1(), conv_fmt());
         break;
       case Instruction::Opcode::split_fs:
-        *it_res = execute_split(values_, it->op1(), it->op2(), conv_fmt());
+        *res = execute_split(values_, it->op1(), it->op2(), conv_fmt());
         break;
       case Instruction::Opcode::split_re:
-        *it_res = execute_split(values_, it->op1(), it->op2(), it->op3(), conv_fmt());
+        *res = execute_split(values_, it->op1(), it->op2(), it->op3(), conv_fmt());
         break;
       case Instruction::Opcode::exit:
         return to_integer(values_.at(std::get<Index>(it->op1())));
       }
       if constexpr (debug) {
         if (it->has_reg()) {
-          std::cout << "[" << *it_res << "]";
+          std::cout << "[" << *res << "]";
         }
         std::cout << '\n';
       }

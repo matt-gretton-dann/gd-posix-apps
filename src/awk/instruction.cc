@@ -226,7 +226,7 @@ auto GD::Awk::operator<<(std::ostream& os, GD::Awk::Instruction::Opcode opcode) 
     os << "load_lvalue";
     break;
   case Instruction::Opcode::store_lvalue:
-    os << "store_lvalue";
+    os << "execute_store_lvalue";
     break;
   case Instruction::Opcode::field:
     os << "field";
