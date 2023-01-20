@@ -629,17 +629,6 @@ public:
     return std::visit([](auto const v) { return static_cast<Integer::underlying_type>(v); }, num);
   }
 
-  [[nodiscard]] static auto to_floating(std::string const& s) -> Floating
-  {
-    std::size_t pos{0};
-    try {
-      return std::stod(s, &pos);
-    }
-    catch (...) {
-      return 0.0;
-    }
-  }
-
   static auto to_floating(ExecutionValue const& value) -> Floating
   {
     return to_floating(to_number(value));
@@ -1436,51 +1425,53 @@ public:
     constexpr bool debug = false;
     auto length{std::distance(begin, end)};
     assert(length >= 0);
-    std::vector<ExecutionValue> values;
     Index pc{0};
     while (pc != static_cast<Index>(length)) {
       auto it{begin + static_cast<Instructions::difference_type>(pc)};
+      assert(!it->has_reg() || it->reg() < values_.size());
+      auto it_res{it->has_reg() ? (values_.begin() + static_cast<std::ptrdiff_t>(it->reg()))
+                                : values_.end()};
       if constexpr (debug) {
         std::cout << std::setw(10) << pc << ": " << *it;  // NOLINT
       }
       switch (it->opcode()) {
       case Instruction::Opcode::reserve_regs:
-        values.resize(std::get<Index>(it->op1()), std::nullopt);
+        values_.resize(std::get<Index>(it->op1()), std::nullopt);
         break;
       case Instruction::Opcode::load_literal:
-        values.at(it->reg()) = (interpret_literal(it->op1()));
+        *it_res = (interpret_literal(it->op1()));
         break;
       case Instruction::Opcode::load_lvalue:
-        values.at(it->reg()) = read_lvalue(values, it->op1());
+        *it_res = read_lvalue(values_, it->op1());
         break;
       case Instruction::Opcode::store_lvalue:
-        store_lvalue(values, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
+        store_lvalue(values_, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
         break;
       case Instruction::Opcode::variable:
-        values.at(it->reg()) = std::get<VariableName>(it->op1());
+        *it_res = std::get<VariableName>(it->op1());
         break;
       case Instruction::Opcode::array:
-        values.at(it->reg()) = std::get<ArrayName>(it->op1());
+        *it_res = std::get<ArrayName>(it->op1());
         break;
       case Instruction::Opcode::array_element:
-        values.at(it->reg()) = execute_array_element(values, it->op1(), it->op2(),
-                                                     std::get<std::string>(var("CONVFMT")));
+        *it_res = execute_array_element(values_, it->op1(), it->op2(),
+                                        std::get<std::string>(var("CONVFMT")));
         break;
       case Instruction::Opcode::field:
-        values.at(it->reg()) = read_field(values, it->op1());
+        *it_res = read_field(values_, it->op1());
         break;
       case Instruction::Opcode::open_param_pack:
-        values.at(it->reg()) = ParameterPack{};
+        *it_res = ParameterPack{};
         break;
       case Instruction::Opcode::close_param_pack:
         break;
       case Instruction::Opcode::push_param:
-        execute_push_parameter_value(values, it->op1(), it->op2());
+        execute_push_parameter_value(values_, it->op1(), it->op2());
         break;
       case Instruction::Opcode::sprintf: {
         auto ofmt{var("OFMT")};
         auto ofmts{std::get<std::string>(ofmt)};
-        values.at(it->reg()) = execute_sprintf(values, it->op1(), it->op2(), ofmts);
+        *it_res = execute_sprintf(values_, it->op1(), it->op2(), ofmts);
         break;
       }
       case Instruction::Opcode::open:
@@ -1488,168 +1479,163 @@ public:
         std::abort();
         break;
       case Instruction::Opcode::print: {
-        auto stream{read_fd(values, it->op2())};
+        auto stream{read_fd(values_, it->op2())};
         auto buf{
-          to_string(values.at(std::get<Index>(it->op1())), std::get<std::string>(var("OFMT")))};
+          to_string(values_.at(std::get<Index>(it->op1())), std::get<std::string>(var("OFMT")))};
         write(stream, buf.data(), buf.size());
         break;
       }
       case Instruction::Opcode::add:
-        values.at(it->reg()) = execute_add(values, it->op1(), it->op2());
+        *it_res = execute_add(values_, it->op1(), it->op2());
         break;
       case Instruction::Opcode::sub:
-        values.at(it->reg()) = execute_sub(values, it->op1(), it->op2());
+        *it_res = execute_sub(values_, it->op1(), it->op2());
         break;
       case Instruction::Opcode::power:
-        values.at(it->reg()) = execute_power(values, it->op1(), it->op2());
+        *it_res = execute_power(values_, it->op1(), it->op2());
         break;
       case Instruction::Opcode::multiply:
-        values.at(it->reg()) = execute_multiply(values, it->op1(), it->op2());
+        *it_res = execute_multiply(values_, it->op1(), it->op2());
         break;
       case Instruction::Opcode::divide:
-        values.at(it->reg()) = execute_divide(values, it->op1(), it->op2());
+        *it_res = execute_divide(values_, it->op1(), it->op2());
         break;
       case Instruction::Opcode::modulo:
-        values.at(it->reg()) = execute_modulo(values, it->op1(), it->op2());
+        *it_res = execute_modulo(values_, it->op1(), it->op2());
         break;
       case Instruction::Opcode::concat:
-        values.at(it->reg()) =
-          execute_concat(values, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
+        *it_res =
+          execute_concat(values_, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
         break;
       case Instruction::Opcode::is_equal:
-        values.at(it->reg()) =
-          execute_is_equal(values, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
+        *it_res =
+          execute_is_equal(values_, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
         break;
       case Instruction::Opcode::is_not_equal:
-        values.at(it->reg()) =
-          execute_is_not_equal(values, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
+        *it_res = execute_is_not_equal(values_, it->op1(), it->op2(),
+                                       std::get<std::string>(var("CONVFMT")));
         break;
       case Instruction::Opcode::is_less_than:
-        values.at(it->reg()) =
-          execute_is_less_than(values, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
+        *it_res = execute_is_less_than(values_, it->op1(), it->op2(),
+                                       std::get<std::string>(var("CONVFMT")));
         break;
       case Instruction::Opcode::is_less_than_equal:
-        values.at(it->reg()) = execute_is_less_than_equal(values, it->op1(), it->op2(),
-                                                          std::get<std::string>(var("CONVFMT")));
+        *it_res = execute_is_less_than_equal(values_, it->op1(), it->op2(),
+                                             std::get<std::string>(var("CONVFMT")));
         break;
       case Instruction::Opcode::is_greater_than:
-        values.at(it->reg()) = execute_is_greater_than(values, it->op1(), it->op2(),
-                                                       std::get<std::string>(var("CONVFMT")));
+        *it_res = execute_is_greater_than(values_, it->op1(), it->op2(),
+                                          std::get<std::string>(var("CONVFMT")));
         break;
       case Instruction::Opcode::is_greater_than_equal:
-        values.at(it->reg()) = execute_greater_than_equal(values, it->op1(), it->op2(),
-                                                          std::get<std::string>(var("CONVFMT")));
+        *it_res = execute_greater_than_equal(values_, it->op1(), it->op2(),
+                                             std::get<std::string>(var("CONVFMT")));
         break;
       case Instruction::Opcode::to_number:
-        values.at(it->reg()) = execute_to_number(values, it->op1());
+        *it_res = execute_to_number(values_, it->op1());
         break;
       case Instruction::Opcode::to_bool:
-        values.at(it->reg()) = execute_to_bool(values, it->op1());
+        *it_res = execute_to_bool(values_, it->op1());
         break;
       case Instruction::Opcode::negate:
-        values.at(it->reg()) = execute_negate(values, it->op1());
+        *it_res = execute_negate(values_, it->op1());
         break;
       case Instruction::Opcode::logical_not:
-        values.at(it->reg()) = execute_logical_not(values, it->op1());
+        *it_res = execute_logical_not(values_, it->op1());
         break;
       case Instruction::Opcode::branch_if_false:
-        pc = execute_branch_if_false(values, it->op1(), it->op2(), pc + 1) - 1;
+        pc = execute_branch_if_false(values_, it->op1(), it->op2(), pc + 1) - 1;
         break;
       case Instruction::Opcode::re_match:
-        values.at(it->reg()) =
-          execute_re_match(values, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
+        *it_res =
+          execute_re_match(values_, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
         break;
       case Instruction::Opcode::branch:
         pc = std::get<Index>(it->op1()) - 1;
         break;
       case Instruction::Opcode::copy:
-        values.at(it->reg()) = values.at(std::get<Index>(it->op1()));
+        *it_res = values_.at(std::get<Index>(it->op1()));
         break;
       case Instruction::Opcode::length:
-        values.at(it->reg()) =
-          execute_length(values, it->op1(), std::get<std::string>(var("CONVFMT")));
+        *it_res = execute_length(values_, it->op1(), std::get<std::string>(var("CONVFMT")));
         break;
       case Instruction::Opcode::atan2:
-        values.at(it->reg()) = execute_atan2(values, it->op1(), it->op2());
+        *it_res = execute_atan2(values_, it->op1(), it->op2());
         break;
       case Instruction::Opcode::cos:
-        values.at(it->reg()) = execute_math(values, it->op1(), cos);
+        *it_res = execute_math(values_, it->op1(), cos);
         break;
       case Instruction::Opcode::sin:
-        values.at(it->reg()) = execute_math(values, it->op1(), sin);
+        *it_res = execute_math(values_, it->op1(), sin);
         break;
       case Instruction::Opcode::exp:
-        values.at(it->reg()) = execute_math(values, it->op1(), exp);
+        *it_res = execute_math(values_, it->op1(), exp);
         break;
       case Instruction::Opcode::log:
-        values.at(it->reg()) = execute_math(values, it->op1(), log);
+        *it_res = execute_math(values_, it->op1(), log);
         break;
       case Instruction::Opcode::sqrt:
-        values.at(it->reg()) = execute_math(values, it->op1(), sqrt);
+        *it_res = execute_math(values_, it->op1(), sqrt);
         break;
       case Instruction::Opcode::int_:
-        values.at(it->reg()) = execute_int(values, it->op1());
+        *it_res = execute_int(values_, it->op1());
         break;
       case Instruction::Opcode::rand:
-        values.at(it->reg()) = Floating{drand48()};  // NOLINT
+        *it_res = Floating{drand48()};  // NOLINT
         break;
       case Instruction::Opcode::srand:
-        values.at(it->reg()) = Integer{rand_seed};
-        rand_seed = execute_srand(values, it->op1());
+        *it_res = Integer{rand_seed};
+        rand_seed = execute_srand(values_, it->op1());
         break;
       case Instruction::Opcode::current_time: {
         auto const now{static_cast<Integer::underlying_type>(std::time(nullptr))};
-        values.at(it->reg()) = Integer{now};
+        *it_res = Integer{now};
         break;
       }
       case Instruction::Opcode::subst:
-        values.at(it->reg()) = execute_subst(values, it->op1(), it->op2(), it->op3(), false,
-                                             std::get<std::string>(var("CONVFMT")));
+        *it_res = execute_subst(values_, it->op1(), it->op2(), it->op3(), false,
+                                std::get<std::string>(var("CONVFMT")));
         break;
       case Instruction::Opcode::gsubst:
-        values.at(it->reg()) = execute_subst(values, it->op1(), it->op2(), it->op3(), true,
-                                             std::get<std::string>(var("CONVFMT")));
+        *it_res = execute_subst(values_, it->op1(), it->op2(), it->op3(), true,
+                                std::get<std::string>(var("CONVFMT")));
         break;
       case Instruction::Opcode::index:
-        values.at(it->reg()) =
-          execute_index(values, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
+        *it_res =
+          execute_index(values_, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
         break;
       case Instruction::Opcode::match: {
         auto [pos, len] =
-          execute_match(values, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
-        values.at(it->reg()) = pos;
+          execute_match(values_, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
+        *it_res = pos;
         var("RSTART", pos);
         var("RLENGTH", len);
         break;
       }
       case Instruction::Opcode::substr:
-        values.at(it->reg()) = execute_substr(values, it->op1(), it->op2(), it->op3(),
-                                              std::get<std::string>(var("CONVFMT")));
+        *it_res = execute_substr(values_, it->op1(), it->op2(), it->op3(),
+                                 std::get<std::string>(var("CONVFMT")));
         break;
       case Instruction::Opcode::tolower:
-        values.at(it->reg()) =
-          execute_tolower(values, it->op1(), std::get<std::string>(var("CONVFMT")));
+        *it_res = execute_tolower(values_, it->op1(), std::get<std::string>(var("CONVFMT")));
         break;
       case Instruction::Opcode::toupper:
-        values.at(it->reg()) =
-          execute_toupper(values, it->op1(), std::get<std::string>(var("CONVFMT")));
+        *it_res = execute_toupper(values_, it->op1(), std::get<std::string>(var("CONVFMT")));
         break;
       case Instruction::Opcode::split_fs:
-        values.at(it->reg()) =
-          execute_split(values, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
+        *it_res =
+          execute_split(values_, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
         break;
       case Instruction::Opcode::split_re:
-        values.at(it->reg()) = execute_split(values, it->op1(), it->op2(), it->op3(),
-                                             std::get<std::string>(var("CONVFMT")));
+        *it_res = execute_split(values_, it->op1(), it->op2(), it->op3(),
+                                std::get<std::string>(var("CONVFMT")));
         break;
-      case Instruction::Opcode::exit: {
-        auto result{to_integer(values.at(std::get<Index>(it->op1())))};
-        return result;
-      }
+      case Instruction::Opcode::exit:
+        return to_integer(values_.at(std::get<Index>(it->op1())));
       }
       if constexpr (debug) {
         if (it->has_reg()) {
-          std::cout << "[" << values.at(it->reg()) << "]";
+          std::cout << "[" << *it_res << "]";
         }
         std::cout << '\n';
       }
@@ -1748,6 +1734,7 @@ public:
 
 private:
   std::list<VariableMap> variables_stack_;
+  std::vector<ExecutionValue> values_;
   Fields fields_;
   std::map<std::string, std::map<std::string, ExecutionValue>> arrays_;
   Integer::underlying_type rand_seed{0};
