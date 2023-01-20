@@ -35,11 +35,16 @@ namespace {
  *  \param  args Arguments for the message.
  */
 template<typename... Ts>
-[[noreturn]] void error(Msg msg, Ts... args)
+[[noreturn]] void error(Msg msg, Ts... args) noexcept
 {
-  std::cerr << GD::program_name() << ": "
-            << GD::Awk::Messages::get().format(GD::Awk::Set::awk, msg, args...) << '\n';
-  std::exit(1);  // NOLINT(concurrency-mt-unsafe)
+  try {
+    std::cerr << GD::program_name() << ": "
+              << GD::Awk::Messages::get().format(GD::Awk::Set::awk, msg, args...) << '\n';
+    std::exit(1);  // NOLINT(concurrency-mt-unsafe)
+  }
+  catch (...) {
+    std::abort();
+  }
 }
 }  // namespace
 
@@ -614,7 +619,7 @@ public:
     return std::visit([](auto const v) { return static_cast<Floating>(v); }, num);
   }
 
-  static auto to_number(Floating f) -> Number
+  static auto to_number(Floating f) noexcept -> Number
   {
     auto i{static_cast<Integer::underlying_type>(f)};
     if (static_cast<Floating>(i) == f) {
@@ -623,7 +628,7 @@ public:
     return Number{f};
   }
 
-  static auto to_number(std::string const& s) -> Number
+  static auto to_number(std::string const& s) noexcept -> Number
   {
     Number num{Integer::underlying_type{0}};
 
@@ -670,18 +675,26 @@ public:
   }
 
   template<typename... Ts>
-  static auto to_number(std::variant<Ts...> const& value) -> Number
+  static auto to_number(std::variant<Ts...> const& value) noexcept -> Number
   {
-    return std::visit(
-      GD::Overloaded{
-        [](Integer i) { return Number{i.get()}; },
-        [](Floating f) { return to_number(f); },
-        [](bool b) { return Number{static_cast<Integer::underlying_type>(b)}; },
-        [](std::string const& s) { return to_number(s); },
-        [](std::nullopt_t) { return Number{Integer::underlying_type{0}}; },
-        [value](auto const&) -> Number { error(Msg::unable_to_cast_value_to_number, value); },
-      },
-      value);
+    try {
+      return std::visit(
+        GD::Overloaded{
+          [](Integer i) { return Number{i.get()}; },
+          [](Floating f) { return to_number(f); },
+          [](bool b) { return Number{static_cast<Integer::underlying_type>(b)}; },
+          [](std::string const& s) { return to_number(s); },
+          [](std::nullopt_t) { return Number{Integer::underlying_type{0}}; },
+          [value](auto const&) -> Number { error(Msg::unable_to_cast_value_to_number, value); },
+        },
+        value);
+    }
+    catch (std::exception const& e) {
+      error(Msg::uncaught_std_exception, e.what());
+    }
+    catch (...) {
+      error(Msg::uncaught_exception);
+    }
   }
 
   static auto to_number_exact(ExecutionValue const& value) -> std::optional<Number>
@@ -701,16 +714,11 @@ public:
   }
 
   template<typename IntFn, typename FloatFn>
-  auto execute_binary_op(std::vector<ExecutionValue> const& values, Instruction::Operand const& lhs,
-                         Instruction::Operand const& rhs, IntFn int_op, FloatFn float_op)
-    -> ExecutionValue
+  auto execute_binary_op(ExecutionValue const& lhs, ExecutionValue const& rhs, IntFn int_op,
+                         FloatFn float_op) -> ExecutionValue
   {
-    assert(std::holds_alternative<Index>(lhs));
-    assert(std::holds_alternative<Index>(rhs));
-    ExecutionValue const& lhs_value{values.at(std::get<Index>(lhs))};
-    ExecutionValue const& rhs_value{values.at(std::get<Index>(rhs))};
-    auto const lhs_number{to_number(lhs_value)};
-    auto const rhs_number{to_number(rhs_value)};
+    auto const lhs_number{to_number(lhs)};
+    auto const rhs_number{to_number(rhs)};
     if (std::holds_alternative<Integer::underlying_type>(lhs_number) &&
         std::holds_alternative<Integer::underlying_type>(rhs_number)) {
       auto const res{int_op(std::get<Integer::underlying_type>(lhs_number),
@@ -720,138 +728,133 @@ public:
         return static_cast<Integer>(r);
       }
     }
-    Floating const lhsf{std::holds_alternative<Floating>(lhs_number)
-                          ? std::get<Floating>(lhs_number)
-                          : static_cast<Floating>(std::get<Integer::underlying_type>(lhs_number))};
-    Floating const rhsf{std::holds_alternative<Floating>(rhs_number)
-                          ? std::get<Floating>(rhs_number)
-                          : static_cast<Floating>(std::get<Integer::underlying_type>(rhs_number))};
 
-    return float_op(lhsf, rhsf);
+    return float_op(to_floating(lhs_number), to_floating(rhs_number));
   }
 
-  static auto execute_atan2(std::vector<ExecutionValue> const& values,
-                            Instruction::Operand const& op1, Instruction::Operand const& op2)
+  static auto execute_atan2(ExecutionValue const& y, ExecutionValue const& x) noexcept
     -> ExecutionValue
   {
-    assert(std::holds_alternative<Index>(op1));
-    assert(std::holds_alternative<Index>(op2));
-    ExecutionValue const& op1_value{values.at(std::get<Index>(op1))};
-    ExecutionValue const& op2_value{values.at(std::get<Index>(op2))};
-
-    return std::atan2(to_floating(op1_value), to_floating(op2_value));
+    return std::atan2(to_floating(y), to_floating(x));
   }
 
-  static auto execute_math(std::vector<ExecutionValue> const& values,
-                           Instruction::Operand const& op, std::function<double(double)> const& fn)
-    -> ExecutionValue
+  static auto execute_math(ExecutionValue const& value,
+                           std::function<double(double)> const& fn) noexcept -> ExecutionValue
   {
-    assert(std::holds_alternative<Index>(op));
-    ExecutionValue const& op_value{values.at(std::get<Index>(op))};
-    return Floating{fn(to_floating(op_value))};
+    return Floating{fn(to_floating(value))};
   }
 
-  static auto execute_int(std::vector<ExecutionValue> const& values, Instruction::Operand const& op)
-    -> ExecutionValue
+  static auto execute_int(ExecutionValue const& value) noexcept -> ExecutionValue
   {
-    assert(std::holds_alternative<Index>(op));
-    ExecutionValue const& value{values.at(std::get<Index>(op))};
-    auto const num{to_number(value)};
-
-    if (std::holds_alternative<Integer::underlying_type>(num)) {
-      return Integer{std::get<Integer::underlying_type>(num)};
+    try {
+      return std::visit(GD::Overloaded{
+                          [](Integer::underlying_type i) { return ExecutionValue{Integer{i}}; },
+                          [](Floating f) {
+                            f = std::trunc(f);
+                            auto const i{static_cast<Integer::underlying_type>(f)};
+                            if (static_cast<Floating>(i) == f) {
+                              return ExecutionValue{Integer{i}};
+                            }
+                            return ExecutionValue{f};
+                          },
+                        },
+                        to_number(value));
     }
-
-    Floating const fresult{std::trunc(std::get<Floating>(num))};
-    auto const iresult{static_cast<Integer::underlying_type>(fresult)};
-    if (static_cast<Floating>(iresult) == fresult) {
-      return Integer{iresult};
+    catch (std::exception const& e) {
+      error(Msg::uncaught_std_exception, e.what());
     }
-    return Floating{fresult};
+    catch (...) {
+      error(Msg::uncaught_exception);
+    }
   }
 
-  auto execute_add(std::vector<ExecutionValue> const& values, Instruction::Operand const& lhs,
-                   Instruction::Operand const& rhs) -> ExecutionValue
+  auto execute_add(ExecutionValue const& lhs, ExecutionValue const& rhs) noexcept -> ExecutionValue
   {
     return execute_binary_op(
-      values, lhs, rhs,
+      lhs, rhs,
       [](Integer::underlying_type a, Integer::underlying_type b) { return do_int_add(a, b); },
       [](Floating a, Floating b) { return a + b; });
   }
 
-  auto execute_sub(std::vector<ExecutionValue> const& values, Instruction::Operand const& lhs,
-                   Instruction::Operand const& rhs) -> ExecutionValue
+  auto execute_sub(ExecutionValue const& lhs, ExecutionValue const& rhs) noexcept -> ExecutionValue
   {
     return execute_binary_op(
-      values, lhs, rhs,
+      lhs, rhs,
       [](Integer::underlying_type a, Integer::underlying_type b) { return do_int_sub(a, b); },
       [](Floating a, Floating b) { return a - b; });
   }
 
-  auto execute_power(std::vector<ExecutionValue> const& values, Instruction::Operand const& lhs,
-                     Instruction::Operand const& rhs) -> ExecutionValue
+  auto execute_power(ExecutionValue const& lhs, ExecutionValue const& rhs) noexcept
+    -> ExecutionValue
   {
     return execute_binary_op(
-      values, lhs, rhs,
+      lhs, rhs,
       [](Integer::underlying_type a, Integer::underlying_type b) { return do_int_power(a, b); },
       [](Floating a, Floating b) { return std::pow(a, b); });
   }
 
-  auto execute_multiply(std::vector<ExecutionValue> const& values, Instruction::Operand const& lhs,
-                        Instruction::Operand const& rhs) -> ExecutionValue
+  auto execute_multiply(ExecutionValue const& lhs, ExecutionValue const& rhs) noexcept
+    -> ExecutionValue
   {
     return execute_binary_op(
-      values, lhs, rhs,
+      lhs, rhs,
       [](Integer::underlying_type a, Integer::underlying_type b) { return do_int_mul(a, b); },
       [](Floating a, Floating b) { return a * b; });
   }
 
-  auto execute_divide(std::vector<ExecutionValue> const& values, Instruction::Operand const& lhs,
-                      Instruction::Operand const& rhs) -> ExecutionValue
+  auto execute_divide(ExecutionValue const& lhs, ExecutionValue const& rhs) noexcept
+    -> ExecutionValue
   {
     return execute_binary_op(
-      values, lhs, rhs,
+      lhs, rhs,
       [](Integer::underlying_type a, Integer::underlying_type b) { return do_int_divide(a, b); },
       [](Floating a, Floating b) { return a / b; });
   }
 
-  auto execute_modulo(std::vector<ExecutionValue> const& values, Instruction::Operand const& lhs,
-                      Instruction::Operand const& rhs) -> ExecutionValue
+  auto execute_modulo(ExecutionValue const& lhs, ExecutionValue const& rhs) noexcept
+    -> ExecutionValue
   {
     return execute_binary_op(
-      values, lhs, rhs,
+      lhs, rhs,
       [](Integer::underlying_type a, Integer::underlying_type b) { return do_int_modulo(a, b); },
       [](Floating a, Floating b) { return fmod(a, b); });
   }
 
-  static auto execute_to_number(std::vector<ExecutionValue> const& values,
-                                Instruction::Operand const& op) -> ExecutionValue
+  static auto execute_to_number(ExecutionValue const& value) noexcept -> ExecutionValue
   {
-    assert(std::holds_alternative<Index>(op));
-    ExecutionValue const& value{values.at(std::get<Index>(op))};
-    auto num{to_number(value)};
-    if (std::holds_alternative<Integer::underlying_type>(num)) {
-      return Integer{std::get<Integer::underlying_type>(num)};
+    try {
+      return std::visit(GD::Overloaded{
+                          [](Integer::underlying_type i) { return ExecutionValue{Integer{i}}; },
+                          [](Floating f) { return ExecutionValue{f}; },
+                        },
+                        to_number(value));
     }
-
-    return Floating{std::get<Floating>(num)};
+    catch (std::exception const& e) {
+      error(Msg::uncaught_std_exception, e.what());
+    }
+    catch (...) {
+      error(Msg::uncaught_exception);
+    }
   }
 
-  static auto execute_negate(std::vector<ExecutionValue> const& values,
-                             Instruction::Operand const& op) -> ExecutionValue
+  static auto execute_negate(ExecutionValue const& value) noexcept -> ExecutionValue
   {
-    assert(std::holds_alternative<Index>(op));
-    ExecutionValue const& value{values.at(std::get<Index>(op))};
-    auto num{to_number(value)};
-    if (std::holds_alternative<Integer::underlying_type>(num)) {
-      auto i{std::get<Integer::underlying_type>(num)};
-      if (i != std::numeric_limits<Integer::underlying_type>::min()) {
-        i = -i;
-        return Integer{i};
-      }
+    try {
+      return std::visit(GD::Overloaded{
+                          [](Integer::underlying_type i) {
+                            i = -i;
+                            return ExecutionValue{Integer{i}};
+                          },
+                          [](Floating f) { return ExecutionValue{-f}; },
+                        },
+                        to_number(value));
     }
-
-    return Floating{-std::get<Floating>(num)};
+    catch (std::exception const& e) {
+      error(Msg::uncaught_std_exception, e.what());
+    }
+    catch (...) {
+      error(Msg::uncaught_exception);
+    }
   }
 
   static auto execute_to_bool(std::vector<ExecutionValue> const& values,
@@ -1396,7 +1399,7 @@ public:
 
   [[nodiscard]] auto ofmt() const -> std::string { return std::get<std::string>(var("OFMT")); }
 
-  [[nodiscard]] static auto to_index(Instruction::Operand const& op) -> Index
+  [[nodiscard]] static auto to_index(Instruction::Operand const& op) noexcept -> Index
   {
     if (auto const* index{std::get_if<Index>(&op)}; index != nullptr) {
       return *index;
@@ -1405,7 +1408,8 @@ public:
     error(Msg::operand_does_not_hold_index, op);
   }
 
-  [[nodiscard]] static auto to_array_name(Instruction::Operand const& op) -> ArrayName const&
+  [[nodiscard]] static auto to_array_name(Instruction::Operand const& op) noexcept
+    -> ArrayName const&
   {
     if (auto const* array_name{std::get_if<ArrayName>(&op)}; array_name != nullptr) {
       return *array_name;
@@ -1414,7 +1418,8 @@ public:
     error(Msg::operand_does_not_hold_array_name, op);
   }
 
-  [[nodiscard]] static auto to_variable_name(Instruction::Operand const& op) -> VariableName const&
+  [[nodiscard]] static auto to_variable_name(Instruction::Operand const& op) noexcept
+    -> VariableName const&
   {
     if (auto const* variable_name{std::get_if<VariableName>(&op)}; variable_name != nullptr) {
       return *variable_name;
@@ -1423,7 +1428,7 @@ public:
     error(Msg::operand_does_not_hold_variable_name, op);
   }
 
-  [[nodiscard]] static auto to_parameter_pack(ExecutionValue& value) -> ParameterPack&
+  [[nodiscard]] static auto to_parameter_pack(ExecutionValue& value) noexcept -> ParameterPack&
   {
     if (auto* pp{std::get_if<ParameterPack>(&value)}; pp != nullptr) {
       return *pp;
@@ -1432,7 +1437,8 @@ public:
     error(Msg::execution_value_does_not_hold_parameter_pack, value);
   }
 
-  [[nodiscard]] static auto to_parameter_pack(ExecutionValue const& value) -> ParameterPack const&
+  [[nodiscard]] static auto to_parameter_pack(ExecutionValue const& value) noexcept
+    -> ParameterPack const&
   {
     if (auto const* pp{std::get_if<ParameterPack>(&value)}; pp != nullptr) {
       return *pp;
@@ -1441,7 +1447,7 @@ public:
     error(Msg::execution_value_does_not_hold_parameter_pack, value);
   }
 
-  static auto to_fd(ExecutionValue const& value) -> int
+  static auto to_fd(ExecutionValue const& value) noexcept -> int
   {
     if (auto const* fd{std::get_if<FileDescriptor>(&value)}; fd != nullptr) {
       return fd->get();
@@ -1527,22 +1533,22 @@ public:
         break;
       }
       case Instruction::Opcode::add:
-        *res = execute_add(values_, it->op1(), it->op2());
+        *res = execute_add(value(it->op1()), value(it->op2()));
         break;
       case Instruction::Opcode::sub:
-        *res = execute_sub(values_, it->op1(), it->op2());
+        *res = execute_sub(value(it->op1()), value(it->op2()));
         break;
       case Instruction::Opcode::power:
-        *res = execute_power(values_, it->op1(), it->op2());
+        *res = execute_power(value(it->op1()), value(it->op2()));
         break;
       case Instruction::Opcode::multiply:
-        *res = execute_multiply(values_, it->op1(), it->op2());
+        *res = execute_multiply(value(it->op1()), value(it->op2()));
         break;
       case Instruction::Opcode::divide:
-        *res = execute_divide(values_, it->op1(), it->op2());
+        *res = execute_divide(value(it->op1()), value(it->op2()));
         break;
       case Instruction::Opcode::modulo:
-        *res = execute_modulo(values_, it->op1(), it->op2());
+        *res = execute_modulo(value(it->op1()), value(it->op2()));
         break;
       case Instruction::Opcode::concat:
         *res = execute_concat(values_, it->op1(), it->op2(), conv_fmt());
@@ -1566,13 +1572,13 @@ public:
         *res = execute_greater_than_equal(values_, it->op1(), it->op2(), conv_fmt());
         break;
       case Instruction::Opcode::to_number:
-        *res = execute_to_number(values_, it->op1());
+        *res = execute_to_number(value(it->op1()));
         break;
       case Instruction::Opcode::to_bool:
         *res = execute_to_bool(values_, it->op1());
         break;
       case Instruction::Opcode::negate:
-        *res = execute_negate(values_, it->op1());
+        *res = execute_negate(value(it->op1()));
         break;
       case Instruction::Opcode::logical_not:
         *res = execute_logical_not(values_, it->op1());
@@ -1593,25 +1599,25 @@ public:
         *res = execute_length(values_, it->op1(), conv_fmt());
         break;
       case Instruction::Opcode::atan2:
-        *res = execute_atan2(values_, it->op1(), it->op2());
+        *res = execute_atan2(value(it->op1()), value(it->op2()));
         break;
       case Instruction::Opcode::cos:
-        *res = execute_math(values_, it->op1(), cos);
+        *res = execute_math(value(it->op1()), cos);
         break;
       case Instruction::Opcode::sin:
-        *res = execute_math(values_, it->op1(), sin);
+        *res = execute_math(value(it->op1()), sin);
         break;
       case Instruction::Opcode::exp:
-        *res = execute_math(values_, it->op1(), exp);
+        *res = execute_math(value(it->op1()), exp);
         break;
       case Instruction::Opcode::log:
-        *res = execute_math(values_, it->op1(), log);
+        *res = execute_math(value(it->op1()), log);
         break;
       case Instruction::Opcode::sqrt:
-        *res = execute_math(values_, it->op1(), sqrt);
+        *res = execute_math(value(it->op1()), sqrt);
         break;
       case Instruction::Opcode::int_:
-        *res = execute_int(values_, it->op1());
+        *res = execute_int(value(it->op1()));
         break;
       case Instruction::Opcode::rand:
         *res = Floating{drand48()};  // NOLINT
