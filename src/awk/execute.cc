@@ -566,10 +566,7 @@ public:
                    // Updating NF requires us to reset the fields_ variable.
                    if (v.get() == "NF") {
                      auto size{to_integer_exact(value)};
-                     if (!size.has_value()) {
-                       error(Msg::unable_to_cast_value_to_integer, value);
-                     }
-                     fields_.resize(static_cast<std::size_t>(*size),
+                     fields_.resize(static_cast<std::size_t>(size),
                                     std::get<std::string>(var("OFS")));
                    }
 
@@ -611,81 +608,18 @@ public:
                       value);
   }
 
-  static auto to_bool_exact(ExecutionValue const& value) -> std::optional<bool>
+  template<typename... Ts>
+  static auto to_integer_exact(std::variant<Ts...> const& value) -> Integer::underlying_type
   {
-    return std::visit(GD::Overloaded{
-                        [](Integer i) { return std::make_optional(i.get() != 0); },
-                        [](Floating f) { return std::make_optional(f != 0.0); },
-                        [](std::nullopt_t) { return std::make_optional(false); },
-                        [](std::string const& s) { return std::make_optional(!s.empty()); },
-                        [](bool b) { return std::make_optional(b); },
-                        [](auto const&) { return std::optional<bool>{std::nullopt}; },
-                      },
-                      value);
-  }
-
-  static auto to_integer_exact(std::string const& s) -> std::optional<Integer::underlying_type>
-  {
-    if (s.empty()) {
-      return std::nullopt;
+    auto v{to_number_exact(value)};
+    if (v.has_value() && std::holds_alternative<Integer::underlying_type>(*v)) {
+      return std::get<Integer::underlying_type>(*v);
     }
-    try {
-      std::size_t pos{0};
-      Integer::underlying_type num{std::stol(s, &pos)};
-      return (pos == s.size()) ? std::make_optional(num)
-                               : std::optional<Integer::underlying_type>(std::nullopt);
-    }
-    catch (...) {
-      return std::nullopt;
-    }
+    error(Msg::unable_to_cast_value_to_exact_integer, value);
   }
 
-  static auto to_integer_exact(Floating f) -> std::optional<Integer::underlying_type>
-  {
-    auto result{static_cast<Integer::underlying_type>(f)};
-    if (f == static_cast<Floating>(result)) {
-      return result;
-    }
-
-    return std::nullopt;
-  }
-
-  static auto to_integer_exact(ExecutionValue const& value)
-    -> std::optional<Integer::underlying_type>
-  {
-    return std::visit(
-      GD::Overloaded{
-        [](Integer i) { return std::make_optional(i.get()); },
-        [](Floating f) { return to_integer_exact(f); },
-        [](std::nullopt_t) { return std::make_optional(Integer::underlying_type{0}); },
-        [](std::string const& s) { return to_integer_exact(s); },
-        [](bool b) { return std::optional<Integer::underlying_type>(b ? 1 : 0); },
-        [](auto const&) { return std::optional<Integer::underlying_type>{std::nullopt}; },
-      },
-      value);
-  }
-
-  static auto to_integer_exact(ParameterValue const& value)
-    -> std::optional<Integer::underlying_type>
-  {
-    return std::visit(
-      GD::Overloaded{
-        [](Integer i) { return std::make_optional(i.get()); },
-        [](Floating f) { return to_integer_exact(f); },
-        [](std::nullopt_t) { return std::make_optional(Integer::underlying_type{0}); },
-        [](std::string const& s) { return to_integer_exact(s); },
-        [](bool b) { return std::optional<Integer::underlying_type>(b ? 1 : 0); },
-        [](auto const&) { return std::optional<Integer::underlying_type>{std::nullopt}; },
-      },
-      value);
-  }
-
-  static auto to_integer(ExecutionValue const& value) -> Integer::underlying_type
-  {
-    return to_integer(to_number(value));
-  }
-
-  static auto to_integer(ParameterValue const& value) -> Integer::underlying_type
+  template<typename... Ts>
+  static auto to_integer(std::variant<Ts...> const& value) -> Integer::underlying_type
   {
     return to_integer(to_number(value));
   }
@@ -708,28 +642,7 @@ public:
 
   static auto to_floating(ExecutionValue const& value) -> Floating
   {
-    return std::visit(GD::Overloaded{
-                        [](Integer i) { return static_cast<Floating>(i.get()); },
-                        [](Floating f) { return f; },
-                        [](std::nullopt_t) { return 0.0; },
-                        [](bool b) { return b ? 1.0 : 0.0; },
-                        [](std::string const& s) { return to_floating(s); },
-                        [](auto const&) { return 0.0; },
-                      },
-                      value);
-  }
-
-  static auto to_floating(ParameterValue const& value) -> Floating
-  {
-    return std::visit(GD::Overloaded{
-                        [](Integer i) { return static_cast<Floating>(i.get()); },
-                        [](Floating f) { return f; },
-                        [](std::nullopt_t) { return 0.0; },
-                        [](bool b) { return b ? 1.0 : 0.0; },
-                        [](std::string const& s) { return to_floating(s); },
-                        [](auto const&) { return 0.0; },
-                      },
-                      value);
+    return to_floating(to_number(value));
   }
 
   static auto to_floating(Number const& num) -> Floating
@@ -792,21 +705,8 @@ public:
     return result;
   }
 
-  static auto to_number(ExecutionValue const& value) -> Number
-  {
-    return std::visit(
-      GD::Overloaded{
-        [](Integer i) { return Number{i.get()}; },
-        [](Floating f) { return to_number(f); },
-        [](bool b) { return Number{static_cast<Integer::underlying_type>(b)}; },
-        [](std::string const& s) { return to_number(s); },
-        [](std::nullopt_t) { return Number{Integer::underlying_type{0}}; },
-        [value](auto const&) -> Number { error(Msg::unable_to_cast_value_to_number, value); },
-      },
-      value);
-  }  // namespace GD::Awk::Details
-
-  static auto to_number(ParameterValue const& value) -> Number
+  template<typename... Ts>
+  static auto to_number(std::variant<Ts...> const& value) -> Number
   {
     return std::visit(
       GD::Overloaded{
@@ -830,7 +730,7 @@ public:
         [](std::string const& s) { return to_number_exact(s); },
         [](std::nullopt_t) { return std::make_optional(Number{Integer::underlying_type{0}}); },
         [value](auto const&) -> std::optional<Number> {
-          error(Msg::unable_to_cast_value_to_number, value);
+          error(Msg::unable_to_cast_value_to_exact_number, value);
         },
       },
       value);
@@ -1006,28 +906,6 @@ public:
     return !to_bool(value);
   }
 
-  static auto execute_logical_and(std::vector<ExecutionValue> const& values,
-                                  Instruction::Operand const& lhs, Instruction::Operand const& rhs)
-    -> ExecutionValue
-  {
-    assert(std::holds_alternative<Index>(lhs));
-    assert(std::holds_alternative<Index>(rhs));
-    ExecutionValue const& lhs_value{values.at(std::get<Index>(lhs))};
-    ExecutionValue const& rhs_value{values.at(std::get<Index>(rhs))};
-    return to_bool(lhs_value) && to_bool(rhs_value);
-  }
-
-  static auto execute_logical_or(std::vector<ExecutionValue> const& values,
-                                 Instruction::Operand const& lhs, Instruction::Operand const& rhs)
-    -> ExecutionValue
-  {
-    assert(std::holds_alternative<Index>(lhs));
-    assert(std::holds_alternative<Index>(rhs));
-    ExecutionValue const& lhs_value{values.at(std::get<Index>(lhs))};
-    ExecutionValue const& rhs_value{values.at(std::get<Index>(rhs))};
-    return to_bool(lhs_value) || to_bool(rhs_value);
-  }
-
   static auto to_fmt(std::string const& s)
   {
     // TODO(mgrettondann): Make this robust
@@ -1037,21 +915,8 @@ public:
     return result;
   }
 
-  static auto to_string(ExecutionValue const& index, std::string const& fmt) -> std::string
-  {
-    return std::visit(
-      GD::Overloaded{
-        [](Integer v) { return std::to_string(v.get()); },
-        [&fmt](Floating v) { return fmt::vformat(to_fmt(fmt), fmt::make_format_args(v)); },
-        [](bool b) { return std::string{b ? "1" : "0"}; },
-        [](std::string const& s) { return s; },
-        [](std::nullopt_t) { return std::string{}; },
-        [index](auto const&) -> std::string { error(Msg::unable_to_cast_value_to_string, index); },
-      },
-      index);
-  }
-
-  static auto to_string(ParameterValue const& index, std::string const& fmt) -> std::string
+  template<typename... Ts>
+  static auto to_string(std::variant<Ts...> const& index, std::string const& fmt) -> std::string
   {
     return std::visit(
       GD::Overloaded{
@@ -1431,17 +1296,9 @@ public:
                              std::string const& conv_fmt) -> ExecutionValue
   {
     auto s{to_string(values.at(std::get<Index>(op_s)), conv_fmt)};
-    auto pos{to_integer_exact(values.at(std::get<Index>(op_pos)))};
-    auto len{to_integer_exact(values.at(std::get<Index>(op_len)))};
-
-    if (!pos.has_value()) {
-      error(Msg::unable_to_cast_value_to_integer, values.at(std::get<Index>(op_pos)));
-    }
-    if (!len.has_value()) {
-      error(Msg::unable_to_cast_value_to_integer, values.at(std::get<Index>(op_len)));
-    }
-
-    return s.substr(*pos - 1, *len);
+    auto pos{to_integer(values.at(std::get<Index>(op_pos)))};
+    auto len{to_integer(values.at(std::get<Index>(op_len)))};
+    return s.substr(pos - 1, len);
   }
 
   static auto execute_tolower(std::vector<ExecutionValue>& values, Instruction::Operand const& op_s,
@@ -1786,11 +1643,8 @@ public:
                                              std::get<std::string>(var("CONVFMT")));
         break;
       case Instruction::Opcode::exit: {
-        auto result{to_integer_exact(values.at(std::get<Index>(it->op1())))};
-        if (!result.has_value()) {
-          error(Msg::unable_to_cast_value_to_integer, values.at(std::get<Index>(it->op1())));
-        }
-        return *result;
+        auto result{to_integer(values.at(std::get<Index>(it->op1())))};
+        return result;
       }
       }
       if constexpr (debug) {

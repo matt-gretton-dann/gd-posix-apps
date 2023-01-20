@@ -764,6 +764,18 @@
         "id": 128,
         "description": "Missing third parameter in call to builtin split.  Instead got {0}.",
         "C": "Missing third parameter in call to split().  Instead got {0}."
+      },
+      {
+        "msg": "unable_to_cast_value_to_exact_integer",
+        "id": 129,
+        "description": "The value {0} is not an exact representation of an integer.",
+        "C": "Unable to cast '{0}' exactly to an integer.."
+      },
+      {
+        "msg": "unable_to_cast_value_to_exact_number",
+        "id": 130,
+        "description": "The value {0} is not an exact representation of a number.",
+        "C": "Unable to cast '{0}' exactly to a number."
       }
     ]
   }
