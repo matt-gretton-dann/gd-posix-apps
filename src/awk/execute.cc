@@ -1419,6 +1419,13 @@ public:
     return Integer{result};
   }
 
+  [[nodiscard]] auto conv_fmt() const -> std::string
+  {
+    return std::get<std::string>(var("CONVFMT"));
+  }
+
+  [[nodiscard]] auto ofmt() const -> std::string { return std::get<std::string>(var("OFMT")); }
+
   auto execute([[maybe_unused]] ParsedProgram const& program, Instructions::const_iterator begin,
                Instructions::const_iterator end) -> std::optional<Integer::underlying_type>
   {
@@ -1445,7 +1452,7 @@ public:
         *it_res = read_lvalue(values_, it->op1());
         break;
       case Instruction::Opcode::store_lvalue:
-        store_lvalue(values_, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
+        store_lvalue(values_, it->op1(), it->op2(), conv_fmt());
         break;
       case Instruction::Opcode::variable:
         *it_res = std::get<VariableName>(it->op1());
@@ -1454,8 +1461,7 @@ public:
         *it_res = std::get<ArrayName>(it->op1());
         break;
       case Instruction::Opcode::array_element:
-        *it_res = execute_array_element(values_, it->op1(), it->op2(),
-                                        std::get<std::string>(var("CONVFMT")));
+        *it_res = execute_array_element(values_, it->op1(), it->op2(), conv_fmt());
         break;
       case Instruction::Opcode::field:
         *it_res = read_field(values_, it->op1());
@@ -1469,9 +1475,7 @@ public:
         execute_push_parameter_value(values_, it->op1(), it->op2());
         break;
       case Instruction::Opcode::sprintf: {
-        auto ofmt{var("OFMT")};
-        auto ofmts{std::get<std::string>(ofmt)};
-        *it_res = execute_sprintf(values_, it->op1(), it->op2(), ofmts);
+        *it_res = execute_sprintf(values_, it->op1(), it->op2(), ofmt());
         break;
       }
       case Instruction::Opcode::open:
@@ -1480,8 +1484,7 @@ public:
         break;
       case Instruction::Opcode::print: {
         auto stream{read_fd(values_, it->op2())};
-        auto buf{
-          to_string(values_.at(std::get<Index>(it->op1())), std::get<std::string>(var("OFMT")))};
+        auto buf{to_string(values_.at(std::get<Index>(it->op1())), ofmt())};
         write(stream, buf.data(), buf.size());
         break;
       }
@@ -1504,32 +1507,25 @@ public:
         *it_res = execute_modulo(values_, it->op1(), it->op2());
         break;
       case Instruction::Opcode::concat:
-        *it_res =
-          execute_concat(values_, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
+        *it_res = execute_concat(values_, it->op1(), it->op2(), conv_fmt());
         break;
       case Instruction::Opcode::is_equal:
-        *it_res =
-          execute_is_equal(values_, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
+        *it_res = execute_is_equal(values_, it->op1(), it->op2(), conv_fmt());
         break;
       case Instruction::Opcode::is_not_equal:
-        *it_res = execute_is_not_equal(values_, it->op1(), it->op2(),
-                                       std::get<std::string>(var("CONVFMT")));
+        *it_res = execute_is_not_equal(values_, it->op1(), it->op2(), conv_fmt());
         break;
       case Instruction::Opcode::is_less_than:
-        *it_res = execute_is_less_than(values_, it->op1(), it->op2(),
-                                       std::get<std::string>(var("CONVFMT")));
+        *it_res = execute_is_less_than(values_, it->op1(), it->op2(), conv_fmt());
         break;
       case Instruction::Opcode::is_less_than_equal:
-        *it_res = execute_is_less_than_equal(values_, it->op1(), it->op2(),
-                                             std::get<std::string>(var("CONVFMT")));
+        *it_res = execute_is_less_than_equal(values_, it->op1(), it->op2(), conv_fmt());
         break;
       case Instruction::Opcode::is_greater_than:
-        *it_res = execute_is_greater_than(values_, it->op1(), it->op2(),
-                                          std::get<std::string>(var("CONVFMT")));
+        *it_res = execute_is_greater_than(values_, it->op1(), it->op2(), conv_fmt());
         break;
       case Instruction::Opcode::is_greater_than_equal:
-        *it_res = execute_greater_than_equal(values_, it->op1(), it->op2(),
-                                             std::get<std::string>(var("CONVFMT")));
+        *it_res = execute_greater_than_equal(values_, it->op1(), it->op2(), conv_fmt());
         break;
       case Instruction::Opcode::to_number:
         *it_res = execute_to_number(values_, it->op1());
@@ -1547,8 +1543,7 @@ public:
         pc = execute_branch_if_false(values_, it->op1(), it->op2(), pc + 1) - 1;
         break;
       case Instruction::Opcode::re_match:
-        *it_res =
-          execute_re_match(values_, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
+        *it_res = execute_re_match(values_, it->op1(), it->op2(), conv_fmt());
         break;
       case Instruction::Opcode::branch:
         pc = std::get<Index>(it->op1()) - 1;
@@ -1557,7 +1552,7 @@ public:
         *it_res = values_.at(std::get<Index>(it->op1()));
         break;
       case Instruction::Opcode::length:
-        *it_res = execute_length(values_, it->op1(), std::get<std::string>(var("CONVFMT")));
+        *it_res = execute_length(values_, it->op1(), conv_fmt());
         break;
       case Instruction::Opcode::atan2:
         *it_res = execute_atan2(values_, it->op1(), it->op2());
@@ -1593,42 +1588,35 @@ public:
         break;
       }
       case Instruction::Opcode::subst:
-        *it_res = execute_subst(values_, it->op1(), it->op2(), it->op3(), false,
-                                std::get<std::string>(var("CONVFMT")));
+        *it_res = execute_subst(values_, it->op1(), it->op2(), it->op3(), false, conv_fmt());
         break;
       case Instruction::Opcode::gsubst:
-        *it_res = execute_subst(values_, it->op1(), it->op2(), it->op3(), true,
-                                std::get<std::string>(var("CONVFMT")));
+        *it_res = execute_subst(values_, it->op1(), it->op2(), it->op3(), true, conv_fmt());
         break;
       case Instruction::Opcode::index:
-        *it_res =
-          execute_index(values_, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
+        *it_res = execute_index(values_, it->op1(), it->op2(), conv_fmt());
         break;
       case Instruction::Opcode::match: {
-        auto [pos, len] =
-          execute_match(values_, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
+        auto [pos, len] = execute_match(values_, it->op1(), it->op2(), conv_fmt());
         *it_res = pos;
         var("RSTART", pos);
         var("RLENGTH", len);
         break;
       }
       case Instruction::Opcode::substr:
-        *it_res = execute_substr(values_, it->op1(), it->op2(), it->op3(),
-                                 std::get<std::string>(var("CONVFMT")));
+        *it_res = execute_substr(values_, it->op1(), it->op2(), it->op3(), conv_fmt());
         break;
       case Instruction::Opcode::tolower:
-        *it_res = execute_tolower(values_, it->op1(), std::get<std::string>(var("CONVFMT")));
+        *it_res = execute_tolower(values_, it->op1(), conv_fmt());
         break;
       case Instruction::Opcode::toupper:
-        *it_res = execute_toupper(values_, it->op1(), std::get<std::string>(var("CONVFMT")));
+        *it_res = execute_toupper(values_, it->op1(), conv_fmt());
         break;
       case Instruction::Opcode::split_fs:
-        *it_res =
-          execute_split(values_, it->op1(), it->op2(), std::get<std::string>(var("CONVFMT")));
+        *it_res = execute_split(values_, it->op1(), it->op2(), conv_fmt());
         break;
       case Instruction::Opcode::split_re:
-        *it_res = execute_split(values_, it->op1(), it->op2(), it->op3(),
-                                std::get<std::string>(var("CONVFMT")));
+        *it_res = execute_split(values_, it->op1(), it->op2(), it->op3(), conv_fmt());
         break;
       case Instruction::Opcode::exit:
         return to_integer(values_.at(std::get<Index>(it->op1())));
@@ -1650,14 +1638,15 @@ public:
    * @param  var Variable to read
    * @return     Value of variable, or std::nullopt if uninitialised.
    */
-  [[nodiscard]] auto var(std::string const& var) const -> ExecutionValue
+  [[nodiscard]] auto var(std::string const& var) const -> ExecutionValue const&
   {
+    static ExecutionValue const default_result;
     for (auto const& map : variables_stack_) {
       if (auto it{map.find(var)}; it != map.end()) {
         return it->second;
       }
     }
-    return std::nullopt;
+    return default_result;
   }
 
   /** \brief Assign \a value to \a var.
@@ -1789,8 +1778,7 @@ auto GD::Awk::execute(ParsedProgram const& program, std::vector<std::string> con
   for (Integer::underlying_type i{0};
        i < std::get<Integer>(state.var("ARGC")).get() && !exit_code.has_value(); ++i) {
     Details::ExecutionValue const& operand_value{state.array_element("ARGV", std::to_string(i))};
-    auto operand{Details::ExecutionState::to_string(operand_value,
-                                                    std::get<std::string>(state.var("CONVFMT")))};
+    auto operand{Details::ExecutionState::to_string(operand_value, state.conv_fmt())};
     if (state.parse_var(operand)) {
       continue;
     }
