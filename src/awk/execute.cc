@@ -522,15 +522,6 @@ public:
       op);
   }
 
-  static auto read_fd(std::vector<ExecutionValue> const& values, Instruction::Operand const& index)
-    -> int
-  {
-    assert(std::holds_alternative<Index>(index));
-    ExecutionValue value{values.at(std::get<Index>(index))};
-    assert(std::holds_alternative<FileDescriptor>(value));
-    return std::get<FileDescriptor>(value).get();
-  }
-
   [[nodiscard]] auto execute_load_lvalue(ExecutionValue const& value) -> ExecutionValue
   {
     return std::visit(
@@ -1079,13 +1070,12 @@ public:
     return to_bool(values.at(std::get<Index>(expr))) ? true_dest : std::get<Index>(false_dest);
   }
 
-  static auto execute_sprintf(std::vector<ExecutionValue> const& values,
-                              Instruction::Operand const& format_op,
-                              Instruction::Operand const& parameter_pack,
+  static auto execute_sprintf(ExecutionValue const& format_op,       // NOLINT
+                              ExecutionValue const& parameter_pack,  // NOLINT
                               std::string const& conv_fmt) -> ExecutionValue
   {
-    auto fmt_string{to_string(values.at(std::get<Index>(format_op)), conv_fmt)};
-    auto pp{std::get<ParameterPack>(values.at(std::get<Index>(parameter_pack)))};
+    auto fmt_string{to_string(format_op, conv_fmt)};
+    auto pp{to_parameter_pack(parameter_pack)};
     auto it{pp.begin()};
     std::size_t pos{0};
     std::string result;
@@ -1156,14 +1146,10 @@ public:
     return result;
   }
 
-  static auto execute_push_parameter_value(std::vector<ExecutionValue>& values,
-                                           Instruction::Operand const& parameter_pack,
-                                           Instruction::Operand const& value)
+  static auto execute_push_parameter_value(ExecutionValue& parameter_pack,
+                                           ExecutionValue const& value)
   {
-    assert(std::holds_alternative<Index>(parameter_pack));
-    assert(std::holds_alternative<Index>(value));
-    ParameterPack& pp{std::get<ParameterPack>(values.at(std::get<Index>(parameter_pack)))};
-    ExecutionValue v{values.at(std::get<Index>(value))};
+    ParameterPack& pp{to_parameter_pack(parameter_pack)};
 
     pp.push_back(std::visit(GD::Overloaded{
                               [](Integer v) { return ParameterValue{v}; },
@@ -1177,7 +1163,7 @@ public:
                                 return ParameterValue{};
                               },
                             },
-                            v));
+                            value));
   }
 
   static auto execute_length(std::vector<ExecutionValue>& values, Instruction::Operand const& expr,
@@ -1437,7 +1423,41 @@ public:
     error(Msg::operand_does_not_hold_variable_name, op);
   }
 
-  [[nodiscard]] auto value(Instruction::Operand const& op) -> ExecutionValue const&
+  [[nodiscard]] static auto to_parameter_pack(ExecutionValue& value) -> ParameterPack&
+  {
+    if (auto* pp{std::get_if<ParameterPack>(&value)}; pp != nullptr) {
+      return *pp;
+    }
+
+    error(Msg::execution_value_does_not_hold_parameter_pack, value);
+  }
+
+  [[nodiscard]] static auto to_parameter_pack(ExecutionValue const& value) -> ParameterPack const&
+  {
+    if (auto const* pp{std::get_if<ParameterPack>(&value)}; pp != nullptr) {
+      return *pp;
+    }
+
+    error(Msg::execution_value_does_not_hold_parameter_pack, value);
+  }
+
+  static auto to_fd(ExecutionValue const& value) -> int
+  {
+    if (auto const* fd{std::get_if<FileDescriptor>(&value)}; fd != nullptr) {
+      return fd->get();
+    }
+
+    error(Msg::execution_value_does_not_hold_file_descriptor, value);
+  }
+
+  [[nodiscard]] auto value(Instruction::Operand const& op) const noexcept -> ExecutionValue const&
+  {
+    auto index{to_index(op)};
+    assert(index < values_.size());
+    return values_[index];
+  }
+
+  [[nodiscard]] auto value(Instruction::Operand const& op) noexcept -> ExecutionValue&
   {
     auto index{to_index(op)};
     assert(index < values_.size());
@@ -1490,10 +1510,10 @@ public:
       case Instruction::Opcode::close_param_pack:
         break;
       case Instruction::Opcode::push_param:
-        execute_push_parameter_value(values_, it->op1(), it->op2());
+        execute_push_parameter_value(value(it->op1()), value(it->op2()));
         break;
       case Instruction::Opcode::sprintf: {
-        *res = execute_sprintf(values_, it->op1(), it->op2(), ofmt());
+        *res = execute_sprintf(value(it->op1()), value(it->op2()), ofmt());
         break;
       }
       case Instruction::Opcode::open:
@@ -1501,8 +1521,8 @@ public:
         std::abort();
         break;
       case Instruction::Opcode::print: {
-        auto stream{read_fd(values_, it->op2())};
-        auto buf{to_string(values_.at(std::get<Index>(it->op1())), ofmt())};
+        auto stream{to_fd(value(it->op2()))};
+        auto buf{to_string(value(it->op1()), ofmt())};
         write(stream, buf.data(), buf.size());
         break;
       }

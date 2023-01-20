@@ -800,6 +800,18 @@
         "id": 134,
         "description": "Operand {0} does not hold a variable name.  Internal error",
         "C": "Critical error! Operand {0} does not hold a variable name."
+      },
+      {
+        "msg": "execution_value_does_not_hold_parameter_pack",
+        "id": 135,
+        "description": "Execution Value {0} does not hold a parameter pack.  Internal error",
+        "C": "Critical error! Execution value {0} does not hold a parameter pack."
+      },
+      {
+        "msg": "execution_value_does_not_hold_file_descriptor",
+        "id": 135,
+        "description": "Execution Value {0} does not hold a file descriptor.  Internal error",
+        "C": "Critical error! Execution value {0} does not hold a file descriptor."
       }
     ]
   }
