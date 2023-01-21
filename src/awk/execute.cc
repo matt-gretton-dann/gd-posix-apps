@@ -43,6 +43,7 @@ template<typename... Ts>
     std::exit(1);  // NOLINT(concurrency-mt-unsafe)
   }
   catch (...) {
+    // Error in error handling - only reasonable thing to do is abort!
     std::abort();
   }
 }
@@ -363,11 +364,11 @@ private:
   std::vector<std::string> fields_{};
 };  // namespace GD::Awk::Details
 
-auto cos(double x) -> double { return std::cos(x); }
-auto sin(double x) -> double { return std::sin(x); }
-auto exp(double x) -> double { return std::exp(x); }
-auto log(double x) -> double { return std::log(x); }
-auto sqrt(double x) -> double { return std::sqrt(x); }
+auto cos(double x) noexcept -> double { return std::cos(x); }
+auto sin(double x) noexcept -> double { return std::sin(x); }
+auto exp(double x) noexcept -> double { return std::exp(x); }
+auto log(double x) noexcept -> double { return std::log(x); }
+auto sqrt(double x) noexcept -> double { return std::sqrt(x); }
 
 auto do_int_add(Integer::underlying_type a, Integer::underlying_type b)
   -> std::optional<Integer::underlying_type>
@@ -571,8 +572,8 @@ public:
 
   [[nodiscard]] static auto execute_field(ExecutionValue const& id) -> ExecutionValue
   {
-    assert(std::holds_alternative<Integer>(id));
-    return Field{std::get<Integer>(id).get()};
+    auto i{to_integer_exact(id)};
+    return Field{i};
   }
 
   static auto to_bool(ExecutionValue const& value) -> bool
@@ -619,7 +620,7 @@ public:
     return std::visit([](auto const v) { return static_cast<Floating>(v); }, num);
   }
 
-  static auto to_number(Floating f) noexcept -> Number
+  static auto to_number(Floating f) -> Number
   {
     auto i{static_cast<Integer::underlying_type>(f)};
     if (static_cast<Floating>(i) == f) {
@@ -628,7 +629,7 @@ public:
     return Number{f};
   }
 
-  static auto to_number(std::string const& s) noexcept -> Number
+  static auto to_number(std::string const& s) -> Number
   {
     Number num{Integer::underlying_type{0}};
 
@@ -675,52 +676,34 @@ public:
   }
 
   template<typename... Ts>
-  static auto to_number(std::variant<Ts...> const& value) noexcept -> Number
+  static auto to_number(std::variant<Ts...> const& value) -> Number
   {
-    try {
-      return std::visit(
-        GD::Overloaded{
-          [](Integer i) { return Number{i.get()}; },
-          [](Floating f) { return to_number(f); },
-          [](bool b) { return Number{static_cast<Integer::underlying_type>(b)}; },
-          [](std::string const& s) { return to_number(s); },
-          [](std::nullopt_t) { return Number{Integer::underlying_type{0}}; },
-          [value](auto const&) -> Number { error(Msg::unable_to_cast_value_to_number, value); },
-        },
-        value);
-    }
-    catch (std::exception const& e) {
-      error(Msg::uncaught_std_exception, e.what());
-    }
-    catch (...) {
-      error(Msg::uncaught_exception);
-    }
+    return std::visit(
+      GD::Overloaded{
+        [](Integer i) { return Number{i.get()}; },
+        [](Floating f) { return to_number(f); },
+        [](bool b) { return Number{static_cast<Integer::underlying_type>(b)}; },
+        [](std::string const& s) { return to_number(s); },
+        [](std::nullopt_t) { return Number{Integer::underlying_type{0}}; },
+        [value](auto const&) -> Number { error(Msg::unable_to_cast_value_to_number, value); },
+      },
+      value);
   }
 
-  static auto to_number_exact(ExecutionValue const& value) noexcept -> std::optional<Number>
+  static auto to_number_exact(ExecutionValue const& value) -> std::optional<Number>
   {
-    try {
-      return std::visit(
-        GD::Overloaded{
-          [](Integer i) { return std::make_optional(Number{i.get()}); },
-          [](Floating f) { return std::make_optional(to_number(f)); },
-          [](bool b) {
-            return std::make_optional(Number{static_cast<Integer::underlying_type>(b)});
-          },
-          [](std::string const& s) { return to_number_exact(s); },
-          [](std::nullopt_t) { return std::make_optional(Number{Integer::underlying_type{0}}); },
-          [value](auto const&) -> std::optional<Number> {
-            error(Msg::unable_to_cast_value_to_exact_number, value);
-          },
+    return std::visit(
+      GD::Overloaded{
+        [](Integer i) { return std::make_optional(Number{i.get()}); },
+        [](Floating f) { return std::make_optional(to_number(f)); },
+        [](bool b) { return std::make_optional(Number{static_cast<Integer::underlying_type>(b)}); },
+        [](std::string const& s) { return to_number_exact(s); },
+        [](std::nullopt_t) { return std::make_optional(Number{Integer::underlying_type{0}}); },
+        [value](auto const&) -> std::optional<Number> {
+          error(Msg::unable_to_cast_value_to_exact_number, value);
         },
-        value);
-    }
-    catch (std::exception const& e) {
-      error(Msg::uncaught_std_exception, e.what());
-    }
-    catch (...) {
-      error(Msg::uncaught_exception);
-    }
+      },
+      value);
   }
 
   template<typename IntFn, typename FloatFn>
@@ -742,43 +725,34 @@ public:
     return float_op(to_floating(lhs_number), to_floating(rhs_number));
   }
 
-  static auto execute_atan2(ExecutionValue const& y, ExecutionValue const& x) noexcept
-    -> ExecutionValue
+  static auto execute_atan2(ExecutionValue const& y, ExecutionValue const& x) -> ExecutionValue
   {
     return std::atan2(to_floating(y), to_floating(x));
   }
 
-  static auto execute_math(ExecutionValue const& value,
-                           std::function<double(double)> const& fn) noexcept -> ExecutionValue
+  static auto execute_math(ExecutionValue const& value, std::function<double(double)> const& fn)
+    -> ExecutionValue
   {
     return Floating{fn(to_floating(value))};
   }
 
-  static auto execute_int(ExecutionValue const& value) noexcept -> ExecutionValue
+  static auto execute_int(ExecutionValue const& value) -> ExecutionValue
   {
-    try {
-      return std::visit(GD::Overloaded{
-                          [](Integer::underlying_type i) { return ExecutionValue{Integer{i}}; },
-                          [](Floating f) {
-                            f = std::trunc(f);
-                            auto const i{static_cast<Integer::underlying_type>(f)};
-                            if (static_cast<Floating>(i) == f) {
-                              return ExecutionValue{Integer{i}};
-                            }
-                            return ExecutionValue{f};
-                          },
+    return std::visit(GD::Overloaded{
+                        [](Integer::underlying_type i) { return ExecutionValue{Integer{i}}; },
+                        [](Floating f) {
+                          f = std::trunc(f);
+                          auto const i{static_cast<Integer::underlying_type>(f)};
+                          if (static_cast<Floating>(i) == f) {
+                            return ExecutionValue{Integer{i}};
+                          }
+                          return ExecutionValue{f};
                         },
-                        to_number(value));
-    }
-    catch (std::exception const& e) {
-      error(Msg::uncaught_std_exception, e.what());
-    }
-    catch (...) {
-      error(Msg::uncaught_exception);
-    }
+                      },
+                      to_number(value));
   }
 
-  auto execute_add(ExecutionValue const& lhs, ExecutionValue const& rhs) noexcept -> ExecutionValue
+  auto execute_add(ExecutionValue const& lhs, ExecutionValue const& rhs) -> ExecutionValue
   {
     return execute_binary_op(
       lhs, rhs,
@@ -786,7 +760,7 @@ public:
       [](Floating a, Floating b) { return a + b; });
   }
 
-  auto execute_sub(ExecutionValue const& lhs, ExecutionValue const& rhs) noexcept -> ExecutionValue
+  auto execute_sub(ExecutionValue const& lhs, ExecutionValue const& rhs) -> ExecutionValue
   {
     return execute_binary_op(
       lhs, rhs,
@@ -794,8 +768,7 @@ public:
       [](Floating a, Floating b) { return a - b; });
   }
 
-  auto execute_power(ExecutionValue const& lhs, ExecutionValue const& rhs) noexcept
-    -> ExecutionValue
+  auto execute_power(ExecutionValue const& lhs, ExecutionValue const& rhs) -> ExecutionValue
   {
     return execute_binary_op(
       lhs, rhs,
@@ -803,8 +776,7 @@ public:
       [](Floating a, Floating b) { return std::pow(a, b); });
   }
 
-  auto execute_multiply(ExecutionValue const& lhs, ExecutionValue const& rhs) noexcept
-    -> ExecutionValue
+  auto execute_multiply(ExecutionValue const& lhs, ExecutionValue const& rhs) -> ExecutionValue
   {
     return execute_binary_op(
       lhs, rhs,
@@ -812,8 +784,7 @@ public:
       [](Floating a, Floating b) { return a * b; });
   }
 
-  auto execute_divide(ExecutionValue const& lhs, ExecutionValue const& rhs) noexcept
-    -> ExecutionValue
+  auto execute_divide(ExecutionValue const& lhs, ExecutionValue const& rhs) -> ExecutionValue
   {
     return execute_binary_op(
       lhs, rhs,
@@ -821,8 +792,7 @@ public:
       [](Floating a, Floating b) { return a / b; });
   }
 
-  auto execute_modulo(ExecutionValue const& lhs, ExecutionValue const& rhs) noexcept
-    -> ExecutionValue
+  auto execute_modulo(ExecutionValue const& lhs, ExecutionValue const& rhs) -> ExecutionValue
   {
     return execute_binary_op(
       lhs, rhs,
@@ -830,44 +800,28 @@ public:
       [](Floating a, Floating b) { return fmod(a, b); });
   }
 
-  static auto execute_to_number(ExecutionValue const& value) noexcept -> ExecutionValue
+  static auto execute_to_number(ExecutionValue const& value) -> ExecutionValue
   {
-    try {
-      return std::visit(GD::Overloaded{
-                          [](Integer::underlying_type i) { return ExecutionValue{Integer{i}}; },
-                          [](Floating f) { return ExecutionValue{f}; },
-                        },
-                        to_number(value));
-    }
-    catch (std::exception const& e) {
-      error(Msg::uncaught_std_exception, e.what());
-    }
-    catch (...) {
-      error(Msg::uncaught_exception);
-    }
+    return std::visit(GD::Overloaded{
+                        [](Integer::underlying_type i) { return ExecutionValue{Integer{i}}; },
+                        [](Floating f) { return ExecutionValue{f}; },
+                      },
+                      to_number(value));
   }
 
-  static auto execute_negate(ExecutionValue const& value) noexcept -> ExecutionValue
+  static auto execute_negate(ExecutionValue const& value) -> ExecutionValue
   {
-    try {
-      return std::visit(GD::Overloaded{
-                          [](Integer::underlying_type i) {
-                            i = -i;
-                            return ExecutionValue{Integer{i}};
-                          },
-                          [](Floating f) { return ExecutionValue{-f}; },
+    return std::visit(GD::Overloaded{
+                        [](Integer::underlying_type i) {
+                          i = -i;
+                          return ExecutionValue{Integer{i}};
                         },
-                        to_number(value));
-    }
-    catch (std::exception const& e) {
-      error(Msg::uncaught_std_exception, e.what());
-    }
-    catch (...) {
-      error(Msg::uncaught_exception);
-    }
+                        [](Floating f) { return ExecutionValue{-f}; },
+                      },
+                      to_number(value));
   }
 
-  static auto execute_to_bool(ExecutionValue const& value) noexcept -> ExecutionValue
+  static auto execute_to_bool(ExecutionValue const& value) -> ExecutionValue
   {
     return to_bool(value);
   }
@@ -887,75 +841,55 @@ public:
   }
 
   template<typename... Ts>
-  static auto to_string(std::variant<Ts...> const& index, std::string const& fmt) noexcept
-    -> std::string
+  static auto to_string(std::variant<Ts...> const& index, std::string const& fmt) -> std::string
   {
-    try {
-      return std::visit(
-        GD::Overloaded{
-          [](Integer v) { return std::to_string(v.get()); },
-          [&fmt](Floating v) { return fmt::vformat(to_fmt(fmt), fmt::make_format_args(v)); },
-          [](bool b) { return std::string{b ? "1" : "0"}; },
-          [](std::string const& s) { return s; },
-          [](std::nullopt_t) { return std::string{}; },
-          [index](auto const&) -> std::string {
-            error(Msg::unable_to_cast_value_to_string, index);
-          },
-        },
-        index);
-    }
-    catch (std::exception const& e) {
-      error(Msg::uncaught_std_exception, e.what());
-    }
-    catch (...) {
-      error(Msg::uncaught_exception);
-    }
+    return std::visit(
+      GD::Overloaded{
+        [](Integer v) { return std::to_string(v.get()); },
+        [&fmt](Floating v) { return fmt::vformat(to_fmt(fmt), fmt::make_format_args(v)); },
+        [](bool b) { return std::string{b ? "1" : "0"}; },
+        [](std::string const& s) { return s; },
+        [](std::nullopt_t) { return std::string{}; },
+        [index](auto const&) -> std::string { error(Msg::unable_to_cast_value_to_string, index); },
+      },
+      index);
   }
 
-  static auto to_re(ExecutionValue const& index, std::string const& fmt) noexcept -> std::regex
+  static auto to_re(ExecutionValue const& index, std::string const& fmt) -> std::regex
   {
-    try {
-      return std::visit(
-        GD::Overloaded{
-          [](std::regex const& re) { return re; },
-          [](Integer v) {
-            return std::regex{std::to_string(v.get()), std::regex_constants::awk};
-          },
-          [&fmt](Floating v) {
-            return std::regex{fmt::vformat(to_fmt(fmt), fmt::make_format_args(v)),
-                              std::regex_constants::awk};
-          },
-          [](bool b) {
-            return std::regex{b ? "1" : "0", std::regex_constants::awk};
-          },
-          [](std::string const& s) {
-            return std::regex{s, std::regex_constants::awk};
-          },
-          [&index](auto const&) -> std::regex { error(Msg::unable_to_cast_value_to_re, index); },
+    return std::visit(
+      GD::Overloaded{
+        [](std::regex const& re) { return re; },
+        [](Integer v) {
+          return std::regex{std::to_string(v.get()), std::regex_constants::awk};
         },
-        index);
-    }
-    catch (std::exception const& e) {
-      error(Msg::uncaught_std_exception, e.what());
-    }
-    catch (...) {
-      error(Msg::uncaught_exception);
-    }
+        [&fmt](Floating v) {
+          return std::regex{fmt::vformat(to_fmt(fmt), fmt::make_format_args(v)),
+                            std::regex_constants::awk};
+        },
+        [](bool b) {
+          return std::regex{b ? "1" : "0", std::regex_constants::awk};
+        },
+        [](std::string const& s) {
+          return std::regex{s, std::regex_constants::awk};
+        },
+        [&index](auto const&) -> std::regex { error(Msg::unable_to_cast_value_to_re, index); },
+      },
+      index);
   }
 
   static auto execute_concat(ExecutionValue const& lhs, ExecutionValue const& rhs,
-                             std::string const& conv_fmt) noexcept -> ExecutionValue
+                             std::string const& conv_fmt) -> ExecutionValue
   {
     return to_string(lhs, conv_fmt) + to_string(rhs, conv_fmt);
   }
 
-  static auto execute_match(std::vector<ExecutionValue> const& values,
-                            Instruction::Operand const& op_s, Instruction::Operand const& op_re,
+  static auto execute_match(ExecutionValue const& op_s, ExecutionValue const& op_re,  // NOLINT
                             std::string const& conv_fmt)
     -> std::pair<ExecutionValue, ExecutionValue>
   {
-    auto str{to_string(values.at(std::get<Index>(op_s)), conv_fmt)};
-    auto re{to_re(values.at(std::get<Index>(op_re)), conv_fmt)};
+    auto str{to_string(op_s, conv_fmt)};
+    auto re{to_re(op_re, conv_fmt)};
 
     std::smatch sm;
     if (!regex_search(str, sm, re)) {
@@ -967,18 +901,16 @@ public:
     return {Integer{pos}, Integer{len}};
   }
 
-  static auto execute_re_match(std::vector<ExecutionValue> const& values,
-                               Instruction::Operand const& lhs, Instruction::Operand const& rhs,
+  static auto execute_re_match(ExecutionValue const& lhs, ExecutionValue const& rhs,
                                std::string const& conv_fmt) -> ExecutionValue
   {
-    auto [pos, len] = execute_match(values, lhs, rhs, conv_fmt);
-    return bool{std::get<Integer>(pos).get() != 0};
+    auto [pos, len] = execute_match(lhs, rhs, conv_fmt);
+    return bool{to_integer(pos) != 0};
   }
 
   template<typename NumFn, typename StringFn>
   auto execute_comparison_op(ExecutionValue const& lhs, ExecutionValue const& rhs, NumFn num_op,
-                             StringFn string_op, std::string const& conv_fmt) noexcept
-    -> ExecutionValue
+                             StringFn string_op, std::string const& conv_fmt) -> ExecutionValue
   {
     auto const lhs_num{to_number_exact(lhs)};
     auto const rhs_num{to_number_exact(rhs)};
@@ -996,7 +928,7 @@ public:
   }
 
   auto execute_is_equal(ExecutionValue const& lhs, ExecutionValue const& rhs,
-                        std::string const& conv_fmt) noexcept -> ExecutionValue
+                        std::string const& conv_fmt) -> ExecutionValue
   {
     return execute_comparison_op(
       lhs, rhs, [](auto l, auto r) { return l == r; },
@@ -1007,7 +939,7 @@ public:
   }
 
   auto execute_is_not_equal(ExecutionValue const& lhs, ExecutionValue const& rhs,
-                            std::string const& conv_fmt) noexcept -> ExecutionValue
+                            std::string const& conv_fmt) -> ExecutionValue
   {
     return execute_comparison_op(
       lhs, rhs, [](auto l, auto r) { return l != r; },
@@ -1018,7 +950,7 @@ public:
   }
 
   auto execute_is_less_than(ExecutionValue const& lhs, ExecutionValue const& rhs,
-                            std::string const& conv_fmt) noexcept -> ExecutionValue
+                            std::string const& conv_fmt) -> ExecutionValue
   {
     return execute_comparison_op(
       lhs, rhs, [](auto l, auto r) { return l < r; },
@@ -1029,7 +961,7 @@ public:
   }
 
   auto execute_is_less_than_equal(ExecutionValue const& lhs, ExecutionValue const& rhs,
-                                  std::string const& conv_fmt) noexcept -> ExecutionValue
+                                  std::string const& conv_fmt) -> ExecutionValue
   {
     return execute_comparison_op(
       lhs, rhs, [](auto l, auto r) { return l <= r; },
@@ -1040,7 +972,7 @@ public:
   }
 
   auto execute_is_greater_than(ExecutionValue const& lhs, ExecutionValue const& rhs,
-                               std::string const& conv_fmt) noexcept -> ExecutionValue
+                               std::string const& conv_fmt) -> ExecutionValue
   {
     return execute_comparison_op(
       lhs, rhs, [](auto l, auto r) { return l > r; },
@@ -1051,7 +983,7 @@ public:
   }
 
   auto execute_greater_than_equal(ExecutionValue const& lhs, ExecutionValue const& rhs,
-                                  std::string const& conv_fmt) noexcept -> ExecutionValue
+                                  std::string const& conv_fmt) -> ExecutionValue
   {
     return execute_comparison_op(
       lhs, rhs, [](auto l, auto r) { return l >= r; },
@@ -1059,16 +991,6 @@ public:
         return std::strcoll(l.data(), r.data()) >= 0;
       },
       conv_fmt);
-  }
-
-  static auto execute_branch_if_false(std::vector<ExecutionValue> const& values,
-                                      Instruction::Operand const& expr,
-                                      Instruction::Operand const& false_dest, Index true_dest)
-    -> Index
-  {
-    assert(std::holds_alternative<Index>(expr));
-    assert(std::holds_alternative<Index>(false_dest));
-    return to_bool(values.at(std::get<Index>(expr))) ? true_dest : std::get<Index>(false_dest);
   }
 
   static auto execute_sprintf(ExecutionValue const& format_op,       // NOLINT
@@ -1167,11 +1089,9 @@ public:
                             value));
   }
 
-  static auto execute_length(std::vector<ExecutionValue>& values, Instruction::Operand const& expr,
-                             std::string const& fmt) -> ExecutionValue
+  static auto execute_length(ExecutionValue const& value, std::string const& fmt) -> ExecutionValue
   {
-    ExecutionValue const v{values.at(std::get<Index>(expr))};
-    std::string const s{to_string(v, fmt)};
+    std::string const s{to_string(value, fmt)};
     return Integer{s.size()};
   }
 
@@ -1184,11 +1104,9 @@ public:
     return ArrayElement{an, s};
   }
 
-  static auto execute_srand(std::vector<ExecutionValue>& values, Instruction::Operand const& expr)
-    -> Integer ::underlying_type
+  static auto execute_srand(ExecutionValue const& expr) -> Integer ::underlying_type
   {
-    ExecutionValue const& v{values.at(std::get<Index>(expr))};
-    auto seed{to_integer(v)};
+    auto seed{to_integer(expr)};
 
     // NOLINTNEXTLINE - API specifies unsigned short.
     std::array<unsigned short, 3> seeda{
@@ -1200,14 +1118,13 @@ public:
     return seed;
   }
 
-  auto execute_subst(std::vector<ExecutionValue>& values, Instruction::Operand const& op_re,
-                     Instruction::Operand const& op_repl,  // NOLINT
-                     Instruction::Operand const& op_in,    // NOLINT
-                     bool global, std::string const& conv_fmt) -> ExecutionValue
+  auto execute_subst(ExecutionValue const& op_re, ExecutionValue const& op_repl,  // NOLINT
+                     ExecutionValue const& op_in, bool global, std::string const& conv_fmt)
+    -> ExecutionValue
   {
-    auto re{to_re(values.at(std::get<Index>(op_re)), conv_fmt)};
-    auto repl{to_string(values.at(std::get<Index>(op_repl)), conv_fmt)};
-    auto str{to_string(execute_load_lvalue(value(op_in)), conv_fmt)};
+    auto re{to_re(op_re, conv_fmt)};
+    auto repl{to_string(op_repl, conv_fmt)};
+    auto str{to_string(execute_load_lvalue(op_in), conv_fmt)};
     auto flags{std::regex_constants::format_sed};
 
     std::string result;
@@ -1227,7 +1144,7 @@ public:
     }
     result += sm.suffix();
     if (!result.empty()) {
-      execute_store_lvalue(value(op_in), ExecutionValue{result}, conv_fmt);
+      execute_store_lvalue(op_in, ExecutionValue{result}, conv_fmt);
     }
     if (!global && matches > 1) {
       matches = 1;
@@ -1235,11 +1152,11 @@ public:
     return Integer{matches};
   }
 
-  static auto execute_index(std::vector<ExecutionValue>& values, Instruction::Operand const& sop,
-                            Instruction::Operand const& top, std::string const& conv_fmt) -> Integer
+  static auto execute_index(ExecutionValue const& sop, ExecutionValue const& top,
+                            std::string const& conv_fmt) -> Integer
   {
-    auto const& s{to_string(values.at(std::get<Index>(sop)), conv_fmt)};
-    auto const& t{to_string(values.at(std::get<Index>(top)), conv_fmt)};
+    auto const& s{to_string(sop, conv_fmt)};
+    auto const& t{to_string(top, conv_fmt)};
 
     auto result{s.find(t)};
     if (result == std::string::npos) {
@@ -1251,20 +1168,20 @@ public:
     return Integer{result};
   }
 
-  static auto execute_substr(std::vector<ExecutionValue>& values, Instruction::Operand const& op_s,
-                             Instruction::Operand const& op_pos, Instruction::Operand const& op_len,
-                             std::string const& conv_fmt) -> ExecutionValue
+  static auto execute_substr(ExecutionValue const& op_s, ExecutionValue const& op_pos,  // NOLINT
+                             ExecutionValue const& op_len, std::string const& conv_fmt)
+    -> ExecutionValue
   {
-    auto s{to_string(values.at(std::get<Index>(op_s)), conv_fmt)};
-    auto pos{to_integer(values.at(std::get<Index>(op_pos)))};
-    auto len{to_integer(values.at(std::get<Index>(op_len)))};
+    auto s{to_string(op_s, conv_fmt)};
+    auto pos{to_integer(op_pos)};
+    auto len{to_integer(op_len)};
     return s.substr(pos - 1, len);
   }
 
-  static auto execute_tolower(std::vector<ExecutionValue>& values, Instruction::Operand const& op_s,
-                              std::string const& conv_fmt) -> ExecutionValue
+  static auto execute_tolower(ExecutionValue const& op_s, std::string const& conv_fmt)
+    -> ExecutionValue
   {
-    auto const& s{to_string(values.at(std::get<Index>(op_s)), conv_fmt)};
+    auto const& s{to_string(op_s, conv_fmt)};
 
     std::string result;
     std::transform(s.begin(), s.end(), std::back_inserter(result),
@@ -1272,11 +1189,10 @@ public:
     return result;
   }
 
-  static auto execute_toupper(std::vector<ExecutionValue> const& values,
-                              Instruction::Operand const& op_s, std::string const& conv_fmt)
+  static auto execute_toupper(ExecutionValue const& op_s, std::string const& conv_fmt)
     -> ExecutionValue
   {
-    auto const& s{to_string(values.at(std::get<Index>(op_s)), conv_fmt)};
+    auto const& s{to_string(op_s, conv_fmt)};
 
     std::string result;
     std::transform(s.begin(), s.end(), std::back_inserter(result),
@@ -1360,30 +1276,25 @@ public:
     return static_cast<Integer::underlying_type>(array.size());
   }
 
-  auto execute_split(std::vector<ExecutionValue> const& values, Instruction::Operand const& op_str,
-                     Instruction::Operand const& array_op, std::string const& conv_fmt)
-    -> ExecutionValue
+  auto execute_split(ExecutionValue const& op_str, ExecutionValue const& array_op,  // NOLINT
+                     std::string const& conv_fmt) -> ExecutionValue
   {
-    auto const& str{to_string(values.at(std::get<Index>(op_str)), conv_fmt)};
-
+    auto const& str{to_string(op_str, conv_fmt)};
     // TODO(mgrettondann): FIX!
-    auto const& array_name{std::get<VariableName>(values.at(std::get<Index>(array_op)))};
+    auto const& array_name{to_variable_name(array_op)};
 
     auto [array, flag] = arrays_.insert_or_assign(array_name.get(), VariableMap{});
     auto result{execute_split(str, array->second, std::get<std::string>(var("FS")))};
     return Integer{result};
   }
 
-  auto execute_split(std::vector<ExecutionValue> const& values, Instruction::Operand const& op_str,
-                     Instruction::Operand const& array_op, Instruction::Operand const& fs_op,
-                     std::string const& conv_fmt) -> ExecutionValue
+  auto execute_split(ExecutionValue const& op_str, ExecutionValue const& array_op,  // NOLINT
+                     ExecutionValue const& fs_op, std::string const& conv_fmt) -> ExecutionValue
   {
-    auto const& str{to_string(values.at(std::get<Index>(op_str)), conv_fmt)};
-
-    auto const& re{to_re(values.at(std::get<Index>(fs_op)), conv_fmt)};
-
+    auto const& str{to_string(op_str, conv_fmt)};
+    auto const& re{to_re(fs_op, conv_fmt)};
     // TODO(mgrettondann): FIX!
-    auto const& array_name{std::get<VariableName>(values.at(std::get<Index>(array_op))).get()};
+    auto const& array_name{to_variable_name(array_op).get()};
 
     auto [array, flag] = arrays_.insert_or_assign(array_name, VariableMap{});
     auto result{execute_split_re(str, array->second, re)};
@@ -1397,7 +1308,7 @@ public:
 
   [[nodiscard]] auto ofmt() const -> std::string { return std::get<std::string>(var("OFMT")); }
 
-  [[nodiscard]] static auto to_index(Instruction::Operand const& op) noexcept -> Index
+  [[nodiscard]] static auto to_index(Instruction::Operand const& op) -> Index
   {
     if (auto const* index{std::get_if<Index>(&op)}; index != nullptr) {
       return *index;
@@ -1406,8 +1317,7 @@ public:
     error(Msg::operand_does_not_hold_index, op);
   }
 
-  [[nodiscard]] static auto to_array_name(Instruction::Operand const& op) noexcept
-    -> ArrayName const&
+  [[nodiscard]] static auto to_array_name(Instruction::Operand const& op) -> ArrayName const&
   {
     if (auto const* array_name{std::get_if<ArrayName>(&op)}; array_name != nullptr) {
       return *array_name;
@@ -1416,8 +1326,7 @@ public:
     error(Msg::operand_does_not_hold_array_name, op);
   }
 
-  [[nodiscard]] static auto to_variable_name(Instruction::Operand const& op) noexcept
-    -> VariableName const&
+  [[nodiscard]] static auto to_variable_name(Instruction::Operand const& op) -> VariableName const&
   {
     if (auto const* variable_name{std::get_if<VariableName>(&op)}; variable_name != nullptr) {
       return *variable_name;
@@ -1426,7 +1335,16 @@ public:
     error(Msg::operand_does_not_hold_variable_name, op);
   }
 
-  [[nodiscard]] static auto to_parameter_pack(ExecutionValue& value) noexcept -> ParameterPack&
+  [[nodiscard]] static auto to_variable_name(ExecutionValue const& op) -> VariableName const&
+  {
+    if (auto const* variable_name{std::get_if<VariableName>(&op)}; variable_name != nullptr) {
+      return *variable_name;
+    }
+
+    error(Msg::execution_value_does_not_hold_variable_name, op);
+  }
+
+  [[nodiscard]] static auto to_parameter_pack(ExecutionValue& value) -> ParameterPack&
   {
     if (auto* pp{std::get_if<ParameterPack>(&value)}; pp != nullptr) {
       return *pp;
@@ -1435,8 +1353,7 @@ public:
     error(Msg::execution_value_does_not_hold_parameter_pack, value);
   }
 
-  [[nodiscard]] static auto to_parameter_pack(ExecutionValue const& value) noexcept
-    -> ParameterPack const&
+  [[nodiscard]] static auto to_parameter_pack(ExecutionValue const& value) -> ParameterPack const&
   {
     if (auto const* pp{std::get_if<ParameterPack>(&value)}; pp != nullptr) {
       return *pp;
@@ -1445,7 +1362,7 @@ public:
     error(Msg::execution_value_does_not_hold_parameter_pack, value);
   }
 
-  static auto to_fd(ExecutionValue const& value) noexcept -> int
+  static auto to_fd(ExecutionValue const& value) -> int
   {
     if (auto const* fd{std::get_if<FileDescriptor>(&value)}; fd != nullptr) {
       return fd->get();
@@ -1454,14 +1371,14 @@ public:
     error(Msg::execution_value_does_not_hold_file_descriptor, value);
   }
 
-  [[nodiscard]] auto value(Instruction::Operand const& op) const noexcept -> ExecutionValue const&
+  [[nodiscard]] auto value(Instruction::Operand const& op) const -> ExecutionValue const&
   {
     auto index{to_index(op)};
     assert(index < values_.size());
     return values_[index];
   }
 
-  [[nodiscard]] auto value(Instruction::Operand const& op) noexcept -> ExecutionValue&
+  [[nodiscard]] auto value(Instruction::Operand const& op) -> ExecutionValue&
   {
     auto index{to_index(op)};
     assert(index < values_.size());
@@ -1582,19 +1499,21 @@ public:
         *res = execute_logical_not(value(it->op1()));
         break;
       case Instruction::Opcode::branch_if_false:
-        pc = execute_branch_if_false(values_, it->op1(), it->op2(), pc + 1) - 1;
+        if (!to_bool(value(it->op1()))) {
+          pc = to_index(it->op2()) - 1;
+        }
         break;
       case Instruction::Opcode::re_match:
-        *res = execute_re_match(values_, it->op1(), it->op2(), conv_fmt());
+        *res = execute_re_match(value(it->op1()), value(it->op2()), conv_fmt());
         break;
       case Instruction::Opcode::branch:
         pc = std::get<Index>(it->op1()) - 1;
         break;
       case Instruction::Opcode::copy:
-        *res = values_.at(std::get<Index>(it->op1()));
+        *res = value(it->op1());
         break;
       case Instruction::Opcode::length:
-        *res = execute_length(values_, it->op1(), conv_fmt());
+        *res = execute_length(value(it->op1()), conv_fmt());
         break;
       case Instruction::Opcode::atan2:
         *res = execute_atan2(value(it->op1()), value(it->op2()));
@@ -1622,7 +1541,7 @@ public:
         break;
       case Instruction::Opcode::srand:
         *res = Integer{rand_seed};
-        rand_seed = execute_srand(values_, it->op1());
+        rand_seed = execute_srand(value(it->op1()));
         break;
       case Instruction::Opcode::current_time: {
         auto const now{static_cast<Integer::underlying_type>(std::time(nullptr))};
@@ -1630,38 +1549,40 @@ public:
         break;
       }
       case Instruction::Opcode::subst:
-        *res = execute_subst(values_, it->op1(), it->op2(), it->op3(), false, conv_fmt());
+        *res =
+          execute_subst(value(it->op1()), value(it->op2()), value(it->op3()), false, conv_fmt());
         break;
       case Instruction::Opcode::gsubst:
-        *res = execute_subst(values_, it->op1(), it->op2(), it->op3(), true, conv_fmt());
+        *res =
+          execute_subst(value(it->op1()), value(it->op2()), value(it->op3()), true, conv_fmt());
         break;
       case Instruction::Opcode::index:
-        *res = execute_index(values_, it->op1(), it->op2(), conv_fmt());
+        *res = execute_index(value(it->op1()), value(it->op2()), conv_fmt());
         break;
       case Instruction::Opcode::match: {
-        auto [pos, len] = execute_match(values_, it->op1(), it->op2(), conv_fmt());
+        auto [pos, len] = execute_match(value(it->op1()), value(it->op2()), conv_fmt());
         *res = pos;
         var("RSTART", pos);
         var("RLENGTH", len);
         break;
       }
       case Instruction::Opcode::substr:
-        *res = execute_substr(values_, it->op1(), it->op2(), it->op3(), conv_fmt());
+        *res = execute_substr(value(it->op1()), value(it->op2()), value(it->op3()), conv_fmt());
         break;
       case Instruction::Opcode::tolower:
-        *res = execute_tolower(values_, it->op1(), conv_fmt());
+        *res = execute_tolower(value(it->op1()), conv_fmt());
         break;
       case Instruction::Opcode::toupper:
-        *res = execute_toupper(values_, it->op1(), conv_fmt());
+        *res = execute_toupper(value(it->op1()), conv_fmt());
         break;
       case Instruction::Opcode::split_fs:
-        *res = execute_split(values_, it->op1(), it->op2(), conv_fmt());
+        *res = execute_split(value(it->op1()), value(it->op2()), conv_fmt());
         break;
       case Instruction::Opcode::split_re:
-        *res = execute_split(values_, it->op1(), it->op2(), it->op3(), conv_fmt());
+        *res = execute_split(value(it->op1()), value(it->op2()), value(it->op3()), conv_fmt());
         break;
       case Instruction::Opcode::exit:
-        return to_integer(values_.at(std::get<Index>(it->op1())));
+        return to_integer(value(it->op1()));
       }
       if constexpr (debug) {
         if (it->has_reg()) {

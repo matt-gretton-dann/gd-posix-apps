@@ -809,9 +809,15 @@
       },
       {
         "msg": "execution_value_does_not_hold_file_descriptor",
-        "id": 135,
+        "id": 136,
         "description": "Execution Value {0} does not hold a file descriptor.  Internal error",
         "C": "Critical error! Execution value {0} does not hold a file descriptor."
+      },
+      {
+        "msg": "execution_value_does_not_hold_variable_name",
+        "id": 137,
+        "description": "Execution Value {0} does not hold a variable name.  Internal error",
+        "C": "Critical error! Execution value {0} does not hold a variable name."
       }
     ]
   }
