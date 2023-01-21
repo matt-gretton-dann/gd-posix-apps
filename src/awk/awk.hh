@@ -914,6 +914,27 @@ auto execute(ParsedProgram const& program, std::vector<std::string> const& initi
 }  // namespace GD::Awk
 
 template<>
+struct fmt::formatter<GD::Awk::Location>
+{
+  static constexpr auto parse(format_parse_context& ctx)
+  {
+    if (ctx.begin() != ctx.end() && *ctx.begin() != '}') {
+      throw format_error("invalid format");
+    }
+    return ctx.begin();
+  }
+
+  template<typename FormatContext>
+  auto format(GD::Awk::Location const& location, FormatContext& ctx)
+  {
+    // Work around Win32 STL bug:
+    return fmt::vformat_to(
+      ctx.out(), "{0}:{1}:{2}",
+      fmt::make_format_args(location.file_name(), location.line(), location.column()));
+  }
+};
+
+template<>
 struct fmt::formatter<GD::Awk::Token>
 {
   static constexpr auto parse(format_parse_context& ctx)

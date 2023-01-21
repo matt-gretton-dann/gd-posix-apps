@@ -194,6 +194,8 @@ test_awk('BEGIN { print 3 ++ }', None, expected_rc=1)
 test_awk('BEGIN { print 3 -- }', None, expected_rc=1)
 test_awk('BEGIN { print 1 < 2}', None, expected_rc=1)
 
+test_awk('BEGIN { a=1; a[1] }', None, expected_rc=1)
+
 # The AWK Programming Language Chapter 1 Examples
 emp_data = tester.input_file('emp.data')
 interest_data = tester.input_file('interest.data')

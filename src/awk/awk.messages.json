@@ -756,8 +756,8 @@
       {
         "msg": "expected_second_expr_in_builtin_split",
         "id": 127,
-        "description": "Missing second parameter in call to builtin split.  Instead got {0}.",
-        "C": "Missing second parameter in call to split().  Instead got {0}."
+        "description": "Expected the second parameter to split to be the name of an array.  Instead got {0}.",
+        "C": "Missing array as second parameter in call to split().  Instead got {0}."
       },
       {
         "msg": "expected_third_expr_in_builtin_split",
@@ -818,6 +818,42 @@
         "id": 137,
         "description": "Execution Value {0} does not hold a variable name.  Internal error",
         "C": "Critical error! Execution value {0} does not hold a variable name."
+      },
+      {
+        "msg": "name_already_used_locally_different_type",
+        "id": 138,
+        "description": "User tried to use name {0} as the type {1}, when it is in fact (locally) of type {2}, and was initially used at {4}. ",
+        "C": "Tried to use '{0}' as the name of {1}.  However, it was previously used locally in this function as the name of {2}.  First previous use here: {3}."
+      },
+      {
+        "msg": "name_already_used_globally_different_type",
+        "id": 139,
+        "description": "User tried to use name {0} as the type {1}, when it is in fact (globally) of type {2}, and was initially used at {4}. ",
+        "C": "Tried to use '{0}' as the name of {1}.  However, it was previously used as the name of {2}.  First previous use here: {3}."
+      },
+      {
+        "msg": "name_type_variable",
+        "id": 140,
+        "description": "How to describe a variable. ",
+        "C": "a variable"
+      },
+      {
+        "msg": "name_type_array",
+        "id": 141,
+        "description": "How to describe an array. ",
+        "C": "an array"
+      },
+      {
+        "msg": "name_type_function",
+        "id": 142,
+        "description": "How to describe a function. ",
+        "C": "a function"
+      },
+      {
+        "msg": "execution_value_does_not_hold_array_name",
+        "id": 143,
+        "description": "Execution Value {0} does not hold an array name.  Internal error",
+        "C": "Critical error! Execution value {0} does not hold an array name."
       }
     ]
   }

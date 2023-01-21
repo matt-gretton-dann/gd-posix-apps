@@ -1281,7 +1281,7 @@ public:
   {
     auto const& str{to_string(op_str, conv_fmt)};
     // TODO(mgrettondann): FIX!
-    auto const& array_name{to_variable_name(array_op)};
+    auto const& array_name{to_array_name(array_op)};
 
     auto [array, flag] = arrays_.insert_or_assign(array_name.get(), VariableMap{});
     auto result{execute_split(str, array->second, std::get<std::string>(var("FS")))};
@@ -1294,7 +1294,7 @@ public:
     auto const& str{to_string(op_str, conv_fmt)};
     auto const& re{to_re(fs_op, conv_fmt)};
     // TODO(mgrettondann): FIX!
-    auto const& array_name{to_variable_name(array_op).get()};
+    auto const& array_name{to_array_name(array_op).get()};
 
     auto [array, flag] = arrays_.insert_or_assign(array_name, VariableMap{});
     auto result{execute_split_re(str, array->second, re)};
@@ -1324,6 +1324,15 @@ public:
     }
 
     error(Msg::operand_does_not_hold_array_name, op);
+  }
+
+  [[nodiscard]] static auto to_array_name(ExecutionValue const& op) -> ArrayName const&
+  {
+    if (auto const* array_name{std::get_if<ArrayName>(&op)}; array_name != nullptr) {
+      return *array_name;
+    }
+
+    error(Msg::execution_value_does_not_hold_array_name, op);
   }
 
   [[nodiscard]] static auto to_variable_name(Instruction::Operand const& op) -> VariableName const&

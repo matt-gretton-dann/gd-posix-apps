@@ -460,6 +460,8 @@ auto to_builtin_func_opcode(Token::BuiltinFunc func) -> Instruction::Opcode
 class ParseState
 {
 public:
+  enum NameType { variable, array, function };
+
   explicit ParseState(std::unique_ptr<Lexer>&& lexer) : lexer_(std::move(lexer)) {}
 
 private:
@@ -754,8 +756,13 @@ private:
 
     peek_and_chew(false, Token::Type::comma, Msg::expected_comma_after_builtin_split_parameter);
 
-    ExprResult const array{
-      parse_expr(emitter, ExprType::expr, Msg::expected_second_expr_in_builtin_split)};
+    auto const& array_tok{lexer_->peek(false)};
+    if (array_tok != Token::Type::name) {
+      error(Msg::expected_second_expr_in_builtin_split, array_tok);
+    }
+    validate_name(array_tok.name(), NameType::array, lexer_->location());
+    auto array{emitter.emit_expr(Instruction::Opcode::array, ArrayName{array_tok.name()})};
+    lexer_->chew(false);
 
     ExprResult result;
     if (lexer_->peek(false) == Token::Type::comma) {
@@ -889,6 +896,34 @@ private:
     }
   }
 
+  using NameTypeMap = std::map<std::string, std::pair<NameType, Location>>;
+  NameTypeMap global_names_;
+  std::unique_ptr<NameTypeMap> local_names_;
+
+  /** @brief Validate that \a name can be used as \a type.  Error if we can't
+   *
+   * @param type Type of name (variable, array, function).
+   * @param name Name to test
+   * @param loc  Location where we are testing.
+   *
+   * Function also registers the usage of this name if it has not been seen before, and we can
+   * determine its type.
+   */
+  void validate_name(std::string const& name, NameType type, Location const& loc)
+  {
+    if (local_names_ != nullptr) {
+      if (auto it{local_names_->find(name)};
+          it != local_names_->end() && it->second.first != type) {
+        error(Msg::name_already_used_locally_different_type, name, type, it->second.first, loc);
+      }
+    }
+
+    auto [it, success] = global_names_.insert({name, {type, loc}});
+    if (!success && it->second.first != type) {
+      error(Msg::name_already_used_globally_different_type, name, type, it->second.first, loc);
+    }
+  }
+
   /** @brief Parse primary expressions, () and lvalues.
    *
    * @param  instrs     Where to emit code to
@@ -956,14 +991,17 @@ private:
     }
     case Token::Type::name: {
       std::string const var_name{tok.name()};
+      Location const var_loc{lexer_->location()};
       lexer_->chew(false);
 
       auto const& tok2{lexer_->peek(true)};
       if (tok2 != Token::Type::lsquare) {
+        validate_name(var_name, NameType::variable, var_loc);
         result = emitter.emit_expr(Instruction::Opcode::variable, VariableName{var_name});
         break;
       }
 
+      validate_name(var_name, NameType::array, var_loc);
       lexer_->chew(true);
 
       ExprResult subscripts;
@@ -1458,6 +1496,7 @@ private:
       if (name != Token::Type::name) {
         error(Msg::expected_name_after_in, name);
       }
+      validate_name(name.name(), NameType::array, lexer_->location());
 
       lexer_->chew(false);
       std::abort();
@@ -2293,12 +2332,15 @@ private:
     if (tok != Token::Type::name && tok != Token::Type::builtin_func_name) {
       error(Msg::expected_function_name, tok);
     }
+    lexer_->chew(false);
 
     if (tok == Token::Type::name) {
+      validate_name(tok.name(), NameType::function, lexer_->location());
       return FuncName{tok.name()};
     }
 
     assert(tok == Token::Type::func_name);
+    validate_name(tok.func_name(), NameType::function, lexer_->location());
     return FuncName{tok.func_name()};
   }
 
@@ -2309,10 +2351,7 @@ private:
    */
   auto parse_function_def() -> Instructions&
   {
-    if (lexer_->peek(false) != Token::Type::function) {
-      error(Msg::expected_function, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::function, Msg::expected_function);
     auto func_name{parse_func_def_name()};
     peek_and_chew(false, Token::Type::lparens, Msg::expected_lparens);
     // TODO(mgrettondann): Parse proper parameters
@@ -2516,6 +2555,38 @@ private:
   std::uint64_t pattern_guard_id_{0};
 };
 }  // namespace GD::Awk::Details
+
+// This needs to be in the global space
+template<>
+struct fmt::formatter<GD::Awk::Details::ParseState::NameType>
+{
+  static constexpr auto parse(format_parse_context& ctx)
+  {
+    if (ctx.begin() != ctx.end() && *ctx.begin() != '}') {
+      throw format_error("invalid format");
+    }
+    return ctx.begin();
+  }
+
+  template<typename FormatContext>
+  auto format(GD::Awk::Details::ParseState::NameType value, FormatContext& ctx)
+  {
+    switch (value) {
+    case GD::Awk::Details::ParseState::variable:
+      return fmt::vformat_to(
+        ctx.out(), "{0}",
+        fmt::make_format_args(GD::Awk::Messages::get().get(Msg::name_type_variable)));
+    case GD::Awk::Details::ParseState::array:
+      return fmt::vformat_to(
+        ctx.out(), "{0}",
+        fmt::make_format_args(GD::Awk::Messages::get().get(Msg::name_type_array)));
+    case GD::Awk::Details::ParseState::function:
+      return fmt::vformat_to(
+        ctx.out(), "{0}",
+        fmt::make_format_args(GD::Awk::Messages::get().get(Msg::name_type_function)));
+    }
+  }
+};
 
 auto GD::Awk::parse(std::unique_ptr<Lexer>&& lexer) -> ParsedProgram
 {
