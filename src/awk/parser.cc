@@ -16,21 +16,6 @@
 #include "awk.hh"
 
 using Msg = GD::Awk::Msg;
-namespace {
-/** \brief       Report an error and exit with exit code 1.
- *  \param  msg  Message ID
- *  \param  args Arguments for the message.
- */
-template<typename... Ts>
-[[noreturn]] void error(Msg msg, GD::Awk::Location const& loc, Ts... args)
-{
-  std::cerr << GD::Awk::Messages::get().format(GD::Awk::Set::awk, Msg::error_label,
-                                               GD::program_name(), loc.file_name(), loc.line(),
-                                               loc.column())
-            << GD::Awk::Messages::get().format(GD::Awk::Set::awk, msg, args...) << '\n';
-  std::exit(1);  // NOLINT(concurrency-mt-unsafe)
-}
-}  // namespace
 
 namespace GD::Awk::Details {
 
@@ -477,6 +462,26 @@ class ParseState
 public:
   explicit ParseState(std::unique_ptr<Lexer>&& lexer) : lexer_(std::move(lexer)) {}
 
+  /** \brief       Report an error and exit with exit code 1.
+   *  \param  msg  Message ID
+   *  \param  args Arguments for the message.
+   */
+  template<typename... Ts>
+  [[noreturn]] void error(Msg msg, Ts... args)
+  {
+    try {
+      auto const& loc{lexer_->location()};
+      std::cerr << GD::Awk::Messages::get().format(GD::Awk::Set::awk, Msg::error_label,
+                                                   GD::program_name(), loc.file_name(), loc.line(),
+                                                   loc.column())
+                << GD::Awk::Messages::get().format(GD::Awk::Set::awk, msg, args...) << '\n';
+      std::exit(1);  // NOLINT(concurrency-mt-unsafe)
+    }
+    catch (...) {
+      std::abort();
+    }
+  }
+
   /** \brief Parse optional newlines.
    *
    * newline_opt : NEWLINE newline_opt
@@ -511,14 +516,13 @@ public:
 
     if (expect_rparens) {
       if (lexer_->peek(false) != Token::Type::rparens) {
-        error(Msg::expected_rparens_after_length_parameter, lexer_->location(),
-              lexer_->peek(false));
+        error(Msg::expected_rparens_after_length_parameter, lexer_->peek(false));
       }
       lexer_->chew(false);
     }
 
     if (expr.has_many_values()) {
-      error(Msg::length_builtin_only_takes_one_parameter, lexer_->location());
+      error(Msg::length_builtin_only_takes_one_parameter);
     }
 
     if (expr.has_no_values()) {
@@ -533,21 +537,19 @@ public:
     -> ExprResult
   {
     if (lexer_->peek(false) != Token::Type::lparens) {
-      error(Msg::expected_lparens_after_builtin_func, lexer_->location(), func,
-            lexer_->peek(false));
+      error(Msg::expected_lparens_after_builtin_func, func, lexer_->peek(false));
     }
     lexer_->chew(false);
 
     ExprResult const expr{parse_expr(emitter, ExprType::expr, Msg::expected_expr_in_builtin_func)};
 
     if (lexer_->peek(false) != Token::Type::rparens) {
-      error(Msg::expected_rparens_after_builtin_func_parameter, lexer_->location(), func,
-            lexer_->peek(false));
+      error(Msg::expected_rparens_after_builtin_func_parameter, func, lexer_->peek(false));
     }
     lexer_->chew(false);
 
     if (expr.has_many_values()) {
-      error(Msg::builtin_only_takes_one_parameter, lexer_->location(), func);
+      error(Msg::builtin_only_takes_one_parameter, func);
     }
 
     return emitter.emit_expr(to_builtin_func_opcode(func), expr);
@@ -556,7 +558,7 @@ public:
   auto parse_builtin_func_atan2_expr(InstructionEmitter& emitter) -> ExprResult
   {
     if (lexer_->peek(false) != Token::Type::lparens) {
-      error(Msg::expected_lparens_after_builtin_atan2, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_lparens_after_builtin_atan2, lexer_->peek(false));
     }
     lexer_->chew(false);
 
@@ -564,8 +566,7 @@ public:
       parse_expr(emitter, ExprType::expr, Msg::expected_expr_in_builtin_atan2)};
 
     if (lexer_->peek(false) != Token::Type::comma) {
-      error(Msg::expected_comma_after_builtin_atan2_parameter, lexer_->location(),
-            lexer_->peek(false));
+      error(Msg::expected_comma_after_builtin_atan2_parameter, lexer_->peek(false));
     }
     lexer_->chew(false);
 
@@ -573,13 +574,12 @@ public:
       parse_expr(emitter, ExprType::expr, Msg::expected_second_expr_in_builtin_atan2)};
 
     if (lexer_->peek(false) != Token::Type::rparens) {
-      error(Msg::expected_rparens_after_builtin_atan2_parameters, lexer_->location(),
-            lexer_->peek(false));
+      error(Msg::expected_rparens_after_builtin_atan2_parameters, lexer_->peek(false));
     }
     lexer_->chew(false);
 
     if (yexpr.has_many_values()) {
-      error(Msg::builtin_only_takes_one_parameter, lexer_->location());
+      error(Msg::builtin_only_takes_one_parameter);
     }
 
     return emitter.emit_expr(Instruction::Opcode::atan2, yexpr, xexpr);
@@ -588,7 +588,7 @@ public:
   auto parse_builtin_func_index_expr(InstructionEmitter& emitter) -> ExprResult
   {
     if (lexer_->peek(false) != Token::Type::lparens) {
-      error(Msg::expected_lparens_after_builtin_index, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_lparens_after_builtin_index, lexer_->peek(false));
     }
     lexer_->chew(false);
 
@@ -596,8 +596,7 @@ public:
       parse_expr(emitter, ExprType::expr, Msg::expected_expr_in_builtin_index)};
 
     if (lexer_->peek(false) != Token::Type::comma) {
-      error(Msg::expected_comma_after_builtin_index_parameter, lexer_->location(),
-            lexer_->peek(false));
+      error(Msg::expected_comma_after_builtin_index_parameter, lexer_->peek(false));
     }
     lexer_->chew(false);
 
@@ -605,8 +604,7 @@ public:
       parse_expr(emitter, ExprType::expr, Msg::expected_second_expr_in_builtin_index)};
 
     if (lexer_->peek(false) != Token::Type::rparens) {
-      error(Msg::expected_rparens_after_builtin_index_parameters, lexer_->location(),
-            lexer_->peek(false));
+      error(Msg::expected_rparens_after_builtin_index_parameters, lexer_->peek(false));
     }
     lexer_->chew(false);
 
@@ -616,7 +614,7 @@ public:
   auto parse_builtin_func_match_expr(InstructionEmitter& emitter) -> ExprResult
   {
     if (lexer_->peek(false) != Token::Type::lparens) {
-      error(Msg::expected_lparens_after_builtin_match, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_lparens_after_builtin_match, lexer_->peek(false));
     }
     lexer_->chew(false);
 
@@ -624,8 +622,7 @@ public:
       parse_expr(emitter, ExprType::expr, Msg::expected_expr_in_builtin_match)};
 
     if (lexer_->peek(false) != Token::Type::comma) {
-      error(Msg::expected_comma_after_builtin_match_parameter, lexer_->location(),
-            lexer_->peek(false));
+      error(Msg::expected_comma_after_builtin_match_parameter, lexer_->peek(false));
     }
     lexer_->chew(false);
 
@@ -633,8 +630,7 @@ public:
       parse_expr(emitter, ExprType::expr, Msg::expected_second_expr_in_builtin_match)};
 
     if (lexer_->peek(false) != Token::Type::rparens) {
-      error(Msg::expected_rparens_after_builtin_match_parameters, lexer_->location(),
-            lexer_->peek(false));
+      error(Msg::expected_rparens_after_builtin_match_parameters, lexer_->peek(false));
     }
     lexer_->chew(false);
 
@@ -644,12 +640,12 @@ public:
   auto parse_builtin_func_rand_expr(InstructionEmitter& emitter) -> ExprResult
   {
     if (lexer_->peek(false) != Token::Type::lparens) {
-      error(Msg::expected_lparens_after_builtin_rand, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_lparens_after_builtin_rand, lexer_->peek(false));
     }
     lexer_->chew(false);
 
     if (lexer_->peek(false) != Token::Type::rparens) {
-      error(Msg::expected_rparens_after_builtin_rand, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_rparens_after_builtin_rand, lexer_->peek(false));
     }
     lexer_->chew(false);
 
@@ -659,7 +655,7 @@ public:
   auto parse_builtin_func_srand_expr(InstructionEmitter& emitter) -> ExprResult
   {
     if (lexer_->peek(false) != Token::Type::lparens) {
-      error(Msg::expected_lparens_after_builtin_srand, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_lparens_after_builtin_srand, lexer_->peek(false));
     }
     lexer_->chew(false);
 
@@ -669,12 +665,12 @@ public:
     }
 
     if (lexer_->peek(false) != Token::Type::rparens) {
-      error(Msg::expected_rparens_after_builtin_srand, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_rparens_after_builtin_srand, lexer_->peek(false));
     }
     lexer_->chew(false);
 
     if (expr.has_many_values()) {
-      error(Msg::builtin_srand_only_takes_one_parameter, lexer_->location());
+      error(Msg::builtin_srand_only_takes_one_parameter);
     }
 
     return emitter.emit_expr(Instruction::Opcode::srand, expr);
@@ -685,7 +681,7 @@ public:
     if (lexer_->peek(false) != Token::Type::lparens) {
       error(global ? Msg::expected_lparens_after_builtin_gsub
                    : Msg::expected_lparens_after_builtin_sub,
-            lexer_->location(), lexer_->peek(false));
+            lexer_->peek(false));
     }
     lexer_->chew(false);
 
@@ -696,7 +692,7 @@ public:
     if (lexer_->peek(false) != Token::Type::comma) {
       error(global ? Msg::expected_comma_after_builtin_gsub_parameter
                    : Msg::expected_comma_after_builtin_sub_parameter,
-            lexer_->location(), lexer_->peek(false));
+            lexer_->peek(false));
     }
     lexer_->chew(false);
 
@@ -718,14 +714,13 @@ public:
 
     if (!in.is_lvalue()) {
       error(global ? Msg::in_parameter_of_gsub_must_be_lvalue
-                   : Msg::in_parameter_of_sub_must_be_lvalue,
-            lexer_->location());
+                   : Msg::in_parameter_of_sub_must_be_lvalue);
     }
 
     if (lexer_->peek(false) != Token::Type::rparens) {
       error(global ? Msg::expected_rparens_after_builtin_gsub
                    : Msg::expected_rparens_after_builtin_sub,
-            lexer_->location(), lexer_->peek(false));
+            lexer_->peek(false));
     }
     lexer_->chew(false);
 
@@ -736,15 +731,14 @@ public:
   auto parse_builtin_func_substr_expr(InstructionEmitter& emitter) -> ExprResult
   {
     if (lexer_->peek(false) != Token::Type::lparens) {
-      error(Msg::expected_lparens_after_builtin_substr, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_lparens_after_builtin_substr, lexer_->peek(false));
     }
     lexer_->chew(false);
 
     ExprResult const str{parse_expr(emitter, ExprType::expr, Msg::expected_expr_in_builtin_substr)};
 
     if (lexer_->peek(false) != Token::Type::comma) {
-      error(Msg::expected_comma_after_builtin_substr_parameter, lexer_->location(),
-            lexer_->peek(false));
+      error(Msg::expected_comma_after_builtin_substr_parameter, lexer_->peek(false));
     }
     lexer_->chew(false);
 
@@ -762,7 +756,7 @@ public:
     }
 
     if (lexer_->peek(false) != Token::Type::rparens) {
-      error(Msg::expected_rparens_after_builtin_substr, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_rparens_after_builtin_substr, lexer_->peek(false));
     }
     lexer_->chew(false);
 
@@ -772,7 +766,7 @@ public:
   auto parse_builtin_func_sprintf_expr(InstructionEmitter& emitter) -> ExprResult
   {
     if (lexer_->peek(false) != Token::Type::lparens) {
-      error(Msg::expected_lparens_after_builtin_sprintf, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_lparens_after_builtin_sprintf, lexer_->peek(false));
     }
     lexer_->chew(false);
 
@@ -784,11 +778,11 @@ public:
     parse_expr_list_opt(emitter, indices.back_inserter(), ExprListType::expr_list);
 
     if (indices.has_no_values()) {
-      error(Msg::expected_list_to_sprintf, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_list_to_sprintf, lexer_->peek(false));
     }
 
     if (lexer_->peek(false) != Token::Type::rparens) {
-      error(Msg::expected_rparens_after_builtin_sprintf, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_rparens_after_builtin_sprintf, lexer_->peek(false));
     }
     lexer_->chew(false);
 
@@ -809,15 +803,14 @@ public:
   auto parse_builtin_func_split_expr(InstructionEmitter& emitter) -> ExprResult
   {
     if (lexer_->peek(false) != Token::Type::lparens) {
-      error(Msg::expected_lparens_after_builtin_split, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_lparens_after_builtin_split, lexer_->peek(false));
     }
     lexer_->chew(false);
 
     ExprResult const str{parse_expr(emitter, ExprType::expr, Msg::expected_expr_in_builtin_split)};
 
     if (lexer_->peek(false) != Token::Type::comma) {
-      error(Msg::expected_comma_after_builtin_split_parameter, lexer_->location(),
-            lexer_->peek(false));
+      error(Msg::expected_comma_after_builtin_split_parameter, lexer_->peek(false));
     }
     lexer_->chew(false);
 
@@ -836,7 +829,7 @@ public:
     }
 
     if (lexer_->peek(false) != Token::Type::rparens) {
-      error(Msg::expected_rparens_after_builtin_split, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_rparens_after_builtin_split, lexer_->peek(false));
     }
     lexer_->chew(false);
 
@@ -1026,7 +1019,7 @@ public:
         break;
       }
 
-      error(Msg::expected_rparens_at_end_of_expression, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_rparens_at_end_of_expression, lexer_->peek(false));
     }
     case Token::Type::name: {
       std::string const var_name{tok.name()};
@@ -1043,12 +1036,11 @@ public:
       ExprResult subscripts;
       parse_expr_list_opt(emitter, subscripts.back_inserter(), ExprListType::expr_list);
       if (subscripts.has_no_values()) {
-        error(Msg::expected_exprs_in_array_element_access, lexer_->location(), lexer_->peek(false));
+        error(Msg::expected_exprs_in_array_element_access, lexer_->peek(false));
       }
 
       if (lexer_->peek(false) != Token::Type::rsquare) {
-        error(Msg::expected_rsquare_after_array_subscripts, lexer_->location(),
-              lexer_->peek(false));
+        error(Msg::expected_rsquare_after_array_subscripts, lexer_->peek(false));
       }
       lexer_->chew(false);
 
@@ -1102,7 +1094,7 @@ public:
     lexer_->chew(false);
     ExprResult const field_id{parse_primary_expr_opt(emitter, unary_type)};
     if (!field_id.has_one_value()) {
-      error(Msg::expected_expr_after_dollar, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_expr_after_dollar, lexer_->peek(false));
     }
 
     assert(field_id.has_one_value());
@@ -1186,8 +1178,7 @@ public:
     ExprResult const lvalue{parse_post_incr_decr_expr_opt(emitter, unary_type)};
 
     if (!lvalue.is_lvalue() || !lvalue.has_one_value()) {
-      error(Msg::expected_lvalue_after_pre_incr_decr, lexer_->location(), token,
-            lexer_->peek(false));
+      error(Msg::expected_lvalue_after_pre_incr_decr, token, lexer_->peek(false));
     }
 
     // Code sequence:
@@ -1229,7 +1220,7 @@ public:
 
     ExprResult const rhs{parse_power_expr_opt(emitter, expr_type, unary_type)};
     if (!rhs.has_one_value()) {
-      error(Msg::expected_expr_after_power, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_expr_after_power, lexer_->peek(false));
     }
 
     return emitter.emit_expr(Instruction::Opcode::power, lhs, rhs);
@@ -1292,8 +1283,11 @@ public:
     }
 
     if (!expr.has_one_value()) {
-      error(Msg::expected_expr_after_unary_prefix, lexer_->location(),
-            is_not ? "!" : (negate ? "-" : "+"), lexer_->peek(false));  // NOLINT
+      static std::string_view const not_s{"!"};
+      static std::string_view const negate_s{"-"};
+      static std::string_view const plus_s{"+"};
+      error(Msg::expected_expr_after_unary_prefix, is_not ? not_s : (negate ? negate_s : plus_s),
+            lexer_->peek(false));
     }
 
     if (is_not) {
@@ -1455,7 +1449,7 @@ public:
       lexer_->chew(true);
       ExprResult const rhs{parse_concat_expr_opt(emitter, expr_type, UnaryType::both)};
       if (!rhs.has_one_value()) {
-        error(Msg::expected_expr_after_comparison_op, lexer_->location(), tok, lexer_->peek(false));
+        error(Msg::expected_expr_after_comparison_op, tok, lexer_->peek(false));
       }
       return emitter.emit_expr(to_binary_op_opcode(tok.type()), lhs, rhs);
     }
@@ -1490,7 +1484,7 @@ public:
       lexer_->chew(true);
       ExprResult const rhs{parse_comparison_expr_opt(emitter, expr_type, UnaryType::both)};
       if (!rhs.has_one_value()) {
-        error(Msg::expected_expr_after_re_match_op, lexer_->location(), tok, lexer_->peek(false));
+        error(Msg::expected_expr_after_re_match_op, tok, lexer_->peek(false));
       }
       auto re_match{emitter.emit_expr(Instruction::Opcode::re_match, lhs, rhs)};
       if (tok.type() == Token::Type::no_match) {
@@ -1531,7 +1525,7 @@ public:
       lexer_->chew(true);
       auto name{lexer_->peek(false)};
       if (name != Token::Type::name) {
-        error(Msg::expected_name_after_in, lexer_->location(), name);
+        error(Msg::expected_name_after_in, name);
       }
 
       lexer_->chew(false);
@@ -1573,7 +1567,7 @@ public:
       parse_newline_opt();
       auto rhs{parse_in_array_expr_opt(emitter, expr_type, unary_type)};
       if (!rhs.has_one_value()) {
-        error(Msg::error_expected_expr_after_and, lexer_->location(), lexer_->peek(false));
+        error(Msg::error_expected_expr_after_and, lexer_->peek(false));
       }
       (void)emitter.emit_expr_to(Instruction::Opcode::to_bool, result.index(), rhs);
     }
@@ -1618,7 +1612,7 @@ public:
 
       auto rhs{parse_in_array_expr_opt(emitter, expr_type, unary_type)};
       if (!rhs.has_one_value()) {
-        error(Msg::error_expected_expr_after_or, lexer_->location(), lexer_->peek(false));
+        error(Msg::error_expected_expr_after_or, lexer_->peek(false));
       }
       lhs = emitter.emit_expr_to(Instruction::Opcode::to_bool, result.index(), rhs);
     }
@@ -1667,14 +1661,14 @@ public:
 
     ExprResult true_expr{parse_ternary_expr_opt(emitter, expr_type, unary_type)};
     if (!true_expr.has_one_value()) {
-      error(Msg::expected_expr_after_query, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_expr_after_query, lexer_->peek(false));
     }
 
     Index const branch_over_false{
       emitter.emit_statement(Instruction::Opcode::branch, illegal_index)};
 
     if (lexer_->peek(false) != Token::Type::colon) {
-      error(Msg::expected_colon_after_truth_expr, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_colon_after_truth_expr, lexer_->peek(false));
     }
     lexer_->chew(false);
 
@@ -1682,7 +1676,7 @@ public:
 
     ExprResult const false_expr{parse_ternary_expr_opt(emitter, expr_type, unary_type)};
     if (!true_expr.has_one_value()) {
-      error(Msg::expected_expr_after_colon, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_expr_after_colon, lexer_->peek(false));
     }
 
     emitter.emit_copy(true_expr, false_expr);
@@ -1732,7 +1726,7 @@ public:
 
     ExprResult const rhs{parse_assignment_expr_opt(emitter, expr_type, unary_type)};
     if (!rhs.has_one_value()) {
-      error(Msg::expected_expr_after_assignment_op, lexer_->location(), op, lexer_->peek(false));
+      error(Msg::expected_expr_after_assignment_op, op, lexer_->peek(false));
     }
 
     auto lhs{emitter.dereference_lvalue(lvalue)};
@@ -1818,7 +1812,7 @@ public:
   {
     ExprResult result{parse_assignment_expr_opt(emitter, expr_type, UnaryType::both)};
     if (result.has_no_values()) {
-      error(error_msg, lexer_->location(), lexer_->peek(false));
+      error(error_msg, lexer_->peek(false));
     }
     return result;
   }
@@ -1834,11 +1828,11 @@ public:
       // Parse the expression
       auto result = parse_expr_opt(emitter, ExprType::expr);
       if (result.has_many_values()) {
-        error(Msg::cannot_nest_multiple_expr_lists, lexer_->location());
+        error(Msg::cannot_nest_multiple_expr_lists);
       }
 
       if (result.has_no_values()) {
-        error(Msg::expected_expr_after_comma, lexer_->location(), lexer_->peek(false));
+        error(Msg::expected_expr_after_comma, lexer_->peek(false));
       }
 
       // Insert index into list of expressions.
@@ -1876,7 +1870,7 @@ public:
 
       if (result.has_no_values()) {
         if (element_count != 0) {
-          error(Msg::expected_expr_after_comma, lexer_->location(), lexer_->peek(false));
+          error(Msg::expected_expr_after_comma, lexer_->peek(false));
         }
         break;
       }
@@ -1894,7 +1888,7 @@ public:
     }
 
     if (list_type == ExprListType::multiple_expr_list && element_count == 1) {
-      error(Msg::expected_two_exprs_in_list, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_two_exprs_in_list, lexer_->peek(false));
     }
   }
 
@@ -1941,7 +1935,7 @@ public:
 
     auto out_expr{parse_expr_opt(emitter, ExprType::expr)};
     if (!out_expr.has_one_value()) {
-      error(Msg::expected_expr_after_redirection, lexer_->location(), tok, lexer_->peek(false));
+      error(Msg::expected_expr_after_redirection, tok, lexer_->peek(false));
     }
 
     if (is_popen) {
@@ -1985,7 +1979,7 @@ public:
     parse_expr_list_opt(emitter, indices.back_inserter(), ExprListType::print_expr_list);
 
     if (is_printf && indices.has_no_values()) {
-      error(Msg::expected_list_to_printf, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_list_to_printf, lexer_->peek(false));
     }
 
     if (!is_printf && indices.has_no_values()) {
@@ -2130,13 +2124,13 @@ public:
     lexer_->chew(false);
 
     if (lexer_->peek(false) != Token::Type::lparens) {
-      error(Msg::expected_lparens_after_if, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_lparens_after_if, lexer_->peek(false));
     }
     lexer_->chew(false);
 
     ExprResult const cond{parse_expr(emitter, ExprType::expr, Msg::expected_expr_after_if)};
     if (lexer_->peek(false) != Token::Type::rparens) {
-      error(Msg::expected_rparens_after_if_expr, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_rparens_after_if_expr, lexer_->peek(false));
     }
     lexer_->chew(false);
     parse_newline_opt();
@@ -2179,14 +2173,14 @@ public:
     lexer_->chew(false);
 
     if (lexer_->peek(false) != Token::Type::lparens) {
-      error(Msg::expected_lparens_after_while, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_lparens_after_while, lexer_->peek(false));
     }
     lexer_->chew(false);
 
     Index const while_cond{emitter.next_instruction_index()};
     ExprResult const cond{parse_expr(emitter, ExprType::expr, Msg::expected_expr_after_while)};
     if (lexer_->peek(false) != Token::Type::rparens) {
-      error(Msg::expected_rparens_after_while_expr, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_rparens_after_while_expr, lexer_->peek(false));
     }
     lexer_->chew(false);
     parse_newline_opt();
@@ -2229,7 +2223,7 @@ public:
     lexer_->chew(false);
 
     if (lexer_->peek(false) != Token::Type::lparens) {
-      error(Msg::expected_lparens_after_for, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_lparens_after_for, lexer_->peek(false));
     }
     lexer_->chew(false);
 
@@ -2238,8 +2232,7 @@ public:
 
     // Semicolon
     if (lexer_->peek(false) != Token::Type::semicolon) {
-      error(Msg::expected_semicolon_after_for_init_statement, lexer_->location(),
-            lexer_->peek(false));
+      error(Msg::expected_semicolon_after_for_init_statement, lexer_->peek(false));
     }
     lexer_->chew(false);
 
@@ -2256,7 +2249,7 @@ public:
 
     // Semicolon
     if (lexer_->peek(false) != Token::Type::semicolon) {
-      error(Msg::expected_semicolon_after_for_cond_expr, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_semicolon_after_for_cond_expr, lexer_->peek(false));
     }
     lexer_->chew(false);
 
@@ -2267,7 +2260,7 @@ public:
 
     // Rparens
     if (lexer_->peek(false) != Token::Type::rparens) {
-      error(Msg::expected_rparens_after_for_update_stmt, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_rparens_after_for_update_stmt, lexer_->peek(false));
     }
     lexer_->chew(false);
     parse_newline_opt();
@@ -2326,7 +2319,7 @@ public:
     auto result{parse_statement_opt(emitter)};
 
     if (result == ParseStatementResult::none) {
-      error(msg, lexer_->location());
+      error(msg);
     }
 
     return result;
@@ -2366,7 +2359,7 @@ public:
     parse_statement_list_opt(emitter);
 
     if (lexer_->peek(false) != Token::Type::rbrace) {
-      error(Msg::missing_rbrace, lexer_->location(), lexer_->peek(false));
+      error(Msg::missing_rbrace, lexer_->peek(false));
     }
     else {
       lexer_->chew(false);
@@ -2382,7 +2375,7 @@ public:
   void parse_action(InstructionEmitter& emitter)
   {
     if (!parse_action_opt(emitter)) {
-      error(Msg::expected_action, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_action, lexer_->peek(false));
     }
   }
 
@@ -2396,10 +2389,10 @@ public:
   {
     auto tok{lexer_->peek(false)};
     if (tok == Token::Type::builtin_func_name) {
-      error(Msg::cannot_redefine_builtin_functions, lexer_->location(), tok);
+      error(Msg::cannot_redefine_builtin_functions, tok);
     }
     if (tok != Token::Type::name && tok != Token::Type::builtin_func_name) {
-      error(Msg::expected_function_name, lexer_->location(), tok);
+      error(Msg::expected_function_name, tok);
     }
 
     if (tok == Token::Type::name) {
@@ -2418,17 +2411,17 @@ public:
   auto parse_function_def() -> Instructions&
   {
     if (lexer_->peek(false) != Token::Type::function) {
-      error(Msg::expected_function, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_function, lexer_->peek(false));
     }
     lexer_->chew(false);
     auto func_name{parse_func_def_name()};
     if (lexer_->peek(false) != Token::Type::lparens) {
-      error(Msg::expected_lparens, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_lparens, lexer_->peek(false));
     }
     lexer_->chew(false);
     // TODO(mgrettondann): Parse proper parameters
     if (lexer_->peek(false) != Token::Type::rparens) {
-      error(Msg::expected_rparens, lexer_->location(), lexer_->peek(false));
+      error(Msg::expected_rparens, lexer_->peek(false));
     }
 
     return program_.function(func_name.get());
@@ -2616,7 +2609,7 @@ public:
 
     parse_item_list_maybe_unterminated();
     if (lexer_->peek(false) != Token::Type::eof) {
-      error(Msg::failed_to_read_whole_program, lexer_->location(), lexer_->peek(false));
+      error(Msg::failed_to_read_whole_program, lexer_->peek(false));
     }
   }
 
