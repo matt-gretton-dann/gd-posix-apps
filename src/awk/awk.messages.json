@@ -420,8 +420,8 @@
       {
         "msg": "expected_lparens_after_builtin_func",
         "id": 71,
-        "description": "Expected a '(' after call to builtin func {0}.  Instead got {1}.",
-        "C": "{0} should be followed by a '('.  Instead there was {1}."
+        "description": "Expected a '(' after call to builtin func.  Instead got {0}.",
+        "C": "Call to a builtin function should be followed by a '('.  Instead there was {0}."
       },
       {
         "msg": "expected_expr_in_builtin_func",
@@ -432,8 +432,8 @@
       {
         "msg": "expected_rparens_after_builtin_func_parameter",
         "id": 73,
-        "description": "Expected a ')' after the parameter to builtin function {0}.  Instead got {1}.",
-        "C": "Expected a ')' after the parameter to builtin function {0}.  Instead got {1}."
+        "description": "Expected a ')' after the parameter to builtin function.  Instead got {0}.",
+        "C": "Expected a ')' after the parameter to a builtin function.  Instead got {0}."
       },
       {
         "msg": "builtin_only_takes_one_parameter",

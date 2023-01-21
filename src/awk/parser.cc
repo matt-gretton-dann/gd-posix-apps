@@ -462,6 +462,7 @@ class ParseState
 public:
   explicit ParseState(std::unique_ptr<Lexer>&& lexer) : lexer_(std::move(lexer)) {}
 
+private:
   /** \brief       Report an error and exit with exit code 1.
    *  \param  msg  Message ID
    *  \param  args Arguments for the message.
@@ -480,6 +481,21 @@ public:
     catch (...) {
       std::abort();
     }
+  }
+
+  /** \brief  Peek and chew a particular expected token, error if missing.
+   *  @param allow_divide Are we in an allow_divide situation?
+   *  @param type         Token type we want
+   *  @param error_msg    Error message if token is missing
+   *
+   *  Upon return can assume that we have chewed the above token.
+   */
+  void peek_and_chew(bool allow_divide, Token::Type type, Msg error_msg)
+  {
+    if (auto const& tok{lexer_->peek(allow_divide)}; tok.type() != type) {
+      error(error_msg, tok);
+    }
+    lexer_->chew(allow_divide);
   }
 
   /** \brief Parse optional newlines.
@@ -515,10 +531,7 @@ public:
     ExprResult expr{parse_expr_opt(emitter, ExprType::expr)};
 
     if (expect_rparens) {
-      if (lexer_->peek(false) != Token::Type::rparens) {
-        error(Msg::expected_rparens_after_length_parameter, lexer_->peek(false));
-      }
-      lexer_->chew(false);
+      peek_and_chew(false, Token::Type::rparens, Msg::expected_rparens_after_length_parameter);
     }
 
     if (expr.has_many_values()) {
@@ -536,17 +549,11 @@ public:
   auto parse_bultin_func_one_param_expr(InstructionEmitter& emitter, Token::BuiltinFunc func)
     -> ExprResult
   {
-    if (lexer_->peek(false) != Token::Type::lparens) {
-      error(Msg::expected_lparens_after_builtin_func, func, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::lparens, Msg::expected_lparens_after_builtin_func);
 
     ExprResult const expr{parse_expr(emitter, ExprType::expr, Msg::expected_expr_in_builtin_func)};
 
-    if (lexer_->peek(false) != Token::Type::rparens) {
-      error(Msg::expected_rparens_after_builtin_func_parameter, func, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::rparens, Msg::expected_rparens_after_builtin_func_parameter);
 
     if (expr.has_many_values()) {
       error(Msg::builtin_only_takes_one_parameter, func);
@@ -557,26 +564,18 @@ public:
 
   auto parse_builtin_func_atan2_expr(InstructionEmitter& emitter) -> ExprResult
   {
-    if (lexer_->peek(false) != Token::Type::lparens) {
-      error(Msg::expected_lparens_after_builtin_atan2, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::lparens, Msg::expected_lparens_after_builtin_atan2);
 
     ExprResult const yexpr{
       parse_expr(emitter, ExprType::expr, Msg::expected_expr_in_builtin_atan2)};
 
-    if (lexer_->peek(false) != Token::Type::comma) {
-      error(Msg::expected_comma_after_builtin_atan2_parameter, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::comma, Msg::expected_comma_after_builtin_atan2_parameter);
 
     ExprResult const xexpr{
       parse_expr(emitter, ExprType::expr, Msg::expected_second_expr_in_builtin_atan2)};
 
-    if (lexer_->peek(false) != Token::Type::rparens) {
-      error(Msg::expected_rparens_after_builtin_atan2_parameters, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::rparens,
+                  Msg::expected_rparens_after_builtin_atan2_parameters);
 
     if (yexpr.has_many_values()) {
       error(Msg::builtin_only_takes_one_parameter);
@@ -587,87 +586,58 @@ public:
 
   auto parse_builtin_func_index_expr(InstructionEmitter& emitter) -> ExprResult
   {
-    if (lexer_->peek(false) != Token::Type::lparens) {
-      error(Msg::expected_lparens_after_builtin_index, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::lparens, Msg::expected_lparens_after_builtin_index);
 
     ExprResult const sexpr{
       parse_expr(emitter, ExprType::expr, Msg::expected_expr_in_builtin_index)};
 
-    if (lexer_->peek(false) != Token::Type::comma) {
-      error(Msg::expected_comma_after_builtin_index_parameter, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::comma, Msg::expected_comma_after_builtin_index_parameter);
 
     ExprResult const texpr{
       parse_expr(emitter, ExprType::expr, Msg::expected_second_expr_in_builtin_index)};
 
-    if (lexer_->peek(false) != Token::Type::rparens) {
-      error(Msg::expected_rparens_after_builtin_index_parameters, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::rparens,
+                  Msg::expected_rparens_after_builtin_index_parameters);
 
     return emitter.emit_expr(Instruction::Opcode::index, sexpr, texpr);
   }
 
   auto parse_builtin_func_match_expr(InstructionEmitter& emitter) -> ExprResult
   {
-    if (lexer_->peek(false) != Token::Type::lparens) {
-      error(Msg::expected_lparens_after_builtin_match, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::lparens, Msg::expected_lparens_after_builtin_match);
 
     ExprResult const sexpr{
       parse_expr(emitter, ExprType::expr, Msg::expected_expr_in_builtin_match)};
 
-    if (lexer_->peek(false) != Token::Type::comma) {
-      error(Msg::expected_comma_after_builtin_match_parameter, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::comma, Msg::expected_comma_after_builtin_match_parameter);
 
     ExprResult const texpr{
       parse_expr(emitter, ExprType::expr, Msg::expected_second_expr_in_builtin_match)};
 
-    if (lexer_->peek(false) != Token::Type::rparens) {
-      error(Msg::expected_rparens_after_builtin_match_parameters, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::rparens,
+                  Msg::expected_rparens_after_builtin_match_parameters);
 
     return emitter.emit_expr(Instruction::Opcode::match, sexpr, texpr);
   }
 
   auto parse_builtin_func_rand_expr(InstructionEmitter& emitter) -> ExprResult
   {
-    if (lexer_->peek(false) != Token::Type::lparens) {
-      error(Msg::expected_lparens_after_builtin_rand, lexer_->peek(false));
-    }
-    lexer_->chew(false);
-
-    if (lexer_->peek(false) != Token::Type::rparens) {
-      error(Msg::expected_rparens_after_builtin_rand, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::lparens, Msg::expected_lparens_after_builtin_rand);
+    peek_and_chew(false, Token::Type::rparens, Msg::expected_rparens_after_builtin_rand);
 
     return emitter.emit_expr(Instruction::Opcode::rand);
   }
 
   auto parse_builtin_func_srand_expr(InstructionEmitter& emitter) -> ExprResult
   {
-    if (lexer_->peek(false) != Token::Type::lparens) {
-      error(Msg::expected_lparens_after_builtin_srand, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::lparens, Msg::expected_lparens_after_builtin_srand);
 
     ExprResult expr{parse_expr_opt(emitter, ExprType::expr)};
     if (expr.has_no_values()) {
       expr = emitter.emit_expr(Instruction::Opcode::current_time);
     }
 
-    if (lexer_->peek(false) != Token::Type::rparens) {
-      error(Msg::expected_rparens_after_builtin_srand, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::rparens, Msg::expected_rparens_after_builtin_srand);
 
     if (expr.has_many_values()) {
       error(Msg::builtin_srand_only_takes_one_parameter);
@@ -678,23 +648,17 @@ public:
 
   auto parse_builtin_func_subst_expr(InstructionEmitter& emitter, bool global) -> ExprResult
   {
-    if (lexer_->peek(false) != Token::Type::lparens) {
-      error(global ? Msg::expected_lparens_after_builtin_gsub
-                   : Msg::expected_lparens_after_builtin_sub,
-            lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::lparens,
+                  global ? Msg::expected_lparens_after_builtin_gsub
+                         : Msg::expected_lparens_after_builtin_sub);
 
     ExprResult const re{
       parse_expr(emitter, ExprType::expr,
                  global ? Msg::expected_expr_in_builtin_gsub : Msg::expected_expr_in_builtin_sub)};
 
-    if (lexer_->peek(false) != Token::Type::comma) {
-      error(global ? Msg::expected_comma_after_builtin_gsub_parameter
-                   : Msg::expected_comma_after_builtin_sub_parameter,
-            lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::comma,
+                  global ? Msg::expected_comma_after_builtin_gsub_parameter
+                         : Msg::expected_comma_after_builtin_sub_parameter);
 
     ExprResult const repl{parse_expr(emitter, ExprType::expr,
                                      global ? Msg::expected_second_expr_in_builtin_gsub
@@ -717,12 +681,9 @@ public:
                    : Msg::in_parameter_of_sub_must_be_lvalue);
     }
 
-    if (lexer_->peek(false) != Token::Type::rparens) {
-      error(global ? Msg::expected_rparens_after_builtin_gsub
-                   : Msg::expected_rparens_after_builtin_sub,
-            lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::rparens,
+                  global ? Msg::expected_rparens_after_builtin_gsub
+                         : Msg::expected_rparens_after_builtin_sub);
 
     return emitter.emit_expr(global ? Instruction::Opcode::gsubst : Instruction::Opcode::subst, re,
                              repl, in);
@@ -730,17 +691,11 @@ public:
 
   auto parse_builtin_func_substr_expr(InstructionEmitter& emitter) -> ExprResult
   {
-    if (lexer_->peek(false) != Token::Type::lparens) {
-      error(Msg::expected_lparens_after_builtin_substr, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::lparens, Msg::expected_lparens_after_builtin_substr);
 
     ExprResult const str{parse_expr(emitter, ExprType::expr, Msg::expected_expr_in_builtin_substr)};
 
-    if (lexer_->peek(false) != Token::Type::comma) {
-      error(Msg::expected_comma_after_builtin_substr_parameter, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::comma, Msg::expected_comma_after_builtin_substr_parameter);
 
     ExprResult const pos{
       parse_expr(emitter, ExprType::expr, Msg::expected_second_expr_in_builtin_substr)};
@@ -755,20 +710,14 @@ public:
       len = emitter.emit_expr(Instruction::Opcode::load_literal, Integer{max});
     }
 
-    if (lexer_->peek(false) != Token::Type::rparens) {
-      error(Msg::expected_rparens_after_builtin_substr, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::rparens, Msg::expected_rparens_after_builtin_substr);
 
     return emitter.emit_expr(Instruction::Opcode::substr, str, pos, len);
   }
 
   auto parse_builtin_func_sprintf_expr(InstructionEmitter& emitter) -> ExprResult
   {
-    if (lexer_->peek(false) != Token::Type::lparens) {
-      error(Msg::expected_lparens_after_builtin_sprintf, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::lparens, Msg::expected_lparens_after_builtin_sprintf);
 
     // So the problem we have here is that the token '(' is valid is the first token in
     // print_expr_list_opt.  So if that is the next token we have no idea whether we are parsing a
@@ -781,10 +730,7 @@ public:
       error(Msg::expected_list_to_sprintf, lexer_->peek(false));
     }
 
-    if (lexer_->peek(false) != Token::Type::rparens) {
-      error(Msg::expected_rparens_after_builtin_sprintf, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::rparens, Msg::expected_rparens_after_builtin_sprintf);
 
     auto const pp{emitter.emit_expr(Instruction::Opcode::open_param_pack)};
     ExprResult fmt;
@@ -802,17 +748,11 @@ public:
 
   auto parse_builtin_func_split_expr(InstructionEmitter& emitter) -> ExprResult
   {
-    if (lexer_->peek(false) != Token::Type::lparens) {
-      error(Msg::expected_lparens_after_builtin_split, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::lparens, Msg::expected_lparens_after_builtin_split);
 
     ExprResult const str{parse_expr(emitter, ExprType::expr, Msg::expected_expr_in_builtin_split)};
 
-    if (lexer_->peek(false) != Token::Type::comma) {
-      error(Msg::expected_comma_after_builtin_split_parameter, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::comma, Msg::expected_comma_after_builtin_split_parameter);
 
     ExprResult const array{
       parse_expr(emitter, ExprType::expr, Msg::expected_second_expr_in_builtin_split)};
@@ -828,10 +768,7 @@ public:
       result = emitter.emit_expr(Instruction::Opcode::split_fs, str, array);
     }
 
-    if (lexer_->peek(false) != Token::Type::rparens) {
-      error(Msg::expected_rparens_after_builtin_split, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::rparens, Msg::expected_rparens_after_builtin_split);
 
     return result;
   }
@@ -1014,12 +951,8 @@ public:
         parse_multiple_expr_list_rest(emitter, result.back_inserter());
       }
 
-      if (close_tok == Token::Type::rparens) {
-        lexer_->chew(false);
-        break;
-      }
-
-      error(Msg::expected_rparens_at_end_of_expression, lexer_->peek(false));
+      peek_and_chew(false, Token::Type::rparens, Msg::expected_rparens_at_end_of_expression);
+      break;
     }
     case Token::Type::name: {
       std::string const var_name{tok.name()};
@@ -1039,10 +972,7 @@ public:
         error(Msg::expected_exprs_in_array_element_access, lexer_->peek(false));
       }
 
-      if (lexer_->peek(false) != Token::Type::rsquare) {
-        error(Msg::expected_rsquare_after_array_subscripts, lexer_->peek(false));
-      }
-      lexer_->chew(false);
+      peek_and_chew(false, Token::Type::rsquare, Msg::expected_rsquare_after_array_subscripts);
 
       ExprResult subsep{};
       if (subscripts.has_many_values()) {
@@ -1063,7 +993,8 @@ public:
       break;
     }
     case Token::Type::builtin_func_name:
-      return parse_builtin_func_expr(emitter);
+      result = parse_builtin_func_expr(emitter);
+      break;
     default:
       break;
     }
@@ -1667,15 +1598,12 @@ public:
     Index const branch_over_false{
       emitter.emit_statement(Instruction::Opcode::branch, illegal_index)};
 
-    if (lexer_->peek(false) != Token::Type::colon) {
-      error(Msg::expected_colon_after_truth_expr, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::colon, Msg::expected_colon_after_truth_expr);
 
     emitter.at(branch_if_false).op2(emitter.next_instruction_index());
 
     ExprResult const false_expr{parse_ternary_expr_opt(emitter, expr_type, unary_type)};
-    if (!true_expr.has_one_value()) {
+    if (!false_expr.has_one_value()) {
       error(Msg::expected_expr_after_colon, lexer_->peek(false));
     }
 
@@ -2123,16 +2051,11 @@ public:
     assert(lexer_->peek(false) == Token::Type::if_);
     lexer_->chew(false);
 
-    if (lexer_->peek(false) != Token::Type::lparens) {
-      error(Msg::expected_lparens_after_if, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::lparens, Msg::expected_lparens_after_if);
 
     ExprResult const cond{parse_expr(emitter, ExprType::expr, Msg::expected_expr_after_if)};
-    if (lexer_->peek(false) != Token::Type::rparens) {
-      error(Msg::expected_rparens_after_if_expr, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+
+    peek_and_chew(false, Token::Type::rparens, Msg::expected_rparens_after_if_expr);
     parse_newline_opt();
 
     Index const false_branch{
@@ -2171,18 +2094,12 @@ public:
   {
     assert(lexer_->peek(false) == Token::Type::while_);
     lexer_->chew(false);
-
-    if (lexer_->peek(false) != Token::Type::lparens) {
-      error(Msg::expected_lparens_after_while, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::lparens, Msg::expected_lparens_after_while);
 
     Index const while_cond{emitter.next_instruction_index()};
     ExprResult const cond{parse_expr(emitter, ExprType::expr, Msg::expected_expr_after_while)};
-    if (lexer_->peek(false) != Token::Type::rparens) {
-      error(Msg::expected_rparens_after_while_expr, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+
+    peek_and_chew(false, Token::Type::rparens, Msg::expected_rparens_after_while_expr);
     parse_newline_opt();
 
     Index const escape_loop{
@@ -2221,20 +2138,13 @@ public:
   {
     assert(lexer_->peek(false) == Token::Type::for_);
     lexer_->chew(false);
-
-    if (lexer_->peek(false) != Token::Type::lparens) {
-      error(Msg::expected_lparens_after_for, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::lparens, Msg::expected_lparens_after_for);
 
     // Initialisation
     (void)parse_simple_statement_opt(emitter);
 
     // Semicolon
-    if (lexer_->peek(false) != Token::Type::semicolon) {
-      error(Msg::expected_semicolon_after_for_init_statement, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::semicolon, Msg::expected_semicolon_after_for_init_statement);
 
     // Condition
     Index const condition_start{emitter.next_instruction_index()};
@@ -2248,10 +2158,7 @@ public:
       emitter.emit_statement(Instruction::Opcode::branch, illegal_index)};
 
     // Semicolon
-    if (lexer_->peek(false) != Token::Type::semicolon) {
-      error(Msg::expected_semicolon_after_for_cond_expr, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::semicolon, Msg::expected_semicolon_after_for_cond_expr);
 
     // Update
     Index const update_start{emitter.next_instruction_index()};
@@ -2259,10 +2166,7 @@ public:
     emitter.emit_statement(Instruction::Opcode::branch, condition_start);
 
     // Rparens
-    if (lexer_->peek(false) != Token::Type::rparens) {
-      error(Msg::expected_rparens_after_for_update_stmt, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::rparens, Msg::expected_rparens_after_for_update_stmt);
     parse_newline_opt();
 
     // Body
@@ -2358,12 +2262,7 @@ public:
     parse_newline_opt();
     parse_statement_list_opt(emitter);
 
-    if (lexer_->peek(false) != Token::Type::rbrace) {
-      error(Msg::missing_rbrace, lexer_->peek(false));
-    }
-    else {
-      lexer_->chew(false);
-    }
+    peek_and_chew(false, Token::Type::rbrace, Msg::missing_rbrace);
 
     return true;
   }
@@ -2415,14 +2314,9 @@ public:
     }
     lexer_->chew(false);
     auto func_name{parse_func_def_name()};
-    if (lexer_->peek(false) != Token::Type::lparens) {
-      error(Msg::expected_lparens, lexer_->peek(false));
-    }
-    lexer_->chew(false);
+    peek_and_chew(false, Token::Type::lparens, Msg::expected_lparens);
     // TODO(mgrettondann): Parse proper parameters
-    if (lexer_->peek(false) != Token::Type::rparens) {
-      error(Msg::expected_rparens, lexer_->peek(false));
-    }
+    peek_and_chew(false, Token::Type::rparens, Msg::expected_rparens);
 
     return program_.function(func_name.get());
   }
@@ -2588,6 +2482,7 @@ public:
     }
   }
 
+public:
   /** \brief Parse the program
    *
    * program : item_list_maybe_unterminated
