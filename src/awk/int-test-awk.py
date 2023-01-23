@@ -120,7 +120,7 @@ test_awk('BEGIN { a[1,2] = 20; print a[1,2] }', "20\n")
 test_awk('BEGIN { a[1 SUBSEP 2] = 20; print a[1, 2] }', "20\n")
 test_awk('BEGIN { SUBSEP=","; a["1,2"] = 20; print a[1, 2] }', "20\n")
 test_awk('BEGIN { for(i = 0; i < ARGC; ++i) print i, ARGV[i] }',
-         f"0 {emp_data}\n", in_file=emp_data)
+         f"0 awk\n1 {emp_data}\n", in_file=emp_data)
 test_awk('BEGIN { print sin(0) }', '0\n')
 test_awk('BEGIN { print cos(0) }', '1\n')
 test_awk('''BEGIN { piby4 = atan2(1, 1)

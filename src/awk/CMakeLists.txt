@@ -47,7 +47,6 @@ if (NOT WIN32)
           "awk/onetrueawk-awk/basic/p.44"
           "awk/onetrueawk-awk/basic/p.47"
           "awk/onetrueawk-awk/basic/p.48"
-          "awk/onetrueawk-awk/basic/p.48a"
           "awk/onetrueawk-awk/basic/p.48b"
           "awk/onetrueawk-awk/basic/p.49"
           "awk/onetrueawk-awk/basic/p.50"

@@ -1731,6 +1731,8 @@ auto GD::Awk::execute(ParsedProgram const& program, std::vector<std::string> con
   state.var("SUBSEP", ";");
 
   Integer::underlying_type idx{0};
+  state.array_element("ARGV", std::to_string(idx++),
+                      Details::ExecutionValue{std::string{GD::program_name()}});
   for (auto const& operand : cmd_line) {
     state.array_element("ARGV", std::to_string(idx++), Details::ExecutionValue{operand});
   }
@@ -1757,10 +1759,14 @@ auto GD::Awk::execute(ParsedProgram const& program, std::vector<std::string> con
   auto [begin_begin, begin_end] = program.begin_instructions();
   auto exit_code{state.execute(program, begin_begin, begin_end)};
 
-  // Now parse and execute the command line.
-  for (Integer::underlying_type i{0};
+  // Now parse and execute the command line - skipping ARGV[0] which is the program name.
+  for (Integer::underlying_type i{1};
        i < std::get<Integer>(state.var("ARGC")).get() && !exit_code.has_value(); ++i) {
     Details::ExecutionValue const& operand_value{state.array_element("ARGV", std::to_string(i))};
+    if (std::holds_alternative<std::nullopt_t>(operand_value)) {
+      // Skip if there is no value.
+      continue;
+    }
     auto operand{Details::ExecutionState::to_string(operand_value, state.conv_fmt())};
     if (state.parse_var(operand)) {
       continue;
