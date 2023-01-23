@@ -254,8 +254,11 @@ public:
     -> ExprResult
   {
     assert(expr.has_one_value());
+    ExprResult::Flags const flags{opcode == Instruction::Opcode::array_element
+                                    ? ExprResult::Flags::lvalue
+                                    : ExprResult::Flags::none};
     instrs_->emplace_back(opcode, reg_, array, dereference_lvalue_int(expr));
-    return ExprResult{reg_++, ExprResult::Flags::lvalue};
+    return ExprResult{reg_++, flags};
   }
 
   auto emit_expr(Instruction::Opcode opcode, ExprResult const& expr, Integer const& op2)
@@ -924,6 +927,30 @@ private:
     }
   }
 
+  static auto generate_array_subscripts(InstructionEmitter& emitter, ExprResult const& subscripts)
+    -> ExprResult
+  {
+    assert(!subscripts.has_no_values());
+    if (subscripts.has_one_value()) {
+      return subscripts;
+    }
+
+    ExprResult const subsep{
+      emitter.emit_expr(Instruction::Opcode::variable, VariableName{"SUBSEP"})};
+    ExprResult join{};
+    for (auto const& subscript : subscripts) {
+      if (join.has_no_values()) {
+        join = ExprResult{subscript};
+      }
+      else {
+        join = emitter.emit_expr(Instruction::Opcode::concat, join, subsep);
+        join = emitter.emit_expr(Instruction::Opcode::concat, join, ExprResult{subscript});
+      }
+    }
+
+    return join;
+  }
+
   /** @brief Parse primary expressions, () and lvalues.
    *
    * @param  instrs     Where to emit code to
@@ -1012,22 +1039,8 @@ private:
 
       peek_and_chew(false, Token::Type::rsquare, Msg::expected_rsquare_after_array_subscripts);
 
-      ExprResult subsep{};
-      if (subscripts.has_many_values()) {
-        subsep = emitter.emit_expr(Instruction::Opcode::variable, VariableName{"SUBSEP"});
-      }
-      ExprResult join{};
-      for (auto const& subscript : subscripts) {
-        if (join.has_no_values()) {
-          join = ExprResult{subscript};
-        }
-        else {
-          join = emitter.emit_expr(Instruction::Opcode::concat, join, subsep);
-          join = emitter.emit_expr(Instruction::Opcode::concat, join, ExprResult{subscript});
-        }
-      }
-
-      result = emitter.emit_expr(Instruction::Opcode::array_element, ArrayName{var_name}, join);
+      result = emitter.emit_expr(Instruction::Opcode::array_element, ArrayName{var_name},
+                                 generate_array_subscripts(emitter, subscripts));
       break;
     }
     case Token::Type::builtin_func_name:
@@ -1486,23 +1499,23 @@ private:
                                UnaryType unary_type) -> ExprResult
   {
     ExprResult lhs{parse_re_match_expr_opt(emitter, expr_type, unary_type)};
-    if (!lhs.has_one_value()) {
+    if (lhs.has_no_values() || (lhs.has_many_values() && unary_type == UnaryType::unary)) {
       return lhs;
     }
 
-    if (auto type{lexer_->peek(true).type()}; type == Token::Type::in) {
-      lexer_->chew(true);
-      auto name{lexer_->peek(false)};
-      if (name != Token::Type::name) {
-        error(Msg::expected_name_after_in, name);
-      }
-      validate_name(name.name(), NameType::array, lexer_->location());
-
-      lexer_->chew(false);
-      std::abort();
+    if (lexer_->peek(true) != Token::Type::in) {
+      return lhs;
     }
+    lexer_->chew(true);
+    auto name{lexer_->peek(false)};
+    if (name != Token::Type::name) {
+      error(Msg::expected_name_after_in, name);
+    }
+    validate_name(name.name(), NameType::array, lexer_->location());
+    lexer_->chew(false);
 
-    return lhs;
+    return emitter.emit_expr(Instruction::Opcode::array_membership, ArrayName{name.name()},
+                             generate_array_subscripts(emitter, lhs));
   }
 
   /** @brief Parse an and expression

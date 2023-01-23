@@ -62,7 +62,6 @@ if (NOT WIN32)
           "awk/onetrueawk-awk/general/t.break1"
           "awk/onetrueawk-awk/general/t.break2"
           "awk/onetrueawk-awk/general/t.break3"
-          "awk/onetrueawk-awk/general/t.coerce2"
           "awk/onetrueawk-awk/general/t.cond"
           "awk/onetrueawk-awk/general/t.contin"
           "awk/onetrueawk-awk/general/t.crlf"

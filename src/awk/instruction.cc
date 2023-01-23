@@ -203,6 +203,7 @@ auto GD::Awk::Instruction::has_result(Opcode opcode) noexcept -> bool
   case Opcode::sprintf:
   case Opcode::split_fs:
   case Opcode::split_re:
+  case Opcode::array_membership:
     return true;
   case Opcode::close_param_pack:
   case Opcode::store_lvalue:
@@ -390,6 +391,9 @@ auto GD::Awk::operator<<(std::ostream& os, GD::Awk::Instruction::Opcode opcode) 
   case Instruction::Opcode::exit:
     os << "exit";
     break;
+  case Instruction::Opcode::array_membership:
+    os << "array_membership";
+    break;
   }
   return os;
 }
@@ -452,6 +456,7 @@ auto GD::Awk::Instruction::op_count(Opcode opcode) noexcept -> unsigned
   case Opcode::index:
   case Opcode::match:
   case Opcode::split_fs:
+  case Opcode::array_membership:
     return 2;
   case Opcode::subst:
   case Opcode::gsubst:
@@ -517,6 +522,7 @@ void GD::Awk::Instruction::validate_operands() const
     assert(std::holds_alternative<ArrayName>(*op1_));  // NOLINT
     break;
   case Opcode::array_element:
+  case Opcode::array_membership:
     assert(std::holds_alternative<ArrayName>(*op1_));  // NOLINT
     assert(std::holds_alternative<Index>(*op2_));      // NOLINT
     break;

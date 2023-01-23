@@ -611,6 +611,7 @@ private:
  * | split_fs              | I          | Ix(S)      | Ix(AN)     |            | <result> = split(<op1>, <op2>)           |
  * | split_re              | I          | Ix(S)      | Ix(AN)     | Ix(R)      | <result> = split(<op1>, <op2>, <op3>)    |
  * | exit                  |            | Ix(I)      |            |            | exit with code <op1>                     |
+ * | array_membership      | B          | AN         | Ix(S)      |            | Does <op1>[<op2>] exist?                 |
  *
  * Parameter packs are identified by the index of the instruction corresponding to the
  * 'open_param_pack'.
@@ -678,6 +679,7 @@ public:
     split_fs,               ///< Split using FS
     split_re,               ///< Split using a specified RE
     exit,                   ///< Exit the program
+    array_membership,       ///< Test for array membership
   };
 
   /** Type representing an offset of to an instruction. */

@@ -1099,9 +1099,17 @@ public:
                                     ExecutionValue const& subscript, std::string const& fmt)
     -> ExecutionValue
   {
-    ArrayName const an{std::get<ArrayName>(array)};
-    std::string const s{to_string(subscript, fmt)};
+    auto const& an{to_array_name(array)};
+    auto const s{to_string(subscript, fmt)};
     return ArrayElement{an, s};
+  }
+
+  [[nodiscard]] auto execute_array_membership(ArrayName const& array,
+                                              ExecutionValue const& subscript,
+                                              std::string const& fmt) const -> ExecutionValue
+  {
+    std::string const s{to_string(subscript, fmt)};
+    return !std::holds_alternative<std::nullopt_t>(array_element(array.get(), s));
   }
 
   static auto execute_srand(ExecutionValue const& expr) -> Integer ::underlying_type
@@ -1592,6 +1600,9 @@ public:
         break;
       case Instruction::Opcode::exit:
         return to_integer(value(it->op1()));
+      case Instruction::Opcode::array_membership:
+        *res = execute_array_membership(to_array_name(it->op1()), value(it->op2()), conv_fmt());
+        break;
       }
       if constexpr (debug) {
         if (it->has_reg()) {

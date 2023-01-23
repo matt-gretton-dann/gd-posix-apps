@@ -177,6 +177,7 @@ test_awk('BEGIN { b = 0; (a = 1) && (b = 1); print a, b }', '1 1\n')
 test_awk('BEGIN { b = 0; (a = 0) && (b = 1); print a, b }', '0 0\n')
 test_awk('BEGIN { b = 0; (a = 0) || (b = 1); print a, b }', '0 1\n')
 test_awk('BEGIN { b = 0; (a = 1) || (b = 1); print a, b }', '1 0\n')
+test_awk('BEGIN { a[1] = 1; print (1 in a), (2 in a) }', '1 0\n')
 
 # Have exit codes will travel...
 test_awk('BEGIN { exit 2 }', None, expected_rc=2)
