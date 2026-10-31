@@ -1665,8 +1665,8 @@ public:
     digits_.mul_pow10(working_scale - scale());
     scale_ = working_scale;
 
-    /* Initial guess = 10^floor(N/2+1). N = number of integer digits (=length - scale)
-     * This gives us something in the correct ball-park.  We also store this at the working_scale.
+    /* Initial guess = 10^floor(N/2). N = number of integer digits (=length - scale).
+     * This positive magnitude estimate may be below the root. Store it at working_scale.
      */
     NumType const initial_guess = (std::max(length(), scale()) - scale()) / 2;
     BasicNumber c(1);
@@ -1684,8 +1684,13 @@ public:
      *                               = (p + *this / p) / 2
      *                               = (*this / p + p) / 2
      *
-     * We loop until the previous and current guesses are the same.
+     * For integer coefficient n, the first Newton step is at least floor(sqrt(n)).
+     * Subsequent steps strictly decrease above that floor; at the floor they may
+     * stay fixed or increase by one. Stop on nondecrease and keep the previous
+     * guess, avoiding the adjacent-integer two-cycle when n is one below a square.
      */
+    bool first_iteration = true;
+    bool improving = false;
     do {
       p = c;
       c = *this;
@@ -1693,9 +1698,11 @@ public:
       assert(c.scale_ == p.scale_);  // NOLINT
       c.digits_.add(p.digits_, 0);
       c.digits_.divide(2);
-    } while (p != c);
+      improving = first_iteration ? (p != c) : (c < p);
+      first_iteration = false;
+    } while (improving);
 
-    *this = c;
+    *this = p;
     if (scale() > target_scale) {
       digits_.div_pow10(scale() - target_scale);
       scale_ = target_scale;
