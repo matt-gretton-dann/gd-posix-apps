@@ -205,13 +205,15 @@ target_include_directories(gdsup PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 set_warnings(gdsup)
 
 # Unit test executable
-add_executable(test-gdsup)
-target_link_libraries(test-gdsup PUBLIC gdsup Catch2::Catch2)
-set_property(TARGET test-gdsup PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
-set_property(TARGET test-gdsup PROPERTY CXX_STANDARD_REQUIRED ON)
-target_include_directories(test-gdsup PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
-target_include_directories(test-gdsup PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
-set_warnings(test-gdsup)
+if(RUN_UNIT_TESTS)
+  add_executable(test-gdsup)
+  target_link_libraries(test-gdsup PUBLIC gdsup Catch2::Catch2)
+  set_property(TARGET test-gdsup PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
+  set_property(TARGET test-gdsup PROPERTY CXX_STANDARD_REQUIRED ON)
+  target_include_directories(test-gdsup PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+  target_include_directories(test-gdsup PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+  set_warnings(test-gdsup)
+endif()
 
 if($CACHE{FORCE_SUPPLEMENTAL_LIBRARY})
   target_compile_definitions(gdsup PUBLIC

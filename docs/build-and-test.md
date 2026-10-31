@@ -57,12 +57,18 @@ The following options can be passed to CMake to change the build behaviour:
 | Cmake Option | Type | Default | Meaning |
 | :----------- | :--- | :------ | :------ |
 | `ALLOW_THIRD_PARTY_DOWNLOADS` | BOOL | ON | Are we allowed to download third-party tools?  If set to no, may cause build-failures on some systems. |
-| `BUILD_TESTING` | BOOL | ON | Is testing enabled? |
+| `BUILD_TESTING` | BOOL | ON | Build and register unit/integration tests, including supplemental-library tests. OFF requires no Catch2 test dependency. |
 | `CMAKE_INSTALL_PREFIX` | STRING | /usr/local | Where to install things to. |
 | `FORCE_SUPPLEMENTAL_LIBRARY` | BOOL | OFF | Force use of the [standard supplemental](./libgdsup/index.md) library even in cases where it is not needed. |
 | `RUN_CLANG_FORMAT` | BOOL | OFF | Check source formatting during the build. |
 | `RUN_CLANG_TIDY` | BOOL | OFF | Run clang-tidy during compilation. |
 | `ENABLE_BC_COVERAGE` | BOOL | OFF | Instrument bc and its tests for line, branch and MC/DC coverage using a supported Clang/LLVM toolchain. |
+
+For a production-only build use `-DBUILD_TESTING=OFF`. With a toolchain providing
+the required standard facilities, `-DALLOW_THIRD_PARTY_DOWNLOADS=OFF` also avoids
+fetching test dependencies. Other missing facilities can still require installed
+supplemental dependencies. CI checks a nested testing-disabled configuration and
+verifies that unit-test targets are absent.
 
 Style checks are opt-in because their diagnostics and formatting rules vary
 between tool versions. Compiler warnings remain enabled and are treated as errors.
