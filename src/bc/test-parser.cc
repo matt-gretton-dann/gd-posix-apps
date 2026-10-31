@@ -542,3 +542,49 @@ TEST_CASE("Parser - basic parsing", "[bc][parser]")
 
   REQUIRE(instructions->at(expected.size()).opcode() == Instruction::Opcode::eof);
 }
+
+TEST_CASE("Expression indices compare type and position independently", "[bc][parser][coverage]")
+{
+  using Type = Parser::ExprType;
+  using Expr = Parser::ExprIndex;
+  for (auto lhs_type : {Type::missing, Type::assignment, Type::named, Type::primary,
+                        Type::array_slice, Type::other}) {
+    for (auto rhs_type : {Type::missing, Type::assignment, Type::named, Type::primary,
+                          Type::array_slice, Type::other}) {
+      for (Parser::Index lhs_index : {0U, 1U}) {
+        for (Parser::Index rhs_index : {0U, 1U}) {
+          Expr const lhs(lhs_index, lhs_type);
+          Expr const rhs(rhs_index, rhs_type);
+          bool const equal =
+            lhs_type == rhs_type && (lhs_type == Type::missing || lhs_index == rhs_index);
+          REQUIRE((lhs == rhs) == equal);
+          REQUIRE((lhs != rhs) == !equal);
+          bool const same_index = lhs_type != Type::missing && lhs_index == rhs_index;
+          REQUIRE((lhs == rhs_index) == same_index);
+          REQUIRE((lhs != rhs_index) == !same_index);
+          REQUIRE((lhs == rhs_type) == (lhs_type == rhs_type));
+          REQUIRE((lhs != rhs_type) == (lhs_type != rhs_type));
+        }
+      }
+    }
+  }
+  REQUIRE(Expr(3).type() == Type::other);
+  REQUIRE(Expr(3) - Expr(1) == 2);
+  REQUIRE(Expr::missing().type() == Type::missing);
+}
+
+TEST_CASE("Interactive parsing returns each complete input item", "[bc][parser][coverage]")
+{
+  Parser parser(std::make_unique<Lexer>(std::make_unique<StringReader>("1\n2\n")), true);
+  for (auto const* number : {"1", "2"}) {
+    auto instructions = parser.parse();
+    REQUIRE(instructions->size() == 2);
+    REQUIRE(instructions->at(0).opcode() == Instruction::Opcode::number);
+    REQUIRE(std::get<std::string>(instructions->at(0).op1()) == number);
+    REQUIRE(instructions->at(1).opcode() == Instruction::Opcode::print);
+    REQUIRE_FALSE(parser.seen_quit());
+  }
+  auto instructions = parser.parse();
+  REQUIRE(instructions->size() == 1);
+  REQUIRE(instructions->at(0).opcode() == Instruction::Opcode::eof);
+}

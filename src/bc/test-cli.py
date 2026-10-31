@@ -10,10 +10,11 @@ import unittest
 
 
 class CliTests(unittest.TestCase):
-    def run_bc(self, text, expected="", files=(), keep_open=False, success=True):
+    def run_bc(self, text, expected="", files=(), keep_open=False, success=True,
+               options=(), error=None):
         with subprocess.Popen(
-            [BC, *map(str, files)], stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+            [BC, *options, *map(str, files)], stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True,
             env=dict(os.environ, LC_ALL="C"),
         ) as child:
             try:
@@ -35,6 +36,8 @@ class CliTests(unittest.TestCase):
         else:
             self.assertNotEqual(err, "")
             self.assertEqual(child.returncode, 1)
+            if error:
+                self.assertIn(error, err)
 
     def test_missing_file_stops_inputs(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -188,6 +191,97 @@ class CliTests(unittest.TestCase):
         for text in ("/*", "/*ordinary", "/* *", "/* *x/", "/*\n**x/"):
             with self.subTest(text=text):
                 self.run_bc(text, success=False)
+
+    def test_options(self):
+        self.run_bc("scale\n", "20\n", options=("-l",))
+        self.run_bc("", success=False, options=("-z",), error="Usage:")
+        for option in ("-q", "-g"):
+            with self.subTest(option=option):
+                self.run_bc("1+1\n", "2\n" if EXTENSIONS else "",
+                            options=(option,), success=EXTENSIONS)
+
+    def test_missing_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            self.run_bc("", files=(Path(directory) / "missing.bc",),
+                        success=False, error="File system error")
+
+    def test_operators_and_assignments(self):
+        for text, expected in [
+            ("2+3*4\n(2+3)*4\n8-3-2\n8/4/2\n2^3^2\n-2^2\n",
+             "14\n20\n3\n1\n512\n4\n"),
+            ("a=b=3\na\nb\n(a=4)\na\n", "3\n3\n4\n4\n"),
+            ("a=2\na+=3\na-=1\na*=4\na/=2\na%=5\na^=3\na\n", "27\n"),
+            ("a=2\na++\n++a\na--\n--a\na\n", "2\n4\n4\n2\n2\n"),
+            ("a[0]=2\na[0]++\n++a[0]\na[0]--\n--a[0]\na[0]\n",
+             "2\n4\n4\n2\n2\n"),
+            ("scale=3\n1/8\nlength(123.45)\nscale(123.45)\nsqrt(4)\n",
+             (".125\n" if EXTENSIONS else "0.125\n") + "5\n2\n2.000\n"),
+            ("1\\\n+2\n\"hello\"\n\"\"\n", "3\nhello"),
+        ]:
+            with self.subTest(text=text):
+                self.run_bc(text, expected)
+
+    def test_control_flow(self):
+        for text, expected in [
+            ("if(0) 1\nif(1) 2\n", "2\n"),
+            ("a=0\nwhile(a<3) {\na++;\n}\na\n", "0\n1\n2\n3\n"),
+            ("for(a=0;a<3;a++) {\na\n}\na\n", "0\n1\n2\n3\n"),
+            ("for(a=0;a<3;a++) {\nfor(b=0;b<3;b++) {\nbreak\n}\na\n}\n",
+             "0\n1\n2\n"),
+            ("a=0\nwhile(1) {\na=7\nbreak\n}\na\n", "7\n"),
+            ("if(1<2) 1\nif(2<=2) 2\nif(3>2) 3\nif(3>=3) 4\n"
+             "if(4==4) 5\nif(4!=5) 6\nif(2<1) 7\nif(2!=2) 8\n",
+             "1\n2\n3\n4\n5\n6\n"),
+            ("define f(a,b) {\nauto c\nc=a+b\nreturn (c)\n}\nf(2,3)\n", "5\n"),
+        ]:
+            with self.subTest(text=text):
+                self.run_bc(text, expected)
+
+    def test_function_returns_and_auto_separators(self):
+        for body, expected in (("return", "0"), ("return ()", "0"),
+                               ("return (7)", "7"),
+                               ("auto a; a=8; return (a)", "8"),
+                               ("auto a\na=9\nreturn (a)", "9")):
+            with self.subTest(body=body):
+                self.run_bc("define f() {\n" + body + "\n}\nf()\n", expected + "\n")
+        self.run_bc("define f(a[]) {\nreturn (a[0])\n}\na[0]=6\nf(a[])\n", "6\n")
+        self.run_bc("define f(z) {\nreturn (z)\n}\nz=4\nf(9)\nz\n", "9\n4\n")
+        self.run_bc("define f(z[]) {\nz[0]=8\nreturn (z[0])\n}\n"
+                    "z[0]=4\nf(z[])\nz[0]\n", "8\n4\n")
+        for text in ("define f(a,a) {\n}\n", "define f(a[],a[]) {\n}\n",
+                     "define f() {\nauto a 1\n}\n"):
+            with self.subTest(text=text):
+                self.run_bc(text, success=False)
+
+    def test_invalid_grammar(self):
+        # Each case must diagnose an error and exit cleanly, rather than crash.
+        for text in ("@\n", "unknown\n", "!\n", "\\x\n", "=-\n",
+                     "\"unterminated", "1+\n", "(1+2\n", "1 2\n", "1",
+                     "if 1\n", "if(1 2) 3\n", "while(1\n", "for(;;\n",
+                     "break\n", "return (1)\n", "a[1\n", "a[]=1\n",
+                     "define () {\n}\n", "define f( {\n}\n",
+                     "define f() {\nauto\n}\n", "define f() {\nreturn (1\n}\n",
+                     "if(1)", "{1\n", "for 1\n", "while 1\n",
+                     "for(1 2;3;4) 5\n", "for(1;2 3;4) 5\n",
+                     "for(1;2;3 4) 5\n", "define f 1\n", "define f() 1\n",
+                     "define f(a[1]) {\n}\n", "define f(a,) {\n}\n",
+                     "++1\n", "1++\n", "a=\n", "f(1\n", "length(1\n",
+                     "length 1\n", "sqrt(1\n", "sqrt 1\n", "scale(1\n",
+                     "abs 1\n", "abs(1\n") :
+            with self.subTest(text=text):
+                self.run_bc(text, success=False)
+
+    def test_configuration_extensions(self):
+        if EXTENSIONS:
+            self.run_bc("abs(-3)\n", "3\n")
+            self.run_bc("a[2]=1\nlength(a[])\n", "3\n")
+            self.run_bc("#!ignored\n1+1\n", "2\n")
+            self.run_bc("define f() {return 3;}\nf()\n", "3\n")
+        else:
+            for text in ("abs(-3)\n", "length(a[])\n", "#!ignored\n1+1\n",
+                         "define f() {return 3;}\nf()\n"):
+                with self.subTest(text=text):
+                    self.run_bc(text, success=False)
 
 
 if __name__ == "__main__":
