@@ -166,6 +166,14 @@ Data types for results are:
 | `Obase` | Reference to obase. |
 | `Scale` | Reference to the scale global. |
 
+### Array argument values
+
+Whole-array arguments pass values, including an empty array. Function writes to
+an array parameter do not change the caller's array. The VM shares stored array
+maps until a write, then copies the map when a parameter, saved local or earlier
+result still owns the previous value. Array loads and array parameter pops
+produce array values; scalar loads and scalar parameter pops produce numbers.
+
 Instruction summary:
 
 | Opcode              | Result type  |  Operand 1   |  Operand 2 |  Description                               |
