@@ -331,6 +331,15 @@ share the same digits (but do they ever really?).
 
 ### Algorithms
 
+#### Addition and subtraction
+
+Both operations retain the maximum of their operand scales, including when
+either operand is zero. Increasing a nonzero result's scale appends decimal
+zeroes to its coefficient; a zero result only needs its scale metadata updated.
+For example, `1 + 0.000` is `1.000` with scale 3. This follows POSIX and GNU bc;
+Apple's Howard 7.0.3 drops the zero operand's precision in this case, so matching
+that implementation is not the conformance oracle.
+
 #### Division
 
 Use Knuth Algorithm D from Section 4.3.1 of TAOCP.  However, we choose the initial scale factor
