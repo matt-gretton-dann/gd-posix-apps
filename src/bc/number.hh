@@ -133,10 +133,10 @@ public:
     return std::all_of(digits_->begin(), digits_->end(), [](auto d) { return d == 0; });
   }
 
-  /** Is this an even number? */
+  /** Is this an even number? Both absent and empty storage represent zero. */
   [[nodiscard]] auto is_even() const -> bool
   {
-    if (!digits_) {
+    if (!digits_ || digits_->empty()) {
       return true;
     }
 

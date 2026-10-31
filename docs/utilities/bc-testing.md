@@ -240,6 +240,15 @@ The initial table rejects the former magnitude-order bug for two negative
 operands. Scale alignment may swap the magnitude operands, and negative signs
 reverse their order again; equal magnitudes remain equal in either orientation.
 
+## Zero digit parity
+
+Parity tests cover both valid zero representations: absent storage and an
+allocated empty vector from constructing zero. They also check ordinary limbs,
+shared values, reset storage and zero-valued multiply-accumulate results at each
+trait width. These inputs use documented constructors/operations; the former
+empty-vector read is rejected by AddressSanitizer/UBSan before the fix. Source
+power evaluation already checks a zero exponent before calling this helper.
+
 ## Imported fixture output isolation
 
 Imported scripts may write generated outputs beside their fixtures. CMake copies
