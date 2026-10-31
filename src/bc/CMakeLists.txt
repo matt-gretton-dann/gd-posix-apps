@@ -146,6 +146,10 @@ endif()
 
 # These local CLI regressions run in both extension configurations and on Windows.
 if(RUN_INTEGRATION_TESTS)
+  add_test(NAME bc/gd-build-provenance COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-gd-build.py"
+           "${CMAKE_CURRENT_SOURCE_DIR}/scripts/build-gd-bc.py")
+  set_tests_properties(bc/gd-build-provenance PROPERTIES TIMEOUT 20)
   add_test(NAME bc/multiply-config COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-multiply-config.py" "${CMAKE_COMMAND}"
            "${CMAKE_SOURCE_DIR}/cmake/BcMultiplyConfig.cmake")
