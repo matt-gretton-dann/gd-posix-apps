@@ -36,6 +36,21 @@ class CliTests(unittest.TestCase):
             self.assertNotEqual(err, "")
             self.assertEqual(child.returncode, 1)
 
+    def test_missing_file_stops_inputs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            later = Path(directory) / "later.bc"
+            later.write_text("42\n")
+            self.run_bc("17\n", files=(Path(directory) / "missing.bc", later), success=False)
+            self.run_bc("17\n", "42\n", files=(later, Path(directory) / "missing.bc"),
+                        success=False)
+
+    def test_directory_input_error(self):
+        # A directory is a controlled failing input, independent of permissions.
+        # POSIX commonly opens it successfully then fails on the first read;
+        # Windows commonly rejects the open. Both must report failure.
+        with tempfile.TemporaryDirectory() as directory:
+            self.run_bc("", files=(directory,), success=False)
+
     def test_quit(self):
         for text, expected in [
             ("quit\n", ""),
@@ -78,20 +93,15 @@ class CliTests(unittest.TestCase):
         else:
             self.run_bc("halt\n", success=False)
 
-    def test_missing_file_stops_inputs(self):
-        with tempfile.TemporaryDirectory() as directory:
-            later = Path(directory) / "later.bc"
-            later.write_text("42\n")
-            self.run_bc("17\n", files=(Path(directory) / "missing.bc", later), success=False)
-            self.run_bc("17\n", "42\n", files=(later, Path(directory) / "missing.bc"),
-                        success=False)
 
-    def test_directory_input_error(self):
-        # A directory is a controlled failing input, independent of permissions.
-        # POSIX commonly opens it successfully then fails on the first read;
-        # Windows commonly rejects the open. Both must report failure.
-        with tempfile.TemporaryDirectory() as directory:
-            self.run_bc("", files=(directory,), success=False)
+
+    def test_shebang(self):
+        self.run_bc("#!ignored\n1+1\n", "2\n" if EXTENSIONS else "", success=EXTENSIONS)
+        self.run_bc("#!ignored", success=EXTENSIONS)
+        for text, expected in ((" #!ignored\n", ""), ("\n#!ignored\n", ""),
+                               ("1\n#!ignored\n2\n", "1\n"), ("#ordinary\n", "")):
+            with self.subTest(text=text):
+                self.run_bc(text, expected, success=False)
 
     def test_comments(self):
         for text in ("/**/2\n", "/*ordinary*/2\n", "/*\nmultiline\n*/2\n",
