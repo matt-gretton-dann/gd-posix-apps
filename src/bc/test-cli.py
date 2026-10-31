@@ -124,6 +124,19 @@ class CliTests(unittest.TestCase):
         # A real error before quit must not be erased by reading ahead to quit.
         self.run_bc("define f() {\nauto\n}\nquit\n", success=False)
 
+    def test_square_root_termination(self):
+        # Each limb width has a different working-scale guard. One of these
+        # hits an exact integer Newton two-cycle on each supported native trait.
+        for power in (6, 10, 20):
+            root = "1" + "0" * (power // 2)
+            for offset in (0, 1, 2, 3):
+                value = str(10 ** power + offset)
+                with self.subTest(value=value):
+                    self.run_bc("sqrt(" + value + ")\n", root + "\n")
+            value = "1" + "0" * power + ".02"
+            with self.subTest(value=value):
+                self.run_bc("sqrt(" + value + ")\n", root + ".00\n")
+
     def test_halt(self):
         if EXTENSIONS:
             self.run_bc("1+1\nhalt\n3+4\n", "2\n", keep_open=True)
