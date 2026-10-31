@@ -34,6 +34,22 @@ class VMTests(unittest.TestCase):
             with self.subTest(text=text):
                 self.run_bc(text, output)
 
+    def test_positive_fractional_whole_value_conversion(self):
+        for text, output in (("scale=2.9999999999999999999\nscale\n", "2\n"),
+                             ("scale=.0000000000000000001\nscale\n", "0\n"),
+                             ("ibase=2.9999999999999999999\n10\n", "2\n"),
+                             ("obase=2.9999999999999999999\n5\n", "101\n"),
+                             ("a[1.0000000001]=7\na[1]\n", "7\n"),
+                             ("a[.0000000000000000001]=7\na[0]\n", "7\n"),
+                             ("scale=2.0000000000000000000\nscale\n", "2\n")):
+            with self.subTest(text=text):
+                self.run_bc(text, output)
+
+    def test_whole_value_overflow_does_not_wrap(self):
+        for text in ("scale=1000000000\n", "a[1000000000]=7\n"):
+            with self.subTest(text=text):
+                self.run_bc(text, success=False)
+
     def test_function_argument_errors(self):
         for text in ("f()\n", "define f(a) {\nreturn (a)\n}\nf()\n",
                      "define f() {\nreturn (0)\n}\nf(1)\n",
