@@ -5,12 +5,14 @@ import argparse
 import contextlib
 import importlib.util
 import io
+import hashlib
 import json
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 
 class BenchmarkCli(unittest.TestCase):
@@ -74,6 +76,36 @@ class BenchmarkCli(unittest.TestCase):
         self.assertGreater(rows[0]["seconds"], 0)
         manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
         self.assertEqual(len(manifest["implementations"][0]["binary_sha256"]), 64)
+        for case in manifest['corpus']:
+            for suffix, field in (('.bc', 'program_sha256'), ('.expected', 'oracle_sha256')):
+                artifact = output / 'workloads' / (case['name'] + suffix)
+                self.assertEqual(hashlib.sha256(artifact.read_bytes()).hexdigest(), case[field])
+
+    def test_artifact_hashes_survive_windows_text_translation(self):
+        config = self.root / 'windows-config.json'
+        config.write_text(json.dumps({'implementations': [
+            {'name': 'fake', 'argv': [sys.executable, str(self.driver), 'ok']}]}), encoding='utf-8')
+        output = self.root / 'windows-artifacts'
+        spec = importlib.util.spec_from_file_location('bc_benchmark_windows', BENCHMARK)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        original = Path.write_text
+
+        def translated(path, data, *args, **kwargs):
+            if path.suffix in ('.bc', '.expected'):
+                return path.write_bytes(data.replace('\n', '\r\n').encode('utf-8'))
+            return original(path, data, *args, **kwargs)
+
+        argv = [BENCHMARK, '--config', str(config), '--output', str(output),
+                '--workload', 'startup', '--samples', '1', '--warmups', '0']
+        with mock.patch.object(Path, 'write_text', translated), \
+                mock.patch.object(sys, 'argv', argv), contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(module.main(), 0)
+        manifest = json.loads((output / 'manifest.json').read_text())
+        case = manifest['corpus'][0]
+        for suffix, field in (('.bc', 'program_sha256'), ('.expected', 'oracle_sha256')):
+            artifact = output / 'workloads' / ('startup' + suffix)
+            self.assertEqual(hashlib.sha256(artifact.read_bytes()).hexdigest(), case[field])
 
     def test_native_quick_corpus(self):
         if BC_BINARY is None:
