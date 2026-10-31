@@ -534,7 +534,8 @@ void GD::Bc::Details::VMState::array(Array a, ArrayValues av)
 auto GD::Bc::Details::VMState::array_length(Array a) const -> GD::Bc::Number::NumType
 {
   auto arr = array(a);
-  if (arr->empty()) {
+  // Untouched arrays have no allocated map and contain no elements.
+  if (!arr || arr->empty()) {
     return 0;
   }
 
