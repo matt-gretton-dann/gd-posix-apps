@@ -1,0 +1,26 @@
+# bc VM and diagnostic tests
+
+`test-token-format.cc` asserts token type names, source spellings, payload/debug
+output and all operator classifications. Each positive operator case is paired
+with the other token kinds, providing short-circuit independence witnesses for
+the classification predicates. Runtime `vformat` calls check the empty/default
+specification and rejection of a nonempty specification for tokens and all 26
+letters with either standard-library formatting or supplemental fmt.
+
+`test-instruction.cc` checks every instruction's diagnostic spelling with valid
+operand types, stream destinations, complete instruction listings, mutable
+operands and missing-operand exceptions. Variable/array masks use independent
+namespaces: equality changes each mask separately, and empty, sparse, repeated,
+last-letter and all-letter fixtures assert iteration order and diagnostic text.
+These checks run with ordinary test output; enabling Catch's per-success logging
+is unnecessary for production diagnostic coverage.
+
+A temporary classification mutation replacing the final relational operator
+with EOF is rejected by the token assertions. This is a fault-detection check,
+not a production mode or a committed source variant.
+
+These tests cover diagnostics and public value contracts. They do not establish
+execution of every VM opcode, validate malformed bytecode or replace the direct
+VM, subprocess runtime-error, function-frame, interrupt and verifier tests tracked
+by #215 and #187. Coverage reports must retain those open obligations and the
+separate extension configurations described in [bc-testing.md](bc-testing.md).
