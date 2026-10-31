@@ -50,7 +50,7 @@ not the POSIX history-disabled configuration. See the pinned
 [upstream build guide](https://github.com/gavinhoward/bc/blob/7.0.3/manuals/build.md).
 The GNU configure recipe is explicitly unavailable on native Windows; use the
 native Howard comparison there. Native CI checks the supported recipes and the
-33 quick output oracles; these one-sample checks make no speed claim.
+36 quick output oracles; these one-sample checks make no speed claim.
 
 `implementations.json` can be passed directly to the checked benchmark runner.
 Add separately built GD base/candidate entries for a competitive experiment.

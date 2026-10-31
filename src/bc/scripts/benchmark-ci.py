@@ -79,7 +79,7 @@ def selected_cases(bench, preset, broad):
     # avoid pretending that quick correctness checks have useful timing power.
     groups = ('startup', 'loop', 'calls', 'array', 'array_sparse', 'fibonacci',
               'multiply', 'divide_multilimb', 'power',
-              'sqrt', 'decimal_input', 'streaming')
+              'sqrt', 'decimal_input', 'streaming', 'comparison')
     chosen = []
     for group in groups:
         choices = [case for case in cases if case['group'] == group]
@@ -89,7 +89,8 @@ def selected_cases(bench, preset, broad):
     # sparse and imbalanced shapes, whose algorithmic behavior differs.
     for case in cases:
         parameters = case['parameters']
-        if case['group'] == 'multiply' and parameters.get('left_digits', 0) >= 10000:
+        if (case['group'] == 'comparison' or
+                (case['group'] == 'multiply' and parameters.get('left_digits', 0) >= 10000)):
             if case['name'] not in chosen:
                 chosen.append(case['name'])
     return chosen
