@@ -30,3 +30,9 @@ empty parse context. The runtime formatting engine normally supplies a closing
 brace even for `{}`, so testing `vformat` alone misses this accepted boundary.
 The direct parser assertion complements the existing accepted/rejected format
 specification cases without changing formatter implementation.
+
+Function argument extraction checks the stored alternative before reading a
+scalar number or whole-array value. A scalar/array mismatch is a source-level
+runtime error with an expected-type diagnostic, rather than an uncaught variant
+exception. The CLI regressions exercise both directions in isolated children.
+This check does not replace the broader bytecode verifier contract in #187.

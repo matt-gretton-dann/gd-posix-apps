@@ -362,6 +362,12 @@
         "id": 60,
         "description": "Cannot get the length of an object to type {0}.",
         "C": "Cannot get length of object of type {0}."
+      },
+      {
+        "msg": "parameter_type_mismatch",
+        "id": 61,
+        "description": "A function argument has the wrong type; {0} is the expected type name.",
+        "C": "Function argument has the wrong type; expected {0}."
       }
     ]
   }
