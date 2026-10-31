@@ -29,12 +29,19 @@ The output directory must be new. The default `full` preset retains the sixteen
 #197 workload parameters and adds dense/sparse/unbalanced multiplication,
 genuine multi-limb division, modulo, powers, a larger square root, changed-base
 literals, recursion, sparse arrays, definition registration, decimal input and
-output-heavy cases. `--list` shows all 32 names and exact parameters. Repeat
+output-heavy cases. `--list` shows all 33 names and exact parameters. Repeat
 `--workload NAME` to select cases. Startup is a separate class.
 
 `--preset quick` reduces dimensions and iterations for fast correctness checks.
 Its parameterized names and manifest identify the changed experiment; quick
-results are not substitutes for full-workload timings. POSIX math functions are
+results are not substitutes for full-workload timings.
+`--preset holdout` increases dimensions by one eighth (at least one) and reduces
+iteration counts by one eighth, with distinct parameterized case names. Use a
+separate `--corpus-seed`, such as 197201, and reserve this preset from tuning or
+PGO training. Startup remains a fixed control. The historical full-case program
+and oracle hashes are checked against the recorded baseline; adding held-out
+shapes does not rewrite the original experiment.
+ POSIX math functions are
 explicitly pending #217 and cannot appear as a performance pass before their
 accuracy-checked implementation exists.
 
@@ -117,6 +124,10 @@ repeated runs check schedule replay without asserting noisy elapsed times.
 This corpus measures complete processes. Definition registration includes
 parsing, validation and VM registration; decimal cases include the surrounding
 interpreter/I/O work. They are not pure parser or arithmetic-kernel measurements.
+The streaming case feeds sequential statements and checks every output line
+through EOF. It measures bulk input/output throughput, including parsing and
+execution; it does not assert interactive first-response latency.
+
 CPU/allocation profiles and component drivers are separate #200 follow-ups,
 before choosing architectural changes. The corpus and this infrastructure make
 no performance-improvement claim by themselves.
