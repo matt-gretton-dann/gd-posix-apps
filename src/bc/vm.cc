@@ -1230,14 +1230,20 @@ void GD::Bc::Details::InstructionPack::validate_result(Index i) const
 }
 
 GD::Bc::VM::VM(std::ostream& out, std::ostream& err, bool save_specials)
-    : state_(new Details::VMState(out, err, save_specials))
+    : state_(std::make_unique<Details::VMState>(out, err, save_specials))
 {
 }
+
+// VMState is complete here: destruction and move assignment release all
+// variables, array snapshots, saved frames and registered function bodies.
+GD::Bc::VM::~VM() = default;
+GD::Bc::VM::VM(VM&&) noexcept = default;
+auto GD::Bc::VM::operator=(VM&&) noexcept -> VM& = default;
 
 auto GD::Bc::VM::execute(Instructions& instructions) -> bool
 {
   state_->validate(instructions);
-  Details::InstructionPack instrs(state_, instructions);
+  Details::InstructionPack instrs(state_.get(), instructions);
   // Restore the caller's handler before reporting interruption, including when
   // execution throws (for example, through an output stream's exception mask).
   auto const result = [&instrs]() {

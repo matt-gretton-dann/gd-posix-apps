@@ -7,6 +7,8 @@
 #include <cstdlib>
 #include <new>
 #include <sstream>
+#include <type_traits>
+#include <utility>
 
 #include "bc.hh"
 
@@ -56,7 +58,21 @@ auto run() -> bool
       break;
     }
   }
-  return output.str().empty() && errors.str().empty();
+  static_assert(!std::is_copy_constructible_v<GD::Bc::VM>);
+  static_assert(!std::is_copy_assignable_v<GD::Bc::VM>);
+  // Transfer populated state, then replace an already allocated destination.
+  GD::Bc::VM moved(std::move(vm));
+  GD::Bc::VM replaced(output, errors, false);
+  replaced = std::move(moved);
+  GD::Bc::Parser query(
+    std::make_unique<GD::Bc::Lexer>(std::make_unique<GD::Bc::StringReader>("a\na[3]\nf(8)\n")),
+    true);
+  while (auto code = query.parse()) {
+    if (!replaced.execute(*code)) {
+      break;
+    }
+  }
+  return output.str() == "12345678901234567890\n7\n9\n" && errors.str().empty();
 }
 }  // namespace
 
