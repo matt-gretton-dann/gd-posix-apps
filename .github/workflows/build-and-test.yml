@@ -41,6 +41,11 @@ jobs:
         run: |
           cd "${GITHUB_WORKSPACE}/build"
           ctest -V
+      - name: Check pinned comparator recipes
+        if: ${{ matrix.extensions == 'ON' }}
+        run: |
+          python3 src/bc/scripts/build-bc-comparators.py --output build-comparators --implementation both --cc cc
+          python3 src/bc/scripts/bench-bc.py --config build-comparators/implementations.json --output build-comparator-checks --preset quick --samples 1 --warmups 0 --require-provenance
       - name: Check separate bc profiling build
         if: ${{ matrix.extensions == 'ON' }}
         run: |
@@ -69,6 +74,15 @@ jobs:
       run: cmake --build "$Env:GITHUB_WORKSPACE\\build" --config Release  --target RUN_TESTS
 
 
+    - name: Check pinned native Howard recipe
+      if: ${{ matrix.extensions == 1 }}
+      shell: cmd
+      run: |
+        for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do call "%%i\Common7\Tools\VsDevCmd.bat" -arch=x64 -host_arch=x64
+        if errorlevel 1 exit /b 1
+        python src/bc/scripts/build-bc-comparators.py --output build-comparators --cc cl
+        if errorlevel 1 exit /b 1
+        python src/bc/scripts/bench-bc.py --config build-comparators/implementations.json --output build-comparator-checks --preset quick --samples 1 --warmups 0 --require-provenance
     - name: Check separate bc profiling build
       if: ${{ matrix.extensions == 1 }}
       run: |

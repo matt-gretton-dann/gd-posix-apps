@@ -119,3 +119,6 @@ interpreter/I/O work. They are not pure parser or arithmetic-kernel measurements
 CPU/allocation profiles and component drivers are separate #200 follow-ups,
 before choosing architectural changes. The corpus and this infrastructure make
 no performance-improvement claim by themselves.
+
+Pinned native build commands, compiler/flag provenance and offline cache options
+are documented in [comparator builds](bc-comparator-builds.md).
