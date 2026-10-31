@@ -1768,16 +1768,19 @@ private:
     if (result == Details::ComparisonResult::equality) {
       return result;
     }
-    return lhs_scale_bigger ? result
-                            : (result == Details::ComparisonResult::less_than
-                                 ? Details::ComparisonResult::greater_than
-                                 : Details::ComparisonResult::less_than);
+    // Swapping the operands for scale alignment reverses magnitude ordering.
+    // Two negative operands reverse it once more; equality is unchanged above.
+    bool const keep_order = lhs_scale_bigger == (sign_ == Sign::positive);
+    return keep_order ? result
+                      : (result == Details::ComparisonResult::less_than
+                           ? Details::ComparisonResult::greater_than
+                           : Details::ComparisonResult::less_than);
   }
 
   Details::BasicDigits<Traits> digits_;  ///< The digits.
   Sign sign_ = Sign::positive;           ///< Sign (+/-1).
   NumType scale_ = 0;                    ///< Scale.
-};                                       // namespace GD::Bc
+};
 
 template<typename Traits>
 auto operator<<(std::ostream& os, BasicNumber<Traits> const& num) -> std::ostream&
