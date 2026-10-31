@@ -59,6 +59,22 @@ class ProfilingCli(unittest.TestCase):
         # Mutable iterator checks borrow their caller-owned vector.
         self.assertEqual(counters['events']['iterator_owner_copies'], 0)
 
+    def test_power_has_no_unused_terminal_square(self):
+        # Small exact powers isolate binary exponentiation from recursive
+        # multiplication; count both result products and necessary squares.
+        for exponent, expected_calls in ((0, 0), (1, 0), (2, 2), (3, 3), (16, 5), (31, 9)):
+            with self.subTest(exponent=exponent):
+                counters = self.profile('2^{}\n'.format(exponent),
+                                        '{}\n'.format(2 ** exponent))
+                self.assertEqual(counters['events']['basic_multiply_calls'], expected_calls)
+                self.assertEqual(counters['events']['karatsuba_multiply_calls'], 0)
+        # Exact value and decimal length checks for a large base. Exponent one
+        # already returns early in BasicNumber, regardless of the threshold.
+        digits = '7' * 1000
+        counters = self.profile('a={}\nb=a^1\nb-a\nlength(b)\n'.format(digits), '0\n1000\n')
+        self.assertEqual(counters['events']['basic_multiply_calls'], 0)
+        self.assertEqual(counters['events']['karatsuba_multiply_calls'], 0)
+
     def test_array_clone_and_frames(self):
         counters = self.profile('define f(a[]) {\na[1]=9\nreturn(a[1])\n}\na[1]=3\nf(a[])\na[1]\n',
                                 '9\n3\n')
