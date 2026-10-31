@@ -23,13 +23,6 @@ include(GNUInstallDirs)
 include(Warnings)
 include(CheckIPOSupported)
 
-# The bundled dependencies still declare old policy versions. CMake 4 can apply
-# a supported policy baseline to them without increasing our minimum version.
-if(CMAKE_VERSION VERSION_GREATER_EQUAL 4.0 AND
-   (NOT DEFINED CMAKE_POLICY_VERSION_MINIMUM OR CMAKE_POLICY_VERSION_MINIMUM VERSION_LESS 3.10))
-  set(CMAKE_POLICY_VERSION_MINIMUM 3.10)
-endif()
-
 include(GDPosixAppsTests)
 
 # Find packages
@@ -61,7 +54,9 @@ if(BUILD_TESTING)
     FetchContent_Declare(
       Catch2
       GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-      GIT_TAG        v2.13.7)
+      GIT_TAG        v2.13.7
+      PATCH_COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=<SOURCE_DIR>"
+                    -P "${CMAKE_SOURCE_DIR}/cmake/Catch2Policies.cmake")
     FetchContent_MakeAvailable(Catch2)
     message(STATUS "Catch2 sources: ${Catch2_SOURCE_DIR}")
     list(PREPEND CMAKE_MODULE_PATH "${Catch2_SOURCE_DIR}/contrib")
