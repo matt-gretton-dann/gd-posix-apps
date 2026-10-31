@@ -34,12 +34,15 @@ if(RUN_UNIT_TESTS)
   target_sources(test-libbc PRIVATE
                  test-format.cc
                  test-lexer.cc
+                 test-lexer-comments.cc
                  test-libbc-main.cc
                  test-number.cc
+                 test-number-power.cc
                  test-parser.cc
                  test-reader.cc)
   target_add_clang_format(test-libbc)
-  catch_discover_tests(test-libbc PROPERTIES FIXTURES_REQUIRED testutil_setup EXTRA_ARGS "-s")
+  catch_discover_tests(test-libbc PROPERTIES FIXTURES_REQUIRED testutil_setup
+                      EXTRA_ARGS "--rng-seed" "197199")
   if (ENABLE_IPO)
     set_property(TARGET test-libbc PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
   endif()
@@ -54,6 +57,9 @@ if(RUN_INTEGRATION_TESTS)
            "${CMAKE_CURRENT_SOURCE_DIR}/test-cli.py" "$<TARGET_FILE:bc>"
            --extensions "$<IF:$<BOOL:${ENABLE_NON_POSIX_EXTENSIONS}>,ON,OFF>")
   set_tests_properties(bc/cli PROPERTIES TIMEOUT 60)
+  add_test(NAME bc/number-oracle COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-number-oracle.py" "$<TARGET_FILE:bc>")
+  set_tests_properties(bc/number-oracle PROPERTIES TIMEOUT 90)
 endif()
 
 add_executable(find-multiply-split-point  find-multiply-split-point.cc)

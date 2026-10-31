@@ -93,6 +93,16 @@ class CliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             self.run_bc("", files=(directory,), success=False)
 
+    def test_comments(self):
+        for text in ("/**/2\n", "/*ordinary*/2\n", "/*\nmultiline\n*/2\n",
+                     "/****/2\n", "/* / */2\n", "/* *x/ still inside */2\n",
+                     "/**//**/2\n"):
+            with self.subTest(text=text):
+                self.run_bc(text, "2\n")
+        for text in ("/*", "/*ordinary", "/* *", "/* *x/", "/*\n**x/"):
+            with self.subTest(text=text):
+                self.run_bc(text, success=False)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)

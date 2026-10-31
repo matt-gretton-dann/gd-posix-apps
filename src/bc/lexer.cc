@@ -283,6 +283,8 @@ void GD::Bc::Lexer::lex_comment()
       t_.emplace(Token::Type::error, r_->error(Msg::unexpected_eof_comment));
       return;
     default:
+      // Only an immediately preceding star can pair with a closing slash.
+      state = CommentState::normal;
       break;
     }
     r_->chew();
@@ -398,6 +400,10 @@ void GD::Bc::Lexer::lex()
       assert(r_->peek() == '*');  // NOLINT
       r_->chew();
       lex_comment();
+      if (t_) {
+        // Keep an unterminated-comment error instead of replacing it with EOF.
+        return;
+      }
       break;
     }
     case '%':
