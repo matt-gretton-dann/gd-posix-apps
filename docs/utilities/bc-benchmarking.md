@@ -81,7 +81,8 @@ Artifacts:
 
 - `manifest.json`: argv, binary hashes, declared build metadata, platform/clock,
   environment, seeds and exact corpus/oracle hashes.
-- `workloads/*.bc` and `*.expected`: reviewable programs and independent answers.
+- `workloads/*.bc` and `*.expected`: exact UTF-8 LF payload bytes matching the
+  program/oracle hashes on every platform; reviewable programs and answers.
 - `samples.jsonl` and `samples.csv`: every warm-up and measured observation,
   pairing/order, checked status, elapsed time and output hash/size.
 - `summary.json`: per-case dispersion and paired comparisons, after success.
