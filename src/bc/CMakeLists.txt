@@ -34,6 +34,7 @@ if(RUN_UNIT_TESTS)
   target_sources(test-libbc PRIVATE
                  test-format.cc
                  test-lexer.cc
+                 test-lexer-shebang.cc
                  test-libbc-main.cc
                  test-number.cc
                  test-parser.cc
