@@ -1233,12 +1233,13 @@ struct fmt::formatter<GD::Bc::Token>
   }
 
   template<typename FormatContext>
-  auto format(GD::Bc::Token const& token, FormatContext& ctx)
+  auto format(GD::Bc::Token const& token, FormatContext& ctx) const
   {
     std::ostringstream os;
     os << token;
     // Work around Win32 STL bug:
-    return fmt::vformat_to(ctx.out(), "{0}", fmt::make_format_args(os.str()));
+    auto text = os.str();
+    return fmt::vformat_to(ctx.out(), "{0}", fmt::make_format_args(text));
   }
 };
 
@@ -1254,7 +1255,7 @@ struct fmt::formatter<GD::Bc::Letter>
   }
 
   template<typename FormatContext>
-  auto format(GD::Bc::Letter letter, FormatContext& ctx)
+  auto format(GD::Bc::Letter letter, FormatContext& ctx) const
   {
     static std::string_view const letters = "abcdefghijklmnopqrstuvwxyz";
     // Work around Win32 STL bug:
