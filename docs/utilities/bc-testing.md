@@ -45,6 +45,20 @@ separate work in [#214](https://github.com/matt-gretton-dann/gd-posix-apps/issue
 and [#215](https://github.com/matt-gretton-dann/gd-posix-apps/issues/215). No coverage
 percentage is inferred from assertion counts.
 
+## Sparse recursive zero sums
+
+For every trait, `[zero-sum-product]` checks A*A, A*C and C*A with
+A=B^7+1 and C=A+B^3, where B is the limb radix. Expected decimal strings
+come directly from A^2=B^14+2B^7+1 and A*C=B^14+B^10+2B^7+B^3+1.
+Thresholds 1, 2 and the radix select different dispatch paths and are restored
+on scope exit. Check complete numeric text and preservation of shared operands.
+
+Nonempty recursive blocks can contain only zero limbs, so their temporary
+half sums can be empty after normalization. The private empty-range guard is
+therefore feasible with valid positive thresholds. These directed native-width
+cases supplement the existing small-trait evidence and correct the earlier
+incomplete nonempty-range proof in the coverage ledger (#199).
+
 ## Calibration input and replay
 
 The multiplication tuner and arithmetic generators share a valid limb domain
