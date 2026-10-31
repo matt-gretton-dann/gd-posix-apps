@@ -166,3 +166,16 @@ function and activation: it asserts the returned array element, restoration of
 the local array and preservation of the caller's array. Argument count/type
 mismatches remain checked source-level runtime errors, independent of this
 structural protocol. Constructor operand-schema preconditions remain unchanged.
+
+## Number formatter boundaries
+
+The runtime number-formatter table covers Traits8/16/32 with exact normal and
+debug strings for positive and negative values. It checks invalid specifications
+through `vformat` and directly exercises empty, invalid and unterminated public
+parse contexts. Ordinary `vformat("{}", ...)` supplies a closing brace, so it
+does not replace the empty-context assertion. Both standard formatting and the
+supplemental fmt backend run the same expectations.
+
+A temporary mutant returning ordinary text for debug formatting is rejected at
+each trait's debug-string assertion. The committed implementation is unchanged;
+these are diagnostic contract tests, not a production formatting mode.
