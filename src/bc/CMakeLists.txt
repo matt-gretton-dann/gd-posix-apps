@@ -34,6 +34,8 @@ if(RUN_UNIT_TESTS)
   target_sources(test-libbc PRIVATE
                  test-benchmark-support.cc
                  test-format.cc
+                 test-instruction.cc
+                 test-token-format.cc
                  test-lexer.cc
                  test-lexer-shebang.cc
                  test-lexer-comments.cc

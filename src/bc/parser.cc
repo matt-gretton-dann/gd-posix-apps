@@ -1104,7 +1104,7 @@ auto GD::Bc::Parser::parse_opt_primary_expression(POPEFlags flags) -> GD::Bc::Pa
   case Token::Type::sqrt: {
     lexer_->chew();
     if (lexer_->peek() != Token::Type::lparens) {
-      return insert_error(Msg::expected_lparens);
+      return insert_error(Msg::expected_lparens, lexer_->peek());
     }
     lexer_->chew();
     auto elt = parse_expression();
@@ -1118,7 +1118,7 @@ auto GD::Bc::Parser::parse_opt_primary_expression(POPEFlags flags) -> GD::Bc::Pa
   case Token::Type::abs: {
     lexer_->chew();
     if (lexer_->peek() != Token::Type::lparens) {
-      return insert_error(Msg::expected_lparens);
+      return insert_error(Msg::expected_lparens, lexer_->peek());
     }
     lexer_->chew();
     auto elt = parse_expression();
@@ -1132,7 +1132,7 @@ auto GD::Bc::Parser::parse_opt_primary_expression(POPEFlags flags) -> GD::Bc::Pa
   case Token::Type::length: {
     lexer_->chew();
     if (lexer_->peek() != Token::Type::lparens) {
-      return insert_error(Msg::expected_lparens);
+      return insert_error(Msg::expected_lparens, lexer_->peek());
     }
     lexer_->chew();
     POPEFlags const expr_flags =

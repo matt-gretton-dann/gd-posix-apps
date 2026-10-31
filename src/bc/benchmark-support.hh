@@ -10,10 +10,12 @@
 
 #include "gd/time.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <iomanip>
 #include <ostream>
 #include <random>
+#include <stdexcept>
 
 namespace GD::Bc::Bench {
 template<typename Number>
@@ -64,6 +66,28 @@ constexpr auto as_nsec(Time const& time) -> int64_t
 {
   return static_cast<int64_t>(time.tv_sec) * sec_as_nsec + time.tv_nsec;
 }
+// Grow by a bounded factor, including when a coarse CPU clock reports zero.
+// Strict progress up to the container limit avoids overflow and stalled loops.
+inline auto next_batch_size(std::size_t count, int64_t elapsed_ns, int64_t target_ns,
+                            std::size_t max_count) -> std::size_t
+{
+  if (count == 0 || count > max_count || elapsed_ns < 0 || target_ns <= 0) {
+    throw std::invalid_argument("Invalid calibration batch or duration");
+  }
+  if (elapsed_ns >= target_ns) {
+    return count;
+  }
+  if (count == max_count) {
+    throw std::length_error("Calibration batch reached the container limit");
+  }
+  std::size_t factor = 2;
+  if (elapsed_ns > 0) {
+    auto const ratio = target_ns / elapsed_ns;
+    factor = ratio >= 4 ? 4 : (ratio >= 3 ? 3 : 2);
+  }
+  return count > max_count / factor ? max_count : count * factor;
+}
+
 }  // namespace GD::Bc::Bench
 
 #endif
