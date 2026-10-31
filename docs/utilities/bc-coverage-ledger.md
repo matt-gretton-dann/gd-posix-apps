@@ -150,3 +150,64 @@ following exact residual constraints, rather than removing defensive code.
 
 This table is evidence for individual obligations. It does not calculate an
 eligible denominator, erase assertion mappings, or claim a raw 100% result.
+
+## Additional arithmetic branch constraints
+
+These source-specific constraints supplement the MC/DC inventory; they do not
+convert repeated template branch records into a new denominator.
+
+| Source decision | Constraint and evidence | Review outcome |
+| --- | --- | --- |
+| `BasicDigits::output`, final `p != number.length()` | Nonzero output starts with nonempty text. The continuation loop consumes a chunk only while remaining text is strictly larger; after the possible zero-sized first chunk, capacity is positive. At least one character remains for the final write. | Defensive empty-tail guard; the false outcome is unavailable through supported output inputs. |
+| `BasicDigits::output_base10`, final fractional `it != result.end()` | The enclosing fractional arm starts with at least one character. Its strict `remaining > capacity` loop leaves a nonempty tail, including the first zero-capacity continuation case. | Defensive empty-tail guard; preserve it and its raw count. |
+| `BasicDigits::tidy`, null storage check | All current callers first allocate/detach writable digits or construct a result vector. Zero/default early returns occur before those calls. Public absent-storage length, parity and conversions remain separately tested. | Call-graph invariant for this private helper, not an exemption for public zero values. |
+| `BasicNumber::sqrt`, final `scale() > target_scale` | Within the existing bounded scale domain, `working_scale = target_scale + base_log10 + 1` is strictly larger. Both guesses keep that scale; division and the explicit scale assertion preserve it at every iteration. Zero returns before this guard. | The false arm requires breaking the working-scale invariant or exceeding the separate #184/#186 domain. Keep the guard and revisit when those limits change. |
+| `BasicNumber::modulo`, comparison switch implicit default | `compare` returns exactly less/equal/greater, all explicitly handled. | Invalid-enum invariant, separate from ordinary quotient/remainder cases. |
+
+## VM validation and execution constraints
+
+Public malformed streams remain eligible: bounds, producer kinds, ownership,
+dominance and marker failures are asserted before observable execution. The
+following are narrower constraints on the subsequent private execution stage.
+Revisit them when #207 changes validation or the execution format.
+
+| Source decision / path | Proof and test boundary | Review outcome |
+| --- | --- | --- |
+| `VMState::array_length`, `arr->empty()` when `arr` exists | Normal VM array creation allocates a map only immediately before `insert_or_assign`; writes never erase elements. Assignment/activation restoration copies an existing map or null. `VM` exposes instruction streams, not a setter taking arbitrary `ArrayValues`. Untouched and sparse-zero length cases remain eligible and directly asserted in ON/OFF. | No successful supported instruction sequence creates an allocated-empty map. Allocation/insertion failure followed by caller reuse is separate resource-failure scope; this is not a claim about that exceptional state. |
+| `InstructionPack::execute_function_begin`, scan reaches stream end | Public validation requires matching function boundaries before executing any prefix; region checks forbid jumps into metadata. The scan can reach its matching end and stop, but cannot normally run out of instructions. Missing ends and conditional region escapes are tested at the verifier entry. | First scan condition cannot independently become false after successful validation. Preserve its defensive runtime check. |
+| `execute_length`, wrong-kind visitor arms | Validation permits only Number and array-location producers. Their runtime opcodes produce those alternatives; dominance prevents an uninitialized read. Invalid source/result kinds are rejected before execution. | Each string/ArrayValues/variable/element/register rejection visitor is defensive after that specific public check, not a blanket VM error exemption. |
+| `execute_load` / `execute_store`, wrong destination visitor arms | Validation permits scalar/array locations; store additionally requires the matching Number/ArrayValues source. Direct valid locations and invalid numeric destinations are asserted separately. | Wrong-kind execution visitors require a broken producer/validation invariant. Retain them. |
+| Expression reads and `validate_result` wrong/absent alternatives | Static producer kinds and dominance are checked before execution. Each executable producer has a fixed result alternative; failed arithmetic/stream operations exit or throw before post-validation. Load legitimately produces Number or ArrayValues, and both are executed. | Individual result-shape guard failures are internal invariant scope after validation. VMState's dynamic function-argument type/count errors remain ordinary eligible runtime behavior and are tested. |
+| `InstructionPack::internal_error` and its two stream insertion helpers | This private diagnostic is called by the execution-stage invariant guards above. Its pack/result stream insertion operators have no independent public entry or normal caller; `execute_print` is a different supported diagnostic operation and explicitly tests every variant. | Uncalled internal diagnostic chain for supported validated execution; keep code and raw lines rather than expose private state solely for coverage. |
+| `execute`, `function_end` abort and EOF post-result case | Function registration skips end metadata. EOF returns directly before the per-instruction result validator; its following break and validator case cannot execute in that path. | Metadata/return-flow constraints; valid function and EOF outcomes remain tested. |
+| `verify_control_flow`, `states[node]` in `unconsumed` | Calls use nodes in the completed reachable `pending` set or successors of those nodes. The prior marker-state BFS assigns each such optional before traversal; an unassigned successor is assigned/enqueued before BFS finishes. | Coupled reachability invariant for the first condition. Both consumed/unconsumed states and an acyclic multi-predecessor join are tested without injecting private graph state. |
+
+These proofs retain the raw counts and all checks. They do not exempt ordinary
+runtime errors, signal handling, diagnostic printing or arbitrary malformed
+streams; the documented public validator and subprocess tests remain required.
+
+## Debug assertion scope
+
+Debug assertion-failure arms are classified separately from ordinary semantic
+coverage, as required by #197. This is not an exemption for all diagnostics or
+all assertions in a file. The following checks retain their raw mappings and
+must be reviewed if callers, representations or supported limits change.
+
+| Exact assertion family | Required contract / boundary evidence |
+| --- | --- |
+| `BasicDigits::output` / `output_base10`, nonzero input; `output`, radix at least two; `to_string`, digit below output radix | Number output handles zero before digit formatting; valid-base setters and exact decimal/nondecimal output tests cover accepted inputs. Direct helper tests satisfy the explicit nonzero/radix preconditions. |
+| `BasicDigits::compare` and both `for_each` storage assertions | Comparison explicitly requires allocated operands; the private traversal contract requires both pointers. Number add/sub/compare zero fast paths avoid those traversals, mutable destinations allocate/detach, and direct comparisons use allocated-empty zero. Null parity/length/conversion/debug boundaries remain ordinary eligible tests. |
+| `BasicDigits::length`, nonzero leading digit and length below radix | Reverse traversal skips high/all-zero limbs before using a leading digit. Directed length/zero/padding cases assert this; exceeding the bounded public length domain belongs to #184/#186 rather than an invalid-storage fixture. |
+| `BasicDigits::for_each` carry bounds; `mul_mod_pow10` final iterator/result bounds | Each limb is radix-sized and scaling is by a smaller radix factor; helper contracts bound the returned digit below the radix. Exact width-parametric carry/remainder tests and native integer oracles cover valid boundaries. Violating these assertions is an arithmetic invariant failure, not an additional accepted input category. |
+| `multiply_basic` result iterators; `multiply_karatsuba` dispatch assertions | The result reserves the sum of operand lengths. Dispatcher entry requires both lengths above the positive threshold; exact threshold/unequal/self-aliasing/shared-copy tests cover accepted cases. Empty private ranges and the half-sum coupling have separate source proofs above. |
+| `BasicDigits::divide` normalization, carry, quotient and remainder-limb assertions | Normalization establishes a high divisor limb at least half the radix; quotient estimates/correction and add-back preserve the algorithm's bounded digits. Directed exact quotient/remainder fixtures exercise corrections at every trait width. Zero division is an ordinary Number runtime error and remains asserted separately. |
+| Numeric-token constructor, input radix/digit/single-period assertions | Runtime base assignment errors are tested before construction. Lexer/parser produce numeric-token spellings; direct arithmetic fixtures honor those token/radix preconditions, including the documented single-digit convention. Invalid source tokens remain eligible lexer/parser tests. |
+| `BasicNumber::power` negative-branch sign; `sqrt` equal working scales | Earlier explicit zero/positive branches leave only negative exponents; square-root iteration keeps both guesses at its selected working scale. Exact signed power and square-root oracles cover valid behavior. |
+| Parser expected-token assertions and insert-load/store expression-kind assertions | Private grammar callers dispatch on the corresponding token/expression kind. Public malformed grammar is handled by terminal diagnostics, not by forging internal tokens or expression indices. Return/assignment/function/error fixtures exercise those public paths. |
+| Instruction constructor operand-count/variant assertions; opcode-count fallback | Each public constructor checks its opcode's operand schema. Tests enumerate valid opcode schemas and use valid schemas for malformed bounds, types and flow. An invalid enum or forged constructor payload violates that constructor contract; it is separate from verifier rejection of a well-formed instruction with an invalid producer. |
+| Token payload constructors, Letter encoding and private mask bounds | Valid kinds/payloads and all 26 letters are enumerated by diagnostic tests. Invalid constructor kinds/high mask bits violate their explicit representation contract; ordinary bad source is still lexed/rejected normally. |
+
+No assertion was deleted, weakened, rewritten for MC/DC, or triggered using
+undefined arithmetic/private-state corruption. A failure inside any of these
+contracts would still be a bug; this classification does not substitute for the
+exact oracles, mutation checks, sanitizers and native behavior tests.
