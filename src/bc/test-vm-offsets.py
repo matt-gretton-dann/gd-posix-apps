@@ -27,6 +27,7 @@ class OffsetTests(unittest.TestCase):
         for case in ("add-string", "add-empty", "add-location", "load-number", "length-string",
                      "branch-string", "index-string", "push-string", "negate-string",
                      "return-string", "store-number-array", "store-array-number",
+                     "store-number-location",
                      "sqrt-string", "abs-string", "scale-string", "print-empty"):
             with self.subTest(case=case):
                 run = self.run_case(case)

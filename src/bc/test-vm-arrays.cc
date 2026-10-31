@@ -55,3 +55,29 @@ TEST_CASE("VM loads and pops array values", "[bc][vm][arrays]")
           "6\n0\n6\n");  // Returned element, restored local, unchanged caller array.
   REQUIRE(errors.str().empty());
 }
+
+TEST_CASE("VM array length executes with either frontend extension mode", "[bc][vm][arrays]")
+{
+  using I = GD::Bc::Instruction;
+  using O = I::Opcode;
+  using D = I::Offset;
+  // Whole-array length is a supported instruction even when the frontend
+  // rejects its extension spelling. Assert both untouched and sparse arrays.
+  GD::Bc::Instructions code{I(O::array, GD::Bc::Array('a')),
+                            I(O::length, D(-1)),
+                            I(O::print, D(-1), I::Stream::output),
+                            I(O::number, "9"),
+                            I(O::array_element, GD::Bc::Array('a'), D(-1)),
+                            I(O::number, "0"),
+                            I(O::store, D(-2), D(-1)),
+                            I(O::array, GD::Bc::Array('a')),
+                            I(O::length, D(-1)),
+                            I(O::print, D(-1), I::Stream::output),
+                            I(O::eof)};
+  std::ostringstream output;
+  std::ostringstream errors;
+  GD::Bc::VM vm(output, errors, false);
+  CHECK_FALSE(vm.execute(code));
+  CHECK(output.str() == "0\n10\n");
+  CHECK(errors.str().empty());
+}

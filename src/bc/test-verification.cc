@@ -69,3 +69,77 @@ TEST_CASE("Verifier dominance agrees with path removal", "[bc][vm][verifier][pro
     }
   }
 }
+
+TEST_CASE("Verifier checks isolated function-body boundaries", "[bc][vm][verifier][pairs]")
+{
+  using I = GD::Bc::Instruction;
+  using O = I::Opcode;
+  using D = I::Offset;
+  auto check = [](GD::Bc::Instructions const& code, std::string_view reason) {
+    auto const failure = GD::Bc::Details::verify_control_flow(code, true);
+    REQUIRE(failure.has_value());
+    CHECK(failure->reason == reason);
+  };
+  check({I(O::function_begin, GD::Bc::VariableMask(), GD::Bc::Location("fixture", 1, 1))},
+        "nested function definition");
+  check({I(O::eof)}, "EOF is only valid at the end of the outer stream");
+  check({I(O::push_param_mark), I(O::pop_param)},
+        "parameter extraction is outside the incoming prologue");
+  check({I(O::push_param_mark), I(O::pop_param_mark)},
+        "incoming parameter marker is absent or already consumed");
+
+  // An acyclic diamond before consuming the incoming pack gives the join
+  // two predecessors. Its indegree decreases once without reaching zero.
+  GD::Bc::Instructions const diamond{
+    I(O::number, "0"), I(O::branch_zero, D(-1), D(3)), I(O::number, "1"), I(O::branch, D(2)),
+    I(O::number, "2"), I(O::pop_param_mark),           I(O::number, "0"), I(O::return_, D(-1))};
+  CHECK_FALSE(GD::Bc::Details::verify_control_flow(diamond, true).has_value());
+}
+
+TEST_CASE("Verifier independently rejects an unavailable second producer",
+          "[bc][vm][verifier][pairs]")
+{
+  using I = GD::Bc::Instruction;
+  using O = I::Opcode;
+  using D = I::Offset;
+  // The first operand dominates the addition; the second is bypassed by a
+  // branch. Schemas, offset bounds and producer kinds satisfy prerequisites.
+  GD::Bc::Instructions code{I(O::number, "1"), I(O::branch, D(2)), I(O::number, "2"),
+                            I(O::add, D(-3), D(-1)), I(O::eof)};
+  auto const failure = GD::Bc::Details::verify_control_flow(code, false);
+  REQUIRE(failure.has_value());
+  CHECK(failure->instruction == 3);
+  CHECK(failure->reason == "operand 2 producer is unavailable on an incoming path");
+  code[1] = I(O::branch, D(1));
+  CHECK_FALSE(GD::Bc::Details::verify_control_flow(code, false).has_value());
+}
+
+TEST_CASE("Verifier rejects missing ends and conditional region escapes",
+          "[bc][vm][verifier][pairs]")
+{
+  using I = GD::Bc::Instruction;
+  using O = I::Opcode;
+  using D = I::Offset;
+  GD::Bc::Instructions const missing{
+    I(O::function_begin, GD::Bc::VariableMask(), GD::Bc::Location("fixture", 1, 1))};
+  auto failure = GD::Bc::Details::verify_control_flow(missing, false);
+  REQUIRE(failure.has_value());
+  CHECK(failure->instruction == 0);
+  CHECK(failure->reason == "missing function end");
+
+  GD::Bc::Instructions escape{
+    I(O::function_begin, GD::Bc::VariableMask(), GD::Bc::Location("fixture", 1, 1)),
+    I(O::pop_param_mark),
+    I(O::number, "0"),
+    I(O::branch_zero, D(-1), D(4)),
+    I(O::number, "0"),
+    I(O::return_, D(-1)),
+    I(O::function_end, GD::Bc::Letter('f'), D(-6)),
+    I(O::eof)};
+  failure = GD::Bc::Details::verify_control_flow(escape, false);
+  REQUIRE(failure.has_value());
+  CHECK(failure->instruction == 3);
+  CHECK(failure->reason == "conditional branch crosses a function boundary");
+  escape[3] = I(O::branch_zero, D(-1), D(1));
+  CHECK_FALSE(GD::Bc::Details::verify_control_flow(escape, false).has_value());
+}
