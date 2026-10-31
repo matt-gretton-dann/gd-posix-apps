@@ -33,3 +33,25 @@ TEMPLATE_TEST_CASE("Digit length traverses high zero limbs without mutation",
     REQUIRE(digits.is_zero() == (value == 0));
   }
 }
+
+TEMPLATE_TEST_CASE("Digit parity accepts every valid zero representation",
+                   "[bc][number][oracle][digit-parity]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Digits = GD::Bc::Details::BasicDigits<TestType>;
+  using N = typename Digits::NumType;
+  REQUIRE(Digits().is_even());
+  REQUIRE(Digits(N(0)).is_even());
+  for (N const value : {N(0), N(1), N(2), N(9), N(10), N(Digits::base_ - 1)}) {
+    INFO("base = " << Digits::base_ << ", value = " << static_cast<unsigned long long>(value));
+    Digits ordinary(value);
+    REQUIRE(ordinary.is_even() == ((value & 1) == 0));
+    auto const saved = ordinary;
+    ordinary.mul_pow10(N(3 * Digits::base_log10_));
+    ordinary.mac(N(0), value);
+    REQUIRE(ordinary.is_even() == ((value & 1) == 0));
+    REQUIRE(saved.is_even() == ((value & 1) == 0));
+    ordinary.reset();
+    REQUIRE(ordinary.is_even());
+  }
+}
