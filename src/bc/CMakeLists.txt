@@ -41,6 +41,7 @@ if(RUN_UNIT_TESTS)
                  test-lexer-comments.cc
                  test-libbc-main.cc
                  test-number.cc
+                 test-number-length.cc
                  test-number-compare.cc
                  test-number-division.cc
                  test-number-zero-scale.cc
