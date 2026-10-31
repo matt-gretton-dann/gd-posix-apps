@@ -307,3 +307,18 @@ inspects or reuses a fatal parser. It does not add recoverable parsing (#185).
 The repeated-parse table checks EOF, newline, unfinished loops/functions and a
 definition at the error cursor in both interactive modes. A separate positive
 case executes two nonfatal interactive items and then EOF to guard normal reuse.
+
+## Fraction helper and large-scale power boundaries
+
+`[scale-helper]` checks null/allocated zero coefficients, padded fractional
+coefficients, and exact multiply/remainder pairs at partial and complete limb
+boundaries for all traits. Expected quotient and remainder use bounded native
+integer arithmetic; remainder comparisons use complete coefficients because
+`to_unsigned` deliberately cannot represent an integer at/above the limb radix.
+Shared source fractions must remain unchanged after modifying a copy.
+
+The positive-power case raises `0.1` to `base + 2` at scale two. Its coefficient
+remains one, so exponentiation uses logarithmic steps and bounded storage even
+for the native billion-radix trait. The independently known truncated result is
+zero with scale two. This exercises scale folding without inventing an invalid
+scale or allocating a billion-digit coefficient (#199, #184, #186).
