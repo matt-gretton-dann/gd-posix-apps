@@ -200,8 +200,9 @@ public:
 
     NumType temp = *it;
     auto t2 = temp % pow10_scale;
-    result += t2 * (base_ / pow10_scale);
-    temp -= t2;
+    // The combined partial limb remains below base_; t2 is at most temp.
+    result = static_cast<NumType>(result + t2 * (base_ / pow10_scale));
+    temp = static_cast<NumType>(temp - t2);
     if (temp > std::numeric_limits<NumType>::max() / pow10_scale) {
       return to_unsigned_error_too_large_;
     }
@@ -329,7 +330,8 @@ public:
       assert(scale >= result.end() - it);  // NOLINT
       while (result.end() - it > break_at - digits_printed) {
         os << result.substr(it - result.begin(), break_at - digits_printed) << "\\\n";
-        scale -= break_at - digits_printed;
+        // The loop and the scale invariant above bound the chunk by scale.
+        scale = static_cast<NumType>(scale - (break_at - digits_printed));
         it += break_at - digits_printed;
         digits_printed = 0;
       }
@@ -1510,8 +1512,9 @@ public:
 
     if (rhs.sign_ == Sign::positive) {
       /* x ^ +p.  Scale = min(scale(x) * p, max(target_scale, scale(x)))
-       *                = min(scale(x) * p, target_scale). (p > 1)
+       * Keep at least the operand's precision before truncating the full power.
        */
+      target_scale = std::max(target_scale, scale_);
       digits_.power_mul(power_whole);
       /* digits_ now has scale: scale_ * power_whole.  We want to rescale to the target_scale if
        * that is less than the new scale.  But we have to cope with the fact that the new scale

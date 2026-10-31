@@ -180,6 +180,14 @@ namespace {
 using Number8 = GD::Bc::BasicNumber<GD::Bc::NumberTraits8>;
 using UInt64Pair = std::pair<uint64_t, uint64_t>;
 
+// Unit tests start at BasicDigits' default threshold. Restore it even when a
+// REQUIRE aborts a generated case, so later tests never inherit a tuned value.
+template<typename Number>
+struct RestoreMultiplyThreshold
+{
+  ~RestoreMultiplyThreshold() { Number::multiply_split_point(1); }
+};
+
 class RandomUIntPairGenerator : public Catch::Generators::IGenerator<UInt64Pair>
 {
 public:
@@ -377,10 +385,10 @@ TEST_CASE("GD::Bc::Number - square root, random", "[bc][number]")
 
 TEST_CASE("GD::Bc::Number - multiplication, random", "[bc][number]")
 {
-  /* Test square rooting by taking the square root and multiplying it up again to see if we have the
-   * correct result.
-   */
+  /* Compare schoolbook, Karatsuba and mixed dispatch on the same operands. */
   auto nums = GENERATE(take(500, random_number_pair(200)));
+  RestoreMultiplyThreshold<GD::Bc::Number> const restore;
+  INFO("seed = " << Catch::rngSeed() << " lhs = " << nums.first << " rhs = " << nums.second);
 
   /* Always do basic multiplication.  */
   auto res1 = nums.first;
@@ -394,8 +402,141 @@ TEST_CASE("GD::Bc::Number - multiplication, random", "[bc][number]")
   REQUIRE(res1 == res2);
 
   /* Do a mix.  */
-  auto res3 = nums.second;
+  auto res3 = nums.first;
   GD::Bc::Number::multiply_split_point(100);  // NOLINT - explicit magic
   res3.multiply(nums.second, 0);
-  REQUIRE(res1 == res2);
+  REQUIRE(res1 == res3);
+}
+
+namespace {
+template<typename Number>
+auto native_number(int64_t value) -> Number
+{
+  Number result(std::to_string(value < 0 ? -value : value), 10);
+  if (value < 0) {
+    result.negate();
+  }
+  return result;
+}
+
+template<typename Number>
+void check_native_pair(int64_t lhs, int64_t rhs)
+{
+  INFO("lhs = " << lhs << " rhs = " << rhs);
+  auto const a = native_number<Number>(lhs);
+  auto const b = native_number<Number>(rhs);
+  auto result = a;
+  result.add(b);
+  REQUIRE(result == native_number<Number>(lhs + rhs));
+  result = a;
+  result.sub(b);
+  REQUIRE(result == native_number<Number>(lhs - rhs));
+  result = a;
+  result.multiply(b, 0);
+  REQUIRE(result == native_number<Number>(lhs * rhs));
+  if (rhs != 0) {
+    result = a;
+    result.divide(b, 0);
+    REQUIRE(result == native_number<Number>(lhs / rhs));
+    result = a;
+    result.modulo(b, 0);
+    REQUIRE(result == native_number<Number>(lhs % rhs));
+  }
+  // Mutating a shared copy must leave both original operands unchanged.
+  REQUIRE(a == native_number<Number>(lhs));
+  REQUIRE(b == native_number<Number>(rhs));
+}
+}  // namespace
+
+TEST_CASE("Number8 exhaustive one-limb arithmetic", "[bc][number][oracle]")
+{
+  RestoreMultiplyThreshold<Number8> const restore;
+  for (int64_t a = 0; a < Number8::base_; ++a) {
+    for (int64_t b = 0; b < Number8::base_; ++b) {
+      check_native_pair<Number8>(a, b);
+      // Low limbs force carry into and borrow from the next limb.
+      check_native_pair<Number8>(a * 100 + 99, b * 100 + 1);
+    }
+  }
+}
+
+TEMPLATE_TEST_CASE("Generic arithmetic native oracles", "[bc][number][oracle]",
+                   GD::Bc::NumberTraits8, GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  RestoreMultiplyThreshold<Number> const restore;
+  int64_t const base = Number::base_;
+  // Products fit in int64_t even for base 10^9. Small traits also exercise
+  // odd/even multi-limb lengths, sparse halves and normalization boundaries.
+  std::vector<int64_t> const values{0,      1,       2,        49,       50,    99,
+                                    100,    101,     199,      9999,     10000, 10001,
+                                    999999, 1000000, 99999999, base - 1, base,  base + 1};
+  for (auto threshold : {1U, 2U, 3U, static_cast<unsigned>(Number::base_)}) {
+    Number::multiply_split_point(static_cast<typename Number::NumType>(threshold));
+    INFO("threshold = " << threshold);
+    for (auto a : values) {
+      for (auto b : values) {
+        check_native_pair<Number>(a, b);
+        check_native_pair<Number>(-a, b);
+        check_native_pair<Number>(a, -b);
+        check_native_pair<Number>(-a, -b);
+      }
+      auto square = native_number<Number>(a);
+      auto shared = square;
+      square.multiply(square, 0);
+      REQUIRE(square == native_number<Number>(a * a));
+      REQUIRE(shared == native_number<Number>(a));
+      auto doubled = shared;
+      doubled.add(doubled);
+      REQUIRE(doubled == native_number<Number>(a + a));
+      auto cancelled = shared;
+      cancelled.sub(cancelled);
+      REQUIRE(cancelled.is_zero());
+    }
+    std::mt19937_64 rng(197199);
+    for (unsigned i = 0; i < 256; ++i) {
+      int64_t const a = static_cast<int64_t>(rng() % 3000000000ULL);
+      int64_t const b = static_cast<int64_t>(rng() % 3000000000ULL);
+      INFO("seed = 197199 sample = " << i);
+      check_native_pair<Number>(a, b);
+    }
+  }
+}
+
+TEMPLATE_TEST_CASE("Generic input conversion and width boundaries", "[bc][number][oracle]",
+                   GD::Bc::NumberTraits8, GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  using Digits = GD::Bc::Details::BasicDigits<TestType>;
+  using NumType = typename Number::NumType;
+  static_assert(static_cast<uint64_t>(Number::base_) * Number::base_ - 1 <=
+                std::numeric_limits<typename Number::WideType>::max());
+  auto const last_limb = static_cast<NumType>(Number::base_ - 1);
+  REQUIRE(Number(last_limb) == native_number<Number>(last_limb));
+  REQUIRE(Number(last_limb).to_unsigned() == last_limb);
+  REQUIRE(Number(std::to_string(last_limb) + ".0", 10).to_unsigned() == last_limb);
+  REQUIRE(Digits().to_unsigned(0) == 0);
+  REQUIRE(Digits(1).to_unsigned(Number::base_log10_) == Digits::to_unsigned_error_fractional_);
+  auto too_large = Digits(last_limb);
+  too_large.mul_pow10(static_cast<NumType>(Number::base_log10_ * 3));
+  REQUIRE(too_large.to_unsigned(0) == Digits::to_unsigned_error_too_large_);
+
+  // Isolate each part of the conversion early-return decision: decimal,
+  // integer and zero-fraction cases versus genuine nondecimal fractions.
+  REQUIRE(Number("0.625", 10) == Number("0.A00", 16));
+  REQUIRE(Number("10", 16) == Number("16", 10));
+  REQUIRE(Number("0.000", 16).is_zero());
+  REQUIRE(Number("0.1", 2) == Number("0.5", 10));
+  REQUIRE(Number("0.01", 2) == Number("0.25", 10));
+  REQUIRE(Number("0.0000000001", 2) == Number("0.0009765625", 10));
+
+  std::string const fraction = "0." + std::string(80, '1');
+  std::ostringstream output;
+  Number(fraction, 10).output(output, 10, 0);
+  auto wrapped = output.str();
+  REQUIRE(wrapped.find("\\\n") != std::string::npos);
+  for (auto pos = wrapped.find("\\\n"); pos != std::string::npos; pos = wrapped.find("\\\n")) {
+    wrapped.erase(pos, 2);
+  }
+  REQUIRE(wrapped == (GD::Bc::extensions_enabled() ? fraction.substr(1) : fraction));
 }
