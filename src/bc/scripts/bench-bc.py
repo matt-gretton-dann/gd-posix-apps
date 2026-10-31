@@ -433,9 +433,11 @@ def main():
         programs = output / "workloads"
         programs.mkdir()
         for case in cases:
-            (programs / (case["name"] + ".bc")).write_text(case["program"], encoding="utf-8")
-            (programs / (case["name"] + ".expected")).write_text(
-                "\n".join(case["expected"]) + "\n", encoding="utf-8")
+            # Preserve exactly the UTF-8 LF bytes hashed below and sent to the
+            # child; native text-mode newline translation would change artifacts.
+            (programs / (case["name"] + ".bc")).write_bytes(case["program"].encode("utf-8"))
+            (programs / (case["name"] + ".expected")).write_bytes(
+                ("\n".join(case["expected"]) + "\n").encode("utf-8"))
         clock = time.get_clock_info("perf_counter")
         manifest = {"schema": 1, "started_utc": datetime.now(timezone.utc).isoformat(),
                     "implementations": tools, "reference": reference, "preset": args.preset,
