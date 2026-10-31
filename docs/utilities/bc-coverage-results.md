@@ -128,3 +128,46 @@ No benchmark, tuner or manual-smoke profiles contribute.
 - Newly exposed feasible verifier decision pairs, invalid store destinations and direct OFF array-length execution are covered by the separate follow-up PR #290, which is not included in this checkpoint. Measure those before closing the VM audit.
 - Earlier imported `misc` expected-oracle behavior and the supported-test skips remain visible. Build-local fixture copies prevent cross-build output races. Other native platforms run behavior tests in PR CI; the MC/DC measurements here are from this macOS/arm64 compiler configuration.
 - No eligible denominator or adjusted percentage has been calculated. Neither these raw results nor the exception ledger claim 100% raw coverage, complete conformance, larger #184/#186 limits, or a performance improvement.
+
+
+## Arithmetic and frontend review checkpoint (c4c1415)
+
+Clean measured source `c4c141546c92b6bc76df8607f133ee31fc5e3068` includes the
+merged correctness/coverage changes through #295 and the mandatory verifier
+mapping check. Apple Clang/LLVM 21.0.0, Debug, macOS/arm64; separate builds,
+matching tools and fresh test-only profiles. No benchmark, tuner, manual-smoke
+or fault-injection profiles contribute.
+
+| Configuration / mapping scope | Lines | Branch outcomes | MC/DC conditions |
+| --- | --- | --- | --- | --- |
+| ON / broad native/test-trait | 4594/4731 (97.10%) | 2360/2606 (90.56%) | 136/163 (83.44%) |
+| ON / application | 4580/4717 (97.10%) | 2357/2604 (90.51%) | 136/163 (83.44%) |
+| OFF / broad native/test-trait | 4555/4728 (96.34%) | 2332/2606 (89.49%) | 133/163 (81.60%) |
+| OFF / application | 4541/4714 (96.33%) | 2329/2604 (89.44%) | 133/163 (81.60%) |
+
+### Raw per-file broad results
+
+| File | ON lines | ON branches | ON MC/DC | OFF lines | OFF branches | OFF MC/DC |
+| --- | --- | --- | --- | --- | --- | --- |
+| bc.cc | 61/62 (98.39%) | 25/27 (92.59%) | 1/2 (50.00%) | 56/62 (90.32%) | 23/27 (85.19%) | 1/2 (50.00%) |
+| bc.hh | 75/75 (100.00%) | 18/18 (100.00%) | 6/6 (100.00%) | 75/75 (100.00%) | 18/18 (100.00%) | 6/6 (100.00%) |
+| instruction.cc | 381/382 (99.74%) | 310/360 (86.11%) | 2/2 (100.00%) | 381/382 (99.74%) | 310/360 (86.11%) | 2/2 (100.00%) |
+| lexer.cc | 403/405 (99.51%) | 304/320 (95.00%) | 6/6 (100.00%) | 385/402 (95.77%) | 280/320 (87.50%) | 0/6 (0.00%) |
+| number.hh | 1103/1128 (97.78%) | 442/504 (87.70%) | 32/42 (76.19%) | 1111/1128 (98.49%) | 448/504 (88.89%) | 34/42 (80.95%) |
+| parser.cc | 926/949 (97.58%) | 318/343 (92.71%) | 17/27 (62.96%) | 906/949 (95.47%) | 311/343 (90.67%) | 18/27 (66.67%) |
+| reader.cc | 75/75 (100.00%) | 24/24 (100.00%) | 5/5 (100.00%) | 75/75 (100.00%) | 24/24 (100.00%) | 5/5 (100.00%) |
+| token.cc | 408/412 (99.03%) | 258/268 (96.27%) | 20/23 (86.96%) | 408/412 (99.03%) | 258/268 (96.27%) | 20/23 (86.96%) |
+| verification.cc | 316/316 (100.00%) | 199/200 (99.50%) | 35/36 (97.22%) | 316/316 (100.00%) | 199/200 (99.50%) | 35/36 (97.22%) |
+| vm.cc | 846/927 (91.26%) | 462/542 (85.24%) | 12/14 (85.71%) | 842/927 (90.83%) | 461/542 (85.06%) | 12/14 (85.71%) |
+
+### Review outcome and limits
+
+- ON: 197 selected entries, 152 CTest passes, 45 explicit unsupported imported skips, zero failures; 440 fresh profiles.
+- OFF: 197 selected entries, 134 CTest passes, 63 explicit unsupported imported skips, zero failures; 417 fresh profiles.
+- Both broad and application LLVM warning logs are empty. Removing `verification.cc` from a genuine export is rejected by the collector's mandatory inventory; that separate fault-injection run supplies no measurement profiles.
+- The earlier claim that private empty multiplication ranges were infeasible was incomplete. Sparse recursive blocks can normalize half sums to empty vectors. Exact polynomial fixtures now record both conditions covered in the native application mappings, ON/OFF, with valid positive thresholds. Both scopes now agree on covered MC/DC counts; small-trait evidence is retained rather than discarded.
+- #199's assertion repair, exact scaled arithmetic/quotient/remainder/sqrt oracles, threshold boundaries, copy/aliasing checks, native width cases and remaining ordinary numeric boundaries are implemented. The arithmetic ledger classifies residual guards/preconditions individually, including strict wrapping tails and working-scale invariants. Existing #184/#186 limits remain separate.
+- #214's asserted CLI/frontend/reader paths, terminal parser behavior, independent-condition tests and reproducible collection are implemented. Remaining frontend decisions are configuration constants, constrained private grammar states, explicit constructor invariants or documented source-mapping/uncalled-private-code artifacts. Recoverable parsing (#185) is not added.
+- #215 remains open at this checkpoint: OFF has four uncovered special-register restoration lines because CLI `-g` is disabled. The VM constructor still accepts that mode, so a direct ON/OFF test is required; this is not a configuration exemption for the public VM API. The separately documented execution-stage invariants do not excuse this path.
+- The remaining 27 ON / 30 OFF raw MC/DC obligations retain their LLVM counts and source-specific classifications. Debug assertion failures are separate invariant/death-test scope. No boolean was rewritten, no invariant weakened, and no undefined/private state injected to improve counts.
+- No eligible denominator or adjusted percentage is computed. Closure of the arithmetic/frontend test work is based on the planned exact tests and the source-specific feasible-gap review, not a claim of 100% raw coverage or conformance. Other native platforms run Release behavior CI; these MC/DC measurements are specific to the recorded macOS/arm64 compiler.
