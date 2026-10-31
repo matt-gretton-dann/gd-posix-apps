@@ -59,6 +59,11 @@ execution of partially parsed function or branch instructions.
 
 There is not much to say about the lexer and parser as they are fairly standard.
 
+With extensions enabled, a `#!` line is ignored only when `#` is the first
+character of an input. Leading whitespace, blank lines or earlier tokens prevent
+shebang recognition. Hash characters elsewhere, and all hash characters with
+extensions disabled, are lexical errors.
+
 Numbers are kept stored as strings until executed as the spec says that the ibase at the time of
 execution determines the interpretation.
 
