@@ -35,12 +35,14 @@ if(RUN_UNIT_TESTS)
                  test-format.cc
                  test-lexer.cc
                  test-lexer-shebang.cc
+                 test-lexer-comments.cc
                  test-libbc-main.cc
                  test-number.cc
                  test-parser.cc
                  test-reader.cc)
   target_add_clang_format(test-libbc)
-  catch_discover_tests(test-libbc PROPERTIES FIXTURES_REQUIRED testutil_setup EXTRA_ARGS "-s")
+  catch_discover_tests(test-libbc PROPERTIES FIXTURES_REQUIRED testutil_setup
+                      EXTRA_ARGS "--rng-seed" "197199")
   if (ENABLE_IPO)
     set_property(TARGET test-libbc PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
   endif()

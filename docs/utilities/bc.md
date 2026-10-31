@@ -6,6 +6,8 @@ The code is a fairly standard (hand-written) lexer and parser that generates an 
 which is interpreted by a Virtual Machine.
 
 There is also the implementation of arbitrary precision arithmetic to consider.
+Its regression tests and independent native oracles are described in
+[Testing bc arithmetic](bc-testing.md).
 
 The majority of the code is implemented as a stand-alone library (`libbc`) to ease unit testing of
 the various components.
@@ -63,6 +65,11 @@ With extensions enabled, a `#!` line is ignored only when `#` is the first
 character of an input. Leading whitespace, blank lines or earlier tokens prevent
 shebang recognition. Hash characters elsewhere, and all hash characters with
 extensions disabled, are lexical errors.
+
+Block comments end only at adjacent `*/` characters. A star followed by ordinary
+text does not pair with a later slash. Unterminated comments are lexical errors
+reported when read, in both extension configurations; they are not treated as
+successful end of input.
 
 Numbers are kept stored as strings until executed as the spec says that the ibase at the time of
 execution determines the interpretation.
