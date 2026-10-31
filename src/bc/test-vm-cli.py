@@ -30,10 +30,10 @@ class VMTests(unittest.TestCase):
                                  ("sqrt(-1)\n", "square root of the negative number"),
                                  ("ibase=1\n", "not a valid ibase"),
                                  ("ibase=17\n", "not a valid ibase"),
-                                 ("ibase=-2\n", "it is negative"),
+                                 ("ibase = -2\n", "it is negative"),
                                  ("obase=1\n", "not a valid obase"),
-                                 ("obase=-2\n", "it is negative"),
-                                 ("scale=-1\n", "it is negative"),
+                                 ("obase = -2\n", "it is negative"),
+                                 ("scale = -1\n", "it is negative"),
                                  ("a[-1]=1\n", "it is negative")):
             with self.subTest(text=text):
                 self.run_bc(text, success=False, diagnostic=diagnostic)
