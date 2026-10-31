@@ -130,3 +130,19 @@ and recorded independence pairs in fresh LLVM exports before claiming coverage.
 The expected quotient/remainder still comes from native division, not this path
 model. The same numeric cases supplement wider traits without claiming identical
 limb paths at their different radices.
+
+### Quotient estimates at each native limb width
+
+The parameterized quotient-estimate fixtures construct independent decimal limb
+blocks at each of the three radices, including the native 10^9 radix. They do not
+rely on rare seeded coincidences or on numbers small enough to fit one/two native
+limbs. With `B` the limb base, their exact identities are:
+
+- `V=(B/2)B^2+B+1`, `U=VB-1`: quotient `B-1`, remainder `V-1`. The initial base-sized estimate has a false second-limb comparison.
+- `V=(B/2)B^2+(B-1)B+1`, `U=(B/2)B^3`: quotient `B-2`, remainder `2B^2+(B-3)B+2`. The estimate needs repeated correction.
+- `V=(B/2)B^2+1`, `U=V(B-1)-1`: quotient `B-2`, remainder `V-1`. Low-limb subtraction forces borrow and add-back.
+
+All sign combinations and independently reconstructed original operands are
+asserted. The CLI Fraction oracle also checks these algebraically constructed
+inputs at the supported radices. Fresh per-instantiation LLVM evidence is still
+required when reporting whether a specific native branch/condition was covered.
