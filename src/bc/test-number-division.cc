@@ -142,3 +142,26 @@ TEMPLATE_TEST_CASE("Quotient estimate boundaries hold at every limb width",
     }
   }
 }
+
+TEMPLATE_TEST_CASE("Knuth normalization can promote inline storage before quotient views",
+                   "[bc][number][division][storage]", GD::Bc::NumberTraits8, GD::Bc::NumberTraits16,
+                   GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  auto const width = Number::base_log10_;
+  // With B = 10^width, (B^3 - 1) / (B + 1) has quotient B^2 - B
+  // and remainder B - 1. Normalization multiplies by B/2, growing the
+  // three-limb dividend before Algorithm D captures its stable buffers.
+  std::string const numerator_text(3 * width, '9');
+  std::string const divisor_text = "1" + std::string(width - 1, '0') + "1";
+  Number const numerator(numerator_text, 10);
+  Number const divisor(divisor_text, 10);
+  auto quotient = numerator;
+  quotient.divide(divisor, 0);
+  CHECK(quotient == Number(std::string(width, '9') + std::string(width, '0'), 10));
+  auto remainder = numerator;
+  remainder.modulo(divisor, 0);
+  CHECK(remainder == Number(std::string(width, '9'), 10));
+  CHECK(numerator == Number(numerator_text, 10));
+  CHECK(divisor == Number(divisor_text, 10));
+}
