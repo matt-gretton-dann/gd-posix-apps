@@ -46,6 +46,8 @@ jobs:
         run: |
           python3 src/bc/scripts/build-bc-comparators.py --output build-comparators --implementation both --cc cc
           python3 src/bc/scripts/bench-bc.py --config build-comparators/implementations.json --output build-comparator-checks --preset quick --samples 1 --warmups 0 --require-provenance
+          python3 src/bc/scripts/build-gd-bc.py --source "${GITHUB_WORKSPACE}" --revision "$(git rev-parse HEAD)" --split-point 126 --output build-gd-recipe --c-compiler cc --cxx-compiler c++
+          python3 src/bc/scripts/bench-bc.py --config build-gd-recipe/implementations.json --output build-gd-recipe-checks --preset quick --samples 1 --warmups 0 --require-provenance
       - name: Check separate bc profiling build
         if: ${{ matrix.extensions == 'ON' }}
         run: |
@@ -83,6 +85,11 @@ jobs:
         python src/bc/scripts/build-bc-comparators.py --output build-comparators --cc cl
         if errorlevel 1 exit /b 1
         python src/bc/scripts/bench-bc.py --config build-comparators/implementations.json --output build-comparator-checks --preset quick --samples 1 --warmups 0 --require-provenance
+        if errorlevel 1 exit /b 1
+        for /f %%i in ('git rev-parse HEAD') do set GD_BENCH_REV=%%i
+        python src/bc/scripts/build-gd-bc.py --source "%GITHUB_WORKSPACE%" --revision %GD_BENCH_REV% --split-point 126 --output build-gd-recipe --c-compiler cl --cxx-compiler cl
+        if errorlevel 1 exit /b 1
+        python src/bc/scripts/bench-bc.py --config build-gd-recipe/implementations.json --output build-gd-recipe-checks --preset quick --samples 1 --warmups 0 --require-provenance
     - name: Check separate bc profiling build
       if: ${{ matrix.extensions == 1 }}
       run: |
