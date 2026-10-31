@@ -94,7 +94,7 @@ def main():
     coverage = json.loads(exported.stdout)["data"][0]
     # Losing a linked implementation object must not silently shrink the scope.
     baseline_files = {"bc.cc", "bc.hh", "instruction.cc", "lexer.cc", "number.hh",
-                      "parser.cc", "reader.cc", "token.cc", "vm.cc"}
+                      "parser.cc", "reader.cc", "token.cc", "verification.cc", "vm.cc"}
     expected = {source / "src" / "bc" / name for name in baseline_files
                 if (source / "src" / "bc" / name).exists()}
     mapped = {Path(entry["filename"]).resolve() for entry in coverage["files"]}
