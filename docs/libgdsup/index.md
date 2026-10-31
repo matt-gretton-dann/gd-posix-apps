@@ -35,6 +35,11 @@ To expose functionality in you C/C++ source do:
 
 These will redirect to the appropriate standard header if necessary.
 
+The message catalogue header `gd/nl_types.h` always uses our own catalogue
+format. Its API uses `gd_nl_catd`, `gd_catopen`, `gd_catgets`, and `gd_catclose`
+so it can coexist with the platform's native catalogue API and standard C++
+locale headers. Callers using the previous unprefixed names must update them.
+
 ## Further Documentation
 
  * [Header file detail](./header-files.md)

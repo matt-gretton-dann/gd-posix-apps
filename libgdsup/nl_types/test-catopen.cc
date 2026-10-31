@@ -1,5 +1,5 @@
 /** \file   libgdsup/nl_types/test-catopen.cc
- *  \brief  Unit tests for catclose()
+ *  \brief  Unit tests for gd_catclose()
  *  \author Copyright 2021, Matthew Gretton-Dann
  *          SPDX-License-Identifier: Apache-2.0
  */
@@ -16,10 +16,10 @@
 #include "nl_types/nl_types.h"
 #include "nl_types/test-config.h"
 
-TEST_CASE("catgets", "[nl_types][catopen][catgets]")
+TEST_CASE("gd_catgets", "[nl_types][gd_catopen][gd_catgets]")
 {
   errno = 0;
-  nl_catd const cat = catopen(LARGE_FILE, 0);
+  gd_nl_catd const cat = gd_catopen(LARGE_FILE, 0);
   REQUIRE(cat != CATD_ERROR);
   REQUIRE(errno == 0);
 
@@ -35,62 +35,62 @@ TEST_CASE("catgets", "[nl_types][catopen][catgets]")
   constexpr int set3 = 3;
   constexpr int missing3 = 1;
 
-  char* result = catgets(cat, set1, hello, failure);  // NOLINT(concurrency-mt-unsafe)
+  char* result = gd_catgets(cat, set1, hello, failure);  // NOLINT(concurrency-mt-unsafe)
   REQUIRE(::strcmp(result, "Hello world") == 0);
   REQUIRE(errno == 0);
 
-  result = catgets(cat, set1, goodbye, failure);  // NOLINT(concurrency-mt-unsafe)
+  result = gd_catgets(cat, set1, goodbye, failure);  // NOLINT(concurrency-mt-unsafe)
   REQUIRE(::strcmp(result, "Goodbye world") == 0);
   REQUIRE(errno == 0);
 
-  result = catgets(cat, set1, missing1, failure);  // NOLINT(concurrency-mt-unsafe)
+  result = gd_catgets(cat, set1, missing1, failure);  // NOLINT(concurrency-mt-unsafe)
   /* In failure case we get the exact string we passed in.  */
   REQUIRE(result == failure);
   REQUIRE(errno == ENOMSG);
 
   errno = 0;
-  result = catgets(cat, set2, fred, failure);  // NOLINT(concurrency-mt-unsafe)
+  result = gd_catgets(cat, set2, fred, failure);  // NOLINT(concurrency-mt-unsafe)
   REQUIRE(::strcmp(result, "Fred") == 0);
   REQUIRE(errno == 0);
 
-  result = catgets(cat, set2, george, failure);  // NOLINT(concurrency-mt-unsafe)
+  result = gd_catgets(cat, set2, george, failure);  // NOLINT(concurrency-mt-unsafe)
   REQUIRE(::strcmp(result, "George") == 0);
   REQUIRE(errno == 0);
 
-  result = catgets(cat, set2, missing2, failure);  // NOLINT(concurrency-mt-unsafe)
+  result = gd_catgets(cat, set2, missing2, failure);  // NOLINT(concurrency-mt-unsafe)
   REQUIRE(result == failure);
   REQUIRE(errno == ENOMSG);
 
   errno = 0;
-  result = catgets(cat, set3, missing3, failure);  // NOLINT(concurrency-mt-unsafe)
+  result = gd_catgets(cat, set3, missing3, failure);  // NOLINT(concurrency-mt-unsafe)
   REQUIRE(result == failure);
   REQUIRE(errno == ENOMSG);
 
   errno = 0;
-  REQUIRE(catclose(cat) != CATD_ERROR);
+  REQUIRE(gd_catclose(cat) != CATD_ERROR);
   REQUIRE(errno == 0);
 }
 
-TEST_CASE("catgets bad catalogues", "[nl_types][catopen][catgets]")
+TEST_CASE("gd_catgets bad catalogues", "[nl_types][gd_catopen][gd_catgets]")
 {
   char const* failure = "FAILED make this at least 24-bytes long";
 
   errno = 0;
-  REQUIRE(catgets(CATD_ERROR, 1, 1, failure) == failure);  // NOLINT(concurrency-mt-unsafe)
+  REQUIRE(gd_catgets(CATD_ERROR, 1, 1, failure) == failure);  // NOLINT(concurrency-mt-unsafe)
   REQUIRE(errno == EBADF);
 
   errno = 0;
   // NOLINTNEXTLINE
-  REQUIRE(catgets(reinterpret_cast<nl_catd>(failure), 1, 1, failure) ==
+  REQUIRE(gd_catgets(reinterpret_cast<gd_nl_catd>(failure), 1, 1, failure) ==
           failure);  // NOLINT(concurrency-mt-unsafe)
   REQUIRE(errno == EBADF);
 }
 
-TEST_CASE("catopen bad catalogues", "[nl_types][catopen]")
+TEST_CASE("gd_catopen bad catalogues", "[nl_types][gd_catopen]")
 {
   // Fail to find a non-existent file by full-path
   errno = 0;
-  nl_catd result = catopen(NON_EXISTANT_FILE, 0);
+  gd_nl_catd result = gd_catopen(NON_EXISTANT_FILE, 0);
   REQUIRE(result == CATD_ERROR);
   REQUIRE(errno != 0);
 
@@ -98,28 +98,28 @@ TEST_CASE("catopen bad catalogues", "[nl_types][catopen]")
   // NOLINTNEXTLINE(concurrency-mt-unsafe)
   REQUIRE(setenv("NLSPATH", TEST_NLSPATH_ROOT __DIR_SEPSTR "%N" __DIR_SEPSTR "%L", 1) == 0);
   errno = 0;
-  result = catopen("non-existent-file", 0);
+  result = gd_catopen("non-existent-file", 0);
   REQUIRE(result == CATD_ERROR);
   REQUIRE(errno != 0);
 }
 
-TEST_CASE("catopen NLSPATH lookup", "[nl_types][catopen]")
+TEST_CASE("gd_catopen NLSPATH lookup", "[nl_types][gd_catopen]")
 {
   // NOLINTNEXTLINE(concurrency-mt-unsafe)
   REQUIRE(setenv("NLSPATH", TEST_NLSPATH_ROOT __DIR_SEPSTR "%L.%N.msg", 1) == 0);
   REQUIRE(setenv("LANG", "en_US.UTF-8", 1) == 0);  // NOLINT(concurrency-mt-unsafe)
 
   errno = 0;
-  nl_catd const result = catopen("messages", 0);
+  gd_nl_catd const result = gd_catopen("messages", 0);
   REQUIRE(result != CATD_ERROR);
   REQUIRE(errno == 0);
 
   char const* failure = "FAILED";
-  char* s = catgets(result, NL_SETD, 1, failure);  // NOLINT(concurrency-mt-unsafe)
+  char* s = gd_catgets(result, NL_SETD, 1, failure);  // NOLINT(concurrency-mt-unsafe)
   REQUIRE(strcmp(s, "en_US.UTF-8") == 0);
   REQUIRE(errno == 0);
 
-  REQUIRE(catclose(result) != CATD_ERROR);
+  REQUIRE(gd_catclose(result) != CATD_ERROR);
   REQUIRE(errno == 0);
 }
 
@@ -139,21 +139,21 @@ void test_locale_lookup(char const* locale)
   }
 
   errno = 0;
-  nl_catd const result = catopen("messages", NL_CAT_LOCALE);
+  gd_nl_catd const result = gd_catopen("messages", NL_CAT_LOCALE);
   REQUIRE(result != CATD_ERROR);
   REQUIRE(errno == 0);
 
   char const* failure = "FAILED";
-  char* s = catgets(result, NL_SETD, 1, failure);  // NOLINT(concurrency-mt-unsafe)
+  char* s = gd_catgets(result, NL_SETD, 1, failure);  // NOLINT(concurrency-mt-unsafe)
   REQUIRE(strcmp(s, locale) == 0);
   REQUIRE(errno == 0);
 
-  REQUIRE(catclose(result) != CATD_ERROR);
+  REQUIRE(gd_catclose(result) != CATD_ERROR);
   REQUIRE(errno == 0);
 }
 }  // namespace
 
-TEST_CASE("catopen NLSPATH lookup 2", "[nl_types][catopen]")
+TEST_CASE("gd_catopen NLSPATH lookup 2", "[nl_types][gd_catopen]")
 {
   // NOLINTNEXTLINE(concurrency-mt-unsafe)
   REQUIRE(setenv("NLSPATH",

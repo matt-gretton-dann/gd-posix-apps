@@ -51,8 +51,8 @@ public:
   /** \brief  Destructor.  */
   ~Messages()
   {
-    if (catd_ != static_cast<nl_catd>(-1)) {
-      ::catclose(catd_);
+    if (catd_ != static_cast<gd_nl_catd>(-1)) {
+      ::gd_catclose(catd_);
     }
   }
 
@@ -95,12 +95,12 @@ public:
   {
     auto val =
       Data::messages_.at(static_cast<std::size_t>(set) - 1)[static_cast<std::size_t>(msg) - 1];
-    if (catd_ == static_cast<nl_catd>(-1)) {
+    if (catd_ == static_cast<gd_nl_catd>(-1)) {
       return val;
     }
 
     // NOLINTNEXTLINE(concurrency-mt-unsafe)
-    char* p = ::catgets(catd_, static_cast<int>(set), static_cast<int>(msg), val);
+    char* p = ::gd_catgets(catd_, static_cast<int>(set), static_cast<int>(msg), val);
     return p;
   }
 
@@ -159,9 +159,9 @@ public:
 
 private:
   /** \brief  Default constructor.  */
-  Messages() : catd_(::catopen(Data::catalogue_, NL_CAT_LOCALE)) {}
+  Messages() : catd_(::gd_catopen(Data::catalogue_, NL_CAT_LOCALE)) {}
 
-  nl_catd catd_;  ///< Message catalogue handle.  */
+  gd_nl_catd catd_;  ///< Message catalogue handle.  */
 };
 
 }  // namespace GD
