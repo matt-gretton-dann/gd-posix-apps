@@ -208,3 +208,36 @@ Debug ON and Release OFF each pass 26 targeted assertions in five cases and
 all six bounded offset-test methods. Temporarily disabling operand-2 dominance
 makes its new fixture fail; restoring the implementation passes again. No
 production mutation is committed.
+
+## Exact VM execution and generated expressions
+
+`test-vm-execution.cc` directly executes all ten binary arithmetic/comparison
+opcodes over signed operands -4 through 4, using exact native integer results.
+Zero divisors and negative exponents remain in the separate runtime-error and
+scaled arithmetic suites. Unary cases assert negate, positive/negative abs,
+perfect-square sqrt, scale and length. Conditional and unconditional branches
+must select exactly one string; register stores must survive a second
+instruction pack, including output-radix conversion.
+
+The property test uses seed `197215` to generate 200 bounded expression trees
+with signed leaves, addition, subtraction and multiplication. Each tree runs
+as independently assembled bytecode and as parsed source. Both must match the
+native integer oracle, with source, seed and sample reported on failure. Depth
+three and leaves -9 through 9 keep every intermediate well within `int64_t`;
+this does not use the bc arithmetic implementation to compute expectations.
+Both executions use the currently validated VM. A future optimized execution
+mode (#207) must run these same oracles; no optimized mode exists yet.
+
+A temporary production mutation dispatching addition to subtraction fails 296
+assertions in the direct and generated cases. Restoring the source passes all
+3,704 assertions across five cases. The mutation is not committed. These tests
+supplement the function/array, verifier, bounded CLI and signal suites; they do
+not by themselves prove complete VM branch or MC/DC coverage (#215).
+
+The diagnostic-print test additionally executes every supported result
+alternative on both stdout and stderr: strings, numbers, variables, arrays,
+array elements, loaded array values and the three special register locations.
+The public verifier explicitly allows these diagnostic operations. Assert the
+complete selected stream and an empty unselected stream; do not manufacture an
+invalid result merely to reach a visitor. With this case, the execution group
+passes 3,710 assertions across six cases in both configurations.
