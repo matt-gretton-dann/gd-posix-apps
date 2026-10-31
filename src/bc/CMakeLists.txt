@@ -41,6 +41,7 @@ if(RUN_UNIT_TESTS)
                  test-number-modulo.cc
                  test-number-power.cc
                  test-parser.cc
+                 test-parser-errors.cc
                  test-reader.cc)
   target_add_clang_format(test-libbc)
   catch_discover_tests(test-libbc PROPERTIES FIXTURES_REQUIRED testutil_setup
