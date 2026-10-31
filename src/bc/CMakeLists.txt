@@ -51,6 +51,17 @@ if(RUN_UNIT_TESTS)
                  test-reader.cc
                  test-vm-arrays.cc)
   target_add_clang_format(test-libbc)
+  add_executable(test-bc-signal test-vm-signal.cc)
+  target_link_libraries(test-bc-signal PRIVATE libbc)
+  target_include_directories(test-bc-signal PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+  set_property(TARGET test-bc-signal PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
+  set_property(TARGET test-bc-signal PROPERTY CXX_STANDARD_REQUIRED ON)
+  set_warnings(test-bc-signal)
+  target_add_clang_format(test-bc-signal)
+  add_test(NAME bc/signal-normal COMMAND "$<TARGET_FILE:test-bc-signal>" normal)
+  add_test(NAME bc/signal-exception COMMAND "$<TARGET_FILE:test-bc-signal>" throw)
+  set_tests_properties(bc/signal-normal bc/signal-exception PROPERTIES
+                       TIMEOUT 10 SKIP_RETURN_CODE 77)
   catch_discover_tests(test-libbc PROPERTIES FIXTURES_REQUIRED testutil_setup TIMEOUT 120
                       EXTRA_ARGS "--rng-seed" "197199")
   add_executable(test-bc-offsets test-vm-offsets.cc)
@@ -108,6 +119,9 @@ if(RUN_INTEGRATION_TESTS)
   add_test(NAME bc/number-oracle COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-number-oracle.py" "$<TARGET_FILE:bc>")
   set_tests_properties(bc/number-oracle PROPERTIES TIMEOUT 90)
+  add_test(NAME bc/signal-delivery COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-signal-delivery.py" "$<TARGET_FILE:bc>")
+  set_tests_properties(bc/signal-delivery PROPERTIES TIMEOUT 20 SKIP_RETURN_CODE 77)
   add_test(NAME bc/vm-cli COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-vm-cli.py" "$<TARGET_FILE:bc>"
            --extensions "$<IF:$<BOOL:${ENABLE_NON_POSIX_EXTENSIONS}>,ON,OFF>")
