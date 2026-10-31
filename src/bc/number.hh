@@ -1510,8 +1510,9 @@ public:
 
     if (rhs.sign_ == Sign::positive) {
       /* x ^ +p.  Scale = min(scale(x) * p, max(target_scale, scale(x)))
-       *                = min(scale(x) * p, target_scale). (p > 1)
+       * Keep at least the operand's precision before truncating the full power.
        */
+      target_scale = std::max(target_scale, scale_);
       digits_.power_mul(power_whole);
       /* digits_ now has scale: scale_ * power_whole.  We want to rescale to the target_scale if
        * that is less than the new scale.  But we have to cope with the fact that the new scale
