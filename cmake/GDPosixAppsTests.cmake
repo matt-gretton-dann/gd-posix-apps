@@ -21,6 +21,13 @@ else()
                         GIT_REPOSITORY https://github.com/matt-gretton-dann/gd-posix-apps-tests
                         GIT_TAG main)
     FetchContent_MakeAvailable(gdpat)
+    # Imported scripts may write beside their fixtures. Each build gets its
+    # own writable copy even when FETCHCONTENT_SOURCE_DIR_GDPAT is shared.
+    # Keep generated outputs and Git metadata out of the copied input tree.
+    set(gdpat_TEST_SOURCE_DIR "${CMAKE_BINARY_DIR}/gdpat-test-source")
+    file(COPY "${gdpat_SOURCE_DIR}/" DESTINATION "${gdpat_TEST_SOURCE_DIR}"
+         PATTERN ".git" EXCLUDE PATTERN "*_outputs" EXCLUDE
+         PATTERN "__pycache__" EXCLUDE)
     set(USE_GD_POSIX_APPS_TESTS ON)
   endif()
 endif()
@@ -46,7 +53,7 @@ function(add_gdpat_test)
 
 
   execute_process(
-    COMMAND "${Python_EXECUTABLE}" "${gdpat_SOURCE_DIR}/run-tests.py" "--list-tests" "${_agt_NAME}"
+    COMMAND "${Python_EXECUTABLE}" "${gdpat_TEST_SOURCE_DIR}/run-tests.py" "--list-tests" "${_agt_NAME}"
     OUTPUT_VARIABLE _agt_TESTS)
   # Newline in next command is deliberate do not remove
   string(REPLACE "
@@ -79,7 +86,7 @@ function(add_gdpat_test)
         endif()
         add_test(
           NAME "${_agt_TEST}"
-          COMMAND "${Python_EXECUTABLE}" "${gdpat_SOURCE_DIR}/run-tests.py"
+          COMMAND "${Python_EXECUTABLE}" "${gdpat_TEST_SOURCE_DIR}/run-tests.py"
                   "--utility" "$<TARGET_FILE:${_agt_NAME}>"
                   "${_agt_TEST}" ${_agt_XFAIL_OPTS})
       endif()
