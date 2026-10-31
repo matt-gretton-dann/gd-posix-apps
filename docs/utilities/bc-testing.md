@@ -183,3 +183,7 @@ maintain the decision-specific feasibility ledger before claiming coverage goals
 The [coverage decision ledger](bc-coverage-ledger.md) records asserted condition
 pairs, source invariants and open feasibility reviews. It does not calculate an
 eligible denominator or replace the raw LLVM reports.
+
+The [committed coverage checkpoint](bc-coverage-results.md) records raw ON/OFF
+and application/broad counts, the measured revision and remaining limitations.
+Rerun the collector for later code; the checkpoint is not an adjusted-goal claim.
