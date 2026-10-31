@@ -92,3 +92,41 @@ process CPU clock reports zero for a short batch. Batch arithmetic checks the
 container limit before multiplication and reports invalid durations or exhausted
 capacity as failures. Timing samples are flushed for failure diagnosis. These
 rules handle coarse clocks without assuming a platform-specific resolution.
+
+## Exact scaled arithmetic and long division
+
+`bc/number-oracle` checks values and result scales with Python `Fraction` and
+integer arithmetic. Scaled multiplication/division include signed, fractional,
+balanced, asymmetric and shared-operand expressions, with seeded dense inputs up
+to 2,000 decimal digits. This complements the forced multiplication-threshold
+unit checks; a calibrated CLI threshold alone does not guarantee every dispatch
+path. Python's integer string conversion limit need not be disabled: the largest
+product has at most 4,000 digits.
+
+Square roots use an integer floor-root calculation and independently assert
+`r*r <= x < (r + 10^-result_scale)^2`. Cases straddle exact squares, including
+the former adjacent-iterate cycle (#237), and retain zero/fractional scale checks.
+No floating-point tolerance or agreement between bc kernels supplies the oracle.
+
+`test-number-division.cc` checks native-integer quotient and remainder oracles
+with all sign combinations, shared copies and self-aliasing on Traits8/16/32.
+The base-100 model makes multi-limb normalization and correction witnesses small
+enough for independently checked 64-bit arithmetic:
+
+| Dividend / divisor | Base-100 normalization | Directed path |
+| --- | --- | --- |
+| `3128583549859727 / 34970` | 17 | Second-limb estimate correction |
+| `6687218857121369 / 63964738` | 1 | Repeated estimate decrement; already normalized |
+| `8623134770622992 / 819692222` | 7 | Borrow and add-back after multiply/subtract |
+| `1626423182298612 / 81326081630` | 7 | Base-sized estimate, repeated correction and add-back |
+
+For the final case, at quotient position 2 the estimate is 2 with the second-limb
+comparison `184 > 184` false. At position 1, a later estimate is 100 (the base)
+with `9200 > 9213` false: the first condition of the correction decision must
+change the result even when its second condition is false. The first case also
+supplies estimate 9 with `396 > 85` true, followed by estimate 8 with
+`352 > 5985` false. These are decision-construction witnesses; confirm execution
+and recorded independence pairs in fresh LLVM exports before claiming coverage.
+The expected quotient/remainder still comes from native division, not this path
+model. The same numeric cases supplement wider traits without claiming identical
+limb paths at their different radices.

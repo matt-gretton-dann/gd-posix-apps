@@ -62,10 +62,14 @@ struct NumberTraitsBase
 /** Number traits with underlying 32-bit Number type.  */
 using NumberTraits32 = NumberTraitsBase<::uint32_t, ::uint64_t>;
 
-/** Number traits with underlying 32-bit Number type.  */
+/** Number traits with 16-bit limbs and 32-bit widened arithmetic.  */
 using NumberTraits16 = NumberTraitsBase<::uint16_t, ::uint32_t>;
 
-/** Number traits with underlying 32-bit Number type.  */
+/** Base-100 traits with 8-bit limbs and 16-bit widened arithmetic.
+ *
+ * The small radix makes exhaustive generic-arithmetic tests practical with
+ * independently checked native-integer expectations.
+ */
 using NumberTraits8 = NumberTraitsBase<::uint8_t, ::uint16_t>;
 
 namespace Details {
@@ -1800,9 +1804,10 @@ auto operator<=(BasicNumber<Traits> const& lhs, BasicNumber<Traits> const& rhs) 
   return !(lhs > rhs);
 }
 
-/** Number using efficient machine format for storage.
+/** Default number format selected by pointer width.
  *
- * Currently we assume 32-bit storage.
+ * Use 32-bit limbs with 64-bit pointers, and 16-bit limbs otherwise. Explicit
+ * trait instantiations remain available for portable generic-arithmetic tests.
  */
 // NOLINTNEXTLINE
 using Number = BasicNumber<std::conditional_t<sizeof(void*) == 8, NumberTraits32, NumberTraits16>>;
