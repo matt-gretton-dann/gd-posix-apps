@@ -90,6 +90,12 @@ class CliTests(unittest.TestCase):
             with self.subTest(text=text):
                 self.run_bc(text, expected)
 
+    def test_invalid_numeric_continuations(self):
+        for text in ("1\\+2\n", "1\\x\n", "1\\", ".5\\+2\n"):
+            with self.subTest(text=text):
+                self.run_bc(text, success=False)
+        self.run_bc("1\\\n+2\n", "3\n")
+
     def test_eof(self):
         self.run_bc("1+1\n", "2\n")
 
