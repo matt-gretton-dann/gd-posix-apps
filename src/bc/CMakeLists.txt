@@ -141,5 +141,8 @@ set(bc_skips bc/gavinhoward-bc)
 endif()
 
 if (NOT WIN32)
-add_gdpat_test(NAME bc SKIPS "${bc_skips}")
+# The imported misc answers discard precision on zero terms, contrary to POSIX.
+# Keep its mismatch visible; bc/number-oracle checks all four expressions against
+# independent exact arithmetic and radix conversion rather than those answers.
+add_gdpat_test(NAME bc SKIPS "${bc_skips}" XFAILS bc/gavinhoward-bc/tests/misc)
 endif()

@@ -30,6 +30,29 @@ def power_result(left, exponent, places):
     return truncate(a ** exponent, s), s
 
 
+def output_base(value, base, places):
+    """Encode with enough radix digits to retain the given decimal precision."""
+    sign = "-" if value < 0 else ""
+    value = abs(value)
+    whole = value.numerator // value.denominator
+    fraction = value - whole
+    digits = ""
+    while whole:
+        whole, digit = divmod(whole, base)
+        digits = "0123456789ABCDEF"[digit] + digits
+    digits = digits or "0"
+    if places:
+        digits += "."
+        radix_power = 1
+        while radix_power < 10 ** places:
+            fraction *= base
+            digit = fraction.numerator // fraction.denominator
+            fraction -= digit
+            digits += "0123456789ABCDEF"[digit]
+            radix_power *= base
+    return sign + digits
+
+
 class NumberOracle(unittest.TestCase):
     def assert_program(self, cases):
         program = []
@@ -70,6 +93,25 @@ class NumberOracle(unittest.TestCase):
                     expected = Fraction(a) + (Fraction(b) if op == "+" else -Fraction(b))
                     cases.append((literal(a) + op + literal(b), 0, expected, max(scale(a), scale(b))))
         self.assert_program(cases)
+
+    def test_zero_terms_preserve_expression_precision(self):
+        # POSIX counterpart of the imported Howard "misc" fixture. Its saved
+        # answers drop scale after subtracting a tiny power truncated to zero.
+        expression = "4.1*1.-13^ - 74 - 1284597623841*1.-13^ - 757"
+        continued = expression.replace("1.-13", "1.\\\n-1\\\n3")
+        program = expression + "\n" + continued + "\nobase=9\n" + expression + "\n" + continued + "\n"
+        value = Fraction(41, 10) - truncate(Fraction(13) ** -74, 20) - 1284597623841
+        value -= truncate(Fraction(13) ** -757, 20)
+        expected = [output_base(value, 10, 20)] * 2 + [output_base(value, 9, 20)] * 2
+        try:
+            run = subprocess.run([BC, "-l"], input=program, universal_newlines=True,
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=20,
+                                 env=dict(os.environ, LC_ALL="C"))
+        except subprocess.TimeoutExpired:
+            self.fail("zero-term precision test timed out")
+        self.assertEqual(run.returncode, 0, run.stderr)
+        self.assertEqual(run.stderr, "")
+        self.assertEqual(run.stdout.replace("\\\n", "").splitlines(), expected)
 
 
 
