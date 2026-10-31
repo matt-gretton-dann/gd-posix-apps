@@ -697,3 +697,58 @@ TEMPLATE_TEST_CASE("Digit helpers handle absent storage and extended scale paddi
   CHECK(parts.second.to_unsigned(0) == 1);
   CHECK(source.to_unsigned(0) == 1);
 }
+
+TEMPLATE_TEST_CASE("Sparse products preserve empty recursive half sums at every width",
+                   "[bc][number][oracle][zero-sum-product]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  using N = typename Number::NumType;
+  RestoreMultiplyThreshold<Number> restore;
+  auto polynomial = [](bool extra, bool product) {
+    constexpr unsigned chunk = Number::base_log10_;
+    unsigned const degree = product ? 14 : 7;
+    std::string text(degree * chunk + 1, '0');
+    auto term = [&](unsigned power, char digit) { text[text.size() - 1 - power * chunk] = digit; };
+    term(0, '1');
+    term(degree, '1');
+    if (product) {
+      term(7, '2');
+    }
+    if (extra) {
+      term(3, '1');
+      if (product) {
+        term(10, '1');
+      }
+    }
+    return text;
+  };
+  // Let B be the limb radix. A=B^7+1 contains long all-zero recursive
+  // blocks. C=A+B^3 keeps the matching block nonzero. Both A*C and C*A
+  // therefore distinguish which temporary half sum is empty, using a valid
+  // positive threshold. A*A also exercises the both-empty case.
+  for (N const threshold : {N(1), N(2), N(Number::base_)}) {
+    Number::multiply_split_point(threshold);
+    for (unsigned order : {0U, 1U, 2U}) {
+      std::string const left = polynomial(order == 2, false);
+      std::string const right = polynomial(order == 1, false);
+      std::string const expected = polynomial(order != 0, true);
+      INFO("base = " << Number::base_ << ", threshold = " << unsigned(threshold)
+                     << ", order = " << order);
+      Number lhs(left, 10);
+      Number const rhs(right, 10);
+      Number value = lhs;
+      value.multiply(rhs, N(0));
+      CHECK(value == Number(expected, 10));
+      std::ostringstream output;
+      value.output(output, N(10), 0);
+      auto text = output.str();
+      for (auto at = text.find("\\\n"); at != std::string::npos; at = text.find("\\\n")) {
+        text.erase(at, 2);
+      }
+      CHECK(text == expected);
+      CHECK(lhs == Number(left, 10));
+      CHECK(rhs == Number(right, 10));
+    }
+  }
+}
