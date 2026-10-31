@@ -203,3 +203,17 @@ eligible denominator or replace the raw LLVM reports.
 The [committed coverage checkpoint](bc-coverage-results.md) records raw ON/OFF
 and application/broad counts, the measured revision and remaining limitations.
 Rerun the collector for later code; the checkpoint is not an adjusted-goal claim.
+
+## Signed comparison oracle
+
+`test-number-compare.cc` interprets a directed table of native integers as
+thousandths and compares every pair with `BasicNumber` at all three limb widths.
+Extra decimal zeros vary the two operand scales independently. Equality and both
+strict orderings must agree with the independent integer comparisons, including
+two negative values, mixed signs, zero, equal values and different magnitudes.
+Negative zero remains equal to zero. The CLI rational oracle checks all six
+relational operators in POSIX conditional syntax against exact Python Fractions.
+
+The initial table rejects the former magnitude-order bug for two negative
+operands. Scale alignment may swap the magnitude operands, and negative signs
+reverse their order again; equal magnitudes remain equal in either orientation.
