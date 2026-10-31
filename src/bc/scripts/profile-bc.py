@@ -177,7 +177,7 @@ def main():
             # Bound repeated-source memory independently of the child deadline.
             repetitions = min(repetitions, max(1, 64 * 1024 * 1024 //
                                                len(case['program'].encode('utf-8'))))
-            (root / (case['name'] + '.bc')).write_text(case['program'], encoding='utf-8')
+            (root / (case['name'] + '.bc')).write_bytes(case['program'].encode('utf-8'))
             row = {'name': case['name'], 'parameters': case['parameters'],
                    'program_sha256': bench.hashlib.sha256(case['program'].encode('utf-8')).hexdigest(),
                    'cpu': cpu_profile(bench, tool, case, repetitions, root, args.timeout),
