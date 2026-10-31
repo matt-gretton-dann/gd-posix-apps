@@ -74,3 +74,10 @@ registers `bc/profiling-cli`, checking real arithmetic, COW isolation, array
 cloning, frames, Unicode report paths, EOF cleanup and report failures. Native
 Linux, macOS and Windows CI builds the diagnostic mode separately from the
 ordinary extension ON/OFF release tests.
+
+
+For matched release/diagnostic attribution, pass the same explicit
+`-DBC_MULTIPLY_SPLIT_POINT=126` to both configurations. The report records the
+compiled point, and `test-profiling-cli.py --split-point 126` checks that it is
+the requested value. Native CI uses this fixed diagnostic configuration while
+ordinary builds continue to exercise automatic calibration.

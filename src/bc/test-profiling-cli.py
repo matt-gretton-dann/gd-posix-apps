@@ -36,6 +36,8 @@ class ProfilingCli(unittest.TestCase):
         self.assertEqual(total['allocation_calls'], total['deallocation_calls'])
         self.assertGreater(total['peak_live_bytes'], 0)
         self.assertGreater(counters['multiply_split_point'], 0)
+        if EXPECTED_SPLIT is not None:
+            self.assertEqual(counters['multiply_split_point'], EXPECTED_SPLIT)
         for values in counters['allocations'].values():
             self.assertEqual(values['live_bytes'], 0)
             self.assertLessEqual(values['peak_live_bytes'], total['peak_live_bytes'])
@@ -74,6 +76,8 @@ class ProfilingCli(unittest.TestCase):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('bc')
+    parser.add_argument('--split-point', type=int)
     args, remaining = parser.parse_known_args()
     BC = str(Path(args.bc).resolve())
+    EXPECTED_SPLIT = args.split_point
     unittest.main(argv=[__file__, *remaining])

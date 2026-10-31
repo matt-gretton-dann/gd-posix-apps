@@ -46,12 +46,14 @@ jobs:
         run: |
           python3 src/bc/scripts/build-bc-comparators.py --output build-comparators --implementation both --cc cc
           python3 src/bc/scripts/bench-bc.py --config build-comparators/implementations.json --output build-comparator-checks --preset quick --samples 1 --warmups 0 --require-provenance
+          python3 src/bc/scripts/build-gd-bc.py --source "${GITHUB_WORKSPACE}" --revision "$(git rev-parse HEAD)" --split-point 126 --output build-gd-recipe --c-compiler cc --cxx-compiler c++
+          python3 src/bc/scripts/bench-bc.py --config build-gd-recipe/implementations.json --output build-gd-recipe-checks --preset quick --samples 1 --warmups 0 --require-provenance
       - name: Check separate bc profiling build
         if: ${{ matrix.extensions == 'ON' }}
         run: |
-          cmake -S "${GITHUB_WORKSPACE}" -B "${GITHUB_WORKSPACE}/build-profile" -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DENABLE_BC_PROFILE=ON
+          cmake -S "${GITHUB_WORKSPACE}" -B "${GITHUB_WORKSPACE}/build-profile" -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DENABLE_BC_PROFILE=ON -DBC_MULTIPLY_SPLIT_POINT=126
           cmake --build "${GITHUB_WORKSPACE}/build-profile" --target bc
-          python3 "${GITHUB_WORKSPACE}/src/bc/test-profiling-cli.py" "${GITHUB_WORKSPACE}/build-profile/src/bc/bc"
+          python3 "${GITHUB_WORKSPACE}/src/bc/test-profiling-cli.py" "${GITHUB_WORKSPACE}/build-profile/src/bc/bc" --split-point 126
 
 
   windows-build:
@@ -83,9 +85,14 @@ jobs:
         python src/bc/scripts/build-bc-comparators.py --output build-comparators --cc cl
         if errorlevel 1 exit /b 1
         python src/bc/scripts/bench-bc.py --config build-comparators/implementations.json --output build-comparator-checks --preset quick --samples 1 --warmups 0 --require-provenance
+        if errorlevel 1 exit /b 1
+        for /f %%i in ('git rev-parse HEAD') do set GD_BENCH_REV=%%i
+        python src/bc/scripts/build-gd-bc.py --source "%GITHUB_WORKSPACE%" --revision %GD_BENCH_REV% --split-point 126 --output build-gd-recipe --c-compiler cl --cxx-compiler cl
+        if errorlevel 1 exit /b 1
+        python src/bc/scripts/bench-bc.py --config build-gd-recipe/implementations.json --output build-gd-recipe-checks --preset quick --samples 1 --warmups 0 --require-provenance
     - name: Check separate bc profiling build
       if: ${{ matrix.extensions == 1 }}
       run: |
-        cmake -S "$Env:GITHUB_WORKSPACE" -B "$Env:GITHUB_WORKSPACE/build-profile" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DENABLE_BC_PROFILE=ON
+        cmake -S "$Env:GITHUB_WORKSPACE" -B "$Env:GITHUB_WORKSPACE/build-profile" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DENABLE_BC_PROFILE=ON -DBC_MULTIPLY_SPLIT_POINT=126
         cmake --build "$Env:GITHUB_WORKSPACE/build-profile" --config Release --target bc
-        python "$Env:GITHUB_WORKSPACE/src/bc/test-profiling-cli.py" "$Env:GITHUB_WORKSPACE/build-profile/src/bc/Release/bc.exe"
+        python "$Env:GITHUB_WORKSPACE/src/bc/test-profiling-cli.py" "$Env:GITHUB_WORKSPACE/build-profile/src/bc/Release/bc.exe" --split-point 126
