@@ -7,6 +7,9 @@
 
 #include <catch2/catch.hpp>
 
+#include <sstream>
+#include <string>
+
 #include "bc.hh"
 
 TEST_CASE("bc custom formatters", "[bc][format]")
@@ -54,4 +57,28 @@ TEMPLATE_TEST_CASE("Number formatters check runtime debug and parse boundaries",
   fmt::formatter<Number> invalid_formatter;
   fmt::format_parse_context invalid("x}");
   REQUIRE_THROWS_AS(invalid_formatter.parse(invalid), fmt::format_error);
+}
+
+TEMPLATE_TEST_CASE("Zero number debug formatting keeps balanced delimiters",
+                   "[bc][number][format][zero-debug]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  using Digits = GD::Bc::Details::BasicDigits<TestType>;
+  using N = typename Number::NumType;
+  for (bool allocated : {false, true}) {
+    Digits const digits = allocated ? Digits(N(0)) : Digits();
+    std::ostringstream output;
+    digits.debug(output);
+    CHECK(output.str() == "{}");
+  }
+  for (Number const& number : {Number(), Number(N(0)), Number("0.00", 10)}) {
+    std::string const expected = "Number({}, sign=+, scale=" + std::to_string(number.scale()) + ")";
+    std::ostringstream output;
+    number.debug(output);
+    CHECK(output.str() == expected);
+    CHECK(fmt::vformat("{:d}", fmt::make_format_args(number)) == expected);
+  }
+  Number const nonzero("42", 10);
+  CHECK(fmt::vformat("{:d}", fmt::make_format_args(nonzero)) == "Number({42}, sign=+, scale=0)");
 }

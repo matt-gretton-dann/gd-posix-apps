@@ -362,3 +362,11 @@ This covers absent complete fractional limbs as well as a final partial limb,
 without an impractical input or private storage injection. Comparisons honor
 the helper's explicit allocated-storage precondition. All three traits use the
 same exact zero/one expectations and preserve the source coefficient (#199).
+
+## Zero debug formatting
+
+`[zero-debug]` asserts balanced `{}` delimiters for absent and allocated-empty
+digit storage, then checks direct Number debug output and its public `:d`
+formatter for default, native zero and scaled zero values across all traits.
+The nonzero spelling stays unchanged. The opening delimiter is independent of
+limb iteration so empty coefficients remain well-formed diagnostics (#293).
