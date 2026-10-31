@@ -377,10 +377,9 @@ TEST_CASE("GD::Bc::Number - square root, random", "[bc][number]")
 
 TEST_CASE("GD::Bc::Number - multiplication, random", "[bc][number]")
 {
-  /* Test square rooting by taking the square root and multiplying it up again to see if we have the
-   * correct result.
-   */
+  /* Compare schoolbook, Karatsuba and mixed dispatch on the same operands. */
   auto nums = GENERATE(take(500, random_number_pair(200)));
+  INFO("seed = " << Catch::rngSeed() << " lhs = " << nums.first << " rhs = " << nums.second);
 
   /* Always do basic multiplication.  */
   auto res1 = nums.first;
@@ -397,5 +396,5 @@ TEST_CASE("GD::Bc::Number - multiplication, random", "[bc][number]")
   auto res3 = nums.second;
   GD::Bc::Number::multiply_split_point(100);  // NOLINT - explicit magic
   res3.multiply(nums.second, 0);
-  REQUIRE(res1 == res2);
+  REQUIRE(res1 == res3);
 }
