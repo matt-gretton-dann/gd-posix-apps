@@ -123,4 +123,4 @@ auto main(int argc, char** argv) -> int
   execute(vm, std::move(r));
 
   return 0;
-}  // namespace
+}
