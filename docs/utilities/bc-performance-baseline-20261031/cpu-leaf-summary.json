@@ -1,0 +1,862 @@
+[
+  {
+    "leaf_rows_at_least_five": [
+      {
+        "samples": 613,
+        "symbol": "GD::Bc::Details::InstructionPack::execute()  (in bc)"
+      },
+      {
+        "samples": 312,
+        "symbol": "_xzm_xzone_malloc_tiny  (in libsystem_malloc.dylib)"
+      },
+      {
+        "samples": 278,
+        "symbol": "_xzm_free_main  (in libsystem_malloc.dylib)"
+      },
+      {
+        "samples": 119,
+        "symbol": "_free  (in libsystem_malloc.dylib)"
+      },
+      {
+        "samples": 115,
+        "symbol": "<deduplicated_symbol>  (in libsystem_malloc.dylib)"
+      },
+      {
+        "samples": 72,
+        "symbol": "malloc_type_malloc  (in libsystem_malloc.dylib)"
+      },
+      {
+        "samples": 62,
+        "symbol": "decltype(auto) std::__variant_detail::__visitation::__base::__dispatcher<3ul>::__dispatch[abi:nqe220106]<std::__variant_detail::__visitation::__variant::__value_visitor<GD::Overloaded<GD::Bc::Details::InstructionPack::execute_load()::$_0, GD::Bc::Details::InstructionPack::execute_load()::$_1, GD::Bc::Details::InstructionPack::execute_load()::$_2, GD::Bc::Details::InstructionPack::execute_load()::$_3, GD::Bc::Details::InstructionPack::execute_load()::$_4, GD::Bc::Details::InstructionPack::execute_load()::$_5, GD::Bc::Details::InstructionPack::execute_load()::$_6, GD::Bc::Details::InstructionPack::execute_load()::$_7, GD::Bc::Details::InstructionPack::execute_load()::$_8>>&&, std::__variant_detail::__base<(std::__variant_detail::_Trait)1, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>, std::shared_ptr<std::map<unsigned int, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>>>, std::basic_string_view<char>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::VariableTag>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, std::pair<GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, unsigned int>, GD::Bc::Ibase, GD::Bc::Obase, GD::Bc::Scale> const&>(std::__variant_detail::__visitation::__variant::__value_visitor<GD::Overloaded<GD::Bc::Details::InstructionPack::execute_load()::$_0, GD::Bc::Details::InstructionPack::execute_load()::$_1, GD::Bc::Details::InstructionPack::execute_load()::$_2, GD::Bc::Details::InstructionPack::execute_load()::$_3, GD::Bc::Details::InstructionPack::execute_load()::$_4, GD::Bc::Details::InstructionPack::execute_load()::$_5, GD::Bc::Details::InstructionPack::execute_load()::$_6, GD::Bc::Details::InstructionPack::execute_load()::$_7, GD::Bc::Details::InstructionPack::execute_load()::$_8>>&&, std::__variant_detail::__base<(std::__variant_detail::_Trait)1, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>, std::shared_ptr<std::map<unsigned int, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>>>, std::basic_string_view<char>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::VariableTag>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, std::pair<GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, unsigned int>, GD::Bc::Ibase, GD::Bc::Obase, GD::Bc::Scale> const&)  (in bc)"
+      },
+      {
+        "samples": 55,
+        "symbol": "GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::copy_on_write()  (in bc)"
+      },
+      {
+        "samples": 53,
+        "symbol": "operator new(unsigned long)  (in libc++abi.dylib)"
+      },
+      {
+        "samples": 49,
+        "symbol": "_platform_memchr  (in libsystem_platform.dylib)"
+      },
+      {
+        "samples": 47,
+        "symbol": "GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::for_each<GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::add(GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>> const&, unsigned int)::'lambda'(std::__wrap_iter<unsigned int*>, unsigned long long)>(GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>> const&, unsigned int, GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::add(GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>> const&, unsigned int)::'lambda'(std::__wrap_iter<unsigned int*>, unsigned long long), unsigned int)  (in bc)"
+      },
+      {
+        "samples": 45,
+        "symbol": "DYLD-STUB$$operator delete(void*)  (in bc)"
+      },
+      {
+        "samples": 45,
+        "symbol": "_platform_memmove  (in libsystem_platform.dylib)"
+      },
+      {
+        "samples": 41,
+        "symbol": "GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::add(GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>> const&)  (in bc)"
+      },
+      {
+        "samples": 40,
+        "symbol": "GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::compare(GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>> const&) const  (in bc)"
+      },
+      {
+        "samples": 35,
+        "symbol": "DYLD-STUB$$operator new(unsigned long)  (in bc)"
+      },
+      {
+        "samples": 33,
+        "symbol": "GD::Bc::Details::InstructionPack::get_op1_expr() const  (in bc)"
+      },
+      {
+        "samples": 30,
+        "symbol": "decltype(auto) std::__variant_detail::__visitation::__base::__dispatcher<3ul>::__dispatch[abi:nqe220106]<std::__variant_detail::__visitation::__variant::__value_visitor<GD::Overloaded<GD::Bc::Details::InstructionPack::execute_store()::$_0, GD::Bc::Details::InstructionPack::execute_store()::$_1, GD::Bc::Details::InstructionPack::execute_store()::$_2, GD::Bc::Details::InstructionPack::execute_store()::$_3, GD::Bc::Details::InstructionPack::execute_store()::$_4, GD::Bc::Details::InstructionPack::execute_store()::$_5, GD::Bc::Details::InstructionPack::execute_store()::$_6, GD::Bc::Details::InstructionPack::execute_store()::$_7, GD::Bc::Details::InstructionPack::execute_store()::$_8>>&&, std::__variant_detail::__base<(std::__variant_detail::_Trait)1, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>, std::shared_ptr<std::map<unsigned int, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>>>, std::basic_string_view<char>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::VariableTag>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, std::pair<GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, unsigned int>, GD::Bc::Ibase, GD::Bc::Obase, GD::Bc::Scale>&>(std::__variant_detail::__visitation::__variant::__value_visitor<GD::Overloaded<GD::Bc::Details::InstructionPack::execute_store()::$_0, GD::Bc::Details::InstructionPack::execute_store()::$_1, GD::Bc::Details::InstructionPack::execute_store()::$_2, GD::Bc::Details::InstructionPack::execute_store()::$_3, GD::Bc::Details::InstructionPack::execute_store()::$_4, GD::Bc::Details::InstructionPack::execute_store()::$_5, GD::Bc::Details::InstructionPack::execute_store()::$_6, GD::Bc::Details::InstructionPack::execute_store()::$_7, GD::Bc::Details::InstructionPack::execute_store()::$_8>>&&, std::__variant_detail::__base<(std::__variant_detail::_Trait)1, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>, std::shared_ptr<std::map<unsigned int, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>>>, std::basic_string_view<char>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::VariableTag>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, std::pair<GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, unsigned int>, GD::Bc::Ibase, GD::Bc::Obase, GD::Bc::Scale>&)  (in bc)"
+      },
+      {
+        "samples": 29,
+        "symbol": "???  (in <unknown binary>)  [0x18a2303d8]"
+      },
+      {
+        "samples": 21,
+        "symbol": "GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::BasicNumber(unsigned int)  (in bc)"
+      },
+      {
+        "samples": 20,
+        "symbol": "???  (in <unknown binary>)  [0x18a2304f8]"
+      },
+      {
+        "samples": 20,
+        "symbol": "DYLD-STUB$$memchr  (in bc)"
+      },
+      {
+        "samples": 20,
+        "symbol": "std::__shared_weak_count::__release_weak()  (in libc++.1.dylib)"
+      },
+      {
+        "samples": 17,
+        "symbol": "DYLD-STUB$$memcpy  (in bc)"
+      },
+      {
+        "samples": 15,
+        "symbol": "<deduplicated_symbol>  (in bc)"
+      },
+      {
+        "samples": 15,
+        "symbol": "GD::Bc::Details::InstructionPack::get_op2_expr() const  (in bc)"
+      },
+      {
+        "samples": 11,
+        "symbol": "DYLD-STUB$$std::__shared_weak_count::__release_weak()  (in bc)"
+      }
+    ],
+    "memory": {
+      "argv": [
+        "/usr/bin/time",
+        "-l",
+        "-o",
+        "/private/tmp/gd-bc-200-release-profiles/loop_1000000.rss.txt",
+        "/private/tmp/gd-posix-vm-lifetime/build-release/src/bc/bc"
+      ],
+      "native_counters": {
+        "cycles_elapsed": 1262665535,
+        "instructions_retired": 7294678931
+      },
+      "native_unit": "bytes (Darwin ru_maxrss)",
+      "peak_memory_footprint_bytes": 1212800,
+      "peak_rss_native": 2015232,
+      "repetitions": 1,
+      "status": "collected"
+    },
+    "name": "loop_1000000",
+    "samples": 2224
+  },
+  {
+    "leaf_rows_at_least_five": [
+      {
+        "samples": 571,
+        "symbol": "GD::Bc::Details::InstructionPack::execute()  (in bc)"
+      },
+      {
+        "samples": 324,
+        "symbol": "_xzm_free_main  (in libsystem_malloc.dylib)"
+      },
+      {
+        "samples": 315,
+        "symbol": "_xzm_xzone_malloc_tiny  (in libsystem_malloc.dylib)"
+      },
+      {
+        "samples": 116,
+        "symbol": "<deduplicated_symbol>  (in libsystem_malloc.dylib)"
+      },
+      {
+        "samples": 114,
+        "symbol": "_free  (in libsystem_malloc.dylib)"
+      },
+      {
+        "samples": 84,
+        "symbol": "malloc_type_malloc  (in libsystem_malloc.dylib)"
+      },
+      {
+        "samples": 80,
+        "symbol": "mach_absolute_time  (in libsystem_kernel.dylib)"
+      },
+      {
+        "samples": 49,
+        "symbol": "operator new(unsigned long)  (in libc++abi.dylib)"
+      },
+      {
+        "samples": 41,
+        "symbol": "GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::for_each<GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::add(GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>> const&, unsigned int)::'lambda'(std::__wrap_iter<unsigned int*>, unsigned long long)>(GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>> const&, unsigned int, GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::add(GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>> const&, unsigned int)::'lambda'(std::__wrap_iter<unsigned int*>, unsigned long long), unsigned int)  (in bc)"
+      },
+      {
+        "samples": 37,
+        "symbol": "GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::add(GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>> const&)  (in bc)"
+      },
+      {
+        "samples": 37,
+        "symbol": "_platform_memmove  (in libsystem_platform.dylib)"
+      },
+      {
+        "samples": 36,
+        "symbol": "???  (in <unknown binary>)  [0x18a2304f8]"
+      },
+      {
+        "samples": 35,
+        "symbol": "decltype(auto) std::__variant_detail::__visitation::__base::__dispatcher<3ul>::__dispatch[abi:nqe220106]<std::__variant_detail::__visitation::__variant::__value_visitor<GD::Overloaded<GD::Bc::Details::InstructionPack::execute_load()::$_0, GD::Bc::Details::InstructionPack::execute_load()::$_1, GD::Bc::Details::InstructionPack::execute_load()::$_2, GD::Bc::Details::InstructionPack::execute_load()::$_3, GD::Bc::Details::InstructionPack::execute_load()::$_4, GD::Bc::Details::InstructionPack::execute_load()::$_5, GD::Bc::Details::InstructionPack::execute_load()::$_6, GD::Bc::Details::InstructionPack::execute_load()::$_7, GD::Bc::Details::InstructionPack::execute_load()::$_8>>&&, std::__variant_detail::__base<(std::__variant_detail::_Trait)1, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>, std::shared_ptr<std::map<unsigned int, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>>>, std::basic_string_view<char>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::VariableTag>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, std::pair<GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, unsigned int>, GD::Bc::Ibase, GD::Bc::Obase, GD::Bc::Scale> const&>(std::__variant_detail::__visitation::__variant::__value_visitor<GD::Overloaded<GD::Bc::Details::InstructionPack::execute_load()::$_0, GD::Bc::Details::InstructionPack::execute_load()::$_1, GD::Bc::Details::InstructionPack::execute_load()::$_2, GD::Bc::Details::InstructionPack::execute_load()::$_3, GD::Bc::Details::InstructionPack::execute_load()::$_4, GD::Bc::Details::InstructionPack::execute_load()::$_5, GD::Bc::Details::InstructionPack::execute_load()::$_6, GD::Bc::Details::InstructionPack::execute_load()::$_7, GD::Bc::Details::InstructionPack::execute_load()::$_8>>&&, std::__variant_detail::__base<(std::__variant_detail::_Trait)1, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>, std::shared_ptr<std::map<unsigned int, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>>>, std::basic_string_view<char>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::VariableTag>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, std::pair<GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, unsigned int>, GD::Bc::Ibase, GD::Bc::Obase, GD::Bc::Scale> const&)  (in bc)"
+      },
+      {
+        "samples": 32,
+        "symbol": "DYLD-STUB$$operator new(unsigned long)  (in bc)"
+      },
+      {
+        "samples": 32,
+        "symbol": "GD::Bc::Details::InstructionPack::get_op1_expr() const  (in bc)"
+      },
+      {
+        "samples": 31,
+        "symbol": "DYLD-STUB$$operator delete(void*)  (in bc)"
+      },
+      {
+        "samples": 31,
+        "symbol": "GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::copy_on_write()  (in bc)"
+      },
+      {
+        "samples": 30,
+        "symbol": "_platform_memchr  (in libsystem_platform.dylib)"
+      },
+      {
+        "samples": 29,
+        "symbol": "???  (in <unknown binary>)  [0x18a2303d8]"
+      },
+      {
+        "samples": 26,
+        "symbol": "decltype(auto) std::__variant_detail::__visitation::__base::__dispatcher<3ul>::__dispatch[abi:nqe220106]<std::__variant_detail::__visitation::__variant::__value_visitor<GD::Overloaded<GD::Bc::Details::InstructionPack::execute_store()::$_0, GD::Bc::Details::InstructionPack::execute_store()::$_1, GD::Bc::Details::InstructionPack::execute_store()::$_2, GD::Bc::Details::InstructionPack::execute_store()::$_3, GD::Bc::Details::InstructionPack::execute_store()::$_4, GD::Bc::Details::InstructionPack::execute_store()::$_5, GD::Bc::Details::InstructionPack::execute_store()::$_6, GD::Bc::Details::InstructionPack::execute_store()::$_7, GD::Bc::Details::InstructionPack::execute_store()::$_8>>&&, std::__variant_detail::__base<(std::__variant_detail::_Trait)1, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>, std::shared_ptr<std::map<unsigned int, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>>>, std::basic_string_view<char>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::VariableTag>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, std::pair<GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, unsigned int>, GD::Bc::Ibase, GD::Bc::Obase, GD::Bc::Scale>&>(std::__variant_detail::__visitation::__variant::__value_visitor<GD::Overloaded<GD::Bc::Details::InstructionPack::execute_store()::$_0, GD::Bc::Details::InstructionPack::execute_store()::$_1, GD::Bc::Details::InstructionPack::execute_store()::$_2, GD::Bc::Details::InstructionPack::execute_store()::$_3, GD::Bc::Details::InstructionPack::execute_store()::$_4, GD::Bc::Details::InstructionPack::execute_store()::$_5, GD::Bc::Details::InstructionPack::execute_store()::$_6, GD::Bc::Details::InstructionPack::execute_store()::$_7, GD::Bc::Details::InstructionPack::execute_store()::$_8>>&&, std::__variant_detail::__base<(std::__variant_detail::_Trait)1, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>, std::shared_ptr<std::map<unsigned int, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>>>, std::basic_string_view<char>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::VariableTag>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, std::pair<GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, unsigned int>, GD::Bc::Ibase, GD::Bc::Obase, GD::Bc::Scale>&)  (in bc)"
+      },
+      {
+        "samples": 17,
+        "symbol": "GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::compare(GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>> const&) const  (in bc)"
+      },
+      {
+        "samples": 17,
+        "symbol": "std::__shared_weak_count::__release_weak()  (in libc++.1.dylib)"
+      },
+      {
+        "samples": 16,
+        "symbol": "DYLD-STUB$$memcpy  (in bc)"
+      },
+      {
+        "samples": 15,
+        "symbol": "<deduplicated_symbol>  (in bc)"
+      },
+      {
+        "samples": 14,
+        "symbol": "decltype(auto) std::__variant_detail::__visitation::__base::__dispatcher<0ul>::__dispatch[abi:nqe220106]<std::__variant_detail::__dtor<std::__variant_detail::__traits<GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>, std::shared_ptr<std::map<unsigned int, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>>>, std::basic_string_view<char>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::VariableTag>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, std::pair<GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, unsigned int>, GD::Bc::Ibase, GD::Bc::Obase, GD::Bc::Scale>, (std::__variant_detail::_Trait)1>::__destroy[abi:nqe220106]()::'lambda'(auto&)&&, std::__variant_detail::__base<(std::__variant_detail::_Trait)1, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>, std::shared_ptr<std::map<unsigned int, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>>>, std::basic_string_view<char>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::VariableTag>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, std::pair<GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, unsigned int>, GD::Bc::Ibase, GD::Bc::Obase, GD::Bc::Scale>&>(auto, std::__variant_detail::__base<(std::__variant_detail::_Trait)1, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>, std::shared_ptr<std::map<unsigned int, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>>>, std::basic_string_view<char>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::VariableTag>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, std::pair<GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, unsigned int>, GD::Bc::Ibase, GD::Bc::Obase, GD::Bc::Scale>&)  (in bc)"
+      },
+      {
+        "samples": 13,
+        "symbol": "GD::Bc::Details::InstructionPack::get_op2_expr() const  (in bc)"
+      },
+      {
+        "samples": 12,
+        "symbol": "GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::multiply(GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>> const&, unsigned int)  (in bc)"
+      },
+      {
+        "samples": 10,
+        "symbol": "std::__shared_ptr_emplace<std::vector<unsigned int>>::__on_zero_shared()  (in bc)"
+      },
+      {
+        "samples": 9,
+        "symbol": "DYLD-STUB$$memchr  (in bc)"
+      },
+      {
+        "samples": 9,
+        "symbol": "GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::BasicNumber(unsigned int)  (in bc)"
+      },
+      {
+        "samples": 7,
+        "symbol": "DYLD-STUB$$std::__shared_weak_count::__release_weak()  (in bc)"
+      },
+      {
+        "samples": 7,
+        "symbol": "decltype(auto) std::__variant_detail::__visitation::__base::__dispatcher<0ul>::__dispatch[abi:nqe220106]<std::__variant_detail::__visitation::__variant::__value_visitor<GD::Overloaded<GD::Bc::Details::InstructionPack::execute_push_param()::$_0, GD::Bc::Details::InstructionPack::execute_push_param()::$_1, GD::Bc::Details::InstructionPack::execute_push_param()::$_2>>&&, std::__variant_detail::__base<(std::__variant_detail::_Trait)1, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>, std::shared_ptr<std::map<unsigned int, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>>>, std::basic_string_view<char>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::VariableTag>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, std::pair<GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, unsigned int>, GD::Bc::Ibase, GD::Bc::Obase, GD::Bc::Scale>&>(std::__variant_detail::__visitation::__variant::__value_visitor<GD::Overloaded<GD::Bc::Details::InstructionPack::execute_push_param()::$_0, GD::Bc::Details::InstructionPack::execute_push_param()::$_1, GD::Bc::Details::InstructionPack::execute_push_param()::$_2>>&&, std::__variant_detail::__base<(std::__variant_detail::_Trait)1, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>, std::shared_ptr<std::map<unsigned int, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>>>, std::basic_string_view<char>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::VariableTag>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, std::pair<GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, unsigned int>, GD::Bc::Ibase, GD::Bc::Obase, GD::Bc::Scale>&)  (in bc)"
+      },
+      {
+        "samples": 6,
+        "symbol": "DYLD-STUB$$mach_absolute_time  (in libsystem_malloc.dylib)"
+      },
+      {
+        "samples": 6,
+        "symbol": "std::allocate_shared[abi:nqe220106]<std::vector<unsigned int>, std::__wrap_iter<unsigned int const*>&, std::__wrap_iter<unsigned int const*>&, 0>(std::allocator<std::vector<unsigned int>> const&, std::__wrap_iter<unsigned int const*>&, std::__wrap_iter<unsigned int const*>&)  (in bc)"
+      },
+      {
+        "samples": 5,
+        "symbol": "GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::multiply_basic(std::__wrap_iter<unsigned int const*>, std::__wrap_iter<unsigned int const*>, std::__wrap_iter<unsigned int const*>, std::__wrap_iter<unsigned int const*>)  (in bc)"
+      }
+    ],
+    "memory": {
+      "argv": [
+        "/usr/bin/time",
+        "-l",
+        "-o",
+        "/private/tmp/gd-bc-200-release-profiles/calls_200000.rss.txt",
+        "/private/tmp/gd-posix-vm-lifetime/build-release/src/bc/bc"
+      ],
+      "native_counters": {
+        "cycles_elapsed": 579891084,
+        "instructions_retired": 3203072656
+      },
+      "native_unit": "bytes (Darwin ru_maxrss)",
+      "peak_memory_footprint_bytes": 1261952,
+      "peak_rss_native": 2064384,
+      "repetitions": 1,
+      "status": "collected"
+    },
+    "name": "calls_200000",
+    "samples": 2239
+  },
+  {
+    "leaf_rows_at_least_five": [
+      {
+        "samples": 1809,
+        "symbol": "GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::for_each<GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::add(GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>> const&, unsigned int)::'lambda'(std::__wrap_iter<unsigned int*>, unsigned long long)>(GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>> const&, unsigned int, GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::add(GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>> const&, unsigned int)::'lambda'(std::__wrap_iter<unsigned int*>, unsigned long long), unsigned int)  (in bc)"
+      },
+      {
+        "samples": 247,
+        "symbol": "GD::Bc::Details::InstructionPack::execute()  (in bc)"
+      },
+      {
+        "samples": 71,
+        "symbol": "_xzm_free_main  (in libsystem_malloc.dylib)"
+      },
+      {
+        "samples": 62,
+        "symbol": "_xzm_xzone_malloc_tiny  (in libsystem_malloc.dylib)"
+      },
+      {
+        "samples": 36,
+        "symbol": "decltype(auto) std::__variant_detail::__visitation::__base::__dispatcher<3ul>::__dispatch[abi:nqe220106]<std::__variant_detail::__visitation::__variant::__value_visitor<GD::Overloaded<GD::Bc::Details::InstructionPack::execute_load()::$_0, GD::Bc::Details::InstructionPack::execute_load()::$_1, GD::Bc::Details::InstructionPack::execute_load()::$_2, GD::Bc::Details::InstructionPack::execute_load()::$_3, GD::Bc::Details::InstructionPack::execute_load()::$_4, GD::Bc::Details::InstructionPack::execute_load()::$_5, GD::Bc::Details::InstructionPack::execute_load()::$_6, GD::Bc::Details::InstructionPack::execute_load()::$_7, GD::Bc::Details::InstructionPack::execute_load()::$_8>>&&, std::__variant_detail::__base<(std::__variant_detail::_Trait)1, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>, std::shared_ptr<std::map<unsigned int, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>>>, std::basic_string_view<char>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::VariableTag>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, std::pair<GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, unsigned int>, GD::Bc::Ibase, GD::Bc::Obase, GD::Bc::Scale> const&>(std::__variant_detail::__visitation::__variant::__value_visitor<GD::Overloaded<GD::Bc::Details::InstructionPack::execute_load()::$_0, GD::Bc::Details::InstructionPack::execute_load()::$_1, GD::Bc::Details::InstructionPack::execute_load()::$_2, GD::Bc::Details::InstructionPack::execute_load()::$_3, GD::Bc::Details::InstructionPack::execute_load()::$_4, GD::Bc::Details::InstructionPack::execute_load()::$_5, GD::Bc::Details::InstructionPack::execute_load()::$_6, GD::Bc::Details::InstructionPack::execute_load()::$_7, GD::Bc::Details::InstructionPack::execute_load()::$_8>>&&, std::__variant_detail::__base<(std::__variant_detail::_Trait)1, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>, std::shared_ptr<std::map<unsigned int, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>>>, std::basic_string_view<char>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::VariableTag>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, std::pair<GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, unsigned int>, GD::Bc::Ibase, GD::Bc::Obase, GD::Bc::Scale> const&)  (in bc)"
+      },
+      {
+        "samples": 31,
+        "symbol": "GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::add(GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>> const&)  (in bc)"
+      },
+      {
+        "samples": 28,
+        "symbol": "_free  (in libsystem_malloc.dylib)"
+      },
+      {
+        "samples": 24,
+        "symbol": "<deduplicated_symbol>  (in libsystem_malloc.dylib)"
+      },
+      {
+        "samples": 16,
+        "symbol": "malloc_type_malloc  (in libsystem_malloc.dylib)"
+      },
+      {
+        "samples": 15,
+        "symbol": "GD::Bc::Details::InstructionPack::get_op1_expr() const  (in bc)"
+      },
+      {
+        "samples": 14,
+        "symbol": "_platform_memmove  (in libsystem_platform.dylib)"
+      },
+      {
+        "samples": 11,
+        "symbol": "GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::copy_on_write()  (in bc)"
+      },
+      {
+        "samples": 11,
+        "symbol": "decltype(auto) std::__variant_detail::__visitation::__base::__dispatcher<3ul>::__dispatch[abi:nqe220106]<std::__variant_detail::__visitation::__variant::__value_visitor<GD::Overloaded<GD::Bc::Details::InstructionPack::execute_store()::$_0, GD::Bc::Details::InstructionPack::execute_store()::$_1, GD::Bc::Details::InstructionPack::execute_store()::$_2, GD::Bc::Details::InstructionPack::execute_store()::$_3, GD::Bc::Details::InstructionPack::execute_store()::$_4, GD::Bc::Details::InstructionPack::execute_store()::$_5, GD::Bc::Details::InstructionPack::execute_store()::$_6, GD::Bc::Details::InstructionPack::execute_store()::$_7, GD::Bc::Details::InstructionPack::execute_store()::$_8>>&&, std::__variant_detail::__base<(std::__variant_detail::_Trait)1, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>, std::shared_ptr<std::map<unsigned int, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>>>, std::basic_string_view<char>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::VariableTag>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, std::pair<GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, unsigned int>, GD::Bc::Ibase, GD::Bc::Obase, GD::Bc::Scale>&>(std::__variant_detail::__visitation::__variant::__value_visitor<GD::Overloaded<GD::Bc::Details::InstructionPack::execute_store()::$_0, GD::Bc::Details::InstructionPack::execute_store()::$_1, GD::Bc::Details::InstructionPack::execute_store()::$_2, GD::Bc::Details::InstructionPack::execute_store()::$_3, GD::Bc::Details::InstructionPack::execute_store()::$_4, GD::Bc::Details::InstructionPack::execute_store()::$_5, GD::Bc::Details::InstructionPack::execute_store()::$_6, GD::Bc::Details::InstructionPack::execute_store()::$_7, GD::Bc::Details::InstructionPack::execute_store()::$_8>>&&, std::__variant_detail::__base<(std::__variant_detail::_Trait)1, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>, std::shared_ptr<std::map<unsigned int, GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>>>, std::basic_string_view<char>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::VariableTag>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, std::pair<GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>, unsigned int>, GD::Bc::Ibase, GD::Bc::Obase, GD::Bc::Scale>&)  (in bc)"
+      },
+      {
+        "samples": 9,
+        "symbol": "DYLD-STUB$$operator delete(void*)  (in bc)"
+      },
+      {
+        "samples": 7,
+        "symbol": "???  (in <unknown binary>)  [0x18a2304f8]"
+      },
+      {
+        "samples": 7,
+        "symbol": "operator new(unsigned long)  (in libc++abi.dylib)"
+      },
+      {
+        "samples": 6,
+        "symbol": "DYLD-STUB$$operator new(unsigned long)  (in bc)"
+      },
+      {
+        "samples": 6,
+        "symbol": "std::__shared_weak_count::__release_weak()  (in libc++.1.dylib)"
+      },
+      {
+        "samples": 5,
+        "symbol": "DYLD-STUB$$memcpy  (in bc)"
+      },
+      {
+        "samples": 5,
+        "symbol": "GD::Bc::Details::InstructionPack::get_op2_expr() const  (in bc)"
+      },
+      {
+        "samples": 5,
+        "symbol": "_platform_memchr  (in libsystem_platform.dylib)"
+      }
+    ],
+    "memory": {
+      "argv": [
+        "/usr/bin/time",
+        "-l",
+        "-o",
+        "/private/tmp/gd-bc-200-release-profiles/fibonacci_10000_x10.rss.txt",
+        "/private/tmp/gd-posix-vm-lifetime/build-release/src/bc/bc"
+      ],
+      "native_counters": {
+        "cycles_elapsed": 618148079,
+        "instructions_retired": 1044066490
+      },
+      "native_unit": "bytes (Darwin ru_maxrss)",
+      "peak_memory_footprint_bytes": 1622400,
+      "peak_rss_native": 2441216,
+      "repetitions": 1,
+      "status": "collected"
+    },
+    "name": "fibonacci_10000_x10",
+    "samples": 2449
+  },
+  {
+    "leaf_rows_at_least_five": [
+      {
+        "samples": 1293,
+        "symbol": "GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::multiply_basic(std::__wrap_iter<unsigned int const*>, std::__wrap_iter<unsigned int const*>, std::__wrap_iter<unsigned int const*>, std::__wrap_iter<unsigned int const*>)  (in bc)"
+      },
+      {
+        "samples": 664,
+        "symbol": "GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::for_each<GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::add(GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>> const&, unsigned int)::'lambda'(std::__wrap_iter<unsigned int*>, unsigned long long)>(GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>> const&, unsigned int, GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::add(GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>> const&, unsigned int)::'lambda'(std::__wrap_iter<unsigned int*>, unsigned long long), unsigned int)  (in bc)"
+      },
+      {
+        "samples": 321,
+        "symbol": "GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::sub(GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>> const&, unsigned int)  (in bc)"
+      },
+      {
+        "samples": 101,
+        "symbol": "std::vector<unsigned int>::insert(std::__wrap_iter<unsigned int const*>, unsigned int&&)  (in bc)"
+      },
+      {
+        "samples": 24,
+        "symbol": "GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::add(std::__wrap_iter<unsigned int const*>, std::__wrap_iter<unsigned int const*>, std::__wrap_iter<unsigned int const*>, std::__wrap_iter<unsigned int const*>)  (in bc)"
+      },
+      {
+        "samples": 18,
+        "symbol": "GD::Bc::Details::InstructionPack::execute()  (in bc)"
+      },
+      {
+        "samples": 9,
+        "symbol": "GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::multiply_karatsuba(std::__wrap_iter<unsigned int const*>, std::__wrap_iter<unsigned int const*>, std::__wrap_iter<unsigned int const*>, std::__wrap_iter<unsigned int const*>)  (in bc)"
+      },
+      {
+        "samples": 8,
+        "symbol": "GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::div_pow10(unsigned int)  (in bc)"
+      },
+      {
+        "samples": 8,
+        "symbol": "_xzm_xzone_malloc_tiny  (in libsystem_malloc.dylib)"
+      },
+      {
+        "samples": 6,
+        "symbol": "GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::copy_on_write()  (in bc)"
+      },
+      {
+        "samples": 6,
+        "symbol": "_xzm_free_main  (in libsystem_malloc.dylib)"
+      }
+    ],
+    "memory": {
+      "argv": [
+        "/usr/bin/time",
+        "-l",
+        "-o",
+        "/private/tmp/gd-bc-200-release-profiles/multiply_10000d_x1000.rss.txt",
+        "/private/tmp/gd-posix-vm-lifetime/build-release/src/bc/bc"
+      ],
+      "native_counters": {
+        "cycles_elapsed": 5793332684,
+        "instructions_retired": 7517569112
+      },
+      "native_unit": "bytes (Darwin ru_maxrss)",
+      "peak_memory_footprint_bytes": 1589632,
+      "peak_rss_native": 2408448,
+      "repetitions": 1,
+      "status": "collected"
+    },
+    "name": "multiply_10000d_x1000",
+    "samples": 2474
+  },
+  {
+    "leaf_rows_at_least_five": [
+      {
+        "samples": 1175,
+        "symbol": "GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::multiply_basic(std::__wrap_iter<unsigned int const*>, std::__wrap_iter<unsigned int const*>, std::__wrap_iter<unsigned int const*>, std::__wrap_iter<unsigned int const*>)  (in bc)"
+      },
+      {
+        "samples": 615,
+        "symbol": "GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::for_each<GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::add(GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>> const&, unsigned int)::'lambda'(std::__wrap_iter<unsigned int*>, unsigned long long)>(GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>> const&, unsigned int, GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::add(GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>> const&, unsigned int)::'lambda'(std::__wrap_iter<unsigned int*>, unsigned long long), unsigned int)  (in bc)"
+      },
+      {
+        "samples": 310,
+        "symbol": "GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::sub(GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>> const&, unsigned int)  (in bc)"
+      },
+      {
+        "samples": 76,
+        "symbol": "std::vector<unsigned int>::insert(std::__wrap_iter<unsigned int const*>, unsigned int&&)  (in bc)"
+      },
+      {
+        "samples": 48,
+        "symbol": "GD::Bc::Details::InstructionPack::execute()  (in bc)"
+      },
+      {
+        "samples": 19,
+        "symbol": "GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::add(std::__wrap_iter<unsigned int const*>, std::__wrap_iter<unsigned int const*>, std::__wrap_iter<unsigned int const*>, std::__wrap_iter<unsigned int const*>)  (in bc)"
+      },
+      {
+        "samples": 6,
+        "symbol": "GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::multiply_karatsuba(std::__wrap_iter<unsigned int const*>, std::__wrap_iter<unsigned int const*>, std::__wrap_iter<unsigned int const*>, std::__wrap_iter<unsigned int const*>)  (in bc)"
+      }
+    ],
+    "memory": {
+      "argv": [
+        "/usr/bin/time",
+        "-l",
+        "-o",
+        "/private/tmp/gd-bc-200-release-profiles/multiply_dense_10000d_x500.rss.txt",
+        "/private/tmp/gd-posix-vm-lifetime/build-release/src/bc/bc"
+      ],
+      "native_counters": {
+        "cycles_elapsed": 2923861147,
+        "instructions_retired": 3817540882
+      },
+      "native_unit": "bytes (Darwin ru_maxrss)",
+      "peak_memory_footprint_bytes": 1589632,
+      "peak_rss_native": 2408448,
+      "repetitions": 1,
+      "status": "collected"
+    },
+    "name": "multiply_dense_10000d_x500",
+    "samples": 2282
+  },
+  {
+    "leaf_rows_at_least_five": [
+      {
+        "samples": 1979,
+        "symbol": "GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::divide(GD::Bc::BasicNumber<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>, unsigned int)  (in bc)"
+      },
+      {
+        "samples": 75,
+        "symbol": "GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::mul_pow10(unsigned int)  (in bc)"
+      },
+      {
+        "samples": 43,
+        "symbol": "GD::Bc::Details::InstructionPack::execute()  (in bc)"
+      },
+      {
+        "samples": 24,
+        "symbol": "_xzm_free_main  (in libsystem_malloc.dylib)"
+      },
+      {
+        "samples": 14,
+        "symbol": "mach_absolute_time  (in libsystem_kernel.dylib)"
+      },
+      {
+        "samples": 12,
+        "symbol": "_xzm_xzone_malloc_tiny  (in libsystem_malloc.dylib)"
+      },
+      {
+        "samples": 11,
+        "symbol": "__error  (in libsystem_kernel.dylib)"
+      },
+      {
+        "samples": 9,
+        "symbol": "<deduplicated_symbol>  (in libsystem_malloc.dylib)"
+      },
+      {
+        "samples": 8,
+        "symbol": "_pthread_mutex_firstfit_unlock_slow  (in libsystem_pthread.dylib)"
+      },
+      {
+        "samples": 7,
+        "symbol": "GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::copy_on_write()  (in bc)"
+      },
+      {
+        "samples": 7,
+        "symbol": "_free  (in libsystem_malloc.dylib)"
+      },
+      {
+        "samples": 6,
+        "symbol": "malloc_type_malloc  (in libsystem_malloc.dylib)"
+      },
+      {
+        "samples": 5,
+        "symbol": "std::vector<unsigned int>::resize(unsigned long)  (in bc)"
+      }
+    ],
+    "memory": {
+      "argv": [
+        "/usr/bin/time",
+        "-l",
+        "-o",
+        "/private/tmp/gd-bc-200-release-profiles/divide_multilimb_900d_450d_s100_x1000.rss.txt",
+        "/private/tmp/gd-posix-vm-lifetime/build-release/src/bc/bc"
+      ],
+      "native_counters": {
+        "cycles_elapsed": 40975907,
+        "instructions_retired": 102234733
+      },
+      "native_unit": "bytes (Darwin ru_maxrss)",
+      "peak_memory_footprint_bytes": 1278336,
+      "peak_rss_native": 2097152,
+      "repetitions": 1,
+      "status": "collected"
+    },
+    "name": "divide_multilimb_900d_450d_s100_x1000",
+    "samples": 2244
+  },
+  {
+    "leaf_rows_at_least_five": [
+      {
+        "samples": 230,
+        "symbol": "GD::Bc::Details::verify_control_flow(std::vector<GD::Bc::Instruction> const&, bool)  (in bc)"
+      },
+      {
+        "samples": 205,
+        "symbol": "_xzm_xzone_malloc_tiny  (in libsystem_malloc.dylib)"
+      },
+      {
+        "samples": 200,
+        "symbol": "mach_absolute_time  (in libsystem_kernel.dylib)"
+      },
+      {
+        "samples": 170,
+        "symbol": "_xzm_free_main  (in libsystem_malloc.dylib)"
+      },
+      {
+        "samples": 123,
+        "symbol": "__error  (in libsystem_kernel.dylib)"
+      },
+      {
+        "samples": 90,
+        "symbol": "<deduplicated_symbol>  (in libsystem_malloc.dylib)"
+      },
+      {
+        "samples": 88,
+        "symbol": "__sigaction  (in libsystem_kernel.dylib)"
+      },
+      {
+        "samples": 70,
+        "symbol": "_pthread_mutex_firstfit_lock_slow  (in libsystem_pthread.dylib)"
+      },
+      {
+        "samples": 70,
+        "symbol": "_pthread_mutex_firstfit_unlock_slow  (in libsystem_pthread.dylib)"
+      },
+      {
+        "samples": 67,
+        "symbol": "_free  (in libsystem_malloc.dylib)"
+      },
+      {
+        "samples": 58,
+        "symbol": "malloc_type_malloc  (in libsystem_malloc.dylib)"
+      },
+      {
+        "samples": 53,
+        "symbol": "<deduplicated_symbol>  (in bc)"
+      },
+      {
+        "samples": 48,
+        "symbol": "GD::Bc::Lexer::lex()  (in bc)"
+      },
+      {
+        "samples": 29,
+        "symbol": "_platform_memmove  (in libsystem_platform.dylib)"
+      },
+      {
+        "samples": 27,
+        "symbol": "GD::Bc::Details::VMState::validate(std::vector<GD::Bc::Instruction> const&, bool) const  (in bc)"
+      },
+      {
+        "samples": 24,
+        "symbol": "_pthread_mutex_lock_init_slow  (in libsystem_pthread.dylib)"
+      },
+      {
+        "samples": 22,
+        "symbol": "GD::Bc::FileReader::peek()  (in bc)"
+      },
+      {
+        "samples": 18,
+        "symbol": "operator new(unsigned long)  (in libc++abi.dylib)"
+      },
+      {
+        "samples": 16,
+        "symbol": "GD::Bc::Parser::parse_program()  (in bc)"
+      },
+      {
+        "samples": 16,
+        "symbol": "std::__uninitialized_allocator_relocate[abi:nqe220106]<std::allocator<GD::Bc::Instruction>, GD::Bc::Instruction*>(std::allocator<GD::Bc::Instruction>&, GD::Bc::Instruction*, GD::Bc::Instruction*, GD::Bc::Instruction*)  (in bc)"
+      },
+      {
+        "samples": 15,
+        "symbol": "_pthread_mutex_unlock_init_slow  (in libsystem_pthread.dylib)"
+      },
+      {
+        "samples": 15,
+        "symbol": "flockfile  (in libsystem_c.dylib)"
+      },
+      {
+        "samples": 14,
+        "symbol": "DYLD-STUB$$memcpy  (in bc)"
+      },
+      {
+        "samples": 13,
+        "symbol": "DYLD-STUB$$operator delete(void*)  (in bc)"
+      },
+      {
+        "samples": 12,
+        "symbol": "DYLD-STUB$$operator new(unsigned long)  (in bc)"
+      },
+      {
+        "samples": 11,
+        "symbol": "???  (in <unknown binary>)  [0x18a2303d8]"
+      },
+      {
+        "samples": 11,
+        "symbol": "???  (in <unknown binary>)  [0x18a2304f8]"
+      },
+      {
+        "samples": 10,
+        "symbol": "GD::Bc::Lexer::chew()  (in bc)"
+      },
+      {
+        "samples": 8,
+        "symbol": "???  (in <unknown binary>)  [0x18a230948]"
+      },
+      {
+        "samples": 8,
+        "symbol": "GD::StreamInputFile::eof() const  (in bc)"
+      },
+      {
+        "samples": 8,
+        "symbol": "std::vector<GD::Bc::Instruction>::__destroy_vector::operator()[abi:nqe220106]()  (in bc)"
+      },
+      {
+        "samples": 7,
+        "symbol": "DYLD-STUB$$mach_absolute_time  (in libsystem_malloc.dylib)"
+      },
+      {
+        "samples": 7,
+        "symbol": "_platform_memset  (in libsystem_platform.dylib)"
+      },
+      {
+        "samples": 6,
+        "symbol": "decltype(auto) std::__variant_detail::__visitation::__base::__dispatcher<2ul>::__dispatch[abi:nqe220106]<void std::__variant_detail::__ctor<std::__variant_detail::__traits<std::basic_string<char>, GD::Bc::Instruction::Stream, long, GD::Bc::Location, GD::Bc::VariableMask, unsigned int, GD::Bc::Letter, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::VariableTag>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>>>::__generic_construct[abi:nqe220106]<std::__variant_detail::__move_constructor<std::__variant_detail::__traits<std::basic_string<char>, GD::Bc::Instruction::Stream, long, GD::Bc::Location, GD::Bc::VariableMask, unsigned int, GD::Bc::Letter, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::VariableTag>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>>, (std::__variant_detail::_Trait)1>>(std::__variant_detail::__ctor<std::__variant_detail::__traits<std::basic_string<char>, GD::Bc::Instruction::Stream, long, GD::Bc::Location, GD::Bc::VariableMask, unsigned int, GD::Bc::Letter, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::VariableTag>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>>>&, std::__variant_detail::__move_constructor<std::__variant_detail::__traits<std::basic_string<char>, GD::Bc::Instruction::Stream, long, GD::Bc::Location, GD::Bc::VariableMask, unsigned int, GD::Bc::Letter, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::VariableTag>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>>, (std::__variant_detail::_Trait)1>&&)::'lambda'(std::__variant_detail::__move_constructor<std::__variant_detail::__traits<std::basic_string<char>, GD::Bc::Instruction::Stream, long, GD::Bc::Location, GD::Bc::VariableMask, unsigned int, GD::Bc::Letter, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::VariableTag>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>>, (std::__variant_detail::_Trait)1>&&)&&, std::__variant_detail::__base<(std::__variant_detail::_Trait)1, std::basic_string<char>, GD::Bc::Instruction::Stream, long, GD::Bc::Location, GD::Bc::VariableMask, unsigned int, GD::Bc::Letter, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::VariableTag>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>>&&>(std::__variant_detail::__move_constructor<std::__variant_detail::__traits<std::basic_string<char>, GD::Bc::Instruction::Stream, long, GD::Bc::Location, GD::Bc::VariableMask, unsigned int, GD::Bc::Letter, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::VariableTag>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>>, (std::__variant_detail::_Trait)1>, std::__variant_detail::__base<(std::__variant_detail::_Trait)1, std::basic_string<char>, GD::Bc::Instruction::Stream, long, GD::Bc::Location, GD::Bc::VariableMask, unsigned int, GD::Bc::Letter, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::VariableTag>, GD::TypeWrapper<GD::Bc::Letter, GD::Bc::ArrayTag>>&&)  (in bc)"
+      },
+      {
+        "samples": 6,
+        "symbol": "fgetc  (in libsystem_c.dylib)"
+      },
+      {
+        "samples": 5,
+        "symbol": "???  (in <unknown binary>)  [0x18a230940]"
+      },
+      {
+        "samples": 5,
+        "symbol": "GD::Bc::Details::InstructionPack::execute()  (in bc)"
+      },
+      {
+        "samples": 5,
+        "symbol": "GD::Bc::Parser::parse_opt_assign_expression(GD::Bc::Parser::POPEFlags)  (in bc)"
+      }
+    ],
+    "memory": {
+      "argv": [
+        "/usr/bin/time",
+        "-l",
+        "-o",
+        "/private/tmp/gd-bc-200-release-profiles/frontend_definitions_2000.rss.txt",
+        "/private/tmp/gd-posix-vm-lifetime/build-release/src/bc/bc"
+      ],
+      "native_counters": {
+        "cycles_elapsed": 56952074,
+        "instructions_retired": 263930317
+      },
+      "native_unit": "bytes (Darwin ru_maxrss)",
+      "peak_memory_footprint_bytes": 1687936,
+      "peak_rss_native": 2490368,
+      "repetitions": 1,
+      "status": "collected"
+    },
+    "name": "frontend_definitions_2000",
+    "samples": 1903
+  },
+  {
+    "leaf_rows_at_least_five": [
+      {
+        "samples": 1891,
+        "symbol": "GD::Bc::Details::InstructionPack::execute()  (in bc)"
+      },
+      {
+        "samples": 93,
+        "symbol": "__error  (in libsystem_kernel.dylib)"
+      },
+      {
+        "samples": 41,
+        "symbol": "_pthread_mutex_firstfit_lock_slow  (in libsystem_pthread.dylib)"
+      },
+      {
+        "samples": 39,
+        "symbol": "_pthread_mutex_firstfit_unlock_slow  (in libsystem_pthread.dylib)"
+      },
+      {
+        "samples": 19,
+        "symbol": "_pthread_mutex_unlock_init_slow  (in libsystem_pthread.dylib)"
+      },
+      {
+        "samples": 16,
+        "symbol": "_platform_memchr  (in libsystem_platform.dylib)"
+      },
+      {
+        "samples": 12,
+        "symbol": "GD::Bc::Lexer::lex()  (in bc)"
+      },
+      {
+        "samples": 8,
+        "symbol": "???  (in <unknown binary>)  [0x18a230948]"
+      },
+      {
+        "samples": 7,
+        "symbol": "GD::Bc::Details::BasicDigits<GD::Bc::NumberTraitsBase<unsigned int, unsigned long long, 9u>>::copy_on_write()  (in bc)"
+      },
+      {
+        "samples": 7,
+        "symbol": "GD::Bc::FileReader::do_chew()  (in bc)"
+      },
+      {
+        "samples": 7,
+        "symbol": "GD::Bc::FileReader::peek()  (in bc)"
+      },
+      {
+        "samples": 7,
+        "symbol": "flockfile  (in libsystem_c.dylib)"
+      },
+      {
+        "samples": 5,
+        "symbol": "???  (in <unknown binary>)  [0x18a23094c]"
+      },
+      {
+        "samples": 5,
+        "symbol": "_pthread_mutex_lock_init_slow  (in libsystem_pthread.dylib)"
+      },
+      {
+        "samples": 5,
+        "symbol": "pthread_mutex_lock  (in libsystem_pthread.dylib)"
+      }
+    ],
+    "memory": {
+      "argv": [
+        "/usr/bin/time",
+        "-l",
+        "-o",
+        "/private/tmp/gd-bc-200-release-profiles/decimal_input_4000d_x100.rss.txt",
+        "/private/tmp/gd-posix-vm-lifetime/build-release/src/bc/bc"
+      ],
+      "native_counters": {
+        "cycles_elapsed": 596685178,
+        "instructions_retired": 1334363449
+      },
+      "native_unit": "bytes (Darwin ru_maxrss)",
+      "peak_memory_footprint_bytes": 1606016,
+      "peak_rss_native": 2424832,
+      "repetitions": 1,
+      "status": "collected"
+    },
+    "name": "decimal_input_4000d_x100",
+    "samples": 2199
+  }
+]
