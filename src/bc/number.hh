@@ -200,8 +200,9 @@ public:
 
     NumType temp = *it;
     auto t2 = temp % pow10_scale;
-    result += t2 * (base_ / pow10_scale);
-    temp -= t2;
+    // The combined partial limb remains below base_; t2 is at most temp.
+    result = static_cast<NumType>(result + t2 * (base_ / pow10_scale));
+    temp = static_cast<NumType>(temp - t2);
     if (temp > std::numeric_limits<NumType>::max() / pow10_scale) {
       return to_unsigned_error_too_large_;
     }
@@ -329,7 +330,8 @@ public:
       assert(scale >= result.end() - it);  // NOLINT
       while (result.end() - it > break_at - digits_printed) {
         os << result.substr(it - result.begin(), break_at - digits_printed) << "\\\n";
-        scale -= break_at - digits_printed;
+        // The loop and the scale invariant above bound the chunk by scale.
+        scale = static_cast<NumType>(scale - (break_at - digits_printed));
         it += break_at - digits_printed;
         digits_printed = 0;
       }

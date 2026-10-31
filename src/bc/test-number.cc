@@ -514,6 +514,7 @@ TEMPLATE_TEST_CASE("Generic input conversion and width boundaries", "[bc][number
   auto const last_limb = static_cast<NumType>(Number::base_ - 1);
   REQUIRE(Number(last_limb) == native_number<Number>(last_limb));
   REQUIRE(Number(last_limb).to_unsigned() == last_limb);
+  REQUIRE(Number(std::to_string(last_limb) + ".0", 10).to_unsigned() == last_limb);
   REQUIRE(Digits().to_unsigned(0) == 0);
   REQUIRE(Digits(1).to_unsigned(Number::base_log10_) == Digits::to_unsigned_error_fractional_);
   auto too_large = Digits(last_limb);
@@ -528,4 +529,14 @@ TEMPLATE_TEST_CASE("Generic input conversion and width boundaries", "[bc][number
   REQUIRE(Number("0.1", 2) == Number("0.5", 10));
   REQUIRE(Number("0.01", 2) == Number("0.25", 10));
   REQUIRE(Number("0.0000000001", 2) == Number("0.0009765625", 10));
+
+  std::string const fraction = "0." + std::string(80, '1');
+  std::ostringstream output;
+  Number(fraction, 10).output(output, 10, 0);
+  auto wrapped = output.str();
+  REQUIRE(wrapped.find("\\\n") != std::string::npos);
+  for (auto pos = wrapped.find("\\\n"); pos != std::string::npos; pos = wrapped.find("\\\n")) {
+    wrapped.erase(pos, 2);
+  }
+  REQUIRE(wrapped == (GD::Bc::extensions_enabled() ? fraction.substr(1) : fraction));
 }
