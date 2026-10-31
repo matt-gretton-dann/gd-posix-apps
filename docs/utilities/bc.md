@@ -334,6 +334,13 @@ multiplications.
 For raising to a negative power we calculate P = x ^ |n| first before doing 1/P to the appropriate
 scale.  This ensures we get the correct answer.
 
+For a positive exponent `n`, the result scale is
+`min(scale(x) * n, max(scale, scale(x)))`. In particular, reducing the global
+scale does not discard the operand's existing precision: at global scale 0,
+`1.23^2` is `1.51`. A zero exponent produces 1 with scale 0; a negative exponent
+uses the global scale. Exact rational CLI oracles and shared trait tests check
+both values and result scales.
+
 #### Square Root
 
 We use the basic Newton-Raphson recursion at a larger scale than we want to ensure we get the right
