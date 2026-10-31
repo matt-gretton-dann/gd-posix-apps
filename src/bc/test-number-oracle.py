@@ -62,6 +62,15 @@ class NumberOracle(unittest.TestCase):
                     cases.append((literal(a) + "^" + literal(str(exponent)), places, expected, s))
         self.assert_program(cases)
 
+    def test_addition_and_subtraction_scales(self):
+        cases = []
+        for a in ("0", "0.000", "-0.000", "1", "-1", "1.25", "-1.25", ".000000001"):
+            for b in ("0", "0.000", "-0.000", "1", "-1", "1.25", "-1.25"):
+                for op in ("+", "-"):
+                    expected = Fraction(a) + (Fraction(b) if op == "+" else -Fraction(b))
+                    cases.append((literal(a) + op + literal(b), 0, expected, max(scale(a), scale(b))))
+        self.assert_program(cases)
+
 
 
 if __name__ == "__main__":

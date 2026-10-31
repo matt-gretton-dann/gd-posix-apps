@@ -37,6 +37,7 @@ if(RUN_UNIT_TESTS)
                  test-lexer-comments.cc
                  test-libbc-main.cc
                  test-number.cc
+                 test-number-zero-scale.cc
                  test-number-power.cc
                  test-parser.cc
                  test-reader.cc)
