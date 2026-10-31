@@ -294,3 +294,16 @@ check ordering, subsequent addition and preservation of the original shared
 value. Multiply-accumulate must drain its complete carry into radix-sized limbs;
 appending a full native carry as one limb gives a noncanonical value even when
 its decimal spelling happens to look correct.
+
+## Fatal parser reuse
+
+A syntax diagnostic terminates that parser object. Every later `parse()` call
+returns a fresh canonical stream containing the original diagnostic, stderr
+print, `quit(1)` and one EOF. Previously returned streams remain unchanged.
+Abandoned loop/function context is cleared when the fatal stream is emitted.
+This prevents duplicate EOFs and partially suppressed definitions when a caller
+inspects or reuses a fatal parser. It does not add recoverable parsing (#185).
+
+The repeated-parse table checks EOF, newline, unfinished loops/functions and a
+definition at the error cursor in both interactive modes. A separate positive
+case executes two nonfatal interactive items and then EOF to guard normal reuse.
