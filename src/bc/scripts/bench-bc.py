@@ -124,6 +124,14 @@ def corpus(preset="full", selected=None, listing=False, seed=197200):
     add("array_{}".format(count), "array",
         "s=0\nfor(i=0;i<%d;i++) a[i]=i\nfor(i=0;i<%d;i++) s+=a[i]\ns" % (count, count),
         lambda: count * (count - 1) // 2, {"elements": count})
+    digits, repeats = dimension(1000), iterations(100000)
+    left = "7" * digits
+    for position, right in (("high", "8" + left[1:]),
+                            ("low", left[:-1] + "8"), ("equal", left)):
+        add("compare_{}_{}d_x{}".format(position, digits, repeats), "comparison",
+            "a={}\nb={}\ns=0\nfor(i=0;i<{};i++) {{if(a<=b) s+=1}}\ns".format(left, right, repeats),
+            lambda: repeats, {"digits": digits, "iterations": repeats,
+                              "first_unequal_limb": position})
     for size, repeats in ((1000, 100), (10000, 10)):
         size, repeats = dimension(size), iterations(repeats)
         body = Path(__file__).with_name("add-bench.bc").read_text(encoding="utf-8")
