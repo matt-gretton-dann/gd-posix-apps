@@ -16,6 +16,7 @@ set(FORCE_SUPPLEMENTAL_LIBRARY OFF CACHE BOOL "Force use of libgdsup?")
 set(BUILD_TESTING ON CACHE BOOL "Enable testing")
 set(ENABLE_NON_POSIX_EXTENSIONS ON CACHE BOOL "Enable non-POSIX extensions")
 set(ENABLE_BC_PROFILE OFF CACHE BOOL "Enable separate bc allocation and copy diagnostics")
+set(BC_MULTIPLY_SPLIT_POINT auto CACHE STRING "auto or a fixed positive bc multiplication threshold in limbs")
 set(ENABLE_BC_COVERAGE OFF CACHE BOOL "Instrument bc tests with Clang line, branch and MC/DC coverage")
 
 # Package inclusions

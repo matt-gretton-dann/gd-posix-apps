@@ -49,9 +49,9 @@ jobs:
       - name: Check separate bc profiling build
         if: ${{ matrix.extensions == 'ON' }}
         run: |
-          cmake -S "${GITHUB_WORKSPACE}" -B "${GITHUB_WORKSPACE}/build-profile" -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DENABLE_BC_PROFILE=ON
+          cmake -S "${GITHUB_WORKSPACE}" -B "${GITHUB_WORKSPACE}/build-profile" -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DENABLE_BC_PROFILE=ON -DBC_MULTIPLY_SPLIT_POINT=126
           cmake --build "${GITHUB_WORKSPACE}/build-profile" --target bc
-          python3 "${GITHUB_WORKSPACE}/src/bc/test-profiling-cli.py" "${GITHUB_WORKSPACE}/build-profile/src/bc/bc"
+          python3 "${GITHUB_WORKSPACE}/src/bc/test-profiling-cli.py" "${GITHUB_WORKSPACE}/build-profile/src/bc/bc" --split-point 126
 
 
   windows-build:
@@ -86,6 +86,6 @@ jobs:
     - name: Check separate bc profiling build
       if: ${{ matrix.extensions == 1 }}
       run: |
-        cmake -S "$Env:GITHUB_WORKSPACE" -B "$Env:GITHUB_WORKSPACE/build-profile" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DENABLE_BC_PROFILE=ON
+        cmake -S "$Env:GITHUB_WORKSPACE" -B "$Env:GITHUB_WORKSPACE/build-profile" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DENABLE_BC_PROFILE=ON -DBC_MULTIPLY_SPLIT_POINT=126
         cmake --build "$Env:GITHUB_WORKSPACE/build-profile" --config Release --target bc
-        python "$Env:GITHUB_WORKSPACE/src/bc/test-profiling-cli.py" "$Env:GITHUB_WORKSPACE/build-profile/src/bc/Release/bc.exe"
+        python "$Env:GITHUB_WORKSPACE/src/bc/test-profiling-cli.py" "$Env:GITHUB_WORKSPACE/build-profile/src/bc/Release/bc.exe" --split-point 126

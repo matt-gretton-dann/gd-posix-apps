@@ -146,6 +146,10 @@ endif()
 
 # These local CLI regressions run in both extension configurations and on Windows.
 if(RUN_INTEGRATION_TESTS)
+  add_test(NAME bc/multiply-config COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-multiply-config.py" "${CMAKE_COMMAND}"
+           "${CMAKE_SOURCE_DIR}/cmake/BcMultiplyConfig.cmake")
+  set_tests_properties(bc/multiply-config PROPERTIES TIMEOUT 20)
   add_test(NAME bc/comparator-builds COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-comparator-builds.py"
            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/build-bc-comparators.py")
@@ -204,13 +208,31 @@ if(RUN_INTEGRATION_TESTS)
 endif()
 
 
-add_custom_command(
-  OUTPUT "find-multiply-split-point.hh"
-  COMMAND "$<TARGET_FILE:find-multiply-split-point>"
-          "${CMAKE_CURRENT_BINARY_DIR}/find-multiply-split-point.hh"
-  DEPENDS find-multiply-split-point
-  COMMENT "Generating find-multiply-split-point.hh")
-add_custom_target(find_multiply_split_point_header DEPENDS find-multiply-split-point.hh)
+include(BcMultiplyConfig)
+gd_bc_multiply_choice("${BC_MULTIPLY_SPLIT_POINT}" "${CMAKE_CROSSCOMPILING}"
+                      GD_BC_MULTIPLY_MODE GD_BC_MULTIPLY_FIXED_POINT)
+if(GD_BC_MULTIPLY_MODE STREQUAL "auto")
+  # Keep native calibration separate from a fixed header. Reconfiguring back
+  # to auto must never reuse a fixed value as though it had been calibrated.
+  configure_file(find-multiply-split-point-auto.hh.in find-multiply-split-point.hh @ONLY)
+  add_custom_command(
+    OUTPUT "find-multiply-split-point-auto.hh"
+    COMMAND "$<TARGET_FILE:find-multiply-split-point>"
+            "${CMAKE_CURRENT_BINARY_DIR}/find-multiply-split-point-auto.hh"
+    DEPENDS find-multiply-split-point
+    COMMENT "Calibrating bc multiplication dispatch")
+  set(GD_BC_MULTIPLY_HEADER_DEPS find-multiply-split-point.hh find-multiply-split-point-auto.hh)
+else()
+  if(BC_MULTIPLY_SPLIT_POINT STREQUAL "auto")
+    set(GD_BC_MULTIPLY_DESCRIPTION "portable cross-build fallback")
+  else()
+    set(GD_BC_MULTIPLY_DESCRIPTION "explicit BC_MULTIPLY_SPLIT_POINT")
+  endif()
+  configure_file(find-multiply-split-point-fixed.hh.in find-multiply-split-point.hh @ONLY)
+  set(GD_BC_MULTIPLY_HEADER_DEPS find-multiply-split-point.hh)
+  message(STATUS "bc multiplication split point: ${GD_BC_MULTIPLY_FIXED_POINT} (${GD_BC_MULTIPLY_DESCRIPTION})")
+endif()
+add_custom_target(find_multiply_split_point_header DEPENDS ${GD_BC_MULTIPLY_HEADER_DEPS})
 add_dependencies(bc find_multiply_split_point_header)
 
 if(ENABLE_NON_POSIX_EXTENSIONS)

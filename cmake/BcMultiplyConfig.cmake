@@ -1,0 +1,28 @@
+# Choose a reproducible multiplication threshold without executing cross targets.
+# SPDX-License-Identifier: Apache-2.0
+function(gd_bc_multiply_choice requested cross output_mode output_point)
+  if("${requested}" STREQUAL "auto")
+    if(cross)
+      # Correctness does not depend on the exact positive dispatch boundary.
+      # This portable choice avoids running a target executable on the host.
+      set(${output_mode} fixed PARENT_SCOPE)
+      set(${output_point} 128 PARENT_SCOPE)
+    else()
+      set(${output_mode} auto PARENT_SCOPE)
+      set(${output_point} "" PARENT_SCOPE)
+    endif()
+    return()
+  endif()
+  if(NOT requested MATCHES "^[1-9][0-9]*$")
+    message(FATAL_ERROR "BC_MULTIPLY_SPLIT_POINT must be auto or an integer from 1 to 1000000000")
+  endif()
+  string(LENGTH "${requested}" _length)
+  if(_length GREATER 10)
+    message(FATAL_ERROR "BC_MULTIPLY_SPLIT_POINT exceeds the native limb radix 1000000000")
+  endif()
+  if(requested GREATER 1000000000)
+    message(FATAL_ERROR "BC_MULTIPLY_SPLIT_POINT exceeds the native limb radix 1000000000")
+  endif()
+  set(${output_mode} fixed PARENT_SCOPE)
+  set(${output_point} "${requested}" PARENT_SCOPE)
+endfunction()
