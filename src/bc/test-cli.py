@@ -236,6 +236,9 @@ class CliTests(unittest.TestCase):
             with self.subTest(body=body):
                 self.run_bc("define f() {\n" + body + "\n}\nf()\n", expected + "\n")
         self.run_bc("define f(a[]) {\nreturn (a[0])\n}\na[0]=6\nf(a[])\n", "6\n")
+        self.run_bc("define f(z) {\nreturn (z)\n}\nz=4\nf(9)\nz\n", "9\n4\n")
+        self.run_bc("define f(z[]) {\nz[0]=8\nreturn (z[0])\n}\n"
+                    "z[0]=4\nf(z[])\nz[0]\n", "8\n4\n")
         for text in ("define f(a,a) {\n}\n", "define f(a[],a[]) {\n}\n",
                      "define f() {\nauto a 1\n}\n"):
             with self.subTest(text=text):
