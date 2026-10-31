@@ -1502,7 +1502,7 @@ public:
 
     if (!power_frac.is_zero()) {
       std::ostringstream ss;
-      output(ss, 10, 0);  // NOLINT - 10 isn't magic
+      rhs.output(ss, 10, 0);  // NOLINT - 10 isn't magic
       Details::error(Msg::raising_to_fractional_power, ss.str());
       return;
     }
