@@ -48,6 +48,14 @@ endif()
 add_utility(NAME bc NO_INT_TEST CAT_ID bc SOURCES bc.cc)
 target_link_libraries(bc PUBLIC libbc)
 
+# These local CLI regressions run in both extension configurations and on Windows.
+if(RUN_INTEGRATION_TESTS)
+  add_test(NAME bc/cli COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-cli.py" "$<TARGET_FILE:bc>"
+           --extensions "${ENABLE_NON_POSIX_EXTENSIONS}")
+  set_tests_properties(bc/cli PROPERTIES TIMEOUT 60)
+endif()
+
 add_executable(find-multiply-split-point  find-multiply-split-point.cc)
 target_include_directories(find-multiply-split-point PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_include_directories(find-multiply-split-point PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
