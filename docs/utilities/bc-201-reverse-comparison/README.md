@@ -141,3 +141,7 @@ as universal effects. Broader competitive targets remain unmet in several classe
 | `decimal_input_4500d_x88` | 1.002 [0.987, 1.011] | 36.185 [35.614, 37.163] |
 | `decimal_output_225d_x875` | 1.005 [0.915, 1.086] | 2.157 [2.080, 2.280] |
 | `streaming_statements_17500` | 1.004 [0.999, 1.006] | 3.063 [2.976, 3.110] |
+
+The native paired workflow also selects all three comparison shapes. Its
+current corpus inventory test is updated to 36; historical manifests retain
+their as-run inventories. Performance remains advisory.

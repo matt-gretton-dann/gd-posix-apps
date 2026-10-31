@@ -1,0 +1,67 @@
+name: bc native paired trends
+on:
+  pull_request:
+    branches: [main]
+    paths: ['src/**', 'libgdsup/**', 'CMakeLists.txt', 'cmake/**', '.github/workflows/bc-performance.yml']
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 3 * * 2'
+  workflow_dispatch:
+    inputs:
+      baseline:
+        description: 'Accepted immutable 40-digit source anchor (empty uses documented anchor)'
+        type: string
+        default: ''
+permissions:
+  contents: read
+concurrency:
+  group: bc-performance-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  paired:
+    name: Paired native bc / ${{ matrix.image }}
+    runs-on: ${{ matrix.image }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [ubuntu-24.04, windows-2025, macos-15]
+    env:
+      BC_CANDIDATE: ${{ github.event.pull_request.head.sha || github.sha }}
+      BC_BASE: ${{ github.event.pull_request.base.sha || inputs.baseline || '2ddf749e8b313f620ad248d680e801c409bbd3f5' }}
+      BC_BROAD: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.BC_CANDIDATE }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Establish native MSVC environment
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installation = & "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe" -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (!$installation) { throw 'Native x64 MSVC is unavailable' }
+          $variables = & cmd /c "`"$installation\Common7\Tools\VsDevCmd.bat`" -arch=x64 -host_arch=x64 >nul && set"
+          if ($LASTEXITCODE) { throw 'Cannot initialize MSVC' }
+          foreach ($line in $variables) {
+            if ($line -match '^(PATH|INCLUDE|LIB|LIBPATH|VCToolsInstallDir|VCINSTALLDIR|VSINSTALLDIR|WindowsSdkDir|WindowsSDKVersion|UniversalCRTSdkDir|UCRTVersion|Platform)=(.*)$') {
+              "$($matches[1])=$($matches[2])" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            }
+          }
+      - name: Build, check and measure serial paired processes
+        shell: pwsh
+        run: |
+          $arguments = @('src/bc/scripts/benchmark-ci.py', '--source', $env:GITHUB_WORKSPACE, '--base', $env:BC_BASE, '--candidate', $env:BC_CANDIDATE, '--output', 'bc-native-results')
+          if ($env:BC_BROAD -eq 'true') { $arguments += '--broad' }
+          python @arguments
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Preserve raw checked samples and provenance
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bc-native-${{ matrix.image }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: bc-native-results/evidence/
+          if-no-files-found: error
+          retention-days: 30
