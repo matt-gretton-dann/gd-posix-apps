@@ -11,6 +11,10 @@
 #
 name: "CodeQL"
 
+permissions:
+  contents: read
+  security-events: write
+
 on:
   push:
     branches: [ main ]
@@ -47,17 +51,19 @@ jobs:
 
           # Initializes the CodeQL tools for scanning.
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
+        uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.language == 'cpp' && 'manual' || 'none' }}
           # If you wish to specify custom queries, you can do so here or in a config file.
           # By default, queries listed here will override any specified in a config file.
           # Prefix the list here with "+" to use these queries and those in the config file.
           # queries: ./path/to/local/query, your-org/your-repo/queries@main
 
       - name: Build
+        if: ${{ matrix.language == 'cpp' }}
         run: |
           cmake --build "${GITHUB_WORKSPACE}/build" --config RelWithDebInfo
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
+        uses: github/codeql-action/analyze@v4
