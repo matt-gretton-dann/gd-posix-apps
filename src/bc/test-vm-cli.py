@@ -8,7 +8,7 @@ import unittest
 
 
 class VMTests(unittest.TestCase):
-    def run_bc(self, text, output="", success=True, options=()):
+    def run_bc(self, text, output="", success=True, options=(), diagnostic=None):
         try:
             run = subprocess.run([BC, *options], input=text, universal_newlines=True,
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=2,
@@ -21,12 +21,28 @@ class VMTests(unittest.TestCase):
             self.assertEqual(run.stderr, "")
         else:
             self.assertNotEqual(run.stderr, "")
+        if diagnostic is not None:
+            self.assertIn(diagnostic, run.stderr)
 
     def test_runtime_numeric_errors(self):
-        for text in ("1/0\n", "2%0\n", "sqrt(-1)\n", "ibase=1\n", "ibase=17\n",
-                     "ibase=-2\n", "obase=1\n", "obase=-2\n", "scale=-1\n", "a[-1]=1\n"):
+        for text, diagnostic in (("1/0\n", "divide by zero"),
+                                 ("2%0\n", "divide by zero"),
+                                 ("sqrt(-1)\n", "square root of the negative number"),
+                                 ("ibase=1\n", "not a valid ibase"),
+                                 ("ibase=17\n", "not a valid ibase"),
+                                 ("ibase=-2\n", "it is negative"),
+                                 ("obase=1\n", "not a valid obase"),
+                                 ("obase=-2\n", "it is negative"),
+                                 ("scale=-1\n", "it is negative"),
+                                 ("a[-1]=1\n", "it is negative")):
             with self.subTest(text=text):
-                self.run_bc(text, success=False)
+                self.run_bc(text, success=False, diagnostic=diagnostic)
+
+    def test_fractional_power_identifies_exponent(self):
+        for text, exponent in (("2^1.5\n", "1.5"), ("3^(-1.25)\n", "-1.25")):
+            with self.subTest(text=text):
+                self.run_bc(text, success=False,
+                            diagnostic="Attempted to raise to fractional power " + exponent + ".")
 
     def test_radix_bounds_and_output(self):
         for text, output in (("ibase=2\n10\n", "2\n"), ("ibase=16\nF\n", "15\n"),
