@@ -68,6 +68,13 @@ execution determines the interpretation.
 
 The parser's handling of errors is to stop parsing immediately, and to not to try to do any recovery.
 
+Syntax errors are reported when read, including inside uncalled functions or
+unreachable branches. A parser error unwinds the current parse and replaces its
+partial instructions with a diagnostic and failure termination. This prevents
+function/branch control flow from hiding errors or executing partial code.
+Previously completed input items keep their output; the current malformed item
+is discarded. A later `quit` does not erase an earlier syntax error.
+
 There are some obvious requirements of the language which may be easy to recover from.  For instance:
 
  * `return (x)` - the brackets are a requirement

@@ -766,6 +766,12 @@ public:
   [[nodiscard]] auto seen_quit() const noexcept -> bool;
 
 private:
+  /** A parse-time diagnostic must escape any unexecuted function/branch body. */
+  struct ParseError
+  {
+    std::string diagnostic;
+  };
+
   /** Parse the main program production. */
   void parse_program();
 
@@ -958,10 +964,12 @@ private:
    */
   auto ensure_expr_loaded(ExprIndex idx) -> ExprIndex;
 
-  /** \brief       Insert error message into stream.
+  /** \brief       Abort the current parse with a diagnostic.
    *  \param  msg  Message ID
    *  \param  args Arguments for the message.
-   *  \return      Offset of last instruction of error.
+   *  \return      Missing expression after quit; otherwise unwinds to parse().
+   *
+   * parse() emits the diagnostic outside any partial function or control flow.
    */
   template<typename... Ts>
   auto insert_error(Msg msg, Ts... args) -> ExprIndex
@@ -975,12 +983,7 @@ private:
      * asked to report.
      */
     bool const lexer_error = lexer_->peek() == Token::Type::error;
-    auto s = insert_string(lexer_error ? lexer_->peek().error() : lexer_->error(msg, args...));
-    if (lexer_error) {
-      lexer_->chew();
-    }
-    insert_print(s, Instruction::Stream::error);
-    return insert_quit(1);
+    throw ParseError{lexer_error ? lexer_->peek().error() : lexer_->error(msg, args...)};
   }
 
   /** \brief    Insert end of file instruction
