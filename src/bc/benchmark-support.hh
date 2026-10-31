@@ -21,7 +21,7 @@ auto limb_distribution() -> std::uniform_int_distribution<typename Number::Print
 {
   // PrintType promotes an 8-bit limb to a supported distribution integer type.
   return std::uniform_int_distribution<typename Number::PrintType>(
-    0, static_cast<typename Number::PrintType>(Number::base_));
+    0, static_cast<typename Number::PrintType>(Number::base_ - 1));
 }
 
 using Time = struct timespec;
