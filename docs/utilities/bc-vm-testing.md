@@ -1,5 +1,11 @@
 # bc VM and diagnostic tests
 
+The isolated `gdsup/signal-first-action` test checks first-request preservation
+and previous-action output in the signal API, before VM-specific restoration is
+involved. Windows console-dispatch initialization must precede storage of the
+requested action. Native POSIX sigaction remains the reference path; unsupported
+facilities report an explicit CTest skip.
+
 `test-token-format.cc` asserts token type names, source spellings, payload/debug
 output and all operator classifications. Each positive operator case is paired
 with the other token kinds, providing short-circuit independence witnesses for

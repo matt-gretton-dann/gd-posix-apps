@@ -96,14 +96,18 @@ int sigaction(int sig, struct sigaction const* __RESTRICT act, struct sigaction*
   }
 
   if (act != NULL) {
+    /* Initialization establishes the default action. Do it before storing the
+     * request, otherwise the first successful request is silently discarded.
+     * A failed initialization must not apply the requested disposition.
+     */
+    if (!install_handlers()) {
+      return -1;
+    }
+
     struct sigaction new_action = *act;
     sigdelset(&new_action.sa_mask, SIGKILL);
     sigdelset(&new_action.sa_mask, SIGSTOP);
     intaction = new_action;
-
-    if (!install_handlers()) {
-      return -1;
-    }
   }
 
   return 0;
