@@ -93,6 +93,8 @@ class CliTests(unittest.TestCase):
     def test_array_length_boundaries(self):
         if EXTENSIONS:
             self.run_bc("length(a[])\n", "0\n")
+            self.run_bc("define f(a[]) {\nreturn (length(a[]))\n}\nf(a[])\n", "0\n")
+            self.run_bc("define f() {\nauto a[]\nreturn (length(a[]))\n}\nf()\n", "0\n")
             self.run_bc("a[0]=0\nlength(a[])\na[9]=0\nlength(a[])\n", "1\n10\n")
         else:
             self.run_bc("length(a[])\n", success=False)
