@@ -61,6 +61,16 @@ execution of partially parsed function or branch instructions.
 
 There is not much to say about the lexer and parser as they are fairly standard.
 
+With extensions enabled, a `#!` line is ignored only when `#` is the first
+character of an input. Leading whitespace, blank lines or earlier tokens prevent
+shebang recognition. Hash characters elsewhere, and all hash characters with
+extensions disabled, are lexical errors.
+
+Block comments end only at adjacent `*/` characters. A star followed by ordinary
+text does not pair with a later slash. Unterminated comments are lexical errors
+reported when read, in both extension configurations; they are not treated as
+successful end of input.
+
 Numbers are kept stored as strings until executed as the spec says that the ibase at the time of
 execution determines the interpretation.
 
@@ -335,6 +345,13 @@ multiplications.
 
 For raising to a negative power we calculate P = x ^ |n| first before doing 1/P to the appropriate
 scale.  This ensures we get the correct answer.
+
+For a positive exponent `n`, the result scale is
+`min(scale(x) * n, max(scale, scale(x)))`. In particular, reducing the global
+scale does not discard the operand's existing precision: at global scale 0,
+`1.23^2` is `1.51`. A zero exponent produces 1 with scale 0; a negative exponent
+uses the global scale. Exact rational CLI oracles and shared trait tests check
+both values and result scales.
 
 #### Square Root
 

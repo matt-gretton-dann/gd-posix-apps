@@ -71,13 +71,6 @@ class CliTests(unittest.TestCase):
             first.write_text("1+1\n")
             self.run_bc("3+4\n", "2\n7\n", (first,))
 
-    def test_halt(self):
-        if EXTENSIONS:
-            self.run_bc("1+1\nhalt\n3+4\n", "2\n", keep_open=True)
-            self.run_bc("if(0) halt\n3+4\n", "7\n")
-        else:
-            self.run_bc("halt\n", success=False)
-
     def test_syntax_errors_are_read_time(self):
         for text in (
             "define f() {\nauto\n}\n",
@@ -97,6 +90,33 @@ class CliTests(unittest.TestCase):
         self.run_bc("1", success=False)
         # A real error before quit must not be erased by reading ahead to quit.
         self.run_bc("define f() {\nauto\n}\nquit\n", success=False)
+
+    def test_halt(self):
+        if EXTENSIONS:
+            self.run_bc("1+1\nhalt\n3+4\n", "2\n", keep_open=True)
+            self.run_bc("if(0) halt\n3+4\n", "7\n")
+        else:
+            self.run_bc("halt\n", success=False)
+
+
+
+    def test_shebang(self):
+        self.run_bc("#!ignored\n1+1\n", "2\n" if EXTENSIONS else "", success=EXTENSIONS)
+        self.run_bc("#!ignored", success=EXTENSIONS)
+        for text, expected in ((" #!ignored\n", ""), ("\n#!ignored\n", ""),
+                               ("1\n#!ignored\n2\n", "1\n"), ("#ordinary\n", "")):
+            with self.subTest(text=text):
+                self.run_bc(text, expected, success=False)
+
+    def test_comments(self):
+        for text in ("/**/2\n", "/*ordinary*/2\n", "/*\nmultiline\n*/2\n",
+                     "/****/2\n", "/* / */2\n", "/* *x/ still inside */2\n",
+                     "/**//**/2\n"):
+            with self.subTest(text=text):
+                self.run_bc(text, "2\n")
+        for text in ("/*", "/*ordinary", "/* *", "/* *x/", "/*\n**x/"):
+            with self.subTest(text=text):
+                self.run_bc(text, success=False)
 
 
 if __name__ == "__main__":

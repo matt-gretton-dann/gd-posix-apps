@@ -34,8 +34,11 @@ if(RUN_UNIT_TESTS)
   target_sources(test-libbc PRIVATE
                  test-format.cc
                  test-lexer.cc
+                 test-lexer-shebang.cc
+                 test-lexer-comments.cc
                  test-libbc-main.cc
                  test-number.cc
+                 test-number-power.cc
                  test-parser.cc
                  test-parser-errors.cc
                  test-reader.cc)
@@ -56,6 +59,9 @@ if(RUN_INTEGRATION_TESTS)
            "${CMAKE_CURRENT_SOURCE_DIR}/test-cli.py" "$<TARGET_FILE:bc>"
            --extensions "$<IF:$<BOOL:${ENABLE_NON_POSIX_EXTENSIONS}>,ON,OFF>")
   set_tests_properties(bc/cli PROPERTIES TIMEOUT 60)
+  add_test(NAME bc/number-oracle COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-number-oracle.py" "$<TARGET_FILE:bc>")
+  set_tests_properties(bc/number-oracle PROPERTIES TIMEOUT 90)
 endif()
 
 add_executable(find-multiply-split-point  find-multiply-split-point.cc)

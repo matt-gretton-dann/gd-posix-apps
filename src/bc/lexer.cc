@@ -283,6 +283,8 @@ void GD::Bc::Lexer::lex_comment()
       t_.emplace(Token::Type::error, r_->error(Msg::unexpected_eof_comment));
       return;
     default:
+      // Only an immediately preceding star can pair with a closing slash.
+      state = CommentState::normal;
       break;
     }
     r_->chew();
@@ -298,7 +300,9 @@ void GD::Bc::Lexer::lex()
   }
 
   /* If this is the first character and extensions are enabled then we chew a #! line.  */
-  if (extensions_enabled() && first_character_ && r_->peek() == '#') {
+  bool const at_start = first_character_;
+  first_character_ = false;
+  if (extensions_enabled() && at_start && r_->peek() == '#') {
     r_->chew();
     if (r_->peek() == '!') {
       while (r_->peek() != EOF && r_->peek() != '\n') {
@@ -398,6 +402,10 @@ void GD::Bc::Lexer::lex()
       assert(r_->peek() == '*');  // NOLINT
       r_->chew();
       lex_comment();
+      if (t_) {
+        // Keep an unterminated-comment error instead of replacing it with EOF.
+        return;
+      }
       break;
     }
     case '%':
