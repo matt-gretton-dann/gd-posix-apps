@@ -110,6 +110,10 @@ if(RUN_INTEGRATION_TESTS)
   add_test(NAME bc/signal-delivery COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-signal-delivery.py" "$<TARGET_FILE:bc>")
   set_tests_properties(bc/signal-delivery PROPERTIES TIMEOUT 20 SKIP_RETURN_CODE 77)
+  add_test(NAME bc/vm-cli COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-vm-cli.py" "$<TARGET_FILE:bc>"
+           --extensions "$<IF:$<BOOL:${ENABLE_NON_POSIX_EXTENSIONS}>,ON,OFF>")
+  set_tests_properties(bc/vm-cli PROPERTIES TIMEOUT 45)
 endif()
 
 add_executable(find-multiply-split-point  find-multiply-split-point.cc)

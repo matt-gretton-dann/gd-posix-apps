@@ -107,6 +107,14 @@ class NumberOracle(unittest.TestCase):
                       ("999999999.999999999", "999999999.999999998"),
                       ("-123.456789", "0.000000009"),
                       ("123.456789", "-0.000000009")))
+        # Algebraic quotient-estimate boundaries at each supported limb radix.
+        for base in (100, 10000, 1000000000):
+            v = (base // 2) * base ** 2 + base + 1
+            pairs.append((str(v * base - 1), str(v)))
+            v = (base // 2) * base ** 2 + (base - 1) * base + 1
+            pairs.append((str((base // 2) * base ** 3), str(v)))
+            v = (base // 2) * base ** 2 + 1
+            pairs.append((str(v * (base - 1) - 1), str(v)))
         for op in ("*", "/"):
             cases = []
             for a, b in pairs:
