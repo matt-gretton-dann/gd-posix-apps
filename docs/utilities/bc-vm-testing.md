@@ -92,3 +92,21 @@ and runtime ibase changes for a reused function literal. Each process must have
 the expected status/stdout and an appropriate empty/nonempty diagnostic stream.
 These cases gate the literal-cache, frame and array optimizations; they do not
 replace malformed-bytecode verification or the separate interrupt protocols.
+
+## Result-type preflight
+
+After checking every offset bound, the verifier classifies each instruction's
+result and checks operand references before executing any part of the stream.
+Arithmetic, comparisons, conditional branches, indexes and return values require
+numbers; load/store require compatible scalar or array locations and values.
+Length accepts a number or an array location, and parameters accept numbers or
+whole-array values. Print deliberately accepts every result alternative for
+instruction diagnostics, but cannot refer to a result-less instruction.
+
+`bc/verifier-offsets` includes isolated malformed-result cases with an observable
+prefix which must never execute, as well as a valid forward-layout producer and
+location printing. Type classification is independent of layout and does not
+assume that every valid result reference is backward. These checks do not yet
+prove control-flow dominance, function-region structure or parameter-marker
+balance; those remain obligations of #187 and #215. Instruction constructors
+retain their existing operand-schema preconditions.
