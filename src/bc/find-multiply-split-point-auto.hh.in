@@ -1,0 +1,5 @@
+/** \file find-multiply-split-point.hh
+ * Select the separate cached native calibration result.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "find-multiply-split-point-auto.hh"

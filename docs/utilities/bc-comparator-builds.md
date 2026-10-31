@@ -75,3 +75,41 @@ A/A runs to assess noise, and distinct corpus seeds for training and holdouts.
 Do not compare absolute medians from different hosts as a regression gate.
 #216 owns same-VM base/candidate orchestration on Linux, macOS and Windows;
 component measurements and profiling remain separate from process timings.
+
+## Immutable GD base/candidate builds
+
+The companion `build-gd-bc.py` clones committed GD source into a fresh directory,
+checks out a full commit SHA, and builds Release with both coverage and allocation
+profiling disabled. It requires the fixed-threshold API; older revisions fail
+explicitly rather than silently selecting a different calibration result.
+
+```sh
+python3 src/bc/scripts/build-gd-bc.py --source /absolute/path/to/gd-posix-apps \
+  --revision FULL_40_DIGIT_COMMIT --split-point 126 --name gd-base \
+  --c-compiler /absolute/path/to/cc --cxx-compiler /absolute/path/to/c++ \
+  --output build-gd-base
+```
+
+Repeat with the candidate revision and the same compiler/threshold settings.
+Local edits and ignored files are excluded by the Git clone. Existing output
+folders are preserved. The default generator is Ninja when available, with the
+CMake platform default as a fallback; native Windows needs its Visual Studio
+developer environment. `--generator` selects another supported generator and
+`--extensions ON|OFF` records the language mode.
+
+Artifacts include the implementation configuration, binary hash, compiler
+invocation/real-file identities and hashes, selected CMake flag values, verbose
+build logs, compile commands when the generator supports them, and the exact
+fixed-threshold header/hash. Compiler aliases such as `clang++` are preserved
+because their invocation names can select behavior. A C++20 preprocessor probe
+records available standard-library header version macros; missing probes remain
+explicitly unavailable. Header identity does not establish the installed runtime
+or SDK version, which must be provisioned and recorded for the experiment.
+
+The recipe verifies the compiled fixed-header choice and rejects enabled coverage,
+allocation profiling and known instrumentation flags. It does not attest arbitrary
+source code or supply a reproducible OS image. Run the checked corpus using the
+emitted configuration before timing. Older native VS generators without compile
+commands retain verbose logs and an explicit absence marker. Keep all of these
+artifacts, and merge base/candidate/comparator entries into the named-argv benchmark
+configuration for same-host paired measurements.

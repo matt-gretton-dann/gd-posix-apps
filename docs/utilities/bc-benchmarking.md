@@ -129,3 +129,24 @@ samples, native memory/counters and explicit platform/measurement limits.
 
 Pinned native build commands, compiler/flag provenance and offline cache options
 are documented in [comparator builds](bc-comparator-builds.md).
+
+
+## Freeze multiplication dispatch during comparisons
+
+Configure base and candidate with the same explicit threshold, for example
+`-DBC_MULTIPLY_SPLIT_POINT=126`. Fixed mode writes the generated dispatch header
+without executing calibration. This isolates unrelated optimizations from host
+load and from a changed calibration result. Record the chosen point and generated
+header with compiler/source metadata; 126 is an experiment setting, not a claim
+of a portable optimum.
+
+The default `auto` preserves native calibration and its seeded input stream.
+Its cached result is a separate generated file, so switching back from a fixed
+choice cannot mistake that fixed header for a calibration result.
+When cross-compiling, `auto` uses a positive portable fallback of 128 limbs and
+does not execute a target tuner on the build host. An explicit integer overrides
+either mode. Accepted fixed values are decimal integers from 1 through the
+current native limb radix, 1,000,000,000; invalid, zero and injectable values fail
+at configuration before entering generated C++. Cross-selection logic is tested;
+actual foreign-architecture binaries still require their target toolchain and
+native/emulated correctness checks.

@@ -62,6 +62,7 @@ The following options can be passed to CMake to change the build behaviour:
 | `FORCE_SUPPLEMENTAL_LIBRARY` | BOOL | OFF | Force use of the [standard supplemental](./libgdsup/index.md) library even in cases where it is not needed. |
 | `RUN_CLANG_FORMAT` | BOOL | OFF | Check source formatting during the build. |
 | `RUN_CLANG_TIDY` | BOOL | OFF | Run clang-tidy during compilation. |
+| `BC_MULTIPLY_SPLIT_POINT` | STRING | auto | Calibrate native builds, or use an explicit positive limb threshold for reproducible builds. Cross-build auto uses the portable fixed fallback 128. |
 | `ENABLE_BC_COVERAGE` | BOOL | OFF | Instrument bc and its tests for line, branch and MC/DC coverage using a supported Clang/LLVM toolchain. |
 
 For a production-only build use `-DBUILD_TESTING=OFF`. With a toolchain providing
