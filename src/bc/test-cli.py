@@ -90,6 +90,11 @@ class CliTests(unittest.TestCase):
             with self.subTest(text=text):
                 self.run_bc(text, expected)
 
+    def test_malformed_delimiters(self):
+        for text in ("sqrt 1\n", "length 1\n", "abs 1\n", "define f() 1\n"):
+            with self.subTest(text=text):
+                self.run_bc(text, success=False)
+
     def test_invalid_numeric_continuations(self):
         for text in ("1\\+2\n", "1\\x\n", "1\\", ".5\\+2\n"):
             with self.subTest(text=text):
