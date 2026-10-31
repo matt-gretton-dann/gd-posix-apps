@@ -51,9 +51,11 @@ class ProfilingCli(unittest.TestCase):
         counters = self.profile('a=12345678901234567890\nb=a\na+=1\na*b\nb\n',
                                 '152415787532388367514250878776253619990\n12345678901234567890\n')
         for event in ('digit_copies', 'owned_digit_copies', 'cow_clones', 'cow_limb_bytes',
-                      'iterator_owner_copies', 'literal_conversions', 'basic_multiply_calls',
+                      'literal_conversions', 'basic_multiply_calls',
                       'instructions_executed'):
             self.assertGreater(counters['events'][event], 0, event)
+        # Mutable iterator checks borrow their caller-owned vector.
+        self.assertEqual(counters['events']['iterator_owner_copies'], 0)
 
     def test_array_clone_and_frames(self):
         counters = self.profile('define f(a[]) {\na[1]=9\nreturn(a[1])\n}\na[1]=3\nf(a[])\na[1]\n',
