@@ -15,6 +15,7 @@
 #include <iomanip>
 #include <ostream>
 #include <random>
+#include <stdexcept>
 
 namespace GD::Bc::Bench {
 template<typename Number>
@@ -65,11 +66,26 @@ constexpr auto as_nsec(Time const& time) -> int64_t
 {
   return static_cast<int64_t>(time.tv_sec) * sec_as_nsec + time.tv_nsec;
 }
-// Estimate the next calibration batch from the measured process CPU duration.
+// Grow by a bounded factor, including when a coarse CPU clock reports zero.
+// Strict progress up to the container limit avoids overflow and stalled loops.
 inline auto next_batch_size(std::size_t count, int64_t elapsed_ns, int64_t target_ns,
-                            [[maybe_unused]] std::size_t max_count) -> std::size_t
+                            std::size_t max_count) -> std::size_t
 {
-  return count * static_cast<std::size_t>(target_ns) / static_cast<std::size_t>(elapsed_ns);
+  if (count == 0 || count > max_count || elapsed_ns < 0 || target_ns <= 0) {
+    throw std::invalid_argument("Invalid calibration batch or duration");
+  }
+  if (elapsed_ns >= target_ns) {
+    return count;
+  }
+  if (count == max_count) {
+    throw std::length_error("Calibration batch reached the container limit");
+  }
+  std::size_t factor = 2;
+  if (elapsed_ns > 0) {
+    auto const ratio = target_ns / elapsed_ns;
+    factor = ratio >= 4 ? 4 : (ratio >= 3 ? 3 : 2);
+  }
+  return count > max_count / factor ? max_count : count * factor;
 }
 
 }  // namespace GD::Bc::Bench

@@ -6,6 +6,7 @@
 #include <catch2/catch.hpp>
 
 #include <array>
+#include <limits>
 #include <random>
 #include <sstream>
 
@@ -68,4 +69,23 @@ TEST_CASE("Calibration batches grow after a zero clock duration", "[bc][benchmar
   // Read at runtime so the pre-fix divide-by-zero is not constant-folded.
   volatile int64_t elapsed_ns = 0;
   REQUIRE(next_batch_size(100, elapsed_ns, 3500000000LL, 10000) == 200);
+}
+
+TEST_CASE("Calibration batch estimates progress without overflow", "[bc][benchmark][batch]")
+{
+  using GD::Bc::Bench::next_batch_size;
+  REQUIRE(next_batch_size(100, 1, 3500000000LL, 10000) == 400);
+  REQUIRE(next_batch_size(100, 1000000000, 3500000000LL, 10000) == 300);
+  REQUIRE(next_batch_size(100, 2000000000, 3500000000LL, 10000) == 200);
+  REQUIRE(next_batch_size(100, 3500000000LL, 3500000000LL, 10000) == 100);
+  REQUIRE(next_batch_size(100, 4000000000LL, 3500000000LL, 10000) == 100);
+  REQUIRE(next_batch_size(100, 1, 3500000000LL, 250) == 250);
+  auto const maximum = std::numeric_limits<std::size_t>::max();
+  REQUIRE(next_batch_size(maximum - 1, 0, 1, maximum) == maximum);
+  REQUIRE(next_batch_size(maximum / 2 + 1, 1, 4, maximum) == maximum);
+  REQUIRE_THROWS_AS(next_batch_size(maximum, 0, 1, maximum), std::length_error);
+  REQUIRE_THROWS_AS(next_batch_size(0, 0, 1, 100), std::invalid_argument);
+  REQUIRE_THROWS_AS(next_batch_size(101, 0, 1, 100), std::invalid_argument);
+  REQUIRE_THROWS_AS(next_batch_size(100, -1, 1, 100), std::invalid_argument);
+  REQUIRE_THROWS_AS(next_batch_size(100, 0, 0, 100), std::invalid_argument);
 }
