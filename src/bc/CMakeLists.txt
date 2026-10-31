@@ -183,6 +183,9 @@ if(RUN_INTEGRATION_TESTS)
            "${CMAKE_CURRENT_SOURCE_DIR}/test-comparator-builds.py"
            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/build-bc-comparators.py")
   set_tests_properties(bc/comparator-builds PROPERTIES TIMEOUT 20)
+  add_test(NAME bc/benchmark-ci COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-benchmark-ci.py")
+  set_tests_properties(bc/benchmark-ci PROPERTIES TIMEOUT 20)
   add_test(NAME bc/benchmark-cli COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-benchmark-cli.py"
            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/bench-bc.py" --bc "$<TARGET_FILE:bc>")
