@@ -80,3 +80,32 @@ parameters assert real end-iterator traversal and local restoration. Preserve
 LLVM's recorded pairs; they do not demonstrate construction of an impossible
 end/nonzero concrete state. The directly callable empty formatter parse-context
 boundary remains feasible and is covered separately by #215.
+
+## Arithmetic decisions reviewed at revision cd0f96e
+
+These are scoped source/call-graph proofs and open obligations, not adjustments
+to the raw denominator. The checkpoint in `bc-coverage-results.md` retains both
+broad and application mappings. Revisit these entries when traits, public limits,
+callers, multiplication dispatch or extension configurations change.
+
+| Exact source / decision | Evidence and constraint | Classification |
+| --- | --- | --- |
+| `number.hh:694`, quotient-estimate equality or second-limb correction | Width-parametric exact quotient/remainder fixtures have both recorded MC/DC conditions covered separately in Traits8/16/32, ON/OFF. | Feasible and measured; the algebraic oracle remains independent of the branch evidence. |
+| `number.hh:1302`, radix-power chunk limit and input scale limit | Short fractions stop at scale; exact 35-bit binary fractions exceed the largest native chunk and exercise the radix-bound exit. Both conditions are recorded covered at each width. | Feasible and measured without a huge input or floating-point tolerance. |
+| `number.hh:376`, reverse-end and high-zero limb tests | Public `mul_pow10`/`mac` operations create high zeros and all-zero storage without private injection. Exact length tests exposed #266, fixed before this checkpoint; recorded pairs now cover both conditions. | Feasible, asserted and measured. Do not exempt unnormalized public-operation results as invalid storage. |
+| `number.hh:1753` and `1760`, zero/sign comparison decisions | Native fixed-point comparison tables vary zero, sign, magnitude and the two scales independently. They exposed #263; the recorded conditions are now covered. | Feasible, asserted and measured. |
+| `number.hh:247` and `321`, extension predicate combined with omitted integer output | ON makes the first condition false and the corresponding nonextension behavior inactive. OFF makes it true; whole and fractional outputs exercise the second condition. | Configuration constant/inactive scope; retain each binary's raw counts rather than combine builds to manufacture independence. |
+| `number.hh:1269`, numeric-token constructor assertion | Digits are selected from `0` through `F`; the final less-than-16 condition cannot be false for a selected digit. POSIX bc leaves out-of-input-base digits undefined except its single-digit register assignment exception. The constructor accepts the project's single-digit convention; normal invalid source tokens still belong to lexer/parser diagnostics. | Valid-token/precondition review for assertion failure outcomes, not a blanket exemption for numeric input or conversion errors. |
+| `number.hh:924` and `982`, private `for_each` pointer assertions | Each private helper explicitly requires non-null operand storage. Normal Number entry paths handle zero operands before calling it; the mutable helper initializes/detaches its destination. Raw mappings repeat template/macro obligations. | Candidate invariant-failure scope for those private helpers. Audit any new caller and direct digit API boundary separately; do not infer an adjusted count by summing repeated raw records. |
+| `number.hh:1029`, empty private multiplication subranges | The public Number threshold contract is `[1, base_]`, default 1; the tuner and tests use positive thresholds. Entering Karatsuba therefore requires both lengths at least 2. Its split is at least 1 and strictly smaller than both lengths; recursive low/high ranges remain nonempty. The Number multiplication entry handles zero values first. | Defensive empty-range guard is infeasible through those supported callers. #273 was corrected after finding the existing precondition; setting zero is not a valid way to fill this gap. Retain the guard. |
+| `number.hh:1132` and `1138–1141`, private half-sum loop and leftover LHS | Its only callers add a low half of length `half` to a high half of length `size-half`, with `half <= size/2`. Thus the RHS cannot end while LHS remains, and no leftover LHS iteration occurs. | Coupled range-length invariant; RHS termination cannot independently decide the first loop while LHS is live. Unequal full multiplication operands remain eligible and are tested. |
+| `number.hh:1640–1645`, modulo scale-restoration fallback | For supported bounded scales, division gives scale `t`, multiplication gives `t + scale(rhs)`, and the corrected subtraction preserves the maximum operand scale, including zero. That maximum is the selected remainder scale. | Defensive fallback after #233's scale preservation; no private scale corruption to force it. Revisit when #184/#186 change size/scale domains. |
+
+The remaining zero-count numeric lines are not automatically exempt. In
+particular: native integer construction (#275), allocated-empty parity (#274),
+positive fractional register/index conversion and overflow (#276), formatter
+parse/debug/error contexts, output positions, strict digit conversion boundaries,
+fraction splitting and practical small-trait power-scale folding remain eligible
+or under test. The known wider length/scale work in #184/#186 is not claimed
+implemented. No first eligible milestone or ultimate feasible-coverage completion
+is asserted by this review.
