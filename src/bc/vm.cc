@@ -487,10 +487,14 @@ auto GD::Bc::Details::VMState::scale() const -> GD::Bc::Number::NumType { return
 
 void GD::Bc::Details::VMState::array_element(ArrayElement const& ae, Number const& num)
 {
-  ArrayValues a = arrays_.at(static_cast<unsigned>(ae.first.get()));
+  auto& a = arrays_.at(static_cast<unsigned>(ae.first.get()));
   if (!a) {
-    arrays_.at(static_cast<unsigned>(ae.first.get())) = a =
-      std::make_shared<ArrayValues::element_type>();
+    a = std::make_shared<ArrayValues::element_type>();
+  }
+  else if (a.use_count() > 1) {
+    // Array arguments and saved locals are values; isolate a write from their
+    // shared snapshot before changing an element.
+    a = std::make_shared<ArrayValues::element_type>(*a);
   }
 
   a->insert_or_assign(ae.second, num);
@@ -1009,7 +1013,6 @@ void GD::Bc::Details::InstructionPack::validate_result(Index i) const
     break;
   case GD::Bc::Instruction::Opcode::number:
   case GD::Bc::Instruction::Opcode::negate:
-  case GD::Bc::Instruction::Opcode::load:
   case GD::Bc::Instruction::Opcode::scale_expr:
   case GD::Bc::Instruction::Opcode::sqrt:
   case GD::Bc::Instruction::Opcode::abs:
@@ -1036,8 +1039,19 @@ void GD::Bc::Details::InstructionPack::validate_result(Index i) const
     // NOLINTNEXTLINE
     assert_error(std::holds_alternative<Variable>(*result), Msg::wrong_result_type, i, "Variable");
     break;
-  case GD::Bc::Instruction::Opcode::array:
+  case GD::Bc::Instruction::Opcode::load:
+    assert_error(result.has_value(), Msg::empty_result, i);  // NOLINT
+    // Scalar locations load Number; whole-array locations load ArrayValues.
+    assert_error(std::holds_alternative<Number>(*result) ||
+                   std::holds_alternative<ArrayValues>(*result),
+                 Msg::wrong_result_type, i, "Number or ArrayValues");  // NOLINT
+    break;
   case GD::Bc::Instruction::Opcode::pop_param_array:
+    assert_error(result.has_value(), Msg::empty_result, i);  // NOLINT
+    assert_error(std::holds_alternative<ArrayValues>(*result), Msg::wrong_result_type, i,
+                 "ArrayValues");  // NOLINT
+    break;
+  case GD::Bc::Instruction::Opcode::array:
     assert_error(result.has_value(), Msg::empty_result, i);  // NOLINT
     // NOLINTNEXTLINE
     assert_error(std::holds_alternative<Array>(*result), Msg::wrong_result_type, i, "Array");

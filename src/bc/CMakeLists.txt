@@ -47,7 +47,8 @@ if(RUN_UNIT_TESTS)
                  test-number-sqrt.cc
                  test-parser.cc
                  test-parser-errors.cc
-                 test-reader.cc)
+                 test-reader.cc
+                 test-vm-arrays.cc)
   target_add_clang_format(test-libbc)
   catch_discover_tests(test-libbc PROPERTIES FIXTURES_REQUIRED testutil_setup TIMEOUT 120
                       EXTRA_ARGS "--rng-seed" "197199")

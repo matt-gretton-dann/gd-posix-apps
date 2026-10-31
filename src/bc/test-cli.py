@@ -97,6 +97,18 @@ class CliTests(unittest.TestCase):
         else:
             self.run_bc("length(a[])\n", success=False)
 
+    def test_array_parameters(self):
+        for text, expected in (
+            ("define f(a[]) {\nreturn (a[0])\n}\na[0]=6\nf(a[])\n", "6\n"),
+            ("define f(a[]) {\nreturn (a[0])\n}\nf(a[])\n", "0\n"),
+            ("define f(a[],b) {\nreturn (a[0]+b)\n}\na[0]=6\nf(a[],2)\n", "8\n"),
+            ("define f(a,b[]) {\nreturn (a+b[0])\n}\nb[0]=6\nf(2,b[])\n", "8\n"),
+            ("define f(a[]) {\na[0]=9\nreturn (a[0])\n}\n"
+             "a[0]=6\nf(a[])\na[0]\n", "9\n6\n"),
+        ):
+            with self.subTest(text=text):
+                self.run_bc(text, expected)
+
     def test_malformed_delimiters(self):
         for text in ("sqrt 1\n", "length 1\n", "abs 1\n", "define f() 1\n"):
             with self.subTest(text=text):
