@@ -383,6 +383,9 @@ auto GD::Bc::Details::VMState::pop_param() -> GD::Bc::Number
 {
   assert_error(!param_stack_.empty(), Msg::parameter_stack_empty);        // NOLINT
   assert_error(!param_stack_.back().empty(), Msg::parameter_pack_empty);  // NOLINT
+  if (!std::holds_alternative<Number>(param_stack_.back().front())) {
+    Details::error(Msg::parameter_type_mismatch, "number");
+  }
   auto result(std::get<Number>(param_stack_.back().front()));
   param_stack_.back().pop_front();
   return result;
@@ -392,6 +395,9 @@ auto GD::Bc::Details::VMState::pop_param_array() -> GD::Bc::ArrayValues
 {
   assert_error(!param_stack_.empty(), Msg::parameter_stack_empty);        // NOLINT
   assert_error(!param_stack_.back().empty(), Msg::parameter_pack_empty);  // NOLINT
+  if (!std::holds_alternative<ArrayValues>(param_stack_.back().front())) {
+    Details::error(Msg::parameter_type_mismatch, "array");
+  }
   auto result(std::get<ArrayValues>(param_stack_.back().front()));
   param_stack_.back().pop_front();
   return result;
