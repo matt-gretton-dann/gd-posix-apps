@@ -1220,6 +1220,11 @@ public:
    *  \param save_specials Should we save ibase, obase, scale on entry to a function?
    */
   VM(std::ostream& out, std::ostream& err, bool save_specials);
+  ~VM();
+  VM(VM const&) = delete;
+  auto operator=(VM const&) -> VM& = delete;
+  VM(VM&&) noexcept;
+  auto operator=(VM&&) noexcept -> VM&;
 
   /** \brief              Execute instructions.
    *  \param instructions Instructions to execute
@@ -1228,7 +1233,7 @@ public:
   auto execute(Instructions& instructions) -> bool;
 
 private:
-  Details::VMState* state_;
+  std::unique_ptr<Details::VMState> state_;  ///< Sole owner of this interpreter's state.
 };
 
 }  // namespace GD::Bc
