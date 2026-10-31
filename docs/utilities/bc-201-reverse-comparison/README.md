@@ -29,6 +29,11 @@ Parent `2ddf749e8b313f620ad248d680e801c409bbd3f5` includes the first ownership s
 Candidate `6cf81f0b6bd84a6acccec1b81bc92e04089b4857` changes comparison and its
 representation comments/tests. It does **not** include the aligned-arithmetic
 patch measured in #310, so each micro-change remains independently attributable.
+After the isolated experiment, merged #310 was integrated for review. The
+combined tree passes 134 bc cases (580,373 assertions) and six CLI/oracle/
+component groups, including 36 quick cases. The tables below retain the
+original independent source identities; they do not relabel combined timings.
+
 The as-run generator is `da2790f3ef0751f9afeb6f9c813983f6a0bc8cc0`, adding three
 comparison shapes while preserving every historical program/oracle hash.
 
