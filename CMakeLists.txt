@@ -22,6 +22,14 @@ include(FetchContent)
 include(GNUInstallDirs)
 include(Warnings)
 include(CheckIPOSupported)
+
+# The bundled dependencies still declare old policy versions. CMake 4 can apply
+# a supported policy baseline to them without increasing our minimum version.
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 4.0 AND
+   (NOT DEFINED CMAKE_POLICY_VERSION_MINIMUM OR CMAKE_POLICY_VERSION_MINIMUM VERSION_LESS 3.10))
+  set(CMAKE_POLICY_VERSION_MINIMUM 3.10)
+endif()
+
 include(GDPosixAppsTests)
 
 # Find packages
