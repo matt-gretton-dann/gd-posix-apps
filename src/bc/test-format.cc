@@ -30,3 +30,28 @@ TEST_CASE("bc formatters accept an empty parse context", "[bc][format][context]"
   fmt::formatter<GD::Bc::Letter> letter_formatter;
   REQUIRE(letter_formatter.parse(letter_context) == letter_context.end());
 }
+
+TEMPLATE_TEST_CASE("Number formatters check runtime debug and parse boundaries",
+                   "[bc][number][format][context][oracle]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  Number const value("42", 10);
+  REQUIRE(fmt::vformat("{}", fmt::make_format_args(value)) == "42");
+  REQUIRE(fmt::vformat("{:d}", fmt::make_format_args(value)) == "Number({42}, sign=+, scale=0)");
+  REQUIRE_THROWS_AS(fmt::vformat("{:x}", fmt::make_format_args(value)), fmt::format_error);
+  Number negative = value;
+  negative.negate();
+  REQUIRE(fmt::vformat("{}", fmt::make_format_args(negative)) == "-42");
+  REQUIRE(fmt::vformat("{:d}", fmt::make_format_args(negative)) == "Number({42}, sign=-, scale=0)");
+
+  fmt::formatter<Number> empty_formatter;
+  fmt::format_parse_context empty("");
+  REQUIRE(empty_formatter.parse(empty) == empty.end());
+  fmt::formatter<Number> missing_end_formatter;
+  fmt::format_parse_context missing_end("d");
+  REQUIRE_THROWS_AS(missing_end_formatter.parse(missing_end), fmt::format_error);
+  fmt::formatter<Number> invalid_formatter;
+  fmt::format_parse_context invalid("x}");
+  REQUIRE_THROWS_AS(invalid_formatter.parse(invalid), fmt::format_error);
+}
