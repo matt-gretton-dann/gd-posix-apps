@@ -164,59 +164,55 @@ public:
   static constexpr NumType to_unsigned_error_fractional_ =
     base_ + 1;  /// Error code for to_unsigned()
 
-  /** \brief        Get the number as the unsigned value.  Errors if out of range or not an integer.
-   *  \param  scale Scale to treat the number as having.
-   *  \return       Value or an error code.
+  /** \brief        Convert to a value in [0, base_), or a reserved error code.
+   *  \param scale   Decimal scale of the coefficient.
+   *  \param truncate_fraction Discard the fraction instead of rejecting it.
    *
-   * Error codes are:
-   *  * to_unsigned_error_too_large_: Number too large to fit in unisgned type.
-   *  * to_unsigned_error_fractional_: Number had a fractional component.
+   * Strict conversion rejects any nonzero fractional digit. Both policies
+   * reject an integer part at or above base_; base_ and base_+1 are reserved
+   * for the too-large and fractional error codes respectively.
    */
-  [[nodiscard]] auto to_unsigned(NumType scale) const -> NumType
+  [[nodiscard]] auto to_unsigned(NumType scale, bool truncate_fraction = false) const -> NumType
   {
     if (!digits_) {
       return 0;
     }
-
     auto it = digits_->begin();
     while (scale >= base_log10_) {
       if (it == digits_->end()) {
         return 0;
       }
-      if (*it != 0) {
+      if (!truncate_fraction && *it != 0) {
         return to_unsigned_error_fractional_;
       }
       ++it;
       scale -= base_log10_;
     }
-
     if (it == digits_->end()) {
       return 0;
     }
 
-    auto pow10_scale = pow10(scale);
-    NumType result = *it / pow10_scale;
-
-    ++it;
+    auto const pow10_scale = pow10(scale);
+    if (!truncate_fraction && *it % pow10_scale != 0) {
+      return to_unsigned_error_fractional_;
+    }
+    NumType result = *it++ / pow10_scale;
     if (it == digits_->end()) {
       return result;
     }
-
-    NumType temp = *it;
-    auto t2 = temp % pow10_scale;
-    // The combined partial limb remains below base_; t2 is at most temp.
-    result = static_cast<NumType>(result + t2 * (base_ / pow10_scale));
-    temp = static_cast<NumType>(temp - t2);
-    if (temp > std::numeric_limits<NumType>::max() / pow10_scale) {
+    // The next limb contributes at weight base_/pow10_scale. A remaining
+    // whole part there makes the value at least base_, outside this domain.
+    if (*it >= pow10_scale) {
       return to_unsigned_error_too_large_;
     }
-
-    ++it;
-    if (it == digits_->end()) {
-      return result;
+    result = static_cast<NumType>(result + *it++ * (base_ / pow10_scale));
+    // Public operations can leave leading zero limbs without normalization.
+    while (it != digits_->end()) {
+      if (*it++ != 0) {
+        return to_unsigned_error_too_large_;
+      }
     }
-
-    return to_unsigned_error_too_large_;
+    return result;
   }
 
   /** \brief          Output to stream
@@ -1326,12 +1322,17 @@ public:
     digits_.mac(base_, value);
   }
 
+  /** Convert a nonnegative bc value to its truncated integer part.
+   * The current conversion domain is [0, base_); larger domains belong to
+   * the separate size/scale work. Preserve the existing negative-input check.
+   */
   [[nodiscard]] auto to_unsigned() const -> NumType
   {
     if (sign_ == Sign::negative) {
       Details::error(Msg::number_to_unsigned_failed_negative, *this);
     }
-    NumType const result = digits_.to_unsigned(scale_);
+    // POSIX register assignments and array subscripts discard the fraction.
+    NumType const result = digits_.to_unsigned(scale_, true);
     if (result == digits_.to_unsigned_error_too_large_) {
       Details::error(Msg::number_to_unsigned_failed_too_large, *this);
     }
