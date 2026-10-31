@@ -114,7 +114,7 @@ endif()
 if(RUN_INTEGRATION_TESTS)
   add_test(NAME bc/benchmark-cli COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-benchmark-cli.py"
-           "${CMAKE_CURRENT_SOURCE_DIR}/scripts/bench-bc.py")
+           "${CMAKE_CURRENT_SOURCE_DIR}/scripts/bench-bc.py" --bc "$<TARGET_FILE:bc>")
   set_tests_properties(bc/benchmark-cli PROPERTIES TIMEOUT 30)
   add_test(NAME bc/cli COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-cli.py" "$<TARGET_FILE:bc>"

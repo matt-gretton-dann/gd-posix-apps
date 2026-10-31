@@ -75,6 +75,27 @@ class BenchmarkCli(unittest.TestCase):
         manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
         self.assertEqual(len(manifest["implementations"][0]["binary_sha256"]), 64)
 
+    def test_native_quick_corpus(self):
+        if BC_BINARY is None:
+            self.skipTest("native executable not supplied")
+        config = self.root / "native.json"
+        config.write_text(json.dumps({"implementations": [{"name": "gd", "argv": [BC_BINARY]}]}),
+                          encoding="utf-8")
+        output = self.root / "native-results"
+        try:
+            result = subprocess.run(
+                [sys.executable, BENCHMARK, "--config", str(config), "--output", str(output),
+                 "--preset", "quick", "--samples", "1", "--warmups", "0", "--timeout", "5"],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, timeout=20)
+        except subprocess.TimeoutExpired:
+            self.fail("native corpus exceeded the outer test deadline")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stderr, "")
+        rows = [json.loads(line) for line in
+                (output / "samples.jsonl").read_text(encoding="utf-8").splitlines()]
+        self.assertEqual(len(rows), 32)
+        self.assertTrue(all(row["checked"] for row in rows))
+
     def check_failure(self, mode, diagnostic, timeout=3):
         result, output = self.invoke(mode, timeout)
         self.assertEqual(result.returncode, 1, result.stderr)
@@ -160,6 +181,8 @@ class PairedStatistics(unittest.TestCase):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("benchmark")
+    parser.add_argument("--bc", help="native executable for the checked quick corpus")
     args, remaining = parser.parse_known_args()
     BENCHMARK = str(Path(args.benchmark).resolve())
+    BC_BINARY = str(Path(args.bc).resolve()) if args.bc else None
     unittest.main(argv=[__file__, *remaining])

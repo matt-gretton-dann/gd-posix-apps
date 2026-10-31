@@ -107,8 +107,8 @@ source-built comparison, not an interchangeable Howard version.
 
 ## Validation and scope
 
-`bc/benchmark-cli` runs in both extension configurations on native CI. Fake
-executables exercise failed exits, stderr, wrong output, warm-up validation,
+`bc/benchmark-cli` runs in both extension configurations on native CI and checks
+all 32 quick workloads against that job's actual GD executable. Fake executables exercise failed exits, stderr, wrong output, warm-up validation,
 timeouts, quoted argv, provenance requirements and timing/profiling separation.
 Paired statistics use exact proportional samples to detect unpaired resampling;
 repeated runs check schedule replay without asserting noisy elapsed times.
