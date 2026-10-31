@@ -56,12 +56,27 @@ class OffsetTests(unittest.TestCase):
                 self.assertEqual(run.stdout, "")
                 self.assertIn("Invalid control flow at instruction", run.stderr)
 
+    def test_reject_parameter_marker_paths(self):
+        for case in ("call-without-mark", "push-without-mark", "pop-without-function",
+                     "param-without-function", "array-param-without-function", "unmatched-mark",
+                     "join-marker", "function-missing-pop", "function-duplicate-pop",
+                     "function-bypass-pop", "function-prepop-loop", "function-owned-loop",
+                     "function-param-after-pop", "function-array-param-after-pop",
+                     "function-return-open-mark", "function-call-without-mark",
+                     "function-pop-owned-mark"):
+            with self.subTest(case=case):
+                run = self.run_case(case)
+                self.assertEqual(run.returncode, 1, run.stderr)
+                self.assertEqual(run.stdout, "")
+                self.assertIn("Invalid control flow at instruction", run.stderr)
+
     def test_valid_fallthrough_and_result(self):
         for case, output in (("branch-end", "EXECUTED\n"), ("conditional-end", "EXECUTED\n"),
                              ("last-result", "EXECUTED\n42\n"),
                              ("valid-forward-result", "EXECUTED\n42\n"),
                              ("valid-location-print", "EXECUTED\na\n"),
-                             ("valid-control-join", "EXECUTED\n9\n")):
+                             ("valid-control-join", "EXECUTED\n9\n"),
+                             ("valid-alternative-calls", "EXECUTED\n7\n")):
             with self.subTest(case=case):
                 run = self.run_case(case)
                 self.assertEqual(run.returncode, 0, run.stderr)

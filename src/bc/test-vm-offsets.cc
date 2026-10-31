@@ -129,6 +129,91 @@ auto main(int argc, char** argv) -> int
     }
     code.emplace_back(O::store, D(-2), D(-1));
   }
+  else if (mode == "call-without-mark" || mode == "push-without-mark" ||
+           mode == "pop-without-function" || mode == "param-without-function" ||
+           mode == "array-param-without-function" || mode == "unmatched-mark" ||
+           mode == "join-marker") {
+    if (mode == "call-without-mark") {
+      code.emplace_back(O::call, GD::Bc::Letter('f'), GD::Bc::Location("fixture", 1, 1));
+    }
+    else if (mode == "push-without-mark") {
+      code.emplace_back(O::number, "1");
+      code.emplace_back(O::push_param, D(-1));
+    }
+    else if (mode == "join-marker") {
+      code.emplace_back(O::number, "0");
+      code.emplace_back(O::branch_zero, D(-1), D(2));
+      code.emplace_back(O::push_param_mark);
+    }
+    else {
+      O const operation = mode == "pop-without-function"           ? O::pop_param_mark
+                          : mode == "param-without-function"       ? O::pop_param
+                          : mode == "array-param-without-function" ? O::pop_param_array
+                                                                   : O::push_param_mark;
+      code.emplace_back(operation);
+    }
+    code.emplace_back(O::eof);
+  }
+  else if (mode == "function-missing-pop" || mode == "function-duplicate-pop" ||
+           mode == "function-bypass-pop" || mode == "function-prepop-loop" ||
+           mode == "function-owned-loop" || mode == "function-param-after-pop" ||
+           mode == "function-array-param-after-pop" || mode == "function-return-open-mark" ||
+           mode == "function-call-without-mark" || mode == "function-pop-owned-mark") {
+    auto const begin = code.size();
+    code.emplace_back(O::function_begin, GD::Bc::VariableMask(), GD::Bc::Location("fixture", 1, 1));
+    if (mode == "function-bypass-pop") {
+      code.emplace_back(O::number, "0");
+      code.emplace_back(O::branch_zero, D(-1), D(2));
+    }
+    if (mode == "function-prepop-loop") {
+      code.emplace_back(O::branch, D(0));
+    }
+    if (mode == "function-pop-owned-mark") {
+      code.emplace_back(O::push_param_mark);
+    }
+    if (mode != "function-missing-pop") {
+      code.emplace_back(O::pop_param_mark);
+    }
+    if (mode == "function-duplicate-pop") {
+      code.emplace_back(O::pop_param_mark);
+    }
+    if (mode == "function-param-after-pop" || mode == "function-array-param-after-pop") {
+      code.emplace_back(mode == "function-param-after-pop" ? O::pop_param : O::pop_param_array);
+    }
+    if (mode == "function-call-without-mark") {
+      code.emplace_back(O::call, GD::Bc::Letter('f'), GD::Bc::Location("fixture", 2, 1));
+    }
+    if (mode == "function-return-open-mark" || mode == "function-owned-loop") {
+      code.emplace_back(O::push_param_mark);
+      if (mode == "function-owned-loop") {
+        code.emplace_back(O::branch, D(-1));
+      }
+    }
+    code.emplace_back(O::number, "0");
+    code.emplace_back(O::return_, D(-1));
+    code.emplace_back(O::function_end, GD::Bc::Letter('f'), D(begin) - D(code.size()));
+    code.emplace_back(O::eof);
+  }
+  else if (mode == "valid-alternative-calls") {
+    code.emplace_back(O::function_begin, GD::Bc::VariableMask(),
+                      GD::Bc::Location("fixture", 1, 1));                                // 2
+    code.emplace_back(O::pop_param_mark);                                                // 3
+    code.emplace_back(O::number, "7");                                                   // 4
+    code.emplace_back(O::return_, D(-1));                                                // 5
+    code.emplace_back(O::function_end, GD::Bc::Letter('f'), D(-4));                      // 6
+    code.emplace_back(O::variable, GD::Bc::Variable('a'));                               // 7
+    code.emplace_back(O::push_param_mark);                                               // 8
+    code.emplace_back(O::number, "0");                                                   // 9
+    code.emplace_back(O::branch_zero, D(-1), D(4));                                      // 10 -> 14
+    code.emplace_back(O::call, GD::Bc::Letter('f'), GD::Bc::Location("fixture", 2, 1));  // 11
+    code.emplace_back(O::store, D(-5), D(-1));                                           // 12
+    code.emplace_back(O::branch, D(3));                                                  // 13 -> 16
+    code.emplace_back(O::call, GD::Bc::Letter('f'), GD::Bc::Location("fixture", 3, 1));  // 14
+    code.emplace_back(O::store, D(-8), D(-1));                                           // 15
+    code.emplace_back(O::load, D(-9));                                                   // 16
+    code.emplace_back(O::print, D(-1), I::Stream::output);
+    code.emplace_back(O::eof);
+  }
   else if (mode == "skipped-producer") {
     code.emplace_back(O::branch, D(2));
     code.emplace_back(O::number, "1");
