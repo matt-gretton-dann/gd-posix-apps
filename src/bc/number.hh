@@ -1659,8 +1659,8 @@ public:
     u.divide(rhs, target_scale);
     u.multiply(rhs, result_scale);
     sub(u);
-    // A zero quotient/product can take sub's zero fast path. Restore the
-    // specified remainder scale even when no numerical subtraction occurred.
+    // Subtraction preserves the selected remainder scale, including zero.
+    // Retain this fallback defensively if the scale-handling contract changes.
     if (scale_ < result_scale) {
       if (!is_zero()) {
         digits_.mul_pow10(result_scale - scale_);
