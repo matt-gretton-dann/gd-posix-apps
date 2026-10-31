@@ -549,3 +549,27 @@ TEMPLATE_TEST_CASE("Generic input conversion and width boundaries", "[bc][number
   }
   REQUIRE(wrapped == (GD::Bc::extensions_enabled() ? fraction.substr(1) : fraction));
 }
+
+TEMPLATE_TEST_CASE("Native number construction normalizes the full input value",
+                   "[bc][number][oracle][native-construction]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  using N = typename Number::NumType;
+  for (N const value :
+       {N(0), N(1), N(Number::base_ - 1), N(Number::base_), std::numeric_limits<N>::max()}) {
+    auto const text = std::to_string(value);
+    INFO("value = " << text << ", base = " << Number::base_);
+    Number const actual(value);
+    Number const expected(text, 10);
+    REQUIRE(actual == expected);
+    REQUIRE_FALSE(actual < expected);
+    REQUIRE_FALSE(actual > expected);
+    auto changed = actual;
+    changed.add(Number(N(1)));
+    auto expected_changed = expected;
+    expected_changed.add(Number("1", 10));
+    REQUIRE(changed == expected_changed);
+    REQUIRE(actual == expected);
+  }
+}
