@@ -61,6 +61,11 @@ execution of partially parsed function or branch instructions.
 
 There is not much to say about the lexer and parser as they are fairly standard.
 
+With extensions enabled, a `#!` line is ignored only when `#` is the first
+character of an input. Leading whitespace, blank lines or earlier tokens prevent
+shebang recognition. Hash characters elsewhere, and all hash characters with
+extensions disabled, are lexical errors.
+
 Block comments end only at adjacent `*/` characters. A star followed by ordinary
 text does not pair with a later slash. Unterminated comments are lexical errors
 reported when read, in both extension configurations; they are not treated as
@@ -328,6 +333,13 @@ that implementation is not the conformance oracle.
 
 Use Knuth Algorithm D from Section 4.3.1 of TAOCP.  However, we choose the initial scale factor
 slightly differently as the one in Knuth doesn't act as expected.
+
+For remainder, first truncate `a/b` to the global scale, then compute
+`a - (a/b)*b` without further truncating the quotient product. The result scale
+is `max(scale(a), scale + scale(b))`, including zero quotients and zero results.
+For example, at scale 2, `5.3 % 1.11` is `0.0053` with scale 4. The current
+public scale limits keep the intermediate scale sum representable; the broader
+limit work remains tracked in #186.
 
 #### Multiplication
 

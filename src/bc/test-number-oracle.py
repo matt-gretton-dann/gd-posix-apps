@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Exact rational power oracles for bc (bounded and replayable)."""
+"""Exact rational arithmetic oracles for bc (bounded and replayable)."""
 
 import argparse
 from fractions import Fraction
 import os
+import random
 import subprocess
 import unittest
 
@@ -113,6 +114,28 @@ class NumberOracle(unittest.TestCase):
         self.assertEqual(run.stderr, "")
         self.assertEqual(run.stdout.replace("\\\n", "").splitlines(), expected)
 
+
+    def test_modulo(self):
+        rng = random.Random(SEED)
+        pairs = [("0", "1"), ("1.23", "1.11"), ("5.3", "1.11"),
+                 ("-5.3", "1.11"), ("5.3", "-1.11"), ("-5.3", "-1.11"),
+                 ("999999999.999999999", ".000000001"),
+                 ("1000000000000000001", "999999999"),
+                 ("1000000000000000001000000001", "999999999999999999"),
+                 ("123456789123456789123456789", "1000000000000000001"),
+                 ("0", "1.00"), ("1", "100.00"), ("5.000", "1")]
+        for digits in (1, 8, 9, 10, 17, 18, 19, 27, 36, 99, 257, 1000):
+            a = "".join(str(rng.randrange(1, 10)) for _ in range(digits))
+            b = "".join(str(rng.randrange(1, 10)) for _ in range(max(1, digits // 3)))
+            pairs.extend(((a, b), (b, a)))
+        cases = []
+        for a, b in pairs:
+            for places in (0, 1, 2, 9, 18, 31):
+                # Keep the entire quotient product: only the division truncates.
+                expected = Fraction(a) - truncate(Fraction(a) / Fraction(b), places) * Fraction(b)
+                s = max(scale(a), places + scale(b))
+                cases.append((literal(a) + "%" + literal(b), places, expected, s))
+        self.assert_program(cases)
 
 
 if __name__ == "__main__":
