@@ -239,3 +239,19 @@ relational operators in POSIX conditional syntax against exact Python Fractions.
 The initial table rejects the former magnitude-order bug for two negative
 operands. Scale alignment may swap the magnitude operands, and negative signs
 reverse their order again; equal magnitudes remain equal in either orientation.
+
+## Imported fixture output isolation
+
+Imported scripts may write generated outputs beside their fixtures. CMake copies
+the imported test inputs into `gdpat-test-source` in each build tree, excluding
+Git metadata and preexisting output directories. Test discovery and execution
+use that copy, so worktrees and ON/OFF builds can share a downloaded dependency
+source without sharing mutable results. The upstream source is left unchanged;
+no platform-specific copy facility is required.
+
+`harness/gdpat-isolation` configures two small build trees against one mock
+source, waits for both writers to signal readiness, then lets them read. Both
+must retain their own marker and the shared source must remain untouched. The
+protocol uses bounded waits and reaps its children. This guarantees isolation
+between build trees; concurrent invocations of the same imported test in one
+build tree still share that tree's output path.

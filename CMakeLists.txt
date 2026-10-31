@@ -48,6 +48,16 @@ else()
 set(RUN_INTEGRATION_TESTS OFF)
 endif()
 
+# Imported-suite commands must isolate mutable files when sources are shared.
+if(RUN_INTEGRATION_TESTS)
+  add_test(NAME harness/gdpat-isolation
+           COMMAND "${Python_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/cmake/tests/test-gdpat-isolation.py"
+                   --cmake "${CMAKE_COMMAND}" --ctest "${CMAKE_CTEST_COMMAND}"
+                   --module "${CMAKE_SOURCE_DIR}/cmake/GDPosixAppsTests.cmake"
+                   --generator "${CMAKE_GENERATOR}")
+  set_tests_properties(harness/gdpat-isolation PROPERTIES TIMEOUT 90)
+endif()
+
 # Unit testing setup
 if(BUILD_TESTING)
   if($CACHE{ALLOW_THIRD_PARTY_DOWNLOADS})
