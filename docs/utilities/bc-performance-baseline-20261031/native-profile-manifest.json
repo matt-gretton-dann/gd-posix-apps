@@ -1,0 +1,428 @@
+{
+  "archived_reports": [
+    {
+      "gzip_sha256": "d5be58e39bb291d8ce37118f190414af401b70592f8f247468d911993dee12ee",
+      "path": "native-profiles/multiply_dense_10000d_x500.sample.txt.gz",
+      "uncompressed_sha256": "de97bc0242ce172c89341e2488444decf5591808d57780f31cbccc6ab3fe5c47"
+    },
+    {
+      "gzip_sha256": "57e25843ee274f25adac569d72a4d638a21ca262c46a7f6c3a6f02df4c76448a",
+      "path": "native-profiles/decimal_input_4000d_x100.sample.txt.gz",
+      "uncompressed_sha256": "65da41b65d7c343ebfb0454c8725543283ee7f97cea747b940e311ab131a2f2c"
+    },
+    {
+      "gzip_sha256": "f3ec5e3527cf8c814daa4f8933d4e13dbca7edeeef222d2a97f825a73420f783",
+      "path": "native-profiles/calls_200000.sample.txt.gz",
+      "uncompressed_sha256": "3b6a944fbe89f806156b7040c7dd3a8b18209cd139b7c7e81b35e546cfc13618"
+    },
+    {
+      "gzip_sha256": "7511241f65dc5d5b2cf3f27e97bcc0803575d27c7ae5ac1ac1fa4da7fb2325a6",
+      "path": "native-profiles/loop_1000000.sample.txt.gz",
+      "uncompressed_sha256": "6840e31590c0ad5a3b3587a5ddb5d6d26934addce916d67857049a3e73252382"
+    },
+    {
+      "gzip_sha256": "d6f9de792ce701f446c1c178d930d909e7775b8a9b1f4240db317c6960c1ecb0",
+      "path": "native-profiles/fibonacci_10000_x10.sample.txt.gz",
+      "uncompressed_sha256": "3cd3927f3d737d39633197cbe9d7dd9289ab4d63ce9dbc405909575743e2fe63"
+    },
+    {
+      "gzip_sha256": "5b8691574b6cd92cf3f0a5838895691b4fd39e0a76b3393e4f6667da7f4e6fae",
+      "path": "native-profiles/divide_multilimb_900d_450d_s100_x1000.sample.txt.gz",
+      "uncompressed_sha256": "02d6d07746bae3c27dc06fd1fece1e3cd5bc2d4c5fa4b3d1a1051b4c8d098d2b"
+    },
+    {
+      "gzip_sha256": "de6ba21887a2be5bd84a9f569e49f9d200cb906fb1a934aad76f34d1a84fe42b",
+      "path": "native-profiles/frontend_definitions_2000.sample.txt.gz",
+      "uncompressed_sha256": "2d97ee9e08457fd58e5b22a5b27dd7c35f591d61c111eccb01081d1012ba42e4"
+    },
+    {
+      "gzip_sha256": "f9ed8dfc33b4a145ddd0eec57e728fa8d357ca2a93c8176720bc3afae90010fe",
+      "path": "native-profiles/multiply_10000d_x1000.sample.txt.gz",
+      "uncompressed_sha256": "27e021fa98b1c4826c62c964432931ecdca8ba86cd26c9c5c85066fb5efd32d0"
+    }
+  ],
+  "collector_sha256": "40cc70fd7c76e731c51a7bbbccd33b7933f676fd54da0677b2edfd77fe3e5d01",
+  "collector_source_archive": "native-profiles/collector-as-run.py.txt",
+  "hardware_counters": {
+    "available_metrics": [
+      "instructions retired",
+      "cycles elapsed"
+    ],
+    "scope": "one checked process per workload, distinct from CPU repetition sample and release timing statistics",
+    "status": "Darwin per-process native fields collected where provided by time -l",
+    "unavailable_metrics": [
+      "branch misses",
+      "cache misses"
+    ]
+  },
+  "implementation": {
+    "argv": [
+      "/private/tmp/gd-posix-vm-lifetime/build-release/src/bc/bc"
+    ],
+    "binary_sha256": "f8e716781e925c787420891f82232945baac7673751317427f8382ac8fc6f9a7",
+    "complete_provenance": true,
+    "metadata": {
+      "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+      "configuration": {
+        "extensions": true,
+        "limb_base": 1000000000,
+        "limb_bits": 32,
+        "multiply_split_point": 126
+      },
+      "flags": {
+        "CMAKE_CXX_FLAGS": "",
+        "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+        "CXX_STANDARD": "gnu++20",
+        "IPO": "thin LTO",
+        "command_log_sha256": "571ed9ea88b2a0546d2a18b281323f7faa726bd1fa095725f05fa2d100560505"
+      },
+      "instrumented": false,
+      "library": [
+        "#define _LIBCPP_VERSION 220106"
+      ],
+      "machine": "Apple M1",
+      "source_revision": "6a1704e0297a4f045d3d5bd5deb5c1e8551d5ff1",
+      "version": "gd-posix-apps 0.0 source 6a1704e0297a4f045d3d5bd5deb5c1e8551d5ff1"
+    },
+    "name": "gd",
+    "role": "candidate"
+  },
+  "native_field_parser_sha256": "4f4d2be41ec91af5bf08387be1aa030e0ac8ec3f75dcfaba11d64ca372e2f3ad",
+  "platform": "macOS-27.2-arm64-arm-64bit-Mach-O",
+  "purpose": "diagnostic attribution; not timing results",
+  "schema": 1,
+  "status": "all diagnostic children checked; availability is per measurement",
+  "workloads": [
+    {
+      "checked": true,
+      "cpu": {
+        "argv": [
+          "/usr/bin/sample",
+          "71410",
+          "3",
+          "1",
+          "-mayDie",
+          "-file",
+          "/private/tmp/gd-bc-200-release-profiles/loop_1000000.sample.txt"
+        ],
+        "repetitions": 13,
+        "returncode": 0,
+        "status": "collected"
+      },
+      "memory": {
+        "argv": [
+          "/usr/bin/time",
+          "-l",
+          "-o",
+          "/private/tmp/gd-bc-200-release-profiles/loop_1000000.rss.txt",
+          "/private/tmp/gd-posix-vm-lifetime/build-release/src/bc/bc"
+        ],
+        "native_counters": {
+          "cycles_elapsed": 1262665535,
+          "instructions_retired": 7294678931
+        },
+        "native_unit": "bytes (Darwin ru_maxrss)",
+        "peak_memory_footprint_bytes": 1212800,
+        "peak_rss_native": 2015232,
+        "repetitions": 1,
+        "status": "collected"
+      },
+      "name": "loop_1000000",
+      "parameters": {
+        "iterations": 1000000
+      },
+      "program_sha256": "74aa1d696c8c54be05d25ad82b085aedd6791012c90b5faf9f3d9d91f94ebdba"
+    },
+    {
+      "checked": true,
+      "cpu": {
+        "argv": [
+          "/usr/bin/sample",
+          "71425",
+          "3",
+          "1",
+          "-mayDie",
+          "-file",
+          "/private/tmp/gd-bc-200-release-profiles/calls_200000.sample.txt"
+        ],
+        "repetitions": 27,
+        "returncode": 0,
+        "status": "collected"
+      },
+      "memory": {
+        "argv": [
+          "/usr/bin/time",
+          "-l",
+          "-o",
+          "/private/tmp/gd-bc-200-release-profiles/calls_200000.rss.txt",
+          "/private/tmp/gd-posix-vm-lifetime/build-release/src/bc/bc"
+        ],
+        "native_counters": {
+          "cycles_elapsed": 579891084,
+          "instructions_retired": 3203072656
+        },
+        "native_unit": "bytes (Darwin ru_maxrss)",
+        "peak_memory_footprint_bytes": 1261952,
+        "peak_rss_native": 2064384,
+        "repetitions": 1,
+        "status": "collected"
+      },
+      "name": "calls_200000",
+      "parameters": {
+        "iterations": 200000
+      },
+      "program_sha256": "738d33209381c5f554a34bc05ed399ed53973ff7ae75a0cd72e464875841c63e"
+    },
+    {
+      "checked": true,
+      "cpu": {
+        "argv": [
+          "/usr/bin/sample",
+          "71445",
+          "3",
+          "1",
+          "-mayDie",
+          "-file",
+          "/private/tmp/gd-bc-200-release-profiles/fibonacci_10000_x10.sample.txt"
+        ],
+        "repetitions": 26,
+        "returncode": 0,
+        "status": "collected"
+      },
+      "memory": {
+        "argv": [
+          "/usr/bin/time",
+          "-l",
+          "-o",
+          "/private/tmp/gd-bc-200-release-profiles/fibonacci_10000_x10.rss.txt",
+          "/private/tmp/gd-posix-vm-lifetime/build-release/src/bc/bc"
+        ],
+        "native_counters": {
+          "cycles_elapsed": 618148079,
+          "instructions_retired": 1044066490
+        },
+        "native_unit": "bytes (Darwin ru_maxrss)",
+        "peak_memory_footprint_bytes": 1622400,
+        "peak_rss_native": 2441216,
+        "repetitions": 1,
+        "status": "collected"
+      },
+      "name": "fibonacci_10000_x10",
+      "parameters": {
+        "index": 10000,
+        "iterations": 10
+      },
+      "program_sha256": "cafa569a1e0259262731ec77ba810fabc76a3ae8eeae60c328f8cb78815bcf1f"
+    },
+    {
+      "checked": true,
+      "cpu": {
+        "argv": [
+          "/usr/bin/sample",
+          "71461",
+          "3",
+          "1",
+          "-mayDie",
+          "-file",
+          "/private/tmp/gd-bc-200-release-profiles/multiply_10000d_x1000.sample.txt"
+        ],
+        "repetitions": 3,
+        "returncode": 0,
+        "status": "collected"
+      },
+      "memory": {
+        "argv": [
+          "/usr/bin/time",
+          "-l",
+          "-o",
+          "/private/tmp/gd-bc-200-release-profiles/multiply_10000d_x1000.rss.txt",
+          "/private/tmp/gd-posix-vm-lifetime/build-release/src/bc/bc"
+        ],
+        "native_counters": {
+          "cycles_elapsed": 5793332684,
+          "instructions_retired": 7517569112
+        },
+        "native_unit": "bytes (Darwin ru_maxrss)",
+        "peak_memory_footprint_bytes": 1589632,
+        "peak_rss_native": 2408448,
+        "repetitions": 1,
+        "status": "collected"
+      },
+      "name": "multiply_10000d_x1000",
+      "parameters": {
+        "iterations": 1000,
+        "left_digits": 10000,
+        "right_digits": 10000,
+        "shape": "repeated"
+      },
+      "program_sha256": "834a93e1304c2fd9c706943a98f5dbf15c6fce738e0b07d01e0cb68fb9e9ee41"
+    },
+    {
+      "checked": true,
+      "cpu": {
+        "argv": [
+          "/usr/bin/sample",
+          "71489",
+          "3",
+          "1",
+          "-mayDie",
+          "-file",
+          "/private/tmp/gd-bc-200-release-profiles/multiply_dense_10000d_x500.sample.txt"
+        ],
+        "repetitions": 6,
+        "returncode": 0,
+        "status": "collected"
+      },
+      "memory": {
+        "argv": [
+          "/usr/bin/time",
+          "-l",
+          "-o",
+          "/private/tmp/gd-bc-200-release-profiles/multiply_dense_10000d_x500.rss.txt",
+          "/private/tmp/gd-posix-vm-lifetime/build-release/src/bc/bc"
+        ],
+        "native_counters": {
+          "cycles_elapsed": 2923861147,
+          "instructions_retired": 3817540882
+        },
+        "native_unit": "bytes (Darwin ru_maxrss)",
+        "peak_memory_footprint_bytes": 1589632,
+        "peak_rss_native": 2408448,
+        "repetitions": 1,
+        "status": "collected"
+      },
+      "name": "multiply_dense_10000d_x500",
+      "parameters": {
+        "iterations": 500,
+        "left_digits": 10000,
+        "right_digits": 10000,
+        "shape": "seeded_dense"
+      },
+      "program_sha256": "0e2e2c1e7cd1ed996201ba01c744f650baf67a86666cb471e4a82e9996c9c345"
+    },
+    {
+      "checked": true,
+      "cpu": {
+        "argv": [
+          "/usr/bin/sample",
+          "71511",
+          "3",
+          "1",
+          "-mayDie",
+          "-file",
+          "/private/tmp/gd-bc-200-release-profiles/divide_multilimb_900d_450d_s100_x1000.sample.txt"
+        ],
+        "repetitions": 353,
+        "returncode": 0,
+        "status": "collected"
+      },
+      "memory": {
+        "argv": [
+          "/usr/bin/time",
+          "-l",
+          "-o",
+          "/private/tmp/gd-bc-200-release-profiles/divide_multilimb_900d_450d_s100_x1000.rss.txt",
+          "/private/tmp/gd-posix-vm-lifetime/build-release/src/bc/bc"
+        ],
+        "native_counters": {
+          "cycles_elapsed": 40975907,
+          "instructions_retired": 102234733
+        },
+        "native_unit": "bytes (Darwin ru_maxrss)",
+        "peak_memory_footprint_bytes": 1278336,
+        "peak_rss_native": 2097152,
+        "repetitions": 1,
+        "status": "collected"
+      },
+      "name": "divide_multilimb_900d_450d_s100_x1000",
+      "parameters": {
+        "dividend_digits": 900,
+        "divisor_digits": 450,
+        "iterations": 1000,
+        "scale": 100
+      },
+      "program_sha256": "3e526fbb9e7ce363f37d717ee26d12d1562e85f4e82d4c671cbc0970f2c048d2"
+    },
+    {
+      "checked": true,
+      "cpu": {
+        "argv": [
+          "/usr/bin/sample",
+          "71518",
+          "3",
+          "1",
+          "-mayDie",
+          "-file",
+          "/private/tmp/gd-bc-200-release-profiles/frontend_definitions_2000.sample.txt"
+        ],
+        "repetitions": 269,
+        "returncode": 0,
+        "status": "collected"
+      },
+      "memory": {
+        "argv": [
+          "/usr/bin/time",
+          "-l",
+          "-o",
+          "/private/tmp/gd-bc-200-release-profiles/frontend_definitions_2000.rss.txt",
+          "/private/tmp/gd-posix-vm-lifetime/build-release/src/bc/bc"
+        ],
+        "native_counters": {
+          "cycles_elapsed": 56952074,
+          "instructions_retired": 263930317
+        },
+        "native_unit": "bytes (Darwin ru_maxrss)",
+        "peak_memory_footprint_bytes": 1687936,
+        "peak_rss_native": 2490368,
+        "repetitions": 1,
+        "status": "collected"
+      },
+      "name": "frontend_definitions_2000",
+      "parameters": {
+        "definitions": 2000
+      },
+      "program_sha256": "36a2bf8899f52e86536ad0fd9763b1dc8b59d565f1da60cb6508d8d213cd8916"
+    },
+    {
+      "checked": true,
+      "cpu": {
+        "argv": [
+          "/usr/bin/sample",
+          "71540",
+          "3",
+          "1",
+          "-mayDie",
+          "-file",
+          "/private/tmp/gd-bc-200-release-profiles/decimal_input_4000d_x100.sample.txt"
+        ],
+        "repetitions": 27,
+        "returncode": 0,
+        "status": "collected"
+      },
+      "memory": {
+        "argv": [
+          "/usr/bin/time",
+          "-l",
+          "-o",
+          "/private/tmp/gd-bc-200-release-profiles/decimal_input_4000d_x100.rss.txt",
+          "/private/tmp/gd-posix-vm-lifetime/build-release/src/bc/bc"
+        ],
+        "native_counters": {
+          "cycles_elapsed": 596685178,
+          "instructions_retired": 1334363449
+        },
+        "native_unit": "bytes (Darwin ru_maxrss)",
+        "peak_memory_footprint_bytes": 1606016,
+        "peak_rss_native": 2424832,
+        "repetitions": 1,
+        "status": "collected"
+      },
+      "name": "decimal_input_4000d_x100",
+      "parameters": {
+        "digits": 4000,
+        "literals": 100
+      },
+      "program_sha256": "f52167d78167be3e447e2b6d40465d288f7981bd3bd081c7da06d4b8980ecbe1"
+    }
+  ]
+}

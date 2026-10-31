@@ -1,0 +1,2584 @@
+{
+  "binary_sha256": "56fbaee5b767426b07a4af170efa46f8f5c707f2f797be04d8444c1323346c14",
+  "corpus_seed": 197200,
+  "harness_sha256": "a060b590ee56eb235f687f24fb516c6f36440f84f2ccc9fc2d7802db99ca5623",
+  "instrumented": true,
+  "limitations": [
+    "Selected container requested storage, not all process malloc or RSS",
+    "Named ownership-copy sites, not hardware atomic operations",
+    "Instrumented layout/side effects differ from release; no timing inference",
+    "Counter build split point 191 differs from release baseline split point 126",
+    "CPU sampling and OS memory evidence are recorded separately"
+  ],
+  "measurement": "diagnostic counters; no timing comparisons",
+  "preset": "full",
+  "source_revision": "f36dc53cc193a52b347e2bda60b6f1c57c2ce71d",
+  "status": "all checked",
+  "toolchain": {
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "configuration": {
+      "CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "CXX_STANDARD": "gnu++20",
+      "ENABLE_BC_PROFILE": true,
+      "ENABLE_NON_POSIX_EXTENSIONS": true,
+      "IPO": "thin LTO",
+      "build_type": "Release",
+      "multiply_split_point": 191
+    },
+    "library": [
+      "#define _LIBCPP_VERSION 220106"
+    ],
+    "machine": "Apple M1"
+  },
+  "workloads": [
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "digits": {
+            "allocated_bytes": 252,
+            "allocation_calls": 8,
+            "deallocation_calls": 8,
+            "live_bytes": 0,
+            "peak_live_bytes": 204
+          },
+          "frames": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocated_bytes": 928,
+            "allocation_calls": 6,
+            "deallocation_calls": 6,
+            "live_bytes": 0,
+            "peak_live_bytes": 672
+          },
+          "results": {
+            "allocated_bytes": 200,
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "live_bytes": 0,
+            "peak_live_bytes": 160
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 0,
+          "cow_clones": 1,
+          "cow_limb_bytes": 4,
+          "digit_copies": 2,
+          "digit_moves": 5,
+          "function_calls": 0,
+          "instructions_executed": 5,
+          "iterator_owner_copies": 1,
+          "karatsuba_multiply_calls": 0,
+          "literal_conversions": 2,
+          "owned_digit_copies": 2,
+          "range_limb_bytes": 0
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 1380,
+          "allocation_calls": 16,
+          "deallocation_calls": 16,
+          "live_bytes": 0,
+          "peak_live_bytes": 828
+        }
+      },
+      "group": "startup",
+      "name": "startup",
+      "output_sha256": "53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3",
+      "parameters": {},
+      "program_sha256": "a7684d1961bc3c87aeea07cbfd22792a6c875687fa1d0f3c18ace930a373040e"
+    },
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "digits": {
+            "allocated_bytes": 263821352,
+            "allocation_calls": 10000004,
+            "deallocation_calls": 10000004,
+            "live_bytes": 0,
+            "peak_live_bytes": 472
+          },
+          "frames": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocated_bytes": 8304,
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "live_bytes": 0,
+            "peak_live_bytes": 5040
+          },
+          "results": {
+            "allocated_bytes": 1160,
+            "allocation_calls": 4,
+            "deallocation_calls": 4,
+            "live_bytes": 0,
+            "peak_live_bytes": 880
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 0,
+          "cow_clones": 1999997,
+          "cow_limb_bytes": 11821100,
+          "digit_copies": 12000005,
+          "digit_moves": 6000009,
+          "function_calls": 0,
+          "instructions_executed": 19000015,
+          "iterator_owner_copies": 1999997,
+          "karatsuba_multiply_calls": 0,
+          "literal_conversions": 2000003,
+          "owned_digit_copies": 12000005,
+          "range_limb_bytes": 0
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 263830816,
+          "allocation_calls": 10000025,
+          "deallocation_calls": 10000025,
+          "live_bytes": 0,
+          "peak_live_bytes": 5088
+        }
+      },
+      "group": "loop",
+      "name": "loop_1000000",
+      "output_sha256": "dbb4498f673634c698bd6e593ef54bdadf465654b13fb7bfe689016e602e7ef8",
+      "parameters": {
+        "iterations": 1000000
+      },
+      "program_sha256": "74aa1d696c8c54be05d25ad82b085aedd6791012c90b5faf9f3d9d91f94ebdba"
+    },
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "digits": {
+            "allocated_bytes": 95614988,
+            "allocation_calls": 3568380,
+            "deallocation_calls": 3568380,
+            "live_bytes": 0,
+            "peak_live_bytes": 640
+          },
+          "frames": {
+            "allocated_bytes": 44800000,
+            "allocation_calls": 1000000,
+            "deallocation_calls": 1000000,
+            "live_bytes": 0,
+            "peak_live_bytes": 224
+          },
+          "instructions": {
+            "allocated_bytes": 13032,
+            "allocation_calls": 24,
+            "deallocation_calls": 24,
+            "live_bytes": 0,
+            "peak_live_bytes": 6496
+          },
+          "results": {
+            "allocated_bytes": 112001920,
+            "allocation_calls": 200005,
+            "deallocation_calls": 200005,
+            "live_bytes": 0,
+            "peak_live_bytes": 1560
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 199999,
+          "cow_clones": 599997,
+          "cow_limb_bytes": 3867724,
+          "digit_copies": 5000006,
+          "digit_moves": 3400007,
+          "function_calls": 200000,
+          "instructions_executed": 6800016,
+          "iterator_owner_copies": 768374,
+          "karatsuba_multiply_calls": 0,
+          "literal_conversions": 600003,
+          "owned_digit_copies": 4400005,
+          "range_limb_bytes": 799996
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 252429940,
+          "allocation_calls": 4768409,
+          "deallocation_calls": 4768409,
+          "live_bytes": 0,
+          "peak_live_bytes": 7168
+        }
+      },
+      "group": "calls",
+      "name": "calls_200000",
+      "output_sha256": "34812d12902217c2ca460d074d75599c4704fbce9e15d1f8780da9463bf0bf9a",
+      "parameters": {
+        "iterations": 200000
+      },
+      "program_sha256": "738d33209381c5f554a34bc05ed399ed53973ff7ae75a0cd72e464875841c63e"
+    },
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 12800048,
+            "allocation_calls": 200001,
+            "deallocation_calls": 200001,
+            "live_bytes": 0,
+            "peak_live_bytes": 12800048
+          },
+          "digits": {
+            "allocated_bytes": 94221496,
+            "allocation_calls": 3600007,
+            "deallocation_calls": 3600007,
+            "live_bytes": 0,
+            "peak_live_bytes": 10400468
+          },
+          "frames": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocated_bytes": 14904,
+            "allocation_calls": 24,
+            "deallocation_calls": 24,
+            "live_bytes": 0,
+            "peak_live_bytes": 5040
+          },
+          "results": {
+            "allocated_bytes": 2120,
+            "allocation_calls": 5,
+            "deallocation_calls": 5,
+            "live_bytes": 0,
+            "peak_live_bytes": 960
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 0,
+          "cow_clones": 599996,
+          "cow_limb_bytes": 3021096,
+          "digit_copies": 4600009,
+          "digit_moves": 2400014,
+          "function_calls": 0,
+          "instructions_executed": 8000023,
+          "iterator_owner_copies": 599996,
+          "karatsuba_multiply_calls": 0,
+          "literal_conversions": 800005,
+          "owned_digit_copies": 4600009,
+          "range_limb_bytes": 0
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 107038568,
+          "allocation_calls": 3800037,
+          "deallocation_calls": 3800037,
+          "live_bytes": 0,
+          "peak_live_bytes": 23205184
+        }
+      },
+      "group": "array",
+      "name": "array_200000",
+      "output_sha256": "ef55be1f845002931219ae88320c4744651b322de6447340a573287179119427",
+      "parameters": {
+        "elements": 200000
+      },
+      "program_sha256": "f6a730c098c8d10032b60dd95a00eb18349ad719604fe3582bad5a1e61e5b054"
+    },
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "digits": {
+            "allocated_bytes": 30532736,
+            "allocation_calls": 906507,
+            "deallocation_calls": 906507,
+            "live_bytes": 0,
+            "peak_live_bytes": 1556
+          },
+          "frames": {
+            "allocated_bytes": 51200,
+            "allocation_calls": 1100,
+            "deallocation_calls": 1100,
+            "live_bytes": 0,
+            "peak_live_bytes": 512
+          },
+          "instructions": {
+            "allocated_bytes": 24888,
+            "allocation_calls": 23,
+            "deallocation_calls": 23,
+            "live_bytes": 0,
+            "peak_live_bytes": 10808
+          },
+          "results": {
+            "allocated_bytes": 158680,
+            "allocation_calls": 104,
+            "deallocation_calls": 104,
+            "live_bytes": 0,
+            "peak_live_bytes": 2440
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 0,
+          "cow_clones": 199999,
+          "cow_limb_bytes": 5225996,
+          "digit_copies": 1403405,
+          "digit_moves": 602409,
+          "function_calls": 100,
+          "instructions_executed": 2404013,
+          "iterator_owner_copies": 1308799,
+          "karatsuba_multiply_calls": 0,
+          "literal_conversions": 200702,
+          "owned_digit_copies": 1402205,
+          "range_limb_bytes": 0
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 30767504,
+          "allocation_calls": 907734,
+          "deallocation_calls": 907734,
+          "live_bytes": 0,
+          "peak_live_bytes": 12448
+        }
+      },
+      "group": "fibonacci",
+      "name": "fibonacci_1000_x100",
+      "output_sha256": "5ee9ba454200025fb52afa547c4c98d5742b5b34cac78f6149a085a20bd96f37",
+      "parameters": {
+        "index": 1000,
+        "iterations": 100
+      },
+      "program_sha256": "1a99529043a0c9a2eed2bd64ec3df2ee15a819a23550a1d0871dfe777a9c0675"
+    },
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "digits": {
+            "allocated_bytes": 76152976,
+            "allocation_calls": 904837,
+            "deallocation_calls": 904837,
+            "live_bytes": 0,
+            "peak_live_bytes": 7408
+          },
+          "frames": {
+            "allocated_bytes": 5120,
+            "allocation_calls": 110,
+            "deallocation_calls": 110,
+            "live_bytes": 0,
+            "peak_live_bytes": 512
+          },
+          "instructions": {
+            "allocated_bytes": 24888,
+            "allocation_calls": 23,
+            "deallocation_calls": 23,
+            "live_bytes": 0,
+            "peak_live_bytes": 10808
+          },
+          "results": {
+            "allocated_bytes": 18280,
+            "allocation_calls": 14,
+            "deallocation_calls": 14,
+            "live_bytes": 0,
+            "peak_live_bytes": 2440
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 0,
+          "cow_clones": 199999,
+          "cow_limb_bytes": 47021676,
+          "digit_copies": 1400345,
+          "digit_moves": 600249,
+          "function_calls": 10,
+          "instructions_executed": 2400413,
+          "iterator_owner_copies": 11757739,
+          "karatsuba_multiply_calls": 0,
+          "literal_conversions": 200072,
+          "owned_digit_copies": 1400225,
+          "range_limb_bytes": 0
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 76201264,
+          "allocation_calls": 904984,
+          "deallocation_calls": 904984,
+          "live_bytes": 0,
+          "peak_live_bytes": 17704
+        }
+      },
+      "group": "fibonacci",
+      "name": "fibonacci_10000_x10",
+      "output_sha256": "31167af12bc28aa39d3e68f27ecf12c96cd2e51e9a029849d7bfaf419e1221fb",
+      "parameters": {
+        "index": 10000,
+        "iterations": 10
+      },
+      "program_sha256": "cafa569a1e0259262731ec77ba810fabc76a3ae8eeae60c328f8cb78815bcf1f"
+    },
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "digits": {
+            "allocated_bytes": 59922336,
+            "allocation_calls": 465057,
+            "deallocation_calls": 465057,
+            "live_bytes": 0,
+            "peak_live_bytes": 6516
+          },
+          "frames": {
+            "allocated_bytes": 16000,
+            "allocation_calls": 350,
+            "deallocation_calls": 350,
+            "live_bytes": 0,
+            "peak_live_bytes": 320
+          },
+          "instructions": {
+            "allocated_bytes": 16984,
+            "allocation_calls": 22,
+            "deallocation_calls": 22,
+            "live_bytes": 0,
+            "peak_live_bytes": 7848
+          },
+          "results": {
+            "allocated_bytes": 56200,
+            "allocation_calls": 54,
+            "deallocation_calls": 54,
+            "live_bytes": 0,
+            "peak_live_bytes": 1960
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 50000,
+          "cow_clones": 50049,
+          "cow_limb_bytes": 200196,
+          "digit_copies": 451205,
+          "digit_moves": 450859,
+          "function_calls": 50,
+          "instructions_executed": 751713,
+          "iterator_owner_copies": 50049,
+          "karatsuba_multiply_calls": 0,
+          "literal_conversions": 100252,
+          "owned_digit_copies": 450905,
+          "range_limb_bytes": 30994800
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 60011520,
+          "allocation_calls": 465483,
+          "deallocation_calls": 465483,
+          "live_bytes": 0,
+          "peak_live_bytes": 14892
+        }
+      },
+      "group": "factorial",
+      "name": "factorial_1000_x50",
+      "output_sha256": "6de3b50bf779285ca18cb5620ee77324deb20740a41545958c7f0ef6f6f0344a",
+      "parameters": {
+        "argument": 1000,
+        "iterations": 50
+      },
+      "program_sha256": "c5f62530bb22594f7bfc55d867b2be7554356b94a976fca91cffc94471bed182"
+    },
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "digits": {
+            "allocated_bytes": 168829956,
+            "allocation_calls": 234152,
+            "deallocation_calls": 234152,
+            "live_bytes": 0,
+            "peak_live_bytes": 37076
+          },
+          "frames": {
+            "allocated_bytes": 1600,
+            "allocation_calls": 35,
+            "deallocation_calls": 35,
+            "live_bytes": 0,
+            "peak_live_bytes": 320
+          },
+          "instructions": {
+            "allocated_bytes": 16984,
+            "allocation_calls": 22,
+            "deallocation_calls": 22,
+            "live_bytes": 0,
+            "peak_live_bytes": 7848
+          },
+          "results": {
+            "allocated_bytes": 7600,
+            "allocation_calls": 9,
+            "deallocation_calls": 9,
+            "live_bytes": 0,
+            "peak_live_bytes": 1960
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 25000,
+          "cow_clones": 25004,
+          "cow_limb_bytes": 100016,
+          "digit_copies": 225125,
+          "digit_moves": 225094,
+          "function_calls": 5,
+          "instructions_executed": 375183,
+          "iterator_owner_copies": 25004,
+          "karatsuba_multiply_calls": 0,
+          "literal_conversions": 50027,
+          "owned_digit_copies": 225095,
+          "range_limb_bytes": 96751460
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 168856140,
+          "allocation_calls": 234218,
+          "deallocation_calls": 234218,
+          "live_bytes": 0,
+          "peak_live_bytes": 45452
+        }
+      },
+      "group": "factorial",
+      "name": "factorial_5000_x5",
+      "output_sha256": "ea30e2c4be443d4f1e2e946f8cc985a3fa0d7c051f9913cc2635e92ae278e058",
+      "parameters": {
+        "argument": 5000,
+        "iterations": 5
+      },
+      "program_sha256": "808583dd419f15a7145ba5455481fd0da1143cbe69b971a03749edea6bd0af6c"
+    },
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "digits": {
+            "allocated_bytes": 36000680,
+            "allocation_calls": 1000019,
+            "deallocation_calls": 1000019,
+            "live_bytes": 0,
+            "peak_live_bytes": 836
+          },
+          "frames": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocated_bytes": 9080,
+            "allocation_calls": 21,
+            "deallocation_calls": 21,
+            "live_bytes": 0,
+            "peak_live_bytes": 5040
+          },
+          "results": {
+            "allocated_bytes": 1320,
+            "allocation_calls": 5,
+            "deallocation_calls": 5,
+            "live_bytes": 0,
+            "peak_live_bytes": 920
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 100000,
+          "cow_clones": 99999,
+          "cow_limb_bytes": 399996,
+          "digit_copies": 1100007,
+          "digit_moves": 900011,
+          "function_calls": 0,
+          "instructions_executed": 2000018,
+          "iterator_owner_copies": 99999,
+          "karatsuba_multiply_calls": 0,
+          "literal_conversions": 200004,
+          "owned_digit_copies": 1100007,
+          "range_limb_bytes": 0
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 36011080,
+          "allocation_calls": 1000045,
+          "deallocation_calls": 1000045,
+          "live_bytes": 0,
+          "peak_live_bytes": 5264
+        }
+      },
+      "group": "multiply",
+      "name": "multiply_100d_x100000",
+      "output_sha256": "2028db28a7510261d8e5d45841744d56b0f49b9e8c159c5670fbde01aa9b2a25",
+      "parameters": {
+        "iterations": 100000,
+        "left_digits": 100,
+        "right_digits": 100,
+        "shape": "repeated"
+      },
+      "program_sha256": "00265d8ce3e2d4f3fe5d5cffc742ccf26ec23aa7d88001d42072cb742e916eed"
+    },
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "digits": {
+            "allocated_bytes": 11602472,
+            "allocation_calls": 100025,
+            "deallocation_calls": 100025,
+            "live_bytes": 0,
+            "peak_live_bytes": 3332
+          },
+          "frames": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocated_bytes": 9080,
+            "allocation_calls": 21,
+            "deallocation_calls": 21,
+            "live_bytes": 0,
+            "peak_live_bytes": 5040
+          },
+          "results": {
+            "allocated_bytes": 1320,
+            "allocation_calls": 5,
+            "deallocation_calls": 5,
+            "live_bytes": 0,
+            "peak_live_bytes": 920
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 10000,
+          "cow_clones": 9999,
+          "cow_limb_bytes": 39996,
+          "digit_copies": 110007,
+          "digit_moves": 90011,
+          "function_calls": 0,
+          "instructions_executed": 200018,
+          "iterator_owner_copies": 9999,
+          "karatsuba_multiply_calls": 0,
+          "literal_conversions": 20004,
+          "owned_digit_copies": 110007,
+          "range_limb_bytes": 0
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 11612872,
+          "allocation_calls": 100051,
+          "deallocation_calls": 100051,
+          "live_bytes": 0,
+          "peak_live_bytes": 7628
+        }
+      },
+      "group": "multiply",
+      "name": "multiply_1000d_x10000",
+      "output_sha256": "3833a70d940fc525e38704a3a34c730cfae55dcf6130db7a23afc0334beec934",
+      "parameters": {
+        "iterations": 10000,
+        "left_digits": 1000,
+        "right_digits": 1000,
+        "shape": "repeated"
+      },
+      "program_sha256": "c5ba1f3e963a6e3fbe4b6c1180790a7f3f8ba66f9ca00ca53e63209aa739c210"
+    },
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "digits": {
+            "allocated_bytes": 97389192,
+            "allocation_calls": 140033,
+            "deallocation_calls": 140033,
+            "live_bytes": 0,
+            "peak_live_bytes": 53228
+          },
+          "frames": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocated_bytes": 9080,
+            "allocation_calls": 21,
+            "deallocation_calls": 21,
+            "live_bytes": 0,
+            "peak_live_bytes": 5040
+          },
+          "results": {
+            "allocated_bytes": 1320,
+            "allocation_calls": 5,
+            "deallocation_calls": 5,
+            "live_bytes": 0,
+            "peak_live_bytes": 920
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 27000,
+          "cow_clones": 999,
+          "cow_limb_bytes": 3996,
+          "digit_copies": 11007,
+          "digit_moves": 9011,
+          "function_calls": 0,
+          "instructions_executed": 20018,
+          "iterator_owner_copies": 34423999,
+          "karatsuba_multiply_calls": 13000,
+          "literal_conversions": 2004,
+          "owned_digit_copies": 11007,
+          "range_limb_bytes": 0
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 97399592,
+          "allocation_calls": 140059,
+          "deallocation_calls": 140059,
+          "live_bytes": 0,
+          "peak_live_bytes": 57524
+        }
+      },
+      "group": "multiply",
+      "name": "multiply_10000d_x1000",
+      "output_sha256": "1ced730440391c21a9a06d8b54177935ba09ebeb111d929f59f3452129402d71",
+      "parameters": {
+        "iterations": 1000,
+        "left_digits": 10000,
+        "right_digits": 10000,
+        "shape": "repeated"
+      },
+      "program_sha256": "834a93e1304c2fd9c706943a98f5dbf15c6fce738e0b07d01e0cb68fb9e9ee41"
+    },
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "digits": {
+            "allocated_bytes": 46400340,
+            "allocation_calls": 1700008,
+            "deallocation_calls": 1700008,
+            "live_bytes": 0,
+            "peak_live_bytes": 656
+          },
+          "frames": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocated_bytes": 8304,
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "live_bytes": 0,
+            "peak_live_bytes": 5040
+          },
+          "results": {
+            "allocated_bytes": 1120,
+            "allocation_calls": 4,
+            "deallocation_calls": 4,
+            "live_bytes": 0,
+            "peak_live_bytes": 840
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 0,
+          "cow_clones": 299999,
+          "cow_limb_bytes": 1199996,
+          "digit_copies": 1100005,
+          "digit_moves": 800009,
+          "function_calls": 0,
+          "instructions_executed": 1800015,
+          "iterator_owner_copies": 99999,
+          "karatsuba_multiply_calls": 0,
+          "literal_conversions": 400003,
+          "owned_digit_copies": 1100005,
+          "range_limb_bytes": 0
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 46409764,
+          "allocation_calls": 1700029,
+          "deallocation_calls": 1700029,
+          "live_bytes": 0,
+          "peak_live_bytes": 5040
+        }
+      },
+      "group": "divide_single_limb",
+      "name": "divide_scale100_x100000",
+      "output_sha256": "8523348d175cb52b0e89463d5c3e43ccf22efcea293c63bde258ca29b2e2df10",
+      "parameters": {
+        "divisor": "7",
+        "iterations": 100000,
+        "scale": 100
+      },
+      "program_sha256": "19c25d96059bd1a0a252ed2100292fe1abbb1bcb437aad307e7078010845e795"
+    },
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "digits": {
+            "allocated_bytes": 8640340,
+            "allocation_calls": 170008,
+            "deallocation_calls": 170008,
+            "live_bytes": 0,
+            "peak_live_bytes": 1456
+          },
+          "frames": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocated_bytes": 8304,
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "live_bytes": 0,
+            "peak_live_bytes": 5040
+          },
+          "results": {
+            "allocated_bytes": 1120,
+            "allocation_calls": 4,
+            "deallocation_calls": 4,
+            "live_bytes": 0,
+            "peak_live_bytes": 840
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 0,
+          "cow_clones": 29999,
+          "cow_limb_bytes": 119996,
+          "digit_copies": 110005,
+          "digit_moves": 80009,
+          "function_calls": 0,
+          "instructions_executed": 180015,
+          "iterator_owner_copies": 9999,
+          "karatsuba_multiply_calls": 0,
+          "literal_conversions": 40003,
+          "owned_digit_copies": 110005,
+          "range_limb_bytes": 0
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 8649764,
+          "allocation_calls": 170029,
+          "deallocation_calls": 170029,
+          "live_bytes": 0,
+          "peak_live_bytes": 5672
+        }
+      },
+      "group": "divide_single_limb",
+      "name": "divide_scale1000_x10000",
+      "output_sha256": "302ac48951296e2ef265d2840e4f1e5fa30fe699b33a5f5249e2dbc69f2e5034",
+      "parameters": {
+        "divisor": "7",
+        "iterations": 10000,
+        "scale": 1000
+      },
+      "program_sha256": "268fc3af6c9f5a54b17fe46bcd57128974349fb1f07043afbc567b85a70f7c4f"
+    },
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "digits": {
+            "allocated_bytes": 13200340,
+            "allocation_calls": 85008,
+            "deallocation_calls": 85008,
+            "live_bytes": 0,
+            "peak_live_bytes": 5008
+          },
+          "frames": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocated_bytes": 8304,
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "live_bytes": 0,
+            "peak_live_bytes": 5040
+          },
+          "results": {
+            "allocated_bytes": 1120,
+            "allocation_calls": 4,
+            "deallocation_calls": 4,
+            "live_bytes": 0,
+            "peak_live_bytes": 840
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 0,
+          "cow_clones": 14999,
+          "cow_limb_bytes": 59996,
+          "digit_copies": 55005,
+          "digit_moves": 40009,
+          "function_calls": 0,
+          "instructions_executed": 90015,
+          "iterator_owner_copies": 4999,
+          "karatsuba_multiply_calls": 0,
+          "literal_conversions": 20003,
+          "owned_digit_copies": 55005,
+          "range_limb_bytes": 0
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 13209764,
+          "allocation_calls": 85029,
+          "deallocation_calls": 85029,
+          "live_bytes": 0,
+          "peak_live_bytes": 9224
+        }
+      },
+      "group": "divide_single_limb",
+      "name": "divide_scale5000_x5000",
+      "output_sha256": "54416950d7a7317687e602ff7aee3bafd019153de0036d5a194a1464f2524591",
+      "parameters": {
+        "divisor": "7",
+        "iterations": 5000,
+        "scale": 5000
+      },
+      "program_sha256": "95e2527229b6c1261b98ec596d3e25eea72d6f58bced0a9019ee159e23d7b1d2"
+    },
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "digits": {
+            "allocated_bytes": 30380340,
+            "allocation_calls": 450008,
+            "deallocation_calls": 450008,
+            "live_bytes": 0,
+            "peak_live_bytes": 1120
+          },
+          "frames": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocated_bytes": 8304,
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "live_bytes": 0,
+            "peak_live_bytes": 5040
+          },
+          "results": {
+            "allocated_bytes": 1080,
+            "allocation_calls": 4,
+            "deallocation_calls": 4,
+            "live_bytes": 0,
+            "peak_live_bytes": 800
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 0,
+          "cow_clones": 104999,
+          "cow_limb_bytes": 4979996,
+          "digit_copies": 230005,
+          "digit_moves": 35009,
+          "function_calls": 0,
+          "instructions_executed": 85015,
+          "iterator_owner_copies": 589999,
+          "karatsuba_multiply_calls": 0,
+          "literal_conversions": 15003,
+          "owned_digit_copies": 230005,
+          "range_limb_bytes": 0
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 30389724,
+          "allocation_calls": 450029,
+          "deallocation_calls": 450029,
+          "live_bytes": 0,
+          "peak_live_bytes": 5296
+        }
+      },
+      "group": "sqrt",
+      "name": "sqrt_scale100_x5000",
+      "output_sha256": "bfe54e49204cf23da3c8b3f3671481ba4b5991b3da8272e94bddc9a855a2c016",
+      "parameters": {
+        "iterations": 5000,
+        "scale": 100
+      },
+      "program_sha256": "776a0a5e34050036c7e3d2dce7b192c09b624a528588da06999c5ec243d32458"
+    },
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "digits": {
+            "allocated_bytes": 2615940,
+            "allocation_calls": 5708,
+            "deallocation_calls": 5708,
+            "live_bytes": 0,
+            "peak_live_bytes": 5120
+          },
+          "frames": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocated_bytes": 8304,
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "live_bytes": 0,
+            "peak_live_bytes": 5040
+          },
+          "results": {
+            "allocated_bytes": 1080,
+            "allocation_calls": 4,
+            "deallocation_calls": 4,
+            "live_bytes": 0,
+            "peak_live_bytes": 800
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 0,
+          "cow_clones": 1349,
+          "cow_limb_bytes": 565396,
+          "digit_copies": 2905,
+          "digit_moves": 359,
+          "function_calls": 0,
+          "instructions_executed": 865,
+          "iterator_owner_copies": 67849,
+          "karatsuba_multiply_calls": 0,
+          "literal_conversions": 153,
+          "owned_digit_copies": 2905,
+          "range_limb_bytes": 0
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 2625324,
+          "allocation_calls": 5729,
+          "deallocation_calls": 5729,
+          "live_bytes": 0,
+          "peak_live_bytes": 9296
+        }
+      },
+      "group": "sqrt",
+      "name": "sqrt_scale1000_x50",
+      "output_sha256": "25c085cfa0055fec91e72c28ab0b832c96a101d28590138dfe01a4aded11f294",
+      "parameters": {
+        "iterations": 50,
+        "scale": 1000
+      },
+      "program_sha256": "9bed475982441bfe7cef8eb52978f6814ff55110a466ad2eadfeb3a0f0312fc1"
+    },
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "digits": {
+            "allocated_bytes": 1449820,
+            "allocation_calls": 658,
+            "deallocation_calls": 658,
+            "live_bytes": 0,
+            "peak_live_bytes": 22884
+          },
+          "frames": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocated_bytes": 8304,
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "live_bytes": 0,
+            "peak_live_bytes": 5040
+          },
+          "results": {
+            "allocated_bytes": 1080,
+            "allocation_calls": 4,
+            "deallocation_calls": 4,
+            "live_bytes": 0,
+            "peak_live_bytes": 800
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 0,
+          "cow_clones": 154,
+          "cow_limb_bytes": 323096,
+          "digit_copies": 335,
+          "digit_moves": 44,
+          "function_calls": 0,
+          "instructions_executed": 100,
+          "iterator_owner_copies": 38994,
+          "karatsuba_multiply_calls": 0,
+          "literal_conversions": 18,
+          "owned_digit_copies": 335,
+          "range_limb_bytes": 0
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 1459204,
+          "allocation_calls": 679,
+          "deallocation_calls": 679,
+          "live_bytes": 0,
+          "peak_live_bytes": 27060
+        }
+      },
+      "group": "sqrt",
+      "name": "sqrt_scale5000_x5",
+      "output_sha256": "07260507be394da1a514c0827e0c2ba4ea466ec4f14509c071d67e9583f4792b",
+      "parameters": {
+        "iterations": 5,
+        "scale": 5000
+      },
+      "program_sha256": "c13f95db6aa11b8fcd0cc94087d55ec39210d535f570dedc86696ddbd698ac79"
+    },
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "digits": {
+            "allocated_bytes": 5802472,
+            "allocation_calls": 50025,
+            "deallocation_calls": 50025,
+            "live_bytes": 0,
+            "peak_live_bytes": 3332
+          },
+          "frames": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocated_bytes": 9080,
+            "allocation_calls": 21,
+            "deallocation_calls": 21,
+            "live_bytes": 0,
+            "peak_live_bytes": 5040
+          },
+          "results": {
+            "allocated_bytes": 1320,
+            "allocation_calls": 5,
+            "deallocation_calls": 5,
+            "live_bytes": 0,
+            "peak_live_bytes": 920
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 5000,
+          "cow_clones": 4999,
+          "cow_limb_bytes": 19996,
+          "digit_copies": 55007,
+          "digit_moves": 45011,
+          "function_calls": 0,
+          "instructions_executed": 100018,
+          "iterator_owner_copies": 4999,
+          "karatsuba_multiply_calls": 0,
+          "literal_conversions": 10004,
+          "owned_digit_copies": 55007,
+          "range_limb_bytes": 0
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 5812872,
+          "allocation_calls": 50051,
+          "deallocation_calls": 50051,
+          "live_bytes": 0,
+          "peak_live_bytes": 7628
+        }
+      },
+      "group": "multiply",
+      "name": "multiply_dense_1000d_x5000",
+      "output_sha256": "a9c2bb0cecb4c38bd6ad6f57631a20f9022634fcb2a488e3addbe2ab63098622",
+      "parameters": {
+        "iterations": 5000,
+        "left_digits": 1000,
+        "right_digits": 1000,
+        "shape": "seeded_dense"
+      },
+      "program_sha256": "2a96c42d44d7ebc2bd37389ad94c4e985592ee4cec7e1ea77914ecc1a1c3616f"
+    },
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "digits": {
+            "allocated_bytes": 48647192,
+            "allocation_calls": 70033,
+            "deallocation_calls": 70033,
+            "live_bytes": 0,
+            "peak_live_bytes": 53192
+          },
+          "frames": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocated_bytes": 9080,
+            "allocation_calls": 21,
+            "deallocation_calls": 21,
+            "live_bytes": 0,
+            "peak_live_bytes": 5040
+          },
+          "results": {
+            "allocated_bytes": 1320,
+            "allocation_calls": 5,
+            "deallocation_calls": 5,
+            "live_bytes": 0,
+            "peak_live_bytes": 920
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 13500,
+          "cow_clones": 499,
+          "cow_limb_bytes": 1996,
+          "digit_copies": 5507,
+          "digit_moves": 4511,
+          "function_calls": 0,
+          "instructions_executed": 10018,
+          "iterator_owner_copies": 17200499,
+          "karatsuba_multiply_calls": 6500,
+          "literal_conversions": 1004,
+          "owned_digit_copies": 5507,
+          "range_limb_bytes": 0
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 48657592,
+          "allocation_calls": 70059,
+          "deallocation_calls": 70059,
+          "live_bytes": 0,
+          "peak_live_bytes": 57488
+        }
+      },
+      "group": "multiply",
+      "name": "multiply_dense_10000d_x500",
+      "output_sha256": "56f68a4f03b4452d9f0885a0512c2828dff9ac4943aad7b4470b3e6989899ba5",
+      "parameters": {
+        "iterations": 500,
+        "left_digits": 10000,
+        "right_digits": 10000,
+        "shape": "seeded_dense"
+      },
+      "program_sha256": "0e2e2c1e7cd1ed996201ba01c744f650baf67a86666cb471e4a82e9996c9c345"
+    },
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "digits": {
+            "allocated_bytes": 9536936,
+            "allocation_calls": 20026,
+            "deallocation_calls": 20026,
+            "live_bytes": 0,
+            "peak_live_bytes": 17764
+          },
+          "frames": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocated_bytes": 9080,
+            "allocation_calls": 21,
+            "deallocation_calls": 21,
+            "live_bytes": 0,
+            "peak_live_bytes": 5040
+          },
+          "results": {
+            "allocated_bytes": 1320,
+            "allocation_calls": 5,
+            "deallocation_calls": 5,
+            "live_bytes": 0,
+            "peak_live_bytes": 920
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 2000,
+          "cow_clones": 1999,
+          "cow_limb_bytes": 7996,
+          "digit_copies": 22007,
+          "digit_moves": 18011,
+          "function_calls": 0,
+          "instructions_executed": 40018,
+          "iterator_owner_copies": 1999,
+          "karatsuba_multiply_calls": 0,
+          "literal_conversions": 4004,
+          "owned_digit_copies": 22007,
+          "range_limb_bytes": 0
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 9547336,
+          "allocation_calls": 20052,
+          "deallocation_calls": 20052,
+          "live_bytes": 0,
+          "peak_live_bytes": 22060
+        }
+      },
+      "group": "multiply",
+      "name": "multiply_unbalanced_10000d_100d_x2000",
+      "output_sha256": "5760ce166565fdd24d0b1cd16b89db3a61501df1820793f0914d0887f9548fe3",
+      "parameters": {
+        "iterations": 2000,
+        "left_digits": 10000,
+        "right_digits": 100,
+        "shape": "unbalanced"
+      },
+      "program_sha256": "f2db34e568ec54dc60e916b85674dcec88085445533deb690917e763a84b6545"
+    },
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "digits": {
+            "allocated_bytes": 102181192,
+            "allocation_calls": 166033,
+            "deallocation_calls": 166033,
+            "live_bytes": 0,
+            "peak_live_bytes": 53188
+          },
+          "frames": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocated_bytes": 9080,
+            "allocation_calls": 21,
+            "deallocation_calls": 21,
+            "live_bytes": 0,
+            "peak_live_bytes": 5040
+          },
+          "results": {
+            "allocated_bytes": 1320,
+            "allocation_calls": 5,
+            "deallocation_calls": 5,
+            "live_bytes": 0,
+            "peak_live_bytes": 920
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 25000,
+          "cow_clones": 999,
+          "cow_limb_bytes": 3996,
+          "digit_copies": 11007,
+          "digit_moves": 9011,
+          "function_calls": 0,
+          "instructions_executed": 20018,
+          "iterator_owner_copies": 21887999,
+          "karatsuba_multiply_calls": 12000,
+          "literal_conversions": 2004,
+          "owned_digit_copies": 11007,
+          "range_limb_bytes": 12000
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 102191592,
+          "allocation_calls": 166059,
+          "deallocation_calls": 166059,
+          "live_bytes": 0,
+          "peak_live_bytes": 57484
+        }
+      },
+      "group": "multiply",
+      "name": "multiply_sparse_10000d_x1000",
+      "output_sha256": "40837530f9d5ab2bb84d2852f894fb60eff20ebea4bae119fe8006cc5fe078ea",
+      "parameters": {
+        "iterations": 1000,
+        "left_digits": 10000,
+        "right_digits": 10000,
+        "shape": "sparse"
+      },
+      "program_sha256": "82eea516e61e12e526afbbc4efae6c5d6bc24f4efb34e84cce4b435dc5ec5d24"
+    },
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "digits": {
+            "allocated_bytes": 2006060,
+            "allocation_calls": 15027,
+            "deallocation_calls": 15027,
+            "live_bytes": 0,
+            "peak_live_bytes": 2868
+          },
+          "frames": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocated_bytes": 9856,
+            "allocation_calls": 25,
+            "deallocation_calls": 25,
+            "live_bytes": 0,
+            "peak_live_bytes": 5040
+          },
+          "results": {
+            "allocated_bytes": 1440,
+            "allocation_calls": 6,
+            "deallocation_calls": 6,
+            "live_bytes": 0,
+            "peak_live_bytes": 920
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 0,
+          "cow_clones": 2999,
+          "cow_limb_bytes": 603996,
+          "digit_copies": 13007,
+          "digit_moves": 6013,
+          "function_calls": 0,
+          "instructions_executed": 20021,
+          "iterator_owner_copies": 999,
+          "karatsuba_multiply_calls": 0,
+          "literal_conversions": 2005,
+          "owned_digit_copies": 13007,
+          "range_limb_bytes": 0
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 2017356,
+          "allocation_calls": 15058,
+          "deallocation_calls": 15058,
+          "live_bytes": 0,
+          "peak_live_bytes": 7164
+        }
+      },
+      "group": "divide_multilimb",
+      "name": "divide_multilimb_900d_450d_s100_x1000",
+      "output_sha256": "4b60ad85f9b98ab2ced300274ab433cd49a836d2f4d7069bc42259a9db243bf6",
+      "parameters": {
+        "dividend_digits": 900,
+        "divisor_digits": 450,
+        "iterations": 1000,
+        "scale": 100
+      },
+      "program_sha256": "3e526fbb9e7ce363f37d717ee26d12d1562e85f4e82d4c671cbc0970f2c048d2"
+    },
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "digits": {
+            "allocated_bytes": 1298572,
+            "allocation_calls": 7528,
+            "deallocation_calls": 7528,
+            "live_bytes": 0,
+            "peak_live_bytes": 3908
+          },
+          "frames": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocated_bytes": 9856,
+            "allocation_calls": 25,
+            "deallocation_calls": 25,
+            "live_bytes": 0,
+            "peak_live_bytes": 5040
+          },
+          "results": {
+            "allocated_bytes": 1440,
+            "allocation_calls": 6,
+            "deallocation_calls": 6,
+            "live_bytes": 0,
+            "peak_live_bytes": 920
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 0,
+          "cow_clones": 1499,
+          "cow_limb_bytes": 425996,
+          "digit_copies": 6507,
+          "digit_moves": 3013,
+          "function_calls": 0,
+          "instructions_executed": 10021,
+          "iterator_owner_copies": 499,
+          "karatsuba_multiply_calls": 0,
+          "literal_conversions": 1005,
+          "owned_digit_copies": 6507,
+          "range_limb_bytes": 0
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 1309868,
+          "allocation_calls": 7559,
+          "deallocation_calls": 7559,
+          "live_bytes": 0,
+          "peak_live_bytes": 8204
+        }
+      },
+      "group": "divide_multilimb",
+      "name": "divide_multilimb_1000d_900d_s1000_x500",
+      "output_sha256": "8e5bcd70e35a53a01291609f3b48ebb20268098095173739f8cc01e9cbafe2b1",
+      "parameters": {
+        "dividend_digits": 1000,
+        "divisor_digits": 900,
+        "iterations": 500,
+        "scale": 1000
+      },
+      "program_sha256": "1dd61158cf4374d878b0750e40180e1cb105064e19a33c1b224479d3e8eb381a"
+    },
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "digits": {
+            "allocated_bytes": 9457960,
+            "allocation_calls": 57024,
+            "deallocation_calls": 57024,
+            "live_bytes": 0,
+            "peak_live_bytes": 3264
+          },
+          "frames": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocated_bytes": 9080,
+            "allocation_calls": 21,
+            "deallocation_calls": 21,
+            "live_bytes": 0,
+            "peak_live_bytes": 5040
+          },
+          "results": {
+            "allocated_bytes": 1320,
+            "allocation_calls": 5,
+            "deallocation_calls": 5,
+            "live_bytes": 0,
+            "peak_live_bytes": 920
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 3000,
+          "cow_clones": 11999,
+          "cow_limb_bytes": 3167996,
+          "digit_copies": 45007,
+          "digit_moves": 27011,
+          "function_calls": 0,
+          "instructions_executed": 60018,
+          "iterator_owner_copies": 338999,
+          "karatsuba_multiply_calls": 0,
+          "literal_conversions": 6004,
+          "owned_digit_copies": 45007,
+          "range_limb_bytes": 0
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 9468360,
+          "allocation_calls": 57050,
+          "deallocation_calls": 57050,
+          "live_bytes": 0,
+          "peak_live_bytes": 7560
+        }
+      },
+      "group": "modulo",
+      "name": "modulo_1000d_350d_x3000",
+      "output_sha256": "4e89b2fa99c8bbc5ebd1fd5980f0f31892e9a1af824b54bae8dd9868f7c14d77",
+      "parameters": {
+        "dividend_digits": 1000,
+        "divisor_digits": 350,
+        "iterations": 3000
+      },
+      "program_sha256": "349c0e4a8bd53d08ab50a00b93b79ed3111cf0fa4dd1f1c8ea7f15705b418817"
+    },
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "digits": {
+            "allocated_bytes": 4740460,
+            "allocation_calls": 43012,
+            "deallocation_calls": 43012,
+            "live_bytes": 0,
+            "peak_live_bytes": 4592
+          },
+          "frames": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocated_bytes": 8304,
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "live_bytes": 0,
+            "peak_live_bytes": 5040
+          },
+          "results": {
+            "allocated_bytes": 1160,
+            "allocation_calls": 4,
+            "deallocation_calls": 4,
+            "live_bytes": 0,
+            "peak_live_bytes": 880
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 7000,
+          "cow_clones": 1999,
+          "cow_limb_bytes": 7996,
+          "digit_copies": 14006,
+          "digit_moves": 28009,
+          "function_calls": 0,
+          "instructions_executed": 19015,
+          "iterator_owner_copies": 2999,
+          "karatsuba_multiply_calls": 0,
+          "literal_conversions": 3003,
+          "owned_digit_copies": 14006,
+          "range_limb_bytes": 48000
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 4749924,
+          "allocation_calls": 43033,
+          "deallocation_calls": 43033,
+          "live_bytes": 0,
+          "peak_live_bytes": 8848
+        }
+      },
+      "group": "power",
+      "name": "power_100d_e17_x1000",
+      "output_sha256": "ea1c1e08af874df6c23cf4c1869428bf96051ff796bd30c580db3918748aadc2",
+      "parameters": {
+        "digits": 100,
+        "exponent": 17,
+        "iterations": 1000
+      },
+      "program_sha256": "45ae4dcbf8b7a7a484ba774e1e4db1f58f5aecd79d66d4c2d81b6d7d4fce668e"
+    },
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "digits": {
+            "allocated_bytes": 5136364,
+            "allocation_calls": 86010,
+            "deallocation_calls": 86010,
+            "live_bytes": 0,
+            "peak_live_bytes": 2288
+          },
+          "frames": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocated_bytes": 8304,
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "live_bytes": 0,
+            "peak_live_bytes": 5040
+          },
+          "results": {
+            "allocated_bytes": 1160,
+            "allocation_calls": 4,
+            "deallocation_calls": 4,
+            "live_bytes": 0,
+            "peak_live_bytes": 880
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 14000,
+          "cow_clones": 3999,
+          "cow_limb_bytes": 15996,
+          "digit_copies": 28006,
+          "digit_moves": 56009,
+          "function_calls": 0,
+          "instructions_executed": 38015,
+          "iterator_owner_copies": 3999,
+          "karatsuba_multiply_calls": 0,
+          "literal_conversions": 6003,
+          "owned_digit_copies": 28006,
+          "range_limb_bytes": 560000
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 5145828,
+          "allocation_calls": 86031,
+          "deallocation_calls": 86031,
+          "live_bytes": 0,
+          "peak_live_bytes": 6544
+        }
+      },
+      "group": "power",
+      "name": "power_20d_e32_x2000",
+      "output_sha256": "33a546bd7d6588cb6c35bc96d097e6133fa5da36de0442a88c8a06d5048fefa1",
+      "parameters": {
+        "digits": 20,
+        "exponent": 32,
+        "iterations": 2000
+      },
+      "program_sha256": "ab699ad4e3d4f68531c41bc1215f5b137ff9e0071dcb4c09dab1d422e7892f16"
+    },
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "digits": {
+            "allocated_bytes": 10400332,
+            "allocation_calls": 400006,
+            "deallocation_calls": 400006,
+            "live_bytes": 0,
+            "peak_live_bytes": 724
+          },
+          "frames": {
+            "allocated_bytes": 3200000,
+            "allocation_calls": 80000,
+            "deallocation_calls": 80000,
+            "live_bytes": 0,
+            "peak_live_bytes": 80
+          },
+          "instructions": {
+            "allocated_bytes": 17088,
+            "allocation_calls": 24,
+            "deallocation_calls": 24,
+            "live_bytes": 0,
+            "peak_live_bytes": 10552
+          },
+          "results": {
+            "allocated_bytes": 8001920,
+            "allocation_calls": 40005,
+            "deallocation_calls": 40005,
+            "live_bytes": 0,
+            "peak_live_bytes": 1560
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 0,
+          "cow_clones": 59998,
+          "cow_limb_bytes": 239992,
+          "digit_copies": 380006,
+          "digit_moves": 260010,
+          "function_calls": 40000,
+          "instructions_executed": 740016,
+          "iterator_owner_copies": 59998,
+          "karatsuba_multiply_calls": 0,
+          "literal_conversions": 120003,
+          "owned_digit_copies": 380006,
+          "range_limb_bytes": 0
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 21619340,
+          "allocation_calls": 520035,
+          "deallocation_calls": 520035,
+          "live_bytes": 0,
+          "peak_live_bytes": 10600
+        }
+      },
+      "group": "literal_base",
+      "name": "ibase_literal_flip_20000",
+      "output_sha256": "7844fbd8ea47c57d25d9ea6da692db584ed0a9dbf31cdce8d5cb82ef7d0a86d7",
+      "parameters": {
+        "bases": [
+          2,
+          10
+        ],
+        "iterations": 20000
+      },
+      "program_sha256": "a3fb77c74b1f846daf6bba2f96e7ddb71bc1cfb221aeddc6921da35eb1dfdaa0"
+    },
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "digits": {
+            "allocated_bytes": 16080288,
+            "allocation_calls": 514006,
+            "deallocation_calls": 514006,
+            "live_bytes": 0,
+            "peak_live_bytes": 10616
+          },
+          "frames": {
+            "allocated_bytes": 11200000,
+            "allocation_calls": 250000,
+            "deallocation_calls": 250000,
+            "live_bytes": 0,
+            "peak_live_bytes": 6888
+          },
+          "instructions": {
+            "allocated_bytes": 16624,
+            "allocation_calls": 21,
+            "deallocation_calls": 21,
+            "live_bytes": 0,
+            "peak_live_bytes": 7536
+          },
+          "results": {
+            "allocated_bytes": 48002080,
+            "allocation_calls": 50004,
+            "deallocation_calls": 50004,
+            "live_bytes": 0,
+            "peak_live_bytes": 48880
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 49000,
+          "cow_clones": 49999,
+          "cow_limb_bytes": 199996,
+          "digit_copies": 754005,
+          "digit_moves": 701008,
+          "function_calls": 50000,
+          "instructions_executed": 1010013,
+          "iterator_owner_copies": 49999,
+          "karatsuba_multiply_calls": 0,
+          "literal_conversions": 103002,
+          "owned_digit_copies": 751005,
+          "range_limb_bytes": 692000
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 75298992,
+          "allocation_calls": 814031,
+          "deallocation_calls": 814031,
+          "live_bytes": 0,
+          "peak_live_bytes": 72168
+        }
+      },
+      "group": "recursion",
+      "name": "recursion_50_x1000",
+      "output_sha256": "89ce918086eeda222f36711d8b97b2eeec8ef9ae01affaf19478c4669d358998",
+      "parameters": {
+        "depth": 50,
+        "iterations": 1000
+      },
+      "program_sha256": "51c7a305c6b6635ba3e821f927f9da4b06c5c2aff088ddabca2d6d6456ea3859"
+    },
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 2032,
+            "allocation_calls": 32,
+            "deallocation_calls": 32,
+            "live_bytes": 0,
+            "peak_live_bytes": 2032
+          },
+          "digits": {
+            "allocated_bytes": 125081008,
+            "allocation_calls": 4786913,
+            "deallocation_calls": 4786913,
+            "live_bytes": 0,
+            "peak_live_bytes": 2292
+          },
+          "frames": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocated_bytes": 14960,
+            "allocation_calls": 18,
+            "deallocation_calls": 18,
+            "live_bytes": 0,
+            "peak_live_bytes": 10032
+          },
+          "results": {
+            "allocated_bytes": 1800,
+            "allocation_calls": 4,
+            "deallocation_calls": 4,
+            "live_bytes": 0,
+            "peak_live_bytes": 1520
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 393517,
+          "cow_clones": 999934,
+          "cow_limb_bytes": 4620844,
+          "digit_copies": 4799973,
+          "digit_moves": 3380561,
+          "function_calls": 0,
+          "instructions_executed": 7000015,
+          "iterator_owner_copies": 599966,
+          "karatsuba_multiply_calls": 0,
+          "literal_conversions": 800003,
+          "owned_digit_copies": 4780617,
+          "range_limb_bytes": 1574068
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 125099800,
+          "allocation_calls": 4786967,
+          "deallocation_calls": 4786967,
+          "live_bytes": 0,
+          "peak_live_bytes": 12548
+        }
+      },
+      "group": "array_sparse",
+      "name": "sparse_array_200000",
+      "output_sha256": "ef55be1f845002931219ae88320c4744651b322de6447340a573287179119427",
+      "parameters": {
+        "iterations": 200000,
+        "keys": 31,
+        "stride": 313
+      },
+      "program_sha256": "ceb9864b7d2e0654c73b4f8efd65cd6eba5a27bbc352705e354b07cb8b49ba1b"
+    },
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "digits": {
+            "allocated_bytes": 96148,
+            "allocation_calls": 2004,
+            "deallocation_calls": 2004,
+            "live_bytes": 0,
+            "peak_live_bytes": 100
+          },
+          "frames": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocated_bytes": 9456512,
+            "allocation_calls": 14005,
+            "deallocation_calls": 14005,
+            "live_bytes": 0,
+            "peak_live_bytes": 4624
+          },
+          "results": {
+            "allocated_bytes": 1280120,
+            "allocation_calls": 2002,
+            "deallocation_calls": 2002,
+            "live_bytes": 0,
+            "peak_live_bytes": 640
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 0,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "digit_copies": 0,
+          "digit_moves": 2003,
+          "function_calls": 0,
+          "instructions_executed": 2003,
+          "iterator_owner_copies": 0,
+          "karatsuba_multiply_calls": 0,
+          "literal_conversions": 1,
+          "owned_digit_copies": 0,
+          "range_limb_bytes": 0
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 10832780,
+          "allocation_calls": 18011,
+          "deallocation_calls": 18011,
+          "live_bytes": 0,
+          "peak_live_bytes": 5264
+        }
+      },
+      "group": "frontend_definition",
+      "name": "frontend_definitions_2000",
+      "output_sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+      "parameters": {
+        "definitions": 2000
+      },
+      "program_sha256": "36a2bf8899f52e86536ad0fd9763b1dc8b59d565f1da60cb6508d8d213cd8916"
+    },
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "digits": {
+            "allocated_bytes": 418896,
+            "allocation_calls": 1202,
+            "deallocation_calls": 1202,
+            "live_bytes": 0,
+            "peak_live_bytes": 5216
+          },
+          "frames": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocated_bytes": 78528,
+            "allocation_calls": 406,
+            "deallocation_calls": 406,
+            "live_bytes": 0,
+            "peak_live_bytes": 672
+          },
+          "results": {
+            "allocated_bytes": 12160,
+            "allocation_calls": 102,
+            "deallocation_calls": 102,
+            "live_bytes": 0,
+            "peak_live_bytes": 120
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 0,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "digit_copies": 101,
+          "digit_moves": 202,
+          "function_calls": 0,
+          "instructions_executed": 304,
+          "iterator_owner_copies": 0,
+          "karatsuba_multiply_calls": 0,
+          "literal_conversions": 100,
+          "owned_digit_copies": 101,
+          "range_limb_bytes": 0
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 509584,
+          "allocation_calls": 1710,
+          "deallocation_calls": 1710,
+          "live_bytes": 0,
+          "peak_live_bytes": 5800
+        }
+      },
+      "group": "decimal_input",
+      "name": "decimal_input_4000d_x100",
+      "output_sha256": "37acd5e7fe7fdcaf548bf8216d62bc5a13b0178e26ec0b200bdb74acdec077f4",
+      "parameters": {
+        "digits": 4000,
+        "literals": 100
+      },
+      "program_sha256": "f52167d78167be3e447e2b6d40465d288f7981bd3bd081c7da06d4b8980ecbe1"
+    },
+    {
+      "checked": true,
+      "counters": {
+        "allocations": {
+          "arrays": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "digits": {
+            "allocated_bytes": 208540,
+            "allocation_calls": 8012,
+            "deallocation_calls": 8012,
+            "live_bytes": 0,
+            "peak_live_bytes": 536
+          },
+          "frames": {
+            "allocated_bytes": 0,
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocated_bytes": 7528,
+            "allocation_calls": 13,
+            "deallocation_calls": 13,
+            "live_bytes": 0,
+            "peak_live_bytes": 5040
+          },
+          "results": {
+            "allocated_bytes": 920,
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "live_bytes": 0,
+            "peak_live_bytes": 760
+          }
+        },
+        "events": {
+          "array_clones": 0,
+          "array_entries_copied": 0,
+          "basic_multiply_calls": 0,
+          "cow_clones": 999,
+          "cow_limb_bytes": 3996,
+          "digit_copies": 8005,
+          "digit_moves": 5008,
+          "function_calls": 0,
+          "instructions_executed": 16012,
+          "iterator_owner_copies": 999,
+          "karatsuba_multiply_calls": 0,
+          "literal_conversions": 2003,
+          "owned_digit_copies": 8005,
+          "range_limb_bytes": 0
+        },
+        "instrumented": true,
+        "limb_base": 1000000000,
+        "limb_bytes": 4,
+        "multiply_split_point": 191,
+        "schema": 1,
+        "scope": "selected C++ container requested storage; not process malloc or RSS",
+        "total": {
+          "allocated_bytes": 216988,
+          "allocation_calls": 8028,
+          "deallocation_calls": 8028,
+          "live_bytes": 0,
+          "peak_live_bytes": 5216
+        }
+      },
+      "group": "decimal_output",
+      "name": "decimal_output_200d_x1000",
+      "output_sha256": "e51f3a543488d55dab07cccd12db7dff25dc77b0b2760d59967ad5968863d54d",
+      "parameters": {
+        "digits": 200,
+        "lines": 1000
+      },
+      "program_sha256": "491c747f387a04807d616d44a9eae25a10f2d07b08d60068aae97c7adaccf8ae"
+    }
+  ]
+}

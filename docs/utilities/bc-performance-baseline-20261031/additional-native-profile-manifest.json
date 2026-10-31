@@ -1,0 +1,192 @@
+{
+  "archived_reports": [
+    {
+      "gzip_sha256": "6e7e5c9f2f931ad27a32c779292aa0b985ab8f1cbfe7d5ed9937f0364da7c757",
+      "path": "additional-native-profiles/array_200000.sample.txt.gz",
+      "uncompressed_sha256": "6ce7a86a3c0a588afdeab933b3e759c5acb124338c6a4e0e2eccf4795de95d90"
+    },
+    {
+      "gzip_sha256": "fa193def6d6622af59006f25b5ccda658a1aa11b1842ec9b01d203300625d258",
+      "path": "additional-native-profiles/sparse_array_200000.sample.txt.gz",
+      "uncompressed_sha256": "94d741fbcea85ad7f2e89382cf86be640cd5eb88f554f6593d2b0e8a6f0ab69f"
+    },
+    {
+      "gzip_sha256": "d94629e9905d59ebe3fbc1f795a0ceaf3c9e2596f27a1c4c24bc2912ac522111",
+      "path": "additional-native-profiles/recursion_50_x1000.sample.txt.gz",
+      "uncompressed_sha256": "bfcd12d88a6e1b59dd4a45add8bba0659fc72e467ac0e47fd8dd31df36cfd62b"
+    }
+  ],
+  "collector_sha256": "b0777f34fbad804ff3a5913639d394c45f519e750589aba5665cdf12d26518eb",
+  "collector_source_archive": "additional-native-profiles/collector-as-run.py.txt",
+  "corpus_seed": 197200,
+  "hardware_counters": {
+    "scope": "native per-process counters where time exposes them; no PMU setup",
+    "status": "platform-dependent; see memory.native_counters",
+    "unavailable_metrics": [
+      "branch misses",
+      "cache misses"
+    ]
+  },
+  "implementation": {
+    "argv": [
+      "/private/tmp/gd-posix-vm-lifetime/build-release/src/bc/bc"
+    ],
+    "binary_sha256": "f8e716781e925c787420891f82232945baac7673751317427f8382ac8fc6f9a7",
+    "complete_provenance": true,
+    "metadata": {
+      "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+      "configuration": {
+        "extensions": true,
+        "limb_base": 1000000000,
+        "limb_bits": 32,
+        "multiply_split_point": 126
+      },
+      "flags": {
+        "CMAKE_CXX_FLAGS": "",
+        "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+        "CXX_STANDARD": "gnu++20",
+        "IPO": "thin LTO",
+        "command_log_sha256": "571ed9ea88b2a0546d2a18b281323f7faa726bd1fa095725f05fa2d100560505"
+      },
+      "instrumented": false,
+      "library": [
+        "#define _LIBCPP_VERSION 220106"
+      ],
+      "machine": "Apple M1",
+      "source_revision": "6a1704e0297a4f045d3d5bd5deb5c1e8551d5ff1",
+      "version": "gd-posix-apps 0.0 source 6a1704e0297a4f045d3d5bd5deb5c1e8551d5ff1"
+    },
+    "name": "gd",
+    "role": "candidate"
+  },
+  "platform": "macOS-27.2-arm64-arm-64bit-Mach-O",
+  "purpose": "diagnostic attribution; not timing results",
+  "repeat_estimate_summary_sha256": "8a3fe7ab90314c7627f6a2eeae6e696b31975868e3e30678f1bafa7cbbb6bafd",
+  "schema": 1,
+  "status": "all diagnostic children checked; availability is per measurement",
+  "workloads": [
+    {
+      "checked": true,
+      "cpu": {
+        "argv": [
+          "/usr/bin/sample",
+          "72000",
+          "3",
+          "1",
+          "-mayDie",
+          "-file",
+          "/private/tmp/gd-bc-200-native-memory-profiles/array_200000.sample.txt"
+        ],
+        "repetitions": 25,
+        "returncode": 0,
+        "status": "collected"
+      },
+      "memory": {
+        "argv": [
+          "/usr/bin/time",
+          "-l",
+          "-o",
+          "/private/tmp/gd-bc-200-native-memory-profiles/array_200000.rss.txt",
+          "/private/tmp/gd-posix-vm-lifetime/build-release/src/bc/bc"
+        ],
+        "native_counters": {
+          "cycles_elapsed": 636234716,
+          "instructions_retired": 2924545594
+        },
+        "native_unit": "bytes (Darwin ru_maxrss)",
+        "peak_memory_footprint_bytes": 26984832,
+        "peak_rss_native": 27803648,
+        "repetitions": 1,
+        "status": "collected"
+      },
+      "name": "array_200000",
+      "parameters": {
+        "elements": 200000
+      },
+      "program_sha256": "f6a730c098c8d10032b60dd95a00eb18349ad719604fe3582bad5a1e61e5b054"
+    },
+    {
+      "checked": true,
+      "cpu": {
+        "argv": [
+          "/usr/bin/sample",
+          "72031",
+          "3",
+          "1",
+          "-mayDie",
+          "-file",
+          "/private/tmp/gd-bc-200-native-memory-profiles/recursion_50_x1000.sample.txt"
+        ],
+        "repetitions": 146,
+        "returncode": 0,
+        "status": "collected"
+      },
+      "memory": {
+        "argv": [
+          "/usr/bin/time",
+          "-l",
+          "-o",
+          "/private/tmp/gd-bc-200-native-memory-profiles/recursion_50_x1000.rss.txt",
+          "/private/tmp/gd-posix-vm-lifetime/build-release/src/bc/bc"
+        ],
+        "native_counters": {
+          "cycles_elapsed": 106645916,
+          "instructions_retired": 540471894
+        },
+        "native_unit": "bytes (Darwin ru_maxrss)",
+        "peak_memory_footprint_bytes": 1425792,
+        "peak_rss_native": 2244608,
+        "repetitions": 1,
+        "status": "collected"
+      },
+      "name": "recursion_50_x1000",
+      "parameters": {
+        "depth": 50,
+        "iterations": 1000
+      },
+      "program_sha256": "51c7a305c6b6635ba3e821f927f9da4b06c5c2aff088ddabca2d6d6456ea3859"
+    },
+    {
+      "checked": true,
+      "cpu": {
+        "argv": [
+          "/usr/bin/sample",
+          "72043",
+          "3",
+          "1",
+          "-mayDie",
+          "-file",
+          "/private/tmp/gd-bc-200-native-memory-profiles/sparse_array_200000.sample.txt"
+        ],
+        "repetitions": 26,
+        "returncode": 0,
+        "status": "collected"
+      },
+      "memory": {
+        "argv": [
+          "/usr/bin/time",
+          "-l",
+          "-o",
+          "/private/tmp/gd-bc-200-native-memory-profiles/sparse_array_200000.rss.txt",
+          "/private/tmp/gd-posix-vm-lifetime/build-release/src/bc/bc"
+        ],
+        "native_counters": {
+          "cycles_elapsed": 614032878,
+          "instructions_retired": 3249720398
+        },
+        "native_unit": "bytes (Darwin ru_maxrss)",
+        "peak_memory_footprint_bytes": 1278336,
+        "peak_rss_native": 2080768,
+        "repetitions": 1,
+        "status": "collected"
+      },
+      "name": "sparse_array_200000",
+      "parameters": {
+        "iterations": 200000,
+        "keys": 31,
+        "stride": 313
+      },
+      "program_sha256": "ceb9864b7d2e0654c73b4f8efd65cd6eba5a27bbc352705e354b07cb8b49ba1b"
+    }
+  ]
+}
