@@ -34,7 +34,22 @@ class CliTests(unittest.TestCase):
             self.assertEqual(child.returncode, 0)
         else:
             self.assertNotEqual(err, "")
-            self.assertNotEqual(child.returncode, 0)
+            self.assertEqual(child.returncode, 1)
+
+    def test_missing_file_stops_inputs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            later = Path(directory) / "later.bc"
+            later.write_text("42\n")
+            self.run_bc("17\n", files=(Path(directory) / "missing.bc", later), success=False)
+            self.run_bc("17\n", "42\n", files=(later, Path(directory) / "missing.bc"),
+                        success=False)
+
+    def test_directory_input_error(self):
+        # A directory is a controlled failing input, independent of permissions.
+        # POSIX commonly opens it successfully then fails on the first read;
+        # Windows commonly rejects the open. Both must report failure.
+        with tempfile.TemporaryDirectory() as directory:
+            self.run_bc("", files=(directory,), success=False)
 
     def test_quit(self):
         for text, expected in [
@@ -71,12 +86,34 @@ class CliTests(unittest.TestCase):
             first.write_text("1+1\n")
             self.run_bc("3+4\n", "2\n7\n", (first,))
 
+    def test_syntax_errors_are_read_time(self):
+        for text in (
+            "define f() {\nauto\n}\n",
+            "define f() {\nauto\n}\nf()\n",
+            "define f() {\nreturn (1\n}\n",
+            "define f() {\nreturn (1\n}\nf()\n",
+            "if(0) {\n1+\n}\n",
+            "while(0) {\n1+\n}\n",
+            "define f() {\nif(0) {\n1+\n}\n}\n",
+        ):
+            with self.subTest(text=text):
+                self.run_bc(text, success=False)
+        self.run_bc("2+3\ndefine f() {\nreturn (1\n}\n", "5\n", success=False)
+
+    def test_malformed_item_is_discarded(self):
+        self.run_bc("1 2\n", success=False)
+        self.run_bc("1", success=False)
+        # A real error before quit must not be erased by reading ahead to quit.
+        self.run_bc("define f() {\nauto\n}\nquit\n", success=False)
+
     def test_halt(self):
         if EXTENSIONS:
             self.run_bc("1+1\nhalt\n3+4\n", "2\n", keep_open=True)
             self.run_bc("if(0) halt\n3+4\n", "7\n")
         else:
             self.run_bc("halt\n", success=False)
+
+
 
     def test_shebang(self):
         self.run_bc("#!ignored\n1+1\n", "2\n" if EXTENSIONS else "", success=EXTENSIONS)

@@ -70,3 +70,19 @@ are separate from production bc coverage; benchmark-support helpers are test/
 calibration code. The old unseeded CI abort cannot be attributed conclusively,
 but invalid generated limbs and incorrect timing are independently reproduced
 and corrected. See [#234](https://github.com/matt-gretton-dann/gd-posix-apps/issues/234).
+
+## Imported zero-scale oracle discrepancy
+
+The imported Howard `tests/misc` fixture has four saved answers which discard
+precision when subtracting a tiny power truncated to zero. POSIX requires
+addition/subtraction to preserve the maximum operand scale; GNU agrees with
+that rule. The imported test still runs and reports an explicit expected
+failure against its old answers. Reverting to those answers would be an
+unexpected pass and fail the suite.
+
+`bc/number-oracle` independently checks all four expressions, including escaped
+newlines and base-9 output, using exact fractions, decimal truncation and integer
+radix conversion. It requires status 0, empty stderr and the complete corrected
+output. This replaces the incorrect oracle without adding an unsupported-test
+skip or accepting arbitrary failures. See
+[#233](https://github.com/matt-gretton-dann/gd-posix-apps/issues/233).

@@ -51,6 +51,10 @@ to the next input. Reading `quit` terminates the entire application successfully
 without opening later files or waiting for standard input to close. Text following
 `quit` is ignored.
 
+A file-open or input-read error is fatal: it emits a diagnostic and exits with
+status 1 before processing later files or standard input. A clean EOF continues
+to the next input. Output from earlier completed input items is preserved.
+
 Output from previously completed input items is preserved. The current item is
 discarded: `1+1;quit;3+4` prints nothing, whereas `1+1` followed by `quit` on the
 next line prints `2`. This follows GNU bc's same-line policy; some implementations
@@ -77,6 +81,13 @@ execution determines the interpretation.
 ### Error handling
 
 The parser's handling of errors is to stop parsing immediately, and to not to try to do any recovery.
+
+Syntax errors are reported when read, including inside uncalled functions or
+unreachable branches. A parser error unwinds the current parse and replaces its
+partial instructions with a diagnostic and failure termination. This prevents
+function/branch control flow from hiding errors or executing partial code.
+Previously completed input items keep their output; the current malformed item
+is discarded. A later `quit` does not erase an earlier syntax error.
 
 There are some obvious requirements of the language which may be easy to recover from.  For instance:
 
@@ -319,6 +330,15 @@ manage memory as it sees fit.  We currently do this on the digits only so that `
 share the same digits (but do they ever really?).
 
 ### Algorithms
+
+#### Addition and subtraction
+
+Both operations retain the maximum of their operand scales, including when
+either operand is zero. Increasing a nonzero result's scale appends decimal
+zeroes to its coefficient; a zero result only needs its scale metadata updated.
+For example, `1 + 0.000` is `1.000` with scale 3. This follows POSIX and GNU bc;
+Apple's Howard 7.0.3 drops the zero operand's precision in this case, so matching
+that implementation is not the conformance oracle.
 
 #### Division
 
