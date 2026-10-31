@@ -34,7 +34,22 @@ class CliTests(unittest.TestCase):
             self.assertEqual(child.returncode, 0)
         else:
             self.assertNotEqual(err, "")
-            self.assertNotEqual(child.returncode, 0)
+            self.assertEqual(child.returncode, 1)
+
+    def test_missing_file_stops_inputs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            later = Path(directory) / "later.bc"
+            later.write_text("42\n")
+            self.run_bc("17\n", files=(Path(directory) / "missing.bc", later), success=False)
+            self.run_bc("17\n", "42\n", files=(later, Path(directory) / "missing.bc"),
+                        success=False)
+
+    def test_directory_input_error(self):
+        # A directory is a controlled failing input, independent of permissions.
+        # POSIX commonly opens it successfully then fails on the first read;
+        # Windows commonly rejects the open. Both must report failure.
+        with tempfile.TemporaryDirectory() as directory:
+            self.run_bc("", files=(directory,), success=False)
 
     def test_quit(self):
         for text, expected in [
@@ -90,7 +105,6 @@ class CliTests(unittest.TestCase):
             self.run_bc("if(0) halt\n3+4\n", "7\n")
         else:
             self.run_bc("halt\n", success=False)
-
 
     def test_shebang(self):
         self.run_bc("#!ignored\n1+1\n", "2\n" if EXTENSIONS else "", success=EXTENSIONS)

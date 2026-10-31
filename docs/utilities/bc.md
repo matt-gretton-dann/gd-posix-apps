@@ -51,6 +51,10 @@ to the next input. Reading `quit` terminates the entire application successfully
 without opening later files or waiting for standard input to close. Text following
 `quit` is ignored.
 
+A file-open or input-read error is fatal: it emits a diagnostic and exits with
+status 1 before processing later files or standard input. A clean EOF continues
+to the next input. Output from earlier completed input items is preserved.
+
 Output from previously completed input items is preserved. The current item is
 discarded: `1+1;quit;3+4` prints nothing, whereas `1+1` followed by `quit` on the
 next line prints `2`. This follows GNU bc's same-line policy; some implementations
@@ -329,6 +333,13 @@ share the same digits (but do they ever really?).
 
 Use Knuth Algorithm D from Section 4.3.1 of TAOCP.  However, we choose the initial scale factor
 slightly differently as the one in Knuth doesn't act as expected.
+
+For remainder, first truncate `a/b` to the global scale, then compute
+`a - (a/b)*b` without further truncating the quotient product. The result scale
+is `max(scale(a), scale + scale(b))`, including zero quotients and zero results.
+For example, at scale 2, `5.3 % 1.11` is `0.0053` with scale 4. The current
+public scale limits keep the intermediate scale sum representable; the broader
+limit work remains tracked in #186.
 
 #### Multiplication
 
