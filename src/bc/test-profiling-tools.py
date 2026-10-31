@@ -3,6 +3,10 @@
 import argparse
 import importlib.util
 import os
+import io
+import contextlib
+import hashlib
+import json
 from pathlib import Path
 import subprocess
 import sys
@@ -42,6 +46,34 @@ class ProfilingTools(unittest.TestCase):
                                        (0, b'2\n3\n', b''), (0, b'2\n2\n', b'warning')):
             with self.assertRaises(self.bench.BenchmarkError):
                 self.module.check(self.bench, case, 2, status, output, errors)
+
+    def test_program_archive_matches_declared_bytes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = root / 'config.json'
+            config.write_text(json.dumps({'implementations': [{
+                'name': 'fake', 'argv': [sys.executable, '-c', 'import sys; sys.stdin.read(); print(2)'],
+                'metadata': {'source_revision': 'fixture', 'compiler': 'fixture', 'flags': 'fixture',
+                             'version': 'fixture', 'instrumented': False}}]}))
+            summary = root / 'summary.json'
+            summary.write_text(json.dumps({'workloads': [{'name': 'startup',
+                'implementations': {'fake': {'median_seconds': 10}}}]}))
+            output = root / 'artifacts'
+            argv = [COLLECTOR, '--config', str(config), '--implementation', 'fake',
+                    '--summary', str(summary), '--output', str(output), '--workload', 'startup']
+            original = Path.write_text
+            def translated(path, data, *args, **kwargs):
+                if path.suffix == '.bc':
+                    return path.write_bytes(data.replace('\n', '\r\n').encode('utf-8'))
+                return original(path, data, *args, **kwargs)
+            with mock.patch.object(Path, 'write_text', translated), \
+                    mock.patch.object(sys, 'argv', argv), \
+                    mock.patch.object(self.module.platform, 'system', return_value='Unsupported'), \
+                    contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(self.module.main(), 0)
+            manifest = json.loads((output / 'manifest.json').read_text())
+            self.assertEqual(hashlib.sha256((output / 'startup.bc').read_bytes()).hexdigest(),
+                             manifest['workloads'][0]['program_sha256'])
 
     def test_sampler_fallback_checks_output(self):
         case = {'name': 'fixture', 'program': 'ignored\n', 'expected': ['2']}
