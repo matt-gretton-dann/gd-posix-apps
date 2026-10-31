@@ -6,6 +6,8 @@ The code is a fairly standard (hand-written) lexer and parser that generates an 
 which is interpreted by a Virtual Machine.
 
 There is also the implementation of arbitrary precision arithmetic to consider.
+Its regression tests and independent native oracles are described in
+[Testing bc arithmetic](bc-testing.md).
 
 The majority of the code is implemented as a stand-alone library (`libbc`) to ease unit testing of
 the various components.
