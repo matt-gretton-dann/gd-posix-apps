@@ -50,8 +50,10 @@ class ProfilingCli(unittest.TestCase):
         self.assertEqual((result.returncode, result.stdout, result.stderr), (0, '2\n', ''))
 
     def test_arithmetic_and_ownership(self):
-        counters = self.profile('a=12345678901234567890\nb=a\na+=1\na*b\nb\n',
-                                '152415787532388367514250878776253619990\n12345678901234567890\n')
+        # Exceed the inline capacity so this fixture continues to exercise COW.
+        value = 123456789012345678901234567890
+        counters = self.profile('a={}\nb=a\na+=1\na*b\nb\n'.format(value),
+                                '{}\n{}\n'.format((value + 1) * value, value))
         for event in ('digit_copies', 'owned_digit_copies', 'cow_clones', 'cow_limb_bytes',
                       'literal_conversions', 'basic_multiply_calls',
                       'instructions_executed'):
@@ -60,7 +62,8 @@ class ProfilingCli(unittest.TestCase):
         self.assertEqual(counters['events']['iterator_owner_copies'], 0)
 
     def test_array_clone_and_frames(self):
-        counters = self.profile('define f(a[]) {\na[1]=9\nreturn(a[1])\n}\na[1]=3\nf(a[])\na[1]\n',
+        counters = self.profile('define f(a[]) {\na[1]=9\nreturn(a[1])\n}\na[1]=3\n'
+                                'a[2]=123456789012345678901234567890\nf(a[])\na[1]\n',
                                 '9\n3\n')
         self.assertGreater(counters['events']['function_calls'], 0)
         self.assertGreater(counters['events']['array_clones'], 0)

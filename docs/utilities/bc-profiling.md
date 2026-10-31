@@ -43,6 +43,12 @@ outstanding requested storage. `peak_live_bytes` for the total is the simultaneo
 peak, not the sum of category peaks. Standard-library node/control-block sizes
 may differ, so record the compiler and library with every run.
 
+Small coefficients use inline limbs and do not request digit-allocator storage.
+Their bytes are part of the containing Number/object: tracked frame/array vector
+requests include their element sizes, while stack values are outside allocator
+counters. Large coefficients retain heap COW storage. Fewer allocation calls do
+not by themselves establish a lower process RSS or a smaller value object.
+
 Events count BasicDigits copy/move construction and assignment, copies retaining
 a non-null shared digit owner (`owned_digit_copies`), the historical
 `iterator_owner_copies` event (now zero because mutable iterator checks borrow

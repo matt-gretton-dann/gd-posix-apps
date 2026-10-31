@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "bc.hh"
+#include "digit-storage.hh"
 
 namespace GD::Bc {
 
@@ -105,8 +106,7 @@ public:
   /** \brief   Construct holding the single digit \a num
    *  \param num Number to hold.  Must be less than \c base_.
    */
-  explicit BasicDigits(NumType num)
-      : digits_(GD_BC_PROFILE_SHARED(Profile::AllocationKind::digits, DigitVector)())
+  explicit BasicDigits(NumType num) : digits_(DigitVector())
   {
     while (num != 0) {
       digits_->push_back(static_cast<NumType>(num % base_));
@@ -692,9 +692,8 @@ public:
       WideType const v2 = (*v.digits_)[0] + (base_ * (*v.digits_)[1]);
       WideType const q = u2 / v2;
 
-      digits_ = GD_BC_PROFILE_SHARED(Profile::AllocationKind::digits, DigitVector)(
-        std::initializer_list<NumType>{static_cast<NumType>(q % base_),
-                                       static_cast<NumType>(q / base_)});
+      digits_ = DigitVector(std::initializer_list<NumType>{static_cast<NumType>(q % base_),
+                                                           static_cast<NumType>(q / base_)});
       return;
     }
 
@@ -716,8 +715,7 @@ public:
     digits_->push_back(0);
 
     BasicDigits q;
-    q.digits_ = GD_BC_PROFILE_SHARED(Profile::AllocationKind::digits,
-                                     DigitVector)(m + 1, static_cast<NumType>(0));
+    q.digits_ = DigitVector(m + 1, static_cast<NumType>(0));
 
     /* D2. Initialize j.  */
     auto j = m;
@@ -899,17 +897,16 @@ private:
   void record_copy() const noexcept
   {
     GD_BC_PROFILE_EVENT(Profile::Event::digit_copies, 1);
-    if (digits_) {
+    if (digits_.has_heap()) {
       GD_BC_PROFILE_EVENT(Profile::Event::owned_digit_copies, 1);
     }
   }
 #endif
-  using DigitVector =
-    std::vector<NumType, Profile::Allocator<NumType, Profile::AllocationKind::digits>>;
+  using DigitVector = DigitStorage<NumType>;
 
   /** Construct basic digits based on an iterator range [begin, end).  */
   BasicDigits(typename DigitVector::const_iterator begin, typename DigitVector::const_iterator end)
-      : digits_(GD_BC_PROFILE_SHARED(Profile::AllocationKind::digits, DigitVector)(begin, end))
+      : digits_(begin, end)
   {
     GD_BC_PROFILE_EVENT(Profile::Event::range_limb_bytes,
                         static_cast<std::uint64_t>(std::distance(begin, end)) * sizeof(NumType));
@@ -920,12 +917,12 @@ private:
   void copy_on_write()
   {
     if (!digits_) {
-      digits_ = GD_BC_PROFILE_SHARED(Profile::AllocationKind::digits, DigitVector)();
+      digits_ = DigitVector();
     }
     if (digits_.use_count() > 1) {
       GD_BC_PROFILE_EVENT(Profile::Event::cow_clones, 1);
       GD_BC_PROFILE_EVENT(Profile::Event::cow_limb_bytes, digits_->size() * sizeof(NumType));
-      digits_ = GD_BC_PROFILE_SHARED(Profile::AllocationKind::digits, DigitVector)(*digits_);
+      digits_ = digits_.clone();
     }
   }
 
@@ -1016,7 +1013,8 @@ private:
     // The calling BasicDigits owns this container throughout the check. Vector
     // growth can move its elements, but does not change the container's owner.
     if (it == digits.end()) {
-      it = digits.insert(it, 0);
+      digits.push_back(0);
+      it = digits.end() - 1;
     }
     return it;
   }
@@ -1235,7 +1233,7 @@ private:
 
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
   static typename DigitVector::difference_type multiply_split_point_;
-  std::shared_ptr<DigitVector> digits_ = nullptr;  ///< BasicDigits in number.
+  DigitVector digits_ = nullptr;  ///< BasicDigits in number.
 };
 
 template<typename Traits>
@@ -1287,8 +1285,10 @@ typename BasicDigits<Traits>::DigitVector::difference_type
  *
  * Where `x ** y` means `x` to the power of `y`, and `n` is `digits_.size()`.
  *
- * `digits_` is stored as a shared pointer so that we don't need to keep duplicating it when
- * we're not going to change the values.
+ * Coefficients of up to three limbs are stored inline and copied by value.
+ * Larger coefficients share heap storage until mutation detaches the value.
+ * Shrinking preserves heap capacity; reset or a shared-small detach can return
+ * to inline storage. Scale and sign remain independent of that storage choice.
  *
  * \brief Printing
  *
