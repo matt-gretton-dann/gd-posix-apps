@@ -51,6 +51,17 @@ if(RUN_UNIT_TESTS)
                  test-reader.cc
                  test-vm-arrays.cc)
   target_add_clang_format(test-libbc)
+  add_executable(test-bc-signal test-vm-signal.cc)
+  target_link_libraries(test-bc-signal PRIVATE libbc)
+  target_include_directories(test-bc-signal PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+  set_property(TARGET test-bc-signal PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
+  set_property(TARGET test-bc-signal PROPERTY CXX_STANDARD_REQUIRED ON)
+  set_warnings(test-bc-signal)
+  target_add_clang_format(test-bc-signal)
+  add_test(NAME bc/signal-normal COMMAND "$<TARGET_FILE:test-bc-signal>" normal)
+  add_test(NAME bc/signal-exception COMMAND "$<TARGET_FILE:test-bc-signal>" throw)
+  set_tests_properties(bc/signal-normal bc/signal-exception PROPERTIES
+                       TIMEOUT 10 SKIP_RETURN_CODE 77)
   catch_discover_tests(test-libbc PROPERTIES FIXTURES_REQUIRED testutil_setup TIMEOUT 120
                       EXTRA_ARGS "--rng-seed" "197199")
   if (ENABLE_IPO)
