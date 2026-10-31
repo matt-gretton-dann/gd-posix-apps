@@ -1404,11 +1404,14 @@ public:
    */
   void add(BasicNumber const& rhs)
   {
+    NumType const result_scale = std::max(scale_, rhs.scale_);
     if (rhs.digits_.is_zero()) {
+      raise_scale(result_scale);
       return;
     }
     if (digits_.is_zero()) {
       *this = rhs;
+      raise_scale(result_scale);
       return;
     }
 
@@ -1457,12 +1460,15 @@ public:
    */
   void sub(BasicNumber const& rhs)
   {
+    NumType const result_scale = std::max(scale_, rhs.scale_);
     if (rhs.digits_.is_zero()) {
+      raise_scale(result_scale);
       return;
     }
     if (digits_.is_zero()) {
       *this = rhs;
       negate();
+      raise_scale(result_scale);
       return;
     }
 
@@ -1717,6 +1723,17 @@ public:
   }
 
 private:
+  /** Increase decimal scale without changing the value or allocating for zero. */
+  void raise_scale(NumType new_scale)
+  {
+    if (new_scale > scale_) {
+      if (!digits_.is_zero()) {
+        digits_.mul_pow10(new_scale - scale_);
+      }
+      scale_ = new_scale;
+    }
+  }
+
   [[nodiscard]] auto compare(BasicNumber const& rhs) const -> Details::ComparisonResult
   {
     bool const lhs_zero = digits_.is_zero();

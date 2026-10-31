@@ -169,7 +169,19 @@ auto GD::Bc::Parser::parse() -> std::shared_ptr<GD::Bc::Instructions>
     loop_breaks_.pop();
   }
   in_function_ = false;
-  parse_program();
+  try {
+    parse_program();
+  }
+  catch (ParseError const& error) {
+    // A syntax error is reported when read, even inside code that would never
+    // execute. Discard partial instructions before emitting the fatal diagnostic.
+    instructions_->clear();
+    in_function_ = false;
+    auto const message = insert_string(error.diagnostic);
+    insert_print(message, Instruction::Stream::error);
+    insert_quit(1);
+    insert_eof();
+  }
   return instructions_;
 }
 
