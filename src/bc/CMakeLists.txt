@@ -162,6 +162,10 @@ endif()
 
 # These local CLI regressions run in both extension configurations and on Windows.
 if(RUN_INTEGRATION_TESTS)
+  add_test(NAME bc/profiling-tools COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-profiling-tools.py"
+           "${CMAKE_CURRENT_SOURCE_DIR}/scripts/profile-bc.py")
+  set_tests_properties(bc/profiling-tools PROPERTIES TIMEOUT 20)
   if(TARGET bc-components)
     add_test(NAME bc/components COMMAND "${Python_EXECUTABLE}"
              "${CMAKE_CURRENT_SOURCE_DIR}/test-components.py" "$<TARGET_FILE:bc-components>")

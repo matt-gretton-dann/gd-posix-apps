@@ -1,0 +1,88 @@
+#!/usr/bin/env python3
+"""Check profiling-output gates, native units and bounded diagnostic children."""
+import argparse
+import importlib.util
+import os
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+import unittest
+from unittest import mock
+
+
+class ProfilingTools(unittest.TestCase):
+    def setUp(self):
+        spec = importlib.util.spec_from_file_location('bc_profile_tools', COLLECTOR)
+        self.module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.module)
+        self.bench = self.module.load_benchmark()
+
+    def test_native_memory_units_and_optional_counters(self):
+        darwin = self.module.rss_fields('Darwin',
+            ' 8589934592 maximum resident set size\n'
+            ' 9999999999 instructions retired\n 22222222222 cycles elapsed\n'
+            ' 1234 peak memory footprint\n')
+        self.assertEqual(darwin['peak_rss_native'], 8589934592)
+        self.assertIn('bytes', darwin['native_unit'])
+        self.assertEqual(darwin['native_counters']['instructions_retired'], 9999999999)
+        self.assertEqual(darwin['native_counters']['cycles_elapsed'], 22222222222)
+        self.assertEqual(darwin['peak_memory_footprint_bytes'], 1234)
+        linux = self.module.rss_fields('Linux', 'MAX_RSS_KIB=65536\n')
+        self.assertEqual(linux['peak_rss_native'], 65536)
+        self.assertIn('KiB', linux['native_unit'])
+        self.assertNotIn('native_counters', linux)
+        self.assertEqual(self.module.rss_fields('Darwin', 'missing\n')['status'], 'unavailable')
+        self.assertEqual(self.module.rss_fields('Windows', '')['status'], 'unavailable')
+
+    def test_each_repeated_output_is_checked(self):
+        case = {'name': 'fixture', 'expected': ['2']}
+        self.module.check(self.bench, case, 2, 0, b'2\n2\n', b'')
+        for status, output, errors in ((23, b'', b''), (0, b'2\n', b''),
+                                       (0, b'2\n3\n', b''), (0, b'2\n2\n', b'warning')):
+            with self.assertRaises(self.bench.BenchmarkError):
+                self.module.check(self.bench, case, 2, status, output, errors)
+
+    def test_sampler_fallback_checks_output(self):
+        case = {'name': 'fixture', 'program': 'ignored\n', 'expected': ['2']}
+        tool = {'argv': [sys.executable, '-c', 'import sys; sys.stdin.read(); print(2)']}
+        with tempfile.TemporaryDirectory() as directory, \
+                mock.patch.object(self.module.platform, 'system', return_value='Unsupported'):
+            result = self.module.cpu_profile(self.bench, tool, case, 1, Path(directory), 3)
+        self.assertEqual(result['status'], 'unavailable')
+
+    @unittest.skipUnless(os.name == 'posix', 'native time wrapper is POSIX-only')
+    def test_wrapper_timeout_closes_descendant_pipes(self):
+        # If only the wrapper dies, its child's inherited output pipe stays open
+        # for two seconds. The outer deadline detects that cleanup failure.
+        with tempfile.TemporaryDirectory() as directory:
+            wrapper = Path(directory) / 'wrapper.py'
+            wrapper.write_text("import subprocess, sys, time\n"
+                               "subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(2)'])\n"
+                               "time.sleep(2)\n")
+            probe = Path(directory) / 'probe.py'
+            probe.write_text("import importlib.util, subprocess, sys\n"
+                             "spec=importlib.util.spec_from_file_location('collector',sys.argv[1])\n"
+                             "module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)\n"
+                             "try: module.run_group([sys.executable,sys.argv[2]],b'',None,0.2)\n"
+                             "except subprocess.TimeoutExpired: pass\n"
+                             "else: raise SystemExit(1)\n")
+            result = subprocess.run([sys.executable, str(probe), COLLECTOR, str(wrapper)],
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=1.5)
+            self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_timeout_kills_and_reaps_diagnostic_child(self):
+        case = {'name': 'fixture', 'program': 'ignored\n', 'expected': ['2']}
+        tool = {'argv': [sys.executable, '-c', 'import time; time.sleep(5)']}
+        with tempfile.TemporaryDirectory() as directory, \
+                mock.patch.object(self.module.platform, 'system', return_value='Unsupported'):
+            with self.assertRaises(subprocess.TimeoutExpired):
+                self.module.cpu_profile(self.bench, tool, case, 1, Path(directory), 0.05)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('collector')
+    args, remaining = parser.parse_known_args()
+    COLLECTOR = str(Path(args.collector).resolve())
+    unittest.main(argv=[__file__, *remaining])
