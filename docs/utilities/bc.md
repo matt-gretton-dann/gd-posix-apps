@@ -62,6 +62,11 @@ There is not much to say about the lexer and parser as they are fairly standard.
 Numbers are kept stored as strings until executed as the spec says that the ibase at the time of
 execution determines the interpretation.
 
+Bare assignment statements update their destination without printing. Parentheses
+form a value expression: `(a=4)` prints `4`, and `(a+=1)` prints the new value
+while updating `a` exactly once. Parenthesized names are loaded as values, rather
+than becoming assignment targets.
+
 ### Error handling
 
 The parser's handling of errors is to stop parsing immediately, and to not to try to do any recovery.

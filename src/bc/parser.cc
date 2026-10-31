@@ -133,7 +133,7 @@ auto GD::Bc::operator-(Parser::ExprIndex const& lhs, Parser::ExprIndex const& rh
  * mul_expression       : mul_expression MUL_OP power_expression
  *                      | power_expression
  *
- * add_expression       : mul_expression ADD_OP add_expression
+ * add_expression       : add_expression ADD_OP mul_expression
  *                      | mul_expression
  *
  * assign_expression    : named_expression ASSIGN_OP assign_expression
@@ -883,7 +883,7 @@ auto GD::Bc::Parser::parse_add_expression() -> GD::Bc::Parser::ExprIndex
 auto GD::Bc::Parser::parse_add_expression(GD::Bc::Parser::ExprIndex lhs)
   -> GD::Bc::Parser::ExprIndex
 {
-  /* add_expression : mul_expression ADD_OP add_expression | mul_expression */
+  /* add_expression : add_expression ADD_OP mul_expression | mul_expression */
 
   while (lexer_->peek().is_add_op()) {
     Token::Type const type = lexer_->peek().type();
@@ -911,7 +911,7 @@ auto GD::Bc::Parser::parse_mul_expression() -> GD::Bc::Parser::ExprIndex
 auto GD::Bc::Parser::parse_mul_expression(GD::Bc::Parser::ExprIndex lhs)
   -> GD::Bc::Parser::ExprIndex
 {
-  /* mul_expression : power_expression MUL_OP mul_expression | power_expression */
+  /* mul_expression : mul_expression MUL_OP power_expression | power_expression */
 
   while (lexer_->peek().is_mul_op()) {
     Token::Type const type = lexer_->peek().type();
@@ -1084,7 +1084,10 @@ auto GD::Bc::Parser::parse_opt_primary_expression(POPEFlags flags) -> GD::Bc::Pa
       return insert_error(Msg::expected_rparens, lexer_->peek());
     }
     lexer_->chew();
-    return idx;
+    // Parentheses form a value expression, even when the inner expression is
+    // an assignment or a name. Only bare assignment statements suppress output.
+    idx = ensure_expr_loaded(idx);
+    return {idx.index(), ExprType::primary};
   }
   case Token::Type::sqrt: {
     lexer_->chew();
