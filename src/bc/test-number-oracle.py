@@ -12,6 +12,18 @@ import unittest
 SEED = 197199
 
 
+def integer_sqrt(value):
+    """Floor square root with integer Newton steps; also supports Python 3.6."""
+    if value == 0:
+        return 0
+    root = 1 << ((value.bit_length() + 1) // 2)
+    while True:
+        next_root = (root + value // root) // 2
+        if next_root >= root:
+            return root
+        root = next_root
+
+
 def literal(value):
     return "(" + value + ")"
 
@@ -75,6 +87,37 @@ class NumberOracle(unittest.TestCase):
                 self.assertEqual(Fraction(lines[2 * i]), expected)
                 self.assertEqual(int(lines[2 * i + 1]), expected_scale)
 
+    def test_scaled_arithmetic(self):
+        rng = random.Random(SEED)
+        pairs = [("0", "1"), ("1.23", "1.11"), ("5.3", "1.11"),
+                 ("-5.3", "1.11"), ("5.3", "-1.11"), ("-5.3", "-1.11"),
+                 ("999999999.999999999", ".000000001"),
+                 ("1000000000000000001", "999999999"),
+                 ("1000000000000000001000000001", "999999999999999999"),
+                 ("123456789123456789123456789", "1000000000000000001")]
+        for digits in (1, 8, 9, 10, 17, 18, 19, 27, 36, 99, 257, 1000, 1998, 2000):
+            # Dense and asymmetric operands complement all-nine and sparse cases.
+            a = "".join(str(rng.randrange(1, 10)) for _ in range(digits))
+            b = "".join(str(rng.randrange(1, 10)) for _ in range(max(1, digits // 3)))
+            balanced = "".join(str(rng.randrange(10)) for _ in range(digits - 1))
+            balanced = str(rng.randrange(1, 10)) + balanced
+            pairs.extend(((a, b), (b, a), (a, balanced), (a, a)))
+        pairs.extend((("0.000", "1.000"), ("1", "100.00"),
+                      (".000000000000000001", ".000000003"),
+                      ("999999999.999999999", "999999999.999999998"),
+                      ("-123.456789", "0.000000009"),
+                      ("123.456789", "-0.000000009")))
+        for op in ("*", "/"):
+            cases = []
+            for a, b in pairs:
+                for places in (0, 1, 2, 9, 18, 31):
+                    s = min(scale(a) + scale(b), max(places, scale(a), scale(b))) if op == "*" else places
+                    value = Fraction(a) * Fraction(b) if op == "*" else Fraction(a) / Fraction(b)
+                    expected = truncate(value, s)
+                    cases.append((literal(a) + op + literal(b), places, expected, s))
+            with self.subTest(operator=op):
+                self.assert_program(cases)
+
     def test_powers(self):
         cases = []
         for a in ("0", "1", "-1", "2", "-2", "1.23", "-1.23", ".001", "123456789"):
@@ -114,7 +157,6 @@ class NumberOracle(unittest.TestCase):
         self.assertEqual(run.stderr, "")
         self.assertEqual(run.stdout.replace("\\\n", "").splitlines(), expected)
 
-
     def test_modulo(self):
         rng = random.Random(SEED)
         pairs = [("0", "1"), ("1.23", "1.11"), ("5.3", "1.11"),
@@ -135,6 +177,25 @@ class NumberOracle(unittest.TestCase):
                 expected = Fraction(a) - truncate(Fraction(a) / Fraction(b), places) * Fraction(b)
                 s = max(scale(a), places + scale(b))
                 cases.append((literal(a) + "%" + literal(b), places, expected, s))
+        self.assert_program(cases)
+
+    def test_square_roots(self):
+        cases = []
+        values = ["0", ".0000", "1", "2", "4", "3.999999999", "4.000000001",
+                  ".00000000000000000001", "999999999999999999999999999999"]
+        for digits in (3, 5, 10, 31, 100):
+            square = 10 ** (2 * digits)
+            values.extend(str(square + offset) for offset in (-1, 0, 1, 2, 3))
+        for a in values:
+            for places in (0, 1, 2, 9, 18, 50):
+                s = max(places, scale(a))
+                scaled = Fraction(a) * 10 ** (2 * s)
+                root = integer_sqrt(scaled.numerator // scaled.denominator)
+                expected = Fraction(root, 10 ** s)
+                # Independent exact floor bounds, without using bc multiplication.
+                self.assertLessEqual(expected ** 2, Fraction(a))
+                self.assertGreater((expected + Fraction(1, 10 ** s)) ** 2, Fraction(a))
+                cases.append(("sqrt(" + a + ")", places, expected, s))
         self.assert_program(cases)
 
 
