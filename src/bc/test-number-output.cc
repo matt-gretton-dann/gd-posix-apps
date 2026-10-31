@@ -88,3 +88,39 @@ TEMPLATE_TEST_CASE("Digit output helpers accept boundary positions",
   CHECK(unwrapped(output.str()) == expected);
   check_lines(output.str(), position);
 }
+
+TEMPLATE_TEST_CASE("Nondecimal continuation keeps established zero-position wrapping",
+                   "[bc][number][oracle][output-position]", GD::Bc::NumberTraits16,
+                   GD::Bc::NumberTraits32)
+{
+  // This value exceeds the small trait's existing decimal-length domain; wider
+  // traits cover the final full continuation chunk without changing that limit.
+  using Number = GD::Bc::BasicNumber<TestType>;
+  Number const value(std::string(137, 'A'), 16);
+  std::ostringstream output;
+  REQUIRE_NOTHROW(value.output(output, 16, 0));
+  REQUIRE(output.str() == std::string(68, 'A') + "\\\n" + std::string(68, 'A') + "\\\nA");
+}
+
+TEMPLATE_TEST_CASE("Long decimal output respects partial-line capacity",
+                   "[bc][number][oracle][output-position]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  unsigned const position = GENERATE(67U, 68U, 69U, 70U);
+  bool const negative = GENERATE(false, true);
+  bool const fractional = GENERATE(false, true);
+  std::string const digits(80, '1');  // Still inside the small trait's supported length/scale.
+  Number value(fractional ? "0." + digits : digits, 10);
+  std::string expected = fractional ? (GD::Bc::extensions_enabled() ? "." : "0.") + digits : digits;
+  if (negative) {
+    value.negate();
+    expected.insert(expected.begin(), '-');
+  }
+  INFO("position = " << position << ", negative = " << negative << ", fractional = " << fractional
+                     << ", base = " << Number::base_);
+  std::ostringstream output;
+  REQUIRE_NOTHROW(value.output(output, 10, position));
+  CHECK(unwrapped(output.str()) == expected);
+  check_lines(output.str(), position);
+}
