@@ -179,3 +179,28 @@ supplemental fmt backend run the same expectations.
 A temporary mutant returning ordinary text for debug formatting is rejected at
 each trait's debug-string assertion. The committed implementation is unchanged;
 these are diagnostic contract tests, not a production formatting mode.
+
+## Exact VM execution and generated expressions
+
+`test-vm-execution.cc` directly executes all ten binary arithmetic/comparison
+opcodes over signed operands -4 through 4, using exact native integer results.
+Zero divisors and negative exponents remain in the separate runtime-error and
+scaled arithmetic suites. Unary cases assert negate, positive/negative abs,
+perfect-square sqrt, scale and length. Conditional and unconditional branches
+must select exactly one string; register stores must survive a second
+instruction pack, including output-radix conversion.
+
+The property test uses seed `197215` to generate 200 bounded expression trees
+with signed leaves, addition, subtraction and multiplication. Each tree runs
+as independently assembled bytecode and as parsed source. Both must match the
+native integer oracle, with source, seed and sample reported on failure. Depth
+three and leaves -9 through 9 keep every intermediate well within `int64_t`;
+this does not use the bc arithmetic implementation to compute expectations.
+Both executions use the currently validated VM. A future optimized execution
+mode (#207) must run these same oracles; no optimized mode exists yet.
+
+A temporary production mutation dispatching addition to subtraction fails 296
+assertions in the direct and generated cases. Restoring the source passes all
+3,704 assertions across five cases. The mutation is not committed. These tests
+supplement the function/array, verifier, bounded CLI and signal suites; they do
+not by themselves prove complete VM branch or MC/DC coverage (#215).

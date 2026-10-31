@@ -52,6 +52,7 @@ if(RUN_UNIT_TESTS)
                  test-parser-errors.cc
                  test-reader.cc
                  test-vm-arrays.cc
+                 test-vm-execution.cc
                  test-verification.cc)
   target_add_clang_format(test-libbc)
   add_executable(test-bc-signal test-vm-signal.cc)
