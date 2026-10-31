@@ -325,6 +325,13 @@ share the same digits (but do they ever really?).
 Use Knuth Algorithm D from Section 4.3.1 of TAOCP.  However, we choose the initial scale factor
 slightly differently as the one in Knuth doesn't act as expected.
 
+For remainder, first truncate `a/b` to the global scale, then compute
+`a - (a/b)*b` without further truncating the quotient product. The result scale
+is `max(scale(a), scale + scale(b))`, including zero quotients and zero results.
+For example, at scale 2, `5.3 % 1.11` is `0.0053` with scale 4. The current
+public scale limits keep the intermediate scale sum representable; the broader
+limit work remains tracked in #186.
+
 #### Multiplication
 
 We make use of both the classic long-multiplication and Karatsuba algorithms.

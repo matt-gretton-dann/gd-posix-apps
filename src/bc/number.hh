@@ -1616,10 +1616,23 @@ public:
 
   void modulo(BasicNumber rhs, NumType target_scale)
   {
+    // Public bc scales are below base_, so their sum fits in NumType for the
+    // supported traits. Preserve the full quotient-product scale, not just the
+    // division scale, before subtracting it from the original dividend.
+    NumType const product_scale = static_cast<NumType>(target_scale + rhs.scale());
+    NumType const result_scale = std::max(scale(), product_scale);
     BasicNumber u(*this);
     u.divide(rhs, target_scale);
-    u.multiply(rhs, target_scale);
+    u.multiply(rhs, result_scale);
     sub(u);
+    // A zero quotient/product can take sub's zero fast path. Restore the
+    // specified remainder scale even when no numerical subtraction occurred.
+    if (scale_ < result_scale) {
+      if (!is_zero()) {
+        digits_.mul_pow10(result_scale - scale_);
+      }
+      scale_ = result_scale;
+    }
   }
 
   void sqrt(NumType target_scale)
