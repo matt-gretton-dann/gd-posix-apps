@@ -22,7 +22,11 @@ negative/fractional bases and negative exponents with nonzero target scale.
 All 128 bc cases pass 580,355 assertions, five profiling checks and six CLI/oracle/
 component groups. After integrating merged aligned arithmetic (#310), all 131
 cases pass 580,388 assertions, plus the same five profiling and six CLI groups.
-Test-first and fix commits remain separate. EOF diagnostic allocations balance.
+After integrating merged comparison (#312), the current tree passes 134 cases
+(580,427 assertions), five profiling checks and eight CLI/helper groups,
+including the 36-case quick corpus. The timing tables retain their original
+isolated revisions. Test-first and fix commits remain separate. EOF diagnostic
+allocations balance.
 
 ## Matched isolated experiment
 

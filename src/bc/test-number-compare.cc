@@ -51,3 +51,35 @@ TEMPLATE_TEST_CASE("Signed comparisons agree with fixed-point integer ordering",
   REQUIRE_FALSE(negative_zero < Number("0.00", 10));
   REQUIRE_FALSE(negative_zero > Number("0.00", 10));
 }
+
+TEMPLATE_TEST_CASE("Equal-scale comparison tolerates untrimmed digit storage",
+                   "[bc][number][oracle][comparison]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Digits = GD::Bc::Details::BasicDigits<TestType>;
+  using Result = GD::Bc::Details::ComparisonResult;
+  Digits const empty(0);
+  Digits const one(1);
+  Digits wide_zero(1);
+  wide_zero.mul_pow10(4 * Digits::base_log10_);
+  wide_zero.mac(0, 0);  // Keep the allocated, nonempty all-zero representation.
+  CHECK(wide_zero.is_zero());
+  CHECK(wide_zero.length() == 1);
+  CHECK(wide_zero.compare(empty, 0) == Result::equality);
+  CHECK(empty.compare(wide_zero, 0) == Result::equality);
+  CHECK(wide_zero.compare(one, 0) == Result::less_than);
+  CHECK(one.compare(wide_zero, 0) == Result::greater_than);
+  wide_zero.mac(0, 1);  // One with several more significant zero limbs.
+  CHECK_FALSE(wide_zero.is_zero());
+  CHECK(wide_zero.length() == 1);
+  CHECK(wide_zero.compare(one, 0) == Result::equality);
+  CHECK(one.compare(wide_zero, 0) == Result::equality);
+
+  Digits high(1);
+  high.mul_pow10(4 * Digits::base_log10_);
+  Digits low(2);
+  low.mul_pow10(3 * Digits::base_log10_);
+  CHECK(high.compare(low, 0) == Result::greater_than);
+  CHECK(low.compare(high, 0) == Result::less_than);
+  CHECK(high.compare(high, 0) == Result::equality);
+}
