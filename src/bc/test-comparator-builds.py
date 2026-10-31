@@ -75,6 +75,15 @@ class ComparatorBuilds(unittest.TestCase):
             self.module.safe_extract(archive, self.root / 'extract')
         self.assertFalse((self.root / 'escape').exists())
 
+    def test_native_toolset_discovery(self):
+        root = self.root / 'MSBuild/Microsoft/VC/v180/Platforms/x64/PlatformToolsets'
+        for toolset in ('v143', 'v145', 'ClangCL', 'v143_xp'):
+            (root / toolset).mkdir(parents=True)
+        self.assertEqual(self.module.msvc_toolset(None, str(self.root)), 'v145')
+        self.assertEqual(self.module.msvc_toolset('v143', None), 'v143')
+        with self.assertRaises(self.module.BuildError):
+            self.module.msvc_toolset(None, None)
+
     def test_existing_output_is_preserved(self):
         output = self.root / 'existing'
         output.mkdir()

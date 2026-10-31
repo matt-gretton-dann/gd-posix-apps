@@ -12,6 +12,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -62,8 +63,9 @@ class Builder:
         log.write_bytes(process.stdout)
         row['returncode'] = process.returncode
         if process.returncode not in allowed:
-            raise BuildError('command {} failed with {}; see {}'.format(
-                number, process.returncode, log))
+            detail = '\n'.join(process.stdout.decode('utf-8', errors='replace').splitlines()[-25:])
+            raise BuildError('command {} failed with {}; see {}\n{}'.format(
+                number, process.returncode, log, detail))
         return process.stdout.decode('utf-8', errors='replace').strip()
 
 
@@ -112,6 +114,22 @@ def build_environment(compiler):
     return environment
 
 
+def msvc_toolset(requested, installation):
+    if requested:
+        return requested
+    if not installation:
+        raise BuildError('use a Visual Studio developer prompt or specify --msvc-toolset')
+    root = Path(installation) / 'MSBuild/Microsoft/VC'
+    candidates = set()
+    for directory in root.rglob('PlatformToolsets'):
+        if directory.parent.name.lower() == 'x64':
+            candidates.update(path.name for path in directory.iterdir()
+                              if path.is_dir() and re.fullmatch(r'v[0-9]+', path.name))
+    if not candidates:
+        raise BuildError('cannot identify installed x64 MSVC toolset; use --msvc-toolset')
+    return max(candidates, key=lambda name: int(name[1:]))
+
+
 def build_howard(builder, args):
     source = builder.root / 'howard-source'
     builder.run(['git', 'clone', '--no-hardlinks', '--depth', '1', '--branch', '7.0.3',
@@ -121,20 +139,21 @@ def build_howard(builder, args):
         raise BuildError('Howard 7.0.3 did not resolve to its pinned commit')
     if os.name == 'nt':
         compiler = compiler_metadata(builder, args.cc or 'cl')
+        toolset = msvc_toolset(args.msvc_toolset, os.environ.get('VSINSTALLDIR'))
         builder.run([args.msbuild, 'vs/bc.sln', '/m:{}'.format(args.jobs),
-                     '/p:Configuration=Release', '/p:Platform=x64',
+                     '/p:Configuration=Release', '/p:Platform=x64', '/p:PlatformToolset=' + toolset,
                      '/p:CLToolPath=' + str(Path(compiler['argv0']).parent) + os.sep,
                      '/p:CLToolExe=' + Path(compiler['argv0']).name], source,
                     build_environment(compiler))
         executable = source / 'vs/bin/x64/Release/bc.exe'
-        flags = {'configuration': 'Release', 'platform': 'x64',
+        flags = {'configuration': 'Release', 'platform': 'x64', 'toolset': toolset,
                  'project_sha256': digest(source / 'vs/bc.vcxproj')}
         command_logs = list((source / 'vs/bin/x64/Release').rglob('CL.command.1.tlog'))
         if not command_logs:
             raise BuildError('MSBuild did not preserve actual compiler command tracking logs')
         flags['native_compile_commands'] = [path.read_text(encoding='utf-16')
                                             for path in command_logs]
-        options = 'upstream native MSBuild Release/x64 defaults'
+        options = 'native MSBuild Release/x64 with recorded installed toolset'
     else:
         compiler = compiler_metadata(builder, args.cc or 'cc')
         environment = build_environment(compiler)
@@ -200,6 +219,7 @@ def main():
     parser.add_argument('--cc', help='explicit C compiler; record its version and checksum')
     parser.add_argument('--make', default='make')
     parser.add_argument('--msbuild', default='MSBuild.exe', help='native Windows MSBuild command')
+    parser.add_argument('--msvc-toolset', help='explicit native toolset, otherwise use installed x64 default')
     parser.add_argument('--jobs', type=positive, default=2)
     parser.add_argument('--command-timeout', type=positive, default=900)
     parser.add_argument('--howard-repository', default=HOWARD_REPOSITORY,

@@ -39,8 +39,11 @@ For Windows run from an x64 Visual Studio developer command prompt:
 python src\bc\scripts\build-bc-comparators.py --output build-comparators --cc cl
 ```
 
-The native Howard recipe uses upstream `vs/bc.sln`, Release/x64, toolset v143.
-It selects the recorded compiler executable through CLToolPath/CLToolExe and
+The native Howard recipe uses upstream `vs/bc.sln`, Release/x64, with an explicitly selected installed x64 MSVC toolset.
+The recipe discovers the newest installed x64 toolset, or uses `--msvc-toolset`
+when specified, and records the selection. This can override the project's
+original v143 default on newer Visual Studio installations. It selects the
+recorded compiler executable through CLToolPath/CLToolExe and
 preserves MSBuild's actual CL command tracking records. Upstream Windows defaults
 include both calculators, extra math and history, with NLS disabled; these are
 not the POSIX history-disabled configuration. See the pinned
