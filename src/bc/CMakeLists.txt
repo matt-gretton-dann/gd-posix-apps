@@ -32,6 +32,7 @@ if(RUN_UNIT_TESTS)
   target_include_directories(test-libbc PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
   set_warnings(test-libbc)
   target_sources(test-libbc PRIVATE
+                 test-benchmark-support.cc
                  test-format.cc
                  test-lexer.cc
                  test-lexer-shebang.cc
@@ -41,12 +42,13 @@ if(RUN_UNIT_TESTS)
                  test-number-zero-scale.cc
                  test-number-modulo.cc
                  test-number-power.cc
+                 test-number-sqrt.cc
                  test-parser.cc
                  test-parser-errors.cc
                  test-reader.cc
                  test-vm-arrays.cc)
   target_add_clang_format(test-libbc)
-  catch_discover_tests(test-libbc PROPERTIES FIXTURES_REQUIRED testutil_setup
+  catch_discover_tests(test-libbc PROPERTIES FIXTURES_REQUIRED testutil_setup TIMEOUT 120
                       EXTRA_ARGS "--rng-seed" "197199")
   if (ENABLE_IPO)
     set_property(TARGET test-libbc PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
@@ -81,6 +83,13 @@ endif()
 target_link_libraries(find-multiply-split-point PUBLIC libbc)
 add_dependencies(find-multiply-split-point "bc_messages_header")
 target_add_clang_format(find-multiply-split-point)
+
+if(RUN_INTEGRATION_TESTS)
+  add_test(NAME bc-tuner/cli COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-tuner-cli.py"
+           "$<TARGET_FILE:find-multiply-split-point>")
+  set_tests_properties(bc-tuner/cli PROPERTIES TIMEOUT 30)
+endif()
 
 
 add_custom_command(

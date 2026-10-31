@@ -391,6 +391,15 @@ both values and result scales.
 We use the basic Newton-Raphson recursion at a larger scale than we want to ensure we get the right
 answer and then scale down.
 
+The integer working coefficient uses
+`f(p) = floor((p + floor(n/p))/2)`. After one step the guess is at least
+`floor(sqrt(n))`. Above that floor it strictly decreases; at the floor it either
+stays fixed or rises by one. The latter case occurs when `n` is one below a
+perfect square, so equality alone is not a termination rule. Keep the previous
+guess when later steps stop decreasing. This preserves the existing initial
+guess, precision and normal iteration count while terminating adjacent-integer
+cycles. Directed tests cover all three limb traits and both value and scale.
+
 #### Benchmarking
 
 Better at large scales than GNU bc - but not at low scales.  Overheads in shared_ptr and iterators.
