@@ -24,3 +24,9 @@ execution of every VM opcode, validate malformed bytecode or replace the direct
 VM, subprocess runtime-error, function-frame, interrupt and verifier tests tracked
 by #215 and #187. Coverage reports must retain those open obligations and the
 separate extension configurations described in [bc-testing.md](bc-testing.md).
+
+`test-format.cc` also calls each public token/letter formatter parser with an
+empty parse context. The runtime formatting engine normally supplies a closing
+brace even for `{}`, so testing `vformat` alone misses this accepted boundary.
+The direct parser assertion complements the existing accepted/rejected format
+specification cases without changing formatter implementation.
