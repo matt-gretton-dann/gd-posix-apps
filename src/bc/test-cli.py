@@ -78,6 +78,19 @@ class CliTests(unittest.TestCase):
         else:
             self.run_bc("halt\n", success=False)
 
+    def test_parenthesized_assignments(self):
+        for text, expected in (
+            ("a=4\na\n", "4\n"),
+            ("(a=4)\na\n", "4\n4\n"),
+            ("((a=4))\na\n", "4\n4\n"),
+            ("a=2\n(a+=3)\na\n", "5\n5\n"),
+            ("(a[0]=3)\na[0]\n", "3\n3\n"),
+            ("(a=4)+1\na\n", "5\n4\n"),
+            ("a=0\n(a+=1)\na\n", "1\n1\n"),
+        ):
+            with self.subTest(text=text):
+                self.run_bc(text, expected)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
