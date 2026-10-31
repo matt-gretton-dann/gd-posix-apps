@@ -70,3 +70,75 @@ TEMPLATE_TEST_CASE("Directed long division preserves quotient and remainder",
     }
   }
 }
+
+TEMPLATE_TEST_CASE("Quotient estimate boundaries hold at every limb width",
+                   "[bc][number][oracle][quotient-estimate]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  uint64_t const base = Number::base_;
+  auto block = [](uint64_t value) {
+    auto const width = static_cast<std::size_t>(Number::base_log10_);
+    auto text = std::to_string(value);
+    return std::string(width - text.size(), '0') + text;
+  };
+  auto const high = block(base / 2);
+  auto const zero = block(0);
+  auto const one = block(1);
+  auto const maximum = block(base - 1);
+  struct Case
+  {
+    std::string dividend;
+    std::string divisor;
+    std::string quotient;
+    std::string remainder;
+  };
+  // Construct decimal limb blocks, not inputs/results computed by bc kernels.
+  // A: U = V*B-1, V = (B/2)*B^2+B+1. q_hat == B while the second test is false.
+  // B: U = (B/2)*B^3, V = (B/2)*B^2+(B-1)*B+1. Two estimate decrements.
+  // C: U = V*(B-1)-1, V = (B/2)*B^2+1. The low limb forces borrow/add-back.
+  std::array<Case, 3> const cases{{
+    {high + one + zero + maximum, high + one + one, maximum, high + one + zero},
+    {high + zero + zero + zero, high + maximum + one, block(base - 2),
+     block(2) + block(base - 3) + block(2)},
+    {block(base / 2 - 1) + high + zero + block(base - 2), high + zero + one, block(base - 2),
+     high + zero + zero},
+  }};
+  for (auto const& test : cases) {
+    for (bool const negative_lhs : {false, true}) {
+      for (bool const negative_rhs : {false, true}) {
+        INFO("base = " << base << ", U = " << test.dividend << ", V = " << test.divisor
+                       << ", lhs negative = " << negative_lhs
+                       << ", rhs negative = " << negative_rhs);
+        Number original(test.dividend, 10);
+        Number divisor(test.divisor, 10);
+        Number expected_quotient(test.quotient, 10);
+        Number expected_remainder(test.remainder, 10);
+        Number saved_original(test.dividend, 10);
+        Number saved_divisor(test.divisor, 10);
+        if (negative_lhs) {
+          original.negate();
+          saved_original.negate();
+          expected_remainder.negate();
+        }
+        if (negative_rhs) {
+          divisor.negate();
+          saved_divisor.negate();
+        }
+        if (negative_lhs != negative_rhs) {
+          expected_quotient.negate();
+        }
+        Number quotient = original;
+        quotient.divide(divisor, 0);
+        Number remainder = original;
+        remainder.modulo(divisor, 0);
+        REQUIRE(quotient == expected_quotient);
+        REQUIRE(remainder == expected_remainder);
+        REQUIRE(quotient.scale() == 0);
+        REQUIRE(remainder.scale() == 0);
+        REQUIRE(original == saved_original);
+        REQUIRE(divisor == saved_divisor);
+      }
+    }
+  }
+}
