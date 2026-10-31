@@ -599,7 +599,7 @@ public:
     not_equals,        ///< op1 != op2.
     less_than,         ///< op1 < op2.
     branch,            ///< Branch to op1
-    branch_zero,       ///< Branch to op1 if op2 is zero.
+    branch_zero,       ///< Branch to op2 if op1 is zero.
     return_,           ///< return(op1)
     call,              ///< call function op1, source location of call in Op2.
     push_param_mark,   ///< Push a "function separator" marker onto the parameter stack
