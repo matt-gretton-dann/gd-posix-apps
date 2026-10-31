@@ -17,7 +17,7 @@ if (ENABLE_IPO)
   set_property(TARGET libbc PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
-target_sources(libbc PRIVATE instruction.cc lexer.cc parser.cc reader.cc token.cc vm.cc)
+target_sources(libbc PRIVATE instruction.cc lexer.cc parser.cc reader.cc token.cc verification.cc vm.cc)
 add_dependencies("libbc" "bc_messages_header")
 target_add_clang_format(libbc)
 
@@ -49,7 +49,8 @@ if(RUN_UNIT_TESTS)
                  test-parser.cc
                  test-parser-errors.cc
                  test-reader.cc
-                 test-vm-arrays.cc)
+                 test-vm-arrays.cc
+                 test-verification.cc)
   target_add_clang_format(test-libbc)
   add_executable(test-bc-signal test-vm-signal.cc)
   target_link_libraries(test-bc-signal PRIVATE libbc)
