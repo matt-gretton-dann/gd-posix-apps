@@ -610,3 +610,64 @@ TEMPLATE_TEST_CASE("Native number construction normalizes the full input value",
     REQUIRE(actual == expected);
   }
 }
+
+TEMPLATE_TEST_CASE("Fraction helpers preserve exact padded and empty values",
+                   "[bc][number][oracle][scale-helper]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Digits = GD::Bc::Details::BasicDigits<TestType>;
+  using N = typename Digits::NumType;
+  for (bool allocated : {false, true}) {
+    Digits zero = allocated ? Digits(N(0)) : Digits();
+    CHECK(zero.mul_mod_pow10(N(16), N(1)) == 0);
+    CHECK(zero.is_zero());
+  }
+
+  // The split pads the fractional coefficient past its original limb. Its
+  // value is still one, so successive binary digits below are all zero.
+  N const scale = N(Digits::base_log10_ + 1);
+  auto const split = Digits(N(1)).split_frac(scale);
+  CHECK(split.first.is_zero());
+  CHECK(split.second.to_unsigned(0) == 1);
+  auto fraction = split.second;
+  CHECK(fraction.mul_mod_pow10(N(2), scale) == 0);
+  CHECK(fraction.to_unsigned(0) == 2);
+  CHECK(split.second.to_unsigned(0) == 1);
+
+  // Independent native arithmetic covers both a partial and a complete
+  // decimal limb, including a carry into the returned quotient.
+  for (N const coefficient : {N(1), N(7), N(19), N(99)}) {
+    for (N const places : {N(1), N(Digits::base_log10_), scale}) {
+      uint64_t denominator = 1;
+      for (N i = 0; i < places; ++i) {
+        denominator *= 10;
+      }
+      uint64_t const product = uint64_t(coefficient) * 7;
+      Digits value(coefficient);
+      CHECK(value.mul_mod_pow10(N(7), places) == product / denominator);
+      Digits expected(N(0));
+      for (char digit : std::to_string(product % denominator)) {
+        expected.mac(N(10), N(digit - '0'));
+      }
+      CHECK(value.compare(expected, N(0)) == GD::Bc::Details::ComparisonResult::equality);
+    }
+  }
+}
+
+TEMPLATE_TEST_CASE("Positive powers fold scales larger than the limb radix",
+                   "[bc][number][oracle][scale-helper]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  using N = typename Number::NumType;
+  Number value("0.1", 10);
+  Number const exponent(std::to_string(uint64_t(Number::base_) + 2), 10);
+  value.power(exponent, N(2));
+  // 10^-(base+2) truncated to two places is exactly zero. The coefficient
+  // stays one throughout exponentiation, keeping this native-width case
+  // bounded even for the billion-scale production trait.
+  CHECK(value.is_zero());
+  CHECK(value.scale() == 2);
+  CHECK(value == Number("0.00", 10));
+  CHECK(exponent == Number(std::to_string(uint64_t(Number::base_) + 2), 10));
+}

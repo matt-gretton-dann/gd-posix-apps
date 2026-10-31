@@ -180,6 +180,13 @@ A temporary mutant returning ordinary text for debug formatting is rejected at
 each trait's debug-string assertion. The committed implementation is unchanged;
 these are diagnostic contract tests, not a production formatting mode.
 
+Numeric runtime tests assert diagnostic routes as well as status and output.
+Negative assignment fixtures separate `=` from unary `-`; POSIX leaves the
+historically ambiguous `=-` adjacency undefined, so a lexer rejection of that
+form must not stand in for a numeric conversion error. Fractional-power cases
+require the existing diagnostic to show the actual positive/negative exponent,
+not the unrelated base operand. Fractional powers remain rejected.
+
 ## Exact VM execution and generated expressions
 
 `test-vm-execution.cc` directly executes all ten binary arithmetic/comparison
