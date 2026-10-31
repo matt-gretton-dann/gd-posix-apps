@@ -204,3 +204,13 @@ TEST_CASE("GD::Bc::Lexer - =- is an error", "[bc][lexer]")
   auto t1 = lexer.peek();
   REQUIRE(t1.type() == GD::Bc::Token::Type::error);
 }
+
+TEST_CASE("Invalid numeric continuations retain diagnostics", "[bc][lexer][continuation]")
+{
+  std::string_view const text = GENERATE("1\\+2", "1\\x", "1\\", ".5\\+2");
+  INFO("input = " << text);
+  GD::Bc::Lexer lexer(std::make_unique<GD::Bc::StringReader>(text));
+  REQUIRE(lexer.peek().type() == GD::Bc::Token::Type::error);
+  REQUIRE_FALSE(lexer.peek().error().empty());
+  REQUIRE(lexer.peek().type() == GD::Bc::Token::Type::error);
+}
