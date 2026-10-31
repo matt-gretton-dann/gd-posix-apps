@@ -557,8 +557,11 @@ public:
       *d = static_cast<NumType>(dw % base_);
     }
 
-    if (carry != 0) {
-      digits_->push_back(static_cast<NumType>(carry));
+    // The accumulator may be a full native value, including the radix itself
+    // in BasicNumber's constructor. Drain every carry limb canonically.
+    while (carry != 0) {
+      digits_->push_back(static_cast<NumType>(carry % base_));
+      carry /= base_;
     }
   }
 

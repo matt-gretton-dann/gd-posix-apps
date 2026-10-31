@@ -264,3 +264,13 @@ must retain their own marker and the shared source must remain untouched. The
 protocol uses bounded waits and reaps its children. This guarantees isolation
 between build trees; concurrent invocations of the same imported test in one
 build tree still share that tree's output path.
+
+## Full native constructor values
+
+The native-value constructor accepts the underlying unsigned type, including
+its maximum value and values at/above the limb radix. Directed tests compare
+those values with independently parsed decimal text at Traits8/16/32, then
+check ordering, subsequent addition and preservation of the original shared
+value. Multiply-accumulate must drain its complete carry into radix-sized limbs;
+appending a full native carry as one limb gives a noncanonical value even when
+its decimal spelling happens to look correct.
