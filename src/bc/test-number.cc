@@ -671,3 +671,29 @@ TEMPLATE_TEST_CASE("Positive powers fold scales larger than the limb radix",
   CHECK(value == Number("0.00", 10));
   CHECK(exponent == Number(std::to_string(uint64_t(Number::base_) + 2), 10));
 }
+
+TEMPLATE_TEST_CASE("Digit helpers handle absent storage and extended scale padding",
+                   "[bc][number][oracle][digit-boundary]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Digits = GD::Bc::Details::BasicDigits<TestType>;
+  using N = typename Digits::NumType;
+  using C = GD::Bc::Details::ComparisonResult;
+  CHECK(Digits().length() == 1);
+  CHECK(Digits(N(0)).length() == 1);
+
+  // Comparison requires allocated coefficients, including allocated zero.
+  // A scale spanning several complete limbs must supply missing LHS zeroes.
+  N const scale = N(2 * Digits::base_log10_ + 1);
+  CHECK(Digits(N(0)).compare(Digits(N(1)), scale) == C::less_than);
+  CHECK(Digits(N(1)).compare(Digits(N(0)), scale) == C::greater_than);
+  CHECK(Digits(N(0)).compare(Digits(N(0)), scale) == C::equality);
+
+  // Splitting beyond the coefficient pads whole absent fractional limbs as
+  // well as a final partial limb, while retaining the exact coefficient.
+  Digits const source(N(1));
+  auto const parts = source.split_frac(scale);
+  CHECK(parts.first.is_zero());
+  CHECK(parts.second.to_unsigned(0) == 1);
+  CHECK(source.to_unsigned(0) == 1);
+}
