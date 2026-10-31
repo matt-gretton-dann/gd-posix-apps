@@ -295,6 +295,22 @@ value. Multiply-accumulate must drain its complete carry into radix-sized limbs;
 appending a full native carry as one limb gives a noncanonical value even when
 its decimal spelling happens to look correct.
 
+## Partial-line numeric output
+
+`test-number-output.cc` checks decimal and hexadecimal output starting at
+columns 0, 67, 68, 69 and 70, including signs, fractional leading zeroes and
+long decimal coefficients. It compares the complete value after removing
+continuations and checks every physical line against the POSIX 70-column
+limit. Direct digit-helper tests cover the same boundary contract across all
+three traits. A separate hexadecimal fixture preserves the established
+continuation layout when output starts at column zero.
+
+Wrapping compares remaining text with available capacity before subtracting a
+chunk. Decimal output also respects the smaller initial capacity selected for
+long coefficients, and counts the extensions-OFF leading zero as output.
+These checks require no platform-specific implementation or enlarged numeric
+limits. They regress #283, found while extending #199 coverage.
+
 ## Fatal parser reuse
 
 A syntax diagnostic terminates that parser object. Every later `parse()` call
