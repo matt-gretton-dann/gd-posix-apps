@@ -145,7 +145,7 @@
         "msg": "expected_lbrace",
         "id": 24,
         "description": "Expected a '{', found: {0}",
-        "C": "Expected '{', found: {0}"
+        "C": "Expected '{{', found: {0}"
       },
       {
         "msg": "expected_newline",

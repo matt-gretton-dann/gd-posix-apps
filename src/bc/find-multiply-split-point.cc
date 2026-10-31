@@ -120,9 +120,11 @@ auto check(Number::NumType initial_digit, uint64_t seed) -> Number::NumType
     std::vector<Number> numbers = canon_numbers;
     base_time = time_run([&numbers]() { multiply(numbers); });
     std::cout << "Initial timing run: " << base_time << " for " << canon_numbers.size()
-              << " multiplications.\n";
+              << " multiplications." << std::endl;
     if (base_time < min_time) {
-      auto new_size = (canon_numbers.size() * (as_nsec(min_time + half_sec))) / as_nsec(base_time);
+      auto const new_size =
+        GD::Bc::Bench::next_batch_size(canon_numbers.size(), as_nsec(base_time),
+                                       as_nsec(min_time + half_sec), canon_numbers.max_size());
       for (auto i = canon_numbers.size(); i < new_size; ++i) {
         canon_numbers.push_back(rng.get());
         rng.next();

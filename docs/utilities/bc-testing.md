@@ -86,3 +86,9 @@ radix conversion. It requires status 0, empty stderr and the complete corrected
 output. This replaces the incorrect oracle without adding an unsupported-test
 skip or accepting arbitrary failures. See
 [#233](https://github.com/matt-gretton-dann/gd-posix-apps/issues/233).
+
+Calibration grows each timing batch by at most four times, doubling when the
+process CPU clock reports zero for a short batch. Batch arithmetic checks the
+container limit before multiplication and reports invalid durations or exhausted
+capacity as failures. Timing samples are flushed for failure diagnosis. These
+rules handle coarse clocks without assuming a platform-specific resolution.
