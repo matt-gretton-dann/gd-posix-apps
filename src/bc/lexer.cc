@@ -111,8 +111,7 @@ void GD::Bc::Lexer::lex_number()
       r_->chew();
       if (r_->peek() != '\n') {
         t_.emplace(Token::Type::error, r_->error(Msg::unexpected_token, '\\'));
-        cont = false;
-        break;
+        return;  // Preserve the diagnostic instead of emitting the partial number.
       }
       r_->chew();  // Chew new-line
       if (extensions_enabled()) {
