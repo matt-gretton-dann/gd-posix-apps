@@ -581,6 +581,8 @@ TEMPLATE_TEST_CASE("Unsigned digit conversion agrees with exact integer division
                                             : N(quotient);
       INFO("coefficient = " << coefficient << ", scale = " << places << ", base = " << base);
       CHECK(digits.to_unsigned(N(places)) == expected);
+      N const truncated = quotient >= base ? Digits::to_unsigned_error_too_large_ : N(quotient);
+      CHECK(digits.to_unsigned(N(places), true) == truncated);
     }
   }
 }
