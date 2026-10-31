@@ -204,3 +204,11 @@ assertions in the direct and generated cases. Restoring the source passes all
 3,704 assertions across five cases. The mutation is not committed. These tests
 supplement the function/array, verifier, bounded CLI and signal suites; they do
 not by themselves prove complete VM branch or MC/DC coverage (#215).
+
+The diagnostic-print test additionally executes every supported result
+alternative on both stdout and stderr: strings, numbers, variables, arrays,
+array elements, loaded array values and the three special register locations.
+The public verifier explicitly allows these diagnostic operations. Assert the
+complete selected stream and an empty unselected stream; do not manufacture an
+invalid result merely to reach a visitor. With this case, the execution group
+passes 3,710 assertions across six cases in both configurations.

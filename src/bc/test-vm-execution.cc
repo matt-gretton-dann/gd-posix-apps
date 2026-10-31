@@ -194,3 +194,33 @@ TEST_CASE("VM special register stores survive instruction packs", "[bc][vm][exec
     CHECK(errors.str().empty());
   }
 }
+
+TEST_CASE("VM diagnostic printing accepts every public result alternative", "[bc][vm][execution]")
+{
+  for (auto stream : {I::Stream::output, I::Stream::error}) {
+    GD::Bc::Instructions code;
+    auto print = [&](I value) {
+      code.push_back(std::move(value));
+      code.emplace_back(O::print, D(-1), stream);
+    };
+    print(I(O::string, "text\n"));
+    print(I(O::number, "42"));
+    print(I(O::variable, GD::Bc::Variable('a')));
+    print(I(O::array, GD::Bc::Array('b')));
+    code.emplace_back(O::number, "2");
+    print(I(O::array_element, GD::Bc::Array('b'), D(-1)));
+    code.emplace_back(O::array, GD::Bc::Array('c'));
+    print(I(O::load, D(-1)));
+    print(I(O::ibase));
+    print(I(O::obase));
+    print(I(O::scale));
+    code.emplace_back(O::eof);
+    std::ostringstream output;
+    std::ostringstream errors;
+    GD::Bc::VM vm(output, errors, false);
+    CHECK_FALSE(vm.execute(code));
+    std::string const expected = "text\n42\na\nb\nb[2]\n<ARRAY VALUES>\nibase\nobase\nscale\n";
+    CHECK(output.str() == (stream == I::Stream::output ? expected : ""));
+    CHECK(errors.str() == (stream == I::Stream::error ? expected : ""));
+  }
+}
