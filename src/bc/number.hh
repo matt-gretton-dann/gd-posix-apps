@@ -574,7 +574,13 @@ public:
     BasicDigits result =
       multiply(digits_->begin(), digits_->end(), rhs.digits_->begin(), rhs.digits_->end());
     std::swap(*this, result);
-    div_pow10(rescale);
+    if (rescale != 0) {
+      div_pow10(rescale);
+    }
+    else {
+      // A zero decimal shift only needs to trim the product's spare limbs.
+      tidy();
+    }
   }
 
   /** \brief      Multiply-accumulate of over the underlying digits.
@@ -622,7 +628,10 @@ public:
     }
 
     /* Now we have to multply by a number < base so can just use mac.  */
-    mac(static_cast<NumType>(pow10(scale % base_log10_)), 0);
+    auto const fractional_shift = scale % base_log10_;
+    if (fractional_shift != 0) {
+      mac(static_cast<NumType>(pow10(fractional_shift)), 0);
+    }
 
     tidy();
   }

@@ -7,6 +7,7 @@
 
 #include <array>
 #include <cstdint>
+#include <sstream>
 #include <string>
 
 #include "bc.hh"
@@ -164,4 +165,32 @@ TEMPLATE_TEST_CASE("Knuth normalization can promote inline storage before quotie
   CHECK(remainder == Number(std::string(width, '9'), 10));
   CHECK(numerator == Number(numerator_text, 10));
   CHECK(divisor == Number(divisor_text, 10));
+}
+
+TEMPLATE_TEST_CASE("Zero rescale and whole-limb shifts retain normalized coefficients",
+                   "[bc][number][storage]", GD::Bc::NumberTraits8, GD::Bc::NumberTraits16,
+                   GD::Bc::NumberTraits32)
+{
+  using Digits = GD::Bc::Details::BasicDigits<TestType>;
+  using Limb = typename Digits::NumType;
+  auto show = [](Digits const& digits) {
+    std::ostringstream output;
+    digits.debug(output);
+    return output.str();
+  };
+  Digits const original(static_cast<Limb>(Digits::base_ + 1));
+  // Force the two-limb base case, whose spare output slots need trimming.
+  Digits::multiply_split_point(3);
+  auto product = original;
+  product.multiply(original, 0);
+  CHECK(show(product) == "{1, 2, 1}");
+  auto shifted = original;
+  auto const shift = static_cast<Limb>(2 * Digits::base_log10_);
+  shifted.mul_pow10(shift);
+  CHECK(show(shifted) == "{0, 0, 1, 1}");
+  shifted.div_pow10(shift);
+  CHECK(show(shifted) == "{1, 1}");
+  shifted.mul_pow10(0);
+  CHECK(show(shifted) == "{1, 1}");
+  CHECK(show(original) == "{1, 1}");
 }
