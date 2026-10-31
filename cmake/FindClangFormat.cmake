@@ -3,7 +3,7 @@
 # \author Copyright 2020, Matthew Gretton-Dann
 #         SPDX-License-Identifier: Apache-2.0
 
-option(RUN_CLANG_FORMAT "Add clang-format target to format sources" ON)
+option(RUN_CLANG_FORMAT "Add clang-format target to format sources" OFF)
 
 if(CMAKE_VERSION VERSION_LESS 3.17)
   set(_cf_CHECK_START STATUS)

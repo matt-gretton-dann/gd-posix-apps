@@ -60,6 +60,11 @@ The following options can be passed to CMake to change the build behaviour:
 | `BUILD_TESTING` | BOOL | ON | Is testing enabled? |
 | `CMAKE_INSTALL_PREFIX` | STRING | /usr/local | Where to install things to. |
 | `FORCE_SUPPLEMENTAL_LIBRARY` | BOOL | OFF | Force use of the [standard supplemental](./libgdsup/index.md) library even in cases where it is not needed. |
+| `RUN_CLANG_FORMAT` | BOOL | OFF | Check source formatting during the build. |
+| `RUN_CLANG_TIDY` | BOOL | OFF | Run clang-tidy during compilation. |
+
+Style checks are opt-in because their diagnostics and formatting rules vary
+between tool versions. Compiler warnings remain enabled and are treated as errors.
 
 To specify these options either use `ccmake` to set them graphically or add `-D<OPT>:<TYPE>=<VALUE>`
 to the `cmake` command line.  For instance:
