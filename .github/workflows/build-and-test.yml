@@ -6,6 +6,9 @@ on:
     # The branches below must be a subset of the branches above
     branches: [ main ]
 
+env:
+  CTEST_OUTPUT_ON_FAILURE: "1"
+
 jobs:
   posix-build:
     name: Build and test on ${{ matrix.os }} - extensions enabled - ${{matrix.extensions}}
