@@ -1,0 +1,156 @@
+#!/usr/bin/env python3
+"""Collect checked release CPU/RSS diagnostics separately from benchmark timings.
+
+Darwin sample and native time adapters are optional. Other hosts retain an
+explicit unavailable status rather than invented CPU/RSS observations.
+Python 3.6+; SPDX-License-Identifier: Apache-2.0
+"""
+import argparse
+import importlib.util
+import json
+import math
+from pathlib import Path
+import platform
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+
+
+def load_benchmark():
+    path = Path(__file__).with_name('bench-bc.py')
+    spec = importlib.util.spec_from_file_location('bc_benchmark', str(path))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def check(bench, case, repetitions, status, stdout, stderr):
+    if status != 0 or stderr:
+        raise bench.BenchmarkError('{} diagnostic child failed: {} {}'.format(
+            case['name'], status, stderr.decode('utf-8', errors='replace')[:500]))
+    expected = ('\n'.join(case['expected'] * repetitions) + '\n').encode('utf-8')
+    if bench.canonical_output(stdout) != bench.canonical_output(expected):
+        raise bench.BenchmarkError(case['name'] + ' diagnostic output is incorrect')
+
+
+def cpu_profile(bench, tool, case, repetitions, root, timeout):
+    source = (case['program'] * repetitions).encode('utf-8')
+    output = root / (case['name'] + '.sample.txt')
+    environment = bench.environment()
+    environment.pop('GD_BC_PROFILE_OUTPUT', None)
+    with tempfile.TemporaryFile() as incoming, tempfile.TemporaryFile() as outgoing, \
+            tempfile.TemporaryFile() as errors:
+        incoming.write(source)
+        incoming.seek(0)
+        with subprocess.Popen(tool['argv'], stdin=incoming, stdout=outgoing, stderr=errors,
+                              env=environment) as child:
+            try:
+                if platform.system() == 'Darwin' and Path('/usr/bin/sample').is_file():
+                    command = ['/usr/bin/sample', str(child.pid), '3', '1', '-mayDie',
+                               '-file', str(output)]
+                    sampled = subprocess.run(command, stdout=subprocess.PIPE,
+                                             stderr=subprocess.STDOUT, timeout=10)
+                    (root / (case['name'] + '.sampler.log')).write_bytes(sampled.stdout)
+                    sampling = {'status': 'collected' if sampled.returncode == 0 and
+                                output.is_file() else 'unavailable', 'argv': command,
+                                'returncode': sampled.returncode, 'repetitions': repetitions}
+                else:
+                    sampling = {'status': 'unavailable', 'reason': 'no native sampling adapter',
+                                'repetitions': repetitions}
+                child.wait(timeout=timeout)
+            except (subprocess.TimeoutExpired, OSError):
+                child.kill()
+                child.wait()
+                raise
+            outgoing.seek(0)
+            errors.seek(0)
+            check(bench, case, repetitions, child.returncode, outgoing.read(), errors.read())
+    return sampling
+
+
+def rss_profile(bench, tool, case, root, timeout):
+    report = root / (case['name'] + '.rss.txt')
+    system = platform.system()
+    if not Path('/usr/bin/time').is_file() or system not in ('Darwin', 'Linux'):
+        return {'status': 'unavailable', 'reason': 'no native per-process memory adapter'}
+    if system == 'Darwin':
+        command = ['/usr/bin/time', '-l', '-o', str(report)] + tool['argv']
+        pattern = r'^\s*(\d+)\s+maximum resident set size\s*$'
+        unit = 'bytes (Darwin ru_maxrss)'
+    else:
+        command = ['/usr/bin/time', '-f', 'MAX_RSS_KIB=%M', '-o', str(report), '--'] + tool['argv']
+        pattern = r'^MAX_RSS_KIB=(\d+)\s*$'
+        unit = 'KiB (GNU time %M)'
+    environment = bench.environment()
+    environment.pop('GD_BC_PROFILE_OUTPUT', None)
+    child = subprocess.run(command, input=case['program'].encode('utf-8'),
+                           stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                           env=environment, timeout=timeout)
+    check(bench, case, 1, child.returncode, child.stdout, child.stderr)
+    match = re.search(pattern, report.read_text(encoding='utf-8'), re.MULTILINE)
+    if not match:
+        return {'status': 'unavailable', 'reason': 'native memory report has no supported RSS field',
+                'argv': command}
+    return {'status': 'collected', 'peak_rss_native': int(match.group(1)),
+            'native_unit': unit, 'argv': command, 'repetitions': 1}
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--config', type=Path, required=True)
+    parser.add_argument('--implementation', required=True)
+    parser.add_argument('--summary', type=Path, required=True, help='checked release summary for repeats')
+    parser.add_argument('--output', type=Path, required=True, help='fresh diagnostics directory')
+    parser.add_argument('--workload', action='append', required=True)
+    parser.add_argument('--timeout', type=float, default=60)
+    args = parser.parse_args()
+    if not math.isfinite(args.timeout) or args.timeout <= 0:
+        parser.error('--timeout must be finite and positive')
+    root = args.output.resolve()
+    try:
+        root.mkdir(parents=True, exist_ok=False)
+    except OSError as error:
+        parser.error('cannot create fresh diagnostics directory: ' + str(error))
+    bench = load_benchmark()
+    manifest = {'schema': 1, 'purpose': 'diagnostic attribution; not timing results',
+                'collector_sha256': bench.digest_file(__file__), 'platform': platform.platform(),
+                'hardware_counters': {'status': 'not collected',
+                                      'reason': 'no hardware counter adapter; do not infer counts'},
+                'workloads': [], 'status': 'incomplete'}
+    try:
+        tools = bench.implementations(args.config, require_provenance=True)
+        tool = next((item for item in tools if item['name'] == args.implementation), None)
+        if tool is None or tool['role'] == 'installed':
+            raise bench.BenchmarkError('select a source-built release implementation')
+        manifest['implementation'] = tool
+        summary = json.loads(args.summary.read_text(encoding='utf-8'))
+        observations = {row['name']: row for row in summary['workloads']}
+        cases = bench.corpus('full', args.workload, seed=197200)
+        for case in cases:
+            median = observations[case['name']]['implementations'][tool['name']]['median_seconds']
+            repetitions = max(1, min(10000, int(math.ceil(5 / max(median, 0.000001)))))
+            # Bound repeated-source memory independently of the child deadline.
+            repetitions = min(repetitions, max(1, 64 * 1024 * 1024 //
+                                               len(case['program'].encode('utf-8'))))
+            (root / (case['name'] + '.bc')).write_text(case['program'], encoding='utf-8')
+            row = {'name': case['name'], 'parameters': case['parameters'],
+                   'program_sha256': bench.hashlib.sha256(case['program'].encode('utf-8')).hexdigest(),
+                   'cpu': cpu_profile(bench, tool, case, repetitions, root, args.timeout),
+                   'memory': rss_profile(bench, tool, case, root, args.timeout), 'checked': True}
+            manifest['workloads'].append(row)
+            bench.write_json(root / 'manifest.json', manifest)
+            print(case['name'] + ': checked CPU/RSS diagnostic', flush=True)
+        manifest['status'] = 'all diagnostic children checked; availability is per measurement'
+        return 0
+    except (bench.BenchmarkError, OSError, ValueError, KeyError, subprocess.TimeoutExpired) as error:
+        manifest['failure'] = str(error)
+        print('Diagnostics failed: ' + str(error), file=sys.stderr)
+        return 1
+    finally:
+        bench.write_json(root / 'manifest.json', manifest)
+
+
+if __name__ == '__main__':
+    sys.exit(main())

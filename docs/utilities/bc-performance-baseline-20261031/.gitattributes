@@ -1,0 +1,4 @@
+# Preserve native evidence formatting: CSV writers emit CRLF, and size prints
+# a trailing space after its virtual zero-fill description.
+*.csv -text whitespace=cr-at-eol
+gd-code-size.txt -text whitespace=-blank-at-eol

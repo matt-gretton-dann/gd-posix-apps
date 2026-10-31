@@ -1,0 +1,2268 @@
+{
+  "performance_gate": "advisory; no aggregate or hard timing threshold",
+  "reference": "howard-7.0.3",
+  "schema": 1,
+  "workloads": [
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            0.6924058598094992,
+            0.8167189945394076
+          ],
+          "median_paired_ratio": 0.7941372722987167,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.7959727087558369
+        },
+        "gd": {
+          "ci95": [
+            0.9126063661993863,
+            1.11092569447591
+          ],
+          "median_paired_ratio": 1.059302541318185,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.0648180598319459
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            0.9433302768458459,
+            1.3747753277618902
+          ],
+          "median_paired_ratio": 1.0094789042858403,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.0740229563485355
+        }
+      },
+      "group": "startup",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 7.383301272056997e-05,
+          "max_seconds": 0.0023933750053402036,
+          "median_seconds": 0.0022482909844256938,
+          "min_seconds": 0.0021570420067291707,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 7.445798837579787e-05,
+          "max_seconds": 0.0035749999806284904,
+          "median_seconds": 0.0030076669936534017,
+          "min_seconds": 0.0028381249867379665,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.0003955419815611094,
+          "max_seconds": 0.004057750018546358,
+          "median_seconds": 0.003033666987903416,
+          "min_seconds": 0.0026381250063423067,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.0001069169957190752,
+          "max_seconds": 0.003481416992144659,
+          "median_seconds": 0.002824583003530279,
+          "min_seconds": 0.0027162079932168126,
+          "samples": 9
+        }
+      },
+      "name": "startup",
+      "parameters": {}
+    },
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            1.0901151028697749,
+            1.1158406133256524
+          ],
+          "median_paired_ratio": 1.110683192809032,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.1108249323656123
+        },
+        "gd": {
+          "ci95": [
+            2.0327131408747996,
+            2.092278544189665
+          ],
+          "median_paired_ratio": 2.073756339104311,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 2.071330294651169
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            1.3312472463861673,
+            1.384887491865433
+          ],
+          "median_paired_ratio": 1.3545993884453587,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.3517720781906077
+        }
+      },
+      "group": "loop",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 0.0003818330296780914,
+          "max_seconds": 0.2148565410170704,
+          "median_seconds": 0.21283975002006628,
+          "min_seconds": 0.21187225001631305,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 0.002273375022923574,
+          "max_seconds": 0.4071526250045281,
+          "median_seconds": 0.396877500024857,
+          "min_seconds": 0.3941332920221612,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.001481875020544976,
+          "max_seconds": 0.27242720799404196,
+          "median_seconds": 0.25900645801448263,
+          "min_seconds": 0.25690224999561906,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00128825000138022,
+          "max_seconds": 0.1957781669916585,
+          "median_seconds": 0.19160512500093319,
+          "min_seconds": 0.1901112500054296,
+          "samples": 9
+        }
+      },
+      "name": "loop_1000000",
+      "parameters": {
+        "iterations": 1000000
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            1.106452791722415,
+            1.1560684408330582
+          ],
+          "median_paired_ratio": 1.1229443867868623,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.1209154226419376
+        },
+        "gd": {
+          "ci95": [
+            2.437227037308776,
+            2.510357844101555
+          ],
+          "median_paired_ratio": 2.476872539058196,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 2.4905946449667122
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            1.4330571687493208,
+            1.546207884241983
+          ],
+          "median_paired_ratio": 1.452958261007967,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.4541919550852822
+        }
+      },
+      "group": "calls",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 0.00031787503394298255,
+          "max_seconds": 0.09029787499457598,
+          "median_seconds": 0.08442295901477337,
+          "min_seconds": 0.08410508398083039,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 0.0015721669769845903,
+          "max_seconds": 0.21484200001577847,
+          "median_seconds": 0.18758183301542886,
+          "min_seconds": 0.18274216700228862,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.0005309170228429139,
+          "max_seconds": 0.1205981669772882,
+          "median_seconds": 0.10952404199633747,
+          "min_seconds": 0.10899312497349456,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00033654100843705237,
+          "max_seconds": 0.11768083300557919,
+          "median_seconds": 0.07531608300632797,
+          "min_seconds": 0.0747473330120556,
+          "samples": 9
+        }
+      },
+      "name": "calls_200000",
+      "parameters": {
+        "iterations": 200000
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            1.0886854532877959,
+            1.1089726115623404
+          ],
+          "median_paired_ratio": 1.098347143118846,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.092183838214666
+        },
+        "gd": {
+          "ci95": [
+            2.1306401549599263,
+            2.1915023404999037
+          ],
+          "median_paired_ratio": 2.155178082245384,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 2.1438708940979003
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            1.1561848878523164,
+            1.1771226443912628
+          ],
+          "median_paired_ratio": 1.1671839931784638,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.1676580413480395
+        }
+      },
+      "group": "array",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 0.0006182089855428785,
+          "max_seconds": 0.1113093750027474,
+          "median_seconds": 0.103978041006485,
+          "min_seconds": 0.10335270798532292,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 0.001589666004292667,
+          "max_seconds": 0.2246627080021426,
+          "median_seconds": 0.20410070900106803,
+          "min_seconds": 0.202281750011025,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.00041091698221862316,
+          "max_seconds": 0.12099695799406618,
+          "median_seconds": 0.11116333300014958,
+          "min_seconds": 0.10871920897625387,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.0008441670215688646,
+          "max_seconds": 0.09688566700788215,
+          "median_seconds": 0.09520195901859552,
+          "min_seconds": 0.09325266699306667,
+          "samples": 9
+        }
+      },
+      "name": "array_200000",
+      "parameters": {
+        "elements": 200000
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            1.0639199360027065,
+            1.1272887855952862
+          ],
+          "median_paired_ratio": 1.0927684576255186,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.0927684576255186
+        },
+        "gd": {
+          "ci95": [
+            1.4464037417875413,
+            1.5200428314169974
+          ],
+          "median_paired_ratio": 1.4722239424625752,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.4764095644295123
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            1.1259225864217624,
+            1.1946796291751138
+          ],
+          "median_paired_ratio": 1.1590784524265327,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.1514745000757882
+        }
+      },
+      "group": "fibonacci",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 0.0004128329746890813,
+          "max_seconds": 0.04398270801175386,
+          "median_seconds": 0.04154933299287222,
+          "min_seconds": 0.04087908400106244,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 0.0004940410144627094,
+          "max_seconds": 0.05770462498185225,
+          "median_seconds": 0.056136166997021064,
+          "min_seconds": 0.0552522920188494,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.0005400840018410236,
+          "max_seconds": 0.04918366699712351,
+          "median_seconds": 0.043781459011370316,
+          "min_seconds": 0.04323762501007877,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00040099999750964344,
+          "max_seconds": 0.03998033300740644,
+          "median_seconds": 0.038022082997485995,
+          "min_seconds": 0.03723408398218453,
+          "samples": 9
+        }
+      },
+      "name": "fibonacci_1000_x100",
+      "parameters": {
+        "index": 1000,
+        "iterations": 100
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            1.049522631882276,
+            1.0672571753470643
+          ],
+          "median_paired_ratio": 1.0566011951702905,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.060807535680114
+        },
+        "gd": {
+          "ci95": [
+            3.4670055412400886,
+            3.5420544678009587
+          ],
+          "median_paired_ratio": 3.500839860031717,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 3.4999103539073033
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            3.514450666726583,
+            3.6328993529842153
+          ],
+          "median_paired_ratio": 3.5974606724413754,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 3.5801191468790683
+        }
+      },
+      "group": "fibonacci",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 0.00032725001801736653,
+          "max_seconds": 0.06170166700030677,
+          "median_seconds": 0.059142583020729944,
+          "min_seconds": 0.05857695802114904,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 0.0009094170236494392,
+          "max_seconds": 0.20371670799795538,
+          "median_seconds": 0.19512845799908973,
+          "min_seconds": 0.19408320798538625,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.0002820839872583747,
+          "max_seconds": 0.2731846249953378,
+          "median_seconds": 0.19960029199137352,
+          "min_seconds": 0.19865545799257234,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.000431790977017954,
+          "max_seconds": 0.060525625012815,
+          "median_seconds": 0.055752415995812044,
+          "min_seconds": 0.05524287497974001,
+          "samples": 9
+        }
+      },
+      "name": "fibonacci_10000_x10",
+      "parameters": {
+        "index": 10000,
+        "iterations": 10
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            0.9922121215972172,
+            1.0146708144196863
+          ],
+          "median_paired_ratio": 1.0132577664430982,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.9955324321281097
+        },
+        "gd": {
+          "ci95": [
+            1.604565401920729,
+            1.6970898324770827
+          ],
+          "median_paired_ratio": 1.626899495345309,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.5986939275587078
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            7.5000238744021415,
+            7.755219140871475
+          ],
+          "median_paired_ratio": 7.635286578083643,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 7.590458925922139
+        }
+      },
+      "group": "factorial",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 0.000469457998406142,
+          "max_seconds": 0.04033270798390731,
+          "median_seconds": 0.03625733300577849,
+          "min_seconds": 0.03571608301717788,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 0.0004912500153295696,
+          "max_seconds": 0.06378795800264925,
+          "median_seconds": 0.05822450001141988,
+          "min_seconds": 0.05773324999609031,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.002379582991125062,
+          "max_seconds": 0.3257068340026308,
+          "median_seconds": 0.2764448329980951,
+          "min_seconds": 0.2735753750021104,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.0002313750155735761,
+          "max_seconds": 0.03705058401101269,
+          "median_seconds": 0.036420042015379295,
+          "min_seconds": 0.03527629200834781,
+          "samples": 9
+        }
+      },
+      "name": "factorial_1000_x50",
+      "parameters": {
+        "argument": 1000,
+        "iterations": 50
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            0.9884015939480048,
+            1.0093115986373475
+          ],
+          "median_paired_ratio": 1.002505652168062,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.9972780955214596
+        },
+        "gd": {
+          "ci95": [
+            1.6527747497196443,
+            1.6805312330588922
+          ],
+          "median_paired_ratio": 1.6632411934803206,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.6592537033630403
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            11.17041140125359,
+            11.41788774226556
+          ],
+          "median_paired_ratio": 11.291289008031159,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 11.235237634744239
+        }
+      },
+      "group": "factorial",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 0.00040045802597887814,
+          "max_seconds": 0.07909604199812748,
+          "median_seconds": 0.07823924999684095,
+          "min_seconds": 0.07754779097740538,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 0.0005680000176653266,
+          "max_seconds": 0.13377629200113006,
+          "median_seconds": 0.1301730840059463,
+          "min_seconds": 0.12922070801141672,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.0010472920257598162,
+          "max_seconds": 1.170453082973836,
+          "median_seconds": 0.8814357499941252,
+          "min_seconds": 0.8790346670139115,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.0005684590141754597,
+          "max_seconds": 0.07974458299577236,
+          "median_seconds": 0.0784527910000179,
+          "min_seconds": 0.07712595901102759,
+          "samples": 9
+        }
+      },
+      "name": "factorial_5000_x5",
+      "parameters": {
+        "argument": 5000,
+        "iterations": 5
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            1.0590012775304667,
+            1.07640802724075
+          ],
+          "median_paired_ratio": 1.0615503457438409,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.0622175081014484
+        },
+        "gd": {
+          "ci95": [
+            0.9118639651002206,
+            0.9251760972309332
+          ],
+          "median_paired_ratio": 0.9141259662619163,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.9156730619239729
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            3.518100813635871,
+            3.555196418364248
+          ],
+          "median_paired_ratio": 3.5265010605793203,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 3.533333569230471
+        }
+      },
+      "group": "multiply",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 0.00018391699995845556,
+          "max_seconds": 0.10031783298472874,
+          "median_seconds": 0.09681187500245869,
+          "min_seconds": 0.09662795800250024,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 0.000252624973654747,
+          "max_seconds": 0.08443012498901226,
+          "median_seconds": 0.08345562499016523,
+          "min_seconds": 0.08310845898813568,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.0007362499891314656,
+          "max_seconds": 0.32366408401867375,
+          "median_seconds": 0.32203258300432935,
+          "min_seconds": 0.3204445829906035,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00017658399883657694,
+          "max_seconds": 0.09438699999009259,
+          "median_seconds": 0.0911412909917999,
+          "min_seconds": 0.0901843750034459,
+          "samples": 9
+        }
+      },
+      "name": "multiply_100d_x100000",
+      "parameters": {
+        "iterations": 100000,
+        "left_digits": 100,
+        "right_digits": 100,
+        "shape": "repeated"
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            1.008433853065862,
+            1.0275401980493917
+          ],
+          "median_paired_ratio": 1.0205369318972894,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.0205326505229722
+        },
+        "gd": {
+          "ci95": [
+            2.041602313945982,
+            2.091486266380025
+          ],
+          "median_paired_ratio": 2.0799270824719547,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 2.079157917953352
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            4.606180336525923,
+            4.744768681245414
+          ],
+          "median_paired_ratio": 4.653804371684291,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 4.64316020433207
+        }
+      },
+      "group": "multiply",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 0.00024341701646335423,
+          "max_seconds": 0.2071725419955328,
+          "median_seconds": 0.16321195801720023,
+          "min_seconds": 0.1627682910184376,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 0.00021141598699614406,
+          "max_seconds": 0.37916016599047,
+          "median_seconds": 0.3325159999949392,
+          "min_seconds": 0.3322700840071775,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.0064153739949688315,
+          "max_seconds": 0.8931700840184931,
+          "median_seconds": 0.7425722909974866,
+          "min_seconds": 0.7352957499970216,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.0009567080123815686,
+          "max_seconds": 0.18824312501237728,
+          "median_seconds": 0.159928208013298,
+          "min_seconds": 0.15875129197956994,
+          "samples": 9
+        }
+      },
+      "name": "multiply_1000d_x10000",
+      "parameters": {
+        "iterations": 10000,
+        "left_digits": 1000,
+        "right_digits": 1000,
+        "shape": "repeated"
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            1.031658967026241,
+            1.0402993547513766
+          ],
+          "median_paired_ratio": 1.03863519981568,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.0348332403455593
+        },
+        "gd": {
+          "ci95": [
+            10.635723289107894,
+            11.08392834245854
+          ],
+          "median_paired_ratio": 10.983104482022782,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 10.964318709398414
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            6.6261120580577915,
+            6.987586939510059
+          ],
+          "median_paired_ratio": 6.939757192372128,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 6.92096066483761
+        }
+      },
+      "group": "multiply",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 0.0005970839993096888,
+          "max_seconds": 0.1796980409999378,
+          "median_seconds": 0.17129754199413583,
+          "min_seconds": 0.17008424998493865,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 0.006467250030254945,
+          "max_seconds": 1.8453164999955334,
+          "median_seconds": 1.8149405830190517,
+          "min_seconds": 1.8084733329887968,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.0017856660124380141,
+          "max_seconds": 1.2449771669926122,
+          "median_seconds": 1.1456372910179198,
+          "min_seconds": 1.1427943750168197,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.0006726249994244426,
+          "max_seconds": 0.17815083402092569,
+          "median_seconds": 0.16553154200664721,
+          "min_seconds": 0.16384729099809192,
+          "samples": 9
+        }
+      },
+      "name": "multiply_10000d_x1000",
+      "parameters": {
+        "iterations": 1000,
+        "left_digits": 10000,
+        "right_digits": 10000,
+        "shape": "repeated"
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            1.1273994165527863,
+            1.1431870925269492
+          ],
+          "median_paired_ratio": 1.1349488299032555,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.1407977318700546
+        },
+        "gd": {
+          "ci95": [
+            1.4098549681677293,
+            1.4322886664419692
+          ],
+          "median_paired_ratio": 1.4208928410464223,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.4178648722214444
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            3.3762386594498173,
+            4.109638487462554
+          ],
+          "median_paired_ratio": 3.440774644664697,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 3.442713958490979
+        }
+      },
+      "group": "divide_single_limb",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 0.00025108299450948834,
+          "max_seconds": 0.06796087499242276,
+          "median_seconds": 0.05486699999892153,
+          "min_seconds": 0.05413208299432881,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 0.00045020898687653244,
+          "max_seconds": 0.09835791599471122,
+          "median_seconds": 0.06819262501085177,
+          "min_seconds": 0.06774241602397524,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.0017350830021314323,
+          "max_seconds": 0.3499093340069521,
+          "median_seconds": 0.16557833302067593,
+          "min_seconds": 0.16329783300170675,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00010987499263137579,
+          "max_seconds": 0.05713633299455978,
+          "median_seconds": 0.04809529197518714,
+          "min_seconds": 0.04798541698255576,
+          "samples": 9
+        }
+      },
+      "name": "divide_scale100_x100000",
+      "parameters": {
+        "divisor": "7",
+        "iterations": 100000,
+        "scale": 100
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            0.9701339226156506,
+            1.014080778959433
+          ],
+          "median_paired_ratio": 1.0004478427131809,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.9929644742530593
+        },
+        "gd": {
+          "ci95": [
+            0.8554452816619748,
+            0.9107745064379854
+          ],
+          "median_paired_ratio": 0.8836906014939654,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.8780746276354007
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            6.463248041390395,
+            6.901465910593143
+          ],
+          "median_paired_ratio": 6.6744764565713535,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 6.6875256211870235
+        }
+      },
+      "group": "divide_single_limb",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 0.00015179201727733016,
+          "max_seconds": 0.020548458996927366,
+          "median_seconds": 0.020141207991400734,
+          "min_seconds": 0.019909875001758337,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 0.0002372919989284128,
+          "max_seconds": 0.018495249998522922,
+          "median_seconds": 0.01781079199281521,
+          "min_seconds": 0.017551458004163578,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.0021611659904010594,
+          "max_seconds": 0.16218362501240335,
+          "median_seconds": 0.1356492079794407,
+          "min_seconds": 0.10864204101380892,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00027379102539271116,
+          "max_seconds": 0.02115616700029932,
+          "median_seconds": 0.020283916004700586,
+          "min_seconds": 0.019861542008584365,
+          "samples": 9
+        }
+      },
+      "name": "divide_scale1000_x10000",
+      "parameters": {
+        "divisor": "7",
+        "iterations": 10000,
+        "scale": 1000
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            0.9428078951657091,
+            1.004685455882545
+          ],
+          "median_paired_ratio": 0.9949696365067445,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.9971738267474074
+        },
+        "gd": {
+          "ci95": [
+            0.7111731606507058,
+            0.7306033646603518
+          ],
+          "median_paired_ratio": 0.723716780478481,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.7280772155181701
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            7.6330710972812605,
+            7.948146676512634
+          ],
+          "median_paired_ratio": 7.817490199748253,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 7.914639216395892
+        }
+      },
+      "group": "divide_single_limb",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 0.00037129197153262794,
+          "max_seconds": 0.0420152910228353,
+          "median_seconds": 0.03956166698480956,
+          "min_seconds": 0.03915475000394508,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 0.0003711259923875332,
+          "max_seconds": 0.03195433400105685,
+          "median_seconds": 0.028885584004456177,
+          "min_seconds": 0.028491584002040327,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.002873207995435223,
+          "max_seconds": 0.33967804099665955,
+          "median_seconds": 0.3140037499833852,
+          "min_seconds": 0.302832874993328,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00029662498855032027,
+          "max_seconds": 0.04456399998161942,
+          "median_seconds": 0.03967379199457355,
+          "min_seconds": 0.03936841699760407,
+          "samples": 9
+        }
+      },
+      "name": "divide_scale5000_x5000",
+      "parameters": {
+        "divisor": "7",
+        "iterations": 5000,
+        "scale": 5000
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            0.9883957802886701,
+            1.0369714095353126
+          ],
+          "median_paired_ratio": 1.0231511895662053,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.0316747510910995
+        },
+        "gd": {
+          "ci95": [
+            0.6868677522979133,
+            0.7164304968997924
+          ],
+          "median_paired_ratio": 0.7054261054191493,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.7127711022374106
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            8.407038228833564,
+            8.802612440790467
+          ],
+          "median_paired_ratio": 8.752349045963337,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 8.751195238374459
+        }
+      },
+      "group": "sqrt",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 0.0007850000110920519,
+          "max_seconds": 0.08830800000578165,
+          "median_seconds": 0.08159958300529979,
+          "min_seconds": 0.08054420902044512,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 0.0006599999906029552,
+          "max_seconds": 0.060702749993652105,
+          "median_seconds": 0.056376124994130805,
+          "min_seconds": 0.05545725001138635,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.002574915997684002,
+          "max_seconds": 0.8698901660100091,
+          "median_seconds": 0.6921695829951204,
+          "min_seconds": 0.6890551250253338,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00043954295688308775,
+          "max_seconds": 0.11746766598662362,
+          "median_seconds": 0.0790942910243757,
+          "min_seconds": 0.07863229099893942,
+          "samples": 9
+        }
+      },
+      "name": "sqrt_scale100_x5000",
+      "parameters": {
+        "iterations": 5000,
+        "scale": 100
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            0.9496426102766277,
+            1.1639077939919011
+          ],
+          "median_paired_ratio": 0.966983037812731,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.9584883885925546
+        },
+        "gd": {
+          "ci95": [
+            0.9079894864057763,
+            1.4912865749734467
+          ],
+          "median_paired_ratio": 0.942139727203204,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.9311291687166818
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            11.184683214344744,
+            11.390347047113258
+          ],
+          "median_paired_ratio": 11.229431777113374,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 11.251667480044237
+        }
+      },
+      "group": "sqrt",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 0.0002648750087246299,
+          "max_seconds": 0.07907199999317527,
+          "median_seconds": 0.04713462499785237,
+          "min_seconds": 0.046699625003384426,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 0.0010118329955730587,
+          "max_seconds": 0.08801125001627952,
+          "median_seconds": 0.045789208001224324,
+          "min_seconds": 0.04465129098389298,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.002636708988575265,
+          "max_seconds": 0.6026086669880897,
+          "median_seconds": 0.5533120000036433,
+          "min_seconds": 0.5498860829975456,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.0004207500023767352,
+          "max_seconds": 0.05194925001705997,
+          "median_seconds": 0.04917600000044331,
+          "min_seconds": 0.04860129201551899,
+          "samples": 9
+        }
+      },
+      "name": "sqrt_scale1000_x50",
+      "parameters": {
+        "iterations": 50,
+        "scale": 1000
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            0.9555597056487147,
+            0.9777051373922632
+          ],
+          "median_paired_ratio": 0.9724333142040292,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.9723270293648841
+        },
+        "gd": {
+          "ci95": [
+            0.8433247153110467,
+            0.8753939876621993
+          ],
+          "median_paired_ratio": 0.8558537403994511,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.8639435193820887
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            9.38755919186189,
+            9.58385493633681
+          ],
+          "median_paired_ratio": 9.523794587444192,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 9.518772112484799
+        }
+      },
+      "group": "sqrt",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 0.000354000017978251,
+          "max_seconds": 0.13338112499332055,
+          "median_seconds": 0.13263091698172502,
+          "min_seconds": 0.13201404100982472,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 0.0015639589983038604,
+          "max_seconds": 0.12219125000410713,
+          "median_seconds": 0.11784679201082326,
+          "min_seconds": 0.11610112502239645,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.00222491699969396,
+          "max_seconds": 1.3118614169943612,
+          "median_seconds": 1.2984144590154756,
+          "min_seconds": 1.2961895420157816,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.0007503329834435135,
+          "max_seconds": 0.1401258750120178,
+          "median_seconds": 0.1364056669990532,
+          "min_seconds": 0.13554670798475854,
+          "samples": 9
+        }
+      },
+      "name": "sqrt_scale5000_x5",
+      "parameters": {
+        "iterations": 5,
+        "scale": 5000
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            0.9601821212741406,
+            0.9881061444537751
+          ],
+          "median_paired_ratio": 0.9812255343368097,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.9842052993309321
+        },
+        "gd": {
+          "ci95": [
+            1.0021791345170503,
+            1.0339523722571025
+          ],
+          "median_paired_ratio": 1.0290217003526414,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.0311075356232347
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            7.615557662928936,
+            8.29093472572344
+          ],
+          "median_paired_ratio": 7.8716446007131715,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 7.8854961677672675
+        }
+      },
+      "group": "multiply",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 0.0007121249800547957,
+          "max_seconds": 0.1650879579829052,
+          "median_seconds": 0.1631415830051992,
+          "min_seconds": 0.16228483300074004,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 0.000629791000392288,
+          "max_seconds": 0.1844777090009302,
+          "median_seconds": 0.170916083996417,
+          "min_seconds": 0.17027575001702644,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.013161626033252105,
+          "max_seconds": 1.6653140829876065,
+          "median_seconds": 1.3070975420123432,
+          "min_seconds": 1.2935558340104762,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00022237497614696622,
+          "max_seconds": 0.3432335410034284,
+          "median_seconds": 0.16575970797566697,
+          "min_seconds": 0.16536891600117087,
+          "samples": 9
+        }
+      },
+      "name": "multiply_dense_1000d_x5000",
+      "parameters": {
+        "iterations": 5000,
+        "left_digits": 1000,
+        "right_digits": 1000,
+        "shape": "seeded_dense"
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            0.9596733733629614,
+            0.9825472163721078
+          ],
+          "median_paired_ratio": 0.9776403999238558,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.9783675824059822
+        },
+        "gd": {
+          "ci95": [
+            1.415501692714603,
+            1.4307952913083035
+          ],
+          "median_paired_ratio": 1.4217403158113813,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.4228802958468119
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            7.994950531208761,
+            8.079858740429177
+          ],
+          "median_paired_ratio": 8.02040505332287,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 8.020655909129232
+        }
+      },
+      "group": "multiply",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 0.0006398329860530794,
+          "max_seconds": 0.6353606250195298,
+          "median_seconds": 0.6321592500025872,
+          "min_seconds": 0.6313103330030572,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 0.0025660840037744492,
+          "max_seconds": 0.9448397500091232,
+          "median_seconds": 0.9193752499995753,
+          "min_seconds": 0.9160847079765517,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.02568216700456105,
+          "max_seconds": 5.659594625001773,
+          "median_seconds": 5.18244054200477,
+          "min_seconds": 5.156758375000209,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00215612500323914,
+          "max_seconds": 1.179060374997789,
+          "median_seconds": 0.6461367500014603,
+          "min_seconds": 0.6428750419872813,
+          "samples": 9
+        }
+      },
+      "name": "multiply_dense_10000d_x500",
+      "parameters": {
+        "iterations": 500,
+        "left_digits": 10000,
+        "right_digits": 10000,
+        "shape": "seeded_dense"
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            0.9651931904833055,
+            0.9774319366535381
+          ],
+          "median_paired_ratio": 0.9731166713521852,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.9745568305881808
+        },
+        "gd": {
+          "ci95": [
+            0.7716056454864655,
+            0.7829855770430223
+          ],
+          "median_paired_ratio": 0.7753829731490333,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.779354978099866
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            14.93262459375188,
+            15.540808937240786
+          ],
+          "median_paired_ratio": 14.986314843866285,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 14.988316818422884
+        }
+      },
+      "group": "multiply",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 0.0003966659714933485,
+          "max_seconds": 0.11089087498839945,
+          "median_seconds": 0.10973249998642132,
+          "min_seconds": 0.1091526249947492,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 0.0003752910124603659,
+          "max_seconds": 0.08893416600767523,
+          "median_seconds": 0.08775329199852422,
+          "min_seconds": 0.08715033301268704,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.004933666990837082,
+          "max_seconds": 3.5518027500074822,
+          "median_seconds": 1.6876444999943487,
+          "min_seconds": 1.6827108330035117,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.0001949580037035048,
+          "max_seconds": 0.11469708400545642,
+          "median_seconds": 0.11259733300539665,
+          "min_seconds": 0.11240237500169314,
+          "samples": 9
+        }
+      },
+      "name": "multiply_unbalanced_10000d_100d_x2000",
+      "parameters": {
+        "iterations": 2000,
+        "left_digits": 10000,
+        "right_digits": 100,
+        "shape": "unbalanced"
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            1.0167102192571194,
+            1.0318642444039794
+          ],
+          "median_paired_ratio": 1.0238543794626562,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.025988096431822
+        },
+        "gd": {
+          "ci95": [
+            11.787506718838433,
+            12.003771914373507
+          ],
+          "median_paired_ratio": 11.900772303003414,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 11.924350457700115
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            12.769074347018652,
+            12.972367532131528
+          ],
+          "median_paired_ratio": 12.92573094643463,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 12.892337299815361
+        }
+      },
+      "group": "multiply",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 0.00014966700109653175,
+          "max_seconds": 0.09534624998923391,
+          "median_seconds": 0.0916212500014808,
+          "min_seconds": 0.09143070800928399,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 0.003359041002113372,
+          "max_seconds": 1.1020356249937322,
+          "median_seconds": 1.0648504580021836,
+          "min_seconds": 1.0604438330046833,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.0013317920092958957,
+          "max_seconds": 1.2143091250036377,
+          "median_seconds": 1.1512921669927891,
+          "min_seconds": 1.1499603749834932,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.0005442920082714409,
+          "max_seconds": 0.13705504199606366,
+          "median_seconds": 0.0893004999961704,
+          "min_seconds": 0.0886469160031993,
+          "samples": 9
+        }
+      },
+      "name": "multiply_sparse_10000d_x1000",
+      "parameters": {
+        "iterations": 1000,
+        "left_digits": 10000,
+        "right_digits": 10000,
+        "shape": "sparse"
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            0.9321457164497364,
+            0.965795722973232
+          ],
+          "median_paired_ratio": 0.9591048065670136,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.9548480064435991
+        },
+        "gd": {
+          "ci95": [
+            0.8665427011042572,
+            0.9098614895428928
+          ],
+          "median_paired_ratio": 0.8964485797037793,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.8918625633994314
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            54.132069503574755,
+            57.59881056186637
+          ],
+          "median_paired_ratio": 57.03153491781851,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 57.1283560979547
+        }
+      },
+      "group": "divide_multilimb",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 0.00015745899872854352,
+          "max_seconds": 0.016331999999238178,
+          "median_seconds": 0.015197083004750311,
+          "min_seconds": 0.014734000025782734,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 0.00013745797332376242,
+          "max_seconds": 0.016091708006570116,
+          "median_seconds": 0.014194625022355467,
+          "min_seconds": 0.01386420798371546,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.001766291999956593,
+          "max_seconds": 0.9110045830020681,
+          "median_seconds": 0.9092382910021115,
+          "min_seconds": 0.9057315000100061,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00017345900414511561,
+          "max_seconds": 0.016919666988542303,
+          "median_seconds": 0.01591570899472572,
+          "min_seconds": 0.0156190000125207,
+          "samples": 9
+        }
+      },
+      "name": "divide_multilimb_900d_450d_s100_x1000",
+      "parameters": {
+        "dividend_digits": 900,
+        "divisor_digits": 450,
+        "iterations": 1000,
+        "scale": 100
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            0.9605183885212696,
+            0.9967318790050275
+          ],
+          "median_paired_ratio": 0.9720609299057387,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.9767081999482834
+        },
+        "gd": {
+          "ci95": [
+            0.9435259519308429,
+            0.9738250317622852
+          ],
+          "median_paired_ratio": 0.9469775576212228,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.9583709524697476
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            42.28832966099858,
+            43.72541597561324
+          ],
+          "median_paired_ratio": 43.43772385236389,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 43.482776640315016
+        }
+      },
+      "group": "divide_multilimb",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 0.00023179201525636017,
+          "max_seconds": 0.043136042018886656,
+          "median_seconds": 0.03844083400326781,
+          "min_seconds": 0.037867291015572846,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 0.0004484160162974149,
+          "max_seconds": 0.03921304197865538,
+          "median_seconds": 0.03771912501542829,
+          "min_seconds": 0.03723374998662621,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.00351595800020732,
+          "max_seconds": 1.7594548339839093,
+          "median_seconds": 1.7113752079894766,
+          "min_seconds": 1.7068834170058835,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.0006245830154512078,
+          "max_seconds": 0.043646209000144154,
+          "median_seconds": 0.03935754200210795,
+          "min_seconds": 0.03866895800456405,
+          "samples": 9
+        }
+      },
+      "name": "divide_multilimb_1000d_900d_s1000_x500",
+      "parameters": {
+        "dividend_digits": 1000,
+        "divisor_digits": 900,
+        "iterations": 500,
+        "scale": 1000
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            0.9799918985992775,
+            0.9946659355723146
+          ],
+          "median_paired_ratio": 0.9911477726815074,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.9883682772606789
+        },
+        "gd": {
+          "ci95": [
+            0.7794539161562453,
+            0.7994623459815333
+          ],
+          "median_paired_ratio": 0.787545887501602,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.7854414995670562
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            36.01032728105661,
+            36.585150543012396
+          ],
+          "median_paired_ratio": 36.413181151323634,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 36.27444496696751
+        }
+      },
+      "group": "modulo",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 0.0005144169845152646,
+          "max_seconds": 0.07355712499702349,
+          "median_seconds": 0.07228974997997284,
+          "min_seconds": 0.07174112502252683,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 0.00015391598572023213,
+          "max_seconds": 0.06558291701367125,
+          "median_seconds": 0.05744758399669081,
+          "min_seconds": 0.05688587500480935,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.004207332996884361,
+          "max_seconds": 2.8146654999873135,
+          "median_seconds": 2.653131041995948,
+          "min_seconds": 2.6470355839992408,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.0004630839976016432,
+          "max_seconds": 0.09552166701178066,
+          "median_seconds": 0.07314049999695271,
+          "min_seconds": 0.07237329200142995,
+          "samples": 9
+        }
+      },
+      "name": "modulo_1000d_350d_x3000",
+      "parameters": {
+        "dividend_digits": 1000,
+        "divisor_digits": 350,
+        "iterations": 3000
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            0.9744876268607735,
+            0.9964583837489467
+          ],
+          "median_paired_ratio": 0.9835700212685371,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.982944231265017
+        },
+        "gd": {
+          "ci95": [
+            2.5556535048399147,
+            2.5837469772562955
+          ],
+          "median_paired_ratio": 2.568068729336009,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 2.5688072860957
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            8.875085882987005,
+            9.02927521539275
+          ],
+          "median_paired_ratio": 8.97887980353943,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 8.969525141142453
+        }
+      },
+      "group": "power",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 0.00020529201719909906,
+          "max_seconds": 0.04424337501404807,
+          "median_seconds": 0.04339150001760572,
+          "min_seconds": 0.042932875017868355,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 0.00037633301690220833,
+          "max_seconds": 0.1153511669836007,
+          "median_seconds": 0.1133984999905806,
+          "min_seconds": 0.11247941700275987,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.0006467500061262399,
+          "max_seconds": 0.39866787497885525,
+          "median_seconds": 0.3959544579847716,
+          "min_seconds": 0.3944446660170797,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.0002562080044299364,
+          "max_seconds": 0.044669541995972395,
+          "median_seconds": 0.04414441698463634,
+          "min_seconds": 0.04365258401958272,
+          "samples": 9
+        }
+      },
+      "name": "power_100d_e17_x1000",
+      "parameters": {
+        "digits": 100,
+        "exponent": 17,
+        "iterations": 1000
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            0.9330431086500002,
+            1.0565099793847204
+          ],
+          "median_paired_ratio": 0.9895565919391965,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.9871509081366743
+        },
+        "gd": {
+          "ci95": [
+            2.1058865705093393,
+            2.2439641793349225
+          ],
+          "median_paired_ratio": 2.2141609616574605,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 2.1906498771170586
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            6.646302400091569,
+            7.054446752033474
+          ],
+          "median_paired_ratio": 6.92633377370386,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 6.9305411452719135
+        }
+      },
+      "group": "power",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 0.0002544999879319221,
+          "max_seconds": 0.024895125010516495,
+          "median_seconds": 0.01716749998740852,
+          "min_seconds": 0.016696875012712553,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 0.0002465000143274665,
+          "max_seconds": 0.046942542016040534,
+          "median_seconds": 0.038097500015283,
+          "min_seconds": 0.03778487499221228,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.00018174998695030808,
+          "max_seconds": 1.6633725409919862,
+          "median_seconds": 0.12052875000517815,
+          "min_seconds": 0.11958575001335703,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00028274900978431106,
+          "max_seconds": 0.020670416997745633,
+          "median_seconds": 0.01739095800439827,
+          "min_seconds": 0.017085500003304332,
+          "samples": 9
+        }
+      },
+      "name": "power_20d_e32_x2000",
+      "parameters": {
+        "digits": 20,
+        "exponent": 32,
+        "iterations": 2000
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            1.046379654671401,
+            1.0926977675502982
+          ],
+          "median_paired_ratio": 1.062276925121948,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.0549074934072118
+        },
+        "gd": {
+          "ci95": [
+            1.5402987382133693,
+            1.6798839402906725
+          ],
+          "median_paired_ratio": 1.6519821404751047,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.659642338095212
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            1.3331524437641895,
+            1.472349712988112
+          ],
+          "median_paired_ratio": 1.4319753771180455,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.4433162518823877
+        }
+      },
+      "group": "literal_base",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 2.3957982193678617e-05,
+          "max_seconds": 0.08531654201215133,
+          "median_seconds": 0.013956249982584268,
+          "min_seconds": 0.013909750006860122,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 0.00020924999262206256,
+          "max_seconds": 0.08174191601574421,
+          "median_seconds": 0.021956790995318443,
+          "min_seconds": 0.0217071249790024,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.0002719990152399987,
+          "max_seconds": 0.05835608398774639,
+          "median_seconds": 0.01909483299823478,
+          "min_seconds": 0.018768415990052745,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00010058301268145442,
+          "max_seconds": 0.07297912499052472,
+          "median_seconds": 0.013229833013610914,
+          "min_seconds": 0.012974583980394527,
+          "samples": 9
+        }
+      },
+      "name": "ibase_literal_flip_20000",
+      "parameters": {
+        "bases": [
+          2,
+          10
+        ],
+        "iterations": 20000
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            1.0457465300918931,
+            1.0769563528149289
+          ],
+          "median_paired_ratio": 1.0678197844814759,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.0593718200586077
+        },
+        "gd": {
+          "ci95": [
+            2.3336614030279157,
+            2.4485614965265015
+          ],
+          "median_paired_ratio": 2.3683967895745592,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 2.339389264071442
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            1.540956799928234,
+            1.5628068067578087
+          ],
+          "median_paired_ratio": 1.5579441052159828,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.5462344608908443
+        }
+      },
+      "group": "recursion",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 6.412499351426959e-05,
+          "max_seconds": 0.02649104199372232,
+          "median_seconds": 0.015605209016939625,
+          "min_seconds": 0.015404499979922548,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 8.43749730847776e-05,
+          "max_seconds": 0.1944848749844823,
+          "median_seconds": 0.034460665978258476,
+          "min_seconds": 0.03435441598412581,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.00010229201870970428,
+          "max_seconds": 0.027066417009336874,
+          "median_seconds": 0.022777000005589798,
+          "min_seconds": 0.02266141600557603,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00020987499738112092,
+          "max_seconds": 0.015590208990033716,
+          "median_seconds": 0.014730625000083819,
+          "min_seconds": 0.014500458986731246,
+          "samples": 9
+        }
+      },
+      "name": "recursion_50_x1000",
+      "parameters": {
+        "depth": 50,
+        "iterations": 1000
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            1.131027612418425,
+            1.159141484985552
+          ],
+          "median_paired_ratio": 1.1398944884878441,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.132814873992172
+        },
+        "gd": {
+          "ci95": [
+            1.9269960573252864,
+            1.985065388492096
+          ],
+          "median_paired_ratio": 1.9441475174603724,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.943277891267537
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            1.6796200143860407,
+            1.7205574811364868
+          ],
+          "median_paired_ratio": 1.6960359638626419,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.6886073910499353
+        }
+      },
+      "group": "array_sparse",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 0.0005424999690148979,
+          "max_seconds": 0.12106133400811814,
+          "median_seconds": 0.11335799997323193,
+          "min_seconds": 0.11263229200267233,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 0.000951208989135921,
+          "max_seconds": 0.20677029099897482,
+          "median_seconds": 0.19445904198801145,
+          "min_seconds": 0.19303891700110398,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.0017939580138772726,
+          "max_seconds": 0.1870310420054011,
+          "median_seconds": 0.16897479101317003,
+          "min_seconds": 0.16697433299850672,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00109741699998267,
+          "max_seconds": 0.11062804199173115,
+          "median_seconds": 0.10006754199275747,
+          "min_seconds": 0.09854645800078288,
+          "samples": 9
+        }
+      },
+      "name": "sparse_array_200000",
+      "parameters": {
+        "iterations": 200000,
+        "keys": 31,
+        "stride": 313
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            0.8554972575148366,
+            1.0349399634862873
+          ],
+          "median_paired_ratio": 0.8958180261765639,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.9079622040706836
+        },
+        "gd": {
+          "ci95": [
+            2.638605987792962,
+            3.655665516350878
+          ],
+          "median_paired_ratio": 3.587701316235428,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 3.5585960729450217
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            0.6019712932285043,
+            0.9045248029388617
+          ],
+          "median_paired_ratio": 0.861661030741333,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.8763327141932726
+        }
+      },
+      "group": "frontend_definition",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 0.00017300000763498247,
+          "max_seconds": 0.015565749985398725,
+          "median_seconds": 0.004750874999444932,
+          "min_seconds": 0.004531167011009529,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 0.0001522919919807464,
+          "max_seconds": 0.023959500016644597,
+          "median_seconds": 0.01862020802218467,
+          "min_seconds": 0.01827999998931773,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.00021475000539794564,
+          "max_seconds": 0.006196542002726346,
+          "median_seconds": 0.004585374990710989,
+          "min_seconds": 0.004323000001022592,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.0001415839942637831,
+          "max_seconds": 0.010293750005075708,
+          "median_seconds": 0.00523245899239555,
+          "min_seconds": 0.005060041992692277,
+          "samples": 9
+        }
+      },
+      "name": "frontend_definitions_2000",
+      "parameters": {
+        "definitions": 2000
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            0.7822754129960968,
+            0.9006161900168905
+          ],
+          "median_paired_ratio": 0.8518199564022095,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.8545148031818187
+        },
+        "gd": {
+          "ci95": [
+            31.762863892419116,
+            37.70026280324407
+          ],
+          "median_paired_ratio": 35.40540270567146,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 35.547376313197624
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            1.3819415188609803,
+            1.6056104125887898
+          ],
+          "median_paired_ratio": 1.4945443263616647,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.4564900736641857
+        }
+      },
+      "group": "decimal_input",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 0.0002929159963969141,
+          "max_seconds": 0.008564499992644414,
+          "median_seconds": 0.004542457987554371,
+          "min_seconds": 0.004238041990902275,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 0.0007547079876530915,
+          "max_seconds": 0.2153439170215279,
+          "median_seconds": 0.1889639159780927,
+          "min_seconds": 0.18773162498837337,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.00024179197498597205,
+          "max_seconds": 0.01095895899925381,
+          "median_seconds": 0.007742457994027063,
+          "min_seconds": 0.007009458000538871,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.000326832989230752,
+          "max_seconds": 0.0068254159996286035,
+          "median_seconds": 0.005315832997439429,
+          "min_seconds": 0.004979583987733349,
+          "samples": 9
+        }
+      },
+      "name": "decimal_input_4000d_x100",
+      "parameters": {
+        "digits": 4000,
+        "literals": 100
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "apple-installed-howard": {
+          "ci95": [
+            1.2023700825134407,
+            1.6004549802019647
+          ],
+          "median_paired_ratio": 1.5608824508856753,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.5507489164080603
+        },
+        "gd": {
+          "ci95": [
+            2.0330755073797997,
+            2.231329980185652
+          ],
+          "median_paired_ratio": 2.1314877792733125,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 2.109783182629994
+        },
+        "gnu-1.08.2": {
+          "ci95": [
+            1.61636237334767,
+            1.8385091725940135
+          ],
+          "median_paired_ratio": 1.6867176454984134,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.6619105887914805
+        }
+      },
+      "group": "decimal_output",
+      "implementations": {
+        "apple-installed-howard": {
+          "mad_seconds": 0.0001366250216960907,
+          "max_seconds": 0.013503124995622784,
+          "median_seconds": 0.007970333012053743,
+          "min_seconds": 0.007777833001455292,
+          "samples": 9
+        },
+        "gd": {
+          "mad_seconds": 0.00017199895228259265,
+          "max_seconds": 0.02562749999924563,
+          "median_seconds": 0.010843582975212485,
+          "min_seconds": 0.010662124986993149,
+          "samples": 9
+        },
+        "gnu-1.08.2": {
+          "mad_seconds": 0.00014170797658152878,
+          "max_seconds": 0.020136249979259446,
+          "median_seconds": 0.00854166698991321,
+          "min_seconds": 0.008381916006328538,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00018375099170953035,
+          "max_seconds": 0.012023292016237974,
+          "median_seconds": 0.005139666987815872,
+          "min_seconds": 0.0048032079939730465,
+          "samples": 9
+        }
+      },
+      "name": "decimal_output_200d_x1000",
+      "parameters": {
+        "digits": 200,
+        "lines": 1000
+      }
+    }
+  ]
+}
