@@ -1024,8 +1024,9 @@ private:
   /** \brief       Iterate over the digits of \c *this & \a rhs calling \a fn.
    *  \param rhs   Right hand side set of digits to iterate over.
    *  \param scale Scale differnce between \c *this & \a rhs.
-   *  \param fn    Function to call, prototype compatable with void Fn(NumType lhs, NumType
-   * rhs);
+   *  \param fn    Policy Fn(iterator lhs, WideType rhs_and_carry) -> WideType.
+   *  It writes the current digit and returns carry/borrow. A zero contribution
+   *  must preserve that digit and return zero, as both add/subtract policies do.
    *
    * \a scale is how many more fractional digits \c *this has compared to \a rhs.
    *
@@ -1039,6 +1040,27 @@ private:
   auto for_each(BasicDigits const& rhs, NumType scale, Fn fn, NumType initial_carry = 0) -> NumType
   {
     assert(digits_ && rhs.digits_);  // NOLINT
+
+    if (scale == 0) {
+      // Capture the source extent before growing the destination. Self-aliases
+      // already have equal extents; distinct shared values were detached by COW.
+      auto const rhs_size = rhs.digits_->size();
+      digits_->resize(std::max(digits_->size(), rhs_size), NumType{0});
+      auto it = digits_->begin();
+      WideType carry = initial_carry;
+      for (typename DigitVector::size_type index = 0; index < rhs_size; ++index) {
+        carry = static_cast<WideType>(fn(it++, carry + (*rhs.digits_)[index]));
+        assert(carry < base_);  // NOLINT
+      }
+      // Both mutable policies are identities for a zero contribution. Higher
+      // destination limbs therefore need no work after carry/borrow is clear.
+      while (carry != 0 && it != digits_->end()) {
+        carry = static_cast<WideType>(fn(it++, carry));
+        assert(carry < base_);  // NOLINT
+      }
+      assert(carry < base_);  // NOLINT
+      return static_cast<NumType>(carry);
+    }
 
     auto it = digits_->begin();
     WideType carry = initial_carry;
