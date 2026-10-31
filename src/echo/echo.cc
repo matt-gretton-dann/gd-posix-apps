@@ -11,6 +11,7 @@
 #include "echo-messages.hh"
 
 #include <cassert>
+#include <algorithm>
 #include <clocale>
 #include <iostream>
 

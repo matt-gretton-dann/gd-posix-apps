@@ -19,6 +19,7 @@
 
 #include "gencat-messages.hh"
 
+#include <algorithm>
 #include <cassert>
 #include <clocale>
 #include <cstdlib>

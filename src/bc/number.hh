@@ -10,6 +10,7 @@
 #include "gd/format.hh"
 #include "gd/string.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <iomanip>
 #include <iterator>

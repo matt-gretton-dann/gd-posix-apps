@@ -12,6 +12,7 @@
 #include "util-messages.hh"
 
 #include <cerrno>
+#include <cstring>
 #include <iostream>
 
 void GD::StreamInputFile::report_error(GD::Util::Msg msg)
