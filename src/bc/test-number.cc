@@ -16,6 +16,7 @@
 #include <utility>
 
 #include "bc.hh"
+#include "benchmark-support.hh"
 
 TEST_CASE("GD::Bc::Number - Number construction, directed", "[bc][number]")
 {
@@ -219,7 +220,8 @@ auto random_pair() -> Catch::Generators::GeneratorWrapper<UInt64Pair>
 class RandomNumberGenerator : public Catch::Generators::IGenerator<GD::Bc::Number>
 {
 public:
-  RandomNumberGenerator() : rand_(Catch::rngSeed() + 1), dist_(0, GD::Bc::Number::base_)
+  RandomNumberGenerator()
+      : rand_(Catch::rngSeed() + 1), dist_(GD::Bc::Bench::limb_distribution<GD::Bc::Number>())
   {
     RandomNumberGenerator::next();
   }
@@ -269,7 +271,8 @@ class RandomNumberPairGenerator
 {
 public:
   explicit RandomNumberPairGenerator(GD::Bc::Number::NumType max_digits = default_max_digits_)
-      : rand_(Catch::rngSeed() + 2), dist_(0, GD::Bc::Number::base_), max_digits_(max_digits)
+      : rand_(Catch::rngSeed() + 2), dist_(GD::Bc::Bench::limb_distribution<GD::Bc::Number>()),
+        max_digits_(max_digits)
   {
     RandomNumberPairGenerator::next();
   }
