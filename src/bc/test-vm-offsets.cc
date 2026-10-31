@@ -118,6 +118,11 @@ auto main(int argc, char** argv) -> int
       code.emplace_back(op, D(-1));
     }
   }
+  else if (mode == "store-number-location") {
+    code.emplace_back(O::number, "1");
+    code.emplace_back(O::number, "2");
+    code.emplace_back(O::store, D(-2), D(-1));
+  }
   else if (mode == "store-number-array" || mode == "store-array-number") {
     if (mode == "store-number-array") {
       code.emplace_back(O::array, GD::Bc::Array('a'));

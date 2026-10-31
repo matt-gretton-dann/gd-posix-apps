@@ -186,3 +186,25 @@ historically ambiguous `=-` adjacency undefined, so a lexer rejection of that
 form must not stand in for a numeric conversion error. Fractional-power cases
 require the existing diagnostic to show the actual positive/negative exponent,
 not the unrelated base operand. Fractional powers remain rejected.
+
+## Verifier decision pairs and direct array length
+
+The coverage follow-up calls the control-flow verifier with its documented
+schema/type/offset prerequisites satisfied. Isolated function-body cases reject
+nested definitions, EOF and extracting/consuming an incoming parameter pack
+while an owned pack is active. A valid acyclic diamond before prologue
+consumption checks an indegree decrement that does not yet reach zero.
+Missing function ends and conditional branches across execution regions have
+specific failure assertions and a valid conditional-branch counterpart.
+
+An operand-2 fixture keeps the first producer dominating while a branch skips
+the second; changing only that branch restores validity. The subprocess suite
+also rejects a numeric store destination before its observable prefix can run.
+A direct VM array-length test checks untouched and sparse arrays with either
+frontend extension mode, including OFF where its source spelling is rejected.
+These tests distinguish the instruction API from the frontend language gate.
+
+Debug ON and Release OFF each pass 26 targeted assertions in five cases and
+all six bounded offset-test methods. Temporarily disabling operand-2 dominance
+makes its new fixture fail; restoring the implementation passes again. No
+production mutation is committed.
