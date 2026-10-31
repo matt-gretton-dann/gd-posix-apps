@@ -83,6 +83,8 @@ class CliTests(unittest.TestCase):
             later = Path(directory) / "later.bc"
             later.write_text("42\n")
             self.run_bc("17\n", files=(Path(directory) / "missing.bc", later), success=False)
+            self.run_bc("17\n", "42\n", files=(later, Path(directory) / "missing.bc"),
+                        success=False)
 
     def test_directory_input_error(self):
         # A directory is a controlled failing input, independent of permissions.
