@@ -44,3 +44,29 @@ Raw line, branch and MC/DC measurements and feasibility classification remain
 separate work in [#214](https://github.com/matt-gretton-dann/gd-posix-apps/issues/214)
 and [#215](https://github.com/matt-gretton-dann/gd-posix-apps/issues/215). No coverage
 percentage is inferred from assertion counts.
+
+## Calibration input and replay
+
+The multiplication tuner and arithmetic generators share a valid limb domain
+`[0, base-1]`; the inclusive radix itself would yield decimal digit 10. Small
+traits test that domain directly, including all base-100 values. Timing helpers
+test normalization at an exact one-second carry and unequal nanosecond operands.
+
+`find-multiply-split-point` uses input seed `197234` by default. To replay a
+different input stream, run:
+
+```sh
+build/src/bc/find-multiply-split-point --seed 197234 output.hh
+```
+
+The seed is flushed to the log before calibration and recorded in the generated
+header. It replays inputs on the same toolchain/trait configuration; measured
+times and the selected threshold still vary with host load. This calibration
+does not establish a portable optimal threshold or a performance win.
+
+Invalid arguments, unavailable CPU clocks and output errors fail explicitly.
+Fast `bc-tuner/cli` checks validate arguments without starting calibration. They
+are separate from production bc coverage; benchmark-support helpers are test/
+calibration code. The old unseeded CI abort cannot be attributed conclusively,
+but invalid generated limbs and incorrect timing are independently reproduced
+and corrected. See [#234](https://github.com/matt-gretton-dann/gd-posix-apps/issues/234).

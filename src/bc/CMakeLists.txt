@@ -80,6 +80,13 @@ target_link_libraries(find-multiply-split-point PUBLIC libbc)
 add_dependencies(find-multiply-split-point "bc_messages_header")
 target_add_clang_format(find-multiply-split-point)
 
+if(RUN_INTEGRATION_TESTS)
+  add_test(NAME bc-tuner/cli COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-tuner-cli.py"
+           "$<TARGET_FILE:find-multiply-split-point>")
+  set_tests_properties(bc-tuner/cli PROPERTIES TIMEOUT 30)
+endif()
+
 
 add_custom_command(
   OUTPUT "find-multiply-split-point.hh"
