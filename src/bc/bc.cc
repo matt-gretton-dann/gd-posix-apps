@@ -72,6 +72,9 @@ auto execute(GD::Bc::VM& vm, std::unique_ptr<GD::Bc::Reader>&& r) -> InputResult
 
 auto main(int argc, char** argv) -> int
 {
+#if GD_BC_PROFILE
+  GD::Bc::Profile::initialize_report();
+#endif
   (void)std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
   GD::Span::span<char*> const args(argv, argc);
   GD::program_name(args[0]);

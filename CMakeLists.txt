@@ -16,6 +16,7 @@ set(FORCE_SUPPLEMENTAL_LIBRARY OFF CACHE BOOL "Force use of libgdsup?")
 set(BUILD_TESTING ON CACHE BOOL "Enable testing")
 set(ENABLE_NON_POSIX_EXTENSIONS ON CACHE BOOL "Enable non-POSIX extensions")
 set(ENABLE_BC_COMPONENT_BENCHMARKS OFF CACHE BOOL "Build separate bc component measurement drivers")
+set(ENABLE_BC_PROFILE OFF CACHE BOOL "Enable separate bc allocation and copy diagnostics")
 set(ENABLE_BC_COVERAGE OFF CACHE BOOL "Instrument bc tests with Clang line, branch and MC/DC coverage")
 
 # Package inclusions
@@ -128,3 +129,16 @@ add_subdirectory(libgdsup)
 # Display summary information
 message(STATUS "Integration testing: ${RUN_INTEGRATION_TESTS}")
 message(STATUS "Unit testing: ${RUN_UNIT_TESTS}")
+
+# Exercise the production-only configuration without downloading test libraries.
+if(BUILD_TESTING)
+  add_test(NAME build/configure-no-tests
+    COMMAND "${CMAKE_COMMAND}"
+      "-DTEST_SOURCE_DIR=${CMAKE_SOURCE_DIR}"
+      "-DTEST_BINARY_DIR=${CMAKE_BINARY_DIR}/configure-no-tests"
+      "-DTEST_GENERATOR=${CMAKE_GENERATOR}"
+      "-DTEST_C_COMPILER=${CMAKE_C_COMPILER}"
+      "-DTEST_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
+      -P "${CMAKE_SOURCE_DIR}/cmake/TestNoTesting.cmake")
+  set_tests_properties(build/configure-no-tests PROPERTIES TIMEOUT 100)
+endif()
