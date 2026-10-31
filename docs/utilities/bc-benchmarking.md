@@ -126,3 +126,6 @@ conversion intervals from the end-to-end corpus, with explicit control costs.
 The [31 October baseline and attribution report](bc-performance-baseline-20261031/README.md)
 retains paired raw samples, A/A noise checks, allocation counts, release CPU
 samples, native memory/counters and explicit platform/measurement limits.
+
+Pinned native build commands, compiler/flag provenance and offline cache options
+are documented in [comparator builds](bc-comparator-builds.md).
