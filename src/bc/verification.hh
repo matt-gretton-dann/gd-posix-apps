@@ -16,6 +16,7 @@ struct VerificationError
 
 // Operand schemas, offset bounds and producer types must be checked first.
 // Function bodies are separate execution regions, including when never called.
+// Marker states must agree at joins and consume the incoming function pack once.
 auto verify_control_flow(Instructions const& code, bool function_body)
   -> std::optional<VerificationError>;
 }  // namespace GD::Bc::Details

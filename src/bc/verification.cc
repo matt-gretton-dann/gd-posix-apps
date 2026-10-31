@@ -102,6 +102,105 @@ auto verify_control_flow(Instructions const& code, bool function_body)
     }
   }
 
+  // Each execution region starts with no owned argument packs. A function
+  // additionally receives one caller-owned pack, consumed by its prologue.
+  // Exact states at joins prevent underflow or accumulation around loops.
+  struct MarkerState
+  {
+    I owned;
+    bool incoming_consumed;
+  };
+  std::vector<std::optional<MarkerState>> states(size + 2);
+  std::vector<I> pending;
+  for (I entry : entries) {
+    bool const incoming = function_body || (entry < size && owner[entry] != 0);
+    states[entry] = MarkerState{0, !incoming};
+    pending.push_back(entry);
+  }
+  for (I cursor = 0; cursor < pending.size(); ++cursor) {
+    I const node = pending[cursor];
+    auto state = *states[node];
+    if (node < size) {
+      switch (code[node].opcode()) {
+      case O::push_param_mark:
+        ++state.owned;
+        break;
+      case O::push_param:
+        if (state.owned == 0) {
+          return VerificationError{node, "parameter push has no argument-pack marker"};
+        }
+        break;
+      case O::call:
+        if (state.owned == 0) {
+          return VerificationError{node, "call has no argument-pack marker"};
+        }
+        --state.owned;
+        break;
+      case O::pop_param:
+      case O::pop_param_array:
+        if (state.incoming_consumed || state.owned != 0) {
+          return VerificationError{node, "parameter extraction is outside the incoming prologue"};
+        }
+        break;
+      case O::pop_param_mark:
+        if (state.incoming_consumed || state.owned != 0) {
+          return VerificationError{node, "incoming parameter marker is absent or already consumed"};
+        }
+        state.incoming_consumed = true;
+        break;
+      default:
+        break;
+      }
+    }
+    if (successors[node].empty() && (state.owned != 0 || !state.incoming_consumed)) {
+      return VerificationError{node, "execution exits with an unconsumed parameter marker"};
+    }
+    for (I destination : successors[node]) {
+      if (!states[destination]) {
+        states[destination] = state;
+        pending.push_back(destination);
+      }
+      else if (states[destination]->owned != state.owned ||
+               states[destination]->incoming_consumed != state.incoming_consumed) {
+        return VerificationError{destination,
+                                 "parameter-marker states disagree at a control-flow join"};
+      }
+    }
+  }
+
+  // A cycle before the incoming pack is consumed can bypass the prologue
+  // forever. Remove acyclic nodes from that subgraph; any remainder is a cycle.
+  // Ordinary function loops after prologue consumption remain valid.
+  std::vector<I> indegree(size + 2, 0);
+  auto unconsumed = [&](I node) { return states[node] && !states[node]->incoming_consumed; };
+  for (I node : pending) {
+    if (unconsumed(node)) {
+      for (I destination : successors[node]) {
+        if (unconsumed(destination)) {
+          ++indegree[destination];
+        }
+      }
+    }
+  }
+  std::vector<I> acyclic;
+  for (I node : pending) {
+    if (unconsumed(node) && indegree[node] == 0) {
+      acyclic.push_back(node);
+    }
+  }
+  for (I cursor = 0; cursor < acyclic.size(); ++cursor) {
+    for (I destination : successors[acyclic[cursor]]) {
+      if (unconsumed(destination) && --indegree[destination] == 0) {
+        acyclic.push_back(destination);
+      }
+    }
+  }
+  for (I node : pending) {
+    if (indegree[node] != 0) {
+      return VerificationError{node, "function can loop before consuming its incoming parameters"};
+    }
+  }
+
   // Iterative DFS avoids making host stack depth depend on source length.
   std::vector<bool> visited(size + 2, false);
   std::vector<std::pair<I, I>> stack{{root, 0}};

@@ -108,7 +108,7 @@ prefix which must never execute, as well as a valid forward-layout producer and
 location printing. Type classification is independent of layout and does not
 assume that every valid result reference is backward. Result types alone do not
 establish availability; the control-flow preflight below checks function regions
-and dominance. Parameter-marker balance remains an obligation of #187 and #215.
+and dominance, then verifies parameter-marker states along execution paths.
 Instruction constructors retain their existing operand-schema preconditions.
 
 ## Function regions and result availability
@@ -139,5 +139,30 @@ A temporary bypass of availability checking is rejected by 602 of the 1,280
 property assertions; restoring the check returns all cases to passing.
 
 The implementation uses iterative graph/tree traversals and linear auxiliary
-storage. Parameter-marker balance and exactly-once function prologue consumption
-remain separate #187 obligations; this stage does not close #187 or #215.
+storage. The following marker pass checks the remaining activation protocol;
+these verifier checks alone do not establish the complete #215 coverage goal.
+
+## Parameter-marker protocol
+
+The outer stream starts with no argument packs. A function starts with one
+incoming caller pack, consumed exactly once by its parameter prologue. Parameter
+extraction is valid only before that consumption, with no nested owned pack.
+Each `push_param_mark` creates an owned argument pack; parameters require such a
+pack and `call` consumes it. A return, fall-through, EOF or quit cannot leave an
+owned pack outstanding or an incoming pack unconsumed.
+
+Every control-flow join requires identical marker states. This rejects growing
+or shrinking packs around loops and paths which bypass or repeat prologue
+consumption. Cycles before incoming-pack consumption are rejected; ordinary
+function loops after the prologue remain valid. Checks are path-sensitive:
+one mark may feed either of two mutually exclusive call instructions, so raw
+global instruction counts are not a substitute for execution balance.
+
+The isolated verifier suite checks missing marks, underflow, invalid joins,
+uncalled malformed definitions, repeated/bypassed prologues, pre-prologue cycles
+and owned-pack accumulation. Its positive branch fixture asserts two alternative
+call sites sharing one mark. The direct array test now uses an actual declared
+function and activation: it asserts the returned array element, restoration of
+the local array and preservation of the caller's array. Argument count/type
+mismatches remain checked source-level runtime errors, independent of this
+structural protocol. Constructor operand-schema preconditions remain unchanged.
