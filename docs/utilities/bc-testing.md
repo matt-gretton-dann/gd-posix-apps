@@ -265,6 +265,26 @@ protocol uses bounded waits and reaps its children. This guarantees isolation
 between build trees; concurrent invocations of the same imported test in one
 build tree still share that tree's output path.
 
+## Whole-value conversion
+
+POSIX bc truncates positive register assignments and array subscripts to their
+integer parts. `BasicNumber::to_unsigned()` applies that policy independently of
+fractional limb length; the existing negative-input check is retained. Exact
+CLI cases include long positive fractions for scale/ibase/obase and array
+indexes, plus tiny fractions whose integer part is zero.
+
+The lower-level digit conversion remains strict by default and has an explicit
+fraction-discarding policy for the bc conversion. A native integer-division
+oracle checks both policies at Traits8/16/32 across fractional and whole-limb
+boundaries, including exact integers and reserved error codes. Leading high
+zeros are permitted when supported operations leave them in storage.
+
+The current unsigned conversion domain remains `[0, base_)`; a nonzero upper
+whole limb must report overflow rather than alias to a lower value or zero.
+The larger size/scale domains proposed in #184/#186 are separate work. These
+checks do not force out-of-input-base digits, whose behavior POSIX generally
+leaves undefined, or change the existing negative-value policy.
+
 ## Full native constructor values
 
 The native-value constructor accepts the underlying unsigned type, including
@@ -274,3 +294,16 @@ check ordering, subsequent addition and preservation of the original shared
 value. Multiply-accumulate must drain its complete carry into radix-sized limbs;
 appending a full native carry as one limb gives a noncanonical value even when
 its decimal spelling happens to look correct.
+
+## Fatal parser reuse
+
+A syntax diagnostic terminates that parser object. Every later `parse()` call
+returns a fresh canonical stream containing the original diagnostic, stderr
+print, `quit(1)` and one EOF. Previously returned streams remain unchanged.
+Abandoned loop/function context is cleared when the fatal stream is emitted.
+This prevents duplicate EOFs and partially suppressed definitions when a caller
+inspects or reuses a fatal parser. It does not add recoverable parsing (#185).
+
+The repeated-parse table checks EOF, newline, unfinished loops/functions and a
+definition at the error cursor in both interactive modes. A separate positive
+case executes two nonfatal interactive items and then EOF to guard normal reuse.

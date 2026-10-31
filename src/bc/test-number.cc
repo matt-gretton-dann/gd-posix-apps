@@ -8,7 +8,9 @@
 
 #include <catch2/catch.hpp>
 
+#include <array>
 #include <cstdint>
+#include <limits>
 #include <random>
 #include <sstream>
 #include <string>
@@ -548,6 +550,41 @@ TEMPLATE_TEST_CASE("Generic input conversion and width boundaries", "[bc][number
     wrapped.erase(pos, 2);
   }
   REQUIRE(wrapped == (GD::Bc::extensions_enabled() ? fraction.substr(1) : fraction));
+}
+
+TEMPLATE_TEST_CASE("Unsigned digit conversion agrees with exact integer division",
+                   "[bc][number][oracle][unsigned-conversion]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  using Digits = GD::Bc::Details::BasicDigits<TestType>;
+  using N = typename Number::NumType;
+  uint64_t const base = Number::base_;
+  std::array<uint64_t, 17> const coefficients{
+    {0, 1, 2, 9, 10, 11, 99, 100, 101, base - 1, base, base + 1, base * base - 1, base * base,
+     base * base + 1, base * base / 2, std::numeric_limits<N>::max()}};
+  unsigned const chunk = Number::base_log10_;
+  for (auto const coefficient : coefficients) {
+    Digits digits(N(0));
+    for (auto digit : std::to_string(coefficient)) {
+      digits.mac(N(10), N(digit - '0'));
+    }
+    for (unsigned places : {0U, 1U, 2U, chunk - 1, chunk, chunk + 1, 2 * chunk, 2 * chunk + 1}) {
+      uint64_t denominator = 1;
+      for (unsigned i = 0; i < places; ++i) {
+        denominator *= 10;
+      }
+      uint64_t const quotient = coefficient / denominator;
+      uint64_t const remainder = coefficient % denominator;
+      N const expected = remainder != 0     ? Digits::to_unsigned_error_fractional_
+                         : quotient >= base ? Digits::to_unsigned_error_too_large_
+                                            : N(quotient);
+      INFO("coefficient = " << coefficient << ", scale = " << places << ", base = " << base);
+      CHECK(digits.to_unsigned(N(places)) == expected);
+      N const truncated = quotient >= base ? Digits::to_unsigned_error_too_large_ : N(quotient);
+      CHECK(digits.to_unsigned(N(places), true) == truncated);
+    }
+  }
 }
 
 TEMPLATE_TEST_CASE("Native number construction normalizes the full input value",
