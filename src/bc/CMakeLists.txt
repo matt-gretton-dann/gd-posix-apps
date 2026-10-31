@@ -52,7 +52,7 @@ target_link_libraries(bc PUBLIC libbc)
 if(RUN_INTEGRATION_TESTS)
   add_test(NAME bc/cli COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-cli.py" "$<TARGET_FILE:bc>"
-           --extensions "${ENABLE_NON_POSIX_EXTENSIONS}")
+           --extensions "$<IF:$<BOOL:${ENABLE_NON_POSIX_EXTENSIONS}>,ON,OFF>")
   set_tests_properties(bc/cli PROPERTIES TIMEOUT 60)
 endif()
 
