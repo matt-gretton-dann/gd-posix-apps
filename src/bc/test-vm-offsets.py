@@ -23,9 +23,21 @@ class OffsetTests(unittest.TestCase):
                 self.assertEqual(run.stdout, "")
                 self.assertIn("Operand " + str(operand) + " of instruction", run.stderr)
 
+    def test_reject_result_types_before_execution(self):
+        for case in ("add-string", "add-empty", "add-location", "load-number", "length-string",
+                     "branch-string", "index-string", "push-string", "negate-string",
+                     "return-string", "store-number-array", "store-array-number"):
+            with self.subTest(case=case):
+                run = self.run_case(case)
+                self.assertEqual(run.returncode, 1, run.stderr)
+                self.assertEqual(run.stdout, "")
+                self.assertIn("has an incompatible result type", run.stderr)
+
     def test_valid_fallthrough_and_result(self):
         for case, output in (("branch-end", "EXECUTED\n"), ("conditional-end", "EXECUTED\n"),
-                             ("last-result", "EXECUTED\n42\n")):
+                             ("last-result", "EXECUTED\n42\n"),
+                             ("valid-forward-result", "EXECUTED\n42\n"),
+                             ("valid-location-print", "EXECUTED\na\n")):
             with self.subTest(case=case):
                 run = self.run_case(case)
                 self.assertEqual(run.returncode, 0, run.stderr)

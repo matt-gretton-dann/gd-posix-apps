@@ -47,6 +47,63 @@ auto main(int argc, char** argv) -> int
     code.emplace_back(O::number, "0");
     code.emplace_back(O::branch_zero, D(-1), D(2));
   }
+  else if (mode == "add-string" || mode == "add-empty" || mode == "add-location") {
+    if (mode == "add-string") {
+      code.emplace_back(O::string, "bad");
+    }
+    else if (mode == "add-empty") {
+      code.emplace_back(O::branch, D(1));
+    }
+    else {
+      code.emplace_back(O::variable, GD::Bc::Variable('a'));
+    }
+    code.emplace_back(O::number, "1");
+    code.emplace_back(O::add, D(-2), D(-1));
+  }
+  else if (mode == "load-number" || mode == "length-string" || mode == "branch-string" ||
+           mode == "index-string" || mode == "push-string" || mode == "negate-string" ||
+           mode == "return-string") {
+    code.emplace_back(mode == "load-number" ? O::number : O::string, "1");
+    if (mode == "branch-string") {
+      code.emplace_back(O::branch_zero, D(-1), D(1));
+    }
+    else if (mode == "index-string") {
+      code.emplace_back(O::array_element, GD::Bc::Array('a'), D(-1));
+    }
+    else {
+      O const op = mode == "load-number"     ? O::load
+                   : mode == "length-string" ? O::length
+                   : mode == "push-string"   ? O::push_param
+                   : mode == "return-string" ? O::return_
+                                             : O::negate;
+      code.emplace_back(op, D(-1));
+    }
+  }
+  else if (mode == "store-number-array" || mode == "store-array-number") {
+    if (mode == "store-number-array") {
+      code.emplace_back(O::array, GD::Bc::Array('a'));
+      code.emplace_back(O::number, "1");
+    }
+    else {
+      code.emplace_back(O::variable, GD::Bc::Variable('a'));
+      code.emplace_back(O::pop_param_array);
+    }
+    code.emplace_back(O::store, D(-2), D(-1));
+  }
+  else if (mode == "valid-forward-result") {
+    // A producer later in layout can execute before its consumer.
+    code.emplace_back(O::branch, D(3));
+    code.emplace_back(O::print, D(2), I::Stream::output);
+    code.emplace_back(O::eof);
+    code.emplace_back(O::number, "42");
+    code.emplace_back(O::branch, D(-3));
+  }
+  else if (mode == "valid-location-print") {
+    // Print intentionally supports diagnostic representations of locations.
+    code.emplace_back(O::variable, GD::Bc::Variable('a'));
+    code.emplace_back(O::print, D(-1), I::Stream::output);
+    code.emplace_back(O::eof);
+  }
   else if (mode == "branch-end") {
     code.emplace_back(O::branch, D(1));
   }
