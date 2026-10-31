@@ -44,8 +44,9 @@ peak, not the sum of category peaks. Standard-library node/control-block sizes
 may differ, so record the compiler and library with every run.
 
 Events count BasicDigits copy/move construction and assignment, copies retaining
-a non-null shared digit owner (`owned_digit_copies`), the by-value owner passed
-to each mutable iterator check, COW clones and payload bytes, copied iterator
+a non-null shared digit owner (`owned_digit_copies`), the historical
+`iterator_owner_copies` event (now zero because mutable iterator checks borrow
+the caller-owned vector), COW clones and payload bytes, copied iterator
 range payload bytes, basic/Karatsuba multiply calls, literal conversions,
 function calls, executed instructions and array clones/entries copied. These
 are counts at the named source sites, not a hardware count of atomic operations.
