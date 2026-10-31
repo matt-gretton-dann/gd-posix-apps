@@ -240,6 +240,15 @@ The initial table rejects the former magnitude-order bug for two negative
 operands. Scale alignment may swap the magnitude operands, and negative signs
 reverse their order again; equal magnitudes remain equal in either orientation.
 
+## Zero digit parity
+
+Parity tests cover both valid zero representations: absent storage and an
+allocated empty vector from constructing zero. They also check ordinary limbs,
+shared values, reset storage and zero-valued multiply-accumulate results at each
+trait width. These inputs use documented constructors/operations; the former
+empty-vector read is rejected by AddressSanitizer/UBSan before the fix. Source
+power evaluation already checks a zero exponent before calling this helper.
+
 ## Imported fixture output isolation
 
 Imported scripts may write generated outputs beside their fixtures. CMake copies
@@ -275,3 +284,13 @@ whole limb must report overflow rather than alias to a lower value or zero.
 The larger size/scale domains proposed in #184/#186 are separate work. These
 checks do not force out-of-input-base digits, whose behavior POSIX generally
 leaves undefined, or change the existing negative-value policy.
+
+## Full native constructor values
+
+The native-value constructor accepts the underlying unsigned type, including
+its maximum value and values at/above the limb radix. Directed tests compare
+those values with independently parsed decimal text at Traits8/16/32, then
+check ordering, subsequent addition and preservation of the original shared
+value. Multiply-accumulate must drain its complete carry into radix-sized limbs;
+appending a full native carry as one limb gives a noncanonical value even when
+its decimal spelling happens to look correct.
