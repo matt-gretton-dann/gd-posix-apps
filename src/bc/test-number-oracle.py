@@ -87,6 +87,26 @@ class NumberOracle(unittest.TestCase):
                 self.assertEqual(Fraction(lines[2 * i]), expected)
                 self.assertEqual(int(lines[2 * i + 1]), expected_scale)
 
+    def test_signed_comparison_conditions(self):
+        values = ("-1000000000000", "-2", "-1.20", "-1.1", "-1.00", "-1", "-0.01",
+                  "0", "0.000", "0.01", "1", "1.00", "1.1", "2", "1000000000000")
+        operators = (("<", lambda a, b: a < b), (">", lambda a, b: a > b),
+                     ("<=", lambda a, b: a <= b), (">=", lambda a, b: a >= b),
+                     ("==", lambda a, b: a == b), ("!=", lambda a, b: a != b))
+        program, expected = [], []
+        for left in values:
+            for right in values:
+                for op, compare in operators:
+                    # Relational operators belong in conditions in POSIX bc.
+                    program.extend(("a=0", "if (" + left + op + right + ") a=1", "a"))
+                    expected.append("1" if compare(Fraction(left), Fraction(right)) else "0")
+        run = subprocess.run([BC], input="\n".join(program) + "\n", universal_newlines=True,
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=20,
+                             env=dict(os.environ, LC_ALL="C"))
+        self.assertEqual(run.returncode, 0, run.stderr)
+        self.assertEqual(run.stderr, "")
+        self.assertEqual(run.stdout.splitlines(), expected)
+
     def test_scaled_arithmetic(self):
         rng = random.Random(SEED)
         pairs = [("0", "1"), ("1.23", "1.11"), ("5.3", "1.11"),
