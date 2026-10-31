@@ -556,28 +556,29 @@ auto GD::Bc::Details::VMState::array_length(Array a) const -> GD::Bc::Number::Nu
 void GD::Bc::Details::VMState::validate(Instructions const& instrs) const
 {
   for (Instructions::size_type i = 0; i < instrs.size(); ++i) {
-    if (instrs[i].has_op1()) {
-      auto const& op = instrs[i].op1();
-      if (std::holds_alternative<Instruction::Offset>(op)) {
-        Instruction::Offset const offset = std::get<Instruction::Offset>(op);
-        assert_error(offset >= 0 || static_cast<Instruction::Index>(-offset) <= i,  // NOLINT
-                     Msg::op1_offset_underflow, i, offset);
-        // NOLINTNEXTLINE
-        assert_error(offset < 0 || static_cast<Instruction::Index>(offset) <= instrs.size() - i,
-                     Msg::op1_offset_overflow, i, offset);
+    auto check_offset = [&](Instruction::Operand const& operand, bool allow_end, Msg underflow,
+                            Msg overflow) {
+      auto const* offset = std::get_if<Instruction::Offset>(&operand);
+      if (offset == nullptr) {
+        return;
       }
+      // -(minimum signed offset) is not representable. For a negative offset,
+      // comparing its magnitude minus one avoids that overflow entirely.
+      assert_error(*offset >= 0 || static_cast<Instruction::Index>(-(*offset + 1)) < i, underflow,
+                   i, *offset);  // NOLINT
+      auto const remaining = instrs.size() - i;
+      // Branches may fall through at end; a data reference needs an actual result.
+      assert_error(*offset < 0 || static_cast<Instruction::Index>(*offset) < remaining ||
+                     (allow_end && static_cast<Instruction::Index>(*offset) == remaining),
+                   overflow, i, *offset);  // NOLINT
+    };
+    if (instrs[i].has_op1()) {
+      check_offset(instrs[i].op1(), instrs[i].opcode() == Instruction::Opcode::branch,
+                   Msg::op1_offset_underflow, Msg::op1_offset_overflow);
     }
     if (instrs[i].has_op2()) {
-      auto const& op = instrs[i].op1();
-      if (std::holds_alternative<Instruction::Offset>(op)) {
-        Instruction::Offset const offset = std::get<Instruction::Offset>(op);
-        // NOLINTNEXTLINE
-        assert_error(offset >= 0 || static_cast<Instruction::Index>(-offset) <= i,
-                     Msg::op2_offset_underflow, i, offset);
-        // NOLINTNEXTLINE
-        assert_error(offset < 0 || static_cast<Instruction::Index>(offset) <= instrs.size() - i,
-                     Msg::op2_offset_overflow, i, offset);
-      }
+      check_offset(instrs[i].op2(), instrs[i].opcode() == Instruction::Opcode::branch_zero,
+                   Msg::op2_offset_underflow, Msg::op2_offset_overflow);
     }
   }
 }

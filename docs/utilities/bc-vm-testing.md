@@ -43,6 +43,21 @@ runtime error with an expected-type diagnostic, rather than an uncaught variant
 exception. The CLI regressions exercise both directions in isolated children.
 This check does not replace the broader bytecode verifier contract in #187.
 
+## Operand-offset boundaries
+
+`bc/verifier-offsets` runs valid-schema instruction fixtures in isolated children.
+Invalid operand-1/operand-2 result offsets, minimum signed offsets and array-index
+references must be rejected before an observable prefix executes. A data offset
+must name a result inside the stream. An unconditional branch target, or the
+second operand of `branch_zero`, may also name the end of the stream: interactive
+parser items use that boundary for fall-through. Positive end/last-result cases
+protect this distinction.
+
+Offset underflow checks avoid negating the minimum signed value. This range
+validation is only the boundary stage of #187; typed-result/control-flow joins
+and parameter-marker verification remain required before code can be treated as
+fully verified or its runtime checks specialized.
+
 `bc/vm-cli` runs isolated, bounded runtime checks in both extension modes. It
 asserts numeric domain/conversion errors, ibase bounds, binary/hex output,
 undefined functions, argument count/type errors, recursion and argument order,
