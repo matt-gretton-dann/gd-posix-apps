@@ -10,6 +10,7 @@
 
 #include "gd/time.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <iomanip>
 #include <ostream>
@@ -64,6 +65,13 @@ constexpr auto as_nsec(Time const& time) -> int64_t
 {
   return static_cast<int64_t>(time.tv_sec) * sec_as_nsec + time.tv_nsec;
 }
+// Estimate the next calibration batch from the measured process CPU duration.
+inline auto next_batch_size(std::size_t count, int64_t elapsed_ns, int64_t target_ns,
+                            [[maybe_unused]] std::size_t max_count) -> std::size_t
+{
+  return count * static_cast<std::size_t>(target_ns) / static_cast<std::size_t>(elapsed_ns);
+}
+
 }  // namespace GD::Bc::Bench
 
 #endif

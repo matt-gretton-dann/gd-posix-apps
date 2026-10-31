@@ -61,3 +61,11 @@ TEST_CASE("Calibration time arithmetic normalizes nanoseconds", "[bc][benchmark]
   output << Time{1, 2};
   REQUIRE(output.str() == "1.000000002");
 }
+
+TEST_CASE("Calibration batches grow after a zero clock duration", "[bc][benchmark][batch]")
+{
+  using GD::Bc::Bench::next_batch_size;
+  // Read at runtime so the pre-fix divide-by-zero is not constant-folded.
+  volatile int64_t elapsed_ns = 0;
+  REQUIRE(next_batch_size(100, elapsed_ns, 3500000000LL, 10000) == 200);
+}
