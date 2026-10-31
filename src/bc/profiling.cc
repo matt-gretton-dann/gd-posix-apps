@@ -71,20 +71,12 @@ auto name(AllocationKind kind) noexcept -> char const*
 }
 auto name(Event which) noexcept -> char const*
 {
-  constexpr std::array names{"digit_copies",
-                             "nonempty_digit_copies",
-                             "digit_moves",
-                             "iterator_owner_copies",
-                             "cow_clones",
-                             "cow_limb_bytes",
-                             "range_limb_bytes",
-                             "basic_multiply_calls",
-                             "karatsuba_multiply_calls",
-                             "literal_conversions",
-                             "function_calls",
-                             "instructions_executed",
-                             "array_clones",
-                             "array_entries_copied"};
+  constexpr std::array names{
+    "digit_copies",          "owned_digit_copies",   "digit_moves",
+    "iterator_owner_copies", "cow_clones",           "cow_limb_bytes",
+    "range_limb_bytes",      "basic_multiply_calls", "karatsuba_multiply_calls",
+    "literal_conversions",   "function_calls",       "instructions_executed",
+    "array_clones",          "array_entries_copied"};
   static_assert(names.size() == static_cast<std::size_t>(Event::count));
   return names[static_cast<std::size_t>(which)];
 }

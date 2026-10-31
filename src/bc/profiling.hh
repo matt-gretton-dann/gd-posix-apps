@@ -16,7 +16,7 @@ namespace GD::Bc::Profile {
 enum class AllocationKind : std::size_t { digits, arrays, instructions, frames, results, count };
 enum class Event : std::size_t {
   digit_copies,
-  nonempty_digit_copies,
+  owned_digit_copies,
   digit_moves,
   iterator_owner_copies,
   cow_clones,
@@ -48,6 +48,7 @@ struct Snapshot
   std::array<std::uint64_t, static_cast<std::size_t>(Event::count)> events{};
 };
 
+void initialize_report() noexcept;
 void allocated(AllocationKind kind, std::size_t bytes) noexcept;
 void deallocated(AllocationKind kind, std::size_t bytes) noexcept;
 void event(Event which, std::uint64_t amount = 1) noexcept;

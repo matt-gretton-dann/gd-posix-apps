@@ -18,6 +18,13 @@ if (ENABLE_IPO)
 endif()
 
 target_sources(libbc PRIVATE instruction.cc lexer.cc parser.cc reader.cc token.cc verification.cc vm.cc)
+if(ENABLE_BC_PROFILE)
+  if(ENABLE_BC_COVERAGE)
+    message(FATAL_ERROR "Use separate bc coverage and allocation profiling builds")
+  endif()
+  target_compile_definitions(libbc PUBLIC GD_BC_PROFILE=1)
+  target_sources(libbc PRIVATE profiling.cc)
+endif()
 add_dependencies("libbc" "bc_messages_header")
 target_add_clang_format(libbc)
 
@@ -107,6 +114,9 @@ endif()
 
 add_utility(NAME bc NO_INT_TEST CAT_ID bc SOURCES bc.cc)
 target_link_libraries(bc PUBLIC libbc)
+if(ENABLE_BC_PROFILE)
+  target_sources(bc PRIVATE profiling-entry.cc)
+endif()
 
 if(ENABLE_BC_COVERAGE)
   if(NOT RUN_UNIT_TESTS OR NOT RUN_INTEGRATION_TESTS)
@@ -140,6 +150,11 @@ if(RUN_INTEGRATION_TESTS)
            "${CMAKE_CURRENT_SOURCE_DIR}/test-benchmark-cli.py"
            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/bench-bc.py" --bc "$<TARGET_FILE:bc>")
   set_tests_properties(bc/benchmark-cli PROPERTIES TIMEOUT 30)
+  if(ENABLE_BC_PROFILE)
+    add_test(NAME bc/profiling-cli COMMAND "${Python_EXECUTABLE}"
+             "${CMAKE_CURRENT_SOURCE_DIR}/test-profiling-cli.py" "$<TARGET_FILE:bc>")
+    set_tests_properties(bc/profiling-cli PROPERTIES TIMEOUT 30)
+  endif()
   add_test(NAME bc/cli COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-cli.py" "$<TARGET_FILE:bc>"
            --extensions "$<IF:$<BOOL:${ENABLE_NON_POSIX_EXTENSIONS}>,ON,OFF>")
@@ -172,7 +187,8 @@ set_warnings(find-multiply-split-point)
 if (ENABLE_IPO)
   set_property(TARGET find-multiply-split-point PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
-target_link_libraries(find-multiply-split-point PUBLIC libbc)
+# The tuner exercises header-only arithmetic. Keep it independent of libbc's
+# diagnostic definition and allocator backend so instrumentation cannot tune it.
 add_dependencies(find-multiply-split-point "bc_messages_header")
 target_add_clang_format(find-multiply-split-point)
 

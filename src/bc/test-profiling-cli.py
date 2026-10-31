@@ -1,0 +1,79 @@
+#!/usr/bin/env python3
+"""Check diagnostic counters independently of noisy process timings."""
+import argparse
+import json
+import os
+from pathlib import Path
+import subprocess
+import tempfile
+import unittest
+
+
+class ProfilingCli(unittest.TestCase):
+    def invoke(self, program, output=None):
+        environment = {key: value for key, value in os.environ.items()
+                       if not key.startswith(('BC_', 'DC_', 'GD_BC_PROFILE_'))}
+        environment['LC_ALL'] = 'C'
+        if output is not None:
+            environment['GD_BC_PROFILE_OUTPUT'] = str(output)
+        return subprocess.run([BC], input=program, stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE, universal_newlines=True,
+                              env=environment, timeout=5)
+
+    def profile(self, program, expected):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / 'profile \u03bb.json'
+            result = self.invoke(program, output)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout, expected)
+            self.assertEqual(result.stderr, '')
+            counters = json.loads(output.read_text(encoding='utf-8'))
+        self.assertEqual(counters['schema'], 1)
+        self.assertTrue(counters['instrumented'])
+        self.assertIn('not process malloc or RSS', counters['scope'])
+        total = counters['total']
+        self.assertEqual(total['live_bytes'], 0)
+        self.assertEqual(total['allocation_calls'], total['deallocation_calls'])
+        self.assertGreater(total['peak_live_bytes'], 0)
+        self.assertGreater(counters['multiply_split_point'], 0)
+        for values in counters['allocations'].values():
+            self.assertEqual(values['live_bytes'], 0)
+            self.assertLessEqual(values['peak_live_bytes'], total['peak_live_bytes'])
+        self.assertEqual(sum(v['allocated_bytes'] for v in counters['allocations'].values()),
+                         total['allocated_bytes'])
+        return counters
+
+    def test_disabled_output_preserves_cli(self):
+        result = self.invoke('1+1\n')
+        self.assertEqual((result.returncode, result.stdout, result.stderr), (0, '2\n', ''))
+
+    def test_arithmetic_and_ownership(self):
+        counters = self.profile('a=12345678901234567890\nb=a\na+=1\na*b\nb\n',
+                                '152415787532388367514250878776253619990\n12345678901234567890\n')
+        for event in ('digit_copies', 'owned_digit_copies', 'cow_clones', 'cow_limb_bytes',
+                      'iterator_owner_copies', 'literal_conversions', 'basic_multiply_calls',
+                      'instructions_executed'):
+            self.assertGreater(counters['events'][event], 0, event)
+
+    def test_array_clone_and_frames(self):
+        counters = self.profile('define f(a[]) {\na[1]=9\nreturn(a[1])\n}\na[1]=3\nf(a[])\na[1]\n',
+                                '9\n3\n')
+        self.assertGreater(counters['events']['function_calls'], 0)
+        self.assertGreater(counters['events']['array_clones'], 0)
+        self.assertGreater(counters['events']['array_entries_copied'], 0)
+        for category in ('arrays', 'frames', 'instructions', 'results', 'digits'):
+            self.assertGreater(counters['allocations'][category]['allocation_calls'], 0, category)
+
+    def test_unwritable_output_reports_failure(self):
+        with tempfile.TemporaryDirectory() as directory:
+            result = self.invoke('2\n', Path(directory) / 'missing' / 'profile.json')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('cannot open profiling output', result.stderr)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('bc')
+    args, remaining = parser.parse_known_args()
+    BC = str(Path(args.bc).resolve())
+    unittest.main(argv=[__file__, *remaining])
