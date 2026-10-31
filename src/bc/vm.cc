@@ -10,6 +10,7 @@
 #include "bc-messages.hh"
 
 #include <array>
+#include <atomic>
 #include <cassert>
 #include <ostream>
 #include <utility>
@@ -315,35 +316,46 @@ private:
 auto operator<<(std::ostream& os, InstructionPack const& instrs) -> std::ostream&;
 auto operator<<(std::ostream& os, InstructionPack::Result const& result) -> std::ostream&;
 
-/** Interrupt handler globals */
+/** Always-lock-free state shared with POSIX handlers or the Windows console thread. */
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-sig_atomic_t have_been_interrupted = 0;
+std::atomic_flag have_been_interrupted = ATOMIC_FLAG_INIT;
 
 /** Handle receiving SIGINT.  */
-__EXTERN_C void handle_sigint(int /*signal*/) { have_been_interrupted = 1; }
-
-/** Install the signal handler for SIGINT.  */
-void install_interrupt_handler()
+__EXTERN_C void handle_sigint(int /*signal*/)
 {
-  have_been_interrupted = 0;
-  struct sigaction sa;            // NOLINT(cppcoreguidelines-pro-type-member-init) - inited below
-  sa.sa_handler = handle_sigint;  // NOLINT - this is a safe union access on macOS
-  sigemptyset(&sa.sa_mask);
-  sa.sa_flags = SA_RESTART | SA_RESETHAND; /* Restart functions if interrupted by handler.  */
-  /* We don't care if this fails as users will still be able to ^C out but just with a worse
-   * experience.  */
-  sigaction(SIGINT, &sa, nullptr);
+  (void)have_been_interrupted.test_and_set(std::memory_order_relaxed);
 }
 
-/* Reset the SIGINT signal handler.  */
-void reset_interrupt_handler()
+/** Install the VM handler only for execution, preserving all caller signal state.
+ * A failed installation leaves the existing handler responsible for interruption.
+ */
+class InterruptHandler
 {
-  struct sigaction sa;            // NOLINT(cppcoreguidelines-pro-type-member-init) - inited below
-  sa.sa_handler = handle_sigint;  // NOLINT - this is a safe union access on macOS
-  sigemptyset(&sa.sa_mask);
-  sigaction(SIGINT, &sa, nullptr);
-  // We assume this has worked for usefulness sake.
-}
+public:
+  InterruptHandler()
+  {
+    have_been_interrupted.clear(std::memory_order_relaxed);
+    struct sigaction action{};
+    action.sa_handler = handle_sigint;
+    sigemptyset(&action.sa_mask);
+    action.sa_flags = SA_RESTART | SA_RESETHAND;
+    installed_ = sigaction(SIGINT, &action, &previous_) == 0;
+  }
+
+  ~InterruptHandler()
+  {
+    if (installed_) {
+      (void)sigaction(SIGINT, &previous_, nullptr);
+    }
+  }
+
+  InterruptHandler(InterruptHandler const&) = delete;
+  auto operator=(InterruptHandler const&) -> InterruptHandler& = delete;
+
+private:
+  struct sigaction previous_{};
+  bool installed_{false};
+};
 
 }  // namespace GD::Bc::Details
 
@@ -592,7 +604,7 @@ GD::Bc::Details::InstructionPack::InstructionPack(VMState* vm, Instructions cons
 auto GD::Bc::Details::InstructionPack::execute() -> std::pair<GD::Bc::Number, bool>
 {
   for (; pc_ < instrs_.size(); ++pc_) {
-    if (Details::have_been_interrupted != 0) {
+    if (Details::have_been_interrupted.test(std::memory_order_relaxed)) {
       return std::make_pair(Number(0), true);
     }
     auto i = pc_;
@@ -1081,15 +1093,15 @@ auto GD::Bc::VM::execute(Instructions& instructions) -> bool
 {
   state_->validate(instructions);
   Details::InstructionPack instrs(state_, instructions);
-  /* We want a way for people to interrupt execution - so install a SIGINT handler
-   * but only whilst executing instructions.
-   */
-  Details::install_interrupt_handler();
-  auto const result = instrs.execute();
-  Details::reset_interrupt_handler();
-  if (Details::have_been_interrupted != 0) {
+  // Restore the caller's handler before reporting interruption, including when
+  // execution throws (for example, through an output stream's exception mask).
+  auto const result = [&instrs]() {
+    Details::InterruptHandler handler;
+    return instrs.execute();
+  }();
+  if (Details::have_been_interrupted.test(std::memory_order_relaxed)) {
     state_->stream(Instruction::Stream::error) << Messages::get().format(Msg::interrupted) << '\n';
-    Details::have_been_interrupted = 0;
+    Details::have_been_interrupted.clear(std::memory_order_relaxed);
   }
   return result.second;
 }
