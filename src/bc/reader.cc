@@ -9,6 +9,8 @@
 #include "bc-messages.hh"
 
 #include <cstdint>
+#include <cstdlib>
+#include <iostream>
 #include <limits>
 #include <string_view>
 
@@ -101,7 +103,8 @@ void GD::Bc::StringReader::do_chew()
 GD::Bc::FileReader::FileReader(std::string_view f) : Reader(f), file_(f)
 {
   if (file_.error()) {
-    error(Msg::file_error, file_.filename());
+    std::cerr << error(Msg::file_error, file_.filename());
+    std::exit(1);  // NOLINT(concurrency-mt-unsafe)
   }
 }
 
@@ -112,7 +115,8 @@ auto GD::Bc::FileReader::peek() -> int
     c_ = file_.getc();
 
     if (file_.error()) {
-      error(Msg::file_error, file_.filename());
+      std::cerr << error(Msg::file_error, file_.filename());
+      std::exit(1);  // NOLINT(concurrency-mt-unsafe)
     }
   };
   return c_;
