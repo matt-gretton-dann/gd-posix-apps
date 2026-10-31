@@ -365,7 +365,8 @@ public:
   /** \brief  Output a debug form of the digits to \a os. */
   void debug(std::ostream& os) const
   {
-    char const* sep = "{";
+    os << '{';
+    char const* sep = "";
     if (digits_) {
       for (auto d : *digits_) {
         os << sep << static_cast<typename Traits::PrintType>(d);

@@ -338,3 +338,11 @@ remains one, so exponentiation uses logarithmic steps and bounded storage even
 for the native billion-radix trait. The independently known truncated result is
 zero with scale two. This exercises scale folding without inventing an invalid
 scale or allocating a billion-digit coefficient (#199, #184, #186).
+
+## Zero debug formatting
+
+`[zero-debug]` asserts balanced `{}` delimiters for absent and allocated-empty
+digit storage, then checks direct Number debug output and its public `:d`
+formatter for default, native zero and scaled zero values across all traits.
+The nonzero spelling stays unchanged. The opening delimiter is independent of
+limb iteration so empty coefficients remain well-formed diagnostics (#293).
