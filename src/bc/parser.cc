@@ -161,26 +161,42 @@ GD::Bc::Parser::Parser(std::unique_ptr<Lexer>&& lexer, bool interactive)
   assert(lexer_ != nullptr);  // NOLINT
 }
 
-auto GD::Bc::Parser::parse() -> std::shared_ptr<GD::Bc::Instructions>
+void GD::Bc::Parser::clear_context()
 {
-  /* reset everything - assuming we may be in error recovery. */
-  instructions_ = std::make_shared<Instructions>();
   while (!loop_breaks_.empty()) {
     loop_breaks_.pop();
   }
   in_function_ = false;
+}
+
+void GD::Bc::Parser::emit_fatal_error(std::string const& diagnostic)
+{
+  instructions_->clear();
+  clear_context();
+  auto const message = insert_string(diagnostic);
+  insert_print(message, Instruction::Stream::error);
+  insert_quit(1);
+  insert_eof();
+}
+
+auto GD::Bc::Parser::parse() -> std::shared_ptr<GD::Bc::Instructions>
+{
+  // Each call owns a fresh stream so previously returned instructions remain
+  // unchanged. A fatal parser cannot safely resume with partially consumed input.
+  instructions_ = std::make_shared<Instructions>();
+  clear_context();
+  if (fatal_diagnostic_) {
+    emit_fatal_error(*fatal_diagnostic_);
+    return instructions_;
+  }
   try {
     parse_program();
   }
   catch (ParseError const& error) {
-    // A syntax error is reported when read, even inside code that would never
-    // execute. Discard partial instructions before emitting the fatal diagnostic.
-    instructions_->clear();
-    in_function_ = false;
-    auto const message = insert_string(error.diagnostic);
-    insert_print(message, Instruction::Stream::error);
-    insert_quit(1);
-    insert_eof();
+    // Keep the first diagnostic terminal even when a caller parses again instead
+    // of executing its quit instruction. Recoverable parsing is separate work.
+    fatal_diagnostic_ = error.diagnostic;
+    emit_fatal_error(*fatal_diagnostic_);
   }
   return instructions_;
 }

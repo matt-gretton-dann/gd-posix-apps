@@ -109,3 +109,23 @@ fraction splitting and practical small-trait power-scale folding remain eligible
 or under test. The known wider length/scale work in #184/#186 is not claimed
 implemented. No first eligible milestone or ultimate feasible-coverage completion
 is asserted by this review.
+
+## Fatal-state review after #281
+
+The terminal diagnostic cache supersedes the earlier open parser-reuse review.
+A fatal `parse()` result is re-emitted on later calls before grammar parsing;
+`insert_error` still unwinds immediately from grammar code on the first error.
+Thus a normally entered grammar method cannot observe `error_ == true` in a
+subsequent loop iteration. This applies to the error predicates in
+`parse_input_item`, `parse_semicolon_list`, `parse_statement_list`,
+`parse_opt_define_list` and `parse_opt_argument_list`, and to the old error EOF
+footer in `parse_program`. Keep their raw counts and defensive code; recovery
+work in #185 must revisit this proof before changing the terminal-state model.
+Continuation/separator/interactive outcomes remain feasible and eligible.
+
+The loop cleanup itself remains feasible: unfinished nested constructs leave
+contexts which the fatal emitter clears. Repeated public parses now assert the
+same terminal diagnostic and one EOF, while independent nonfatal interactive
+parses execute both input values normally. No private state is injected, no
+boolean is rewritten to fill a denominator, and no adjusted percentage is
+inferred from this control-flow proof.
