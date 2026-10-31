@@ -248,3 +248,6 @@ ibase and obase; the caller must observe either all original or all changed
 values, according to the mode. Disabling the frontend `-g` option does not make
 this public constructor argument unreachable. Explicit radix restoration lets
 the output assertion distinguish numeric state from its current text base.
+
+The pinned ON/OFF measurements, residual constraints and future regression
+obligations are recorded in [VM coverage closeout](bc-vm-coverage-results.md).
