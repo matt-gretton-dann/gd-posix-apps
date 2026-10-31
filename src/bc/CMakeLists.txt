@@ -95,6 +95,22 @@ endif()
 add_utility(NAME bc NO_INT_TEST CAT_ID bc SOURCES bc.cc)
 target_link_libraries(bc PUBLIC libbc)
 
+if(RUN_UNIT_TESTS OR ENABLE_BC_COMPONENT_BENCHMARKS)
+  add_executable(bc-components benchmark-components.cc)
+  target_link_libraries(bc-components PRIVATE libbc)
+  target_include_directories(bc-components PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+  set_property(TARGET bc-components PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
+  set_property(TARGET bc-components PROPERTY CXX_STANDARD_REQUIRED ON)
+  if(ENABLE_IPO)
+    set_property(TARGET bc-components PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+  endif()
+  set_warnings(bc-components)
+  target_add_clang_format(bc-components)
+  if(TARGET test-libbc)
+    add_dependencies(test-libbc bc-components)
+  endif()
+endif()
+
 if(ENABLE_BC_COVERAGE)
   if(NOT RUN_UNIT_TESTS OR NOT RUN_INTEGRATION_TESTS)
     message(FATAL_ERROR "bc coverage requires both unit tests and Python CLI tests")
@@ -123,6 +139,11 @@ endif()
 
 # These local CLI regressions run in both extension configurations and on Windows.
 if(RUN_INTEGRATION_TESTS)
+  if(TARGET bc-components)
+    add_test(NAME bc/components COMMAND "${Python_EXECUTABLE}"
+             "${CMAKE_CURRENT_SOURCE_DIR}/test-components.py" "$<TARGET_FILE:bc-components>")
+    set_tests_properties(bc/components PROPERTIES TIMEOUT 30)
+  endif()
   add_test(NAME bc/benchmark-cli COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-benchmark-cli.py"
            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/bench-bc.py" --bc "$<TARGET_FILE:bc>")
