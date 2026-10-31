@@ -1,5 +1,31 @@
 # bc VM and diagnostic tests
 
+## Interrupt protocols
+
+The VM temporarily installs its SIGINT handler while executing a stream, then
+restores the caller's complete signal action before reporting interruption.
+Scoped restoration also runs when execution propagates an exception, such as
+an output-stream failure. If installation is unsupported, the caller's existing
+signal behavior remains the fallback. The shared interruption flag is an
+always-lock-free `std::atomic_flag`, usable by POSIX signal handlers and by the
+separate Windows console-handler thread.
+
+`bc/signal-normal` and `bc/signal-exception` are isolated native processes which
+assert handler, flags and mask restoration; the exception case also checks that
+the exception propagates. A setup assertion distinguishes a signal API which
+loses its first requested action from a VM restoration defect. Unsupported
+signal facilities report explicit CTest skips.
+
+`bc/signal-delivery` uses a POSIX PTY. A printed readiness marker inside the same
+execution item as an infinite loop proves handler installation before SIGINT.
+It interrupts two successive items, checks both diagnostics, then observes the
+result of `2+3` while stdin remains open before sending quit. Reads and child
+lifetimes are bounded, and children are killed/reaped on failures. The POSIX PTY
+facility is explicitly skipped where unavailable; native restoration tests
+remain independent of actual signal delivery.
+
+## Value and diagnostic checks
+
 `test-token-format.cc` asserts token type names, source spellings, payload/debug
 output and all operator classifications. Each positive operator case is paired
 with the other token kinds, providing short-circuit independence witnesses for

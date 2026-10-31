@@ -81,6 +81,9 @@ if(RUN_INTEGRATION_TESTS)
   add_test(NAME bc/number-oracle COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-number-oracle.py" "$<TARGET_FILE:bc>")
   set_tests_properties(bc/number-oracle PROPERTIES TIMEOUT 90)
+  add_test(NAME bc/signal-delivery COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-signal-delivery.py" "$<TARGET_FILE:bc>")
+  set_tests_properties(bc/signal-delivery PROPERTIES TIMEOUT 20 SKIP_RETURN_CODE 77)
 endif()
 
 add_executable(find-multiply-split-point  find-multiply-split-point.cc)
