@@ -129,6 +129,77 @@ auto main(int argc, char** argv) -> int
     }
     code.emplace_back(O::store, D(-2), D(-1));
   }
+  else if (mode == "skipped-producer") {
+    code.emplace_back(O::branch, D(2));
+    code.emplace_back(O::number, "1");
+    code.emplace_back(O::print, D(-1), I::Stream::output);
+    code.emplace_back(O::eof);
+  }
+  else if (mode == "join-producer") {
+    code.emplace_back(O::number, "0");
+    code.emplace_back(O::branch_zero, D(-1), D(3));
+    code.emplace_back(O::number, "7");
+    code.emplace_back(O::branch, D(1));
+    code.emplace_back(O::print, D(-2), I::Stream::output);
+    code.emplace_back(O::eof);
+  }
+  else if (mode == "self-producer") {
+    code.emplace_back(O::negate, D(0));
+  }
+  else if (mode == "middle-eof") {
+    code.emplace_back(O::eof);
+    code.emplace_back(O::number, "0");
+  }
+  else if (mode == "missing-function-end" || mode == "mismatched-function-end" ||
+           mode == "branch-into-function" || mode == "branch-out-of-function" ||
+           mode == "cross-function-result" || mode == "nested-function" ||
+           mode == "orphan-function-end") {
+    if (mode == "orphan-function-end") {
+      code.emplace_back(O::function_end, GD::Bc::Letter('f'), D(-1));
+    }
+    else {
+      if (mode == "branch-into-function") {
+        code.emplace_back(O::branch, D(2));
+      }
+      if (mode == "cross-function-result") {
+        code.emplace_back(O::number, "7");
+      }
+      auto const begin = code.size();
+      code.emplace_back(O::function_begin, GD::Bc::VariableMask(),
+                        GD::Bc::Location("fixture", 1, 1));
+      if (mode == "nested-function") {
+        code.emplace_back(O::function_begin, GD::Bc::VariableMask(),
+                          GD::Bc::Location("fixture", 2, 1));
+      }
+      code.emplace_back(O::pop_param_mark);
+      if (mode == "branch-out-of-function") {
+        code.emplace_back(O::branch, D(4));
+      }
+      code.emplace_back(O::number, "0");
+      code.emplace_back(O::return_, mode == "cross-function-result" ? D(-4) : D(-1));
+      if (mode == "nested-function") {
+        code.emplace_back(O::function_end, GD::Bc::Letter('g'), D(begin + 1) - D(code.size()));
+      }
+      if (mode != "missing-function-end") {
+        code.emplace_back(O::function_end, GD::Bc::Letter('f'),
+                          D(begin) - D(code.size()) - (mode == "mismatched-function-end" ? 1 : 0));
+      }
+    }
+    code.emplace_back(O::eof);
+  }
+  else if (mode == "valid-control-join") {
+    code.emplace_back(O::variable, GD::Bc::Variable('a'));  // 2
+    code.emplace_back(O::number, "0");                      // 3
+    code.emplace_back(O::branch_zero, D(-1), D(4));         // 4 -> 8
+    code.emplace_back(O::number, "7");                      // 5
+    code.emplace_back(O::store, D(-4), D(-1));              // 6
+    code.emplace_back(O::branch, D(3));                     // 7 -> 10
+    code.emplace_back(O::number, "9");                      // 8
+    code.emplace_back(O::store, D(-7), D(-1));              // 9
+    code.emplace_back(O::load, D(-8));                      // 10
+    code.emplace_back(O::print, D(-1), I::Stream::output);
+    code.emplace_back(O::eof);
+  }
   else if (mode == "valid-forward-result") {
     // A producer later in layout can execute before its consumer.
     code.emplace_back(O::branch, D(3));

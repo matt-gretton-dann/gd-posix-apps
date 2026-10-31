@@ -106,7 +106,38 @@ instruction diagnostics, but cannot refer to a result-less instruction.
 `bc/verifier-offsets` includes isolated malformed-result cases with an observable
 prefix which must never execute, as well as a valid forward-layout producer and
 location printing. Type classification is independent of layout and does not
-assume that every valid result reference is backward. These checks do not yet
-prove control-flow dominance, function-region structure or parameter-marker
-balance; those remain obligations of #187 and #215. Instruction constructors
-retain their existing operand-schema preconditions.
+assume that every valid result reference is backward. Result types alone do not
+establish availability; the control-flow preflight below checks function regions
+and dominance. Parameter-marker balance remains an obligation of #187 and #215.
+Instruction constructors retain their existing operand-schema preconditions.
+
+## Function regions and result availability
+
+The control-flow preflight matches each nonnested function definition with its
+end metadata before any output or registration executes. Branches and result
+references stay in their execution region. EOF is outer-stream termination and
+must be the last instruction; function-end metadata is a body fall-through
+sentinel, never an executable instruction. Copied function bodies are checked
+with their function context retained.
+
+Every reachable result consumer requires a producer which strictly dominates
+it: every path from that region's entry executes the producer first. Forward
+layout is accepted when this holds, including a branch through a later producer
+and back to an earlier consumer. Results from an assumed previous loop iteration
+do not justify a first read. Unreachable consumers still have their offset,
+type and region contracts checked, but cannot execute an unavailable read.
+
+`bc/verifier-offsets` rejects skipped producers, invalid joins, self references,
+function-region crossings, malformed definition boundaries and misplaced EOF
+before its observable prefix. Positive forward-layout and branch-join programs
+assert their output. A seeded bytecode property suite generates small cyclic
+control-flow graphs and compares verifier acceptance with an independent oracle:
+removing a dominating producer disconnects every path to its consumer. The
+oracle uses reachability rather than the implementation's dominator algorithm.
+Generation is deterministic (seed `197187`) and does not execute arbitrary loops.
+A temporary bypass of availability checking is rejected by 602 of the 1,280
+property assertions; restoring the check returns all cases to passing.
+
+The implementation uses iterative graph/tree traversals and linear auxiliary
+storage. Parameter-marker balance and exactly-once function prologue consumption
+remain separate #187 obligations; this stage does not close #187 or #215.
