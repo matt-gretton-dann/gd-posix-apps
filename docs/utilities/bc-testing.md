@@ -203,3 +203,14 @@ eligible denominator or replace the raw LLVM reports.
 The [committed coverage checkpoint](bc-coverage-results.md) records raw ON/OFF
 and application/broad counts, the measured revision and remaining limitations.
 Rerun the collector for later code; the checkpoint is not an adjusted-goal claim.
+
+## Unnormalized digit lengths
+
+`test-number-length.cc` checks length after documented digit operations leave
+high zero limbs. Multiplying by a power of ten and then applying `mac(0, value)`
+preserves allocated high zero limbs without modifying private state. Length must
+skip them toward the reverse end, report one digit for zero and leave shared
+copies unchanged. The fixtures cover empty/all-zero storage, decimal/limb
+boundaries and all three traits. AddressSanitizer rejects the former reverse
+iterator traversal before the fix; ordinary number tests retain the normalized
+production cases.

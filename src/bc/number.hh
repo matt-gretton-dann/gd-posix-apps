@@ -374,7 +374,7 @@ public:
     auto length = digits_->size() * base_log10_;
     auto rit = digits_->rbegin();
     while (rit != digits_->rend() && *rit == 0) {
-      --rit;
+      ++rit;
       length -= base_log10_;
     }
     if (rit != digits_->rend()) {
