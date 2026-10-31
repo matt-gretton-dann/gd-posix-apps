@@ -370,3 +370,10 @@ digit storage, then checks direct Number debug output and its public `:d`
 formatter for default, native zero and scaled zero values across all traits.
 The nonzero spelling stays unchanged. The opening delimiter is independent of
 limb iteration so empty coefficients remain well-formed diagnostics (#293).
+
+The collector's mandatory mapping inventory includes `verification.cc` alongside
+the original production units and executable headers. A linked verifier must
+remain visible in each raw export. The audit validated this with a genuine LLVM
+export whose verifier file entry was deliberately removed: collection rejected
+it with a missing-production-mapping error, while the unmodified export passed.
+Fault-injection profiles are separate from published measurement profiles.
