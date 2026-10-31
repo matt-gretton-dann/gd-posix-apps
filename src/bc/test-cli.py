@@ -90,6 +90,13 @@ class CliTests(unittest.TestCase):
             with self.subTest(text=text):
                 self.run_bc(text, expected)
 
+    def test_array_length_boundaries(self):
+        if EXTENSIONS:
+            self.run_bc("length(a[])\n", "0\n")
+            self.run_bc("a[0]=0\nlength(a[])\na[9]=0\nlength(a[])\n", "1\n10\n")
+        else:
+            self.run_bc("length(a[])\n", success=False)
+
     def test_eof(self):
         self.run_bc("1+1\n", "2\n")
 
