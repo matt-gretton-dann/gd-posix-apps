@@ -1,0 +1,9 @@
+{
+  "binary_sha256": "bb46183c44d137cd1ebebf1628b3020b309fe11e7fe8a0a8f29d83ee968f9aaf",
+  "build_type": "Release",
+  "extensions": "OFF",
+  "instrumented": true,
+  "multiply_split_point": 126,
+  "scope": "software source-site counters; no timing inference",
+  "source_revision": "fd902d0a51ec44d0319cd3b0b00eef66c3e8d221"
+}

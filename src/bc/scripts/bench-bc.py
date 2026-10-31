@@ -84,10 +84,14 @@ def corpus(preset="full", selected=None, listing=False, seed=197200):
     rng = random.Random(seed)
     cases, known = [], []
     def iterations(count):
-        return max(1, count // 100) if preset == "quick" else count
+        if preset == "quick":
+            return max(1, count // 100)
+        return max(1, count - count // 8) if preset == "holdout" else count
 
     def dimension(count):
-        return max(1, count // 10) if preset == "quick" else count
+        if preset == "quick":
+            return max(1, count // 10)
+        return count + max(1, count // 8) if preset == "holdout" else count
 
     def add(name, group, program, oracle, parameters=None):
         known.append(name)
@@ -211,6 +215,10 @@ def corpus(preset="full", selected=None, listing=False, seed=197200):
     add("decimal_output_{}d_x{}".format(digits, count), "decimal_output",
         "a={}\nfor(i=0;i<{};i++) a".format(value, count), lambda: [value] * count,
         {"digits": digits, "lines": count})
+    count = iterations(20000)
+    add("streaming_statements_{}".format(count), "streaming",
+        "i=0\n" + "i+=1\ni\n" * count, lambda: list(range(1, count + 1)),
+        {"statements": count * 2 + 1, "output_lines": count, "termination": "EOF"})
     if selected:
         missing = set(selected) - set(known)
         if missing:
@@ -393,7 +401,7 @@ def main():
     parser.add_argument("--config", type=Path, help="JSON implementations with named argv lists")
     parser.add_argument("--output", type=Path, help="new experiment directory")
     parser.add_argument("--list", action="store_true", help="list case names and parameters")
-    parser.add_argument("--preset", choices=("full", "quick"), default="full")
+    parser.add_argument("--preset", choices=("full", "quick", "holdout"), default="full")
     parser.add_argument("--workload", action="append", help="select an exact name; repeatable")
     parser.add_argument("--reference", help="reference implementation (default: first configured)")
     parser.add_argument("--samples", type=positive_integer, default=9)

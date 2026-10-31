@@ -125,7 +125,7 @@ class BenchmarkCli(unittest.TestCase):
         self.assertEqual(result.stderr, "")
         rows = [json.loads(line) for line in
                 (output / "samples.jsonl").read_text(encoding="utf-8").splitlines()]
-        self.assertEqual(len(rows), 32)
+        self.assertEqual(len(rows), 33)
         self.assertTrue(all(row["checked"] for row in rows))
 
     def check_failure(self, mode, diagnostic, timeout=3):
@@ -194,6 +194,31 @@ class PairedStatistics(unittest.TestCase):
         except SystemExit:
             self.fail("benchmark module starts its CLI while being imported")
         return module
+
+    def test_legacy_full_corpus_retains_its_programs_and_oracles(self):
+        module = self.module()
+        baseline = Path(__file__).resolve().parents[2] / (
+            'docs/utilities/bc-performance-baseline-20261031/competitive-manifest.json')
+        recorded = json.loads(baseline.read_text(encoding='utf-8'))['corpus']
+        current = {row['name']: row for row in module.corpus('full')}
+        for previous in recorded:
+            case = current[previous['name']]
+            self.assertEqual(hashlib.sha256(case['program'].encode()).hexdigest(),
+                             previous['program_sha256'])
+            oracle = ('\n'.join(case['expected']) + '\n').encode()
+            self.assertEqual(hashlib.sha256(oracle).hexdigest(), previous['oracle_sha256'])
+
+    def test_holdout_shapes_are_separate_and_replayable(self):
+        module = self.module()
+        full = module.corpus('full', listing=True)
+        held = module.corpus('holdout', listing=True, seed=197201)
+        self.assertEqual([case['group'] for case in full], [case['group'] for case in held])
+        self.assertEqual(held, module.corpus('holdout', listing=True, seed=197201))
+        for training, holdout in zip(full, held):
+            if training['name'] != 'startup':
+                self.assertNotEqual(training['name'], holdout['name'])
+                self.assertNotEqual(training['parameters'], holdout['parameters'])
+                self.assertNotEqual(training['program'], holdout['program'])
 
     def test_exact_paired_ratio_and_replay(self):
         module = self.module()

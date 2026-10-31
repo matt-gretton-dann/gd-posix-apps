@@ -1010,13 +1010,13 @@ private:
     }
   }
 
-  auto ensure_it_valid(typename DigitVector::iterator it, std::shared_ptr<DigitVector> digits) ->
+  static auto ensure_it_valid(typename DigitVector::iterator it, DigitVector& digits) ->
     typename DigitVector::iterator
   {
-    // This by-value owner is copied at each mutable per-limb iterator check.
-    GD_BC_PROFILE_EVENT(Profile::Event::iterator_owner_copies, 1);
-    if (it == digits->end()) {
-      it = digits->insert(it, 0);
+    // The calling BasicDigits owns this container throughout the check. Vector
+    // growth can move its elements, but does not change the container's owner.
+    if (it == digits.end()) {
+      it = digits.insert(it, 0);
     }
     return it;
   }
@@ -1066,7 +1066,7 @@ private:
     WideType carry = initial_carry;
 
     while (scale >= base_log10_) {
-      it = ensure_it_valid(it, digits_);
+      it = ensure_it_valid(it, *digits_);
       carry = static_cast<WideType>(fn(it++, carry));
       assert(carry < base_);  // NOLINT
       scale -= base_log10_;
@@ -1075,7 +1075,7 @@ private:
     WideType const pow10_scale = pow10(scale);
     for (auto it_rhs : *rhs.digits_) {
       carry += it_rhs * pow10_scale;
-      it = ensure_it_valid(it, digits_);
+      it = ensure_it_valid(it, *digits_);
       carry = static_cast<WideType>(fn(it++, carry));
       assert(carry < base_);  // NOLINT
     }
