@@ -105,7 +105,8 @@ public:
   /** \brief   Construct holding the single digit \a num
    *  \param num Number to hold.  Must be less than \c base_.
    */
-  explicit BasicDigits(NumType num) : digits_(std::make_shared<DigitVector>())
+  explicit BasicDigits(NumType num)
+      : digits_(GD_BC_PROFILE_SHARED(Profile::AllocationKind::digits, DigitVector)())
   {
     while (num != 0) {
       digits_->push_back(static_cast<NumType>(num % base_));
@@ -114,10 +115,30 @@ public:
   }
 
   ~BasicDigits() = default;
+#if GD_BC_PROFILE
+  BasicDigits(BasicDigits const& other) noexcept : digits_(other.digits_) { record_copy(); }
+  auto operator=(BasicDigits const& other) noexcept -> BasicDigits&
+  {
+    digits_ = other.digits_;
+    record_copy();
+    return *this;
+  }
+  BasicDigits(BasicDigits&& other) noexcept : digits_(std::move(other.digits_))
+  {
+    GD_BC_PROFILE_EVENT(Profile::Event::digit_moves, 1);
+  }
+  auto operator=(BasicDigits&& other) noexcept -> BasicDigits&
+  {
+    digits_ = std::move(other.digits_);
+    GD_BC_PROFILE_EVENT(Profile::Event::digit_moves, 1);
+    return *this;
+  }
+#else
   BasicDigits(BasicDigits const&) = default;
   auto operator=(BasicDigits const&) -> BasicDigits& = default;
   BasicDigits(BasicDigits&&) noexcept = default;
   auto operator=(BasicDigits&&) noexcept -> BasicDigits& = default;
+#endif
 
   /** \brief  Reset the digits - sets us to zero. */
   void reset() { digits_.reset(); }
@@ -671,8 +692,9 @@ public:
       WideType const v2 = (*v.digits_)[0] + (base_ * (*v.digits_)[1]);
       WideType const q = u2 / v2;
 
-      digits_ = std::make_shared<DigitVector>(std::initializer_list<NumType>{
-        static_cast<NumType>(q % base_), static_cast<NumType>(q / base_)});
+      digits_ = GD_BC_PROFILE_SHARED(Profile::AllocationKind::digits, DigitVector)(
+        std::initializer_list<NumType>{static_cast<NumType>(q % base_),
+                                       static_cast<NumType>(q / base_)});
       return;
     }
 
@@ -694,7 +716,8 @@ public:
     digits_->push_back(0);
 
     BasicDigits q;
-    q.digits_ = std::make_shared<DigitVector>(m + 1, static_cast<NumType>(0));
+    q.digits_ = GD_BC_PROFILE_SHARED(Profile::AllocationKind::digits,
+                                     DigitVector)(m + 1, static_cast<NumType>(0));
 
     /* D2. Initialize j.  */
     auto j = m;
@@ -872,12 +895,24 @@ public:
   }
 
 private:
-  using DigitVector = std::vector<NumType>;
+#if GD_BC_PROFILE
+  void record_copy() const noexcept
+  {
+    GD_BC_PROFILE_EVENT(Profile::Event::digit_copies, 1);
+    if (digits_) {
+      GD_BC_PROFILE_EVENT(Profile::Event::owned_digit_copies, 1);
+    }
+  }
+#endif
+  using DigitVector =
+    std::vector<NumType, Profile::Allocator<NumType, Profile::AllocationKind::digits>>;
 
   /** Construct basic digits based on an iterator range [begin, end).  */
   BasicDigits(typename DigitVector::const_iterator begin, typename DigitVector::const_iterator end)
-      : digits_(std::make_shared<DigitVector>(begin, end))
+      : digits_(GD_BC_PROFILE_SHARED(Profile::AllocationKind::digits, DigitVector)(begin, end))
   {
+    GD_BC_PROFILE_EVENT(Profile::Event::range_limb_bytes,
+                        static_cast<std::uint64_t>(std::distance(begin, end)) * sizeof(NumType));
   }
 
   /** \brief  Ensure digits_ is populated in a way that is modifiable.
@@ -885,10 +920,12 @@ private:
   void copy_on_write()
   {
     if (!digits_) {
-      digits_ = std::make_shared<DigitVector>();
+      digits_ = GD_BC_PROFILE_SHARED(Profile::AllocationKind::digits, DigitVector)();
     }
     if (digits_.use_count() > 1) {
-      digits_ = std::make_shared<DigitVector>(*digits_);
+      GD_BC_PROFILE_EVENT(Profile::Event::cow_clones, 1);
+      GD_BC_PROFILE_EVENT(Profile::Event::cow_limb_bytes, digits_->size() * sizeof(NumType));
+      digits_ = GD_BC_PROFILE_SHARED(Profile::AllocationKind::digits, DigitVector)(*digits_);
     }
   }
 
@@ -976,6 +1013,8 @@ private:
   auto ensure_it_valid(typename DigitVector::iterator it, std::shared_ptr<DigitVector> digits) ->
     typename DigitVector::iterator
   {
+    // This by-value owner is copied at each mutable per-limb iterator check.
+    GD_BC_PROFILE_EVENT(Profile::Event::iterator_owner_copies, 1);
     if (it == digits->end()) {
       it = digits->insert(it, 0);
     }
@@ -1045,6 +1084,7 @@ private:
                              typename DigitVector::const_iterator rhs_begin,
                              typename DigitVector::const_iterator rhs_end) -> BasicDigits
   {
+    GD_BC_PROFILE_EVENT(Profile::Event::basic_multiply_calls, 1);
     /* Handle the case of nothing to multiply by - equivalent to multiplying by zero.  */
     if (lhs_begin == lhs_end || rhs_begin == rhs_end) {
       return BasicDigits();
@@ -1100,6 +1140,7 @@ private:
                                  typename DigitVector::const_iterator rhs_begin,
                                  typename DigitVector::const_iterator rhs_end) -> BasicDigits
   {
+    GD_BC_PROFILE_EVENT(Profile::Event::karatsuba_multiply_calls, 1);
     assert(std::distance(lhs_begin, lhs_end) > multiply_split_point_);  // NOLINT
     assert(std::distance(lhs_begin, lhs_end) > multiply_split_point_);  // NOLINT
 
@@ -1267,6 +1308,7 @@ public:
    */
   BasicNumber(std::string_view s, NumType ibase) : digits_(), sign_(Sign::positive), scale_(0)
   {
+    GD_BC_PROFILE_EVENT(Profile::Event::literal_conversions, 1);
     assert(ibase >= 2);   // NOLINT
     assert(ibase <= 16);  // NOLINT
 

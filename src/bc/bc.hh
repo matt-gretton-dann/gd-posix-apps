@@ -28,6 +28,8 @@
 #include <tuple>
 #include <variant>
 
+#include "profiling.hh"
+
 namespace GD::Bc {
 // Needed for number.hh
 inline constexpr auto extensions_enabled() -> bool
@@ -425,7 +427,10 @@ using ArrayIndex = Number::NumType;
 using ArrayElement = std::pair<Array, ArrayIndex>;
 
 /** Array values. */
-using ArrayValues = std::shared_ptr<std::map<ArrayIndex, Number>>;
+using ArrayStorage = std::map<
+  ArrayIndex, Number, std::less<ArrayIndex>,
+  Profile::Allocator<std::pair<ArrayIndex const, Number>, Profile::AllocationKind::arrays>>;
+using ArrayValues = std::shared_ptr<ArrayStorage>;
 
 template<typename T>
 auto operator==(TypeWrapper<Letter, T> lhs, TypeWrapper<Letter, T> rhs) -> bool
@@ -688,7 +693,8 @@ private:
 };
 
 /** Vector of instructions.  */
-using Instructions = std::vector<Instruction>;
+using Instructions =
+  std::vector<Instruction, Profile::Allocator<Instruction, Profile::AllocationKind::instructions>>;
 
 auto operator<<(std::ostream& os, Instruction::Stream s) -> std::ostream&;
 auto operator<<(std::ostream& os, Instruction::Opcode opcode) -> std::ostream&;

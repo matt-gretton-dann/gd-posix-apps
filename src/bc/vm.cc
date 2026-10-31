@@ -122,11 +122,15 @@ private:
   }
 
   using Param = std::variant<ArrayValues, Number>;  ///< Parameter to a function
-  using Params = std::list<Param>;                  ///< List of parameters
-  using ParamStack = std::list<Params>;             ///< Stack of current function parameters
-  using Index = Instruction::Index;                 ///< Index into the instructions
-  using Offset = Instruction::Offset;               ///< Offset from current instruction
-  using NumType = Number::NumType;                  ///< Number type
+  using Params =
+    std::list<Param,
+              Profile::Allocator<Param, Profile::AllocationKind::frames>>;  ///< List of parameters
+  using ParamStack = std::list<
+    Params, Profile::Allocator<Params, Profile::AllocationKind::frames>>;  ///< Stack of current
+                                                                           ///< function parameters
+  using Index = Instruction::Index;    ///< Index into the instructions
+  using Offset = Instruction::Offset;  ///< Offset from current instruction
+  using NumType = Number::NumType;     ///< Number type
   using FunctionDefinition =
     std::tuple<Instructions, VariableMask, Location>;  ///< Function definition.
 
@@ -308,10 +312,12 @@ private:
   /** Validate the result in the current pc. */
   void validate_result(Instructions::size_type i) const;
 
-  VMState* vm_;                                 ///< Virtual Machine state
-  Instructions const& instrs_;                  ///< Instructions to execute
-  Instruction::Index pc_{0};                    ///< Current program counter
-  std::vector<std::optional<Result>> results_;  ///< Results of instructions.
+  VMState* vm_;                 ///< Virtual Machine state
+  Instructions const& instrs_;  ///< Instructions to execute
+  Instruction::Index pc_{0};    ///< Current program counter
+  std::vector<std::optional<Result>,
+              Profile::Allocator<std::optional<Result>, Profile::AllocationKind::results>>
+    results_;  ///< Results of instructions.
 };
 
 auto operator<<(std::ostream& os, InstructionPack const& instrs) -> std::ostream&;
@@ -428,6 +434,7 @@ void GD::Bc::Details::VMState::function(Letter func, Instructions::const_iterato
 
 auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc::Number
 {
+  GD_BC_PROFILE_EVENT(Profile::Event::function_calls, 1);
   auto const& func_ptr{functions_.at(static_cast<unsigned>(func))};
   if (!func_ptr.has_value()) {
     Details::error(Msg::function_not_defined, func, loc.file_name(), loc.line(), loc.column());
@@ -508,12 +515,14 @@ void GD::Bc::Details::VMState::array_element(ArrayElement const& ae, Number cons
 {
   auto& a = arrays_.at(static_cast<unsigned>(ae.first.get()));
   if (!a) {
-    a = std::make_shared<ArrayValues::element_type>();
+    a = GD_BC_PROFILE_SHARED(Profile::AllocationKind::arrays, ArrayValues::element_type)();
   }
   else if (a.use_count() > 1) {
     // Array arguments and saved locals are values; isolate a write from their
     // shared snapshot before changing an element.
-    a = std::make_shared<ArrayValues::element_type>(*a);
+    GD_BC_PROFILE_EVENT(Profile::Event::array_clones, 1);
+    GD_BC_PROFILE_EVENT(Profile::Event::array_entries_copied, a->size());
+    a = GD_BC_PROFILE_SHARED(Profile::AllocationKind::arrays, ArrayValues::element_type)(*a);
   }
 
   a->insert_or_assign(ae.second, num);
@@ -752,6 +761,7 @@ auto GD::Bc::Details::InstructionPack::execute() -> std::pair<GD::Bc::Number, bo
     if (Details::have_been_interrupted.test(std::memory_order_relaxed)) {
       return std::make_pair(Number(0), true);
     }
+    GD_BC_PROFILE_EVENT(Profile::Event::instructions_executed, 1);
     auto i = pc_;
     switch (instrs_[pc_].opcode()) {
     case Instruction::Opcode::string:
