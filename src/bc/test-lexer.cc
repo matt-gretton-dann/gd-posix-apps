@@ -110,7 +110,7 @@ TEST_CASE("GD::Bc::Lexer - Number", "[bc][lexer]")
 
 TEST_CASE("GD::Bc::Lexer - Number Extensions", "[bc][lexer][extensions]")
 {
-  std::string_view number = GENERATE("1\\\n    2");  // NOLINT
+  std::string_view number = GENERATE("1\\\n    2", "1\\\n\t2", "1\\\n \t 2");  // NOLINT
   auto lexer = GD::Bc::Lexer(std::make_unique<GD::Bc::StringReader>(number));
   auto t1 = lexer.peek();
   if (GD::Bc::extensions_enabled()) {
@@ -213,4 +213,17 @@ TEST_CASE("Invalid numeric continuations retain diagnostics", "[bc][lexer][conti
   REQUIRE(lexer.peek().type() == GD::Bc::Token::Type::error);
   REQUIRE_FALSE(lexer.peek().error().empty());
   REQUIRE(lexer.peek().type() == GD::Bc::Token::Type::error);
+}
+
+TEST_CASE("Lexer can chew before its first peek", "[bc][lexer][coverage]")
+{
+  GD::Bc::Lexer lexer(std::make_unique<GD::Bc::StringReader>("1 2"));
+  lexer.chew();
+  REQUIRE(lexer.peek().type() == GD::Bc::Token::Type::number);
+  REQUIRE(lexer.peek().number() == "2");
+  lexer.chew();
+  lexer.chew();
+  REQUIRE(lexer.peek().type() == GD::Bc::Token::Type::eof);
+  lexer.chew();
+  REQUIRE(lexer.peek().type() == GD::Bc::Token::Type::eof);
 }
