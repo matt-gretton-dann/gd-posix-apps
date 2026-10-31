@@ -71,6 +71,12 @@ calibration code. The old unseeded CI abort cannot be attributed conclusively,
 but invalid generated limbs and incorrect timing are independently reproduced
 and corrected. See [#234](https://github.com/matt-gretton-dann/gd-posix-apps/issues/234).
 
+Calibration grows each timing batch by at most four times, doubling when the
+process CPU clock reports zero for a short batch. Batch arithmetic checks the
+container limit before multiplication and reports invalid durations or exhausted
+capacity as failures. Timing samples are flushed for failure diagnosis. These
+rules handle coarse clocks without assuming a platform-specific resolution.
+
 ## Imported zero-scale oracle discrepancy
 
 The imported Howard `tests/misc` fixture has four saved answers which discard
@@ -86,12 +92,6 @@ radix conversion. It requires status 0, empty stderr and the complete corrected
 output. This replaces the incorrect oracle without adding an unsupported-test
 skip or accepting arbitrary failures. See
 [#233](https://github.com/matt-gretton-dann/gd-posix-apps/issues/233).
-
-Calibration grows each timing batch by at most four times, doubling when the
-process CPU clock reports zero for a short batch. Batch arithmetic checks the
-container limit before multiplication and reports invalid durations or exhausted
-capacity as failures. Timing samples are flushed for failure diagnosis. These
-rules handle coarse clocks without assuming a platform-specific resolution.
 
 ## Exact scaled arithmetic and long division
 
@@ -130,3 +130,60 @@ and recorded independence pairs in fresh LLVM exports before claiming coverage.
 The expected quotient/remainder still comes from native division, not this path
 model. The same numeric cases supplement wider traits without claiming identical
 limb paths at their different radices.
+
+## Isolated LLVM coverage
+
+Use a Clang/LLVM toolchain which supports MC/DC. `ENABLE_BC_COVERAGE=ON`
+checks compiler support and instruments bc, its implementation library and its
+unit tests with `-fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc`.
+Coverage is opt-in; ordinary compiler configurations are unchanged. Both asserted
+CLI and unit tests are required, including when extensions are disabled.
+
+Configure and build ON and OFF separately, preserving configure/build logs:
+Use the default static libraries so both executable mappings contain the linked
+implementation. Missing baseline implementation mappings are an error, not a
+smaller coverage denominator.
+
+```sh
+cmake -S . -B build/bc-coverage-on -G Ninja -DCMAKE_BUILD_TYPE=Debug \
+  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+  -DENABLE_NON_POSIX_EXTENSIONS=ON -DENABLE_BC_COVERAGE=ON
+cmake --build build/bc-coverage-on --target bc test-libbc test-util
+python3 src/bc/scripts/collect-coverage.py build/bc-coverage-on build/bc-report-on
+```
+
+Repeat with a distinct `bc-coverage-off` tree, `ENABLE_NON_POSIX_EXTENSIONS=OFF`
+and a new `bc-report-off` output directory. The collector refuses an existing
+output directory, runs the discovered bc tests, and merges only profiles written
+by that test run. Build-time tuner, benchmark and manual-smoke profiles cannot
+enter the report. Unsupported imported entries retain their explicit skip
+results. It returns failure if tests fail or MC/DC instrumentation is absent.
+
+On macOS, select matching tools with `--llvm-cov "$(xcrun --find llvm-cov)"`
+and `--llvm-profdata "$(xcrun --find llvm-profdata)"`. Other hosts can pass explicit
+matching LLVM executable paths. Keep compiler/tool versions and build logs with
+the report, including any instrumentation limit or exclusion warnings.
+
+Artifacts include the selected test manifest, test logs, raw profiles and merge
+manifest, full LLVM JSON, per-file/raw summary counts, text and annotated HTML,
+source revision/dirty state and LLVM warnings. Header coverage retains native
+and small-trait instantiations for continuity with the original broad baseline.
+An additional application-mappings view excludes instantiations found only in
+the unit executable; its counts remain separate from the broad baseline.
+Test/support/generated/tuner files are excluded by role and filename, not by
+whether they were covered. Never sum repeated template `mcdc_records`; LLVM's
+summary supplies the tracked condition denominator.
+
+Report raw counts alongside any reviewed eligible result. The collector computes
+no adjusted denominator or feasibility exclusions. Single-condition decisions,
+constant-folded/uninstrumented expressions, and condition/vector limits are tool
+scope, not covered MC/DC. Review actual short-circuit independence pairs and
+maintain the decision-specific feasibility ledger before claiming coverage goals.
+
+The [coverage decision ledger](bc-coverage-ledger.md) records asserted condition
+pairs, source invariants and open feasibility reviews. It does not calculate an
+eligible denominator or replace the raw LLVM reports.
+
+The [committed coverage checkpoint](bc-coverage-results.md) records raw ON/OFF
+and application/broad counts, the measured revision and remaining limitations.
+Rerun the collector for later code; the checkpoint is not an adjusted-goal claim.

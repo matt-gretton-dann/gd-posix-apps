@@ -62,6 +62,7 @@ The following options can be passed to CMake to change the build behaviour:
 | `FORCE_SUPPLEMENTAL_LIBRARY` | BOOL | OFF | Force use of the [standard supplemental](./libgdsup/index.md) library even in cases where it is not needed. |
 | `RUN_CLANG_FORMAT` | BOOL | OFF | Check source formatting during the build. |
 | `RUN_CLANG_TIDY` | BOOL | OFF | Run clang-tidy during compilation. |
+| `ENABLE_BC_COVERAGE` | BOOL | OFF | Instrument bc and its tests for line, branch and MC/DC coverage using a supported Clang/LLVM toolchain. |
 
 Style checks are opt-in because their diagnostics and formatting rules vary
 between tool versions. Compiler warnings remain enabled and are treated as errors.

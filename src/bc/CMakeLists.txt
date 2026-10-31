@@ -72,6 +72,32 @@ endif()
 add_utility(NAME bc NO_INT_TEST CAT_ID bc SOURCES bc.cc)
 target_link_libraries(bc PUBLIC libbc)
 
+if(ENABLE_BC_COVERAGE)
+  if(NOT RUN_UNIT_TESTS OR NOT RUN_INTEGRATION_TESTS)
+    message(FATAL_ERROR "bc coverage requires both unit tests and Python CLI tests")
+  endif()
+  if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    message(FATAL_ERROR "bc MC/DC coverage requires a supported Clang compiler")
+  endif()
+  include(CheckCXXCompilerFlag)
+  include(CMakePushCheckState)
+  cmake_push_check_state(RESET)
+  set(CMAKE_REQUIRED_LINK_OPTIONS -fprofile-instr-generate)
+  check_cxx_compiler_flag("-fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc"
+                         GD_BC_HAS_MCDC)
+  cmake_pop_check_state()
+  if(NOT GD_BC_HAS_MCDC)
+    message(FATAL_ERROR "This Clang configuration cannot instrument bc MC/DC coverage")
+  endif()
+  foreach(_bc_target libbc bc test-libbc)
+    target_compile_options(${_bc_target} PRIVATE
+                           -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc)
+  endforeach()
+  # Consumers (including the build-time tuner) need the profile runtime when
+  # linking the instrumented library. Only asserted test profiles are collected.
+  target_link_options(libbc INTERFACE -fprofile-instr-generate)
+endif()
+
 # These local CLI regressions run in both extension configurations and on Windows.
 if(RUN_INTEGRATION_TESTS)
   add_test(NAME bc/cli COMMAND "${Python_EXECUTABLE}"
