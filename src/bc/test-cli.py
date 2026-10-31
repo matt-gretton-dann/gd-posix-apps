@@ -78,6 +78,26 @@ class CliTests(unittest.TestCase):
         else:
             self.run_bc("halt\n", success=False)
 
+    def test_syntax_errors_are_read_time(self):
+        for text in (
+            "define f() {\nauto\n}\n",
+            "define f() {\nauto\n}\nf()\n",
+            "define f() {\nreturn (1\n}\n",
+            "define f() {\nreturn (1\n}\nf()\n",
+            "if(0) {\n1+\n}\n",
+            "while(0) {\n1+\n}\n",
+            "define f() {\nif(0) {\n1+\n}\n}\n",
+        ):
+            with self.subTest(text=text):
+                self.run_bc(text, success=False)
+        self.run_bc("2+3\ndefine f() {\nreturn (1\n}\n", "5\n", success=False)
+
+    def test_malformed_item_is_discarded(self):
+        self.run_bc("1 2\n", success=False)
+        self.run_bc("1", success=False)
+        # A real error before quit must not be erased by reading ahead to quit.
+        self.run_bc("define f() {\nauto\n}\nquit\n", success=False)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
