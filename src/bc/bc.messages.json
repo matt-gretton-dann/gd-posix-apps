@@ -374,6 +374,12 @@
         "id": 62,
         "description": "Operand {0} of instruction {1} refers to an incompatible result type.",
         "C": "Operand {0} of instruction {1} has an incompatible result type."
+      },
+      {
+        "msg": "invalid_control_flow",
+        "id": 63,
+        "description": "Instruction {0} violates the control-flow contract; {1} explains why.",
+        "C": "Invalid control flow at instruction {0}: {1}."
       }
     ]
   }

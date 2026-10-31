@@ -17,6 +17,7 @@
 
 #include "bc.hh"
 #include "number.hh"
+#include "verification.hh"
 
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define STRINGIFY2(a) #a
@@ -107,8 +108,8 @@ struct VMState
    */
   auto pop_param_array() -> ArrayValues;
 
-  /** \brief  Validate instruction offset bounds and result types.  */
-  void validate(Instructions const& instrs) const;
+  /** \brief  Validate instruction bounds, result types and control-flow availability.  */
+  void validate(Instructions const& instrs, bool function_body = false) const;
 
 private:
   template<typename... Ts>
@@ -420,7 +421,7 @@ void GD::Bc::Details::VMState::function(Letter func, Instructions::const_iterato
                                         Location const& loc)
 {
   Instructions instrs(begin, end);
-  validate(instrs);
+  validate(instrs, true);
   functions_.at(static_cast<unsigned>(func)) =
     std::make_optional(std::make_tuple(std::move(instrs), mask, loc));
 }
@@ -565,7 +566,7 @@ auto GD::Bc::Details::VMState::array_length(Array a) const -> GD::Bc::Number::Nu
   return rit->first + 1;
 }
 
-void GD::Bc::Details::VMState::validate(Instructions const& instrs) const
+void GD::Bc::Details::VMState::validate(Instructions const& instrs, bool function_body) const
 {
   for (Instructions::size_type i = 0; i < instrs.size(); ++i) {
     auto check_offset = [&](Instruction::Operand const& operand, bool allow_end, Msg underflow,
@@ -731,6 +732,11 @@ void GD::Bc::Details::VMState::validate(Instructions const& instrs) const
     case O::function_end:
       break;
     }
+  }
+  auto const failure = verify_control_flow(instrs, function_body);
+  if (failure) {
+    assert_error(false, Msg::invalid_control_flow, failure->instruction,
+                 failure->reason);  // NOLINT
   }
 }
 
