@@ -553,8 +553,12 @@ public:
         result.multiply(*this, 0);
         power.sub(one, 0);
       }
-      multiply(*this, 0);
       power.divide(2);
+      // The remaining bits consume the next squared base. Once the exponent
+      // is exhausted that square is unused, including in reciprocal powers.
+      if (!power.is_zero()) {
+        multiply(*this, 0);
+      }
     }
 
     std::swap(digits_, result.digits_);
