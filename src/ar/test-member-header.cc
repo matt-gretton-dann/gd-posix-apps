@@ -14,6 +14,15 @@
 
 #include "ar.hh"
 
+TEST_CASE("GD::Ar::ReadIterator - Empty archive", "[ar][read-iterator]")
+{
+  std::string const archive = "!<arch>\n";
+  GD::MemorySpanInputFile file((GD::Span::span<char const>(archive.data(), archive.size())));
+  auto begin = GD::Ar::read_archive_begin(file);
+  auto end = GD::Ar::read_archive_end<GD::MemorySpanInputFile>();
+  REQUIRE(begin == end);
+}
+
 TEST_CASE("GD::Ar::Details::MemberHeader - Construction BSD", "[ar][member-header]")
 {
   std::string const name = "file            ";

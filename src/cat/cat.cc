@@ -10,6 +10,7 @@
 
 #include <clocale>
 #include <cstdio>
+#include <cstring>
 #include <iostream>
 
 template<typename... Ts>

@@ -1,5 +1,5 @@
 /** \file libgdsup/nl_types/catopen.c
- *  \brief Implemenation of catopen()
+ *  \brief Implemenation of gd_catopen()
  *  \author Copyright 2021, Matthew Gretton-Dann
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -30,12 +30,12 @@
  *  \param  path Path of file to attempt to open.
  *  \return      Catalogue value, NULL on file is not open, CATD_ERROR on other error.
  *
- * This is not quite the error codes expected for the return from \c catopen().  NULL is returned
+ * This is not quite the error codes expected for the return from \c gd_catopen().  NULL is returned
  * when the file doesn't exist - this is so that the path searcher can move to the next file to
  * attempt.  Use \c generate_result() to convert the result of this function to an appropriate one
- * for \c catopen().
+ * for \c gd_catopen().
  */
-static nl_catd do_catopen(char const* path)
+static gd_nl_catd do_catopen(char const* path)
 {
 #define error_return(e, fd)                                                                        \
   do {                                                                                             \
@@ -79,7 +79,7 @@ static nl_catd do_catopen(char const* path)
   }
 
   close(fd);
-  return (nl_catd)full_buffer;
+  return (gd_nl_catd)full_buffer;
 
 #undef error_return
 }
@@ -226,13 +226,13 @@ static char* expand_nlspath_entry(char const* begin, char const* end, char const
  *  \param  locale  Locale to use in %L, %l, %t, and %c.
  *  \return         Catalogue ID, NULL if no catalogue found, -1 on other error.
  *
- * This is not quite the error codes expected for the return from \c catopen().  NULL is returned
+ * This is not quite the error codes expected for the return from \c gd_catopen().  NULL is returned
  * when the file doesn't exist - this is so that the path searcher can move to the next file to
  * attempt.  Use \c generate_result() to convert the result of this function to an appropriate one
- * for \c catopen().
+ * for \c gd_catopen().
  */
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-static nl_catd do_catopen_path(char const* nlspath, char const* name, char const* locale)
+static gd_nl_catd do_catopen_path(char const* nlspath, char const* name, char const* locale)
 {
   int saved_errno = errno;
 
@@ -245,7 +245,7 @@ static nl_catd do_catopen_path(char const* nlspath, char const* name, char const
     }
 
     if (p == end) {
-      nl_catd result = do_catopen(name);
+      gd_nl_catd result = do_catopen(name);
       if (result != CATD_NOTFOUND) {
         return result;
       }
@@ -255,7 +255,7 @@ static nl_catd do_catopen_path(char const* nlspath, char const* name, char const
       if (expanded_name == NULL) {
         return CATD_ERROR;
       }
-      nl_catd result = do_catopen(expanded_name);
+      gd_nl_catd result = do_catopen(expanded_name);
       free(expanded_name);
       if (result != CATD_NOTFOUND) {
         return result;
@@ -269,13 +269,13 @@ static nl_catd do_catopen_path(char const* nlspath, char const* name, char const
   return CATD_NOTFOUND;
 }
 
-/** \brief         Generate a \c catopen() result
+/** \brief         Generate a \c gd_catopen() result
  *  \param  result Prototype result.
- *  \return        Expected result from \c catopen().
+ *  \return        Expected result from \c gd_catopen().
  *
  * Basically returns \a result unless it is \c NULL in which case it sets \c errno to \c ENOENT.
  */
-static nl_catd generate_result(nl_catd result)
+static gd_nl_catd generate_result(gd_nl_catd result)
 {
   if (result == CATD_NOTFOUND) {
     errno = ENOENT;
@@ -284,10 +284,10 @@ static nl_catd generate_result(nl_catd result)
   return result;
 }
 
-nl_catd catopen(char const* name, int oflag)
+gd_nl_catd gd_catopen(char const* name, int oflag)
 {
   if (oflag != 0 && oflag != NL_CAT_LOCALE) {
-    __support_log("catopen: Illegal oflag: %d\n", oflag);
+    __support_log("gd_catopen: Illegal oflag: %d\n", oflag);
     errno = EINVAL;
     return CATD_ERROR;
   }
@@ -332,7 +332,7 @@ nl_catd catopen(char const* name, int oflag)
   /* Do lookup on the NLSPATH.  */
   if (nlspath != NULL && nlspath[0] != '\0') {
     int saved_errno = errno;
-    nl_catd result = do_catopen_path(nlspath, name, locale);
+    gd_nl_catd result = do_catopen_path(nlspath, name, locale);
     if (result != CATD_NOTFOUND) {
       free(locale_to_free);
       return generate_result(result);
@@ -341,7 +341,7 @@ nl_catd catopen(char const* name, int oflag)
   }
 
   /* NLSPATH lookup failed - try the default NLSPATH instead.  */
-  nl_catd result = do_catopen_path(DEFAULT_NLSPATH, name, locale);
+  gd_nl_catd result = do_catopen_path(DEFAULT_NLSPATH, name, locale);
   free(locale_to_free);
   return generate_result(result);
 }

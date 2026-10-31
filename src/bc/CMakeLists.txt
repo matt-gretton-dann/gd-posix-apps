@@ -32,6 +32,7 @@ if(RUN_UNIT_TESTS)
   target_include_directories(test-libbc PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
   set_warnings(test-libbc)
   target_sources(test-libbc PRIVATE
+                 test-format.cc
                  test-lexer.cc
                  test-libbc-main.cc
                  test-number.cc

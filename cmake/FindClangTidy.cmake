@@ -3,7 +3,7 @@
 # \author Copyright 2021, Matthew Gretton-Dann
 #         SPDX-License-Identifier: Apache-2.0
 
-option(RUN_CLANG_TIDY "Add clang-tidy target to format sources" ON)
+option(RUN_CLANG_TIDY "Run clang-tidy while building sources" OFF)
 
 if (CMAKE_VERSION VERSION_LESS 3.17)
   set(_ct_CHECK_START STATUS)

@@ -27,7 +27,6 @@ Checks:          >-
  -readability-identifier-length
 WarningsAsErrors: '*,-clang-diagnostic-ignored-optimization-argument'
 HeaderFilterRegex: ''
-AnalyzeTemporaryDtors: false
 FormatStyle:     file
 User:            mgrettondann
 CheckOptions:

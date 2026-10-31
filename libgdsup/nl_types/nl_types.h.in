@@ -14,10 +14,10 @@
 #include <stdbool.h>
 
 /** \brief Catalogue value representing an error.  */
-#define CATD_ERROR ((nl_catd)-1)
+#define CATD_ERROR ((gd_nl_catd)-1)
 
 /** \brief Catalogue value representing a missing file.  */
-#define CATD_NOTFOUND ((nl_catd)NULL)
+#define CATD_NOTFOUND ((gd_nl_catd)NULL)
 
 /** \brief  Size of a message catalogue header. */
 #define CAT_HDR_SIZE 24

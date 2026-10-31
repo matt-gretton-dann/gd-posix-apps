@@ -11,12 +11,13 @@ jobs:
     name: Build and test on ${{ matrix.os }} - extensions enabled - ${{matrix.extensions}}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
         extensions: [OFF, ON]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v7
       - name: Package install (Ubuntu)
         if: ${{ matrix.os  == 'ubuntu-latest' }}
         run: |
@@ -43,12 +44,13 @@ jobs:
     name: Build and test on ${{ matrix.os }} - extensions enabled - ${{matrix.extensions}}
     runs-on: ${{ matrix. os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [windows-latest]
         extensions: [0, 1]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v7
     - name: Configure
       run: |
         cmake -S "$Env:GITHUB_WORKSPACE" -B "$Env:GITHUB_WORKSPACE\\build" -DCMAKE_BUILD_TYPE:STRING=Release -DENABLE_NON_POSIX_EXTENSIONS:BOOL=${{matrix.extensions}}

@@ -22,6 +22,7 @@ include(FetchContent)
 include(GNUInstallDirs)
 include(Warnings)
 include(CheckIPOSupported)
+
 include(GDPosixAppsTests)
 
 # Find packages
@@ -53,7 +54,9 @@ if(BUILD_TESTING)
     FetchContent_Declare(
       Catch2
       GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-      GIT_TAG        v2.13.7)
+      GIT_TAG        v2.13.7
+      PATCH_COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=<SOURCE_DIR>"
+                    -P "${CMAKE_SOURCE_DIR}/cmake/Catch2Policies.cmake")
     FetchContent_MakeAvailable(Catch2)
     message(STATUS "Catch2 sources: ${Catch2_SOURCE_DIR}")
     list(PREPEND CMAKE_MODULE_PATH "${Catch2_SOURCE_DIR}/contrib")

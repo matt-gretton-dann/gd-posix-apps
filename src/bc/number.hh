@@ -10,6 +10,7 @@
 #include "gd/format.hh"
 #include "gd/string.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <iomanip>
 #include <iterator>
@@ -1795,7 +1796,7 @@ struct fmt::formatter<GD::Bc::BasicNumber<NumberTraits>>
   }
 
   template<typename FormatContext>
-  auto format(Number const& number, FormatContext& ctx)
+  auto format(Number const& number, FormatContext& ctx) const
   {
     std::ostringstream os;
     if (debug_) {
@@ -1805,7 +1806,8 @@ struct fmt::formatter<GD::Bc::BasicNumber<NumberTraits>>
       number.output(os, 10, 0);  // NOLINT - 10 isn't magic
     }
     // Work around Win32 STL bug:
-    return vformat_to(ctx.out(), "{0}", fmt::make_format_args(os.str()));
+    auto text = os.str();
+    return fmt::vformat_to(ctx.out(), "{0}", fmt::make_format_args(text));
   }
 
 private:

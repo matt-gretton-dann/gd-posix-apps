@@ -1,5 +1,5 @@
 /** \file libgdsup/nl_types/catgets.c
- *  \brief Implemenation of catgets()
+ *  \brief Implemenation of gd_catgets()
  *  \author Copyright 2021, Matthew Gretton-Dann
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,7 @@
 
 /* See /docs/file-formats/message-catalogues.md for a description of the file format we are reading.
  */
-char* catgets(nl_catd catd, int set_id, int msg_id, char const* s)
+char* gd_catgets(gd_nl_catd catd, int set_id, int msg_id, char const* s)
 {
 #define error_return(e, fmt, ...)                                                                  \
   do {                                                                                             \
@@ -29,10 +29,10 @@ char* catgets(nl_catd catd, int set_id, int msg_id, char const* s)
   /* Parameter checks.  */
   if (catd == CATD_ERROR || catd == CATD_NOTFOUND ||
       !__nl_types_check_cat_header((char const*)catd)) {  // NOLINT
-    error_return(EBADF, "catgets: Bad Catalogue ID [%p, %d, %d]\n", catd, set_id, msg_id);
+    error_return(EBADF, "gd_catgets: Bad Catalogue ID [%p, %d, %d]\n", catd, set_id, msg_id);
   }
   if (set_id < 1 || msg_id < 1) {
-    error_return(ENOMSG, "catgets: Set ID and Message ID too low [%p, %d, %d]\n", catd, set_id,
+    error_return(ENOMSG, "gd_catgets: Set ID and Message ID too low [%p, %d, %d]\n", catd, set_id,
                  msg_id);
   }
 
@@ -51,7 +51,7 @@ char* catgets(nl_catd catd, int set_id, int msg_id, char const* s)
   }
 
   if (i == num_sets) {
-    error_return(ENOMSG, "catgets: Set ID does not exist in catalogue [%p, %d, %d]\n", catd, set_id,
+    error_return(ENOMSG, "gd_catgets: Set ID does not exist in catalogue [%p, %d, %d]\n", catd, set_id,
                  msg_id);
   }
 
@@ -60,13 +60,13 @@ char* catgets(nl_catd catd, int set_id, int msg_id, char const* s)
   uint64_t msg_offset = __support_read_le_u64(off + CAT_ARRAY_PTR_OFFSET);
   if (msg_offset > UINT64_MAX - ((uint64_t)num_msgs) * CAT_ARRAY_ENTRY_SIZE) {
     error_return(EINVAL,
-                 "catgets: Message array overflows uint64_t capacity [%p, %i, %i]: [% " PRIx64
+                 "gd_catgets: Message array overflows uint64_t capacity [%p, %i, %i]: [% " PRIx64
                  ", %" PRIu32 "]\n",
                  catd, set_id, msg_id, msg_offset, num_msgs);
   }
   if (cat_size < msg_offset + ((uint64_t)num_msgs) * CAT_ARRAY_ENTRY_SIZE) {
     error_return(EINVAL,
-                 "catgets: Message array overflows catalogue [%p, %i, %i]: [% " PRIx64 ", %" PRIu32
+                 "gd_catgets: Message array overflows catalogue [%p, %i, %i]: [% " PRIx64 ", %" PRIu32
                  ", %" PRIx64 "]\n",
                  catd, set_id, msg_id, msg_offset, num_msgs, cat_size);
   }
@@ -81,7 +81,7 @@ char* catgets(nl_catd catd, int set_id, int msg_id, char const* s)
     off += CAT_ARRAY_ENTRY_SIZE;
   }
   if (j == num_msgs) {
-    error_return(ENOMSG, "catgets: Message ID does not exist in catalogue [%p, %d, %d]\n", catd,
+    error_return(ENOMSG, "gd_catgets: Message ID does not exist in catalogue [%p, %d, %d]\n", catd,
                  set_id, msg_id);
   }
 
@@ -89,13 +89,13 @@ char* catgets(nl_catd catd, int set_id, int msg_id, char const* s)
   msg_offset = __support_read_le_u64(off + CAT_ARRAY_PTR_OFFSET);
   if (msg_offset > UINT64_MAX - msg_len) {
     error_return(EINVAL,
-                 "catgets: Message string overflows uint64_t capacity [%p, %i, %i]: [% " PRIx64
+                 "gd_catgets: Message string overflows uint64_t capacity [%p, %i, %i]: [% " PRIx64
                  ", %" PRIu32 "]\n",
                  catd, set_id, msg_id, msg_offset, msg_len);
   }
   if (cat_size < msg_offset + num_msgs) {
     error_return(EINVAL,
-                 "catgets: Message string overflows catalogue [%p, %i, %i]: [% " PRIx64 ", %" PRIu32
+                 "gd_catgets: Message string overflows catalogue [%p, %i, %i]: [% " PRIx64 ", %" PRIu32
                  ", %" PRIx64 "]\n",
                  catd, set_id, msg_id, msg_offset, msg_len, cat_size);
   }
@@ -103,7 +103,7 @@ char* catgets(nl_catd catd, int set_id, int msg_id, char const* s)
   char* result = buf + msg_offset;
 
   if (result[msg_len - 1] != '\0') {
-    error_return(EBADMSG, "catgets: Message does not end in a NUL character [%p, %i, %i]", catd,
+    error_return(EBADMSG, "gd_catgets: Message does not end in a NUL character [%p, %i, %i]", catd,
                  set_id, msg_id);
   }
 

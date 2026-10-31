@@ -1,5 +1,5 @@
 /** \file   libgdsup/nl_types/test-catclose.cc
- *  \brief  Unit tests for catclose()
+ *  \brief  Unit tests for gd_catclose()
  *  \author Copyright 2021, Matthew Gretton-Dann
  *          SPDX-License-Identifier: Apache-2.0
  */

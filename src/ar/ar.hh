@@ -1182,7 +1182,7 @@ auto read_archive_end() -> ReadIterator<FType>
 
 /** \brief  Start reading through an archive file.  */
 template<typename FType1>
-auto read_archive_begin(FType1&& f) -> ReadIterator<typename std::remove_reference<FType1>::type>
+auto read_archive_begin(FType1&& f) -> ReadIterator<typename std::remove_reference_t<FType1>>
 {
   using FType = typename std::remove_reference_t<FType1>;
   FType file(std::move(f));  // NOLINT
@@ -1267,7 +1267,7 @@ auto read_archive_begin(FType1&& f) -> ReadIterator<typename std::remove_referen
     member.reset();
   }
 
-  return ReadIterator(std::move(file), offset, format, member, std::move(symbol_map), long_names);
+  return ReadIterator<FType>(std::move(file), offset, format, member, std::move(symbol_map), long_names);
 }
 
 inline auto archive_inserter(fs::path const& fname, Format format, mode_t mode = 0644)  // NOLINT

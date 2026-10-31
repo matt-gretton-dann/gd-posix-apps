@@ -17,6 +17,7 @@
 #include "gd/sys/stat.h"
 #include "gd/unistd.h"
 
+#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <cstdio>

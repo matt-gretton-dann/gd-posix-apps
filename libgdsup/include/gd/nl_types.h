@@ -12,26 +12,18 @@
 
 #include "gd/bits/defines.h"
 
-/* macOS headers include <nl_types.h> randomly (and incorrectly), which leads us to multiple-
- * definition errors.  We fix this by doing what you should never do and defining include macros
- * etc.
+/* Keep the native declarations available to standard library headers. Our catalogue format and
+ * descriptor type are different, so give the supplemental API distinct symbols instead of
+ * depending on the order in which system headers are included.
  */
-#ifdef __APPLE__
-#  ifdef _NL_TYPES_H_  // NOLINT
-#    error "<nl_types.h> has already been included please include gd/nl_types.h early"
-#  endif
-#  define _NL_TYPES_H_  // NOLINT
-#  include <_types.h>
-
-#  include <_types/_nl_item.h>
-#  include <sys/cdefs.h>
-#  include <sys/types.h>
-#endif  // __APPLE__
+#if __has_include(<nl_types.h>)
+#  include <nl_types.h>
+#endif
 
 #include <stdint.h>
 
 /** \brief Opaque type representing a Catalogue ID.  */
-typedef intptr_t nl_catd;
+typedef intptr_t gd_nl_catd;
 
 /** \brief  Default set ID used by gencat.  */
 #undef NL_SETD
@@ -47,15 +39,15 @@ typedef intptr_t nl_catd;
  *
  * \subsection Error results.
  *
- * catclose() can return the following errors:
+ * gd_catclose() can return the following errors:
  *
  *  - \c EBADF: \a catd does not describe a catalogue descriptor.
  *
  * POSIX also allows us to return \c EINTR if we were interrupted by a signal.  However, this
- * implementation of catclose() will not do that.
+ * implementation of gd_catclose() will not do that.
  */
 // NOLINTNEXTLINE(modernize-use-trailing-return-type)
-__EXTERN_C int catclose(nl_catd catd);
+__EXTERN_C int gd_catclose(gd_nl_catd catd);
 
 /** \brief         Read a program message
  *  \param  catd   Catalogue descriptor
@@ -80,7 +72,7 @@ __EXTERN_C int catclose(nl_catd catd);
  * We do not return messages that do not end in a NULL character.
  */
 // NOLINTNEXTLINE(modernize-use-trailing-return-type)
-__EXTERN_C char* catgets(nl_catd catd, int set_id, int msg_id, char const* s);
+__EXTERN_C char* gd_catgets(gd_nl_catd catd, int set_id, int msg_id, char const* s);
 
 /** \brief        Open a message catalogue
  *  \param  name  Path to message catalogue
@@ -98,7 +90,7 @@ __EXTERN_C char* catgets(nl_catd catd, int set_id, int msg_id, char const* s);
  *
  * \subsection Error results.
  *
- * If catopen() fails to open a catalogue it may set \a errno to any of the values open() will use.
+ * If gd_catopen() fails to open a catalogue it may set \a errno to any of the values open() will use.
  * In particular it will use \c ENOENT if the \a name doesn't exist.
  *
  * It may also return \c ENOMEM if we do not have the memory to store the catalogue.
@@ -106,6 +98,6 @@ __EXTERN_C char* catgets(nl_catd catd, int set_id, int msg_id, char const* s);
  * As a POSIX extension: \c EINVAL is set if the \a oflag field is set to an invalid value.
  */
 // NOLINTNEXTLINE(modernize-use-trailing-return-type)
-__EXTERN_C nl_catd catopen(char const* /*name*/, int /*oflag*/);
+__EXTERN_C gd_nl_catd gd_catopen(char const* /*name*/, int /*oflag*/);
 
 #endif  // LIBGDSUP_INCLUDE_GD_NL_TYPES_H_INCLUDED
