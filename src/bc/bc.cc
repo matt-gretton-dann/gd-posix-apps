@@ -48,19 +48,23 @@ template<typename... Ts>
   std::exit(1);  // NOLINT(concurrency-mt-unsafe)
 }
 
-void execute(GD::Bc::VM& vm, std::unique_ptr<GD::Bc::Reader>&& r)
+enum class InputResult { eof, quit };
+
+/** Execute complete input items until EOF or read-time quit.
+ * Quit discards the current item, including partial function/branch code. Output
+ * from earlier items is preserved. Runtime halt is handled separately by the VM.
+ */
+auto execute(GD::Bc::VM& vm, std::unique_ptr<GD::Bc::Reader>&& r) -> InputResult
 {
   GD::Bc::Parser parser(std::make_unique<GD::Bc::Lexer>(std::move(r)), true);
 
-  bool cont = true;
-  while (cont) {
+  while (true) {
     auto instructions = parser.parse();
-    if (instructions) {
-      cont = parser.seen_quit();
-      cont |= vm.execute(*instructions);
+    if (parser.seen_quit()) {
+      return InputResult::quit;
     }
-    else {
-      cont = false;
+    if (!instructions || !vm.execute(*instructions)) {
+      return InputResult::eof;
     }
   }
 }
@@ -108,18 +112,15 @@ auto main(int argc, char** argv) -> int
     execute(vm, std::move(r));
   }
 
-  auto process = [&vm](std::string_view fname) -> bool {
-    auto r = std::make_unique<GD::Bc::FileReader>(fname);
-    execute(vm, std::move(r));
-    return true;
-  };
-
-  bool const success =
-    GD::for_each_file(args.begin() + optind, args.end(), process, GD::FEFFlags::none);
-  if (success) {
-    auto r = std::make_unique<GD::Bc::FileReader>("-");
-    execute(vm, std::move(r));
+  // EOF advances to the next input; quit must stop before opening it.
+  for (auto it = args.begin() + optind; it != args.end(); ++it) {
+    auto r = std::make_unique<GD::Bc::FileReader>(*it);
+    if (execute(vm, std::move(r)) == InputResult::quit) {
+      return 0;
+    }
   }
+  auto r = std::make_unique<GD::Bc::FileReader>("-");
+  execute(vm, std::move(r));
 
-  return success ? 0 : 1;
+  return 0;
 }  // namespace
