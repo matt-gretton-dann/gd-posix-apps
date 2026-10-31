@@ -59,6 +59,11 @@ execution of partially parsed function or branch instructions.
 
 There is not much to say about the lexer and parser as they are fairly standard.
 
+Block comments end only at adjacent `*/` characters. A star followed by ordinary
+text does not pair with a later slash. Unterminated comments are lexical errors
+reported when read, in both extension configurations; they are not treated as
+successful end of input.
+
 Numbers are kept stored as strings until executed as the spec says that the ibase at the time of
 execution determines the interpretation.
 
