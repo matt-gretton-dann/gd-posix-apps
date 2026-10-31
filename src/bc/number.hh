@@ -234,6 +234,10 @@ public:
   {
     assert(!is_zero());  // NOLINT
     assert(obase >= 2);  // NOLINT
+    if (line_pos >= line_length) {
+      os << '\n';
+      line_pos = 0;
+    }
     auto [whole, frac] = split_frac(scale);
     DigitVector whole_digits;
     while (!whole.is_zero()) {
@@ -265,7 +269,10 @@ public:
     std::string::size_type p = 0;
     // Ensure we handle line breaks appropriately.  Note that line_length includes the \\.
     if (number.length() > line_length - line_pos) {
-      while (p < number.length() - (line_length - line_pos - 1)) {
+      // Compare the remaining output with the reserved chunk capacity, avoiding
+      // unsigned subtraction from the full length. A zero-sized first chunk
+      // still advances layout by starting a new line.
+      while (number.length() - p > line_length - line_pos - 1) {
         os << number.substr(p, line_length - line_pos - 1) << "\\\n";
         p += line_length - line_pos - 1;
         line_pos = 0;
@@ -290,6 +297,10 @@ public:
      * in the correct place.
      */
     assert(!is_zero());  // NOLINT
+    if (digits_printed >= line_length) {
+      os << '\n';
+      digits_printed = 0;
+    }
 
     /* Generate string without radix point. Note we reverse through the digits as we want to print
      * big-endian, but numbers are stored little-endian.
@@ -302,6 +313,12 @@ public:
     }
     std::string result = ss.str();
     unsigned const break_at = (result.length() <= line_length) ? line_length : (line_length - 1);
+    // A long coefficient reserves an extra column before its first chunk.
+    // Continue the current number if its sign has already filled that space.
+    if (digits_printed >= break_at) {
+      os << "\\\n";
+      digits_printed = 0;
+    }
     auto it = result.begin();
     bool print = false;
     while (result.end() - it > scale) {
@@ -319,8 +336,11 @@ public:
     }
 
     if (!extensions_enabled() && !print) {
-      ++digits_printed;
       os << '0';
+      if (++digits_printed == break_at) {
+        os << "\\\n";
+        digits_printed = 0;
+      }
     }
 
     if (it != result.end()) {
