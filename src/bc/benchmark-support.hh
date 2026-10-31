@@ -39,8 +39,8 @@ constexpr auto operator-(Time const& lhs, Time const& rhs) -> Time
 
 constexpr auto operator+(Time const& lhs, Time const& rhs) -> Time
 {
-  Time result{lhs.tv_sec + rhs.tv_sec, lhs.tv_nsec + lhs.tv_nsec};
-  if (lhs.tv_nsec + rhs.tv_nsec > sec_as_nsec) {
+  Time result{lhs.tv_sec + rhs.tv_sec, lhs.tv_nsec + rhs.tv_nsec};
+  if (result.tv_nsec >= sec_as_nsec) {
     ++result.tv_sec;
     result.tv_nsec -= sec_as_nsec;
   }
