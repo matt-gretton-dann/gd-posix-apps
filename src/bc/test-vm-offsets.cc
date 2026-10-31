@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <array>
 #include <iostream>
 #include <limits>
 #include <string_view>
@@ -60,6 +61,44 @@ auto main(int argc, char** argv) -> int
     code.emplace_back(O::number, "1");
     code.emplace_back(O::add, D(-2), D(-1));
   }
+  else if (mode.substr(0, 7) == "binary-") {
+    std::array<std::pair<std::string_view, O>, 10> const operations{{
+      {"add", O::add},
+      {"subtract", O::subtract},
+      {"multiply", O::multiply},
+      {"divide", O::divide},
+      {"modulo", O::modulo},
+      {"power", O::power},
+      {"equals", O::equals},
+      {"not-equals", O::not_equals},
+      {"less-than", O::less_than},
+      {"less-equal", O::less_than_equals},
+    }};
+    bool found = false;
+    for (auto const& operation : operations) {
+      if (mode.substr(7, mode.size() - 9) == operation.first) {
+        code.emplace_back(mode.back() == '1' ? O::string : O::number, "1");
+        code.emplace_back(mode.back() == '2' ? O::string : O::number, "1");
+        code.emplace_back(operation.second, D(-2), D(-1));
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      return 2;
+    }
+  }
+  else if (mode == "sqrt-string" || mode == "abs-string" || mode == "scale-string") {
+    code.emplace_back(O::string, "bad");
+    code.emplace_back(mode == "sqrt-string"  ? O::sqrt
+                      : mode == "abs-string" ? O::abs
+                                             : O::scale_expr,
+                      D(-1));
+  }
+  else if (mode == "print-empty") {
+    code.emplace_back(O::branch, D(1));
+    code.emplace_back(O::print, D(-1), I::Stream::output);
+  }
   else if (mode == "load-number" || mode == "length-string" || mode == "branch-string" ||
            mode == "index-string" || mode == "push-string" || mode == "negate-string" ||
            mode == "return-string") {
@@ -94,9 +133,10 @@ auto main(int argc, char** argv) -> int
     // A producer later in layout can execute before its consumer.
     code.emplace_back(O::branch, D(3));
     code.emplace_back(O::print, D(2), I::Stream::output);
-    code.emplace_back(O::eof);
+    code.emplace_back(O::branch, D(3));
     code.emplace_back(O::number, "42");
     code.emplace_back(O::branch, D(-3));
+    code.emplace_back(O::eof);
   }
   else if (mode == "valid-location-print") {
     // Print intentionally supports diagnostic representations of locations.

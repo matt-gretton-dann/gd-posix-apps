@@ -106,7 +106,7 @@ struct VMState
    */
   auto pop_param_array() -> ArrayValues;
 
-  /** \brief  Validate an instruction vectore.  */
+  /** \brief  Validate instruction offset bounds and result types.  */
   void validate(Instructions const& instrs) const;
 
 private:
@@ -579,6 +579,145 @@ void GD::Bc::Details::VMState::validate(Instructions const& instrs) const
     if (instrs[i].has_op2()) {
       check_offset(instrs[i].op2(), instrs[i].opcode() == Instruction::Opcode::branch_zero,
                    Msg::op2_offset_underflow, Msg::op2_offset_overflow);
+    }
+  }
+
+  // Classify result contracts independently of instruction layout. In particular,
+  // a forward reference may be valid when control flow executes its producer
+  // first. This checks types, not dominance or parameter-stack balance.
+  using O = Instruction::Opcode;
+  enum class ResultKind { none, number, string, scalar_location, array_location, array_values };
+  auto target = [](Instruction::Index i, Instruction::Operand const& operand) {
+    // The complete range pass above makes signed-min and one-past data offsets
+    // impossible here. Unsigned addition also handles valid negative offsets.
+    return i + static_cast<Instruction::Index>(std::get<Instruction::Offset>(operand));
+  };
+  std::vector<ResultKind> kinds(instrs.size(), ResultKind::none);
+  for (Instruction::Index i = 0; i < instrs.size(); ++i) {
+    switch (instrs[i].opcode()) {
+    case O::string:
+      kinds[i] = ResultKind::string;
+      break;
+    case O::variable:
+    case O::array_element:
+    case O::ibase:
+    case O::obase:
+    case O::scale:
+      kinds[i] = ResultKind::scalar_location;
+      break;
+    case O::array:
+      kinds[i] = ResultKind::array_location;
+      break;
+    case O::pop_param_array:
+      kinds[i] = ResultKind::array_values;
+      break;
+    case O::load:
+      kinds[i] = instrs[target(i, instrs[i].op1())].opcode() == O::array ? ResultKind::array_values
+                                                                         : ResultKind::number;
+      break;
+    case O::number:
+    case O::add:
+    case O::subtract:
+    case O::negate:
+    case O::multiply:
+    case O::divide:
+    case O::modulo:
+    case O::power:
+    case O::scale_expr:
+    case O::sqrt:
+    case O::abs:
+    case O::length:
+    case O::equals:
+    case O::less_than_equals:
+    case O::not_equals:
+    case O::less_than:
+    case O::call:
+    case O::pop_param:
+      kinds[i] = ResultKind::number;
+      break;
+    case O::eof:
+    case O::print:
+    case O::quit:
+    case O::store:
+    case O::branch:
+    case O::branch_zero:
+    case O::return_:
+    case O::push_param_mark:
+    case O::pop_param_mark:
+    case O::push_param:
+    case O::function_begin:
+    case O::function_end:
+      break;
+    }
+  }
+  for (Instruction::Index i = 0; i < instrs.size(); ++i) {
+    auto const& instruction = instrs[i];
+    auto check = [this, i](bool valid, unsigned operand) {
+      assert_error(valid, Msg::incompatible_operand_result, operand, i);  // NOLINT
+    };
+    auto first = [&]() { return kinds[target(i, instruction.op1())]; };
+    auto second = [&]() { return kinds[target(i, instruction.op2())]; };
+    switch (instruction.opcode()) {
+    case O::add:
+    case O::subtract:
+    case O::multiply:
+    case O::divide:
+    case O::modulo:
+    case O::power:
+    case O::equals:
+    case O::less_than_equals:
+    case O::not_equals:
+    case O::less_than:
+      check(second() == ResultKind::number, 2);
+      [[fallthrough]];
+    case O::negate:
+    case O::scale_expr:
+    case O::sqrt:
+    case O::abs:
+    case O::branch_zero:
+    case O::return_:
+      check(first() == ResultKind::number, 1);
+      break;
+    case O::array_element:
+      check(second() == ResultKind::number, 2);
+      break;
+    case O::load:
+      check(first() == ResultKind::scalar_location || first() == ResultKind::array_location, 1);
+      break;
+    case O::store:
+      check(first() == ResultKind::scalar_location || first() == ResultKind::array_location, 1);
+      check(second() == (first() == ResultKind::array_location ? ResultKind::array_values
+                                                               : ResultKind::number),
+            2);
+      break;
+    case O::length:
+      check(first() == ResultKind::number || first() == ResultKind::array_location, 1);
+      break;
+    case O::push_param:
+      check(first() == ResultKind::number || first() == ResultKind::array_values, 1);
+      break;
+    case O::print:
+      // Printing all result alternatives is a supported diagnostic operation.
+      check(first() != ResultKind::none, 1);
+      break;
+    case O::eof:
+    case O::quit:
+    case O::string:
+    case O::number:
+    case O::variable:
+    case O::array:
+    case O::scale:
+    case O::ibase:
+    case O::obase:
+    case O::branch:
+    case O::call:
+    case O::push_param_mark:
+    case O::pop_param_mark:
+    case O::pop_param:
+    case O::pop_param_array:
+    case O::function_begin:
+    case O::function_end:
+      break;
     }
   }
 }
