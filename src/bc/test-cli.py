@@ -78,6 +78,14 @@ class CliTests(unittest.TestCase):
         else:
             self.run_bc("halt\n", success=False)
 
+    def test_shebang(self):
+        self.run_bc("#!ignored\n1+1\n", "2\n" if EXTENSIONS else "", success=EXTENSIONS)
+        self.run_bc("#!ignored", success=EXTENSIONS)
+        for text, expected in ((" #!ignored\n", ""), ("\n#!ignored\n", ""),
+                               ("1\n#!ignored\n2\n", "1\n"), ("#ordinary\n", "")):
+            with self.subTest(text=text):
+                self.run_bc(text, expected, success=False)
+
     def test_comments(self):
         for text in ("/**/2\n", "/*ordinary*/2\n", "/*\nmultiline\n*/2\n",
                      "/****/2\n", "/* / */2\n", "/* *x/ still inside */2\n",
