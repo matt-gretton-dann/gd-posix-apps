@@ -23,8 +23,8 @@ If built with non-POSIX extensions enabled the following functionality is added:
  * `-g` command line option.  This causes function invocations to push `ibase`, `obase`, and
    `scale` onto a stack (i.e. treat them as locals to functions).
 
- * `halt` statement.  This does a `quit` when executed.  Unlike `quit` which quits the code when
-   parsed (which is virtually never what you want).
+ * `halt` statement. This terminates successfully when executed. In contrast,
+   `quit` terminates when read, even inside an uncalled function or an unreachable branch.
 
  * Numbers which are written over two-or more lines may have white-space at the start of the
    continuation lines.
@@ -41,6 +41,19 @@ If built with non-POSIX extensions enabled the following functionality is added:
  * `return foo;` is valid.
 
  * No newline needed after opening brace of a function definition.
+
+## Input termination
+
+Named files are processed in order, followed by standard input. End of file advances
+to the next input. Reading `quit` terminates the entire application successfully,
+without opening later files or waiting for standard input to close. Text following
+`quit` is ignored.
+
+Output from previously completed input items is preserved. The current item is
+discarded: `1+1;quit;3+4` prints nothing, whereas `1+1` followed by `quit` on the
+next line prints `2`. This follows GNU bc's same-line policy; some implementations
+instead execute the prefix of the current item. Discarding the item also prevents
+execution of partially parsed function or branch instructions.
 
 ## Lexing & Parsing
 
