@@ -28,6 +28,8 @@
 #include <tuple>
 #include <variant>
 
+#include "profiling.hh"
+
 namespace GD::Bc {
 // Needed for number.hh
 inline constexpr auto extensions_enabled() -> bool
@@ -425,7 +427,10 @@ using ArrayIndex = Number::NumType;
 using ArrayElement = std::pair<Array, ArrayIndex>;
 
 /** Array values. */
-using ArrayValues = std::shared_ptr<std::map<ArrayIndex, Number>>;
+using ArrayStorage = std::map<
+  ArrayIndex, Number, std::less<ArrayIndex>,
+  Profile::Allocator<std::pair<ArrayIndex const, Number>, Profile::AllocationKind::arrays>>;
+using ArrayValues = std::shared_ptr<ArrayStorage>;
 
 template<typename T>
 auto operator==(TypeWrapper<Letter, T> lhs, TypeWrapper<Letter, T> rhs) -> bool
@@ -688,7 +693,8 @@ private:
 };
 
 /** Vector of instructions.  */
-using Instructions = std::vector<Instruction>;
+using Instructions =
+  std::vector<Instruction, Profile::Allocator<Instruction, Profile::AllocationKind::instructions>>;
 
 auto operator<<(std::ostream& os, Instruction::Stream s) -> std::ostream&;
 auto operator<<(std::ostream& os, Instruction::Opcode opcode) -> std::ostream&;
@@ -1220,6 +1226,11 @@ public:
    *  \param save_specials Should we save ibase, obase, scale on entry to a function?
    */
   VM(std::ostream& out, std::ostream& err, bool save_specials);
+  ~VM();
+  VM(VM const&) = delete;
+  auto operator=(VM const&) -> VM& = delete;
+  VM(VM&&) noexcept;
+  auto operator=(VM&&) noexcept -> VM&;
 
   /** \brief              Execute instructions.
    *  \param instructions Instructions to execute
@@ -1228,7 +1239,7 @@ public:
   auto execute(Instructions& instructions) -> bool;
 
 private:
-  Details::VMState* state_;
+  std::unique_ptr<Details::VMState> state_;  ///< Sole owner of this interpreter's state.
 };
 
 }  // namespace GD::Bc

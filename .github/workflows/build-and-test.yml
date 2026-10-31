@@ -46,6 +46,12 @@ jobs:
         run: |
           python3 src/bc/scripts/build-bc-comparators.py --output build-comparators --implementation both --cc cc
           python3 src/bc/scripts/bench-bc.py --config build-comparators/implementations.json --output build-comparator-checks --preset quick --samples 1 --warmups 0 --require-provenance
+      - name: Check separate bc profiling build
+        if: ${{ matrix.extensions == 'ON' }}
+        run: |
+          cmake -S "${GITHUB_WORKSPACE}" -B "${GITHUB_WORKSPACE}/build-profile" -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DENABLE_BC_PROFILE=ON
+          cmake --build "${GITHUB_WORKSPACE}/build-profile" --target bc
+          python3 "${GITHUB_WORKSPACE}/src/bc/test-profiling-cli.py" "${GITHUB_WORKSPACE}/build-profile/src/bc/bc"
 
 
   windows-build:
@@ -77,3 +83,9 @@ jobs:
         python src/bc/scripts/build-bc-comparators.py --output build-comparators --cc cl
         if errorlevel 1 exit /b 1
         python src/bc/scripts/bench-bc.py --config build-comparators/implementations.json --output build-comparator-checks --preset quick --samples 1 --warmups 0 --require-provenance
+    - name: Check separate bc profiling build
+      if: ${{ matrix.extensions == 1 }}
+      run: |
+        cmake -S "$Env:GITHUB_WORKSPACE" -B "$Env:GITHUB_WORKSPACE/build-profile" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DENABLE_BC_PROFILE=ON
+        cmake --build "$Env:GITHUB_WORKSPACE/build-profile" --config Release --target bc
+        python "$Env:GITHUB_WORKSPACE/src/bc/test-profiling-cli.py" "$Env:GITHUB_WORKSPACE/build-profile/src/bc/Release/bc.exe"
