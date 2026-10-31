@@ -62,6 +62,19 @@ class CliTests(unittest.TestCase):
             self.run_bc("8+9\n", "2\n7\n",
                         (first, quit_file, Path(directory) / "missing.bc"))
 
+    def test_parenthesized_assignments(self):
+        for text, expected in (
+            ("a=4\na\n", "4\n"),
+            ("(a=4)\na\n", "4\n4\n"),
+            ("((a=4))\na\n", "4\n4\n"),
+            ("a=2\n(a+=3)\na\n", "5\n5\n"),
+            ("(a[0]=3)\na[0]\n", "3\n3\n"),
+            ("(a=4)+1\na\n", "5\n4\n"),
+            ("a=0\n(a+=1)\na\n", "1\n1\n"),
+        ):
+            with self.subTest(text=text):
+                self.run_bc(text, expected)
+
     def test_eof(self):
         self.run_bc("1+1\n", "2\n")
 
@@ -78,18 +91,14 @@ class CliTests(unittest.TestCase):
         else:
             self.run_bc("halt\n", success=False)
 
-    def test_parenthesized_assignments(self):
-        for text, expected in (
-            ("a=4\na\n", "4\n"),
-            ("(a=4)\na\n", "4\n4\n"),
-            ("((a=4))\na\n", "4\n4\n"),
-            ("a=2\n(a+=3)\na\n", "5\n5\n"),
-            ("(a[0]=3)\na[0]\n", "3\n3\n"),
-            ("(a=4)+1\na\n", "5\n4\n"),
-            ("a=0\n(a+=1)\na\n", "1\n1\n"),
-        ):
+
+    def test_shebang(self):
+        self.run_bc("#!ignored\n1+1\n", "2\n" if EXTENSIONS else "", success=EXTENSIONS)
+        self.run_bc("#!ignored", success=EXTENSIONS)
+        for text, expected in ((" #!ignored\n", ""), ("\n#!ignored\n", ""),
+                               ("1\n#!ignored\n2\n", "1\n"), ("#ordinary\n", "")):
             with self.subTest(text=text):
-                self.run_bc(text, expected)
+                self.run_bc(text, expected, success=False)
 
     def test_comments(self):
         for text in ("/**/2\n", "/*ordinary*/2\n", "/*\nmultiline\n*/2\n",
