@@ -18,11 +18,17 @@ class BenchmarkCli(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
+        self.invocations = 0
         self.driver = self.root / "fake bc's tool.py"
         self.driver.write_text(
             "import sys, time\n"
+            "from pathlib import Path\n"
             "mode = sys.argv[1]\n"
             "source = sys.stdin.read()\n"
+            "if mode == 'warmup':\n"
+            "    marker = Path(sys.argv[2])\n"
+            "    mode = 'ok' if marker.exists() else 'wrong'\n"
+            "    marker.write_text('used')\n"
             "if mode == 'timeout': time.sleep(10)\n"
             "if mode == 'exit':\n"
             "    sys.stderr.write('deliberate child failure\\n')\n"
@@ -31,18 +37,24 @@ class BenchmarkCli(unittest.TestCase):
             "if mode == 'stderr': sys.stderr.write('unexpected warning\\n')\n",
             encoding="utf-8")
 
-    def invoke(self, mode, timeout=3, duplicate=False):
-        implementation = {"name": "fake", "argv": [sys.executable, str(self.driver), mode]}
+    def invoke(self, mode, timeout=3, duplicate=False, names=("fake",), samples=1,
+               warmups=0, extra=(), metadata=None):
+        entries = [{"name": name, "argv": [sys.executable, str(self.driver), mode,
+                                           str(self.root / "marker")],
+                    "metadata": metadata or {}} for name in names]
+        implementation = entries[0]
         config = self.root / "implementations.json"
         config.write_text(json.dumps({"implementations":
                                      [implementation, implementation] if duplicate else
-                                     [implementation]}), encoding="utf-8")
-        output = self.root / "results"
+                                     entries}), encoding="utf-8")
+        self.invocations += 1
+        output = self.root / ("results-" + str(self.invocations))
         try:
             result = subprocess.run(
                 [sys.executable, BENCHMARK, "--config", str(config), "--output", str(output),
-                 "--workload", "startup", "--samples", "1", "--warmups", "0",
-                 "--timeout", str(timeout)], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                 "--workload", "startup", "--samples", str(samples), "--warmups", str(warmups),
+                 "--timeout", str(timeout)] + list(extra),
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                 universal_newlines=True, timeout=8)
         except subprocess.TimeoutExpired:
             self.fail("benchmark did not terminate within the test's outer deadline")
@@ -86,6 +98,37 @@ class BenchmarkCli(unittest.TestCase):
         result, _ = self.invoke("ok", duplicate=True)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("duplicate implementation", result.stderr)
+
+    def test_warmup_output_is_also_checked(self):
+        result, _ = self.invoke("warmup", warmups=1)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("incorrect output", result.stderr)
+
+    def test_strict_provenance_and_instrumented_binary_rejection(self):
+        result, _ = self.invoke("ok", extra=("--require-provenance",))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("lacks source/compiler/flags/version provenance", result.stderr)
+        result, _ = self.invoke("ok", metadata={"instrumented": True})
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("separate timing binary", result.stderr)
+
+    def test_pair_schedule_is_replayable(self):
+        schedules = []
+        for _ in range(2):
+            result, output = self.invoke("ok", names=("first", "second"), samples=3)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            rows = [json.loads(line) for line in
+                    (output / "samples.jsonl").read_text(encoding="utf-8").splitlines()]
+            schedules.append([(row["round"], row["order"], row["implementation"])
+                              for row in rows])
+            for round_number in range(3):
+                block = [row["implementation"] for row in rows if row["round"] == round_number]
+                self.assertCountEqual(block, ["first", "second"])
+            summary = json.loads((output / "summary.json").read_text(encoding="utf-8"))
+            paired = summary["workloads"][0]["candidate_over_reference"]["second"]
+            self.assertEqual(paired["pairs"], 3)
+            self.assertIsNotNone(paired["ci95"])
+        self.assertEqual(schedules[0], schedules[1])
 
 
 class PairedStatistics(unittest.TestCase):
