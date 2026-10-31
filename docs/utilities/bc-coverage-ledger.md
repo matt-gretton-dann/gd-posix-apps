@@ -129,3 +129,24 @@ same terminal diagnostic and one EOF, while independent nonfatal interactive
 parses execute both input values normally. No private state is injected, no
 boolean is rewritten to fill a denominator, and no adjusted percentage is
 inferred from this control-flow proof.
+
+
+## Arithmetic boundary follow-up at revision ce52323
+
+The 184-entry ON/OFF checkpoint includes the conversion, parity, native
+constructor, formatter, output-position, padded-fraction and bounded power-scale
+regressions. Their formerly missing ordinary paths now execute; #274, #275,
+#276, #281, #283 and #285 have fixes with independent assertions. Retain the
+following exact residual constraints, rather than removing defensive code.
+
+| Source decision / lines | Scope and proof | Classification |
+| --- | --- | --- |
+| `number.hh:345`, `digits_printed > break_at` after writing the radix point | `output_base10` normalizes the initial counter below `break_at`. Each emitted integer digit and the OFF leading zero wraps exactly when reaching that bound. Before the radix point the counter is therefore at most `break_at - 1`; adding one cannot exceed `break_at`. Boundary tests exercise both sides of every feasible neighboring counter. | Defensive overflow fallback after #283; retain its three raw zero-count body lines. |
+| `number.hh:1359-1361`, Number fractional-conversion diagnostic | `BasicNumber::to_unsigned` requests truncation explicitly. `BasicDigits::to_unsigned(..., true)` skips fractional limbs and cannot return its fractional sentinel. The strict digit API still rejects nonzero fractions, with exact tests. | Defensive compatibility guard after #276, not an exempt positive-fraction input. Negative and overflow diagnostics remain ordinary tested paths. |
+| `number.hh:249-250` and `335-340`, OFF leading integer zero | ON compiles the predicate false; OFF executes both leading-zero paths, including boundary wrapping. | Per-binary extension constant. Do not combine configurations to create a fictitious independence pair. |
+| `number.hh:1157-1160`, half-sum leftover LHS | The earlier low/high-half range proof remains unchanged at the new line numbers. | Coupled private range invariant; retain raw counts. |
+| `number.hh:1295-1297`, invalid numeric character abort | The constructor consumes numeric-token spellings from `0..F` and a radix point. An unrecognized character violates that token contract; lexer/parser rejection remains eligible and tested. | Invalid constructor precondition, separate from normal malformed source. |
+| `number.hh:1665-1669`, modulo scale restoration | The earlier exact subtraction/scale proof still applies to supported bounded scales. | Defensive scale invariant; #184/#186 remain separate limits work. |
+
+This table is evidence for individual obligations. It does not calculate an
+eligible denominator, erase assertion mappings, or claim a raw 100% result.
