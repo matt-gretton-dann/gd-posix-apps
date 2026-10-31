@@ -22,6 +22,9 @@ configure_file(test-config.h.in test-config.h)
 target_add_clang_format_extra(nl_types.h.in test-config.h.in)
 
 add_gdsup_source(UNIT_TEST test-catclose.cc SOURCES catclose.c)
+if(RUN_UNIT_TESTS)
+  target_sources(test-gdsup PRIVATE test-header-order.cc)
+endif()
 add_gdsup_source(TEST_SETUP test-setup-catopen.py SETUP_EXE gencat UNIT_TEST test-catopen.cc
                  SOURCES catgets.c catopen.c)
 add_gdsup_source(UNIT_TEST test-__nl_types_check_cat_header.cc
