@@ -532,6 +532,12 @@ TEMPLATE_TEST_CASE("Generic input conversion and width boundaries", "[bc][number
   REQUIRE(Number("0.1", 2) == Number("0.5", 10));
   REQUIRE(Number("0.01", 2) == Number("0.25", 10));
   REQUIRE(Number("0.0000000001", 2) == Number("0.0009765625", 10));
+  // 35 binary fractional digits exceed the largest native chunk (29 bits),
+  // exercising the t <= ibase exit as well as the short-input scale exit.
+  REQUIRE(Number("0." + std::string(35, '1'), 2) ==
+          Number("0.99999999997089616954326629638671875", 10));
+  REQUIRE(Number("0." + std::string(34, '0') + "1", 2) ==
+          Number("0.00000000002910383045673370361328125", 10));
 
   std::string const fraction = "0." + std::string(80, '1');
   std::ostringstream output;

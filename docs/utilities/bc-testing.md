@@ -147,6 +147,16 @@ asserted. The CLI Fraction oracle also checks these algebraically constructed
 inputs at the supported radices. Fresh per-instantiation LLVM evidence is still
 required when reporting whether a specific native branch/condition was covered.
 
+A clean test-only MC/DC checkpoint at `ecfa2a084b01efba310e3116dbbe6de72b5dd1cb`
+records both quotient-estimate conditions independently covered in each of the
+three limb-width instantiations, in ON and OFF builds. This confirms the
+parameterized fixtures' native condition coverage; it does not replace their
+independent quotient/remainder assertions or imply complete arithmetic coverage.
+
+The input conversion suite also includes 35-bit binary fractions. Their exact
+terminating decimal values exercise multiple conversion chunks even with native
+32-bit limbs, complementing the shorter fractions which end at the scale guard.
+
 ## Isolated LLVM coverage
 
 Use a Clang/LLVM toolchain which supports MC/DC. `ENABLE_BC_COVERAGE=ON`
@@ -164,7 +174,8 @@ smaller coverage denominator.
 cmake -S . -B build/bc-coverage-on -G Ninja -DCMAKE_BUILD_TYPE=Debug \
   -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
   -DENABLE_NON_POSIX_EXTENSIONS=ON -DENABLE_BC_COVERAGE=ON
-cmake --build build/bc-coverage-on --target bc test-libbc test-util
+cmake --build build/bc-coverage-on --target bc test-libbc test-util \
+  test-bc-offsets test-bc-signal
 python3 src/bc/scripts/collect-coverage.py build/bc-coverage-on build/bc-report-on
 ```
 
