@@ -56,7 +56,7 @@ auto main() -> int
 
     struct alignas(64) Aligned
     {
-      std::uint64_t value;
+      std::array<std::byte, 64> value;
     };
     P::CountingAllocator<Aligned, K::results> allocator;
     auto* storage = allocator.allocate(2);
