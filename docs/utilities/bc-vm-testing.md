@@ -251,3 +251,13 @@ the output assertion distinguish numeric state from its current text base.
 
 The pinned ON/OFF measurements, residual constraints and future regression
 obligations are recorded in [VM coverage closeout](bc-vm-coverage-results.md).
+
+VM owns its private state uniquely. Destruction releases variables, arrays and
+function definitions; copying is disabled. Move construction transfers the
+state, and move assignment first releases the destination's previous state.
+Moved-from VMs may be destroyed or assigned, but cannot execute instructions.
+`bc/vm-lifetime` uses isolated ordinary allocation replacements in its own test
+executable, warms lazy runtime initialization, and checks balance across repeated
+populated VM lifetimes and moves. The replacements are absent from production
+and the main unit-test runner. This regression covers the EOF retention defect
+found by #200's diagnostic counters (#298).
