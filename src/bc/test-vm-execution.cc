@@ -224,3 +224,25 @@ TEST_CASE("VM diagnostic printing accepts every public result alternative", "[bc
     CHECK(errors.str() == (stream == I::Stream::error ? expected : ""));
   }
 }
+
+TEST_CASE("VM special-register saving is independent of the frontend option gate",
+          "[bc][vm][execution][special-registers]")
+{
+  bool const save_specials = GENERATE(false, true);
+  // -g is only a frontend extension; the VM constructor's mode remains a
+  // callable contract in either build. Reset the radix before reading saved
+  // values so the assertion also detects leaking ibase and obase changes.
+  std::string const source =
+    "scale=2\ndefine f() {\nscale=3\nibase=16\nobase=2\nreturn (0)\n}\n"
+    "f()\ns=scale\ni=ibase\no=obase\nibase=2\nibase=1010\nobase=10\ns\ni\no\n";
+  GD::Bc::Parser parser(
+    std::make_unique<GD::Bc::Lexer>(std::make_unique<GD::Bc::StringReader>(source)), false);
+  auto code = parser.parse();
+  REQUIRE(code != nullptr);
+  std::ostringstream output;
+  std::ostringstream errors;
+  GD::Bc::VM vm(output, errors, save_specials);
+  CHECK_FALSE(vm.execute(*code));
+  CHECK(output.str() == (save_specials ? "0\n2\n10\n10\n" : "0\n3\n16\n2\n"));
+  CHECK(errors.str().empty());
+}

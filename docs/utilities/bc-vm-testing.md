@@ -241,3 +241,10 @@ The public verifier explicitly allows these diagnostic operations. Assert the
 complete selected stream and an empty unselected stream; do not manufacture an
 invalid result merely to reach a visitor. With this case, the execution group
 passes 3,710 assertions across six cases in both configurations.
+
+The VM constructor's special-register save mode is tested directly with both
+boolean values in both extension configurations. A function changes scale,
+ibase and obase; the caller must observe either all original or all changed
+values, according to the mode. Disabling the frontend `-g` option does not make
+this public constructor argument unreachable. Explicit radix restoration lets
+the output assertion distinguish numeric state from its current text base.
