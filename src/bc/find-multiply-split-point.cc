@@ -17,13 +17,15 @@
 #include <utility>
 
 #include "bc.hh"
+#include "benchmark-support.hh"
 
 using Number = GD::Bc::Number;
 class RandomNumberGenerator
 {
 public:
   explicit RandomNumberGenerator(GD::Bc::Number::NumType digit_count)
-      : rand_(std::random_device{}()), dist_(0, GD::Bc::Number::base_), digit_count_(digit_count)
+      : rand_(std::random_device{}()), dist_(GD::Bc::Bench::limb_distribution<Number>()),
+        digit_count_(digit_count)
   {
     next();
   }
@@ -68,45 +70,12 @@ void multiply(std::vector<Number>& n)
   }
 }
 
-using Time = struct timespec;
-constexpr decltype(Time::tv_nsec) sec_as_nsec = 1000000000;
-
-constexpr auto operator-(Time const& lhs, Time const& rhs) -> Time
-{
-  Time result{lhs.tv_sec - rhs.tv_sec, lhs.tv_nsec - rhs.tv_nsec};
-  if (rhs.tv_nsec > lhs.tv_nsec) {
-    --result.tv_sec;
-    result.tv_nsec += sec_as_nsec;
-  }
-  return result;
-}
-
-constexpr auto operator+(Time const& lhs, Time const& rhs) -> Time
-{
-  Time result{lhs.tv_sec + rhs.tv_sec, lhs.tv_nsec + lhs.tv_nsec};
-  if (lhs.tv_nsec + rhs.tv_nsec > sec_as_nsec) {
-    ++result.tv_sec;
-    result.tv_nsec -= sec_as_nsec;
-  }
-  return result;
-}
-
-auto operator<<(std::ostream& os, Time const& t) -> std::ostream&
-{
-  constexpr int nsec_digits = 9;
-  os << t.tv_sec << '.' << std::setw(nsec_digits) << std::setfill('0') << std::right << t.tv_nsec;
-  return os;
-}
-
-constexpr auto operator<(Time const& lhs, Time const& rhs) -> bool
-{
-  return lhs.tv_sec < rhs.tv_sec || (lhs.tv_sec == rhs.tv_sec && lhs.tv_nsec < rhs.tv_nsec);
-}
-
-constexpr auto as_nsec(Time const& t) -> int64_t
-{
-  return static_cast<int64_t>(t.tv_sec) * sec_as_nsec + t.tv_nsec;
-}
+using GD::Bc::Bench::as_nsec;
+using GD::Bc::Bench::Time;
+using GD::Bc::Bench::operator-;
+using GD::Bc::Bench::operator+;
+using GD::Bc::Bench::operator<<;
+using GD::Bc::Bench::operator<;
 
 template<typename Fn>
 auto time_run(Fn f) -> Time
