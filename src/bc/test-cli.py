@@ -102,6 +102,19 @@ class CliTests(unittest.TestCase):
             with self.subTest(text=text):
                 self.run_bc(text, expected)
 
+    def test_argument_type_diagnostics(self):
+        for text, kind in (
+            ("define f(a) {\nreturn (a)\n}\nf(b[])\n", "number"),
+            ("define f(a[]) {\nreturn (a[0])\n}\nf(1)\n", "array"),
+        ):
+            with self.subTest(kind=kind):
+                child = subprocess.run([BC], input=text, universal_newlines=True,
+                                       stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                       timeout=2, env=dict(os.environ, LC_ALL="C"))
+                self.assertEqual(child.returncode, 1, child.stderr)
+                self.assertEqual(child.stdout, "")
+                self.assertIn("expected " + kind, child.stderr)
+
     def test_malformed_delimiters(self):
         for text in ("sqrt 1\n", "length 1\n", "abs 1\n", "define f() 1\n"):
             with self.subTest(text=text):
