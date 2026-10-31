@@ -87,3 +87,44 @@ and marker verifier changes; it is a pinned checkpoint, not a measurement of tho
 - The later source-tree output race (#271) is separate from these zero-failure results. Later runs must use build-local fixture copies or avoid overlapping imported suites sharing a dependency source.
 - Remaining feasible numeric conversion, formatting and public-boundary obligations are still open, including #274/#275. The decision ledger records constraints; no eligible denominator, adjusted percentage or arithmetic/VM completion claim is made.
 - Source and mapping changes alter denominators. These counts are not a pure test-only delta or a performance claim.
+
+
+## Regression and VM execution checkpoint (ce52323)
+
+Measured clean source `ce52323abbc035c34e6c3bd208507264a1075c7f`, included in
+main by PR #289. Apple Clang/LLVM 21.0.0, Debug, macOS/arm64, separate ON/OFF
+builds and fresh test-only profiles using the documented collector. Both
+collections have zero test failures and empty broad/application warning logs.
+No benchmark, tuner or manual-smoke profiles contribute.
+
+| Configuration / mapping scope | Lines | Branch outcomes | MC/DC conditions |
+| --- | --- | --- | --- |
+| ON / broad native/test-trait | 4587/4730 (96.98%) | 2349/2606 (90.14%) | 127/163 (77.91%) |
+| ON / application | 4571/4716 (96.93%) | 2344/2604 (90.02%) | 125/163 (76.69%) |
+| OFF / broad native/test-trait | 4539/4727 (96.02%) | 2317/2606 (88.91%) | 122/163 (74.85%) |
+| OFF / application | 4523/4713 (95.97%) | 2312/2604 (88.79%) | 120/163 (73.62%) |
+
+### Raw per-file broad results
+
+| File | ON lines | ON branches | ON MC/DC | OFF lines | OFF branches | OFF MC/DC |
+| --- | --- | --- | --- | --- | --- | --- |
+| bc.cc | 61/62 (98.39%) | 25/27 (92.59%) | 1/2 (50.00%) | 56/62 (90.32%) | 23/27 (85.19%) | 1/2 (50.00%) |
+| bc.hh | 75/75 (100.00%) | 18/18 (100.00%) | 6/6 (100.00%) | 75/75 (100.00%) | 18/18 (100.00%) | 6/6 (100.00%) |
+| instruction.cc | 381/382 (99.74%) | 310/360 (86.11%) | 2/2 (100.00%) | 381/382 (99.74%) | 310/360 (86.11%) | 2/2 (100.00%) |
+| lexer.cc | 403/405 (99.51%) | 304/320 (95.00%) | 6/6 (100.00%) | 385/402 (95.77%) | 280/320 (87.50%) | 0/6 (0.00%) |
+| number.hh | 1102/1127 (97.78%) | 439/504 (87.10%) | 32/42 (76.19%) | 1110/1127 (98.49%) | 445/504 (88.29%) | 34/42 (80.95%) |
+| parser.cc | 926/949 (97.58%) | 318/343 (92.71%) | 17/27 (62.96%) | 906/949 (95.47%) | 311/343 (90.67%) | 18/27 (66.67%) |
+| reader.cc | 75/75 (100.00%) | 24/24 (100.00%) | 5/5 (100.00%) | 75/75 (100.00%) | 24/24 (100.00%) | 5/5 (100.00%) |
+| token.cc | 408/412 (99.03%) | 258/268 (96.27%) | 20/23 (86.96%) | 408/412 (99.03%) | 258/268 (96.27%) | 20/23 (86.96%) |
+| verification.cc | 310/316 (98.10%) | 192/200 (96.00%) | 28/36 (77.78%) | 310/316 (98.10%) | 192/200 (96.00%) | 28/36 (77.78%) |
+| vm.cc | 846/927 (91.26%) | 461/542 (85.06%) | 10/14 (71.43%) | 833/927 (89.86%) | 456/542 (84.13%) | 8/14 (57.14%) |
+
+### Interpretation and open work
+
+- ON: 184 selected entries, 139 CTest passes, 45 explicit unsupported imported skips, zero failures; 426 fresh profiles.
+- OFF: 184 selected entries, 121 CTest passes, 63 explicit unsupported imported skips, zero failures; 403 fresh profiles.
+- Both scopes include the newly linked `verification.cc`; its 316 lines, 200 branch outcomes and 36 MC/DC conditions were absent from the earlier nine-file checkpoint. New conversion/output/parser decisions also change mapping denominators. These are source-and-test deltas, not a pure test-only comparison.
+- The source includes the constructor, parity, conversion, fatal-parser, diagnostic and output-boundary fixes, exact fraction helpers, bounded scale-folding powers, direct VM semantics and seeded grammar/bytecode oracles. The arithmetic ledger identifies the residual configuration/invariant obligations individually; assertions and defensive paths remain in the raw results.
+- Newly exposed feasible verifier decision pairs, invalid store destinations and direct OFF array-length execution are covered by the separate follow-up PR #290, which is not included in this checkpoint. Measure those before closing the VM audit.
+- Earlier imported `misc` expected-oracle behavior and the supported-test skips remain visible. Build-local fixture copies prevent cross-build output races. Other native platforms run behavior tests in PR CI; the MC/DC measurements here are from this macOS/arm64 compiler configuration.
+- No eligible denominator or adjusted percentage has been calculated. Neither these raw results nor the exception ledger claim 100% raw coverage, complete conformance, larger #184/#186 limits, or a performance improvement.
