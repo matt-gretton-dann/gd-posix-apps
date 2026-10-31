@@ -759,6 +759,8 @@ public:
   Parser(std::unique_ptr<Lexer>&& lexer, bool interactive);
 
   /** \brief  Do the next stage of a parse.
+   * A fatal diagnostic is terminal for this parser object: later calls return
+   * the same diagnostic/quit stream. They do not attempt error recovery.
    */
   auto parse() -> std::shared_ptr<Instructions>;
 
@@ -771,6 +773,12 @@ private:
   {
     std::string diagnostic;
   };
+
+  /** Clear abandoned loop/function bookkeeping before parsing or emitting an error. */
+  void clear_context();
+
+  /** Emit one canonical terminal diagnostic stream, discarding partial code. */
+  void emit_fatal_error(std::string const& diagnostic);
 
   /** Parse the main program production. */
   void parse_program();
@@ -1176,13 +1184,14 @@ private:
   /** \brief  Are we currently in a loop? */
   [[nodiscard]] auto in_loop() const -> bool;
 
-  std::unique_ptr<Lexer> lexer_;                ///< Lexer
-  std::shared_ptr<Instructions> instructions_;  ///< Current set of instructions
-  std::stack<std::list<Index>> loop_breaks_;    ///< Stack of loop breaks.
-  bool interactive_;                            ///< Are we interactive?
-  bool error_{false};                           ///< Has there been an error?
-  bool in_function_{false};                     ///< Are we in a function?
-  bool seen_quit_{false};                       ///< Have we seen a quit token?
+  std::unique_ptr<Lexer> lexer_;                 ///< Lexer
+  std::shared_ptr<Instructions> instructions_;   ///< Current set of instructions
+  std::stack<std::list<Index>> loop_breaks_;     ///< Stack of loop breaks.
+  bool interactive_;                             ///< Are we interactive?
+  std::optional<std::string> fatal_diagnostic_;  ///< Original terminal diagnostic, if any.
+  bool error_{false};                            ///< Has there been an error?
+  bool in_function_{false};                      ///< Are we in a function?
+  bool seen_quit_{false};                        ///< Have we seen a quit token?
 };
 
 auto operator==(Parser::ExprIndex const& lhs, Parser::ExprIndex const& rhs) -> bool;
