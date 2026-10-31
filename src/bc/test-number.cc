@@ -752,3 +752,53 @@ TEMPLATE_TEST_CASE("Sparse products preserve empty recursive half sums at every 
     }
   }
 }
+
+TEMPLATE_TEST_CASE("Equal-scale arithmetic preserves long chains and aliases",
+                   "[bc][number][aligned-arithmetic]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using N = GD::Bc::BasicNumber<TestType>;
+  auto render = [](N const& value) {
+    std::ostringstream output;
+    value.output(output, 10, 0);
+    return output.str();
+  };
+  auto const digits = 6 * N::base_log10_;
+  std::string const nines(digits, '9');
+  N const large(nines, 10);
+  N const one(1);
+  auto shared = large;
+
+  auto value = large;
+  value.add(one);
+  CHECK(render(value) == "1" + std::string(digits, '0'));
+  value.sub(one);
+  CHECK(render(value) == nines);
+  CHECK(render(shared) == nines);
+
+  value = one;
+  value.add(large);  // Grow the shorter destination before creating iterators.
+  CHECK(render(value) == "1" + std::string(digits, '0'));
+  value = one;
+  value.sub(large);
+  CHECK(render(value) == "-" + std::string(digits - 1, '9') + "8");
+
+  value = large;
+  value.add(value);
+  CHECK(render(value) == "1" + std::string(digits - 1, '9') + "8");
+  value = large;
+  value.sub(value);
+  CHECK(render(value) == "0");
+  CHECK(render(shared) == nines);
+
+  std::string const high = "7" + std::string(digits - 1, '0');
+  value = N(high, 10);
+  value.sub(one);
+  CHECK(render(value) == "6" + std::string(digits - 1, '9'));
+  std::string const sparse = "7" + std::string(digits - 2, '0') + "3";
+  value = N(sparse, 10);
+  value.add(one);
+  CHECK(render(value) == "7" + std::string(digits - 2, '0') + "4");
+  value.sub(one);
+  CHECK(render(value) == sparse);
+}
