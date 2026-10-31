@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <cassert>
 #include <clocale>
+#include <cstring>
 #include <ctime>
 #include <iomanip>
 #include <iostream>

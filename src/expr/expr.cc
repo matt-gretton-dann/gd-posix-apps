@@ -14,6 +14,7 @@
 #include <cassert>
 #include <clocale>
 #include <cstdint>
+#include <cstring>
 #include <functional>
 #include <iostream>
 #include <ostream>

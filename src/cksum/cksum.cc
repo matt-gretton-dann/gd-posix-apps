@@ -14,6 +14,7 @@
 #include <array>
 #include <clocale>
 #include <cstdint>
+#include <cstring>
 #include <iostream>
 #include <istream>
 #include <limits>
