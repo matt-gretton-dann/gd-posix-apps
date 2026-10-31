@@ -368,6 +368,12 @@
         "id": 61,
         "description": "A function argument has the wrong type; {0} is the expected type name.",
         "C": "Function argument has the wrong type; expected {0}."
+      },
+      {
+        "msg": "incompatible_operand_result",
+        "id": 62,
+        "description": "Operand {0} of instruction {1} refers to an incompatible result type.",
+        "C": "Operand {0} of instruction {1} has an incompatible result type."
       }
     ]
   }
