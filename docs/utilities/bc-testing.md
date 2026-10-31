@@ -338,3 +338,13 @@ remains one, so exponentiation uses logarithmic steps and bounded storage even
 for the native billion-radix trait. The independently known truncated result is
 zero with scale two. This exercises scale folding without inventing an invalid
 scale or allocating a billion-digit coefficient (#199, #184, #186).
+
+## Absent digit storage and extended padding
+
+`[digit-boundary]` checks that absent and allocated-empty coefficients both have
+length one. It also compares allocated zero/nonzero coefficients with a scale
+of `2 * base_log10 + 1`, and splits a single-digit coefficient at that scale.
+This covers absent complete fractional limbs as well as a final partial limb,
+without an impractical input or private storage injection. Comparisons honor
+the helper's explicit allocated-storage precondition. All three traits use the
+same exact zero/one expectations and preserve the source coefficient (#199).
