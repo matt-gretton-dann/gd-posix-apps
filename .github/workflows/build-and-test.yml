@@ -11,6 +11,7 @@ jobs:
     name: Build and test on ${{ matrix.os }} - extensions enabled - ${{matrix.extensions}}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
         extensions: [OFF, ON]
@@ -43,6 +44,7 @@ jobs:
     name: Build and test on ${{ matrix.os }} - extensions enabled - ${{matrix.extensions}}
     runs-on: ${{ matrix. os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [windows-latest]
         extensions: [0, 1]
