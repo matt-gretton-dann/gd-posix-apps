@@ -71,10 +71,14 @@ class NativeTrends(unittest.TestCase):
         self.assertIn('hex_input_100000d_x3', subset)
         self.assertIn('temporary_chain_1000d_x50000', subset)
         self.assertIn('file_statements_20000', subset)
+        for name in ('sqrt_scale5000_x5', 'sqrt_large_scale10000_x5',
+                     'sqrt_tiny_scale1024_x30', 'sqrt_tiny_scale4096_x1',
+                     'sqrt_integer_power2000_scale100_x10'):
+            self.assertIn(name, subset)
         for position in ('high', 'low', 'equal'):
             self.assertIn('compare_{}_1000d_x100000'.format(position), subset)
         self.assertLess(len(subset), len(full))
-        self.assertEqual(len(full), 46)
+        self.assertEqual(len(full), 50)
         self.assertEqual(set(full) & set(held), {'startup'})
 
     def test_pr_subset_covers_every_corpus_group(self):
