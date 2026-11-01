@@ -771,9 +771,8 @@ auto GD::Bc::Details::InstructionPack::execute() -> std::pair<GD::Bc::Number, bo
       });
       break;
     case Instruction::Opcode::number:
-      execute_unary([this](Instruction::Operand const& o) {
-        return Number(std::get<std::string>(o), vm_->ibase());
-      });
+      execute_unary(
+        [this](Instruction::Operand const&) { return instrs_[pc_].decoded_number(vm_->ibase()); });
       break;
     case Instruction::Opcode::variable:
       execute_unary([](Instruction::Operand const& o) { return std::get<Variable>(o); });

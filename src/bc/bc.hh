@@ -650,6 +650,19 @@ public:
    */
   Instruction(Opcode opcode, Operand const& op1, Operand const& op2);
 
+  ~Instruction();
+  Instruction(Instruction const& other);
+  auto operator=(Instruction const& other) -> Instruction&;
+  Instruction(Instruction&& other) noexcept;
+  auto operator=(Instruction&& other) noexcept -> Instruction&;
+
+  /** Decode a numeric literal at execution-time ibase.
+   * Each instruction owns at most one last-base value. Copies start uncached;
+   * function activations borrow persistent code and retain its cache. Execution
+   * updates this memo, so callers must serialize use of one instruction vector.
+   */
+  [[nodiscard]] auto decoded_number(unsigned ibase) const -> Number;
+
   /** Get opcode */
   [[nodiscard]] auto opcode() const -> Opcode;
 
@@ -687,9 +700,11 @@ private:
   /** \brief  Validate the operands.  */
   void validate_operands() const;
 
-  Opcode opcode_;               ///< Opcode
-  std::optional<Operand> op1_;  ///< Operand 1
-  std::optional<Operand> op2_;  ///< Operand 2
+  struct LiteralCache;
+  mutable std::unique_ptr<LiteralCache> literal_cache_;  ///< Bounded runtime memo.
+  Opcode opcode_;                                        ///< Opcode
+  std::optional<Operand> op1_;                           ///< Operand 1
+  std::optional<Operand> op2_;                           ///< Operand 2
 };
 
 /** Vector of instructions.  */

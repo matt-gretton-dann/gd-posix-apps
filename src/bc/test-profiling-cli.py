@@ -88,6 +88,22 @@ class ProfilingCli(unittest.TestCase):
                                         '0\n{}\n'.format(2 * digits))
                 self.assertGreater(counters['events']['square_multiply_calls'], 0)
 
+    def test_literal_cache_survives_function_activations_and_base_changes(self):
+        counters = self.profile('define f() {\nreturn (10)\n}\nf()\nf()\n'
+                                'ibase=2\nf()\nf()\n', '10\n10\n2\n2\n')
+        self.assertEqual(counters['events']['literal_cache_misses'], 2)
+        self.assertEqual(counters['events']['literal_cache_hits'], 2)
+        self.assertEqual(counters['events']['literal_conversions'], 2)
+        # Changing the key reuses one bounded memo, not another cache entry.
+        self.assertEqual(counters['allocations']['literals']['allocation_calls'], 1)
+        self.assertEqual(counters['allocations']['literals']['deallocation_calls'], 1)
+
+    def test_single_digits_need_no_decoded_cache_allocation(self):
+        counters = self.profile('0\n1\nA\nF\n', '0\n1\n10\n15\n')
+        self.assertEqual(counters['events']['single_digit_literals'], 4)
+        self.assertEqual(counters['events']['literal_conversions'], 0)
+        self.assertEqual(counters['allocations']['literals']['allocation_calls'], 0)
+
     def test_array_clone_and_frames(self):
         counters = self.profile('define f(a[]) {\na[1]=9\nreturn(a[1])\n}\na[1]=3\n'
                                 'a[2]=123456789012345678901234567890\nf(a[])\na[1]\n',
