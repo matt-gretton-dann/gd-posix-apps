@@ -72,6 +72,7 @@ if(RUN_UNIT_TESTS)
                  test-lexer-comments.cc
                  test-libbc-main.cc
                  test-number.cc
+                 test-number-workspace.cc
                  test-number-output.cc
                  test-number-length.cc
                  test-number-compare.cc
