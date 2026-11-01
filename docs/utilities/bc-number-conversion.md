@@ -7,8 +7,11 @@ whole growing coefficient by ten.
 
 For input base ten, validate decimal characters and a sole optional radix point,
 retain the original number of fractional places, and ignore leading coefficient
-zeros when sizing storage. Resize once, then decode from the least significant
-end in groups of the trait's decimal limb width. Fractional trailing zeros stay
+zeros when sizing storage. Resize once, then decode the partial leading chunk
+and full chunks in forward order using multiply-by-ten accumulation. Store the
+completed chunks into little-endian limbs from the back. Every chunk prefix is
+below the decimal limb base and fits the trait's ordinary limb type; a separate
+wide positional weight is unnecessary. Fractional trailing zeros stay
 in the coefficient and scale. Every exposed limb is initialized before use;
 copies retain normal inline-value or shared heap COW semantics.
 
@@ -203,3 +206,19 @@ text is still owned at its original instruction/source locations; views and
 format buffers never escape their calls. Capacity products and power exponents
 are bounded before construction. None of this establishes the overall #197
 competitive target or substitutes for its final coverage/configuration review.
+
+## Forward decimal chunk experiment
+
+Refs #200, #206 and #197. The forward Horner decoder is a separate experiment
+following the confirmed Linux decimal-input loss observed while evaluating
+#355. That workload does not execute sqrt, and its compiler mechanism is not
+established. This kernel change must earn acceptance through independent
+correctness checks and matched local/native measurements; it is not an
+attribute hint or a claim about the cause of the earlier loss.
+
+Independent arithmetic oracles now cover every radix-point position around
+one- and two-limb boundaries, all-nine maximal chunks, zero suffixes, leading
+zeros and immutable copies for all three traits. Partial leading groups are
+selected from the validated significant digit count; fractional trailing zeros
+and the caller's decimal scale remain unchanged. Zero and single-digit paths
+retain their existing behavior. No platform-specific implementation is added.
