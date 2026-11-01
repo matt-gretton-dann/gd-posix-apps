@@ -57,8 +57,7 @@ and near-root regimes. Quick mode uses scales2/20/100. Held-out inputs use
 different regular arguments or exact integer-order Bessel symmetries, with
 different repeated-call counts. Names and parameters retain each actual input,
 scale, call count and mode. These fixed counts are **not calibrated**; short
-cases do not establish a substantive timing advantage. Duration calibration
-and correlation-aware uncertainty remain separate issue #216 work.
+cases do not establish a substantive timing advantage. Duration calibration remains separate issue #216 work.
 
 Each configured command must load its chosen library explicitly. For example:
 
@@ -147,12 +146,22 @@ Both seeds, exact programs, parameters and oracle hashes are preserved.
 
 Each implementation gets median/min/max wall time and median absolute
 deviation. Comparisons report both the ratio of medians and the median paired
-ratio. The approximate 95% paired percentile-bootstrap interval resamples whole
-paired ratios using the recorded seed. Fewer than three pairs have no confidence
-interval; the default nine pairs are still observations on the recorded host,
-not a guarantee about another machine. No aggregate score or hard timing gate
-is produced. Keep losing cases visible and use separate A/A runs to understand
-noise before introducing CI regression thresholds (#216).
+ratio. Two nominal 95% percentile-bootstrap intervals use the recorded seed:
+IID resampling of whole paired ratios and circular resampling of neighboring
+paired rounds in blocks. The prespecified block length is
+`max(2, floor(sqrt(pair_count)))`. Both intervals and lag-one correlation are
+reported. The final interval is their union, so it cannot become narrower than
+the IID interval. Constant series with sufficient pairs have zero reported
+lag-one correlation.
+
+The block design follows the general circular-resampling approach of
+[Politis and Romano](https://statistics.stanford.edu/technical-reports/circular-block-resampling-procedure-stationary-data).
+The block-length choice and union rule are this harness's explicit protocol;
+they are not an optimal-length claim or a finite-sample coverage theorem.
+Fewer than three pairs have no interval. Small samples, nonstationary host
+noise and drift remain limitations, and a small observed correlation does not
+prove independence. Keep A/A controls and noisy/inconclusive outcomes visible.
+No aggregate score or hard timing pass is produced.
 
 Artifacts:
 

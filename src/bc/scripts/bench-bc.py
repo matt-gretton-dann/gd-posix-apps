@@ -504,14 +504,44 @@ def paired_statistics(candidate, reference, seed, resamples=2000):
     if resamples < 200:
         raise BenchmarkError("at least 200 bootstrap resamples are required")
     ratios = [left / right for left, right in zip(candidate, reference)]
+    if any(not math.isfinite(value) for value in ratios):
+        raise BenchmarkError('derived paired ratios must be finite')
     result = {"pairs": len(ratios), "median_paired_ratio": statistics.median(ratios),
               "ratio_of_medians": statistics.median(candidate) / statistics.median(reference),
-              "ci95": None, "method": "paired percentile bootstrap of median ratios"}
+              'ci95': None, 'iid_ci95': None, 'block_ci95': None,
+              'block_length': None, 'autocorrelation_lag1': None,
+              'method': 'union of paired IID and circular-block percentile intervals'}
     if len(ratios) >= 3:
         rng = random.Random(seed)
         bootstraps = [statistics.median([ratios[rng.randrange(len(ratios))]
                                         for _ in ratios]) for _ in range(resamples)]
-        result["ci95"] = [quantile(bootstraps, 0.025), quantile(bootstraps, 0.975)]
+        result['iid_ci95'] = [quantile(bootstraps, 0.025), quantile(bootstraps, 0.975)]
+        # Preserve neighboring rounds when resampling. The predeclared block
+        # length grows with sample count; it is not tuned to an observed win.
+        length = max(2, int(math.sqrt(len(ratios))))
+        result['block_length'] = length
+        blocks = []
+        for _ in range(resamples):
+            sample = []
+            while len(sample) < len(ratios):
+                start = rng.randrange(len(ratios))
+                sample.extend(ratios[(start + offset) % len(ratios)] for offset in range(length))
+            blocks.append(statistics.median(sample[:len(ratios)]))
+        result['block_ci95'] = [quantile(blocks, 0.025), quantile(blocks, 0.975)]
+        result['ci95'] = [min(result['iid_ci95'][0], result['block_ci95'][0]),
+                          max(result['iid_ci95'][1], result['block_ci95'][1])]
+        # Correlation is scale invariant. Normalize before squaring so a
+        # finite but large ratio cannot overflow this diagnostic's variance.
+        largest = max(ratios)
+        normalized = [value / largest for value in ratios]
+        mean = statistics.mean(normalized)
+        variance = sum((value - mean) ** 2 for value in normalized)
+        result['autocorrelation_lag1'] = (sum((left - mean) * (right - mean)
+                                             for left, right in zip(normalized[1:], normalized[:-1])) /
+                                          variance if variance else 0.0)
+        result['interval_limitations'] = ('Nominal percentile intervals; small samples and '
+                                           'nonstationary host noise remain limitations. '
+                                           'The union cannot be narrower than the IID interval.')
     else:
         result["interval_status"] = "insufficient_pairs"
     return result

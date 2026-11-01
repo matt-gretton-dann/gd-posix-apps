@@ -391,6 +391,24 @@ class PairedStatistics(unittest.TestCase):
         self.assertEqual(result, module.paired_statistics(
             [2, 4, 6], [1, 2, 3], seed=197200, resamples=200))
 
+    def test_serial_dependence_is_reported_without_narrowing_iid_intervals(self):
+        module = self.module()
+        ratios = [1, 1, 1, 2, 2, 2, 3, 3, 3]
+        result = module.paired_statistics(ratios, [1] * len(ratios), 216, 400)
+        self.assertAlmostEqual(result['autocorrelation_lag1'], 2 / 3)
+        self.assertEqual(result['block_length'], 3)
+        for kind in ('iid_ci95', 'block_ci95'):
+            self.assertLessEqual(result['ci95'][0], result[kind][0])
+            self.assertGreaterEqual(result['ci95'][1], result[kind][1])
+        self.assertEqual(result, module.paired_statistics(ratios, [1] * len(ratios), 216, 400))
+        alternating = module.paired_statistics([1, 3] * 4, [1] * 8, 216, 400)
+        self.assertAlmostEqual(alternating['autocorrelation_lag1'], -7 / 8)
+        large = module.paired_statistics([value * 1e200 for value in ratios], [1] * 9, 216, 400)
+        self.assertAlmostEqual(large['autocorrelation_lag1'], 2 / 3)
+        with self.assertRaisesRegex(module.BenchmarkError, 'ratios must be finite'):
+            module.paired_statistics([1e308] * 3, [1e-308] * 3, 216, 400)
+
+
     def test_single_pair_has_no_confidence_claim(self):
         result = self.module().paired_statistics([2], [1], seed=197200, resamples=200)
         self.assertEqual(result["median_paired_ratio"], 2)
