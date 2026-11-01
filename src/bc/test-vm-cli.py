@@ -95,6 +95,39 @@ class VMTests(unittest.TestCase):
     def test_runtime_ibase_for_reused_literal(self):
         self.run_bc("define f() {\nreturn (10)\n}\nf()\nibase=2\nf()\n", "10\n2\n")
 
+    def test_repeated_function_literals_follow_each_runtime_base(self):
+        # Re-enter the same executable function repeatedly under each base.
+        text = "define f() {\nreturn (10)\n}\n"
+        expected = ""
+        for spelling, value in (("2", 2), ("8", 8), ("A", 10), ("16", 16), ("A", 10)):
+            text += "ibase={}\nf()\nf()\n".format(spelling)
+            expected += "{}\n{}\n".format(value, value)
+        text += ("for(i=0;i<4;i++) {\nibase=A\nif(i%2==0) ibase=2\nf()\n}\n")
+        self.run_bc(text, expected + "2\n10\n2\n10\n")
+
+    def test_fractional_and_single_digit_literals_keep_their_rules(self):
+        text = ("define f() {\nreturn (10.1)\n}\n"
+                "define g() {\nreturn (F)\n}\n")
+        expected = ""
+        for spelling, value in (("2", "2.5"), ("8", "8.1"), ("A", "10.1"),
+                                 ("16", "16.0"), ("A", "10.1")):
+            text += "ibase={}\nf()\nf()\ng()\ng()\n".format(spelling)
+            expected += "{0}\n{0}\n15\n15\n".format(value)
+        self.run_bc(text, expected)
+
+    def test_literal_results_are_independent_snapshots(self):
+        value = "123456789012345678901234567890"
+        text = ("define f() {\nreturn (" + value + ")\n}\n"
+                "a=f()\na+=1\na\nf()\nf()\n"
+                "define f() {\nreturn (10)\n}\nf()\nibase=2\nf()\nf()\n")
+        self.run_bc(text, str(int(value) + 1) + "\n" + value + "\n" + value + "\n10\n2\n2\n")
+
+    def test_literals_after_internal_base_change_and_special_restore(self):
+        text = ("define f() {\nibase=2\nreturn (10)\n}\nf()\nf()\nibase\n")
+        self.run_bc(text, "2\n2\n2\n")
+        if EXTENSIONS:
+            self.run_bc(text, "2\n2\n10\n", options=("-g",))
+
     def test_sparse_array_defaults(self):
         self.run_bc("a[1000000]=9\na[0]\na[1000000]\n", "0\n9\n")
 

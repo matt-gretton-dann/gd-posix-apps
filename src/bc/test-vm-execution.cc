@@ -275,3 +275,21 @@ TEST_CASE("Consumed parameters and terminal returns preserve snapshots",
         "99999999999999\n88\n999999999999999999999999999999999999999999999999999999999999999\n10000"
         "00000000000000000000000000000000000000000000000000000000000\n-1.2500\n17\n");
 }
+
+TEST_CASE("Repeated executable code observes replaced literal text", "[bc][vm][literal]")
+{
+  std::ostringstream output;
+  std::ostringstream errors;
+  GD::Bc::VM vm(output, errors, false);
+  GD::Bc::Instructions code;
+  code.emplace_back(O::number, std::string("123456789012345678901234567890"));
+  code.emplace_back(O::print, D(-1), I::Stream::output);
+  CHECK(vm.execute(code));
+  CHECK(vm.execute(code));
+  code.front().op1(std::string("987654321098765432109876543210"));
+  CHECK(vm.execute(code));
+  CHECK(errors.str().empty());
+  CHECK(output.str() == "123456789012345678901234567890\n"
+                        "123456789012345678901234567890\n"
+                        "987654321098765432109876543210\n");
+}
