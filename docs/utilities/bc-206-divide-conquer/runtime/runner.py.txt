@@ -1,0 +1,41 @@
+"""Matched production input dispatch; exact source recipes and integer oracles."""
+import argparse,csv,hashlib,importlib.util,json,random,subprocess,sys,time
+from pathlib import Path
+sys.set_int_max_str_digits(1000000)
+p=argparse.ArgumentParser();p.add_argument('--holdout',action='store_true');args=p.parse_args()
+repo=Path('/private/tmp/gd-posix-conversion-dc');spec=importlib.util.spec_from_file_location('bench',repo/'src/bc/scripts/bench-bc.py');bench=importlib.util.module_from_spec(spec);spec.loader.exec_module(bench)
+seed=197210 if args.holdout else 197209
+root=Path('/private/tmp/gd-bc-206-runtime-dc-'+('holdout' if args.holdout else 'full'));root.mkdir(exist_ok=False)
+roles={n:Path('/private/tmp/gd-bc-206-runtime-dc-'+n+'-components') for n in ('baseline','candidate')};metadata={n:json.loads((p/'manifest.json').read_text()) for n,p in roles.items()};assert all(not m['instrumented'] for m in metadata.values())
+assert metadata['baseline']['source_revision']=='9669ef73bc00e5b89f3fb00e2867a8f8ed9c4d32'
+assert metadata['candidate']['source_revision']=='a54210149ced1f8b773cd0af2b434790ae52e34c'
+cases=[];alphabet='0123456789ABCDEF'
+bases=(2,8,10,16) if args.holdout else (2,3,8,10,16)
+sizes=((3,10000),(257,1000),(2048,20),(70000,1),(120000,1)) if args.holdout else ((1,100000),(16,10000),(64,5000),(256,1000),(10000,2),(65535,1),(65536,1),(65537,1),(100000,1))
+for base in bases:
+ for digits,count in sizes:
+  rng=random.Random(seed+digits*17+base);literal=alphabet[base-1]+''.join(alphabet[rng.randrange(base)] for _ in range(digits-1));expected=str(int(literal,base));fixture=literal+'\n'
+  c={'name':'input-b{}-{}d-x{}'.format(base,digits,count),'component':'conversion-in','base':base,'digits':digits,'iterations':count,'fixture':fixture,'expected':expected,'checksum':count*len(expected),'input_sha256':hashlib.sha256(fixture.encode()).hexdigest()};cases.append(c);(root/(c['name']+'.txt')).write_text(fixture);(root/(c['name']+'.expected')).write_text(expected+'\n')
+for digits,count in ((1,100000),(1000,1000),(10000,100)):
+ literal='7'*digits;cases.append({'name':'control-{}d'.format(digits),'component':'control','base':10,'digits':digits,'iterations':count,'fixture':literal+'\n','expected':literal,'checksum':count*digits,'input_sha256':hashlib.sha256((literal+'\n').encode()).hexdigest()})
+manifest={'schema':1,'seed':seed,'warmups':1,'samples':9,'scope':'Actual Number constructor dispatch, same ordinary conversion-in mode. Internal intervals include reset/consumer; no control subtraction. One checked warmup and nine shuffled paired rounds; no local builds/tests/profiles overlap timings. Shared-host/frequency/thermal uncontrolled. Positive integer fixtures; signs/fractions/invalid input retain separate correctness coverage.','implementations':metadata,'cases':[{k:v for k,v in c.items() if k not in ('fixture','expected')} for c in cases]};(root/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n');schedule=random.Random(seed);rows=[]
+with (root/'samples.jsonl').open('w') as out:
+ for phase,rounds in [('warmup',1),('measurement',9)]:
+  for r in range(rounds):
+   order=list(cases);schedule.shuffle(order)
+   for c in order:
+    names=list(roles);schedule.shuffle(names)
+    for position,n in enumerate(names):
+     argv=metadata[n]['argv']+[c['component'],str(c['iterations']),'126']+([str(c['base'])] if c['component']=='conversion-in' else []);started=time.perf_counter();child=subprocess.run(argv,input=c['fixture'],text=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,env=bench.environment(),timeout=90);wall=time.perf_counter()-started
+     assert child.returncode==0 and not child.stderr,(n,c['name'],child.stderr);d=json.loads(child.stdout)
+     assert d['result']==c['expected'] and d['checksum_mod_2_64']==c['checksum'],(n,c['name'],d['checksum_mod_2_64'],c['checksum'])
+     assert d['component']==c['component'] and d['iterations']==c['iterations'] and d['text_base']==c['base'] and d['split_point']==126 and not d['instrumented'] and d['seconds']>=0
+     row={'phase':phase,'round':r,'order':position,'workload':c['name'],'implementation':n,'seconds':d['seconds'],'wall_seconds_auxiliary':wall,'checked':True,'stdout_sha256':hashlib.sha256(child.stdout.encode()).hexdigest(),'reported':d};rows.append(row);out.write(json.dumps(row,sort_keys=True)+'\n');out.flush()
+   print(phase,r+1,'complete',flush=True)
+summary=[]
+for c in cases:
+ values={n:[r['seconds'] for r in rows if r['phase']=='measurement' and r['workload']==c['name'] and r['implementation']==n] for n in roles};ratio=bench.paired_statistics(values['candidate'],values['baseline'],seed=seed,resamples=2000) if all(v>0 for vv in values.values() for v in vv) else {'median_paired_ratio':None,'ci95':None,'interval_status':'insufficient-clock-resolution'};summary.append({'name':c['name'],'component':c['component'],'base':c['base'],'digits':c['digits'],'candidate_over_parent':ratio})
+(root/'summary.json').write_text(json.dumps({'schema':1,'performance_gate':False,'workloads':summary},indent=2)+'\n')
+with (root/'samples.csv').open('w',newline='') as out:
+ fields=['phase','round','order','workload','implementation','seconds','wall_seconds_auxiliary','checked','stdout_sha256'];writer=csv.DictWriter(out,fieldnames=fields);writer.writeheader();writer.writerows({k:r[k] for k in fields} for r in rows)
+print('All',len(rows),'production input component invocations pass exact checks',flush=True)

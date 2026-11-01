@@ -47,6 +47,8 @@ enum class Event : std::size_t {
   blocked_multiply_calls,
   result_validation_calls,
   radix_output_divisions,
+  radix_dc_input_calls,
+  radix_dc_input_leaf_conversions,
   count
 };
 

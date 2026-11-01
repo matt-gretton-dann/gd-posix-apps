@@ -131,3 +131,35 @@ search checks the mapping, independently of the arithmetic value oracles.
 Actual conversion measurements and native acceptance are still required; this
 candidate is not an asserted speedup. Decimal chunk decoding retains its measured
 arithmetic fast path, and single decimal digits retain the direct scalar path.
+
+## Diagnostic divide-and-conquer components
+
+`bc-components conversion-in-dc ITERATIONS SPLIT_POINT [TEXT_BASE]` and
+`conversion-out-dc` evaluate bounded positive-integer prototypes in the benchmark
+executable. They do not change runtime Number conversion or the bc language.
+Fixtures with a sign or radix point are rejected before timing. Input uses the
+specified base; output fixtures remain decimal. Zero and the existing single
+out-of-base digit rule remain supported. Text bases are 2–16.
+
+Input recursively splits source digits and combines `left * base^right_width +
+right`. Output divides by an exact radix power, then concatenates the quotient
+with an exactly padded remainder. Its integer log estimate chooses only the
+partition; exact arithmetic determines all result digits. Nonshrinking output
+partitions and oversized native exponents are rejected. Decimal conversion
+retains its existing linear path. Leaves use at most 64 input characters or
+64 decimal coefficient digits; this is an experimental choice, not a measured
+universal crossover.
+
+Each conversion owns a local power cache, so generation, cache allocation and
+cleanup are included in every interval. There is no hidden cross-call reuse.
+Leaf output uses the public Number formatter and joins intermediate continuation
+lines; that overhead is part of this prototype. Its performance cannot establish
+a lower bound for other divide-and-conquer implementations. Both experimental
+and ordinary modes share fixture validation. Controls remain separate and are
+never subtracted. Profile-instrumented component reports still have no elapsed
+seconds. Native source, regimes, peak-memory scope and any measured losses must
+be recorded before choosing a runtime crossover.
+
+[DC experiment results](bc-206-divide-conquer/README.md) retain all input wins,
+small-input/output losses, cutoff sweeps, separate controls and process-memory
+observations. Runtime adoption still requires its own integrated/native evidence.

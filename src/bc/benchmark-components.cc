@@ -2,9 +2,14 @@
  * Component measurements with explicit setup and copy/reset control costs.
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <algorithm>
+#include <array>
 #include <charconv>
 #include <chrono>
 #include <iomanip>
+#include <limits>
+#include <map>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -24,12 +29,8 @@ auto positive(std::string_view text, std::uint64_t maximum) -> std::uint64_t
   return result;
 }
 
-auto number(std::string_view text, Number::NumType input_base = 10) -> Number
+void validate_numeric(std::string_view text, Number::NumType input_base)
 {
-  bool const negative = !text.empty() && text.front() == '-';
-  if (negative) {
-    text.remove_prefix(1);
-  }
   bool digit = false;
   bool period = false;
   auto const* message = input_base == 10 ? "expected a signed decimal number"
@@ -51,6 +52,15 @@ auto number(std::string_view text, Number::NumType input_base = 10) -> Number
   if (!digit) {
     throw std::runtime_error(message);
   }
+}
+
+auto number(std::string_view text, Number::NumType input_base = 10) -> Number
+{
+  bool const negative = !text.empty() && text.front() == '-';
+  if (negative) {
+    text.remove_prefix(1);
+  }
+  validate_numeric(text, input_base);
   Number result(text, input_base);
   if (negative) {
     result.negate();
@@ -64,6 +74,108 @@ auto text(Number const& value, Number::NumType output_base = 10) -> std::string
   value.output(output, output_base, 0);
   return output.str();
 }
+// Diagnostic-only prototypes. Every conversion owns its power cache: constant
+// generation/allocation is included, with no hidden cross-call amortization.
+class ConversionPowers
+{
+public:
+  explicit ConversionPowers(Number::NumType base) : base_(base) {}
+  auto get(std::size_t digits) -> Number const&
+  {
+    if (digits > std::numeric_limits<Number::NumType>::max())
+      throw std::length_error("Diagnostic conversion exponent exceeds native bounds");
+    auto found = powers_.find(digits);
+    if (found == powers_.end()) {
+      Number power(base_);
+      power.power(Number(static_cast<Number::NumType>(digits)), 0);
+      found = powers_.emplace(digits, std::move(power)).first;
+    }
+    return found->second;
+  }
+
+private:
+  Number::NumType base_;
+  std::map<std::size_t, Number> powers_;
+};
+
+constexpr std::size_t conversion_leaf = 64;
+auto parse_dc(std::string_view input, Number::NumType base, ConversionPowers& powers) -> Number
+{
+  if (input.size() <= conversion_leaf)
+    return Number(input, base);
+  auto const middle = input.size() / 2;
+  auto left = parse_dc(input.substr(0, middle), base, powers);
+  auto right = parse_dc(input.substr(middle), base, powers);
+  left.multiply(powers.get(input.size() - middle), 0);
+  left.add(right);
+  return left;
+}
+
+auto input_dc(std::string_view input, Number::NumType base) -> Number
+{
+  // Direct decimal decoding is already linear; retain its normal entry path.
+  if (base == 10 || input.size() <= conversion_leaf)
+    return number(input, base);
+  validate_numeric(input, base);
+  ConversionPowers powers(base);
+  return parse_dc(input, base, powers);
+}
+
+auto unwrapped(std::string result) -> std::string
+{
+  for (auto at = result.find("\\\n"); at != std::string::npos; at = result.find("\\\n"))
+    result.erase(at, 2);
+  return result;
+}
+
+auto output_dc_digits(Number const& value, Number::NumType base, ConversionPowers& powers)
+  -> std::string
+{
+  if (value.length() <= conversion_leaf)
+    return unwrapped(text(value, base));
+  // Approximate log10(base)*1000 only chooses a partition, never result digits.
+  // For the non-leaf regime each side shrinks; exact powers and arithmetic
+  // determine the quotient/remainder regardless of this integer estimate.
+  constexpr std::array<unsigned, 17> logs{0,   0,    301,  477,  602,  699,  778,  845, 903,
+                                          954, 1000, 1041, 1079, 1113, 1146, 1176, 1204};
+  auto const width = static_cast<std::size_t>(std::uint64_t(value.length()) * 500 / logs[base]);
+  auto const& power = powers.get(width);
+  auto high = value;
+  high.divide(power, 0);
+  auto low = high;
+  low.multiply(power, 0);
+  low.negate();
+  low.add(value);
+  if (high.length() >= value.length() || low.length() >= value.length())
+    throw std::logic_error("Diagnostic conversion partition did not shrink");
+  auto left = output_dc_digits(high, base, powers);
+  auto right = output_dc_digits(low, base, powers);
+  if (right.size() > width)
+    throw std::logic_error("Diagnostic remainder exceeds radix power");
+  left.append(width - right.size(), '0');
+  left += right;
+  return left;
+}
+
+auto output_dc(Number const& value, Number::NumType base) -> std::string
+{
+  if (base == 10 || value.length() <= conversion_leaf)
+    return text(value, base);
+  ConversionPowers powers(base);
+  auto const digits = output_dc_digits(value, base, powers);
+  std::string result;
+  std::size_t position = 0;
+  // Match the existing positive-integer, line-position-zero generic layout.
+  if (digits.size() > 69) {
+    while (digits.size() - position > 68) {
+      result.append(digits, position, 68);
+      result += "\\\n";
+      position += 68;
+    }
+  }
+  result.append(digits, position);
+  return result;
+}
 }  // namespace
 
 auto main(int argc, char** argv) -> int
@@ -74,9 +186,13 @@ auto main(int argc, char** argv) -> int
         "usage: bc-components COMPONENT ITERATIONS SPLIT_POINT [TEXT_BASE] < INPUT");
     }
     std::string const component(argv[1]);
+    bool const conversion_input = component == "conversion-in" || component == "conversion-in-dc";
+    bool const conversion_output =
+      component == "conversion-out" || component == "conversion-out-dc";
+    bool const divide_conquer = component == "conversion-in-dc" || component == "conversion-out-dc";
     if (component != "control" && component != "add" && component != "subtract" &&
         component != "multiply" && component != "square" && component != "divide" &&
-        component != "parse" && component != "conversion-in" && component != "conversion-out") {
+        component != "parse" && !conversion_input && !conversion_output) {
       throw std::runtime_error("unknown component");
     }
     auto const iterations = positive(argv[2], 10000000);
@@ -85,7 +201,7 @@ auto main(int argc, char** argv) -> int
     if (text_base < 2) {
       throw std::runtime_error("text base must be between two and sixteen");
     }
-    if (argc == 5 && component != "conversion-in" && component != "conversion-out") {
+    if (argc == 5 && !conversion_input && !conversion_output) {
       throw std::runtime_error("text base applies only to conversion components");
     }
     Number::multiply_split_point(static_cast<Number::NumType>(split));
@@ -111,8 +227,7 @@ auto main(int argc, char** argv) -> int
       if (!right.empty() && right.back() == '\r') {
         right.pop_back();
       }
-      if (right.empty() && component != "control" && component != "conversion-in" &&
-          component != "conversion-out") {
+      if (right.empty() && component != "control" && !conversion_input && !conversion_output) {
         throw std::runtime_error("missing right-hand component operand");
       }
       std::string extra;
@@ -121,7 +236,9 @@ auto main(int argc, char** argv) -> int
           throw std::runtime_error("unexpected extra component input");
         }
       }
-      lhs = number(literal, component == "conversion-in" ? text_base : Number::NumType(10));
+      if (divide_conquer && literal.find_first_of("-.") != std::string::npos)
+        throw std::runtime_error("divide-conquer diagnostics require unsigned integer fixtures");
+      lhs = number(literal, conversion_input ? text_base : Number::NumType(10));
       rhs = right.empty() ? Number(1) : number(right);
       if (component == "divide" && rhs.is_zero()) {
         throw std::runtime_error("zero component divisor");
@@ -162,17 +279,29 @@ auto main(int argc, char** argv) -> int
         checksum += instruction_count;
       });
     }
-    else if (component == "conversion-out") {
-      repeat([&]() {
-        rendered = text(lhs, text_base);
-        checksum += rendered.size();
-      });
+    else if (conversion_output) {
+      if (divide_conquer)
+        repeat([&]() {
+          rendered = output_dc(lhs, text_base);
+          checksum += rendered.size();
+        });
+      else
+        repeat([&]() {
+          rendered = text(lhs, text_base);
+          checksum += rendered.size();
+        });
     }
-    else if (component == "conversion-in") {
-      repeat([&]() {
-        result = number(literal, text_base);
-        checksum += result.length();
-      });
+    else if (conversion_input) {
+      if (divide_conquer)
+        repeat([&]() {
+          result = input_dc(literal, text_base);
+          checksum += result.length();
+        });
+      else
+        repeat([&]() {
+          result = number(literal, text_base);
+          checksum += result.length();
+        });
     }
     else {
       // Select the operation once. Control includes the same copy/reset and
@@ -207,7 +336,7 @@ auto main(int argc, char** argv) -> int
     auto const seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - started);
 #endif
     // Formatting the final arithmetic result is outside the measured interval.
-    if (component != "parse" && component != "conversion-out") {
+    if (component != "parse" && !conversion_output) {
       rendered = text(result);
     }
     // Joining continuation lines is output validation work, outside timing.

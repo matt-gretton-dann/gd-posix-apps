@@ -80,7 +80,7 @@ def corpus(preset="full", selected=None, listing=False, seed=197200):
     only for selected cases, so startup-only validation stays inexpensive.
     """
     if hasattr(sys, "set_int_max_str_digits"):
-        sys.set_int_max_str_digits(100000)
+        sys.set_int_max_str_digits(1000000)
     rng = random.Random(seed)
     cases, known = [], []
     def iterations(count):
@@ -251,6 +251,17 @@ def corpus(preset="full", selected=None, listing=False, seed=197200):
             "a={}\nobase={}\nfor(i=0;i<{};i++) a".format(value, output_base, count),
             lambda value=value, code=code, count=count: [format(int(value), code)] * count,
             {"digits": digits, "lines": count, "output_base": output_base})
+    # Append cold source literals above the balanced-input dispatch boundary.
+    # Repeating statements constructs separate instruction caches; a loop around
+    # one literal would mainly measure cache hits rather than radix conversion.
+    for label, input_base, expression, alphabet in (
+            ('binary', 2, '2', '01'), ('hex', 16, 'A+6', '0123456789ABCDEF')):
+        digits, count = dimension(100000), iterations(3)
+        value = alphabet[-1] + ''.join(rng.choice(alphabet) for _ in range(digits - 1))
+        add("{}_input_{}d_x{}".format(label, digits, count), label + "_input",
+            "ibase={}\n".format(expression) + ("a=" + value + "\n") * count + "ibase=A\na",
+            lambda value=value, input_base=input_base: int(value, input_base),
+            {"digits": digits, "literals": count, "input_base": input_base})
     if selected:
         missing = set(selected) - set(known)
         if missing:

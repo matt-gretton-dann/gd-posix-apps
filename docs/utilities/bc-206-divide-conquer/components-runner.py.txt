@@ -1,0 +1,50 @@
+"""Same-binary exact-checked integer conversion algorithm experiments."""
+import argparse,csv,hashlib,importlib.util,json,random,subprocess,sys,time
+from pathlib import Path
+sys.set_int_max_str_digits(0)
+p=argparse.ArgumentParser();p.add_argument('--holdout',action='store_true');args=p.parse_args()
+repo=Path('/private/tmp/gd-posix-conversion-dc');spec=importlib.util.spec_from_file_location('bench',repo/'src/bc/scripts/bench-bc.py');bench=importlib.util.module_from_spec(spec);spec.loader.exec_module(bench)
+seed=197207 if args.holdout else 197206
+root=Path('/private/tmp/gd-bc-206-dc-'+('holdout' if args.holdout else 'full'));root.mkdir(exist_ok=False)
+metadata=json.loads(Path('/private/tmp/gd-bc-206-dc-components/manifest.json').read_text());assert not metadata['instrumented']
+bases=(2,10,16) if args.holdout else (2,3,8,10,16)
+sizes=((80,1000),(257,200),(2048,10),(20000,1),(120000,1)) if args.holdout else ((1,100000),(16,10000),(63,2000),(64,2000),(65,2000),(127,500),(128,500),(256,500),(1024,20),(10000,2),(100000,1))
+alphabet='0123456789ABCDEF'
+def encode(value,base):
+ out=[]
+ while value:
+  value,rem=divmod(value,base);out.append(alphabet[rem])
+ return ''.join(reversed(out)) or '0'
+cases=[]
+for base in bases:
+ for digits,count in sizes:
+  for direction in ('in','out'):
+   rng=random.Random(seed+base*101+digits*3+(direction=='out'))
+   literal=(alphabet[base-1]+''.join(alphabet[rng.randrange(base)] for _ in range(digits-1))) if direction=='in' else ('7'+''.join(str(rng.randrange(10)) for _ in range(digits-1)))
+   expected=str(int(literal,base)) if direction=='in' else encode(int(literal),base)
+   length=len(expected)
+   wraps=0 if direction=='in' else (length//(69 if length<=69 else 68) if base==10 else (0 if length<=69 else (length-1)//68))
+   c={'name':'{}-b{}-{}d-x{}'.format(direction,base,digits,count),'component':'conversion-'+direction,'base':base,'digits':digits,'iterations':count,'fixture':literal+'\n','expected':expected,'checksum':count*(length+2*wraps),'input_sha256':hashlib.sha256((literal+'\n').encode()).hexdigest()};cases.append(c);(root/(c['name']+'.txt')).write_text(c['fixture']);(root/(c['name']+'.expected')).write_text(expected+'\n')
+manifest={'schema':1,'seed':seed,'warmups':1,'samples':9,'implementation':metadata,'algorithms':['grouped','divide_conquer'],'scope':'Same executable/source; only component mode differs. Constant generation/local power cache and cleanup included in each DC conversion. Integer-only public-API prototype with fixed 64-character/decimal-digit leaves, not a lower bound for other algorithms. Internal intervals include validation/reset/consumer and formatting. No local builds/tests/profiles overlap timings; host contention/frequency/thermal uncontrolled.','cases':[{k:v for k,v in c.items() if k not in ('fixture','expected')} for c in cases]};(root/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+schedule=random.Random(seed);rows=[]
+with (root/'samples.jsonl').open('w') as out:
+ for phase,rounds in [('warmup',1),('measurement',9)]:
+  for r in range(rounds):
+   order=list(cases);schedule.shuffle(order)
+   for c in order:
+    algorithms=['grouped','divide_conquer'];schedule.shuffle(algorithms)
+    for position,algorithm in enumerate(algorithms):
+     component=c['component']+('-dc' if algorithm=='divide_conquer' else '')
+     argv=metadata['argv']+[component,str(c['iterations']),'126',str(c['base'])];started=time.perf_counter();child=subprocess.run(argv,input=c['fixture'],text=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,env=bench.environment(),timeout=90);wall=time.perf_counter()-started
+     assert child.returncode==0 and not child.stderr,(algorithm,c['name'],child.returncode,child.stderr);d=json.loads(child.stdout)
+     assert d['result']==c['expected'] and d['checksum_mod_2_64']==c['checksum'],(algorithm,c['name'],d['checksum_mod_2_64'],c['checksum'])
+     assert d['component']==component and d['iterations']==c['iterations'] and d['text_base']==c['base'] and d['split_point']==126 and not d['instrumented'] and d['seconds']>=0
+     row={'phase':phase,'round':r,'order':position,'workload':c['name'],'algorithm':algorithm,'seconds':d['seconds'],'wall_seconds_auxiliary':wall,'checked':True,'stdout_sha256':hashlib.sha256(child.stdout.encode()).hexdigest(),'reported':d};rows.append(row);out.write(json.dumps(row,sort_keys=True)+'\n');out.flush()
+   print(phase,r+1,'complete',flush=True)
+summary=[]
+for c in cases:
+ values={n:[r['seconds'] for r in rows if r['phase']=='measurement' and r['workload']==c['name'] and r['algorithm']==n] for n in ('grouped','divide_conquer')};ratio=bench.paired_statistics(values['divide_conquer'],values['grouped'],seed=seed,resamples=2000) if all(v>0 for vv in values.values() for v in vv) else {'median_paired_ratio':None,'ci95':None,'interval_status':'insufficient-clock-resolution'};summary.append({'name':c['name'],'component':c['component'],'base':c['base'],'digits':c['digits'],'divide_conquer_over_grouped':ratio})
+(root/'summary.json').write_text(json.dumps({'schema':1,'performance_gate':False,'workloads':summary},indent=2)+'\n')
+with (root/'samples.csv').open('w',newline='') as out:
+ fields=['phase','round','order','workload','algorithm','seconds','wall_seconds_auxiliary','checked','stdout_sha256'];writer=csv.DictWriter(out,fieldnames=fields);writer.writeheader();writer.writerows({k:r[k] for k in fields} for r in rows)
+print('All',len(rows),'same-binary algorithm invocations pass exact checks',flush=True)
