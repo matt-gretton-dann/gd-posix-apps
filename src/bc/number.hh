@@ -27,6 +27,7 @@
 #include "bc.hh"
 #include "digit-storage.hh"
 #include "limb-product.hh"
+#include "limb-schoolbook.hh"
 
 namespace GD::Bc {
 
@@ -1255,6 +1256,12 @@ private:
     result.copy_on_write();
     auto const result_size = (lhs_end - lhs_begin) + (rhs_end - rhs_begin) + 2;
     result.digits_->resize(result_size, 0);
+    if (Details::LimbSchoolbook<Traits>::eligible(lhs_end - lhs_begin, rhs_end - rhs_begin)) {
+      Details::LimbSchoolbook<Traits>::multiply(
+        std::span<NumType const>(lhs_begin, lhs_end), std::span<NumType const>(rhs_begin, rhs_end),
+        std::span<NumType>(result.digits_->begin(), result.digits_->size()));
+      return result;
+    }
     auto result_begin = result.digits_->begin();
 
     for (auto lhs_it = lhs_begin; lhs_it != lhs_end; ++lhs_it) {

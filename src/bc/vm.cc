@@ -536,12 +536,8 @@ auto GD::Bc::Details::VMState::array_element(ArrayElement const& ae) const -> GD
     return {};
   }
 
-  auto it = a->find(ae.second);
-  if (it == a->end()) {
-    return {};
-  }
-
-  return it->second;
+  auto const* value = a->lookup(ae.second);
+  return value ? *value : Number();
 }
 
 auto GD::Bc::Details::VMState::variable(Variable v) const -> GD::Bc::Number const&
@@ -572,8 +568,7 @@ auto GD::Bc::Details::VMState::array_length(Array a) const -> GD::Bc::Number::Nu
     return 0;
   }
 
-  auto rit = arr->rbegin();
-  return rit->first + 1;
+  return arr->length();
 }
 
 void GD::Bc::Details::VMState::validate(Instructions const& instrs, bool function_body) const

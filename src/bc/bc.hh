@@ -46,6 +46,7 @@ inline constexpr auto extensions_enabled() -> bool
 #include <type_traits>
 #include <unordered_map>
 
+#include "array-storage.hh"
 #include "number.hh"
 
 #ifndef ENABLE_EXTENSIONS
@@ -427,9 +428,7 @@ using ArrayIndex = Number::NumType;
 using ArrayElement = std::pair<Array, ArrayIndex>;
 
 /** Array values. */
-using ArrayStorage = std::map<
-  ArrayIndex, Number, std::less<ArrayIndex>,
-  Profile::Allocator<std::pair<ArrayIndex const, Number>, Profile::AllocationKind::arrays>>;
+using ArrayStorage = Details::HybridArrayStorage<Number>;
 using ArrayValues = std::shared_ptr<ArrayStorage>;
 
 template<typename T>

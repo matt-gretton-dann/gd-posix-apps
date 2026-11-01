@@ -13,6 +13,7 @@
 
 #include "bc.hh"
 #include "limb-product.hh"
+#include "limb-schoolbook.hh"
 
 namespace {
 // This oracle uses decimal characters, not the implementation's limb radix,
@@ -248,4 +249,74 @@ TEST_CASE("Square dispatch retains a generic narrow-accumulator fallback",
   CHECK(value == std::uint64_t{1599999999} * 1599999999);
   CHECK(output.front() == 199);
   CHECK(output.back() == 199);
+}
+
+TEMPLATE_TEST_CASE("Blocked schoolbook stays within tile and output bounds",
+                   "[bc][number][multiply][blocked]", GD::Bc::NumberTraits8, GD::Bc::NumberTraits16,
+                   GD::Bc::NumberTraits32)
+{
+  using Limb = typename TestType::NumType;
+  using Kernel = GD::Bc::Details::LimbSchoolbook<TestType>;
+  auto decimal = [](std::span<Limb const> value) {
+    std::string result;
+    for (auto it = value.rbegin(); it != value.rend(); ++it) {
+      auto const part = std::to_string(*it);
+      result.append(TestType::base_log10_ - part.size(), '0');
+      result += part;
+    }
+    auto const first = result.find_first_not_of('0');
+    return first == std::string::npos ? std::string("0") : result.substr(first);
+  };
+  auto const guard = static_cast<Limb>(TestType::base_ - 1);
+  for (std::size_t rows : {0U, 1U, 2U, 3U, 4U, 5U, 6U, 7U, 15U, 16U, 17U, 31U, 32U, 33U, 63U}) {
+    for (std::size_t columns : {0U, 1U, 3U, 4U, 15U, 16U, 17U, 33U}) {
+      for (bool sparse : {false, true}) {
+        std::vector<Limb> a(rows, guard), b(columns, guard);
+        if (sparse) {
+          for (std::size_t i = 0; i < rows; i += 2)
+            a[i] = 0;
+          for (std::size_t i = 1; i < columns; i += 3)
+            b[i] = 0;
+        }
+        std::vector<Limb> output(rows + columns + 2, 0);
+        output.front() = output.back() = guard;
+        auto result = std::span<Limb>(output).subspan(1, rows + columns);
+        Kernel::multiply(a, b, result);
+        CHECK(decimal(result) == decimal_product(decimal(a), decimal(b)));
+        CHECK(output.front() == guard);
+        CHECK(output.back() == guard);
+        CHECK(std::all_of(result.begin(), result.end(),
+                          [](auto digit) { return digit < TestType::base_; }));
+      }
+    }
+  }
+}
+
+namespace {
+struct TightBlockedTraits
+{
+  using NumType = std::uint8_t;
+  using WideType = std::uint16_t;
+  static constexpr WideType base_ = 200;
+};
+}  // namespace
+TEST_CASE("Blocked schoolbook retains a narrow-wide scalar fallback", "[bc][number][blocked]")
+{
+  using Kernel = GD::Bc::Details::LimbSchoolbook<TightBlockedTraits>;
+  CHECK_FALSE(Kernel::eligible(5, 7));
+  std::vector<std::uint8_t> a(5, 199), b(7, 199), result(14, 0);
+  result.front() = result.back() = 251;
+  Kernel::multiply(a, b, std::span(result).subspan(1, 12));
+  std::vector<std::uint32_t> oracle(12, 0);
+  for (std::size_t i = 0; i < 5; ++i)
+    for (std::size_t j = 0; j < 7; ++j)
+      oracle[i + j] += 199U * 199U;
+  for (std::size_t i = 0; i + 1 < oracle.size(); ++i) {
+    oracle[i + 1] += oracle[i] / 200;
+    oracle[i] %= 200;
+  }
+  for (std::size_t i = 0; i < 12; ++i)
+    CHECK(result[i + 1] == oracle[i]);
+  CHECK(result.front() == 251);
+  CHECK(result.back() == 251);
 }
