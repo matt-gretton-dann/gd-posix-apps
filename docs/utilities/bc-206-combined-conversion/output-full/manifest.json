@@ -1,0 +1,349 @@
+{
+  "schema": 1,
+  "seed": 197219,
+  "warmups": 1,
+  "samples": 9,
+  "scope": "Internal component intervals include formatting/reset/consumer; no control subtraction. One checked warmup and nine shuffled paired rounds; no local builds/tests/profiles overlap timings. Shared-host/frequency/thermal uncontrolled. Positive integer timing fixtures; broader signs/fractions/positions covered by separate tests.",
+  "implementations": {
+    "baseline": {
+      "schema": 1,
+      "source_revision": "dd8c60c274511e26ed453eb1d8e175936ea6f576",
+      "argv": [
+        "/private/tmp/gd-bc-206-accepted-input-baseline-components/build/src/bc/bc-components"
+      ],
+      "binary_sha256": "0133fc39e151022a5a29c6b9edeb2fa7c35fb7a970a479f89b5024f5c306744a",
+      "compiler": {
+        "C": {
+          "argv0": "/usr/bin/cc",
+          "realpath": "/usr/bin/cc",
+          "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+          "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+        },
+        "CXX": {
+          "argv0": "/usr/bin/c++",
+          "realpath": "/usr/bin/c++",
+          "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+          "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+        }
+      },
+      "standard_library": {
+        "header_macros": {
+          "_LIBCPP_VERSION": "220106"
+        },
+        "scope": "standard-library header identity; provision runtime and SDK separately",
+        "status": "recorded"
+      },
+      "flags": {
+        "BC_MULTIPLY_SPLIT_POINT:STRING": "126",
+        "CMAKE_CXX_FLAGS:STRING": "",
+        "CMAKE_CXX_FLAGS_RELEASE:STRING": "-O3 -DNDEBUG",
+        "ENABLE_BC_COVERAGE:BOOL": "OFF",
+        "ENABLE_BC_PROFILE:BOOL": "OFF"
+      },
+      "commands": [
+        {
+          "argv": [
+            "cmake",
+            "-S",
+            "/private/tmp/gd-bc-206-accepted-input-baseline-release/source",
+            "-B",
+            "/private/tmp/gd-bc-206-accepted-input-baseline-components/build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DBUILD_TESTING=OFF",
+            "-DENABLE_BC_COMPONENT_BENCHMARKS=ON",
+            "-DENABLE_BC_PROFILE=OFF",
+            "-DENABLE_BC_COVERAGE=OFF",
+            "-DENABLE_NON_POSIX_EXTENSIONS=ON",
+            "-DBC_MULTIPLY_SPLIT_POINT=126",
+            "-DCMAKE_C_COMPILER=/usr/bin/cc",
+            "-DCMAKE_CXX_COMPILER=/usr/bin/c++",
+            "-DFETCHCONTENT_SOURCE_DIR_GDPAT=/Users/mgrettondann/repos/gd-posix-apps/build/_deps/gdpat-src"
+          ],
+          "cwd": "/private/tmp/gd-bc-206-accepted-input-baseline-components",
+          "returncode": 0,
+          "log": "command-001.log"
+        },
+        {
+          "argv": [
+            "cmake",
+            "--build",
+            "/private/tmp/gd-bc-206-accepted-input-baseline-components/build",
+            "--target",
+            "bc-components",
+            "--parallel",
+            "2",
+            "--verbose"
+          ],
+          "cwd": "/private/tmp/gd-bc-206-accepted-input-baseline-components",
+          "returncode": 0,
+          "log": "command-002.log"
+        }
+      ],
+      "instrumented": false,
+      "scope": "Component intervals include reset/consumer; startup and fixture parsing excluded"
+    },
+    "candidate": {
+      "schema": 1,
+      "source_revision": "68c22f90b4c8e2457ea2bb91df551c0fe8653e53",
+      "argv": [
+        "/private/tmp/gd-bc-206-combined-components/build/src/bc/bc-components"
+      ],
+      "binary_sha256": "c16915bba4d426d674c311ae6f74ff580a7fe063cd09630139b20829a9e93615",
+      "compiler": {
+        "C": {
+          "argv0": "/usr/bin/cc",
+          "realpath": "/usr/bin/cc",
+          "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+          "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+        },
+        "CXX": {
+          "argv0": "/usr/bin/c++",
+          "realpath": "/usr/bin/c++",
+          "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+          "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+        }
+      },
+      "standard_library": {
+        "header_macros": {
+          "_LIBCPP_VERSION": "220106"
+        },
+        "scope": "standard-library header identity; provision runtime and SDK separately",
+        "status": "recorded"
+      },
+      "flags": {
+        "BC_MULTIPLY_SPLIT_POINT:STRING": "126",
+        "CMAKE_CXX_FLAGS:STRING": "",
+        "CMAKE_CXX_FLAGS_RELEASE:STRING": "-O3 -DNDEBUG",
+        "ENABLE_BC_COVERAGE:BOOL": "OFF",
+        "ENABLE_BC_PROFILE:BOOL": "OFF"
+      },
+      "commands": [
+        {
+          "argv": [
+            "cmake",
+            "-S",
+            "/private/tmp/gd-bc-206-combined-release/source",
+            "-B",
+            "/private/tmp/gd-bc-206-combined-components/build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DBUILD_TESTING=OFF",
+            "-DENABLE_BC_COMPONENT_BENCHMARKS=ON",
+            "-DENABLE_BC_PROFILE=OFF",
+            "-DENABLE_BC_COVERAGE=OFF",
+            "-DENABLE_NON_POSIX_EXTENSIONS=ON",
+            "-DBC_MULTIPLY_SPLIT_POINT=126",
+            "-DCMAKE_C_COMPILER=/usr/bin/cc",
+            "-DCMAKE_CXX_COMPILER=/usr/bin/c++",
+            "-DFETCHCONTENT_SOURCE_DIR_GDPAT=/Users/mgrettondann/repos/gd-posix-apps/build/_deps/gdpat-src"
+          ],
+          "cwd": "/private/tmp/gd-bc-206-combined-components",
+          "returncode": 0,
+          "log": "command-001.log"
+        },
+        {
+          "argv": [
+            "cmake",
+            "--build",
+            "/private/tmp/gd-bc-206-combined-components/build",
+            "--target",
+            "bc-components",
+            "--parallel",
+            "2",
+            "--verbose"
+          ],
+          "cwd": "/private/tmp/gd-bc-206-combined-components",
+          "returncode": 0,
+          "log": "command-002.log"
+        }
+      ],
+      "instrumented": false,
+      "scope": "Component intervals include reset/consumer; startup and fixture parsing excluded"
+    }
+  },
+  "cases": [
+    {
+      "name": "output-b10-1d-x50000",
+      "component": "conversion-out",
+      "base": 10,
+      "digits": 1,
+      "iterations": 50000,
+      "checksum": 50000,
+      "input_sha256": "10159baf262b43a92d95db59dae1f72c645127301661e0a3ce4e38b295a97c58"
+    },
+    {
+      "name": "output-b10-9d-x25000",
+      "component": "conversion-out",
+      "base": 10,
+      "digits": 9,
+      "iterations": 25000,
+      "checksum": 225000,
+      "input_sha256": "ea389a56be6fbf7fc4a4ed0057653278041b5da60fc43f57893ead2098545a8d"
+    },
+    {
+      "name": "output-b10-10d-x25000",
+      "component": "conversion-out",
+      "base": 10,
+      "digits": 10,
+      "iterations": 25000,
+      "checksum": 250000,
+      "input_sha256": "9559d621f87bfdfac0f6456a0c3df7c6da60854b91a0c7fac55728328c6565fb"
+    },
+    {
+      "name": "output-b10-26d-x10000",
+      "component": "conversion-out",
+      "base": 10,
+      "digits": 26,
+      "iterations": 10000,
+      "checksum": 260000,
+      "input_sha256": "cd36ffc4bd423a7aa52c86b3c1bb9a98f25a576584c656a40882507c5e20672d"
+    },
+    {
+      "name": "output-b10-27d-x10000",
+      "component": "conversion-out",
+      "base": 10,
+      "digits": 27,
+      "iterations": 10000,
+      "checksum": 270000,
+      "input_sha256": "e53e526b60371559118e67b76ec5aa62564d725157cdf7dce0cead2e87023741"
+    },
+    {
+      "name": "output-b10-28d-x10000",
+      "component": "conversion-out",
+      "base": 10,
+      "digits": 28,
+      "iterations": 10000,
+      "checksum": 280000,
+      "input_sha256": "3d67484f63626cafce9db86173758961b1a80a94d9008decd1429957d0224aad"
+    },
+    {
+      "name": "output-b10-29d-x10000",
+      "component": "conversion-out",
+      "base": 10,
+      "digits": 29,
+      "iterations": 10000,
+      "checksum": 290000,
+      "input_sha256": "f54b8bde34c536ca92cbfb164d89ddf7f02dab6d6bda6afbf921244a781cc5dd"
+    },
+    {
+      "name": "output-b10-35d-x10000",
+      "component": "conversion-out",
+      "base": 10,
+      "digits": 35,
+      "iterations": 10000,
+      "checksum": 350000,
+      "input_sha256": "3a362ecfc5fdd291d506cd8a69c925250eb0574a492971167183d1b0e9ddff2f"
+    },
+    {
+      "name": "output-b10-36d-x10000",
+      "component": "conversion-out",
+      "base": 10,
+      "digits": 36,
+      "iterations": 10000,
+      "checksum": 360000,
+      "input_sha256": "414bde87e69d235cf3eef9e40a27a31f2303ed93239b0a93921ae336a34ac9e3"
+    },
+    {
+      "name": "output-b10-37d-x10000",
+      "component": "conversion-out",
+      "base": 10,
+      "digits": 37,
+      "iterations": 10000,
+      "checksum": 370000,
+      "input_sha256": "c2147ff4b680a53395cd4dfeb74ac700828854c9db0099a72ac23a7ab0bcd322"
+    },
+    {
+      "name": "output-b10-68d-x5000",
+      "component": "conversion-out",
+      "base": 10,
+      "digits": 68,
+      "iterations": 5000,
+      "checksum": 340000,
+      "input_sha256": "af51330fa8bfc926a2842bd98bb7cac37c536ff502824e8994c6bc8cdb447751"
+    },
+    {
+      "name": "output-b10-69d-x5000",
+      "component": "conversion-out",
+      "base": 10,
+      "digits": 69,
+      "iterations": 5000,
+      "checksum": 355000,
+      "input_sha256": "6bb341db173e575ce8cc6116cf3462c8e42ee554a35b82c175d648c3c1911f7d"
+    },
+    {
+      "name": "output-b10-70d-x5000",
+      "component": "conversion-out",
+      "base": 10,
+      "digits": 70,
+      "iterations": 5000,
+      "checksum": 360000,
+      "input_sha256": "8ed191cab4651eb701c6ef9f259af887ccb7550afd4d88e6bccbc1ea05480348"
+    },
+    {
+      "name": "output-b10-128d-x2500",
+      "component": "conversion-out",
+      "base": 10,
+      "digits": 128,
+      "iterations": 2500,
+      "checksum": 325000,
+      "input_sha256": "c22a3a2b052aade00805d1cd18d2210af51613d402cdc19406cb8ff5dbaf7932"
+    },
+    {
+      "name": "output-b10-1000d-x2000",
+      "component": "conversion-out",
+      "base": 10,
+      "digits": 1000,
+      "iterations": 2000,
+      "checksum": 2056000,
+      "input_sha256": "7185322bbf45cc1ad7fc5a5d9e7dc388554c6d2fa275668967fd8486fe6a03fe"
+    },
+    {
+      "name": "output-b10-10000d-x200",
+      "component": "conversion-out",
+      "base": 10,
+      "digits": 10000,
+      "iterations": 200,
+      "checksum": 2058800,
+      "input_sha256": "1cdf11d982da8e7c9df1ebf22b2aeb51467d0e18d87993577a7aa257b04f568c"
+    },
+    {
+      "name": "output-b10-100000d-x100",
+      "component": "conversion-out",
+      "base": 10,
+      "digits": 100000,
+      "iterations": 100,
+      "checksum": 10294000,
+      "input_sha256": "6b11aeecf67ff9ae3d47edde78c386202ab340d2380041ba128b2707e919fe46"
+    },
+    {
+      "name": "control-1d",
+      "component": "control",
+      "base": 10,
+      "digits": 1,
+      "iterations": 100000,
+      "checksum": 100000,
+      "input_sha256": "10159baf262b43a92d95db59dae1f72c645127301661e0a3ce4e38b295a97c58"
+    },
+    {
+      "name": "control-1000d",
+      "component": "control",
+      "base": 10,
+      "digits": 1000,
+      "iterations": 1000,
+      "checksum": 1000000,
+      "input_sha256": "1e795dadf17f574b1fb52972aac7c0e3a053fa0d724f80e54bd14459a31f6fcb"
+    },
+    {
+      "name": "control-10000d",
+      "component": "control",
+      "base": 10,
+      "digits": 10000,
+      "iterations": 100,
+      "checksum": 1000000,
+      "input_sha256": "102c3662f9a059c4d548b115b8d9d7d1d14d9fad6eca9b36e6f34e9937049961"
+    }
+  ]
+}

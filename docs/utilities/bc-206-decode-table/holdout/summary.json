@@ -1,0 +1,374 @@
+{
+  "schema": 1,
+  "performance_gate": false,
+  "workloads": [
+    {
+      "name": "input-b2-3d-x10000",
+      "component": "conversion-in",
+      "base": 2,
+      "digits": 3,
+      "candidate_over_parent": {
+        "pairs": 9,
+        "median_paired_ratio": 0.9037004519044545,
+        "ratio_of_medians": 0.9037236692974778,
+        "ci95": [
+          0.900676378906482,
+          0.9080522068141405
+        ],
+        "method": "paired percentile bootstrap of median ratios"
+      }
+    },
+    {
+      "name": "input-b2-257d-x1000",
+      "component": "conversion-in",
+      "base": 2,
+      "digits": 257,
+      "candidate_over_parent": {
+        "pairs": 9,
+        "median_paired_ratio": 0.6758973319824384,
+        "ratio_of_medians": 0.6794214917825537,
+        "ci95": [
+          0.6685702286772585,
+          0.6894939874178043
+        ],
+        "method": "paired percentile bootstrap of median ratios"
+      }
+    },
+    {
+      "name": "input-b2-2048d-x20",
+      "component": "conversion-in",
+      "base": 2,
+      "digits": 2048,
+      "candidate_over_parent": {
+        "pairs": 9,
+        "median_paired_ratio": 0.7757849892179035,
+        "ratio_of_medians": 0.7854542372881356,
+        "ci95": [
+          0.7421622764310972,
+          0.7911686541737649
+        ],
+        "method": "paired percentile bootstrap of median ratios"
+      }
+    },
+    {
+      "name": "input-b2-20000d-x1",
+      "component": "conversion-in",
+      "base": 2,
+      "digits": 20000,
+      "candidate_over_parent": {
+        "pairs": 9,
+        "median_paired_ratio": 0.9318690775921264,
+        "ratio_of_medians": 0.9318690775921264,
+        "ci95": [
+          0.9200554481024312,
+          0.9356173833065072
+        ],
+        "method": "paired percentile bootstrap of median ratios"
+      }
+    },
+    {
+      "name": "input-b2-120000d-x1",
+      "component": "conversion-in",
+      "base": 2,
+      "digits": 120000,
+      "candidate_over_parent": {
+        "pairs": 9,
+        "median_paired_ratio": 0.9864729412583199,
+        "ratio_of_medians": 0.9861396479994501,
+        "ci95": [
+          0.9836893088953725,
+          0.9908088054270064
+        ],
+        "method": "paired percentile bootstrap of median ratios"
+      }
+    },
+    {
+      "name": "input-b8-3d-x10000",
+      "component": "conversion-in",
+      "base": 8,
+      "digits": 3,
+      "candidate_over_parent": {
+        "pairs": 9,
+        "median_paired_ratio": 0.8831974176010873,
+        "ratio_of_medians": 0.882837914025623,
+        "ci95": [
+          0.8825430449828622,
+          0.900792661424185
+        ],
+        "method": "paired percentile bootstrap of median ratios"
+      }
+    },
+    {
+      "name": "input-b8-257d-x1000",
+      "component": "conversion-in",
+      "base": 8,
+      "digits": 257,
+      "candidate_over_parent": {
+        "pairs": 9,
+        "median_paired_ratio": 0.8190000000000001,
+        "ratio_of_medians": 0.8159998659878689,
+        "ci95": [
+          0.8105985701621099,
+          0.8249605626726952
+        ],
+        "method": "paired percentile bootstrap of median ratios"
+      }
+    },
+    {
+      "name": "input-b8-2048d-x20",
+      "component": "conversion-in",
+      "base": 8,
+      "digits": 2048,
+      "candidate_over_parent": {
+        "pairs": 9,
+        "median_paired_ratio": 0.813401864002207,
+        "ratio_of_medians": 0.8138955710364196,
+        "ci95": [
+          0.806980484222937,
+          0.8203688626206798
+        ],
+        "method": "paired percentile bootstrap of median ratios"
+      }
+    },
+    {
+      "name": "input-b8-20000d-x1",
+      "component": "conversion-in",
+      "base": 8,
+      "digits": 20000,
+      "candidate_over_parent": {
+        "pairs": 9,
+        "median_paired_ratio": 0.9592662644862767,
+        "ratio_of_medians": 0.9605695849103432,
+        "ci95": [
+          0.956310861654228,
+          0.9640917650202734
+        ],
+        "method": "paired percentile bootstrap of median ratios"
+      }
+    },
+    {
+      "name": "input-b8-120000d-x1",
+      "component": "conversion-in",
+      "base": 8,
+      "digits": 120000,
+      "candidate_over_parent": {
+        "pairs": 9,
+        "median_paired_ratio": 0.9917460842020701,
+        "ratio_of_medians": 0.9924645996152966,
+        "ci95": [
+          0.9900638501478823,
+          0.9945170536471403
+        ],
+        "method": "paired percentile bootstrap of median ratios"
+      }
+    },
+    {
+      "name": "input-b10-3d-x10000",
+      "component": "conversion-in",
+      "base": 10,
+      "digits": 3,
+      "candidate_over_parent": {
+        "pairs": 9,
+        "median_paired_ratio": 1.1058831261090125,
+        "ratio_of_medians": 1.1058180410375533,
+        "ci95": [
+          1.0828632760591388,
+          1.1321303373013414
+        ],
+        "method": "paired percentile bootstrap of median ratios"
+      }
+    },
+    {
+      "name": "input-b10-257d-x1000",
+      "component": "conversion-in",
+      "base": 10,
+      "digits": 257,
+      "candidate_over_parent": {
+        "pairs": 9,
+        "median_paired_ratio": 0.9988858580813708,
+        "ratio_of_medians": 1.0033275600167044,
+        "ci95": [
+          0.9953024708041844,
+          1.0117220337393622
+        ],
+        "method": "paired percentile bootstrap of median ratios"
+      }
+    },
+    {
+      "name": "input-b10-2048d-x20",
+      "component": "conversion-in",
+      "base": 10,
+      "digits": 2048,
+      "candidate_over_parent": {
+        "pairs": 9,
+        "median_paired_ratio": 1.0169371420605695,
+        "ratio_of_medians": 1.0213670732701874,
+        "ci95": [
+          1.002438512157558,
+          1.0247450998649843
+        ],
+        "method": "paired percentile bootstrap of median ratios"
+      }
+    },
+    {
+      "name": "input-b10-20000d-x1",
+      "component": "conversion-in",
+      "base": 10,
+      "digits": 20000,
+      "candidate_over_parent": {
+        "pairs": 9,
+        "median_paired_ratio": 1.0,
+        "ratio_of_medians": 0.9948904392257051,
+        "ci95": [
+          0.98978087845141,
+          1.0041199245507793
+        ],
+        "method": "paired percentile bootstrap of median ratios"
+      }
+    },
+    {
+      "name": "input-b10-120000d-x1",
+      "component": "conversion-in",
+      "base": 10,
+      "digits": 120000,
+      "candidate_over_parent": {
+        "pairs": 9,
+        "median_paired_ratio": 1.0034986890403774,
+        "ratio_of_medians": 1.0020876826722338,
+        "ci95": [
+          0.9892854329157803,
+          1.0314892866738312
+        ],
+        "method": "paired percentile bootstrap of median ratios"
+      }
+    },
+    {
+      "name": "input-b16-3d-x10000",
+      "component": "conversion-in",
+      "base": 16,
+      "digits": 3,
+      "candidate_over_parent": {
+        "pairs": 9,
+        "median_paired_ratio": 0.8906953845568404,
+        "ratio_of_medians": 0.8884070588626017,
+        "ci95": [
+          0.8875602960548138,
+          0.8947314733323687
+        ],
+        "method": "paired percentile bootstrap of median ratios"
+      }
+    },
+    {
+      "name": "input-b16-257d-x1000",
+      "component": "conversion-in",
+      "base": 16,
+      "digits": 257,
+      "candidate_over_parent": {
+        "pairs": 9,
+        "median_paired_ratio": 0.9186791874979987,
+        "ratio_of_medians": 0.9194417363641029,
+        "ci95": [
+          0.8911790334338799,
+          0.9268490987572023
+        ],
+        "method": "paired percentile bootstrap of median ratios"
+      }
+    },
+    {
+      "name": "input-b16-2048d-x20",
+      "component": "conversion-in",
+      "base": 16,
+      "digits": 2048,
+      "candidate_over_parent": {
+        "pairs": 9,
+        "median_paired_ratio": 0.8939246884841847,
+        "ratio_of_medians": 0.9002464740517595,
+        "ci95": [
+          0.8903599451372309,
+          0.905037982824583
+        ],
+        "method": "paired percentile bootstrap of median ratios"
+      }
+    },
+    {
+      "name": "input-b16-20000d-x1",
+      "component": "conversion-in",
+      "base": 16,
+      "digits": 20000,
+      "candidate_over_parent": {
+        "pairs": 9,
+        "median_paired_ratio": 0.9808969142916478,
+        "ratio_of_medians": 0.9795612589228914,
+        "ci95": [
+          0.9769184648244783,
+          0.9827149657337699
+        ],
+        "method": "paired percentile bootstrap of median ratios"
+      }
+    },
+    {
+      "name": "input-b16-120000d-x1",
+      "component": "conversion-in",
+      "base": 16,
+      "digits": 120000,
+      "candidate_over_parent": {
+        "pairs": 9,
+        "median_paired_ratio": 0.9964524366263529,
+        "ratio_of_medians": 0.9994100304215204,
+        "ci95": [
+          0.8673903080334432,
+          0.9994100304215204
+        ],
+        "method": "paired percentile bootstrap of median ratios"
+      }
+    },
+    {
+      "name": "control-1d",
+      "component": "control",
+      "base": 10,
+      "digits": 1,
+      "candidate_over_parent": {
+        "pairs": 9,
+        "median_paired_ratio": 0.9993688196928255,
+        "ratio_of_medians": 0.9997902536755947,
+        "ci95": [
+          0.9791993620414673,
+          1.0040713360082372
+        ],
+        "method": "paired percentile bootstrap of median ratios"
+      }
+    },
+    {
+      "name": "control-1000d",
+      "component": "control",
+      "base": 10,
+      "digits": 1000,
+      "candidate_over_parent": {
+        "pairs": 9,
+        "median_paired_ratio": 1.0031698113207548,
+        "ratio_of_medians": 1.0031698113207548,
+        "ci95": [
+          1.0,
+          1.0409569233098646
+        ],
+        "method": "paired percentile bootstrap of median ratios"
+      }
+    },
+    {
+      "name": "control-10000d",
+      "component": "control",
+      "base": 10,
+      "digits": 10000,
+      "candidate_over_parent": {
+        "pairs": 9,
+        "median_paired_ratio": 0.9992942836979535,
+        "ratio_of_medians": 0.9726666666666666,
+        "ci95": [
+          0.8945041061276059,
+          1.02880658436214
+        ],
+        "method": "paired percentile bootstrap of median ratios"
+      }
+    }
+  ]
+}

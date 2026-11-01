@@ -1,0 +1,17 @@
+{
+  "scope": "Mach-O __TEXT segment is code/read-only storage, not resident process memory",
+  "rows": [
+    {
+      "role": "baseline",
+      "binary_sha256": "bc69a580354424b6154f6aacebff24488855a24ef07f1456b5359771aece17b9",
+      "file_bytes": 507536,
+      "text_segment_bytes": 311296
+    },
+    {
+      "role": "candidate",
+      "binary_sha256": "eb1f70023c19f838a82c402c91a1ec12620873bf7c110b67e0451193ac3617db",
+      "file_bytes": 507776,
+      "text_segment_bytes": 311296
+    }
+  ]
+}

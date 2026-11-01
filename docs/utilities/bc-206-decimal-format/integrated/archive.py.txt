@@ -1,0 +1,21 @@
+from pathlib import Path
+import json,shutil
+for name,candidate in [('decimal-format','6431f7deb50b9f9f665ef1dc42cdc5fb0ef5236d'),('decode-table','81fae3adce980e32e07dd8860b456bb7bb01071d')]:
+ w=Path('/private/tmp/gd-posix-'+('decimal-format' if name=='decimal-format' else 'decode-table'));r=w/('docs/utilities/bc-206-'+name+'/integrated');r.mkdir()
+ for preset in ('full','holdout'):shutil.copytree('/private/tmp/gd-bc-206-'+name+'-integrated-'+preset,r/preset)
+ for role in ('baseline','candidate'):
+  for kind in ('release','components'):
+   prefix='accepted-input-baseline' if role=='baseline' else name+'-integrated'
+   source=Path('/private/tmp/gd-bc-206-'+prefix+'-'+kind);target=r/(role+'-'+kind);target.mkdir()
+   for p in source.iterdir():
+    if p.is_file() and p.suffix in ('.json','.log','.hh','.cc'):shutil.copyfile(p,target/p.name)
+ runner='/private/tmp/bc-206-run-integrated-'+('decimal' if name=='decimal-format' else 'table')+'-components.py';shutil.copyfile(runner,r/'runner.py.txt')
+ lines=['# Integrated '+name+' component comparisons','','Refs #206 and #197. Exact baseline dd8c60c274511e26ed453eb1d8e175936ea6f576', 'and candidate '+candidate+'. Both include accepted large-input', 'runtime conversion. Complete actual flags, compiler/library/source identities,', 'commands and binary hashes remain in recipes. Earlier source results, including', 'the held decimal microcase, retain their original identities and are not replaced.', '', 'Apple M1/macOS 27.2, Apple Clang 21, Release thin LTO, fixed split 126,', 'extensions ON, profiling/coverage OFF. One checked warmup and nine shuffled', 'paired rounds, separate full/held-out seeds, 2000 bootstrap resamples. All', 'exact integer/decimal/continuation-length checksum and process checks pass.', 'No local builds/tests/profiles overlap timing. Host scheduling, frequency', 'and thermals remain uncontrolled. Controls stay separate and are not subtracted.', '']
+ if name=='decimal-format':lines+=['All 600 invocations pass; no interval lower endpoint exceeds 1.05. One-digit', 'output ratio is about 0.547, 100000 digits 0.204 and held-out 120000 0.203.', 'Native acceptance and final combined decoder/formatter evaluation remain required.','']
+ else:lines+=['All 2620 invocations pass; no interval lower endpoint exceeds 1.05. The', 'held-out three-character decimal case is now 0.989 of this changed baseline.', 'The original dbcdcad loss (1.106) remains held in the parent archive; this', 'new source and baseline do not prove its cause. Binary 16/64 characters is', 'about 0.711/0.673, hex 16/64 about 0.745/0.745. Production DC leaf decoding', 'also benefits in the measured large-input regimes. Native acceptance and', 'the final combined formatter/decoder source still require their own evaluation.','']
+ for preset in ('full','holdout'):
+  lines+=['## '+preset,'','| Workload | Candidate / baseline, 95% paired interval |','| --- | --- |']
+  for c in json.loads((r/preset/'summary.json').read_text())['workloads']:
+   v=c['candidate_over_parent'];lo,hi=v['ci95'];lines.append('| `{}` | {:.3f} [{:.3f},{:.3f}] |'.format(c['name'],v['median_paired_ratio'],lo,hi))
+  lines.append('')
+ (r/'README.md').write_text('\n'.join(lines).rstrip()+'\n');shutil.copyfile(__file__,r/'archive.py.txt')

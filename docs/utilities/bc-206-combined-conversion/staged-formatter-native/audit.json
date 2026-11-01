@@ -1,0 +1,48 @@
+{
+  "workflow_run": 41296627628,
+  "scope": "Formatter stage 6431f7d only; NOT final combined decoder candidate",
+  "rows": [
+    {
+      "os": "linux",
+      "checked": 1650,
+      "identities": {
+        "base": "dd8c60c274511e26ed453eb1d8e175936ea6f576",
+        "candidate": "6431f7deb50b9f9f665ef1dc42cdc5fb0ef5236d",
+        "howard": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8"
+      },
+      "confirmed": [],
+      "decimal_output": [
+        "| full | paired | `decimal_output_200d_x1000` | 0.730 [0.713237888118006, 0.8801988948207488] | pass |"
+      ],
+      "sha256": "43c7d5970dfc9233ce273f6c8fc5db24fae24c3590993d9f3b31339ec64e1452"
+    },
+    {
+      "os": "macos",
+      "checked": 1650,
+      "identities": {
+        "base": "dd8c60c274511e26ed453eb1d8e175936ea6f576",
+        "candidate": "6431f7deb50b9f9f665ef1dc42cdc5fb0ef5236d",
+        "howard": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8"
+      },
+      "confirmed": [],
+      "decimal_output": [
+        "| full | paired | `decimal_output_200d_x1000` | 0.733 [0.6233482558064645, 0.7598044445501161] | pass |"
+      ],
+      "sha256": "022a2c26bf1ec6ea1e3458cb0acf2777158d86cb4975b32e09494ae3430ac14b"
+    },
+    {
+      "os": "windows",
+      "checked": 1650,
+      "identities": {
+        "base": "dd8c60c274511e26ed453eb1d8e175936ea6f576",
+        "candidate": "6431f7deb50b9f9f665ef1dc42cdc5fb0ef5236d",
+        "howard": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8"
+      },
+      "confirmed": [],
+      "decimal_output": [
+        "| full | paired | `decimal_output_200d_x1000` | 0.694 [0.6721521596330894, 0.73692443760265] | pass |"
+      ],
+      "sha256": "273098dd8f6f082a779e680ce5df75b67d629f8e5cc70ecae306bc1a443f97d4"
+    }
+  ]
+}

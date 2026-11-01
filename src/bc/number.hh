@@ -12,15 +12,18 @@
 
 #include <algorithm>
 #include <array>
+#include <charconv>
 #include <cstdint>
 #include <iomanip>
 #include <iterator>
 #include <limits>
+#include <locale>
 #include <map>
 #include <memory>
 #include <ostream>
 #include <span>
 #include <sstream>
+#include <stdexcept>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -80,6 +83,29 @@ using NumberTraits16 = NumberTraitsBase<::uint16_t, ::uint32_t>;
 using NumberTraits8 = NumberTraitsBase<::uint8_t, ::uint16_t>;
 
 namespace Details {
+
+/** Alphabet index for the existing raw constructor decoder, or 17 if absent.
+ *  Preserve strchr's terminator index (16); existing per-base assertions still
+ *  reject it in valid input. Wider character models retain the generic search.
+ */
+inline auto radix_character_index(char c) -> unsigned
+{
+  static constexpr char alphabet[] = "0123456789ABCDEF";
+  if constexpr (std::numeric_limits<unsigned char>::max() == 255) {
+    static constexpr auto indexes = [] {
+      std::array<unsigned char, 256> table{};
+      table.fill(17);
+      for (unsigned i = 0; i < sizeof(alphabet); ++i)
+        table[static_cast<unsigned char>(alphabet[i])] = static_cast<unsigned char>(i);
+      return table;
+    }();
+    return indexes[static_cast<unsigned char>(c)];
+  }
+  else {
+    auto const* found = ::strchr(alphabet, c);
+    return found ? static_cast<unsigned>(found - alphabet) : 17;
+  }
+}
 
 /** \brief       Report an error and exit with exit code 1.
  *  \param  msg  Message ID
@@ -436,10 +462,9 @@ public:
    */
   void output_base10(std::ostream& os, NumType scale, unsigned digits_printed) const
   {
-    /* For base 10 we can rely on the underlying system-library's output routines the only corner
-     * cases are to: 1) Ensure we pad with zeroes where necessary; and 2) Insert the decimal point
-     * in the correct place.
-     */
+    // Serialize decimal limbs once, then apply the established point, scale
+    // and continuation rules. A small reusable buffer handles interior limbs
+    // without constructing a formatted stream for each coefficient.
     assert(!is_zero());  // NOLINT
     if (digits_printed >= line_length) {
       os << '\n';
@@ -449,13 +474,40 @@ public:
     /* Generate string without radix point. Note we reverse through the digits as we want to print
      * big-endian, but numbers are stored little-endian.
      */
-    std::ostringstream ss;
-    int width = 0;
-    for (auto rit = digits_->rbegin(); rit != digits_->rend(); ++rit) {
-      ss << std::setfill('0') << std::setw(width) << static_cast<typename Traits::PrintType>(*rit);
-      width = static_cast<int>(base_log10_);
+    std::string result;
+    if (std::locale() == std::locale::classic()) {
+      // One coefficient allocation at most; no retained cross-call workspace.
+      if (digits_->size() > result.max_size() / base_log10_)
+        throw std::length_error("decimal coefficient exceeds string capacity");
+      result.reserve(digits_->size() * base_log10_);
+      std::array<char, base_log10_> limb;
+      auto rit = digits_->rbegin();
+      auto const first =
+        std::to_chars(limb.data(), limb.data() + limb.size(), static_cast<PrintType>(*rit));
+      assert(first.ec == std::errc{});  // NOLINT: every limb is below 10^base_log10_.
+      result.append(limb.data(), static_cast<std::size_t>(first.ptr - limb.data()));
+      for (++rit; rit != digits_->rend(); ++rit) {
+        auto value = *rit;
+        // Interior limbs have exactly base_log10_ digits, including all zeros.
+        // Reuse the same bounded buffer before appending each complete limb.
+        for (auto at = limb.rbegin(); at != limb.rend(); ++at) {
+          *at = static_cast<char>('0' + value % 10);
+          value /= 10;
+        }
+        result.append(limb.data(), limb.size());
+      }
     }
-    std::string result = ss.str();
+    else {
+      // The historical temporary stream uses the global locale, independently
+      // of the destination stream. Preserve custom facets/punctuation there.
+      std::ostringstream ss;
+      int width = 0;
+      for (auto rit = digits_->rbegin(); rit != digits_->rend(); ++rit) {
+        ss << std::setfill('0') << std::setw(width) << static_cast<PrintType>(*rit);
+        width = static_cast<int>(base_log10_);
+      }
+      result = ss.str();
+    }
     unsigned const break_at = (result.length() <= line_length) ? line_length : (line_length - 1);
     // A long coefficient reserves an extra column before its first chunk.
     // Continue the current number if its sign has already filled that space.
@@ -1575,8 +1627,7 @@ public:
      * fractional input digits in scale_. The input value is C / ibase^scale_;
      * decimal storage needs floor(C * 10^scale_ / ibase^scale_).
      */
-    static constexpr char const* digits = "0123456789ABCDEF"; /* Acceptable input characters.  */
-    bool seen_period = false;                                 /* Have we seen the radix-point. */
+    bool seen_period = false; /* Have we seen the radix-point. */
 
     // Keep common short literals on their original scalar path. For longer
     // text, bound a chunk's multiplier and coefficient by both the native limb
@@ -1612,10 +1663,10 @@ public:
           ++scale_;
         }
 
-        const auto* digit = ::strchr(digits, c);
-        if (digit != nullptr) {
-          assert((digit - digits < ibase) || (single_literal && digit - digits < 16));  // NOLINT
-          digits_.mac(ibase, static_cast<NumType>(digit - digits));
+        auto const digit = Details::radix_character_index(c);
+        if (digit != 17) {
+          assert((digit < ibase) || (single_literal && digit < 16));  // NOLINT
+          digits_.mac(ibase, static_cast<NumType>(digit));
         }
         else if (c == '.') {
           assert(!seen_period);  // NOLINT
@@ -1637,11 +1688,11 @@ public:
           seen_period = true;
           continue;
         }
-        auto const* digit = ::strchr(digits, c);
-        if (digit == nullptr)
+        auto const digit = Details::radix_character_index(c);
+        if (digit == 17)
           abort();
-        assert((digit - digits < ibase) || (single_literal && digit - digits < 16));  // NOLINT
-        coefficient = coefficient * ibase + WideType(digit - digits);
+        assert((digit < ibase) || (single_literal && digit < 16));  // NOLINT
+        coefficient = coefficient * ibase + WideType(digit);
         if (++pending == group_size) {
           digits_.mac(group_multiplier, static_cast<NumType>(coefficient));
           coefficient = 0;
