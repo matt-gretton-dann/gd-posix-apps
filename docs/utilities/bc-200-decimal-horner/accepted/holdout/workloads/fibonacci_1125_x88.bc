@@ -1,0 +1,14 @@
+define f(a) {
+  auto b,c,d
+  b = 0
+  c = 1
+  while (a-- > 0) {
+    d = b + c
+    b = c
+    c = d
+  }
+  return (b)
+}
+
+for(k=0;k<88;k++) e=f(1125)
+e

@@ -1,0 +1,15 @@
+Test project /private/tmp/gd-posix-decimal-horner/build-asan
+    Start 224: bc/vm-lifetime
+1/5 Test #224: bc/vm-lifetime ...................   Passed    0.30 sec
+    Start 234: bc/benchmark-cli
+2/5 Test #234: bc/benchmark-cli .................   Passed    4.61 sec
+    Start 235: bc/cli
+3/5 Test #235: bc/cli ...........................   Passed    2.87 sec
+    Start 237: bc/number-oracle
+4/5 Test #237: bc/number-oracle .................   Passed    3.81 sec
+    Start 239: bc/vm-cli
+5/5 Test #239: bc/vm-cli ........................   Passed    0.77 sec
+
+100% tests passed out of 5
+
+Total Test time (real) =  12.38 sec

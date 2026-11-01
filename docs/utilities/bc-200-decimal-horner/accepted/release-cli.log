@@ -1,0 +1,15 @@
+Test project /private/tmp/gd-posix-decimal-horner/build-release
+    Start 224: bc/vm-lifetime
+1/5 Test #224: bc/vm-lifetime ...................   Passed    0.26 sec
+    Start 234: bc/benchmark-cli
+2/5 Test #234: bc/benchmark-cli .................   Passed    3.30 sec
+    Start 235: bc/cli
+3/5 Test #235: bc/cli ...........................   Passed    0.57 sec
+    Start 237: bc/number-oracle
+4/5 Test #237: bc/number-oracle .................   Passed    0.81 sec
+    Start 239: bc/vm-cli
+5/5 Test #239: bc/vm-cli ........................   Passed    0.18 sec
+
+100% tests passed out of 5
+
+Total Test time (real) =   5.14 sec
