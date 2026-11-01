@@ -5,6 +5,7 @@
 
 #include <catch2/catch.hpp>
 
+#include <sstream>
 #include <string>
 
 #include "bc.hh"
@@ -39,4 +40,32 @@ TEMPLATE_TEST_CASE("Square root terminates on adjacent Newton iterates",
   Number const expected(root_text + "." + std::string(guard, '0') + "9", 10);
   REQUIRE(precise == expected);
   REQUIRE(precise.scale() == guard + 1);
+}
+
+TEMPLATE_TEST_CASE("Square root preserves shared input through terminal rescaling",
+                   "[bc][number][sqrt][ownership]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  using N = typename Number::NumType;
+  auto const digits = Number::base_log10_;
+  // sqrt(10^(8*d)) = 10^(4*d). The input exceeds inline capacity for
+  // every trait, and the fractional suffix makes scale preservation visible.
+  std::string const input = "1" + std::string(8 * digits, '0') + ".0000";
+  Number const snapshot(input, N(10));
+  for (N scale : {N(4), N(6)}) {
+    Number value = snapshot;
+    value.sqrt(scale);
+    std::string const expected = "1" + std::string(4 * digits, '0') + "." +
+                                 std::string(scale, '0');
+    CHECK(value == Number(expected, N(10)));
+    CHECK(value.scale() == scale);
+    std::ostringstream output;
+    value.output(output, N(10), 0);
+    CHECK(output.str() == expected);
+    CHECK(snapshot == Number(input, N(10)));
+    CHECK(snapshot.scale() == 4);
+    value.add(Number(N(1)));
+    CHECK(snapshot == Number(input, N(10)));
+  }
 }
