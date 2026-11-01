@@ -44,6 +44,7 @@ enum class Event : std::size_t {
   comparison_limb_positions,
   zero_scan_limbs,
   length_scan_limbs,
+  blocked_multiply_calls,
   count
 };
 

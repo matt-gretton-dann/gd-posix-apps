@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "harness_revision": "565564dba7d781613c5046d4898a0efdf6a2832b",
+  "roles": [
+    {
+      "name": "blocked",
+      "source_revision": "565564dba7d781613c5046d4898a0efdf6a2832b",
+      "binary": "/private/tmp/gd-posix-blocked-schoolbook/build-profile/src/bc/bc",
+      "binary_sha256": "ec82bfafc8bca5afe3b4597f694193644a44a0d15676b0c2f005fff05559353b"
+    }
+  ],
+  "scope": "Scoped counters only, fixed126, Release/profileON. No timing inference or RSS claim."
+}
