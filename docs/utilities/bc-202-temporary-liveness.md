@@ -32,11 +32,15 @@ Outer execution owns its prepared metadata beside the borrowed instruction
 stream. Persistent function code owns both instructions and metadata. Views
 are formed on demand, so copying/moving owners cannot retain a pointer into
 a former owner's metadata. Function redefinition recomputes the plan; nested
-function definitions are already rejected by the entry verifier. Instruction structure and
-metadata must remain unchanged and alive throughout their borrowed execution;
+function definitions are already rejected by the entry verifier. Instruction
+structure and metadata must remain unchanged and alive throughout their borrowed execution;
 ordinary decoded literal caches can still populate at runtime.
 
-Common outer streams shorter than sixteen instructions skip planning. Function
+Outer plans visit only their own execution region: definition bodies are
+registered and skipped, while function packs prepare their own persistent
+metadata. This avoids duplicate tables for arithmetic that cannot execute in
+the outer pack. Common outer streams shorter than sixteen instructions skip
+planning. Function
 plans persist across calls; streams without arithmetic or proven transfers use
 an empty plan. A nonempty plan has one tracked byte per instruction, plus its
 ordinary owner header. Construction uses linear temporary storage, which is
@@ -47,9 +51,9 @@ memory and code size require separate diagnostics.
 The failing profile regression precedes implementation. Direct checked/verified
 fixtures protect a repeated loop consumer and duplicate operands. Plan tests
 cover empty/tiny streams, conditional entries, later uses and both safe/unsafe
-backedges. Release passes 211 cases/691931 assertions and nine CLI groups. Extensions-OFF
-ASan/UBSan passes 28 VM/plan cases/54298 assertions, fifteen VM CLI and six
-offset groups. Thirteen profiling CLI groups pass; nine focused profiling unit
-cases (39 assertions) show the protected literal still clones in both modes,
+backedges. Release passes 212 cases/691938 assertions and nine CLI groups. Extensions-OFF
+ASan/UBSan passes 29 VM/plan cases/54305 assertions, fifteen VM CLI and six
+offset groups. Fourteen profiling CLI groups pass; ten focused profiling unit
+cases (46 assertions) show the protected literal still clones in both modes,
 while the unique intermediate avoids one clone only in verified execution.
 Matched timing/memory and native acceptance remain required before adoption.

@@ -31,6 +31,28 @@ auto arithmetic_lhs(Instruction::Opcode opcode) -> bool
     return false;
   }
 }
+// A definition registers its body without executing those instructions in the
+// outer pack. Persistent function packs receive a separate, verified body.
+// Visit end metadata too, so the position after a definition starts a block.
+template<typename Fn>
+void visit_execution_region(Instructions const& code, Fn&& visit)
+{
+  bool in_function = false;
+  for (Instruction::Index i = 0; i < code.size(); ++i) {
+    auto const opcode = code[i].opcode();
+    if (opcode == Instruction::Opcode::function_begin) {
+      in_function = true;
+      visit(i);
+    }
+    else if (opcode == Instruction::Opcode::function_end) {
+      in_function = false;
+      visit(i);
+    }
+    else if (!in_function) {
+      visit(i);
+    }
+  }
+}
 }  // namespace
 
 auto plan_consumption(Instructions const& code, bool persistent) -> ConsumptionPlan
@@ -42,8 +64,8 @@ auto plan_consumption(Instructions const& code, bool persistent) -> ConsumptionP
   if (size == 0 || (!persistent && size < 16))
     return {};
   bool arithmetic = false;
-  for (auto const& instruction : code)
-    arithmetic = arithmetic || arithmetic_lhs(instruction.opcode());
+  visit_execution_region(code,
+                         [&](I i) { arithmetic = arithmetic || arithmetic_lhs(code[i].opcode()); });
   if (!arithmetic)
     return {};
 
@@ -59,7 +81,7 @@ auto plan_consumption(Instructions const& code, bool persistent) -> ConsumptionP
     if (index < size)
       leader[index] = true;
   };
-  for (I i = 0; i < size; ++i) {
+  visit_execution_region(code, [&](I i) {
     auto const opcode = code[i].opcode();
     if (opcode == O::branch) {
       begin_block(target(i, code[i].op1()));
@@ -87,7 +109,7 @@ auto plan_consumption(Instructions const& code, bool persistent) -> ConsumptionP
       if (code[i].has_op2() && opcode != O::branch_zero)
         count(code[i].op2());
     }
-  }
+  });
   I current = 0;
   for (I i = 0; i < size; ++i) {
     if (leader[i])
@@ -96,15 +118,15 @@ auto plan_consumption(Instructions const& code, bool persistent) -> ConsumptionP
   }
   ConsumptionPlan result(size, 0);
   bool any = false;
-  for (I i = 0; i < size; ++i) {
+  visit_execution_region(code, [&](I i) {
     if (!arithmetic_lhs(code[i].opcode()))
-      continue;
+      return;
     auto const producer = target(i, code[i].op1());
     if (producer < i && uses[producer] == 1 && block[producer] == block[i]) {
       result[i] = 1;
       any = true;
     }
-  }
+  });
   // Checked execution and plans with no proven transfer use the copy fallback.
   if (!any)
     return {};

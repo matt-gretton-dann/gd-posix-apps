@@ -84,6 +84,7 @@ TEST_CASE("Outer definition registration does not prepare unexecuted arithmetic"
   code.emplace_back(O::eof);
   REQUIRE(code.size() >= 16);
   CHECK(plan(code, false).empty());
+  CHECK(plan(code, true).empty());  // Caching never executes definition bodies.
   GD::Bc::Instructions const body(
     code.begin() + 1, code.begin() + static_cast<GD::Bc::Instructions::difference_type>(end));
   REQUIRE_FALSE(GD::Bc::Details::verify_control_flow(body, true).has_value());

@@ -21,7 +21,8 @@ using ConsumptionPlan =
 // Call only after complete entry verification. A transfer needs one static use
 // and a producer earlier in the same straight-line basic block. In particular,
 // a producer outside a loop cannot be consumed merely because its consumer is
-// the only static use. Function plans persist; tiny outer streams skip planning.
+// the only static use. Definition bodies are planned separately from the pack
+// that registers them. Function plans persist; tiny outer streams skip planning.
 auto plan_consumption(Instructions const& code, bool persistent) -> ConsumptionPlan;
 }  // namespace GD::Bc::Details
 #endif
