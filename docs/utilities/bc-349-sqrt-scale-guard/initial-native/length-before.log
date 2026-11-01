@@ -1,0 +1,23 @@
+Assertion failed: (length < base_), function length, file number.hh, line 642.
+Filters: [sqrt-guard-boundary]
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+test-libbc is a Catch v2.13.7 host application.
+Run with -? for options
+
+-------------------------------------------------------------------------------
+Square root preserves representable scale at the guard boundary
+-------------------------------------------------------------------------------
+/private/tmp/gd-posix-sqrt-scale-guard/src/bc/test-number-sqrt.cc:73
+...............................................................................
+
+/private/tmp/gd-posix-sqrt-scale-guard/src/bc/test-number-sqrt.cc:73: FAILED:
+  {Unknown expression after the reported line}
+due to a fatal error condition:
+  scale=96 radicand=2
+  SIGABRT - Abort (abnormal termination) signal
+
+===============================================================================
+test cases: 1 | 1 failed
+assertions: 9 | 8 passed | 1 failed
+

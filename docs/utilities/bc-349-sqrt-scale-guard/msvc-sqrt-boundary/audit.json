@@ -1,0 +1,62 @@
+{
+  "workflow_run": 41319747300,
+  "source_checks": "All fourteen checks pass; confirmed Windows regression still blocks adoption",
+  "rows": [
+    {
+      "os": "linux",
+      "checked": 1750,
+      "identities": {
+        "base": "23c2c4d8ec61ec04fdb3344ea6ec66d06827b6d9",
+        "candidate": "caedb62e5cfa9e53039ce551b7e252f5e44c1135"
+      },
+      "confirmed": [],
+      "selected": [
+        "| full | paired | `loop_1000000` | 0.947 [0.9134008332091328, 0.9691022872861611] | pass |",
+        "| full | paired | `calls_200000` | 0.990 [0.9771548714234031, 0.9978405254470846] | pass |",
+        "| full | paired | `array_200000` | 0.993 [0.9678460825541282, 0.9962077941385287] | pass |",
+        "| full | paired | `compare_equal_1000d_x100000` | 0.996 [0.9773186915966292, 1.0002956259103235] | pass |",
+        "| full | paired | `sqrt_scale100_x5000` | 0.994 [0.9907724701717059, 1.0003127589094456] | pass |",
+        "| full | paired | `file_statements_20000` | 1.000 [0.993790965193814, 1.012244414400675] | pass |"
+      ],
+      "sha256": "cfab9b6229c3ec147235a36c9bb2d30ef137afb5451ab6859861cad2d87dee92"
+    },
+    {
+      "os": "macos",
+      "checked": 1750,
+      "identities": {
+        "base": "23c2c4d8ec61ec04fdb3344ea6ec66d06827b6d9",
+        "candidate": "caedb62e5cfa9e53039ce551b7e252f5e44c1135"
+      },
+      "confirmed": [],
+      "selected": [
+        "| full | paired | `loop_1000000` | 1.038 [0.9504796453443444, 1.1806708003230026] | inconclusive-noisy |",
+        "| full | paired | `calls_200000` | 0.990 [0.8524252102809965, 1.0880833489112234] | inconclusive-noisy |",
+        "| full | paired | `array_200000` | 1.050 [0.8923994717953838, 1.1558213350559787] | inconclusive-noisy |",
+        "| full | paired | `compare_equal_1000d_x100000` | 0.959 [0.8729510179278461, 1.1306638179847808] | inconclusive-noisy |",
+        "| full | paired | `sqrt_scale100_x5000` | 0.905 [0.8586749666955681, 1.0910953807611312] | inconclusive-noisy |",
+        "| full | paired | `file_statements_20000` | 0.991 [0.8134010867091687, 1.1321200754518987] | inconclusive-noisy |"
+      ],
+      "sha256": "42b3d90b8cdaec265dc23cee19a97d8f2744abd9d14a1ff17305e8901be560e7"
+    },
+    {
+      "os": "windows",
+      "checked": 1780,
+      "identities": {
+        "base": "23c2c4d8ec61ec04fdb3344ea6ec66d06827b6d9",
+        "candidate": "caedb62e5cfa9e53039ce551b7e252f5e44c1135"
+      },
+      "confirmed": [
+        "| full | paired | `compare_equal_1000d_x100000` | 1.118 [1.105560248270914, 1.1443493510622647] | confirmed regression |"
+      ],
+      "selected": [
+        "| full | paired | `loop_1000000` | 1.081 [1.0266384360482044, 1.09114108766154] | inconclusive-noisy |",
+        "| full | paired | `calls_200000` | 1.013 [0.9749110365838745, 1.120248762970597] | inconclusive-noisy |",
+        "| full | paired | `array_200000` | 1.078 [1.035024551528582, 1.1092495582434285] | inconclusive-noisy |",
+        "| full | paired | `compare_equal_1000d_x100000` | 1.118 [1.105560248270914, 1.1443493510622647] | confirmed regression |",
+        "| full | paired | `sqrt_scale100_x5000` | 0.997 [0.9842975206613573, 1.0276543424679254] | pass |",
+        "| full | paired | `file_statements_20000` | 1.016 [0.9879134719027907, 1.0531748051181788] | inconclusive-noisy |"
+      ],
+      "sha256": "ae09cefe00c816ae5feecefd3326ee48cd349c4989467d99746aee5e984a3d12"
+    }
+  ]
+}
