@@ -1,0 +1,69 @@
+from pathlib import Path
+import json,shutil,hashlib,zipfile
+root=Path('/private/tmp/gd-posix-decimal-chunks/docs/utilities/bc-206-decimal-input');root.mkdir(exist_ok=True)
+(root/'.gitattributes').write_text('*.csv -text whitespace=cr-at-eol\n*.log -text whitespace=-blank-at-eol,-blank-at-eof\n')
+for stage,prefix in [('initial','gd-bc-206-final'),('scalar','gd-bc-206-scalar')]:
+ folder=root/stage;folder.mkdir(exist_ok=True)
+ for preset in ('quick','full','holdout'):
+  source=Path('/private/tmp/'+prefix+'-'+preset)
+  for name in ('manifest.json','summary.json','samples.csv'):
+   shutil.copyfile(source/name,folder/(preset+'-'+name))
+  for kind in ('programs','oracles'):
+   if (source/kind).is_dir():shutil.copytree(source/kind,folder/(preset+'-'+kind),dirs_exist_ok=True)
+for role,recipe in [('parent-a5','gd-bc-206-current-parent-release'),('initial','gd-bc-206-final-release'),('scalar','gd-bc-206-scalar-release')]:
+ folder=root/(role+'-recipe');folder.mkdir(exist_ok=True);source=Path('/private/tmp/'+recipe)
+ for name in ('build-manifest.json','implementations.json','compile_commands.json','multiply-threshold.hh','standard-library-probe.cc'):
+  if (source/name).exists():shutil.copyfile(source/name,folder/name)
+ for p in source.glob('command-*.log'):shutil.copyfile(p,folder/p.name)
+folder=root/'scalar-components';shutil.copytree('/private/tmp/gd-bc-206-scalar-component-results',folder,dirs_exist_ok=True)
+shutil.copyfile('/private/tmp/bc-206-run-scalar-components.py',folder/'runner.py.txt')
+for role,recipe in [('parent','gd-bc-206-current-parent-components'),('scalar','gd-bc-206-scalar-components')]:
+ source=Path('/private/tmp/'+recipe);shutil.copyfile(source/'manifest.json',folder/(role+'-build-manifest.json'))
+profiles=Path('/private/tmp/gd-bc-197-current-experiments-counters');shutil.copyfile(profiles/'provenance.json',root/'initial-counter-provenance.json');records=json.loads((profiles/'checked-profiles.json').read_text());(root/'initial-checked-profiles.json').write_text(json.dumps([r for r in records if r['role'] in ('parent','decimal')],indent=2)+'\n')
+index=[]
+for osname in ('linux','macos','windows'):
+ p=Path('/private/tmp/bc-206-native43-'+osname+'.zip');z=zipfile.ZipFile(p);rows=[]
+ for f in z.namelist():
+  if f.endswith('samples.jsonl'):rows += [json.loads(s) for s in z.read(f).decode().splitlines()]
+ assert rows and all(r['checked'] for r in rows)
+ name='initial-native43-'+osname+'.zip';shutil.copyfile(p,root/name);index.append({'os':osname,'file':name,'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'run_id':41270773329,'checked_invocations':len(rows),'confirmed_regressions':z.read('summary.md').decode().count('confirmed regression')})
+(root/'initial-native-artifacts.json').write_text(json.dumps(index,indent=2)+'\n')
+lines=['# Decimal input experiment — acceptance pending','',
+'Initial source `dd88b5cec60fc0796bea11998f547084db11f0fd` exposed a one-digit',
+'component regression. Revised source `bd002d4c671a91a6d08899f5e536155497c6be31`',
+'restores a decimal single-digit scalar path. Both comparisons below use the',
+'explicit historical accepted parent `a5c1cb1ad4051616afdce115b02ecc0247ad62f7`.',
+'The revised source also includes main\'s profile-only scan counters (#324);',
+'an exact current-main comparison is required before attributing the remaining',
+'division/modulo differences to conversion. These are retained observations,',
+'not evidence of neutral performance or an accepted cross-platform speedup.','',
+'All 360 revised component invocations pass exact result, checksum, status and',
+'stderr checks. One-digit conversion improves from the initial 1.551 ratio to',
+'0.941 [0.939, 0.981]. Other sizes retain their input-conversion gains. Internal',
+'chrono intervals include reset/consumer work; control rows are separate and',
+'are not subtracted. Process wall times are auxiliary, not pure kernel cost.','',
+'Each process stage passes 120 quick, 1200 full and 1200 held-out exact checks.',
+'Full/held-out timing uses one checked warm-up and nine seeded paired rounds',
+'with 2000 paired bootstrap resamples. No builds/tests/profiles overlap local',
+'timing. Apple M1/macOS 27.2, Apple Clang 21/libc++ 220106, Release thin LTO,',
+'fixed split point 126 and native pinned Howard 7.0.3; exact manifests and raw',
+'rows are included. Shared-host frequency/thermal isolation is unavailable.','',
+'Revised held-out multi-limb division is 1.175 [1.135, 1.197] and modulo is',
+'1.127 [1.118, 1.150] against the historical parent. Keep the PR on hold while',
+'checking current-main attribution and bounded confirmation. Initial native run',
+'43 covers the old PR subset, which omitted modulo and decimal-output groups;',
+'its absence of confirmed regressions does not resolve those omissions. #325',
+'now fixes the subset, and must be included in the final acceptance run.','',
+'Initial diagnostic counters retain their actual older source identities and',
+'are not relabeled as the scalar revision. They are separate from timings.','']
+for stage in ('initial','scalar'):
+ for preset in ('full','holdout'):
+  lines += ['## '+stage.title()+' '+preset,'','| Workload | Candidate / historical parent [95%] |','| --- | --- |']
+  key='gd-decimal-final' if stage=='initial' else 'gd-decimal-scalar'
+  for w in json.loads((root/stage/(preset+'-summary.json')).read_text())['workloads']:
+   r=w['candidate_over_reference'][key];lo,hi=r['ci95'];lines.append('| `{}` | {:.3f} [{:.3f}, {:.3f}] |'.format(w['name'],r['median_paired_ratio'],lo,hi))
+  lines.append('')
+lines += ['## Revised components','','| Component | Candidate / historical parent [95%] |','| --- | --- |']
+for w in json.loads((folder/'summary.json').read_text())['workloads']:
+ r=w['candidate_over_parent'];lo,hi=r['ci95'];lines.append('| `{}` | {:.3f} [{:.3f}, {:.3f}] |'.format(w['name'],r['median_paired_ratio'],lo,hi))
+(root/'README.md').write_text('\n'.join(lines)+'\n');shutil.copyfile(__file__,root/'archive-current.py.txt');print('Archived initial and scalar conversion stages')

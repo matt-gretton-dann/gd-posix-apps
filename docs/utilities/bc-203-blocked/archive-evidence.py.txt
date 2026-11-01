@@ -1,0 +1,58 @@
+from pathlib import Path
+import json,shutil,zipfile,hashlib
+root=Path('/private/tmp/gd-posix-blocked-schoolbook/docs/utilities/bc-203-blocked');root.mkdir(exist_ok=True);(root/'.gitattributes').write_text('*.csv -text whitespace=cr-at-eol\n')
+for preset in ('quick','full','holdout'):
+ source=Path('/private/tmp/gd-bc-203-blocked-'+preset)
+ for name in ('manifest.json','summary.json','samples.csv'):shutil.copyfile(source/name,root/(preset+'-'+name))
+for role,recipe in [('parent','gd-bc-current-0868-release'),('candidate','gd-bc-203-blocked-release')]:
+ source=Path('/private/tmp/'+recipe)
+ for name in ('build-manifest.json','implementations.json','compile_commands.json','multiply-threshold.hh'):
+  shutil.copyfile(source/name,root/(role+'-'+name))
+profiles=Path('/private/tmp/gd-bc-197-attribution-frames-counters');base=[r for r in json.loads((profiles/'checked-profiles.json').read_text()) if r['role']=='current-main'];cand=Path('/private/tmp/gd-bc-203-blocked-counters');base+=json.loads((cand/'checked-profiles.json').read_text());(root/'checked-profiles.json').write_text(json.dumps(base,indent=2)+'\n');shutil.copyfile(profiles/'provenance.json',root/'parent-counter-provenance.json');shutil.copyfile(cand/'provenance.json',root/'candidate-counter-provenance.json');shutil.copyfile('/private/tmp/bc-203-blocked-counters.py',root/'counter-collector.py.txt')
+index=[]
+for osname in ('linux','macos','windows'):
+ p=Path('/private/tmp/bc-203-blocked-native-'+osname+'.zip');z=zipfile.ZipFile(p);rows=[]
+ for f in z.namelist():
+  if f.endswith('samples.jsonl'):rows += [json.loads(s) for s in z.read(f).decode().splitlines()]
+ assert all(r['checked'] for r in rows)
+ file='native-'+osname+'.zip';shutil.copyfile(p,root/file);index.append({'os':osname,'file':file,'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'run_id':41276001021,'checked_invocations':len(rows),'confirmed_regressions':z.read('summary.md').decode().count('confirmed regression')})
+(root/'native-artifacts.json').write_text(json.dumps(index,indent=2)+'\n')
+lines=['# Portable blocked schoolbook multiplication','',
+'Candidate `565564dba7d781613c5046d4898a0efdf6a2832b` versus accepted source',
+'`0868b4acd36d91a39a1d07c1aafb0808bda519cc`. Native PR base is',
+'`9eed920f181f3445db5a4017d48f3d6c0e4ed249`; its production arithmetic/VM',
+'sources are identical to 0868b4a (intervening changes are benchmark selection,',
+'reversed-operand tests and rejected-experiment documentation). Every identity',
+'remains explicit rather than relabeling a previously built executable.','',
+'All 120 quick, 1200 full and 1200 held-out invocations pass exact output, status,',
+'stderr and deadline checks. Nine seeded paired measurement rounds follow one',
+'checked warm-up per implementation/case; 2000 paired bootstrap resamples.',
+'Apple M1/macOS 27.2, Apple Clang 21/libc++ header 220106, Release thin LTO,',
+'extensions ON and fixed split point 126. No local builds/tests/profiles overlap',
+'timing. These are end-to-end process measurements, not pure kernel intervals.','',
+'Full multiplication ratios range from 0.222 to 0.582; held-out 0.229 to 0.544.',
+'All square shapes remain close to baseline. Local multi-limb division remains',
+'inconclusive: full 1.053 [1.016,1.090], held-out 1.150 [0.978,1.207]. Do not',
+'claim neutral division or hide the worst class. No frequency/thermal isolation',
+'or cross-platform precision guarantee follows from the shared local host.','',
+'Native run 41276001021 passes 1450 checked invocations per OS on Linux, macOS',
+'and Windows, including independent A/A builds, with no confirmed regressions.',
+'Large dense multiplication ratios are 0.472 Linux, 0.318 macOS and 0.489',
+'Windows. Division is Linux pass and macOS/Windows inconclusive. Verified raw',
+'ZIPs, their SHA-256 digests, confirmations and losing classes remain archived.','',
+'All 80 separate parent/candidate diagnostic invocations pass exact oracles and',
+'balance selected allocations at EOF. Counter binaries retain their actual',
+'source identities, including parent e069301 (production-equivalent to 0868b4a).',
+'Counter data are not elapsed timings or process RSS. Dedicated square dispatch',
+'and one-limb paths remain ahead of the candidate, with scalar fallback for',
+'small or insufficient-headroom shapes. No ISA/vectorization cause is claimed.','',
+'This accepts only the bounded base-case experiment after green final checks.',
+'Robust crossover/default selection remains #203 work; alternative algorithms',
+'and backends remain #204 work. The overall #197 competitive target is not',
+'claimed achieved.','']
+for preset in ('full','holdout'):
+ lines += ['## '+preset.title(),'','| Workload | Candidate / parent [95%] | Candidate / Howard (medians) |','| --- | --- | --- |']
+ for w in json.loads((root/(preset+'-summary.json')).read_text())['workloads']:
+  r=w['candidate_over_reference']['gd-blocked'];lo,hi=r['ci95'];v=w['implementations'];h=v['gd-blocked']['median_seconds']/v['howard-7.0.3']['median_seconds'];lines.append('| `{}` | {:.3f} [{:.3f}, {:.3f}] | {:.3f} |'.format(w['name'],r['median_paired_ratio'],lo,hi,h))
+ lines.append('')
+(root/'README.md').write_text('\n'.join(lines));shutil.copyfile(__file__,root/'archive-evidence.py.txt');print('Archived checked blocked kernel data and three native artifacts')

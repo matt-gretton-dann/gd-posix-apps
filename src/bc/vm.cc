@@ -12,6 +12,7 @@
 #include <array>
 #include <atomic>
 #include <cassert>
+#include <deque>
 #include <ostream>
 #include <utility>
 
@@ -35,6 +36,12 @@ __DISABLE_NARROWING_WARNING
   }
 
 namespace GD::Bc::Details {
+using ExecutionResult = std::variant<Number, ArrayValues, std::string_view, Variable, Array,
+                                     ArrayElement, Ibase, Obase, Scale>;
+using ResultBuffer =
+  std::vector<std::optional<ExecutionResult>,
+              Profile::Allocator<std::optional<ExecutionResult>, Profile::AllocationKind::results>>;
+
 /** A borrowed instruction stream whose entry verification has completed.
  * Construction is confined to the verifier and persistent verified owners.
  * The source must outlive execution, as with the original borrowed executor.
@@ -142,6 +149,11 @@ struct VMState
    */
   auto pop_param_array() -> ArrayValues;
 
+  // Each active pack owns one depth slot. deque growth preserves references
+  // held by callers; clearing a slot drops values while retaining capacity.
+  auto acquire_results(std::size_t count) -> ResultBuffer&;
+  void release_results();
+
   /** \brief  Validate instruction bounds, result types and control-flow availability.  */
   void validate(Instructions const& instrs, bool function_body = false) const;
   auto verify(Instructions const& instructions) const -> VerifiedInstructions
@@ -162,12 +174,14 @@ private:
   }
 
   using Param = std::variant<ArrayValues, Number>;  ///< Parameter to a function
-  using Params =
-    std::list<Param,
-              Profile::Allocator<Param, Profile::AllocationKind::frames>>;  ///< List of parameters
-  using ParamStack = std::list<
-    Params, Profile::Allocator<Params, Profile::AllocationKind::frames>>;  ///< Stack of current
-                                                                           ///< function parameters
+  using Params = std::vector<Param, Profile::Allocator<Param, Profile::AllocationKind::frames>>;
+  struct ParamMark
+  {
+    std::size_t begin;
+    std::size_t next;
+  };
+  using ParamMarks =
+    std::vector<ParamMark, Profile::Allocator<ParamMark, Profile::AllocationKind::frames>>;
   using Index = Instruction::Index;    ///< Index into the instructions
   using Offset = Instruction::Offset;  ///< Offset from current instruction
   using NumType = Number::NumType;     ///< Number type
@@ -181,13 +195,17 @@ private:
   std::array<std::optional<FunctionDefinition>, Letter::count_>
     functions_;  ///< Array of (optional) functions, indexed by letter.
   std::array<Number, Letter::count_> variables_;  ///< Array of scalar variables, indexed by Letter.
-  ParamStack param_stack_;                        ///< Stack of parameters
-  ParamStack local_stack_;                        ///< Stack of locals.
-  NumType ibase_ = default_base_;                 ///< Input base, range [2, 16]
-  NumType obase_ = default_base_;                 ///< Output base, range: [2, base_)
-  NumType scale_ = 0;                             ///< Scale, range: [0, base_)
-  bool save_specials_;                            ///< Save specials on function entry?
-  VM::ExecutionChecks checks_;                    ///< Full diagnostic oracle or verified dispatch.
+  Params parameters_;                             ///< Contiguous values for active argument packs.
+  ParamMarks param_marks_;                        ///< Pack offsets; indices survive vector growth.
+  Params saved_locals_;                           ///< Contiguous saved locals for active calls.
+  std::deque<ResultBuffer, Profile::Allocator<ResultBuffer, Profile::AllocationKind::frames>>
+    result_buffers_;  ///< Reusable buffers, indexed by simultaneous activation depth.
+  std::size_t result_depth_ = 0;
+  NumType ibase_ = default_base_;  ///< Input base, range [2, 16]
+  NumType obase_ = default_base_;  ///< Output base, range: [2, base_)
+  NumType scale_ = 0;              ///< Scale, range: [0, base_)
+  bool save_specials_;             ///< Save specials on function entry?
+  VM::ExecutionChecks checks_;     ///< Full diagnostic oracle or verified dispatch.
 };
 
 /** \brief  An executable instruction pack.
@@ -207,14 +225,16 @@ public:
    * ArrayElement: Array element.
    */
   using Index = Instruction::Index;
-  using Result = std::variant<Number, ArrayValues, std::string_view, Variable, Array, ArrayElement,
-                              Ibase, Obase, Scale>;
+  using Result = ExecutionResult;
 
   /** \brief        Constructor
    *  \param vm     VM state to modify
    *  \param instrs Instructions to hold.
    */
   InstructionPack(VMState* vm, VerifiedInstructions instrs);
+  ~InstructionPack() { vm_->release_results(); }
+  InstructionPack(InstructionPack const&) = delete;
+  auto operator=(InstructionPack const&) -> InstructionPack& = delete;
 
   /** \brief  Execute the instruction pack
    *  \return Pair of returned value, and whether we should execute more instruction packs.
@@ -358,9 +378,7 @@ private:
   VMState* vm_;                 ///< Virtual Machine state
   Instructions const& instrs_;  ///< Instructions to execute
   Instruction::Index pc_{0};    ///< Current program counter
-  std::vector<std::optional<Result>,
-              Profile::Allocator<std::optional<Result>, Profile::AllocationKind::results>>
-    results_;  ///< Results of instructions.
+  ResultBuffer& results_;       ///< Borrowed stable buffer for this activation.
 };
 
 auto operator<<(std::ostream& os, InstructionPack const& instrs) -> std::ostream&;
@@ -423,48 +441,54 @@ auto GD::Bc::Details::VMState::stream(Instruction::Stream stream) const -> std::
 
 void GD::Bc::Details::VMState::push_param(Number const& n)
 {
-  assert_error(!param_stack_.empty(), Msg::parameter_stack_empty);  // NOLINT
-  param_stack_.back().push_back(n);
+  assert_error(!param_marks_.empty(), Msg::parameter_stack_empty);  // NOLINT
+  parameters_.emplace_back(n);
 }
 
 void GD::Bc::Details::VMState::push_param(ArrayValues av)
 {
-  assert_error(!param_stack_.empty(), Msg::parameter_stack_empty);  // NOLINT
-  param_stack_.back().push_back(av);
+  assert_error(!param_marks_.empty(), Msg::parameter_stack_empty);  // NOLINT
+  parameters_.emplace_back(std::move(av));
 }
 
-void GD::Bc::Details::VMState::push_param_pack() { param_stack_.push_back(Params{}); }
+void GD::Bc::Details::VMState::push_param_pack()
+{
+  param_marks_.push_back({parameters_.size(), parameters_.size()});
+}
 
 void GD::Bc::Details::VMState::pop_param_pack()
 {
-  assert_error(!param_stack_.empty(), Msg::parameter_stack_empty);           // NOLINT
-  assert_error(param_stack_.back().empty(), Msg::parameter_pack_not_empty);  // NOLINT
-  param_stack_.pop_back();
+  assert_error(!param_marks_.empty(), Msg::parameter_stack_empty);  // NOLINT
+  auto const mark = param_marks_.back();
+  assert_error(mark.next == parameters_.size(), Msg::parameter_pack_not_empty);  // NOLINT
+  parameters_.resize(mark.begin);
+  param_marks_.pop_back();
 }
 
 auto GD::Bc::Details::VMState::pop_param() -> GD::Bc::Number
 {
-  assert_error(!param_stack_.empty(), Msg::parameter_stack_empty);        // NOLINT
-  assert_error(!param_stack_.back().empty(), Msg::parameter_pack_empty);  // NOLINT
-  if (!std::holds_alternative<Number>(param_stack_.back().front())) {
+  assert_error(!param_marks_.empty(), Msg::parameter_stack_empty);  // NOLINT
+  auto& mark = param_marks_.back();
+  assert_error(mark.next < parameters_.size(), Msg::parameter_pack_empty);  // NOLINT
+  auto& value = parameters_[mark.next];
+  if (!std::holds_alternative<Number>(value)) {
     Details::error(Msg::parameter_type_mismatch, "number");
   }
-  // This node is consumed immediately; transfer its value before erasing it.
-  auto result(std::move(std::get<Number>(param_stack_.back().front())));
-  param_stack_.back().pop_front();
-  return result;
+  ++mark.next;
+  return std::move(std::get<Number>(value));
 }
 
 auto GD::Bc::Details::VMState::pop_param_array() -> GD::Bc::ArrayValues
 {
-  assert_error(!param_stack_.empty(), Msg::parameter_stack_empty);        // NOLINT
-  assert_error(!param_stack_.back().empty(), Msg::parameter_pack_empty);  // NOLINT
-  if (!std::holds_alternative<ArrayValues>(param_stack_.back().front())) {
+  assert_error(!param_marks_.empty(), Msg::parameter_stack_empty);  // NOLINT
+  auto& mark = param_marks_.back();
+  assert_error(mark.next < parameters_.size(), Msg::parameter_pack_empty);  // NOLINT
+  auto& value = parameters_[mark.next];
+  if (!std::holds_alternative<ArrayValues>(value)) {
     Details::error(Msg::parameter_type_mismatch, "array");
   }
-  auto result(std::move(std::get<ArrayValues>(param_stack_.back().front())));
-  param_stack_.back().pop_front();
-  return result;
+  ++mark.next;
+  return std::move(std::get<ArrayValues>(value));
 }
 
 void GD::Bc::Details::VMState::function(Letter func, Instructions::const_iterator const& begin,
@@ -490,16 +514,17 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
   auto locals = std::get<1>(def);
 
   /* Save the locals.  */
-  Params p;
-  locals.for_each_variable([&p, this](Letter l) {
-    p.push_back(variables_.at(static_cast<unsigned>(l)));
+  // Retain offsets rather than references across execute(): recursive calls
+  // may grow the same buffer. Capacity remains available after restoration.
+  auto const saved_begin = saved_locals_.size();
+  locals.for_each_variable([this](Letter l) {
+    saved_locals_.emplace_back(std::move(variables_.at(static_cast<unsigned>(l))));
     variables_.at(static_cast<unsigned>(l)) = Number(0);
   });
-  locals.for_each_array([&p, this](Letter l) {
-    p.push_back(arrays_.at(static_cast<unsigned>(l)));
+  locals.for_each_array([this](Letter l) {
+    saved_locals_.emplace_back(std::move(arrays_.at(static_cast<unsigned>(l))));
     arrays_.at(static_cast<unsigned>(l)).reset();
   });
-  local_stack_.push_back(p);
 
   /* Save specials.  */
   auto saved_scale = scale_;
@@ -510,15 +535,14 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
   auto [result, cont] = fn.execute();
 
   /* Restore the locals. */
-  locals.for_each_variable([&p, this](Letter l) {
-    variables_.at(static_cast<unsigned>(l)) = std::get<Number>(p.front());
-    p.pop_front();
+  auto saved = saved_begin;
+  locals.for_each_variable([&saved, this](Letter l) {
+    variables_.at(static_cast<unsigned>(l)) = std::move(std::get<Number>(saved_locals_[saved++]));
   });
-  locals.for_each_array([&p, this](Letter l) {
-    arrays_.at(static_cast<unsigned>(l)) = std::get<ArrayValues>(p.front());
-    p.pop_front();
+  locals.for_each_array([&saved, this](Letter l) {
+    arrays_.at(static_cast<unsigned>(l)) = std::move(std::get<ArrayValues>(saved_locals_[saved++]));
   });
-  local_stack_.pop_back();
+  saved_locals_.resize(saved_begin);
 
   /* Restore specials.  */
   if (save_specials_) {
@@ -794,8 +818,26 @@ void GD::Bc::Details::VMState::validate(Instructions const& instrs, bool functio
   }
 }
 
+auto GD::Bc::Details::VMState::acquire_results(std::size_t count) -> ResultBuffer&
+{
+  if (result_depth_ == result_buffers_.size()) {
+    result_buffers_.emplace_back();
+  }
+  auto& result = result_buffers_[result_depth_];
+  assert(result.empty());  // NOLINT
+  result.resize(count);
+  ++result_depth_;
+  return result;
+}
+
+void GD::Bc::Details::VMState::release_results()
+{
+  assert(result_depth_ != 0);  // NOLINT
+  result_buffers_[--result_depth_].clear();
+}
+
 GD::Bc::Details::InstructionPack::InstructionPack(VMState* vm, VerifiedInstructions instrs)
-    : vm_(vm), instrs_(instrs.instructions()), results_(instrs_.size())
+    : vm_(vm), instrs_(instrs.instructions()), results_(vm->acquire_results(instrs_.size()))
 {
   assert(vm_ != nullptr);  // NOLINT
 }
