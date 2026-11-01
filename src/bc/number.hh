@@ -351,7 +351,10 @@ public:
     // sixteen on the scalar path. Long alphabetic output can divide once per
     // native group instead of once per printed character.
     if (obase <= 16 && whole.digits_ && whole.digits_->size() >= 4) {
-      while (division_base <= (base_ - 1) / obase) {
+      // The quotient is <= base_-1, which fits NumType. Name it in that type
+      // so small-trait integer promotion cannot obscure the product bound.
+      NumType const largest_factor = static_cast<NumType>((base_ - 1) / obase);
+      while (division_base <= largest_factor) {
         division_base = static_cast<NumType>(division_base * obase);
         ++group_width;
       }
@@ -1703,6 +1706,11 @@ public:
    *  \param obase    Base to output in
    *  \param line_pos Current position on output line (default = 0).
    */
+#if defined(__GNUC__) && !defined(__clang__)
+  // Keep formatting out of GCC's surrounding execution-frame inlining.
+  // Other compilers retain generic policy and the identical formatting body.
+  __attribute__((noinline))
+#endif
   void output(std::ostream& os, NumType obase, unsigned line_pos) const
   {
     if (line_pos > digits_.line_length) {
