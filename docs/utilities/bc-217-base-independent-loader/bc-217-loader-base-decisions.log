@@ -1,0 +1,12 @@
+Certified 476 results; observed 121/132 interpreted decision outcomes
+Uncovered: {'line': 29, 'function': 'a', 'kind': 'if', 'expression': 'scale!=w', 'observed': ['false'], 'modeled': ['true', 'false']}
+Uncovered: {'line': 95, 'function': 'e', 'kind': 'if', 'expression': 'scale!=w', 'observed': ['false'], 'modeled': ['true']}
+Uncovered: {'line': 115, 'function': 'e', 'kind': 'if', 'expression': 'r>=0', 'observed': ['true'], 'modeled': [], 'exception': 'exponential coefficient remains nonnegative by construction'}
+Uncovered: {'line': 116, 'function': 'e', 'kind': 'if', 'expression': 'r<0', 'observed': ['false'], 'modeled': [], 'exception': 'exponential coefficient remains nonnegative by construction'}
+Uncovered: {'line': 134, 'function': 'l', 'kind': 'if', 'expression': 'scale!=w', 'observed': ['false'], 'modeled': ['true']}
+Uncovered: {'line': 181, 'function': 's', 'kind': 'if', 'expression': 'scale!=w', 'observed': ['false'], 'modeled': ['true', 'false']}
+Uncovered: {'line': 191, 'function': 's', 'kind': 'if', 'expression': 'scale!=w', 'observed': ['false'], 'modeled': ['true']}
+Uncovered: {'line': 224, 'function': 'c', 'kind': 'if', 'expression': 'scale!=w', 'observed': ['false'], 'modeled': ['true', 'false']}
+Uncovered: {'line': 230, 'function': 'c', 'kind': 'if', 'expression': 'scale!=w', 'observed': ['false'], 'modeled': ['true']}
+Uncovered: {'line': 288, 'function': 'j', 'kind': 'if', 'expression': 'scale!=w', 'observed': ['false'], 'modeled': ['true']}
+Uncovered: {'line': 333, 'function': 'j', 'kind': 'if', 'expression': 'scale!=w', 'observed': ['false'], 'modeled': ['true']}

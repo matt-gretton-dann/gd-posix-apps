@@ -1,0 +1,125 @@
+FFFFFF
+======================================================================
+FAIL: test_ordinary_source_initializes_decimal_scale_under_any_base (__main__.LibraryCli.test_ordinary_source_initializes_decimal_scale_under_any_base) (binary='build-release/src/bc/bc', base=2)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-portable-math/src/bc/test-math-library-cli.py", line 96, in test_ordinary_source_initializes_decimal_scale_under_any_base
+    self.assertEqual(lines, ['20', str(base), str(base)])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['4', '2', '2'] != ['20', '2', '2']
+
+First differing element 0:
+'4'
+'20'
+
+- ['4', '2', '2']
+?   ^
+
++ ['20', '2', '2']
+?   ^^
+
+
+======================================================================
+FAIL: test_ordinary_source_initializes_decimal_scale_under_any_base (__main__.LibraryCli.test_ordinary_source_initializes_decimal_scale_under_any_base) (binary='build-release/src/bc/bc', base=8)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-portable-math/src/bc/test-math-library-cli.py", line 96, in test_ordinary_source_initializes_decimal_scale_under_any_base
+    self.assertEqual(lines, ['20', str(base), str(base)])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['16', '8', '8'] != ['20', '8', '8']
+
+First differing element 0:
+'16'
+'20'
+
+- ['16', '8', '8']
+?   ^^
+
++ ['20', '8', '8']
+?   ^^
+
+
+======================================================================
+FAIL: test_ordinary_source_initializes_decimal_scale_under_any_base (__main__.LibraryCli.test_ordinary_source_initializes_decimal_scale_under_any_base) (binary='build-release/src/bc/bc', base=16)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-portable-math/src/bc/test-math-library-cli.py", line 96, in test_ordinary_source_initializes_decimal_scale_under_any_base
+    self.assertEqual(lines, ['20', str(base), str(base)])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['32', '16', '16'] != ['20', '16', '16']
+
+First differing element 0:
+'32'
+'20'
+
+- ['32', '16', '16']
+?   -
+
++ ['20', '16', '16']
+?    +
+
+
+======================================================================
+FAIL: test_ordinary_source_initializes_decimal_scale_under_any_base (__main__.LibraryCli.test_ordinary_source_initializes_decimal_scale_under_any_base) (binary='/private/tmp/gd-bc-200-recipe-check-3/howard-source/bin/bc', base=2)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-portable-math/src/bc/test-math-library-cli.py", line 96, in test_ordinary_source_initializes_decimal_scale_under_any_base
+    self.assertEqual(lines, ['20', str(base), str(base)])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['4', '2', '2'] != ['20', '2', '2']
+
+First differing element 0:
+'4'
+'20'
+
+- ['4', '2', '2']
+?   ^
+
++ ['20', '2', '2']
+?   ^^
+
+
+======================================================================
+FAIL: test_ordinary_source_initializes_decimal_scale_under_any_base (__main__.LibraryCli.test_ordinary_source_initializes_decimal_scale_under_any_base) (binary='/private/tmp/gd-bc-200-recipe-check-3/howard-source/bin/bc', base=8)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-portable-math/src/bc/test-math-library-cli.py", line 96, in test_ordinary_source_initializes_decimal_scale_under_any_base
+    self.assertEqual(lines, ['20', str(base), str(base)])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['16', '8', '8'] != ['20', '8', '8']
+
+First differing element 0:
+'16'
+'20'
+
+- ['16', '8', '8']
+?   ^^
+
++ ['20', '8', '8']
+?   ^^
+
+
+======================================================================
+FAIL: test_ordinary_source_initializes_decimal_scale_under_any_base (__main__.LibraryCli.test_ordinary_source_initializes_decimal_scale_under_any_base) (binary='/private/tmp/gd-bc-200-recipe-check-3/howard-source/bin/bc', base=16)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-portable-math/src/bc/test-math-library-cli.py", line 96, in test_ordinary_source_initializes_decimal_scale_under_any_base
+    self.assertEqual(lines, ['20', str(base), str(base)])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['32', '16', '16'] != ['20', '16', '16']
+
+First differing element 0:
+'32'
+'20'
+
+- ['32', '16', '16']
+?   -
+
++ ['20', '16', '16']
+?    +
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.050s
+
+FAILED (failures=6)
