@@ -221,9 +221,12 @@ TEMPLATE_TEST_CASE("Scaled division agrees with native rational arithmetic",
     }
     return result;
   };
-  std::array<std::uint64_t, 5> const coefficients{1, 7, 23, 99, 1001};
+  std::array<std::uint64_t, 6> const coefficients{0, 1, 7, 23, 99, 1001};
   for (auto const a : coefficients) {
     for (auto const b : coefficients) {
+      if (b == 0) {
+        continue;  // Zero-divisor diagnostics have separate subprocess tests.
+      }
       for (unsigned sa : {0U, 1U, 2U, 3U, 4U}) {
         for (unsigned sb : {0U, 1U, 2U, 3U, 4U}) {
           for (unsigned places : {0U, 1U, 2U, 3U, 4U}) {
