@@ -11,11 +11,27 @@
 #include <cassert>
 #include <cstdio>
 
-auto GD::StreamInputFile::getc() -> int
+template<bool Locked>
+auto GD::StreamInputFile::getc_impl() -> int
 {
   assert(file_ != nullptr);  // NOLINT
+  auto next = [this] {
+    if constexpr (Locked) {
+      return std::fgetc(file_);
+    }
+    else {
+#if defined(_WIN32) && defined(_MSC_VER)
+      return _fgetc_nolock(file_);
+#elif defined(_POSIX_THREAD_SAFE_FUNCTIONS) && _POSIX_THREAD_SAFE_FUNCTIONS > 0
+      // POSIX permits a macro: keep the FILE argument free of side effects.
+      return getc_unlocked(file_);
+#else
+      return std::fgetc(file_);
+#endif
+    }
+  };
   int c = 0;
-  while ((c = std::fgetc(file_)) == EOF) {
+  while ((c = next()) == EOF) {
     if (std::feof(file_) != 0) {
       return EOF;
     }
@@ -31,4 +47,12 @@ auto GD::StreamInputFile::getc() -> int
   }
 
   return c;
+}
+
+auto GD::StreamInputFile::getc() -> int { return getc_impl<true>(); }
+
+auto GD::StreamInputFile::getc_exclusive() -> int
+{
+  // stdin is borrowed and can be shared by otherwise independent readers.
+  return is_stdin_ ? getc_impl<true>() : getc_impl<false>();
 }
