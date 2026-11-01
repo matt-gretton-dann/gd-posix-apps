@@ -47,6 +47,45 @@ class ProfilingTools(unittest.TestCase):
             with self.assertRaises(self.bench.BenchmarkError):
                 self.module.check(self.bench, case, 2, status, output, errors)
 
+    def test_each_mathematical_result_and_state_is_checked(self):
+        case = {'name': 'math-fixture', 'expected': None,
+                'oracle': {'kind': 'decimal-ulp', 'lower': '1', 'upper': '1',
+                           'scale': 2, 'expected_state': ['2', '10', '2']}}
+        chunk = b'1.00\n2\n10\n2\n'
+        self.module.check(self.bench, case, 2, 0, chunk * 2, b'')
+        for output in (chunk, chunk * 2 + b'0\n',
+                       chunk + b'1.03\n2\n10\n2\n',
+                       chunk + b'1.00\n3\n10\n2\n'):
+            with self.assertRaises(self.bench.BenchmarkError):
+                self.module.check(self.bench, case, 2, 0, output, b'')
+
+    def test_cpu_preserves_file_transport(self):
+        case = {'name': 'file-fixture', 'program': '2\n',
+                'expected': ['2'], 'input_mode': 'file'}
+        code = ('import pathlib,sys; assert not sys.stdin.read(); '
+                'print(pathlib.Path(sys.argv[1]).read_text(),end="")')
+        tool = {'argv': [sys.executable, '-c', code]}
+        with tempfile.TemporaryDirectory() as directory, \
+                mock.patch.object(self.module.platform, 'system', return_value='Unsupported'):
+            result = self.module.cpu_profile(self.bench, tool, case, 2, Path(directory), 3)
+        self.assertEqual(result['status'], 'unavailable')
+
+    def test_memory_preserves_file_transport(self):
+        case = {'name': 'file-fixture', 'program': '2\n',
+                'expected': ['2'], 'input_mode': 'file'}
+        def child(argv, payload, environment, timeout):
+            self.assertEqual(payload, b'')
+            self.assertEqual(Path(argv[-1]).read_bytes(), b'2\n')
+            Path(argv[argv.index('-o') + 1]).write_text('MAX_RSS_KIB=1\n')
+            return subprocess.CompletedProcess(argv, 0, b'2\n', b'')
+        with tempfile.TemporaryDirectory() as directory, \
+                mock.patch.object(self.module.platform, 'system', return_value='Linux'), \
+                mock.patch.object(Path, 'is_file', return_value=True), \
+                mock.patch.object(self.module, 'run_group', side_effect=child):
+            result = self.module.rss_profile(self.bench, {'argv': ['fake']},
+                                             case, Path(directory), 3)
+        self.assertEqual(result['peak_rss_native'], 1)
+
     def test_program_archive_matches_declared_bytes(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
