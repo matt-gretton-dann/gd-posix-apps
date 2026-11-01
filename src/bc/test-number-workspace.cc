@@ -94,8 +94,16 @@ TEMPLATE_TEST_CASE("Recursive products agree with decimal convolution",
   {
     ~Restore() { Number::multiply_split_point(1); }
   } const restore;
-  for (auto const& [a, b] :
-       {std::pair{4U, 4U}, {5U, 7U}, {8U, 9U}, {17U, 16U}, {31U, 63U}, {2U, 63U}, {10U, 63U}}) {
+  for (auto const& [a, b] : {std::pair{4U, 4U},
+                             {5U, 7U},
+                             {8U, 9U},
+                             {17U, 16U},
+                             {31U, 63U},
+                             {2U, 63U},
+                             {10U, 63U},
+                             {63U, 31U},
+                             {63U, 2U},
+                             {63U, 10U}}) {
     for (unsigned pattern : {0U, 1U}) {
       std::string left(a * Number::base_log10_, '9');
       std::string right(b * Number::base_log10_, '9');
