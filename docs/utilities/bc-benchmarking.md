@@ -211,3 +211,6 @@ and other hosts may prefer different points; the default stays portable.
 `--quick` is a smoke protocol covering three small sizes, all four shapes and
 three rounds, with the same correctness and selection rules. It checks the
 executable protocol in automated tests and should not tune production builds.
+
+[Repeated tuning evidence and retained per-shape costs](bc-203-tuning/README.md)
+record the stable-default decision and exact compiler/source provenance.
