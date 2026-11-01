@@ -199,3 +199,51 @@ TEMPLATE_TEST_CASE("Decimal coefficients reach streams in bounded blocks",
   value.output(padded, 10, 0);
   CHECK(unwrapped(padded.str()) == "    " + coefficient);
 }
+
+TEMPLATE_TEST_CASE("Decimal interior limbs keep every zero and digit",
+                   "[bc][number][decimal-limbs]", GD::Bc::NumberTraits8, GD::Bc::NumberTraits16,
+                   GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  for (auto const& text :
+       {std::string("1000000000000000001000000001"), std::string("1000000000000000000.000000001"),
+        std::string("999999999000000000999999999")}) {
+    Number const value(text, 10);
+    auto const snapshot = value;
+    for (unsigned position : {0U, 67U, 68U, 69U}) {
+      std::ostringstream output;
+      value.output(output, 10, position);
+      CHECK(unwrapped(output.str()) == text);
+      check_lines(output.str(), position);
+      CHECK(value == snapshot);
+    }
+  }
+}
+
+namespace {
+class GroupedPunctuation : public std::numpunct<char>
+{
+  auto do_thousands_sep() const -> char override { return '_'; }
+  auto do_grouping() const -> std::string override { return "\3"; }
+};
+}  // namespace
+
+TEMPLATE_TEST_CASE("Decimal coefficient formatting retains global locale behavior",
+                   "[bc][number][decimal-limbs]", GD::Bc::NumberTraits8, GD::Bc::NumberTraits16,
+                   GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  struct LocaleScope
+  {
+    std::locale old =
+      std::locale::global(std::locale(std::locale::classic(), new GroupedPunctuation));
+    ~LocaleScope() { std::locale::global(old); }
+  } const scope;
+  Number const value("1234567", 10);
+  std::ostringstream output;
+  output.imbue(std::locale::classic());
+  value.output(output, 10, 0);
+  CHECK(output.str() == (Number::base_ == 100     ? "1234567"
+                         : Number::base_ == 10000 ? "1234_567"
+                                                  : "1_234_567"));
+}
