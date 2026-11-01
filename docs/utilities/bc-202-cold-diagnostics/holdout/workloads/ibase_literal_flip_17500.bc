@@ -1,0 +1,11 @@
+define f() {
+return(10)
+}
+s=0
+for(i=0;i<17500;i++) {
+ibase=2
+s+=f()
+ibase=A
+s+=f()
+}
+s

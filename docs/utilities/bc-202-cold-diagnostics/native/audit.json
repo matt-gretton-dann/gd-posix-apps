@@ -1,0 +1,57 @@
+{
+  "workflow_run": 41309743098,
+  "source_checks": "All fourteen exact-head CI/native/CodeQL checks pass",
+  "rows": [
+    {
+      "os": "linux",
+      "checked": 1700,
+      "identities": {
+        "base": "d472b0065e213419fc6b046d89d6994ab85baf9c",
+        "candidate": "0a46f05138e5399a89b9627553e9c6fc460055f2"
+      },
+      "confirmed": [],
+      "selected": [
+        "| full | paired | `loop_1000000` | 1.012 [0.9993671462411805, 1.0394212894106605] | pass |",
+        "| full | paired | `calls_200000` | 0.986 [0.9756401599416784, 1.0141317100452896] | pass |",
+        "| full | paired | `array_200000` | 0.970 [0.9662675188483484, 0.9863190927832614] | pass |",
+        "| full | paired | `frontend_definitions_2000` | 1.003 [0.9882391948531026, 1.0077966704887065] | pass |",
+        "| full | paired | `temporary_chain_1000d_x50000` | 0.985 [0.977605078264445, 0.9888725090442281] | pass |"
+      ],
+      "sha256": "af7423364cb80c3bb8096de3afcb69fd7e82fdb9a284f99d5a9865b734c8f158"
+    },
+    {
+      "os": "macos",
+      "checked": 1700,
+      "identities": {
+        "base": "d472b0065e213419fc6b046d89d6994ab85baf9c",
+        "candidate": "0a46f05138e5399a89b9627553e9c6fc460055f2"
+      },
+      "confirmed": [],
+      "selected": [
+        "| full | paired | `loop_1000000` | 0.937 [0.8331806311039603, 1.076767487707668] | inconclusive-noisy |",
+        "| full | paired | `calls_200000` | 0.989 [0.8720376339365545, 1.2389115651357958] | inconclusive-noisy |",
+        "| full | paired | `array_200000` | 0.923 [0.7335483235159989, 1.2200032662333076] | inconclusive-noisy |",
+        "| full | paired | `frontend_definitions_2000` | 1.188 [0.8572855077621785, 1.3904463723865144] | inconclusive-noisy |",
+        "| full | paired | `temporary_chain_1000d_x50000` | 1.024 [0.8329991097782955, 1.1023214434013076] | inconclusive-noisy |"
+      ],
+      "sha256": "a302bc83670641e2db47b599ad30ba87e106ef201f6e395d0d19d27d24be63ee"
+    },
+    {
+      "os": "windows",
+      "checked": 1700,
+      "identities": {
+        "base": "d472b0065e213419fc6b046d89d6994ab85baf9c",
+        "candidate": "0a46f05138e5399a89b9627553e9c6fc460055f2"
+      },
+      "confirmed": [],
+      "selected": [
+        "| full | paired | `loop_1000000` | 1.037 [1.0004555085436608, 1.0561170923889684] | inconclusive-noisy |",
+        "| full | paired | `calls_200000` | 1.016 [0.9815119822360008, 1.0608798884902175] | inconclusive-noisy |",
+        "| full | paired | `array_200000` | 0.996 [0.988447365737394, 1.0728623999791858] | inconclusive-noisy |",
+        "| full | paired | `frontend_definitions_2000` | 0.980 [0.8797286042663043, 1.0258997653994442] | pass |",
+        "| full | paired | `temporary_chain_1000d_x50000` | 1.000 [0.9975825811600912, 1.0169909101394743] | pass |"
+      ],
+      "sha256": "b6c28aa0b1aed44992e29fc21053691cd6e751d7d082918f526b39872bb3a39f"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+Test project /private/tmp/gd-posix-cold-diagnostics/build-release
+    Start 225: bc/math-oracle
+1/8 Test #225: bc/math-oracle ...................   Passed    0.41 sec
+    Start 226: bc/gd-build-provenance
+2/8 Test #226: bc/gd-build-provenance ...........   Passed    0.34 sec
+    Start 227: bc/multiply-config
+3/8 Test #227: bc/multiply-config ...............   Passed    0.25 sec
+    Start 231: bc/benchmark-ci
+4/8 Test #231: bc/benchmark-ci ..................   Passed    3.08 sec
+    Start 232: bc/benchmark-cli
+5/8 Test #232: bc/benchmark-cli .................   Passed    2.88 sec
+    Start 233: bc/cli
+6/8 Test #233: bc/cli ...........................   Passed    0.56 sec
+    Start 235: bc/number-oracle
+7/8 Test #235: bc/number-oracle .................   Passed    0.22 sec
+    Start 237: bc/vm-cli
+8/8 Test #237: bc/vm-cli ........................   Passed    0.18 sec
+
+100% tests passed out of 8
+
+Total Test time (real) =   7.93 sec
