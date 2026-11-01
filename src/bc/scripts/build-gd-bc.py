@@ -101,6 +101,21 @@ def build_metadata(helper, root, source, build, revision, split, compiler_c, com
                             'Compiler defaults and actual commands are recorded, not claimed identical across hosts']}
 
 
+def verified_array_layout(helper, build, requested):
+    """Do not accept a cache variable ignored by an older source revision."""
+    observed = cache_values(build / 'CMakeCache.txt').get('BC_ARRAY_STORAGE', 'hybrid')
+    if observed != requested:
+        raise helper.BuildError('revision did not build the requested array storage layout')
+    if requested != 'hybrid':
+        commands = build / 'compile_commands.json'
+        number = ('hybrid', 'paged', 'flat', 'hash', 'ordered').index(requested)
+        if not commands.is_file() or not re.search(
+                r'GD_BC_ARRAY_STORAGE=' + str(number) + r'(?![0-9])',
+                commands.read_text(encoding='utf-8')):
+            raise helper.BuildError('cannot verify the experimental array layout compilation')
+    return observed
+
+
 def positive_point(text):
     if not re.fullmatch(r'[1-9][0-9]*', text) or len(text) > 10 or int(text) > 1000000000:
         raise argparse.ArgumentTypeError('must be an integer from 1 through 1000000000')
@@ -125,6 +140,8 @@ def main():
     parser.add_argument('--cxx-compiler', default='cl' if os.name == 'nt' else 'c++')
     parser.add_argument('--generator', help='default Ninja when available, otherwise CMake platform default')
     parser.add_argument('--extensions', choices=('ON', 'OFF'), default='ON')
+    parser.add_argument('--array-storage', choices=('hybrid', 'paged', 'flat', 'hash', 'ordered'),
+                        default='hybrid', help='explicit experimental array layout')
     parser.add_argument('--jobs', type=int, default=2)
     parser.add_argument('--command-timeout', type=int, default=900)
     args = parser.parse_args()
@@ -162,6 +179,8 @@ def main():
                      '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON',
                      '-DCMAKE_C_COMPILER:FILEPATH=' + compiler_c['argv0'],
                      '-DCMAKE_CXX_COMPILER:FILEPATH=' + compiler_cxx['argv0']]
+        if args.array_storage != 'hybrid':
+            configure += ['-DBC_ARRAY_STORAGE=' + args.array_storage]
         generator = args.generator or ('Ninja' if shutil.which('ninja') else None)
         if generator:
             configure += ['-G', generator]
@@ -178,6 +197,8 @@ def main():
             raise helper.BuildError('build did not produce the expected bc executable')
         metadata = build_metadata(helper, root, source, build, actual, args.split_point,
                                   compiler_c, compiler_cxx)
+        observed_layout = verified_array_layout(helper, build, args.array_storage)
+        metadata['configuration']['array_storage'] = observed_layout
         metadata['binary_sha256'] = helper.digest(executable)
         metadata['standard_library'] = standard_library_info(helper, builder, compiler_cxx, root)
         helper.write_json(root / 'implementations.json', {'implementations': [

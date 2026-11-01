@@ -47,6 +47,24 @@ class GdBuild(unittest.TestCase):
                          (self.build / 'compile_commands.json').read_bytes())
         self.assertFalse(value['instrumented'])
 
+    def test_experimental_layout_requires_compiled_selection(self):
+        self.assertEqual(self.module.verified_array_layout(self.helper, self.build, 'hybrid'), 'hybrid')
+        for number, layout in enumerate(('hybrid', 'paged', 'flat', 'hash', 'ordered')):
+            self.cache.write_text('BC_ARRAY_STORAGE:STRING=' + layout + '\n')
+            commands = self.build / 'compile_commands.json'
+            commands.write_text(json.dumps([{'command': 'c++ -DGD_BC_ARRAY_STORAGE=' + str(number)}]))
+            self.assertEqual(self.module.verified_array_layout(self.helper, self.build, layout), layout)
+            if layout != 'hybrid':
+                commands.write_text(json.dumps([{'command': 'c++ -DGD_BC_ARRAY_STORAGE=' + str(number + 10)}]))
+                with self.assertRaises(self.helper.BuildError):
+                    self.module.verified_array_layout(self.helper, self.build, layout)
+                commands.unlink()
+                with self.assertRaises(self.helper.BuildError):
+                    self.module.verified_array_layout(self.helper, self.build, layout)
+        self.cache.write_text('BC_ARRAY_STORAGE:STRING=hybrid\n')
+        with self.assertRaises(self.helper.BuildError):
+            self.module.verified_array_layout(self.helper, self.build, 'paged')
+
     def test_instrumented_configuration_is_rejected(self):
         for variable in ('ENABLE_BC_PROFILE', 'ENABLE_BC_COVERAGE'):
             previous = self.cache.read_text()
