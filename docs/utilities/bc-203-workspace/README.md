@@ -141,3 +141,13 @@ This completes the workspace experiment only. Dedicated squaring, blocked/
 asymmetric dispatch, repeated threshold sweeps and stable portable defaults
 remain separate #203 stages. Scratch is scoped to one operation and never owns
 escaping values; no thread cache or cross-frame arena is introduced.
+
+## Integration with the merged lifetime stage
+
+The isolated measurements above retain their original source identities. After
+integrating main `3682edf` (PR #315), the combined tree passes 141 bc cases
+(581,809 assertions), all eight CLI/helper groups, 14 VM cases under ASan/UBSan
+(5,026 assertions) and five profiling checks. The numeric kernel is unchanged.
+A test-only structured binding now borrows shape pairs to satisfy GCC's
+warnings-as-errors policy. Fresh latest-head native checks compare against the
+current base; no earlier timing is relabeled as that integrated source.
