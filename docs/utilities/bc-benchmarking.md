@@ -30,7 +30,8 @@ The output directory must be new. The default `full` preset retains the sixteen
 genuine multi-limb division, modulo, powers, a larger square root, changed-base
 literals, recursion, sparse arrays, definition registration, decimal input and
 output-heavy cases, plus equal-scale comparisons with high/low unequal limbs
-and equal values. `--list` shows all 36 names and exact parameters. Repeat
+and equal values. Aliased squares at 100, 1000 and 10000 decimal digits
+exercise the triangular kernel and recursive square dispatch. `--list` shows all 39 names and exact parameters. Repeat
 `--workload NAME` to select cases. Startup is a separate class.
 
 `--preset quick` reduces dimensions and iterations for fast correctness checks.
@@ -117,7 +118,7 @@ source-built comparison, not an interchangeable Howard version.
 ## Validation and scope
 
 `bc/benchmark-cli` runs in both extension configurations on native CI and checks
-all 36 quick workloads against that job's actual GD executable. Fake executables exercise failed exits, stderr, wrong output, warm-up validation,
+all 39 quick workloads against that job's actual GD executable. Fake executables exercise failed exits, stderr, wrong output, warm-up validation,
 timeouts, quoted argv, provenance requirements and timing/profiling separation.
 Paired statistics use exact proportional samples to detect unpaired resampling;
 repeated runs check schedule replay without asserting noisy elapsed times.
@@ -163,3 +164,8 @@ current native limb radix, 1,000,000,000; invalid, zero and injectable values fa
 at configuration before entering generated C++. Cross-selection logic is tested;
 actual foreign-architecture binaries still require their target toolchain and
 native/emulated correctness checks.
+
+The [portable square evaluation](bc-203-squares/README.md) records independent
+full/held-out measurements, diagnostic counters and native artifacts. It retains
+the initial Linux ordinary-product regression and distinguishes the revised
+dispatch results from inconclusive small-product/division observations.

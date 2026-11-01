@@ -1,0 +1,26 @@
+[
+  {
+    "os": "linux",
+    "run_id": 41267138736,
+    "artifact": "bc-203-square-native32-linux.zip",
+    "sha256": "a36952f7e053511e03b704c6e8cb28523be093b0045856d59b9aa28094508dfc",
+    "checked_invocations": 1050,
+    "confirmed_regression": false
+  },
+  {
+    "os": "macos",
+    "run_id": 41267138736,
+    "artifact": "bc-203-square-native32-macos.zip",
+    "sha256": "b8f024dc438b29f78e2853b8bdac83974f8f5aa2ea59c5d3f306577ede6e81a2",
+    "checked_invocations": 1050,
+    "confirmed_regression": false
+  },
+  {
+    "os": "windows",
+    "run_id": 41267138736,
+    "artifact": "bc-203-square-native32-windows.zip",
+    "sha256": "0abf17d55be21a4ed3d440d4a0dd316b4090ce5a04cc7377680e57d6117affcc",
+    "checked_invocations": 1050,
+    "confirmed_regression": false
+  }
+]
