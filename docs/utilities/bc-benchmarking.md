@@ -166,6 +166,16 @@ Artifacts:
 
 ## Source and build provenance
 
+When a recipe declares `binary_sha256` in its metadata or normalized entry,
+the harness checks that identity against the actual executable before running.
+Every provided declaration must agree; conflicting or malformed hashes fail.
+Controlled `--require-provenance` runs need a matching declaration as well as
+source/compiler/flags/version metadata and an uninstrumented binary. A supplied
+installed comparator without a declared identity still records its actual hash,
+but does not gain controlled provenance. Hash agreement checks the executable
+identity; the preserved build recipe remains the evidence for its source and
+compiler configuration.
+
 The minimal configuration above is suitable for exploratory correctness checks.
 Controlled competitive runs require `--require-provenance` and actual per-entry
 `metadata` fields: `source_revision`, `compiler`, `flags`, `version`, and an
