@@ -74,3 +74,23 @@ Radix points only affect the count of fractional source digits. The constructed
 integer coefficient C is then converted to floor(C*10^scale/b^scale) using the
 existing fractional rescaling path. Runtime input-base changes and persistent
 literal-cache invalidation remain unchanged.
+
+## Output block emission
+
+Decimal coefficient formatting retains the existing stream/locale conversion of
+limbs, zero padding, scale and sign policy. Whole-number characters are emitted
+in blocks bounded by the current continuation-line capacity. If a caller sets a
+stream field width, the first emitted character consumes it as before; batching
+starts after that character. The physical continuation policy, including a
+continuation immediately after an exactly filled whole-number line, is unchanged.
+
+Wrapped nondecimal and fractional text uses string views of the owned formatting
+buffer rather than allocating a substring per line. Views never escape the call.
+Fractional leading zero padding retains its bounded zero buffer. The stream's
+existing fill/alignment side effects and error handling remain in their original
+paths. Capacity and time claims require measurements; batching does not imply
+that nondecimal conversion has changed its arithmetic algorithm.
+
+[Complete output measurements](bc-206-output/README.md) retain full/held-out
+fixtures, every checked interval, controls and compiler/source provenance.
+Native acceptance and output-base algorithm decisions remain separate work.

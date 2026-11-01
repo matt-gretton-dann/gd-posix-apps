@@ -1,0 +1,45 @@
+Filters: [output-batching]
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+test-libbc is a Catch v2.13.7 host application.
+Run with -? for options
+
+Randomness seeded to: 197206
+
+-------------------------------------------------------------------------------
+Decimal coefficients reach streams in bounded blocks - GD::Bc::NumberTraits8
+-------------------------------------------------------------------------------
+/private/tmp/gd-posix-batched-output/src/bc/test-number-output.cc:183
+...............................................................................
+
+/private/tmp/gd-posix-batched-output/src/bc/test-number-output.cc:194: FAILED:
+  CHECK( sink.block_writes < 16 )
+with expansion:
+  182 < 16
+
+-------------------------------------------------------------------------------
+Decimal coefficients reach streams in bounded blocks - GD::Bc::NumberTraits16
+-------------------------------------------------------------------------------
+/private/tmp/gd-posix-batched-output/src/bc/test-number-output.cc:183
+...............................................................................
+
+/private/tmp/gd-posix-batched-output/src/bc/test-number-output.cc:194: FAILED:
+  CHECK( sink.block_writes < 16 )
+with expansion:
+  182 < 16
+
+-------------------------------------------------------------------------------
+Decimal coefficients reach streams in bounded blocks - GD::Bc::NumberTraits32
+-------------------------------------------------------------------------------
+/private/tmp/gd-posix-batched-output/src/bc/test-number-output.cc:183
+...............................................................................
+
+/private/tmp/gd-posix-batched-output/src/bc/test-number-output.cc:194: FAILED:
+  CHECK( sink.block_writes < 16 )
+with expansion:
+  182 < 16
+
+===============================================================================
+test cases:  3 |  0 passed | 3 failed
+assertions: 21 | 18 passed | 3 failed
+
