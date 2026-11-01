@@ -17,6 +17,13 @@ No package-wide upgrade runs inside these jobs.
 
 ## Sources and controls
 
+Build/test, CodeQL and paired trends check pull requests targeting `main` or a
+`codex/**` topic branch. This supports stacked performance changes: a storage
+PR can compare against its workspace dependency without attributing that
+dependency's gains to storage. CodeQL also analyzes topic pushes to index those
+base branches. Build/test and paired trends retain main-only push triggers;
+topic changes use their PR checks. Existing job permissions are unchanged.
+
 For a PR, build the exact base SHA and **head SHA**, not the synthetic merge
 commit. The workflow passes these as environment data. A PR uses ordinary
 unprivileged execution, a read-only token and checkout without persisted Git

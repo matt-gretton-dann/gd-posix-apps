@@ -17,10 +17,11 @@ permissions:
 
 on:
   push:
-    branches: [ main ]
+    # Index topic bases so stacked pull requests have a baseline analysis.
+    branches: [ main, 'codex/**' ]
   pull_request:
     # The branches below must be a subset of the branches above
-    branches: [ main ]
+    branches: [ main, 'codex/**' ]
   schedule:
     - cron: '21 21 * * 1'
 
