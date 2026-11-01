@@ -1,0 +1,198 @@
+...FFFFFFFFFFFFFFFF.....
+======================================================================
+FAIL: test_divide_conquer_integer_conversion_protocol (__main__.Components.test_divide_conquer_integer_conversion_protocol) (base=2)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 96, in test_divide_conquer_integer_conversion_protocol
+    parsed = self.invoke('conversion-in-dc', '000' + digits + '\n', base=base)
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 22, in invoke
+    self.assertEqual(child.returncode, 0, child.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : bc-components: unknown component
+
+
+======================================================================
+FAIL: test_divide_conquer_integer_conversion_protocol (__main__.Components.test_divide_conquer_integer_conversion_protocol) (base=3)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 96, in test_divide_conquer_integer_conversion_protocol
+    parsed = self.invoke('conversion-in-dc', '000' + digits + '\n', base=base)
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 22, in invoke
+    self.assertEqual(child.returncode, 0, child.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : bc-components: unknown component
+
+
+======================================================================
+FAIL: test_divide_conquer_integer_conversion_protocol (__main__.Components.test_divide_conquer_integer_conversion_protocol) (base=4)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 96, in test_divide_conquer_integer_conversion_protocol
+    parsed = self.invoke('conversion-in-dc', '000' + digits + '\n', base=base)
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 22, in invoke
+    self.assertEqual(child.returncode, 0, child.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : bc-components: unknown component
+
+
+======================================================================
+FAIL: test_divide_conquer_integer_conversion_protocol (__main__.Components.test_divide_conquer_integer_conversion_protocol) (base=5)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 96, in test_divide_conquer_integer_conversion_protocol
+    parsed = self.invoke('conversion-in-dc', '000' + digits + '\n', base=base)
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 22, in invoke
+    self.assertEqual(child.returncode, 0, child.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : bc-components: unknown component
+
+
+======================================================================
+FAIL: test_divide_conquer_integer_conversion_protocol (__main__.Components.test_divide_conquer_integer_conversion_protocol) (base=6)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 96, in test_divide_conquer_integer_conversion_protocol
+    parsed = self.invoke('conversion-in-dc', '000' + digits + '\n', base=base)
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 22, in invoke
+    self.assertEqual(child.returncode, 0, child.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : bc-components: unknown component
+
+
+======================================================================
+FAIL: test_divide_conquer_integer_conversion_protocol (__main__.Components.test_divide_conquer_integer_conversion_protocol) (base=7)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 96, in test_divide_conquer_integer_conversion_protocol
+    parsed = self.invoke('conversion-in-dc', '000' + digits + '\n', base=base)
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 22, in invoke
+    self.assertEqual(child.returncode, 0, child.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : bc-components: unknown component
+
+
+======================================================================
+FAIL: test_divide_conquer_integer_conversion_protocol (__main__.Components.test_divide_conquer_integer_conversion_protocol) (base=8)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 96, in test_divide_conquer_integer_conversion_protocol
+    parsed = self.invoke('conversion-in-dc', '000' + digits + '\n', base=base)
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 22, in invoke
+    self.assertEqual(child.returncode, 0, child.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : bc-components: unknown component
+
+
+======================================================================
+FAIL: test_divide_conquer_integer_conversion_protocol (__main__.Components.test_divide_conquer_integer_conversion_protocol) (base=9)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 96, in test_divide_conquer_integer_conversion_protocol
+    parsed = self.invoke('conversion-in-dc', '000' + digits + '\n', base=base)
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 22, in invoke
+    self.assertEqual(child.returncode, 0, child.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : bc-components: unknown component
+
+
+======================================================================
+FAIL: test_divide_conquer_integer_conversion_protocol (__main__.Components.test_divide_conquer_integer_conversion_protocol) (base=10)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 96, in test_divide_conquer_integer_conversion_protocol
+    parsed = self.invoke('conversion-in-dc', '000' + digits + '\n', base=base)
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 22, in invoke
+    self.assertEqual(child.returncode, 0, child.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : bc-components: unknown component
+
+
+======================================================================
+FAIL: test_divide_conquer_integer_conversion_protocol (__main__.Components.test_divide_conquer_integer_conversion_protocol) (base=11)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 96, in test_divide_conquer_integer_conversion_protocol
+    parsed = self.invoke('conversion-in-dc', '000' + digits + '\n', base=base)
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 22, in invoke
+    self.assertEqual(child.returncode, 0, child.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : bc-components: unknown component
+
+
+======================================================================
+FAIL: test_divide_conquer_integer_conversion_protocol (__main__.Components.test_divide_conquer_integer_conversion_protocol) (base=12)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 96, in test_divide_conquer_integer_conversion_protocol
+    parsed = self.invoke('conversion-in-dc', '000' + digits + '\n', base=base)
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 22, in invoke
+    self.assertEqual(child.returncode, 0, child.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : bc-components: unknown component
+
+
+======================================================================
+FAIL: test_divide_conquer_integer_conversion_protocol (__main__.Components.test_divide_conquer_integer_conversion_protocol) (base=13)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 96, in test_divide_conquer_integer_conversion_protocol
+    parsed = self.invoke('conversion-in-dc', '000' + digits + '\n', base=base)
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 22, in invoke
+    self.assertEqual(child.returncode, 0, child.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : bc-components: unknown component
+
+
+======================================================================
+FAIL: test_divide_conquer_integer_conversion_protocol (__main__.Components.test_divide_conquer_integer_conversion_protocol) (base=14)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 96, in test_divide_conquer_integer_conversion_protocol
+    parsed = self.invoke('conversion-in-dc', '000' + digits + '\n', base=base)
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 22, in invoke
+    self.assertEqual(child.returncode, 0, child.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : bc-components: unknown component
+
+
+======================================================================
+FAIL: test_divide_conquer_integer_conversion_protocol (__main__.Components.test_divide_conquer_integer_conversion_protocol) (base=15)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 96, in test_divide_conquer_integer_conversion_protocol
+    parsed = self.invoke('conversion-in-dc', '000' + digits + '\n', base=base)
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 22, in invoke
+    self.assertEqual(child.returncode, 0, child.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : bc-components: unknown component
+
+
+======================================================================
+FAIL: test_divide_conquer_integer_conversion_protocol (__main__.Components.test_divide_conquer_integer_conversion_protocol) (base=16)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 96, in test_divide_conquer_integer_conversion_protocol
+    parsed = self.invoke('conversion-in-dc', '000' + digits + '\n', base=base)
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 22, in invoke
+    self.assertEqual(child.returncode, 0, child.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : bc-components: unknown component
+
+
+======================================================================
+FAIL: test_divide_conquer_integer_conversion_protocol (__main__.Components.test_divide_conquer_integer_conversion_protocol)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 104, in test_divide_conquer_integer_conversion_protocol
+    self.assertEqual(self.invoke('conversion-in-dc', 'F\n', base=2)['result'], '15')
+                     ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/gd-posix-conversion-dc/src/bc/test-components.py", line 22, in invoke
+    self.assertEqual(child.returncode, 0, child.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : bc-components: unknown component
+
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.434s
+
+FAILED (failures=16)

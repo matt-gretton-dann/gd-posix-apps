@@ -144,3 +144,7 @@ and ordinary modes share fixture validation. Controls remain separate and are
 never subtracted. Profile-instrumented component reports still have no elapsed
 seconds. Native source, regimes, peak-memory scope and any measured losses must
 be recorded before choosing a runtime crossover.
+
+[DC experiment results](bc-206-divide-conquer/README.md) retain all input wins,
+small-input/output losses, cutoff sweeps, separate controls and process-memory
+observations. Runtime adoption still requires its own integrated/native evidence.

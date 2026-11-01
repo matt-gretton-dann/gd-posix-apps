@@ -1,0 +1,8 @@
+import json,subprocess,hashlib,statistics
+from pathlib import Path
+root=Path('/private/tmp/gd-bc-206-dc-controls');root.mkdir();m=json.loads(Path('/private/tmp/gd-bc-206-dc-components/manifest.json').read_text());rows=[]
+for digits in (1,1024,100000):
+ fixture='7'*digits+'\n';(root/('input-'+str(digits)+'.txt')).write_text(fixture)
+ for sample in range(10):
+  child=subprocess.run(m['argv']+['control','1000000','126'],input=fixture,text=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=90);assert child.returncode==0 and not child.stderr;d=json.loads(child.stdout);assert d['result']=='7'*digits and d['checksum_mod_2_64']==1000000*digits and not d['instrumented'];rows.append({'digits':digits,'phase':'warmup' if sample==0 else 'measurement','sample':sample,'checked':True,'reported':d,'stdout_sha256':hashlib.sha256(child.stdout.encode()).hexdigest()})
+(root/'manifest.json').write_text(json.dumps({'implementation':m,'scope':'Separate copy/reset/length-consumer controls, not subtracted from conversion intervals. No local builds/tests/profiles overlap. Large fixture parsing and final rendering occur outside internal control clock.','iterations':1000000,'warmups':1,'samples':9},indent=2)+'\n');(root/'samples.json').write_text(json.dumps(rows,indent=2)+'\n');print('All',len(rows),'separate control invocations pass exact checks')
