@@ -54,7 +54,8 @@ class ProfilingTools(unittest.TestCase):
             config.write_text(json.dumps({'implementations': [{
                 'name': 'fake', 'argv': [sys.executable, '-c', 'import sys; sys.stdin.read(); print(2)'],
                 'metadata': {'source_revision': 'fixture', 'compiler': 'fixture', 'flags': 'fixture',
-                             'version': 'fixture', 'instrumented': False}}]}))
+                             'version': 'fixture', 'instrumented': False,
+                             'binary_sha256': hashlib.sha256(Path(sys.executable).read_bytes()).hexdigest()}}]}))
             summary = root / 'summary.json'
             summary.write_text(json.dumps({'workloads': [{'name': 'startup',
                 'implementations': {'fake': {'median_seconds': 10}}}]}))
