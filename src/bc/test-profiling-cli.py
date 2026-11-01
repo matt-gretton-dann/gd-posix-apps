@@ -131,6 +131,13 @@ class ProfilingCli(unittest.TestCase):
                                 '0\n')
         self.assertEqual(counters['events'].get('radix_dc_input_calls', 0), 0)
 
+    def test_verified_arithmetic_consumes_proven_last_use_temporaries(self):
+        expected = '4' + '0' * 100
+        wrapped = expected[:68] + '\\\n' + expected[68:] + '\n'
+        counters = self.profile('define f(x) {\nreturn((x+x)+(x+x));\n}\nf(10^100)\n',
+                                wrapped)
+        self.assertGreater(counters['events'].get('temporary_consumptions', 0), 0)
+
     def test_single_digits_need_no_decoded_cache_allocation(self):
         counters = self.profile('0\n1\nA\nF\n', '0\n1\n10\n15\n')
         self.assertEqual(counters['events']['single_digit_literals'], 4)
