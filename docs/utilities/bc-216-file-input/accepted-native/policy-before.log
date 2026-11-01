@@ -1,0 +1,14 @@
+.....F
+======================================================================
+FAIL: test_subset_retains_real_dimensions_and_broad_adds_holdouts (__main__.NativeTrends.test_subset_retains_real_dimensions_and_broad_adds_holdouts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-file-input-corpus/src/bc/test-benchmark-ci.py", line 73, in test_subset_retains_real_dimensions_and_broad_adds_holdouts
+    self.assertIn('file_statements_20000', subset)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'file_statements_20000' not found in ['startup', 'loop_1000000', 'calls_200000', 'array_200000', 'compare_high_1000d_x100000', 'fibonacci_1000_x100', 'factorial_1000_x50', 'multiply_100d_x100000', 'divide_scale100_x100000', 'sqrt_scale100_x5000', 'divide_multilimb_900d_450d_s100_x1000', 'modulo_1000d_350d_x3000', 'power_100d_e17_x1000', 'ibase_literal_flip_20000', 'recursion_50_x1000', 'sparse_array_200000', 'frontend_definitions_2000', 'decimal_input_4000d_x100', 'decimal_output_200d_x1000', 'streaming_statements_20000', 'square_100d_x100000', 'literal_repeat_2000d_x2000', 'binary_output_1000d_x300', 'octal_output_1000d_x300', 'binary_input_100000d_x3', 'hex_input_100000d_x3', 'temporary_chain_1000d_x50000', 'compare_low_1000d_x100000', 'compare_equal_1000d_x100000', 'multiply_10000d_x1000', 'multiply_dense_10000d_x500', 'multiply_unbalanced_10000d_100d_x2000', 'multiply_sparse_10000d_x1000', 'square_10000d_x500']
+
+----------------------------------------------------------------------
+Ran 6 tests in 2.957s
+
+FAILED (failures=1)

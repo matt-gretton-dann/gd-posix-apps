@@ -49,6 +49,22 @@ shapes does not rewrite the original experiment.
 explicitly pending #217 and cannot appear as a performance pass before their
 accuracy-checked implementation exists.
 
+## Archived evidence byte stability
+
+Archived evidence directories disable Git text conversion so recorded program,
+recipe and metadata hashes survive Windows checkouts. This preserves actual LF
+or CRLF payloads; it does not relabel measured source identities. The native build
+workflow verifies every committed SHA-256 payload and simulates Git checkout
+conversion with `core.autocrlf=true`:
+
+```sh
+python3 docs/utilities/verify-bc-evidence-checkout.py
+```
+
+Use `--index` to validate staged packaging changes before committing. These checks
+change neither worktree files nor persistent Git configuration. Historical
+measurement payloads remain unchanged when packaging rules are corrected.
+
 ## Correctness and deadlines
 
 Every warm-up and measured process must exit successfully, leave stderr empty,
