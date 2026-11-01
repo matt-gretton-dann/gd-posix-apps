@@ -313,13 +313,13 @@ set(bc_skips
     bc/gavinhoward-bc/tests/engineering # Don't support engineering obase
     bc/gavinhoward-bc/tests/strings # Don't support print.
     bc/gavinhoward-bc/tests/letters # Don't support letters G-Z.
-    bc/gavinhoward-bc/tests/exponent # Library not yet written
-    bc/gavinhoward-bc/tests/log # Library not yet written
-    bc/gavinhoward-bc/tests/pi # Library not yet written
-    bc/gavinhoward-bc/tests/arctangent # Library not yet written
-    bc/gavinhoward-bc/tests/sine # Library not yet written
-    bc/gavinhoward-bc/tests/cosine # Library not yet written
-    bc/gavinhoward-bc/tests/bessel # Library not yet written
+    bc/gavinhoward-bc/tests/exponent # Exact Howard snapshots need certified ULP adapter (#217)
+    bc/gavinhoward-bc/tests/log # Exact Howard snapshots need certified ULP adapter (#217)
+    bc/gavinhoward-bc/tests/pi # Exact Howard snapshots need certified ULP adapter (#217)
+    bc/gavinhoward-bc/tests/arctangent # Exact Howard snapshots need certified ULP adapter (#217)
+    bc/gavinhoward-bc/tests/sine # Exact Howard snapshots need certified ULP adapter (#217)
+    bc/gavinhoward-bc/tests/cosine # Exact Howard snapshots need certified ULP adapter (#217)
+    bc/gavinhoward-bc/tests/bessel # Exact Howard snapshots need certified ULP adapter (#217)
     bc/gavinhoward-bc/tests/misc1 # No support for last
     bc/gavinhoward-bc/tests/misc2 # We're strict about presence of newlines.
     bc/gavinhoward-bc/tests/misc3 # We're strict about presence of newlines, and no support for print
@@ -336,9 +336,9 @@ set(bc_skips
     bc/gavinhoward-bc/script/multiply # Don't support multi-char variables
     bc/gavinhoward-bc/script/divide # Don't support multi-char variables
     bc/gavinhoward-bc/script/array # No support for comments
-    bc/gavinhoward-bc/script/atan # No support for library
-    bc/gavinhoward-bc/script/bessel # No support for library
-    bc/gavinhoward-bc/script/functions # No support for library
+    bc/gavinhoward-bc/script/atan # Library result snapshots need accuracy adapter (#217)
+    bc/gavinhoward-bc/script/bessel # Library result snapshots need accuracy adapter (#217)
+    bc/gavinhoward-bc/script/functions # Library result snapshots need accuracy adapter (#217)
     bc/gavinhoward-bc/script/len # No support for multi-char function names.
     bc/gavinhoward-bc/script/rand # No support for random numbers.
     bc/gavinhoward-bc/script/references # No support for references

@@ -5,6 +5,7 @@ from fractions import Fraction
 import importlib.util
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -30,7 +31,7 @@ class LibraryCli(unittest.TestCase):
     def invoke(self, program, options=('-l',), files=(), binary=None, timeout=30):
         try:
             return subprocess.run([binary or BC, *options, *map(str, files)], input=program,
-                                  text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                  universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                   env=environment(), timeout=timeout)
         except subprocess.TimeoutExpired:
             self.fail('math-library invocation exceeded its correctness deadline')
@@ -121,6 +122,48 @@ class LibraryCli(unittest.TestCase):
         lines = self.checked_lines('scale=20\ne(l(1))\nl(e(0))\nj(0.00,0)\n'
                                    'j(-1.00,0)\nscale\nibase\n')
         self.assertEqual([Fraction(x) for x in lines], [1, 0, 1, 0, 20, 10])
+
+    def test_argument_values_survive_function_parameter_mutation(self):
+        for fraction in ('', '.' + '1234567890' * 10):
+            places = 0 if not fraction else len(fraction) - 1
+            order = '-3' + ('.' + '0' * places if places else '')
+            for call, sign in [('e(x)', '-'), ('a(x)', '-'), ('s(x)', '-'),
+                               ('c(x)', '-'), ('l(x)', ''), ('j(n,x)', '-')]:
+                x = sign + '2' + fraction
+                with self.subTest(call=call, places=places):
+                    # The long fractions force heap-backed COW coefficients;
+                    # checking only small inline arguments misses that contract.
+                    program = ('x= {}\nn= {}\nv={}\nx\nn\nscale(x)\nscale(n)\n'
+                               'scale(v)\n').format(x, order, call)
+                    lines = self.checked_lines(program)
+                    self.assertEqual([Fraction(value) for value in lines],
+                                     [Fraction(x), -3, places, places, 20])
+
+    def test_silent_host_scale_clamping_cannot_return_uncertified_values(self):
+        # Portable test-side fault injection models a host that ignores the
+        # working-scale request; production has no fault-injection hooks.
+        source = Path(SOURCE).read_text(encoding='utf-8')
+        changed = re.sub(r'(?m)^( *)scale=w$', r'\1scale=0', source)
+        self.assertNotEqual(changed, source)
+        with tempfile.TemporaryDirectory() as directory:
+            program = Path(directory) / 'clamped library.bc'
+            program.write_text(changed, encoding='utf-8')
+            for call in ('e(0)', 'l(1)', 'a(0)', 's(0)', 'c(0)', 'j(0,0)'):
+                with self.subTest(call=call):
+                    result = self.invoke(call + '\n', options=(), files=(program,))
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertNotEqual(result.stderr, '')
+                    self.assertEqual(result.stdout, '')
+
+    def test_unrepresentable_working_precision_reports_failure(self):
+        # These valid-domain values require unrepresentable working scales,
+        # so assignment must fail before an enormous coefficient is allocated.
+        for call in ('e(10^20)', 'j(10^20,10^20)'):
+            with self.subTest(call=call):
+                result = self.invoke(call + '\n')
+                self.assertNotEqual(result.returncode, 0)
+                self.assertNotEqual(result.stderr, '')
+                self.assertEqual(result.stdout, '')
 
     def test_optional_external_source_portability(self):
         if OTHER_BC is None:
