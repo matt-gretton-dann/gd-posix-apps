@@ -1,0 +1,10 @@
+{
+  "head_revision": "225bfaf682adf6c06266fe632e3a1216cbdf30e8",
+  "check_run_id": 124794666884,
+  "path": "src/bc/number.hh",
+  "line": 354,
+  "title": "Comparison of narrow type with wide type in loop condition",
+  "message": "Comparison between [division_base](1) of type NumType and [... / ...](2) of wider type int.\nComparison between [division_base](1) of type NumType and [... / ...](2) of wider type unsigned int.",
+  "reported_severity": "high",
+  "supported_input_failure_reproduced": false
+}
