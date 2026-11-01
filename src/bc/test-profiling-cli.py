@@ -138,6 +138,12 @@ class ProfilingCli(unittest.TestCase):
                                 wrapped)
         self.assertGreater(counters['events'].get('temporary_consumptions', 0), 0)
 
+    def test_inline_arithmetic_keeps_the_copy_fallback(self):
+        counters = self.profile('define f(x) {\nreturn((x+x)+(x+x));\n}\nf(7)\n', '28\n')
+        self.assertEqual(counters['events']['cow_clones'], 0)
+        self.assertEqual(counters['events']['owned_digit_copies'], 0)
+        self.assertEqual(counters['events'].get('temporary_consumptions', 0), 0)
+
     def test_single_digits_need_no_decoded_cache_allocation(self):
         counters = self.profile('0\n1\nA\nF\n', '0\n1\n10\n15\n')
         self.assertEqual(counters['events']['single_digit_literals'], 4)
