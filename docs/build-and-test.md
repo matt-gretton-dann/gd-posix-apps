@@ -32,6 +32,12 @@ dependencies:
  * [Catch2](https://github.com/catchorg/Catch2).  If unit testing is enabled we use `Catch2` as the
    testing framework.
 
+The pinned Catch2 v2 header uses `std::nothrow` without declaring it through
+`<new>` on every include path. Test translation units include `<new>` before
+Catch2 explicitly, so they work with standard libraries that remove incidental
+transitive includes. The include-sorting policy preserves that order. This
+does not require dependency edits or compiler-wide forced includes.
+
 For more information on the licensing of these tools see the
 [Copyright and Licensing](./copyright-and-licensing.md) page.
 

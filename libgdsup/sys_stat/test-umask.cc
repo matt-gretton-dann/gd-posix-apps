@@ -1,5 +1,7 @@
 #include "gd/sys/stat.h"
 
+#include <new>
+
 #include <catch2/catch.hpp>
 
 // NOLINTNEXTLINE
