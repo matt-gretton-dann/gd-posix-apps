@@ -16,3 +16,8 @@ pass exact output/status/stderr/deadline checks with both implementations.
 These are correctness smokes, not paired timing evidence or acceptance of the
 unmerged grouped-output runtime change. Historical reports retain old corpus
 identities; new native results must name their actual harness source.
+
+After integrating accepted array main 0514351, all sixteen benchmark groups
+(including all 42 quick cases on the accepted array executable) and six native
+policy groups pass again. This is validation of the current runtime composition;
+the earlier full-size smoke records keep their original frozen sources.
