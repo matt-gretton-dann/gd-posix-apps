@@ -155,3 +155,35 @@ TEST_CASE("Instruction diagnostics preserve operands and positions", "[bc][instr
   listing << GD::Bc::Instructions{number, sum, eof};
   REQUIRE(listing.str() == "0\tnumber 2\n1\tadd -3, -4\n2\teof\n");
 }
+
+TEST_CASE("Decoded literal memos follow instruction copy move and replacement",
+          "[bc][instruction][literal]")
+{
+  using I = GD::Bc::Instruction;
+  using GD::Bc::Number;
+  I source(I::Opcode::number, std::string("10"));
+  auto snapshot = source.decoded_number(10);
+  snapshot.add(Number(1));
+  CHECK(snapshot == Number(11));
+  CHECK(source.decoded_number(10) == Number(10));
+  I copy(source);
+  source.op1(std::string("11"));
+  CHECK(source.decoded_number(2) == Number(3));
+  CHECK(copy.decoded_number(2) == Number(2));
+  I moved(std::move(copy));
+  CHECK(moved.decoded_number(10) == Number(10));
+  moved.op1(std::string("100"));
+  CHECK(moved.decoded_number(2) == Number(4));
+  I assigned(I::Opcode::number, std::string("77"));
+  CHECK(assigned.decoded_number(10) == Number(77));
+  assigned = moved;
+  CHECK(assigned.decoded_number(2) == Number(4));
+  moved.op1(std::string("10"));
+  CHECK(assigned.decoded_number(2) == Number(4));
+  CHECK(moved.decoded_number(2) == Number(2));
+  assigned = std::move(moved);
+  CHECK(assigned.decoded_number(10) == Number(10));
+  auto const* alias = &assigned;
+  assigned = *alias;
+  CHECK(assigned.decoded_number(10) == Number(10));
+}
