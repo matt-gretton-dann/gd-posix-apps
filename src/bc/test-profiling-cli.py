@@ -188,6 +188,15 @@ class ProfilingCli(unittest.TestCase):
         for category in ('arrays', 'frames', 'instructions', 'results', 'digits'):
             self.assertGreater(counters['allocations'][category]['allocation_calls'], 0, category)
 
+    def test_unretained_input_items_reuse_bounded_instruction_storage(self):
+        # Exact repeated output checks that clearing/reusing storage neither
+        # reexecutes old instructions nor delays complete input items.
+        for count in (64, 1024):
+            with self.subTest(count=count):
+                counters = self.profile('1\n' * count, '1\n' * count)
+                self.assertLessEqual(
+                    counters['allocations']['instructions']['allocation_calls'], 4)
+
     def test_unwritable_output_reports_failure(self):
         with tempfile.TemporaryDirectory() as directory:
             result = self.invoke('2\n', Path(directory) / 'missing' / 'profile.json')
