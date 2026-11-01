@@ -1,0 +1,391 @@
+{
+  "bootstrap_resamples": 2000,
+  "clock": {
+    "implementation": "QueryPerformanceCounter()",
+    "monotonic": true,
+    "resolution": 1e-07
+  },
+  "corpus": [
+    {
+      "group": "startup",
+      "name": "startup",
+      "oracle_sha256": "53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3",
+      "parameters": {},
+      "program_sha256": "a7684d1961bc3c87aeea07cbfd22792a6c875687fa1d0f3c18ace930a373040e"
+    },
+    {
+      "group": "loop",
+      "name": "loop_1000000",
+      "oracle_sha256": "dbb4498f673634c698bd6e593ef54bdadf465654b13fb7bfe689016e602e7ef8",
+      "parameters": {
+        "iterations": 1000000
+      },
+      "program_sha256": "74aa1d696c8c54be05d25ad82b085aedd6791012c90b5faf9f3d9d91f94ebdba"
+    },
+    {
+      "group": "calls",
+      "name": "calls_200000",
+      "oracle_sha256": "34812d12902217c2ca460d074d75599c4704fbce9e15d1f8780da9463bf0bf9a",
+      "parameters": {
+        "iterations": 200000
+      },
+      "program_sha256": "738d33209381c5f554a34bc05ed399ed53973ff7ae75a0cd72e464875841c63e"
+    },
+    {
+      "group": "array",
+      "name": "array_200000",
+      "oracle_sha256": "ef55be1f845002931219ae88320c4744651b322de6447340a573287179119427",
+      "parameters": {
+        "elements": 200000
+      },
+      "program_sha256": "f6a730c098c8d10032b60dd95a00eb18349ad719604fe3582bad5a1e61e5b054"
+    },
+    {
+      "group": "comparison",
+      "name": "compare_high_1000d_x100000",
+      "oracle_sha256": "b80500a01f984c764f1a3b486622d0ef7cc5b13fa9bd57ec9015113eaf875597",
+      "parameters": {
+        "digits": 1000,
+        "first_unequal_limb": "high",
+        "iterations": 100000
+      },
+      "program_sha256": "1592c96a7a3807bc318c69e45c69d1837b3194c219481c6f0ee159bd9ad5f057"
+    },
+    {
+      "group": "comparison",
+      "name": "compare_low_1000d_x100000",
+      "oracle_sha256": "b80500a01f984c764f1a3b486622d0ef7cc5b13fa9bd57ec9015113eaf875597",
+      "parameters": {
+        "digits": 1000,
+        "first_unequal_limb": "low",
+        "iterations": 100000
+      },
+      "program_sha256": "65f427eade6749f96db6392b4a66e68248b90fd30ac32020aad51be98990f47c"
+    },
+    {
+      "group": "comparison",
+      "name": "compare_equal_1000d_x100000",
+      "oracle_sha256": "b80500a01f984c764f1a3b486622d0ef7cc5b13fa9bd57ec9015113eaf875597",
+      "parameters": {
+        "digits": 1000,
+        "first_unequal_limb": "equal",
+        "iterations": 100000
+      },
+      "program_sha256": "e9f2a5c85feb5736a4a4faf469f8d593280c7b7c3b8290b49be6cef834038ff1"
+    },
+    {
+      "group": "fibonacci",
+      "name": "fibonacci_1000_x100",
+      "oracle_sha256": "a7c08fc8246fdd9775ffd65e21f82638373172fc8bec3ebbc5c7c765c0bd9010",
+      "parameters": {
+        "index": 1000,
+        "iterations": 100
+      },
+      "program_sha256": "1a99529043a0c9a2eed2bd64ec3df2ee15a819a23550a1d0871dfe777a9c0675"
+    },
+    {
+      "group": "multiply",
+      "name": "multiply_100d_x100000",
+      "oracle_sha256": "ddcbaa65ea02c205692e9a19e882486a2e63dcc1508cb76af4499ba70c45b206",
+      "parameters": {
+        "iterations": 100000,
+        "left_digits": 100,
+        "right_digits": 100,
+        "shape": "repeated"
+      },
+      "program_sha256": "00265d8ce3e2d4f3fe5d5cffc742ccf26ec23aa7d88001d42072cb742e916eed"
+    },
+    {
+      "group": "multiply",
+      "name": "multiply_10000d_x1000",
+      "oracle_sha256": "c65fdf864347bf83524e3a0a91f5c7571e0fc8ffb2308894a7116da06726d55d",
+      "parameters": {
+        "iterations": 1000,
+        "left_digits": 10000,
+        "right_digits": 10000,
+        "shape": "repeated"
+      },
+      "program_sha256": "834a93e1304c2fd9c706943a98f5dbf15c6fce738e0b07d01e0cb68fb9e9ee41"
+    },
+    {
+      "group": "sqrt",
+      "name": "sqrt_scale100_x5000",
+      "oracle_sha256": "32284e16893663b90a4f71d5dd20f068df57d23fe7b28ac44bcabc897e7ceb86",
+      "parameters": {
+        "iterations": 5000,
+        "scale": 100
+      },
+      "program_sha256": "776a0a5e34050036c7e3d2dce7b192c09b624a528588da06999c5ec243d32458"
+    },
+    {
+      "group": "multiply",
+      "name": "multiply_dense_10000d_x500",
+      "oracle_sha256": "4c4166d125931ae3835453e106e433b19c7aafba4814f84949cd98d7a85adb87",
+      "parameters": {
+        "iterations": 500,
+        "left_digits": 10000,
+        "right_digits": 10000,
+        "shape": "seeded_dense"
+      },
+      "program_sha256": "0e2e2c1e7cd1ed996201ba01c744f650baf67a86666cb471e4a82e9996c9c345"
+    },
+    {
+      "group": "multiply",
+      "name": "multiply_unbalanced_10000d_100d_x2000",
+      "oracle_sha256": "63be8a13ba51919ec8595849a2b9315fac530c5c1d9c8fad6f9c4fbd1ca38862",
+      "parameters": {
+        "iterations": 2000,
+        "left_digits": 10000,
+        "right_digits": 100,
+        "shape": "unbalanced"
+      },
+      "program_sha256": "f2db34e568ec54dc60e916b85674dcec88085445533deb690917e763a84b6545"
+    },
+    {
+      "group": "multiply",
+      "name": "multiply_sparse_10000d_x1000",
+      "oracle_sha256": "dab20e708bf20d2f0b97c5f1cdf1168bd36e19859ae8fb2e260c035455b2dcd0",
+      "parameters": {
+        "iterations": 1000,
+        "left_digits": 10000,
+        "right_digits": 10000,
+        "shape": "sparse"
+      },
+      "program_sha256": "82eea516e61e12e526afbbc4efae6c5d6bc24f4efb34e84cce4b435dc5ec5d24"
+    },
+    {
+      "group": "divide_multilimb",
+      "name": "divide_multilimb_900d_450d_s100_x1000",
+      "oracle_sha256": "ea75d46619e9c8cba8804db38a1a96255c4388c12402c052c06521561429bd04",
+      "parameters": {
+        "dividend_digits": 900,
+        "divisor_digits": 450,
+        "iterations": 1000,
+        "scale": 100
+      },
+      "program_sha256": "3e526fbb9e7ce363f37d717ee26d12d1562e85f4e82d4c671cbc0970f2c048d2"
+    },
+    {
+      "group": "power",
+      "name": "power_100d_e17_x1000",
+      "oracle_sha256": "eaf99cbbe3af3cc4de92ca234fce04ba0f5d697e563e3947ac4ade4d0d5af72a",
+      "parameters": {
+        "digits": 100,
+        "exponent": 17,
+        "iterations": 1000
+      },
+      "program_sha256": "45ae4dcbf8b7a7a484ba774e1e4db1f58f5aecd79d66d4c2d81b6d7d4fce668e"
+    },
+    {
+      "group": "array_sparse",
+      "name": "sparse_array_200000",
+      "oracle_sha256": "ef55be1f845002931219ae88320c4744651b322de6447340a573287179119427",
+      "parameters": {
+        "iterations": 200000,
+        "keys": 31,
+        "stride": 313
+      },
+      "program_sha256": "ceb9864b7d2e0654c73b4f8efd65cd6eba5a27bbc352705e354b07cb8b49ba1b"
+    },
+    {
+      "group": "decimal_input",
+      "name": "decimal_input_4000d_x100",
+      "oracle_sha256": "23b55f5a4378876edb19ea7c9df8f5b27024e770ae4a9712bcc5c8e120af47db",
+      "parameters": {
+        "digits": 4000,
+        "literals": 100
+      },
+      "program_sha256": "f52167d78167be3e447e2b6d40465d288f7981bd3bd081c7da06d4b8980ecbe1"
+    },
+    {
+      "group": "streaming",
+      "name": "streaming_statements_20000",
+      "oracle_sha256": "f6351f5ead9a700e34275480b3856ea738122a7c57bdeb744a631251c069587a",
+      "parameters": {
+        "output_lines": 20000,
+        "statements": 40001,
+        "termination": "EOF"
+      },
+      "program_sha256": "9258f13cfeeaf263faaa3c79b841727a0bed8428422355c012a96e80f6839be3"
+    }
+  ],
+  "corpus_seed": 197200,
+  "environment": {
+    "BC_ENV_ARGS": "",
+    "BC_LINE_LENGTH": "70",
+    "LANG": "C",
+    "LC_ALL": "C"
+  },
+  "harness_sha256": "da99ecd0a7cd0ca66f6c3a613e9f4fdbd54bdbc615181edbe8ce85d4854665f4",
+  "implementations": [
+    {
+      "argv": [
+        "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results\\base\\build\\src\\bc\\bc.exe"
+      ],
+      "binary_sha256": "f9fa981b12d58cb5cdf56b7c6e69e9d7d04120ba6dadfdff30a0e5efeaf4919c",
+      "complete_provenance": true,
+      "metadata": {
+        "binary_sha256": "f9fa981b12d58cb5cdf56b7c6e69e9d7d04120ba6dadfdff30a0e5efeaf4919c",
+        "compiler": {
+          "C": {
+            "argv0": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\cl.EXE",
+            "realpath": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.51.36231\\bin\\Hostx64\\x64\\cl.exe",
+            "sha256": "b0a1818ebae6da7f18230a84e76ce839212584ac4c2ab55b97a0d5268085da57",
+            "version": "Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36260 for x64\r\nCopyright (C) Microsoft Corporation.  All rights reserved.\r\n\r\nusage: cl [ option... ] filename... [ /link linkoption... ]"
+          },
+          "CXX": {
+            "argv0": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\cl.EXE",
+            "realpath": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.51.36231\\bin\\Hostx64\\x64\\cl.exe",
+            "sha256": "b0a1818ebae6da7f18230a84e76ce839212584ac4c2ab55b97a0d5268085da57",
+            "version": "Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36260 for x64\r\nCopyright (C) Microsoft Corporation.  All rights reserved.\r\n\r\nusage: cl [ option... ] filename... [ /link linkoption... ]"
+          }
+        },
+        "configuration": {
+          "build_type": "Release",
+          "extensions": "ON",
+          "generator": "Ninja",
+          "multiply_split_point": 126,
+          "threshold_header_sha256": "e1eda3d7df36d2ab96f41bb90d3a64694a6d4119280596dec511e2bbfce166ec"
+        },
+        "flags": {
+          "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /GR /EHsc",
+          "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG",
+          "CMAKE_C_FLAGS": "/DWIN32 /D_WINDOWS",
+          "CMAKE_C_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG",
+          "CMAKE_EXE_LINKER_FLAGS": "/machine:x64",
+          "CMAKE_EXE_LINKER_FLAGS_RELEASE": "/INCREMENTAL:NO",
+          "compile_commands_sha256": "711e2f3dd889e594970a64ffcb20f27a5228e0ac2ae1635e39886540e4218709"
+        },
+        "instrumented": false,
+        "limitations": [
+          "Provision compiler, C/C++ runtime and SDK separately; this is not an OS image",
+          "Compiler defaults and actual commands are recorded, not claimed identical across hosts"
+        ],
+        "source_revision": "3682edf98157de1f3c06ee8a315c5e8cef50aa3b",
+        "standard_library": {
+          "header_macros": {
+            "_MSVC_STL_UPDATE": "202604L",
+            "_MSVC_STL_VERSION": "145"
+          },
+          "scope": "standard-library header identity; provision runtime and SDK separately",
+          "status": "recorded"
+        },
+        "version": "gd-posix-apps source 3682edf98157de1f3c06ee8a315c5e8cef50aa3b"
+      },
+      "name": "base",
+      "role": "candidate"
+    },
+    {
+      "argv": [
+        "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results\\candidate\\build\\src\\bc\\bc.exe"
+      ],
+      "binary_sha256": "075175a0f4aa0c851f4abf9fac5eb740eddd951b018e6cb32bb200748b50f251",
+      "complete_provenance": true,
+      "metadata": {
+        "binary_sha256": "075175a0f4aa0c851f4abf9fac5eb740eddd951b018e6cb32bb200748b50f251",
+        "compiler": {
+          "C": {
+            "argv0": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\cl.EXE",
+            "realpath": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.51.36231\\bin\\Hostx64\\x64\\cl.exe",
+            "sha256": "b0a1818ebae6da7f18230a84e76ce839212584ac4c2ab55b97a0d5268085da57",
+            "version": "Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36260 for x64\r\nCopyright (C) Microsoft Corporation.  All rights reserved.\r\n\r\nusage: cl [ option... ] filename... [ /link linkoption... ]"
+          },
+          "CXX": {
+            "argv0": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\cl.EXE",
+            "realpath": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.51.36231\\bin\\Hostx64\\x64\\cl.exe",
+            "sha256": "b0a1818ebae6da7f18230a84e76ce839212584ac4c2ab55b97a0d5268085da57",
+            "version": "Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36260 for x64\r\nCopyright (C) Microsoft Corporation.  All rights reserved.\r\n\r\nusage: cl [ option... ] filename... [ /link linkoption... ]"
+          }
+        },
+        "configuration": {
+          "build_type": "Release",
+          "extensions": "ON",
+          "generator": "Ninja",
+          "multiply_split_point": 126,
+          "threshold_header_sha256": "e1eda3d7df36d2ab96f41bb90d3a64694a6d4119280596dec511e2bbfce166ec"
+        },
+        "flags": {
+          "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /GR /EHsc",
+          "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG",
+          "CMAKE_C_FLAGS": "/DWIN32 /D_WINDOWS",
+          "CMAKE_C_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG",
+          "CMAKE_EXE_LINKER_FLAGS": "/machine:x64",
+          "CMAKE_EXE_LINKER_FLAGS_RELEASE": "/INCREMENTAL:NO",
+          "compile_commands_sha256": "b4e90d9e64d3db1fc7a18c22d49578a97df8b61e0c9f4c6df75b62204cfa6f3c"
+        },
+        "instrumented": false,
+        "limitations": [
+          "Provision compiler, C/C++ runtime and SDK separately; this is not an OS image",
+          "Compiler defaults and actual commands are recorded, not claimed identical across hosts"
+        ],
+        "source_revision": "5e23d646393051f3e22a957495fab69473a01f64",
+        "standard_library": {
+          "header_macros": {
+            "_MSVC_STL_UPDATE": "202604L",
+            "_MSVC_STL_VERSION": "145"
+          },
+          "scope": "standard-library header identity; provision runtime and SDK separately",
+          "status": "recorded"
+        },
+        "version": "gd-posix-apps source 5e23d646393051f3e22a957495fab69473a01f64"
+      },
+      "name": "candidate",
+      "role": "candidate"
+    },
+    {
+      "argv": [
+        "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results\\howard\\howard-source\\vs\\bin\\x64\\Release\\bc.exe"
+      ],
+      "binary_sha256": "81292bcc7bf21eebd4984b783b9e6e0157fe559800310958732bdb57620d4d97",
+      "complete_provenance": true,
+      "metadata": {
+        "binary_sha256": "81292bcc7bf21eebd4984b783b9e6e0157fe559800310958732bdb57620d4d97",
+        "compiler": {
+          "argv0": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.51.36231\\bin\\Hostx64\\x64\\cl.exe",
+          "sha256": "b0a1818ebae6da7f18230a84e76ce839212584ac4c2ab55b97a0d5268085da57",
+          "version": "Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36260 for x64\r\nCopyright (C) Microsoft Corporation.  All rights reserved.\r\n\r\nusage: cl [ option... ] filename... [ /link linkoption... ]"
+        },
+        "configuration": "native MSBuild Release/x64 with recorded installed toolset",
+        "flags": {
+          "configuration": "Release",
+          "native_compile_commands": [
+            "^D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\VS\\SRC2\\BC_HELP.C\n/c /I..\\INCLUDE /Zi /nologo /W3 /WX- /diagnostics:column /sdl /O2 /Oi /GL /D BC_ENABLED=1 /D DC_ENABLED=1 /D BC_ENABLE_EXTRA_MATH=1 /D BC_ENABLE_HISTORY=1 /D BC_ENABLE_NLS=0 /D BC_DEBUG_CODE=0 /D BC_ENABLE_LIBRARY=0 /D BC_ENABLE_EDITLINE=0 /D BC_ENABLE_READLINE=0 /D BC_ENABLE_OSSFUZZ=0 /D BUILD_TYPE=N /D BC_DEFAULT_BANNER=1 /D BC_DEFAULT_SIGINT_RESET=0 /D DC_DEFAULT_SIGINT_RESET=0 /D BC_DEFAULT_TTY_MODE=1 /D DC_DEFAULT_TTY_MODE=1 /D BC_DEFAULT_PROMPT=1 /D DC_DEFAULT_PROMPT=1 /D BC_DEFAULT_EXPR_EXIT=1 /D DC_DEFAULT_EXPR_EXIT=1 /D BC_DEFAULT_DIGIT_CLAMP=1 /D DC_DEFAULT_DIGIT_CLAMP=1 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /permissive- /Fo\"BIN\\X64\\RELEASE\\\\\" /Fd\"BIN\\X64\\RELEASE\\VC145.PDB\" /external:W3 /Gd /TC /FC /std:c17  D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\VS\\SRC2\\BC_HELP.C\n^D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\VS\\SRC2\\DC_HELP.C\n/c /I..\\INCLUDE /Zi /nologo /W3 /WX- /diagnostics:column /sdl /O2 /Oi /GL /D BC_ENABLED=1 /D DC_ENABLED=1 /D BC_ENABLE_EXTRA_MATH=1 /D BC_ENABLE_HISTORY=1 /D BC_ENABLE_NLS=0 /D BC_DEBUG_CODE=0 /D BC_ENABLE_LIBRARY=0 /D BC_ENABLE_EDITLINE=0 /D BC_ENABLE_READLINE=0 /D BC_ENABLE_OSSFUZZ=0 /D BUILD_TYPE=N /D BC_DEFAULT_BANNER=1 /D BC_DEFAULT_SIGINT_RESET=0 /D DC_DEFAULT_SIGINT_RESET=0 /D BC_DEFAULT_TTY_MODE=1 /D DC_DEFAULT_TTY_MODE=1 /D BC_DEFAULT_PROMPT=1 /D DC_DEFAULT_PROMPT=1 /D BC_DEFAULT_EXPR_EXIT=1 /D DC_DEFAULT_EXPR_EXIT=1 /D BC_DEFAULT_DIGIT_CLAMP=1 /D DC_DEFAULT_DIGIT_CLAMP=1 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /permissive- /Fo\"BIN\\X64\\RELEASE\\\\\" /Fd\"BIN\\X64\\RELEASE\\VC145.PDB\" /external:W3 /Gd /TC /FC /std:c17  D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\VS\\SRC2\\DC_HELP.C\n^D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\VS\\SRC2\\LIB.C\n/c /I..\\INCLUDE /Zi /nologo /W3 /WX- /diagnostics:column /sdl /O2 /Oi /GL /D BC_ENABLED=1 /D DC_ENABLED=1 /D BC_ENABLE_EXTRA_MATH=1 /D BC_ENABLE_HISTORY=1 /D BC_ENABLE_NLS=0 /D BC_DEBUG_CODE=0 /D BC_ENABLE_LIBRARY=0 /D BC_ENABLE_EDITLINE=0 /D BC_ENABLE_READLINE=0 /D BC_ENABLE_OSSFUZZ=0 /D BUILD_TYPE=N /D BC_DEFAULT_BANNER=1 /D BC_DEFAULT_SIGINT_RESET=0 /D DC_DEFAULT_SIGINT_RESET=0 /D BC_DEFAULT_TTY_MODE=1 /D DC_DEFAULT_TTY_MODE=1 /D BC_DEFAULT_PROMPT=1 /D DC_DEFAULT_PROMPT=1 /D BC_DEFAULT_EXPR_EXIT=1 /D DC_DEFAULT_EXPR_EXIT=1 /D BC_DEFAULT_DIGIT_CLAMP=1 /D DC_DEFAULT_DIGIT_CLAMP=1 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /permissive- /Fo\"BIN\\X64\\RELEASE\\\\\" /Fd\"BIN\\X64\\RELEASE\\VC145.PDB\" /external:W3 /Gd /TC /FC /std:c17  D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\VS\\SRC2\\LIB.C\n^D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\VS\\SRC2\\LIB2.C\n/c /I..\\INCLUDE /Zi /nologo /W3 /WX- /diagnostics:column /sdl /O2 /Oi /GL /D BC_ENABLED=1 /D DC_ENABLED=1 /D BC_ENABLE_EXTRA_MATH=1 /D BC_ENABLE_HISTORY=1 /D BC_ENABLE_NLS=0 /D BC_DEBUG_CODE=0 /D BC_ENABLE_LIBRARY=0 /D BC_ENABLE_EDITLINE=0 /D BC_ENABLE_READLINE=0 /D BC_ENABLE_OSSFUZZ=0 /D BUILD_TYPE=N /D BC_DEFAULT_BANNER=1 /D BC_DEFAULT_SIGINT_RESET=0 /D DC_DEFAULT_SIGINT_RESET=0 /D BC_DEFAULT_TTY_MODE=1 /D DC_DEFAULT_TTY_MODE=1 /D BC_DEFAULT_PROMPT=1 /D DC_DEFAULT_PROMPT=1 /D BC_DEFAULT_EXPR_EXIT=1 /D DC_DEFAULT_EXPR_EXIT=1 /D BC_DEFAULT_DIGIT_CLAMP=1 /D DC_DEFAULT_DIGIT_CLAMP=1 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /permissive- /Fo\"BIN\\X64\\RELEASE\\\\\" /Fd\"BIN\\X64\\RELEASE\\VC145.PDB\" /external:W3 /Gd /TC /FC /std:c17  D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\VS\\SRC2\\LIB2.C\n^D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\ARGS.C\n/c /I..\\INCLUDE /Zi /nologo /W3 /WX- /diagnostics:column /sdl /O2 /Oi /GL /D BC_ENABLED=1 /D DC_ENABLED=1 /D BC_ENABLE_EXTRA_MATH=1 /D BC_ENABLE_HISTORY=1 /D BC_ENABLE_NLS=0 /D BC_DEBUG_CODE=0 /D BC_ENABLE_LIBRARY=0 /D BC_ENABLE_EDITLINE=0 /D BC_ENABLE_READLINE=0 /D BC_ENABLE_OSSFUZZ=0 /D BUILD_TYPE=N /D BC_DEFAULT_BANNER=1 /D BC_DEFAULT_SIGINT_RESET=0 /D DC_DEFAULT_SIGINT_RESET=0 /D BC_DEFAULT_TTY_MODE=1 /D DC_DEFAULT_TTY_MODE=1 /D BC_DEFAULT_PROMPT=1 /D DC_DEFAULT_PROMPT=1 /D BC_DEFAULT_EXPR_EXIT=1 /D DC_DEFAULT_EXPR_EXIT=1 /D BC_DEFAULT_DIGIT_CLAMP=1 /D DC_DEFAULT_DIGIT_CLAMP=1 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /permissive- /Fo\"BIN\\X64\\RELEASE\\\\\" /Fd\"BIN\\X64\\RELEASE\\VC145.PDB\" /external:W3 /Gd /TC /FC /std:c17  D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\ARGS.C\n^D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\BC.C\n/c /I..\\INCLUDE /Zi /nologo /W3 /WX- /diagnostics:column /sdl /O2 /Oi /GL /D BC_ENABLED=1 /D DC_ENABLED=1 /D BC_ENABLE_EXTRA_MATH=1 /D BC_ENABLE_HISTORY=1 /D BC_ENABLE_NLS=0 /D BC_DEBUG_CODE=0 /D BC_ENABLE_LIBRARY=0 /D BC_ENABLE_EDITLINE=0 /D BC_ENABLE_READLINE=0 /D BC_ENABLE_OSSFUZZ=0 /D BUILD_TYPE=N /D BC_DEFAULT_BANNER=1 /D BC_DEFAULT_SIGINT_RESET=0 /D DC_DEFAULT_SIGINT_RESET=0 /D BC_DEFAULT_TTY_MODE=1 /D DC_DEFAULT_TTY_MODE=1 /D BC_DEFAULT_PROMPT=1 /D DC_DEFAULT_PROMPT=1 /D BC_DEFAULT_EXPR_EXIT=1 /D DC_DEFAULT_EXPR_EXIT=1 /D BC_DEFAULT_DIGIT_CLAMP=1 /D DC_DEFAULT_DIGIT_CLAMP=1 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /permissive- /Fo\"BIN\\X64\\RELEASE\\\\\" /Fd\"BIN\\X64\\RELEASE\\VC145.PDB\" /external:W3 /Gd /TC /FC /std:c17  D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\BC.C\n^D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\BC_LEX.C\n/c /I..\\INCLUDE /Zi /nologo /W3 /WX- /diagnostics:column /sdl /O2 /Oi /GL /D BC_ENABLED=1 /D DC_ENABLED=1 /D BC_ENABLE_EXTRA_MATH=1 /D BC_ENABLE_HISTORY=1 /D BC_ENABLE_NLS=0 /D BC_DEBUG_CODE=0 /D BC_ENABLE_LIBRARY=0 /D BC_ENABLE_EDITLINE=0 /D BC_ENABLE_READLINE=0 /D BC_ENABLE_OSSFUZZ=0 /D BUILD_TYPE=N /D BC_DEFAULT_BANNER=1 /D BC_DEFAULT_SIGINT_RESET=0 /D DC_DEFAULT_SIGINT_RESET=0 /D BC_DEFAULT_TTY_MODE=1 /D DC_DEFAULT_TTY_MODE=1 /D BC_DEFAULT_PROMPT=1 /D DC_DEFAULT_PROMPT=1 /D BC_DEFAULT_EXPR_EXIT=1 /D DC_DEFAULT_EXPR_EXIT=1 /D BC_DEFAULT_DIGIT_CLAMP=1 /D DC_DEFAULT_DIGIT_CLAMP=1 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /permissive- /Fo\"BIN\\X64\\RELEASE\\\\\" /Fd\"BIN\\X64\\RELEASE\\VC145.PDB\" /external:W3 /Gd /TC /FC /std:c17  D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\BC_LEX.C\n^D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\BC_PARSE.C\n/c /I..\\INCLUDE /Zi /nologo /W3 /WX- /diagnostics:column /sdl /O2 /Oi /GL /D BC_ENABLED=1 /D DC_ENABLED=1 /D BC_ENABLE_EXTRA_MATH=1 /D BC_ENABLE_HISTORY=1 /D BC_ENABLE_NLS=0 /D BC_DEBUG_CODE=0 /D BC_ENABLE_LIBRARY=0 /D BC_ENABLE_EDITLINE=0 /D BC_ENABLE_READLINE=0 /D BC_ENABLE_OSSFUZZ=0 /D BUILD_TYPE=N /D BC_DEFAULT_BANNER=1 /D BC_DEFAULT_SIGINT_RESET=0 /D DC_DEFAULT_SIGINT_RESET=0 /D BC_DEFAULT_TTY_MODE=1 /D DC_DEFAULT_TTY_MODE=1 /D BC_DEFAULT_PROMPT=1 /D DC_DEFAULT_PROMPT=1 /D BC_DEFAULT_EXPR_EXIT=1 /D DC_DEFAULT_EXPR_EXIT=1 /D BC_DEFAULT_DIGIT_CLAMP=1 /D DC_DEFAULT_DIGIT_CLAMP=1 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /permissive- /Fo\"BIN\\X64\\RELEASE\\\\\" /Fd\"BIN\\X64\\RELEASE\\VC145.PDB\" /external:W3 /Gd /TC /FC /std:c17  D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\BC_PARSE.C\n^D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\DATA.C\n/c /I..\\INCLUDE /Zi /nologo /W3 /WX- /diagnostics:column /sdl /O2 /Oi /GL /D BC_ENABLED=1 /D DC_ENABLED=1 /D BC_ENABLE_EXTRA_MATH=1 /D BC_ENABLE_HISTORY=1 /D BC_ENABLE_NLS=0 /D BC_DEBUG_CODE=0 /D BC_ENABLE_LIBRARY=0 /D BC_ENABLE_EDITLINE=0 /D BC_ENABLE_READLINE=0 /D BC_ENABLE_OSSFUZZ=0 /D BUILD_TYPE=N /D BC_DEFAULT_BANNER=1 /D BC_DEFAULT_SIGINT_RESET=0 /D DC_DEFAULT_SIGINT_RESET=0 /D BC_DEFAULT_TTY_MODE=1 /D DC_DEFAULT_TTY_MODE=1 /D BC_DEFAULT_PROMPT=1 /D DC_DEFAULT_PROMPT=1 /D BC_DEFAULT_EXPR_EXIT=1 /D DC_DEFAULT_EXPR_EXIT=1 /D BC_DEFAULT_DIGIT_CLAMP=1 /D DC_DEFAULT_DIGIT_CLAMP=1 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /permissive- /Fo\"BIN\\X64\\RELEASE\\\\\" /Fd\"BIN\\X64\\RELEASE\\VC145.PDB\" /external:W3 /Gd /TC /FC /std:c17  D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\DATA.C\n^D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\DC.C\n/c /I..\\INCLUDE /Zi /nologo /W3 /WX- /diagnostics:column /sdl /O2 /Oi /GL /D BC_ENABLED=1 /D DC_ENABLED=1 /D BC_ENABLE_EXTRA_MATH=1 /D BC_ENABLE_HISTORY=1 /D BC_ENABLE_NLS=0 /D BC_DEBUG_CODE=0 /D BC_ENABLE_LIBRARY=0 /D BC_ENABLE_EDITLINE=0 /D BC_ENABLE_READLINE=0 /D BC_ENABLE_OSSFUZZ=0 /D BUILD_TYPE=N /D BC_DEFAULT_BANNER=1 /D BC_DEFAULT_SIGINT_RESET=0 /D DC_DEFAULT_SIGINT_RESET=0 /D BC_DEFAULT_TTY_MODE=1 /D DC_DEFAULT_TTY_MODE=1 /D BC_DEFAULT_PROMPT=1 /D DC_DEFAULT_PROMPT=1 /D BC_DEFAULT_EXPR_EXIT=1 /D DC_DEFAULT_EXPR_EXIT=1 /D BC_DEFAULT_DIGIT_CLAMP=1 /D DC_DEFAULT_DIGIT_CLAMP=1 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /permissive- /Fo\"BIN\\X64\\RELEASE\\\\\" /Fd\"BIN\\X64\\RELEASE\\VC145.PDB\" /external:W3 /Gd /TC /FC /std:c17  D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\DC.C\n^D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\DC_LEX.C\n/c /I..\\INCLUDE /Zi /nologo /W3 /WX- /diagnostics:column /sdl /O2 /Oi /GL /D BC_ENABLED=1 /D DC_ENABLED=1 /D BC_ENABLE_EXTRA_MATH=1 /D BC_ENABLE_HISTORY=1 /D BC_ENABLE_NLS=0 /D BC_DEBUG_CODE=0 /D BC_ENABLE_LIBRARY=0 /D BC_ENABLE_EDITLINE=0 /D BC_ENABLE_READLINE=0 /D BC_ENABLE_OSSFUZZ=0 /D BUILD_TYPE=N /D BC_DEFAULT_BANNER=1 /D BC_DEFAULT_SIGINT_RESET=0 /D DC_DEFAULT_SIGINT_RESET=0 /D BC_DEFAULT_TTY_MODE=1 /D DC_DEFAULT_TTY_MODE=1 /D BC_DEFAULT_PROMPT=1 /D DC_DEFAULT_PROMPT=1 /D BC_DEFAULT_EXPR_EXIT=1 /D DC_DEFAULT_EXPR_EXIT=1 /D BC_DEFAULT_DIGIT_CLAMP=1 /D DC_DEFAULT_DIGIT_CLAMP=1 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /permissive- /Fo\"BIN\\X64\\RELEASE\\\\\" /Fd\"BIN\\X64\\RELEASE\\VC145.PDB\" /external:W3 /Gd /TC /FC /std:c17  D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\DC_LEX.C\n^D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\DC_PARSE.C\n/c /I..\\INCLUDE /Zi /nologo /W3 /WX- /diagnostics:column /sdl /O2 /Oi /GL /D BC_ENABLED=1 /D DC_ENABLED=1 /D BC_ENABLE_EXTRA_MATH=1 /D BC_ENABLE_HISTORY=1 /D BC_ENABLE_NLS=0 /D BC_DEBUG_CODE=0 /D BC_ENABLE_LIBRARY=0 /D BC_ENABLE_EDITLINE=0 /D BC_ENABLE_READLINE=0 /D BC_ENABLE_OSSFUZZ=0 /D BUILD_TYPE=N /D BC_DEFAULT_BANNER=1 /D BC_DEFAULT_SIGINT_RESET=0 /D DC_DEFAULT_SIGINT_RESET=0 /D BC_DEFAULT_TTY_MODE=1 /D DC_DEFAULT_TTY_MODE=1 /D BC_DEFAULT_PROMPT=1 /D DC_DEFAULT_PROMPT=1 /D BC_DEFAULT_EXPR_EXIT=1 /D DC_DEFAULT_EXPR_EXIT=1 /D BC_DEFAULT_DIGIT_CLAMP=1 /D DC_DEFAULT_DIGIT_CLAMP=1 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /permissive- /Fo\"BIN\\X64\\RELEASE\\\\\" /Fd\"BIN\\X64\\RELEASE\\VC145.PDB\" /external:W3 /Gd /TC /FC /std:c17  D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\DC_PARSE.C\n^D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\FILE.C\n/c /I..\\INCLUDE /Zi /nologo /W3 /WX- /diagnostics:column /sdl /O2 /Oi /GL /D BC_ENABLED=1 /D DC_ENABLED=1 /D BC_ENABLE_EXTRA_MATH=1 /D BC_ENABLE_HISTORY=1 /D BC_ENABLE_NLS=0 /D BC_DEBUG_CODE=0 /D BC_ENABLE_LIBRARY=0 /D BC_ENABLE_EDITLINE=0 /D BC_ENABLE_READLINE=0 /D BC_ENABLE_OSSFUZZ=0 /D BUILD_TYPE=N /D BC_DEFAULT_BANNER=1 /D BC_DEFAULT_SIGINT_RESET=0 /D DC_DEFAULT_SIGINT_RESET=0 /D BC_DEFAULT_TTY_MODE=1 /D DC_DEFAULT_TTY_MODE=1 /D BC_DEFAULT_PROMPT=1 /D DC_DEFAULT_PROMPT=1 /D BC_DEFAULT_EXPR_EXIT=1 /D DC_DEFAULT_EXPR_EXIT=1 /D BC_DEFAULT_DIGIT_CLAMP=1 /D DC_DEFAULT_DIGIT_CLAMP=1 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /permissive- /Fo\"BIN\\X64\\RELEASE\\\\\" /Fd\"BIN\\X64\\RELEASE\\VC145.PDB\" /external:W3 /Gd /TC /FC /std:c17  D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\FILE.C\n^D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\HISTORY.C\n/c /I..\\INCLUDE /Zi /nologo /W3 /WX- /diagnostics:column /sdl /O2 /Oi /GL /D BC_ENABLED=1 /D DC_ENABLED=1 /D BC_ENABLE_EXTRA_MATH=1 /D BC_ENABLE_HISTORY=1 /D BC_ENABLE_NLS=0 /D BC_DEBUG_CODE=0 /D BC_ENABLE_LIBRARY=0 /D BC_ENABLE_EDITLINE=0 /D BC_ENABLE_READLINE=0 /D BC_ENABLE_OSSFUZZ=0 /D BUILD_TYPE=N /D BC_DEFAULT_BANNER=1 /D BC_DEFAULT_SIGINT_RESET=0 /D DC_DEFAULT_SIGINT_RESET=0 /D BC_DEFAULT_TTY_MODE=1 /D DC_DEFAULT_TTY_MODE=1 /D BC_DEFAULT_PROMPT=1 /D DC_DEFAULT_PROMPT=1 /D BC_DEFAULT_EXPR_EXIT=1 /D DC_DEFAULT_EXPR_EXIT=1 /D BC_DEFAULT_DIGIT_CLAMP=1 /D DC_DEFAULT_DIGIT_CLAMP=1 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /permissive- /Fo\"BIN\\X64\\RELEASE\\\\\" /Fd\"BIN\\X64\\RELEASE\\VC145.PDB\" /external:W3 /Gd /TC /FC /std:c17  D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\HISTORY.C\n^D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\LANG.C\n/c /I..\\INCLUDE /Zi /nologo /W3 /WX- /diagnostics:column /sdl /O2 /Oi /GL /D BC_ENABLED=1 /D DC_ENABLED=1 /D BC_ENABLE_EXTRA_MATH=1 /D BC_ENABLE_HISTORY=1 /D BC_ENABLE_NLS=0 /D BC_DEBUG_CODE=0 /D BC_ENABLE_LIBRARY=0 /D BC_ENABLE_EDITLINE=0 /D BC_ENABLE_READLINE=0 /D BC_ENABLE_OSSFUZZ=0 /D BUILD_TYPE=N /D BC_DEFAULT_BANNER=1 /D BC_DEFAULT_SIGINT_RESET=0 /D DC_DEFAULT_SIGINT_RESET=0 /D BC_DEFAULT_TTY_MODE=1 /D DC_DEFAULT_TTY_MODE=1 /D BC_DEFAULT_PROMPT=1 /D DC_DEFAULT_PROMPT=1 /D BC_DEFAULT_EXPR_EXIT=1 /D DC_DEFAULT_EXPR_EXIT=1 /D BC_DEFAULT_DIGIT_CLAMP=1 /D DC_DEFAULT_DIGIT_CLAMP=1 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /permissive- /Fo\"BIN\\X64\\RELEASE\\\\\" /Fd\"BIN\\X64\\RELEASE\\VC145.PDB\" /external:W3 /Gd /TC /FC /std:c17  D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\LANG.C\n^D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\LEX.C\n/c /I..\\INCLUDE /Zi /nologo /W3 /WX- /diagnostics:column /sdl /O2 /Oi /GL /D BC_ENABLED=1 /D DC_ENABLED=1 /D BC_ENABLE_EXTRA_MATH=1 /D BC_ENABLE_HISTORY=1 /D BC_ENABLE_NLS=0 /D BC_DEBUG_CODE=0 /D BC_ENABLE_LIBRARY=0 /D BC_ENABLE_EDITLINE=0 /D BC_ENABLE_READLINE=0 /D BC_ENABLE_OSSFUZZ=0 /D BUILD_TYPE=N /D BC_DEFAULT_BANNER=1 /D BC_DEFAULT_SIGINT_RESET=0 /D DC_DEFAULT_SIGINT_RESET=0 /D BC_DEFAULT_TTY_MODE=1 /D DC_DEFAULT_TTY_MODE=1 /D BC_DEFAULT_PROMPT=1 /D DC_DEFAULT_PROMPT=1 /D BC_DEFAULT_EXPR_EXIT=1 /D DC_DEFAULT_EXPR_EXIT=1 /D BC_DEFAULT_DIGIT_CLAMP=1 /D DC_DEFAULT_DIGIT_CLAMP=1 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /permissive- /Fo\"BIN\\X64\\RELEASE\\\\\" /Fd\"BIN\\X64\\RELEASE\\VC145.PDB\" /external:W3 /Gd /TC /FC /std:c17  D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\LEX.C\n^D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\LIBRARY.C\n/c /I..\\INCLUDE /Zi /nologo /W3 /WX- /diagnostics:column /sdl /O2 /Oi /GL /D BC_ENABLED=1 /D DC_ENABLED=1 /D BC_ENABLE_EXTRA_MATH=1 /D BC_ENABLE_HISTORY=1 /D BC_ENABLE_NLS=0 /D BC_DEBUG_CODE=0 /D BC_ENABLE_LIBRARY=0 /D BC_ENABLE_EDITLINE=0 /D BC_ENABLE_READLINE=0 /D BC_ENABLE_OSSFUZZ=0 /D BUILD_TYPE=N /D BC_DEFAULT_BANNER=1 /D BC_DEFAULT_SIGINT_RESET=0 /D DC_DEFAULT_SIGINT_RESET=0 /D BC_DEFAULT_TTY_MODE=1 /D DC_DEFAULT_TTY_MODE=1 /D BC_DEFAULT_PROMPT=1 /D DC_DEFAULT_PROMPT=1 /D BC_DEFAULT_EXPR_EXIT=1 /D DC_DEFAULT_EXPR_EXIT=1 /D BC_DEFAULT_DIGIT_CLAMP=1 /D DC_DEFAULT_DIGIT_CLAMP=1 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /permissive- /Fo\"BIN\\X64\\RELEASE\\\\\" /Fd\"BIN\\X64\\RELEASE\\VC145.PDB\" /external:W3 /Gd /TC /FC /std:c17  D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\LIBRARY.C\n^D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\MAIN.C\n/c /I..\\INCLUDE /Zi /nologo /W3 /WX- /diagnostics:column /sdl /O2 /Oi /GL /D BC_ENABLED=1 /D DC_ENABLED=1 /D BC_ENABLE_EXTRA_MATH=1 /D BC_ENABLE_HISTORY=1 /D BC_ENABLE_NLS=0 /D BC_DEBUG_CODE=0 /D BC_ENABLE_LIBRARY=0 /D BC_ENABLE_EDITLINE=0 /D BC_ENABLE_READLINE=0 /D BC_ENABLE_OSSFUZZ=0 /D BUILD_TYPE=N /D BC_DEFAULT_BANNER=1 /D BC_DEFAULT_SIGINT_RESET=0 /D DC_DEFAULT_SIGINT_RESET=0 /D BC_DEFAULT_TTY_MODE=1 /D DC_DEFAULT_TTY_MODE=1 /D BC_DEFAULT_PROMPT=1 /D DC_DEFAULT_PROMPT=1 /D BC_DEFAULT_EXPR_EXIT=1 /D DC_DEFAULT_EXPR_EXIT=1 /D BC_DEFAULT_DIGIT_CLAMP=1 /D DC_DEFAULT_DIGIT_CLAMP=1 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /permissive- /Fo\"BIN\\X64\\RELEASE\\\\\" /Fd\"BIN\\X64\\RELEASE\\VC145.PDB\" /external:W3 /Gd /TC /FC /std:c17  D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\MAIN.C\n^D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\NUM.C\n/c /I..\\INCLUDE /Zi /nologo /W3 /WX- /diagnostics:column /sdl /O2 /Oi /GL /D BC_ENABLED=1 /D DC_ENABLED=1 /D BC_ENABLE_EXTRA_MATH=1 /D BC_ENABLE_HISTORY=1 /D BC_ENABLE_NLS=0 /D BC_DEBUG_CODE=0 /D BC_ENABLE_LIBRARY=0 /D BC_ENABLE_EDITLINE=0 /D BC_ENABLE_READLINE=0 /D BC_ENABLE_OSSFUZZ=0 /D BUILD_TYPE=N /D BC_DEFAULT_BANNER=1 /D BC_DEFAULT_SIGINT_RESET=0 /D DC_DEFAULT_SIGINT_RESET=0 /D BC_DEFAULT_TTY_MODE=1 /D DC_DEFAULT_TTY_MODE=1 /D BC_DEFAULT_PROMPT=1 /D DC_DEFAULT_PROMPT=1 /D BC_DEFAULT_EXPR_EXIT=1 /D DC_DEFAULT_EXPR_EXIT=1 /D BC_DEFAULT_DIGIT_CLAMP=1 /D DC_DEFAULT_DIGIT_CLAMP=1 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /permissive- /Fo\"BIN\\X64\\RELEASE\\\\\" /Fd\"BIN\\X64\\RELEASE\\VC145.PDB\" /external:W3 /Gd /TC /FC /std:c17  D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\NUM.C\n^D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\OPT.C\n/c /I..\\INCLUDE /Zi /nologo /W3 /WX- /diagnostics:column /sdl /O2 /Oi /GL /D BC_ENABLED=1 /D DC_ENABLED=1 /D BC_ENABLE_EXTRA_MATH=1 /D BC_ENABLE_HISTORY=1 /D BC_ENABLE_NLS=0 /D BC_DEBUG_CODE=0 /D BC_ENABLE_LIBRARY=0 /D BC_ENABLE_EDITLINE=0 /D BC_ENABLE_READLINE=0 /D BC_ENABLE_OSSFUZZ=0 /D BUILD_TYPE=N /D BC_DEFAULT_BANNER=1 /D BC_DEFAULT_SIGINT_RESET=0 /D DC_DEFAULT_SIGINT_RESET=0 /D BC_DEFAULT_TTY_MODE=1 /D DC_DEFAULT_TTY_MODE=1 /D BC_DEFAULT_PROMPT=1 /D DC_DEFAULT_PROMPT=1 /D BC_DEFAULT_EXPR_EXIT=1 /D DC_DEFAULT_EXPR_EXIT=1 /D BC_DEFAULT_DIGIT_CLAMP=1 /D DC_DEFAULT_DIGIT_CLAMP=1 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /permissive- /Fo\"BIN\\X64\\RELEASE\\\\\" /Fd\"BIN\\X64\\RELEASE\\VC145.PDB\" /external:W3 /Gd /TC /FC /std:c17  D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\OPT.C\n^D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\PARSE.C\n/c /I..\\INCLUDE /Zi /nologo /W3 /WX- /diagnostics:column /sdl /O2 /Oi /GL /D BC_ENABLED=1 /D DC_ENABLED=1 /D BC_ENABLE_EXTRA_MATH=1 /D BC_ENABLE_HISTORY=1 /D BC_ENABLE_NLS=0 /D BC_DEBUG_CODE=0 /D BC_ENABLE_LIBRARY=0 /D BC_ENABLE_EDITLINE=0 /D BC_ENABLE_READLINE=0 /D BC_ENABLE_OSSFUZZ=0 /D BUILD_TYPE=N /D BC_DEFAULT_BANNER=1 /D BC_DEFAULT_SIGINT_RESET=0 /D DC_DEFAULT_SIGINT_RESET=0 /D BC_DEFAULT_TTY_MODE=1 /D DC_DEFAULT_TTY_MODE=1 /D BC_DEFAULT_PROMPT=1 /D DC_DEFAULT_PROMPT=1 /D BC_DEFAULT_EXPR_EXIT=1 /D DC_DEFAULT_EXPR_EXIT=1 /D BC_DEFAULT_DIGIT_CLAMP=1 /D DC_DEFAULT_DIGIT_CLAMP=1 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /permissive- /Fo\"BIN\\X64\\RELEASE\\\\\" /Fd\"BIN\\X64\\RELEASE\\VC145.PDB\" /external:W3 /Gd /TC /FC /std:c17  D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\PARSE.C\n^D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\PROGRAM.C\n/c /I..\\INCLUDE /Zi /nologo /W3 /WX- /diagnostics:column /sdl /O2 /Oi /GL /D BC_ENABLED=1 /D DC_ENABLED=1 /D BC_ENABLE_EXTRA_MATH=1 /D BC_ENABLE_HISTORY=1 /D BC_ENABLE_NLS=0 /D BC_DEBUG_CODE=0 /D BC_ENABLE_LIBRARY=0 /D BC_ENABLE_EDITLINE=0 /D BC_ENABLE_READLINE=0 /D BC_ENABLE_OSSFUZZ=0 /D BUILD_TYPE=N /D BC_DEFAULT_BANNER=1 /D BC_DEFAULT_SIGINT_RESET=0 /D DC_DEFAULT_SIGINT_RESET=0 /D BC_DEFAULT_TTY_MODE=1 /D DC_DEFAULT_TTY_MODE=1 /D BC_DEFAULT_PROMPT=1 /D DC_DEFAULT_PROMPT=1 /D BC_DEFAULT_EXPR_EXIT=1 /D DC_DEFAULT_EXPR_EXIT=1 /D BC_DEFAULT_DIGIT_CLAMP=1 /D DC_DEFAULT_DIGIT_CLAMP=1 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /permissive- /Fo\"BIN\\X64\\RELEASE\\\\\" /Fd\"BIN\\X64\\RELEASE\\VC145.PDB\" /external:W3 /Gd /TC /FC /std:c17  D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\PROGRAM.C\n^D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\RAND.C\n/c /I..\\INCLUDE /Zi /nologo /W3 /WX- /diagnostics:column /sdl /O2 /Oi /GL /D BC_ENABLED=1 /D DC_ENABLED=1 /D BC_ENABLE_EXTRA_MATH=1 /D BC_ENABLE_HISTORY=1 /D BC_ENABLE_NLS=0 /D BC_DEBUG_CODE=0 /D BC_ENABLE_LIBRARY=0 /D BC_ENABLE_EDITLINE=0 /D BC_ENABLE_READLINE=0 /D BC_ENABLE_OSSFUZZ=0 /D BUILD_TYPE=N /D BC_DEFAULT_BANNER=1 /D BC_DEFAULT_SIGINT_RESET=0 /D DC_DEFAULT_SIGINT_RESET=0 /D BC_DEFAULT_TTY_MODE=1 /D DC_DEFAULT_TTY_MODE=1 /D BC_DEFAULT_PROMPT=1 /D DC_DEFAULT_PROMPT=1 /D BC_DEFAULT_EXPR_EXIT=1 /D DC_DEFAULT_EXPR_EXIT=1 /D BC_DEFAULT_DIGIT_CLAMP=1 /D DC_DEFAULT_DIGIT_CLAMP=1 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /permissive- /Fo\"BIN\\X64\\RELEASE\\\\\" /Fd\"BIN\\X64\\RELEASE\\VC145.PDB\" /external:W3 /Gd /TC /FC /std:c17  D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\RAND.C\n^D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\READ.C\n/c /I..\\INCLUDE /Zi /nologo /W3 /WX- /diagnostics:column /sdl /O2 /Oi /GL /D BC_ENABLED=1 /D DC_ENABLED=1 /D BC_ENABLE_EXTRA_MATH=1 /D BC_ENABLE_HISTORY=1 /D BC_ENABLE_NLS=0 /D BC_DEBUG_CODE=0 /D BC_ENABLE_LIBRARY=0 /D BC_ENABLE_EDITLINE=0 /D BC_ENABLE_READLINE=0 /D BC_ENABLE_OSSFUZZ=0 /D BUILD_TYPE=N /D BC_DEFAULT_BANNER=1 /D BC_DEFAULT_SIGINT_RESET=0 /D DC_DEFAULT_SIGINT_RESET=0 /D BC_DEFAULT_TTY_MODE=1 /D DC_DEFAULT_TTY_MODE=1 /D BC_DEFAULT_PROMPT=1 /D DC_DEFAULT_PROMPT=1 /D BC_DEFAULT_EXPR_EXIT=1 /D DC_DEFAULT_EXPR_EXIT=1 /D BC_DEFAULT_DIGIT_CLAMP=1 /D DC_DEFAULT_DIGIT_CLAMP=1 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /permissive- /Fo\"BIN\\X64\\RELEASE\\\\\" /Fd\"BIN\\X64\\RELEASE\\VC145.PDB\" /external:W3 /Gd /TC /FC /std:c17  D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\READ.C\n^D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\VECTOR.C\n/c /I..\\INCLUDE /Zi /nologo /W3 /WX- /diagnostics:column /sdl /O2 /Oi /GL /D BC_ENABLED=1 /D DC_ENABLED=1 /D BC_ENABLE_EXTRA_MATH=1 /D BC_ENABLE_HISTORY=1 /D BC_ENABLE_NLS=0 /D BC_DEBUG_CODE=0 /D BC_ENABLE_LIBRARY=0 /D BC_ENABLE_EDITLINE=0 /D BC_ENABLE_READLINE=0 /D BC_ENABLE_OSSFUZZ=0 /D BUILD_TYPE=N /D BC_DEFAULT_BANNER=1 /D BC_DEFAULT_SIGINT_RESET=0 /D DC_DEFAULT_SIGINT_RESET=0 /D BC_DEFAULT_TTY_MODE=1 /D DC_DEFAULT_TTY_MODE=1 /D BC_DEFAULT_PROMPT=1 /D DC_DEFAULT_PROMPT=1 /D BC_DEFAULT_EXPR_EXIT=1 /D DC_DEFAULT_EXPR_EXIT=1 /D BC_DEFAULT_DIGIT_CLAMP=1 /D DC_DEFAULT_DIGIT_CLAMP=1 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /permissive- /Fo\"BIN\\X64\\RELEASE\\\\\" /Fd\"BIN\\X64\\RELEASE\\VC145.PDB\" /external:W3 /Gd /TC /FC /std:c17  D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\VECTOR.C\n^D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\VM.C\n/c /I..\\INCLUDE /Zi /nologo /W3 /WX- /diagnostics:column /sdl /O2 /Oi /GL /D BC_ENABLED=1 /D DC_ENABLED=1 /D BC_ENABLE_EXTRA_MATH=1 /D BC_ENABLE_HISTORY=1 /D BC_ENABLE_NLS=0 /D BC_DEBUG_CODE=0 /D BC_ENABLE_LIBRARY=0 /D BC_ENABLE_EDITLINE=0 /D BC_ENABLE_READLINE=0 /D BC_ENABLE_OSSFUZZ=0 /D BUILD_TYPE=N /D BC_DEFAULT_BANNER=1 /D BC_DEFAULT_SIGINT_RESET=0 /D DC_DEFAULT_SIGINT_RESET=0 /D BC_DEFAULT_TTY_MODE=1 /D DC_DEFAULT_TTY_MODE=1 /D BC_DEFAULT_PROMPT=1 /D DC_DEFAULT_PROMPT=1 /D BC_DEFAULT_EXPR_EXIT=1 /D DC_DEFAULT_EXPR_EXIT=1 /D BC_DEFAULT_DIGIT_CLAMP=1 /D DC_DEFAULT_DIGIT_CLAMP=1 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /permissive- /Fo\"BIN\\X64\\RELEASE\\\\\" /Fd\"BIN\\X64\\RELEASE\\VC145.PDB\" /external:W3 /Gd /TC /FC /std:c17  D:\\A\\GD-POSIX-APPS\\GD-POSIX-APPS\\BC-NATIVE-RESULTS\\HOWARD\\HOWARD-SOURCE\\SRC\\VM.C\n"
+          ],
+          "platform": "x64",
+          "project_sha256": "93a5409abe7dda46c600a46da9debd42ccd18ce4ead962d844f00e5895e4bf0a",
+          "toolset": "v145"
+        },
+        "instrumented": false,
+        "source_revision": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8",
+        "source_url": "https://github.com/gavinhoward/bc.git",
+        "tuning": {
+          "BC_NUM_KARATSUBA_LEN": 32
+        },
+        "version": "bc.exe 7.0.3\r\nCopyright (c) 2018-2024 Gavin D. Howard and contributors\r\nReport bugs at: https://git.gavinhoward.com/gavin/bc\r\n\r\nThis is free software with ABSOLUTELY NO WARRANTY."
+      },
+      "name": "howard-7.0.3",
+      "role": "reference"
+    }
+  ],
+  "pending_classes": [
+    {
+      "group": "posix_math_library",
+      "issue": 217,
+      "status": "not implemented; not a performance pass"
+    }
+  ],
+  "platform": {
+    "machine": "AMD64",
+    "python": "3.12.10",
+    "release": "2025Server",
+    "system": "Windows"
+  },
+  "preset": "full",
+  "reference": "base",
+  "samples": 9,
+  "schema": 1,
+  "seed": 197216,
+  "started_utc": "2026-11-01T01:53:17.648124+00:00",
+  "timeout": 30,
+  "warmups": 1
+}
