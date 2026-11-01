@@ -177,6 +177,9 @@ endif()
 # These local CLI regressions run in both extension configurations and on Windows.
 if(RUN_INTEGRATION_TESTS)
   # Committed exact enclosures keep this check independent of optional FLINT.
+  add_test(NAME bc/math-library-cli COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-math-library-cli.py" "$<TARGET_FILE:bc>")
+  set_tests_properties(bc/math-library-cli PROPERTIES TIMEOUT 650)
   add_test(NAME bc/math-library-source COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-math-library-source.py"
            "${CMAKE_CURRENT_SOURCE_DIR}/math-library.bc"
