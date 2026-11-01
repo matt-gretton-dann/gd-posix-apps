@@ -1,0 +1,15 @@
+from pathlib import Path
+import hashlib,json,sys,zipfile
+for os in sys.argv[1:]:
+ p=Path('/private/tmp/bc-349-msvc-native-'+os+'.zip');z=zipfile.ZipFile(p);names=z.namelist();identities={}
+ for role,expected in [('base','23c2c4d8ec61ec04fdb3344ea6ec66d06827b6d9'),('candidate','caedb62e5cfa9e53039ce551b7e252f5e44c1135')]:
+  entries=json.loads(z.read(role+'/implementations.json'))['implementations'];assert len(entries)==1
+  identities[role]=entries[0]['metadata']['source_revision'];assert identities[role]==expected
+  assert entries[0]['metadata']['instrumented'] is False
+ rows=[]
+ for n in names:
+  if n.endswith('/samples.jsonl'):
+   part=[json.loads(s) for s in z.read(n).decode().splitlines()];assert part and all(x['checked'] for x in part);rows+=part
+ assert len(rows)>=1750
+ summary=z.read('summary.md').decode();confirmed=[line for line in summary.splitlines() if 'confirmed regression' in line.lower().replace('-', ' ')];selected=[line for line in summary.splitlines() if '| paired |' in line and any('`'+n+'`' in line for n in ['loop_1000000','calls_200000','array_200000','sqrt_scale100_x5000','compare_equal_1000d_x100000','file_statements_20000'])]
+ audit={'os':os,'checked':len(rows),'identities':identities,'confirmed':confirmed,'selected':selected,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()};p.with_suffix('.audit.json').write_text(json.dumps(audit,indent=2)+'\n');print(json.dumps(audit))
