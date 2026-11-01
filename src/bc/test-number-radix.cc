@@ -208,16 +208,15 @@ TEMPLATE_TEST_CASE("Large radix integer construction retains exact values and sn
     ~SplitScope() { Number::multiply_split_point(1); }
   } split;
   // The narrow model exercises generic fallback inside its supported length
-  // domain; wider models also reach the measured production DC boundary.
-  std::size_t const count = std::numeric_limits<N>::max() < 32768 ? 129 : 65536;
+  // domain (length must be below the storage radix). The widest model also
+  // reaches the measured production DC boundary.
+  std::size_t const count = Number::base_ == 100 ? 64 : Number::base_ == 10000 ? 4096 : 65536;
   constexpr char const* alphabet = "0123456789ABCDEF";
   for (unsigned base : {2U, 16U}) {
-    // Keep the 16-bit length model within its decimal digit domain.
-    auto const radix_count = sizeof(N) == 2 && base == 16 ? 32768 : count;
     Number expected{N(base)};
-    expected.power(Number(std::to_string(radix_count), N(10)), N(0));
+    expected.power(Number(std::to_string(count), N(10)), N(0));
     expected.sub(Number(N(1)));
-    std::string const digits(radix_count, alphabet[base - 1]);
+    std::string const digits(count, alphabet[base - 1]);
     Number const parsed(digits, N(base));
     INFO("base=" << base << ", count=" << count << ", storage radix=" << Number::base_);
     CHECK(parsed == expected);
