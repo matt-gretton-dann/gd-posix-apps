@@ -1,0 +1,254 @@
+{
+  "legacy_unchanged": 40,
+  "new_cases": 2,
+  "checks": [
+    {
+      "implementation": {
+        "argv": [
+          "/private/tmp/gd-bc-206-output-groups-baseline-release/build/src/bc/bc"
+        ],
+        "metadata": {
+          "binary_sha256": "2a7abb9f14e1a09f52617263cc2fa90f2e2b16b6a353a0d55860c3dd895919cc",
+          "compiler": {
+            "C": {
+              "argv0": "/usr/bin/cc",
+              "realpath": "/usr/bin/cc",
+              "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+              "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+            },
+            "CXX": {
+              "argv0": "/usr/bin/c++",
+              "realpath": "/usr/bin/c++",
+              "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+              "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+            }
+          },
+          "configuration": {
+            "build_type": "Release",
+            "extensions": "ON",
+            "generator": "Ninja",
+            "multiply_split_point": 126,
+            "threshold_header_sha256": "c5b539c9f87d032bfcb436bb8da8972048d2ed1780a980265b7c3fe0e5e45626"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "",
+            "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+            "CMAKE_C_FLAGS": "",
+            "CMAKE_C_FLAGS_RELEASE": "-O3 -DNDEBUG",
+            "CMAKE_EXE_LINKER_FLAGS": "",
+            "CMAKE_EXE_LINKER_FLAGS_RELEASE": "",
+            "compile_commands_sha256": "b1a270c4075af236f7bbaa547f64a660ad3f769df08ecb44f73ebbe82ac70854"
+          },
+          "instrumented": false,
+          "limitations": [
+            "Provision compiler, C/C++ runtime and SDK separately; this is not an OS image",
+            "Compiler defaults and actual commands are recorded, not claimed identical across hosts"
+          ],
+          "source_revision": "7424aacc39b79b3d46c534be6ec4595643c2b7f0",
+          "standard_library": {
+            "header_macros": {
+              "_LIBCPP_VERSION": "220106"
+            },
+            "scope": "standard-library header identity; provision runtime and SDK separately",
+            "status": "recorded"
+          },
+          "version": "gd-posix-apps source 7424aacc39b79b3d46c534be6ec4595643c2b7f0"
+        },
+        "name": "gd-output-groups-baseline"
+      },
+      "workload": "binary_output_1000d_x300",
+      "check": {
+        "output_bytes": 1025700,
+        "checked": true,
+        "output_sha256": "965969dfa000e336246405b9df24573d3f535aedfbc355f56c639b7c4e1097a3"
+      },
+      "scope": "Correctness smoke only; no elapsed-performance claim"
+    },
+    {
+      "implementation": {
+        "argv": [
+          "/private/tmp/gd-bc-206-output-groups-baseline-release/build/src/bc/bc"
+        ],
+        "metadata": {
+          "binary_sha256": "2a7abb9f14e1a09f52617263cc2fa90f2e2b16b6a353a0d55860c3dd895919cc",
+          "compiler": {
+            "C": {
+              "argv0": "/usr/bin/cc",
+              "realpath": "/usr/bin/cc",
+              "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+              "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+            },
+            "CXX": {
+              "argv0": "/usr/bin/c++",
+              "realpath": "/usr/bin/c++",
+              "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+              "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+            }
+          },
+          "configuration": {
+            "build_type": "Release",
+            "extensions": "ON",
+            "generator": "Ninja",
+            "multiply_split_point": 126,
+            "threshold_header_sha256": "c5b539c9f87d032bfcb436bb8da8972048d2ed1780a980265b7c3fe0e5e45626"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "",
+            "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+            "CMAKE_C_FLAGS": "",
+            "CMAKE_C_FLAGS_RELEASE": "-O3 -DNDEBUG",
+            "CMAKE_EXE_LINKER_FLAGS": "",
+            "CMAKE_EXE_LINKER_FLAGS_RELEASE": "",
+            "compile_commands_sha256": "b1a270c4075af236f7bbaa547f64a660ad3f769df08ecb44f73ebbe82ac70854"
+          },
+          "instrumented": false,
+          "limitations": [
+            "Provision compiler, C/C++ runtime and SDK separately; this is not an OS image",
+            "Compiler defaults and actual commands are recorded, not claimed identical across hosts"
+          ],
+          "source_revision": "7424aacc39b79b3d46c534be6ec4595643c2b7f0",
+          "standard_library": {
+            "header_macros": {
+              "_LIBCPP_VERSION": "220106"
+            },
+            "scope": "standard-library header identity; provision runtime and SDK separately",
+            "status": "recorded"
+          },
+          "version": "gd-posix-apps source 7424aacc39b79b3d46c534be6ec4595643c2b7f0"
+        },
+        "name": "gd-output-groups-baseline"
+      },
+      "workload": "octal_output_1000d_x300",
+      "check": {
+        "output_bytes": 342300,
+        "checked": true,
+        "output_sha256": "9fe6dfa2c8aa6ca34f88dc3fad5b893ca743d0e0027ad78876f60ca216956619"
+      },
+      "scope": "Correctness smoke only; no elapsed-performance claim"
+    },
+    {
+      "implementation": {
+        "argv": [
+          "/private/tmp/gd-bc-206-output-groups-candidate-release/build/src/bc/bc"
+        ],
+        "metadata": {
+          "binary_sha256": "90cb092430ea1a2c376b2e00c7c5e093f9949d2ab785e79563b7a979b430e656",
+          "compiler": {
+            "C": {
+              "argv0": "/usr/bin/cc",
+              "realpath": "/usr/bin/cc",
+              "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+              "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+            },
+            "CXX": {
+              "argv0": "/usr/bin/c++",
+              "realpath": "/usr/bin/c++",
+              "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+              "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+            }
+          },
+          "configuration": {
+            "build_type": "Release",
+            "extensions": "ON",
+            "generator": "Ninja",
+            "multiply_split_point": 126,
+            "threshold_header_sha256": "c5b539c9f87d032bfcb436bb8da8972048d2ed1780a980265b7c3fe0e5e45626"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "",
+            "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+            "CMAKE_C_FLAGS": "",
+            "CMAKE_C_FLAGS_RELEASE": "-O3 -DNDEBUG",
+            "CMAKE_EXE_LINKER_FLAGS": "",
+            "CMAKE_EXE_LINKER_FLAGS_RELEASE": "",
+            "compile_commands_sha256": "dce2649e7c228b4aea886c0495c6614d8e6f7b40555b3709b345967ea2d82c8d"
+          },
+          "instrumented": false,
+          "limitations": [
+            "Provision compiler, C/C++ runtime and SDK separately; this is not an OS image",
+            "Compiler defaults and actual commands are recorded, not claimed identical across hosts"
+          ],
+          "source_revision": "ca006614732c55a49d18bccc91495e9858afa682",
+          "standard_library": {
+            "header_macros": {
+              "_LIBCPP_VERSION": "220106"
+            },
+            "scope": "standard-library header identity; provision runtime and SDK separately",
+            "status": "recorded"
+          },
+          "version": "gd-posix-apps source ca006614732c55a49d18bccc91495e9858afa682"
+        },
+        "name": "gd-output-groups-candidate"
+      },
+      "workload": "binary_output_1000d_x300",
+      "check": {
+        "output_bytes": 1025700,
+        "checked": true,
+        "output_sha256": "965969dfa000e336246405b9df24573d3f535aedfbc355f56c639b7c4e1097a3"
+      },
+      "scope": "Correctness smoke only; no elapsed-performance claim"
+    },
+    {
+      "implementation": {
+        "argv": [
+          "/private/tmp/gd-bc-206-output-groups-candidate-release/build/src/bc/bc"
+        ],
+        "metadata": {
+          "binary_sha256": "90cb092430ea1a2c376b2e00c7c5e093f9949d2ab785e79563b7a979b430e656",
+          "compiler": {
+            "C": {
+              "argv0": "/usr/bin/cc",
+              "realpath": "/usr/bin/cc",
+              "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+              "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+            },
+            "CXX": {
+              "argv0": "/usr/bin/c++",
+              "realpath": "/usr/bin/c++",
+              "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+              "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+            }
+          },
+          "configuration": {
+            "build_type": "Release",
+            "extensions": "ON",
+            "generator": "Ninja",
+            "multiply_split_point": 126,
+            "threshold_header_sha256": "c5b539c9f87d032bfcb436bb8da8972048d2ed1780a980265b7c3fe0e5e45626"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "",
+            "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+            "CMAKE_C_FLAGS": "",
+            "CMAKE_C_FLAGS_RELEASE": "-O3 -DNDEBUG",
+            "CMAKE_EXE_LINKER_FLAGS": "",
+            "CMAKE_EXE_LINKER_FLAGS_RELEASE": "",
+            "compile_commands_sha256": "dce2649e7c228b4aea886c0495c6614d8e6f7b40555b3709b345967ea2d82c8d"
+          },
+          "instrumented": false,
+          "limitations": [
+            "Provision compiler, C/C++ runtime and SDK separately; this is not an OS image",
+            "Compiler defaults and actual commands are recorded, not claimed identical across hosts"
+          ],
+          "source_revision": "ca006614732c55a49d18bccc91495e9858afa682",
+          "standard_library": {
+            "header_macros": {
+              "_LIBCPP_VERSION": "220106"
+            },
+            "scope": "standard-library header identity; provision runtime and SDK separately",
+            "status": "recorded"
+          },
+          "version": "gd-posix-apps source ca006614732c55a49d18bccc91495e9858afa682"
+        },
+        "name": "gd-output-groups-candidate"
+      },
+      "workload": "octal_output_1000d_x300",
+      "check": {
+        "output_bytes": 342300,
+        "checked": true,
+        "output_sha256": "9fe6dfa2c8aa6ca34f88dc3fad5b893ca743d0e0027ad78876f60ca216956619"
+      },
+      "scope": "Correctness smoke only; no elapsed-performance claim"
+    }
+  ]
+}
