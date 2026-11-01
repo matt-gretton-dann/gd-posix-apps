@@ -1,2 +1,4 @@
+# Preserve recorded artifact bytes under every Git newline policy.
+* -text
 probe.s -text whitespace=-blank-at-eol
 *-diagnostic.patch -text whitespace=-blank-at-eol,-blank-at-eof
