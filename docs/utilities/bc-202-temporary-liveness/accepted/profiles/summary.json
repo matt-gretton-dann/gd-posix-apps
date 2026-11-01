@@ -1,0 +1,5987 @@
+[
+  {
+    "name": "startup",
+    "group": "startup",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 5,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 0,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 6,
+            "deallocation_calls": 6,
+            "allocated_bytes": 992,
+            "live_bytes": 0,
+            "peak_live_bytes": 720
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 224,
+            "live_bytes": 0,
+            "peak_live_bytes": 224
+          },
+          "literals": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          }
+        },
+        "total": {
+          "allocation_calls": 9,
+          "deallocation_calls": 9,
+          "allocated_bytes": 5304,
+          "live_bytes": 0,
+          "peak_live_bytes": 4856
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 5,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 0,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 6,
+            "deallocation_calls": 6,
+            "allocated_bytes": 992,
+            "live_bytes": 0,
+            "peak_live_bytes": 720
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 224,
+            "live_bytes": 0,
+            "peak_live_bytes": 224
+          },
+          "literals": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "execution_plans": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          }
+        },
+        "total": {
+          "allocation_calls": 9,
+          "deallocation_calls": 9,
+          "allocated_bytes": 5304,
+          "live_bytes": 0,
+          "peak_live_bytes": 4856
+        }
+      }
+    }
+  },
+  {
+    "name": "loop_1000000",
+    "group": "loop",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 19000015,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 0,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "allocated_bytes": 8928,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1400,
+            "live_bytes": 0,
+            "peak_live_bytes": 1400
+          },
+          "literals": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 48,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 22,
+          "deallocation_calls": 22,
+          "allocated_bytes": 14464,
+          "live_bytes": 0,
+          "peak_live_bytes": 9680
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 19000015,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 0,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "allocated_bytes": 8928,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1400,
+            "live_bytes": 0,
+            "peak_live_bytes": 1400
+          },
+          "literals": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 48,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 22,
+            "live_bytes": 0,
+            "peak_live_bytes": 22
+          }
+        },
+        "total": {
+          "allocation_calls": 23,
+          "deallocation_calls": 23,
+          "allocated_bytes": 14486,
+          "live_bytes": 0,
+          "peak_live_bytes": 9680
+        }
+      }
+    }
+  },
+  {
+    "name": "calls_200000",
+    "group": "calls",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 6800016,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 0,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 24,
+            "deallocation_calls": 24,
+            "allocated_bytes": 14016,
+            "live_bytes": 0,
+            "peak_live_bytes": 6992
+          },
+          "frames": {
+            "allocation_calls": 5,
+            "deallocation_calls": 5,
+            "allocated_bytes": 4200,
+            "live_bytes": 0,
+            "peak_live_bytes": 4200
+          },
+          "results": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 3472,
+            "live_bytes": 0,
+            "peak_live_bytes": 2688
+          },
+          "literals": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 48,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 33,
+          "deallocation_calls": 33,
+          "allocated_bytes": 21736,
+          "live_bytes": 0,
+          "peak_live_bytes": 12072
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 6800016,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 0,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 24,
+            "deallocation_calls": 24,
+            "allocated_bytes": 14016,
+            "live_bytes": 0,
+            "peak_live_bytes": 6992
+          },
+          "frames": {
+            "allocation_calls": 5,
+            "deallocation_calls": 5,
+            "allocated_bytes": 4200,
+            "live_bytes": 0,
+            "peak_live_bytes": 4200
+          },
+          "results": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 3472,
+            "live_bytes": 0,
+            "peak_live_bytes": 2688
+          },
+          "literals": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 48,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 39,
+            "live_bytes": 0,
+            "peak_live_bytes": 39
+          }
+        },
+        "total": {
+          "allocation_calls": 35,
+          "deallocation_calls": 35,
+          "allocated_bytes": 21775,
+          "live_bytes": 0,
+          "peak_live_bytes": 12086
+        }
+      }
+    }
+  },
+  {
+    "name": "array_200000",
+    "group": "array",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 8000023,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 0,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "arrays": {
+            "allocation_calls": 20,
+            "deallocation_calls": 20,
+            "allocated_bytes": 25165872,
+            "live_bytes": 0,
+            "peak_live_bytes": 18874464
+          },
+          "instructions": {
+            "allocation_calls": 24,
+            "deallocation_calls": 24,
+            "allocated_bytes": 16032,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 3864,
+            "live_bytes": 0,
+            "peak_live_bytes": 3696
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 51,
+          "deallocation_calls": 51,
+          "allocated_bytes": 25189952,
+          "live_bytes": 0,
+          "peak_live_bytes": 18883464
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 8000023,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 0,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "arrays": {
+            "allocation_calls": 20,
+            "deallocation_calls": 20,
+            "allocated_bytes": 25165872,
+            "live_bytes": 0,
+            "peak_live_bytes": 18874464
+          },
+          "instructions": {
+            "allocation_calls": 24,
+            "deallocation_calls": 24,
+            "allocated_bytes": 16032,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 3864,
+            "live_bytes": 0,
+            "peak_live_bytes": 3696
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 46,
+            "live_bytes": 0,
+            "peak_live_bytes": 24
+          }
+        },
+        "total": {
+          "allocation_calls": 53,
+          "deallocation_calls": 53,
+          "allocated_bytes": 25189998,
+          "live_bytes": 0,
+          "peak_live_bytes": 18883486
+        }
+      }
+    }
+  },
+  {
+    "name": "compare_high_1000d_x100000",
+    "group": "comparison",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 2400021,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 300004,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 4,
+            "deallocation_calls": 4,
+            "allocated_bytes": 992,
+            "live_bytes": 0,
+            "peak_live_bytes": 992
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 25,
+            "deallocation_calls": 25,
+            "allocated_bytes": 10592,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1680,
+            "live_bytes": 0,
+            "peak_live_bytes": 1680
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 36,
+          "deallocation_calls": 36,
+          "allocated_bytes": 17496,
+          "live_bytes": 0,
+          "peak_live_bytes": 10672
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 2400021,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 200004,
+          "temporary_consumptions": 100000
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 4,
+            "deallocation_calls": 4,
+            "allocated_bytes": 992,
+            "live_bytes": 0,
+            "peak_live_bytes": 992
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 25,
+            "deallocation_calls": 25,
+            "allocated_bytes": 10592,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1680,
+            "live_bytes": 0,
+            "peak_live_bytes": 1680
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 27,
+            "live_bytes": 0,
+            "peak_live_bytes": 27
+          }
+        },
+        "total": {
+          "allocation_calls": 37,
+          "deallocation_calls": 37,
+          "allocated_bytes": 17523,
+          "live_bytes": 0,
+          "peak_live_bytes": 10672
+        }
+      }
+    }
+  },
+  {
+    "name": "compare_low_1000d_x100000",
+    "group": "comparison",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 2400021,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 300004,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 4,
+            "deallocation_calls": 4,
+            "allocated_bytes": 992,
+            "live_bytes": 0,
+            "peak_live_bytes": 992
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 25,
+            "deallocation_calls": 25,
+            "allocated_bytes": 10592,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1680,
+            "live_bytes": 0,
+            "peak_live_bytes": 1680
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 36,
+          "deallocation_calls": 36,
+          "allocated_bytes": 17496,
+          "live_bytes": 0,
+          "peak_live_bytes": 10672
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 2400021,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 200004,
+          "temporary_consumptions": 100000
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 4,
+            "deallocation_calls": 4,
+            "allocated_bytes": 992,
+            "live_bytes": 0,
+            "peak_live_bytes": 992
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 25,
+            "deallocation_calls": 25,
+            "allocated_bytes": 10592,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1680,
+            "live_bytes": 0,
+            "peak_live_bytes": 1680
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 27,
+            "live_bytes": 0,
+            "peak_live_bytes": 27
+          }
+        },
+        "total": {
+          "allocation_calls": 37,
+          "deallocation_calls": 37,
+          "allocated_bytes": 17523,
+          "live_bytes": 0,
+          "peak_live_bytes": 10672
+        }
+      }
+    }
+  },
+  {
+    "name": "compare_equal_1000d_x100000",
+    "group": "comparison",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 2400021,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 300004,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 4,
+            "deallocation_calls": 4,
+            "allocated_bytes": 992,
+            "live_bytes": 0,
+            "peak_live_bytes": 992
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 25,
+            "deallocation_calls": 25,
+            "allocated_bytes": 10592,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1680,
+            "live_bytes": 0,
+            "peak_live_bytes": 1680
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 36,
+          "deallocation_calls": 36,
+          "allocated_bytes": 17496,
+          "live_bytes": 0,
+          "peak_live_bytes": 10672
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 2400021,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 200004,
+          "temporary_consumptions": 100000
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 4,
+            "deallocation_calls": 4,
+            "allocated_bytes": 992,
+            "live_bytes": 0,
+            "peak_live_bytes": 992
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 25,
+            "deallocation_calls": 25,
+            "allocated_bytes": 10592,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1680,
+            "live_bytes": 0,
+            "peak_live_bytes": 1680
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 27,
+            "live_bytes": 0,
+            "peak_live_bytes": 27
+          }
+        },
+        "total": {
+          "allocation_calls": 37,
+          "deallocation_calls": 37,
+          "allocated_bytes": 17523,
+          "live_bytes": 0,
+          "peak_live_bytes": 10672
+        }
+      }
+    }
+  },
+  {
+    "name": "fibonacci_1000_x100",
+    "group": "fibonacci",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 2404013,
+          "cow_clones": 86900,
+          "cow_limb_bytes": 4722000,
+          "owned_digit_copies": 783401,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 178200,
+            "deallocation_calls": 178200,
+            "allocated_bytes": 9338800,
+            "live_bytes": 0,
+            "peak_live_bytes": 840
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 23,
+            "deallocation_calls": 23,
+            "allocated_bytes": 26784,
+            "live_bytes": 0,
+            "peak_live_bytes": 11632
+          },
+          "frames": {
+            "allocation_calls": 7,
+            "deallocation_calls": 7,
+            "allocated_bytes": 4488,
+            "live_bytes": 0,
+            "peak_live_bytes": 4440
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4480,
+            "live_bytes": 0,
+            "peak_live_bytes": 4480
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 96
+          }
+        },
+        "total": {
+          "allocation_calls": 178234,
+          "deallocation_calls": 178234,
+          "allocated_bytes": 9374648,
+          "live_bytes": 0,
+          "peak_live_bytes": 18016
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 2404013,
+          "cow_clones": 86900,
+          "cow_limb_bytes": 4722000,
+          "owned_digit_copies": 696501,
+          "temporary_consumptions": 86900
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 178200,
+            "deallocation_calls": 178200,
+            "allocated_bytes": 9338800,
+            "live_bytes": 0,
+            "peak_live_bytes": 840
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 23,
+            "deallocation_calls": 23,
+            "allocated_bytes": 26784,
+            "live_bytes": 0,
+            "peak_live_bytes": 11632
+          },
+          "frames": {
+            "allocation_calls": 7,
+            "deallocation_calls": 7,
+            "allocated_bytes": 4488,
+            "live_bytes": 0,
+            "peak_live_bytes": 4440
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4480,
+            "live_bytes": 0,
+            "peak_live_bytes": 4480
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 96
+          },
+          "execution_plans": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 61,
+            "live_bytes": 0,
+            "peak_live_bytes": 61
+          }
+        },
+        "total": {
+          "allocation_calls": 178236,
+          "deallocation_calls": 178236,
+          "allocated_bytes": 9374709,
+          "live_bytes": 0,
+          "peak_live_bytes": 18055
+        }
+      }
+    }
+  },
+  {
+    "name": "fibonacci_10000_x10",
+    "group": "fibonacci",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 2400413,
+          "cow_clones": 98690,
+          "cow_limb_bytes": 46611280,
+          "owned_digit_copies": 888341,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 202000,
+            "deallocation_calls": 202000,
+            "allocated_bytes": 55673280,
+            "live_bytes": 0,
+            "peak_live_bytes": 6692
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 23,
+            "deallocation_calls": 23,
+            "allocated_bytes": 26784,
+            "live_bytes": 0,
+            "peak_live_bytes": 11632
+          },
+          "frames": {
+            "allocation_calls": 7,
+            "deallocation_calls": 7,
+            "allocated_bytes": 4488,
+            "live_bytes": 0,
+            "peak_live_bytes": 4440
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4480,
+            "live_bytes": 0,
+            "peak_live_bytes": 4480
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 96
+          }
+        },
+        "total": {
+          "allocation_calls": 202034,
+          "deallocation_calls": 202034,
+          "allocated_bytes": 55709128,
+          "live_bytes": 0,
+          "peak_live_bytes": 23612
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 2400413,
+          "cow_clones": 98690,
+          "cow_limb_bytes": 46611280,
+          "owned_digit_copies": 789651,
+          "temporary_consumptions": 98690
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 202000,
+            "deallocation_calls": 202000,
+            "allocated_bytes": 55673280,
+            "live_bytes": 0,
+            "peak_live_bytes": 6692
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 23,
+            "deallocation_calls": 23,
+            "allocated_bytes": 26784,
+            "live_bytes": 0,
+            "peak_live_bytes": 11632
+          },
+          "frames": {
+            "allocation_calls": 7,
+            "deallocation_calls": 7,
+            "allocated_bytes": 4488,
+            "live_bytes": 0,
+            "peak_live_bytes": 4440
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4480,
+            "live_bytes": 0,
+            "peak_live_bytes": 4480
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 96
+          },
+          "execution_plans": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 61,
+            "live_bytes": 0,
+            "peak_live_bytes": 61
+          }
+        },
+        "total": {
+          "allocation_calls": 202036,
+          "deallocation_calls": 202036,
+          "allocated_bytes": 55709189,
+          "live_bytes": 0,
+          "peak_live_bytes": 23673
+        }
+      }
+    }
+  },
+  {
+    "name": "factorial_1000_x50",
+    "group": "factorial",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 751713,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 148701,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 113200,
+            "deallocation_calls": 113200,
+            "allocated_bytes": 49670200,
+            "live_bytes": 0,
+            "peak_live_bytes": 5848
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 22,
+            "deallocation_calls": 22,
+            "allocated_bytes": 18272,
+            "live_bytes": 0,
+            "peak_live_bytes": 8448
+          },
+          "frames": {
+            "allocation_calls": 6,
+            "deallocation_calls": 6,
+            "allocated_bytes": 4296,
+            "live_bytes": 0,
+            "peak_live_bytes": 4296
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 3136,
+            "live_bytes": 0,
+            "peak_live_bytes": 3136
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 96
+          }
+        },
+        "total": {
+          "allocation_calls": 113232,
+          "deallocation_calls": 113232,
+          "allocated_bytes": 49696000,
+          "live_bytes": 0,
+          "peak_live_bytes": 19984
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 751713,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 99201,
+          "temporary_consumptions": 49500
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 113200,
+            "deallocation_calls": 113200,
+            "allocated_bytes": 49670200,
+            "live_bytes": 0,
+            "peak_live_bytes": 5848
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 22,
+            "deallocation_calls": 22,
+            "allocated_bytes": 18272,
+            "live_bytes": 0,
+            "peak_live_bytes": 8448
+          },
+          "frames": {
+            "allocation_calls": 6,
+            "deallocation_calls": 6,
+            "allocated_bytes": 4296,
+            "live_bytes": 0,
+            "peak_live_bytes": 4296
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 3136,
+            "live_bytes": 0,
+            "peak_live_bytes": 3136
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 96
+          },
+          "execution_plans": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 49,
+            "live_bytes": 0,
+            "peak_live_bytes": 49
+          }
+        },
+        "total": {
+          "allocation_calls": 113234,
+          "deallocation_calls": 113234,
+          "allocated_bytes": 49696049,
+          "live_bytes": 0,
+          "peak_live_bytes": 20033
+        }
+      }
+    }
+  },
+  {
+    "name": "factorial_5000_x5",
+    "group": "factorial",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 375183,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 74901,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 58980,
+            "deallocation_calls": 58980,
+            "allocated_bytes": 163724980,
+            "live_bytes": 0,
+            "peak_live_bytes": 36408
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 22,
+            "deallocation_calls": 22,
+            "allocated_bytes": 18272,
+            "live_bytes": 0,
+            "peak_live_bytes": 8448
+          },
+          "frames": {
+            "allocation_calls": 6,
+            "deallocation_calls": 6,
+            "allocated_bytes": 4296,
+            "live_bytes": 0,
+            "peak_live_bytes": 4296
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 3136,
+            "live_bytes": 0,
+            "peak_live_bytes": 3136
+          },
+          "literals": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 48,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 59011,
+          "deallocation_calls": 59011,
+          "allocated_bytes": 163750732,
+          "live_bytes": 0,
+          "peak_live_bytes": 50496
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 375183,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 49941,
+          "temporary_consumptions": 24960
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 58980,
+            "deallocation_calls": 58980,
+            "allocated_bytes": 163724980,
+            "live_bytes": 0,
+            "peak_live_bytes": 36408
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 22,
+            "deallocation_calls": 22,
+            "allocated_bytes": 18272,
+            "live_bytes": 0,
+            "peak_live_bytes": 8448
+          },
+          "frames": {
+            "allocation_calls": 6,
+            "deallocation_calls": 6,
+            "allocated_bytes": 4296,
+            "live_bytes": 0,
+            "peak_live_bytes": 4296
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 3136,
+            "live_bytes": 0,
+            "peak_live_bytes": 3136
+          },
+          "literals": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 48,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 49,
+            "live_bytes": 0,
+            "peak_live_bytes": 49
+          }
+        },
+        "total": {
+          "allocation_calls": 59013,
+          "deallocation_calls": 59013,
+          "allocated_bytes": 163750781,
+          "live_bytes": 0,
+          "peak_live_bytes": 50545
+        }
+      }
+    }
+  },
+  {
+    "name": "multiply_100d_x100000",
+    "group": "multiply",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 2000018,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 400005,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 200004,
+            "deallocation_calls": 200004,
+            "allocated_bytes": 15200192,
+            "live_bytes": 0,
+            "peak_live_bytes": 496
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 21,
+            "deallocation_calls": 21,
+            "allocated_bytes": 9760,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1456,
+            "live_bytes": 0,
+            "peak_live_bytes": 1456
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 200032,
+          "deallocation_calls": 200032,
+          "allocated_bytes": 15215640,
+          "live_bytes": 0,
+          "peak_live_bytes": 9872
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 2000018,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 300005,
+          "temporary_consumptions": 100000
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 200004,
+            "deallocation_calls": 200004,
+            "allocated_bytes": 15200192,
+            "live_bytes": 0,
+            "peak_live_bytes": 496
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 21,
+            "deallocation_calls": 21,
+            "allocated_bytes": 9760,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1456,
+            "live_bytes": 0,
+            "peak_live_bytes": 1456
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 23,
+            "live_bytes": 0,
+            "peak_live_bytes": 23
+          }
+        },
+        "total": {
+          "allocation_calls": 200033,
+          "deallocation_calls": 200033,
+          "allocated_bytes": 15215663,
+          "live_bytes": 0,
+          "peak_live_bytes": 9872
+        }
+      }
+    }
+  },
+  {
+    "name": "multiply_1000d_x10000",
+    "group": "multiply",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 200018,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 40005,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 20004,
+            "deallocation_calls": 20004,
+            "allocated_bytes": 9520992,
+            "live_bytes": 0,
+            "peak_live_bytes": 2896
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 21,
+            "deallocation_calls": 21,
+            "allocated_bytes": 9760,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1456,
+            "live_bytes": 0,
+            "peak_live_bytes": 1456
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 20032,
+          "deallocation_calls": 20032,
+          "allocated_bytes": 9536440,
+          "live_bytes": 0,
+          "peak_live_bytes": 11952
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 200018,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 30005,
+          "temporary_consumptions": 10000
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 20004,
+            "deallocation_calls": 20004,
+            "allocated_bytes": 9520992,
+            "live_bytes": 0,
+            "peak_live_bytes": 2896
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 21,
+            "deallocation_calls": 21,
+            "allocated_bytes": 9760,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1456,
+            "live_bytes": 0,
+            "peak_live_bytes": 1456
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 23,
+            "live_bytes": 0,
+            "peak_live_bytes": 23
+          }
+        },
+        "total": {
+          "allocation_calls": 20033,
+          "deallocation_calls": 20033,
+          "allocated_bytes": 9536463,
+          "live_bytes": 0,
+          "peak_live_bytes": 11975
+        }
+      }
+    }
+  },
+  {
+    "name": "multiply_10000d_x1000",
+    "group": "multiply",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 20018,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 4005,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 3004,
+            "deallocation_calls": 3004,
+            "allocated_bytes": 25752992,
+            "live_bytes": 0,
+            "peak_live_bytes": 43680
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 21,
+            "deallocation_calls": 21,
+            "allocated_bytes": 9760,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1456,
+            "live_bytes": 0,
+            "peak_live_bytes": 1456
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 3032,
+          "deallocation_calls": 3032,
+          "allocated_bytes": 25768440,
+          "live_bytes": 0,
+          "peak_live_bytes": 52736
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 20018,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 3005,
+          "temporary_consumptions": 1000
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 3004,
+            "deallocation_calls": 3004,
+            "allocated_bytes": 25752992,
+            "live_bytes": 0,
+            "peak_live_bytes": 43680
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 21,
+            "deallocation_calls": 21,
+            "allocated_bytes": 9760,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1456,
+            "live_bytes": 0,
+            "peak_live_bytes": 1456
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 23,
+            "live_bytes": 0,
+            "peak_live_bytes": 23
+          }
+        },
+        "total": {
+          "allocation_calls": 3033,
+          "deallocation_calls": 3033,
+          "allocated_bytes": 25768463,
+          "live_bytes": 0,
+          "peak_live_bytes": 52759
+        }
+      }
+    }
+  },
+  {
+    "name": "divide_scale100_x100000",
+    "group": "divide_single_limb",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 1800015,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 100001,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 200000,
+            "deallocation_calls": 200000,
+            "allocated_bytes": 9600000,
+            "live_bytes": 0,
+            "peak_live_bytes": 192
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "allocated_bytes": 8928,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1344,
+            "live_bytes": 0,
+            "peak_live_bytes": 1344
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 200023,
+          "deallocation_calls": 200023,
+          "allocated_bytes": 9614456,
+          "live_bytes": 0,
+          "peak_live_bytes": 9680
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 1800015,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 100001,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 200000,
+            "deallocation_calls": 200000,
+            "allocated_bytes": 9600000,
+            "live_bytes": 0,
+            "peak_live_bytes": 192
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "allocated_bytes": 8928,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1344,
+            "live_bytes": 0,
+            "peak_live_bytes": 1344
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 21,
+            "live_bytes": 0,
+            "peak_live_bytes": 21
+          }
+        },
+        "total": {
+          "allocation_calls": 200024,
+          "deallocation_calls": 200024,
+          "allocated_bytes": 9614477,
+          "live_bytes": 0,
+          "peak_live_bytes": 9680
+        }
+      }
+    }
+  },
+  {
+    "name": "divide_scale1000_x10000",
+    "group": "divide_single_limb",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 180015,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 10001,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 20000,
+            "deallocation_calls": 20000,
+            "allocated_bytes": 4960000,
+            "live_bytes": 0,
+            "peak_live_bytes": 992
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "allocated_bytes": 8928,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1344,
+            "live_bytes": 0,
+            "peak_live_bytes": 1344
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 20023,
+          "deallocation_calls": 20023,
+          "allocated_bytes": 4974456,
+          "live_bytes": 0,
+          "peak_live_bytes": 9936
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 180015,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 10001,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 20000,
+            "deallocation_calls": 20000,
+            "allocated_bytes": 4960000,
+            "live_bytes": 0,
+            "peak_live_bytes": 992
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "allocated_bytes": 8928,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1344,
+            "live_bytes": 0,
+            "peak_live_bytes": 1344
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 21,
+            "live_bytes": 0,
+            "peak_live_bytes": 21
+          }
+        },
+        "total": {
+          "allocation_calls": 20024,
+          "deallocation_calls": 20024,
+          "allocated_bytes": 4974477,
+          "live_bytes": 0,
+          "peak_live_bytes": 9957
+        }
+      }
+    }
+  },
+  {
+    "name": "divide_scale5000_x5000",
+    "group": "divide_single_limb",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 90015,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 5001,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 10000,
+            "deallocation_calls": 10000,
+            "allocated_bytes": 11360000,
+            "live_bytes": 0,
+            "peak_live_bytes": 4544
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "allocated_bytes": 8928,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1344,
+            "live_bytes": 0,
+            "peak_live_bytes": 1344
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 10023,
+          "deallocation_calls": 10023,
+          "allocated_bytes": 11374456,
+          "live_bytes": 0,
+          "peak_live_bytes": 13488
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 90015,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 5001,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 10000,
+            "deallocation_calls": 10000,
+            "allocated_bytes": 11360000,
+            "live_bytes": 0,
+            "peak_live_bytes": 4544
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "allocated_bytes": 8928,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1344,
+            "live_bytes": 0,
+            "peak_live_bytes": 1344
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 21,
+            "live_bytes": 0,
+            "peak_live_bytes": 21
+          }
+        },
+        "total": {
+          "allocation_calls": 10024,
+          "deallocation_calls": 10024,
+          "allocated_bytes": 11374477,
+          "live_bytes": 0,
+          "peak_live_bytes": 13509
+        }
+      }
+    }
+  },
+  {
+    "name": "sqrt_scale100_x5000",
+    "group": "sqrt",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 85015,
+          "cow_clones": 90000,
+          "cow_limb_bytes": 4680000,
+          "owned_digit_copies": 95001,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 380000,
+            "deallocation_calls": 380000,
+            "allocated_bytes": 28540000,
+            "live_bytes": 0,
+            "peak_live_bytes": 760
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "allocated_bytes": 8928,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1288,
+            "live_bytes": 0,
+            "peak_live_bytes": 1288
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 380023,
+          "deallocation_calls": 380023,
+          "allocated_bytes": 28554400,
+          "live_bytes": 0,
+          "peak_live_bytes": 9680
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 85015,
+          "cow_clones": 90000,
+          "cow_limb_bytes": 4680000,
+          "owned_digit_copies": 95001,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 380000,
+            "deallocation_calls": 380000,
+            "allocated_bytes": 28540000,
+            "live_bytes": 0,
+            "peak_live_bytes": 760
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "allocated_bytes": 8928,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1288,
+            "live_bytes": 0,
+            "peak_live_bytes": 1288
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 20,
+            "live_bytes": 0,
+            "peak_live_bytes": 20
+          }
+        },
+        "total": {
+          "allocation_calls": 380024,
+          "deallocation_calls": 380024,
+          "allocated_bytes": 28554420,
+          "live_bytes": 0,
+          "peak_live_bytes": 9680
+        }
+      }
+    }
+  },
+  {
+    "name": "sqrt_scale1000_x50",
+    "group": "sqrt",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 865,
+          "cow_clones": 1200,
+          "cow_limb_bytes": 542400,
+          "owned_digit_copies": 1251,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 5000,
+            "deallocation_calls": 5000,
+            "allocated_bytes": 2577200,
+            "live_bytes": 0,
+            "peak_live_bytes": 4760
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "allocated_bytes": 8928,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1288,
+            "live_bytes": 0,
+            "peak_live_bytes": 1288
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 5023,
+          "deallocation_calls": 5023,
+          "allocated_bytes": 2591600,
+          "live_bytes": 0,
+          "peak_live_bytes": 13648
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 865,
+          "cow_clones": 1200,
+          "cow_limb_bytes": 542400,
+          "owned_digit_copies": 1251,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 5000,
+            "deallocation_calls": 5000,
+            "allocated_bytes": 2577200,
+            "live_bytes": 0,
+            "peak_live_bytes": 4760
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "allocated_bytes": 8928,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1288,
+            "live_bytes": 0,
+            "peak_live_bytes": 1288
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 20,
+            "live_bytes": 0,
+            "peak_live_bytes": 20
+          }
+        },
+        "total": {
+          "allocation_calls": 5024,
+          "deallocation_calls": 5024,
+          "allocated_bytes": 2591620,
+          "live_bytes": 0,
+          "peak_live_bytes": 13668
+        }
+      }
+    }
+  },
+  {
+    "name": "sqrt_scale5000_x5",
+    "group": "sqrt",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 100,
+          "cow_clones": 140,
+          "cow_limb_bytes": 311920,
+          "owned_digit_copies": 146,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 580,
+            "deallocation_calls": 580,
+            "allocated_bytes": 1436760,
+            "live_bytes": 0,
+            "peak_live_bytes": 22528
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "allocated_bytes": 8928,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1288,
+            "live_bytes": 0,
+            "peak_live_bytes": 1288
+          },
+          "literals": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 48,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 602,
+          "deallocation_calls": 602,
+          "allocated_bytes": 1451112,
+          "live_bytes": 0,
+          "peak_live_bytes": 31368
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 100,
+          "cow_clones": 140,
+          "cow_limb_bytes": 311920,
+          "owned_digit_copies": 146,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 580,
+            "deallocation_calls": 580,
+            "allocated_bytes": 1436760,
+            "live_bytes": 0,
+            "peak_live_bytes": 22528
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "allocated_bytes": 8928,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1288,
+            "live_bytes": 0,
+            "peak_live_bytes": 1288
+          },
+          "literals": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 48,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 20,
+            "live_bytes": 0,
+            "peak_live_bytes": 20
+          }
+        },
+        "total": {
+          "allocation_calls": 603,
+          "deallocation_calls": 603,
+          "allocated_bytes": 1451132,
+          "live_bytes": 0,
+          "peak_live_bytes": 31388
+        }
+      }
+    }
+  },
+  {
+    "name": "multiply_dense_1000d_x5000",
+    "group": "multiply",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 100018,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 20005,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 10004,
+            "deallocation_calls": 10004,
+            "allocated_bytes": 4760992,
+            "live_bytes": 0,
+            "peak_live_bytes": 2896
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 21,
+            "deallocation_calls": 21,
+            "allocated_bytes": 9760,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1456,
+            "live_bytes": 0,
+            "peak_live_bytes": 1456
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 10032,
+          "deallocation_calls": 10032,
+          "allocated_bytes": 4776440,
+          "live_bytes": 0,
+          "peak_live_bytes": 11952
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 100018,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 15005,
+          "temporary_consumptions": 5000
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 10004,
+            "deallocation_calls": 10004,
+            "allocated_bytes": 4760992,
+            "live_bytes": 0,
+            "peak_live_bytes": 2896
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 21,
+            "deallocation_calls": 21,
+            "allocated_bytes": 9760,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1456,
+            "live_bytes": 0,
+            "peak_live_bytes": 1456
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 23,
+            "live_bytes": 0,
+            "peak_live_bytes": 23
+          }
+        },
+        "total": {
+          "allocation_calls": 10033,
+          "deallocation_calls": 10033,
+          "allocated_bytes": 4776463,
+          "live_bytes": 0,
+          "peak_live_bytes": 11975
+        }
+      }
+    }
+  },
+  {
+    "name": "multiply_dense_10000d_x500",
+    "group": "multiply",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 10018,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 2005,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 1504,
+            "deallocation_calls": 1504,
+            "allocated_bytes": 12880992,
+            "live_bytes": 0,
+            "peak_live_bytes": 43680
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 21,
+            "deallocation_calls": 21,
+            "allocated_bytes": 9760,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1456,
+            "live_bytes": 0,
+            "peak_live_bytes": 1456
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 1532,
+          "deallocation_calls": 1532,
+          "allocated_bytes": 12896440,
+          "live_bytes": 0,
+          "peak_live_bytes": 52736
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 10018,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 1505,
+          "temporary_consumptions": 500
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 1504,
+            "deallocation_calls": 1504,
+            "allocated_bytes": 12880992,
+            "live_bytes": 0,
+            "peak_live_bytes": 43680
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 21,
+            "deallocation_calls": 21,
+            "allocated_bytes": 9760,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1456,
+            "live_bytes": 0,
+            "peak_live_bytes": 1456
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 23,
+            "live_bytes": 0,
+            "peak_live_bytes": 23
+          }
+        },
+        "total": {
+          "allocation_calls": 1533,
+          "deallocation_calls": 1533,
+          "allocated_bytes": 12896463,
+          "live_bytes": 0,
+          "peak_live_bytes": 52759
+        }
+      }
+    }
+  },
+  {
+    "name": "multiply_unbalanced_10000d_100d_x2000",
+    "group": "multiply",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 40018,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 8005,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 4004,
+            "deallocation_calls": 4004,
+            "allocated_bytes": 9108592,
+            "live_bytes": 0,
+            "peak_live_bytes": 13696
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 21,
+            "deallocation_calls": 21,
+            "allocated_bytes": 9760,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1456,
+            "live_bytes": 0,
+            "peak_live_bytes": 1456
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 4032,
+          "deallocation_calls": 4032,
+          "allocated_bytes": 9124040,
+          "live_bytes": 0,
+          "peak_live_bytes": 22752
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 40018,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 6005,
+          "temporary_consumptions": 2000
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 4004,
+            "deallocation_calls": 4004,
+            "allocated_bytes": 9108592,
+            "live_bytes": 0,
+            "peak_live_bytes": 13696
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 21,
+            "deallocation_calls": 21,
+            "allocated_bytes": 9760,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1456,
+            "live_bytes": 0,
+            "peak_live_bytes": 1456
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 23,
+            "live_bytes": 0,
+            "peak_live_bytes": 23
+          }
+        },
+        "total": {
+          "allocation_calls": 4033,
+          "deallocation_calls": 4033,
+          "allocated_bytes": 9124063,
+          "live_bytes": 0,
+          "peak_live_bytes": 22775
+        }
+      }
+    }
+  },
+  {
+    "name": "multiply_sparse_10000d_x1000",
+    "group": "multiply",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 20018,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 4005,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 3004,
+            "deallocation_calls": 3004,
+            "allocated_bytes": 25752992,
+            "live_bytes": 0,
+            "peak_live_bytes": 43680
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 21,
+            "deallocation_calls": 21,
+            "allocated_bytes": 9760,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1456,
+            "live_bytes": 0,
+            "peak_live_bytes": 1456
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 3032,
+          "deallocation_calls": 3032,
+          "allocated_bytes": 25768440,
+          "live_bytes": 0,
+          "peak_live_bytes": 52736
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 20018,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 3005,
+          "temporary_consumptions": 1000
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 3004,
+            "deallocation_calls": 3004,
+            "allocated_bytes": 25752992,
+            "live_bytes": 0,
+            "peak_live_bytes": 43680
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 21,
+            "deallocation_calls": 21,
+            "allocated_bytes": 9760,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1456,
+            "live_bytes": 0,
+            "peak_live_bytes": 1456
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 23,
+            "live_bytes": 0,
+            "peak_live_bytes": 23
+          }
+        },
+        "total": {
+          "allocation_calls": 3033,
+          "deallocation_calls": 3033,
+          "allocated_bytes": 25768463,
+          "live_bytes": 0,
+          "peak_live_bytes": 52759
+        }
+      }
+    }
+  },
+  {
+    "name": "divide_multilimb_900d_450d_s100_x1000",
+    "group": "divide_multilimb",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 20021,
+          "cow_clones": 2000,
+          "cow_limb_bytes": 600000,
+          "owned_digit_copies": 5005,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 7004,
+            "deallocation_calls": 7004,
+            "allocated_bytes": 1796696,
+            "live_bytes": 0,
+            "peak_live_bytes": 2392
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 25,
+            "deallocation_calls": 25,
+            "allocated_bytes": 10592,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1456,
+            "live_bytes": 0,
+            "peak_live_bytes": 1456
+          },
+          "literals": {
+            "allocation_calls": 4,
+            "deallocation_calls": 4,
+            "allocated_bytes": 192,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 7037,
+          "deallocation_calls": 7037,
+          "allocated_bytes": 1813024,
+          "live_bytes": 0,
+          "peak_live_bytes": 11448
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 20021,
+          "cow_clones": 2000,
+          "cow_limb_bytes": 600000,
+          "owned_digit_copies": 4005,
+          "temporary_consumptions": 1000
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 7004,
+            "deallocation_calls": 7004,
+            "allocated_bytes": 1796696,
+            "live_bytes": 0,
+            "peak_live_bytes": 2392
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 25,
+            "deallocation_calls": 25,
+            "allocated_bytes": 10592,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1456,
+            "live_bytes": 0,
+            "peak_live_bytes": 1456
+          },
+          "literals": {
+            "allocation_calls": 4,
+            "deallocation_calls": 4,
+            "allocated_bytes": 192,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 23,
+            "live_bytes": 0,
+            "peak_live_bytes": 23
+          }
+        },
+        "total": {
+          "allocation_calls": 7038,
+          "deallocation_calls": 7038,
+          "allocated_bytes": 1813047,
+          "live_bytes": 0,
+          "peak_live_bytes": 11471
+        }
+      }
+    }
+  },
+  {
+    "name": "divide_multilimb_1000d_900d_s1000_x500",
+    "group": "divide_multilimb",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 10021,
+          "cow_clones": 1000,
+          "cow_limb_bytes": 424000,
+          "owned_digit_copies": 2505,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 3504,
+            "deallocation_calls": 3504,
+            "allocated_bytes": 1192944,
+            "live_bytes": 0,
+            "peak_live_bytes": 3424
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 25,
+            "deallocation_calls": 25,
+            "allocated_bytes": 10592,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1456,
+            "live_bytes": 0,
+            "peak_live_bytes": 1456
+          },
+          "literals": {
+            "allocation_calls": 4,
+            "deallocation_calls": 4,
+            "allocated_bytes": 192,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 3537,
+          "deallocation_calls": 3537,
+          "allocated_bytes": 1209272,
+          "live_bytes": 0,
+          "peak_live_bytes": 12480
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 10021,
+          "cow_clones": 1000,
+          "cow_limb_bytes": 424000,
+          "owned_digit_copies": 2005,
+          "temporary_consumptions": 500
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 3504,
+            "deallocation_calls": 3504,
+            "allocated_bytes": 1192944,
+            "live_bytes": 0,
+            "peak_live_bytes": 3424
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 25,
+            "deallocation_calls": 25,
+            "allocated_bytes": 10592,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1456,
+            "live_bytes": 0,
+            "peak_live_bytes": 1456
+          },
+          "literals": {
+            "allocation_calls": 4,
+            "deallocation_calls": 4,
+            "allocated_bytes": 192,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 23,
+            "live_bytes": 0,
+            "peak_live_bytes": 23
+          }
+        },
+        "total": {
+          "allocation_calls": 3538,
+          "deallocation_calls": 3538,
+          "allocated_bytes": 1209295,
+          "live_bytes": 0,
+          "peak_live_bytes": 12503
+        }
+      }
+    }
+  },
+  {
+    "name": "modulo_1000d_350d_x3000",
+    "group": "modulo",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 60018,
+          "cow_clones": 9000,
+          "cow_limb_bytes": 3156000,
+          "owned_digit_copies": 21005,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 33004,
+            "deallocation_calls": 33004,
+            "allocated_bytes": 8832700,
+            "live_bytes": 0,
+            "peak_live_bytes": 2792
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 21,
+            "deallocation_calls": 21,
+            "allocated_bytes": 9760,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1456,
+            "live_bytes": 0,
+            "peak_live_bytes": 1456
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 33032,
+          "deallocation_calls": 33032,
+          "allocated_bytes": 8848148,
+          "live_bytes": 0,
+          "peak_live_bytes": 11848
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 60018,
+          "cow_clones": 9000,
+          "cow_limb_bytes": 3156000,
+          "owned_digit_copies": 18005,
+          "temporary_consumptions": 3000
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 33004,
+            "deallocation_calls": 33004,
+            "allocated_bytes": 8832700,
+            "live_bytes": 0,
+            "peak_live_bytes": 2792
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 21,
+            "deallocation_calls": 21,
+            "allocated_bytes": 9760,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1456,
+            "live_bytes": 0,
+            "peak_live_bytes": 1456
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 23,
+            "live_bytes": 0,
+            "peak_live_bytes": 23
+          }
+        },
+        "total": {
+          "allocation_calls": 33033,
+          "deallocation_calls": 33033,
+          "allocated_bytes": 8848171,
+          "live_bytes": 0,
+          "peak_live_bytes": 11871
+        }
+      }
+    }
+  },
+  {
+    "name": "power_100d_e17_x1000",
+    "group": "power",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 19015,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 3003,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 12002,
+            "deallocation_calls": 12002,
+            "allocated_bytes": 2484096,
+            "live_bytes": 0,
+            "peak_live_bytes": 2584
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "allocated_bytes": 8928,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1400,
+            "live_bytes": 0,
+            "peak_live_bytes": 1400
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 96
+          }
+        },
+        "total": {
+          "allocation_calls": 12026,
+          "deallocation_calls": 12026,
+          "allocated_bytes": 2498656,
+          "live_bytes": 0,
+          "peak_live_bytes": 11632
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 19015,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 2003,
+          "temporary_consumptions": 1000
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 12002,
+            "deallocation_calls": 12002,
+            "allocated_bytes": 2484096,
+            "live_bytes": 0,
+            "peak_live_bytes": 2584
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "allocated_bytes": 8928,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1400,
+            "live_bytes": 0,
+            "peak_live_bytes": 1400
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 96
+          },
+          "execution_plans": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 22,
+            "live_bytes": 0,
+            "peak_live_bytes": 22
+          }
+        },
+        "total": {
+          "allocation_calls": 12027,
+          "deallocation_calls": 12027,
+          "allocated_bytes": 2498678,
+          "live_bytes": 0,
+          "peak_live_bytes": 11654
+        }
+      }
+    }
+  },
+  {
+    "name": "power_20d_e32_x2000",
+    "group": "power",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 38015,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 2001,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 24000,
+            "deallocation_calls": 24000,
+            "allocated_bytes": 2336000,
+            "live_bytes": 0,
+            "peak_live_bytes": 992
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "allocated_bytes": 8928,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1400,
+            "live_bytes": 0,
+            "peak_live_bytes": 1400
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 96
+          }
+        },
+        "total": {
+          "allocation_calls": 24024,
+          "deallocation_calls": 24024,
+          "allocated_bytes": 2350560,
+          "live_bytes": 0,
+          "peak_live_bytes": 10040
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 38015,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 2001,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 24000,
+            "deallocation_calls": 24000,
+            "allocated_bytes": 2336000,
+            "live_bytes": 0,
+            "peak_live_bytes": 992
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "allocated_bytes": 8928,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1400,
+            "live_bytes": 0,
+            "peak_live_bytes": 1400
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 96
+          },
+          "execution_plans": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 22,
+            "live_bytes": 0,
+            "peak_live_bytes": 22
+          }
+        },
+        "total": {
+          "allocation_calls": 24025,
+          "deallocation_calls": 24025,
+          "allocated_bytes": 2350582,
+          "live_bytes": 0,
+          "peak_live_bytes": 10062
+        }
+      }
+    }
+  },
+  {
+    "name": "ibase_literal_flip_20000",
+    "group": "literal_base",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 740016,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 0,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 24,
+            "deallocation_calls": 24,
+            "allocated_bytes": 18384,
+            "live_bytes": 0,
+            "peak_live_bytes": 11360
+          },
+          "frames": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 4104,
+            "live_bytes": 0,
+            "peak_live_bytes": 4104
+          },
+          "results": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 2576,
+            "live_bytes": 0,
+            "peak_live_bytes": 2296
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 96
+          }
+        },
+        "total": {
+          "allocation_calls": 32,
+          "deallocation_calls": 32,
+          "allocated_bytes": 25160,
+          "live_bytes": 0,
+          "peak_live_bytes": 15840
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 740016,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 0,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 24,
+            "deallocation_calls": 24,
+            "allocated_bytes": 18384,
+            "live_bytes": 0,
+            "peak_live_bytes": 11360
+          },
+          "frames": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 4104,
+            "live_bytes": 0,
+            "peak_live_bytes": 4104
+          },
+          "results": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 2576,
+            "live_bytes": 0,
+            "peak_live_bytes": 2296
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 96
+          },
+          "execution_plans": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 34,
+            "live_bytes": 0,
+            "peak_live_bytes": 34
+          }
+        },
+        "total": {
+          "allocation_calls": 33,
+          "deallocation_calls": 33,
+          "allocated_bytes": 25194,
+          "live_bytes": 0,
+          "peak_live_bytes": 15840
+        }
+      }
+    }
+  },
+  {
+    "name": "recursion_50_x1000",
+    "group": "recursion",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 1010013,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 25001,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 52000,
+            "deallocation_calls": 52000,
+            "allocated_bytes": 1856000,
+            "live_bytes": 0,
+            "peak_live_bytes": 312
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 21,
+            "deallocation_calls": 21,
+            "allocated_bytes": 17888,
+            "live_bytes": 0,
+            "peak_live_bytes": 8112
+          },
+          "frames": {
+            "allocation_calls": 11,
+            "deallocation_calls": 11,
+            "allocated_bytes": 10248,
+            "live_bytes": 0,
+            "peak_live_bytes": 8760
+          },
+          "results": {
+            "allocation_calls": 51,
+            "deallocation_calls": 51,
+            "allocated_bytes": 68656,
+            "live_bytes": 0,
+            "peak_live_bytes": 68656
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 96
+          }
+        },
+        "total": {
+          "allocation_calls": 52085,
+          "deallocation_calls": 52085,
+          "allocated_bytes": 1952888,
+          "live_bytes": 0,
+          "peak_live_bytes": 82608
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 1010013,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 25001,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 52000,
+            "deallocation_calls": 52000,
+            "allocated_bytes": 1856000,
+            "live_bytes": 0,
+            "peak_live_bytes": 312
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 21,
+            "deallocation_calls": 21,
+            "allocated_bytes": 17888,
+            "live_bytes": 0,
+            "peak_live_bytes": 8112
+          },
+          "frames": {
+            "allocation_calls": 11,
+            "deallocation_calls": 11,
+            "allocated_bytes": 10248,
+            "live_bytes": 0,
+            "peak_live_bytes": 8760
+          },
+          "results": {
+            "allocation_calls": 51,
+            "deallocation_calls": 51,
+            "allocated_bytes": 68656,
+            "live_bytes": 0,
+            "peak_live_bytes": 68656
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 96
+          },
+          "execution_plans": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 46,
+            "live_bytes": 0,
+            "peak_live_bytes": 46
+          }
+        },
+        "total": {
+          "allocation_calls": 52087,
+          "deallocation_calls": 52087,
+          "allocated_bytes": 1952934,
+          "live_bytes": 0,
+          "peak_live_bytes": 82654
+        }
+      }
+    }
+  },
+  {
+    "name": "sparse_array_200000",
+    "group": "array_sparse",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 7000015,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 0,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "arrays": {
+            "allocation_calls": 32,
+            "deallocation_calls": 32,
+            "allocated_bytes": 2544,
+            "live_bytes": 0,
+            "peak_live_bytes": 2544
+          },
+          "instructions": {
+            "allocation_calls": 18,
+            "deallocation_calls": 18,
+            "allocated_bytes": 16096,
+            "live_bytes": 0,
+            "peak_live_bytes": 10800
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 2296,
+            "live_bytes": 0,
+            "peak_live_bytes": 2296
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 144
+          }
+        },
+        "total": {
+          "allocation_calls": 57,
+          "deallocation_calls": 57,
+          "allocated_bytes": 25168,
+          "live_bytes": 0,
+          "peak_live_bytes": 16168
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 7000015,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 0,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "arrays": {
+            "allocation_calls": 32,
+            "deallocation_calls": 32,
+            "allocated_bytes": 2544,
+            "live_bytes": 0,
+            "peak_live_bytes": 2544
+          },
+          "instructions": {
+            "allocation_calls": 18,
+            "deallocation_calls": 18,
+            "allocated_bytes": 16096,
+            "live_bytes": 0,
+            "peak_live_bytes": 10800
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 2296,
+            "live_bytes": 0,
+            "peak_live_bytes": 2296
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 144
+          },
+          "execution_plans": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 38,
+            "live_bytes": 0,
+            "peak_live_bytes": 38
+          }
+        },
+        "total": {
+          "allocation_calls": 58,
+          "deallocation_calls": 58,
+          "allocated_bytes": 25206,
+          "live_bytes": 0,
+          "peak_live_bytes": 16168
+        }
+      }
+    }
+  },
+  {
+    "name": "frontend_definitions_2000",
+    "group": "frontend_definition",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 2003,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 0,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 14005,
+            "deallocation_calls": 14005,
+            "allocated_bytes": 10176544,
+            "live_bytes": 0,
+            "peak_live_bytes": 4976
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 896,
+            "live_bytes": 0,
+            "peak_live_bytes": 896
+          },
+          "literals": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          }
+        },
+        "total": {
+          "allocation_calls": 14008,
+          "deallocation_calls": 14008,
+          "allocated_bytes": 10181528,
+          "live_bytes": 0,
+          "peak_live_bytes": 9960
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 2003,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 0,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 14005,
+            "deallocation_calls": 14005,
+            "allocated_bytes": 10176544,
+            "live_bytes": 0,
+            "peak_live_bytes": 4976
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 896,
+            "live_bytes": 0,
+            "peak_live_bytes": 896
+          },
+          "literals": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "execution_plans": {
+            "allocation_calls": 2000,
+            "deallocation_calls": 2000,
+            "allocated_bytes": 28000,
+            "live_bytes": 0,
+            "peak_live_bytes": 28
+          }
+        },
+        "total": {
+          "allocation_calls": 16008,
+          "deallocation_calls": 16008,
+          "allocated_bytes": 10209528,
+          "live_bytes": 0,
+          "peak_live_bytes": 9988
+        }
+      }
+    }
+  },
+  {
+    "name": "decimal_input_4000d_x100",
+    "group": "decimal_input",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 304,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 201,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 200,
+            "deallocation_calls": 200,
+            "allocated_bytes": 182800,
+            "live_bytes": 0,
+            "peak_live_bytes": 3656
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 406,
+            "deallocation_calls": 406,
+            "allocated_bytes": 84192,
+            "live_bytes": 0,
+            "peak_live_bytes": 720
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 168,
+            "live_bytes": 0,
+            "peak_live_bytes": 168
+          },
+          "literals": {
+            "allocation_calls": 100,
+            "deallocation_calls": 100,
+            "allocated_bytes": 4800,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 709,
+          "deallocation_calls": 709,
+          "allocated_bytes": 276048,
+          "live_bytes": 0,
+          "peak_live_bytes": 8456
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 304,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 201,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 200,
+            "deallocation_calls": 200,
+            "allocated_bytes": 182800,
+            "live_bytes": 0,
+            "peak_live_bytes": 3656
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 406,
+            "deallocation_calls": 406,
+            "allocated_bytes": 84192,
+            "live_bytes": 0,
+            "peak_live_bytes": 720
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 168,
+            "live_bytes": 0,
+            "peak_live_bytes": 168
+          },
+          "literals": {
+            "allocation_calls": 100,
+            "deallocation_calls": 100,
+            "allocated_bytes": 4800,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          }
+        },
+        "total": {
+          "allocation_calls": 709,
+          "deallocation_calls": 709,
+          "allocated_bytes": 276048,
+          "live_bytes": 0,
+          "peak_live_bytes": 8456
+        }
+      }
+    }
+  },
+  {
+    "name": "decimal_output_200d_x1000",
+    "group": "decimal_output",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 16012,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 1002,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 140,
+            "live_bytes": 0,
+            "peak_live_bytes": 140
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 13,
+            "deallocation_calls": 13,
+            "allocated_bytes": 8096,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1232,
+            "live_bytes": 0,
+            "peak_live_bytes": 1232
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 21,
+          "deallocation_calls": 21,
+          "allocated_bytes": 13652,
+          "live_bytes": 0,
+          "peak_live_bytes": 9820
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 16012,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 1002,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 140,
+            "live_bytes": 0,
+            "peak_live_bytes": 140
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 13,
+            "deallocation_calls": 13,
+            "allocated_bytes": 8096,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1232,
+            "live_bytes": 0,
+            "peak_live_bytes": 1232
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 19,
+            "live_bytes": 0,
+            "peak_live_bytes": 19
+          }
+        },
+        "total": {
+          "allocation_calls": 22,
+          "deallocation_calls": 22,
+          "allocated_bytes": 13671,
+          "live_bytes": 0,
+          "peak_live_bytes": 9820
+        }
+      }
+    }
+  },
+  {
+    "name": "streaming_statements_20000",
+    "group": "streaming",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 160004,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 0,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 180006,
+            "deallocation_calls": 180006,
+            "allocated_bytes": 51200992,
+            "live_bytes": 0,
+            "peak_live_bytes": 1392
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 504,
+            "live_bytes": 0,
+            "peak_live_bytes": 504
+          },
+          "literals": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          }
+        },
+        "total": {
+          "allocation_calls": 180010,
+          "deallocation_calls": 180010,
+          "allocated_bytes": 51205584,
+          "live_bytes": 0,
+          "peak_live_bytes": 5816
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 160004,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 0,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 180006,
+            "deallocation_calls": 180006,
+            "allocated_bytes": 51200992,
+            "live_bytes": 0,
+            "peak_live_bytes": 1392
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 504,
+            "live_bytes": 0,
+            "peak_live_bytes": 504
+          },
+          "literals": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "execution_plans": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          }
+        },
+        "total": {
+          "allocation_calls": 180010,
+          "deallocation_calls": 180010,
+          "allocated_bytes": 51205584,
+          "live_bytes": 0,
+          "peak_live_bytes": 5816
+        }
+      }
+    }
+  },
+  {
+    "name": "square_100d_x100000",
+    "group": "square",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 2000015,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 400003,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 200002,
+            "deallocation_calls": 200002,
+            "allocated_bytes": 15200096,
+            "live_bytes": 0,
+            "peak_live_bytes": 400
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "allocated_bytes": 8928,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1456,
+            "live_bytes": 0,
+            "peak_live_bytes": 1456
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 200025,
+          "deallocation_calls": 200025,
+          "allocated_bytes": 15214664,
+          "live_bytes": 0,
+          "peak_live_bytes": 9776
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 2000015,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 300003,
+          "temporary_consumptions": 100000
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 200002,
+            "deallocation_calls": 200002,
+            "allocated_bytes": 15200096,
+            "live_bytes": 0,
+            "peak_live_bytes": 400
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "allocated_bytes": 8928,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1456,
+            "live_bytes": 0,
+            "peak_live_bytes": 1456
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 23,
+            "live_bytes": 0,
+            "peak_live_bytes": 23
+          }
+        },
+        "total": {
+          "allocation_calls": 200026,
+          "deallocation_calls": 200026,
+          "allocated_bytes": 15214687,
+          "live_bytes": 0,
+          "peak_live_bytes": 9776
+        }
+      }
+    }
+  },
+  {
+    "name": "square_1000d_x10000",
+    "group": "square",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 200015,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 40003,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 20002,
+            "deallocation_calls": 20002,
+            "allocated_bytes": 9520496,
+            "live_bytes": 0,
+            "peak_live_bytes": 2400
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "allocated_bytes": 8928,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1456,
+            "live_bytes": 0,
+            "peak_live_bytes": 1456
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 20025,
+          "deallocation_calls": 20025,
+          "allocated_bytes": 9535064,
+          "live_bytes": 0,
+          "peak_live_bytes": 11456
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 200015,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 30003,
+          "temporary_consumptions": 10000
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 20002,
+            "deallocation_calls": 20002,
+            "allocated_bytes": 9520496,
+            "live_bytes": 0,
+            "peak_live_bytes": 2400
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "allocated_bytes": 8928,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1456,
+            "live_bytes": 0,
+            "peak_live_bytes": 1456
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 23,
+            "live_bytes": 0,
+            "peak_live_bytes": 23
+          }
+        },
+        "total": {
+          "allocation_calls": 20026,
+          "deallocation_calls": 20026,
+          "allocated_bytes": 9535087,
+          "live_bytes": 0,
+          "peak_live_bytes": 11479
+        }
+      }
+    }
+  },
+  {
+    "name": "square_10000d_x500",
+    "group": "square",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 10015,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 2003,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 1502,
+            "deallocation_calls": 1502,
+            "allocated_bytes": 12876496,
+            "live_bytes": 0,
+            "peak_live_bytes": 39184
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "allocated_bytes": 8928,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1456,
+            "live_bytes": 0,
+            "peak_live_bytes": 1456
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 1525,
+          "deallocation_calls": 1525,
+          "allocated_bytes": 12891064,
+          "live_bytes": 0,
+          "peak_live_bytes": 48240
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 10015,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 1503,
+          "temporary_consumptions": 500
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 1502,
+            "deallocation_calls": 1502,
+            "allocated_bytes": 12876496,
+            "live_bytes": 0,
+            "peak_live_bytes": 39184
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "allocated_bytes": 8928,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1456,
+            "live_bytes": 0,
+            "peak_live_bytes": 1456
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 23,
+            "live_bytes": 0,
+            "peak_live_bytes": 23
+          }
+        },
+        "total": {
+          "allocation_calls": 1526,
+          "deallocation_calls": 1526,
+          "allocated_bytes": 12891087,
+          "live_bytes": 0,
+          "peak_live_bytes": 48263
+        }
+      }
+    }
+  },
+  {
+    "name": "literal_repeat_2000d_x2000",
+    "group": "literal_repeat",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 42012,
+          "cow_clones": 2000,
+          "cow_limb_bytes": 1784000,
+          "owned_digit_copies": 10001,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 4002,
+            "deallocation_calls": 4002,
+            "allocated_bytes": 1880940,
+            "live_bytes": 0,
+            "peak_live_bytes": 2820
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 13,
+            "deallocation_calls": 13,
+            "allocated_bytes": 8096,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 1344,
+            "live_bytes": 0,
+            "peak_live_bytes": 1344
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 96
+          }
+        },
+        "total": {
+          "allocation_calls": 4020,
+          "deallocation_calls": 4020,
+          "allocated_bytes": 1894564,
+          "live_bytes": 0,
+          "peak_live_bytes": 11980
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 42012,
+          "cow_clones": 2000,
+          "cow_limb_bytes": 1784000,
+          "owned_digit_copies": 8001,
+          "temporary_consumptions": 2000
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 4002,
+            "deallocation_calls": 4002,
+            "allocated_bytes": 1880940,
+            "live_bytes": 0,
+            "peak_live_bytes": 2820
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 13,
+            "deallocation_calls": 13,
+            "allocated_bytes": 8096,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 1344,
+            "live_bytes": 0,
+            "peak_live_bytes": 1344
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 96
+          },
+          "execution_plans": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 24,
+            "live_bytes": 0,
+            "peak_live_bytes": 24
+          }
+        },
+        "total": {
+          "allocation_calls": 4021,
+          "deallocation_calls": 4021,
+          "allocated_bytes": 1894588,
+          "live_bytes": 0,
+          "peak_live_bytes": 12004
+        }
+      }
+    }
+  },
+  {
+    "name": "binary_output_1000d_x300",
+    "group": "binary_output",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 4815,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 602,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 4202,
+            "deallocation_calls": 4202,
+            "allocated_bytes": 936496,
+            "live_bytes": 0,
+            "peak_live_bytes": 2512
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "allocated_bytes": 8928,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1232,
+            "live_bytes": 0,
+            "peak_live_bytes": 1232
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 4225,
+          "deallocation_calls": 4225,
+          "allocated_bytes": 950840,
+          "live_bytes": 0,
+          "peak_live_bytes": 11344
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 4815,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 602,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 4202,
+            "deallocation_calls": 4202,
+            "allocated_bytes": 936496,
+            "live_bytes": 0,
+            "peak_live_bytes": 2512
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "allocated_bytes": 8928,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1232,
+            "live_bytes": 0,
+            "peak_live_bytes": 1232
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 19,
+            "live_bytes": 0,
+            "peak_live_bytes": 19
+          }
+        },
+        "total": {
+          "allocation_calls": 4226,
+          "deallocation_calls": 4226,
+          "allocated_bytes": 950859,
+          "live_bytes": 0,
+          "peak_live_bytes": 11363
+        }
+      }
+    }
+  },
+  {
+    "name": "octal_output_1000d_x300",
+    "group": "octal_output",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 4815,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 602,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 4202,
+            "deallocation_calls": 4202,
+            "allocated_bytes": 936496,
+            "live_bytes": 0,
+            "peak_live_bytes": 2512
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "allocated_bytes": 8928,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1232,
+            "live_bytes": 0,
+            "peak_live_bytes": 1232
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 4225,
+          "deallocation_calls": 4225,
+          "allocated_bytes": 950840,
+          "live_bytes": 0,
+          "peak_live_bytes": 11344
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 4815,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 602,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 4202,
+            "deallocation_calls": 4202,
+            "allocated_bytes": 936496,
+            "live_bytes": 0,
+            "peak_live_bytes": 2512
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 17,
+            "deallocation_calls": 17,
+            "allocated_bytes": 8928,
+            "live_bytes": 0,
+            "peak_live_bytes": 5424
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 1232,
+            "live_bytes": 0,
+            "peak_live_bytes": 1232
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 19,
+            "live_bytes": 0,
+            "peak_live_bytes": 19
+          }
+        },
+        "total": {
+          "allocation_calls": 4226,
+          "deallocation_calls": 4226,
+          "allocated_bytes": 950859,
+          "live_bytes": 0,
+          "peak_live_bytes": 11363
+        }
+      }
+    }
+  },
+  {
+    "name": "binary_input_100000d_x3",
+    "group": "binary_input",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 19,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 3076,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 12888,
+            "deallocation_calls": 12888,
+            "allocated_bytes": 1320204,
+            "live_bytes": 0,
+            "peak_live_bytes": 79788
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 26,
+            "deallocation_calls": 26,
+            "allocated_bytes": 5152,
+            "live_bytes": 0,
+            "peak_live_bytes": 720
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 168,
+            "live_bytes": 0,
+            "peak_live_bytes": 168
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 12920,
+          "deallocation_calls": 12920,
+          "allocated_bytes": 1329756,
+          "live_bytes": 0,
+          "peak_live_bytes": 84540
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 19,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 3076,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 12888,
+            "deallocation_calls": 12888,
+            "allocated_bytes": 1320204,
+            "live_bytes": 0,
+            "peak_live_bytes": 79788
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 26,
+            "deallocation_calls": 26,
+            "allocated_bytes": 5152,
+            "live_bytes": 0,
+            "peak_live_bytes": 720
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 168,
+            "live_bytes": 0,
+            "peak_live_bytes": 168
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          }
+        },
+        "total": {
+          "allocation_calls": 12920,
+          "deallocation_calls": 12920,
+          "allocated_bytes": 1329756,
+          "live_bytes": 0,
+          "peak_live_bytes": 84540
+        }
+      }
+    }
+  },
+  {
+    "name": "hex_input_100000d_x3",
+    "group": "hex_input",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 21,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 6148,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 31713,
+            "deallocation_calls": 31713,
+            "allocated_bytes": 5673888,
+            "live_bytes": 0,
+            "peak_live_bytes": 321064
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 27,
+            "deallocation_calls": 27,
+            "allocated_bytes": 6048,
+            "live_bytes": 0,
+            "peak_live_bytes": 1392
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 280,
+            "live_bytes": 0,
+            "peak_live_bytes": 280
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 31746,
+          "deallocation_calls": 31746,
+          "allocated_bytes": 5684448,
+          "live_bytes": 0,
+          "peak_live_bytes": 325928
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 21,
+          "cow_clones": 0,
+          "cow_limb_bytes": 0,
+          "owned_digit_copies": 6148,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 31713,
+            "deallocation_calls": 31713,
+            "allocated_bytes": 5673888,
+            "live_bytes": 0,
+            "peak_live_bytes": 321064
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 27,
+            "deallocation_calls": 27,
+            "allocated_bytes": 6048,
+            "live_bytes": 0,
+            "peak_live_bytes": 1392
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "results": {
+            "allocation_calls": 1,
+            "deallocation_calls": 1,
+            "allocated_bytes": 280,
+            "live_bytes": 0,
+            "peak_live_bytes": 280
+          },
+          "literals": {
+            "allocation_calls": 3,
+            "deallocation_calls": 3,
+            "allocated_bytes": 144,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          }
+        },
+        "total": {
+          "allocation_calls": 31746,
+          "deallocation_calls": 31746,
+          "allocated_bytes": 5684448,
+          "live_bytes": 0,
+          "peak_live_bytes": 325928
+        }
+      }
+    }
+  },
+  {
+    "name": "temporary_chain_1000d_x50000",
+    "group": "temporary_chain",
+    "measurements": {
+      "baseline": {
+        "events": {
+          "instructions_executed": 2400016,
+          "cow_clones": 350000,
+          "cow_limb_bytes": 156800000,
+          "owned_digit_copies": 1350003,
+          "temporary_consumptions": 0
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 700002,
+            "deallocation_calls": 700002,
+            "allocated_bytes": 173600496,
+            "live_bytes": 0,
+            "peak_live_bytes": 4464
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 25,
+            "deallocation_calls": 25,
+            "allocated_bytes": 19392,
+            "live_bytes": 0,
+            "peak_live_bytes": 8784
+          },
+          "frames": {
+            "allocation_calls": 5,
+            "deallocation_calls": 5,
+            "allocated_bytes": 4200,
+            "live_bytes": 0,
+            "peak_live_bytes": 4200
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 3472,
+            "live_bytes": 0,
+            "peak_live_bytes": 3472
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          }
+        },
+        "total": {
+          "allocation_calls": 700036,
+          "deallocation_calls": 700036,
+          "allocated_bytes": 173627656,
+          "live_bytes": 0,
+          "peak_live_bytes": 19176
+        }
+      },
+      "candidate": {
+        "events": {
+          "instructions_executed": 2400016,
+          "cow_clones": 50000,
+          "cow_limb_bytes": 22400000,
+          "owned_digit_copies": 1000003,
+          "temporary_consumptions": 350000
+        },
+        "allocations": {
+          "digits": {
+            "allocation_calls": 100002,
+            "deallocation_calls": 100002,
+            "allocated_bytes": 24800496,
+            "live_bytes": 0,
+            "peak_live_bytes": 1488
+          },
+          "arrays": {
+            "allocation_calls": 0,
+            "deallocation_calls": 0,
+            "allocated_bytes": 0,
+            "live_bytes": 0,
+            "peak_live_bytes": 0
+          },
+          "instructions": {
+            "allocation_calls": 25,
+            "deallocation_calls": 25,
+            "allocated_bytes": 19392,
+            "live_bytes": 0,
+            "peak_live_bytes": 8784
+          },
+          "frames": {
+            "allocation_calls": 5,
+            "deallocation_calls": 5,
+            "allocated_bytes": 4200,
+            "live_bytes": 0,
+            "peak_live_bytes": 4200
+          },
+          "results": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 3472,
+            "live_bytes": 0,
+            "peak_live_bytes": 3472
+          },
+          "literals": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 96,
+            "live_bytes": 0,
+            "peak_live_bytes": 48
+          },
+          "execution_plans": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 53,
+            "live_bytes": 0,
+            "peak_live_bytes": 53
+          }
+        },
+        "total": {
+          "allocation_calls": 100038,
+          "deallocation_calls": 100038,
+          "allocated_bytes": 24827709,
+          "live_bytes": 0,
+          "peak_live_bytes": 16253
+        }
+      }
+    }
+  }
+]

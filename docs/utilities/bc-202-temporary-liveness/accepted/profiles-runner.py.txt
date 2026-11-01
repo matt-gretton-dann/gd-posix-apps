@@ -1,0 +1,28 @@
+"""Separate exact-checked allocation diagnostics for every full corpus case."""
+from pathlib import Path
+import hashlib,importlib.util,json,subprocess
+repo=Path('/private/tmp/gd-posix-consume-temporaries');spec=importlib.util.spec_from_file_location('bench',repo/'src/bc/scripts/bench-bc.py');bench=importlib.util.module_from_spec(spec);spec.loader.exec_module(bench)
+root=Path('/private/tmp/gd-bc-202-consume-policy-profiles');root.mkdir();(root/'workloads').mkdir()
+implementations={role:json.loads(Path('/private/tmp/gd-bc-202-consume-'+role+'-profile/manifest.json').read_text()) for role in ['baseline','candidate']}
+implementations['candidate']=json.loads(Path('/private/tmp/gd-bc-202-consume-policy-profile/manifest.json').read_text())
+assert implementations['baseline']['source_revision']=='e53a4b9fb73fc037bc4e30aecb310fbff37b92a2'
+assert implementations['candidate']['source_revision']=='7974cb3d8b16c98441f9dc960f6c91f52736b06d'
+cases=bench.corpus('full');rows=[]
+for case in cases:
+ expected=bench.canonical_output(('\n'.join(case['expected'])+'\n').encode());(root/'workloads'/(case['name']+'.bc')).write_bytes(case['program'].encode())
+ for role,metadata in implementations.items():
+  output=root/(role+'-'+case['name']+'.json');env=bench.environment();env['GD_BC_PROFILE_OUTPUT']=str(output)
+  child=subprocess.run(metadata['argv'],input=case['program'].encode(),stdout=subprocess.PIPE,stderr=subprocess.PIPE,env=env,timeout=90)
+  assert child.returncode==0 and not child.stderr,(role,case['name'],child.stderr)
+  assert bench.canonical_output(child.stdout)==expected,(role,case['name'],'wrong value')
+  d=json.loads(output.read_text());assert d['instrumented'] and d['total']['live_bytes']==0
+  assert d['total']['allocation_calls']==d['total']['deallocation_calls']
+  rows.append({'name':case['name'],'group':case['group'],'role':role,'checked':True,'program_sha256':hashlib.sha256(case['program'].encode()).hexdigest(),'stdout_sha256':hashlib.sha256(child.stdout).hexdigest(),'counters':output.name})
+ print(case['name'],'checked',flush=True)
+(root/'manifest.json').write_text(json.dumps({'implementations':implementations,'scope':'Separate allocation/COW diagnostics for every full corpus case. Instrumented elapsed times are not performance evidence. Selected allocator totals are not process malloc traffic or RSS; plan construction temporaries and owner headers remain outside those counters.','rows':rows},indent=2)+'\n')
+summary=[]
+for case in cases:
+ pair={role:json.loads((root/(role+'-'+case['name']+'.json')).read_text()) for role in implementations}
+ summary.append({'name':case['name'],'group':case['group'],'measurements':{role:{'events':{k:p['events'].get(k,0) for k in ['instructions_executed','cow_clones','cow_limb_bytes','owned_digit_copies','temporary_consumptions']},'allocations':p['allocations'],'total':p['total']} for role,p in pair.items()}})
+(root/'summary.json').write_text(json.dumps(summary,indent=2)+'\n')
+print('All',len(rows),'instrumented executions pass independent value and balanced-storage checks')
