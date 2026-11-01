@@ -1,4 +1,4 @@
-/** \file   src/util/test-program-name.cc
+/** \file   src/util/tests/test-program-name.cc
  *  \brief  Unit tests for program_name utils
  *  \author Copyright 2021, Matthew Gretton-Dann
  *          SPDX-License-Identifier: Apache-2.0
@@ -6,6 +6,8 @@
 
 #include "util/utils.hh"
 
+// Catch2 v2 uses std::nothrow without including its declaring header.
+#include <new>
 #include <catch2/catch.hpp>
 
 TEST_CASE("program_name", "[util][program_name]")

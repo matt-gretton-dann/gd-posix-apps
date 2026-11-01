@@ -2,6 +2,7 @@
  * Basic-block and repeated-use obligations for arithmetic ownership transfer.
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <new>
 #include <catch2/catch.hpp>
 
 #include "execution-plan.hh"

@@ -1,6 +1,7 @@
 #include "gd/string.h"
 #include "gd/unistd.h"
 
+#include <new>
 #include <catch2/catch.hpp>
 
 #include <array>

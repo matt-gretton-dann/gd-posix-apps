@@ -5,6 +5,7 @@
 
 #include "gd/nl_types.h"
 
+#include <new>
 #include <catch2/catch.hpp>
 
 #include <sstream>
