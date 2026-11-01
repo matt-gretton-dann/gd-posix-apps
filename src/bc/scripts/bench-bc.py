@@ -271,6 +271,15 @@ def corpus(preset="full", selected=None, listing=False, seed=197200):
         "for(i=0;i<{};i++) r=g(a)\nr".format(value, count),
         lambda value=value: 8 * int(value),
         {"digits": digits, "iterations": count, "terms": 8})
+    # File input is a separate class: an argv artifact with closed stdin,
+    # not a stdin execution relabeled as file throughput. Append after existing
+    # cases so their source/oracle dictionaries and RNG consumption stay stable.
+    count = iterations(20000)
+    file_case = "file_statements_{}".format(count)
+    add(file_case, "file_streaming", "s=0\n" + "s+=1\n" * count + "s",
+        count, {"statements": count})
+    if cases and cases[-1]['name'] == file_case:
+        cases[-1]['input_mode'] = 'file'
     if selected:
         missing = set(selected) - set(known)
         if missing:
@@ -301,12 +310,29 @@ def environment():
     return result
 
 
-def run_checked(implementation, case, timeout):
+def run_checked(implementation, case, timeout, program_path=None):
     label = implementation["name"] + " / " + case["name"]
     payload, child_environment = case["program"].encode("utf-8"), environment()
+    argv = list(implementation["argv"])
+    mode = case.get("input_mode", "stdin")
+    if mode == "file":
+        if program_path is None:
+            raise BenchmarkError(label + " requires a staged file artifact")
+        try:
+            artifact = Path(program_path).read_bytes()
+        except OSError as error:
+            raise BenchmarkError(label + " cannot read file artifact: " + str(error))
+        if artifact != payload:
+            raise BenchmarkError(label + " file artifact does not match workload program")
+        argv.append(str(program_path))
+        payload = b""  # EOF after file input; never wait for a second input source.
+    elif mode != "stdin":
+        raise BenchmarkError(label + " has unknown input mode: " + str(mode))
+    # Staging/validation is outside timing. File trials therefore use cached
+    # artifact bytes, not a cold-filesystem or disk-bandwidth experiment.
     started = time.perf_counter()
     try:
-        child = subprocess.run(implementation["argv"], input=payload,
+        child = subprocess.run(argv, input=payload,
                                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                env=child_environment, timeout=timeout)
     except subprocess.TimeoutExpired:
@@ -515,6 +541,7 @@ def main():
                                          "status": "not implemented; not a performance pass"}],
                     "corpus": [{"name": case["name"], "group": case["group"],
                                 "parameters": case["parameters"],
+                                **({"input_mode": "file"} if case.get("input_mode") == "file" else {}),
                                 "oracle_sha256": hashlib.sha256(
                                     ("\n".join(case["expected"]) + "\n").encode("utf-8")).hexdigest(),
                                 "program_sha256": hashlib.sha256(
@@ -536,7 +563,8 @@ def main():
                         block = list(tools)
                         rng.shuffle(block)
                         for order, tool in enumerate(block):
-                            row = run_checked(tool, case, args.timeout)
+                            row = run_checked(tool, case, args.timeout,
+                                              programs / (case["name"] + ".bc"))
                             row.update(phase=phase, round=round_number, order=order,
                                        workload=case["name"], implementation=tool["name"])
                             rows.append(row)
