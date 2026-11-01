@@ -1,0 +1,16 @@
+import importlib.util,subprocess,tempfile,json,shutil
+from pathlib import Path
+newpath=Path('src/bc/scripts/bench-bc.py').resolve()
+def load(path,name):
+ spec=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m);return m
+new=load(newpath,'combined');checks=[]
+with tempfile.TemporaryDirectory() as d:
+ for fixture in ('add-bench.bc','mul-bench.bc'):shutil.copyfile(newpath.with_name(fixture),Path(d)/fixture)
+ for revision in ('f6031076e726c2184fc720698d89516ee3df0ede','f95455e053f5aef12a436ff2a1131eadedc780d6'):
+  path=Path(d)/(revision+'.py');path.write_text(subprocess.run(['git','show',revision+':src/bc/scripts/bench-bc.py'],capture_output=True,text=True,check=True).stdout);old=load(path,'old_'+revision)
+  for preset in ('quick','full','holdout'):
+   seed=197201 if preset=='holdout' else 197200
+   previous={c['name']:c for c in old.corpus(preset,seed=seed)};current={c['name']:c for c in new.corpus(preset,seed=seed)}
+   for name,c in previous.items():assert c==current[name],(revision,preset,name)
+   checks.append({'parent':revision,'preset':preset,'retained':len(previous),'combined':len(current)})
+print(json.dumps(checks));Path('/private/tmp/bc-205-combined-corpus-verification.json').write_text(json.dumps(checks,indent=2)+'\n')

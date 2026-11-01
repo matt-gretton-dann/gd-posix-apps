@@ -41,5 +41,13 @@ selected allocations at EOF. Loop/call literal conversions fall from
 with two memo allocations reused across all changes. Selected loop/call peaks
 increase from 5,040/7,288 to 5,424/7,704 bytes; the repeated 2,000-digit literal
 peak falls from 9,596 to 8,536. These costs are explicit rather than a blanket
-memory-reduction claim. The [paired evaluation](bc-205-literal-cache/README.md) retains all full and
-held-out results, native artifacts and inconclusive division repeats; #205 remains open until the paired evaluation is complete.
+memory-reduction claim.
+
+The [paired evaluation](bc-205-literal-cache/README.md) retains all full and
+held-out results, native artifacts and inconclusive division repeats. Isolated
+measurements retain their original source identities. Combined square/cache
+validation passes 165 Release bc cases, eight CLI groups, 18 sanitizer
+VM/instruction cases, 15 sanitizer CLI cases and eight profile checks. The
+40-case corpus preserves both earlier generators' programs, parameters and
+oracles in all three presets. Native integration and merge validation are
+recorded in [PR #319](https://github.com/matt-gretton-dann/gd-posix-apps/pull/319).
