@@ -2,7 +2,7 @@
 
 Refs #202, #207 and #197. This candidate transfers a first arithmetic operand
 when its result slot cannot be read again. It does not consume variables,
-arrays or arbitrary aliases, replace COW storage, or claim a measured speedup.
+arrays or arbitrary aliases, replace COW storage, or replace the checked execution oracle.
 
 Complete entry checks still run first: operand schemas/ranges, producer kinds,
 function boundaries, dominance and parameter-stack invariants. The plan counts
@@ -56,4 +56,7 @@ ASan/UBSan passes 29 VM/plan cases/54305 assertions, fifteen VM CLI and six
 offset groups. Fourteen profiling CLI groups pass; ten focused profiling unit
 cases (46 assertions) show the protected literal still clones in both modes,
 while the unique intermediate avoids one clone only in verified execution.
-Matched timing/memory and native acceptance remain required before adoption.
+PR #342 adopts this stage after matched timing, separate counters/RSS and native
+acceptance. [The exact-source evidence](bc-202-temporary-liveness/accepted/README.md)
+retains speedups, scalar costs, noisy intervals and memory limitations. #202 and
+#207 retain their remaining work.

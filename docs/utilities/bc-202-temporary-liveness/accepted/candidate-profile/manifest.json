@@ -1,0 +1,79 @@
+{
+  "schema": 1,
+  "source_revision": "7974cb3d8b16c98441f9dc960f6c91f52736b06d",
+  "argv": [
+    "/private/tmp/gd-bc-202-consume-policy-profile/build/src/bc/bc"
+  ],
+  "binary_sha256": "6288e0d9a96a4deb5d9e2f4e1ede51e563d45cc2bee7f14ae7762a1bd55e23af",
+  "compiler": {
+    "C": {
+      "argv0": "/usr/bin/cc",
+      "realpath": "/usr/bin/cc",
+      "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+      "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+    },
+    "CXX": {
+      "argv0": "/usr/bin/c++",
+      "realpath": "/usr/bin/c++",
+      "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+      "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+    }
+  },
+  "standard_library": {
+    "header_macros": {
+      "_LIBCPP_VERSION": "220106"
+    },
+    "scope": "standard-library header identity; provision runtime and SDK separately",
+    "status": "recorded"
+  },
+  "flags": {
+    "BC_MULTIPLY_SPLIT_POINT:STRING": "126",
+    "CMAKE_CXX_FLAGS:STRING": "",
+    "CMAKE_CXX_FLAGS_RELEASE:STRING": "-O3 -DNDEBUG",
+    "ENABLE_BC_COVERAGE:BOOL": "OFF",
+    "ENABLE_BC_PROFILE:BOOL": "ON"
+  },
+  "commands": [
+    {
+      "argv": [
+        "cmake",
+        "-S",
+        "/private/tmp/gd-bc-202-consume-policy-release/source",
+        "-B",
+        "/private/tmp/gd-bc-202-consume-policy-profile/build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_TESTING=OFF",
+        "-DENABLE_BC_COMPONENT_BENCHMARKS=OFF",
+        "-DENABLE_BC_PROFILE=ON",
+        "-DENABLE_BC_COVERAGE=OFF",
+        "-DENABLE_NON_POSIX_EXTENSIONS=ON",
+        "-DBC_MULTIPLY_SPLIT_POINT=126",
+        "-DCMAKE_C_COMPILER=/usr/bin/cc",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/c++",
+        "-DFETCHCONTENT_SOURCE_DIR_GDPAT=/Users/mgrettondann/repos/gd-posix-apps/build/_deps/gdpat-src"
+      ],
+      "cwd": "/private/tmp/gd-bc-202-consume-policy-profile",
+      "returncode": 0,
+      "log": "command-001.log"
+    },
+    {
+      "argv": [
+        "cmake",
+        "--build",
+        "/private/tmp/gd-bc-202-consume-policy-profile/build",
+        "--target",
+        "bc",
+        "--parallel",
+        "2",
+        "--verbose"
+      ],
+      "cwd": "/private/tmp/gd-bc-202-consume-policy-profile",
+      "returncode": 0,
+      "log": "command-002.log"
+    }
+  ],
+  "instrumented": true,
+  "scope": "Scoped diagnostics only"
+}

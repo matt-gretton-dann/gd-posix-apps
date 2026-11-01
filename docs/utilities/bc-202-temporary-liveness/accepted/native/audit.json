@@ -1,0 +1,57 @@
+{
+  "workflow_run": 41306397625,
+  "checks": "All fourteen exact-head checks pass",
+  "rows": [
+    {
+      "os": "linux",
+      "checked": 1700,
+      "identities": {
+        "base": "e53a4b9fb73fc037bc4e30aecb310fbff37b92a2",
+        "candidate": "7974cb3d8b16c98441f9dc960f6c91f52736b06d",
+        "howard": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8"
+      },
+      "confirmed": [],
+      "selected": [
+        "| full | paired | `loop_1000000` | 0.962 [0.9447261370015979, 0.9925941296351936] | pass |",
+        "| full | paired | `calls_200000` | 0.968 [0.9350727224368026, 0.9983674198874051] | pass |",
+        "| full | paired | `frontend_definitions_2000` | 1.046 [1.0336452819782243, 1.0571238836219858] | inconclusive-noisy |",
+        "| full | paired | `temporary_chain_1000d_x50000` | 0.906 [0.9006106823051415, 0.9135973786910894] | pass |"
+      ],
+      "sha256": "866ffae5c279c4d77c99b969fd1484a02fcda6afb66e587a5e4f29eb306a1db6"
+    },
+    {
+      "os": "macos",
+      "checked": 1700,
+      "identities": {
+        "base": "e53a4b9fb73fc037bc4e30aecb310fbff37b92a2",
+        "candidate": "7974cb3d8b16c98441f9dc960f6c91f52736b06d",
+        "howard": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8"
+      },
+      "confirmed": [],
+      "selected": [
+        "| full | paired | `loop_1000000` | 0.979 [0.8752466049423889, 1.08278747832396] | inconclusive-noisy |",
+        "| full | paired | `calls_200000` | 1.006 [0.7860701213567608, 1.2207022837620767] | inconclusive-noisy |",
+        "| full | paired | `frontend_definitions_2000` | 1.006 [0.9398020370909319, 1.2379327434712695] | inconclusive-noisy |",
+        "| full | paired | `temporary_chain_1000d_x50000` | 0.800 [0.7321685934917985, 0.8564688976313273] | pass |"
+      ],
+      "sha256": "2c0f5459467127bfcfa74d230bc83cceda2de87f316302a685de683065d63f34"
+    },
+    {
+      "os": "windows",
+      "checked": 1700,
+      "identities": {
+        "base": "e53a4b9fb73fc037bc4e30aecb310fbff37b92a2",
+        "candidate": "7974cb3d8b16c98441f9dc960f6c91f52736b06d",
+        "howard": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8"
+      },
+      "confirmed": [],
+      "selected": [
+        "| full | paired | `loop_1000000` | 0.968 [0.9372847358908123, 0.9727244176340407] | pass |",
+        "| full | paired | `calls_200000` | 1.001 [0.9189903548659009, 1.0104069939349776] | pass |",
+        "| full | paired | `frontend_definitions_2000` | 0.972 [0.9484037723683378, 0.9789099222022711] | pass |",
+        "| full | paired | `temporary_chain_1000d_x50000` | 0.848 [0.8432411753058107, 0.8513986635949194] | pass |"
+      ],
+      "sha256": "8214429e2bbc704156768d4fe1db76bf68c2dc15c5210181d6a4cd10479a2397"
+    }
+  ]
+}
