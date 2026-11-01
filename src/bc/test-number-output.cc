@@ -124,3 +124,30 @@ TEMPLATE_TEST_CASE("Long decimal output respects partial-line capacity",
   CHECK(unwrapped(output.str()) == expected);
   check_lines(output.str(), position);
 }
+
+TEMPLATE_TEST_CASE("Decimal padding and exact continuation boundaries preserve line bounds",
+                   "[bc][number][oracle][decimal-padding]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  unsigned const position = GENERATE(0U, 67U, 68U, 69U, 70U);
+  bool const negative = GENERATE(false, true);
+  std::string const text = GENERATE(std::string(68, '7'), std::string(69, '7'),
+                                    std::string(70, '7'), std::string(71, '7'),
+                                    "0." + std::string(79, '0') + "1",
+                                    "0." + std::string(68, '0') + "10");
+  Number value(text, 10);
+  auto expected = text;
+  if (GD::Bc::extensions_enabled() && text[0] == '0') {
+    expected.erase(0, 1);
+  }
+  if (negative) {
+    value.negate();
+    expected.insert(expected.begin(), '-');
+  }
+  INFO("input = " << text << ", position = " << position << ", negative = " << negative);
+  std::ostringstream output;
+  value.output(output, 10, position);
+  CHECK(unwrapped(output.str()) == expected);
+  check_lines(output.str(), position);
+}
