@@ -33,7 +33,7 @@ output-heavy cases, plus equal-scale comparisons with high/low unequal limbs
 and equal values. Aliased squares at 100, 1000 and 10000 decimal digits
 exercise triangular and recursive square dispatch. A repeated large literal
 mutates each result to check cache snapshot independence. `--list` shows all
-40 names and exact parameters. Repeat
+50 names and exact parameters. Repeat
 `--workload NAME` to select cases. Startup is a separate class.
 
 `--preset quick` reduces dimensions and iterations for fast correctness checks.
@@ -45,9 +45,53 @@ separate `--corpus-seed`, such as 197201, and reserve this preset from tuning or
 PGO training. Startup remains a fixed control. The historical full-case program
 and oracle hashes are checked against the recorded baseline; adding held-out
 shapes does not rewrite the original experiment.
- POSIX math functions are
-explicitly pending #217 and cannot appear as a performance pass before their
-accuracy-checked implementation exists.
+Math acceptance remains issue #217 work. Select its separate corpus explicitly
+as described below; an unselected suite is never a performance pass.
+
+## Optional mathematical corpus
+
+`--suite arithmetic` is the default and preserves all fifty existing cases.
+`--suite math` selects sixty one-shot/repeated cases: all six public functions
+at scales20/100/1000, plus Bessel turning, order-dominated, argument-dominated
+and near-root regimes. Quick mode uses scales2/20/100. Held-out inputs use
+different regular arguments or exact integer-order Bessel symmetries, with
+different repeated-call counts. Names and parameters retain each actual input,
+scale, call count and mode. These fixed counts are **not calibrated**; short
+cases do not establish a substantive timing advantage. Duration calibration
+and correlation-aware uncertainty remain separate issue #216 work.
+
+Each configured command must load its chosen library explicitly. For example:
+
+```json
+{"implementations": [
+  {"name": "howard-standard", "role": "reference", "argv": ["/path/to/howard", "-l"]},
+  {"name": "gd-portable", "argv": ["/path/to/gd-with-library", "-l"]},
+  {"name": "howard-portable", "argv": ["/path/to/howard", "/path/to/math-library.bc"]}
+]}
+```
+
+```sh
+python3 src/bc/scripts/bench-bc.py --suite math --list
+python3 src/bc/scripts/bench-bc.py --suite math --config math-implementations.json \
+  --reference howard-standard --output build/bc-math-comparison
+```
+
+The standard library and portable-source comparison remain distinct roles.
+The identical program and requested scale are used in all roles. One-shot
+and repeated processes include loading, constant generation and output; the
+repeated cases still include preload/startup, rather than subtracting a fitted
+startup cost. Every warmup and sample must satisfy the independent outward
+enclosure at both endpoints within one decimal ULP, and preserve scale/ibase
+and returned scale. Howard's output is checked independently, never used as
+the mathematical oracle. An enclosure crossing the decision boundary reports
+that refinement is required; it is not accepted or labeled a proven failure.
+
+Mathematical `.expected` artifacts contain JSON rational enclosures and state
+requirements. The manifest hashes their actual bytes, the numerical checker
+and the reference fixture. Ordinary arithmetic `.expected` artifacts retain
+their previous exact-output format. Larger arguments and scales remain in
+the broader accuracy corpus even when omitted from this bounded timing subset.
+This harness support alone makes no competitive-performance claim.
 
 ## Archived evidence byte stability
 
