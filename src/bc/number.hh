@@ -1706,6 +1706,11 @@ public:
    *  \param obase    Base to output in
    *  \param line_pos Current position on output line (default = 0).
    */
+#if defined(__GNUC__) && !defined(__clang__)
+  // Keep formatting out of GCC's surrounding execution-frame inlining.
+  // Other compilers retain generic policy and the identical formatting body.
+  __attribute__((noinline))
+#endif
   void output(std::ostream& os, NumType obase, unsigned line_pos) const
   {
     if (line_pos > digits_.line_length) {
