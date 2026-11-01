@@ -1,0 +1,7 @@
+{
+  "role": "baseline",
+  "source_revision": "1926cbc83e2ea1df0abb7f41231a412ea52db62b",
+  "binary_sha256": "592fae911a540f78ac2591209d1543d3dbd7db9d6aded27feefa0c82cfc4a42d",
+  "instrumented": true,
+  "scope": "Separate diagnostic counters, not release timing or process RSS; division stored coefficient dimensions before normalization. Exactly one sqrt and no other Number divisions per program."
+}
