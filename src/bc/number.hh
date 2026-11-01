@@ -2104,11 +2104,6 @@ public:
     }
   }
 
-  // Keep this large operation outside MSVC's VM-dispatch inlining budget.
-  // Other compilers retain their ordinary policy and the same checked algorithm.
-#if defined(_MSC_VER)
-  __declspec(noinline)
-#endif
   void sqrt(NumType target_scale)
   {
     /* Scale we want to end up at.  */
@@ -2259,7 +2254,14 @@ private:
     }
   }
 
-  [[nodiscard]] auto compare(BasicNumber const& rhs) const -> Details::ComparisonResult
+  // Isolate the value-comparison wrapper from MSVC's surrounding VM inlining
+  // choices, complementing the limb comparator's existing call boundary.
+  // Other compilers retain their ordinary generic policy.
+  [[nodiscard]]
+#if defined(_MSC_VER)
+  __declspec(noinline)
+#endif
+  auto compare(BasicNumber const& rhs) const -> Details::ComparisonResult
   {
     bool const lhs_zero = digits_.is_zero();
     bool const rhs_zero = rhs.digits_.is_zero();

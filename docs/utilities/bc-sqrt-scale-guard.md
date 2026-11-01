@@ -34,6 +34,9 @@ The [initial native candidate](bc-349-sqrt-scale-guard/initial-native/README.md)
 passes correctness and ordinary checks but is held: Windows confirms an equal-
 comparison slowdown, even though that workload does not execute sqrt. An inlining
 or layout interaction is a hypothesis, not an established instruction-level cause.
-The next source gives MSVC a noinline boundary around the large sqrt operation;
-other compilers retain their ordinary policy. Fresh exact-source native evaluation
-is required before adoption, and the initial losing interval remains unchanged.
+The [sqrt-only boundary experiment](bc-349-sqrt-scale-guard/msvc-sqrt-boundary/README.md)
+also fails the Windows comparison policy and is dropped. The next source instead
+isolates the affected Number comparison wrapper from surrounding MSVC inlining;
+the limb comparator already has its own boundary. Other compilers keep the same
+generic policy. Fresh exact-source native evaluation is required before adoption,
+and both earlier losing datasets remain unchanged.
