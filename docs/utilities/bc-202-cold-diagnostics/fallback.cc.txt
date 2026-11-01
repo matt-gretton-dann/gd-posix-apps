@@ -1,0 +1,6 @@
+#undef __GNUC__
+#undef __clang__
+#undef _MSC_VER
+#include "/private/tmp/gd-posix-cold-diagnostics/src/bc/compiler-hints.hh"
+[[noreturn]] GD_BC_COLD_DIAGNOSTIC void fatal() { for (;;) {} }
+int main() {}

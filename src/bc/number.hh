@@ -29,7 +29,6 @@
 #include <vector>
 
 #include "bc.hh"
-#include "compiler-hints.hh"
 #include "digit-storage.hh"
 #include "limb-product.hh"
 #include "limb-schoolbook.hh"
@@ -113,7 +112,7 @@ inline auto radix_character_index(char c) -> unsigned
  *  \param  args Arguments for the message.
  */
 template<typename... Ts>
-[[noreturn]] GD_BC_COLD_DIAGNOSTIC void error(Msg msg, Ts... args)
+[[noreturn]] void error(Msg msg, Ts... args)
 {
   std::cerr << Messages::get().format(Set::bc, msg, args...) << '\n';
   std::exit(1);  // NOLINT(concurrency-mt-unsafe)

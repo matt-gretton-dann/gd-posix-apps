@@ -1,0 +1,120 @@
+commit 0a46f05138e5399a89b9627553e9c6fc460055f2
+Author:     Codex instance <matt+codex@gretton-dann.org.uk>
+AuthorDate: Sun Nov 1 13:07:21 2026 +0000
+Commit:     Codex instance <matt+codex@gretton-dann.org.uk>
+CommitDate: Sun Nov 1 13:07:21 2026 +0000
+
+    bc: Separate fatal diagnostic formatting from hot execution
+    
+    Mark numeric and VM fatal formatting as cold and non-inlined where the
+    compiler supports those hints. Keep a noinline MSVC path and an ordinary
+    noreturn fallback elsewhere. Runtime checks, source context, formatting,
+    streams and exit status remain unchanged.
+    
+    Evaluate actual release code size and matched workloads before adopting
+    this layout choice; formatting size alone is not a speed claim.
+    
+    All 212 unit cases (691942 assertions), eight CLI/helper groups and six
+    malformed-offset groups pass in Release. Existing tests exercise semantic
+    errors and checked execution without weakening their diagnostics.
+    
+    Refs #202 and #197.
+
+diff --git a/docs/utilities/bc-cold-diagnostics.md b/docs/utilities/bc-cold-diagnostics.md
+new file mode 100644
+index 0000000..3f2f157
+--- /dev/null
++++ b/docs/utilities/bc-cold-diagnostics.md
+@@ -0,0 +1,12 @@
++# Cold diagnostic separation
++
++Refs #202 and #197. This candidate asks GCC/Clang to place arithmetic and VM
++fatal formatting off the success path and avoid inlining it. MSVC receives its
++noinline hint; other compilers retain the ordinary noreturn definition. Entry
++validation, runtime semantic errors, diagnostic arguments, streams, source
++locations and exit status remain active and unchanged. There are no unchecked
++assumptions or new runtime/compiler requirements.
++
++This is an experiment until actual code size, all-class matched release timing
++and native evidence support a decision. Fewer formatting bodies or ownership
++operations alone do not establish a runtime improvement.
+diff --git a/src/bc/compiler-hints.hh b/src/bc/compiler-hints.hh
+new file mode 100644
+index 0000000..59b3877
+--- /dev/null
++++ b/src/bc/compiler-hints.hh
+@@ -0,0 +1,19 @@
++/** \file compiler-hints.hh
++ * Optional code-placement hints with a portable semantic fallback.
++ * SPDX-License-Identifier: Apache-2.0
++ */
++#ifndef GD_BC_COMPILER_HINTS_HH
++#define GD_BC_COMPILER_HINTS_HH
++
++// Keep diagnostic formatting out of successful arithmetic/VM execution. These
++// hints change neither the checked conditions nor the reported diagnostics.
++// Compilers without supported hints retain the ordinary noreturn function.
++#if defined(__GNUC__) || defined(__clang__)
++#  define GD_BC_COLD_DIAGNOSTIC __attribute__((cold, noinline))
++#elif defined(_MSC_VER)
++#  define GD_BC_COLD_DIAGNOSTIC __declspec(noinline)
++#else
++#  define GD_BC_COLD_DIAGNOSTIC
++#endif
++
++#endif
+diff --git a/src/bc/number.hh b/src/bc/number.hh
+index 4a7a956..0f0aa7c 100644
+--- a/src/bc/number.hh
++++ b/src/bc/number.hh
+@@ -29,6 +29,7 @@
+ #include <vector>
+ 
+ #include "bc.hh"
++#include "compiler-hints.hh"
+ #include "digit-storage.hh"
+ #include "limb-product.hh"
+ #include "limb-schoolbook.hh"
+@@ -112,7 +113,7 @@ inline auto radix_character_index(char c) -> unsigned
+  *  \param  args Arguments for the message.
+  */
+ template<typename... Ts>
+-[[noreturn]] void error(Msg msg, Ts... args)
++[[noreturn]] GD_BC_COLD_DIAGNOSTIC void error(Msg msg, Ts... args)
+ {
+   std::cerr << Messages::get().format(Set::bc, msg, args...) << '\n';
+   std::exit(1);  // NOLINT(concurrency-mt-unsafe)
+diff --git a/src/bc/vm.cc b/src/bc/vm.cc
+index e5420c6..4fb3967 100644
+--- a/src/bc/vm.cc
++++ b/src/bc/vm.cc
+@@ -17,6 +17,7 @@
+ #include <utility>
+ 
+ #include "bc.hh"
++#include "compiler-hints.hh"
+ #include "execution-plan.hh"
+ #include "number.hh"
+ #include "verification.hh"
+@@ -212,8 +213,8 @@ struct VMState
+ 
+ private:
+   template<typename... Ts>
+-  [[noreturn]] void error(char const* func, char const* file, unsigned line, char const* test,
+-                          Msg msg, Ts... args) const
++  [[noreturn]] GD_BC_COLD_DIAGNOSTIC void error(char const* func, char const* file, unsigned line,
++                                                char const* test, Msg msg, Ts... args) const
+   {
+     error_ << Messages::get().format(Set::bc, Msg::internal_error, func, file, line, test) << '\n'
+            << Messages::get().format(Set::bc, msg, args...) << '\n';
+@@ -292,8 +293,8 @@ private:
+   friend auto operator<<(std::ostream& os, InstructionPack const& instrs) -> std::ostream&;
+ 
+   template<typename... Ts>
+-  [[noreturn]] void error(char const* func, char const* file, unsigned line, char const* test,
+-                          Msg msg, Ts... args) const
++  [[noreturn]] GD_BC_COLD_DIAGNOSTIC void error(char const* func, char const* file, unsigned line,
++                                                char const* test, Msg msg, Ts... args) const
+   {
+     vm_->stream(Instruction::Stream::error)
+       << Messages::get().format(Set::bc, Msg::internal_error, func, file, line, test) << '\n'
