@@ -207,3 +207,10 @@ or complete #206 acceptance.
 | `control-1000d` | 0.997 [0.988,1.009] |
 | `control-10000d` | 1.000 [0.925,1.028] |
 
+
+## Subsequent acceptance
+
+This report retains the historical component source and decision. The distinct
+[accepted native stage](accepted-native/README.md) records PR #334. Later
+[combined conversion acceptance](../bc-206-combined-conversion/accepted-native/README.md)
+completes #206 while preserving every earlier loss and inconclusive interval.

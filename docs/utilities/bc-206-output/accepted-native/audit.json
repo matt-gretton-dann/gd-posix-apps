@@ -1,0 +1,40 @@
+{
+  "workflow_run": 41285997767,
+  "base": "b15806ac7470eee9cfecf9e598047109bef32a62",
+  "candidate": "73554654033fe099aee8abdd61c83bf90d561d97",
+  "rows": [
+    {
+      "os": "linux",
+      "checked": 1450,
+      "identities": {
+        "base": "b15806ac7470eee9cfecf9e598047109bef32a62",
+        "candidate": "73554654033fe099aee8abdd61c83bf90d561d97",
+        "howard-7.0.3": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8"
+      },
+      "confirmed": [],
+      "sha256": "06642cb89d9754855bef1d8833b862cd046d9ec211712c83a42da64020067362"
+    },
+    {
+      "os": "macos",
+      "checked": 1450,
+      "identities": {
+        "base": "b15806ac7470eee9cfecf9e598047109bef32a62",
+        "candidate": "73554654033fe099aee8abdd61c83bf90d561d97",
+        "howard-7.0.3": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8"
+      },
+      "confirmed": [],
+      "sha256": "9ae80f4877a4dbe3e097afe81950d8e79f1124b37c0b1d3eac54e4cce3721fa2"
+    },
+    {
+      "os": "windows",
+      "checked": 1450,
+      "identities": {
+        "base": "b15806ac7470eee9cfecf9e598047109bef32a62",
+        "candidate": "73554654033fe099aee8abdd61c83bf90d561d97",
+        "howard-7.0.3": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8"
+      },
+      "confirmed": [],
+      "sha256": "1ae32bd6c2d7689f84da2d0fb00ef65f44f0190fa2f3e08d0d61b2e47d5d3df5"
+    }
+  ]
+}
