@@ -260,3 +260,8 @@ each source line, expression, normal and
 modeled observations, and this exception. Any other missing outcome fails
 the automated check. This is interpreted-library decision evidence, kept
 separate from C++ line/branch/compiler MC/DC reports and their ON/OFF totals.
+
+The first [correctness and coverage archive](bc-217-library-validation/README.md)
+retains the exact interpreted source, validation logs, separate LLVM 23 ON/OFF
+profiles/reports and the existing arithmetic native control. Its measured
+revisions are explicit checkpoints; later source changes require fresh checks.
