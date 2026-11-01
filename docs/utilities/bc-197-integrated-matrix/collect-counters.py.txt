@@ -1,0 +1,18 @@
+from pathlib import Path
+import importlib.util,json,subprocess,hashlib
+repo=Path('/private/tmp/gd-posix-hybrid-arrays');spec=importlib.util.spec_from_file_location('bench',repo/'src/bc/scripts/bench-bc.py');bench=importlib.util.module_from_spec(spec);spec.loader.exec_module(bench)
+root=Path('/private/tmp/gd-bc-197-integrated-counters');root.mkdir(exist_ok=False)
+roles=[('accepted-blocked','/private/tmp/gd-posix-blocked-schoolbook/build-profile/src/bc/bc','565564dba7d781613c5046d4898a0efdf6a2832b'),('decimal','/private/tmp/gd-posix-decimal-chunks/build-profile/src/bc/bc','00365f2f75324278024e665ba025aa47abbf6d70'),('frames','/private/tmp/gd-posix-reusable-frames/build-profile/src/bc/bc','d76e408e069a4824eca7ab1fc3fa35100a14a070'),('verified','/private/tmp/gd-posix-verified-execution/build-profile/src/bc/bc','357d15a4abd3736b432953b9269ba1057e234f02'),('arrays','/private/tmp/gd-posix-hybrid-arrays/build-profile/src/bc/bc','91b7b481178bebb6d8a9c660649d59c71527743a')]
+records=[]
+for role,binary,revision in roles:
+ target=root/role;target.mkdir()
+ for case in bench.corpus('full'):
+  env=bench.environment();path=target/(case['name']+'.json');env['GD_BC_PROFILE_OUTPUT']=str(path)
+  child=subprocess.run([binary],input=case['program'].encode(),stdout=subprocess.PIPE,stderr=subprocess.PIPE,env=env,timeout=60);assert child.returncode==0 and not child.stderr,(role,case['name'])
+  assert bench.canonical_output(child.stdout)==bench.canonical_output(('\n'.join(case['expected'])+'\n').encode()),(role,case['name'])
+  data=json.loads(path.read_text());assert data['instrumented'] and data['total']['live_bytes']==0;assert data['total']['allocation_calls']==data['total']['deallocation_calls']
+  if role in ('verified','arrays'):assert data['events']['result_validation_calls']==0
+  records.append({'role':role,'workload':case['name'],'checked':True,'profile':data})
+ print(role,'40 exact checks and EOF balance passed',flush=True)
+(root/'provenance.json').write_text(json.dumps({'schema':1,'harness_revision':'91b7b481178bebb6d8a9c660649d59c71527743a','roles':[{'name':r,'source_revision':s,'binary':b,'binary_sha256':hashlib.sha256(Path(b).read_bytes()).hexdigest()} for r,b,s in roles],'scope':'Selected allocator/event counters only, fixed126, Release/profileON; no timings/RSS. Accepted-blocked counter source565 is production-C++ equivalent to timing source00d5896.'},indent=2)+'\n')
+(root/'checked-profiles.json').write_text(json.dumps(records,indent=2)+'\n');print('All200 checks passed',flush=True)

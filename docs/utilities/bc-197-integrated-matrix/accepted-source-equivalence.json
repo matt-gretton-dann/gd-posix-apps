@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "scope": "Exact src tree identity; counter and release builds intentionally use different instrumentation flags",
+  "trees": {
+    "565564dba7d781613c5046d4898a0efdf6a2832b": "927e9e44af67406745571a8cf8dd5864885c5ff9",
+    "00d5896be1768d1936a075ccd47e4b529a914dd2": "927e9e44af67406745571a8cf8dd5864885c5ff9"
+  }
+}
