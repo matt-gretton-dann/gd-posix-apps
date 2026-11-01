@@ -1,0 +1,21 @@
+from pathlib import Path
+import json,shutil
+w=Path('/private/tmp/gd-posix-decode-table');r=w/'docs/utilities/bc-206-decode-table';r.mkdir()
+(r/'.gitattributes').write_text('*.csv -text whitespace=cr-at-eol\n*.log -text whitespace=-blank-at-eol,-blank-at-eof\n')
+for preset in ('full','holdout'):shutil.copytree('/private/tmp/gd-bc-206-decode-table-'+preset,r/preset)
+for role in ('baseline','candidate'):
+ for kind in ('release','components'):
+  prefix='runtime-dc-baseline' if role=='baseline' else 'decode-table-candidate'
+  source=Path('/private/tmp/gd-bc-206-'+prefix+'-'+kind);target=r/(role+'-'+kind);target.mkdir()
+  for p in source.iterdir():
+   if p.is_file() and p.suffix in ('.json','.log','.hh','.cc'):shutil.copyfile(p,target/p.name)
+shutil.copyfile('/private/tmp/bc-206-run-decode-table-components.py',r/'runner.py.txt')
+for name in ('tests','release-all','cli','asan-tests','asan-vm','asan-components'):
+ shutil.copyfile('/private/tmp/bc-206-decode-table-'+name+'.log',r/(name+'.log'))
+lines=['# Indexed nondecimal decoder: initial held candidate','','Refs #206 and #197. Exact baseline 9669ef73bc00e5b89f3fb00e2867a8f8ed9c4d32', 'and candidate dbcdcad7fc68e80da10cae1757f3e022279b2635. Recipes retain all actual', 'compiler/library identities, flags, commands and executable hashes. Later', 'integration with accepted main does not replace these measured source identities.', '', 'A 256-entry immutable table replaces repeated alphabet searches in the raw', 'nondecimal decoder on eight-bit character platforms. Index through unsigned', 'char; wider character models retain the original generic alphabet search.', 'The exhaustive 256-byte oracle retains every raw search result, including', 'the terminator index, independently of arithmetic value tests. Existing base', 'assertions, single-digit rules, point and invalid-character paths stay in place.', 'The measured decimal and single-decimal-digit arithmetic paths are unchanged.', '', 'Apple M1/macOS 27.2, Apple Clang 21, Release thin LTO, fixed split 126,', 'extensions ON, profiling/coverage OFF. Full 2160 and held-out 460 invocations', 'pass exact Python integer/decimal/length checksum, status, stderr and deadline', 'checks. One checked warmup and nine shuffled paired rounds; 2000 bootstrap', 'resamples. No local builds/tests/profiles overlap timing. Shared-host scheduling,', 'frequency and thermals remain uncontrolled. Controls are separate, not subtracted.', '', 'The candidate improves short/modest nondecimal conversion in measured regimes:', 'binary 16/64/256 characters is about 0.726/0.676/0.672; hexadecimal 16/64', 'characters is about 0.736/0.757. At 100000 characters growing arithmetic', 'dominates and binary/hex ratios are near 0.983/0.996.', '', '**Hold this source:** held-out decimal 3-character input is 1.106', '[1.083,1.132], a measured local regression despite no source change to the', 'decimal fast path. Do not dismiss it as noise or claim a proven layout cause.', 'No full-set interval has its lower endpoint above 1.05. The complete losing', 'and inconclusive intervals remain below and in raw samples. Any integrated', 'candidate needs fresh exact-source comparisons and native acceptance.', '', 'Release passes 194 cases/691695 assertions and eight CLI groups. Extensions-', 'OFF ASan/UBSan passes four radix cases/36256 assertions, fifteen VM CLI', 'and seven component groups. These logs belong to this initial source.', '']
+for preset in ('full','holdout'):
+ lines+=['## '+preset,'','| Workload | Candidate / baseline, 95% paired interval |','| --- | --- |']
+ for c in json.loads((r/preset/'summary.json').read_text())['workloads']:
+  v=c['candidate_over_parent'];lo,hi=v['ci95'];lines.append('| `{}` | {:.3f} [{:.3f},{:.3f}] |'.format(c['name'],v['median_paired_ratio'],lo,hi))
+ lines.append('')
+(r/'README.md').write_text('\n'.join(lines)+'\n');shutil.copyfile(__file__,r/'archive.py.txt')
