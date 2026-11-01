@@ -81,7 +81,7 @@ TEST_CASE("Square root preserves representable scale at the guard boundary",
     "03885038753432764157273501384623091229702492483605585073721264412149709993583141"
     "32226659275055927557999505011527820605714701095599716059702745345968620147285174"
     "18640889198609552";
-  for (unsigned scale : {252U, 253U, 254U, 255U}) {
+  for (unsigned scale : {95U, 96U, 252U, 253U, 254U, 255U}) {
     for (unsigned radicand : {2U, 4U}) {
       INFO("scale=" << scale << " radicand=" << radicand);
       Number const snapshot(static_cast<N>(radicand));
