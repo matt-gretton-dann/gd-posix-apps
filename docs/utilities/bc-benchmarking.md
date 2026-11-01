@@ -190,7 +190,7 @@ outside timing, and every timed result is checked against it afterwards. The
 independent arithmetic oracles remain the authority for kernel correctness.
 
 Each shape receives an exact-checked warm-up for every point and five shuffled
-candidate sweeps. The tool records every CPU-clock sample, batch and correctness
+candidate sweeps. The tool records every monotonic elapsed-clock sample, batch and correctness
 flag as CSV rows in stdout, followed by per-candidate scores. It uses median
 within-round ratios against 126 for each shape, then an equally weighted
 geometric mean across shapes. Scores need not be monotonic in the threshold.
@@ -201,10 +201,12 @@ and the actual source/compiler recipe when using a calibrated setting.
 
 Batch growth targets 2 ms but is bounded by both 256 results and approximately
 65536 input limbs, so tiny cases can remain below the target. A zero-duration
-measured sample is rejected. Copies, input parsing and exact result comparisons
+measured sample is rejected. The portable steady clock avoids coarse process
+CPU-accounting quanta on Windows; scheduling remains part of elapsed time.
+Copies, input parsing and exact result comparisons
 are outside the multiplication interval; copy-on-write detachment, temporary
-workspace and result allocation during multiplication remain inside it. CPU
-clocks, scheduling, frequency and corpus choice can still affect the selection.
+workspace and result allocation during multiplication remain inside it. Clock
+resolution, scheduling, frequency and corpus choice can still affect selection.
 A finite sweep does not establish a global or universal optimum. Repeated runs
 and other hosts may prefer different points; the default stays portable.
 

@@ -54,6 +54,7 @@ class TunerCli(unittest.TestCase):
             self.assertEqual(child.returncode, 0, child.stderr)
             self.assertEqual(child.stderr, '')
             self.assertIn('Tuner seed: 197203', child.stdout)
+            self.assertIn('Tuner clock: steady monotonic elapsed nanoseconds', child.stdout)
             rows = [line.split(',') for line in child.stdout.splitlines()
                     if line.startswith('sample,') and not line.startswith('sample,left')]
             self.assertEqual(len(rows), 3 * 4 * 3 * 8)

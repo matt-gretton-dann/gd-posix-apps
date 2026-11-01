@@ -4,13 +4,10 @@
  *  SPDX-License-Identifier: Apache-2.0
  */
 
-#include "gd/nl_types.h"
-
-#include "gd/time.h"
-
 #include <algorithm>
 #include <array>
 #include <charconv>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
@@ -31,9 +28,6 @@
 
 using Number = GD::Bc::Number;
 namespace {
-using GD::Bc::Bench::as_nsec;
-using GD::Bc::Bench::Time;
-using GD::Bc::Bench::operator-;
 constexpr Number::NumType portable_point = 126;
 constexpr std::array<Number::NumType, 8> candidates{16, 32, 64, 96, 126, 192, 256, 512};
 
@@ -47,14 +41,6 @@ auto operand(std::size_t limbs, std::mt19937_64& engine) -> Number
   for (std::size_t i = 1; i < text.size(); ++i)
     text[i] = static_cast<char>('0' + digit(engine));
   return Number(text, 10);
-}
-
-auto cpu_time() -> Time
-{
-  Time now{};
-  if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &now) != 0)
-    throw std::runtime_error("Unable to read the process CPU clock");
-  return now;
 }
 
 struct Fixture
@@ -71,20 +57,24 @@ auto trial(Fixture const& fixture, Number::NumType split, std::size_t batch) -> 
 {
   Number::multiply_split_point(split);
   std::vector<Number> results(batch, fixture.left);
-  auto const start = cpu_time();
+  auto const start = std::chrono::steady_clock::now();
   for (auto& value : results) {
     if (fixture.square)
       value.multiply(value, 0);
     else
       value.multiply(fixture.right, 0);
   }
-  auto const elapsed = as_nsec(cpu_time() - start);
+  // A portable monotonic elapsed clock avoids coarse process-accounting
+  // quanta on Windows. Scheduling/host contention remain measurement noise.
+  auto const elapsed =
+    std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - start)
+      .count();
   for (auto const& value : results) {
     if (value != fixture.expected)
       throw std::runtime_error("Candidate multiplication failed its exact oracle");
   }
   if (elapsed < 0)
-    throw std::runtime_error("Process CPU clock moved backwards");
+    throw std::runtime_error("Monotonic calibration clock moved backwards");
   return elapsed;
 }
 
@@ -97,7 +87,8 @@ auto check(uint64_t seed, bool quick) -> Number::NumType
   unsigned const rounds = quick ? 3 : 5;
   std::array<double, candidates.size()> log_scores{};
   std::size_t fixture_count = 0;
-  std::cout << "sample,left_limbs,right_limbs,square,round,split,batch,cpu_ns,checked\n";
+  std::cout << "Tuner clock: steady monotonic elapsed nanoseconds\n";
+  std::cout << "sample,left_limbs,right_limbs,square,round,split,batch,elapsed_ns,checked\n";
   for (auto const left_limbs : sizes) {
     // Include balanced, asymmetric and aliased-square shapes independently.
     for (unsigned shape = 0; shape < 4; ++shape) {
@@ -138,7 +129,7 @@ auto check(uint64_t seed, bool quick) -> Number::NumType
         for (auto index : order) {
           auto const elapsed = trial(fixture, candidates[index], batch);
           if (elapsed == 0)
-            throw std::runtime_error("Insufficient CPU clock resolution");
+            throw std::runtime_error("Insufficient monotonic clock resolution");
           current[index] = static_cast<double>(elapsed);
           std::cout << "sample," << left_limbs << ',' << right_limbs << ',' << fixture.square << ','
                     << round << ',' << candidates[index] << ',' << batch << ',' << elapsed
