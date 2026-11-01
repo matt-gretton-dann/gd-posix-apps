@@ -1,0 +1,9 @@
+Test project /private/tmp/gd-posix-sqrt-matrix/build-asan
+    Start 11: bc/vm-lifetime
+1/2 Test #11: bc/vm-lifetime ...................   Passed    0.42 sec
+    Start 24: bc/number-oracle
+2/2 Test #24: bc/number-oracle .................   Passed    4.05 sec
+
+100% tests passed out of 2
+
+Total Test time (real) =   4.48 sec

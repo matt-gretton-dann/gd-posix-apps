@@ -1,0 +1,694 @@
+{
+  "bootstrap_resamples": 2000,
+  "clock": {
+    "implementation": "mach_absolute_time()",
+    "monotonic": true,
+    "resolution": 4.166666666666666e-08
+  },
+  "corpus": [
+    {
+      "group": "startup",
+      "name": "startup",
+      "oracle_sha256": "53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3",
+      "parameters": {},
+      "program_sha256": "a7684d1961bc3c87aeea07cbfd22792a6c875687fa1d0f3c18ace930a373040e"
+    },
+    {
+      "group": "loop",
+      "name": "loop_1000000",
+      "oracle_sha256": "dbb4498f673634c698bd6e593ef54bdadf465654b13fb7bfe689016e602e7ef8",
+      "parameters": {
+        "iterations": 1000000
+      },
+      "program_sha256": "74aa1d696c8c54be05d25ad82b085aedd6791012c90b5faf9f3d9d91f94ebdba"
+    },
+    {
+      "group": "calls",
+      "name": "calls_200000",
+      "oracle_sha256": "34812d12902217c2ca460d074d75599c4704fbce9e15d1f8780da9463bf0bf9a",
+      "parameters": {
+        "iterations": 200000
+      },
+      "program_sha256": "738d33209381c5f554a34bc05ed399ed53973ff7ae75a0cd72e464875841c63e"
+    },
+    {
+      "group": "array",
+      "name": "array_200000",
+      "oracle_sha256": "ef55be1f845002931219ae88320c4744651b322de6447340a573287179119427",
+      "parameters": {
+        "elements": 200000
+      },
+      "program_sha256": "f6a730c098c8d10032b60dd95a00eb18349ad719604fe3582bad5a1e61e5b054"
+    },
+    {
+      "group": "comparison",
+      "name": "compare_high_1000d_x100000",
+      "oracle_sha256": "b80500a01f984c764f1a3b486622d0ef7cc5b13fa9bd57ec9015113eaf875597",
+      "parameters": {
+        "digits": 1000,
+        "first_unequal_limb": "high",
+        "iterations": 100000
+      },
+      "program_sha256": "1592c96a7a3807bc318c69e45c69d1837b3194c219481c6f0ee159bd9ad5f057"
+    },
+    {
+      "group": "comparison",
+      "name": "compare_low_1000d_x100000",
+      "oracle_sha256": "b80500a01f984c764f1a3b486622d0ef7cc5b13fa9bd57ec9015113eaf875597",
+      "parameters": {
+        "digits": 1000,
+        "first_unequal_limb": "low",
+        "iterations": 100000
+      },
+      "program_sha256": "65f427eade6749f96db6392b4a66e68248b90fd30ac32020aad51be98990f47c"
+    },
+    {
+      "group": "comparison",
+      "name": "compare_equal_1000d_x100000",
+      "oracle_sha256": "b80500a01f984c764f1a3b486622d0ef7cc5b13fa9bd57ec9015113eaf875597",
+      "parameters": {
+        "digits": 1000,
+        "first_unequal_limb": "equal",
+        "iterations": 100000
+      },
+      "program_sha256": "e9f2a5c85feb5736a4a4faf469f8d593280c7b7c3b8290b49be6cef834038ff1"
+    },
+    {
+      "group": "fibonacci",
+      "name": "fibonacci_1000_x100",
+      "oracle_sha256": "a7c08fc8246fdd9775ffd65e21f82638373172fc8bec3ebbc5c7c765c0bd9010",
+      "parameters": {
+        "index": 1000,
+        "iterations": 100
+      },
+      "program_sha256": "1a99529043a0c9a2eed2bd64ec3df2ee15a819a23550a1d0871dfe777a9c0675"
+    },
+    {
+      "group": "fibonacci",
+      "name": "fibonacci_10000_x10",
+      "oracle_sha256": "fa5492a12ce0f19580352968549873df85b53b95c8ed2c99f0b8eabbf43f9667",
+      "parameters": {
+        "index": 10000,
+        "iterations": 10
+      },
+      "program_sha256": "cafa569a1e0259262731ec77ba810fabc76a3ae8eeae60c328f8cb78815bcf1f"
+    },
+    {
+      "group": "factorial",
+      "name": "factorial_1000_x50",
+      "oracle_sha256": "0161aca5eff2c941f66b69e57ac24bfff76cd2e8209ec10de2216ede9d223121",
+      "parameters": {
+        "argument": 1000,
+        "iterations": 50
+      },
+      "program_sha256": "c5f62530bb22594f7bfc55d867b2be7554356b94a976fca91cffc94471bed182"
+    },
+    {
+      "group": "factorial",
+      "name": "factorial_5000_x5",
+      "oracle_sha256": "01301ade3e0a379421e967fb9ba2e56b83a1dc78b4151364325c9736591c5403",
+      "parameters": {
+        "argument": 5000,
+        "iterations": 5
+      },
+      "program_sha256": "808583dd419f15a7145ba5455481fd0da1143cbe69b971a03749edea6bd0af6c"
+    },
+    {
+      "group": "multiply",
+      "name": "multiply_100d_x100000",
+      "oracle_sha256": "ddcbaa65ea02c205692e9a19e882486a2e63dcc1508cb76af4499ba70c45b206",
+      "parameters": {
+        "iterations": 100000,
+        "left_digits": 100,
+        "right_digits": 100,
+        "shape": "repeated"
+      },
+      "program_sha256": "00265d8ce3e2d4f3fe5d5cffc742ccf26ec23aa7d88001d42072cb742e916eed"
+    },
+    {
+      "group": "multiply",
+      "name": "multiply_1000d_x10000",
+      "oracle_sha256": "b64ffb6b5deb391f25202397e9f3b6a71504177a9cac83e28fe46dc49d212338",
+      "parameters": {
+        "iterations": 10000,
+        "left_digits": 1000,
+        "right_digits": 1000,
+        "shape": "repeated"
+      },
+      "program_sha256": "c5ba1f3e963a6e3fbe4b6c1180790a7f3f8ba66f9ca00ca53e63209aa739c210"
+    },
+    {
+      "group": "multiply",
+      "name": "multiply_10000d_x1000",
+      "oracle_sha256": "c65fdf864347bf83524e3a0a91f5c7571e0fc8ffb2308894a7116da06726d55d",
+      "parameters": {
+        "iterations": 1000,
+        "left_digits": 10000,
+        "right_digits": 10000,
+        "shape": "repeated"
+      },
+      "program_sha256": "834a93e1304c2fd9c706943a98f5dbf15c6fce738e0b07d01e0cb68fb9e9ee41"
+    },
+    {
+      "group": "divide_single_limb",
+      "name": "divide_scale100_x100000",
+      "oracle_sha256": "353c3d764da6c99541a8ed42fd0f20b6ca8c9d40957cc1b872e78634c80935f0",
+      "parameters": {
+        "divisor": "7",
+        "iterations": 100000,
+        "scale": 100
+      },
+      "program_sha256": "19c25d96059bd1a0a252ed2100292fe1abbb1bcb437aad307e7078010845e795"
+    },
+    {
+      "group": "divide_single_limb",
+      "name": "divide_scale1000_x10000",
+      "oracle_sha256": "14893165584b19dc4bb176a8d98d886effa3ab7c9fa312ca1a6fdfc4089c24bc",
+      "parameters": {
+        "divisor": "7",
+        "iterations": 10000,
+        "scale": 1000
+      },
+      "program_sha256": "268fc3af6c9f5a54b17fe46bcd57128974349fb1f07043afbc567b85a70f7c4f"
+    },
+    {
+      "group": "divide_single_limb",
+      "name": "divide_scale5000_x5000",
+      "oracle_sha256": "0174db3b3b02ce177bede9770c660b57456cca4df478d335b8f7e57860a418b3",
+      "parameters": {
+        "divisor": "7",
+        "iterations": 5000,
+        "scale": 5000
+      },
+      "program_sha256": "95e2527229b6c1261b98ec596d3e25eea72d6f58bced0a9019ee159e23d7b1d2"
+    },
+    {
+      "group": "sqrt",
+      "name": "sqrt_scale100_x5000",
+      "oracle_sha256": "32284e16893663b90a4f71d5dd20f068df57d23fe7b28ac44bcabc897e7ceb86",
+      "parameters": {
+        "iterations": 5000,
+        "scale": 100
+      },
+      "program_sha256": "776a0a5e34050036c7e3d2dce7b192c09b624a528588da06999c5ec243d32458"
+    },
+    {
+      "group": "sqrt",
+      "name": "sqrt_scale1000_x50",
+      "oracle_sha256": "42541117d02911fa2728d84b4bd67cb695569273a2c8fd010fd56e156aaa9c44",
+      "parameters": {
+        "iterations": 50,
+        "scale": 1000
+      },
+      "program_sha256": "9bed475982441bfe7cef8eb52978f6814ff55110a466ad2eadfeb3a0f0312fc1"
+    },
+    {
+      "group": "sqrt",
+      "name": "sqrt_scale5000_x5",
+      "oracle_sha256": "c06514a7b2265dbedb3c9c57fb0aa76daa0b86631231cc92e23a4d18e7a15337",
+      "parameters": {
+        "iterations": 5,
+        "scale": 5000
+      },
+      "program_sha256": "c13f95db6aa11b8fcd0cc94087d55ec39210d535f570dedc86696ddbd698ac79"
+    },
+    {
+      "group": "multiply",
+      "name": "multiply_dense_1000d_x5000",
+      "oracle_sha256": "582f69f13e140c10cbb1256873bc4c91be1e1a5cbc455b6a9049aeb173b21415",
+      "parameters": {
+        "iterations": 5000,
+        "left_digits": 1000,
+        "right_digits": 1000,
+        "shape": "seeded_dense"
+      },
+      "program_sha256": "2a96c42d44d7ebc2bd37389ad94c4e985592ee4cec7e1ea77914ecc1a1c3616f"
+    },
+    {
+      "group": "multiply",
+      "name": "multiply_dense_10000d_x500",
+      "oracle_sha256": "4c4166d125931ae3835453e106e433b19c7aafba4814f84949cd98d7a85adb87",
+      "parameters": {
+        "iterations": 500,
+        "left_digits": 10000,
+        "right_digits": 10000,
+        "shape": "seeded_dense"
+      },
+      "program_sha256": "0e2e2c1e7cd1ed996201ba01c744f650baf67a86666cb471e4a82e9996c9c345"
+    },
+    {
+      "group": "multiply",
+      "name": "multiply_unbalanced_10000d_100d_x2000",
+      "oracle_sha256": "63be8a13ba51919ec8595849a2b9315fac530c5c1d9c8fad6f9c4fbd1ca38862",
+      "parameters": {
+        "iterations": 2000,
+        "left_digits": 10000,
+        "right_digits": 100,
+        "shape": "unbalanced"
+      },
+      "program_sha256": "f2db34e568ec54dc60e916b85674dcec88085445533deb690917e763a84b6545"
+    },
+    {
+      "group": "multiply",
+      "name": "multiply_sparse_10000d_x1000",
+      "oracle_sha256": "dab20e708bf20d2f0b97c5f1cdf1168bd36e19859ae8fb2e260c035455b2dcd0",
+      "parameters": {
+        "iterations": 1000,
+        "left_digits": 10000,
+        "right_digits": 10000,
+        "shape": "sparse"
+      },
+      "program_sha256": "82eea516e61e12e526afbbc4efae6c5d6bc24f4efb34e84cce4b435dc5ec5d24"
+    },
+    {
+      "group": "divide_multilimb",
+      "name": "divide_multilimb_900d_450d_s100_x1000",
+      "oracle_sha256": "ea75d46619e9c8cba8804db38a1a96255c4388c12402c052c06521561429bd04",
+      "parameters": {
+        "dividend_digits": 900,
+        "divisor_digits": 450,
+        "iterations": 1000,
+        "scale": 100
+      },
+      "program_sha256": "3e526fbb9e7ce363f37d717ee26d12d1562e85f4e82d4c671cbc0970f2c048d2"
+    },
+    {
+      "group": "divide_multilimb",
+      "name": "divide_multilimb_1000d_900d_s1000_x500",
+      "oracle_sha256": "39223da607c39fb1c8e4b1685982a177164410b2fffc5186301caa5378ca5fc3",
+      "parameters": {
+        "dividend_digits": 1000,
+        "divisor_digits": 900,
+        "iterations": 500,
+        "scale": 1000
+      },
+      "program_sha256": "1dd61158cf4374d878b0750e40180e1cb105064e19a33c1b224479d3e8eb381a"
+    },
+    {
+      "group": "modulo",
+      "name": "modulo_1000d_350d_x3000",
+      "oracle_sha256": "d2c0f4112019a7fe180eda3895493459be39cc8a2f93e448e4c5c1275288c0a5",
+      "parameters": {
+        "dividend_digits": 1000,
+        "divisor_digits": 350,
+        "iterations": 3000
+      },
+      "program_sha256": "349c0e4a8bd53d08ab50a00b93b79ed3111cf0fa4dd1f1c8ea7f15705b418817"
+    },
+    {
+      "group": "power",
+      "name": "power_100d_e17_x1000",
+      "oracle_sha256": "eaf99cbbe3af3cc4de92ca234fce04ba0f5d697e563e3947ac4ade4d0d5af72a",
+      "parameters": {
+        "digits": 100,
+        "exponent": 17,
+        "iterations": 1000
+      },
+      "program_sha256": "45ae4dcbf8b7a7a484ba774e1e4db1f58f5aecd79d66d4c2d81b6d7d4fce668e"
+    },
+    {
+      "group": "power",
+      "name": "power_20d_e32_x2000",
+      "oracle_sha256": "f31071648d30805ba09b14dbed00a6cf40c656b0056b6342be47e36d989a52eb",
+      "parameters": {
+        "digits": 20,
+        "exponent": 32,
+        "iterations": 2000
+      },
+      "program_sha256": "ab699ad4e3d4f68531c41bc1215f5b137ff9e0071dcb4c09dab1d422e7892f16"
+    },
+    {
+      "group": "literal_base",
+      "name": "ibase_literal_flip_20000",
+      "oracle_sha256": "7844fbd8ea47c57d25d9ea6da692db584ed0a9dbf31cdce8d5cb82ef7d0a86d7",
+      "parameters": {
+        "bases": [
+          2,
+          10
+        ],
+        "iterations": 20000
+      },
+      "program_sha256": "a3fb77c74b1f846daf6bba2f96e7ddb71bc1cfb221aeddc6921da35eb1dfdaa0"
+    },
+    {
+      "group": "recursion",
+      "name": "recursion_50_x1000",
+      "oracle_sha256": "89ce918086eeda222f36711d8b97b2eeec8ef9ae01affaf19478c4669d358998",
+      "parameters": {
+        "depth": 50,
+        "iterations": 1000
+      },
+      "program_sha256": "51c7a305c6b6635ba3e821f927f9da4b06c5c2aff088ddabca2d6d6456ea3859"
+    },
+    {
+      "group": "array_sparse",
+      "name": "sparse_array_200000",
+      "oracle_sha256": "ef55be1f845002931219ae88320c4744651b322de6447340a573287179119427",
+      "parameters": {
+        "iterations": 200000,
+        "keys": 31,
+        "stride": 313
+      },
+      "program_sha256": "ceb9864b7d2e0654c73b4f8efd65cd6eba5a27bbc352705e354b07cb8b49ba1b"
+    },
+    {
+      "group": "frontend_definition",
+      "name": "frontend_definitions_2000",
+      "oracle_sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+      "parameters": {
+        "definitions": 2000
+      },
+      "program_sha256": "36a2bf8899f52e86536ad0fd9763b1dc8b59d565f1da60cb6508d8d213cd8916"
+    },
+    {
+      "group": "decimal_input",
+      "name": "decimal_input_4000d_x100",
+      "oracle_sha256": "23b55f5a4378876edb19ea7c9df8f5b27024e770ae4a9712bcc5c8e120af47db",
+      "parameters": {
+        "digits": 4000,
+        "literals": 100
+      },
+      "program_sha256": "f52167d78167be3e447e2b6d40465d288f7981bd3bd081c7da06d4b8980ecbe1"
+    },
+    {
+      "group": "decimal_output",
+      "name": "decimal_output_200d_x1000",
+      "oracle_sha256": "8f570d1e16d7ea92fd4d1f879255eca205e677a997a07dbdcf437d71b1a71766",
+      "parameters": {
+        "digits": 200,
+        "lines": 1000
+      },
+      "program_sha256": "491c747f387a04807d616d44a9eae25a10f2d07b08d60068aae97c7adaccf8ae"
+    },
+    {
+      "group": "streaming",
+      "name": "streaming_statements_20000",
+      "oracle_sha256": "f6351f5ead9a700e34275480b3856ea738122a7c57bdeb744a631251c069587a",
+      "parameters": {
+        "output_lines": 20000,
+        "statements": 40001,
+        "termination": "EOF"
+      },
+      "program_sha256": "9258f13cfeeaf263faaa3c79b841727a0bed8428422355c012a96e80f6839be3"
+    },
+    {
+      "group": "square",
+      "name": "square_100d_x100000",
+      "oracle_sha256": "575dca270f8c83360eb59beae85e1fb7830941c88260cfae4d9b170850457aa1",
+      "parameters": {
+        "digits": 100,
+        "iterations": 100000,
+        "shape": "aliased"
+      },
+      "program_sha256": "06b43a72821a8146185bf4db472f97a309ea61afa6a884c7be91569f7a1db3c7"
+    },
+    {
+      "group": "square",
+      "name": "square_1000d_x10000",
+      "oracle_sha256": "82b8cea2132061b2192e6b1346fdb2485454628a43c61dac7916377d75410ad7",
+      "parameters": {
+        "digits": 1000,
+        "iterations": 10000,
+        "shape": "aliased"
+      },
+      "program_sha256": "7248a6558ceb7612d5aa63a204773d57ef1c83ddb1b5ab88336e76fce7c2e340"
+    },
+    {
+      "group": "square",
+      "name": "square_10000d_x500",
+      "oracle_sha256": "742d9fc08b59769fd420765bd2a475c4cbce2300a5454267b80ee8add561908d",
+      "parameters": {
+        "digits": 10000,
+        "iterations": 500,
+        "shape": "aliased"
+      },
+      "program_sha256": "108d014f2803284e3a7e9e242430eb11a0d0bc98f570718cf60cec3633c2fc05"
+    },
+    {
+      "group": "literal_repeat",
+      "name": "literal_repeat_2000d_x2000",
+      "oracle_sha256": "a56adbf7a515a6c86dcff0eda9caa3dfa5f007fd1fad16b757e9641a01e1cb89",
+      "parameters": {
+        "digits": 2000,
+        "iterations": 2000
+      },
+      "program_sha256": "a1ac2e26647d04476e86adc828ad089dc49f6402c58b41b2a5de9c2a4a5ebc7c"
+    },
+    {
+      "group": "binary_output",
+      "name": "binary_output_1000d_x300",
+      "oracle_sha256": "11891bc2ecf2ca87907642c23fd08b35a9710c587b57a980d1f10d491cbeb691",
+      "parameters": {
+        "digits": 1000,
+        "lines": 300,
+        "output_base": 2
+      },
+      "program_sha256": "7542569af5657835dbf426b32640c7c282248e31f23fe81b9b597fffeeebd06c"
+    },
+    {
+      "group": "octal_output",
+      "name": "octal_output_1000d_x300",
+      "oracle_sha256": "0fdf561b1a02bc35115d1606258aecd5b86870c8c865f2ec415bdd7a659a78a9",
+      "parameters": {
+        "digits": 1000,
+        "lines": 300,
+        "output_base": 8
+      },
+      "program_sha256": "61a674d7da923a8f5c9eea102da2e7e1782266ae273c03d1d9be24f7d7837f5f"
+    },
+    {
+      "group": "binary_input",
+      "name": "binary_input_100000d_x3",
+      "oracle_sha256": "ee65e37364ee58e519fca6e216a1cbe9bcdfa4c19ebc718d5090db1a7136e1b1",
+      "parameters": {
+        "digits": 100000,
+        "input_base": 2,
+        "literals": 3
+      },
+      "program_sha256": "5708591ea9ef5b6f865e2697e54474f21b008fce56222ee9f914bed6c92e76cc"
+    },
+    {
+      "group": "hex_input",
+      "name": "hex_input_100000d_x3",
+      "oracle_sha256": "e8512326442321c92bc35cfd57c121bdb35fc26bdbde04cea11cc69d100d4092",
+      "parameters": {
+        "digits": 100000,
+        "input_base": 16,
+        "literals": 3
+      },
+      "program_sha256": "ac6a53ff2dd5fe039ff93d69b42355e5d2dedf641822fb12ae90d5251dad70c7"
+    },
+    {
+      "group": "temporary_chain",
+      "name": "temporary_chain_1000d_x50000",
+      "oracle_sha256": "018c187fe7e39541b6270b7988d8338ef098bd95a7172f93123876a597f54204",
+      "parameters": {
+        "digits": 1000,
+        "iterations": 50000,
+        "terms": 8
+      },
+      "program_sha256": "627c528d666e851353a773210f5e5f8a0e1bbd383116e310241c03703ebf3930"
+    },
+    {
+      "group": "file_streaming",
+      "input_mode": "file",
+      "name": "file_statements_20000",
+      "oracle_sha256": "0be508172e87a2af98f344d18610bbaaa0e6bbfcef0c7804b24457f839e129c9",
+      "parameters": {
+        "statements": 20000
+      },
+      "program_sha256": "c4152672d2f743bc5893c5f564f728e9764b251c0faa153905e7eb515ee123c9"
+    },
+    {
+      "group": "sqrt_large_scale",
+      "name": "sqrt_large_scale10000_x5",
+      "oracle_sha256": "1350e0632435caa7d0100e532346962f7efbebbe4e3bd35b9274ad1c79eafbe7",
+      "parameters": {
+        "iterations": 5,
+        "radicand": "2",
+        "scale": 10000
+      },
+      "program_sha256": "6f040bb0ca08b7c9dcd1efd7042c6bf637084f3b831662d0fd5da649cbb12be5"
+    },
+    {
+      "group": "sqrt_tiny",
+      "name": "sqrt_tiny_scale1024_x30",
+      "oracle_sha256": "9bab095187490d7505a856781152c56c17226c00f80286efcd7002fbd4a9327a",
+      "parameters": {
+        "coefficient": "4",
+        "input_scale": 1024,
+        "iterations": 30,
+        "scale": 0
+      },
+      "program_sha256": "79cd19dfc6e90500f4bae2858675e449a8c5e31accdec363fe088fbeb7672141"
+    },
+    {
+      "group": "sqrt_tiny",
+      "name": "sqrt_tiny_scale4096_x10",
+      "oracle_sha256": "546d12530ba9520a5a77953f2c16b52a0ae50f8ef5eecee221f88122e8eb9d50",
+      "parameters": {
+        "coefficient": "4",
+        "input_scale": 4096,
+        "iterations": 10,
+        "scale": 0
+      },
+      "program_sha256": "0e2307d8a7f97d2d68ddc86b8a1cbfacab874e7269281fdba8b6920d0e9b09f6"
+    },
+    {
+      "group": "sqrt_large_integer",
+      "name": "sqrt_integer_power2000_scale100_x10",
+      "oracle_sha256": "b1199974fc58d8aa83572fdda7f195de608c14f31237c9e01991659af33efeed",
+      "parameters": {
+        "coefficient": "4",
+        "input_digits": 4001,
+        "iterations": 10,
+        "root_power": 2000,
+        "scale": 100
+      },
+      "program_sha256": "3552c797fae31d128b9369d1d0ce12a48191840f458a5361eecf93ac557fa08f"
+    }
+  ],
+  "corpus_seed": 197200,
+  "environment": {
+    "BC_ENV_ARGS": "",
+    "BC_LINE_LENGTH": "70",
+    "LANG": "C",
+    "LC_ALL": "C"
+  },
+  "harness_sha256": "f5412f50ec870c3fe4d9be8a843be64ba423b425e396d1a4cc0cbab0fdacdea0",
+  "implementations": [
+    {
+      "argv": [
+        "/private/tmp/gd-bc-212-fraction-base-release/build/src/bc/bc"
+      ],
+      "binary_sha256": "006d4d64345b494cfa2796b9040f8d30e457d0ee8eecc8896e926f86c5ff7f1c",
+      "complete_provenance": true,
+      "metadata": {
+        "binary_sha256": "006d4d64345b494cfa2796b9040f8d30e457d0ee8eecc8896e926f86c5ff7f1c",
+        "compiler": {
+          "C": {
+            "argv0": "/usr/bin/cc",
+            "realpath": "/usr/bin/cc",
+            "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+            "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+          },
+          "CXX": {
+            "argv0": "/usr/bin/c++",
+            "realpath": "/usr/bin/c++",
+            "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+            "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+          }
+        },
+        "configuration": {
+          "build_type": "Release",
+          "extensions": "ON",
+          "generator": "Ninja",
+          "multiply_split_point": 126,
+          "threshold_header_sha256": "c5b539c9f87d032bfcb436bb8da8972048d2ed1780a980265b7c3fe0e5e45626"
+        },
+        "flags": {
+          "CMAKE_CXX_FLAGS": "",
+          "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+          "CMAKE_C_FLAGS": "",
+          "CMAKE_C_FLAGS_RELEASE": "-O3 -DNDEBUG",
+          "CMAKE_EXE_LINKER_FLAGS": "",
+          "CMAKE_EXE_LINKER_FLAGS_RELEASE": "",
+          "compile_commands_sha256": "cdcacc1d06caa29a9023402e5b06a5b8e54d61b4545dbbe0bd5927be77dbb5e1"
+        },
+        "instrumented": false,
+        "limitations": [
+          "Provision compiler, C/C++ runtime and SDK separately; this is not an OS image",
+          "Compiler defaults and actual commands are recorded, not claimed identical across hosts"
+        ],
+        "source_revision": "cc3d4ace9e25932325094e3a90da56e5537beba8",
+        "standard_library": {
+          "header_macros": {
+            "_LIBCPP_VERSION": "220106"
+          },
+          "scope": "standard-library header identity; provision runtime and SDK separately",
+          "status": "recorded"
+        },
+        "version": "gd-posix-apps source cc3d4ace9e25932325094e3a90da56e5537beba8"
+      },
+      "name": "base",
+      "role": "candidate"
+    },
+    {
+      "argv": [
+        "/private/tmp/gd-bc-212-fraction-candidate-release/build/src/bc/bc"
+      ],
+      "binary_sha256": "e6a97ea06d3699ebdc4cc07040ca4c534b5e6b42c4296f750a4d444b62400fa0",
+      "complete_provenance": true,
+      "metadata": {
+        "binary_sha256": "e6a97ea06d3699ebdc4cc07040ca4c534b5e6b42c4296f750a4d444b62400fa0",
+        "compiler": {
+          "C": {
+            "argv0": "/usr/bin/cc",
+            "realpath": "/usr/bin/cc",
+            "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+            "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+          },
+          "CXX": {
+            "argv0": "/usr/bin/c++",
+            "realpath": "/usr/bin/c++",
+            "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+            "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+          }
+        },
+        "configuration": {
+          "build_type": "Release",
+          "extensions": "ON",
+          "generator": "Ninja",
+          "multiply_split_point": 126,
+          "threshold_header_sha256": "c5b539c9f87d032bfcb436bb8da8972048d2ed1780a980265b7c3fe0e5e45626"
+        },
+        "flags": {
+          "CMAKE_CXX_FLAGS": "",
+          "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+          "CMAKE_C_FLAGS": "",
+          "CMAKE_C_FLAGS_RELEASE": "-O3 -DNDEBUG",
+          "CMAKE_EXE_LINKER_FLAGS": "",
+          "CMAKE_EXE_LINKER_FLAGS_RELEASE": "",
+          "compile_commands_sha256": "876b0d048638a697d27cd0ec56baaf70df3baa4bc1523f3558323cddf8456a75"
+        },
+        "instrumented": false,
+        "limitations": [
+          "Provision compiler, C/C++ runtime and SDK separately; this is not an OS image",
+          "Compiler defaults and actual commands are recorded, not claimed identical across hosts"
+        ],
+        "source_revision": "444e53d4a0068aeabda73f5615b3e2f40935f752",
+        "standard_library": {
+          "header_macros": {
+            "_LIBCPP_VERSION": "220106"
+          },
+          "scope": "standard-library header identity; provision runtime and SDK separately",
+          "status": "recorded"
+        },
+        "version": "gd-posix-apps source 444e53d4a0068aeabda73f5615b3e2f40935f752"
+      },
+      "name": "candidate",
+      "role": "candidate"
+    }
+  ],
+  "pending_classes": [
+    {
+      "group": "posix_math_library",
+      "issue": 217,
+      "status": "not implemented; not a performance pass"
+    }
+  ],
+  "platform": {
+    "machine": "arm64",
+    "python": "3.15.2",
+    "release": "27.2.0",
+    "system": "Darwin"
+  },
+  "preset": "full",
+  "reference": "base",
+  "samples": 15,
+  "schema": 1,
+  "seed": 197212,
+  "started_utc": "2026-11-01T16:33:51.688074+00:00",
+  "timeout": 30,
+  "warmups": 3
+}

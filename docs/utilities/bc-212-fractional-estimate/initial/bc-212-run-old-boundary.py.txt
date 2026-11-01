@@ -1,0 +1,9 @@
+from pathlib import Path
+import json,shlex,subprocess
+root=Path('/private/tmp/gd-bc-210-parser-release')
+src=Path('/private/tmp/bc-212-old-test-vm-lifetime.cc');src.write_bytes(Path('/private/tmp/gd-posix-sqrt-matrix/src/bc/test-vm-lifetime.cc').read_bytes())
+j=json.loads((root/'build/compile_commands.json').read_text());old=next(x for x in j if x['file'].endswith('/bc.cc'));argv=shlex.split(old['command']);argv[argv.index('-o')+1]='/private/tmp/bc-212-old-boundary.o';argv[-1]=str(src)
+subprocess.run(argv,cwd=old['directory'],check=True)
+subprocess.run(['/usr/bin/c++','-O3','-DNDEBUG','-flto=thin','-arch','arm64','/private/tmp/bc-212-old-boundary.o',str(root/'build/src/bc/liblibbc.a'),str(root/'build/src/libutil.a'),str(root/'build/libgdsup/libgdsup.a'),'-o','/private/tmp/bc-212-old-boundary'],check=True)
+r=subprocess.run(['/private/tmp/bc-212-old-boundary'],capture_output=True,text=True)
+print(r.stdout,r.stderr,'exit:',r.returncode);assert r.returncode==1

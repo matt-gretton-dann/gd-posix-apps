@@ -1,0 +1,16 @@
+from pathlib import Path
+import hashlib,json,os,subprocess,sys
+w=Path('/private/tmp/gd-posix-sqrt-fraction-estimate');role=sys.argv[1];r=Path('/private/tmp/bc-212-sqrt-profile-'+role);r.mkdir();binary=w/'build-profile/src/bc/bc'
+revision=subprocess.check_output(['git','rev-parse','HEAD'],cwd=w,text=True).strip();assert not subprocess.check_output(['git','status','--porcelain'],cwd=w)
+cases=[]
+for scale in [4,64,1024,4096]:
+ half=scale//2;radicand='.'+'0'*(scale-1)+'4';expected='.'+'0'*(half-1)+'2';cases.append(('tiny-square-'+str(scale),'scale=0\nsqrt('+radicand+')-('+expected+')\n'))
+cases += [('sqrt2-scale100','scale=100\nsqrt(2)\n'),('sqrt4-scale10000','scale=10000\nsqrt(4)-2\n')]
+rows=[]
+for name,program in cases:
+ (r/(name+'.bc')).write_text(program);report=r/(name+'.json');env=dict(os.environ,LC_ALL='C',GD_BC_PROFILE_OUTPUT=str(report));p=subprocess.run([str(binary)],input=program,text=True,capture_output=True,timeout=90,env=env);assert p.returncode==0 and not p.stderr,(name,p.returncode,p.stderr)
+ if name!='sqrt2-scale100':assert p.stdout=='0\n',(name,p.stdout[:100])
+ else:assert p.stdout.replace('\\\n','').strip()=='1.4142135623730950488016887242096980785696718753769480731766797379907324784621070388503875343276415727'
+ data=json.loads(report.read_text());events=data['events'];assert events['division_requests']==events['sqrt_iterations'];assert data['total']['live_bytes']==0
+ rows.append({'name':name,'checked':True,'stdout_sha256':hashlib.sha256(p.stdout.encode()).hexdigest(),'iterations':events['sqrt_iterations'],'division_requests':events['division_requests'],'dividend_limb_sum':events['division_dividend_limbs'],'divisor_limb_sum':events['division_divisor_limbs'],'working_scale_sum':events['sqrt_working_scale_sum'],'selected_peak_bytes':data['total']['peak_live_bytes']});print(name,rows[-1],flush=True)
+(r/'manifest.json').write_text(json.dumps({'role':role,'source_revision':revision,'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),'instrumented':True,'scope':'Separate diagnostic counters, not release timing or process RSS; division stored coefficient dimensions before normalization. Exactly one sqrt and no other Number divisions per program.'},indent=2)+'\n');(r/'summary.json').write_text(json.dumps(rows,indent=2)+'\n')
