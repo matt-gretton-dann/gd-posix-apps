@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <utility>
+#include <vector>
 
 #include "digit-storage.hh"
 
@@ -66,4 +67,71 @@ TEMPLATE_TEST_CASE("Digit storage preserves inline values and heap snapshots",
   CHECK(moved_heap.size() == 3);
   CHECK(moved_heap.back() == 1);
   CHECK_THROWS_AS(moved_heap.at(3), std::out_of_range);
+}
+
+TEMPLATE_TEST_CASE("Digit storage assignment covers every active-member transition",
+                   "[bc][number][storage]", std::uint8_t, std::uint16_t, std::uint32_t)
+{
+  using Storage = GD::Bc::Details::DigitStorage<TestType>;
+  auto make = [](unsigned state) {
+    if (state == 0) {
+      return Storage(nullptr);
+    }
+    if (state == 1) {
+      return Storage{1, 2};
+    }
+    return Storage{1, 2, 3, 4};
+  };
+  auto values = [](Storage const& value) {
+    return std::vector<TestType>(value.begin(), value.end());
+  };
+  auto self_move = [](Storage& value) {
+    auto* alias = std::addressof(value);
+    value = std::move(*alias);
+  };
+  for (unsigned from = 0; from != 3; ++from) {
+    for (unsigned to = 0; to != 3; ++to) {
+      INFO("source state " << from << ", destination state " << to);
+      auto source = make(from);
+      auto target = make(to);
+      auto const expected = values(source);
+      bool const present = static_cast<bool>(source);
+      bool const heap = source.has_heap();
+      {
+        Storage copy(source);
+        CHECK(values(copy) == expected);
+        CHECK(static_cast<bool>(copy) == present);
+      }
+      target = source;
+      CHECK(values(target) == expected);
+      CHECK(values(source) == expected);
+      CHECK(static_cast<bool>(target) == present);
+      CHECK(target.has_heap() == heap);
+      if (heap) {
+        CHECK(source.use_count() == 2);
+      }
+      auto const& alias = target;
+      target = alias;
+      self_move(target);
+      CHECK(values(target) == expected);
+      CHECK(static_cast<bool>(target) == present);
+      target = make(to);
+      target = std::move(source);
+      CHECK(values(target) == expected);
+      CHECK(static_cast<bool>(target) == present);
+      CHECK(target.has_heap() == heap);
+      CHECK_FALSE(source);
+      CHECK(source.empty());
+      CHECK_FALSE(source.has_heap());
+      if (heap) {
+        CHECK(target.use_count() == 1);
+      }
+    }
+  }
+  auto source = make(2);
+  auto target = source;
+  target = std::move(source);  // Aliased owners still transfer exactly once.
+  CHECK_FALSE(source);
+  CHECK(target.use_count() == 1);
+  CHECK(values(target) == std::vector<TestType>{1, 2, 3, 4});
 }
