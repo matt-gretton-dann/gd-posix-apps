@@ -1,0 +1,30 @@
+"""Serial fresh-process peak RSS, kept separate from release speed samples."""
+from pathlib import Path
+import hashlib,importlib.util,json,platform,re,statistics,subprocess
+repo=Path('/private/tmp/gd-posix-consume-temporaries');spec=importlib.util.spec_from_file_location('bench',repo/'src/bc/scripts/bench-bc.py');bench=importlib.util.module_from_spec(spec);spec.loader.exec_module(bench)
+root=Path('/private/tmp/gd-bc-210-parser-memory');root.mkdir()
+implementations={row['name']:row for row in json.loads(Path('/private/tmp/bc-210-parser-implementations.json').read_text())['implementations']}
+cases=bench.corpus('full');rows=[]
+for case in cases:
+ expected=bench.canonical_output(('\n'.join(case['expected'])+'\n').encode())
+ for role,implementation in implementations.items():
+  for sample in range(3):
+   log=root/(role+'-'+case['name']+'-'+str(sample)+'.log')
+   argv=['/usr/bin/time','-l','-o',str(log)]+implementation['argv']
+   child=subprocess.run(argv,input=case['program'].encode(),stdout=subprocess.PIPE,stderr=subprocess.PIPE,env=bench.environment(),timeout=90)
+   assert child.returncode==0 and not child.stderr,(role,case['name'],child.returncode,child.stderr)
+   assert bench.canonical_output(child.stdout)==expected,(role,case['name'],'wrong value')
+   report=log.read_text();match=re.search(r'^\s*(\d+)\s+maximum resident set size\s*$',report,re.M);assert match,log
+   rows.append({'name':case['name'],'group':case['group'],'role':role,'sample':sample,'checked':True,'max_rss_bytes':int(match.group(1)),'log':log.name,'stdout_sha256':hashlib.sha256(child.stdout).hexdigest()})
+ print(case['name'],'memory checked',flush=True)
+(root/'manifest.json').write_text(json.dumps({'implementations':implementations,'host':platform.platform(),'scope':'Three serial fresh bc processes per full workload/implementation, after all speed timings/builds/tests/profiles. Process peaks include loader, parsing, code, VM state, values and output; they are not isolated workspace or selected allocator bytes. No speed claim uses these diagnostic resource times.','units_reference':'Local getrusage(2): ru_maxrss is maximum resident set size utilized, in bytes','argv_prefix':['/usr/bin/time','-l','-o','LOG']},indent=2)+'\n')
+(root/'samples.json').write_text(json.dumps(rows,indent=2)+'\n')
+summary=[]
+for case in cases:
+ summary.append({'name':case['name'],'group':case['group'],'process_peaks':{role:{'median_bytes':statistics.median(x['max_rss_bytes'] for x in rows if x['name']==case['name'] and x['role']==role),'min_bytes':min(x['max_rss_bytes'] for x in rows if x['name']==case['name'] and x['role']==role),'max_bytes':max(x['max_rss_bytes'] for x in rows if x['name']==case['name'] and x['role']==role)} for role in implementations}})
+(root/'summary.json').write_text(json.dumps(summary,indent=2)+'\n')
+code=[]
+for role,implementation in implementations.items():
+ binary=Path(implementation['argv'][0]);report=subprocess.check_output(['/usr/bin/size','-m',str(binary)],text=True);(root/(role+'-size.log')).write_text(report);code.append({'role':role,'file_bytes':binary.stat().st_size,'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),'text_segment_bytes':int(re.search(r'Segment __TEXT:\s*(\d+)',report).group(1))})
+(root/'code-size.json').write_text(json.dumps({'scope':'Mach-O __TEXT is code/read-only storage, not process RSS','rows':code},indent=2)+'\n')
+print('All',len(rows),'memory executions pass exact process/output checks')

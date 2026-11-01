@@ -1,0 +1,36 @@
+"""macOS live RSS after a large item; diagnostic, never timing evidence."""
+from pathlib import Path
+import errno,hashlib,json,os,select,statistics,subprocess,time
+root=Path('/private/tmp/gd-bc-210-parser-retained-rss');root.mkdir()
+config=json.loads(Path('/private/tmp/bc-210-parser-implementations.json').read_text());rows=[]
+large='{'+('a=1;'*65536)+'}\n123\n';small=('a=1\n'*1024)+'456\n'
+(root/'large.bc').write_text(large);(root/'small.bc').write_text(small)
+(root/'ps-rss-units.txt').write_text('Local /usr/share/man/man1/ps.1, rss: the real memory (resident set) size of the process (in 1024 byte units).\n')
+def line(master):
+ out=b'';deadline=time.monotonic()+30
+ while not out.endswith(b'\n'):
+  remaining=deadline-time.monotonic();assert remaining>0,'response deadline'
+  readable,_,_=select.select([master],[],[],remaining);assert readable,'no response'
+  chunk=os.read(master,64);assert chunk,'unexpected EOF';out+=chunk
+ return out.replace(b'\r\n',b'\n')
+def rss(pid):
+ raw=subprocess.check_output(['/bin/ps','-o','rss=','-p',str(pid)],text=True);return int(raw.strip())*1024
+for item in config['implementations']:
+ for sample in range(3):
+  master,slave=os.openpty();env={k:v for k,v in os.environ.items() if not k.startswith(('BC_','DC_','GD_BC_PROFILE_'))};env['LC_ALL']='C'
+  child=subprocess.Popen(item['argv'],stdin=subprocess.PIPE,stdout=slave,stderr=subprocess.PIPE,env=env);os.close(slave)
+  try:
+   child.stdin.write(large.encode());child.stdin.flush();assert line(master)==b'123\n'
+   before=[rss(child.pid) for _ in range(3)]
+   child.stdin.write(small.encode());child.stdin.flush();assert line(master)==b'456\n'
+   after=[rss(child.pid) for _ in range(3)]
+   child.stdin.close();assert child.wait(timeout=30)==0;assert not child.stderr.read()
+   rows.append({'role':item['name'],'sample':sample,'checked':True,'after_large_bytes':before,'after_small_bytes':after})
+  finally:
+   if child.poll() is None:child.kill();child.wait()
+   os.close(master)
+  print(item['name'],sample,'live RSS checked',flush=True)
+(root/'samples.json').write_text(json.dumps(rows,indent=2)+'\n')
+(root/'manifest.json').write_text(json.dumps({'implementations':config['implementations'],'large_sha256':hashlib.sha256(large.encode()).hexdigest(),'small_sha256':hashlib.sha256(small.encode()).hexdigest(),'scope':'Separate live-RSS diagnostics while bc waits for input after exact output checkpoints; stdout uses a PTY for line buffering. ps RSS is KiB converted to bytes. Both implementations retain the existing VM result pool. Process RSS is not isolated instruction capacity; no performance claim uses these executions.'},indent=2)+'\n')
+for role in [x['name'] for x in config['implementations']]:
+ selected=[x for x in rows if x['role']==role];print(role,{phase:statistics.median(v for x in selected for v in x[phase]) for phase in ['after_large_bytes','after_small_bytes']})

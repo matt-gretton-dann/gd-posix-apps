@@ -16,5 +16,7 @@ stages.
 
 Tests retain several returned results across more parsing, and independently
 check exact output with bounded instruction allocations over repeated items.
-Matched all-class timing, separate process memory and native checks remain
-required before adoption.
+PR #346 accepts this stage after matched all-class timing, separate peak/live
+process memory and all fourteen native/CI/CodeQL checks. [The exact-source
+report](bc-210-parser-reuse/README.md) retains costs and noisy intervals alongside
+the bounded gains. Other #210 stages remain open.
