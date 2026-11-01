@@ -13,8 +13,7 @@
 #include <iterator>
 #include <memory>
 #include <stdexcept>
-#include <type_traits>
-#include <utility>
+#include <variant>
 #include <vector>
 
 #include "profiling.hh"
@@ -30,18 +29,11 @@ namespace GD::Bc::Details {
  * This supplies only the vector operations used by BasicDigits, not a general
  * allocator-aware vector interface. Nullable storage preserves its existing
  * absent-versus-owned-empty distinction without allocating an empty owner.
- *
- * Non-heap states keep a live Inline member (empty when absent). Heap states
- * keep a live non-null Owner. The unsigned integral limbs are trivial, so their
- * union member can be replaced without destruction; owners are explicitly
- * constructed/destroyed. All throwing allocation work precedes a tag change.
- * This is ordinary C++ object storage, not pointer tagging or layout punning.
  */
 template<typename Limb, std::size_t InlineCapacity = 3>
 class DigitStorage
 {
   static_assert(InlineCapacity > 0 && InlineCapacity < 255);
-  static_assert(std::is_integral_v<Limb> && std::is_unsigned_v<Limb>);
   using Heap = std::vector<Limb, Profile::Allocator<Limb, Profile::AllocationKind::digits>>;
   struct Inline
   {
@@ -49,41 +41,17 @@ class DigitStorage
     unsigned char size = 0;
   };
   using Owner = std::shared_ptr<Heap>;
-  enum class Kind : unsigned char { absent, inline_value, heap };
-  union Storage
-  {
-    Inline small;
-    Owner owner;
-    Storage() noexcept {}   // Each constructor starts the selected member explicitly.
-    ~Storage() noexcept {}  // DigitStorage destroys the active owner explicitly.
-  } storage_;
-  Kind kind_ = Kind::absent;
+  std::variant<std::monostate, Inline, Owner> storage_;
+  static constexpr std::array<Limb, InlineCapacity> empty_{};
 
-  // At every public boundary heap means a live, non-null Owner; other states
-  // have a live Inline member. Moves restore that invariant in their source.
-  auto heap() -> Owner*
-  {
-    assert(has_heap());
-    return std::addressof(storage_.owner);
-  }
-  auto heap() const -> Owner const*
-  {
-    assert(has_heap());
-    return std::addressof(storage_.owner);
-  }
-  void install_heap(Owner&& owner) noexcept
-  {
-    assert(!has_heap() && owner);
-    std::construct_at(std::addressof(storage_.owner), std::move(owner));
-    kind_ = Kind::heap;
-  }
+  auto heap() -> Owner* { return std::get_if<Owner>(&storage_); }
+  auto heap() const -> Owner const* { return std::get_if<Owner>(&storage_); }
   auto small() -> Inline&
   {
-    assert(!has_heap());
-    if (kind_ == Kind::absent) {
-      kind_ = Kind::inline_value;
+    if (std::holds_alternative<std::monostate>(storage_)) {
+      storage_ = Inline{};
     }
-    return storage_.small;
+    return std::get<Inline>(storage_);
   }
   auto data() -> Limb*
   {
@@ -97,7 +65,8 @@ class DigitStorage
     if (has_heap()) {
       return (*heap())->data();
     }
-    return storage_.small.limbs.data();
+    auto const* value = std::get_if<Inline>(&storage_);
+    return value ? value->limbs.data() : empty_.data();
   }
   void promote(std::size_t capacity)
   {
@@ -108,7 +77,7 @@ class DigitStorage
     owner->reserve(capacity);
     auto const& value = small();
     owner->insert(owner->end(), value.limbs.begin(), value.limbs.begin() + value.size);
-    install_heap(std::move(owner));
+    storage_ = std::move(owner);
   }
 
 public:
@@ -121,12 +90,8 @@ public:
   using const_reverse_iterator = std::reverse_iterator<const_iterator>;
   static constexpr std::size_t inline_capacity = InlineCapacity;
 
-  DigitStorage() noexcept
-  {
-    std::construct_at(std::addressof(storage_.small));
-    kind_ = Kind::inline_value;
-  }
-  DigitStorage(std::nullptr_t) noexcept { std::construct_at(std::addressof(storage_.small)); }
+  DigitStorage() : storage_(Inline{}) {}
+  DigitStorage(std::nullptr_t) noexcept : storage_(std::monostate{}) {}
   DigitStorage(size_type count, Limb value) : DigitStorage() { resize(count, value); }
   DigitStorage(const_iterator first, const_iterator last) : DigitStorage()
   {
@@ -138,91 +103,39 @@ public:
       small().size = static_cast<unsigned char>(count);
     }
     else {
-      install_heap(GD_BC_PROFILE_SHARED(Profile::AllocationKind::digits, Heap)(first, last));
+      storage_ = GD_BC_PROFILE_SHARED(Profile::AllocationKind::digits, Heap)(first, last);
     }
   }
   DigitStorage(std::initializer_list<Limb> values) : DigitStorage(values.begin(), values.end()) {}
-  DigitStorage(DigitStorage const& other) noexcept
+  DigitStorage(DigitStorage const&) noexcept = default;
+  auto operator=(DigitStorage const&) noexcept -> DigitStorage& = default;
+  DigitStorage(DigitStorage&& other) noexcept : storage_(std::move(other.storage_))
   {
-    if (other.has_heap()) {
-      std::construct_at(std::addressof(storage_.owner), *other.heap());
-    }
-    else {
-      std::construct_at(std::addressof(storage_.small), other.storage_.small);
-    }
-    kind_ = other.kind_;
-  }
-  auto operator=(DigitStorage const& other) noexcept -> DigitStorage&
-  {
-    if (this != &other) {
-      if (has_heap() && other.has_heap()) {
-        *heap() = *other.heap();
-      }
-      else if (other.has_heap()) {
-        std::construct_at(std::addressof(storage_.owner), *other.heap());
-      }
-      else {
-        if (has_heap()) {
-          std::destroy_at(heap());
-        }
-        std::construct_at(std::addressof(storage_.small), other.storage_.small);
-      }
-      kind_ = other.kind_;
-    }
-    return *this;
-  }
-  DigitStorage(DigitStorage&& other) noexcept
-  {
-    if (other.has_heap()) {
-      std::construct_at(std::addressof(storage_.owner), std::move(*other.heap()));
-    }
-    else {
-      std::construct_at(std::addressof(storage_.small), other.storage_.small);
-    }
-    kind_ = other.kind_;
     other.reset();
   }
   auto operator=(DigitStorage&& other) noexcept -> DigitStorage&
   {
     if (this != &other) {
-      if (has_heap() && other.has_heap()) {
-        *heap() = std::move(*other.heap());
-      }
-      else if (other.has_heap()) {
-        std::construct_at(std::addressof(storage_.owner), std::move(*other.heap()));
-      }
-      else {
-        if (has_heap()) {
-          std::destroy_at(heap());
-        }
-        std::construct_at(std::addressof(storage_.small), other.storage_.small);
-      }
-      kind_ = other.kind_;
+      storage_ = std::move(other.storage_);
       other.reset();
     }
     return *this;
   }
-  ~DigitStorage() noexcept
-  {
-    if (has_heap()) {
-      std::destroy_at(heap());
-    }
-  }
 
-  [[nodiscard]] auto has_heap() const noexcept -> bool { return kind_ == Kind::heap; }
-  explicit operator bool() const noexcept { return kind_ != Kind::absent; }
+  [[nodiscard]] auto has_heap() const noexcept -> bool
+  {
+    auto const* owner = heap();
+    return owner && static_cast<bool>(*owner);
+  }
+  explicit operator bool() const noexcept
+  {
+    return !std::holds_alternative<std::monostate>(storage_) && (!heap() || has_heap());
+  }
   auto operator->() noexcept -> DigitStorage* { return this; }
   auto operator->() const noexcept -> DigitStorage const* { return this; }
   auto operator*() noexcept -> DigitStorage& { return *this; }
   auto operator*() const noexcept -> DigitStorage const& { return *this; }
-  void reset() noexcept
-  {
-    if (has_heap()) {
-      std::destroy_at(heap());
-    }
-    std::construct_at(std::addressof(storage_.small));
-    kind_ = Kind::absent;
-  }
+  void reset() noexcept { storage_ = std::monostate{}; }
   [[nodiscard]] auto use_count() const noexcept -> long
   {
     return has_heap() ? (*heap()).use_count() : (static_cast<bool>(*this) ? 1L : 0L);
@@ -233,7 +146,8 @@ public:
     if (has_heap()) {
       return (*heap())->size();
     }
-    return storage_.small.size;
+    auto const* value = std::get_if<Inline>(&storage_);
+    return value ? value->size : 0;
   }
   [[nodiscard]] auto empty() const noexcept -> bool { return size() == 0; }
   auto begin() -> iterator { return data(); }

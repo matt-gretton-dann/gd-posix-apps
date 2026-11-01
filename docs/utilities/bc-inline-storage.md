@@ -16,10 +16,9 @@ small heap value copies into inline storage. Growth invalidates iterators as a
 vector growth does. A move leaves the source absent. Raw iterator users must
 retain their owning value and obey those invalidation rules.
 
-The representation uses an explicit discriminator with ordinary `std::array`,
-`std::shared_ptr` and `std::vector`; it assumes no pointer tagging, shared_ptr
-layout, ISA or architecture. Active union members have explicit C++ lifetimes;
-all absent/inline/heap copy and move transitions are tested. The heap path remains available for arbitrary supported sizes.
+The representation uses ordinary `std::variant`, `std::array`, `std::shared_ptr`
+and `std::vector`; it assumes no pointer tagging, shared_ptr layout, ISA or
+architecture. The heap path remains available for arbitrary supported sizes.
 There is no manual arena or cross-frame lifetime coupling. Storage growth is
 exact; arithmetic, public scale/sign rules and zero padding are unchanged.
 
