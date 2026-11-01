@@ -1,0 +1,13 @@
+Test project /private/tmp/gd-posix-sqrt-fraction-estimate/build-asan
+    Start 227: bc/vm-lifetime
+1/4 Test #227: bc/vm-lifetime ...................   Passed    0.30 sec
+    Start 238: bc/cli
+2/4 Test #238: bc/cli ...........................   Passed    3.84 sec
+    Start 240: bc/number-oracle
+3/4 Test #240: bc/number-oracle .................   Passed    3.76 sec
+    Start 242: bc/vm-cli
+4/4 Test #242: bc/vm-cli ........................   Passed    0.88 sec
+
+100% tests passed out of 4
+
+Total Test time (real) =   8.79 sec

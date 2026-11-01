@@ -1,0 +1,165 @@
+diff --git a/src/bc/number.hh b/src/bc/number.hh
+index 11003a4..25615fa 100644
+--- a/src/bc/number.hh
++++ b/src/bc/number.hh
+@@ -138,6 +138,14 @@ public:
+   /** Whether coefficient storage retains a heap owner rather than inline limbs. */
+   [[nodiscard]] auto has_heap_storage() const noexcept -> bool { return digits_.has_heap(); }
+ 
++#if GD_BC_PROFILE
++  /** Stored coefficient limbs before division normalization; diagnostics only. */
++  [[nodiscard]] auto coefficient_limbs() const noexcept -> std::size_t
++  {
++    return digits_ ? digits_->size() : 0;
++  }
++#endif
++
+   /** \brief   Construct holding the single digit \a num
+    *  \param num Number to hold.  Must be less than \c base_.
+    */
+@@ -2064,6 +2072,11 @@ public:
+     }
+ 
+     digits_.mul_pow10(target_scale);
++    // Record logical coefficient dimensions after scale alignment and before
++    // comparison/normalization. These are request totals, not CPU or RSS costs.
++    GD_BC_PROFILE_EVENT(Profile::Event::division_requests, 1);
++    GD_BC_PROFILE_EVENT(Profile::Event::division_dividend_limbs, digits_.coefficient_limbs());
++    GD_BC_PROFILE_EVENT(Profile::Event::division_divisor_limbs, rhs.digits_.coefficient_limbs());
+     auto comparison = digits_.compare(rhs.digits_, 0);
+     switch (comparison) {
+     case Details::ComparisonResult::less_than:
+@@ -2125,7 +2138,13 @@ public:
+     // precision. The enlarged coefficient can exceed the narrow length helper's
+     // result domain even though its original input and requested scale are valid.
+     // This power-of-ten estimate may be below the root; the first step is bounded.
+-    NumType const initial_guess = (std::max(length(), scale()) - scale()) / 2;
++    // Let P be coefficient digits and S the input scale. A power near the
++    // root is 10^floor((P-S)/2), including when that exponent is negative.
++    // Split the two signs to avoid unsigned underflow or signed narrowing.
++    NumType const input_digits = digits_.length();
++    NumType const initial_guess = input_digits >= scale_ ? (input_digits - scale_) / 2 : 0;
++    NumType const fractional_digits = input_digits < scale_ ? scale_ - input_digits : 0;
++    NumType const fractional_shift = fractional_digits / 2 + fractional_digits % 2;
+ 
+     // Guard digits are optional for exact integer-coefficient Newton iteration.
+     // If the scale field cannot represent them, work at the requested precision:
+@@ -2142,7 +2161,9 @@ public:
+ 
+     BasicNumber c(1);
+     c.digits_.mul_pow10(initial_guess);
+-    c.digits_.mul_pow10(working_scale);
++    // working_scale >= input scale >= fractional_shift. Keep integer growth
++    // separate so adding a positive magnitude exponent cannot wrap NumType.
++    c.digits_.mul_pow10(working_scale - fractional_shift);
+     c.scale_ = working_scale;
+     BasicNumber p;
+ 
+@@ -2167,6 +2188,8 @@ public:
+       // the previous guess rather than copying and then releasing it.
+       p = std::move(c);
+       c = *this;
++      GD_BC_PROFILE_EVENT(Profile::Event::sqrt_iterations, 1);
++      GD_BC_PROFILE_EVENT(Profile::Event::sqrt_working_scale_sum, working_scale);
+       c.divide(p, working_scale);
+       assert(c.scale_ == p.scale_);  // NOLINT
+       c.digits_.add(p.digits_, 0);
+diff --git a/src/bc/profiling.cc b/src/bc/profiling.cc
+index 9530070..b6b0d08 100644
+--- a/src/bc/profiling.cc
++++ b/src/bc/profiling.cc
+@@ -98,7 +98,12 @@ auto name(Event which) noexcept -> char const*
+                              "radix_output_divisions",
+                              "radix_dc_input_calls",
+                              "radix_dc_input_leaf_conversions",
+-                             "temporary_consumptions"};
++                             "temporary_consumptions",
++                             "division_requests",
++                             "division_dividend_limbs",
++                             "division_divisor_limbs",
++                             "sqrt_iterations",
++                             "sqrt_working_scale_sum"};
+   static_assert(names.size() == static_cast<std::size_t>(Event::count));
+   return names[static_cast<std::size_t>(which)];
+ }
+diff --git a/src/bc/profiling.hh b/src/bc/profiling.hh
+index 8e903db..d128992 100644
+--- a/src/bc/profiling.hh
++++ b/src/bc/profiling.hh
+@@ -51,6 +51,11 @@ enum class Event : std::size_t {
+   radix_dc_input_calls,
+   radix_dc_input_leaf_conversions,
+   temporary_consumptions,
++  division_requests,
++  division_dividend_limbs,
++  division_divisor_limbs,
++  sqrt_iterations,
++  sqrt_working_scale_sum,
+   count
+ };
+ 
+diff --git a/src/bc/test-number-sqrt.cc b/src/bc/test-number-sqrt.cc
+index bba29aa..960b34c 100644
+--- a/src/bc/test-number-sqrt.cc
++++ b/src/bc/test-number-sqrt.cc
+@@ -100,3 +100,31 @@ TEST_CASE("Square root preserves representable scale at the guard boundary",
+     }
+   }
+ }
++
++TEMPLATE_TEST_CASE("Square root estimates tiny fractional magnitudes",
++                   "[bc][number][sqrt][fractional-estimate]", GD::Bc::NumberTraits8,
++                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
++{
++  using Number = GD::Bc::BasicNumber<TestType>;
++  using N = typename Number::NumType;
++  // Independently generated sqrt(2) decimal prefix, without the point.
++  std::string const sqrt_two_digits = "141421356237309504880168872420969807";
++  for (unsigned half_scale : {1U, 2U, 9U, 32U}) {
++    for (unsigned coefficient : {2U, 4U}) {
++      auto const scale = 2 * half_scale;
++      std::string const input = "." + std::string(scale - 1, '0') + std::to_string(coefficient);
++      Number const snapshot(input, N(10));
++      auto value = snapshot;
++      value.sqrt(N(0));
++      std::string const result_digits = coefficient == 4
++                                          ? "2" + std::string(half_scale, '0')
++                                          : sqrt_two_digits.substr(0, half_scale + 1);
++      std::string const expected = "." + std::string(half_scale - 1, '0') + result_digits;
++      INFO("input=" << input);
++      CHECK(value == Number(expected, N(10)));
++      CHECK(value.scale() == scale);
++      CHECK(snapshot == Number(input, N(10)));
++      CHECK(snapshot.scale() == scale);
++    }
++  }
++}
+diff --git a/src/bc/test-profiling-cli.py b/src/bc/test-profiling-cli.py
+index 4367f8d..c250fa9 100644
+--- a/src/bc/test-profiling-cli.py
++++ b/src/bc/test-profiling-cli.py
+@@ -50,6 +50,24 @@ class ProfilingCli(unittest.TestCase):
+         result = self.invoke('1+1\n')
+         self.assertEqual((result.returncode, result.stdout, result.stderr), (0, '2\n', ''))
+ 
++    def test_square_root_iteration_and_division_dimensions(self):
++        counters = self.profile('scale=3\nsqrt(4)\n', '2.000\n')
++        events = counters['events']
++        iterations = events['sqrt_iterations']
++        self.assertGreater(iterations, 0)
++        width = len(str(counters['limb_base'])) - 1
++        working_scale = 3 + width + 1
++        self.assertEqual(events['sqrt_working_scale_sum'], iterations * working_scale)
++        self.assertEqual(events['division_requests'], iterations)
++        numerator_limbs = (1 + 2 * working_scale + width - 1) // width
++        denominator_limbs = (1 + working_scale + width - 1) // width
++        self.assertEqual(events['division_dividend_limbs'], iterations * numerator_limbs)
++        self.assertEqual(events['division_divisor_limbs'], iterations * denominator_limbs)
++        zero = self.profile('scale=3\nsqrt(0)\n', '0\n')['events']
++        for name in ('sqrt_iterations', 'sqrt_working_scale_sum', 'division_requests',
++                     'division_dividend_limbs', 'division_divisor_limbs'):
++            self.assertEqual(zero[name], 0)
++
+     def test_arithmetic_and_ownership(self):
+         # Exceed the inline capacity so this fixture continues to exercise COW.
+         value = 123456789012345678901234567890

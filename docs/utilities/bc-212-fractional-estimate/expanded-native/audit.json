@@ -1,0 +1,62 @@
+{
+  "workflow_run": 41329122608,
+  "source_checks": "All fourteen exact-head checks successful",
+  "rows": [
+    {
+      "os": "linux",
+      "checked": 2030,
+      "identities": {
+        "base": "704d8013c2ff877357bf9dc42a0ae68b571c6c3e",
+        "candidate": "f3a4707f3c07f7dd02d582070f9a66f397a00666"
+      },
+      "confirmed": [
+        "| full | paired | `decimal_input_4000d_x100` | 1.120 [1.1147228532307052, 1.151653207949864] | confirmed regression |"
+      ],
+      "selected": [
+        "| full | paired | `loop_1000000` | 1.031 [0.9998181202609396, 1.0402484174381772] | pass |",
+        "| full | paired | `calls_200000` | 1.048 [1.0325862744199288, 1.067529579856138] | inconclusive-noisy |",
+        "| full | paired | `array_200000` | 1.010 [0.9974872005586545, 1.0188906452710882] | pass |",
+        "| full | paired | `compare_equal_1000d_x100000` | 1.031 [1.017166707459336, 1.078541357444165] | inconclusive-noisy |",
+        "| full | paired | `sqrt_scale100_x5000` | 0.999 [0.9901392451409587, 1.0073945147554835] | pass |",
+        "| full | paired | `file_statements_20000` | 1.010 [0.995375526121775, 1.0116346835265517] | pass |"
+      ],
+      "sha256": "24ebb6692a434583f000c99ef0c8924ad32de927106b8ef39a12606596ab5864"
+    },
+    {
+      "os": "macos",
+      "checked": 2000,
+      "identities": {
+        "base": "704d8013c2ff877357bf9dc42a0ae68b571c6c3e",
+        "candidate": "f3a4707f3c07f7dd02d582070f9a66f397a00666"
+      },
+      "confirmed": [],
+      "selected": [
+        "| full | paired | `loop_1000000` | 0.974 [0.816628592148804, 1.087878573362559] | inconclusive-noisy |",
+        "| full | paired | `calls_200000` | 0.996 [0.903035125634829, 1.1822783647320063] | inconclusive-noisy |",
+        "| full | paired | `array_200000` | 0.968 [0.8940465690394352, 1.0977103383534397] | inconclusive-noisy |",
+        "| full | paired | `compare_equal_1000d_x100000` | 0.997 [0.9057603172926301, 1.1469248429953538] | inconclusive-noisy |",
+        "| full | paired | `sqrt_scale100_x5000` | 1.021 [0.8186756766141912, 1.2421677710549532] | inconclusive-noisy |",
+        "| full | paired | `file_statements_20000` | 0.999 [0.8931039874493027, 1.1562610524640908] | inconclusive-noisy |"
+      ],
+      "sha256": "a034153f20a3f3b77deac92560afb8237452f51b7dc117a1eab47714eec3eb2b"
+    },
+    {
+      "os": "windows",
+      "checked": 2000,
+      "identities": {
+        "base": "704d8013c2ff877357bf9dc42a0ae68b571c6c3e",
+        "candidate": "f3a4707f3c07f7dd02d582070f9a66f397a00666"
+      },
+      "confirmed": [],
+      "selected": [
+        "| full | paired | `loop_1000000` | 0.987 [0.9721745086888866, 0.9943386100757889] | pass |",
+        "| full | paired | `calls_200000` | 0.958 [0.9500330130730709, 0.9706007204967095] | pass |",
+        "| full | paired | `array_200000` | 0.986 [0.9051759377420634, 1.0557933472388874] | inconclusive-noisy |",
+        "| full | paired | `compare_equal_1000d_x100000` | 0.982 [0.9766051675176786, 1.0166610144075936] | pass |",
+        "| full | paired | `sqrt_scale100_x5000` | 1.000 [0.9850801779258404, 1.0133584591698725] | pass |",
+        "| full | paired | `file_statements_20000` | 1.008 [0.9351854092042249, 1.0504608483987345] | inconclusive-noisy |"
+      ],
+      "sha256": "821c36a03f465c6db32f8b3ca23da371507cf94de1b723af576de08eda437372"
+    }
+  ]
+}

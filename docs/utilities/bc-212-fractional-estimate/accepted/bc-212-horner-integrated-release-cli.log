@@ -1,0 +1,17 @@
+Test project /private/tmp/gd-posix-sqrt-fraction-estimate/build-release
+    Start 227: bc/vm-lifetime
+1/6 Test #227: bc/vm-lifetime ...................   Passed    0.17 sec
+    Start 236: bc/benchmark-ci
+2/6 Test #236: bc/benchmark-ci ..................   Passed    3.20 sec
+    Start 237: bc/benchmark-cli
+3/6 Test #237: bc/benchmark-cli .................   Passed    3.68 sec
+    Start 238: bc/cli
+4/6 Test #238: bc/cli ...........................   Passed    0.55 sec
+    Start 240: bc/number-oracle
+5/6 Test #240: bc/number-oracle .................   Passed    0.75 sec
+    Start 242: bc/vm-cli
+6/6 Test #242: bc/vm-cli ........................   Passed    0.18 sec
+
+100% tests passed out of 6
+
+Total Test time (real) =   8.56 sec

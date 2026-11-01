@@ -1,0 +1,60 @@
+{
+  "workflow_run": 41328592792,
+  "source_checks": "All fourteen exact-head checks successful",
+  "rows": [
+    {
+      "os": "linux",
+      "checked": 2000,
+      "identities": {
+        "base": "704d8013c2ff877357bf9dc42a0ae68b571c6c3e",
+        "candidate": "a678366d56a920fa466ada1befc326eebe808183"
+      },
+      "confirmed": [],
+      "selected": [
+        "| full | paired | `loop_1000000` | 0.997 [0.9762159777478918, 1.009398783526377] | pass |",
+        "| full | paired | `calls_200000` | 1.004 [0.9722253447927807, 1.022855419620953] | pass |",
+        "| full | paired | `array_200000` | 0.999 [0.9871656944544474, 1.0140079650846823] | pass |",
+        "| full | paired | `compare_equal_1000d_x100000` | 0.998 [0.9848396517692609, 1.0117882310620672] | pass |",
+        "| full | paired | `sqrt_scale100_x5000` | 0.998 [0.9968221089414191, 1.0015503847422418] | pass |",
+        "| full | paired | `file_statements_20000` | 1.004 [0.9985524852889863, 1.0159642188903315] | pass |"
+      ],
+      "sha256": "60c221e2e555fb14f6e063be7ea445ca0e304e176019ab22e636a675e3f158ac"
+    },
+    {
+      "os": "macos",
+      "checked": 2000,
+      "identities": {
+        "base": "704d8013c2ff877357bf9dc42a0ae68b571c6c3e",
+        "candidate": "a678366d56a920fa466ada1befc326eebe808183"
+      },
+      "confirmed": [],
+      "selected": [
+        "| full | paired | `loop_1000000` | 1.089 [0.9557627721688962, 1.2353800168042088] | inconclusive-noisy |",
+        "| full | paired | `calls_200000` | 1.043 [0.9174041559525874, 1.133783165463231] | inconclusive-noisy |",
+        "| full | paired | `array_200000` | 1.091 [0.9418736418034996, 1.1269128431021211] | inconclusive-noisy |",
+        "| full | paired | `compare_equal_1000d_x100000` | 0.995 [0.8618589149048291, 1.2386479705293434] | inconclusive-noisy |",
+        "| full | paired | `sqrt_scale100_x5000` | 0.887 [0.7388618036955151, 1.0353350729866615] | pass |",
+        "| full | paired | `file_statements_20000` | 0.904 [0.804140996224349, 1.7610148746027665] | inconclusive-noisy |"
+      ],
+      "sha256": "74cb533495f6aebd4d16a3adb040638f5210ef638dd921eead4b5e171ae46a6b"
+    },
+    {
+      "os": "windows",
+      "checked": 2000,
+      "identities": {
+        "base": "704d8013c2ff877357bf9dc42a0ae68b571c6c3e",
+        "candidate": "a678366d56a920fa466ada1befc326eebe808183"
+      },
+      "confirmed": [],
+      "selected": [
+        "| full | paired | `loop_1000000` | 0.988 [0.9316340258757124, 1.0468011311833874] | pass |",
+        "| full | paired | `calls_200000` | 0.975 [0.9375396441232545, 0.9857452363552351] | pass |",
+        "| full | paired | `array_200000` | 0.982 [0.9639532452592099, 1.0025267485444564] | pass |",
+        "| full | paired | `compare_equal_1000d_x100000` | 0.964 [0.756598478994132, 1.1576263099032322] | inconclusive-noisy |",
+        "| full | paired | `sqrt_scale100_x5000` | 0.989 [0.8984455152138514, 1.0313759213757094] | pass |",
+        "| full | paired | `file_statements_20000` | 0.991 [0.9199149901967597, 1.0302243293650954] | pass |"
+      ],
+      "sha256": "aa83878cc4feaafb1a0aa1117c50f2928a64bb397fdc451278b3369ddb4ff9c8"
+    }
+  ]
+}

@@ -100,3 +100,31 @@ TEST_CASE("Square root preserves representable scale at the guard boundary",
     }
   }
 }
+
+TEMPLATE_TEST_CASE("Square root estimates tiny fractional magnitudes",
+                   "[bc][number][sqrt][fractional-estimate]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  using N = typename Number::NumType;
+  // Independently generated sqrt(2) decimal prefix, without the point.
+  std::string const sqrt_two_digits = "141421356237309504880168872420969807";
+  for (unsigned half_scale : {1U, 2U, 9U, 32U}) {
+    for (unsigned coefficient : {2U, 4U}) {
+      auto const scale = 2 * half_scale;
+      std::string const input = "." + std::string(scale - 1, '0') + std::to_string(coefficient);
+      Number const snapshot(input, N(10));
+      auto value = snapshot;
+      value.sqrt(N(0));
+      std::string const result_digits = coefficient == 4
+                                          ? "2" + std::string(half_scale, '0')
+                                          : sqrt_two_digits.substr(0, half_scale + 1);
+      std::string const expected = "." + std::string(half_scale - 1, '0') + result_digits;
+      INFO("input=" << input);
+      CHECK(value == Number(expected, N(10)));
+      CHECK(value.scale() == scale);
+      CHECK(snapshot == Number(input, N(10)));
+      CHECK(snapshot.scale() == scale);
+    }
+  }
+}
