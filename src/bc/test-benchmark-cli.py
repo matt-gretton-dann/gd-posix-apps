@@ -192,22 +192,31 @@ class BenchmarkCli(unittest.TestCase):
         self.assertEqual(schedules[0], schedules[1])
 
     def test_math_cli_preserves_enclosures_and_state_in_artifacts(self):
+        library = self.root / 'ordinary library.bc'
+        library.write_bytes(b'scale=20\n')
         config = self.root / 'math-config.json'
         config.write_text(json.dumps({'implementations': [
             {'name': 'fake-math', 'argv': [sys.executable, '-c',
-                                         "print('.84\\n2\\n10\\n2')"]}]}))
+                                         "print('.84\\n2\\n10\\n2')", str(library)],
+             'input_artifacts': [dict(path=str(library), purpose='ordinary library',
+                                      sha256=hashlib.sha256(library.read_bytes()).hexdigest())]}]}))
         output = self.root / 'math-results'
         result = subprocess.run(
             [sys.executable, BENCHMARK, '--suite', 'math', '--preset', 'quick',
-             '--workload', 'math_regular_s-one_scale2_one_shot_x1',
+             '--workload', 'math_regular_s-one_scale2_repeated_x2',
              '--config', str(config), '--output', str(output),
-             '--samples', '1', '--warmups', '1'],
+             '--samples', '1', '--warmups', '1', '--calibrate-seconds', '.000001'],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, timeout=8)
         self.assertEqual(result.returncode, 0, result.stderr)
         manifest = json.loads((output / 'manifest.json').read_text())
         self.assertEqual(manifest['suite'], 'math')
         self.assertEqual(len(manifest['oracle_checker_sha256']), 64)
         self.assertEqual(len(manifest['reference_fixture_sha256']), 64)
+        self.assertIn('duration_calibration', manifest)
+        declared, = manifest['implementations'][0]['input_artifacts']
+        copied = output / declared['archived_as']
+        self.assertEqual(copied.read_bytes(), library.read_bytes())
+        self.assertEqual(hashlib.sha256(copied.read_bytes()).hexdigest(), declared['sha256'])
         entry, = manifest['corpus']
         payload = (output / 'workloads' / (entry['name'] + '.expected')).read_bytes()
         self.assertEqual(hashlib.sha256(payload).hexdigest(), entry['oracle_sha256'])
@@ -217,6 +226,44 @@ class BenchmarkCli(unittest.TestCase):
         rows = [json.loads(line) for line in (output / 'samples.jsonl').read_text().splitlines()]
         self.assertEqual(len(rows), 2)
         self.assertTrue(all(row['checked'] for row in rows))
+        calibration = [json.loads(line) for line in
+                       (output / 'calibration/samples.jsonl').read_text().splitlines()]
+        self.assertEqual(len(calibration), 3)
+        self.assertTrue(all(row['checked'] for row in calibration))
+        replay_output = self.root / 'math-replayed'
+        replay = subprocess.run(
+            [sys.executable, BENCHMARK, '--suite', 'math', '--replay-corpus', str(output),
+             '--config', str(config), '--output', str(replay_output),
+             '--samples', '1', '--warmups', '0'],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, timeout=8)
+        self.assertEqual(replay.returncode, 0, replay.stderr)
+        repeated = json.loads((replay_output / 'manifest.json').read_text())
+        self.assertEqual(repeated['preset'], 'quick')
+        self.assertEqual(repeated['corpus'], manifest['corpus'])
+        self.assertEqual(repeated['replayed_corpus']['source_manifest_sha256'],
+                         hashlib.sha256((output / 'manifest.json').read_bytes()).hexdigest())
+        self.assertFalse((replay_output / 'calibration').exists())
+        program = output / 'workloads' / (entry['name'] + '.bc')
+        program.write_bytes(program.read_bytes() + b'1\n')
+        invalid_output = self.root / 'math-invalid-replay'
+        invalid = subprocess.run(
+            [sys.executable, BENCHMARK, '--suite', 'math', '--replay-corpus', str(output),
+             '--config', str(config), '--output', str(invalid_output), '--samples', '1'],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, timeout=8)
+        self.assertEqual(invalid.returncode, 1)
+        self.assertIn('artifact hash mismatch', invalid.stderr)
+        self.assertTrue((invalid_output / 'failure.json').exists())
+        self.assertFalse((invalid_output / 'samples.jsonl').exists())
+        prepared = self.root / 'math-prepared'
+        preparation = subprocess.run(
+            [sys.executable, BENCHMARK, '--suite', 'math', '--preset', 'quick',
+             '--workload', 'math_regular_s-one_scale2_repeated_x2', '--config', str(config),
+             '--output', str(prepared), '--calibrate-seconds', '.000001', '--calibrate-only'],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, timeout=8)
+        self.assertEqual(preparation.returncode, 0, preparation.stderr)
+        self.assertEqual(json.loads((prepared / 'calibration-only.json').read_text())['workloads'], 1)
+        self.assertTrue((prepared / 'setup.json').exists())
+        self.assertFalse((prepared / 'samples.jsonl').exists())
 
 
 class PairedStatistics(unittest.TestCase):
@@ -229,6 +276,28 @@ class PairedStatistics(unittest.TestCase):
         except SystemExit:
             self.fail("benchmark module starts its CLI while being imported")
         return module
+
+    def test_declared_inputs_are_verified_before_starting_a_child(self):
+        module = self.module()
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            library = root / 'math source.bc'
+            library.write_bytes(b'scale=20\n')
+            config = root / 'implementations.json'
+            entry = dict(name='fake', argv=[sys.executable, '-c', 'print(2)', str(library)],
+                         input_artifacts=[dict(path=str(library),
+                                               sha256=hashlib.sha256(library.read_bytes()).hexdigest())])
+            config.write_text(json.dumps(dict(implementations=[entry])))
+            tool, = module.implementations(config)
+            case = dict(name='input-check', program='1+1\n', expected=['2'])
+            self.assertTrue(module.run_checked(tool, case, 3)['checked'])
+            library.write_bytes(b'scale=21\n')
+            with mock.patch.object(module.subprocess, 'run') as child:
+                with self.assertRaisesRegex(module.BenchmarkError, 'artifact changed'):
+                    module.run_checked(tool, case, 3)
+                child.assert_not_called()
+            with self.assertRaisesRegex(module.BenchmarkError, 'hash does not match'):
+                module.implementations(config)
 
     def test_stale_declared_binary_identity_is_rejected(self):
         module = self.module()
@@ -453,6 +522,72 @@ class PairedStatistics(unittest.TestCase):
         self.assertEqual(result["median_paired_ratio"], 2)
         self.assertIsNone(result["ci95"])
         self.assertEqual(result["pairs"], 1)
+
+    def test_serial_dependence_is_reported_without_narrowing_iid_intervals(self):
+        module = self.module()
+        ratios = [1, 1, 1, 2, 2, 2, 3, 3, 3]
+        result = module.paired_statistics(ratios, [1] * len(ratios), 216, 400)
+        self.assertAlmostEqual(result['autocorrelation_lag1'], 2 / 3)
+        self.assertEqual(result['block_length'], 3)
+        for kind in ('iid_ci95', 'block_ci95'):
+            self.assertLessEqual(result['ci95'][0], result[kind][0])
+            self.assertGreaterEqual(result['ci95'][1], result[kind][1])
+        self.assertEqual(result, module.paired_statistics(ratios, [1] * len(ratios), 216, 400))
+        alternating = module.paired_statistics([1, 3] * 4, [1] * 8, 216, 400)
+        self.assertAlmostEqual(alternating['autocorrelation_lag1'], -7 / 8)
+        large = module.paired_statistics([value * 1e200 for value in ratios], [1] * 9, 216, 400)
+        self.assertAlmostEqual(large['autocorrelation_lag1'], 2 / 3)
+        with self.assertRaisesRegex(module.BenchmarkError, 'ratios must be finite'):
+            module.paired_statistics([1e308] * 3, [1e-308] * 3, 216, 400)
+
+    def test_math_calibration_freezes_the_slowest_required_common_count(self):
+        module = self.module()
+        source = module.corpus('quick', suite='math')[:2]
+        roles = [dict(name='fast'), dict(name='slow')]
+        def checked(tool, case, timeout):
+            factor = .001 if tool['name'] == 'fast' else .004
+            return dict(seconds=case['parameters']['iterations'] * factor, checked=True,
+                        output_sha256='a' * 64, output_bytes=10)
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            with mock.patch.object(module, 'run_checked', side_effect=checked) as invoked:
+                cases, report = module.calibrate_math(source, roles, .01, 3, 16, 1, output)
+            self.assertEqual(invoked.call_count, 18)
+            self.assertEqual(cases[0], source[0])
+            self.assertEqual(source[1]['parameters']['iterations'], 2)
+            frozen = cases[1]
+            self.assertEqual(frozen['parameters']['iterations'], 16)
+            self.assertTrue(frozen['name'].endswith('_x16'))
+            self.assertIn('i<16;', frozen['program'])
+            choice = report['cases'][1]
+            self.assertEqual(choice['roles']['fast']['iterations'], 16)
+            self.assertEqual(choice['roles']['slow']['iterations'], 4)
+            rows = [json.loads(line) for line in
+                    (output / 'calibration/samples.jsonl').read_text().splitlines()]
+            self.assertEqual(len(rows), 18)
+            self.assertTrue(all(row['checked'] for row in rows))
+            for row in rows:
+                payload = (output / 'calibration/workloads' / (row['workload'] + '.bc')).read_bytes()
+                self.assertEqual(hashlib.sha256(payload).hexdigest(), row['program_sha256'])
+            observed = [dict(workload=frozen['name'], phase='measurement', implementation=name,
+                             seconds=seconds) for name, seconds in [('fast', .005), ('slow', .1)]]
+            summary = module.summarize([frozen], observed, 'fast', 216, 200)['workloads'][0]
+            self.assertEqual(summary['duration_target_met'], {'fast': False, 'slow': True})
+            self.assertIn('shortfall', summary['duration_status'])
+
+    def test_calibration_cap_failure_preserves_checked_trials(self):
+        module = self.module()
+        case = module.corpus('quick', suite='math')[1]
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            with mock.patch.object(module, 'run_checked', return_value=dict(
+                    seconds=.001, checked=True, output_sha256='b' * 64, output_bytes=10)):
+                with self.assertRaisesRegex(module.BenchmarkError, 'duration target at 4'):
+                    module.calibrate_math([case], [dict(name='role')], .1, 1, 4, 1, output)
+            rows = [json.loads(line) for line in
+                    (output / 'calibration/samples.jsonl').read_text().splitlines()]
+            self.assertEqual([row['iterations'] for row in rows], [2, 4])
+            self.assertTrue(all(row['checked'] for row in rows))
 
     def test_enclosure_oracles_accept_endpoints_and_reject_bad_results(self):
         module = self.module()
