@@ -112,7 +112,9 @@ auto GD::Bc::FileReader::peek() -> int
 {
   /* We only read from the file when we know we need to - which is indicated by c_ being EOF.  */
   if (c_ == EOF && !file_.eof()) {
-    c_ = file_.getc();
+    // Each named FILE is private to this sequential reader. Borrowed stdin
+    // keeps ordinary locking inside the utility, including across readers.
+    c_ = file_.getc_exclusive();
 
     if (file_.error()) {
       std::cerr << error(Msg::file_error, file_.filename());
