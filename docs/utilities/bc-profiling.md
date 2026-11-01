@@ -108,3 +108,19 @@ For matched release/diagnostic attribution, pass the same explicit
 compiled point, and `test-profiling-cli.py --split-point 126` checks that it is
 the requested value. Native CI uses this fixed diagnostic configuration while
 ordinary builds continue to exercise automatic calibration.
+
+The square-root experiments also record `sqrt_iterations` and
+`sqrt_working_scale_sum`. The latter sums decimal working scales over Newton
+steps; divide it by the iteration count only when a mean is useful. It is not
+an allocation size or a maximum. Zero and rejected negative roots take no steps.
+
+`division_requests`, `division_dividend_limbs` and `division_divisor_limbs`
+record Number division requests after aligning operand scales and scaling the
+numerator for the requested quotient. The limb amounts are stored coefficient
+lengths before comparison and integer-division normalization. They include
+requests resolved by comparison; they do not count only general multi-limb
+kernel dispatches, normalization workspace, the Newton averaging divide-by-two,
+CPU work or process RSS. Isolate sqrt from other division expressions when
+attributing request totals to Newton steps. General division workloads can also
+use these dimensions. All counters are diagnostic-only and their amount
+expressions are discarded in ordinary builds.

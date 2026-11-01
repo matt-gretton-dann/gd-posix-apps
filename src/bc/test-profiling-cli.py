@@ -50,6 +50,24 @@ class ProfilingCli(unittest.TestCase):
         result = self.invoke('1+1\n')
         self.assertEqual((result.returncode, result.stdout, result.stderr), (0, '2\n', ''))
 
+    def test_square_root_iteration_and_division_dimensions(self):
+        counters = self.profile('scale=3\nsqrt(4)\n', '2.000\n')
+        events = counters['events']
+        iterations = events['sqrt_iterations']
+        self.assertGreater(iterations, 0)
+        width = len(str(counters['limb_base'])) - 1
+        working_scale = 3 + width + 1
+        self.assertEqual(events['sqrt_working_scale_sum'], iterations * working_scale)
+        self.assertEqual(events['division_requests'], iterations)
+        numerator_limbs = (1 + 2 * working_scale + width - 1) // width
+        denominator_limbs = (1 + working_scale + width - 1) // width
+        self.assertEqual(events['division_dividend_limbs'], iterations * numerator_limbs)
+        self.assertEqual(events['division_divisor_limbs'], iterations * denominator_limbs)
+        zero = self.profile('scale=3\nsqrt(0)\n', '0\n')['events']
+        for name in ('sqrt_iterations', 'sqrt_working_scale_sum', 'division_requests',
+                     'division_dividend_limbs', 'division_divisor_limbs'):
+            self.assertEqual(zero[name], 0)
+
     def test_arithmetic_and_ownership(self):
         # Exceed the inline capacity so this fixture continues to exercise COW.
         value = 123456789012345678901234567890

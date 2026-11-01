@@ -51,6 +51,11 @@ enum class Event : std::size_t {
   radix_dc_input_calls,
   radix_dc_input_leaf_conversions,
   temporary_consumptions,
+  division_requests,
+  division_dividend_limbs,
+  division_divisor_limbs,
+  sqrt_iterations,
+  sqrt_working_scale_sum,
   count
 };
 

@@ -98,7 +98,12 @@ auto name(Event which) noexcept -> char const*
                              "radix_output_divisions",
                              "radix_dc_input_calls",
                              "radix_dc_input_leaf_conversions",
-                             "temporary_consumptions"};
+                             "temporary_consumptions",
+                             "division_requests",
+                             "division_dividend_limbs",
+                             "division_divisor_limbs",
+                             "sqrt_iterations",
+                             "sqrt_working_scale_sum"};
   static_assert(names.size() == static_cast<std::size_t>(Event::count));
   return names[static_cast<std::size_t>(which)];
 }

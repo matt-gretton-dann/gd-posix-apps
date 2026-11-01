@@ -138,6 +138,14 @@ public:
   /** Whether coefficient storage retains a heap owner rather than inline limbs. */
   [[nodiscard]] auto has_heap_storage() const noexcept -> bool { return digits_.has_heap(); }
 
+#if GD_BC_PROFILE
+  /** Stored coefficient limbs before division normalization; diagnostics only. */
+  [[nodiscard]] auto coefficient_limbs() const noexcept -> std::size_t
+  {
+    return digits_ ? digits_->size() : 0;
+  }
+#endif
+
   /** \brief   Construct holding the single digit \a num
    *  \param num Number to hold.  Must be less than \c base_.
    */
@@ -2064,6 +2072,11 @@ public:
     }
 
     digits_.mul_pow10(target_scale);
+    // Record logical coefficient dimensions after scale alignment and before
+    // comparison/normalization. These are request totals, not CPU or RSS costs.
+    GD_BC_PROFILE_EVENT(Profile::Event::division_requests, 1);
+    GD_BC_PROFILE_EVENT(Profile::Event::division_dividend_limbs, digits_.coefficient_limbs());
+    GD_BC_PROFILE_EVENT(Profile::Event::division_divisor_limbs, rhs.digits_.coefficient_limbs());
     auto comparison = digits_.compare(rhs.digits_, 0);
     switch (comparison) {
     case Details::ComparisonResult::less_than:
@@ -2167,6 +2180,8 @@ public:
       // the previous guess rather than copying and then releasing it.
       p = std::move(c);
       c = *this;
+      GD_BC_PROFILE_EVENT(Profile::Event::sqrt_iterations, 1);
+      GD_BC_PROFILE_EVENT(Profile::Event::sqrt_working_scale_sum, working_scale);
       c.divide(p, working_scale);
       assert(c.scale_ == p.scale_);  // NOLINT
       c.digits_.add(p.digits_, 0);
