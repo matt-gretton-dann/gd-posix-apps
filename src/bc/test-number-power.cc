@@ -28,6 +28,15 @@ TEMPLATE_TEST_CASE("Power preserves operand precision", "[bc][number][power]",
   using Number = GD::Bc::BasicNumber<TestType>;
   auto [base, exponent, target_scale, expected] =
     GENERATE(table<std::string_view, std::string_view, unsigned, std::string_view>({
+      {"0", "0", 0, "1"},
+      {"2", "0", 0, "1"},
+      {"2", "1", 0, "2"},
+      {"2", "2", 0, "4"},
+      {"2", "16", 0, "65536"},
+      {"2", "31", 0, "2147483648"},
+      {"-1.25", "3", 6, "-1.953125"},
+      {"-1.25", "-1", 6, "-0.800000"},
+      {"-1.25", "-3", 6, "-0.512000"},
       {"1.23", "2", 0, "1.51"},
       {"1.23", "3", 1, "1.86"},
       {"-1.23", "3", 0, "-1.86"},

@@ -40,3 +40,11 @@ before adopting this experiment; allocation counts alone do not settle it.
 
 This is the first storage stage. Last-use temporary consumption, capacity reuse,
 unique/deep-copy comparisons and any arena evaluation remain separate #202 work.
+
+After integrating the merged comparison and terminal-square fixes, the current
+tree passes 143 bc cases (580,544 assertions), 103 extensions-disabled ASan/UBSan
+number/VM cases (396,335 assertions), five diagnostic checks and eight CLI/helper
+groups, including 36 quick corpus cases. The initial storage-only experiment
+exposed large-kernel regressions; fixed-buffer views and identity-scaling changes
+were measured separately. Their rejected/neutral/losing cases remain evidence,
+and final adoption requires a fresh comparison of the combined source.

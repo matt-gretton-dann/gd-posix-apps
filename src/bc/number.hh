@@ -144,7 +144,11 @@ public:
   /** \brief  Reset the digits - sets us to zero. */
   void reset() { digits_.reset(); }
 
-  /** \brief Is this zero?  */
+  /** \brief Is this zero?
+   * Storage is not universally normalized: range copies and fractional splits
+   * retain zero padding, and mac(0, 0) can leave nonempty zero storage. Do not
+   * replace this numeric check with an empty-container or final-limb test.
+   */
   [[nodiscard]] auto is_zero() const -> bool
   {
     /* We're zero if we have no digits_ vector or all the digits in it are zero.  */
@@ -170,6 +174,24 @@ public:
   {
     assert(digits_);      // NOLINT
     assert(rhs.digits_);  // NOLINT
+    if (scale == 0) {
+      // Inspect the most significant unequal limb first. Zero-extension keeps
+      // this valid for temporary ranges that still contain leading zero limbs;
+      // storage length alone does not establish numeric ordering.
+      auto index = std::max(digits_->size(), rhs.digits_->size());
+      while (index != 0) {
+        --index;
+        NumType const lhs_digit = index < digits_->size() ? (*digits_)[index] : 0;
+        NumType const rhs_digit = index < rhs.digits_->size() ? (*rhs.digits_)[index] : 0;
+        if (lhs_digit < rhs_digit) {
+          return Details::ComparisonResult::less_than;
+        }
+        if (lhs_digit > rhs_digit) {
+          return Details::ComparisonResult::greater_than;
+        }
+      }
+      return Details::ComparisonResult::equality;
+    }
     Details::ComparisonResult result = Details::ComparisonResult::equality;
     for_each(rhs, scale, [&result](NumType lhs, NumType rhs) {
       if (lhs < rhs) {
@@ -554,8 +576,12 @@ public:
         result.multiply(*this, 0);
         power.sub(one, 0);
       }
-      multiply(*this, 0);
       power.divide(2);
+      // The remaining bits consume the next squared base. Once the exponent
+      // is exhausted that square is unused, including in reciprocal powers.
+      if (!power.is_zero()) {
+        multiply(*this, 0);
+      }
     }
 
     std::swap(digits_, result.digits_);
@@ -947,7 +973,9 @@ private:
     }
   }
 
-  /** \brief        Tidy up the digits_ vector.
+  /** \brief        Remove most-significant zero limbs, retaining the owner.
+   * This is an explicit operation, not a class-wide representation invariant.
+   * Fractional splits deliberately retain padding until their consumer acts.
    */
   void tidy()
   {

@@ -29,7 +29,8 @@ The output directory must be new. The default `full` preset retains the sixteen
 #197 workload parameters and adds dense/sparse/unbalanced multiplication,
 genuine multi-limb division, modulo, powers, a larger square root, changed-base
 literals, recursion, sparse arrays, definition registration, decimal input and
-output-heavy cases. `--list` shows all 33 names and exact parameters. Repeat
+output-heavy cases, plus equal-scale comparisons with high/low unequal limbs
+and equal values. `--list` shows all 36 names and exact parameters. Repeat
 `--workload NAME` to select cases. Startup is a separate class.
 
 `--preset quick` reduces dimensions and iterations for fast correctness checks.
@@ -116,7 +117,7 @@ source-built comparison, not an interchangeable Howard version.
 ## Validation and scope
 
 `bc/benchmark-cli` runs in both extension configurations on native CI and checks
-all 32 quick workloads against that job's actual GD executable. Fake executables exercise failed exits, stderr, wrong output, warm-up validation,
+all 36 quick workloads against that job's actual GD executable. Fake executables exercise failed exits, stderr, wrong output, warm-up validation,
 timeouts, quoted argv, provenance requirements and timing/profiling separation.
 Paired statistics use exact proportional samples to detect unpaired resampling;
 repeated runs check schedule replay without asserting noisy elapsed times.
