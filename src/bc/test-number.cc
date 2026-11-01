@@ -863,6 +863,22 @@ TEMPLATE_TEST_CASE("Decimal construction agrees with digit arithmetic at chunk b
       }
     }
   }
+  // Every point position around partial/full chunks, including maximal limbs
+  // and zero suffixes, must agree with independent digit arithmetic. These
+  // bounds stay inside the narrow trait's existing decimal-length domain.
+  for (auto count : {width - 1, width, width + 1, 2 * width - 1, 2 * width, 2 * width + 1}) {
+    for (bool maximal : {false, true}) {
+      std::string digits(count, maximal ? '9' : '0');
+      if (!maximal) {
+        digits.front() = '7';
+      }
+      for (std::size_t point = 0; point <= count; ++point) {
+        auto text = "000" + digits;
+        text.insert(3 + point, 1, '.');
+        check(text);
+      }
+    }
+  }
   for (auto const* text : {"", ".", "0", "000", "0.", ".0000", "000.000", ".0001", "001.0000"}) {
     check(text);
   }
