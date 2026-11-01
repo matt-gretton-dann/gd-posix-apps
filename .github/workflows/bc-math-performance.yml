@@ -4,7 +4,7 @@ on:
     branches: [main, 'codex/**']
     paths: ['src/**', 'libgdsup/**', 'CMakeLists.txt', 'cmake/**', '.github/workflows/bc-math-performance.yml']
   push:
-    branches: [main]
+    branches: [main, 'codex/bc-math-broad/**']
     paths: ['src/**', 'libgdsup/**', 'CMakeLists.txt', 'cmake/**', '.github/workflows/bc-math-performance.yml']
   schedule:
     - cron: '17 3 * * 2'
@@ -25,7 +25,7 @@ jobs:
         image: [ubuntu-24.04, windows-2025, macos-15]
     env:
       BC_CANDIDATE: ${{ github.event.pull_request.head.sha || github.sha }}
-      BC_BROAD: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+      BC_BROAD: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/heads/codex/bc-math-broad/') }}
     steps:
       - uses: actions/checkout@v7
         with:

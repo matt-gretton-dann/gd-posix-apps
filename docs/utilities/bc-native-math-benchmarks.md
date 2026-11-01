@@ -52,3 +52,16 @@ uploads checked raw samples, frozen inputs, calibration trials, recipes, logs,
 host metadata and per-class decisions even after failure. Build trees are not
 uploaded. Parent and descendant processes are terminated at experiment deadlines
 on POSIX and Windows; other Python platforms retain a direct-child fallback.
+
+## Broad runs requested through source control
+
+Pushing a candidate branch under `codex/bc-math-broad/` explicitly requests the
+same bounded full and held-out matrix as a scheduled or manual run. The runner
+builds the exact pushed SHA, with the same read-only token permissions and
+checked release protocol. The branch prefix selects the larger workload set;
+it does not alter production arithmetic or numerical acceptance.
+
+This provides a reproducible opt-in route when Actions workflow dispatch is
+unavailable to a client. Ordinary PR jobs retain their representative subset;
+broad push and PR artifacts remain separate experiments with their own source
+and host identities. Preserve all per-class misses and failures from either.
