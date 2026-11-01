@@ -1,0 +1,11 @@
+{
+  "os": "windows",
+  "checked": 1450,
+  "identities": {
+    "base": "3232d2f5458492b5763cae77ec699cdb38882fe7",
+    "candidate": "13e44f6b90d8ac5cf6248548d806c9d87c3097f3",
+    "howard-7.0.3": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8"
+  },
+  "confirmed": [],
+  "sha256": "f6716a14ce21d3fc55177e8b2306661503fb347064189a437b17bf7e6ec4f770"
+}
