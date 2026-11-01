@@ -111,3 +111,7 @@ unchanged. The four-limb choice remains a candidate until measured across
 sizes and bases; it is not a universal crossover claim. The diagnostic
 `radix_output_divisions` event counts actual whole-coefficient division calls,
 including scalar fallback. Profiling remains separate from elapsed timings.
+
+[Complete grouped-output crossover evidence](bc-206-output-groups/README.md)
+retains every full/held-out fixture, control, interval and actual source recipe.
+Native acceptance requires the added nondecimal workload classes.
