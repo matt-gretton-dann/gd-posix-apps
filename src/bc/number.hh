@@ -2138,7 +2138,13 @@ public:
     // precision. The enlarged coefficient can exceed the narrow length helper's
     // result domain even though its original input and requested scale are valid.
     // This power-of-ten estimate may be below the root; the first step is bounded.
-    NumType const initial_guess = (std::max(length(), scale()) - scale()) / 2;
+    // Let P be coefficient digits and S the input scale. A power near the
+    // root is 10^floor((P-S)/2), including when that exponent is negative.
+    // Split the two signs to avoid unsigned underflow or signed narrowing.
+    NumType const input_digits = digits_.length();
+    NumType const initial_guess = input_digits >= scale_ ? (input_digits - scale_) / 2 : 0;
+    NumType const fractional_digits = input_digits < scale_ ? scale_ - input_digits : 0;
+    NumType const fractional_shift = fractional_digits / 2 + fractional_digits % 2;
 
     // Guard digits are optional for exact integer-coefficient Newton iteration.
     // If the scale field cannot represent them, work at the requested precision:
@@ -2155,7 +2161,9 @@ public:
 
     BasicNumber c(1);
     c.digits_.mul_pow10(initial_guess);
-    c.digits_.mul_pow10(working_scale);
+    // working_scale >= input scale >= fractional_shift. Keep integer growth
+    // separate so adding a positive magnitude exponent cannot wrap NumType.
+    c.digits_.mul_pow10(working_scale - fractional_shift);
     c.scale_ = working_scale;
     BasicNumber p;
 
