@@ -122,3 +122,49 @@ TEMPLATE_TEST_CASE("Recursive products agree with decimal convolution",
     }
   }
 }
+
+TEMPLATE_TEST_CASE("Aliased and opposite-sign shared squares preserve snapshots",
+                   "[bc][number][multiply][square]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  using N = typename Number::NumType;
+  struct Restore
+  {
+    ~Restore() { Number::multiply_split_point(1); }
+  } const restore;
+  for (unsigned count : {2U, 3U, 4U, 7U, 16U, 17U, 63U}) {
+    for (unsigned sparse : {0U, 1U}) {
+      std::string input(count * Number::base_log10_, '9');
+      if (sparse != 0) {
+        std::fill(input.begin() + 1, input.end() - 1, '0');
+      }
+      Number const expected(decimal_product(input, input), N(10));
+      for (N point : {N(1), N(4), N(16), N(Number::base_)}) {
+        INFO("limb digits " << Number::base_log10_ << ", count " << count
+                             << ", sparse " << sparse << ", threshold " << unsigned(point));
+        Number::multiply_split_point(point);
+        Number const snapshot(input, N(10));
+        auto square = snapshot;
+        square.multiply(square, N(0));
+        CHECK(square == expected);
+        CHECK(snapshot == Number(input, N(10)));
+        auto negative = snapshot;
+        negative.negate();  // Same shared coefficient, opposite public sign.
+        auto product = snapshot;
+        product.multiply(negative, N(0));
+        auto negative_expected = expected;
+        negative_expected.negate();
+        CHECK(product == negative_expected);
+        CHECK(snapshot == Number(input, N(10)));
+      }
+    }
+  }
+  Number fraction("1.2500", N(10));
+  auto const original = fraction;
+  fraction.multiply(fraction, N(6));
+  CHECK(fraction == Number("1.562500", N(10)));
+  CHECK(fraction.scale() == 6);
+  CHECK(original == Number("1.2500", N(10)));
+  CHECK(original.scale() == 4);
+}
