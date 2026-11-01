@@ -3,8 +3,8 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    # The branches below must be a subset of the branches above
-    branches: [ main ]
+    # Topic bases allow normal checks for stacked pull requests.
+    branches: [ main, 'codex/**' ]
 
 env:
   CTEST_OUTPUT_ON_FAILURE: "1"
