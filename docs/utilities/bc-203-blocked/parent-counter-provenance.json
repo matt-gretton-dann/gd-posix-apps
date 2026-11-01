@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "harness_revision": "cbeea027c527992d9203f01a68faad549b7f8886",
+  "roles": [
+    {
+      "name": "current-main",
+      "source_revision": "e069301ddec9766a9b212a93ce273a6b20f1033d",
+      "binary": "/private/tmp/gd-posix-arithmetic-completion/build-profile/src/bc/bc",
+      "binary_sha256": "c2e0bfd75ccd49a5e5ee5147e8e3694e3e3ea7d00f15ee17e6b23c9ce706e73a"
+    },
+    {
+      "name": "decimal-scalar",
+      "source_revision": "bd002d4c671a91a6d08899f5e536155497c6be31",
+      "binary": "/private/tmp/gd-posix-decimal-chunks/build-profile/src/bc/bc",
+      "binary_sha256": "7f034c49b18b3621474d25f3ee516d2d139cdfd3ccd241eee05797cc61f87630"
+    },
+    {
+      "name": "frames",
+      "source_revision": "adeedcc4dbd83912979f1f524a37f9efa96097dc",
+      "binary": "/private/tmp/gd-posix-reusable-frames/build-profile/src/bc/bc",
+      "binary_sha256": "1866696e4f5b6b61de2951c7f81c1f5581975a96524f5a426c4cbc2dd5f46feb"
+    }
+  ],
+  "scope": "Scoped counters only, fixed126, Release/profileON. No timing inference or RSS claim."
+}

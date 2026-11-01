@@ -1,3 +1,13 @@
+# Decimal input stages
+
+The [revised candidate and complete measurements](aligned/README.md) retain
+large-input gains after repairing scalar construction and testing a bounded
+Apple arm64 function-entry alignment. All-class and bounded division intervals
+remain explicit; no neutral-performance claim is made. Adoption requires green
+checks for the reviewed head. Nondecimal grouping and buffered output remain.
+
+## Historical initial and scalar-stage evidence
+
 # Decimal input experiment — acceptance pending
 
 Initial source `dd88b5cec60fc0796bea11998f547084db11f0fd` exposed a one-digit

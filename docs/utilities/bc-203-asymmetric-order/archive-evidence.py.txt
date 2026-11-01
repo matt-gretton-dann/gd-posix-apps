@@ -1,0 +1,52 @@
+from pathlib import Path
+import json,shutil,zipfile,hashlib
+root=Path('/private/tmp/gd-posix-asymmetric-order/docs/utilities/bc-203-asymmetric-order');root.mkdir(exist_ok=True);(root/'.gitattributes').write_text('*.csv -text whitespace=cr-at-eol\n')
+for preset in ('full','holdout'):
+ source=Path('/private/tmp/gd-bc-203-asym-'+preset)
+ for name in ('manifest.json','summary.json','samples.csv'):shutil.copyfile(source/name,root/(preset+'-'+name))
+for role,recipe in [('parent','/private/tmp/gd-bc-206-current-parent-release'),('candidate','/private/tmp/gd-bc-203-asym-release')]:shutil.copyfile(Path(recipe)/'build-manifest.json',root/(role+'-build-manifest.json'))
+profiles=Path('/private/tmp/gd-bc-197-current-experiments-counters');shutil.copyfile(profiles/'provenance.json',root/'counter-provenance.json');records=json.loads((profiles/'checked-profiles.json').read_text());(root/'checked-profiles.json').write_text(json.dumps([r for r in records if r['role'] in ('parent','asymmetric')],indent=2)+'\n');shutil.copyfile('/private/tmp/bc-197-current-counters.py',root/'counter-collector.py.txt')
+index=[]
+for osname in ('linux','macos','windows'):
+ p=Path('/private/tmp/bc-203-asym-native44-'+osname+'.zip');z=zipfile.ZipFile(p);n=0
+ for f in z.namelist():
+  if f.endswith('samples.jsonl'):
+   rows=[json.loads(s) for s in z.read(f).decode().splitlines()];assert all(r['checked'] for r in rows);n+=len(rows)
+ file='native44-'+osname+'.zip';shutil.copyfile(p,root/file);text=z.read('summary.md').decode();index.append({'os':osname,'file':file,'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'run_id':41270803888,'checked_invocations':n,'confirmed_regressions':text.count('confirmed regression')})
+(root/'native-artifacts.json').write_text(json.dumps(index,indent=2)+'\n')
+lines=['# Shorter-row schoolbook order — rejected #203 experiment','',
+'**Do not adopt this ordering.** The intended asymmetric workload is slower in',
+'both local presets and has confirmed native Linux/Windows regressions. Correct',
+'values and fewer potential row tails do not establish faster execution. Restore',
+'the accepted row order while retaining the reversed-operand oracle coverage.', '',
+'Parent `a5c1cb1ad4051616afdce115b02ecc0247ad62f7`; candidate',
+'`c73fb2a6ee86d1a0720c8e67ee4b8c620baede43`. Immutable Release recipes use identical',
+'Apple Clang21/libc++ header220106, -O3/-DNDEBUG, thin LTO, extensions ON and fixed',
+'126 on the recorded Apple M1/macOS27.2 host. Manifests retain exact commands and',
+'binary hashes. Native pinned Howard7.0.3 is the competitive reference.', '',
+'All120 quick,1200 full and1200 held-out checks pass independent exact output,',
+'status, stderr and deadline gates. Each full/held case has one checked warm-up',
+'and nine paired rounds, seeded order and2000 bootstrap resamples. Held-out',
+'dimensions/seed197201 remain separate from full197200. No local builds/tests/',
+'profiles overlap timing. This shared workstation has no frequency/thermal',
+'isolation. All40 classes, including losses and inconclusive cases, remain below.', '',
+'Full unbalanced product ratio1.114 [1.108,1.123]; held-out1.111 [1.108,1.118].',
+'Full modulo is1.067 [1.053,1.076]. Division and additional modulo observations',
+'remain slower/inconclusive in their full tables. No aggregate hides them.', '',
+'Native run44 uses exact parent/candidate identities. Each OS passes1130 checked',
+'invocations including bounded confirmations. Linux unbalanced multiplication is',
+'1.226 [1.225,1.228] and Windows1.133 [1.099,1.140], both confirmed regressions.',
+'macOS1.076 [1.014,1.225] remains inconclusive. Raw verified ZIPs/hashes and all',
+'confirmation rows are preserved. The change is rejected across the portable',
+'default rather than selecting an unsupported platform-specific exception.', '',
+'All80 separate parent/candidate full-corpus diagnostic runs pass exact oracles',
+'and balance selected storage at EOF. They are not timed; no hardware cause is',
+'established. Dependency chains, locality and code generation are hypotheses,',
+'not measured explanations for these results. Planned blocked kernels and robust',
+'crossover/default selection remain separate #203 work.', '']
+for preset in ('full','holdout'):
+ lines.extend(['## '+preset.title(),'','| Workload | Candidate / parent [95%] | Candidate / Howard (ratio of medians) |','| --- | --- | --- |'])
+ for w in json.loads((root/(preset+'-summary.json')).read_text())['workloads']:
+  r=w['candidate_over_reference']['gd-asym'];lo,hi=r['ci95'];v=w['implementations'];ratio=v['gd-asym']['median_seconds']/v['howard-7.0.3']['median_seconds'];lines.append('| `{}` | {:.3f} [{:.3f},{:.3f}] | {:.3f} |'.format(w['name'],r['median_paired_ratio'],lo,hi,ratio))
+ lines.append('')
+(root/'README.md').write_text('\n'.join(lines).rstrip()+'\n');shutil.copyfile(__file__,root/'archive-evidence.py.txt');print('Archived rejected asymmetric experiment')

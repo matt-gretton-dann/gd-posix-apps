@@ -25,6 +25,13 @@ chunk boundaries, leading/trailing zeros, fractional positions, empty/point-only
 Number API forms, copies and single hexadecimal digits under every input base.
 Existing CLI validation retains its own token/error contracts.
 
+Apple arm64 Clang gives the large division function 64-byte entry alignment.
+The bounded experiment addresses observed layout sensitivity after decoder
+changes; it does not establish a hardware cause or cache-line property. Other
+platforms keep their generic compiler alignment policy. [Complete measurements
+and retained regressions](bc-206-decimal-input/README.md) distinguish the initial,
+scalar and aligned stages, including inconclusive division/modulo intervals.
+
 This is the first #206 stage. Nondecimal grouping, batched output and conversion
 crossover decisions remain open. Performance results must distinguish component
 conversion from end-to-end multiplication, which includes input and output.
