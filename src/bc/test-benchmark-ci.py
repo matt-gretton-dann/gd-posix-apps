@@ -71,6 +71,17 @@ class NativeTrends(unittest.TestCase):
         self.assertEqual(len(full), 40)
         self.assertEqual(set(full) & set(held), {'startup'})
 
+    def test_pr_subset_covers_every_corpus_group(self):
+        bench = CI.load('bench-bc')
+        for preset in ('full', 'holdout'):
+            with self.subTest(preset=preset):
+                cases = bench.corpus(preset, listing=True,
+                                     seed=197201 if preset == 'holdout' else 197200)
+                selected = set(CI.selected_cases(bench, preset, False))
+                self.assertEqual({case['group'] for case in cases
+                                  if case['name'] in selected},
+                                 {case['group'] for case in cases})
+
     def exercise(self, fail=False):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
