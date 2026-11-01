@@ -178,11 +178,17 @@ public:
       // Inspect the most significant unequal limb first. Zero-extension keeps
       // this valid for temporary ranges that still contain leading zero limbs;
       // storage length alone does not establish numeric ordering.
-      auto index = std::max(digits_->size(), rhs.digits_->size());
+      // Neither operand changes during comparison. Select inline/heap storage
+      // and capture both extents once rather than rechecking each limb access.
+      auto const lhs_size = digits_->size();
+      auto const rhs_size = rhs.digits_->size();
+      auto const lhs_first = digits_->begin();
+      auto const rhs_first = rhs.digits_->begin();
+      auto index = std::max(lhs_size, rhs_size);
       while (index != 0) {
         --index;
-        NumType const lhs_digit = index < digits_->size() ? (*digits_)[index] : 0;
-        NumType const rhs_digit = index < rhs.digits_->size() ? (*rhs.digits_)[index] : 0;
+        NumType const lhs_digit = index < lhs_size ? lhs_first[index] : 0;
+        NumType const rhs_digit = index < rhs_size ? rhs_first[index] : 0;
         if (lhs_digit < rhs_digit) {
           return Details::ComparisonResult::less_than;
         }
@@ -434,11 +440,12 @@ public:
      */
     auto length = digits_->size() * base_log10_;
     auto rit = digits_->rbegin();
-    while (rit != digits_->rend() && *rit == 0) {
+    auto const finish = digits_->rend();
+    while (rit != finish && *rit == 0) {
       ++rit;
       length -= base_log10_;
     }
-    if (rit != digits_->rend()) {
+    if (rit != finish) {
       length -= base_log10_;
       NumType d = *rit;
       assert(d != 0);  // NOLINT
@@ -963,10 +970,13 @@ private:
    */
   void copy_on_write()
   {
-    if (!digits_) {
+    // A single ownership query distinguishes absent, independent inline and
+    // shared heap values. Zero owners means absent at public boundaries.
+    auto const owners = digits_.use_count();
+    if (owners == 0) {
       digits_ = DigitVector();
     }
-    if (digits_.use_count() > 1) {
+    else if (owners > 1) {
       GD_BC_PROFILE_EVENT(Profile::Event::cow_clones, 1);
       GD_BC_PROFILE_EVENT(Profile::Event::cow_limb_bytes, digits_->size() * sizeof(NumType));
       digits_ = digits_.clone();
