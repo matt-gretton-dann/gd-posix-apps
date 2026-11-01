@@ -1,0 +1,356 @@
+{
+  "bootstrap_resamples": 2000,
+  "clock": {
+    "implementation": "mach_absolute_time()",
+    "monotonic": true,
+    "resolution": 4.166666666666666e-08
+  },
+  "corpus": [
+    {
+      "group": "loop",
+      "name": "loop_1000000",
+      "oracle_sha256": "dbb4498f673634c698bd6e593ef54bdadf465654b13fb7bfe689016e602e7ef8",
+      "parameters": {
+        "iterations": 1000000
+      },
+      "program_sha256": "74aa1d696c8c54be05d25ad82b085aedd6791012c90b5faf9f3d9d91f94ebdba"
+    },
+    {
+      "group": "sqrt",
+      "name": "sqrt_scale100_x5000",
+      "oracle_sha256": "32284e16893663b90a4f71d5dd20f068df57d23fe7b28ac44bcabc897e7ceb86",
+      "parameters": {
+        "iterations": 5000,
+        "scale": 100
+      },
+      "program_sha256": "776a0a5e34050036c7e3d2dce7b192c09b624a528588da06999c5ec243d32458"
+    },
+    {
+      "group": "sqrt",
+      "name": "sqrt_scale1000_x50",
+      "oracle_sha256": "42541117d02911fa2728d84b4bd67cb695569273a2c8fd010fd56e156aaa9c44",
+      "parameters": {
+        "iterations": 50,
+        "scale": 1000
+      },
+      "program_sha256": "9bed475982441bfe7cef8eb52978f6814ff55110a466ad2eadfeb3a0f0312fc1"
+    },
+    {
+      "group": "sqrt",
+      "name": "sqrt_scale5000_x5",
+      "oracle_sha256": "c06514a7b2265dbedb3c9c57fb0aa76daa0b86631231cc92e23a4d18e7a15337",
+      "parameters": {
+        "iterations": 5,
+        "scale": 5000
+      },
+      "program_sha256": "c13f95db6aa11b8fcd0cc94087d55ec39210d535f570dedc86696ddbd698ac79"
+    },
+    {
+      "group": "multiply",
+      "name": "multiply_unbalanced_10000d_100d_x2000",
+      "oracle_sha256": "63be8a13ba51919ec8595849a2b9315fac530c5c1d9c8fad6f9c4fbd1ca38862",
+      "parameters": {
+        "iterations": 2000,
+        "left_digits": 10000,
+        "right_digits": 100,
+        "shape": "unbalanced"
+      },
+      "program_sha256": "f2db34e568ec54dc60e916b85674dcec88085445533deb690917e763a84b6545"
+    },
+    {
+      "group": "multiply",
+      "name": "multiply_sparse_10000d_x1000",
+      "oracle_sha256": "dab20e708bf20d2f0b97c5f1cdf1168bd36e19859ae8fb2e260c035455b2dcd0",
+      "parameters": {
+        "iterations": 1000,
+        "left_digits": 10000,
+        "right_digits": 10000,
+        "shape": "sparse"
+      },
+      "program_sha256": "82eea516e61e12e526afbbc4efae6c5d6bc24f4efb34e84cce4b435dc5ec5d24"
+    },
+    {
+      "group": "divide_multilimb",
+      "name": "divide_multilimb_900d_450d_s100_x1000",
+      "oracle_sha256": "ea75d46619e9c8cba8804db38a1a96255c4388c12402c052c06521561429bd04",
+      "parameters": {
+        "dividend_digits": 900,
+        "divisor_digits": 450,
+        "iterations": 1000,
+        "scale": 100
+      },
+      "program_sha256": "3e526fbb9e7ce363f37d717ee26d12d1562e85f4e82d4c671cbc0970f2c048d2"
+    },
+    {
+      "group": "divide_multilimb",
+      "name": "divide_multilimb_1000d_900d_s1000_x500",
+      "oracle_sha256": "39223da607c39fb1c8e4b1685982a177164410b2fffc5186301caa5378ca5fc3",
+      "parameters": {
+        "dividend_digits": 1000,
+        "divisor_digits": 900,
+        "iterations": 500,
+        "scale": 1000
+      },
+      "program_sha256": "1dd61158cf4374d878b0750e40180e1cb105064e19a33c1b224479d3e8eb381a"
+    },
+    {
+      "group": "modulo",
+      "name": "modulo_1000d_350d_x3000",
+      "oracle_sha256": "d2c0f4112019a7fe180eda3895493459be39cc8a2f93e448e4c5c1275288c0a5",
+      "parameters": {
+        "dividend_digits": 1000,
+        "divisor_digits": 350,
+        "iterations": 3000
+      },
+      "program_sha256": "349c0e4a8bd53d08ab50a00b93b79ed3111cf0fa4dd1f1c8ea7f15705b418817"
+    },
+    {
+      "group": "decimal_input",
+      "name": "decimal_input_4000d_x100",
+      "oracle_sha256": "23b55f5a4378876edb19ea7c9df8f5b27024e770ae4a9712bcc5c8e120af47db",
+      "parameters": {
+        "digits": 4000,
+        "literals": 100
+      },
+      "program_sha256": "f52167d78167be3e447e2b6d40465d288f7981bd3bd081c7da06d4b8980ecbe1"
+    }
+  ],
+  "corpus_seed": 197200,
+  "environment": {
+    "BC_ENV_ARGS": "",
+    "BC_LINE_LENGTH": "70",
+    "LANG": "C",
+    "LC_ALL": "C"
+  },
+  "harness_sha256": "1ae7c8de9d77aaaa9fcb53bbf5a822f6807d646fad2144a3b257cb31123beb98",
+  "implementations": [
+    {
+      "argv": [
+        "/private/tmp/gd-bc-202-parent-release/build/src/bc/bc"
+      ],
+      "binary_sha256": "e0fc776923035bca290a5882d8f0cbba0b3c97cb219a81b124eeec3af696f493",
+      "complete_provenance": true,
+      "metadata": {
+        "binary_sha256": "e0fc776923035bca290a5882d8f0cbba0b3c97cb219a81b124eeec3af696f493",
+        "compiler": {
+          "C": {
+            "argv0": "/usr/bin/cc",
+            "realpath": "/usr/bin/cc",
+            "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+            "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+          },
+          "CXX": {
+            "argv0": "/usr/bin/c++",
+            "realpath": "/usr/bin/c++",
+            "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+            "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+          }
+        },
+        "configuration": {
+          "build_type": "Release",
+          "extensions": "ON",
+          "generator": "Ninja",
+          "multiply_split_point": 126,
+          "threshold_header_sha256": "c5b539c9f87d032bfcb436bb8da8972048d2ed1780a980265b7c3fe0e5e45626"
+        },
+        "flags": {
+          "CMAKE_CXX_FLAGS": "",
+          "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+          "CMAKE_C_FLAGS": "",
+          "CMAKE_C_FLAGS_RELEASE": "-O3 -DNDEBUG",
+          "CMAKE_EXE_LINKER_FLAGS": "",
+          "CMAKE_EXE_LINKER_FLAGS_RELEASE": "",
+          "compile_commands_sha256": "b8fd4dfe9db456182c5cf78cfe793abd4f97f06e535a2b708e35d1e1315b6fe1"
+        },
+        "instrumented": false,
+        "limitations": [
+          "Provision compiler, C/C++ runtime and SDK separately; this is not an OS image",
+          "Compiler defaults and actual commands are recorded, not claimed identical across hosts"
+        ],
+        "source_revision": "be6980152a6d0519454e7bc3ff03ea78cff0f69d",
+        "standard_library": {
+          "header_macros": {
+            "_LIBCPP_VERSION": "220106"
+          },
+          "scope": "standard-library header identity; provision runtime and SDK separately",
+          "status": "recorded"
+        },
+        "version": "gd-posix-apps source be6980152a6d0519454e7bc3ff03ea78cff0f69d"
+      },
+      "name": "gd-parent",
+      "role": "candidate"
+    },
+    {
+      "argv": [
+        "/private/tmp/gd-bc-202-inline-release/build/src/bc/bc"
+      ],
+      "binary_sha256": "535ccc8894c136ad3bd051dbb5a5dce2f7865f6b229e39b3dc205982df373f12",
+      "complete_provenance": true,
+      "metadata": {
+        "binary_sha256": "535ccc8894c136ad3bd051dbb5a5dce2f7865f6b229e39b3dc205982df373f12",
+        "compiler": {
+          "C": {
+            "argv0": "/usr/bin/cc",
+            "realpath": "/usr/bin/cc",
+            "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+            "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+          },
+          "CXX": {
+            "argv0": "/usr/bin/c++",
+            "realpath": "/usr/bin/c++",
+            "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+            "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+          }
+        },
+        "configuration": {
+          "build_type": "Release",
+          "extensions": "ON",
+          "generator": "Ninja",
+          "multiply_split_point": 126,
+          "threshold_header_sha256": "c5b539c9f87d032bfcb436bb8da8972048d2ed1780a980265b7c3fe0e5e45626"
+        },
+        "flags": {
+          "CMAKE_CXX_FLAGS": "",
+          "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+          "CMAKE_C_FLAGS": "",
+          "CMAKE_C_FLAGS_RELEASE": "-O3 -DNDEBUG",
+          "CMAKE_EXE_LINKER_FLAGS": "",
+          "CMAKE_EXE_LINKER_FLAGS_RELEASE": "",
+          "compile_commands_sha256": "2f93cd5a61d75c3801af33614bc490fea2fe47fc488d1b3f5bb33bece4f88cc4"
+        },
+        "instrumented": false,
+        "limitations": [
+          "Provision compiler, C/C++ runtime and SDK separately; this is not an OS image",
+          "Compiler defaults and actual commands are recorded, not claimed identical across hosts"
+        ],
+        "source_revision": "c3a769a212c7be347a92f7fc2d9108005eea75e9",
+        "standard_library": {
+          "header_macros": {
+            "_LIBCPP_VERSION": "220106"
+          },
+          "scope": "standard-library header identity; provision runtime and SDK separately",
+          "status": "recorded"
+        },
+        "version": "gd-posix-apps source c3a769a212c7be347a92f7fc2d9108005eea75e9"
+      },
+      "name": "gd-inline",
+      "role": "candidate"
+    },
+    {
+      "argv": [
+        "/private/tmp/gd-bc-202-views-release/build/src/bc/bc"
+      ],
+      "binary_sha256": "7dc468ab21c5468e781d1e43e72034f9dd8ca2f4ac799deb075561e60baf112f",
+      "complete_provenance": true,
+      "metadata": {
+        "binary_sha256": "7dc468ab21c5468e781d1e43e72034f9dd8ca2f4ac799deb075561e60baf112f",
+        "compiler": {
+          "C": {
+            "argv0": "/usr/bin/cc",
+            "realpath": "/usr/bin/cc",
+            "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+            "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+          },
+          "CXX": {
+            "argv0": "/usr/bin/c++",
+            "realpath": "/usr/bin/c++",
+            "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+            "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+          }
+        },
+        "configuration": {
+          "build_type": "Release",
+          "extensions": "ON",
+          "generator": "Ninja",
+          "multiply_split_point": 126,
+          "threshold_header_sha256": "c5b539c9f87d032bfcb436bb8da8972048d2ed1780a980265b7c3fe0e5e45626"
+        },
+        "flags": {
+          "CMAKE_CXX_FLAGS": "",
+          "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+          "CMAKE_C_FLAGS": "",
+          "CMAKE_C_FLAGS_RELEASE": "-O3 -DNDEBUG",
+          "CMAKE_EXE_LINKER_FLAGS": "",
+          "CMAKE_EXE_LINKER_FLAGS_RELEASE": "",
+          "compile_commands_sha256": "2bfe146efeef96809ad06e5ebac5b4a26d118528d6930c77e0f08a39f1265815"
+        },
+        "instrumented": false,
+        "limitations": [
+          "Provision compiler, C/C++ runtime and SDK separately; this is not an OS image",
+          "Compiler defaults and actual commands are recorded, not claimed identical across hosts"
+        ],
+        "source_revision": "4f8444ab50ffb0d30c6ce40b36a13cfee499ba51",
+        "standard_library": {
+          "header_macros": {
+            "_LIBCPP_VERSION": "220106"
+          },
+          "scope": "standard-library header identity; provision runtime and SDK separately",
+          "status": "recorded"
+        },
+        "version": "gd-posix-apps source 4f8444ab50ffb0d30c6ce40b36a13cfee499ba51"
+      },
+      "name": "gd-views",
+      "role": "candidate"
+    },
+    {
+      "argv": [
+        "/private/tmp/gd-bc-200-recipe-check-3/howard-source/bin/bc"
+      ],
+      "binary_sha256": "2ca4cdb63a38d828d5a3f3ca2cd51ba14eecdbcb4d7596cae3779391d2f286c8",
+      "complete_provenance": true,
+      "metadata": {
+        "binary_sha256": "2ca4cdb63a38d828d5a3f3ca2cd51ba14eecdbcb4d7596cae3779391d2f286c8",
+        "compiler": {
+          "argv0": "/usr/bin/clang",
+          "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+          "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+        },
+        "configuration": [
+          "--opt=3",
+          "--disable-nls",
+          "--disable-history",
+          "--disable-dc",
+          "--disable-man-pages",
+          "--disable-generated-tests",
+          "--disable-strip"
+        ],
+        "flags": {
+          "CC": "/usr/bin/clang",
+          "CFLAGS": "-DBC_ENABLED=1 -DDC_ENABLED=0 -I./include/ -DBUILD_TYPE=HN  -DEXECPREFIX= -DMAINEXEC=bc  -D_DARWIN_C_SOURCE -DBC_NUM_KARATSUBA_LEN=32 -DBC_ENABLE_NLS=0 -DBC_ENABLE_EXTRA_MATH=1 -DBC_ENABLE_HISTORY=0 -DBC_ENABLE_LIBRARY=0 -DBC_ENABLE_MEMCHECK=0 -DBC_ENABLE_AFL=0 -DBC_ENABLE_OSSFUZZ=0 -DBC_DEFAULT_BANNER=0 -DBC_DEFAULT_SIGINT_RESET=1 -DBC_DEFAULT_TTY_MODE=1 -DBC_DEFAULT_PROMPT=1 -DBC_DEFAULT_EXPR_EXIT=1 -DBC_DEFAULT_DIGIT_CLAMP=0 -DDC_DEFAULT_SIGINT_RESET=1 -DDC_DEFAULT_TTY_MODE=0 -DDC_DEFAULT_PROMPT=0 -DDC_DEFAULT_EXPR_EXIT=1 -DDC_DEFAULT_DIGIT_CLAMP=0 -DNDEBUG  -D_POSIX_C_SOURCE=200809L -D_XOPEN_SOURCE=700 -O3 -O3 -DNDEBUG -DBC_ENABLE_EDITLINE=0 -DBC_ENABLE_READLINE=0",
+          "CPPFLAGS": "-DBC_ENABLED=1 -DDC_ENABLED=0 -I./include/ -DBUILD_TYPE=HN  -DEXECPREFIX= -DMAINEXEC=bc  -D_DARWIN_C_SOURCE -DBC_NUM_KARATSUBA_LEN=32 -DBC_ENABLE_NLS=0 -DBC_ENABLE_EXTRA_MATH=1 -DBC_ENABLE_HISTORY=0 -DBC_ENABLE_LIBRARY=0 -DBC_ENABLE_MEMCHECK=0 -DBC_ENABLE_AFL=0 -DBC_ENABLE_OSSFUZZ=0",
+          "LDFLAGS": ""
+        },
+        "instrumented": false,
+        "source_revision": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8",
+        "source_url": "https://github.com/gavinhoward/bc.git",
+        "tuning": {
+          "BC_NUM_KARATSUBA_LEN": 32
+        },
+        "version": "bc 7.0.3\nCopyright (c) 2018-2024 Gavin D. Howard and contributors\nReport bugs at: https://git.gavinhoward.com/gavin/bc\n\nThis is free software with ABSOLUTELY NO WARRANTY."
+      },
+      "name": "howard-7.0.3",
+      "role": "reference"
+    }
+  ],
+  "pending_classes": [
+    {
+      "group": "posix_math_library",
+      "issue": 217,
+      "status": "not implemented; not a performance pass"
+    }
+  ],
+  "platform": {
+    "machine": "arm64",
+    "python": "3.15.2",
+    "release": "27.2.0",
+    "system": "Darwin"
+  },
+  "preset": "full",
+  "reference": "gd-parent",
+  "samples": 3,
+  "schema": 1,
+  "seed": 197200,
+  "started_utc": "2026-10-31T23:29:45.692069+00:00",
+  "timeout": 30,
+  "warmups": 1
+}

@@ -66,3 +66,7 @@ The local comparison baseline is workspace source
 compiler, flags and fixed split point. Its accepted main merge is `b8c2e79`;
 production C++/CMake is identical. PR #314 now targets main, retaining the
 original source labels rather than relabeling already collected experiments.
+
+The [measurement report](bc-202-inline-storage/README.md) retains all rejected
+prototypes, exact source identities, checked samples, native platform outcomes
+and the final memory/runtime tradeoffs, including inconclusive losing classes.

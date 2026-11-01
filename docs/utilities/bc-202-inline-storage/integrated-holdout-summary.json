@@ -1,0 +1,1940 @@
+{
+  "performance_gate": "advisory; no aggregate or hard timing threshold",
+  "reference": "gd-workspace-parent",
+  "schema": 1,
+  "workloads": [
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.8957706784565735,
+            1.1402429316115232
+          ],
+          "median_paired_ratio": 0.9993849617757421,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.9071994004589408
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            0.7885857626740967,
+            1.095159888481608
+          ],
+          "median_paired_ratio": 0.9291801242853922,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.8716172686394927
+        }
+      },
+      "group": "startup",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.0001397909945808351,
+          "max_seconds": 0.0051680830074474216,
+          "median_seconds": 0.0031848750077188015,
+          "min_seconds": 0.0030450840131379664,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.00023687398061156273,
+          "max_seconds": 0.0037475409917533398,
+          "median_seconds": 0.003510667011141777,
+          "min_seconds": 0.0030413750209845603,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00013587396824732423,
+          "max_seconds": 0.00495750003028661,
+          "median_seconds": 0.0030599579913541675,
+          "min_seconds": 0.0028549580019898713,
+          "samples": 9
+        }
+      },
+      "name": "startup",
+      "parameters": {}
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.6345313189623843,
+            0.6578428382354581
+          ],
+          "median_paired_ratio": 0.6455305763476602,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.6460981682768308
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            0.48802337643899585,
+            0.5038302245157318
+          ],
+          "median_paired_ratio": 0.4978806884937188,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.4968290496902075
+        }
+      },
+      "group": "loop",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.0007359159644693136,
+          "max_seconds": 0.2239603340276517,
+          "median_seconds": 0.21716920798644423,
+          "min_seconds": 0.21606304199667647,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.0013357080169953406,
+          "max_seconds": 0.34719541697995737,
+          "median_seconds": 0.3361241660313681,
+          "min_seconds": 0.33462266699643806,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00033741601509973407,
+          "max_seconds": 0.1694984170026146,
+          "median_seconds": 0.16699624998727813,
+          "min_seconds": 0.16614145797211677,
+          "samples": 9
+        }
+      },
+      "name": "loop_875000",
+      "parameters": {
+        "iterations": 875000
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.7161362048492009,
+            0.7271896523873851
+          ],
+          "median_paired_ratio": 0.7257321958346309,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.7260033724204596
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            0.416490893607358,
+            0.4228716904999761
+          ],
+          "median_paired_ratio": 0.4189649502897242,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.4201148977674889
+        }
+      },
+      "group": "calls",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.0003441659500822425,
+          "max_seconds": 0.1169553340296261,
+          "median_seconds": 0.11537733295699582,
+          "min_seconds": 0.11481245898175985,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.0006096659926697612,
+          "max_seconds": 0.16802054102299735,
+          "median_seconds": 0.15892120799981058,
+          "min_seconds": 0.15788516600150615,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00040362507570534945,
+          "max_seconds": 0.06845312501536682,
+          "median_seconds": 0.06676516705192626,
+          "min_seconds": 0.0660987080191262,
+          "samples": 9
+        }
+      },
+      "name": "calls_175000",
+      "parameters": {
+        "iterations": 175000
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.6337225520108032,
+            0.6436984155964092
+          ],
+          "median_paired_ratio": 0.6349460021624962,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.6375369316146559
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            0.45759675652054527,
+            0.47823423683229044
+          ],
+          "median_paired_ratio": 0.46990326650898956,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.4691637881484101
+        }
+      },
+      "group": "array",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.0007479159976355731,
+          "max_seconds": 0.11518316704314202,
+          "median_seconds": 0.11236487497808412,
+          "min_seconds": 0.11115158296888694,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.0007810830138623714,
+          "max_seconds": 0.1817564590019174,
+          "median_seconds": 0.17624841700308025,
+          "min_seconds": 0.17157279094681144,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00014249997911974788,
+          "max_seconds": 0.08472770801745355,
+          "median_seconds": 0.08268937497632578,
+          "min_seconds": 0.08198241697391495,
+          "samples": 9
+        }
+      },
+      "name": "array_175000",
+      "parameters": {
+        "elements": 175000
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.5716043644581136,
+            0.6252248061311271
+          ],
+          "median_paired_ratio": 0.5973706932091251,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.605321960487702
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            0.4628260901921694,
+            0.5212794702762096
+          ],
+          "median_paired_ratio": 0.48689439901043796,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.4826848127552034
+        }
+      },
+      "group": "comparison",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.00024625001242384315,
+          "max_seconds": 0.03395462495973334,
+          "median_seconds": 0.032144083990715444,
+          "min_seconds": 0.031195416988339275,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.0010943759698420763,
+          "max_seconds": 0.069450874987524,
+          "median_seconds": 0.0531024580122903,
+          "min_seconds": 0.05141095904400572,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.0007750000222586095,
+          "max_seconds": 0.047713000036310405,
+          "median_seconds": 0.025631750002503395,
+          "min_seconds": 0.024748917028773576,
+          "samples": 9
+        }
+      },
+      "name": "compare_high_1125d_x87500",
+      "parameters": {
+        "digits": 1125,
+        "first_unequal_limb": "high",
+        "iterations": 87500
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.6576643879981032,
+            0.7025070976086023
+          ],
+          "median_paired_ratio": 0.6737358719805484,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.6704146610263904
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            0.4852587017385036,
+            0.5150319233287791
+          ],
+          "median_paired_ratio": 0.497201284928579,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.48949240962895785
+        }
+      },
+      "group": "comparison",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.0003438750864006579,
+          "max_seconds": 0.047781749977730215,
+          "median_seconds": 0.041878625052049756,
+          "min_seconds": 0.04144058399833739,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.0011680410243570805,
+          "max_seconds": 0.11858445900725201,
+          "median_seconds": 0.0624667500378564,
+          "min_seconds": 0.06118900002911687,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00013537501217797399,
+          "max_seconds": 0.03386504098307341,
+          "median_seconds": 0.030576999997720122,
+          "min_seconds": 0.03044162498554215,
+          "samples": 9
+        }
+      },
+      "name": "compare_low_1125d_x87500",
+      "parameters": {
+        "digits": 1125,
+        "first_unequal_limb": "low",
+        "iterations": 87500
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.6688229747355989,
+            0.683557252079121
+          ],
+          "median_paired_ratio": 0.676300611595182,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.6733797139752447
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            0.4935385164710403,
+            0.518690573337138
+          ],
+          "median_paired_ratio": 0.49618305122708306,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.49738653807041894
+        }
+      },
+      "group": "comparison",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.00038583303103223443,
+          "max_seconds": 0.043018708005547523,
+          "median_seconds": 0.04183724999893457,
+          "min_seconds": 0.041287000000011176,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.00027670798590406775,
+          "max_seconds": 0.06242420797934756,
+          "median_seconds": 0.06213025003671646,
+          "min_seconds": 0.061730833956971765,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00031937501626089215,
+          "max_seconds": 0.03308316698530689,
+          "median_seconds": 0.03090274997521192,
+          "min_seconds": 0.030411874991841614,
+          "samples": 9
+        }
+      },
+      "name": "compare_equal_1125d_x87500",
+      "parameters": {
+        "digits": 1125,
+        "first_unequal_limb": "equal",
+        "iterations": 87500
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.7438763000470848,
+            0.7605314931458301
+          ],
+          "median_paired_ratio": 0.7523870073654433,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.7502343557307233
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            0.8843607183795639,
+            0.8986841025820287
+          ],
+          "median_paired_ratio": 0.894965115872193,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.8942701593398382
+        }
+      },
+      "group": "fibonacci",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.00011662504402920604,
+          "max_seconds": 0.03249166702153161,
+          "median_seconds": 0.031912625010591,
+          "min_seconds": 0.031777125026565045,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.00016516598407179117,
+          "max_seconds": 0.043589667009655386,
+          "median_seconds": 0.04253687500022352,
+          "min_seconds": 0.0422002500272356,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00035079196095466614,
+          "max_seconds": 0.038391250011045486,
+          "median_seconds": 0.038039457984268665,
+          "min_seconds": 0.03732179099461064,
+          "samples": 9
+        }
+      },
+      "name": "fibonacci_1125_x88",
+      "parameters": {
+        "index": 1125,
+        "iterations": 88
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.8457453436994045,
+            0.8576187912915332
+          ],
+          "median_paired_ratio": 0.8536651254991827,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.8552592071667985
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            0.8202317296947319,
+            0.8372708996540277
+          ],
+          "median_paired_ratio": 0.8329925223005491,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.833552079709893
+        }
+      },
+      "group": "fibonacci",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.00027733301976695657,
+          "max_seconds": 0.0615231660194695,
+          "median_seconds": 0.06062829203438014,
+          "min_seconds": 0.060277167009189725,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.00019249995239078999,
+          "max_seconds": 0.07443729200167581,
+          "median_seconds": 0.07088879199000075,
+          "min_seconds": 0.07058433297788724,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00017370900604873896,
+          "max_seconds": 0.0619204169488512,
+          "median_seconds": 0.05908949999138713,
+          "min_seconds": 0.05871908296830952,
+          "samples": 9
+        }
+      },
+      "name": "fibonacci_11250_x9",
+      "parameters": {
+        "index": 11250,
+        "iterations": 9
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.5231519221065455,
+            0.5252775590088578
+          ],
+          "median_paired_ratio": 0.5250431004233469,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.5242823797391618
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            0.6037966137263939,
+            0.6098781194861504
+          ],
+          "median_paired_ratio": 0.6066640556760735,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.6072044521629414
+        }
+      },
+      "group": "factorial",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 6.512500112876296e-05,
+          "max_seconds": 0.03309045796049759,
+          "median_seconds": 0.03285349998623133,
+          "min_seconds": 0.03276375000132248,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.00019562506349757314,
+          "max_seconds": 0.06316695897839963,
+          "median_seconds": 0.06266375002451241,
+          "min_seconds": 0.062407667050138116,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 6.77499920129776e-05,
+          "max_seconds": 0.0382730410201475,
+          "median_seconds": 0.03804970800410956,
+          "min_seconds": 0.03789716603932902,
+          "samples": 9
+        }
+      },
+      "name": "factorial_1125_x44",
+      "parameters": {
+        "argument": 1125,
+        "iterations": 44
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.44325611183748853,
+            0.448475407690874
+          ],
+          "median_paired_ratio": 0.4456709775584069,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.44651472617453886
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            0.5976979898403006,
+            0.6005970295642951
+          ],
+          "median_paired_ratio": 0.5982038886137465,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.5995349596036255
+        }
+      },
+      "group": "factorial",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.00031304097501561046,
+          "max_seconds": 0.07319404202280566,
+          "median_seconds": 0.07278941699769348,
+          "min_seconds": 0.07225820800522342,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.00019762502051889896,
+          "max_seconds": 0.16609949996927753,
+          "median_seconds": 0.1630168340052478,
+          "min_seconds": 0.1628192089847289,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00029945699498057365,
+          "max_seconds": 0.0995298329507932,
+          "median_seconds": 0.09773429099004716,
+          "min_seconds": 0.09737095900345594,
+          "samples": 9
+        }
+      },
+      "name": "factorial_5625_x5",
+      "parameters": {
+        "argument": 5625,
+        "iterations": 5
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.8519312864772385,
+            0.8584970899470161
+          ],
+          "median_paired_ratio": 0.8557742961017367,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.8532742736859352
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            1.1584543734582649,
+            1.177685128978753
+          ],
+          "median_paired_ratio": 1.1611573570385705,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.1632502902761692
+        }
+      },
+      "group": "multiply",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.00015179201727733016,
+          "max_seconds": 0.06569633400067687,
+          "median_seconds": 0.06487508298596367,
+          "min_seconds": 0.06472329096868634,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.00018937501590698957,
+          "max_seconds": 0.07637004100251943,
+          "median_seconds": 0.07603075000224635,
+          "min_seconds": 0.0755938749643974,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.0002943740109913051,
+          "max_seconds": 0.08991195796988904,
+          "median_seconds": 0.08844279201002792,
+          "min_seconds": 0.0878378750057891,
+          "samples": 9
+        }
+      },
+      "name": "multiply_112d_x87500",
+      "parameters": {
+        "iterations": 87500,
+        "left_digits": 112,
+        "right_digits": 112,
+        "shape": "repeated"
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.9850894265300892,
+            0.9876355903059374
+          ],
+          "median_paired_ratio": 0.986016035137659,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.9858891085157722
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            0.4250107159495711,
+            0.42723199004607193
+          ],
+          "median_paired_ratio": 0.4264625989975828,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.42642110183369886
+        }
+      },
+      "group": "multiply",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.0002690000110305846,
+          "max_seconds": 0.3635028749704361,
+          "median_seconds": 0.35925737500656396,
+          "min_seconds": 0.3588447079528123,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.00013254093937575817,
+          "max_seconds": 0.3680379589786753,
+          "median_seconds": 0.36439937504474074,
+          "min_seconds": 0.3642363750259392,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00022449996322393417,
+          "max_seconds": 0.15601174999028444,
+          "median_seconds": 0.15538758301408961,
+          "min_seconds": 0.15459866699529812,
+          "samples": 9
+        }
+      },
+      "name": "multiply_1125d_x8750",
+      "parameters": {
+        "iterations": 8750,
+        "left_digits": 1125,
+        "right_digits": 1125,
+        "shape": "repeated"
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.9815774881265029,
+            0.9988472381793551
+          ],
+          "median_paired_ratio": 0.9964630525128687,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.9962518583603002
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            0.14076327639787137,
+            0.14416852960199672
+          ],
+          "median_paired_ratio": 0.14332438024051153,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.14379582199326493
+        }
+      },
+      "group": "multiply",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.0007374580600298941,
+          "max_seconds": 1.1880914579960518,
+          "median_seconds": 1.1652622920228168,
+          "min_seconds": 1.1632517090183683,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.002806458971463144,
+          "max_seconds": 1.246725459001027,
+          "median_seconds": 1.1696462919935584,
+          "min_seconds": 1.1668398330220953,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.0002400830271653831,
+          "max_seconds": 0.17427104199305177,
+          "median_seconds": 0.16819024999858811,
+          "min_seconds": 0.16710462502669543,
+          "samples": 9
+        }
+      },
+      "name": "multiply_11250d_x875",
+      "parameters": {
+        "iterations": 875,
+        "left_digits": 11250,
+        "right_digits": 11250,
+        "shape": "repeated"
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.6171819094390701,
+            0.6254683692713248
+          ],
+          "median_paired_ratio": 0.6197048249432412,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.6194864087229472
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            0.7413500291270266,
+            0.7476255494442872
+          ],
+          "median_paired_ratio": 0.7439167235709466,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.7448435600523159
+        }
+      },
+      "group": "divide_single_limb",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.00022220698883756995,
+          "max_seconds": 0.0386641250224784,
+          "median_seconds": 0.03670604102080688,
+          "min_seconds": 0.03648383403196931,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.00013879203470423818,
+          "max_seconds": 0.062203583016525954,
+          "median_seconds": 0.05925237503834069,
+          "min_seconds": 0.059016000013798475,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00015816697850823402,
+          "max_seconds": 0.04611854098038748,
+          "median_seconds": 0.044133749965112656,
+          "min_seconds": 0.0437958330148831,
+          "samples": 9
+        }
+      },
+      "name": "divide_scale112_x87500",
+      "parameters": {
+        "divisor": "7",
+        "iterations": 87500,
+        "scale": 112
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.6676236894430065,
+            0.7153624663460589
+          ],
+          "median_paired_ratio": 0.6894511095596298,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.6856720589404225
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            1.149334036224558,
+            1.170863411817069
+          ],
+          "median_paired_ratio": 1.15805459548567,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.1624893925975643
+        }
+      },
+      "group": "divide_single_limb",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.0001228759647347033,
+          "max_seconds": 0.012645374983549118,
+          "median_seconds": 0.011461666028480977,
+          "min_seconds": 0.01128770801005885,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.00013895798474550247,
+          "max_seconds": 0.01801416598027572,
+          "median_seconds": 0.016715959005523473,
+          "min_seconds": 0.0165487919584848,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 7.404200732707977e-05,
+          "max_seconds": 0.019604833039920777,
+          "median_seconds": 0.019432125031016767,
+          "min_seconds": 0.019265540991909802,
+          "samples": 9
+        }
+      },
+      "name": "divide_scale1125_x8750",
+      "parameters": {
+        "divisor": "7",
+        "iterations": 8750,
+        "scale": 1125
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.6495674198920978,
+            0.7051295382674211
+          ],
+          "median_paired_ratio": 0.6859757096553868,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.6859051684624436
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            1.3525122038865816,
+            1.4078001923918442
+          ],
+          "median_paired_ratio": 1.3998028675674121,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.4059864283532701
+        }
+      },
+      "group": "divide_single_limb",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.00010904204100370407,
+          "max_seconds": 0.020312416017986834,
+          "median_seconds": 0.018896459019742906,
+          "min_seconds": 0.018787416978739202,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.00013720797142013907,
+          "max_seconds": 0.057037874998059124,
+          "median_seconds": 0.027549667051061988,
+          "min_seconds": 0.02739137498429045,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.0001728750066831708,
+          "max_seconds": 0.03923908399883658,
+          "median_seconds": 0.038734457979444414,
+          "min_seconds": 0.038560374989174306,
+          "samples": 9
+        }
+      },
+      "name": "divide_scale5625_x4375",
+      "parameters": {
+        "divisor": "7",
+        "iterations": 4375,
+        "scale": 5625
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.9576147594726149,
+            0.9759154750667429
+          ],
+          "median_paired_ratio": 0.9657401237525214,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.9685523687242364
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            1.4999668795559824,
+            1.5377035961296943
+          ],
+          "median_paired_ratio": 1.524822896942051,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.5273576612178452
+        }
+      },
+      "group": "sqrt",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.00013912504073232412,
+          "max_seconds": 0.08083758398424834,
+          "median_seconds": 0.04791541601298377,
+          "min_seconds": 0.04735800001071766,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.00015516701387241483,
+          "max_seconds": 0.05250866699498147,
+          "median_seconds": 0.0494711670326069,
+          "min_seconds": 0.04909791599493474,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00014579202979803085,
+          "max_seconds": 0.07869566697627306,
+          "median_seconds": 0.07556016597663984,
+          "min_seconds": 0.07512104097986594,
+          "samples": 9
+        }
+      },
+      "name": "sqrt_scale112_x4375",
+      "parameters": {
+        "iterations": 4375,
+        "scale": 112
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.9946037468868147,
+            1.0113746176557517
+          ],
+          "median_paired_ratio": 0.9994377766771781,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.0019442753172616
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            1.1184848144410107,
+            1.1290146713713396
+          ],
+          "median_paired_ratio": 1.1205319966956513,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.1224688333648813
+        }
+      },
+      "group": "sqrt",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.00033362500835210085,
+          "max_seconds": 0.051070749992504716,
+          "median_seconds": 0.04809737502364442,
+          "min_seconds": 0.04767216695472598,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.00020262593170627952,
+          "max_seconds": 0.05102483299560845,
+          "median_seconds": 0.04800404194975272,
+          "min_seconds": 0.04780141601804644,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00019124901155009866,
+          "max_seconds": 0.05717495799763128,
+          "median_seconds": 0.05388304096413776,
+          "min_seconds": 0.05363970797043294,
+          "samples": 9
+        }
+      },
+      "name": "sqrt_scale1125_x44",
+      "parameters": {
+        "iterations": 44,
+        "scale": 1125
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            1.0035437745915101,
+            1.0080572661785947
+          ],
+          "median_paired_ratio": 1.0050788471164807,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.0056986196456759
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            1.1803722841913729,
+            1.1887817333774664
+          ],
+          "median_paired_ratio": 1.1826060827472091,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.1846091393784017
+        }
+      },
+      "group": "sqrt",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.0003315000212751329,
+          "max_seconds": 0.1474962920183316,
+          "median_seconds": 0.14617045799968764,
+          "min_seconds": 0.14579087495803833,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.00031208398286253214,
+          "max_seconds": 0.14614637498743832,
+          "median_seconds": 0.14534220803761855,
+          "min_seconds": 0.14502437500050291,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.0006669999565929174,
+          "max_seconds": 0.17491945798974484,
+          "median_seconds": 0.17217370797879994,
+          "min_seconds": 0.17128770798444748,
+          "samples": 9
+        }
+      },
+      "name": "sqrt_scale5625_x5",
+      "parameters": {
+        "iterations": 5,
+        "scale": 5625
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.9833079984966413,
+            0.9903388896959376
+          ],
+          "median_paired_ratio": 0.9855153388191499,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.9855653089907837
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            0.9408565858107841,
+            0.9444650511176573
+          ],
+          "median_paired_ratio": 0.9422436577831236,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.9421756519328425
+        }
+      },
+      "group": "multiply",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.00017974898219108582,
+          "max_seconds": 0.18496774998493493,
+          "median_seconds": 0.18142758397152647,
+          "min_seconds": 0.18092995800543576,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.00025808397913351655,
+          "max_seconds": 0.18448704096954316,
+          "median_seconds": 0.1840847910498269,
+          "min_seconds": 0.18356608302565292,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 7.454195292666554e-05,
+          "max_seconds": 0.17494908400112763,
+          "median_seconds": 0.17344020801829174,
+          "min_seconds": 0.1729645419982262,
+          "samples": 9
+        }
+      },
+      "name": "multiply_dense_1125d_x4375",
+      "parameters": {
+        "iterations": 4375,
+        "left_digits": 1125,
+        "right_digits": 1125,
+        "shape": "seeded_dense"
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.993219760540463,
+            1.0064468634078674
+          ],
+          "median_paired_ratio": 0.9945881982298148,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.9933586383658802
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            1.1558412474767767,
+            1.1691252833912469
+          ],
+          "median_paired_ratio": 1.1568986180512486,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.1568986180512486
+        }
+      },
+      "group": "multiply",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.0016334170359186828,
+          "max_seconds": 0.6690676659927703,
+          "median_seconds": 0.5978559590294026,
+          "min_seconds": 0.5960367079824209,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.001783040992449969,
+          "max_seconds": 0.656573791988194,
+          "median_seconds": 0.6018530830042437,
+          "min_seconds": 0.598577665979974,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.0019587920396588743,
+          "max_seconds": 0.7225815830170177,
+          "median_seconds": 0.6962829999974929,
+          "min_seconds": 0.6932554169907235,
+          "samples": 9
+        }
+      },
+      "name": "multiply_dense_11250d_x438",
+      "parameters": {
+        "iterations": 438,
+        "left_digits": 11250,
+        "right_digits": 11250,
+        "shape": "seeded_dense"
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            1.0469287770812565,
+            1.0536675727046025
+          ],
+          "median_paired_ratio": 1.0512149455919146,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.0502165351814143
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            1.4547232739504399,
+            1.467349908348265
+          ],
+          "median_paired_ratio": 1.4598877812603188,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.4602704861530822
+        }
+      },
+      "group": "multiply",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.0002661259495653212,
+          "max_seconds": 0.08761787501862273,
+          "median_seconds": 0.08704220899380744,
+          "min_seconds": 0.08672645798651502,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.0001462909858673811,
+          "max_seconds": 0.08333325001876801,
+          "median_seconds": 0.08288025000365451,
+          "min_seconds": 0.08268929197220132,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00030587392393499613,
+          "max_seconds": 0.12227033299859613,
+          "median_seconds": 0.12102758296532556,
+          "min_seconds": 0.12072075001196936,
+          "samples": 9
+        }
+      },
+      "name": "multiply_unbalanced_11250d_112d_x1750",
+      "parameters": {
+        "iterations": 1750,
+        "left_digits": 11250,
+        "right_digits": 112,
+        "shape": "unbalanced"
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.9811759631169327,
+            0.9872381529192014
+          ],
+          "median_paired_ratio": 0.9842670435585829,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.9844004317520693
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            0.3400401842194335,
+            0.3444058468499792
+          ],
+          "median_paired_ratio": 0.34249928428637866,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.343122459795115
+        }
+      },
+      "group": "multiply",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.000526667048688978,
+          "max_seconds": 0.2776345830061473,
+          "median_seconds": 0.26834595802938566,
+          "min_seconds": 0.26742412499152124,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.0006275420309975743,
+          "max_seconds": 0.2820724160410464,
+          "median_seconds": 0.2725983749842271,
+          "min_seconds": 0.2718879170133732,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.0004132079775445163,
+          "max_seconds": 0.09721416601678357,
+          "median_seconds": 0.09353462496073917,
+          "min_seconds": 0.0924409999861382,
+          "samples": 9
+        }
+      },
+      "name": "multiply_sparse_11250d_x875",
+      "parameters": {
+        "iterations": 875,
+        "left_digits": 11250,
+        "right_digits": 11250,
+        "shape": "sparse"
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.8155977295359413,
+            0.8757726122010318
+          ],
+          "median_paired_ratio": 0.8272422106806644,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.8366529127982736
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            1.3184016751376808,
+            1.3838376082068926
+          ],
+          "median_paired_ratio": 1.371798269730223,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.3687977529069866
+        }
+      },
+      "group": "divide_multilimb",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.0002982499427162111,
+          "max_seconds": 0.016001540992874652,
+          "median_seconds": 0.015059124969411641,
+          "min_seconds": 0.01471112499712035,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.00018674996681511402,
+          "max_seconds": 0.01874041702831164,
+          "median_seconds": 0.017999250034336,
+          "min_seconds": 0.017623874999117106,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00011445803102105856,
+          "max_seconds": 0.025325958034954965,
+          "median_seconds": 0.02463733300101012,
+          "min_seconds": 0.024374833039473742,
+          "samples": 9
+        }
+      },
+      "name": "divide_multilimb_1012d_506d_s112_x875",
+      "parameters": {
+        "dividend_digits": 1012,
+        "divisor_digits": 506,
+        "iterations": 875,
+        "scale": 112
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.9519066965816794,
+            0.9949500212994135
+          ],
+          "median_paired_ratio": 0.9858200009235687,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.9868562184931967
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            0.7643896322222019,
+            0.7940808785842808
+          ],
+          "median_paired_ratio": 0.7873576658504919,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.7856161518274154
+        }
+      },
+      "group": "divide_multilimb",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.00024937494890764356,
+          "max_seconds": 0.042444582970347255,
+          "median_seconds": 0.041607749997638166,
+          "min_seconds": 0.04101608297787607,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.0002231260295957327,
+          "max_seconds": 0.04376041598152369,
+          "median_seconds": 0.04216191702289507,
+          "min_seconds": 0.04176195798208937,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 8.900003740563989e-05,
+          "max_seconds": 0.03347650001524016,
+          "median_seconds": 0.03312308300519362,
+          "min_seconds": 0.03303191700251773,
+          "samples": 9
+        }
+      },
+      "name": "divide_multilimb_1125d_1012d_s1125_x438",
+      "parameters": {
+        "dividend_digits": 1125,
+        "divisor_digits": 1012,
+        "iterations": 438,
+        "scale": 1125
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.8835428989042944,
+            0.9717862187758644
+          ],
+          "median_paired_ratio": 0.9623043821402013,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.9658179567110778
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            1.6386346938803302,
+            1.8126766642763996
+          ],
+          "median_paired_ratio": 1.797763511645857,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.7982785428892853
+        }
+      },
+      "group": "modulo",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.00034237507497891784,
+          "max_seconds": 0.060980916023254395,
+          "median_seconds": 0.056338375026825815,
+          "min_seconds": 0.05585916596464813,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.0005814589676447213,
+          "max_seconds": 0.06901862501399592,
+          "median_seconds": 0.05833229195559397,
+          "min_seconds": 0.05775083298794925,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00011479196837171912,
+          "max_seconds": 0.10941025003558025,
+          "median_seconds": 0.10489770898129791,
+          "min_seconds": 0.10478291701292619,
+          "samples": 9
+        }
+      },
+      "name": "modulo_1125d_393d_x2625",
+      "parameters": {
+        "dividend_digits": 1125,
+        "divisor_digits": 393,
+        "iterations": 2625
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.9581989160649339,
+            0.9724380786075933
+          ],
+          "median_paired_ratio": 0.9672625853654782,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.9623305652400281
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            1.13472886131469,
+            1.1476078094722653
+          ],
+          "median_paired_ratio": 1.1423128126831936,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.1388110226286694
+        }
+      },
+      "group": "power",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.00017954205395653844,
+          "max_seconds": 0.042947666021063924,
+          "median_seconds": 0.03872241702629253,
+          "min_seconds": 0.03850283398060128,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.00026066601276397705,
+          "max_seconds": 0.04210491699632257,
+          "median_seconds": 0.0402381659951061,
+          "min_seconds": 0.03984737501014024,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00016441696789115667,
+          "max_seconds": 0.048337833024561405,
+          "median_seconds": 0.04582366696558893,
+          "min_seconds": 0.0455181670258753,
+          "samples": 9
+        }
+      },
+      "name": "power_112d_e17_x875",
+      "parameters": {
+        "digits": 112,
+        "exponent": 17,
+        "iterations": 875
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.881570326958183,
+            0.9046335045508354
+          ],
+          "median_paired_ratio": 0.8927756552499927,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.8952993757625174
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            1.1916636742792608,
+            1.211990410055342
+          ],
+          "median_paired_ratio": 1.197686308685597,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.2033240789581767
+        }
+      },
+      "group": "power",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 9.924900950863957e-05,
+          "max_seconds": 0.014529458014294505,
+          "median_seconds": 0.01342441700398922,
+          "min_seconds": 0.013297166035044938,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 8.308305405080318e-05,
+          "max_seconds": 0.015702292032074183,
+          "median_seconds": 0.014994333032518625,
+          "min_seconds": 0.01489004195900634,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 5.0499977078288794e-05,
+          "max_seconds": 0.018168582988437265,
+          "median_seconds": 0.01804304198594764,
+          "min_seconds": 0.017946582986041903,
+          "samples": 9
+        }
+      },
+      "name": "power_22d_e32_x1750",
+      "parameters": {
+        "digits": 22,
+        "exponent": 32,
+        "iterations": 1750
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.7269181059535966,
+            0.7742922271787089
+          ],
+          "median_paired_ratio": 0.7387449760642515,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.7551750343764767
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            0.5994601074323576,
+            0.615218962855599
+          ],
+          "median_paired_ratio": 0.6112489975552611,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.6126042773224492
+        }
+      },
+      "group": "literal_base",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.00037187401903793216,
+          "max_seconds": 0.015195707965176553,
+          "median_seconds": 0.014689916977658868,
+          "min_seconds": 0.014046208001673222,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.0001293760142289102,
+          "max_seconds": 0.02036900003440678,
+          "median_seconds": 0.01945233397418633,
+          "min_seconds": 0.019246332987677306,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 7.587397703900933e-05,
+          "max_seconds": 0.012238916999194771,
+          "median_seconds": 0.011916582996491343,
+          "min_seconds": 0.011721041984856129,
+          "samples": 9
+        }
+      },
+      "name": "ibase_literal_flip_17500",
+      "parameters": {
+        "bases": [
+          2,
+          10
+        ],
+        "iterations": 17500
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.8414930279885563,
+            0.8530598005531274
+          ],
+          "median_paired_ratio": 0.8448683363811701,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.8482069753966472
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            0.42456229514692867,
+            0.4323297446643828
+          ],
+          "median_paired_ratio": 0.4280680896331524,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.4280523919145203
+        }
+      },
+      "group": "recursion",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.00012104201596230268,
+          "max_seconds": 0.029531374981161207,
+          "median_seconds": 0.02889000001596287,
+          "min_seconds": 0.02869179198751226,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 3.62089485861361e-05,
+          "max_seconds": 0.03444962500361726,
+          "median_seconds": 0.03406008303863928,
+          "min_seconds": 0.03393616701941937,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 6.045796908438206e-05,
+          "max_seconds": 0.015305791981518269,
+          "median_seconds": 0.014579500013496727,
+          "min_seconds": 0.014475999982096255,
+          "samples": 9
+        }
+      },
+      "name": "recursion_56_x875",
+      "parameters": {
+        "depth": 56,
+        "iterations": 875
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.5953559228799794,
+            0.6058801905227946
+          ],
+          "median_paired_ratio": 0.6019265623891651,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.5986991251464298
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            0.5162113092146488,
+            0.523317161914694
+          ],
+          "median_paired_ratio": 0.5190464994976521,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.5195279305471056
+        }
+      },
+      "group": "array_sparse",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.0007736670086160302,
+          "max_seconds": 0.10240012500435114,
+          "median_seconds": 0.10072883300017565,
+          "min_seconds": 0.09981341700768098,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.0004002090427093208,
+          "max_seconds": 0.22052941599395126,
+          "median_seconds": 0.16824616701342165,
+          "min_seconds": 0.1671107080182992,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.000299417064525187,
+          "max_seconds": 0.08849816699512303,
+          "median_seconds": 0.08740858297096565,
+          "min_seconds": 0.08691462501883507,
+          "samples": 9
+        }
+      },
+      "name": "sparse_array_175000",
+      "parameters": {
+        "iterations": 175000,
+        "keys": 31,
+        "stride": 313
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.986226043308247,
+            1.0085521484613018
+          ],
+          "median_paired_ratio": 1.0044708613089979,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.0017651616749097
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            0.29885771671840755,
+            0.3083341025890962
+          ],
+          "median_paired_ratio": 0.30114647531793803,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.3027965189187148
+        }
+      },
+      "group": "frontend_definition",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.0001023329677991569,
+          "max_seconds": 0.017179417016450316,
+          "median_seconds": 0.016812207992188632,
+          "min_seconds": 0.016697874991223216,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 5.037500523030758e-05,
+          "max_seconds": 0.01721062499564141,
+          "median_seconds": 0.016782584018073976,
+          "min_seconds": 0.01663550001103431,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 4.675000673159957e-05,
+          "max_seconds": 0.005936041998211294,
+          "median_seconds": 0.005081708019133657,
+          "min_seconds": 0.0049822909641079605,
+          "samples": 9
+        }
+      },
+      "name": "frontend_definitions_1750",
+      "parameters": {
+        "definitions": 1750
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.9979278959252996,
+            1.0055563598305381
+          ],
+          "median_paired_ratio": 1.0008754989919892,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.0037139630465917
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            0.026218765838596867,
+            0.028375348862892353
+          ],
+          "median_paired_ratio": 0.02732380691946583,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.02735107092068707
+        }
+      },
+      "group": "decimal_input",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.0005858750664629042,
+          "max_seconds": 0.212612499948591,
+          "median_seconds": 0.20717225002590567,
+          "min_seconds": 0.2059042920009233,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.0002880840329453349,
+          "max_seconds": 0.214068999979645,
+          "median_seconds": 0.20640566700603813,
+          "min_seconds": 0.20600483298767358,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 8.683395572006702e-05,
+          "max_seconds": 0.005883042002096772,
+          "median_seconds": 0.005645416036713868,
+          "min_seconds": 0.005387250042986125,
+          "samples": 9
+        }
+      },
+      "name": "decimal_input_4500d_x88",
+      "parameters": {
+        "digits": 4500,
+        "literals": 88
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.9624159636016008,
+            1.0240216658961911
+          ],
+          "median_paired_ratio": 0.9952700143706914,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.9735030301447046
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            0.4416735528994117,
+            0.4736984590149176
+          ],
+          "median_paired_ratio": 0.4612168424586953,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.4558378224059183
+        }
+      },
+      "group": "decimal_output",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 6.437505362555385e-05,
+          "max_seconds": 0.012389916984830052,
+          "median_seconds": 0.01060262497048825,
+          "min_seconds": 0.01051724998978898,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.00020391703583300114,
+          "max_seconds": 0.012118584010750055,
+          "median_seconds": 0.010891209007240832,
+          "min_seconds": 0.010597874992527068,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 5.858403164893389e-05,
+          "max_seconds": 0.005916625028476119,
+          "median_seconds": 0.004964624997228384,
+          "min_seconds": 0.004688290995545685,
+          "samples": 9
+        }
+      },
+      "name": "decimal_output_225d_x875",
+      "parameters": {
+        "digits": 225,
+        "lines": 875
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "gd-inline-workspace": {
+          "ci95": [
+            0.964348056867525,
+            0.9814736675703977
+          ],
+          "median_paired_ratio": 0.9714387867982848,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.9728691353041196
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            0.3196561929068907,
+            0.3294587963581427
+          ],
+          "median_paired_ratio": 0.3281210750309198,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.3273519680916087
+        }
+      },
+      "group": "streaming",
+      "implementations": {
+        "gd-inline-workspace": {
+          "mad_seconds": 0.0002745410311035812,
+          "max_seconds": 0.08315070800017565,
+          "median_seconds": 0.08230095898034051,
+          "min_seconds": 0.08201983303297311,
+          "samples": 9
+        },
+        "gd-workspace-parent": {
+          "mad_seconds": 0.0003378340043127537,
+          "max_seconds": 0.08956124994438142,
+          "median_seconds": 0.08459612500155345,
+          "min_seconds": 0.08417395903961733,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.0004059999482706189,
+          "max_seconds": 0.06529854197287932,
+          "median_seconds": 0.027692708012182266,
+          "min_seconds": 0.02679066703421995,
+          "samples": 9
+        }
+      },
+      "name": "streaming_statements_17500",
+      "parameters": {
+        "output_lines": 17500,
+        "statements": 35001,
+        "termination": "EOF"
+      }
+    }
+  ]
+}

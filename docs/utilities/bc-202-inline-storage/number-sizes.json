@@ -1,0 +1,54 @@
+[
+  {
+    "number_bytes": 24,
+    "name": "parent",
+    "command": [
+      "/usr/bin/c++",
+      "-DENABLE_EXTENSIONS=1",
+      "-I/private/tmp/gd-bc-202-parent-release/source/src/include",
+      "-I/private/tmp/gd-bc-202-parent-release/build/src/bc",
+      "-I/private/tmp/gd-bc-202-parent-release/source/libgdsup/include",
+      "-I/private/tmp/gd-bc-202-parent-release/source/src/bc",
+      "-O3",
+      "-DNDEBUG",
+      "-std=gnu++20",
+      "-flto=thin",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-Wno-gnu-zero-variadic-macro-arguments",
+      "-Wno-deprecated-declarations",
+      "/private/tmp/gd-bc-202-sizes/probe.cc",
+      "-o",
+      "/private/tmp/gd-bc-202-sizes/parent"
+    ],
+    "source_revision": "be6980152a6d0519454e7bc3ff03ea78cff0f69d"
+  },
+  {
+    "number_bytes": 32,
+    "name": "inline",
+    "command": [
+      "/usr/bin/c++",
+      "-DENABLE_EXTENSIONS=1",
+      "-I/private/tmp/gd-bc-202-inline-release/source/src/include",
+      "-I/private/tmp/gd-bc-202-inline-release/build/src/bc",
+      "-I/private/tmp/gd-bc-202-inline-release/source/libgdsup/include",
+      "-I/private/tmp/gd-bc-202-inline-release/source/src/bc",
+      "-O3",
+      "-DNDEBUG",
+      "-std=gnu++20",
+      "-flto=thin",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-Wno-gnu-zero-variadic-macro-arguments",
+      "-Wno-deprecated-declarations",
+      "/private/tmp/gd-bc-202-sizes/probe.cc",
+      "-o",
+      "/private/tmp/gd-bc-202-sizes/inline"
+    ],
+    "source_revision": "c3a769a212c7be347a92f7fc2d9108005eea75e9"
+  }
+]

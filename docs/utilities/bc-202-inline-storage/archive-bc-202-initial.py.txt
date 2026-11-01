@@ -1,0 +1,32 @@
+import gzip,json,shutil
+from pathlib import Path
+out=Path('/private/tmp/gd-posix-inline-limbs/docs/utilities/bc-202-inline-storage');out.mkdir(exist_ok=True)
+(out/'.gitattributes').write_text('*.csv -text whitespace=cr-at-eol\n*-size.txt -text whitespace=-blank-at-eol\n')
+for preset in ('full','holdout'):
+ source=Path('/private/tmp/gd-bc-202-inline-'+preset)
+ for name in ('manifest.json','samples.csv','summary.json'):
+  shutil.copyfile(source/name,out/('initial-'+preset+'-'+name))
+for variant in ('views','identity'):
+ source=Path('/private/tmp/gd-bc-202-'+variant+'-smoke')
+ for name in ('manifest.json','samples.csv','summary.json'):
+  shutil.copyfile(source/name,out/(variant+'-smoke-'+name))
+for collection in ('counters','views-counters','identity-counters'):
+ source=Path('/private/tmp/gd-bc-202-'+collection)
+ data={'manifest':json.loads((source/'manifest.json').read_text()),'profiles':{}}
+ for directory in source.iterdir():
+  if directory.is_dir():
+   data['profiles'][directory.name]={p.stem:json.loads(p.read_text()) for p in directory.glob('*.json')}
+ (out/(collection+'.json.gz')).write_bytes(gzip.compress(json.dumps(data,sort_keys=True).encode(),mtime=0))
+for name in ('parent','inline'):
+ for group in ('div','array'):
+  source=Path('/private/tmp/gd-bc-202-'+name+'-'+group+'-profile-2')
+  target=out/(name+'-'+group+'-diagnostic');target.mkdir(exist_ok=True)
+  for path in source.iterdir():
+   if path.suffix=='.bc':continue # Program SHA and original source retained by corpus.
+   if path.name.endswith('.sample.txt'):
+    (target/(path.name+'.gz')).write_bytes(gzip.compress(path.read_bytes(),mtime=0))
+   else:shutil.copyfile(path,target/path.name)
+shutil.copyfile('/private/tmp/gd-bc-202-sizes/sizes.json',out/'number-sizes.json')
+for script in ('bc-202-size-probe.py','bc-202-counters.py','bc-202-views-counters.py','bc-202-identity-counters.py'):
+ shutil.copyfile('/private/tmp/'+script,out/(script+'.txt'))
+print('Archived initial and bounded diagnostic evidence')

@@ -1,0 +1,60 @@
+{
+  "performance_gate": "advisory; no aggregate or hard timing threshold",
+  "reference": "base",
+  "schema": 1,
+  "workloads": [
+    {
+      "candidate_over_reference": {
+        "candidate": {
+          "ci95": [
+            1.089622857198631,
+            1.1053698734137423
+          ],
+          "median_paired_ratio": 1.1033433918414142,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.1017848695650132
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            1.655524334854707,
+            1.7006801610922047
+          ],
+          "median_paired_ratio": 1.676605358952403,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.6726610704127787
+        }
+      },
+      "group": "sqrt",
+      "implementations": {
+        "base": {
+          "mad_seconds": 0.000744209000004048,
+          "max_seconds": 0.04940770899997915,
+          "median_seconds": 0.0486634999999751,
+          "min_seconds": 0.04609741700005543,
+          "samples": 9
+        },
+        "candidate": {
+          "mad_seconds": 0.0009947080000074493,
+          "max_seconds": 0.054611416000057034,
+          "median_seconds": 0.053616708000049584,
+          "min_seconds": 0.05068825000000743,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.000424332999955368,
+          "max_seconds": 0.12869724999995924,
+          "median_seconds": 0.08139754199999061,
+          "min_seconds": 0.07755033299997649,
+          "samples": 9
+        }
+      },
+      "name": "sqrt_scale100_x5000",
+      "parameters": {
+        "iterations": 5000,
+        "scale": 100
+      }
+    }
+  ]
+}
