@@ -230,6 +230,63 @@ class PairedStatistics(unittest.TestCase):
             self.fail("benchmark module starts its CLI while being imported")
         return module
 
+    def test_stale_declared_binary_identity_is_rejected(self):
+        module = self.module()
+        actual = hashlib.sha256(Path(sys.executable).read_bytes()).hexdigest()
+        with tempfile.TemporaryDirectory() as temporary:
+            config = Path(temporary) / 'implementations.json'
+            for location in ('metadata', 'entry', 'contradictory'):
+                with self.subTest(location=location):
+                    entry = dict(name='fixture', argv=[sys.executable],
+                                 metadata={'instrumented': False})
+                    if location == 'metadata':
+                        entry['metadata']['binary_sha256'] = '0' * 64
+                    else:
+                        entry['binary_sha256'] = '0' * 64
+                    if location == 'contradictory':
+                        entry['metadata']['binary_sha256'] = actual
+                    config.write_text(json.dumps(dict(implementations=[entry])))
+                    with self.assertRaisesRegex(module.BenchmarkError, 'binary.*hash'):
+                        module.implementations(config)
+
+    def test_strict_binary_provenance_requires_a_declared_identity(self):
+        module = self.module()
+        with tempfile.TemporaryDirectory() as temporary:
+            config = Path(temporary) / 'implementations.json'
+            entry = dict(name='fixture', argv=[sys.executable],
+                         metadata=dict(source_revision='unit-fixture', compiler='unit-fixture',
+                                       flags='unit-fixture', version='unit-fixture', instrumented=False))
+            config.write_text(json.dumps(dict(implementations=[entry])))
+            with self.assertRaisesRegex(module.BenchmarkError, 'provenance'):
+                module.implementations(config, True)
+            actual = hashlib.sha256(Path(sys.executable).read_bytes()).hexdigest()
+            entry['metadata']['binary_sha256'] = actual
+            config.write_text(json.dumps(dict(implementations=[entry])))
+            controlled, = module.implementations(config, True)
+            self.assertTrue(controlled['complete_provenance'])
+            self.assertEqual(controlled['binary_sha256'], entry['metadata']['binary_sha256'])
+            del entry['metadata']['binary_sha256']
+            entry['binary_sha256'] = actual.upper()
+            config.write_text(json.dumps(dict(implementations=[entry])))
+            controlled, = module.implementations(config, True)
+            self.assertTrue(controlled['complete_provenance'])
+            self.assertEqual(controlled['binary_sha256'], actual)
+            entry['metadata']['binary_sha256'] = 'malformed'
+            config.write_text(json.dumps(dict(implementations=[entry])))
+            with self.assertRaisesRegex(module.BenchmarkError, 'binary.*hash'):
+                module.implementations(config)
+
+    def test_installed_fallback_preserves_observed_identity_without_controlled_provenance(self):
+        module = self.module()
+        with tempfile.TemporaryDirectory() as temporary:
+            config = Path(temporary) / 'implementations.json'
+            config.write_text(json.dumps(dict(implementations=[dict(
+                name='installed', role='installed', argv=[sys.executable])])))
+            entry, = module.implementations(config, True)
+            self.assertFalse(entry['complete_provenance'])
+            actual = hashlib.sha256(Path(sys.executable).read_bytes()).hexdigest()
+            self.assertEqual(entry['binary_sha256'], actual)
+
     def test_legacy_full_corpus_retains_its_programs_and_oracles(self):
         module = self.module()
         baseline = Path(__file__).resolve().parents[2] / (
