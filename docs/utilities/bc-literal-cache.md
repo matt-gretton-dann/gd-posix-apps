@@ -21,7 +21,8 @@ scale changes.
 
 Each Instruction adds one unique owning pointer, including nonnumeric code.
 Only executed multi-character literals allocate a memo; a base miss replaces
-its Number in place. The pointer and payload costs are measured separately.
+its Number in place. On the measured 64-bit Apple host, Instruction grows from 104 to 112 bytes
+and Number remains 40 bytes. Each allocated memo requests 48 payload bytes.
 Copying instructions copies source operands and starts a fresh empty memo;
 activation packs borrow their function code and do not copy or clear it.
 Independent code copies therefore do not share mutable caches. Reusing the same
@@ -34,5 +35,11 @@ requested bytes, not process RSS. All caches are released with their instruction
 storage when code is replaced or the VM is destroyed.
 
 Baseline semantic tests precede implementation: fifteen CLI cases plus direct
-re-execution after operand replacement. Exact performance and memory results are
-pending; #205 remains open until the paired evaluation is complete.
+re-execution after operand replacement. All 74 full-corpus diagnostic runs pass their exact output checks and balance
+selected allocations at EOF. Loop/call literal conversions fall from
+2,000,003/600,003 to one each. Base-flip conversions fall from 120,003 to 40,001,
+with two memo allocations reused across all changes. Selected loop/call peaks
+increase from 5,040/7,288 to 5,424/7,704 bytes; the repeated 2,000-digit literal
+peak falls from 9,596 to 8,536. These costs are explicit rather than a blanket
+memory-reduction claim. The [paired evaluation](bc-205-literal-cache/README.md) retains all full and
+held-out results, native artifacts and inconclusive division repeats; #205 remains open until the paired evaluation is complete.

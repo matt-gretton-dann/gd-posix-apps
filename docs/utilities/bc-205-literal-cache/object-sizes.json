@@ -1,0 +1,60 @@
+[
+  {
+    "instruction_bytes": 104,
+    "number_bytes": 40,
+    "role": "parent",
+    "command": [
+      "/usr/bin/c++",
+      "-DENABLE_EXTENSIONS=1",
+      "-I/private/tmp/gd-bc-202-integrated-release/source/src/include",
+      "-I/private/tmp/gd-bc-202-integrated-release/build/src/bc",
+      "-I/private/tmp/gd-bc-202-integrated-release/source/libgdsup/include",
+      "-I/private/tmp/gd-bc-202-integrated-release/source/src/bc",
+      "-O3",
+      "-DNDEBUG",
+      "-std=gnu++20",
+      "-flto=thin",
+      "-arch",
+      "arm64",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-Wno-gnu-zero-variadic-macro-arguments",
+      "-Wno-deprecated-declarations",
+      "/private/tmp/gd-bc-205-cache-sizes/probe.cc",
+      "-o",
+      "/private/tmp/gd-bc-205-cache-sizes/parent"
+    ],
+    "source_revision": "58075b41a293a7d3f4cfbad308ff75997702e496"
+  },
+  {
+    "instruction_bytes": 112,
+    "number_bytes": 40,
+    "role": "candidate",
+    "command": [
+      "/usr/bin/c++",
+      "-DENABLE_EXTENSIONS=1",
+      "-I/private/tmp/gd-bc-205-cache-release/source/src/include",
+      "-I/private/tmp/gd-bc-205-cache-release/build/src/bc",
+      "-I/private/tmp/gd-bc-205-cache-release/source/libgdsup/include",
+      "-I/private/tmp/gd-bc-205-cache-release/source/src/bc",
+      "-O3",
+      "-DNDEBUG",
+      "-std=gnu++20",
+      "-flto=thin",
+      "-arch",
+      "arm64",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-Wno-gnu-zero-variadic-macro-arguments",
+      "-Wno-deprecated-declarations",
+      "/private/tmp/gd-bc-205-cache-sizes/probe.cc",
+      "-o",
+      "/private/tmp/gd-bc-205-cache-sizes/candidate"
+    ],
+    "source_revision": "f95455e053f5aef12a436ff2a1131eadedc780d6"
+  }
+]
