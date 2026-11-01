@@ -1,0 +1,3 @@
+__TEXT	__DATA	__OBJC	others	dec	hex
+278528	16384	0	4295147520	4295442432	100074000	/private/tmp/gd-bc-current-0868-release/build/src/bc/bc
+294912	16384	0	4295147520	4295458816	100078000	/private/tmp/gd-bc-207-verified-release/build/src/bc/bc
