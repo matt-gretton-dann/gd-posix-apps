@@ -93,7 +93,8 @@ auto name(Event which) noexcept -> char const*
                              "zero_scan_limbs",
                              "length_scan_limbs",
                              "blocked_multiply_calls",
-                             "result_validation_calls"};
+                             "result_validation_calls",
+                             "radix_output_divisions"};
   static_assert(names.size() == static_cast<std::size_t>(Event::count));
   return names[static_cast<std::size_t>(which)];
 }

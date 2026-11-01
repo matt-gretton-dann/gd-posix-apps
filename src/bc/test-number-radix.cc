@@ -146,3 +146,48 @@ TEMPLATE_TEST_CASE("Runtime-base output agrees with independent decimal division
     }
   }
 }
+
+#if GD_BC_PROFILE
+TEMPLATE_TEST_CASE("Radix output groups reduce whole-coefficient divisions",
+                   "[bc][number][radix-output-profile]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  std::string const decimal(100, '7');
+  Number const value(decimal, 10);
+  auto const expected = radix_reference(decimal, 16);
+  auto count = []() {
+    return GD::Bc::Profile::snapshot()
+      .events[static_cast<std::size_t>(GD::Bc::Profile::Event::radix_output_divisions)];
+  };
+  auto const before = count();
+  std::ostringstream output;
+  value.output(output, 16, 0);
+  auto const divides = count() - before;
+  CHECK(unwrap_radix(output.str()) == expected);
+  if constexpr (Number::base_ > 256)
+    CHECK(divides < expected.size() / 2);
+  else
+    CHECK(divides == expected.size());  // Narrow-trait scalar fallback.
+}
+#endif
+
+TEMPLATE_TEST_CASE("Large space-separated output retains the generic path",
+                   "[bc][number][radix-output]", GD::Bc::NumberTraits8, GD::Bc::NumberTraits16,
+                   GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  using N = typename Number::NumType;
+  for (auto const& fixture : std::array<std::pair<unsigned, char const*>, 2>{
+         std::pair<unsigned, char const*>{20, "1073741824000000000000000000000000000000"},
+         std::pair<unsigned, char const*>{
+           99, "739700373388280422730015092316714942252676262352676444347001"}}) {
+    Number const value(fixture.second, N(10));
+    std::string expected = " 01";
+    for (unsigned i = 0; i < 30; ++i)
+      expected += " 00";
+    std::ostringstream output;
+    value.output(output, N(fixture.first), 0);
+    CHECK(unwrap_radix(output.str()) == expected);
+  }
+}
