@@ -138,8 +138,10 @@ the raw lookup also preserves the old alphabet terminator index. CLI token
 validation is unchanged. An exhaustive 256-byte comparison against the previous
 search checks the mapping, independently of the arithmetic value oracles.
 
-Actual conversion measurements and native acceptance are still required; this
-candidate is not an asserted speedup. Decimal chunk decoding retains its measured
+[Combined-source conversion measurements](bc-206-combined-conversion/README.md)
+retain the indexed decoder and fixed-buffer formatter results, including the
+earlier held decimal loss. Final native acceptance is still required.
+Decimal chunk decoding retains its measured
 arithmetic fast path, and single decimal digits retain the direct scalar path.
 
 ## Diagnostic divide-and-conquer components
