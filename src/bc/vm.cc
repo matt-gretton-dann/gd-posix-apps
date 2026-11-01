@@ -105,9 +105,18 @@ struct VMState
   [[nodiscard]] auto scale() const -> Number::NumType;
 
   /** \brief  Get the number stored in the array element ae.  */
-  [[nodiscard]] auto array_element(ArrayElement const& ae) const -> Number;
+  // Keep container-specific work outside scalar dispatch on GCC. Native Linux
+  // measurements exposed broad regressions after the storage layout changed.
+  [[nodiscard]]
+#if defined(__GNUC__) && !defined(__clang__)
+  __attribute__((noinline))
+#endif
+  auto array_element(ArrayElement const& ae) const -> Number;
 
   /** \brief  Store a number in an array eleemnt.  */
+#if defined(__GNUC__) && !defined(__clang__)
+  __attribute__((noinline))
+#endif
   void array_element(ArrayElement const& ae, Number const& num);
 
   [[nodiscard]] auto variable(Variable v) const -> Number const&;
