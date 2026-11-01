@@ -54,11 +54,12 @@ as described below; an unselected suite is never a performance pass.
 `--suite math` selects sixty one-shot/repeated cases: all six public functions
 at scales20/100/1000, plus Bessel turning, order-dominated, argument-dominated
 and near-root regimes. Quick mode uses scales2/20/100. Held-out inputs use
-different regular arguments or exact integer-order Bessel symmetries, with
+different argument magnitudes and Bessel orders, with
 different repeated-call counts. Names and parameters retain each actual input,
-scale, call count and mode. These fixed counts are **not calibrated**; short
-cases do not establish a substantive timing advantage. Duration calibration
-and correlation-aware uncertainty remain separate issue #216 work.
+scale, call count and mode. Default fixed counts are **not calibrated**; short
+cases do not establish a substantive timing advantage. Use the explicit
+calibration/replay protocol below when substantive repeated-call duration is
+required.
 
 Each configured command must load its chosen library explicitly. For example:
 
@@ -92,6 +93,60 @@ and the reference fixture. Ordinary arithmetic `.expected` artifacts retain
 their previous exact-output format. Larger arguments and scales remain in
 the broader accuracy corpus even when omitted from this bounded timing subset.
 This harness support alone makes no competitive-performance claim.
+
+The held-out mathematical inputs use independently certified enclosures for
+1.125 regular arguments, log(2.25), Bessel turning/order/argument cases at
+(23,22.5), (113,1.125), (1,112.5), and a near-root order-one case. These replace
+the initial sign/symmetry-only held-out shapes before native math timing.
+The sixty full cases retain their exact program/oracle/parameter dictionaries,
+verified against the recorded pre-change hashes. The dedicated benchmark
+fixture contains eighty full/held-out enclosures across four scales; the
+broader mathematical correctness corpus remains a separate scope.
+
+## Calibrate once and replay frozen dimensions
+
+`--calibrate-seconds 0.1` calibrates repeated math cases separately for each
+configured role. Starting at two calls, double the count until the median of
+three checked fresh processes reaches the target, subject to the explicit
+`--calibration-max-iterations` cap and per-process timeout. Freeze the largest
+required count as the common count for every role. One-shot latency cases are
+kept at one call. No paired measurement is used to select a count.
+
+`--calibrate-only` writes the validated setup, calibration trials, frozen
+programs, oracles and manifest without paired samples. Subsequent A/A controls,
+primary comparisons and bounded confirmations can use `--replay-corpus DIR`.
+Replay verifies every program/oracle hash and retains the original preset,
+operand seed, input transport and actual dimensions. It neither regenerates
+inputs nor recalibrates counts. Supply the original suite explicitly.
+
+```sh
+python3 src/bc/scripts/bench-bc.py --suite math --config math-implementations.json \
+  --output build/math-prepared --calibrate-seconds 0.1 --calibrate-only
+python3 src/bc/scripts/bench-bc.py --suite math --config math-implementations.json \
+  --replay-corpus build/math-prepared --output build/math-measured \
+  --samples 15 --warmups 3
+```
+
+Calibration and paired samples are separate artifacts. A cap or timeout failure
+retains its checked partial trials, exact programs and validated setup. A later
+measured median below the target is recorded as a duration shortfall; the
+harness does not change counts or rerun until favorable. Such a class does not
+establish substantive-duration acceptance. Counts calibrated on one machine
+need not meet the target on another; report actual measured adequacy.
+
+Ordinary library files passed in a role's argv can be declared explicitly:
+
+```json
+"input_artifacts": [{"path": "/path/to/math-library.bc",
+                     "sha256": "ACTUAL_64_HEXADECIMAL_DIGITS", "purpose": "ordinary library"}]
+```
+
+Each declaration must identify an actual argv file and match its bytes. The
+harness archives it and rechecks it before each invocation, outside the timer.
+This preserves the portable-source comparison's actual library identity;
+the executable hash alone cannot identify an additional source file. File
+validation warms caches, so these are process/preload measurements without a
+cold-filesystem claim. Commands still choose their libraries normally.
 
 ## Archived evidence byte stability
 
@@ -147,15 +202,30 @@ Both seeds, exact programs, parameters and oracle hashes are preserved.
 
 Each implementation gets median/min/max wall time and median absolute
 deviation. Comparisons report both the ratio of medians and the median paired
-ratio. The approximate 95% paired percentile-bootstrap interval resamples whole
-paired ratios using the recorded seed. Fewer than three pairs have no confidence
-interval; the default nine pairs are still observations on the recorded host,
-not a guarantee about another machine. No aggregate score or hard timing gate
-is produced. Keep losing cases visible and use separate A/A runs to understand
-noise before introducing CI regression thresholds (#216).
+ratio. Two nominal 95% percentile-bootstrap intervals use the recorded seed:
+IID resampling of whole paired ratios and circular resampling of neighboring
+paired rounds in blocks. The prespecified block length is
+`max(2, floor(sqrt(pair_count)))`. Both intervals and lag-one correlation are
+reported. The final interval is their union, so it cannot become narrower than
+the IID interval. Constant series with sufficient pairs have zero reported
+lag-one correlation.
+
+The block design follows the general circular-resampling approach of
+[Politis and Romano](https://statistics.stanford.edu/technical-reports/circular-block-resampling-procedure-stationary-data).
+The block-length choice and union rule are this harness's explicit protocol;
+they are not an optimal-length claim or a finite-sample coverage theorem.
+Fewer than three pairs have no interval. Small samples, nonstationary host
+noise and drift remain limitations, and a small observed correlation does not
+prove independence. Keep A/A controls and noisy/inconclusive outcomes visible.
+No aggregate score or hard timing pass is produced.
 
 Artifacts:
 
+- `setup.json`: validated identities before calibration/trials, retained on
+  bounded calibration failure.
+- `calibration/`: separate checked diagnostic trials, exact programs/oracles
+  and the frozen count decision, when requested.
+- `declared-inputs/`: archived argv-file payloads with verified hashes.
 - `manifest.json`: argv, binary hashes, declared build metadata, platform/clock,
   environment, seeds and exact corpus/oracle hashes.
 - `workloads/*.bc` and `*.expected`: exact UTF-8 LF payload bytes matching the
@@ -165,6 +235,16 @@ Artifacts:
 - `summary.json`: per-case dispersion and paired comparisons, after success.
 
 ## Source and build provenance
+
+When a recipe declares `binary_sha256` in its metadata or normalized entry,
+the harness checks that identity against the actual executable before running.
+Every provided declaration must agree; conflicting or malformed hashes fail.
+Controlled `--require-provenance` runs need a matching declaration as well as
+source/compiler/flags/version metadata and an uninstrumented binary. A supplied
+installed comparator without a declared identity still records its actual hash,
+but does not gain controlled provenance. Hash agreement checks the executable
+identity; the preserved build recipe remains the evidence for its source and
+compiler configuration.
 
 The minimal configuration above is suitable for exploratory correctness checks.
 Controlled competitive runs require `--require-provenance` and actual per-entry

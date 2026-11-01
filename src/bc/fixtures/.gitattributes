@@ -7,3 +7,5 @@ math-crossover-oracles.json -text
 math-imported-bessel.bc text eol=lf
 math-imported-atan.bc text eol=lf
 math-library-decisions.json -text
+math-benchmark-cases.json text eol=lf
+math-benchmark-oracles.json -text
