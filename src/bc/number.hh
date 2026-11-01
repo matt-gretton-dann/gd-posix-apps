@@ -351,7 +351,10 @@ public:
     // sixteen on the scalar path. Long alphabetic output can divide once per
     // native group instead of once per printed character.
     if (obase <= 16 && whole.digits_ && whole.digits_->size() >= 4) {
-      while (division_base <= (base_ - 1) / obase) {
+      // The quotient is <= base_-1, which fits NumType. Name it in that type
+      // so small-trait integer promotion cannot obscure the product bound.
+      NumType const largest_factor = static_cast<NumType>((base_ - 1) / obase);
+      while (division_base <= largest_factor) {
         division_base = static_cast<NumType>(division_base * obase);
         ++group_width;
       }
