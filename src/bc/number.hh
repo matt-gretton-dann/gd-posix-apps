@@ -1190,9 +1190,30 @@ private:
   {
     if (std::distance(lhs_begin, lhs_end) <= multiply_split_point_ ||
         std::distance(rhs_begin, rhs_end) <= multiply_split_point_) {
+      if constexpr (LimbSquare<Traits>::supported) {
+        // Keep the ordinary schoolbook body unchanged. Recognition belongs to
+        // dispatch, before either coefficient kernel allocates its output.
+        if (lhs_end - lhs_begin > 1 && std::to_address(lhs_begin) == std::to_address(rhs_begin) &&
+            lhs_end - lhs_begin == rhs_end - rhs_begin) {
+          return square_basic(lhs_begin, lhs_end);
+        }
+      }
       return multiply_basic(lhs_begin, lhs_end, rhs_begin, rhs_end);
     }
     return multiply_workspace(lhs_begin, lhs_end, rhs_begin, rhs_end);
+  }
+
+  static auto square_basic(typename DigitVector::const_iterator first,
+                           typename DigitVector::const_iterator last) -> BasicDigits
+  {
+    auto const count = static_cast<std::size_t>(last - first);
+    BasicDigits result;
+    result.copy_on_write();
+    result.digits_->resize(2 * count + 2, 0);
+    LimbSquare<Traits>::multiply(
+      {std::to_address(first), count},
+      {std::to_address(result.digits_->begin()), result.digits_->size()});
+    return result;
   }
 
   static auto multiply_basic(typename DigitVector::const_iterator lhs_begin,
