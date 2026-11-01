@@ -1171,9 +1171,30 @@ private:
   {
     if (std::distance(lhs_begin, lhs_end) <= multiply_split_point_ ||
         std::distance(rhs_begin, rhs_end) <= multiply_split_point_) {
+      if constexpr (LimbSquare<Traits>::supported) {
+        // Keep the ordinary schoolbook body unchanged. Recognition belongs to
+        // dispatch, before either coefficient kernel allocates its output.
+        if (lhs_end - lhs_begin > 1 && std::to_address(lhs_begin) == std::to_address(rhs_begin) &&
+            lhs_end - lhs_begin == rhs_end - rhs_begin) {
+          return square_basic(lhs_begin, lhs_end);
+        }
+      }
       return multiply_basic(lhs_begin, lhs_end, rhs_begin, rhs_end);
     }
     return multiply_workspace(lhs_begin, lhs_end, rhs_begin, rhs_end);
+  }
+
+  static auto square_basic(typename DigitVector::const_iterator first,
+                           typename DigitVector::const_iterator last) -> BasicDigits
+  {
+    auto const count = static_cast<std::size_t>(last - first);
+    BasicDigits result;
+    result.copy_on_write();
+    result.digits_->resize(2 * count + 2, 0);
+    LimbSquare<Traits>::multiply(
+      {std::to_address(first), count},
+      {std::to_address(result.digits_->begin()), result.digits_->size()});
+    return result;
   }
 
   static auto multiply_basic(typename DigitVector::const_iterator lhs_begin,
@@ -1181,14 +1202,13 @@ private:
                              typename DigitVector::const_iterator rhs_begin,
                              typename DigitVector::const_iterator rhs_end) -> BasicDigits
   {
+    GD_BC_PROFILE_EVENT(Profile::Event::basic_multiply_calls, 1);
     /* Handle the case of nothing to multiply by - equivalent to multiplying by zero.  */
     if (lhs_begin == lhs_end || rhs_begin == rhs_end) {
-      GD_BC_PROFILE_EVENT(Profile::Event::basic_multiply_calls, 1);
       return BasicDigits();
     }
 
     if (lhs_end == lhs_begin + 1) {
-      GD_BC_PROFILE_EVENT(Profile::Event::basic_multiply_calls, 1);
       /* LHS is one digit use the Multiply accumulate function.  */
       BasicDigits r(rhs_begin, rhs_end);
       r.mac(*lhs_begin, 0);
@@ -1196,7 +1216,6 @@ private:
     }
 
     if (rhs_end == rhs_begin + 1) {
-      GD_BC_PROFILE_EVENT(Profile::Event::basic_multiply_calls, 1);
       /* RHS is one digit use the Multiply accumulate function.  */
       BasicDigits r(lhs_begin, lhs_end);
       r.mac(*rhs_begin, 0);
@@ -1210,17 +1229,6 @@ private:
     result.digits_->resize(result_size, 0);
     auto result_begin = result.digits_->begin();
 
-    if constexpr (LimbSquare<Traits>::supported) {
-      if (std::to_address(lhs_begin) == std::to_address(rhs_begin) &&
-          lhs_end - lhs_begin == rhs_end - rhs_begin) {
-        LimbSquare<Traits>::multiply(
-          {std::to_address(lhs_begin), static_cast<std::size_t>(lhs_end - lhs_begin)},
-          {std::to_address(result.digits_->begin()), result.digits_->size()});
-        return result;
-      }
-    }
-
-    GD_BC_PROFILE_EVENT(Profile::Event::basic_multiply_calls, 1);
     for (auto lhs_it = lhs_begin; lhs_it != lhs_end; ++lhs_it) {
       WideType carry = 0;
       auto result_it = result_begin++;
