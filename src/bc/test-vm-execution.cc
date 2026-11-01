@@ -20,12 +20,18 @@ using D = I::Offset;
 
 auto execute(GD::Bc::Instructions code) -> std::string
 {
-  std::ostringstream output;
-  std::ostringstream errors;
-  GD::Bc::VM vm(output, errors, false);
-  CHECK_FALSE(vm.execute(code));
-  CHECK(errors.str().empty());
-  return output.str();
+  auto run = [&code](GD::Bc::VM::ExecutionChecks checks) {
+    auto independent = code;  // Independent literal caches and activation state.
+    std::ostringstream output;
+    std::ostringstream errors;
+    GD::Bc::VM vm(output, errors, false, checks);
+    CHECK_FALSE(vm.execute(independent));
+    CHECK(errors.str().empty());
+    return output.str();
+  };
+  auto checked = run(GD::Bc::VM::ExecutionChecks::full);
+  CHECK(run(GD::Bc::VM::ExecutionChecks::verified) == checked);
+  return checked;
 }
 
 auto literal(GD::Bc::Instructions& code, int64_t value) -> D
@@ -181,10 +187,11 @@ TEST_CASE("VM conditional and unconditional branches select one output", "[bc][v
 
 TEST_CASE("VM special register stores survive instruction packs", "[bc][vm][execution]")
 {
+  auto checks = GENERATE(GD::Bc::VM::ExecutionChecks::full, GD::Bc::VM::ExecutionChecks::verified);
   for (O opcode : {O::scale, O::ibase, O::obase}) {
     std::ostringstream output;
     std::ostringstream errors;
-    GD::Bc::VM vm(output, errors, false);
+    GD::Bc::VM vm(output, errors, false, checks);
     GD::Bc::Instructions store{I(opcode), I(O::number, "16"), I(O::store, D(-2), D(-1)), I(O::eof)};
     CHECK_FALSE(vm.execute(store));
     GD::Bc::Instructions load{I(opcode), I(O::load, D(-1)), I(O::print, D(-1), I::Stream::output),
@@ -197,6 +204,7 @@ TEST_CASE("VM special register stores survive instruction packs", "[bc][vm][exec
 
 TEST_CASE("VM diagnostic printing accepts every public result alternative", "[bc][vm][execution]")
 {
+  auto checks = GENERATE(GD::Bc::VM::ExecutionChecks::full, GD::Bc::VM::ExecutionChecks::verified);
   for (auto stream : {I::Stream::output, I::Stream::error}) {
     GD::Bc::Instructions code;
     auto print = [&](I value) {
@@ -217,7 +225,7 @@ TEST_CASE("VM diagnostic printing accepts every public result alternative", "[bc
     code.emplace_back(O::eof);
     std::ostringstream output;
     std::ostringstream errors;
-    GD::Bc::VM vm(output, errors, false);
+    GD::Bc::VM vm(output, errors, false, checks);
     CHECK_FALSE(vm.execute(code));
     std::string const expected = "text\n42\na\nb\nb[2]\n<ARRAY VALUES>\nibase\nobase\nscale\n";
     CHECK(output.str() == (stream == I::Stream::output ? expected : ""));
@@ -228,6 +236,7 @@ TEST_CASE("VM diagnostic printing accepts every public result alternative", "[bc
 TEST_CASE("VM special-register saving is independent of the frontend option gate",
           "[bc][vm][execution][special-registers]")
 {
+  auto checks = GENERATE(GD::Bc::VM::ExecutionChecks::full, GD::Bc::VM::ExecutionChecks::verified);
   bool const save_specials = GENERATE(false, true);
   // -g is only a frontend extension; the VM constructor's mode remains a
   // callable contract in either build. Reset the radix before reading saved
@@ -241,7 +250,7 @@ TEST_CASE("VM special-register saving is independent of the frontend option gate
   REQUIRE(code != nullptr);
   std::ostringstream output;
   std::ostringstream errors;
-  GD::Bc::VM vm(output, errors, save_specials);
+  GD::Bc::VM vm(output, errors, save_specials, checks);
   CHECK_FALSE(vm.execute(*code));
   CHECK(output.str() == (save_specials ? "0\n2\n10\n10\n" : "0\n3\n16\n2\n"));
   CHECK(errors.str().empty());
@@ -250,6 +259,7 @@ TEST_CASE("VM special-register saving is independent of the frontend option gate
 TEST_CASE("Consumed parameters and terminal returns preserve snapshots",
           "[bc][vm][execution][ownership]")
 {
+  auto checks = GENERATE(GD::Bc::VM::ExecutionChecks::full, GD::Bc::VM::ExecutionChecks::verified);
   // For the recursive call, r(0)=N+3 and r(k)=N+(4-k)+r(k-1)+k,
   // giving r(3)=4*N+15. Both parameter/local restoration and the caller's
   // large scalar/array snapshots must survive moving consumed frame values.
@@ -260,7 +270,7 @@ TEST_CASE("Consumed parameters and terminal returns preserve snapshots",
     "1\nx\ny\ng(-1.2500)\nz\n";
   std::ostringstream output;
   std::ostringstream errors;
-  GD::Bc::VM vm(output, errors, false);
+  GD::Bc::VM vm(output, errors, false, checks);
   GD::Bc::Parser parser(
     std::make_unique<GD::Bc::Lexer>(std::make_unique<GD::Bc::StringReader>(source)), true);
   while (auto code = parser.parse()) {
@@ -278,9 +288,10 @@ TEST_CASE("Consumed parameters and terminal returns preserve snapshots",
 
 TEST_CASE("Repeated executable code observes replaced literal text", "[bc][vm][literal]")
 {
+  auto checks = GENERATE(GD::Bc::VM::ExecutionChecks::full, GD::Bc::VM::ExecutionChecks::verified);
   std::ostringstream output;
   std::ostringstream errors;
-  GD::Bc::VM vm(output, errors, false);
+  GD::Bc::VM vm(output, errors, false, checks);
   GD::Bc::Instructions code;
   code.emplace_back(O::number, std::string("123456789012345678901234567890"));
   code.emplace_back(O::print, D(-1), I::Stream::output);
@@ -293,3 +304,28 @@ TEST_CASE("Repeated executable code observes replaced literal text", "[bc][vm][l
                         "123456789012345678901234567890\n"
                         "987654321098765432109876543210\n");
 }
+
+#if GD_BC_PROFILE
+TEST_CASE("Verified execution omits only the result diagnostic switch",
+          "[bc][vm][verified-profile]")
+{
+  using Checks = GD::Bc::VM::ExecutionChecks;
+  auto count = [] {
+    return GD::Bc::Profile::snapshot()
+      .events[static_cast<std::size_t>(GD::Bc::Profile::Event::result_validation_calls)];
+  };
+  for (auto checks : {Checks::full, Checks::verified}) {
+    std::ostringstream output, errors;
+    GD::Bc::VM vm(output, errors, false, checks);
+    GD::Bc::Instructions code{I(O::number, "42"), I(O::print, D(-1), I::Stream::output), I(O::eof)};
+    auto before = count();
+    CHECK_FALSE(vm.execute(code));
+    CHECK(output.str() == "42\n");
+    CHECK(errors.str().empty());
+    if (checks == Checks::full)
+      CHECK(count() > before);
+    else
+      CHECK(count() == before);
+  }
+}
+#endif

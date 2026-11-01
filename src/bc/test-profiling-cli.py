@@ -60,6 +60,7 @@ class ProfilingCli(unittest.TestCase):
             self.assertGreater(counters['events'][event], 0, event)
         # Mutable iterator checks borrow their caller-owned vector.
         self.assertEqual(counters['events']['iterator_owner_copies'], 0)
+        self.assertEqual(counters['events']['result_validation_calls'], 0)
 
     def test_power_has_no_unused_terminal_square(self):
         # Small exact powers isolate binary exponentiation from recursive
