@@ -36,6 +36,7 @@ add_custom_target("util_messages" ALL DEPENDS "util.msg.stamp")
 if(RUN_UNIT_TESTS)
   target_sources(test-util PRIVATE
     tests/test-for-each-file.cc
+    tests/test-stream-input.cc
     tests/test-program-name.cc
     tests/test-read-write-endian.cc
     tests/test-util-main.cc)

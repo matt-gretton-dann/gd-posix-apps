@@ -511,6 +511,14 @@ public:
    */
   auto getc() -> int;
 
+  /** Read one character when the caller exclusively accesses this object.
+   * Named streams may use a platform's unlocked stdio primitive. Borrowed stdin
+   * and platforms without that primitive retain ordinary fgetc locking.
+   * EOF, errors, text translation and retry behavior match getc(). This does not
+   * transfer FILE ownership or permit concurrent reads of the same object.
+   */
+  auto getc_exclusive() -> int;
+
   /** \brief  Get a line of text.  Strips off the \n terminator.
    *  \return Found line.
    *
@@ -546,6 +554,9 @@ public:
   void setbuf(Buffering type, std::unique_ptr<std::vector<char>>&& ptr);
 
 private:
+  template<bool Locked>
+  auto getc_impl() -> int;
+
   using Msg = GD::Util::Msg;
 
   /** \brief     Report an error on the stream.
