@@ -16,17 +16,15 @@ small heap value copies into inline storage. Growth invalidates iterators as a
 vector growth does. A move leaves the source absent. Raw iterator users must
 retain their owning value and obey those invalidation rules.
 
-The representation uses ordinary `std::variant`, `std::array`, `std::shared_ptr`
-and `std::vector`; it assumes no pointer tagging, shared_ptr layout, ISA or
-architecture. The variant has two alternatives: inline values (including an
-absent sentinel outside the valid size range) and heap owners. This preserves
-the nullable facade without a third dispatch state. A heap alternative has a
-non-null owner at every public boundary: allocation/copy establishes it and
-moves reset their source before returning. Access tests the variant tag once,
-without a second owner-pointer null check in the limb path. The heap path remains
-available for arbitrary supported sizes.
-There is no manual arena or cross-frame lifetime coupling. Storage growth is
-exact; arithmetic, public scale/sign rules and zero padding are unchanged.
+The representation uses an always-live inline array and `std::shared_ptr` owner,
+with `std::vector` as the arbitrary-size fallback. A non-null owner selects the
+heap path directly. There is no union, pointer tagging, shared_ptr layout or ISA
+assumption. Only the inline prefix described by its size is initialized and
+copied; growth initializes every newly exposed element. An absent size sentinel
+exposes an empty range. Unused inline slots are never copied or inspected.
+Reset releases the owner and changes the size, without clearing unused limbs.
+This costs more object space than the variant prototype; runtime and memory
+must both justify adoption. There is no cross-frame lifetime coupling.
 
 Tests cover inline/heap promotion, independent inline copies, heap COW snapshots,
 shrinking without relocation, shared-small demotion, reset, moves and bounds at
@@ -37,23 +35,18 @@ construction, copy, add and subtract, without relying solely on a storage tag.
 Diagnostic fixtures deliberately exceed inline capacity when asserting COW and
 heap allocation events.
 
-The initial Debug tree passes 134 bc cases (580,424 assertions), eight selected
-CLI/helper groups and four diagnostic checks. The extensions-disabled ASan/UBSan
-run passes 94 number/VM cases (396,215 assertions). Larger Number/result objects
-may cost memory and copying even when allocations fall. Matched full/held-out
-runtime, selected allocation bytes, RSS and object/code sizes must be measured
-before adopting this experiment; allocation counts alone do not settle it.
+The current tree passes 149 Release bc cases (581,015 assertions), 109
+extensions-disabled ASan/UBSan number/VM cases (396,806 assertions), eight
+CLI/helper groups and five diagnostic checks. Growth after copy, shrink and
+reset explicitly checks newly exposed inline elements. Large Number/result
+objects can cost memory even when allocation counts fall; matched full/held-out
+runtime, selected bytes, RSS and object/code sizes remain adoption criteria.
 
-This is the first storage stage. Last-use temporary consumption, capacity reuse,
-unique/deep-copy comparisons and any arena evaluation remain separate #202 work.
-
-After integrating the merged comparison and terminal-square fixes, the current
-tree passes 143 bc cases (580,544 assertions), 103 extensions-disabled ASan/UBSan
-number/VM cases (396,335 assertions), five diagnostic checks and eight CLI/helper
-groups, including 36 quick corpus cases. The initial storage-only experiment
-exposed large-kernel regressions; fixed-buffer views and identity-scaling changes
-were measured separately. Their rejected/neutral/losing cases remain evidence,
-and final adoption requires a fresh comparison of the combined source.
+VM parameter/terminal-return consumption was merged separately. Numeric code
+also consumes divisor coefficients and Newton guesses only at their proven
+lexical last use. General arithmetic liveness, result/capacity reuse and
+ownership-policy comparisons remain #202 work. Per-operation multiplication
+scratch is evaluated independently under #203.
 
 An explicit-union alternative was rejected after an uninstrumented Release
 output failure under Thin LTO/-O3, despite passing Debug and diagnostic builds.

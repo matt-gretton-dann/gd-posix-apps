@@ -67,6 +67,24 @@ TEMPLATE_TEST_CASE("Digit storage preserves inline values and heap snapshots",
   CHECK(moved_heap.size() == 3);
   CHECK(moved_heap.back() == 1);
   CHECK_THROWS_AS(moved_heap.at(3), std::out_of_range);
+
+  Storage prefix{2};
+  auto expanded = prefix;
+  expanded.resize(Storage::inline_capacity, TestType{9});
+  CHECK(expanded[0] == 2);
+  CHECK(expanded[1] == 9);
+  CHECK(expanded[2] == 9);
+  CHECK(prefix.size() == 1);
+  expanded.resize(1);
+  expanded.resize(Storage::inline_capacity, TestType{5});
+  CHECK(expanded[0] == 2);
+  CHECK(expanded[1] == 5);
+  CHECK(expanded[2] == 5);
+  expanded.reset();
+  expanded.resize(Storage::inline_capacity, TestType{7});
+  CHECK(expanded[0] == 7);
+  CHECK(expanded[1] == 7);
+  CHECK(expanded[2] == 7);
 }
 
 TEMPLATE_TEST_CASE("Digit storage assignment covers every active-member transition",

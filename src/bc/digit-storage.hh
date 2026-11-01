@@ -13,7 +13,8 @@
 #include <iterator>
 #include <memory>
 #include <stdexcept>
-#include <variant>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "profiling.hh"
@@ -34,27 +35,48 @@ template<typename Limb, std::size_t InlineCapacity = 3>
 class DigitStorage
 {
   static_assert(InlineCapacity > 0 && InlineCapacity < 255);
+  static_assert(std::is_integral_v<Limb> && std::is_unsigned_v<Limb>);
   using Heap = std::vector<Limb, Profile::Allocator<Limb, Profile::AllocationKind::digits>>;
   struct Inline
   {
-    std::array<Limb, InlineCapacity> limbs{};
+    // Only [0, size) is initialized and copied. An absent sentinel exposes no
+    // elements. Never copy this aggregate wholesale or read its unused suffix.
+    std::array<Limb, InlineCapacity> limbs;
     unsigned char size = 0;
   };
-  // The sentinel occupies no additional alternative or storage. InlineCapacity
-  // is strictly smaller, and absent storage exposes an empty range.
+  // All members stay alive: no union, pointer tagging or explicit lifetime
+  // management. A non-null owner selects heap storage. Its inline size is absent.
   static constexpr unsigned char absent_size = 255;
   using Owner = std::shared_ptr<Heap>;
-  std::variant<Inline, Owner> storage_;
+  Inline small_;
+  Owner owner_;
 
-  auto heap() -> Owner* { return std::get_if<Owner>(&storage_); }
-  auto heap() const -> Owner const* { return std::get_if<Owner>(&storage_); }
+  auto heap() -> Owner*
+  {
+    assert(owner_);
+    return std::addressof(owner_);
+  }
+  auto heap() const -> Owner const*
+  {
+    assert(owner_);
+    return std::addressof(owner_);
+  }
+  void copy_inline(DigitStorage const& other) noexcept
+  {
+    assert(!owner_ && !other.owner_);
+    small_.size = other.small_.size;
+    if (small_.size != absent_size) {
+      assert(small_.size <= InlineCapacity);
+      std::copy_n(other.small_.limbs.begin(), small_.size, small_.limbs.begin());
+    }
+  }
   auto small() -> Inline&
   {
-    auto& value = std::get<Inline>(storage_);
-    if (value.size == absent_size) {
-      value.size = 0;
+    assert(!owner_);
+    if (small_.size == absent_size) {
+      small_.size = 0;
     }
-    return value;
+    return small_;
   }
   auto data() -> Limb*
   {
@@ -68,7 +90,7 @@ class DigitStorage
     if (has_heap()) {
       return (*heap())->data();
     }
-    return std::get<Inline>(storage_).limbs.data();
+    return small_.limbs.data();
   }
   void promote(std::size_t capacity)
   {
@@ -79,7 +101,8 @@ class DigitStorage
     owner->reserve(capacity);
     auto const& value = small();
     owner->insert(owner->end(), value.limbs.begin(), value.limbs.begin() + value.size);
-    storage_ = std::move(owner);
+    owner_ = std::move(owner);
+    small_.size = absent_size;
   }
 
 public:
@@ -92,8 +115,10 @@ public:
   using const_reverse_iterator = std::reverse_iterator<const_iterator>;
   static constexpr std::size_t inline_capacity = InlineCapacity;
 
-  DigitStorage() : storage_(Inline{}) {}
-  DigitStorage(std::nullptr_t) noexcept : storage_(Inline{{}, absent_size}) {}
+  // A user-provided constructor leaves unused limb slots uninitialized.
+  // Growth fills every new live slot, and copies only read the live prefix.
+  DigitStorage() noexcept {}
+  DigitStorage(std::nullptr_t) noexcept { small_.size = absent_size; }
   DigitStorage(size_type count, Limb value) : DigitStorage() { resize(count, value); }
   DigitStorage(const_iterator first, const_iterator last) : DigitStorage()
   {
@@ -105,20 +130,53 @@ public:
       small().size = static_cast<unsigned char>(count);
     }
     else {
-      storage_ = GD_BC_PROFILE_SHARED(Profile::AllocationKind::digits, Heap)(first, last);
+      owner_ = GD_BC_PROFILE_SHARED(Profile::AllocationKind::digits, Heap)(first, last);
+      small_.size = absent_size;
     }
   }
   DigitStorage(std::initializer_list<Limb> values) : DigitStorage(values.begin(), values.end()) {}
-  DigitStorage(DigitStorage const&) noexcept = default;
-  auto operator=(DigitStorage const&) noexcept -> DigitStorage& = default;
-  DigitStorage(DigitStorage&& other) noexcept : storage_(std::move(other.storage_))
+  DigitStorage(DigitStorage const& other) noexcept : owner_(other.owner_)
   {
+    if (owner_) {
+      small_.size = absent_size;
+    }
+    else {
+      copy_inline(other);
+    }
+  }
+  auto operator=(DigitStorage const& other) noexcept -> DigitStorage&
+  {
+    if (this != &other) {
+      owner_ = other.owner_;
+      if (owner_) {
+        small_.size = absent_size;
+      }
+      else {
+        copy_inline(other);
+      }
+    }
+    return *this;
+  }
+  DigitStorage(DigitStorage&& other) noexcept : owner_(std::move(other.owner_))
+  {
+    if (owner_) {
+      small_.size = absent_size;
+    }
+    else {
+      copy_inline(other);
+    }
     other.reset();
   }
   auto operator=(DigitStorage&& other) noexcept -> DigitStorage&
   {
     if (this != &other) {
-      storage_ = std::move(other.storage_);
+      owner_ = std::move(other.owner_);
+      if (owner_) {
+        small_.size = absent_size;
+      }
+      else {
+        copy_inline(other);
+      }
       other.reset();
     }
     return *this;
@@ -126,21 +184,21 @@ public:
 
   [[nodiscard]] auto has_heap() const noexcept -> bool
   {
-    // Every heap alternative holds a non-null owner at public boundaries.
-    // Constructors either allocate or copy an existing owner; moves reset the
-    // source before returning. Do not load/test the pointer in each limb access.
-    return std::holds_alternative<Owner>(storage_);
+    return static_cast<bool>(owner_);
   }
   explicit operator bool() const noexcept
   {
-    auto const* value = std::get_if<Inline>(&storage_);
-    return value ? value->size != absent_size : true;
+    return owner_ || small_.size != absent_size;
   }
   auto operator->() noexcept -> DigitStorage* { return this; }
   auto operator->() const noexcept -> DigitStorage const* { return this; }
   auto operator*() noexcept -> DigitStorage& { return *this; }
   auto operator*() const noexcept -> DigitStorage const& { return *this; }
-  void reset() noexcept { storage_ = Inline{{}, absent_size}; }
+  void reset() noexcept
+  {
+    owner_.reset();
+    small_.size = absent_size;
+  }
   [[nodiscard]] auto use_count() const noexcept -> long
   {
     return has_heap() ? (*heap()).use_count() : (static_cast<bool>(*this) ? 1L : 0L);
@@ -151,7 +209,7 @@ public:
     if (has_heap()) {
       return (*heap())->size();
     }
-    auto const count = std::get<Inline>(storage_).size;
+    auto const count = small_.size;
     return count == absent_size ? 0 : count;
   }
   [[nodiscard]] auto empty() const noexcept -> bool { return size() == 0; }
