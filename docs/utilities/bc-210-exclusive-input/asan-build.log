@@ -1,0 +1,12 @@
+[1/11] Building CXX object src/bc/CMakeFiles/libbc.dir/execution-plan.cc.o
+[2/11] Building CXX object src/bc/CMakeFiles/libbc.dir/instruction.cc.o
+[3/11] Building CXX object src/bc/CMakeFiles/libbc.dir/lexer.cc.o
+[4/11] Building CXX object src/bc/CMakeFiles/libbc.dir/reader.cc.o
+[5/11] Building CXX object src/bc/CMakeFiles/libbc.dir/parser.cc.o
+[6/11] Building CXX object src/bc/CMakeFiles/libbc.dir/token.cc.o
+[7/11] Building CXX object src/bc/CMakeFiles/libbc.dir/verification.cc.o
+[8/11] Building CXX object src/bc/CMakeFiles/bc.dir/bc.cc.o
+[9/11] Building CXX object src/bc/CMakeFiles/libbc.dir/vm.cc.o
+[10/11] Linking CXX static library src/bc/liblibbc.a
+[11/11] Linking CXX executable src/bc/bc
+ld: warning: ignoring duplicate libraries: 'libgdsup/libgdsup.a', 'src/libutil.a'

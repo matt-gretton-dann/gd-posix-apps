@@ -1,0 +1,16 @@
+{
+  "workflow_run": 41326973722,
+  "source_revision": "d6eb63c941d9cd66ca45cac384efde9ba6864a9d",
+  "base_revision": "704d8013c2ff877357bf9dc42a0ae68b571c6c3e",
+  "windows_artifact_id": 13092480518,
+  "sha256": "78199e99703bf912deb2dcfa55cfbb0b941d5bd06398c509a4f63a93765fe5ee",
+  "completed_checked_rows": {
+    "full-aa/samples.jsonl": 800,
+    "full-paired/samples.jsonl": 78
+  },
+  "failure": {
+    "error": "howard-7.0.3 / sqrt_tiny_scale4096_x10 timed out after 30 seconds",
+    "validation": "failed"
+  },
+  "acceptance": "Hard failure; incomplete native matrix, never a performance pass"
+}

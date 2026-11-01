@@ -20,6 +20,8 @@ do not establish a speed benefit; current file and stdin workloads must measure 
 
 Utility tests interleave ordinary/exclusive reads over 8192 binary bytes covering
 every unsigned-byte value, EOF and line-input interoperability. Existing bc
-CLI/file/quit and independent numeric oracles remain active. Matched full/held-out
-measurements, separate memory and native artifact audits are required before
-adoption; no improvement is claimed by this candidate alone.
+CLI/file/quit and independent numeric oracles remain active. PR #352 accepts
+this stage after matched full/held-out timing, separate memory diagnostics and
+all fourteen native/CI/CodeQL checks. The [exact-source report](bc-210-exclusive-input/README.md)
+retains the modest local file gain, neutral/noisy native results, all class
+intervals and memory limitations. Other #210 frontend experiments remain open.

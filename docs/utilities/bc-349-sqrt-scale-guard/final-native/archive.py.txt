@@ -1,0 +1,12 @@
+from pathlib import Path
+import hashlib,json,shutil
+w=Path('/private/tmp/gd-posix-exclusive-input-evidence');r=w/'docs/utilities/bc-349-sqrt-scale-guard/final-native';r.mkdir()
+(r/'.gitattributes').write_text('* -text\n')
+audits=[]
+for os in ['linux','macos','windows']:
+ p=Path('/private/tmp/bc-349-final-native-'+os+'.zip');a=json.loads(p.with_suffix('.audit.json').read_text());assert not a['confirmed'];assert a['identities']['candidate']=='967b1c6522d7b1102f597c7414b13958146ac93e';assert hashlib.sha256(p.read_bytes()).hexdigest()==a['sha256'];audits.append(a);shutil.copyfile(p,r/(os+'.zip'))
+assert sum(x['checked'] for x in audits)==5280
+(r/'audit.json').write_text(json.dumps({'workflow_run':41324588691,'source_checks':'All fourteen final-head checks successful before PR350 merge','rows':audits},indent=2)+'\n')
+shutil.copyfile('/private/tmp/bc-349-audit-final-native.py',r/'native-audit.py.txt')
+(r/'README.md').write_text('''# Final-head sqrt boundary artifacts\n\nRefs #349, #212, #200 and #197. PR #350 final head\n`967b1c6522d7b1102f597c7414b13958146ac93e` has all fourteen check\nruns successful. The final evidence-only commit triggered native CI again;\nno favorable rerun of unchanged source was requested. The earlier runtime\nsource d252da1, initial confirmed-regression and rejected sqrt-boundary\ndatasets remain separately preserved. Do not replace or pool them.\n\nRun 41324588691 retains digest/source-verified 1750 Linux, 1750 macOS and\n1780 Windows checked invocations, 5280 total. No class meets the established\ntwo-pass confirmed-regression rule. Windows equality remains slower/noisy\nat 1.054 [1.04048,1.08060]; Linux equality is 1.032 [1.01937,1.05458].\nMacOS intervals remain wide. These results do not establish equivalence or\na beneficial compiler mechanism; the comparison limitation stays in #200.\nAll controls, confirmation samples, compiler/binary identities and complete\nclass decisions remain in the unmodified archives.\n\nPR #350 merged as 71b3683eae1d1bae72e7d062a9de5e87c144ff9a and\nlocal main was immediately fast-forwarded. This separate documentation-only\narchive preserves final-head observations without changing the source again.\n''')
+shutil.copyfile(__file__,r/'archive.py.txt');proof={str(p.relative_to(r)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(r.rglob('*')) if p.is_file()};(r/'sha256.json').write_text(json.dumps(proof,indent=2)+'\n');print('Archived',len(proof),'final sqrt payloads')

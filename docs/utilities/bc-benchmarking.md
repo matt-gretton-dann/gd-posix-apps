@@ -242,3 +242,29 @@ executable protocol in automated tests and should not tune production builds.
 
 [Repeated tuning evidence and retained per-shape costs](bc-203-tuning/README.md)
 record the stable-default decision and exact compiler/source provenance.
+
+The expanded sqrt matrix (#212/#216) appends four cases to the previous 46,
+retaining every earlier complete case dictionary and seeded operand. The full
+corpus now has 50 cases. Additions cover sqrt(2) at scale 10000, tiny exact
+squares with input scales 1024 and 4096 (requested scale zero), and a 4001-digit
+integer square at scale 100. Quick and held-out presets report their actual
+dimensions; tiny-square scales are rounded down to an even value so their
+roots remain finite exact decimals. Independent integer-floor or power-of-ten
+oracles do not use the executable's arithmetic.
+
+Native representative checks retain the existing scale-5000 sqrt case, the
+new scale-10000 class, both tiny-fraction dimensions and the large-integer
+class. This prevents a first-per-group selection from exercising only the
+small-scale sqrt winner. These are process workloads including parsing,
+startup and output; they do not isolate Newton division or establish a speed
+claim. Separate diagnostic counters and RSS measurements remain necessary.
+The committed `fixtures/benchmark-corpus-before-sqrt.json` records hashes of
+all 46 previous full/held-out/quick dictionaries, including programs, oracles,
+parameters and transport, at source 704d8013c2ff877357bf9dc42a0ae68b571c6c3e.
+
+The scale-4096 tiny-fraction case uses one repeat in full/held-out trials.
+The initial ten-repeat source exceeded the existing 30-second deadline in
+Howard on Windows. Preserve that failed run separately; reduce repetitions
+without reducing precision, weakening its exact oracle or raising deadlines.
+Initial local experiments with ten repeats remain labeled with their actual
+programs and source identities; they are not relabeled as this workload.
