@@ -36,3 +36,18 @@ This is the first #206 stage. Nondecimal grouping, batched output and conversion
 crossover decisions remain open. Performance results must distinguish component
 conversion from end-to-end multiplication, which includes input and output.
 The separate #320 fix handles fractional padding that bypassed line wrapping.
+
+## Component measurement inputs
+
+`bc-components conversion-in ITERATIONS SPLIT_POINT [TEXT_BASE]` accepts an
+optional input base from 2 through 16; decimal remains the default. Nondecimal
+single digits retain their base-independent values. Fractional conversion keeps
+the existing decimal-place scale and truncation rule. Invalid benchmark fixtures
+are rejected before measurement. The default decimal fixture syntax remains
+strict signed decimal text.
+
+For `conversion-out`, the same optional argument chooses the output base while
+the fixture remains decimal. The JSON report records `text_base`; arithmetic and
+parse components reject this extra argument. Internal conversion intervals still
+include validation and consumer/reset work, with final output checking outside
+timing. Control rows remain separate and are never subtracted.

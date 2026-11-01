@@ -73,6 +73,7 @@ if(RUN_UNIT_TESTS)
                  test-libbc-main.cc
                  test-digit-storage.cc
                  test-number.cc
+                 test-number-radix.cc
                  test-number-workspace.cc
                  test-number-output.cc
                  test-number-length.cc

@@ -8,8 +8,11 @@ import unittest
 
 
 class Components(unittest.TestCase):
-    def invoke(self, component, source, iterations='3', split='2', success=True):
-        child = subprocess.run([DRIVER, component, iterations, split], input=source,
+    def invoke(self, component, source, iterations='3', split='2', success=True, base=None):
+        argv = [DRIVER, component, iterations, split]
+        if base is not None:
+            argv.append(str(base))
+        child = subprocess.run(argv, input=source,
                                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                universal_newlines=True, timeout=5)
         if not success:
@@ -21,6 +24,7 @@ class Components(unittest.TestCase):
         result = json.loads(child.stdout)
         self.assertEqual(result['iterations'], int(iterations))
         self.assertEqual(result['split_point'], int(split))
+        self.assertEqual(result['text_base'], 10 if base is None else int(base))
         if result['instrumented']:
             self.assertIsNone(result['seconds'])
         else:
@@ -54,6 +58,40 @@ class Components(unittest.TestCase):
                 self.assertEqual(result['checksum_mod_2_64'], len(literal) * 3)
             else:
                 self.assertGreaterEqual(result['checksum_mod_2_64'], len(literal) * 3)
+
+    def test_nondecimal_conversion_oracles(self):
+        alphabet = '0123456789ABCDEF'
+        value = 123456789012345678901234567890
+        def encode(number, base):
+            result = ''
+            while number:
+                number, remainder = divmod(number, base)
+                result = alphabet[remainder] + result
+            return result or '0'
+        for base in range(2, 17):
+            with self.subTest(base=base):
+                digits = encode(value, base)
+                decoded = self.invoke('conversion-in', digits + '\n', base=base)
+                self.assertEqual(decoded['result'], str(value))
+                self.assertEqual(decoded['checksum_mod_2_64'], len(str(value)) * 3)
+                encoded = self.invoke('conversion-out', str(value) + '\n', base=base)
+                self.assertEqual(encoded['result'], digits)
+        self.assertEqual(self.invoke('conversion-in', 'F\n', base=2)['result'], '15')
+        self.assertEqual(self.invoke('conversion-in', '1.1\n', base=2)['result'], '1.5')
+        self.assertEqual(self.invoke('conversion-in', '-A.F\n', base=16)['result'], '-10.9')
+        self.assertEqual(self.invoke('conversion-out', '1.5\n', base=2)['result'], '1.1000')
+
+    def test_nondecimal_conversion_rejects_invalid_bases_and_digits(self):
+        for component, source, base in (('conversion-in', '1\n', 1),
+                                        ('conversion-out', '1\n', 17),
+                                        ('conversion-in', '12\n', 2),
+                                        ('conversion-in', 'FG\n', 16),
+                                        ('conversion-in', '1..1\n', 2),
+                                        ('conversion-in', 'A\n', 10),
+                                        ('add', '1\n2\n', 2),
+                                        ('parse', '1\n', 2)):
+            with self.subTest(component=component, source=source, base=base):
+                self.invoke(component, source, base=base, success=False)
 
     def test_parse_performs_no_execution(self):
         one = self.invoke('parse', '1/0\n')
