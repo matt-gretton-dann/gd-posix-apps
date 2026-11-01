@@ -1,0 +1,62 @@
+name: bc native mathematical comparisons
+on:
+  pull_request:
+    branches: [main, 'codex/**']
+    paths: ['src/**', 'libgdsup/**', 'CMakeLists.txt', 'cmake/**', '.github/workflows/bc-math-performance.yml']
+  push:
+    branches: [main]
+    paths: ['src/**', 'libgdsup/**', 'CMakeLists.txt', 'cmake/**', '.github/workflows/bc-math-performance.yml']
+  schedule:
+    - cron: '17 3 * * 2'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: bc-math-performance-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  paired:
+    name: Native math bc / ${{ matrix.image }}
+    runs-on: ${{ matrix.image }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [ubuntu-24.04, windows-2025, macos-15]
+    env:
+      BC_CANDIDATE: ${{ github.event.pull_request.head.sha || github.sha }}
+      BC_BROAD: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.BC_CANDIDATE }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Establish native MSVC environment
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installation = & "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe" -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (!$installation) { throw 'Native x64 MSVC is unavailable' }
+          $variables = & cmd /c "`"$installation\Common7\Tools\VsDevCmd.bat`" -arch=x64 -host_arch=x64 >nul && set"
+          if ($LASTEXITCODE) { throw 'Cannot initialize MSVC' }
+          foreach ($line in $variables) {
+            if ($line -match '^(PATH|INCLUDE|LIB|LIBPATH|VCToolsInstallDir|VCINSTALLDIR|VSINSTALLDIR|WindowsSdkDir|WindowsSDKVersion|UniversalCRTSdkDir|UCRTVersion|Platform)=(.*)$') {
+              "$($matches[1])=$($matches[2])" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            }
+          }
+      - name: Build independent controls and measure checked native math roles
+        shell: pwsh
+        run: |
+          $arguments = @('src/bc/scripts/benchmark-math-ci.py', '--source', $env:GITHUB_WORKSPACE, '--candidate', $env:BC_CANDIDATE, '--output', 'bc-math-results')
+          if ($env:BC_BROAD -eq 'true') { $arguments += '--broad' }
+          python @arguments
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Preserve raw checked samples and provenance
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bc-math-native-${{ matrix.image }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: bc-math-results/evidence/
+          if-no-files-found: error
+          retention-days: 30
