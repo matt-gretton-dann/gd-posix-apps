@@ -169,29 +169,29 @@ public:
     BasicDigits result;
     result.copy_on_write();
     result.digits_->resize(count, 0);
-    auto output = result.digits_->begin();
-    WideType coefficient = 0;
-    WideType weight = 1;
-    unsigned places = 0;
-    for (auto i = text.size(); i > first;) {
-      auto const c = text[--i];
+    // Decode the partial leading chunk first, then full chunks, storing into
+    // little-endian limbs from the back. Horner accumulation avoids a separate
+    // positional weight and wide multiply per character. Each prefix remains
+    // below base_, which fits NumType for every supported trait.
+    auto output = result.digits_->rbegin();
+    NumType coefficient = 0;
+    auto remaining = decimal_digits % base_log10_;
+    if (remaining == 0) {
+      remaining = base_log10_;
+    }
+    for (auto i = first; i < text.size(); ++i) {
+      auto const c = text[i];
       if (c == '.') {
         continue;
       }
-      coefficient += WideType(c - '0') * weight;
-      if (++places == base_log10_) {
-        *output++ = static_cast<NumType>(coefficient);
+      coefficient = static_cast<NumType>(coefficient * NumType(10) + NumType(c - '0'));
+      if (--remaining == 0) {
+        *output++ = coefficient;
         coefficient = 0;
-        weight = 1;
-        places = 0;
-      }
-      else {
-        weight *= 10;
+        remaining = base_log10_;
       }
     }
-    if (places != 0) {
-      *output = static_cast<NumType>(coefficient);
-    }
+    assert(output == result.digits_->rend());  // NOLINT
     return result;
   }
 
