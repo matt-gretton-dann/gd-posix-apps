@@ -61,11 +61,13 @@ class NativeTrends(unittest.TestCase):
         self.assertIn('array_200000', subset)
         self.assertIn('sparse_array_200000', subset)
         self.assertIn('multiply_100d_x100000', subset)
+        self.assertIn('square_100d_x100000', subset)
+        self.assertIn('square_10000d_x500', subset)
         self.assertIn('streaming_statements_20000', subset)
         for position in ('high', 'low', 'equal'):
             self.assertIn('compare_{}_1000d_x100000'.format(position), subset)
         self.assertLess(len(subset), len(full))
-        self.assertEqual(len(full), 36)
+        self.assertEqual(len(full), 39)
         self.assertEqual(set(full) & set(held), {'startup'})
 
     def exercise(self, fail=False):

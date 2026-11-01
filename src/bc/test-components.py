@@ -33,7 +33,7 @@ class Components(unittest.TestCase):
         for split in ('1', '2', '126'):
             for component, expected in (('control', left), ('add', left + right),
                                         ('subtract', left - right), ('multiply', left * right),
-                                        ('divide', left // right)):
+                                        ('square', left * left), ('divide', left // right)):
                 with self.subTest(component=component, split=split):
                     result = self.invoke(component, '{}\n{}\n'.format(left, right), split=split)
                     self.assertEqual(result['result'], str(expected))

@@ -69,8 +69,8 @@ auto main(int argc, char** argv) -> int
     }
     std::string const component(argv[1]);
     if (component != "control" && component != "add" && component != "subtract" &&
-        component != "multiply" && component != "divide" && component != "parse" &&
-        component != "conversion-in" && component != "conversion-out") {
+        component != "multiply" && component != "square" && component != "divide" &&
+        component != "parse" && component != "conversion-in" && component != "conversion-out") {
       throw std::runtime_error("unknown component");
     }
     auto const iterations = positive(argv[2], 10000000);
@@ -179,6 +179,9 @@ auto main(int argc, char** argv) -> int
       }
       else if (component == "multiply") {
         arithmetic([&](Number& value) { value.multiply(rhs, 0); });
+      }
+      else if (component == "square") {
+        arithmetic([](Number& value) { value.multiply(value, 0); });
       }
       else if (component == "divide") {
         arithmetic([&](Number& value) { value.divide(rhs, 0); });

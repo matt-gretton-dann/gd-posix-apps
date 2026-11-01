@@ -1,0 +1,57 @@
+from pathlib import Path
+import json,shutil,hashlib
+root=Path('/private/tmp/gd-posix-square-kernel/docs/utilities/bc-203-squares')
+root.mkdir(exist_ok=True)
+for preset in ('full','holdout'):
+ source=Path('/private/tmp/gd-bc-203-square-'+preset)
+ for name in ('manifest.json','summary.json','samples.csv'):
+  shutil.copyfile(source/name,root/(preset+'-'+name))
+for role,source in [('candidate','/private/tmp/gd-bc-203-square-release'),('parent','/private/tmp/gd-bc-202-integrated-release')]:
+ shutil.copyfile(Path(source)/'build-manifest.json',root/(role+'-build-manifest.json'))
+shutil.copyfile(__file__,root/'archive-evidence.py.txt')
+lines=['# Portable triangular squares — #203', '',
+'Identical coefficient spans use a triangular schoolbook square. Diagonals are',
+'computed once, cross terms twice, with a compile-time widened accumulator bound.',
+'Recursive low/high squares retain their shared inputs; the middle square reuses',
+'one sum. Single-limb multiply-accumulate and unsupported-trait generic fallbacks',
+'remain. Sign and decimal scale stay in Number; equality of values is not scanned',
+'to discover squares.', '',
+'Parent `58075b41a293a7d3f4cfbad308ff75997702e496` has identical production C++/CMake',
+'as accepted main `a520f2a0db29858643dd0d24eb2470329d56ab56`. Candidate is',
+'`e127b8a11e35e6e031448c21c4577a57c1b8e5a5`. Both immutable recipes use fixed',
+'126, Release -O3/-DNDEBUG, thin LTO, Apple Clang 21/libc++ header 220106 on the',
+'recorded Apple M1/macOS 27.2 host. Manifests retain actual commands and binary',
+'hashes. Pinned native Howard 7.0.3 is the competitive reference. This experiment',
+'uses no instrumentation, PGO or local concurrent builds/tests/profiles.', '',
+'All 1,170 full and 1,170 held-out invocations pass exact independent output,',
+'status, stderr and deadline gates. Each workload has one checked warm-up and',
+'nine measured paired rounds, interleaved in seeded order with 2,000 bootstrap',
+'resamples. Full seed 197200 and held-out seed 197201/dimensions remain distinct.',
+'The 39-case generator appends three square workloads without changing the older',
+'36 seeded operands. No aggregate or exclusions hide losing classes. This shared',
+'workstation has no frequency/thermal isolation; intervals are sample evidence,',
+'not guarantees for other machines. Hosted native results are reported separately.', '',
+'Combined correctness: 162 Release bc cases/583,369 assertions; 122 extensions-',
+'disabled ASan/UBSan number/VM cases/399,160 assertions; six profiling checks and',
+'eight CLI groups pass. Independent decimal convolution covers all three limb',
+'widths, exact output guards, carries, sparse/zero inputs, aliases, opposite signs,',
+'scales and threshold boundaries. The component driver adds an aliased square',
+'with an independent Python integer oracle. #211 product counts remain checked.', '',
+'#203 remains open for asymmetric dispatch, robust sweeps and stable defaults.', '']
+for preset in ('full','holdout'):
+ summary=json.loads((root/(preset+'-summary.json')).read_text())
+ lines.extend(['## '+preset.title(), '', '| Workload | Candidate / parent [95%] | Candidate / Howard (ratio of medians) |', '| --- | --- | --- |'])
+ for row in summary['workloads']:
+  ratio=row['candidate_over_reference']['gd-square'];low,high=ratio['ci95']
+  # Ratios use each same-workload implementation median, not a ratio of paired CIs.
+  impl=row['implementations']
+  if isinstance(impl,dict):
+   c=impl['gd-square'];h=impl['howard-7.0.3']
+   med=lambda v:v.get('median_seconds',v.get('median'))
+   competitive=med(c)/med(h)
+  else:
+   raise RuntimeError('inspect implementation summary schema')
+  lines.append('| `{}` | {:.3f} [{:.3f}, {:.3f}] | {:.3f} |'.format(row['name'],ratio['median_paired_ratio'],low,high,competitive))
+ lines.append('')
+(root/'README.md').write_text('\n'.join(lines)+'\n')
+print('Archived',root)

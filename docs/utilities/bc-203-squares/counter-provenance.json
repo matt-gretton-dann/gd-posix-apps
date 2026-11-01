@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "harness_revision": "61d3a9ce4c487ec504f83bfbbd1f389c6a73214e",
+  "source_cpp_parent_matches_main": "a520f2a0db29858643dd0d24eb2470329d56ab56",
+  "roles": [
+    {
+      "name": "parent",
+      "binary": "/private/tmp/gd-posix-inline-limbs/build-profile/src/bc/bc",
+      "binary_sha256": "827a85a63000d4f1c7505e0bf7ec0942ac1d34b80050851f23bdce57615e2858",
+      "source_revision": "31aabc92e1428e4066bed821f1573c9e70c85179"
+    },
+    {
+      "name": "candidate",
+      "binary": "/private/tmp/gd-posix-square-kernel/build-profile/src/bc/bc",
+      "binary_sha256": "ee977f109f0f0d6330b0bbd44faf22fa6a899d8aebfbfcb9c5e9591bb9ca313f",
+      "source_revision": "61d3a9ce4c487ec504f83bfbbd1f389c6a73214e"
+    }
+  ],
+  "scope": "Counters only; no timing inference. Fixed126, Release, ENABLE_BC_PROFILE ON. Not process RSS."
+}
