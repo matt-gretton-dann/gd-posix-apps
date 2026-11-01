@@ -116,3 +116,18 @@ including scalar fallback. Profiling remains separate from elapsed timings.
 [Complete grouped-output crossover evidence](bc-206-output-groups/README.md)
 retains every full/held-out fixture, control, interval and actual source recipe.
 Native acceptance requires the added nondecimal workload classes.
+
+## Nondecimal character lookup evaluation
+
+The candidate replaces repeated alphabet searches with a 256-entry immutable
+index table on eight-bit character platforms. Index through unsigned char so
+negative signed characters cannot address before the table. Wider character
+models retain the generic alphabet search. Existing base assertions, single-digit
+rules, point handling and invalid-character aborts remain at their original sites;
+the raw lookup also preserves the old alphabet terminator index. CLI token
+validation is unchanged. An exhaustive 256-byte comparison against the previous
+search checks the mapping, independently of the arithmetic value oracles.
+
+Actual conversion measurements and native acceptance are still required; this
+candidate is not an asserted speedup. Decimal chunk decoding retains its measured
+arithmetic fast path, and single decimal digits retain the direct scalar path.

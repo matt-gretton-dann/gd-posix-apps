@@ -191,3 +191,16 @@ TEMPLATE_TEST_CASE("Large space-separated output retains the generic path",
     CHECK(unwrap_radix(output.str()) == expected);
   }
 }
+
+TEST_CASE("Radix character lookup preserves every byte of the prior decoder",
+          "[bc][number][radix-decode]")
+{
+  char const alphabet[] = "0123456789ABCDEF";
+  for (unsigned byte = 0; byte <= 255; ++byte) {
+    char const character = static_cast<char>(static_cast<unsigned char>(byte));
+    auto const* found = ::strchr(alphabet, character);
+    unsigned const expected = found ? static_cast<unsigned>(found - alphabet) : 17;
+    INFO("input byte=" << byte);
+    CHECK(GD::Bc::Details::radix_character_index(character) == expected);
+  }
+}

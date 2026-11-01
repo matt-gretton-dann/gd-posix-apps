@@ -80,6 +80,29 @@ using NumberTraits8 = NumberTraitsBase<::uint8_t, ::uint16_t>;
 
 namespace Details {
 
+/** Alphabet index for the existing raw constructor decoder, or 17 if absent.
+ *  Preserve strchr's terminator index (16); existing per-base assertions still
+ *  reject it in valid input. Wider character models retain the generic search.
+ */
+inline auto radix_character_index(char c) -> unsigned
+{
+  static constexpr char alphabet[] = "0123456789ABCDEF";
+  if constexpr (std::numeric_limits<unsigned char>::max() == 255) {
+    static constexpr auto indexes = [] {
+      std::array<unsigned char, 256> table{};
+      table.fill(17);
+      for (unsigned i = 0; i < sizeof(alphabet); ++i)
+        table[static_cast<unsigned char>(alphabet[i])] = static_cast<unsigned char>(i);
+      return table;
+    }();
+    return indexes[static_cast<unsigned char>(c)];
+  }
+  else {
+    auto const* found = ::strchr(alphabet, c);
+    return found ? static_cast<unsigned>(found - alphabet) : 17;
+  }
+}
+
 /** \brief       Report an error and exit with exit code 1.
  *  \param  msg  Message ID
  *  \param  args Arguments for the message.
@@ -1554,8 +1577,7 @@ public:
      * fractional input digits in scale_. The input value is C / ibase^scale_;
      * decimal storage needs floor(C * 10^scale_ / ibase^scale_).
      */
-    static constexpr char const* digits = "0123456789ABCDEF"; /* Acceptable input characters.  */
-    bool seen_period = false;                                 /* Have we seen the radix-point. */
+    bool seen_period = false; /* Have we seen the radix-point. */
 
     // Keep common short literals on their original scalar path. For longer
     // text, bound a chunk's multiplier and coefficient by both the native limb
@@ -1591,10 +1613,10 @@ public:
           ++scale_;
         }
 
-        const auto* digit = ::strchr(digits, c);
-        if (digit != nullptr) {
-          assert((digit - digits < ibase) || (s.size() == 1 && digit - digits < 16));  // NOLINT
-          digits_.mac(ibase, static_cast<NumType>(digit - digits));
+        auto const digit = Details::radix_character_index(c);
+        if (digit != 17) {
+          assert((digit < ibase) || (s.size() == 1 && digit < 16));  // NOLINT
+          digits_.mac(ibase, static_cast<NumType>(digit));
         }
         else if (c == '.') {
           assert(!seen_period);  // NOLINT
@@ -1616,11 +1638,11 @@ public:
           seen_period = true;
           continue;
         }
-        auto const* digit = ::strchr(digits, c);
-        if (digit == nullptr)
+        auto const digit = Details::radix_character_index(c);
+        if (digit == 17)
           abort();
-        assert((digit - digits < ibase) || (s.size() == 1 && digit - digits < 16));  // NOLINT
-        coefficient = coefficient * ibase + WideType(digit - digits);
+        assert((digit < ibase) || (s.size() == 1 && digit < 16));  // NOLINT
+        coefficient = coefficient * ibase + WideType(digit);
         if (++pending == group_size) {
           digits_.mac(group_multiplier, static_cast<NumType>(coefficient));
           coefficient = 0;
