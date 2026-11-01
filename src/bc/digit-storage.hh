@@ -40,18 +40,21 @@ class DigitStorage
     std::array<Limb, InlineCapacity> limbs{};
     unsigned char size = 0;
   };
+  // The sentinel occupies no additional alternative or storage. InlineCapacity
+  // is strictly smaller, and absent storage exposes an empty range.
+  static constexpr unsigned char absent_size = 255;
   using Owner = std::shared_ptr<Heap>;
-  std::variant<std::monostate, Inline, Owner> storage_;
-  static constexpr std::array<Limb, InlineCapacity> empty_{};
+  std::variant<Inline, Owner> storage_;
 
   auto heap() -> Owner* { return std::get_if<Owner>(&storage_); }
   auto heap() const -> Owner const* { return std::get_if<Owner>(&storage_); }
   auto small() -> Inline&
   {
-    if (std::holds_alternative<std::monostate>(storage_)) {
-      storage_ = Inline{};
+    auto& value = std::get<Inline>(storage_);
+    if (value.size == absent_size) {
+      value.size = 0;
     }
-    return std::get<Inline>(storage_);
+    return value;
   }
   auto data() -> Limb*
   {
@@ -65,8 +68,7 @@ class DigitStorage
     if (has_heap()) {
       return (*heap())->data();
     }
-    auto const* value = std::get_if<Inline>(&storage_);
-    return value ? value->limbs.data() : empty_.data();
+    return std::get<Inline>(storage_).limbs.data();
   }
   void promote(std::size_t capacity)
   {
@@ -91,7 +93,7 @@ public:
   static constexpr std::size_t inline_capacity = InlineCapacity;
 
   DigitStorage() : storage_(Inline{}) {}
-  DigitStorage(std::nullptr_t) noexcept : storage_(std::monostate{}) {}
+  DigitStorage(std::nullptr_t) noexcept : storage_(Inline{{}, absent_size}) {}
   DigitStorage(size_type count, Limb value) : DigitStorage() { resize(count, value); }
   DigitStorage(const_iterator first, const_iterator last) : DigitStorage()
   {
@@ -129,13 +131,14 @@ public:
   }
   explicit operator bool() const noexcept
   {
-    return !std::holds_alternative<std::monostate>(storage_) && (!heap() || has_heap());
+    auto const* value = std::get_if<Inline>(&storage_);
+    return value ? value->size != absent_size : has_heap();
   }
   auto operator->() noexcept -> DigitStorage* { return this; }
   auto operator->() const noexcept -> DigitStorage const* { return this; }
   auto operator*() noexcept -> DigitStorage& { return *this; }
   auto operator*() const noexcept -> DigitStorage const& { return *this; }
-  void reset() noexcept { storage_ = std::monostate{}; }
+  void reset() noexcept { storage_ = Inline{{}, absent_size}; }
   [[nodiscard]] auto use_count() const noexcept -> long
   {
     return has_heap() ? (*heap()).use_count() : (static_cast<bool>(*this) ? 1L : 0L);
@@ -146,8 +149,8 @@ public:
     if (has_heap()) {
       return (*heap())->size();
     }
-    auto const* value = std::get_if<Inline>(&storage_);
-    return value ? value->size : 0;
+    auto const count = std::get<Inline>(storage_).size;
+    return count == absent_size ? 0 : count;
   }
   [[nodiscard]] auto empty() const noexcept -> bool { return size() == 0; }
   auto begin() -> iterator { return data(); }

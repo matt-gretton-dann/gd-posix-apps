@@ -18,7 +18,10 @@ retain their owning value and obey those invalidation rules.
 
 The representation uses ordinary `std::variant`, `std::array`, `std::shared_ptr`
 and `std::vector`; it assumes no pointer tagging, shared_ptr layout, ISA or
-architecture. The heap path remains available for arbitrary supported sizes.
+architecture. The variant has two alternatives: inline values (including an
+absent sentinel outside the valid size range) and heap owners. This preserves
+the nullable facade without a third dispatch state. The heap path remains
+available for arbitrary supported sizes.
 There is no manual arena or cross-frame lifetime coupling. Storage growth is
 exact; arithmetic, public scale/sign rules and zero padding are unchanged.
 
@@ -48,3 +51,10 @@ groups, including 36 quick corpus cases. The initial storage-only experiment
 exposed large-kernel regressions; fixed-buffer views and identity-scaling changes
 were measured separately. Their rejected/neutral/losing cases remain evidence,
 and final adoption requires a fresh comparison of the combined source.
+
+An explicit-union alternative was rejected after an uninstrumented Release
+output failure under Thin LTO/-O3, despite passing Debug and diagnostic builds.
+The cause is unresolved; neither that representation nor a global compiler
+flag workaround is adopted. Release correctness checks must precede timings.
+Native paired runs also found square-root and sparse-product regressions in
+the original three-alternative prototype, so PR #314 remains an experiment.
