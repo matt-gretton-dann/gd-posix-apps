@@ -1,0 +1,20 @@
+from pathlib import Path
+import json,shutil
+w=Path('/private/tmp/gd-posix-batched-output');r=w/'docs/utilities/bc-206-output';r.mkdir();(r/'.gitattributes').write_text('*.csv -text whitespace=cr-at-eol\n*.log -text whitespace=-blank-at-eol,-blank-at-eof\n')
+for preset in ('full','holdout'):shutil.copytree('/private/tmp/gd-bc-206-output-'+preset,r/preset)
+shutil.copyfile('/private/tmp/bc-206-run-output-components.py',r/'runner.py.txt')
+for role in ('baseline','batched'):
+ for kind in ('release','components'):
+  source=Path('/private/tmp/gd-bc-206-output-'+role+'-'+kind);target=r/('recipe-'+role+'-'+kind);target.mkdir()
+  for p in source.iterdir():
+   if p.is_file() and p.suffix in ('.json','.log','.hh','.cc'):shutil.copyfile(p,target/p.name)
+for name in ('before','batch-tests','release-tests','cli','asan-tests','profile-tests'):shutil.copyfile('/private/tmp/bc-206-output-'+name+'.log',r/(name+'.log'))
+lines=['# Bounded numeric output writes','','Exact baseline `b15806ac7470eee9cfecf9e598047109bef32a62`; integrated', 'batched source `e88cafbd7551f8faf331367e3b044aab451e4abc`. Actual source,', 'compiler/library identity, flags, commands and binary hashes are in the', 'release/component recipes. This stage retains the corrected GCC decoder', 'parent; it does not include the held array implementation.','', 'Apple M1/macOS 27.2, Apple Clang 21, Release thin LTO, extensions ON, fixed', 'split point 126; profiling/coverage OFF. All 2760 full and 460 held-out', 'component invocations pass independent integer radix and exact continuation-', 'length checks, output/status/stderr checks and deadlines. Full/held-out', 'use different seeds and sizes, one checked warm-up and nine shuffled paired', 'rounds with 2000 bootstrap resamples. No local build/test/profile overlaps', 'timings. Host load, frequency and thermal state remain uncontrolled.','', 'Internal intervals include formatting, buffer reset and consumer work.', 'Startup and fixture parsing are outside these component intervals. Controls', 'remain separate and are never subtracted. Positive integer timing fixtures', 'do not represent all fractional/sign/stream-error regimes. Independent', 'all-trait tests cover output positions, fractions/padding and width behavior.','', 'The test-first stream-buffer oracle fails at 182 block operations for a', '180-digit coefficient on all three traits. The implementation emits bounded', 'whole-coefficient spans and views of existing wrapped text. It preserves', 'the locale-aware limb formatter, continuation rules, and first-character', 'stream width. Release: 181 cases / 628045 assertions plus eight CLI/tool', 'groups; after carrying the GCC parent, OFF ASan/UBSan: 140 arithmetic/VM', 'cases / 443827 assertions and 15 CLI checks, plus eleven profiling checks.','', 'No measured interval is wholly above the provisional 1.05 regression', 'threshold. Decimal component ratios range from approximately 0.90 for one', 'digit to 0.28 for 10000 digits. Generic nondecimal conversion retains its', 'arithmetic algorithm; view emission alone need not improve its dominant', 'division cost. All losing/noisy intervals and controls remain below and in', 'the raw data. These local component results do not establish native adoption', 'or complete #206 acceptance.','']
+for preset in ('full','holdout'):
+ x=json.loads((r/preset/'summary.json').read_text())['workloads'];lines+=['## '+preset.title()+' intervals','','| Workload | Candidate / baseline, 95% paired interval |','| --- | --- |']
+ for c in x:
+  v=c['candidate_over_parent'];lo,hi=v['ci95'];lines.append('| `{}` | {:.3f} [{:.3f},{:.3f}] |'.format(c['name'],v['median_paired_ratio'],lo,hi))
+ lines.append('')
+(r/'README.md').write_text('\n'.join(lines)+'\n');shutil.copyfile(__file__,r/'archive.py.txt')
+p=w/'docs/utilities/bc-number-conversion.md';p.write_text(p.read_text()+'\n[Complete output measurements](bc-206-output/README.md) retain full/held-out\nfixtures, every checked interval, controls and compiler/source provenance.\nNative acceptance and output-base algorithm decisions remain separate work.\n')
+print('Archived all 3220 checked full/holdout output invocations')

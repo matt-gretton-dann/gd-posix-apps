@@ -90,3 +90,7 @@ Fractional leading zero padding retains its bounded zero buffer. The stream's
 existing fill/alignment side effects and error handling remain in their original
 paths. Capacity and time claims require measurements; batching does not imply
 that nondecimal conversion has changed its arithmetic algorithm.
+
+[Complete output measurements](bc-206-output/README.md) retain full/held-out
+fixtures, every checked interval, controls and compiler/source provenance.
+Native acceptance and output-base algorithm decisions remain separate work.
