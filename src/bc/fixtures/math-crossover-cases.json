@@ -1,0 +1,220 @@
+{
+  "scales": [
+    0,
+    1,
+    20,
+    100,
+    250
+  ],
+  "cases": [
+    {
+      "id": "a-half-angle-below",
+      "function": "a",
+      "arguments": [
+        "0.099999"
+      ]
+    },
+    {
+      "id": "a-half-angle-exact",
+      "function": "a",
+      "arguments": [
+        "0.1"
+      ]
+    },
+    {
+      "id": "a-half-angle-above",
+      "function": "a",
+      "arguments": [
+        "0.100001"
+      ]
+    },
+    {
+      "id": "a-reciprocal-below",
+      "function": "a",
+      "arguments": [
+        "0.999999"
+      ]
+    },
+    {
+      "id": "a-reciprocal-exact",
+      "function": "a",
+      "arguments": [
+        "1"
+      ]
+    },
+    {
+      "id": "a-reciprocal-above",
+      "function": "a",
+      "arguments": [
+        "1.000001"
+      ]
+    },
+    {
+      "id": "e-halving-below",
+      "function": "e",
+      "arguments": [
+        "0.124999"
+      ]
+    },
+    {
+      "id": "e-halving-exact",
+      "function": "e",
+      "arguments": [
+        "0.125"
+      ]
+    },
+    {
+      "id": "e-halving-above",
+      "function": "e",
+      "arguments": [
+        "0.125001"
+      ]
+    },
+    {
+      "id": "l-lower-reduction-below",
+      "function": "l",
+      "arguments": [
+        "0.799999"
+      ]
+    },
+    {
+      "id": "l-lower-reduction-exact",
+      "function": "l",
+      "arguments": [
+        "0.8"
+      ]
+    },
+    {
+      "id": "l-lower-reduction-above",
+      "function": "l",
+      "arguments": [
+        "0.800001"
+      ]
+    },
+    {
+      "id": "l-upper-reduction-below",
+      "function": "l",
+      "arguments": [
+        "1.199999"
+      ]
+    },
+    {
+      "id": "l-upper-reduction-exact",
+      "function": "l",
+      "arguments": [
+        "1.2"
+      ]
+    },
+    {
+      "id": "l-upper-reduction-above",
+      "function": "l",
+      "arguments": [
+        "1.200001"
+      ]
+    },
+    {
+      "id": "j-hankel-order0-below",
+      "function": "j",
+      "arguments": [
+        "0",
+        "7.999999"
+      ]
+    },
+    {
+      "id": "j-hankel-order0-exact",
+      "function": "j",
+      "arguments": [
+        "0",
+        "8"
+      ]
+    },
+    {
+      "id": "j-hankel-order0-above",
+      "function": "j",
+      "arguments": [
+        "0",
+        "8.000001"
+      ]
+    },
+    {
+      "id": "j-hankel-order1-below",
+      "function": "j",
+      "arguments": [
+        "1",
+        "15.999999"
+      ]
+    },
+    {
+      "id": "j-hankel-order1-exact",
+      "function": "j",
+      "arguments": [
+        "1",
+        "16"
+      ]
+    },
+    {
+      "id": "j-hankel-order1-above",
+      "function": "j",
+      "arguments": [
+        "1",
+        "16.000001"
+      ]
+    },
+    {
+      "id": "j-hankel-order2-below",
+      "function": "j",
+      "arguments": [
+        "2",
+        "39.999999"
+      ]
+    },
+    {
+      "id": "j-hankel-order2-exact",
+      "function": "j",
+      "arguments": [
+        "2",
+        "40"
+      ]
+    },
+    {
+      "id": "j-hankel-order2-above",
+      "function": "j",
+      "arguments": [
+        "2",
+        "40.000001"
+      ]
+    },
+    {
+      "id": "j-small-coefficient-underflow",
+      "function": "j",
+      "arguments": [
+        "3",
+        "0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001"
+      ]
+    },
+    {
+      "id": "j-tiny-bound-exact",
+      "function": "j",
+      "arguments": [
+        "12",
+        "4"
+      ]
+    },
+    {
+      "id": "j-negative-even-symmetry",
+      "function": "j",
+      "arguments": [
+        "-2",
+        "-3"
+      ]
+    },
+    {
+      "id": "j-hankel-negative-order",
+      "function": "j",
+      "arguments": [
+        "-1",
+        "1000"
+      ]
+    }
+  ]
+}

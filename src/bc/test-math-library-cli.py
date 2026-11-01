@@ -43,7 +43,9 @@ class LibraryCli(unittest.TestCase):
         return result.stdout.replace('\\\r\n', '').replace('\\\n', '').splitlines()
 
     def certified(self, options=('-l',), files=(), binary=None):
-        cases = json.loads((ROOT / 'fixtures/math-oracles.json').read_text())['cases']
+        cases = []
+        for filename in ('math-oracles.json', 'math-crossover-oracles.json'):
+            cases.extend(json.loads((ROOT / 'fixtures' / filename).read_text())['cases'])
         program = []
         for case in cases:
             program += ['scale=' + str(case['scale']),
