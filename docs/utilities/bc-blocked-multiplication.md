@@ -26,6 +26,9 @@ both rectangular shapes and every relevant tile boundary/tail, with untouched
 output guards. A radix-200 uint8/uint16 trait checks the scalar fallback where
 the widened type holds ordinary products but not two-row accumulation.
 
-This is a #203 experiment pending correctness and paired performance evidence.
+[Paired measurements and all raw evidence](bc-203-blocked/README.md) show
+substantial end-to-end multiplication gains locally and on all three native
+platforms. Division retains inconclusive intervals; it is not claimed neutral.
+Final adoption still requires green checks for the reviewed head.
 The stack bound and independent products do not establish vectorization or a
 speedup. No ISA-specific code or hardware feature requirement is introduced.
