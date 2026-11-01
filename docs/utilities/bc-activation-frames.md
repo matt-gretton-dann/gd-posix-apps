@@ -29,6 +29,9 @@ than a wall-time threshold. Existing VM and CLI oracles cover nested and mutual
 recursion, array snapshots, arguments, local restoration, redefinition and saved
 special variables.
 
-This layout retains the existing host-recursive call control flow. An explicit
-VM call stack is a separate decision after measuring this bounded change;
-retaining capacity does not establish a new recursion-depth guarantee.
+This layout retains the existing host-recursive call control flow. The measured layout
+addresses the allocation cost while preserving existing return and unwind
+behavior. The [acceptance report](bc-208-frames/accepted-native/README.md) records
+the decision to retain host recursion, complete native evidence and limitations.
+Deep-recursion limits remain #184 work; retaining capacity does not establish a
+new recursion-depth guarantee.
