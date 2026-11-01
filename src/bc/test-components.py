@@ -105,6 +105,26 @@ class Components(unittest.TestCase):
         for component in ('conversion-in-dc', 'conversion-out-dc'):
             self.assertEqual(self.invoke(component, '0\n', base=2)['result'], '0')
 
+    def test_divide_conquer_boundaries_and_zero_remainders(self):
+        alphabet = '0123456789ABCDEF'
+        for base in (2, 3, 8, 16):
+            for width in (64, 65, 127, 128, 1024):
+                with self.subTest(base=base, width=width):
+                    digits = alphabet[base - 1] * width
+                    decimal = str(int(digits, base))
+                    parsed = self.invoke('conversion-in-dc', digits + '\n', base=base)
+                    self.assertEqual(parsed['result'], decimal)
+                    self.assertEqual(parsed['checksum_mod_2_64'], 3 * len(decimal))
+                    output = self.invoke('conversion-out-dc', decimal + '\n', base=base)
+                    self.assertEqual(output['result'], digits)
+            for exponent in (64, 128, 256):
+                with self.subTest(base=base, exponent=exponent):
+                    value = str(base ** exponent)
+                    output = self.invoke('conversion-out-dc', value + '\n', base=base)
+                    self.assertEqual(output['result'], '1' + '0' * exponent)
+            self.assertEqual(self.invoke('conversion-in-dc', '0' * 128 + '1\n',
+                                         base=base)['result'], '1')
+
     def test_divide_conquer_diagnostics_reject_noninteger_fixtures(self):
         for component in ('conversion-in-dc', 'conversion-out-dc'):
             for source in ('-1\n', '1.5\n', '+1\n'):
