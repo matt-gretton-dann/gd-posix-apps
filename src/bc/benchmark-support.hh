@@ -10,12 +10,16 @@
 
 #include "gd/time.h"
 
+#include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <iomanip>
 #include <ostream>
 #include <random>
 #include <stdexcept>
+#include <utility>
+#include <vector>
 
 namespace GD::Bc::Bench {
 template<typename Number>
@@ -86,6 +90,46 @@ inline auto next_batch_size(std::size_t count, int64_t elapsed_ns, int64_t targe
     factor = ratio >= 4 ? 4 : (ratio >= 3 ? 3 : 2);
   }
   return count > max_count / factor ? max_count : count * factor;
+}
+
+// Calibration uses medians of repeated, paired ratios. Reject incomplete or
+// nonpositive clock observations rather than interpreting them as a speedup.
+inline auto median(std::vector<double> values) -> double
+{
+  if (values.empty() || std::any_of(values.begin(), values.end(),
+                                    [](double v) { return !std::isfinite(v) || v <= 0; })) {
+    throw std::invalid_argument("Invalid calibration samples");
+  }
+  std::sort(values.begin(), values.end());
+  auto const middle = values.size() / 2;
+  return values.size() % 2 != 0 ? values[middle] : values[middle - 1] / 2 + values[middle] / 2;
+}
+
+// Sweep every candidate: scores need not be monotonic in the split point.
+// Within 1% of the best score, prefer the point closest to the portable policy
+// to avoid moving the boundary in response to a marginal timing difference.
+inline auto choose_split(std::vector<std::pair<std::size_t, double>> const& scores,
+                         std::size_t portable = 126) -> std::size_t
+{
+  if (scores.empty())
+    throw std::invalid_argument("No calibration candidates");
+  double best = scores.front().second;
+  for (auto [point, score] : scores) {
+    if (point == 0 || !std::isfinite(score) || score <= 0)
+      throw std::invalid_argument("Invalid calibration score");
+    best = std::min(best, score);
+  }
+  auto distance = [portable](std::size_t point) {
+    return point > portable ? point - portable : portable - point;
+  };
+  std::size_t selected = 0;
+  for (auto [point, score] : scores) {
+    if (score <= best * 1.01 && (selected == 0 || distance(point) < distance(selected) ||
+                                 (distance(point) == distance(selected) && point < selected))) {
+      selected = point;
+    }
+  }
+  return selected;
 }
 
 }  // namespace GD::Bc::Bench

@@ -45,6 +45,34 @@ class TunerCli(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             self.invoke([str(Path(directory) / "missing-parent" / "output.hh")], 1)
 
+    def test_quick_sweep_checks_every_candidate_and_shape(self):
+        with tempfile.TemporaryDirectory() as directory:
+            header = Path(directory) / 'dispatch.hh'
+            child = subprocess.run([TUNER, '--quick', '--seed', '197203', str(header)],
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                   universal_newlines=True, timeout=10)
+            self.assertEqual(child.returncode, 0, child.stderr)
+            self.assertEqual(child.stderr, '')
+            self.assertIn('Tuner seed: 197203', child.stdout)
+            rows = [line.split(',') for line in child.stdout.splitlines()
+                    if line.startswith('sample,') and not line.startswith('sample,left')]
+            self.assertEqual(len(rows), 3 * 4 * 3 * 8)
+            seen = set()
+            for _, left, right, square, round_, point, batch, elapsed, checked in rows:
+                self.assertGreater(int(batch), 0)
+                self.assertGreater(int(elapsed), 0)
+                self.assertEqual(checked, '1')
+                seen.add((int(left), int(right), int(square), int(round_), int(point)))
+            expected = {(left, left * (2 if shape == 1 else 8 if shape == 2 else 1),
+                         int(shape == 3), round_, point)
+                        for left in (2, 12, 32) for shape in range(4)
+                        for round_ in range(3)
+                        for point in (16, 32, 64, 96, 126, 192, 256, 512)}
+            self.assertEqual(seen, expected)
+            self.assertIn('Input seed: 197203', header.read_text())
+            self.assertRegex(header.read_text(),
+                             r'#define BC_MULTIPLY_SPLIT_POINT (16|32|64|96|126|192|256|512)\n')
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
