@@ -1,0 +1,18 @@
+{
+  "os": "windows",
+  "checked": 2000,
+  "identities": {
+    "base": "fac133458f4671fa39f626913faf55948b7848d6",
+    "candidate": "7c30eb3c182d257c189395692c856d517735d880"
+  },
+  "confirmed": [],
+  "selected": [
+    "| full | paired | `loop_1000000` | 1.013 [0.9989708786475131, 1.0248926154239324] | pass |",
+    "| full | paired | `calls_200000` | 1.017 [1.0009668090973955, 1.0793846816723722] | inconclusive-noisy |",
+    "| full | paired | `array_200000` | 1.011 [0.9903079497034968, 1.1379810192797581] | inconclusive-noisy |",
+    "| full | paired | `compare_equal_1000d_x100000` | 0.942 [0.9150349711191273, 0.9958332388077156] | pass |",
+    "| full | paired | `sqrt_scale100_x5000` | 1.007 [0.9627304844328624, 1.084259344292274] | inconclusive-noisy |",
+    "| full | paired | `file_statements_20000` | 1.005 [0.9789806334616034, 1.0903302580967251] | inconclusive-noisy |"
+  ],
+  "sha256": "e5857e51c3deefe2813f7b9bb3f5b59ba11cbaa3f3dc99d44c02e0b8c01ef1d0"
+}

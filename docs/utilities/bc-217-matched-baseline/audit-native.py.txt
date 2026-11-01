@@ -1,0 +1,93 @@
+"""Audit checked native math artifacts without rerunning interpreters."""
+import collections
+import hashlib
+import json
+import math
+from pathlib import Path
+import sys
+import zipfile
+
+REVISION='cb0383da32e08339b4f3e993b2caadb179ad6e1e'
+HOWARD='c8dabac65d39fd527a9264a5e505a99b1d8df3d8'
+LIBRARY='e4095342fc587ec43f964f9a6314b4a68a1762cac15b2d0a3016f34fd4565de7'
+def digest(value):return hashlib.sha256(value).hexdigest()
+mode=sys.argv[1]
+assert mode in ('broad','subset')
+for system in sys.argv[2:]:
+ path=Path('/private/tmp/bc-369-'+mode+'-native-'+system+'.zip')
+ with zipfile.ZipFile(path) as archive:
+  def read(name):return json.loads(archive.read(name))
+  names=set(archive.namelist())
+  assert 'failure.json' not in names and 'unavailable.json' not in names
+  orchestration=read('orchestration.json')
+  assert orchestration['candidate']==REVISION and orchestration['samples']==15
+  assert orchestration['broad']==(mode=='broad')
+  assert all(row.get('returncode')==0 for row in orchestration['commands'])
+  raw_library=archive.read('full-paired/declared-inputs/2-0-math-library.bc')
+  library_hash=digest(raw_library)
+  assert digest(raw_library.replace(b'\r\n',b'\n'))==LIBRARY
+  binaries={}
+  for role,revision in [('gd',REVISION),('aa',REVISION),('howard',HOWARD)]:
+   recipe=read(role+'/implementations.json')['implementations'][0]
+   assert recipe['metadata']['source_revision']==revision and recipe['metadata']['instrumented'] is False
+   binaries[role]=recipe['metadata']['binary_sha256']
+  counts={};observed_cases=set();calibrations={}
+  for preset in (('full','holdout') if mode=='broad' else ('full',)):
+   prefix=preset+'-'
+   prepared=read(prefix+'prepared/manifest.json')
+   cases={row['name']:row for row in prepared['corpus']}
+   assert len(cases)==(60 if mode=='broad' else 20)
+   assert {c['parameters']['scale'] for c in cases.values()}==({20,100,1000} if mode=='broad' else {100})
+   assert len({(c['group'],c['parameters']['mode']) for c in cases.values()})==20
+   observed_cases.update((preset,name) for name in cases)
+   calibrated=read(prefix+'prepared/calibration/summary.json')
+   for row in calibrated['cases']:
+    if row['status']=='one-shot latency; not batched':continue
+    assert row['iterations']==max(r['iterations'] for r in row['roles'].values())
+    assert len(row['roles'])==4 and row['iterations']==cases[row['frozen']]['parameters']['iterations']
+   for directory in sorted(n[:-len('/manifest.json')] for n in names if n.startswith(prefix) and n.endswith('/manifest.json')):
+    manifest=read(directory+'/manifest.json');tools=manifest['implementations']
+    for tool in tools:
+     assert tool['complete_provenance'] is True and tool['metadata']['instrumented'] is False
+     role='howard' if tool['name'].startswith('howard-') else 'aa' if tool['name']=='gd-aa' else 'gd'
+     assert tool['metadata']['source_revision']==(HOWARD if role=='howard' else REVISION)
+     assert tool['binary_sha256']==tool['metadata']['binary_sha256']==binaries[role]
+     if tool['name']!='howard-standard':assert tool['metadata']['library']['source_sha256']==library_hash
+     for declared in tool.get('input_artifacts',[]):
+      artifact=directory+'/'+declared['archived_as'].replace('\\','/')
+      assert digest(archive.read(artifact))==declared['sha256']==library_hash
+    for case in manifest['corpus']:
+     assert case==cases[case['name']]
+     for suffix,key in [('.bc','program_sha256'),('.expected','oracle_sha256')]:
+      assert digest(archive.read(directory+'/workloads/'+case['name']+suffix))==case[key]
+    if directory==prefix+'prepared':continue
+    assert manifest['samples']==15 and manifest['warmups']==3
+    assert manifest['replayed_corpus']['source_manifest_sha256']==digest(archive.read(prefix+'prepared/manifest.json'))
+    rows=[json.loads(line) for line in archive.read(directory+'/samples.jsonl').splitlines()]
+    tool_names={t['name'] for t in tools};case_names={c['name'] for c in manifest['corpus']}
+    assert len(rows)==len(case_names)*len(tool_names)*18
+    seen=collections.defaultdict(set)
+    for row in rows:
+     assert row['checked'] is True and math.isfinite(row['seconds']) and row['seconds']>0
+     assert row['implementation'] in tool_names and row['workload'] in case_names
+     key=row['workload'],row['implementation'],row['phase']
+     assert row['round'] not in seen[key];seen[key].add(row['round'])
+    for name in case_names:
+     for tool in tool_names:
+      assert seen[name,tool,'measurement']==set(range(15)) and seen[name,tool,'warmup']==set(range(3))
+    counts[directory]=len(rows)
+   calibration=[json.loads(line) for line in archive.read(prefix+'prepared/calibration/samples.jsonl').splitlines()]
+   assert calibration and all(row['checked'] is True for row in calibration)
+   counts[prefix+'calibration']=len(calibration)
+  decisions=read('decisions.json')
+  assert decisions['advisory'] is True
+  assert {(row['preset'],row['name']) for row in decisions['results']}==observed_cases
+  assert len(decisions['results'])==(120 if mode=='broad' else 20)
+  statuses=collections.Counter(row['status'] for row in decisions['results'])
+  controls=collections.Counter(row['aa_status'] for row in decisions['results'])
+  audit=dict(source=REVISION,system=system,mode=mode,zip_sha256=digest(path.read_bytes()),
+   library_sha256=library_hash,canonical_lf_library_sha256=LIBRARY,source_crlf_count=raw_library.count(b'\r\n'),
+   checked_rows=sum(counts.values()),counts=counts,statuses=dict(statuses),controls=dict(controls),
+   decisions=decisions['results'],limitation='competitive/A-A observations; no separate old-GD mathematical baseline in this protocol')
+  path.with_suffix('.audit.json').write_text(json.dumps(audit,indent=2)+'\n')
+  print(system,mode,'checked',audit['checked_rows'],'statuses',dict(statuses),'controls',dict(controls))
