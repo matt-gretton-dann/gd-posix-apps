@@ -54,10 +54,16 @@ accuracy-checked implementation exists.
 Every warm-up and measured process must exit successfully, leave stderr empty,
 and match its independent expected output. Each invocation has a finite
 `--timeout` (30 seconds by default); Python kills and waits for its direct child
-on expiration. Programs arrive on stdin followed by EOF, without `quit` or an
-open-input dependency. The recorded interval covers launch, input transfer,
-parsing, calculation and output capture. Environment preparation, encoding,
-oracle construction and comparison, hashing and statistics are outside it.
+on expiration. Ordinary classes send programs on stdin followed by EOF, without
+`quit` or an open-input dependency. The `file_streaming` class instead appends the
+staged `.bc` path as one argv entry and supplies empty stdin, so the interpreter
+cannot wait for another input source after the file. Its manifest records
+`input_mode: file`. Missing/changed artifacts and unknown input modes fail before timing.
+The recorded interval covers launch, input transfer/opening, parsing, calculation
+and output capture. Environment preparation, encoding, artifact staging and
+validation, oracle construction/comparison, hashing and statistics are outside it.
+File validation reads the exact bytes before each trial: this is cached file
+input, not a cold-filesystem or disk-bandwidth measurement.
 
 Oracles use exact Python integers, exact scaled integer division/modulo/power,
 and an integer floor-root construction. They do not use bc itself or floating
@@ -130,7 +136,11 @@ parsing, validation and VM registration; decimal cases include the surrounding
 interpreter/I/O work. They are not pure parser or arithmetic-kernel measurements.
 The streaming case feeds sequential statements and checks every output line
 through EOF. It measures bulk input/output throughput, including parsing and
-execution; it does not assert interactive first-response latency.
+execution; it does not assert interactive first-response latency. A separate
+file-streaming case increments a scalar across complete file input items and
+checks the final exact integer; it measures file opening plus frontend/VM work.
+Existing stdin case definitions remain unchanged. The file class runs in the
+native representative matrix as well as the full, held-out and quick corpora.
 
 CPU/allocation profiles and component drivers are separate #200 follow-ups,
 before choosing architectural changes. The corpus and this infrastructure make
