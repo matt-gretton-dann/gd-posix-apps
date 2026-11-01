@@ -126,7 +126,7 @@ class BenchmarkCli(unittest.TestCase):
         self.assertEqual(result.stderr, "")
         rows = [json.loads(line) for line in
                 (output / "samples.jsonl").read_text(encoding="utf-8").splitlines()]
-        self.assertEqual(len(rows), 46)
+        self.assertEqual(len(rows), 50)
         self.assertTrue(all(row["checked"] for row in rows))
         manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
         files = [case for case in manifest['corpus'] if case['group'] == 'file_streaming']
@@ -215,6 +215,42 @@ class PairedStatistics(unittest.TestCase):
                              previous['program_sha256'])
             oracle = ('\n'.join(case['expected']) + '\n').encode()
             self.assertEqual(hashlib.sha256(oracle).hexdigest(), previous['oracle_sha256'])
+
+    def test_expanded_sqrt_cases_preserve_every_previous_case(self):
+        module = self.module()
+        fixture = Path(__file__).resolve().parent / 'fixtures/benchmark-corpus-before-sqrt.json'
+        report = json.loads(fixture.read_text())
+        for preset, recorded in report['presets'].items():
+            cases = module.corpus(preset, seed=recorded['seed'])
+            self.assertEqual(len(cases), 50)
+            for actual, previous in zip(cases[:46], recorded['cases']):
+                self.assertEqual(actual['name'], previous['name'])
+                payload = json.dumps(actual, sort_keys=True, separators=(',', ':')).encode()
+                self.assertEqual(hashlib.sha256(payload).hexdigest(), previous['sha256'])
+            extra = cases[46:]
+            self.assertEqual([c['group'] for c in extra],
+                             ['sqrt_large_scale', 'sqrt_tiny', 'sqrt_tiny', 'sqrt_large_integer'])
+            for case in extra:
+                parameters = case['parameters']
+                self.assertGreater(parameters['iterations'], 0)
+                self.assertIn('sqrt(', case['program'])
+                self.assertEqual(len(case['expected']), 1)
+                if case['group'] == 'sqrt_tiny':
+                    places = parameters['input_scale']
+                    self.assertEqual(places % 2, 0)
+                    expected = module.scaled(2 * 10 ** (places // 2), places)
+                    self.assertEqual(case['expected'], [expected])
+                    self.assertIn('scale=0', case['program'])
+                elif case['group'] == 'sqrt_large_integer':
+                    root = 2 * 10 ** parameters['root_power']
+                    self.assertEqual(case['expected'],
+                                     [module.scaled(root * 10 ** parameters['scale'],
+                                                    parameters['scale'])])
+                else:
+                    places = parameters['scale']
+                    coefficient = int(case['expected'][0].replace('.', ''))
+                    self.assertLessEqual(coefficient * coefficient, 2 * 10 ** (2 * places))
+                    self.assertGreater((coefficient + 1) ** 2, 2 * 10 ** (2 * places))
 
     def test_nondecimal_output_classes_have_independent_roundtrip_oracles(self):
         cases = self.module().corpus('quick')

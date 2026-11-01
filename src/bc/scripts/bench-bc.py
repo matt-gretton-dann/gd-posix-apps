@@ -280,6 +280,32 @@ def corpus(preset="full", selected=None, listing=False, seed=197200):
         count, {"statements": count})
     if cases and cases[-1]['name'] == file_case:
         cases[-1]['input_mode'] = 'file'
+    # Append expanded sqrt regimes after every historical case. No RNG draws
+    # or dictionary changes perturb the preceding full/held-out/quick corpus.
+    places, count = dimension(10000), iterations(5)
+    add("sqrt_large_scale{}_x{}".format(places, count), "sqrt_large_scale",
+        "scale={}\nfor(i=0;i<{};i++) c=sqrt(2)\nc".format(places, count),
+        lambda: scaled(integer_sqrt(2 * 10 ** (2 * places)), places),
+        {"scale": places, "iterations": count, "radicand": "2"})
+    for original_scale, repetitions in ((1024, 30), (4096, 10)):
+        # Keep the input scale even so the exact root is a finite decimal in
+        # every preset; report the actual adjusted dimension in its name.
+        places = 2 * max(1, dimension(original_scale) // 2)
+        count = iterations(repetitions)
+        value = "." + "0" * (places - 1) + "4"
+        add("sqrt_tiny_scale{}_x{}".format(places, count), "sqrt_tiny",
+            "scale=0\nx={}\nfor(i=0;i<{};i++) c=sqrt(x)\nc".format(value, count),
+            lambda places=places: scaled(2 * 10 ** (places // 2), places),
+            {"input_scale": places, "scale": 0, "iterations": count,
+             "coefficient": "4"})
+    root_power, places, count = dimension(2000), dimension(100), iterations(10)
+    value = "4" + "0" * (2 * root_power)
+    add("sqrt_integer_power{}_scale{}_x{}".format(root_power, places, count),
+        "sqrt_large_integer",
+        "scale={}\nx={}\nfor(i=0;i<{};i++) c=sqrt(x)\nc".format(places, value, count),
+        lambda: scaled(2 * 10 ** (root_power + places), places),
+        {"root_power": root_power, "input_digits": len(value),
+         "scale": places, "iterations": count, "coefficient": "4"})
     if selected:
         missing = set(selected) - set(known)
         if missing:
