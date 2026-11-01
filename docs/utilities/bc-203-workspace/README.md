@@ -151,3 +151,23 @@ integrating main `3682edf` (PR #315), the combined tree passes 141 bc cases
 A test-only structured binding now borrows shape pairs to satisfy GCC's
 warnings-as-errors policy. Fresh latest-head native checks compare against the
 current base; no earlier timing is relabeled as that integrated source.
+
+
+## Integrated Windows regression hold (native run 21)
+
+The integrated source `0374daf` passes ordinary CI and native output checks,
+but is not accepted for merge. Linux/macOS each pass 950 invocations with no
+confirmed performance regression. Windows passes 980 output checks including
+one confirmation batch, but confirms multi-limb division at 1.261
+[1.192, 1.343] versus base `3682edf`. Small square root is 1.175 with a wide
+interval and is inconclusive. Earlier isolated workspace runs 16/18 were
+neutral for division. All observations, including this new losing result, are
+retained in the native21 summaries/decisions and verified artifact hashes.
+
+An MSVC-only `__declspec(noinline)` boundary around the large coefficient
+Algorithm D method is now an experiment to isolate caller inlining choices.
+This does not establish the cause of the regression. Other compilers keep their
+ordinary policy; arithmetic and generic portability are unchanged. The
+[Microsoft declaration documentation](https://learn.microsoft.com/en-us/cpp/cpp/noinline)
+explains this compiler control. Fresh native validation must establish its
+cost before acceptance; no global optimization flag is weakened.

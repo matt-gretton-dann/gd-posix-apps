@@ -695,7 +695,13 @@ public:
     return static_cast<NumType>(result);
   }
 
-  /** Return modulo.  */
+  /** Replace the coefficient with its integer quotient by v. */
+#if defined(_MSC_VER)
+  // Isolate the large Algorithm D kernel from MSVC caller inlining decisions.
+  // Native #203 runs found a Windows division regression after VM/kernel
+  // integration. Other compilers retain their ordinary inlining policy.
+  __declspec(noinline)
+#endif
   void divide(BasicDigits v)
   {
     /* Algorithm D of Knuth TAOCP 4.3.1.  */

@@ -1,2 +1,2 @@
 *-size.txt -text whitespace=-blank-at-eol
-native16-windows-* -text whitespace=cr-at-eol
+native*-windows-* -text whitespace=cr-at-eol
