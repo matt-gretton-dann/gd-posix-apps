@@ -12,7 +12,7 @@ replaces directional search with a finite shuffled sweep and paired medians.
 The [protocol](../bc-benchmarking.md#explicit-multiplication-calibration)
 defines shape weighting, batch bounds, warm-up and the 1% stability tolerance.
 
-## Repeated full runs
+## Original process-CPU-clock stage
 
 On Apple M1/macOS 27.2 with the compiler/build identity in provenance.json,
 three independent seeds each pass all 1440 timed result comparisons across
@@ -72,3 +72,26 @@ selection), 176 Release cases / 592102 assertions, deterministic median and
 nonmonotonic-selection tests, and five tuner CLI groups. The quick CLI test
 checks all 288 samples and every candidate/shape/round plus header seed.
 No actual foreign cross executable was run locally; native CI remains required.
+
+## Portable elapsed-clock correction
+
+Windows CI 41285156338 rejects zero process-CPU intervals in both extension
+configurations. The failing quick-sweep excerpt remains in
+windows-clock-failure.log; no sample is reinterpreted as a speedup. Source
+`027bffd107580791b4bc8101222a78d8e203ce1d` switches the tuner to the portable
+steady monotonic elapsed clock and labels that metric in stdout/CSV. The
+unchanged quick protocol still requires positive durations and every checked
+candidate/shape/round. Scheduling now belongs to the measured interval. The
+original CPU-clock data above remains unchanged with its original source.
+
+Three fresh full runs retain all 4320 exact-checked elapsed samples and every
+candidate/shape in steady-repeated/ and steady-summary.json. Their actual source,
+binary/compiler identity and limitations are in steady-provenance.json. These
+runs do not change the portable 126 default. Windows native CI must confirm
+the correction; passing Mac tests do not establish the Windows outcome.
+
+| Seed | Selected point | Aggregate / 126 |
+| ---: | ---: | ---: |
+| 197203 | 32 | 0.965406 |
+| 197204 | 32 | 0.963511 |
+| 197205 | 32 | 0.965960 |
