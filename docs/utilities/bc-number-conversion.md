@@ -15,8 +15,9 @@ copies retain normal inline-value or shared heap COW semantics.
 Single decimal digits use a direct scalar multiply-accumulate path at every
 input base, preserving their base-independent value without chunk planning.
 Single hexadecimal letters retain the generic decoder's same base-independent
-rule. Other input bases and established nondecimal input contracts retain exact
-generic multiply-accumulate and fractional conversion.
+rule. Longer nondecimal literals can combine several input digits in one native
+multiply-accumulate. Short literals retain their scalar loop; traits without
+sufficient widened headroom also use that generic fallback.
 No input base is assumed at compilation or function definition time.
 
 Independent tests construct references from small integer arithmetic and exact
@@ -32,8 +33,8 @@ platforms keep their generic compiler alignment policy. [Complete measurements
 and retained regressions](bc-206-decimal-input/README.md) distinguish the initial,
 scalar and aligned stages, including inconclusive division/modulo intervals.
 
-This is the first #206 stage. Nondecimal grouping, batched output and conversion
-crossover decisions remain open. Performance results must distinguish component
+Nondecimal grouping is a candidate pending its own measurements. Batched output
+and conversion crossover decisions remain open. Performance results must distinguish component
 conversion from end-to-end multiplication, which includes input and output.
 The separate #320 fix handles fractional padding that bypassed line wrapping.
 
@@ -51,3 +52,24 @@ the fixture remains decimal. The JSON report records `text_base`; arithmetic and
 parse components reject this extra argument. Internal conversion intervals still
 include validation and consumer/reset work, with final output checking outside
 timing. Control rows remain separate and are never subtracted.
+
+## Nondecimal group bounds
+
+Let B be the storage radix and M the smaller of the native limb maximum and
+floor(widened maximum / B). Both a group's multiplier and its coefficient must
+be at most M. If the incoming carry is at most M, every limb multiply-accumulate
+is at most (B-1)M + M = BM, which fits the widened type. The carry remains bounded
+by M and is drained into as many canonical limbs as needed.
+
+The group planner bounds even the legacy decoder's full 0–16 range, including
+its release-build behavior for out-of-base API forms. A k-digit group in input
+base b has coefficient at most 16(b^k-1)/(b-1). Therefore b^k is bounded by
+floor(M(b-1)/16)+1, computed with quotient/remainder arithmetic to avoid an
+intermediate overflow. Every partial group also satisfies the bound. Normal
+lexer-validated digits require less headroom, but this optimization preserves
+the existing decoder rather than broadening the public input contract.
+
+Radix points only affect the count of fractional source digits. The constructed
+integer coefficient C is then converted to floor(C*10^scale/b^scale) using the
+existing fractional rescaling path. Runtime input-base changes and persistent
+literal-cache invalidation remain unchanged.
