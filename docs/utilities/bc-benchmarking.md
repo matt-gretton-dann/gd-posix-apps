@@ -54,7 +54,7 @@ as described below; an unselected suite is never a performance pass.
 `--suite math` selects sixty one-shot/repeated cases: all six public functions
 at scales20/100/1000, plus Bessel turning, order-dominated, argument-dominated
 and near-root regimes. Quick mode uses scales2/20/100. Held-out inputs use
-different regular arguments or exact integer-order Bessel symmetries, with
+different argument magnitudes and Bessel orders, with
 different repeated-call counts. Names and parameters retain each actual input,
 scale, call count and mode. Default fixed counts are **not calibrated**; short
 cases do not establish a substantive timing advantage. Use the explicit
@@ -93,6 +93,15 @@ and the reference fixture. Ordinary arithmetic `.expected` artifacts retain
 their previous exact-output format. Larger arguments and scales remain in
 the broader accuracy corpus even when omitted from this bounded timing subset.
 This harness support alone makes no competitive-performance claim.
+
+The held-out mathematical inputs use independently certified enclosures for
+1.125 regular arguments, log(2.25), Bessel turning/order/argument cases at
+(23,22.5), (113,1.125), (1,112.5), and a near-root order-one case. These replace
+the initial sign/symmetry-only held-out shapes before native math timing.
+The sixty full cases retain their exact program/oracle/parameter dictionaries,
+verified against the recorded pre-change hashes. The dedicated benchmark
+fixture contains eighty full/held-out enclosures across four scales; the
+broader mathematical correctness corpus remains a separate scope.
 
 ## Calibrate once and replay frozen dimensions
 

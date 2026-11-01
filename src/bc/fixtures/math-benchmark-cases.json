@@ -1,0 +1,200 @@
+{
+  "scales": [
+    2,
+    20,
+    100,
+    1000
+  ],
+  "cases": [
+    {
+      "id": "s-one",
+      "function": "s",
+      "arguments": [
+        "1"
+      ],
+      "corpus": "full",
+      "regime": "regular"
+    },
+    {
+      "id": "c-one",
+      "function": "c",
+      "arguments": [
+        "1"
+      ],
+      "corpus": "full",
+      "regime": "regular"
+    },
+    {
+      "id": "a-one",
+      "function": "a",
+      "arguments": [
+        "1"
+      ],
+      "corpus": "full",
+      "regime": "regular"
+    },
+    {
+      "id": "l-two",
+      "function": "l",
+      "arguments": [
+        "2"
+      ],
+      "corpus": "full",
+      "regime": "regular"
+    },
+    {
+      "id": "e-one",
+      "function": "e",
+      "arguments": [
+        "1"
+      ],
+      "corpus": "full",
+      "regime": "regular"
+    },
+    {
+      "id": "j-zero-one",
+      "function": "j",
+      "arguments": [
+        "0",
+        "1"
+      ],
+      "corpus": "full",
+      "regime": "regular"
+    },
+    {
+      "id": "j-turning",
+      "function": "j",
+      "arguments": [
+        "20",
+        "20"
+      ],
+      "corpus": "full",
+      "regime": "turning"
+    },
+    {
+      "id": "j-order-dominates",
+      "function": "j",
+      "arguments": [
+        "100",
+        "1"
+      ],
+      "corpus": "full",
+      "regime": "order_dominates"
+    },
+    {
+      "id": "j-argument-dominates",
+      "function": "j",
+      "arguments": [
+        "0",
+        "100"
+      ],
+      "corpus": "full",
+      "regime": "argument_dominates"
+    },
+    {
+      "id": "j-near-root",
+      "function": "j",
+      "arguments": [
+        "0",
+        "2.4048255576957727686216318793264546431242449091460"
+      ],
+      "corpus": "full",
+      "regime": "near_root"
+    },
+    {
+      "id": "held-s-nine-eighths",
+      "function": "s",
+      "arguments": [
+        "1.125"
+      ],
+      "corpus": "holdout",
+      "regime": "regular"
+    },
+    {
+      "id": "held-c-nine-eighths",
+      "function": "c",
+      "arguments": [
+        "1.125"
+      ],
+      "corpus": "holdout",
+      "regime": "regular"
+    },
+    {
+      "id": "held-a-nine-eighths",
+      "function": "a",
+      "arguments": [
+        "1.125"
+      ],
+      "corpus": "holdout",
+      "regime": "regular"
+    },
+    {
+      "id": "held-l-nine-fourths",
+      "function": "l",
+      "arguments": [
+        "2.25"
+      ],
+      "corpus": "holdout",
+      "regime": "regular"
+    },
+    {
+      "id": "held-e-nine-eighths",
+      "function": "e",
+      "arguments": [
+        "1.125"
+      ],
+      "corpus": "holdout",
+      "regime": "regular"
+    },
+    {
+      "id": "held-j-one-nine-eighths",
+      "function": "j",
+      "arguments": [
+        "1",
+        "1.125"
+      ],
+      "corpus": "holdout",
+      "regime": "regular"
+    },
+    {
+      "id": "held-j-turning23",
+      "function": "j",
+      "arguments": [
+        "23",
+        "22.5"
+      ],
+      "corpus": "holdout",
+      "regime": "turning"
+    },
+    {
+      "id": "held-j-order113",
+      "function": "j",
+      "arguments": [
+        "113",
+        "1.125"
+      ],
+      "corpus": "holdout",
+      "regime": "order_dominates"
+    },
+    {
+      "id": "held-j-argument112",
+      "function": "j",
+      "arguments": [
+        "1",
+        "112.5"
+      ],
+      "corpus": "holdout",
+      "regime": "argument_dominates"
+    },
+    {
+      "id": "held-j-one-near-root",
+      "function": "j",
+      "arguments": [
+        "1",
+        "3.8317059702075123156144358863081607665645452742878"
+      ],
+      "corpus": "holdout",
+      "regime": "near_root"
+    }
+  ]
+}
