@@ -49,3 +49,6 @@ integers. Broader end-to-end and cross-platform observations remain required.
 
 Complete raw samples, controls, fixtures and intervals are retained. Batched
 output, other output-base algorithms and final #206 acceptance remain open.
+
+[Accepted native evidence](accepted-native/README.md) records the changed GCC
+source and all three OSes, with the initial Linux losses retained separately.

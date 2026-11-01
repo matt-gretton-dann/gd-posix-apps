@@ -1,0 +1,16 @@
+...s..........F.
+======================================================================
+FAIL: test_nondecimal_output_classes_have_independent_roundtrip_oracles (__main__.PairedStatistics.test_nondecimal_output_classes_have_independent_roundtrip_oracles)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-radix-output-matrix/src/bc/test-benchmark-cli.py", line 216, in test_nondecimal_output_classes_have_independent_roundtrip_oracles
+    self.assertEqual(set(selected), {'binary_output', 'octal_output'})
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Items in the second set but not the first:
+'octal_output'
+'binary_output'
+
+----------------------------------------------------------------------
+Ran 16 tests in 1.379s
+
+FAILED (failures=1, skipped=1)

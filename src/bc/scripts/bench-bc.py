@@ -242,6 +242,15 @@ def corpus(preset="full", selected=None, listing=False, seed=197200):
     add("literal_repeat_{}d_x{}".format(digits, count), "literal_repeat",
         "for(i=0;i<{};i++) {{\na={}\na+=1\n}}\na".format(count, value),
         lambda: int(value) + 1, {"digits": digits, "iterations": count})
+    # Append output-heavy nondecimal classes without perturbing earlier seeds.
+    # Separate groups keep both bases in every representative native PR subset.
+    for label, output_base, code in (('binary', 2, 'b'), ('octal', 8, 'o')):
+        digits, count = dimension(1000), iterations(300)
+        value = dense(digits)
+        add("{}_output_{}d_x{}".format(label, digits, count), label + "_output",
+            "a={}\nobase={}\nfor(i=0;i<{};i++) a".format(value, output_base, count),
+            lambda value=value, code=code, count=count: [format(int(value), code)] * count,
+            {"digits": digits, "lines": count, "output_base": output_base})
     if selected:
         missing = set(selected) - set(known)
         if missing:

@@ -105,9 +105,18 @@ struct VMState
   [[nodiscard]] auto scale() const -> Number::NumType;
 
   /** \brief  Get the number stored in the array element ae.  */
-  [[nodiscard]] auto array_element(ArrayElement const& ae) const -> Number;
+  // Keep container-specific work outside scalar dispatch on GCC. Native Linux
+  // measurements exposed broad regressions after the storage layout changed.
+  [[nodiscard]]
+#if defined(__GNUC__) && !defined(__clang__)
+  __attribute__((noinline))
+#endif
+  auto array_element(ArrayElement const& ae) const -> Number;
 
   /** \brief  Store a number in an array eleemnt.  */
+#if defined(__GNUC__) && !defined(__clang__)
+  __attribute__((noinline))
+#endif
   void array_element(ArrayElement const& ae, Number const& num);
 
   [[nodiscard]] auto variable(Variable v) const -> Number const&;
@@ -599,17 +608,13 @@ void GD::Bc::Details::VMState::array_element(ArrayElement const& ae, Number cons
 
 auto GD::Bc::Details::VMState::array_element(ArrayElement const& ae) const -> GD::Bc::Number
 {
-  ArrayValues const a = arrays_.at(static_cast<unsigned>(ae.first.get()));
+  ArrayValues const& a = arrays_.at(static_cast<unsigned>(ae.first.get()));
   if (!a) {
     return {};
   }
 
-  auto it = a->find(ae.second);
-  if (it == a->end()) {
-    return {};
-  }
-
-  return it->second;
+  auto const* value = a->lookup(ae.second);
+  return value ? *value : Number();
 }
 
 auto GD::Bc::Details::VMState::variable(Variable v) const -> GD::Bc::Number const&
@@ -634,14 +639,13 @@ void GD::Bc::Details::VMState::array(Array a, ArrayValues av)
 
 auto GD::Bc::Details::VMState::array_length(Array a) const -> GD::Bc::Number::NumType
 {
-  auto arr = array(a);
+  ArrayValues const& arr = arrays_.at(static_cast<unsigned>(a.get()));
   // Untouched arrays have no allocated map and contain no elements.
   if (!arr || arr->empty()) {
     return 0;
   }
 
-  auto rit = arr->rbegin();
-  return rit->first + 1;
+  return arr->length();
 }
 
 void GD::Bc::Details::VMState::validate(Instructions const& instrs, bool function_body) const

@@ -87,8 +87,9 @@ original CPU-clock data above remains unchanged with its original source.
 Three fresh full runs retain all 4320 exact-checked elapsed samples and every
 candidate/shape in steady-repeated/ and steady-summary.json. Their actual source,
 binary/compiler identity and limitations are in steady-provenance.json. These
-runs do not change the portable 126 default. Windows native CI must confirm
-the correction; passing Mac tests do not establish the Windows outcome.
+runs do not change the portable 126 default. Windows confirmation was pending at collection time. The subsequent
+[accepted native run](accepted-native/README.md) records both Windows extension
+jobs passing and complete three-OS evidence.
 
 | Seed | Selected point | Aggregate / 126 |
 | ---: | ---: | ---: |
