@@ -20,6 +20,7 @@
 #include <span>
 #include <sstream>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include "bc.hh"
@@ -1774,7 +1775,9 @@ public:
       digits_ = Details::BasicDigits<Traits>(1);
       break;
     case Details::ComparisonResult::greater_than:
-      digits_.divide(rhs.digits_);
+      // The by-value divisor coefficient is dead after this call; scale/sign
+      // remain available below. Transfer it into normalization instead of copying.
+      digits_.divide(std::move(rhs.digits_));
       break;
     }
 
@@ -1854,7 +1857,9 @@ public:
     bool first_iteration = true;
     bool improving = false;
     do {
-      p = c;
+      // The current guess is replaced immediately. Transfer its ownership to
+      // the previous guess rather than copying and then releasing it.
+      p = std::move(c);
       c = *this;
       c.divide(p, working_scale);
       assert(c.scale_ == p.scale_);  // NOLINT
@@ -1864,7 +1869,9 @@ public:
       first_iteration = false;
     } while (improving);
 
-    *this = p;
+    // No later step reads p. Moving also keeps terminal rescaling from
+    // detaching a result that would otherwise remain shared with this local.
+    *this = std::move(p);
     if (scale() > target_scale) {
       digits_.div_pow10(scale() - target_scale);
       scale_ = target_scale;
