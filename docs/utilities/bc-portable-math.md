@@ -29,6 +29,8 @@ there is no private function namespace or retained implementation that bypasses
 redefinition. There are no additional reserved helper names or global caches.
 The accuracy argument below assumes the supplied definitions are in place.
 
+The ordinary source initializes decimal scale with `2*A`, so loading it after
+a caller's nondecimal-base file still selects 20 and preserves both bases.
 Each function sets `ibase=A` before evaluating multi-digit constants. A single
 `A` has its base-independent value ten. Saving/restoring the caller's base uses
 values, not literals interpreted in the caller's base. Tests cover input/output

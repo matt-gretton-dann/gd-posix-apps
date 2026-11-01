@@ -5,7 +5,7 @@
       "expression": "scale!=w",
       "function": "a",
       "kind": "if",
-      "line": 28,
+      "line": 29,
       "modeled": [
         "true",
         "false"
@@ -18,7 +18,7 @@
       "expression": "x<0",
       "function": "a",
       "kind": "if",
-      "line": 30,
+      "line": 31,
       "modeled": [
         "false"
       ],
@@ -31,7 +31,7 @@
       "expression": "x>1",
       "function": "a",
       "kind": "if",
-      "line": 35,
+      "line": 36,
       "modeled": [
         "false"
       ],
@@ -44,7 +44,7 @@
       "expression": "x>.1",
       "function": "a",
       "kind": "while",
-      "line": 42,
+      "line": 43,
       "modeled": [
         "true",
         "false"
@@ -58,7 +58,7 @@
       "expression": "t!=0",
       "function": "a",
       "kind": "while",
-      "line": 50,
+      "line": 51,
       "modeled": [
         "true",
         "false"
@@ -70,19 +70,6 @@
     },
     {
       "expression": "v==1",
-      "function": "a",
-      "kind": "if",
-      "line": 57,
-      "modeled": [
-        "false"
-      ],
-      "observed": [
-        "true",
-        "false"
-      ]
-    },
-    {
-      "expression": "n==1",
       "function": "a",
       "kind": "if",
       "line": 58,
@@ -95,10 +82,23 @@
       ]
     },
     {
+      "expression": "n==1",
+      "function": "a",
+      "kind": "if",
+      "line": 59,
+      "modeled": [
+        "false"
+      ],
+      "observed": [
+        "true",
+        "false"
+      ]
+    },
+    {
       "expression": "r>=0",
       "function": "a",
       "kind": "if",
-      "line": 60,
+      "line": 61,
       "modeled": [
         "true"
       ],
@@ -111,7 +111,7 @@
       "expression": "r<0",
       "function": "a",
       "kind": "if",
-      "line": 61,
+      "line": 62,
       "modeled": [
         "false"
       ],
@@ -124,7 +124,7 @@
       "expression": "x<0",
       "function": "e",
       "kind": "if",
-      "line": 77,
+      "line": 78,
       "modeled": [
         "false"
       ],
@@ -137,7 +137,7 @@
       "expression": "n==1",
       "function": "e",
       "kind": "if",
-      "line": 82,
+      "line": 83,
       "modeled": [
         "false"
       ],
@@ -150,7 +150,7 @@
       "expression": "x>=3*(s+1)",
       "function": "e",
       "kind": "if",
-      "line": 83,
+      "line": 84,
       "modeled": [],
       "observed": [
         "true",
@@ -161,7 +161,7 @@
       "expression": "scale!=w",
       "function": "e",
       "kind": "if",
-      "line": 94,
+      "line": 95,
       "modeled": [
         "true"
       ],
@@ -173,7 +173,7 @@
       "expression": "x>.125",
       "function": "e",
       "kind": "while",
-      "line": 96,
+      "line": 97,
       "modeled": [],
       "observed": [
         "true",
@@ -184,7 +184,7 @@
       "expression": "t!=0",
       "function": "e",
       "kind": "while",
-      "line": 103,
+      "line": 104,
       "modeled": [],
       "observed": [
         "true",
@@ -195,7 +195,7 @@
       "expression": "k>0",
       "function": "e",
       "kind": "while",
-      "line": 108,
+      "line": 109,
       "modeled": [],
       "observed": [
         "true",
@@ -206,7 +206,7 @@
       "expression": "n==1",
       "function": "e",
       "kind": "if",
-      "line": 112,
+      "line": 113,
       "modeled": [],
       "observed": [
         "true",
@@ -218,7 +218,7 @@
       "expression": "r>=0",
       "function": "e",
       "kind": "if",
-      "line": 114,
+      "line": 115,
       "modeled": [],
       "observed": [
         "true"
@@ -229,7 +229,7 @@
       "expression": "r<0",
       "function": "e",
       "kind": "if",
-      "line": 115,
+      "line": 116,
       "modeled": [],
       "observed": [
         "false"
@@ -239,7 +239,7 @@
       "expression": "scale!=w",
       "function": "l",
       "kind": "if",
-      "line": 133,
+      "line": 134,
       "modeled": [
         "true"
       ],
@@ -251,7 +251,7 @@
       "expression": "x<=0",
       "function": "l",
       "kind": "if",
-      "line": 134,
+      "line": 135,
       "modeled": [],
       "observed": [
         "true",
@@ -262,7 +262,7 @@
       "expression": "x<.8",
       "function": "l",
       "kind": "while",
-      "line": 141,
+      "line": 142,
       "modeled": [],
       "observed": [
         "true",
@@ -273,7 +273,7 @@
       "expression": "x>1.2",
       "function": "l",
       "kind": "while",
-      "line": 145,
+      "line": 146,
       "modeled": [],
       "observed": [
         "true",
@@ -284,7 +284,7 @@
       "expression": "t!=0",
       "function": "l",
       "kind": "while",
-      "line": 153,
+      "line": 154,
       "modeled": [],
       "observed": [
         "true",
@@ -293,17 +293,6 @@
     },
     {
       "expression": "r>=0",
-      "function": "l",
-      "kind": "if",
-      "line": 161,
-      "modeled": [],
-      "observed": [
-        "true",
-        "false"
-      ]
-    },
-    {
-      "expression": "r<0",
       "function": "l",
       "kind": "if",
       "line": 162,
@@ -314,10 +303,21 @@
       ]
     },
     {
+      "expression": "r<0",
+      "function": "l",
+      "kind": "if",
+      "line": 163,
+      "modeled": [],
+      "observed": [
+        "true",
+        "false"
+      ]
+    },
+    {
       "expression": "scale!=w",
       "function": "s",
       "kind": "if",
-      "line": 180,
+      "line": 181,
       "modeled": [
         "true",
         "false"
@@ -330,7 +330,7 @@
       "expression": "x<0",
       "function": "s",
       "kind": "if",
-      "line": 182,
+      "line": 183,
       "modeled": [
         "false"
       ],
@@ -343,7 +343,7 @@
       "expression": "scale!=w",
       "function": "s",
       "kind": "if",
-      "line": 190,
+      "line": 191,
       "modeled": [
         "true"
       ],
@@ -355,7 +355,7 @@
       "expression": "x>p/2",
       "function": "s",
       "kind": "if",
-      "line": 192,
+      "line": 193,
       "modeled": [],
       "observed": [
         "true",
@@ -366,7 +366,7 @@
       "expression": "t!=0",
       "function": "s",
       "kind": "while",
-      "line": 197,
+      "line": 198,
       "modeled": [],
       "observed": [
         "true",
@@ -377,7 +377,7 @@
       "expression": "n==1",
       "function": "s",
       "kind": "if",
-      "line": 202,
+      "line": 203,
       "modeled": [],
       "observed": [
         "true",
@@ -388,7 +388,7 @@
       "expression": "r>=0",
       "function": "s",
       "kind": "if",
-      "line": 204,
+      "line": 205,
       "modeled": [],
       "observed": [
         "true",
@@ -399,7 +399,7 @@
       "expression": "r<0",
       "function": "s",
       "kind": "if",
-      "line": 205,
+      "line": 206,
       "modeled": [],
       "observed": [
         "true",
@@ -410,7 +410,7 @@
       "expression": "scale!=w",
       "function": "c",
       "kind": "if",
-      "line": 223,
+      "line": 224,
       "modeled": [
         "true",
         "false"
@@ -423,7 +423,7 @@
       "expression": "x<0",
       "function": "c",
       "kind": "if",
-      "line": 224,
+      "line": 225,
       "modeled": [
         "false"
       ],
@@ -436,7 +436,7 @@
       "expression": "scale!=w",
       "function": "c",
       "kind": "if",
-      "line": 229,
+      "line": 230,
       "modeled": [
         "true"
       ],
@@ -448,7 +448,7 @@
       "expression": "x>p/2",
       "function": "c",
       "kind": "if",
-      "line": 231,
+      "line": 232,
       "modeled": [],
       "observed": [
         "true",
@@ -459,7 +459,7 @@
       "expression": "t!=0",
       "function": "c",
       "kind": "while",
-      "line": 236,
+      "line": 237,
       "modeled": [],
       "observed": [
         "true",
@@ -470,7 +470,7 @@
       "expression": "r>=0",
       "function": "c",
       "kind": "if",
-      "line": 242,
+      "line": 243,
       "modeled": [],
       "observed": [
         "true",
@@ -481,7 +481,7 @@
       "expression": "r<0",
       "function": "c",
       "kind": "if",
-      "line": 243,
+      "line": 244,
       "modeled": [],
       "observed": [
         "true",
@@ -492,7 +492,7 @@
       "expression": "n<0",
       "function": "j",
       "kind": "if",
-      "line": 264,
+      "line": 265,
       "modeled": [
         "false"
       ],
@@ -505,7 +505,7 @@
       "expression": "x<0",
       "function": "j",
       "kind": "if",
-      "line": 268,
+      "line": 269,
       "modeled": [
         "false"
       ],
@@ -518,7 +518,7 @@
       "expression": "n>=3*x",
       "function": "j",
       "kind": "if",
-      "line": 273,
+      "line": 274,
       "modeled": [
         "false"
       ],
@@ -531,7 +531,7 @@
       "expression": "n>=4*(s+1)",
       "function": "j",
       "kind": "if",
-      "line": 274,
+      "line": 275,
       "modeled": [],
       "observed": [
         "true",
@@ -542,7 +542,7 @@
       "expression": "x>8*(n*n+1)",
       "function": "j",
       "kind": "if",
-      "line": 285,
+      "line": 286,
       "modeled": [
         "true",
         "false"
@@ -556,7 +556,7 @@
       "expression": "scale!=w",
       "function": "j",
       "kind": "if",
-      "line": 287,
+      "line": 288,
       "modeled": [
         "true"
       ],
@@ -568,7 +568,7 @@
       "expression": "t!=0",
       "function": "j",
       "kind": "while",
-      "line": 295,
+      "line": 296,
       "modeled": [],
       "observed": [
         "true",
@@ -579,7 +579,7 @@
       "expression": "g<0",
       "function": "j",
       "kind": "if",
-      "line": 299,
+      "line": 300,
       "modeled": [],
       "observed": [
         "true",
@@ -590,7 +590,7 @@
       "expression": "g>4*k*x",
       "function": "j",
       "kind": "if",
-      "line": 300,
+      "line": 301,
       "modeled": [],
       "observed": [
         "true",
@@ -601,7 +601,7 @@
       "expression": "h==4",
       "function": "j",
       "kind": "if",
-      "line": 306,
+      "line": 307,
       "modeled": [],
       "observed": [
         "true",
@@ -612,7 +612,7 @@
       "expression": "h==0",
       "function": "j",
       "kind": "if",
-      "line": 307,
+      "line": 308,
       "modeled": [],
       "observed": [
         "true",
@@ -623,7 +623,7 @@
       "expression": "h==1",
       "function": "j",
       "kind": "if",
-      "line": 308,
+      "line": 309,
       "modeled": [],
       "observed": [
         "true",
@@ -634,7 +634,7 @@
       "expression": "h==2",
       "function": "j",
       "kind": "if",
-      "line": 309,
+      "line": 310,
       "modeled": [],
       "observed": [
         "true",
@@ -645,7 +645,7 @@
       "expression": "h==3",
       "function": "j",
       "kind": "if",
-      "line": 310,
+      "line": 311,
       "modeled": [],
       "observed": [
         "true",
@@ -656,7 +656,7 @@
       "expression": "f==1",
       "function": "j",
       "kind": "if",
-      "line": 312,
+      "line": 313,
       "modeled": [],
       "observed": [
         "true",
@@ -667,7 +667,7 @@
       "expression": "v==1",
       "function": "j",
       "kind": "if",
-      "line": 317,
+      "line": 318,
       "modeled": [],
       "observed": [
         "true",
@@ -678,7 +678,7 @@
       "expression": "r>=0",
       "function": "j",
       "kind": "if",
-      "line": 319,
+      "line": 320,
       "modeled": [],
       "observed": [
         "true",
@@ -689,7 +689,7 @@
       "expression": "r<0",
       "function": "j",
       "kind": "if",
-      "line": 320,
+      "line": 321,
       "modeled": [],
       "observed": [
         "true",
@@ -700,7 +700,7 @@
       "expression": "scale!=w",
       "function": "j",
       "kind": "if",
-      "line": 332,
+      "line": 333,
       "modeled": [
         "true"
       ],
@@ -712,7 +712,7 @@
       "expression": "i=1;i<=n;i++",
       "function": "j",
       "kind": "for",
-      "line": 334,
+      "line": 335,
       "modeled": [],
       "observed": [
         "true",
@@ -723,7 +723,7 @@
       "expression": "t==0",
       "function": "j",
       "kind": "if",
-      "line": 336,
+      "line": 337,
       "modeled": [],
       "observed": [
         "true",
@@ -734,7 +734,7 @@
       "expression": "t!=0",
       "function": "j",
       "kind": "while",
-      "line": 341,
+      "line": 342,
       "modeled": [],
       "observed": [
         "true",
@@ -745,7 +745,7 @@
       "expression": "v==1",
       "function": "j",
       "kind": "if",
-      "line": 346,
+      "line": 347,
       "modeled": [],
       "observed": [
         "true",
@@ -756,7 +756,7 @@
       "expression": "r>=0",
       "function": "j",
       "kind": "if",
-      "line": 348,
+      "line": 349,
       "modeled": [],
       "observed": [
         "true",
@@ -767,7 +767,7 @@
       "expression": "r<0",
       "function": "j",
       "kind": "if",
-      "line": 349,
+      "line": 350,
       "modeled": [],
       "observed": [
         "true",
@@ -781,7 +781,7 @@
   "observed_outcomes": 121,
   "schema": 1,
   "scope": "test-side interpreted decision outcomes; not compiler MC/DC",
-  "source_sha256": "2ff9404fc9d32cce7ae682389e6497c2a1f4c1939fd98bf9b42d9f7d7803508d",
+  "source_sha256": "e4095342fc587ec43f964f9a6314b4a68a1762cac15b2d0a3016f34fd4565de7",
   "total_outcomes": 132,
   "undefined_domain_guard_calls": 2
 }

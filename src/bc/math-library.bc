@@ -12,7 +12,8 @@
    See the accompanying numerical
    error-budget document; a vanishing term alone is not an accuracy proof.
 */
-scale=20
+/* Single-digit constants keep initialization independent of the caller's base. */
+scale=2*A
 
 /* Arctangent: reciprocal and half-angle reduction, alternating series. */
 define a(x) {
