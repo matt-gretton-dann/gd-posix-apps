@@ -8,6 +8,7 @@
 
 #include "gd/span.hh"
 
+#include <new>
 #include <catch2/catch.hpp>
 
 #include <sstream>

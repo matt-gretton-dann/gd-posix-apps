@@ -2,6 +2,7 @@
  * Dense/sparse storage oracles independent of VM parsing and array lookup.
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <new>
 #include <catch2/catch.hpp>
 
 #include <map>

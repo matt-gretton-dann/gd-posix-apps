@@ -4,6 +4,7 @@
  *          SPDX-License-Identifier: Apache-2.0
  */
 
+#include <new>
 #include <catch2/catch.hpp>
 
 #include <cstdint>

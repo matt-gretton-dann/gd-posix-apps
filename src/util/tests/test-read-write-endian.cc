@@ -6,6 +6,7 @@
 
 #include "util/utils.hh"
 
+#include <new>
 #include <catch2/catch.hpp>
 
 #include <vector>
