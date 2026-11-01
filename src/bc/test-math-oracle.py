@@ -137,6 +137,28 @@ class CertifiedFixtures(unittest.TestCase):
                 self.assertEqual(ORACLE.classify(candidate + 3 * ulp, lower, upper,
                                                 case['scale']), 'fail')
 
+    def test_imported_decisions_account_for_computed_arguments(self):
+        spec = importlib.util.spec_from_file_location('imported_math', ROOT / 'test-math-imported.py')
+        adapter = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(adapter)
+        reference = dict(function='s', arguments=['0'], scale=2, lower='0', upper='0')
+        actual = dict(function='s', arguments=['.001'], scale=2, value='.001')
+        adapter.certify(actual, reference)
+        with self.assertRaises(AssertionError):
+            adapter.certify(dict(actual, value='.02'), reference)
+        # An uncertain boundary must request refinement, not pass or count as
+        # a proven numerical failure. The widened enclosure crosses one ULP.
+        with self.assertRaisesRegex(AssertionError, 'refine'):
+            adapter.certify(dict(actual, value='.010'), reference)
+        with self.assertRaisesRegex(AssertionError, 'regeneration'):
+            adapter.certify(dict(actual, function='e'), dict(reference, function='e'))
+        replacement = dict(reference, function='e', arguments=['.5'],
+                           user_redefinition='identity replacement of e')
+        identity = dict(function='e', arguments=['.5'], scale=2, value='.5')
+        adapter.certify(identity, replacement)
+        with self.assertRaises(AssertionError):
+            adapter.certify(dict(identity, value='.6'), replacement)
+
     def test_every_case_and_scale_has_a_narrow_dyadic_enclosure(self):
         specification = json.loads((ROOT / 'fixtures/math-oracle-cases.json').read_text())
         expected = {(c['id'], s) for c in specification['cases'] for s in specification['scales']}

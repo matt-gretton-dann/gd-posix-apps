@@ -7,9 +7,10 @@ There are no math opcodes, callbacks, function-name interception, privileged
 precision registers or hidden caches. The identical file can be supplied as
 input to another conforming bc without that implementation's `-l` library.
 
-This is a correctness candidate. Performance acceptance, imported-corpus
-adapters, interpreted decision coverage and the complete competitive matrix
-remain outstanding. Passing finite vectors alone is not the accuracy argument.
+This is a correctness candidate. Performance acceptance and the complete
+competitive matrix remain outstanding. Imported-program adapters and
+interpreted decision evidence are described below. Passing finite vectors
+alone is not the accuracy argument.
 
 ## Interface, state and namespace
 
@@ -203,5 +204,59 @@ FLINT/Arb enclosures. Tests require both endpoint errors <= 10^-S and distinguis
 an indeterminate enclosure from a proven numerical failure. Scales include
 0,1,2,20,100,1000,2000, with zero/one cases, signs, near-one logs, tiny/huge
 arguments, trig reduction boundaries and several Bessel regimes. Finite tests
-support the arguments above; crossover expansion and decision coverage remain
-required before completing #217.
+support the arguments above. A separate crossover fixture adds 28 regimes at
+five scales (140 enclosures), on both sides of the reciprocal, half-angle,
+halving, log-reduction and Hankel entry boundaries, plus negative-order Hankel
+symmetry and an underflowing initial Bessel coefficient. These join the original
+336 enclosures; regeneration uses the same pinned optional FLINT environment.
+
+## Imported programs and interpreted decisions
+
+`bc/math-imported` runs the imported Howard exponent, log, pi, arctangent,
+sine, cosine and Bessel programs, generated atan calls, and the ordinary
+function-replacement script. It redirects only their mathematical call
+sites to ordinary test-side wrappers. Production definitions and their internal
+calls remain unchanged. The wrappers record each actual argument, entry scale
+and result; the original expressions and loops still execute. All 1581 calls
+are accounted for: 1073 certified numerical results, 507 undefined-domain
+inputs (eleven nonpositive logarithms and 496 noninteger Bessel orders), and
+one ordinary user replacement of `e` by the identity function. Undefined-domain
+calls and the replacement are not counted as numerical accuracy evidence.
+
+The committed outward enclosures certify exact reference arguments. Computed
+trigonometric inputs use the imported program's own approximation to pi;
+the adapter widens the enclosure by the exact argument difference using
+the global one-Lipschitz bounds for sine, cosine and arctangent. It never
+assumes a particular final digit of pi or uses a binary floating-point
+tolerance. Other inputs must agree exactly. Normalized source hashes and
+call counts prevent silently replacing or dropping imported cases.
+
+The legacy exact-output GDPAT entries remain excluded because their expected
+text encodes a different library's rounding. Their mathematical calls are now
+exercised by the numerical adapter. Bessel and atan generation uses the
+imported scripts with pinned Howard bc; their committed generated input and
+generator hashes are checked. The generated Howard `halt` terminator is
+removed in favor of harness EOF. The identity replacement's bare `return x`
+is parenthesized as `return(x)` for strict POSIX mode; its original source hash
+is still checked. The definition retains ordinary binding, so the next wrapper
+call resolves the user replacement in both extension configurations.
+
+`bc/math-library-decisions` transforms only test-side source. Each original
+condition is evaluated once. Automatic array flags distinguish loop exhaustion
+from `break`; `return` skips unreachable probes. A behavioral check covers
+skipped/exhausted/broken loops, return, nested decisions and a condition with a
+side effect before the production fixture runs. It certifies all 476 numerical
+results from the instrumented definitions against the same exact enclosures.
+
+The source contains 66 decisions and 132 outcomes. Normal execution, including
+two explicitly undefined-domain log guard calls, observes 121 outcomes. Nine
+separate portable-host models independently clamp a working-scale setter and
+exercise its defensive error branch without returning a numerical value.
+Together these observe 130 outcomes. The two remaining outcomes require a
+negative exponential coefficient: positive Taylor terms, positive squaring
+and a positive reciprocal preserve nonnegativity, so they are infeasible.
+The committed `src/bc/fixtures/math-library-decisions.json` report records
+each source line, expression, normal and
+modeled observations, and this exception. Any other missing outcome fails
+the automated check. This is interpreted-library decision evidence, kept
+separate from C++ line/branch/compiler MC/DC reports and their ON/OFF totals.

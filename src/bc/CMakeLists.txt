@@ -185,6 +185,17 @@ if(RUN_INTEGRATION_TESTS)
            "${CMAKE_CURRENT_SOURCE_DIR}/math-library.bc"
            "${CMAKE_CURRENT_BINARY_DIR}/bc-math-library.hh")
   set_tests_properties(bc/math-library-source PROPERTIES TIMEOUT 10)
+  add_test(NAME bc/math-library-decisions COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-math-library-coverage.py" "$<TARGET_FILE:bc>")
+  set_tests_properties(bc/math-library-decisions PROPERTIES TIMEOUT 650)
+  if(USE_GD_POSIX_APPS_TESTS)
+    # Exercise the actual imported programs using numerical enclosures rather
+    # than another implementation's exact final-digit snapshots.
+    add_test(NAME bc/math-imported COMMAND "${Python_EXECUTABLE}"
+             "${CMAKE_CURRENT_SOURCE_DIR}/test-math-imported.py" "$<TARGET_FILE:bc>"
+             "${gdpat_TEST_SOURCE_DIR}/testsuites/gavinhoward-bc/tests/bc")
+    set_tests_properties(bc/math-imported PROPERTIES TIMEOUT 650)
+  endif()
   add_test(NAME bc/math-oracle COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-math-oracle.py")
   set_tests_properties(bc/math-oracle PROPERTIES TIMEOUT 30)
@@ -313,13 +324,13 @@ set(bc_skips
     bc/gavinhoward-bc/tests/engineering # Don't support engineering obase
     bc/gavinhoward-bc/tests/strings # Don't support print.
     bc/gavinhoward-bc/tests/letters # Don't support letters G-Z.
-    bc/gavinhoward-bc/tests/exponent # Exact Howard snapshots need certified ULP adapter (#217)
-    bc/gavinhoward-bc/tests/log # Exact Howard snapshots need certified ULP adapter (#217)
-    bc/gavinhoward-bc/tests/pi # Exact Howard snapshots need certified ULP adapter (#217)
-    bc/gavinhoward-bc/tests/arctangent # Exact Howard snapshots need certified ULP adapter (#217)
-    bc/gavinhoward-bc/tests/sine # Exact Howard snapshots need certified ULP adapter (#217)
-    bc/gavinhoward-bc/tests/cosine # Exact Howard snapshots need certified ULP adapter (#217)
-    bc/gavinhoward-bc/tests/bessel # Exact Howard snapshots need certified ULP adapter (#217)
+    bc/gavinhoward-bc/tests/exponent # Numerical calls covered by bc/math-imported; exact text differs
+    bc/gavinhoward-bc/tests/log # Numerical calls covered by bc/math-imported; exact text differs
+    bc/gavinhoward-bc/tests/pi # Numerical calls covered by bc/math-imported; exact text differs
+    bc/gavinhoward-bc/tests/arctangent # Numerical calls covered by bc/math-imported; exact text differs
+    bc/gavinhoward-bc/tests/sine # Numerical calls covered by bc/math-imported; exact text differs
+    bc/gavinhoward-bc/tests/cosine # Numerical calls covered by bc/math-imported; exact text differs
+    bc/gavinhoward-bc/tests/bessel # Numerical calls covered by bc/math-imported; exact text differs
     bc/gavinhoward-bc/tests/misc1 # No support for last
     bc/gavinhoward-bc/tests/misc2 # We're strict about presence of newlines.
     bc/gavinhoward-bc/tests/misc3 # We're strict about presence of newlines, and no support for print
@@ -336,9 +347,9 @@ set(bc_skips
     bc/gavinhoward-bc/script/multiply # Don't support multi-char variables
     bc/gavinhoward-bc/script/divide # Don't support multi-char variables
     bc/gavinhoward-bc/script/array # No support for comments
-    bc/gavinhoward-bc/script/atan # Library result snapshots need accuracy adapter (#217)
-    bc/gavinhoward-bc/script/bessel # Library result snapshots need accuracy adapter (#217)
-    bc/gavinhoward-bc/script/functions # Library result snapshots need accuracy adapter (#217)
+    bc/gavinhoward-bc/script/atan # Numerical calls covered by bc/math-imported; exact text differs
+    bc/gavinhoward-bc/script/bessel # Numerical calls covered by bc/math-imported; exact text differs
+    bc/gavinhoward-bc/script/functions # Numerical calls covered by bc/math-imported; exact text differs
     bc/gavinhoward-bc/script/len # No support for multi-char function names.
     bc/gavinhoward-bc/script/rand # No support for random numbers.
     bc/gavinhoward-bc/script/references # No support for references
