@@ -78,7 +78,7 @@ def selected_cases(bench, preset, broad):
     # One representative per class keeps PR cost bounded. Full parameter sizes
     # avoid pretending that quick correctness checks have useful timing power.
     groups = ('startup', 'loop', 'calls', 'array', 'array_sparse', 'fibonacci',
-              'multiply', 'divide_multilimb', 'power',
+              'multiply', 'square', 'divide_multilimb', 'power',
               'sqrt', 'decimal_input', 'streaming', 'comparison', 'literal_repeat')
     chosen = []
     for group in groups:
@@ -90,6 +90,7 @@ def selected_cases(bench, preset, broad):
     for case in cases:
         parameters = case['parameters']
         if (case['group'] == 'comparison' or
+                (case['group'] == 'square' and parameters.get('digits', 0) >= 10000) or
                 (case['group'] == 'multiply' and parameters.get('left_digits', 0) >= 10000)):
             if case['name'] not in chosen:
                 chosen.append(case['name'])

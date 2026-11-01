@@ -1,0 +1,23 @@
+[
+  {
+    "os": "linux",
+    "artifact": "bc-203-square-native31-linux.zip",
+    "sha256": "8865da81293d1ba76eac58fb5e2a21fb1d20f06d29f7894f991f8254ff2166c4",
+    "checked_invocations": 1140,
+    "run_id": 41266628637
+  },
+  {
+    "os": "macos",
+    "artifact": "bc-203-square-native31-macos.zip",
+    "sha256": "b9a06899623c46a3ab4720880e6c09e930b60f5e4efde9f6ad086ac12b949c4b",
+    "checked_invocations": 1050,
+    "run_id": 41266628637
+  },
+  {
+    "os": "windows",
+    "artifact": "bc-203-square-native31-windows.zip",
+    "sha256": "8e60f9fd26030fe1f9717d587877a13c0ac6d3771c4cb96f0257b64cc69a70c0",
+    "checked_invocations": 1050,
+    "run_id": 41266628637
+  }
+]

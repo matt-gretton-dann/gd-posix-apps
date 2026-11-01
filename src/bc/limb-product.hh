@@ -12,6 +12,7 @@
 #include <span>
 #include <stdexcept>
 
+#include "limb-square.hh"
 #include "profiling.hh"
 
 namespace GD::Bc::Details {
@@ -89,6 +90,12 @@ class LimbProduct
 
   static void basic(Input a, Input b, Buffer result)
   {
+    if constexpr (LimbSquare<Traits>::supported) {
+      if (a.data() == b.data() && a.size() == b.size()) {
+        LimbSquare<Traits>::multiply(a, result);
+        return;
+      }
+    }
     GD_BC_PROFILE_EVENT(Profile::Event::basic_multiply_calls, 1);
     for (std::size_t i = 0; i < a.size(); ++i) {
       Wide carry = 0;
@@ -128,8 +135,7 @@ public:
     return size;
   }
 
-  static void multiply(Input a, Input b, Buffer result, Buffer scratch,
-                       std::size_t split_point)
+  static void multiply(Input a, Input b, Buffer result, Buffer scratch, std::size_t split_point)
   {
     a = trim(a);
     b = trim(b);
@@ -161,7 +167,10 @@ public:
     auto const middle_count = a_count + b_count;
     assert(scratch.size() >= 2 * middle_count);
     auto const a_sum = sum(a0, a1, scratch.first(a_count));
-    auto const b_sum = sum(b0, b1, scratch.subspan(a_count, b_count));
+    // Preserve coefficient identity through the middle square as well.
+    auto const b_sum = a.data() == b.data() && a.size() == b.size()
+                         ? a_sum
+                         : sum(b0, b1, scratch.subspan(a_count, b_count));
     auto const middle = scratch.subspan(middle_count, middle_count);
     std::fill(middle.begin(), middle.end(), Limb{0});
     multiply(a_sum, b_sum, middle, scratch.subspan(2 * middle_count), split_point);

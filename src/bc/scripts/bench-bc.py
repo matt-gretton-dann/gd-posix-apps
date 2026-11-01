@@ -227,6 +227,14 @@ def corpus(preset="full", selected=None, listing=False, seed=197200):
     add("streaming_statements_{}".format(count), "streaming",
         "i=0\n" + "i+=1\ni\n" * count, lambda: list(range(1, count + 1)),
         {"statements": count * 2 + 1, "output_lines": count, "termination": "EOF"})
+    # Append square cases so earlier seeded operands and hashes stay stable.
+    for size, repeat_count in ((100, 100000), (1000, 10000), (10000, 500)):
+        digits, count = dimension(size), iterations(repeat_count)
+        value = dense(digits)
+        add("square_{}d_x{}".format(digits, count), "square",
+            "a={}\nfor(i=0;i<{};i++) c=a*a\nc".format(value, count),
+            lambda value=value: int(value) ** 2,
+            {"digits": digits, "iterations": count, "shape": "aliased"})
     # A single persistent literal executes repeatedly, including COW mutation
     # of each returned snapshot. No extra RNG draws change earlier programs.
     digits, count = dimension(2000), iterations(2000)

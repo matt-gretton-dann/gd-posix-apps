@@ -68,7 +68,8 @@ class ProfilingCli(unittest.TestCase):
             with self.subTest(exponent=exponent):
                 counters = self.profile('2^{}\n'.format(exponent),
                                         '{}\n'.format(2 ** exponent))
-                self.assertEqual(counters['events']['basic_multiply_calls'], expected_calls)
+                self.assertEqual(counters['events']['basic_multiply_calls'] +
+                                 counters['events']['square_multiply_calls'], expected_calls)
                 self.assertEqual(counters['events']['karatsuba_multiply_calls'], 0)
         # Exact value and decimal length checks for a large base. Exponent one
         # already returns early in BasicNumber, regardless of the threshold.
@@ -76,6 +77,16 @@ class ProfilingCli(unittest.TestCase):
         counters = self.profile('a={}\nb=a^1\nb-a\nlength(b)\n'.format(digits), '0\n1000\n')
         self.assertEqual(counters['events']['basic_multiply_calls'], 0)
         self.assertEqual(counters['events']['karatsuba_multiply_calls'], 0)
+        self.assertEqual(counters['events']['square_multiply_calls'], 0)
+
+    def test_shared_coefficient_square_dispatch(self):
+        # Multi-limb operands avoid the single-limb multiply-accumulate path.
+        for digits in (40, 2000):
+            with self.subTest(digits=digits):
+                value = '9' * digits
+                counters = self.profile('a={}\nb=a*a\nb-a*a\nlength(b)\n'.format(value),
+                                        '0\n{}\n'.format(2 * digits))
+                self.assertGreater(counters['events']['square_multiply_calls'], 0)
 
     def test_literal_cache_survives_function_activations_and_base_changes(self):
         counters = self.profile('define f() {\nreturn (10)\n}\nf()\nf()\n'

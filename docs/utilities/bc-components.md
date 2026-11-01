@@ -36,7 +36,7 @@ and consumes the result length, retaining realistic copy-on-write/reset costs.
 | Component | Work inside the interval |
 | :--- | :--- |
 | `control` | Copy/reset lhs and consume its numeric length. |
-| `add`, `subtract`, `multiply`, `divide` | The control work plus one Number API operation. Multiply/divide use target scale zero, preserving the API's normal operand-scale rules. |
+| `add`, `subtract`, `multiply`, `square`, `divide` | The control work plus one Number API operation. Square uses an aliased lhs and ignores the required rhs fixture. Multiply/square/divide use target scale zero, preserving the API's normal operand-scale rules. |
 | `conversion-in` | Validate/construct the signed decimal operand, reset the result, and consume its numeric length. |
 | `conversion-out` | Construct an output string stream, format the prepared Number in decimal, and capture/count the raw string including continuation lines. |
 | `parse` | Construct reader, lexer and parser; parse all input items through EOF; count instructions and check for fatal parser output. No VM is constructed or executed. |
