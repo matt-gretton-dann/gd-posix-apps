@@ -12,9 +12,11 @@ end in groups of the trait's decimal limb width. Fractional trailing zeros stay
 in the coefficient and scale. Every exposed limb is initialized before use;
 copies retain normal inline-value or shared heap COW semantics.
 
-Single hexadecimal digits and other established input contracts fall back to
-the generic decoder when they are not ordinary decimal text. Other input bases
-retain their exact generic multiply-accumulate and fractional conversion path.
+Single decimal digits use a direct scalar multiply-accumulate path at every
+input base, preserving their base-independent value without chunk planning.
+Single hexadecimal letters retain the generic decoder's same base-independent
+rule. Other input bases and established nondecimal input contracts retain exact
+generic multiply-accumulate and fractional conversion.
 No input base is assumed at compilation or function definition time.
 
 Independent tests construct references from small integer arithmetic and exact

@@ -205,7 +205,10 @@ public:
       return true;
     }
 
-    return std::all_of(digits_->begin(), digits_->end(), [](auto d) { return d == 0; });
+    return std::all_of(digits_->begin(), digits_->end(), [](auto d) {
+      GD_BC_PROFILE_EVENT(Profile::Event::zero_scan_limbs, 1);
+      return d == 0;
+    });
   }
 
   /** Is this an even number? Both absent and empty storage represent zero. */
@@ -236,6 +239,7 @@ public:
       auto index = std::max(lhs_size, rhs_size);
       while (index != 0) {
         --index;
+        GD_BC_PROFILE_EVENT(Profile::Event::comparison_limb_positions, 1);
         NumType const lhs_digit = index < lhs_size ? lhs_first[index] : 0;
         NumType const rhs_digit = index < rhs_size ? rhs_first[index] : 0;
         if (lhs_digit < rhs_digit) {
@@ -249,6 +253,7 @@ public:
     }
     Details::ComparisonResult result = Details::ComparisonResult::equality;
     for_each(rhs, scale, [&result](NumType lhs, NumType rhs) {
+      GD_BC_PROFILE_EVENT(Profile::Event::comparison_limb_positions, 1);
       if (lhs < rhs) {
         result = Details::ComparisonResult::less_than;
       }
@@ -512,6 +517,10 @@ public:
       ++rit;
       length -= base_log10_;
     }
+    // Count logical limb positions, including the first significant limb.
+    // The amount expression is not evaluated in ordinary builds.
+    GD_BC_PROFILE_EVENT(Profile::Event::length_scan_limbs,
+                        std::distance(digits_->rbegin(), rit) + (rit != finish ? 1 : 0));
     if (rit != finish) {
       length -= base_log10_;
       NumType d = *rit;
@@ -1448,6 +1457,13 @@ public:
     assert(ibase >= 2);   // NOLINT
     assert(ibase <= 16);  // NOLINT
 
+    if (s.size() == 1 && s.front() >= '0' && s.front() <= '9') {
+      // Single digits retain their base-independent value without chunk
+      // planning or temporary storage. Hexadecimal letters keep the decoder below.
+      digits_.mac(ibase, static_cast<NumType>(s.front() - '0'));
+      return;
+    }
+
     if (ibase == 10) {  // NOLINT - decimal limbs match the input radix.
       std::size_t point = std::string_view::npos;
       bool decimal = true;
@@ -1461,8 +1477,8 @@ public:
         }
       }
       if (decimal) {
-        // Keep single hexadecimal digits and other established input contracts
-        // on the generic path. No compile-time or execution-time base is folded.
+        // Nondecimal forms retain the generic decoder contract. Keep the
+        // original fractional scale; no definition-time base is assumed.
         scale_ =
           point == std::string_view::npos ? NumType{0} : static_cast<NumType>(s.size() - point - 1);
         digits_ = Details::BasicDigits<Traits>::from_decimal(s, point);

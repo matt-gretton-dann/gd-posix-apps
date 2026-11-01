@@ -104,6 +104,18 @@ class ProfilingCli(unittest.TestCase):
         self.assertEqual(counters['events']['literal_conversions'], 0)
         self.assertEqual(counters['allocations']['literals']['allocation_calls'], 0)
 
+    def test_comparison_positions_distinguish_early_and_full_scans(self):
+        value = '7' * 1000
+        for kind, right in (('high', '8' + value[1:]), ('low', value[:-1] + '8'),
+                            ('equal', value)):
+            with self.subTest(kind=kind):
+                counters = self.profile('a={}\nb={}\nr=0\nif(a<b) r=1\nr\n'.format(value, right),
+                                        '0\n' if kind == 'equal' else '1\n')
+                width = len(str(counters['limb_base'])) - 1
+                positions = 1 if kind == 'high' else (len(value) + width - 1) // width
+                self.assertEqual(counters['events']['comparison_limb_positions'], positions)
+                self.assertGreater(counters['events']['zero_scan_limbs'], 0)
+
     def test_array_clone_and_frames(self):
         counters = self.profile('define f(a[]) {\na[1]=9\nreturn(a[1])\n}\na[1]=3\n'
                                 'a[2]=123456789012345678901234567890\nf(a[])\na[1]\n',

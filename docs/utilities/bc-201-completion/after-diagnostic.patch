@@ -1,0 +1,66 @@
+diff --git a/src/bc/number.hh b/src/bc/number.hh
+index b358a65..e64b8e1 100644
+--- a/src/bc/number.hh
++++ b/src/bc/number.hh
+@@ -155,7 +155,7 @@ public:
+       return true;
+     }
+ 
+-    return std::all_of(digits_->begin(), digits_->end(), [](auto d) { return d == 0; });
++    return std::all_of(digits_->begin(), digits_->end(), [](auto d) { GD_BC_PROFILE_EVENT(Profile::Event::zero_scan_limbs, 1); return d == 0; });
+   }
+ 
+   /** Is this an even number? Both absent and empty storage represent zero. */
+@@ -180,6 +180,7 @@ public:
+       auto index = std::max(digits_->size(), rhs.digits_->size());
+       while (index != 0) {
+         --index;
++        GD_BC_PROFILE_EVENT(Profile::Event::comparison_limb_positions, 1);
+         NumType const lhs_digit = index < digits_->size() ? (*digits_)[index] : 0;
+         NumType const rhs_digit = index < rhs.digits_->size() ? (*rhs.digits_)[index] : 0;
+         if (lhs_digit < rhs_digit) {
+@@ -193,6 +194,7 @@ public:
+     }
+     Details::ComparisonResult result = Details::ComparisonResult::equality;
+     for_each(rhs, scale, [&result](NumType lhs, NumType rhs) {
++      GD_BC_PROFILE_EVENT(Profile::Event::comparison_limb_positions, 1);
+       if (lhs < rhs) {
+         result = Details::ComparisonResult::less_than;
+       }
+@@ -437,6 +439,8 @@ public:
+       ++rit;
+       length -= base_log10_;
+     }
++    GD_BC_PROFILE_EVENT(Profile::Event::length_scan_limbs,
++                        std::distance(digits_->rbegin(), rit) + (rit != digits_->rend() ? 1 : 0));
+     if (rit != digits_->rend()) {
+       length -= base_log10_;
+       NumType d = *rit;
+diff --git a/src/bc/profiling.cc b/src/bc/profiling.cc
+index 6a4e692..fe5570b 100644
+--- a/src/bc/profiling.cc
++++ b/src/bc/profiling.cc
+@@ -76,7 +76,8 @@ auto name(Event which) noexcept -> char const*
+     "iterator_owner_copies", "cow_clones",           "cow_limb_bytes",
+     "range_limb_bytes",      "basic_multiply_calls", "karatsuba_multiply_calls",
+     "literal_conversions",   "function_calls",       "instructions_executed",
+-    "array_clones",          "array_entries_copied"};
++    "array_clones",          "array_entries_copied",
++    "comparison_limb_positions", "zero_scan_limbs", "length_scan_limbs"};
+   static_assert(names.size() == static_cast<std::size_t>(Event::count));
+   return names[static_cast<std::size_t>(which)];
+ }
+diff --git a/src/bc/profiling.hh b/src/bc/profiling.hh
+index 08b10b4..244d123 100644
+--- a/src/bc/profiling.hh
++++ b/src/bc/profiling.hh
+@@ -29,6 +29,9 @@ enum class Event : std::size_t {
+   instructions_executed,
+   array_clones,
+   array_entries_copied,
++  comparison_limb_positions,
++  zero_scan_limbs,
++  length_scan_limbs,
+   count
+ };
+ 
