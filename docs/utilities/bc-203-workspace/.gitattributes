@@ -1,2 +1,4 @@
+# Preserve recorded artifact bytes under every Git newline policy.
+* -text
 *-size.txt -text whitespace=-blank-at-eol
 native*-windows-* -text whitespace=cr-at-eol

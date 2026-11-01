@@ -19,3 +19,8 @@ existing filename-encoding contract. The representative native policy includes
 the new group. PR #348 passes all fourteen checks; [native acceptance](accepted-native/README.md)
 retains 5250 checked invocations, staged-byte audits and noisy intervals.
 This infrastructure makes no scanner or performance-improvement claim.
+
+Archived byte rules also prevent Git newline conversion of standalone metadata.
+The repository evidence verifier checks recorded hashes and real checkout-filter
+behavior in Linux, macOS and Windows build jobs. Packaging updates do not alter
+measurement payloads, source identities or the original native ZIPs.
