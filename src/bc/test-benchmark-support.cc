@@ -71,6 +71,27 @@ TEST_CASE("Calibration batches grow after a zero clock duration", "[bc][benchmar
   REQUIRE(next_batch_size(100, elapsed_ns, 3500000000LL, 10000) == 200);
 }
 
+TEST_CASE("Calibration selection tolerates outliers and nonmonotonic curves",
+          "[bc][benchmark][sweep]")
+{
+  using GD::Bc::Bench::choose_split;
+  using GD::Bc::Bench::median;
+  CHECK(median({2, 1, 1000, 1, 1}) == 1);
+  CHECK(median({4, 2, 1, 3}) == 2.5);
+  CHECK(choose_split({{16, 1.3}, {32, 1.1}, {64, 1.2}, {96, .9}, {126, 1.1}, {192, 1.2}}) == 96);
+  CHECK(choose_split({{64, 1.0}, {126, 1.005}, {192, 1.2}}) == 126);
+  CHECK(choose_split({{64, 1.0}, {126, 1.02}, {192, 1.2}}) == 64);
+  CHECK(choose_split({{126, 1.005}, {192, 1.2}, {64, 1.0}}) == 126);
+  CHECK_THROWS_AS(median({}), std::invalid_argument);
+  CHECK_THROWS_AS(median({0, 1}), std::invalid_argument);
+  CHECK_THROWS_AS(median({-1, 1}), std::invalid_argument);
+  CHECK_THROWS_AS(median({std::numeric_limits<double>::infinity()}), std::invalid_argument);
+  CHECK_THROWS_AS(median({std::numeric_limits<double>::quiet_NaN()}), std::invalid_argument);
+  CHECK_THROWS_AS(choose_split({}), std::invalid_argument);
+  CHECK_THROWS_AS(choose_split({{0, 1}}), std::invalid_argument);
+  CHECK_THROWS_AS(choose_split({{126, 0}}), std::invalid_argument);
+}
+
 TEST_CASE("Calibration batch estimates progress without overflow", "[bc][benchmark][batch]")
 {
   using GD::Bc::Bench::next_batch_size;

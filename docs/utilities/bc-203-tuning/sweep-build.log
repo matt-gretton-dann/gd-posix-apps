@@ -1,0 +1,6 @@
+[1/5] Building CXX object src/bc/CMakeFiles/test-libbc.dir/test-benchmark-support.cc.o
+[2/5] Building CXX object src/bc/CMakeFiles/find-multiply-split-point.dir/find-multiply-split-point.cc.o
+[3/5] Linking CXX executable src/bc/find-multiply-split-point
+ld: warning: ignoring duplicate libraries: 'libgdsup/libgdsup.a'
+[4/5] Building CXX object src/bc/CMakeFiles/test-libbc.dir/test-number.cc.o
+[5/5] Linking CXX executable src/bc/test-libbc

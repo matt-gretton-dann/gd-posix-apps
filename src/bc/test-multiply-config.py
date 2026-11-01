@@ -23,6 +23,13 @@ class MultiplyConfig(unittest.TestCase):
                                    stderr=subprocess.PIPE, universal_newlines=True, timeout=3)
             return child, result.read_text() if result.exists() else None
 
+    def test_portable_default_never_runs_target_calibration(self):
+        for cross in (False, True):
+            with self.subTest(cross=cross):
+                child, choice = self.invoke('portable', cross)
+                self.assertEqual(child.returncode, 0, child.stderr)
+                self.assertEqual(choice, 'fixed|126')
+
     def test_native_auto_remains_calibrated(self):
         child, choice = self.invoke('auto')
         self.assertEqual(child.returncode, 0, child.stderr)

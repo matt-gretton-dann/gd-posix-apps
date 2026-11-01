@@ -1,0 +1,20 @@
+  FAIL: test_quick_sweep_checks_every_candidate_and_shape (__main__.TunerCli.test_quick_sweep_checks_every_candidate_and_shape)
+  ----------------------------------------------------------------------
+  Traceback (most recent call last):
+    File "D:\a\gd-posix-apps\gd-posix-apps\src\bc\test-tuner-cli.py", line 54, in test_quick_sweep_checks_every_candidate_and_shape
+      self.assertEqual(child.returncode, 0, child.stderr)
+      ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  AssertionError: 1 != 0 : Calibration failed: Insufficient CPU clock resolution
+  
+  
+  ----------------------------------------------------------------------
+  Ran 5 tests in 0.076s
+  
+  FAILED (failures=1)
+  
+          Start 211: int-test-cat
+  211/241 Test #211: int-test-cat ......................................................................................   Passed    0.10 sec
+          Start 212: int-test-cksum
+  212/241 Test #212: int-test-cksum ....................................................................................   Passed    0.07 sec
+          Start 213: int-test-dirname
+  213/241 Test #213: int-test-dirname ..................................................................................   Passed    0.11 sec
