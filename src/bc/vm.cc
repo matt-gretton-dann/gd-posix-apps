@@ -17,6 +17,7 @@
 #include <utility>
 
 #include "bc.hh"
+#include "compiler-hints.hh"
 #include "execution-plan.hh"
 #include "number.hh"
 #include "verification.hh"
@@ -212,8 +213,8 @@ struct VMState
 
 private:
   template<typename... Ts>
-  [[noreturn]] void error(char const* func, char const* file, unsigned line, char const* test,
-                          Msg msg, Ts... args) const
+  [[noreturn]] GD_BC_COLD_DIAGNOSTIC void error(char const* func, char const* file, unsigned line,
+                                                char const* test, Msg msg, Ts... args) const
   {
     error_ << Messages::get().format(Set::bc, Msg::internal_error, func, file, line, test) << '\n'
            << Messages::get().format(Set::bc, msg, args...) << '\n';
@@ -292,8 +293,8 @@ private:
   friend auto operator<<(std::ostream& os, InstructionPack const& instrs) -> std::ostream&;
 
   template<typename... Ts>
-  [[noreturn]] void error(char const* func, char const* file, unsigned line, char const* test,
-                          Msg msg, Ts... args) const
+  [[noreturn]] GD_BC_COLD_DIAGNOSTIC void error(char const* func, char const* file, unsigned line,
+                                                char const* test, Msg msg, Ts... args) const
   {
     vm_->stream(Instruction::Stream::error)
       << Messages::get().format(Set::bc, Msg::internal_error, func, file, line, test) << '\n'
