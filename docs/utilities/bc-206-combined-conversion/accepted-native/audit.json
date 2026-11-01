@@ -1,0 +1,55 @@
+{
+  "workflow_run": 41297754143,
+  "base": "dd8c60c274511e26ed453eb1d8e175936ea6f576",
+  "candidate": "ffcda6a202c60c55cf45bd5c4f6c72654288e89b",
+  "rows": [
+    {
+      "os": "linux",
+      "checked": 1650,
+      "identities": {
+        "base": "dd8c60c274511e26ed453eb1d8e175936ea6f576",
+        "candidate": "ffcda6a202c60c55cf45bd5c4f6c72654288e89b",
+        "howard": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8"
+      },
+      "confirmed": [],
+      "selected": [
+        "| full | paired | `decimal_output_200d_x1000` | 0.756 [0.7166667647577935, 0.814291173757204] | pass |",
+        "| full | paired | `binary_input_100000d_x3` | 0.953 [0.9386716374882104, 0.9667182444102564] | pass |",
+        "| full | paired | `hex_input_100000d_x3` | 0.989 [0.9861588520902985, 0.9983571464810403] | pass |"
+      ],
+      "sha256": "422aec7f9360aa76f88f23fda546604d2b74e74448c2689629274dd37f42a07e"
+    },
+    {
+      "os": "macos",
+      "checked": 1650,
+      "identities": {
+        "base": "dd8c60c274511e26ed453eb1d8e175936ea6f576",
+        "candidate": "ffcda6a202c60c55cf45bd5c4f6c72654288e89b",
+        "howard": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8"
+      },
+      "confirmed": [],
+      "selected": [
+        "| full | paired | `decimal_output_200d_x1000` | 0.687 [0.5513312469240238, 0.7898562340204106] | pass |",
+        "| full | paired | `binary_input_100000d_x3` | 0.952 [0.9212052985478886, 0.9736833280901517] | pass |",
+        "| full | paired | `hex_input_100000d_x3` | 0.975 [0.8758076686347488, 0.9806404768124118] | pass |"
+      ],
+      "sha256": "710ecd4e6fb484c3705a0afdced9c2b2d3287819b96804674c4b5f1fedb4aa07"
+    },
+    {
+      "os": "windows",
+      "checked": 1680,
+      "identities": {
+        "base": "dd8c60c274511e26ed453eb1d8e175936ea6f576",
+        "candidate": "ffcda6a202c60c55cf45bd5c4f6c72654288e89b",
+        "howard": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8"
+      },
+      "confirmed": [],
+      "selected": [
+        "| full | paired | `decimal_output_200d_x1000` | 0.623 [0.5807720779746154, 0.6600921452929688] | pass |",
+        "| full | paired | `binary_input_100000d_x3` | 0.943 [0.9287032029832623, 0.9582074204953465] | pass |",
+        "| full | paired | `hex_input_100000d_x3` | 0.941 [0.9298607648008181, 0.9689762787209455] | pass |"
+      ],
+      "sha256": "a46b0206ea768e7207d66fa686a9660826bd0423122676ef5bf8cd56db0477fd"
+    }
+  ]
+}

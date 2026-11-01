@@ -57,8 +57,9 @@ not resident process memory. Exact hashes and raw size/time logs remain.
 The staged formatter source 6431f7d passed all fourteen checks and has no
 confirmed native regressions in 1650 checked rows per OS. Its original ZIPs
 are retained under staged-formatter-native with explicit source/digest audits.
-Those rows do not validate the later combined source. Final combined-head
-three-platform CI, CodeQL and artifact audits remain required before merge.
+Those rows do not validate the later combined source. The final combined head
+subsequently passed all fourteen checks and the three-platform artifact audit;
+[final acceptance](accepted-native/README.md) retains its distinct 4980 rows.
 
 ## output full
 

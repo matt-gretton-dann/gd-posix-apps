@@ -1,0 +1,91 @@
+from pathlib import Path
+import json,shutil,hashlib,zipfile,csv,io,subprocess
+w=Path('/private/tmp/gd-posix-conversion-acceptance')
+for dirname,prefix,run,base,head in [('bc-206-output','bc-206-output-native',41285997767,'b15806ac7470eee9cfecf9e598047109bef32a62','73554654033fe099aee8abdd61c83bf90d561d97'),('bc-206-combined-conversion','bc-206-combined-native',41297754143,'dd8c60c274511e26ed453eb1d8e175936ea6f576','ffcda6a202c60c55cf45bd5c4f6c72654288e89b')]:
+ r=w/('docs/utilities/'+dirname+'/accepted-native');r.mkdir();rows=[]
+ for os in ('linux','macos','windows'):
+  p=Path('/private/tmp/'+prefix+'-'+os+'.zip');a=p.with_suffix('.audit.json');a=a if a.exists() else Path('/private/tmp/'+prefix+'-'+os+'-audit.json');audit=json.loads(a.read_text());assert audit['sha256']==hashlib.sha256(p.read_bytes()).hexdigest() and not audit['confirmed']
+  with zipfile.ZipFile(p) as z:
+   ids={role:json.loads(z.read(role+'/implementations.json'))['implementations'][0]['metadata']['source_revision'] for role in ['base','candidate','howard']};assert ids['base']==base and ids['candidate']==head
+   count=0
+   for n in z.namelist():
+    if n.endswith('/samples.csv'):
+     rr=list(csv.DictReader(io.StringIO(z.read(n).decode())));assert rr and all(x['checked']=='True' for x in rr);count+=len(rr)
+   assert count==audit['checked'];assert 'confirmed regression' not in z.read('summary.md').decode()
+  rows.append(audit);shutil.copyfile(p,r/(os+'.zip'))
+ (r/'audit.json').write_text(json.dumps({'workflow_run':run,'base':base,'candidate':head,'rows':rows},indent=2)+'\n')
+ if dirname=='bc-206-output':
+  (r/'README.md').write_text('''# Accepted output block emission
+
+PR #334 accepted exact source 7355465 against b15806a. Native run 41285997767
+has 1450 checked rows per OS, exact source identities and no confirmed regressions.
+Original ZIPs retain recipes, flags, compiler/library/binary identities, every
+row and all advisory intervals. audit.json records verified SHA-256 values.
+These are the batched-write stage, distinct from later fixed-width formatting.
+Refs #206 and #197. Final combined acceptance is recorded in the conversion guide.
+''')
+ else:
+  (r/'README.md').write_text('''# Final conversion acceptance
+
+PR #339 accepted exact source ffcda6a202c60c55cf45bd5c4f6c72654288e89b against
+main dd8c60c274511e26ed453eb1d8e175936ea6f576. Native run 41297754143 has 1650
+checked rows each on Linux/macOS and 1680 on Windows, including bounded
+confirmation. All 4980 rows pass exact output/process checks; no confirmed
+regressions remain. All fourteen head checks passed, including both CodeQL
+workflows and the aggregate alert check. Merge d493faf was followed immediately
+by fast-forwarding the root checkout to origin/main.
+
+Original digest-verified ZIPs preserve every actual source/build identity,
+checked row, advisory interval and noisy/inconclusive outcome. Decimal-output
+candidate/base is Linux 0.756 [0.7167,0.8143], macOS 0.687 [0.5513,0.7899],
+Windows 0.623 [0.5808,0.6601]. Large binary/hex input classes also pass. These
+are native end-to-end observations, distinct from local component timings.
+
+The locally measured runtime commit 68c22f9 and native head ffcda6a have an
+identical src/bc source tree; subsequent changes only archive evidence. Both
+actual identities and their binary hashes remain recorded, without relabeling.
+Earlier held candidates, losing decimal microcases, inconclusive intervals and
+rejected DC output retain their own sources and measurements.
+
+Refs #206 and #197. This completes the staged conversion issue: decimal chunk
+input and arithmetic scalar paths (#322), nondecimal input groups (#332),
+bounded writes (#334), grouped nondecimal output (#337), measured large input
+DC with generic fallbacks (#338), and fixed-width formatting/indexed decoding
+(#339). No particular speedup for every possible input or platform is claimed.
+The overall competitive goal, remaining roadmap issues and final coverage rerun
+remain tracked by #197.
+''')
+subprocess.run(['git','diff','--quiet','68c22f90b4c8e2457ea2bb91df551c0fe8653e53','ffcda6a202c60c55cf45bd5c4f6c72654288e89b','--','src/bc'],cwd=w,check=True)
+shutil.copyfile(__file__,w/'docs/utilities/bc-206-combined-conversion/accepted-native/archive.py.txt')
+p=w/'docs/utilities/bc-206-combined-conversion/README.md';s=p.read_text();old='Those rows do not validate the later combined source. Final combined-head\nthree-platform CI, CodeQL and artifact audits remain required before merge.';new='Those rows do not validate the later combined source. The final combined head\nsubsequently passed all fourteen checks and the three-platform artifact audit;\n[final acceptance](accepted-native/README.md) retains its distinct 4980 rows.';assert old in s;p.write_text(s.replace(old,new))
+p=w/'docs/utilities/bc-number-conversion.md';s=p.read_text().replace('remaining conversion experiments keep #206 open.','final conversion acceptance is recorded below.').replace('Native acceptance and output-base algorithm decisions remain separate work.','[Accepted native block-emission evidence](bc-206-output/accepted-native/README.md)\nretains the distinct PR #334 source. Later algorithm decisions appear below.').replace('## Nondecimal character lookup evaluation','## Indexed nondecimal character lookup').replace('The candidate replaces repeated alphabet searches','The accepted decoder replaces repeated alphabet searches').replace('earlier held decimal loss. Final native acceptance is still required.','earlier held decimal loss. [Final native acceptance](bc-206-combined-conversion/accepted-native/README.md)\nrecords the exact accepted combined source and all three platforms.');s+='''
+## Completed conversion stages and limits
+
+The six stages of #206 are accepted through PRs #322, #332, #334, #337, #338
+and #339. Direct decimal input uses validated arithmetic digit decoding and one
+pre-sized limb store. Nondecimal input retains small/narrow/fractional fallbacks;
+large significant integer input uses the measured per-call power cache. Decimal
+output uses fixed-width interior limb conversion and bounded span emission,
+with generic custom-locale behavior. Nondecimal grouped output retains small,
+narrow and space-separated fallbacks; the measured output DC prototype loses
+and is not selected. Compiler-specific layout/outline choices keep generic
+policies elsewhere and remain scoped to their recorded platform evidence.
+
+[Final acceptance and source identities](bc-206-combined-conversion/accepted-native/README.md)
+link the component, native, memory and code-size evidence. Public language
+limits and unrelated recovery issues are unchanged. Tests cover supported
+bases, signs, single digits, scale/zeros, copies and exact continuation formats;
+lookup equivalence retains the old invalid-character/base contracts. Numeric
+text is still owned at its original instruction/source locations; views and
+format buffers never escape their calls. Capacity products and power exponents
+are bounded before construction. None of this establishes the overall #197
+competitive target or substitutes for its final coverage/configuration review.
+''';p.write_text(s.rstrip()+'\n')
+p=w/'docs/utilities/bc-206-output/README.md';s=p.read_text();s+='''
+## Subsequent acceptance
+
+This report retains the historical component source and decision. The distinct
+[accepted native stage](accepted-native/README.md) records PR #334. Later
+[combined conversion acceptance](../bc-206-combined-conversion/accepted-native/README.md)
+completes #206 while preserving every earlier loss and inconclusive interval.
+''';p.write_text(s.rstrip()+'\n')

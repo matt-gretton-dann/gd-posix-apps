@@ -36,7 +36,7 @@ scalar and aligned stages, including inconclusive division/modulo intervals.
 [Nondecimal grouping measurements](bc-206-radix-input/README.md) retain all
 fixtures and intervals; [native acceptance](bc-206-radix-input/accepted-native/README.md)
 records the corrected GCC source and retained initial Linux losses. Output block emission and grouped nondecimal output are now accepted;
-remaining conversion experiments keep #206 open. Performance results must distinguish component
+final conversion acceptance is recorded below. Performance results must distinguish component
 conversion from end-to-end multiplication, which includes input and output.
 The separate #320 fix handles fractional padding that bypassed line wrapping.
 
@@ -100,7 +100,8 @@ that nondecimal conversion has changed its arithmetic algorithm.
 
 [Complete output measurements](bc-206-output/README.md) retain full/held-out
 fixtures, every checked interval, controls and compiler/source provenance.
-Native acceptance and output-base algorithm decisions remain separate work.
+[Accepted native block-emission evidence](bc-206-output/accepted-native/README.md)
+retains the distinct PR #334 source. Later algorithm decisions appear below.
 
 ## Whole-number output groups
 
@@ -127,9 +128,9 @@ records PR #337 and preserves earlier held regressions.
 [Fixed-buffer decimal limb formatting measurements](bc-206-decimal-format/README.md)
 retain every local interval, fixture, control and immutable recipe.
 
-## Nondecimal character lookup evaluation
+## Indexed nondecimal character lookup
 
-The candidate replaces repeated alphabet searches with a 256-entry immutable
+The accepted decoder replaces repeated alphabet searches with a 256-entry immutable
 index table on eight-bit character platforms. Index through unsigned char so
 negative signed characters cannot address before the table. Wider character
 models retain the generic alphabet search. Existing base assertions, single-digit
@@ -140,7 +141,8 @@ search checks the mapping, independently of the arithmetic value oracles.
 
 [Combined-source conversion measurements](bc-206-combined-conversion/README.md)
 retain the indexed decoder and fixed-buffer formatter results, including the
-earlier held decimal loss. Final native acceptance is still required.
+earlier held decimal loss. [Final native acceptance](bc-206-combined-conversion/accepted-native/README.md)
+records the exact accepted combined source and all three platforms.
 Decimal chunk decoding retains its measured
 arithmetic fast path, and single decimal digits retain the direct scalar path.
 
@@ -179,3 +181,25 @@ retain their distinct source identities. PR #338 accepts the 65536-significant-
 character integer input policy after exact three-platform native checks, while
 short/fractional/exponent-width-limited inputs retain the generic fallback.
 The rejected output DC prototype does not replace grouped runtime output.
+
+## Completed conversion stages and limits
+
+The six stages of #206 are accepted through PRs #322, #332, #334, #337, #338
+and #339. Direct decimal input uses validated arithmetic digit decoding and one
+pre-sized limb store. Nondecimal input retains small/narrow/fractional fallbacks;
+large significant integer input uses the measured per-call power cache. Decimal
+output uses fixed-width interior limb conversion and bounded span emission,
+with generic custom-locale behavior. Nondecimal grouped output retains small,
+narrow and space-separated fallbacks; the measured output DC prototype loses
+and is not selected. Compiler-specific layout/outline choices keep generic
+policies elsewhere and remain scoped to their recorded platform evidence.
+
+[Final acceptance and source identities](bc-206-combined-conversion/accepted-native/README.md)
+link the component, native, memory and code-size evidence. Public language
+limits and unrelated recovery issues are unchanged. Tests cover supported
+bases, signs, single digits, scale/zeros, copies and exact continuation formats;
+lookup equivalence retains the old invalid-character/base contracts. Numeric
+text is still owned at its original instruction/source locations; views and
+format buffers never escape their calls. Capacity products and power exponents
+are bounded before construction. None of this establishes the overall #197
+competitive target or substitutes for its final coverage/configuration review.
