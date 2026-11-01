@@ -1254,9 +1254,10 @@ auto GD::Bc::Details::InstructionPack::take_op1_expr() -> GD::Bc::Number
   auto& result = results_[index];
   assert_error(result.has_value(), Msg::empty_result, index);  // NOLINT
   auto& number = std::get<Number>(*result);
-  if (!consumption_.empty() && consumption_[pc_] != 0) {
+  if (number.has_heap_storage() && !consumption_.empty() && consumption_[pc_] != 0) {
     // One static use within a straight-line block proves this slot cannot be
     // read again before its producer executes. Other COW owners stay intact.
+    // Inline copies retain no heap owner, so they keep the ordinary copy path.
     GD_BC_PROFILE_EVENT(Profile::Event::temporary_consumptions, 1);
     return std::move(number);
   }

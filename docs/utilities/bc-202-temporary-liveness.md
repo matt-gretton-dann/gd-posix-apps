@@ -17,7 +17,10 @@ first. A backedge into the middle would create a new block, preventing transfer.
 A backedge to the producer permits a fresh value on each iteration. A producer
 outside the loop is never consumed merely because it has one static use.
 
-The first operand becomes the working Number; the second remains borrowed.
+A proven first operand with heap storage becomes the working Number; the
+second remains borrowed. Inline coefficients keep ordinary copies: moving them
+avoids no heap ownership operation. The storage query depends on representation,
+not numeric magnitude, so retained heap capacity after shrinking still qualifies.
 Both-operand aliases have two counted uses and keep the copy path. Other COW
 owners, including variables, snapshots and immutable literal caches, remain
 intact. A consumed slot is not read again before its producer overwrites it.

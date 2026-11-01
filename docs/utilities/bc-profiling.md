@@ -59,9 +59,10 @@ a non-null shared digit owner (`owned_digit_copies`), the historical
 the caller-owned vector), COW clones and payload bytes, copied iterator
 range payload bytes, basic/Karatsuba/triangular-square calls, literal conversions, cache hits/misses and single-digit literal fast paths,
 function calls, executed instructions and array clones/entries copied.
-`temporary_consumptions` counts first-operand Number transfers after a
-single-use/basic-block proof. It includes inline values and does not by itself
-prove a COW clone was avoided. Compare clone/payload counts and separate Release
+`temporary_consumptions` counts heap first-operand Number transfers after a
+single-use/basic-block proof. The initial candidate also moved inline values;
+its archived counters retain that historical meaning. A transfer does not by
+itself prove a COW clone was avoided. Compare clone/payload counts and separate Release
 timings; checked execution retains ordinary copies as a semantic oracle.
 `radix_dc_input_calls` counts large integer input dispatches;
 `radix_dc_input_leaf_conversions` counts their grouped leaf constructors.
