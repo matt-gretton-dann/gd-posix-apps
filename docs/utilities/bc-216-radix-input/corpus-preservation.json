@@ -1,0 +1,25 @@
+{
+  "baseline_revision": "9669ef73bc00e5b89f3fb00e2867a8f8ed9c4d32",
+  "preserved_cases": 42,
+  "new_cases": [
+    {
+      "name": "binary_input_100000d_x3",
+      "group": "binary_input",
+      "parameters": {
+        "digits": 100000,
+        "literals": 3,
+        "input_base": 2
+      }
+    },
+    {
+      "name": "hex_input_100000d_x3",
+      "group": "hex_input",
+      "parameters": {
+        "digits": 100000,
+        "literals": 3,
+        "input_base": 16
+      }
+    }
+  ],
+  "program_and_oracle_dictionaries_equal": true
+}

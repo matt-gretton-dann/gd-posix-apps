@@ -1,0 +1,53 @@
+{
+  "workflow_run": 41295439584,
+  "head": "75de1ad865affe5c8e23b50282c2a207a6d96fb7",
+  "merge": "dd8c60c274511e26ed453eb1d8e175936ea6f576",
+  "checks": "All 14 head checks completed successfully before merge",
+  "rows": [
+    {
+      "os": "linux",
+      "checked": 1650,
+      "identities": {
+        "base": "9669ef73bc00e5b89f3fb00e2867a8f8ed9c4d32",
+        "candidate": "75de1ad865affe5c8e23b50282c2a207a6d96fb7",
+        "howard": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8"
+      },
+      "confirmed": [],
+      "inputs": [
+        "| full | paired | `binary_input_100000d_x3` | 0.350 [0.34818481206084295, 0.3535482440871845] | pass |",
+        "| full | paired | `hex_input_100000d_x3` | 0.127 [0.1259097019648156, 0.12806365321006088] | pass |"
+      ],
+      "sha256": "ff63afcbe89b9b94b503198a3698bd57e804eea4ee566b9794ef82d41c65dc1b"
+    },
+    {
+      "os": "macos",
+      "checked": 1650,
+      "identities": {
+        "base": "9669ef73bc00e5b89f3fb00e2867a8f8ed9c4d32",
+        "candidate": "75de1ad865affe5c8e23b50282c2a207a6d96fb7",
+        "howard": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8"
+      },
+      "confirmed": [],
+      "inputs": [
+        "| full | paired | `binary_input_100000d_x3` | 0.505 [0.4128481512659169, 0.5359533875462785] | pass |",
+        "| full | paired | `hex_input_100000d_x3` | 0.170 [0.15609848556782077, 0.18288104667894683] | pass |"
+      ],
+      "sha256": "ff87a61743345ed37dfb1fed464f336b3e1f5b1701f402304210f2237b8aed58"
+    },
+    {
+      "os": "windows",
+      "checked": 1650,
+      "identities": {
+        "base": "9669ef73bc00e5b89f3fb00e2867a8f8ed9c4d32",
+        "candidate": "75de1ad865affe5c8e23b50282c2a207a6d96fb7",
+        "howard": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8"
+      },
+      "confirmed": [],
+      "inputs": [
+        "| full | paired | `binary_input_100000d_x3` | 0.474 [0.46518272316454395, 0.47771339039923993] | pass |",
+        "| full | paired | `hex_input_100000d_x3` | 0.170 [0.16944508177282164, 0.171514435178902] | pass |"
+      ],
+      "sha256": "ca4457eb85aa5ffce60e47e175e06667ec9cf15c2cad2dc60b66d09864f0da70"
+    }
+  ]
+}

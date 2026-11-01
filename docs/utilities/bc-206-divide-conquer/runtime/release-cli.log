@@ -1,0 +1,21 @@
+Test project /private/tmp/gd-posix-conversion-dc/build-release
+    Start 206: bc/vm-lifetime
+1/8 Test #206: bc/vm-lifetime ...................   Passed    0.31 sec
+    Start 212: bc/components
+2/8 Test #212: bc/components ....................   Passed    0.94 sec
+    Start 214: bc/benchmark-ci
+3/8 Test #214: bc/benchmark-ci ..................   Passed    2.73 sec
+    Start 215: bc/benchmark-cli
+4/8 Test #215: bc/benchmark-cli .................   Passed    1.75 sec
+    Start 216: bc/cli
+5/8 Test #216: bc/cli ...........................   Passed    0.58 sec
+    Start 217: bc/verifier-offsets
+6/8 Test #217: bc/verifier-offsets ..............   Passed    0.74 sec
+    Start 218: bc/number-oracle
+7/8 Test #218: bc/number-oracle .................   Passed    0.23 sec
+    Start 220: bc/vm-cli
+8/8 Test #220: bc/vm-cli ........................   Passed    0.19 sec
+
+100% tests passed out of 8
+
+Total Test time (real) =   7.49 sec

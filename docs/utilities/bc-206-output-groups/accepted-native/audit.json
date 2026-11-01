@@ -1,0 +1,48 @@
+{
+  "workflow_run": 41293118564,
+  "checks": "All 14 head checks completed successfully before merge",
+  "rows": [
+    {
+      "os": "linux",
+      "checked": 1550,
+      "confirmed": [],
+      "divide": [
+        "| full | paired | `divide_scale100_x100000` | 1.028 [1.0195037058160101, 1.0472680865074437] | pass |"
+      ],
+      "sha256": "cd54e6f5238c176b3295a4c055b4afb98bf8601bdb69d9ebb5d1008a5bb5f566",
+      "identities": {
+        "base": "422cbe90c6b4ae0bc7f4d15b43858e30165ed4c3",
+        "candidate": "dac2d221c2aba6426768b4223307e86f3f2ebb8e",
+        "howard": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8"
+      }
+    },
+    {
+      "os": "macos",
+      "checked": 1550,
+      "confirmed": [],
+      "divide": [
+        "| full | paired | `divide_scale100_x100000` | 0.994 [0.8006932203844285, 1.0707201084140938] | inconclusive-noisy |"
+      ],
+      "sha256": "e63fcdbb245b846a5ed7e12b016c69c8300d534314a13d889a1f16be12b662cc",
+      "identities": {
+        "base": "422cbe90c6b4ae0bc7f4d15b43858e30165ed4c3",
+        "candidate": "dac2d221c2aba6426768b4223307e86f3f2ebb8e",
+        "howard": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8"
+      }
+    },
+    {
+      "os": "windows",
+      "checked": 1550,
+      "confirmed": [],
+      "divide": [
+        "| full | paired | `divide_scale100_x100000` | 0.959 [0.9510840147000472, 0.9746878910463065] | pass |"
+      ],
+      "sha256": "718b01b11860c308c517088fa099082bf259144eddbd7c73b8c20b6435a92fa7",
+      "identities": {
+        "base": "422cbe90c6b4ae0bc7f4d15b43858e30165ed4c3",
+        "candidate": "dac2d221c2aba6426768b4223307e86f3f2ebb8e",
+        "howard": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8"
+      }
+    }
+  ]
+}
