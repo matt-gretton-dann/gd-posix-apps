@@ -17,6 +17,9 @@ Cpp11BracedListStyle: true
 FixNamespaceComments: true
 IncludeBlocks: Regroup
 IncludeCategories:
+  # Catch2 v2 needs the allocation declarations before its header is parsed.
+  - Regex:           '^<new>$'
+    Priority:        19
   - Regex:           '^".*-messages\.hh"$'
     Priority:        3
   - Regex:           '<catch2/'

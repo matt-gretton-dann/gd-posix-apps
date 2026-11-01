@@ -8,6 +8,7 @@
 
 // Catch2 v2 uses std::nothrow without including its declaring header.
 #include <new>
+
 #include <catch2/catch.hpp>
 
 TEST_CASE("program_name", "[util][program_name]")

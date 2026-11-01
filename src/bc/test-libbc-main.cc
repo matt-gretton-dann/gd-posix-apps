@@ -6,6 +6,7 @@
 
 #define CATCH_CONFIG_RUNNER
 #include <new>
+
 #include <catch2/catch.hpp>
 
 auto main(int argc, char* argv[]) -> int

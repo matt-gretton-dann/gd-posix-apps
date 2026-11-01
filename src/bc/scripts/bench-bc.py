@@ -3,7 +3,8 @@
 
 Use --list to inspect the corpus. A JSON configuration supplies named argv lists;
 --output receives a new directory containing programs, oracles, raw samples and
-provenance. Every warm-up and measured invocation must pass its exact oracle.
+provenance. Every warm-up and measured invocation must pass its exact-output
+or certified decimal-ULP oracle.
 Python 3.6+; no shell command construction or optional numerical dependencies.
 SPDX-License-Identifier: Apache-2.0
 """
@@ -12,6 +13,7 @@ import argparse
 import csv
 from datetime import datetime, timezone
 import hashlib
+import importlib.util
 import json
 import math
 import os
@@ -24,10 +26,48 @@ import statistics
 import subprocess
 import sys
 import time
+from fractions import Fraction
 
 
 class BenchmarkError(RuntimeError):
     """Invalid experiment or a failed correctness/process check."""
+
+
+def oracle_payload(case):
+    """Preserve the actual decision input, including mathematical enclosures."""
+    if 'oracle' in case:
+        return (json.dumps(case['oracle'], sort_keys=True, indent=2) + '\n').encode('utf-8')
+    return ('\n'.join(case['expected']) + '\n').encode('utf-8')
+
+
+def check_output(case, actual, label):
+    if 'oracle' not in case:
+        expected = canonical_output(oracle_payload(case))
+        if actual != expected:
+            raise BenchmarkError(label + ' produced incorrect output')
+        return
+    oracle = case['oracle']
+    if oracle.get('kind') != 'decimal-ulp':
+        raise BenchmarkError(label + ' has an unknown numerical oracle')
+    state = oracle.get('expected_state', [])
+    if len(actual) != 1 + len(state):
+        raise BenchmarkError(label + ' must produce exactly one mathematical result and its state')
+    if actual[1:] != state:
+        raise BenchmarkError(label + ' changed the required mathematical result scale or caller state')
+    path = Path(__file__).with_name('math_oracle.py')
+    spec = importlib.util.spec_from_file_location('bc_benchmark_math_oracle', str(path))
+    checker = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(checker)
+    try:
+        status = checker.classify(checker.decimal_fraction(actual[0]),
+                                  Fraction(oracle['lower']), Fraction(oracle['upper']),
+                                  oracle['scale'])
+    except (KeyError, TypeError, ValueError, ZeroDivisionError) as error:
+        raise BenchmarkError(label + ' has an invalid numerical oracle: ' + str(error))
+    if status == 'refine':
+        raise BenchmarkError(label + ' reference needs refinement at the decimal-ULP boundary')
+    if status != 'pass':
+        raise BenchmarkError(label + ' exceeds the one-decimal-ULP error bound')
 
 
 def write_json(path, value):
@@ -72,13 +112,77 @@ def fibonacci(count):
     return first
 
 
-def corpus(preset="full", selected=None, listing=False, seed=197200):
+def math_corpus(preset='full', selected=None, listing=False):
+    """Explicit-library one-shot/repeated calls with independent enclosures.
+
+    Fixed counts are deliberately recorded, not claimed calibrated. Large
+    argument/precision correctness remains broader than the timing subset.
+    Each role's argv chooses -l or an ordinary library file; the harness never
+    substitutes a mathematical implementation or special-cases an executable.
+    """
+    path = Path(__file__).resolve().parents[1] / 'fixtures/math-oracles.json'
+    references = json.loads(path.read_text(encoding='utf-8'))
+    by_key = {(case['id'], case['scale']): case for case in references['cases']}
+    regular = [('s', 's-one', 's-negative'), ('c', 'c-one', 'c-negative'),
+               ('a', 'a-one', 'a-negative'), ('l', 'l-two', 'l-tenth'),
+               ('e', 'e-one', 'e-negative-one'), ('j', 'j-zero-one', 'j-one-one')]
+    regimes = [(function, 'regular', held if preset == 'holdout' else full, False)
+               for function, full, held in regular]
+    # Negative integer orders and negative arguments use exact Bessel
+    # symmetries. These four selected orders are even, so the bounds agree.
+    regimes += [('j', regime, identifier, preset == 'holdout') for regime, identifier in
+                [('turning', 'j-turning'), ('order_dominates', 'j-order-dominates'),
+                 ('argument_dominates', 'j-argument-dominates'), ('near_root', 'j-near-root')]]
+    scales = [2, 20, 100] if preset == 'quick' else [20, 100, 1000]
+    cases, known = [], []
+    for function, regime, identifier, symmetry in regimes:
+        for scale in scales:
+            reference = by_key[identifier, scale]
+            arguments = list(reference['arguments'])
+            if symmetry:
+                position = 0 if regime in ('turning', 'order_dominates') else 1
+                arguments[position] = '-' + arguments[position]
+            for mode in ('one_shot', 'repeated'):
+                count = 1 if mode == 'one_shot' else (2 if preset == 'quick' else
+                                                    {20: 50, 100: 20, 1000: 3}[scale])
+                if preset == 'holdout' and mode == 'repeated':
+                    count = max(2, count - max(1, count // 8))
+                suffix = '_symmetric' if symmetry else ''
+                name = 'math_{}_{}{}_scale{}_{}_x{}'.format(
+                    regime, identifier, suffix, scale, mode, count)
+                known.append(name)
+                if selected and name not in selected:
+                    continue
+                call = '{}({})'.format(function, ','.join(arguments))
+                program = 'scale={}\n'.format(scale)
+                program += ('r=' + call if mode == 'one_shot' else
+                            'for(i=0;i<{};i++) r={}'.format(count, call))
+                program += '\nr\nscale\nibase\nscale(r)\n'
+                cases.append(dict(name=name, group='math_' + function + '_' + regime,
+                                  program=program, expected=None,
+                                  parameters=dict(function=function, arguments=arguments,
+                                                  scale=scale, iterations=count, mode=mode,
+                                                  calibration='fixed count; not calibrated'),
+                                  oracle=dict(kind='decimal-ulp', scale=scale,
+                                              lower=reference['lower'], upper=reference['upper'],
+                                              reference_id=identifier,
+                                              expected_state=[str(scale), '10', str(scale)])))
+    if selected and set(selected) - set(known):
+        raise BenchmarkError('unknown workload: ' + ', '.join(sorted(set(selected) - set(known))))
+    return cases
+
+
+def corpus(preset="full", selected=None, listing=False, seed=197200, suite='arithmetic'):
     """Keep the historical sixteen cases, then add explicitly named classes.
 
     Quick mode reduces both dimensions and iterations; its parameterized names
     and manifest distinguish it from the full baseline. Oracles are evaluated
     only for selected cases, so startup-only validation stays inexpensive.
     """
+    if suite == 'math':
+        return math_corpus(preset, selected, listing)
+    if suite != 'arithmetic':
+        raise BenchmarkError('unknown benchmark suite: ' + suite)
     if hasattr(sys, "set_int_max_str_digits"):
         sys.set_int_max_str_digits(1000000)
     rng = random.Random(seed)
@@ -378,9 +482,7 @@ def run_checked(implementation, case, timeout, program_path=None):
         actual = canonical_output(child.stdout)
     except (UnicodeError, ValueError):
         raise BenchmarkError(label + " produced incorrect output (not numeric)")
-    expected = canonical_output(("\n".join(case["expected"]) + "\n").encode("utf-8"))
-    if actual != expected:
-        raise BenchmarkError(label + " produced incorrect output")
+    check_output(case, actual, label)
     return {"seconds": elapsed, "output_bytes": len(child.stdout), "checked": True,
             "output_sha256": hashlib.sha256(child.stdout).hexdigest()}
 
@@ -508,6 +610,8 @@ def main():
     parser.add_argument("--output", type=Path, help="new experiment directory")
     parser.add_argument("--list", action="store_true", help="list case names and parameters")
     parser.add_argument("--preset", choices=("full", "quick", "holdout"), default="full")
+    parser.add_argument('--suite', choices=('arithmetic', 'math'), default='arithmetic',
+                        help='math requires each configured argv to load its chosen library')
     parser.add_argument("--workload", action="append", help="select an exact name; repeatable")
     parser.add_argument("--reference", help="reference implementation (default: first configured)")
     parser.add_argument("--samples", type=positive_integer, default=9)
@@ -520,7 +624,8 @@ def main():
     args = parser.parse_args()
     if args.list:
         try:
-            cases = corpus(args.preset, args.workload, listing=True, seed=args.corpus_seed)
+            cases = corpus(args.preset, args.workload, listing=True, seed=args.corpus_seed,
+                           suite=args.suite)
         except BenchmarkError as error:
             parser.error(str(error))
         print(json.dumps([{key: case[key] for key in ("name", "group", "parameters")}
@@ -543,7 +648,7 @@ def main():
         if args.require_provenance and next(tool for tool in tools
                                            if tool["name"] == reference)["role"] == "installed":
             raise BenchmarkError("an installed comparator cannot be the controlled reference")
-        cases = corpus(args.preset, args.workload, seed=args.corpus_seed)
+        cases = corpus(args.preset, args.workload, seed=args.corpus_seed, suite=args.suite)
         programs = output / "workloads"
         programs.mkdir()
         for case in cases:
@@ -551,10 +656,11 @@ def main():
             # child; native text-mode newline translation would change artifacts.
             (programs / (case["name"] + ".bc")).write_bytes(case["program"].encode("utf-8"))
             (programs / (case["name"] + ".expected")).write_bytes(
-                ("\n".join(case["expected"]) + "\n").encode("utf-8"))
+                oracle_payload(case))
         clock = time.get_clock_info("perf_counter")
         manifest = {"schema": 1, "started_utc": datetime.now(timezone.utc).isoformat(),
                     "implementations": tools, "reference": reference, "preset": args.preset,
+                    'suite': args.suite,
                     "samples": args.samples, "warmups": args.warmups, "timeout": args.timeout,
                     "seed": args.seed, "corpus_seed": args.corpus_seed,
                     "harness_sha256": digest_file(__file__),
@@ -565,16 +671,22 @@ def main():
                               "monotonic": clock.monotonic},
                     "environment": {"LC_ALL": "C", "LANG": "C", "BC_LINE_LENGTH": "70",
                                     "BC_ENV_ARGS": ""},
-                    "pending_classes": [{"group": "posix_math_library", "issue": 217,
-                                         "status": "not implemented; not a performance pass"}],
+                    "pending_classes": ([] if args.suite == 'math' else
+                                        [{"group": "posix_math_library", "issue": 217,
+                                          "status": "not selected; not a performance pass"}]),
                     "corpus": [{"name": case["name"], "group": case["group"],
                                 "parameters": case["parameters"],
                                 **({"input_mode": "file"} if case.get("input_mode") == "file" else {}),
                                 "oracle_sha256": hashlib.sha256(
-                                    ("\n".join(case["expected"]) + "\n").encode("utf-8")).hexdigest(),
+                                    oracle_payload(case)).hexdigest(),
                                 "program_sha256": hashlib.sha256(
                                     case["program"].encode("utf-8")).hexdigest()}
                                for case in cases]}
+        if args.suite == 'math':
+            scripts = Path(__file__).resolve().parent
+            manifest['oracle_checker_sha256'] = digest_file(scripts / 'math_oracle.py')
+            manifest['reference_fixture_sha256'] = digest_file(
+                scripts.parent / 'fixtures/math-oracles.json')
         write_json(output / "manifest.json", manifest)
         rows, rng = [], random.Random(args.seed)
         fields = ("phase", "round", "order", "workload", "implementation", "seconds",
