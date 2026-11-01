@@ -222,3 +222,9 @@ zeros and immutable copies for all three traits. Partial leading groups are
 selected from the validated significant digit count; fractional trailing zeros
 and the caller's decimal scale remain unchanged. Zero and single-digit paths
 retain their existing behavior. No platform-specific implementation is added.
+
+PR #357 accepts the forward kernel after all fourteen checks, 3600 matched
+local timing invocations, 300 separate RSS checks and 6000 native checked
+invocations with no confirmed regression. The [exact-source report](bc-200-decimal-horner/accepted/README.md)
+retains near-parity local results, modest/noisy native gains and every class
+interval. This stage does not resolve the separately unmerged #355 candidate.
