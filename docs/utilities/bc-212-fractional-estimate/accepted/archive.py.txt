@@ -1,0 +1,76 @@
+from pathlib import Path
+import hashlib,json,shutil,subprocess
+w=Path('/private/tmp/gd-posix-fraction-accepted-evidence')
+r=w/'docs/utilities/bc-212-fractional-estimate/accepted';r.mkdir(parents=True)
+(r/'.gitattributes').write_text('* -text\n*.log whitespace=-blank-at-eol,-blank-at-eof\n*.csv whitespace=cr-at-eol\n*.txt whitespace=-blank-at-eol,-blank-at-eof\n')
+for name in ['full','holdout','memory']:
+ shutil.copytree('/private/tmp/gd-bc-212-horner-integrated-'+name,r/name)
+for role,src in [('base','/private/tmp/gd-bc-200-horner-candidate-release'),('candidate','/private/tmp/gd-bc-212-horner-integrated-candidate-release')]:
+ dest=r/(role+'-release');dest.mkdir()
+ for p in Path(src).iterdir():
+  if p.is_file() and p.suffix in ['.json','.log','.hh','.cc']:shutil.copyfile(p,dest/p.name)
+for name in ['bc-212-horner-integrated-implementations.json','bc-212-horner-baseline-equivalence.json','bc-212-horner-integrated-memory.py','bc-355-horner-audit-native.py','bc-206-dc-rss-units.txt']:
+ shutil.copyfile('/private/tmp/'+name,r/(name+'.txt' if name.endswith('.py') else name))
+for name in ['bc-212-horner-integrated-release-build','bc-212-horner-integrated-release-tests','bc-212-horner-integrated-release-cli','bc-212-horner-integrated-candidate-recipe','bc-212-horner-integrated-full','bc-212-horner-integrated-holdout','bc-212-horner-integrated-memory']:
+ shutil.copyfile('/private/tmp/'+name+'.log',r/(name+'.log'))
+for name in ['bench-bc.py','benchmark-ci.py']:
+ (r/(name+'.txt')).write_bytes(subprocess.check_output(['git','show','aff408d22dbf4284bf6db586271bc663e8bbd8e4:src/bc/scripts/'+name],cwd=w))
+h=hashlib.sha256((r/'bench-bc.py.txt').read_bytes()).hexdigest()
+for preset in ['full','holdout']:
+ manifest=json.loads((r/preset/'manifest.json').read_text());assert manifest['harness_sha256']==h
+ rows=[json.loads(line) for line in (r/preset/'samples.jsonl').read_text().splitlines()]
+ assert len(rows)==1800 and all(row['checked'] for row in rows)
+(r/'source.patch.txt').write_bytes(subprocess.check_output(['git','diff','8ab320a39ba1622f88edd0bc492822c8a83da22c','aff408d22dbf4284bf6db586271bc663e8bbd8e4','--','src'],cwd=w))
+n=r/'native';n.mkdir();audits=[]
+for os in ['linux','macos','windows']:
+ p=Path('/private/tmp/bc-355-horner-native-'+os+'.zip');a=json.loads(p.with_suffix('.audit.json').read_text())
+ assert hashlib.sha256(p.read_bytes()).hexdigest()==a['sha256'] and not a['confirmed']
+ assert a['checked']==2000;audits.append(a);shutil.copyfile(p,n/(os+'.zip'))
+(n/'audit.json').write_text(json.dumps(dict(workflow_run=41336697566,ordinary_checks='All fourteen exact-head checks pass',rows=audits),indent=2)+'\n')
+lines=['# Accepted fractional sqrt estimate with integrated decimal kernel','',
+'Refs #212, #200 and #197. PR #355 merged as `95f914a` after all fourteen',
+'checks passed. Exact candidate `aff408d22dbf4284bf6db586271bc663e8bbd8e4`.',
+'Local baseline is actual `7dc777eecd0abcc36d4381875253b031267d7d45`;',
+'its tracked tree is identical to native baseline `8ab320a` (proof retained).',
+'Do not relabel the local recipe as a different source revision. Both include',
+'the accepted forward decimal kernel; earlier failed experiments remain under',
+'`initial` and `expanded-native`. Their compiler mechanism remains unproven.',
+'', '## Validation and measurement scope','',
+'Integrated Release passes217 cases/693324 assertions and six CLI/oracle groups.',
+'Final native ON/OFF builds pass. Earlier separate profiling and actual OFF',
+'ASan/UBSan observations stay in the initial archive with their real sources.',
+'No new instrumentation or relaxed oracle is used for final timing.',
+'', 'Both full and held-out matrices check1800 invocations: fifty cases, two',
+'roles, three warmups and fifteen shuffled samples. Schedule seeds1972121/',
+'1972122 differ from corpus seeds197200/197201. The actual bounded corpus',
+'uses one repeat for the largest tiny root, unlike the initial x10 experiment.',
+'No local build, test, profile or RSS collection overlaps release timings.',
+'Host frequency, thermals and scheduling remain uncontrolled.',
+'', 'No workload CI lies wholly above1.05. Decimal ratios1.00139 [0.99939,1.00714]',
+'and0.99797 [0.99309,1.01404] are near parity. Tiny1024/1152 ratios0.01260/',
+'0.01043 and tiny4096/4608 ratios0.00563/0.00426 retain the large improvement.',
+'Every interval follows below; small roots, huge integers and large-scale',
+'roots are retained independently rather than combined into one speedup.',
+'', 'All300 separate RSS executions pass. Tiny4096 median process peaks are',
+'2457600/2080768 bytes; decimal input2326528/2342912 bytes. Peaks include',
+'loader/frontend/VM/values/output/allocator. Three observations per role/case',
+'do not establish portable memory bounds; all costs and raw logs are retained.',
+'', '## Native observations','',
+'Linux/macOS/Windows each verify2000 invocations (6000 total), with no',
+'confirmed regression. Decimal ratios are1.001 [0.931,1.016],',
+'1.055 [0.953,1.169] (noisy/inconclusive), and0.987 [0.964,1.008].',
+'Tiny4096 ratios are approximately0.004/0.006/0.006. These observations',
+'support this integrated source, not the rejected earlier candidates.',
+'All three raw ZIPs, source identities, schedules, A/A and class decisions',
+'are preserved; workflow success alone is not the performance audit.',
+'', 'Precision-growth and capacity-reuse experiments are still outstanding',
+'under issue #212. This archive completes the initial-estimate experiment.', '']
+for preset in ['full','holdout']:
+ lines+=['## '+preset+' intervals','','| Workload | Candidate / baseline, CI95 |','| --- | --- |']
+ for c in json.loads((r/preset/'summary.json').read_text())['workloads']:
+  v=c['candidate_over_reference']['candidate'];lo,hi=v['ci95'];lines.append('| `{}` | {:.5f} [{:.5f},{:.5f}] |'.format(c['name'],v['median_paired_ratio'],lo,hi))
+ lines.append('')
+(r/'README.md').write_text('\n'.join(lines).rstrip()+'\n')
+shutil.copyfile(__file__,r/'archive.py.txt')
+proof={str(p.relative_to(r)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(r.rglob('*')) if p.is_file()}
+(r/'sha256.json').write_text(json.dumps(proof,indent=2)+'\n');print('Preserved',len(proof),'accepted payloads')
