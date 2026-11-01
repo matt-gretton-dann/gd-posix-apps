@@ -69,6 +69,71 @@ auto GD::Bc::operator<<(std::ostream& os, GD::Bc::VariableMask mask) -> std::ost
   return os;
 }
 
+// Keep cache storage out of nonnumeric instructions. Independent code copies
+// own independent mutable memos; activations borrow their function's code.
+struct GD::Bc::Instruction::LiteralCache
+{
+  unsigned base;
+  Number value;
+
+  LiteralCache(unsigned input_base, Number&& number) : base(input_base), value(std::move(number))
+  {
+#if GD_BC_PROFILE
+    Profile::allocated(Profile::AllocationKind::literals, sizeof(LiteralCache));
+#endif
+  }
+  ~LiteralCache()
+  {
+#if GD_BC_PROFILE
+    Profile::deallocated(Profile::AllocationKind::literals, sizeof(LiteralCache));
+#endif
+  }
+};
+
+GD::Bc::Instruction::~Instruction() = default;
+GD::Bc::Instruction::Instruction(Instruction&&) noexcept = default;
+auto GD::Bc::Instruction::operator=(Instruction&&) noexcept -> Instruction& = default;
+GD::Bc::Instruction::Instruction(Instruction const& other)
+    : opcode_(other.opcode_), op1_(other.op1_), op2_(other.op2_)
+{
+}
+auto GD::Bc::Instruction::operator=(Instruction const& other) -> Instruction&
+{
+  if (this != &other) {
+    Instruction copy(other);
+    *this = std::move(copy);
+  }
+  return *this;
+}
+
+auto GD::Bc::Instruction::decoded_number(unsigned ibase) const -> Number
+{
+  assert(opcode_ == Opcode::number);  // NOLINT
+  assert(ibase >= 2 && ibase <= 16);  // NOLINT
+  auto const& text = std::get<std::string>(op1());
+  if (text.size() == 1) {
+    // A single hexadecimal digit denotes its value even when >= ibase.
+    auto const digit = text[0] <= '9' ? unsigned(text[0] - '0') : unsigned(text[0] - 'A' + 10);
+    assert(digit < 16);  // NOLINT
+    GD_BC_PROFILE_EVENT(Profile::Event::single_digit_literals, 1);
+    return Number(static_cast<Number::NumType>(digit));
+  }
+  if (literal_cache_ && literal_cache_->base == ibase) {
+    GD_BC_PROFILE_EVENT(Profile::Event::literal_cache_hits, 1);
+    return literal_cache_->value;
+  }
+  GD_BC_PROFILE_EVENT(Profile::Event::literal_cache_misses, 1);
+  Number value(text, static_cast<Number::NumType>(ibase));
+  if (literal_cache_) {
+    literal_cache_->value = std::move(value);
+    literal_cache_->base = ibase;
+  }
+  else {
+    literal_cache_ = std::make_unique<LiteralCache>(ibase, std::move(value));
+  }
+  return literal_cache_->value;
+}
+
 GD::Bc::Instruction::Instruction(Opcode opcode) : opcode_(opcode)
 {
   assert(op_count(opcode) == 0);  // NOLINT
@@ -102,6 +167,7 @@ void GD::Bc::Instruction::op1(Operand const& operand)
 {
   assert(has_op1());  // NOLINT
   op1_ = operand;
+  literal_cache_.reset();
   validate_operands();
 }
 

@@ -13,7 +13,15 @@
 #include <utility>
 
 namespace GD::Bc::Profile {
-enum class AllocationKind : std::size_t { digits, arrays, instructions, frames, results, count };
+enum class AllocationKind : std::size_t {
+  digits,
+  arrays,
+  instructions,
+  frames,
+  results,
+  literals,
+  count
+};
 enum class Event : std::size_t {
   digit_copies,
   owned_digit_copies,
@@ -25,6 +33,9 @@ enum class Event : std::size_t {
   basic_multiply_calls,
   karatsuba_multiply_calls,
   literal_conversions,
+  literal_cache_hits,
+  literal_cache_misses,
+  single_digit_literals,
   function_calls,
   instructions_executed,
   array_clones,

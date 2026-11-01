@@ -36,8 +36,8 @@ native 64-bit atomic arithmetic.
 Categories cover digit vectors, recursive multiplication scratch and shared
 control blocks, array map nodes/shared
 control blocks, instruction vectors/shared control blocks, parameter/local list
-nodes, and instruction-result vectors. Byte counts are storage requested through
-these allocators; they exclude allocator metadata, strings, I/O buffers, other
+nodes, instruction-result vectors, and decoded literal memo payloads. Memo payloads account for their typed object size at construction/destruction.
+Other byte counts are storage requested through these allocators; they exclude allocator metadata, strings, I/O buffers, other
 containers and operating-system storage. They are **not process malloc traffic
 or RSS**. `allocated_bytes` is cumulative traffic; `live_bytes` is currently
 outstanding requested storage. `peak_live_bytes` for the total is the simultaneous
@@ -54,7 +54,7 @@ Events count BasicDigits copy/move construction and assignment, copies retaining
 a non-null shared digit owner (`owned_digit_copies`), the historical
 `iterator_owner_copies` event (now zero because mutable iterator checks borrow
 the caller-owned vector), COW clones and payload bytes, copied iterator
-range payload bytes, basic/Karatsuba multiply calls, literal conversions,
+range payload bytes, basic/Karatsuba multiply calls, literal conversions, cache hits/misses and single-digit literal fast paths,
 function calls, executed instructions and array clones/entries copied. These
 are counts at the named source sites, not a hardware count of atomic operations.
 Copies of empty allocated vectors still retain an owner and are counted.

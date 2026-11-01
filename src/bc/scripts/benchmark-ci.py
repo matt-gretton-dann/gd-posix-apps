@@ -79,7 +79,7 @@ def selected_cases(bench, preset, broad):
     # avoid pretending that quick correctness checks have useful timing power.
     groups = ('startup', 'loop', 'calls', 'array', 'array_sparse', 'fibonacci',
               'multiply', 'divide_multilimb', 'power',
-              'sqrt', 'decimal_input', 'streaming', 'comparison')
+              'sqrt', 'decimal_input', 'streaming', 'comparison', 'literal_repeat')
     chosen = []
     for group in groups:
         choices = [case for case in cases if case['group'] == group]
