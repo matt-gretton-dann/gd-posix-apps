@@ -156,7 +156,13 @@ load and from a changed calibration result. Record the chosen point and generate
 header with compiler/source metadata; 126 is an experiment setting, not a claim
 of a portable optimum.
 
-The default `auto` preserves native calibration and its seeded input stream.
+The default `portable` uses a stable 126-limb threshold on native and cross
+hosts, avoiding expensive host-dependent calibration during normal builds.
+This is the setting exercised by the native correctness/performance matrix;
+it is not a portable optimum claim. Existing build caches retain their explicit
+or previously cached selection until reconfigured.
+
+Explicit `auto` retains native calibration and its seeded input stream.
 Its cached result is a separate generated file, so switching back from a fixed
 choice cannot mistake that fixed header for a calibration result.
 When cross-compiling, `auto` uses a positive portable fallback of 128 limbs and
@@ -171,3 +177,42 @@ The [portable square evaluation](bc-203-squares/README.md) records independent
 full/held-out measurements, diagnostic counters and native artifacts. It retains
 the initial Linux ordinary-product regression and distinguishes the revised
 dispatch results from inconclusive small-product/division observations.
+
+## Explicit multiplication calibration
+
+`find-multiply-split-point [--seed INTEGER] [--quick] [output-header]` evaluates
+all points in the finite set 16, 32, 64, 96, 126, 192, 256 and 512 limbs. Full
+runs cover 1/2/10/12/112/128/256/512/1112-limb shorter operands, balanced, 1:2,
+1:8 and aliased-square shapes. Exact-width seeded inputs are parsed before
+measurement. Each trial starts from the original operands; results never grow
+from one repetition to the next. A schoolbook/square reference is prepared
+outside timing, and every timed result is checked against it afterwards. The
+independent arithmetic oracles remain the authority for kernel correctness.
+
+Each shape receives an exact-checked warm-up for every point and five shuffled
+candidate sweeps. The tool records every monotonic elapsed-clock sample, batch and correctness
+flag as CSV rows in stdout, followed by per-candidate scores. It uses median
+within-round ratios against 126 for each shape, then an equally weighted
+geometric mean across shapes. Scores need not be monotonic in the threshold.
+Within 1% of the lowest score, prefer the point closest to 126. This tolerance
+reduces churn; it is not a confidence interval or a performance acceptance gate.
+The emitted header retains the replay seed. Preserve stdout with that header
+and the actual source/compiler recipe when using a calibrated setting.
+
+Batch growth targets 2 ms but is bounded by both 256 results and approximately
+65536 input limbs, so tiny cases can remain below the target. A zero-duration
+measured sample is rejected. The portable steady clock avoids coarse process
+CPU-accounting quanta on Windows; scheduling remains part of elapsed time.
+Copies, input parsing and exact result comparisons
+are outside the multiplication interval; copy-on-write detachment, temporary
+workspace and result allocation during multiplication remain inside it. Clock
+resolution, scheduling, frequency and corpus choice can still affect selection.
+A finite sweep does not establish a global or universal optimum. Repeated runs
+and other hosts may prefer different points; the default stays portable.
+
+`--quick` is a smoke protocol covering three small sizes, all four shapes and
+three rounds, with the same correctness and selection rules. It checks the
+executable protocol in automated tests and should not tune production builds.
+
+[Repeated tuning evidence and retained per-shape costs](bc-203-tuning/README.md)
+record the stable-default decision and exact compiler/source provenance.

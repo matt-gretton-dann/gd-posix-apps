@@ -1,0 +1,35 @@
+....FF
+======================================================================
+FAIL: test_portable_default_never_runs_target_calibration (__main__.MultiplyConfig.test_portable_default_never_runs_target_calibration) (cross=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-stable-tuning/src/bc/test-multiply-config.py", line 30, in test_portable_default_never_runs_target_calibration
+    self.assertEqual(child.returncode, 0, child.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : CMake Error at cmake/BcMultiplyConfig.cmake:17 (message):
+  BC_MULTIPLY_SPLIT_POINT must be auto or an integer from 1 to 1000000000
+Call Stack (most recent call first):
+  /var/folders/cd/s8qz13dx0tv95ybg7159p2b40000gn/T/tmpbqpguf3_/probe.cmake:2 (gd_bc_multiply_choice)
+
+
+
+
+======================================================================
+FAIL: test_portable_default_never_runs_target_calibration (__main__.MultiplyConfig.test_portable_default_never_runs_target_calibration) (cross=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-stable-tuning/src/bc/test-multiply-config.py", line 30, in test_portable_default_never_runs_target_calibration
+    self.assertEqual(child.returncode, 0, child.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : CMake Error at cmake/BcMultiplyConfig.cmake:17 (message):
+  BC_MULTIPLY_SPLIT_POINT must be auto or an integer from 1 to 1000000000
+Call Stack (most recent call first):
+  /var/folders/cd/s8qz13dx0tv95ybg7159p2b40000gn/T/tmptbpeoeta/probe.cmake:2 (gd_bc_multiply_choice)
+
+
+
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.240s
+
+FAILED (failures=2)

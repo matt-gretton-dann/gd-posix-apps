@@ -1,0 +1,21 @@
+{
+  "source_revision": "2e7e84ba7f3bbb91ac4507d913f7d8d6f4b74be4",
+  "source_clean": true,
+  "argv": [
+    "/private/tmp/gd-posix-stable-tuning/build-release/src/bc/find-multiply-split-point"
+  ],
+  "binary_sha256": "376b91cc346eac967aa2b50fecee4c6a719aa1268af7e0ba2dbe0140f16ce3e5",
+  "host": "macOS-27.2-arm64-arm-64bit-Mach-O",
+  "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin\n",
+  "configuration": {
+    "BC_MULTIPLY_SPLIT_POINT": "portable",
+    "CMAKE_BUILD_TYPE": "Release",
+    "CMAKE_CXX_FLAGS": "",
+    "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+    "ENABLE_BC_COVERAGE": "OFF",
+    "ENABLE_BC_PROFILE": "OFF",
+    "ENABLE_NON_POSIX_EXTENSIONS": "ON"
+  },
+  "method": "Three serial full runs; no overlapping local builds/tests/profiles; process CPU timing; host contention/frequency/thermal uncontrolled",
+  "oracle": "Every timed product compared after timing against its same-input schoolbook/square result; independent all-trait arithmetic tests remain separate"
+}
