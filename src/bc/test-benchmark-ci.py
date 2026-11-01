@@ -65,10 +65,12 @@ class NativeTrends(unittest.TestCase):
         self.assertIn('square_10000d_x500', subset)
         self.assertIn('literal_repeat_2000d_x2000', subset)
         self.assertIn('streaming_statements_20000', subset)
+        self.assertIn('binary_output_1000d_x300', subset)
+        self.assertIn('octal_output_1000d_x300', subset)
         for position in ('high', 'low', 'equal'):
             self.assertIn('compare_{}_1000d_x100000'.format(position), subset)
         self.assertLess(len(subset), len(full))
-        self.assertEqual(len(full), 40)
+        self.assertEqual(len(full), 42)
         self.assertEqual(set(full) & set(held), {'startup'})
 
     def test_pr_subset_covers_every_corpus_group(self):

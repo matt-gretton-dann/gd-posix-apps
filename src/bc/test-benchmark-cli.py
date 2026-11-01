@@ -7,6 +7,7 @@ import importlib.util
 import io
 import hashlib
 import json
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -207,6 +208,20 @@ class PairedStatistics(unittest.TestCase):
                              previous['program_sha256'])
             oracle = ('\n'.join(case['expected']) + '\n').encode()
             self.assertEqual(hashlib.sha256(oracle).hexdigest(), previous['oracle_sha256'])
+
+    def test_nondecimal_output_classes_have_independent_roundtrip_oracles(self):
+        cases = self.module().corpus('quick')
+        selected = {case['group']: case for case in cases
+                    if case['group'] in ('binary_output', 'octal_output')}
+        self.assertEqual(set(selected), {'binary_output', 'octal_output'})
+        for group, base in (('binary_output', 2), ('octal_output', 8)):
+            case = selected[group]
+            literal = re.match(r'a=([0-9]+)\n', case['program']).group(1)
+            self.assertIn('obase={}\n'.format(base), case['program'])
+            self.assertEqual(len(case['expected']), case['parameters']['lines'])
+            for line in case['expected']:
+                self.assertTrue(set(line) <= set('01234567'[:base]))
+                self.assertEqual(int(line, base), int(literal))
 
     def test_holdout_shapes_are_separate_and_replayable(self):
         module = self.module()
