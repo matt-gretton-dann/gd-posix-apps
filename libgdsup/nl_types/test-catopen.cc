@@ -10,6 +10,7 @@
 #include "gd/string.h"
 
 #include <new>
+
 #include <catch2/catch.hpp>
 
 #include <cerrno>
