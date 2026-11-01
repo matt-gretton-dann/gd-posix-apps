@@ -588,3 +588,23 @@ TEST_CASE("Interactive parsing returns each complete input item", "[bc][parser][
   REQUIRE(instructions->size() == 1);
   REQUIRE(instructions->at(0).opcode() == Instruction::Opcode::eof);
 }
+
+TEST_CASE("Retained parser results remain independent across input items", "[bc][parser][coverage]")
+{
+  Parser parser(std::make_unique<Lexer>(std::make_unique<StringReader>("1\n2\n3\n")), true);
+  auto first = parser.parse();
+  auto second = parser.parse();
+  auto third = parser.parse();
+  auto end = parser.parse();
+  REQUIRE(first != second);
+  REQUIRE(second != third);
+  REQUIRE(third != end);
+  for (auto const& [stream, number] :
+       {std::pair{first, "1"}, std::pair{second, "2"}, std::pair{third, "3"}}) {
+    REQUIRE(stream->size() == 2);
+    CHECK(std::get<std::string>(stream->at(0).op1()) == number);
+    CHECK(stream->at(1).opcode() == Instruction::Opcode::print);
+  }
+  REQUIRE(end->size() == 1);
+  CHECK(end->at(0).opcode() == Instruction::Opcode::eof);
+}
