@@ -81,6 +81,20 @@ class LibraryCli(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertNotEqual(result.stderr, '')
 
+    def test_ordinary_source_initializes_decimal_scale_under_any_base(self):
+        binaries = [BC] + ([OTHER_BC] if OTHER_BC else [])
+        for binary in binaries:
+            for base in (2, 8, 16):
+                with self.subTest(binary=binary, base=base):
+                    with tempfile.TemporaryDirectory() as directory:
+                        first = Path(directory) / 'caller base.bc'
+                        value = 'A+6' if base == 16 else str(base)
+                        first.write_text('ibase={}\nobase={}\n'.format(value, value))
+                        lines = self.checked_lines(
+                            'i=ibase\no=obase\nibase=A\nobase=A\nscale\ni\no\n',
+                            options=(), files=(first, SOURCE), binary=binary)
+                        self.assertEqual(lines, ['20', str(base), str(base)])
+
     def test_user_definition_replaces_library_function_normally(self):
         lines = self.checked_lines('define e(x) {\nreturn(7)\n}\ne(0)\nscale(e(0))\nscale\n')
         # The replacement is an ordinary user function, including its scale.
