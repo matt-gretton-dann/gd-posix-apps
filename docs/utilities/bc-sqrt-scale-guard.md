@@ -38,5 +38,10 @@ The [sqrt-only boundary experiment](bc-349-sqrt-scale-guard/msvc-sqrt-boundary/R
 also fails the Windows comparison policy and is dropped. The next source instead
 isolates the affected Number comparison wrapper from surrounding MSVC inlining;
 the limb comparator already has its own boundary. Other compilers keep the same
-generic policy. Fresh exact-source native evaluation is required before adoption,
-and both earlier losing datasets remain unchanged.
+generic policy. The [exact-source evaluation](bc-349-sqrt-scale-guard/comparison-boundary/README.md)
+has all fourteen checks green and no two-pass confirmed regression. Windows
+comparison medians remain about 6–7% slower, with confirmation intervals crossing
+the provisional 5% boundary. This is an unresolved #200 performance limitation,
+not evidence of equivalence or of a beneficial compiler mechanism. The arithmetic
+correctness fix is the purpose of this prerequisite; all three datasets remain
+available without rerunning unchanged source until favorable.
