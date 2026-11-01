@@ -20,6 +20,7 @@ enum class AllocationKind : std::size_t {
   frames,
   results,
   literals,
+  execution_plans,
   count
 };
 enum class Event : std::size_t {
@@ -49,6 +50,7 @@ enum class Event : std::size_t {
   radix_output_divisions,
   radix_dc_input_calls,
   radix_dc_input_leaf_conversions,
+  temporary_consumptions,
   count
 };
 

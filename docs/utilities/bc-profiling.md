@@ -34,9 +34,12 @@ A portable `atomic_flag` guards the 64-bit totals, including on targets lacking
 native 64-bit atomic arithmetic.
 
 Categories cover digit vectors, recursive multiplication scratch and shared
-control blocks, array map nodes/shared
-control blocks, instruction vectors/shared control blocks, parameter/local list
-nodes, instruction-result vectors, and decoded literal memo payloads. Memo payloads account for their typed object size at construction/destruction.
+control blocks, array dense-prefix buffers/sparse nodes/shared control blocks,
+instruction vectors/shared control blocks, reusable parameter/local/frame
+vectors, instruction-result vectors, decoded literal memo payloads, and
+`execution_plans` byte buffers. Memo payloads account for their typed object
+size at construction/destruction. Plan owner headers, and temporary ordinary
+vectors used by verification/plan construction, are outside those byte counters.
 Other byte counts are storage requested through these allocators; they exclude allocator metadata, strings, I/O buffers, other
 containers and operating-system storage. They are **not process malloc traffic
 or RSS**. `allocated_bytes` is cumulative traffic; `live_bytes` is currently
@@ -56,6 +59,10 @@ a non-null shared digit owner (`owned_digit_copies`), the historical
 the caller-owned vector), COW clones and payload bytes, copied iterator
 range payload bytes, basic/Karatsuba/triangular-square calls, literal conversions, cache hits/misses and single-digit literal fast paths,
 function calls, executed instructions and array clones/entries copied.
+`temporary_consumptions` counts first-operand Number transfers after a
+single-use/basic-block proof. It includes inline values and does not by itself
+prove a COW clone was avoided. Compare clone/payload counts and separate Release
+timings; checked execution retains ordinary copies as a semantic oracle.
 `radix_dc_input_calls` counts large integer input dispatches;
 `radix_dc_input_leaf_conversions` counts their grouped leaf constructors.
 `literal_conversions` includes those recursive text constructors, so it is not

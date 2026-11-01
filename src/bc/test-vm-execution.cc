@@ -371,3 +371,42 @@ TEST_CASE("Repeated operands preserve both reads of the same producer",
   code.emplace_back(O::eof);
   CHECK(execute(code) == "2" + std::string(67, '0') + "\\\n" + std::string(33, '0') + "\n");
 }
+
+#if GD_BC_PROFILE
+TEST_CASE("Last-use transfers avoid an intermediate COW clone only in verified execution",
+          "[bc][vm][temporary-liveness-profile]")
+{
+  for (auto checks : {GD::Bc::VM::ExecutionChecks::full, GD::Bc::VM::ExecutionChecks::verified}) {
+    GD::Bc::Instructions code{I(O::number, "1" + std::string(100, '0')),
+                              I(O::number, "1"),
+                              I(O::add, D(-2), D(-1)),
+                              I(O::number, "1"),
+                              I(O::add, D(-2), D(-1)),
+                              I(O::print, D(-1), I::Stream::output)};
+    for (unsigned n = 0; n < 16; ++n)
+      code.emplace_back(O::number, "0");
+    code.emplace_back(O::eof);
+    std::ostringstream output, errors;
+    GD::Bc::VM vm(output, errors, false, checks);
+    auto const before = GD::Bc::Profile::snapshot();
+    CHECK_FALSE(vm.execute(code));
+    auto const after = GD::Bc::Profile::snapshot();
+    auto delta = [&](GD::Bc::Profile::Event event) {
+      auto const index = static_cast<std::size_t>(event);
+      return after.events[index] - before.events[index];
+    };
+    CHECK(output.str() == "1" + std::string(67, '0') + "\\\n" + std::string(32, '0') + "2\n");
+    CHECK(errors.str().empty());
+    // The literal cache retains the original coefficient in both modes. Only
+    // the otherwise unique intermediate sum can avoid detaching a second time.
+    if (checks == GD::Bc::VM::ExecutionChecks::full) {
+      CHECK(delta(GD::Bc::Profile::Event::temporary_consumptions) == 0);
+      CHECK(delta(GD::Bc::Profile::Event::cow_clones) == 2);
+    }
+    else {
+      CHECK(delta(GD::Bc::Profile::Event::temporary_consumptions) > 0);
+      CHECK(delta(GD::Bc::Profile::Event::cow_clones) == 1);
+    }
+  }
+}
+#endif
