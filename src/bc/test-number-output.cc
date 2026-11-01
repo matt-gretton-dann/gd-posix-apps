@@ -5,6 +5,7 @@
 
 #include <catch2/catch.hpp>
 
+#include <iomanip>
 #include <sstream>
 #include <string>
 
@@ -149,4 +150,52 @@ TEMPLATE_TEST_CASE("Decimal padding and exact continuation boundaries preserve l
   value.output(output, 10, position);
   CHECK(unwrapped(output.str()) == expected);
   check_lines(output.str(), position);
+}
+
+namespace {
+class CountingOutput : public std::streambuf
+{
+public:
+  std::string bytes;
+  std::size_t character_writes = 0;
+  std::size_t block_writes = 0;
+
+protected:
+  auto overflow(int_type value) -> int_type override
+  {
+    if (!traits_type::eq_int_type(value, traits_type::eof())) {
+      ++character_writes;
+      bytes += traits_type::to_char_type(value);
+    }
+    return traits_type::not_eof(value);
+  }
+  auto xsputn(char const* data, std::streamsize count) -> std::streamsize override
+  {
+    ++block_writes;
+    bytes.append(data, static_cast<std::size_t>(count));
+    return count;
+  }
+};
+}  // namespace
+
+TEMPLATE_TEST_CASE("Decimal coefficients reach streams in bounded blocks",
+                   "[bc][number][output-batching]", GD::Bc::NumberTraits8, GD::Bc::NumberTraits16,
+                   GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  std::string const coefficient(180, '7');
+  Number const value(coefficient, 10);
+  CountingOutput sink;
+  std::ostream stream(&sink);
+  value.output(stream, 10, 0);
+  CHECK(unwrapped(sink.bytes) == coefficient);
+  check_lines(sink.bytes, 0);
+  CHECK(sink.character_writes < 16);
+  CHECK(sink.block_writes < 16);
+
+  // Existing formatted-stream width is consumed by the first emitted character.
+  std::ostringstream padded;
+  padded << std::setw(5);
+  value.output(padded, 10, 0);
+  CHECK(unwrapped(padded.str()) == "    " + coefficient);
 }

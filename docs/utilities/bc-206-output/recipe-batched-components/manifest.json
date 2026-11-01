@@ -1,0 +1,79 @@
+{
+  "schema": 1,
+  "source_revision": "e88cafbd7551f8faf331367e3b044aab451e4abc",
+  "argv": [
+    "/private/tmp/gd-bc-206-output-batched-components/build/src/bc/bc-components"
+  ],
+  "binary_sha256": "4bc4b80c5ea44e599bc27afe02a64fcaf4a393ed6ff2edb857f59504d059b154",
+  "compiler": {
+    "C": {
+      "argv0": "/usr/bin/cc",
+      "realpath": "/usr/bin/cc",
+      "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+      "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+    },
+    "CXX": {
+      "argv0": "/usr/bin/c++",
+      "realpath": "/usr/bin/c++",
+      "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+      "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+    }
+  },
+  "standard_library": {
+    "header_macros": {
+      "_LIBCPP_VERSION": "220106"
+    },
+    "scope": "standard-library header identity; provision runtime and SDK separately",
+    "status": "recorded"
+  },
+  "flags": {
+    "BC_MULTIPLY_SPLIT_POINT:STRING": "126",
+    "CMAKE_CXX_FLAGS:STRING": "",
+    "CMAKE_CXX_FLAGS_RELEASE:STRING": "-O3 -DNDEBUG",
+    "ENABLE_BC_COVERAGE:BOOL": "OFF",
+    "ENABLE_BC_PROFILE:BOOL": "OFF"
+  },
+  "commands": [
+    {
+      "argv": [
+        "cmake",
+        "-S",
+        "/private/tmp/gd-bc-206-output-batched-release/source",
+        "-B",
+        "/private/tmp/gd-bc-206-output-batched-components/build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_TESTING=OFF",
+        "-DENABLE_BC_COMPONENT_BENCHMARKS=ON",
+        "-DENABLE_BC_PROFILE=OFF",
+        "-DENABLE_BC_COVERAGE=OFF",
+        "-DENABLE_NON_POSIX_EXTENSIONS=ON",
+        "-DBC_MULTIPLY_SPLIT_POINT=126",
+        "-DCMAKE_C_COMPILER=/usr/bin/cc",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/c++",
+        "-DFETCHCONTENT_SOURCE_DIR_GDPAT=/Users/mgrettondann/repos/gd-posix-apps/build/_deps/gdpat-src"
+      ],
+      "cwd": "/private/tmp/gd-bc-206-output-batched-components",
+      "returncode": 0,
+      "log": "command-001.log"
+    },
+    {
+      "argv": [
+        "cmake",
+        "--build",
+        "/private/tmp/gd-bc-206-output-batched-components/build",
+        "--target",
+        "bc-components",
+        "--parallel",
+        "2",
+        "--verbose"
+      ],
+      "cwd": "/private/tmp/gd-bc-206-output-batched-components",
+      "returncode": 0,
+      "log": "command-002.log"
+    }
+  ],
+  "instrumented": false,
+  "scope": "Component intervals include reset/consumer; startup and fixture parsing excluded"
+}
