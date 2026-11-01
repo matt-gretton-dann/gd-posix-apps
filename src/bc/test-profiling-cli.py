@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -109,6 +110,24 @@ class ProfilingCli(unittest.TestCase):
         # Changing the key reuses one bounded memo, not another cache entry.
         self.assertEqual(counters['allocations']['literals']['allocation_calls'], 1)
         self.assertEqual(counters['allocations']['literals']['deallocation_calls'], 1)
+
+    def test_large_integer_radix_input_uses_bounded_dc_dispatch(self):
+        if hasattr(sys, 'set_int_max_str_digits'):
+            sys.set_int_max_str_digits(100000)
+        for width, expected_dispatches in ((65535, 0), (65536, 1), (65537, 1)):
+            with self.subTest(width=width):
+                digits = '1' * width
+                expected = str(int(digits, 2))
+                counters = self.profile('ibase=2\na={}\nibase=A\na-{}\nlength(a)\n'.format(
+                    digits, expected), '0\n{}\n'.format(len(expected)))
+                self.assertEqual(counters['events'].get('radix_dc_input_calls', 0),
+                                 expected_dispatches)
+        # A point retains the established grouped fractional conversion path.
+        digits = '1' * 65536
+        expected = str(int(digits, 2)) + '.5'
+        counters = self.profile('ibase=2\na={}.1\nibase=A\na-{}\n'.format(digits, expected),
+                                '0\n')
+        self.assertEqual(counters['events'].get('radix_dc_input_calls', 0), 0)
 
     def test_single_digits_need_no_decoded_cache_allocation(self):
         counters = self.profile('0\n1\nA\nF\n', '0\n1\n10\n15\n')
