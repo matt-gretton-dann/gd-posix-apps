@@ -16,6 +16,7 @@
 #include <iomanip>
 #include <iterator>
 #include <limits>
+#include <map>
 #include <memory>
 #include <ostream>
 #include <span>
@@ -1521,7 +1522,8 @@ public:
     assert(ibase >= 2);   // NOLINT
     assert(ibase <= 16);  // NOLINT
 
-    if (s.size() == 1 && s.front() >= '0' && s.front() <= '9') {
+    bool const single_literal = s.size() == 1;
+    if (single_literal && s.front() >= '0' && s.front() <= '9') {
       // Single digits retain their base-independent value without chunk
       // planning or temporary storage. Hexadecimal letters keep the decoder below.
       digits_.mac(ibase, static_cast<NumType>(s.front() - '0'));
@@ -1547,6 +1549,25 @@ public:
           point == std::string_view::npos ? NumType{0} : static_cast<NumType>(s.size() - point - 1);
         digits_ = Details::BasicDigits<Traits>::from_decimal(s, point);
         return;
+      }
+    }
+
+    // Large integer text has a measured divide-and-conquer regime. Keep
+    // fractional input on the established grouped rescaling path. Cache powers
+    // must fit the trait's native exponent constructor; narrower domains fall
+    // back without changing their accepted text/value contracts.
+    if constexpr (std::numeric_limits<NumType>::max() >= radix_dc_cutoff / 2) {
+      if (ibase != 10 && s.size() >= radix_dc_cutoff && s.find('.') == std::string_view::npos) {
+        auto const significant = s.find_first_not_of('0');
+        if (significant == std::string_view::npos)
+          return;
+        s.remove_prefix(significant);
+        if (s.size() >= radix_dc_cutoff &&
+            s.size() - s.size() / 2 <= std::numeric_limits<NumType>::max()) {
+          GD_BC_PROFILE_EVENT(Profile::Event::radix_dc_input_calls, 1);
+          *this = parse_radix_integer_dc(s, ibase);
+          return;
+        }
       }
     }
 
@@ -1593,7 +1614,7 @@ public:
 
         const auto* digit = ::strchr(digits, c);
         if (digit != nullptr) {
-          assert((digit - digits < ibase) || (s.size() == 1 && digit - digits < 16));  // NOLINT
+          assert((digit - digits < ibase) || (single_literal && digit - digits < 16));  // NOLINT
           digits_.mac(ibase, static_cast<NumType>(digit - digits));
         }
         else if (c == '.') {
@@ -1619,7 +1640,7 @@ public:
         auto const* digit = ::strchr(digits, c);
         if (digit == nullptr)
           abort();
-        assert((digit - digits < ibase) || (s.size() == 1 && digit - digits < 16));  // NOLINT
+        assert((digit - digits < ibase) || (single_literal && digit - digits < 16));  // NOLINT
         coefficient = coefficient * ibase + WideType(digit - digits);
         if (++pending == group_size) {
           digits_.mac(group_multiplier, static_cast<NumType>(coefficient));
@@ -2114,6 +2135,44 @@ public:
   }
 
 private:
+  static constexpr std::size_t radix_dc_cutoff = 65536;
+  static constexpr std::size_t radix_dc_leaf = 64;
+  using RadixPowers = std::map<std::size_t, BasicNumber>;
+
+  static auto parse_radix_integer_range(std::string_view text, NumType radix, RadixPowers& powers)
+    -> BasicNumber
+  {
+    if (text.size() <= radix_dc_leaf) {
+      GD_BC_PROFILE_EVENT(Profile::Event::radix_dc_input_leaf_conversions, 1);
+      return BasicNumber(text, radix);
+    }
+    auto const middle = text.size() / 2;
+    auto left = parse_radix_integer_range(text.substr(0, middle), radix, powers);
+    auto right = parse_radix_integer_range(text.substr(middle), radix, powers);
+    // Zero prefixes need no radix power or product, including all-zero subtrees.
+    if (left.is_zero())
+      return right;
+    auto const width = text.size() - middle;
+    auto found = powers.find(width);
+    if (found == powers.end()) {
+      // The entry guard bounds every recursive exponent by NumType::max.
+      BasicNumber power(radix);
+      power.power(BasicNumber(static_cast<NumType>(width)), 0);
+      found = powers.emplace(width, std::move(power)).first;
+    }
+    left.multiply(found->second, 0);
+    left.add(right);
+    return left;
+  }
+
+  static auto parse_radix_integer_dc(std::string_view text, NumType radix) -> BasicNumber
+  {
+    // Powers depend on this runtime radix and conversion only. No definition-
+    // time input base or hidden cross-call cache is introduced.
+    RadixPowers powers;
+    return parse_radix_integer_range(text, radix, powers);
+  }
+
   /** Increase decimal scale without changing the value or allocating for zero. */
   void raise_scale(NumType new_scale)
   {

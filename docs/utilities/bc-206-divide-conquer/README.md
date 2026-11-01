@@ -23,6 +23,24 @@ not an optimum or a lower bound for all divide-and-conquer implementations.
 Signed/fractional diagnostic fixtures are rejected; production contracts are
 unchanged. Decimal paths retain their linear decoder/formatter.
 
+## Runtime candidate
+
+The subsequent runtime candidate dispatches nondecimal integer text at 65536
+significant characters to the measured balanced input algorithm, with 64-character
+grouped leaves. Each call owns its radix-power map, including construction and
+cleanup. It uses existing generic exact arithmetic. Fractional, short and
+exponent-width-limited traits retain grouped parsing; decimal parsing remains
+linear. Leading zeros are removed before the significant-length decision, and
+all-zero input retains canonical zero. The guard bounds every recursive native
+exponent. There is no cache across runtime input bases or calls.
+
+The profiling regression checks 65535/65536/65537 characters and the long
+fractional fallback against independent Python integers. C++ tests check exact
+radix powers minus one, leading/all zeros, scale, length and copy snapshots across
+8-, 16- and 32-bit traits within their decimal length domains. These correctness
+checks do not assert wall-clock thresholds. Actual runtime and native performance
+evaluation remains required; the prototype rows below retain source 376235c.
+
 ## Decisions supported by these experiments
 
 Input DC loses at modest sizes (often roughly 1.7–2.6x near 65–256 characters).

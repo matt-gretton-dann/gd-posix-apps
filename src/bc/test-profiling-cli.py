@@ -122,6 +122,8 @@ class ProfilingCli(unittest.TestCase):
                     digits, expected), '0\n{}\n'.format(len(expected)))
                 self.assertEqual(counters['events'].get('radix_dc_input_calls', 0),
                                  expected_dispatches)
+                leaves = counters['events'].get('radix_dc_input_leaf_conversions', 0)
+                self.assertEqual(leaves > 0, expected_dispatches > 0)
         # A point retains the established grouped fractional conversion path.
         digits = '1' * 65536
         expected = str(int(digits, 2)) + '.5'

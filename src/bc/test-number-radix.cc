@@ -191,3 +191,51 @@ TEMPLATE_TEST_CASE("Large space-separated output retains the generic path",
     CHECK(unwrap_radix(output.str()) == expected);
   }
 }
+
+TEMPLATE_TEST_CASE("Large radix integer construction retains exact values and snapshots",
+                   "[bc][number][oracle][radix-input-large]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  using N = typename Number::NumType;
+  struct SplitScope
+  {
+    SplitScope()
+    {
+      Number::multiply_split_point(
+        static_cast<N>(std::min(typename Number::WideType(126), Number::base_)));
+    }
+    ~SplitScope() { Number::multiply_split_point(1); }
+  } split;
+  // The narrow model exercises generic fallback inside its supported length
+  // domain; wider models also reach the measured production DC boundary.
+  std::size_t const count = std::numeric_limits<N>::max() < 32768 ? 129 : 65536;
+  constexpr char const* alphabet = "0123456789ABCDEF";
+  for (unsigned base : {2U, 16U}) {
+    // Keep the 16-bit length model within its decimal digit domain.
+    auto const radix_count = sizeof(N) == 2 && base == 16 ? 32768 : count;
+    Number expected{N(base)};
+    expected.power(Number(std::to_string(radix_count), N(10)), N(0));
+    expected.sub(Number(N(1)));
+    std::string const digits(radix_count, alphabet[base - 1]);
+    Number const parsed(digits, N(base));
+    INFO("base=" << base << ", count=" << count << ", storage radix=" << Number::base_);
+    CHECK(parsed == expected);
+    CHECK(parsed.scale() == 0);
+    CHECK(parsed.length() == expected.length());
+    auto changed = parsed;
+    changed.add(Number(N(1)));
+    CHECK(parsed == expected);
+    CHECK(changed > parsed);
+    Number const padded(std::string(70, '0') + digits, N(base));
+    CHECK(padded == expected);
+    CHECK(padded.length() == expected.length());
+  }
+  Number const zero(std::string(count, '0'), N(2));
+  CHECK(zero.is_zero());
+  CHECK(zero.length() == Number(N(0)).length());
+  CHECK(zero.scale() == 0);
+  Number const tiny(std::string(count, '0') + '1', N(2));
+  CHECK(tiny == Number(N(1)));
+  CHECK(tiny.length() == 1);
+}
