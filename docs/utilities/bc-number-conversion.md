@@ -123,3 +123,6 @@ including scalar fallback. Profiling remains separate from elapsed timings.
 retains every full/held-out fixture, control, interval and actual source recipe.
 [Accepted native evidence](bc-206-output-groups/accepted-native/README.md)
 records PR #337 and preserves earlier held regressions.
+
+[Fixed-buffer decimal limb formatting measurements](bc-206-decimal-format/README.md)
+retain every local interval, fixture, control and immutable recipe.
