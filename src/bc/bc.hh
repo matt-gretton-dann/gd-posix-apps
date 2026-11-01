@@ -779,6 +779,8 @@ public:
   Parser(std::unique_ptr<Lexer>&& lexer, bool interactive);
 
   /** \brief  Do the next stage of a parse.
+   * Retained shared results remain independent. If no caller retains the previous
+   * result, its owner/capacity may be reused after destroying its instructions.
    * A fatal diagnostic is terminal for this parser object: later calls return
    * the same diagnostic/quit stream. They do not attempt error recovery.
    */

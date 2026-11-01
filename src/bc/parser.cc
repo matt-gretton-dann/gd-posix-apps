@@ -181,9 +181,15 @@ void GD::Bc::Parser::emit_fatal_error(std::string const& diagnostic)
 
 auto GD::Bc::Parser::parse() -> std::shared_ptr<GD::Bc::Instructions>
 {
-  // Each call owns a fresh stream so previously returned instructions remain
-  // unchanged. A fatal parser cannot safely resume with partially consumed input.
-  instructions_ = GD_BC_PROFILE_SHARED(Profile::AllocationKind::instructions, Instructions)();
+  // Retained results are independent snapshots. Only reuse an unobserved owner;
+  // clear every instruction/cache while retaining the largest item's capacity.
+  // A fatal parser still cannot resume with partially consumed input.
+  if (instructions_ && instructions_.use_count() == 1) {
+    instructions_->clear();
+  }
+  else {
+    instructions_ = GD_BC_PROFILE_SHARED(Profile::AllocationKind::instructions, Instructions)();
+  }
   clear_context();
   if (fatal_diagnostic_) {
     emit_fatal_error(*fatal_diagnostic_);
