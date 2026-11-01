@@ -118,6 +118,14 @@ if(RUN_UNIT_TESTS)
   endif()
 endif()
 
+# Keep -l as ordinary source, embedded without recognizing functions in the VM.
+# A source edit must regenerate the header on the next ordinary build.
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+             "${CMAKE_CURRENT_SOURCE_DIR}/math-library.bc")
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/math-library.bc" GD_BC_LIBRARY_SOURCE)
+configure_file(math-library.hh.in bc-math-library.hh @ONLY NEWLINE_STYLE LF)
+unset(GD_BC_LIBRARY_SOURCE)
+
 add_utility(NAME bc NO_INT_TEST CAT_ID bc SOURCES bc.cc)
 target_link_libraries(bc PUBLIC libbc)
 if(ENABLE_BC_PROFILE)
@@ -169,6 +177,11 @@ endif()
 # These local CLI regressions run in both extension configurations and on Windows.
 if(RUN_INTEGRATION_TESTS)
   # Committed exact enclosures keep this check independent of optional FLINT.
+  add_test(NAME bc/math-library-source COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-math-library-source.py"
+           "${CMAKE_CURRENT_SOURCE_DIR}/math-library.bc"
+           "${CMAKE_CURRENT_BINARY_DIR}/bc-math-library.hh")
+  set_tests_properties(bc/math-library-source PROPERTIES TIMEOUT 10)
   add_test(NAME bc/math-oracle COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-math-oracle.py")
   set_tests_properties(bc/math-oracle PROPERTIES TIMEOUT 30)

@@ -20,16 +20,12 @@
 #include <memory>
 #include <variant>
 
+#include "bc-math-library.hh"
 #include "find-multiply-split-point.hh"
 
 using Msg = GD::Bc::Msg;
 
 namespace {
-/** \brief  Library script loaded with -l. */
-char const* const library_script = R"EOF(
-scale=20
-)EOF";
-
 /** \brief       Report an error and exit with exit code 1.
  *  \param  msg  Message ID
  *  \param  args Arguments for the message.
@@ -111,7 +107,7 @@ auto main(int argc, char** argv) -> int
   GD::Bc::Number::multiply_split_point(BC_MULTIPLY_SPLIT_POINT);
 
   if (load_library) {
-    auto r = std::make_unique<GD::Bc::StringReader>(library_script);
+    auto r = std::make_unique<GD::Bc::StringReader>(GD::Bc::Library::source);
     execute(vm, std::move(r));
   }
 

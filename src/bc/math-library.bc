@@ -1,0 +1,2 @@
+/* Portable POSIX bc library source. SPDX-License-Identifier: Apache-2.0. */
+scale=20
