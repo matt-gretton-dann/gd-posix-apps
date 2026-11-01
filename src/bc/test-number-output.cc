@@ -6,6 +6,7 @@
 #include <catch2/catch.hpp>
 
 #include <iomanip>
+#include <locale>
 #include <sstream>
 #include <string>
 

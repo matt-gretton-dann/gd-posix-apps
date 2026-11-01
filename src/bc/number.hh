@@ -12,14 +12,17 @@
 
 #include <algorithm>
 #include <array>
+#include <charconv>
 #include <cstdint>
 #include <iomanip>
 #include <iterator>
 #include <limits>
+#include <locale>
 #include <memory>
 #include <ostream>
 #include <span>
 #include <sstream>
+#include <stdexcept>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -435,10 +438,9 @@ public:
    */
   void output_base10(std::ostream& os, NumType scale, unsigned digits_printed) const
   {
-    /* For base 10 we can rely on the underlying system-library's output routines the only corner
-     * cases are to: 1) Ensure we pad with zeroes where necessary; and 2) Insert the decimal point
-     * in the correct place.
-     */
+    // Serialize decimal limbs once, then apply the established point, scale
+    // and continuation rules. A small reusable buffer handles interior limbs
+    // without constructing a formatted stream for each coefficient.
     assert(!is_zero());  // NOLINT
     if (digits_printed >= line_length) {
       os << '\n';
@@ -448,13 +450,40 @@ public:
     /* Generate string without radix point. Note we reverse through the digits as we want to print
      * big-endian, but numbers are stored little-endian.
      */
-    std::ostringstream ss;
-    int width = 0;
-    for (auto rit = digits_->rbegin(); rit != digits_->rend(); ++rit) {
-      ss << std::setfill('0') << std::setw(width) << static_cast<typename Traits::PrintType>(*rit);
-      width = static_cast<int>(base_log10_);
+    std::string result;
+    if (std::locale() == std::locale::classic()) {
+      // One coefficient allocation at most; no retained cross-call workspace.
+      if (digits_->size() > result.max_size() / base_log10_)
+        throw std::length_error("decimal coefficient exceeds string capacity");
+      result.reserve(digits_->size() * base_log10_);
+      std::array<char, base_log10_> limb;
+      auto rit = digits_->rbegin();
+      auto const first =
+        std::to_chars(limb.data(), limb.data() + limb.size(), static_cast<PrintType>(*rit));
+      assert(first.ec == std::errc{});  // NOLINT: every limb is below 10^base_log10_.
+      result.append(limb.data(), static_cast<std::size_t>(first.ptr - limb.data()));
+      for (++rit; rit != digits_->rend(); ++rit) {
+        auto value = *rit;
+        // Interior limbs have exactly base_log10_ digits, including all zeros.
+        // Reuse the same bounded buffer before appending each complete limb.
+        for (auto at = limb.rbegin(); at != limb.rend(); ++at) {
+          *at = static_cast<char>('0' + value % 10);
+          value /= 10;
+        }
+        result.append(limb.data(), limb.size());
+      }
     }
-    std::string result = ss.str();
+    else {
+      // The historical temporary stream uses the global locale, independently
+      // of the destination stream. Preserve custom facets/punctuation there.
+      std::ostringstream ss;
+      int width = 0;
+      for (auto rit = digits_->rbegin(); rit != digits_->rend(); ++rit) {
+        ss << std::setfill('0') << std::setw(width) << static_cast<PrintType>(*rit);
+        width = static_cast<int>(base_log10_);
+      }
+      result = ss.str();
+    }
     unsigned const break_at = (result.length() <= line_length) ? line_length : (line_length - 1);
     // A long coefficient reserves an extra column before its first chunk.
     // Continue the current number if its sign has already filled that space.

@@ -35,8 +35,8 @@ scalar and aligned stages, including inconclusive division/modulo intervals.
 
 [Nondecimal grouping measurements](bc-206-radix-input/README.md) retain all
 fixtures and intervals; [native acceptance](bc-206-radix-input/accepted-native/README.md)
-records the corrected GCC source and retained initial Linux losses. Batched output
-and conversion crossover decisions remain open. Performance results must distinguish component
+records the corrected GCC source and retained initial Linux losses. Output block emission and grouped nondecimal output are now accepted;
+remaining conversion experiments keep #206 open. Performance results must distinguish component
 conversion from end-to-end multiplication, which includes input and output.
 The separate #320 fix handles fractional padding that bypassed line wrapping.
 
@@ -78,8 +78,14 @@ literal-cache invalidation remain unchanged.
 
 ## Output block emission
 
-Decimal coefficient formatting retains the existing stream/locale conversion of
-limbs, zero padding, scale and sign policy. Whole-number characters are emitted
+In the classic global locale, decimal coefficient formatting uses a reusable
+stack limb buffer, converts the first limb without padding, and writes each
+interior limb at exactly the decimal storage width. One pre-reserved coefficient
+string retains the full coefficient, so this is not constant-space formatting
+or a cross-call workspace cache. Capacity multiplication is checked before
+reservation. A nonclassic global locale retains the historical stream formatter,
+including custom facets and punctuation independently of the destination locale.
+Zero padding, scale and sign policy remain unchanged. Whole-number characters are emitted
 in blocks bounded by the current continuation-line capacity. If a caller sets a
 stream field width, the first emitted character consumes it as before; batching
 starts after that character. The physical continuation policy, including a
@@ -96,7 +102,7 @@ that nondecimal conversion has changed its arithmetic algorithm.
 fixtures, every checked interval, controls and compiler/source provenance.
 Native acceptance and output-base algorithm decisions remain separate work.
 
-## Whole-number output groups (candidate)
+## Whole-number output groups
 
 For alphabetic output bases 2 through 16, a coefficient of at least four
 storage limbs can divide by the largest power of the output base strictly
@@ -108,11 +114,12 @@ passes and the temporary remainder-vector length without changing formatting.
 
 Short coefficients, insufficient group width and bases above 16 retain the
 scalar division/space-separated formatting path. Fractional conversion is
-unchanged. The four-limb choice remains a candidate until measured across
-sizes and bases; it is not a universal crossover claim. The diagnostic
+unchanged. The four-limb choice is supported by measured full/held-out
+regimes and the accepted native candidate; it is not a universal crossover claim. The diagnostic
 `radix_output_divisions` event counts actual whole-coefficient division calls,
 including scalar fallback. Profiling remains separate from elapsed timings.
 
 [Complete grouped-output crossover evidence](bc-206-output-groups/README.md)
 retains every full/held-out fixture, control, interval and actual source recipe.
-Native acceptance requires the added nondecimal workload classes.
+[Accepted native evidence](bc-206-output-groups/accepted-native/README.md)
+records PR #337 and preserves earlier held regressions.
