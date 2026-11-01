@@ -222,8 +222,13 @@ public:
     return ((*digits_)[0] & 1) == 0;
   }
 
-  [[nodiscard]] auto compare(BasicDigits const& rhs, NumType scale) const
-    -> Details::ComparisonResult
+  // Isolate the limb comparator from surrounding VM/template inlining choices
+  // on MSVC. Other compilers retain their existing generic inlining policy.
+  [[nodiscard]]
+#if defined(_MSC_VER)
+  __declspec(noinline)
+#endif
+  auto compare(BasicDigits const& rhs, NumType scale) const -> Details::ComparisonResult
   {
     assert(digits_);      // NOLINT
     assert(rhs.digits_);  // NOLINT
