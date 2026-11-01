@@ -1,0 +1,17 @@
+[
+  {
+    "os": "linux",
+    "sha256": "19e6d13e10edfb81e3e29f7599dbce97bac3570446c15064ac1c842968c6034c",
+    "checked_invocations": 950
+  },
+  {
+    "os": "macos",
+    "sha256": "637572dd034c9c09032e098bc73dfc49a679c3a8dfa8cca485a52f3c2d797617",
+    "checked_invocations": 950
+  },
+  {
+    "os": "windows",
+    "sha256": "6258a20526069939f79ee722c70c6da3b248c7bc5160ea0924e06d7726f28405",
+    "checked_invocations": 950
+  }
+]

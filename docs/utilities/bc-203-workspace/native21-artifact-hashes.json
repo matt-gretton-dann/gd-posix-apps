@@ -1,0 +1,14 @@
+[
+  {
+    "os": "linux",
+    "sha256": "29582ffa260e3dd797e3e3002b5f0a52ef72a1cbc420599b508ddd3cc6f29d8b"
+  },
+  {
+    "os": "macos",
+    "sha256": "50c4db5c9516ca75335d8d5be1b8dcd5acc86aeaefbc01124e963fa063fa7910"
+  },
+  {
+    "os": "windows",
+    "sha256": "9af442abdb8105c5fc9f9cd2dd45cde410eca7eb09680faea4305cf8c28f4c5a"
+  }
+]

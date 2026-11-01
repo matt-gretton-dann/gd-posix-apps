@@ -54,3 +54,9 @@ The cause is unresolved; neither that representation nor a global compiler
 flag workaround is adopted. Release correctness checks must precede timings.
 Native paired runs also found square-root and sparse-product regressions in
 the original three-alternative prototype, so PR #314 remains an experiment.
+
+The storage/workspace combination passes 156 Release bc cases (582,397
+assertions), 116 extensions-disabled ASan/UBSan number/VM cases (398,188
+assertions), five diagnostic checks and all eight CLI/helper groups. Its
+performance comparison must use the workspace dependency as the exact baseline;
+earlier variant/legacy-multiplication data remain separately labeled.

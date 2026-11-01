@@ -1,0 +1,109 @@
+import csv,gzip,hashlib,io,json,shutil,zipfile
+from pathlib import Path
+root=Path('/private/tmp/gd-posix-multiply-workspace/docs/utilities/bc-203-workspace');root.mkdir(exist_ok=True)
+(root/'.gitattributes').write_text('*-size.txt -text whitespace=-blank-at-eol\nnative16-windows-* -text whitespace=cr-at-eol\n')
+rows=[]
+for preset in ['full','holdout']:
+ src=Path('/private/tmp/gd-bc-203-workspace-paired-'+preset)
+ for name in ['summary.json','manifest.json']:
+  shutil.copyfile(src/name,root/(preset+'-'+name))
+ raw=(src/'samples.csv').read_bytes();assert len(list(csv.DictReader(io.StringIO(raw.decode()))))==1440
+ (root/(preset+'-samples.csv.gz')).write_bytes(gzip.compress(raw,mtime=0))
+ for w in json.loads((src/'summary.json').read_text())['workloads']:
+  r=w['candidate_over_reference']['gd-workspace']
+  h=w['implementations'];rat=h['gd-workspace']['median_seconds']/h['howard-7.0.3']['median_seconds']
+  rows.append('| '+preset+' | `'+w['name']+'` | {:.3f} [{:.3f}, {:.3f}] | {:.3f} |'.format(r['median_paired_ratio'],*r['ci95'],rat))
+counters={'instrumented':True,'timings':'discarded','reports':{}}
+for name,path in [('parent',Path('/private/tmp/gd-bc-202-combined-counters/parent')),('workspace',Path('/private/tmp/gd-bc-203-workspace-counters/workspace'))]:
+ counters['reports'][name]={p.stem:json.loads(p.read_text()) for p in sorted(path.glob('*.json'))}
+(root/'counters.json.gz').write_bytes(gzip.compress(json.dumps(counters,sort_keys=True,indent=2).encode()+b'\n',mtime=0))
+shutil.copyfile('/private/tmp/gd-bc-202-combined-counters/manifest.json',root/'parent-counter-manifest.json')
+shutil.copyfile('/private/tmp/gd-bc-203-workspace-counters/manifest.json',root/'candidate-counter-manifest.json')
+for name,path in [('parent','/private/tmp/bc-202-current-parent-size.txt'),('workspace','/private/tmp/bc-203-workspace-size.txt')]:
+ shutil.copyfile(path,root/(name+'-size.txt'))
+artifacts=[]
+for osname in ['linux','macos','windows']:
+ path=Path('/private/tmp/bc-203-native16-'+osname+'.zip');z=zipfile.ZipFile(path)
+ checks=sum(len(list(csv.DictReader(io.StringIO(z.read(n).decode())))) for n in z.namelist() if n.endswith('samples.csv'))
+ assert checks==950
+ artifacts.append({'os':osname,'sha256':hashlib.sha256(path.read_bytes()).hexdigest(),'checked_invocations':checks})
+ for name in ['decisions.json','summary.md','orchestration.json','full-aa/summary.json','full-paired/summary.json']:
+  (root/('native16-'+osname+'-'+name.replace('/','-'))).write_bytes(z.read(name))
+(root/'native16-artifact-hashes.json').write_text(json.dumps(artifacts,indent=2)+'\n')
+text='''# Reusable Karatsuba limb workspace — #203
+
+Parent `73619a3e5dbc3dbddbca929bdac0a212b77b6772` and candidate
+`dc86aaa51cc1a25214943e7a8c4e078342b8dfed` use independently built immutable
+Release binaries, fixed split point 126, Apple Clang 21, libc++ header 220106,
+C++20 and thin LTO on Apple M1/macOS 27.2. Actual commands, binary hashes,
+compiler identities and every corpus hash are in the manifests. No instrumented
+binary enters a timing comparison. Neither source is relabeled after later edits.
+
+## Method and validation
+
+Full and held-out experiments each pass 1,440 checks: 36 workloads, four
+implementations, one checked warm-up and nine paired measured rounds. The raw
+rows retain parent, workspace candidate, the independently evaluated inline-
+storage candidate and pinned native Howard 7.0.3. The tables below select only
+workspace/parent; they do not attribute the inline candidate's gains here.
+Full seed is 197200; held-out shapes/seed are 197201. Timing order is seeded and
+interleaved within rounds; intervals use 2,000 paired bootstrap resamples.
+No local build, test or diagnostic overlaps timing. This shared workstation has
+no CPU/frequency/thermal isolation, and intervals do not establish other hosts.
+The quick corpus also passes all 144 checks before full timing begins.
+
+The implementation passes 140 bc cases (581,807 assertions), 100 extensions-
+disabled ASan/UBSan number/VM cases (397,598 assertions), five profiling checks
+and eight CLI/helper groups. Independent decimal convolution tests were committed
+before the implementation. Exact planned scratch bounds are exercised with
+nonzero scratch and guarded output/scratch at all three generic limb widths.
+
+## Process results and limits
+
+Large dense-product ratios are 0.864–0.867 full and 0.883–0.887 held out.
+Sparse-product ratios are 0.338 full and 0.346 held out. Small products,
+factorial, square root, loop and call classes remain mostly neutral. These are
+class results, not an aggregate. Several competitive targets remain unmet;
+the Howard column makes the remaining gap visible. It is a ratio of medians,
+not a separate paired interval. POSIX math coverage is pending #217.
+
+| Corpus | Workload | Candidate / parent [paired 95%] | Candidate / Howard medians |
+| --- | --- | --- | --- |
+'''
+text+='\n'.join(rows)+'''
+
+## Allocation and storage evidence
+
+In the original 10,000-digit product workload, selected allocation calls drop
+from 410,059 to 11,059 and requested allocated bytes from 165,215,592 to
+25,995,592. Selected peak live bytes fall from 57,752 to 55,772. Karatsuba call
+count is unchanged at 40,000; the measured source retains the same fixed split
+control. All 72 parent/candidate reports balance allocations/deallocations and
+show zero selected live bytes at EOF. These are scoped requested allocation
+metrics, not whole-process RSS or allocator usable sizes. The parent's profile
+source e7c1a83 has the same Git tree as 73619a3, as recorded by #211 evidence.
+
+Number layout is unchanged. Native Mach-O __text is 226,276 -> 226,528 bytes;
+__TEXT remains 278,528 bytes. Raw native size reports retain other sections;
+the 4 GiB __PAGEZERO virtual reservation is not resident memory.
+
+## Native platform replication
+
+[Run 16](https://github.com/matt-gretton-dann/gd-posix-apps/actions/runs/41259365703)
+passes 950 output checks per OS (2,850 total), with no confirmed regression
+in paired or A/A reports. Dense 10,000-digit product ratios are 0.895 Linux,
+0.870 macOS and 0.892 Windows. Sparse-product ratios are 0.363, 0.340 and
+0.345 respectively. Each OS rebuilds exact base/head and an independent A/A
+base plus pinned Howard natively; no WSL comparator or stale binary is used.
+Artifact hashes, decisions, all class summaries and orchestration are archived.
+Original raw samples/build logs remain workflow artifacts; verified local ZIP
+copies are retained. Host/compiler/image differences prohibit cross-OS pooling.
+
+This completes the workspace experiment only. Dedicated squaring, blocked/
+asymmetric dispatch, repeated threshold sweeps and stable portable defaults
+remain separate #203 stages. Scratch is scoped to one operation and never owns
+escaping values; no thread cache or cross-frame arena is introduced.
+'''
+(root/'README.md').write_text(text)
+shutil.copyfile('/private/tmp/archive-bc-203-workspace.py',root/'archive-evidence.py.txt')
+print('Archived',len(rows),'class ratios and',sum(a['checked_invocations'] for a in artifacts),'native checks')

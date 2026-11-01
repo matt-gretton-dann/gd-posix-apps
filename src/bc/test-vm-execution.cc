@@ -246,3 +246,32 @@ TEST_CASE("VM special-register saving is independent of the frontend option gate
   CHECK(output.str() == (save_specials ? "0\n2\n10\n10\n" : "0\n3\n16\n2\n"));
   CHECK(errors.str().empty());
 }
+
+TEST_CASE("Consumed parameters and terminal returns preserve snapshots",
+          "[bc][vm][execution][ownership]")
+{
+  // For the recursive call, r(0)=N+3 and r(k)=N+(4-k)+r(k-1)+k,
+  // giving r(3)=4*N+15. Both parameter/local restoration and the caller's
+  // large scalar/array snapshots must survive moving consumed frame values.
+  std::string const source =
+    "x=999999999999999999999999999999999999999999999999999999999999999\na[0]=x\nt=88\nz=17\ndefine "
+    "g(z) {\nreturn(z)\n}\ndefine f(x,a[]) {\nauto t\nif(x==0) "
+    "return(a[0])\na[0]+=1\nt=f(x-1,a[])\nreturn(a[0]+t+x)\n}\nf(3,a[])\na[0]\nx\nt\ny=g(x)\ny+="
+    "1\nx\ny\ng(-1.2500)\nz\n";
+  std::ostringstream output;
+  std::ostringstream errors;
+  GD::Bc::VM vm(output, errors, false);
+  GD::Bc::Parser parser(
+    std::make_unique<GD::Bc::Lexer>(std::make_unique<GD::Bc::StringReader>(source)), true);
+  while (auto code = parser.parse()) {
+    if (!vm.execute(*code)) {
+      break;
+    }
+  }
+  CHECK(errors.str().empty());
+  CHECK(output.str() ==
+        "4000000000000000000000000000000000000000000000000000000000000011\n999999999999999999999999"
+        "999999999999999999999999999999999999999\n9999999999999999999999999999999999999999999999999"
+        "99999999999999\n88\n999999999999999999999999999999999999999999999999999999999999999\n10000"
+        "00000000000000000000000000000000000000000000000000000000000\n-1.2500\n17\n");
+}

@@ -33,7 +33,8 @@ alignment and portable node/control-block allocation. It does not replace global
 A portable `atomic_flag` guards the 64-bit totals, including on targets lacking
 native 64-bit atomic arithmetic.
 
-Categories cover digit vectors/shared control blocks, array map nodes/shared
+Categories cover digit vectors, recursive multiplication scratch and shared
+control blocks, array map nodes/shared
 control blocks, instruction vectors/shared control blocks, parameter/local list
 nodes, and instruction-result vectors. Byte counts are storage requested through
 these allocators; they exclude allocator metadata, strings, I/O buffers, other

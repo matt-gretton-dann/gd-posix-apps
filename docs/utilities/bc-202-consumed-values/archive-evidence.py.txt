@@ -1,0 +1,63 @@
+import gzip,json,shutil
+from pathlib import Path
+root=Path('/private/tmp/gd-posix-last-use-temporaries/docs/utilities/bc-202-consumed-values');root.mkdir(exist_ok=True)
+for preset in ['full','holdout']:
+ src=Path('/private/tmp/gd-bc-202-two-state-paired-'+preset)
+ for name in ['summary.json','manifest.json']:
+  shutil.copyfile(src/name,root/(preset+'-'+name))
+ (root/(preset+'-samples.csv.gz')).write_bytes(gzip.compress((src/'samples.csv').read_bytes(),mtime=0))
+counters={'instrumented':True,'timings':'discarded','source_revision':'2ce200c69e3fbd3b148c922e1b3f9281dc74badb','parent_tree':'73619a3e5dbc3dbddbca929bdac0a212b77b6772','reports':{}}
+for name,path in [('parent',Path('/private/tmp/gd-bc-202-combined-counters/parent')),('consume',Path('/private/tmp/gd-bc-202-two-state-counters/consume'))]:
+ counters['reports'][name]={p.stem:json.loads(p.read_text()) for p in sorted(path.glob('*.json'))}
+(root/'counters.json.gz').write_bytes(gzip.compress(json.dumps(counters,sort_keys=True,indent=2).encode()+b'\n',mtime=0))
+shutil.copyfile('/private/tmp/gd-bc-202-two-state-counters/manifest.json',root/'counter-validation-manifest.json')
+rows=[]
+for preset in ['full','holdout']:
+ summary=json.loads((root/(preset+'-summary.json')).read_text())
+ for w in summary['workloads']:
+  r=w['candidate_over_reference']['gd-consume']
+  rows.append('| '+preset+' | `'+w['name']+'` | {:.3f} [{:.3f}, {:.3f}] |'.format(r['median_paired_ratio'],*r['ci95']))
+text='''# Consumed parameter nodes and terminal returns — #202
+
+Move values only where their source lifetime ends: a parameter node immediately
+before erasure, or an owned numeric producer slot at a terminal return. Variable
+and array locations are never moved from. Recursive caller snapshots, array COW,
+local restoration and fractional scale/sign have exact automated output checks.
+This does not infer general arithmetic liveness across backward edges.
+
+Parent is `73619a3e5dbc3dbddbca929bdac0a212b77b6772`; candidate is
+`2ce200c69e3fbd3b148c922e1b3f9281dc74badb`. Immutable Release recipes use fixed
+threshold 126, Apple Clang 21, libc++ header 220106 and thin LTO on Apple M1,
+macOS 27.2. Compiler commands, hashes and corpus identities are in the manifests.
+
+## Checked process measurements
+
+Each full/held-out experiment checks all 36 workloads across four implementations:
+parent, this candidate, the separate two-state inline-storage experiment and
+pinned native Howard 7.0.3. There are 1,440 checked invocations per experiment
+(9 paired measured rounds plus a warm-up per case/implementation). Raw rows and
+summaries retain every implementation, including losing observations. This report
+extracts only `gd-consume / gd-parent`; it does not attribute inline-storage gains
+to consumption. All builds, tests and diagnostics finished before timing began.
+Instrumented binaries do not enter timings. No CPU/frequency/thermal isolation
+is claimed; intervals are paired bootstrap estimates, not cross-host guarantees.
+Full seed is 197200; held-out shapes/seed are 197201, with 2,000 bootstrap resamples.
+
+The call workload loses 400,000 owned-digit copies (4,400,005 to 4,000,005),
+replaced by moves. Selected allocation calls are unchanged at 4,768,409. The loop
+and dense array counters are unchanged. This is an ownership-operation reduction,
+not an allocation or broad runtime win. All 72 parent/candidate profiles balance
+selected allocations/deallocations and have zero selected live bytes at EOF.
+The parent diagnostic binary's source e7c1a83 has the same Git tree as 73619a3;
+that identity is established by the earlier #211/current-storage evidence.
+
+The full call timing is 0.988 [0.980, 1.000], while most unrelated classes are
+neutral. Retain the complete class table rather than an aggregate performance
+claim. Native paired CI reports are checked separately before merge.
+
+| Corpus | Workload | Candidate / parent [95%] |
+| --- | --- | --- |
+'''
+(root/'README.md').write_text(text+'\n'.join(rows)+'\n\n#202 remains open: general liveness, result-capacity reuse and ownership/arena\nevaluation are separate work. POSIX math workload coverage remains #217.\n')
+shutil.copyfile('/private/tmp/archive-bc-202-consumed-values.py',root/'archive-evidence.py.txt')
+print('Archived',len(rows),'class ratios')
