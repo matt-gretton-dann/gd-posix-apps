@@ -37,7 +37,7 @@ public:
       : dense_(std::move(other.dense_)), sparse_(std::move(other.sparse_)),
         entries_(std::exchange(other.entries_, 0)),
         dense_entries_(std::exchange(other.dense_entries_, 0)),
-        highest_(std::exchange(other.highest_, 0))
+        highest_(std::exchange(other.highest_, Index{0}))
   {
     other.dense_.clear();
     other.sparse_.clear();

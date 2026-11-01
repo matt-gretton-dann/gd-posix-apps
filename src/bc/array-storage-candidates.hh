@@ -36,7 +36,7 @@ public:
   MapArrayStorage() = default;
   MapArrayStorage(MapArrayStorage const&) = default;
   MapArrayStorage(MapArrayStorage&& other) noexcept
-      : values_(std::move(other.values_)), highest_(std::exchange(other.highest_, 0))
+      : values_(std::move(other.values_)), highest_(std::exchange(other.highest_, Index{0}))
   {
     other.values_.clear();
   }
@@ -128,7 +128,7 @@ public:
   PagedArrayStorage(PagedArrayStorage const&) = default;
   PagedArrayStorage(PagedArrayStorage&& other) noexcept
       : pages_(std::move(other.pages_)), entries_(std::exchange(other.entries_, 0)),
-        highest_(std::exchange(other.highest_, 0))
+        highest_(std::exchange(other.highest_, Index{0}))
   {
     other.pages_.clear();
   }
