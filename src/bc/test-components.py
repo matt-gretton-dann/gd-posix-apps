@@ -81,6 +81,36 @@ class Components(unittest.TestCase):
         self.assertEqual(self.invoke('conversion-in', '-A.F\n', base=16)['result'], '-10.9')
         self.assertEqual(self.invoke('conversion-out', '1.5\n', base=2)['result'], '1.1000')
 
+    def test_divide_conquer_integer_conversion_protocol(self):
+        alphabet = '0123456789ABCDEF'
+        value = 10 ** 79 + 123456789012345678901234567890
+        def encode(number, base):
+            result = ''
+            while number:
+                number, remainder = divmod(number, base)
+                result = alphabet[remainder] + result
+            return result or '0'
+        for base in range(2, 17):
+            with self.subTest(base=base):
+                digits = encode(value, base)
+                parsed = self.invoke('conversion-in-dc', '000' + digits + '\n', base=base)
+                self.assertEqual(parsed['result'], str(value))
+                self.assertEqual(parsed['checksum_mod_2_64'], 3 * len(str(value)))
+                output = self.invoke('conversion-out-dc', str(value) + '\n', base=base)
+                self.assertEqual(output['result'], digits)
+                wraps = len(digits) // (69 if len(digits) <= 69 else 68) if base == 10 else (
+                    0 if len(digits) <= 69 else (len(digits) - 1) // 68)
+                self.assertEqual(output['checksum_mod_2_64'], 3 * (len(digits) + 2 * wraps))
+        self.assertEqual(self.invoke('conversion-in-dc', 'F\n', base=2)['result'], '15')
+        for component in ('conversion-in-dc', 'conversion-out-dc'):
+            self.assertEqual(self.invoke(component, '0\n', base=2)['result'], '0')
+
+    def test_divide_conquer_diagnostics_reject_noninteger_fixtures(self):
+        for component in ('conversion-in-dc', 'conversion-out-dc'):
+            for source in ('-1\n', '1.5\n', '+1\n'):
+                with self.subTest(component=component, source=source):
+                    self.invoke(component, source, success=False, base=10)
+
     def test_nondecimal_conversion_rejects_invalid_bases_and_digits(self):
         for component, source, base in (('conversion-in', '1\n', 1),
                                         ('conversion-out', '1\n', 17),
