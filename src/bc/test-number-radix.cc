@@ -2,6 +2,8 @@
  * Independent digit-arithmetic oracles for runtime-base conversion.
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <new>
+
 #include <catch2/catch.hpp>
 
 #include <algorithm>

@@ -711,17 +711,28 @@ def implementations(path, require_provenance=False):
             raise BenchmarkError(name + " metadata must be an object")
         if metadata.get("instrumented"):
             raise BenchmarkError(name + " is instrumented; use a separate timing binary")
+        binary_sha256 = digest_file(binary)
+        declarations = (metadata.get('binary_sha256'), entry.get('binary_sha256'))
+        for declared in declarations:
+            if declared is None:
+                continue
+            if not isinstance(declared, str) or not re.fullmatch('[0-9a-fA-F]{64}', declared):
+                raise BenchmarkError(name + ' binary identity hash must be 64 hexadecimal characters')
+            if declared.lower() != binary_sha256:
+                raise BenchmarkError(name + ' binary identity hash does not match the executable')
         provenance_fields = ("source_revision", "compiler", "flags", "version")
         complete = (all(metadata.get(key) for key in provenance_fields) and
-                    metadata.get("instrumented") is False)
+                    metadata.get("instrumented") is False and
+                    any(declared is not None for declared in declarations))
         role = entry.get("role", "candidate")
         if require_provenance and role != "installed" and not complete:
-            raise BenchmarkError(name + " lacks source/compiler/flags/version provenance")
-        declared = entry.get('input_artifacts', [])
-        if not isinstance(declared, list):
+            raise BenchmarkError(name + ' lacks source/compiler/flags/version provenance '
+                                 'or a matching declared binary identity hash')
+        declared_inputs = entry.get('input_artifacts', [])
+        if not isinstance(declared_inputs, list):
             raise BenchmarkError(name + ' input_artifacts must be a list')
         artifacts = []
-        for artifact in declared:
+        for artifact in declared_inputs:
             if (not isinstance(artifact, dict) or not isinstance(artifact.get('path'), str) or
                     not isinstance(artifact.get('sha256'), str) or
                     not re.fullmatch('[0-9a-fA-F]{64}', artifact['sha256'])):
@@ -744,7 +755,7 @@ def implementations(path, require_provenance=False):
             artifacts.append(dict(path=artifact['path'], realpath=str(actual_path),
                                   sha256=artifact['sha256'].lower(), purpose=artifact.get('purpose', 'input')))
         result.append({"name": name, "argv": [str(Path(binary).resolve())] + argv[1:],
-                       "binary_sha256": digest_file(binary), "metadata": metadata,
+                       "binary_sha256": binary_sha256, "metadata": metadata,
                        "role": role, "complete_provenance": complete,
                        **({'input_artifacts': artifacts} if artifacts else {})})
     return result
