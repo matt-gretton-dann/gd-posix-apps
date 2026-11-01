@@ -1,5 +1,5 @@
 /** \file digit-storage.hh
- * Inline limbs with shared heap storage for larger numeric coefficients.
+ * EXPERIMENT ONLY: zero inline capacity with shared heap COW storage.
  * SPDX-License-Identifier: Apache-2.0
  */
 #ifndef GD_BC_DIGIT_STORAGE_HH
@@ -31,17 +31,18 @@ namespace GD::Bc::Details {
  * allocator-aware vector interface. Nullable storage preserves its existing
  * absent-versus-owned-empty distinction without allocating an empty owner.
  */
-template<typename Limb, std::size_t InlineCapacity = 3>
+template<typename Limb, std::size_t InlineCapacity = 0>
 class DigitStorage
 {
-  static_assert(InlineCapacity > 0 && InlineCapacity < 255);
+  static_assert(InlineCapacity < 255);
   static_assert(std::is_integral_v<Limb> && std::is_unsigned_v<Limb>);
   using Heap = std::vector<Limb, Profile::Allocator<Limb, Profile::AllocationKind::digits>>;
   struct Inline
   {
     // Only [0, size) is initialized and copied. An absent sentinel exposes no
     // elements. Never copy this aggregate wholesale or read its unused suffix.
-    std::array<Limb, InlineCapacity> limbs;
+    // One unused slot keeps empty-range pointers valid when capacity is zero.
+    std::array<Limb, InlineCapacity == 0 ? 1 : InlineCapacity> limbs;
     unsigned char size = 0;
   };
   // All members stay alive: no union, pointer tagging or explicit lifetime
