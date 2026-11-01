@@ -126,7 +126,7 @@ class BenchmarkCli(unittest.TestCase):
         self.assertEqual(result.stderr, "")
         rows = [json.loads(line) for line in
                 (output / "samples.jsonl").read_text(encoding="utf-8").splitlines()]
-        self.assertEqual(len(rows), 45)
+        self.assertEqual(len(rows), 46)
         self.assertTrue(all(row["checked"] for row in rows))
 
     def check_failure(self, mode, diagnostic, timeout=3):
@@ -249,6 +249,57 @@ class PairedStatistics(unittest.TestCase):
             self.assertEqual(case['parameters']['terms'], 8)
             self.assertEqual(case['expected'], [str(8 * int(literal))])
             self.assertIn('i<{}'.format(case['parameters']['iterations']), case['program'])
+
+    def test_file_class_has_an_independent_integer_oracle(self):
+        for preset in ('full', 'holdout', 'quick'):
+            cases = [c for c in self.module().corpus(preset)
+                     if c['group'] == 'file_streaming']
+            self.assertEqual(len(cases), 1)
+            case, = cases
+            self.assertEqual(case['input_mode'], 'file')
+            count = case['parameters']['statements']
+            self.assertEqual(case['program'], 's=0\n' + 's+=1\n' * count + 's\n')
+            self.assertEqual(case['expected'], [str(sum(1 for _ in range(count)))])
+
+    def test_file_transport_preserves_argv_and_closes_stdin(self):
+        module = self.module()
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name)
+        path = root / "source \u03bb's.bc"
+        path.write_bytes(b'1+1\n')
+        driver = root / 'read artifact.py'
+        driver.write_text("import sys\nfrom pathlib import Path\n"
+                          "assert sys.stdin.buffer.read() == b''\n"
+                          "assert Path(sys.argv[1]).read_bytes() == b'1+1\\n'\n"
+                          "print(2)\n", encoding='utf-8')
+        case = {'name': 'file-check', 'program': '1+1\n',
+                'expected': ['2'], 'input_mode': 'file'}
+        result = module.run_checked({'name': 'fake',
+                                     'argv': [sys.executable, str(driver)]}, case, 3, path)
+        self.assertTrue(result['checked'])
+
+    def test_file_transport_rejects_missing_or_wrong_artifact(self):
+        module = self.module()
+        tool = {'name': 'fake', 'argv': [sys.executable, '-c', 'print(2)']}
+        case = {'name': 'file-check', 'program': '1+1\n',
+                'expected': ['2'], 'input_mode': 'file'}
+        with self.assertRaisesRegex(module.BenchmarkError, 'artifact'):
+            module.run_checked(tool, case, 3)
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        path = Path(temporary.name) / 'wrong.bc'
+        path.write_bytes(b'1+2\n')
+        with self.assertRaisesRegex(module.BenchmarkError, 'artifact'):
+            module.run_checked(tool, case, 3, path)
+
+    def test_transport_rejects_unknown_mode(self):
+        module = self.module()
+        case = {'name': 'mode-check', 'program': '1+1\n',
+                'expected': ['2'], 'input_mode': 'unknown'}
+        with self.assertRaisesRegex(module.BenchmarkError, 'input mode'):
+            module.run_checked({'name': 'fake',
+                                'argv': [sys.executable, '-c', 'print(2)']}, case, 3)
 
     def test_holdout_shapes_are_separate_and_replayable(self):
         module = self.module()
