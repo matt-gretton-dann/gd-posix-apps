@@ -128,6 +128,13 @@ class BenchmarkCli(unittest.TestCase):
                 (output / "samples.jsonl").read_text(encoding="utf-8").splitlines()]
         self.assertEqual(len(rows), 46)
         self.assertTrue(all(row["checked"] for row in rows))
+        manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+        files = [case for case in manifest['corpus'] if case['group'] == 'file_streaming']
+        self.assertEqual(len(files), 1)
+        self.assertEqual(files[0]['input_mode'], 'file')
+        artifact = output / 'workloads' / (files[0]['name'] + '.bc')
+        self.assertEqual(hashlib.sha256(artifact.read_bytes()).hexdigest(),
+                         files[0]['program_sha256'])
 
     def check_failure(self, mode, diagnostic, timeout=3):
         result, output = self.invoke(mode, timeout)
