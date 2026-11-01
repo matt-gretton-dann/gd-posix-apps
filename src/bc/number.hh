@@ -1834,6 +1834,11 @@ public:
     sign_ = sign_ == rhs.sign_ ? Sign::positive : Sign::negative;
   }
 
+#if defined(__APPLE__) && defined(__aarch64__) && defined(__clang__)
+  // Keep this large hot function's entry alignment stable as decoders grow.
+  // Other platforms retain their compiler's normal alignment policy.
+  __attribute__((aligned(64)))
+#endif
   void divide(BasicNumber rhs, NumType target_scale)
   {
     if (rhs.is_zero()) {
