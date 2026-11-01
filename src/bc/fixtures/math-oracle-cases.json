@@ -1,0 +1,362 @@
+{
+  "scales": [
+    0,
+    1,
+    2,
+    20,
+    100,
+    1000,
+    2000
+  ],
+  "cases": [
+    {
+      "id": "s-zero",
+      "function": "s",
+      "arguments": [
+        "0"
+      ]
+    },
+    {
+      "id": "s-one",
+      "function": "s",
+      "arguments": [
+        "1"
+      ]
+    },
+    {
+      "id": "s-negative",
+      "function": "s",
+      "arguments": [
+        "-1"
+      ]
+    },
+    {
+      "id": "s-tiny",
+      "function": "s",
+      "arguments": [
+        "0.0000000000000000000000000000000000000001"
+      ]
+    },
+    {
+      "id": "s-huge",
+      "function": "s",
+      "arguments": [
+        "10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001"
+      ]
+    },
+    {
+      "id": "c-zero",
+      "function": "c",
+      "arguments": [
+        "0"
+      ]
+    },
+    {
+      "id": "c-one",
+      "function": "c",
+      "arguments": [
+        "1"
+      ]
+    },
+    {
+      "id": "c-negative",
+      "function": "c",
+      "arguments": [
+        "-1"
+      ]
+    },
+    {
+      "id": "c-tiny",
+      "function": "c",
+      "arguments": [
+        "0.0000000000000000000000000000000000000001"
+      ]
+    },
+    {
+      "id": "c-huge",
+      "function": "c",
+      "arguments": [
+        "10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001"
+      ]
+    },
+    {
+      "id": "a-zero",
+      "function": "a",
+      "arguments": [
+        "0"
+      ]
+    },
+    {
+      "id": "a-one",
+      "function": "a",
+      "arguments": [
+        "1"
+      ]
+    },
+    {
+      "id": "a-negative",
+      "function": "a",
+      "arguments": [
+        "-1"
+      ]
+    },
+    {
+      "id": "a-tiny",
+      "function": "a",
+      "arguments": [
+        "0.0000000000000000000000000000000000000001"
+      ]
+    },
+    {
+      "id": "a-huge",
+      "function": "a",
+      "arguments": [
+        "10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001"
+      ]
+    },
+    {
+      "id": "s-near-pi",
+      "function": "s",
+      "arguments": [
+        "3.14159265358979323846264338327950288419716939937510"
+      ]
+    },
+    {
+      "id": "s-near-half-pi",
+      "function": "s",
+      "arguments": [
+        "1.57079632679489661923132169163975144209858469968755"
+      ]
+    },
+    {
+      "id": "c-near-pi",
+      "function": "c",
+      "arguments": [
+        "3.14159265358979323846264338327950288419716939937510"
+      ]
+    },
+    {
+      "id": "c-near-half-pi",
+      "function": "c",
+      "arguments": [
+        "1.57079632679489661923132169163975144209858469968755"
+      ]
+    },
+    {
+      "id": "a-negative-huge",
+      "function": "a",
+      "arguments": [
+        "-10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+      ]
+    },
+    {
+      "id": "l-one",
+      "function": "l",
+      "arguments": [
+        "1"
+      ]
+    },
+    {
+      "id": "l-two",
+      "function": "l",
+      "arguments": [
+        "2"
+      ]
+    },
+    {
+      "id": "l-tenth",
+      "function": "l",
+      "arguments": [
+        "0.1"
+      ]
+    },
+    {
+      "id": "l-near-one-below",
+      "function": "l",
+      "arguments": [
+        "0.9999999999999999999999999999999999999999"
+      ]
+    },
+    {
+      "id": "l-near-one-above",
+      "function": "l",
+      "arguments": [
+        "1.0000000000000000000000000000000000000001"
+      ]
+    },
+    {
+      "id": "l-huge",
+      "function": "l",
+      "arguments": [
+        "10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+      ]
+    },
+    {
+      "id": "l-tiny",
+      "function": "l",
+      "arguments": [
+        "0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001"
+      ]
+    },
+    {
+      "id": "e-zero",
+      "function": "e",
+      "arguments": [
+        "0"
+      ]
+    },
+    {
+      "id": "e-one",
+      "function": "e",
+      "arguments": [
+        "1"
+      ]
+    },
+    {
+      "id": "e-negative-one",
+      "function": "e",
+      "arguments": [
+        "-1"
+      ]
+    },
+    {
+      "id": "e-tiny",
+      "function": "e",
+      "arguments": [
+        "0.0000000000000000000000000000000000000001"
+      ]
+    },
+    {
+      "id": "e-positive-large",
+      "function": "e",
+      "arguments": [
+        "100"
+      ]
+    },
+    {
+      "id": "e-negative-large",
+      "function": "e",
+      "arguments": [
+        "-100"
+      ]
+    },
+    {
+      "id": "e-positive-larger",
+      "function": "e",
+      "arguments": [
+        "1000"
+      ]
+    },
+    {
+      "id": "e-negative-larger",
+      "function": "e",
+      "arguments": [
+        "-1000"
+      ]
+    },
+    {
+      "id": "j-zero-zero",
+      "function": "j",
+      "arguments": [
+        "0",
+        "0"
+      ]
+    },
+    {
+      "id": "j-one-zero",
+      "function": "j",
+      "arguments": [
+        "1",
+        "0"
+      ]
+    },
+    {
+      "id": "j-negative-zero",
+      "function": "j",
+      "arguments": [
+        "-1",
+        "0"
+      ]
+    },
+    {
+      "id": "j-zero-one",
+      "function": "j",
+      "arguments": [
+        "0",
+        "1"
+      ]
+    },
+    {
+      "id": "j-one-one",
+      "function": "j",
+      "arguments": [
+        "1",
+        "1"
+      ]
+    },
+    {
+      "id": "j-negative-order",
+      "function": "j",
+      "arguments": [
+        "-5",
+        "3"
+      ]
+    },
+    {
+      "id": "j-negative-argument",
+      "function": "j",
+      "arguments": [
+        "2",
+        "-3"
+      ]
+    },
+    {
+      "id": "j-both-negative",
+      "function": "j",
+      "arguments": [
+        "-5",
+        "-3"
+      ]
+    },
+    {
+      "id": "j-turning",
+      "function": "j",
+      "arguments": [
+        "20",
+        "20"
+      ]
+    },
+    {
+      "id": "j-order-dominates",
+      "function": "j",
+      "arguments": [
+        "100",
+        "1"
+      ]
+    },
+    {
+      "id": "j-argument-dominates",
+      "function": "j",
+      "arguments": [
+        "0",
+        "100"
+      ]
+    },
+    {
+      "id": "j-near-root",
+      "function": "j",
+      "arguments": [
+        "0",
+        "2.4048255576957727686216318793264546431242449091460"
+      ]
+    },
+    {
+      "id": "j-huge-argument",
+      "function": "j",
+      "arguments": [
+        "1",
+        "100000000000000000000000000000000000000000000000000"
+      ]
+    }
+  ]
+}

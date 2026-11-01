@@ -1,0 +1,2 @@
+# The certified reference report records this source's exact SHA-256.
+generate-math-oracles.py text eol=lf

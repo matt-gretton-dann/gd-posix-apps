@@ -1,0 +1,3 @@
+# Reference identities must survive Windows checkout and regeneration.
+math-oracle-cases.json text eol=lf
+math-oracles.json -text
