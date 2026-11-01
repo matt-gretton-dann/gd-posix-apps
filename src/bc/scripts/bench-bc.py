@@ -172,6 +172,130 @@ def math_corpus(preset='full', selected=None, listing=False):
     return cases
 
 
+def math_iterations(case, count):
+    """Rebuild a repeated mathematical program from explicit dimensions."""
+    parameters = dict(case['parameters'])
+    if parameters.get('mode') != 'repeated' or case.get('oracle', {}).get('kind') != 'decimal-ulp':
+        raise BenchmarkError('duration calibration requires a repeated mathematical case')
+    if type(count) is not int or count < 2:
+        raise BenchmarkError('repeated mathematical count must be at least two')
+    parameters['iterations'] = count
+    call = '{}({})'.format(parameters['function'], ','.join(parameters['arguments']))
+    program = 'scale={}\nfor(i=0;i<{};i++) r={}\nr\nscale\nibase\nscale(r)\n'.format(
+        parameters['scale'], count, call)
+    name, changed = re.subn(r'_x[0-9]+$', '_x' + str(count), case['name'])
+    if changed != 1:
+        raise BenchmarkError('mathematical case name does not identify its iteration count')
+    return dict(case, name=name, program=program, parameters=parameters)
+
+
+def calibrate_math(cases, tools, target, samples, maximum, timeout, output):
+    """Choose each role's bounded duration count, then freeze their maximum.
+
+    Calibration timings are separate diagnostics. No paired trial is used to
+    tune counts, and later shortfall is reported rather than triggering reruns.
+    """
+    directory = output / 'calibration'
+    programs = directory / 'workloads'
+    programs.mkdir(parents=True)
+    chosen, calibrated = [], []
+    with (directory / 'samples.jsonl').open('w', encoding='utf-8') as log:
+        for case in cases:
+            if case['parameters']['mode'] == 'one_shot':
+                calibrated.append(case)
+                chosen.append(dict(original=case['name'], status='one-shot latency; not batched'))
+                continue
+            roles = {}
+            for tool in tools:
+                count = 2
+                while True:
+                    trial = math_iterations(case, count)
+                    payload = trial['program'].encode('utf-8')
+                    (programs / (trial['name'] + '.bc')).write_bytes(payload)
+                    (programs / (trial['name'] + '.expected')).write_bytes(oracle_payload(trial))
+                    durations = []
+                    for sample in range(samples):
+                        result = run_checked(tool, trial, timeout)
+                        row = dict(result, workload=trial['name'], original=case['name'],
+                                   implementation=tool['name'], iterations=count, trial=sample,
+                                   program_sha256=hashlib.sha256(payload).hexdigest())
+                        log.write(json.dumps(row, sort_keys=True) + '\n')
+                        log.flush()
+                        durations.append(result['seconds'])
+                    median = statistics.median(durations)
+                    if median >= target:
+                        roles[tool['name']] = dict(iterations=count, median_seconds=median)
+                        break
+                    if count == maximum:
+                        raise BenchmarkError('{} / {} did not reach the duration target at '
+                                             '{} iterations'.format(tool['name'], case['name'], count))
+                    count = min(maximum, count * 2)
+            count = max(role['iterations'] for role in roles.values())
+            frozen = math_iterations(case, count)
+            frozen['parameters']['calibration'] = 'bounded per-role median duration; common maximum'
+            frozen['parameters']['duration_target_seconds'] = target
+            calibrated.append(frozen)
+            chosen.append(dict(original=case['name'], frozen=frozen['name'], iterations=count,
+                               status='frozen before paired trials', roles=roles))
+    report = dict(target_seconds=target, samples_per_count=samples, maximum_iterations=maximum,
+                  method='independent per-role doubling, common maximum, no paired-data feedback',
+                  cases=chosen)
+    write_json(directory / 'summary.json', report)
+    return calibrated, report
+
+
+def _replay_corpus(directory, suite, selected=None):
+    """Load the exact frozen programs/oracles, including calibrated counts."""
+    manifest_path = directory / 'manifest.json'
+    manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+    if manifest.get('suite', 'arithmetic') != suite:
+        raise BenchmarkError('replayed corpus suite does not match --suite')
+    cases, names = [], set()
+    for entry in manifest['corpus']:
+        name = entry['name']
+        if (not isinstance(name, str) or not re.fullmatch(r'[A-Za-z0-9_.-]+', name) or
+                name in ('.', '..') or name in names):
+            raise BenchmarkError('invalid or duplicate replayed workload name')
+        names.add(name)
+        if selected and name not in selected:
+            continue
+        payloads = {}
+        for suffix, field in (('.bc', 'program_sha256'), ('.expected', 'oracle_sha256')):
+            payload = (directory / 'workloads' / (name + suffix)).read_bytes()
+            if hashlib.sha256(payload).hexdigest() != entry[field]:
+                raise BenchmarkError('replayed artifact hash mismatch: ' + name + suffix)
+            payloads[suffix] = payload.decode('utf-8')
+        case = dict(name=name, group=entry['group'], parameters=entry['parameters'],
+                    program=payloads['.bc'], expected=None)
+        if not isinstance(case['parameters'], dict) or not isinstance(case['group'], str):
+            raise BenchmarkError('invalid replayed workload dimensions')
+        if suite == 'math':
+            case['oracle'] = json.loads(payloads['.expected'])
+        else:
+            case['expected'] = payloads['.expected'].splitlines()
+        mode = entry.get('input_mode', 'stdin')
+        if mode not in ('stdin', 'file'):
+            raise BenchmarkError('unknown replayed input transport')
+        if mode == 'file':
+            case['input_mode'] = 'file'
+        cases.append(case)
+    if not cases or (selected and set(selected) - names):
+        raise BenchmarkError('empty or unknown replayed workload selection')
+    return cases, dict(source_manifest_sha256=digest_file(manifest_path),
+                       source_directory=str(directory.resolve()),
+                       original_preset=manifest.get('preset'),
+                       original_corpus_seed=manifest.get('corpus_seed'),
+                       original_reference_fixture_sha256=manifest.get('reference_fixture_sha256'),
+                       scope='frozen program/oracle replay; no new duration calibration')
+
+
+def replay_corpus(directory, suite, selected=None):
+    try:
+        return _replay_corpus(directory, suite, selected)
+    except (OSError, KeyError, TypeError, ValueError) as error:
+        raise BenchmarkError('invalid replay corpus: ' + str(error))
+
+
 def corpus(preset="full", selected=None, listing=False, seed=197200, suite='arithmetic'):
     """Keep the historical sixteen cases, then add explicitly named classes.
 
@@ -638,10 +762,17 @@ def summarize(cases, rows, reference, seed, resamples):
             if name != reference:
                 comparisons[name] = paired_statistics(values[name], values[reference],
                                                        seed + index, resamples)
+        durations = {name: dispersion(times) for name, times in values.items()}
+        target = case['parameters'].get('duration_target_seconds')
+        adequacy = ({name: detail['median_seconds'] >= target for name, detail in durations.items()}
+                    if target is not None else None)
         workloads.append({"name": case["name"], "group": case["group"],
                           "parameters": case["parameters"],
-                          "implementations": {name: dispersion(times)
-                                              for name, times in values.items()},
+                          "implementations": durations,
+                          **({'duration_target_met': adequacy,
+                              'duration_status': ('target met' if all(adequacy.values()) else
+                                                  'shortfall; not substantive duration evidence')}
+                             if adequacy is not None else {}),
                           "candidate_over_reference": comparisons})
     return {"schema": 1, "reference": reference, "workloads": workloads,
             "performance_gate": "advisory; no aggregate or hard timing threshold"}
@@ -685,11 +816,21 @@ def main():
     parser.add_argument("--corpus-seed", type=int, default=197200, help="operand-generation seed")
     parser.add_argument("--bootstrap", type=positive_integer, default=2000)
     parser.add_argument("--require-provenance", action="store_true")
+    parser.add_argument('--calibrate-seconds', type=positive_timeout,
+                        help='target per-role median duration for repeated math cases')
+    parser.add_argument('--calibration-samples', type=positive_integer, default=3)
+    parser.add_argument('--calibration-max-iterations', type=positive_integer, default=1048576)
+    parser.add_argument('--calibrate-only', action='store_true',
+                        help='prepare the calibrated corpus without paired timing samples')
+    parser.add_argument('--replay-corpus', type=Path,
+                        help='reuse an experiment directory\'s exact hashed programs and oracles')
     args = parser.parse_args()
     if args.list:
         try:
-            cases = corpus(args.preset, args.workload, listing=True, seed=args.corpus_seed,
-                           suite=args.suite)
+            cases = (replay_corpus(args.replay_corpus, args.suite, args.workload)[0]
+                     if args.replay_corpus else
+                     corpus(args.preset, args.workload, listing=True, seed=args.corpus_seed,
+                            suite=args.suite))
         except BenchmarkError as error:
             parser.error(str(error))
         print(json.dumps([{key: case[key] for key in ("name", "group", "parameters")}
@@ -699,6 +840,15 @@ def main():
         parser.error("--config and --output are required unless --list is used")
     if args.bootstrap < 200:
         parser.error("--bootstrap must be at least 200")
+    if args.calibrate_only and args.calibrate_seconds is None:
+        parser.error('--calibrate-only requires --calibrate-seconds')
+    if args.replay_corpus and args.calibrate_seconds is not None:
+        parser.error('replaying frozen counts and new duration calibration are mutually exclusive')
+    if args.calibrate_seconds is not None:
+        if args.suite != 'math':
+            parser.error('duration calibration currently supports only the explicit math suite')
+        if args.calibrate_seconds >= args.timeout or args.calibration_max_iterations < 2:
+            parser.error('calibration needs a target below the process timeout and a count cap >=2')
     output = args.output.resolve()
     try:
         output.mkdir(parents=True, exist_ok=False)
@@ -716,13 +866,33 @@ def main():
                 if digest_file(archived) != artifact['sha256']:
                     raise BenchmarkError(tool['name'] + ' declared input changed while archiving')
                 artifact['archived_as'] = str(archived.relative_to(output))
+        # Keep enough identity information to reproduce a failed bounded
+        # calibration even when no final measurement manifest can be written.
+        write_json(output / 'setup.json', dict(
+            scope='validated input snapshot before calibration or paired trials',
+            implementations=tools, source_config_sha256=digest_file(args.config),
+            harness_sha256=digest_file(__file__), requested_suite=args.suite,
+            requested_preset=args.preset, timeout=args.timeout,
+            calibration_target_seconds=args.calibrate_seconds,
+            calibration_samples=args.calibration_samples,
+            calibration_max_iterations=args.calibration_max_iterations))
         reference = args.reference or tools[0]["name"]
         if reference not in [tool["name"] for tool in tools]:
             raise BenchmarkError("reference is not a configured implementation")
         if args.require_provenance and next(tool for tool in tools
                                            if tool["name"] == reference)["role"] == "installed":
             raise BenchmarkError("an installed comparator cannot be the controlled reference")
-        cases = corpus(args.preset, args.workload, seed=args.corpus_seed, suite=args.suite)
+        replay = None
+        if args.replay_corpus:
+            cases, replay = replay_corpus(args.replay_corpus, args.suite, args.workload)
+        else:
+            cases = corpus(args.preset, args.workload, seed=args.corpus_seed, suite=args.suite)
+        calibration = None
+        if args.calibrate_seconds is not None:
+            cases, calibration = calibrate_math(cases, tools, args.calibrate_seconds,
+                                                args.calibration_samples,
+                                                args.calibration_max_iterations,
+                                                args.timeout, output)
         programs = output / "workloads"
         programs.mkdir()
         for case in cases:
@@ -733,10 +903,12 @@ def main():
                 oracle_payload(case))
         clock = time.get_clock_info("perf_counter")
         manifest = {"schema": 1, "started_utc": datetime.now(timezone.utc).isoformat(),
-                    "implementations": tools, "reference": reference, "preset": args.preset,
+                    "implementations": tools, "reference": reference,
+                    "preset": replay['original_preset'] if replay else args.preset,
                     'suite': args.suite,
                     "samples": args.samples, "warmups": args.warmups, "timeout": args.timeout,
-                    "seed": args.seed, "corpus_seed": args.corpus_seed,
+                    "seed": args.seed,
+                    "corpus_seed": replay['original_corpus_seed'] if replay else args.corpus_seed,
                     "harness_sha256": digest_file(__file__),
                     "bootstrap_resamples": args.bootstrap,
                     "platform": {"system": platform.system(), "release": platform.release(),
@@ -759,9 +931,18 @@ def main():
         if args.suite == 'math':
             scripts = Path(__file__).resolve().parent
             manifest['oracle_checker_sha256'] = digest_file(scripts / 'math_oracle.py')
-            manifest['reference_fixture_sha256'] = digest_file(
-                scripts.parent / 'fixtures/math-oracles.json')
+            manifest['reference_fixture_sha256'] = (replay['original_reference_fixture_sha256']
+                if replay else digest_file(scripts.parent / 'fixtures/math-oracles.json'))
+        if calibration is not None:
+            manifest['duration_calibration'] = calibration
+        if replay is not None:
+            manifest['replayed_corpus'] = replay
         write_json(output / "manifest.json", manifest)
+        if args.calibrate_only:
+            write_json(output / 'calibration-only.json', dict(status='prepared; no paired samples',
+                                                             workloads=len(cases)))
+            print('Prepared {} calibrated workloads without paired samples'.format(len(cases)))
+            return 0
         rows, rng = [], random.Random(args.seed)
         fields = ("phase", "round", "order", "workload", "implementation", "seconds",
                   "checked", "output_bytes", "output_sha256")

@@ -56,8 +56,10 @@ at scales20/100/1000, plus Bessel turning, order-dominated, argument-dominated
 and near-root regimes. Quick mode uses scales2/20/100. Held-out inputs use
 different regular arguments or exact integer-order Bessel symmetries, with
 different repeated-call counts. Names and parameters retain each actual input,
-scale, call count and mode. These fixed counts are **not calibrated**; short
-cases do not establish a substantive timing advantage. Duration calibration remains separate issue #216 work.
+scale, call count and mode. Default fixed counts are **not calibrated**; short
+cases do not establish a substantive timing advantage. Use the explicit
+calibration/replay protocol below when substantive repeated-call duration is
+required.
 
 Each configured command must load its chosen library explicitly. For example:
 
@@ -92,7 +94,36 @@ their previous exact-output format. Larger arguments and scales remain in
 the broader accuracy corpus even when omitted from this bounded timing subset.
 This harness support alone makes no competitive-performance claim.
 
-## Declared command inputs
+## Calibrate once and replay frozen dimensions
+
+`--calibrate-seconds 0.1` calibrates repeated math cases separately for each
+configured role. Starting at two calls, double the count until the median of
+three checked fresh processes reaches the target, subject to the explicit
+`--calibration-max-iterations` cap and per-process timeout. Freeze the largest
+required count as the common count for every role. One-shot latency cases are
+kept at one call. No paired measurement is used to select a count.
+
+`--calibrate-only` writes the validated setup, calibration trials, frozen
+programs, oracles and manifest without paired samples. Subsequent A/A controls,
+primary comparisons and bounded confirmations can use `--replay-corpus DIR`.
+Replay verifies every program/oracle hash and retains the original preset,
+operand seed, input transport and actual dimensions. It neither regenerates
+inputs nor recalibrates counts. Supply the original suite explicitly.
+
+```sh
+python3 src/bc/scripts/bench-bc.py --suite math --config math-implementations.json \
+  --output build/math-prepared --calibrate-seconds 0.1 --calibrate-only
+python3 src/bc/scripts/bench-bc.py --suite math --config math-implementations.json \
+  --replay-corpus build/math-prepared --output build/math-measured \
+  --samples 15 --warmups 3
+```
+
+Calibration and paired samples are separate artifacts. A cap or timeout failure
+retains its checked partial trials, exact programs and validated setup. A later
+measured median below the target is recorded as a duration shortfall; the
+harness does not change counts or rerun until favorable. Such a class does not
+establish substantive-duration acceptance. Counts calibrated on one machine
+need not meet the target on another; report actual measured adequacy.
 
 Ordinary library files passed in a role's argv can be declared explicitly:
 
@@ -181,6 +212,11 @@ No aggregate score or hard timing pass is produced.
 
 Artifacts:
 
+- `setup.json`: validated identities before calibration/trials, retained on
+  bounded calibration failure.
+- `calibration/`: separate checked diagnostic trials, exact programs/oracles
+  and the frozen count decision, when requested.
+- `declared-inputs/`: archived argv-file payloads with verified hashes.
 - `manifest.json`: argv, binary hashes, declared build metadata, platform/clock,
   environment, seeds and exact corpus/oracle hashes.
 - `workloads/*.bc` and `*.expected`: exact UTF-8 LF payload bytes matching the
