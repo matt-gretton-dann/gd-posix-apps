@@ -45,3 +45,20 @@ ordinary VM/parser/CLI and diagnostic suites. Timings, allocation traffic and
 native peak memory still need matched dense, random, sparse, clustered and
 repeated-write measurements. This document records candidate designs, not a
 performance result or a default-selection decision.
+
+
+`prepare-array-benchmark.py --output prepared --preset full` creates eight
+exact-oracle workloads for sequential and permuted dense access, random sparse
+keys and absent neighbors, sparse clusters, repeated high-index replacement,
+absent reads, parameter snapshots and heap coefficients. The `holdout` preset
+changes dimensions and sparse/permutation parameters; `quick` is correctness
+only. Replay these frozen programs through `bench-bc.py --replay-corpus prepared`
+with all candidate configs and the hybrid reference. This separate corpus does
+not change any existing benchmark program or seeded operand.
+
+The real-interpreter quick regression runs in both extension modes on native
+64-bit hosts. These timing inputs deliberately use the native 10^9 index domain;
+smaller pointer-width targets retain the generic storage oracles but skip this
+CLI corpus, rather than silently truncating its high keys. No timing acceptance
+is inferred from quick correctness. Full/held-out paired runs and separate
+resource diagnostics remain required.

@@ -144,15 +144,16 @@ public:
   auto length() const noexcept -> Index { return empty() ? Index{0} : Index(highest_ + Index{1}); }
   auto lookup(Index index) const -> Number const*
   {
-    auto const page = pages_.find(index / page_size);
+    auto const page = pages_.find(static_cast<Index>(index / page_size));
     if (page == pages_.end())
       return nullptr;
-    auto const& slot = page->second[index % page_size];
+    auto const& slot = page->second[static_cast<std::size_t>(index % page_size)];
     return slot ? &*slot : nullptr;
   }
   void insert_or_assign(Index index, Number value)
   {
-    auto& slot = pages_.try_emplace(index / page_size).first->second[index % page_size];
+    auto& slot = pages_.try_emplace(static_cast<Index>(index / page_size))
+                   .first->second[static_cast<std::size_t>(index % page_size)];
     if (!slot)
       ++entries_;
     slot = std::move(value);
