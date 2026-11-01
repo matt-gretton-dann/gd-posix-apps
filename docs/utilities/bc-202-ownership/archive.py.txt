@@ -1,0 +1,21 @@
+from pathlib import Path
+import hashlib,json,shutil,subprocess
+w=Path('/private/tmp/gd-posix-ownership-evidence');r=w/'docs/utilities/bc-202-ownership';r.mkdir()
+(r/'.gitattributes').write_text('*.csv -text whitespace=cr-at-eol\n*.log -text whitespace=-blank-at-eol,-blank-at-eof\nlocal-rss-units.txt -text whitespace=-blank-at-eof\n*.patch -text whitespace=-blank-at-eol,-blank-at-eof\n')
+for name in ['full','holdout']:
+ src=Path('/private/tmp/gd-bc-202-ownership-'+name);rows=[json.loads(x) for x in (src/'samples.jsonl').read_text().splitlines()];assert len(rows)==1350 and all(x['checked'] for x in rows);shutil.copytree(src,r/name)
+for role,src in [('hybrid','gd-bc-202-consume-policy-release'),('unique','gd-bc-202-unique-release'),('heap-cow','gd-bc-202-heap-cow-release')]:
+ src=Path('/private/tmp')/src;dest=r/(role+'-release');dest.mkdir()
+ for p in src.iterdir():
+  if p.is_file() and p.suffix in ['.json','.log','.hh','.cc']:shutil.copyfile(p,dest/p.name)
+for role,root in [('unique','gd-posix-ownership-comparison'),('heap-cow','gd-posix-heap-cow-control')]:
+ src=Path('/private/tmp')/root
+ patch=subprocess.check_output(['git','show','--format=fuller','--binary','HEAD'],cwd=src)
+ (r/(role+'.patch')).write_bytes(patch)
+for name in ['unique-tests','unique-cli','heap-cli','heap-vm','heap-number','unique-asan-tests','unique-asan-vm','ownership-quick','ownership-frozen-quick']:
+ shutil.copyfile('/private/tmp/bc-202-'+name+'.log',r/(name+'.log'))
+shutil.copyfile('/private/tmp/bc-202-ownership-implementations.json',r/'implementations.json')
+shutil.copyfile('/private/tmp/bc-202-collect-ownership-memory.py',r/'memory-runner.py.txt')
+shutil.copyfile('/private/tmp/bc-206-dc-rss-units.txt',r/'local-rss-units.txt')
+shutil.copyfile(__file__,r/'archive.py.txt')
+print('Copied matched experiments and exact prototype patches')

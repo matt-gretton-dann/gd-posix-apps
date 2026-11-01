@@ -1,0 +1,110 @@
+[
+  {
+    "role": "hybrid",
+    "source_revision": "7974cb3d8b16c98441f9dc960f6c91f52736b06d",
+    "argv": [
+      "/usr/bin/c++",
+      "-DENABLE_EXTENSIONS=1",
+      "-D_CRT_SECURE_NO_WARNINGS",
+      "-I/private/tmp/gd-bc-202-consume-policy-release/source/src/bc",
+      "-I/private/tmp/gd-bc-202-consume-policy-release/build/src/bc",
+      "-I/private/tmp/gd-bc-202-consume-policy-release/source/libgdsup/include",
+      "-I/private/tmp/gd-bc-202-consume-policy-release/source/src/include",
+      "-O3",
+      "-DNDEBUG",
+      "-std=gnu++20",
+      "-flto=thin",
+      "-arch",
+      "arm64",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-Wno-gnu-zero-variadic-macro-arguments",
+      "-Wno-deprecated-declarations",
+      "-I/private/tmp/gd-bc-202-consume-policy-release/source/src/bc",
+      "/private/tmp/gd-bc-202-ownership-memory/object-size.cc",
+      "-o",
+      "/private/tmp/gd-bc-202-ownership-memory/hybrid-object-size"
+    ],
+    "cwd": "/private/tmp/gd-bc-202-consume-policy-release/build",
+    "values": {
+      "number_bytes": 40,
+      "storage_bytes": 32,
+      "instruction_bytes": 112
+    },
+    "probe_sha256": "8e8b31536ee55ed636de18971cdd357f7405c0c87a3c90d04d65c808b1486141"
+  },
+  {
+    "role": "unique",
+    "source_revision": "1c5a294f2c7c8720521ad89ff74939221fb93348",
+    "argv": [
+      "/usr/bin/c++",
+      "-DENABLE_EXTENSIONS=1",
+      "-D_CRT_SECURE_NO_WARNINGS",
+      "-I/private/tmp/gd-bc-202-unique-release/source/src/bc",
+      "-I/private/tmp/gd-bc-202-unique-release/build/src/bc",
+      "-I/private/tmp/gd-bc-202-unique-release/source/libgdsup/include",
+      "-I/private/tmp/gd-bc-202-unique-release/source/src/include",
+      "-O3",
+      "-DNDEBUG",
+      "-std=gnu++20",
+      "-flto=thin",
+      "-arch",
+      "arm64",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-Wno-gnu-zero-variadic-macro-arguments",
+      "-Wno-deprecated-declarations",
+      "-I/private/tmp/gd-bc-202-unique-release/source/src/bc",
+      "/private/tmp/gd-bc-202-ownership-memory/object-size.cc",
+      "-o",
+      "/private/tmp/gd-bc-202-ownership-memory/unique-object-size"
+    ],
+    "cwd": "/private/tmp/gd-bc-202-unique-release/build",
+    "values": {
+      "number_bytes": 32,
+      "storage_bytes": 24,
+      "instruction_bytes": 112
+    },
+    "probe_sha256": "8e8b31536ee55ed636de18971cdd357f7405c0c87a3c90d04d65c808b1486141"
+  },
+  {
+    "role": "heap-cow",
+    "source_revision": "57d88bb97d2d2c99cf18e4850cd692ba26ea79d2",
+    "argv": [
+      "/usr/bin/c++",
+      "-DENABLE_EXTENSIONS=1",
+      "-D_CRT_SECURE_NO_WARNINGS",
+      "-I/private/tmp/gd-bc-202-heap-cow-release/source/src/bc",
+      "-I/private/tmp/gd-bc-202-heap-cow-release/build/src/bc",
+      "-I/private/tmp/gd-bc-202-heap-cow-release/source/libgdsup/include",
+      "-I/private/tmp/gd-bc-202-heap-cow-release/source/src/include",
+      "-O3",
+      "-DNDEBUG",
+      "-std=gnu++20",
+      "-flto=thin",
+      "-arch",
+      "arm64",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Werror",
+      "-Wno-gnu-zero-variadic-macro-arguments",
+      "-Wno-deprecated-declarations",
+      "-I/private/tmp/gd-bc-202-heap-cow-release/source/src/bc",
+      "/private/tmp/gd-bc-202-ownership-memory/object-size.cc",
+      "-o",
+      "/private/tmp/gd-bc-202-ownership-memory/heap-cow-object-size"
+    ],
+    "cwd": "/private/tmp/gd-bc-202-heap-cow-release/build",
+    "values": {
+      "number_bytes": 32,
+      "storage_bytes": 24,
+      "instruction_bytes": 112
+    },
+    "probe_sha256": "8e8b31536ee55ed636de18971cdd357f7405c0c87a3c90d04d65c808b1486141"
+  }
+]

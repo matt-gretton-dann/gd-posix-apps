@@ -1,0 +1,71 @@
+commit 57d88bb97d2d2c99cf18e4850cd692ba26ea79d2
+Author:     Codex instance <matt+codex@gretton-dann.org.uk>
+AuthorDate: Sun Nov 1 12:54:15 2026 +0000
+Commit:     Codex instance <matt+codex@gretton-dann.org.uk>
+CommitDate: Sun Nov 1 12:54:15 2026 +0000
+
+    bc: Prototype zero-inline COW storage as an ownership control
+    
+    Retain current vector/COW arithmetic while sending nonempty coefficients
+    to heap storage. This supplies a contemporary control for the three-limb
+    hybrid without relabeling a historical executable as the current source.
+    Keep a valid empty pointer range with one unused local limb.
+    
+    The prototype is not an adoption decision. CLI, VM, independent arithmetic
+    oracle groups and all 45 quick benchmark oracles pass. Production inline
+    layout assertions do not apply to this control. Compare matched release
+    timings and actual process memory before choosing an ownership policy.
+    
+    Refs #202 and #197.
+
+diff --git a/docs/utilities/bc-202-heap-control.md b/docs/utilities/bc-202-heap-control.md
+new file mode 100644
+index 0000000..e240611
+--- /dev/null
++++ b/docs/utilities/bc-202-heap-control.md
+@@ -0,0 +1,12 @@
++# Heap COW control
++
++Refs #202 and #197. Experimental branch, not an adoption decision. Disable
++inline coefficient capacity while retaining current vector/COW arithmetic and
++verified execution. Empty/absent values remain allocation-free, with one unused
++local limb providing a valid empty pointer range. Every nonempty coefficient
++uses the heap; shrinking retains its existing location. No arithmetic or VM
++algorithm is changed.
++
++This is a contemporary zero-inline control, not the historical baseline binary.
++Storage-layout and small-allocation assertions target the production policy;
++independent numeric/VM oracles and process RSS/timings compare this policy.
+diff --git a/src/bc/digit-storage.hh b/src/bc/digit-storage.hh
+index 16559b6..b27d5be 100644
+--- a/src/bc/digit-storage.hh
++++ b/src/bc/digit-storage.hh
+@@ -1,5 +1,5 @@
+ /** \file digit-storage.hh
+- * Inline limbs with shared heap storage for larger numeric coefficients.
++ * EXPERIMENT ONLY: zero inline capacity with shared heap COW storage.
+  * SPDX-License-Identifier: Apache-2.0
+  */
+ #ifndef GD_BC_DIGIT_STORAGE_HH
+@@ -31,17 +31,18 @@ namespace GD::Bc::Details {
+  * allocator-aware vector interface. Nullable storage preserves its existing
+  * absent-versus-owned-empty distinction without allocating an empty owner.
+  */
+-template<typename Limb, std::size_t InlineCapacity = 3>
++template<typename Limb, std::size_t InlineCapacity = 0>
+ class DigitStorage
+ {
+-  static_assert(InlineCapacity > 0 && InlineCapacity < 255);
++  static_assert(InlineCapacity < 255);
+   static_assert(std::is_integral_v<Limb> && std::is_unsigned_v<Limb>);
+   using Heap = std::vector<Limb, Profile::Allocator<Limb, Profile::AllocationKind::digits>>;
+   struct Inline
+   {
+     // Only [0, size) is initialized and copied. An absent sentinel exposes no
+     // elements. Never copy this aggregate wholesale or read its unused suffix.
+-    std::array<Limb, InlineCapacity> limbs;
++    // One unused slot keeps empty-range pointers valid when capacity is zero.
++    std::array<Limb, InlineCapacity == 0 ? 1 : InlineCapacity> limbs;
+     unsigned char size = 0;
+   };
+   // All members stay alive: no union, pointer tagging or explicit lifetime

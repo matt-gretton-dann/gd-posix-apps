@@ -1,0 +1,11 @@
+Test project /private/tmp/gd-posix-ownership-comparison/build-release
+    Start 233: bc/cli
+1/3 Test #233: bc/cli ...........................   Passed    0.55 sec
+    Start 235: bc/number-oracle
+2/3 Test #235: bc/number-oracle .................   Passed    0.22 sec
+    Start 237: bc/vm-cli
+3/3 Test #237: bc/vm-cli ........................   Passed    0.18 sec
+
+100% tests passed out of 3
+
+Total Test time (real) =   0.96 sec

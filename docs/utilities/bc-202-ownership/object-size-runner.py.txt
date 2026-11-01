@@ -1,0 +1,15 @@
+from pathlib import Path
+import hashlib,json,shlex,subprocess
+root=Path('/private/tmp/gd-bc-202-ownership-memory');probe=root/'object-size.cc';probe.write_text('#include "bc.hh"\n#include <iostream>\nint main() { std::cout << "{\\\"number_bytes\\\":" << sizeof(GD::Bc::Number) << ",\\\"storage_bytes\\\":" << sizeof(GD::Bc::Details::DigitStorage<unsigned>) << ",\\\"instruction_bytes\\\":" << sizeof(GD::Bc::Instruction) << "}\\n"; }\n')
+config=json.loads(Path('/private/tmp/bc-202-ownership-implementations.json').read_text());rows=[]
+for item in config['implementations']:
+ role=item['name'];binary=Path(item['argv'][0]);build=binary.parents[2];commands=json.loads((build/'compile_commands.json').read_text());entry=next(x for x in commands if x['file'].endswith('/src/bc/vm.cc'));args=shlex.split(entry['command']);out=[];skip=False
+ for i,arg in enumerate(args):
+  if skip:skip=False;continue
+  if arg=='-o':skip=True;continue
+  if arg=='-c' or arg==entry['file']:continue
+  out.append(arg)
+ out.extend(['-I'+str(Path(entry['file']).parent),str(probe),'-o',str(root/(role+'-object-size'))])
+ child=subprocess.run(out,cwd=entry['directory'],stdout=subprocess.PIPE,stderr=subprocess.STDOUT);(root/(role+'-object-size-build.log')).write_bytes(child.stdout);assert child.returncode==0,child.stdout.decode()
+ result=subprocess.check_output([str(root/(role+'-object-size'))],text=True);rows.append({'role':role,'source_revision':item['metadata']['source_revision'],'argv':out,'cwd':entry['directory'],'values':json.loads(result),'probe_sha256':hashlib.sha256(probe.read_bytes()).hexdigest()})
+(root/'object-size.json').write_text(json.dumps(rows,indent=2)+'\n');print(json.dumps([{k:v for k,v in r.items() if k in ['role','values']} for r in rows]))

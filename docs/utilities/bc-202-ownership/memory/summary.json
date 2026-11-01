@@ -1,0 +1,947 @@
+[
+  {
+    "name": "startup",
+    "group": "startup",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 1949696,
+        "min_bytes": 1949696,
+        "max_bytes": 1949696
+      },
+      "unique": {
+        "median_bytes": 1982464,
+        "min_bytes": 1982464,
+        "max_bytes": 1982464
+      },
+      "heap-cow": {
+        "median_bytes": 1966080,
+        "min_bytes": 1966080,
+        "max_bytes": 1966080
+      }
+    }
+  },
+  {
+    "name": "loop_1000000",
+    "group": "loop",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 1966080,
+        "min_bytes": 1949696,
+        "max_bytes": 1982464
+      },
+      "unique": {
+        "median_bytes": 2015232,
+        "min_bytes": 2015232,
+        "max_bytes": 2031616
+      },
+      "heap-cow": {
+        "median_bytes": 2048000,
+        "min_bytes": 2048000,
+        "max_bytes": 2048000
+      }
+    }
+  },
+  {
+    "name": "calls_200000",
+    "group": "calls",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 1998848,
+        "min_bytes": 1998848,
+        "max_bytes": 2015232
+      },
+      "unique": {
+        "median_bytes": 2031616,
+        "min_bytes": 2031616,
+        "max_bytes": 2031616
+      },
+      "heap-cow": {
+        "median_bytes": 2048000,
+        "min_bytes": 2048000,
+        "max_bytes": 2064384
+      }
+    }
+  },
+  {
+    "name": "array_200000",
+    "group": "array",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 24281088,
+        "min_bytes": 24281088,
+        "max_bytes": 24281088
+      },
+      "unique": {
+        "median_bytes": 20643840,
+        "min_bytes": 20643840,
+        "max_bytes": 20643840
+      },
+      "heap-cow": {
+        "median_bytes": 33538048,
+        "min_bytes": 33505280,
+        "max_bytes": 33554432
+      }
+    }
+  },
+  {
+    "name": "compare_high_1000d_x100000",
+    "group": "comparison",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 1998848,
+        "min_bytes": 1982464,
+        "max_bytes": 1998848
+      },
+      "unique": {
+        "median_bytes": 2064384,
+        "min_bytes": 2064384,
+        "max_bytes": 2064384
+      },
+      "heap-cow": {
+        "median_bytes": 2048000,
+        "min_bytes": 2031616,
+        "max_bytes": 2048000
+      }
+    }
+  },
+  {
+    "name": "compare_low_1000d_x100000",
+    "group": "comparison",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 1998848,
+        "min_bytes": 1982464,
+        "max_bytes": 1998848
+      },
+      "unique": {
+        "median_bytes": 2064384,
+        "min_bytes": 2064384,
+        "max_bytes": 2064384
+      },
+      "heap-cow": {
+        "median_bytes": 2031616,
+        "min_bytes": 2031616,
+        "max_bytes": 2048000
+      }
+    }
+  },
+  {
+    "name": "compare_equal_1000d_x100000",
+    "group": "comparison",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 1998848,
+        "min_bytes": 1982464,
+        "max_bytes": 1998848
+      },
+      "unique": {
+        "median_bytes": 2064384,
+        "min_bytes": 2064384,
+        "max_bytes": 2064384
+      },
+      "heap-cow": {
+        "median_bytes": 2031616,
+        "min_bytes": 2031616,
+        "max_bytes": 2048000
+      }
+    }
+  },
+  {
+    "name": "fibonacci_1000_x100",
+    "group": "fibonacci",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2244608,
+        "min_bytes": 2211840,
+        "max_bytes": 2359296
+      },
+      "unique": {
+        "median_bytes": 2310144,
+        "min_bytes": 2244608,
+        "max_bytes": 2326528
+      },
+      "heap-cow": {
+        "median_bytes": 2424832,
+        "min_bytes": 2424832,
+        "max_bytes": 2424832
+      }
+    }
+  },
+  {
+    "name": "fibonacci_10000_x10",
+    "group": "fibonacci",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2736128,
+        "min_bytes": 2736128,
+        "max_bytes": 2736128
+      },
+      "unique": {
+        "median_bytes": 2457600,
+        "min_bytes": 2457600,
+        "max_bytes": 2736128
+      },
+      "heap-cow": {
+        "median_bytes": 2981888,
+        "min_bytes": 2719744,
+        "max_bytes": 2981888
+      }
+    }
+  },
+  {
+    "name": "factorial_1000_x50",
+    "group": "factorial",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2473984,
+        "min_bytes": 2441216,
+        "max_bytes": 2473984
+      },
+      "unique": {
+        "median_bytes": 2850816,
+        "min_bytes": 2818048,
+        "max_bytes": 3112960
+      },
+      "heap-cow": {
+        "median_bytes": 2768896,
+        "min_bytes": 2457600,
+        "max_bytes": 2768896
+      }
+    }
+  },
+  {
+    "name": "factorial_5000_x5",
+    "group": "factorial",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2654208,
+        "min_bytes": 2605056,
+        "max_bytes": 2654208
+      },
+      "unique": {
+        "median_bytes": 3178496,
+        "min_bytes": 3178496,
+        "max_bytes": 3588096
+      },
+      "heap-cow": {
+        "median_bytes": 3063808,
+        "min_bytes": 3014656,
+        "max_bytes": 3080192
+      }
+    }
+  },
+  {
+    "name": "multiply_100d_x100000",
+    "group": "multiply",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2048000,
+        "min_bytes": 2031616,
+        "max_bytes": 2048000
+      },
+      "unique": {
+        "median_bytes": 2113536,
+        "min_bytes": 2113536,
+        "max_bytes": 2113536
+      },
+      "heap-cow": {
+        "median_bytes": 2080768,
+        "min_bytes": 2080768,
+        "max_bytes": 2080768
+      }
+    }
+  },
+  {
+    "name": "multiply_1000d_x10000",
+    "group": "multiply",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2048000,
+        "min_bytes": 2048000,
+        "max_bytes": 2048000
+      },
+      "unique": {
+        "median_bytes": 2113536,
+        "min_bytes": 2113536,
+        "max_bytes": 2113536
+      },
+      "heap-cow": {
+        "median_bytes": 2080768,
+        "min_bytes": 2064384,
+        "max_bytes": 2080768
+      }
+    }
+  },
+  {
+    "name": "multiply_10000d_x1000",
+    "group": "multiply",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2211840,
+        "min_bytes": 2195456,
+        "max_bytes": 2244608
+      },
+      "unique": {
+        "median_bytes": 2326528,
+        "min_bytes": 2293760,
+        "max_bytes": 2326528
+      },
+      "heap-cow": {
+        "median_bytes": 2228224,
+        "min_bytes": 2228224,
+        "max_bytes": 2228224
+      }
+    }
+  },
+  {
+    "name": "divide_scale100_x100000",
+    "group": "divide_single_limb",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 1998848,
+        "min_bytes": 1998848,
+        "max_bytes": 2031616
+      },
+      "unique": {
+        "median_bytes": 2080768,
+        "min_bytes": 2080768,
+        "max_bytes": 2080768
+      },
+      "heap-cow": {
+        "median_bytes": 2080768,
+        "min_bytes": 2064384,
+        "max_bytes": 2080768
+      }
+    }
+  },
+  {
+    "name": "divide_scale1000_x10000",
+    "group": "divide_single_limb",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2031616,
+        "min_bytes": 2031616,
+        "max_bytes": 2031616
+      },
+      "unique": {
+        "median_bytes": 2080768,
+        "min_bytes": 2080768,
+        "max_bytes": 2080768
+      },
+      "heap-cow": {
+        "median_bytes": 2080768,
+        "min_bytes": 2048000,
+        "max_bytes": 2080768
+      }
+    }
+  },
+  {
+    "name": "divide_scale5000_x5000",
+    "group": "divide_single_limb",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2031616,
+        "min_bytes": 2031616,
+        "max_bytes": 2048000
+      },
+      "unique": {
+        "median_bytes": 2080768,
+        "min_bytes": 2080768,
+        "max_bytes": 2080768
+      },
+      "heap-cow": {
+        "median_bytes": 2064384,
+        "min_bytes": 2048000,
+        "max_bytes": 2080768
+      }
+    }
+  },
+  {
+    "name": "sqrt_scale100_x5000",
+    "group": "sqrt",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2080768,
+        "min_bytes": 2080768,
+        "max_bytes": 2080768
+      },
+      "unique": {
+        "median_bytes": 2129920,
+        "min_bytes": 2129920,
+        "max_bytes": 2146304
+      },
+      "heap-cow": {
+        "median_bytes": 2113536,
+        "min_bytes": 2113536,
+        "max_bytes": 2129920
+      }
+    }
+  },
+  {
+    "name": "sqrt_scale1000_x50",
+    "group": "sqrt",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2064384,
+        "min_bytes": 2064384,
+        "max_bytes": 2080768
+      },
+      "unique": {
+        "median_bytes": 2129920,
+        "min_bytes": 2129920,
+        "max_bytes": 2129920
+      },
+      "heap-cow": {
+        "median_bytes": 2113536,
+        "min_bytes": 2113536,
+        "max_bytes": 2129920
+      }
+    }
+  },
+  {
+    "name": "sqrt_scale5000_x5",
+    "group": "sqrt",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2097152,
+        "min_bytes": 2097152,
+        "max_bytes": 2097152
+      },
+      "unique": {
+        "median_bytes": 2129920,
+        "min_bytes": 2113536,
+        "max_bytes": 2162688
+      },
+      "heap-cow": {
+        "median_bytes": 2113536,
+        "min_bytes": 2113536,
+        "max_bytes": 2113536
+      }
+    }
+  },
+  {
+    "name": "multiply_dense_1000d_x5000",
+    "group": "multiply",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2048000,
+        "min_bytes": 2031616,
+        "max_bytes": 2048000
+      },
+      "unique": {
+        "median_bytes": 2113536,
+        "min_bytes": 2113536,
+        "max_bytes": 2113536
+      },
+      "heap-cow": {
+        "median_bytes": 2064384,
+        "min_bytes": 2048000,
+        "max_bytes": 2080768
+      }
+    }
+  },
+  {
+    "name": "multiply_dense_10000d_x500",
+    "group": "multiply",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2228224,
+        "min_bytes": 2211840,
+        "max_bytes": 2244608
+      },
+      "unique": {
+        "median_bytes": 2326528,
+        "min_bytes": 2326528,
+        "max_bytes": 2326528
+      },
+      "heap-cow": {
+        "median_bytes": 2228224,
+        "min_bytes": 2228224,
+        "max_bytes": 2228224
+      }
+    }
+  },
+  {
+    "name": "multiply_unbalanced_10000d_100d_x2000",
+    "group": "multiply",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2113536,
+        "min_bytes": 2113536,
+        "max_bytes": 2113536
+      },
+      "unique": {
+        "median_bytes": 2179072,
+        "min_bytes": 2179072,
+        "max_bytes": 2179072
+      },
+      "heap-cow": {
+        "median_bytes": 2146304,
+        "min_bytes": 2146304,
+        "max_bytes": 2146304
+      }
+    }
+  },
+  {
+    "name": "multiply_sparse_10000d_x1000",
+    "group": "multiply",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2195456,
+        "min_bytes": 2162688,
+        "max_bytes": 2244608
+      },
+      "unique": {
+        "median_bytes": 2293760,
+        "min_bytes": 2260992,
+        "max_bytes": 2326528
+      },
+      "heap-cow": {
+        "median_bytes": 2211840,
+        "min_bytes": 2211840,
+        "max_bytes": 2228224
+      }
+    }
+  },
+  {
+    "name": "divide_multilimb_900d_450d_s100_x1000",
+    "group": "divide_multilimb",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2097152,
+        "min_bytes": 2080768,
+        "max_bytes": 2113536
+      },
+      "unique": {
+        "median_bytes": 2162688,
+        "min_bytes": 2162688,
+        "max_bytes": 2179072
+      },
+      "heap-cow": {
+        "median_bytes": 2146304,
+        "min_bytes": 2129920,
+        "max_bytes": 2146304
+      }
+    }
+  },
+  {
+    "name": "divide_multilimb_1000d_900d_s1000_x500",
+    "group": "divide_multilimb",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2097152,
+        "min_bytes": 2097152,
+        "max_bytes": 2097152
+      },
+      "unique": {
+        "median_bytes": 2146304,
+        "min_bytes": 2146304,
+        "max_bytes": 2162688
+      },
+      "heap-cow": {
+        "median_bytes": 2113536,
+        "min_bytes": 2113536,
+        "max_bytes": 2129920
+      }
+    }
+  },
+  {
+    "name": "modulo_1000d_350d_x3000",
+    "group": "modulo",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2129920,
+        "min_bytes": 2113536,
+        "max_bytes": 2129920
+      },
+      "unique": {
+        "median_bytes": 2179072,
+        "min_bytes": 2179072,
+        "max_bytes": 2195456
+      },
+      "heap-cow": {
+        "median_bytes": 2146304,
+        "min_bytes": 2146304,
+        "max_bytes": 2146304
+      }
+    }
+  },
+  {
+    "name": "power_100d_e17_x1000",
+    "group": "power",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2097152,
+        "min_bytes": 2097152,
+        "max_bytes": 2097152
+      },
+      "unique": {
+        "median_bytes": 2179072,
+        "min_bytes": 2162688,
+        "max_bytes": 2179072
+      },
+      "heap-cow": {
+        "median_bytes": 2129920,
+        "min_bytes": 2113536,
+        "max_bytes": 2129920
+      }
+    }
+  },
+  {
+    "name": "power_20d_e32_x2000",
+    "group": "power",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2113536,
+        "min_bytes": 2097152,
+        "max_bytes": 2113536
+      },
+      "unique": {
+        "median_bytes": 2162688,
+        "min_bytes": 2146304,
+        "max_bytes": 2162688
+      },
+      "heap-cow": {
+        "median_bytes": 2129920,
+        "min_bytes": 2129920,
+        "max_bytes": 2129920
+      }
+    }
+  },
+  {
+    "name": "ibase_literal_flip_20000",
+    "group": "literal_base",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2015232,
+        "min_bytes": 1998848,
+        "max_bytes": 2031616
+      },
+      "unique": {
+        "median_bytes": 2048000,
+        "min_bytes": 2031616,
+        "max_bytes": 2048000
+      },
+      "heap-cow": {
+        "median_bytes": 2080768,
+        "min_bytes": 2080768,
+        "max_bytes": 2080768
+      }
+    }
+  },
+  {
+    "name": "recursion_50_x1000",
+    "group": "recursion",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2211840,
+        "min_bytes": 2195456,
+        "max_bytes": 2211840
+      },
+      "unique": {
+        "median_bytes": 2260992,
+        "min_bytes": 2244608,
+        "max_bytes": 2260992
+      },
+      "heap-cow": {
+        "median_bytes": 2195456,
+        "min_bytes": 2179072,
+        "max_bytes": 2195456
+      }
+    }
+  },
+  {
+    "name": "sparse_array_200000",
+    "group": "array_sparse",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2031616,
+        "min_bytes": 2015232,
+        "max_bytes": 2048000
+      },
+      "unique": {
+        "median_bytes": 2048000,
+        "min_bytes": 2048000,
+        "max_bytes": 2064384
+      },
+      "heap-cow": {
+        "median_bytes": 2080768,
+        "min_bytes": 2080768,
+        "max_bytes": 2080768
+      }
+    }
+  },
+  {
+    "name": "frontend_definitions_2000",
+    "group": "frontend_definition",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2441216,
+        "min_bytes": 2441216,
+        "max_bytes": 2441216
+      },
+      "unique": {
+        "median_bytes": 2506752,
+        "min_bytes": 2506752,
+        "max_bytes": 2506752
+      },
+      "heap-cow": {
+        "median_bytes": 2359296,
+        "min_bytes": 2359296,
+        "max_bytes": 2408448
+      }
+    }
+  },
+  {
+    "name": "decimal_input_4000d_x100",
+    "group": "decimal_input",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2392064,
+        "min_bytes": 2375680,
+        "max_bytes": 2408448
+      },
+      "unique": {
+        "median_bytes": 2490368,
+        "min_bytes": 2441216,
+        "max_bytes": 2490368
+      },
+      "heap-cow": {
+        "median_bytes": 2359296,
+        "min_bytes": 2342912,
+        "max_bytes": 2392064
+      }
+    }
+  },
+  {
+    "name": "decimal_output_200d_x1000",
+    "group": "decimal_output",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 1966080,
+        "min_bytes": 1966080,
+        "max_bytes": 1982464
+      },
+      "unique": {
+        "median_bytes": 2064384,
+        "min_bytes": 2064384,
+        "max_bytes": 2064384
+      },
+      "heap-cow": {
+        "median_bytes": 2048000,
+        "min_bytes": 2048000,
+        "max_bytes": 2064384
+      }
+    }
+  },
+  {
+    "name": "streaming_statements_20000",
+    "group": "streaming",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2375680,
+        "min_bytes": 2342912,
+        "max_bytes": 2392064
+      },
+      "unique": {
+        "median_bytes": 2408448,
+        "min_bytes": 2392064,
+        "max_bytes": 2457600
+      },
+      "heap-cow": {
+        "median_bytes": 2293760,
+        "min_bytes": 2293760,
+        "max_bytes": 2326528
+      }
+    }
+  },
+  {
+    "name": "square_100d_x100000",
+    "group": "square",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2015232,
+        "min_bytes": 1998848,
+        "max_bytes": 2031616
+      },
+      "unique": {
+        "median_bytes": 2097152,
+        "min_bytes": 2097152,
+        "max_bytes": 2097152
+      },
+      "heap-cow": {
+        "median_bytes": 2080768,
+        "min_bytes": 2048000,
+        "max_bytes": 2080768
+      }
+    }
+  },
+  {
+    "name": "square_1000d_x10000",
+    "group": "square",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2015232,
+        "min_bytes": 2015232,
+        "max_bytes": 2031616
+      },
+      "unique": {
+        "median_bytes": 2097152,
+        "min_bytes": 2097152,
+        "max_bytes": 2097152
+      },
+      "heap-cow": {
+        "median_bytes": 2064384,
+        "min_bytes": 2064384,
+        "max_bytes": 2080768
+      }
+    }
+  },
+  {
+    "name": "square_10000d_x500",
+    "group": "square",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2179072,
+        "min_bytes": 2146304,
+        "max_bytes": 2179072
+      },
+      "unique": {
+        "median_bytes": 2244608,
+        "min_bytes": 2228224,
+        "max_bytes": 2260992
+      },
+      "heap-cow": {
+        "median_bytes": 2179072,
+        "min_bytes": 2162688,
+        "max_bytes": 2179072
+      }
+    }
+  },
+  {
+    "name": "literal_repeat_2000d_x2000",
+    "group": "literal_repeat",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2031616,
+        "min_bytes": 2031616,
+        "max_bytes": 2031616
+      },
+      "unique": {
+        "median_bytes": 2097152,
+        "min_bytes": 2097152,
+        "max_bytes": 2097152
+      },
+      "heap-cow": {
+        "median_bytes": 2080768,
+        "min_bytes": 2080768,
+        "max_bytes": 2080768
+      }
+    }
+  },
+  {
+    "name": "binary_output_1000d_x300",
+    "group": "binary_output",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2211840,
+        "min_bytes": 2162688,
+        "max_bytes": 2244608
+      },
+      "unique": {
+        "median_bytes": 2310144,
+        "min_bytes": 2310144,
+        "max_bytes": 2310144
+      },
+      "heap-cow": {
+        "median_bytes": 2260992,
+        "min_bytes": 2260992,
+        "max_bytes": 2260992
+      }
+    }
+  },
+  {
+    "name": "octal_output_1000d_x300",
+    "group": "octal_output",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2179072,
+        "min_bytes": 2113536,
+        "max_bytes": 2195456
+      },
+      "unique": {
+        "median_bytes": 2260992,
+        "min_bytes": 2260992,
+        "max_bytes": 2277376
+      },
+      "heap-cow": {
+        "median_bytes": 2195456,
+        "min_bytes": 2179072,
+        "max_bytes": 2211840
+      }
+    }
+  },
+  {
+    "name": "binary_input_100000d_x3",
+    "group": "binary_input",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 3063808,
+        "min_bytes": 3031040,
+        "max_bytes": 3063808
+      },
+      "unique": {
+        "median_bytes": 3244032,
+        "min_bytes": 3227648,
+        "max_bytes": 3244032
+      },
+      "heap-cow": {
+        "median_bytes": 3047424,
+        "min_bytes": 3014656,
+        "max_bytes": 3063808
+      }
+    }
+  },
+  {
+    "name": "hex_input_100000d_x3",
+    "group": "hex_input",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 3473408,
+        "min_bytes": 3473408,
+        "max_bytes": 3489792
+      },
+      "unique": {
+        "median_bytes": 3620864,
+        "min_bytes": 3588096,
+        "max_bytes": 3620864
+      },
+      "heap-cow": {
+        "median_bytes": 3407872,
+        "min_bytes": 3407872,
+        "max_bytes": 3506176
+      }
+    }
+  },
+  {
+    "name": "temporary_chain_1000d_x50000",
+    "group": "temporary_chain",
+    "process_peaks": {
+      "hybrid": {
+        "median_bytes": 2064384,
+        "min_bytes": 2064384,
+        "max_bytes": 2064384
+      },
+      "unique": {
+        "median_bytes": 2113536,
+        "min_bytes": 2097152,
+        "max_bytes": 2113536
+      },
+      "heap-cow": {
+        "median_bytes": 2064384,
+        "min_bytes": 2064384,
+        "max_bytes": 2080768
+      }
+    }
+  }
+]

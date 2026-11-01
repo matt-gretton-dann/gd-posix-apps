@@ -1,0 +1,9 @@
+define f(a) {
+  auto b
+  b = 1
+  while (a > 0) b *= a--
+  return (b)
+}
+
+for(k=0;k<5;k++) e=f(5625)
+e
