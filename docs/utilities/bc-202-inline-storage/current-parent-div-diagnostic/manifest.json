@@ -1,0 +1,118 @@
+{
+  "collector_sha256": "5ac8a3467c988b558109d1376134b79b37c22e4cc0eab65abc3eedbf2155ce4d",
+  "corpus_seed": 197200,
+  "hardware_counters": {
+    "scope": "native per-process counters where time exposes them; no PMU setup",
+    "status": "platform-dependent; see memory.native_counters",
+    "unavailable_metrics": [
+      "branch misses",
+      "cache misses"
+    ]
+  },
+  "implementation": {
+    "argv": [
+      "/private/tmp/gd-bc-202-current-parent-release/build/src/bc/bc"
+    ],
+    "binary_sha256": "79f8d8249881a30b35870e0e866aef8068760c0ea56453712464ff719991f409",
+    "complete_provenance": true,
+    "metadata": {
+      "binary_sha256": "79f8d8249881a30b35870e0e866aef8068760c0ea56453712464ff719991f409",
+      "compiler": {
+        "C": {
+          "argv0": "/usr/bin/cc",
+          "realpath": "/usr/bin/cc",
+          "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+          "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+        },
+        "CXX": {
+          "argv0": "/usr/bin/c++",
+          "realpath": "/usr/bin/c++",
+          "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+          "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+        }
+      },
+      "configuration": {
+        "build_type": "Release",
+        "extensions": "ON",
+        "generator": "Ninja",
+        "multiply_split_point": 126,
+        "threshold_header_sha256": "c5b539c9f87d032bfcb436bb8da8972048d2ed1780a980265b7c3fe0e5e45626"
+      },
+      "flags": {
+        "CMAKE_CXX_FLAGS": "",
+        "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+        "CMAKE_C_FLAGS": "",
+        "CMAKE_C_FLAGS_RELEASE": "-O3 -DNDEBUG",
+        "CMAKE_EXE_LINKER_FLAGS": "",
+        "CMAKE_EXE_LINKER_FLAGS_RELEASE": "",
+        "compile_commands_sha256": "66418f77ae4baf8d2f94ed4234ebaa5b7ba4153aa0d86bec4fd17de0ed76304b"
+      },
+      "instrumented": false,
+      "limitations": [
+        "Provision compiler, C/C++ runtime and SDK separately; this is not an OS image",
+        "Compiler defaults and actual commands are recorded, not claimed identical across hosts"
+      ],
+      "source_revision": "73619a3e5dbc3dbddbca929bdac0a212b77b6772",
+      "standard_library": {
+        "header_macros": {
+          "_LIBCPP_VERSION": "220106"
+        },
+        "scope": "standard-library header identity; provision runtime and SDK separately",
+        "status": "recorded"
+      },
+      "version": "gd-posix-apps source 73619a3e5dbc3dbddbca929bdac0a212b77b6772"
+    },
+    "name": "gd-parent",
+    "role": "candidate"
+  },
+  "platform": "macOS-27.2-arm64-arm-64bit-Mach-O",
+  "purpose": "diagnostic attribution; not timing results",
+  "repeat_estimate_summary_sha256": "42f633e60f32fd4e45cbc5d4bcb6f04387181f71b86344f32c074496895e028d",
+  "schema": 1,
+  "status": "all diagnostic children checked; availability is per measurement",
+  "workloads": [
+    {
+      "checked": true,
+      "cpu": {
+        "argv": [
+          "/usr/bin/sample",
+          "42050",
+          "3",
+          "1",
+          "-mayDie",
+          "-file",
+          "/private/tmp/gd-bc-202-current-parent-div-diagnostic/divide_multilimb_900d_450d_s100_x1000.sample.txt"
+        ],
+        "repetitions": 349,
+        "returncode": 0,
+        "status": "collected"
+      },
+      "memory": {
+        "argv": [
+          "/usr/bin/time",
+          "-l",
+          "-o",
+          "/private/tmp/gd-bc-202-current-parent-div-diagnostic/divide_multilimb_900d_450d_s100_x1000.rss.txt",
+          "/private/tmp/gd-bc-202-current-parent-release/build/src/bc/bc"
+        ],
+        "native_counters": {
+          "cycles_elapsed": 39954672,
+          "instructions_retired": 100838033
+        },
+        "native_unit": "bytes (Darwin ru_maxrss)",
+        "peak_memory_footprint_bytes": 1294720,
+        "peak_rss_native": 2129920,
+        "repetitions": 1,
+        "status": "collected"
+      },
+      "name": "divide_multilimb_900d_450d_s100_x1000",
+      "parameters": {
+        "dividend_digits": 900,
+        "divisor_digits": 450,
+        "iterations": 1000,
+        "scale": 100
+      },
+      "program_sha256": "3e526fbb9e7ce363f37d717ee26d12d1562e85f4e82d4c671cbc0970f2c048d2"
+    }
+  ]
+}

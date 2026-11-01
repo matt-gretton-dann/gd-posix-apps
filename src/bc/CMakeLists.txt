@@ -71,6 +71,7 @@ if(RUN_UNIT_TESTS)
                  test-lexer-shebang.cc
                  test-lexer-comments.cc
                  test-libbc-main.cc
+                 test-digit-storage.cc
                  test-number.cc
                  test-number-workspace.cc
                  test-number-output.cc

@@ -1,0 +1,163 @@
+import csv,gzip,hashlib,io,json,shutil,zipfile
+from pathlib import Path
+root=Path('/private/tmp/gd-posix-inline-limbs/docs/utilities/bc-202-inline-storage');root.mkdir(exist_ok=True)
+(root/'.gitattributes').write_text('*.csv -text whitespace=cr-at-eol\n*-size.txt -text whitespace=-blank-at-eol\nnative*-windows-* -text whitespace=cr-at-eol\n')
+experiments=[('borrow-state-full','/private/tmp/gd-bc-202-borrow-state-paired-full',1440),('borrow-state-holdout','/private/tmp/gd-bc-202-borrow-state-paired-holdout',1440),('terminal-numeric-smoke','/private/tmp/gd-bc-202-terminal-numeric-smoke',160),('separate-owner-smoke','/private/tmp/gd-bc-202-separate-owner-smoke',192),('integrated-full','/private/tmp/gd-bc-202-integrated-full',1080),('integrated-holdout','/private/tmp/gd-bc-202-integrated-holdout',1080)]
+for label,path,count in experiments:
+ src=Path(path)
+ for name in ['summary.json','manifest.json']:shutil.copyfile(src/name,root/(label+'-'+name))
+ data=(src/'samples.csv').read_bytes();rows=list(csv.DictReader(io.StringIO(data.decode())));assert len(rows)==count
+ (root/(label+'-samples.csv.gz')).write_bytes(gzip.compress(data,mtime=0))
+for name in ['borrow-state','terminal-numeric','separate-owner','integrated']:
+ src=Path('/private/tmp/gd-bc-202-'+name+'-counters')
+ data={p.relative_to(src).as_posix():json.loads(p.read_text()) for p in src.rglob('*.json')}
+ (root/(name+'-counters.json.gz')).write_bytes(gzip.compress(json.dumps(data,sort_keys=True,indent=2).encode()+b'\n',mtime=0))
+ collector=Path('/private/tmp/bc-202-'+name+'-counters.py')
+ if collector.exists():shutil.copyfile(collector,root/(name+'-counter-collector.py.txt'))
+for name in ['separate-parent','separate-owner']:
+ src=Path('/private/tmp/gd-bc-202-'+name+'-array-diagnostic')
+ data={p.name:p.read_text() for p in src.iterdir() if p.is_file()}
+ (root/(name+'-array-diagnostic.json.gz')).write_bytes(gzip.compress(json.dumps(data,sort_keys=True,indent=2).encode()+b'\n',mtime=0))
+shutil.copyfile('/private/tmp/gd-bc-202-separate-owner-sizes/sizes.json',root/'separate-owner-sizes.json')
+shutil.copyfile('/private/tmp/bc-202-separate-owner-size-probe.py',root/'separate-owner-size-probe.py.txt')
+artifacts=[]
+for run in [9,13,15,17,20,22,24]:
+ for osname in ['linux','macos','windows']:
+  src=Path('/private/tmp/bc-202-native'+str(run)+'-'+osname+'.zip')
+  if not src.exists():continue
+  dest=root/('native'+str(run)+'-'+osname+'.zip');shutil.copyfile(src,dest)
+  z=zipfile.ZipFile(src);o=json.loads(z.read('orchestration.json'))
+  artifacts.append({'run':run,'os':osname,'file':dest.name,'sha256':hashlib.sha256(src.read_bytes()).hexdigest(),'base':o['base'],'candidate':o['candidate']})
+(root/'native-artifact-index.json').write_text(json.dumps(artifacts,indent=2)+'\n')
+old=root/'README.md'
+if old.exists() and not (root/'staged-variant-report.md').exists():shutil.copyfile(old,root/'staged-variant-report.md')
+text='''# Inline coefficients and bounded numeric ownership — #202
+
+The final candidate uses an always-live three-limb inline buffer and shared
+heap vector owner. A non-null owner selects heap data directly. Small copies
+are independent; large immutable values/snapshots retain COW. Growth initializes
+all newly exposed elements; copy/move reads only the live inline prefix. Heap
+shrinking retains capacity and iterator location. Reset/moves leave an absent
+source without clearing or reading unused slots. No union, pointer tagging,
+shared_ptr layout or ISA assumption is introduced. The heap path is generic.
+
+Divisor coefficients and Newton guesses are moved only at proven lexical last
+use. Final sqrt rescaling consequently avoids one needless COW clone per call.
+VM parameter/return consumption was independently merged in PR #315. No general
+arithmetic operand is consumed across potentially live control-flow edges.
+
+## Sources and correctness
+
+The isolated final comparison uses workspace baseline
+`5e23d646393051f3e22a957495fab69473a01f64` and storage candidate
+`58075b41a293a7d3f4cfbad308ff75997702e496`. Both are independently built from
+immutable sources with identical fixed threshold 126, Release flags, compiler
+and library. The source/compiler commands and binary/corpus hashes are recorded.
+The later main merge `b8c2e79` adds workflow/evidence files only to that workspace
+source; its production C++/CMake diff against 5e23d64 is empty. Later integration
+of those files into the storage topic also leaves production code unchanged.
+These identities are retained rather than relabeling old observations.
+
+The combined tree passes 156 Release bc cases (582,397 assertions), 116
+extensions-disabled ASan/UBSan number/VM cases (398,188 assertions), five profile
+checks and eight CLI/helper groups. Coverage includes every absent/inline/heap
+copy/move assignment pairing, self/aliased moves, promotion, COW snapshots,
+shrink/demotion, newly exposed elements after copy/shrink/reset, fractional
+scale/sign, recursive frames and exact large square roots. The ordinary global
+allocation probe independently confirms zero allocations for small numeric
+construction/copy/add/subtract at all three limb widths.
+
+The immutable final quick corpus passes 108 checks. Full and held-out corpora
+each pass 1,080 output/status/deadline checks: 36 workloads, three implementations
+and one warm-up plus nine measured paired rounds. The third implementation is
+pinned native Howard 7.0.3. Full seed is 197200; held-out shapes/seed are 197201.
+All builds/tests/profiling finish before timing. Paired intervals use 2,000
+bootstrap resamples. Apple M1/macOS 27.2, Apple Clang 21 and libc++ header 220106
+are this local stratum; there is no CPU/frequency/thermal isolation. Earlier
+staged held-out runs informed engineering decisions, so this is not blinded
+candidate selection. Native platform replication is separate, not pooled.
+
+## Final storage versus workspace results
+
+Full loop/call/array ratios are 0.649/0.720/0.631. Short/long Fibonacci are
+0.746/0.846; the small product is 0.805. Large products are near neutral against
+the already improved workspace. Full small sqrt is 0.967. All losing observations
+remain visible: held-out unbalanced multiplication is 1.051 [1.047, 1.054],
+crossing the provisional 1.05 threshold and therefore inconclusive, not a
+no-regression claim. Most other classes are neutral or faster; competitive
+Howard gaps remain and belong to subsequent VM/algorithm work. POSIX math is
+explicitly pending #217. There is no aggregate performance claim.
+
+| Corpus | Workload | Candidate / workspace [paired 95%] | Candidate / Howard medians |
+| --- | --- | --- | --- |
+'''
+for preset in ['full','holdout']:
+ s=json.loads((root/('integrated-'+preset+'-summary.json')).read_text())
+ for w in s['workloads']:
+  r=w['candidate_over_reference']['gd-inline-workspace'];i=w['implementations'];h=i['gd-inline-workspace']['median_seconds']/i['howard-7.0.3']['median_seconds']
+  text+='| '+preset+' | `'+w['name']+'` | {:.3f} [{:.3f}, {:.3f}] | {:.3f} |\n'.format(r['median_paired_ratio'],*r['ci95'],h)
+text+='''
+
+## Memory and ownership costs
+
+Default Number is 24 bytes in the legacy parent, 32 in the rejected variant
+prototype and 40 with separate inline/owner storage on this 64-bit host. This
+is a deliberate object-space tradeoff, not a universally size-neutral change.
+The array workload's selected allocation calls fall from 3,800,037 in legacy
+to 200,030. Requested peak bytes are 23,205,184 legacy, 14,405,088 variant and
+16,005,088 separate-owner. The latter costs more requested node storage than
+the variant. Fresh checked Darwin array diagnostics nevertheless record RSS
+27,754,496 -> 18,153,472 bytes legacy/separate-owner, and retired instructions
+2,926,190,387 -> 1,843,704,318. Allocator size classes can absorb layout changes;
+this observation does not promise the same usable-size/RSS behavior elsewhere.
+Raw native diagnostics and size-probe commands are archived. Selected requested
+allocation bytes are not whole-process malloc traffic or RSS.
+
+All 72 exact workspace-parent/candidate profiles balance selected allocations
+and deallocations and have zero selected live bytes at EOF. Those reports retain
+all categories and copy/COW/move events. Against the prior variant source, the
+numeric last-use stage removes 5,000 COW clones in the 5,000-call small-sqrt
+workload (95,000 -> 90,000) and halves owned copies (190,001 -> 95,001).
+
+## Rejected and intermediate stages
+
+`staged-variant-report.md` preserves the earlier complete staged narrative and
+all original raw full/held-out data remain. Do not treat its local acceptance
+wording as final adoption: native validation rejected those candidates.
+
+- The first variant source c3a769a reduced small allocations but regressed true
+  division/modulo/sqrt. Fixed buffer views and identity scaling were independently
+  measured in 4f8444a and aa97e54. Combined source 5cd2252 still confirmed native
+  small-sqrt/sparse-product regressions, so it was not merged.
+- The explicit union 2c95f93 was rejected after Thin-LTO/-O3 literal output became
+  zero; it passed Debug/sanitized/instrumented checks but failed uninstrumented
+  Release validation. 14849e2 reverted it. The cause is unresolved; no global
+  compiler flag workaround is adopted. Assignment transition tests were kept.
+- Two-alternative variant 2b942f5, owner-tag 364fc61 and borrowed views/ownership
+  query 14f381a preserve small-value gains but still confirm Linux sqrt/sparse
+  losses. All collected source labels, intervals and diagnostics are retained.
+- Numeric last-use 13c2839 improves ownership counts but still confirms legacy
+  Linux sqrt/sparse losses. Its 160-check bounded smoke run is diagnostic, not
+  final precision evidence; no redundant full acceptance run was claimed.
+- Separate-owner 33d59ec clears the native Linux sqrt signal (1.025, within the
+  provisional band) but still confirms legacy sparse multiplication (1.076).
+  Its 192-check smoke and native22 data are retained; it was not accepted alone.
+- Combining storage with workspace source 6834454 passes native24: 950 checks
+  per OS and no confirmed paired/A/A regression. That pre-retarget run compares
+  against main 3682edf, so it measures combined gains, not isolated storage.
+  Exact workspace-only local evidence above is kept separate. Current-main
+  PR validation is still required before final merge.
+
+The immutable native ZIPs and `native-artifact-index.json` retain all downloaded
+platforms for runs 9/13/15/17/20/22/24, including losing first/confirmation batches,
+A/A controls, exact programs/oracles, metadata, logs and decisions. Missing OS
+ZIPs in an intermediate canceled/partial run are unavailable, not passes.
+
+#202 remains open: control-flow-aware general liveness, result/capacity reuse,
+ownership-policy comparisons and arena evaluation remain separate work. This
+report supports only the measured inline/heap representation and lexical
+consumption stage. Per-operation multiplication scratch is independently #203.
+'''
+(root/'README.md').write_text(text)
+shutil.copyfile('/private/tmp/archive-bc-202-final-stages.py',root/'archive-final-stages.py.txt')
+print('Archived final/intermediate sources and',len(artifacts),'verified native ZIPs')

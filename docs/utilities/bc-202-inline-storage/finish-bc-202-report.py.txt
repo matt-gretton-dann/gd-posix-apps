@@ -1,0 +1,157 @@
+import gzip,importlib.util,json,re,shutil
+from pathlib import Path
+root=Path('/private/tmp/gd-posix-inline-limbs')
+out=root/'docs/utilities/bc-202-inline-storage';out.mkdir(exist_ok=True)
+spec=importlib.util.spec_from_file_location('bench',root/'src/bc/scripts/bench-bc.py')
+bench=importlib.util.module_from_spec(spec);spec.loader.exec_module(bench)
+for label,stem in (('isolated','final'),('acceptance','acceptance')):
+ for preset in ('full','holdout'):
+  source=Path('/private/tmp/gd-bc-202-'+stem+'-'+preset)
+  for name in ('manifest.json','samples.csv','summary.json'):
+   shutil.copyfile(source/name,out/(label+'-'+preset+'-'+name))
+source=Path('/private/tmp/gd-bc-202-combined-counters')
+data={'manifest':json.loads((source/'manifest.json').read_text()),'profiles':{}}
+for directory in source.iterdir():
+ if directory.is_dir():data['profiles'][directory.name]={p.stem:json.loads(p.read_text()) for p in directory.glob('*.json')}
+data['parent_tree_equivalence']={'profile_revision':'e7c1a8395c10eb1ef1b5c21aa32393d7f147f3a3','main_revision':'73619a3e5dbc3dbddbca929bdac0a212b77b6772','tree':'3c3357dc820163b79ea3c9a21dc9974c9b2b1ed7'}
+(out/'combined-counters.json.gz').write_bytes(gzip.compress(json.dumps(data,sort_keys=True).encode(),mtime=0))
+for name,stem in (('current-parent','current-parent'),('combined','combined')):
+ for group in ('div','array'):
+  source=Path('/private/tmp/gd-bc-202-'+stem+'-'+group+'-diagnostic')
+  target=out/(name+'-'+group+'-diagnostic');target.mkdir(exist_ok=True)
+  for path in source.iterdir():
+   if path.suffix=='.bc':continue
+   if path.name.endswith('.sample.txt'):(target/(path.name+'.gz')).write_bytes(gzip.compress(path.read_bytes(),mtime=0))
+   else:shutil.copyfile(path,target/path.name)
+for name in ('current-parent','combined'):
+ shutil.copyfile('/private/tmp/bc-202-'+name+'-size.txt',out/(name+'-size.txt'))
+shutil.copyfile('/private/tmp/gd-bc-202-current-sizes/sizes.json',out/'current-number-sizes.json')
+for script in ('bc-202-current-size-probe.py','bc-202-combined-counters.py'):
+ shutil.copyfile('/private/tmp/'+script,out/(script+'.txt'))
+lines=['# Inline limbs and a portable COW heap fallback — #202','',
+'Up to three coefficient limbs now live inside their value. Small copies are',
+'independent; larger values retain shared heap vectors and detach on mutation.',
+'This removes small-value owner/vector allocations while retaining cheap sharing',
+'for large literals and snapshots. Scale/sign, zero padding and arithmetic rules',
+'remain separate. No pointer tagging, ISA path or privileged VM operation is used.','',
+'## Safety and scope','',
+'Growth can relocate elements; shrinking retains heap capacity and iterator',
+'location. Reset/assignment and shared-small detachment can demote. Moves leave',
+'the source absent. Fixed buffer views are acquired after normalization/growth',
+'and end before swaps/resizes. Knuth extents are asserted once before its limb',
+'loops. Exact generic cases force inline-to-heap normalization and verify that',
+'zero-rescale products still trim spare slots; whole-limb shifts preserve copies.',
+'Constant-time numeric zero/length assumptions are not introduced.','',
+'The combined tree passes 143 bc cases (580,544 assertions), eight CLI/helper',
+'groups including 36 quick cases, five profiling checks and 103 extensions-',
+'disabled ASan/UBSan number/VM cases (396,335 assertions). The isolated ordinary-',
+'allocation test verifies zero allocations for small construction/copy/add/subtract',
+'at all three traits. Heap/COW diagnostic fixtures deliberately exceed capacity.',
+'The small-multiply winner improves; remaining losing observations are visible.',
+'This completes the first storage stage, not all #202 work: terminal/last-use',
+'values, capacity reuse and ownership/arena evaluation remain separate.','',
+'## Staged source identities','',
+'| Stage | Parent | Candidate | Evidence |',
+'| --- | --- | --- | --- |',
+'| Initial storage | `be6980152a6d0519454e7bc3ff03ea78cff0f69d` | `c3a769a212c7be347a92f7fc2d9108005eea75e9` | 2,160 checked full/held-out invocations; rejected as incomplete |',
+'| Fixed views | same | `4f8444ab50ffb0d30c6ce40b36a13cfee499ba51` | bounded four-way check, then nine-pair comparison |',
+'| Identity scaling | same | `aa97e54307a7e37d80a9e38180a33a3e7d2fd589` | bounded five-way check, then nine-pair comparison |',
+'| Combined acceptance | `73619a3e5dbc3dbddbca929bdac0a212b77b6772` | `5cd225291808a7f4f57570c17e835396ac2a692b` | fresh source builds; 2,160 checked invocations |','',
+'The initial source predates the separately merged reverse-comparison and',
+'discarded-square fixes. Isolated tables keep those identities rather than',
+'relabeling them as combined timings. The final acceptance pair includes both',
+'fixes in its parent and candidate. Every immutable recipe uses fixed threshold',
+'126, identical compiler/library identities, extensions ON, Release `-O3',
+'-DNDEBUG`, thin LTO and C++20. The host is Apple M1/macOS 27.2, Apple Clang 21',
+'and libc++ header 220106. Native pinned Howard 7.0.3 at c8dabac is the competitive',
+'reference. Actual compiler commands, binary hashes and corpus hashes are retained.',
+'Path-dependent command hashes differ. No instrumented binary enters timing.','',
+'Each main experiment has one checked warm-up and nine paired measured rounds',
+'per workload, seeded interleaving and 2,000 paired bootstrap resamples. Full seed',
+'197200 and held-out shapes/seed 197201 remain separate; no threshold or PGO',
+'training was fitted to the held-out inputs. Earlier staged validation also used',
+'held-out shapes to check general regressions; this is not a claim of blinded',
+'candidate selection. The two bounded checks have only three pairs and are',
+'engineering diagnostics, not final precision claims. All source-revision labels',
+'and initial losing data remain available. No aggregate hides a class.','',
+'No local builds/profiling ran during timed experiments. This shared workstation',
+'has no CPU/frequency/thermal isolation. Paired intervals do not establish another',
+'host or OS speedup; A/A calibration warns against treating tiny excursions as',
+'universal effects. Native #216 jobs supply separate advisory platform trends.','',
+'## Why the first prototype was not adopted','',
+'The initial allocation savings coexisted with large fallback regressions:',
+'full true-division ratios were 1.419/1.156, modulo 1.290, square roots',
+'1.108–1.159, sparse/unbalanced products about 1.094. Held-out shapes reproduced',
+'the bad division/modulo/sqrt signals. All original rows and intervals are in',
+'`initial-*-summary.json` and raw CSV. Native division retired instructions grew',
+'from 101,936,709 to 188,238,401 despite lower allocation traffic.','',
+'Fixed buffer views move repeated storage-mode/bounds dispatch out of stable',
+'limb loops. Exact identity scaling avoids traversing zero decimal shifts and',
+'whole-limb shifts again, while retaining normalization. The isolated four-way',
+'full/held-out experiment records both revisions, including neutral/losing cases.',
+'Identity scaling particularly helps factorial and whole-limb decimal scaling;',
+'partial-limb scales remain distinct. The final current-base comparison follows.','',
+'## Current-source paired results','',
+'Full loop/calls/dense-array ratios are 0.572/0.658/0.568. Short/long Fibonacci',
+'ratios are 0.739/0.843, and the 100-digit product is 0.821. Held-out shapes',
+'confirm the broad pattern. Small square root is about 3% slower; the original',
+'unbalanced shape is about 3.5% slower with a wide lower interval. These remain',
+'visible, not described as no regression. Major initial kernel regressions are',
+'removed. Several competitive targets remain unmet; math #217 is pending.','']
+for preset in ('full','holdout'):
+ source=Path('/private/tmp/gd-bc-202-acceptance-'+preset)
+ summary=json.loads((source/'summary.json').read_text())
+ raw=[json.loads(row) for row in (source/'samples.jsonl').read_text().splitlines()]
+ lines+=['### '+preset.capitalize(),'','| Workload | Candidate / current parent [95%] | Candidate / Howard [95%] |','| :--- | :--- | :--- |']
+ for row in summary['workloads']:
+  def samples(name):return [x['seconds'] for x in sorted(raw,key=lambda x:x['round']) if x['phase']=='measurement' and x['workload']==row['name'] and x['implementation']==name]
+  ratio=bench.paired_statistics(samples('gd-inline-final'),samples('howard-7.0.3'),seed=197201 if preset=='holdout' else 197200)
+  def fmt(value):return '{:.3f} [{:.3f}, {:.3f}]'.format(value['median_paired_ratio'],*value['ci95'])
+  lines+=['| `{}` | {} | {} |'.format(row['name'],fmt(row['candidate_over_reference']['gd-inline-final']),fmt(ratio))]
+ lines+=['']
+lines+=['## Allocation and representation costs','',
+'All 72 final counter reports pass exact outputs and EOF allocation balance.',
+'They are instrumented diagnostics; elapsed times are discarded. The parent',
+'profile source e7c1a83 has the identical Git tree to parent merge 73619a3; the',
+'recorded tree hash proves that equivalence. Earlier view/identity counter runs',
+'also assert exact equality with all 36 initial storage reports, confirming that',
+'loop refinements retain their allocation savings.','',
+'| Workload | Parent calls / candidate calls | Parent peak / candidate peak selected bytes |',
+'| --- | --- | --- |']
+for name in ('loop_1000000','calls_200000','array_200000','fibonacci_10000_x10'):
+ values=[data['profiles'][kind][name]['total'] for kind in ('parent','combined')]
+ lines+=['| `{}` | {:,} / {:,} | {:,} / {:,} |'.format(name,values[0]['allocation_calls'],values[1]['allocation_calls'],values[0]['peak_live_bytes'],values[1]['peak_live_bytes'])]
+lines+=['','The native size probe records Number growing from 24 to 32 bytes. Inline bytes',
+'belong to containing objects; tracked frame/array allocations include element',
+'sizes, while stack and other untracked object storage do not enter selected',
+'allocator counters. These are requested selected bytes, not process malloc or',
+'RSS. Larger values therefore remain a real cost even when allocations fall.','',
+'## Native uninstrumented memory/code diagnostics','',
+'These are separately checked observations, not timing samples. CPU sampling',
+'repeats programs for attribution; RSS/counters use one checked invocation.',
+'The first sandbox attempt could not read the native clock-rate interface and',
+'is not a measurement. Fresh authorized runs retain per-field native availability.',
+'No branch/cache-miss counter is claimed.','',
+'| Workload | Parent peak RSS bytes | Candidate peak RSS bytes | Parent / candidate retired instructions |',
+'| --- | --- | --- | --- |']
+for group,case in (('array','array_200000'),('div','divide_multilimb_900d_450d_s100_x1000')):
+ values=[]
+ for name in ('current-parent','combined'):
+  d=json.loads((out/(name+'-'+group+'-diagnostic/manifest.json')).read_text())['workloads'][0]['memory'];values.append(d)
+ lines+=['| `{}` | {:,} | {:,} | {:,} / {:,} |'.format(case,values[0]['peak_rss_native'],values[1]['peak_rss_native'],values[0]['native_counters']['instructions_retired'],values[1]['native_counters']['instructions_retired'])]
+lines+=['','| Mach-O field | Parent bytes | Candidate bytes |','| --- | --- | --- |']
+for field in ('__text','__TEXT'):
+ sizes=[]
+ for name in ('current-parent','combined'):
+  text=(out/(name+'-size.txt')).read_text()
+  pattern=(r'Section __text:\s*([0-9]+)' if field=='__text' else r'Segment __TEXT:\s*([0-9]+)')
+  sizes.append(int(re.search(pattern,text).group(1)))
+ lines+=['| `{}` | {:,} | {:,} |'.format(field,*sizes)]
+lines+=['','`__PAGEZERO` is virtual address reservation, not resident memory. Raw size',
+'outputs, counter collectors, source/command identities, all stage CSV/manifests/',
+'summaries and compressed native samples/counter reports are retained here.',
+'Load compressed JSON with `json.load(gzip.open(path, "rt"))`. This evidence',
+'supports the storage choice on the recorded host; it does not close remaining',
+'#202 ownership/lifetime stages or #197 competitive goals.','']
+(out/'README.md').write_text('\n'.join(lines))
+print('Wrote current-source report and retained staged evidence')
