@@ -1,0 +1,24 @@
+{
+  "baseline": "e53a4b9fb73fc037bc4e30aecb310fbff37b92a2",
+  "candidate_corpus_sha256": "6149c9659a2d4ff713de9f05a36504b197d59513520684b7fd0b6e4113cdb70c",
+  "rows": [
+    {
+      "preset": "full",
+      "preserved_cases": 44,
+      "new_cases": 1,
+      "previous_dictionaries_equal": true
+    },
+    {
+      "preset": "holdout",
+      "preserved_cases": 44,
+      "new_cases": 1,
+      "previous_dictionaries_equal": true
+    },
+    {
+      "preset": "quick",
+      "preserved_cases": 44,
+      "new_cases": 1,
+      "previous_dictionaries_equal": true
+    }
+  ]
+}
