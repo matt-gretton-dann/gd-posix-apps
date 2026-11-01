@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 PATH = Path(__file__).resolve().parent / 'scripts/benchmark-math-ci.py'
 SPEC = importlib.util.spec_from_file_location('benchmark_math_ci', str(PATH))
@@ -105,10 +106,18 @@ class NativeMath(unittest.TestCase):
     def test_missing_library_emits_unavailable_evidence_without_acceptance(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            result = subprocess.run([sys.executable, str(PATH), '--source', str(root),
-                                     '--candidate', 'a' * 40, '--output', str(root / 'results')],
-                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=10)
-            self.assertEqual(result.returncode, 0, result.stderr.decode())
+            original_load = CI.load
+            # This checks unavailable-source evidence, not machine inventory.
+            # Native workflow artifacts exercise the real bounded host probes;
+            # a Windows CIM query can itself take longer than this unit test.
+            def load(name):
+                if name == 'benchmark-ci':
+                    return mock.Mock(host_info=lambda: dict(test_host='isolated fixture'))
+                return original_load(name)
+            argv = [str(PATH), '--source', str(root), '--candidate', 'a' * 40,
+                    '--output', str(root / 'results')]
+            with mock.patch.object(CI, 'load', side_effect=load), mock.patch.object(sys, 'argv', argv):
+                self.assertEqual(CI.main(), 0)
             evidence = root / 'results/evidence'
             self.assertFalse(json.loads((evidence / 'unavailable.json').read_text())['performance_acceptance'])
             self.assertFalse((evidence / 'decisions.json').exists())
