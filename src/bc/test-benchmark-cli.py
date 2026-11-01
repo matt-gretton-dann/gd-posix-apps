@@ -191,6 +191,33 @@ class BenchmarkCli(unittest.TestCase):
             self.assertIsNotNone(paired["ci95"])
         self.assertEqual(schedules[0], schedules[1])
 
+    def test_math_cli_preserves_enclosures_and_state_in_artifacts(self):
+        config = self.root / 'math-config.json'
+        config.write_text(json.dumps({'implementations': [
+            {'name': 'fake-math', 'argv': [sys.executable, '-c',
+                                         "print('.84\\n2\\n10\\n2')"]}]}))
+        output = self.root / 'math-results'
+        result = subprocess.run(
+            [sys.executable, BENCHMARK, '--suite', 'math', '--preset', 'quick',
+             '--workload', 'math_regular_s-one_scale2_one_shot_x1',
+             '--config', str(config), '--output', str(output),
+             '--samples', '1', '--warmups', '1'],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, timeout=8)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        manifest = json.loads((output / 'manifest.json').read_text())
+        self.assertEqual(manifest['suite'], 'math')
+        self.assertEqual(len(manifest['oracle_checker_sha256']), 64)
+        self.assertEqual(len(manifest['reference_fixture_sha256']), 64)
+        entry, = manifest['corpus']
+        payload = (output / 'workloads' / (entry['name'] + '.expected')).read_bytes()
+        self.assertEqual(hashlib.sha256(payload).hexdigest(), entry['oracle_sha256'])
+        oracle = json.loads(payload)
+        self.assertEqual(oracle['kind'], 'decimal-ulp')
+        self.assertEqual(oracle['expected_state'], ['2', '10', '2'])
+        rows = [json.loads(line) for line in (output / 'samples.jsonl').read_text().splitlines()]
+        self.assertEqual(len(rows), 2)
+        self.assertTrue(all(row['checked'] for row in rows))
+
 
 class PairedStatistics(unittest.TestCase):
     def module(self):
@@ -369,6 +396,52 @@ class PairedStatistics(unittest.TestCase):
         self.assertEqual(result["median_paired_ratio"], 2)
         self.assertIsNone(result["ci95"])
         self.assertEqual(result["pairs"], 1)
+
+    def test_enclosure_oracles_accept_endpoints_and_reject_bad_results(self):
+        module = self.module()
+        case = dict(name='enclosure', program='1+1\n', expected=None,
+                    oracle=dict(kind='decimal-ulp', scale=2, lower='199/100', upper='201/100'))
+        tool = dict(name='fake', argv=[sys.executable, '-c', 'print(2)'])
+        self.assertTrue(module.run_checked(tool, case, 3)['checked'])
+        with self.assertRaisesRegex(module.BenchmarkError, 'error bound'):
+            module.run_checked(dict(tool, argv=[sys.executable, '-c', 'print(3)']), case, 3)
+        uncertain = dict(case, oracle=dict(kind='decimal-ulp', scale=2,
+                                          lower='201/100', upper='203/100'))
+        with self.assertRaisesRegex(module.BenchmarkError, 'refinement'):
+            module.run_checked(tool, uncertain, 3)
+        with self.assertRaisesRegex(module.BenchmarkError, 'exactly one'):
+            module.run_checked(dict(tool, argv=[sys.executable, '-c', "print('2\\n2')"]), case, 3)
+        payload = json.loads(module.oracle_payload(case))
+        self.assertEqual(payload, case['oracle'])
+        with self.assertRaisesRegex(module.BenchmarkError, 'unknown numerical oracle'):
+            module.run_checked(tool, dict(case, oracle={'kind': 'floating-tolerance'}), 3)
+        state_case = dict(case, oracle=dict(case['oracle'], expected_state=['2', '10', '2']))
+        state_tool = dict(tool, argv=[sys.executable, '-c', "print('2\\n2\\n10\\n2')"])
+        self.assertTrue(module.run_checked(state_tool, state_case, 3)['checked'])
+        with self.assertRaisesRegex(module.BenchmarkError, 'caller state'):
+            module.run_checked(dict(tool, argv=[sys.executable, '-c', "print('2\\n0\\n10\\n2')"]),
+                               state_case, 3)
+
+    def test_optional_math_suite_preserves_arithmetic_and_records_all_dimensions(self):
+        module = self.module()
+        original = module.corpus('quick')
+        full = module.corpus('full', suite='math')
+        held = module.corpus('holdout', suite='math')
+        quick = module.corpus('quick', suite='math')
+        self.assertEqual(module.corpus('quick'), original)
+        self.assertEqual(len(full), 60)
+        self.assertEqual([case['group'] for case in full], [case['group'] for case in held])
+        self.assertEqual({case['parameters']['function'] for case in full}, set('scalej'))
+        self.assertEqual({case['parameters']['scale'] for case in full}, {20, 100, 1000})
+        self.assertEqual({case['parameters']['scale'] for case in quick}, {2, 20, 100})
+        for training, holdout in zip(full, held):
+            self.assertNotEqual(training['name'], holdout['name'])
+            self.assertNotEqual(training['program'], holdout['program'])
+            for case in (training, holdout):
+                self.assertEqual(case['oracle']['kind'], 'decimal-ulp')
+                self.assertEqual(case['oracle']['scale'], case['parameters']['scale'])
+                self.assertIn(str(case['parameters']['iterations']), case['name'])
+                self.assertEqual(case['parameters']['calibration'], 'fixed count; not calibrated')
 
 
 if __name__ == "__main__":
