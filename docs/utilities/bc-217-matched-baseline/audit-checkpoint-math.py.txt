@@ -1,0 +1,102 @@
+"""Audit preserved native math structure without rerunning timed interpreters."""
+import collections
+import hashlib
+import json
+import math
+from pathlib import Path
+import sys
+import zipfile
+
+REVISION = '7c30eb3c182d257c189395692c856d517735d880'
+LIBRARY = 'e4095342fc587ec43f964f9a6314b4a68a1762cac15b2d0a3016f34fd4565de7'
+HOWARD = 'c8dabac65d39fd527a9264a5e505a99b1d8df3d8'
+
+
+def digest(value):
+    return hashlib.sha256(value).hexdigest()
+
+
+for system in sys.argv[1:]:
+    path = Path('/private/tmp/bc-359-7c-math-native-' + system + '.zip')
+    with zipfile.ZipFile(path) as archive:
+        def read(name):
+            return json.loads(archive.read(name))
+        names = set(archive.namelist())
+        portable_bytes = archive.read('full-paired/declared-inputs/2-0-math-library.bc')
+        library_hash = digest(portable_bytes)
+        assert digest(portable_bytes.replace(b'\r\n', b'\n')) == LIBRARY
+        assert 'failure.json' not in names and 'unavailable.json' not in names
+        orchestration = read('orchestration.json')
+        assert orchestration['candidate'] == REVISION
+        assert orchestration['samples'] == 15 and orchestration['broad'] is False
+        assert all(row.get('returncode') == 0 for row in orchestration['commands'])
+        recipes = {}
+        for role, revision in [('gd', REVISION), ('aa', REVISION), ('howard', HOWARD)]:
+            recipe = read(role + '/implementations.json')['implementations'][0]
+            assert recipe['metadata']['source_revision'] == revision
+            assert recipe['metadata']['instrumented'] is False
+            recipes[role] = recipe['metadata']['binary_sha256']
+        prepared = read('full-prepared/manifest.json')
+        assert len(prepared['corpus']) == 20 and len(prepared['implementations']) == 4
+        prepared_cases = {row['name']: row for row in prepared['corpus']}
+        assert len({(row['group'], row['parameters']['mode']) for row in prepared['corpus']}) == 20
+        assert all(row['parameters']['scale'] == 100 for row in prepared['corpus'])
+        total = 0
+        counts = {}
+        for directory in sorted(n[:-len('/manifest.json')] for n in names
+                                if n.startswith('full-') and n.endswith('/manifest.json')):
+            manifest = read(directory + '/manifest.json')
+            tools = manifest['implementations']
+            for tool in tools:
+                assert tool['complete_provenance'] is True
+                source = HOWARD if tool['name'].startswith('howard-') else REVISION
+                assert tool['metadata']['source_revision'] == source
+                assert tool['binary_sha256'] == tool['metadata']['binary_sha256']
+                if tool['name'].startswith('howard-'):
+                    assert tool['binary_sha256'] == recipes['howard']
+                else:
+                    role = 'aa' if tool['name'] == 'gd-aa' else 'gd'
+                    assert tool['binary_sha256'] == recipes[role]
+                for declared in tool.get('input_artifacts', []):
+                    assert digest(archive.read(directory + '/' + declared['archived_as'].replace('\\', '/'))) == declared['sha256'] == library_hash
+                if tool['name'] != 'howard-standard':
+                    assert tool['metadata']['library']['source_sha256'] == library_hash
+            for case in manifest['corpus']:
+                name = case['name']
+                assert case == prepared_cases[name]
+                for suffix, key in [('.bc', 'program_sha256'), ('.expected', 'oracle_sha256')]:
+                    assert digest(archive.read(directory + '/workloads/' + name + suffix)) == case[key]
+            if directory == 'full-prepared':
+                continue
+            assert manifest['samples'] == 15 and manifest['warmups'] == 3
+            assert manifest['replayed_corpus']['source_manifest_sha256'] == digest(archive.read('full-prepared/manifest.json'))
+            rows = [json.loads(line) for line in archive.read(directory + '/samples.jsonl').splitlines()]
+            tool_names = {tool['name'] for tool in tools}
+            cases = {case['name'] for case in manifest['corpus']}
+            assert len(rows) == len(cases) * len(tool_names) * 18
+            seen = collections.defaultdict(set)
+            for row in rows:
+                assert row['checked'] is True and math.isfinite(row['seconds']) and row['seconds'] > 0
+                assert row['implementation'] in tool_names and row['workload'] in cases
+                key = row['workload'], row['implementation'], row['phase']
+                assert row['round'] not in seen[key]
+                seen[key].add(row['round'])
+            for case in cases:
+                for tool in tool_names:
+                    assert seen[case, tool, 'measurement'] == set(range(15))
+                    assert seen[case, tool, 'warmup'] == set(range(3))
+            total += len(rows)
+            counts[directory] = len(rows)
+        calibration = [json.loads(line) for line in archive.read('full-prepared/calibration/samples.jsonl').splitlines()]
+        assert calibration and all(row['checked'] is True for row in calibration)
+        counts['calibration'] = len(calibration)
+        decisions = read('decisions.json')
+        assert decisions['advisory'] is True and len(decisions['results']) == 20
+        repeated = [row for row in decisions['results'] if row['parameters']['mode'] != 'one_shot']
+        audit = dict(system=system, source=REVISION, library_sha256=library_hash,
+                     canonical_lf_library_sha256=LIBRARY, source_crlf_count=portable_bytes.count(b"\r\n"),
+                     zip_sha256=digest(path.read_bytes()), checked_rows=total + len(calibration),
+                     counts=counts, classes=repeated,
+                     limitation='structural/provenance audit; numeric checks executed by the identified harness on the native runner')
+        path.with_suffix('.audit.json').write_text(json.dumps(audit, indent=2) + '\n')
+        print(system, counts, 'checked structural provenance and frozen replay')

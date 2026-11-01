@@ -124,3 +124,35 @@ CPU work or process RSS. Isolate sqrt from other division expressions when
 attributing request totals to Newton steps. General division workloads can also
 use these dimensions. All counters are diagnostic-only and their amount
 expressions are discarded in ordinary builds.
+
+
+## Checked release CPU and memory diagnostics
+
+`src/bc/scripts/profile-bc.py` accepts the same source-built release config as
+`bench-bc.py`. Choose explicit workload names and provide the checked timing
+summary used only to estimate CPU sampling repetitions:
+
+```sh
+python3 src/bc/scripts/profile-bc.py --config release-implementations.json \
+  --implementation gd --summary timed/summary.json --output diagnostics \
+  --suite math --replay-corpus timed --workload WORKLOAD_NAME
+```
+
+The default suite is `arithmetic`. Without `--replay-corpus`, the collector
+regenerates the full suite; replay instead verifies and uses the exact archived
+programs and oracles, including calibrated iteration counts. Mathematical
+outputs use the independent decimal-ULP enclosures and check the result scale
+and caller state for every repetition. Arithmetic retains exact output checks.
+Any incorrect output, diagnostic stderr, failed child or deadline rejects the
+measurement. Unsupported native adapters retain an explicit unavailable status.
+
+The archive contains the original LF program, exact expected-output or enclosure
+payload, their SHA-256 identities, replay manifest identity, declared library
+inputs, and the expanded CPU input hash and byte count. Declared inputs are
+rechecked before each launch. File workloads receive a temporary LF source file
+and empty stdin; stdin workloads retain their original transport. Repeating a
+program for CPU sampling happens in one interpreter, with startup and any
+library argv file evaluated once. This measures repeated execution and parsing,
+not repeated cold startup. RSS runs the original workload once. Neither CPU
+samples nor native RSS observations replace the separate paired release timing
+experiment; software allocation counters remain a separate instrumented build.
