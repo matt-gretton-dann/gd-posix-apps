@@ -819,7 +819,8 @@ TEMPLATE_TEST_CASE("Decimal construction agrees with digit arithmetic at chunk b
     for (char c : text) {
       if (c == '.') {
         fractional = true;
-      } else {
+      }
+      else {
         coefficient.multiply(ten, N(0));
         coefficient.add(Number(N(c - '0')));
         if (fractional) {

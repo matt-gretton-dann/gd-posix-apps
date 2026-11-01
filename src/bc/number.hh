@@ -117,6 +117,52 @@ public:
     }
   }
 
+  /** Populate coefficient limbs directly from validated decimal text.
+   * The caller supplies the sole radix-point position (or npos) and retains
+   * its decimal scale. Leading coefficient zeros need no storage; fractional
+   * trailing zeros remain part of the integer coefficient.
+   */
+  static auto from_decimal(std::string_view text, std::size_t point) -> BasicDigits
+  {
+    std::size_t first = 0;
+    while (first < text.size() && (text[first] == '0' || text[first] == '.')) {
+      ++first;
+    }
+    if (first == text.size()) {
+      return BasicDigits();
+    }
+    auto const decimal_digits =
+      text.size() - first - (point != std::string_view::npos && point >= first ? 1 : 0);
+    auto const count = decimal_digits / base_log10_ + (decimal_digits % base_log10_ != 0);
+    BasicDigits result;
+    result.copy_on_write();
+    result.digits_->resize(count, 0);
+    auto output = result.digits_->begin();
+    WideType coefficient = 0;
+    WideType weight = 1;
+    unsigned places = 0;
+    for (auto i = text.size(); i > first;) {
+      auto const c = text[--i];
+      if (c == '.') {
+        continue;
+      }
+      coefficient += WideType(c - '0') * weight;
+      if (++places == base_log10_) {
+        *output++ = static_cast<NumType>(coefficient);
+        coefficient = 0;
+        weight = 1;
+        places = 0;
+      }
+      else {
+        weight *= 10;
+      }
+    }
+    if (places != 0) {
+      *output = static_cast<NumType>(coefficient);
+    }
+    return result;
+  }
+
   ~BasicDigits() = default;
 #if GD_BC_PROFILE
   BasicDigits(BasicDigits const& other) noexcept : digits_(other.digits_) { record_copy(); }
@@ -1233,9 +1279,9 @@ private:
   }
 
   static auto multiply_workspace(typename DigitVector::const_iterator lhs_begin,
-                                  typename DigitVector::const_iterator lhs_end,
-                                  typename DigitVector::const_iterator rhs_begin,
-                                  typename DigitVector::const_iterator rhs_end) -> BasicDigits
+                                 typename DigitVector::const_iterator lhs_end,
+                                 typename DigitVector::const_iterator rhs_begin,
+                                 typename DigitVector::const_iterator rhs_end) -> BasicDigits
   {
     auto const lhs_size = static_cast<std::size_t>(lhs_end - lhs_begin);
     auto const rhs_size = static_cast<std::size_t>(rhs_end - rhs_begin);
@@ -1362,7 +1408,29 @@ public:
     assert(ibase >= 2);   // NOLINT
     assert(ibase <= 16);  // NOLINT
 
-    /* Construct the basic number a digit at a time, working out the scale when we see digits
+    if (ibase == 10) {  // NOLINT - decimal limbs match the input radix.
+      std::size_t point = std::string_view::npos;
+      bool decimal = true;
+      for (std::size_t i = 0; i < s.size(); ++i) {
+        if (s[i] == '.' && point == std::string_view::npos) {
+          point = i;
+        }
+        else if (s[i] < '0' || s[i] > '9') {
+          decimal = false;
+          break;
+        }
+      }
+      if (decimal) {
+        // Keep single hexadecimal digits and other established input contracts
+        // on the generic path. No compile-time or execution-time base is folded.
+        scale_ =
+          point == std::string_view::npos ? NumType{0} : static_cast<NumType>(s.size() - point - 1);
+        digits_ = Details::BasicDigits<Traits>::from_decimal(s, point);
+        return;
+      }
+    }
+
+    /* Generic fallback: construct a digit at a time, working out scale for digits
      * after the radix point.
      *
      * Ultimately we want this to be digits_ * 10 ^ scale_.
