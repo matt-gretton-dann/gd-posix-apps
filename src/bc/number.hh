@@ -11,6 +11,7 @@
 #include "gd/string.h"
 
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <iomanip>
 #include <iterator>
@@ -400,6 +401,24 @@ public:
       }
 
       assert(scale >= result.end() - it);  // NOLINT
+      auto padding = std::size_t(scale) - static_cast<std::size_t>(result.end() - it);
+      if (padding != 0) {
+        // Leading fractional zeros use the same continuation capacity as real
+        // coefficient digits. Keep the buffer bounded independently of scale.
+        std::array<char, line_length> zeroes;
+        zeroes.fill('0');
+        while (padding != 0) {
+          if (digits_printed >= break_at) {
+            os << "\\\n";
+            digits_printed = 0;
+          }
+          auto const count = std::min(padding, std::size_t(break_at - digits_printed));
+          os.write(zeroes.data(), static_cast<std::streamsize>(count));
+          padding -= count;
+          scale = static_cast<NumType>(scale - count);
+          digits_printed += static_cast<unsigned>(count);
+        }
+      }
       while (result.end() - it > break_at - digits_printed) {
         os << result.substr(it - result.begin(), break_at - digits_printed) << "\\\n";
         // The loop and the scale invariant above bound the chunk by scale.
@@ -1233,9 +1252,9 @@ private:
   }
 
   static auto multiply_workspace(typename DigitVector::const_iterator lhs_begin,
-                                  typename DigitVector::const_iterator lhs_end,
-                                  typename DigitVector::const_iterator rhs_begin,
-                                  typename DigitVector::const_iterator rhs_end) -> BasicDigits
+                                 typename DigitVector::const_iterator lhs_end,
+                                 typename DigitVector::const_iterator rhs_begin,
+                                 typename DigitVector::const_iterator rhs_end) -> BasicDigits
   {
     auto const lhs_size = static_cast<std::size_t>(lhs_end - lhs_begin);
     auto const rhs_size = static_cast<std::size_t>(rhs_end - rhs_begin);

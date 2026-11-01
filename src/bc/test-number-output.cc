@@ -132,10 +132,9 @@ TEMPLATE_TEST_CASE("Decimal padding and exact continuation boundaries preserve l
   using Number = GD::Bc::BasicNumber<TestType>;
   unsigned const position = GENERATE(0U, 67U, 68U, 69U, 70U);
   bool const negative = GENERATE(false, true);
-  std::string const text = GENERATE(std::string(68, '7'), std::string(69, '7'),
-                                    std::string(70, '7'), std::string(71, '7'),
-                                    "0." + std::string(79, '0') + "1",
-                                    "0." + std::string(68, '0') + "10");
+  std::string const text =
+    GENERATE(std::string(68, '7'), std::string(69, '7'), std::string(70, '7'), std::string(71, '7'),
+             "0." + std::string(79, '0') + "1", "0." + std::string(68, '0') + "10");
   Number value(text, 10);
   auto expected = text;
   if (GD::Bc::extensions_enabled() && text[0] == '0') {
