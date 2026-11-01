@@ -69,4 +69,3 @@ punctuation, destination locale, scales, signs, stream width and continuation.
 | `control-1d` | 1.003 [1.000,1.025] |
 | `control-1000d` | 0.994 [0.988,0.997] |
 | `control-10000d` | 1.000 [0.950,1.030] |
-
