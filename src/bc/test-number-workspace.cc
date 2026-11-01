@@ -20,8 +20,8 @@ auto decimal_product(std::string const& left, std::string const& right) -> std::
   std::vector<unsigned> digits(left.size() + right.size());
   for (std::size_t i = 0; i < left.size(); ++i) {
     for (std::size_t j = 0; j < right.size(); ++j) {
-      digits[i + j] += unsigned(left[left.size() - 1 - i] - '0') *
-                       unsigned(right[right.size() - 1 - j] - '0');
+      digits[i + j] +=
+        unsigned(left[left.size() - 1 - i] - '0') * unsigned(right[right.size() - 1 - j] - '0');
     }
   }
   for (std::size_t i = 0; i + 1 < digits.size(); ++i) {
@@ -92,8 +92,8 @@ TEMPLATE_TEST_CASE("Recursive products agree with decimal convolution",
   {
     ~Restore() { Number::multiply_split_point(1); }
   } const restore;
-  for (auto const& [a, b] : {std::pair{4U, 4U}, {5U, 7U}, {8U, 9U}, {17U, 16U},
-                            {31U, 63U}, {2U, 63U}, {10U, 63U}}) {
+  for (auto const& [a, b] :
+       {std::pair{4U, 4U}, {5U, 7U}, {8U, 9U}, {17U, 16U}, {31U, 63U}, {2U, 63U}, {10U, 63U}}) {
     for (unsigned pattern : {0U, 1U}) {
       std::string left(a * Number::base_log10_, '9');
       std::string right(b * Number::base_log10_, '9');
@@ -106,8 +106,8 @@ TEMPLATE_TEST_CASE("Recursive products agree with decimal convolution",
       }
       std::string const expected = decimal_product(left, right);
       for (unsigned threshold : {1U, 3U, 4U, 7U, 99U}) {
-        INFO("limb digits " << Number::base_log10_ << ", shape " << a << 'x' << b
-                             << ", pattern " << pattern << ", threshold " << threshold);
+        INFO("limb digits " << Number::base_log10_ << ", shape " << a << 'x' << b << ", pattern "
+                            << pattern << ", threshold " << threshold);
         Number::multiply_split_point(static_cast<N>(threshold));
         Number lhs(left, N(10));
         Number const rhs(right, N(10));
@@ -124,8 +124,8 @@ TEMPLATE_TEST_CASE("Recursive products agree with decimal convolution",
 }
 
 TEMPLATE_TEST_CASE("Aliased and opposite-sign shared squares preserve snapshots",
-                   "[bc][number][multiply][square]", GD::Bc::NumberTraits8,
-                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+                   "[bc][number][multiply][square]", GD::Bc::NumberTraits8, GD::Bc::NumberTraits16,
+                   GD::Bc::NumberTraits32)
 {
   using Number = GD::Bc::BasicNumber<TestType>;
   using N = typename Number::NumType;
@@ -141,8 +141,8 @@ TEMPLATE_TEST_CASE("Aliased and opposite-sign shared squares preserve snapshots"
       }
       Number const expected(decimal_product(input, input), N(10));
       for (N point : {N(1), N(4), N(16), N(Number::base_)}) {
-        INFO("limb digits " << Number::base_log10_ << ", count " << count
-                             << ", sparse " << sparse << ", threshold " << unsigned(point));
+        INFO("limb digits " << Number::base_log10_ << ", count " << count << ", sparse " << sparse
+                            << ", threshold " << unsigned(point));
         Number::multiply_split_point(point);
         Number const snapshot(input, N(10));
         auto square = snapshot;
@@ -167,4 +167,45 @@ TEMPLATE_TEST_CASE("Aliased and opposite-sign shared squares preserve snapshots"
   CHECK(fraction.scale() == 6);
   CHECK(original == Number("1.2500", N(10)));
   CHECK(original.scale() == 4);
+}
+
+TEMPLATE_TEST_CASE("Triangular squares stay within exact output bounds",
+                   "[bc][number][multiply][square]", GD::Bc::NumberTraits8, GD::Bc::NumberTraits16,
+                   GD::Bc::NumberTraits32)
+{
+  using Limb = typename TestType::NumType;
+  using Kernel = GD::Bc::Details::LimbSquare<TestType>;
+  static_assert(Kernel::supported);
+  auto const guard = static_cast<Limb>(TestType::base_ - 1);
+  for (std::size_t count : {1U, 2U, 3U, 4U, 7U, 16U, 17U, 63U}) {
+    for (unsigned pattern : {0U, 1U, 2U}) {
+      std::vector<Limb> input(count, guard);
+      if (pattern == 1) {
+        std::fill(input.begin(), input.end(), Limb{0});
+        input.front() = input.back() = guard;
+      }
+      else if (pattern == 2) {
+        std::fill(input.begin(), input.end(), Limb{0});
+      }
+      auto const snapshot = input;
+      std::vector<Limb> output(2 * count + 2, Limb{0});
+      output.front() = output.back() = guard;
+      auto const result = std::span<Limb>(output).subspan(1, 2 * count);
+      Kernel::multiply(input, result);
+      auto decimal = [](std::span<Limb const> value) {
+        std::string text;
+        for (auto it = value.rbegin(); it != value.rend(); ++it) {
+          auto const part = std::to_string(*it);
+          text.append(TestType::base_log10_ - part.size(), '0');
+          text += part;
+        }
+        auto const first = text.find_first_not_of('0');
+        return first == std::string::npos ? std::string("0") : text.substr(first);
+      };
+      CHECK(decimal(result) == decimal_product(decimal(input), decimal(input)));
+      CHECK(input == snapshot);
+      CHECK(output.front() == guard);
+      CHECK(output.back() == guard);
+    }
+  }
 }

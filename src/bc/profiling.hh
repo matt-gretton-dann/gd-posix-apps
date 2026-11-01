@@ -24,6 +24,7 @@ enum class Event : std::size_t {
   range_limb_bytes,
   basic_multiply_calls,
   karatsuba_multiply_calls,
+  square_multiply_calls,
   literal_conversions,
   function_calls,
   instructions_executed,

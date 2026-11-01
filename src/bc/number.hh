@@ -1141,13 +1141,14 @@ private:
                              typename DigitVector::const_iterator rhs_begin,
                              typename DigitVector::const_iterator rhs_end) -> BasicDigits
   {
-    GD_BC_PROFILE_EVENT(Profile::Event::basic_multiply_calls, 1);
     /* Handle the case of nothing to multiply by - equivalent to multiplying by zero.  */
     if (lhs_begin == lhs_end || rhs_begin == rhs_end) {
+      GD_BC_PROFILE_EVENT(Profile::Event::basic_multiply_calls, 1);
       return BasicDigits();
     }
 
     if (lhs_end == lhs_begin + 1) {
+      GD_BC_PROFILE_EVENT(Profile::Event::basic_multiply_calls, 1);
       /* LHS is one digit use the Multiply accumulate function.  */
       BasicDigits r(rhs_begin, rhs_end);
       r.mac(*lhs_begin, 0);
@@ -1155,6 +1156,7 @@ private:
     }
 
     if (rhs_end == rhs_begin + 1) {
+      GD_BC_PROFILE_EVENT(Profile::Event::basic_multiply_calls, 1);
       /* RHS is one digit use the Multiply accumulate function.  */
       BasicDigits r(lhs_begin, lhs_end);
       r.mac(*rhs_begin, 0);
@@ -1168,6 +1170,17 @@ private:
     result.digits_->resize(result_size, 0);
     auto result_begin = result.digits_->begin();
 
+    if constexpr (LimbSquare<Traits>::supported) {
+      if (std::to_address(lhs_begin) == std::to_address(rhs_begin) &&
+          lhs_end - lhs_begin == rhs_end - rhs_begin) {
+        LimbSquare<Traits>::multiply(
+          {std::to_address(lhs_begin), static_cast<std::size_t>(lhs_end - lhs_begin)},
+          {result.digits_->data(), result.digits_->size()});
+        return result;
+      }
+    }
+
+    GD_BC_PROFILE_EVENT(Profile::Event::basic_multiply_calls, 1);
     for (auto lhs_it = lhs_begin; lhs_it != lhs_end; ++lhs_it) {
       WideType carry = 0;
       auto result_it = result_begin++;
@@ -1193,9 +1206,9 @@ private:
   }
 
   static auto multiply_workspace(typename DigitVector::const_iterator lhs_begin,
-                                  typename DigitVector::const_iterator lhs_end,
-                                  typename DigitVector::const_iterator rhs_begin,
-                                  typename DigitVector::const_iterator rhs_end) -> BasicDigits
+                                 typename DigitVector::const_iterator lhs_end,
+                                 typename DigitVector::const_iterator rhs_begin,
+                                 typename DigitVector::const_iterator rhs_end) -> BasicDigits
   {
     auto const lhs_size = static_cast<std::size_t>(lhs_end - lhs_begin);
     auto const rhs_size = static_cast<std::size_t>(rhs_end - rhs_begin);
