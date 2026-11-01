@@ -92,6 +92,22 @@ their previous exact-output format. Larger arguments and scales remain in
 the broader accuracy corpus even when omitted from this bounded timing subset.
 This harness support alone makes no competitive-performance claim.
 
+## Declared command inputs
+
+Ordinary library files passed in a role's argv can be declared explicitly:
+
+```json
+"input_artifacts": [{"path": "/path/to/math-library.bc",
+                     "sha256": "ACTUAL_64_HEXADECIMAL_DIGITS", "purpose": "ordinary library"}]
+```
+
+Each declaration must identify an actual argv file and match its bytes. The
+harness archives it and rechecks it before each invocation, outside the timer.
+This preserves the portable-source comparison's actual library identity;
+the executable hash alone cannot identify an additional source file. File
+validation warms caches, so these are process/preload measurements without a
+cold-filesystem claim. Commands still choose their libraries normally.
+
 ## Archived evidence byte stability
 
 Archived evidence directories disable Git text conversion so recorded program,

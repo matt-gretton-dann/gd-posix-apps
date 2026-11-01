@@ -444,6 +444,13 @@ def environment():
 
 def run_checked(implementation, case, timeout, program_path=None):
     label = implementation["name"] + " / " + case["name"]
+    for artifact in implementation.get('input_artifacts', []):
+        try:
+            observed = digest_file(artifact['realpath'])
+        except OSError as error:
+            raise BenchmarkError(label + ' cannot read declared input artifact: ' + str(error))
+        if observed != artifact['sha256']:
+            raise BenchmarkError(label + ' declared input artifact changed before invocation')
     payload, child_environment = case["program"].encode("utf-8"), environment()
     argv = list(implementation["argv"])
     mode = case.get("input_mode", "stdin")
@@ -586,9 +593,36 @@ def implementations(path, require_provenance=False):
         role = entry.get("role", "candidate")
         if require_provenance and role != "installed" and not complete:
             raise BenchmarkError(name + " lacks source/compiler/flags/version provenance")
+        declared = entry.get('input_artifacts', [])
+        if not isinstance(declared, list):
+            raise BenchmarkError(name + ' input_artifacts must be a list')
+        artifacts = []
+        for artifact in declared:
+            if (not isinstance(artifact, dict) or not isinstance(artifact.get('path'), str) or
+                    not isinstance(artifact.get('sha256'), str) or
+                    not re.fullmatch('[0-9a-fA-F]{64}', artifact['sha256'])):
+                raise BenchmarkError(name + ' needs declared input paths and SHA-256 identities')
+            actual_path = Path(artifact['path']).resolve()
+            present = False
+            for arg in argv[1:]:
+                try:
+                    present = Path(arg).resolve() == actual_path
+                except (OSError, ValueError):
+                    # Command arguments can be programs or arbitrary values,
+                    # not just legal filesystem names.
+                    continue
+                if present:
+                    break
+            if not present:
+                raise BenchmarkError(name + ' declared input must appear in its actual argv')
+            if digest_file(actual_path) != artifact['sha256'].lower():
+                raise BenchmarkError(name + ' declared input artifact hash does not match')
+            artifacts.append(dict(path=artifact['path'], realpath=str(actual_path),
+                                  sha256=artifact['sha256'].lower(), purpose=artifact.get('purpose', 'input')))
         result.append({"name": name, "argv": [str(Path(binary).resolve())] + argv[1:],
                        "binary_sha256": digest_file(binary), "metadata": metadata,
-                       "role": role, "complete_provenance": complete})
+                       "role": role, "complete_provenance": complete,
+                       **({'input_artifacts': artifacts} if artifacts else {})})
     return result
 
 
@@ -672,6 +706,16 @@ def main():
         parser.error("cannot create a fresh output directory: " + str(error))
     try:
         tools = implementations(args.config, args.require_provenance)
+        for tool_index, tool in enumerate(tools):
+            for input_index, artifact in enumerate(tool.get('input_artifacts', [])):
+                directory = output / 'declared-inputs'
+                directory.mkdir(exist_ok=True)
+                archived = directory / '{}-{}-{}'.format(
+                    tool_index, input_index, Path(artifact['realpath']).name)
+                archived.write_bytes(Path(artifact['realpath']).read_bytes())
+                if digest_file(archived) != artifact['sha256']:
+                    raise BenchmarkError(tool['name'] + ' declared input changed while archiving')
+                artifact['archived_as'] = str(archived.relative_to(output))
         reference = args.reference or tools[0]["name"]
         if reference not in [tool["name"] for tool in tools]:
             raise BenchmarkError("reference is not a configured implementation")

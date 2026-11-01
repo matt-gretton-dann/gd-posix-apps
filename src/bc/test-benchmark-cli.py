@@ -192,10 +192,14 @@ class BenchmarkCli(unittest.TestCase):
         self.assertEqual(schedules[0], schedules[1])
 
     def test_math_cli_preserves_enclosures_and_state_in_artifacts(self):
+        library = self.root / 'ordinary library.bc'
+        library.write_bytes(b'scale=20\n')
         config = self.root / 'math-config.json'
         config.write_text(json.dumps({'implementations': [
             {'name': 'fake-math', 'argv': [sys.executable, '-c',
-                                         "print('.84\\n2\\n10\\n2')"]}]}))
+                                         "print('.84\\n2\\n10\\n2')", str(library)],
+             'input_artifacts': [dict(path=str(library), purpose='ordinary library',
+                                      sha256=hashlib.sha256(library.read_bytes()).hexdigest())]}]}))
         output = self.root / 'math-results'
         result = subprocess.run(
             [sys.executable, BENCHMARK, '--suite', 'math', '--preset', 'quick',
@@ -208,6 +212,10 @@ class BenchmarkCli(unittest.TestCase):
         self.assertEqual(manifest['suite'], 'math')
         self.assertEqual(len(manifest['oracle_checker_sha256']), 64)
         self.assertEqual(len(manifest['reference_fixture_sha256']), 64)
+        declared, = manifest['implementations'][0]['input_artifacts']
+        copied = output / declared['archived_as']
+        self.assertEqual(copied.read_bytes(), library.read_bytes())
+        self.assertEqual(hashlib.sha256(copied.read_bytes()).hexdigest(), declared['sha256'])
         entry, = manifest['corpus']
         payload = (output / 'workloads' / (entry['name'] + '.expected')).read_bytes()
         self.assertEqual(hashlib.sha256(payload).hexdigest(), entry['oracle_sha256'])
@@ -220,6 +228,29 @@ class BenchmarkCli(unittest.TestCase):
 
 
 class PairedStatistics(unittest.TestCase):
+    def test_declared_inputs_are_verified_before_starting_a_child(self):
+        module = self.module()
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            library = root / 'math source.bc'
+            library.write_bytes(b'scale=20\n')
+            config = root / 'implementations.json'
+            entry = dict(name='fake', argv=[sys.executable, '-c', 'print(2)', str(library)],
+                         input_artifacts=[dict(path=str(library),
+                                               sha256=hashlib.sha256(library.read_bytes()).hexdigest())])
+            config.write_text(json.dumps(dict(implementations=[entry])))
+            tool, = module.implementations(config)
+            case = dict(name='input-check', program='1+1\n', expected=['2'])
+            self.assertTrue(module.run_checked(tool, case, 3)['checked'])
+            library.write_bytes(b'scale=21\n')
+            with mock.patch.object(module.subprocess, 'run') as child:
+                with self.assertRaisesRegex(module.BenchmarkError, 'artifact changed'):
+                    module.run_checked(tool, case, 3)
+                child.assert_not_called()
+            with self.assertRaisesRegex(module.BenchmarkError, 'hash does not match'):
+                module.implementations(config)
+
+
     def module(self):
         spec = importlib.util.spec_from_file_location("bc_benchmark", BENCHMARK)
         module = importlib.util.module_from_spec(spec)
