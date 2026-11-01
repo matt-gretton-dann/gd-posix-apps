@@ -531,7 +531,7 @@ void GD::Bc::Details::VMState::array_element(ArrayElement const& ae, Number cons
 
 auto GD::Bc::Details::VMState::array_element(ArrayElement const& ae) const -> GD::Bc::Number
 {
-  ArrayValues const a = arrays_.at(static_cast<unsigned>(ae.first.get()));
+  ArrayValues const& a = arrays_.at(static_cast<unsigned>(ae.first.get()));
   if (!a) {
     return {};
   }
@@ -566,7 +566,7 @@ void GD::Bc::Details::VMState::array(Array a, ArrayValues av)
 
 auto GD::Bc::Details::VMState::array_length(Array a) const -> GD::Bc::Number::NumType
 {
-  auto arr = array(a);
+  ArrayValues const& arr = arrays_.at(static_cast<unsigned>(a.get()));
   // Untouched arrays have no allocated map and contain no elements.
   if (!arr || arr->empty()) {
     return 0;
