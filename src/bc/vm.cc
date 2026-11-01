@@ -98,12 +98,12 @@ struct VMState
   /** Pop the current parameter pack.  */
   void pop_param_pack();
 
-  /** \brief  Pop a scalar param.
+  /** \brief  Consume a scalar parameter.
    *  \return Value of parameter
    */
   auto pop_param() -> Number;
 
-  /** \brief  Pop a scalar param.
+  /** \brief  Consume an array parameter.
    *  \return Value of parameter
    */
   auto pop_param_array() -> ArrayValues;
@@ -405,7 +405,8 @@ auto GD::Bc::Details::VMState::pop_param() -> GD::Bc::Number
   if (!std::holds_alternative<Number>(param_stack_.back().front())) {
     Details::error(Msg::parameter_type_mismatch, "number");
   }
-  auto result(std::get<Number>(param_stack_.back().front()));
+  // This node is consumed immediately; transfer its value before erasing it.
+  auto result(std::move(std::get<Number>(param_stack_.back().front())));
   param_stack_.back().pop_front();
   return result;
 }
@@ -417,7 +418,7 @@ auto GD::Bc::Details::VMState::pop_param_array() -> GD::Bc::ArrayValues
   if (!std::holds_alternative<ArrayValues>(param_stack_.back().front())) {
     Details::error(Msg::parameter_type_mismatch, "array");
   }
-  auto result(std::get<ArrayValues>(param_stack_.back().front()));
+  auto result(std::move(std::get<ArrayValues>(param_stack_.back().front())));
   param_stack_.back().pop_front();
   return result;
 }
@@ -881,8 +882,14 @@ auto GD::Bc::Details::InstructionPack::execute() -> std::pair<GD::Bc::Number, bo
         return vm_->call(std::get<Letter>(o1), std::get<Location>(o2));
       });
       break;
-    case Instruction::Opcode::return_:
-      return std::make_pair(get_op1_expr(), true);
+    case Instruction::Opcode::return_: {
+      // Returning ends this activation. No producer slot is read afterwards,
+      // so transfer the owned result without an extra shared-owner copy.
+      auto const index = get_offset_index(instrs_[pc_].op1());
+      auto& value = results_[index];
+      assert_error(value.has_value(), Msg::empty_result, index);  // NOLINT
+      return std::make_pair(std::move(std::get<Number>(*value)), true);
+    }
     case Instruction::Opcode::eof:
       assert(pc_ == instrs_.size() - 1);  // NOLINT
       return std::make_pair(Number(0), false);
