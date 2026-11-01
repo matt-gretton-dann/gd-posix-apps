@@ -1,0 +1,26 @@
+[
+  {
+    "os": "linux",
+    "file": "native44-linux.zip",
+    "sha256": "829946f88f299ea041940751926025aa15ed56c51626655792e2b37969e026e4",
+    "run_id": 41270803888,
+    "checked_invocations": 1130,
+    "confirmed_regressions": 1
+  },
+  {
+    "os": "macos",
+    "file": "native44-macos.zip",
+    "sha256": "4ff9a5d7a54441118ae47dfba3e5d247d5d09f441cfc50218b41ab3d164cea4d",
+    "run_id": 41270803888,
+    "checked_invocations": 1130,
+    "confirmed_regressions": 0
+  },
+  {
+    "os": "windows",
+    "file": "native44-windows.zip",
+    "sha256": "fd07fd8d25c462790197e64f8f24f61e504dc27267937e5f54c2796fda69e7c2",
+    "run_id": 41270803888,
+    "checked_invocations": 1130,
+    "confirmed_regressions": 1
+  }
+]

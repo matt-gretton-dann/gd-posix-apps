@@ -1,0 +1,17 @@
+from pathlib import Path
+import importlib.util,json,subprocess,hashlib
+repo=Path('/private/tmp/gd-posix-decimal-chunks');spec=importlib.util.spec_from_file_location('bench',repo/'src/bc/scripts/bench-bc.py');bench=importlib.util.module_from_spec(spec);spec.loader.exec_module(bench)
+root=Path('/private/tmp/gd-bc-197-current-experiments-counters');root.mkdir(exist_ok=False)
+roles=[('parent','/private/tmp/gd-bc-current-main-profile/build/src/bc/bc','a5c1cb1ad4051616afdce115b02ecc0247ad62f7'),('decimal','/private/tmp/gd-posix-decimal-chunks/build-profile/src/bc/bc','dd88b5cec60fc0796bea11998f547084db11f0fd'),('asymmetric','/private/tmp/gd-posix-asymmetric-order/build-profile/src/bc/bc','c73fb2a6ee86d1a0720c8e67ee4b8c620baede43')]
+records=[]
+for role,binary,revision in roles:
+ target=root/role;target.mkdir()
+ for case in bench.corpus('full'):
+  env=bench.environment();path=target/(case['name']+'.json');env['GD_BC_PROFILE_OUTPUT']=str(path)
+  child=subprocess.run([binary],input=case['program'].encode(),stdout=subprocess.PIPE,stderr=subprocess.PIPE,env=env,timeout=60);assert child.returncode==0 and not child.stderr,(role,case['name'])
+  assert bench.canonical_output(child.stdout)==bench.canonical_output(('\n'.join(case['expected'])+'\n').encode()),(role,case['name'])
+  data=json.loads(path.read_text());assert data['instrumented'] and data['total']['live_bytes']==0;assert data['total']['allocation_calls']==data['total']['deallocation_calls']
+  records.append({'role':role,'workload':case['name'],'checked':True,'profile':data})
+ print(role,'40 exact checks and EOF balance passed',flush=True)
+(root/'provenance.json').write_text(json.dumps({'schema':1,'harness_revision':'dd88b5cec60fc0796bea11998f547084db11f0fd','roles':[{'name':r,'source_revision':s,'binary':b,'binary_sha256':hashlib.sha256(Path(b).read_bytes()).hexdigest()} for r,b,s in roles],'scope':'Scoped counters only, fixed126, Release/profileON. No timing inference or RSS claim.'},indent=2)+'\n')
+(root/'checked-profiles.json').write_text(json.dumps(records,indent=2)+'\n');print('All120 checks passed',flush=True)
