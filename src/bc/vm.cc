@@ -35,12 +35,46 @@ __DISABLE_NARROWING_WARNING
   }
 
 namespace GD::Bc::Details {
+/** A borrowed instruction stream whose entry verification has completed.
+ * Construction is confined to the verifier and persistent verified owners.
+ * The source must outlive execution, as with the original borrowed executor.
+ */
+class VerifiedInstructions
+{
+public:
+  auto instructions() const -> Instructions const& { return *instructions_; }
+
+private:
+  friend struct VMState;
+  friend class FunctionCode;
+  explicit VerifiedInstructions(Instructions const& instructions) : instructions_(&instructions) {}
+  Instructions const* instructions_;
+};
+
+/** Persistent function code can be constructed only after body verification.
+ * Copying/replacing this owner preserves the proof; no mutable code view escapes.
+ */
+class FunctionCode
+{
+public:
+  FunctionCode(FunctionCode const&) = default;
+  FunctionCode(FunctionCode&&) noexcept = default;
+  auto operator=(FunctionCode const&) -> FunctionCode& = default;
+  auto operator=(FunctionCode&&) noexcept -> FunctionCode& = default;
+  auto view() const -> VerifiedInstructions { return VerifiedInstructions(instructions_); }
+
+private:
+  friend struct VMState;
+  explicit FunctionCode(Instructions instructions) : instructions_(std::move(instructions)) {}
+  Instructions instructions_;
+};
+
 /** \brief Hold virtual machine state.
  */
 struct VMState
 {
   /** \brief  Constructor.  */
-  VMState(std::ostream& out, std::ostream& err, bool save_specials);
+  VMState(std::ostream& out, std::ostream& err, bool save_specials, VM::ExecutionChecks checks);
 
   /** \brief  Get the appropriate output stream for \a stream.  */
   [[nodiscard]] auto stream(Instruction::Stream stream) const -> std::ostream&;
@@ -110,6 +144,12 @@ struct VMState
 
   /** \brief  Validate instruction bounds, result types and control-flow availability.  */
   void validate(Instructions const& instrs, bool function_body = false) const;
+  auto verify(Instructions const& instructions) const -> VerifiedInstructions
+  {
+    validate(instructions);
+    return VerifiedInstructions(instructions);
+  }
+  auto full_checks() const noexcept -> bool { return checks_ == VM::ExecutionChecks::full; }
 
 private:
   template<typename... Ts>
@@ -132,7 +172,7 @@ private:
   using Offset = Instruction::Offset;  ///< Offset from current instruction
   using NumType = Number::NumType;     ///< Number type
   using FunctionDefinition =
-    std::tuple<Instructions, VariableMask, Location>;  ///< Function definition.
+    std::tuple<FunctionCode, VariableMask, Location>;  ///< Function definition.
 
   static constexpr NumType default_base_ = 10;
   std::ostream& output_;                            ///< Stream for "normal output."
@@ -147,6 +187,7 @@ private:
   NumType obase_ = default_base_;                 ///< Output base, range: [2, base_)
   NumType scale_ = 0;                             ///< Scale, range: [0, base_)
   bool save_specials_;                            ///< Save specials on function entry?
+  VM::ExecutionChecks checks_;                    ///< Full diagnostic oracle or verified dispatch.
 };
 
 /** \brief  An executable instruction pack.
@@ -173,7 +214,7 @@ public:
    *  \param vm     VM state to modify
    *  \param instrs Instructions to hold.
    */
-  InstructionPack(VMState* vm, Instructions const& instrs);
+  InstructionPack(VMState* vm, VerifiedInstructions instrs);
 
   /** \brief  Execute the instruction pack
    *  \return Pair of returned value, and whether we should execute more instruction packs.
@@ -311,6 +352,8 @@ private:
 
   /** Validate the result in the current pc. */
   void validate_result(Instructions::size_type i) const;
+  template<bool FullChecks>
+  auto execute_impl() -> std::pair<Number, bool>;
 
   VMState* vm_;                 ///< Virtual Machine state
   Instructions const& instrs_;  ///< Instructions to execute
@@ -367,8 +410,9 @@ private:
 }  // namespace GD::Bc::Details
 
 // NOLINTNEXTLINE
-GD::Bc::Details::VMState::VMState(std::ostream& out, std::ostream& err, bool save_specials)
-    : output_(out), error_(err), save_specials_(save_specials)
+GD::Bc::Details::VMState::VMState(std::ostream& out, std::ostream& err, bool save_specials,
+                                  VM::ExecutionChecks checks)
+    : output_(out), error_(err), save_specials_(save_specials), checks_(checks)
 {
 }
 
@@ -430,7 +474,7 @@ void GD::Bc::Details::VMState::function(Letter func, Instructions::const_iterato
   Instructions instrs(begin, end);
   validate(instrs, true);
   functions_.at(static_cast<unsigned>(func)) =
-    std::make_optional(std::make_tuple(std::move(instrs), mask, loc));
+    std::make_optional(std::make_tuple(FunctionCode(std::move(instrs)), mask, loc));
 }
 
 auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc::Number
@@ -462,7 +506,7 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
   auto saved_ibase = ibase_;
   auto saved_obase = obase_;
 
-  InstructionPack fn(this, func_instructions);
+  InstructionPack fn(this, func_instructions.view());
   auto [result, cont] = fn.execute();
 
   /* Restore the locals. */
@@ -750,20 +794,26 @@ void GD::Bc::Details::VMState::validate(Instructions const& instrs, bool functio
   }
 }
 
-GD::Bc::Details::InstructionPack::InstructionPack(VMState* vm, Instructions const& instrs)
-    : vm_(vm), instrs_(instrs), results_(instrs.size())
+GD::Bc::Details::InstructionPack::InstructionPack(VMState* vm, VerifiedInstructions instrs)
+    : vm_(vm), instrs_(instrs.instructions()), results_(instrs_.size())
 {
   assert(vm_ != nullptr);  // NOLINT
 }
 
 auto GD::Bc::Details::InstructionPack::execute() -> std::pair<GD::Bc::Number, bool>
 {
+  return vm_->full_checks() ? execute_impl<true>() : execute_impl<false>();
+}
+
+template<bool FullChecks>
+auto GD::Bc::Details::InstructionPack::execute_impl() -> std::pair<GD::Bc::Number, bool>
+{
   for (; pc_ < instrs_.size(); ++pc_) {
     if (Details::have_been_interrupted.test(std::memory_order_relaxed)) {
       return std::make_pair(Number(0), true);
     }
     GD_BC_PROFILE_EVENT(Profile::Event::instructions_executed, 1);
-    auto i = pc_;
+    [[maybe_unused]] auto const i = pc_;
     switch (instrs_[pc_].opcode()) {
     case Instruction::Opcode::string:
       execute_unary([](Instruction::Operand const& o) {
@@ -898,8 +948,11 @@ auto GD::Bc::Details::InstructionPack::execute() -> std::pair<GD::Bc::Number, bo
       break;
     }
 
-    /* Validate the results.  */
-    validate_result(i);
+    // Entry verification proves the result kind and availability at each
+    // consumer. Retain the original second switch in the diagnostic oracle.
+    if constexpr (FullChecks) {
+      validate_result(i);
+    }
   }
 
   /* Fall off the end assume 'return (0);' */
@@ -1154,6 +1207,7 @@ auto GD::Bc::Details::operator<<(std::ostream& os, GD::Bc::Details::InstructionP
 
 void GD::Bc::Details::InstructionPack::validate_result(Index i) const
 {
+  GD_BC_PROFILE_EVENT(Profile::Event::result_validation_calls, 1);
   [[maybe_unused]] auto const& result = results_[i];
   switch (instrs_[i].opcode()) {
   case GD::Bc::Instruction::Opcode::eof:
@@ -1245,8 +1299,8 @@ void GD::Bc::Details::InstructionPack::validate_result(Index i) const
   }
 }
 
-GD::Bc::VM::VM(std::ostream& out, std::ostream& err, bool save_specials)
-    : state_(std::make_unique<Details::VMState>(out, err, save_specials))
+GD::Bc::VM::VM(std::ostream& out, std::ostream& err, bool save_specials, ExecutionChecks checks)
+    : state_(std::make_unique<Details::VMState>(out, err, save_specials, checks))
 {
 }
 
@@ -1258,8 +1312,8 @@ auto GD::Bc::VM::operator=(VM&&) noexcept -> VM& = default;
 
 auto GD::Bc::VM::execute(Instructions& instructions) -> bool
 {
-  state_->validate(instructions);
-  Details::InstructionPack instrs(state_.get(), instructions);
+  auto const verified = state_->verify(instructions);
+  Details::InstructionPack instrs(state_.get(), verified);
   // Restore the caller's handler before reporting interruption, including when
   // execution throws (for example, through an output stream's exception mask).
   auto const result = [&instrs]() {
