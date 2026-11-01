@@ -12,6 +12,7 @@
 #include <span>
 #include <stdexcept>
 
+#include "limb-schoolbook.hh"
 #include "limb-square.hh"
 #include "profiling.hh"
 
@@ -97,6 +98,10 @@ class LimbProduct
       }
     }
     GD_BC_PROFILE_EVENT(Profile::Event::basic_multiply_calls, 1);
+    if (LimbSchoolbook<Traits>::eligible(a.size(), b.size())) {
+      LimbSchoolbook<Traits>::multiply(a, b, result);
+      return;
+    }
     for (std::size_t i = 0; i < a.size(); ++i) {
       Wide carry = 0;
       std::size_t j = 0;

@@ -1,0 +1,61 @@
+from pathlib import Path
+import json,shutil,zipfile,hashlib
+root=Path('/private/tmp/gd-posix-decimal-chunks/docs/utilities/bc-206-decimal-input');target=root/'aligned';target.mkdir(exist_ok=True)
+for label,prefix,presets in [('all','gd-bc-206-aligned-all',('quick','full','holdout')),('bounded','gd-bc-206-aligned',('full','holdout'))]:
+ for preset in presets:
+  source=Path('/private/tmp/'+prefix+'-'+preset)
+  for name in ('manifest.json','summary.json','samples.csv'):shutil.copyfile(source/name,target/(label+'-'+preset+'-'+name))
+for name in ('build-manifest.json','implementations.json','compile_commands.json','multiply-threshold.hh'):
+ shutil.copyfile(Path('/private/tmp/gd-bc-206-aligned-release')/name,target/name)
+index=[]
+for osname in ('linux','macos','windows'):
+ p=Path('/private/tmp/bc-206-aligned-native-'+osname+'.zip');z=zipfile.ZipFile(p);rows=[]
+ for f in z.namelist():
+  if f.endswith('samples.jsonl'):rows += [json.loads(s) for s in z.read(f).decode().splitlines()]
+ assert all(r['checked'] for r in rows)
+ file='native-'+osname+'.zip';shutil.copyfile(p,target/file);index.append({'os':osname,'file':file,'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'run_id':41275892730,'checked_invocations':len(rows),'confirmed_regressions':z.read('summary.md').decode().count('confirmed regression')})
+(target/'native-artifacts.json').write_text(json.dumps(index,indent=2)+'\n')
+lines=['# Revised decimal input and bounded Apple arm64 alignment','',
+'Candidate `2cd685cb4f228d639d40a83ebd271a3d61f63e7d` versus local accepted',
+'`0868b4acd36d91a39a1d07c1aafb0808bda519cc`. Native base is `ad1b082`',
+'(full SHA in each manifest), whose production arithmetic/VM sources match',
+'0868b4a. The only later numeric source change is a guarded 64-byte function-',
+'entry alignment hint for Apple arm64 Clang; all other platforms keep their',
+'generic compiler policy. This does not introduce specialized arithmetic or',
+'assert a hardware cause. Initial and scalar-stage regressions remain archived.','',
+'All 120 quick, 1200 full and 1200 held-out invocations pass exact output,',
+'status, stderr and deadline checks. Nine seeded paired rounds follow one',
+'warm-up. The separately pre-bounded division/modulo batches use 27 pairs.',
+'Every raw row remains, including inconclusive intervals. No local compiler,',
+'unit test or profiling workload overlaps these timings. Compiler/library,',
+'Release flags, fixed split point 126, host and pinned Howard identities are',
+'recorded in the manifests; this shared host has no thermal/frequency isolation.','',
+'The all-class full decimal-input ratio is 0.145; held-out remains near 0.13.',
+'No full-set median is more than 3.5% slower. All-class held-out division is',
+'1.036 [0.973,1.112]. The earlier 27-pair held-out division batch is 1.063',
+'[1.049,1.078] and modulo 1.050 [1.037,1.058]. These remain inconclusive under',
+'the documented 5% material-regression policy; no neutral-performance claim',
+'or favorable-only replacement of the earlier batch is made.','',
+'Native run 41275892730 passes 1450 checked invocations on each OS with no',
+'confirmed paired/A/A regressions. Decimal input ratios are Linux 0.048,',
+'Windows 0.085 and macOS 0.151. macOS division 1.069 [0.954,1.120] and Windows',
+'modulo remain inconclusive. Verified raw ZIPs and SHA-256 digests are included.','',
+'Final source adoption is conditional on green checks for the reviewed head.',
+'Nondecimal grouping, buffered output and crossover decisions remain #206 work.','']
+for preset in ('full','holdout'):
+ lines += ['## '+preset.title(),'','| Workload | Candidate / parent [95%] | Candidate / Howard (medians) |','| --- | --- | --- |']
+ for w in json.loads((target/('all-'+preset+'-summary.json')).read_text())['workloads']:
+  r=w['candidate_over_reference']['gd-decimal-aligned'];lo,hi=r['ci95'];v=w['implementations'];h=v['gd-decimal-aligned']['median_seconds']/v['howard-7.0.3']['median_seconds'];lines.append('| `{}` | {:.3f} [{:.3f}, {:.3f}] | {:.3f} |'.format(w['name'],r['median_paired_ratio'],lo,hi,h))
+ lines.append('')
+(target/'README.md').write_text('\n'.join(lines))
+p=root/'README.md';old=p.read_text();marker='## Historical initial and scalar-stage evidence\n\n'
+if marker not in old:p.write_text('''# Decimal input stages
+
+The [revised candidate and complete measurements](aligned/README.md) retain
+large-input gains after repairing scalar construction and testing a bounded
+Apple arm64 function-entry alignment. All-class and bounded division intervals
+remain explicit; no neutral-performance claim is made. Adoption requires green
+checks for the reviewed head. Nondecimal grouping and buffered output remain.
+
+'''+marker+old)
+shutil.copyfile(__file__,target/'archive-evidence.py.txt');print('Archived revised alignment all-class and bounded measurements')

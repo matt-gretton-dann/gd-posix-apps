@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "harness_revision": "dd88b5cec60fc0796bea11998f547084db11f0fd",
+  "roles": [
+    {
+      "name": "parent",
+      "source_revision": "a5c1cb1ad4051616afdce115b02ecc0247ad62f7",
+      "binary": "/private/tmp/gd-bc-current-main-profile/build/src/bc/bc",
+      "binary_sha256": "f137c7f6e524eac8aab3f07a121103f43626c756d97088c39f187ab2b4c49fd9"
+    },
+    {
+      "name": "decimal",
+      "source_revision": "dd88b5cec60fc0796bea11998f547084db11f0fd",
+      "binary": "/private/tmp/gd-posix-decimal-chunks/build-profile/src/bc/bc",
+      "binary_sha256": "a662160b2990438954f5cec099e7b2cab89c081673953cf0644595206c0de173"
+    },
+    {
+      "name": "asymmetric",
+      "source_revision": "c73fb2a6ee86d1a0720c8e67ee4b8c620baede43",
+      "binary": "/private/tmp/gd-posix-asymmetric-order/build-profile/src/bc/bc",
+      "binary_sha256": "48d78fe2fcc5c1f9f8acacc4c3b1b548edfeff5e1cec4110e3809909db5bdee8"
+    }
+  ],
+  "scope": "Scoped counters only, fixed126, Release/profileON. No timing inference or RSS claim."
+}

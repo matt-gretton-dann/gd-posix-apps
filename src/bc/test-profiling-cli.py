@@ -79,6 +79,17 @@ class ProfilingCli(unittest.TestCase):
         self.assertEqual(counters['events']['karatsuba_multiply_calls'], 0)
         self.assertEqual(counters['events']['square_multiply_calls'], 0)
 
+    def test_blocked_products_count_as_schoolbook_leaves(self):
+        for digits in (100, 1000):
+            with self.subTest(digits=digits):
+                a, b = '7' * digits, '8' * digits
+                expected = str(int(a) * int(b))
+                counters = self.profile('a={};b={};r=a*b;r-{}\n'.format(a, b, expected),
+                                        '0\n')
+                blocked = counters['events']['blocked_multiply_calls']
+                self.assertGreater(blocked, 0)
+                self.assertLessEqual(blocked, counters['events']['basic_multiply_calls'])
+
     def test_shared_coefficient_square_dispatch(self):
         # Multi-limb operands avoid the single-limb multiply-accumulate path.
         for digits in (40, 2000):

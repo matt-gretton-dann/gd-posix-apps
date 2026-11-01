@@ -27,6 +27,7 @@
 #include "bc.hh"
 #include "digit-storage.hh"
 #include "limb-product.hh"
+#include "limb-schoolbook.hh"
 
 namespace GD::Bc {
 
@@ -116,6 +117,52 @@ public:
       digits_->push_back(static_cast<NumType>(num % base_));
       num /= static_cast<NumType>(base_);
     }
+  }
+
+  /** Populate coefficient limbs directly from validated decimal text.
+   * The caller supplies the sole radix-point position (or npos) and retains
+   * its decimal scale. Leading coefficient zeros need no storage; fractional
+   * trailing zeros remain part of the integer coefficient.
+   */
+  static auto from_decimal(std::string_view text, std::size_t point) -> BasicDigits
+  {
+    std::size_t first = 0;
+    while (first < text.size() && (text[first] == '0' || text[first] == '.')) {
+      ++first;
+    }
+    if (first == text.size()) {
+      return BasicDigits();
+    }
+    auto const decimal_digits =
+      text.size() - first - (point != std::string_view::npos && point >= first ? 1 : 0);
+    auto const count = decimal_digits / base_log10_ + (decimal_digits % base_log10_ != 0);
+    BasicDigits result;
+    result.copy_on_write();
+    result.digits_->resize(count, 0);
+    auto output = result.digits_->begin();
+    WideType coefficient = 0;
+    WideType weight = 1;
+    unsigned places = 0;
+    for (auto i = text.size(); i > first;) {
+      auto const c = text[--i];
+      if (c == '.') {
+        continue;
+      }
+      coefficient += WideType(c - '0') * weight;
+      if (++places == base_log10_) {
+        *output++ = static_cast<NumType>(coefficient);
+        coefficient = 0;
+        weight = 1;
+        places = 0;
+      }
+      else {
+        weight *= 10;
+      }
+    }
+    if (places != 0) {
+      *output = static_cast<NumType>(coefficient);
+    }
+    return result;
   }
 
   ~BasicDigits() = default;
@@ -1255,6 +1302,12 @@ private:
     result.copy_on_write();
     auto const result_size = (lhs_end - lhs_begin) + (rhs_end - rhs_begin) + 2;
     result.digits_->resize(result_size, 0);
+    if (Details::LimbSchoolbook<Traits>::eligible(lhs_end - lhs_begin, rhs_end - rhs_begin)) {
+      Details::LimbSchoolbook<Traits>::multiply(
+        std::span<NumType const>(lhs_begin, lhs_end), std::span<NumType const>(rhs_begin, rhs_end),
+        std::span<NumType>(result.digits_->begin(), result.digits_->size()));
+      return result;
+    }
     auto result_begin = result.digits_->begin();
 
     for (auto lhs_it = lhs_begin; lhs_it != lhs_end; ++lhs_it) {
@@ -1411,7 +1464,36 @@ public:
     assert(ibase >= 2);   // NOLINT
     assert(ibase <= 16);  // NOLINT
 
-    /* Construct the basic number a digit at a time, working out the scale when we see digits
+    if (s.size() == 1 && s.front() >= '0' && s.front() <= '9') {
+      // Single digits retain their base-independent value without chunk
+      // planning or temporary storage. Hexadecimal letters keep the decoder below.
+      digits_.mac(ibase, static_cast<NumType>(s.front() - '0'));
+      return;
+    }
+
+    if (ibase == 10) {  // NOLINT - decimal limbs match the input radix.
+      std::size_t point = std::string_view::npos;
+      bool decimal = true;
+      for (std::size_t i = 0; i < s.size(); ++i) {
+        if (s[i] == '.' && point == std::string_view::npos) {
+          point = i;
+        }
+        else if (s[i] < '0' || s[i] > '9') {
+          decimal = false;
+          break;
+        }
+      }
+      if (decimal) {
+        // Nondecimal forms retain the generic decoder contract. Keep the
+        // original fractional scale; no definition-time base is assumed.
+        scale_ =
+          point == std::string_view::npos ? NumType{0} : static_cast<NumType>(s.size() - point - 1);
+        digits_ = Details::BasicDigits<Traits>::from_decimal(s, point);
+        return;
+      }
+    }
+
+    /* Generic fallback: construct a digit at a time, working out scale for digits
      * after the radix point.
      *
      * Ultimately we want this to be digits_ * 10 ^ scale_.
@@ -1759,6 +1841,11 @@ public:
     sign_ = sign_ == rhs.sign_ ? Sign::positive : Sign::negative;
   }
 
+#if defined(__APPLE__) && defined(__aarch64__) && defined(__clang__)
+  // Keep this large hot function's entry alignment stable as decoders grow.
+  // Other platforms retain their compiler's normal alignment policy.
+  __attribute__((aligned(64)))
+#endif
   void divide(BasicNumber rhs, NumType target_scale)
   {
     if (rhs.is_zero()) {
