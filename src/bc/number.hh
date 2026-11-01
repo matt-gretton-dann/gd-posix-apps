@@ -379,13 +379,13 @@ public:
       // unsigned subtraction from the full length. A zero-sized first chunk
       // still advances layout by starting a new line.
       while (number.length() - p > line_length - line_pos - 1) {
-        os << number.substr(p, line_length - line_pos - 1) << "\\\n";
+        os << std::string_view(number).substr(p, line_length - line_pos - 1) << "\\\n";
         p += line_length - line_pos - 1;
         line_pos = 0;
       }
     }
     if (p != number.length()) {
-      os << number.substr(p);
+      os << std::string_view(number).substr(p);
     }
   }
 
@@ -425,20 +425,28 @@ public:
       os << "\\\n";
       digits_printed = 0;
     }
-    auto it = result.begin();
-    bool print = false;
-    while (result.end() - it > scale) {
-      if (*it != '0') {
-        print = true;
-      }
-      if (print) {
+    auto const whole_end =
+      result.end() - static_cast<std::ptrdiff_t>(std::min(std::size_t(scale), result.size()));
+    auto it = std::find_if(result.begin(), whole_end, [](char c) { return c != '0'; });
+    bool const print = it != whole_end;
+    while (it != whole_end) {
+      auto count =
+        std::min(static_cast<std::size_t>(whole_end - it), std::size_t(break_at - digits_printed));
+      if (os.width() != 0) {
+        // A caller-supplied field width historically applies to the first
+        // emitted character, rather than the complete coefficient chunk.
         os << *it;
-        if (++digits_printed == break_at) {
-          digits_printed = 0;
-          os << "\\\n";
-        }
+        count = 1;
       }
-      ++it;
+      else {
+        os.write(std::to_address(it), static_cast<std::streamsize>(count));
+      }
+      it += static_cast<std::ptrdiff_t>(count);
+      digits_printed += static_cast<unsigned>(count);
+      if (digits_printed == break_at) {
+        digits_printed = 0;
+        os << "\\\n";
+      }
     }
 
     if (!extensions_enabled() && !print) {
@@ -477,7 +485,8 @@ public:
         }
       }
       while (result.end() - it > break_at - digits_printed) {
-        os << result.substr(it - result.begin(), break_at - digits_printed) << "\\\n";
+        os << std::string_view(result).substr(it - result.begin(), break_at - digits_printed)
+           << "\\\n";
         // The loop and the scale invariant above bound the chunk by scale.
         scale = static_cast<NumType>(scale - (break_at - digits_printed));
         it += break_at - digits_printed;
@@ -485,7 +494,7 @@ public:
       }
       if (it != result.end()) {
         os << std::setfill('0') << std::right << std::setw(scale)
-           << result.substr(it - result.begin());
+           << std::string_view(result).substr(it - result.begin());
       }
     }
   }

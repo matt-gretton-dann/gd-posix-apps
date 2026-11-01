@@ -1,0 +1,21 @@
+Test project /private/tmp/gd-posix-batched-output/build-release
+    Start 191: bc/vm-lifetime
+1/8 Test #191: bc/vm-lifetime ...................   Passed    0.32 sec
+    Start 197: bc/components
+2/8 Test #197: bc/components ....................   Passed    0.57 sec
+    Start 199: bc/benchmark-ci
+3/8 Test #199: bc/benchmark-ci ..................   Passed    2.56 sec
+    Start 200: bc/benchmark-cli
+4/8 Test #200: bc/benchmark-cli .................   Passed    1.86 sec
+    Start 201: bc/cli
+5/8 Test #201: bc/cli ...........................   Passed    0.56 sec
+    Start 202: bc/verifier-offsets
+6/8 Test #202: bc/verifier-offsets ..............   Passed    0.72 sec
+    Start 203: bc/number-oracle
+7/8 Test #203: bc/number-oracle .................   Passed    0.22 sec
+    Start 205: bc/vm-cli
+8/8 Test #205: bc/vm-cli ........................   Passed    0.18 sec
+
+100% tests passed out of 8
+
+Total Test time (real) =   7.01 sec
