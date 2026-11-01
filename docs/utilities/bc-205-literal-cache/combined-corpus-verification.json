@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "combined_source_revision": "036b14e9a94a11b28e4ff61df3f83e19b9ededa3",
+  "harness_sha256": "d85a1984ea1d1bf054444d42373041800918da8ac436e74f7d9fff0569ab7f8d",
+  "checks": [
+    {
+      "parent": "f6031076e726c2184fc720698d89516ee3df0ede",
+      "preset": "quick",
+      "retained": 39,
+      "combined": 40
+    },
+    {
+      "parent": "f6031076e726c2184fc720698d89516ee3df0ede",
+      "preset": "full",
+      "retained": 39,
+      "combined": 40
+    },
+    {
+      "parent": "f6031076e726c2184fc720698d89516ee3df0ede",
+      "preset": "holdout",
+      "retained": 39,
+      "combined": 40
+    },
+    {
+      "parent": "f95455e053f5aef12a436ff2a1131eadedc780d6",
+      "preset": "quick",
+      "retained": 37,
+      "combined": 40
+    },
+    {
+      "parent": "f95455e053f5aef12a436ff2a1131eadedc780d6",
+      "preset": "full",
+      "retained": 37,
+      "combined": 40
+    },
+    {
+      "parent": "f95455e053f5aef12a436ff2a1131eadedc780d6",
+      "preset": "holdout",
+      "retained": 37,
+      "combined": 40
+    }
+  ]
+}

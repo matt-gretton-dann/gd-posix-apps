@@ -235,6 +235,13 @@ def corpus(preset="full", selected=None, listing=False, seed=197200):
             "a={}\nfor(i=0;i<{};i++) c=a*a\nc".format(value, count),
             lambda value=value: int(value) ** 2,
             {"digits": digits, "iterations": count, "shape": "aliased"})
+    # A single persistent literal executes repeatedly, including COW mutation
+    # of each returned snapshot. No extra RNG draws change earlier programs.
+    digits, count = dimension(2000), iterations(2000)
+    value = "7" * digits
+    add("literal_repeat_{}d_x{}".format(digits, count), "literal_repeat",
+        "for(i=0;i<{};i++) {{\na={}\na+=1\n}}\na".format(count, value),
+        lambda: int(value) + 1, {"digits": digits, "iterations": count})
     if selected:
         missing = set(selected) - set(known)
         if missing:

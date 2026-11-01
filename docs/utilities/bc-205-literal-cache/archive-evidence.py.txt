@@ -1,0 +1,85 @@
+from pathlib import Path
+import json,shutil,hashlib,zipfile
+root=Path('/private/tmp/gd-posix-literal-cache/docs/utilities/bc-205-literal-cache');root.mkdir(exist_ok=True)
+(root/'.gitattributes').write_text('*.csv -text whitespace=cr-at-eol\n')
+for preset in ('full','holdout'):
+ source=Path('/private/tmp/gd-bc-205-cache-'+preset)
+ for name in ('manifest.json','summary.json','samples.csv'):shutil.copyfile(source/name,root/(preset+'-'+name))
+for role,source in [('candidate','/private/tmp/gd-bc-205-cache-release'),('parent','/private/tmp/gd-bc-202-integrated-release')]:shutil.copyfile(Path(source)/'build-manifest.json',root/(role+'-build-manifest.json'))
+for name in ('provenance.json','checked-profiles.json'):shutil.copyfile(Path('/private/tmp/gd-bc-205-cache-counters')/name,root/('counter-'+name))
+shutil.copyfile('/private/tmp/gd-bc-205-cache-sizes/sizes.json',root/'object-sizes.json')
+shutil.copyfile('/private/tmp/bc-205-size-probe.py',root/'size-probe.py.txt')
+shutil.copyfile('/private/tmp/bc-205-counters.py',root/'counter-collector.py.txt')
+index=[]
+for osname in ('linux','macos','windows'):
+ source=Path('/private/tmp/bc-205-native33-'+osname+'.zip');z=zipfile.ZipFile(source);n=0
+ for name in z.namelist():
+  if name.endswith('samples.jsonl'):
+   rows=[json.loads(s) for s in z.read(name).decode().splitlines()];assert all(r['checked'] for r in rows);n+=len(rows)
+ for role,sha in [('base','a520f2a0db29858643dd0d24eb2470329d56ab56'),('candidate','f95455e053f5aef12a436ff2a1131eadedc780d6')]:assert json.loads(z.read(role+'/implementations.json'))['implementations'][0]['metadata']['source_revision']==sha
+ assert 'confirmed regression' not in z.read('summary.md').decode()
+ target='native33-'+osname+'.zip';shutil.copyfile(source,root/target)
+ index.append({'os':osname,'file':target,'sha256':hashlib.sha256(source.read_bytes()).hexdigest(),'checked_invocations':n,'run_id':41267514425,'confirmed_regression':False})
+(root/'native-artifacts.json').write_text(json.dumps(index,indent=2)+'\n')
+lines=['# Bounded execution-time literal cache — #205', '',
+'Parent `58075b41a293a7d3f4cfbad308ff75997702e496` has identical production C++/CMake',
+'as accepted main `a520f2a0db29858643dd0d24eb2470329d56ab56`. Candidate is',
+'`f95455e053f5aef12a436ff2a1131eadedc780d6`. Both immutable recipes use fixed',
+'126, Release -O3/-DNDEBUG, thin LTO, Apple Clang 21/libc++ header 220106 on the',
+'recorded Apple M1/macOS 27.2 host. Manifests retain commands and binary hashes.',
+'Pinned native Howard 7.0.3 is the competitive reference. No instrumented binary',
+'is timed; no local build/test/profile overlaps the serial experiments.', '',
+'All 111 quick, 1,110 full and 1,110 held-out invocations pass exact independent',
+'output/status/stderr/deadline gates. Each full/held workload has one checked',
+'warm-up and nine paired measured rounds, seeded interleaving and 2,000 bootstrap',
+'resamples. Full seed 197200 and held-out dimensions/seed 197201 remain distinct.',
+'The 37-case generator appends one repeated large literal without changing older',
+'seeded operands. No aggregate or exclusions hide losing classes. The workstation',
+'has no CPU/frequency/thermal isolation; these intervals do not promise behavior',
+'on another host. Native run 33 remains a separately labeled experiment.', '',
+'Correctness: test-first runtime-base/fraction/hex/redefinition/snapshot/operand',
+'replacement tests pass, followed by populated-cache instruction copy/move tests.',
+'All 158 Release bc cases (582,414 assertions), 18 extensions-disabled ASan/UBSan',
+'VM/instruction cases (5,194 assertions), 15 sanitizer CLI cases, seven profile',
+'checks and eight CLI groups pass. Function activations borrow persistent code;',
+'instruction copies own independent memos. Serialize execution of one code vector.', '',
+'## Counters and memory costs', '',
+'All 74 separate full-corpus diagnostic runs pass and balance selected storage',
+'at EOF. Counter binaries and exact source identities are recorded separately;',
+'elapsed diagnostic times are not performance evidence. The size probe uses',
+'each immutable recipe\'s actual include/flag context.', '',
+'Instruction grows from 104 to 112 bytes on this 64-bit host; Number stays 40.',
+'Each allocated memo requests 48 payload bytes, excluding allocator metadata.',
+'Base misses replace the Number in place rather than allocating another memo.',
+'These scoped requested-byte counters are not process malloc traffic or RSS.', '',
+'| Workload | Conversions before / after | Memo allocations | Selected peak before / after |',
+'| --- | --- | --- | --- |']
+profiles=Path('/private/tmp/gd-bc-205-cache-counters')
+for case in ('loop_1000000','calls_200000','literal_repeat_2000d_x2000','ibase_literal_flip_20000','frontend_definitions_2000'):
+ a=json.loads((profiles/'parent'/(case+'.json')).read_text());b=json.loads((profiles/'candidate'/(case+'.json')).read_text())
+ lines.append('| `{}` | {} / {} | {} | {} / {} |'.format(case,a['events']['literal_conversions'],b['events']['literal_conversions'],b['allocations']['literals']['allocation_calls'],a['total']['peak_live_bytes'],b['total']['peak_live_bytes']))
+lines.extend(['',
+'Zero/one/single-digit integers need no memo allocation. General expression',
+'folding is not performed. Bounded interning is not selected: measured hot small',
+'constants already use direct integer construction, while the repeated large',
+'literal has one persistent memo. The present corpus does not demonstrate a',
+'material benefit from pooling duplicate large literal sites; a pool adds lookup,',
+'ownership and invalidation costs. Revisit only with measured duplicate-site',
+'workloads. This decision does not claim interning can never help.', '',
+'## Native results and limits', '',
+'All three verified native run-33 artifacts have no confirmed paired/A/A',
+'regression. Loop ratios are Linux .831, macOS .848 and Windows .831. Repeated',
+'large-literal ratios are .003/.006/.008. Windows call .943 [.937,1.190] remains',
+'inconclusive; startup is uncalibrated. Exact artifacts, hashes, source revisions',
+'and per-OS checked invocation counts remain beside the report.', ''])
+for preset in ('full','holdout'):
+ summary=json.loads((root/(preset+'-summary.json')).read_text())
+ lines.extend(['## '+preset.title(), '', '| Workload | Candidate / parent [95%] | Candidate / Howard (ratio of medians) |', '| --- | --- | --- |'])
+ for row in summary['workloads']:
+  r=row['candidate_over_reference']['gd-literal-cache'];lo,hi=r['ci95'];impl=row['implementations'];competitive=impl['gd-literal-cache']['median_seconds']/impl['howard-7.0.3']['median_seconds']
+  lines.append('| `{}` | {:.3f} [{:.3f}, {:.3f}] | {:.3f} |'.format(row['name'],r['median_paired_ratio'],lo,hi,competitive))
+ lines.append('')
+(root/'README.md').write_text('\n'.join(lines).rstrip()+'\n')
+shutil.copyfile(__file__,root/'archive-evidence.py.txt')
+print('Archived cache evidence',root)
+print(index)
