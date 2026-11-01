@@ -21,12 +21,13 @@ class ProfilingCli(unittest.TestCase):
                               stderr=subprocess.PIPE, universal_newlines=True,
                               env=environment, timeout=5)
 
-    def profile(self, program, expected):
+    def profile(self, program, expected, numeric_continuations=False):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / 'profile \u03bb.json'
             result = self.invoke(program, output)
             self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertEqual(result.stdout, expected)
+            actual = result.stdout.replace('\\\n', '') if numeric_continuations else result.stdout
+            self.assertEqual(actual, expected)
             self.assertEqual(result.stderr, '')
             counters = json.loads(output.read_text(encoding='utf-8'))
         self.assertEqual(counters['schema'], 1)
@@ -94,7 +95,7 @@ class ProfilingCli(unittest.TestCase):
                     rhs = ('-' if right_sign < 0 else '') + decimal(b, sb)
                     expected = ('-' if left_sign != right_sign else '') + decimal(quotient, places)
                     program = 'scale={}\n({})/({})\n'.format(places, lhs, rhs)
-                    counters = self.profile(program, expected + '\n')
+                    counters = self.profile(program, expected + '\n', numeric_continuations=True)
                     events = counters['events']
                     width = len(str(counters['limb_base'])) - 1
                     self.assertEqual(events['division_requests'], 1)
