@@ -1,0 +1,112 @@
+{
+  "builder_sha256": "7b08cb97d36f0e57e28e166b3cb388573b36ad81582cdfeb81ec7ef66500c3bc",
+  "commands": [
+    {
+      "argv": [
+        "git",
+        "clone",
+        "--no-hardlinks",
+        "--no-checkout",
+        "/Users/mgrettondann/repos/gd-posix-apps",
+        "/private/tmp/gd-bc-368-base-release/source"
+      ],
+      "cwd": "/private/tmp/gd-bc-368-base-release",
+      "log": "command-001.log",
+      "returncode": 0
+    },
+    {
+      "argv": [
+        "git",
+        "checkout",
+        "--detach",
+        "96d900b8e66c299d35e7a93c63b7fb5ef5131654"
+      ],
+      "cwd": "/private/tmp/gd-bc-368-base-release/source",
+      "log": "command-002.log",
+      "returncode": 0
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/private/tmp/gd-bc-368-base-release/source",
+      "log": "command-003.log",
+      "returncode": 0
+    },
+    {
+      "argv": [
+        "/usr/bin/cc",
+        "--version"
+      ],
+      "cwd": "/private/tmp/gd-bc-368-base-release",
+      "log": "command-004.log",
+      "returncode": 0
+    },
+    {
+      "argv": [
+        "/usr/bin/c++",
+        "--version"
+      ],
+      "cwd": "/private/tmp/gd-bc-368-base-release",
+      "log": "command-005.log",
+      "returncode": 0
+    },
+    {
+      "argv": [
+        "cmake",
+        "-S",
+        "/private/tmp/gd-bc-368-base-release/source",
+        "-B",
+        "/private/tmp/gd-bc-368-base-release/build",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_TESTING=OFF",
+        "-DENABLE_BC_PROFILE=OFF",
+        "-DENABLE_BC_COVERAGE=OFF",
+        "-DENABLE_NON_POSIX_EXTENSIONS=ON",
+        "-DBC_MULTIPLY_SPLIT_POINT=126",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DCMAKE_C_COMPILER:FILEPATH=/usr/bin/cc",
+        "-DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/c++",
+        "-G",
+        "Ninja"
+      ],
+      "cwd": "/private/tmp/gd-bc-368-base-release",
+      "log": "command-006.log",
+      "returncode": 0
+    },
+    {
+      "argv": [
+        "cmake",
+        "--build",
+        "/private/tmp/gd-bc-368-base-release/build",
+        "--config",
+        "Release",
+        "--target",
+        "bc",
+        "--parallel",
+        "2",
+        "--verbose"
+      ],
+      "cwd": "/private/tmp/gd-bc-368-base-release",
+      "log": "command-007.log",
+      "returncode": 0
+    },
+    {
+      "argv": [
+        "/usr/bin/c++",
+        "-std=c++20",
+        "-E",
+        "-P",
+        "/private/tmp/gd-bc-368-base-release/standard-library-probe.cc"
+      ],
+      "cwd": "/private/tmp/gd-bc-368-base-release",
+      "log": "command-008.log",
+      "returncode": 0
+    }
+  ],
+  "helper_sha256": "2c30c947a8fca4c0dfbff92d2cb8a259c4fee353895980e8ba1652abec27b551",
+  "schema": 1,
+  "status": "built; run checked corpus before timing"
+}

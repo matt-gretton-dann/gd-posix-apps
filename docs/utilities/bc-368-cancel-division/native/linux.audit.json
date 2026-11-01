@@ -1,0 +1,10 @@
+{
+  "host": "linux",
+  "source": {
+    "base": "96d900b8e66c299d35e7a93c63b7fb5ef5131654",
+    "candidate": "fe61ffb515b0055e2a6c371abb51a6f287621873"
+  },
+  "checked": 2100,
+  "confirmed": [],
+  "artifact_sha256": "be790334a9549076ab81cb03abc572ffb35294ca4dd74a08336110a486032e60"
+}

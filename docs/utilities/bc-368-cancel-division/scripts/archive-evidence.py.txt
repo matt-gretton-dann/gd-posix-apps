@@ -1,0 +1,58 @@
+"""Preserve checked division experiment artifacts without relabeling source."""
+import hashlib
+import json
+from pathlib import Path
+import shutil
+import subprocess
+import zipfile
+
+repo=Path('/private/tmp/gd-posix-cancel-division')
+root=repo/'docs/utilities/bc-368-cancel-division'
+assert Path('/private/tmp/bc-368-paired-release/complete.json').is_file()
+assert not Path('/private/tmp/bc-368-paired-release/failure.json').exists()
+root.mkdir(parents=True,exist_ok=False)
+def digest(data):return hashlib.sha256(data).hexdigest()
+def copy(source,target):
+ p=root/target;p.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(source,p)
+def archive(source,target):
+ with zipfile.ZipFile(root/target,'w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+  for p in sorted(Path(source).rglob('*')):
+   if p.is_file():z.write(p,p.relative_to(source).as_posix())
+for name,path in [('paired-release','bc-368-paired-release'),('software-counters','bc-368-work-counters'),('native-resources','bc-368-native-resources')]:
+ archive(Path('/private/tmp')/path,name+'.zip')
+for host in ('linux','macos','windows'):
+ for suffix in ('.zip','.audit.json'):
+  copy('/private/tmp/bc-368-fe61-native-'+host+suffix,'native/'+host+suffix)
+for name in ('base','candidate'):
+ source=Path('/private/tmp/gd-bc-368-'+name+'-release')
+ for p in sorted(source.glob('*')):
+  if p.is_file():copy(p,'recipes/'+name+'-release/'+p.name)
+ for p in sorted((source/'logs').glob('*')):
+  if p.is_file():copy(p,'recipes/'+name+'-release/logs/'+p.name)
+copy('/private/tmp/bc-217-pinned-howard.json','recipes/howard.json')
+for name in ('run-paired','collect-counters','collect-rss','audit-paired','audit-native'):
+ copy('/private/tmp/bc-368-'+name+'.py','scripts/'+name+'.py.txt')
+copy(__file__,'scripts/archive-evidence.py.txt')
+copy('/private/tmp/bc-368-evidence-README.md','README.md')
+(root/'.gitattributes').write_text('* -text\n*.log whitespace=-blank-at-eol,-blank-at-eof\n*.txt whitespace=-blank-at-eol,-blank-at-eof\n')
+for name in ('release','asan'):copy('/private/tmp/bc-368-library-core-'+name+'.log','validation/library-core-'+name+'.log')
+for p in sorted(Path('/private/tmp').glob('bc-368-asan-*.log')):copy(p,'validation/'+p.name)
+for name in ('bc-368-test-first-edd-linux.log','bc-368-expanded-harness-tests.log','bc-368-expanded-harness-python39.log','bc-368-expanded-native-policy-tests.log','bc-368-expanded-native-policy-python39.log'):
+ copy('/private/tmp/'+name,'validation/'+name)
+library=Path('/private/tmp/gd-bc-217-portable-v1-release/source/src/bc/math-library.bc')
+copy(library,'sources/math-library.bc.txt')
+assert digest(library.read_bytes())=='e4095342fc587ec43f964f9a6314b4a68a1762cac15b2d0a3016f34fd4565de7'
+inventory=[]
+for revision in ('96d900b8e66c299d35e7a93c63b7fb5ef5131654','7d538de7813d024995465fc3b98334851a7fbcb3','fe61ffb515b0055e2a6c371abb51a6f287621873'):
+ for name in ('number.hh','scripts/bench-bc.py','scripts/profile-bc.py','scripts/benchmark-math-ci.py','scripts/build-gd-bc.py','scripts/build-bc-comparators.py'):
+  data=subprocess.check_output(['git','-C',str(repo),'show',revision+':src/bc/'+name])
+  sha=digest(data);target='sources/'+Path(name).name+'-'+sha+'.txt'
+  (root/target).write_bytes(data)
+  inventory.append(dict(revision=revision,path='src/bc/'+name,sha256=sha,archived_as=target))
+(root/'source-inventory.json').write_text(json.dumps(inventory,indent=2)+'\n')
+# Write the reviewed interpretation separately after auditing every class.
+entries={p.relative_to(root).as_posix():digest(p.read_bytes()) for p in sorted(root.rglob('*')) if p.is_file() and p.name!='sha256.json'}
+(root/'sha256.json').write_text(json.dumps(entries,indent=2,sort_keys=True)+'\n')
+for p in root.rglob('*.zip'):
+ with zipfile.ZipFile(p) as z:assert z.testzip() is None
+print(len(entries),'payloads preserved')

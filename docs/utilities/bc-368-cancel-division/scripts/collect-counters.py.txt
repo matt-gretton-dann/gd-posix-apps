@@ -1,0 +1,79 @@
+"""Collect checked project allocation/work counters; never timing evidence."""
+import hashlib
+import importlib.util
+import json
+import os
+from pathlib import Path
+import subprocess
+import time
+
+SCRIPTS = Path('/private/tmp/gd-posix-cancel-division/src/bc/scripts')
+spec = importlib.util.spec_from_file_location('bench', str(SCRIPTS / 'bench-bc.py'))
+bench = importlib.util.module_from_spec(spec);spec.loader.exec_module(bench)
+root = Path('/private/tmp/bc-368-work-counters');root.mkdir(exist_ok=False)
+programs = root / 'workloads';programs.mkdir()
+library = Path('/private/tmp/gd-bc-217-portable-v1-release/source/src/bc/math-library.bc')
+library_hash = bench.digest_file(library)
+assert library_hash == 'e4095342fc587ec43f964f9a6314b4a68a1762cac15b2d0a3016f34fd4565de7'
+cases, replay = bench.replay_corpus(Path('/private/tmp/bc-217-frozen-v1-math/full-prepared'), 'math')
+cases += [case for case in bench.corpus('full') if case['group'].startswith('divide_scaled_')]
+roles = [dict(name='base', revision='96d900b8e66c299d35e7a93c63b7fb5ef5131654',
+              source=Path('/private/tmp/gd-bc-368-base-release/source'),
+              build=Path('/private/tmp/gd-bc-368-base-profile')),
+         dict(name='candidate', revision='7d538de7813d024995465fc3b98334851a7fbcb3',
+              source=Path('/private/tmp/gd-posix-cancel-division'),
+              build=Path('/private/tmp/gd-posix-cancel-division/build-profile'))]
+manifest = dict(purpose='project-tagged allocation/work attribution, not process malloc/RSS or speed',
+                instrumented=True, performance_acceptance=False, replayed_math=replay,
+                collector_sha256=bench.digest_file(__file__), harness_sha256=bench.digest_file(SCRIPTS/'bench-bc.py'),
+                ordinary_library_sha256=library_hash, roles=[], cases=[], status='incomplete')
+for role in roles:
+    target = root / role['name'];target.mkdir()
+    binary = role['build'] / 'src/bc/bc'
+    number = role['source'] / 'src/bc/number.hh'
+    committed = subprocess.check_output(['git', '-C', str(role['source']), 'show', role['revision']+':src/bc/number.hh'])
+    assert number.read_bytes() == committed
+    cache = role['build'] / 'CMakeCache.txt'
+    assert 'ENABLE_BC_PROFILE:BOOL=ON' in cache.read_text()
+    (target/'CMakeCache.txt').write_bytes(cache.read_bytes())
+    manifest['roles'].append(dict(name=role['name'], runtime_source=role['revision'],
+        number_hh_sha256=bench.digest_file(number), binary=str(binary), binary_sha256=bench.digest_file(binary),
+        cache_sha256=bench.digest_file(cache), source_status=subprocess.check_output(
+            ['git','-C',str(role['source']),'status','--porcelain'],text=True),
+        scope='compiled runtime file verified; candidate includes separately listed benchmark/test changes'))
+    role['binary'] = binary
+bench.write_json(root/'manifest.json',manifest)
+deadline = time.monotonic() + 1200
+try:
+    for case in cases:
+        name = case['name']
+        payload = case['program'].encode('utf-8');oracle = bench.oracle_payload(case)
+        (programs/(name+'.bc')).write_bytes(payload);(programs/(name+'.expected')).write_bytes(oracle)
+        row = dict(name=name,parameters=case['parameters'],group=case['group'],
+                   program_sha256=hashlib.sha256(payload).hexdigest(),oracle_sha256=hashlib.sha256(oracle).hexdigest(),roles={})
+        for role in roles:
+            assert bench.digest_file(library) == library_hash
+            output = root/role['name']/(name+'.json')
+            environment = {k:v for k,v in bench.environment().items() if not k.startswith('GD_BC_PROFILE_')}
+            environment['GD_BC_PROFILE_OUTPUT'] = str(output)
+            argv = [str(role['binary'])] + ([str(library)] if 'oracle' in case else [])
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:raise RuntimeError('counter experiment exhausted total deadline')
+            result = subprocess.run(argv,input=payload,stdout=subprocess.PIPE,stderr=subprocess.PIPE,
+                                    env=environment,timeout=min(120,remaining))
+            if result.returncode or result.stderr:
+                raise RuntimeError(name+' failed '+str(result.returncode)+' '+result.stderr.decode(errors='replace')[:500])
+            bench.check_output(case,bench.canonical_output(result.stdout),role['name']+'/'+name)
+            counters = json.loads(output.read_text())
+            assert counters['instrumented'] is True and counters['total']['live_bytes'] == 0
+            assert counters['total']['allocation_calls'] == counters['total']['deallocation_calls']
+            row['roles'][role['name']] = dict(checked=True,counters=output.name,
+                 output_sha256=hashlib.sha256(result.stdout).hexdigest(),output_bytes=len(result.stdout))
+        manifest['cases'].append(row);bench.write_json(root/'manifest.json',manifest)
+        print(name,flush=True)
+    manifest['status']='all instrumented observations checked; no speed acceptance'
+except BaseException as error:
+    manifest['failure']=str(error)
+    raise
+finally:
+    bench.write_json(root/'manifest.json',manifest)
