@@ -1,0 +1,4 @@
+* -text
+*.log whitespace=-blank-at-eol,-blank-at-eof
+*.csv whitespace=cr-at-eol
+*.txt whitespace=-blank-at-eol,-blank-at-eof

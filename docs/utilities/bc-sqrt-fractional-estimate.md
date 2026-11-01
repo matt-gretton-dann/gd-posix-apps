@@ -4,6 +4,16 @@ Refs #212 and #197. This experiment changes the initial estimate separately
 from precision growth. Working precision, exact Newton steps, termination and
 final truncation retain the #349 rules.
 
+PR #355 is accepted at source `aff408d` after integration with the forward
+decimal kernel and expanded corpus. All fourteen checks, 3600 matched local
+timing checks, 300 separate RSS checks and 6000 native checked invocations pass;
+the native audit finds no confirmed regression. Complete final recipes,
+intervals, memory costs and raw ZIPs are in
+[`bc-212-fractional-estimate/accepted`](bc-212-fractional-estimate/accepted/README.md).
+The earlier Linux decimal regressions remain preserved under `initial` and
+`expanded-native`; their mechanism is unproven. Precision growth and capacity
+reuse remain outstanding work under issue #212.
+
 For a nonzero coefficient with P decimal digits and input scale S, use
 `10^floor((P-S)/2)` as the initial power. The former estimate clamps negative
 exponents to zero, starting at one even for tiny fractions. For negative
@@ -28,6 +38,5 @@ Separate diagnostic builds record Newton iterations, summed working scales
 and Number division request coefficient dimensions before normalization.
 Release timing and fresh-process RSS must be measured separately against the
 actual integrated baseline; diagnostic elapsed times are not speed evidence.
-This candidate remains an experiment until full/held-out correctness, local
-measurements and exact-source native checks pass. Precision growth itself
-remains a separate #212 experiment.
+Those checks passed for the integrated accepted source identified above.
+Precision growth itself remains a separate #212 experiment.
