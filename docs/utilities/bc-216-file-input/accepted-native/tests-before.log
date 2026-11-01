@@ -1,0 +1,41 @@
+...s........FEF......F
+======================================================================
+ERROR: test_file_transport_preserves_argv_and_closes_stdin (__main__.PairedStatistics.test_file_transport_preserves_argv_and_closes_stdin)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-file-input-corpus/src/bc/test-benchmark-cli.py", line 278, in test_file_transport_preserves_argv_and_closes_stdin
+    result = module.run_checked({'name': 'fake',
+                                 'argv': [sys.executable, str(driver)]}, case, 3, path)
+TypeError: run_checked() takes 3 positional arguments but 4 were given
+
+======================================================================
+FAIL: test_file_class_has_an_independent_integer_oracle (__main__.PairedStatistics.test_file_class_has_an_independent_integer_oracle)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-file-input-corpus/src/bc/test-benchmark-cli.py", line 257, in test_file_class_has_an_independent_integer_oracle
+    self.assertEqual(len(cases), 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_file_transport_rejects_missing_or_wrong_artifact (__main__.PairedStatistics.test_file_transport_rejects_missing_or_wrong_artifact)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-file-input-corpus/src/bc/test-benchmark-cli.py", line 287, in test_file_transport_rejects_missing_or_wrong_artifact
+    with self.assertRaisesRegex(module.BenchmarkError, 'artifact'):
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: BenchmarkError not raised
+
+======================================================================
+FAIL: test_transport_rejects_unknown_mode (__main__.PairedStatistics.test_transport_rejects_unknown_mode)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-file-input-corpus/src/bc/test-benchmark-cli.py", line 300, in test_transport_rejects_unknown_mode
+    with self.assertRaisesRegex(module.BenchmarkError, 'input mode'):
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: BenchmarkError not raised
+
+----------------------------------------------------------------------
+Ran 22 tests in 2.616s
+
+FAILED (failures=3, errors=1, skipped=1)

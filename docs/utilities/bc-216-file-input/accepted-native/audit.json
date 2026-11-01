@@ -1,0 +1,69 @@
+{
+  "workflow_run": 41312677357,
+  "checks": "All fourteen exact-head checks pass",
+  "rows": [
+    {
+      "os": "linux",
+      "checked": 1750,
+      "identities": {
+        "base": "a721a1a85f9dc5947836741787904f8e7952a4a8",
+        "candidate": "2819b02d55836f935f94aa0bf2a47205efa2d9a3"
+      },
+      "confirmed": [],
+      "selected": [
+        "| full | paired | `loop_1000000` | 0.984 [0.9578955529220858, 0.9975481051643682] | pass |",
+        "| full | paired | `calls_200000` | 1.002 [0.9861264793654837, 1.0322903704400799] | pass |",
+        "| full | paired | `array_200000` | 0.989 [0.9706036751688912, 1.007841626974421] | pass |",
+        "| full | paired | `frontend_definitions_2000` | 0.993 [0.9795211287801919, 1.000643783387411] | pass |",
+        "| full | paired | `file_statements_20000` | 0.997 [0.9722883014739205, 1.009767431861198] | pass |"
+      ],
+      "sha256": "6d195ee99f2ad1fa06352581a4b3528b7e9c27622215f1ca09b1572a8ab9501d",
+      "harness_sha256": "33e839927a95d943e1a1ffc088fba17cb1883a8511c5bc8d72cdb73288a34cb6",
+      "harness_newlines": "LF",
+      "file_mode_checked": true,
+      "staged_artifacts_verified": 140
+    },
+    {
+      "os": "macos",
+      "checked": 1750,
+      "identities": {
+        "base": "a721a1a85f9dc5947836741787904f8e7952a4a8",
+        "candidate": "2819b02d55836f935f94aa0bf2a47205efa2d9a3"
+      },
+      "confirmed": [],
+      "selected": [
+        "| full | paired | `loop_1000000` | 1.001 [0.8869012428434228, 1.121475608184353] | inconclusive-noisy |",
+        "| full | paired | `calls_200000` | 1.010 [0.6555497037363934, 1.138393560831367] | inconclusive-noisy |",
+        "| full | paired | `array_200000` | 1.042 [0.9906499675720024, 1.2697105333951335] | inconclusive-noisy |",
+        "| full | paired | `frontend_definitions_2000` | 0.979 [0.820269125334784, 1.3286793370961107] | inconclusive-noisy |",
+        "| full | paired | `file_statements_20000` | 1.038 [0.8688245090200652, 1.3864041769013273] | inconclusive-noisy |"
+      ],
+      "sha256": "fe9be4ef06600ce61e22eb494e01e1767d8550de0576ef31c05800971aac196b",
+      "harness_sha256": "33e839927a95d943e1a1ffc088fba17cb1883a8511c5bc8d72cdb73288a34cb6",
+      "harness_newlines": "LF",
+      "file_mode_checked": true,
+      "staged_artifacts_verified": 140
+    },
+    {
+      "os": "windows",
+      "checked": 1750,
+      "identities": {
+        "base": "a721a1a85f9dc5947836741787904f8e7952a4a8",
+        "candidate": "2819b02d55836f935f94aa0bf2a47205efa2d9a3"
+      },
+      "confirmed": [],
+      "selected": [
+        "| full | paired | `loop_1000000` | 0.967 [0.9411946249701998, 1.0058012587886405] | pass |",
+        "| full | paired | `calls_200000` | 0.993 [0.9281779540405037, 1.002736185110518] | pass |",
+        "| full | paired | `array_200000` | 0.989 [0.9853616978396998, 1.003800527896583] | pass |",
+        "| full | paired | `frontend_definitions_2000` | 0.926 [0.8848525643283079, 1.1178543441176343] | inconclusive-noisy |",
+        "| full | paired | `file_statements_20000` | 0.987 [0.8712612644205284, 1.0149291518333818] | pass |"
+      ],
+      "sha256": "a70c9c37c016d3f041a7e7f0a125edebbf27cf33cedef28cb0394c57cbf83c34",
+      "harness_sha256": "5c8d55aeca76c0d5582e1b08520d7f76af78468cfa54314a6031b3afdbb73c22",
+      "harness_newlines": "CRLF",
+      "file_mode_checked": true,
+      "staged_artifacts_verified": 140
+    }
+  ]
+}

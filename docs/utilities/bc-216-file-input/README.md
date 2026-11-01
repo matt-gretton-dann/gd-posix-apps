@@ -16,5 +16,6 @@ Tests check quoting/Unicode transport with a Python fixture, closed stdin,
 missing/changed artifacts, unsupported modes, exact integer oracles and native
 quick execution including the file. This does not extend the interpreter's
 existing filename-encoding contract. The representative native policy includes
-the new group; its runtime acceptance still requires exact-source artifact audits.
+the new group. PR #348 passes all fourteen checks; [native acceptance](accepted-native/README.md)
+retains 5250 checked invocations, staged-byte audits and noisy intervals.
 This infrastructure makes no scanner or performance-improvement claim.
