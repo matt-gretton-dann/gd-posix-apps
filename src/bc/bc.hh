@@ -1234,12 +1234,16 @@ struct VMState;
 class VM
 {
 public:
+  enum class ExecutionChecks { full, verified };
+
   /** \brief               Constructor
    *  \param out           Stream to use for standard output.
    *  \param err           Stream to use for standard error.
    *  \param save_specials Should we save ibase, obase, scale on entry to a function?
+   *  \param checks        Keep full dispatch diagnostics or use entry-verifier proofs.
    */
-  VM(std::ostream& out, std::ostream& err, bool save_specials);
+  VM(std::ostream& out, std::ostream& err, bool save_specials,
+     ExecutionChecks checks = ExecutionChecks::full);
   ~VM();
   VM(VM const&) = delete;
   auto operator=(VM const&) -> VM& = delete;

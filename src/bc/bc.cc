@@ -105,7 +105,7 @@ auto main(int argc, char** argv) -> int
     }
   }
 
-  GD::Bc::VM vm(std::cout, std::clog, save_specials);
+  GD::Bc::VM vm(std::cout, std::clog, save_specials, GD::Bc::VM::ExecutionChecks::verified);
 
   /* Configure where we do multiplication splits.  */
   GD::Bc::Number::multiply_split_point(BC_MULTIPLY_SPLIT_POINT);

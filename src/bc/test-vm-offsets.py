@@ -9,9 +9,14 @@ import unittest
 
 class OffsetTests(unittest.TestCase):
     def run_case(self, name):
-        return subprocess.run([DRIVER, name], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                              universal_newlines=True, timeout=2,
-                              env=dict(os.environ, LC_ALL="C"))
+        def run(mode):
+            return subprocess.run([DRIVER, name, mode], stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE, universal_newlines=True,
+                                  timeout=2, env=dict(os.environ, LC_ALL="C"))
+        checked, verified = run('checked'), run('verified')
+        self.assertEqual((checked.returncode, checked.stdout, checked.stderr),
+                         (verified.returncode, verified.stdout, verified.stderr))
+        return checked
 
     def test_reject_before_execution(self):
         for case, operand in (("op1-end", 1), ("op1-after", 1), ("op1-before", 1), ("op1-min", 1),

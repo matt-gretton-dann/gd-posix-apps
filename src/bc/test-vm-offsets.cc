@@ -12,7 +12,7 @@
 
 auto main(int argc, char** argv) -> int
 {
-  if (argc != 2) {
+  if (argc != 2 && argc != 3) {
     return 2;
   }
   using I = GD::Bc::Instruction;
@@ -320,7 +320,10 @@ auto main(int argc, char** argv) -> int
   else {
     return 2;
   }
-  GD::Bc::VM vm(std::cout, std::cerr, false);
+  auto const checks = argc == 3 && std::string_view(argv[2]) == "verified"
+                        ? GD::Bc::VM::ExecutionChecks::verified
+                        : GD::Bc::VM::ExecutionChecks::full;
+  GD::Bc::VM vm(std::cout, std::cerr, false, checks);
   try {
     (void)vm.execute(code);
   }

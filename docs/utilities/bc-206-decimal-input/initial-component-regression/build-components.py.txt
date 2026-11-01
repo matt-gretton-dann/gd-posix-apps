@@ -1,0 +1,16 @@
+"""Build a separate component or counter target from an immutable recipe source."""
+import argparse,hashlib,json,subprocess
+from pathlib import Path
+parser=argparse.ArgumentParser();parser.add_argument('--recipe',type=Path,required=True);parser.add_argument('--output',type=Path,required=True);parser.add_argument('--target',choices=('bc','bc-components'),required=True);parser.add_argument('--profile',action='store_true');args=parser.parse_args()
+recipe=args.recipe;root=args.output;root.mkdir(exist_ok=False);source=recipe/'source';commands=[]
+metadata=json.loads((recipe/'implementations.json').read_text())['implementations'][0]['metadata'];revision=subprocess.check_output(['git','rev-parse','HEAD'],cwd=source,text=True).strip();assert revision==metadata['source_revision']
+def run(argv):
+ path=root/('command-%03d.log'%(len(commands)+1));child=subprocess.run(argv,cwd=root,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,timeout=900);path.write_bytes(child.stdout);commands.append({'argv':argv,'cwd':str(root),'returncode':child.returncode,'log':path.name});assert child.returncode==0,path
+command=['cmake','-S',str(source),'-B',str(root/'build'),'-G','Ninja','-DCMAKE_BUILD_TYPE=Release','-DBUILD_TESTING=OFF','-DENABLE_BC_COMPONENT_BENCHMARKS='+('ON' if args.target=='bc-components' else 'OFF'),'-DENABLE_BC_PROFILE='+('ON' if args.profile else 'OFF'),'-DENABLE_BC_COVERAGE=OFF','-DENABLE_NON_POSIX_EXTENSIONS=ON','-DBC_MULTIPLY_SPLIT_POINT=126','-DCMAKE_C_COMPILER=/usr/bin/cc','-DCMAKE_CXX_COMPILER=/usr/bin/c++','-DFETCHCONTENT_SOURCE_DIR_GDPAT=/Users/mgrettondann/repos/gd-posix-apps/build/_deps/gdpat-src']
+run(command);run(['cmake','--build',str(root/'build'),'--target',args.target,'--parallel','2','--verbose'])
+binary=root/'build/src/bc'/args.target;flags={}
+for line in (root/'build/CMakeCache.txt').read_text().splitlines():
+ if line.startswith(('CMAKE_CXX_FLAGS:','CMAKE_CXX_FLAGS_RELEASE:','ENABLE_BC_PROFILE:','ENABLE_BC_COVERAGE:','BC_MULTIPLY_SPLIT_POINT:')):
+  key,value=line.split('=',1);flags[key]=value
+manifest={'schema':1,'source_revision':revision,'argv':[str(binary)],'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),'compiler':metadata['compiler'],'standard_library':metadata['standard_library'],'flags':flags,'commands':commands,'instrumented':args.profile,'scope':'Scoped diagnostics only' if args.profile else 'Component intervals include reset/consumer; startup and fixture parsing excluded'}
+(root/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n');print(revision,args.target,'profile='+str(args.profile),'complete')

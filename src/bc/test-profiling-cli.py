@@ -60,6 +60,7 @@ class ProfilingCli(unittest.TestCase):
             self.assertGreater(counters['events'][event], 0, event)
         # Mutable iterator checks borrow their caller-owned vector.
         self.assertEqual(counters['events']['iterator_owner_copies'], 0)
+        self.assertEqual(counters['events']['result_validation_calls'], 0)
 
     def test_power_has_no_unused_terminal_square(self):
         # Small exact powers isolate binary exponentiation from recursive
@@ -126,6 +127,22 @@ class ProfilingCli(unittest.TestCase):
                 positions = 1 if kind == 'high' else (len(value) + width - 1) // width
                 self.assertEqual(counters['events']['comparison_limb_positions'], positions)
                 self.assertGreater(counters['events']['zero_scan_limbs'], 0)
+
+    def test_sequential_calls_reuse_frame_capacity(self):
+        definition = ('define f(a,b,c,d) {\nauto e,h\n'
+                      'e=a+b;h=c+d;return(e+h)\n}\n')
+        def run(count):
+            return self.profile(definition +
+                                'r=0;for(i=0;i<{};i++) r+=f(1,2,3,4)\nr\n'.format(count),
+                                '{}\n'.format(10 * count))
+        short, long = run(1), run(200)
+        self.assertEqual(long['events']['function_calls'], 200)
+        # Sequential activations of the same shape reuse frame storage after
+        # warm-up. This checks allocation behavior, without a wall-time gate.
+        self.assertEqual(long['allocations']['frames']['allocation_calls'],
+                         short['allocations']['frames']['allocation_calls'])
+        self.assertEqual(long['allocations']['results']['allocation_calls'],
+                         short['allocations']['results']['allocation_calls'])
 
     def test_array_clone_and_frames(self):
         counters = self.profile('define f(a[]) {\na[1]=9\nreturn(a[1])\n}\na[1]=3\n'
