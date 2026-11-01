@@ -1,0 +1,7 @@
+{
+  "binary_sha256": "a7ca66d22dfd8828224562e1d20aef6fd05426977bd416c4246e34709367f44f",
+  "production_source": "d76e408e069a4824eca7ab1fc3fa35100a14a070",
+  "path": "/private/tmp/gd-posix-reusable-frames/build-release/src/bc/bc",
+  "after_binary_sha256": "a7ca66d22dfd8828224562e1d20aef6fd05426977bd416c4246e34709367f44f",
+  "byte_identical": true
+}

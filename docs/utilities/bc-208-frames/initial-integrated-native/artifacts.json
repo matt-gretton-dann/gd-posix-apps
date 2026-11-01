@@ -1,0 +1,40 @@
+[
+  {
+    "os": "linux",
+    "checked": 1450,
+    "ids": {
+      "base": "00d5896be1768d1936a075ccd47e4b529a914dd2",
+      "candidate": "d76e408e069a4824eca7ab1fc3fa35100a14a070",
+      "howard-7.0.3": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8"
+    },
+    "confirmed": [],
+    "sha256": "7737df87738d22d726aed1017e755a3eaaca8e469f94ddb23b19c5a68f1747b9",
+    "file": "native-linux.zip"
+  },
+  {
+    "os": "macos",
+    "checked": 1450,
+    "ids": {
+      "base": "00d5896be1768d1936a075ccd47e4b529a914dd2",
+      "candidate": "d76e408e069a4824eca7ab1fc3fa35100a14a070",
+      "howard-7.0.3": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8"
+    },
+    "confirmed": [],
+    "sha256": "45e97616ae913f92a53fba432207b3216b91cdcd31a325427c74773204fc55a9",
+    "file": "native-macos.zip"
+  },
+  {
+    "os": "windows",
+    "checked": 1510,
+    "ids": {
+      "base": "00d5896be1768d1936a075ccd47e4b529a914dd2",
+      "candidate": "d76e408e069a4824eca7ab1fc3fa35100a14a070",
+      "howard-7.0.3": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8"
+    },
+    "confirmed": [
+      "| full | paired | `compare_low_1000d_x100000` | 1.114 [1.0909390545202535, 1.1465884868799647] | confirmed regression |"
+    ],
+    "sha256": "72d5bcb8330ae532c50a5bf5c5e43ee09cb2ee2856bad7c65af12eb26ff7eb8b",
+    "file": "native-windows.zip"
+  }
+]
