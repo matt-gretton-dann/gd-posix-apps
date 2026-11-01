@@ -345,13 +345,50 @@ public:
       line_pos = 0;
     }
     auto [whole, frac] = split_frac(scale);
+    NumType division_base = obase;
+    std::size_t group_width = 1;
+    // Keep short coefficients and the space-separated digits of bases above
+    // sixteen on the scalar path. Long alphabetic output can divide once per
+    // native group instead of once per printed character.
+    if (obase <= 16 && whole.digits_ && whole.digits_->size() >= 4) {
+      // The quotient is <= base_-1, which fits NumType. Name it in that type
+      // so small-trait integer promotion cannot obscure the product bound.
+      NumType const largest_factor = static_cast<NumType>((base_ - 1) / obase);
+      while (division_base <= largest_factor) {
+        division_base = static_cast<NumType>(division_base * obase);
+        ++group_width;
+      }
+    }
     DigitVector whole_digits;
     while (!whole.is_zero()) {
-      whole_digits.push_back(whole.divide(obase));
+      GD_BC_PROFILE_EVENT(Profile::Event::radix_output_divisions, 1);
+      whole_digits.push_back(whole.divide(division_base));
     }
     std::string number;
-    for (auto it = whole_digits.rbegin(); it != whole_digits.rend(); ++it) {
-      number += to_string(*it, obase);
+    if (group_width == 1) {
+      for (auto it = whole_digits.rbegin(); it != whole_digits.rend(); ++it)
+        number += to_string(*it, obase);
+    }
+    else {
+      // division_base < base_ keeps each remainder within a native limb.
+      // A group uses fewer than NumType's bit count even in output base two.
+      constexpr char const* alphabet = "0123456789ABCDEF";
+      std::array<char, std::numeric_limits<NumType>::digits> buffer;
+      bool first = true;
+      for (auto it = whole_digits.rbegin(); it != whole_digits.rend(); ++it) {
+        auto value = *it;
+        auto position = buffer.size();
+        do {
+          buffer[--position] = alphabet[value % obase];
+          value = static_cast<NumType>(value / obase);
+        } while (value != 0);
+        if (!first) {
+          while (buffer.size() - position < group_width)
+            buffer[--position] = '0';
+        }
+        number.append(buffer.data() + position, buffer.size() - position);
+        first = false;
+      }
     }
 
     if (!extensions_enabled() && number.empty()) {
@@ -1669,6 +1706,11 @@ public:
    *  \param obase    Base to output in
    *  \param line_pos Current position on output line (default = 0).
    */
+#if defined(__GNUC__) && !defined(__clang__)
+  // Keep formatting out of GCC's surrounding execution-frame inlining.
+  // Other compilers retain generic policy and the identical formatting body.
+  __attribute__((noinline))
+#endif
   void output(std::ostream& os, NumType obase, unsigned line_pos) const
   {
     if (line_pos > digits_.line_length) {

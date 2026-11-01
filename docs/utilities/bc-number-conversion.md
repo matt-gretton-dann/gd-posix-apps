@@ -95,3 +95,24 @@ that nondecimal conversion has changed its arithmetic algorithm.
 [Complete output measurements](bc-206-output/README.md) retain full/held-out
 fixtures, every checked interval, controls and compiler/source provenance.
 Native acceptance and output-base algorithm decisions remain separate work.
+
+## Whole-number output groups (candidate)
+
+For alphabetic output bases 2 through 16, a coefficient of at least four
+storage limbs can divide by the largest power of the output base strictly
+below the storage radix. Each remainder then expands through bounded native
+arithmetic; all groups except the most significant are padded to their full
+width. The character buffer is bounded by the native limb's bit count, and
+only initialized bytes are appended. This reduces both full-coefficient
+passes and the temporary remainder-vector length without changing formatting.
+
+Short coefficients, insufficient group width and bases above 16 retain the
+scalar division/space-separated formatting path. Fractional conversion is
+unchanged. The four-limb choice remains a candidate until measured across
+sizes and bases; it is not a universal crossover claim. The diagnostic
+`radix_output_divisions` event counts actual whole-coefficient division calls,
+including scalar fallback. Profiling remains separate from elapsed timings.
+
+[Complete grouped-output crossover evidence](bc-206-output-groups/README.md)
+retains every full/held-out fixture, control, interval and actual source recipe.
+Native acceptance requires the added nondecimal workload classes.

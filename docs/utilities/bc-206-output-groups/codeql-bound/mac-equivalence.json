@@ -1,0 +1,7 @@
+{
+  "before_sha256": "9d18b8d819ec56e6dc0f6ed8252ecda3800baa0ab3fba35a63e06b31d923286c",
+  "before_runtime_source": "225bfaf682adf6c06266fe632e3a1216cbdf30e8",
+  "after_sha256": "9d18b8d819ec56e6dc0f6ed8252ecda3800baa0ab3fba35a63e06b31d923286c",
+  "byte_identical": true,
+  "scope": "Matched Mac Release production executable; small-trait test binary is validated separately. New native/CodeQL checks remain required."
+}
