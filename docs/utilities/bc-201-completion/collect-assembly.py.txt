@@ -1,0 +1,22 @@
+from pathlib import Path
+import json,shlex,subprocess,hashlib
+repo=Path('/private/tmp/gd-posix-arithmetic-completion');root=Path('/private/tmp/gd-bc-201-assembly-review');root.mkdir(exist_ok=False)
+probe=root/'probe.cc';probe.write_text('''#include "bc.hh"
+extern "C" void mac8(GD::Bc::Details::BasicDigits<GD::Bc::NumberTraits8>* value, unsigned char mul, unsigned char acc) { value->mac(mul,acc); }
+extern "C" void mac16(GD::Bc::Details::BasicDigits<GD::Bc::NumberTraits16>* value, unsigned short mul, unsigned short acc) { value->mac(mul,acc); }
+extern "C" void mac32(GD::Bc::Details::BasicDigits<GD::Bc::NumberTraits32>* value, unsigned mul, unsigned acc) { value->mac(mul,acc); }
+''')
+recipe=Path('/private/tmp/gd-bc-203-square-dispatch-release');entries=json.loads((recipe/'compile_commands.json').read_text());entry=next(e for e in entries if e['file'].endswith('/src/bc/bc.cc'));original=entry.get('arguments') or shlex.split(entry['command']);args=[];skip=False
+for arg in original:
+ if skip:skip=False;continue
+ if arg in ('-o','-MT','-MF','-MQ'):skip=True;continue
+ if arg in ('-c','-MD','-MMD') or arg.startswith('-flto') or arg==entry['file']:continue
+ args.append(arg)
+# Prefer the reviewed source headers; retain the recipe's generated headers/SDK.
+args[1:1]=['-I'+str(repo/'src/bc')]
+output=root/'probe.s';command=args+['-S',str(probe),'-o',str(output)]
+child=subprocess.run(command,cwd=entry['directory'],capture_output=True,timeout=60);(root/'compile.log').write_bytes(child.stdout+child.stderr);assert child.returncode==0
+metadata=json.loads((recipe/'implementations.json').read_text())['implementations'][0]['metadata']
+manifest={'schema':1,'source_revision':subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip(),'command':command,'cwd':entry['directory'],'compiler':metadata['compiler']['CXX'],'standard_library':metadata['standard_library'],'probe_sha256':hashlib.sha256(probe.read_bytes()).hexdigest(),'assembly_sha256':hashlib.sha256(output.read_bytes()).hexdigest(),'scope':'Actual BasicDigits::mac instantiations, translation-unit O3 assembly. Thin LTO removed only to emit readable target assembly; not a final LTO-binary disassembly or cross-platform result.'}
+(root/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+lines=output.read_text().splitlines();print('Assembly lines',len(lines),'udiv',sum('udiv' in s for s in lines),'umulh',sum('umulh' in s for s in lines))

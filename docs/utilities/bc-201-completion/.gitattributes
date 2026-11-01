@@ -1,0 +1,2 @@
+probe.s -text whitespace=-blank-at-eol
+*-diagnostic.patch -text whitespace=-blank-at-eol,-blank-at-eof

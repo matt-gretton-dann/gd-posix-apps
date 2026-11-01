@@ -1,0 +1,4 @@
+#include "bc.hh"
+extern "C" void mac8(GD::Bc::Details::BasicDigits<GD::Bc::NumberTraits8>* value, unsigned char mul, unsigned char acc) { value->mac(mul,acc); }
+extern "C" void mac16(GD::Bc::Details::BasicDigits<GD::Bc::NumberTraits16>* value, unsigned short mul, unsigned short acc) { value->mac(mul,acc); }
+extern "C" void mac32(GD::Bc::Details::BasicDigits<GD::Bc::NumberTraits32>* value, unsigned mul, unsigned acc) { value->mac(mul,acc); }
