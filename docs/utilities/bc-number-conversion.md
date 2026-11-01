@@ -127,6 +127,21 @@ records PR #337 and preserves earlier held regressions.
 [Fixed-buffer decimal limb formatting measurements](bc-206-decimal-format/README.md)
 retain every local interval, fixture, control and immutable recipe.
 
+## Nondecimal character lookup evaluation
+
+The candidate replaces repeated alphabet searches with a 256-entry immutable
+index table on eight-bit character platforms. Index through unsigned char so
+negative signed characters cannot address before the table. Wider character
+models retain the generic alphabet search. Existing base assertions, single-digit
+rules, point handling and invalid-character aborts remain at their original sites;
+the raw lookup also preserves the old alphabet terminator index. CLI token
+validation is unchanged. An exhaustive 256-byte comparison against the previous
+search checks the mapping, independently of the arithmetic value oracles.
+
+Actual conversion measurements and native acceptance are still required; this
+candidate is not an asserted speedup. Decimal chunk decoding retains its measured
+arithmetic fast path, and single decimal digits retain the direct scalar path.
+
 ## Diagnostic divide-and-conquer components
 
 `bc-components conversion-in-dc ITERATIONS SPLIT_POINT [TEXT_BASE]` and
