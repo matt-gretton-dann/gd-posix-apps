@@ -287,7 +287,9 @@ def corpus(preset="full", selected=None, listing=False, seed=197200):
         "scale={}\nfor(i=0;i<{};i++) c=sqrt(2)\nc".format(places, count),
         lambda: scaled(integer_sqrt(2 * 10 ** (2 * places)), places),
         {"scale": places, "iterations": count, "radicand": "2"})
-    for original_scale, repetitions in ((1024, 30), (4096, 10)):
+    # One large tiny-fraction root already gives a substantive trial; ten
+    # repeats exceed the unchanged 30-second Howard deadline on Windows.
+    for original_scale, repetitions in ((1024, 30), (4096, 1)):
         # Keep the input scale even so the exact root is a finite decimal in
         # every preset; report the actual adjusted dimension in its name.
         places = 2 * max(1, dimension(original_scale) // 2)

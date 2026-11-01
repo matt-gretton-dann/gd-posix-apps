@@ -261,3 +261,10 @@ claim. Separate diagnostic counters and RSS measurements remain necessary.
 The committed `fixtures/benchmark-corpus-before-sqrt.json` records hashes of
 all 46 previous full/held-out/quick dictionaries, including programs, oracles,
 parameters and transport, at source 704d8013c2ff877357bf9dc42a0ae68b571c6c3e.
+
+The scale-4096 tiny-fraction case uses one repeat in full/held-out trials.
+The initial ten-repeat source exceeded the existing 30-second deadline in
+Howard on Windows. Preserve that failed run separately; reduce repetitions
+without reducing precision, weakening its exact oracle or raising deadlines.
+Initial local experiments with ten repeats remain labeled with their actual
+programs and source identities; they are not relabeled as this workload.

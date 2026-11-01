@@ -72,7 +72,7 @@ class NativeTrends(unittest.TestCase):
         self.assertIn('temporary_chain_1000d_x50000', subset)
         self.assertIn('file_statements_20000', subset)
         for name in ('sqrt_scale5000_x5', 'sqrt_large_scale10000_x5',
-                     'sqrt_tiny_scale1024_x30', 'sqrt_tiny_scale4096_x10',
+                     'sqrt_tiny_scale1024_x30', 'sqrt_tiny_scale4096_x1',
                      'sqrt_integer_power2000_scale100_x10'):
             self.assertIn(name, subset)
         for position in ('high', 'low', 'equal'):
