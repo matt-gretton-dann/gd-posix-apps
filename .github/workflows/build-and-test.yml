@@ -21,6 +21,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+      - name: Verify archived bc evidence bytes
+        if: ${{ matrix.extensions == 'ON' }}
+        run: python3 docs/utilities/verify-bc-evidence-checkout.py
       - name: Package install (Ubuntu)
         if: ${{ matrix.os  == 'ubuntu-latest' }}
         run: |
@@ -67,6 +70,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v7
+    - name: Verify archived bc evidence bytes
+      if: ${{ matrix.extensions == 1 }}
+      run: python docs/utilities/verify-bc-evidence-checkout.py
     - name: Configure
       run: |
         cmake -S "$Env:GITHUB_WORKSPACE" -B "$Env:GITHUB_WORKSPACE\\build" -DCMAKE_BUILD_TYPE:STRING=Release -DENABLE_NON_POSIX_EXTENSIONS:BOOL=${{matrix.extensions}}
