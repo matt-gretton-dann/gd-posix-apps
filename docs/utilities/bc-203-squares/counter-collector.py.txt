@@ -1,0 +1,23 @@
+from pathlib import Path
+import importlib.util,json,os,subprocess,hashlib
+repo=Path('/private/tmp/gd-posix-square-kernel')
+spec=importlib.util.spec_from_file_location('bench',repo/'src/bc/scripts/bench-bc.py');bench=importlib.util.module_from_spec(spec);spec.loader.exec_module(bench)
+root=Path('/private/tmp/gd-bc-203-square-dispatch-counters');root.mkdir(exist_ok=False)
+roles=[('parent','/private/tmp/gd-posix-inline-limbs/build-profile/src/bc/bc','31aabc92e1428e4066bed821f1573c9e70c85179'),('candidate',str(repo/'build-profile/src/bc/bc'),'61d3a9ce4c487ec504f83bfbbd1f389c6a73214e')]
+records=[]
+for role,binary,revision in roles:
+ target=root/role;target.mkdir()
+ for case in bench.corpus('full'):
+  env=bench.environment();path=target/(case['name']+'.json');env['GD_BC_PROFILE_OUTPUT']=str(path)
+  child=subprocess.run([binary],input=case['program'].encode(),stdout=subprocess.PIPE,stderr=subprocess.PIPE,env=env,timeout=60)
+  assert child.returncode==0 and not child.stderr,(role,case['name'],child.returncode)
+  expected=bench.canonical_output(('\n'.join(case['expected'])+'\n').encode())
+  assert bench.canonical_output(child.stdout)==expected,(role,case['name'])
+  data=json.loads(path.read_text());assert data['instrumented']
+  assert data['total']['live_bytes']==0
+  assert data['total']['allocation_calls']==data['total']['deallocation_calls']
+  records.append({'role':role,'workload':case['name'],'checked':True,'profile':data})
+ print(role,'39 checks passed',flush=True)
+(root/'provenance.json').write_text(json.dumps({'schema':1,'harness_revision':'61d3a9ce4c487ec504f83bfbbd1f389c6a73214e','source_cpp_parent_matches_main':'a520f2a0db29858643dd0d24eb2470329d56ab56','roles':[{'name':r,'binary':b,'binary_sha256':hashlib.sha256(Path(b).read_bytes()).hexdigest(),'source_revision':s} for r,b,s in roles],'scope':'Counters only; no timing inference. Fixed126, Release, ENABLE_BC_PROFILE ON. Not process RSS.'},indent=2)+'\n')
+(root/'checked-profiles.json').write_text(json.dumps(records,indent=2)+'\n')
+print('All 78 counter runs checked and balanced at EOF',flush=True)

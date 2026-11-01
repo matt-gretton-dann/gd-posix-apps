@@ -164,3 +164,8 @@ current native limb radix, 1,000,000,000; invalid, zero and injectable values fa
 at configuration before entering generated C++. Cross-selection logic is tested;
 actual foreign-architecture binaries still require their target toolchain and
 native/emulated correctness checks.
+
+The [portable square evaluation](bc-203-squares/README.md) records independent
+full/held-out measurements, diagnostic counters and native artifacts. It retains
+the initial Linux ordinary-product regression and distinguishes the revised
+dispatch results from inconclusive small-product/division observations.
