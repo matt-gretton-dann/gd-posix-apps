@@ -1,0 +1,38 @@
+from pathlib import Path
+import hashlib,json,shutil,subprocess
+w=Path('/private/tmp/gd-posix-exclusive-input-evidence');r=w/'docs/utilities/bc-210-exclusive-input';r.mkdir()
+(r/'.gitattributes').write_text('* -text\n*.log whitespace=-blank-at-eol,-blank-at-eof\n*.csv whitespace=cr-at-eol\n')
+for name in ['full','holdout','memory']:shutil.copytree('/private/tmp/gd-bc-210-final-exclusive-'+name,r/name)
+for role in ['base','candidate']:
+ src=Path('/private/tmp/gd-bc-210-final-exclusive-'+role);dest=r/(role+'-release');dest.mkdir()
+ for p in src.iterdir():
+  if p.is_file() and p.suffix in ['.json','.log','.hh','.cc']:shutil.copyfile(p,dest/p.name)
+shutil.copyfile('/private/tmp/bc-210-final-exclusive-implementations.json',r/'implementations.json')
+shutil.copyfile('/private/tmp/bc-210-final-exclusive-memory.py',r/'memory-runner.py.txt')
+shutil.copyfile('/private/tmp/bc-206-dc-rss-units.txt',r/'local-rss-units.txt')
+for name in ['release-build','release-tests','util-tests','cli','asan-build','asan-util','asan-cli','asan-vm','asan-quick','evidence']:
+ shutil.copyfile('/private/tmp/bc-210-exclusive-integrated-'+name+'.log',r/(name+'.log'))
+for name in ['build','tests','cli','evidence']:shutil.copyfile('/private/tmp/bc-210-compare-integrated-'+name+'.log',r/('final-'+name+'.log'))
+(r/'candidate.patch.txt').write_bytes(subprocess.check_output(['git','diff','d252da1f8d3e4e5d37dede1724851c9b004c8147','18da3049afdd10747268d95ba0ebf10a7e84fdb2','--','src'],cwd=w))
+n=r/'native';n.mkdir();audits=[]
+for os in ['linux','macos','windows']:
+ p=Path('/private/tmp/bc-210-exclusive-native-'+os+'.zip');a=json.loads(p.with_suffix('.audit.json').read_text());assert not a['confirmed'] and a['checked']==1750;assert hashlib.sha256(p.read_bytes()).hexdigest()==a['sha256'];audits.append(a);shutil.copyfile(p,n/(os+'.zip'))
+(n/'audit.json').write_text(json.dumps({'workflow_run':41324368774,'source_checks':'All fourteen exact-head checks successful','rows':audits},indent=2)+'\n')
+shutil.copyfile('/private/tmp/bc-210-audit-exclusive-native.py',r/'native-audit.py.txt')
+lines=['# Exclusive named-file input: accepted bounded stage','','Refs #210, #216 and #197. PR #352 accepts candidate', '`18da3049afdd10747268d95ba0ebf10a7e84fdb2` against actual local/native base', '`d252da1f8d3e4e5d37dede1724851c9b004c8147`. Actual source identities, fixed', 'split 126, extensions ON, compiler/library/flags, binary hashes and commands', 'remain in the immutable recipes. Local host: Apple M1/macOS 27.2, Apple Clang', '21/libc++ 220106, Release thin LTO. No instrumentation is used for speed.', '', 'Named streams privately owned by FileReader opt into an exclusive stdio read.', 'Borrowed stdin and existing default callers retain locked getc. Supported POSIX', 'and MSVC use their documented unlocked primitives; other platforms use fgetc.', 'EOF, errors, retry behavior and text translation share the same loop. There is', 'no new read-ahead, scanner, batching, output delay or signal-lifetime policy.', '', '## Correctness and serial timing', '', 'Release passes 214 numeric/VM cases/692004 assertions, 9 utility cases/8232', 'assertions and eight CLI/helper groups. The binary-byte tests cover all 256', 'unsigned values, alternating APIs, EOF and line interoperability. Extensions-OFF', 'ASan/UBSan utility, CLI, VM CLI and quick benchmark transport tests pass. The', 'final prerequisite integration repeats all numeric/VM and eight helper groups.', '', 'Full and held-out each check 1656 invocations (46 cases, two roles, three', 'warmups and fifteen shuffled paired samples), 3312 exact output/status/stderr/', 'deadline checks total. Schedule seeds 197210/197211 differ from corpus seeds', '197200/197201. All intervals and losing medians are retained below. No class', 'has CI95 wholly above 1.05. No builds, tests, profiles or RSS collection overlap', 'these timings. Host scheduling, frequency and temperature remain uncontrolled.', '', 'File input is 0.965 [0.951,0.966] full and 0.974 [0.959,0.999] held-out.', 'Stdin streaming remains about 1.002 in both. This is a modest local file-input', 'gain, not a universal improvement. The file artifact is validated before the', 'timer, so this measures cached file/frontend/VM work rather than cold disk I/O.', '', '## Separate memory and native checks', '', 'All 276 serial fresh-process RSS executions pass exact checks, using three', 'processes per full case and role. File-case median peaks are both 2162688 bytes;', 'stdin streaming medians are 2228224/2211840. Peaks include loader, frontend,', 'VM, values, output and allocator; they do not isolate reader storage. Three', 'samples do not establish portable memory equivalence. Local getrusage(2) byte', 'units are retained. The first sandboxed resource-collection attempt exited', 'before collecting a valid sample; the documented collector then ran with', 'process-resource access. Neither attempt contributes release speed samples.', '', 'All fourteen source checks pass. Three digest/source-verified native archives', 'contain 1750 checked invocations each (5250 total), with no confirmed regression.', 'File ratios: Linux 0.996 [0.983,1.007], macOS 0.986 [0.954,1.198], Windows', '1.003 [0.978,1.020]. Native results are neutral or noisy, not evidence of a', 'portable gain. Linux loop 1.037 [1.017,1.063] and macOS loop 1.054', '[1.016,1.168] remain inconclusive and visible in the full summaries.', '', 'Adopt this small opt-in stage on the matched local evidence and correctness', 'checks, keeping the generic fallback. Scanner/refill, bounded batching, driver', 'signal policy and interactive behavior remain #210 work. Overall competitive', 'acceptance, coverage recalculation and #197 completion remain open.', '']
+for preset in ['full','holdout']:
+ rows=[json.loads(x) for x in (r/preset/'samples.jsonl').read_text().splitlines()];assert len(rows)==1656 and all(x['checked'] for x in rows)
+ lines+=['## '+preset+' paired intervals','','| Workload | Candidate / baseline, CI95 |','| --- | --- |']
+ for c in json.loads((r/preset/'summary.json').read_text())['workloads']:
+  v=c['candidate_over_reference']['candidate'];lo,hi=v['ci95'];assert lo<=1.05;lines.append('| `{}` | {:.3f} [{:.3f},{:.3f}] |'.format(c['name'],v['median_paired_ratio'],lo,hi))
+ lines.append('')
+(r/'README.md').write_text('\n'.join(lines).rstrip()+'\n');shutil.copyfile(__file__,r/'archive.py.txt')
+proof={str(p.relative_to(r)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(r.rglob('*')) if p.is_file()};(r/'sha256.json').write_text(json.dumps(proof,indent=2)+'\n')
+p=w/'docs/utilities/bc-exclusive-file-input.md';s=p.read_text();old='''CLI/file/quit and independent numeric oracles remain active. Matched full/held-out
+measurements, separate memory and native artifact audits are required before
+adoption; no improvement is claimed by this candidate alone.''';new='''CLI/file/quit and independent numeric oracles remain active. PR #352 accepts
+this stage after matched full/held-out timing, separate memory diagnostics and
+all fourteen native/CI/CodeQL checks. The [exact-source report](bc-210-exclusive-input/README.md)
+retains the modest local file gain, neutral/noisy native results, all class
+intervals and memory limitations. Other #210 frontend experiments remain open.''';assert old in s;s=s.replace(old,new);p.write_text(s)
+print('Archived',len(proof),'file-input payloads')

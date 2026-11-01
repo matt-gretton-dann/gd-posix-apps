@@ -1,0 +1,21 @@
+Test project /private/tmp/gd-posix-exclusive-file-input/build-release
+    Start 235: bc/math-oracle
+1/8 Test #235: bc/math-oracle ...................   Passed    0.41 sec
+    Start 236: bc/gd-build-provenance
+2/8 Test #236: bc/gd-build-provenance ...........   Passed    0.33 sec
+    Start 237: bc/multiply-config
+3/8 Test #237: bc/multiply-config ...............   Passed    0.24 sec
+    Start 241: bc/benchmark-ci
+4/8 Test #241: bc/benchmark-ci ..................   Passed    3.08 sec
+    Start 242: bc/benchmark-cli
+5/8 Test #242: bc/benchmark-cli .................   Passed    3.21 sec
+    Start 243: bc/cli
+6/8 Test #243: bc/cli ...........................   Passed    0.55 sec
+    Start 245: bc/number-oracle
+7/8 Test #245: bc/number-oracle .................   Passed    0.22 sec
+    Start 247: bc/vm-cli
+8/8 Test #247: bc/vm-cli ........................   Passed    0.18 sec
+
+100% tests passed out of 8
+
+Total Test time (real) =   8.22 sec
