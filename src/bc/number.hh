@@ -2104,6 +2104,11 @@ public:
     }
   }
 
+  // Keep this large operation outside MSVC's VM-dispatch inlining budget.
+  // Other compilers retain their ordinary policy and the same checked algorithm.
+#if defined(_MSC_VER)
+  __declspec(noinline)
+#endif
   void sqrt(NumType target_scale)
   {
     /* Scale we want to end up at.  */
@@ -2121,17 +2126,25 @@ public:
       return;
     }
 
-    /* We work to a scale which provides an extra block or two of digits at the bottom.  We also
-     * rescale *this to the working_scale to save work later.
-     */
-    NumType const working_scale = target_scale + base_log10_ + 1;
+    // Determine the magnitude from the original value, before adding working
+    // precision. The enlarged coefficient can exceed the narrow length helper's
+    // result domain even though its original input and requested scale are valid.
+    // This power-of-ten estimate may be below the root; the first step is bounded.
+    NumType const initial_guess = (std::max(length(), scale()) - scale()) / 2;
+
+    // Guard digits are optional for exact integer-coefficient Newton iteration.
+    // If the scale field cannot represent them, work at the requested precision:
+    // wrapping would instead lose both fractional digits and the result scale.
+    constexpr auto guards = static_cast<NumType>(base_log10_ + 1);
+    NumType const working_scale = target_scale <= std::numeric_limits<NumType>::max() - guards
+                                    ? static_cast<NumType>(target_scale + guards)
+                                    : target_scale;
+    // Rescale once so each quotient/average is the floor of the corresponding
+    // integer-coefficient operation. The nondecreasing-step test below therefore
+    // retains the exact floor root, even when no extra guard scale is available.
     digits_.mul_pow10(working_scale - scale());
     scale_ = working_scale;
 
-    /* Initial guess = 10^floor(N/2). N = number of integer digits (=length - scale).
-     * This positive magnitude estimate may be below the root. Store it at working_scale.
-     */
-    NumType const initial_guess = (std::max(length(), scale()) - scale()) / 2;
     BasicNumber c(1);
     c.digits_.mul_pow10(initial_guess);
     c.digits_.mul_pow10(working_scale);

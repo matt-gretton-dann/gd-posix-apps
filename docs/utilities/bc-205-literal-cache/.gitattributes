@@ -1,1 +1,3 @@
+# Preserve recorded artifact bytes under every Git newline policy.
+* -text
 *.csv -text whitespace=cr-at-eol
