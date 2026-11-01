@@ -1,0 +1,115 @@
+{
+  "performance_gate": "advisory; no aggregate or hard timing threshold",
+  "reference": "base",
+  "schema": 1,
+  "workloads": [
+    {
+      "candidate_over_reference": {
+        "candidate": {
+          "ci95": [
+            1.0676904511193976,
+            1.0810220893615732
+          ],
+          "median_paired_ratio": 1.0757639724725205,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.0763663813421434
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            1.6666262833444698,
+            1.6838406088091964
+          ],
+          "median_paired_ratio": 1.6726585798854614,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.673911256087851
+        }
+      },
+      "group": "sqrt",
+      "implementations": {
+        "base": {
+          "mad_seconds": 5.7155999968472315e-05,
+          "max_seconds": 0.04645222400000648,
+          "median_seconds": 0.045670174999997926,
+          "min_seconds": 0.045577362000017274,
+          "samples": 9
+        },
+        "candidate": {
+          "mad_seconds": 8.937600000535895e-05,
+          "max_seconds": 0.0498861699999793,
+          "median_seconds": 0.049157841000010194,
+          "min_seconds": 0.04896551300004148,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.0002906120000147894,
+          "max_seconds": 0.076992956999959,
+          "median_seconds": 0.0764478199999985,
+          "min_seconds": 0.0759989379999979,
+          "samples": 9
+        }
+      },
+      "name": "sqrt_scale100_x5000",
+      "parameters": {
+        "iterations": 5000,
+        "scale": 100
+      }
+    },
+    {
+      "candidate_over_reference": {
+        "candidate": {
+          "ci95": [
+            1.0767621238609664,
+            1.08075503039306
+          ],
+          "median_paired_ratio": 1.0787012744204096,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 1.0790643672924196
+        },
+        "howard-7.0.3": {
+          "ci95": [
+            0.12044859622965987,
+            0.1218446886810537
+          ],
+          "median_paired_ratio": 0.12069260225116742,
+          "method": "paired percentile bootstrap of median ratios",
+          "pairs": 9,
+          "ratio_of_medians": 0.12069260225116742
+        }
+      },
+      "group": "multiply",
+      "implementations": {
+        "base": {
+          "mad_seconds": 0.00029243899996345135,
+          "max_seconds": 0.6180628749999642,
+          "median_seconds": 0.6167942989999915,
+          "min_seconds": 0.6160596299999952,
+          "samples": 9
+        },
+        "candidate": {
+          "mad_seconds": 0.0008880640000370477,
+          "max_seconds": 0.6669088859999874,
+          "median_seconds": 0.6655607499999974,
+          "min_seconds": 0.6640300450000041,
+          "samples": 9
+        },
+        "howard-7.0.3": {
+          "mad_seconds": 0.00016288400001940317,
+          "max_seconds": 0.07521703300000127,
+          "median_seconds": 0.0744425089999936,
+          "min_seconds": 0.07422573899998497,
+          "samples": 9
+        }
+      },
+      "name": "multiply_sparse_10000d_x1000",
+      "parameters": {
+        "iterations": 1000,
+        "left_digits": 10000,
+        "right_digits": 10000,
+        "shape": "sparse"
+      }
+    }
+  ]
+}

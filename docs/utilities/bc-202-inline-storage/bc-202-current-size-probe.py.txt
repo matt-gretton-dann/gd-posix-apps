@@ -1,0 +1,25 @@
+import json,shlex,subprocess
+from pathlib import Path
+root=Path('/private/tmp/gd-bc-202-current-sizes');root.mkdir(exist_ok=True)
+source=root/'probe.cc'
+source.write_text('#include <cstdio>\n#include "bc.hh"\nint main(){std::printf("{\\"number_bytes\\":%zu}\\n",sizeof(GD::Bc::Number));}\n')
+rows=[]
+for name in ('parent','inline'):
+ directory=Path('/private/tmp/gd-bc-202-current-parent-release' if name=='parent' else '/private/tmp/gd-bc-202-combined-release')
+ entries=json.loads((directory/'compile_commands.json').read_text())
+ entry=next(e for e in entries if e['file'].endswith('/src/bc/bc.cc'))
+ original=entry.get('arguments') or shlex.split(entry['command'])
+ args=[];skip=False
+ for arg in original:
+  if skip:skip=False;continue
+  if arg in ('-o','-MT','-MF','-MQ'):skip=True;continue
+  if arg in ('-c','-MD','-MMD') or arg==entry['file']:continue
+  args.append(arg)
+ binary=root/name
+ command=args+[str(source),'-o',str(binary)]
+ subprocess.run(command,cwd=entry['directory'],check=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+ output=subprocess.check_output([str(binary)],universal_newlines=True)
+ row=json.loads(output);row.update(name=name,command=command,source_revision=json.loads((directory/'implementations.json').read_text())['implementations'][0]['metadata']['source_revision'])
+ rows.append(row)
+ print(name,row['number_bytes'])
+(root/'sizes.json').write_text(json.dumps(rows,indent=2)+'\n')

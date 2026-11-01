@@ -1,0 +1,138 @@
+[
+  {
+    "run": 9,
+    "os": "linux",
+    "file": "native9-linux.zip",
+    "sha256": "e234c64e2a4482a08db7c392490543fa80582ce5f94e00b0564d2a2e0dd63d8f",
+    "base": "73619a3e5dbc3dbddbca929bdac0a212b77b6772",
+    "candidate": "5cd225291808a7f4f57570c17e835396ac2a692b"
+  },
+  {
+    "run": 9,
+    "os": "macos",
+    "file": "native9-macos.zip",
+    "sha256": "c9ecfdb42d274c8ddb77dc15b64d9a1ae7e57ec074bea6443d3dfef6bf1bbd1c",
+    "base": "73619a3e5dbc3dbddbca929bdac0a212b77b6772",
+    "candidate": "5cd225291808a7f4f57570c17e835396ac2a692b"
+  },
+  {
+    "run": 9,
+    "os": "windows",
+    "file": "native9-windows.zip",
+    "sha256": "8002ba40799dc6b280b499b5627607fbdbca3fcd3a3314e19221dff681455f00",
+    "base": "73619a3e5dbc3dbddbca929bdac0a212b77b6772",
+    "candidate": "5cd225291808a7f4f57570c17e835396ac2a692b"
+  },
+  {
+    "run": 13,
+    "os": "linux",
+    "file": "native13-linux.zip",
+    "sha256": "f7aabc9e3832be6f28c7424ea74fbfb9e8cd03982132a4c2a82ee3900b5b0f16",
+    "base": "73619a3e5dbc3dbddbca929bdac0a212b77b6772",
+    "candidate": "2b942f57cfdc1c69aee1b8f4f7dcd42e34f9dcc2"
+  },
+  {
+    "run": 15,
+    "os": "linux",
+    "file": "native15-linux.zip",
+    "sha256": "8a7709e76e58c47a09ef7e129a86d6dddf32e9f0ef070c85711bd2bc3bc910da",
+    "base": "73619a3e5dbc3dbddbca929bdac0a212b77b6772",
+    "candidate": "364fc61aa58be8b782e1c04f1643d7bf5ee7e8ca"
+  },
+  {
+    "run": 17,
+    "os": "linux",
+    "file": "native17-linux.zip",
+    "sha256": "08cbac7cf66acdb57c9dcc18479083dc13d21867c391a1e3927a8ea5ecc46c9e",
+    "base": "73619a3e5dbc3dbddbca929bdac0a212b77b6772",
+    "candidate": "14f381a25394d6a0042a1e00f7838e745f867b06"
+  },
+  {
+    "run": 17,
+    "os": "macos",
+    "file": "native17-macos.zip",
+    "sha256": "5952f60969aaa18765b2119bd9a960bca4f99676e7e7d8a5ec7a5d0f8e0c9f20",
+    "base": "73619a3e5dbc3dbddbca929bdac0a212b77b6772",
+    "candidate": "14f381a25394d6a0042a1e00f7838e745f867b06"
+  },
+  {
+    "run": 17,
+    "os": "windows",
+    "file": "native17-windows.zip",
+    "sha256": "914e522bd0c590be9eba61e0170f08dca1ff811033b2b9801ebcac5fbe2fd4c2",
+    "base": "73619a3e5dbc3dbddbca929bdac0a212b77b6772",
+    "candidate": "14f381a25394d6a0042a1e00f7838e745f867b06"
+  },
+  {
+    "run": 20,
+    "os": "linux",
+    "file": "native20-linux.zip",
+    "sha256": "0a4d8ba99f036f649247e5714e0d56e592422928c9bb6e91f16e953063ed4162",
+    "base": "73619a3e5dbc3dbddbca929bdac0a212b77b6772",
+    "candidate": "13c28396c7a460c867ada0f8d553ce98b6423e13"
+  },
+  {
+    "run": 20,
+    "os": "macos",
+    "file": "native20-macos.zip",
+    "sha256": "0f8d3d73630d328a59685e88eb05cd957d337030bbed1427c10c3a4f8c53b769",
+    "base": "73619a3e5dbc3dbddbca929bdac0a212b77b6772",
+    "candidate": "13c28396c7a460c867ada0f8d553ce98b6423e13"
+  },
+  {
+    "run": 20,
+    "os": "windows",
+    "file": "native20-windows.zip",
+    "sha256": "ebfc08c7f13bbc03e7f94c17d96cf09a749dcbb6be62adc2e7625250cf066300",
+    "base": "73619a3e5dbc3dbddbca929bdac0a212b77b6772",
+    "candidate": "13c28396c7a460c867ada0f8d553ce98b6423e13"
+  },
+  {
+    "run": 22,
+    "os": "linux",
+    "file": "native22-linux.zip",
+    "sha256": "dacc24c3aff5aff038497081495f9fa9f13f78f8b1e8097804490b0693c3b768",
+    "base": "73619a3e5dbc3dbddbca929bdac0a212b77b6772",
+    "candidate": "33d59ec07f3323e82bb51d79bf15d6eda376eb71"
+  },
+  {
+    "run": 22,
+    "os": "macos",
+    "file": "native22-macos.zip",
+    "sha256": "4dc015c51a53ded7e4115dc0e7b7d4e378c7833675d1b3a5281457fa8f0aa1bb",
+    "base": "73619a3e5dbc3dbddbca929bdac0a212b77b6772",
+    "candidate": "33d59ec07f3323e82bb51d79bf15d6eda376eb71"
+  },
+  {
+    "run": 22,
+    "os": "windows",
+    "file": "native22-windows.zip",
+    "sha256": "55494849c4a0e6f94b45072db2c9c1da4743a43ee6e6c8acad0abf3b451e3ca2",
+    "base": "73619a3e5dbc3dbddbca929bdac0a212b77b6772",
+    "candidate": "33d59ec07f3323e82bb51d79bf15d6eda376eb71"
+  },
+  {
+    "run": 24,
+    "os": "linux",
+    "file": "native24-linux.zip",
+    "sha256": "b3fab8661083ca5cd67ddc98523f9d3dd52ba78ae0614bd4e68a8b7446739a6b",
+    "base": "3682edf98157de1f3c06ee8a315c5e8cef50aa3b",
+    "candidate": "68344549dc0938e8666dffe84d2eeb5e367190c2"
+  },
+  {
+    "run": 24,
+    "os": "macos",
+    "file": "native24-macos.zip",
+    "sha256": "a2292394ef813c2647419a13a9bdfec0ac91e9f8a29516c13287e5c5eb6ef496",
+    "base": "3682edf98157de1f3c06ee8a315c5e8cef50aa3b",
+    "candidate": "68344549dc0938e8666dffe84d2eeb5e367190c2"
+  },
+  {
+    "run": 24,
+    "os": "windows",
+    "file": "native24-windows.zip",
+    "sha256": "cd036e09748813474d2c4ae4a068f39bdf19eb9da752b2a090cab199eb129687",
+    "base": "3682edf98157de1f3c06ee8a315c5e8cef50aa3b",
+    "candidate": "68344549dc0938e8666dffe84d2eeb5e367190c2"
+  }
+]

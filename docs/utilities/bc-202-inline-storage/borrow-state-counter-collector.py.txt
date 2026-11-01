@@ -1,0 +1,27 @@
+import hashlib,importlib.util,json,os
+from pathlib import Path
+harness=Path('/Users/mgrettondann/repos/gd-posix-apps/src/bc/scripts/bench-bc.py')
+spec=importlib.util.spec_from_file_location('bench',harness)
+bench=importlib.util.module_from_spec(spec);spec.loader.exec_module(bench)
+root=Path('/private/tmp/gd-bc-202-borrow-state-counters');root.mkdir(exist_ok=False)
+entries=[('borrow-state','14f381a25394d6a0042a1e00f7838e745f867b06',Path('/private/tmp/gd-posix-inline-limbs/build-profile/src/bc/bc'))]
+metadata={'harness_sha256':hashlib.sha256(harness.read_bytes()).hexdigest(),
+          'harness_revision':'73619a3e5dbc3dbddbca929bdac0a212b77b6772',
+          'instrumented':True,'timings':'discarded; counters only','implementations':[],'checks':[]}
+for name,revision,binary in entries:
+ target=root/name;target.mkdir()
+ metadata['implementations'].append({'name':name,'source_revision':revision,'binary':str(binary),
+      'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),'split_point':126})
+ for case in bench.corpus('full'):
+  output=target/(case['name']+'.json')
+  os.environ['GD_BC_PROFILE_OUTPUT']=str(output)
+  checked=bench.run_checked({'name':name,'argv':[str(binary)]},case,120)
+  counters=json.loads(output.read_text())
+  assert counters['instrumented'] and counters['multiply_split_point']==126
+  assert counters['total']['live_bytes']==0
+  assert counters['total']['allocation_calls']==counters['total']['deallocation_calls']
+  checked.pop('seconds')
+  metadata['checks'].append(dict(implementation=name,workload=case['name'],**checked))
+ (root/'manifest.json').write_text(json.dumps(metadata,indent=2)+'\n')
+ print('Checked counters:',name,flush=True)
+os.environ.pop('GD_BC_PROFILE_OUTPUT',None)

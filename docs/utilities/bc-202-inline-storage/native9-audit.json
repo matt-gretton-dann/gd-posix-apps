@@ -1,0 +1,3511 @@
+[
+  {
+    "os": "linux",
+    "artifact_sha256": "e234c64e2a4482a08db7c392490543fa80582ce5f94e00b0564d2a2e0dd63d8f",
+    "host": {
+      "ISA": "portable C++ only; no runtime ISA-specific kernel selected",
+      "affinity": "OS default; no CPU isolation or affinity pinning",
+      "details": [
+        {
+          "argv": [
+            "lscpu",
+            "-J"
+          ],
+          "status": 0,
+          "stderr": "",
+          "stdout": "{\n   \"lscpu\": [\n      {\n         \"field\": \"Architecture:\",\n         \"data\": \"x86_64\"\n      },{\n         \"field\": \"CPU op-mode(s):\",\n         \"data\": \"32-bit, 64-bit\"\n      },{\n         \"field\": \"Address sizes:\",\n         \"data\": \"48 bits physical, 48 bits virtual\"\n      },{\n         \"field\": \"Byte Order:\",\n         \"data\": \"Little Endian\"\n      },{\n         \"field\": \"CPU(s):\",\n         \"data\": \"4\"\n      },{\n         \"field\": \"On-line CPU(s) list:\",\n         \"data\": \"0-3\"\n      },{\n         \"field\": \"Vendor ID:\",\n         \"data\": \"AuthenticAMD\"\n      },{\n         \"field\": \"Model name:\",\n         \"data\": \"AMD EPYC 7763 64-Core Processor\"\n      },{\n         \"field\": \"CPU family:\",\n         \"data\": \"25\"\n      },{\n         \"field\": \"Model:\",\n         \"data\": \"1\"\n      },{\n         \"field\": \"Thread(s) per core:\",\n         \"data\": \"2\"\n      },{\n         \"field\": \"Core(s) per socket:\",\n         \"data\": \"2\"\n      },{\n         \"field\": \"Socket(s):\",\n         \"data\": \"1\"\n      },{\n         \"field\": \"Stepping:\",\n         \"data\": \"1\"\n      },{\n         \"field\": \"BogoMIPS:\",\n         \"data\": \"4890.86\"\n      },{\n         \"field\": \"Flags:\",\n         \"data\": \"fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl tsc_reliable nonstop_tsc cpuid extd_apicid aperfmperf tsc_known_freq pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand hypervisor lahf_lm cmp_legacy svm cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw topoext vmmcall fsgsbase bmi1 avx2 smep bmi2 erms invpcid rdseed adx smap clflushopt clwb sha_ni xsaveopt xsavec xgetbv1 xsaves user_shstk clzero xsaveerptr rdpru arat npt nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold v_vmsave_vmload umip vaes vpclmulqdq rdpid fsrm\"\n      },{\n         \"field\": \"Virtualization:\",\n         \"data\": \"AMD-V\"\n      },{\n         \"field\": \"Hypervisor vendor:\",\n         \"data\": \"Microsoft\"\n      },{\n         \"field\": \"Virtualization type:\",\n         \"data\": \"full\"\n      },{\n         \"field\": \"L1d cache:\",\n         \"data\": \"64 KiB (2 instances)\"\n      },{\n         \"field\": \"L1i cache:\",\n         \"data\": \"64 KiB (2 instances)\"\n      },{\n         \"field\": \"L2 cache:\",\n         \"data\": \"1 MiB (2 instances)\"\n      },{\n         \"field\": \"L3 cache:\",\n         \"data\": \"32 MiB (1 instance)\"\n      },{\n         \"field\": \"NUMA node(s):\",\n         \"data\": \"1\"\n      },{\n         \"field\": \"NUMA node0 CPU(s):\",\n         \"data\": \"0-3\"\n      },{\n         \"field\": \"Vulnerability Gather data sampling:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Ghostwrite:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Indirect target selection:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Itlb multihit:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability L1tf:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Mds:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Meltdown:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Mmio stale data:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Old microcode:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Reg file data sampling:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Retbleed:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Spec rstack overflow:\",\n         \"data\": \"Vulnerable: Safe RET, no microcode\"\n      },{\n         \"field\": \"Vulnerability Spec store bypass:\",\n         \"data\": \"Vulnerable\"\n      },{\n         \"field\": \"Vulnerability Spectre v1:\",\n         \"data\": \"Mitigation; usercopy/swapgs barriers and __user pointer sanitization\"\n      },{\n         \"field\": \"Vulnerability Spectre v2:\",\n         \"data\": \"Mitigation; Retpolines; STIBP disabled; RSB filling; PBRSB-eIBRS Not affected; BHI Not affected\"\n      },{\n         \"field\": \"Vulnerability Srbds:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Tsa:\",\n         \"data\": \"Vulnerable: No microcode\"\n      },{\n         \"field\": \"Vulnerability Tsx async abort:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Vmscape:\",\n         \"data\": \"Not affected\"\n      }\n   ]\n}\n"
+        },
+        {
+          "argv": [
+            "ldd",
+            "--version"
+          ],
+          "status": 0,
+          "stderr": "",
+          "stdout": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\nWritten by Roland McGrath and Ulrich Drepper.\n"
+        }
+      ],
+      "diagnostics": "allocation counters are excluded from timing; CPU/RSS diagnostics are separate",
+      "limitations": "Hosted VM contention, frequency and temperature are uncontrolled",
+      "machine": "x86_64",
+      "platform": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "runner": {
+        "GITHUB_EVENT_NAME": "pull_request",
+        "GITHUB_RUN_ATTEMPT": "1",
+        "GITHUB_RUN_ID": "41254982468",
+        "ImageOS": "ubuntu24",
+        "ImageVersion": "20261026.354.1",
+        "RUNNER_ARCH": "X64",
+        "RUNNER_OS": "Linux"
+      }
+    },
+    "orchestration": {
+      "base": "73619a3e5dbc3dbddbca929bdac0a212b77b6772",
+      "candidate": "5cd225291808a7f4f57570c17e835396ac2a692b",
+      "commands": [
+        {
+          "argv": [
+            "/usr/bin/python",
+            "/home/runner/work/gd-posix-apps/gd-posix-apps/src/bc/scripts/build-gd-bc.py",
+            "--source",
+            "/home/runner/work/gd-posix-apps/gd-posix-apps",
+            "--revision",
+            "73619a3e5dbc3dbddbca929bdac0a212b77b6772",
+            "--split-point",
+            "126",
+            "--output",
+            "/home/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/base",
+            "--name",
+            "base",
+            "--c-compiler",
+            "cc",
+            "--cxx-compiler",
+            "c++"
+          ],
+          "cwd": "/home/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results",
+          "log": "command-001.log",
+          "returncode": 0
+        },
+        {
+          "argv": [
+            "/usr/bin/python",
+            "/home/runner/work/gd-posix-apps/gd-posix-apps/src/bc/scripts/build-gd-bc.py",
+            "--source",
+            "/home/runner/work/gd-posix-apps/gd-posix-apps",
+            "--revision",
+            "5cd225291808a7f4f57570c17e835396ac2a692b",
+            "--split-point",
+            "126",
+            "--output",
+            "/home/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/candidate",
+            "--name",
+            "candidate",
+            "--c-compiler",
+            "cc",
+            "--cxx-compiler",
+            "c++"
+          ],
+          "cwd": "/home/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results",
+          "log": "command-002.log",
+          "returncode": 0
+        },
+        {
+          "argv": [
+            "/usr/bin/python",
+            "/home/runner/work/gd-posix-apps/gd-posix-apps/src/bc/scripts/build-gd-bc.py",
+            "--source",
+            "/home/runner/work/gd-posix-apps/gd-posix-apps",
+            "--revision",
+            "73619a3e5dbc3dbddbca929bdac0a212b77b6772",
+            "--split-point",
+            "126",
+            "--output",
+            "/home/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/aa",
+            "--name",
+            "aa",
+            "--c-compiler",
+            "cc",
+            "--cxx-compiler",
+            "c++"
+          ],
+          "cwd": "/home/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results",
+          "log": "command-003.log",
+          "returncode": 0
+        },
+        {
+          "argv": [
+            "/usr/bin/python",
+            "/home/runner/work/gd-posix-apps/gd-posix-apps/src/bc/scripts/build-bc-comparators.py",
+            "--output",
+            "/home/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/howard",
+            "--cc",
+            "cc"
+          ],
+          "cwd": "/home/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results",
+          "log": "command-004.log",
+          "returncode": 0
+        },
+        {
+          "argv": [
+            "/usr/bin/python",
+            "/home/runner/work/gd-posix-apps/gd-posix-apps/src/bc/scripts/bench-bc.py",
+            "--config",
+            "/home/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/aa.json",
+            "--output",
+            "/home/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/evidence/full-aa",
+            "--reference",
+            "base",
+            "--preset",
+            "full",
+            "--samples",
+            "9",
+            "--warmups",
+            "1",
+            "--seed",
+            "197216",
+            "--corpus-seed",
+            "197200",
+            "--require-provenance",
+            "--workload",
+            "startup",
+            "--workload",
+            "loop_1000000",
+            "--workload",
+            "calls_200000",
+            "--workload",
+            "array_200000",
+            "--workload",
+            "sparse_array_200000",
+            "--workload",
+            "fibonacci_1000_x100",
+            "--workload",
+            "multiply_100d_x100000",
+            "--workload",
+            "divide_multilimb_900d_450d_s100_x1000",
+            "--workload",
+            "power_100d_e17_x1000",
+            "--workload",
+            "sqrt_scale100_x5000",
+            "--workload",
+            "decimal_input_4000d_x100",
+            "--workload",
+            "streaming_statements_20000",
+            "--workload",
+            "compare_high_1000d_x100000",
+            "--workload",
+            "compare_low_1000d_x100000",
+            "--workload",
+            "compare_equal_1000d_x100000",
+            "--workload",
+            "multiply_10000d_x1000",
+            "--workload",
+            "multiply_dense_10000d_x500",
+            "--workload",
+            "multiply_unbalanced_10000d_100d_x2000",
+            "--workload",
+            "multiply_sparse_10000d_x1000"
+          ],
+          "cwd": "/home/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results",
+          "log": "command-005.log",
+          "returncode": 0
+        },
+        {
+          "argv": [
+            "/usr/bin/python",
+            "/home/runner/work/gd-posix-apps/gd-posix-apps/src/bc/scripts/bench-bc.py",
+            "--config",
+            "/home/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/paired.json",
+            "--output",
+            "/home/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/evidence/full-paired",
+            "--reference",
+            "base",
+            "--preset",
+            "full",
+            "--samples",
+            "9",
+            "--warmups",
+            "1",
+            "--seed",
+            "197216",
+            "--corpus-seed",
+            "197200",
+            "--require-provenance",
+            "--workload",
+            "startup",
+            "--workload",
+            "loop_1000000",
+            "--workload",
+            "calls_200000",
+            "--workload",
+            "array_200000",
+            "--workload",
+            "sparse_array_200000",
+            "--workload",
+            "fibonacci_1000_x100",
+            "--workload",
+            "multiply_100d_x100000",
+            "--workload",
+            "divide_multilimb_900d_450d_s100_x1000",
+            "--workload",
+            "power_100d_e17_x1000",
+            "--workload",
+            "sqrt_scale100_x5000",
+            "--workload",
+            "decimal_input_4000d_x100",
+            "--workload",
+            "streaming_statements_20000",
+            "--workload",
+            "compare_high_1000d_x100000",
+            "--workload",
+            "compare_low_1000d_x100000",
+            "--workload",
+            "compare_equal_1000d_x100000",
+            "--workload",
+            "multiply_10000d_x1000",
+            "--workload",
+            "multiply_dense_10000d_x500",
+            "--workload",
+            "multiply_unbalanced_10000d_100d_x2000",
+            "--workload",
+            "multiply_sparse_10000d_x1000"
+          ],
+          "cwd": "/home/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results",
+          "log": "command-006.log",
+          "returncode": 0
+        },
+        {
+          "argv": [
+            "/usr/bin/python",
+            "/home/runner/work/gd-posix-apps/gd-posix-apps/src/bc/scripts/bench-bc.py",
+            "--config",
+            "/home/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/paired.json",
+            "--output",
+            "/home/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/evidence/full-paired-confirmation",
+            "--reference",
+            "base",
+            "--preset",
+            "full",
+            "--samples",
+            "9",
+            "--warmups",
+            "1",
+            "--seed",
+            "197217",
+            "--corpus-seed",
+            "197200",
+            "--require-provenance",
+            "--workload",
+            "sqrt_scale100_x5000",
+            "--workload",
+            "multiply_sparse_10000d_x1000"
+          ],
+          "cwd": "/home/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results",
+          "log": "command-007.log",
+          "returncode": 0
+        }
+      ],
+      "split_point": 126
+    },
+    "decisions": {
+      "advisory": true,
+      "pending": [
+        "POSIX math library #217",
+        "cross-run A/A calibration and autocorrelation policy"
+      ],
+      "policy": "5% is provisional; no performance failure gate; startup uncalibrated",
+      "results": [
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "startup",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.7910217840956041,
+              1.3029258541451458
+            ],
+            "median_paired_ratio": 0.8752026614646807,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9696052473525758
+          },
+          "status": "inconclusive-noisy"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "loop_1000000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9519985774024821,
+              1.030312537118583
+            ],
+            "median_paired_ratio": 1.008011506922198,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.0092778170035417
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "calls_200000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9818929004044243,
+              1.0042211238643375
+            ],
+            "median_paired_ratio": 1.0010658559059842,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.0017835581860557
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "array_200000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9856148644232509,
+              1.0104488208891111
+            ],
+            "median_paired_ratio": 1.0003750128107345,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9968987467619651
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "compare_high_1000d_x100000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9943416596041282,
+              1.0264686256859152
+            ],
+            "median_paired_ratio": 1.0109396280827243,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.0205051603521065
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "compare_low_1000d_x100000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9693601767221047,
+              1.0345640523273776
+            ],
+            "median_paired_ratio": 1.0006908439361146,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9962091728174188
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "compare_equal_1000d_x100000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              1.0010825428629473,
+              1.03465423493402
+            ],
+            "median_paired_ratio": 1.0251226124283082,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.022897057516472
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "fibonacci_1000_x100",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9933917100160191,
+              1.041640345575331
+            ],
+            "median_paired_ratio": 1.0122622308930602,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9992779283722305
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "multiply_100d_x100000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9891928085296062,
+              1.0218816752160116
+            ],
+            "median_paired_ratio": 1.0026773078910214,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.0004464818940901
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "multiply_10000d_x1000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9987410474072217,
+              1.0023806716200672
+            ],
+            "median_paired_ratio": 1.0006719093145826,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.000381328614444
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "sqrt_scale100_x5000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9896008468101916,
+              1.0060218629888364
+            ],
+            "median_paired_ratio": 0.99759446653878,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.99759446653878
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "multiply_dense_10000d_x500",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9982376354985808,
+              1.0028186157924759
+            ],
+            "median_paired_ratio": 1.0011996002997683,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.0004906249628738
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "multiply_unbalanced_10000d_100d_x2000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9988391277058413,
+              1.0011237555554455
+            ],
+            "median_paired_ratio": 1.000409454338617,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.003162620080167
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "multiply_sparse_10000d_x1000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9982252276244226,
+              1.000126201945231
+            ],
+            "median_paired_ratio": 0.9996571161708043,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9990640232163223
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "divide_multilimb_900d_450d_s100_x1000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9819758213517006,
+              1.0218417782268299
+            ],
+            "median_paired_ratio": 0.9892973081593617,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9921880215411966
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "power_100d_e17_x1000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9926907628599272,
+              1.0072536554972018
+            ],
+            "median_paired_ratio": 0.9988356051204846,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9997322339754315
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "sparse_array_200000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9795477357830743,
+              1.038402094865844
+            ],
+            "median_paired_ratio": 1.0132628074820937,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.0104365474744263
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "decimal_input_4000d_x100",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9959476470898867,
+              1.0015684590970633
+            ],
+            "median_paired_ratio": 0.9997914795074703,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9994488805894165
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "streaming_statements_20000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9895742466010079,
+              1.0031089385653245
+            ],
+            "median_paired_ratio": 0.996924105464798,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.996924105464798
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              1.6757171025978872,
+              2.3259541760332416
+            ],
+            "median_paired_ratio": 2.0497150170719967,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 2.0497150170719967
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "startup",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.8375750671864559,
+              1.3218413603896502
+            ],
+            "median_paired_ratio": 1.1902923687558362,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.1985097786525245
+          },
+          "status": "inconclusive-noisy"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              1.6693675731204605,
+              1.69468669351478
+            ],
+            "median_paired_ratio": 1.683036324984112,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.686516991281026
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "loop_1000000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.7842523420953965,
+              0.833555739189896
+            ],
+            "median_paired_ratio": 0.8159831738361146,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.8195461503286109
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              1.8832444154889443,
+              1.9469785792182321
+            ],
+            "median_paired_ratio": 1.9270491470177673,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.9304067683520543
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "calls_200000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.8666005145912757,
+              0.9131088368751884
+            ],
+            "median_paired_ratio": 0.8925917784517142,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.8959080759004232
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              1.8008995801077767,
+              1.853221757150433
+            ],
+            "median_paired_ratio": 1.814802183217449,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.8252495016270074
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "array_200000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.8034293979594235,
+              0.8298188994655376
+            ],
+            "median_paired_ratio": 0.8226479395598574,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.8184519765449239
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              1.726018367233835,
+              1.7709948954205532
+            ],
+            "median_paired_ratio": 1.7513012337606901,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.7545281102541646
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "compare_high_1000d_x100000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.8039120834585999,
+              0.8384935232892248
+            ],
+            "median_paired_ratio": 0.828618822777091,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.8231843351260724
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              1.8778910990228197,
+              1.9566702674618712
+            ],
+            "median_paired_ratio": 1.9220690688445194,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.9221375941068193
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "compare_low_1000d_x100000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9530638618462076,
+              0.9956584333181251
+            ],
+            "median_paired_ratio": 0.9868929677204595,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9843329180215736
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              1.8843020810695565,
+              1.9407393404340818
+            ],
+            "median_paired_ratio": 1.9275810283551338,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.9244633611187705
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "compare_equal_1000d_x100000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9653786677651642,
+              0.9979282243382525
+            ],
+            "median_paired_ratio": 0.9823576098813326,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9899771072549249
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              1.1226756207680841,
+              1.1404044394888435
+            ],
+            "median_paired_ratio": 1.1267204606468884,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.1274015243838622
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "fibonacci_1000_x100",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.8741844391547272,
+              0.8972801131050001
+            ],
+            "median_paired_ratio": 0.8863233649573617,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.8942642004115638
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              1.2271399395256721,
+              1.251008221665779
+            ],
+            "median_paired_ratio": 1.2418122011397579,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.242067246601778
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "multiply_100d_x100000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9229495025544973,
+              0.9487308201884679
+            ],
+            "median_paired_ratio": 0.9407888554966236,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9395714996437871
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              7.7559890455439024,
+              7.791976935668257
+            ],
+            "median_paired_ratio": 7.787480006343309,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 7.788505617445966
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "multiply_10000d_x1000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              1.0133863788782744,
+              1.016360645250215
+            ],
+            "median_paired_ratio": 1.0154253651087313,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.0156099391599005
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              0.6344351262657486,
+              0.6447218287419066
+            ],
+            "median_paired_ratio": 0.6427360761142206,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.6425190965325607
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "ci95": [
+              1.0676904511193976,
+              1.0810220893615732
+            ],
+            "median_paired_ratio": 1.0757639724725205,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.0763663813421434
+          },
+          "name": "sqrt_scale100_x5000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              1.070691132261648,
+              1.0770843149002236
+            ],
+            "median_paired_ratio": 1.075633274187595,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.0760790741397654
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              1.0480985210863882,
+              1.0557262146927955
+            ],
+            "median_paired_ratio": 1.054920869579973,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.0544568693465608
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "multiply_dense_10000d_x500",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              1.001813115464468,
+              1.0048539882516025
+            ],
+            "median_paired_ratio": 1.0038780686497089,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.0035025285068588
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              1.4528178319910359,
+              1.478503174299031
+            ],
+            "median_paired_ratio": 1.4723329151306528,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.4668973464166486
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "multiply_unbalanced_10000d_100d_x2000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9656693536036192,
+              0.9692170342643772
+            ],
+            "median_paired_ratio": 0.9675710148342178,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9655280972841237
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              8.894228912757011,
+              8.96703131943444
+            ],
+            "median_paired_ratio": 8.92231090404161,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 8.91793088351473
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "ci95": [
+              1.0767621238609664,
+              1.08075503039306
+            ],
+            "median_paired_ratio": 1.0787012744204096,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.0790643672924196
+          },
+          "name": "multiply_sparse_10000d_x1000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              1.0747939879258126,
+              1.0809902060608008
+            ],
+            "median_paired_ratio": 1.0777667695794244,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.0777667695794244
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              0.7660440219691321,
+              0.7866762939459451
+            ],
+            "median_paired_ratio": 0.7769069170450766,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.774252613533655
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "divide_multilimb_900d_450d_s100_x1000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9778693134192755,
+              1.0322273594349454
+            ],
+            "median_paired_ratio": 1.0020302277486834,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.999074027687643
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              1.444685589759789,
+              1.6408602927876885
+            ],
+            "median_paired_ratio": 1.6240191274718248,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.6272258751385669
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "power_100d_e17_x1000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9716320975381946,
+              0.9870144604002437
+            ],
+            "median_paired_ratio": 0.9761819942067518,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.982809259925125
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              1.456814229591356,
+              1.494225217764627
+            ],
+            "median_paired_ratio": 1.4687392287118781,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.480829161146717
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "sparse_array_200000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.8140395165280229,
+              0.8551202752943179
+            ],
+            "median_paired_ratio": 0.8340707407982352,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.8429452650629178
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              42.91116953993867,
+              44.96221095229281
+            ],
+            "median_paired_ratio": 43.42238266470663,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 43.43275379045413
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "decimal_input_4000d_x100",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9982346230564731,
+              1.0026089556171276
+            ],
+            "median_paired_ratio": 1.000926633453981,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9998032883157745
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              2.4466125443262747,
+              2.5000396641223994
+            ],
+            "median_paired_ratio": 2.4586354588400035,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 2.4556374361305444
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "streaming_statements_20000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9960704504117942,
+              1.0229732912161773
+            ],
+            "median_paired_ratio": 1.001393852086401,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.998258342496173
+          },
+          "status": "pass"
+        }
+      ]
+    }
+  },
+  {
+    "os": "macos",
+    "artifact_sha256": "c9ecfdb42d274c8ddb77dc15b64d9a1ae7e57ec074bea6443d3dfef6bf1bbd1c",
+    "host": {
+      "ISA": "portable C++ only; no runtime ISA-specific kernel selected",
+      "affinity": "OS default; no CPU isolation or affinity pinning",
+      "details": [
+        {
+          "argv": [
+            "sysctl",
+            "machdep.cpu",
+            "hw.model",
+            "hw.memsize"
+          ],
+          "status": 0,
+          "stderr": "",
+          "stdout": "machdep.cpu.cores_per_package: 3\nmachdep.cpu.core_count: 3\nmachdep.cpu.logical_per_package: 3\nmachdep.cpu.thread_count: 3\nmachdep.cpu.brand_string: Apple M1 (Virtual)\nhw.model: VirtualMac2,1\nhw.memsize: 7516192768\n"
+        },
+        {
+          "argv": [
+            "sw_vers"
+          ],
+          "status": 0,
+          "stderr": "",
+          "stdout": "ProductName:\t\tmacOS\nProductVersion:\t\t15.8.2\nBuildVersion:\t\t24H232\n"
+        }
+      ],
+      "diagnostics": "allocation counters are excluded from timing; CPU/RSS diagnostics are separate",
+      "limitations": "Hosted VM contention, frequency and temperature are uncontrolled",
+      "machine": "arm64",
+      "platform": "macOS-15.8.2-arm64-arm-64bit-Mach-O",
+      "python": "3.14.10 (v3.14.10:b703b2c5e70, Oct 25 2026, 14:17:53) [Clang 21.0.0 (clang-2100.1.1.101)]",
+      "runner": {
+        "GITHUB_EVENT_NAME": "pull_request",
+        "GITHUB_RUN_ATTEMPT": "1",
+        "GITHUB_RUN_ID": "41254982468",
+        "ImageOS": "macos15",
+        "ImageVersion": "20261028.0489.1",
+        "RUNNER_ARCH": "ARM64",
+        "RUNNER_OS": "macOS"
+      }
+    },
+    "orchestration": {
+      "base": "73619a3e5dbc3dbddbca929bdac0a212b77b6772",
+      "candidate": "5cd225291808a7f4f57570c17e835396ac2a692b",
+      "commands": [
+        {
+          "argv": [
+            "/Library/Frameworks/Python.framework/Versions/3.14/bin/python",
+            "/Users/runner/work/gd-posix-apps/gd-posix-apps/src/bc/scripts/build-gd-bc.py",
+            "--source",
+            "/Users/runner/work/gd-posix-apps/gd-posix-apps",
+            "--revision",
+            "73619a3e5dbc3dbddbca929bdac0a212b77b6772",
+            "--split-point",
+            "126",
+            "--output",
+            "/Users/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/base",
+            "--name",
+            "base",
+            "--c-compiler",
+            "cc",
+            "--cxx-compiler",
+            "c++"
+          ],
+          "cwd": "/Users/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results",
+          "log": "command-001.log",
+          "returncode": 0
+        },
+        {
+          "argv": [
+            "/Library/Frameworks/Python.framework/Versions/3.14/bin/python",
+            "/Users/runner/work/gd-posix-apps/gd-posix-apps/src/bc/scripts/build-gd-bc.py",
+            "--source",
+            "/Users/runner/work/gd-posix-apps/gd-posix-apps",
+            "--revision",
+            "5cd225291808a7f4f57570c17e835396ac2a692b",
+            "--split-point",
+            "126",
+            "--output",
+            "/Users/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/candidate",
+            "--name",
+            "candidate",
+            "--c-compiler",
+            "cc",
+            "--cxx-compiler",
+            "c++"
+          ],
+          "cwd": "/Users/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results",
+          "log": "command-002.log",
+          "returncode": 0
+        },
+        {
+          "argv": [
+            "/Library/Frameworks/Python.framework/Versions/3.14/bin/python",
+            "/Users/runner/work/gd-posix-apps/gd-posix-apps/src/bc/scripts/build-gd-bc.py",
+            "--source",
+            "/Users/runner/work/gd-posix-apps/gd-posix-apps",
+            "--revision",
+            "73619a3e5dbc3dbddbca929bdac0a212b77b6772",
+            "--split-point",
+            "126",
+            "--output",
+            "/Users/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/aa",
+            "--name",
+            "aa",
+            "--c-compiler",
+            "cc",
+            "--cxx-compiler",
+            "c++"
+          ],
+          "cwd": "/Users/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results",
+          "log": "command-003.log",
+          "returncode": 0
+        },
+        {
+          "argv": [
+            "/Library/Frameworks/Python.framework/Versions/3.14/bin/python",
+            "/Users/runner/work/gd-posix-apps/gd-posix-apps/src/bc/scripts/build-bc-comparators.py",
+            "--output",
+            "/Users/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/howard",
+            "--cc",
+            "cc"
+          ],
+          "cwd": "/Users/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results",
+          "log": "command-004.log",
+          "returncode": 0
+        },
+        {
+          "argv": [
+            "/Library/Frameworks/Python.framework/Versions/3.14/bin/python",
+            "/Users/runner/work/gd-posix-apps/gd-posix-apps/src/bc/scripts/bench-bc.py",
+            "--config",
+            "/Users/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/aa.json",
+            "--output",
+            "/Users/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/evidence/full-aa",
+            "--reference",
+            "base",
+            "--preset",
+            "full",
+            "--samples",
+            "9",
+            "--warmups",
+            "1",
+            "--seed",
+            "197216",
+            "--corpus-seed",
+            "197200",
+            "--require-provenance",
+            "--workload",
+            "startup",
+            "--workload",
+            "loop_1000000",
+            "--workload",
+            "calls_200000",
+            "--workload",
+            "array_200000",
+            "--workload",
+            "sparse_array_200000",
+            "--workload",
+            "fibonacci_1000_x100",
+            "--workload",
+            "multiply_100d_x100000",
+            "--workload",
+            "divide_multilimb_900d_450d_s100_x1000",
+            "--workload",
+            "power_100d_e17_x1000",
+            "--workload",
+            "sqrt_scale100_x5000",
+            "--workload",
+            "decimal_input_4000d_x100",
+            "--workload",
+            "streaming_statements_20000",
+            "--workload",
+            "compare_high_1000d_x100000",
+            "--workload",
+            "compare_low_1000d_x100000",
+            "--workload",
+            "compare_equal_1000d_x100000",
+            "--workload",
+            "multiply_10000d_x1000",
+            "--workload",
+            "multiply_dense_10000d_x500",
+            "--workload",
+            "multiply_unbalanced_10000d_100d_x2000",
+            "--workload",
+            "multiply_sparse_10000d_x1000"
+          ],
+          "cwd": "/Users/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results",
+          "log": "command-005.log",
+          "returncode": 0
+        },
+        {
+          "argv": [
+            "/Library/Frameworks/Python.framework/Versions/3.14/bin/python",
+            "/Users/runner/work/gd-posix-apps/gd-posix-apps/src/bc/scripts/bench-bc.py",
+            "--config",
+            "/Users/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/paired.json",
+            "--output",
+            "/Users/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/evidence/full-paired",
+            "--reference",
+            "base",
+            "--preset",
+            "full",
+            "--samples",
+            "9",
+            "--warmups",
+            "1",
+            "--seed",
+            "197216",
+            "--corpus-seed",
+            "197200",
+            "--require-provenance",
+            "--workload",
+            "startup",
+            "--workload",
+            "loop_1000000",
+            "--workload",
+            "calls_200000",
+            "--workload",
+            "array_200000",
+            "--workload",
+            "sparse_array_200000",
+            "--workload",
+            "fibonacci_1000_x100",
+            "--workload",
+            "multiply_100d_x100000",
+            "--workload",
+            "divide_multilimb_900d_450d_s100_x1000",
+            "--workload",
+            "power_100d_e17_x1000",
+            "--workload",
+            "sqrt_scale100_x5000",
+            "--workload",
+            "decimal_input_4000d_x100",
+            "--workload",
+            "streaming_statements_20000",
+            "--workload",
+            "compare_high_1000d_x100000",
+            "--workload",
+            "compare_low_1000d_x100000",
+            "--workload",
+            "compare_equal_1000d_x100000",
+            "--workload",
+            "multiply_10000d_x1000",
+            "--workload",
+            "multiply_dense_10000d_x500",
+            "--workload",
+            "multiply_unbalanced_10000d_100d_x2000",
+            "--workload",
+            "multiply_sparse_10000d_x1000"
+          ],
+          "cwd": "/Users/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results",
+          "log": "command-006.log",
+          "returncode": 0
+        },
+        {
+          "argv": [
+            "/Library/Frameworks/Python.framework/Versions/3.14/bin/python",
+            "/Users/runner/work/gd-posix-apps/gd-posix-apps/src/bc/scripts/bench-bc.py",
+            "--config",
+            "/Users/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/paired.json",
+            "--output",
+            "/Users/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/evidence/full-paired-confirmation",
+            "--reference",
+            "base",
+            "--preset",
+            "full",
+            "--samples",
+            "9",
+            "--warmups",
+            "1",
+            "--seed",
+            "197217",
+            "--corpus-seed",
+            "197200",
+            "--require-provenance",
+            "--workload",
+            "sqrt_scale100_x5000"
+          ],
+          "cwd": "/Users/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results",
+          "log": "command-007.log",
+          "returncode": 0
+        }
+      ],
+      "split_point": 126
+    },
+    "decisions": {
+      "advisory": true,
+      "pending": [
+        "POSIX math library #217",
+        "cross-run A/A calibration and autocorrelation policy"
+      ],
+      "policy": "5% is provisional; no performance failure gate; startup uncalibrated",
+      "results": [
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "startup",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9490896687391854,
+              1.1540456270850934
+            ],
+            "median_paired_ratio": 1.0294882856451386,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.0519918714855885
+          },
+          "status": "inconclusive-noisy"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "loop_1000000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.956300266001846,
+              1.011398610980527
+            ],
+            "median_paired_ratio": 1.00189074379258,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9923272107244089
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "calls_200000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.971247809578289,
+              1.1067686793347644
+            ],
+            "median_paired_ratio": 1.0043001841576593,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.0127858329844903
+          },
+          "status": "inconclusive-noisy"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "array_200000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.930848400225617,
+              0.9989289837305199
+            ],
+            "median_paired_ratio": 0.9684593844363152,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9541280893204248
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "compare_high_1000d_x100000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              1.000217996864695,
+              1.0305843899281004
+            ],
+            "median_paired_ratio": 1.0114807569771302,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.024525148376854
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "compare_low_1000d_x100000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9875628399171464,
+              1.0188907621444887
+            ],
+            "median_paired_ratio": 1.0035473724125266,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.0052394040025676
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "compare_equal_1000d_x100000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9078607547724239,
+              1.009477217869415
+            ],
+            "median_paired_ratio": 1.000243032124344,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.0010629155272357
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "fibonacci_1000_x100",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9816080246038967,
+              1.0178309591905144
+            ],
+            "median_paired_ratio": 0.9951175999745789,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.0119661342980855
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "multiply_100d_x100000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9882005536930896,
+              1.0408653090282594
+            ],
+            "median_paired_ratio": 1.007746795656742,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.0229419696989257
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "multiply_10000d_x1000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9799212176749267,
+              1.0255338436402235
+            ],
+            "median_paired_ratio": 1.0036163800834277,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9987064900086936
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "sqrt_scale100_x5000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9461418817388542,
+              1.0098144417712016
+            ],
+            "median_paired_ratio": 0.9846956171105656,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9945361939349134
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "multiply_dense_10000d_x500",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9592107365251076,
+              1.0433689973924314
+            ],
+            "median_paired_ratio": 1.007312462650286,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.995113778908174
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "multiply_unbalanced_10000d_100d_x2000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9230714310190882,
+              1.0069237262948747
+            ],
+            "median_paired_ratio": 0.9910244431595863,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9910244431595863
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "multiply_sparse_10000d_x1000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9758263251897722,
+              1.0605657554010575
+            ],
+            "median_paired_ratio": 1.0167470341237597,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.0165653406347472
+          },
+          "status": "inconclusive-noisy"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "divide_multilimb_900d_450d_s100_x1000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9145604888034687,
+              1.0337973719827003
+            ],
+            "median_paired_ratio": 1.0157130611035685,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9859347760924564
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "power_100d_e17_x1000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9503021830568422,
+              1.0307988462038016
+            ],
+            "median_paired_ratio": 0.992213983601389,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9944735868424361
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "sparse_array_200000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9516447772883694,
+              1.0028575948322698
+            ],
+            "median_paired_ratio": 1.000119802151615,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9947487151553478
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "decimal_input_4000d_x100",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9953789194543313,
+              1.0116719550271847
+            ],
+            "median_paired_ratio": 1.005096545842019,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9998337323553143
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "streaming_statements_20000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9831812024046158,
+              1.0319835926539096
+            ],
+            "median_paired_ratio": 1.007755492092512,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.018073026402785
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              0.9695080589875125,
+              1.361709239717071
+            ],
+            "median_paired_ratio": 1.307769403867425,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.22409121401477
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "startup",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.8909285569813489,
+              1.1606635237861147
+            ],
+            "median_paired_ratio": 1.1466464702038242,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.0482899256046807
+          },
+          "status": "inconclusive-noisy"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              1.2460174937526491,
+              1.3125729639512445
+            ],
+            "median_paired_ratio": 1.2656277671247393,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.2691993847093825
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "loop_1000000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.7131318010544301,
+              0.7450822466609848
+            ],
+            "median_paired_ratio": 0.7353257300161025,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.7246681921983572
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              1.6331069658059345,
+              1.7055721397108154
+            ],
+            "median_paired_ratio": 1.6387653770834256,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.6372844028397766
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "calls_200000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.7832751542359557,
+              0.7936587602412541
+            ],
+            "median_paired_ratio": 0.7902137455518634,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.7897373674400254
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              1.4025608387291066,
+              1.4244289144575562
+            ],
+            "median_paired_ratio": 1.411892576179461,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.4089028125284655
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "array_200000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.6072289709758971,
+              0.636851281033285
+            ],
+            "median_paired_ratio": 0.6180095588965108,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.6197199421267746
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              1.2057894061163368,
+              1.223123259117074
+            ],
+            "median_paired_ratio": 1.2149929498513994,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.208709824927942
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "compare_high_1000d_x100000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.6671758141638677,
+              0.6820478450421605
+            ],
+            "median_paired_ratio": 0.6743102857133842,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.6726817446512677
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              1.4749791767186924,
+              1.5071560036680218
+            ],
+            "median_paired_ratio": 1.5045482756315853,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.4811766562583897
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "compare_low_1000d_x100000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.8151395945144552,
+              0.8340600853146215
+            ],
+            "median_paired_ratio": 0.8266159649518551,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.8198306822642106
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              1.4828118858850727,
+              1.507099571646278
+            ],
+            "median_paired_ratio": 1.483447618916781,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.4859382780631105
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "compare_equal_1000d_x100000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.8166854117389046,
+              0.8322499325594569
+            ],
+            "median_paired_ratio": 0.8247553205318301,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.8238795739320233
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              0.8407891269778386,
+              0.8564872986419217
+            ],
+            "median_paired_ratio": 0.8508026756459786,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.8489210358774023
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "fibonacci_1000_x100",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.8158632010606808,
+              0.8314615560979303
+            ],
+            "median_paired_ratio": 0.8196502429350606,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.8199799449225864
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              1.1450576580075327,
+              1.1921232993272366
+            ],
+            "median_paired_ratio": 1.1763721854279259,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.179906552606629
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "multiply_100d_x100000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.8760359701509347,
+              0.9028030234456419
+            ],
+            "median_paired_ratio": 0.8863100625895161,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.8963681694778977
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              8.764424836830875,
+              9.581713293375431
+            ],
+            "median_paired_ratio": 9.064009728601667,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 9.03994980520728
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "multiply_10000d_x1000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9848158517023601,
+              1.038720119424872
+            ],
+            "median_paired_ratio": 1.0180457146321937,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.016771644391428
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              0.6493891125007547,
+              0.6605353864268428
+            ],
+            "median_paired_ratio": 0.6562482312104153,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.6747624049511427
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "ci95": [
+              1.089622857198631,
+              1.1053698734137423
+            ],
+            "median_paired_ratio": 1.1033433918414142,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.1017848695650132
+          },
+          "name": "sqrt_scale100_x5000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              1.0883096572156667,
+              1.1076162312608606
+            ],
+            "median_paired_ratio": 1.105220720797866,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.1067417349155808
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              1.2904951137003269,
+              1.3931646205008332
+            ],
+            "median_paired_ratio": 1.3173954261947374,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.3138993347332257
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "multiply_dense_10000d_x500",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9572498050464001,
+              1.0131405941398786
+            ],
+            "median_paired_ratio": 0.9664538097678714,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9688239614383639
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              2.032223383646118,
+              2.432033067504572
+            ],
+            "median_paired_ratio": 2.186002674380323,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 2.1414235067919396
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "multiply_unbalanced_10000d_100d_x2000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9494638418155994,
+              0.9592543919806567
+            ],
+            "median_paired_ratio": 0.9557001273121478,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.955281441007071
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              9.532996279756523,
+              10.390540748222321
+            ],
+            "median_paired_ratio": 9.941670262537455,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 9.759433300119166
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "multiply_sparse_10000d_x1000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9815073331723878,
+              1.0562494234932853
+            ],
+            "median_paired_ratio": 1.0246292377482664,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.016092123538971
+          },
+          "status": "inconclusive-noisy"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              0.8556203194862763,
+              0.927495220132183
+            ],
+            "median_paired_ratio": 0.8717927698057053,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.8808016121366312
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "divide_multilimb_900d_450d_s100_x1000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.8807546236615508,
+              1.0104671652562593
+            ],
+            "median_paired_ratio": 0.9460693882778909,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9381492976494714
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              1.9386711734542224,
+              2.0759572192652245
+            ],
+            "median_paired_ratio": 1.954853826045238,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.9433849480713123
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "power_100d_e17_x1000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9611490607275566,
+              0.9741121030136521
+            ],
+            "median_paired_ratio": 0.9706399283021137,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.969893077933258
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              1.0846424466471363,
+              1.1200968965316818
+            ],
+            "median_paired_ratio": 1.0909131557483964,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.0921446965493349
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "sparse_array_200000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.6447389279913757,
+              0.6675777552751508
+            ],
+            "median_paired_ratio": 0.6524731874503344,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.6481951158734105
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              37.32997471906314,
+              41.89225054692743
+            ],
+            "median_paired_ratio": 39.397525057107636,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 38.52351867790936
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "decimal_input_4000d_x100",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9560285812166588,
+              1.0061552758828542
+            ],
+            "median_paired_ratio": 0.9925569756274741,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9575681652054518
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              2.6378339966830566,
+              2.75764667000576
+            ],
+            "median_paired_ratio": 2.7356930042336765,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 2.740812749589079
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "streaming_statements_20000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9850673651619754,
+              1.045576166571529
+            ],
+            "median_paired_ratio": 0.996304252936636,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9946673124841664
+          },
+          "status": "pass"
+        }
+      ]
+    }
+  },
+  {
+    "os": "windows",
+    "artifact_sha256": "8002ba40799dc6b280b499b5627607fbdbca3fcd3a3314e19221dff681455f00",
+    "host": {
+      "ISA": "portable C++ only; no runtime ISA-specific kernel selected",
+      "affinity": "OS default; no CPU isolation or affinity pinning",
+      "details": [
+        {
+          "argv": [
+            "powershell",
+            "-NoProfile",
+            "-Command",
+            "Get-CimInstance Win32_Processor | Select-Object Name,Architecture,NumberOfCores,NumberOfLogicalProcessors | ConvertTo-Json"
+          ],
+          "status": 0,
+          "stderr": "",
+          "stdout": "{\n    \"Name\":  \"AMD EPYC 7763 64-Core Processor                \",\n    \"Architecture\":  9,\n    \"NumberOfCores\":  2,\n    \"NumberOfLogicalProcessors\":  4\n}\n"
+        },
+        {
+          "argv": [
+            "cmd",
+            "/c",
+            "ver"
+          ],
+          "status": 0,
+          "stderr": "",
+          "stdout": "\nMicrosoft Windows [Version 10.0.26100.33650]\n"
+        },
+        {
+          "argv": [
+            "powershell",
+            "-NoProfile",
+            "-Command",
+            "(Get-Item ($env:WINDIR + \"/System32/ucrtbase.dll\")).VersionInfo | Select-Object FileVersion,ProductVersion | ConvertTo-Json"
+          ],
+          "status": 0,
+          "stderr": "",
+          "stdout": "{\n    \"FileVersion\":  \"10.0.26100.33648 (WinBuild.160101.0800)\",\n    \"ProductVersion\":  \"10.0.26100.33648\"\n}\n"
+        }
+      ],
+      "diagnostics": "allocation counters are excluded from timing; CPU/RSS diagnostics are separate",
+      "limitations": "Hosted VM contention, frequency and temperature are uncontrolled",
+      "machine": "AMD64",
+      "platform": "Windows-2025Server-10.0.26100-SP0",
+      "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+      "runner": {
+        "GITHUB_EVENT_NAME": "pull_request",
+        "GITHUB_RUN_ATTEMPT": "1",
+        "GITHUB_RUN_ID": "41254982468",
+        "ImageOS": "win25-vs2026",
+        "ImageVersion": "20261021.278.1",
+        "RUNNER_ARCH": "X64",
+        "RUNNER_OS": "Windows"
+      }
+    },
+    "orchestration": {
+      "base": "73619a3e5dbc3dbddbca929bdac0a212b77b6772",
+      "candidate": "5cd225291808a7f4f57570c17e835396ac2a692b",
+      "commands": [
+        {
+          "argv": [
+            "C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\python.exe",
+            "D:\\a\\gd-posix-apps\\gd-posix-apps\\src\\bc\\scripts\\build-gd-bc.py",
+            "--source",
+            "D:\\a\\gd-posix-apps\\gd-posix-apps",
+            "--revision",
+            "73619a3e5dbc3dbddbca929bdac0a212b77b6772",
+            "--split-point",
+            "126",
+            "--output",
+            "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results\\base",
+            "--name",
+            "base",
+            "--c-compiler",
+            "cl",
+            "--cxx-compiler",
+            "cl"
+          ],
+          "cwd": "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results",
+          "log": "command-001.log",
+          "returncode": 0
+        },
+        {
+          "argv": [
+            "C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\python.exe",
+            "D:\\a\\gd-posix-apps\\gd-posix-apps\\src\\bc\\scripts\\build-gd-bc.py",
+            "--source",
+            "D:\\a\\gd-posix-apps\\gd-posix-apps",
+            "--revision",
+            "5cd225291808a7f4f57570c17e835396ac2a692b",
+            "--split-point",
+            "126",
+            "--output",
+            "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results\\candidate",
+            "--name",
+            "candidate",
+            "--c-compiler",
+            "cl",
+            "--cxx-compiler",
+            "cl"
+          ],
+          "cwd": "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results",
+          "log": "command-002.log",
+          "returncode": 0
+        },
+        {
+          "argv": [
+            "C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\python.exe",
+            "D:\\a\\gd-posix-apps\\gd-posix-apps\\src\\bc\\scripts\\build-gd-bc.py",
+            "--source",
+            "D:\\a\\gd-posix-apps\\gd-posix-apps",
+            "--revision",
+            "73619a3e5dbc3dbddbca929bdac0a212b77b6772",
+            "--split-point",
+            "126",
+            "--output",
+            "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results\\aa",
+            "--name",
+            "aa",
+            "--c-compiler",
+            "cl",
+            "--cxx-compiler",
+            "cl"
+          ],
+          "cwd": "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results",
+          "log": "command-003.log",
+          "returncode": 0
+        },
+        {
+          "argv": [
+            "C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\python.exe",
+            "D:\\a\\gd-posix-apps\\gd-posix-apps\\src\\bc\\scripts\\build-bc-comparators.py",
+            "--output",
+            "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results\\howard",
+            "--cc",
+            "cl"
+          ],
+          "cwd": "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results",
+          "log": "command-004.log",
+          "returncode": 0
+        },
+        {
+          "argv": [
+            "C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\python.exe",
+            "D:\\a\\gd-posix-apps\\gd-posix-apps\\src\\bc\\scripts\\bench-bc.py",
+            "--config",
+            "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results\\aa.json",
+            "--output",
+            "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results\\evidence\\full-aa",
+            "--reference",
+            "base",
+            "--preset",
+            "full",
+            "--samples",
+            "9",
+            "--warmups",
+            "1",
+            "--seed",
+            "197216",
+            "--corpus-seed",
+            "197200",
+            "--require-provenance",
+            "--workload",
+            "startup",
+            "--workload",
+            "loop_1000000",
+            "--workload",
+            "calls_200000",
+            "--workload",
+            "array_200000",
+            "--workload",
+            "sparse_array_200000",
+            "--workload",
+            "fibonacci_1000_x100",
+            "--workload",
+            "multiply_100d_x100000",
+            "--workload",
+            "divide_multilimb_900d_450d_s100_x1000",
+            "--workload",
+            "power_100d_e17_x1000",
+            "--workload",
+            "sqrt_scale100_x5000",
+            "--workload",
+            "decimal_input_4000d_x100",
+            "--workload",
+            "streaming_statements_20000",
+            "--workload",
+            "compare_high_1000d_x100000",
+            "--workload",
+            "compare_low_1000d_x100000",
+            "--workload",
+            "compare_equal_1000d_x100000",
+            "--workload",
+            "multiply_10000d_x1000",
+            "--workload",
+            "multiply_dense_10000d_x500",
+            "--workload",
+            "multiply_unbalanced_10000d_100d_x2000",
+            "--workload",
+            "multiply_sparse_10000d_x1000"
+          ],
+          "cwd": "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results",
+          "log": "command-005.log",
+          "returncode": 0
+        },
+        {
+          "argv": [
+            "C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\python.exe",
+            "D:\\a\\gd-posix-apps\\gd-posix-apps\\src\\bc\\scripts\\bench-bc.py",
+            "--config",
+            "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results\\paired.json",
+            "--output",
+            "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results\\evidence\\full-paired",
+            "--reference",
+            "base",
+            "--preset",
+            "full",
+            "--samples",
+            "9",
+            "--warmups",
+            "1",
+            "--seed",
+            "197216",
+            "--corpus-seed",
+            "197200",
+            "--require-provenance",
+            "--workload",
+            "startup",
+            "--workload",
+            "loop_1000000",
+            "--workload",
+            "calls_200000",
+            "--workload",
+            "array_200000",
+            "--workload",
+            "sparse_array_200000",
+            "--workload",
+            "fibonacci_1000_x100",
+            "--workload",
+            "multiply_100d_x100000",
+            "--workload",
+            "divide_multilimb_900d_450d_s100_x1000",
+            "--workload",
+            "power_100d_e17_x1000",
+            "--workload",
+            "sqrt_scale100_x5000",
+            "--workload",
+            "decimal_input_4000d_x100",
+            "--workload",
+            "streaming_statements_20000",
+            "--workload",
+            "compare_high_1000d_x100000",
+            "--workload",
+            "compare_low_1000d_x100000",
+            "--workload",
+            "compare_equal_1000d_x100000",
+            "--workload",
+            "multiply_10000d_x1000",
+            "--workload",
+            "multiply_dense_10000d_x500",
+            "--workload",
+            "multiply_unbalanced_10000d_100d_x2000",
+            "--workload",
+            "multiply_sparse_10000d_x1000"
+          ],
+          "cwd": "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results",
+          "log": "command-006.log",
+          "returncode": 0
+        },
+        {
+          "argv": [
+            "C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\python.exe",
+            "D:\\a\\gd-posix-apps\\gd-posix-apps\\src\\bc\\scripts\\bench-bc.py",
+            "--config",
+            "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results\\paired.json",
+            "--output",
+            "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results\\evidence\\full-paired-confirmation",
+            "--reference",
+            "base",
+            "--preset",
+            "full",
+            "--samples",
+            "9",
+            "--warmups",
+            "1",
+            "--seed",
+            "197217",
+            "--corpus-seed",
+            "197200",
+            "--require-provenance",
+            "--workload",
+            "multiply_sparse_10000d_x1000"
+          ],
+          "cwd": "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results",
+          "log": "command-007.log",
+          "returncode": 0
+        }
+      ],
+      "split_point": 126
+    },
+    "decisions": {
+      "advisory": true,
+      "pending": [
+        "POSIX math library #217",
+        "cross-run A/A calibration and autocorrelation policy"
+      ],
+      "policy": "5% is provisional; no performance failure gate; startup uncalibrated",
+      "results": [
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "startup",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.8922687449533268,
+              1.0785157821040678
+            ],
+            "median_paired_ratio": 1.0063802317824964,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.015685281452172
+          },
+          "status": "inconclusive-noisy"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "loop_1000000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9775447253524359,
+              1.016267239513421
+            ],
+            "median_paired_ratio": 1.0082411906131084,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.0057854225885603
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "calls_200000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9850256716945233,
+              1.03093171745617
+            ],
+            "median_paired_ratio": 1.0032010444489916,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.009250391911093
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "array_200000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9787796725695207,
+              1.0104847842202476
+            ],
+            "median_paired_ratio": 1.0063358233978474,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.0063358233978474
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "compare_high_1000d_x100000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9532781895775558,
+              1.0194138950524914
+            ],
+            "median_paired_ratio": 0.9991569006950104,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9791539230489346
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "compare_low_1000d_x100000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.955887722434682,
+              1.004745914551176
+            ],
+            "median_paired_ratio": 0.9990659571047994,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9932107055726354
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "compare_equal_1000d_x100000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9304922744811529,
+              1.0353522263323465
+            ],
+            "median_paired_ratio": 1.0060461097930289,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.002938873389005
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "fibonacci_1000_x100",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9751344718038668,
+              1.0076357192742547
+            ],
+            "median_paired_ratio": 0.9983539018324717,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9967506949549894
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "multiply_100d_x100000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9942184845828163,
+              1.0392205744415028
+            ],
+            "median_paired_ratio": 1.001553111175573,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.0013298130419244
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "multiply_10000d_x1000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9958184855249032,
+              1.0000802506729147
+            ],
+            "median_paired_ratio": 0.9984223302970588,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9984223302970588
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "sqrt_scale100_x5000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9899242247420191,
+              1.0139021602940594
+            ],
+            "median_paired_ratio": 1.0014385092217089,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.0020060686644492
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "multiply_dense_10000d_x500",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9932271274235268,
+              1.0021995769681316
+            ],
+            "median_paired_ratio": 0.9978822756107572,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9988485270721322
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "multiply_unbalanced_10000d_100d_x2000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9909786269869787,
+              1.0179677630765331
+            ],
+            "median_paired_ratio": 1.0001244474058846,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9992214713230212
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "multiply_sparse_10000d_x1000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9976680272717591,
+              1.0020204042638736
+            ],
+            "median_paired_ratio": 0.9999065052613993,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.000755856634302
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "divide_multilimb_900d_450d_s100_x1000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9735248491220642,
+              1.0273108907519106
+            ],
+            "median_paired_ratio": 1.0027668680511184,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9916483448567508
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "power_100d_e17_x1000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9926804683263739,
+              1.0070714976470716
+            ],
+            "median_paired_ratio": 1.0005934043980804,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9964966172550479
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "sparse_array_200000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9678075154790475,
+              1.0112598358531577
+            ],
+            "median_paired_ratio": 0.9834164025458969,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9833076250659515
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "decimal_input_4000d_x100",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9928118660798577,
+              1.0018016474394271
+            ],
+            "median_paired_ratio": 0.9981364828347106,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9980331577280481
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": null,
+          "comparison": "aa",
+          "confirmation": null,
+          "name": "streaming_statements_20000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9372782443579792,
+              1.1574451915530257
+            ],
+            "median_paired_ratio": 1.021869360688966,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.020839979336591
+          },
+          "status": "inconclusive-noisy"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              1.0005774526968896,
+              1.1960231820851466
+            ],
+            "median_paired_ratio": 1.1238985110806772,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.163429262323296
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "startup",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.99746200515034,
+              1.1346416745078143
+            ],
+            "median_paired_ratio": 1.0555933062319343,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.1108545736225328
+          },
+          "status": "inconclusive-noisy"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              1.5705162064210492,
+              1.6843043413232537
+            ],
+            "median_paired_ratio": 1.6746358744219438,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.6756664205494067
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "loop_1000000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.5742484368772919,
+              0.594902176347271
+            ],
+            "median_paired_ratio": 0.5855683743497808,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.5877646625363032
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              2.4733654210972693,
+              2.6969021596468155
+            ],
+            "median_paired_ratio": 2.6565589515977037,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 2.6396201222055287
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "calls_200000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.7236297347129603,
+              0.7687871001381447
+            ],
+            "median_paired_ratio": 0.755159152782191,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.7529513198189127
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              0.13987651408970808,
+              0.15070479972583947
+            ],
+            "median_paired_ratio": 0.14330152714794192,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.1428097571142728
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "array_200000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.6217855012759288,
+              0.6619521631030447
+            ],
+            "median_paired_ratio": 0.639338147223748,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.6370608719689076
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              1.6367384311043989,
+              1.6868720128497103
+            ],
+            "median_paired_ratio": 1.6655228000202407,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.6547330866951622
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "compare_high_1000d_x100000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.5379154622322777,
+              0.5562829243235136
+            ],
+            "median_paired_ratio": 0.5545262369557433,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.5492807676305754
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              2.0565703478472046,
+              2.4096040624530466
+            ],
+            "median_paired_ratio": 2.077763752594308,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 2.0803524318806295
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "compare_low_1000d_x100000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.7485555018294129,
+              0.8737492030415959
+            ],
+            "median_paired_ratio": 0.7709466145928405,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.7623761932744066
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              2.050445109817,
+              2.1005965018672854
+            ],
+            "median_paired_ratio": 2.0678633922166036,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 2.0701863795630007
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "compare_equal_1000d_x100000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.7663390071449944,
+              0.8095671985397097
+            ],
+            "median_paired_ratio": 0.7839216430864832,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.7802799388393283
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              1.0953692436856008,
+              1.1289262929260613
+            ],
+            "median_paired_ratio": 1.1120397936358448,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.1122286336862957
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "fibonacci_1000_x100",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.7446234540515515,
+              0.7870447259762662
+            ],
+            "median_paired_ratio": 0.7762502133880317,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.767764294070958
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              0.6368832817639188,
+              0.6559545653872401
+            ],
+            "median_paired_ratio": 0.6494562449374576,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.6494562449374576
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "multiply_100d_x100000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.8067788530505988,
+              0.8327322562594184
+            ],
+            "median_paired_ratio": 0.8312709296146908,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.8312709296146908
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              4.157980444434713,
+              4.193519101131028
+            ],
+            "median_paired_ratio": 4.175716065952417,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 4.1797301206274575
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "multiply_10000d_x1000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              1.0442983093110974,
+              1.0497546486785718
+            ],
+            "median_paired_ratio": 1.047212648277781,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.0465185839140108
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              0.2716516097211393,
+              0.2853541392207688
+            ],
+            "median_paired_ratio": 0.2783824112900607,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.2793111864058077
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "sqrt_scale100_x5000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9815857907355228,
+              1.068119029300718
+            ],
+            "median_paired_ratio": 1.0644646754467284,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.0644646754467284
+          },
+          "status": "inconclusive-noisy"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              0.37237345775507247,
+              0.3750691390928747
+            ],
+            "median_paired_ratio": 0.3742768872939699,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.3742768872939699
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "multiply_dense_10000d_x500",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              1.0178828910782256,
+              1.0280135377963224
+            ],
+            "median_paired_ratio": 1.0214849671432862,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.022049796067876
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              0.2999377402308016,
+              0.30449517476581756
+            ],
+            "median_paired_ratio": 0.30296944546496063,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.3033465051185318
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "multiply_unbalanced_10000d_100d_x2000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9049903313884629,
+              0.9403700816432491
+            ],
+            "median_paired_ratio": 0.9354946412152375,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9366589080765143
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              4.180384644424475,
+              4.3427297068994815
+            ],
+            "median_paired_ratio": 4.322503025570084,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 4.293033362483212
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "ci95": [
+              1.0789674133603175,
+              1.0832315307579696
+            ],
+            "median_paired_ratio": 1.0805753385151564,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.0808351786815174
+          },
+          "name": "multiply_sparse_10000d_x1000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              1.0667019879293433,
+              1.0881308909803393
+            ],
+            "median_paired_ratio": 1.0795647620622737,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.080362921362988
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              0.27688394854322185,
+              0.28382358975498473
+            ],
+            "median_paired_ratio": 0.28054300645315267,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.28331973726364357
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "divide_multilimb_900d_450d_s100_x1000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.97198357865361,
+              1.0043823509383227
+            ],
+            "median_paired_ratio": 0.9904873660315444,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9967603645272602
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              0.38687409365996134,
+              0.397447739270643
+            ],
+            "median_paired_ratio": 0.3940405549966877,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.3925648195622323
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "power_100d_e17_x1000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9523382531507245,
+              0.9786192328194987
+            ],
+            "median_paired_ratio": 0.9714481057351492,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9684884390151293
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              1.5003028730849066,
+              1.5453489436935883
+            ],
+            "median_paired_ratio": 1.5393386922898282,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.5299710294298414
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "sparse_array_200000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.5520148722888846,
+              0.5934126846439177
+            ],
+            "median_paired_ratio": 0.5716661785835983,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.5676994995384285
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              23.016920800907112,
+              24.06714655564846
+            ],
+            "median_paired_ratio": 23.71342979484553,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 23.74513951236685
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "decimal_input_4000d_x100",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.9851723349491227,
+              1.0022268835435133
+            ],
+            "median_paired_ratio": 0.9998749995003465,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9960847555716826
+          },
+          "status": "pass"
+        },
+        {
+          "candidate_over_howard": {
+            "ci95": [
+              1.6474123083533458,
+              1.9873789538284041
+            ],
+            "median_paired_ratio": 1.8352381283889432,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 1.847444287162676
+          },
+          "comparison": "paired",
+          "confirmation": null,
+          "name": "streaming_statements_20000",
+          "preset": "full",
+          "ratio": {
+            "ci95": [
+              0.7945926870410271,
+              0.9742610219468426
+            ],
+            "median_paired_ratio": 0.9645976976152139,
+            "method": "paired percentile bootstrap of median ratios",
+            "pairs": 9,
+            "ratio_of_medians": 0.9583974125539133
+          },
+          "status": "pass"
+        }
+      ]
+    }
+  }
+]

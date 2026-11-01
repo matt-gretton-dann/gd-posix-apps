@@ -7,6 +7,7 @@
 
 #include <array>
 #include <cstdint>
+#include <sstream>
 #include <string>
 
 #include "bc.hh"
@@ -141,4 +142,55 @@ TEMPLATE_TEST_CASE("Quotient estimate boundaries hold at every limb width",
       }
     }
   }
+}
+
+TEMPLATE_TEST_CASE("Knuth normalization can promote inline storage before quotient views",
+                   "[bc][number][division][storage]", GD::Bc::NumberTraits8, GD::Bc::NumberTraits16,
+                   GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  auto const width = Number::base_log10_;
+  // With B = 10^width, (B^3 - 1) / (B + 1) has quotient B^2 - B
+  // and remainder B - 1. Normalization multiplies by B/2, growing the
+  // three-limb dividend before Algorithm D captures its stable buffers.
+  std::string const numerator_text(3 * width, '9');
+  std::string const divisor_text = "1" + std::string(width - 1, '0') + "1";
+  Number const numerator(numerator_text, 10);
+  Number const divisor(divisor_text, 10);
+  auto quotient = numerator;
+  quotient.divide(divisor, 0);
+  CHECK(quotient == Number(std::string(width, '9') + std::string(width, '0'), 10));
+  auto remainder = numerator;
+  remainder.modulo(divisor, 0);
+  CHECK(remainder == Number(std::string(width, '9'), 10));
+  CHECK(numerator == Number(numerator_text, 10));
+  CHECK(divisor == Number(divisor_text, 10));
+}
+
+TEMPLATE_TEST_CASE("Zero rescale and whole-limb shifts retain normalized coefficients",
+                   "[bc][number][storage]", GD::Bc::NumberTraits8, GD::Bc::NumberTraits16,
+                   GD::Bc::NumberTraits32)
+{
+  using Digits = GD::Bc::Details::BasicDigits<TestType>;
+  using Limb = typename Digits::NumType;
+  auto show = [](Digits const& digits) {
+    std::ostringstream output;
+    digits.debug(output);
+    return output.str();
+  };
+  Digits const original(static_cast<Limb>(Digits::base_ + 1));
+  // Force the two-limb base case, whose spare output slots need trimming.
+  Digits::multiply_split_point(3);
+  auto product = original;
+  product.multiply(original, 0);
+  CHECK(show(product) == "{1, 2, 1}");
+  auto shifted = original;
+  auto const shift = static_cast<Limb>(2 * Digits::base_log10_);
+  shifted.mul_pow10(shift);
+  CHECK(show(shifted) == "{0, 0, 1, 1}");
+  shifted.div_pow10(shift);
+  CHECK(show(shifted) == "{1, 1}");
+  shifted.mul_pow10(0);
+  CHECK(show(shifted) == "{1, 1}");
+  CHECK(show(original) == "{1, 1}");
 }

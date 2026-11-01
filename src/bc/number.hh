@@ -17,11 +17,14 @@
 #include <limits>
 #include <memory>
 #include <ostream>
+#include <span>
 #include <sstream>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include "bc.hh"
+#include "digit-storage.hh"
 #include "limb-product.hh"
 
 namespace GD::Bc {
@@ -106,8 +109,7 @@ public:
   /** \brief   Construct holding the single digit \a num
    *  \param num Number to hold.  Must be less than \c base_.
    */
-  explicit BasicDigits(NumType num)
-      : digits_(GD_BC_PROFILE_SHARED(Profile::AllocationKind::digits, DigitVector)())
+  explicit BasicDigits(NumType num) : digits_(DigitVector())
   {
     while (num != 0) {
       digits_->push_back(static_cast<NumType>(num % base_));
@@ -178,11 +180,17 @@ public:
       // Inspect the most significant unequal limb first. Zero-extension keeps
       // this valid for temporary ranges that still contain leading zero limbs;
       // storage length alone does not establish numeric ordering.
-      auto index = std::max(digits_->size(), rhs.digits_->size());
+      // Neither operand changes during comparison. Select inline/heap storage
+      // and capture both extents once rather than rechecking each limb access.
+      auto const lhs_size = digits_->size();
+      auto const rhs_size = rhs.digits_->size();
+      auto const lhs_first = digits_->begin();
+      auto const rhs_first = rhs.digits_->begin();
+      auto index = std::max(lhs_size, rhs_size);
       while (index != 0) {
         --index;
-        NumType const lhs_digit = index < digits_->size() ? (*digits_)[index] : 0;
-        NumType const rhs_digit = index < rhs.digits_->size() ? (*rhs.digits_)[index] : 0;
+        NumType const lhs_digit = index < lhs_size ? lhs_first[index] : 0;
+        NumType const rhs_digit = index < rhs_size ? rhs_first[index] : 0;
         if (lhs_digit < rhs_digit) {
           return Details::ComparisonResult::less_than;
         }
@@ -434,11 +442,12 @@ public:
      */
     auto length = digits_->size() * base_log10_;
     auto rit = digits_->rbegin();
-    while (rit != digits_->rend() && *rit == 0) {
+    auto const finish = digits_->rend();
+    while (rit != finish && *rit == 0) {
       ++rit;
       length -= base_log10_;
     }
-    if (rit != digits_->rend()) {
+    if (rit != finish) {
       length -= base_log10_;
       NumType d = *rit;
       assert(d != 0);  // NOLINT
@@ -600,7 +609,13 @@ public:
     BasicDigits result =
       multiply(digits_->begin(), digits_->end(), rhs.digits_->begin(), rhs.digits_->end());
     std::swap(*this, result);
-    div_pow10(rescale);
+    if (rescale != 0) {
+      div_pow10(rescale);
+    }
+    else {
+      // A zero decimal shift only needs to trim the product's spare limbs.
+      tidy();
+    }
   }
 
   /** \brief      Multiply-accumulate of over the underlying digits.
@@ -615,11 +630,13 @@ public:
 
     WideType carry = acc;
 
-    for (auto d = digits_->begin(); d != digits_->end(); ++d) {
-      WideType dw = *d;
+    // Storage cannot grow until the carry-draining phase below. A range keeps
+    // inline/heap selection outside the per-limb arithmetic loop.
+    for (auto& digit : *digits_) {
+      WideType dw = digit;
       dw = dw * mul + carry;
       carry = dw / base_;
-      *d = static_cast<NumType>(dw % base_);
+      digit = static_cast<NumType>(dw % base_);
     }
 
     // The accumulator may be a full native value, including the radix itself
@@ -639,15 +656,17 @@ public:
     NumType const extra_digits = scale / base_log10_;
     auto const init_size = digits_->size();
     digits_->resize(init_size + extra_digits);
-    for (auto i = init_size; i > 0; --i) {
-      (*digits_)[i + extra_digits - 1] = (*digits_)[i - 1];
-    }
-    for (typename DigitVector::size_type i = 0; i < extra_digits; ++i) {
-      (*digits_)[i] = 0;
+    if (extra_digits != 0) {
+      auto const first = digits_->begin();
+      std::move_backward(first, first + init_size, first + init_size + extra_digits);
+      std::fill_n(first, extra_digits, NumType{0});
     }
 
     /* Now we have to multply by a number < base so can just use mac.  */
-    mac(static_cast<NumType>(pow10(scale % base_log10_)), 0);
+    auto const fractional_shift = scale % base_log10_;
+    if (fractional_shift != 0) {
+      mac(static_cast<NumType>(pow10(fractional_shift)), 0);
+    }
 
     tidy();
   }
@@ -725,9 +744,8 @@ public:
       WideType const v2 = (*v.digits_)[0] + (base_ * (*v.digits_)[1]);
       WideType const q = u2 / v2;
 
-      digits_ = GD_BC_PROFILE_SHARED(Profile::AllocationKind::digits, DigitVector)(
-        std::initializer_list<NumType>{static_cast<NumType>(q % base_),
-                                       static_cast<NumType>(q / base_)});
+      digits_ = DigitVector(std::initializer_list<NumType>{static_cast<NumType>(q % base_),
+                                                           static_cast<NumType>(q / base_)});
       return;
     }
 
@@ -749,27 +767,35 @@ public:
     digits_->push_back(0);
 
     BasicDigits q;
-    q.digits_ = GD_BC_PROFILE_SHARED(Profile::AllocationKind::digits,
-                                     DigitVector)(m + 1, static_cast<NumType>(0));
+    q.digits_ = DigitVector(m + 1, static_cast<NumType>(0));
+
+    // D3-D6 change limb values but never resize these buffers. Resolve the
+    // storage modes once, after normalization/growth and before the final swap.
+    // The established extents bound every index in the quotient-digit loop.
+    auto dividend = std::span(digits_->begin(), digits_->size());
+    auto divisor = std::span<NumType const>(v.digits_->begin(), n);
+    auto quotient = std::span(q.digits_->begin(), q.digits_->size());
+    assert(n >= 2 && n + m < dividend.size());  // NOLINT
+    assert(quotient.size() == m + 1);           // NOLINT
 
     /* D2. Initialize j.  */
     auto j = m;
 
     do {
       /* D3. Calculate q_hat. */
-      WideType const t = digits_->at(n + j) * base_ + digits_->at(n + j - 1);
-      WideType q_hat = t / v.digits_->at(n - 1);
-      WideType r_hat = t % v.digits_->at(n - 1);
+      WideType const t = dividend[n + j] * base_ + dividend[n + j - 1];
+      WideType q_hat = t / divisor[n - 1];
+      WideType r_hat = t % divisor[n - 1];
 
       bool cont = true;
 
       while (cont) {
         cont = false;
-        WideType const q_hat_v_n2 = q_hat * v.digits_->at(n - 2);
-        WideType const b_r_hat_u_j_n2 = base_ * r_hat + digits_->at(j + n - 2);
+        WideType const q_hat_v_n2 = q_hat * divisor[n - 2];
+        WideType const b_r_hat_u_j_n2 = base_ * r_hat + dividend[j + n - 2];
         if (q_hat == base_ || q_hat_v_n2 > b_r_hat_u_j_n2) {
           --q_hat;
-          r_hat += v.digits_->at(n - 1);
+          r_hat += divisor[n - 1];
           if (r_hat < base_) {
             cont = true;
           }
@@ -779,23 +805,23 @@ public:
       /* D4. Multiply and subtract.   */
       WideType carry = 0;
       for (unsigned i = 0; i < n; ++i) {
-        carry += v.digits_->at(i) * q_hat;
+        carry += divisor[i] * q_hat;
         NumType const rhs_d = carry % base_;
         carry /= base_;
-        if (rhs_d > digits_->at(j + i)) {
-          digits_->at(j + i) += base_;
+        if (rhs_d > dividend[j + i]) {
+          dividend[j + i] += base_;
           carry += 1;
         }
-        digits_->at(j + i) -= rhs_d;
+        dividend[j + i] -= rhs_d;
       }
       if (carry != 0) {
         NumType const rhs_d = carry % base_;
         carry /= base_;
-        if (rhs_d > digits_->at(j + n)) {
-          digits_->at(j + n) += base_;
+        if (rhs_d > dividend[j + n]) {
+          dividend[j + n] += base_;
           carry += 1;
         }
-        digits_->at(j + n) -= rhs_d;
+        dividend[j + n] -= rhs_d;
       }
       bool const borrowed = (carry != 0);
 
@@ -803,21 +829,21 @@ public:
         /* D6. Add back.  Do this now as it is simpler. */
         carry = 0;
         for (typename DigitVector::size_type i = 0; i < n; ++i) {
-          carry += v.digits_->at(i) + digits_->at(j + i);
-          digits_->at(j + i) = carry % base_;
+          carry += divisor[i] + dividend[j + i];
+          dividend[j + i] = carry % base_;
           carry /= base_;
         }
-        carry += digits_->at(j + n);
-        digits_->at(j + n) = carry % base_;
+        carry += dividend[j + n];
+        dividend[j + n] = carry % base_;
         carry /= base_;
         assert(carry == 1);  // NOLINT
         q_hat -= 1;
       }
 
       /* D5. Test remainder.  */
-      assert(q_hat < base_);            // NOLINT
-      assert(digits_->at(n + j) == 0);  // NOLINT
-      q.digits_->at(j) = static_cast<NumType>(q_hat);
+      assert(q_hat < base_);         // NOLINT
+      assert(dividend[n + j] == 0);  // NOLINT
+      quotient[j] = static_cast<NumType>(q_hat);
 
     } while (j-- > 0);
 
@@ -831,7 +857,8 @@ public:
     copy_on_write();
 
     WideType carry = 0;
-    for (auto d = digits_->rbegin(); d != digits_->rend(); ++d) {
+    auto const finish = digits_->rend();
+    for (auto d = digits_->rbegin(); d != finish; ++d) {
       carry += *d;
       assert(carry / div < base_);  // NOLINT
       *d = static_cast<NumType>(carry / div);
@@ -854,9 +881,8 @@ public:
       offset = init_size;
     }
     if (offset != 0) {
-      for (decltype(offset) i = 0; i < init_size - offset; ++i) {
-        (*digits_)[i] = (*digits_)[i + offset];
-      }
+      auto const first = digits_->begin();
+      std::move(first + offset, first + init_size, first);
     }
     digits_->resize(init_size - offset);
     if (digits_->empty()) {
@@ -865,8 +891,9 @@ public:
 
     auto const scale_pow10 = static_cast<WideType>(pow10(scale % base_log10_));
     auto it = digits_->begin();
+    auto const finish = digits_->end();
     WideType carry = *it / scale_pow10;
-    while (++it != digits_->end()) {
+    while (++it != finish) {
       carry += static_cast<WideType>(*it) * (base_ / scale_pow10);
       *(it - 1) = carry % base_;
       carry /= base_;
@@ -932,17 +959,16 @@ private:
   void record_copy() const noexcept
   {
     GD_BC_PROFILE_EVENT(Profile::Event::digit_copies, 1);
-    if (digits_) {
+    if (digits_.has_heap()) {
       GD_BC_PROFILE_EVENT(Profile::Event::owned_digit_copies, 1);
     }
   }
 #endif
-  using DigitVector =
-    std::vector<NumType, Profile::Allocator<NumType, Profile::AllocationKind::digits>>;
+  using DigitVector = DigitStorage<NumType>;
 
   /** Construct basic digits based on an iterator range [begin, end).  */
   BasicDigits(typename DigitVector::const_iterator begin, typename DigitVector::const_iterator end)
-      : digits_(GD_BC_PROFILE_SHARED(Profile::AllocationKind::digits, DigitVector)(begin, end))
+      : digits_(begin, end)
   {
     GD_BC_PROFILE_EVENT(Profile::Event::range_limb_bytes,
                         static_cast<std::uint64_t>(std::distance(begin, end)) * sizeof(NumType));
@@ -952,13 +978,16 @@ private:
    */
   void copy_on_write()
   {
-    if (!digits_) {
-      digits_ = GD_BC_PROFILE_SHARED(Profile::AllocationKind::digits, DigitVector)();
+    // A single ownership query distinguishes absent, independent inline and
+    // shared heap values. Zero owners means absent at public boundaries.
+    auto const owners = digits_.use_count();
+    if (owners == 0) {
+      digits_ = DigitVector();
     }
-    if (digits_.use_count() > 1) {
+    else if (owners > 1) {
       GD_BC_PROFILE_EVENT(Profile::Event::cow_clones, 1);
       GD_BC_PROFILE_EVENT(Profile::Event::cow_limb_bytes, digits_->size() * sizeof(NumType));
-      digits_ = GD_BC_PROFILE_SHARED(Profile::AllocationKind::digits, DigitVector)(*digits_);
+      digits_ = digits_.clone();
     }
   }
 
@@ -969,8 +998,14 @@ private:
   void tidy()
   {
     if (digits_) {
-      while (!digits_->empty() && digits_->back() == 0) {
-        digits_->pop_back();
+      auto const first = digits_->begin();
+      auto const size = digits_->size();
+      auto remaining = size;
+      while (remaining != 0 && first[remaining - 1] == 0) {
+        --remaining;
+      }
+      if (remaining != size) {
+        digits_->resize(remaining);
       }
     }
   }
@@ -1016,9 +1051,10 @@ private:
     assert(digits_ && rhs.digits_);  // NOLINT
 
     auto it_lhs = digits_->begin();
+    auto const finish = digits_->end();
 
     while (scale >= base_log10_) {
-      NumType const d_lhs = (it_lhs == digits_->end()) ? 0 : *it_lhs++;
+      NumType const d_lhs = (it_lhs == finish) ? 0 : *it_lhs++;
       fn(d_lhs, 0);
       scale -= base_log10_;
     }
@@ -1030,17 +1066,17 @@ private:
       auto const d_rhs = static_cast<NumType>(carry % base_);
       carry /= base_;
 
-      NumType const d_lhs = (it_lhs == digits_->end()) ? 0 : *it_lhs++;
+      NumType const d_lhs = (it_lhs == finish) ? 0 : *it_lhs++;
       assert(carry < base_);  // NOLINT
       fn(d_lhs, d_rhs);
     }
 
     if (carry != 0) {
-      NumType const d_lhs = (it_lhs == digits_->end()) ? 0 : *it_lhs++;
+      NumType const d_lhs = (it_lhs == finish) ? 0 : *it_lhs++;
       fn(d_lhs, static_cast<NumType>(carry));
     }
 
-    while (it_lhs != digits_->end()) {
+    while (it_lhs != finish) {
       fn(*it_lhs++, 0);
     }
   }
@@ -1051,7 +1087,8 @@ private:
     // The calling BasicDigits owns this container throughout the check. Vector
     // growth can move its elements, but does not change the container's owner.
     if (it == digits.end()) {
-      it = digits.insert(it, 0);
+      digits.push_back(0);
+      it = digits.end() - 1;
     }
     return it;
   }
@@ -1082,14 +1119,16 @@ private:
       auto const rhs_size = rhs.digits_->size();
       digits_->resize(std::max(digits_->size(), rhs_size), NumType{0});
       auto it = digits_->begin();
+      auto const finish = digits_->end();
+      auto const source = rhs.digits_->begin();
       WideType carry = initial_carry;
       for (typename DigitVector::size_type index = 0; index < rhs_size; ++index) {
-        carry = static_cast<WideType>(fn(it++, carry + (*rhs.digits_)[index]));
+        carry = static_cast<WideType>(fn(it++, carry + source[index]));
         assert(carry < base_);  // NOLINT
       }
       // Both mutable policies are identities for a zero contribution. Higher
       // destination limbs therefore need no work after carry/borrow is clear.
-      while (carry != 0 && it != digits_->end()) {
+      while (carry != 0 && it != finish) {
         carry = static_cast<WideType>(fn(it++, carry));
         assert(carry < base_);  // NOLINT
       }
@@ -1115,7 +1154,8 @@ private:
       assert(carry < base_);  // NOLINT
     }
 
-    while (it != digits_->end()) {
+    auto const finish = digits_->end();
+    while (it != finish) {
       carry = static_cast<WideType>(fn(it++, carry));
       assert(carry < base_);  // NOLINT
     }
@@ -1221,7 +1261,7 @@ private:
 
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
   static typename DigitVector::difference_type multiply_split_point_;
-  std::shared_ptr<DigitVector> digits_ = nullptr;  ///< BasicDigits in number.
+  DigitVector digits_ = nullptr;  ///< BasicDigits in number.
 };
 
 template<typename Traits>
@@ -1273,8 +1313,10 @@ typename BasicDigits<Traits>::DigitVector::difference_type
  *
  * Where `x ** y` means `x` to the power of `y`, and `n` is `digits_.size()`.
  *
- * `digits_` is stored as a shared pointer so that we don't need to keep duplicating it when
- * we're not going to change the values.
+ * Coefficients of up to three limbs are stored inline and copied by value.
+ * Larger coefficients share heap storage until mutation detaches the value.
+ * Shrinking preserves heap capacity; reset or a shared-small detach can return
+ * to inline storage. Scale and sign remain independent of that storage choice.
  *
  * \brief Printing
  *
@@ -1693,7 +1735,9 @@ public:
       digits_ = Details::BasicDigits<Traits>(1);
       break;
     case Details::ComparisonResult::greater_than:
-      digits_.divide(rhs.digits_);
+      // The by-value divisor coefficient is dead after this call; scale/sign
+      // remain available below. Transfer it into normalization instead of copying.
+      digits_.divide(std::move(rhs.digits_));
       break;
     }
 
@@ -1773,7 +1817,9 @@ public:
     bool first_iteration = true;
     bool improving = false;
     do {
-      p = c;
+      // The current guess is replaced immediately. Transfer its ownership to
+      // the previous guess rather than copying and then releasing it.
+      p = std::move(c);
       c = *this;
       c.divide(p, working_scale);
       assert(c.scale_ == p.scale_);  // NOLINT
@@ -1783,7 +1829,9 @@ public:
       first_iteration = false;
     } while (improving);
 
-    *this = p;
+    // No later step reads p. Moving also keeps terminal rescaling from
+    // detaching a result that would otherwise remain shared with this local.
+    *this = std::move(p);
     if (scale() > target_scale) {
       digits_.div_pow10(scale() - target_scale);
       scale_ = target_scale;

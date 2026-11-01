@@ -1,0 +1,115 @@
+{
+  "collector_sha256": "5ac8a3467c988b558109d1376134b79b37c22e4cc0eab65abc3eedbf2155ce4d",
+  "corpus_seed": 197200,
+  "hardware_counters": {
+    "scope": "native per-process counters where time exposes them; no PMU setup",
+    "status": "platform-dependent; see memory.native_counters",
+    "unavailable_metrics": [
+      "branch misses",
+      "cache misses"
+    ]
+  },
+  "implementation": {
+    "argv": [
+      "/private/tmp/gd-bc-202-parent-release/build/src/bc/bc"
+    ],
+    "binary_sha256": "e0fc776923035bca290a5882d8f0cbba0b3c97cb219a81b124eeec3af696f493",
+    "complete_provenance": true,
+    "metadata": {
+      "binary_sha256": "e0fc776923035bca290a5882d8f0cbba0b3c97cb219a81b124eeec3af696f493",
+      "compiler": {
+        "C": {
+          "argv0": "/usr/bin/cc",
+          "realpath": "/usr/bin/cc",
+          "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+          "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+        },
+        "CXX": {
+          "argv0": "/usr/bin/c++",
+          "realpath": "/usr/bin/c++",
+          "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+          "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+        }
+      },
+      "configuration": {
+        "build_type": "Release",
+        "extensions": "ON",
+        "generator": "Ninja",
+        "multiply_split_point": 126,
+        "threshold_header_sha256": "c5b539c9f87d032bfcb436bb8da8972048d2ed1780a980265b7c3fe0e5e45626"
+      },
+      "flags": {
+        "CMAKE_CXX_FLAGS": "",
+        "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+        "CMAKE_C_FLAGS": "",
+        "CMAKE_C_FLAGS_RELEASE": "-O3 -DNDEBUG",
+        "CMAKE_EXE_LINKER_FLAGS": "",
+        "CMAKE_EXE_LINKER_FLAGS_RELEASE": "",
+        "compile_commands_sha256": "b8fd4dfe9db456182c5cf78cfe793abd4f97f06e535a2b708e35d1e1315b6fe1"
+      },
+      "instrumented": false,
+      "limitations": [
+        "Provision compiler, C/C++ runtime and SDK separately; this is not an OS image",
+        "Compiler defaults and actual commands are recorded, not claimed identical across hosts"
+      ],
+      "source_revision": "be6980152a6d0519454e7bc3ff03ea78cff0f69d",
+      "standard_library": {
+        "header_macros": {
+          "_LIBCPP_VERSION": "220106"
+        },
+        "scope": "standard-library header identity; provision runtime and SDK separately",
+        "status": "recorded"
+      },
+      "version": "gd-posix-apps source be6980152a6d0519454e7bc3ff03ea78cff0f69d"
+    },
+    "name": "gd-parent",
+    "role": "candidate"
+  },
+  "platform": "macOS-27.2-arm64-arm-64bit-Mach-O",
+  "purpose": "diagnostic attribution; not timing results",
+  "repeat_estimate_summary_sha256": "f442b7115f685b1372ad717fe37f60619644f1dc2a00130550f6599711a79eed",
+  "schema": 1,
+  "status": "all diagnostic children checked; availability is per measurement",
+  "workloads": [
+    {
+      "checked": true,
+      "cpu": {
+        "argv": [
+          "/usr/bin/sample",
+          "25593",
+          "3",
+          "1",
+          "-mayDie",
+          "-file",
+          "/private/tmp/gd-bc-202-parent-array-profile-2/array_200000.sample.txt"
+        ],
+        "repetitions": 26,
+        "returncode": 0,
+        "status": "collected"
+      },
+      "memory": {
+        "argv": [
+          "/usr/bin/time",
+          "-l",
+          "-o",
+          "/private/tmp/gd-bc-202-parent-array-profile-2/array_200000.rss.txt",
+          "/private/tmp/gd-bc-202-parent-release/build/src/bc/bc"
+        ],
+        "native_counters": {
+          "cycles_elapsed": 623160231,
+          "instructions_retired": 2927063918
+        },
+        "native_unit": "bytes (Darwin ru_maxrss)",
+        "peak_memory_footprint_bytes": 26968472,
+        "peak_rss_native": 27770880,
+        "repetitions": 1,
+        "status": "collected"
+      },
+      "name": "array_200000",
+      "parameters": {
+        "elements": 200000
+      },
+      "program_sha256": "f6a730c098c8d10032b60dd95a00eb18349ad719604fe3582bad5a1e61e5b054"
+    }
+  ]
+}
