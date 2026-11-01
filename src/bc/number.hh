@@ -1472,7 +1472,13 @@ public:
    *
    * Can only handle positive numbers.
    */
-  BasicNumber(std::string_view s, NumType ibase) : digits_(), sign_(Sign::positive), scale_(0)
+#if defined(__GNUC__) && !defined(__clang__)
+  // Isolate runtime-base decoding from GCC's surrounding VM/template inlining.
+  // Other compilers retain their generic policy and the same constructor body.
+  __attribute__((noinline))
+#endif
+  BasicNumber(std::string_view s, NumType ibase)
+      : digits_(), sign_(Sign::positive), scale_(0)
   {
     GD_BC_PROFILE_EVENT(Profile::Event::literal_conversions, 1);
     assert(ibase >= 2);   // NOLINT

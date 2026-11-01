@@ -1,0 +1,7 @@
+{
+  "before_source": "13e44f6b90d8ac5cf6248548d806c9d87c3097f3",
+  "before_sha256": "db36e334b3808e98a45895de104e92fc4331f7455579805ca75899d8c981ab92",
+  "after_sha256": "db36e334b3808e98a45895de104e92fc4331f7455579805ca75899d8c981ab92",
+  "byte_identical": true,
+  "scope": "Matched non-MSVC/non-GCC worktree Release executable; new source still requires native evidence"
+}

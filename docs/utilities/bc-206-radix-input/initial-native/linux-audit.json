@@ -1,0 +1,16 @@
+{
+  "os": "linux",
+  "checked": 1570,
+  "identities": {
+    "base": "3232d2f5458492b5763cae77ec699cdb38882fe7",
+    "candidate": "13e44f6b90d8ac5cf6248548d806c9d87c3097f3",
+    "howard-7.0.3": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8"
+  },
+  "confirmed": [
+    "| full | paired | `compare_high_1000d_x100000` | 1.081 [1.0568881602656885, 1.0925632530317535] | confirmed regression |",
+    "| full | paired | `compare_low_1000d_x100000` | 1.096 [1.074521118374453, 1.1064012104401062] | confirmed regression |",
+    "| full | paired | `compare_equal_1000d_x100000` | 1.095 [1.0762511039134037, 1.113769220523473] | confirmed regression |",
+    "| full | paired | `ibase_literal_flip_20000` | 1.105 [1.0973876147061197, 1.132294146671137] | confirmed regression |"
+  ],
+  "sha256": "678c72c95108ea532c34915084e438fbe22c2e010c50906d4c1850ba7a454627"
+}
