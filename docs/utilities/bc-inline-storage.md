@@ -20,7 +20,10 @@ The representation uses ordinary `std::variant`, `std::array`, `std::shared_ptr`
 and `std::vector`; it assumes no pointer tagging, shared_ptr layout, ISA or
 architecture. The variant has two alternatives: inline values (including an
 absent sentinel outside the valid size range) and heap owners. This preserves
-the nullable facade without a third dispatch state. The heap path remains
+the nullable facade without a third dispatch state. A heap alternative has a
+non-null owner at every public boundary: allocation/copy establishes it and
+moves reset their source before returning. Access tests the variant tag once,
+without a second owner-pointer null check in the limb path. The heap path remains
 available for arbitrary supported sizes.
 There is no manual arena or cross-frame lifetime coupling. Storage growth is
 exact; arithmetic, public scale/sign rules and zero padding are unchanged.

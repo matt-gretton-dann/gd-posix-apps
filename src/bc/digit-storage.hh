@@ -126,13 +126,15 @@ public:
 
   [[nodiscard]] auto has_heap() const noexcept -> bool
   {
-    auto const* owner = heap();
-    return owner && static_cast<bool>(*owner);
+    // Every heap alternative holds a non-null owner at public boundaries.
+    // Constructors either allocate or copy an existing owner; moves reset the
+    // source before returning. Do not load/test the pointer in each limb access.
+    return std::holds_alternative<Owner>(storage_);
   }
   explicit operator bool() const noexcept
   {
     auto const* value = std::get_if<Inline>(&storage_);
-    return value ? value->size != absent_size : has_heap();
+    return value ? value->size != absent_size : true;
   }
   auto operator->() noexcept -> DigitStorage* { return this; }
   auto operator->() const noexcept -> DigitStorage const* { return this; }
