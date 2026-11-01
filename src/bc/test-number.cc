@@ -802,3 +802,30 @@ TEMPLATE_TEST_CASE("Equal-scale arithmetic preserves long chains and aliases",
   value.sub(one);
   CHECK(render(value) == sparse);
 }
+
+#if GD_BC_PROFILE
+TEMPLATE_TEST_CASE("Scan diagnostics count logical limb positions", "[bc][number][scan-profile]",
+                   GD::Bc::NumberTraits8, GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Digits = GD::Bc::Details::BasicDigits<TestType>;
+  using N = typename TestType::NumType;
+  namespace P = GD::Bc::Profile;
+  auto event = [](P::Event kind) { return P::snapshot().events[static_cast<std::size_t>(kind)]; };
+  Digits value(N(7));
+  value.mul_pow10(N(3 * TestType::base_log10_));
+  auto before = event(P::Event::zero_scan_limbs);
+  CHECK_FALSE(value.is_zero());
+  CHECK(event(P::Event::zero_scan_limbs) - before == 4);
+  before = event(P::Event::length_scan_limbs);
+  CHECK(value.length() == 3 * TestType::base_log10_ + 1);
+  CHECK(event(P::Event::length_scan_limbs) - before == 1);
+  auto zero = value;
+  zero.mac(N(0), N(0));
+  before = event(P::Event::zero_scan_limbs);
+  CHECK(zero.is_zero());
+  CHECK(event(P::Event::zero_scan_limbs) - before == 4);
+  before = event(P::Event::length_scan_limbs);
+  CHECK(zero.length() == 1);
+  CHECK(event(P::Event::length_scan_limbs) - before == 4);
+}
+#endif

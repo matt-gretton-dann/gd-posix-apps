@@ -1,0 +1,100 @@
+{
+  "schema": 1,
+  "role": "before",
+  "source_commit": "2ddf749e8b313f620ad248d680e801c409bbd3f5",
+  "diagnostic_patch_sha256": "fadcd6bc1e3fee41afb0775ce26bf1fa2f413829c21d0b22dbcf34174e27848e",
+  "compiled_files": {
+    "number.hh": "4ffdbe4ba3149488dbc5197ebc50c0c69ea1b56b5b9d22dd9456fd2ea791d748",
+    "profiling.hh": "81fb484104d82aa649bceaba162bfe405d8c45ec1481b7e44c250a3147310a19",
+    "profiling.cc": "12bba8c43599bc1ad490e8655cb47d846643c342cec224b25c93cd8a9953a7d7"
+  },
+  "argv": [
+    "/private/tmp/gd-bc-201-scans-before/build/src/bc/bc"
+  ],
+  "binary_sha256": "7afb67893859adace320327ae168d67338cb8e44a635c0e6c4acc29845816fa6",
+  "instrumented": true,
+  "commands": [
+    {
+      "argv": [
+        "git",
+        "clone",
+        "--no-hardlinks",
+        "--no-checkout",
+        "/Users/mgrettondann/repos/gd-posix-apps",
+        "/private/tmp/gd-bc-201-scans-before/source"
+      ],
+      "cwd": "/private/tmp/gd-bc-201-scans-before",
+      "returncode": 0,
+      "log": "command-001.log"
+    },
+    {
+      "argv": [
+        "git",
+        "checkout",
+        "--detach",
+        "2ddf749e8b313f620ad248d680e801c409bbd3f5"
+      ],
+      "cwd": "/private/tmp/gd-bc-201-scans-before/source",
+      "returncode": 0,
+      "log": "command-002.log"
+    },
+    {
+      "argv": [
+        "cmake",
+        "-S",
+        "/private/tmp/gd-bc-201-scans-before/source",
+        "-B",
+        "/private/tmp/gd-bc-201-scans-before/build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_TESTING=OFF",
+        "-DENABLE_BC_PROFILE=ON",
+        "-DENABLE_BC_COVERAGE=OFF",
+        "-DENABLE_NON_POSIX_EXTENSIONS=ON",
+        "-DBC_MULTIPLY_SPLIT_POINT=126",
+        "-DFETCHCONTENT_SOURCE_DIR_GDPAT=/Users/mgrettondann/repos/gd-posix-apps/build/_deps/gdpat-src"
+      ],
+      "cwd": "/private/tmp/gd-bc-201-scans-before",
+      "returncode": 0,
+      "log": "command-003.log"
+    },
+    {
+      "argv": [
+        "cmake",
+        "--build",
+        "/private/tmp/gd-bc-201-scans-before/build",
+        "--target",
+        "bc",
+        "--parallel",
+        "2",
+        "--verbose"
+      ],
+      "cwd": "/private/tmp/gd-bc-201-scans-before",
+      "returncode": 0,
+      "log": "command-004.log"
+    }
+  ],
+  "scope": "Diagnostic-only software logical positions, not hardware loads/cycles or timed performance. Historical source plus archived counter patch, not an unmodified commit binary.",
+  "compiler": {
+    "argv0": "/usr/bin/c++",
+    "realpath": "/usr/bin/c++",
+    "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+    "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin\n"
+  },
+  "standard_library": {
+    "header_macros": {
+      "LIBCPP": "220106"
+    },
+    "scope": "Header identity, not separately provisioned runtime/SDK identity"
+  },
+  "configuration": {
+    "CMAKE_BUILD_TYPE": "Release",
+    "CMAKE_CXX_FLAGS": "",
+    "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+    "BC_MULTIPLY_SPLIT_POINT": "126",
+    "ENABLE_BC_PROFILE": "ON",
+    "ENABLE_BC_COVERAGE": "OFF"
+  },
+  "compile_commands_sha256": "895421d47341739a94aa3c7f2b4106a93bd07fd159529ba7163f0eab532dfcd4"
+}

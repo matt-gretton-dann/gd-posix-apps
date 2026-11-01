@@ -1,0 +1,11 @@
+from pathlib import Path
+import hashlib,json,os,subprocess
+root=Path('/private/tmp/gd-bc-201-scan-results');root.mkdir(exist_ok=False);records=[];repeats=100;digits='7'*1000
+for role in ('before','after'):
+ build=Path('/private/tmp/gd-bc-201-scans-'+role);binary=build/'build/src/bc/bc';target=root/role;target.mkdir()
+ for kind,right in [('high','8'+digits[1:]),('low',digits[:-1]+'8'),('equal',digits)]:
+  program='a={}\nb={}\nr=0\n'.format(digits,right)+'if(a<b) r=1\n'*repeats+'r\nlength(a)\nlength(b)\n';expected=('0\n' if kind=='equal' else '1\n')+'1000\n1000\n'
+  path=target/(kind+'.json');env={k:v for k,v in os.environ.items() if not k.startswith(('BC_','DC_','GD_BC_PROFILE_'))};env.update(LC_ALL='C',GD_BC_PROFILE_OUTPUT=str(path));child=subprocess.run([str(binary)],input=program,text=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,env=env,timeout=10);assert child.returncode==0 and child.stdout==expected and not child.stderr,(role,kind,child.stderr)
+  data=json.loads(path.read_text());assert data['total']['live_bytes']==0 and data['total']['allocation_calls']==data['total']['deallocation_calls'];(target/(kind+'.bc')).write_text(program)
+  record={'role':role,'kind':kind,'comparisons':repeats,'decimal_digits':1000,'program_sha256':hashlib.sha256(program.encode()).hexdigest(),'stdout_sha256':hashlib.sha256(child.stdout.encode()).hexdigest(),'checked':True,'events':{k:data['events'][k] for k in ('comparison_limb_positions','zero_scan_limbs','length_scan_limbs','iterator_owner_copies')},'source':json.loads((build/'manifest.json').read_text())};records.append(record);print(role,kind,record['events'])
+(root/'results.json').write_text(json.dumps({'schema':1,'scope':'Six exact checked diagnostic runs, not elapsed-time evidence. Each historical commit has the archived diagnostic-only patch. Logical positions are not hardware loads.','runs':records},indent=2)+'\n')

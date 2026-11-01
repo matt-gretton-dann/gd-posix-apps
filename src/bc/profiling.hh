@@ -41,6 +41,9 @@ enum class Event : std::size_t {
   instructions_executed,
   array_clones,
   array_entries_copied,
+  comparison_limb_positions,
+  zero_scan_limbs,
+  length_scan_limbs,
   count
 };
 
