@@ -1,0 +1,16 @@
+{
+  "os": "linux",
+  "checked": 1450,
+  "identities": {
+    "base": "00365f2f75324278024e665ba025aa47abbf6d70",
+    "candidate": "569b1cdcc36c6c5493038cf22bc6137794640595",
+    "howard-7.0.3": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8"
+  },
+  "confirmed": [],
+  "comparison": [
+    "| full | paired | `compare_high_1000d_x100000` | 1.006 [0.98291067087918, 1.0139479360980848] | pass |",
+    "| full | paired | `compare_low_1000d_x100000` | 0.996 [0.9685913897163476, 1.0091635314146696] | pass |",
+    "| full | paired | `compare_equal_1000d_x100000` | 1.040 [1.0063564863843204, 1.0643505467222163] | inconclusive-noisy |"
+  ],
+  "sha256": "93f40930c88adac9f1b8b04affbf2670e2ff3e1208f17fb1e0600ae64d46a0d1"
+}

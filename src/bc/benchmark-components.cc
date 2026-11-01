@@ -24,7 +24,7 @@ auto positive(std::string_view text, std::uint64_t maximum) -> std::uint64_t
   return result;
 }
 
-auto number(std::string_view text) -> Number
+auto number(std::string_view text, Number::NumType input_base = 10) -> Number
 {
   bool const negative = !text.empty() && text.front() == '-';
   if (negative) {
@@ -32,31 +32,36 @@ auto number(std::string_view text) -> Number
   }
   bool digit = false;
   bool period = false;
+  auto const* message = input_base == 10 ? "expected a signed decimal number"
+                                         : "expected signed digits in the requested input base";
   for (auto c : text) {
     if (c == '.' && !period) {
       period = true;
     }
-    else if (c >= '0' && c <= '9') {
+    else if (input_base == 10
+               ? (c >= '0' && c <= '9')
+               : (std::string_view("0123456789ABCDEF").find(c) < input_base ||
+                  (text.size() == 1 && std::string_view("0123456789ABCDEF").find(c) < 16))) {
       digit = true;
     }
     else {
-      throw std::runtime_error("expected a signed decimal number");
+      throw std::runtime_error(message);
     }
   }
   if (!digit) {
-    throw std::runtime_error("expected a signed decimal number");
+    throw std::runtime_error(message);
   }
-  Number result(text, 10);
+  Number result(text, input_base);
   if (negative) {
     result.negate();
   }
   return result;
 }
 
-auto text(Number const& value) -> std::string
+auto text(Number const& value, Number::NumType output_base = 10) -> std::string
 {
   std::ostringstream output;
-  value.output(output, 10, 0);
+  value.output(output, output_base, 0);
   return output.str();
 }
 }  // namespace
@@ -64,8 +69,9 @@ auto text(Number const& value) -> std::string
 auto main(int argc, char** argv) -> int
 {
   try {
-    if (argc != 4) {
-      throw std::runtime_error("usage: bc-components COMPONENT ITERATIONS SPLIT_POINT < INPUT");
+    if (argc != 4 && argc != 5) {
+      throw std::runtime_error(
+        "usage: bc-components COMPONENT ITERATIONS SPLIT_POINT [TEXT_BASE] < INPUT");
     }
     std::string const component(argv[1]);
     if (component != "control" && component != "add" && component != "subtract" &&
@@ -75,6 +81,13 @@ auto main(int argc, char** argv) -> int
     }
     auto const iterations = positive(argv[2], 10000000);
     auto const split = positive(argv[3], Number::base_);
+    auto const text_base = static_cast<Number::NumType>(argc == 5 ? positive(argv[4], 16) : 10);
+    if (text_base < 2) {
+      throw std::runtime_error("text base must be between two and sixteen");
+    }
+    if (argc == 5 && component != "conversion-in" && component != "conversion-out") {
+      throw std::runtime_error("text base applies only to conversion components");
+    }
     Number::multiply_split_point(static_cast<Number::NumType>(split));
     // Read a bounded fixture before measuring; stdin avoids native path encoding
     // differences and matches the process harness's explicit EOF protocol.
@@ -108,7 +121,7 @@ auto main(int argc, char** argv) -> int
           throw std::runtime_error("unexpected extra component input");
         }
       }
-      lhs = number(literal);
+      lhs = number(literal, component == "conversion-in" ? text_base : Number::NumType(10));
       rhs = right.empty() ? Number(1) : number(right);
       if (component == "divide" && rhs.is_zero()) {
         throw std::runtime_error("zero component divisor");
@@ -151,13 +164,13 @@ auto main(int argc, char** argv) -> int
     }
     else if (component == "conversion-out") {
       repeat([&]() {
-        rendered = text(lhs);
+        rendered = text(lhs, text_base);
         checksum += rendered.size();
       });
     }
     else if (component == "conversion-in") {
       repeat([&]() {
-        result = number(literal);
+        result = number(literal, text_base);
         checksum += result.length();
       });
     }
@@ -204,8 +217,9 @@ auto main(int argc, char** argv) -> int
     }
     std::cout << "{\"component\":\"" << component << "\",\"iterations\":" << iterations
               << ",\"checksum_mod_2_64\":" << checksum << ",\"instructions\":" << instruction_count
-              << ",\"split_point\":" << split << ",\"limb_bytes\":" << sizeof(Number::NumType)
-              << ",\"result\":\"" << rendered << "\",\"instrumented\":";
+              << ",\"text_base\":" << text_base << ",\"split_point\":" << split
+              << ",\"limb_bytes\":" << sizeof(Number::NumType) << ",\"result\":\"" << rendered
+              << "\",\"instrumented\":";
 #if GD_BC_PROFILE
     std::cout << "true,\"seconds\":null";
 #else

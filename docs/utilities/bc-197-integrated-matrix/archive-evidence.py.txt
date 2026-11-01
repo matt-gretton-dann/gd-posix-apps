@@ -1,0 +1,136 @@
+from pathlib import Path
+import json,shutil,hashlib,zipfile,importlib.util,subprocess
+root=Path('/private/tmp/gd-posix-integrated-matrix/docs/utilities/bc-197-integrated-matrix');root.mkdir(exist_ok=True)
+(root/'.gitattributes').write_text('*.csv -text whitespace=cr-at-eol\n*.log -text whitespace=-blank-at-eol,-blank-at-eof\n')
+for preset in ('quick','full','holdout'):
+ source=Path('/private/tmp/gd-bc-197-integrated-'+preset)
+ for name in ('manifest.json','summary.json','samples.csv','samples.jsonl'):shutil.copyfile(source/name,root/(preset+'-'+name))
+ for item in source.iterdir():
+  if item.is_dir():shutil.copytree(item,root/(preset+'-'+item.name),dirs_exist_ok=True)
+shutil.copyfile('/private/tmp/gd-bc-197-integrated-adjacent-summary.json',root/'adjacent-summary.json')
+shutil.copyfile('/private/tmp/bc-197-analyze-integrated.py',root/'analyze-adjacent.py.txt')
+profiles=Path('/private/tmp/gd-bc-197-integrated-counters')
+for name in ('provenance.json','checked-profiles.json'):shutil.copyfile(profiles/name,root/('counter-'+name))
+shutil.copyfile('/private/tmp/bc-197-integrated-counters.py',root/'collect-counters.py.txt')
+shutil.copytree('/private/tmp/gd-bc-206-integrated-component-results',root/'conversion-components',dirs_exist_ok=True)
+shutil.copyfile('/private/tmp/bc-206-run-integrated-components.py',root/'conversion-components/runner.py.txt')
+for role,recipe in [('accepted','gd-bc-current-00d5-release'),('decimal','gd-bc-206-integrated-release'),('frames','gd-bc-208-integrated-release'),('verified','gd-bc-207-integrated-release'),('arrays','gd-bc-209-integrated-release')]:
+ source=Path('/private/tmp/'+recipe);target=root/('recipe-'+role);target.mkdir(exist_ok=True)
+ for name in ('build-manifest.json','implementations.json','compile_commands.json','multiply-threshold.hh'):
+  shutil.copyfile(source/name,target/name)
+# Preserve superseded observations, including the earlier standalone division losses.
+for stage,prefix,recipe in [('frames','gd-bc-208-frames','gd-bc-208-frames-release'),('verified','gd-bc-207-verified','gd-bc-207-verified-release')]:
+ target=root/('standalone-'+stage);target.mkdir(exist_ok=True)
+ for preset in ('quick','full','holdout'):
+  for name in ('manifest.json','summary.json','samples.csv'):
+   shutil.copyfile(Path('/private/tmp/'+prefix+'-'+preset)/name,target/(preset+'-'+name))
+ shutil.copyfile(Path('/private/tmp/'+recipe)/'build-manifest.json',target/'build-manifest.json')
+shutil.copyfile('/private/tmp/bc-207-code-size.txt',root/'standalone-verified/code-size.txt')
+lines=[s for s in Path('/private/tmp/bc-207-dispatch-symbols.txt').read_text().splitlines() if s.endswith(('InstructionPack::execute_impl<true>()','InstructionPack::execute_impl<false>()'))];(root/'standalone-verified/dispatch-symbols.txt').write_text('\n'.join(lines)+'\n')
+index=[]
+for pr,run in [(322,41277789782),(326,41278153784),(328,41278527561),(329,41279178886)]:
+ for osname in ('linux','macos','windows'):
+  source=Path('/private/tmp/bc-integrated-'+str(pr)+'-'+osname+'.zip');z=zipfile.ZipFile(source);rows=[]
+  for name in z.namelist():
+   if name.endswith('samples.jsonl'):rows += [json.loads(s) for s in z.read(name).decode().splitlines()]
+  assert rows and all(r['checked'] for r in rows)
+  manifest=json.loads(z.read('full-paired/manifest.json'));ids={i['name']:i.get('metadata',{}).get('source_revision') for i in manifest['implementations']}
+  name='native-'+str(pr)+'-'+osname+'.zip';shutil.copyfile(source,root/name);index.append({'pr':pr,'run_id':run,'os':osname,'file':name,'sha256':hashlib.sha256(source.read_bytes()).hexdigest(),'checked':len(rows),'identities':ids,'confirmed_regressions':[s for s in z.read('summary.md').decode().splitlines() if 'confirmed regression' in s]})
+(root/'native-artifacts.json').write_text(json.dumps(index,indent=2)+'\n')
+rows=json.loads((root/'counter-checked-profiles.json').read_text());matrix=json.loads((root/'adjacent-summary.json').read_text())
+report=['# First matched integration matrix — candidates and native holds','',
+'This report preserves complete observations for #200/#197. It does not accept',
+'every candidate or claim that the competitive target has been achieved. Native',
+'bounded confirmations put the initial integrated frame and hybrid-array heads',
+'on hold despite advisory green workflows. Changed compiler-specific candidates',
+'must earn their own native evidence; later sources are never substituted into',
+'these historical measurements.','',
+'## Exact revisions','',
+'| Stage | Source | Comparison |','| --- | --- | --- |',
+'| Accepted blocked kernel | `00d5896be1768d1936a075ccd47e4b529a914dd2` | Baseline |',
+'| Direct decimal/scalar path and Apple alignment | `00365f2f75324278024e665ba025aa47abbf6d70` | Accepted kernel |',
+'| Reusable activations | `d76e408e069a4824eca7ab1fc3fa35100a14a070` | Decimal stage |',
+'| Verified executor with checked oracle | `357d15a4abd3736b432953b9269ba1057e234f02` | Frame stage |',
+'| Hybrid arrays and borrowed lookup | `91b7b481178bebb6d8a9c660649d59c71527743a` | Verified stage |',
+'| Native Howard 7.0.3 | `c8dabac65d39fd527a9264a5e505a99b1d8df3d8` | Competitive reference |','',
+'## Method and limits','',
+'Apple M1/macOS 27.2, Apple Clang 21/libc++ header 220106, Release thin LTO,',
+'extensions ON, fixed multiplication split point 126, profile/coverage OFF.',
+'Compiler commands, executable hashes, libraries, host and corpus identities',
+'are in the manifests. All 240 quick, 2400 full and 2400 held-out invocations',
+'pass exact output, status, stderr and deadline checks. Full/held-out use one',
+'checked warm-up and nine seeded paired rounds, with 2000 paired bootstrap',
+'resamples. Each case runs the six implementations serially in seeded order.',
+'No local builds/tests/profiles overlap these timings. Shared-host contention,',
+'frequency and thermal state are not controlled.','',
+'The adjacent analysis pairs the same measurement round rather than dividing',
+'confidence intervals or composing independently collected speedups. Startup',
+'remains inconclusive pending calibration. No local adjacent interval is wholly',
+'above the provisional 1.05 material threshold; that is not a neutral-performance',
+'claim. Held-out modulo in the decimal stage is 1.070 [0.992,1.093]. Frame reuse',
+'also has measurable roughly 3–4% loop/Fibonacci costs. Native losses below remain',
+'visible instead of being hidden by a local aggregate or cumulative gain.','',
+'## Principal adjacent results','',
+'| Stage/workload | Full | Held-out |','| --- | --- | --- |',
+'| Decimal input | 0.143 | 0.128 |',
+'| Frame calls | 0.801 | 0.797 |',
+'| Verified loop | 0.923 | 0.921 |',
+'| Verified calls | 0.922 | 0.922 |',
+'| Hybrid dense arrays | 0.805 | 0.817 |',
+'| Hybrid sparse arrays | 1.008 | 1.011 |','',
+'All class intervals are retained below. Conversion components pass all 360',
+'exact result/checksum/status checks; one-digit input is 0.965 [0.941,0.975],',
+'while 9/10/100/1000/10000-digit ratios are approximately 0.512/0.387/0.115/',
+'0.0197/0.00178. These internal intervals include reset/consumer/validation',
+'work and do not subtract controls or claim pure-kernel costs.','',
+'## Allocation observations','',
+'All 200 separate diagnostic invocations pass exact oracles and balance selected',
+'allocations at EOF. They are not elapsed timings or process RSS. The accepted',
+'counter source is 565564d, whose production C++ matches timing source 00d5896;',
+'every actual counter source and binary hash remains explicit in provenance.','',
+'| Workload/stage | Array allocation calls | Allocated bytes | Peak selected bytes |',
+'| --- | ---: | ---: | ---: |']
+for name in ('array_200000','sparse_array_200000'):
+ for role in ('verified','arrays'):
+  r=next(r for r in rows if r['role']==role and r['workload']==name);a=r['profile']['allocations']['arrays'];report.append('| {} / {} | {} | {} | {} |'.format(name,role,a['allocation_calls'],a['allocated_bytes'],a['peak_live_bytes']))
+report += ['',
+'Dense allocation calls fall dramatically, but geometric vector growth increases',
+'peak selected array payload by about 18% and cumulative requested bytes by about',
+'57%. This is a real tradeoff. Sparse payload differs only by the container header',
+'in the measured case. Paged, flat/sorted and hash alternatives remain #209 work.','',
+'## Native decisions','',
+'Every ZIP below was checked against its Actions digest and exact candidate',
+'identity. Correctness passes on all OSes. #326\'s event used main 00d5896 as',
+'base before PR retargeting; its native comparison includes decimal conversion',
+'and frames. #328 and #329 use their actual adjacent predecessors.','',
+'| PR / OS | Checked invocations | Confirmed regressions |','| --- | ---: | --- |']
+for r in index:
+ text='None' if not r['confirmed_regressions'] else '; '.join(s.split('`')[1] for s in r['confirmed_regressions']);report.append('| #{} / {} | {} | {} |'.format(r['pr'],r['os'],r['checked'],text))
+report += ['',
+'Windows #326 confirms low-digit comparison at 1.114 [1.091,1.147]. Linux #329',
+'confirms loop 1.141, calls 1.112, high comparison 1.109, low comparison 1.097,',
+'base-changing literals 1.087 and sparse arrays 1.082. Their raw confirmation',
+'batches and intervals remain in the ZIPs. Neither result proves an inlining',
+'or hardware cause. Both candidates stay on hold while changed candidates are',
+'evaluated. The native workflow is intentionally advisory, so its green result',
+'alone is insufficient for adoption.','',
+'## Superseded standalone stages','',
+'The standalone frame and verified-executor full/held-out raw data are retained',
+'with their original sources and parent 0868b4a. In particular, standalone frame',
+'held-out division was 1.127 [1.106,1.207]. Integration is an actual code change,',
+'not a favorable replacement of those rows. Standalone verified code retains',
+'both executor instantiations and increases the recorded Mach-O __TEXT segment',
+'from 278528 to 294912 bytes; this segment size is not process RSS.','']
+labels=['Decimal / accepted','Frames / decimal','Verified / frames','Arrays / verified']
+for preset,cases in matrix['presets'].items():
+ report += ['## '+preset.title()+' adjacent ratios','','| Workload | '+' | '.join(labels)+' |','| --- | '+' | '.join(['---']*4)+' |']
+ for case in cases:
+  fields=[]
+  for p in case['adjacent']:
+   r=p['statistics'];lo,hi=r['ci95'];fields.append('{:.3f} [{:.3f},{:.3f}]'.format(r['median_paired_ratio'],lo,hi))
+  report.append('| `{}` | {} |'.format(case['name'],' | '.join(fields)))
+ report.append('')
+report += ['Math-library classes, alternative backends, final compiler/PGO and complete',
+'cross-platform calibration remain pending in their own issues. Their absence',
+'is unsupported/pending, never a performance pass.']
+(root/'README.md').write_text('\n'.join(report)+'\n');shutil.copyfile(__file__,root/'archive-evidence.py.txt');print('Archived matched matrix, standalone losses and all twelve native artifacts')

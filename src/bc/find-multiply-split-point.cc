@@ -4,15 +4,16 @@
  *  SPDX-License-Identifier: Apache-2.0
  */
 
-#include "gd/nl_types.h"
-
-#include "gd/time.h"
-
+#include <algorithm>
+#include <array>
 #include <charconv>
+#include <chrono>
+#include <cmath>
 #include <cstdint>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <numeric>
 #include <optional>
 #include <random>
 #include <sstream>
@@ -20,146 +21,140 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 #include "bc.hh"
 #include "benchmark-support.hh"
 
 using Number = GD::Bc::Number;
-class RandomNumberGenerator
+namespace {
+constexpr Number::NumType portable_point = 126;
+constexpr std::array<Number::NumType, 8> candidates{16, 32, 64, 96, 126, 192, 256, 512};
+
+// Fixed-width, nonzero-leading operands make each reported shape exact. Parse
+// once outside timing; repeated products always start from the original values.
+auto operand(std::size_t limbs, std::mt19937_64& engine) -> Number
 {
-public:
-  RandomNumberGenerator(GD::Bc::Number::NumType digit_count, uint64_t seed)
-      : rand_(seed), dist_(GD::Bc::Bench::limb_distribution<Number>()), digit_count_(digit_count)
-  {
-    next();
-  }
+  std::uniform_int_distribution<unsigned> digit(0, 9);
+  std::string text(limbs * Number::base_log10_, '0');
+  text.front() = static_cast<char>('1' + digit(engine) % 9);
+  for (std::size_t i = 1; i < text.size(); ++i)
+    text[i] = static_cast<char>('0' + digit(engine));
+  return Number(text, 10);
+}
 
-  [[nodiscard]] auto get() const -> GD::Bc::Number const& { return number_; }
-
-  auto next() -> bool
-  {
-    auto digit_count = dist_(rand_) % (digit_count_ * GD::Bc::Number::base_log10_);
-    constexpr int base10 = 10;
-
-    std::string num;
-    GD::Bc::Number::NumType digits = 0;
-    for (decltype(digit_count) i = 0; i < digit_count; ++i) {
-      if (i % GD::Bc::Number::base_log10_ == 0) {
-        digits = dist_(rand_);
-      }
-      auto digit = digits / (GD::Bc::Number::base_ / base10);
-      digits = (digits % (GD::Bc::Number::base_ / base10)) * base10;
-      assert(digit < base10);  // NOLINT
-
-      num += static_cast<char>('0' + digit);
-    }
-
-    number_ = GD::Bc::Number(num, base10);
-    return true;
-  }
-
-private:
-  std::mt19937_64 rand_;
-  std::uniform_int_distribution<GD::Bc::Number::NumType> dist_;
-  GD::Bc::Number::NumType digit_count_;
-  GD::Bc::Number number_;
+struct Fixture
+{
+  Number left;
+  Number right;
+  Number expected;
+  std::size_t left_limbs;
+  std::size_t right_limbs;
+  bool square;
 };
 
-void multiply(std::vector<Number>& n)
+auto trial(Fixture const& fixture, Number::NumType split, std::size_t batch) -> int64_t
 {
-  auto it = n.begin();
-  while (it != n.end() - 1) {
-    it->multiply(*(it + 1), 0);
-    ++it;
+  Number::multiply_split_point(split);
+  std::vector<Number> results(batch, fixture.left);
+  auto const start = std::chrono::steady_clock::now();
+  for (auto& value : results) {
+    if (fixture.square)
+      value.multiply(value, 0);
+    else
+      value.multiply(fixture.right, 0);
   }
+  // A portable monotonic elapsed clock avoids coarse process-accounting
+  // quanta on Windows. Scheduling/host contention remain measurement noise.
+  auto const elapsed =
+    std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - start)
+      .count();
+  for (auto const& value : results) {
+    if (value != fixture.expected)
+      throw std::runtime_error("Candidate multiplication failed its exact oracle");
+  }
+  if (elapsed < 0)
+    throw std::runtime_error("Monotonic calibration clock moved backwards");
+  return elapsed;
 }
 
-using GD::Bc::Bench::as_nsec;
-using GD::Bc::Bench::Time;
-using GD::Bc::Bench::operator-;
-using GD::Bc::Bench::operator+;
-using GD::Bc::Bench::operator<<;
-using GD::Bc::Bench::operator<;
-
-template<typename Fn>
-auto time_run(Fn f) -> Time
+auto check(uint64_t seed, bool quick) -> Number::NumType
 {
-  Time start;
-  Time end;
-  if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start) != 0) {
-    throw std::runtime_error("Unable to read the process CPU clock");
-  }
-  f();
-  if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end) != 0) {
-    throw std::runtime_error("Unable to read the process CPU clock");
-  }
+  std::mt19937_64 engine(seed);
+  std::vector<std::size_t> sizes =
+    quick ? std::vector<std::size_t>{2, 12, 32}
+          : std::vector<std::size_t>{1, 2, 10, 12, 112, 128, 256, 512, 1112};
+  unsigned const rounds = quick ? 3 : 5;
+  std::array<double, candidates.size()> log_scores{};
+  std::size_t fixture_count = 0;
+  std::cout << "Tuner clock: steady monotonic elapsed nanoseconds\n";
+  std::cout << "sample,left_limbs,right_limbs,square,round,split,batch,elapsed_ns,checked\n";
+  for (auto const left_limbs : sizes) {
+    // Include balanced, asymmetric and aliased-square shapes independently.
+    for (unsigned shape = 0; shape < 4; ++shape) {
+      std::size_t const right_limbs = left_limbs * (shape == 1 ? 2 : shape == 2 ? 8 : 1);
+      Fixture fixture{operand(left_limbs, engine),
+                      operand(right_limbs, engine),
+                      Number{},
+                      left_limbs,
+                      right_limbs,
+                      shape == 3};
+      fixture.expected = fixture.left;
+      Number::multiply_split_point(static_cast<Number::NumType>(right_limbs + 1));
+      if (fixture.square)
+        fixture.expected.multiply(fixture.expected, 0);
+      else
+        fixture.expected.multiply(fixture.right, 0);
 
-  return end - start;
-}
-
-auto check(Number::NumType initial_digit, uint64_t seed) -> Number::NumType
-{
-  std::vector<Number> canon_numbers;
-  RandomNumberGenerator rng(initial_digit, seed);
-
-  Time base_time{0, 0};
-
-  constexpr unsigned num_numbers = 100;
-  for (unsigned i = 0; i < num_numbers; ++i) {
-    canon_numbers.push_back(rng.get());
-    rng.next();
-  }
-  Number::multiply_split_point(initial_digit + 1);
-
-  /* Generate enough numbers that the initial run takes >3 secs.
-   * We expect the best time to be ~50% of initial run - so this ensures we get good numbers.
-   */
-  constexpr Time min_time{3, 0};          // NOLINT - we're defining numbers here they're not magic
-  constexpr Time half_sec{0, 500000000};  // NOLINT - ditto
-  while (base_time < min_time) {
-    std::vector<Number> numbers = canon_numbers;
-    base_time = time_run([&numbers]() { multiply(numbers); });
-    std::cout << "Initial timing run: " << base_time << " for " << canon_numbers.size()
-              << " multiplications." << std::endl;
-    if (base_time < min_time) {
-      auto const new_size =
-        GD::Bc::Bench::next_batch_size(canon_numbers.size(), as_nsec(base_time),
-                                       as_nsec(min_time + half_sec), canon_numbers.max_size());
-      for (auto i = canon_numbers.size(); i < new_size; ++i) {
-        canon_numbers.push_back(rng.get());
-        rng.next();
+      std::size_t batch = 1;
+      auto const max_batch =
+        std::max(std::size_t{1},
+                 std::min(std::size_t{256}, std::size_t{65536} / (left_limbs + right_limbs)));
+      constexpr int64_t target_ns = 2000000;
+      while (true) {
+        auto const elapsed = trial(fixture, portable_point, batch);
+        if (elapsed >= target_ns || batch == max_batch)
+          break;
+        batch = GD::Bc::Bench::next_batch_size(batch, elapsed, target_ns, max_batch);
       }
+      // Every candidate gets an exact-checked warm-up before paired rounds.
+      for (auto split : candidates)
+        (void)trial(fixture, split, 1);
+      std::array<std::vector<double>, candidates.size()> times;
+      for (unsigned round = 0; round < rounds; ++round) {
+        std::array<std::size_t, candidates.size()> order{};
+        std::iota(order.begin(), order.end(), std::size_t{0});
+        std::shuffle(order.begin(), order.end(), engine);
+        std::array<double, candidates.size()> current{};
+        for (auto index : order) {
+          auto const elapsed = trial(fixture, candidates[index], batch);
+          if (elapsed == 0)
+            throw std::runtime_error("Insufficient monotonic clock resolution");
+          current[index] = static_cast<double>(elapsed);
+          std::cout << "sample," << left_limbs << ',' << right_limbs << ',' << fixture.square << ','
+                    << round << ',' << candidates[index] << ',' << batch << ',' << elapsed
+                    << ",1\n";
+        }
+        constexpr std::size_t portable_index = 4;
+        for (std::size_t i = 0; i < candidates.size(); ++i)
+          times[i].push_back(current[i] / current[portable_index]);
+      }
+      for (std::size_t i = 0; i < candidates.size(); ++i)
+        log_scores[i] += std::log(GD::Bc::Bench::median(times[i]));
+      ++fixture_count;
     }
   }
-  std::cout << "Basic speed: " << base_time << "\n";
-
-  Number::NumType split_point_top = initial_digit + 1;
-  Number::NumType split_point_bottom = 1;
-  Number::NumType best_split = initial_digit + 1;
-  Time best_time = base_time;
-
-  while (split_point_top - 1 > split_point_bottom) {
-    Number::NumType const split_point = (split_point_bottom + split_point_top) / 2;
-    std::vector<Number> numbers = canon_numbers;
-    Number::multiply_split_point(split_point);
-    Time const st = time_run([&numbers]() { multiply(numbers); });
-    std::cout << "Split [" << split_point_bottom << ", " << split_point_top << "] at "
-              << split_point << " has speed = " << st << "\n";
-    if (st < best_time) {
-      split_point_top = split_point;
-      best_time = st;
-      best_split = split_point;
-    }
-    else {
-      split_point_bottom = split_point;
-    }
+  std::vector<std::pair<std::size_t, double>> scores;
+  for (std::size_t i = 0; i < candidates.size(); ++i) {
+    double const score = std::exp(log_scores[i] / static_cast<double>(fixture_count));
+    scores.emplace_back(candidates[i], score);
+    std::cout << "score," << candidates[i] << ',' << std::setprecision(9) << score << '\n';
   }
-
-  std::cout << "Base speed: " << base_time << "\n";
-  std::cout << "Best speed:  " << best_time << "\n";
-  std::cout << "Best point:  " << best_split << "\n";
-  return best_split;
+  auto const selected = GD::Bc::Bench::choose_split(scores, portable_point);
+  std::cout << "Best point: " << selected << " (finite candidate sweep; not a global optimum)\n";
+  return static_cast<Number::NumType>(selected);
 }
+}  // namespace
 
 void output(std::ostream& os, Number::NumType value, uint64_t seed)
 {
@@ -182,14 +177,18 @@ try {
   uint64_t seed = 197234;
   std::optional<std::string_view> output_path;
   bool parse_options = true;
+  bool quick = false;
   for (int i = 1; i < argc; ++i) {
     std::string_view const argument(argv[i]);
     if (parse_options && argument == "--") {
       parse_options = false;
     }
     else if (parse_options && argument == "--help") {
-      std::cout << "Usage: find-multiply-split-point [--seed INTEGER] [output-header]\n";
+      std::cout << "Usage: find-multiply-split-point [--seed INTEGER] [--quick] [output-header]\n";
       return EXIT_SUCCESS;
+    }
+    else if (parse_options && argument == "--quick") {
+      quick = true;
     }
     else if (parse_options && argument == "--seed") {
       if (++i == argc) {
@@ -223,8 +222,7 @@ try {
 
   // Flush before calibration so a failure log always contains its replay seed.
   std::cout << "Tuner seed: " << seed << std::endl;
-  constexpr Number::NumType start_at = 500;
-  auto const result = check(start_at, seed);
+  auto const result = check(seed, quick);
   if (!output_path) {
     output(std::cout, result, seed);
   }

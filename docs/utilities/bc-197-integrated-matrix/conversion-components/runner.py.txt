@@ -1,0 +1,37 @@
+"""Serial, exact-checked component intervals; retain reset/control work separately."""
+import csv,hashlib,importlib.util,json,random,subprocess,time
+from pathlib import Path
+repo=Path('/private/tmp/gd-posix-decimal-chunks');spec=importlib.util.spec_from_file_location('bench',repo/'src/bc/scripts/bench-bc.py');bench=importlib.util.module_from_spec(spec);spec.loader.exec_module(bench)
+root=Path('/private/tmp/gd-bc-206-integrated-component-results');root.mkdir(exist_ok=False)
+roles={'parent':Path('/private/tmp/gd-bc-current-00d5-components'),'decimal':Path('/private/tmp/gd-bc-206-integrated-components')}
+metadata={name:json.loads((path/'manifest.json').read_text()) for name,path in roles.items()};assert all(not v['instrumented'] for v in metadata.values())
+cases=[]
+for digits,count in ((1,100000),(9,100000),(10,100000),(100,10000),(1000,500),(10000,5)):
+ rng=random.Random(197206+digits);literal='7'+''.join(str(rng.randrange(10)) for _ in range(digits-1));fixture=literal+'\n';(root/('input-%dd.txt'%digits)).write_text(fixture)
+ for component in ('control','conversion-in','conversion-out'):
+  raw_length=digits+2*(digits//(69 if digits<=69 else 68))
+  cases.append({'name':'{}-{}d-x{}'.format(component,digits,count),'component':component,'digits':digits,'iterations':count,'input':fixture,'expected':literal,'checksum':count*(raw_length if component=='conversion-out' else digits),'input_sha256':hashlib.sha256(fixture.encode()).hexdigest()})
+manifest={'schema':1,'scope':'Internal std::chrono component seconds include reset/consumer work; process wall time is auxiliary. No control subtraction or pure-kernel attribution.','samples':9,'warmups':1,'seed':197206,'implementations':metadata,'cases':[{k:v for k,v in c.items() if k not in ('input','expected')} for c in cases]};(root/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+rows=[];schedule=random.Random(197206)
+with (root/'samples.jsonl').open('w') as stream:
+ for phase,rounds in [('warmup',1),('measurement',9)]:
+  for round_number in range(rounds):
+   order=list(cases);schedule.shuffle(order)
+   for case in order:
+    implementations=list(roles);schedule.shuffle(implementations)
+    for position,name in enumerate(implementations):
+     argv=metadata[name]['argv']+[case['component'],str(case['iterations']),'126'];started=time.perf_counter();child=subprocess.run(argv,input=case['input'],text=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,env=bench.environment(),timeout=60);wall=time.perf_counter()-started
+     assert child.returncode==0 and not child.stderr,(name,case['name'],child.stderr);data=json.loads(child.stdout)
+     assert data['result']==case['expected'] and data['checksum_mod_2_64']==case['checksum'],(name,case['name'])
+     assert data['component']==case['component'] and data['iterations']==case['iterations'] and data['split_point']==126 and not data['instrumented'] and data['seconds']>=0
+     row={'phase':phase,'round':round_number,'order':position,'workload':case['name'],'implementation':name,'seconds':data['seconds'],'wall_seconds_auxiliary':wall,'checked':True,'stdout_sha256':hashlib.sha256(child.stdout.encode()).hexdigest(),'reported':data};rows.append(row);stream.write(json.dumps(row,sort_keys=True)+'\n');stream.flush()
+summary=[]
+for case in cases:
+ values={name:[r['seconds'] for r in rows if r['phase']=='measurement' and r['workload']==case['name'] and r['implementation']==name] for name in roles}
+ if all(v>0 for vv in values.values() for v in vv):ratio=bench.paired_statistics(values['decimal'],values['parent'],seed=197206,resamples=2000)
+ else:ratio={'median_paired_ratio':None,'ci95':None,'interval_status':'insufficient-clock-resolution'}
+ summary.append({'name':case['name'],'parameters':{k:case[k] for k in ('component','digits','iterations')},'candidate_over_parent':ratio})
+(root/'summary.json').write_text(json.dumps({'schema':1,'performance_gate':False,'workloads':summary},indent=2)+'\n')
+with (root/'samples.csv').open('w',newline='') as stream:
+ fields=['phase','round','order','workload','implementation','seconds','wall_seconds_auxiliary','checked','stdout_sha256'];writer=csv.DictWriter(stream,fieldnames=fields);writer.writeheader();writer.writerows({k:r[k] for k in fields} for r in rows)
+print('All',len(rows),'component invocations pass exact result/checksum/status checks')

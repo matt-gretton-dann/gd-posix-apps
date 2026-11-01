@@ -1,0 +1,16 @@
+{
+  "os": "macos",
+  "checked": 1450,
+  "identities": {
+    "base": "00365f2f75324278024e665ba025aa47abbf6d70",
+    "candidate": "569b1cdcc36c6c5493038cf22bc6137794640595",
+    "howard-7.0.3": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8"
+  },
+  "confirmed": [],
+  "comparison": [
+    "| full | paired | `compare_high_1000d_x100000` | 1.040 [0.8822378820861174, 1.2613264487044633] | inconclusive-noisy |",
+    "| full | paired | `compare_low_1000d_x100000` | 1.039 [0.9296301938809781, 1.1550089541456388] | inconclusive-noisy |",
+    "| full | paired | `compare_equal_1000d_x100000` | 1.056 [0.9722815123755453, 1.1935164562119958] | inconclusive-noisy |"
+  ],
+  "sha256": "308e1fda4713fa7cb9f2a7536162bdc80a888b4df5cfb10b7602e7f68c6a1526"
+}

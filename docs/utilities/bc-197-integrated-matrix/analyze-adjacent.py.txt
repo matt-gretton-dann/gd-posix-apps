@@ -1,0 +1,17 @@
+from pathlib import Path
+import importlib.util,json
+repo=Path('/private/tmp/gd-posix-hybrid-arrays');spec=importlib.util.spec_from_file_location('bench',repo/'src/bc/scripts/bench-bc.py');bench=importlib.util.module_from_spec(spec);spec.loader.exec_module(bench)
+order=['gd-accepted-blocked','gd-integrated-decimal','gd-integrated-frames','gd-integrated-verified','gd-integrated-arrays'];result={'schema':1,'scope':'Adjacent paired process ratios, nine measurement blocks per case; all stages retain independent source identities. No aggregate hides classes.','presets':{}}
+for preset in ('full','holdout'):
+ root=Path('/private/tmp/gd-bc-197-integrated-'+preset);rows=[json.loads(line) for line in (root/'samples.jsonl').read_text().splitlines()];assert len(rows)==2400 and all(row['checked'] for row in rows)
+ measured={(r['workload'],r['round'],r['implementation']):r['seconds'] for r in rows if r['phase']=='measurement'};names=[w['name'] for w in json.loads((root/'summary.json').read_text())['workloads']];assert len(names)==40
+ cases=[]
+ for name in names:
+  pairs=[]
+  for position in range(1,len(order)):
+   parent,candidate=order[position-1:position+1];base=[measured[name,i,parent] for i in range(9)];head=[measured[name,i,candidate] for i in range(9)];r=bench.paired_statistics(head,base,seed=197206+position,resamples=2000);lo,hi=r['ci95'];r['advisory']='inconclusive-noisy' if name == 'startup' else ('pass' if hi<=1.05 else ('needs-bounded-confirmation' if lo>1.05 else 'inconclusive-noisy'));pairs.append({'parent':parent,'candidate':candidate,'statistics':r})
+   if lo>1.05 or (name.startswith(('loop_','calls_','array_','sparse_array_','decimal_input_'))):print(preset,name,candidate,round(r['median_paired_ratio'],4),[round(lo,4),round(hi,4)],r['advisory'])
+  cases.append({'name':name,'adjacent':pairs})
+ result['presets'][preset]=cases
+Path('/private/tmp/gd-bc-197-integrated-adjacent-summary.json').write_text(json.dumps(result,indent=2)+'\n')
+print('All 4800 full/held rows checked; adjacent summaries saved')

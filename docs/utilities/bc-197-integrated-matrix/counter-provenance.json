@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "harness_revision": "91b7b481178bebb6d8a9c660649d59c71527743a",
+  "roles": [
+    {
+      "name": "accepted-blocked",
+      "source_revision": "565564dba7d781613c5046d4898a0efdf6a2832b",
+      "binary": "/private/tmp/gd-posix-blocked-schoolbook/build-profile/src/bc/bc",
+      "binary_sha256": "ec82bfafc8bca5afe3b4597f694193644a44a0d15676b0c2f005fff05559353b"
+    },
+    {
+      "name": "decimal",
+      "source_revision": "00365f2f75324278024e665ba025aa47abbf6d70",
+      "binary": "/private/tmp/gd-posix-decimal-chunks/build-profile/src/bc/bc",
+      "binary_sha256": "f96ad749f9c938f724a9f252a75c0bbf63e6bdf9b7e58141fdce62186d08c5e6"
+    },
+    {
+      "name": "frames",
+      "source_revision": "d76e408e069a4824eca7ab1fc3fa35100a14a070",
+      "binary": "/private/tmp/gd-posix-reusable-frames/build-profile/src/bc/bc",
+      "binary_sha256": "a51c1a3fa78b9b2c9e749a7f73ec01ce8bf2ed60314da1825365481fcdc2d4ee"
+    },
+    {
+      "name": "verified",
+      "source_revision": "357d15a4abd3736b432953b9269ba1057e234f02",
+      "binary": "/private/tmp/gd-posix-verified-execution/build-profile/src/bc/bc",
+      "binary_sha256": "4c772a2eaf602d6e48e8c15251afb7a4378b29cac47d628b56dfc20669263cd4"
+    },
+    {
+      "name": "arrays",
+      "source_revision": "91b7b481178bebb6d8a9c660649d59c71527743a",
+      "binary": "/private/tmp/gd-posix-hybrid-arrays/build-profile/src/bc/bc",
+      "binary_sha256": "50b48ee12bbb23a3ddb4c7c2e50548ccd8fa7f28a75915752236ef1b1b0c5de3"
+    }
+  ],
+  "scope": "Selected allocator/event counters only, fixed126, Release/profileON; no timings/RSS. Accepted-blocked counter source565 is production-C++ equivalent to timing source00d5896."
+}
