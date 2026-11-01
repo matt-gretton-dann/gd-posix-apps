@@ -1,0 +1,22 @@
+from pathlib import Path
+import json,shutil
+w=Path('/private/tmp/gd-posix-decimal-format');r=w/'docs/utilities/bc-206-decimal-format';r.mkdir()
+(r/'.gitattributes').write_text('*.csv -text whitespace=cr-at-eol\n*.log -text whitespace=-blank-at-eol,-blank-at-eof\n')
+for preset in ('full','holdout'):shutil.copytree('/private/tmp/gd-bc-206-decimal-format-'+preset,r/preset)
+for role in ('baseline','candidate'):
+ for kind in ('release','components'):
+  prefix='runtime-dc-baseline' if role=='baseline' else 'decimal-format-candidate'
+  source=Path('/private/tmp/gd-bc-206-'+prefix+'-'+kind);target=r/(role+'-'+kind);target.mkdir()
+  for p in source.iterdir():
+   if p.is_file() and p.suffix in ('.json','.log','.hh','.cc'):shutil.copyfile(p,target/p.name)
+shutil.copyfile('/private/tmp/bc-206-run-decimal-format-components.py',r/'runner.py.txt')
+for name in ('before','after-tests','release-all','cli','asan-tests','asan-vm'):
+ shutil.copyfile('/private/tmp/bc-206-decimal-format-'+name+'.log',r/(name+'.log'))
+lines=['# Decimal limb formatting through a fixed buffer','','Refs #206 and #197. Exact accepted baseline 9669ef73bc00e5b89f3fb00e2867a8f8ed9c4d32', 'and candidate d0947b5f40ca95a059fe30193168d7bf4c217e5e; ordinary conversion-out', 'component mode, actual source/flags/compiler/library/binary hashes in recipes.', '', 'Classic-locale formatting uses one checked, pre-reserved coefficient string', 'and one reusable stack buffer of a limb width. The first limb uses to_chars;', 'interior limbs have exactly the decimal storage width, including zero padding.', 'This does not retain global memory or make complete formatting constant-space.', 'Nonclassic global locales retain the historical temporary stream fallback,', 'independently of destination locale. Existing scale and wrapping paths are shared.', '', 'Apple M1/macOS 27.2, Apple Clang 21, Release thin LTO, fixed split 126,', 'extensions ON, profiling/coverage OFF. Full 400 and held-out 200 invocations', 'pass independent decimal text/continuation-length checksum, status, stderr and', 'deadline checks. One checked warmup and nine shuffled paired rounds; 2000', 'bootstrap resamples. No local builds, tests or profiling overlap timing.', 'Shared-host contention/frequency/thermals remain uncontrolled. Separate controls', 'are auxiliary and never subtracted. Small-loop compiler folding is possible.', '', 'Ratios are approximately 0.54 for one-digit output, 0.26 for 1000 decimal', 'digits, and 0.20 at 100000 digits. The held-out 120000-digit ratio is 0.199.', 'No measured interval has a lower endpoint above 1.05. These are scoped local', 'component results; native three-platform and end-to-end acceptance is pending.', '', 'Release passes 199 cases/691577 assertions and eight CLI groups. Six new', 'compatibility cases pass on the old formatter before implementation. The', 'extensions-OFF ASan/UBSan run passes 29 output cases/19291 assertions and', 'fifteen VM CLI groups. Checks include exact interior zeros, custom global', 'punctuation, destination locale, scales, signs, stream width and continuation.', '']
+for preset in ('full','holdout'):
+ lines+=['## '+preset,'','| Workload | Candidate / baseline, 95% paired interval |','| --- | --- |']
+ for c in json.loads((r/preset/'summary.json').read_text())['workloads']:
+  v=c['candidate_over_parent'];lo,hi=v['ci95'];lines.append('| `{}` | {:.3f} [{:.3f},{:.3f}] |'.format(c['name'],v['median_paired_ratio'],lo,hi))
+ lines.append('')
+(r/'README.md').write_text('\n'.join(lines)+'\n');shutil.copyfile(__file__,r/'archive.py.txt')
+p=w/'docs/utilities/bc-number-conversion.md';p.write_text(p.read_text()+'\n[Fixed-buffer decimal limb formatting measurements](bc-206-decimal-format/README.md)\nretain every local interval, fixture, control and immutable recipe.\n')

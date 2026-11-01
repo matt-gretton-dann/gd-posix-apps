@@ -1,0 +1,21 @@
+Test project /private/tmp/gd-posix-decode-table/build-release
+    Start 204: bc/vm-lifetime
+1/8 Test #204: bc/vm-lifetime ...................   Passed    0.22 sec
+    Start 210: bc/components
+2/8 Test #210: bc/components ....................   Passed    0.53 sec
+    Start 212: bc/benchmark-ci
+3/8 Test #212: bc/benchmark-ci ..................   Passed    2.56 sec
+    Start 213: bc/benchmark-cli
+4/8 Test #213: bc/benchmark-cli .................   Passed    2.36 sec
+    Start 214: bc/cli
+5/8 Test #214: bc/cli ...........................   Passed    1.23 sec
+    Start 215: bc/verifier-offsets
+6/8 Test #215: bc/verifier-offsets ..............   Passed    1.27 sec
+    Start 216: bc/number-oracle
+7/8 Test #216: bc/number-oracle .................   Passed    0.32 sec
+    Start 218: bc/vm-cli
+8/8 Test #218: bc/vm-cli ........................   Passed    0.41 sec
+
+100% tests passed out of 8
+
+Total Test time (real) =   8.93 sec

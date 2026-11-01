@@ -1,0 +1,57 @@
+{
+  "implementations": [
+    {
+      "argv": [
+        "/private/tmp/gd-bc-206-decimal-format-integrated-release/build/src/bc/bc"
+      ],
+      "metadata": {
+        "binary_sha256": "12e8db409bc481366ce8b70d29f10cd6cc9f6831db0d164a82dafda45ad232f5",
+        "compiler": {
+          "C": {
+            "argv0": "/usr/bin/cc",
+            "realpath": "/usr/bin/cc",
+            "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+            "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+          },
+          "CXX": {
+            "argv0": "/usr/bin/c++",
+            "realpath": "/usr/bin/c++",
+            "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+            "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+          }
+        },
+        "configuration": {
+          "build_type": "Release",
+          "extensions": "ON",
+          "generator": "Ninja",
+          "multiply_split_point": 126,
+          "threshold_header_sha256": "c5b539c9f87d032bfcb436bb8da8972048d2ed1780a980265b7c3fe0e5e45626"
+        },
+        "flags": {
+          "CMAKE_CXX_FLAGS": "",
+          "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+          "CMAKE_C_FLAGS": "",
+          "CMAKE_C_FLAGS_RELEASE": "-O3 -DNDEBUG",
+          "CMAKE_EXE_LINKER_FLAGS": "",
+          "CMAKE_EXE_LINKER_FLAGS_RELEASE": "",
+          "compile_commands_sha256": "62634e895c90b71805057905da4587dd21e0c1e847cbda43e7c257712928cfab"
+        },
+        "instrumented": false,
+        "limitations": [
+          "Provision compiler, C/C++ runtime and SDK separately; this is not an OS image",
+          "Compiler defaults and actual commands are recorded, not claimed identical across hosts"
+        ],
+        "source_revision": "6431f7deb50b9f9f665ef1dc42cdc5fb0ef5236d",
+        "standard_library": {
+          "header_macros": {
+            "_LIBCPP_VERSION": "220106"
+          },
+          "scope": "standard-library header identity; provision runtime and SDK separately",
+          "status": "recorded"
+        },
+        "version": "gd-posix-apps source 6431f7deb50b9f9f665ef1dc42cdc5fb0ef5236d"
+      },
+      "name": "integrated-decimal-formatter"
+    }
+  ]
+}

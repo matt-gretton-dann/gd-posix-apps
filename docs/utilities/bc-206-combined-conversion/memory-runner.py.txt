@@ -1,0 +1,14 @@
+import hashlib,importlib.util,json,re,subprocess,platform
+from pathlib import Path
+root=Path('/private/tmp/gd-bc-206-combined-memory');root.mkdir()
+spec=importlib.util.spec_from_file_location('bench',Path('/private/tmp/gd-posix-decimal-format/src/bc/scripts/bench-bc.py'));bench=importlib.util.module_from_spec(spec);spec.loader.exec_module(bench)
+metadata={role:json.loads((Path('/private/tmp/gd-bc-206-'+prefix+'-components')/'manifest.json').read_text()) for role,prefix in [('baseline','accepted-input-baseline'),('candidate','combined')]}
+assert metadata['baseline']['source_revision']=='dd8c60c274511e26ed453eb1d8e175936ea6f576'
+assert metadata['candidate']['source_revision']=='68c22f90b4c8e2457ea2bb91df551c0fe8653e53'
+rows=[]
+for group,name in [('input','input-b2-100000d-x1'),('input','input-b16-100000d-x1'),('output','output-b10-1000d-x2000'),('output','output-b10-100000d-x100')]:
+ source=Path('/private/tmp/gd-bc-206-combined-'+group+'-full');m=json.loads((source/'manifest.json').read_text());case=next(c for c in m['cases'] if c['name']==name);fixture=(source/(name+'.txt')).read_text();expected=(source/(name+'.expected')).read_text().rstrip('\n') if group=='input' else fixture.rstrip('\n');checksum=case['checksum']//case['iterations']
+ for role in metadata:
+  for sample in range(3):
+   argv=['/usr/bin/time','-l']+metadata[role]['argv']+[case['component'],'1','126',str(case['base'])];child=subprocess.run(argv,input=fixture,text=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,env=bench.environment(),timeout=90);assert child.returncode==0,(name,role,child.stderr);d=json.loads(child.stdout);assert d['result']==expected and d['checksum_mod_2_64']==checksum;rss=int(re.search(r'^\s*(\d+)\s+maximum resident set size\s*$',child.stderr,re.M).group(1));log='{}-{}-{}.log'.format(name,role,sample);(root/log).write_text(child.stderr);rows.append({'workload':name,'implementation':role,'sample':sample,'checked':True,'max_rss_bytes':rss,'log':log,'stdout_sha256':hashlib.sha256(child.stdout.encode()).hexdigest()})
+(root/'manifest.json').write_text(json.dumps({'implementations':metadata,'host':platform.platform(),'scope':'Separate diagnostic process peak RSS, not timed speed observations or selected allocator payloads. Includes loader, one-MiB fixture buffer, preparsed Number, conversion temporaries, output and final JSON. Three serial fresh processes per case/implementation. No local build/test/profile/timing overlap.','units_reference':'Local getrusage(2): ru_maxrss is maximum resident set size utilized (in bytes)','argv_prefix':['/usr/bin/time','-l'],'environment':{'LC_ALL':'C','LANG':'C','BC_LINE_LENGTH':'70','BC_ENV_ARGS':''}},indent=2)+'\n');(root/'samples.json').write_text(json.dumps(rows,indent=2)+'\n');print('All',len(rows),'separate memory invocations pass exact checks')
