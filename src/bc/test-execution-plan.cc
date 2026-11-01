@@ -67,3 +67,25 @@ TEST_CASE("A second later use prevents an arithmetic transfer", "[bc][vm][execut
                                   I(O::print, D(-3), I::Stream::output)};
   CHECK(plan(code).empty());
 }
+
+TEST_CASE("Outer definition registration does not prepare unexecuted arithmetic",
+          "[bc][vm][execution-plan]")
+{
+  GD::Bc::Instructions code{
+    I(O::function_begin, GD::Bc::VariableMask(), GD::Bc::Location("unused", 1, 1)),
+    I(O::pop_param_mark), I(O::number, "7")};
+  for (unsigned n = 0; n < 6; ++n) {
+    code.emplace_back(O::number, "1");
+    code.emplace_back(O::add, D(-2), D(-1));
+  }
+  code.emplace_back(O::return_, D(-1));
+  auto const end = code.size();
+  code.emplace_back(O::function_end, GD::Bc::Letter('f'), -static_cast<D>(end));
+  code.emplace_back(O::eof);
+  REQUIRE(code.size() >= 16);
+  CHECK(plan(code, false).empty());
+  GD::Bc::Instructions const body(
+    code.begin() + 1, code.begin() + static_cast<GD::Bc::Instructions::difference_type>(end));
+  REQUIRE_FALSE(GD::Bc::Details::verify_control_flow(body, true).has_value());
+  CHECK_FALSE(GD::Bc::Details::plan_consumption(body, true).empty());
+}
