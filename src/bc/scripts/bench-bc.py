@@ -262,6 +262,15 @@ def corpus(preset="full", selected=None, listing=False, seed=197200):
             "ibase={}\n".format(expression) + ("a=" + value + "\n") * count + "ibase=A\na",
             lambda value=value, input_base=input_base: int(value, input_base),
             {"digits": digits, "literals": count, "input_base": input_base})
+    # A long left-associated expression exposes otherwise unique intermediate
+    # coefficients. Append it after existing classes to preserve their hashes.
+    digits, count = dimension(1000), iterations(50000)
+    value = '7' * digits
+    add("temporary_chain_{}d_x{}".format(digits, count), "temporary_chain",
+        "define g(x) {{\nreturn(x+x+x+x+x+x+x+x)\n}}\na={}\n"
+        "for(i=0;i<{};i++) r=g(a)\nr".format(value, count),
+        lambda value=value: 8 * int(value),
+        {"digits": digits, "iterations": count, "terms": 8})
     if selected:
         missing = set(selected) - set(known)
         if missing:

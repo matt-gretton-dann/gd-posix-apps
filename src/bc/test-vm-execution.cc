@@ -329,3 +329,84 @@ TEST_CASE("Verified execution omits only the result diagnostic switch",
   }
 }
 #endif
+
+TEST_CASE("A producer outside a loop retains its value on every iteration",
+          "[bc][vm][temporary-liveness]")
+{
+  // A sole static use is not enough: this consumer executes repeatedly while
+  // its dominating producer is outside the backedge. Consuming it would print
+  // the correct value once and then use a moved-from Number.
+  auto const counter = GD::Bc::Variable('i');
+  GD::Bc::Instructions code{
+    I(O::number, "1" + std::string(100, '0')),  // 0: live across loop iterations
+    I(O::variable, counter),                    // 1
+    I(O::number, "0"),                          // 2
+    I(O::store, D(-2), D(-1)),                  // 3
+    I(O::load, D(-3)),                          // 4: loop header
+    I(O::number, "3"),                          // 5
+    I(O::less_than, D(-2), D(-1)),              // 6
+    I(O::branch_zero, D(-1), D(9)),             // 7: exit at EOF
+    I(O::number, "1"),                          // 8
+    I(O::add, D(-9), D(-1)),                    // 9: sole static read of 0
+    I(O::print, D(-1), I::Stream::output),      // 10
+    I(O::load, D(-10)),                         // 11
+    I(O::number, "1"),                          // 12
+    I(O::add, D(-2), D(-1)),                    // 13
+    I(O::store, D(-13), D(-1)),                 // 14
+    I(O::branch, D(-11)),                       // 15
+    I(O::eof)};
+  std::string const line = "1" + std::string(67, '0') + "\\\n" + std::string(32, '0') + "1\n";
+  CHECK(execute(code) == line + line + line);
+}
+
+TEST_CASE("Repeated operands preserve both reads of the same producer",
+          "[bc][vm][temporary-liveness]")
+{
+  GD::Bc::Instructions code{I(O::number, "1" + std::string(100, '0')), I(O::add, D(-1), D(-1)),
+                            I(O::print, D(-1), I::Stream::output)};
+  // Keep this outer stream large enough for execution-plan analysis; these
+  // unused literals must not create a second semantic use of the producer.
+  for (unsigned n = 0; n < 16; ++n)
+    code.emplace_back(O::number, "0");
+  code.emplace_back(O::eof);
+  CHECK(execute(code) == "2" + std::string(67, '0') + "\\\n" + std::string(33, '0') + "\n");
+}
+
+#if GD_BC_PROFILE
+TEST_CASE("Last-use transfers avoid an intermediate COW clone only in verified execution",
+          "[bc][vm][temporary-liveness-profile]")
+{
+  for (auto checks : {GD::Bc::VM::ExecutionChecks::full, GD::Bc::VM::ExecutionChecks::verified}) {
+    GD::Bc::Instructions code{I(O::number, "1" + std::string(100, '0')),
+                              I(O::number, "1"),
+                              I(O::add, D(-2), D(-1)),
+                              I(O::number, "1"),
+                              I(O::add, D(-2), D(-1)),
+                              I(O::print, D(-1), I::Stream::output)};
+    for (unsigned n = 0; n < 16; ++n)
+      code.emplace_back(O::number, "0");
+    code.emplace_back(O::eof);
+    std::ostringstream output, errors;
+    GD::Bc::VM vm(output, errors, false, checks);
+    auto const before = GD::Bc::Profile::snapshot();
+    CHECK_FALSE(vm.execute(code));
+    auto const after = GD::Bc::Profile::snapshot();
+    auto delta = [&](GD::Bc::Profile::Event event) {
+      auto const index = static_cast<std::size_t>(event);
+      return after.events[index] - before.events[index];
+    };
+    CHECK(output.str() == "1" + std::string(67, '0') + "\\\n" + std::string(32, '0') + "2\n");
+    CHECK(errors.str().empty());
+    // The literal cache retains the original coefficient in both modes. Only
+    // the otherwise unique intermediate sum can avoid detaching a second time.
+    if (checks == GD::Bc::VM::ExecutionChecks::full) {
+      CHECK(delta(GD::Bc::Profile::Event::temporary_consumptions) == 0);
+      CHECK(delta(GD::Bc::Profile::Event::cow_clones) == 2);
+    }
+    else {
+      CHECK(delta(GD::Bc::Profile::Event::temporary_consumptions) > 0);
+      CHECK(delta(GD::Bc::Profile::Event::cow_clones) == 1);
+    }
+  }
+}
+#endif

@@ -1,0 +1,17 @@
+{
+  "scope": "Mach-O __TEXT is code/read-only storage, not process RSS",
+  "rows": [
+    {
+      "role": "baseline",
+      "file_bytes": 507776,
+      "binary_sha256": "3a953ed21789788ec9ac76128c4a735f0e3a27b04a41754c8b93026403a3dc59",
+      "text_segment_bytes": 311296
+    },
+    {
+      "role": "candidate",
+      "file_bytes": 508048,
+      "binary_sha256": "43654a868b9cd4922aa6fbd3bae5d0fab1877a7b09fc0c1d622906e910849a2b",
+      "text_segment_bytes": 311296
+    }
+  ]
+}

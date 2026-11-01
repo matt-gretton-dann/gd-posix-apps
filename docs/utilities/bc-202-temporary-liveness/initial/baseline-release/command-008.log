@@ -1,0 +1,6 @@
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmacro-redefined"
+#pragma clang diagnostic pop
+
+
+GD_BC_LIBRARY__LIBCPP_VERSION 220106

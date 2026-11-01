@@ -135,6 +135,9 @@ public:
   /** \brief  Basic constructor.  */
   BasicDigits() : digits_(nullptr) {}
 
+  /** Whether coefficient storage retains a heap owner rather than inline limbs. */
+  [[nodiscard]] auto has_heap_storage() const noexcept -> bool { return digits_.has_heap(); }
+
   /** \brief   Construct holding the single digit \a num
    *  \param num Number to hold.  Must be less than \c base_.
    */
@@ -1555,6 +1558,14 @@ public:
   auto operator=(BasicNumber const&) -> BasicNumber& = default;
   BasicNumber(BasicNumber&&) noexcept = default;
   auto operator=(BasicNumber&&) noexcept -> BasicNumber& = default;
+
+  /** Storage query for generic copy/move cost policies, not numeric magnitude.
+   * A coefficient may retain heap capacity after shrinking to a small value.
+   */
+  [[nodiscard]] auto has_heap_storage() const noexcept -> bool
+  {
+    return digits_.has_heap_storage();
+  }
 
   /** \brief       Construct a number.
    *  \param s     String representing the number.

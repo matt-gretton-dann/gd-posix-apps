@@ -1,0 +1,272 @@
+[
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/c++ -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/src/util -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -O3 -DNDEBUG -std=gnu++20 -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/CMakeFiles/util.dir/util/input-file/input-file-constructor.cc.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/util/input-file/input-file-constructor.cc",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/util/input-file/input-file-constructor.cc",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/CMakeFiles/util.dir/util/input-file/input-file-constructor.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/c++ -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/src/util -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -O3 -DNDEBUG -std=gnu++20 -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/CMakeFiles/util.dir/util/input-file/input-file-getc.cc.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/util/input-file/input-file-getc.cc",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/util/input-file/input-file-getc.cc",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/CMakeFiles/util.dir/util/input-file/input-file-getc.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/c++ -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/src/util -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -O3 -DNDEBUG -std=gnu++20 -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/CMakeFiles/util.dir/util/input-file/input-file-getline.cc.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/util/input-file/input-file-getline.cc",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/util/input-file/input-file-getline.cc",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/CMakeFiles/util.dir/util/input-file/input-file-getline.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/c++ -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/src/util -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -O3 -DNDEBUG -std=gnu++20 -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/CMakeFiles/util.dir/util/input-file/input-file-queries.cc.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/util/input-file/input-file-queries.cc",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/util/input-file/input-file-queries.cc",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/CMakeFiles/util.dir/util/input-file/input-file-queries.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/c++ -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/src/util -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -O3 -DNDEBUG -std=gnu++20 -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/CMakeFiles/util.dir/util/input-file/input-file-report-error.cc.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/util/input-file/input-file-report-error.cc",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/util/input-file/input-file-report-error.cc",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/CMakeFiles/util.dir/util/input-file/input-file-report-error.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/c++ -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/src/util -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -O3 -DNDEBUG -std=gnu++20 -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/CMakeFiles/util.dir/util/input-file/input-file-setbuf.cc.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/util/input-file/input-file-setbuf.cc",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/util/input-file/input-file-setbuf.cc",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/CMakeFiles/util.dir/util/input-file/input-file-setbuf.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/c++ -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/src/util -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -O3 -DNDEBUG -std=gnu++20 -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/CMakeFiles/util.dir/util/program-name.cc.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/util/program-name.cc",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/util/program-name.cc",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/CMakeFiles/util.dir/util/program-name.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/c++ -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/src/util -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -O3 -DNDEBUG -std=gnu++20 -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/CMakeFiles/util.dir/util/rename.cc.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/util/rename.cc",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/util/rename.cc",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/CMakeFiles/util.dir/util/rename.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/c++ -DENABLE_EXTENSIONS=1 -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/src/gencat -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -O3 -DNDEBUG -std=gnu++20 -flto=thin -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/gencat/CMakeFiles/gencat.dir/gencat.cc.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/gencat/gencat.cc",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/gencat/gencat.cc",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/gencat/CMakeFiles/gencat.dir/gencat.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/c++ -DENABLE_EXTENSIONS=1 -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/ar -I/private/tmp/gd-bc-202-consume-candidate-release/build/src/ar -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -O3 -DNDEBUG -std=gnu++20 -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/ar/CMakeFiles/libar.dir/ar-member.cc.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/ar/ar-member.cc",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/ar/ar-member.cc",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/ar/CMakeFiles/libar.dir/ar-member.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/c++ -DENABLE_EXTENSIONS=1 -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/src/ar -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/ar -O3 -DNDEBUG -std=gnu++20 -flto=thin -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/ar/CMakeFiles/ar.dir/ar.cc.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/ar/ar.cc",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/ar/ar.cc",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/ar/CMakeFiles/ar.dir/ar.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/c++ -DENABLE_EXTENSIONS=1 -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/src/asa -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -O3 -DNDEBUG -std=gnu++20 -flto=thin -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/asa/CMakeFiles/asa.dir/asa.cc.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/asa/asa.cc",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/asa/asa.cc",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/asa/CMakeFiles/asa.dir/asa.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/c++ -DENABLE_EXTENSIONS=1 -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/src/basename -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -O3 -DNDEBUG -std=gnu++20 -flto=thin -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/basename/CMakeFiles/basename.dir/basename.cc.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/basename/basename.cc",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/basename/basename.cc",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/basename/CMakeFiles/basename.dir/basename.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/c++ -DENABLE_EXTENSIONS=1 -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/bc -I/private/tmp/gd-bc-202-consume-candidate-release/build/src/bc -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -O3 -DNDEBUG -std=gnu++20 -flto=thin -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/bc/CMakeFiles/libbc.dir/execution-plan.cc.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/bc/execution-plan.cc",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/bc/execution-plan.cc",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/bc/CMakeFiles/libbc.dir/execution-plan.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/c++ -DENABLE_EXTENSIONS=1 -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/bc -I/private/tmp/gd-bc-202-consume-candidate-release/build/src/bc -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -O3 -DNDEBUG -std=gnu++20 -flto=thin -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/bc/CMakeFiles/libbc.dir/instruction.cc.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/bc/instruction.cc",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/bc/instruction.cc",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/bc/CMakeFiles/libbc.dir/instruction.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/c++ -DENABLE_EXTENSIONS=1 -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/bc -I/private/tmp/gd-bc-202-consume-candidate-release/build/src/bc -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -O3 -DNDEBUG -std=gnu++20 -flto=thin -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/bc/CMakeFiles/libbc.dir/lexer.cc.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/bc/lexer.cc",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/bc/lexer.cc",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/bc/CMakeFiles/libbc.dir/lexer.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/c++ -DENABLE_EXTENSIONS=1 -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/bc -I/private/tmp/gd-bc-202-consume-candidate-release/build/src/bc -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -O3 -DNDEBUG -std=gnu++20 -flto=thin -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/bc/CMakeFiles/libbc.dir/parser.cc.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/bc/parser.cc",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/bc/parser.cc",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/bc/CMakeFiles/libbc.dir/parser.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/c++ -DENABLE_EXTENSIONS=1 -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/bc -I/private/tmp/gd-bc-202-consume-candidate-release/build/src/bc -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -O3 -DNDEBUG -std=gnu++20 -flto=thin -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/bc/CMakeFiles/libbc.dir/reader.cc.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/bc/reader.cc",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/bc/reader.cc",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/bc/CMakeFiles/libbc.dir/reader.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/c++ -DENABLE_EXTENSIONS=1 -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/bc -I/private/tmp/gd-bc-202-consume-candidate-release/build/src/bc -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -O3 -DNDEBUG -std=gnu++20 -flto=thin -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/bc/CMakeFiles/libbc.dir/token.cc.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/bc/token.cc",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/bc/token.cc",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/bc/CMakeFiles/libbc.dir/token.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/c++ -DENABLE_EXTENSIONS=1 -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/bc -I/private/tmp/gd-bc-202-consume-candidate-release/build/src/bc -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -O3 -DNDEBUG -std=gnu++20 -flto=thin -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/bc/CMakeFiles/libbc.dir/verification.cc.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/bc/verification.cc",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/bc/verification.cc",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/bc/CMakeFiles/libbc.dir/verification.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/c++ -DENABLE_EXTENSIONS=1 -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/bc -I/private/tmp/gd-bc-202-consume-candidate-release/build/src/bc -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -O3 -DNDEBUG -std=gnu++20 -flto=thin -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/bc/CMakeFiles/libbc.dir/vm.cc.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/bc/vm.cc",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/bc/vm.cc",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/bc/CMakeFiles/libbc.dir/vm.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/c++ -DENABLE_EXTENSIONS=1 -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/src/bc -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/bc -O3 -DNDEBUG -std=gnu++20 -flto=thin -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/bc/CMakeFiles/bc.dir/bc.cc.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/bc/bc.cc",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/bc/bc.cc",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/bc/CMakeFiles/bc.dir/bc.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/c++ -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/bc -I/private/tmp/gd-bc-202-consume-candidate-release/build/src/bc -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -O3 -DNDEBUG -std=gnu++20 -flto=thin -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/bc/CMakeFiles/find-multiply-split-point.dir/find-multiply-split-point.cc.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/bc/find-multiply-split-point.cc",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/bc/find-multiply-split-point.cc",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/bc/CMakeFiles/find-multiply-split-point.dir/find-multiply-split-point.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/c++ -DENABLE_EXTENSIONS=1 -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/src/cat -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -O3 -DNDEBUG -std=gnu++20 -flto=thin -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/cat/CMakeFiles/cat.dir/cat.cc.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/cat/cat.cc",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/cat/cat.cc",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/cat/CMakeFiles/cat.dir/cat.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/c++ -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -O3 -DNDEBUG -std=gnu++20 -arch arm64 -o src/cksum/CMakeFiles/gen-cksum-table.dir/gen-cksum-table.cc.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/cksum/gen-cksum-table.cc",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/cksum/gen-cksum-table.cc",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/cksum/CMakeFiles/gen-cksum-table.dir/gen-cksum-table.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/c++ -DENABLE_EXTENSIONS=1 -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/src/cksum -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -O3 -DNDEBUG -std=gnu++20 -flto=thin -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/cksum/CMakeFiles/cksum.dir/cksum.cc.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/cksum/cksum.cc",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/cksum/cksum.cc",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/cksum/CMakeFiles/cksum.dir/cksum.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/c++ -DENABLE_EXTENSIONS=1 -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/src/cksum -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -O3 -DNDEBUG -std=gnu++20 -flto=thin -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/cksum/CMakeFiles/cksum.dir/cksum-table.cc.o -c /private/tmp/gd-bc-202-consume-candidate-release/build/src/cksum/cksum-table.cc",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/cksum/cksum-table.cc",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/cksum/CMakeFiles/cksum.dir/cksum-table.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/c++ -DENABLE_EXTENSIONS=1 -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/src/dirname -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -O3 -DNDEBUG -std=gnu++20 -flto=thin -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/dirname/CMakeFiles/dirname.dir/dirname.cc.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/dirname/dirname.cc",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/dirname/dirname.cc",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/dirname/CMakeFiles/dirname.dir/dirname.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/c++ -DENABLE_EXTENSIONS=1 -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/src/echo -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -O3 -DNDEBUG -std=gnu++20 -flto=thin -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/echo/CMakeFiles/echo.dir/echo.cc.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/echo/echo.cc",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/echo/echo.cc",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/echo/CMakeFiles/echo.dir/echo.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/c++ -DENABLE_EXTENSIONS=1 -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/src/expr -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -O3 -DNDEBUG -std=gnu++20 -flto=thin -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/expr/CMakeFiles/expr.dir/expr.cc.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/expr/expr.cc",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/expr/expr.cc",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/expr/CMakeFiles/expr.dir/expr.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/c++ -DENABLE_EXTENSIONS=1 -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/src/printf -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -O3 -DNDEBUG -std=gnu++20 -flto=thin -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/printf/CMakeFiles/printf.dir/printf.cc.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/printf/printf.cc",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/printf/printf.cc",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/printf/CMakeFiles/printf.dir/printf.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/cc -DENABLE_EXTENSIONS=1 -DTRUE_FALSE_EXIT_CODE=1 -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -O3 -DNDEBUG -flto=thin -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/true-false/CMakeFiles/false.dir/true-false.c.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/true-false/true-false.c",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/true-false/true-false.c",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/true-false/CMakeFiles/false.dir/true-false.c.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/cc -DENABLE_EXTENSIONS=1 -DTRUE_FALSE_EXIT_CODE=0 -I/private/tmp/gd-bc-202-consume-candidate-release/source/src/include -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -O3 -DNDEBUG -flto=thin -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/true-false/CMakeFiles/true.dir/true-false.c.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/src/true-false/true-false.c",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/src/true-false/true-false.c",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/src/true-false/CMakeFiles/true.dir/true-false.c.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/cc -D__STDC_WANT_LIB_EXT1__=1 -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/libgdsup -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup -O3 -DNDEBUG -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/gdsup.dir/fcntl/__fcntl_open.c.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/fcntl/__fcntl_open.c",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/fcntl/__fcntl_open.c",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/libgdsup/CMakeFiles/gdsup.dir/fcntl/__fcntl_open.c.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/cc -D__STDC_WANT_LIB_EXT1__=1 -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/libgdsup -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup -O3 -DNDEBUG -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/gdsup.dir/nl_types/catclose.c.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/nl_types/catclose.c",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/nl_types/catclose.c",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/libgdsup/CMakeFiles/gdsup.dir/nl_types/catclose.c.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/cc -D__STDC_WANT_LIB_EXT1__=1 -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/libgdsup -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup -O3 -DNDEBUG -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/gdsup.dir/nl_types/catgets.c.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/nl_types/catgets.c",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/nl_types/catgets.c",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/libgdsup/CMakeFiles/gdsup.dir/nl_types/catgets.c.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/cc -D__STDC_WANT_LIB_EXT1__=1 -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/libgdsup -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup -O3 -DNDEBUG -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/gdsup.dir/nl_types/catopen.c.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/nl_types/catopen.c",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/nl_types/catopen.c",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/libgdsup/CMakeFiles/gdsup.dir/nl_types/catopen.c.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/cc -D__STDC_WANT_LIB_EXT1__=1 -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/libgdsup -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup -O3 -DNDEBUG -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/gdsup.dir/nl_types/__nl_types_check_cat_header.c.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/nl_types/__nl_types_check_cat_header.c",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/nl_types/__nl_types_check_cat_header.c",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/libgdsup/CMakeFiles/gdsup.dir/nl_types/__nl_types_check_cat_header.c.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/cc -D__STDC_WANT_LIB_EXT1__=1 -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/libgdsup -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup -O3 -DNDEBUG -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/gdsup.dir/support/empty.c.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/support/empty.c",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/support/empty.c",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/libgdsup/CMakeFiles/gdsup.dir/support/empty.c.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/cc -D__STDC_WANT_LIB_EXT1__=1 -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/libgdsup -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup -O3 -DNDEBUG -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/gdsup.dir/support/__support_log.c.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/support/__support_log.c",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/support/__support_log.c",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/libgdsup/CMakeFiles/gdsup.dir/support/__support_log.c.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/cc -D__STDC_WANT_LIB_EXT1__=1 -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/libgdsup -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup -O3 -DNDEBUG -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/gdsup.dir/support/__support_read_le_u64.c.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/support/__support_read_le_u64.c",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/support/__support_read_le_u64.c",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/libgdsup/CMakeFiles/gdsup.dir/support/__support_read_le_u64.c.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/cc -D__STDC_WANT_LIB_EXT1__=1 -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/libgdsup -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup -O3 -DNDEBUG -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/gdsup.dir/support/__support_read_le_u32.c.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/support/__support_read_le_u32.c",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/support/__support_read_le_u32.c",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/libgdsup/CMakeFiles/gdsup.dir/support/__support_read_le_u32.c.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/cc -D__STDC_WANT_LIB_EXT1__=1 -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/libgdsup -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup -O3 -DNDEBUG -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/gdsup.dir/unistd/getopt.c.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/unistd/getopt.c",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/unistd/getopt.c",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/libgdsup/CMakeFiles/gdsup.dir/unistd/getopt.c.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/cc -D__STDC_WANT_LIB_EXT1__=1 -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/libgdsup -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup -O3 -DNDEBUG -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/gdsup.dir/unistd/__gd_getopt_reset.c.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/unistd/__gd_getopt_reset.c",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/unistd/__gd_getopt_reset.c",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/libgdsup/CMakeFiles/gdsup.dir/unistd/__gd_getopt_reset.c.o"
+},
+{
+  "directory": "/private/tmp/gd-bc-202-consume-candidate-release/build",
+  "command": "/usr/bin/cc -D__STDC_WANT_LIB_EXT1__=1 -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/include -I/private/tmp/gd-bc-202-consume-candidate-release/build/libgdsup -I/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup -O3 -DNDEBUG -arch arm64 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/gdsup.dir/unistd/__unistd_read.c.o -c /private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/unistd/__unistd_read.c",
+  "file": "/private/tmp/gd-bc-202-consume-candidate-release/source/libgdsup/unistd/__unistd_read.c",
+  "output": "/private/tmp/gd-bc-202-consume-candidate-release/build/libgdsup/CMakeFiles/gdsup.dir/unistd/__unistd_read.c.o"
+}
+]

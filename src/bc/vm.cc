@@ -17,6 +17,7 @@
 #include <utility>
 
 #include "bc.hh"
+#include "execution-plan.hh"
 #include "number.hh"
 #include "verification.hh"
 
@@ -44,18 +45,47 @@ using ResultBuffer =
 
 /** A borrowed instruction stream whose entry verification has completed.
  * Construction is confined to the verifier and persistent verified owners.
- * The source must outlive execution, as with the original borrowed executor.
+ * Instruction structure and metadata stay unchanged and outlive execution.
+ * Ordinary decoded literal caches can still populate at runtime.
  */
 class VerifiedInstructions
 {
 public:
   auto instructions() const -> Instructions const& { return *instructions_; }
+  auto consumption() const -> ConsumptionPlan const& { return *consumption_; }
 
 private:
   friend struct VMState;
   friend class FunctionCode;
-  explicit VerifiedInstructions(Instructions const& instructions) : instructions_(&instructions) {}
+  friend class PreparedInstructions;
+  VerifiedInstructions(Instructions const& instructions, ConsumptionPlan const& consumption)
+      : instructions_(&instructions), consumption_(&consumption)
+  {
+  }
   Instructions const* instructions_;
+  ConsumptionPlan const* consumption_;
+};
+
+/** Own the outer stream's prepared metadata while borrowing its instructions.
+ * Views are formed on demand, so copying/moving this owner never leaves a view
+ * pointing into a previous owner's metadata. No prepared view escapes execute().
+ */
+class PreparedInstructions
+{
+public:
+  auto view() const -> VerifiedInstructions
+  {
+    return VerifiedInstructions(*instructions_, consumption_);
+  }
+
+private:
+  friend struct VMState;
+  PreparedInstructions(Instructions const& instructions, ConsumptionPlan consumption)
+      : instructions_(&instructions), consumption_(std::move(consumption))
+  {
+  }
+  Instructions const* instructions_;
+  ConsumptionPlan consumption_;
 };
 
 /** Persistent function code can be constructed only after body verification.
@@ -68,12 +98,19 @@ public:
   FunctionCode(FunctionCode&&) noexcept = default;
   auto operator=(FunctionCode const&) -> FunctionCode& = default;
   auto operator=(FunctionCode&&) noexcept -> FunctionCode& = default;
-  auto view() const -> VerifiedInstructions { return VerifiedInstructions(instructions_); }
+  auto view() const -> VerifiedInstructions
+  {
+    return VerifiedInstructions(instructions_, consumption_);
+  }
 
 private:
   friend struct VMState;
-  explicit FunctionCode(Instructions instructions) : instructions_(std::move(instructions)) {}
+  FunctionCode(Instructions instructions, ConsumptionPlan consumption)
+      : instructions_(std::move(instructions)), consumption_(std::move(consumption))
+  {
+  }
   Instructions instructions_;
+  ConsumptionPlan consumption_;
 };
 
 /** \brief Hold virtual machine state.
@@ -165,10 +202,11 @@ struct VMState
 
   /** \brief  Validate instruction bounds, result types and control-flow availability.  */
   void validate(Instructions const& instrs, bool function_body = false) const;
-  auto verify(Instructions const& instructions) const -> VerifiedInstructions
+  auto verify(Instructions const& instructions) const -> PreparedInstructions
   {
     validate(instructions);
-    return VerifiedInstructions(instructions);
+    return PreparedInstructions(
+      instructions, full_checks() ? ConsumptionPlan{} : plan_consumption(instructions, false));
   }
   auto full_checks() const noexcept -> bool { return checks_ == VM::ExecutionChecks::full; }
 
@@ -347,7 +385,7 @@ private:
   template<typename Fn>
   void execute_unary_op(Fn f)
   {
-    Number lhs = get_op1_expr();
+    Number lhs = take_op1_expr();
     f(lhs);
     results_[pc_] = std::move(lhs);
   }
@@ -361,7 +399,7 @@ private:
   template<typename Fn>
   void execute_binary_op(Fn f)
   {
-    Number lhs = get_op1_expr();
+    Number lhs = take_op1_expr();
     Number const& rhs = get_op2_expr();
     f(lhs, rhs);
     results_[pc_] = std::move(lhs);
@@ -372,6 +410,9 @@ private:
 
   /** \brief  Get the value pointed to by op relative to the current PC.  */
   [[nodiscard]] auto get_op_expr(Instruction::Operand const& op) const -> Number const&;
+
+  /** Copy the first expression, or transfer it after a proven last use. */
+  auto take_op1_expr() -> Number;
 
   /** \brief Get the value pointed to by op1 of the current instruction.  */
   [[nodiscard]] auto get_op1_expr() const -> Number const&;
@@ -384,10 +425,11 @@ private:
   template<bool FullChecks>
   auto execute_impl() -> std::pair<Number, bool>;
 
-  VMState* vm_;                 ///< Virtual Machine state
-  Instructions const& instrs_;  ///< Instructions to execute
-  Instruction::Index pc_{0};    ///< Current program counter
-  ResultBuffer& results_;       ///< Borrowed stable buffer for this activation.
+  VMState* vm_;                         ///< Virtual Machine state
+  Instructions const& instrs_;          ///< Instructions to execute
+  Instruction::Index pc_{0};            ///< Current program counter
+  ResultBuffer& results_;               ///< Borrowed stable buffer for this activation.
+  ConsumptionPlan const& consumption_;  ///< Immutable metadata owned beside the code.
 };
 
 auto operator<<(std::ostream& os, InstructionPack const& instrs) -> std::ostream&;
@@ -506,8 +548,9 @@ void GD::Bc::Details::VMState::function(Letter func, Instructions::const_iterato
 {
   Instructions instrs(begin, end);
   validate(instrs, true);
-  functions_.at(static_cast<unsigned>(func)) =
-    std::make_optional(std::make_tuple(FunctionCode(std::move(instrs)), mask, loc));
+  auto consumption = full_checks() ? ConsumptionPlan{} : plan_consumption(instrs, true);
+  functions_.at(static_cast<unsigned>(func)) = std::make_optional(
+    std::make_tuple(FunctionCode(std::move(instrs), std::move(consumption)), mask, loc));
 }
 
 auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc::Number
@@ -841,7 +884,8 @@ void GD::Bc::Details::VMState::release_results()
 }
 
 GD::Bc::Details::InstructionPack::InstructionPack(VMState* vm, VerifiedInstructions instrs)
-    : vm_(vm), instrs_(instrs.instructions()), results_(vm->acquire_results(instrs_.size()))
+    : vm_(vm), instrs_(instrs.instructions()), results_(vm->acquire_results(instrs_.size())),
+      consumption_(instrs.consumption())
 {
   assert(vm_ != nullptr);  // NOLINT
 }
@@ -1204,6 +1248,22 @@ auto GD::Bc::Details::InstructionPack::get_op_expr(Instruction::Operand const& o
   return std::get<Number>(*result);
 }
 
+auto GD::Bc::Details::InstructionPack::take_op1_expr() -> GD::Bc::Number
+{
+  auto const index = get_offset_index(instrs_[pc_].op1());
+  auto& result = results_[index];
+  assert_error(result.has_value(), Msg::empty_result, index);  // NOLINT
+  auto& number = std::get<Number>(*result);
+  if (number.has_heap_storage() && !consumption_.empty() && consumption_[pc_] != 0) {
+    // One static use within a straight-line block proves this slot cannot be
+    // read again before its producer executes. Other COW owners stay intact.
+    // Inline copies retain no heap owner, so they keep the ordinary copy path.
+    GD_BC_PROFILE_EVENT(Profile::Event::temporary_consumptions, 1);
+    return std::move(number);
+  }
+  return number;
+}
+
 auto GD::Bc::Details::InstructionPack::get_op1_expr() const -> GD::Bc::Number const&
 {
   return get_op_expr(instrs_[pc_].op1());
@@ -1359,7 +1419,7 @@ auto GD::Bc::VM::operator=(VM&&) noexcept -> VM& = default;
 auto GD::Bc::VM::execute(Instructions& instructions) -> bool
 {
   auto const verified = state_->verify(instructions);
-  Details::InstructionPack instrs(state_.get(), verified);
+  Details::InstructionPack instrs(state_.get(), verified.view());
   // Restore the caller's handler before reporting interruption, including when
   // execution throws (for example, through an output stream's exception mask).
   auto const result = [&instrs]() {
