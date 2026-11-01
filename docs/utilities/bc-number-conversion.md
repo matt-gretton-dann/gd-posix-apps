@@ -34,7 +34,8 @@ and retained regressions](bc-206-decimal-input/README.md) distinguish the initia
 scalar and aligned stages, including inconclusive division/modulo intervals.
 
 [Nondecimal grouping measurements](bc-206-radix-input/README.md) retain all
-fixtures and intervals; native acceptance is still pending. Batched output
+fixtures and intervals; [native acceptance](bc-206-radix-input/accepted-native/README.md)
+records the corrected GCC source and retained initial Linux losses. Batched output
 and conversion crossover decisions remain open. Performance results must distinguish component
 conversion from end-to-end multiplication, which includes input and output.
 The separate #320 fix handles fractional padding that bypassed line wrapping.

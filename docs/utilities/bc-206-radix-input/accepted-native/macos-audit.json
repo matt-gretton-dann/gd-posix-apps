@@ -1,0 +1,11 @@
+{
+  "os": "macos",
+  "checked": 1480,
+  "identities": {
+    "base": "3232d2f5458492b5763cae77ec699cdb38882fe7",
+    "candidate": "b15806ac7470eee9cfecf9e598047109bef32a62",
+    "howard-7.0.3": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8"
+  },
+  "confirmed": [],
+  "sha256": "8c9620e0ee5c4714f5d2accfb9847c0f5f6866a3a9b7b17823e719d795dc742f"
+}
