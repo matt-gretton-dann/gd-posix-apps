@@ -1,0 +1,975 @@
+{
+  "implementations": {
+    "baseline": {
+      "schema": 1,
+      "source_revision": "e53a4b9fb73fc037bc4e30aecb310fbff37b92a2",
+      "argv": [
+        "/private/tmp/gd-bc-202-consume-baseline-profile/build/src/bc/bc"
+      ],
+      "binary_sha256": "7fd9ab90fd7d1caec0022955566674c528757a4afa0b3051fb3283b544cc7250",
+      "compiler": {
+        "C": {
+          "argv0": "/usr/bin/cc",
+          "realpath": "/usr/bin/cc",
+          "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+          "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+        },
+        "CXX": {
+          "argv0": "/usr/bin/c++",
+          "realpath": "/usr/bin/c++",
+          "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+          "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+        }
+      },
+      "standard_library": {
+        "header_macros": {
+          "_LIBCPP_VERSION": "220106"
+        },
+        "scope": "standard-library header identity; provision runtime and SDK separately",
+        "status": "recorded"
+      },
+      "flags": {
+        "BC_MULTIPLY_SPLIT_POINT:STRING": "126",
+        "CMAKE_CXX_FLAGS:STRING": "",
+        "CMAKE_CXX_FLAGS_RELEASE:STRING": "-O3 -DNDEBUG",
+        "ENABLE_BC_COVERAGE:BOOL": "OFF",
+        "ENABLE_BC_PROFILE:BOOL": "ON"
+      },
+      "commands": [
+        {
+          "argv": [
+            "cmake",
+            "-S",
+            "/private/tmp/gd-bc-202-consume-baseline-release/source",
+            "-B",
+            "/private/tmp/gd-bc-202-consume-baseline-profile/build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DBUILD_TESTING=OFF",
+            "-DENABLE_BC_COMPONENT_BENCHMARKS=OFF",
+            "-DENABLE_BC_PROFILE=ON",
+            "-DENABLE_BC_COVERAGE=OFF",
+            "-DENABLE_NON_POSIX_EXTENSIONS=ON",
+            "-DBC_MULTIPLY_SPLIT_POINT=126",
+            "-DCMAKE_C_COMPILER=/usr/bin/cc",
+            "-DCMAKE_CXX_COMPILER=/usr/bin/c++",
+            "-DFETCHCONTENT_SOURCE_DIR_GDPAT=/Users/mgrettondann/repos/gd-posix-apps/build/_deps/gdpat-src"
+          ],
+          "cwd": "/private/tmp/gd-bc-202-consume-baseline-profile",
+          "returncode": 0,
+          "log": "command-001.log"
+        },
+        {
+          "argv": [
+            "cmake",
+            "--build",
+            "/private/tmp/gd-bc-202-consume-baseline-profile/build",
+            "--target",
+            "bc",
+            "--parallel",
+            "2",
+            "--verbose"
+          ],
+          "cwd": "/private/tmp/gd-bc-202-consume-baseline-profile",
+          "returncode": 0,
+          "log": "command-002.log"
+        }
+      ],
+      "instrumented": true,
+      "scope": "Scoped diagnostics only"
+    },
+    "candidate": {
+      "schema": 1,
+      "source_revision": "34a10afa4fafe46bbd7668a0738e4d8a4c5ce913",
+      "argv": [
+        "/private/tmp/gd-bc-202-consume-candidate-profile/build/src/bc/bc"
+      ],
+      "binary_sha256": "290b5d18486466320d4f20f87d7eb9e2fd85fe2436e46ff7b28b8933099688d6",
+      "compiler": {
+        "C": {
+          "argv0": "/usr/bin/cc",
+          "realpath": "/usr/bin/cc",
+          "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+          "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+        },
+        "CXX": {
+          "argv0": "/usr/bin/c++",
+          "realpath": "/usr/bin/c++",
+          "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+          "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+        }
+      },
+      "standard_library": {
+        "header_macros": {
+          "_LIBCPP_VERSION": "220106"
+        },
+        "scope": "standard-library header identity; provision runtime and SDK separately",
+        "status": "recorded"
+      },
+      "flags": {
+        "BC_MULTIPLY_SPLIT_POINT:STRING": "126",
+        "CMAKE_CXX_FLAGS:STRING": "",
+        "CMAKE_CXX_FLAGS_RELEASE:STRING": "-O3 -DNDEBUG",
+        "ENABLE_BC_COVERAGE:BOOL": "OFF",
+        "ENABLE_BC_PROFILE:BOOL": "ON"
+      },
+      "commands": [
+        {
+          "argv": [
+            "cmake",
+            "-S",
+            "/private/tmp/gd-bc-202-consume-candidate-release/source",
+            "-B",
+            "/private/tmp/gd-bc-202-consume-candidate-profile/build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DBUILD_TESTING=OFF",
+            "-DENABLE_BC_COMPONENT_BENCHMARKS=OFF",
+            "-DENABLE_BC_PROFILE=ON",
+            "-DENABLE_BC_COVERAGE=OFF",
+            "-DENABLE_NON_POSIX_EXTENSIONS=ON",
+            "-DBC_MULTIPLY_SPLIT_POINT=126",
+            "-DCMAKE_C_COMPILER=/usr/bin/cc",
+            "-DCMAKE_CXX_COMPILER=/usr/bin/c++",
+            "-DFETCHCONTENT_SOURCE_DIR_GDPAT=/Users/mgrettondann/repos/gd-posix-apps/build/_deps/gdpat-src"
+          ],
+          "cwd": "/private/tmp/gd-bc-202-consume-candidate-profile",
+          "returncode": 0,
+          "log": "command-001.log"
+        },
+        {
+          "argv": [
+            "cmake",
+            "--build",
+            "/private/tmp/gd-bc-202-consume-candidate-profile/build",
+            "--target",
+            "bc",
+            "--parallel",
+            "2",
+            "--verbose"
+          ],
+          "cwd": "/private/tmp/gd-bc-202-consume-candidate-profile",
+          "returncode": 0,
+          "log": "command-002.log"
+        }
+      ],
+      "instrumented": true,
+      "scope": "Scoped diagnostics only"
+    }
+  },
+  "scope": "Separate allocation/COW diagnostics for every full corpus case. Instrumented elapsed times are not performance evidence. Selected allocator totals are not process malloc traffic or RSS; plan construction temporaries and owner headers remain outside those counters.",
+  "rows": [
+    {
+      "name": "startup",
+      "group": "startup",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "a7684d1961bc3c87aeea07cbfd22792a6c875687fa1d0f3c18ace930a373040e",
+      "stdout_sha256": "53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3",
+      "counters": "baseline-startup.json"
+    },
+    {
+      "name": "startup",
+      "group": "startup",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "a7684d1961bc3c87aeea07cbfd22792a6c875687fa1d0f3c18ace930a373040e",
+      "stdout_sha256": "53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3",
+      "counters": "candidate-startup.json"
+    },
+    {
+      "name": "loop_1000000",
+      "group": "loop",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "74aa1d696c8c54be05d25ad82b085aedd6791012c90b5faf9f3d9d91f94ebdba",
+      "stdout_sha256": "dbb4498f673634c698bd6e593ef54bdadf465654b13fb7bfe689016e602e7ef8",
+      "counters": "baseline-loop_1000000.json"
+    },
+    {
+      "name": "loop_1000000",
+      "group": "loop",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "74aa1d696c8c54be05d25ad82b085aedd6791012c90b5faf9f3d9d91f94ebdba",
+      "stdout_sha256": "dbb4498f673634c698bd6e593ef54bdadf465654b13fb7bfe689016e602e7ef8",
+      "counters": "candidate-loop_1000000.json"
+    },
+    {
+      "name": "calls_200000",
+      "group": "calls",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "738d33209381c5f554a34bc05ed399ed53973ff7ae75a0cd72e464875841c63e",
+      "stdout_sha256": "34812d12902217c2ca460d074d75599c4704fbce9e15d1f8780da9463bf0bf9a",
+      "counters": "baseline-calls_200000.json"
+    },
+    {
+      "name": "calls_200000",
+      "group": "calls",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "738d33209381c5f554a34bc05ed399ed53973ff7ae75a0cd72e464875841c63e",
+      "stdout_sha256": "34812d12902217c2ca460d074d75599c4704fbce9e15d1f8780da9463bf0bf9a",
+      "counters": "candidate-calls_200000.json"
+    },
+    {
+      "name": "array_200000",
+      "group": "array",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "f6a730c098c8d10032b60dd95a00eb18349ad719604fe3582bad5a1e61e5b054",
+      "stdout_sha256": "ef55be1f845002931219ae88320c4744651b322de6447340a573287179119427",
+      "counters": "baseline-array_200000.json"
+    },
+    {
+      "name": "array_200000",
+      "group": "array",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "f6a730c098c8d10032b60dd95a00eb18349ad719604fe3582bad5a1e61e5b054",
+      "stdout_sha256": "ef55be1f845002931219ae88320c4744651b322de6447340a573287179119427",
+      "counters": "candidate-array_200000.json"
+    },
+    {
+      "name": "compare_high_1000d_x100000",
+      "group": "comparison",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "1592c96a7a3807bc318c69e45c69d1837b3194c219481c6f0ee159bd9ad5f057",
+      "stdout_sha256": "b80500a01f984c764f1a3b486622d0ef7cc5b13fa9bd57ec9015113eaf875597",
+      "counters": "baseline-compare_high_1000d_x100000.json"
+    },
+    {
+      "name": "compare_high_1000d_x100000",
+      "group": "comparison",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "1592c96a7a3807bc318c69e45c69d1837b3194c219481c6f0ee159bd9ad5f057",
+      "stdout_sha256": "b80500a01f984c764f1a3b486622d0ef7cc5b13fa9bd57ec9015113eaf875597",
+      "counters": "candidate-compare_high_1000d_x100000.json"
+    },
+    {
+      "name": "compare_low_1000d_x100000",
+      "group": "comparison",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "65f427eade6749f96db6392b4a66e68248b90fd30ac32020aad51be98990f47c",
+      "stdout_sha256": "b80500a01f984c764f1a3b486622d0ef7cc5b13fa9bd57ec9015113eaf875597",
+      "counters": "baseline-compare_low_1000d_x100000.json"
+    },
+    {
+      "name": "compare_low_1000d_x100000",
+      "group": "comparison",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "65f427eade6749f96db6392b4a66e68248b90fd30ac32020aad51be98990f47c",
+      "stdout_sha256": "b80500a01f984c764f1a3b486622d0ef7cc5b13fa9bd57ec9015113eaf875597",
+      "counters": "candidate-compare_low_1000d_x100000.json"
+    },
+    {
+      "name": "compare_equal_1000d_x100000",
+      "group": "comparison",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "e9f2a5c85feb5736a4a4faf469f8d593280c7b7c3b8290b49be6cef834038ff1",
+      "stdout_sha256": "b80500a01f984c764f1a3b486622d0ef7cc5b13fa9bd57ec9015113eaf875597",
+      "counters": "baseline-compare_equal_1000d_x100000.json"
+    },
+    {
+      "name": "compare_equal_1000d_x100000",
+      "group": "comparison",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "e9f2a5c85feb5736a4a4faf469f8d593280c7b7c3b8290b49be6cef834038ff1",
+      "stdout_sha256": "b80500a01f984c764f1a3b486622d0ef7cc5b13fa9bd57ec9015113eaf875597",
+      "counters": "candidate-compare_equal_1000d_x100000.json"
+    },
+    {
+      "name": "fibonacci_1000_x100",
+      "group": "fibonacci",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "1a99529043a0c9a2eed2bd64ec3df2ee15a819a23550a1d0871dfe777a9c0675",
+      "stdout_sha256": "5ee9ba454200025fb52afa547c4c98d5742b5b34cac78f6149a085a20bd96f37",
+      "counters": "baseline-fibonacci_1000_x100.json"
+    },
+    {
+      "name": "fibonacci_1000_x100",
+      "group": "fibonacci",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "1a99529043a0c9a2eed2bd64ec3df2ee15a819a23550a1d0871dfe777a9c0675",
+      "stdout_sha256": "5ee9ba454200025fb52afa547c4c98d5742b5b34cac78f6149a085a20bd96f37",
+      "counters": "candidate-fibonacci_1000_x100.json"
+    },
+    {
+      "name": "fibonacci_10000_x10",
+      "group": "fibonacci",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "cafa569a1e0259262731ec77ba810fabc76a3ae8eeae60c328f8cb78815bcf1f",
+      "stdout_sha256": "31167af12bc28aa39d3e68f27ecf12c96cd2e51e9a029849d7bfaf419e1221fb",
+      "counters": "baseline-fibonacci_10000_x10.json"
+    },
+    {
+      "name": "fibonacci_10000_x10",
+      "group": "fibonacci",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "cafa569a1e0259262731ec77ba810fabc76a3ae8eeae60c328f8cb78815bcf1f",
+      "stdout_sha256": "31167af12bc28aa39d3e68f27ecf12c96cd2e51e9a029849d7bfaf419e1221fb",
+      "counters": "candidate-fibonacci_10000_x10.json"
+    },
+    {
+      "name": "factorial_1000_x50",
+      "group": "factorial",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "c5f62530bb22594f7bfc55d867b2be7554356b94a976fca91cffc94471bed182",
+      "stdout_sha256": "6de3b50bf779285ca18cb5620ee77324deb20740a41545958c7f0ef6f6f0344a",
+      "counters": "baseline-factorial_1000_x50.json"
+    },
+    {
+      "name": "factorial_1000_x50",
+      "group": "factorial",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "c5f62530bb22594f7bfc55d867b2be7554356b94a976fca91cffc94471bed182",
+      "stdout_sha256": "6de3b50bf779285ca18cb5620ee77324deb20740a41545958c7f0ef6f6f0344a",
+      "counters": "candidate-factorial_1000_x50.json"
+    },
+    {
+      "name": "factorial_5000_x5",
+      "group": "factorial",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "808583dd419f15a7145ba5455481fd0da1143cbe69b971a03749edea6bd0af6c",
+      "stdout_sha256": "ea30e2c4be443d4f1e2e946f8cc985a3fa0d7c051f9913cc2635e92ae278e058",
+      "counters": "baseline-factorial_5000_x5.json"
+    },
+    {
+      "name": "factorial_5000_x5",
+      "group": "factorial",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "808583dd419f15a7145ba5455481fd0da1143cbe69b971a03749edea6bd0af6c",
+      "stdout_sha256": "ea30e2c4be443d4f1e2e946f8cc985a3fa0d7c051f9913cc2635e92ae278e058",
+      "counters": "candidate-factorial_5000_x5.json"
+    },
+    {
+      "name": "multiply_100d_x100000",
+      "group": "multiply",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "00265d8ce3e2d4f3fe5d5cffc742ccf26ec23aa7d88001d42072cb742e916eed",
+      "stdout_sha256": "2028db28a7510261d8e5d45841744d56b0f49b9e8c159c5670fbde01aa9b2a25",
+      "counters": "baseline-multiply_100d_x100000.json"
+    },
+    {
+      "name": "multiply_100d_x100000",
+      "group": "multiply",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "00265d8ce3e2d4f3fe5d5cffc742ccf26ec23aa7d88001d42072cb742e916eed",
+      "stdout_sha256": "2028db28a7510261d8e5d45841744d56b0f49b9e8c159c5670fbde01aa9b2a25",
+      "counters": "candidate-multiply_100d_x100000.json"
+    },
+    {
+      "name": "multiply_1000d_x10000",
+      "group": "multiply",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "c5ba1f3e963a6e3fbe4b6c1180790a7f3f8ba66f9ca00ca53e63209aa739c210",
+      "stdout_sha256": "3833a70d940fc525e38704a3a34c730cfae55dcf6130db7a23afc0334beec934",
+      "counters": "baseline-multiply_1000d_x10000.json"
+    },
+    {
+      "name": "multiply_1000d_x10000",
+      "group": "multiply",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "c5ba1f3e963a6e3fbe4b6c1180790a7f3f8ba66f9ca00ca53e63209aa739c210",
+      "stdout_sha256": "3833a70d940fc525e38704a3a34c730cfae55dcf6130db7a23afc0334beec934",
+      "counters": "candidate-multiply_1000d_x10000.json"
+    },
+    {
+      "name": "multiply_10000d_x1000",
+      "group": "multiply",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "834a93e1304c2fd9c706943a98f5dbf15c6fce738e0b07d01e0cb68fb9e9ee41",
+      "stdout_sha256": "1ced730440391c21a9a06d8b54177935ba09ebeb111d929f59f3452129402d71",
+      "counters": "baseline-multiply_10000d_x1000.json"
+    },
+    {
+      "name": "multiply_10000d_x1000",
+      "group": "multiply",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "834a93e1304c2fd9c706943a98f5dbf15c6fce738e0b07d01e0cb68fb9e9ee41",
+      "stdout_sha256": "1ced730440391c21a9a06d8b54177935ba09ebeb111d929f59f3452129402d71",
+      "counters": "candidate-multiply_10000d_x1000.json"
+    },
+    {
+      "name": "divide_scale100_x100000",
+      "group": "divide_single_limb",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "19c25d96059bd1a0a252ed2100292fe1abbb1bcb437aad307e7078010845e795",
+      "stdout_sha256": "8523348d175cb52b0e89463d5c3e43ccf22efcea293c63bde258ca29b2e2df10",
+      "counters": "baseline-divide_scale100_x100000.json"
+    },
+    {
+      "name": "divide_scale100_x100000",
+      "group": "divide_single_limb",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "19c25d96059bd1a0a252ed2100292fe1abbb1bcb437aad307e7078010845e795",
+      "stdout_sha256": "8523348d175cb52b0e89463d5c3e43ccf22efcea293c63bde258ca29b2e2df10",
+      "counters": "candidate-divide_scale100_x100000.json"
+    },
+    {
+      "name": "divide_scale1000_x10000",
+      "group": "divide_single_limb",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "268fc3af6c9f5a54b17fe46bcd57128974349fb1f07043afbc567b85a70f7c4f",
+      "stdout_sha256": "302ac48951296e2ef265d2840e4f1e5fa30fe699b33a5f5249e2dbc69f2e5034",
+      "counters": "baseline-divide_scale1000_x10000.json"
+    },
+    {
+      "name": "divide_scale1000_x10000",
+      "group": "divide_single_limb",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "268fc3af6c9f5a54b17fe46bcd57128974349fb1f07043afbc567b85a70f7c4f",
+      "stdout_sha256": "302ac48951296e2ef265d2840e4f1e5fa30fe699b33a5f5249e2dbc69f2e5034",
+      "counters": "candidate-divide_scale1000_x10000.json"
+    },
+    {
+      "name": "divide_scale5000_x5000",
+      "group": "divide_single_limb",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "95e2527229b6c1261b98ec596d3e25eea72d6f58bced0a9019ee159e23d7b1d2",
+      "stdout_sha256": "54416950d7a7317687e602ff7aee3bafd019153de0036d5a194a1464f2524591",
+      "counters": "baseline-divide_scale5000_x5000.json"
+    },
+    {
+      "name": "divide_scale5000_x5000",
+      "group": "divide_single_limb",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "95e2527229b6c1261b98ec596d3e25eea72d6f58bced0a9019ee159e23d7b1d2",
+      "stdout_sha256": "54416950d7a7317687e602ff7aee3bafd019153de0036d5a194a1464f2524591",
+      "counters": "candidate-divide_scale5000_x5000.json"
+    },
+    {
+      "name": "sqrt_scale100_x5000",
+      "group": "sqrt",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "776a0a5e34050036c7e3d2dce7b192c09b624a528588da06999c5ec243d32458",
+      "stdout_sha256": "bfe54e49204cf23da3c8b3f3671481ba4b5991b3da8272e94bddc9a855a2c016",
+      "counters": "baseline-sqrt_scale100_x5000.json"
+    },
+    {
+      "name": "sqrt_scale100_x5000",
+      "group": "sqrt",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "776a0a5e34050036c7e3d2dce7b192c09b624a528588da06999c5ec243d32458",
+      "stdout_sha256": "bfe54e49204cf23da3c8b3f3671481ba4b5991b3da8272e94bddc9a855a2c016",
+      "counters": "candidate-sqrt_scale100_x5000.json"
+    },
+    {
+      "name": "sqrt_scale1000_x50",
+      "group": "sqrt",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "9bed475982441bfe7cef8eb52978f6814ff55110a466ad2eadfeb3a0f0312fc1",
+      "stdout_sha256": "25c085cfa0055fec91e72c28ab0b832c96a101d28590138dfe01a4aded11f294",
+      "counters": "baseline-sqrt_scale1000_x50.json"
+    },
+    {
+      "name": "sqrt_scale1000_x50",
+      "group": "sqrt",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "9bed475982441bfe7cef8eb52978f6814ff55110a466ad2eadfeb3a0f0312fc1",
+      "stdout_sha256": "25c085cfa0055fec91e72c28ab0b832c96a101d28590138dfe01a4aded11f294",
+      "counters": "candidate-sqrt_scale1000_x50.json"
+    },
+    {
+      "name": "sqrt_scale5000_x5",
+      "group": "sqrt",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "c13f95db6aa11b8fcd0cc94087d55ec39210d535f570dedc86696ddbd698ac79",
+      "stdout_sha256": "07260507be394da1a514c0827e0c2ba4ea466ec4f14509c071d67e9583f4792b",
+      "counters": "baseline-sqrt_scale5000_x5.json"
+    },
+    {
+      "name": "sqrt_scale5000_x5",
+      "group": "sqrt",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "c13f95db6aa11b8fcd0cc94087d55ec39210d535f570dedc86696ddbd698ac79",
+      "stdout_sha256": "07260507be394da1a514c0827e0c2ba4ea466ec4f14509c071d67e9583f4792b",
+      "counters": "candidate-sqrt_scale5000_x5.json"
+    },
+    {
+      "name": "multiply_dense_1000d_x5000",
+      "group": "multiply",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "2a96c42d44d7ebc2bd37389ad94c4e985592ee4cec7e1ea77914ecc1a1c3616f",
+      "stdout_sha256": "a9c2bb0cecb4c38bd6ad6f57631a20f9022634fcb2a488e3addbe2ab63098622",
+      "counters": "baseline-multiply_dense_1000d_x5000.json"
+    },
+    {
+      "name": "multiply_dense_1000d_x5000",
+      "group": "multiply",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "2a96c42d44d7ebc2bd37389ad94c4e985592ee4cec7e1ea77914ecc1a1c3616f",
+      "stdout_sha256": "a9c2bb0cecb4c38bd6ad6f57631a20f9022634fcb2a488e3addbe2ab63098622",
+      "counters": "candidate-multiply_dense_1000d_x5000.json"
+    },
+    {
+      "name": "multiply_dense_10000d_x500",
+      "group": "multiply",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "0e2e2c1e7cd1ed996201ba01c744f650baf67a86666cb471e4a82e9996c9c345",
+      "stdout_sha256": "56f68a4f03b4452d9f0885a0512c2828dff9ac4943aad7b4470b3e6989899ba5",
+      "counters": "baseline-multiply_dense_10000d_x500.json"
+    },
+    {
+      "name": "multiply_dense_10000d_x500",
+      "group": "multiply",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "0e2e2c1e7cd1ed996201ba01c744f650baf67a86666cb471e4a82e9996c9c345",
+      "stdout_sha256": "56f68a4f03b4452d9f0885a0512c2828dff9ac4943aad7b4470b3e6989899ba5",
+      "counters": "candidate-multiply_dense_10000d_x500.json"
+    },
+    {
+      "name": "multiply_unbalanced_10000d_100d_x2000",
+      "group": "multiply",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "f2db34e568ec54dc60e916b85674dcec88085445533deb690917e763a84b6545",
+      "stdout_sha256": "5760ce166565fdd24d0b1cd16b89db3a61501df1820793f0914d0887f9548fe3",
+      "counters": "baseline-multiply_unbalanced_10000d_100d_x2000.json"
+    },
+    {
+      "name": "multiply_unbalanced_10000d_100d_x2000",
+      "group": "multiply",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "f2db34e568ec54dc60e916b85674dcec88085445533deb690917e763a84b6545",
+      "stdout_sha256": "5760ce166565fdd24d0b1cd16b89db3a61501df1820793f0914d0887f9548fe3",
+      "counters": "candidate-multiply_unbalanced_10000d_100d_x2000.json"
+    },
+    {
+      "name": "multiply_sparse_10000d_x1000",
+      "group": "multiply",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "82eea516e61e12e526afbbc4efae6c5d6bc24f4efb34e84cce4b435dc5ec5d24",
+      "stdout_sha256": "40837530f9d5ab2bb84d2852f894fb60eff20ebea4bae119fe8006cc5fe078ea",
+      "counters": "baseline-multiply_sparse_10000d_x1000.json"
+    },
+    {
+      "name": "multiply_sparse_10000d_x1000",
+      "group": "multiply",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "82eea516e61e12e526afbbc4efae6c5d6bc24f4efb34e84cce4b435dc5ec5d24",
+      "stdout_sha256": "40837530f9d5ab2bb84d2852f894fb60eff20ebea4bae119fe8006cc5fe078ea",
+      "counters": "candidate-multiply_sparse_10000d_x1000.json"
+    },
+    {
+      "name": "divide_multilimb_900d_450d_s100_x1000",
+      "group": "divide_multilimb",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "3e526fbb9e7ce363f37d717ee26d12d1562e85f4e82d4c671cbc0970f2c048d2",
+      "stdout_sha256": "4b60ad85f9b98ab2ced300274ab433cd49a836d2f4d7069bc42259a9db243bf6",
+      "counters": "baseline-divide_multilimb_900d_450d_s100_x1000.json"
+    },
+    {
+      "name": "divide_multilimb_900d_450d_s100_x1000",
+      "group": "divide_multilimb",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "3e526fbb9e7ce363f37d717ee26d12d1562e85f4e82d4c671cbc0970f2c048d2",
+      "stdout_sha256": "4b60ad85f9b98ab2ced300274ab433cd49a836d2f4d7069bc42259a9db243bf6",
+      "counters": "candidate-divide_multilimb_900d_450d_s100_x1000.json"
+    },
+    {
+      "name": "divide_multilimb_1000d_900d_s1000_x500",
+      "group": "divide_multilimb",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "1dd61158cf4374d878b0750e40180e1cb105064e19a33c1b224479d3e8eb381a",
+      "stdout_sha256": "8e5bcd70e35a53a01291609f3b48ebb20268098095173739f8cc01e9cbafe2b1",
+      "counters": "baseline-divide_multilimb_1000d_900d_s1000_x500.json"
+    },
+    {
+      "name": "divide_multilimb_1000d_900d_s1000_x500",
+      "group": "divide_multilimb",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "1dd61158cf4374d878b0750e40180e1cb105064e19a33c1b224479d3e8eb381a",
+      "stdout_sha256": "8e5bcd70e35a53a01291609f3b48ebb20268098095173739f8cc01e9cbafe2b1",
+      "counters": "candidate-divide_multilimb_1000d_900d_s1000_x500.json"
+    },
+    {
+      "name": "modulo_1000d_350d_x3000",
+      "group": "modulo",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "349c0e4a8bd53d08ab50a00b93b79ed3111cf0fa4dd1f1c8ea7f15705b418817",
+      "stdout_sha256": "4e89b2fa99c8bbc5ebd1fd5980f0f31892e9a1af824b54bae8dd9868f7c14d77",
+      "counters": "baseline-modulo_1000d_350d_x3000.json"
+    },
+    {
+      "name": "modulo_1000d_350d_x3000",
+      "group": "modulo",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "349c0e4a8bd53d08ab50a00b93b79ed3111cf0fa4dd1f1c8ea7f15705b418817",
+      "stdout_sha256": "4e89b2fa99c8bbc5ebd1fd5980f0f31892e9a1af824b54bae8dd9868f7c14d77",
+      "counters": "candidate-modulo_1000d_350d_x3000.json"
+    },
+    {
+      "name": "power_100d_e17_x1000",
+      "group": "power",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "45ae4dcbf8b7a7a484ba774e1e4db1f58f5aecd79d66d4c2d81b6d7d4fce668e",
+      "stdout_sha256": "ea1c1e08af874df6c23cf4c1869428bf96051ff796bd30c580db3918748aadc2",
+      "counters": "baseline-power_100d_e17_x1000.json"
+    },
+    {
+      "name": "power_100d_e17_x1000",
+      "group": "power",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "45ae4dcbf8b7a7a484ba774e1e4db1f58f5aecd79d66d4c2d81b6d7d4fce668e",
+      "stdout_sha256": "ea1c1e08af874df6c23cf4c1869428bf96051ff796bd30c580db3918748aadc2",
+      "counters": "candidate-power_100d_e17_x1000.json"
+    },
+    {
+      "name": "power_20d_e32_x2000",
+      "group": "power",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "ab699ad4e3d4f68531c41bc1215f5b137ff9e0071dcb4c09dab1d422e7892f16",
+      "stdout_sha256": "33a546bd7d6588cb6c35bc96d097e6133fa5da36de0442a88c8a06d5048fefa1",
+      "counters": "baseline-power_20d_e32_x2000.json"
+    },
+    {
+      "name": "power_20d_e32_x2000",
+      "group": "power",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "ab699ad4e3d4f68531c41bc1215f5b137ff9e0071dcb4c09dab1d422e7892f16",
+      "stdout_sha256": "33a546bd7d6588cb6c35bc96d097e6133fa5da36de0442a88c8a06d5048fefa1",
+      "counters": "candidate-power_20d_e32_x2000.json"
+    },
+    {
+      "name": "ibase_literal_flip_20000",
+      "group": "literal_base",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "a3fb77c74b1f846daf6bba2f96e7ddb71bc1cfb221aeddc6921da35eb1dfdaa0",
+      "stdout_sha256": "7844fbd8ea47c57d25d9ea6da692db584ed0a9dbf31cdce8d5cb82ef7d0a86d7",
+      "counters": "baseline-ibase_literal_flip_20000.json"
+    },
+    {
+      "name": "ibase_literal_flip_20000",
+      "group": "literal_base",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "a3fb77c74b1f846daf6bba2f96e7ddb71bc1cfb221aeddc6921da35eb1dfdaa0",
+      "stdout_sha256": "7844fbd8ea47c57d25d9ea6da692db584ed0a9dbf31cdce8d5cb82ef7d0a86d7",
+      "counters": "candidate-ibase_literal_flip_20000.json"
+    },
+    {
+      "name": "recursion_50_x1000",
+      "group": "recursion",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "51c7a305c6b6635ba3e821f927f9da4b06c5c2aff088ddabca2d6d6456ea3859",
+      "stdout_sha256": "89ce918086eeda222f36711d8b97b2eeec8ef9ae01affaf19478c4669d358998",
+      "counters": "baseline-recursion_50_x1000.json"
+    },
+    {
+      "name": "recursion_50_x1000",
+      "group": "recursion",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "51c7a305c6b6635ba3e821f927f9da4b06c5c2aff088ddabca2d6d6456ea3859",
+      "stdout_sha256": "89ce918086eeda222f36711d8b97b2eeec8ef9ae01affaf19478c4669d358998",
+      "counters": "candidate-recursion_50_x1000.json"
+    },
+    {
+      "name": "sparse_array_200000",
+      "group": "array_sparse",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "ceb9864b7d2e0654c73b4f8efd65cd6eba5a27bbc352705e354b07cb8b49ba1b",
+      "stdout_sha256": "ef55be1f845002931219ae88320c4744651b322de6447340a573287179119427",
+      "counters": "baseline-sparse_array_200000.json"
+    },
+    {
+      "name": "sparse_array_200000",
+      "group": "array_sparse",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "ceb9864b7d2e0654c73b4f8efd65cd6eba5a27bbc352705e354b07cb8b49ba1b",
+      "stdout_sha256": "ef55be1f845002931219ae88320c4744651b322de6447340a573287179119427",
+      "counters": "candidate-sparse_array_200000.json"
+    },
+    {
+      "name": "frontend_definitions_2000",
+      "group": "frontend_definition",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "36a2bf8899f52e86536ad0fd9763b1dc8b59d565f1da60cb6508d8d213cd8916",
+      "stdout_sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+      "counters": "baseline-frontend_definitions_2000.json"
+    },
+    {
+      "name": "frontend_definitions_2000",
+      "group": "frontend_definition",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "36a2bf8899f52e86536ad0fd9763b1dc8b59d565f1da60cb6508d8d213cd8916",
+      "stdout_sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+      "counters": "candidate-frontend_definitions_2000.json"
+    },
+    {
+      "name": "decimal_input_4000d_x100",
+      "group": "decimal_input",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "f52167d78167be3e447e2b6d40465d288f7981bd3bd081c7da06d4b8980ecbe1",
+      "stdout_sha256": "37acd5e7fe7fdcaf548bf8216d62bc5a13b0178e26ec0b200bdb74acdec077f4",
+      "counters": "baseline-decimal_input_4000d_x100.json"
+    },
+    {
+      "name": "decimal_input_4000d_x100",
+      "group": "decimal_input",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "f52167d78167be3e447e2b6d40465d288f7981bd3bd081c7da06d4b8980ecbe1",
+      "stdout_sha256": "37acd5e7fe7fdcaf548bf8216d62bc5a13b0178e26ec0b200bdb74acdec077f4",
+      "counters": "candidate-decimal_input_4000d_x100.json"
+    },
+    {
+      "name": "decimal_output_200d_x1000",
+      "group": "decimal_output",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "491c747f387a04807d616d44a9eae25a10f2d07b08d60068aae97c7adaccf8ae",
+      "stdout_sha256": "e51f3a543488d55dab07cccd12db7dff25dc77b0b2760d59967ad5968863d54d",
+      "counters": "baseline-decimal_output_200d_x1000.json"
+    },
+    {
+      "name": "decimal_output_200d_x1000",
+      "group": "decimal_output",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "491c747f387a04807d616d44a9eae25a10f2d07b08d60068aae97c7adaccf8ae",
+      "stdout_sha256": "e51f3a543488d55dab07cccd12db7dff25dc77b0b2760d59967ad5968863d54d",
+      "counters": "candidate-decimal_output_200d_x1000.json"
+    },
+    {
+      "name": "streaming_statements_20000",
+      "group": "streaming",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "9258f13cfeeaf263faaa3c79b841727a0bed8428422355c012a96e80f6839be3",
+      "stdout_sha256": "f6351f5ead9a700e34275480b3856ea738122a7c57bdeb744a631251c069587a",
+      "counters": "baseline-streaming_statements_20000.json"
+    },
+    {
+      "name": "streaming_statements_20000",
+      "group": "streaming",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "9258f13cfeeaf263faaa3c79b841727a0bed8428422355c012a96e80f6839be3",
+      "stdout_sha256": "f6351f5ead9a700e34275480b3856ea738122a7c57bdeb744a631251c069587a",
+      "counters": "candidate-streaming_statements_20000.json"
+    },
+    {
+      "name": "square_100d_x100000",
+      "group": "square",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "06b43a72821a8146185bf4db472f97a309ea61afa6a884c7be91569f7a1db3c7",
+      "stdout_sha256": "71878fec27cac7ef920e43f51fe55a7ff654fedece2e638cee06b6e00ead542b",
+      "counters": "baseline-square_100d_x100000.json"
+    },
+    {
+      "name": "square_100d_x100000",
+      "group": "square",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "06b43a72821a8146185bf4db472f97a309ea61afa6a884c7be91569f7a1db3c7",
+      "stdout_sha256": "71878fec27cac7ef920e43f51fe55a7ff654fedece2e638cee06b6e00ead542b",
+      "counters": "candidate-square_100d_x100000.json"
+    },
+    {
+      "name": "square_1000d_x10000",
+      "group": "square",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "7248a6558ceb7612d5aa63a204773d57ef1c83ddb1b5ab88336e76fce7c2e340",
+      "stdout_sha256": "b1f7afe3575c109eb8257d60c0ae8380b844b7adf8cd7c41c5dc269a712ba63f",
+      "counters": "baseline-square_1000d_x10000.json"
+    },
+    {
+      "name": "square_1000d_x10000",
+      "group": "square",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "7248a6558ceb7612d5aa63a204773d57ef1c83ddb1b5ab88336e76fce7c2e340",
+      "stdout_sha256": "b1f7afe3575c109eb8257d60c0ae8380b844b7adf8cd7c41c5dc269a712ba63f",
+      "counters": "candidate-square_1000d_x10000.json"
+    },
+    {
+      "name": "square_10000d_x500",
+      "group": "square",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "108d014f2803284e3a7e9e242430eb11a0d0bc98f570718cf60cec3633c2fc05",
+      "stdout_sha256": "114d8d3a25281942ff164c69821f53029ae0aa8078d156265edc3ac9946962c5",
+      "counters": "baseline-square_10000d_x500.json"
+    },
+    {
+      "name": "square_10000d_x500",
+      "group": "square",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "108d014f2803284e3a7e9e242430eb11a0d0bc98f570718cf60cec3633c2fc05",
+      "stdout_sha256": "114d8d3a25281942ff164c69821f53029ae0aa8078d156265edc3ac9946962c5",
+      "counters": "candidate-square_10000d_x500.json"
+    },
+    {
+      "name": "literal_repeat_2000d_x2000",
+      "group": "literal_repeat",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "a1ac2e26647d04476e86adc828ad089dc49f6402c58b41b2a5de9c2a4a5ebc7c",
+      "stdout_sha256": "a2021abaa1f67de09d692c508e709992933fb3cbb946f38764c773813e94c5f0",
+      "counters": "baseline-literal_repeat_2000d_x2000.json"
+    },
+    {
+      "name": "literal_repeat_2000d_x2000",
+      "group": "literal_repeat",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "a1ac2e26647d04476e86adc828ad089dc49f6402c58b41b2a5de9c2a4a5ebc7c",
+      "stdout_sha256": "a2021abaa1f67de09d692c508e709992933fb3cbb946f38764c773813e94c5f0",
+      "counters": "candidate-literal_repeat_2000d_x2000.json"
+    },
+    {
+      "name": "binary_output_1000d_x300",
+      "group": "binary_output",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "7542569af5657835dbf426b32640c7c282248e31f23fe81b9b597fffeeebd06c",
+      "stdout_sha256": "965969dfa000e336246405b9df24573d3f535aedfbc355f56c639b7c4e1097a3",
+      "counters": "baseline-binary_output_1000d_x300.json"
+    },
+    {
+      "name": "binary_output_1000d_x300",
+      "group": "binary_output",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "7542569af5657835dbf426b32640c7c282248e31f23fe81b9b597fffeeebd06c",
+      "stdout_sha256": "965969dfa000e336246405b9df24573d3f535aedfbc355f56c639b7c4e1097a3",
+      "counters": "candidate-binary_output_1000d_x300.json"
+    },
+    {
+      "name": "octal_output_1000d_x300",
+      "group": "octal_output",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "61a674d7da923a8f5c9eea102da2e7e1782266ae273c03d1d9be24f7d7837f5f",
+      "stdout_sha256": "9fe6dfa2c8aa6ca34f88dc3fad5b893ca743d0e0027ad78876f60ca216956619",
+      "counters": "baseline-octal_output_1000d_x300.json"
+    },
+    {
+      "name": "octal_output_1000d_x300",
+      "group": "octal_output",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "61a674d7da923a8f5c9eea102da2e7e1782266ae273c03d1d9be24f7d7837f5f",
+      "stdout_sha256": "9fe6dfa2c8aa6ca34f88dc3fad5b893ca743d0e0027ad78876f60ca216956619",
+      "counters": "candidate-octal_output_1000d_x300.json"
+    },
+    {
+      "name": "binary_input_100000d_x3",
+      "group": "binary_input",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "5708591ea9ef5b6f865e2697e54474f21b008fce56222ee9f914bed6c92e76cc",
+      "stdout_sha256": "1e711ab2ea57244b777d0b67b71bf58da3c71c99c66adb83ea683a4594a3e235",
+      "counters": "baseline-binary_input_100000d_x3.json"
+    },
+    {
+      "name": "binary_input_100000d_x3",
+      "group": "binary_input",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "5708591ea9ef5b6f865e2697e54474f21b008fce56222ee9f914bed6c92e76cc",
+      "stdout_sha256": "1e711ab2ea57244b777d0b67b71bf58da3c71c99c66adb83ea683a4594a3e235",
+      "counters": "candidate-binary_input_100000d_x3.json"
+    },
+    {
+      "name": "hex_input_100000d_x3",
+      "group": "hex_input",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "ac6a53ff2dd5fe039ff93d69b42355e5d2dedf641822fb12ae90d5251dad70c7",
+      "stdout_sha256": "364d4085d06cbec3d98d241c0e7c2e6d54ba95ec24723d3dcce97873c26e0372",
+      "counters": "baseline-hex_input_100000d_x3.json"
+    },
+    {
+      "name": "hex_input_100000d_x3",
+      "group": "hex_input",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "ac6a53ff2dd5fe039ff93d69b42355e5d2dedf641822fb12ae90d5251dad70c7",
+      "stdout_sha256": "364d4085d06cbec3d98d241c0e7c2e6d54ba95ec24723d3dcce97873c26e0372",
+      "counters": "candidate-hex_input_100000d_x3.json"
+    },
+    {
+      "name": "temporary_chain_1000d_x50000",
+      "group": "temporary_chain",
+      "role": "baseline",
+      "checked": true,
+      "program_sha256": "627c528d666e851353a773210f5e5f8a0e1bbd383116e310241c03703ebf3930",
+      "stdout_sha256": "af9d8db00693055b1e03fd7102c1103379c3dae6fbe6ecb5ec02370d4ad02c16",
+      "counters": "baseline-temporary_chain_1000d_x50000.json"
+    },
+    {
+      "name": "temporary_chain_1000d_x50000",
+      "group": "temporary_chain",
+      "role": "candidate",
+      "checked": true,
+      "program_sha256": "627c528d666e851353a773210f5e5f8a0e1bbd383116e310241c03703ebf3930",
+      "stdout_sha256": "af9d8db00693055b1e03fd7102c1103379c3dae6fbe6ecb5ec02370d4ad02c16",
+      "counters": "candidate-temporary_chain_1000d_x50000.json"
+    }
+  ]
+}

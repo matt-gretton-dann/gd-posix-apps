@@ -1,0 +1,23 @@
+Test project /private/tmp/gd-posix-consume-temporaries/build-release
+    Start 221: bc/vm-lifetime
+1/9 Test #221: bc/vm-lifetime ...................   Passed    0.38 sec
+    Start 224: bc/math-oracle
+2/9 Test #224: bc/math-oracle ...................   Passed    0.41 sec
+    Start 228: bc/components
+3/9 Test #228: bc/components ....................   Passed    0.97 sec
+    Start 230: bc/benchmark-ci
+4/9 Test #230: bc/benchmark-ci ..................   Passed    3.25 sec
+    Start 231: bc/benchmark-cli
+5/9 Test #231: bc/benchmark-cli .................   Passed    3.97 sec
+    Start 232: bc/cli
+6/9 Test #232: bc/cli ...........................   Passed    1.07 sec
+    Start 233: bc/verifier-offsets
+7/9 Test #233: bc/verifier-offsets ..............   Passed    1.28 sec
+    Start 234: bc/number-oracle
+8/9 Test #234: bc/number-oracle .................   Passed    0.36 sec
+    Start 236: bc/vm-cli
+9/9 Test #236: bc/vm-cli ........................   Passed    0.35 sec
+
+100% tests passed out of 9
+
+Total Test time (real) =  12.06 sec

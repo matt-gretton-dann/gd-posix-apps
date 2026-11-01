@@ -1,0 +1,14 @@
+F
+======================================================================
+FAIL: test_verified_arithmetic_consumes_proven_last_use_temporaries (__main__.ProfilingCli.test_verified_arithmetic_consumes_proven_last_use_temporaries)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-consume-temporaries/src/bc/test-profiling-cli.py", line 139, in test_verified_arithmetic_consumes_proven_last_use_temporaries
+    self.assertGreater(counters['events'].get('temporary_consumptions', 0), 0)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 not greater than 0
+
+----------------------------------------------------------------------
+Ran 1 test in 0.553s
+
+FAILED (failures=1)
