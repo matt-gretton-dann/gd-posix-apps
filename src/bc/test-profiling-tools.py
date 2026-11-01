@@ -115,6 +115,62 @@ class ProfilingTools(unittest.TestCase):
             self.assertEqual(hashlib.sha256((output / 'startup.bc').read_bytes()).hexdigest(),
                              manifest['workloads'][0]['program_sha256'])
 
+    def test_frozen_math_cli_archives_oracle_and_declared_input(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            frozen = root / 'frozen'
+            (frozen / 'workloads').mkdir(parents=True)
+            program = b'fixture\n'
+            case = {'oracle': {'kind': 'decimal-ulp', 'lower': '1', 'upper': '1',
+                               'scale': 2, 'expected_state': ['2', '10', '2']}}
+            oracle = self.bench.oracle_payload(case)
+            (frozen / 'workloads/math.bc').write_bytes(program)
+            (frozen / 'workloads/math.expected').write_bytes(oracle)
+            (frozen / 'manifest.json').write_text(json.dumps({'suite': 'math', 'corpus': [{
+                'name': 'math', 'group': 'fixture', 'parameters': {}, 'input_mode': 'file',
+                'program_sha256': hashlib.sha256(program).hexdigest(),
+                'oracle_sha256': hashlib.sha256(oracle).hexdigest()}]}))
+            declared = root / 'library.bc'
+            declared.write_bytes(b'ordinary library fixture\n')
+            code = ('import pathlib,sys; assert not sys.stdin.read(); '
+                    'assert pathlib.Path(sys.argv[2]).read_bytes()==b"fixture\\n"; '
+                    'print("1.00\\n2\\n10\\n2")')
+            config = root / 'config.json'
+            config.write_text(json.dumps({'implementations': [{
+                'name': 'fake', 'argv': [sys.executable, '-c', code, str(declared)],
+                'input_artifacts': [{'path': str(declared),
+                    'sha256': hashlib.sha256(declared.read_bytes()).hexdigest()}],
+                'metadata': {'source_revision': 'fixture', 'compiler': 'fixture', 'flags': 'fixture',
+                             'version': 'fixture', 'instrumented': False,
+                             'binary_sha256': hashlib.sha256(Path(sys.executable).read_bytes()).hexdigest()}}]}))
+            summary = root / 'summary.json'
+            summary.write_text(json.dumps({'workloads': [{'name': 'math',
+                'implementations': {'fake': {'median_seconds': 10}}}]}))
+            output = root / 'artifacts'
+            argv = [COLLECTOR, '--config', str(config), '--implementation', 'fake',
+                    '--summary', str(summary), '--output', str(output), '--workload', 'math',
+                    '--suite', 'math', '--replay-corpus', str(frozen)]
+            with mock.patch.object(sys, 'argv', argv), \
+                    mock.patch.object(self.module.platform, 'system', return_value='Unsupported'), \
+                    contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(self.module.main(), 0)
+            manifest = json.loads((output / 'manifest.json').read_text())
+            self.assertEqual((output / 'math.expected').read_bytes(), oracle)
+            self.assertEqual(manifest['suite'], 'math')
+            self.assertEqual(manifest['replay']['source_manifest_sha256'],
+                             self.bench.digest_file(frozen / 'manifest.json'))
+            row = manifest['workloads'][0]
+            self.assertEqual(row['oracle_sha256'], hashlib.sha256(oracle).hexdigest())
+            self.assertEqual(row['cpu']['input_mode'], 'file')
+            artifact = manifest['implementation']['input_artifacts'][0]
+            self.assertEqual((output / artifact['archived_as']).read_bytes(), declared.read_bytes())
+            # A library changed after initial configuration cannot silently be profiled.
+            declared.write_bytes(b'changed\n')
+            with self.assertRaises(self.bench.BenchmarkError):
+                with self.module.diagnostic_input(self.bench, manifest['implementation'],
+                                                  {'program': '2\n'}, 1):
+                    self.fail('changed declared input reached launch')
+
     def test_sampler_fallback_checks_output(self):
         case = {'name': 'fixture', 'program': 'ignored\n', 'expected': ['2']}
         tool = {'argv': [sys.executable, '-c', 'import sys; sys.stdin.read(); print(2)']}
