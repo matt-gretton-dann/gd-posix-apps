@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "source_revision": "a5c1cb1ad4051616afdce115b02ecc0247ad62f7",
+  "command": [
+    "/usr/bin/c++",
+    "-I/private/tmp/gd-posix-arithmetic-completion/src/bc",
+    "-DENABLE_EXTENSIONS=1",
+    "-I/private/tmp/gd-bc-203-square-dispatch-release/source/src/include",
+    "-I/private/tmp/gd-bc-203-square-dispatch-release/build/src/bc",
+    "-I/private/tmp/gd-bc-203-square-dispatch-release/source/libgdsup/include",
+    "-I/private/tmp/gd-bc-203-square-dispatch-release/source/src/bc",
+    "-O3",
+    "-DNDEBUG",
+    "-std=gnu++20",
+    "-arch",
+    "arm64",
+    "-Wall",
+    "-Wextra",
+    "-Wpedantic",
+    "-Werror",
+    "-Wno-gnu-zero-variadic-macro-arguments",
+    "-Wno-deprecated-declarations",
+    "-S",
+    "/private/tmp/gd-bc-201-assembly-review/probe.cc",
+    "-o",
+    "/private/tmp/gd-bc-201-assembly-review/probe.s"
+  ],
+  "cwd": "/private/tmp/gd-bc-203-square-dispatch-release/build",
+  "compiler": {
+    "argv0": "/usr/bin/c++",
+    "realpath": "/usr/bin/c++",
+    "sha256": "ed6f5284033aa2aae6a58427c25ba3ab119947b40365627b24e5d51a4b70a1cd",
+    "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+  },
+  "standard_library": {
+    "header_macros": {
+      "_LIBCPP_VERSION": "220106"
+    },
+    "scope": "standard-library header identity; provision runtime and SDK separately",
+    "status": "recorded"
+  },
+  "probe_sha256": "af677f725ed534c440a9601357009a4b102d93c913f61a1890535711a4df3b19",
+  "assembly_sha256": "b1a2cba815a836646b9c44845b33d57ae1dc75405457d63dc2db0f2d8d30302c",
+  "scope": "Actual BasicDigits::mac instantiations, translation-unit O3 assembly. Thin LTO removed only to emit readable target assembly; not a final LTO-binary disassembly or cross-platform result."
+}

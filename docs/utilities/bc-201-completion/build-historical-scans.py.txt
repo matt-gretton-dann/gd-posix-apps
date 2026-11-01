@@ -1,0 +1,23 @@
+"""Add the same diagnostic-only scan sites to an isolated historical source."""
+from pathlib import Path
+import hashlib,json,subprocess,sys,re
+role=sys.argv[1];revision={'before':'2ddf749e8b313f620ad248d680e801c409bbd3f5','after':'6cf81f0b6bd84a6acccec1b81bc92e04089b4857'}[role]
+root=Path('/private/tmp/gd-bc-201-scans-'+role);root.mkdir(exist_ok=False);source=root/'source';commands=[]
+def run(argv,cwd):
+ path=root/('command-%03d.log'%(len(commands)+1));child=subprocess.run(argv,cwd=cwd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,timeout=900);path.write_bytes(child.stdout);commands.append({'argv':argv,'cwd':str(cwd),'returncode':child.returncode,'log':path.name});assert child.returncode==0,path
+run(['git','clone','--no-hardlinks','--no-checkout','/Users/mgrettondann/repos/gd-posix-apps',str(source)],root);run(['git','checkout','--detach',revision],source)
+p=source/'src/bc/profiling.hh';s=p.read_text();needle='  array_entries_copied,\n  count';assert needle in s;s=s.replace(needle,'  array_entries_copied,\n  comparison_limb_positions,\n  zero_scan_limbs,\n  length_scan_limbs,\n  count',1);p.write_text(s)
+p=source/'src/bc/profiling.cc';s=p.read_text();needle='"array_entries_copied"};';assert needle in s;s=s.replace(needle,'"array_entries_copied",\n    "comparison_limb_positions", "zero_scan_limbs", "length_scan_limbs"};',1);p.write_text(s)
+p=source/'src/bc/number.hh';s=p.read_text();needle='[](auto d) { return d == 0; }';assert s.count(needle)==1;s=s.replace(needle,'[](auto d) { GD_BC_PROFILE_EVENT(Profile::Event::zero_scan_limbs, 1); return d == 0; }',1)
+needle='    for_each(rhs, scale, [&result](NumType lhs, NumType rhs) {';assert needle in s;s=s.replace(needle,needle+'\n      GD_BC_PROFILE_EVENT(Profile::Event::comparison_limb_positions, 1);',1)
+needle='      while (index != 0) {\n        --index;'
+if role=='after':assert needle in s;s=s.replace(needle,needle+'\n        GD_BC_PROFILE_EVENT(Profile::Event::comparison_limb_positions, 1);',1)
+start=s.index('  [[nodiscard]] auto length() const -> NumType');idx=s.index('    if (rit != ',start)
+s=s[:idx]+'''    GD_BC_PROFILE_EVENT(Profile::Event::length_scan_limbs,
+                        std::distance(digits_->rbegin(), rit) + (rit != digits_->rend() ? 1 : 0));
+'''+s[idx:];p.write_text(s)
+patch=subprocess.check_output(['git','diff','--','src/bc/number.hh','src/bc/profiling.hh','src/bc/profiling.cc'],cwd=source);(root/'diagnostic.patch').write_bytes(patch)
+run(['cmake','-S',str(source),'-B',str(root/'build'),'-G','Ninja','-DCMAKE_BUILD_TYPE=Release','-DBUILD_TESTING=OFF','-DENABLE_BC_PROFILE=ON','-DENABLE_BC_COVERAGE=OFF','-DENABLE_NON_POSIX_EXTENSIONS=ON','-DBC_MULTIPLY_SPLIT_POINT=126','-DFETCHCONTENT_SOURCE_DIR_GDPAT=/Users/mgrettondann/repos/gd-posix-apps/build/_deps/gdpat-src'],root)
+run(['cmake','--build',str(root/'build'),'--target','bc','--parallel','2','--verbose'],root)
+binary=root/'build/src/bc/bc';manifest={'schema':1,'role':role,'source_commit':revision,'diagnostic_patch_sha256':hashlib.sha256(patch).hexdigest(),'compiled_files':{name:hashlib.sha256((source/'src/bc'/name).read_bytes()).hexdigest() for name in ('number.hh','profiling.hh','profiling.cc')},'argv':[str(binary)],'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),'instrumented':True,'commands':commands,'scope':'Diagnostic-only software logical positions, not hardware loads/cycles or timed performance. Historical source plus archived counter patch, not an unmodified commit binary.'}
+(root/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n');print(role,'scan build complete')

@@ -159,7 +159,10 @@ public:
       return true;
     }
 
-    return std::all_of(digits_->begin(), digits_->end(), [](auto d) { return d == 0; });
+    return std::all_of(digits_->begin(), digits_->end(), [](auto d) {
+      GD_BC_PROFILE_EVENT(Profile::Event::zero_scan_limbs, 1);
+      return d == 0;
+    });
   }
 
   /** Is this an even number? Both absent and empty storage represent zero. */
@@ -190,6 +193,7 @@ public:
       auto index = std::max(lhs_size, rhs_size);
       while (index != 0) {
         --index;
+        GD_BC_PROFILE_EVENT(Profile::Event::comparison_limb_positions, 1);
         NumType const lhs_digit = index < lhs_size ? lhs_first[index] : 0;
         NumType const rhs_digit = index < rhs_size ? rhs_first[index] : 0;
         if (lhs_digit < rhs_digit) {
@@ -203,6 +207,7 @@ public:
     }
     Details::ComparisonResult result = Details::ComparisonResult::equality;
     for_each(rhs, scale, [&result](NumType lhs, NumType rhs) {
+      GD_BC_PROFILE_EVENT(Profile::Event::comparison_limb_positions, 1);
       if (lhs < rhs) {
         result = Details::ComparisonResult::less_than;
       }
@@ -466,6 +471,10 @@ public:
       ++rit;
       length -= base_log10_;
     }
+    // Count logical limb positions, including the first significant limb.
+    // The amount expression is not evaluated in ordinary builds.
+    GD_BC_PROFILE_EVENT(Profile::Event::length_scan_limbs,
+                        std::distance(digits_->rbegin(), rit) + (rit != finish ? 1 : 0));
     if (rit != finish) {
       length -= base_log10_;
       NumType d = *rit;
@@ -1239,13 +1248,6 @@ private:
       BasicDigits r(lhs_begin, lhs_end);
       r.mac(*rhs_begin, 0);
       return r;
-    }
-
-    // With unequal extents, fewer rows mean fewer carry-draining tails. The
-    // one-limb MAC paths above stay unchanged; both ranges remain borrowed.
-    if (lhs_end - lhs_begin > rhs_end - rhs_begin) {
-      std::swap(lhs_begin, rhs_begin);
-      std::swap(lhs_end, rhs_end);
     }
 
     /* Have to do the full thing... */

@@ -88,7 +88,10 @@ auto name(Event which) noexcept -> char const*
                              "function_calls",
                              "instructions_executed",
                              "array_clones",
-                             "array_entries_copied"};
+                             "array_entries_copied",
+                             "comparison_limb_positions",
+                             "zero_scan_limbs",
+                             "length_scan_limbs"};
   static_assert(names.size() == static_cast<std::size_t>(Event::count));
   return names[static_cast<std::size_t>(which)];
 }

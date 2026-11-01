@@ -55,7 +55,13 @@ a non-null shared digit owner (`owned_digit_copies`), the historical
 `iterator_owner_copies` event (now zero because mutable iterator checks borrow
 the caller-owned vector), COW clones and payload bytes, copied iterator
 range payload bytes, basic/Karatsuba/triangular-square calls, literal conversions, cache hits/misses and single-digit literal fast paths,
-function calls, executed instructions and array clones/entries copied. These
+function calls, executed instructions and array clones/entries copied.
+`comparison_limb_positions` counts aligned pairs visited by comparison,
+`zero_scan_limbs` counts zero-predicate visits, and `length_scan_limbs` counts
+leading positions inspected including the first significant limb. These are
+logical software positions, not hardware memory loads or cycles. Length's
+amount expression and all increments are removed in ordinary builds.
+ These
 are counts at the named source sites, not a hardware count of atomic operations.
 Copies of empty allocated vectors still retain an owner and are counted.
 Self-assignment and the library's shared-pointer implementation can affect actual
