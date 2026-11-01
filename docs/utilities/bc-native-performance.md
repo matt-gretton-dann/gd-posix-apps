@@ -50,7 +50,11 @@ with one checked warm-up and nine paired rounds, seeded order interleaving
 inside each workload block. Independent base/base runs precede base/head/Howard
 runs. Short and long workloads remain separate; quick correctness dimensions
 are not presented as performance evidence. Scheduled/manual runs include all
-full and held-out shapes; PR and push runs select representative full shapes.
+full and held-out shapes; PR and push runs select at least one full-size
+representative of every corpus group, including conversion, modulo and frontend
+work. The selection follows the corpus automatically and retains extra large,
+imbalanced, square and comparison shapes. An inventory test checks both presets
+so new workload groups cannot silently escape the native PR subset.
 Held-out dimensions and seed 197201 are reserved from PGO/tuning; the full seed
 is 197200. Timing includes process startup; arithmetic component drivers are a
 separate experiment.

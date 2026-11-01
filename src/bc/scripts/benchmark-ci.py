@@ -75,16 +75,14 @@ def selected_cases(bench, preset, broad):
     cases = bench.corpus(preset, listing=True, seed=197201 if preset == 'holdout' else 197200)
     if broad:
         return [case['name'] for case in cases]
-    # One representative per class keeps PR cost bounded. Full parameter sizes
-    # avoid pretending that quick correctness checks have useful timing power.
-    groups = ('startup', 'loop', 'calls', 'array', 'array_sparse', 'fibonacci',
-              'multiply', 'square', 'divide_multilimb', 'power',
-              'sqrt', 'decimal_input', 'streaming', 'comparison', 'literal_repeat')
+    # Derive representatives from the corpus so newly added classes cannot
+    # silently escape PR checks. Keep real full-size dimensions for timing.
     chosen = []
-    for group in groups:
-        choices = [case for case in cases if case['group'] == group]
-        if choices:
-            chosen.append(choices[0]['name'])
+    groups = set()
+    for case in cases:
+        if case['group'] not in groups:
+            chosen.append(case['name'])
+            groups.add(case['group'])
     # Preserve the existing small-multiply winner and representative large,
     # sparse and imbalanced shapes, whose algorithmic behavior differs.
     for case in cases:
