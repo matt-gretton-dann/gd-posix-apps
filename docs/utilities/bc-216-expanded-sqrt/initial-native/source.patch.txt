@@ -1,0 +1,80 @@
+commit d6eb63c941d9cd66ca45cac384efde9ba6864a9d
+Author:     Codex instance <matt+codex@gretton-dann.org.uk>
+AuthorDate: Sun Nov 1 16:33:22 2026 +0000
+Commit:     Codex instance <matt+codex@gretton-dann.org.uk>
+CommitDate: Sun Nov 1 16:33:22 2026 +0000
+
+    bc: Exercise large and tiny square roots in native benchmarks
+    
+    A first-per-group subset measured only the small sqrt winner and could
+    miss changes to large precision or fractional initial estimates. Append
+    scale-10000, tiny-fraction and large-integer classes with exact independent
+    oracles; retain scale 5000 and both tiny dimensions in native checks.
+    
+    Preserve all 46 prior complete case dictionaries across full, held-out
+    and quick presets with committed source-anchored hashes. Report actual
+    even tiny-square dimensions rather than relabeling preset inputs.
+    
+    All 23 harness tests pass on Python 3.9 and 3.15, including the actual
+    50-case quick corpus with the baseline executable. Six native-policy
+    orchestration tests pass. The missing-case check fails before the change.
+    
+    Refs #216, #212 and #197.
+
+diff --git a/src/bc/scripts/bench-bc.py b/src/bc/scripts/bench-bc.py
+index e62b12e..12e193d 100755
+--- a/src/bc/scripts/bench-bc.py
++++ b/src/bc/scripts/bench-bc.py
+@@ -280,6 +280,32 @@ def corpus(preset="full", selected=None, listing=False, seed=197200):
+         count, {"statements": count})
+     if cases and cases[-1]['name'] == file_case:
+         cases[-1]['input_mode'] = 'file'
++    # Append expanded sqrt regimes after every historical case. No RNG draws
++    # or dictionary changes perturb the preceding full/held-out/quick corpus.
++    places, count = dimension(10000), iterations(5)
++    add("sqrt_large_scale{}_x{}".format(places, count), "sqrt_large_scale",
++        "scale={}\nfor(i=0;i<{};i++) c=sqrt(2)\nc".format(places, count),
++        lambda: scaled(integer_sqrt(2 * 10 ** (2 * places)), places),
++        {"scale": places, "iterations": count, "radicand": "2"})
++    for original_scale, repetitions in ((1024, 30), (4096, 10)):
++        # Keep the input scale even so the exact root is a finite decimal in
++        # every preset; report the actual adjusted dimension in its name.
++        places = 2 * max(1, dimension(original_scale) // 2)
++        count = iterations(repetitions)
++        value = "." + "0" * (places - 1) + "4"
++        add("sqrt_tiny_scale{}_x{}".format(places, count), "sqrt_tiny",
++            "scale=0\nx={}\nfor(i=0;i<{};i++) c=sqrt(x)\nc".format(value, count),
++            lambda places=places: scaled(2 * 10 ** (places // 2), places),
++            {"input_scale": places, "scale": 0, "iterations": count,
++             "coefficient": "4"})
++    root_power, places, count = dimension(2000), dimension(100), iterations(10)
++    value = "4" + "0" * (2 * root_power)
++    add("sqrt_integer_power{}_scale{}_x{}".format(root_power, places, count),
++        "sqrt_large_integer",
++        "scale={}\nx={}\nfor(i=0;i<{};i++) c=sqrt(x)\nc".format(places, value, count),
++        lambda: scaled(2 * 10 ** (root_power + places), places),
++        {"root_power": root_power, "input_digits": len(value),
++         "scale": places, "iterations": count, "coefficient": "4"})
+     if selected:
+         missing = set(selected) - set(known)
+         if missing:
+diff --git a/src/bc/scripts/benchmark-ci.py b/src/bc/scripts/benchmark-ci.py
+index 5b86897..17420d5 100644
+--- a/src/bc/scripts/benchmark-ci.py
++++ b/src/bc/scripts/benchmark-ci.py
+@@ -84,10 +84,13 @@ def selected_cases(bench, preset, broad):
+             chosen.append(case['name'])
+             groups.add(case['group'])
+     # Preserve the existing small-multiply winner and representative large,
+-    # sparse and imbalanced shapes, whose algorithmic behavior differs.
++    # sparse and imbalanced shapes, whose algorithmic behavior differs. Retain
++    # large-scale and both tiny-fraction sqrt regimes rather than measuring only
++    # the first, small sqrt representative.
+     for case in cases:
+         parameters = case['parameters']
+-        if (case['group'] == 'comparison' or
++        if (case['group'] == 'comparison' or case['group'] == 'sqrt_tiny' or
++                (case['group'] == 'sqrt' and parameters.get('scale', 0) >= 5000) or
+                 (case['group'] == 'square' and parameters.get('digits', 0) >= 10000) or
+                 (case['group'] == 'multiply' and parameters.get('left_digits', 0) >= 10000)):
+             if case['name'] not in chosen:
