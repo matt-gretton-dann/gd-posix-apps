@@ -1,0 +1,190 @@
+diff --git a/src/bc/reader.cc b/src/bc/reader.cc
+index 3972185..19089cf 100644
+--- a/src/bc/reader.cc
++++ b/src/bc/reader.cc
+@@ -112,7 +112,9 @@ auto GD::Bc::FileReader::peek() -> int
+ {
+   /* We only read from the file when we know we need to - which is indicated by c_ being EOF.  */
+   if (c_ == EOF && !file_.eof()) {
+-    c_ = file_.getc();
++    // Each named FILE is private to this sequential reader. Borrowed stdin
++    // keeps ordinary locking inside the utility, including across readers.
++    c_ = file_.getc_exclusive();
+ 
+     if (file_.error()) {
+       std::cerr << error(Msg::file_error, file_.filename());
+diff --git a/src/include/util/file.hh b/src/include/util/file.hh
+index ce6bb06..2636de7 100644
+--- a/src/include/util/file.hh
++++ b/src/include/util/file.hh
+@@ -511,6 +511,14 @@ public:
+    */
+   auto getc() -> int;
+ 
++  /** Read one character when the caller exclusively accesses this object.
++   * Named streams may use a platform's unlocked stdio primitive. Borrowed stdin
++   * and platforms without that primitive retain ordinary fgetc locking.
++   * EOF, errors, text translation and retry behavior match getc(). This does not
++   * transfer FILE ownership or permit concurrent reads of the same object.
++   */
++  auto getc_exclusive() -> int;
++
+   /** \brief  Get a line of text.  Strips off the \n terminator.
+    *  \return Found line.
+    *
+@@ -546,6 +554,9 @@ public:
+   void setbuf(Buffering type, std::unique_ptr<std::vector<char>>&& ptr);
+ 
+ private:
++  template<bool Locked>
++  auto getc_impl() -> int;
++
+   using Msg = GD::Util::Msg;
+ 
+   /** \brief     Report an error on the stream.
+diff --git a/src/util/CMakeLists.txt b/src/util/CMakeLists.txt
+index a6a9fe3..531deb0 100644
+--- a/src/util/CMakeLists.txt
++++ b/src/util/CMakeLists.txt
+@@ -36,6 +36,7 @@ add_custom_target("util_messages" ALL DEPENDS "util.msg.stamp")
+ if(RUN_UNIT_TESTS)
+   target_sources(test-util PRIVATE
+     tests/test-for-each-file.cc
++    tests/test-stream-input.cc
+     tests/test-program-name.cc
+     tests/test-read-write-endian.cc
+     tests/test-util-main.cc)
+diff --git a/src/util/input-file/input-file-getc.cc b/src/util/input-file/input-file-getc.cc
+index e98c95b..0a09f66 100644
+--- a/src/util/input-file/input-file-getc.cc
++++ b/src/util/input-file/input-file-getc.cc
+@@ -11,11 +11,27 @@
+ #include <cassert>
+ #include <cstdio>
+ 
+-auto GD::StreamInputFile::getc() -> int
++template<bool Locked>
++auto GD::StreamInputFile::getc_impl() -> int
+ {
+   assert(file_ != nullptr);  // NOLINT
++  auto next = [this] {
++    if constexpr (Locked) {
++      return std::fgetc(file_);
++    }
++    else {
++#if defined(_WIN32) && defined(_MSC_VER)
++      return _fgetc_nolock(file_);
++#elif defined(_POSIX_THREAD_SAFE_FUNCTIONS) && _POSIX_THREAD_SAFE_FUNCTIONS > 0
++      // POSIX permits a macro: keep the FILE argument free of side effects.
++      return getc_unlocked(file_);
++#else
++      return std::fgetc(file_);
++#endif
++    }
++  };
+   int c = 0;
+-  while ((c = std::fgetc(file_)) == EOF) {
++  while ((c = next()) == EOF) {
+     if (std::feof(file_) != 0) {
+       return EOF;
+     }
+@@ -32,3 +48,11 @@ auto GD::StreamInputFile::getc() -> int
+ 
+   return c;
+ }
++
++auto GD::StreamInputFile::getc() -> int { return getc_impl<true>(); }
++
++auto GD::StreamInputFile::getc_exclusive() -> int
++{
++  // stdin is borrowed and can be shared by otherwise independent readers.
++  return is_stdin_ ? getc_impl<true>() : getc_impl<false>();
++}
+diff --git a/src/util/tests/test-stream-input.cc b/src/util/tests/test-stream-input.cc
+new file mode 100644
+index 0000000..bdcb82f
+--- /dev/null
++++ b/src/util/tests/test-stream-input.cc
+@@ -0,0 +1,82 @@
++/** \file test-stream-input.cc
++ * Character input compatibility for privately owned stdio streams.
++ * SPDX-License-Identifier: Apache-2.0
++ */
++#include "util/file.hh"
++
++#include <catch2/catch.hpp>
++
++#include <chrono>
++#include <fstream>
++#include <stdexcept>
++#include <string>
++#include <system_error>
++
++namespace {
++struct TemporaryInput
++{
++  fs::path directory;
++  TemporaryInput()
++  {
++    auto const stamp = std::chrono::steady_clock::now().time_since_epoch().count();
++    for (unsigned attempt = 0; attempt < 32; ++attempt) {
++      auto path = fs::temp_directory_path() /
++                  ("gd-stream-" + std::to_string(stamp) + "-" + std::to_string(attempt));
++      if (fs::create_directory(path)) {
++        directory = std::move(path);
++        return;
++      }
++    }
++    throw std::runtime_error("cannot create exclusive stream test directory");
++  }
++  ~TemporaryInput()
++  {
++    std::error_code ignored;
++    fs::remove_all(directory, ignored);
++  }
++  auto file() const -> fs::path { return directory / "input.bin"; }
++};
++}  // namespace
++
++TEST_CASE("Exclusive and ordinary reads share binary stream state", "[util][file][input]")
++{
++  TemporaryInput temporary;
++  {
++    std::ofstream output(temporary.file(), std::ios::binary);
++    for (unsigned i = 0; i < 8192; ++i)
++      output.put(static_cast<char>(i % 256));
++    REQUIRE(output.good());
++  }
++  GD::StreamInputFile input(temporary.file().string(), "rb");
++  REQUIRE_FALSE(input.error());
++  for (unsigned i = 0; i < 8192; ++i) {
++    auto const actual = (i % 2 == 0) ? input.getc_exclusive() : input.getc();
++    REQUIRE(actual == static_cast<int>(i % 256));
++  }
++  CHECK(input.getc_exclusive() == EOF);
++  CHECK(input.getc() == EOF);
++  CHECK(input.eof());
++  CHECK_FALSE(input.error());
++}
++
++TEST_CASE("Exclusive reads interleave with line input", "[util][file][input]")
++{
++  TemporaryInput temporary;
++  {
++    std::ofstream output(temporary.file(), std::ios::binary);
++    output << "ab\ncd\nef\n";
++    REQUIRE(output.good());
++  }
++  GD::StreamInputFile input(temporary.file().string());
++  REQUIRE_FALSE(input.error());
++  CHECK(input.getc_exclusive() == 'a');
++  CHECK(input.getc() == 'b');
++  CHECK(input.getline().empty());
++  CHECK(input.getline() == "cd");
++  CHECK(input.getc_exclusive() == 'e');
++  CHECK(input.getc() == 'f');
++  CHECK(input.getc_exclusive() == '\n');
++  CHECK(input.getc_exclusive() == EOF);
++  CHECK(input.eof());
++  CHECK_FALSE(input.error());
++}

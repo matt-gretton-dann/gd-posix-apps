@@ -1,0 +1,21 @@
+"""Serial peak-RSS diagnostics, run only after both release speed matrices."""
+from pathlib import Path
+import importlib.util,json,platform,re,statistics,subprocess
+repo=Path('/Users/mgrettondann/repos/gd-posix-apps');spec=importlib.util.spec_from_file_location('bench',repo/'src/bc/scripts/bench-bc.py');bench=importlib.util.module_from_spec(spec);spec.loader.exec_module(bench)
+root=Path('/private/tmp/gd-bc-210-final-exclusive-memory');root.mkdir()
+implementations=json.loads(Path('/private/tmp/bc-210-final-exclusive-implementations.json').read_text())['implementations'];rows=[];cases=bench.corpus('full')
+for case in cases:
+ artifact=root/(case['name']+'.bc');artifact.write_bytes(case['program'].encode())
+ for implementation in implementations:
+  role=implementation['name']
+  for sample in range(3):
+   log=root/(role+'-'+case['name']+'-'+str(sample)+'.log');timed=dict(implementation);timed['argv']=['/usr/bin/time','-l','-o',str(log)]+implementation['argv']
+   result=bench.run_checked(timed,case,90,program_path=artifact)
+   match=re.search(r'^\s*(\d+)\s+maximum resident set size\s*$',log.read_text(),re.M);assert match,log
+   rows.append({'name':case['name'],'group':case['group'],'input_mode':case.get('input_mode','stdin'),'role':role,'sample':sample,'checked':result['checked'],'output_sha256':result['output_sha256'],'max_rss_bytes':int(match.group(1)),'log':log.name})
+ print(case['name'],'memory checked',flush=True)
+(root/'samples.json').write_text(json.dumps(rows,indent=2)+'\n')
+(root/'manifest.json').write_text(json.dumps({'implementations':implementations,'host':platform.platform(),'scope':'Three serial fresh processes per full case and implementation after both speed matrices. Includes loader, frontend, VM, arithmetic, output and allocator; not isolated reader storage. Resource times are diagnostic only. File case uses staged filename with stdin EOF; all other cases retain stdin transport.','max_rss_units':'bytes, local getrusage(2) reference retained','argv_prefix':['/usr/bin/time','-l','-o','LOG']},indent=2)+'\n')
+summary=[{'name':case['name'],'group':case['group'],'process_peaks':{i['name']:{'median_bytes':statistics.median(x['max_rss_bytes'] for x in rows if x['name']==case['name'] and x['role']==i['name']),'min_bytes':min(x['max_rss_bytes'] for x in rows if x['name']==case['name'] and x['role']==i['name']),'max_bytes':max(x['max_rss_bytes'] for x in rows if x['name']==case['name'] and x['role']==i['name'])} for i in implementations}} for case in cases]
+(root/'summary.json').write_text(json.dumps(summary,indent=2)+'\n')
+print('All',len(rows),'RSS executions pass exact checks')
