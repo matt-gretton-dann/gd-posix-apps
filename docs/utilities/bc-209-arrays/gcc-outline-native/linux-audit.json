@@ -1,0 +1,13 @@
+{
+  "os": "linux",
+  "checked": 1480,
+  "identities": {
+    "base": "8e6c1495cdeb8c797f1161750634732fd71b348b",
+    "candidate": "254073f445346c1842929e51269eb5d101c7c91f",
+    "howard-7.0.3": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8"
+  },
+  "confirmed": [
+    "| full | paired | `ibase_literal_flip_20000` | 1.072 [1.0597562953492332, 1.0899447665832624] | confirmed regression |"
+  ],
+  "sha256": "54de6a31713108eb6911fed04c7bd1cabf46816f5b3c8309301269fa04d16453"
+}
