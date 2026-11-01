@@ -1,0 +1,75 @@
+{
+  "purpose": "Correctness smokes, not comparative timing evidence",
+  "runtime_source_revision": "9bbf9d5de95f61c5b2e793bdf6ff7706757ac527",
+  "binary_sha256": "65ffce97f8735d4cd6d310f097e8e8b741a9e72feb3d8f826b2f4b136a825739",
+  "rows": [
+    {
+      "preset": "full",
+      "name": "binary_input_100000d_x3",
+      "parameters": {
+        "digits": 100000,
+        "literals": 3,
+        "input_base": 2
+      },
+      "result": {
+        "seconds": 0.029787207953631878,
+        "output_bytes": 30988,
+        "checked": true,
+        "output_sha256": "1e711ab2ea57244b777d0b67b71bf58da3c71c99c66adb83ea683a4594a3e235"
+      },
+      "program_sha256": "5708591ea9ef5b6f865e2697e54474f21b008fce56222ee9f914bed6c92e76cc",
+      "oracle_sha256": "ee65e37364ee58e519fca6e216a1cbe9bcdfa4c19ebc718d5090db1a7136e1b1"
+    },
+    {
+      "preset": "full",
+      "name": "hex_input_100000d_x3",
+      "parameters": {
+        "digits": 100000,
+        "literals": 3,
+        "input_base": 16
+      },
+      "result": {
+        "seconds": 0.08743129199137911,
+        "output_bytes": 123953,
+        "checked": true,
+        "output_sha256": "364d4085d06cbec3d98d241c0e7c2e6d54ba95ec24723d3dcce97873c26e0372"
+      },
+      "program_sha256": "ac6a53ff2dd5fe039ff93d69b42355e5d2dedf641822fb12ae90d5251dad70c7",
+      "oracle_sha256": "e8512326442321c92bc35cfd57c121bdb35fc26bdbde04cea11cc69d100d4092"
+    },
+    {
+      "preset": "holdout",
+      "name": "binary_input_112500d_x3",
+      "parameters": {
+        "digits": 112500,
+        "literals": 3,
+        "input_base": 2
+      },
+      "result": {
+        "seconds": 0.03385083400644362,
+        "output_bytes": 34863,
+        "checked": true,
+        "output_sha256": "fb7bba38bdf2143180397358652ef1540c33d4ba2a6b7572f3b83aa801bfb6b6"
+      },
+      "program_sha256": "bbee74fe9e555e0ceded12f88ac03e545462c4595a53addb3ccadc8e38b8b15a",
+      "oracle_sha256": "22f0e88f61309e355649a28af24270b544f4f073b819403e18f1669941109f10"
+    },
+    {
+      "preset": "holdout",
+      "name": "hex_input_112500d_x3",
+      "parameters": {
+        "digits": 112500,
+        "literals": 3,
+        "input_base": 16
+      },
+      "result": {
+        "seconds": 0.11166049999883398,
+        "output_bytes": 139449,
+        "checked": true,
+        "output_sha256": "e7149236ebd067f0a4a01e9f3c313dfb71d58717bc9640a0d205866e26094e53"
+      },
+      "program_sha256": "383ff1df33e1be22eae515b08a24c3e8fb70f0dac6bdd55b716a3088bbae49a4",
+      "oracle_sha256": "cac6e92732c2d3527b75e2d01c8c74b20c609c89a9cc49fb5aa303508416bca3"
+    }
+  ]
+}

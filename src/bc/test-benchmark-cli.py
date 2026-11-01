@@ -126,7 +126,7 @@ class BenchmarkCli(unittest.TestCase):
         self.assertEqual(result.stderr, "")
         rows = [json.loads(line) for line in
                 (output / "samples.jsonl").read_text(encoding="utf-8").splitlines()]
-        self.assertEqual(len(rows), 42)
+        self.assertEqual(len(rows), 44)
         self.assertTrue(all(row["checked"] for row in rows))
 
     def check_failure(self, mode, diagnostic, timeout=3):
@@ -222,6 +222,21 @@ class PairedStatistics(unittest.TestCase):
             for line in case['expected']:
                 self.assertTrue(set(line) <= set('01234567'[:base]))
                 self.assertEqual(int(line, base), int(literal))
+
+    def test_large_radix_input_classes_have_independent_integer_oracles(self):
+        for preset in ('full', 'holdout', 'quick'):
+            selected = {c['group']: c for c in self.module().corpus(preset)
+                        if c['group'] in ('binary_input', 'hex_input')}
+            self.assertEqual(set(selected), {'binary_input', 'hex_input'})
+            for group, base in (('binary_input', 2), ('hex_input', 16)):
+                case = selected[group]
+                literals = re.findall(r'^a=([0-9A-F]+)$', case['program'], re.MULTILINE)
+                self.assertEqual(len(literals), case['parameters']['literals'])
+                self.assertTrue(all(len(x) == case['parameters']['digits'] for x in literals))
+                self.assertEqual(case['expected'], [str(int(literals[-1], base))])
+                self.assertIn('ibase=A\n', case['program'])
+                if preset != 'quick':
+                    self.assertGreaterEqual(len(literals[0]), 65536)
 
     def test_holdout_shapes_are_separate_and_replayable(self):
         module = self.module()

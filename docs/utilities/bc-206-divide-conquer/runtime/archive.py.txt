@@ -1,0 +1,20 @@
+from pathlib import Path
+import json,shutil
+w=Path('/private/tmp/gd-posix-conversion-dc');r=w/'docs/utilities/bc-206-divide-conquer/runtime';r.mkdir()
+(r/'.gitattributes').write_text('*.csv -text whitespace=cr-at-eol\n*.log -text whitespace=-blank-at-eol,-blank-at-eof\n')
+for preset in ('full','holdout'):shutil.copytree('/private/tmp/gd-bc-206-runtime-dc-'+preset,r/preset)
+for role in ('baseline','candidate'):
+ for kind in ('release','components'):
+  source=Path('/private/tmp/gd-bc-206-runtime-dc-'+role+'-'+kind);target=r/(role+'-'+kind);target.mkdir()
+  for p in source.iterdir():
+   if p.is_file() and p.suffix in ('.json','.log','.hh','.cc'):shutil.copyfile(p,target/p.name)
+shutil.copyfile('/private/tmp/bc-206-run-runtime-dc-components.py',r/'runner.py.txt')
+for name in ('release-all','release-cli','release-domain-tests','asan-tests','asan-vm','asan-components','asan-offsets','profile-tests'):
+ shutil.copyfile('/private/tmp/bc-206-runtime-dc-'+name+'.log',r/(name+'.log'))
+lines=['# Actual runtime input dispatch comparisons','','Refs #206 and #197. Exact baseline 9669ef73bc00e5b89f3fb00e2867a8f8ed9c4d32', 'and candidate a54210149ced1f8b773cd0af2b434790ae52e34c. Both use the ordinary', '`conversion-in` mode and actual Number constructor, not a forced DC diagnostic.', 'Every compiler/library, flag, command, source and binary hash remains in recipes.', '', 'Apple M1/macOS 27.2, Apple Clang 21, Release thin LTO, fixed split 126,', 'extensions ON, profiling/coverage OFF. Full 960 and held-out 460 invocations', 'pass exact Python integer/decimal/length-checksum, status, stderr and deadline', 'checks. One checked warmup and nine shuffled paired rounds; 2000 bootstrap', 'resamples. No local builds, tests or profiling overlap timing. Shared-host', 'contention, frequency and thermals remain uncontrolled. Separate copy/reset/', 'consumer controls remain auxiliary and are never subtracted.', '', 'At 100000 input characters, runtime ratios are approximately 0.257 binary,', '0.201 base three, 0.148 octal and 0.128 hexadecimal. Held-out 120000-character', 'ratios are 0.235, 0.139 and 0.121 for binary, octal and hex. Decimal remains', 'near 1.0. No measured interval has its lower endpoint above 1.05. That is', 'scoped local evidence, not a universal or native-platform acceptance claim.', '', 'The measured runtime policy retains short/fractional/exponent-width fallbacks.', 'The earlier prototype memory observations are separate process measurements', 'and are not relabeled as actual runtime workspace or final peak RSS.', '', 'The first full Release log predates the corrected narrow length fixtures;', 'the separate domain-test log and sanitizer logs record the corrected tests.', 'All three corrected domain cases pass; native CI must still pass at the PR head.', '']
+for preset in ('full','holdout'):
+ lines+=['## '+preset,'','| Workload | Candidate / baseline, 95% paired interval |','| --- | --- |']
+ for c in json.loads((r/preset/'summary.json').read_text())['workloads']:
+  v=c['candidate_over_parent'];lo,hi=v['ci95'];lines.append('| `{}` | {:.3f} [{:.3f},{:.3f}] |'.format(c['name'],v['median_paired_ratio'],lo,hi))
+ lines.append('')
+(r/'README.md').write_text('\n'.join(lines)+'\n');shutil.copyfile(__file__,r/'archive.py.txt')

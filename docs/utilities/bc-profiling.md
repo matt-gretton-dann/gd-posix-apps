@@ -56,6 +56,11 @@ a non-null shared digit owner (`owned_digit_copies`), the historical
 the caller-owned vector), COW clones and payload bytes, copied iterator
 range payload bytes, basic/Karatsuba/triangular-square calls, literal conversions, cache hits/misses and single-digit literal fast paths,
 function calls, executed instructions and array clones/entries copied.
+`radix_dc_input_calls` counts large integer input dispatches;
+`radix_dc_input_leaf_conversions` counts their grouped leaf constructors.
+`literal_conversions` includes those recursive text constructors, so it is not
+a count of VM cache misses or source-level literals. The separate cache events
+retain their VM meanings. Power caches are local to each conversion.
 `comparison_limb_positions` counts aligned pairs visited by comparison,
 `zero_scan_limbs` counts zero-predicate visits, and `length_scan_limbs` counts
 leading positions inspected including the first significant limb. These are
