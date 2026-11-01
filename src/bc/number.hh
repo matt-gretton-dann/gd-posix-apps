@@ -1463,7 +1463,13 @@ public:
    *
    * Can only handle positive numbers.
    */
-  BasicNumber(std::string_view s, NumType ibase) : digits_(), sign_(Sign::positive), scale_(0)
+#if defined(__GNUC__) && !defined(__clang__)
+  // Isolate runtime-base decoding from GCC's surrounding VM/template inlining.
+  // Other compilers retain their generic policy and the same constructor body.
+  __attribute__((noinline))
+#endif
+  BasicNumber(std::string_view s, NumType ibase)
+      : digits_(), sign_(Sign::positive), scale_(0)
   {
     GD_BC_PROFILE_EVENT(Profile::Event::literal_conversions, 1);
     assert(ibase >= 2);   // NOLINT
@@ -1498,37 +1504,94 @@ public:
       }
     }
 
-    /* Generic fallback: construct a digit at a time, working out scale for digits
-     * after the radix point.
-     *
-     * Ultimately we want this to be digits_ * 10 ^ scale_.
-     * But we start by calculating digits_ * ibase ^ scale_.
+    /* Construct the integer coefficient C by ignoring the radix point and count
+     * fractional input digits in scale_. The input value is C / ibase^scale_;
+     * decimal storage needs floor(C * 10^scale_ / ibase^scale_).
      */
     static constexpr char const* digits = "0123456789ABCDEF"; /* Acceptable input characters.  */
     bool seen_period = false;                                 /* Have we seen the radix-point. */
 
-    for (auto c : s) {
-      if (seen_period) {
-        ++scale_;
-      }
-
-      const auto* digit = ::strchr(digits, c);
-      if (digit != nullptr) {
-        assert((digit - digits < ibase) || (s.size() == 1 && digit - digits < 16));  // NOLINT
-        digits_.mac(ibase, static_cast<NumType>(digit - digits));
-      }
-      else if (c == '.') {
-        assert(!seen_period);  // NOLINT
-        seen_period = true;
-      }
-      else {
-        abort();
+    // Keep common short literals on their original scalar path. For longer
+    // text, bound a chunk's multiplier and coefficient by both the native limb
+    // and widened MAC headroom. This retains generic narrower-trait fallback.
+    std::size_t group_size = 1;
+    NumType group_multiplier = ibase;
+    if (s.size() >= 16) {
+      constexpr WideType max_chunk =
+        std::min(WideType(std::numeric_limits<NumType>::max()),
+                 WideType(std::numeric_limits<WideType>::max() / base_));
+      if constexpr (max_chunk >= 16) {
+        // Reserve the full legacy decoder range. Splitting the division avoids
+        // overflowing the widened type while deriving the power bound.
+        WideType const power_bound =
+          (max_chunk / 16) * (ibase - 1) + ((max_chunk % 16) * (ibase - 1)) / 16 + 1;
+        WideType const last_before_multiply = power_bound / ibase;
+        WideType power = 1;
+        std::size_t count = 0;
+        while (power <= last_before_multiply && count < s.size()) {
+          power *= ibase;
+          ++count;
+        }
+        if (count > 1) {
+          group_size = count;
+          group_multiplier = static_cast<NumType>(power);
+        }
       }
     }
 
-    /* We now have number as digits_ * ibase ^ scale_.  If we're in base 10 or the scale is zero
-     * or the digits are zero we have finished.  */
-    if (ibase == 10 || scale_ == 0 || digits_.is_zero()) {  // NOLINT - 10 isn't magic
+    if (group_size == 1) {
+      for (auto c : s) {
+        if (seen_period) {
+          ++scale_;
+        }
+
+        const auto* digit = ::strchr(digits, c);
+        if (digit != nullptr) {
+          assert((digit - digits < ibase) || (s.size() == 1 && digit - digits < 16));  // NOLINT
+          digits_.mac(ibase, static_cast<NumType>(digit - digits));
+        }
+        else if (c == '.') {
+          assert(!seen_period);  // NOLINT
+          seen_period = true;
+        }
+        else {
+          abort();
+        }
+      }
+    }
+    else {
+      WideType coefficient = 0;
+      std::size_t pending = 0;
+      for (auto c : s) {
+        if (seen_period)
+          ++scale_;
+        if (c == '.') {
+          assert(!seen_period);  // NOLINT
+          seen_period = true;
+          continue;
+        }
+        auto const* digit = ::strchr(digits, c);
+        if (digit == nullptr)
+          abort();
+        assert((digit - digits < ibase) || (s.size() == 1 && digit - digits < 16));  // NOLINT
+        coefficient = coefficient * ibase + WideType(digit - digits);
+        if (++pending == group_size) {
+          digits_.mac(group_multiplier, static_cast<NumType>(coefficient));
+          coefficient = 0;
+          pending = 0;
+        }
+      }
+      if (pending != 0) {
+        NumType power = 1;
+        for (std::size_t i = 0; i < pending; ++i)
+          power *= ibase;
+        digits_.mac(power, static_cast<NumType>(coefficient));
+      }
+    }
+
+    /* The stored coefficient is C. Integer or zero values need no fractional
+     * rescaling; decimal input has already used the direct path above. */
+    if (scale_ == 0 || digits_.is_zero()) {
       return;
     }
 
