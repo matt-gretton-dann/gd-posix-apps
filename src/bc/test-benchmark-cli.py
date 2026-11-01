@@ -635,6 +635,35 @@ class PairedStatistics(unittest.TestCase):
                 self.assertIn(str(case['parameters']['iterations']), case['name'])
                 self.assertEqual(case['parameters']['calibration'], 'fixed count; not calibrated')
 
+    def test_math_holdout_changes_magnitudes_and_preserves_full_cases(self):
+        from fractions import Fraction
+        module = self.module()
+        fixtures = Path(__file__).resolve().parent / 'fixtures'
+        before = json.loads((fixtures / 'math-benchmark-before-heldout.json').read_text())
+        full, held = module.corpus('full', suite='math'), module.corpus('holdout', suite='math')
+        for case, previous, holdout in zip(full, before['corpus'], held):
+            self.assertEqual(case['name'], previous['name'])
+            payload = json.dumps(case, sort_keys=True, separators=(',', ':')).encode()
+            self.assertEqual(hashlib.sha256(payload).hexdigest(), previous['sha256'])
+            self.assertNotEqual([abs(Fraction(x)) for x in case['parameters']['arguments']],
+                                [abs(Fraction(x)) for x in holdout['parameters']['arguments']])
+        report = json.loads((fixtures / 'math-benchmark-oracles.json').read_text())
+        source = fixtures / 'math-benchmark-cases.json'
+        specification = json.loads(source.read_text())
+        self.assertEqual(report['case_file_sha256'], hashlib.sha256(source.read_bytes()).hexdigest())
+        generator = fixtures.parent / 'scripts/generate-math-oracles.py'
+        self.assertEqual(report['generator_sha256'], hashlib.sha256(generator.read_bytes()).hexdigest())
+        expected = {(case['id'], scale) for case in specification['cases']
+                    for scale in specification['scales']}
+        self.assertEqual(len(report['cases']), len(expected))
+        self.assertEqual({(case['id'], case['scale']) for case in report['cases']}, expected)
+        for case in report['cases']:
+            lower, upper = Fraction(case['lower']), Fraction(case['upper'])
+            self.assertLessEqual(lower, upper)
+            self.assertLessEqual(upper - lower, Fraction(1, 10 ** (case['scale'] + report['guard_digits'])))
+            self.assertEqual(lower.denominator & (lower.denominator - 1), 0)
+            self.assertEqual(upper.denominator & (upper.denominator - 1), 0)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)

@@ -120,36 +120,28 @@ def math_corpus(preset='full', selected=None, listing=False):
     Each role's argv chooses -l or an ordinary library file; the harness never
     substitutes a mathematical implementation or special-cases an executable.
     """
-    path = Path(__file__).resolve().parents[1] / 'fixtures/math-oracles.json'
+    path = Path(__file__).resolve().parents[1] / 'fixtures/math-benchmark-oracles.json'
     references = json.loads(path.read_text(encoding='utf-8'))
     by_key = {(case['id'], case['scale']): case for case in references['cases']}
-    regular = [('s', 's-one', 's-negative'), ('c', 'c-one', 'c-negative'),
-               ('a', 'a-one', 'a-negative'), ('l', 'l-two', 'l-tenth'),
-               ('e', 'e-one', 'e-negative-one'), ('j', 'j-zero-one', 'j-one-one')]
-    regimes = [(function, 'regular', held if preset == 'holdout' else full, False)
-               for function, full, held in regular]
-    # Negative integer orders and negative arguments use exact Bessel
-    # symmetries. These four selected orders are even, so the bounds agree.
-    regimes += [('j', regime, identifier, preset == 'holdout') for regime, identifier in
-                [('turning', 'j-turning'), ('order_dominates', 'j-order-dominates'),
-                 ('argument_dominates', 'j-argument-dominates'), ('near_root', 'j-near-root')]]
     scales = [2, 20, 100] if preset == 'quick' else [20, 100, 1000]
+    corpus_name = 'holdout' if preset == 'holdout' else 'full'
+    regimes = [case for case in references['cases']
+               if case['corpus'] == corpus_name and case['scale'] == scales[0]]
+    if len(regimes) != 10:
+        raise BenchmarkError('mathematical reference regime inventory changed')
     cases, known = [], []
-    for function, regime, identifier, symmetry in regimes:
+    for origin in regimes:
+        function, regime, identifier = origin['function'], origin['regime'], origin['id']
         for scale in scales:
             reference = by_key[identifier, scale]
             arguments = list(reference['arguments'])
-            if symmetry:
-                position = 0 if regime in ('turning', 'order_dominates') else 1
-                arguments[position] = '-' + arguments[position]
             for mode in ('one_shot', 'repeated'):
                 count = 1 if mode == 'one_shot' else (2 if preset == 'quick' else
                                                     {20: 50, 100: 20, 1000: 3}[scale])
                 if preset == 'holdout' and mode == 'repeated':
                     count = max(2, count - max(1, count // 8))
-                suffix = '_symmetric' if symmetry else ''
-                name = 'math_{}_{}{}_scale{}_{}_x{}'.format(
-                    regime, identifier, suffix, scale, mode, count)
+                name = 'math_{}_{}_scale{}_{}_x{}'.format(
+                    regime, identifier, scale, mode, count)
                 known.append(name)
                 if selected and name not in selected:
                     continue
@@ -943,7 +935,7 @@ def main():
             scripts = Path(__file__).resolve().parent
             manifest['oracle_checker_sha256'] = digest_file(scripts / 'math_oracle.py')
             manifest['reference_fixture_sha256'] = (replay['original_reference_fixture_sha256']
-                if replay else digest_file(scripts.parent / 'fixtures/math-oracles.json'))
+                if replay else digest_file(scripts.parent / 'fixtures/math-benchmark-oracles.json'))
         if calibration is not None:
             manifest['duration_calibration'] = calibration
         if replay is not None:
