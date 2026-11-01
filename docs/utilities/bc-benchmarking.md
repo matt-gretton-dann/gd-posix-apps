@@ -156,7 +156,13 @@ load and from a changed calibration result. Record the chosen point and generate
 header with compiler/source metadata; 126 is an experiment setting, not a claim
 of a portable optimum.
 
-The default `auto` preserves native calibration and its seeded input stream.
+The default `portable` uses a stable 126-limb threshold on native and cross
+hosts, avoiding expensive host-dependent calibration during normal builds.
+This is the setting exercised by the native correctness/performance matrix;
+it is not a portable optimum claim. Existing build caches retain their explicit
+or previously cached selection until reconfigured.
+
+Explicit `auto` retains native calibration and its seeded input stream.
 Its cached result is a separate generated file, so switching back from a fixed
 choice cannot mistake that fixed header for a calibration result.
 When cross-compiling, `auto` uses a positive portable fallback of 128 limbs and
