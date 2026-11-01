@@ -802,3 +802,71 @@ TEMPLATE_TEST_CASE("Equal-scale arithmetic preserves long chains and aliases",
   value.sub(one);
   CHECK(render(value) == sparse);
 }
+
+TEMPLATE_TEST_CASE("Decimal construction agrees with digit arithmetic at chunk boundaries",
+                   "[bc][number][oracle][decimal-parse]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  using N = typename Number::NumType;
+  Number const ten(N(10));
+  auto reference = [&](std::string const& text) {
+    // Construct only small integers directly. Multiplication/addition and exact
+    // division supply a reference independent of decimal string decoding.
+    Number coefficient(N(0));
+    std::size_t places = 0;
+    bool fractional = false;
+    for (char c : text) {
+      if (c == '.') {
+        fractional = true;
+      } else {
+        coefficient.multiply(ten, N(0));
+        coefficient.add(Number(N(c - '0')));
+        if (fractional) {
+          ++places;
+        }
+      }
+    }
+    Number divisor(N(1));
+    for (std::size_t i = 0; i < places; ++i) {
+      divisor.multiply(ten, N(0));
+    }
+    coefficient.divide(divisor, static_cast<N>(places));
+    return coefficient;
+  };
+  auto check = [&](std::string const& text) {
+    INFO("decimal input = " << text << ", limb width = " << Number::base_log10_);
+    auto const expected = reference(text);
+    Number const parsed(text, N(10));
+    CHECK(parsed == expected);
+    CHECK(parsed.scale() == expected.scale());
+    CHECK(parsed.length() == expected.length());
+    auto mutated = parsed;
+    mutated.add(Number(N(1)));
+    CHECK(parsed == expected);
+  };
+  auto const width = std::size_t{Number::base_log10_};
+  for (std::size_t count : {std::size_t{1}, width, width + 1, 4 * width + 1, 16 * width + 3}) {
+    std::string digits;
+    for (std::size_t i = 0; i < count; ++i) {
+      digits += static_cast<char>('0' + (7 * i + 3) % 10);
+    }
+    for (std::size_t places : {std::size_t{0}, std::size_t{1}, count / 2, count}) {
+      auto text = "000" + digits;
+      if (places != 0) {
+        text.insert(text.size() - places, 1, '.');
+      }
+      check(text);
+      if (places != 0) {
+        check(text + "00");
+      }
+    }
+  }
+  for (auto const* text : {"", ".", "0", "000", "0.", ".0000", "000.000", ".0001", "001.0000"}) {
+    check(text);
+  }
+  for (N base = 2; base <= 16; ++base) {
+    CHECK(Number("A", base) == Number(N(10)));
+    CHECK(Number("F", base) == Number(N(15)));
+  }
+}
