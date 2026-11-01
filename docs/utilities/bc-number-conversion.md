@@ -33,7 +33,8 @@ platforms keep their generic compiler alignment policy. [Complete measurements
 and retained regressions](bc-206-decimal-input/README.md) distinguish the initial,
 scalar and aligned stages, including inconclusive division/modulo intervals.
 
-Nondecimal grouping is a candidate pending its own measurements. Batched output
+[Nondecimal grouping measurements](bc-206-radix-input/README.md) retain all
+fixtures and intervals; native acceptance is still pending. Batched output
 and conversion crossover decisions remain open. Performance results must distinguish component
 conversion from end-to-end multiplication, which includes input and output.
 The separate #320 fix handles fractional padding that bypassed line wrapping.

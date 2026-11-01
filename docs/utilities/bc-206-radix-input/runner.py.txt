@@ -1,0 +1,42 @@
+"""Matched, exact-checked radix input components with explicit source recipes."""
+import hashlib,importlib.util,json,random,subprocess,time,sys,csv
+from pathlib import Path
+sys.set_int_max_str_digits(0)
+repo=Path('/private/tmp/gd-posix-radix-groups')
+spec=importlib.util.spec_from_file_location('bench',repo/'src/bc/scripts/bench-bc.py');bench=importlib.util.module_from_spec(spec);spec.loader.exec_module(bench)
+root=Path('/private/tmp/gd-bc-206-radix-component-results');root.mkdir(exist_ok=False)
+roles={name:Path('/private/tmp/gd-bc-206-radix-'+name+'-components') for name in ('baseline','grouped')}
+metadata={n:json.loads((p/'manifest.json').read_text()) for n,p in roles.items()}
+assert all(not m['instrumented'] for m in metadata.values())
+cases=[]
+for base in range(2,17):
+ for digits,count in ((1,100000),(8,100000),(15,50000),(16,50000),(17,50000),(32,20000),(128,2000),(1024,100),(8192,2)):
+  rng=random.Random(197206+digits*17+base);alphabet='0123456789ABCDEF';literal=alphabet[base-1]+''.join(alphabet[rng.randrange(base)] for _ in range(digits-1));expected=str(int(literal,base));fixture=literal+'\n'
+  case={'name':'input-b{}-{}d-x{}'.format(base,digits,count),'component':'conversion-in','base':base,'digits':digits,'iterations':count,'fixture':fixture,'expected':expected,'checksum':count*len(expected),'input_sha256':hashlib.sha256(fixture.encode()).hexdigest()}
+  cases.append(case);(root/(case['name']+'.txt')).write_text(fixture)
+for digits,count in ((1,100000),(128,2000),(8192,2)):
+ literal='7'*digits;case={'name':'control-{}d-x{}'.format(digits,count),'component':'control','base':10,'digits':digits,'iterations':count,'fixture':literal+'\n','expected':literal,'checksum':count*digits,'input_sha256':hashlib.sha256((literal+'\n').encode()).hexdigest()};cases.append(case)
+manifest={'schema':1,'scope':'Component intervals include validation/reset/consumer work; controls remain separate. Serial seeded pairs, one checked warmup, nine measured rounds, no overlapping local builds/tests/profiles. Host thermal/frequency and unrelated contention uncontrolled.','seed':197206,'warmups':1,'samples':9,'implementations':metadata,'cases':[{k:v for k,v in c.items() if k not in ('fixture','expected')} for c in cases]};(root/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+rows=[];schedule=random.Random(197206)
+with (root/'samples.jsonl').open('w') as out:
+ for phase,rounds in [('warmup',1),('measurement',9)]:
+  for r in range(rounds):
+   order=list(cases);schedule.shuffle(order)
+   for c in order:
+    implementations=list(roles);schedule.shuffle(implementations)
+    for position,name in enumerate(implementations):
+     argv=metadata[name]['argv']+[c['component'],str(c['iterations']),'126']+([str(c['base'])] if c['component']=='conversion-in' else []);started=time.perf_counter();child=subprocess.run(argv,input=c['fixture'],text=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,env=bench.environment(),timeout=90);wall=time.perf_counter()-started
+     assert child.returncode==0 and not child.stderr,(name,c['name'],child.returncode,child.stderr)
+     d=json.loads(child.stdout);assert d['result']==c['expected'] and d['checksum_mod_2_64']==c['checksum'],(name,c['name'],d)
+     assert d['component']==c['component'] and d['text_base']==c['base'] and d['iterations']==c['iterations'] and d['split_point']==126 and not d['instrumented'] and d['seconds']>=0
+     row={'phase':phase,'round':r,'order':position,'workload':c['name'],'implementation':name,'seconds':d['seconds'],'wall_seconds_auxiliary':wall,'checked':True,'stdout_sha256':hashlib.sha256(child.stdout.encode()).hexdigest(),'reported':d};rows.append(row);out.write(json.dumps(row,sort_keys=True)+'\n');out.flush()
+   print(phase,r+1,'complete',flush=True)
+summary=[]
+for c in cases:
+ values={n:[r['seconds'] for r in rows if r['phase']=='measurement' and r['workload']==c['name'] and r['implementation']==n] for n in roles}
+ ratio=bench.paired_statistics(values['grouped'],values['baseline'],seed=197206,resamples=2000) if all(v>0 for vv in values.values() for v in vv) else {'median_paired_ratio':None,'ci95':None,'interval_status':'insufficient-clock-resolution'}
+ summary.append({'name':c['name'],'base':c['base'],'digits':c['digits'],'component':c['component'],'candidate_over_parent':ratio})
+(root/'summary.json').write_text(json.dumps({'schema':1,'performance_gate':False,'workloads':summary},indent=2)+'\n')
+with (root/'samples.csv').open('w',newline='') as out:
+ fields=['phase','round','order','workload','implementation','seconds','wall_seconds_auxiliary','checked','stdout_sha256'];writer=csv.DictWriter(out,fieldnames=fields);writer.writeheader();writer.writerows({k:r[k] for k in fields} for r in rows)
+print('All',len(rows),'component invocations pass exact checks',flush=True)
