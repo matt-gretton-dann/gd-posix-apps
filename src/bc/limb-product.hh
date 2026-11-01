@@ -96,6 +96,10 @@ class LimbProduct
         return;
       }
     }
+    // Keep the shorter span as the row count for lopsided recursive leaves.
+    if (a.size() > b.size()) {
+      std::swap(a, b);
+    }
     GD_BC_PROFILE_EVENT(Profile::Event::basic_multiply_calls, 1);
     for (std::size_t i = 0; i < a.size(); ++i) {
       Wide carry = 0;

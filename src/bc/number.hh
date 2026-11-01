@@ -1222,6 +1222,13 @@ private:
       return r;
     }
 
+    // With unequal extents, fewer rows mean fewer carry-draining tails. The
+    // one-limb MAC paths above stay unchanged; both ranges remain borrowed.
+    if (lhs_end - lhs_begin > rhs_end - rhs_begin) {
+      std::swap(lhs_begin, rhs_begin);
+      std::swap(lhs_end, rhs_end);
+    }
+
     /* Have to do the full thing... */
     BasicDigits result;
     result.copy_on_write();
