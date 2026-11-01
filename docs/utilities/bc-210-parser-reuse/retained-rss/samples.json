@@ -1,0 +1,92 @@
+[
+  {
+    "role": "baseline",
+    "sample": 0,
+    "checked": true,
+    "after_large_bytes": [
+      94814208,
+      94814208,
+      94814208
+    ],
+    "after_small_bytes": [
+      95076352,
+      95076352,
+      95076352
+    ]
+  },
+  {
+    "role": "baseline",
+    "sample": 1,
+    "checked": true,
+    "after_large_bytes": [
+      94814208,
+      94814208,
+      94814208
+    ],
+    "after_small_bytes": [
+      95059968,
+      95059968,
+      95059968
+    ]
+  },
+  {
+    "role": "baseline",
+    "sample": 2,
+    "checked": true,
+    "after_large_bytes": [
+      94846976,
+      94846976,
+      94846976
+    ],
+    "after_small_bytes": [
+      95125504,
+      95125504,
+      95125504
+    ]
+  },
+  {
+    "role": "candidate",
+    "sample": 0,
+    "checked": true,
+    "after_large_bytes": [
+      94814208,
+      94814208,
+      94814208
+    ],
+    "after_small_bytes": [
+      95043584,
+      95043584,
+      95043584
+    ]
+  },
+  {
+    "role": "candidate",
+    "sample": 1,
+    "checked": true,
+    "after_large_bytes": [
+      94830592,
+      94830592,
+      94830592
+    ],
+    "after_small_bytes": [
+      95059968,
+      95059968,
+      95059968
+    ]
+  },
+  {
+    "role": "candidate",
+    "sample": 2,
+    "checked": true,
+    "after_large_bytes": [
+      94797824,
+      94797824,
+      94797824
+    ],
+    "after_small_bytes": [
+      95010816,
+      95010816,
+      95010816
+    ]
+  }
+]

@@ -1,0 +1,27 @@
+FF
+======================================================================
+FAIL: test_unretained_input_items_reuse_bounded_instruction_storage (__main__.ProfilingCli.test_unretained_input_items_reuse_bounded_instruction_storage) (count=64)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-parser-buffer-reuse/src/bc/test-profiling-cli.py", line 197, in test_unretained_input_items_reuse_bounded_instruction_storage
+    self.assertLessEqual(
+    ~~~~~~~~~~~~~~~~~~~~^
+        counters['allocations']['instructions']['allocation_calls'], 4)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 194 not less than or equal to 4
+
+======================================================================
+FAIL: test_unretained_input_items_reuse_bounded_instruction_storage (__main__.ProfilingCli.test_unretained_input_items_reuse_bounded_instruction_storage) (count=1024)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-parser-buffer-reuse/src/bc/test-profiling-cli.py", line 197, in test_unretained_input_items_reuse_bounded_instruction_storage
+    self.assertLessEqual(
+    ~~~~~~~~~~~~~~~~~~~~^
+        counters['allocations']['instructions']['allocation_calls'], 4)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 3074 not less than or equal to 4
+
+----------------------------------------------------------------------
+Ran 1 test in 0.024s
+
+FAILED (failures=2)

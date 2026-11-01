@@ -1,0 +1,1 @@
+Local /usr/share/man/man1/ps.1, rss: the real memory (resident set) size of the process (in 1024 byte units).

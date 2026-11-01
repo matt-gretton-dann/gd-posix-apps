@@ -1,0 +1,4 @@
+Filters: [bc][parser],[bc][vm]
+===============================================================================
+All tests passed (56643 assertions in 38 test cases)
+

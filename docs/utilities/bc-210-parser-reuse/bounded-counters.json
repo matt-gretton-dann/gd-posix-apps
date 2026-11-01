@@ -1,0 +1,24 @@
+[
+  {
+    "items": 64,
+    "checked": true,
+    "instructions": {
+      "allocation_calls": 3,
+      "deallocation_calls": 3,
+      "allocated_bytes": 384,
+      "live_bytes": 0,
+      "peak_live_bytes": 384
+    }
+  },
+  {
+    "items": 1024,
+    "checked": true,
+    "instructions": {
+      "allocation_calls": 3,
+      "deallocation_calls": 3,
+      "allocated_bytes": 384,
+      "live_bytes": 0,
+      "peak_live_bytes": 384
+    }
+  }
+]
