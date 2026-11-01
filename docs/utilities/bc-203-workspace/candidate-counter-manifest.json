@@ -1,0 +1,528 @@
+{
+  "harness_sha256": "1ae7c8de9d77aaaa9fcb53bbf5a822f6807d646fad2144a3b257cb31123beb98",
+  "harness_revision": "73619a3e5dbc3dbddbca929bdac0a212b77b6772",
+  "instrumented": true,
+  "timings": "discarded; counters only",
+  "implementations": [
+    {
+      "name": "workspace",
+      "source_revision": "dc86aaa51cc1a25214943e7a8c4e078342b8dfed",
+      "binary": "/private/tmp/gd-posix-multiply-workspace/build-profile/src/bc/bc",
+      "binary_sha256": "7953eda6a3688bb3fd35335ccc93683cc6aa8850878c4120d0178b4a5d0609d6",
+      "split_point": 126
+    },
+    {
+      "name": "owner-tag",
+      "source_revision": "364fc61aa58be8b782e1c04f1643d7bf5ee7e8ca",
+      "binary": "/private/tmp/gd-posix-inline-limbs/build-profile/src/bc/bc",
+      "binary_sha256": "dc1b3996b4a646d0bf80186a64d064b5a30f091e7eefa06539b812b82f9c711c",
+      "split_point": 126
+    }
+  ],
+  "checks": [
+    {
+      "implementation": "workspace",
+      "workload": "startup",
+      "output_bytes": 2,
+      "checked": true,
+      "output_sha256": "53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "loop_1000000",
+      "output_bytes": 13,
+      "checked": true,
+      "output_sha256": "dbb4498f673634c698bd6e593ef54bdadf465654b13fb7bfe689016e602e7ef8"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "calls_200000",
+      "output_bytes": 17,
+      "checked": true,
+      "output_sha256": "34812d12902217c2ca460d074d75599c4704fbce9e15d1f8780da9463bf0bf9a"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "array_200000",
+      "output_bytes": 12,
+      "checked": true,
+      "output_sha256": "ef55be1f845002931219ae88320c4744651b322de6447340a573287179119427"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "compare_high_1000d_x100000",
+      "output_bytes": 7,
+      "checked": true,
+      "output_sha256": "b80500a01f984c764f1a3b486622d0ef7cc5b13fa9bd57ec9015113eaf875597"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "compare_low_1000d_x100000",
+      "output_bytes": 7,
+      "checked": true,
+      "output_sha256": "b80500a01f984c764f1a3b486622d0ef7cc5b13fa9bd57ec9015113eaf875597"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "compare_equal_1000d_x100000",
+      "output_bytes": 7,
+      "checked": true,
+      "output_sha256": "b80500a01f984c764f1a3b486622d0ef7cc5b13fa9bd57ec9015113eaf875597"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "fibonacci_1000_x100",
+      "output_bytes": 216,
+      "checked": true,
+      "output_sha256": "5ee9ba454200025fb52afa547c4c98d5742b5b34cac78f6149a085a20bd96f37"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "fibonacci_10000_x10",
+      "output_bytes": 2151,
+      "checked": true,
+      "output_sha256": "31167af12bc28aa39d3e68f27ecf12c96cd2e51e9a029849d7bfaf419e1221fb"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "factorial_1000_x50",
+      "output_bytes": 2643,
+      "checked": true,
+      "output_sha256": "6de3b50bf779285ca18cb5620ee77324deb20740a41545958c7f0ef6f6f0344a"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "factorial_5000_x5",
+      "output_bytes": 16807,
+      "checked": true,
+      "output_sha256": "ea30e2c4be443d4f1e2e946f8cc985a3fa0d7c051f9913cc2635e92ae278e058"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "multiply_100d_x100000",
+      "output_bytes": 205,
+      "checked": true,
+      "output_sha256": "2028db28a7510261d8e5d45841744d56b0f49b9e8c159c5670fbde01aa9b2a25"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "multiply_1000d_x10000",
+      "output_bytes": 2059,
+      "checked": true,
+      "output_sha256": "3833a70d940fc525e38704a3a34c730cfae55dcf6130db7a23afc0334beec934"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "multiply_10000d_x1000",
+      "output_bytes": 20589,
+      "checked": true,
+      "output_sha256": "1ced730440391c21a9a06d8b54177935ba09ebeb111d929f59f3452129402d71"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "divide_scale100_x100000",
+      "output_bytes": 104,
+      "checked": true,
+      "output_sha256": "8523348d175cb52b0e89463d5c3e43ccf22efcea293c63bde258ca29b2e2df10"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "divide_scale1000_x10000",
+      "output_bytes": 1030,
+      "checked": true,
+      "output_sha256": "302ac48951296e2ef265d2840e4f1e5fa30fe699b33a5f5249e2dbc69f2e5034"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "divide_scale5000_x5000",
+      "output_bytes": 5148,
+      "checked": true,
+      "output_sha256": "54416950d7a7317687e602ff7aee3bafd019153de0036d5a194a1464f2524591"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "sqrt_scale100_x5000",
+      "output_bytes": 105,
+      "checked": true,
+      "output_sha256": "bfe54e49204cf23da3c8b3f3671481ba4b5991b3da8272e94bddc9a855a2c016"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "sqrt_scale1000_x50",
+      "output_bytes": 1031,
+      "checked": true,
+      "output_sha256": "25c085cfa0055fec91e72c28ab0b832c96a101d28590138dfe01a4aded11f294"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "sqrt_scale5000_x5",
+      "output_bytes": 5149,
+      "checked": true,
+      "output_sha256": "07260507be394da1a514c0827e0c2ba4ea466ec4f14509c071d67e9583f4792b"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "multiply_dense_1000d_x5000",
+      "output_bytes": 2059,
+      "checked": true,
+      "output_sha256": "a9c2bb0cecb4c38bd6ad6f57631a20f9022634fcb2a488e3addbe2ab63098622"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "multiply_dense_10000d_x500",
+      "output_bytes": 20589,
+      "checked": true,
+      "output_sha256": "56f68a4f03b4452d9f0885a0512c2828dff9ac4943aad7b4470b3e6989899ba5"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "multiply_unbalanced_10000d_100d_x2000",
+      "output_bytes": 10396,
+      "checked": true,
+      "output_sha256": "5760ce166565fdd24d0b1cd16b89db3a61501df1820793f0914d0887f9548fe3"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "multiply_sparse_10000d_x1000",
+      "output_bytes": 20588,
+      "checked": true,
+      "output_sha256": "40837530f9d5ab2bb84d2852f894fb60eff20ebea4bae119fe8006cc5fe078ea"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "divide_multilimb_900d_450d_s100_x1000",
+      "output_bytes": 569,
+      "checked": true,
+      "output_sha256": "4b60ad85f9b98ab2ced300274ab433cd49a836d2f4d7069bc42259a9db243bf6"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "divide_multilimb_1000d_900d_s1000_x500",
+      "output_bytes": 1135,
+      "checked": true,
+      "output_sha256": "8e5bcd70e35a53a01291609f3b48ebb20268098095173739f8cc01e9cbafe2b1"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "modulo_1000d_350d_x3000",
+      "output_bytes": 360,
+      "checked": true,
+      "output_sha256": "4e89b2fa99c8bbc5ebd1fd5980f0f31892e9a1af824b54bae8dd9868f7c14d77"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "power_100d_e17_x1000",
+      "output_bytes": 1739,
+      "checked": true,
+      "output_sha256": "ea1c1e08af874df6c23cf4c1869428bf96051ff796bd30c580db3918748aadc2"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "power_20d_e32_x2000",
+      "output_bytes": 649,
+      "checked": true,
+      "output_sha256": "33a546bd7d6588cb6c35bc96d097e6133fa5da36de0442a88c8a06d5048fefa1"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "ibase_literal_flip_20000",
+      "output_bytes": 7,
+      "checked": true,
+      "output_sha256": "7844fbd8ea47c57d25d9ea6da692db584ed0a9dbf31cdce8d5cb82ef7d0a86d7"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "recursion_50_x1000",
+      "output_bytes": 66,
+      "checked": true,
+      "output_sha256": "89ce918086eeda222f36711d8b97b2eeec8ef9ae01affaf19478c4669d358998"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "sparse_array_200000",
+      "output_bytes": 12,
+      "checked": true,
+      "output_sha256": "ef55be1f845002931219ae88320c4744651b322de6447340a573287179119427"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "frontend_definitions_2000",
+      "output_bytes": 2,
+      "checked": true,
+      "output_sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "decimal_input_4000d_x100",
+      "output_bytes": 4117,
+      "checked": true,
+      "output_sha256": "37acd5e7fe7fdcaf548bf8216d62bc5a13b0178e26ec0b200bdb74acdec077f4"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "decimal_output_200d_x1000",
+      "output_bytes": 205000,
+      "checked": true,
+      "output_sha256": "e51f3a543488d55dab07cccd12db7dff25dc77b0b2760d59967ad5968863d54d"
+    },
+    {
+      "implementation": "workspace",
+      "workload": "streaming_statements_20000",
+      "output_bytes": 108894,
+      "checked": true,
+      "output_sha256": "f6351f5ead9a700e34275480b3856ea738122a7c57bdeb744a631251c069587a"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "startup",
+      "output_bytes": 2,
+      "checked": true,
+      "output_sha256": "53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "loop_1000000",
+      "output_bytes": 13,
+      "checked": true,
+      "output_sha256": "dbb4498f673634c698bd6e593ef54bdadf465654b13fb7bfe689016e602e7ef8"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "calls_200000",
+      "output_bytes": 17,
+      "checked": true,
+      "output_sha256": "34812d12902217c2ca460d074d75599c4704fbce9e15d1f8780da9463bf0bf9a"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "array_200000",
+      "output_bytes": 12,
+      "checked": true,
+      "output_sha256": "ef55be1f845002931219ae88320c4744651b322de6447340a573287179119427"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "compare_high_1000d_x100000",
+      "output_bytes": 7,
+      "checked": true,
+      "output_sha256": "b80500a01f984c764f1a3b486622d0ef7cc5b13fa9bd57ec9015113eaf875597"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "compare_low_1000d_x100000",
+      "output_bytes": 7,
+      "checked": true,
+      "output_sha256": "b80500a01f984c764f1a3b486622d0ef7cc5b13fa9bd57ec9015113eaf875597"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "compare_equal_1000d_x100000",
+      "output_bytes": 7,
+      "checked": true,
+      "output_sha256": "b80500a01f984c764f1a3b486622d0ef7cc5b13fa9bd57ec9015113eaf875597"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "fibonacci_1000_x100",
+      "output_bytes": 216,
+      "checked": true,
+      "output_sha256": "5ee9ba454200025fb52afa547c4c98d5742b5b34cac78f6149a085a20bd96f37"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "fibonacci_10000_x10",
+      "output_bytes": 2151,
+      "checked": true,
+      "output_sha256": "31167af12bc28aa39d3e68f27ecf12c96cd2e51e9a029849d7bfaf419e1221fb"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "factorial_1000_x50",
+      "output_bytes": 2643,
+      "checked": true,
+      "output_sha256": "6de3b50bf779285ca18cb5620ee77324deb20740a41545958c7f0ef6f6f0344a"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "factorial_5000_x5",
+      "output_bytes": 16807,
+      "checked": true,
+      "output_sha256": "ea30e2c4be443d4f1e2e946f8cc985a3fa0d7c051f9913cc2635e92ae278e058"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "multiply_100d_x100000",
+      "output_bytes": 205,
+      "checked": true,
+      "output_sha256": "2028db28a7510261d8e5d45841744d56b0f49b9e8c159c5670fbde01aa9b2a25"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "multiply_1000d_x10000",
+      "output_bytes": 2059,
+      "checked": true,
+      "output_sha256": "3833a70d940fc525e38704a3a34c730cfae55dcf6130db7a23afc0334beec934"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "multiply_10000d_x1000",
+      "output_bytes": 20589,
+      "checked": true,
+      "output_sha256": "1ced730440391c21a9a06d8b54177935ba09ebeb111d929f59f3452129402d71"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "divide_scale100_x100000",
+      "output_bytes": 104,
+      "checked": true,
+      "output_sha256": "8523348d175cb52b0e89463d5c3e43ccf22efcea293c63bde258ca29b2e2df10"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "divide_scale1000_x10000",
+      "output_bytes": 1030,
+      "checked": true,
+      "output_sha256": "302ac48951296e2ef265d2840e4f1e5fa30fe699b33a5f5249e2dbc69f2e5034"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "divide_scale5000_x5000",
+      "output_bytes": 5148,
+      "checked": true,
+      "output_sha256": "54416950d7a7317687e602ff7aee3bafd019153de0036d5a194a1464f2524591"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "sqrt_scale100_x5000",
+      "output_bytes": 105,
+      "checked": true,
+      "output_sha256": "bfe54e49204cf23da3c8b3f3671481ba4b5991b3da8272e94bddc9a855a2c016"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "sqrt_scale1000_x50",
+      "output_bytes": 1031,
+      "checked": true,
+      "output_sha256": "25c085cfa0055fec91e72c28ab0b832c96a101d28590138dfe01a4aded11f294"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "sqrt_scale5000_x5",
+      "output_bytes": 5149,
+      "checked": true,
+      "output_sha256": "07260507be394da1a514c0827e0c2ba4ea466ec4f14509c071d67e9583f4792b"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "multiply_dense_1000d_x5000",
+      "output_bytes": 2059,
+      "checked": true,
+      "output_sha256": "a9c2bb0cecb4c38bd6ad6f57631a20f9022634fcb2a488e3addbe2ab63098622"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "multiply_dense_10000d_x500",
+      "output_bytes": 20589,
+      "checked": true,
+      "output_sha256": "56f68a4f03b4452d9f0885a0512c2828dff9ac4943aad7b4470b3e6989899ba5"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "multiply_unbalanced_10000d_100d_x2000",
+      "output_bytes": 10396,
+      "checked": true,
+      "output_sha256": "5760ce166565fdd24d0b1cd16b89db3a61501df1820793f0914d0887f9548fe3"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "multiply_sparse_10000d_x1000",
+      "output_bytes": 20588,
+      "checked": true,
+      "output_sha256": "40837530f9d5ab2bb84d2852f894fb60eff20ebea4bae119fe8006cc5fe078ea"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "divide_multilimb_900d_450d_s100_x1000",
+      "output_bytes": 569,
+      "checked": true,
+      "output_sha256": "4b60ad85f9b98ab2ced300274ab433cd49a836d2f4d7069bc42259a9db243bf6"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "divide_multilimb_1000d_900d_s1000_x500",
+      "output_bytes": 1135,
+      "checked": true,
+      "output_sha256": "8e5bcd70e35a53a01291609f3b48ebb20268098095173739f8cc01e9cbafe2b1"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "modulo_1000d_350d_x3000",
+      "output_bytes": 360,
+      "checked": true,
+      "output_sha256": "4e89b2fa99c8bbc5ebd1fd5980f0f31892e9a1af824b54bae8dd9868f7c14d77"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "power_100d_e17_x1000",
+      "output_bytes": 1739,
+      "checked": true,
+      "output_sha256": "ea1c1e08af874df6c23cf4c1869428bf96051ff796bd30c580db3918748aadc2"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "power_20d_e32_x2000",
+      "output_bytes": 649,
+      "checked": true,
+      "output_sha256": "33a546bd7d6588cb6c35bc96d097e6133fa5da36de0442a88c8a06d5048fefa1"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "ibase_literal_flip_20000",
+      "output_bytes": 7,
+      "checked": true,
+      "output_sha256": "7844fbd8ea47c57d25d9ea6da692db584ed0a9dbf31cdce8d5cb82ef7d0a86d7"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "recursion_50_x1000",
+      "output_bytes": 66,
+      "checked": true,
+      "output_sha256": "89ce918086eeda222f36711d8b97b2eeec8ef9ae01affaf19478c4669d358998"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "sparse_array_200000",
+      "output_bytes": 12,
+      "checked": true,
+      "output_sha256": "ef55be1f845002931219ae88320c4744651b322de6447340a573287179119427"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "frontend_definitions_2000",
+      "output_bytes": 2,
+      "checked": true,
+      "output_sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "decimal_input_4000d_x100",
+      "output_bytes": 4117,
+      "checked": true,
+      "output_sha256": "37acd5e7fe7fdcaf548bf8216d62bc5a13b0178e26ec0b200bdb74acdec077f4"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "decimal_output_200d_x1000",
+      "output_bytes": 205000,
+      "checked": true,
+      "output_sha256": "e51f3a543488d55dab07cccd12db7dff25dc77b0b2760d59967ad5968863d54d"
+    },
+    {
+      "implementation": "owner-tag",
+      "workload": "streaming_statements_20000",
+      "output_bytes": 108894,
+      "checked": true,
+      "output_sha256": "f6351f5ead9a700e34275480b3856ea738122a7c57bdeb744a631251c069587a"
+    }
+  ]
+}
