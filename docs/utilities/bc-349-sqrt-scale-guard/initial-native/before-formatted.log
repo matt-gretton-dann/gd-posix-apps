@@ -1,0 +1,136 @@
+Filters: [sqrt-guard-boundary]
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+test-libbc is a Catch v2.13.7 host application.
+Run with -? for options
+
+-------------------------------------------------------------------------------
+Square root preserves representable scale at the guard boundary
+-------------------------------------------------------------------------------
+/private/tmp/gd-posix-sqrt-scale-guard/src/bc/test-number-sqrt.cc:73
+...............................................................................
+
+/private/tmp/gd-posix-sqrt-scale-guard/src/bc/test-number-sqrt.cc:90: FAILED:
+  CHECK( value.scale() == scale )
+with expansion:
+  0 == 253
+with message:
+  scale=253 radicand=2
+
+/private/tmp/gd-posix-sqrt-scale-guard/src/bc/test-number-sqrt.cc:97: FAILED:
+  CHECK( rendered == (radicand == 4 ? "2." + std::string(scale, '0') : sqrt_two.substr(0, scale + 2)) )
+with expansion:
+  "1"
+  ==
+  "1.
+  4142135623730950488016887242096980785696718753769480731766797379907324784621-
+  0703885038753432764157273501384623091229702492483605585073721264412149709993-
+  5831413222665927505592755799950501152782060571470109559971605970274534596862-
+  0147285174186408891986095"
+with message:
+  scale=253 radicand=2
+
+/private/tmp/gd-posix-sqrt-scale-guard/src/bc/test-number-sqrt.cc:90: FAILED:
+  CHECK( value.scale() == scale )
+with expansion:
+  0 == 253
+with message:
+  scale=253 radicand=4
+
+/private/tmp/gd-posix-sqrt-scale-guard/src/bc/test-number-sqrt.cc:97: FAILED:
+  CHECK( rendered == (radicand == 4 ? "2." + std::string(scale, '0') : sqrt_two.substr(0, scale + 2)) )
+with expansion:
+  "2"
+  ==
+  "2.
+  0000000000000000000000000000000000000000000000000000000000000000000000000000-
+  0000000000000000000000000000000000000000000000000000000000000000000000000000-
+  0000000000000000000000000000000000000000000000000000000000000000000000000000-
+  0000000000000000000000000"
+with message:
+  scale=253 radicand=4
+
+/private/tmp/gd-posix-sqrt-scale-guard/src/bc/test-number-sqrt.cc:90: FAILED:
+  CHECK( value.scale() == scale )
+with expansion:
+  1 == 254
+with message:
+  scale=254 radicand=2
+
+/private/tmp/gd-posix-sqrt-scale-guard/src/bc/test-number-sqrt.cc:97: FAILED:
+  CHECK( rendered == (radicand == 4 ? "2." + std::string(scale, '0') : sqrt_two.substr(0, scale + 2)) )
+with expansion:
+  "1.4"
+  ==
+  "1.
+  4142135623730950488016887242096980785696718753769480731766797379907324784621-
+  0703885038753432764157273501384623091229702492483605585073721264412149709993-
+  5831413222665927505592755799950501152782060571470109559971605970274534596862-
+  01472851741864088919860955"
+with message:
+  scale=254 radicand=2
+
+/private/tmp/gd-posix-sqrt-scale-guard/src/bc/test-number-sqrt.cc:90: FAILED:
+  CHECK( value.scale() == scale )
+with expansion:
+  1 == 254
+with message:
+  scale=254 radicand=4
+
+/private/tmp/gd-posix-sqrt-scale-guard/src/bc/test-number-sqrt.cc:97: FAILED:
+  CHECK( rendered == (radicand == 4 ? "2." + std::string(scale, '0') : sqrt_two.substr(0, scale + 2)) )
+with expansion:
+  "2.0"
+  ==
+  "2.
+  0000000000000000000000000000000000000000000000000000000000000000000000000000-
+  0000000000000000000000000000000000000000000000000000000000000000000000000000-
+  0000000000000000000000000000000000000000000000000000000000000000000000000000-
+  00000000000000000000000000"
+with message:
+  scale=254 radicand=4
+
+/private/tmp/gd-posix-sqrt-scale-guard/src/bc/test-number-sqrt.cc:90: FAILED:
+  CHECK( value.scale() == scale )
+with expansion:
+  2 == 255
+with message:
+  scale=255 radicand=2
+
+/private/tmp/gd-posix-sqrt-scale-guard/src/bc/test-number-sqrt.cc:97: FAILED:
+  CHECK( rendered == (radicand == 4 ? "2." + std::string(scale, '0') : sqrt_two.substr(0, scale + 2)) )
+with expansion:
+  "1.41"
+  ==
+  "1.
+  4142135623730950488016887242096980785696718753769480731766797379907324784621-
+  0703885038753432764157273501384623091229702492483605585073721264412149709993-
+  5831413222665927505592755799950501152782060571470109559971605970274534596862-
+  014728517418640889198609552"
+with message:
+  scale=255 radicand=2
+
+/private/tmp/gd-posix-sqrt-scale-guard/src/bc/test-number-sqrt.cc:90: FAILED:
+  CHECK( value.scale() == scale )
+with expansion:
+  2 == 255
+with message:
+  scale=255 radicand=4
+
+/private/tmp/gd-posix-sqrt-scale-guard/src/bc/test-number-sqrt.cc:97: FAILED:
+  CHECK( rendered == (radicand == 4 ? "2." + std::string(scale, '0') : sqrt_two.substr(0, scale + 2)) )
+with expansion:
+  "2.00"
+  ==
+  "2.
+  0000000000000000000000000000000000000000000000000000000000000000000000000000-
+  0000000000000000000000000000000000000000000000000000000000000000000000000000-
+  0000000000000000000000000000000000000000000000000000000000000000000000000000-
+  000000000000000000000000000"
+with message:
+  scale=255 radicand=4
+
+===============================================================================
+test cases:  1 |  0 passed |  1 failed
+assertions: 32 | 20 passed | 12 failed
+
