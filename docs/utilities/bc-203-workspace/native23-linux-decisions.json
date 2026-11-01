@@ -1,0 +1,865 @@
+{
+  "advisory": true,
+  "pending": [
+    "POSIX math library #217",
+    "cross-run A/A calibration and autocorrelation policy"
+  ],
+  "policy": "5% is provisional; no performance failure gate; startup uncalibrated",
+  "results": [
+    {
+      "candidate_over_howard": null,
+      "comparison": "aa",
+      "confirmation": null,
+      "name": "startup",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.8800244231709766,
+          1.1366235966865372
+        ],
+        "median_paired_ratio": 0.9836852012441072,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 0.9060839367782034
+      },
+      "status": "inconclusive-noisy"
+    },
+    {
+      "candidate_over_howard": null,
+      "comparison": "aa",
+      "confirmation": null,
+      "name": "loop_1000000",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9959775797056364,
+          1.1391990652644008
+        ],
+        "median_paired_ratio": 1.089929883555721,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 1.1044496495248102
+      },
+      "status": "inconclusive-noisy"
+    },
+    {
+      "candidate_over_howard": null,
+      "comparison": "aa",
+      "confirmation": null,
+      "name": "calls_200000",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.996571437178166,
+          1.0052556155889214
+        ],
+        "median_paired_ratio": 1.0003238963549617,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 1.000749574821055
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": null,
+      "comparison": "aa",
+      "confirmation": null,
+      "name": "array_200000",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9738760427312445,
+          1.0287340157950593
+        ],
+        "median_paired_ratio": 1.018099527142052,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 1.006323374134766
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": null,
+      "comparison": "aa",
+      "confirmation": null,
+      "name": "compare_high_1000d_x100000",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9894273784666587,
+          1.0066664441067519
+        ],
+        "median_paired_ratio": 0.998614893448693,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 0.9967026638830783
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": null,
+      "comparison": "aa",
+      "confirmation": null,
+      "name": "compare_low_1000d_x100000",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9907197824341,
+          1.0075628420643055
+        ],
+        "median_paired_ratio": 0.9984240222563637,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 0.9951908548136329
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": null,
+      "comparison": "aa",
+      "confirmation": null,
+      "name": "compare_equal_1000d_x100000",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9967046921666007,
+          1.0071913019340901
+        ],
+        "median_paired_ratio": 1.0029366870224838,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 1.0016683615033162
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": null,
+      "comparison": "aa",
+      "confirmation": null,
+      "name": "fibonacci_1000_x100",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9590892489608177,
+          1.0121631882682858
+        ],
+        "median_paired_ratio": 1.0007075316242862,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 0.999731017897692
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": null,
+      "comparison": "aa",
+      "confirmation": null,
+      "name": "multiply_100d_x100000",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9910911666343276,
+          1.0049189897923743
+        ],
+        "median_paired_ratio": 0.9975262909279274,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 1.0007644544325212
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": null,
+      "comparison": "aa",
+      "confirmation": null,
+      "name": "multiply_10000d_x1000",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9938297495206347,
+          1.0789378996979468
+        ],
+        "median_paired_ratio": 1.0035454962052954,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 1.0040549582152294
+      },
+      "status": "inconclusive-noisy"
+    },
+    {
+      "candidate_over_howard": null,
+      "comparison": "aa",
+      "confirmation": null,
+      "name": "sqrt_scale100_x5000",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9917722014827983,
+          1.0201562092576015
+        ],
+        "median_paired_ratio": 1.002738523702195,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 1.0047604106019525
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": null,
+      "comparison": "aa",
+      "confirmation": null,
+      "name": "multiply_dense_10000d_x500",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9925072483231462,
+          1.0054746386511082
+        ],
+        "median_paired_ratio": 1.0004158370705731,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 1.0024801050279637
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": null,
+      "comparison": "aa",
+      "confirmation": null,
+      "name": "multiply_unbalanced_10000d_100d_x2000",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9909888975027116,
+          1.0077012989405785
+        ],
+        "median_paired_ratio": 1.0017610508951926,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 0.9996928674953317
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": null,
+      "comparison": "aa",
+      "confirmation": null,
+      "name": "multiply_sparse_10000d_x1000",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9976568771145871,
+          1.0099057660900026
+        ],
+        "median_paired_ratio": 1.0010129405970305,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 1.0007034421988574
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": null,
+      "comparison": "aa",
+      "confirmation": null,
+      "name": "divide_multilimb_900d_450d_s100_x1000",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9669982402314525,
+          1.0107318516031085
+        ],
+        "median_paired_ratio": 0.9769432126632229,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 0.980519357733816
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": null,
+      "comparison": "aa",
+      "confirmation": null,
+      "name": "power_100d_e17_x1000",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9948963849031924,
+          1.0034478056551033
+        ],
+        "median_paired_ratio": 0.999019823427718,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 0.9979849598152033
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": null,
+      "comparison": "aa",
+      "confirmation": null,
+      "name": "sparse_array_200000",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9863475816092405,
+          1.0095223079186646
+        ],
+        "median_paired_ratio": 1.002311247087987,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 0.9953867052325365
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": null,
+      "comparison": "aa",
+      "confirmation": null,
+      "name": "decimal_input_4000d_x100",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9890321950264694,
+          1.0005495019308053
+        ],
+        "median_paired_ratio": 0.9996185736577757,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 0.9998848888231443
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": null,
+      "comparison": "aa",
+      "confirmation": null,
+      "name": "streaming_statements_20000",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9876731323512966,
+          1.006814632750849
+        ],
+        "median_paired_ratio": 0.998657152213111,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 1.0010354646606645
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": {
+        "ci95": [
+          1.6375916185348205,
+          1.9082037871919082
+        ],
+        "median_paired_ratio": 1.7449091808237047,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 1.7538571733252604
+      },
+      "comparison": "paired",
+      "confirmation": null,
+      "name": "startup",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9290860405860225,
+          1.1174793088996373
+        ],
+        "median_paired_ratio": 1.0003563424482178,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 1.0205624194222847
+      },
+      "status": "inconclusive-noisy"
+    },
+    {
+      "candidate_over_howard": {
+        "ci95": [
+          2.0803208368846695,
+          2.1114975082743026
+        ],
+        "median_paired_ratio": 2.0912917557143023,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 2.089898620632056
+      },
+      "comparison": "paired",
+      "confirmation": null,
+      "name": "loop_1000000",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.8989531191367821,
+          0.9861317068251226
+        ],
+        "median_paired_ratio": 0.9813332150945987,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 0.9809148497413959
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": {
+        "ci95": [
+          2.1016534062298797,
+          2.119783231129976
+        ],
+        "median_paired_ratio": 2.106150167936303,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 2.106150167936303
+      },
+      "comparison": "paired",
+      "confirmation": null,
+      "name": "calls_200000",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9416711085329206,
+          0.9494579253573094
+        ],
+        "median_paired_ratio": 0.9465616240691949,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 0.9466834966728949
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": {
+        "ci95": [
+          2.4663039287424886,
+          2.5452645078533935
+        ],
+        "median_paired_ratio": 2.4932242698595037,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 2.4865045370687477
+      },
+      "comparison": "paired",
+      "confirmation": null,
+      "name": "array_200000",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9915203948717737,
+          1.0265556656613954
+        ],
+        "median_paired_ratio": 1.0068036832502258,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 1.0035624968924644
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": {
+        "ci95": [
+          2.1220067235949687,
+          2.149536211078407
+        ],
+        "median_paired_ratio": 2.1255970112846536,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 2.1424272225066305
+      },
+      "comparison": "paired",
+      "confirmation": null,
+      "name": "compare_high_1000d_x100000",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9706515238258654,
+          0.9789648823516417
+        ],
+        "median_paired_ratio": 0.9767143153181178,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 0.9787766280222341
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": {
+        "ci95": [
+          2.0718379782340146,
+          2.0931644958230615
+        ],
+        "median_paired_ratio": 2.0819340887593962,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 2.0807932799878013
+      },
+      "comparison": "paired",
+      "confirmation": null,
+      "name": "compare_low_1000d_x100000",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9665622780564692,
+          0.9781013079289615
+        ],
+        "median_paired_ratio": 0.9738148713257794,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 0.9723204424435753
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": {
+        "ci95": [
+          2.068954960990847,
+          2.1022019951740374
+        ],
+        "median_paired_ratio": 2.07957152610405,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 2.0845379007050617
+      },
+      "comparison": "paired",
+      "confirmation": null,
+      "name": "compare_equal_1000d_x100000",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9861017990635195,
+          0.9959762113683557
+        ],
+        "median_paired_ratio": 0.9889580060358184,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 0.9897386660495796
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": {
+        "ci95": [
+          1.222992431275042,
+          1.2514156611432323
+        ],
+        "median_paired_ratio": 1.239598057152291,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 1.2376803841818476
+      },
+      "comparison": "paired",
+      "confirmation": null,
+      "name": "fibonacci_1000_x100",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9758598211781756,
+          1.0068098614164074
+        ],
+        "median_paired_ratio": 0.9872328492291541,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 0.9839345755300012
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": {
+        "ci95": [
+          1.1489086854309292,
+          1.1585058246865743
+        ],
+        "median_paired_ratio": 1.153527733238245,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 1.1534562541500428
+      },
+      "comparison": "paired",
+      "confirmation": null,
+      "name": "multiply_100d_x100000",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9718106830756705,
+          0.9845086718955287
+        ],
+        "median_paired_ratio": 0.978259306308483,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 0.9785181527272604
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": {
+        "ci95": [
+          7.051730523324514,
+          7.426972172646789
+        ],
+        "median_paired_ratio": 7.355409709940772,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 7.381416956674583
+      },
+      "comparison": "paired",
+      "confirmation": null,
+      "name": "multiply_10000d_x1000",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.8929226687015922,
+          0.9454829262337022
+        ],
+        "median_paired_ratio": 0.8999114999220993,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 0.8970124471146461
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": {
+        "ci95": [
+          0.5953488841388634,
+          0.6038394436837712
+        ],
+        "median_paired_ratio": 0.5990706304839568,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 0.5990880075970572
+      },
+      "comparison": "paired",
+      "confirmation": null,
+      "name": "sqrt_scale100_x5000",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9781397610532644,
+          0.9963974786525699
+        ],
+        "median_paired_ratio": 0.9891592541018743,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 0.9912262646050144
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": {
+        "ci95": [
+          0.8627222807150537,
+          0.8822909578626745
+        ],
+        "median_paired_ratio": 0.8783664023031647,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 0.8777882546459947
+      },
+      "comparison": "paired",
+      "confirmation": null,
+      "name": "multiply_dense_10000d_x500",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.7962592581756113,
+          0.8461222616484317
+        ],
+        "median_paired_ratio": 0.8442233183135845,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 0.8438488312629796
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": {
+        "ci95": [
+          1.2152081336027747,
+          1.3060016417245859
+        ],
+        "median_paired_ratio": 1.278406778205545,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 1.273955321118713
+      },
+      "comparison": "paired",
+      "confirmation": null,
+      "name": "multiply_unbalanced_10000d_100d_x2000",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9808667912200832,
+          1.0013255930706333
+        ],
+        "median_paired_ratio": 0.9968549069520113,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 0.9966935300395375
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": {
+        "ci95": [
+          3.288667264422217,
+          3.3765310607623666
+        ],
+        "median_paired_ratio": 3.350815293276123,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 3.337906878835561
+      },
+      "comparison": "paired",
+      "confirmation": null,
+      "name": "multiply_sparse_10000d_x1000",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.3545906208081092,
+          0.36993230883683453
+        ],
+        "median_paired_ratio": 0.3684938780138962,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 0.36841960615673003
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": {
+        "ci95": [
+          0.7790716117346295,
+          0.822552019172818
+        ],
+        "median_paired_ratio": 0.8004114170852549,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 0.8119159073794884
+      },
+      "comparison": "paired",
+      "confirmation": null,
+      "name": "divide_multilimb_900d_450d_s100_x1000",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9948198087656968,
+          1.0713449560698767
+        ],
+        "median_paired_ratio": 1.0573402153300466,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 1.0401623297922573
+      },
+      "status": "inconclusive-noisy"
+    },
+    {
+      "candidate_over_howard": {
+        "ci95": [
+          1.8124798144961027,
+          1.9469776643319883
+        ],
+        "median_paired_ratio": 1.8195050040944427,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 1.816894567313671
+      },
+      "comparison": "paired",
+      "confirmation": null,
+      "name": "power_100d_e17_x1000",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9743384625301227,
+          1.0052126921435114
+        ],
+        "median_paired_ratio": 1.0018619023734656,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 0.999571974317851
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": {
+        "ci95": [
+          1.6800199860688978,
+          1.7221071877605683
+        ],
+        "median_paired_ratio": 1.6886935939606724,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 1.6872379293477557
+      },
+      "comparison": "paired",
+      "confirmation": null,
+      "name": "sparse_array_200000",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9276533895272373,
+          0.9611574762280775
+        ],
+        "median_paired_ratio": 0.9566643576642794,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 0.9566643576642794
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": {
+        "ci95": [
+          65.16378205737965,
+          69.57009424448499
+        ],
+        "median_paired_ratio": 66.1369945940648,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 65.56994964468245
+      },
+      "comparison": "paired",
+      "confirmation": null,
+      "name": "decimal_input_4000d_x100",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9962184402790404,
+          1.0027376595930941
+        ],
+        "median_paired_ratio": 0.9972016103073705,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 0.9975152631881825
+      },
+      "status": "pass"
+    },
+    {
+      "candidate_over_howard": {
+        "ci95": [
+          2.5454060977212416,
+          2.5958092295140625
+        ],
+        "median_paired_ratio": 2.578155922929186,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 2.6021054402732466
+      },
+      "comparison": "paired",
+      "confirmation": null,
+      "name": "streaming_statements_20000",
+      "preset": "full",
+      "ratio": {
+        "ci95": [
+          0.9933362897481571,
+          1.0440041102474988
+        ],
+        "median_paired_ratio": 1.0224828440392528,
+        "method": "paired percentile bootstrap of median ratios",
+        "pairs": 9,
+        "ratio_of_medians": 1.0343950773498853
+      },
+      "status": "pass"
+    }
+  ]
+}

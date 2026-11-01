@@ -1,7 +1,7 @@
 name: bc native paired trends
 on:
   pull_request:
-    branches: [main]
+    branches: [main, 'codex/**']
     paths: ['src/**', 'libgdsup/**', 'CMakeLists.txt', 'cmake/**', '.github/workflows/bc-performance.yml']
   push:
     branches: [main]

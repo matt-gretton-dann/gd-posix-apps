@@ -171,3 +171,28 @@ ordinary policy; arithmetic and generic portability are unchanged. The
 [Microsoft declaration documentation](https://learn.microsoft.com/en-us/cpp/cpp/noinline)
 explains this compiler control. Fresh native validation must establish its
 cost before acceptance; no global optimization flag is weakened.
+
+
+## MSVC boundary result (native run 23)
+
+Source `5e23d646393051f3e22a957495fab69473a01f64` passes all six build/test
+jobs, CodeQL and native run 23. Every OS passes 950 output checks, with no
+confirmed regression in paired or A/A reports. The Windows division ratio is
+0.983 [0.870, 1.020], clearing the earlier run-21 signal; small sqrt is 0.994
+with a wide interval and remains inconclusive. Linux division 1.057
+[0.995, 1.071] and macOS division 0.950 [0.727, 1.085] are also inconclusive,
+not evidence of a universal no-regression bound. Large-product gains persist.
+
+This supports retaining the targeted MSVC compilation boundary. It does not
+prove why the original integration changed performance: the runs use separate
+hosted VMs, and the compiler/caller explanation remains a hypothesis. Earlier
+losing observations are retained, and this is not an unlimited rerun policy.
+The attribute experiment changes code generation only on MSVC-family compilers;
+other compilers preserve their normal policy and all arithmetic is unchanged.
+
+Native23 decisions, complete class summaries, paired manifests with compiler/
+host metadata, orchestration and verified artifact hashes are archived here.
+The measured source identity remains 5e23d64 after this evidence-only update.
+The workspace and compilation-boundary stage is ready for green latest-head
+merge. Dedicated squares, asymmetric dispatch, tuning and stable defaults still
+belong to the remaining #203 work.

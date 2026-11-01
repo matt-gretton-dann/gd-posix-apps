@@ -61,7 +61,8 @@ assertions), five diagnostic checks and all eight CLI/helper groups. Its
 performance comparison must use the workspace dependency as the exact baseline;
 earlier variant/legacy-multiplication data remain separately labeled.
 
-The stacked comparison baseline is workspace source
-`5e23d646393051f3e22a957495fab69473a01f64` (PR #316), with the same compiler,
-flags and fixed split point rebuilt alongside the candidate. Changing a PR's
-base does not relabel already collected experiments against older main sources.
+The local comparison baseline is workspace source
+`5e23d646393051f3e22a957495fab69473a01f64` (PR #316), rebuilt with the same
+compiler, flags and fixed split point. Its accepted main merge is `b8c2e79`;
+production C++/CMake is identical. PR #314 now targets main, retaining the
+original source labels rather than relabeling already collected experiments.
