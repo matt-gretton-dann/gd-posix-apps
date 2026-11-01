@@ -6,6 +6,7 @@ from fractions import Fraction
 import os
 import random
 import subprocess
+import sys
 import unittest
 
 
@@ -67,13 +68,13 @@ def output_base(value, base, places):
 
 
 class NumberOracle(unittest.TestCase):
-    def assert_program(self, cases):
+    def assert_program(self, cases, timeout=20):
         program = []
         for expression, places, _, _ in cases:
             program.extend(("scale=" + str(places), expression, "scale(" + expression + ")"))
         try:
             run = subprocess.run([BC], input="\n".join(program) + "\n", universal_newlines=True,
-                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=20,
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout,
                                  env=dict(os.environ, LC_ALL="C"))
         except subprocess.TimeoutExpired:
             self.fail("oracle batch timed out (seed {})".format(SEED))
@@ -225,6 +226,43 @@ class NumberOracle(unittest.TestCase):
                 self.assertGreater((expected + Fraction(1, 10 ** s)) ** 2, Fraction(a))
                 cases.append(("sqrt(" + a + ")", places, expected, s))
         self.assert_program(cases)
+
+
+    def test_large_square_roots(self):
+        # All decimal fixtures are bounded below 25,000 digits. Lift Python's
+        # optional conversion ceiling only within this test, then restore it.
+        get_limit = getattr(sys, "get_int_max_str_digits", lambda: 0)
+        set_limit = getattr(sys, "set_int_max_str_digits", lambda value: None)
+        previous_limit = get_limit()
+        if previous_limit:
+            set_limit(max(previous_limit, 25000))
+        try:
+            inputs = [("2", places) for places in (5000, 10000)]
+            inputs += [("4", places) for places in (5000, 10000)]
+            square = (10 ** 100 + 37) ** 2
+            inputs += [(str(square + offset), 100) for offset in (-1, 0, 1)]
+            # Input scale exceeds the requested scale; a tiny perfect square
+            # also exercises the initial estimate far below one.
+            inputs += [("." + "0" * 1023 + "4", 0),
+                       ("0." + "0" * 127 + "2", 20),
+                       ("0.0000", 10000)]
+            cases = []
+            for text, places in inputs:
+                value = Fraction(text)
+                result_scale = max(places, scale(text))
+                unit = Fraction(1, 10 ** result_scale)
+                scaled = value * 10 ** (2 * result_scale)
+                root = integer_sqrt(scaled.numerator // scaled.denominator)
+                expected = root * unit
+                # Exact inequalities establish the required decimal floor,
+                # independently of bc arithmetic or a floating-point library.
+                self.assertLessEqual(expected * expected, value)
+                self.assertGreater((expected + unit) ** 2, value)
+                cases.append(("sqrt(" + text + ")", places, expected, result_scale))
+            self.assert_program(cases, timeout=60)
+        finally:
+            if previous_limit:
+                set_limit(previous_limit)
 
 
 if __name__ == "__main__":
