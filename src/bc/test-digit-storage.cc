@@ -33,7 +33,7 @@ TEMPLATE_TEST_CASE("Digit storage preserves inline values and heap snapshots",
   REQUIRE(value.has_heap());
   CHECK_FALSE(inline_copy.has_heap());
   auto shared = value;
-  CHECK(value.use_count() == 2);
+  CHECK(value.use_count() == 1);  // Experimental eager-copy policy.
   shared = shared.clone();  // BasicDigits detaches at its mutation boundary.
   CHECK(value.use_count() == 1);
   CHECK(shared.use_count() == 1);
@@ -126,7 +126,7 @@ TEMPLATE_TEST_CASE("Digit storage assignment covers every active-member transiti
       CHECK(static_cast<bool>(target) == present);
       CHECK(target.has_heap() == heap);
       if (heap) {
-        CHECK(source.use_count() == 2);
+        CHECK(source.use_count() == 1);  // Experimental eager-copy policy.
       }
       auto const& alias = target;
       target = alias;

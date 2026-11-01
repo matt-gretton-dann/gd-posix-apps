@@ -1,5 +1,5 @@
 /** \file digit-storage.hh
- * Inline limbs with shared heap storage for larger numeric coefficients.
+ * EXPERIMENT ONLY: inline limbs with unique, eagerly copied heap storage.
  * SPDX-License-Identifier: Apache-2.0
  */
 #ifndef GD_BC_DIGIT_STORAGE_HH
@@ -23,8 +23,8 @@ namespace GD::Bc::Details {
 
 /** Contiguous coefficient storage, with explicit COW at the caller's boundary.
  *
- * Small copies own their inline values. Large copies share a vector until the
- * caller invokes clone(). Growth invalidates iterators like vector growth;
+ * Small copies own their inline values. Large copies eagerly clone the vector.
+ * This experimental policy retains the caller facade for value comparisons. Growth invalidates iterators like vector growth;
  * shrinking retains heap storage rather than unexpectedly relocating iterators.
  * Reset/assignment and a shared-small clone can return to inline storage.
  * This supplies only the vector operations used by BasicDigits, not a general
@@ -47,7 +47,7 @@ class DigitStorage
   // All members stay alive: no union, pointer tagging or explicit lifetime
   // management. A non-null owner selects heap storage. Its inline size is absent.
   static constexpr unsigned char absent_size = 255;
-  using Owner = std::shared_ptr<Heap>;
+  using Owner = std::unique_ptr<Heap>;
   Inline small_;
   Owner owner_;
 
@@ -97,7 +97,7 @@ class DigitStorage
     if (has_heap()) {
       return;
     }
-    auto owner = GD_BC_PROFILE_SHARED(Profile::AllocationKind::digits, Heap)();
+    auto owner = std::make_unique<Heap>();
     owner->reserve(capacity);
     auto const& value = small();
     owner->insert(owner->end(), value.limbs.begin(), value.limbs.begin() + value.size);
@@ -130,12 +130,13 @@ public:
       small().size = static_cast<unsigned char>(count);
     }
     else {
-      owner_ = GD_BC_PROFILE_SHARED(Profile::AllocationKind::digits, Heap)(first, last);
+      owner_ = std::make_unique<Heap>(first, last);
       small_.size = absent_size;
     }
   }
   DigitStorage(std::initializer_list<Limb> values) : DigitStorage(values.begin(), values.end()) {}
-  DigitStorage(DigitStorage const& other) noexcept : owner_(other.owner_)
+  DigitStorage(DigitStorage const& other)
+      : owner_(other.owner_ ? std::make_unique<Heap>(*other.owner_) : nullptr)
   {
     if (owner_) {
       small_.size = absent_size;
@@ -144,10 +145,12 @@ public:
       copy_inline(other);
     }
   }
-  auto operator=(DigitStorage const& other) noexcept -> DigitStorage&
+  auto operator=(DigitStorage const& other) -> DigitStorage&
   {
     if (this != &other) {
-      owner_ = other.owner_;
+      // Prepare a potentially throwing deep copy before changing this value.
+      auto copy = other.owner_ ? std::make_unique<Heap>(*other.owner_) : nullptr;
+      owner_ = std::move(copy);
       if (owner_) {
         small_.size = absent_size;
       }
@@ -201,7 +204,7 @@ public:
   }
   [[nodiscard]] auto use_count() const noexcept -> long
   {
-    return has_heap() ? (*heap()).use_count() : (static_cast<bool>(*this) ? 1L : 0L);
+    return static_cast<bool>(*this) ? 1L : 0L;
   }
   [[nodiscard]] auto clone() const -> DigitStorage { return DigitStorage(begin(), end()); }
   [[nodiscard]] auto size() const noexcept -> size_type

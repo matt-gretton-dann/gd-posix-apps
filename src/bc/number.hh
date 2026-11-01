@@ -197,8 +197,8 @@ public:
 
   ~BasicDigits() = default;
 #if GD_BC_PROFILE
-  BasicDigits(BasicDigits const& other) noexcept : digits_(other.digits_) { record_copy(); }
-  auto operator=(BasicDigits const& other) noexcept -> BasicDigits&
+  BasicDigits(BasicDigits const& other) : digits_(other.digits_) { record_copy(); }
+  auto operator=(BasicDigits const& other) -> BasicDigits&
   {
     digits_ = other.digits_;
     record_copy();
