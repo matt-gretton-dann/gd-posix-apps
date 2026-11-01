@@ -98,3 +98,22 @@ cold library loading and the identical-source Howard comparison are pending
 #217 and must be added before closing #216. Cross-run calibration and all three
 native artifact results must also be reviewed. A dedicated stable runner may be
 needed to distinguish small changes reliably.
+
+## Nondecimal output coverage
+
+The corpus adds separate `binary_output` and `octal_output` groups, each printing
+a dense 1000-decimal-digit integer 300 times in full mode. Quick and held-out
+presets vary dimensions/iterations normally. Python integer formatting supplies
+expected digits; an independent test decodes each oracle back to the original
+source integer. Both groups enter every representative PR subset through the
+same per-group selection rule. This makes native runs exercise whole-number
+radix conversion, rather than inferring it from decimal output or local-only
+component timings. Output capture, continuation joining, status, stderr and
+deadline checks remain active.
+
+These cases are appended after the existing corpus; earlier programs, oracles
+and seeded operands retain their identities. Full corpus size grows from 40 to
+42. Historical reports keep their original corpus sizes and source revisions.
+Binary/octal digits fit the existing numeric-output validator; hexadecimal
+letters are covered by all-platform arithmetic tests and separate component
+oracles, and are not silently added to that validator's contract.

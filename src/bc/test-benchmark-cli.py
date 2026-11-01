@@ -126,7 +126,7 @@ class BenchmarkCli(unittest.TestCase):
         self.assertEqual(result.stderr, "")
         rows = [json.loads(line) for line in
                 (output / "samples.jsonl").read_text(encoding="utf-8").splitlines()]
-        self.assertEqual(len(rows), 40)
+        self.assertEqual(len(rows), 42)
         self.assertTrue(all(row["checked"] for row in rows))
 
     def check_failure(self, mode, diagnostic, timeout=3):
