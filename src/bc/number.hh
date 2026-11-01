@@ -2104,6 +2104,11 @@ public:
     }
   }
 
+  // Keep this large operation outside MSVC's VM-dispatch inlining budget.
+  // Other compilers retain their ordinary policy and the same checked algorithm.
+#if defined(_MSC_VER)
+  __declspec(noinline)
+#endif
   void sqrt(NumType target_scale)
   {
     /* Scale we want to end up at.  */

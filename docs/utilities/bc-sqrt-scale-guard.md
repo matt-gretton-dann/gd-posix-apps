@@ -27,3 +27,13 @@ This preserves the generic fallback without adding an arbitrary scale limit.
 Native maximum-scale allocations are not attempted; broader implementation-limit
 policy remains #186. Precision growth and better initial estimates remain #212
 experiments, separately measured after this correctness prerequisite.
+
+## Native compiler-policy evaluation
+
+The [initial native candidate](bc-349-sqrt-scale-guard/initial-native/README.md)
+passes correctness and ordinary checks but is held: Windows confirms an equal-
+comparison slowdown, even though that workload does not execute sqrt. An inlining
+or layout interaction is a hypothesis, not an established instruction-level cause.
+The next source gives MSVC a noinline boundary around the large sqrt operation;
+other compilers retain their ordinary policy. Fresh exact-source native evaluation
+is required before adoption, and the initial losing interval remains unchanged.
