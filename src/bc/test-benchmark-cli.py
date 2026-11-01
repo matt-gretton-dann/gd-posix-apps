@@ -126,7 +126,7 @@ class BenchmarkCli(unittest.TestCase):
         self.assertEqual(result.stderr, "")
         rows = [json.loads(line) for line in
                 (output / "samples.jsonl").read_text(encoding="utf-8").splitlines()]
-        self.assertEqual(len(rows), 44)
+        self.assertEqual(len(rows), 45)
         self.assertTrue(all(row["checked"] for row in rows))
 
     def check_failure(self, mode, diagnostic, timeout=3):
@@ -237,6 +237,18 @@ class PairedStatistics(unittest.TestCase):
                 self.assertIn('ibase=A\n', case['program'])
                 if preset != 'quick':
                     self.assertGreaterEqual(len(literals[0]), 65536)
+
+    def test_temporary_chain_has_an_independent_integer_oracle(self):
+        for preset in ('full', 'holdout', 'quick'):
+            selected = [c for c in self.module().corpus(preset)
+                        if c['group'] == 'temporary_chain']
+            self.assertEqual(len(selected), 1)
+            case = selected[0]
+            literal = re.search(r'^a=([0-9]+)$', case['program'], re.MULTILINE).group(1)
+            self.assertEqual(len(literal), case['parameters']['digits'])
+            self.assertEqual(case['parameters']['terms'], 8)
+            self.assertEqual(case['expected'], [str(8 * int(literal))])
+            self.assertIn('i<{}'.format(case['parameters']['iterations']), case['program'])
 
     def test_holdout_shapes_are_separate_and_replayable(self):
         module = self.module()
