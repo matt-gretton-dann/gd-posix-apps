@@ -99,3 +99,30 @@ TEST_CASE("Sparse high writes do not materialize their index range",
   CHECK(stats().live_bytes == before.live_bytes);
 }
 #endif
+
+TEMPLATE_TEST_CASE("Hybrid arrays preserve each numeric index width",
+                   "[bc][vm][arrays][array-storage]", GD::Bc::NumberTraits8, GD::Bc::NumberTraits16,
+                   GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  using Index = typename Number::NumType;
+  GD::Bc::Details::HybridArrayStorage<Number> values;
+  Index const high = TestType::base_ - 1;
+  values.insert_or_assign(high, Number(Index(0)));
+  for (unsigned i = 0; i < 32; ++i) {
+    values.insert_or_assign(Index(i), Number(Index(i % 7)));
+  }
+  for (unsigned i = 0; i < 32; ++i) {
+    REQUIRE(values.lookup(Index(i)) != nullptr);
+    CHECK(*values.lookup(Index(i)) == Number(Index(i % 7)));
+  }
+  CHECK(values.size() == 33);
+  CHECK(values.length() == TestType::base_);
+  values.insert_or_assign(high, Number(Index(1)));
+  CHECK(values.size() == 33);
+  CHECK(*values.lookup(high) == Number(Index(1)));
+  auto snapshot = values;
+  values.insert_or_assign(Index(0), Number(Index(7)));
+  CHECK(*snapshot.lookup(Index(0)) == Number(Index(0)));
+  CHECK(*values.lookup(Index(0)) == Number(Index(7)));
+}
