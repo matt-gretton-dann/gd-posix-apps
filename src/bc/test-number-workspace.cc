@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "bc.hh"
+#include "limb-product.hh"
 
 namespace {
 // This oracle uses decimal characters, not the implementation's limb radix,
@@ -35,6 +36,49 @@ auto decimal_product(std::string const& left, std::string const& right) -> std::
     result += static_cast<char>('0' + *it);
   }
   return result;
+}
+
+TEMPLATE_TEST_CASE("Recursive workspace stays within planned buffers",
+                   "[bc][number][multiply][workspace]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Limb = typename TestType::NumType;
+  using Kernel = GD::Bc::Details::LimbProduct<TestType>;
+  auto decimal = [](std::span<Limb const> value) {
+    std::string result;
+    for (auto it = value.rbegin(); it != value.rend(); ++it) {
+      auto const part = std::to_string(*it);
+      result.append(TestType::base_log10_ - part.size(), '0');
+      result += part;
+    }
+    auto const first = result.find_first_not_of('0');
+    return first == std::string::npos ? std::string("0") : result.substr(first);
+  };
+  auto const guard = static_cast<Limb>(TestType::base_ - 1);
+  for (std::size_t count : {4U, 5U, 7U, 13U, 32U, 63U}) {
+    for (std::size_t shorter : {count, count / 2 + 1, count / 3}) {
+      for (unsigned leading_zero : {0U, 1U}) {
+        std::vector<Limb> a(count, guard);
+        std::vector<Limb> b(shorter, guard);
+        if (leading_zero != 0) {
+          // The planner sees the original extents. Trimming can change both
+          // the recursive shape and whether a schoolbook fallback is selected.
+          std::fill(b.begin() + static_cast<std::ptrdiff_t>(shorter / 2), b.end(), Limb{0});
+        }
+        auto const size = Kernel::workspace_size(count, 1);
+        std::vector<Limb> scratch(size + 2, guard);
+        std::vector<Limb> output(a.size() + b.size() + 2, Limb{0});
+        output.front() = output.back() = guard;
+        auto const product = std::span<Limb>(output).subspan(1, a.size() + b.size());
+        Kernel::multiply(a, b, product, std::span<Limb>(scratch).subspan(1, size), 1);
+        CHECK(decimal(product) == decimal_product(decimal(a), decimal(b)));
+        CHECK(output.front() == guard);
+        CHECK(output.back() == guard);
+        CHECK(scratch.front() == guard);
+        CHECK(scratch.back() == guard);
+      }
+    }
+  }
 }
 }  // namespace
 

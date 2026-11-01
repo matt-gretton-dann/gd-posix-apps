@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "bc.hh"
+#include "limb-product.hh"
 
 namespace GD::Bc {
 
@@ -1126,7 +1127,7 @@ private:
         std::distance(rhs_begin, rhs_end) <= multiply_split_point_) {
       return multiply_basic(lhs_begin, lhs_end, rhs_begin, rhs_end);
     }
-    return multiply_karatsuba(lhs_begin, lhs_end, rhs_begin, rhs_end);
+    return multiply_workspace(lhs_begin, lhs_end, rhs_begin, rhs_end);
   }
 
   static auto multiply_basic(typename DigitVector::const_iterator lhs_begin,
@@ -1185,78 +1186,29 @@ private:
     return result;
   }
 
-  static auto multiply_karatsuba(typename DigitVector::const_iterator lhs_begin,
-                                 typename DigitVector::const_iterator lhs_end,
-                                 typename DigitVector::const_iterator rhs_begin,
-                                 typename DigitVector::const_iterator rhs_end) -> BasicDigits
+  static auto multiply_workspace(typename DigitVector::const_iterator lhs_begin,
+                                  typename DigitVector::const_iterator lhs_end,
+                                  typename DigitVector::const_iterator rhs_begin,
+                                  typename DigitVector::const_iterator rhs_end) -> BasicDigits
   {
-    GD_BC_PROFILE_EVENT(Profile::Event::karatsuba_multiply_calls, 1);
-    assert(std::distance(lhs_begin, lhs_end) > multiply_split_point_);  // NOLINT
-    assert(std::distance(lhs_begin, lhs_end) > multiply_split_point_);  // NOLINT
-
-    auto const lhs_size = std::distance(lhs_begin, lhs_end);
-    auto const rhs_size = std::distance(rhs_begin, rhs_end);
-    auto half_size = std::min(lhs_size, rhs_size) / 2;
-    half_size = std::max(half_size, decltype(half_size){1});
-
-    auto const lhs_mid = lhs_begin + std::min(half_size, lhs_size);
-    auto const rhs_mid = rhs_begin + std::min(half_size, rhs_size);
-
-    BasicDigits const z0 = multiply(lhs_begin, lhs_mid, rhs_begin, rhs_mid);
-    BasicDigits const z2 = multiply(lhs_mid, lhs_end, rhs_mid, rhs_end);
-
-    // NOLINTNEXTLINE(readability-suspicious-call-argument)
-    BasicDigits const z1lhs_sum = add(lhs_begin, lhs_mid, lhs_mid, lhs_end);
-    // NOLINTNEXTLINE(readability-suspicious-call-argument)
-    BasicDigits const z1rhs_sum = add(rhs_begin, rhs_mid, rhs_mid, rhs_end);
-    auto const z1lhs_sum_begin = z1lhs_sum.digits_->begin();
-    auto const z1rhs_sum_begin = z1rhs_sum.digits_->begin();
-    auto const z1lhs_sum_end = z1lhs_sum.digits_->end();
-    auto const z1rhs_sum_end = z1rhs_sum.digits_->end();
-    BasicDigits z1 = multiply(z1lhs_sum_begin, z1lhs_sum_end, z1rhs_sum_begin, z1rhs_sum_end);
-    z1.sub(z0, 0);
-    z1.sub(z2, 0);
-
+    auto const lhs_size = static_cast<std::size_t>(lhs_end - lhs_begin);
+    auto const rhs_size = static_cast<std::size_t>(rhs_end - rhs_begin);
+    if (lhs_size > std::numeric_limits<std::size_t>::max() - rhs_size) {
+      throw std::length_error("bc multiplication result too large");
+    }
+    auto const point = static_cast<std::size_t>(multiply_split_point_);
+    using Kernel = LimbProduct<Traits>;
+    // Allocate output and scratch once. Recursive products only borrow spans;
+    // no owner escapes and no generic decimal rescaling is used to recombine.
     BasicDigits result;
     result.copy_on_write();
-    result.digits_->resize(lhs_size + rhs_size + 2);
-    result.add(z0, 0);
-    result.add(z1, static_cast<NumType>(half_size * base_log10_));
-    result.add(z2, static_cast<NumType>(half_size * 2 * base_log10_));
-    result.tidy();
-
-    return result;
-  }
-
-  static auto add(typename DigitVector::const_iterator lhs_begin,
-                  typename DigitVector::const_iterator lhs_end,
-                  typename DigitVector::const_iterator rhs_begin,
-                  typename DigitVector::const_iterator rhs_end) -> BasicDigits
-  {
-    BasicDigits result;
-    result.copy_on_write();
-    result.digits_->resize(
-      std::max(std::distance(lhs_begin, lhs_end), std::distance(rhs_begin, rhs_end)) + 1, 0);
-    auto result_insert = result.digits_->begin();
-
-    WideType carry = 0;
-    while (lhs_begin != lhs_end && rhs_begin != rhs_end) {
-      carry += *lhs_begin++ + *rhs_begin++;
-      *result_insert++ = static_cast<NumType>(carry % base_);
-      carry /= base_;
-    }
-    while (lhs_begin != lhs_end) {
-      carry += *lhs_begin++;
-      *result_insert++ = static_cast<NumType>(carry % base_);
-      carry /= base_;
-    }
-    while (rhs_begin != rhs_end) {
-      carry += *rhs_begin++;
-      *result_insert++ = static_cast<NumType>(carry % base_);
-      carry /= base_;
-    }
-    *result_insert = static_cast<NumType>(carry);
-
+    result.digits_->resize(lhs_size + rhs_size, NumType{0});
+    std::vector<NumType, Profile::Allocator<NumType, Profile::AllocationKind::digits>> workspace(
+      Kernel::workspace_size(std::max(lhs_size, rhs_size), point));
+    Kernel::multiply(std::span<NumType const>(lhs_begin, lhs_end),
+                     std::span<NumType const>(rhs_begin, rhs_end),
+                     std::span<NumType>(result.digits_->begin(), result.digits_->end()),
+                     std::span<NumType>(workspace), point);
     result.tidy();
     return result;
   }
@@ -1689,8 +1641,10 @@ public:
   /** \brief  Set the split point for choosing which multiplication algorithm to use.
    *  \param point New point (in range [1, base_]), unit is number of base_ digits.
    *
-   * At and below the value of \a point basic (O(n^3)) multiplication will be done, above \a point
-   * we will do Karatsuba multiplication.
+   * At and below \a point, use schoolbook multiplication (quadratic limb work).
+   * Larger balanced products use recursive Karatsuba with reusable scratch.
+   * Recursive leaves retain a minimum of three limbs; asymmetric children
+   * with an empty high half also use the portable schoolbook fallback.
    */
   static void multiply_split_point(NumType point)
   {
