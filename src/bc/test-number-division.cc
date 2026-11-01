@@ -235,9 +235,9 @@ TEMPLATE_TEST_CASE("Scaled division agrees with native rational arithmetic",
             auto const coefficient = a * power(places + sb) / (b * power(sa));
             for (int left_sign : {-1, 1}) {
               for (int right_sign : {-1, 1}) {
-                INFO("coefficients=" << a << "," << b << " scales=" << sa << "," << sb
-                     << "," << places << " signs=" << left_sign << "," << right_sign
-                     << " limb base=" << Number::base_);
+                INFO("coefficients=" << a << "," << b << " scales=" << sa << "," << sb << ","
+                                     << places << " signs=" << left_sign << "," << right_sign
+                                     << " limb base=" << Number::base_);
                 Number lhs(decimal(a, sa), 10);
                 Number rhs(decimal(b, sb), 10);
                 Number expected(decimal(coefficient, places), 10);

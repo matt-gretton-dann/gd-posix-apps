@@ -528,6 +528,28 @@ def corpus(preset="full", selected=None, listing=False, seed=197200, suite='arit
         lambda: scaled(2 * 10 ** (root_power + places), places),
         {"root_power": root_power, "input_digits": len(value),
          "scale": places, "iterations": count, "coefficient": "4"})
+    # Append scaled-numerator division after historical cases. A separate RNG
+    # stream keeps all earlier operands and exact oracle payloads unchanged.
+    fraction_digits = dimension(1000)
+    repeats = iterations(5000)
+    fractional_rng = random.Random(seed ^ 368)
+    whole, divisor = (2469, 13) if preset == 'holdout' else (1234, 7)
+    for shape in ('dense', 'trailing_zero'):
+        fraction = (''.join(str(fractional_rng.randrange(10)) for _ in range(fraction_digits))
+                    if shape == 'dense' else '0' * fraction_digits)
+        value = str(whole) + '.' + fraction
+        coefficient = int(str(whole) + fraction)
+        # Equal precision is first so native PR selection includes the scalar
+        # divisor opportunity; below/above precision remain in broad matrices.
+        for places in (fraction_digits, fraction_digits // 2, 2 * fraction_digits):
+            name = 'divide_scaled_{}_s{}_t{}_x{}'.format(shape, fraction_digits, places, repeats)
+            add(name, 'divide_scaled_' + shape,
+                'scale={}\na={}\nfor(i=0;i<{};i++) c=a/{}\nc'.format(
+                    places, value, repeats, divisor),
+                lambda coefficient=coefficient, places=places: scaled(
+                    coefficient * 10 ** places // (divisor * 10 ** fraction_digits), places),
+                dict(input_scale=fraction_digits, scale=places, iterations=repeats,
+                     divisor=str(divisor), shape=shape, coefficient_digits=len(str(coefficient))))
     if selected:
         missing = set(selected) - set(known)
         if missing:

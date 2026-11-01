@@ -77,8 +77,10 @@ class NativeTrends(unittest.TestCase):
             self.assertIn(name, subset)
         for position in ('high', 'low', 'equal'):
             self.assertIn('compare_{}_1000d_x100000'.format(position), subset)
+        self.assertIn('divide_scaled_dense_s1000_t1000_x5000', subset)
+        self.assertIn('divide_scaled_trailing_zero_s1000_t1000_x5000', subset)
         self.assertLess(len(subset), len(full))
-        self.assertEqual(len(full), 50)
+        self.assertEqual(len(full), 56)
         self.assertEqual(set(full) & set(held), {'startup'})
 
     def test_pr_subset_covers_every_corpus_group(self):
