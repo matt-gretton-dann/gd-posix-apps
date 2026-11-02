@@ -30,12 +30,13 @@
 
 __DISABLE_NARROWING_WARNING
 
-/* Assert an error.
+/* Assert an error. Keep the repository-relative source name stable across
+ * independent checkout roots, retaining the actual function and line number.
  * To work around some awkward compilers the first ... argument is a message ID. */
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define assert_error(TEST, ...)                                                                    \
   if (!(TEST)) {                                                                                   \
-    error(__func__, __FILE__, __LINE__, STRINGIFY(TEST), __VA_ARGS__);                             \
+    error(__func__, "src/bc/vm.cc", __LINE__, STRINGIFY(TEST), __VA_ARGS__);                             \
   }
 
 namespace GD::Bc::Details {
