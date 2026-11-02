@@ -28,13 +28,15 @@ jobs:
       matrix:
         image: [ubuntu-24.04, windows-2025, macos-15]
     env:
-      BC_CANDIDATE: ${{ github.event.pull_request.head.sha || github.sha }}
-      BC_BASE: ${{ github.event.pull_request.base.sha || inputs.baseline || '2ddf749e8b313f620ad248d680e801c409bbd3f5' }}
-      BC_BROAD: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+      # Diagnostic checkpoint only: do not merge these fixed runtime pins.
+      BC_PROTOCOL: ${{ github.event.pull_request.head.sha || github.sha }}
+      BC_CANDIDATE: dd5576221d05c0e4bf8590ea1f8f5eaa739a4edf
+      BC_BASE: ff6876171a68513dea193a0f04655c0bba4a2866
+      BC_BROAD: 'true'
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ env.BC_CANDIDATE }}
+          ref: ${{ env.BC_PROTOCOL }}
           fetch-depth: 0
           persist-credentials: false
       - name: Establish native MSVC environment
@@ -57,6 +59,7 @@ jobs:
           if ($env:BC_BROAD -eq 'true') { $arguments += '--broad' }
           python @arguments
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          @{ protocol_revision = $env:BC_PROTOCOL; runtime_base = $env:BC_BASE; runtime_candidate = $env:BC_CANDIDATE; purpose = 'bounded diagnostic checkpoint; retain prior rejected batches; not a production fix' } | ConvertTo-Json | Set-Content -Encoding utf8 'bc-native-results/evidence/workflow-inputs.json'
       - name: Preserve raw checked samples and provenance
         if: always()
         uses: actions/upload-artifact@v7
