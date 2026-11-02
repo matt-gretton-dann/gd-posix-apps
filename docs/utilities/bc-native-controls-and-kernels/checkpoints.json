@@ -1,0 +1,274 @@
+{
+  "schema": 1,
+  "checkpoints": [
+    {
+      "name": "policy-403",
+      "base": "a5f83342a11d5044f48f41470178e55f99dd4d79",
+      "candidate": "fd6e1de40c62e4ee4b3418cef80ecec44021daf7",
+      "run_id": 41433342122,
+      "minimum_checked": 2100,
+      "status": "accepted harness correction",
+      "recorded_symmetric_policy": true,
+      "candidate_toom3_threshold": 0,
+      "hosts": {
+        "linux": {
+          "path": "native/policy-403/linux.zip",
+          "sha256": "93dae03e1ac0980bdd88e6b89abd3d9530d5646499832cc3b79cb2226a8c6ce5"
+        },
+        "macos": {
+          "path": "native/policy-403/macos.zip",
+          "sha256": "d6fdbf9458051d5bf7d3629e664471fa9fb1afa34362e54fae796bd85866bc69"
+        },
+        "windows": {
+          "path": "native/policy-403/windows.zip",
+          "sha256": "6840ec017ec1273fa4f9efd272af1821acf98e9cee1259d580fb607a4706f988"
+        }
+      }
+    },
+    {
+      "name": "producer-initial-401",
+      "base": "a5f83342a11d5044f48f41470178e55f99dd4d79",
+      "candidate": "9e2c5d40a66ec13d8f87c1fd9ed9f3c1ca958b9d",
+      "run_id": 41428223606,
+      "minimum_checked": 2100,
+      "status": "superseded control policy; runtime later accepted",
+      "recorded_symmetric_policy": false,
+      "candidate_toom3_threshold": 0,
+      "hosts": {
+        "linux": {
+          "path": "native/producer-initial-401/linux.zip",
+          "sha256": "8d10b869cdf3b8257723cac9c63dc7e380815e1fe6e8500146631d5b76994e78"
+        },
+        "macos": {
+          "path": "native/producer-initial-401/macos.zip",
+          "sha256": "d79b057008139200f086a196f3894cd5c25fa852ce65c7ea0aab6ecf973a9e51"
+        },
+        "windows": {
+          "path": "native/producer-initial-401/windows.zip",
+          "sha256": "c6c56b3971fed7b95b7777e4b51c4670fe4628056e4109b2355704e4e08a439c"
+        }
+      }
+    },
+    {
+      "name": "producer-final-401",
+      "base": "9e62855562cdf2590b3d335fb81fe4779b0a325e",
+      "candidate": "804281834634c7d400121c3993831c5c4454503c",
+      "run_id": 41435527769,
+      "minimum_checked": 2100,
+      "status": "accepted bounded producer-slot step; #207 remains open",
+      "recorded_symmetric_policy": true,
+      "candidate_toom3_threshold": 0,
+      "hosts": {
+        "linux": {
+          "path": "native/producer-final-401/linux.zip",
+          "sha256": "cf32f49dce4fea9b67fbbc4bca0cabccefa3b157309f55b2618b40748fcc8c53"
+        },
+        "macos": {
+          "path": "native/producer-final-401/macos.zip",
+          "sha256": "cfa25f1f7f2278d9206e6bbb111917521adf46e1e69c99744b9ccf9dbf12f4c0"
+        },
+        "windows": {
+          "path": "native/producer-final-401/windows.zip",
+          "sha256": "c34167d71a07354848e6cb33c64b97cc85f7eb085443d31dc9a1e310a476289d"
+        }
+      }
+    },
+    {
+      "name": "root-initial-387",
+      "base": "ff6876171a68513dea193a0f04655c0bba4a2866",
+      "candidate": "dd5576221d05c0e4bf8590ea1f8f5eaa739a4edf",
+      "run_id": 41408447011,
+      "minimum_checked": 2100,
+      "status": "rejected initial root candidate",
+      "recorded_symmetric_policy": false,
+      "candidate_toom3_threshold": 0,
+      "codegen_available": false,
+      "codegen_unavailable_reason": "This checkpoint predates the exact executable collector; hashes/recipes are retained without inventing missing machine code.",
+      "hosts": {
+        "linux": {
+          "path": "native/root-initial-387/linux.zip",
+          "sha256": "05167bfceeb108ea26872bf8b8964910e85a6b0d55d08ca77c9b60461fb1fc4b"
+        },
+        "macos": {
+          "path": "native/root-initial-387/macos.zip",
+          "sha256": "25c765b3ca6338080d3663c4657d516433888b6928c1f2650f0e59fabfb2cea8"
+        },
+        "windows": {
+          "path": "native/root-initial-387/windows.zip",
+          "sha256": "42145ab7f516dd89c9f8c27ca32d3da0a78d5e10cba822c76b1c3fe1274a8b67"
+        }
+      }
+    },
+    {
+      "name": "root-test-followup-387",
+      "base": "ff6876171a68513dea193a0f04655c0bba4a2866",
+      "candidate": "0cfe7ee75a9a0b394b3bf164d518ec2e932c5263",
+      "run_id": 41412963260,
+      "minimum_checked": 2100,
+      "status": "successful different-CPU batch; does not waive initial loss",
+      "recorded_symmetric_policy": false,
+      "candidate_toom3_threshold": 0,
+      "codegen_available": false,
+      "codegen_unavailable_reason": "This checkpoint predates the exact executable collector; hashes/recipes are retained without inventing missing machine code.",
+      "hosts": {
+        "linux": {
+          "path": "native/root-test-followup-387/linux.zip",
+          "sha256": "27b7504bcb9831a7962dc3f3c2281664d50144a00a13ed8ad5f47bc347e1889f"
+        },
+        "macos": {
+          "path": "native/root-test-followup-387/macos.zip",
+          "sha256": "3ba578cb87563158f7e01a264e1fdceb83f68760adf7133e8b5d747e45c2607c"
+        },
+        "windows": {
+          "path": "native/root-test-followup-387/windows.zip",
+          "sha256": "475773df13b7a8b1d186a4b0ce84ee11a0e3f17cda7f22a4d6655d55c31fca6b"
+        }
+      }
+    },
+    {
+      "name": "root-pinned-400",
+      "base": "ff6876171a68513dea193a0f04655c0bba4a2866",
+      "candidate": "dd5576221d05c0e4bf8590ea1f8f5eaa739a4edf",
+      "run_id": 41422041124,
+      "minimum_checked": 5600,
+      "status": "rejected runtime checkpoint; diagnostic workflow pins must not merge",
+      "recorded_symmetric_policy": false,
+      "candidate_toom3_threshold": 0,
+      "hosts": {
+        "linux": {
+          "path": "native/root-pinned-400/linux.zip",
+          "sha256": "8945d86f1d1ebc095a8769c4029f90415376f74b4a5353649d74521d17dfcb77"
+        },
+        "macos": {
+          "path": "native/root-pinned-400/macos.zip",
+          "sha256": "a78426d65ae0c5d39438b5013d2726a33ca513d1511457b0fd6f0d4c07dd4523"
+        },
+        "windows": {
+          "path": "native/root-pinned-400/windows.zip",
+          "sha256": "9f48ca99c6e436051ce7015ab9272bd4a78c4b9ed89955d75a24f366e490be09"
+        }
+      }
+    },
+    {
+      "name": "root-clamp-404",
+      "base": "0cfe7ee75a9a0b394b3bf164d518ec2e932c5263",
+      "candidate": "b074c3158f3f88ad08f12e399e9bf150ce1f3c41",
+      "run_id": 41435465453,
+      "minimum_checked": 5600,
+      "status": "topic refinement only; no waiver of main-baseline losses",
+      "recorded_symmetric_policy": true,
+      "candidate_toom3_threshold": 0,
+      "hosts": {
+        "linux": {
+          "path": "native/root-clamp-404/linux.zip",
+          "sha256": "a6529dbde9b1c1041ecc942efa4951b688197d30d14f9d107c38143d533cd764"
+        },
+        "macos": {
+          "path": "native/root-clamp-404/macos.zip",
+          "sha256": "681132ad076ddcffb49ffc0365d598f8a9532916fda0eed7d9a788602242a923"
+        },
+        "windows": {
+          "path": "native/root-clamp-404/windows.zip",
+          "sha256": "948043573ebe3a2943c8e61aa32f761272ff4b740d41e5d8819aae74932b1def"
+        }
+      }
+    },
+    {
+      "name": "root-integrated-subset-405",
+      "base": "21b3638ed338009a7bccf022cddcc119ce620296",
+      "candidate": "a9a43afa8812e0a0f21d58a051d72b4ae5d1ebd0",
+      "run_id": 41452003174,
+      "minimum_checked": 2100,
+      "status": "rejected main-baseline checkpoint",
+      "recorded_symmetric_policy": true,
+      "candidate_toom3_threshold": 0,
+      "hosts": {
+        "linux": {
+          "path": "native/root-integrated-subset-405/linux.zip",
+          "sha256": "6ae63e9381d520079fb193de464d91051a64ee2d1c44f38e77d8313d8f89559e"
+        },
+        "macos": {
+          "path": "native/root-integrated-subset-405/macos.zip",
+          "sha256": "269a801b24e8b76f82d11db72adac1e5e6d0dfd1ee2f4082b66a23212b44ab0b"
+        },
+        "windows": {
+          "path": "native/root-integrated-subset-405/windows.zip",
+          "sha256": "9658e4aec33144d63562348e1ff5ea9eeb6391006084d3bfd894efa5936b59b0"
+        }
+      }
+    },
+    {
+      "name": "root-integrated-broad-405",
+      "base": "21b3638ed338009a7bccf022cddcc119ce620296",
+      "candidate": "a9a43afa8812e0a0f21d58a051d72b4ae5d1ebd0",
+      "run_id": 41452088765,
+      "minimum_checked": 5600,
+      "status": "no confirmed loss in this batch; does not waive subset loss",
+      "recorded_symmetric_policy": true,
+      "candidate_toom3_threshold": 0,
+      "hosts": {
+        "linux": {
+          "path": "native/root-integrated-broad-405/linux.zip",
+          "sha256": "9d8965d07f1c2b1ec4d143e4c9b79a63a6119fd755854d821e528ab2608ffe84"
+        },
+        "macos": {
+          "path": "native/root-integrated-broad-405/macos.zip",
+          "sha256": "6c2f03eb3d6daf31e887bb5ad00411960cbf4d593a4de7e5307172a44315b3e1"
+        },
+        "windows": {
+          "path": "native/root-integrated-broad-405/windows.zip",
+          "sha256": "7f998853da0e45f75ae04b35ebbfcacb3f387cbfa2bb458f6e1cb16b2fec9787"
+        }
+      }
+    },
+    {
+      "name": "toom-default-406",
+      "base": "21b3638ed338009a7bccf022cddcc119ce620296",
+      "candidate": "a7483fcc6ced55f422290cbaad16f4c591e14d0c",
+      "run_id": 41453645038,
+      "minimum_checked": 2100,
+      "status": "default-tier control; Windows A/A biases retained",
+      "recorded_symmetric_policy": true,
+      "candidate_toom3_threshold": 0,
+      "hosts": {
+        "linux": {
+          "path": "native/toom-default-406/linux.zip",
+          "sha256": "efc31b85e264eaac39d6be184fd65a510c0ff16fe7fedc0e565844be15df674c"
+        },
+        "macos": {
+          "path": "native/toom-default-406/macos.zip",
+          "sha256": "2b585be39dfdc951d6d3891d437ae71a66955c5143c035f10e62cc823e14af84"
+        },
+        "windows": {
+          "path": "native/toom-default-406/windows.zip",
+          "sha256": "5080e47081a318e980c29073127711598756253c3f8130bab87350d5570ef7b6"
+        }
+      }
+    },
+    {
+      "name": "toom-opt-in-406",
+      "base": "21b3638ed338009a7bccf022cddcc119ce620296",
+      "candidate": "a7483fcc6ced55f422290cbaad16f4c591e14d0c",
+      "run_id": 41453645081,
+      "minimum_checked": 5600,
+      "status": "rejected threshold-512 prototype",
+      "recorded_symmetric_policy": true,
+      "candidate_toom3_threshold": 512,
+      "hosts": {
+        "linux": {
+          "path": "native/toom-opt-in-406/linux.zip",
+          "sha256": "bbb4ff52c414a59a5e8f7aa4f96e0cb306c372ca23b8b1fdeae96c844e0a4ea1"
+        },
+        "macos": {
+          "path": "native/toom-opt-in-406/macos.zip",
+          "sha256": "091584aba72548076b049fd4e96055861baae8ee2b6db0be2cf38f35f85a0bb6"
+        },
+        "windows": {
+          "path": "native/toom-opt-in-406/windows.zip",
+          "sha256": "3ac0af5e10b383eb6a7f50f0d6e42fcbe8f4dc06b96629508ef14f289a31bfcd"
+        }
+      }
+    }
+  ],
+  "scope": "Exact original artifact ZIPs; runtime adoption status is per checkpoint, not inferred from green jobs"
+}

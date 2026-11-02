@@ -1,0 +1,10 @@
+{
+  "host": "windows",
+  "source": {
+    "base": "a5f83342a11d5044f48f41470178e55f99dd4d79",
+    "candidate": "9e2c5d40a66ec13d8f87c1fd9ed9f3c1ca958b9d"
+  },
+  "checked": 2100,
+  "confirmed": [],
+  "artifact_sha256": "c6c56b3971fed7b95b7777e4b51c4670fe4628056e4109b2355704e4e08a439c"
+}

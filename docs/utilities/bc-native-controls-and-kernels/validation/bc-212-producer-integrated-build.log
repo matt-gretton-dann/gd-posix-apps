@@ -1,0 +1,9 @@
+[1/8] Building CXX object src/bc/CMakeFiles/libbc.dir/execution-plan.cc.o
+[2/8] Building CXX object src/bc/CMakeFiles/libbc.dir/vm.cc.o
+[3/8] Linking CXX static library src/bc/liblibbc.a
+[4/8] Linking CXX executable src/bc/bc-components
+[5/8] Linking CXX executable src/bc/test-bc-vm-lifetime
+[6/8] Linking CXX executable src/bc/bc
+ld: warning: ignoring duplicate libraries: 'libgdsup/libgdsup.a', 'src/libutil.a'
+[7/8] Building CXX object src/bc/CMakeFiles/test-libbc.dir/test-execution-plan.cc.o
+[8/8] Linking CXX executable src/bc/test-libbc
