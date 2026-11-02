@@ -41,10 +41,11 @@ The default unit suite compares every layout with an independent ordered-map
 value oracle using 8/16/32-bit Number models, including sparse maxima, page
 boundaries, random writes/reads, zero, replacement, copies, moves, heap values and
 borrowed insertions. Builds selecting another layout must additionally pass the
-ordinary VM/parser/CLI and diagnostic suites. Timings, allocation traffic and
-native peak memory still need matched dense, random, sparse, clustered and
-repeated-write measurements. This document records candidate designs, not a
-performance result or a default-selection decision.
+ordinary VM/parser/CLI and diagnostic suites. The completed [matched comparison](bc-209-array-comparison/README.md) records
+full/held-out elapsed pairs, separate allocation counters and native peak RSS.
+It retains the hybrid default: the alternatives have workload-specific wins,
+but sorted insertion, sparse-page memory and snapshot costs prevent a general
+replacement. The portable alternatives remain explicit experiments.
 
 
 `prepare-array-benchmark.py --output prepared --preset full` creates eight
@@ -60,5 +61,7 @@ The real-interpreter quick regression runs in both extension modes on native
 64-bit hosts. These timing inputs deliberately use the native 10^9 index domain;
 smaller pointer-width targets retain the generic storage oracles but skip this
 CLI corpus, rather than silently truncating its high keys. No timing acceptance
-is inferred from quick correctness. Full/held-out paired runs and separate
-resource diagnostics remain required.
+is inferred from quick correctness. The archived full/held-out runs and separate resource diagnostics retain
+their exact historical source identity. Their layout timings are from one
+native Apple ARM64 host; cross-platform unit correctness is separate.
+Competitive misses and inconclusive controls are recorded per class.

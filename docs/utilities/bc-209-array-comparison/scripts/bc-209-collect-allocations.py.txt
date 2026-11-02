@@ -1,0 +1,47 @@
+"""Collect checked quick-matrix storage counters, never release elapsed results."""
+import hashlib
+import importlib.util
+import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+source=Path('/private/tmp/gd-posix-array-candidates')
+scripts=source/'src/bc/scripts'
+def load(name):
+ spec=importlib.util.spec_from_file_location(name.replace('-','_'),scripts/(name+'.py'))
+ m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m);return m
+bench,ci,builder=load('bench-bc'),load('benchmark-math-ci'),load('build-gd-bc')
+root=Path('/private/tmp/bc-209-allocation-diagnostics');root.mkdir(exist_ok=False)
+commands=ci.Commands(root,3600)
+cases,replay=bench.replay_corpus(Path('/private/tmp/bc-209-array-prepared/quick'),'arithmetic')
+report=dict(instrumented=True,scope='quick dimensions, allocation requests only; do not extrapolate full RSS or speed',replay=replay,roles={},cases=[],status='incomplete')
+try:
+ for layout in ('hybrid','paged','flat','hash','ordered'):
+  build=source/'build-profile'
+  commands.run(['cmake','-S',str(source),'-B',str(build),'-G','Ninja','-DCMAKE_BUILD_TYPE=Release','-DBUILD_TESTING=OFF','-DENABLE_BC_PROFILE=ON','-DENABLE_BC_COVERAGE=OFF','-DENABLE_NON_POSIX_EXTENSIONS=ON','-DBC_MULTIPLY_SPLIT_POINT=126','-DBC_ARRAY_STORAGE='+layout,'-DCMAKE_EXPORT_COMPILE_COMMANDS=ON'],timeout=600)
+  commands.run(['cmake','--build',str(build),'--target','bc','--parallel','2'],timeout=600)
+  assert builder.verified_array_layout(builder.helpers(),build,layout)==layout
+  directory=root/layout;directory.mkdir()
+  for filename in ('CMakeCache.txt','compile_commands.json'):
+   shutil.copyfile(build/filename,directory/filename)
+  binary=build/'src/bc/bc'
+  report['roles'][layout]=dict(source_revision=subprocess.check_output(['git','rev-parse','HEAD'],cwd=source,text=True).strip(),binary_sha256=bench.digest_file(binary),instrumented=True,configuration='Release; extensions ON; split126; profile ON',compiled_layout=layout)
+  for case in cases:
+   target=directory/(case['name']+'.json')
+   environment=bench.environment();environment['GD_BC_PROFILE_OUTPUT']=str(target)
+   result=subprocess.run([str(binary)],input=case['program'].encode('utf-8'),stdout=subprocess.PIPE,stderr=subprocess.PIPE,env=environment,timeout=30)
+   if result.returncode or result.stderr:raise RuntimeError(case['name']+' diagnostic process failed')
+   bench.check_output(case,bench.canonical_output(result.stdout),layout+'/'+case['name'])
+   counters=json.loads(target.read_text());assert counters['instrumented'] is True
+   assert counters['total']['live_bytes']==0
+   report['cases'].append(dict(layout=layout,name=case['name'],parameters=case['parameters'],checked=True,counters=str(target.relative_to(root)),output_sha256=hashlib.sha256(result.stdout).hexdigest(),program_sha256=hashlib.sha256(case['program'].encode('utf-8')).hexdigest(),oracle_sha256=hashlib.sha256(bench.oracle_payload(case)).hexdigest()))
+  print(layout,'eight checked allocation diagnostics',flush=True)
+ report['status']='all forty diagnostic invocations checked; no elapsed acceptance'
+except BaseException as error:
+ report['failure']=str(error);raise
+finally:
+ report['commands']=commands.commands
+ report['collector_sha256']=bench.digest_file(__file__)
+ ci.write(root/'manifest.json',report)

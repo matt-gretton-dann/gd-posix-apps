@@ -1,0 +1,87 @@
+"""Verify frozen array experiments after every elapsed stage has completed."""
+from collections import Counter,defaultdict
+import hashlib
+import json
+import math
+from pathlib import Path
+import statistics
+
+ROOT=Path('/private/tmp/bc-209-paired-release')
+REVISION='7723ebd74614df1a56e03cb5867ef53efcdd0104'
+HOWARD='c8dabac65d39fd527a9264a5e505a99b1d8df3d8'
+def read(p):return json.loads(p.read_text())
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+assert (ROOT/'complete.json').is_file() and not (ROOT/'failure.json').exists()
+protocol=read(ROOT/'protocol.json');assert protocol['runtime_revision']==REVISION
+assert protocol['samples']==15 and protocol['warmups']==3 and protocol['child_timeout_seconds']==120
+for name,digest in protocol['harness'].items():
+ assert sha(Path('/private/tmp/gd-posix-array-candidates/src/bc/scripts')/name)==digest
+assert sha(Path('/private/tmp/bc-209-run-paired.py'))==protocol['runner_sha256']
+commands=read(ROOT/'orchestration.json')['commands'];assert all(c['returncode']==0 for c in commands)
+trials={};comparisons=[]
+for path in sorted(ROOT.glob('*/samples.jsonl')):
+ directory=path.parent;manifest=read(directory/'manifest.json')
+ rows=[json.loads(line) for line in path.read_text().splitlines()]
+ assert manifest['samples']==15 and manifest['warmups']==3 and manifest['timeout']==120
+ implementations={t['name']:t for t in manifest['implementations']}
+ cases={c['name']:c for c in manifest['corpus']}
+ assert len(cases)==8 or directory.name.endswith('-confirmation')
+ seen=defaultdict(set);measurements=defaultdict(dict)
+ for name,tool in implementations.items():
+  assert tool['complete_provenance'] and tool['metadata']['instrumented'] is False
+  assert tool['binary_sha256']==tool['metadata']['binary_sha256']==sha(Path(tool['argv'][0]))
+  assert tool['metadata']['source_revision']==(HOWARD if name=='howard' else REVISION)
+  if name!='howard':
+   assert tool['metadata']['configuration']['array_storage']==('hybrid' if name=='aa' else name)
+   assert tool['metadata']['configuration']['build_type']=='Release'
+ for name,case in cases.items():
+  for suffix,key in (('.bc','program_sha256'),('.expected','oracle_sha256')):
+   assert sha(directory/'workloads'/(name+suffix))==case[key]
+ for row in rows:
+  assert row['checked'] is True and math.isfinite(row['seconds']) and row['seconds']>0
+  assert row['implementation'] in implementations and row['workload'] in cases
+  assert row['output_sha256']==cases[row['workload']]['oracle_sha256']
+  key=(row['workload'],row['implementation'],row['phase'])
+  assert row['round'] not in seen[key];seen[key].add(row['round'])
+  if row['phase']=='measurement':measurements[row['workload'],row['implementation']][row['round']]=row['seconds']
+ assert len(rows)==len(cases)*len(implementations)*18
+ for case in cases:
+  for name in implementations:
+   assert seen[case,name,'measurement']==set(range(15))
+   assert seen[case,name,'warmup']==set(range(3))
+ trials[directory.name]=len(rows)
+ for row in read(directory/'summary.json')['workloads']:
+  reference=measurements[row['name'],'hybrid']
+  for name,stats in row['candidate_over_reference'].items():
+   sample=measurements[row['name'],name]
+   ratios=[sample[i]/reference[i] for i in range(15)]
+   assert stats['pairs']==15 and stats['median_paired_ratio']==statistics.median(ratios)
+   comparisons.append(dict(stage=directory.name,name=row['name'],candidate=name,ratio=stats['median_paired_ratio'],ci95=stats['ci95']))
+alloc_root=Path('/private/tmp/bc-209-allocation-diagnostics');alloc=read(alloc_root/'manifest.json')
+assert alloc['instrumented'] is True and len(alloc['cases'])==40
+quick={c['name']:c for c in read(Path('/private/tmp/bc-209-array-prepared/quick/manifest.json'))['corpus']}
+for row in alloc['cases']:
+ assert row['checked'] and row['output_sha256']==row['oracle_sha256']
+ assert row['program_sha256']==quick[row['name']]['program_sha256'] and row['oracle_sha256']==quick[row['name']]['oracle_sha256']
+ counters=read(alloc_root/row['counters']);assert counters['instrumented'] is True and counters['total']['live_bytes']==0
+resources=read(Path('/private/tmp/bc-209-native-resources/manifest.json'));assert len(resources['samples'])==120
+full={c['name']:c for c in read(Path('/private/tmp/bc-209-array-prepared/full/manifest.json'))['corpus']}
+counts=Counter()
+for row in resources['samples']:
+ assert row['checked'] and row['resource']['status']=='collected' and row['resource']['peak_rss_native']>0
+ assert row['program_sha256']==full[row['name']]['program_sha256'] and row['oracle_sha256']==full[row['name']]['oracle_sha256']
+ counts[row['name'],row['implementation']]+=1
+assert len(counts)==40 and set(counts.values())=={3}
+controls=read(ROOT/'controls.json')['results'];assert len(controls)==16
+result=dict(runtime_revision=REVISION,checked_elapsed_rows=sum(trials.values()),trials=trials,
+ checked_allocation_reports=40,checked_native_resource_reports=120,
+ controls=dict(Counter(r['status'] for r in controls)),comparisons=comparisons,
+ limitations=['One native Apple ARM64 host for the layout comparison; cross-platform correctness is separate',
+ 'Quick-corpus software counters and full-corpus RSS are separate from elapsed evidence',
+ 'The initial 30-second timeout attempt is retained separately and never pooled',
+ 'No aggregate performance pass or automatic storage-default adoption'])
+(ROOT/'audit.json').write_text(json.dumps(result,indent=2,sort_keys=True)+'\n')
+print('Checked elapsed:',result['checked_elapsed_rows'],'controls:',result['controls'])
+for row in comparisons:
+ if row['stage'].endswith('-paired'):
+  print(row['stage'],row['name'],row['candidate'],round(row['ratio'],4),[round(x,4) for x in row['ci95']])

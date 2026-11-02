@@ -1,0 +1,34 @@
+"""Collect checked native full-size array resource reports, not paired times."""
+import hashlib
+import importlib.util
+import json
+from pathlib import Path
+import random
+import time
+scripts=Path('/private/tmp/gd-posix-array-candidates/src/bc/scripts')
+def load(path,name):
+ spec=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m);return m
+bench=load(scripts/'bench-bc.py','bench')
+profile_path=Path('/Users/mgrettondann/repos/gd-posix-apps/src/bc/scripts/profile-bc.py')
+profile=load(profile_path,'profile')
+root=Path('/private/tmp/bc-209-native-resources');root.mkdir(exist_ok=False)
+config=Path('/private/tmp/bc-209-release-preparation/paired.json')
+tools=[tool for tool in bench.implementations(config,require_provenance=True) if tool['name']!='howard']
+cases,replay=bench.replay_corpus(Path('/private/tmp/bc-209-array-prepared/full'),'arithmetic')
+report=dict(scope='native per-process diagnostics; elapsed wrapper fields are not paired timing',replay=replay,roles=tools,trials=3,samples=[],profile_helper_sha256=bench.digest_file(profile_path),collector_sha256=bench.digest_file(__file__),status='incomplete')
+started=time.monotonic();rng=random.Random(1972093)
+try:
+ for case in cases:
+  for trial in range(3):
+   order=list(tools);rng.shuffle(order)
+   for tool in order:
+    if time.monotonic()-started>1800:raise RuntimeError('resource diagnostic total deadline')
+    directory=root/(case['name']+'-'+tool['name']+'-'+str(trial));directory.mkdir()
+    result=profile.rss_profile(bench,tool,case,directory,120)
+    report['samples'].append(dict(name=case['name'],parameters=case['parameters'],implementation=tool['name'],trial=trial,order=[t['name'] for t in order],checked=True,resource=result,program_sha256=hashlib.sha256(case['program'].encode('utf-8')).hexdigest(),oracle_sha256=hashlib.sha256(bench.oracle_payload(case)).hexdigest()))
+   bench.write_json(root/'manifest.json',report)
+  print(case['name'],'fifteen checked native resource invocations',flush=True)
+ report['status']='all 120 native diagnostic invocations checked; availability per measurement'
+except BaseException as error:
+ report['failure']=str(error);raise
+finally:bench.write_json(root/'manifest.json',report)
