@@ -56,6 +56,68 @@ class NativeMath(unittest.TestCase):
             with self.assertRaisesRegex(CI.CommandFailure, 'pinned'):
                 CI.configurations(gd, aa, howard, library, other, revision)
 
+    def test_separate_baseline_identity_and_regression_roles(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            library = Path(temporary) / 'candidate.bc'
+            baseline = Path(temporary) / 'base.bc'
+            library.write_bytes(b'candidate ordinary source\n')
+            baseline.write_bytes(b'baseline ordinary source\n')
+            revision, old_revision = 'a' * 40, 'b' * 40
+            gd = dict(name='gd', argv=['gd-binary'], metadata=dict(source_revision=revision))
+            old = dict(name='old', argv=['old-binary'], metadata=dict(source_revision=old_revision))
+            howard = dict(name='howard', argv=['howard-binary'], metadata=dict(
+                source_revision=CI.load('build-bc-comparators').HOWARD_REVISION))
+            original = copy.deepcopy(old)
+            configs = CI.configurations(gd, gd, howard, library, library, revision,
+                                         base=old, base_library=baseline, base_revision=old_revision)
+            self.assertEqual(old, original)
+            self.assertEqual([len(configs[k]) for k in ('preparation', 'paired', 'aa', 'regression')],
+                             [5, 4, 2, 2])
+            base, candidate = configs['regression']
+            self.assertEqual(base['name'], 'gd-base')
+            self.assertEqual(base['argv'], ['old-binary', '-l'])
+            self.assertNotEqual(base['metadata']['library']['source_sha256'],
+                                candidate['metadata']['library']['source_sha256'])
+            with self.assertRaisesRegex(CI.CommandFailure, 'baseline'):
+                CI.configurations(gd, gd, howard, library, library, revision,
+                                  base=old, base_library=baseline, base_revision=revision)
+
+    def test_regressions_require_confirmation_and_usable_controls(self):
+        slow = dict(ci95=[1.1, 1.2])
+        fast = dict(ci95=[.8, .9])
+        duration = dict(base=True, candidate=True)
+        classify = lambda first, second, control='pass', mode='repeated', target=duration: \
+            CI.regression_status(first, second, control, mode, target)
+        self.assertEqual(classify(slow, None), 'inconclusive-noisy')
+        self.assertEqual(classify(slow, slow), 'confirmed regression')
+        self.assertEqual(classify(slow, fast), 'inconclusive-noisy')
+        self.assertEqual(classify(fast, None), 'pass')
+        self.assertEqual(classify(fast, None, 'inconclusive'), 'pass; A/A inconclusive')
+        self.assertEqual(classify(None, None), 'unavailable baseline library')
+        self.assertEqual(classify(slow, slow, 'confirmed A/A bias'), 'inconclusive control bias')
+        self.assertEqual(classify(slow, slow, mode='one_shot'), 'one-shot latency observation')
+        self.assertEqual(classify(slow, slow, target={}), 'inconclusive duration shortfall')
+
+    def test_diagnostic_selection_preserves_all_regimes_at_a_declared_scale(self):
+        bench = CI.load('bench-bc')
+        for preset in ('full', 'holdout'):
+            cases = CI.diagnostic_cases(bench, preset)
+            self.assertEqual(len(cases), 10)
+            self.assertTrue(all(c['parameters']['mode'] == 'one_shot' and
+                                c['parameters']['scale'] == 100 for c in cases))
+            self.assertEqual(len({c['group'] for c in cases}), 10)
+
+    def test_profiled_config_cannot_enter_elapsed_harness(self):
+        bench = CI.load('bench-bc')
+        with tempfile.TemporaryDirectory() as temporary:
+            config = Path(temporary) / 'profile.json'
+            config.write_text(json.dumps({'implementations': [{'name': 'profile',
+                'argv': [sys.executable], 'metadata': {'instrumented': True,
+                    'source_revision': 'fixture', 'compiler': 'fixture', 'flags': 'fixture',
+                    'version': 'fixture', 'binary_sha256': bench.digest_file(sys.executable)}}]}))
+            with self.assertRaisesRegex(bench.BenchmarkError, 'instrument'):
+                bench.implementations(config, require_provenance=True)
+
     def test_control_bias_needs_same_direction_confirmation(self):
         high, low = dict(ci95=[1.1, 1.2]), dict(ci95=[.8, .9])
         self.assertEqual(CI.aa_status(high), 'inconclusive')
@@ -114,7 +176,7 @@ class NativeMath(unittest.TestCase):
                 if name == 'benchmark-ci':
                     return mock.Mock(host_info=lambda: dict(test_host='isolated fixture'))
                 return original_load(name)
-            argv = [str(PATH), '--source', str(root), '--candidate', 'a' * 40,
+            argv = [str(PATH), '--source', str(root), '--candidate', 'a' * 40, '--base', 'b' * 40,
                     '--output', str(root / 'results')]
             with mock.patch.object(CI, 'load', side_effect=load), mock.patch.object(sys, 'argv', argv):
                 self.assertEqual(CI.main(), 0)
