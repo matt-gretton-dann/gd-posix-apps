@@ -617,24 +617,44 @@ public:
    */
   [[nodiscard]] auto length() const -> NumType
   {
-    return coefficient_width<NumType, true>();
+    if (!digits_) {
+      return 1;
+    }
+
+    /* The length is at most the number of entries in the digits_ vector times the log base.  We
+     * then correct by reducing length by the number of leading zeros.
+     */
+    auto length = digits_->size() * base_log10_;
+    auto rit = digits_->rbegin();
+    auto const finish = digits_->rend();
+    while (rit != finish && *rit == 0) {
+      ++rit;
+      length -= base_log10_;
+    }
+    // Count logical limb positions, including the first significant limb.
+    // The amount expression is not evaluated in ordinary builds.
+    GD_BC_PROFILE_EVENT(Profile::Event::length_scan_limbs,
+                        std::distance(digits_->rbegin(), rit) + (rit != finish ? 1 : 0));
+    if (rit != finish) {
+      length -= base_log10_;
+      NumType d = *rit;
+      assert(d != 0);  // NOLINT
+      while (d != 0) {
+        length += 1;
+        d /= 10;  // NOLINT - 10 is not a magic number
+      }
+    }
+
+    assert(length < base_);  // NOLINT
+
+    return std::max(NumType{1}, static_cast<NumType>(length));
   }
 
-  /** Decimal coefficient width for internal storage algorithms.
-   * Unlike the public length result, this does not narrow enlarged working
-   * coefficients into the trait's value/index type.
+  /** Internal storage-width scan, deliberately separate from public length.
+   * Keep the established public function's call graph and narrowing unchanged.
+   * Prefix-root dimensions must not narrow enlarged working coefficients.
    */
   [[nodiscard]] auto coefficient_digits() const -> std::size_t
-  {
-    return coefficient_width<std::size_t, false>();
-  }
-
-private:
-  // Keep the established public narrowing/clamp order while sharing the scan
-  // with the storage-width query. Testing the policy explicitly also avoids
-  // confusing NumType with size_t on hosts where those types have equal width.
-  template<typename Width, bool PublicLength>
-  [[nodiscard]] auto coefficient_width() const -> Width
   {
     if (!digits_) {
       return 1;
@@ -664,13 +684,9 @@ private:
       }
     }
 
-    if constexpr (PublicLength) {
-      assert(length < base_);  // NOLINT
-    }
-    return std::max(Width{1}, static_cast<Width>(length));
+    return std::max(std::size_t{1}, static_cast<std::size_t>(length));
   }
 
-public:
   /** Copy floor(coefficient * 10^growth / 10^drop) without an oversized owner.
    * Cancel shifts first, copy only surviving limbs when shrinking, and size
    * growing storage once. All dimensions are storage-width values.

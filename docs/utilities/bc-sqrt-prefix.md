@@ -68,9 +68,11 @@ completed issue is claimed by the initial correct prototype.
 
 The public coefficient length keeps its existing trait limit and converts and
 clamps in the public result type. The internal width query uses storage-width
-arithmetic. Both share one scan with explicit result/clamp policies; the public
-assertion is selected by policy rather than by assuming NumType differs from
-size_t on every host. Zero remains one digit through both interfaces. No public
+arithmetic. The current experiment deliberately retains a separate copy of the
+scan for the internal query, preserving the exact previously accepted public
+length function rather than routing it through a shared template. The internal
+query does not assert the public trait limit, including when NumType and size_t
+have equal width. Zero remains one digit through both interfaces. No public
 language limit is enlarged by the internal query.
 
 This preserves the original public clamp ordering while investigating the
@@ -144,3 +146,20 @@ references the external 32-bit entry without defining either prefix helper;
 the kernel object defines both 16-bit and 32-bit entries and implementations.
 This confirms local compilation isolation, not a performance improvement or
 an MSVC/IPO result. Native validation remains pending.
+
+## Preserve the accepted public length code path
+
+Translation-unit isolation alone did not clear native losses at checkpoint
+426905d. Run 41485521321 and the complete three-replica run 41485521233 retain
+ten confirmed Windows losses: input cases on EPYC 7763 and a loop on Intel
+Xeon Platinum 8573C. Nine corresponding controls pass; one is inconclusive.
+Linux/macOS have no confirmed loss, with substantial macOS control noise.
+
+The next refinement restores the public `BasicDigits::length()` function
+verbatim from accepted runtime 21b3638. Its internal wide counterpart has a
+separate scan. The small duplication intentionally preserves the established
+public call/inlining path while keeping enlarged prefix-root dimensions wide.
+The prefix arithmetic, cutoff, external kernels and exact-floor tests remain
+unchanged. This is one further code-generation hypothesis, not a proved cause
+or accepted performance fix. Keep all earlier checkpoints and every native
+cohort outcome; successful jobs cannot waive their measured losses.
