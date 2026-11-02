@@ -147,12 +147,15 @@ class ProfilingCli(unittest.TestCase):
 
     def test_shared_coefficient_square_dispatch(self):
         # Multi-limb operands avoid the single-limb multiply-accumulate path.
-        for digits in (40, 2000):
+        for digits in (40, 2000, 10000):
             with self.subTest(digits=digits):
                 value = '9' * digits
                 counters = self.profile('a={}\nb=a*a\nb-a*a\nlength(b)\n'.format(value),
                                         '0\n{}\n'.format(2 * digits))
                 self.assertGreater(counters['events']['square_multiply_calls'], 0)
+                # Every recursive point of a shared square should retain its
+                # coefficient identity, including the optional higher tier.
+                self.assertEqual(counters['events']['basic_multiply_calls'], 0)
 
     def test_toom_selection_and_temporary_lifetimes(self):
         digits = 10000
