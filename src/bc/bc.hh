@@ -46,6 +46,7 @@ inline constexpr auto extensions_enabled() -> bool
 #include <type_traits>
 #include <unordered_map>
 
+#include "array-storage-candidates.hh"
 #include "array-storage.hh"
 #include "number.hh"
 
@@ -428,7 +429,24 @@ using ArrayIndex = Number::NumType;
 using ArrayElement = std::pair<Array, ArrayIndex>;
 
 /** Array values. */
+// The default is the measured hybrid. Other portable layouts are explicit
+// build-time experiments, so their identity is visible in benchmark recipes.
+#ifndef GD_BC_ARRAY_STORAGE
+#  define GD_BC_ARRAY_STORAGE 0
+#endif
+#if GD_BC_ARRAY_STORAGE == 0
 using ArrayStorage = Details::HybridArrayStorage<Number>;
+#elif GD_BC_ARRAY_STORAGE == 1
+using ArrayStorage = Details::PagedArrayStorage<Number>;
+#elif GD_BC_ARRAY_STORAGE == 2
+using ArrayStorage = Details::FlatArrayStorage<Number>;
+#elif GD_BC_ARRAY_STORAGE == 3
+using ArrayStorage = Details::MapArrayStorage<Number, true>;
+#elif GD_BC_ARRAY_STORAGE == 4
+using ArrayStorage = Details::MapArrayStorage<Number, false>;
+#else
+#  error Unsupported GD_BC_ARRAY_STORAGE selection
+#endif
 using ArrayValues = std::shared_ptr<ArrayStorage>;
 
 template<typename T>

@@ -1,0 +1,8 @@
+array_layout_sequential_full fifteen checked native resource invocations
+array_layout_permuted_dense_full fifteen checked native resource invocations
+array_layout_sparse_full fifteen checked native resource invocations
+array_layout_clustered_full fifteen checked native resource invocations
+array_layout_overwrite_full fifteen checked native resource invocations
+array_layout_absent_full fifteen checked native resource invocations
+array_layout_snapshot_full fifteen checked native resource invocations
+array_layout_heap_values_full fifteen checked native resource invocations

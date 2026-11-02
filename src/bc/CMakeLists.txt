@@ -6,6 +6,14 @@ add_library(libbc)
 target_include_directories(libbc PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_include_directories(libbc PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_link_libraries(libbc PUBLIC gdsup util)
+set(BC_ARRAY_STORAGE hybrid CACHE STRING "Experimental bc array layout: hybrid, paged, flat, hash or ordered")
+set_property(CACHE BC_ARRAY_STORAGE PROPERTY STRINGS hybrid paged flat hash ordered)
+set(_bc_array_layouts hybrid paged flat hash ordered)
+list(FIND _bc_array_layouts "${BC_ARRAY_STORAGE}" _bc_array_layout)
+if(_bc_array_layout LESS 0)
+  message(FATAL_ERROR "Unsupported BC_ARRAY_STORAGE: ${BC_ARRAY_STORAGE}")
+endif()
+target_compile_definitions(libbc PUBLIC GD_BC_ARRAY_STORAGE=${_bc_array_layout})
 set_property(TARGET libbc PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
 set_property(TARGET libbc PROPERTY CXX_STANDARD_REQUIRED ON)
 target_compile_definitions(libbc PRIVATE _CRT_SECURE_NO_WARNINGS)
@@ -168,6 +176,13 @@ endif()
 
 # These local CLI regressions run in both extension configurations and on Windows.
 if(RUN_INTEGRATION_TESTS)
+  # Native performance inputs use the 64-bit-host Number model's index range.
+  # All layouts still have generic 8/16/32-bit storage tests on other targets.
+  if(CMAKE_SIZEOF_VOID_P GREATER 4)
+    add_test(NAME bc/array-benchmark COMMAND "${Python_EXECUTABLE}"
+             "${CMAKE_CURRENT_SOURCE_DIR}/test-array-benchmark.py" "$<TARGET_FILE:bc>")
+    set_tests_properties(bc/array-benchmark PROPERTIES TIMEOUT 60)
+  endif()
   # Committed exact enclosures keep this check independent of optional FLINT.
   add_test(NAME bc/math-oracle COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-math-oracle.py")
