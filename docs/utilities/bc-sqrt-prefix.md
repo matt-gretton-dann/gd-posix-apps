@@ -113,3 +113,34 @@ EPYC/Xeon batch cannot establish coverage for the earlier failing model. If none
 of the fixed jobs obtains that CPU, coverage remains unavailable. The workflow
 runs on its own PR-file changes or manual dispatch; ordinary PRs do not gain
 an automatic three-job Windows cohort after that workflow is accepted.
+
+## Translation-unit isolation experiment
+
+The noinline-only candidate still has confirmed input-conversion regressions
+on the Windows EPYC 7763 cohort (run 41475043315, replica 3), including both
+full and held-out decimal/binary input cases. The other two predetermined
+replicas ran on EPYC 9V74 and 9V45 and did not confirm losses. Those outcomes
+are retained separately; the successful jobs do not establish acceptance.
+
+The next candidate emits the native 16-bit and 32-bit prefix-root entry points
+in `number-sqrt.cc`. Their declarations keep the large implementation out of
+VM compilation, and retain the existing noinline annotation where supported.
+Other trait instantiations, including the exhaustive 8-bit model, use the same
+header-defined generic algorithm. No arithmetic, cutoff, scale, seed selection
+or iteration condition changes. Without compiler attribute support the external
+specializations remain valid C++, with ordinary optimization rules.
+
+This is a code-generation hypothesis. It does not establish that code layout
+caused the regression, and it requires fresh native checks and all predetermined
+Windows CPU cohort outcomes before adoption. IPO may otherwise change call
+boundaries; actual compiler flags and native binary evidence remain relevant.
+
+The local translation-unit candidate passed 247 ASan/UBSan component cases
+(1,233,081 assertions), including 25 root cases with 22,367 assertions,
+26 driver checks, 15 VM differential checks, the activation-lifetime check,
+616 ordinary-source math references, and 23 Release profiling checks. Leak
+Sanitizer is unavailable on this host. Release object inspection shows the VM
+references the external 32-bit entry without defining either prefix helper;
+the kernel object defines both 16-bit and 32-bit entries and implementations.
+This confirms local compilation isolation, not a performance improvement or
+an MSVC/IPO result. Native validation remains pending.

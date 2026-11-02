@@ -2328,15 +2328,15 @@ private:
     }
   }
 
-  // Keep the large prefix kernel behind a call boundary where the compiler
-  // supports one. This code-generation experiment isolates it from surrounding
-  // numeric dispatch; the generic body below remains the fallback otherwise.
-#if defined(_MSC_VER)
-  __declspec(noinline)
-#elif __has_cpp_attribute(gnu::noinline)
-  [[gnu::noinline]]
-#endif
+  // Unusual traits use this header-defined implementation. Native-width
+  // specializations declared below are emitted in number-sqrt.cc, keeping the
+  // large prefix kernel out of the VM translation unit.
   auto sqrt_prefix_if_large(NumType working_scale, NumType target_scale) -> bool
+  {
+    return sqrt_prefix_impl(working_scale, target_scale);
+  }
+
+  auto sqrt_prefix_impl(NumType working_scale, NumType target_scale) -> bool
   {
     constexpr std::size_t cutoff = 128;
     constexpr auto maximum = std::numeric_limits<std::size_t>::max();
@@ -2545,6 +2545,27 @@ private:
   Sign sign_ = Sign::positive;           ///< Sign (+/-1).
   NumType scale_ = 0;                    ///< Scale.
 };
+
+// Keep both native pointer-width choices out of callers, including with IPO
+// where the compiler supports a noinline attribute. Other traits retain the
+// same generic algorithm above without compiler-specific requirements.
+template<>
+#if defined(_MSC_VER)
+__declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+[[gnu::noinline]]
+#endif
+auto BasicNumber<NumberTraits16>::sqrt_prefix_if_large(NumType working_scale, NumType target_scale)
+  -> bool;
+
+template<>
+#if defined(_MSC_VER)
+__declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+[[gnu::noinline]]
+#endif
+auto BasicNumber<NumberTraits32>::sqrt_prefix_if_large(NumType working_scale, NumType target_scale)
+  -> bool;
 
 template<typename Traits>
 auto operator<<(std::ostream& os, BasicNumber<Traits> const& num) -> std::ostream&

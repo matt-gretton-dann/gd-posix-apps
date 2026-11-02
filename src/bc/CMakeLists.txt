@@ -25,8 +25,8 @@ if (ENABLE_IPO)
   set_property(TARGET libbc PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
-target_sources(libbc PRIVATE execution-plan.cc instruction.cc lexer.cc parser.cc reader.cc token.cc
-                            verification.cc vm.cc)
+target_sources(libbc PRIVATE execution-plan.cc instruction.cc lexer.cc number-sqrt.cc parser.cc reader.cc
+                            token.cc verification.cc vm.cc)
 if(ENABLE_BC_PROFILE)
   if(ENABLE_BC_COVERAGE)
     message(FATAL_ERROR "Use separate bc coverage and allocation profiling builds")
