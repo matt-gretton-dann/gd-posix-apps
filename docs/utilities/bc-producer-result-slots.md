@@ -101,3 +101,27 @@ scope and require separate proof and performance evaluation.
 The topic uses the explicit `codex/bc-native-broad/` branch convention, retaining
 full and held-out native arithmetic samples for this executable change. This
 only selects the existing corpus; it does not relax control or loss policies.
+
+## Direct numeric access refinement
+
+The initial typed-pool candidate, PR #409 at `9028375`, is not accepted:
+native run 41491016435 retains 16 confirmed Linux losses and two Windows
+losses. Its completed local full/held-out comparison has 20,880 checked
+executions and no confirmed local loss, which does not waive those native
+results. Logical result storage falls in several cases while process RSS
+remains mixed. Payload savings alone do not establish adoption.
+
+The next refinement uses the verifier's existing numeric-kind proof directly
+for arithmetic operands and returns. Numeric C++ result types select their
+fixed destination pool for literals, arithmetic, scalar loads, calls and
+parameter pops. Location loads retain their statically nonnumeric variant.
+Operations with genuinely mixed public alternatives still use the scoped
+result view. Generic layouts and the full diagnostic interpreter retain
+variant engagement/type checks; there is no new execution mode, source limit,
+slot reuse or cross-activation pointer. The existing last-use proof continues
+to govern coefficient transfers independently of this access change.
+
+Expanded exact opcode fixtures run the same independent native-integer
+oracles through both tiny and numeric-heavy streams, comparing each with the
+full checked interpreter. Further native full/held-out measurements are
+required before claiming that avoiding dynamic result views fixes any loss.

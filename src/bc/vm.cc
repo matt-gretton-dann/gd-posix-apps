@@ -444,7 +444,7 @@ private:
   template<typename Fn>
   void execute_nonary(Fn f)
   {
-    result_at(pc_) = f();
+    set_result(f());
   }
 
   /** \brief        Execute an instruction with one operand, and which sets a result.
@@ -458,7 +458,7 @@ private:
   template<typename Fn>
   void execute_unary(Fn f)
   {
-    result_at(pc_) = f(instrs_[pc_].op1());
+    set_result(f(instrs_[pc_].op1()));
   }
 
   /** \brief              Execute an instruction with two operands, and which sets a result.
@@ -472,7 +472,7 @@ private:
   template<typename Fn>
   void execute_binary(Fn f)
   {
-    result_at(pc_) = f(instrs_[pc_].op1(), instrs_[pc_].op2());
+    set_result(f(instrs_[pc_].op1(), instrs_[pc_].op2()));
   }
 
   /** \brief   Execute an instruction with one expression operand, and has a Number result.
@@ -485,7 +485,7 @@ private:
   {
     Number lhs = take_op1_expr();
     f(lhs);
-    result_at(pc_) = std::move(lhs);
+    set_result(std::move(lhs));
   }
 
   /** \brief   Execute an instruction with two expression operands, and has a Number result.
@@ -500,7 +500,7 @@ private:
     Number lhs = take_op1_expr();
     Number const& rhs = get_op2_expr();
     f(lhs, rhs);
-    result_at(pc_) = std::move(lhs);
+    set_result(std::move(lhs));
   }
 
   /** \brief  Conver the offset in the index  */
@@ -522,6 +522,47 @@ private:
   void validate_result(Instructions::size_type i) const;
   template<bool FullChecks>
   auto execute_impl() -> std::pair<Number, bool>;
+
+  // A numeric operand's kind and availability were proved at entry. Access
+  // its fixed pool directly instead of constructing a dynamic result view.
+  // The full diagnostic oracle and generic layouts keep variant checks.
+  auto number_at(Index instruction) const -> Number&
+  {
+    auto const index = result_indices_ ? result_indices_[instruction] : instruction;
+    if (typed_results_) {
+      assert((index & ResultSlotPlan::number_tag) != 0);  // NOLINT: verified numeric producer.
+      return results_.numbers[index & ~ResultSlotPlan::number_tag];
+    }
+    auto& slot = results_.variants[index];
+    assert_error(slot.has_value(), Msg::empty_result, instruction);  // NOLINT
+    return std::get<Number>(*slot);
+  }
+
+  // The C++ result type selects the numeric destination without a runtime
+  // variant/view tag. This does not change ownership or reuse any live slot.
+  template<typename Value>
+  void set_result(Value&& value)
+  {
+    auto const index = result_indices_ ? result_indices_[pc_] : pc_;
+    if constexpr (std::is_same_v<std::remove_cvref_t<Value>, Number>) {
+      if (typed_results_) {
+        assert((index & ResultSlotPlan::number_tag) != 0);  // NOLINT: verified numeric producer.
+        results_.numbers[index & ~ResultSlotPlan::number_tag] = std::forward<Value>(value);
+        return;
+      }
+    }
+    assert(!typed_results_ || (index & ResultSlotPlan::number_tag) == 0);  // NOLINT
+    results_.variants[index] = std::forward<Value>(value);
+  }
+
+  // Locations have a statically nonnumeric result kind. Retain their owning
+  // variant and engagement check without building a numeric-capable view.
+  auto location_at(Index instruction) const -> ResultSlot&
+  {
+    auto const index = result_indices_ ? result_indices_[instruction] : instruction;
+    assert(!typed_results_ || (index & ResultSlotPlan::number_tag) == 0);  // NOLINT
+    return results_.variants[index];
+  }
 
   // Immutable verified maps select an owning slot, including fixed numeric
   // pools. Full checks and unprofitable layouts retain generic variant slots.
@@ -1104,9 +1145,7 @@ auto GD::Bc::Details::InstructionPack::execute_impl() -> std::pair<GD::Bc::Numbe
       // Returning ends this activation. No producer slot is read afterwards,
       // so transfer the owned result without an extra shared-owner copy.
       auto const index = get_offset_index(instrs_[pc_].op1());
-      auto value = result_at(index);
-      assert_error(value.has_value(), Msg::empty_result, index);  // NOLINT
-      return std::make_pair(std::move(value.get<Number>()), true);
+      return std::make_pair(std::move(number_at(index)), true);
     }
     case Instruction::Opcode::eof:
       assert(pc_ == instrs_.size() - 1);  // NOLINT
@@ -1197,27 +1236,27 @@ void GD::Bc::Details::InstructionPack::execute_load()
 {
   assert(instrs_[pc_].opcode() == Instruction::Opcode::load);  // NOLINT
   Index const loc_idx = get_offset_index(instrs_.at(pc_).op1());
-  auto result = result_at(pc_);
-  auto const loc = result_at(loc_idx);
+  auto const& loc = location_at(loc_idx);
   assert_error(loc.has_value(), Msg::empty_result, loc_idx);  // NOLINT
 
-  loc.visit(Overloaded{
-    // Empty slots are rejected before visiting in both execution modes.
-    [](std::monostate) { std::abort(); },
-    [this](std::string_view /*sv*/) {
-      assert_error(false, Msg::cannot_load, "string_view");  // NOLINT
-    },
-    [this](Number) { assert_error(false, Msg::cannot_load, "Number"); },  // NOLINT
-    [this](ArrayValues const& /*av*/) {
-      assert_error(false, Msg::cannot_load, "ArrayValues");  // NOLINT
-    },
-    [&result, this](Variable v) { result = vm_->variable(v); },
-    [&result, this](Array a) { result = vm_->array(a); },
-    [&result, this](ArrayElement const& ae) { result = vm_->array_element(ae); },
-    [&result, this](Ibase /*ib*/) { result = Number(vm_->ibase()); },
-    [&result, this](Obase /*ob*/) { result = Number(vm_->obase()); },
-    [&result, this](Scale /*s*/) { result = Number(vm_->scale()); },
-  });
+  std::visit(Overloaded{
+               // Empty slots are rejected before visiting in both execution modes.
+               [](std::monostate) { std::abort(); },
+               [this](std::string_view /*sv*/) {
+                 assert_error(false, Msg::cannot_load, "string_view");  // NOLINT
+               },
+               [this](Number) { assert_error(false, Msg::cannot_load, "Number"); },  // NOLINT
+               [this](ArrayValues const& /*av*/) {
+                 assert_error(false, Msg::cannot_load, "ArrayValues");  // NOLINT
+               },
+               [this](Variable v) { set_result(vm_->variable(v)); },
+               [this](Array a) { set_result(vm_->array(a)); },
+               [this](ArrayElement const& ae) { set_result(vm_->array_element(ae)); },
+               [this](Ibase /*ib*/) { set_result(Number(vm_->ibase())); },
+               [this](Obase /*ob*/) { set_result(Number(vm_->obase())); },
+               [this](Scale /*s*/) { set_result(Number(vm_->scale())); },
+             },
+             *loc);
 }
 
 void GD::Bc::Details::InstructionPack::execute_store()
@@ -1324,17 +1363,13 @@ auto GD::Bc::Details::InstructionPack::get_offset_index(Instruction::Operand con
 auto GD::Bc::Details::InstructionPack::get_op_expr(Instruction::Operand const& op) const
   -> GD::Bc::Number const&
 {
-  auto const result = result_at(get_offset_index(op));
-  assert_error(result.has_value(), Msg::empty_result, get_offset_index(op));  // NOLINT
-  return result.get<Number>();
+  return number_at(get_offset_index(op));
 }
 
 auto GD::Bc::Details::InstructionPack::take_op1_expr() -> GD::Bc::Number
 {
   auto const index = get_offset_index(instrs_[pc_].op1());
-  auto result = result_at(index);
-  assert_error(result.has_value(), Msg::empty_result, index);  // NOLINT
-  auto& number = result.get<Number>();
+  auto& number = number_at(index);
   if (number.has_heap_storage() && !consumption_.empty() && consumption_[pc_] != 0) {
     // One static use within a straight-line block proves this slot cannot be
     // read again before its producer executes. Other COW owners stay intact.
