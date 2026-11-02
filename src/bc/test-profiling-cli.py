@@ -86,6 +86,24 @@ class ProfilingCli(unittest.TestCase):
         self.assertLess(events['sqrt_root_digits_sum'],
                         coefficient_digits * events['sqrt_iterations'])
 
+    def test_exact_power_seed_does_not_add_newton_requests(self):
+        places = 200
+        events = self.profile('scale={}\nsqrt(1)\n'.format(places),
+                              '1.' + '0' * places + '\n',
+                              numeric_continuations=True)['events']
+        self.assertLessEqual(events['sqrt_iterations'], 1)
+        self.assertLessEqual(events['division_requests'], 1)
+
+    def test_near_square_seed_retains_its_short_newton_path(self):
+        places = 256
+        # (10^k+1)^2-1 has floor root 10^k, independently of bc.
+        value = '1' + '0' * (places - 1) + '2' + '0' * places
+        events = self.profile('scale=0\nsqrt({})\n'.format(value),
+                              '1' + '0' * places + '\n',
+                              numeric_continuations=True)['events']
+        self.assertLessEqual(events['sqrt_iterations'], 3)
+        self.assertLessEqual(events['division_requests'], 3)
+
     def test_scaled_division_avoids_shared_decimal_padding(self):
         def decimal(coefficient, places):
             text = str(coefficient).zfill(places + 1)
