@@ -1,0 +1,18 @@
+{
+  "os": "macos",
+  "checked": 2000,
+  "identities": {
+    "base": "fac133458f4671fa39f626913faf55948b7848d6",
+    "candidate": "7c30eb3c182d257c189395692c856d517735d880"
+  },
+  "confirmed": [],
+  "selected": [
+    "| full | paired | `loop_1000000` | 1.061 [0.9788166710399314, 1.1559503025208135] | inconclusive-noisy |",
+    "| full | paired | `calls_200000` | 1.071 [0.7322373785951024, 1.1241993529865655] | inconclusive-noisy |",
+    "| full | paired | `array_200000` | 0.964 [0.8005836889104555, 1.1869475443372113] | inconclusive-noisy |",
+    "| full | paired | `compare_equal_1000d_x100000` | 0.977 [0.9474267139690501, 1.001827386321843] | pass |",
+    "| full | paired | `sqrt_scale100_x5000` | 0.992 [0.925229139538474, 1.0729255053795306] | inconclusive-noisy |",
+    "| full | paired | `file_statements_20000` | 0.912 [0.8594638972055363, 1.103366285103324] | inconclusive-noisy |"
+  ],
+  "sha256": "180341be2dba9c8560c74da429e27ce3c60b321b6d4719c4f9c85d2448821cf1"
+}

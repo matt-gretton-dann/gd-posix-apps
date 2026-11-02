@@ -126,7 +126,7 @@ class BenchmarkCli(unittest.TestCase):
         self.assertEqual(result.stderr, "")
         rows = [json.loads(line) for line in
                 (output / "samples.jsonl").read_text(encoding="utf-8").splitlines()]
-        self.assertEqual(len(rows), 50)
+        self.assertEqual(len(rows), 56)
         self.assertTrue(all(row["checked"] for row in rows))
         manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
         files = [case for case in manifest['corpus'] if case['group'] == 'file_streaming']
@@ -369,18 +369,60 @@ class PairedStatistics(unittest.TestCase):
             oracle = ('\n'.join(case['expected']) + '\n').encode()
             self.assertEqual(hashlib.sha256(oracle).hexdigest(), previous['oracle_sha256'])
 
+    def test_scaled_division_cases_preserve_all_original_payloads(self):
+        module = self.module()
+        path = Path(__file__).resolve().parent / 'fixtures/benchmark-corpus-before-scaled-division.json'
+        recorded = json.loads(path.read_text())
+        for preset, previous in recorded['presets'].items():
+            cases = module.corpus(preset, seed=previous['seed'])
+            self.assertEqual(len(cases), len(previous['cases']) + 6)
+            by_name = {case['name']: case for case in cases}
+            for name, digest in previous['cases'].items():
+                payload = json.dumps(by_name[name], sort_keys=True, separators=(',', ':')).encode()
+                self.assertEqual(hashlib.sha256(payload).hexdigest(), digest)
+
+    def test_scaled_division_oracles_cover_scale_directions_and_holdout(self):
+        from fractions import Fraction
+        module = self.module()
+        inventories = {}
+        for preset, seed in [('quick', 197200), ('full', 197200), ('holdout', 197201)]:
+            cases = [case for case in module.corpus(preset, seed=seed)
+                     if case['group'].startswith('divide_scaled_')]
+            self.assertEqual(len(cases), 6)
+            for shape in ('dense', 'trailing_zero'):
+                rows = [case for case in cases if case['parameters']['shape'] == shape]
+                self.assertEqual(len(rows), 3)
+                relations = set()
+                for case in rows:
+                    parameters = case['parameters']
+                    source = re.search(r'\na=([0-9.]+)\n', case['program']).group(1)
+                    value = Fraction(source) / int(parameters['divisor'])
+                    scale = parameters['scale']
+                    expected = Fraction(int(value * 10 ** scale), 10 ** scale)
+                    self.assertEqual(Fraction(case['expected'][0]), expected)
+                    self.assertEqual(len(case['expected'][0].split('.')[1]), scale)
+                    delta = scale - parameters['input_scale']
+                    relations.add(-1 if delta < 0 else 1 if delta > 0 else 0)
+                    self.assertGreater(parameters['iterations'], 0)
+                self.assertEqual(relations, {-1, 0, 1})
+            inventories[preset] = cases
+        self.assertNotEqual(inventories['full'][0]['parameters']['input_scale'],
+                            inventories['holdout'][0]['parameters']['input_scale'])
+        self.assertNotEqual(inventories['full'][0]['parameters']['divisor'],
+                            inventories['holdout'][0]['parameters']['divisor'])
+
     def test_expanded_sqrt_cases_preserve_every_previous_case(self):
         module = self.module()
         fixture = Path(__file__).resolve().parent / 'fixtures/benchmark-corpus-before-sqrt.json'
         report = json.loads(fixture.read_text())
         for preset, recorded in report['presets'].items():
             cases = module.corpus(preset, seed=recorded['seed'])
-            self.assertEqual(len(cases), 50)
+            self.assertEqual(len(cases), 56)
             for actual, previous in zip(cases[:46], recorded['cases']):
                 self.assertEqual(actual['name'], previous['name'])
                 payload = json.dumps(actual, sort_keys=True, separators=(',', ':')).encode()
                 self.assertEqual(hashlib.sha256(payload).hexdigest(), previous['sha256'])
-            extra = cases[46:]
+            extra = cases[46:50]
             self.assertEqual([c['group'] for c in extra],
                              ['sqrt_large_scale', 'sqrt_tiny', 'sqrt_tiny', 'sqrt_large_integer'])
             for case in extra:

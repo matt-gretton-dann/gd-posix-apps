@@ -1,0 +1,70 @@
+"""Audit every frozen division comparison class and preserve all outcomes."""
+from collections import Counter
+import hashlib
+import importlib.util
+import json
+from pathlib import Path
+
+scripts=Path('/private/tmp/gd-posix-cancel-division/src/bc/scripts')
+spec=importlib.util.spec_from_file_location('bench',scripts/'bench-bc.py')
+bench=importlib.util.module_from_spec(spec);spec.loader.exec_module(bench)
+root=Path('/private/tmp/bc-368-paired-release')
+assert (root/'complete.json').is_file() and not (root/'failure.json').exists()
+expected_sources={'gd-base':'96d900b8e66c299d35e7a93c63b7fb5ef5131654',
+                  'gd-candidate':'7d538de7813d024995465fc3b98334851a7fbcb3',
+                  'howard':'c8dabac65d39fd527a9264a5e505a99b1d8df3d8'}
+results=[];checked=0;signals=[]
+for suite in ('arithmetic','math'):
+ for preset in ('full','holdout'):
+  directory=root/(suite+'-'+preset)
+  manifest=json.loads((directory/'manifest.json').read_text())
+  summary=json.loads((directory/'summary.json').read_text())
+  assert manifest['samples']==15 and manifest['warmups']==3
+  assert manifest['harness_sha256']==bench.digest_file(scripts/'bench-bc.py')
+  for tool in manifest['implementations']:
+   assert tool['metadata']['source_revision']==expected_sources[tool['name']]
+   assert tool['metadata']['instrumented'] is False
+   assert tool['binary_sha256']==bench.digest_file(tool['argv'][0])
+  if suite=='math':
+   original=Path('/private/tmp/bc-217-frozen-v1-math')/(preset+'-prepared')
+   cases,replay=bench.replay_corpus(original,'math')
+   assert manifest['replayed_corpus']['source_manifest_sha256']==bench.digest_file(original/'manifest.json')
+  else:
+   cases=bench.corpus(preset,seed=197200 if preset=='full' else 197201)
+  assert len(manifest['corpus'])==len(cases)==(60 if suite=='math' else 56)
+  expected={case['name']:case for case in cases}
+  rows=[json.loads(line) for line in (directory/'samples.jsonl').read_text().splitlines()]
+  assert len(rows)==len(cases)*3*18 and all(row['checked'] for row in rows)
+  counts=Counter((row['workload'],row['implementation'],row['phase']) for row in rows)
+  for item in manifest['corpus']:
+   name=item['name'];case=expected[name]
+   for suffix,key,payload in [('.bc','program_sha256',case['program'].encode('utf-8')),
+                               ('.expected','oracle_sha256',bench.oracle_payload(case))]:
+    actual=(directory/'workloads'/(name+suffix)).read_bytes()
+    assert actual==payload and hashlib.sha256(actual).hexdigest()==item[key]
+   for role in expected_sources:
+    assert counts[(name,role,'measurement')]==15
+    assert counts[(name,role,'warmup')]==3
+  checked+=len(rows)
+  for case in summary['workloads']:
+   ratio=case['candidate_over_reference']['gd-candidate']
+   substantive=case['group']!='startup' and case['parameters'].get('mode')!='one_shot'
+   if substantive and ratio['ci95'][0]>1.05:signals.append((suite,preset,case['name']))
+   record=dict(suite=suite,preset=preset,name=case['name'],parameters=case['parameters'],
+               candidate_over_base=ratio,duration_target_met=case.get('duration_target_met'))
+   if suite=='math':
+    def times(role):return [row['seconds'] for row in sorted(rows,key=lambda r:r['round'])
+        if row['phase']=='measurement' and row['workload']==case['name'] and row['implementation']==role]
+    record['candidate_over_howard']=bench.paired_statistics(times('gd-candidate'),times('howard'),1973689)
+   results.append(record)
+assert checked==12528 and len(results)==232
+assert not signals,signals
+report=dict(checked=checked,classes=len(results),substantive_outside_regression_band=signals,
+            runtime_sources=expected_sources,protocol_revision='fe61ffb515b0055e2a6c371abb51a6f287621873',
+            scope='per-class observations; math is identical ordinary file on both GD binaries, not embedded -l',
+            limitations=['normal host scheduling; no CPU isolation','nominal paired intervals; no aggregate pass',
+                         'calibrated replay counts frozen before core change; preserve per-role duration shortfalls',
+                         'this experiment has no new independent A/A batch; frozen library controls and native core controls remain separate'],
+            results=results)
+(root/'audit.json').write_text(json.dumps(report,indent=2,sort_keys=True)+'\n')
+print('Verified',checked,'checked observations across',len(results),'classes; no substantive outside-band regression signal')

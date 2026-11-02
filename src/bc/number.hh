@@ -2063,16 +2063,31 @@ public:
       return;
     }
 
-    /* We want both sides to have the same scale.  */
+    // For nonnegative coefficients A/B, operand scales sa/sb and result
+    // scale t, the quotient coefficient is floor(A*10^(t+sb-sa)/B).
+    // Cancel powers introduced on both sides rather than padding a small
+    // integer divisor to the numerator's fractional scale. Differences avoid
+    // overflowing a scale field when the combined exponent would be large.
     if (scale() > rhs.scale()) {
-      rhs.digits_.mul_pow10(scale() - rhs.scale());
+      NumType const difference = scale() - rhs.scale();
+      if (target_scale >= difference) {
+        digits_.mul_pow10(target_scale - difference);
+      }
+      else {
+        // Integer comparison requires present storage even for a zero
+        // numerator. Preserve the old identity normalization without padding.
+        digits_.mul_pow10(0);
+        rhs.digits_.mul_pow10(difference - target_scale);
+      }
     }
-    else if (scale() < rhs.scale()) {
-      digits_.mul_pow10(rhs.scale() - scale());
+    else {
+      if (scale() < rhs.scale()) {
+        digits_.mul_pow10(rhs.scale() - scale());
+      }
+      digits_.mul_pow10(target_scale);
     }
 
-    digits_.mul_pow10(target_scale);
-    // Record logical coefficient dimensions after scale alignment and before
+    // Record logical coefficient dimensions after decimal-factor cancellation and before
     // comparison/normalization. These are request totals, not CPU or RSS costs.
     GD_BC_PROFILE_EVENT(Profile::Event::division_requests, 1);
     GD_BC_PROFILE_EVENT(Profile::Event::division_dividend_limbs, digits_.coefficient_limbs());

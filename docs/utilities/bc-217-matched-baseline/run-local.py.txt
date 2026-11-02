@@ -1,0 +1,30 @@
+import importlib.util,json,sys
+from pathlib import Path
+scripts=Path('/private/tmp/gd-posix-native-math/src/bc/scripts')
+spec=importlib.util.spec_from_file_location('native_math',str(scripts/'benchmark-math-ci.py'))
+ci=importlib.util.module_from_spec(spec);spec.loader.exec_module(ci)
+root=Path('/private/tmp/bc-217-frozen-v1-math');commands=ci.Commands(root,7200)
+try:
+ for preset in ('full','holdout'):
+  prepared=root/(preset+'-prepared')
+  commands.run([sys.executable,str(scripts/'bench-bc.py'),'--suite','math','--config',str(root/'preparation.json'),'--output',str(prepared),'--preset',preset,'--calibrate-seconds','.1','--calibrate-only','--require-provenance'])
+  for comparison,reference in [('aa','gd-portable'),('paired','howard-standard')]:
+   target=root/(preset+'-'+comparison)
+   command=[sys.executable,str(scripts/'bench-bc.py'),'--suite','math','--config',str(root/(comparison+'.json')),'--output',str(target),'--replay-corpus',str(prepared),'--reference',reference,'--samples','15','--warmups','3','--seed','1972170','--require-provenance']
+   commands.run(command)
+   ci.measurements(target)
+   if comparison=='aa':
+    summary=json.loads((target/'summary.json').read_text())
+    suspects=[r['name'] for r in summary['workloads'] if r['candidate_over_reference']['gd-aa']['ci95'][0]>1.05 or r['candidate_over_reference']['gd-aa']['ci95'][1]<.95]
+    if suspects:
+     confirm=command+[p for name in suspects for p in ('--workload',name)]
+     confirm[confirm.index('--output')+1]=str(root/(preset+'-aa-confirmation'))
+     confirm[confirm.index('--seed')+1]='1972171'
+     commands.run(confirm)
+     ci.measurements(root/(preset+'-aa-confirmation'))
+ ci.write(root/'complete.json',dict(status='checked measurements complete; acceptance requires per-class audit'))
+except Exception as error:
+ ci.write(root/'failure.json',dict(error=str(error),status='no acceptance'))
+ raise
+finally:
+ ci.write(root/'orchestration.json',dict(commands=commands.commands))
