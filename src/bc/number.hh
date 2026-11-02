@@ -2238,7 +2238,33 @@ public:
     sign_ = sign_ == rhs.sign_ ? Sign::positive : Sign::negative;
   }
 
-  void modulo(BasicNumber rhs, NumType target_scale)
+  void modulo(BasicNumber rhs, NumType target_scale) { modulo_impl(std::move(rhs), target_scale); }
+
+  void sqrt(NumType target_scale) { sqrt_impl(target_scale); }
+
+  /** \brief  Are we equal to zero?
+   *  \return True iff equal to zero.
+   */
+  [[nodiscard]] auto is_zero() const -> bool { return digits_.is_zero(); }
+
+  auto operator==(BasicNumber const& rhs) const -> bool
+  {
+    return compare(rhs) == Details::ComparisonResult::equality;
+  }
+
+  auto operator<(BasicNumber const& rhs) const -> bool
+  {
+    return compare(rhs) == Details::ComparisonResult::less_than;
+  }
+
+  auto operator>(BasicNumber const& rhs) const -> bool
+  {
+    return compare(rhs) == Details::ComparisonResult::greater_than;
+  }
+
+private:
+  // Native-width modulo entries compile this same generic body outside the VM.
+  void modulo_impl(BasicNumber rhs, NumType target_scale)
   {
     if (target_scale <= std::numeric_limits<NumType>::max() - rhs.scale()) {
       if (rhs.is_zero()) {
@@ -2285,29 +2311,6 @@ public:
     }
   }
 
-  void sqrt(NumType target_scale) { sqrt_impl(target_scale); }
-
-  /** \brief  Are we equal to zero?
-   *  \return True iff equal to zero.
-   */
-  [[nodiscard]] auto is_zero() const -> bool { return digits_.is_zero(); }
-
-  auto operator==(BasicNumber const& rhs) const -> bool
-  {
-    return compare(rhs) == Details::ComparisonResult::equality;
-  }
-
-  auto operator<(BasicNumber const& rhs) const -> bool
-  {
-    return compare(rhs) == Details::ComparisonResult::less_than;
-  }
-
-  auto operator>(BasicNumber const& rhs) const -> bool
-  {
-    return compare(rhs) == Details::ComparisonResult::greater_than;
-  }
-
-private:
   // Keep the generic algorithm available for every trait. Native-width entry
   // points below call this same implementation from number-sqrt.cc.
   void sqrt_impl(NumType target_scale)
@@ -2635,6 +2638,24 @@ private:
   Sign sign_ = Sign::positive;           ///< Sign (+/-1).
   NumType scale_ = 0;                    ///< Scale.
 };
+
+// Isolate the native remainder driver from instruction dispatch. Other traits
+// keep the same generic implementation without a required compiler attribute.
+template<>
+#if defined(_MSC_VER)
+__declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+[[gnu::noinline]]
+#endif
+void BasicNumber<NumberTraits16>::modulo(BasicNumber rhs, NumType target_scale);
+
+template<>
+#if defined(_MSC_VER)
+__declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+[[gnu::noinline]]
+#endif
+void BasicNumber<NumberTraits32>::modulo(BasicNumber rhs, NumType target_scale);
 
 // Isolate the complete native root, including its small-root fallback.
 // Other traits retain the identical header-defined generic algorithm.

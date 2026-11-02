@@ -65,3 +65,36 @@ all prior 56 corpus cases and their payloads remain unchanged in each preset;
 all 58 quick cases execute with checked outputs. The full native branch route
 will compare complete full/holdout classes, not just the new modulo groups.
 Native timing remains pending and no runtime adoption is claimed.
+
+
+## Isolate native remainder compilation
+
+Initial head `8cbb65a5` retains 17,430 checked native rows: Linux 5830, macOS
+5800 and Windows 5800. All nine timing executables and eighteen inspection
+outputs are verified. Linux full small squaring regresses with a passing A/A
+control: first paired median 1.06474, 95% interval [1.06122,1.06940], confirmation
+1.06815 [1.06392,1.07600]. macOS/Windows do not confirm a candidate loss in those
+batches; their different results do not waive the Linux loss. Integer/scaled
+modulo improvements cannot hide it. This source is rejected for adoption.
+
+The next experiment emits native 16/32-bit modulo entry points from
+`number-remainder.cc`, following the accepted root kernel structure. The entire
+arithmetic/fallback body moves unchanged to one private generic implementation;
+a byte-for-byte source extraction verifies that move. Native entry declarations
+request noinline only where supported. Other traits use the same header-defined
+generic body; other compilers retain ordinary optimization rules. There is no
+new arithmetic, cutoff, public limit, workload recognition or ISA assumption.
+
+This is a compilation-isolation hypothesis, not an established explanation of
+the squaring loss or an accepted remedy. Local Release object inspection shows
+the VM refers to the external native modulo entry and does not define the
+remainder driver or remainder-only division kernel. The new object defines
+both native entry points and the generic implementations. IPO can still affect
+code generation; fresh complete native evidence is required before adoption.
+
+The isolated candidate passes 257 ASan/UBSan cases / 1,505,459 assertions,
+nine CLI/driver/lifetime checks, 616 ordinary-source math references, and
+24 profiling checks with extensions ON and separately OFF. LeakSanitizer is
+unavailable. Earlier logical allocation measurements remain under their exact
+`8cbb65a5` source: traffic falls while peak tracked digits rise; neither becomes
+a claim about this unmeasured refinement.
