@@ -5,6 +5,7 @@
 #include "execution-plan.hh"
 
 #include <cassert>
+#include <limits>
 
 namespace GD::Bc::Details {
 namespace {
@@ -111,6 +112,38 @@ auto classify_result(Instructions const& code, Instruction::Index index) -> Resu
     return ResultKind::none;
   }
   return ResultKind::none;
+}
+
+auto plan_result_slots(Instructions const& code, std::size_t slot_bytes) -> ResultSlotPlan
+{
+  using Compact = ResultSlotPlan::CompactIndex;
+  auto const size = code.size();
+  // Avoid per-item map work on tiny CLI streams and preserve the full index
+  // domain through the existing representation when narrowing cannot be proved.
+  if (size < 16 || size > std::numeric_limits<Compact>::max() ||
+      size > std::numeric_limits<std::size_t>::max() / sizeof(Compact) ||
+      slot_bytes <= sizeof(Compact)) {
+    return {};
+  }
+  std::size_t producers = 0;
+  visit_execution_region(code, [&](Instruction::Index i) {
+    if (classify_result(code, i) != ResultKind::none)
+      ++producers;
+  });
+  // Include the shared empty sentinel and the persistent map in the payload
+  // comparison. Division avoids overflowing a saved-slots * slot-bytes product.
+  if (producers >= size - 1 || size - producers - 1 <= size * sizeof(Compact) / slot_bytes) {
+    return {};
+  }
+  ResultSlotPlan result;
+  result.indices.resize(size, 0);
+  Compact next = 1;
+  visit_execution_region(code, [&](Instruction::Index i) {
+    if (classify_result(code, i) != ResultKind::none)
+      result.indices[i] = next++;
+  });
+  result.count = next;
+  return result;
 }
 
 auto plan_consumption(Instructions const& code, bool persistent) -> ConsumptionPlan

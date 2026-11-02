@@ -19,6 +19,35 @@ enum class ResultKind { none, number, string, scalar_location, array_location, a
 // classifies producer types; it does not establish availability or dominance.
 auto classify_result(Instructions const& code, Instruction::Index index) -> ResultKind;
 
+// A compact map assigns slots only to value-producing instructions in this
+// execution region. Zero is a shared empty sentinel for non-producers and
+// skipped definition bodies. Producers never share slots with one another;
+// no liveness or control-flow-dependent reuse is inferred here.
+struct ResultSlotPlan
+{
+  using CompactIndex = std::uint32_t;
+  using Map =
+    std::vector<CompactIndex,
+                Profile::Allocator<CompactIndex, Profile::AllocationKind::execution_plans>>;
+  Map indices;
+  std::size_t count{0};
+
+  // Empty metadata retains the original instruction-indexed representation.
+  auto storage_size(std::size_t instruction_count) const -> std::size_t
+  {
+    return indices.empty() ? instruction_count : count;
+  }
+  auto index(Instruction::Index instruction) const -> Instruction::Index
+  {
+    return indices.empty() ? instruction : indices[instruction];
+  }
+};
+
+// Call after complete verification. Small streams, unrepresentable compact
+// indices and layouts without a net slot/map payload saving keep the generic
+// identity layout. slot_bytes is the caller's actual result-slot sizeof.
+auto plan_result_slots(Instructions const& code, std::size_t slot_bytes) -> ResultSlotPlan;
+
 // One byte per instruction: nonzero permits transferring its first arithmetic
 // operand. An empty plan keeps ordinary copies without a per-instruction table.
 using ConsumptionPlan =
