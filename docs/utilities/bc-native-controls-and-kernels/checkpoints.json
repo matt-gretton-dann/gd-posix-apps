@@ -796,6 +796,102 @@
           "sha256": "8983f34cb395bfb840dc06d3bae3fe52f881cc03d8eec79619919b66a9ccaff4"
         }
       }
+    },
+    {
+      "name": "typed-sparse-8cf-409",
+      "base": "19b930d9d78286c6b959a0f75c67f8ec6e194edb",
+      "candidate": "8cf4c3b8c77c235312d095f3e6cf4c943e3112de",
+      "run_id": 41531061483,
+      "minimum_checked": 5600,
+      "status": "Rejected sparse numeric backing: confirmed Windows held-out loop regression; control inconclusive, not a waiver",
+      "recorded_symmetric_policy": true,
+      "candidate_toom3_threshold": 0,
+      "hosts": {
+        "linux": {
+          "path": "native/typed-sparse-8cf-409/linux.zip",
+          "sha256": "e8ce089b6e6a40e2bd65f7ed57888018164fd24c90fb0f5a5c8264e2898970f8"
+        },
+        "macos": {
+          "path": "native/typed-sparse-8cf-409/macos.zip",
+          "sha256": "f278f044d18c8e6f7430039775e7533716a2a778084d1d0469b7b67c2734d237"
+        },
+        "windows": {
+          "path": "native/typed-sparse-8cf-409/windows.zip",
+          "sha256": "eb061fa0ca2480bcd994e0ae854ea3f3d745f9c02ed15884c2de03cb89ad3059"
+        }
+      }
+    },
+    {
+      "name": "root-final-a9a2-405",
+      "base": "19b930d9d78286c6b959a0f75c67f8ec6e194edb",
+      "candidate": "a9a2d5915ff45c85d0ca92f42931c62f4ac9430e",
+      "run_id": 41531532145,
+      "minimum_checked": 5600,
+      "status": "Accepted exact staged-root implementation in PR #405; no confirmed candidate loss, other #197 goals remain open",
+      "recorded_symmetric_policy": true,
+      "candidate_toom3_threshold": 0,
+      "hosts": {
+        "linux": {
+          "path": "native/root-final-a9a2-405/linux.zip",
+          "sha256": "4fb597ce318eeb15b30b89b50e2a9cc01f9cf32af60a2270d4d711ee4a589fae"
+        },
+        "macos": {
+          "path": "native/root-final-a9a2-405/macos.zip",
+          "sha256": "82d416818d71f5a7df0e48bdd8ca086bff62fbacaf0d9777ae0718b3d5cb7b26"
+        },
+        "windows": {
+          "path": "native/root-final-a9a2-405/windows.zip",
+          "sha256": "25ec659a7972fa71faf6424953f8c3ed2c39fc35140ae8401e74fffb1d8d1a17"
+        }
+      }
+    },
+    {
+      "name": "root-final-a9a2-cpu1-405",
+      "base": "19b930d9d78286c6b959a0f75c67f8ec6e194edb",
+      "candidate": "a9a2d5915ff45c85d0ca92f42931c62f4ac9430e",
+      "run_id": 41531532108,
+      "minimum_checked": 5600,
+      "status": "Predetermined accepted-root CPU replica; no filtering or pooled acceptance",
+      "recorded_symmetric_policy": true,
+      "candidate_toom3_threshold": 0,
+      "hosts": {
+        "windows": {
+          "path": "native/root-final-a9a2-cpu1-405/windows.zip",
+          "sha256": "d8e1b3b07c1bd8caf3aa525deeaea6e06f6c86d0384168e845ab8f332b4b59b7"
+        }
+      }
+    },
+    {
+      "name": "root-final-a9a2-cpu2-405",
+      "base": "19b930d9d78286c6b959a0f75c67f8ec6e194edb",
+      "candidate": "a9a2d5915ff45c85d0ca92f42931c62f4ac9430e",
+      "run_id": 41531532108,
+      "minimum_checked": 5600,
+      "status": "Predetermined accepted-root CPU replica; no filtering or pooled acceptance",
+      "recorded_symmetric_policy": true,
+      "candidate_toom3_threshold": 0,
+      "hosts": {
+        "windows": {
+          "path": "native/root-final-a9a2-cpu2-405/windows.zip",
+          "sha256": "601a908393c28da5797b5f926d1063066468a501f6ef3c4e8b43d85b798de4c9"
+        }
+      }
+    },
+    {
+      "name": "root-final-a9a2-cpu3-405",
+      "base": "19b930d9d78286c6b959a0f75c67f8ec6e194edb",
+      "candidate": "a9a2d5915ff45c85d0ca92f42931c62f4ac9430e",
+      "run_id": 41531532108,
+      "minimum_checked": 5600,
+      "status": "Predetermined accepted-root CPU replica; no filtering or pooled acceptance",
+      "recorded_symmetric_policy": true,
+      "candidate_toom3_threshold": 0,
+      "hosts": {
+        "windows": {
+          "path": "native/root-final-a9a2-cpu3-405/windows.zip",
+          "sha256": "1becd0870fe38111dcc214033ccddc97e8a72210201a91e04a4266016761b8cd"
+        }
+      }
     }
   ],
   "scope": "Exact original artifact ZIPs; runtime adoption status is per checkpoint, not inferred from green jobs"

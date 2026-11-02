@@ -9,8 +9,8 @@ Refs [#197](https://github.com/matt-gretton-dann/gd-posix-apps/issues/197),
 [#402](https://github.com/matt-gretton-dann/gd-posix-apps/issues/402).
 
 This archive retains successful and rejected checkpoints together. There are
-374,670 checked native children across 37 checkpoints and 87 byte-for-byte
-original native ZIPs. They include 243 timing executables and 486 native
+425,130 checked native children across 42 checkpoints and 96 byte-for-byte
+original native ZIPs. They include 270 timing executables and 540 native
 inspection outputs; the six older #387 ZIPs predate executable collection and
 retain recipes/binary hashes only. Missing historical machine code remains
 explicitly unavailable. Completed local producer, typed-pool and Toom experiments
@@ -44,7 +44,7 @@ artifact hashes and per-checkpoint treatment. [audit-summary.json](audit-summary
 keeps every confirmed loss and control qualification per host. The ordinary main
 math implementation was unavailable in these native matrices; green unavailable
 math jobs are not math-performance passes. This archive does not close #204,
-#207, #212, #216 or #197, nor adopt a Toom threshold or staged-root candidate.
+#207, #212, #216 or #197, nor adopt a Toom threshold. The final staged-root implementation was accepted in #405.
 
 The shared A/A policy requires a complete interval inside [0.95,1.05] to pass.
 At most one independent-seed confirmation can establish persistent bias in
@@ -217,5 +217,23 @@ metadata test failure is retained. No timing or adoption claim rests on either
 missing executable. The optional-deque metadata test separately fails at 4088
 extra bytes. The final sparse candidate passes both bounds, but its generic
 recursion frame peak is 15,928 bytes versus 14,392 for `cbbc754`; it does not
-universally reduce frame allocation. Current sparse and root integration native
-matrices are separate pending evidence and are not included in these totals.
+universally reduce frame allocation. The completed sparse and root integration matrices are retained below and included in the totals.
+
+
+The final `a9a2d591` root matrix adds 33,600 checked children and eighteen exact
+executables across ordinary Linux/macOS/Windows and three predetermined Windows
+replicas. None confirms a candidate regression. Replicas 1 and 3 ran on EPYC
+7763; replica 2 used Xeon 6973P-C, and ordinary Windows used Xeon Platinum
+8573C. All twenty current-head check records passed before PR #405 merged as
+`66cbf5d`. Scale-5000 paired ratios range from 0.232 to 0.272 and scale-10000
+from 0.208 to 0.222 across those six hosts. Small-scale roots remain near
+baseline. Neither this successful source nor the earlier `535` source erases
+the rejected source checkpoints or their recorded losses. The remaining huge
+integer/Howard competitive gap stays under #200/#197.
+
+The final `8cf4c3b` sparse numeric-backing matrix adds 16,860 checked children
+and nine exact executables. Linux/macOS have no confirmed candidate loss.
+Windows held-out `loop_875000` regresses: first median 1.08283 with 95% interval
+[1.06805,1.11639], bounded confirmation 1.07905 [1.06678,1.13833]. Its A/A control
+is inconclusive. That limits attribution without waiving the loss: PR #409
+remains unaccepted, independently of its earlier `cbbc754` held-call loss.
