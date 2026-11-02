@@ -471,3 +471,34 @@ TEST_CASE("Recursive numeric results preserve array snapshots and caller locals"
   // Summing n=0..4 gives 5*148+10=750. The caller's array stays seven.
   CHECK(execute(*code) == "750\n7\n30\n");
 }
+
+TEST_CASE("Numeric activations survive alternating generic calls at shared depths",
+          "[bc][vm][execution][typed-results]")
+{
+  std::string sum = "1";
+  for (unsigned n = 2; n <= 64; ++n)
+    sum += "+" + std::to_string(n);
+  // The large numeric body calls a tiny generic body at a deeper depth, then
+  // later reuses those depths in the opposite layout. All callers' storage
+  // must remain stable while recursive preparation grows either backing pool.
+  std::string const source = "define g(x) {\nreturn(x*x+1)\n}\n"
+                             "define f(n) {\nauto x\nx=" +
+                             sum +
+                             "\n"
+                             "if(n==0) return(g(x))\n"
+                             "return(f(n-1)+g(x+n))\n}\n"
+                             "f(4)\ng(3)\nf(1)\ng(5)\n";
+  auto expected = [](unsigned depth) {
+    unsigned value = 0;
+    for (unsigned n = 0; n <= depth; ++n) {
+      auto const x = 64U * 65U / 2U + n;
+      value += x * x + 1;
+    }
+    return std::to_string(value);
+  };
+  GD::Bc::Parser parser(
+    std::make_unique<GD::Bc::Lexer>(std::make_unique<GD::Bc::StringReader>(source)), false);
+  auto code = parser.parse();
+  REQUIRE(code != nullptr);
+  CHECK(execute(*code) == expected(4) + "\n10\n" + expected(1) + "\n26\n");
+}
