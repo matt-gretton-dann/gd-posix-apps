@@ -222,6 +222,9 @@ def main():
                     shutil.copyfile(str(path), str(target / path.name))
             if (source / 'logs').is_dir():
                 shutil.copytree(str(source / 'logs'), str(target / 'logs'))
+        # Every timed child has finished. Preserve the actual measured code
+        # without rebuilding, relinking or changing compiler flags.
+        load('collect-bc-codegen').collect(entries, evidence / 'codegen')
 
 
 if __name__ == '__main__':

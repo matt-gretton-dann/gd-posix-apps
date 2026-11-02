@@ -137,7 +137,15 @@ class NativeTrends(unittest.TestCase):
                 (output / 'summary.json').write_text(json.dumps({'workloads': results}))
                 (output / 'samples.jsonl').write_text('\n'.join(json.dumps(row) for row in raw))
 
+        def capture(entries, directory):
+            directory.mkdir()
+            (directory / 'manifest.json').write_text(json.dumps(dict(
+                names=[entry['name'] for entry in entries],
+                commands_before_capture=len(calls))))
+
         def modules(name):
+            if name == 'collect-bc-codegen':
+                return types.SimpleNamespace(collect=capture)
             if name == 'build-bc-comparators':
                 return types.SimpleNamespace(Builder=Builder, BuildError=helper.BuildError)
             return original_load(name)
@@ -153,6 +161,9 @@ class NativeTrends(unittest.TestCase):
     def test_slow_candidate_is_reported_without_failing_performance_gate(self):
         root, calls, result = self.exercise()
         self.assertEqual(result, 0)
+        capture = json.loads((root / 'evidence/codegen/manifest.json').read_text())
+        self.assertEqual(capture['names'], ['base', 'candidate', 'aa'])
+        self.assertEqual(capture['commands_before_capture'], len(calls))
         self.assertEqual([Path(call[1]).name for call in calls[:4]],
                          ['build-gd-bc.py'] * 3 + ['build-bc-comparators.py'])
         self.assertEqual(calls[0][calls[0].index('--revision') + 1],
