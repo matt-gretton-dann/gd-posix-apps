@@ -202,7 +202,7 @@ def regression_status(first, second, control, mode, duration):
     return result if control == 'pass' or result.startswith('inconclusive') else result + '; A/A inconclusive'
 
 
-def allocation_diagnostics(bench, profile, cases, directory):
+def allocation_diagnostics(bench, profile, cases, directory, timeout=60):
     directory.mkdir()
     tool = copy.deepcopy(profile)
     if tool['metadata']['instrumented'] is not True:
@@ -214,7 +214,7 @@ def allocation_diagnostics(bench, profile, cases, directory):
         for case in cases:
             target = directory / (case['name'] + '.json')
             os.environ['GD_BC_PROFILE_OUTPUT'] = str(target)
-            observed = bench.run_checked(tool, case, 60)
+            observed = bench.run_checked(tool, case, timeout)
             observed.pop('seconds')  # Instrumented elapsed time is never evidence.
             counters = json.loads(target.read_text(encoding='utf-8'))
             if counters.get('instrumented') is not True or counters['total']['live_bytes'] != 0:
@@ -232,10 +232,10 @@ def allocation_diagnostics(bench, profile, cases, directory):
             os.environ['GD_BC_PROFILE_OUTPUT'] = previous
     write(directory / 'manifest.json', dict(implementation=tool, instrumented=True,
         scope='candidate-only software allocation/event counts; not RSS or release elapsed time',
-        observations=records))
+        observations=records, child_timeout_seconds=timeout))
 
 
-def resource_diagnostics(bench, configs, cases, directory):
+def resource_diagnostics(bench, configs, cases, directory, timeout=60):
     directory.mkdir()
     profile = load('profile-bc')
     tools = bench.implementations(configs, require_provenance=True)
@@ -246,7 +246,7 @@ def resource_diagnostics(bench, configs, cases, directory):
         for tool in tools:
             target = directory / (case['name'] + '-' + tool['name'])
             target.mkdir()
-            result = profile.rss_profile(bench, tool, case, target, 60)
+            result = profile.rss_profile(bench, tool, case, target, timeout)
             records.append(dict(name=case['name'], parameters=case['parameters'],
                 implementation=tool['name'], resource=result, checked=result.get('checked', False),
                 program_sha256=bench.hashlib.sha256(case['program'].encode('utf-8')).hexdigest(),
@@ -254,7 +254,7 @@ def resource_diagnostics(bench, configs, cases, directory):
                 correctness='checked by adapter when invoked; unavailable adapters run no child'))
     write(directory / 'manifest.json', dict(
         scope='one cold invocation per regime/role; native CPU/RSS availability per observation; no paired elapsed inference',
-        observations=records, implementations=tools))
+        observations=records, implementations=tools, child_timeout_seconds=timeout))
 
 
 def summary_markdown(decisions):
@@ -289,6 +289,7 @@ def main():
     parser.add_argument('--broad', action='store_true')
     parser.add_argument('--samples', type=bench.positive_integer, default=15)
     parser.add_argument('--duration-seconds', type=bench.positive_timeout, default=.1)
+    parser.add_argument('--child-timeout-seconds', type=bench.positive_timeout, default=120)
     parser.add_argument('--total-seconds', type=bench.positive_timeout, default=4800)
     args = parser.parse_args()
     if args.samples < 3:
@@ -345,7 +346,8 @@ def main():
         shutil.copyfile(root / 'gd/source/src/bc/math-library.bc', libraries / 'candidate.bc')
         if baseline:
             shutil.copyfile(base_library, libraries / 'base.bc')
-        allocation_diagnostics(bench, profiled, diagnostic_cases(bench, 'full'), evidence / 'allocation-diagnostics')
+        allocation_diagnostics(bench, profiled, diagnostic_cases(bench, 'full'), evidence / 'allocation-diagnostics',
+                               timeout=args.child_timeout_seconds)
         for name, entries in configs.items():
             write(evidence / (name + '.json'), dict(implementations=entries))
         decisions = []
@@ -354,7 +356,7 @@ def main():
             command = [sys.executable, str(SCRIPTS / 'bench-bc.py'), '--suite', 'math',
                        '--config', str(evidence / 'preparation.json'), '--output', str(prepared),
                        '--preset', preset, '--calibrate-seconds', str(args.duration_seconds),
-                       '--calibrate-only', '--require-provenance']
+                       '--calibrate-only', '--timeout', str(args.child_timeout_seconds), '--require-provenance']
             for name in selected_cases(bench, preset, args.broad):
                 command += ['--workload', name]
             commands.run(command)
@@ -365,7 +367,7 @@ def main():
                            '--config', str(evidence / (comparison + '.json')), '--output', str(target),
                            '--replay-corpus', str(prepared), '--reference', reference,
                            '--samples', str(args.samples), '--warmups', '3', '--seed', '1972170',
-                           '--require-provenance']
+                           '--timeout', str(args.child_timeout_seconds), '--require-provenance']
                 commands.run(command)
                 summary = json.loads((target / 'summary.json').read_text())
                 measurements(target)
@@ -409,7 +411,7 @@ def main():
                     confirm = [sys.executable, str(SCRIPTS / 'bench-bc.py'), '--suite', 'math',
                         '--config', str(evidence / 'regression.json'), '--output', str(target),
                         '--replay-corpus', str(prepared), '--reference', 'gd-base',
-                        '--samples', str(args.samples), '--warmups', '3', '--seed', '1972161', '--require-provenance']
+                        '--samples', str(args.samples), '--warmups', '3', '--seed', '1972161', '--timeout', str(args.child_timeout_seconds), '--require-provenance']
                     confirm += [part for name in suspects for part in ('--workload', name)]
                     commands.run(confirm)
                     measurements(target)
@@ -435,7 +437,7 @@ def main():
         # Resource wrappers run after all elapsed stages, never concurrently.
         for preset in (('full', 'holdout') if args.broad else ('full',)):
             resource_diagnostics(bench, evidence / 'paired.json', diagnostic_cases(bench, preset),
-                                 evidence / (preset + '-resource-diagnostics'))
+                                 evidence / (preset + '-resource-diagnostics'), timeout=args.child_timeout_seconds)
         write(evidence / 'decisions.json', dict(advisory=True, results=decisions,
              goal='median<=0.90 and nominal CI upper<1 for substantive repeated classes',
              pending='CPU/RSS availability and precision are per observation; allocation counts are candidate-only; no aggregate pass'))
@@ -452,7 +454,8 @@ def main():
         return 1
     finally:
         write(evidence / 'orchestration.json',dict(candidate=args.candidate,base=args.base,baseline_library_available=bool(configs.get('regression')),commands=commands.commands,
-              broad=args.broad,samples=args.samples,duration_target=args.duration_seconds))
+              broad=args.broad,samples=args.samples,duration_target=args.duration_seconds,
+              child_timeout_seconds=args.child_timeout_seconds,total_seconds=args.total_seconds))
         for path in root.glob('command-*.log'):
             shutil.copyfile(path, evidence / path.name)
         for name in ('gd', 'aa', 'base', 'profile', 'howard'):
