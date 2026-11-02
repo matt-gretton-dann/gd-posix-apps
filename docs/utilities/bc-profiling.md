@@ -156,3 +156,25 @@ library argv file evaluated once. This measures repeated execution and parsing,
 not repeated cold startup. RSS runs the original workload once. Neither CPU
 samples nor native RSS observations replace the separate paired release timing
 experiment; software allocation counters remain a separate instrumented build.
+
+
+## Immutable diagnostic recipes
+
+`build-gd-bc.py --source REPOSITORY --revision FULL_SHA --split-point 126
+--diagnostic-profile --output diagnostic-recipe` builds the same immutable
+source with software counters enabled. Its metadata always says
+`instrumented: true`; the checked elapsed harness rejects that configuration.
+Ordinary recipes still require counters and compiler instrumentation disabled.
+Only this explicit diagnostic mode permits the counter macro; coverage,
+sanitisers and compiler profile generation remain rejected by this builder.
+The native mathematical workflow builds this separate recipe before any timing
+and discards instrumented elapsed values while preserving checked outputs and
+logical counter reports.
+
+Native resource reports retain CPU accounting separately from elapsed samples.
+Darwin parses the user/system fields printed by time-l; GNU time emits explicit
+USER_SECONDS and SYSTEM_SECONDS records. Missing or malformed CPU fields stay
+unavailable even when RSS exists, and valid zero CPU times retain their printed
+precision limitation. RSS units and optional hardware counters keep their native
+meanings. Unsupported hosts retain an explicit unavailable result; this adapter
+does not infer CPU time from wall-clock duration.
