@@ -9,11 +9,13 @@
 
 #include "bc-messages.hh"
 
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <cassert>
 #include <cstdlib>
 #include <deque>
+#include <memory>
 #include <optional>
 #include <ostream>
 #include <type_traits>
@@ -72,19 +74,46 @@ using ResultBuffer =
   std::vector<ResultSlot, Profile::Allocator<ResultSlot, Profile::AllocationKind::results>>;
 using NumberBuffer =
   std::vector<Number, Profile::Allocator<Number, Profile::AllocationKind::results>>;
-using NumberBuffers =
-  std::deque<NumberBuffer, Profile::Allocator<NumberBuffer, Profile::AllocationKind::frames>>;
+using NumberHeaderAllocator = Profile::Allocator<NumberBuffer, Profile::AllocationKind::frames>;
 
-// Charge the optional owner's entire header to each selected numeric plan,
+struct NumberBufferDeleter
+{
+  void operator()(NumberBuffer* value) const noexcept
+  {
+    std::destroy_at(value);
+    NumberHeaderAllocator{}.deallocate(value, 1);
+  }
+};
+using NumberBufferOwner = std::unique_ptr<NumberBuffer, NumberBufferDeleter>;
+struct NumberBacking
+{
+  std::size_t depth;
+  NumberBufferOwner buffer;
+};
+using NumberBuffers =
+  std::vector<NumberBacking, Profile::Allocator<NumberBacking, Profile::AllocationKind::frames>>;
+
+auto make_number_buffer() -> NumberBufferOwner
+{
+  // An empty vector header cannot allocate or throw with either allocator.
+  // Install ownership before separately growing its element storage.
+  static_assert(std::is_nothrow_default_constructible_v<NumberBuffer>);
+  NumberHeaderAllocator allocator;
+  auto* value = allocator.allocate(1);
+  std::construct_at(value);
+  return NumberBufferOwner(value);
+}
+
+// Charge the registry owner's entire header to each selected numeric plan,
 // conservatively including a VM-wide cost only once in reality. Allocation
 // capacity/rounding still needs separate profiling and process-RSS evidence.
 constexpr auto numeric_backing_header_bytes =
-  sizeof(NumberBuffer) + sizeof(std::optional<NumberBuffers>) + 2 * sizeof(std::size_t);
+  sizeof(NumberBuffer) + sizeof(NumberBuffers) + sizeof(NumberBacking) + 2 * sizeof(std::size_t);
 
 struct ActivationResults
 {
   // A pack borrows stable per-depth owners. Null numeric backing is the
-  // generic layout; no numeric deque or buffer is acquired for that pack.
+  // generic layout; no numeric owner or buffer is acquired for that pack.
   ResultBuffer& variants;
   NumberBuffer* numbers;
 };
@@ -355,10 +384,10 @@ private:
   Params saved_locals_;                           ///< Contiguous saved locals for active calls.
   std::deque<ResultBuffer, Profile::Allocator<ResultBuffer, Profile::AllocationKind::frames>>
     result_buffers_;  ///< Single-vector generic headers, indexed by activation depth.
-  // A generic/full activation never creates numeric backing. Construct this
-  // owner only for the first selected numeric pool; deque growth keeps all
-  // active numeric-buffer references stable, including across generic calls.
-  std::optional<NumberBuffers> number_buffers_;
+  // Generic/full activations never create numeric backing. Only selected depths
+  // appear in this sorted registry; generic ancestors leave no owner gaps.
+  // Moving handles during registry growth cannot relocate active buffers.
+  NumberBuffers number_buffers_;
   std::size_t result_depth_ = 0;
   NumType ibase_ = default_base_;  ///< Input base, range [2, 16]
   NumType obase_ = default_base_;  ///< Output base, range: [2, base_)
@@ -989,24 +1018,23 @@ auto GD::Bc::Details::VMState::acquire_results(std::size_t count, std::size_t nu
   }
   auto& result = result_buffers_[result_depth_];
   assert(result.empty());  // NOLINT
-  assert(!number_buffers_ || result_depth_ >= number_buffers_->size() ||
-         (*number_buffers_)[result_depth_].empty());  // NOLINT
   NumberBuffer* numeric = nullptr;
   try {
     result.resize(count);
     if (numbers != 0) {
-      if (!number_buffers_)
-        number_buffers_.emplace();
-      while (number_buffers_->size() <= result_depth_)
-        number_buffers_->emplace_back();
-      numeric = &(*number_buffers_)[result_depth_];
+      auto owner = std::lower_bound(
+        number_buffers_.begin(), number_buffers_.end(), result_depth_,
+        [](NumberBacking const& entry, std::size_t depth) { return entry.depth < depth; });
+      if (owner == number_buffers_.end() || owner->depth != result_depth_)
+        owner = number_buffers_.insert(owner, NumberBacking{result_depth_, make_number_buffer()});
+      numeric = owner->buffer.get();
       assert(numeric->empty());  // NOLINT
       numeric->resize(numbers);
     }
   }
   catch (...) {
-    // Failed lazy owner/header/vector growth must not consume an activation
-    // depth or leave live values. Existing callers' deque references survive.
+    // Failed registry/header/vector growth must not consume an activation
+    // depth or leave live values. Earlier callers' owners remain stable.
     result.clear();
     if (numeric != nullptr)
       numeric->clear();

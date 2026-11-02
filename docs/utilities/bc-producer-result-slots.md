@@ -136,24 +136,28 @@ that does not waive the Windows result. All 16,910 raw checked executions and
 actual executable/inspection identities remain retained. This candidate is
 unaccepted, as is the earlier eighteen-loss typed-pool checkpoint.
 
-The next storage refinement restores single-vector headers in the generic
-activation deque. Numeric buffers live in a separate optional deque, created
-only when a profitable verified numeric plan first needs backing. A generic
+The storage refinement restores single-vector headers in the generic
+activation deque. Numeric buffers receive individually owned headers only
+when a profitable verified numeric plan first needs backing. A sorted registry
+contains only selected depths, so generic ancestors leave no empty owner slots. A generic
 or fully checked call acquires no numeric backing. Each active pack borrows
-its generic buffer and an optional numeric-buffer pointer; either deque can
-grow without relocating those owners. That pointer also identifies the
+its generic buffer and a nullable numeric-buffer pointer. Generic deque growth
+and registry handle moves cannot relocate those owners. That pointer also identifies the
 layout, replacing a separate runtime Boolean. Values are cleared through the
 borrowed view on release; capacity can be reused by later calls at that depth.
 
-The dormant optional owner still adds a VM-wide header. The planner charges
-its whole actual compiler-dependent size, a numeric vector header and the
-existing bookkeeping allowance to every selected numeric plan. Charging that
+The empty registry still adds a VM-wide vector header. The planner charges
+its whole actual compiler-dependent size, a numeric vector header, one registry
+entry and the existing bookkeeping allowance to every selected numeric plan. Charging that
 VM-wide cost repeatedly is conservative. Tiny or unprofitable packs retain
 the generic representation; allocator rounding, capacities, executable size
 and process RSS remain separate measurements. Neither fewer generic frame
 headers nor a changed payload decision proves a timing or RSS improvement.
+Header objects and registry entries are charged to frame profiling; number
+elements retain the result-storage category. Header construction is proved
+nothrow, and ownership is installed before element-vector growth.
 
-Allocation failure during lazy owner creation, deque/header growth or vector
+Allocation failure during header creation, registry insertion or element-vector
 resizing clears the current acquired values without advancing the activation
 depth. Earlier callers' owners remain stable. Existing isolated allocation
 failure/retry tests cover every allocation position in a mixed numeric stream.
@@ -165,6 +169,17 @@ semantic errors, caller restoration and interrupt checks retain their contracts.
 Local validation passes 235 ASan/UBSan cases (1,215,643 assertions), including
 six typed-result cases with 146 assertions, nine CLI/verifier/lifetime/signal
 and controller checks, 616 identical ordinary-source math references, and
-eighteen separate Release profiling checks. LeakSanitizer is unavailable.
+twenty separate Release profiling checks. LeakSanitizer is unavailable.
 New full/held-out native evidence is required before accepting this refinement;
 it does not complete the wider operand/register/liveness work in #207/#197.
+
+The intermediate optional-deque implementation `4c66d13` is not adopted. Its
+local logical profiles increased mixed-recursion frame peak from 5,304 to
+9,392 bytes, and a new first-backing test measured 4,088 extra frame bytes
+against a 256-byte metadata bound. An indexed-owner working prototype removed
+that block but allocated unused entries through generic recursion: a second
+test measured 688 extra bytes for one numeric leaf below eighty generic calls.
+Both tests were committed before the final ownership fix. Sparse individually
+owned headers now pass those metadata bounds without weakening their inputs.
+All prototype evidence remains retained; the bounds concern requested frame
+metadata and do not establish a process-memory or timing win.
