@@ -1,0 +1,40 @@
+"""Audit immutable native PR368 artifacts without rerunning timing."""
+from collections import Counter
+import hashlib
+import json
+from pathlib import Path
+import sys
+import zipfile
+for host in sys.argv[1:]:
+ path=Path('/private/tmp/bc-368-fe61-native-'+host+'.zip')
+ checked=0
+ with zipfile.ZipFile(path) as z:
+  sources={}
+  for role,revision in [('base','96d900b8e66c299d35e7a93c63b7fb5ef5131654'),('candidate','fe61ffb515b0055e2a6c371abb51a6f287621873')]:
+   tool=json.loads(z.read(role+'/implementations.json'))['implementations'][0]
+   assert tool['metadata']['source_revision']==revision
+   assert tool['metadata']['instrumented'] is False
+   sources[role]=revision
+  for name in z.namelist():
+   if not name.endswith('/samples.jsonl'):continue
+   directory=name.rsplit('/',1)[0]
+   manifest=json.loads(z.read(directory+'/manifest.json'))
+   rows=[json.loads(line) for line in z.read(name).decode().splitlines()]
+   assert rows and all(row['checked'] for row in rows)
+   counts=Counter((row['workload'],row['implementation'],row['phase']) for row in rows)
+   for case in manifest['corpus']:
+    for suffix,key in [('.bc','program_sha256'),('.expected','oracle_sha256')]:
+     payload=z.read(directory+'/workloads/'+case['name']+suffix)
+     assert hashlib.sha256(payload).hexdigest()==case[key]
+    for tool in manifest['implementations']:
+     assert counts[(case['name'],tool['name'],'measurement')]==manifest['samples']
+     assert counts[(case['name'],tool['name'],'warmup')]==manifest['warmups']
+   checked+=len(rows)
+  decisions=json.loads(z.read('decisions.json'))['results']
+  confirmed=[row for row in decisions if 'confirmed regression' in row['status'].lower().replace('-',' ')]
+  assert not confirmed, confirmed
+  assert checked>=2100
+ result=dict(host=host,source=sources,checked=checked,confirmed=confirmed,
+             artifact_sha256=hashlib.sha256(path.read_bytes()).hexdigest())
+ path.with_suffix('.audit.json').write_text(json.dumps(result,indent=2)+'\n')
+ print(host,checked,'checked; hashes/counts/source verified; no confirmed regression')

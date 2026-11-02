@@ -6,6 +6,7 @@ explicit unavailable status rather than invented CPU/RSS observations.
 Python 3.6+; SPDX-License-Identifier: Apache-2.0
 """
 import argparse
+import contextlib
 import importlib.util
 import json
 import math
@@ -31,21 +32,53 @@ def check(bench, case, repetitions, status, stdout, stderr):
     if status != 0 or stderr:
         raise bench.BenchmarkError('{} diagnostic child failed: {} {}'.format(
             case['name'], status, stderr.decode('utf-8', errors='replace')[:500]))
-    expected = ('\n'.join(case['expected'] * repetitions) + '\n').encode('utf-8')
-    if bench.canonical_output(stdout) != bench.canonical_output(expected):
-        raise bench.BenchmarkError(case['name'] + ' diagnostic output is incorrect')
+    actual = bench.canonical_output(stdout)
+    if 'oracle' in case:
+        width = 1 + len(case['oracle'].get('expected_state', []))
+        if len(actual) != width * repetitions:
+            raise bench.BenchmarkError(case['name'] + ' diagnostic result count is incorrect')
+        for index in range(repetitions):
+            bench.check_output(case, actual[index * width:(index + 1) * width],
+                               '{} diagnostic repetition {}'.format(case['name'], index))
+    else:
+        expected = ('\n'.join(case['expected'] * repetitions) + '\n').encode('utf-8')
+        if actual != bench.canonical_output(expected):
+            raise bench.BenchmarkError(case['name'] + ' diagnostic output is incorrect')
+
+
+@contextlib.contextmanager
+def diagnostic_input(bench, tool, case, repetitions):
+    """Preserve transport and recheck declared files immediately before launch."""
+    for artifact in tool.get('input_artifacts', []):
+        if bench.digest_file(artifact['realpath']) != artifact['sha256']:
+            raise bench.BenchmarkError('declared input artifact changed before diagnostic')
+    source = (case['program'] * repetitions).encode('utf-8')
+    mode = case.get('input_mode', 'stdin')
+    if mode not in ('stdin', 'file'):
+        raise bench.BenchmarkError('unknown diagnostic input transport')
+    metadata = dict(input_mode=mode, expanded_program_sha256=bench.hashlib.sha256(source).hexdigest(),
+                    expanded_program_bytes=len(source))
+    with tempfile.TemporaryDirectory(prefix='bc-profile-') as directory:
+        argv = list(tool['argv'])
+        payload = source
+        if mode == 'file':
+            path = Path(directory) / 'workload.bc'
+            path.write_bytes(source)
+            argv.append(str(path))
+            payload = b''
+        yield argv, payload, metadata
 
 
 def cpu_profile(bench, tool, case, repetitions, root, timeout):
-    source = (case['program'] * repetitions).encode('utf-8')
     output = root / (case['name'] + '.sample.txt')
     environment = bench.environment()
     environment.pop('GD_BC_PROFILE_OUTPUT', None)
-    with tempfile.TemporaryFile() as incoming, tempfile.TemporaryFile() as outgoing, \
+    with diagnostic_input(bench, tool, case, repetitions) as (argv, payload, metadata), \
+            tempfile.TemporaryFile() as incoming, tempfile.TemporaryFile() as outgoing, \
             tempfile.TemporaryFile() as errors:
-        incoming.write(source)
+        incoming.write(payload)
         incoming.seek(0)
-        with subprocess.Popen(tool['argv'], stdin=incoming, stdout=outgoing, stderr=errors,
+        with subprocess.Popen(argv, stdin=incoming, stdout=outgoing, stderr=errors,
                               env=environment) as child:
             try:
                 if platform.system() == 'Darwin' and Path('/usr/bin/sample').is_file():
@@ -68,6 +101,7 @@ def cpu_profile(bench, tool, case, repetitions, root, timeout):
             outgoing.seek(0)
             errors.seek(0)
             check(bench, case, repetitions, child.returncode, outgoing.read(), errors.read())
+    sampling.update(metadata)
     return sampling
 
 
@@ -125,15 +159,17 @@ def rss_profile(bench, tool, case, root, timeout):
     if not Path('/usr/bin/time').is_file() or system not in ('Darwin', 'Linux'):
         return {'status': 'unavailable', 'reason': 'no native per-process memory adapter'}
     if system == 'Darwin':
-        command = ['/usr/bin/time', '-l', '-o', str(report)] + tool['argv']
+        command = ['/usr/bin/time', '-l', '-o', str(report)]
     else:
-        command = ['/usr/bin/time', '-f', 'MAX_RSS_KIB=%M', '-o', str(report), '--'] + tool['argv']
+        command = ['/usr/bin/time', '-f', 'MAX_RSS_KIB=%M', '-o', str(report), '--']
     environment = bench.environment()
     environment.pop('GD_BC_PROFILE_OUTPUT', None)
-    child = run_group(command, case['program'].encode('utf-8'), environment, timeout)
+    with diagnostic_input(bench, tool, case, 1) as (argv, payload, metadata):
+        command += argv
+        child = run_group(command, payload, environment, timeout)
     check(bench, case, 1, child.returncode, child.stdout, child.stderr)
     result = rss_fields(system, report.read_text(encoding='utf-8'))
-    result.update(argv=command, repetitions=1)
+    result.update(metadata, argv=command, repetitions=1)
     return result
 
 
@@ -144,6 +180,8 @@ def main():
     parser.add_argument('--summary', type=Path, required=True, help='checked release summary for repeats')
     parser.add_argument('--output', type=Path, required=True, help='fresh diagnostics directory')
     parser.add_argument('--workload', action='append', required=True)
+    parser.add_argument('--suite', choices=('arithmetic', 'math'), default='arithmetic')
+    parser.add_argument('--replay-corpus', type=Path, help='exact frozen benchmark programs and oracles')
     parser.add_argument('--timeout', type=float, default=60)
     args = parser.parse_args()
     if not math.isfinite(args.timeout) or args.timeout <= 0:
@@ -159,7 +197,7 @@ def main():
                 'hardware_counters': {'status': 'platform-dependent; see memory.native_counters',
                                       'scope': 'native per-process counters where time exposes them; no PMU setup',
                                       'unavailable_metrics': ['branch misses', 'cache misses']},
-                'corpus_seed': 197200,
+                'suite': args.suite, 'corpus_seed': None if args.replay_corpus else 197200,
                 'repeat_estimate_summary_sha256': bench.digest_file(args.summary),
                 'workloads': [], 'status': 'incomplete'}
     try:
@@ -167,10 +205,21 @@ def main():
         tool = next((item for item in tools if item['name'] == args.implementation), None)
         if tool is None or tool['role'] == 'installed':
             raise bench.BenchmarkError('select a source-built release implementation')
+        for index, artifact in enumerate(tool.get('input_artifacts', [])):
+            directory = root / 'declared-inputs'
+            directory.mkdir(exist_ok=True)
+            archived = directory / '{}-{}'.format(index, Path(artifact['realpath']).name)
+            archived.write_bytes(Path(artifact['realpath']).read_bytes())
+            if bench.digest_file(archived) != artifact['sha256']:
+                raise bench.BenchmarkError('declared input changed while archiving')
+            artifact['archived_as'] = str(archived.relative_to(root))
         manifest['implementation'] = tool
         summary = json.loads(args.summary.read_text(encoding='utf-8'))
         observations = {row['name']: row for row in summary['workloads']}
-        cases = bench.corpus('full', args.workload, seed=197200)
+        if args.replay_corpus:
+            cases, manifest['replay'] = bench.replay_corpus(args.replay_corpus, args.suite, args.workload)
+        else:
+            cases = bench.corpus('full', args.workload, seed=197200, suite=args.suite)
         for case in cases:
             median = observations[case['name']]['implementations'][tool['name']]['median_seconds']
             repetitions = max(1, min(10000, int(math.ceil(5 / max(median, 0.000001)))))
@@ -178,7 +227,10 @@ def main():
             repetitions = min(repetitions, max(1, 64 * 1024 * 1024 //
                                                len(case['program'].encode('utf-8'))))
             (root / (case['name'] + '.bc')).write_bytes(case['program'].encode('utf-8'))
-            row = {'name': case['name'], 'parameters': case['parameters'],
+            oracle = bench.oracle_payload(case)
+            (root / (case['name'] + '.expected')).write_bytes(oracle)
+            row = {'oracle_sha256': bench.hashlib.sha256(oracle).hexdigest(),
+                   'input_mode': case.get('input_mode', 'stdin'), 'name': case['name'], 'parameters': case['parameters'],
                    'program_sha256': bench.hashlib.sha256(case['program'].encode('utf-8')).hexdigest(),
                    'cpu': cpu_profile(bench, tool, case, repetitions, root, args.timeout),
                    'memory': rss_profile(bench, tool, case, root, args.timeout), 'checked': True}

@@ -1,0 +1,110 @@
+[
+  {
+    "revision": "96d900b8e66c299d35e7a93c63b7fb5ef5131654",
+    "path": "src/bc/number.hh",
+    "sha256": "0d3a6f4f9f154660a80dc10cb94164cf9a1030da1c7ec27ad51f167aed9bded3",
+    "archived_as": "sources/number.hh-0d3a6f4f9f154660a80dc10cb94164cf9a1030da1c7ec27ad51f167aed9bded3.txt"
+  },
+  {
+    "revision": "96d900b8e66c299d35e7a93c63b7fb5ef5131654",
+    "path": "src/bc/scripts/bench-bc.py",
+    "sha256": "a18e17bbb5eeb3914a5133168d65002246046c6ecbcde5f2ff2c79eb195562a4",
+    "archived_as": "sources/bench-bc.py-a18e17bbb5eeb3914a5133168d65002246046c6ecbcde5f2ff2c79eb195562a4.txt"
+  },
+  {
+    "revision": "96d900b8e66c299d35e7a93c63b7fb5ef5131654",
+    "path": "src/bc/scripts/profile-bc.py",
+    "sha256": "5ac8a3467c988b558109d1376134b79b37c22e4cc0eab65abc3eedbf2155ce4d",
+    "archived_as": "sources/profile-bc.py-5ac8a3467c988b558109d1376134b79b37c22e4cc0eab65abc3eedbf2155ce4d.txt"
+  },
+  {
+    "revision": "96d900b8e66c299d35e7a93c63b7fb5ef5131654",
+    "path": "src/bc/scripts/benchmark-math-ci.py",
+    "sha256": "b7fd3749b000db5f3ebb1fb43374d700731200a7a9573f2a81e34db0dcbe7e3d",
+    "archived_as": "sources/benchmark-math-ci.py-b7fd3749b000db5f3ebb1fb43374d700731200a7a9573f2a81e34db0dcbe7e3d.txt"
+  },
+  {
+    "revision": "96d900b8e66c299d35e7a93c63b7fb5ef5131654",
+    "path": "src/bc/scripts/build-gd-bc.py",
+    "sha256": "7b08cb97d36f0e57e28e166b3cb388573b36ad81582cdfeb81ec7ef66500c3bc",
+    "archived_as": "sources/build-gd-bc.py-7b08cb97d36f0e57e28e166b3cb388573b36ad81582cdfeb81ec7ef66500c3bc.txt"
+  },
+  {
+    "revision": "96d900b8e66c299d35e7a93c63b7fb5ef5131654",
+    "path": "src/bc/scripts/build-bc-comparators.py",
+    "sha256": "2c30c947a8fca4c0dfbff92d2cb8a259c4fee353895980e8ba1652abec27b551",
+    "archived_as": "sources/build-bc-comparators.py-2c30c947a8fca4c0dfbff92d2cb8a259c4fee353895980e8ba1652abec27b551.txt"
+  },
+  {
+    "revision": "7d538de7813d024995465fc3b98334851a7fbcb3",
+    "path": "src/bc/number.hh",
+    "sha256": "dafa20bd5168b938f2fbfc5c7d8ccb31421a84eb1ae6489c1e304b2c4b3c2f0f",
+    "archived_as": "sources/number.hh-dafa20bd5168b938f2fbfc5c7d8ccb31421a84eb1ae6489c1e304b2c4b3c2f0f.txt"
+  },
+  {
+    "revision": "7d538de7813d024995465fc3b98334851a7fbcb3",
+    "path": "src/bc/scripts/bench-bc.py",
+    "sha256": "a18e17bbb5eeb3914a5133168d65002246046c6ecbcde5f2ff2c79eb195562a4",
+    "archived_as": "sources/bench-bc.py-a18e17bbb5eeb3914a5133168d65002246046c6ecbcde5f2ff2c79eb195562a4.txt"
+  },
+  {
+    "revision": "7d538de7813d024995465fc3b98334851a7fbcb3",
+    "path": "src/bc/scripts/profile-bc.py",
+    "sha256": "5ac8a3467c988b558109d1376134b79b37c22e4cc0eab65abc3eedbf2155ce4d",
+    "archived_as": "sources/profile-bc.py-5ac8a3467c988b558109d1376134b79b37c22e4cc0eab65abc3eedbf2155ce4d.txt"
+  },
+  {
+    "revision": "7d538de7813d024995465fc3b98334851a7fbcb3",
+    "path": "src/bc/scripts/benchmark-math-ci.py",
+    "sha256": "b7fd3749b000db5f3ebb1fb43374d700731200a7a9573f2a81e34db0dcbe7e3d",
+    "archived_as": "sources/benchmark-math-ci.py-b7fd3749b000db5f3ebb1fb43374d700731200a7a9573f2a81e34db0dcbe7e3d.txt"
+  },
+  {
+    "revision": "7d538de7813d024995465fc3b98334851a7fbcb3",
+    "path": "src/bc/scripts/build-gd-bc.py",
+    "sha256": "7b08cb97d36f0e57e28e166b3cb388573b36ad81582cdfeb81ec7ef66500c3bc",
+    "archived_as": "sources/build-gd-bc.py-7b08cb97d36f0e57e28e166b3cb388573b36ad81582cdfeb81ec7ef66500c3bc.txt"
+  },
+  {
+    "revision": "7d538de7813d024995465fc3b98334851a7fbcb3",
+    "path": "src/bc/scripts/build-bc-comparators.py",
+    "sha256": "2c30c947a8fca4c0dfbff92d2cb8a259c4fee353895980e8ba1652abec27b551",
+    "archived_as": "sources/build-bc-comparators.py-2c30c947a8fca4c0dfbff92d2cb8a259c4fee353895980e8ba1652abec27b551.txt"
+  },
+  {
+    "revision": "fe61ffb515b0055e2a6c371abb51a6f287621873",
+    "path": "src/bc/number.hh",
+    "sha256": "dafa20bd5168b938f2fbfc5c7d8ccb31421a84eb1ae6489c1e304b2c4b3c2f0f",
+    "archived_as": "sources/number.hh-dafa20bd5168b938f2fbfc5c7d8ccb31421a84eb1ae6489c1e304b2c4b3c2f0f.txt"
+  },
+  {
+    "revision": "fe61ffb515b0055e2a6c371abb51a6f287621873",
+    "path": "src/bc/scripts/bench-bc.py",
+    "sha256": "577fc5f4964baa69037c144cf14961a90b3f2bb1f0fbbd3d55ad358deb6f83d5",
+    "archived_as": "sources/bench-bc.py-577fc5f4964baa69037c144cf14961a90b3f2bb1f0fbbd3d55ad358deb6f83d5.txt"
+  },
+  {
+    "revision": "fe61ffb515b0055e2a6c371abb51a6f287621873",
+    "path": "src/bc/scripts/profile-bc.py",
+    "sha256": "5ac8a3467c988b558109d1376134b79b37c22e4cc0eab65abc3eedbf2155ce4d",
+    "archived_as": "sources/profile-bc.py-5ac8a3467c988b558109d1376134b79b37c22e4cc0eab65abc3eedbf2155ce4d.txt"
+  },
+  {
+    "revision": "fe61ffb515b0055e2a6c371abb51a6f287621873",
+    "path": "src/bc/scripts/benchmark-math-ci.py",
+    "sha256": "b7fd3749b000db5f3ebb1fb43374d700731200a7a9573f2a81e34db0dcbe7e3d",
+    "archived_as": "sources/benchmark-math-ci.py-b7fd3749b000db5f3ebb1fb43374d700731200a7a9573f2a81e34db0dcbe7e3d.txt"
+  },
+  {
+    "revision": "fe61ffb515b0055e2a6c371abb51a6f287621873",
+    "path": "src/bc/scripts/build-gd-bc.py",
+    "sha256": "7b08cb97d36f0e57e28e166b3cb388573b36ad81582cdfeb81ec7ef66500c3bc",
+    "archived_as": "sources/build-gd-bc.py-7b08cb97d36f0e57e28e166b3cb388573b36ad81582cdfeb81ec7ef66500c3bc.txt"
+  },
+  {
+    "revision": "fe61ffb515b0055e2a6c371abb51a6f287621873",
+    "path": "src/bc/scripts/build-bc-comparators.py",
+    "sha256": "2c30c947a8fca4c0dfbff92d2cb8a259c4fee353895980e8ba1652abec27b551",
+    "archived_as": "sources/build-bc-comparators.py-2c30c947a8fca4c0dfbff92d2cb8a259c4fee353895980e8ba1652abec27b551.txt"
+  }
+]

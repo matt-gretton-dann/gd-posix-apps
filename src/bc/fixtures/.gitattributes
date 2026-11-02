@@ -3,3 +3,4 @@ math-oracle-cases.json text eol=lf
 math-oracles.json -text
 math-benchmark-cases.json text eol=lf
 math-benchmark-oracles.json -text
+benchmark-corpus-before-scaled-division.json -text

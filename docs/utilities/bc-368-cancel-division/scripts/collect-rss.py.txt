@@ -1,0 +1,62 @@
+"""Checked native resource diagnostics, separate from elapsed-speed samples."""
+import hashlib
+import importlib.util
+import json
+from pathlib import Path
+import sys
+
+SCRIPTS=Path('/private/tmp/gd-posix-cancel-division/src/bc/scripts')
+def load(name):
+ s=importlib.util.spec_from_file_location(name,str(SCRIPTS/(name+'.py')))
+ m=importlib.util.module_from_spec(s);s.loader.exec_module(m);return m
+bench=load('bench-bc');profile=load('profile-bc')
+root=Path('/private/tmp/bc-368-native-resources');root.mkdir(exist_ok=False)
+programs=root/'workloads';programs.mkdir()
+library=Path('/private/tmp/gd-bc-217-portable-v1-release/source/src/bc/math-library.bc')
+library_hash=bench.digest_file(library)
+math_cases,replay=bench.replay_corpus(Path('/private/tmp/bc-217-frozen-v1-math/full-prepared'),'math')
+cases=[c for c in math_cases if c['parameters']['mode']=='one_shot' and c['parameters']['scale']==1000]
+cases += [c for c in bench.corpus('full') if c['group'].startswith('divide_scaled_')]
+# Separate prespecified one-operation memory stressors, not speed benchmarks.
+for shape in ('dense','trailing_zero'):
+ places=100000
+ fraction=('27182818284590452353602874713526624977572470936999'*2001)[:places] if shape=='dense' else '0'*places
+ value='1234.'+fraction;coefficient=int('1234'+fraction)
+ cases.append(dict(name='memory_divide_'+shape+'_scale100000',group='memory_stress',
+  program='scale={}\na={}\na/7\n'.format(places,value),expected=[bench.scaled(coefficient//7,places)],
+  parameters=dict(input_scale=places,scale=places,iterations=1,shape=shape,diagnostic_only=True)))
+roles=[]
+for name in ('base','candidate'):
+ entry=json.loads((Path('/private/tmp/gd-bc-368-'+name+'-release')/'implementations.json').read_text())['implementations'][0]
+ assert entry['metadata']['instrumented'] is False
+ assert bench.digest_file(entry['argv'][0])==entry['metadata']['binary_sha256']
+ roles.append(dict(name=name,entry=entry))
+manifest=dict(purpose='native RSS/instruction diagnostics; not paired elapsed-speed evidence',
+ performance_acceptance=False,trials=3,order='alternating base/candidate and candidate/base',
+ library_sha256=library_hash,replayed_math=replay,roles=roles,cases=[],samples=[],status='incomplete',
+ collector_sha256=bench.digest_file(__file__),rss_unit='Darwin native maximum resident set size is bytes')
+try:
+ for case in cases:
+  payload=case['program'].encode();oracle=bench.oracle_payload(case)
+  (programs/(case['name']+'.bc')).write_bytes(payload);(programs/(case['name']+'.expected')).write_bytes(oracle)
+  manifest['cases'].append(dict(name=case['name'],parameters=case['parameters'],program_sha256=hashlib.sha256(payload).hexdigest(),oracle_sha256=hashlib.sha256(oracle).hexdigest()))
+  for trial in range(3):
+   for role in (roles if trial%2==0 else list(reversed(roles))):
+    assert bench.digest_file(library)==library_hash
+    argv=role['entry']['argv']+([str(library)] if 'oracle' in case else [])
+    report=root/(case['name']+'-'+role['name']+'-'+str(trial)+'.rss.txt')
+    command=['/usr/bin/time','-l','-o',str(report)]+argv
+    environment={k:v for k,v in bench.environment().items() if not k.startswith('GD_BC_PROFILE_')}
+    result=profile.run_group(command,payload,environment,120)
+    if result.returncode or result.stderr:raise RuntimeError(case['name']+' failed '+result.stderr.decode(errors='replace')[:500])
+    bench.check_output(case,bench.canonical_output(result.stdout),role['name']+'/'+case['name'])
+    fields=profile.rss_fields('Darwin',report.read_text())
+    assert fields['status']=='collected'
+    manifest['samples'].append(dict(name=case['name'],role=role['name'],trial=trial,checked=True,report=report.name,resources=fields,output_sha256=hashlib.sha256(result.stdout).hexdigest()))
+    bench.write_json(root/'manifest.json',manifest)
+  print(case['name'],flush=True)
+ manifest['status']='all native diagnostic children checked; inspect metric availability individually'
+except BaseException as error:
+ manifest['failure']=str(error);raise
+finally:
+ bench.write_json(root/'manifest.json',manifest)
