@@ -75,6 +75,9 @@ auto expression(std::mt19937& rng, unsigned depth, GD::Bc::Instructions& code) -
 
 TEST_CASE("VM binary opcodes agree with native integer arithmetic", "[bc][vm][execution]")
 {
+  // Exercise both tiny fallback streams and numeric-heavy streams that can
+  // profit from a typed pool, using the same independent arithmetic oracle.
+  auto const padding = GENERATE(0U, 64U);
   for (int64_t lhs = -4; lhs <= 4; ++lhs) {
     for (int64_t rhs = -4; rhs <= 4; ++rhs) {
       for (O opcode : {O::add, O::subtract, O::multiply, O::divide, O::modulo, O::power, O::equals,
@@ -123,6 +126,8 @@ TEST_CASE("VM binary opcodes agree with native integer arithmetic", "[bc][vm][ex
         }
         INFO("lhs = " << lhs << ", rhs = " << rhs << ", opcode = " << unsigned(opcode));
         GD::Bc::Instructions code;
+        for (unsigned n = 0; n < padding; ++n)
+          code.emplace_back(O::number, "0");
         D const left = literal(code, lhs);
         D const right = literal(code, rhs);
         D const at = D(code.size());
@@ -159,16 +164,19 @@ TEST_CASE("Generated expressions agree across grammar bytecode and native oracle
 
 TEST_CASE("VM unary operations have exact observable results", "[bc][vm][execution]")
 {
+  auto const padding = GENERATE(0U, 64U);
   for (auto const& entry :
        {std::make_tuple(O::negate, "7", "-7"), std::make_tuple(O::abs, "7", "7"),
         std::make_tuple(O::sqrt, "81", "9"), std::make_tuple(O::scale_expr, "12.340", "3"),
         std::make_tuple(O::length, "123", "3")}) {
     GD::Bc::Instructions code{I(O::number, std::get<1>(entry)), I(std::get<0>(entry), D(-1)),
                               I(O::print, D(-1), I::Stream::output), I(O::eof)};
+    code.insert(code.begin(), padding, I(O::number, "0"));
     CHECK(execute(code) == std::string(std::get<2>(entry)) + "\n");
   }
   GD::Bc::Instructions code{I(O::number, "7"), I(O::negate, D(-1)), I(O::abs, D(-1)),
                             I(O::print, D(-1), I::Stream::output), I(O::eof)};
+  code.insert(code.begin(), padding, I(O::number, "0"));
   CHECK(execute(code) == "7\n");
 }
 
