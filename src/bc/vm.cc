@@ -68,6 +68,65 @@ private:
 };
 using ResultBuffer =
   std::vector<ResultSlot, Profile::Allocator<ResultSlot, Profile::AllocationKind::results>>;
+using NumberBuffer =
+  std::vector<Number, Profile::Allocator<Number, Profile::AllocationKind::results>>;
+
+struct ActivationResults
+{
+  ResultBuffer variants;
+  NumberBuffer numbers;
+};
+
+// A short-lived view into one stable activation. Numeric slots have a fixed
+// verified type and need no variant discriminant. Full checking and generic
+// layouts still use the original owning variant with its empty-state checks.
+class ResultReference
+{
+public:
+  explicit ResultReference(ResultSlot& value) : variant_(&value) {}
+  explicit ResultReference(Number& value) : number_(&value) {}
+  auto has_value() const -> bool { return number_ != nullptr || variant_->has_value(); }
+  auto numeric_storage() const -> bool { return number_ != nullptr; }
+  auto variant() const -> ExecutionResult& { return **variant_; }
+
+  template<typename T>
+  auto get() const -> T&
+  {
+    if constexpr (std::is_same_v<T, Number>) {
+      if (number_ != nullptr)
+        return *number_;
+    }
+    assert(variant_ != nullptr);  // NOLINT: verified fixed result kind.
+    return std::get<T>(**variant_);
+  }
+
+  template<typename Fn>
+  decltype(auto) visit(Fn&& fn) const
+  {
+    if (number_ != nullptr)
+      return std::forward<Fn>(fn)(*number_);
+    return std::visit(std::forward<Fn>(fn), **variant_);
+  }
+
+  template<typename Value>
+    requires std::is_assignable_v<ExecutionResult&, Value&&>
+  auto operator=(Value&& value) -> ResultReference&
+  {
+    if constexpr (std::is_same_v<std::remove_cvref_t<Value>, Number>) {
+      if (number_ != nullptr) {
+        *number_ = std::forward<Value>(value);
+        return *this;
+      }
+    }
+    assert(variant_ != nullptr);  // NOLINT: numeric kinds cannot become locations.
+    *variant_ = std::forward<Value>(value);
+    return *this;
+  }
+
+private:
+  ResultSlot* variant_{nullptr};
+  Number* number_{nullptr};
+};
 
 /** A borrowed instruction stream whose entry verification has completed.
  * Construction is confined to the verifier and persistent verified owners.
@@ -231,7 +290,7 @@ struct VMState
 
   // Each active pack owns one depth slot. deque growth preserves references
   // held by callers; clearing a slot drops values while retaining capacity.
-  auto acquire_results(std::size_t count) -> ResultBuffer&;
+  auto acquire_results(std::size_t count, std::size_t numbers) -> ActivationResults&;
   void release_results();
 
   /** \brief  Validate instruction bounds, result types and control-flow availability.  */
@@ -241,7 +300,9 @@ struct VMState
     validate(instructions);
     return PreparedInstructions(
       instructions, full_checks() ? ConsumptionPlan{} : plan_consumption(instructions, false),
-      full_checks() ? ResultSlotPlan{} : plan_result_slots(instructions, sizeof(ResultSlot)));
+      full_checks() ? ResultSlotPlan{}
+                    : plan_typed_result_slots(instructions, sizeof(ResultSlot), sizeof(Number),
+                                              sizeof(NumberBuffer) + 2 * sizeof(std::size_t)));
   }
   auto full_checks() const noexcept -> bool { return checks_ == VM::ExecutionChecks::full; }
 
@@ -280,7 +341,8 @@ private:
   Params parameters_;                             ///< Contiguous values for active argument packs.
   ParamMarks param_marks_;                        ///< Pack offsets; indices survive vector growth.
   Params saved_locals_;                           ///< Contiguous saved locals for active calls.
-  std::deque<ResultBuffer, Profile::Allocator<ResultBuffer, Profile::AllocationKind::frames>>
+  std::deque<ActivationResults,
+             Profile::Allocator<ActivationResults, Profile::AllocationKind::frames>>
     result_buffers_;  ///< Reusable buffers, indexed by simultaneous activation depth.
   std::size_t result_depth_ = 0;
   NumType ibase_ = default_base_;  ///< Input base, range [2, 16]
@@ -460,25 +522,26 @@ private:
   template<bool FullChecks>
   auto execute_impl() -> std::pair<Number, bool>;
 
-  // The verified producer map preserves instruction-relative operands. Full
-  // checks and unprofitable maps use the original instruction-indexed buffer.
-  auto result_at(Index instruction) -> ResultSlot&
+  // Immutable verified maps select an owning slot, including fixed numeric
+  // pools. Full checks and unprofitable layouts retain generic variant slots.
+  // No pointer to another activation's result buffer is cached here.
+  auto result_at(Index instruction) const -> ResultReference
   {
-    return results_[result_indices_ ? result_indices_[instruction] : instruction];
-  }
-  auto result_at(Index instruction) const -> ResultSlot const&
-  {
-    return results_[result_indices_ ? result_indices_[instruction] : instruction];
+    auto const index = result_indices_ ? result_indices_[instruction] : instruction;
+    if (typed_results_ && (index & ResultSlotPlan::number_tag) != 0)
+      return ResultReference(results_.numbers[index & ~ResultSlotPlan::number_tag]);
+    return ResultReference(results_.variants[index]);
   }
 
   VMState* vm_;                         ///< Virtual Machine state
   Instructions const& instrs_;          ///< Instructions to execute
   Instruction::Index pc_{0};            ///< Current program counter
-  ResultBuffer& results_;               ///< Borrowed stable buffer for this activation.
+  ActivationResults& results_;          ///< Borrowed stable buffer for this activation.
   ConsumptionPlan const& consumption_;  ///< Immutable metadata owned beside the code.
   // Immutable plan data is owned beside the verified code and cannot relocate
   // during this activation. Null preserves the full-width identity fallback.
   ResultSlotPlan::CompactIndex const* result_indices_;
+  bool typed_results_;
 };
 
 auto operator<<(std::ostream& os, InstructionPack const& instrs) -> std::ostream&;
@@ -598,8 +661,10 @@ void GD::Bc::Details::VMState::function(Letter func, Instructions::const_iterato
   Instructions instrs(begin, end);
   validate(instrs, true);
   auto consumption = full_checks() ? ConsumptionPlan{} : plan_consumption(instrs, true);
-  auto result_slots =
-    full_checks() ? ResultSlotPlan{} : plan_result_slots(instrs, sizeof(ResultSlot));
+  auto result_slots = full_checks()
+                        ? ResultSlotPlan{}
+                        : plan_typed_result_slots(instrs, sizeof(ResultSlot), sizeof(Number),
+                                                  sizeof(NumberBuffer) + 2 * sizeof(std::size_t));
   functions_.at(static_cast<unsigned>(func)) = std::make_optional(std::make_tuple(
     FunctionCode(std::move(instrs), std::move(consumption), std::move(result_slots)), mask, loc));
 }
@@ -861,14 +926,24 @@ void GD::Bc::Details::VMState::validate(Instructions const& instrs, bool functio
   }
 }
 
-auto GD::Bc::Details::VMState::acquire_results(std::size_t count) -> ResultBuffer&
+auto GD::Bc::Details::VMState::acquire_results(std::size_t count, std::size_t numbers)
+  -> ActivationResults&
 {
   if (result_depth_ == result_buffers_.size()) {
     result_buffers_.emplace_back();
   }
   auto& result = result_buffers_[result_depth_];
-  assert(result.empty());  // NOLINT
-  result.resize(count);
+  assert(result.variants.empty() && result.numbers.empty());  // NOLINT
+  try {
+    result.variants.resize(count);
+    result.numbers.resize(numbers);
+  }
+  catch (...) {
+    // A failed second allocation must not leave a partially acquired depth.
+    result.variants.clear();
+    result.numbers.clear();
+    throw;
+  }
   ++result_depth_;
   return result;
 }
@@ -876,15 +951,19 @@ auto GD::Bc::Details::VMState::acquire_results(std::size_t count) -> ResultBuffe
 void GD::Bc::Details::VMState::release_results()
 {
   assert(result_depth_ != 0);  // NOLINT
-  result_buffers_[--result_depth_].clear();
+  auto& result = result_buffers_[--result_depth_];
+  result.variants.clear();
+  result.numbers.clear();
 }
 
 GD::Bc::Details::InstructionPack::InstructionPack(VMState* vm, VerifiedInstructions instrs)
     : vm_(vm), instrs_(instrs.instructions()),
-      results_(vm->acquire_results(instrs.result_slots().storage_size(instrs_.size()))),
+      results_(vm->acquire_results(instrs.result_slots().storage_size(instrs_.size()),
+                                   instrs.result_slots().number_count)),
       consumption_(instrs.consumption()),
       result_indices_(instrs.result_slots().indices.empty() ? nullptr
-                                                         : instrs.result_slots().indices.data())
+                                                            : instrs.result_slots().indices.data()),
+      typed_results_(instrs.result_slots().number_count != 0)
 {
   assert(vm_ != nullptr);  // NOLINT
 }
@@ -1024,9 +1103,9 @@ auto GD::Bc::Details::InstructionPack::execute_impl() -> std::pair<GD::Bc::Numbe
       // Returning ends this activation. No producer slot is read afterwards,
       // so transfer the owned result without an extra shared-owner copy.
       auto const index = get_offset_index(instrs_[pc_].op1());
-      auto& value = result_at(index);
+      auto value = result_at(index);
       assert_error(value.has_value(), Msg::empty_result, index);  // NOLINT
-      return std::make_pair(std::move(std::get<Number>(*value)), true);
+      return std::make_pair(std::move(value.get<Number>()), true);
     }
     case Instruction::Opcode::eof:
       assert(pc_ == instrs_.size() - 1);  // NOLINT
@@ -1053,25 +1132,24 @@ void GD::Bc::Details::InstructionPack::execute_print()
   assert(instrs_[pc_].opcode() == Instruction::Opcode::print);  // NOLINT
   Index const result_idx = get_offset_index(instrs_[pc_].op1());
   std::ostream& os = vm_->stream(std::get<Instruction::Stream>(instrs_[pc_].op2()));
-  auto& result = result_at(result_idx);
+  auto result = result_at(result_idx);
   assert_error(result.has_value(), Msg::empty_result, result_idx);  // NOLINT
-  std::visit(Overloaded{
-               // Empty slots are rejected before visiting in both execution modes.
-               [](std::monostate) { std::abort(); },
-               [&os](std::string_view sv) { os << sv; },
-               [&os, this](Number const& n) {
-                 n.output(os, vm_->obase(), 0);
-                 os << '\n';
-               },
-               [&os](Variable v) { os << v << '\n'; },
-               [&os](Array a) { os << a << '\n'; },
-               [&os](ArrayElement const& ae) { os << ae.first << '[' << ae.second << "]\n"; },
-               [&os](ArrayValues const& /*unused*/) { os << "<ARRAY VALUES>\n"; },
-               [&os](Ibase /*unused*/) { os << "ibase\n"; },
-               [&os](Obase /*unused*/) { os << "obase\n"; },
-               [&os](Scale /*unused*/) { os << "scale\n"; },
-             },
-             *result);
+  result.visit(Overloaded{
+    // Empty slots are rejected before visiting in both execution modes.
+    [](std::monostate) { std::abort(); },
+    [&os](std::string_view sv) { os << sv; },
+    [&os, this](Number const& n) {
+      n.output(os, vm_->obase(), 0);
+      os << '\n';
+    },
+    [&os](Variable v) { os << v << '\n'; },
+    [&os](Array a) { os << a << '\n'; },
+    [&os](ArrayElement const& ae) { os << ae.first << '[' << ae.second << "]\n"; },
+    [&os](ArrayValues const& /*unused*/) { os << "<ARRAY VALUES>\n"; },
+    [&os](Ibase /*unused*/) { os << "ibase\n"; },
+    [&os](Obase /*unused*/) { os << "obase\n"; },
+    [&os](Scale /*unused*/) { os << "scale\n"; },
+  });
 }
 
 void GD::Bc::Details::InstructionPack::execute_quit()
@@ -1085,94 +1163,90 @@ void GD::Bc::Details::InstructionPack::execute_length()
 {
   assert(instrs_[pc_].opcode() == Instruction::Opcode::length);  // NOLINT
   Index const loc_idx = get_offset_index(instrs_[pc_].op1());
-  auto& result = result_at(pc_);
-  auto const& loc = result_at(loc_idx);
+  auto result = result_at(pc_);
+  auto const loc = result_at(loc_idx);
   assert_error(loc.has_value(), Msg::empty_result, loc_idx);  // NOLINT
 
-  std::visit(Overloaded{
-               // Empty slots are rejected before visiting in both execution modes.
-               [](std::monostate) { std::abort(); },
-               [this](std::string_view /*s*/) {
-                 assert_error(false, Msg::cannot_get_length, "string_view");  // NOLINT
-               },
-               [&result](Number const& n) { result = Number(n.length()); },
-               [this](ArrayValues const& /*av*/) {
-                 assert_error(false, Msg::cannot_get_length, "ArrayValues");  // NOLINT
-               },
-               [this](Variable /*v*/) {
-                 // NOLINTNEXTLINE
-                 assert_error(false, Msg::cannot_get_length, "Variable");
-               },
-               [&result, this](Array a) { result = Number(vm_->array_length(a)); },
-               [this](ArrayElement const& /*ae*/) {
-                 // NOLINTNEXTLINE
-                 assert_error(false, Msg::cannot_get_length, "ArrayElement");
-               },
-               [this](Ibase) { assert_error(false, Msg::cannot_get_length, "ibase"); },  // NOLINT
-               [this](Obase) { assert_error(false, Msg::cannot_get_length, "obase"); },  // NOLINT
-               [this](Scale) { assert_error(false, Msg::cannot_get_length, "scale"); },  // NOLINT
-             },
-             *loc);
+  loc.visit(Overloaded{
+    // Empty slots are rejected before visiting in both execution modes.
+    [](std::monostate) { std::abort(); },
+    [this](std::string_view /*s*/) {
+      assert_error(false, Msg::cannot_get_length, "string_view");  // NOLINT
+    },
+    [&result](Number const& n) { result = Number(n.length()); },
+    [this](ArrayValues const& /*av*/) {
+      assert_error(false, Msg::cannot_get_length, "ArrayValues");  // NOLINT
+    },
+    [this](Variable /*v*/) {
+      // NOLINTNEXTLINE
+      assert_error(false, Msg::cannot_get_length, "Variable");
+    },
+    [&result, this](Array a) { result = Number(vm_->array_length(a)); },
+    [this](ArrayElement const& /*ae*/) {
+      // NOLINTNEXTLINE
+      assert_error(false, Msg::cannot_get_length, "ArrayElement");
+    },
+    [this](Ibase) { assert_error(false, Msg::cannot_get_length, "ibase"); },  // NOLINT
+    [this](Obase) { assert_error(false, Msg::cannot_get_length, "obase"); },  // NOLINT
+    [this](Scale) { assert_error(false, Msg::cannot_get_length, "scale"); },  // NOLINT
+  });
 }
 
 void GD::Bc::Details::InstructionPack::execute_load()
 {
   assert(instrs_[pc_].opcode() == Instruction::Opcode::load);  // NOLINT
   Index const loc_idx = get_offset_index(instrs_.at(pc_).op1());
-  auto& result = result_at(pc_);
-  auto const& loc = result_at(loc_idx);
+  auto result = result_at(pc_);
+  auto const loc = result_at(loc_idx);
   assert_error(loc.has_value(), Msg::empty_result, loc_idx);  // NOLINT
 
-  std::visit(Overloaded{
-               // Empty slots are rejected before visiting in both execution modes.
-               [](std::monostate) { std::abort(); },
-               [this](std::string_view /*sv*/) {
-                 assert_error(false, Msg::cannot_load, "string_view");  // NOLINT
-               },
-               [this](Number) { assert_error(false, Msg::cannot_load, "Number"); },  // NOLINT
-               [this](ArrayValues const& /*av*/) {
-                 assert_error(false, Msg::cannot_load, "ArrayValues");  // NOLINT
-               },
-               [&result, this](Variable v) { result = vm_->variable(v); },
-               [&result, this](Array a) { result = vm_->array(a); },
-               [&result, this](ArrayElement const& ae) { result = vm_->array_element(ae); },
-               [&result, this](Ibase /*ib*/) { result = Number(vm_->ibase()); },
-               [&result, this](Obase /*ob*/) { result = Number(vm_->obase()); },
-               [&result, this](Scale /*s*/) { result = Number(vm_->scale()); },
-             },
-             *loc);
+  loc.visit(Overloaded{
+    // Empty slots are rejected before visiting in both execution modes.
+    [](std::monostate) { std::abort(); },
+    [this](std::string_view /*sv*/) {
+      assert_error(false, Msg::cannot_load, "string_view");  // NOLINT
+    },
+    [this](Number) { assert_error(false, Msg::cannot_load, "Number"); },  // NOLINT
+    [this](ArrayValues const& /*av*/) {
+      assert_error(false, Msg::cannot_load, "ArrayValues");  // NOLINT
+    },
+    [&result, this](Variable v) { result = vm_->variable(v); },
+    [&result, this](Array a) { result = vm_->array(a); },
+    [&result, this](ArrayElement const& ae) { result = vm_->array_element(ae); },
+    [&result, this](Ibase /*ib*/) { result = Number(vm_->ibase()); },
+    [&result, this](Obase /*ob*/) { result = Number(vm_->obase()); },
+    [&result, this](Scale /*s*/) { result = Number(vm_->scale()); },
+  });
 }
 
 void GD::Bc::Details::InstructionPack::execute_store()
 {
   assert(instrs_[pc_].opcode() == Instruction::Opcode::store);  // NOLINT
   Index const loc_idx = get_offset_index(instrs_[pc_].op1());
-  auto& loc = result_at(loc_idx);
+  auto loc = result_at(loc_idx);
   assert_error(loc.has_value(), Msg::empty_result, loc_idx);  // NOLINT
   Index const expr_idx = get_offset_index(instrs_[pc_].op2());
-  auto& result = result_at(expr_idx);
+  auto result = result_at(expr_idx);
   assert_error(result.has_value(), Msg::empty_result, expr_idx);  // NOLINT
-  auto& expr = *result;
+  auto expr = result;
 
-  std::visit(
-    Overloaded{
-      // Empty slots are rejected before visiting in both execution modes.
-      [](std::monostate) { std::abort(); },
-      [this](std::string_view /*sv*/) {
-        assert_error(false, Msg::cannot_store, "string_view");  // NOLINT
-      },
-      [this](Number) { assert_error(false, Msg::cannot_store, "Number"); },  // NOLINT
-      [this](ArrayValues const& /*av*/) {
-        assert_error(false, Msg::cannot_store, "ArrayValues");  // NOLINT
-      },
-      [&expr, this](Variable v) { vm_->variable(v, std::get<Number>(expr)); },
-      [&expr, this](Array a) { vm_->array(a, std::get<ArrayValues>(expr)); },
-      [&expr, this](ArrayElement const& ae) { vm_->array_element(ae, std::get<Number>(expr)); },
-      [&expr, this](Ibase /*unused*/) { vm_->ibase(std::get<Number>(expr)); },
-      [&expr, this](Obase /*unused*/) { vm_->obase(std::get<Number>(expr)); },
-      [&expr, this](Scale /*unused*/) { vm_->scale(std::get<Number>(expr)); },
+  loc.visit(Overloaded{
+    // Empty slots are rejected before visiting in both execution modes.
+    [](std::monostate) { std::abort(); },
+    [this](std::string_view /*sv*/) {
+      assert_error(false, Msg::cannot_store, "string_view");  // NOLINT
     },
-    *loc);
+    [this](Number) { assert_error(false, Msg::cannot_store, "Number"); },  // NOLINT
+    [this](ArrayValues const& /*av*/) {
+      assert_error(false, Msg::cannot_store, "ArrayValues");  // NOLINT
+    },
+    [&expr, this](Variable v) { vm_->variable(v, expr.get<Number>()); },
+    [&expr, this](Array a) { vm_->array(a, expr.get<ArrayValues>()); },
+    [&expr, this](ArrayElement const& ae) { vm_->array_element(ae, expr.get<Number>()); },
+    [&expr, this](Ibase /*unused*/) { vm_->ibase(expr.get<Number>()); },
+    [&expr, this](Obase /*unused*/) { vm_->obase(expr.get<Number>()); },
+    [&expr, this](Scale /*unused*/) { vm_->scale(expr.get<Number>()); },
+  });
 }
 
 auto GD::Bc::Details::InstructionPack::execute_branch() -> GD::Bc::Instruction::Index
@@ -1221,15 +1295,14 @@ void GD::Bc::Details::InstructionPack::execute_push_param()
 {
   assert(instrs_[pc_].opcode() == Instruction::Opcode::push_param);  // NOLINT
   Index const expr_idx = get_offset_index(instrs_[pc_].op1());
-  auto& expr = result_at(expr_idx);
+  auto expr = result_at(expr_idx);
   assert_error(expr.has_value(), Msg::empty_result, expr_idx);  // NOLINT
 
-  std::visit(Overloaded{
-               [this](Number const& n) { vm_->push_param(n); },
-               [this](ArrayValues const& av) { vm_->push_param(av); },
-               []([[maybe_unused]] auto a) { abort(); },
-             },
-             *expr);
+  expr.visit(Overloaded{
+    [this](Number const& n) { vm_->push_param(n); },
+    [this](ArrayValues const& av) { vm_->push_param(av); },
+    []([[maybe_unused]] auto a) { abort(); },
+  });
 }
 
 void GD::Bc::Details::InstructionPack::execute_pop_param_mark()
@@ -1250,17 +1323,17 @@ auto GD::Bc::Details::InstructionPack::get_offset_index(Instruction::Operand con
 auto GD::Bc::Details::InstructionPack::get_op_expr(Instruction::Operand const& op) const
   -> GD::Bc::Number const&
 {
-  auto const& result = result_at(get_offset_index(op));
+  auto const result = result_at(get_offset_index(op));
   assert_error(result.has_value(), Msg::empty_result, get_offset_index(op));  // NOLINT
-  return std::get<Number>(*result);
+  return result.get<Number>();
 }
 
 auto GD::Bc::Details::InstructionPack::take_op1_expr() -> GD::Bc::Number
 {
   auto const index = get_offset_index(instrs_[pc_].op1());
-  auto& result = result_at(index);
+  auto result = result_at(index);
   assert_error(result.has_value(), Msg::empty_result, index);  // NOLINT
-  auto& number = std::get<Number>(*result);
+  auto& number = result.get<Number>();
   if (number.has_heap_storage() && !consumption_.empty() && consumption_[pc_] != 0) {
     // One static use within a straight-line block proves this slot cannot be
     // read again before its producer executes. Other COW owners stay intact.
@@ -1312,7 +1385,11 @@ auto GD::Bc::Details::operator<<(std::ostream& os, GD::Bc::Details::InstructionP
     os << '\t' << instrs.instrs_[i];
     auto const& instr{instrs.result_at(i)};
     if (instr.has_value()) {
-      os << " = " << *instr;
+      os << " = ";
+      if (instr.numeric_storage())
+        os << instr.get<Number>();
+      else
+        os << instr.variant();
     }
     os << '\n';
   }
@@ -1322,7 +1399,7 @@ auto GD::Bc::Details::operator<<(std::ostream& os, GD::Bc::Details::InstructionP
 void GD::Bc::Details::InstructionPack::validate_result(Index i) const
 {
   GD_BC_PROFILE_EVENT(Profile::Event::result_validation_calls, 1);
-  [[maybe_unused]] auto const& result = result_at(i);
+  [[maybe_unused]] auto const& result = results_.variants[i];
   switch (instrs_[i].opcode()) {
   case GD::Bc::Instruction::Opcode::eof:
   case GD::Bc::Instruction::Opcode::push_param_mark:

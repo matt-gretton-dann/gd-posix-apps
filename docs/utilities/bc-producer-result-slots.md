@@ -41,3 +41,63 @@ Measure cold registration, warm calls/loops, recursion, alternating frame sizes,
 arrays, streaming input and ordinary portable math source on the full/held-out
 native matrix. Keep losing and inconclusive cases. Typed executable operands,
 CFG-aware liveness, direct call windows and fusion remain separate #207 work.
+
+## Typed numeric-pool experiment
+
+The next #207 step gives statically numeric producers their own contiguous
+`Number` pool. Locations, strings and array snapshots retain the existing
+variant pool, including one empty nonproducer sentinel. A tagged 32-bit map
+names each `(pool,index)` pair uniquely. There is no liveness reuse: loops,
+forward references and joins keep the same verified producer identity.
+
+Complete entry verification runs before planning, including operand schemas,
+result kinds, dominance and parameter-stack obligations. The number kind of a
+producer is fixed. Default-constructed numeric storage therefore needs no
+runtime engagement/type tag; reaching its consumer is already proved to follow
+its producer. A scoped result view borrows the current activation's owning
+storage. It does not cache pointers across activation-buffer growth or moves.
+Literal caches and code remain owned by the existing immutable code owners.
+
+The planner uses actual caller-supplied slot sizes and charges the map, numeric
+pool, variant sentinel and extra buffer/header budget. It must beat the best
+existing producer-map or identity payload. Tiny streams, incompatible sizes,
+overflow, tagged-domain limits and unprofitable layouts retain that existing
+generic representation. The typed domain requires fewer than 2^31 source
+instructions; generic maps keep their complete 32-bit index domain, and the
+identity fallback keeps the full original instruction-index width. No public
+language or source-program limit is narrowed.
+
+The fully checked VM retains instruction-indexed variants and the complete
+per-result diagnostic switch. It remains the differential oracle. Runtime
+semantic errors remain in both modes. Number and variant buffers belong to
+one stable deque element per simultaneous activation depth, clear owning values
+on release, and retain capacity for later calls. If allocation fails after
+variant resizing, both buffers are cleared before propagating the exception,
+so the same VM can retry without consuming or damaging its activation depth.
+
+Validation includes exact checked/verified execution, separate array/scalar
+load kinds, recursion with local restoration and array snapshots, excluded
+uncalled bodies, map/header profitability, and generic fallback. The isolated
+lifetime test fails each ordinary allocation position once while executing a
+mixed stream with 67 heap-valued numeric literals, then retries the same VM.
+Destruction must return the ordinary outstanding-allocation count to its prior
+value. This exercises partial preparation, both result pools and literal-cache
+failures without masking them through a successful fresh VM.
+
+Local ASan/UBSan checks pass 234 component cases (1,211,033 assertions),
+including five targeted cases with 139 assertions, the allocation-failure and
+lifetime test, bounded malformed-stream checks, driver/VM checks, signal
+delivery, 616 identical ordinary-source math references and Release profiling
+checks. LeakSanitizer is unavailable. Native and elapsed adoption evidence is
+still required. Smaller selected payload is not a claim about process RSS,
+allocator rounding, retained capacities, startup or execution speed. The extra
+pool/header and lookup branches can still cost memory or time on fallback
+streams, and must be measured.
+
+This step does not compact the wide source instruction operands, infer CFG
+liveness, fuse operations, or complete #207. Those items retain their original
+scope and require separate proof and performance evaluation.
+
+The topic uses the explicit `codex/bc-native-broad/` branch convention, retaining
+full and held-out native arithmetic samples for this executable change. This
+only selects the existing corpus; it does not relax control or loss policies.

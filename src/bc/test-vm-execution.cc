@@ -442,3 +442,24 @@ TEST_CASE("Reused activation slots release mixed result alternatives",
   CHECK(errors.str().empty());
   CHECK(output.str() == expected);
 }
+
+TEST_CASE("Recursive numeric results preserve array snapshots and caller locals",
+          "[bc][vm][execution][typed-results]")
+{
+  std::string const source = "define f(n,a[]) {\n"
+                             "auto x,b[]\n"
+                             "x=n+1+2+3+4+5+6+7+8+9+10+11+12+13+14+15+16\n"
+                             "a[0]=a[0]+1\n"
+                             "b[0]=a[0]+n\n"
+                             "if(n==0) return(x+b[0])\n"
+                             "return(f(n-1,a[])+x+b[0])\n"
+                             "}\n"
+                             "a[0]=7\nf(4,a[])\na[0]\nibase=16\nF+F\n";
+  GD::Bc::Parser parser(
+    std::make_unique<GD::Bc::Lexer>(std::make_unique<GD::Bc::StringReader>(source)), false);
+  auto code = parser.parse();
+  REQUIRE(code != nullptr);
+  // Each activation sees a[0]=12-n, so b[0]=12 and x=136+n.
+  // Summing n=0..4 gives 5*148+10=750. The caller's array stays seven.
+  CHECK(execute(*code) == "750\n7\n30\n");
+}

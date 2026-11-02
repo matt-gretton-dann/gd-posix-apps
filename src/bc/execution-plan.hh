@@ -20,9 +20,9 @@ enum class ResultKind { none, number, string, scalar_location, array_location, a
 auto classify_result(Instructions const& code, Instruction::Index index) -> ResultKind;
 
 // A compact map assigns slots only to value-producing instructions in this
-// execution region. Zero is a shared empty sentinel for non-producers and
-// skipped definition bodies. Producers never share slots with one another;
-// no liveness or control-flow-dependent reuse is inferred here.
+// execution region. Zero is a shared empty variant sentinel for non-producers
+// and skipped definition bodies. A tagged numeric map selects a separate pool.
+// Producers never share a (pool,index) pair; no liveness reuse is inferred.
 struct ResultSlotPlan
 {
   using CompactIndex = std::uint32_t;
@@ -31,6 +31,13 @@ struct ResultSlotPlan
                 Profile::Allocator<CompactIndex, Profile::AllocationKind::execution_plans>>;
   Map indices;
   std::size_t count{0};
+  std::size_t number_count{0};
+  static constexpr CompactIndex number_tag = CompactIndex{1} << 31;
+
+  auto is_number(Instruction::Index instruction) const -> bool
+  {
+    return number_count != 0 && (indices[instruction] & number_tag) != 0;
+  }
 
   // Empty metadata retains the original instruction-indexed representation.
   auto storage_size(std::size_t instruction_count) const -> std::size_t
@@ -39,7 +46,9 @@ struct ResultSlotPlan
   }
   auto index(Instruction::Index instruction) const -> Instruction::Index
   {
-    return indices.empty() ? instruction : indices[instruction];
+    if (indices.empty())
+      return instruction;
+    return number_count == 0 ? indices[instruction] : indices[instruction] & ~number_tag;
   }
 };
 
@@ -47,6 +56,14 @@ struct ResultSlotPlan
 // indices and layouts without a net slot/map payload saving keep the generic
 // identity layout. slot_bytes is the caller's actual result-slot sizeof.
 auto plan_result_slots(Instructions const& code, std::size_t slot_bytes) -> ResultSlotPlan;
+
+// Separate Number storage only when both index pools fit the tagged domain and
+// the complete map/pool/header payload is smaller than the best existing
+// producer-map or identity layout. Other streams keep that generic fallback.
+// Verification establishes every producer's fixed type and availability first.
+auto plan_typed_result_slots(Instructions const& code, std::size_t slot_bytes,
+                             std::size_t number_bytes, std::size_t extra_buffer_bytes)
+  -> ResultSlotPlan;
 
 // One byte per instruction: nonzero permits transferring its first arithmetic
 // operand. An empty plan keeps ordinary copies without a per-instruction table.
