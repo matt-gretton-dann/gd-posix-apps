@@ -44,7 +44,7 @@ class LibraryCli(unittest.TestCase):
 
     def certified(self, options=('-l',), files=(), binary=None):
         cases = []
-        for filename in ('math-oracles.json', 'math-crossover-oracles.json'):
+        for filename in ('math-oracles.json', 'math-crossover-oracles.json', 'math-trig-oracles.json'):
             cases.extend(json.loads((ROOT / 'fixtures' / filename).read_text())['cases'])
         program = []
         for case in cases:
@@ -119,6 +119,40 @@ class LibraryCli(unittest.TestCase):
                     rounded_upper = (2 * upper.numerator * factor + upper.denominator) // (2 * upper.denominator)
                     self.assertEqual(rounded_lower, rounded_upper)
                     self.assertEqual(candidate, sign * Fraction(rounded_lower, factor))
+                    self.assertEqual(lines[4 * index + 1:4 * index + 4],
+                                     [str(scale), str(base), str(scale)])
+
+    def test_trig_argument_representation_preserves_certified_values(self):
+        # Adding fractional zeroes changes stored precision, never the exact
+        # input. Reuse independently enclosed +/-1 values for both shapes.
+        references = {(case['function'], case['scale']): case for case in
+                      json.loads((ROOT / 'fixtures/math-oracles.json').read_text())['cases']
+                      if case['function'] in ('s', 'c') and case['arguments'] == ['1']}
+        tests = [(function, scale, sign, base)
+                 for function in ('s', 'c') for scale in (0, 20, 100, 1000)
+                 for sign in (1, -1) for base in (10, 2, 16)]
+        program = ['ibase=A', 'obase=A']
+        for function, scale, sign, base in tests:
+            argument = ('-' if sign < 0 else '') + '1.' + '0' * 512
+            program += ['ibase=A', 'scale=' + str(scale), 'ibase=' + str(base),
+                        'r=' + function + '(' + argument + ')',
+                        'r', 'scale', 'ibase', 'scale(r)']
+        modes = [(BC, ('-l',), ()), (BC, (), (SOURCE,))]
+        if OTHER_BC:
+            modes.append((OTHER_BC, (), (SOURCE,)))
+        for binary, options, files in modes:
+            lines = self.checked_lines('\n'.join(program) + '\n', binary=binary,
+                                       options=options, files=files, timeout=300)
+            self.assertEqual(len(lines), 4 * len(tests))
+            for index, (function, scale, sign, base) in enumerate(tests):
+                with self.subTest(binary=binary, function=function, scale=scale,
+                                  sign=sign, base=base, options=options):
+                    reference = references[(function, scale)]
+                    lower, upper = Fraction(reference['lower']), Fraction(reference['upper'])
+                    if function == 's' and sign < 0:
+                        lower, upper = -upper, -lower
+                    value = ORACLE.decimal_fraction(lines[4 * index])
+                    self.assertEqual(ORACLE.classify(value, lower, upper, scale), 'pass')
                     self.assertEqual(lines[4 * index + 1:4 * index + 4],
                                      [str(scale), str(base), str(scale)])
 
