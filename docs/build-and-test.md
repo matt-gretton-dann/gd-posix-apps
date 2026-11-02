@@ -68,7 +68,8 @@ The following options can be passed to CMake to change the build behaviour:
 | `FORCE_SUPPLEMENTAL_LIBRARY` | BOOL | OFF | Force use of the [standard supplemental](./libgdsup/index.md) library even in cases where it is not needed. |
 | `RUN_CLANG_FORMAT` | BOOL | OFF | Check source formatting during the build. |
 | `RUN_CLANG_TIDY` | BOOL | OFF | Run clang-tidy during compilation. |
-| `BC_MULTIPLY_SPLIT_POINT` | STRING | auto | Calibrate native builds, or use an explicit positive limb threshold for reproducible builds. Cross-build auto uses the portable fixed fallback 128. |
+| `BC_MULTIPLY_SPLIT_POINT` | STRING | portable | Use the stable threshold 126, `auto` to calibrate native builds, or an explicit positive limb threshold. Cross-build `auto` uses the fixed fallback 128. |
+| `IPO_MODE` | STRING | AUTO | Automatic IPO policy: preserve supported non-Debug detection (`AUTO`), disable project-managed IPO (`OFF`), or require support without fallback (`REQUIRED`). |
 | `ENABLE_BC_COVERAGE` | BOOL | OFF | Instrument bc and its tests for line, branch and MC/DC coverage using a supported Clang/LLVM toolchain. |
 
 For a production-only build use `-DBUILD_TESTING=OFF`. With a toolchain providing
@@ -129,3 +130,30 @@ You can also invoke ctest directly by doing:
 cd build
 ctest
 ```
+
+
+### Reproducible IPO controls
+
+`IPO_MODE=AUTO` preserves the previous policy: supported non-Debug builds enable
+CMake IPO, Debug skips detection, and unsupported toolchains use the generic
+build. A multi-configuration generator retains the previous detection behavior;
+no per-configuration policy is added. `IPO_MODE=OFF` skips the capability probe
+and disables the project-managed IPO properties on utility executables and bc
+library/test/component/tuner targets. `IPO_MODE=REQUIRED` probes even for Debug
+and fails configuration if IPO is unavailable. Mode names are case-sensitive.
+
+These settings control CMake's automatic IPO flags. Explicit compiler/link
+flags remain caller inputs; other libraries can also inherit a caller-supplied
+`CMAKE_INTERPROCEDURAL_OPTIMIZATION` setting. Use fresh build directories and
+inspect actual compile/link commands when comparing compiler modes. In
+particular, an explicit OFF request is not proof that manually supplied flags
+contain no LTO. The default settings, optimization levels and portable kernels
+are unchanged by this control.
+
+Each successful configuration writes `gd-ipo-policy.json` with the selected
+mode and automatic capability result. A failed reconfiguration removes a stale
+report. This records CMake's selection; actual commands remain the evidence of
+compiler behavior. The policy fixture tests supported/unsupported, Debug,
+explicit opt-out, required-support failure and stale-report paths independently
+of the host's LTO availability. This is groundwork for #213's matched compiler
+and PGO experiments, not an established performance improvement.

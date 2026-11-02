@@ -25,7 +25,7 @@ list(PREPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 include(FetchContent)
 include(GNUInstallDirs)
 include(Warnings)
-include(CheckIPOSupported)
+include(GDInterproceduralOptimization)
 
 include(GDPosixAppsTests)
 
@@ -59,6 +59,11 @@ if(RUN_INTEGRATION_TESTS)
                    --module "${CMAKE_SOURCE_DIR}/cmake/GDPosixAppsTests.cmake"
                    --generator "${CMAKE_GENERATOR}")
   set_tests_properties(harness/gdpat-isolation PROPERTIES TIMEOUT 90)
+  add_test(NAME build/ipo-policy
+           COMMAND "${Python_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/cmake/tests/test-ipo-policy.py"
+                   --cmake "${CMAKE_COMMAND}"
+                   --module "${CMAKE_SOURCE_DIR}/cmake/GDInterproceduralOptimization.cmake")
+  set_tests_properties(build/ipo-policy PROPERTIES TIMEOUT 60)
 endif()
 
 # Unit testing setup
@@ -110,18 +115,9 @@ else()
   endif()
 endif()
 
-# Enable IPO support if possible:
-if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-set(ENABLE_IPO OFF)
-message(STATUS "!! Disabling IPO for debug builds")
-else()
-check_ipo_supported(RESULT ENABLE_IPO OUTPUT IPO_WARNINGS LANGUAGES C CXX)
-endif()
-if (ENABLE_IPO)
-message(STATUS "Inter-procedural optimizations are enabled.")
-else()
-  message(STATUS "!! Inter-procedural optimizations are not supported for this build.")
-endif()
+# Preserve automatic detection by default; experiments can disable it or
+# require support instead of silently accepting a different compilation mode.
+gd_check_ipo()
 
 # And recurse to the subdirectories - order here is important.
 add_subdirectory(src)

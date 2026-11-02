@@ -6,11 +6,17 @@ endif()
 execute_process(
   COMMAND "${CMAKE_COMMAND}" -S "${TEST_SOURCE_DIR}" -B "${TEST_BINARY_DIR}"
           -G "${TEST_GENERATOR}" -DBUILD_TESTING=OFF -DALLOW_THIRD_PARTY_DOWNLOADS=OFF
+          -DIPO_MODE=OFF
           "-DCMAKE_C_COMPILER:FILEPATH=${TEST_C_COMPILER}"
           "-DCMAKE_CXX_COMPILER:FILEPATH=${TEST_CXX_COMPILER}"
   RESULT_VARIABLE _result OUTPUT_VARIABLE _output ERROR_VARIABLE _error TIMEOUT 90)
 if(NOT _result STREQUAL "0")
   message(FATAL_ERROR "BUILD_TESTING=OFF configure failed (${_result}):\n${_output}\n${_error}")
+endif()
+file(READ "${TEST_BINARY_DIR}/gd-ipo-policy.json" _ipo_policy)
+if(NOT _ipo_policy MATCHES "\"mode\":\"OFF\""
+   OR NOT _ipo_policy MATCHES "\"automatic_ipo\":false")
+  message(FATAL_ERROR "Production-only configuration did not disable automatic IPO")
 endif()
 file(READ "${TEST_BINARY_DIR}/CMakeFiles/TargetDirectories.txt" _targets)
 foreach(_target test-gdsup test-util test-libbc)
