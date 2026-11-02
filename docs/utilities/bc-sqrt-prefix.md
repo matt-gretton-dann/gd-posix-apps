@@ -63,3 +63,19 @@ adjacent squares, tiny fractions and large requested scales. The interpreted
 math library is also checked as ordinary source after changing builtin sqrt.
 Native paired full/held-out evidence is required before adoption; no speedup or
 completed issue is claimed by the initial correct prototype.
+
+## Public and internal width policies
+
+The public coefficient length keeps its existing trait limit and converts and
+clamps in the public result type. The internal width query uses storage-width
+arithmetic. Both share one scan with explicit result/clamp policies; the public
+assertion is selected by policy rather than by assuming NumType differs from
+size_t on every host. Zero remains one digit through both interfaces. No public
+language limit is enlarged by the internal query.
+
+This preserves the original public clamp ordering while investigating the
+prototype's native Windows regression. It is a generated-code hypothesis, not
+an accuracy fix or an established performance mechanism. Dedicated component
+checks cover valid trait-domain lengths, zero/padded zero and wide internal
+queries; the complete exact-root and ordinary-source math oracles remain
+required. Native full/held-out results and code inspection decide adoption.

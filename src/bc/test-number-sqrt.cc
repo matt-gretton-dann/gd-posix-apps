@@ -267,3 +267,34 @@ TEST_CASE("Small-trait root coefficients retain wide internal growth offsets",
   CHECK(value.scale() == 0);
   CHECK(snapshot == Number(input, 10));
 }
+
+TEMPLATE_TEST_CASE("Public coefficient lengths keep their trait domain and zero floor",
+                   "[bc][number][sqrt][coefficient-width]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Digits = GD::Bc::Details::BasicDigits<TestType>;
+  Digits const zero;
+  CHECK(zero.length() == 1);
+  CHECK(zero.coefficient_digits() == 1);
+  for (std::size_t count : {1U, 2U, 9U, 99U, 1000U, 9999U}) {
+    if (count >= TestType::base_)
+      continue;
+    auto const value = Digits::from_decimal("0000" + std::string(count, '7'), std::string_view::npos);
+    INFO("coefficient digits = " << count);
+    CHECK(static_cast<std::size_t>(value.length()) == count);
+    CHECK(value.coefficient_digits() == count);
+  }
+  auto const padded_zero = Digits::from_decimal(std::string(4096, '0'), std::string_view::npos);
+  CHECK(padded_zero.length() == 1);
+  CHECK(padded_zero.coefficient_digits() == 1);
+}
+
+TEMPLATE_TEST_CASE("Internal coefficient widths do not inherit public narrowing",
+                   "[bc][number][sqrt][coefficient-width]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Digits = GD::Bc::Details::BasicDigits<TestType>;
+  auto const value = Digits::from_decimal(std::string(1025, '7'), std::string_view::npos);
+  // Only query the wide internal interface; do not widen public language limits.
+  CHECK(value.coefficient_digits() == 1025);
+}
