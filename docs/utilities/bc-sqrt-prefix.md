@@ -89,3 +89,16 @@ checks the exact output floor inequalities and result scale, and observes the
 selected path on both sides of the cutoff. Earlier elapsed cases named
 `crossover_120/124/128/132` are retained with their original names and programs;
 they measure nearby sizes but do not establish that they straddle this cutoff.
+
+
+The outlined-prefix checkpoint requests a call boundary for the large helper:
+MSVC uses `__declspec(noinline)`, compilers advertising `gnu::noinline` use that
+attribute, and other compilers retain the identical generic function without
+an annotation. See the [MSVC declaration documentation](https://learn.microsoft.com/en-us/cpp/cpp/noinline?view=msvc-170)
+and [GCC common attributes](https://gcc.gnu.org/onlinedocs/gcc/Common-Attributes.html).
+No arithmetic, seed, cutoff, precision ladder or fallback selection changes.
+This is an isolated code-generation experiment under #212/#213, not a proved
+explanation of the mixed hosted Windows timings. The prior candidate adds
+5,120 raw PE code bytes over current main and has retained input regressions;
+its successful broad batch does not erase those losses. Compare complete
+full/held-out classes and actual executables before adopting this boundary.

@@ -2328,6 +2328,14 @@ private:
     }
   }
 
+  // Keep the large prefix kernel behind a call boundary where the compiler
+  // supports one. This code-generation experiment isolates it from surrounding
+  // numeric dispatch; the generic body below remains the fallback otherwise.
+#if defined(_MSC_VER)
+  __declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+  [[gnu::noinline]]
+#endif
   auto sqrt_prefix_if_large(NumType working_scale, NumType target_scale) -> bool
   {
     constexpr std::size_t cutoff = 128;
