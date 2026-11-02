@@ -106,3 +106,35 @@ This provides a reproducible opt-in route when Actions workflow dispatch is
 unavailable to a client. Ordinary PR jobs retain their representative subset;
 broad push and PR artifacts remain separate experiments with their own source
 and host identities. Preserve all per-class misses and failures from either.
+
+
+## Child and experiment deadlines
+
+The native orchestrator declares `--child-timeout-seconds` (default 120).
+It passes that same positive finite bound to calibration, paired/A-A stages,
+confirmations and separate diagnostic invocations, and records it in the
+orchestration artifact. This is distinct from the retained 6600-second workflow
+experiment bound and 120-minute job limit; it changes no sample count,
+substantive-duration target, correctness check or acceptance threshold.
+
+A common calibrated batch can exceed the standalone harness's 30-second
+default when the candidate is substantially faster than a comparator. The
+first trig/Bessel broad attempt records a Howard 1000-place cosine timeout at
+512 calls; it is retained as failed evidence and never pooled into the bounded
+120-second-child retry. The independent full/held-out inputs and per-role
+output checks remain mandatory. A global deadline failure still grants no
+acceptance; this setting does not promise that every host can finish a matrix.
+
+
+Broad workflow runs now schedule `full` and `holdout` independently on each
+native OS. `--broad-preset full` or `--broad-preset holdout` selects that cohort
+and requires `--broad`; omitting the selector retains the standalone combined
+mode. Orchestration records the selected presets, and held-out artifacts/checks
+carry a distinct suffix. PR-sized full check names remain unchanged.
+
+Both cohorts use the same immutable source and experimental anchor, with
+independent builds, calibration, same-job paired roles and controls. No tuning
+occurs between cohorts, and their raw observations are never pooled into one
+sample distribution. Every job retains its 6600-second experiment and 120-minute
+job limits. This avoids exhausting the Windows preparation margin while
+preserving all cases, samples, output checks and duration qualifications.

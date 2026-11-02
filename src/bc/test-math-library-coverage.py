@@ -75,7 +75,8 @@ def main():
     source = (ROOT / 'math-library.bc').read_text(encoding='utf-8')
     transformed, decisions = instrument(source)
     cases = []
-    for filename in ('math-oracles.json', 'math-crossover-oracles.json', 'math-trig-oracles.json'):
+    for filename in ('math-oracles.json', 'math-crossover-oracles.json', 'math-trig-oracles.json',
+                     'math-bessel-zero-oracles.json'):
         cases.extend(json.loads((ROOT / 'fixtures' / filename).read_text())['cases'])
     program = ''.join('scale={}\n{}({})\n'.format(
         case['scale'], case['function'], ','.join(case['arguments'])) for case in cases)

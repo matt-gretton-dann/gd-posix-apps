@@ -12,3 +12,5 @@ math-benchmark-oracles.json -text
 benchmark-corpus-before-scaled-division.json -text
 math-trig-cases.json text eol=lf
 math-trig-oracles.json -text
+math-bessel-zero-cases.json text eol=lf
+math-bessel-zero-oracles.json -text
