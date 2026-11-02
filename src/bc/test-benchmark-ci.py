@@ -30,6 +30,28 @@ class NativeTrends(unittest.TestCase):
         self.assertEqual(CI.decision(slow, slow, startup=True), 'inconclusive-noisy')
         self.assertEqual(CI.decision({}), 'inconclusive-noisy')
 
+    def test_aa_interval_contract_is_symmetric_and_inclusive(self):
+        for interval, expected in (([.95, 1.05], 'pass'), ([.98, 1.02], 'pass'),
+                                   ([.937, 1.017], 'inconclusive-noisy'),
+                                   ([.98, 1.08], 'inconclusive-noisy'),
+                                   ([.90, .92], 'inconclusive-noisy'),
+                                   ([1.08, 1.1], 'inconclusive-noisy')):
+            with self.subTest(interval=interval):
+                self.assertEqual(CI.aa_decision(dict(ci95=interval)), expected)
+        for interval in (None, [], [1], [float('nan'), 1.1], [.9, float('inf')],
+                         [1.1, .9], [0, 1], [True, 1.01]):
+            with self.subTest(invalid=interval):
+                ratio = dict(ci95=interval)
+                self.assertEqual(CI.aa_decision(ratio), 'inconclusive-noisy')
+                self.assertFalse(CI.needs_confirmation(ratio, 'aa'))
+        for interval in ([.90, .92], [1.08, 1.1]):
+            ratio = dict(ci95=interval)
+            self.assertTrue(CI.needs_confirmation(ratio, 'aa'))
+            self.assertEqual(CI.aa_decision(ratio, ratio), 'confirmed A/A bias')
+            self.assertEqual(CI.aa_decision(ratio, dict(ci95=[.98, 1.02])), 'inconclusive-noisy')
+            self.assertFalse(CI.needs_confirmation(ratio, 'aa', startup=True))
+            self.assertEqual(CI.aa_decision(ratio, ratio, startup=True), 'inconclusive-noisy')
+
     def test_checked_runner_detects_an_intentionally_slow_fixture(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
