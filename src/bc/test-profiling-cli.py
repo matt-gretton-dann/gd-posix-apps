@@ -121,6 +121,31 @@ class ProfilingCli(unittest.TestCase):
         # short initial convergence stays near twice the final digit budget.
         self.assertLessEqual(counters['events']['sqrt_root_digits_sum'], 2 * root_digits + 64)
 
+    def test_prefix_root_actual_working_coefficient_cutoff(self):
+        baseline = self.profile('1\n', '1\n')
+        width = len(str(baseline['limb_base'])) - 1
+        # For sqrt(2), W=S+width+1 and the root coefficient has W+1
+        # decimal digits. Exercise 127/128/129, rather than confusing the
+        # requested scale with the algorithm's working coefficient width.
+        center = 128 - width - 2
+        for places in (center - 1, center, center + 1):
+            n = 2 * 10 ** (2 * places)
+            root = 1 << ((n.bit_length() + 1) // 2)
+            while True:
+                next_root = (root + n // root) // 2
+                if next_root >= root:
+                    break
+                root = next_root
+            self.assertLessEqual(root * root, n)
+            self.assertGreater((root + 1) * (root + 1), n)
+            text = str(root).zfill(places + 1)
+            expected = text[:-places] + '.' + text[-places:]
+            with self.subTest(scale=places, working_root_digits=places + width + 2):
+                counters = self.profile('scale={}\nr=sqrt(2)\nr\nscale(r)\n'.format(places),
+                    expected + '\n' + str(places) + '\n', numeric_continuations=True)
+                selected = counters['events']['sqrt_precision_stages'] > 0
+                self.assertEqual(selected, places + width + 2 >= 128)
+
     def test_scaled_division_avoids_shared_decimal_padding(self):
         def decimal(coefficient, places):
             text = str(coefficient).zfill(places + 1)
