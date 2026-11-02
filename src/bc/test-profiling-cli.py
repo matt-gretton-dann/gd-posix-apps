@@ -250,6 +250,15 @@ class ProfilingCli(unittest.TestCase):
                 self.assertLessEqual(
                     counters['allocations']['instructions']['allocation_calls'], 4)
 
+    def test_unused_definition_does_not_allocate_body_results(self):
+        baseline = self.profile('1\n', '1\n')
+        source = 'define f() {\nauto x\nx=0\n' + 'x=x+1\n' * 200 + 'return(x)\n}\n'
+        inert = self.profile(source, '')
+        # Compare logical result storage, not elapsed time or process RSS.
+        # The function body is registered as code but never enters an activation.
+        self.assertLessEqual(inert['allocations']['results']['peak_live_bytes'],
+                             baseline['allocations']['results']['peak_live_bytes'])
+
     def test_unwritable_output_reports_failure(self):
         with tempfile.TemporaryDirectory() as directory:
             result = self.invoke('2\n', Path(directory) / 'missing' / 'profile.json')

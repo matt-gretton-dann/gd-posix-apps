@@ -79,17 +79,20 @@ class VerifiedInstructions
 public:
   auto instructions() const -> Instructions const& { return *instructions_; }
   auto consumption() const -> ConsumptionPlan const& { return *consumption_; }
+  auto result_slots() const -> ResultSlotPlan const& { return *result_slots_; }
 
 private:
   friend struct VMState;
   friend class FunctionCode;
   friend class PreparedInstructions;
-  VerifiedInstructions(Instructions const& instructions, ConsumptionPlan const& consumption)
-      : instructions_(&instructions), consumption_(&consumption)
+  VerifiedInstructions(Instructions const& instructions, ConsumptionPlan const& consumption,
+                       ResultSlotPlan const& result_slots)
+      : instructions_(&instructions), consumption_(&consumption), result_slots_(&result_slots)
   {
   }
   Instructions const* instructions_;
   ConsumptionPlan const* consumption_;
+  ResultSlotPlan const* result_slots_;
 };
 
 /** Own the outer stream's prepared metadata while borrowing its instructions.
@@ -101,17 +104,20 @@ class PreparedInstructions
 public:
   auto view() const -> VerifiedInstructions
   {
-    return VerifiedInstructions(*instructions_, consumption_);
+    return VerifiedInstructions(*instructions_, consumption_, result_slots_);
   }
 
 private:
   friend struct VMState;
-  PreparedInstructions(Instructions const& instructions, ConsumptionPlan consumption)
-      : instructions_(&instructions), consumption_(std::move(consumption))
+  PreparedInstructions(Instructions const& instructions, ConsumptionPlan consumption,
+                       ResultSlotPlan result_slots)
+      : instructions_(&instructions), consumption_(std::move(consumption)),
+        result_slots_(std::move(result_slots))
   {
   }
   Instructions const* instructions_;
   ConsumptionPlan consumption_;
+  ResultSlotPlan result_slots_;
 };
 
 /** Persistent function code can be constructed only after body verification.
@@ -126,17 +132,19 @@ public:
   auto operator=(FunctionCode&&) noexcept -> FunctionCode& = default;
   auto view() const -> VerifiedInstructions
   {
-    return VerifiedInstructions(instructions_, consumption_);
+    return VerifiedInstructions(instructions_, consumption_, result_slots_);
   }
 
 private:
   friend struct VMState;
-  FunctionCode(Instructions instructions, ConsumptionPlan consumption)
-      : instructions_(std::move(instructions)), consumption_(std::move(consumption))
+  FunctionCode(Instructions instructions, ConsumptionPlan consumption, ResultSlotPlan result_slots)
+      : instructions_(std::move(instructions)), consumption_(std::move(consumption)),
+        result_slots_(std::move(result_slots))
   {
   }
   Instructions instructions_;
   ConsumptionPlan consumption_;
+  ResultSlotPlan result_slots_;
 };
 
 /** \brief Hold virtual machine state.
@@ -232,7 +240,8 @@ struct VMState
   {
     validate(instructions);
     return PreparedInstructions(
-      instructions, full_checks() ? ConsumptionPlan{} : plan_consumption(instructions, false));
+      instructions, full_checks() ? ConsumptionPlan{} : plan_consumption(instructions, false),
+      full_checks() ? ResultSlotPlan{} : plan_result_slots(instructions, sizeof(ResultSlot)));
   }
   auto full_checks() const noexcept -> bool { return checks_ == VM::ExecutionChecks::full; }
 
@@ -372,7 +381,7 @@ private:
   template<typename Fn>
   void execute_nonary(Fn f)
   {
-    results_[pc_] = f();
+    result_at(pc_) = f();
   }
 
   /** \brief        Execute an instruction with one operand, and which sets a result.
@@ -386,7 +395,7 @@ private:
   template<typename Fn>
   void execute_unary(Fn f)
   {
-    results_[pc_] = f(instrs_[pc_].op1());
+    result_at(pc_) = f(instrs_[pc_].op1());
   }
 
   /** \brief              Execute an instruction with two operands, and which sets a result.
@@ -400,7 +409,7 @@ private:
   template<typename Fn>
   void execute_binary(Fn f)
   {
-    results_[pc_] = f(instrs_[pc_].op1(), instrs_[pc_].op2());
+    result_at(pc_) = f(instrs_[pc_].op1(), instrs_[pc_].op2());
   }
 
   /** \brief   Execute an instruction with one expression operand, and has a Number result.
@@ -413,7 +422,7 @@ private:
   {
     Number lhs = take_op1_expr();
     f(lhs);
-    results_[pc_] = std::move(lhs);
+    result_at(pc_) = std::move(lhs);
   }
 
   /** \brief   Execute an instruction with two expression operands, and has a Number result.
@@ -428,7 +437,7 @@ private:
     Number lhs = take_op1_expr();
     Number const& rhs = get_op2_expr();
     f(lhs, rhs);
-    results_[pc_] = std::move(lhs);
+    result_at(pc_) = std::move(lhs);
   }
 
   /** \brief  Conver the offset in the index  */
@@ -451,11 +460,25 @@ private:
   template<bool FullChecks>
   auto execute_impl() -> std::pair<Number, bool>;
 
+  // The verified producer map preserves instruction-relative operands. Full
+  // checks and unprofitable maps use the original instruction-indexed buffer.
+  auto result_at(Index instruction) -> ResultSlot&
+  {
+    return results_[result_indices_ ? result_indices_[instruction] : instruction];
+  }
+  auto result_at(Index instruction) const -> ResultSlot const&
+  {
+    return results_[result_indices_ ? result_indices_[instruction] : instruction];
+  }
+
   VMState* vm_;                         ///< Virtual Machine state
   Instructions const& instrs_;          ///< Instructions to execute
   Instruction::Index pc_{0};            ///< Current program counter
   ResultBuffer& results_;               ///< Borrowed stable buffer for this activation.
   ConsumptionPlan const& consumption_;  ///< Immutable metadata owned beside the code.
+  // Immutable plan data is owned beside the verified code and cannot relocate
+  // during this activation. Null preserves the full-width identity fallback.
+  ResultSlotPlan::CompactIndex const* result_indices_;
 };
 
 auto operator<<(std::ostream& os, InstructionPack const& instrs) -> std::ostream&;
@@ -575,8 +598,10 @@ void GD::Bc::Details::VMState::function(Letter func, Instructions::const_iterato
   Instructions instrs(begin, end);
   validate(instrs, true);
   auto consumption = full_checks() ? ConsumptionPlan{} : plan_consumption(instrs, true);
-  functions_.at(static_cast<unsigned>(func)) = std::make_optional(
-    std::make_tuple(FunctionCode(std::move(instrs), std::move(consumption)), mask, loc));
+  auto result_slots =
+    full_checks() ? ResultSlotPlan{} : plan_result_slots(instrs, sizeof(ResultSlot));
+  functions_.at(static_cast<unsigned>(func)) = std::make_optional(std::make_tuple(
+    FunctionCode(std::move(instrs), std::move(consumption), std::move(result_slots)), mask, loc));
 }
 
 auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc::Number
@@ -750,7 +775,6 @@ void GD::Bc::Details::VMState::validate(Instructions const& instrs, bool functio
   // a forward reference may be valid when control flow executes its producer
   // first. This checks types, not dominance or parameter-stack balance.
   using O = Instruction::Opcode;
-  enum class ResultKind { none, number, string, scalar_location, array_location, array_values };
   auto target = [](Instruction::Index i, Instruction::Operand const& operand) {
     // The complete range pass above makes signed-min and one-past data offsets
     // impossible here. Unsigned addition also handles valid negative offsets.
@@ -758,61 +782,7 @@ void GD::Bc::Details::VMState::validate(Instructions const& instrs, bool functio
   };
   std::vector<ResultKind> kinds(instrs.size(), ResultKind::none);
   for (Instruction::Index i = 0; i < instrs.size(); ++i) {
-    switch (instrs[i].opcode()) {
-    case O::string:
-      kinds[i] = ResultKind::string;
-      break;
-    case O::variable:
-    case O::array_element:
-    case O::ibase:
-    case O::obase:
-    case O::scale:
-      kinds[i] = ResultKind::scalar_location;
-      break;
-    case O::array:
-      kinds[i] = ResultKind::array_location;
-      break;
-    case O::pop_param_array:
-      kinds[i] = ResultKind::array_values;
-      break;
-    case O::load:
-      kinds[i] = instrs[target(i, instrs[i].op1())].opcode() == O::array ? ResultKind::array_values
-                                                                         : ResultKind::number;
-      break;
-    case O::number:
-    case O::add:
-    case O::subtract:
-    case O::negate:
-    case O::multiply:
-    case O::divide:
-    case O::modulo:
-    case O::power:
-    case O::scale_expr:
-    case O::sqrt:
-    case O::abs:
-    case O::length:
-    case O::equals:
-    case O::less_than_equals:
-    case O::not_equals:
-    case O::less_than:
-    case O::call:
-    case O::pop_param:
-      kinds[i] = ResultKind::number;
-      break;
-    case O::eof:
-    case O::print:
-    case O::quit:
-    case O::store:
-    case O::branch:
-    case O::branch_zero:
-    case O::return_:
-    case O::push_param_mark:
-    case O::pop_param_mark:
-    case O::push_param:
-    case O::function_begin:
-    case O::function_end:
-      break;
-    }
+    kinds[i] = classify_result(instrs, i);
   }
   for (Instruction::Index i = 0; i < instrs.size(); ++i) {
     auto const& instruction = instrs[i];
@@ -910,8 +880,11 @@ void GD::Bc::Details::VMState::release_results()
 }
 
 GD::Bc::Details::InstructionPack::InstructionPack(VMState* vm, VerifiedInstructions instrs)
-    : vm_(vm), instrs_(instrs.instructions()), results_(vm->acquire_results(instrs_.size())),
-      consumption_(instrs.consumption())
+    : vm_(vm), instrs_(instrs.instructions()),
+      results_(vm->acquire_results(instrs.result_slots().storage_size(instrs_.size()))),
+      consumption_(instrs.consumption()),
+      result_indices_(instrs.result_slots().indices.empty() ? nullptr
+                                                         : instrs.result_slots().indices.data())
 {
   assert(vm_ != nullptr);  // NOLINT
 }
@@ -1051,7 +1024,7 @@ auto GD::Bc::Details::InstructionPack::execute_impl() -> std::pair<GD::Bc::Numbe
       // Returning ends this activation. No producer slot is read afterwards,
       // so transfer the owned result without an extra shared-owner copy.
       auto const index = get_offset_index(instrs_[pc_].op1());
-      auto& value = results_[index];
+      auto& value = result_at(index);
       assert_error(value.has_value(), Msg::empty_result, index);  // NOLINT
       return std::make_pair(std::move(std::get<Number>(*value)), true);
     }
@@ -1080,7 +1053,7 @@ void GD::Bc::Details::InstructionPack::execute_print()
   assert(instrs_[pc_].opcode() == Instruction::Opcode::print);  // NOLINT
   Index const result_idx = get_offset_index(instrs_[pc_].op1());
   std::ostream& os = vm_->stream(std::get<Instruction::Stream>(instrs_[pc_].op2()));
-  auto& result = results_[result_idx];
+  auto& result = result_at(result_idx);
   assert_error(result.has_value(), Msg::empty_result, result_idx);  // NOLINT
   std::visit(Overloaded{
                // Empty slots are rejected before visiting in both execution modes.
@@ -1112,8 +1085,8 @@ void GD::Bc::Details::InstructionPack::execute_length()
 {
   assert(instrs_[pc_].opcode() == Instruction::Opcode::length);  // NOLINT
   Index const loc_idx = get_offset_index(instrs_[pc_].op1());
-  auto& result = results_[pc_];
-  auto const& loc = results_[loc_idx];
+  auto& result = result_at(pc_);
+  auto const& loc = result_at(loc_idx);
   assert_error(loc.has_value(), Msg::empty_result, loc_idx);  // NOLINT
 
   std::visit(Overloaded{
@@ -1146,8 +1119,8 @@ void GD::Bc::Details::InstructionPack::execute_load()
 {
   assert(instrs_[pc_].opcode() == Instruction::Opcode::load);  // NOLINT
   Index const loc_idx = get_offset_index(instrs_.at(pc_).op1());
-  auto& result = results_[pc_];
-  auto const& loc = results_[loc_idx];
+  auto& result = result_at(pc_);
+  auto const& loc = result_at(loc_idx);
   assert_error(loc.has_value(), Msg::empty_result, loc_idx);  // NOLINT
 
   std::visit(Overloaded{
@@ -1174,10 +1147,10 @@ void GD::Bc::Details::InstructionPack::execute_store()
 {
   assert(instrs_[pc_].opcode() == Instruction::Opcode::store);  // NOLINT
   Index const loc_idx = get_offset_index(instrs_[pc_].op1());
-  auto& loc = results_[loc_idx];
+  auto& loc = result_at(loc_idx);
   assert_error(loc.has_value(), Msg::empty_result, loc_idx);  // NOLINT
   Index const expr_idx = get_offset_index(instrs_[pc_].op2());
-  auto& result = results_[expr_idx];
+  auto& result = result_at(expr_idx);
   assert_error(result.has_value(), Msg::empty_result, expr_idx);  // NOLINT
   auto& expr = *result;
 
@@ -1248,7 +1221,7 @@ void GD::Bc::Details::InstructionPack::execute_push_param()
 {
   assert(instrs_[pc_].opcode() == Instruction::Opcode::push_param);  // NOLINT
   Index const expr_idx = get_offset_index(instrs_[pc_].op1());
-  auto& expr = results_[expr_idx];
+  auto& expr = result_at(expr_idx);
   assert_error(expr.has_value(), Msg::empty_result, expr_idx);  // NOLINT
 
   std::visit(Overloaded{
@@ -1277,7 +1250,7 @@ auto GD::Bc::Details::InstructionPack::get_offset_index(Instruction::Operand con
 auto GD::Bc::Details::InstructionPack::get_op_expr(Instruction::Operand const& op) const
   -> GD::Bc::Number const&
 {
-  auto const& result = results_[get_offset_index(op)];
+  auto const& result = result_at(get_offset_index(op));
   assert_error(result.has_value(), Msg::empty_result, get_offset_index(op));  // NOLINT
   return std::get<Number>(*result);
 }
@@ -1285,7 +1258,7 @@ auto GD::Bc::Details::InstructionPack::get_op_expr(Instruction::Operand const& o
 auto GD::Bc::Details::InstructionPack::take_op1_expr() -> GD::Bc::Number
 {
   auto const index = get_offset_index(instrs_[pc_].op1());
-  auto& result = results_[index];
+  auto& result = result_at(index);
   assert_error(result.has_value(), Msg::empty_result, index);  // NOLINT
   auto& number = std::get<Number>(*result);
   if (number.has_heap_storage() && !consumption_.empty() && consumption_[pc_] != 0) {
@@ -1337,7 +1310,7 @@ auto GD::Bc::Details::operator<<(std::ostream& os, GD::Bc::Details::InstructionP
       os << "**";
     }
     os << '\t' << instrs.instrs_[i];
-    auto const& instr{instrs.results_[i]};
+    auto const& instr{instrs.result_at(i)};
     if (instr.has_value()) {
       os << " = " << *instr;
     }
@@ -1349,7 +1322,7 @@ auto GD::Bc::Details::operator<<(std::ostream& os, GD::Bc::Details::InstructionP
 void GD::Bc::Details::InstructionPack::validate_result(Index i) const
 {
   GD_BC_PROFILE_EVENT(Profile::Event::result_validation_calls, 1);
-  [[maybe_unused]] auto const& result = results_[i];
+  [[maybe_unused]] auto const& result = result_at(i);
   switch (instrs_[i].opcode()) {
   case GD::Bc::Instruction::Opcode::eof:
   case GD::Bc::Instruction::Opcode::push_param_mark:
