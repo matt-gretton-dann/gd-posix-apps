@@ -426,16 +426,16 @@ TEST_CASE("Reused activation slots release mixed result alternatives",
     // Reuse the same activation buffer for differently sized packs and
     // owning/non-owning alternatives. Each execution must start empty,
     // independently of the previous result kind or retained capacity.
-    GD::Bc::Instructions number{I(O::number, coefficient),
-                               I(O::print, D(-1), I::Stream::output), I(O::eof)};
+    GD::Bc::Instructions number{I(O::number, coefficient), I(O::print, D(-1), I::Stream::output),
+                                I(O::eof)};
     CHECK_FALSE(vm.execute(number));
     expected += coefficient + "\n";
     GD::Bc::Instructions array{I(O::array, GD::Bc::Array('a')), I(O::load, D(-1)),
-                              I(O::print, D(-1), I::Stream::output), I(O::eof)};
+                               I(O::print, D(-1), I::Stream::output), I(O::eof)};
     CHECK_FALSE(vm.execute(array));
     expected += "<ARRAY VALUES>\n";
     GD::Bc::Instructions text{I(O::string, "ready\n"), I(O::print, D(-1), I::Stream::output),
-                             I(O::scale), I(O::print, D(-1), I::Stream::output), I(O::eof)};
+                              I(O::scale), I(O::print, D(-1), I::Stream::output), I(O::eof)};
     CHECK_FALSE(vm.execute(text));
     expected += "ready\nscale\n";
   }
