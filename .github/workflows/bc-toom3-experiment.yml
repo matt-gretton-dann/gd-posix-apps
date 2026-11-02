@@ -52,7 +52,7 @@ jobs:
       - name: Build, check and measure serial paired processes
         shell: pwsh
         run: |
-          $arguments = @('src/bc/scripts/benchmark-ci.py', '--source', $env:GITHUB_WORKSPACE, '--base', $env:BC_BASE, '--candidate', $env:BC_CANDIDATE, '--output', 'bc-native-results', '--candidate-toom3-threshold', '512')
+          $arguments = @('src/bc/scripts/benchmark-ci.py', '--source', $env:GITHUB_WORKSPACE, '--base', $env:BC_BASE, '--candidate', $env:BC_CANDIDATE, '--output', 'bc-native-results', '--candidate-toom3-threshold', '2048')
           if ($env:BC_BROAD -eq 'true') { $arguments += '--broad' }
           python @arguments
           if ($LASTEXITCODE) { exit $LASTEXITCODE }

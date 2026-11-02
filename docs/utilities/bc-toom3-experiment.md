@@ -71,9 +71,9 @@ experiments; this prototype does not stand in for those comparisons.
 `bc-toom3-experiment.yml` runs a separate advisory native experiment on matching
 PRs, relevant main pushes and manual dispatch. It records the exact PR base/head
 (or the documented fixed accepted main anchor), uses the existing full/held-out
-arithmetic corpus and selects threshold 512 only for the candidate. Baseline
+arithmetic corpus and selects threshold 2048 only for the candidate. Baseline
 and independent A/A builds keep their default tier. There is no scheduled
-experimental default and no threshold tuning from the paired outcomes.
+experimental default. The treatment is frozen before each native full/held-out batch.
 
 The shared controller's `--candidate-toom3-threshold` is zero by default, so the
 ordinary native workflow keeps its existing treatment. Opt-in runs first finish
@@ -103,3 +103,39 @@ very sparse operands pay the complete scan. `toom_sparse_scan_limbs` and
 This does not select a general density crossover or waive the retained dense
 held-out losses. The original full/held-out samples remain unchanged regression
 evidence; fresh evaluation is needed before choosing a production threshold.
+
+## Recorded threshold-grid follow-up
+
+After the square/sparse corrections, native threshold 512 still has confirmed
+Linux square/dense-product and Windows tiny-root regressions (run 41458320350).
+All six default/opt-in artifact digests, checked samples, corpus hashes,
+source/threshold provenance, and native copied binaries were verified. The
+three default-off jobs have no confirmed losses; their controls include noise.
+These observations remain separate from later experiments.
+
+A fixed Apple-host training grid compared 128, 512 and 2048 over the 56 known
+regression classes and 18 new large shapes. The frozen new sizes were 30,000,
+100,000 and 200,000 digits, with dense, repeated, sparse, asymmetric,
+near-two-thirds and shared-square operands. All 9,414 elapsed children were
+checked. Threshold 128 has a confirmed 10,000-digit square regression;
+512 and 2048 have none in that local training. There are six inconclusive
+A/A classes. No local result waives native threshold-512 regressions.
+
+Threshold 2048 was recorded for independent evaluation before any new held-out
+elapsed results or held-out memory metrics were inspected. It is often slower
+than 512, but has substantially less requested allocation traffic than either
+lower threshold. It still uses more memory than the generic kernel: a single
+200,000-digit dense product requested 943 allocations and 7,993,043 cumulative
+bytes versus 22 and 722,539; selected peak storage was 1,154,779 versus 718,827
+bytes, with separate median RSS 4,112,384 versus 3,162,112 bytes. Logical
+storage excludes other process allocations, and RSS is specific to that host.
+Repeated-digit products still lose to Howard, so no competitive goal is met.
+
+The native workflow now freezes 2048 as its candidate-only follow-up treatment;
+base and A/A remain zero. Fresh local evaluation uses the already frozen
+32,771/98,317/196,613-digit operands and fixed counts, retaining the previously
+seen 56-class regression core separately from those 18 new evaluation shapes.
+Only this selected variant is evaluated. No default change, universal crossover
+or performance acceptance is claimed; native losses and all qualifiers remain
+adoption gates. Temporary raw training, diagnostics and the timestamped
+selection record must be retained for the final evidence archive.
