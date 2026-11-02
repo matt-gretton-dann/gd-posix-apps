@@ -1,0 +1,74 @@
+[1/73] Building C object libgdsup/CMakeFiles/gdsup.dir/fcntl/__fcntl_open.c.o
+[2/73] Generating i18n header for util
+[3/73] Building C object libgdsup/CMakeFiles/gdsup.dir/nl_types/catclose.c.o
+[4/73] Building C object libgdsup/CMakeFiles/gdsup.dir/nl_types/catgets.c.o
+[5/73] Building C object libgdsup/CMakeFiles/gdsup.dir/nl_types/catopen.c.o
+[6/73] Building C object libgdsup/CMakeFiles/gdsup.dir/nl_types/__nl_types_check_cat_header.c.o
+[7/73] Building C object libgdsup/CMakeFiles/gdsup.dir/support/empty.c.o
+[8/73] Building C object libgdsup/CMakeFiles/gdsup.dir/support/__support_log.c.o
+[9/73] Building C object libgdsup/CMakeFiles/gdsup.dir/support/__support_read_le_u64.c.o
+[10/73] Building C object libgdsup/CMakeFiles/gdsup.dir/support/__support_read_le_u32.c.o
+[11/73] Building C object libgdsup/CMakeFiles/gdsup.dir/unistd/getopt.c.o
+[12/73] Building C object libgdsup/CMakeFiles/gdsup.dir/unistd/__gd_getopt_reset.c.o
+[13/73] Building C object libgdsup/CMakeFiles/gdsup.dir/unistd/__unistd_read.c.o
+[14/73] Generating i18n header for bc: bc-messages.hh
+[15/73] Building CXX object src/CMakeFiles/util.dir/util/input-file/input-file-getc.cc.o
+[16/73] Building CXX object src/CMakeFiles/util.dir/util/input-file/input-file-constructor.cc.o
+[17/73] Building CXX object src/CMakeFiles/util.dir/util/input-file/input-file-queries.cc.o
+[18/73] Building CXX object src/CMakeFiles/util.dir/util/input-file/input-file-getline.cc.o
+[19/73] Building CXX object src/CMakeFiles/util.dir/util/input-file/input-file-setbuf.cc.o
+[20/73] Building CXX object src/CMakeFiles/util.dir/util/program-name.cc.o
+[21/73] Building CXX object src/CMakeFiles/util.dir/util/input-file/input-file-report-error.cc.o
+[22/73] Linking C static library libgdsup/libgdsup.a
+[23/73] Building CXX object src/CMakeFiles/util.dir/util/rename.cc.o
+[24/73] Linking CXX static library src/libutil.a
+[25/73] Building CXX object src/bc/CMakeFiles/libbc.dir/execution-plan.cc.o
+[26/73] Building CXX object src/bc/CMakeFiles/libbc.dir/lexer.cc.o
+[27/73] Building CXX object src/bc/CMakeFiles/libbc.dir/instruction.cc.o
+[28/73] Building CXX object src/bc/CMakeFiles/libbc.dir/reader.cc.o
+[29/73] Building CXX object src/bc/CMakeFiles/libbc.dir/parser.cc.o
+[30/73] Building CXX object src/bc/CMakeFiles/libbc.dir/token.cc.o
+[31/73] Building CXX object src/bc/CMakeFiles/libbc.dir/verification.cc.o
+[32/73] Building CXX object src/bc/CMakeFiles/test-bc-profiling.dir/profiling.cc.o
+[33/73] Building CXX object src/bc/CMakeFiles/test-bc-profiling.dir/test-profiling.cc.o
+[34/73] Building CXX object src/bc/CMakeFiles/test-bc-profiling-disabled.dir/test-profiling-disabled.cc.o
+[35/73] Building CXX object src/bc/CMakeFiles/libbc.dir/vm.cc.o
+[36/73] Linking CXX static library src/bc/liblibbc.a
+[37/73] Building CXX object src/bc/CMakeFiles/test-bc-vm-lifetime.dir/test-vm-lifetime.cc.o
+[38/73] Linking CXX executable src/bc/test-bc-profiling
+[39/73] Linking CXX executable src/bc/test-bc-profiling-disabled
+[40/73] Linking CXX executable src/bc/test-bc-vm-lifetime
+[41/73] Building CXX object src/bc/CMakeFiles/bc-components.dir/benchmark-components.cc.o
+[42/73] Linking CXX executable src/bc/bc-components
+[43/73] Building CXX object src/bc/CMakeFiles/bc.dir/bc.cc.o
+[44/73] Building CXX object src/bc/CMakeFiles/test-libbc.dir/test-execution-plan.cc.o
+[45/73] Building CXX object src/bc/CMakeFiles/test-libbc.dir/test-benchmark-support.cc.o
+[46/73] Building CXX object src/bc/CMakeFiles/test-libbc.dir/test-array-storage.cc.o
+[47/73] Building CXX object src/bc/CMakeFiles/test-libbc.dir/test-instruction.cc.o
+[48/73] Building CXX object src/bc/CMakeFiles/test-libbc.dir/test-format.cc.o
+[49/73] Building CXX object src/bc/CMakeFiles/test-libbc.dir/test-token-format.cc.o
+[50/73] Building CXX object src/bc/CMakeFiles/test-libbc.dir/test-lexer-shebang.cc.o
+[51/73] Building CXX object src/bc/CMakeFiles/test-libbc.dir/test-lexer.cc.o
+[52/73] Building CXX object src/bc/CMakeFiles/test-libbc.dir/test-lexer-comments.cc.o
+[53/73] Building CXX object src/bc/CMakeFiles/test-libbc.dir/test-digit-storage.cc.o
+[54/73] Building CXX object src/bc/CMakeFiles/test-libbc.dir/test-libbc-main.cc.o
+[55/73] Building CXX object src/bc/CMakeFiles/test-libbc.dir/test-number.cc.o
+[56/73] Building CXX object src/bc/CMakeFiles/test-libbc.dir/test-number-radix.cc.o
+[57/73] Building CXX object src/bc/CMakeFiles/test-libbc.dir/test-number-workspace.cc.o
+[58/73] Building CXX object src/bc/CMakeFiles/test-libbc.dir/test-number-length.cc.o
+[59/73] Building CXX object src/bc/CMakeFiles/test-libbc.dir/test-number-output.cc.o
+[60/73] Building CXX object src/bc/CMakeFiles/test-libbc.dir/test-number-compare.cc.o
+[61/73] Building CXX object src/bc/CMakeFiles/test-libbc.dir/test-number-division.cc.o
+[62/73] Building CXX object src/bc/CMakeFiles/test-libbc.dir/test-number-zero-scale.cc.o
+[63/73] Building CXX object src/bc/CMakeFiles/test-libbc.dir/test-number-modulo.cc.o
+[64/73] Building CXX object src/bc/CMakeFiles/test-libbc.dir/test-number-power.cc.o
+[65/73] Building CXX object src/bc/CMakeFiles/test-libbc.dir/test-number-sqrt.cc.o
+[66/73] Building CXX object src/bc/CMakeFiles/test-libbc.dir/test-parser.cc.o
+[67/73] Building CXX object src/bc/CMakeFiles/test-libbc.dir/test-reader.cc.o
+[68/73] Building CXX object src/bc/CMakeFiles/test-libbc.dir/test-parser-errors.cc.o
+[69/73] Building CXX object src/bc/CMakeFiles/test-libbc.dir/test-vm-arrays.cc.o
+[70/73] Building CXX object src/bc/CMakeFiles/test-libbc.dir/test-vm-execution.cc.o
+[71/73] Linking CXX executable src/bc/bc
+ld: warning: ignoring duplicate libraries: 'libgdsup/libgdsup.a', 'src/libutil.a'
+[72/73] Building CXX object src/bc/CMakeFiles/test-libbc.dir/test-verification.cc.o
+[73/73] Linking CXX executable src/bc/test-libbc

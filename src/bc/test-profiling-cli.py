@@ -21,12 +21,13 @@ class ProfilingCli(unittest.TestCase):
                               stderr=subprocess.PIPE, universal_newlines=True,
                               env=environment, timeout=5)
 
-    def profile(self, program, expected):
+    def profile(self, program, expected, numeric_continuations=False):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / 'profile \u03bb.json'
             result = self.invoke(program, output)
             self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertEqual(result.stdout, expected)
+            actual = result.stdout.replace('\\\n', '') if numeric_continuations else result.stdout
+            self.assertEqual(actual, expected)
             self.assertEqual(result.stderr, '')
             counters = json.loads(output.read_text(encoding='utf-8'))
         self.assertEqual(counters['schema'], 1)
@@ -67,6 +68,40 @@ class ProfilingCli(unittest.TestCase):
         for name in ('sqrt_iterations', 'sqrt_working_scale_sum', 'division_requests',
                      'division_dividend_limbs', 'division_divisor_limbs'):
             self.assertEqual(zero[name], 0)
+
+    def test_scaled_division_avoids_shared_decimal_padding(self):
+        def decimal(coefficient, places):
+            text = str(coefficient).zfill(places + 1)
+            return text[:-places] + '.' + text[-places:] if places else text
+
+        cases = [(1234 * 10 ** 90, 90, 7, 0, places) for places in (80, 90, 100)]
+        cases += [(1234, 0, 7 * 10 ** 90, 90, 3),
+                  (12345678, 4, 7 * 10 ** 90, 90, 3),
+                  (12345678, 4, 31234567, 5, 7)]
+        for a, sa, b, sb, places in cases:
+            # Derive the oracle using unreduced exact integer powers. Only
+            # powers introduced by alignment are removed from the work bound;
+            # intrinsic coefficient zeros are deliberately left intact.
+            common_scale = max(sa, sb)
+            numerator_shift = common_scale - sa + places
+            denominator_shift = common_scale - sb
+            numerator = a * 10 ** numerator_shift
+            denominator = b * 10 ** denominator_shift
+            quotient = numerator // denominator
+            padding = 10 ** min(numerator_shift, denominator_shift)
+            for left_sign, right_sign in ((1, 1), (-1, 1), (1, -1), (-1, -1)):
+                with self.subTest(scales=(sa, sb, places), signs=(left_sign, right_sign)):
+                    lhs = ('-' if left_sign < 0 else '') + decimal(a, sa)
+                    rhs = ('-' if right_sign < 0 else '') + decimal(b, sb)
+                    expected = ('-' if left_sign != right_sign else '') + decimal(quotient, places)
+                    program = 'scale={}\n({})/({})\n'.format(places, lhs, rhs)
+                    counters = self.profile(program, expected + '\n', numeric_continuations=True)
+                    events = counters['events']
+                    width = len(str(counters['limb_base'])) - 1
+                    self.assertEqual(events['division_requests'], 1)
+                    for key, coefficient in [('division_dividend_limbs', numerator // padding),
+                                             ('division_divisor_limbs', denominator // padding)]:
+                        self.assertEqual(events[key], (len(str(coefficient)) + width - 1) // width)
 
     def test_arithmetic_and_ownership(self):
         # Exceed the inline capacity so this fixture continues to exercise COW.

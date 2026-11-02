@@ -1,0 +1,54 @@
+"""Run frozen release comparisons only after builds/tests/diagnostics finish."""
+import copy
+import importlib.util
+import json
+from pathlib import Path
+import subprocess
+import sys
+
+SCRIPTS=Path('/private/tmp/gd-posix-cancel-division/src/bc/scripts')
+spec=importlib.util.spec_from_file_location('ci',str(SCRIPTS/'benchmark-math-ci.py'))
+ci=importlib.util.module_from_spec(spec);spec.loader.exec_module(ci)
+root=Path('/private/tmp/bc-368-paired-release');root.mkdir(exist_ok=False)
+base=json.loads(Path('/private/tmp/gd-bc-368-base-release/implementations.json').read_text())['implementations'][0]
+candidate=json.loads(Path('/private/tmp/gd-bc-368-candidate-release/implementations.json').read_text())['implementations'][0]
+howard=json.loads(Path('/private/tmp/bc-217-pinned-howard.json').read_text())
+base.update(name='gd-base',role='reference');candidate.update(name='gd-candidate',role='candidate');howard.update(name='howard',role='candidate')
+ci.write(root/'arithmetic.json',dict(implementations=[base,candidate,howard]))
+math_roles=copy.deepcopy([base,candidate,howard])
+library=Path('/private/tmp/gd-bc-217-portable-v1-release/source/src/bc/math-library.bc')
+bench=ci.load('bench-bc');library_hash=bench.digest_file(library)
+for tool in math_roles[:2]:
+ tool['argv'].append(str(library))
+ tool['metadata']['library']=dict(kind='identical ordinary source file; no -l',source_revision='7ed25fb1eea0a46a056480c9432c276b88e9bccf',source_sha256=library_hash)
+ tool['input_artifacts']=[dict(path=str(library),sha256=library_hash,purpose='ordinary mathematical source')]
+math_roles[2]['argv'].append('-l')
+math_roles[2]['metadata']['library']=dict(kind='pinned Howard standard library',source_revision='c8dabac65d39fd527a9264a5e505a99b1d8df3d8')
+ci.write(root/'math.json',dict(implementations=math_roles))
+changed=subprocess.check_output(['git','-C','/private/tmp/gd-posix-cancel-division','diff','--name-only','7d538de7813d024995465fc3b98334851a7fbcb3','fe61ffb515b0055e2a6c371abb51a6f287621873'],text=True).splitlines()
+assert all(p.startswith(('docs/','src/bc/test-','src/bc/fixtures/')) or p=='src/bc/scripts/bench-bc.py' for p in changed)
+ci.write(root/'experiment.json',dict(runtime_base='96d900b8e66c299d35e7a93c63b7fb5ef5131654',runtime_candidate='7d538de7813d024995465fc3b98334851a7fbcb3',protocol_revision='fe61ffb515b0055e2a6c371abb51a6f287621873',non_runtime_changes_after_candidate=changed,math_mode='both GD binaries load identical ordinary file without -l; do not relabel this as embedded-library startup',source_library_sha256=library_hash,policy='no overlapping local builds/tests/profiles/RSS during paired timing; one bounded confirmation for CI wholly above 1.05, excluding startup/one-shot'))
+ci.write(root/'runner.json',dict(runner_sha256=bench.digest_file(__file__)))
+ci.write(root/'host.json',ci.load('benchmark-ci').host_info())
+commands=ci.Commands(root,7200)
+try:
+ for index,(suite,preset) in enumerate([('arithmetic','full'),('arithmetic','holdout'),('math','full'),('math','holdout')]):
+  target=root/(suite+'-'+preset)
+  command=[sys.executable,str(SCRIPTS/'bench-bc.py'),'--suite',suite,'--config',str(root/(suite+'.json')),'--output',str(target),'--reference','gd-base','--samples','15','--warmups','3','--seed',str(1973681+index),'--require-provenance']
+  if suite=='arithmetic':command += ['--preset',preset,'--corpus-seed',str(197200 if preset=='full' else 197201)]
+  else:command += ['--replay-corpus',str(Path('/private/tmp/bc-217-frozen-v1-math')/(preset+'-prepared'))]
+  commands.run(command)
+  ci.measurements(target)
+  summary=json.loads((target/'summary.json').read_text())
+  suspects=[row['name'] for row in summary['workloads'] if row['group']!='startup' and row['parameters'].get('mode')!='one_shot' and row['candidate_over_reference']['gd-candidate']['ci95'][0]>1.05]
+  if suspects:
+   confirmation=command+[p for name in suspects for p in ('--workload',name)]
+   confirmation[confirmation.index('--output')+1]=str(root/(suite+'-'+preset+'-confirmation'))
+   confirmation[confirmation.index('--seed')+1]=str(1973691+index)
+   commands.run(confirmation)
+   ci.measurements(root/(suite+'-'+preset+'-confirmation'))
+ ci.write(root/'complete.json',dict(status='all checked measurements complete; audit every class before acceptance'))
+except BaseException as error:
+ ci.write(root/'failure.json',dict(error=str(error),performance_acceptance=False));raise
+finally:
+ ci.write(root/'orchestration.json',dict(commands=commands.commands))

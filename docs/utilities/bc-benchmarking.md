@@ -33,7 +33,7 @@ output-heavy cases, plus equal-scale comparisons with high/low unequal limbs
 and equal values. Aliased squares at 100, 1000 and 10000 decimal digits
 exercise triangular and recursive square dispatch. A repeated large literal
 mutates each result to check cache snapshot independence. `--list` shows all
-50 names and exact parameters. Repeat
+56 names and exact parameters. Repeat
 `--workload NAME` to select cases. Startup is a separate class.
 
 `--preset quick` reduces dimensions and iterations for fast correctness checks.
@@ -50,7 +50,8 @@ as described below; an unselected suite is never a performance pass.
 
 ## Optional mathematical corpus
 
-`--suite arithmetic` is the default and preserves all fifty existing cases.
+`--suite arithmetic` is the default: fifty historical cases plus six
+scaled-numerator division cases.
 `--suite math` selects sixty one-shot/repeated cases: all six public functions
 at scales20/100/1000, plus Bessel turning, order-dominated, argument-dominated
 and near-root regimes. Quick mode uses scales2/20/100. Held-out inputs use
@@ -266,7 +267,8 @@ source-built comparison, not an interchangeable Howard version.
 ## Validation and scope
 
 `bc/benchmark-cli` runs in both extension configurations on native CI and checks
-all 40 quick workloads against that job's actual GD executable. Fake executables exercise failed exits, stderr, wrong output, warm-up validation,
+all 56 quick workloads against that job's actual GD executable. Fake executables
+exercise failed exits, stderr, wrong output, warm-up validation,
 timeouts, quoted argv, provenance requirements and timing/profiling separation.
 Paired statistics use exact proportional samples to detect unpaired resampling;
 repeated runs check schedule replay without asserting noisy elapsed times.
@@ -369,7 +371,8 @@ record the stable-default decision and exact compiler/source provenance.
 
 The expanded sqrt matrix (#212/#216) appends four cases to the previous 46,
 retaining every earlier complete case dictionary and seeded operand. The full
-corpus now has 50 cases. Additions cover sqrt(2) at scale 10000, tiny exact
+corpus then had 50 cases, before the scaled-division additions below. These
+sqrt additions cover sqrt(2) at scale 10000, tiny exact
 squares with input scales 1024 and 4096 (requested scale zero), and a 4001-digit
 integer square at scale 100. Quick and held-out presets report their actual
 dimensions; tiny-square scales are rounded down to an even value so their
@@ -392,3 +395,29 @@ Howard on Windows. Preserve that failed run separately; reduce repetitions
 without reducing precision, weakening its exact oracle or raising deadlines.
 Initial local experiments with ten repeats remain labeled with their actual
 programs and source identities; they are not relabeled as this workload.
+
+## Scaled-numerator division
+
+Issue #368 adds six cases after every historical dictionary. Two numerator
+shapes (seeded nonzero fractional data and trailing fractional zeros) each use
+requested precision below, equal to and above their input scale. Full cases
+have input scale 1000 and 5000 divisions; quick cases use scale 100 and fifty
+divisions. Held-out inputs use scale 1125, 4375 divisions, a different whole
+part and divisor, and a separate operand seed.
+
+These complement the existing 1/7 and true multi-limb-divisor cases: a small
+integer divisor can still acquire a large integer coefficient through decimal
+scale alignment. For positive coefficient A, input scale S, integer divisor D
+and requested T, the independent oracle computes floor(A*10^T/(D*10^S)). It
+does not use the executable's division. Exact signed/zero/alias semantics also
+have separate all-trait rational tests; process timing includes ordinary
+parsing, the loop, output and startup.
+
+Native PR selection includes both shapes at equal requested/input precision;
+the full and held-out matrices retain all three scale relations. The committed
+`fixtures/benchmark-corpus-before-scaled-division.json` preserves hashes for all
+fifty earlier quick/full/held-out dictionaries and seeds at source
+96d900b8e66c299d35e7a93c63b7fb5ef5131654. New operands use a separate RNG stream.
+The maintained arithmetic corpus now has 56 cases. These additions alone make
+no speedup claim; matched release observations and separate work/allocation
+attribution are required.

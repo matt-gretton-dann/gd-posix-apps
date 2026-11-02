@@ -196,3 +196,82 @@ TEMPLATE_TEST_CASE("Zero rescale and whole-limb shifts retain normalized coeffic
   CHECK(show(shifted) == "{1, 1}");
   CHECK(show(original) == "{1, 1}");
 }
+
+TEMPLATE_TEST_CASE("Scaled division agrees with native rational arithmetic",
+                   "[bc][number][oracle][scaled-division]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  using N = typename Number::NumType;
+  auto decimal = [](std::uint64_t coefficient, unsigned places) {
+    auto text = std::to_string(coefficient);
+    if (places != 0) {
+      if (text.size() <= places) {
+        text.insert(0, places + 1 - text.size(), '0');
+      }
+      text.insert(text.size() - places, 1, '.');
+    }
+    return text;
+  };
+  auto power = [](unsigned exponent) {
+    std::uint64_t result = 1;
+    while (exponent != 0) {
+      result *= 10;
+      --exponent;
+    }
+    return result;
+  };
+  std::array<std::uint64_t, 6> const coefficients{0, 1, 7, 23, 99, 1001};
+  for (auto const a : coefficients) {
+    for (auto const b : coefficients) {
+      if (b == 0) {
+        continue;  // Zero-divisor diagnostics have separate subprocess tests.
+      }
+      for (unsigned sa : {0U, 1U, 2U, 3U, 4U}) {
+        for (unsigned sb : {0U, 1U, 2U, 3U, 4U}) {
+          for (unsigned places : {0U, 1U, 2U, 3U, 4U}) {
+            // This unreduced rational formula fits uint64_t throughout this
+            // bounded matrix; it shares no bc scale-alignment/division code.
+            auto const coefficient = a * power(places + sb) / (b * power(sa));
+            for (int left_sign : {-1, 1}) {
+              for (int right_sign : {-1, 1}) {
+                INFO("coefficients=" << a << "," << b << " scales=" << sa << "," << sb << ","
+                                     << places << " signs=" << left_sign << "," << right_sign
+                                     << " limb base=" << Number::base_);
+                Number lhs(decimal(a, sa), 10);
+                Number rhs(decimal(b, sb), 10);
+                Number expected(decimal(coefficient, places), 10);
+                if (left_sign < 0) {
+                  lhs.negate();
+                }
+                if (right_sign < 0) {
+                  rhs.negate();
+                }
+                if (left_sign != right_sign) {
+                  expected.negate();
+                }
+                Number result = lhs;
+                Number const rhs_before = rhs;
+                result.divide(rhs, static_cast<N>(places));
+                REQUIRE(result == expected);
+                REQUIRE(result.scale() == places);
+                REQUIRE(rhs == rhs_before);
+                Number original(decimal(a, sa), 10);
+                if (left_sign < 0) {
+                  original.negate();
+                }
+                REQUIRE(lhs == original);
+                if (a == b && sa == sb) {
+                  Number alias = lhs;
+                  alias.divide(alias, static_cast<N>(places));
+                  REQUIRE(alias == Number("1", 10));
+                  REQUIRE(alias.scale() == places);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

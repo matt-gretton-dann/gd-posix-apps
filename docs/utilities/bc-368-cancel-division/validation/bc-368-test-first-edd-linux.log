@@ -1,0 +1,105 @@
+Source: edd4292de48e33331a4eedbe1458766c367eb561
+Run: 41354530736
+Job: 124991653591 (Linux extensions ON)
+Scope: excerpt of the actual profiling regression failures; original CI job log is authoritative.
+
+FAIL: test_scaled_division_avoids_shared_decimal_padding (__main__.ProfilingCli.test_scaled_division_avoids_shared_decimal_padding) (scales=(90, 0, 80), signs=(1, 1))
+2026-11-01T22:01:15.9631589Z ----------------------------------------------------------------------
+2026-11-01T22:01:15.9632014Z Traceback (most recent call last):
+2026-11-01T22:01:15.9632868Z   File "/home/runner/work/gd-posix-apps/gd-posix-apps/src/bc/test-profiling-cli.py", line 104, in test_scaled_division_avoids_shared_decimal_padding
+2026-11-01T22:01:15.9634304Z     self.assertEqual(events[key], (len(str(coefficient)) + width - 1) // width)
+2026-11-01T22:01:15.9634850Z AssertionError: 20 != 11
+2026-11-01T22:01:15.9635067Z 
+2026-11-01T22:01:15.9635221Z ======================================================================
+2026-11-01T22:01:15.9636200Z FAIL: test_scaled_division_avoids_shared_decimal_padding (__main__.ProfilingCli.test_scaled_division_avoids_shared_decimal_padding) (scales=(90, 0, 80), signs=(-1, 1))
+2026-11-01T22:01:15.9637198Z ----------------------------------------------------------------------
+2026-11-01T22:01:15.9637797Z Traceback (most recent call last):
+2026-11-01T22:01:15.9638613Z   File "/home/runner/work/gd-posix-apps/gd-posix-apps/src/bc/test-profiling-cli.py", line 104, in test_scaled_division_avoids_shared_decimal_padding
+2026-11-01T22:01:15.9639412Z     self.assertEqual(events[key], (len(str(coefficient)) + width - 1) // width)
+2026-11-01T22:01:15.9639779Z AssertionError: 20 != 11
+2026-11-01T22:01:15.9639925Z 
+2026-11-01T22:01:15.9640040Z ======================================================================
+2026-11-01T22:01:15.9640701Z FAIL: test_scaled_division_avoids_shared_decimal_padding (__main__.ProfilingCli.test_scaled_division_avoids_shared_decimal_padding) (scales=(90, 0, 80), signs=(1, -1))
+2026-11-01T22:01:15.9641357Z ----------------------------------------------------------------------
+2026-11-01T22:01:15.9641674Z Traceback (most recent call last):
+2026-11-01T22:01:15.9642242Z   File "/home/runner/work/gd-posix-apps/gd-posix-apps/src/bc/test-profiling-cli.py", line 104, in test_scaled_division_avoids_shared_decimal_padding
+2026-11-01T22:01:15.9642896Z     self.assertEqual(events[key], (len(str(coefficient)) + width - 1) // width)
+2026-11-01T22:01:15.9643264Z AssertionError: 20 != 11
+2026-11-01T22:01:15.9643399Z 
+2026-11-01T22:01:15.9643514Z ======================================================================
+2026-11-01T22:01:15.9644157Z FAIL: test_scaled_division_avoids_shared_decimal_padding (__main__.ProfilingCli.test_scaled_division_avoids_shared_decimal_padding) (scales=(90, 0, 80), signs=(-1, -1))
+2026-11-01T22:01:15.9644816Z ----------------------------------------------------------------------
+2026-11-01T22:01:15.9645134Z Traceback (most recent call last):
+2026-11-01T22:01:15.9645684Z   File "/home/runner/work/gd-posix-apps/gd-posix-apps/src/bc/test-profiling-cli.py", line 104, in test_scaled_division_avoids_shared_decimal_padding
+2026-11-01T22:01:15.9646343Z     self.assertEqual(events[key], (len(str(coefficient)) + width - 1) // width)
+2026-11-01T22:01:15.9646693Z AssertionError: 20 != 11
+2026-11-01T22:01:15.9646841Z 
+2026-11-01T22:01:15.9646953Z ======================================================================
+2026-11-01T22:01:15.9647581Z FAIL: test_scaled_division_avoids_shared_decimal_padding (__main__.ProfilingCli.test_scaled_division_avoids_shared_decimal_padding) (scales=(90, 0, 90), signs=(1, 1))
+2026-11-01T22:01:15.9648217Z ----------------------------------------------------------------------
+2026-11-01T22:01:15.9648737Z Traceback (most recent call last):
+2026-11-01T22:01:15.9649388Z   File "/home/runner/work/gd-posix-apps/gd-posix-apps/src/bc/test-profiling-cli.py", line 104, in test_scaled_division_avoids_shared_decimal_padding
+2026-11-01T22:01:15.9650047Z     self.assertEqual(events[key], (len(str(coefficient)) + width - 1) // width)
+2026-11-01T22:01:15.9650405Z AssertionError: 21 != 11
+2026-11-01T22:01:15.9650544Z 
+2026-11-01T22:01:15.9650655Z ======================================================================
+2026-11-01T22:01:15.9651314Z FAIL: test_scaled_division_avoids_shared_decimal_padding (__main__.ProfilingCli.test_scaled_division_avoids_shared_decimal_padding) (scales=(90, 0, 90), signs=(-1, 1))
+2026-11-01T22:01:15.9651980Z ----------------------------------------------------------------------
+2026-11-01T22:01:15.9652287Z Traceback (most recent call last):
+2026-11-01T22:01:15.9652810Z   File "/home/runner/work/gd-posix-apps/gd-posix-apps/src/bc/test-profiling-cli.py", line 104, in test_scaled_division_avoids_shared_decimal_padding
+2026-11-01T22:01:15.9653574Z     self.assertEqual(events[key], (len(str(coefficient)) + width - 1) // width)
+2026-11-01T22:01:15.9653943Z AssertionError: 21 != 11
+2026-11-01T22:01:15.9654075Z 
+2026-11-01T22:01:15.9654188Z ======================================================================
+2026-11-01T22:01:15.9654800Z FAIL: test_scaled_division_avoids_shared_decimal_padding (__main__.ProfilingCli.test_scaled_division_avoids_shared_decimal_padding) (scales=(90, 0, 90), signs=(1, -1))
+2026-11-01T22:01:15.9655461Z ----------------------------------------------------------------------
+2026-11-01T22:01:15.9655858Z Traceback (most recent call last):
+2026-11-01T22:01:15.9656413Z   File "/home/runner/work/gd-posix-apps/gd-posix-apps/src/bc/test-profiling-cli.py", line 104, in test_scaled_division_avoids_shared_decimal_padding
+2026-11-01T22:01:15.9657072Z     self.assertEqual(events[key], (len(str(coefficient)) + width - 1) // width)
+2026-11-01T22:01:15.9657436Z AssertionError: 21 != 11
+2026-11-01T22:01:15.9657574Z 
+2026-11-01T22:01:15.9657697Z ======================================================================
+2026-11-01T22:01:15.9658477Z FAIL: test_scaled_division_avoids_shared_decimal_padding (__main__.ProfilingCli.test_scaled_division_avoids_shared_decimal_padding) (scales=(90, 0, 90), signs=(-1, -1))
+2026-11-01T22:01:15.9659337Z ----------------------------------------------------------------------
+2026-11-01T22:01:15.9659648Z Traceback (most recent call last):
+2026-11-01T22:01:15.9660188Z   File "/home/runner/work/gd-posix-apps/gd-posix-apps/src/bc/test-profiling-cli.py", line 104, in test_scaled_division_avoids_shared_decimal_padding
+2026-11-01T22:01:15.9660849Z     self.assertEqual(events[key], (len(str(coefficient)) + width - 1) // width)
+2026-11-01T22:01:15.9661200Z AssertionError: 21 != 11
+2026-11-01T22:01:15.9661342Z 
+2026-11-01T22:01:15.9661454Z ======================================================================
+2026-11-01T22:01:15.9662066Z FAIL: test_scaled_division_avoids_shared_decimal_padding (__main__.ProfilingCli.test_scaled_division_avoids_shared_decimal_padding) (scales=(90, 0, 100), signs=(1, 1))
+2026-11-01T22:01:15.9662779Z ----------------------------------------------------------------------
+2026-11-01T22:01:15.9663094Z Traceback (most recent call last):
+2026-11-01T22:01:15.9663631Z   File "/home/runner/work/gd-posix-apps/gd-posix-apps/src/bc/test-profiling-cli.py", line 104, in test_scaled_division_avoids_shared_decimal_padding
+2026-11-01T22:01:15.9664290Z     self.assertEqual(events[key], (len(str(coefficient)) + width - 1) // width)
+2026-11-01T22:01:15.9664644Z AssertionError: 22 != 12
+2026-11-01T22:01:15.9664786Z 
+2026-11-01T22:01:15.9664895Z ======================================================================
+2026-11-01T22:01:15.9665521Z FAIL: test_scaled_division_avoids_shared_decimal_padding (__main__.ProfilingCli.test_scaled_division_avoids_shared_decimal_padding) (scales=(90, 0, 100), signs=(-1, 1))
+2026-11-01T22:01:15.9666171Z ----------------------------------------------------------------------
+2026-11-01T22:01:15.9666486Z Traceback (most recent call last):
+2026-11-01T22:01:15.9667028Z   File "/home/runner/work/gd-posix-apps/gd-posix-apps/src/bc/test-profiling-cli.py", line 104, in test_scaled_division_avoids_shared_decimal_padding
+2026-11-01T22:01:15.9667768Z     self.assertEqual(events[key], (len(str(coefficient)) + width - 1) // width)
+2026-11-01T22:01:15.9668136Z AssertionError: 22 != 12
+2026-11-01T22:01:15.9668277Z 
+2026-11-01T22:01:15.9668518Z ======================================================================
+2026-11-01T22:01:15.9669398Z FAIL: test_scaled_division_avoids_shared_decimal_padding (__main__.ProfilingCli.test_scaled_division_avoids_shared_decimal_padding) (scales=(90, 0, 100), signs=(1, -1))
+2026-11-01T22:01:15.9670072Z ----------------------------------------------------------------------
+2026-11-01T22:01:15.9670383Z Traceback (most recent call last):
+2026-11-01T22:01:15.9671039Z   File "/home/runner/work/gd-posix-apps/gd-posix-apps/src/bc/test-profiling-cli.py", line 104, in test_scaled_division_avoids_shared_decimal_padding
+2026-11-01T22:01:15.9671690Z     self.assertEqual(events[key], (len(str(coefficient)) + width - 1) // width)
+2026-11-01T22:01:15.9672042Z AssertionError: 22 != 12
+2026-11-01T22:01:15.9672181Z 
+2026-11-01T22:01:15.9672287Z ======================================================================
+2026-11-01T22:01:15.9672926Z FAIL: test_scaled_division_avoids_shared_decimal_padding (__main__.ProfilingCli.test_scaled_division_avoids_shared_decimal_padding) (scales=(90, 0, 100), signs=(-1, -1))
+2026-11-01T22:01:15.9673670Z ----------------------------------------------------------------------
+2026-11-01T22:01:15.9673983Z Traceback (most recent call last):
+2026-11-01T22:01:15.9674520Z   File "/home/runner/work/gd-posix-apps/gd-posix-apps/src/bc/test-profiling-cli.py", line 104, in test_scaled_division_avoids_shared_decimal_padding
+2026-11-01T22:01:15.9675168Z     self.assertEqual(events[key], (len(str(coefficient)) + width - 1) // width)
+2026-11-01T22:01:15.9675527Z AssertionError: 22 != 12
+2026-11-01T22:01:15.9675668Z 
+2026-11-01T22:01:15.9675800Z ----------------------------------------------------------------------
+2026-11-01T22:01:15.9676111Z Ran 17 tests in 0.142s
+2026-11-01T22:01:15.9676240Z 
+2026-11-01T22:01:15.9676334Z FAILED (failures=12)
+
