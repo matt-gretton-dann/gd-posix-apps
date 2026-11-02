@@ -750,7 +750,6 @@ void GD::Bc::Details::VMState::validate(Instructions const& instrs, bool functio
   // a forward reference may be valid when control flow executes its producer
   // first. This checks types, not dominance or parameter-stack balance.
   using O = Instruction::Opcode;
-  enum class ResultKind { none, number, string, scalar_location, array_location, array_values };
   auto target = [](Instruction::Index i, Instruction::Operand const& operand) {
     // The complete range pass above makes signed-min and one-past data offsets
     // impossible here. Unsigned addition also handles valid negative offsets.
@@ -758,61 +757,7 @@ void GD::Bc::Details::VMState::validate(Instructions const& instrs, bool functio
   };
   std::vector<ResultKind> kinds(instrs.size(), ResultKind::none);
   for (Instruction::Index i = 0; i < instrs.size(); ++i) {
-    switch (instrs[i].opcode()) {
-    case O::string:
-      kinds[i] = ResultKind::string;
-      break;
-    case O::variable:
-    case O::array_element:
-    case O::ibase:
-    case O::obase:
-    case O::scale:
-      kinds[i] = ResultKind::scalar_location;
-      break;
-    case O::array:
-      kinds[i] = ResultKind::array_location;
-      break;
-    case O::pop_param_array:
-      kinds[i] = ResultKind::array_values;
-      break;
-    case O::load:
-      kinds[i] = instrs[target(i, instrs[i].op1())].opcode() == O::array ? ResultKind::array_values
-                                                                         : ResultKind::number;
-      break;
-    case O::number:
-    case O::add:
-    case O::subtract:
-    case O::negate:
-    case O::multiply:
-    case O::divide:
-    case O::modulo:
-    case O::power:
-    case O::scale_expr:
-    case O::sqrt:
-    case O::abs:
-    case O::length:
-    case O::equals:
-    case O::less_than_equals:
-    case O::not_equals:
-    case O::less_than:
-    case O::call:
-    case O::pop_param:
-      kinds[i] = ResultKind::number;
-      break;
-    case O::eof:
-    case O::print:
-    case O::quit:
-    case O::store:
-    case O::branch:
-    case O::branch_zero:
-    case O::return_:
-    case O::push_param_mark:
-    case O::pop_param_mark:
-    case O::push_param:
-    case O::function_begin:
-    case O::function_end:
-      break;
-    }
+    kinds[i] = classify_result(instrs, i);
   }
   for (Instruction::Index i = 0; i < instrs.size(); ++i) {
     auto const& instruction = instrs[i];

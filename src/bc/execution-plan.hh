@@ -12,6 +12,13 @@
 #include "profiling.hh"
 
 namespace GD::Bc::Details {
+// Static value contracts shared by verification and executable preparation.
+enum class ResultKind { none, number, string, scalar_location, array_location, array_values };
+
+// Operand schemas and all data-offset bounds must already be checked. This
+// classifies producer types; it does not establish availability or dominance.
+auto classify_result(Instructions const& code, Instruction::Index index) -> ResultKind;
+
 // One byte per instruction: nonzero permits transferring its first arithmetic
 // operand. An empty plan keeps ordinary copies without a per-instruction table.
 using ConsumptionPlan =
