@@ -203,7 +203,8 @@ class NativeMath(unittest.TestCase):
 
 
     def test_selected_broad_preset_is_explicit_in_unavailable_evidence(self):
-        for preset in ('full', 'holdout'):
+        for preset, expected in ((None, ['full', 'holdout']), ('full', ['full']),
+                                 ('holdout', ['holdout'])):
             with self.subTest(preset=preset), tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary)
                 original_load = CI.load
@@ -213,13 +214,15 @@ class NativeMath(unittest.TestCase):
                     return original_load(name)
                 argv = [str(PATH), '--source', str(root), '--candidate', 'a' * 40,
                         '--base', 'b' * 40, '--output', str(root / 'results'),
-                        '--broad', '--broad-preset', preset]
+                        '--broad']
+                if preset:
+                    argv += ['--broad-preset', preset]
                 with mock.patch.object(CI, 'load', side_effect=load), mock.patch.object(sys, 'argv', argv):
                     self.assertEqual(CI.main(), 0)
                 evidence = root / 'results/evidence'
                 orchestration = json.loads((evidence / 'orchestration.json').read_text())
                 self.assertTrue(orchestration['broad'])
-                self.assertEqual(orchestration['presets'], [preset])
+                self.assertEqual(orchestration['presets'], expected)
                 self.assertFalse((evidence / 'decisions.json').exists())
 
     def test_single_preset_requires_broad_mode(self):

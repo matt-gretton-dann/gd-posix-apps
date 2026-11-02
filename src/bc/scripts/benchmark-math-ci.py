@@ -287,6 +287,7 @@ def main():
     parser.add_argument('--candidate', type=gd_builder.revision_value, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--broad', action='store_true')
+    parser.add_argument('--broad-preset', choices=('full', 'holdout'))
     parser.add_argument('--samples', type=bench.positive_integer, default=15)
     parser.add_argument('--duration-seconds', type=bench.positive_timeout, default=.1)
     parser.add_argument('--child-timeout-seconds', type=bench.positive_timeout, default=120)
@@ -294,6 +295,10 @@ def main():
     args = parser.parse_args()
     if args.samples < 3:
         parser.error('at least three paired samples are required')
+    if args.broad_preset and not args.broad:
+        parser.error('--broad-preset requires --broad')
+    presets = ((args.broad_preset,) if args.broad_preset else
+               ('full', 'holdout') if args.broad else ('full',))
     root = args.output.resolve()
     root.mkdir(parents=True, exist_ok=False)
     evidence = root / 'evidence'
@@ -346,12 +351,12 @@ def main():
         shutil.copyfile(root / 'gd/source/src/bc/math-library.bc', libraries / 'candidate.bc')
         if baseline:
             shutil.copyfile(base_library, libraries / 'base.bc')
-        allocation_diagnostics(bench, profiled, diagnostic_cases(bench, 'full'), evidence / 'allocation-diagnostics',
+        allocation_diagnostics(bench, profiled, diagnostic_cases(bench, presets[0]), evidence / 'allocation-diagnostics',
                                timeout=args.child_timeout_seconds)
         for name, entries in configs.items():
             write(evidence / (name + '.json'), dict(implementations=entries))
         decisions = []
-        for preset in (('full', 'holdout') if args.broad else ('full',)):
+        for preset in presets:
             prepared = evidence / (preset + '-prepared')
             command = [sys.executable, str(SCRIPTS / 'bench-bc.py'), '--suite', 'math',
                        '--config', str(evidence / 'preparation.json'), '--output', str(prepared),
@@ -435,7 +440,7 @@ def main():
                         row['parameters']['mode'], {role: (row.get('duration_target_met') or {}).get(role, False)
                             for role in ('gd-portable', 'gd-base')})))
         # Resource wrappers run after all elapsed stages, never concurrently.
-        for preset in (('full', 'holdout') if args.broad else ('full',)):
+        for preset in presets:
             resource_diagnostics(bench, evidence / 'paired.json', diagnostic_cases(bench, preset),
                                  evidence / (preset + '-resource-diagnostics'), timeout=args.child_timeout_seconds)
         write(evidence / 'decisions.json', dict(advisory=True, results=decisions,
@@ -454,7 +459,7 @@ def main():
         return 1
     finally:
         write(evidence / 'orchestration.json',dict(candidate=args.candidate,base=args.base,baseline_library_available=bool(configs.get('regression')),commands=commands.commands,
-              broad=args.broad,samples=args.samples,duration_target=args.duration_seconds,
+              broad=args.broad,presets=list(presets),samples=args.samples,duration_target=args.duration_seconds,
               child_timeout_seconds=args.child_timeout_seconds,total_seconds=args.total_seconds))
         for path in root.glob('command-*.log'):
             shutil.copyfile(path, evidence / path.name)

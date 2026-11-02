@@ -124,3 +124,17 @@ first trig/Bessel broad attempt records a Howard 1000-place cosine timeout at
 120-second-child retry. The independent full/held-out inputs and per-role
 output checks remain mandatory. A global deadline failure still grants no
 acceptance; this setting does not promise that every host can finish a matrix.
+
+
+Broad workflow runs now schedule `full` and `holdout` independently on each
+native OS. `--broad-preset full` or `--broad-preset holdout` selects that cohort
+and requires `--broad`; omitting the selector retains the standalone combined
+mode. Orchestration records the selected presets, and held-out artifacts/checks
+carry a distinct suffix. PR-sized full check names remain unchanged.
+
+Both cohorts use the same immutable source and experimental anchor, with
+independent builds, calibration, same-job paired roles and controls. No tuning
+occurs between cohorts, and their raw observations are never pooled into one
+sample distribution. Every job retains its 6600-second experiment and 120-minute
+job limits. This avoids exhausting the Windows preparation margin while
+preserving all cases, samples, output checks and duration qualifications.
