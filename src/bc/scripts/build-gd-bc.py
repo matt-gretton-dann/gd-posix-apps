@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Build an immutable GD revision with fixed dispatch and actual provenance.
 
+Release is the default. Explicit diagnostic counter builds are always marked
+instrumented, so the timing harness rejects their generated configurations.
+
 Use the sibling comparator builder for shared bounded command/log handling.
 Python 3.6+; SPDX-License-Identifier: Apache-2.0
 """
@@ -61,11 +64,13 @@ def cache_values(path):
     return result
 
 
-def build_metadata(helper, root, source, build, revision, split, compiler_c, compiler_cxx):
+def build_metadata(helper, root, source, build, revision, split, compiler_c, compiler_cxx,
+                   diagnostic_profile=False):
     cache = cache_values(build / 'CMakeCache.txt')
     for flag in ('ENABLE_BC_PROFILE', 'ENABLE_BC_COVERAGE'):
-        if cache.get(flag, '').upper() not in ('OFF', 'FALSE', 'NO', '0'):
-            raise helper.BuildError('release timing configuration must disable ' + flag)
+        allowed = ('ON', 'TRUE', 'YES', '1') if diagnostic_profile and flag == 'ENABLE_BC_PROFILE' else ('OFF', 'FALSE', 'NO', '0')
+        if cache.get(flag, '').upper() not in allowed:
+            raise helper.BuildError('configuration disagrees with requested diagnostic mode: ' + flag)
     header = (build / 'src/bc/find-multiply-split-point.hh').read_text(encoding='utf-8')
     match = re.search(r'^#define BC_MULTIPLY_SPLIT_POINT ([0-9]+)$', header, re.MULTILINE)
     if not match or int(match.group(1)) != split or 'explicit BC_MULTIPLY_SPLIT_POINT' not in header:
@@ -84,18 +89,23 @@ def build_metadata(helper, root, source, build, revision, split, compiler_c, com
         # remain required evidence, and this absence stays explicit.
         flags['compile_commands'] = 'unavailable for this generator; see verbose build log'
         checked_flags = json.dumps(flags)
-    if re.search(r'-fprofile(?:-instr)?-generate|-fprofile-arcs|-ftest-coverage|-fcoverage|--coverage|-fsanitize|/fsanitize|-finstrument-functions|GD_BC_PROFILE=1',
+    if re.search(r'-fprofile(?:-instr)?-generate|-fprofile-arcs|-ftest-coverage|-fcoverage|--coverage|-fsanitize|/fsanitize|-finstrument-functions',
                  checked_flags, re.IGNORECASE):
         raise helper.BuildError('timing build contains instrumentation flags')
+    compiled_profile = bool(re.search(r'GD_BC_PROFILE=1', checked_flags, re.IGNORECASE))
+    if compiled_profile and not diagnostic_profile:
+        raise helper.BuildError('timing build contains diagnostic counter instrumentation')
+    if commands.is_file() and diagnostic_profile and not compiled_profile:
+        raise helper.BuildError('diagnostic counters are absent from compiled commands')
     shutil.copyfile(str(build / 'src/bc/find-multiply-split-point.hh'),
                     str(root / 'multiply-threshold.hh'))
     return {'source_revision': revision,
             'compiler': {'C': compiler_c, 'CXX': compiler_cxx}, 'flags': flags,
-            'version': 'gd-posix-apps source ' + revision, 'instrumented': False,
+            'version': 'gd-posix-apps source ' + revision, 'instrumented': diagnostic_profile,
             'configuration': {'build_type': cache.get('CMAKE_BUILD_TYPE'),
                               'generator': cache.get('CMAKE_GENERATOR'),
                               'extensions': cache.get('ENABLE_NON_POSIX_EXTENSIONS'),
-                              'multiply_split_point': split,
+                              'multiply_split_point': split, 'diagnostic_profile': diagnostic_profile,
                               'threshold_header_sha256': helper.digest(root / 'multiply-threshold.hh')},
             'limitations': ['Provision compiler, C/C++ runtime and SDK separately; this is not an OS image',
                             'Compiler defaults and actual commands are recorded, not claimed identical across hosts']}
@@ -125,6 +135,8 @@ def main():
     parser.add_argument('--cxx-compiler', default='cl' if os.name == 'nt' else 'c++')
     parser.add_argument('--generator', help='default Ninja when available, otherwise CMake platform default')
     parser.add_argument('--extensions', choices=('ON', 'OFF'), default='ON')
+    parser.add_argument('--diagnostic-profile', action='store_true',
+                        help='build counters separately; resulting config is forbidden for timing')
     parser.add_argument('--jobs', type=int, default=2)
     parser.add_argument('--command-timeout', type=int, default=900)
     args = parser.parse_args()
@@ -156,7 +168,8 @@ def main():
         compiler_cxx = compiler_identity(helper, builder, args.cxx_compiler)
         build = root / 'build'
         configure = ['cmake', '-S', str(source), '-B', str(build), '-DCMAKE_BUILD_TYPE=Release',
-                     '-DBUILD_TESTING=OFF', '-DENABLE_BC_PROFILE=OFF', '-DENABLE_BC_COVERAGE=OFF',
+                     '-DBUILD_TESTING=OFF', '-DENABLE_BC_PROFILE=' + ('ON' if args.diagnostic_profile else 'OFF'),
+                     '-DENABLE_BC_COVERAGE=OFF',
                      '-DENABLE_NON_POSIX_EXTENSIONS=' + args.extensions,
                      '-DBC_MULTIPLY_SPLIT_POINT=' + str(args.split_point),
                      '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON',
@@ -177,12 +190,13 @@ def main():
         if not executable.is_file():
             raise helper.BuildError('build did not produce the expected bc executable')
         metadata = build_metadata(helper, root, source, build, actual, args.split_point,
-                                  compiler_c, compiler_cxx)
+                                  compiler_c, compiler_cxx, args.diagnostic_profile)
         metadata['binary_sha256'] = helper.digest(executable)
         metadata['standard_library'] = standard_library_info(helper, builder, compiler_cxx, root)
         helper.write_json(root / 'implementations.json', {'implementations': [
             {'name': args.name, 'argv': [str(executable)], 'metadata': metadata}]})
-        manifest['status'] = 'built; run checked corpus before timing'
+        manifest['status'] = ('built diagnostic counters; forbidden for elapsed timing' if args.diagnostic_profile
+                              else 'built; run checked corpus before timing')
         print(root / 'implementations.json')
         return 0
     except (helper.BuildError, OSError, ValueError) as error:
