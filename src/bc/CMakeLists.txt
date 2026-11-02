@@ -211,6 +211,9 @@ if(RUN_INTEGRATION_TESTS)
   add_test(NAME bc/benchmark-ci COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-benchmark-ci.py")
   set_tests_properties(bc/benchmark-ci PROPERTIES TIMEOUT 20)
+  add_test(NAME bc/codegen-evidence COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-codegen-evidence.py")
+  set_tests_properties(bc/codegen-evidence PROPERTIES TIMEOUT 30)
   add_test(NAME bc/math-benchmark-ci COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-benchmark-math-ci.py")
   set_tests_properties(bc/math-benchmark-ci PROPERTIES TIMEOUT 30)

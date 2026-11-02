@@ -117,3 +117,36 @@ and seeded operands retain their identities. Full corpus size grows from 40 to
 Binary/octal digits fit the existing numeric-output validator; hexadecimal
 letters are covered by all-platform arithmetic tests and separate component
 oracles, and are not silently added to that validator's contract.
+
+## Preserve measured machine code
+
+Issue #397 adds `evidence/codegen/` to the arithmetic native workflow after all
+elapsed children finish, including bounded confirmations. It copies the exact
+base, candidate and independently built A/A executables and verifies every copy
+against the existing recipe's SHA-256 before and after inspection. No timing
+compiler/linker flags change, and the collector never executes the copied bc.
+Partial build failures retain only the completed roles. A missing or changed
+declared executable is a hard integrity failure, with a manifest retained.
+
+Native tools are discovered rather than required: Windows uses `dumpbin`, macOS
+uses `otool`, and Linux uses `llvm-objdump` or `objdump`. Header and disassembly
+commands run after timing with bounded process-tree cleanup. The manifest records
+the tool hash, commands, deadlines, output hashes and byte counts. Missing,
+failing or timed-out tools are explicitly unavailable; the exact executable and
+its full-file identity remain the generic fallback.
+
+A bounded, read-only PE section decoder also records code/executable-section
+bytes, RVAs, sizes and hashes on Windows. Its layout follows Microsoft's
+[PE format](https://learn.microsoft.com/windows/win32/debug/pe-format). It separates
+the raw COFF timestamp field and non-code data from code payload identity.
+Payload hashes include encoded addresses and file padding; they are not
+relocation-normalized, and virtual zero fill is not stored payload. Other image
+formats retain native-tool output and the full-file hash without claiming PE
+section coverage. Truncated or unsupported images have no partial code identity.
+
+These diagnostics help investigate code layout, compiler choices and build
+reproducibility. Equal code bytes do not establish equal behavior: data,
+relocations, runtime placement and host contention still matter. Neither a green
+advisory job nor matching source/code hashes waive a confirmed timing regression.
+Original rejected batches remain separate evidence. Memory/CPU diagnostics and
+paired elapsed measurements retain their existing scopes.
