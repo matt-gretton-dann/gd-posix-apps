@@ -2,6 +2,7 @@
 """Check native math roles, acceptance limits and process-tree deadlines."""
 import copy
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
@@ -177,13 +178,64 @@ class NativeMath(unittest.TestCase):
                     return mock.Mock(host_info=lambda: dict(test_host='isolated fixture'))
                 return original_load(name)
             argv = [str(PATH), '--source', str(root), '--candidate', 'a' * 40, '--base', 'b' * 40,
-                    '--output', str(root / 'results')]
+                    '--output', str(root / 'results'), '--child-timeout-seconds', '.125']
             with mock.patch.object(CI, 'load', side_effect=load), mock.patch.object(sys, 'argv', argv):
                 self.assertEqual(CI.main(), 0)
             evidence = root / 'results/evidence'
             self.assertFalse(json.loads((evidence / 'unavailable.json').read_text())['performance_acceptance'])
             self.assertFalse((evidence / 'decisions.json').exists())
             self.assertEqual(json.loads((evidence / 'orchestration.json').read_text())['commands'], [])
+            self.assertEqual(json.loads((evidence / 'orchestration.json').read_text())['child_timeout_seconds'], .125)
+
+
+    def test_invalid_child_deadlines_fail_before_creating_evidence(self):
+        for value in ('0', '-1', 'nan', 'inf'):
+            with self.subTest(value=value), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                argv = [str(PATH), '--source', str(root), '--candidate', 'a' * 40,
+                        '--base', 'b' * 40, '--output', str(root / 'results'),
+                        '--child-timeout-seconds', value]
+                with mock.patch.object(sys, 'argv', argv), mock.patch.object(sys, 'stderr', io.StringIO()):
+                    with self.assertRaises(SystemExit) as failure:
+                        CI.main()
+                self.assertEqual(failure.exception.code, 2)
+                self.assertFalse((root / 'results').exists())
+
+
+    def test_selected_broad_preset_is_explicit_in_unavailable_evidence(self):
+        for preset, expected in ((None, ['full', 'holdout']), ('full', ['full']),
+                                 ('holdout', ['holdout'])):
+            with self.subTest(preset=preset), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                original_load = CI.load
+                def load(name):
+                    if name == 'benchmark-ci':
+                        return mock.Mock(host_info=lambda: dict(test_host='isolated fixture'))
+                    return original_load(name)
+                argv = [str(PATH), '--source', str(root), '--candidate', 'a' * 40,
+                        '--base', 'b' * 40, '--output', str(root / 'results'),
+                        '--broad']
+                if preset:
+                    argv += ['--broad-preset', preset]
+                with mock.patch.object(CI, 'load', side_effect=load), mock.patch.object(sys, 'argv', argv):
+                    self.assertEqual(CI.main(), 0)
+                evidence = root / 'results/evidence'
+                orchestration = json.loads((evidence / 'orchestration.json').read_text())
+                self.assertTrue(orchestration['broad'])
+                self.assertEqual(orchestration['presets'], expected)
+                self.assertFalse((evidence / 'decisions.json').exists())
+
+    def test_single_preset_requires_broad_mode(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            argv = [str(PATH), '--source', str(root), '--candidate', 'a' * 40,
+                    '--base', 'b' * 40, '--output', str(root / 'results'),
+                    '--broad-preset', 'holdout']
+            with mock.patch.object(sys, 'argv', argv), mock.patch.object(sys, 'stderr', io.StringIO()):
+                with self.assertRaises(SystemExit) as failure:
+                    CI.main()
+            self.assertEqual(failure.exception.code, 2)
+            self.assertFalse((root / 'results').exists())
 
 
 if __name__ == '__main__':
