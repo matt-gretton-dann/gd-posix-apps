@@ -102,3 +102,14 @@ explanation of the mixed hosted Windows timings. The prior candidate adds
 5,120 raw PE code bytes over current main and has retained input regressions;
 its successful broad batch does not erase those losses. Compare complete
 full/held-out classes and actual executables before adopting this boundary.
+
+
+The fixed Windows CPU-coverage workflow launches three predetermined independent
+jobs for an explicit checkpoint. It keeps every host model, A/A qualifier and
+paired outcome, with exact base/head and replica identity. It does not select a
+CPU, filter unfavorable results, retry for a preferred number or pool different
+hardware. Actual EPYC 7763 coverage must be checked because a successful newer
+EPYC/Xeon batch cannot establish coverage for the earlier failing model. If none
+of the fixed jobs obtains that CPU, coverage remains unavailable. The workflow
+runs on its own PR-file changes or manual dispatch; ordinary PRs do not gain
+an automatic three-job Windows cohort after that workflow is accepted.
