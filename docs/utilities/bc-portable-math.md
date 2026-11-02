@@ -189,6 +189,21 @@ bound and `n! >= (n/e)^n` give
 Under these conditions this is at most `(e/6)^n * exp(n/36)`, below 10^-S.
 This branch avoids unbounded work on a huge order whose result is certified tiny.
 
+After that fast path, an additional regime returns scaled zero for positive
+integer n with n >= 16x and n >= S. Test
+n >= S before the extra ratio comparison, avoiding that work when high
+requested precision already excludes this regime.
+The ascending absolute-series bound and factorial estimate above give
+`abs(J_n(x)) <= (e*x/(2*n))^n * exp(x*x/(4*(n+1)))`.
+Here `x*x/(4*(n+1)) < n/1024` and `e*x/(2*n) < 3/32`.
+Since `exp(1/1024) <= 1024/1023`, the bound is below
+`(96/1023)^n < 10^-n <= 10^-S`. This is an absolute error certificate,
+independent of a vanishing coefficient. For x=0 and positive n the result
+is exactly zero; n=0 is excluded, preserving J_0(0)=1. Sign normalization
+precedes the test, and zero is independent of the recorded parity. The
+ordinary decimal product 16*x is exact because multiplication retains x's
+fractional scale. No transcendental bound calculation runs in the interpreter.
+
 For x > 8*(n*n+1), attempt the real large-argument expansion from
 [NIST DLMF 10.17](https://dlmf.nist.gov/10.17). Coefficients satisfy
 `b_0=1; b_k=b_(k-1)*(4*n*n-(2*k-1)^2)/(8*k*x)`.
@@ -246,8 +261,10 @@ five scales (140 enclosures), on both sides of the reciprocal, half-angle,
 halving, log-reduction and Hankel entry boundaries, plus negative-order Hankel
 symmetry and an underflowing initial Bessel coefficient. These join the original
 336 enclosures; a separate trigonometric fixture adds 60 enclosures around
-positive and negative three radians. All 536 are independently certified;
-regeneration uses the same pinned optional FLINT environment.
+positive and negative three radians. A Bessel zero-bound fixture adds 80
+enclosures across ratio and scale boundaries, signs and the complementary old
+bound. All 616 are independently certified; regeneration uses the same pinned
+optional FLINT environment.
 
 ## Imported programs and interpreted decisions
 
@@ -284,14 +301,14 @@ call resolves the user replacement in both extension configurations.
 condition is evaluated once. Automatic array flags distinguish loop exhaustion
 from `break`; `return` skips unreachable probes. A behavioral check covers
 skipped/exhausted/broken loops, return, nested decisions and a condition with a
-side effect before the production fixture runs. It certifies all 536 numerical
+side effect before the production fixture runs. It certifies all 616 numerical
 results from the instrumented definitions against the same exact enclosures.
 
-The source contains 75 decisions and 150 outcomes. The expected fixture requires
-139 normal outcomes, including two explicitly undefined-domain log guard calls. Nine
+The source contains 78 decisions and 156 outcomes. The expected fixture requires
+145 normal outcomes, including two explicitly undefined-domain log guard calls. Nine
 separate portable-host models independently clamp a working-scale setter and
 exercise its defensive error branch without returning a numerical value.
-Together the ordinary and modeled runs must reproduce 148 outcomes. The two
+Together the ordinary and modeled runs must reproduce 154 outcomes. The two
 remaining outcomes require a
 negative exponential coefficient: positive Taylor terms, positive squaring
 and a positive reciprocal preserve nonnegativity, so they are infeasible.

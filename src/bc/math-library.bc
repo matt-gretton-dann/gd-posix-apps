@@ -311,6 +311,19 @@ define j(n,x) {
       return(r)
     }
   }
+  /* Keep the existing tiny fast path first. For n>=16*x, the
+     factorial bound is below 10^(-n); positive n>=s certifies zero.
+     Test scale first to skip extra ratio work at high precision. */
+  if (n>=s) {
+    if (n>=16*x) {
+      if (n>0) {
+        scale=s
+        r=0/1
+        ibase=b
+        return(r)
+      }
+    }
+  }
   w=s+scale(x)+length(x)+2*length(s+scale(x)+length(x)+length(n)+1)+32
   /* DLMF 10.17.14-15 bounds the Hankel remainder by less than three
      first-omitted coefficients here. Abort if recurrence contraction is
