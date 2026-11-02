@@ -159,3 +159,26 @@ an otherwise mergeable workflow. The PR base/head remain the immutable runtime
 inputs; recipes, raw samples and post-sampling executable inspection retain
 those identities. The broad branch name does not change sample counts, output
 checks, tuning policy or bounded-confirmation rules.
+
+## Symmetric independent-build controls
+
+A/A has no expected winning direction. Its complete interval must lie inside
+[0.95,1.05] to pass. An interval wholly below 0.95 or above 1.05 selects at most
+one independent-seed confirmation. Persistent same-direction evidence is
+`confirmed A/A bias`; missing, overlapping, invalid or reversing controls remain
+inconclusive. Startup remains uncalibrated. Arithmetic and math orchestration
+share this policy, whose exact source SHA-256 is recorded with decisions.
+
+Arithmetic paired rows retain the raw candidate/base regression status and
+include the matching `aa_control_status` separately, also shown in the job
+summary. A noisy or biased control limits source attribution and competitive
+claims; it does not erase a raw adverse signal. Runtime C++, sample counts,
+workloads, tuning and the bounded-repeat rule are unchanged by this correction.
+
+Earlier arithmetic reports used the one-sided candidate/base rule for A/A and
+could incorrectly label a fast or lower-band-overlapping control as pass. Keep
+those original artifacts unchanged. Requalification must identify the policy
+and original evidence, retaining absent confirmations as unavailable rather than
+manufacturing a new pass. In particular, #400's held-loop control [.937,1.017]
+is inconclusive under the symmetric policy. Its separate full-loop control lies
+inside the band and does not waive the retained full-loop regression.
