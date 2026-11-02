@@ -1,0 +1,23 @@
+"""Build isolated immutable array candidates before any elapsed comparison."""
+import importlib.util
+import json
+from pathlib import Path
+import sys
+scripts=Path('/private/tmp/gd-posix-array-candidates/src/bc/scripts')
+spec=importlib.util.spec_from_file_location('ci',scripts/'benchmark-math-ci.py')
+ci=importlib.util.module_from_spec(spec);spec.loader.exec_module(ci)
+root=Path('/private/tmp/bc-209-release-preparation');root.mkdir(exist_ok=False)
+commands=ci.Commands(root,5400)
+revision='7723ebd74614df1a56e03cb5867ef53efcdd0104'
+try:
+ for name,layout in [('hybrid','hybrid'),('aa','hybrid'),('paged','paged'),('flat','flat'),('hash','hash'),('ordered','ordered')]:
+  destination=Path('/private/tmp/gd-bc-209-'+name+'-release')
+  commands.run([sys.executable,str(scripts/'build-gd-bc.py'),'--source','/private/tmp/gd-posix-array-candidates','--revision',revision,'--split-point','126','--array-storage',layout,'--output',str(destination),'--name',name,'--extensions','ON','--c-compiler','cc','--cxx-compiler','c++','--jobs','2'],timeout=900)
+  config=json.loads((destination/'implementations.json').read_text())['implementations'][0]
+  assert config['metadata']['source_revision']==revision
+  assert config['metadata']['configuration']['array_storage']==layout
+  print(name,'release built with verified layout',flush=True)
+ ci.write(root/'complete.json',dict(status='all six release builds complete; timing not started',revision=revision))
+except BaseException as error:
+ ci.write(root/'failure.json',dict(error=str(error),performance_acceptance=False));raise
+finally:ci.write(root/'orchestration.json',dict(commands=commands.commands))

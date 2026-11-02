@@ -1,0 +1,9 @@
+Test project /private/tmp/gd-posix-array-candidates/build-check
+    Start 241: bc/cli
+1/2 Test #241: bc/cli ...........................   Passed    2.91 sec
+    Start 245: bc/vm-cli
+2/2 Test #245: bc/vm-cli ........................   Passed    0.78 sec
+
+100% tests passed out of 2
+
+Total Test time (real) =   3.70 sec

@@ -13,7 +13,8 @@
 
 #include "bc.hh"
 
-TEST_CASE("Hybrid arrays agree with an ordered-map value oracle", "[bc][vm][arrays][array-storage]")
+TEST_CASE("Selected array layout agrees with an ordered-map value oracle",
+          "[bc][vm][arrays][array-storage]")
 {
   using Storage = GD::Bc::ArrayStorage;
   using Number = GD::Bc::Number;
@@ -95,8 +96,14 @@ TEST_CASE("Sparse high writes do not materialize their index range",
     values.insert_or_assign(high, GD::Bc::Number(0));
     CHECK(values.length() == GD::Bc::Number::base_);
     CHECK(values.size() == 1);
-    // A single fallback node is bounded independently of the written index.
+// A single fallback node is bounded independently of the written index.
+#  if GD_BC_ARRAY_STORAGE == 1
+    // A paged candidate charges one complete page even for a single key.
+    CHECK(stats().allocated_bytes - before.allocated_bytes <
+          64 * sizeof(std::optional<GD::Bc::Number>) + 1024);
+#  else
     CHECK(stats().allocated_bytes - before.allocated_bytes < 1024);
+#  endif
   }
   CHECK(stats().live_bytes == before.live_bytes);
 }
@@ -127,4 +134,84 @@ TEMPLATE_TEST_CASE("Hybrid arrays preserve each numeric index width",
   values.insert_or_assign(Index(0), Number(Index(7)));
   CHECK(*snapshot.lookup(Index(0)) == Number(Index(0)));
   CHECK(*values.lookup(Index(0)) == Number(Index(7)));
+}
+
+namespace {
+template<typename Storage, typename Number>
+void check_storage_candidate()
+{
+  using Index = typename Number::NumType;
+  Index const high = Number::base_ - 1;
+  Storage actual;
+  std::map<Index, unsigned> expected;
+  auto verify = [&](Index index) {
+    auto const found = expected.find(index);
+    auto const* value = actual.lookup(index);
+    CHECK((value != nullptr) == (found != expected.end()));
+    if (value)
+      CHECK(*value == Number(static_cast<Index>(found->second)));
+    CHECK(actual.size() == expected.size());
+    CHECK(actual.length() == (expected.empty() ? Index{0} : Index(expected.rbegin()->first + 1)));
+  };
+  verify(high);
+  CHECK(actual.empty());
+  // Cover absent page slots, page boundaries, high sparse keys, explicit zero,
+  // replacement and backwards/random insertion without a dense allocation.
+  for (Index key : {Index{0}, Index{63}, Index{64}, Index{65}, high}) {
+    actual.insert_or_assign(key, Number(0));
+    expected.insert_or_assign(key, 0);
+    verify(key);
+  }
+  std::mt19937 random(197209);
+  for (unsigned i = 0; i < 3000; ++i) {
+    auto const key = static_cast<Index>(random() % Number::base_);
+    auto const value = static_cast<Index>(random() % 23);
+    actual.insert_or_assign(key, Number(value));
+    expected.insert_or_assign(key, value);
+    verify(key);
+    verify(static_cast<Index>(random() % Number::base_));
+  }
+  auto snapshot = actual;
+  actual.insert_or_assign(0, Number(7));
+  CHECK(*snapshot.lookup(0) == Number(static_cast<Index>(expected.at(0))));
+  auto moved = std::move(snapshot);
+  CHECK(snapshot.empty());
+  CHECK(snapshot.length() == 0);
+  CHECK(snapshot.lookup(high) == nullptr);
+  snapshot = moved;
+  CHECK(snapshot.size() == expected.size());
+  // Passing a borrowed value must be safe even when insertion reallocates or
+  // rehashes the container. Heap digit payloads must preserve value isolation.
+  Number large("123456789012345678901234567890", 10);
+  actual.insert_or_assign(0, large);
+  for (unsigned i = 1; i < 80; ++i) {
+    auto const key = static_cast<Index>(i);
+    actual.insert_or_assign(key, *actual.lookup(0));
+    CHECK(*actual.lookup(key) == large);
+  }
+  auto copy = actual;
+  copy.insert_or_assign(0, Number(3));
+  CHECK(*actual.lookup(0) == large);
+  CHECK(*copy.lookup(0) == Number(3));
+}
+
+template<typename Traits>
+void check_all_storage_candidates()
+{
+  using Number = GD::Bc::BasicNumber<Traits>;
+  check_storage_candidate<GD::Bc::Details::HybridArrayStorage<Number>, Number>();
+  check_storage_candidate<GD::Bc::Details::PagedArrayStorage<Number>, Number>();
+  check_storage_candidate<GD::Bc::Details::FlatArrayStorage<Number>, Number>();
+  check_storage_candidate<GD::Bc::Details::MapArrayStorage<Number, true>, Number>();
+  check_storage_candidate<GD::Bc::Details::MapArrayStorage<Number, false>, Number>();
+}
+}  // namespace
+
+TEST_CASE("Array layout candidates preserve sparse value semantics",
+          "[bc][vm][arrays][array-storage][array-candidates]")
+{
+  // Retain the small-width generic model and complement it with native widths.
+  check_all_storage_candidates<GD::Bc::NumberTraits8>();
+  check_all_storage_candidates<GD::Bc::NumberTraits16>();
+  check_all_storage_candidates<GD::Bc::NumberTraits32>();
 }

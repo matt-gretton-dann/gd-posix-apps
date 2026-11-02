@@ -1,0 +1,55 @@
+"""Archive the completed array comparison with immutable source identities."""
+import hashlib
+import json
+from pathlib import Path
+import shutil
+import subprocess
+import zipfile
+REPO=Path('/private/tmp/gd-posix-array-candidates')
+REVISION='7723ebd74614df1a56e03cb5867ef53efcdd0104'
+ROOT=REPO/'docs/utilities/bc-209-array-comparison'
+assert Path('/private/tmp/bc-209-paired-release/complete.json').is_file()
+assert Path('/private/tmp/bc-209-paired-release/audit.json').is_file()
+assert not Path('/private/tmp/bc-209-paired-release/failure.json').exists()
+ROOT.mkdir(parents=True,exist_ok=False)
+def digest(data):return hashlib.sha256(data).hexdigest()
+def copy(source,target):
+ path=ROOT/target;path.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(source,path)
+def archive(source,target):
+ with zipfile.ZipFile(ROOT/target,'w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+  for p in sorted(Path(source).rglob('*')):
+   if p.is_file():z.write(p,p.relative_to(source).as_posix())
+for source,target in [('bc-209-paired-release','paired-release'),('bc-209-paired-release-timeout30','initial-timeout30'),('bc-209-array-prepared','frozen-corpus'),('bc-209-allocation-diagnostics','software-counters'),('bc-209-native-resources','native-resources'),('bc-209-release-preparation','preparation')]:
+ archive(Path('/private/tmp')/source,target+'.zip')
+for host in ('linux','macos','windows'):
+ for suffix in ('.zip','.audit.json'):
+  copy('/private/tmp/bc-373-772-native-'+host+suffix,'native/'+host+suffix)
+for layout in ('hybrid','aa','paged','flat','hash','ordered'):
+ source=Path('/private/tmp/gd-bc-209-'+layout+'-release')
+ for p in sorted(source.glob('*')):
+  if p.is_file():copy(p,'recipes/'+layout+'/'+p.name)
+ for p in sorted((source/'logs').glob('*')):
+  if p.is_file():copy(p,'recipes/'+layout+'/logs/'+p.name)
+copy('/private/tmp/bc-217-pinned-howard.json','recipes/howard.json')
+for p in sorted(Path('/private/tmp').glob('bc-209-*.py')):
+ copy(p,'scripts/'+p.name+'.txt')
+copy('/private/tmp/bc-373-772-audit-native.py','scripts/audit-native.py.txt')
+for pattern in ('bc-209-*-asan.log','bc-209-*-vm-cli-asan.log','bc-209-*checks*.log','bc-209-build-releases.log','bc-209-collect-allocations.log','bc-209-collect-rss.log'):
+ for p in Path('/private/tmp').glob(pattern):copy(p,'validation/'+p.name)
+copy('/private/tmp/bc-209-evidence-README.md','README.md')
+inventory=[]
+for name in ('array-storage.hh','array-storage-candidates.hh','bc.hh','vm.cc','CMakeLists.txt','test-array-storage.cc','test-array-benchmark.py','scripts/prepare-array-benchmark.py','scripts/bench-bc.py','scripts/benchmark-math-ci.py','scripts/build-gd-bc.py'):
+ result=subprocess.run(['git','-C',str(REPO),'show',REVISION+':src/bc/'+name],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+ if result.returncode:
+  # Fail on a guessed source path instead of silently dropping source evidence.
+  raise ValueError(name+': '+result.stderr.decode())
+ data=result.stdout;sha=digest(data);target='sources/'+Path(name).name+'-'+sha+'.txt'
+ path=ROOT/target;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data)
+ inventory.append(dict(revision=REVISION,path='src/bc/'+name,sha256=sha,archived_as=target))
+(ROOT/'source-inventory.json').write_text(json.dumps(inventory,indent=2)+'\n')
+(ROOT/'.gitattributes').write_text('* -text\n*.log whitespace=-blank-at-eol,-blank-at-eof\n*.txt whitespace=-blank-at-eol,-blank-at-eof\n')
+entries={p.relative_to(ROOT).as_posix():digest(p.read_bytes()) for p in sorted(ROOT.rglob('*')) if p.is_file() and p.name!='sha256.json'}
+(ROOT/'sha256.json').write_text(json.dumps(entries,indent=2,sort_keys=True)+'\n')
+for p in ROOT.rglob('*.zip'):
+ with zipfile.ZipFile(p) as z:assert z.testzip() is None
+print(len(entries),'array evidence payloads preserved')

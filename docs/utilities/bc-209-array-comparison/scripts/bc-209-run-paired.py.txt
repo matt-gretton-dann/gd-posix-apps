@@ -1,0 +1,44 @@
+"""Run complete fixed array matrices after builds/tests/resource collection."""
+import importlib.util
+import json
+from pathlib import Path
+import sys
+scripts=Path('/private/tmp/gd-posix-array-candidates/src/bc/scripts')
+spec=importlib.util.spec_from_file_location('ci',scripts/'benchmark-math-ci.py')
+ci=importlib.util.module_from_spec(spec);spec.loader.exec_module(ci)
+bench=ci.load('bench-bc')
+root=Path('/private/tmp/bc-209-paired-release');root.mkdir(exist_ok=False)
+preparation=Path('/private/tmp/bc-209-release-preparation')
+assert (preparation/'complete.json').is_file()
+quick=json.loads((preparation/'quick-checks.json').read_text());assert len(quick['checks'])==56 and all(r['checked'] for r in quick['checks'])
+allocations=json.loads(Path('/private/tmp/bc-209-allocation-diagnostics/manifest.json').read_text());assert len(allocations['cases'])==40 and 'failure' not in allocations
+resources=json.loads(Path('/private/tmp/bc-209-native-resources/manifest.json').read_text());assert len(resources['samples'])==120 and 'failure' not in resources
+hashes={name:bench.digest_file(scripts/name) for name in ('bench-bc.py','benchmark-math-ci.py')}
+ci.write(root/'protocol.json',dict(runtime_revision='7723ebd74614df1a56e03cb5867ef53efcdd0104',harness=hashes,runner_sha256=bench.digest_file(__file__),samples=15,warmups=3,child_timeout_seconds=120,previous_failed_attempt='/private/tmp/bc-209-paired-release-timeout30',source='all layouts same immutable source/compiler/Release/extensions ON/split126; independent hybrid build; pinned native Howard',policy='all eight full and held-out classes; one bounded A/A confirmation for either outside-band direction; retain prototype losses; no default adoption or aggregate pass; fixed 120-second child deadline for every role; initial 30-second timeout retained separately; unchanged inputs/sample plan; no concurrent local builds/tests/resource work during timing'))
+ci.write(root/'host.json',ci.load('benchmark-ci').host_info())
+commands=ci.Commands(root,7200);controls=[]
+try:
+ for index,preset in enumerate(('full','holdout')):
+  for comparison in ('aa','paired'):
+   assert all(bench.digest_file(scripts/name)==sha for name,sha in hashes.items())
+   target=root/(preset+'-'+comparison)
+   command=[sys.executable,str(scripts/'bench-bc.py'),'--config',str(preparation/(comparison+'.json')),'--output',str(target),'--reference','hybrid','--replay-corpus','/private/tmp/bc-209-array-prepared/'+preset,'--samples','15','--warmups','3','--timeout','120','--seed',str(1972091+index*10+(comparison=='paired')),'--require-provenance']
+   commands.run(command,timeout=3600);ci.measurements(target)
+   if comparison=='aa':
+    rows=json.loads((target/'summary.json').read_text())['workloads']
+    suspects=[row['name'] for row in rows if row['candidate_over_reference']['aa']['ci95'][0]>1.05 or row['candidate_over_reference']['aa']['ci95'][1]<.95]
+    confirmation={}
+    if suspects:
+     confirm=command+[p for name in suspects for p in ('--workload',name)]
+     confirm[confirm.index('--output')+1]=str(root/(preset+'-aa-confirmation'))
+     confirm[confirm.index('--seed')+1]=str(1972191+index)
+     commands.run(confirm,timeout=900);ci.measurements(root/(preset+'-aa-confirmation'))
+     confirmation={row['name']:row for row in json.loads((root/(preset+'-aa-confirmation/summary.json')).read_text())['workloads']}
+    for row in rows:
+     second=confirmation.get(row['name'],{}).get('candidate_over_reference',{}).get('aa')
+     controls.append(dict(preset=preset,name=row['name'],status=ci.aa_status(row['candidate_over_reference']['aa'],second),first=row['candidate_over_reference']['aa'],confirmation=second))
+ ci.write(root/'controls.json',dict(results=controls))
+ ci.write(root/'complete.json',dict(status='all checked full/held-out prototype observations complete; per-class review required',performance_acceptance=False))
+except BaseException as error:
+ ci.write(root/'failure.json',dict(error=str(error),performance_acceptance=False));raise
+finally:ci.write(root/'orchestration.json',dict(commands=commands.commands))
