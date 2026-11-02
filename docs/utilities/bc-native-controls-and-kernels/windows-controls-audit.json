@@ -1,0 +1,166 @@
+{
+  "run": 41506823190,
+  "head": "1089d716d229375b4d8dd435050c7c71b8d536e5",
+  "base": "d1de5150e511fcc75d718a3fb8d5f680219bafff",
+  "results": [
+    {
+      "replica": "1",
+      "archive": "replica1.zip",
+      "archive_sha256": "78bffa04c6b37144bfe60df4f0a98bc2122f94810ddde08fdc59a7075630be4b",
+      "cpu": "INTEL(R) XEON(R) PLATINUM 8573C",
+      "checked_executions": 1008,
+      "module_probes": 18,
+      "images": 6,
+      "statuses": {
+        "inconclusive": 18,
+        "pass": 52
+      },
+      "module_summary": {
+        "image0": {
+          "bases": [
+            "0x00007ff6afd70000"
+          ],
+          "collected": 3
+        },
+        "image1": {
+          "bases": [
+            "0x00007ff721c50000"
+          ],
+          "collected": 3
+        },
+        "image2": {
+          "bases": [
+            "0x00007ff66c9f0000"
+          ],
+          "collected": 3
+        },
+        "image3": {
+          "bases": [
+            "0x00007ff6283f0000"
+          ],
+          "collected": 3
+        },
+        "image4": {
+          "bases": [
+            "0x00007ff6270c0000"
+          ],
+          "collected": 3
+        },
+        "image5": {
+          "bases": [
+            "0x00007ff648090000"
+          ],
+          "collected": 3
+        }
+      },
+      "performance_acceptance": false,
+      "scope": "exact bytes/provenance/raw-output checks and policy replay; reported confidence intervals are not independently bootstrap-recomputed"
+    },
+    {
+      "replica": "2",
+      "archive": "replica2.zip",
+      "archive_sha256": "c4420407d2c0d9fb6e061f0a89fc8b92cbc3399019474adbacfdbd6c5c31f9ff",
+      "cpu": "AMD EPYC 9V74 80-Core Processor                ",
+      "checked_executions": 1008,
+      "module_probes": 18,
+      "images": 6,
+      "statuses": {
+        "inconclusive": 54,
+        "pass": 16
+      },
+      "module_summary": {
+        "image0": {
+          "bases": [
+            "0x00007ff690b20000"
+          ],
+          "collected": 3
+        },
+        "image1": {
+          "bases": [
+            "0x00007ff6e76c0000"
+          ],
+          "collected": 3
+        },
+        "image2": {
+          "bases": [
+            "0x00007ff7f7500000"
+          ],
+          "collected": 3
+        },
+        "image3": {
+          "bases": [
+            "0x00007ff6e81c0000"
+          ],
+          "collected": 3
+        },
+        "image4": {
+          "bases": [
+            "0x00007ff641f50000"
+          ],
+          "collected": 3
+        },
+        "image5": {
+          "bases": [
+            "0x00007ff709c70000"
+          ],
+          "collected": 3
+        }
+      },
+      "performance_acceptance": false,
+      "scope": "exact bytes/provenance/raw-output checks and policy replay; reported confidence intervals are not independently bootstrap-recomputed"
+    },
+    {
+      "replica": "3",
+      "archive": "replica3.zip",
+      "archive_sha256": "517c1b1a204f982ccec432b6315bca580ab3c4e5d2d166e3b363c24b8e25bd45",
+      "cpu": "AMD EPYC 9V74 80-Core Processor                ",
+      "checked_executions": 1008,
+      "module_probes": 18,
+      "images": 6,
+      "statuses": {
+        "inconclusive": 26,
+        "pass": 44
+      },
+      "module_summary": {
+        "image0": {
+          "bases": [
+            "0x00007ff768400000"
+          ],
+          "collected": 3
+        },
+        "image1": {
+          "bases": [
+            "0x00007ff6a5280000"
+          ],
+          "collected": 3
+        },
+        "image2": {
+          "bases": [
+            "0x00007ff7c7080000"
+          ],
+          "collected": 3
+        },
+        "image3": {
+          "bases": [
+            "0x00007ff62de60000"
+          ],
+          "collected": 3
+        },
+        "image4": {
+          "bases": [
+            "0x00007ff7f2c00000"
+          ],
+          "collected": 3
+        },
+        "image5": {
+          "bases": [
+            "0x00007ff74a4d0000"
+          ],
+          "collected": 3
+        }
+      },
+      "performance_acceptance": false,
+      "scope": "exact bytes/provenance/raw-output checks and policy replay; reported confidence intervals are not independently bootstrap-recomputed"
+    }
+  ]
+}

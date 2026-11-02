@@ -1,0 +1,42 @@
+"""Frozen VM experiment: elapsed sampling follows every local build/diagnostic."""
+import hashlib,importlib.util,json,shutil,sys
+from pathlib import Path
+scripts=Path('/private/tmp/gd-posix-typed-result-pools/src/bc/scripts')
+spec=importlib.util.spec_from_file_location('ci',scripts/'benchmark-math-ci.py');ci=importlib.util.module_from_spec(spec);spec.loader.exec_module(ci)
+bench=ci.load('bench-bc');policy=ci.load('benchmark-policy')
+root=Path('/private/tmp/bc-207-typed-paired-release');root.mkdir(exist_ok=False)
+preparation=Path('/private/tmp/bc-207-typed-preparation');prepared=json.loads((preparation/'complete.json').read_text());assert prepared['arithmetic_checks']==544 and prepared['math_checks']==180,prepared
+resources=json.loads(Path('/private/tmp/bc-207-typed-native-resources/manifest.json').read_text());assert len(resources['samples'])==216 and 'failure' not in resources
+logical=json.loads(Path('/private/tmp/bc-207-typed-logical/manifest.json').read_text());assert len(logical['results'])==96 and 'failure' not in logical
+for preset in ('full','holdout'):shutil.copytree(Path(prepared['math_corpus'])/(preset+'-prepared'),preparation/('math-'+preset))
+ci.write(root/'protocol.json',dict(base='7871af4c7bed04b2874ba78d214879d7923c5814',candidate='9028375821c730243f64d1d9dfdd1f20ec4a3eba',protocol_revision='9028375821c730243f64d1d9dfdd1f20ec4a3eba',samples=15,warmups=3,child_timeout=120,arithmetic_cases_per_cohort=68,known_core_per_cohort=56,known_storage_per_cohort=4,fresh_typed_cases_per_cohort=8,math_cases_per_cohort=60,runner_sha256=bench.digest_file(__file__),aa_policy_sha256=policy.source_sha256(),library_sha256=prepared['library_sha256'],source_storage='three independent immutable sparse detached worktrees share Git objects only; source files/builds are separate',concurrency='No owned builds/tests/profiles/RSS overlap elapsed children. OS-default affinity and background services; host not isolated. Source editing and read-only artifact audits may occur.',policy='Frozen full and evaluation cohorts: 56 known arithmetic core and four known storage regression classes plus eight fresh typed-pool fixtures per arithmetic set; replayed math is known regression data. No new threshold is selected from these observations. Finish local builds/tests/profiles/RSS before timing. Preserve losses, short classes and inconclusive controls. One bounded independent-seed confirmation for wholly out-of-band A/A in either direction or candidate/base lower CI above 1.05. Replayed historical math counts are frozen, not retuned. All GD roles execute the identical ordinary source file without -l; math compares the VM only, not library competitiveness. Arithmetic includes pinned Howard. No pooled pass.'))
+ci.write(root/'host.json',ci.load('benchmark-ci').host_info())
+commands=ci.Commands(root,18000);controls=[];regressions=[]
+try:
+ for suite_index,suite in enumerate(('arithmetic','math')):
+  for index,preset in enumerate(('full','holdout')):
+   for comparison in ('aa','paired'):
+    target=root/(suite+'-'+preset+'-'+comparison)
+    corpus=preparation/(preset if suite=='arithmetic' else 'math-'+preset)
+    config=preparation/((comparison if suite=='arithmetic' else 'math-'+comparison)+'.json')
+    seed=19720741+suite_index*1000+index*100+(comparison=='paired')
+    command=[sys.executable,str(scripts/'bench-bc.py'),'--config',str(config),'--output',str(target),'--reference','base','--suite',suite,'--replay-corpus',str(corpus),'--samples','15','--warmups','3','--timeout','120','--seed',str(seed),'--require-provenance']
+    commands.run(command,timeout=7200);ci.measurements(target)
+    rows=json.loads((target/'summary.json').read_text())['workloads'];candidate='aa' if comparison=='aa' else 'candidate'
+    suspects=[r['name'] for r in rows if (policy.aa_direction(r['candidate_over_reference'][candidate]) if comparison=='aa' else r['candidate_over_reference'][candidate]['ci95'][0]>1.05) and r['name']!='startup']
+    confirmation={}
+    if suspects:
+     confirm=command+[p for name in suspects for p in ('--workload',name)]
+     destination=root/(suite+'-'+preset+'-'+comparison+'-confirmation');confirm[confirm.index('--output')+1]=str(destination);confirm[confirm.index('--seed')+1]=str(seed+10000)
+     commands.run(confirm,timeout=3600);ci.measurements(destination)
+     confirmation={r['name']:r for r in json.loads((destination/'summary.json').read_text())['workloads']}
+    for row in rows:
+     first=row['candidate_over_reference'][candidate];second=confirmation.get(row['name'],{}).get('candidate_over_reference',{}).get(candidate)
+     common=dict(suite=suite,preset=preset,name=row['name'],first=first,confirmation=second)
+     if comparison=='aa':controls.append(dict(common,status='inconclusive' if row['name']=='startup' else policy.aa_status(first,second)))
+     else:regressions.append(dict(common,confirmed_regression=bool(row['name']!='startup' and first['ci95'][0]>1.05 and second and second['ci95'][0]>1.05),group=row['group']))
+    ci.write(root/'controls.json',dict(results=controls));ci.write(root/'regressions.json',dict(results=regressions));print(suite,preset,comparison,'complete',flush=True)
+ ci.write(root/'complete.json',dict(status='all frozen measurements checked; per-class audit still required',performance_acceptance=False))
+except BaseException as error:
+ ci.write(root/'failure.json',dict(error=str(error),performance_acceptance=False));raise
+finally:ci.write(root/'orchestration.json',dict(commands=commands.commands))
