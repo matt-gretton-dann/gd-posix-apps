@@ -75,7 +75,7 @@ def main():
     source = (ROOT / 'math-library.bc').read_text(encoding='utf-8')
     transformed, decisions = instrument(source)
     cases = []
-    for filename in ('math-oracles.json', 'math-crossover-oracles.json'):
+    for filename in ('math-oracles.json', 'math-crossover-oracles.json', 'math-trig-oracles.json'):
         cases.extend(json.loads((ROOT / 'fixtures' / filename).read_text())['cases'])
     program = ''.join('scale={}\n{}({})\n'.format(
         case['scale'], case['function'], ','.join(case['arguments'])) for case in cases)
@@ -112,7 +112,7 @@ def main():
         assert model_decisions == decisions
         function = decision['function']
         call = {'a': 'a(0)', 'e': 'e(0)', 'l': 'l(1)',
-                's': 's(0)', 'c': 'c(0)'}.get(function)
+                's': 's(4)', 'c': 'c(4)'}.get(function)
         if function == 'j':
             call = 'j(0,1000)' if decision['line'] == j_guards[0] else 'j(0,1)'
         fault = run(args.bc, model, call + '\n')

@@ -186,27 +186,35 @@ define l(x) {
 /* Sine: dynamically computed period and bounded alternating series. */
 define s(x) {
   auto b,i,k,n,p,q,r,t,u,v,w;
-  /* b/u save base/scale; w is precision; n marks odd symmetry.
-     p is the period and k its quotient; q/t/r/i drive the Taylor recurrence. */
+  /* b/u save base/scale; w is precision; v is integer magnitude.
+     n marks odd symmetry; p/k are period and quotient; q/t/r/i drive Taylor. */
   b=ibase
   ibase=A
   u=scale
   scale=0
-  w=u+length(x)+scale(x)+2*length(u+length(x)+scale(x)+1)+24
+  /* Integer magnitude controls reduction; fractional width does not. */
+  v=length(x)-scale(x)
+  if (v<1) v=1
+  w=u+v+2*length(u+v+scale(x)+1)+24
   scale=w
   if (scale!=w) return(1/0)
+  /* Coerce only excess input precision, keeping short factors short. */
+  if (scale(x)>w) x=x/1
   n=0
   if (x<0) {
     n=1
     x= -x
   }
-  p=8*a(1)
-  scale=0
-  k=x/p
-  scale=w
-  if (scale!=w) return(1/0)
-  x=x-k*p
-  if (x>p/2) x=x-p
+  /* Three radians already lie within the certified series radius. */
+  if (x>3) {
+    p=8*a(1)
+    scale=0
+    k=x/p
+    scale=w
+    if (scale!=w) return(1/0)
+    x=x-k*p
+    if (x>p/2) x=x-p
+  }
   q= -x*x
   t=x
   r=x
@@ -228,24 +236,32 @@ define s(x) {
 
 /* Cosine: dynamically computed period and bounded alternating series. */
 define c(x) {
-  auto b,i,k,p,q,r,t,u,w;
-  /* b/u save base/scale; w is precision; p is the period and k its quotient.
-     q/t/r/i drive the Taylor recurrence after even-symmetry reduction. */
+  auto b,i,k,p,q,r,t,u,v,w;
+  /* b/u save base/scale; w is precision; v is integer magnitude.
+     p/k are period and quotient; q/t/r/i drive the even Taylor recurrence. */
   b=ibase
   ibase=A
   u=scale
   scale=0
-  w=u+length(x)+scale(x)+2*length(u+length(x)+scale(x)+1)+24
+  /* Integer magnitude controls reduction; fractional width does not. */
+  v=length(x)-scale(x)
+  if (v<1) v=1
+  w=u+v+2*length(u+v+scale(x)+1)+24
   scale=w
   if (scale!=w) return(1/0)
+  /* Coerce only excess input precision, keeping short factors short. */
+  if (scale(x)>w) x=x/1
   if (x<0) x= -x
-  p=8*a(1)
-  scale=0
-  k=x/p
-  scale=w
-  if (scale!=w) return(1/0)
-  x=x-k*p
-  if (x>p/2) x=x-p
+  /* Three radians already lie within the certified series radius. */
+  if (x>3) {
+    p=8*a(1)
+    scale=0
+    k=x/p
+    scale=w
+    if (scale!=w) return(1/0)
+    x=x-k*p
+    if (x>p/2) x=x-p
+  }
   q= -x*x
   t=1
   r=1

@@ -113,29 +113,30 @@ class CertifiedFixtures(unittest.TestCase):
                      ROOT / 'scripts/generate-math-oracles.py'):
             self.assertNotIn(b'\r', path.read_bytes())
 
-    def test_crossover_reference_identities_and_enclosures(self):
-        report = json.loads((ROOT / 'fixtures/math-crossover-oracles.json').read_text())
-        source = ROOT / 'fixtures/math-crossover-cases.json'
-        specification = json.loads(source.read_text())
-        self.assertEqual(report['case_file_sha256'], hashlib.sha256(source.read_bytes()).hexdigest())
-        self.assertEqual(report['generator_sha256'], self.report['generator_sha256'])
-        expected = {(case['id'], scale) for case in specification['cases']
-                    for scale in specification['scales']}
-        self.assertEqual(len(report['cases']), len(expected))
-        self.assertEqual({(case['id'], case['scale']) for case in report['cases']}, expected)
-        by_id = {case['id']: case for case in specification['cases']}
-        for case in report['cases']:
-            with self.subTest(case=case['id'], scale=case['scale']):
-                self.assertEqual(case['function'], by_id[case['id']]['function'])
-                self.assertEqual(case['arguments'], by_id[case['id']]['arguments'])
-                lower, upper = Fraction(case['lower']), Fraction(case['upper'])
-                ulp = ORACLE.decimal_ulp(case['scale'])
-                self.assertLessEqual(lower, upper)
-                self.assertLessEqual(upper - lower, ulp / 10 ** report['guard_digits'])
-                candidate = ORACLE.decimal_fraction(ORACLE.nearest_decimal(lower, upper, case['scale']))
-                self.assertEqual(ORACLE.classify(candidate, lower, upper, case['scale']), 'pass')
-                self.assertEqual(ORACLE.classify(candidate + 3 * ulp, lower, upper,
-                                                case['scale']), 'fail')
+    def test_boundary_reference_identities_and_enclosures(self):
+        for prefix in ('math-crossover', 'math-trig'):
+            report = json.loads((ROOT / ('fixtures/' + prefix + '-oracles.json')).read_text())
+            source = ROOT / ('fixtures/' + prefix + '-cases.json')
+            specification = json.loads(source.read_text())
+            self.assertEqual(report['case_file_sha256'], hashlib.sha256(source.read_bytes()).hexdigest())
+            self.assertEqual(report['generator_sha256'], self.report['generator_sha256'])
+            expected = {(case['id'], scale) for case in specification['cases']
+                        for scale in specification['scales']}
+            self.assertEqual(len(report['cases']), len(expected))
+            self.assertEqual({(case['id'], case['scale']) for case in report['cases']}, expected)
+            by_id = {case['id']: case for case in specification['cases']}
+            for case in report['cases']:
+                with self.subTest(case=case['id'], scale=case['scale']):
+                    self.assertEqual(case['function'], by_id[case['id']]['function'])
+                    self.assertEqual(case['arguments'], by_id[case['id']]['arguments'])
+                    lower, upper = Fraction(case['lower']), Fraction(case['upper'])
+                    ulp = ORACLE.decimal_ulp(case['scale'])
+                    self.assertLessEqual(lower, upper)
+                    self.assertLessEqual(upper - lower, ulp / 10 ** report['guard_digits'])
+                    candidate = ORACLE.decimal_fraction(ORACLE.nearest_decimal(lower, upper, case['scale']))
+                    self.assertEqual(ORACLE.classify(candidate, lower, upper, case['scale']), 'pass')
+                    self.assertEqual(ORACLE.classify(candidate + 3 * ulp, lower, upper,
+                                                    case['scale']), 'fail')
 
     def test_imported_decisions_account_for_computed_arguments(self):
         spec = importlib.util.spec_from_file_location('imported_math', ROOT / 'test-math-imported.py')
