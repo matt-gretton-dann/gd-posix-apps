@@ -1,0 +1,31 @@
+"""Collect separate local RSS from exact native CI executables; no timing claim."""
+from pathlib import Path
+import hashlib,importlib.util,json,platform,subprocess,zipfile
+source=Path('/private/tmp/gd-posix-direct-remainder');scripts=source/'src/bc/scripts'
+def load(name):
+ s=importlib.util.spec_from_file_location(name,scripts/(name+'.py'));m=importlib.util.module_from_spec(s);s.loader.exec_module(m);return m
+b=load('bench-bc');p=load('profile-bc');root=Path('/private/tmp/bc-416-isolated-rss');root.mkdir(exist_ok=False)
+logical=Path('/private/tmp/bc-416-isolated-logical-work/manifest.json');ld=json.loads(logical.read_text());assert len(ld['observations'])==12 and all(x['checked'] for x in ld['observations'])
+manifest=dict(schema=1,scope='local M1 RSS of exact macOS native CI timing binaries, not hosted-runner RSS or elapsed acceptance',performance_acceptance=False,logical_manifest_sha256=hashlib.sha256(logical.read_bytes()).hexdigest(),collector_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),concurrency='All owned local builds/tests/logical profiles/probes finished first; metadata/source work may continue; host is unisolated',host=dict(platform=platform.platform(),architecture=platform.machine()),trials=3,roles={},samples=[])
+with zipfile.ZipFile('/private/tmp/bc-417-46a7-native-macos.zip') as z:
+ for role in ['base','candidate','aa']:
+  metadata=json.loads(z.read(role+'/implementations.json'))['implementations'][0]['metadata'];assert metadata['instrumented'] is False
+  binary=Path('/private/tmp/bc-416-isolated-ci-binaries')/role;assert b.digest_file(binary)==metadata['binary_sha256'];manifest['roles'][role]=dict(argv=[str(binary)],metadata=metadata)
+try:
+ for preset,seed in [('full',197200),('holdout',197201)]:
+  for case in b.corpus(preset,seed=seed):
+   if case['group']!='modulo' and not case['group'].startswith('modulo_scaled_'):continue
+   name=preset+'-'+case['name']
+   for trial in range(3):
+    roles=list(manifest['roles'].items())
+    for role,tool in roles if trial%2==0 else list(reversed(roles)):
+     report=root/(name+'-'+role+'-'+str(trial)+'.rss.txt')
+     child=p.run_group(['/usr/bin/time','-l','-o',str(report)]+tool['argv'],case['program'].encode(),b.environment(),120)
+     assert child.returncode==0 and not child.stderr,(name,role,child.returncode,child.stderr)
+     b.check_output(case,b.canonical_output(child.stdout),name+'/'+role)
+     resource=p.rss_fields('Darwin',report.read_text());assert resource['status']=='collected'
+     manifest['samples'].append(dict(name=name,role=role,trial=trial,checked=True,report=report.name,report_sha256=b.digest_file(report),resources=resource,output_sha256=hashlib.sha256(child.stdout).hexdigest()))
+   print(name,'all nine resource children checked',flush=True);b.write_json(root/'manifest.json',manifest)
+ assert len(manifest['samples'])==54;manifest['status']='all 54 resource children checked; no elapsed acceptance claim'
+except BaseException as error:manifest.update(status='failed',failure=str(error));raise
+finally:b.write_json(root/'manifest.json',manifest)

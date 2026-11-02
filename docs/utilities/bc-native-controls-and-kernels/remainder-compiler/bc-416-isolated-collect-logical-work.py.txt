@@ -1,0 +1,41 @@
+"""Collect matched logical counters only; no elapsed/RSS acceptance claim."""
+import hashlib,importlib.util,json,os,subprocess
+from pathlib import Path
+root=Path('/private/tmp/bc-416-isolated-logical-work');root.mkdir(exist_ok=False)
+candidate=Path('/private/tmp/gd-posix-direct-remainder')
+spec=importlib.util.spec_from_file_location('bench',candidate/'src/bc/scripts/bench-bc.py');bench=importlib.util.module_from_spec(spec);spec.loader.exec_module(bench)
+def digest(data):return hashlib.sha256(data).hexdigest()
+def git(source,*args):return subprocess.check_output(['git',*args],cwd=source,text=True).strip()
+manifest=dict(scope='Release profiling, extensions OFF, fixed threshold 126; logical counters only',performance_acceptance=False,roles={},observations=[])
+roles=[('base',Path('/private/tmp/gd-posix-complete-root-translation-unit'),'build-profile','a9a2d5915ff45c85d0ca92f42931c62f4ac9430e'),('candidate',candidate,'build-profile-off','46a7d68b2022b386f0e2f54e95aa1a81d5b87772')]
+for role,source,build_name,revision in roles:
+ assert git(source,'rev-parse','HEAD')==revision
+ assert not git(source,'diff','--','src','libgdsup','cmake','CMakeLists.txt')
+ build=source/build_name;cache=(build/'CMakeCache.txt').read_text()
+ for key in ['CMAKE_BUILD_TYPE:STRING=Release','CMAKE_CXX_FLAGS:STRING=','CMAKE_CXX_FLAGS_RELEASE:STRING=-O3 -DNDEBUG','ENABLE_NON_POSIX_EXTENSIONS:BOOL=OFF','ENABLE_BC_PROFILE:BOOL=ON','BC_MULTIPLY_SPLIT_POINT:STRING=126']:assert key in cache.splitlines(),key
+ folder=root/role;folder.mkdir();binary=build/'src/bc/bc'
+ metadata=dict(source_revision=revision,binary_sha256=digest(binary.read_bytes()),snapshots={})
+ for path,name in [(binary,'binary'),(build/'CMakeCache.txt','CMakeCache.txt'),(build/'build.ninja','build.ninja'),(build/'compile_commands.json','compile_commands.json'),(source/'src/bc/number.hh','number.hh'),(source/'src/bc/vm.cc','vm.cc')]:
+  if not path.is_file():metadata['snapshots'][name]=dict(status='unavailable');continue
+  payload=path.read_bytes();(folder/name).write_bytes(payload);metadata['snapshots'][name]=dict(status='retained',path=role+'/'+name,sha256=digest(payload))
+ manifest['roles'][role]=metadata
+ if role=='base':
+  accepted='66cbf5d5016844ccac3e37956541d6a4123a50ef';trees={}
+  for path in ['src','libgdsup','cmake','CMakeLists.txt']:
+   before=git(source,'rev-parse',revision+':'+path);after=git(source,'rev-parse',accepted+':'+path);assert before==after;trees[path]=before
+  manifest['accepted_main_equivalence']=dict(source_revision=revision,accepted_main=accepted,identical_tree_or_blob_objects=trees)
+ for preset,seed in [('full',197200),('holdout',197201)]:
+  for case in bench.corpus(preset,seed=seed):
+   if case['group']!='modulo' and not case['group'].startswith('modulo_scaled_'):continue
+   stem=preset+'-'+case['name'];program=case['program'].encode();oracle=('\n'.join(case['expected'])+'\n').encode()
+   (root/(stem+'.bc')).write_bytes(program);(root/(stem+'.expected')).write_bytes(oracle)
+   report=folder/(stem+'.json');env=bench.environment();env['GD_BC_PROFILE_OUTPUT']=str(report)
+   child=subprocess.run([str(binary)],input=program,stdout=subprocess.PIPE,stderr=subprocess.PIPE,env=env,timeout=120)
+   assert child.returncode==0 and not child.stderr,(role,stem,child.returncode,child.stderr)
+   bench.check_output(case,bench.canonical_output(child.stdout),role+'/'+stem)
+   counters=json.loads(report.read_text());assert counters['instrumented'] is True and counters['total']['live_bytes']==0
+   assert counters['total']['allocation_calls']==counters['total']['deallocation_calls']
+   row=dict(role=role,name=stem,checked=True,report=report.relative_to(root).as_posix(),report_sha256=digest(report.read_bytes()),program_sha256=digest(program),oracle_sha256=digest(oracle),output_sha256=digest(child.stdout),total=counters['total'],digits=counters['allocations']['digits'],events=counters['events'])
+   manifest['observations'].append(row);print(role,stem,'digit allocated',row['digits']['allocated_bytes'],'peak',row['digits']['peak_live_bytes'],'multiply',row['events']['basic_multiply_calls'],flush=True)
+assert len(manifest['observations'])==12
+(root/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')

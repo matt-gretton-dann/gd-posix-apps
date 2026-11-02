@@ -26,9 +26,22 @@
   "local_native_outputs": 6,
   "local_producer_checked": 19440,
   "local_resource_observations": 48,
-  "native_binaries": 270,
-  "native_checked": 425130,
-  "native_inspection_outputs": 540,
+  "native_binaries": 297,
+  "native_checked": 466490,
+  "native_inspection_outputs": 594,
+  "remainder_compiler": {
+    "limitations": [
+      "checked output records retained, not re-executed",
+      "local RSS is not hosted-runner RSS",
+      "allocation traffic and peak storage are separate",
+      "no pooled timing or universal memory claim"
+    ],
+    "local_rss_observations": 54,
+    "logical_observations": 24,
+    "native_policy_records": 9,
+    "performance_acceptance": false,
+    "profiling_binaries": 4
+  },
   "reports": [
     {
       "changed_legacy_qualifiers": 0,
@@ -5865,6 +5878,202 @@
         "pass": 85
       },
       "cpu": "AMD EPYC 7763 64-Core Processor",
+      "host": "windows",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5830,
+      "checkpoint": "remainder-initial-8cbb-417",
+      "checkpoint_status": "Rejected initial remainder source: Linux small-square loss with passing A/A control",
+      "confirmed_losses": [
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.3280469366493795,
+            "block_ci95": [
+              0.8038644364882114,
+              0.8091050462248759
+            ],
+            "block_length": 3,
+            "ci95": [
+              0.8005694252533908,
+              0.811322209672698
+            ],
+            "iid_ci95": [
+              0.8005694252533908,
+              0.811322209672698
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 0.8063786196227382,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 0.8057802551890019
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.06307096025803101,
+            "block_ci95": [
+              1.0639209719490716,
+              1.0726640520835435
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0639209719490716,
+              1.075998698049021
+            ],
+            "iid_ci95": [
+              1.0639209719490716,
+              1.075998698049021
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0681547973501648,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.0699684021256919
+          },
+          "name": "square_100d_x100000",
+          "preset": "full",
+          "ratio": {
+            "autocorrelation_lag1": 0.006878441565998443,
+            "block_ci95": [
+              1.0632708114029097,
+              1.0661217436145596
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0612207285636477,
+              1.0694049246396713
+            ],
+            "iid_ci95": [
+              1.0612207285636477,
+              1.0694049246396713
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.064735699790122,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.0641407135086918
+          },
+          "status": "confirmed regression"
+        }
+      ],
+      "controls": {
+        "inconclusive-noisy": 16,
+        "pass": 100
+      },
+      "cpu": null,
+      "host": "linux",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5800,
+      "checkpoint": "remainder-initial-8cbb-417",
+      "checkpoint_status": "Rejected initial remainder source: Linux small-square loss with passing A/A control",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 115,
+        "pass": 1
+      },
+      "cpu": null,
+      "host": "macos",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5800,
+      "checkpoint": "remainder-initial-8cbb-417",
+      "checkpoint_status": "Rejected initial remainder source: Linux small-square loss with passing A/A control",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 29,
+        "pass": 87
+      },
+      "cpu": "AMD EPYC 7763 64-Core Processor",
+      "host": "windows",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5800,
+      "checkpoint": "remainder-final-46a7-417",
+      "checkpoint_status": "Accepted direct remainder with native compilation isolation; no confirmed candidate loss",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 16,
+        "pass": 100
+      },
+      "cpu": null,
+      "host": "linux",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5800,
+      "checkpoint": "remainder-final-46a7-417",
+      "checkpoint_status": "Accepted direct remainder with native compilation isolation; no confirmed candidate loss",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 116
+      },
+      "cpu": null,
+      "host": "macos",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5800,
+      "checkpoint": "remainder-final-46a7-417",
+      "checkpoint_status": "Accepted direct remainder with native compilation isolation; no confirmed candidate loss",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 25,
+        "pass": 91
+      },
+      "cpu": "AMD EPYC 7763 64-Core Processor",
+      "host": "windows",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 2100,
+      "checkpoint": "compiler-policy-d08-418",
+      "checkpoint_status": "Accepted explicit IPO controls only; Windows A/A biases retained, no speedup claim",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 11,
+        "pass": 31
+      },
+      "cpu": null,
+      "host": "linux",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 2130,
+      "checkpoint": "compiler-policy-d08-418",
+      "checkpoint_status": "Accepted explicit IPO controls only; Windows A/A biases retained, no speedup claim",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 42
+      },
+      "cpu": null,
+      "host": "macos",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 2300,
+      "checkpoint": "compiler-policy-d08-418",
+      "checkpoint_status": "Accepted explicit IPO controls only; Windows A/A biases retained, no speedup claim",
+      "confirmed_losses": [],
+      "controls": {
+        "confirmed A/A bias": 9,
+        "inconclusive-noisy": 13,
+        "pass": 20
+      },
+      "cpu": "AMD EPYC 9V45 96-Core Processor",
       "host": "windows",
       "universal_acceptance": false
     }

@@ -9,8 +9,8 @@ Refs [#197](https://github.com/matt-gretton-dann/gd-posix-apps/issues/197),
 [#402](https://github.com/matt-gretton-dann/gd-posix-apps/issues/402).
 
 This archive retains successful and rejected checkpoints together. There are
-425,130 checked native children across 42 checkpoints and 96 byte-for-byte
-original native ZIPs. They include 270 timing executables and 540 native
+466,490 checked native children across 45 checkpoints and 105 byte-for-byte
+original native ZIPs. They include 297 timing executables and 594 native
 inspection outputs; the six older #387 ZIPs predate executable collection and
 retain recipes/binary hashes only. Missing historical machine code remains
 explicitly unavailable. Completed local producer, typed-pool and Toom experiments
@@ -237,3 +237,58 @@ Windows held-out `loop_875000` regresses: first median 1.08283 with 95% interval
 [1.06805,1.11639], bounded confirmation 1.07905 [1.06678,1.13833]. Its A/A control
 is inconclusive. That limits attribution without waiving the loss: PR #409
 remains unaccepted, independently of its earlier `cbbc754` held-call loss.
+
+
+## Direct remainder and compiler-policy acceptance
+
+Nine additional original ZIPs retain the initial/final remainder sources and
+explicit IPO controls. `remainder-initial-8cbb-417` has 17,430 checked children
+and a rejected Linux small-square loss: median 1.06474 with 95% interval
+[1.06122,1.06940], confirmation 1.06815 [1.06392,1.07600], A/A passing.
+`remainder-final-46a7-417` has 17,400 checked children with no confirmed candidate
+regression and was accepted in #417 as `dbf0e68d`. Linux small squaring remains
+1.0151 [1.00397,1.02600], below the material threshold; it is not called faster.
+All seventeen current-head checks passed before merge. Linux controls are
+100 pass/16 inconclusive, macOS 116 inconclusive, Windows 91 pass/25 inconclusive.
+The noisy macOS batch cannot establish precise universal effects. The earlier
+source remains rejected; it is not replaced by a favorable rerun of that head.
+
+`compiler-policy-d08-418` retains 6,530 checked children for #418, merged as
+`628ddbfb` after seventeen checks. No candidate loss is confirmed. Windows has
+nine confirmed A/A biases despite identical base/candidate/control code payloads
+(259,584 bytes, SHA-256 362f8970d3a5a458992d88c075988d1740fdfdca85f7859ac355cc819c119484).
+Linux controls are 31 pass/11 inconclusive; macOS 42 inconclusive; Windows
+20 pass/13 inconclusive/nine biased. This proves neither a cause for the bias
+nor a compiler speedup. Source-generated candidate AUTO policy bytes/digests
+are retained for every host; older baseline/control recipes remain explicitly
+`legacy-auto`. Full compiler/PGO experiments under #213 are incomplete.
+
+[remainder-compiler](remainder-compiler) preserves twelve logical observations
+for each remainder source, four exact profiling binaries, source/compiler
+snapshots, the exact moved arithmetic body, symbol observations and a separate
+54-child RSS run of exact final macOS CI binaries on the local M1. Three trials
+per role/case were fixed in advance; all owned builds/tests/profiles finished
+before RSS. These are local, unisolated resource observations, not hosted-runner
+RSS or elapsed timing. Full integer-modulo total digit allocation falls
+8,832,700 to 4,788,700 bytes and basic product calls 3000 to zero, while peak
+tracked digits rise 2792 to 3240. The blocked-call counter is included in basic
+calls; those counters are not disjoint. Both scaled directions and all held-out
+cases show the same traffic/peak tradeoff. Full integer median RSS is
+2,179,072 to 2,146,304 bytes; sample medians are lower for all six cases, without
+claiming a universal reduction. Final macOS file size rises 552,656 to 552,704
+bytes; Windows code payload rises 259,584 to 262,656 bytes.
+
+`verify-remainder-compiler.py` checks complete observation grids, balanced
+allocations, source/report/program/oracle and executable hashes, actual RSS
+report values, and native IPO policy bytes. Original output-check records are
+retained rather than re-executing binaries on the replay host. Negative tests
+reject duplicate observations replacing a missing case, altered instrumented
+executables and altered policy bytes. Native timings are never pooled into an
+aggregate acceptance claim. Prepared divisors, caller scratch and the other
+#197 requirements remain separate work.
+
+The combined accepted source at `dbf0e68d` was rebuilt with the accepted IPO
+controls and native remainder implementation together: 257 ASan/UBSan cases
+(1,505,459 assertions), fourteen selected CLI/build/controller tests, and
+616 ordinary-source math references pass. This checks their integration without
+relabeling older source-specific timing or resource observations.

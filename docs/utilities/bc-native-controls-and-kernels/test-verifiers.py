@@ -111,5 +111,51 @@ class RootStorageIntegrityTests(unittest.TestCase):
             self.verify(self.root)
 
 
+class RemainderCompilerIntegrityTests(unittest.TestCase):
+    def setUp(self):
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        self.root = Path(self.directory.name)
+        shutil.copytree(ROOT / 'remainder-compiler', self.root / 'remainder-compiler')
+        for checkpoint, hosts in (('remainder-final-46a7-417', ('macos',)),
+                                  ('compiler-policy-d08-418', ('linux', 'macos', 'windows'))):
+            folder = self.root / 'native' / checkpoint
+            folder.mkdir(parents=True)
+            for host in hosts:
+                shutil.copyfile(ROOT / 'native' / checkpoint / (host + '.zip'),
+                                folder / (host + '.zip'))
+        self.verify = runpy.run_path(str(ROOT / 'verify-remainder-compiler.py'))['verify']
+
+    def test_complete_remainder_and_policy_evidence_passes(self):
+        result = self.verify(self.root)
+        self.assertEqual(result['logical_observations'], 24)
+        self.assertEqual(result['local_rss_observations'], 54)
+        self.assertEqual(result['native_policy_records'], 9)
+        self.assertFalse(result['performance_acceptance'])
+
+    def test_duplicate_observation_cannot_replace_missing_case(self):
+        def duplicate(data):
+            value = json.loads(data)
+            value['observations'][-1] = value['observations'][0]
+            return json.dumps(value).encode('utf-8')
+        replace_member(self.root / 'remainder-compiler/initial-logical.zip',
+                       'manifest.json', duplicate)
+        with self.assertRaises(AssertionError):
+            self.verify(self.root)
+
+    def test_changed_instrumented_executable_is_rejected(self):
+        replace_member(self.root / 'remainder-compiler/final-logical.zip',
+                       'candidate/binary', lambda data: bytes([data[0] ^ 1]) + data[1:])
+        with self.assertRaises(AssertionError):
+            self.verify(self.root)
+
+    def test_changed_native_policy_bytes_are_rejected(self):
+        replace_member(self.root / 'native/compiler-policy-d08-418/windows.zip',
+                       'candidate/gd-ipo-policy.json',
+                       lambda data: data.replace(b'true', b'false'))
+        with self.assertRaises(AssertionError):
+            self.verify(self.root)
+
+
 if __name__ == '__main__':
     unittest.main()
