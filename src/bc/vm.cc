@@ -12,8 +12,10 @@
 #include <array>
 #include <atomic>
 #include <cassert>
+#include <cstdlib>
 #include <deque>
 #include <ostream>
+#include <type_traits>
 #include <utility>
 
 #include "bc.hh"
@@ -37,11 +39,35 @@ __DISABLE_NARROWING_WARNING
   }
 
 namespace GD::Bc::Details {
-using ExecutionResult = std::variant<Number, ArrayValues, std::string_view, Variable, Array,
-                                     ArrayElement, Ibase, Obase, Scale>;
+using ExecutionResult = std::variant<std::monostate, Number, ArrayValues, std::string_view,
+                                     Variable, Array, ArrayElement, Ibase, Obase, Scale>;
+
+/** A result slot has one discriminant, including its empty state.
+ * The previous optional<variant<...>> needed a separate engagement flag and
+ * padding for every instruction, even those that produce no value. Keep the
+ * existing checked access protocol while representing emptiness in the variant.
+ * Clearing an activation still destroys every owning value before reuse.
+ */
+class ResultSlot
+{
+public:
+  auto has_value() const noexcept -> bool { return value_.index() != 0; }
+  auto operator*() -> ExecutionResult& { return value_; }
+  auto operator*() const -> ExecutionResult const& { return value_; }
+
+  template<typename Value>
+    requires std::is_assignable_v<ExecutionResult&, Value&&>
+  auto operator=(Value&& value) -> ResultSlot&
+  {
+    value_ = std::forward<Value>(value);
+    return *this;
+  }
+
+private:
+  ExecutionResult value_;
+};
 using ResultBuffer =
-  std::vector<std::optional<ExecutionResult>,
-              Profile::Allocator<std::optional<ExecutionResult>, Profile::AllocationKind::results>>;
+  std::vector<ResultSlot, Profile::Allocator<ResultSlot, Profile::AllocationKind::results>>;
 
 /** A borrowed instruction stream whose entry verification has completed.
  * Construction is confined to the verifier and persistent verified owners.
@@ -1057,6 +1083,8 @@ void GD::Bc::Details::InstructionPack::execute_print()
   auto& result = results_[result_idx];
   assert_error(result.has_value(), Msg::empty_result, result_idx);  // NOLINT
   std::visit(Overloaded{
+               // Empty slots are rejected before visiting in both execution modes.
+               [](std::monostate) { std::abort(); },
                [&os](std::string_view sv) { os << sv; },
                [&os, this](Number const& n) {
                  n.output(os, vm_->obase(), 0);
@@ -1089,6 +1117,8 @@ void GD::Bc::Details::InstructionPack::execute_length()
   assert_error(loc.has_value(), Msg::empty_result, loc_idx);  // NOLINT
 
   std::visit(Overloaded{
+               // Empty slots are rejected before visiting in both execution modes.
+               [](std::monostate) { std::abort(); },
                [this](std::string_view /*s*/) {
                  assert_error(false, Msg::cannot_get_length, "string_view");  // NOLINT
                },
@@ -1121,6 +1151,8 @@ void GD::Bc::Details::InstructionPack::execute_load()
   assert_error(loc.has_value(), Msg::empty_result, loc_idx);  // NOLINT
 
   std::visit(Overloaded{
+               // Empty slots are rejected before visiting in both execution modes.
+               [](std::monostate) { std::abort(); },
                [this](std::string_view /*sv*/) {
                  assert_error(false, Msg::cannot_load, "string_view");  // NOLINT
                },
@@ -1151,6 +1183,8 @@ void GD::Bc::Details::InstructionPack::execute_store()
 
   std::visit(
     Overloaded{
+      // Empty slots are rejected before visiting in both execution modes.
+      [](std::monostate) { std::abort(); },
       [this](std::string_view /*sv*/) {
         assert_error(false, Msg::cannot_store, "string_view");  // NOLINT
       },
@@ -1279,6 +1313,7 @@ auto GD::Bc::Details::operator<<(std::ostream& os,
   -> std::ostream&
 {
   std::visit(Overloaded{
+               [&os](std::monostate) { os << "Empty"; },
                [&os](std::string_view s) { os << "String(" << s << ')'; },
                [&os](Number const& n) { n.debug(os); },
                [&os](Variable v) { os << v; },
