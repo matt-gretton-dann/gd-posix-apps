@@ -61,7 +61,8 @@ def cache_values(path):
     return result
 
 
-def build_metadata(helper, root, source, build, revision, split, compiler_c, compiler_cxx):
+def build_metadata(helper, root, source, build, revision, split, compiler_c, compiler_cxx,
+                   ipo_mode='AUTO'):
     cache = cache_values(build / 'CMakeCache.txt')
     for flag in ('ENABLE_BC_PROFILE', 'ENABLE_BC_COVERAGE'):
         if cache.get(flag, '').upper() not in ('OFF', 'FALSE', 'NO', '0'):
@@ -89,16 +90,45 @@ def build_metadata(helper, root, source, build, revision, split, compiler_c, com
         raise helper.BuildError('timing build contains instrumentation flags')
     shutil.copyfile(str(build / 'src/bc/find-multiply-split-point.hh'),
                     str(root / 'multiply-threshold.hh'))
+    ipo = verified_ipo_policy(helper, build, ipo_mode)
+    if ipo['status'] == 'recorded':
+        shutil.copyfile(str(build / 'gd-ipo-policy.json'), str(root / 'gd-ipo-policy.json'))
+        ipo['report_sha256'] = helper.digest(root / 'gd-ipo-policy.json')
     return {'source_revision': revision,
             'compiler': {'C': compiler_c, 'CXX': compiler_cxx}, 'flags': flags,
             'version': 'gd-posix-apps source ' + revision, 'instrumented': False,
             'configuration': {'build_type': cache.get('CMAKE_BUILD_TYPE'),
                               'generator': cache.get('CMAKE_GENERATOR'),
                               'extensions': cache.get('ENABLE_NON_POSIX_EXTENSIONS'),
+                              'ipo_policy': ipo,
                               'multiply_split_point': split,
                               'threshold_header_sha256': helper.digest(root / 'multiply-threshold.hh')},
             'limitations': ['Provision compiler, C/C++ runtime and SDK separately; this is not an OS image',
                             'Compiler defaults and actual commands are recorded, not claimed identical across hosts']}
+
+
+def verified_ipo_policy(helper, build, requested):
+    """Require the source policy report, not an ignored command-line cache key."""
+    path = build / 'gd-ipo-policy.json'
+    if not path.is_file():
+        if requested != 'AUTO':
+            raise helper.BuildError('source revision cannot verify the requested IPO policy')
+        return dict(status='legacy-auto', mode='AUTO', automatic_ipo=None,
+                    scope='source predates explicit policy; inspect recorded compiler commands')
+    try:
+        value = json.loads(path.read_text(encoding='utf-8'))
+    except (ValueError, OSError) as error:
+        raise helper.BuildError('invalid IPO policy report: ' + str(error))
+    if (not isinstance(value, dict) or type(value.get('schema')) is not int or
+            value.get('schema') != 1 or
+            value.get('mode') != requested or type(value.get('automatic_ipo')) is not bool or
+            cache_values(build / 'CMakeCache.txt').get('IPO_MODE') != requested):
+        raise helper.BuildError('source did not record the requested IPO policy')
+    if ((requested == 'OFF' and value['automatic_ipo']) or
+            (requested == 'REQUIRED' and not value['automatic_ipo'])):
+        raise helper.BuildError('source did not apply the requested IPO policy')
+    return dict(status='recorded', schema=value['schema'], mode=value['mode'],
+                automatic_ipo=value['automatic_ipo'])
 
 
 def verified_array_layout(helper, build, requested):
@@ -140,6 +170,8 @@ def main():
     parser.add_argument('--cxx-compiler', default='cl' if os.name == 'nt' else 'c++')
     parser.add_argument('--generator', help='default Ninja when available, otherwise CMake platform default')
     parser.add_argument('--extensions', choices=('ON', 'OFF'), default='ON')
+    parser.add_argument('--ipo-mode', choices=('AUTO', 'OFF', 'REQUIRED'), default='AUTO',
+                        help='automatic IPO policy; explicit modes require source support')
     parser.add_argument('--array-storage', choices=('hybrid', 'paged', 'flat', 'hash', 'ordered'),
                         default='hybrid', help='explicit experimental array layout')
     parser.add_argument('--jobs', type=int, default=2)
@@ -181,6 +213,8 @@ def main():
                      '-DCMAKE_CXX_COMPILER:FILEPATH=' + compiler_cxx['argv0']]
         if args.array_storage != 'hybrid':
             configure += ['-DBC_ARRAY_STORAGE=' + args.array_storage]
+        if args.ipo_mode != 'AUTO':
+            configure += ['-DIPO_MODE=' + args.ipo_mode]
         generator = args.generator or ('Ninja' if shutil.which('ninja') else None)
         if generator:
             configure += ['-G', generator]
@@ -196,7 +230,7 @@ def main():
         if not executable.is_file():
             raise helper.BuildError('build did not produce the expected bc executable')
         metadata = build_metadata(helper, root, source, build, actual, args.split_point,
-                                  compiler_c, compiler_cxx)
+                                  compiler_c, compiler_cxx, args.ipo_mode)
         observed_layout = verified_array_layout(helper, build, args.array_storage)
         metadata['configuration']['array_storage'] = observed_layout
         metadata['binary_sha256'] = helper.digest(executable)

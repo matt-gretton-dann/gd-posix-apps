@@ -157,3 +157,11 @@ compiler behavior. The policy fixture tests supported/unsupported, Debug,
 explicit opt-out, required-support failure and stale-report paths independently
 of the host's LTO availability. This is groundwork for #213's matched compiler
 and PGO experiments, not an established performance improvement.
+
+
+The immutable-source bc builder accepts `--ipo-mode AUTO|OFF|REQUIRED` and
+records the selected policy plus the report hash in `implementations.json`.
+Explicit OFF/REQUIRED requests require a matching source-generated report;
+a cached variable alone is insufficient. Older revisions remain buildable in
+their existing default mode, labeled `legacy-auto` with the exact compiler
+commands retained. They cannot satisfy an explicit newer policy request.
