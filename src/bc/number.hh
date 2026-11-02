@@ -996,6 +996,22 @@ public:
 #endif
   void divide(BasicDigits v)
   {
+    divide_impl<false>(std::move(v));
+  }
+
+  /** Replace the coefficient with its integer remainder by v.
+   * The caller establishes that this coefficient is greater than v > 0.
+   */
+  void modulo(BasicDigits v) { divide_impl<true>(std::move(v)); }
+
+private:
+  /** Algorithm D shares normalization and quotient estimates between both
+   * outputs. Select the result at compile time so quotient-only callers keep
+   * their original loop and remainder-only callers allocate no quotient.
+   */
+  template<bool Remainder>
+  void divide_impl(BasicDigits v)
+  {
     /* Algorithm D of Knuth TAOCP 4.3.1.  */
 
     /* D1. Normalise.  */
@@ -1007,7 +1023,11 @@ public:
     assert(digits_->size() >= v.digits_->size());  // NOLINT
 
     if (v.digits_->size() == 1) {
-      divide(v.digits_->at(0));
+      auto const remainder = divide(v.digits_->at(0));
+      if constexpr (Remainder) {
+        digits_ = DigitVector(std::initializer_list<NumType>{remainder});
+        tidy();
+      }
       return;
     }
 
@@ -1015,16 +1035,19 @@ public:
       assert(v.digits_->size() == 2);  // NOLINT
       WideType const u2 = (*digits_)[0] + (base_ * (*digits_)[1]);
       WideType const v2 = (*v.digits_)[0] + (base_ * (*v.digits_)[1]);
-      WideType const q = u2 / v2;
+      WideType const q = Remainder ? u2 % v2 : u2 / v2;
 
       digits_ = DigitVector(std::initializer_list<NumType>{static_cast<NumType>(q % base_),
                                                            static_cast<NumType>(q / base_)});
+      if constexpr (Remainder) {
+        tidy();
+      }
       return;
     }
 
     /* D1. Normalize.  */
-    /* Note this is not the number Knuth picks as that one causes me problems.  This choice still
-     * guarantees that d > b/2, but that we don't extend the v vector at all.
+    /* This multiplier makes the divisor's highest limb at least base_/2
+     * without increasing its limb count.
      */
     auto const n = v.digits_->size();
     auto const m = digits_->size() - n;
@@ -1040,16 +1063,21 @@ public:
     digits_->push_back(0);
 
     BasicDigits q;
-    q.digits_ = DigitVector(m + 1, static_cast<NumType>(0));
+    if constexpr (!Remainder) {
+      q.digits_ = DigitVector(m + 1, static_cast<NumType>(0));
+    }
 
     // D3-D6 change limb values but never resize these buffers. Resolve the
     // storage modes once, after normalization/growth and before the final swap.
     // The established extents bound every index in the quotient-digit loop.
     auto dividend = std::span(digits_->begin(), digits_->size());
     auto divisor = std::span<NumType const>(v.digits_->begin(), n);
-    auto quotient = std::span(q.digits_->begin(), q.digits_->size());
+    std::span<NumType> quotient;
+    if constexpr (!Remainder) {
+      quotient = std::span(q.digits_->begin(), q.digits_->size());
+      assert(quotient.size() == m + 1);  // NOLINT
+    }
     assert(n >= 2 && n + m < dividend.size());  // NOLINT
-    assert(quotient.size() == m + 1);           // NOLINT
 
     /* D2. Initialize j.  */
     auto j = m;
@@ -1116,14 +1144,30 @@ public:
       /* D5. Test remainder.  */
       assert(q_hat < base_);         // NOLINT
       assert(dividend[n + j] == 0);  // NOLINT
-      quotient[j] = static_cast<NumType>(q_hat);
+      if constexpr (!Remainder) {
+        quotient[j] = static_cast<NumType>(q_hat);
+      }
 
     } while (j-- > 0);
 
-    /* D7. Unormalise.  */
-    std::swap(q.digits_, digits_);
+    /* D7. The low n dividend limbs hold d times the exact remainder. */
+    if constexpr (Remainder) {
+      digits_->resize(n);
+      if (d != 1) {
+        auto const discarded = divide(d);
+        assert(discarded == 0);  // NOLINT - normalization is exact.
+        static_cast<void>(discarded);
+      }
+      else {
+        tidy();
+      }
+    }
+    else {
+      std::swap(q.digits_, digits_);
+    }
   }
 
+public:
   /** \brief  Divide by the number \a div.  Returns remainder.  */
   auto divide(NumType div) -> NumType
   {
@@ -2194,26 +2238,7 @@ public:
     sign_ = sign_ == rhs.sign_ ? Sign::positive : Sign::negative;
   }
 
-  void modulo(BasicNumber rhs, NumType target_scale)
-  {
-    // Public bc scales are below base_, so their sum fits in NumType for the
-    // supported traits. Preserve the full quotient-product scale, not just the
-    // division scale, before subtracting it from the original dividend.
-    NumType const product_scale = static_cast<NumType>(target_scale + rhs.scale());
-    NumType const result_scale = std::max(scale(), product_scale);
-    BasicNumber u(*this);
-    u.divide(rhs, target_scale);
-    u.multiply(rhs, result_scale);
-    sub(u);
-    // Subtraction preserves the selected remainder scale, including zero.
-    // Retain this fallback defensively if the scale-handling contract changes.
-    if (scale_ < result_scale) {
-      if (!is_zero()) {
-        digits_.mul_pow10(result_scale - scale_);
-      }
-      scale_ = result_scale;
-    }
-  }
+  void modulo(BasicNumber rhs, NumType target_scale) { modulo_impl(std::move(rhs), target_scale); }
 
   void sqrt(NumType target_scale) { sqrt_impl(target_scale); }
 
@@ -2238,6 +2263,54 @@ public:
   }
 
 private:
+  // Native-width modulo entries compile this same generic body outside the VM.
+  void modulo_impl(BasicNumber rhs, NumType target_scale)
+  {
+    if (target_scale <= std::numeric_limits<NumType>::max() - rhs.scale()) {
+      if (rhs.is_zero()) {
+        Details::error(Msg::divide_by_zero);
+        return;
+      }
+      // With result scale R=max(sa,t+sb), the remainder coefficient is
+      // (A*10^(R-sa)) mod (B*10^(R-sb-t)). Both exponents are nonnegative.
+      // Its sign is the dividend's sign, independent of the divisor's sign.
+      auto const result_scale = std::max(scale(), static_cast<NumType>(target_scale + rhs.scale()));
+      digits_.mul_pow10(result_scale - scale());
+      rhs.digits_.mul_pow10(result_scale - rhs.scale() - target_scale);
+      GD_BC_PROFILE_EVENT(Profile::Event::division_requests, 1);
+      GD_BC_PROFILE_EVENT(Profile::Event::division_dividend_limbs, digits_.coefficient_limbs());
+      GD_BC_PROFILE_EVENT(Profile::Event::division_divisor_limbs, rhs.digits_.coefficient_limbs());
+      auto const comparison = digits_.compare(rhs.digits_, 0);
+      if (comparison == Details::ComparisonResult::equality) {
+        digits_.reset();
+      }
+      else if (comparison == Details::ComparisonResult::greater_than) {
+        digits_.modulo(std::move(rhs.digits_));
+      }
+      scale_ = result_scale;
+      return;
+    }
+    // Keep the existing path for a sum outside the trait's scale field;
+    // the direct coefficient formula must never use a wrapped exponent.
+    // Public bc scales are below base_, so their sum fits in NumType for the
+    // supported traits. Preserve the full quotient-product scale, not just the
+    // division scale, before subtracting it from the original dividend.
+    NumType const product_scale = static_cast<NumType>(target_scale + rhs.scale());
+    NumType const result_scale = std::max(scale(), product_scale);
+    BasicNumber u(*this);
+    u.divide(rhs, target_scale);
+    u.multiply(rhs, result_scale);
+    sub(u);
+    // Subtraction preserves the selected remainder scale, including zero.
+    // Retain this fallback defensively if the scale-handling contract changes.
+    if (scale_ < result_scale) {
+      if (!is_zero()) {
+        digits_.mul_pow10(result_scale - scale_);
+      }
+      scale_ = result_scale;
+    }
+  }
+
   // Keep the generic algorithm available for every trait. Native-width entry
   // points below call this same implementation from number-sqrt.cc.
   void sqrt_impl(NumType target_scale)
@@ -2565,6 +2638,24 @@ private:
   Sign sign_ = Sign::positive;           ///< Sign (+/-1).
   NumType scale_ = 0;                    ///< Scale.
 };
+
+// Isolate the native remainder driver from instruction dispatch. Other traits
+// keep the same generic implementation without a required compiler attribute.
+template<>
+#if defined(_MSC_VER)
+__declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+[[gnu::noinline]]
+#endif
+void BasicNumber<NumberTraits16>::modulo(BasicNumber rhs, NumType target_scale);
+
+template<>
+#if defined(_MSC_VER)
+__declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+[[gnu::noinline]]
+#endif
+void BasicNumber<NumberTraits32>::modulo(BasicNumber rhs, NumType target_scale);
 
 // Isolate the complete native root, including its small-root fallback.
 // Other traits retain the identical header-defined generic algorithm.

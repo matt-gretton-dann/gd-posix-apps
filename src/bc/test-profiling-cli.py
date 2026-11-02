@@ -180,6 +180,29 @@ class ProfilingCli(unittest.TestCase):
                                              ('division_divisor_limbs', denominator // padding)]:
                         self.assertEqual(events[key], (len(str(coefficient)) + width - 1) // width)
 
+    def test_scaled_modulo_avoids_quotient_product(self):
+        def decimal(coefficient, scale):
+            text = str(coefficient).zfill(scale + 1)
+            return text[:-scale] + '.' + text[-scale:] if scale else text
+
+        a = int('9123456789' * 31)
+        b = int('71234567890123456789' * 7)
+        for sa, sb, scale in ((2, 3, 7), (90, 3, 7)):
+            with self.subTest(scales=(sa, sb, scale)):
+                result_scale = max(sa, sb + scale)
+                numerator = a * 10 ** (result_scale - sa)
+                denominator = b * 10 ** (result_scale - sb - scale)
+                remainder = numerator % denominator
+                program = 'scale={}\n({})%({})\n'.format(
+                    scale, decimal(a, sa), decimal(b, sb))
+                counters = self.profile(program, decimal(remainder, result_scale) + '\n',
+                                        numeric_continuations=True)
+                events = counters['events']
+                self.assertEqual(events['division_requests'], 1)
+                for event in ('basic_multiply_calls', 'blocked_multiply_calls',
+                              'karatsuba_multiply_calls', 'square_multiply_calls'):
+                    self.assertEqual(events[event], 0)
+
     def test_arithmetic_and_ownership(self):
         # Exceed the inline capacity so this fixture continues to exercise COW.
         value = 123456789012345678901234567890
