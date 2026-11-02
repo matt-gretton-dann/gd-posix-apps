@@ -217,6 +217,12 @@ if(RUN_INTEGRATION_TESTS)
   add_test(NAME bc/math-benchmark-ci COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-benchmark-math-ci.py")
   set_tests_properties(bc/math-benchmark-ci PROPERTIES TIMEOUT 30)
+  add_test(NAME bc/windows-image-probe COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-windows-image-probe.py" --bc "$<TARGET_FILE:bc>")
+  set_tests_properties(bc/windows-image-probe PROPERTIES TIMEOUT 60)
+  add_test(NAME bc/image-controls COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-image-controls.py")
+  set_tests_properties(bc/image-controls PROPERTIES TIMEOUT 30)
   add_test(NAME bc/benchmark-cli COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-benchmark-cli.py"
            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/bench-bc.py" --bc "$<TARGET_FILE:bc>")
