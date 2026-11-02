@@ -892,6 +892,78 @@
           "sha256": "1becd0870fe38111dcc214033ccddc97e8a72210201a91e04a4266016761b8cd"
         }
       }
+    },
+    {
+      "name": "remainder-initial-8cbb-417",
+      "base": "66cbf5d5016844ccac3e37956541d6a4123a50ef",
+      "candidate": "8cbb65a5f56099fde1fbdef2896fe8142c19f844",
+      "run_id": 41537008693,
+      "minimum_checked": 5800,
+      "status": "Rejected initial remainder source: Linux small-square loss with passing A/A control",
+      "recorded_symmetric_policy": true,
+      "candidate_toom3_threshold": 0,
+      "hosts": {
+        "linux": {
+          "path": "native/remainder-initial-8cbb-417/linux.zip",
+          "sha256": "0d5413c66a4a37d275a960fced2806fd6c388970d47f2102f721588ce051378a"
+        },
+        "macos": {
+          "path": "native/remainder-initial-8cbb-417/macos.zip",
+          "sha256": "4421b17a9398814b1361babbdaa73d2ab1b3512b7d0db01c9da3ba7a876c0e30"
+        },
+        "windows": {
+          "path": "native/remainder-initial-8cbb-417/windows.zip",
+          "sha256": "2154805b4debc879e98fb2078b2c6cecc1b315a393c14babbeea1f9cd0615289"
+        }
+      }
+    },
+    {
+      "name": "remainder-final-46a7-417",
+      "base": "66cbf5d5016844ccac3e37956541d6a4123a50ef",
+      "candidate": "46a7d68b2022b386f0e2f54e95aa1a81d5b87772",
+      "run_id": 41541764502,
+      "minimum_checked": 5800,
+      "status": "Accepted direct remainder with native compilation isolation; no confirmed candidate loss",
+      "recorded_symmetric_policy": true,
+      "candidate_toom3_threshold": 0,
+      "hosts": {
+        "linux": {
+          "path": "native/remainder-final-46a7-417/linux.zip",
+          "sha256": "25829003fec04a93439a69d00cb964e9872417cb9796478f054fd23660fa1181"
+        },
+        "macos": {
+          "path": "native/remainder-final-46a7-417/macos.zip",
+          "sha256": "376119ce5199d33062dd39e214f7ce9661ee6111cbeb6bbf095d844c00f194bb"
+        },
+        "windows": {
+          "path": "native/remainder-final-46a7-417/windows.zip",
+          "sha256": "f380dc73eb063e6c2c86b654f6193bda4bb957c1af9e7d9dbe4816a3b3053f89"
+        }
+      }
+    },
+    {
+      "name": "compiler-policy-d08-418",
+      "base": "5466904efcbaff363b391ea3c17455a94f737742",
+      "candidate": "d08fbebf8ca565dbe52ef861096078964945fefe",
+      "run_id": 41540386361,
+      "minimum_checked": 2100,
+      "status": "Accepted explicit IPO controls only; Windows A/A biases retained, no speedup claim",
+      "recorded_symmetric_policy": true,
+      "candidate_toom3_threshold": 0,
+      "hosts": {
+        "linux": {
+          "path": "native/compiler-policy-d08-418/linux.zip",
+          "sha256": "e1efa74cfd16eec182a7730fc82e5e36988918f872198a952af2de7e66f7e626"
+        },
+        "macos": {
+          "path": "native/compiler-policy-d08-418/macos.zip",
+          "sha256": "2fdcd4e380c771500a27fe9a157bedb508656ca1deec791b1022fb804ce839e2"
+        },
+        "windows": {
+          "path": "native/compiler-policy-d08-418/windows.zip",
+          "sha256": "ab3b68040322b612ef5eae947dd6e695d8414ba8d6f59ae3c50064a3dd26560c"
+        }
+      }
     }
   ],
   "scope": "Exact original artifact ZIPs; runtime adoption status is per checkpoint, not inferred from green jobs"

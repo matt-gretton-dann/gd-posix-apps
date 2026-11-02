@@ -1,0 +1,45 @@
+{
+    if (target_scale <= std::numeric_limits<NumType>::max() - rhs.scale()) {
+      if (rhs.is_zero()) {
+        Details::error(Msg::divide_by_zero);
+        return;
+      }
+      // With result scale R=max(sa,t+sb), the remainder coefficient is
+      // (A*10^(R-sa)) mod (B*10^(R-sb-t)). Both exponents are nonnegative.
+      // Its sign is the dividend's sign, independent of the divisor's sign.
+      auto const result_scale = std::max(scale(), static_cast<NumType>(target_scale + rhs.scale()));
+      digits_.mul_pow10(result_scale - scale());
+      rhs.digits_.mul_pow10(result_scale - rhs.scale() - target_scale);
+      GD_BC_PROFILE_EVENT(Profile::Event::division_requests, 1);
+      GD_BC_PROFILE_EVENT(Profile::Event::division_dividend_limbs, digits_.coefficient_limbs());
+      GD_BC_PROFILE_EVENT(Profile::Event::division_divisor_limbs, rhs.digits_.coefficient_limbs());
+      auto const comparison = digits_.compare(rhs.digits_, 0);
+      if (comparison == Details::ComparisonResult::equality) {
+        digits_.reset();
+      }
+      else if (comparison == Details::ComparisonResult::greater_than) {
+        digits_.modulo(std::move(rhs.digits_));
+      }
+      scale_ = result_scale;
+      return;
+    }
+    // Keep the existing path for a sum outside the trait's scale field;
+    // the direct coefficient formula must never use a wrapped exponent.
+    // Public bc scales are below base_, so their sum fits in NumType for the
+    // supported traits. Preserve the full quotient-product scale, not just the
+    // division scale, before subtracting it from the original dividend.
+    NumType const product_scale = static_cast<NumType>(target_scale + rhs.scale());
+    NumType const result_scale = std::max(scale(), product_scale);
+    BasicNumber u(*this);
+    u.divide(rhs, target_scale);
+    u.multiply(rhs, result_scale);
+    sub(u);
+    // Subtraction preserves the selected remainder scale, including zero.
+    // Retain this fallback defensively if the scale-handling contract changes.
+    if (scale_ < result_scale) {
+      if (!is_zero()) {
+        digits_.mul_pow10(result_scale - scale_);
+      }
+      scale_ = result_scale;
+    }
+  }

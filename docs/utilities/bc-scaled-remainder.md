@@ -1,7 +1,7 @@
-# Direct scaled remainder experiment
+# Direct scaled remainders
 
-Refs #416, #197, #200 and #216. This is a correctness-checked candidate;
-native full/held-out performance evidence is required before adoption.
+Refs #416, #197, #200 and #216. Accepted in PR #417; the development and
+validation history below retains both the rejected and accepted checkpoints.
 
 For magnitudes A and B, operand scales sa and sb, and quotient scale t,
 POSIX bc defines x%y as x minus the product of y and the quotient truncated
@@ -98,3 +98,28 @@ nine CLI/driver/lifetime checks, 616 ordinary-source math references, and
 unavailable. Earlier logical allocation measurements remain under their exact
 `8cbb65a5` source: traffic falls while peak tracked digits rise; neither becomes
 a claim about this unmeasured refinement.
+
+
+## Accepted direct remainder
+
+Final head `46a7d68` passed all seventeen checks and 17,400 native checked rows
+across Linux/macOS/Windows, with no confirmed candidate regressions, before
+#417 merged as `dbf0e68d`. Nine exact timing executables and eighteen native
+inspection outputs are retained. The original `8cbb65a5` small-square loss stays
+rejected. Final Linux small squaring is 1.0151 [1.00397,1.02600], below the
+material threshold; macOS control noise remains explicit. No losing class is
+hidden in a mean or erased by another source's successful batch.
+
+Current-head logical evidence contains twelve checked, balanced observations.
+Full integer modulo allocated digit bytes fall 8,832,700 to 4,788,700 and basic
+product calls 3000 to zero; peak tracked digits rise 2792 to 3240. Separate
+local execution of exact CI macOS binaries supplies 54 checked RSS observations
+with three predetermined trials per role/case. Full integer median RSS is
+2,179,072 to 2,146,304 bytes. These unisolated samples do not prove a universal
+memory reduction. Final macOS file size rises by 48 bytes and Windows code
+payload by 3072 bytes. The [retained archive](bc-native-controls-and-kernels/README.md)
+keeps every original ZIP, memory report, collector and availability limitation.
+
+This completes #416's direct scaled-remainder step. Prepared divisor reuse,
+caller-provided arithmetic storage, symbolic shifted views and the broader
+#197 performance/coverage requirements remain outstanding.
