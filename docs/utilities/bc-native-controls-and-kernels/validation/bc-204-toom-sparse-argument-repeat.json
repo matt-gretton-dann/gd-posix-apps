@@ -1,0 +1,55 @@
+{
+  "scope": "bounded correctness diagnosis, not performance evidence; original first-run timeouts retained",
+  "observations": [
+    {
+      "trial": 0,
+      "seconds": 0.055988125037401915,
+      "checked": true
+    },
+    {
+      "trial": 1,
+      "seconds": 0.017827959032729268,
+      "checked": true
+    },
+    {
+      "trial": 2,
+      "seconds": 0.01769770897226408,
+      "checked": true
+    },
+    {
+      "trial": 3,
+      "seconds": 0.01789508300134912,
+      "checked": true
+    },
+    {
+      "trial": 4,
+      "seconds": 0.01784450002014637,
+      "checked": true
+    },
+    {
+      "trial": 5,
+      "seconds": 0.01777887501521036,
+      "checked": true
+    },
+    {
+      "trial": 6,
+      "seconds": 0.017801249981857836,
+      "checked": true
+    },
+    {
+      "trial": 7,
+      "seconds": 0.017775667016394436,
+      "checked": true
+    },
+    {
+      "trial": 8,
+      "seconds": 0.017533375008497387,
+      "checked": true
+    },
+    {
+      "trial": 9,
+      "seconds": 0.01773287495598197,
+      "checked": true
+    }
+  ]
+}

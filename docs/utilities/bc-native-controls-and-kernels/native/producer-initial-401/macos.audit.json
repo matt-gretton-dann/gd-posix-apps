@@ -1,0 +1,10 @@
+{
+  "host": "macos",
+  "source": {
+    "base": "a5f83342a11d5044f48f41470178e55f99dd4d79",
+    "candidate": "9e2c5d40a66ec13d8f87c1fd9ed9f3c1ca958b9d"
+  },
+  "checked": 2100,
+  "confirmed": [],
+  "artifact_sha256": "d79b057008139200f086a196f3894cd5c25fa852ce65c7ea0aab6ecf973a9e51"
+}

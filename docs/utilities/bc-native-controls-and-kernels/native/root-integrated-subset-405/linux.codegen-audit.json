@@ -1,0 +1,33 @@
+{
+  "host": "linux",
+  "archive_sha256": "6ae63e9381d520079fb193de464d91051a64ee2d1c44f38e77d8313d8f89559e",
+  "roles": {
+    "base": {
+      "binary_sha256": "ede6094dc07412faf58ba9c64ab55c0f4af86b2ad93a7210d8df9ded07f5f725",
+      "file_bytes": 427800,
+      "pe_code": {
+        "reason": "not a supported PE image",
+        "status": "unavailable"
+      }
+    },
+    "candidate": {
+      "binary_sha256": "f4cfccb1d5be9be8b6caeb094073b867a83782ef7450d7806fce54f394db5078",
+      "file_bytes": 432440,
+      "pe_code": {
+        "reason": "not a supported PE image",
+        "status": "unavailable"
+      }
+    },
+    "aa": {
+      "binary_sha256": "558ecffd8cfc88acdd9ce71a49b3ffbeafc86fc324cfaedf2ea74437d2400ea6",
+      "file_bytes": 427800,
+      "pe_code": {
+        "reason": "not a supported PE image",
+        "status": "unavailable"
+      }
+    }
+  },
+  "native_inspections": 6,
+  "status": "actual timing executables and native logs verified",
+  "path_scope": "relative paths use the source host convention; ZIP entry paths use slash separators"
+}

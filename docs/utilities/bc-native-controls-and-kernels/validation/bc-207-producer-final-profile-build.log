@@ -1,0 +1,4 @@
+[1/3] Building CXX object src/bc/CMakeFiles/libbc.dir/vm.cc.o
+[2/3] Linking CXX static library src/bc/liblibbc.a
+[3/3] Linking CXX executable src/bc/bc
+ld: warning: ignoring duplicate libraries: 'libgdsup/libgdsup.a', 'src/libutil.a'

@@ -1,0 +1,33 @@
+{
+  "host": "macos",
+  "archive_sha256": "d79b057008139200f086a196f3894cd5c25fa852ce65c7ea0aab6ecf973a9e51",
+  "roles": {
+    "base": {
+      "binary_sha256": "b6fb9a78c13f06593300d3d1e32eae387d831a9a6ed979751dfecca56090f5c1",
+      "file_bytes": 535232,
+      "pe_code": {
+        "reason": "not a supported PE image",
+        "status": "unavailable"
+      }
+    },
+    "candidate": {
+      "binary_sha256": "4cecb72575d7f5d8e732c4a8f77687381cc09c7a5ba1a64801c525976f81c13a",
+      "file_bytes": 535728,
+      "pe_code": {
+        "reason": "not a supported PE image",
+        "status": "unavailable"
+      }
+    },
+    "aa": {
+      "binary_sha256": "e899ad18b771eafe69578c009b857c6a67a0419ed1e215dbb0f07671f671e6d0",
+      "file_bytes": 535232,
+      "pe_code": {
+        "reason": "not a supported PE image",
+        "status": "unavailable"
+      }
+    }
+  },
+  "native_inspections": 6,
+  "status": "actual timing executables and native logs verified",
+  "path_scope": "relative paths use the source host convention; ZIP entry paths use slash separators"
+}

@@ -1,0 +1,16 @@
+F
+======================================================================
+FAIL: test_unused_definition_does_not_allocate_body_results (__main__.ProfilingCli.test_unused_definition_does_not_allocate_body_results)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-producer-result-slots/src/bc/test-profiling-cli.py", line 259, in test_unused_definition_does_not_allocate_body_results
+    self.assertLessEqual(inert['allocations']['results']['peak_live_bytes'],
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                         baseline['allocations']['results']['peak_live_bytes'])
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 58128 not less than or equal to 96
+
+----------------------------------------------------------------------
+Ran 1 test in 0.240s
+
+FAILED (failures=1)

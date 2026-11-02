@@ -1,0 +1,57 @@
+"""Freeze independent VM storage workloads before looking at elapsed outcomes."""
+import copy,hashlib,importlib.util,json,sys
+from pathlib import Path
+scripts=Path('/private/tmp/gd-posix-producer-result-slots/src/bc/scripts')
+spec=importlib.util.spec_from_file_location('bench',scripts/'bench-bc.py');bench=importlib.util.module_from_spec(spec);spec.loader.exec_module(bench)
+root=Path('/private/tmp/bc-207-producer-preparation');root.mkdir(exist_ok=False)
+roles={}
+for role in ('base','candidate','aa'):
+ e=json.loads(Path('/private/tmp/gd-bc-207-producer-'+role+'-release/implementations.json').read_text())['implementations'][0]
+ assert not e['metadata']['instrumented'] and bench.digest_file(e['argv'][0])==e['metadata']['binary_sha256']
+ e['name']=role;roles[role]=e
+roles['howard']=json.loads(Path('/private/tmp/bc-217-pinned-howard.json').read_text());roles['howard']['name']='howard'
+for comparison,names in [('aa',('base','aa')),('paired',('base','candidate','howard'))]:bench.write_json(root/(comparison+'.json'),dict(implementations=[roles[n] for n in names]))
+checks=[]
+for preset,size,count,depth in [('full',10000,100,32),('holdout',7333,137,27)]:
+ cases=bench.corpus(preset,seed=197200 if preset=='full' else 197201);assert len(cases)==56
+ def body(n):return 'x=x+1\n'*n
+ def extra(name,program,answer,parameters):
+  cases.append(dict(name='slots_'+name,group='result_slots_'+name,program=program,expected=[str(answer)],parameters=dict(parameters,preset=preset,oracle='closed-form integer sum independent of VM result mapping')))
+ extra('uncalled','define f() {\nauto x\nx=0\n'+body(size)+'return(x)\n}\n1\n',1,dict(body_statements=size,calls=0))
+ n=size//10
+ extra('called','define f(n) {\nauto x\nx=n\n'+body(n)+'return(x)\n}\ns=0\nfor(i=0;i<'+str(count)+';i++) s+=f(i)\ns\n',count*(count-1)//2+count*n,dict(body_statements=n,calls=count))
+ n=size//80;calls=count*30
+ extra('alternating','define f(n) {\nauto x\nx=n\n'+body(n)+'return(x)\n}\ndefine g(n) {\nreturn(n+1)\n}\ns=0\nfor(i=0;i<'+str(calls)+';i++) {\ns+=f(i);s+=g(i)\n}\ns\n',calls*(calls-1)+calls*(n+1),dict(large_body_statements=n,calls_per_shape=calls))
+ n=32;calls=count*3
+ extra('recursive','define f(n) {\nauto x\nx=0\n'+body(n)+'if(n<=0) return(x)\nreturn(x+f(n-1))\n}\nfor(i=0;i<'+str(calls)+';i++) r=f('+str(depth)+')\nr\n',n*(depth+1),dict(body_statements=n,depth=depth,calls=calls))
+ target=root/preset;programs=target/'workloads';programs.mkdir(parents=True);entries=[]
+ for case in cases:
+  payload=case['program'].encode();oracle=bench.oracle_payload(case)
+  (programs/(case['name']+'.bc')).write_bytes(payload);(programs/(case['name']+'.expected')).write_bytes(oracle)
+  e={k:case[k] for k in ('name','group','parameters')};e.update(program_sha256=hashlib.sha256(payload).hexdigest(),oracle_sha256=hashlib.sha256(oracle).hexdigest())
+  if case.get('input_mode'):e['input_mode']=case['input_mode']
+  entries.append(e)
+ bench.write_json(target/'manifest.json',dict(suite='arithmetic',preset=preset,corpus=entries))
+ for case in bench.corpus('quick',seed=197200 if preset=='full' else 197201)+cases[-4:]:
+  for role in roles:
+   tool=next(t for t in bench.implementations(root/('aa.json' if role in ('base','aa') else 'paired.json'),True) if t['name']==role)
+   staged=root/('quick-'+preset+'-'+case['name']+'.bc');staged.write_text(case['program'])
+   result=bench.run_checked(tool,case,120,staged);checks.append(dict(preset=preset,name=case['name'],role=role,checked=result['checked']))
+ print(preset,len(cases),'frozen cases checked',flush=True)
+# All GD roles execute exactly the same ordinary portable source file, without -l.
+# Existing independently enclosed math workloads and fixed repeat counts are replayed.
+library=Path('/private/tmp/gd-posix-math-short-atan/src/bc/math-library.bc');payload=library.read_bytes();(root/'math-library.bc').write_bytes(payload)
+math_roles={}
+for role in ('base','candidate','aa'):
+ e=copy.deepcopy(roles[role]);e['argv'].append(str(root/'math-library.bc'));e['metadata']['library']=dict(kind='ordinary source input',source_revision='ed10f1fbeec956b53fdb8d2023f3b48b75507bb7',source_sha256=hashlib.sha256(payload).hexdigest());math_roles[role]=e
+for comparison,names in [('aa',('base','aa')),('paired',('base','candidate'))]:bench.write_json(root/('math-'+comparison+'.json'),dict(implementations=[math_roles[n] for n in names]))
+math_checks=[]
+for preset in ('full','holdout'):
+ original=Path('/private/tmp/bc-217-frozen-v1-math')/(preset+'-prepared');cases,replay=bench.replay_corpus(original,'math')
+ for case in [c for c in cases if c['parameters']['mode']=='one_shot']:
+  for role in math_roles:
+   tool=next(t for t in bench.implementations(root/('math-aa.json' if role in ('base','aa') else 'math-paired.json'),True) if t['name']==role)
+   result=bench.run_checked(tool,case,120,original/'workloads'/(case['name']+'.bc'));math_checks.append(dict(preset=preset,name=case['name'],role=role,checked=result['checked']))
+ print(preset,'ordinary-source math one-shot checks complete',flush=True)
+bench.write_json(root/'quick-checks.json',dict(arithmetic=checks,math=math_checks))
+bench.write_json(root/'complete.json',dict(status='frozen before paired trials',arithmetic_checks=len(checks),math_checks=len(math_checks),cases_per_arithmetic_cohort=60,math_corpus='/private/tmp/bc-217-frozen-v1-math',library_sha256=hashlib.sha256(payload).hexdigest(),preparer_sha256=bench.digest_file(__file__),acceptance=False))

@@ -21,6 +21,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+      - name: Replay retained native control evidence
+        if: ${{ matrix.extensions == 'ON' }}
+        run: python3 docs/utilities/bc-native-controls-and-kernels/verify.py
       - name: Verify archived bc evidence bytes
         if: ${{ matrix.extensions == 'ON' }}
         run: python3 docs/utilities/verify-bc-evidence-checkout.py
@@ -71,6 +74,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v7
+    - name: Replay retained native control evidence
+      if: ${{ matrix.extensions == 1 }}
+      run: python docs/utilities/bc-native-controls-and-kernels/verify.py
     - name: Verify archived bc evidence bytes
       if: ${{ matrix.extensions == 1 }}
       run: python docs/utilities/verify-bc-evidence-checkout.py
