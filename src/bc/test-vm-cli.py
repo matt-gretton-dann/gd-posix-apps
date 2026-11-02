@@ -25,8 +25,8 @@ class VMTests(unittest.TestCase):
             self.assertIn(diagnostic, run.stderr)
 
     def test_bare_if_conditions(self):
-        cases = [('n=0\n', 'n', ''), ('n=-2\n', 'n', '7\n'),
-                 ('a[2]=0\n', 'a[2]', ''), ('a[2]=-3\n', 'a[2]', '7\n'),
+        cases = [('n=0\n', 'n', ''), ('n = -2\n', 'n', '7\n'),
+                 ('a[2]=0\n', 'a[2]', ''), ('a[2] = -3\n', 'a[2]', '7\n'),
                  ('scale=0\n', 'scale', ''), ('scale=2\n', 'scale', '7\n'),
                  ('', 'ibase', '7\n'), ('', 'obase', '7\n')]
         for setup, condition, expected in cases:
