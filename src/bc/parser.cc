@@ -1336,11 +1336,15 @@ auto GD::Bc::Parser::insert_length(ExprIndex expr) -> GD::Bc::Parser::ExprIndex
   return result;
 }
 
-auto GD::Bc::Parser::insert_branch_zero(ExprIndex dest, ExprIndex cmp) -> GD::Bc::Parser::ExprIndex
+auto GD::Bc::Parser::insert_branch_zero(ExprIndex condition, ExprIndex destination)
+  -> GD::Bc::Parser::ExprIndex
 {
-  cmp = ensure_expr_loaded(cmp);
+  // The first operand is a value. Load a named condition before emitting its
+  // use; keep the destination as an instruction index for later loop fixups.
+  condition = ensure_expr_loaded(condition);
   ExprIndex result(instructions_->size());
-  instructions_->emplace_back(Instruction::Opcode::branch_zero, dest - result, cmp - result);
+  instructions_->emplace_back(Instruction::Opcode::branch_zero, condition - result,
+                              destination - result);
   return result;
 }
 

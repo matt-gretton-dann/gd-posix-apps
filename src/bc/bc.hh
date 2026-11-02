@@ -1150,10 +1150,10 @@ private:
   auto insert_length(ExprIndex expr) -> ExprIndex;
 
   /** \brief      Insert branch if zero
-   *  \param dest Destination
-   *  \param cmp  Comparison index
+   *  \param condition   Expression whose numeric value is tested
+   *  \param destination Instruction index to branch to if the value is zero
    */
-  auto insert_branch_zero(ExprIndex dest, ExprIndex cmp) -> ExprIndex;
+  auto insert_branch_zero(ExprIndex condition, ExprIndex destination) -> ExprIndex;
 
   /** \brief      Insert branch
    *  \param dest Destination

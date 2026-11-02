@@ -181,5 +181,15 @@ that block but allocated unused entries through generic recursion: a second
 test measured 688 extra bytes for one numeric leaf below eighty generic calls.
 Both tests were committed before the final ownership fix. Sparse individually
 owned headers now pass those metadata bounds without weakening their inputs.
-All prototype evidence remains retained; the bounds concern requested frame
-metadata and do not establish a process-memory or timing win.
+The committed deque source/profiles and both failing test logs remain retained.
+The indexed working prototype was not an elapsed experiment; its temporary
+binary was superseded and is unavailable, so it is not claimed reproducible as
+a binary checkpoint. The bounds concern requested frame metadata and establish
+no process-memory or timing win.
+
+The accepted bare-condition parser fix #413 is integrated before the next
+native comparison. The combined source passes 236 ASan/UBSan cases
+(1,215,650 assertions), nine CLI/verifier/lifetime/signal/controller checks,
+twenty Release profiling checks and 616 ordinary-source math references.
+Earlier Windows call losses remain retained until this combined candidate has
+its own complete native evidence.
