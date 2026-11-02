@@ -173,6 +173,16 @@ class ProfilingCli(unittest.TestCase):
         # profile() already requires every selected temporary allocation to be
         # balanced at normal exit, including recursively owned Toom vectors.
 
+    def test_toom_keeps_sparse_coefficients_on_the_generic_tier(self):
+        digits = 10000
+        sparse = '1' + '0' * (digits - 2) + '1'
+        for other in (sparse, '7' * digits):
+            with self.subTest(other_shape='sparse' if other == sparse else 'dense'):
+                expected = str(int(sparse) * int(other)) + '\n'
+                counters = self.profile('a={};b={};a*b\nb*a\n'.format(sparse, other),
+                                        expected + expected, numeric_continuations=True)
+                self.assertEqual(counters['events']['toom3_multiply_calls'], 0)
+
     def test_literal_cache_survives_function_activations_and_base_changes(self):
         counters = self.profile('define f() {\nreturn (10)\n}\nf()\nf()\n'
                                 'ibase=2\nf()\nf()\n', '10\n10\n2\n2\n')
