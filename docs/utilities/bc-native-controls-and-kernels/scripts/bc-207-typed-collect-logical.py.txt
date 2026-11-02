@@ -1,0 +1,64 @@
+"""Collect checked logical requested storage separately from native RSS/timing."""
+import hashlib,importlib.util,json,re,shutil,subprocess
+from pathlib import Path
+scripts=Path('/private/tmp/gd-posix-typed-result-pools/src/bc/scripts')
+def load(name):
+ s=importlib.util.spec_from_file_location(name,scripts/(name+'.py'));m=importlib.util.module_from_spec(s);s.loader.exec_module(m);return m
+bench=load('bench-bc');profile=load('profile-bc')
+root=Path('/private/tmp/bc-207-typed-logical');root.mkdir(exist_ok=False)
+prepared=Path('/private/tmp/bc-207-typed-preparation');assert json.loads((prepared/'complete.json').read_text())['arithmetic_checks']==544
+roles={}
+for role,source,build,revision in [('base',Path('/private/tmp/gd-bc-207-typed-base-release/source'),Path('/private/tmp/gd-bc-207-typed-base-release/build-profile'),'7871af4c7bed04b2874ba78d214879d7923c5814'),('candidate',Path('/private/tmp/gd-posix-typed-result-pools'),Path('/private/tmp/gd-posix-typed-result-pools/build-profile'),'9028375821c730243f64d1d9dfdd1f20ec4a3eba')]:
+ assert subprocess.check_output(['git','-C',str(source),'rev-parse','HEAD'],text=True).strip()==revision
+ assert not subprocess.check_output(['git','-C',str(source),'status','--porcelain'],text=True)
+ binary=build/'src/bc/bc';cache=(build/'CMakeCache.txt').read_text();assert 'ENABLE_BC_PROFILE:BOOL=ON' in cache and 'CMAKE_BUILD_TYPE:STRING=Release' in cache and 'ENABLE_NON_POSIX_EXTENSIONS:BOOL=OFF' in cache
+ assert 'GD_BC_PROFILE=1' in (build/'build.ninja').read_text()
+ snapshots={}
+ for name in ('CMakeCache.txt','build.ninja','compile_commands.json'):
+  p=build/name
+  if p.is_file():destination=root/(role+'-'+name);shutil.copyfile(p,destination);snapshots[name]=dict(path=destination.name,sha256=bench.digest_file(destination))
+ roles[role]=dict(argv=[str(binary)],source_revision=revision,binary_sha256=bench.digest_file(binary),instrumented=True,configuration='Release / profile ON / extensions OFF / fixed multiply 126',snapshots=snapshots)
+manifest=dict(collector_sha256=bench.digest_file(__file__),purpose='logical allocation/requested-storage diagnostic; not elapsed or RSS evidence',roles=roles,results=[],performance_acceptance=False)
+try:
+ for preset in ('full','holdout'):
+  cases,_=bench.replay_corpus(prepared/preset,'arithmetic')
+  for original in [c for c in cases if c['name'].startswith('slots_')]:
+   p=original['parameters'];name=preset+'-'+original['name'];short=original['name'].removeprefix('slots_')
+   for mode in ('single','batch'):
+    case=dict(original)
+    if mode=='single':
+     case['program'],n=re.subn(r'for\(i=0;i<[0-9]+;i\+\+\)', 'for(i=0;i<1;i++)',case['program']);assert n in (0,1)
+     if short=='uncalled':answer=1
+     elif short=='called':answer=p['body_statements']
+     elif short=='alternating':answer=p['large_body_statements']+1
+     elif short=='recursive':answer=p['body_statements']*(p['depth']+1)
+     else:
+      delta=p['terms']*(p['terms']+1)//2;step_sum=p['steps']*(p['steps']+1)//2
+      if short=='typed_inline_calls':answer=delta
+      elif short=='typed_heap_calls':answer=10**p['coefficient_places']+delta
+      elif short=='typed_inline_loop':answer=step_sum
+      elif short=='typed_heap_loop':answer=10**p['coefficient_places']+step_sum
+      elif short=='typed_array_calls':answer=delta+7
+      elif short=='typed_recursive_snapshots':answer=original['expected']
+      elif short=='typed_alternating':answer=delta+1
+      elif short=='typed_divrem':
+       inner=p['inner_terms']*(p['inner_terms']+1)//2;answer=inner%97+inner//3
+      else:raise AssertionError(short)
+     case['expected']=list(map(str,answer)) if isinstance(answer,(list,tuple)) else [str(answer)]
+    payload=case['program'].encode();oracle=bench.oracle_payload(case);stem=name+'-'+mode
+    (root/(stem+'.bc')).write_bytes(payload);(root/(stem+'.expected')).write_bytes(oracle)
+    for role,tool in roles.items():
+     report=root/(stem+'-'+role+'.profile.json');environment=bench.environment();environment['GD_BC_PROFILE_OUTPUT']=str(report)
+     result=profile.run_group(tool['argv'],payload,environment,120)
+     assert result.returncode==0 and not result.stderr,(stem,role,result.stderr)
+     bench.check_output(case,bench.canonical_output(result.stdout),role+'/'+stem)
+     counters=json.loads(report.read_text());assert counters['instrumented'] and counters['total']['live_bytes']==0
+     assert counters['multiply_split_point']==126 and counters['limb_bytes']==4 and counters['limb_base']==1000000000
+     manifest['results'].append(dict(name=name,mode=mode,role=role,checked=True,program_sha256=hashlib.sha256(payload).hexdigest(),oracle_sha256=hashlib.sha256(oracle).hexdigest(),report=report.name,report_sha256=bench.digest_file(report),results=counters['allocations']['results'],frames=counters['allocations']['frames'],plans=counters['allocations']['execution_plans']))
+   print(name,flush=True)
+  bench.write_json(root/'manifest.json',manifest)
+ assert len(manifest['results'])==96
+ manifest['status']='all 96 logical children checked and selected storage balanced'
+except BaseException as error:
+ manifest['failure']=str(error);raise
+finally:bench.write_json(root/'manifest.json',manifest)

@@ -1,0 +1,165 @@
+{
+  "builder_sha256": "01f83b92ca0dfafaf0c96053c2eabdb146c64c144873b1951ea02c80ca018d53",
+  "commands": [
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/Users/mgrettondann/repos/gd-posix-apps",
+        "worktree",
+        "add",
+        "--detach",
+        "--no-checkout",
+        "/private/tmp/gd-bc-207-typed-aa-release/source",
+        "7871af4c7bed04b2874ba78d214879d7923c5814"
+      ],
+      "cwd": "/private/tmp/gd-bc-207-typed-aa-release",
+      "log": "command-001.log",
+      "returncode": 0
+    },
+    {
+      "argv": [
+        "git",
+        "sparse-checkout",
+        "init",
+        "--cone"
+      ],
+      "cwd": "/private/tmp/gd-bc-207-typed-aa-release/source",
+      "log": "command-002.log",
+      "returncode": 0
+    },
+    {
+      "argv": [
+        "git",
+        "sparse-checkout",
+        "set",
+        "src",
+        "libgdsup",
+        "cmake",
+        "python-lib",
+        "schema",
+        ".github"
+      ],
+      "cwd": "/private/tmp/gd-bc-207-typed-aa-release/source",
+      "log": "command-003.log",
+      "returncode": 0
+    },
+    {
+      "argv": [
+        "git",
+        "checkout",
+        "--detach",
+        "7871af4c7bed04b2874ba78d214879d7923c5814"
+      ],
+      "cwd": "/private/tmp/gd-bc-207-typed-aa-release/source",
+      "log": "command-004.log",
+      "returncode": 0
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/private/tmp/gd-bc-207-typed-aa-release/source",
+      "log": "command-005.log",
+      "returncode": 0
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--quiet"
+      ],
+      "cwd": "/private/tmp/gd-bc-207-typed-aa-release/source",
+      "log": "command-006.log",
+      "returncode": 0
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--cached",
+        "--quiet"
+      ],
+      "cwd": "/private/tmp/gd-bc-207-typed-aa-release/source",
+      "log": "command-007.log",
+      "returncode": 0
+    },
+    {
+      "argv": [
+        "/usr/bin/cc",
+        "--version"
+      ],
+      "cwd": "/private/tmp/gd-bc-207-typed-aa-release",
+      "log": "command-008.log",
+      "returncode": 0
+    },
+    {
+      "argv": [
+        "/usr/bin/c++",
+        "--version"
+      ],
+      "cwd": "/private/tmp/gd-bc-207-typed-aa-release",
+      "log": "command-009.log",
+      "returncode": 0
+    },
+    {
+      "argv": [
+        "cmake",
+        "-S",
+        "/private/tmp/gd-bc-207-typed-aa-release/source",
+        "-B",
+        "/private/tmp/gd-bc-207-typed-aa-release/build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_TESTING=OFF",
+        "-DENABLE_NON_POSIX_EXTENSIONS=ON",
+        "-DENABLE_BC_PROFILE=OFF",
+        "-DENABLE_BC_COVERAGE=OFF",
+        "-DBC_MULTIPLY_SPLIT_POINT=126",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DCMAKE_C_COMPILER:FILEPATH=/usr/bin/cc",
+        "-DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/c++",
+        "-DFETCHCONTENT_SOURCE_DIR_CATCH2=/private/tmp/gd-posix-array-candidates/build-check/_deps/catch2-src",
+        "-DFETCHCONTENT_SOURCE_DIR_GDPAT=/private/tmp/gd-posix-array-candidates/build-check/_deps/gdpat-src"
+      ],
+      "cwd": "/private/tmp/gd-bc-207-typed-aa-release",
+      "log": "command-010.log",
+      "returncode": 0
+    },
+    {
+      "argv": [
+        "cmake",
+        "--build",
+        "/private/tmp/gd-bc-207-typed-aa-release/build",
+        "--target",
+        "bc",
+        "--parallel",
+        "2",
+        "--verbose"
+      ],
+      "cwd": "/private/tmp/gd-bc-207-typed-aa-release",
+      "log": "command-011.log",
+      "returncode": 0
+    },
+    {
+      "argv": [
+        "/usr/bin/c++",
+        "-std=c++20",
+        "-E",
+        "-P",
+        "/private/tmp/gd-bc-207-typed-aa-release/standard-library-probe.cc"
+      ],
+      "cwd": "/private/tmp/gd-bc-207-typed-aa-release",
+      "log": "command-012.log",
+      "returncode": 0
+    }
+  ],
+  "recipe_helper_sha256": "a70fb4fe8d652e5c2256d7c19e3919b2c2d09b25a9d2a6a262e2db49af561bea",
+  "schema": 1,
+  "source_method": "independent sparse detached worktree; Git object store shared, source files and build outputs independent",
+  "source_revision": "7871af4c7bed04b2874ba78d214879d7923c5814",
+  "status": "built independently; correctness checks required before elapsed timing"
+}

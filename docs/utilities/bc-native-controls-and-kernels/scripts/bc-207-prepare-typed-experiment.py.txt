@@ -1,0 +1,81 @@
+"""Freeze independent VM storage workloads before looking at elapsed outcomes."""
+import copy,hashlib,importlib.util,json,sys
+from pathlib import Path
+scripts=Path('/private/tmp/gd-posix-typed-result-pools/src/bc/scripts')
+spec=importlib.util.spec_from_file_location('bench',scripts/'bench-bc.py');bench=importlib.util.module_from_spec(spec);spec.loader.exec_module(bench)
+root=Path('/private/tmp/bc-207-typed-preparation');root.mkdir(exist_ok=False)
+roles={}
+for role in ('base','candidate','aa'):
+ e=json.loads(Path('/private/tmp/gd-bc-207-typed-'+role+'-release/implementations.json').read_text())['implementations'][0]
+ assert not e['metadata']['instrumented'] and bench.digest_file(e['argv'][0])==e['metadata']['binary_sha256']
+ e['name']=role;roles[role]=e
+roles['howard']=json.loads(Path('/private/tmp/bc-217-pinned-howard.json').read_text());roles['howard']['name']='howard'
+for comparison,names in [('aa',('base','aa')),('paired',('base','candidate','howard'))]:bench.write_json(root/(comparison+'.json'),dict(implementations=[roles[n] for n in names]))
+checks=[]
+for preset,size,count,depth in [('full',10000,100,32),('holdout',7333,137,27)]:
+ cases=bench.corpus(preset,seed=197200 if preset=='full' else 197201);assert len(cases)==56
+ for case in cases:case['parameters']=dict(case['parameters'],experiment_scope='known arithmetic regression core; not newly unseen')
+ def body(n):return 'x=x+1\n'*n
+ def extra(name,program,answer,parameters):
+  cases.append(dict(name='slots_'+name,group='result_slots_'+name,program=program,expected=list(map(str,answer)) if isinstance(answer,(list,tuple)) else [str(answer)],parameters=dict(parameters,preset=preset,oracle='closed-form integer sum independent of VM result mapping')))
+ extra('uncalled','define f() {\nauto x\nx=0\n'+body(size)+'return(x)\n}\n1\n',1,dict(body_statements=size,calls=0))
+ n=size//10
+ extra('called','define f(n) {\nauto x\nx=n\n'+body(n)+'return(x)\n}\ns=0\nfor(i=0;i<'+str(count)+';i++) s+=f(i)\ns\n',count*(count-1)//2+count*n,dict(body_statements=n,calls=count))
+ n=size//80;calls=count*30
+ extra('alternating','define f(n) {\nauto x\nx=n\n'+body(n)+'return(x)\n}\ndefine g(n) {\nreturn(n+1)\n}\ns=0\nfor(i=0;i<'+str(calls)+';i++) {\ns+=f(i);s+=g(i)\n}\ns\n',calls*(calls-1)+calls*(n+1),dict(large_body_statements=n,calls_per_shape=calls))
+ n=32;calls=count*3
+ extra('recursive','define f(n) {\nauto x\nx=0\n'+body(n)+'if(n<=0) return(x)\nreturn(x+f(n-1))\n}\nfor(i=0;i<'+str(calls)+';i++) r=f('+str(depth)+')\nr\n',n*(depth+1),dict(body_statements=n,depth=depth,calls=calls))
+ for case in cases[-4:]:case['parameters']['experiment_scope']='known producer-slot storage regression; not newly unseen'
+ terms=64 if preset=='full' else 73;steps=16 if preset=='full' else 19;places=150 if preset=='full' else 173
+ series='+'.join(map(str,range(1,terms+1)));delta=terms*(terms+1)//2
+ stride='+'.join(map(str,range(1,steps+1)));step_sum=steps*(steps+1)//2
+ def typed(name,program,answer,parameters):
+  extra('typed_'+name,program,answer,dict(parameters,experiment_scope='fresh typed-pool fixture frozen before any elapsed inspection',terms=terms,steps=steps,coefficient_places=places))
+ calls=count*100
+ typed('inline_calls','define f(n) {\nreturn(n+'+series+')\n}\ns=0\nfor(i=0;i<'+str(calls)+';i++) s+=f(i)\ns\n',calls*(calls-1)//2+calls*delta,dict(calls=calls))
+ calls=count*4
+ typed('heap_calls','define f(n) {\nreturn(n+'+series+')\n}\na=10^'+str(places)+'\nfor(i=0;i<'+str(calls)+';i++) r=f(a)\nr\n',10**places+delta,dict(calls=calls))
+ iterations=count*250
+ typed('inline_loop','s=0\nfor(i=0;i<'+str(iterations)+';i++) s=s+'+stride+'\ns\n',iterations*step_sum,dict(iterations=iterations))
+ iterations=count*50
+ typed('heap_loop','s=10^'+str(places)+'\nfor(i=0;i<'+str(iterations)+';i++) s=s+'+stride+'\ns\n',10**places+iterations*step_sum,dict(iterations=iterations))
+ calls=count*50
+ typed('array_calls','define f(n,a[]) {\nreturn(n+'+series+'+a[0])\n}\na[0]=7\ns=0\nfor(i=0;i<'+str(calls)+';i++) s+=f(i,a[])\ns\n',calls*(calls-1)//2+calls*(delta+7),dict(calls=calls))
+ inner=32 if preset=='full' else 37;inside='+'.join(map(str,range(1,inner+1)));inside_sum=inner*(inner+1)//2
+ program='define f(n,a[]) {\nauto x,b[]\nx=n+'+inside+'\na[0]+=1\nb[0]=a[0]+n\nif(n<=0) return(x+b[0])\nreturn(f(n-1,a[])+x+b[0])\n}\na[0]=7\nfor(i=0;i<'+str(count)+';i++) r=f('+str(depth)+',a[])\nr\na[0]\n'
+ typed('recursive_snapshots',program,[(depth+1)*(inside_sum+8+depth)+depth*(depth+1)//2,7],dict(depth=depth,calls=count,inner_terms=inner))
+ calls=count*50
+ typed('alternating','define f(n) {\nreturn(n+'+series+')\n}\ndefine g(n) {\nreturn(n+1)\n}\ns=0\nfor(i=0;i<'+str(calls)+';i++) {\ns+=f(i);s+=g(i)\n}\ns\n',calls*(calls-1)+calls*(delta+1),dict(calls_per_shape=calls))
+ calls=count*30
+ typed('divrem','define f(n) {\nauto x\nx=n+'+inside+'\nreturn(x%97+x/3)\n}\ns=0\nfor(i=0;i<'+str(calls)+';i++) s+=f(i)\ns\n',sum((i+inside_sum)%97+(i+inside_sum)//3 for i in range(calls)),dict(calls=calls,inner_terms=inner))
+ target=root/preset;programs=target/'workloads';programs.mkdir(parents=True);entries=[]
+ for case in cases:
+  payload=case['program'].encode();oracle=bench.oracle_payload(case)
+  (programs/(case['name']+'.bc')).write_bytes(payload);(programs/(case['name']+'.expected')).write_bytes(oracle)
+  e={k:case[k] for k in ('name','group','parameters')};e.update(program_sha256=hashlib.sha256(payload).hexdigest(),oracle_sha256=hashlib.sha256(oracle).hexdigest())
+  if case.get('input_mode'):e['input_mode']=case['input_mode']
+  entries.append(e)
+ bench.write_json(target/'manifest.json',dict(suite='arithmetic',preset=preset,corpus=entries))
+ for case in bench.corpus('quick',seed=197200 if preset=='full' else 197201)+cases[-12:]:
+  for role in roles:
+   tool=next(t for t in bench.implementations(root/('aa.json' if role in ('base','aa') else 'paired.json'),True) if t['name']==role)
+   staged=root/('quick-'+preset+'-'+case['name']+'.bc');staged.write_text(case['program'])
+   result=bench.run_checked(tool,case,120,staged);checks.append(dict(preset=preset,name=case['name'],role=role,checked=result['checked']))
+ print(preset,len(cases),'frozen cases checked',flush=True)
+# All GD roles execute exactly the same ordinary portable source file, without -l.
+# Existing independently enclosed math workloads and fixed repeat counts are replayed.
+library=Path('/private/tmp/gd-posix-math-short-atan/src/bc/math-library.bc');payload=library.read_bytes();(root/'math-library.bc').write_bytes(payload)
+math_roles={}
+for role in ('base','candidate','aa'):
+ e=copy.deepcopy(roles[role]);e['argv'].append(str(root/'math-library.bc'));e['metadata']['library']=dict(kind='ordinary source input',source_revision='ed10f1fbeec956b53fdb8d2023f3b48b75507bb7',source_sha256=hashlib.sha256(payload).hexdigest());math_roles[role]=e
+for comparison,names in [('aa',('base','aa')),('paired',('base','candidate'))]:bench.write_json(root/('math-'+comparison+'.json'),dict(implementations=[math_roles[n] for n in names]))
+math_checks=[]
+for preset in ('full','holdout'):
+ original=Path('/private/tmp/bc-217-frozen-v1-math')/(preset+'-prepared');cases,replay=bench.replay_corpus(original,'math')
+ for case in [c for c in cases if c['parameters']['mode']=='one_shot']:
+  for role in math_roles:
+   tool=next(t for t in bench.implementations(root/('math-aa.json' if role in ('base','aa') else 'math-paired.json'),True) if t['name']==role)
+   result=bench.run_checked(tool,case,120,original/'workloads'/(case['name']+'.bc'));math_checks.append(dict(preset=preset,name=case['name'],role=role,checked=result['checked']))
+ print(preset,'ordinary-source math one-shot checks complete',flush=True)
+bench.write_json(root/'quick-checks.json',dict(arithmetic=checks,math=math_checks))
+bench.write_json(root/'complete.json',dict(status='frozen before paired trials',arithmetic_checks=len(checks),math_checks=len(math_checks),cases_per_arithmetic_cohort=68,known_arithmetic_core=56,known_storage_classes=4,fresh_typed_classes=8,math_corpus='/private/tmp/bc-217-frozen-v1-math',library_sha256=hashlib.sha256(payload).hexdigest(),preparer_sha256=bench.digest_file(__file__),acceptance=False))

@@ -1,0 +1,35 @@
+"""Replay frozen selected-treatment evaluation integrity."""
+from collections import Counter
+import hashlib,importlib.util,json
+from pathlib import Path
+root=Path('/private/tmp/bc-204-toom-grid-evaluation');s=Path('/private/tmp/gd-posix-toom3-prototype/src/bc/scripts')
+spec=importlib.util.spec_from_file_location('policy',s/'benchmark-policy.py');policy=importlib.util.module_from_spec(spec);spec.loader.exec_module(policy)
+assert (root/'complete.json').is_file() and not (root/'failure.json').exists()
+p=json.loads((root/'protocol.json').read_text());assert p['source_policy_sha256']==policy.source_sha256()
+checked=0;matrices=[]
+for target in sorted(root.iterdir()):
+ if not target.is_dir() or not (target/'samples.jsonl').is_file():continue
+ m=json.loads((target/'manifest.json').read_text());raw=[json.loads(l) for l in (target/'samples.jsonl').read_text().splitlines()]
+ assert raw and all(r['checked'] for r in raw)
+ assert m['harness_sha256']==hashlib.sha256((s/'bench-bc.py').read_bytes()).hexdigest()
+ assert m['samples']==15 and m['warmups']==3
+ counts=Counter((r['workload'],r['implementation'],r['phase']) for r in raw)
+ for case in m['corpus']:
+  for suffix,key in [('.bc','program_sha256'),('.expected','oracle_sha256')]:assert hashlib.sha256((target/'workloads'/(case['name']+suffix)).read_bytes()).hexdigest()==case[key]
+  for tool in m['implementations']:
+   assert counts[case['name'],tool['name'],'measurement']==15
+   assert counts[case['name'],tool['name'],'warmup']==3
+ for tool in m['implementations']:
+  meta=tool['metadata'];assert meta['instrumented'] is False
+  assert hashlib.sha256(Path(tool['argv'][0]).read_bytes()).hexdigest()==meta['binary_sha256']
+  if tool['name']!='howard':
+   assert meta['source_revision']==p['source_revision']
+   assert meta['configuration']['toom3_threshold']==dict(base=0,aa=0,toom128=128,toom512=512,toom2048=2048)[tool['name']]
+   assert meta['configuration']['multiply_split_point']==126 and meta['configuration']['build_type']=='Release'
+ checked+=len(raw);matrices.append(dict(name=target.name,checked=len(raw),classes=len(m['corpus'])))
+controls=json.loads((root/'controls.json').read_text())['results'];outcomes=json.loads((root/'outcomes.json').read_text())['results'];assert len(controls)==74 and len(outcomes)==74
+for c in controls:assert c['status']==('inconclusive' if c['name']=='startup' else policy.aa_status(c['first'],c['confirmation']))
+for r in outcomes:
+ assert r['confirmed_regression']==bool(r['name']!='startup' and r['first']['ci95'][0]>1.05 and r['confirmation'] and r['confirmation']['ci95'][0]>1.05)
+result=dict(status='raw counts, checked outputs, program/oracle/source/binary hashes and controls verified',checked=checked,matrices=matrices,controls=dict(Counter(c['status'] for c in controls)),losses={v:[r['name'] for r in outcomes if r['variant']==v and r['confirmed_regression']] for v in ('toom2048',)},performance_acceptance=False)
+(root/'audit.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))

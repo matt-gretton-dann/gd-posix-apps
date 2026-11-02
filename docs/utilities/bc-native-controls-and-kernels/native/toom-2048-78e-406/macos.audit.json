@@ -1,0 +1,15 @@
+{
+  "checkpoint": "406-toom-78e",
+  "host": "macos",
+  "base": "21b3638ed338009a7bccf022cddcc119ce620296",
+  "candidate": "78ee2144f1716f3e05512fbd7123aff497f47574",
+  "checked": 5620,
+  "artifact_sha256": "1580cd66aecf7cbbc5d0165d49a40427ad1f11f250acdd67e9469f27440ea40a",
+  "controls": {
+    "inconclusive-noisy": 111,
+    "pass": 1
+  },
+  "confirmed_regressions": [],
+  "performance_acceptance": false,
+  "scope": "Raw checked outputs/provenance and symmetric controls verified. No pooled pass; candidate acceptance requires all remaining evidence."
+}

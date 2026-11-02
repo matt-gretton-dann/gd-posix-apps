@@ -1,0 +1,144 @@
+{
+  "collector_sha256": "fe0b0d5c6583b21fbd2cc3c01ede8edacb0e39375bb963139c024b0c8d4b03aa",
+  "observations": [
+    {
+      "binary": "base/binary",
+      "binary_sha256": "7f99d3b178c15ac447372d36a3def4decc2e321934d32c85d26b24b337d36b65",
+      "disassembly": {
+        "commands": [
+          {
+            "argv": [
+              "/usr/bin/otool",
+              "-l",
+              "/Users/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/evidence/codegen/base/binary"
+            ],
+            "cwd": "/Users/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/evidence/codegen/base",
+            "log": "command-001.log",
+            "log_bytes": 5587,
+            "log_sha256": "0f67b21fccab35149539c9ee067751f78c798150e66bef5db6cd8ca3ac3fc68f",
+            "returncode": 0,
+            "timeout_seconds": 60
+          },
+          {
+            "argv": [
+              "/usr/bin/otool",
+              "-tvV",
+              "/Users/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/evidence/codegen/base/binary"
+            ],
+            "cwd": "/Users/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/evidence/codegen/base",
+            "log": "command-002.log",
+            "log_bytes": 2786151,
+            "log_sha256": "9b01aad7b303010c55395c628a2996821583436ab71b756cf840c8b36d24ce76",
+            "returncode": 0,
+            "timeout_seconds": 60
+          }
+        ],
+        "status": "collected",
+        "tool": "/usr/bin/otool",
+        "tool_sha256": "8291fbbbaa75761bb649970a16af2ef84b4afd5da0bc133f4d8915f0f2f63e98"
+      },
+      "file_bytes": 535728,
+      "name": "base",
+      "pe_code": {
+        "reason": "not a supported PE image",
+        "status": "unavailable"
+      },
+      "source_revision": "d1de5150e511fcc75d718a3fb8d5f680219bafff",
+      "status": "preserved"
+    },
+    {
+      "binary": "candidate/binary",
+      "binary_sha256": "7f99d3b178c15ac447372d36a3def4decc2e321934d32c85d26b24b337d36b65",
+      "disassembly": {
+        "commands": [
+          {
+            "argv": [
+              "/usr/bin/otool",
+              "-l",
+              "/Users/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/evidence/codegen/candidate/binary"
+            ],
+            "cwd": "/Users/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/evidence/codegen/candidate",
+            "log": "command-001.log",
+            "log_bytes": 5592,
+            "log_sha256": "4e2508ac5bcbfa3bd64d70cf37eb267882759dae59cd2a9566574840d98228da",
+            "returncode": 0,
+            "timeout_seconds": 60
+          },
+          {
+            "argv": [
+              "/usr/bin/otool",
+              "-tvV",
+              "/Users/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/evidence/codegen/candidate/binary"
+            ],
+            "cwd": "/Users/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/evidence/codegen/candidate",
+            "log": "command-002.log",
+            "log_bytes": 2786156,
+            "log_sha256": "606a5ac7705812d277e2bb811b8c45b36d2aaf81980beab52fd9a3a4d399cf6a",
+            "returncode": 0,
+            "timeout_seconds": 60
+          }
+        ],
+        "status": "collected",
+        "tool": "/usr/bin/otool",
+        "tool_sha256": "8291fbbbaa75761bb649970a16af2ef84b4afd5da0bc133f4d8915f0f2f63e98"
+      },
+      "file_bytes": 535728,
+      "name": "candidate",
+      "pe_code": {
+        "reason": "not a supported PE image",
+        "status": "unavailable"
+      },
+      "source_revision": "1089d716d229375b4d8dd435050c7c71b8d536e5",
+      "status": "preserved"
+    },
+    {
+      "binary": "aa/binary",
+      "binary_sha256": "7f99d3b178c15ac447372d36a3def4decc2e321934d32c85d26b24b337d36b65",
+      "disassembly": {
+        "commands": [
+          {
+            "argv": [
+              "/usr/bin/otool",
+              "-l",
+              "/Users/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/evidence/codegen/aa/binary"
+            ],
+            "cwd": "/Users/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/evidence/codegen/aa",
+            "log": "command-001.log",
+            "log_bytes": 5585,
+            "log_sha256": "03e8361811e4c9a182d205e1d4996bf4a27c9037ccb57e4d40047274985413c1",
+            "returncode": 0,
+            "timeout_seconds": 60
+          },
+          {
+            "argv": [
+              "/usr/bin/otool",
+              "-tvV",
+              "/Users/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/evidence/codegen/aa/binary"
+            ],
+            "cwd": "/Users/runner/work/gd-posix-apps/gd-posix-apps/bc-native-results/evidence/codegen/aa",
+            "log": "command-002.log",
+            "log_bytes": 2786149,
+            "log_sha256": "64821967cc7f9384dad96979d948dc8958ac62d4825a1f426b9b2b331b04cc2a",
+            "returncode": 0,
+            "timeout_seconds": 60
+          }
+        ],
+        "status": "collected",
+        "tool": "/usr/bin/otool",
+        "tool_sha256": "8291fbbbaa75761bb649970a16af2ef84b4afd5da0bc133f4d8915f0f2f63e98"
+      },
+      "file_bytes": 535728,
+      "name": "aa",
+      "pe_code": {
+        "reason": "not a supported PE image",
+        "status": "unavailable"
+      },
+      "source_revision": "d1de5150e511fcc75d718a3fb8d5f680219bafff",
+      "status": "preserved"
+    }
+  ],
+  "purpose": "post-sampling executable/code-generation evidence; not timing or performance acceptance",
+  "schema": 1,
+  "status": "preserved",
+  "system": "Darwin"
+}

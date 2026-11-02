@@ -1,0 +1,195 @@
+{
+  "collector_sha256": "781895a08bbd9d24ed410d824e7caea95c8cd6d878b6a905d3d3878ec5ced18b",
+  "observations": [
+    {
+      "binary": "base\\binary.exe",
+      "binary_sha256": "e6c0c880ed9952d5d3ba1ff647c240da98b452e042931bc0795f2243fb0cf6bd",
+      "disassembly": {
+        "commands": [
+          {
+            "argv": [
+              "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\dumpbin.EXE",
+              "/headers",
+              "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results\\evidence\\codegen\\base\\binary.exe"
+            ],
+            "cwd": "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results\\evidence\\codegen\\base",
+            "log": "command-001.log",
+            "log_bytes": 5713,
+            "log_sha256": "3464320fb687a08cdfdcce998ed20b0699c814e23cc794f637c02cbe23dc5aad",
+            "returncode": 0,
+            "timeout_seconds": 60
+          },
+          {
+            "argv": [
+              "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\dumpbin.EXE",
+              "/disasm",
+              "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results\\evidence\\codegen\\base\\binary.exe"
+            ],
+            "cwd": "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results\\evidence\\codegen\\base",
+            "log": "command-002.log",
+            "log_bytes": 4971818,
+            "log_sha256": "54ad6a1cb7b5fcc3e8babdcbcc0fdf30d8b8f0a9b1a004f5925bf87f4c838138",
+            "returncode": 0,
+            "timeout_seconds": 60
+          }
+        ],
+        "status": "collected",
+        "tool": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\dumpbin.EXE",
+        "tool_sha256": "357c989e1c926841df4e6e97c25a60b205b30110cd6db39bde8d81a627e48ebb"
+      },
+      "file_bytes": 463360,
+      "name": "base",
+      "pe_code": {
+        "code_file_bytes": 255488,
+        "code_payload_sha256": "8cde7053781737d4dd5892ca9eb046bea26085ed0afffa4d04a1e15d46549752",
+        "code_virtual_bytes": 255202,
+        "coff_timestamp_field": 1793646523,
+        "format": "PE",
+        "machine": 34404,
+        "scope": "ordered length-framed raw code/executable sections, including file padding; no address/relocation normalization; non-code data and runtime placement excluded",
+        "sections": [
+          {
+            "characteristics": 1610612768,
+            "name": ".text",
+            "raw_offset": 1024,
+            "raw_size": 255488,
+            "rva": 4096,
+            "sha256": "0038c230a10b98fc009a120a2a03d3796ed2a97146d5eee7033228f599e0b475",
+            "virtual_size": 255202
+          }
+        ],
+        "status": "collected"
+      },
+      "source_revision": "d1de5150e511fcc75d718a3fb8d5f680219bafff",
+      "status": "preserved"
+    },
+    {
+      "binary": "candidate\\binary.exe",
+      "binary_sha256": "2d5924ddd984e62554354dadac4ab02e50fe6ac2b8cb09e66c03a6148d1652f0",
+      "disassembly": {
+        "commands": [
+          {
+            "argv": [
+              "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\dumpbin.EXE",
+              "/headers",
+              "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results\\evidence\\codegen\\candidate\\binary.exe"
+            ],
+            "cwd": "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results\\evidence\\codegen\\candidate",
+            "log": "command-001.log",
+            "log_bytes": 5718,
+            "log_sha256": "c09fd4bd7239a2f8bd89755cb4d6bf9f025b921405ac63611eee09180a93a7c1",
+            "returncode": 0,
+            "timeout_seconds": 60
+          },
+          {
+            "argv": [
+              "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\dumpbin.EXE",
+              "/disasm",
+              "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results\\evidence\\codegen\\candidate\\binary.exe"
+            ],
+            "cwd": "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results\\evidence\\codegen\\candidate",
+            "log": "command-002.log",
+            "log_bytes": 4971823,
+            "log_sha256": "0c4ff474ad1147faa119389f631fd67e7a0ef5b260e7e716cfd2b1595f279ee7",
+            "returncode": 0,
+            "timeout_seconds": 60
+          }
+        ],
+        "status": "collected",
+        "tool": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\dumpbin.EXE",
+        "tool_sha256": "357c989e1c926841df4e6e97c25a60b205b30110cd6db39bde8d81a627e48ebb"
+      },
+      "file_bytes": 463360,
+      "name": "candidate",
+      "pe_code": {
+        "code_file_bytes": 255488,
+        "code_payload_sha256": "8cde7053781737d4dd5892ca9eb046bea26085ed0afffa4d04a1e15d46549752",
+        "code_virtual_bytes": 255202,
+        "coff_timestamp_field": 1793646567,
+        "format": "PE",
+        "machine": 34404,
+        "scope": "ordered length-framed raw code/executable sections, including file padding; no address/relocation normalization; non-code data and runtime placement excluded",
+        "sections": [
+          {
+            "characteristics": 1610612768,
+            "name": ".text",
+            "raw_offset": 1024,
+            "raw_size": 255488,
+            "rva": 4096,
+            "sha256": "0038c230a10b98fc009a120a2a03d3796ed2a97146d5eee7033228f599e0b475",
+            "virtual_size": 255202
+          }
+        ],
+        "status": "collected"
+      },
+      "source_revision": "1089d716d229375b4d8dd435050c7c71b8d536e5",
+      "status": "preserved"
+    },
+    {
+      "binary": "aa\\binary.exe",
+      "binary_sha256": "a74bd6a7bf5ef3d0f166bb11d5f8f1954fee282cfb6e251e246a639f0ffb4b31",
+      "disassembly": {
+        "commands": [
+          {
+            "argv": [
+              "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\dumpbin.EXE",
+              "/headers",
+              "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results\\evidence\\codegen\\aa\\binary.exe"
+            ],
+            "cwd": "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results\\evidence\\codegen\\aa",
+            "log": "command-001.log",
+            "log_bytes": 5711,
+            "log_sha256": "620f1ab68578a9cb16ede0b7c07ded6fa280f4079152971ab8f07540c4e41fbd",
+            "returncode": 0,
+            "timeout_seconds": 60
+          },
+          {
+            "argv": [
+              "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\dumpbin.EXE",
+              "/disasm",
+              "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results\\evidence\\codegen\\aa\\binary.exe"
+            ],
+            "cwd": "D:\\a\\gd-posix-apps\\gd-posix-apps\\bc-native-results\\evidence\\codegen\\aa",
+            "log": "command-002.log",
+            "log_bytes": 4971816,
+            "log_sha256": "d096ae41b2843cc44b9281ebbdfb0874cc3a421efcbae730b4e94792d3171603",
+            "returncode": 0,
+            "timeout_seconds": 60
+          }
+        ],
+        "status": "collected",
+        "tool": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\dumpbin.EXE",
+        "tool_sha256": "357c989e1c926841df4e6e97c25a60b205b30110cd6db39bde8d81a627e48ebb"
+      },
+      "file_bytes": 463360,
+      "name": "aa",
+      "pe_code": {
+        "code_file_bytes": 255488,
+        "code_payload_sha256": "8cde7053781737d4dd5892ca9eb046bea26085ed0afffa4d04a1e15d46549752",
+        "code_virtual_bytes": 255202,
+        "coff_timestamp_field": 1793646612,
+        "format": "PE",
+        "machine": 34404,
+        "scope": "ordered length-framed raw code/executable sections, including file padding; no address/relocation normalization; non-code data and runtime placement excluded",
+        "sections": [
+          {
+            "characteristics": 1610612768,
+            "name": ".text",
+            "raw_offset": 1024,
+            "raw_size": 255488,
+            "rva": 4096,
+            "sha256": "0038c230a10b98fc009a120a2a03d3796ed2a97146d5eee7033228f599e0b475",
+            "virtual_size": 255202
+          }
+        ],
+        "status": "collected"
+      },
+      "source_revision": "d1de5150e511fcc75d718a3fb8d5f680219bafff",
+      "status": "preserved"
+    }
+  ],
+  "purpose": "post-sampling executable/code-generation evidence; not timing or performance acceptance",
+  "schema": 1,
+  "status": "preserved",
+  "system": "Windows"
+}

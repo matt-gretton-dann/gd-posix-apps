@@ -1,0 +1,33 @@
+"""Build independent immutable worktree snapshots without copying Git history."""
+import importlib.util,json,os
+from pathlib import Path
+repo=Path('/Users/mgrettondann/repos/gd-posix-apps');script=repo/'src/bc/scripts/build-gd-bc.py'
+spec=importlib.util.spec_from_file_location('gd_builder',script);gd=importlib.util.module_from_spec(spec);spec.loader.exec_module(gd);helper=gd.helpers()
+revisions={'base':'7871af4c7bed04b2874ba78d214879d7923c5814','candidate':'9028375821c730243f64d1d9dfdd1f20ec4a3eba','aa':'7871af4c7bed04b2874ba78d214879d7923c5814'}
+for role,revision in revisions.items():
+ root=Path('/private/tmp/gd-bc-207-typed-'+role+'-release');root.mkdir(exist_ok=False)
+ builder=helper.Builder(root,600);manifest=dict(schema=1,builder_sha256=helper.digest(__file__),recipe_helper_sha256=helper.digest(script),source_revision=revision,source_method='independent sparse detached worktree; Git object store shared, source files and build outputs independent',commands=builder.commands,status='incomplete')
+ try:
+  source=root/'source';build=root/'build'
+  builder.run(['git','-C',str(repo),'worktree','add','--detach','--no-checkout',str(source),revision])
+  builder.run(['git','sparse-checkout','init','--cone'],source)
+  builder.run(['git','sparse-checkout','set','src','libgdsup','cmake','python-lib','schema','.github'],source)
+  builder.run(['git','checkout','--detach',revision],source)
+  actual=builder.run(['git','rev-parse','HEAD'],source);assert actual==revision
+  builder.run(['git','diff','--quiet'],source);builder.run(['git','diff','--cached','--quiet'],source)
+  cc=gd.compiler_identity(helper,builder,'/usr/bin/cc');cxx=gd.compiler_identity(helper,builder,'/usr/bin/c++')
+  environment={k:v for k,v in os.environ.items() if not k.startswith(('BC_','DC_','GD_BC_PROFILE_')) and k not in ('CFLAGS','CXXFLAGS','CPPFLAGS','LDFLAGS','CL','_CL_')}
+  command=['cmake','-S',str(source),'-B',str(build),'-G','Ninja','-DCMAKE_BUILD_TYPE=Release','-DBUILD_TESTING=OFF','-DENABLE_NON_POSIX_EXTENSIONS=ON','-DENABLE_BC_PROFILE=OFF','-DENABLE_BC_COVERAGE=OFF','-DBC_MULTIPLY_SPLIT_POINT=126','-DCMAKE_EXPORT_COMPILE_COMMANDS=ON','-DCMAKE_C_COMPILER:FILEPATH='+cc['argv0'],'-DCMAKE_CXX_COMPILER:FILEPATH='+cxx['argv0'],'-DFETCHCONTENT_SOURCE_DIR_CATCH2=/private/tmp/gd-posix-array-candidates/build-check/_deps/catch2-src','-DFETCHCONTENT_SOURCE_DIR_GDPAT=/private/tmp/gd-posix-array-candidates/build-check/_deps/gdpat-src']
+  builder.run(command,environment=environment)
+  builder.run(['cmake','--build',str(build),'--target','bc','--parallel','2','--verbose'],environment=environment)
+  binary=build/'src/bc/bc';assert binary.is_file()
+  metadata=gd.build_metadata(helper,root,source,build,actual,126,cc,cxx)
+  metadata['configuration']['array_storage']=gd.verified_array_layout(helper,build,'hybrid')
+  metadata['binary_sha256']=helper.digest(binary);metadata['standard_library']=gd.standard_library_info(helper,builder,cxx,root)
+  metadata['source_storage']=manifest['source_method']
+  helper.write_json(root/'implementations.json',dict(implementations=[dict(name=role,argv=[str(binary)],metadata=metadata)]))
+  manifest['status']='built independently; correctness checks required before elapsed timing'
+  print(role,revision,'Release uninstrumented binary recorded',flush=True)
+ except BaseException as error:
+  manifest['failure']=str(error);raise
+ finally:helper.write_json(root/'build-manifest.json',manifest)

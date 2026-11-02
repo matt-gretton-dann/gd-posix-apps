@@ -1,0 +1,15 @@
+{
+  "checkpoint": "405-c866",
+  "host": "macos",
+  "base": "21b3638ed338009a7bccf022cddcc119ce620296",
+  "candidate": "c866b5fa6dcd15638231d701480cccdf75bb1681",
+  "checked": 5600,
+  "artifact_sha256": "adbb1d8ffbff4dc6a158b8a282a49fb515580529f73599df73bae896e3971455",
+  "controls": {
+    "inconclusive-noisy": 110,
+    "pass": 2
+  },
+  "confirmed_regressions": [],
+  "performance_acceptance": false,
+  "scope": "Raw checked outputs/provenance and symmetric controls verified. No pooled pass; candidate acceptance requires all remaining evidence."
+}

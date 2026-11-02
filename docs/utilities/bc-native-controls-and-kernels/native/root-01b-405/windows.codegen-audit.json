@@ -1,0 +1,84 @@
+{
+  "host": "windows",
+  "archive_sha256": "3af3e436a15d0721930ac917a6674188297d44a0178509444508f54990316e91",
+  "roles": {
+    "base": {
+      "binary_sha256": "eee3cae2c0f7316f922675f11f384702da5a486e1e1bf09de7311e48bf331214",
+      "file_bytes": 463360,
+      "pe_code": {
+        "code_file_bytes": 255488,
+        "code_payload_sha256": "f72fc5c011be01278ab46a7be983f76580de2672e5b9266c52886d5a3c35f0e9",
+        "code_virtual_bytes": 255202,
+        "coff_timestamp_field": 1793634545,
+        "format": "PE",
+        "machine": 34404,
+        "scope": "ordered length-framed raw code/executable sections, including file padding; no address/relocation normalization; non-code data and runtime placement excluded",
+        "sections": [
+          {
+            "characteristics": 1610612768,
+            "name": ".text",
+            "raw_offset": 1024,
+            "raw_size": 255488,
+            "rva": 4096,
+            "sha256": "77602a83d2f6f2bc394a4a442a7d40aa33adb58ffd86416be835a299e575aec4",
+            "virtual_size": 255202
+          }
+        ],
+        "status": "collected"
+      }
+    },
+    "candidate": {
+      "binary_sha256": "76dbb275525bb0908d0fbf3b5eac61a81702659ba7f61cac2149b5aae59fad11",
+      "file_bytes": 468992,
+      "pe_code": {
+        "code_file_bytes": 260608,
+        "code_payload_sha256": "a2770db7a3e01a14977c2b8167481240a3f34ace8af7346e49e1bea4d20c11df",
+        "code_virtual_bytes": 260194,
+        "coff_timestamp_field": 1793634579,
+        "format": "PE",
+        "machine": 34404,
+        "scope": "ordered length-framed raw code/executable sections, including file padding; no address/relocation normalization; non-code data and runtime placement excluded",
+        "sections": [
+          {
+            "characteristics": 1610612768,
+            "name": ".text",
+            "raw_offset": 1024,
+            "raw_size": 260608,
+            "rva": 4096,
+            "sha256": "fefa04a0b68f0b3c356ef329d4c36f707f4757d78b74cd98b3c029b830e6903e",
+            "virtual_size": 260194
+          }
+        ],
+        "status": "collected"
+      }
+    },
+    "aa": {
+      "binary_sha256": "d4d9542f4567d6cf774549704fb33526b394b4cc9e85ff71198511e169266dca",
+      "file_bytes": 463360,
+      "pe_code": {
+        "code_file_bytes": 255488,
+        "code_payload_sha256": "f72fc5c011be01278ab46a7be983f76580de2672e5b9266c52886d5a3c35f0e9",
+        "code_virtual_bytes": 255202,
+        "coff_timestamp_field": 1793634616,
+        "format": "PE",
+        "machine": 34404,
+        "scope": "ordered length-framed raw code/executable sections, including file padding; no address/relocation normalization; non-code data and runtime placement excluded",
+        "sections": [
+          {
+            "characteristics": 1610612768,
+            "name": ".text",
+            "raw_offset": 1024,
+            "raw_size": 255488,
+            "rva": 4096,
+            "sha256": "77602a83d2f6f2bc394a4a442a7d40aa33adb58ffd86416be835a299e575aec4",
+            "virtual_size": 255202
+          }
+        ],
+        "status": "collected"
+      }
+    }
+  },
+  "native_inspections": 6,
+  "status": "actual timing executables and native logs verified",
+  "path_scope": "relative paths use the source host convention; ZIP entry paths use slash separators"
+}
