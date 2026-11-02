@@ -28,14 +28,22 @@ the full coefficient width. Exact-prefix computation still copies/truncates a
 radicand per stage; allocation traffic, retained capacity and process RSS must be
 measured. In particular, exact powers and near-square inputs may already have
 an excellent old seed and must not lose their fast path merely to exercise
-staging. Development counters show both favorable and unfavorable cases and
-are kept separately from elapsed acceptance evidence.
+staging. Compare the original coefficient A with the square of the old
+power-of-ten seed, expressed as 10^e in that same coefficient domain. When
+the residual is zero or its decimal width establishes at least half the
+required root precision, preserve the original Newton path. This is a work
+selection rule, never a returned approximation or a different stopping test;
+both paths retain exact floor convergence. The legacy fallback also requires
+its original input-width domain. Development counters retain both favorable
+and unfavorable cases separately from elapsed acceptance evidence.
 
 `sqrt_iterations` counts every actual Newton request in either path.
 `sqrt_working_scale_sum` retains the fractional scale of those requests (zero
 for integer-prefix iterations). `sqrt_precision_stages` counts exact prefix
 stages, and `sqrt_root_digits_sum` sums their root-coefficient widths once per
-Newton iteration. Division request/operand dimensions and allocator counters
+Newton iteration. `sqrt_precise_seed_fallbacks` counts large roots routed back
+to the original path by the exact-residual selector. Division request/operand
+dimensions and allocator counters
 remain independently recorded. These are logical work and storage diagnostics,
 not CPU time or RSS.
 

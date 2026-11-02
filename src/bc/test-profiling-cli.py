@@ -68,7 +68,7 @@ class ProfilingCli(unittest.TestCase):
         self.assertEqual(events['division_divisor_limbs'], iterations * denominator_limbs)
         zero = self.profile('scale=3\nsqrt(0)\n', '0\n')['events']
         for name in ('sqrt_iterations', 'sqrt_working_scale_sum', 'sqrt_precision_stages',
-                     'sqrt_root_digits_sum', 'division_requests',
+                     'sqrt_root_digits_sum', 'sqrt_precise_seed_fallbacks', 'division_requests',
                      'division_dividend_limbs', 'division_divisor_limbs'):
             self.assertEqual(zero[name], 0)
 

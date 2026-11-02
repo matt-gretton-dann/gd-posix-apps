@@ -105,7 +105,8 @@ auto name(Event which) noexcept -> char const*
                              "sqrt_iterations",
                              "sqrt_working_scale_sum",
                              "sqrt_precision_stages",
-                             "sqrt_root_digits_sum"};
+                             "sqrt_root_digits_sum",
+                             "sqrt_precise_seed_fallbacks"};
   static_assert(names.size() == static_cast<std::size_t>(Event::count));
   return names[static_cast<std::size_t>(which)];
 }

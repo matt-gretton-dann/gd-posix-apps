@@ -58,6 +58,7 @@ enum class Event : std::size_t {
   sqrt_working_scale_sum,
   sqrt_precision_stages,
   sqrt_root_digits_sum,
+  sqrt_precise_seed_fallbacks,
   count
 };
 

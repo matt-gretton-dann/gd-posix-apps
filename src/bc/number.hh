@@ -2299,6 +2299,30 @@ private:
       return false;
     }
 
+    // Keep a good existing power-of-ten seed. In the original coefficient
+    // domain its square is 10^e, where e is width or width-1. A tiny exact
+    // residual means that full-precision Newton already starts with at least
+    // half the required root digits. This is selection only, never stopping
+    // or an approximation used as the returned result.
+    if (width < base_) {
+      auto const exponent = width - (width % 2 != std::size_t(scale_) % 2 ? 1 : 0);
+      Details::BasicDigits<Traits> reference(1);
+      shift_coefficient(reference, exponent, true);
+      auto residual = digits_;
+      // sub retains the absolute coefficient and separately reports its sign.
+      static_cast<void>(residual.sub(reference, 0));
+      bool precise = residual.is_zero();
+      if (!precise) {
+        auto const error_digits = residual.coefficient_digits();
+        precise = exponent > error_digits &&
+                  exponent - error_digits >= root_digits / 2 + root_digits % 2 + 1;
+      }
+      if (precise) {
+        GD_BC_PROFILE_EVENT(Profile::Event::sqrt_precise_seed_fallbacks, 1);
+        return false;
+      }
+    }
+
     // N=A*10^(2W-S) is an exact integer. Split the exponent so no
     // intermediate addition can wrap the public scale representation.
     BasicNumber radicand = *this;
