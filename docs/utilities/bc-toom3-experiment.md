@@ -85,3 +85,11 @@ preserves the measured binaries. Controls, bounded confirmations and per-class
 losses retain the ordinary policy; a green advisory job cannot establish a win.
 Native elapsed corpus sizes remain the historical arithmetic sizes. Separate
 100k/200k checks establish correctness only, not large-size speed or RSS.
+
+Aliased coefficient squares retain the specialized square leaf at every point,
+including recursive Toom levels. The original input ranges must share identity
+and extent before an evaluated range can serve as both operands. Equal values
+in distinct ranges do not trigger that shortcut. The larger shared-square
+profiling guard exposed 54 ordinary-product leaves in the first prototype;
+reusing the evaluated range for both point operands removes that regression.
+The separate number sign and COW snapshots retain their wrapper semantics.

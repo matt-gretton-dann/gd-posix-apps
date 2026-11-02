@@ -199,6 +199,7 @@ public:
       return;
     }
     GD_BC_PROFILE_EVENT(Profile::Event::toom3_multiply_calls, 1);
+    bool const square = a.data() == b.data() && a.size() == b.size();
     auto const n = std::max(a.size(), b.size());
     auto const k = n / 3 + (n % 3 != 0 ? 1 : 0);
     auto const a0 = a.first(k), a1 = a.subspan(k, k), a2 = a.subspan(2 * k);
@@ -211,9 +212,12 @@ public:
     auto const bt = add(add(b0, times(b1, 2)), times(b2, 4));
     auto const v0 = product(a0, b0, split, threshold);
     auto const v4 = product(a2, b2, split, threshold);
-    auto const vp = product(ap, bp, split, threshold);
-    auto const vm = product(am, bm, split, threshold);
-    auto v2 = product(at, bt, split, threshold);
+    // Preserve the existing square leaf at every recursive point. Values
+    // equal by coincidence are not enough: the original input ranges must
+    // share identity before either evaluation can stand for both operands.
+    auto const vp = product(ap, square ? Input(ap) : Input(bp), split, threshold);
+    auto const vm = product(am, square ? Input(am) : Input(bm), split, threshold);
+    auto v2 = product(at, square ? Input(at) : Input(bt), split, threshold);
     // s = c1+c3 and c2 = (W(1)+W(-1))/2-c0-c4. W(1)
     // dominates |W(-1)|, so no signed coefficient storage is needed.
     auto s = a_negative == b_negative ? Digits(vp) : add(vp, vm);
