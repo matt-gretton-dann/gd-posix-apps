@@ -24,6 +24,44 @@ class VMTests(unittest.TestCase):
         if diagnostic is not None:
             self.assertIn(diagnostic, run.stderr)
 
+    def test_bare_if_conditions(self):
+        cases = [('n=0\n', 'n', ''), ('n=-2\n', 'n', '7\n'),
+                 ('a[2]=0\n', 'a[2]', ''), ('a[2]=-3\n', 'a[2]', '7\n'),
+                 ('scale=0\n', 'scale', ''), ('scale=2\n', 'scale', '7\n'),
+                 ('', 'ibase', '7\n'), ('', 'obase', '7\n')]
+        for setup, condition, expected in cases:
+            with self.subTest(condition=condition, setup=setup):
+                self.run_bc(setup + 'if(' + condition + ') 7\n', expected)
+
+    def test_bare_loop_conditions_observe_each_iteration(self):
+        for target in ('n', 'a[2]', 'scale'):
+            for kind in ('while', 'for'):
+                with self.subTest(target=target, kind=kind):
+                    header = ('while(' + target + ')' if kind == 'while' else
+                              'for(i=0;' + target + ';i=i+1)')
+                    self.run_bc(target + '=3\ns=0\n' + header + ' {\n'
+                                's=s+' + target + '\n' + target + '=' + target + '-1\n}\n'
+                                's\n' + target + '\n', '6\n0\n')
+        for target in ('ibase', 'obase'):
+            with self.subTest(target=target):
+                self.run_bc('while(' + target + ') {\n7\nbreak\n}\n', '7\n')
+                self.run_bc('for(i=0;' + target + ';i=i+1) {\n7\nbreak\n}\n', '7\n')
+
+    def test_condition_side_effects_run_once(self):
+        cases = [('n=0\nif(n=2) 7\nn\n', '7\n2\n'),
+                 ('n=0\nif(n++) 7\nn\n', '1\n'),
+                 ('n=3\ns=0\nwhile(n--) s=s+n\ns\nn\n', '3\n-1\n'),
+                 ('s=0\nfor(n=3;n--;n=n) s=s+n\ns\nn\n', '3\n-1\n')]
+        for program, expected in cases:
+            with self.subTest(program=program):
+                self.run_bc(program, expected)
+
+    def test_bare_parameter_and_local_conditions(self):
+        self.run_bc('define f(n) {\nif(n) return(f(n-1)+n)\nreturn(0)\n}\n'
+                    'n=7\nf(3)\nn\n', '6\n7\n')
+        self.run_bc('define f(x) {\nauto n,s\ns=0\n'
+                    'for(n=x;n;n=n-1) s=s+n\nreturn(s)\n}\nf(3)\n', '6\n')
+
     def test_runtime_numeric_errors(self):
         for text, diagnostic in (("1/0\n", "divide by zero"),
                                  ("2%0\n", "divide by zero"),
