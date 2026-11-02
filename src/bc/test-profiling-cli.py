@@ -27,7 +27,10 @@ class ProfilingCli(unittest.TestCase):
             result = self.invoke(program, output)
             self.assertEqual(result.returncode, 0, result.stderr)
             actual = result.stdout.replace('\\\n', '') if numeric_continuations else result.stdout
-            self.assertEqual(actual, expected)
+            if isinstance(expected, tuple):
+                self.assertIn(actual, expected)
+            else:
+                self.assertEqual(actual, expected)
             self.assertEqual(result.stderr, '')
             counters = json.loads(output.read_text(encoding='utf-8'))
         self.assertEqual(counters['schema'], 1)
@@ -59,15 +62,89 @@ class ProfilingCli(unittest.TestCase):
         width = len(str(counters['limb_base'])) - 1
         working_scale = 3 + width + 1
         self.assertEqual(events['sqrt_working_scale_sum'], iterations * working_scale)
+        self.assertEqual(events['sqrt_precision_stages'], 0)
+        self.assertEqual(events['sqrt_root_digits_sum'], 0)
         self.assertEqual(events['division_requests'], iterations)
         numerator_limbs = (1 + 2 * working_scale + width - 1) // width
         denominator_limbs = (1 + working_scale + width - 1) // width
         self.assertEqual(events['division_dividend_limbs'], iterations * numerator_limbs)
         self.assertEqual(events['division_divisor_limbs'], iterations * denominator_limbs)
         zero = self.profile('scale=3\nsqrt(0)\n', '0\n')['events']
-        for name in ('sqrt_iterations', 'sqrt_working_scale_sum', 'division_requests',
+        for name in ('sqrt_iterations', 'sqrt_working_scale_sum', 'sqrt_precision_stages',
+                     'sqrt_root_digits_sum', 'sqrt_precise_seed_fallbacks', 'division_requests',
                      'division_dividend_limbs', 'division_divisor_limbs'):
             self.assertEqual(zero[name], 0)
+
+    def test_large_square_root_reports_integer_coefficient_precision(self):
+        places = 200
+        counters = self.profile('scale={}\nsqrt(4)\n'.format(places),
+                                '2.' + '0' * places + '\n', numeric_continuations=True)
+        events = counters['events']
+        width = len(str(counters['limb_base'])) - 1
+        coefficient_digits = places + width + 2
+        self.assertGreater(events['sqrt_precision_stages'], 1)
+        self.assertEqual(events['sqrt_working_scale_sum'], 0)
+        self.assertEqual(events['division_requests'], events['sqrt_iterations'])
+        self.assertGreaterEqual(events['sqrt_root_digits_sum'], coefficient_digits)
+        self.assertLess(events['sqrt_root_digits_sum'],
+                        coefficient_digits * events['sqrt_iterations'])
+
+    def test_exact_power_seed_does_not_add_newton_requests(self):
+        places = 200
+        events = self.profile('scale={}\nsqrt(1)\n'.format(places),
+                              '1.' + '0' * places + '\n',
+                              numeric_continuations=True)['events']
+        self.assertLessEqual(events['sqrt_iterations'], 1)
+        self.assertLessEqual(events['division_requests'], 1)
+
+    def test_near_square_seed_retains_its_short_newton_path(self):
+        places = 256
+        # (10^k+1)^2-1 has floor root 10^k, independently of bc.
+        value = '1' + '0' * (places - 1) + '2' + '0' * places
+        events = self.profile('scale=0\nsqrt({})\n'.format(value),
+                              '1' + '0' * places + '\n',
+                              numeric_continuations=True)['events']
+        self.assertLessEqual(events['sqrt_iterations'], 3)
+        self.assertLessEqual(events['division_requests'], 3)
+
+    def test_tiny_square_root_avoids_a_redundant_almost_full_stage(self):
+        places = 1024
+        value = '.' + '0' * (places - 1) + '4'
+        expected = '0.' + '0' * (places // 2 - 1) + '2' + '0' * (places // 2) + '\n'
+        # POSIX mode retains the leading zero; extensions mode omits it.
+        # Both spellings must retain every exact fractional and trailing digit.
+        counters = self.profile('scale=0\nsqrt({})\n'.format(value),
+                                (expected, expected[1:]), numeric_continuations=True)
+        width = len(str(counters['limb_base'])) - 1
+        root_digits = places + width + 1 - places // 2 + 1
+        # For this exact square, a balanced geometric prefix ladder plus its
+        # short initial convergence stays near twice the final digit budget.
+        self.assertLessEqual(counters['events']['sqrt_root_digits_sum'], 2 * root_digits + 64)
+
+    def test_prefix_root_actual_working_coefficient_cutoff(self):
+        baseline = self.profile('1\n', '1\n')
+        width = len(str(baseline['limb_base'])) - 1
+        # For sqrt(2), W=S+width+1 and the root coefficient has W+1
+        # decimal digits. Exercise 127/128/129, rather than confusing the
+        # requested scale with the algorithm's working coefficient width.
+        center = 128 - width - 2
+        for places in (center - 1, center, center + 1):
+            n = 2 * 10 ** (2 * places)
+            root = 1 << ((n.bit_length() + 1) // 2)
+            while True:
+                next_root = (root + n // root) // 2
+                if next_root >= root:
+                    break
+                root = next_root
+            self.assertLessEqual(root * root, n)
+            self.assertGreater((root + 1) * (root + 1), n)
+            text = str(root).zfill(places + 1)
+            expected = text[:-places] + '.' + text[-places:]
+            with self.subTest(scale=places, working_root_digits=places + width + 2):
+                counters = self.profile('scale={}\nr=sqrt(2)\nr\nscale(r)\n'.format(places),
+                    expected + '\n' + str(places) + '\n', numeric_continuations=True)
+                selected = counters['events']['sqrt_precision_stages'] > 0
+                self.assertEqual(selected, places + width + 2 >= 128)
 
     def test_scaled_division_avoids_shared_decimal_padding(self):
         def decimal(coefficient, places):
