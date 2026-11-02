@@ -23,8 +23,12 @@ decrease above the floor retain the existing stop-on-nondecrease rule, including
 adjacent-integer cycles. At q=0 the result is the exact integer floor sqrt(N).
 Truncating W-T digits finally gives the exact decimal floor at T.
 
-The prototype initially grows root precision from at most eight digits toward
-the full coefficient width. Exact-prefix computation still copies/truncates a
+Plan stages backward from the final coefficient width by ceiling-halves, then
+execute them forward. The first stage has at most eight digits; every following
+extension is at most twice its predecessor. A fixed stack array bounded by the
+storage-index bit width holds the plan, without an extra heap allocation. This
+avoids a penultimate stage that is almost as large as the final one.
+Exact-prefix computation still copies/truncates a
 radicand per stage; allocation traffic, retained capacity and process RSS must be
 measured. In particular, exact powers and near-square inputs may already have
 an excellent old seed and must not lose their fast path merely to exercise

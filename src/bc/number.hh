@@ -2330,10 +2330,22 @@ private:
     radicand.digits_.mul_pow10(working_scale);
     radicand.scale_ = 0;
     BasicNumber current;
+    // Plan backwards by ceiling-halves so a nearly complete stage is not
+    // followed by another almost identical full-size division. There is at
+    // most one stage per storage-index bit; the plan needs no heap allocation.
+    std::array<std::size_t, std::numeric_limits<std::size_t>::digits + 1> stages{};
+    std::size_t remaining = 0;
+    for (auto precision = root_digits;; precision = precision / 2 + precision % 2) {
+      assert(remaining < stages.size());  // NOLINT
+      stages[remaining++] = precision;
+      if (precision <= 8) {
+        break;
+      }
+    }
     std::size_t previous_drop = 0;
-    std::size_t precision = std::min(std::size_t{8}, root_digits);
     bool initial = true;
-    while (true) {
+    while (remaining != 0) {
+      auto const precision = stages[--remaining];
       auto const drop = root_digits - precision;
       BasicNumber prefix = radicand;
       // floor(sqrt(floor(N/10^(2q)))) equals floor(sqrt(N)/10^q).
@@ -2371,7 +2383,6 @@ private:
         break;
       }
       previous_drop = drop;
-      precision += std::min(precision, root_digits - precision);
     }
     *this = std::move(current);
     scale_ = working_scale;
