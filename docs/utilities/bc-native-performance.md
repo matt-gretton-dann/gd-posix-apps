@@ -150,3 +150,12 @@ relocations, runtime placement and host contention still matter. Neither a green
 advisory job nor matching source/code hashes waive a confirmed timing regression.
 Original rejected batches remain separate evidence. Memory/CPU diagnostics and
 paired elapsed measurements retain their existing scopes.
+
+Draft or ready PRs whose head branch starts `codex/bc-native-broad/` run the
+existing broad arithmetic full/held-out plan, as scheduled/manual runs do.
+Ordinary PRs retain their bounded subset. This permits an explicit diagnostic
+checkpoint without a manual-dispatch connector or hard-coded runtime pins in
+an otherwise mergeable workflow. The PR base/head remain the immutable runtime
+inputs; recipes, raw samples and post-sampling executable inspection retain
+those identities. The broad branch name does not change sample counts, output
+checks, tuning policy or bounded-confirmation rules.
