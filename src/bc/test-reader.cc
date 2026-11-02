@@ -12,6 +12,7 @@
 
 #include <limits>
 #include <sstream>
+#include <string>
 
 #include "bc.hh"
 
@@ -75,4 +76,35 @@ TEST_CASE("Location saturation and comparison independence", "[bc][reader][cover
   std::ostringstream output;
   output << reference;
   REQUIRE(output.str() == "file:42:7");
+}
+
+TEST_CASE("StringReader retains the complete byte domain before EOF", "[bc][reader][byte-domain]")
+{
+  // Include NUL and a byte after 0xff: neither may terminate the input.
+  std::string input;
+  for (unsigned value = 0; value <= 255; ++value) {
+    input += static_cast<char>(value);
+  }
+  input += 'Z';
+  GD::Bc::StringReader reader(input);
+  GD::Bc::Location::Line line = 1;
+  GD::Bc::Location::Column column = 1;
+  for (unsigned char value : input) {
+    INFO("byte = " << static_cast<unsigned>(value));
+    CHECK(reader.location() == GD::Bc::Location("Library", line, column));
+    CHECK(reader.peek() == static_cast<int>(value));
+    CHECK(reader.peek() == static_cast<int>(value));
+    CHECK(reader.location() == GD::Bc::Location("Library", line, column));
+    reader.chew();
+    if (value == '\n') {
+      ++line;
+      column = 1;
+    }
+    else {
+      ++column;
+    }
+  }
+  CHECK(reader.peek() == EOF);
+  CHECK(reader.peek() == EOF);
+  CHECK(reader.location() == GD::Bc::Location("Library", line, column));
 }

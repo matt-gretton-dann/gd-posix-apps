@@ -288,7 +288,7 @@ public:
   auto operator=(Reader&&) noexcept -> Reader& = default;
 
   /** \brief  Peek at the current character.
-   *  \return Current character or EOF on end-of-file.
+   *  \return Unsigned byte promoted to int, or EOF only on end-of-file.
    *
    * Implementations should be lazy - that is not do the peeking until called, hence this method
    * not being `const`.
