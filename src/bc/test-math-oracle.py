@@ -114,7 +114,7 @@ class CertifiedFixtures(unittest.TestCase):
             self.assertNotIn(b'\r', path.read_bytes())
 
     def test_boundary_reference_identities_and_enclosures(self):
-        for prefix in ('math-crossover', 'math-trig'):
+        for prefix in ('math-crossover', 'math-trig', 'math-bessel-zero'):
             report = json.loads((ROOT / ('fixtures/' + prefix + '-oracles.json')).read_text())
             source = ROOT / ('fixtures/' + prefix + '-cases.json')
             specification = json.loads(source.read_text())
