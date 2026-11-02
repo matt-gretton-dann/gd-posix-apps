@@ -1,0 +1,14 @@
+F
+======================================================================
+FAIL: test_numeric_registry_does_not_fill_generic_depth_gaps (__main__.ProfilingCli.test_numeric_registry_does_not_fill_generic_depth_gaps)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-lazy-numeric-backing/src/bc/test-profiling-cli.py", line 74, in test_numeric_registry_does_not_fill_generic_depth_gaps
+    self.assertLessEqual(numeric['allocated_bytes'] - baseline['allocated_bytes'], 256)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 688 not less than or equal to 256
+
+----------------------------------------------------------------------
+Ran 1 test in 0.012s
+
+FAILED (failures=1)

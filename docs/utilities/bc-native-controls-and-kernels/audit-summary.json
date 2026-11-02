@@ -26,9 +26,9 @@
   "local_native_outputs": 6,
   "local_producer_checked": 19440,
   "local_resource_observations": 48,
-  "native_binaries": 207,
-  "native_checked": 317840,
-  "native_inspection_outputs": 414,
+  "native_binaries": 243,
+  "native_checked": 374670,
+  "native_inspection_outputs": 486,
   "reports": [
     {
       "changed_legacy_qualifiers": 0,
@@ -5431,8 +5431,260 @@
       "cpu": "AMD EPYC 7763 64-Core Processor",
       "host": "windows",
       "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5620,
+      "checkpoint": "typed-cbbc-409",
+      "checkpoint_status": "Rejected numeric result helpers: Windows held-out calls confirmed slower",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 24,
+        "pass": 88
+      },
+      "cpu": null,
+      "host": "linux",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5600,
+      "checkpoint": "typed-cbbc-409",
+      "checkpoint_status": "Rejected numeric result helpers: Windows held-out calls confirmed slower",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 107,
+        "pass": 5
+      },
+      "cpu": null,
+      "host": "macos",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5690,
+      "checkpoint": "typed-cbbc-409",
+      "checkpoint_status": "Rejected numeric result helpers: Windows held-out calls confirmed slower",
+      "confirmed_losses": [
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.23513224730058532,
+            "block_ci95": [
+              1.3799683374692944,
+              1.4412645503533819
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.361901332054467,
+              1.4474106682432053
+            ],
+            "iid_ci95": [
+              1.361901332054467,
+              1.4474106682432053
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.434702866134017,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.4354158656450384
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": 0.10228635066423944,
+            "block_ci95": [
+              1.0577339964272192,
+              1.07897280830922
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0577339964272192,
+              1.0870313579305366
+            ],
+            "iid_ci95": [
+              1.0577339964272192,
+              1.0870313579305366
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.069296342436887,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.071136510634485
+          },
+          "name": "calls_175000",
+          "preset": "holdout",
+          "ratio": {
+            "autocorrelation_lag1": 0.011939423661334473,
+            "block_ci95": [
+              1.0668439980720956,
+              1.072848575126723
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0606748166662008,
+              1.0777905456760497
+            ],
+            "iid_ci95": [
+              1.0606748166662008,
+              1.0777905456760497
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0677425194686625,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.0681657350435485
+          },
+          "status": "confirmed regression"
+        }
+      ],
+      "controls": {
+        "inconclusive-noisy": 48,
+        "pass": 64
+      },
+      "cpu": "Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz",
+      "host": "windows",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5600,
+      "checkpoint": "root-535-405",
+      "checkpoint_status": "Complete root translation unit: no confirmed native loss; source superseded by accepted-main integration",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 12,
+        "pass": 100
+      },
+      "cpu": null,
+      "host": "linux",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5620,
+      "checkpoint": "root-535-405",
+      "checkpoint_status": "Complete root translation unit: no confirmed native loss; source superseded by accepted-main integration",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 109,
+        "pass": 3
+      },
+      "cpu": null,
+      "host": "macos",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5600,
+      "checkpoint": "root-535-405",
+      "checkpoint_status": "Complete root translation unit: no confirmed native loss; source superseded by accepted-main integration",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 29,
+        "pass": 83
+      },
+      "cpu": "Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz",
+      "host": "windows",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 2100,
+      "checkpoint": "load-conditions-414",
+      "checkpoint_status": "Accepted parser correctness fix #413; all original native outputs retained",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 9,
+        "pass": 33
+      },
+      "cpu": null,
+      "host": "linux",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 2100,
+      "checkpoint": "load-conditions-414",
+      "checkpoint_status": "Accepted parser correctness fix #413; all original native outputs retained",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 39,
+        "pass": 3
+      },
+      "cpu": null,
+      "host": "macos",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 2100,
+      "checkpoint": "load-conditions-414",
+      "checkpoint_status": "Accepted parser correctness fix #413; all original native outputs retained",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 11,
+        "pass": 31
+      },
+      "cpu": "AMD EPYC 7763 64-Core Processor",
+      "host": "windows",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5600,
+      "checkpoint": "root-535-cpu1-405",
+      "checkpoint_status": "Predetermined Windows CPU cohort; no model selection, no confirmed native loss",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 16,
+        "pass": 96
+      },
+      "cpu": "AMD EPYC 9V74 80-Core Processor",
+      "host": "windows",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5600,
+      "checkpoint": "root-535-cpu2-405",
+      "checkpoint_status": "Predetermined Windows CPU cohort; no model selection, no confirmed native loss",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 38,
+        "pass": 74
+      },
+      "cpu": "AMD EPYC 9V74 80-Core Processor",
+      "host": "windows",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5600,
+      "checkpoint": "root-535-cpu3-405",
+      "checkpoint_status": "Predetermined Windows CPU cohort; no model selection, no confirmed native loss",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 34,
+        "pass": 78
+      },
+      "cpu": "AMD EPYC 7763 64-Core Processor",
+      "host": "windows",
+      "universal_acceptance": false
     }
   ],
+  "root_storage": {
+    "limitations": [
+      "RSS comes from local execution of retained CI binaries",
+      "optional prototype executable is unavailable",
+      "checked output records are retained, not re-executed",
+      "no elapsed-time or aggregate acceptance claim"
+    ],
+    "numeric_logical": 12,
+    "performance_acceptance": false,
+    "retained_profile_binaries": 4,
+    "root_logical": 56,
+    "root_rss": 126
+  },
   "windows_deployment_checked": 3024,
   "windows_module_probes": 54
 }

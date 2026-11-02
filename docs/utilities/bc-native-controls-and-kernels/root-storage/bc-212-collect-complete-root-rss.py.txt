@@ -1,0 +1,32 @@
+"""Collect only missing RSS after the sandbox denied time's clock query."""
+import hashlib,importlib.util,json,zipfile
+from pathlib import Path
+scripts=Path('/Users/mgrettondann/repos/gd-posix-apps/src/bc/scripts')
+def load(name):
+ spec=importlib.util.spec_from_file_location(name,scripts/(name+'.py'));m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m);return m
+bench=load('bench-bc');profile=load('profile-bc')
+logical=Path('/private/tmp/bc-212-complete-root-diagnostics');old=json.loads((logical/'manifest.json').read_text())
+assert old['status']=='failed' and 'sysctl kern.clockrate' in old['failure']
+assert len(old['logical'])==56 and all(r['checked'] for r in old['logical']) and not old['resources']
+root=Path('/private/tmp/bc-212-complete-root-rss');root.mkdir(exist_ok=False)
+manifest=dict(schema=1,purpose='separate checked native RSS; no elapsed performance claim',collector_sha256=bench.digest_file(__file__),logical_manifest_sha256=bench.digest_file(logical/'manifest.json'),original_failure_retained=True,source_scope=old['rss_execution_scope'],roles=old['rss_roles'],trials=3,samples=[],performance_acceptance=False,concurrency='All owned builds/tests/logical profiles completed first; source/metadata work may continue; host is not isolated.')
+try:
+ for preset in ('full','holdout'):
+  cases,_=bench.replay_corpus(logical/'prepared'/preset,'arithmetic')
+  for case in cases:
+   name=preset+'-'+case['name'];payload=case['program'].encode()
+   for trial in range(3):
+    roles=list(manifest['roles'].items())
+    for role,tool in roles if trial%2==0 else list(reversed(roles)):
+     assert bench.digest_file(tool['argv'][0])==tool['metadata']['binary_sha256']
+     report=root/(name+'-'+role+'-'+str(trial)+'.rss.txt')
+     result=profile.run_group(['/usr/bin/time','-l','-o',str(report)]+tool['argv'],payload,bench.environment(),120)
+     assert not result.returncode and not result.stderr,(name,role,result.stderr)
+     bench.check_output(case,bench.canonical_output(result.stdout),role+'/'+name)
+     resource=profile.rss_fields('Darwin',report.read_text());assert resource['status']=='collected'
+     manifest['samples'].append(dict(name=name,role=role,trial=trial,checked=True,report=report.name,report_sha256=bench.digest_file(report),resources=resource,output_sha256=hashlib.sha256(result.stdout).hexdigest()))
+   print(name,flush=True);bench.write_json(root/'manifest.json',manifest)
+ assert len(manifest['samples'])==126
+ manifest['status']='all 126 resource children checked; no elapsed acceptance claim'
+except BaseException as error:manifest.update(status='failed',failure=str(error));raise
+finally:bench.write_json(root/'manifest.json',manifest)

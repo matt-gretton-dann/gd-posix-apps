@@ -9,8 +9,8 @@ Refs [#197](https://github.com/matt-gretton-dann/gd-posix-apps/issues/197),
 [#402](https://github.com/matt-gretton-dann/gd-posix-apps/issues/402).
 
 This archive retains successful and rejected checkpoints together. There are
-317,840 checked native children across 31 checkpoints and 75 byte-for-byte
-original native ZIPs. They include 207 timing executables and 414 native
+374,670 checked native children across 37 checkpoints and 87 byte-for-byte
+original native ZIPs. They include 243 timing executables and 486 native
 inspection outputs; the six older #387 ZIPs predate executable collection and
 retain recipes/binary hashes only. Missing historical machine code remains
 explicitly unavailable. Completed local producer, typed-pool and Toom experiments
@@ -168,3 +168,54 @@ checks and ten bounded diagnostic repetitions passed without deadline changes.
 The original failures remain, their cause is unproven, and LeakSanitizer was
 unavailable. No recorded successful rerun erases those limitations. Later source
 refinements and new native results require their own evidence before adoption.
+
+## Complete-root and numeric-storage follow-up
+
+The additional twelve original native ZIPs preserve these completed checkpoints:
+
+| Checkpoint | Source and result |
+| --- | --- |
+| `typed-cbbc-409` | `cbbc754`: 16,910 checked children; Windows held-out calls regress about 6.9%, with a passing A/A control. Rejected despite green jobs. |
+| `root-535-405` and its three CPU replicas | `535420b`: 33,620 checked children; no confirmed candidate losses, including the predetermined EPYC 7763 replica. Superseded by integration with accepted main. |
+| `load-conditions-414` | `854b59e`: 6,300 checked children, no confirmed candidate losses. Accepted parser fix #413 loads the condition before branching; it preserves verifier checks. |
+
+These observations neither replace the earlier failures nor establish the
+remaining competitive targets. In the `535` ordinary matrix, scale-5000/10000
+square roots improve substantially against the accepted baseline. Huge integer
+square roots still lose to Howard. Small-scale roots retain near-baseline
+performance; noisy intervals remain inconclusive. Native executables and all
+inspection outputs remain inside their original ZIPs.
+
+[root-storage](root-storage) retains 56 checked logical root observations,
+126 checked RSS observations, twelve checked numeric-storage logical
+observations, collector sources and two test-first metadata failure logs.
+`verify-root-storage.py` checks complete observation grids, workload/oracle and
+report hashes, allocation balance, compiler snapshots, four retained profiling
+executables and links the RSS recipes to the exact native macOS `535` artifact.
+The archive replay does not execute those binaries or recompute their original
+output checks. `test-verifiers.py` checks valid replay and rejects omitted
+observations, changed RSS reports and changed profiling executables.
+
+The original root collector's manifest remains **failed**: all 56 logical
+observations completed, but `/usr/bin/time` could not query `kern.clockrate`
+in the sandbox. The separate RSS collector fills only that missing phase.
+It ran the retained CI macOS arm64 binaries on the local M1 after owned
+builds/tests/profiles finished; these are local RSS observations, not hosted
+runner RSS or elapsed-time performance measurements. The host was not isolated.
+For scale 5000, logical single-root digit peak falls from 20,248 to 11,344 bytes,
+while batch median RSS rises from 2,146,304 to 2,277,376 bytes. For scale 10000,
+the corresponding values are 40,260 to 35,764 logical bytes and 2,179,072 to
+2,326,528 RSS bytes. Native macOS binary size rises from 535,728 to 552,656 bytes.
+The memory and code-size costs remain visible beside the speed improvements.
+
+Numeric-storage measurements compare `cbbc754` with the rejected optional
+header prototype `4c66d13` and sparse owned-header candidate `8cf4c3b`.
+The optional prototype's original executable was overwritten and is unavailable;
+its raw reports and recorded identity remain. The intermediate indexed-owner
+prototype was uncommitted and its executable is unavailable; only its 688-byte
+metadata test failure is retained. No timing or adoption claim rests on either
+missing executable. The optional-deque metadata test separately fails at 4088
+extra bytes. The final sparse candidate passes both bounds, but its generic
+recursion frame peak is 15,928 bytes versus 14,392 for `cbbc754`; it does not
+universally reduce frame allocation. Current sparse and root integration native
+matrices are separate pending evidence and are not included in these totals.
