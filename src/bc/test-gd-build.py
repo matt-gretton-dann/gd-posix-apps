@@ -46,6 +46,51 @@ class GdBuild(unittest.TestCase):
         self.assertEqual((self.root / 'compile_commands.json').read_bytes(),
                          (self.build / 'compile_commands.json').read_bytes())
         self.assertFalse(value['instrumented'])
+        self.assertEqual(value['configuration']['ipo_policy']['status'], 'legacy-auto')
+
+    def test_explicit_ipo_rejects_ignored_cache_variable(self):
+        # An older revision can cache any -D value without using it. Require
+        # the production module's result in addition to the requested key.
+        self.cache.write_text(self.cache.read_text() + 'IPO_MODE:STRING=OFF\n')
+        for requested in ('OFF', 'REQUIRED'):
+            with self.assertRaises(self.helper.BuildError):
+                self.module.verified_ipo_policy(self.helper, self.build, requested)
+
+    def test_explicit_ipo_checks_requested_and_applied_modes(self):
+        report = self.build / 'gd-ipo-policy.json'
+        for mode, enabled in (('AUTO', True), ('AUTO', False),
+                              ('OFF', False), ('REQUIRED', True)):
+            self.cache.write_text('IPO_MODE:STRING=' + mode + '\n')
+            value = dict(schema=1, mode=mode, automatic_ipo=enabled)
+            report.write_text(json.dumps(value))
+            self.assertEqual(self.module.verified_ipo_policy(self.helper, self.build, mode),
+                             dict(status='recorded', **value))
+            if mode != 'AUTO':
+                value['automatic_ipo'] = not enabled
+                report.write_text(json.dumps(value))
+                with self.assertRaises(self.helper.BuildError):
+                    self.module.verified_ipo_policy(self.helper, self.build, mode)
+
+    def test_stale_or_malformed_ipo_reports_are_rejected(self):
+        self.cache.write_text('IPO_MODE:STRING=OFF\n')
+        report = self.build / 'gd-ipo-policy.json'
+        for payload in ('not json', '[]',
+                        '{"schema":1,"mode":"AUTO","automatic_ipo":false}',
+                        '{"schema":1,"mode":"OFF","automatic_ipo":"false"}',
+                        '{"schema":true,"mode":"OFF","automatic_ipo":false}',
+                        '{"schema":2,"mode":"OFF","automatic_ipo":false}'):
+            report.write_text(payload)
+            with self.assertRaises(self.helper.BuildError):
+                self.module.verified_ipo_policy(self.helper, self.build, 'OFF')
+
+    def test_ipo_policy_bytes_are_retained_in_build_provenance(self):
+        self.cache.write_text(self.cache.read_text() + 'IPO_MODE:STRING=AUTO\n')
+        report = self.build / 'gd-ipo-policy.json'
+        report.write_bytes(b'{"schema":1,"mode":"AUTO","automatic_ipo":true}\n')
+        value = self.metadata()['configuration']['ipo_policy']
+        self.assertEqual(value['status'], 'recorded')
+        self.assertEqual(value['report_sha256'], hashlib.sha256(report.read_bytes()).hexdigest())
+        self.assertEqual((self.root / report.name).read_bytes(), report.read_bytes())
 
     def test_experimental_layout_requires_compiled_selection(self):
         self.assertEqual(self.module.verified_array_layout(self.helper, self.build, 'hybrid'), 'hybrid')
