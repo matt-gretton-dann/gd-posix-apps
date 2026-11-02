@@ -9,6 +9,11 @@ on:
   schedule:
     - cron: '17 3 * * 2'
   workflow_dispatch:
+    inputs:
+      base:
+        description: Immutable mathematical baseline checkpoint
+        required: false
+        default: '78a732a6c1f995b45b140d4b86d8d3af57354804'
 permissions:
   contents: read
 concurrency:
@@ -18,12 +23,13 @@ jobs:
   paired:
     name: Native math bc / ${{ matrix.image }}
     runs-on: ${{ matrix.image }}
-    timeout-minutes: 90
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
         image: [ubuntu-24.04, windows-2025, macos-15]
     env:
+      BC_BASE: ${{ github.event.pull_request.base.sha || inputs.base || '78a732a6c1f995b45b140d4b86d8d3af57354804' }}
       BC_CANDIDATE: ${{ github.event.pull_request.head.sha || github.sha }}
       BC_BROAD: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/heads/codex/bc-math-broad/') }}
     steps:
@@ -48,7 +54,7 @@ jobs:
       - name: Build independent controls and measure checked native math roles
         shell: pwsh
         run: |
-          $arguments = @('src/bc/scripts/benchmark-math-ci.py', '--source', $env:GITHUB_WORKSPACE, '--candidate', $env:BC_CANDIDATE, '--output', 'bc-math-results')
+          $arguments = @('src/bc/scripts/benchmark-math-ci.py', '--source', $env:GITHUB_WORKSPACE, '--candidate', $env:BC_CANDIDATE, '--base', $env:BC_BASE, '--total-seconds', '6600', '--output', 'bc-math-results')
           if ($env:BC_BROAD -eq 'true') { $arguments += '--broad' }
           python @arguments
           if ($LASTEXITCODE) { exit $LASTEXITCODE }

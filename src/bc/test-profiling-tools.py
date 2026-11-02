@@ -39,6 +39,17 @@ class ProfilingTools(unittest.TestCase):
         self.assertEqual(self.module.rss_fields('Darwin', 'missing\n')['status'], 'unavailable')
         self.assertEqual(self.module.rss_fields('Windows', '')['status'], 'unavailable')
 
+    def test_native_cpu_time_is_optional_and_distinct_from_elapsed_time(self):
+        darwin = self.module.cpu_time_fields('Darwin', ' 47.73 real 46.91 user 0.05 sys\n')
+        self.assertEqual(darwin['status'], 'collected')
+        self.assertEqual((darwin['user_seconds'], darwin['system_seconds']), (46.91, .05))
+        linux = self.module.cpu_time_fields('Linux',
+                    'MAX_RSS_KIB=4096\nUSER_SECONDS=0.00\nSYSTEM_SECONDS=0.01\n')
+        self.assertEqual((linux['user_seconds'], linux['system_seconds']), (0, .01))
+        for system, content in (('Windows', ''), ('Linux', 'USER_SECONDS=0.2\n'),
+                                ('Darwin', 'unrecognized'), ('Linux', 'USER_SECONDS=-1\nSYSTEM_SECONDS=0\n')):
+            self.assertEqual(self.module.cpu_time_fields(system, content)['status'], 'unavailable')
+
     def test_each_repeated_output_is_checked(self):
         case = {'name': 'fixture', 'expected': ['2']}
         self.module.check(self.bench, case, 2, 0, b'2\n2\n', b'')

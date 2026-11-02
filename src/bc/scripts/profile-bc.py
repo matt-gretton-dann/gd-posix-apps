@@ -126,6 +126,27 @@ def run_group(argv, payload, environment, timeout):
         return subprocess.CompletedProcess(argv, child.returncode, output, errors)
 
 
+def cpu_time_fields(system, content):
+    """Native printed CPU accounting, separate from paired wall-clock results."""
+    number = r'([0-9]+(?:\.[0-9]+)?)'
+    values = None
+    if system == 'Darwin':
+        match = re.search(r'^\s*' + number + r'\s+real\s+' + number +
+                          r'\s+user\s+' + number + r'\s+sys\s*$', content, re.MULTILINE)
+        if match:
+            values = [float(match.group(2)), float(match.group(3))]
+    elif system == 'Linux':
+        fields = [re.search(r'^' + field + '=' + number + r'\s*$', content, re.MULTILINE)
+                  for field in ('USER_SECONDS', 'SYSTEM_SECONDS')]
+        if all(fields):
+            values = [float(field.group(1)) for field in fields]
+    if values is None or not all(math.isfinite(value) for value in values):
+        return dict(status='unavailable', reason='no supported native CPU-time fields')
+    return dict(status='collected', user_seconds=values[0], system_seconds=values[1],
+                native_unit='seconds', precision='native printed precision; short processes may round to zero',
+                scope='native child CPU accounting; not paired elapsed timing or hardware counters')
+
+
 def rss_fields(system, content):
     if system == 'Darwin':
         pattern = r'^\s*(\d+)\s+maximum resident set size\s*$'
@@ -134,11 +155,14 @@ def rss_fields(system, content):
         pattern = r'^MAX_RSS_KIB=(\d+)\s*$'
         unit = 'KiB (GNU time %M)'
     else:
-        return {'status': 'unavailable', 'reason': 'no native per-process memory adapter'}
+        return {'status': 'unavailable', 'reason': 'no native per-process memory adapter',
+                'cpu_time': cpu_time_fields(system, content)}
     match = re.search(pattern, content, re.MULTILINE)
     if not match:
-        return {'status': 'unavailable', 'reason': 'native memory report has no supported RSS field'}
-    result = {'status': 'collected', 'peak_rss_native': int(match.group(1)), 'native_unit': unit}
+        return {'status': 'unavailable', 'reason': 'native memory report has no supported RSS field',
+                'cpu_time': cpu_time_fields(system, content)}
+    result = {'status': 'collected', 'peak_rss_native': int(match.group(1)), 'native_unit': unit,
+              'cpu_time': cpu_time_fields(system, content)}
     if system == 'Darwin':
         counters = {}
         for label, key in (('instructions retired', 'instructions_retired'),
@@ -157,11 +181,12 @@ def rss_profile(bench, tool, case, root, timeout):
     report = root / (case['name'] + '.rss.txt')
     system = platform.system()
     if not Path('/usr/bin/time').is_file() or system not in ('Darwin', 'Linux'):
-        return {'status': 'unavailable', 'reason': 'no native per-process memory adapter'}
+        return {'status': 'unavailable', 'reason': 'no native per-process memory adapter',
+                'cpu_time': cpu_time_fields(system, ''), 'checked': False}
     if system == 'Darwin':
         command = ['/usr/bin/time', '-l', '-o', str(report)]
     else:
-        command = ['/usr/bin/time', '-f', 'MAX_RSS_KIB=%M', '-o', str(report), '--']
+        command = ['/usr/bin/time', '-f', r'MAX_RSS_KIB=%M\nUSER_SECONDS=%U\nSYSTEM_SECONDS=%S', '-o', str(report), '--']
     environment = bench.environment()
     environment.pop('GD_BC_PROFILE_OUTPUT', None)
     with diagnostic_input(bench, tool, case, 1) as (argv, payload, metadata):
@@ -169,7 +194,7 @@ def rss_profile(bench, tool, case, root, timeout):
         child = run_group(command, payload, environment, timeout)
     check(bench, case, 1, child.returncode, child.stdout, child.stderr)
     result = rss_fields(system, report.read_text(encoding='utf-8'))
-    result.update(metadata, argv=command, repetitions=1)
+    result.update(metadata, argv=command, repetitions=1, checked=True)
     return result
 
 

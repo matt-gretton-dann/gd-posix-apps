@@ -59,6 +59,28 @@ class GdBuild(unittest.TestCase):
             with self.assertRaises(self.helper.BuildError):
                 self.metadata()
 
+    def test_diagnostic_mode_is_explicit_and_forbidden_for_release_metadata(self):
+        self.cache.write_text(self.cache.read_text().replace('ENABLE_BC_PROFILE:BOOL=OFF',
+                                                           'ENABLE_BC_PROFILE:BOOL=ON'))
+        commands = self.build / 'compile_commands.json'
+        commands.write_text(json.dumps([{'command': 'c++ -O3 -DGD_BC_PROFILE=1 -c source.cc'}]))
+        with self.assertRaises(self.helper.BuildError):
+            self.metadata()
+        value = self.module.build_metadata(self.helper, self.root, self.root / 'source',
+                                           self.build, 'a' * 40, 126,
+                                           {'version': 'C'}, {'version': 'C++'}, True)
+        self.assertTrue(value['instrumented'])
+        self.assertTrue(value['configuration']['diagnostic_profile'])
+        commands.write_text(json.dumps([{'command': 'c++ -O3 -c source.cc'}]))
+        with self.assertRaises(self.helper.BuildError):
+            self.module.build_metadata(self.helper, self.root, self.root / 'source', self.build,
+                                       'a' * 40, 126, {'version': 'C'}, {'version': 'C++'}, True)
+        self.cache.write_text(self.cache.read_text().replace('ENABLE_BC_COVERAGE:BOOL=OFF',
+                                                           'ENABLE_BC_COVERAGE:BOOL=ON'))
+        with self.assertRaises(self.helper.BuildError):
+            self.module.build_metadata(self.helper, self.root, self.root / 'source', self.build,
+                                       'a' * 40, 126, {'version': 'C'}, {'version': 'C++'}, True)
+
     def test_wrong_or_automatic_threshold_is_rejected(self):
         for content in ('#define BC_MULTIPLY_SPLIT_POINT 127\n',
                         '#define BC_MULTIPLY_SPLIT_POINT 126\n',
