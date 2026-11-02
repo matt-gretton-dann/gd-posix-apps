@@ -75,6 +75,9 @@ auto expression(std::mt19937& rng, unsigned depth, GD::Bc::Instructions& code) -
 
 TEST_CASE("VM binary opcodes agree with native integer arithmetic", "[bc][vm][execution]")
 {
+  // Exercise both tiny fallback streams and numeric-heavy streams that can
+  // profit from a typed pool, using the same independent arithmetic oracle.
+  auto const padding = GENERATE(0U, 64U);
   for (int64_t lhs = -4; lhs <= 4; ++lhs) {
     for (int64_t rhs = -4; rhs <= 4; ++rhs) {
       for (O opcode : {O::add, O::subtract, O::multiply, O::divide, O::modulo, O::power, O::equals,
@@ -123,6 +126,8 @@ TEST_CASE("VM binary opcodes agree with native integer arithmetic", "[bc][vm][ex
         }
         INFO("lhs = " << lhs << ", rhs = " << rhs << ", opcode = " << unsigned(opcode));
         GD::Bc::Instructions code;
+        for (unsigned n = 0; n < padding; ++n)
+          code.emplace_back(O::number, "0");
         D const left = literal(code, lhs);
         D const right = literal(code, rhs);
         D const at = D(code.size());
@@ -159,16 +164,19 @@ TEST_CASE("Generated expressions agree across grammar bytecode and native oracle
 
 TEST_CASE("VM unary operations have exact observable results", "[bc][vm][execution]")
 {
+  auto const padding = GENERATE(0U, 64U);
   for (auto const& entry :
        {std::make_tuple(O::negate, "7", "-7"), std::make_tuple(O::abs, "7", "7"),
         std::make_tuple(O::sqrt, "81", "9"), std::make_tuple(O::scale_expr, "12.340", "3"),
         std::make_tuple(O::length, "123", "3")}) {
     GD::Bc::Instructions code{I(O::number, std::get<1>(entry)), I(std::get<0>(entry), D(-1)),
                               I(O::print, D(-1), I::Stream::output), I(O::eof)};
+    code.insert(code.begin(), padding, I(O::number, "0"));
     CHECK(execute(code) == std::string(std::get<2>(entry)) + "\n");
   }
   GD::Bc::Instructions code{I(O::number, "7"), I(O::negate, D(-1)), I(O::abs, D(-1)),
                             I(O::print, D(-1), I::Stream::output), I(O::eof)};
+  code.insert(code.begin(), padding, I(O::number, "0"));
   CHECK(execute(code) == "7\n");
 }
 
@@ -456,4 +464,56 @@ TEST_CASE("Reused activation slots release mixed result alternatives",
   }
   CHECK(errors.str().empty());
   CHECK(output.str() == expected);
+}
+
+TEST_CASE("Recursive numeric results preserve array snapshots and caller locals",
+          "[bc][vm][execution][typed-results]")
+{
+  std::string const source = "define f(n,a[]) {\n"
+                             "auto x,b[]\n"
+                             "x=n+1+2+3+4+5+6+7+8+9+10+11+12+13+14+15+16\n"
+                             "a[0]=a[0]+1\n"
+                             "b[0]=a[0]+n\n"
+                             "if(n==0) return(x+b[0])\n"
+                             "return(f(n-1,a[])+x+b[0])\n"
+                             "}\n"
+                             "a[0]=7\nf(4,a[])\na[0]\nibase=16\nF+F\n";
+  GD::Bc::Parser parser(
+    std::make_unique<GD::Bc::Lexer>(std::make_unique<GD::Bc::StringReader>(source)), false);
+  auto code = parser.parse();
+  REQUIRE(code != nullptr);
+  // Each activation sees a[0]=12-n, so b[0]=12 and x=136+n.
+  // Summing n=0..4 gives 5*148+10=750. The caller's array stays seven.
+  CHECK(execute(*code) == "750\n7\n30\n");
+}
+
+TEST_CASE("Numeric activations survive alternating generic calls at shared depths",
+          "[bc][vm][execution][typed-results]")
+{
+  std::string sum = "1";
+  for (unsigned n = 2; n <= 64; ++n)
+    sum += "+" + std::to_string(n);
+  // The large numeric body calls a tiny generic body at a deeper depth, then
+  // later reuses those depths in the opposite layout. All callers' storage
+  // must remain stable while recursive preparation grows either backing pool.
+  std::string const source = "define g(x) {\nreturn(x*x+1)\n}\n"
+                             "define f(n) {\nauto x\nx=" +
+                             sum +
+                             "\n"
+                             "if(n==0) return(g(x))\n"
+                             "return(f(n-1)+g(x+n))\n}\n"
+                             "f(4)\ng(3)\nf(1)\ng(5)\n";
+  auto expected = [](unsigned depth) {
+    unsigned value = 0;
+    for (unsigned n = 0; n <= depth; ++n) {
+      auto const x = 64U * 65U / 2U + n;
+      value += x * x + 1;
+    }
+    return std::to_string(value);
+  };
+  GD::Bc::Parser parser(
+    std::make_unique<GD::Bc::Lexer>(std::make_unique<GD::Bc::StringReader>(source)), false);
+  auto code = parser.parse();
+  REQUIRE(code != nullptr);
+  CHECK(execute(*code) == expected(4) + "\n10\n" + expected(1) + "\n26\n");
 }

@@ -182,3 +182,82 @@ TEST_CASE("Outer result slots exclude every unexecuted definition-body producer"
   // This body is almost entirely producers, so the map cannot repay its cost.
   CHECK(GD::Bc::Details::plan_result_slots(body, 48).indices.empty());
 }
+
+TEST_CASE("Numeric result pools keep a distinct slot for every producer",
+          "[bc][vm][result-slots][typed-results]")
+{
+  GD::Bc::Instructions code(16, I(O::number, "1"));
+  auto const compact = GD::Bc::Details::plan_typed_result_slots(code, 48, 32, 40);
+  REQUIRE(compact.indices.size() == code.size());
+  CHECK(compact.number_count == 16);
+  CHECK(compact.count == 1);  // The empty variant sentinel has its own pool.
+  for (I::Index i = 0; i < code.size(); ++i) {
+    CHECK(compact.is_number(i));
+    CHECK(compact.index(i) == i);
+  }
+  // Charge the extra pool header and compare against the best existing layout.
+  CHECK(GD::Bc::Details::plan_typed_result_slots(code, 48, 32, 200).number_count == 0);
+  CHECK(GD::Bc::Details::plan_typed_result_slots(code, 48, 48, 0).number_count == 0);
+  CHECK(GD::Bc::Details::plan_typed_result_slots(code, 48, 0, 0).number_count == 0);
+  CHECK(GD::Bc::Details::plan_typed_result_slots(code, 0, 0, 0).indices.empty());
+  code.erase(code.begin() + 15, code.end());
+  CHECK(GD::Bc::Details::plan_typed_result_slots(code, 48, 32, 0).indices.empty());
+}
+
+TEST_CASE("Typed result planning does not enlarge a better producer map",
+          "[bc][vm][result-slots][typed-results]")
+{
+  GD::Bc::Instructions code{I(O::number, "7")};
+  while (code.size() < 32)
+    code.emplace_back(O::branch, D(1));
+  auto const old = GD::Bc::Details::plan_result_slots(code, 48);
+  REQUIRE_FALSE(old.indices.empty());
+  for (auto extra : {std::size_t{40}, std::numeric_limits<std::size_t>::max()}) {
+    auto const compact = GD::Bc::Details::plan_typed_result_slots(code, 48, 32, extra);
+    CHECK(compact.number_count == 0);
+    CHECK(compact.indices == old.indices);
+    CHECK(compact.count == old.count);
+  }
+}
+
+TEST_CASE("Typed pools distinguish numeric loads from array snapshots and locations",
+          "[bc][vm][result-slots][typed-results]")
+{
+  GD::Bc::Instructions code{I(O::array, GD::Bc::Array('a')), I(O::load, D(-1)),
+                            I(O::variable, GD::Bc::Variable('a')), I(O::load, D(-1))};
+  while (code.size() < 32)
+    code.emplace_back(O::number, "1");
+  auto const compact = GD::Bc::Details::plan_typed_result_slots(code, 48, 32, 40);
+  REQUIRE(compact.number_count == 29);
+  CHECK(compact.count == 4);
+  for (I::Index i = 0; i < 3; ++i) {
+    CHECK_FALSE(compact.is_number(i));
+    CHECK(compact.index(i) == i + 1);
+  }
+  CHECK(compact.is_number(3));
+  CHECK(compact.index(3) == 0);
+}
+
+TEST_CASE("Typed outer pools leave uncalled definition bodies unallocated",
+          "[bc][vm][result-slots][typed-results]")
+{
+  GD::Bc::Instructions code{
+    I(O::function_begin, GD::Bc::VariableMask(), GD::Bc::Location("typed-pool", 1, 1)),
+    I(O::pop_param_mark)};
+  for (unsigned i = 0; i < 32; ++i)
+    code.emplace_back(O::number, "1");
+  code.emplace_back(O::return_, D(-1));
+  auto const end = code.size();
+  code.emplace_back(O::function_end, GD::Bc::Letter('f'), -static_cast<D>(end));
+  for (unsigned i = 0; i < 32; ++i)
+    code.emplace_back(O::number, "2");
+  code.emplace_back(O::eof);
+  REQUIRE_FALSE(GD::Bc::Details::verify_control_flow(code, false).has_value());
+  auto const outer = GD::Bc::Details::plan_typed_result_slots(code, 48, 32, 40);
+  REQUIRE(outer.number_count == 32);
+  CHECK(outer.count == 1);
+  for (I::Index i = 0; i <= end; ++i) {
+    CHECK_FALSE(outer.is_number(i));
+    CHECK(outer.index(i) == 0);
+  }
+}

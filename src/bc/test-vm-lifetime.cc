@@ -22,6 +22,7 @@ std::atomic<std::size_t> allocation_calls{0};
 // coefficient growth before allocating gigabytes. It is inactive elsewhere.
 thread_local std::size_t allocation_ceiling = std::numeric_limits<std::size_t>::max();
 thread_local std::size_t denied_allocations = 0;
+thread_local std::size_t fail_allocation_after = std::numeric_limits<std::size_t>::max();
 
 class AllocationCeiling
 {
@@ -41,6 +42,13 @@ private:
 
 auto operator new(std::size_t size) -> void*
 {
+  if (fail_allocation_after != std::numeric_limits<std::size_t>::max()) {
+    if (fail_allocation_after-- == 0) {
+      fail_allocation_after = std::numeric_limits<std::size_t>::max();
+      ++denied_allocations;
+      throw std::bad_alloc();
+    }
+  }
   if (size > allocation_ceiling) {
     ++denied_allocations;
     throw std::bad_alloc();
@@ -152,6 +160,47 @@ auto run() -> bool
   }
   return output.str() == "12345678901234567890\n7\n9\n" && errors.str().empty();
 }
+// Fail each allocation in a complete numeric activation once, including the
+// numeric-pool allocation after variant resizing. The same VM must remain valid:
+// verification failure and partially acquired buffers cannot consume a depth.
+auto numeric_pool_allocation_failures() -> bool
+{
+  using I = GD::Bc::Instruction;
+  using O = I::Opcode;
+  for (std::size_t fail_at = 0; fail_at < 1024; ++fail_at) {
+    std::ostringstream output, errors;
+    GD::Bc::VM vm(output, errors, false, GD::Bc::VM::ExecutionChecks::verified);
+    GD::Bc::Instructions warm{I(O::eof)};
+    if (vm.execute(warm))
+      return false;
+    GD::Bc::Instructions code{I(O::array, GD::Bc::Array('a')), I(O::load, I::Offset(-1)),
+                              I(O::variable, GD::Bc::Variable('a'))};
+    for (unsigned i = 0; i < 67; ++i)
+      code.emplace_back(O::number, "12345678901234567890123456789012345678901234567890");
+    code.emplace_back(O::eof);
+    auto const before = denied_allocations;
+    bool rejected = false;
+    fail_allocation_after = fail_at;
+    try {
+      if (vm.execute(code)) {
+        fail_allocation_after = std::numeric_limits<std::size_t>::max();
+        return false;
+      }
+    }
+    catch (std::bad_alloc const&) {
+      rejected = true;
+    }
+    fail_allocation_after = std::numeric_limits<std::size_t>::max();
+    if (vm.execute(code) || !output.str().empty() || !errors.str().empty())
+      return false;
+    if (denied_allocations == before)
+      return !rejected;  // Every allocation position has been exercised.
+    if (!rejected)
+      return false;
+  }
+  return false;  // A growth in allocation count cannot silently truncate testing.
+}
+
 }  // namespace
 
 auto main() -> int
@@ -171,6 +220,10 @@ auto main() -> int
   if (!native_sqrt_scale_boundary<GD::Bc::NumberTraits16>() ||
       !native_sqrt_scale_boundary<GD::Bc::NumberTraits32>()) {
     std::fprintf(stderr, "Native square-root scale wrapped or lost snapshot isolation\n");
+    return 1;
+  }
+  if (!numeric_pool_allocation_failures()) {
+    std::fprintf(stderr, "Numeric result allocation failure damaged VM reuse\n");
     return 1;
   }
   for (unsigned i = 0; i < 3; ++i) {

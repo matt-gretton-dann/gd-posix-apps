@@ -146,6 +146,55 @@ auto plan_result_slots(Instructions const& code, std::size_t slot_bytes) -> Resu
   return result;
 }
 
+auto plan_typed_result_slots(Instructions const& code, std::size_t slot_bytes,
+                             std::size_t number_bytes, std::size_t extra_buffer_bytes)
+  -> ResultSlotPlan
+{
+  using Compact = ResultSlotPlan::CompactIndex;
+  auto const size = code.size();
+  auto fallback = [&]() { return plan_result_slots(code, slot_bytes); };
+  // Keep tiny streams and the full generic index domain. Prove every payload
+  // product below fits before evaluating the profitability inequality.
+  if (size < 16 || size >= ResultSlotPlan::number_tag || slot_bytes <= sizeof(Compact) ||
+      number_bytes == 0 || number_bytes >= slot_bytes ||
+      size > std::numeric_limits<std::size_t>::max() / slot_bytes)
+    return fallback();
+  std::size_t numbers = 0, others = 0;
+  visit_execution_region(code, [&](Instruction::Index i) {
+    auto const kind = classify_result(code, i);
+    numbers += kind == ResultKind::number ? 1 : 0;
+    others += kind != ResultKind::none && kind != ResultKind::number ? 1 : 0;
+  });
+  if (numbers == 0)
+    return fallback();
+  auto const original = size * slot_bytes;
+  // One shared empty variant sentinel serves nonproducers. Sequential
+  // subtractions avoid overflowing the sum, including caller-supplied costs.
+  auto remaining = original;
+  auto const producers = numbers + others;
+  if (producers < size - 1 && size - producers - 1 > size * sizeof(Compact) / slot_bytes)
+    remaining = (producers + 1) * slot_bytes + size * sizeof(Compact);
+  for (auto cost : {(others + 1) * slot_bytes, numbers * number_bytes, size * sizeof(Compact),
+                    extra_buffer_bytes}) {
+    if (cost >= remaining)
+      return fallback();
+    remaining -= cost;
+  }
+  ResultSlotPlan result;
+  result.indices.resize(size, 0);
+  Compact next_number = 0, next_other = 1;
+  visit_execution_region(code, [&](Instruction::Index i) {
+    auto const kind = classify_result(code, i);
+    if (kind == ResultKind::number)
+      result.indices[i] = ResultSlotPlan::number_tag | next_number++;
+    else if (kind != ResultKind::none)
+      result.indices[i] = next_other++;
+  });
+  result.count = next_other;
+  result.number_count = next_number;
+  return result;
+}
+
 auto plan_consumption(Instructions const& code, bool persistent) -> ConsumptionPlan
 {
   using I = Instruction::Index;
