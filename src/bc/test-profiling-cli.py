@@ -51,6 +51,15 @@ class ProfilingCli(unittest.TestCase):
         result = self.invoke('1+1\n')
         self.assertEqual((result.returncode, result.stdout, result.stderr), (0, '2\n', ''))
 
+    def test_first_numeric_backing_has_bounded_frame_metadata(self):
+        baseline = self.profile('1\n', '1\n')['allocations']['frames']
+        numeric = self.profile('+'.join(map(str, range(1, 65))) + '\n',
+                               '2080\n')['allocations']['frames']
+        # One numeric activation must not allocate a whole deque block of
+        # otherwise unused buffer headers. Requested metadata bytes are bounded
+        # independently of limb storage; this does not describe malloc/RSS.
+        self.assertLessEqual(numeric['allocated_bytes'] - baseline['allocated_bytes'], 256)
+
     def test_square_root_iteration_and_division_dimensions(self):
         counters = self.profile('scale=3\nsqrt(4)\n', '2.000\n')
         events = counters['events']
