@@ -54,12 +54,13 @@ retaining more operand precision have a smaller bound. Addition/subtraction
 of these stored coefficients is exact at their selected scale. Builtin sqrt
 returns an exact decimal floor with error below u at precision at least W.
 
-The final step adds or subtracts U/2 at working precision, then divides by one
-at entry scale. This rounds the guarded approximation, with ties away from zero.
-If its pre-rounding error is below U/2, final error is below U. Correct rounding
+The dynamic algorithms add or subtract U/2 at working precision, then divide
+by one at entry scale. This rounds the guarded approximation, with ties away
+from zero. If its pre-rounding error is below U/2, final error is below U. Correct rounding
 of every possible near-midpoint input is not claimed. Rounding avoids placing
 ordinary results just beside a one-ULP certification boundary; certified oracle
-intervals still decide acceptance independently.
+intervals still decide acceptance independently. The bounded unit-arctangent
+path uses the same final rounding step and an independently certified literal.
 
 Let D = length(x) and F = scale(x), before changing x. In the supported decimal
 model D >= F and D >= 1. Let d(T) be the decimal digit count of a positive
@@ -71,6 +72,23 @@ explicit margin for the conservative constants below. They are not a fixed
 S+10 accuracy assumption.
 
 ## Arctangent
+
+For exact |x| = 1 and entry S <= 64, use an ordinary 80-decimal-place lower
+bound. The committed a-one/S100 certified enclosure has identical floors after
+multiplication by 10^80 at both endpoints. The stored literal is exactly that
+integer divided by 10^80, so its error is strictly below 10^-80. Add the exact
+half decimal unit, then truncate at S as in the dynamic path. Since S <= 64,
+the final error is at most U/2 + 10^-80 < U. Negating before truncation preserves
+this absolute bound and the existing nearest-rounding behavior for -1. Tests
+also verify that the literal and both reference endpoints round identically at
+every entry scale through 64.
+
+This is bounded source data, not a constant claimed valid at arbitrary
+precision. The precision readback guard still executes before it, ensuring
+that the half unit is represented exactly. All other inputs and S >= 65 retain
+the dynamic calculation. Literal identity, threshold neighbors, representations
+and caller bases are checked independently. No retained state or VM recognition
+is introduced.
 
 Use odd symmetry, and for |x| > 1 use pi/2 - atan(1/|x|). Compute pi/2 as
 2*a(1) at working precision; the recursive argument one needs no reciprocal,
@@ -250,11 +268,11 @@ skipped/exhausted/broken loops, return, nested decisions and a condition with a
 side effect before the production fixture runs. It certifies all 476 numerical
 results from the instrumented definitions against the same exact enclosures.
 
-The source contains 66 decisions and 132 outcomes. Normal execution, including
-two explicitly undefined-domain log guard calls, observes 121 outcomes. Nine
+The source contains 69 decisions and 138 outcomes. The expected fixture requires
+127 normal outcomes, including two explicitly undefined-domain log guard calls. Nine
 separate portable-host models independently clamp a working-scale setter and
 exercise its defensive error branch without returning a numerical value.
-Together these observe 130 outcomes. The two remaining outcomes require a
+Together the ordinary and modeled runs must reproduce 136 outcomes. The two remaining outcomes require a
 negative exponential coefficient: positive Taylor terms, positive squaring
 and a positive reciprocal preserve nonnegativity, so they are infeasible.
 The committed `src/bc/fixtures/math-library-decisions.json` report records

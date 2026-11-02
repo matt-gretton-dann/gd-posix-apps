@@ -65,6 +65,27 @@ class LibraryCli(unittest.TestCase):
                 self.assertEqual(lines[4 * index + 1:4 * index + 4],
                                  [str(case['scale']), '10', str(case['scale'])])
 
+    def test_atan_unit_literal_matches_the_certified_enclosure(self):
+        source = Path(SOURCE).read_text(encoding='utf-8')
+        literals = re.findall(r'(?m)^\s*r=(\.\d{80})$', source)
+        self.assertEqual(len(literals), 1)
+        cases = json.loads((ROOT / 'fixtures/math-oracles.json').read_text())['cases']
+        reference = next(c for c in cases if c['id'] == 'a-one' and c['scale'] == 100)
+        lower, upper = Fraction(reference['lower']), Fraction(reference['upper'])
+        places = 10 ** 80
+        lo = lower.numerator * places // lower.denominator
+        hi = upper.numerator * places // upper.denominator
+        self.assertEqual(lo, hi, 'reference must certify every stored decimal place')
+        self.assertEqual(Fraction(literals[0]), Fraction(lo, places))
+        for scale in range(65):
+            factor = 10 ** scale
+            self.assertEqual(lower.numerator * factor // lower.denominator,
+                             upper.numerator * factor // upper.denominator)
+            def rounded(value):
+                return (2 * value.numerator * factor + value.denominator) // (2 * value.denominator)
+            self.assertEqual(rounded(lower), rounded(upper))
+            self.assertEqual(rounded(Fraction(literals[0])), rounded(lower))
+
     def test_atan_unit_argument_precision_boundary(self):
         # Reuse a much tighter certified enclosure for the identical exact
         # argument. Negating it reverses endpoints without a new approximation.
@@ -91,8 +112,13 @@ class LibraryCli(unittest.TestCase):
                 with self.subTest(binary=binary, scale=scale, sign=sign,
                                   trailing=trailing, base=base, options=options):
                     lo, hi = (lower, upper) if sign > 0 else (-upper, -lower)
-                    self.assertEqual(ORACLE.classify(ORACLE.decimal_fraction(lines[4 * index]),
-                                                    lo, hi, scale), 'pass')
+                    candidate = ORACLE.decimal_fraction(lines[4 * index])
+                    self.assertEqual(ORACLE.classify(candidate, lo, hi, scale), 'pass')
+                    factor = 10 ** scale
+                    rounded_lower = (2 * lower.numerator * factor + lower.denominator) // (2 * lower.denominator)
+                    rounded_upper = (2 * upper.numerator * factor + upper.denominator) // (2 * upper.denominator)
+                    self.assertEqual(rounded_lower, rounded_upper)
+                    self.assertEqual(candidate, sign * Fraction(rounded_lower, factor))
                     self.assertEqual(lines[4 * index + 1:4 * index + 4],
                                      [str(scale), str(base), str(scale)])
 

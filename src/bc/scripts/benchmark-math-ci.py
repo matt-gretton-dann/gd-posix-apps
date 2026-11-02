@@ -226,6 +226,12 @@ def main():
         configs = configurations(*entries, howard,
                                  root / 'gd/source/src/bc/math-library.bc',
                                  root / 'aa/source/src/bc/math-library.bc', args.candidate)
+        # Certify the exact source on both native hosts before any timing.
+        # The external role loads ordinary data, without Howard's own -l.
+        commands.run([sys.executable, str(SCRIPTS.parent / 'test-math-library-cli.py'),
+                      configs['paired'][1]['argv'][0], '--source',
+                      str(root / 'gd/source/src/bc/math-library.bc'), '--other-bc',
+                      howard['argv'][0]], timeout=600)
         for name, entries in configs.items():
             write(evidence / (name + '.json'), dict(implementations=entries))
         decisions = []

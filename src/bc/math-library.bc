@@ -32,6 +32,22 @@ define a(x) {
     n=1
     x= -x
   }
+  /* Certified 80-place lower bound of atan(1). At entry scales through
+     64, retain the existing nearest-rounding step with sixteen extra
+     decimal places. Higher scales and other arguments stay dynamic.
+     The enclosure and scale boundary are checked independently. */
+  if (s<=64) {
+    if (x==1) {
+      r=.78539816339744830961566084581987572104929234984377645524373614807695410157155224
+      t=10^(-s)/2
+      r+=t
+      if (n==1) r= -r
+      scale=s
+      r=r/1
+      ibase=b
+      return(r)
+    }
+  }
   v=0
   if (x>1) {
     v=1
