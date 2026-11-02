@@ -107,7 +107,7 @@ class ProfilingCli(unittest.TestCase):
     def test_tiny_square_root_avoids_a_redundant_almost_full_stage(self):
         places = 1024
         value = '.' + '0' * (places - 1) + '4'
-        expected = '.' + '0' * (places // 2 - 1) + '2' + '0' * (places // 2) + '\n'
+        expected = '0.' + '0' * (places // 2 - 1) + '2' + '0' * (places // 2) + '\n'
         counters = self.profile('scale=0\nsqrt({})\n'.format(value), expected,
                                 numeric_continuations=True)
         width = len(str(counters['limb_base'])) - 1
