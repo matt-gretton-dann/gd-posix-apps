@@ -104,6 +104,18 @@ class ProfilingCli(unittest.TestCase):
         self.assertLessEqual(events['sqrt_iterations'], 3)
         self.assertLessEqual(events['division_requests'], 3)
 
+    def test_tiny_square_root_avoids_a_redundant_almost_full_stage(self):
+        places = 1024
+        value = '.' + '0' * (places - 1) + '4'
+        expected = '.' + '0' * (places // 2 - 1) + '2' + '0' * (places // 2) + '\n'
+        counters = self.profile('scale=0\nsqrt({})\n'.format(value), expected,
+                                numeric_continuations=True)
+        width = len(str(counters['limb_base'])) - 1
+        root_digits = places + width + 1 - places // 2 + 1
+        # For this exact square, a balanced geometric prefix ladder plus its
+        # short initial convergence stays near twice the final digit budget.
+        self.assertLessEqual(counters['events']['sqrt_root_digits_sum'], 2 * root_digits + 64)
+
     def test_scaled_division_avoids_shared_decimal_padding(self):
         def decimal(coefficient, places):
             text = str(coefficient).zfill(places + 1)
