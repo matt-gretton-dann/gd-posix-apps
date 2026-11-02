@@ -150,7 +150,8 @@ and declared-input hashes too. It writes the deterministic audit summary and
 retains losses as data; its success is an integrity/replay result. Actual
 performance acceptance remains the per-checkpoint decision above.
 
-The negative tests reject omitted checked samples and altered timing executables.
+The tests reject omitted checked samples and altered timing executables, and
+simulate Windows text newline translation to require byte-stable audit replay.
 They run on Linux, macOS and Windows alongside archive replay.
 
 The final check verifies all repository evidence manifests and Windows checkout

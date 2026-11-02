@@ -1,6 +1,6 @@
 {
   ".gitattributes": "b1a0d9a7d9a2b4dcc7f6ebcc5c4c95aaaf1b5fb77fd2a45a6aec5078aa8561e3",
-  "README.md": "1aa960c4ea3d3ddec55ab7bd31fec2ae6d7135d030b3408e8d41a397403c1080",
+  "README.md": "c311931b1b0cf4d13d625528608340285348ba1ed21292292b95b407ded64982",
   "audit-summary.json": "61bbe339cd1c05ebb5c62539841a1dff3ebf489958494e29d9f90dc7f14298c1",
   "checkpoints.json": "c1c4d0e24a3d40f4f86b935846473083f400564a14655428366197b1c6db869d",
   "further-local/recipes/204-toom/aa/build-manifest.json": "3252c82fc2910a25dc23280a6adfd3f56c20bafc1d9bed298752f916a84d3575",
@@ -475,7 +475,7 @@
   "validation/bc-402-native-tests.log": "dfb6ae9455d96c8e0575e2f8b3dba8d78e8bed13792ae028e61f0ad0b2751ea2",
   "validation/bc-402-test-first-failure.log": "13c9d97154e760aa2c9489e9e3c2ae373fc59733201b37dd9f7b5548420645ec",
   "verify-further-local.py": "ada5cd6e88bf680fe7ab53de7285a88d7bc42f3ff012930c327da7c1e73d2f9e",
-  "verify-windows-controls.py": "dd7cdb03b00c08a274e042198b12ead10c46f04e7aca117a29e289778dd00074",
+  "verify-windows-controls.py": "2bd3c3a18ce794bdbbe8c1b0ec9d02fc02a1d9459ed1b9b1f3928992f68b932b",
   "verify.py": "828642d860e584913d09db628e5e46265a33010f0fb2beac6c86d44cd08d40ca",
   "windows-controls-audit.json": "cc5974ab48bf49254cf68c37c60e3cd304d42466060fd6b63d3814b6f7d06064"
 }

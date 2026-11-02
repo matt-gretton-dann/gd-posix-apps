@@ -106,5 +106,7 @@ for p in sorted((ROOT/'further-local/windows-controls').glob('replica*.zip')):
   results.append(record)
   print('replica',d['replica'],cpu,checked,'checked;',record['statuses'])
 assert len(results)==3 and {r['replica'] for r in results}=={'1','2','3'}
-(ROOT/'windows-controls-audit.json').write_text(json.dumps(dict(run=41506823190,head=head,base=base,results=results),indent=2)+'\n')
+# This report is hashed evidence. Write explicit UTF-8 bytes so replay on
+# Windows cannot translate its LF newlines and invalidate the recorded hash.
+(ROOT/'windows-controls-audit.json').write_bytes((json.dumps(dict(run=41506823190,head=head,base=base,results=results),indent=2)+'\n').encode('utf-8'))
 print('all three complete; no timing bias reproduced; no causal attribution or old-loss waiver')
