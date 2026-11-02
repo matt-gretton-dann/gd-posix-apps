@@ -550,6 +550,27 @@ def corpus(preset="full", selected=None, listing=False, seed=197200, suite='arit
                     coefficient * 10 ** places // (divisor * 10 ** fraction_digits), places),
                 dict(input_scale=fraction_digits, scale=places, iterations=repeats,
                      divisor=str(divisor), shape=shape, coefficient_digits=len(str(coefficient))))
+    # Append fractional remainder classes without changing any existing input
+    # or RNG stream. Exercise padding on either side of the exact integer mod.
+    modulo_rng = random.Random(seed ^ 416)
+    def modulo_dense(length):
+        return str(modulo_rng.randrange(1, 10)) + ''.join(
+            str(modulo_rng.randrange(10)) for _ in range(length - 1))
+
+    for shape, sa, sb, places in (('numerator', 3, 7, 43), ('divisor', 97, 37, 43)):
+        sa, sb, places = dimension(sa), dimension(sb), dimension(places)
+        count = iterations(1000)
+        a, b = int(modulo_dense(dimension(600))), int(modulo_dense(dimension(230)))
+        result_scale = max(sa, sb + places)
+        remainder = ((a * 10 ** (result_scale - sa)) %
+                     (b * 10 ** (result_scale - sb - places)))
+        name = 'modulo_scaled_{}_s{}_b{}_t{}_x{}'.format(shape, sa, sb, places, count)
+        add(name, 'modulo_scaled_' + shape,
+            'scale={}\na={}\nb={}\nfor(i=0;i<{};i++) c=a%b\nc'.format(
+                places, scaled(a, sa), scaled(b, sb), count),
+            scaled(remainder, result_scale),
+            dict(input_scale=sa, divisor_scale=sb, scale=places, shape=shape,
+                 iterations=count, dividend_digits=len(str(a)), divisor_digits=len(str(b))))
     if selected:
         missing = set(selected) - set(known)
         if missing:

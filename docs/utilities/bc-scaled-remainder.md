@@ -46,3 +46,22 @@ work, not a native speedup. Integrate the current accepted root implementation
 before final native evaluation. Prepared divisors, reusable caller-provided
 quotient/remainder buffers and symbolic shifted coefficient views remain
 separate #197 follow-ups.
+
+
+## Integrated validation and native matrix
+
+The candidate now includes accepted staged-root main `66cbf5d`. After integration,
+257 ASan/UBSan cases with 1,505,459 assertions, nine CLI/driver/lifetime checks,
+616 ordinary-source math references and twenty-four profiling checks pass.
+The benchmark builder and orchestration suites pass 37 and ten checks.
+
+Two new fractional modulo groups exercise numerator and divisor decimal
+padding. Full cases use 600/230-digit seeded coefficients, operand scales
+3/7 or 97/37, quotient scale 43 and 1000 repetitions. Holdout uses different
+seeded coefficients, dimensions, scales and counts; quick mode scales down
+both dimensions and repetitions. Exact Fraction tests derive x-trunc(x/y,t)*y
+independently of the integer remainder oracle. A frozen snapshot verifies
+all prior 56 corpus cases and their payloads remain unchanged in each preset;
+all 58 quick cases execute with checked outputs. The full native branch route
+will compare complete full/holdout classes, not just the new modulo groups.
+Native timing remains pending and no runtime adoption is claimed.

@@ -126,7 +126,7 @@ class BenchmarkCli(unittest.TestCase):
         self.assertEqual(result.stderr, "")
         rows = [json.loads(line) for line in
                 (output / "samples.jsonl").read_text(encoding="utf-8").splitlines()]
-        self.assertEqual(len(rows), 56)
+        self.assertEqual(len(rows), 58)
         self.assertTrue(all(row["checked"] for row in rows))
         manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
         files = [case for case in manifest['corpus'] if case['group'] == 'file_streaming']
@@ -375,11 +375,44 @@ class PairedStatistics(unittest.TestCase):
         recorded = json.loads(path.read_text())
         for preset, previous in recorded['presets'].items():
             cases = module.corpus(preset, seed=previous['seed'])
-            self.assertEqual(len(cases), len(previous['cases']) + 6)
+            self.assertEqual(len(cases), len(previous['cases']) + 8)
             by_name = {case['name']: case for case in cases}
             for name, digest in previous['cases'].items():
                 payload = json.dumps(by_name[name], sort_keys=True, separators=(',', ':')).encode()
                 self.assertEqual(hashlib.sha256(payload).hexdigest(), digest)
+
+    def test_scaled_modulo_preserves_previous_corpus_and_exact_oracles(self):
+        from fractions import Fraction
+        module = self.module()
+        fixture = Path(__file__).resolve().parent / 'fixtures/benchmark-corpus-before-scaled-modulo.json'
+        report = json.loads(fixture.read_text())
+        inventories = {}
+        for preset, recorded in report['presets'].items():
+            cases = module.corpus(preset, seed=recorded['seed'])
+            by_name = {case['name']: case for case in cases}
+            self.assertEqual(len(cases), len(recorded['cases']) + 2)
+            for name, digest in recorded['cases'].items():
+                payload = json.dumps(by_name[name], sort_keys=True, separators=(',', ':')).encode()
+                self.assertEqual(hashlib.sha256(payload).hexdigest(), digest)
+            added = [case for case in cases if case['group'].startswith('modulo_scaled_')]
+            self.assertEqual({case['parameters']['shape'] for case in added},
+                             {'numerator', 'divisor'})
+            for case in added:
+                parameters = case['parameters']
+                left = Fraction(re.search(r'\na=([0-9.]+)\n', case['program']).group(1))
+                right = Fraction(re.search(r'\nb=([0-9.]+)\n', case['program']).group(1))
+                unit = 10 ** parameters['scale']
+                quotient = Fraction(int(left / right * unit), unit)
+                expected = left - quotient * right
+                self.assertEqual(Fraction(case['expected'][0]), expected)
+                self.assertEqual(len(case['expected'][0].split('.')[1]),
+                                 max(parameters['input_scale'],
+                                     parameters['scale'] + parameters['divisor_scale']))
+                self.assertGreater(parameters['iterations'], 0)
+            inventories[preset] = added
+        for full, held in zip(inventories['full'], inventories['holdout']):
+            self.assertNotEqual(full['program'], held['program'])
+            self.assertNotEqual(full['parameters'], held['parameters'])
 
     def test_scaled_division_oracles_cover_scale_directions_and_holdout(self):
         from fractions import Fraction
@@ -417,7 +450,7 @@ class PairedStatistics(unittest.TestCase):
         report = json.loads(fixture.read_text())
         for preset, recorded in report['presets'].items():
             cases = module.corpus(preset, seed=recorded['seed'])
-            self.assertEqual(len(cases), 56)
+            self.assertEqual(len(cases), 58)
             for actual, previous in zip(cases[:46], recorded['cases']):
                 self.assertEqual(actual['name'], previous['name'])
                 payload = json.dumps(actual, sort_keys=True, separators=(',', ':')).encode()
