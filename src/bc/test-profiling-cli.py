@@ -27,7 +27,10 @@ class ProfilingCli(unittest.TestCase):
             result = self.invoke(program, output)
             self.assertEqual(result.returncode, 0, result.stderr)
             actual = result.stdout.replace('\\\n', '') if numeric_continuations else result.stdout
-            self.assertEqual(actual, expected)
+            if isinstance(expected, tuple):
+                self.assertIn(actual, expected)
+            else:
+                self.assertEqual(actual, expected)
             self.assertEqual(result.stderr, '')
             counters = json.loads(output.read_text(encoding='utf-8'))
         self.assertEqual(counters['schema'], 1)
@@ -108,8 +111,10 @@ class ProfilingCli(unittest.TestCase):
         places = 1024
         value = '.' + '0' * (places - 1) + '4'
         expected = '0.' + '0' * (places // 2 - 1) + '2' + '0' * (places // 2) + '\n'
-        counters = self.profile('scale=0\nsqrt({})\n'.format(value), expected,
-                                numeric_continuations=True)
+        # POSIX mode retains the leading zero; extensions mode omits it.
+        # Both spellings must retain every exact fractional and trailing digit.
+        counters = self.profile('scale=0\nsqrt({})\n'.format(value),
+                                (expected, expected[1:]), numeric_continuations=True)
         width = len(str(counters['limb_base'])) - 1
         root_digits = places + width + 1 - places // 2 + 1
         # For this exact square, a balanced geometric prefix ladder plus its
