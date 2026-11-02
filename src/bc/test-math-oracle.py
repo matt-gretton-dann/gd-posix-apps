@@ -113,6 +113,52 @@ class CertifiedFixtures(unittest.TestCase):
                      ROOT / 'scripts/generate-math-oracles.py'):
             self.assertNotIn(b'\r', path.read_bytes())
 
+    def test_crossover_reference_identities_and_enclosures(self):
+        report = json.loads((ROOT / 'fixtures/math-crossover-oracles.json').read_text())
+        source = ROOT / 'fixtures/math-crossover-cases.json'
+        specification = json.loads(source.read_text())
+        self.assertEqual(report['case_file_sha256'], hashlib.sha256(source.read_bytes()).hexdigest())
+        self.assertEqual(report['generator_sha256'], self.report['generator_sha256'])
+        expected = {(case['id'], scale) for case in specification['cases']
+                    for scale in specification['scales']}
+        self.assertEqual(len(report['cases']), len(expected))
+        self.assertEqual({(case['id'], case['scale']) for case in report['cases']}, expected)
+        by_id = {case['id']: case for case in specification['cases']}
+        for case in report['cases']:
+            with self.subTest(case=case['id'], scale=case['scale']):
+                self.assertEqual(case['function'], by_id[case['id']]['function'])
+                self.assertEqual(case['arguments'], by_id[case['id']]['arguments'])
+                lower, upper = Fraction(case['lower']), Fraction(case['upper'])
+                ulp = ORACLE.decimal_ulp(case['scale'])
+                self.assertLessEqual(lower, upper)
+                self.assertLessEqual(upper - lower, ulp / 10 ** report['guard_digits'])
+                candidate = ORACLE.decimal_fraction(ORACLE.nearest_decimal(lower, upper, case['scale']))
+                self.assertEqual(ORACLE.classify(candidate, lower, upper, case['scale']), 'pass')
+                self.assertEqual(ORACLE.classify(candidate + 3 * ulp, lower, upper,
+                                                case['scale']), 'fail')
+
+    def test_imported_decisions_account_for_computed_arguments(self):
+        spec = importlib.util.spec_from_file_location('imported_math', ROOT / 'test-math-imported.py')
+        adapter = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(adapter)
+        reference = dict(function='s', arguments=['0'], scale=2, lower='0', upper='0')
+        actual = dict(function='s', arguments=['.001'], scale=2, value='.001')
+        adapter.certify(actual, reference)
+        with self.assertRaises(AssertionError):
+            adapter.certify(dict(actual, value='.02'), reference)
+        # An uncertain boundary must request refinement, not pass or count as
+        # a proven numerical failure. The widened enclosure crosses one ULP.
+        with self.assertRaisesRegex(AssertionError, 'refine'):
+            adapter.certify(dict(actual, value='.010'), reference)
+        with self.assertRaisesRegex(AssertionError, 'regeneration'):
+            adapter.certify(dict(actual, function='e'), dict(reference, function='e'))
+        replacement = dict(reference, function='e', arguments=['.5'],
+                           user_redefinition='identity replacement of e')
+        identity = dict(function='e', arguments=['.5'], scale=2, value='.5')
+        adapter.certify(identity, replacement)
+        with self.assertRaises(AssertionError):
+            adapter.certify(dict(identity, value='.6'), replacement)
+
     def test_every_case_and_scale_has_a_narrow_dyadic_enclosure(self):
         specification = json.loads((ROOT / 'fixtures/math-oracle-cases.json').read_text())
         expected = {(c['id'], s) for c in specification['cases'] for s in specification['scales']}

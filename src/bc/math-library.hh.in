@@ -1,0 +1,9 @@
+/** Mechanically embedded ordinary bc source; do not edit generated output.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#ifndef GD_BC_MATH_LIBRARY_HH
+#define GD_BC_MATH_LIBRARY_HH
+namespace GD::Bc::Library {
+inline constexpr char source[] = R"GD_BC_LIBRARY(@GD_BC_LIBRARY_SOURCE@)GD_BC_LIBRARY";
+}
+#endif

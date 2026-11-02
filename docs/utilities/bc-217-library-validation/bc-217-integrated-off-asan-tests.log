@@ -1,0 +1,13 @@
+Test project /private/tmp/gd-posix-portable-math/build-asan
+    Start 14: bc/math-library-cli
+1/4 Test #14: bc/math-library-cli ..............   Passed  264.10 sec
+    Start 15: bc/math-library-source
+2/4 Test #15: bc/math-library-source ...........   Passed    0.04 sec
+    Start 16: bc/math-library-decisions
+3/4 Test #16: bc/math-library-decisions ........   Passed  125.43 sec
+    Start 17: bc/math-imported
+4/4 Test #17: bc/math-imported .................   Passed    7.79 sec
+
+100% tests passed out of 4
+
+Total Test time (real) = 397.37 sec

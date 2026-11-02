@@ -171,3 +171,44 @@ or fault-injection profiles contribute.
 - #215 remains open at this checkpoint: OFF has four uncovered special-register restoration lines because CLI `-g` is disabled. The VM constructor still accepts that mode, so a direct ON/OFF test is required; this is not a configuration exemption for the public VM API. The separately documented execution-stage invariants do not excuse this path.
 - The remaining 27 ON / 30 OFF raw MC/DC obligations retain their LLVM counts and source-specific classifications. Debug assertion failures are separate invariant/death-test scope. No boolean was rewritten, no invariant weakened, and no undefined/private state injected to improve counts.
 - No eligible denominator or adjusted percentage is computed. Closure of the arithmetic/frontend test work is based on the planned exact tests and the source-specific feasible-gap review, not a claim of 100% raw coverage or conformance. Other native platforms run Release behavior CI; these MC/DC measurements are specific to the recorded macOS/arm64 compiler.
+
+
+## Portable library checkpoint at 2579bfe
+
+Measured source: `2579bfe23d2785d1bd0c3052b32275fc70b66a20`, 1 November 2026,
+Homebrew Clang/LLVM 23.1.4 Debug on macOS 27.2/arm64. Raw profiles, profdata,
+exports, HTML, test inventories/logs, binary identities and compile commands
+are preserved in the [library validation archive](bc-217-library-validation/README.md).
+
+| Configuration / mappings | Lines | Branch outcomes | MC/DC conditions |
+| --- | --- | --- | --- |
+| ON / broad native/test-trait | 5634/5783 | 2807/3103 | 190/241 |
+| ON / application | 5603/5752 | 2805/3101 | 190/241 |
+| OFF / broad native/test-trait | 5599/5780 | 2787/3103 | 187/241 |
+| OFF / application | 5568/5749 | 2785/3101 | 187/241 |
+
+ON has 257 passes and 45 explicit imported skips, with 955 fresh profiles;
+OFF has 239 passes and 63 skips, with 931 profiles. Both select 302 entries,
+have zero failures, and have empty broad/application LLVM warning logs. The
+legacy exact-output math entries remain explicit skips while their calls run
+through the independent numerical adapter.
+
+The loader's `bc.cc` mapping remains 61/62 lines, 25/27 branch outcomes and
+1/2 MC/DC ON; OFF is 56/62, 23/27 and 1/2. Library loading executes in both
+directions. The null-instruction invariant, unreachable post-error break and
+option-schema/extension constraints remain in the raw counts and source-specific
+ledger; this checkpoint does not infer a new eligible denominator or completion
+percentage. Changes in compiler and source preclude a pure test-only comparison
+with the earlier LLVM 21 checkpoints. ON and OFF profiles remain separate.
+
+Both source-status snapshots record an untracked `default.profraw` from manual
+unit validation. It is excluded from every isolated input manifest; tracked
+code equals the stated revision. The collector merges only its newly created
+`test-profiles` directory.
+
+Interpreted `.bc` decisions are a separate scope: 476 certified numerical
+results observe 121/132 normal outcomes, 130/132 including nine independent
+scale-clipping host models, with two proved infeasible negative-exponential
+outcomes. That evidence does not fill C++ MC/DC obligations. Later source
+changes require fresh reports, and the final roadmap review still needs its
+current-source feasible-gap assessment.

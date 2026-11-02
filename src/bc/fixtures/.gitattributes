@@ -1,6 +1,12 @@
 # Reference identities must survive Windows checkout and regeneration.
 math-oracle-cases.json text eol=lf
 math-oracles.json -text
+math-imported-oracles.json -text
+math-crossover-cases.json text eol=lf
+math-crossover-oracles.json -text
+math-imported-bessel.bc text eol=lf
+math-imported-atan.bc text eol=lf
+math-library-decisions.json -text
 math-benchmark-cases.json text eol=lf
 math-benchmark-oracles.json -text
 benchmark-corpus-before-scaled-division.json -text

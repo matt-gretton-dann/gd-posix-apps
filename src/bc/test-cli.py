@@ -205,6 +205,15 @@ class CliTests(unittest.TestCase):
             with self.subTest(text=text):
                 self.run_bc(text, success=False)
 
+    def test_library_preload_runs_once_before_files_and_stdin(self):
+        with tempfile.TemporaryDirectory() as directory:
+            first = Path(directory) / 'first.bc'
+            second = Path(directory) / 'second.bc'
+            first.write_text('scale\nscale=3\n')
+            second.write_text('scale\nscale=4\n')
+            self.run_bc('scale\n', '20\n3\n4\n', files=(first, second), options=('-l',))
+            self.run_bc('scale\n', '0\n3\n4\n', files=(first, second))
+
     def test_options(self):
         self.run_bc("scale\n", "20\n", options=("-l",))
         self.run_bc("", success=False, options=("-z",), error="Usage:")
