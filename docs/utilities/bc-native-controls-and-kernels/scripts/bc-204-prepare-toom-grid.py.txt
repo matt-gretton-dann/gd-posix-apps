@@ -1,0 +1,54 @@
+"""Freeze a fixed-threshold grid and fresh large-size evaluation before timing."""
+import hashlib,importlib.util,json,random
+from pathlib import Path
+scripts=Path('/private/tmp/gd-posix-toom3-prototype/src/bc/scripts')
+spec=importlib.util.spec_from_file_location('bench',scripts/'bench-bc.py');bench=importlib.util.module_from_spec(spec);spec.loader.exec_module(bench)
+root=Path('/private/tmp/bc-204-toom-grid-preparation');root.mkdir(exist_ok=False)
+revision='6a5da4478ef6117c324122568511b2a75cff6844';roles={}
+for role,threshold in [('base',0),('aa',0),('toom128',128),('toom512',512),('toom2048',2048)]:
+ e=json.loads(Path('/private/tmp/gd-bc-204-toom-'+role+'-release/implementations.json').read_text())['implementations'][0]
+ assert e['name']==role and e['metadata']['source_revision']==revision
+ assert e['metadata']['instrumented'] is False and e['metadata']['configuration']['toom3_threshold']==threshold
+ assert bench.digest_file(e['argv'][0])==e['metadata']['binary_sha256']
+ roles[role]=e
+roles['howard']=json.loads(Path('/private/tmp/bc-217-pinned-howard.json').read_text());roles['howard']['name']='howard'
+for name,names in [('aa',('base','aa')),('training-paired',('base','toom128','toom512','toom2048','howard'))]:bench.write_json(root/(name+'.json'),dict(implementations=[roles[n] for n in names]))
+checks=[]
+for preset,dimensions,seed in [('full',[(30000,20),(100000,5),(200000,3)],19720400),('holdout',[(32771,17),(98317,7),(196613,4)],19720401)]:
+ cases=bench.corpus(preset,seed=197200 if preset=='full' else 197201);assert len(cases)==56
+ for case in cases:case['parameters']=dict(case['parameters'],experiment_scope='known regression core; not newly unseen evaluation')
+ rng=random.Random(seed)
+ def dense(n):return str(rng.randrange(1,10))+''.join(str(rng.randrange(10)) for _ in range(n-1))
+ for digits,repeats in dimensions:
+  for shape in ('dense','repeated','sparse','asymmetric','near_two_thirds','square'):
+   left=dense(digits)
+   if shape=='dense':right=dense(digits-1)
+   elif shape=='repeated':left='7'*digits;right='8'*digits
+   elif shape=='sparse':left='1'+'0'*(digits-2)+'1';right=left
+   elif shape=='asymmetric':right=dense(digits//7+37)
+   elif shape=='near_two_thirds':right=dense(2*digits//3+37)
+   else:right=left
+   name='toom_grid_{}_{}d_{}d_x{}'.format(shape,len(left),len(right),repeats)
+   if shape=='square':program='a={}\nfor(i=0;i<{};i++) c=a*a\nc\n'.format(left,repeats)
+   else:program='a={}\nb={}\nfor(i=0;i<{};i++) c=a*b\nc\n'.format(left,right,repeats)
+   expected=str(int(left)*int(right))
+   cases.append(dict(name=name,group='toom_grid_'+shape,program=program,expected=[expected],parameters=dict(left_digits=len(left),right_digits=len(right),iterations=repeats,shape=shape,seed=seed,preset=preset,oracle='independent Python exact integer product',experiment_scope='fresh training sizes' if preset=='full' else 'fresh evaluation sizes/operands; no elapsed inspection before training selection')))
+  print(preset,digits,'six frozen shapes',flush=True)
+ target=root/preset;programs=target/'workloads';programs.mkdir(parents=True);entries=[]
+ for case in cases:
+  payload=case['program'].encode();oracle=bench.oracle_payload(case)
+  (programs/(case['name']+'.bc')).write_bytes(payload);(programs/(case['name']+'.expected')).write_bytes(oracle)
+  entry={key:case[key] for key in ('name','group','parameters')};entry.update(program_sha256=hashlib.sha256(payload).hexdigest(),oracle_sha256=hashlib.sha256(oracle).hexdigest())
+  if case.get('input_mode'):entry['input_mode']=case['input_mode']
+  entries.append(entry)
+ bench.write_json(target/'manifest.json',dict(suite='arithmetic',preset=preset,corpus=entries))
+ # Correctness can be checked before selection; no elapsed ratio is inferred.
+ for case in bench.corpus('quick',seed=197200 if preset=='full' else 197201)+cases[-18:]:
+  for role in roles:
+   config=root/('aa.json' if role in ('base','aa') else 'training-paired.json')
+   tool=next(t for t in bench.implementations(config,True) if t['name']==role)
+   staged=root/('check-'+preset+'-'+case['name']+'.bc');staged.write_bytes(case['program'].encode())
+   result=bench.run_checked(tool,case,120,staged);checks.append(dict(preset=preset,name=case['name'],role=role,checked=result['checked']))
+ print(preset,len(cases),'classes; all correctness children checked',flush=True)
+bench.write_json(root/'checks.json',dict(results=checks))
+bench.write_json(root/'complete.json',dict(status='frozen and correctness checked before elapsed selection',source_revision=revision,thresholds=[128,512,2048],known_core_per_cohort=56,fresh_large_per_cohort=18,checked=len(checks),preparer_sha256=bench.digest_file(__file__),policy='Collect separate memory/allocation diagnostics before timing. Select a threshold using full training results only, record that choice, then run the frozen fresh evaluation. Retain the known 56-class core as regression evidence; prior holdout cases informed diagnosis and are not relabeled as unseen. No aggregation may hide a loss. Fixed counts/dimensions; no feedback calibration or favorable reruns.'))

@@ -197,3 +197,52 @@ the kernel object defines both native entries and their generic bodies.
 This establishes the observed local compilation boundary, without claiming
 an uninstrumented timing gain or MSVC/IPO behavior. Native evidence remains
 required, including every previously losing workload and CPU-cohort result.
+
+## Complete-root checkpoint and current-source integration
+
+Checkpoint `535420b` passed all twenty current checks and all six predetermined
+native comparisons: ordinary run 41512282021 plus the three Windows replicas
+in 41512281980. The 33,620 checked executions, eighteen exact timing binaries
+and 36 native inspection outputs are verified. No confirmed candidate loss
+was observed. Windows includes Intel Xeon Platinum 8370C, two EPYC 9V74 jobs
+and EPYC 7763; all earlier rejected checkpoints remain retained.
+
+The expanded full/held-out native corpus includes scales 5,000/5,625 and
+10,000/11,250, tiny fractional radicands and large integer coefficients.
+For the full scale-10,000 case, candidate/base medians are about 0.211 on Linux,
+0.210 on macOS and 0.218 on ordinary Windows, with reported intervals below
+one. Small scale-100 timings remain near baseline, with macOS noise limiting
+qualification. Reported intervals are not independently bootstrap-recomputed;
+CPU models and batches are not pooled. Huge integer roots still lose to Howard
+in some classes, so the broader #200/#197 competitive goal remains open.
+
+Separate current-source diagnostics retain 56 checked logical profiles and
+126 checked local RSS observations over all fourteen full/held-out root
+classes. Logical profiles use local Release profiling builds; RSS uses the
+exact uninstrumented macOS-15 arm64 timing binaries on the local M1 host.
+Those are local process-memory observations, not memory measurements from the
+hosted runner. All owned builds/tests finish first, logical collection finishes
+before RSS, and CPU/elapsed resource readings do not support speed claims.
+
+For one scale-5,000 root, the recorded divisor-limb sum falls from 7,798 to
+2,519 and requested digit peak from 20,248 to 11,344 bytes. Scale 10,000 uses
+28 smaller Newton steps instead of fifteen full-width steps: divisor-limb sum
+16,695 to 5,163 and requested digit peak 40,260 to 35,764 bytes. More iterations
+at smaller dimensions explain the measurement being taken; an iteration count
+alone is not a performance score.
+
+Process RSS remains mixed. Three-trial local medians for the original batched
+scale-5,000 workload rise from 2,146,304 to 2,277,376 bytes, and scale 10,000
+from 2,179,072 to 2,326,528. The tiny scale-4,096 median falls from 2,146,304 to
+2,080,768. The macOS executable grows from 535,728 to 552,656 file bytes.
+These code/allocator/process costs are retained alongside the lower requested
+storage and native speed gains; no universal memory win is claimed. The first
+RSS attempt could not read a sandboxed kernel clock counter and is preserved
+as failed/unavailable. Only the missing RSS phase was then collected with the
+required read-only resource access; completed logical observations were kept.
+
+The accepted bare-condition fix #413 is integrated before the next adoption
+comparison. The combined source passes 248 ASan/UBSan cases (1,233,119
+assertions), nine CLI/verifier/lifetime/signal/controller checks, 23 Release
+profiling checks and 616 ordinary-source math references. Its own complete
+native evidence is still required before adopting the combined source.

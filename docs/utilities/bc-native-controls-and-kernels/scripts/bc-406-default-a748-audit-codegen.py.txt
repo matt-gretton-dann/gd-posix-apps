@@ -1,0 +1,25 @@
+"""Audit exact native executable copies and inspection outputs, no new timing."""
+import hashlib,json,zipfile
+from pathlib import Path,PureWindowsPath
+for host in ('linux','macos','windows'):
+ p=Path('/private/tmp/bc-406-default-a748-native-'+host+'.zip')
+ with zipfile.ZipFile(p) as z:
+  manifest=json.loads(z.read('codegen/manifest.json'));assert manifest['status']=='preserved'
+  assert {r['name'] for r in manifest['observations']}=={'base','candidate','aa'}
+  identities={}
+  for r in manifest['observations']:
+   role=r['name'];recipe=json.loads(z.read(role+'/implementations.json'))['implementations'][0]['metadata']
+   relative=PureWindowsPath(r['binary']).as_posix() if host=='windows' else r['binary']
+   payload=z.read('codegen/'+relative);assert hashlib.sha256(payload).hexdigest()==r['binary_sha256']==recipe['binary_sha256']
+   assert len(payload)==r['file_bytes'] and r['source_revision']==recipe['source_revision']
+   native=r['disassembly'];assert native['status']=='collected' and len(native['commands'])==2
+   for command in native['commands']:
+    log=z.read('codegen/'+role+'/'+command['log']);assert hashlib.sha256(log).hexdigest()==command['log_sha256'] and len(log)==command['log_bytes']
+    assert command['returncode']==0 and 0<command['timeout_seconds']<=60
+   identities[role]=dict(binary_sha256=r['binary_sha256'],file_bytes=r['file_bytes'],pe_code=r['pe_code'])
+   if host=='windows':assert r['pe_code']['status']=='collected'
+  result=dict(host=host,archive_sha256=hashlib.sha256(p.read_bytes()).hexdigest(),roles=identities,native_inspections=6,status='actual timing executables and native logs verified',path_scope='relative paths use the source host convention; ZIP entry paths use slash separators')
+ p.with_suffix('.codegen-audit.json').write_text(json.dumps(result,indent=2)+'\n')
+ print(host,'three exact binaries and six native inspection outputs verified')
+ if host=='windows':
+  for role,r in identities.items():print(role,r['pe_code']['code_file_bytes'],r['pe_code']['code_payload_sha256'])

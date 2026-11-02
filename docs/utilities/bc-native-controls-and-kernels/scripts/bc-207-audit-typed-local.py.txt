@@ -1,0 +1,39 @@
+"""Audit completed frozen result-slot experiments without collecting more timing."""
+from collections import Counter
+import hashlib,importlib.util,json
+from pathlib import Path
+root=Path('/private/tmp/bc-207-typed-paired-release');prep=Path('/private/tmp/bc-207-typed-preparation')
+assert (root/'complete.json').is_file() and not (root/'failure.json').exists()
+protocol=json.loads((root/'protocol.json').read_text());s=Path('/private/tmp/gd-posix-typed-result-pools/src/bc/scripts')
+spec=importlib.util.spec_from_file_location('policy',s/'benchmark-policy.py');policy=importlib.util.module_from_spec(spec);spec.loader.exec_module(policy)
+assert protocol['aa_policy_sha256']==policy.source_sha256()
+assert protocol['library_sha256']==hashlib.sha256((prep/'math-library.bc').read_bytes()).hexdigest()
+expected={'base':'7871af4c7bed04b2874ba78d214879d7923c5814','aa':'7871af4c7bed04b2874ba78d214879d7923c5814','candidate':'9028375821c730243f64d1d9dfdd1f20ec4a3eba'}
+checked=0;matrices=[]
+for target in sorted(root.iterdir()):
+ if not target.is_dir() or not (target/'samples.jsonl').is_file():continue
+ m=json.loads((target/'manifest.json').read_text());raw=[json.loads(l) for l in (target/'samples.jsonl').read_text().splitlines()];assert raw and all(r['checked'] for r in raw)
+ assert m['harness_sha256']==hashlib.sha256((s/'bench-bc.py').read_bytes()).hexdigest()
+ assert m['samples']==15 and m['warmups']==3
+ counts=Counter((r['workload'],r['implementation'],r['phase']) for r in raw)
+ for case in m['corpus']:
+  for suffix,key in [('.bc','program_sha256'),('.expected','oracle_sha256')]:assert hashlib.sha256((target/'workloads'/(case['name']+suffix)).read_bytes()).hexdigest()==case[key]
+  for tool in m['implementations']:
+   assert counts[case['name'],tool['name'],'measurement']==15
+   assert counts[case['name'],tool['name'],'warmup']==3
+ for tool in m['implementations']:
+  meta=tool['metadata'];assert meta['instrumented'] is False
+  if tool['name'] in expected:
+   assert meta['source_revision']==expected[tool['name']]
+   assert hashlib.sha256(Path(tool['argv'][0]).read_bytes()).hexdigest()==meta['binary_sha256']
+   if m['suite']=='math':
+    assert tool['argv'][1:]==[str(prep/'math-library.bc')]
+    assert meta['library']['source_sha256']==protocol['library_sha256']
+ checked+=len(raw);matrices.append(dict(name=target.name,checked=len(raw),classes=len(m['corpus'])))
+controls=json.loads((root/'controls.json').read_text())['results'];regressions=json.loads((root/'regressions.json').read_text())['results'];assert len(controls)==len(regressions)==256
+for c in controls:assert c['status']==('inconclusive' if c['name']=='startup' else policy.aa_status(c['first'],c['confirmation']))
+for r in regressions:assert r['confirmed_regression']==bool(r['name']!='startup' and r['first']['ci95'][0]>1.05 and r['confirmation'] and r['confirmation']['ci95'][0]>1.05)
+resources=json.loads(Path('/private/tmp/bc-207-typed-native-resources/manifest.json').read_text());assert len(resources['samples'])==216 and all(r['checked'] and r['resources']['status']=='collected' for r in resources['samples']) and 'failure' not in resources
+assert checked>=20880
+result=dict(status='all raw counts, program/oracle/source/binary hashes and controls verified',checked=checked,matrices=matrices,paired_classes=len(regressions),confirmed_regressions=sum(bool(r['confirmed_regression']) for r in regressions),control_statuses=dict(Counter(c['status'] for c in controls)),rss_observations=216,performance_acceptance=False,limitations=['one local Apple host; native CI evidence remains separate','all inconclusive controls and confirmed losses retained','short classes retain fixed historical counts','RSS is separate from requested storage; early RSS collection overlapped a baseline profile build; concurrency is recorded','math uses identical ordinary source and evaluates VM effects, not library competitiveness','source editing, artifact downloads and read-only evidence audits occurred during sampling; builds/tests/profiles/RSS did not overlap'])
+(root/'audit.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))

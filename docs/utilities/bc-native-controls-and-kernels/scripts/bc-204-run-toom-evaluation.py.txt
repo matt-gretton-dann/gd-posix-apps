@@ -1,0 +1,40 @@
+"""Run only the preregistered selected treatment on frozen evaluation inputs."""
+import importlib.util,json,sys
+from pathlib import Path
+scripts=Path('/private/tmp/gd-posix-toom3-prototype/src/bc/scripts')
+spec=importlib.util.spec_from_file_location('ci',scripts/'benchmark-math-ci.py');ci=importlib.util.module_from_spec(spec);spec.loader.exec_module(ci)
+bench=ci.load('bench-bc');policy=ci.load('benchmark-policy')
+prepared=Path('/private/tmp/bc-204-toom-grid-preparation');assert json.loads((prepared/'complete.json').read_text())['checked']==888
+diagnostics=json.loads(Path('/private/tmp/bc-204-toom-grid-diagnostics/manifest.json').read_text());assert 'failure' not in diagnostics and len(diagnostics['logical'])==288 and len(diagnostics['resources'])==540
+training=Path('/private/tmp/bc-204-toom-grid-training');selection=json.loads((training/'selection.json').read_text());assert selection['selected_variant']=='toom2048' and (training/'complete.json').is_file()
+root=Path('/private/tmp/bc-204-toom-grid-evaluation');root.mkdir(exist_ok=False)
+ci.write(root/'protocol.json',dict(source_revision='6a5da4478ef6117c324122568511b2a75cff6844',thresholds=[2048],selection_sha256=bench.digest_file(training/'selection.json'),frozen_manifest_sha256=bench.digest_file(prepared/'holdout/manifest.json'),source_policy_sha256=policy.source_sha256(),runner_sha256=bench.digest_file(__file__),harness_sha256=bench.digest_file(scripts/'bench-bc.py'),samples=15,warmups=3,child_timeout=120,classes=74,known_regression_core=56,fresh_evaluation_classes=18,selection_policy='Selection recorded before evaluation; only threshold 2048 is evaluated. Preserve all 56 known regression classes and 18 fresh evaluation shapes separately. No confirmed loss may be hidden by a mean; startup uncalibrated. No favorable reruns or production adoption from this Apple host alone.',concurrency='All owned builds/tests/profiles/RSS completed before elapsed children; OS-default affinity; pre-existing clangd and two five-day-old Python services observed at 0% CPU before launch; host not isolated.'))
+ci.write(root/'host.json',ci.load('benchmark-ci').host_info())
+commands=ci.Commands(root,10800);controls=[];outcomes=[]
+try:
+ for comparison in ('aa','paired'):
+  config=prepared/('aa.json' if comparison=='aa' else 'evaluation-paired.json');target=root/comparison
+  command=[sys.executable,str(scripts/'bench-bc.py'),'--config',str(config),'--output',str(target),'--reference','base','--replay-corpus',str(prepared/'holdout'),'--samples','15','--warmups','3','--timeout','120','--seed',str(19722431 if comparison=='aa' else 19722432),'--require-provenance']
+  commands.run(command,timeout=7200);ci.measurements(target)
+  rows=json.loads((target/'summary.json').read_text())['workloads'];names=('aa',) if comparison=='aa' else ('toom2048',)
+  suspects=[]
+  for row in rows:
+   if row['name']=='startup':continue
+   if any((policy.aa_direction(row['candidate_over_reference'][name])!=0 if comparison=='aa' else row['candidate_over_reference'][name]['ci95'][0]>1.05) for name in names):suspects.append(row['name'])
+  confirmation={}
+  if suspects:
+   destination=root/(comparison+'-confirmation');confirm=command+[p for name in suspects for p in ('--workload',name)];confirm[confirm.index('--output')+1]=str(destination);confirm[confirm.index('--seed')+1]=str(19723431 if comparison=='aa' else 19723432)
+   commands.run(confirm,timeout=3600);ci.measurements(destination);confirmation={r['name']:r for r in json.loads((destination/'summary.json').read_text())['workloads']}
+  raw=[json.loads(line) for line in (target/'samples.jsonl').read_text().splitlines()]
+  def samples(workload,name):return [r['seconds'] for r in sorted(raw,key=lambda r:r['round']) if r['phase']=='measurement' and r['workload']==workload and r['implementation']==name]
+  for row in rows:
+   for name in names:
+    first=row['candidate_over_reference'][name];second=confirmation.get(row['name'],{}).get('candidate_over_reference',{}).get(name)
+    entry=dict(name=row['name'],group=row['group'],variant=name,first=first,confirmation=second)
+    if comparison=='aa':controls.append(dict(entry,status='inconclusive' if row['name']=='startup' else policy.aa_status(first,second)))
+    else:outcomes.append(dict(entry,confirmed_regression=bool(row['name']!='startup' and first['ci95'][0]>1.05 and second and second['ci95'][0]>1.05),candidate_over_howard=bench.paired_statistics(samples(row['name'],name),samples(row['name'],'howard'),seed=19722432)))
+  ci.write(root/'controls.json',dict(results=controls));ci.write(root/'outcomes.json',dict(results=outcomes));print(comparison,'evaluation complete',flush=True)
+ ci.write(root/'complete.json',dict(status='selected-treatment evaluation checked; native validation and adoption audit remain required',performance_acceptance=False))
+except BaseException as error:
+ ci.write(root/'failure.json',dict(error=str(error),performance_acceptance=False));raise
+finally:ci.write(root/'orchestration.json',dict(commands=commands.commands))

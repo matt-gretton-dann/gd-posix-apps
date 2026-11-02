@@ -1,0 +1,15 @@
+{
+  "checkpoint": "405-c866-cpu1",
+  "host": "windows",
+  "base": "21b3638ed338009a7bccf022cddcc119ce620296",
+  "candidate": "c866b5fa6dcd15638231d701480cccdf75bb1681",
+  "checked": 5600,
+  "artifact_sha256": "7bb8bea18a4a5544153305725793919693a1c190c90e1d369ba3444b97b80702",
+  "controls": {
+    "inconclusive-noisy": 27,
+    "pass": 85
+  },
+  "confirmed_regressions": [],
+  "performance_acceptance": false,
+  "scope": "Raw checked outputs/provenance and symmetric controls verified. No pooled pass; candidate acceptance requires all remaining evidence."
+}

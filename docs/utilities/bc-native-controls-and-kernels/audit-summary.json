@@ -1,4 +1,20 @@
 {
+  "further_local": {
+    "exact_binaries": 8,
+    "native_inspection_outputs": 16,
+    "observations": {
+      "toom-diagnostics/logical": 288,
+      "toom-diagnostics/resources": 540,
+      "typed-logical/results": 96,
+      "typed-resources/samples": 216
+    },
+    "performance_acceptance": false,
+    "timing_counts": {
+      "toom-evaluation": 6660,
+      "toom-training": 9414,
+      "typed-paired": 20880
+    }
+  },
   "limitations": [
     "recorded nominal intervals are not recomputed",
     "local producer raw counts/hashes/controls are replayed; original collector/auditor remain alongside them",
@@ -10,9 +26,9 @@
   "local_native_outputs": 6,
   "local_producer_checked": 19440,
   "local_resource_observations": 48,
-  "native_binaries": 81,
-  "native_checked": 112040,
-  "native_inspection_outputs": 162,
+  "native_binaries": 207,
+  "native_checked": 317840,
+  "native_inspection_outputs": 414,
   "reports": [
     {
       "changed_legacy_qualifiers": 0,
@@ -1456,6 +1472,3967 @@
       "cpu": "AMD EPYC 7763 64-Core Processor",
       "host": "windows",
       "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5600,
+      "checkpoint": "root-outlined-405",
+      "checkpoint_status": "No confirmed loss in this batch; preceding Windows losses remain unwaived",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 19,
+        "pass": 93
+      },
+      "cpu": null,
+      "host": "linux",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5600,
+      "checkpoint": "root-outlined-405",
+      "checkpoint_status": "No confirmed loss in this batch; preceding Windows losses remain unwaived",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 111,
+        "pass": 1
+      },
+      "cpu": null,
+      "host": "macos",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5600,
+      "checkpoint": "root-outlined-405",
+      "checkpoint_status": "No confirmed loss in this batch; preceding Windows losses remain unwaived",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 19,
+        "pass": 93
+      },
+      "cpu": "AMD EPYC 9V74 80-Core Processor",
+      "host": "windows",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5600,
+      "checkpoint": "root-01b-405",
+      "checkpoint_status": "Fixed CPU cohort exposes four EPYC 7763 conversion losses",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 13,
+        "pass": 99
+      },
+      "cpu": null,
+      "host": "linux",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5600,
+      "checkpoint": "root-01b-405",
+      "checkpoint_status": "Fixed CPU cohort exposes four EPYC 7763 conversion losses",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 107,
+        "pass": 5
+      },
+      "cpu": null,
+      "host": "macos",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5600,
+      "checkpoint": "root-01b-405",
+      "checkpoint_status": "Fixed CPU cohort exposes four EPYC 7763 conversion losses",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 31,
+        "pass": 81
+      },
+      "cpu": "AMD EPYC 9V74 80-Core Processor",
+      "host": "windows",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5600,
+      "checkpoint": "root-01b-cpu1-405",
+      "checkpoint_status": "Fixed CPU cohort exposes four EPYC 7763 conversion losses; predetermined replica, no model selection",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 29,
+        "pass": 83
+      },
+      "cpu": "AMD EPYC 9V74 80-Core Processor",
+      "host": "windows",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5630,
+      "checkpoint": "root-01b-cpu2-405",
+      "checkpoint_status": "Fixed CPU cohort exposes four EPYC 7763 conversion losses; predetermined replica, no model selection",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 47,
+        "pass": 65
+      },
+      "cpu": "AMD EPYC 9V45 96-Core Processor",
+      "host": "windows",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5720,
+      "checkpoint": "root-01b-cpu3-405",
+      "checkpoint_status": "Fixed CPU cohort exposes four EPYC 7763 conversion losses; predetermined replica, no model selection",
+      "confirmed_losses": [
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.05220070951569554,
+            "block_ci95": [
+              2.156922037464994,
+              2.2351927495435473
+            ],
+            "block_length": 3,
+            "ci95": [
+              2.1483027803125574,
+              2.2541982722921414
+            ],
+            "iid_ci95": [
+              2.1483027803125574,
+              2.2541982722921414
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 2.2267493651989914,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 2.1814537022195726
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.12583029804881044,
+            "block_ci95": [
+              1.1163929846058533,
+              1.1382843321554752
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0846609152810691,
+              1.162624501334703
+            ],
+            "iid_ci95": [
+              1.0846609152810691,
+              1.162624501334703
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1355692163314202,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1122190209376634
+          },
+          "name": "decimal_input_4000d_x100",
+          "preset": "full",
+          "ratio": {
+            "autocorrelation_lag1": -0.23314085946693186,
+            "block_ci95": [
+              1.1214507337518156,
+              1.1391762222924502
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0958396473978413,
+              1.144424139776257
+            ],
+            "iid_ci95": [
+              1.0958396473978413,
+              1.144424139776257
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1309793283267529,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1309793283267529
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "inconclusive-noisy",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": 0.4674754432905523,
+            "block_ci95": [
+              0.035668155771794746,
+              0.04209093675913237
+            ],
+            "block_length": 3,
+            "ci95": [
+              0.035668155771794746,
+              0.04209093675913237
+            ],
+            "iid_ci95": [
+              0.035668155771794746,
+              0.04209093675913237
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 0.03614639446393022,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 0.0360923880292811
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.03989045812125572,
+            "block_ci95": [
+              1.0887827608910252,
+              1.1165152356016144
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0887827608910252,
+              1.1220639640728092
+            ],
+            "iid_ci95": [
+              1.0887827608910252,
+              1.1220639640728092
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1070243354962321,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1085996051859757
+          },
+          "name": "binary_input_100000d_x3",
+          "preset": "full",
+          "ratio": {
+            "autocorrelation_lag1": 0.41903740709512977,
+            "block_ci95": [
+              1.1047476380385857,
+              1.335011816140824
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1047476380385857,
+              1.335011816140824
+            ],
+            "iid_ci95": [
+              1.1047476380385857,
+              1.335011816140824
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.118256397977606,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1175751252811403
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": 0.10640016943236588,
+            "block_ci95": [
+              2.0771829255777154,
+              2.226402612667015
+            ],
+            "block_length": 3,
+            "ci95": [
+              2.0771829255777154,
+              2.226402612667015
+            ],
+            "iid_ci95": [
+              2.0771829255777154,
+              2.226402612667015
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 2.1849592458243916,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 2.1849592458243916
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": 0.038577720472896274,
+            "block_ci95": [
+              1.12713884900069,
+              1.1377640669696731
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1186424130595218,
+              1.1390686807267023
+            ],
+            "iid_ci95": [
+              1.1186424130595218,
+              1.1390686807267023
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1337660908734872,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1390686807267023
+          },
+          "name": "decimal_input_4500d_x88",
+          "preset": "holdout",
+          "ratio": {
+            "autocorrelation_lag1": -0.2659841737577456,
+            "block_ci95": [
+              1.1282038875496565,
+              1.140706449701343
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1282038875496565,
+              1.1452604018182422
+            ],
+            "iid_ci95": [
+              1.1282038875496565,
+              1.1452604018182422
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1353094606591867,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1353094606591867
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.023369614965596516,
+            "block_ci95": [
+              0.03250335698771618,
+              0.03271643456944507
+            ],
+            "block_length": 3,
+            "ci95": [
+              0.0320799940320665,
+              0.03276745132267273
+            ],
+            "iid_ci95": [
+              0.0320799940320665,
+              0.03276745132267273
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 0.03268872848928909,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 0.032672939498099185
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": 0.1903939669594915,
+            "block_ci95": [
+              1.1070917390711252,
+              1.1354422295570046
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1054188066212538,
+              1.1354422295570046
+            ],
+            "iid_ci95": [
+              1.1054188066212538,
+              1.1354422295570046
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1164917316136387,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1129687415251106
+          },
+          "name": "binary_input_112500d_x3",
+          "preset": "holdout",
+          "ratio": {
+            "autocorrelation_lag1": 0.04586931368492815,
+            "block_ci95": [
+              1.1060925069789167,
+              1.142675159233931
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0871529109104547,
+              1.142675159233931
+            ],
+            "iid_ci95": [
+              1.0871529109104547,
+              1.142675159233931
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1174968039747382,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1177109552937876
+          },
+          "status": "confirmed regression"
+        }
+      ],
+      "controls": {
+        "inconclusive-noisy": 23,
+        "pass": 89
+      },
+      "cpu": "AMD EPYC 7763 64-Core Processor",
+      "host": "windows",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5600,
+      "checkpoint": "root-426-405",
+      "checkpoint_status": "Rejected translation-unit checkpoint; ten Windows losses across ordinary and fixed cohorts",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 21,
+        "pass": 91
+      },
+      "cpu": null,
+      "host": "linux",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5620,
+      "checkpoint": "root-426-405",
+      "checkpoint_status": "Rejected translation-unit checkpoint; ten Windows losses across ordinary and fixed cohorts",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 109,
+        "pass": 3
+      },
+      "cpu": null,
+      "host": "macos",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5690,
+      "checkpoint": "root-426-405",
+      "checkpoint_status": "Rejected translation-unit checkpoint; ten Windows losses across ordinary and fixed cohorts",
+      "confirmed_losses": [
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": 0.08956765042484092,
+            "block_ci95": [
+              2.0578176868054037,
+              2.1759096219972816
+            ],
+            "block_length": 3,
+            "ci95": [
+              2.0362093481237524,
+              2.1759096219972816
+            ],
+            "iid_ci95": [
+              2.0362093481237524,
+              2.1759096219972816
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 2.099746777908744,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 2.1005101304190306
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.15592968520662684,
+            "block_ci95": [
+              1.120194070447641,
+              1.1324499353208293
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1164163021309899,
+              1.14264706523769
+            ],
+            "iid_ci95": [
+              1.1164163021309899,
+              1.14264706523769
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1262079938976062,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1229726136659637
+          },
+          "name": "decimal_input_4000d_x100",
+          "preset": "full",
+          "ratio": {
+            "autocorrelation_lag1": -0.40143510750665784,
+            "block_ci95": [
+              1.1142196362447634,
+              1.1244992163483507
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0755256291569082,
+              1.1280176244813498
+            ],
+            "iid_ci95": [
+              1.0755256291569082,
+              1.1280176244813498
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1201429964232505,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1244992163483507
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.047064931560140875,
+            "block_ci95": [
+              0.03616858487122391,
+              0.03710587063578139
+            ],
+            "block_length": 3,
+            "ci95": [
+              0.03616858487122391,
+              0.03724036943144825
+            ],
+            "iid_ci95": [
+              0.03616858487122391,
+              0.03724036943144825
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 0.036666453784340206,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 0.0366114031644065
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.3869994678198631,
+            "block_ci95": [
+              1.1144099298113244,
+              1.1220871497863338
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1143834190398403,
+              1.1295431558864515
+            ],
+            "iid_ci95": [
+              1.1143834190398403,
+              1.1295431558864515
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1182379842524244,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1207051048294712
+          },
+          "name": "binary_input_100000d_x3",
+          "preset": "full",
+          "ratio": {
+            "autocorrelation_lag1": -0.24870342077538882,
+            "block_ci95": [
+              1.1078174941104397,
+              1.127790990030569
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0843308199177493,
+              1.127790990030569
+            ],
+            "iid_ci95": [
+              1.0843308199177493,
+              1.127790990030569
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1146026192463094,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1083845378192991
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.06789782460891944,
+            "block_ci95": [
+              0.03271157179359482,
+              0.03338135398977678
+            ],
+            "block_length": 3,
+            "ci95": [
+              0.03271157179359482,
+              0.03338135398977678
+            ],
+            "iid_ci95": [
+              0.03271157179359482,
+              0.03338135398977678
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 0.03306369492213962,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 0.03308766556336265
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": 0.19839340624728666,
+            "block_ci95": [
+              1.1183618626228937,
+              1.129757972069074
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1147354301917958,
+              1.129757972069074
+            ],
+            "iid_ci95": [
+              1.1147354301917958,
+              1.129757972069074
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1238050306634326,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1220395798647926
+          },
+          "name": "binary_input_112500d_x3",
+          "preset": "holdout",
+          "ratio": {
+            "autocorrelation_lag1": -0.0511163985646092,
+            "block_ci95": [
+              1.1086795732059866,
+              1.1374405342481357
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1045832843244772,
+              1.1374405342481357
+            ],
+            "iid_ci95": [
+              1.1045832843244772,
+              1.1374405342481357
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1133424899432753,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1133424899432753
+          },
+          "status": "confirmed regression"
+        }
+      ],
+      "controls": {
+        "inconclusive-noisy": 17,
+        "pass": 95
+      },
+      "cpu": "AMD EPYC 7763 64-Core Processor",
+      "host": "windows",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5690,
+      "checkpoint": "root-426-cpu1-405",
+      "checkpoint_status": "Rejected translation-unit checkpoint; ten Windows losses across ordinary and fixed cohorts; predetermined replica, no model selection",
+      "confirmed_losses": [
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": 0.04684526182337667,
+            "block_ci95": [
+              2.100460947916799,
+              2.1742127975194534
+            ],
+            "block_length": 3,
+            "ci95": [
+              2.100460947916799,
+              2.1742127975194534
+            ],
+            "iid_ci95": [
+              2.100460947916799,
+              2.1742127975194534
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 2.1303318695942184,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 2.100460947916799
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": 0.017482359978189293,
+            "block_ci95": [
+              1.118824705038081,
+              1.1448760826770072
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1121175653553337,
+              1.147993139537014
+            ],
+            "iid_ci95": [
+              1.1121175653553337,
+              1.147993139537014
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.128160283276883,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.128160283276883
+          },
+          "name": "decimal_input_4000d_x100",
+          "preset": "full",
+          "ratio": {
+            "autocorrelation_lag1": 0.07665133506981113,
+            "block_ci95": [
+              1.0982899879277292,
+              1.1371504895238649
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0982899879277292,
+              1.150314794254272
+            ],
+            "iid_ci95": [
+              1.0982899879277292,
+              1.150314794254272
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1128281814269712,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1123954851273974
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": 0.0301081958080051,
+            "block_ci95": [
+              2.084836569600012,
+              2.143510308354353
+            ],
+            "block_length": 3,
+            "ci95": [
+              2.084836569600012,
+              2.1511294679944903
+            ],
+            "iid_ci95": [
+              2.084836569600012,
+              2.1511294679944903
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 2.103203596437144,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 2.1047972610179206
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.013689232073295683,
+            "block_ci95": [
+              1.1227558941157274,
+              1.1350337423501415
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.118638544571072,
+              1.167022375807602
+            ],
+            "iid_ci95": [
+              1.118638544571072,
+              1.167022375807602
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1339844771136103,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1345716208075576
+          },
+          "name": "decimal_input_4500d_x88",
+          "preset": "holdout",
+          "ratio": {
+            "autocorrelation_lag1": -0.0479079180515388,
+            "block_ci95": [
+              1.1139370432992328,
+              1.1466712095958869
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1124721508113227,
+              1.150861144244608
+            ],
+            "iid_ci95": [
+              1.1124721508113227,
+              1.150861144244608
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.12774389860009,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1250380364191794
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": 0.38755111637078987,
+            "block_ci95": [
+              0.03275268147061364,
+              0.034979770335127294
+            ],
+            "block_length": 3,
+            "ci95": [
+              0.03275268147061364,
+              0.034979770335127294
+            ],
+            "iid_ci95": [
+              0.03275268147061364,
+              0.034979770335127294
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 0.03315052329233083,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 0.0331977044614076
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.23846804242468117,
+            "block_ci95": [
+              1.102624296401638,
+              1.1215575629122285
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0959815888082918,
+              1.1354252481245963
+            ],
+            "iid_ci95": [
+              1.0959815888082918,
+              1.1354252481245963
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.109650615192326,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1142405644737758
+          },
+          "name": "binary_input_112500d_x3",
+          "preset": "holdout",
+          "ratio": {
+            "autocorrelation_lag1": -0.5206651406155548,
+            "block_ci95": [
+              1.1076716211458346,
+              1.1255088212128919
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0981894891652373,
+              1.130449758882935
+            ],
+            "iid_ci95": [
+              1.0981894891652373,
+              1.130449758882935
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1161380120876039,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1218064166941533
+          },
+          "status": "confirmed regression"
+        }
+      ],
+      "controls": {
+        "inconclusive-noisy": 23,
+        "pass": 89
+      },
+      "cpu": "AMD EPYC 7763 64-Core Processor",
+      "host": "windows",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5690,
+      "checkpoint": "root-426-cpu2-405",
+      "checkpoint_status": "Rejected translation-unit checkpoint; ten Windows losses across ordinary and fixed cohorts; predetermined replica, no model selection",
+      "confirmed_losses": [
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.40678533159440816,
+            "block_ci95": [
+              1.3511997027797804,
+              1.39604611655742
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.3431410589424102,
+              1.4254522940532308
+            ],
+            "iid_ci95": [
+              1.3431410589424102,
+              1.4254522940532308
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.3839440790663693,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.3978015090310463
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.3816894609598185,
+            "block_ci95": [
+              1.0790788852343123,
+              1.103494038354787
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0790788852343123,
+              1.103494038354787
+            ],
+            "iid_ci95": [
+              1.0790788852343123,
+              1.103494038354787
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0908717493059585,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.0847520519174438
+          },
+          "name": "loop_1000000",
+          "preset": "full",
+          "ratio": {
+            "autocorrelation_lag1": -0.4703955011438519,
+            "block_ci95": [
+              1.0646972366635206,
+              1.0819714737481865
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0642929690334,
+              1.0819714737481865
+            ],
+            "iid_ci95": [
+              1.0642929690334,
+              1.0819714737481865
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0754100749250002,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.0757981858736305
+          },
+          "status": "confirmed regression"
+        }
+      ],
+      "controls": {
+        "inconclusive-noisy": 33,
+        "pass": 79
+      },
+      "cpu": "INTEL(R) XEON(R) PLATINUM 8573C",
+      "host": "windows",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5690,
+      "checkpoint": "root-426-cpu3-405",
+      "checkpoint_status": "Rejected translation-unit checkpoint; ten Windows losses across ordinary and fixed cohorts; predetermined replica, no model selection",
+      "confirmed_losses": [
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.1776661509801108,
+            "block_ci95": [
+              2.0516637057653564,
+              2.1844596600910244
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.867158978918173,
+              2.702651572412827
+            ],
+            "iid_ci95": [
+              1.867158978918173,
+              2.702651572412827
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 2.175218854059877,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 2.0854054227722667
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.2035519660842136,
+            "block_ci95": [
+              1.1253822098650226,
+              1.13405940335864
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.105863469547255,
+              1.1404934335863313
+            ],
+            "iid_ci95": [
+              1.105863469547255,
+              1.1404934335863313
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1305971092691167,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1223365031732706
+          },
+          "name": "decimal_input_4000d_x100",
+          "preset": "full",
+          "ratio": {
+            "autocorrelation_lag1": -0.06405160277023982,
+            "block_ci95": [
+              1.1160883555056098,
+              1.1759943697152877
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1160883555056098,
+              1.468394366685536
+            ],
+            "iid_ci95": [
+              1.1160883555056098,
+              1.468394366685536
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1227143209207464,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1290460039986547
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": 0.29929246263701276,
+            "block_ci95": [
+              2.106574948000791,
+              2.2532791458979906
+            ],
+            "block_length": 3,
+            "ci95": [
+              2.106574948000791,
+              2.2532791458979906
+            ],
+            "iid_ci95": [
+              2.106574948000791,
+              2.2532791458979906
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 2.1426932198017066,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 2.1535264871866127
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": 0.14282744315565904,
+            "block_ci95": [
+              1.105454317223992,
+              1.1392247074493784
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.105454317223992,
+              1.1392247074493784
+            ],
+            "iid_ci95": [
+              1.105454317223992,
+              1.134926017810105
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1249356923081075,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.123305193130511
+          },
+          "name": "decimal_input_4500d_x88",
+          "preset": "holdout",
+          "ratio": {
+            "autocorrelation_lag1": 0.19931499021170956,
+            "block_ci95": [
+              1.1219248284247543,
+              1.1522091360962055
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1157288153463205,
+              1.1522091360962055
+            ],
+            "iid_ci95": [
+              1.1157288153463205,
+              1.1522091360962055
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1238823689203052,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1444928344349912
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "inconclusive-noisy",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.18376351466277308,
+            "block_ci95": [
+              0.03283746080894895,
+              0.03312169154582224
+            ],
+            "block_length": 3,
+            "ci95": [
+              0.03254945919968523,
+              0.03342945115082421
+            ],
+            "iid_ci95": [
+              0.03254945919968523,
+              0.03342945115082421
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 0.033046354788750024,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 0.03303248188953961
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.15795343718145827,
+            "block_ci95": [
+              1.1123417956973503,
+              1.1269135936911505
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1103610617345585,
+              1.1325266295681136
+            ],
+            "iid_ci95": [
+              1.1103610617345585,
+              1.1325266295681136
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1199827869477315,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1179495617563922
+          },
+          "name": "binary_input_112500d_x3",
+          "preset": "holdout",
+          "ratio": {
+            "autocorrelation_lag1": -0.11653832505027473,
+            "block_ci95": [
+              1.1121600337733797,
+              1.1246386018265233
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0988721499077165,
+              1.1247503800202392
+            ],
+            "iid_ci95": [
+              1.0988721499077165,
+              1.1247503800202392
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1139904875287445,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1148949580385528
+          },
+          "status": "confirmed regression"
+        }
+      ],
+      "controls": {
+        "inconclusive-noisy": 29,
+        "pass": 83
+      },
+      "cpu": "AMD EPYC 7763 64-Core Processor",
+      "host": "windows",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5600,
+      "checkpoint": "root-c866-405",
+      "checkpoint_status": "Rejected public-length restoration; eight Windows conversion losses and unchanged code identity",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 8,
+        "pass": 104
+      },
+      "cpu": null,
+      "host": "linux",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5600,
+      "checkpoint": "root-c866-405",
+      "checkpoint_status": "Rejected public-length restoration; eight Windows conversion losses and unchanged code identity",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 110,
+        "pass": 2
+      },
+      "cpu": null,
+      "host": "macos",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5720,
+      "checkpoint": "root-c866-405",
+      "checkpoint_status": "Rejected public-length restoration; eight Windows conversion losses and unchanged code identity",
+      "confirmed_losses": [
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": 0.25236573681075525,
+            "block_ci95": [
+              2.144789683217625,
+              2.2206187371498203
+            ],
+            "block_length": 3,
+            "ci95": [
+              2.1237607537890657,
+              2.2206187371498203
+            ],
+            "iid_ci95": [
+              2.1237607537890657,
+              2.2206187371498203
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 2.154262081276443,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 2.21473082913841
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.06853573754493335,
+            "block_ci95": [
+              1.1349675502746361,
+              1.1967540016116867
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1308866429299715,
+              1.1967540016116867
+            ],
+            "iid_ci95": [
+              1.1308866429299715,
+              1.157618910730242
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1446744117128242,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1516251031075764
+          },
+          "name": "decimal_input_4000d_x100",
+          "preset": "full",
+          "ratio": {
+            "autocorrelation_lag1": 0.11219632675192959,
+            "block_ci95": [
+              1.1076020667482094,
+              1.1304721680193999
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0978115447673635,
+              1.132015737380538
+            ],
+            "iid_ci95": [
+              1.0978115447673635,
+              1.132015737380538
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1230107841586676,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1336109511366201
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.04770688113472187,
+            "block_ci95": [
+              0.03583884794465385,
+              0.03610861886750072
+            ],
+            "block_length": 3,
+            "ci95": [
+              0.03581927750199765,
+              0.036575532214976454
+            ],
+            "iid_ci95": [
+              0.03581927750199765,
+              0.036575532214976454
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 0.035936243530272124,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 0.035955949848675894
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": 0.020432495559247532,
+            "block_ci95": [
+              1.1119302059650606,
+              1.1215192316979061
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1119302059650606,
+              1.1217655047642514
+            ],
+            "iid_ci95": [
+              1.1119302059650606,
+              1.1217655047642514
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1191621340921971,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.117311291064827
+          },
+          "name": "binary_input_100000d_x3",
+          "preset": "full",
+          "ratio": {
+            "autocorrelation_lag1": -0.12558953127104136,
+            "block_ci95": [
+              1.1117264456412812,
+              1.117474092481909
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0962841523780003,
+              1.122628112988881
+            ],
+            "iid_ci95": [
+              1.0962841523780003,
+              1.122628112988881
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.11222001829846,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1159180684678405
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.008311046992798362,
+            "block_ci95": [
+              2.070040328672857,
+              2.1505457003587884
+            ],
+            "block_length": 3,
+            "ci95": [
+              2.070040328672857,
+              2.1505457003587884
+            ],
+            "iid_ci95": [
+              2.070040328672857,
+              2.1505457003587884
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 2.114644283926427,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 2.1523921788633555
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.005505873562924743,
+            "block_ci95": [
+              1.1224043480178567,
+              1.143137727700184
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1224043480178567,
+              1.1437465601046084
+            ],
+            "iid_ci95": [
+              1.1224043480178567,
+              1.1437465601046084
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1328610971842528,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1316653065424136
+          },
+          "name": "decimal_input_4500d_x88",
+          "preset": "holdout",
+          "ratio": {
+            "autocorrelation_lag1": 0.029820648697677227,
+            "block_ci95": [
+              1.1203752829535512,
+              1.1349965897856267
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1175452538508734,
+              1.1463485421380304
+            ],
+            "iid_ci95": [
+              1.1175452538508734,
+              1.1463485421380304
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1270731359626425,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1310704214338063
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.504142736691344,
+            "block_ci95": [
+              0.032833648371078515,
+              0.032874441591743554
+            ],
+            "block_length": 3,
+            "ci95": [
+              0.032815957334594546,
+              0.03295160387939474
+            ],
+            "iid_ci95": [
+              0.032815957334594546,
+              0.03295160387939474
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 0.03287288095582885,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 0.03286837043876037
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.11567903738195552,
+            "block_ci95": [
+              1.109497611574256,
+              1.127081440366547
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0950433889431896,
+              1.127081440366547
+            ],
+            "iid_ci95": [
+              1.0950433889431896,
+              1.127081440366547
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1153139530305558,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1159446642182382
+          },
+          "name": "binary_input_112500d_x3",
+          "preset": "holdout",
+          "ratio": {
+            "autocorrelation_lag1": -0.3465060269864443,
+            "block_ci95": [
+              1.1057139487532102,
+              1.1161609740401472
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0963877132499726,
+              1.1161609740401472
+            ],
+            "iid_ci95": [
+              1.0963877132499726,
+              1.1161609740401472
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.108928892579867,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1092097450891485
+          },
+          "status": "confirmed regression"
+        }
+      ],
+      "controls": {
+        "inconclusive-noisy": 26,
+        "pass": 86
+      },
+      "cpu": "AMD EPYC 7763 64-Core Processor",
+      "host": "windows",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5600,
+      "checkpoint": "root-c866-cpu1-405",
+      "checkpoint_status": "Rejected public-length restoration; eight Windows conversion losses and unchanged code identity; predetermined replica, no model selection",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 27,
+        "pass": 85
+      },
+      "cpu": "AMD EPYC 9V45 96-Core Processor",
+      "host": "windows",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5720,
+      "checkpoint": "root-c866-cpu2-405",
+      "checkpoint_status": "Rejected public-length restoration; eight Windows conversion losses and unchanged code identity; predetermined replica, no model selection",
+      "confirmed_losses": [
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.1744505789567277,
+            "block_ci95": [
+              2.1514555909027235,
+              2.264692297758128
+            ],
+            "block_length": 3,
+            "ci95": [
+              2.137440431552666,
+              2.2849051415894674
+            ],
+            "iid_ci95": [
+              2.137440431552666,
+              2.2849051415894674
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 2.2021662600265874,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 2.2386487435667104
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.1446130300332519,
+            "block_ci95": [
+              1.1219532408269168,
+              1.144942358970755
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1117926171165886,
+              1.1546759464645464
+            ],
+            "iid_ci95": [
+              1.1117926171165886,
+              1.1546759464645464
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1303244435656419,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.135896257440244
+          },
+          "name": "decimal_input_4000d_x100",
+          "preset": "full",
+          "ratio": {
+            "autocorrelation_lag1": -0.03775239765446819,
+            "block_ci95": [
+              1.1195606290619968,
+              1.135462635732872
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0974734732564781,
+              1.135462635732872
+            ],
+            "iid_ci95": [
+              1.0974734732564781,
+              1.135462635732872
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1315961146427627,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1165698170483627
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "inconclusive-noisy",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.1395731634459696,
+            "block_ci95": [
+              0.03496200177728533,
+              0.03626410495871027
+            ],
+            "block_length": 3,
+            "ci95": [
+              0.034736045527722234,
+              0.03907473358743899
+            ],
+            "iid_ci95": [
+              0.034736045527722234,
+              0.03907473358743899
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 0.03606119027795915,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 0.03597985466700036
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": 0.014768469320688172,
+            "block_ci95": [
+              1.1116384258241492,
+              1.1267575092523119
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.104617254649337,
+              1.1274954415734892
+            ],
+            "iid_ci95": [
+              1.104617254649337,
+              1.1274954415734892
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1219071154320162,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1171730664105481
+          },
+          "name": "binary_input_100000d_x3",
+          "preset": "full",
+          "ratio": {
+            "autocorrelation_lag1": -0.20518267398378495,
+            "block_ci95": [
+              1.102308444505463,
+              1.165895850137138
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0975307777429624,
+              1.2349104814611218
+            ],
+            "iid_ci95": [
+              1.0975307777429624,
+              1.2349104814611218
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1158285933119234,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.13567761687515
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.2541162829661351,
+            "block_ci95": [
+              2.1410810276265595,
+              2.1665414961328446
+            ],
+            "block_length": 3,
+            "ci95": [
+              2.1410810276265595,
+              2.207299371582973
+            ],
+            "iid_ci95": [
+              2.1410810276265595,
+              2.207299371582973
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 2.1623920586285434,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 2.1430525552308617
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.12151876870197466,
+            "block_ci95": [
+              1.1262618335438113,
+              1.1608320555766263
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1251142040966455,
+              1.1608320555766263
+            ],
+            "iid_ci95": [
+              1.1251142040966455,
+              1.1608320555766263
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1516904155679366,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1398204836516845
+          },
+          "name": "decimal_input_4500d_x88",
+          "preset": "holdout",
+          "ratio": {
+            "autocorrelation_lag1": -0.4398579966623083,
+            "block_ci95": [
+              1.1286988227064,
+              1.141114592173576
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1274653345976189,
+              1.141114592173576
+            ],
+            "iid_ci95": [
+              1.1274653345976189,
+              1.141114592173576
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1319710970573684,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1289914360266682
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": 0.1949013780177058,
+            "block_ci95": [
+              0.032367571152921694,
+              0.03285384946301698
+            ],
+            "block_length": 3,
+            "ci95": [
+              0.03222991340902071,
+              0.03285562922659077
+            ],
+            "iid_ci95": [
+              0.03222991340902071,
+              0.03285562922659077
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 0.032586825424054076,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 0.0325806914024583
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": 0.4208945967225718,
+            "block_ci95": [
+              1.086289814809534,
+              1.1269212930995622
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0850107915220863,
+              1.1269212930995622
+            ],
+            "iid_ci95": [
+              1.0850107915220863,
+              1.1269212930995622
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1101099824441623,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1093072456311577
+          },
+          "name": "binary_input_112500d_x3",
+          "preset": "holdout",
+          "ratio": {
+            "autocorrelation_lag1": -0.009355354539425537,
+            "block_ci95": [
+              1.1006671241043682,
+              1.1210949712156524
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1006671241043682,
+              1.1311007499087014
+            ],
+            "iid_ci95": [
+              1.1006671241043682,
+              1.1311007499087014
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.109970656427987,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.118419536921579
+          },
+          "status": "confirmed regression"
+        }
+      ],
+      "controls": {
+        "inconclusive-noisy": 41,
+        "pass": 71
+      },
+      "cpu": "AMD EPYC 7763 64-Core Processor",
+      "host": "windows",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5600,
+      "checkpoint": "root-c866-cpu3-405",
+      "checkpoint_status": "Rejected public-length restoration; eight Windows conversion losses and unchanged code identity; predetermined replica, no model selection",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 30,
+        "pass": 82
+      },
+      "cpu": "Intel(R) Xeon(R) 6973P-C",
+      "host": "windows",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 2100,
+      "checkpoint": "toom-default-6a5-406",
+      "checkpoint_status": "Default tier diagnostic; no candidate adoption",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 3,
+        "pass": 39
+      },
+      "cpu": null,
+      "host": "linux",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 2100,
+      "checkpoint": "toom-default-6a5-406",
+      "checkpoint_status": "Default tier diagnostic; no candidate adoption",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 42
+      },
+      "cpu": null,
+      "host": "macos",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 2100,
+      "checkpoint": "toom-default-6a5-406",
+      "checkpoint_status": "Default tier diagnostic; no candidate adoption",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 18,
+        "pass": 24
+      },
+      "cpu": "AMD EPYC 9V45 96-Core Processor",
+      "host": "windows",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5720,
+      "checkpoint": "toom-512-6a5-406",
+      "checkpoint_status": "Rejected threshold-512 checkpoint; all four confirmed losses retained",
+      "confirmed_losses": [
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.40111250768649,
+            "block_ci95": [
+              0.46123245741502034,
+              0.4634213770138412
+            ],
+            "block_length": 3,
+            "ci95": [
+              0.4602749438949256,
+              0.46404129415579487
+            ],
+            "iid_ci95": [
+              0.4602749438949256,
+              0.46404129415579487
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 0.4623806446916292,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 0.4617209820960186
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.19764914718192284,
+            "block_ci95": [
+              1.0694307767777087,
+              1.070062160540314
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0694307767777087,
+              1.0780279590427717
+            ],
+            "iid_ci95": [
+              1.0694307767777087,
+              1.0780279590427717
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.06964443695823,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.0697250901082171
+          },
+          "name": "square_10000d_x500",
+          "preset": "full",
+          "ratio": {
+            "autocorrelation_lag1": -0.10215698759903677,
+            "block_ci95": [
+              1.0689253565010068,
+              1.07018024414078
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0676435798668376,
+              1.0829214855071467
+            ],
+            "iid_ci95": [
+              1.0676435798668376,
+              1.0829214855071467
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0690796311896822,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.0695223262947993
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.1892375563221966,
+            "block_ci95": [
+              0.3779088783337401,
+              0.37995932441865377
+            ],
+            "block_length": 3,
+            "ci95": [
+              0.3768730481541138,
+              0.38028537345007424
+            ],
+            "iid_ci95": [
+              0.3768730481541138,
+              0.38028537345007424
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 0.37886347544527027,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 0.37974067239486103
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": 0.17058648166838364,
+            "block_ci95": [
+              1.0637036886129208,
+              1.0677913219113642
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0601517623366052,
+              1.0677913219113642
+            ],
+            "iid_ci95": [
+              1.0601517623366052,
+              1.0677913219113642
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0671146034355994,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.067067751774432
+          },
+          "name": "multiply_dense_11250d_x438",
+          "preset": "holdout",
+          "ratio": {
+            "autocorrelation_lag1": -0.10426122644342403,
+            "block_ci95": [
+              1.0628403947552396,
+              1.068803206831347
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0628403947552396,
+              1.068803206831347
+            ],
+            "iid_ci95": [
+              1.0628403947552396,
+              1.068803206831347
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0653901807877544,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.0694565271351406
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.08308836993869659,
+            "block_ci95": [
+              0.46404326046141803,
+              0.4719125230348768
+            ],
+            "block_length": 3,
+            "ci95": [
+              0.46404326046141803,
+              0.47348451095872945
+            ],
+            "iid_ci95": [
+              0.46404326046141803,
+              0.47348451095872945
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 0.4707841889782253,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 0.47075995108754515
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.11030195421574752,
+            "block_ci95": [
+              1.0616849738236367,
+              1.0627747032677033
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.059210791363825,
+              1.063999862496848
+            ],
+            "iid_ci95": [
+              1.059210791363825,
+              1.063999862496848
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0619353308972725,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.062098394773407
+          },
+          "name": "square_11250d_x438",
+          "preset": "holdout",
+          "ratio": {
+            "autocorrelation_lag1": -0.03988095981121005,
+            "block_ci95": [
+              1.06119137206562,
+              1.0629433564349735
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.06119137206562,
+              1.0713577867371438
+            ],
+            "iid_ci95": [
+              1.06119137206562,
+              1.0713577867371438
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0623143204043035,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.0625416143863247
+          },
+          "status": "confirmed regression"
+        }
+      ],
+      "controls": {
+        "inconclusive-noisy": 17,
+        "pass": 95
+      },
+      "cpu": null,
+      "host": "linux",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5630,
+      "checkpoint": "toom-512-6a5-406",
+      "checkpoint_status": "Rejected threshold-512 checkpoint; all four confirmed losses retained",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 110,
+        "pass": 2
+      },
+      "cpu": null,
+      "host": "macos",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5660,
+      "checkpoint": "toom-512-6a5-406",
+      "checkpoint_status": "Rejected threshold-512 checkpoint; all four confirmed losses retained",
+      "confirmed_losses": [
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.13795169260094786,
+            "block_ci95": [
+              0.002945642158300755,
+              0.003155392878105373
+            ],
+            "block_length": 3,
+            "ci95": [
+              0.002945642158300755,
+              0.003155392878105373
+            ],
+            "iid_ci95": [
+              0.002945642158300755,
+              0.003155392878105373
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 0.003123846357051756,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 0.003123718869262021
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": 0.1976000806768355,
+            "block_ci95": [
+              1.0608296981053276,
+              1.1225144581292759
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0608296981053276,
+              1.1241043570000369
+            ],
+            "iid_ci95": [
+              1.0670588618219006,
+              1.1241043570000369
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1053668833545842,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.0672185839684794
+          },
+          "name": "sqrt_tiny_scale1152_x27",
+          "preset": "holdout",
+          "ratio": {
+            "autocorrelation_lag1": 0.2260346418434048,
+            "block_ci95": [
+              1.1323818758664737,
+              1.201360156951771
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1323818758664737,
+              1.201360156951771
+            ],
+            "iid_ci95": [
+              1.1323818758664737,
+              1.201360156951771
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1773375015178393,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.187812207890306
+          },
+          "status": "confirmed regression"
+        }
+      ],
+      "controls": {
+        "inconclusive-noisy": 20,
+        "pass": 92
+      },
+      "cpu": "AMD EPYC 9V74 80-Core Processor",
+      "host": "windows",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 2100,
+      "checkpoint": "toom-default-78e-406",
+      "checkpoint_status": "Four Windows candidate losses and matching control biases retained; no causal waiver",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 9,
+        "pass": 33
+      },
+      "cpu": null,
+      "host": "linux",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 2100,
+      "checkpoint": "toom-default-78e-406",
+      "checkpoint_status": "Four Windows candidate losses and matching control biases retained; no causal waiver",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 42
+      },
+      "cpu": null,
+      "host": "macos",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 2320,
+      "checkpoint": "toom-default-78e-406",
+      "checkpoint_status": "Four Windows candidate losses and matching control biases retained; no causal waiver",
+      "confirmed_losses": [
+        {
+          "aa_control_status": "confirmed A/A bias",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.09079655714249858,
+            "block_ci95": [
+              1.4671179935741436,
+              1.5401101969837572
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.4671179935741436,
+              1.5715487891079452
+            ],
+            "iid_ci95": [
+              1.4671179935741436,
+              1.5715487891079452
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.517185626688743,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.484772606374955
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.0878105752813428,
+            "block_ci95": [
+              1.146609814895281,
+              1.1652862547880167
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1239374631949512,
+              1.1652862547880167
+            ],
+            "iid_ci95": [
+              1.1239374631949512,
+              1.1652862547880167
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.149778997965003,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.156301206291423
+          },
+          "name": "loop_1000000",
+          "preset": "full",
+          "ratio": {
+            "autocorrelation_lag1": -0.2061970138448864,
+            "block_ci95": [
+              1.1489366997421468,
+              1.1759687249837705
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.139975406270522,
+              1.1759687249837705
+            ],
+            "iid_ci95": [
+              1.139975406270522,
+              1.1759687249837705
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1520771780056807,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1489366997421468
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "confirmed A/A bias",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.06497249689477422,
+            "block_ci95": [
+              0.10780586538823765,
+              0.11177714640770706
+            ],
+            "block_length": 3,
+            "ci95": [
+              0.10694088499527873,
+              0.11256629032753476
+            ],
+            "iid_ci95": [
+              0.10694088499527873,
+              0.11256629032753476
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 0.11017534317555272,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 0.10928004701671351
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": 0.17120359500432478,
+            "block_ci95": [
+              1.1032323764604695,
+              1.1710429703297953
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1032323764604695,
+              1.1721329895405799
+            ],
+            "iid_ci95": [
+              1.1032323764604695,
+              1.1721329895405799
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1650222625740052,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.170003373954512
+          },
+          "name": "array_200000",
+          "preset": "full",
+          "ratio": {
+            "autocorrelation_lag1": -0.585589510633518,
+            "block_ci95": [
+              1.1436146982094406,
+              1.1686717881262292
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1375262556814012,
+              1.1853782714168895
+            ],
+            "iid_ci95": [
+              1.1375262556814012,
+              1.1853782714168895
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1580994917353433,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1615344414758246
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "confirmed A/A bias",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.28491028603880625,
+            "block_ci95": [
+              1.4492938163530409,
+              1.4999675116955875
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.427358069889715,
+              1.4999675116955875
+            ],
+            "iid_ci95": [
+              1.427358069889715,
+              1.4999675116955875
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.4848683979522006,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.5004548362589347
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": 0.013752208148795537,
+            "block_ci95": [
+              1.0634065559216621,
+              1.0912457702022507
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.053549063122352,
+              1.0943155213150644
+            ],
+            "iid_ci95": [
+              1.053549063122352,
+              1.0943155213150644
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0780017137358164,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.0779228197439643
+          },
+          "name": "compare_high_1000d_x100000",
+          "preset": "full",
+          "ratio": {
+            "autocorrelation_lag1": -0.11999737042109565,
+            "block_ci95": [
+              1.063000396818227,
+              1.0704246947299632
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0583101073432701,
+              1.0817180624562925
+            ],
+            "iid_ci95": [
+              1.0583101073432701,
+              1.0817180624562925
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0677878155154505,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.0704246947299632
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "confirmed A/A bias",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": 0.05996694421996599,
+            "block_ci95": [
+              1.5031510146939087,
+              1.5360742276697439
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.4948971738071746,
+              1.5360742276697439
+            ],
+            "iid_ci95": [
+              1.4948971738071746,
+              1.5360742276697439
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.5058206662534894,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.5097802867885184
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.4151496644248241,
+            "block_ci95": [
+              1.0632910132365319,
+              1.0766314091850389
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0609929037385555,
+              1.194854838318057
+            ],
+            "iid_ci95": [
+              1.0609929037385555,
+              1.194854838318057
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0683987282267908,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.0616005124198953
+          },
+          "name": "compare_equal_1000d_x100000",
+          "preset": "full",
+          "ratio": {
+            "autocorrelation_lag1": -0.2688945164187186,
+            "block_ci95": [
+              1.0626903462019324,
+              1.0974266792036262
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0562673206585642,
+              1.0974266792036262
+            ],
+            "iid_ci95": [
+              1.0562673206585642,
+              1.0778549289882104
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0665161621947132,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.0655609689373362
+          },
+          "status": "confirmed regression"
+        }
+      ],
+      "controls": {
+        "confirmed A/A bias": 4,
+        "inconclusive-noisy": 12,
+        "pass": 26
+      },
+      "cpu": "AMD EPYC 7763 64-Core Processor",
+      "host": "windows",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5800,
+      "checkpoint": "toom-2048-78e-406",
+      "checkpoint_status": "No confirmed loss in this batch; default-tier losses and unavailable CPU coverage remain",
+      "confirmed_losses": [],
+      "controls": {
+        "confirmed A/A bias": 4,
+        "inconclusive-noisy": 40,
+        "pass": 68
+      },
+      "cpu": null,
+      "host": "linux",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5620,
+      "checkpoint": "toom-2048-78e-406",
+      "checkpoint_status": "No confirmed loss in this batch; default-tier losses and unavailable CPU coverage remain",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 111,
+        "pass": 1
+      },
+      "cpu": null,
+      "host": "macos",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5600,
+      "checkpoint": "toom-2048-78e-406",
+      "checkpoint_status": "No confirmed loss in this batch; default-tier losses and unavailable CPU coverage remain",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 26,
+        "pass": 86
+      },
+      "cpu": "INTEL(R) XEON(R) PLATINUM 8573C",
+      "host": "windows",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5600,
+      "checkpoint": "diagnostic-path-408",
+      "checkpoint_status": "Accepted portable diagnostic path fix; other performance goals remain open",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 17,
+        "pass": 95
+      },
+      "cpu": null,
+      "host": "linux",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5620,
+      "checkpoint": "diagnostic-path-408",
+      "checkpoint_status": "Accepted portable diagnostic path fix; other performance goals remain open",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 112
+      },
+      "cpu": null,
+      "host": "macos",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5600,
+      "checkpoint": "diagnostic-path-408",
+      "checkpoint_status": "Accepted portable diagnostic path fix; other performance goals remain open",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 22,
+        "pass": 90
+      },
+      "cpu": "AMD EPYC 9V74 80-Core Processor",
+      "host": "windows",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 6110,
+      "checkpoint": "typed-pools-902-409",
+      "checkpoint_status": "Rejected numeric-pool checkpoint: 16 Linux and two Windows confirmed losses",
+      "confirmed_losses": [
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": 0.32503198979509623,
+            "block_ci95": [
+              1.2935725015118222,
+              1.3302571625681152
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.2829993219900742,
+              1.3302571625681152
+            ],
+            "iid_ci95": [
+              1.2829993219900742,
+              1.3302571625681152
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.2978913578147335,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.3046747820939395
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": 0.21848327914849294,
+            "block_ci95": [
+              1.0977144996516504,
+              1.1382664842215617
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0977144996516504,
+              1.147695425609421
+            ],
+            "iid_ci95": [
+              1.108183473001579,
+              1.147695425609421
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1220014900144992,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1215510323210094
+          },
+          "name": "loop_1000000",
+          "preset": "full",
+          "ratio": {
+            "autocorrelation_lag1": -0.1072456134631478,
+            "block_ci95": [
+              1.1109017704393258,
+              1.152313472696161
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1036636376167088,
+              1.154148390949862
+            ],
+            "iid_ci95": [
+              1.1036636376167088,
+              1.154148390949862
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1360083200029838,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.146211072866712
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": 0.16676185531255905,
+            "block_ci95": [
+              1.5449029278902209,
+              1.6428828753235794
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.5303227217246895,
+              1.6428828753235794
+            ],
+            "iid_ci95": [
+              1.5303227217246895,
+              1.6428828753235794
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.6049778671623773,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.6088379864427105
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": 0.30193731743358543,
+            "block_ci95": [
+              1.0905449516117312,
+              1.1809305386451905
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0905449516117312,
+              1.1809305386451905
+            ],
+            "iid_ci95": [
+              1.0905449516117312,
+              1.1809305386451905
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1482218123254107,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1583661573580932
+          },
+          "name": "calls_200000",
+          "preset": "full",
+          "ratio": {
+            "autocorrelation_lag1": 0.25217203235591895,
+            "block_ci95": [
+              1.1085225847939502,
+              1.1881679913257788
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1085225847939502,
+              1.188576561745416
+            ],
+            "iid_ci95": [
+              1.1085225847939502,
+              1.188576561745416
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1798827008821076,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1725144203109739
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.5698866799081395,
+            "block_ci95": [
+              1.1614595604271232,
+              1.19769114112753
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1568305950709805,
+              1.198111898099211
+            ],
+            "iid_ci95": [
+              1.1568305950709805,
+              1.198111898099211
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1800569278596948,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1706100025863426
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": 0.3231666007401423,
+            "block_ci95": [
+              1.0645502622571381,
+              1.0974736963390337
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0633681621204387,
+              1.0974736963390337
+            ],
+            "iid_ci95": [
+              1.0633681621204387,
+              1.0974736963390337
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0776840162858285,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.071305691260808
+          },
+          "name": "array_200000",
+          "preset": "full",
+          "ratio": {
+            "autocorrelation_lag1": -0.31119019479759696,
+            "block_ci95": [
+              1.0781026394057296,
+              1.0865247283935364
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.072828749346205,
+              1.1168149536818606
+            ],
+            "iid_ci95": [
+              1.072828749346205,
+              1.1168149536818606
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0794622952332193,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.0825820183022437
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": 0.40769118818056715,
+            "block_ci95": [
+              1.3477277390549671,
+              1.37675856172978
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.3457466836184562,
+              1.37675856172978
+            ],
+            "iid_ci95": [
+              1.3457466836184562,
+              1.37675856172978
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.355332193948074,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.3519117786281307
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.055467528789505956,
+            "block_ci95": [
+              1.1184683299980749,
+              1.1289498900117731
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1119659078155844,
+              1.142359262867245
+            ],
+            "iid_ci95": [
+              1.1119659078155844,
+              1.142359262867245
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1231098597617284,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.125752086076813
+          },
+          "name": "compare_high_1000d_x100000",
+          "preset": "full",
+          "ratio": {
+            "autocorrelation_lag1": -0.17804218551580447,
+            "block_ci95": [
+              1.0998805327391274,
+              1.1463061955785274
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0996942282459012,
+              1.1463061955785274
+            ],
+            "iid_ci95": [
+              1.0996942282459012,
+              1.1463061955785274
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1335606183447287,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1223710995775036
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.4503113022707678,
+            "block_ci95": [
+              1.3502025399348743,
+              1.3842918751525048
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.3502025399348743,
+              1.3964666183928287
+            ],
+            "iid_ci95": [
+              1.3502025399348743,
+              1.3964666183928287
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.3708458222795354,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.372580435641258
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": 0.1507105305397407,
+            "block_ci95": [
+              1.0620759673211904,
+              1.1105470561775708
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0620759673211904,
+              1.1198948701994185
+            ],
+            "iid_ci95": [
+              1.080877519523828,
+              1.1198948701994185
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1066793810539999,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.0996167141681155
+          },
+          "name": "compare_low_1000d_x100000",
+          "preset": "full",
+          "ratio": {
+            "autocorrelation_lag1": 0.07937118689548006,
+            "block_ci95": [
+              1.0825812979001606,
+              1.1163558670030649
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0825812979001606,
+              1.1203906203390488
+            ],
+            "iid_ci95": [
+              1.0825812979001606,
+              1.1203906203390488
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0933681864390792,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1012266426555979
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.18550353120242058,
+            "block_ci95": [
+              1.3520965958143514,
+              1.3740844297968529
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.3507798300299545,
+              1.3740844297968529
+            ],
+            "iid_ci95": [
+              1.3507798300299545,
+              1.3740844297968529
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.3617284931243543,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.36055449863159
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.4806498658578279,
+            "block_ci95": [
+              1.0889490433747178,
+              1.1102902544028677
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0787517698924165,
+              1.1119166942844774
+            ],
+            "iid_ci95": [
+              1.0787517698924165,
+              1.1119166942844774
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0986635029928054,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.0969208053306578
+          },
+          "name": "compare_equal_1000d_x100000",
+          "preset": "full",
+          "ratio": {
+            "autocorrelation_lag1": -0.19000209501282075,
+            "block_ci95": [
+              1.0970302857377807,
+              1.1249820833285233
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0932981535732111,
+              1.1249820833285233
+            ],
+            "iid_ci95": [
+              1.0932981535732111,
+              1.1249820833285233
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0997038440170295,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1057336095583719
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "inconclusive-noisy",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.4607157432830609,
+            "block_ci95": [
+              1.0431977765802445,
+              1.056200280705831
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0343028985481646,
+              1.0835075743735123
+            ],
+            "iid_ci95": [
+              1.0343028985481646,
+              1.0835075743735123
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0506046746823943,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.0541843052914648
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.14768380162808156,
+            "block_ci95": [
+              1.086359100234488,
+              1.1061296636152385
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0855561223671126,
+              1.106399196817278
+            ],
+            "iid_ci95": [
+              1.0855561223671126,
+              1.106399196817278
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0952126973800307,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.0979621006825107
+          },
+          "name": "fibonacci_1000_x100",
+          "preset": "full",
+          "ratio": {
+            "autocorrelation_lag1": -0.30630794367739006,
+            "block_ci95": [
+              1.1020133724960672,
+              1.1080050592331518
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0944858859119446,
+              1.108439493908731
+            ],
+            "iid_ci95": [
+              1.0944858859119446,
+              1.108439493908731
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1050116570253918,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1024180026137949
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.048392648380718495,
+            "block_ci95": [
+              0.008236417300564574,
+              0.008747915428446522
+            ],
+            "block_length": 3,
+            "ci95": [
+              0.008209307840416343,
+              0.008747915428446522
+            ],
+            "iid_ci95": [
+              0.008209307840416343,
+              0.008747915428446522
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 0.00834000546417215,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 0.00833147659382283
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.10721128109120263,
+            "block_ci95": [
+              1.0756272013107155,
+              1.101493085174038
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0510269020348795,
+              1.1258344041827408
+            ],
+            "iid_ci95": [
+              1.0510269020348795,
+              1.1258344041827408
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0940156632209828,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.0604691636010843
+          },
+          "name": "sqrt_tiny_scale1024_x30",
+          "preset": "full",
+          "ratio": {
+            "autocorrelation_lag1": 0.06711124381424614,
+            "block_ci95": [
+              1.1134830126726938,
+              1.1705977276984671
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0897558393266398,
+              1.1705977276984671
+            ],
+            "iid_ci95": [
+              1.0897558393266398,
+              1.1705977276984671
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1237551104292034,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1172144162664628
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.2403682635684359,
+            "block_ci95": [
+              1.288457516317806,
+              1.309841599667808
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.2825908880618198,
+              1.309841599667808
+            ],
+            "iid_ci95": [
+              1.2825908880618198,
+              1.309841599667808
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.2939419959838052,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.2957066266768082
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.8212959724307152,
+            "block_ci95": [
+              1.0836823721276536,
+              1.1308552211420722
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0836823721276536,
+              1.1314159180937176
+            ],
+            "iid_ci95": [
+              1.0836823721276536,
+              1.1314159180937176
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1055369326817381,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1071530070217364
+          },
+          "name": "loop_875000",
+          "preset": "holdout",
+          "ratio": {
+            "autocorrelation_lag1": -0.28244714161554874,
+            "block_ci95": [
+              1.1214968379964187,
+              1.1445973143865142
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.114861484328797,
+              1.15722891089704
+            ],
+            "iid_ci95": [
+              1.114861484328797,
+              1.15722891089704
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1293950590341746,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.128771380642055
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.5768046055931583,
+            "block_ci95": [
+              1.5522411171598818,
+              1.5862451837898794
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.532339446451475,
+              1.5879272654411014
+            ],
+            "iid_ci95": [
+              1.532339446451475,
+              1.5879272654411014
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.5697486246825523,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.5879272654411014
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.0029049516231288487,
+            "block_ci95": [
+              1.1144998801258312,
+              1.1972494605464532
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.099524858481994,
+              1.2039573724719794
+            ],
+            "iid_ci95": [
+              1.099524858481994,
+              1.2039573724719794
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.132501622589433,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1657136257044345
+          },
+          "name": "calls_175000",
+          "preset": "holdout",
+          "ratio": {
+            "autocorrelation_lag1": -0.31890002103256443,
+            "block_ci95": [
+              1.1193422569762095,
+              1.1491935647655933
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1092966465361855,
+              1.1715462637665977
+            ],
+            "iid_ci95": [
+              1.1092966465361855,
+              1.1715462637665977
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.133169453626914,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1374264244184238
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.2992905589312567,
+            "block_ci95": [
+              1.1731540058144474,
+              1.1806126075630101
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1570855050508493,
+              1.1990671730515814
+            ],
+            "iid_ci95": [
+              1.1570855050508493,
+              1.1990671730515814
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.177611201381511,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1735827627929694
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.1389064090060661,
+            "block_ci95": [
+              1.0718935132755443,
+              1.0931799233367032
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0713174884395447,
+              1.0934361587122174
+            ],
+            "iid_ci95": [
+              1.0713174884395447,
+              1.0934361587122174
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0793131802401823,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.0790791020682744
+          },
+          "name": "array_175000",
+          "preset": "holdout",
+          "ratio": {
+            "autocorrelation_lag1": -0.2961986184413646,
+            "block_ci95": [
+              1.06844597761909,
+              1.0909279915069683
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0676799859073733,
+              1.0909279915069683
+            ],
+            "iid_ci95": [
+              1.0676799859073733,
+              1.0909279915069683
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0787280180001984,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.078237988353289
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.012696402194186699,
+            "block_ci95": [
+              1.3441759333874348,
+              1.3707918357128603
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.3441759333874348,
+              1.3746341304371172
+            ],
+            "iid_ci95": [
+              1.3441759333874348,
+              1.3746341304371172
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.3616566981728855,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.3515907468380313
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": 0.19545600298558133,
+            "block_ci95": [
+              1.066959257817294,
+              1.1383061707374276
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.066959257817294,
+              1.1383061707374276
+            ],
+            "iid_ci95": [
+              1.066959257817294,
+              1.1383061707374276
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.110209844358672,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1122953487381648
+          },
+          "name": "compare_high_1125d_x87500",
+          "preset": "holdout",
+          "ratio": {
+            "autocorrelation_lag1": 0.23052692912271516,
+            "block_ci95": [
+              1.0692832130838203,
+              1.1357693885294011
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0692832130838203,
+              1.1358152526955423
+            ],
+            "iid_ci95": [
+              1.0692832130838203,
+              1.1358152526955423
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.118268094560261,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1075960862546774
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.18032890984732852,
+            "block_ci95": [
+              1.352027056574779,
+              1.371189609581551
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.350106316757523,
+              1.3883281579773779
+            ],
+            "iid_ci95": [
+              1.350106316757523,
+              1.3883281579773779
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.3557554868002435,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.360636871877844
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.14543445125525611,
+            "block_ci95": [
+              1.088569762643102,
+              1.095303845639068
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0749781032743335,
+              1.1146090029074962
+            ],
+            "iid_ci95": [
+              1.0749781032743335,
+              1.1146090029074962
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0905257924504743,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.0890854656597704
+          },
+          "name": "compare_low_1125d_x87500",
+          "preset": "holdout",
+          "ratio": {
+            "autocorrelation_lag1": 0.02574555993530713,
+            "block_ci95": [
+              1.0945587365534564,
+              1.1083136739743664
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.092644711804376,
+              1.108613219943704
+            ],
+            "iid_ci95": [
+              1.092644711804376,
+              1.108613219943704
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1027449173982309,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.0945587365534564
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.294903472791897,
+            "block_ci95": [
+              1.340731108416137,
+              1.366910791521157
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.3380129588162153,
+              1.3756137488124065
+            ],
+            "iid_ci95": [
+              1.3380129588162153,
+              1.3756137488124065
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.3566851041703656,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.3523708652468296
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.39369689064084273,
+            "block_ci95": [
+              1.0836884221100975,
+              1.1023226787067373
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.077465462054097,
+              1.1023226787067373
+            ],
+            "iid_ci95": [
+              1.077465462054097,
+              1.1023226787067373
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.091927583415097,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.0959295295065195
+          },
+          "name": "compare_equal_1125d_x87500",
+          "preset": "holdout",
+          "ratio": {
+            "autocorrelation_lag1": -0.2202848861362981,
+            "block_ci95": [
+              1.0850698314161642,
+              1.1013406763567766
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0801097952973195,
+              1.101409620712087
+            ],
+            "iid_ci95": [
+              1.0801097952973195,
+              1.101409620712087
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0967205013643795,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.092978445016486
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.022425030646349202,
+            "block_ci95": [
+              1.0445536283227423,
+              1.0681129134021792
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.037346727613274,
+              1.0911760012629441
+            ],
+            "iid_ci95": [
+              1.037346727613274,
+              1.0911760012629441
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.056056415415813,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.0579590853348666
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.11874891827682788,
+            "block_ci95": [
+              1.0842582677532673,
+              1.1372446962018476
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0808506505526232,
+              1.1372446962018476
+            ],
+            "iid_ci95": [
+              1.0808506505526232,
+              1.1372446962018476
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0895018257814042,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1034332093392154
+          },
+          "name": "fibonacci_1125_x88",
+          "preset": "holdout",
+          "ratio": {
+            "autocorrelation_lag1": -0.0774700531544041,
+            "block_ci95": [
+              1.0803508987927368,
+              1.0922714147749315
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.080287195225757,
+              1.1234534487033825
+            ],
+            "iid_ci95": [
+              1.080287195225757,
+              1.1234534487033825
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0885735866570772,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.0957523669403406
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.17705973612556733,
+            "block_ci95": [
+              1.1649624637801546,
+              1.1989979521161618
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.1532640414721673,
+              1.1989979521161618
+            ],
+            "iid_ci95": [
+              1.1532640414721673,
+              1.1989979521161618
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.1877727890368779,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.1919419434055945
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.15316979050333707,
+            "block_ci95": [
+              1.0606135740394114,
+              1.0669246046941392
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0514008526855816,
+              1.0773939838559885
+            ],
+            "iid_ci95": [
+              1.0514008526855816,
+              1.0773939838559885
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0630959213615443,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.0681437927743673
+          },
+          "name": "sparse_array_175000",
+          "preset": "holdout",
+          "ratio": {
+            "autocorrelation_lag1": -0.09395950468494653,
+            "block_ci95": [
+              1.0613333100427245,
+              1.0908768607128547
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0613333100427245,
+              1.0908768607128547
+            ],
+            "iid_ci95": [
+              1.0613333100427245,
+              1.0908768607128547
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.087718606771094,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.086179837458201
+          },
+          "status": "confirmed regression"
+        }
+      ],
+      "controls": {
+        "inconclusive-noisy": 9,
+        "pass": 103
+      },
+      "cpu": null,
+      "host": "linux",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5630,
+      "checkpoint": "typed-pools-902-409",
+      "checkpoint_status": "Rejected numeric-pool checkpoint: 16 Linux and two Windows confirmed losses",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 109,
+        "pass": 3
+      },
+      "cpu": null,
+      "host": "macos",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 5720,
+      "checkpoint": "typed-pools-902-409",
+      "checkpoint_status": "Rejected numeric-pool checkpoint: 16 Linux and two Windows confirmed losses",
+      "confirmed_losses": [
+        {
+          "aa_control_status": "inconclusive-noisy",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": -0.5062842638450961,
+            "block_ci95": [
+              1.4114058256620572,
+              1.444384525881744
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.3531244581489748,
+              1.4527404814634284
+            ],
+            "iid_ci95": [
+              1.3531244581489748,
+              1.4527404814634284
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.4270360482620559,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.4284905271826918
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.17096639226379967,
+            "block_ci95": [
+              1.0798452601453752,
+              1.1080182026090089
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0580158782850984,
+              1.1089964140439887
+            ],
+            "iid_ci95": [
+              1.0580158782850984,
+              1.1089964140439887
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0832906816189831,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.082140341982668
+          },
+          "name": "loop_1000000",
+          "preset": "full",
+          "ratio": {
+            "autocorrelation_lag1": 0.06846621511829926,
+            "block_ci95": [
+              1.051269762097343,
+              1.0832337354397834
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.051269762097343,
+              1.0922280429550413
+            ],
+            "iid_ci95": [
+              1.051269762097343,
+              1.0922280429550413
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0749512507988699,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.0738370832016433
+          },
+          "status": "confirmed regression"
+        },
+        {
+          "aa_control_status": "pass",
+          "candidate_over_howard": {
+            "autocorrelation_lag1": 0.07287991152621422,
+            "block_ci95": [
+              0.09782469620905222,
+              0.10189568453838692
+            ],
+            "block_length": 3,
+            "ci95": [
+              0.09747073945705444,
+              0.10189568453838692
+            ],
+            "iid_ci95": [
+              0.09747073945705444,
+              0.10189568453838692
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 0.09853666204683778,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 0.09804448998640516
+          },
+          "comparison": "paired",
+          "confirmation": {
+            "autocorrelation_lag1": -0.12791092770171067,
+            "block_ci95": [
+              1.0780350490368027,
+              1.1012858167150368
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.0776171019367333,
+              1.1489069545701869
+            ],
+            "iid_ci95": [
+              1.0776171019367333,
+              1.1489069545701869
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0928750810420034,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.0968441002229017
+          },
+          "name": "array_200000",
+          "preset": "full",
+          "ratio": {
+            "autocorrelation_lag1": -0.05043948791256722,
+            "block_ci95": [
+              1.064897422318232,
+              1.1145454082073194
+            ],
+            "block_length": 3,
+            "ci95": [
+              1.064897422318232,
+              1.1189741502292552
+            ],
+            "iid_ci95": [
+              1.064897422318232,
+              1.1189741502292552
+            ],
+            "interval_limitations": "Nominal percentile intervals; small samples and nonstationary host noise remain limitations. The union cannot be narrower than the IID interval.",
+            "median_paired_ratio": 1.0836105151046835,
+            "method": "union of paired IID and circular-block percentile intervals",
+            "pairs": 9,
+            "ratio_of_medians": 1.081893719614985
+          },
+          "status": "confirmed regression"
+        }
+      ],
+      "controls": {
+        "inconclusive-noisy": 22,
+        "pass": 90
+      },
+      "cpu": "AMD EPYC 7763 64-Core Processor",
+      "host": "windows",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 2100,
+      "checkpoint": "windows-diagnostic-411",
+      "checkpoint_status": "Accepted diagnostic tooling only; no runtime performance gain claimed",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 6,
+        "pass": 36
+      },
+      "cpu": null,
+      "host": "linux",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 2100,
+      "checkpoint": "windows-diagnostic-411",
+      "checkpoint_status": "Accepted diagnostic tooling only; no runtime performance gain claimed",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 32,
+        "pass": 10
+      },
+      "cpu": null,
+      "host": "macos",
+      "universal_acceptance": false
+    },
+    {
+      "changed_legacy_qualifiers": 0,
+      "checked": 2100,
+      "checkpoint": "windows-diagnostic-411",
+      "checkpoint_status": "Accepted diagnostic tooling only; no runtime performance gain claimed",
+      "confirmed_losses": [],
+      "controls": {
+        "inconclusive-noisy": 12,
+        "pass": 30
+      },
+      "cpu": "AMD EPYC 7763 64-Core Processor",
+      "host": "windows",
+      "universal_acceptance": false
     }
-  ]
+  ],
+  "windows_deployment_checked": 3024,
+  "windows_module_probes": 54
 }
