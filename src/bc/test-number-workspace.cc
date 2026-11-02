@@ -484,3 +484,34 @@ TEST_CASE("Toom exhausts independent small-radix corner chunk pairs",
     }
   }
 }
+
+namespace {
+// One scalar product plus result/carry fits exactly in eight bits at radix 16,
+// while the conservative Toom bound 16*radix needs a wider accumulator.
+struct TightToomTraits
+{
+  using NumType = std::uint8_t;
+  using WideType = std::uint8_t;
+  static constexpr WideType base_ = 16;
+};
+}  // namespace
+
+TEST_CASE("Toom retains the generic kernel at the widened headroom boundary",
+          "[bc][number][multiply][toom3]")
+{
+  using Kernel = GD::Bc::Details::LimbToom3<TightToomTraits>;
+  CHECK_FALSE(Kernel::eligible(8, 8, 6));
+  std::array<std::uint8_t, 8> input{};
+  input.fill(15);
+  std::array<std::uint8_t, 18> output{};
+  output.front() = output.back() = 255;
+  Kernel::multiply(input, input, std::span(output).subspan(1, 16), 3, 6);
+  std::uint64_t value = 0;
+  for (std::size_t i = 16; i != 0; --i) {
+    CHECK(output[i] < 16);
+    value = value * 16 + output[i];
+  }
+  CHECK(value == std::uint64_t{0xffffffffU} * 0xffffffffU);
+  CHECK(output.front() == 255);
+  CHECK(output.back() == 255);
+}
