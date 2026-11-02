@@ -1,0 +1,41 @@
+FFFF
+======================================================================
+FAIL: test_aa_bias_in_either_direction_gets_one_distinct_confirmation (__main__.NativeTrends.test_aa_bias_in_either_direction_gets_one_distinct_confirmation) (ratio={'median_paired_ratio': 0.91, 'ci95': [0.9, 0.92]})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-symmetric-aa-controls/src/bc/test-benchmark-ci.py", line 192, in test_aa_bias_in_either_direction_gets_one_distinct_confirmation
+    self.assertEqual(len(confirmations), 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_aa_bias_in_either_direction_gets_one_distinct_confirmation (__main__.NativeTrends.test_aa_bias_in_either_direction_gets_one_distinct_confirmation) (ratio={'median_paired_ratio': 1.09, 'ci95': [1.08, 1.1]})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-symmetric-aa-controls/src/bc/test-benchmark-ci.py", line 196, in test_aa_bias_in_either_direction_gets_one_distinct_confirmation
+    self.assertTrue(all(row['status'] == 'confirmed A/A bias' for row in controls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_aa_interval_crossing_the_lower_band_is_inconclusive_without_retry (__main__.NativeTrends.test_aa_interval_crossing_the_lower_band_is_inconclusive_without_retry)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-symmetric-aa-controls/src/bc/test-benchmark-ci.py", line 207, in test_aa_interval_crossing_the_lower_band_is_inconclusive_without_retry
+    self.assertTrue(all(row['status'] == 'inconclusive-noisy' for row in controls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_aa_confirmation_reversing_bias_does_not_pass (__main__.NativeTrends.test_aa_confirmation_reversing_bias_does_not_pass)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-symmetric-aa-controls/src/bc/test-benchmark-ci.py", line 217, in test_aa_confirmation_reversing_bias_does_not_pass
+    self.assertTrue(all(row['status'] == 'inconclusive-noisy' for row in controls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 3 tests in 1.606s
+
+FAILED (failures=4)

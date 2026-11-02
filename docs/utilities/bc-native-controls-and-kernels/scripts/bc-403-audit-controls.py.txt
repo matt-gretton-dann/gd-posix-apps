@@ -1,0 +1,25 @@
+"""Recompute control qualification while retaining original artifact decisions."""
+from collections import Counter
+import hashlib,importlib.util,json,zipfile
+from pathlib import Path
+s=Path('/private/tmp/gd-posix-symmetric-aa-controls/src/bc/scripts/benchmark-policy.py')
+spec=importlib.util.spec_from_file_location('policy',s);policy=importlib.util.module_from_spec(spec);spec.loader.exec_module(policy)
+for checkpoint in ('403','401','400'):
+ for host in ('linux','macos','windows'):
+  p=Path('/private/tmp/bc-'+checkpoint+'-native-'+host+'.zip')
+  with zipfile.ZipFile(p) as z:
+   report=json.loads(z.read('decisions.json'));rows=report['results'];controls={};qualifications=[]
+   if checkpoint=='403':
+    expected=hashlib.sha256(s.read_bytes().replace(b'\n',b'\r\n')).hexdigest() if host=='windows' else policy.source_sha256()
+    assert report['aa_policy_sha256']==expected
+   for r in rows:
+    if r['comparison']!='aa':continue
+    status='inconclusive-noisy' if r['name']=='startup' else policy.aa_status(r['ratio'],r['confirmation']).replace('inconclusive','inconclusive-noisy')
+    controls[r['preset'],r['name']]=status
+    qualifications.append(dict(preset=r['preset'],name=r['name'],original_status=r['status'],qualified_status=status,first=r['ratio'],confirmation=r['confirmation']))
+    if checkpoint=='403':assert r['status']==r['aa_control_status']==status
+   for r in rows:
+    if checkpoint=='403':assert r['aa_control_status']==controls[r['preset'],r['name']]
+   result=dict(artifact_sha256=hashlib.sha256(p.read_bytes()).hexdigest(),policy_sha256=policy.source_sha256(),policy_source=str(s),results=qualifications,original_artifact_unchanged=True,scope='Control qualification only; original A/B results and adverse signals remain authoritative. Missing confirmations remain inconclusive.')
+   p.with_suffix('.control-qualification.json').write_text(json.dumps(result,indent=2)+'\n')
+   print(checkpoint,host,dict(Counter(r['qualified_status'] for r in qualifications)),'changed',sum(r['original_status']!=r['qualified_status'] for r in qualifications))

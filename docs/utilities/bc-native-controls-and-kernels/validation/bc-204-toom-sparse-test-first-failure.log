@@ -1,0 +1,23 @@
+FF
+======================================================================
+FAIL: test_toom_keeps_sparse_coefficients_on_the_generic_tier (__main__.ProfilingCli.test_toom_keeps_sparse_coefficients_on_the_generic_tier) (other_shape='sparse')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-toom3-prototype/src/bc/test-profiling-cli.py", line 184, in test_toom_keeps_sparse_coefficients_on_the_generic_tier
+    self.assertEqual(counters['events']['toom3_multiply_calls'], 0)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 2 != 0
+
+======================================================================
+FAIL: test_toom_keeps_sparse_coefficients_on_the_generic_tier (__main__.ProfilingCli.test_toom_keeps_sparse_coefficients_on_the_generic_tier) (other_shape='dense')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-toom3-prototype/src/bc/test-profiling-cli.py", line 184, in test_toom_keeps_sparse_coefficients_on_the_generic_tier
+    self.assertEqual(counters['events']['toom3_multiply_calls'], 0)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 2 != 0
+
+----------------------------------------------------------------------
+Ran 1 test in 0.028s
+
+FAILED (failures=2)

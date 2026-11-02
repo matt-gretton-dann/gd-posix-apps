@@ -1,0 +1,39 @@
+"""Audit native source, checked raw samples, control qualification and losses."""
+from collections import Counter
+import hashlib,importlib.util,json,sys,zipfile
+from pathlib import Path
+policy_path=Path('/private/tmp/gd-posix-symmetric-aa-controls/src/bc/scripts/benchmark-policy.py')
+spec=importlib.util.spec_from_file_location('policy',policy_path);policy=importlib.util.module_from_spec(spec);spec.loader.exec_module(policy)
+rejected=False
+for checkpoint,base,candidate,expected_min in [('401-804','9e62855562cdf2590b3d335fb81fe4779b0a325e','804281834634c7d400121c3993831c5c4454503c',2100),('404','0cfe7ee75a9a0b394b3bf164d518ec2e932c5263','b074c3158f3f88ad08f12e399e9bf150ce1f3c41',5600)]:
+ for host in ('linux','macos','windows'):
+  p=Path('/private/tmp/bc-'+checkpoint+'-native-'+host+'.zip');checked=0
+  with zipfile.ZipFile(p) as z:
+   for role,revision in [('base',base),('aa',base),('candidate',candidate)]:
+    m=json.loads(z.read(role+'/implementations.json'))['implementations'][0]['metadata'];assert m['source_revision']==revision and m['instrumented'] is False,(checkpoint,host,role,m['source_revision'])
+   for name in z.namelist():
+    if not name.endswith('/samples.jsonl'):continue
+    directory=name.rsplit('/',1)[0];manifest=json.loads(z.read(directory+'/manifest.json'));raw=[json.loads(line) for line in z.read(name).decode().splitlines()]
+    assert raw and all(r['checked'] for r in raw)
+    counts=Counter((r['workload'],r['implementation'],r['phase']) for r in raw)
+    for case in manifest['corpus']:
+     for suffix,key in [('.bc','program_sha256'),('.expected','oracle_sha256')]:assert hashlib.sha256(z.read(directory+'/workloads/'+case['name']+suffix)).hexdigest()==case[key]
+     for tool in manifest['implementations']:
+      assert counts[case['name'],tool['name'],'measurement']==manifest['samples']
+      assert counts[case['name'],tool['name'],'warmup']==manifest['warmups']
+    checked+=len(raw)
+   d=json.loads(z.read('decisions.json'));native=policy_path.read_bytes();expected=hashlib.sha256(native.replace(b'\n',b'\r\n') if host=='windows' else native).hexdigest();assert d['aa_policy_sha256']==expected
+   controls={}
+   for r in d['results']:
+    if r['comparison']!='aa':continue
+    status='inconclusive-noisy' if r['name']=='startup' else policy.aa_status(r['ratio'],r['confirmation']).replace('inconclusive','inconclusive-noisy')
+    assert status==r['status']==r['aa_control_status'];controls[r['preset'],r['name']]=status
+   for r in d['results']:assert r['aa_control_status']==controls[r['preset'],r['name']]
+   confirmed=[r for r in d['results'] if 'confirmed regression' in r['status'].lower().replace('-',' ')]
+   assert checked>=expected_min
+   result=dict(checkpoint=checkpoint,host=host,base=base,candidate=candidate,checked=checked,artifact_sha256=hashlib.sha256(p.read_bytes()).hexdigest(),controls=dict(Counter(controls.values())),confirmed_regressions=confirmed,performance_acceptance=False,scope='Raw checked outputs/provenance and symmetric controls verified. No pooled pass; candidate acceptance requires all remaining evidence.')
+   p.with_suffix('.audit.json').write_text(json.dumps(result,indent=2)+'\n')
+   print(checkpoint,host,checked,'checked; controls',result['controls'],'confirmed',len(confirmed))
+   for r in confirmed:print(r['preset'],r['name'],r['ratio']['median_paired_ratio'],r['ratio']['ci95'],'confirmation',r['confirmation'],'control',r['aa_control_status'])
+   rejected |= bool(confirmed)
+sys.exit(1 if rejected else 0)

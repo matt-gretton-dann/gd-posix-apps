@@ -1,0 +1,14 @@
+F
+======================================================================
+FAIL: test_shared_coefficient_square_dispatch (__main__.ProfilingCli.test_shared_coefficient_square_dispatch) (digits=10000)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-toom3-prototype/src/bc/test-profiling-cli.py", line 158, in test_shared_coefficient_square_dispatch
+    self.assertEqual(counters['events']['basic_multiply_calls'], 0)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 54 != 0
+
+----------------------------------------------------------------------
+Ran 1 test in 0.019s
+
+FAILED (failures=1)

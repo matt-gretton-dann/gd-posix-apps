@@ -182,3 +182,27 @@ and original evidence, retaining absent confirmations as unavailable rather than
 manufacturing a new pass. In particular, #400's held-loop control [.937,1.017]
 is inconclusive under the symmetric policy. Its separate full-loop control lies
 inside the band and does not waive the retained full-loop regression.
+
+## Stable internal diagnostic source names
+
+The VM's internal error checks retain `src/bc/vm.cc` as a repository-relative
+file name, together with the actual function and source line. Independent
+checkout roots therefore do not change this diagnostic string. The bounded
+malformed-stream tests require the canonical file, a positive line and the
+existing rejection, identically in checked and verified modes. This is portable
+C++ and needs no compiler-specific path-remapping switch. Ordinary language
+errors and all verifier/runtime checks keep their existing contracts.
+
+Absolute source roots previously differed between baseline, candidate and A/A
+build roles. Removing that one retained string variation makes this diagnostic
+more consistent; it does not establish full binary reproducibility or prove
+that path length caused timing or code-layout differences. Object metadata,
+other libraries, toolchains and native addresses can still differ. Keep the
+actual executable hashes and code inspections, and retain all control outcomes.
+
+Branches under `codex/bc-native-broad/` explicitly select the existing full and
+held-out native arithmetic cohorts on pull requests. Ordinary topic branches
+retain the smaller representative cohort; schedule/manual runs remain broad.
+The branch convention changes corpus selection, not measured treatments or
+acceptance rules. Every first/confirmation loss and inconclusive control remains
+an adoption gate. No timing advantage is claimed by diagnostic normalization.

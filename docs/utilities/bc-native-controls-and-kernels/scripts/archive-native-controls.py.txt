@@ -1,0 +1,49 @@
+"""Retain exact native artifacts and completed local producer evidence."""
+import hashlib,json,shutil,subprocess,zipfile
+from pathlib import Path
+root=Path('/private/tmp/gd-posix-native-controls-evidence/docs/utilities/bc-native-controls-and-kernels');root.mkdir(exist_ok=False)
+rows=[
+ ('policy-403','403','a5f83342a11d5044f48f41470178e55f99dd4d79','fd6e1de40c62e4ee4b3418cef80ecec44021daf7',41433342122,2100,'accepted harness correction',True,0),
+ ('producer-initial-401','401','a5f83342a11d5044f48f41470178e55f99dd4d79','9e2c5d40a66ec13d8f87c1fd9ed9f3c1ca958b9d',41428223606,2100,'superseded control policy; runtime later accepted',False,0),
+ ('producer-final-401','401-804','9e62855562cdf2590b3d335fb81fe4779b0a325e','804281834634c7d400121c3993831c5c4454503c',41435527769,2100,'accepted bounded producer-slot step; #207 remains open',True,0),
+ ('root-pinned-400','400','ff6876171a68513dea193a0f04655c0bba4a2866','dd5576221d05c0e4bf8590ea1f8f5eaa739a4edf',41422041124,5600,'rejected runtime checkpoint; diagnostic workflow pins must not merge',False,0),
+ ('root-clamp-404','404','0cfe7ee75a9a0b394b3bf164d518ec2e932c5263','b074c3158f3f88ad08f12e399e9bf150ce1f3c41',41435465453,5600,'topic refinement only; no waiver of main-baseline losses',True,0),
+ ('root-integrated-subset-405','405-subset','21b3638ed338009a7bccf022cddcc119ce620296','a9a43afa8812e0a0f21d58a051d72b4ae5d1ebd0',41452003174,2100,'rejected main-baseline checkpoint',True,0),
+ ('root-integrated-broad-405','405-broad','21b3638ed338009a7bccf022cddcc119ce620296','a9a43afa8812e0a0f21d58a051d72b4ae5d1ebd0',41452088765,5600,'no confirmed loss in this batch; does not waive subset loss',True,0),
+ ('toom-default-406','406-default-a748','21b3638ed338009a7bccf022cddcc119ce620296','a7483fcc6ced55f422290cbaad16f4c591e14d0c',41453645038,2100,'default-tier control; Windows A/A biases retained',True,0),
+ ('toom-opt-in-406','406-toom-a748','21b3638ed338009a7bccf022cddcc119ce620296','a7483fcc6ced55f422290cbaad16f4c591e14d0c',41453645081,5600,'rejected threshold-512 prototype',True,512),
+]
+checkpoints=[]
+for name,tag,base,candidate,run,minimum,status,symmetric,threshold in rows:
+ entry=dict(name=name,base=base,candidate=candidate,run_id=run,minimum_checked=minimum,status=status,recorded_symmetric_policy=symmetric,candidate_toom3_threshold=threshold,hosts={})
+ directory=root/'native'/name;directory.mkdir(parents=True)
+ for host in ('linux','macos','windows'):
+  source=Path('/private/tmp/bc-'+tag+'-native-'+host+'.zip');assert source.is_file(),source
+  destination=directory/(host+'.zip');shutil.copyfile(source,destination)
+  for suffix in ('.audit.json','.codegen-audit.json','.control-qualification.json','.rejection.json'):
+   extra=source.with_suffix(suffix)
+   if extra.exists():shutil.copyfile(extra,directory/(host+suffix))
+  entry['hosts'][host]=dict(path=destination.relative_to(root).as_posix(),sha256=hashlib.sha256(destination.read_bytes()).hexdigest())
+ checkpoints.append(entry)
+(root/'checkpoints.json').write_text(json.dumps(dict(schema=1,checkpoints=checkpoints,scope='Exact original artifact ZIPs; runtime adoption status is per checkpoint, not inferred from green jobs'),indent=2)+'\n')
+# Standalone source snapshots make policy and audit interpretation independent
+# of later source edits. Windows-native CRLF hashes remain in original reports.
+(root/'sources').mkdir();(root/'scripts').mkdir();(root/'validation').mkdir()
+policy=Path('/private/tmp/gd-posix-symmetric-aa-controls/src/bc/scripts/benchmark-policy.py')
+shutil.copyfile(policy,root/'sources/benchmark-policy.py.txt')
+for script in ('bc-403-audit-native.py','bc-403-audit-codegen.py','bc-403-audit-controls.py','bc-401-404-audit-native.py','bc-405-audit-native.py','bc-406-a748-audit-native.py','bc-207-prepare-producer-experiment.py','bc-207-producer-collect-resources.py','bc-207-run-producer-paired.py','bc-207-audit-producer-local.py'):
+ shutil.copyfile(Path('/private/tmp')/script,root/'scripts'/(script+'.txt'))
+for name,source in [('producer-preparation','bc-207-producer-preparation'),('producer-paired','bc-207-producer-paired-release'),('producer-resources','bc-207-producer-native-resources')]:
+ with zipfile.ZipFile(root/(name+'.zip'),'w',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as archive:
+  directory=Path('/private/tmp')/source
+  for path in sorted(directory.rglob('*')):
+   if path.is_file():archive.write(path,path.relative_to(directory).as_posix())
+for role in ('base','candidate','aa'):
+ source=Path('/private/tmp/gd-bc-207-producer-'+role+'-release');destination=root/'producer-recipes'/role;destination.mkdir(parents=True)
+ for name in ('implementations.json','build-manifest.json','compile_commands.json','multiply-threshold.hh','standard-library-probe.cc'):
+  shutil.copyfile(source/name,destination/name)
+ for path in source.glob('command-*.log'):shutil.copyfile(path,destination/path.name)
+for pattern in ('bc-402-*-tests.log','bc-402-python39-*.log','bc-402-test-first-failure.log','bc-207-producer-test-first-failure.log','bc-207-producer-final-*.log','bc-212-producer-integrated-*.log','bc-204-toom-square-test-first-failure.log','bc-204-toom-sparse-test-first-failure.log','bc-204-toom-square-on-cli-asan.log','bc-204-toom-square-on-cli-idle-recheck.log','bc-204-toom-sparse-on-cli-asan.log','bc-204-toom-sparse-on-cli-idle-recheck.log','bc-204-toom-sparse-argument-repeat.json'):
+ for path in Path('/private/tmp').glob(pattern):shutil.copyfile(path,root/'validation'/path.name)
+(root/'.gitattributes').write_text('* -text\n*.log whitespace=-blank-at-eol,-blank-at-eof\n*.txt whitespace=-blank-at-eol,-blank-at-eof\n')
+print('Prepared',len(checkpoints),'native checkpoints,',sum(1 for p in root.rglob('*') if p.is_file()),'payloads;',sum(p.stat().st_size for p in root.rglob('*') if p.is_file()),'bytes')
