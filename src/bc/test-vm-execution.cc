@@ -187,6 +187,21 @@ TEST_CASE("VM conditional and unconditional branches select one output", "[bc][v
   }
 }
 
+TEST_CASE("Bare source conditions load values in both execution modes",
+          "[bc][vm][execution][conditions]")
+{
+  std::string const source = "n=3\ns=0\nwhile(n) {\ns+=n\nn-=1\n}\ns\n"
+                             "a[2]=2\nfor(i=0;a[2];i++) {\na[2]-=1\n}\ni\n"
+                             "scale=0\nif(scale) 9\nscale=2\nif(scale) 7\n"
+                             "define f(x) {\nif(x) return(x)\nreturn(0)\n}\n"
+                             "f(0)\nf(-3)\nif(ibase) 5\nif(obase) 6\n";
+  GD::Bc::Parser parser(
+    std::make_unique<GD::Bc::Lexer>(std::make_unique<GD::Bc::StringReader>(source)), false);
+  auto code = parser.parse();
+  REQUIRE(code != nullptr);
+  CHECK(execute(*code) == "6\n2\n7\n0\n-3\n5\n6\n");
+}
+
 TEST_CASE("VM special register stores survive instruction packs", "[bc][vm][execution]")
 {
   auto checks = GENERATE(GD::Bc::VM::ExecutionChecks::full, GD::Bc::VM::ExecutionChecks::verified);
