@@ -18,6 +18,15 @@ class OffsetTests(unittest.TestCase):
                          (verified.returncode, verified.stdout, verified.stderr))
         return checked
 
+    def test_internal_diagnostic_uses_repository_relative_source(self):
+        # Independent builds live under different role/root names. Keep the
+        # internal source location useful without embedding those directories.
+        run = self.run_case("op1-end")
+        self.assertEqual(run.returncode, 1, run.stderr)
+        self.assertEqual(run.stdout, "")
+        self.assertRegex(run.stderr, r"\(file: src/bc/vm\.cc, line [1-9][0-9]*\):")
+        self.assertIn("Operand 1 of instruction", run.stderr)
+
     def test_reject_before_execution(self):
         for case, operand in (("op1-end", 1), ("op1-after", 1), ("op1-before", 1), ("op1-min", 1),
                               ("op2-end", 2), ("op2-after", 2), ("op2-before", 2), ("op2-min", 2),

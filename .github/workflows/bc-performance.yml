@@ -30,7 +30,7 @@ jobs:
     env:
       BC_CANDIDATE: ${{ github.event.pull_request.head.sha || github.sha }}
       BC_BASE: ${{ github.event.pull_request.base.sha || inputs.baseline || '2ddf749e8b313f620ad248d680e801c409bbd3f5' }}
-      BC_BROAD: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+      BC_BROAD: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || startsWith(github.head_ref, 'codex/bc-native-broad/') }}
     steps:
       - uses: actions/checkout@v7
         with:
