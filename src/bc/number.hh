@@ -617,9 +617,7 @@ public:
    */
   [[nodiscard]] auto length() const -> NumType
   {
-    auto const count = coefficient_digits();
-    assert(count < base_);  // NOLINT
-    return static_cast<NumType>(count);
+    return coefficient_width<NumType, true>();
   }
 
   /** Decimal coefficient width for internal storage algorithms.
@@ -627,6 +625,16 @@ public:
    * coefficients into the trait's value/index type.
    */
   [[nodiscard]] auto coefficient_digits() const -> std::size_t
+  {
+    return coefficient_width<std::size_t, false>();
+  }
+
+private:
+  // Keep the established public narrowing/clamp order while sharing the scan
+  // with the storage-width query. Testing the policy explicitly also avoids
+  // confusing NumType with size_t on hosts where those types have equal width.
+  template<typename Width, bool PublicLength>
+  [[nodiscard]] auto coefficient_width() const -> Width
   {
     if (!digits_) {
       return 1;
@@ -656,9 +664,13 @@ public:
       }
     }
 
-    return std::max(std::size_t{1}, length);
+    if constexpr (PublicLength) {
+      assert(length < base_);  // NOLINT
+    }
+    return std::max(Width{1}, static_cast<Width>(length));
   }
 
+public:
   /** Copy floor(coefficient * 10^growth / 10^drop) without an oversized owner.
    * Cancel shifts first, copy only surviving limbs when shrinking, and size
    * growing storage once. All dimensions are storage-width values.

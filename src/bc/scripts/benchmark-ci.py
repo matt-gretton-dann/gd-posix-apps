@@ -25,6 +25,9 @@ def load(name):
     return module
 
 
+AA_POLICY = load('benchmark-policy')
+
+
 def write(path, value):
     path.write_text(json.dumps(value, indent=2, sort_keys=True) + '\n', encoding='utf-8')
 
@@ -69,6 +72,24 @@ def decision(first, second=None, startup=False):
     if bounds[1] <= 1.05:
         return 'pass'
     return 'inconclusive-noisy'
+
+
+def aa_decision(first, second=None, startup=False):
+    # Independent builds have no expected winning direction. Do not reuse the
+    # candidate/base rule, which intentionally permits an arbitrarily fast head.
+    if startup:
+        return 'inconclusive-noisy'
+    status = AA_POLICY.aa_status(first, second)
+    return 'inconclusive-noisy' if status == 'inconclusive' else status
+
+
+def needs_confirmation(ratio, comparison, startup=False):
+    if startup:
+        return False
+    interval = AA_POLICY.bounds(ratio)
+    if interval is None:
+        return False
+    return AA_POLICY.aa_direction(ratio) != 0 if comparison == 'aa' else interval[0] > 1.05
 
 
 def selected_cases(bench, preset, broad):
@@ -142,6 +163,7 @@ def main():
         reports = []
         for preset in (('full', 'holdout') if args.broad else ('full',)):
             names = selected_cases(bench, preset, args.broad)
+            controls = {}
             for comparison in ('aa', 'paired'):
                 target = evidence / (preset + '-' + comparison)
                 command = [sys.executable, str(SCRIPTS / 'bench-bc.py'), '--config',
@@ -156,8 +178,8 @@ def main():
                 summary = json.loads((target / 'summary.json').read_text())
                 candidate = 'aa' if comparison == 'aa' else 'candidate'
                 suspects = [row['name'] for row in summary['workloads']
-                            if row['name'] != 'startup' and
-                            row['candidate_over_reference'][candidate].get('ci95', [0])[0] > 1.05]
+                            if needs_confirmation(row['candidate_over_reference'][candidate], comparison,
+                                                  startup=row['name'] == 'startup')]
                 confirmation = {}
                 if suspects:
                     confirm_target = evidence / (preset + '-' + comparison + '-confirmation')
@@ -181,23 +203,30 @@ def main():
                                                               seed=197216)
                     ratio = row['candidate_over_reference'][candidate]
                     second = confirmation.get(row['name'], {}).get('candidate_over_reference', {}).get(candidate)
+                    status = (aa_decision(ratio, second, startup=row['name'] == 'startup')
+                              if comparison == 'aa' else
+                              decision(ratio, second, startup=row['name'] == 'startup'))
+                    if comparison == 'aa':
+                        controls[row['name']] = status
                     reports.append({'preset': preset, 'comparison': comparison, 'name': row['name'],
                                     'ratio': ratio, 'confirmation': second,
-                                    'status': decision(ratio, second, startup=row['name'] == 'startup'),
+                                    'status': status, 'aa_control_status': controls[row['name']],
                                     'candidate_over_howard': competitive})
         write(evidence / 'decisions.json', {'advisory': True, 'results': reports,
+              'aa_policy_sha256': AA_POLICY.source_sha256(),
               'policy': '5% is provisional; no performance failure gate; startup uncalibrated',
               'pending': ['POSIX math library #217', 'cross-run A/A calibration and autocorrelation policy']})
         lines = ['# bc native paired results', '', 'Performance decisions are advisory; correctness, builds and deadlines are hard failures.',
                  '', 'Candidate is the exact PR head (not a synthetic merge), or checked push/main SHA.',
-                 'A/A independently rebuilds the same base. Startup remains inconclusive until calibrated.', '',
-                 '| Preset | Comparison | Workload | Ratio [95%] | Advisory status |',
-                 '| --- | --- | --- | --- | --- |']
+                 'A/A independently rebuilds the same base; its entire CI must lie in [0.95,1.05] to pass. Startup remains inconclusive until calibrated.',
+                 'Paired status retains the raw A/B signal; the A/A qualifier limits attribution and competitive claims.', '',
+                 '| Preset | Comparison | Workload | Ratio [95%] | Advisory status | A/A qualifier |',
+                 '| --- | --- | --- | --- | --- | --- |']
         for row in reports:
             ratio = row['ratio']
-            lines.append('| {} | {} | `{}` | {:.3f} {} | {} |'.format(
+            lines.append('| {} | {} | `{}` | {:.3f} {} | {} | {} |'.format(
                 row['preset'], row['comparison'], row['name'], ratio['median_paired_ratio'],
-                ratio.get('ci95'), row['status']))
+                ratio.get('ci95'), row['status'], row['aa_control_status'] if row['comparison'] == 'paired' else '-'))
         (evidence / 'summary.md').write_text('\n'.join(lines) + '\n', encoding='utf-8')
         if os.environ.get('GITHUB_STEP_SUMMARY'):
             with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as stream:
@@ -222,6 +251,9 @@ def main():
                     shutil.copyfile(str(path), str(target / path.name))
             if (source / 'logs').is_dir():
                 shutil.copytree(str(source / 'logs'), str(target / 'logs'))
+        # Every timed child has finished. Preserve the actual measured code
+        # without rebuilding, relinking or changing compiler flags.
+        load('collect-bc-codegen').collect(entries, evidence / 'codegen')
 
 
 if __name__ == '__main__':

@@ -117,3 +117,68 @@ and seeded operands retain their identities. Full corpus size grows from 40 to
 Binary/octal digits fit the existing numeric-output validator; hexadecimal
 letters are covered by all-platform arithmetic tests and separate component
 oracles, and are not silently added to that validator's contract.
+
+## Preserve measured machine code
+
+Issue #397 adds `evidence/codegen/` to the arithmetic native workflow after all
+elapsed children finish, including bounded confirmations. It copies the exact
+base, candidate and independently built A/A executables and verifies every copy
+against the existing recipe's SHA-256 before and after inspection. No timing
+compiler/linker flags change, and the collector never executes the copied bc.
+Partial build failures retain only the completed roles. A missing or changed
+declared executable is a hard integrity failure, with a manifest retained.
+
+Native tools are discovered rather than required: Windows uses `dumpbin`, macOS
+uses `otool`, and Linux uses `llvm-objdump` or `objdump`. Header and disassembly
+commands run after timing with bounded process-tree cleanup. The manifest records
+the tool hash, commands, deadlines, output hashes and byte counts. Missing,
+failing or timed-out tools are explicitly unavailable; the exact executable and
+its full-file identity remain the generic fallback.
+
+A bounded, read-only PE section decoder also records code/executable-section
+bytes, RVAs, sizes and hashes on Windows. Its layout follows Microsoft's
+[PE format](https://learn.microsoft.com/windows/win32/debug/pe-format). It separates
+the raw COFF timestamp field and non-code data from code payload identity.
+Payload hashes include encoded addresses and file padding; they are not
+relocation-normalized, and virtual zero fill is not stored payload. Other image
+formats retain native-tool output and the full-file hash without claiming PE
+section coverage. Truncated or unsupported images have no partial code identity.
+
+These diagnostics help investigate code layout, compiler choices and build
+reproducibility. Equal code bytes do not establish equal behavior: data,
+relocations, runtime placement and host contention still matter. Neither a green
+advisory job nor matching source/code hashes waive a confirmed timing regression.
+Original rejected batches remain separate evidence. Memory/CPU diagnostics and
+paired elapsed measurements retain their existing scopes.
+
+Draft or ready PRs whose head branch starts `codex/bc-native-broad/` run the
+existing broad arithmetic full/held-out plan, as scheduled/manual runs do.
+Ordinary PRs retain their bounded subset. This permits an explicit diagnostic
+checkpoint without a manual-dispatch connector or hard-coded runtime pins in
+an otherwise mergeable workflow. The PR base/head remain the immutable runtime
+inputs; recipes, raw samples and post-sampling executable inspection retain
+those identities. The broad branch name does not change sample counts, output
+checks, tuning policy or bounded-confirmation rules.
+
+## Symmetric independent-build controls
+
+A/A has no expected winning direction. Its complete interval must lie inside
+[0.95,1.05] to pass. An interval wholly below 0.95 or above 1.05 selects at most
+one independent-seed confirmation. Persistent same-direction evidence is
+`confirmed A/A bias`; missing, overlapping, invalid or reversing controls remain
+inconclusive. Startup remains uncalibrated. Arithmetic and math orchestration
+share this policy, whose exact source SHA-256 is recorded with decisions.
+
+Arithmetic paired rows retain the raw candidate/base regression status and
+include the matching `aa_control_status` separately, also shown in the job
+summary. A noisy or biased control limits source attribution and competitive
+claims; it does not erase a raw adverse signal. Runtime C++, sample counts,
+workloads, tuning and the bounded-repeat rule are unchanged by this correction.
+
+Earlier arithmetic reports used the one-sided candidate/base rule for A/A and
+could incorrectly label a fast or lower-band-overlapping control as pass. Keep
+those original artifacts unchanged. Requalification must identify the policy
+and original evidence, retaining absent confirmations as unavailable rather than
+manufacturing a new pass. In particular, #400's held-loop control [.937,1.017]
+is inconclusive under the symmetric policy. Its separate full-loop control lies
+inside the band and does not waive the retained full-loop regression.

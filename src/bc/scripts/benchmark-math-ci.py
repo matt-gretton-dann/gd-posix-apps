@@ -26,6 +26,9 @@ def load(name):
     return module
 
 
+AA_POLICY = load('benchmark-policy')
+
+
 def write(path, value):
     path.write_bytes((json.dumps(value, indent=2, sort_keys=True) + '\n').encode('utf-8'))
 
@@ -130,15 +133,7 @@ def configurations(gd, aa, howard, library, aa_library, revision):
 
 
 def aa_status(first, second=None):
-    bounds = first.get('ci95')
-    if not bounds:
-        return 'inconclusive'
-    direction = 1 if bounds[0] > 1.05 else -1 if bounds[1] < .95 else 0
-    if direction:
-        other = second.get('ci95') if second else None
-        same = other and (other[0] > 1.05 if direction == 1 else other[1] < .95)
-        return 'confirmed A/A bias' if same else 'inconclusive'
-    return 'pass' if bounds[0] >= .95 and bounds[1] <= 1.05 else 'inconclusive'
+    return AA_POLICY.aa_status(first, second)
 
 
 def goal_status(row, control):
@@ -285,6 +280,7 @@ def main():
                     aa_status=controls[row['name']], status=goal_status(row,controls[row['name']]),
                     duration_target_met=row.get('duration_target_met')))
         write(evidence / 'decisions.json', dict(advisory=True, results=decisions,
+             aa_policy_sha256=AA_POLICY.source_sha256(),
              goal='median<=0.90 and nominal CI upper<1 for substantive repeated classes',
              pending='separate instruction/allocation/peak-memory diagnostics; no aggregate pass'))
         summary_path = evidence / 'summary.md'
