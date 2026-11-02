@@ -51,6 +51,20 @@ class LimbToom3
 
   static void tidy(Digits& value) { value.resize(trim(value).size()); }
 
+  // Point evaluation can turn a very sparse coefficient into several dense
+  // temporaries. Preserve the existing tier for at most two nonzero limbs.
+  // Dense inputs stop after their third nonzero limb, without a full scan.
+  static auto sparse(Input value) -> bool
+  {
+    unsigned nonzero = 0;
+    for (auto const digit : value) {
+      GD_BC_PROFILE_EVENT(Profile::Event::toom_sparse_scan_limbs, 1);
+      if (digit != 0 && ++nonzero == 3)
+        return false;
+    }
+    return true;
+  }
+
   static auto compare(Input a, Input b) -> int
   {
     a = trim(a);
@@ -192,8 +206,13 @@ public:
     assert(a.size() <= result.size() && b.size() <= result.size() - a.size());
     if (a.empty() || b.empty())
       return;
-    if (!eligible(a.size(), b.size(), threshold) ||
-        std::min(a.size(), b.size()) <= std::max(split, std::size_t{3})) {
+    bool use_toom = eligible(a.size(), b.size(), threshold) &&
+                    std::min(a.size(), b.size()) > std::max(split, std::size_t{3});
+    if (use_toom && (sparse(a) || sparse(b))) {
+      GD_BC_PROFILE_EVENT(Profile::Event::toom_sparse_fallbacks, 1);
+      use_toom = false;
+    }
+    if (!use_toom) {
       Digits scratch(LimbProduct<Traits>::workspace_size(std::max(a.size(), b.size()), split));
       LimbProduct<Traits>::multiply(a, b, result, scratch, split);
       return;

@@ -104,7 +104,9 @@ auto name(Event which) noexcept -> char const*
                              "division_divisor_limbs",
                              "sqrt_iterations",
                              "sqrt_working_scale_sum",
-                             "toom3_multiply_calls"};
+                             "toom3_multiply_calls",
+                             "toom_sparse_scan_limbs",
+                             "toom_sparse_fallbacks"};
   static_assert(names.size() == static_cast<std::size_t>(Event::count));
   return names[static_cast<std::size_t>(which)];
 }

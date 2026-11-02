@@ -93,3 +93,13 @@ in distinct ranges do not trigger that shortcut. The larger shared-square
 profiling guard exposed 54 ordinary-product leaves in the first prototype;
 reusing the evaluated range for both point operands removes that regression.
 The separate number sign and COW snapshots retain their wrapper semantics.
+
+The first threshold-512 native checkpoint loses substantially on the known
+full-cohort sparse product. An operand with at most two nonzero limbs now keeps
+the established Karatsuba/schoolbook tier before any Toom evaluation vectors
+are allocated. Dense operands stop the predicate at their third nonzero limb;
+very sparse operands pay the complete scan. `toom_sparse_scan_limbs` and
+`toom_sparse_fallbacks` account for that decision in separate diagnostic builds.
+This does not select a general density crossover or waive the retained dense
+held-out losses. The original full/held-out samples remain unchanged regression
+evidence; fresh evaluation is needed before choosing a production threshold.
