@@ -659,6 +659,54 @@ public:
     return std::max(std::size_t{1}, length);
   }
 
+  /** Copy floor(coefficient * 10^growth / 10^drop) without an oversized owner.
+   * Cancel shifts first, copy only surviving limbs when shrinking, and size
+   * growing storage once. All dimensions are storage-width values.
+   */
+  [[nodiscard]] auto rescaled_copy(std::size_t growth, std::size_t drop) const -> BasicDigits
+  {
+    auto const cancelled = std::min(growth, drop);
+    growth -= cancelled;
+    drop -= cancelled;
+    if (!digits_ || digits_->empty()) {
+      return BasicDigits();
+    }
+    if (growth != 0) {
+      auto const whole = growth / base_log10_;
+      auto const count = digits_->size();
+      if (whole >= std::numeric_limits<std::size_t>::max() - count) {
+        throw std::length_error("decimal coefficient growth exceeds storage width");
+      }
+      BasicDigits result;
+      // One spare limb absorbs a possible partial-radix carry without growth.
+      result.digits_ = DigitVector(count + whole + 1, 0);
+      std::copy(digits_->begin(), digits_->end(), result.digits_->begin() + whole);
+      GD_BC_PROFILE_EVENT(Profile::Event::range_limb_bytes, count * sizeof(NumType));
+      auto const part = growth % base_log10_;
+      if (part != 0) {
+        result.mac(static_cast<NumType>(pow10(part)), 0);
+      }
+      result.tidy();
+      return result;
+    }
+    if (drop != 0) {
+      auto const whole = drop / base_log10_;
+      if (whole >= digits_->size()) {
+        return BasicDigits();
+      }
+      BasicDigits result(digits_->begin() + whole, digits_->end());
+      auto const part = drop % base_log10_;
+      if (part != 0) {
+        result.divide(static_cast<NumType>(pow10(part)));
+      }
+      else {
+        result.tidy();
+      }
+      return result;
+    }
+    return *this;
+  }
+
   /** \brief        Add a NumType value to the digits_ at a given scale
    *  \param add    Addend.
    *  \param scale  Scale to add it at.
@@ -2256,19 +2304,14 @@ public:
   }
 
 private:
-  static void shift_coefficient(Details::BasicDigits<Traits>& value, std::size_t places, bool grow)
+  static void grow_coefficient(Details::BasicDigits<Traits>& value, std::size_t places)
   {
     // The decimal storage shift API uses the public trait width. A working
     // coefficient can need a wider offset, so split it without narrowing.
     constexpr auto maximum = std::numeric_limits<NumType>::max();
     while (places != 0) {
       auto const part = static_cast<NumType>(std::min(places, std::size_t(maximum)));
-      if (grow) {
-        value.mul_pow10(part);
-      }
-      else {
-        value.div_pow10(part);
-      }
+      value.mul_pow10(part);
       places -= part;
     }
   }
@@ -2307,7 +2350,7 @@ private:
     if (width < base_) {
       auto const exponent = width - (width % 2 != std::size_t(scale_) % 2 ? 1 : 0);
       Details::BasicDigits<Traits> reference(1);
-      shift_coefficient(reference, exponent, true);
+      grow_coefficient(reference, exponent);
       auto residual = digits_;
       // sub retains the absolute coefficient and separately reports its sign.
       static_cast<void>(residual.sub(reference, 0));
@@ -2323,12 +2366,9 @@ private:
       }
     }
 
-    // N=A*10^(2W-S) is an exact integer. Split the exponent so no
-    // intermediate addition can wrap the public scale representation.
-    BasicNumber radicand = *this;
-    radicand.digits_.mul_pow10(working_scale - scale_);
-    radicand.digits_.mul_pow10(working_scale);
-    radicand.scale_ = 0;
+    // N=A*10^(2W-S) is an exact integer, represented symbolically by A and
+    // the checked wide shift. Materialize only the coefficient needed by
+    // each Newton request instead of retaining a full shifted radicand.
     BasicNumber current;
     // Plan backwards by ceiling-halves so a nearly complete stage is not
     // followed by another almost identical full-size division. There is at
@@ -2347,18 +2387,16 @@ private:
     while (remaining != 0) {
       auto const precision = stages[--remaining];
       auto const drop = root_digits - precision;
-      BasicNumber prefix = radicand;
       // floor(sqrt(floor(N/10^(2q)))) equals floor(sqrt(N)/10^q).
-      // These two shifts also avoid forming the possibly wider 2q.
-      shift_coefficient(prefix.digits_, drop, false);
-      shift_coefficient(prefix.digits_, drop, false);
+      // Since q<R, 2q is at most the checked radicand width minus one.
+      auto const removed = drop + drop;
       if (initial) {
         current = BasicNumber(1);
-        shift_coefficient(current.digits_, (radicand_digits - drop - drop) / 2, true);
+        grow_coefficient(current.digits_, (radicand_digits - drop - drop) / 2);
         initial = false;
       }
       else {
-        shift_coefficient(current.digits_, previous_drop - drop, true);
+        grow_coefficient(current.digits_, previous_drop - drop);
       }
       GD_BC_PROFILE_EVENT(Profile::Event::sqrt_precision_stages, 1);
       BasicNumber previous;
@@ -2366,7 +2404,9 @@ private:
       bool improving;
       do {
         previous = std::move(current);
-        current = prefix;
+        current.digits_ = digits_.rescaled_copy(extra, removed);
+        current.scale_ = 0;
+        current.sign_ = Sign::positive;
         GD_BC_PROFILE_EVENT(Profile::Event::sqrt_iterations, 1);
         GD_BC_PROFILE_EVENT(Profile::Event::sqrt_working_scale_sum, 0);
         GD_BC_PROFILE_EVENT(Profile::Event::sqrt_root_digits_sum, precision);

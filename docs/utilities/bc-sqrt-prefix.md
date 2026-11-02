@@ -8,10 +8,11 @@ not an adopted performance result.
 
 For input coefficient A and scale S, result scale is T=max(requested,S). Keep
 the existing working scale W (T plus optional guards, without overflow), and
-form the exact integer N=A*10^(2W-S) using separate W-S and W shifts. Internal
-coefficient widths and prefix offsets use the storage index domain rather than
-the narrower public length result. Oversized shifts are split into representable
-chunks. Existing zero, negative-input and resource/error paths remain intact.
+represent the exact integer N=A*10^(2W-S) symbolically. Compute its exponent
+and coefficient width in the checked storage-index domain rather than narrowing
+them into the public scale/length result. Construct only the coefficient needed
+by each Newton request; no full shifted radicand is retained between requests.
+Existing zero, negative-input and resource/error paths remain intact.
 
 For q>=0, let Nq=floor(N/10^(2q)). Then
 `floor(sqrt(Nq)) = floor(sqrt(N)/10^q)`: both sides select the unique integer r
@@ -28,10 +29,15 @@ execute them forward. The first stage has at most eight digits; every following
 extension is at most twice its predecessor. A fixed stack array bounded by the
 storage-index bit width holds the plan, without an extra heap allocation. This
 avoids a penultimate stage that is almost as large as the final one.
-Exact-prefix computation still copies/truncates a
-radicand per stage; allocation traffic, retained capacity and process RSS must be
-measured. In particular, exact powers and near-square inputs may already have
-an excellent old seed and must not lose their fast path merely to exercise
+A coefficient-copy helper cancels decimal growth/truncation first. Shrinking
+copies only surviving high limbs and applies the remaining scalar decimal
+divisor. Growing sizes storage once, copies the original coefficient at its
+whole-limb offset and handles the partial-limb carry. One spare limb avoids
+capacity doubling. Every Newton request constructs its exact prefix directly
+from the original input, without retaining an oversized prefix owner.
+Allocation traffic, retained capacity and process RSS still require measurement.
+In particular, exact powers and near-square inputs may already have an excellent
+old seed and must not lose their fast path merely to exercise
 staging. Compare the original coefficient A with the square of the old
 power-of-ten seed, expressed as 10^e in that same coefficient domain. When
 the residual is zero or its decimal width establishes at least half the

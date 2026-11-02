@@ -183,3 +183,87 @@ TEMPLATE_TEST_CASE("Large integer square roots retain adjacent square floors",
     }
   }
 }
+
+TEMPLATE_TEST_CASE("Coefficient rescaling copies match native decimal arithmetic",
+                   "[bc][number][sqrt][coefficient-prefix]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Digits = GD::Bc::Details::BasicDigits<TestType>;
+  using N = typename TestType::NumType;
+  for (std::uint64_t value = 0; value < 40; ++value) {
+    auto const text = std::to_string(value);
+    auto const original = Digits::from_decimal(text, std::string_view::npos);
+    for (unsigned grow = 0; grow <= 6; ++grow) {
+      for (unsigned drop = 0; drop <= 6; ++drop) {
+        std::uint64_t expected = value;
+        for (unsigned i = 0; i < grow; ++i)
+          expected *= 10;
+        for (unsigned i = 0; i < drop; ++i)
+          expected /= 10;
+        auto result = original.rescaled_copy(grow, drop);
+        auto const wanted = Digits::from_decimal(std::to_string(expected), std::string_view::npos);
+        INFO("value=" << value << " grow=" << grow << " drop=" << drop);
+        if (expected == 0) {
+          CHECK(result.is_zero());
+        }
+        else {
+          REQUIRE_FALSE(result.is_zero());
+          CHECK(result.compare(wanted, N(0)) == GD::Bc::Details::ComparisonResult::equality);
+        }
+        result.mac(N(2), N(1));
+        auto const snapshot = Digits::from_decimal(text, std::string_view::npos);
+        if (value == 0) {
+          CHECK(original.is_zero());
+        }
+        else {
+          REQUIRE_FALSE(original.is_zero());
+          CHECK(original.compare(snapshot, N(0)) == GD::Bc::Details::ComparisonResult::equality);
+        }
+      }
+    }
+  }
+}
+
+TEMPLATE_TEST_CASE("Coefficient prefixes retain wide offsets and independent ownership",
+                   "[bc][number][sqrt][coefficient-prefix]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Digits = GD::Bc::Details::BasicDigits<TestType>;
+  using N = typename TestType::NumType;
+  std::string const text = "1234567890123456789012345678901234567890";
+  auto const original = Digits::from_decimal(text, std::string_view::npos);
+  for (std::size_t grow : {0U, 1U, 9U, 128U, 256U}) {
+    for (std::size_t drop : {0U, 1U, 8U, 9U, 10U, 39U, 40U, 41U, 128U, 256U}) {
+      std::string expected = text + std::string(grow, '0');
+      expected = drop >= expected.size() ? "0" : expected.substr(0, expected.size() - drop);
+      auto result = original.rescaled_copy(grow, drop);
+      auto const wanted = Digits::from_decimal(expected, std::string_view::npos);
+      INFO("grow=" << grow << " drop=" << drop);
+      if (expected == "0") {
+        CHECK(result.is_zero());
+      }
+      else {
+        REQUIRE_FALSE(result.is_zero());
+        CHECK(result.compare(wanted, N(0)) == GD::Bc::Details::ComparisonResult::equality);
+      }
+      result.mac(N(2), N(1));
+      auto const snapshot = Digits::from_decimal(text, std::string_view::npos);
+      CHECK(original.compare(snapshot, N(0)) == GD::Bc::Details::ComparisonResult::equality);
+    }
+  }
+}
+
+TEST_CASE("Small-trait root coefficients retain wide internal growth offsets",
+          "[bc][number][sqrt][coefficient-prefix]")
+{
+  using Number = GD::Bc::BasicNumber<GD::Bc::NumberTraits8>;
+  // Internal coefficient dimensions can exceed both public field domains.
+  // This arithmetic model does not enlarge language-level index limits.
+  std::string const input = "1" + std::string(1024, '0');
+  Number const snapshot(input, 10);
+  auto value = snapshot;
+  value.sqrt(0);
+  CHECK(value == Number("1" + std::string(512, '0'), 10));
+  CHECK(value.scale() == 0);
+  CHECK(snapshot == Number(input, 10));
+}
