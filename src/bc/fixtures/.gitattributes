@@ -10,3 +10,5 @@ math-library-decisions.json -text
 math-benchmark-cases.json text eol=lf
 math-benchmark-oracles.json -text
 benchmark-corpus-before-scaled-division.json -text
+math-trig-cases.json text eol=lf
+math-trig-oracles.json -text

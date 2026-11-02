@@ -23,7 +23,8 @@ saved and restored; output base is untouched. Every work value is an automatic
 variable or parameter. Actual argument values and user scalar bindings survive.
 
 Only these six function names are defined. Calls between them are ordinary
-visible bc bindings: `s`/`c` use `a`, and the large-argument `j` path uses
+visible bc bindings: `s`/`c` use `a` when reducing arguments larger than three radians, and the
+large-argument `j` path uses
 `a`/`s`/`c`. Redefining a public dependency therefore has normal program effects;
 there is no private function namespace or retained implementation that bypasses
 redefinition. There are no additional reserved helper names or global caches.
@@ -146,20 +147,36 @@ zero before taking roots.
 
 ## Sine and cosine
 
-Use W = S + D + F + 2*d(S+D+F+1) + 24. Compute the period as 8*a(1) at W;
-there is no fixed pi literal. Remove an integer multiple at scale zero, then
-place the reduced argument in [-pi,pi]. A quotient off by one at a reduction
-boundary merely changes the period representative. Its phase error is bounded
-by 16*10^D*u, including the period error and the possible adjacent quotient.
-The explicit D guard protects arbitrarily large supported arguments.
+Let M = max(D-F,1) and T = S+M+F+1. Use
+W = S + M + 2*d(T) + 24. Since abs(x) < 10^M, the integer magnitude,
+rather than the stored fractional width, determines the reduction budget.
+If F>W, truncate the input once to W; this changes its exact value by less
+than u. Sine and cosine are globally one-Lipschitz, so the resulting
+function error is below u. Shorter exact inputs retain their original scale.
+
+After sign normalization, arguments at most three radians need no period
+construction: three is below pi and already within the series radius. For
+larger arguments, compute the period as 8*a(1) at W using the ordinary public
+binding. There is no fixed period literal. Remove an integer multiple at
+scale zero, then center the reduced argument. An adjacent quotient at a
+reduction boundary changes only the period representative. The period and
+phase error is bounded by 16*10^M*u, including that adjacent quotient.
+Working-scale readback still protects both the initial and reduction setters.
 
 Use alternating term recurrences with the squared reduced argument and
-successive factorial factors. The magnitude is below four. After the first
+successive factorial factors. Its magnitude is below four. After the first
 few terms, recurrence ratios are at most one half; fewer than 4W+32 terms
-suffice. An absolute-series bound exp(4) < 100 bounds early amplification and
-cancellation. Conservative series/rounding error is below 4000*(W+10)*u;
-combine it with the phase bound above. Both contributions are far below U/2
-under the selected W. Odd/even symmetry handles negative input exactly.
+suffice. The absolute-series bound exp(4) < 100 bounds early amplification
+and cancellation. Conservative series/rounding error is below
+4000*(W+10)*u. Include the input-coercion error as well as the phase error.
+
+Here W<=27T. Dividing the aggregate bound by U gives at most
+`[16*10^M + 4000*(27T+10) + 1] * 10^(-M-2*d(T)-24)`.
+Since M>=1, T>=2 and T<10^d(T), this is below 10^-20. The final rounding
+step adds at most U/2, preserving the one-decimal-ULP contract for arbitrary
+supported magnitudes and fractional widths. Odd/even symmetry handles
+negative input exactly. The certified +/-3 boundary fixtures and equivalent
+long-fraction representations exercise both sides of the new decisions.
 
 ## Bessel J
 
@@ -228,7 +245,9 @@ support the arguments above. A separate crossover fixture adds 28 regimes at
 five scales (140 enclosures), on both sides of the reciprocal, half-angle,
 halving, log-reduction and Hankel entry boundaries, plus negative-order Hankel
 symmetry and an underflowing initial Bessel coefficient. These join the original
-336 enclosures; regeneration uses the same pinned optional FLINT environment.
+336 enclosures; a separate trigonometric fixture adds 60 enclosures around
+positive and negative three radians. All 536 are independently certified;
+regeneration uses the same pinned optional FLINT environment.
 
 ## Imported programs and interpreted decisions
 
@@ -265,14 +284,15 @@ call resolves the user replacement in both extension configurations.
 condition is evaluated once. Automatic array flags distinguish loop exhaustion
 from `break`; `return` skips unreachable probes. A behavioral check covers
 skipped/exhausted/broken loops, return, nested decisions and a condition with a
-side effect before the production fixture runs. It certifies all 476 numerical
+side effect before the production fixture runs. It certifies all 536 numerical
 results from the instrumented definitions against the same exact enclosures.
 
-The source contains 69 decisions and 138 outcomes. The expected fixture requires
-127 normal outcomes, including two explicitly undefined-domain log guard calls. Nine
+The source contains 75 decisions and 150 outcomes. The expected fixture requires
+139 normal outcomes, including two explicitly undefined-domain log guard calls. Nine
 separate portable-host models independently clamp a working-scale setter and
 exercise its defensive error branch without returning a numerical value.
-Together the ordinary and modeled runs must reproduce 136 outcomes. The two remaining outcomes require a
+Together the ordinary and modeled runs must reproduce 148 outcomes. The two
+remaining outcomes require a
 negative exponential coefficient: positive Taylor terms, positive squaring
 and a positive reciprocal preserve nonnegativity, so they are infeasible.
 The committed `src/bc/fixtures/math-library-decisions.json` report records
