@@ -156,3 +156,8 @@ library argv file evaluated once. This measures repeated execution and parsing,
 not repeated cold startup. RSS runs the original workload once. Neither CPU
 samples nor native RSS observations replace the separate paired release timing
 experiment; software allocation counters remain a separate instrumented build.
+
+The opt-in [Toom-3 experiment](bc-toom3-experiment.md) adds
+`toom3_multiply_calls` for selected recursive nodes. Its temporary coefficient
+vectors use the existing `digits` allocation category; account for those
+allocations separately from native process RSS. The default threshold is zero.

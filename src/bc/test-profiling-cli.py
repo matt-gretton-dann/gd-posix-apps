@@ -154,6 +154,22 @@ class ProfilingCli(unittest.TestCase):
                                         '0\n{}\n'.format(2 * digits))
                 self.assertGreater(counters['events']['square_multiply_calls'], 0)
 
+    def test_toom_selection_and_temporary_lifetimes(self):
+        digits = 10000
+        a, b = '7' * digits, '8' * digits
+        counters = self.profile('a={};b={};a*b\n'.format(a, b),
+                                str(int(a) * int(b)) + '\n', numeric_continuations=True)
+        width = len(str(counters['limb_base'])) - 1
+        limbs = (digits + width - 1) // width
+        threshold = counters['toom3_threshold']
+        selected = threshold != 0 and limbs >= max(6, threshold) and limbs > counters['multiply_split_point']
+        if selected:
+            self.assertGreater(counters['events']['toom3_multiply_calls'], 0)
+        else:
+            self.assertEqual(counters['events']['toom3_multiply_calls'], 0)
+        # profile() already requires every selected temporary allocation to be
+        # balanced at normal exit, including recursively owned Toom vectors.
+
     def test_literal_cache_survives_function_activations_and_base_changes(self):
         counters = self.profile('define f() {\nreturn (10)\n}\nf()\nf()\n'
                                 'ibase=2\nf()\nf()\n', '10\n10\n2\n2\n')
@@ -264,4 +280,6 @@ if __name__ == '__main__':
     args, remaining = parser.parse_known_args()
     BC = str(Path(args.bc).resolve())
     EXPECTED_SPLIT = args.split_point
+    if hasattr(sys, 'set_int_max_str_digits'):
+        sys.set_int_max_str_digits(100000)
     unittest.main(argv=[__file__, *remaining])

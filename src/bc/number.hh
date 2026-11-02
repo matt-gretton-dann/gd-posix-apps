@@ -32,6 +32,11 @@
 #include "digit-storage.hh"
 #include "limb-product.hh"
 #include "limb-schoolbook.hh"
+#include "limb-toom3.hh"
+
+#ifndef GD_BC_TOOM3_THRESHOLD
+#  define GD_BC_TOOM3_THRESHOLD 0
+#endif
 
 namespace GD::Bc {
 
@@ -1461,11 +1466,23 @@ private:
     }
     auto const point = static_cast<std::size_t>(multiply_split_point_);
     using Kernel = LimbProduct<Traits>;
-    // Allocate output and scratch once. Recursive products only borrow spans;
-    // no owner escapes and no generic decimal rescaling is used to recombine.
+    // The accepted tier allocates output and scratch once. Its recursive calls
+    // borrow spans; no owner escapes or decimal rescaling recombines products.
+    // The explicit Toom experiment instead accounts for temporary vectors.
     BasicDigits result;
     result.copy_on_write();
     result.digits_->resize(lhs_size + rhs_size, NumType{0});
+    if constexpr (GD_BC_TOOM3_THRESHOLD != 0) {
+      if (LimbToom3<Traits>::eligible(lhs_size, rhs_size, GD_BC_TOOM3_THRESHOLD)) {
+        LimbToom3<Traits>::multiply(
+          std::span<NumType const>(lhs_begin, lhs_end),
+          std::span<NumType const>(rhs_begin, rhs_end),
+          std::span<NumType>(result.digits_->begin(), result.digits_->end()), point,
+          GD_BC_TOOM3_THRESHOLD);
+        result.tidy();
+        return result;
+      }
+    }
     std::vector<NumType, Profile::Allocator<NumType, Profile::AllocationKind::digits>> workspace(
       Kernel::workspace_size(std::max(lhs_size, rhs_size), point));
     Kernel::multiply(std::span<NumType const>(lhs_begin, lhs_end),
@@ -2032,7 +2049,9 @@ public:
    *
    * At and below \a point, use schoolbook multiplication (quadratic limb work).
    * Larger balanced products use recursive Karatsuba with reusable scratch.
-   * Recursive leaves retain a minimum of three limbs; asymmetric children
+   * An explicit nonzero BC_TOOM3_THRESHOLD may select the experimental Toom
+   * tier above this leaf point. Zero keeps the accepted default dispatch.
+   * Recursive Karatsuba leaves retain a minimum of three limbs; asymmetric children
    * with an empty high half also use the portable schoolbook fallback.
    */
   static void multiply_split_point(NumType point)

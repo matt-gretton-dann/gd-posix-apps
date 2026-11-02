@@ -14,6 +14,15 @@ if(_bc_array_layout LESS 0)
   message(FATAL_ERROR "Unsupported BC_ARRAY_STORAGE: ${BC_ARRAY_STORAGE}")
 endif()
 target_compile_definitions(libbc PUBLIC GD_BC_ARRAY_STORAGE=${_bc_array_layout})
+# Zero retains the accepted Karatsuba tier. Experimental Toom thresholds are
+# explicit limb counts, never calibrated independently during paired builds.
+set(BC_TOOM3_THRESHOLD 0 CACHE STRING "Experimental Toom-3 limb threshold (0 disables)")
+if(NOT BC_TOOM3_THRESHOLD MATCHES "^(0|[1-9][0-9]*)$" OR
+   BC_TOOM3_THRESHOLD GREATER 1000000000 OR
+   (BC_TOOM3_THRESHOLD GREATER 0 AND BC_TOOM3_THRESHOLD LESS 6))
+  message(FATAL_ERROR "BC_TOOM3_THRESHOLD must be 0 or an integer from 6 through 1000000000")
+endif()
+target_compile_definitions(libbc PUBLIC GD_BC_TOOM3_THRESHOLD=${BC_TOOM3_THRESHOLD})
 set_property(TARGET libbc PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
 set_property(TARGET libbc PROPERTY CXX_STANDARD_REQUIRED ON)
 target_compile_definitions(libbc PRIVATE _CRT_SECURE_NO_WARNINGS)
@@ -238,6 +247,9 @@ if(RUN_INTEGRATION_TESTS)
   add_test(NAME bc/number-oracle COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-number-oracle.py" "$<TARGET_FILE:bc>")
   set_tests_properties(bc/number-oracle PROPERTIES TIMEOUT 90)
+  add_test(NAME bc/toom-oracle COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-toom-oracle.py" "$<TARGET_FILE:bc>")
+  set_tests_properties(bc/toom-oracle PROPERTIES TIMEOUT 120)
   add_test(NAME bc/signal-delivery COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-signal-delivery.py" "$<TARGET_FILE:bc>")
   set_tests_properties(bc/signal-delivery PROPERTIES TIMEOUT 20 SKIP_RETURN_CODE 77)
