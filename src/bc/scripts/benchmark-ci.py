@@ -130,6 +130,8 @@ def main():
     parser.add_argument('--broad', action='store_true')
     parser.add_argument('--samples', type=int, default=9)
     parser.add_argument('--split-point', type=gd.positive_point, default=126)
+    parser.add_argument('--candidate-toom3-threshold', type=gd.toom_point, default=0,
+                        help='opt-in candidate tier only; base and independent A/A stay default')
     args = parser.parse_args()
     if args.samples < 3:
         parser.error('at least three paired samples are required')
@@ -146,15 +148,28 @@ def main():
         # concurrently with any measured executable. No tuned-binary cache.
         for name, revision in (('base', args.base), ('candidate', args.candidate), ('aa', args.base)):
             directory = root / name
-            builder.run([sys.executable, str(SCRIPTS / 'build-gd-bc.py'), '--source',
+            command = [sys.executable, str(SCRIPTS / 'build-gd-bc.py'), '--source',
                          str(args.source.resolve()), '--revision', revision, '--split-point',
                          str(args.split_point), '--output', str(directory), '--name', name,
-                         '--c-compiler', cc, '--cxx-compiler', cxx])
+                         '--c-compiler', cc, '--cxx-compiler', cxx]
+            if name == 'candidate' and args.candidate_toom3_threshold:
+                command += ['--toom3-threshold', str(args.candidate_toom3_threshold)]
+            builder.run(command)
             entries.extend(json.loads((directory / 'implementations.json').read_text())['implementations'])
         comparator = root / 'howard'
         builder.run([sys.executable, str(SCRIPTS / 'build-bc-comparators.py'), '--output',
                      str(comparator), '--cc', cc])
         howard = json.loads((comparator / 'implementations.json').read_text())['implementations']
+        if args.candidate_toom3_threshold:
+            # Complete opt-in correctness before every elapsed child, rather
+            # than infer selected-wrapper behavior from default-build tests.
+            executable = entries[1]['argv'][0]
+            for script, extra in (
+                    ('test-cli.py', ['--extensions', 'ON']),
+                    ('test-number-oracle.py', []),
+                    ('test-toom-oracle.py', ['--large', '--report',
+                                            str(evidence / 'toom-exact-oracles.json')])):
+                builder.run([sys.executable, str(SCRIPTS.parent / script), executable] + extra)
         bench = load('bench-bc')
         configs = {'paired': [entries[0], entries[1]] + howard,
                    'aa': [entries[0], entries[2]]}
@@ -214,6 +229,7 @@ def main():
                                     'candidate_over_howard': competitive})
         write(evidence / 'decisions.json', {'advisory': True, 'results': reports,
               'aa_policy_sha256': AA_POLICY.source_sha256(),
+              'candidate_toom3_threshold': args.candidate_toom3_threshold,
               'policy': '5% is provisional; no performance failure gate; startup uncalibrated',
               'pending': ['POSIX math library #217', 'cross-run A/A calibration and autocorrelation policy']})
         lines = ['# bc native paired results', '', 'Performance decisions are advisory; correctness, builds and deadlines are hard failures.',

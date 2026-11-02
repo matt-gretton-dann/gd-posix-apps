@@ -65,3 +65,23 @@ thresholds, identical ordinary math source where applicable, and the native
 Linux/Windows/macOS comparison policy. Retain losing and inconclusive cases.
 Wider decimal/binary limbs, NTT/FFT, GMP and SIMD remain separate #204
 experiments; this prototype does not stand in for those comparisons.
+
+## Explicit native checkpoint
+
+`bc-toom3-experiment.yml` runs a separate advisory native experiment on matching
+PRs, relevant main pushes and manual dispatch. It records the exact PR base/head
+(or the documented fixed accepted main anchor), uses the existing full/held-out
+arithmetic corpus and selects threshold 512 only for the candidate. Baseline
+and independent A/A builds keep their default tier. There is no scheduled
+experimental default and no threshold tuning from the paired outcomes.
+
+The shared controller's `--candidate-toom3-threshold` is zero by default, so the
+ordinary native workflow keeps its existing treatment. Opt-in runs first finish
+all builds and the candidate's driver, exact rational and 50 large-product/alias
+checks, then begin paired elapsed children. Failure in those checks is a hard
+failure. The decision report records the requested threshold, each actual recipe
+verifies compiled selection, and the existing post-timing executable collector
+preserves the measured binaries. Controls, bounded confirmations and per-class
+losses retain the ordinary policy; a green advisory job cannot establish a win.
+Native elapsed corpus sizes remain the historical arithmetic sizes. Separate
+100k/200k checks establish correctness only, not large-size speed or RSS.

@@ -116,7 +116,7 @@ class NativeTrends(unittest.TestCase):
                                   if case['name'] in selected},
                                  {case['group'] for case in cases})
 
-    def exercise(self, fail=False, aa_first=None, aa_second=None):
+    def exercise(self, fail=False, aa_first=None, aa_second=None, toom_threshold=0):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name) / 'results'
@@ -132,6 +132,8 @@ class NativeTrends(unittest.TestCase):
             def run(self, argv):
                 calls.append(argv)
                 script = Path(argv[1]).name
+                if script in ('test-cli.py', 'test-number-oracle.py', 'test-toom-oracle.py'):
+                    return
                 output = Path(argv[argv.index('--output') + 1])
                 output.mkdir()
                 if script in ('build-gd-bc.py', 'build-bc-comparators.py'):
@@ -177,11 +179,27 @@ class NativeTrends(unittest.TestCase):
 
         argv = [str(PATH), '--source', str(Path(temporary.name)), '--base', 'a' * 40,
                 '--candidate', 'b' * 40, '--output', str(root)]
+        if toom_threshold:
+            argv += ['--candidate-toom3-threshold', str(toom_threshold)]
         with mock.patch.object(CI, 'load', modules), mock.patch.object(CI, 'host_info', return_value={}), \
                 mock.patch.object(sys, 'argv', argv), mock.patch.dict('os.environ', {}, clear=True), \
                 contextlib.redirect_stderr(io.StringIO()):
             result = CI.main()
         return root, calls, result
+
+    def test_opt_in_toom_changes_only_candidate_and_checks_before_timing(self):
+        root, calls, result = self.exercise(toom_threshold=512)
+        self.assertEqual(result, 0)
+        builds = [call for call in calls if Path(call[1]).name == 'build-gd-bc.py']
+        self.assertNotIn('--toom3-threshold', builds[0])
+        self.assertEqual(builds[1][builds[1].index('--toom3-threshold') + 1], '512')
+        self.assertNotIn('--toom3-threshold', builds[2])
+        scripts = [Path(call[1]).name for call in calls]
+        self.assertEqual(scripts[4:7], ['test-cli.py', 'test-number-oracle.py', 'test-toom-oracle.py'])
+        self.assertEqual(scripts[7], 'bench-bc.py')
+        self.assertIn('--large', calls[6])
+        self.assertEqual(json.loads((root / 'evidence/decisions.json').read_text())[
+            'candidate_toom3_threshold'], 512)
 
     def test_slow_candidate_is_reported_without_failing_performance_gate(self):
         root, calls, result = self.exercise()
