@@ -90,7 +90,7 @@ auto GD::Bc::StringReader::peek() -> int
     return EOF;
   }
 
-  return s_[pos_];
+  return static_cast<unsigned char>(s_[pos_]);
 }
 
 void GD::Bc::StringReader::do_chew()
