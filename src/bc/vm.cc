@@ -14,6 +14,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <deque>
+#include <optional>
 #include <ostream>
 #include <type_traits>
 #include <utility>
@@ -71,11 +72,21 @@ using ResultBuffer =
   std::vector<ResultSlot, Profile::Allocator<ResultSlot, Profile::AllocationKind::results>>;
 using NumberBuffer =
   std::vector<Number, Profile::Allocator<Number, Profile::AllocationKind::results>>;
+using NumberBuffers =
+  std::deque<NumberBuffer, Profile::Allocator<NumberBuffer, Profile::AllocationKind::frames>>;
+
+// Charge the optional owner's entire header to each selected numeric plan,
+// conservatively including a VM-wide cost only once in reality. Allocation
+// capacity/rounding still needs separate profiling and process-RSS evidence.
+constexpr auto numeric_backing_header_bytes =
+  sizeof(NumberBuffer) + sizeof(std::optional<NumberBuffers>) + 2 * sizeof(std::size_t);
 
 struct ActivationResults
 {
-  ResultBuffer variants;
-  NumberBuffer numbers;
+  // A pack borrows stable per-depth owners. Null numeric backing is the
+  // generic layout; no numeric deque or buffer is acquired for that pack.
+  ResultBuffer& variants;
+  NumberBuffer* numbers;
 };
 
 // A short-lived view into one stable activation. Numeric slots have a fixed
@@ -291,8 +302,8 @@ struct VMState
 
   // Each active pack owns one depth slot. deque growth preserves references
   // held by callers; clearing a slot drops values while retaining capacity.
-  auto acquire_results(std::size_t count, std::size_t numbers) -> ActivationResults&;
-  void release_results();
+  auto acquire_results(std::size_t count, std::size_t numbers) -> ActivationResults;
+  void release_results(ActivationResults const& result);
 
   /** \brief  Validate instruction bounds, result types and control-flow availability.  */
   void validate(Instructions const& instrs, bool function_body = false) const;
@@ -303,7 +314,7 @@ struct VMState
       instructions, full_checks() ? ConsumptionPlan{} : plan_consumption(instructions, false),
       full_checks() ? ResultSlotPlan{}
                     : plan_typed_result_slots(instructions, sizeof(ResultSlot), sizeof(Number),
-                                              sizeof(NumberBuffer) + 2 * sizeof(std::size_t)));
+                                              numeric_backing_header_bytes));
   }
   auto full_checks() const noexcept -> bool { return checks_ == VM::ExecutionChecks::full; }
 
@@ -342,9 +353,12 @@ private:
   Params parameters_;                             ///< Contiguous values for active argument packs.
   ParamMarks param_marks_;                        ///< Pack offsets; indices survive vector growth.
   Params saved_locals_;                           ///< Contiguous saved locals for active calls.
-  std::deque<ActivationResults,
-             Profile::Allocator<ActivationResults, Profile::AllocationKind::frames>>
-    result_buffers_;  ///< Reusable buffers, indexed by simultaneous activation depth.
+  std::deque<ResultBuffer, Profile::Allocator<ResultBuffer, Profile::AllocationKind::frames>>
+    result_buffers_;  ///< Single-vector generic headers, indexed by activation depth.
+  // A generic/full activation never creates numeric backing. Construct this
+  // owner only for the first selected numeric pool; deque growth keeps all
+  // active numeric-buffer references stable, including across generic calls.
+  std::optional<NumberBuffers> number_buffers_;
   std::size_t result_depth_ = 0;
   NumType ibase_ = default_base_;  ///< Input base, range [2, 16]
   NumType obase_ = default_base_;  ///< Output base, range: [2, base_)
@@ -377,7 +391,7 @@ public:
    *  \param instrs Instructions to hold.
    */
   InstructionPack(VMState* vm, VerifiedInstructions instrs);
-  ~InstructionPack() { vm_->release_results(); }
+  ~InstructionPack() { vm_->release_results(results_); }
   InstructionPack(InstructionPack const&) = delete;
   auto operator=(InstructionPack const&) -> InstructionPack& = delete;
 
@@ -529,9 +543,9 @@ private:
   auto number_at(Index instruction) const -> Number&
   {
     auto const index = result_indices_ ? result_indices_[instruction] : instruction;
-    if (typed_results_) {
+    if (results_.numbers != nullptr) {
       assert((index & ResultSlotPlan::number_tag) != 0);  // NOLINT: verified numeric producer.
-      return results_.numbers[index & ~ResultSlotPlan::number_tag];
+      return (*results_.numbers)[index & ~ResultSlotPlan::number_tag];
     }
     auto& slot = results_.variants[index];
     assert_error(slot.has_value(), Msg::empty_result, instruction);  // NOLINT
@@ -545,13 +559,13 @@ private:
   {
     auto const index = result_indices_ ? result_indices_[pc_] : pc_;
     if constexpr (std::is_same_v<std::remove_cvref_t<Value>, Number>) {
-      if (typed_results_) {
+      if (results_.numbers != nullptr) {
         assert((index & ResultSlotPlan::number_tag) != 0);  // NOLINT: verified numeric producer.
-        results_.numbers[index & ~ResultSlotPlan::number_tag] = std::forward<Value>(value);
+        (*results_.numbers)[index & ~ResultSlotPlan::number_tag] = std::forward<Value>(value);
         return;
       }
     }
-    assert(!typed_results_ || (index & ResultSlotPlan::number_tag) == 0);  // NOLINT
+    assert(results_.numbers == nullptr || (index & ResultSlotPlan::number_tag) == 0);  // NOLINT
     results_.variants[index] = std::forward<Value>(value);
   }
 
@@ -560,7 +574,7 @@ private:
   auto location_at(Index instruction) const -> ResultSlot&
   {
     auto const index = result_indices_ ? result_indices_[instruction] : instruction;
-    assert(!typed_results_ || (index & ResultSlotPlan::number_tag) == 0);  // NOLINT
+    assert(results_.numbers == nullptr || (index & ResultSlotPlan::number_tag) == 0);  // NOLINT
     return results_.variants[index];
   }
 
@@ -570,20 +584,19 @@ private:
   auto result_at(Index instruction) const -> ResultReference
   {
     auto const index = result_indices_ ? result_indices_[instruction] : instruction;
-    if (typed_results_ && (index & ResultSlotPlan::number_tag) != 0)
-      return ResultReference(results_.numbers[index & ~ResultSlotPlan::number_tag]);
+    if (results_.numbers != nullptr && (index & ResultSlotPlan::number_tag) != 0)
+      return ResultReference((*results_.numbers)[index & ~ResultSlotPlan::number_tag]);
     return ResultReference(results_.variants[index]);
   }
 
   VMState* vm_;                         ///< Virtual Machine state
   Instructions const& instrs_;          ///< Instructions to execute
   Instruction::Index pc_{0};            ///< Current program counter
-  ActivationResults& results_;          ///< Borrowed stable buffer for this activation.
+  ActivationResults const results_;     ///< Borrowed stable backing for this activation.
   ConsumptionPlan const& consumption_;  ///< Immutable metadata owned beside the code.
   // Immutable plan data is owned beside the verified code and cannot relocate
   // during this activation. Null preserves the full-width identity fallback.
   ResultSlotPlan::CompactIndex const* result_indices_;
-  bool typed_results_;
 };
 
 auto operator<<(std::ostream& os, InstructionPack const& instrs) -> std::ostream&;
@@ -706,7 +719,7 @@ void GD::Bc::Details::VMState::function(Letter func, Instructions::const_iterato
   auto result_slots = full_checks()
                         ? ResultSlotPlan{}
                         : plan_typed_result_slots(instrs, sizeof(ResultSlot), sizeof(Number),
-                                                  sizeof(NumberBuffer) + 2 * sizeof(std::size_t));
+                                                  numeric_backing_header_bytes);
   functions_.at(static_cast<unsigned>(func)) = std::make_optional(std::make_tuple(
     FunctionCode(std::move(instrs), std::move(consumption), std::move(result_slots)), mask, loc));
 }
@@ -969,33 +982,48 @@ void GD::Bc::Details::VMState::validate(Instructions const& instrs, bool functio
 }
 
 auto GD::Bc::Details::VMState::acquire_results(std::size_t count, std::size_t numbers)
-  -> ActivationResults&
+  -> ActivationResults
 {
   if (result_depth_ == result_buffers_.size()) {
     result_buffers_.emplace_back();
   }
   auto& result = result_buffers_[result_depth_];
-  assert(result.variants.empty() && result.numbers.empty());  // NOLINT
+  assert(result.empty());  // NOLINT
+  assert(!number_buffers_ || result_depth_ >= number_buffers_->size() ||
+         (*number_buffers_)[result_depth_].empty());  // NOLINT
+  NumberBuffer* numeric = nullptr;
   try {
-    result.variants.resize(count);
-    result.numbers.resize(numbers);
+    result.resize(count);
+    if (numbers != 0) {
+      if (!number_buffers_)
+        number_buffers_.emplace();
+      while (number_buffers_->size() <= result_depth_)
+        number_buffers_->emplace_back();
+      numeric = &(*number_buffers_)[result_depth_];
+      assert(numeric->empty());  // NOLINT
+      numeric->resize(numbers);
+    }
   }
   catch (...) {
-    // A failed second allocation must not leave a partially acquired depth.
-    result.variants.clear();
-    result.numbers.clear();
+    // Failed lazy owner/header/vector growth must not consume an activation
+    // depth or leave live values. Existing callers' deque references survive.
+    result.clear();
+    if (numeric != nullptr)
+      numeric->clear();
     throw;
   }
   ++result_depth_;
-  return result;
+  return {result, numeric};
 }
 
-void GD::Bc::Details::VMState::release_results()
+void GD::Bc::Details::VMState::release_results(ActivationResults const& result)
 {
   assert(result_depth_ != 0);  // NOLINT
-  auto& result = result_buffers_[--result_depth_];
+  assert(&result.variants == &result_buffers_[result_depth_ - 1]);  // NOLINT
+  --result_depth_;
   result.variants.clear();
-  result.numbers.clear();
+  if (result.numbers != nullptr)
+    result.numbers->clear();
 }
 
 GD::Bc::Details::InstructionPack::InstructionPack(VMState* vm, VerifiedInstructions instrs)
@@ -1004,8 +1032,7 @@ GD::Bc::Details::InstructionPack::InstructionPack(VMState* vm, VerifiedInstructi
                                    instrs.result_slots().number_count)),
       consumption_(instrs.consumption()),
       result_indices_(instrs.result_slots().indices.empty() ? nullptr
-                                                            : instrs.result_slots().indices.data()),
-      typed_results_(instrs.result_slots().number_count != 0)
+                                                            : instrs.result_slots().indices.data())
 {
   assert(vm_ != nullptr);  // NOLINT
 }

@@ -69,11 +69,11 @@ language or source-program limit is narrowed.
 
 The fully checked VM retains instruction-indexed variants and the complete
 per-result diagnostic switch. It remains the differential oracle. Runtime
-semantic errors remain in both modes. Number and variant buffers belong to
-one stable deque element per simultaneous activation depth, clear owning values
-on release, and retain capacity for later calls. If allocation fails after
-variant resizing, both buffers are cleared before propagating the exception,
-so the same VM can retry without consuming or damaging its activation depth.
+semantic errors remain in both modes. Number and variant buffers have stable
+per-depth owners, clear live values on release, and retain capacity for later
+calls. Numeric backing is acquired only when a selected plan needs it. Failed
+variant, lazy owner or number-vector growth clears the current activation
+before propagating the exception, so a retry does not consume its depth.
 
 Validation includes exact checked/verified execution, separate array/scalar
 load kinds, recursion with local restoration and array snapshots, excluded
@@ -125,3 +125,46 @@ Expanded exact opcode fixtures run the same independent native-integer
 oracles through both tiny and numeric-heavy streams, comparing each with the
 full checked interpreter. Further native full/held-out measurements are
 required before claiming that avoiding dynamic result views fixes any loss.
+
+## Lazy numeric backing and generic call frames
+
+The direct-access checkpoint `cbbc754` retains a confirmed Windows held-out
+`calls_175000` loss in native run 41508074256: candidate/base medians 1.06774
+and 1.06930 on independent confirmation, with a passing A/A control on Intel
+Xeon Platinum 8370C. Its Linux and macOS batches have no confirmed loss, but
+that does not waive the Windows result. All 16,910 raw checked executions and
+actual executable/inspection identities remain retained. This candidate is
+unaccepted, as is the earlier eighteen-loss typed-pool checkpoint.
+
+The next storage refinement restores single-vector headers in the generic
+activation deque. Numeric buffers live in a separate optional deque, created
+only when a profitable verified numeric plan first needs backing. A generic
+or fully checked call acquires no numeric backing. Each active pack borrows
+its generic buffer and an optional numeric-buffer pointer; either deque can
+grow without relocating those owners. That pointer also identifies the
+layout, replacing a separate runtime Boolean. Values are cleared through the
+borrowed view on release; capacity can be reused by later calls at that depth.
+
+The dormant optional owner still adds a VM-wide header. The planner charges
+its whole actual compiler-dependent size, a numeric vector header and the
+existing bookkeeping allowance to every selected numeric plan. Charging that
+VM-wide cost repeatedly is conservative. Tiny or unprofitable packs retain
+the generic representation; allocator rounding, capacities, executable size
+and process RSS remain separate measurements. Neither fewer generic frame
+headers nor a changed payload decision proves a timing or RSS improvement.
+
+Allocation failure during lazy owner creation, deque/header growth or vector
+resizing clears the current acquired values without advancing the activation
+depth. Earlier callers' owners remain stable. Existing isolated allocation
+failure/retry tests cover every allocation position in a mixed numeric stream.
+A new exact checked/verified test alternates large numeric recursive bodies
+with tiny generic calls, then reuses the same depths in the opposite layout.
+The generic fallback, literal caches, source instructions, transfer proof,
+semantic errors, caller restoration and interrupt checks retain their contracts.
+
+Local validation passes 235 ASan/UBSan cases (1,215,643 assertions), including
+six typed-result cases with 146 assertions, nine CLI/verifier/lifetime/signal
+and controller checks, 616 identical ordinary-source math references, and
+eighteen separate Release profiling checks. LeakSanitizer is unavailable.
+New full/held-out native evidence is required before accepting this refinement;
+it does not complete the wider operand/register/liveness work in #207/#197.
