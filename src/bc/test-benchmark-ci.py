@@ -30,6 +30,28 @@ class NativeTrends(unittest.TestCase):
         self.assertEqual(CI.decision(slow, slow, startup=True), 'inconclusive-noisy')
         self.assertEqual(CI.decision({}), 'inconclusive-noisy')
 
+    def test_aa_interval_contract_is_symmetric_and_inclusive(self):
+        for interval, expected in (([.95, 1.05], 'pass'), ([.98, 1.02], 'pass'),
+                                   ([.937, 1.017], 'inconclusive-noisy'),
+                                   ([.98, 1.08], 'inconclusive-noisy'),
+                                   ([.90, .92], 'inconclusive-noisy'),
+                                   ([1.08, 1.1], 'inconclusive-noisy')):
+            with self.subTest(interval=interval):
+                self.assertEqual(CI.aa_decision(dict(ci95=interval)), expected)
+        for interval in (None, [], [1], [float('nan'), 1.1], [.9, float('inf')],
+                         [1.1, .9], [0, 1], [True, 1.01]):
+            with self.subTest(invalid=interval):
+                ratio = dict(ci95=interval)
+                self.assertEqual(CI.aa_decision(ratio), 'inconclusive-noisy')
+                self.assertFalse(CI.needs_confirmation(ratio, 'aa'))
+        for interval in ([.90, .92], [1.08, 1.1]):
+            ratio = dict(ci95=interval)
+            self.assertTrue(CI.needs_confirmation(ratio, 'aa'))
+            self.assertEqual(CI.aa_decision(ratio, ratio), 'confirmed A/A bias')
+            self.assertEqual(CI.aa_decision(ratio, dict(ci95=[.98, 1.02])), 'inconclusive-noisy')
+            self.assertFalse(CI.needs_confirmation(ratio, 'aa', startup=True))
+            self.assertEqual(CI.aa_decision(ratio, ratio, startup=True), 'inconclusive-noisy')
+
     def test_checked_runner_detects_an_intentionally_slow_fixture(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -94,7 +116,7 @@ class NativeTrends(unittest.TestCase):
                                   if case['name'] in selected},
                                  {case['group'] for case in cases})
 
-    def exercise(self, fail=False):
+    def exercise(self, fail=False, aa_first=None, aa_second=None):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name) / 'results'
@@ -128,6 +150,9 @@ class NativeTrends(unittest.TestCase):
                     slow = candidate == 'candidate' and name != 'startup'
                     ratio = {'median_paired_ratio': 1.2 if slow else 1.0,
                              'ci95': [1.15, 1.25] if slow else [0.99, 1.01]}
+                    # Synthetic summaries exercise controller decisions, not timing inference.
+                    if candidate == 'aa' and aa_first is not None:
+                        ratio = aa_second if output.name.endswith('confirmation') and aa_second is not None else aa_first
                     results.append({'name': name, 'candidate_over_reference': {candidate: ratio}})
                     for round_number in range(9):
                         for implementation in implementations:
@@ -177,6 +202,43 @@ class NativeTrends(unittest.TestCase):
         aa = [row for row in report['results'] if row['comparison'] == 'aa' and row['name'] != 'startup']
         self.assertTrue(all(row['status'] == 'pass' for row in aa))
         self.assertTrue((root / 'evidence/summary.md').is_file())
+
+    def test_aa_bias_in_either_direction_gets_one_distinct_confirmation(self):
+        for ratio in (dict(median_paired_ratio=.91, ci95=[.90, .92]),
+                      dict(median_paired_ratio=1.09, ci95=[1.08, 1.10])):
+            with self.subTest(ratio=ratio):
+                root, calls, result = self.exercise(aa_first=ratio)
+                self.assertEqual(result, 0)
+                confirmations = [call for call in calls if '--output' in call and
+                                 Path(call[call.index('--output') + 1]).name == 'full-aa-confirmation']
+                self.assertEqual(len(confirmations), 1)
+                self.assertEqual(confirmations[0][confirmations[0].index('--seed') + 1], '197217')
+                rows = json.loads((root / 'evidence/decisions.json').read_text())['results']
+                controls = [row for row in rows if row['comparison'] == 'aa' and row['name'] != 'startup']
+                self.assertTrue(all(row['status'] == 'confirmed A/A bias' for row in controls))
+                paired = [row for row in rows if row['comparison'] == 'paired' and row['name'] != 'startup']
+                self.assertTrue(all(row['aa_control_status'] == 'confirmed A/A bias' for row in paired))
+                # Control qualification does not erase the independently reported raw A/B signal.
+                self.assertTrue(all(row['status'] == 'confirmed regression' for row in paired))
+
+    def test_aa_interval_crossing_the_lower_band_is_inconclusive_without_retry(self):
+        root, calls, result = self.exercise(aa_first=dict(median_paired_ratio=.986, ci95=[.937, 1.017]))
+        self.assertEqual(result, 0)
+        rows = json.loads((root / 'evidence/decisions.json').read_text())['results']
+        controls = [row for row in rows if row['comparison'] == 'aa' and row['name'] != 'startup']
+        self.assertTrue(all(row['status'] == 'inconclusive-noisy' for row in controls))
+        self.assertFalse(any('--output' in call and Path(call[call.index('--output') + 1]).name ==
+                             'full-aa-confirmation' for call in calls))
+
+    def test_aa_confirmation_reversing_bias_does_not_pass(self):
+        root, calls, result = self.exercise(aa_first=dict(median_paired_ratio=.91, ci95=[.9, .92]),
+                                           aa_second=dict(median_paired_ratio=1.09, ci95=[1.08, 1.1]))
+        self.assertEqual(result, 0)
+        rows = json.loads((root / 'evidence/decisions.json').read_text())['results']
+        controls = [row for row in rows if row['comparison'] == 'aa' and row['name'] != 'startup']
+        self.assertTrue(all(row['status'] == 'inconclusive-noisy' for row in controls))
+        startup = [row for row in rows if row['name'] == 'startup']
+        self.assertTrue(all(row['status'] == 'inconclusive-noisy' for row in startup))
 
     def test_failed_checked_run_remains_a_hard_failure_with_evidence(self):
         root, calls, result = self.exercise(fail=True)
