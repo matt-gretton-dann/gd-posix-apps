@@ -2215,7 +2215,32 @@ public:
     }
   }
 
-  void sqrt(NumType target_scale)
+  void sqrt(NumType target_scale) { sqrt_impl(target_scale); }
+
+  /** \brief  Are we equal to zero?
+   *  \return True iff equal to zero.
+   */
+  [[nodiscard]] auto is_zero() const -> bool { return digits_.is_zero(); }
+
+  auto operator==(BasicNumber const& rhs) const -> bool
+  {
+    return compare(rhs) == Details::ComparisonResult::equality;
+  }
+
+  auto operator<(BasicNumber const& rhs) const -> bool
+  {
+    return compare(rhs) == Details::ComparisonResult::less_than;
+  }
+
+  auto operator>(BasicNumber const& rhs) const -> bool
+  {
+    return compare(rhs) == Details::ComparisonResult::greater_than;
+  }
+
+private:
+  // Keep the generic algorithm available for every trait. Native-width entry
+  // points below call this same implementation from number-sqrt.cc.
+  void sqrt_impl(NumType target_scale)
   {
     /* Scale we want to end up at.  */
     target_scale = std::max(target_scale, scale());
@@ -2311,27 +2336,6 @@ public:
     }
   }
 
-  /** \brief  Are we equal to zero?
-   *  \return True iff equal to zero.
-   */
-  [[nodiscard]] auto is_zero() const -> bool { return digits_.is_zero(); }
-
-  auto operator==(BasicNumber const& rhs) const -> bool
-  {
-    return compare(rhs) == Details::ComparisonResult::equality;
-  }
-
-  auto operator<(BasicNumber const& rhs) const -> bool
-  {
-    return compare(rhs) == Details::ComparisonResult::less_than;
-  }
-
-  auto operator>(BasicNumber const& rhs) const -> bool
-  {
-    return compare(rhs) == Details::ComparisonResult::greater_than;
-  }
-
-private:
   static void grow_coefficient(Details::BasicDigits<Traits>& value, std::size_t places)
   {
     // The decimal storage shift API uses the public trait width. A working
@@ -2561,6 +2565,24 @@ private:
   Sign sign_ = Sign::positive;           ///< Sign (+/-1).
   NumType scale_ = 0;                    ///< Scale.
 };
+
+// Isolate the complete native root, including its small-root fallback.
+// Other traits retain the identical header-defined generic algorithm.
+template<>
+#if defined(_MSC_VER)
+__declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+[[gnu::noinline]]
+#endif
+void BasicNumber<NumberTraits16>::sqrt(NumType target_scale);
+
+template<>
+#if defined(_MSC_VER)
+__declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+[[gnu::noinline]]
+#endif
+void BasicNumber<NumberTraits32>::sqrt(NumType target_scale);
 
 // Keep both native pointer-width choices out of callers, including with IPO
 // where the compiler supports a noinline attribute. Other traits retain the

@@ -163,3 +163,37 @@ The prefix arithmetic, cutoff, external kernels and exact-floor tests remain
 unchanged. This is one further code-generation hypothesis, not a proved cause
 or accepted performance fix. Keep all earlier checkpoints and every native
 cohort outcome; successful jobs cannot waive their measured losses.
+
+## Isolate the complete native root
+
+The public-length restoration at `c866b5f` also retained eight confirmed
+Windows conversion losses across ordinary run 41491302951 and the complete
+fixed-replica run 41491302365. Its Windows code payload matches `426905d`.
+Restoring that public helper therefore did not change the retained native
+code or establish a fix. All of those outcomes remain part of the evidence.
+
+The next experiment moves the original complete root body into a private
+generic implementation without changing its arithmetic. Native 16-bit and
+32-bit `sqrt` entry points call it from `number-sqrt.cc`, using the same
+supported noinline declarations as the existing prefix entries. Both the
+small-root fallback and the staged prefix driver are consequently compiled
+outside the VM translation unit. Other traits retain the identical generic
+header implementation, including the primary exhaustive 8-bit test model.
+
+Zero and negative handling, guard-scale bounds, public coefficient length,
+prefix cutoff, exact Newton termination and final rescaling are unchanged.
+The source extraction checks the moved body byte-for-byte before formatting.
+This tests compilation isolation rather than a new arithmetic algorithm;
+actual native compile commands, executable bytes, broad/held-out results and
+all three predetermined Windows replicas are still required before adoption.
+It does not waive any earlier loss or complete #212/#197.
+
+Local validation of complete-root isolation passes 247 ASan/UBSan cases
+(1,233,112 assertions), seven CLI/malformed-stream/lifetime/signal checks,
+616 identical ordinary-source math references and 23 separate Release
+profiling checks. LeakSanitizer is unavailable. In that local profiling
+build, the VM object has only an undefined native 32-bit `sqrt` reference;
+the kernel object defines both native entries and their generic bodies.
+This establishes the observed local compilation boundary, without claiming
+an uninstrumented timing gain or MSVC/IPO behavior. Native evidence remains
+required, including every previously losing workload and CPU-cohort result.
