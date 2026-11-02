@@ -138,13 +138,11 @@ public:
   /** Whether coefficient storage retains a heap owner rather than inline limbs. */
   [[nodiscard]] auto has_heap_storage() const noexcept -> bool { return digits_.has_heap(); }
 
-#if GD_BC_PROFILE
-  /** Stored coefficient limbs before division normalization; diagnostics only. */
+  /** Logical stored limbs for algorithm dimensions and optional diagnostics. */
   [[nodiscard]] auto coefficient_limbs() const noexcept -> std::size_t
   {
     return digits_ ? digits_->size() : 0;
   }
-#endif
 
   /** \brief   Construct holding the single digit \a num
    *  \param num Number to hold.  Must be less than \c base_.
@@ -650,6 +648,91 @@ public:
     assert(length < base_);  // NOLINT
 
     return std::max(NumType{1}, static_cast<NumType>(length));
+  }
+
+  /** Internal storage-width scan, deliberately separate from public length.
+   * Keep the established public function's call graph and narrowing unchanged.
+   * Prefix-root dimensions must not narrow enlarged working coefficients.
+   */
+  [[nodiscard]] auto coefficient_digits() const -> std::size_t
+  {
+    if (!digits_) {
+      return 1;
+    }
+
+    /* The length is at most the number of entries in the digits_ vector times the log base.  We
+     * then correct by reducing length by the number of leading zeros.
+     */
+    auto length = digits_->size() * base_log10_;
+    auto rit = digits_->rbegin();
+    auto const finish = digits_->rend();
+    while (rit != finish && *rit == 0) {
+      ++rit;
+      length -= base_log10_;
+    }
+    // Count logical limb positions, including the first significant limb.
+    // The amount expression is not evaluated in ordinary builds.
+    GD_BC_PROFILE_EVENT(Profile::Event::length_scan_limbs,
+                        std::distance(digits_->rbegin(), rit) + (rit != finish ? 1 : 0));
+    if (rit != finish) {
+      length -= base_log10_;
+      NumType d = *rit;
+      assert(d != 0);  // NOLINT
+      while (d != 0) {
+        length += 1;
+        d /= 10;  // NOLINT - 10 is not a magic number
+      }
+    }
+
+    return std::max(std::size_t{1}, static_cast<std::size_t>(length));
+  }
+
+  /** Copy floor(coefficient * 10^growth / 10^drop) without an oversized owner.
+   * Cancel shifts first, copy only surviving limbs when shrinking, and size
+   * growing storage once. All dimensions are storage-width values.
+   */
+  [[nodiscard]] auto rescaled_copy(std::size_t growth, std::size_t drop) const -> BasicDigits
+  {
+    auto const cancelled = std::min(growth, drop);
+    growth -= cancelled;
+    drop -= cancelled;
+    if (!digits_ || digits_->empty()) {
+      return BasicDigits();
+    }
+    if (growth != 0) {
+      auto const whole = growth / base_log10_;
+      auto const count = digits_->size();
+      if (whole >= std::numeric_limits<std::size_t>::max() - count) {
+        throw std::length_error("decimal coefficient growth exceeds storage width");
+      }
+      BasicDigits result;
+      // One spare limb absorbs a possible partial-radix carry without growth.
+      result.digits_ = DigitVector(count + whole + 1, 0);
+      std::copy(digits_->begin(), digits_->end(), result.digits_->begin() + whole);
+      GD_BC_PROFILE_EVENT(Profile::Event::range_limb_bytes, count * sizeof(NumType));
+      auto const part = growth % base_log10_;
+      if (part != 0) {
+        result.mac(static_cast<NumType>(pow10(part)), 0);
+      }
+      result.tidy();
+      return result;
+    }
+    if (drop != 0) {
+      auto const whole = drop / base_log10_;
+      if (whole >= digits_->size()) {
+        return BasicDigits();
+      }
+      BasicDigits result(digits_->begin() + whole, digits_->end());
+      auto const part = drop % base_log10_;
+      if (part != 0) {
+        result.divide(static_cast<NumType>(pow10(part)));
+      }
+      else {
+        result.tidy();
+      }
+      return result;
+    }
+    return *this;
   }
 
   /** \brief        Add a NumType value to the digits_ at a given scale
@@ -2132,7 +2215,32 @@ public:
     }
   }
 
-  void sqrt(NumType target_scale)
+  void sqrt(NumType target_scale) { sqrt_impl(target_scale); }
+
+  /** \brief  Are we equal to zero?
+   *  \return True iff equal to zero.
+   */
+  [[nodiscard]] auto is_zero() const -> bool { return digits_.is_zero(); }
+
+  auto operator==(BasicNumber const& rhs) const -> bool
+  {
+    return compare(rhs) == Details::ComparisonResult::equality;
+  }
+
+  auto operator<(BasicNumber const& rhs) const -> bool
+  {
+    return compare(rhs) == Details::ComparisonResult::less_than;
+  }
+
+  auto operator>(BasicNumber const& rhs) const -> bool
+  {
+    return compare(rhs) == Details::ComparisonResult::greater_than;
+  }
+
+private:
+  // Keep the generic algorithm available for every trait. Native-width entry
+  // points below call this same implementation from number-sqrt.cc.
+  void sqrt_impl(NumType target_scale)
   {
     /* Scale we want to end up at.  */
     target_scale = std::max(target_scale, scale());
@@ -2149,6 +2257,19 @@ public:
       return;
     }
 
+    // Guard digits are optional for exact integer-coefficient Newton iteration.
+    // If the scale field cannot represent them, work at the requested precision:
+    // wrapping would instead lose both fractional digits and the result scale.
+    // Retain exact coefficient Newton iteration for small roots. Large
+    // roots can grow significant coefficient precision in exact prefixes.
+    constexpr auto guards = static_cast<NumType>(base_log10_ + 1);
+    NumType const working_scale = target_scale <= std::numeric_limits<NumType>::max() - guards
+                                    ? static_cast<NumType>(target_scale + guards)
+                                    : target_scale;
+    if (sqrt_prefix_if_large(working_scale, target_scale)) {
+      return;
+    }
+
     // Determine the magnitude from the original value, before adding working
     // precision. The enlarged coefficient can exceed the narrow length helper's
     // result domain even though its original input and requested scale are valid.
@@ -2161,13 +2282,6 @@ public:
     NumType const fractional_digits = input_digits < scale_ ? scale_ - input_digits : 0;
     NumType const fractional_shift = fractional_digits / 2 + fractional_digits % 2;
 
-    // Guard digits are optional for exact integer-coefficient Newton iteration.
-    // If the scale field cannot represent them, work at the requested precision:
-    // wrapping would instead lose both fractional digits and the result scale.
-    constexpr auto guards = static_cast<NumType>(base_log10_ + 1);
-    NumType const working_scale = target_scale <= std::numeric_limits<NumType>::max() - guards
-                                    ? static_cast<NumType>(target_scale + guards)
-                                    : target_scale;
     // Rescale once so each quotient/average is the floor of the corresponding
     // integer-coefficient operation. The nondecreasing-step test below therefore
     // retains the exact floor root, even when no extra guard scale is available.
@@ -2222,27 +2336,143 @@ public:
     }
   }
 
-  /** \brief  Are we equal to zero?
-   *  \return True iff equal to zero.
-   */
-  [[nodiscard]] auto is_zero() const -> bool { return digits_.is_zero(); }
-
-  auto operator==(BasicNumber const& rhs) const -> bool
+  static void grow_coefficient(Details::BasicDigits<Traits>& value, std::size_t places)
   {
-    return compare(rhs) == Details::ComparisonResult::equality;
+    // The decimal storage shift API uses the public trait width. A working
+    // coefficient can need a wider offset, so split it without narrowing.
+    constexpr auto maximum = std::numeric_limits<NumType>::max();
+    while (places != 0) {
+      auto const part = static_cast<NumType>(std::min(places, std::size_t(maximum)));
+      value.mul_pow10(part);
+      places -= part;
+    }
   }
 
-  auto operator<(BasicNumber const& rhs) const -> bool
+  // Unusual traits use this header-defined implementation. Native-width
+  // specializations declared below are emitted in number-sqrt.cc, keeping the
+  // large prefix kernel out of the VM translation unit.
+  auto sqrt_prefix_if_large(NumType working_scale, NumType target_scale) -> bool
   {
-    return compare(rhs) == Details::ComparisonResult::less_than;
+    return sqrt_prefix_impl(working_scale, target_scale);
   }
 
-  auto operator>(BasicNumber const& rhs) const -> bool
+  auto sqrt_prefix_impl(NumType working_scale, NumType target_scale) -> bool
   {
-    return compare(rhs) == Details::ComparisonResult::greater_than;
+    constexpr std::size_t cutoff = 128;
+    constexpr auto maximum = std::numeric_limits<std::size_t>::max();
+    auto const limbs = digits_.coefficient_limbs();
+    auto const first_shift = std::size_t(working_scale - scale_);
+    auto const second_shift = std::size_t(working_scale);
+    // A storage-width overflow keeps the established resource/error path.
+    if (limbs > maximum / base_log10_ || first_shift > maximum - second_shift) {
+      return false;
+    }
+    auto const extra = first_shift + second_shift;
+    auto const upper = limbs * base_log10_;
+    if (upper > maximum - extra || upper + extra < 2 * cutoff - 1) {
+      return false;
+    }
+    auto const width = digits_.coefficient_digits();
+    if (width > maximum - extra) {
+      return false;
+    }
+    auto const radicand_digits = width + extra;
+    auto const root_digits = radicand_digits / 2 + radicand_digits % 2;
+    if (root_digits < cutoff) {
+      return false;
+    }
+
+    // Keep a good existing power-of-ten seed. In the original coefficient
+    // domain its square is 10^e, where e is width or width-1. A tiny exact
+    // residual means that full-precision Newton already starts with at least
+    // half the required root digits. This is selection only, never stopping
+    // or an approximation used as the returned result.
+    if (width < base_) {
+      auto const exponent = width - (width % 2 != std::size_t(scale_) % 2 ? 1 : 0);
+      Details::BasicDigits<Traits> reference(1);
+      grow_coefficient(reference, exponent);
+      auto residual = digits_;
+      // sub retains the absolute coefficient and separately reports its sign.
+      static_cast<void>(residual.sub(reference, 0));
+      bool precise = residual.is_zero();
+      if (!precise) {
+        auto const error_digits = residual.coefficient_digits();
+        precise = exponent > error_digits &&
+                  exponent - error_digits >= root_digits / 2 + root_digits % 2 + 1;
+      }
+      if (precise) {
+        GD_BC_PROFILE_EVENT(Profile::Event::sqrt_precise_seed_fallbacks, 1);
+        return false;
+      }
+    }
+
+    // N=A*10^(2W-S) is an exact integer, represented symbolically by A and
+    // the checked wide shift. Materialize only the coefficient needed by
+    // each Newton request instead of retaining a full shifted radicand.
+    BasicNumber current;
+    // Plan backwards by ceiling-halves so a nearly complete stage is not
+    // followed by another almost identical full-size division. There is at
+    // most one stage per storage-index bit; the plan needs no heap allocation.
+    std::array<std::size_t, std::numeric_limits<std::size_t>::digits + 1> stages{};
+    std::size_t remaining = 0;
+    for (auto precision = root_digits;; precision = precision / 2 + precision % 2) {
+      assert(remaining < stages.size());  // NOLINT
+      stages[remaining++] = precision;
+      if (precision <= 8) {
+        break;
+      }
+    }
+    std::size_t previous_drop = 0;
+    bool initial = true;
+    while (remaining != 0) {
+      auto const precision = stages[--remaining];
+      auto const drop = root_digits - precision;
+      // floor(sqrt(floor(N/10^(2q)))) equals floor(sqrt(N)/10^q).
+      // Since q<R, 2q is at most the checked radicand width minus one.
+      auto const removed = drop + drop;
+      if (initial) {
+        current = BasicNumber(1);
+        grow_coefficient(current.digits_, (radicand_digits - drop - drop) / 2);
+        initial = false;
+      }
+      else {
+        grow_coefficient(current.digits_, previous_drop - drop);
+      }
+      GD_BC_PROFILE_EVENT(Profile::Event::sqrt_precision_stages, 1);
+      BasicNumber previous;
+      bool first = true;
+      bool improving;
+      do {
+        previous = std::move(current);
+        current.digits_ = digits_.rescaled_copy(extra, removed);
+        current.scale_ = 0;
+        current.sign_ = Sign::positive;
+        GD_BC_PROFILE_EVENT(Profile::Event::sqrt_iterations, 1);
+        GD_BC_PROFILE_EVENT(Profile::Event::sqrt_working_scale_sum, 0);
+        GD_BC_PROFILE_EVENT(Profile::Event::sqrt_root_digits_sum, precision);
+        current.divide(previous, 0);
+        current.digits_.add(previous.digits_, 0);
+        current.digits_.divide(2);
+        // Every positive seed has a bounded first Newton step. Thereafter
+        // stop on nondecrease, retaining the exact floor and avoiding cycles.
+        improving = first ? previous != current : current < previous;
+        first = false;
+      } while (improving);
+      current = std::move(previous);
+      if (drop == 0) {
+        break;
+      }
+      previous_drop = drop;
+    }
+    *this = std::move(current);
+    scale_ = working_scale;
+    if (scale_ > target_scale) {
+      digits_.div_pow10(scale_ - target_scale);
+      scale_ = target_scale;
+    }
+    return true;
   }
 
-private:
   static constexpr std::size_t radix_dc_cutoff = 65536;
   static constexpr std::size_t radix_dc_leaf = 64;
   using RadixPowers = std::map<std::size_t, BasicNumber>;
@@ -2335,6 +2565,45 @@ private:
   Sign sign_ = Sign::positive;           ///< Sign (+/-1).
   NumType scale_ = 0;                    ///< Scale.
 };
+
+// Isolate the complete native root, including its small-root fallback.
+// Other traits retain the identical header-defined generic algorithm.
+template<>
+#if defined(_MSC_VER)
+__declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+[[gnu::noinline]]
+#endif
+void BasicNumber<NumberTraits16>::sqrt(NumType target_scale);
+
+template<>
+#if defined(_MSC_VER)
+__declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+[[gnu::noinline]]
+#endif
+void BasicNumber<NumberTraits32>::sqrt(NumType target_scale);
+
+// Keep both native pointer-width choices out of callers, including with IPO
+// where the compiler supports a noinline attribute. Other traits retain the
+// same generic algorithm above without compiler-specific requirements.
+template<>
+#if defined(_MSC_VER)
+__declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+[[gnu::noinline]]
+#endif
+auto BasicNumber<NumberTraits16>::sqrt_prefix_if_large(NumType working_scale, NumType target_scale)
+  -> bool;
+
+template<>
+#if defined(_MSC_VER)
+__declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+[[gnu::noinline]]
+#endif
+auto BasicNumber<NumberTraits32>::sqrt_prefix_if_large(NumType working_scale, NumType target_scale)
+  -> bool;
 
 template<typename Traits>
 auto operator<<(std::ostream& os, BasicNumber<Traits> const& num) -> std::ostream&

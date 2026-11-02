@@ -156,3 +156,16 @@ library argv file evaluated once. This measures repeated execution and parsing,
 not repeated cold startup. RSS runs the original workload once. Neither CPU
 samples nor native RSS observations replace the separate paired release timing
 experiment; software allocation counters remain a separate instrumented build.
+
+
+The [coefficient-prefix square-root experiment](bc-sqrt-prefix.md) distinguishes
+fractional working scale from significant coefficient width. Integer-prefix
+Newton requests contribute zero to `sqrt_working_scale_sum`; their work is
+still counted by `sqrt_iterations` and division dimensions. New
+`sqrt_precision_stages` and `sqrt_root_digits_sum` counters describe stage count
+and per-iteration root-coefficient precision. They are zero on the legacy path.
+These diagnostics do not substitute for paired timing or native RSS.
+
+`sqrt_precise_seed_fallbacks` counts large-root requests whose exact input
+residual shows that the existing seed is already precise enough to retain the
+original path. It does not count Newton iterations or claim an elapsed saving.
