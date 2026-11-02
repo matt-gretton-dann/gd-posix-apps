@@ -229,3 +229,21 @@ TEST_CASE("Lexer can chew before its first peek", "[bc][lexer][coverage]")
   lexer.chew();
   REQUIRE(lexer.peek().type() == GD::Bc::Token::Type::eof);
 }
+
+TEST_CASE("Quoted string bytes do not alias EOF", "[bc][lexer][byte-domain]")
+{
+  std::string contents(1, '\0');
+  for (unsigned value = 128; value <= 255; ++value) {
+    contents += static_cast<char>(value);
+  }
+  contents += 'Z';
+  std::string const input = '"' + contents + "\" 1";
+  GD::Bc::Lexer lexer(std::make_unique<GD::Bc::StringReader>(input));
+  REQUIRE(lexer.peek().type() == GD::Bc::Token::Type::string);
+  CHECK(lexer.peek().string() == contents);
+  lexer.chew();
+  REQUIRE(lexer.peek().type() == GD::Bc::Token::Type::number);
+  CHECK(lexer.peek().number() == "1");
+  lexer.chew();
+  CHECK(lexer.peek().type() == GD::Bc::Token::Type::eof);
+}
