@@ -60,6 +60,19 @@ class ProfilingCli(unittest.TestCase):
         # independently of limb storage; this does not describe malloc/RSS.
         self.assertLessEqual(numeric['allocated_bytes'] - baseline['allocated_bytes'], 256)
 
+    def test_numeric_registry_does_not_fill_generic_depth_gaps(self):
+        definition = 'define q() {\nreturn(' + '+'.join(map(str, range(1, 65))) + ')\n}\n'
+
+        def program(leaf):
+            return (definition + 'define f() {\nif(n>0) {\nn=n-1\nreturn(f())\n}\n'
+                    'return(' + leaf + ')\n}\nn=80\nf()\n')
+
+        baseline = self.profile(program('1'), '1\n')['allocations']['frames']
+        numeric = self.profile(program('q()'), '2080\n')['allocations']['frames']
+        # The sole numeric leaf must not reserve one owner slot for each of
+        # its generic ancestors. Both paths keep the same recursive call depth.
+        self.assertLessEqual(numeric['allocated_bytes'] - baseline['allocated_bytes'], 256)
+
     def test_square_root_iteration_and_division_dimensions(self):
         counters = self.profile('scale=3\nsqrt(4)\n', '2.000\n')
         events = counters['events']
