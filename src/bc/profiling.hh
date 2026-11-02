@@ -56,6 +56,8 @@ enum class Event : std::size_t {
   division_divisor_limbs,
   sqrt_iterations,
   sqrt_working_scale_sum,
+  sqrt_precision_stages,
+  sqrt_root_digits_sum,
   count
 };
 

@@ -59,15 +59,32 @@ class ProfilingCli(unittest.TestCase):
         width = len(str(counters['limb_base'])) - 1
         working_scale = 3 + width + 1
         self.assertEqual(events['sqrt_working_scale_sum'], iterations * working_scale)
+        self.assertEqual(events['sqrt_precision_stages'], 0)
+        self.assertEqual(events['sqrt_root_digits_sum'], 0)
         self.assertEqual(events['division_requests'], iterations)
         numerator_limbs = (1 + 2 * working_scale + width - 1) // width
         denominator_limbs = (1 + working_scale + width - 1) // width
         self.assertEqual(events['division_dividend_limbs'], iterations * numerator_limbs)
         self.assertEqual(events['division_divisor_limbs'], iterations * denominator_limbs)
         zero = self.profile('scale=3\nsqrt(0)\n', '0\n')['events']
-        for name in ('sqrt_iterations', 'sqrt_working_scale_sum', 'division_requests',
+        for name in ('sqrt_iterations', 'sqrt_working_scale_sum', 'sqrt_precision_stages',
+                     'sqrt_root_digits_sum', 'division_requests',
                      'division_dividend_limbs', 'division_divisor_limbs'):
             self.assertEqual(zero[name], 0)
+
+    def test_large_square_root_reports_integer_coefficient_precision(self):
+        places = 200
+        counters = self.profile('scale={}\nsqrt(4)\n'.format(places),
+                                '2.' + '0' * places + '\n', numeric_continuations=True)
+        events = counters['events']
+        width = len(str(counters['limb_base'])) - 1
+        coefficient_digits = places + width + 2
+        self.assertGreater(events['sqrt_precision_stages'], 1)
+        self.assertEqual(events['sqrt_working_scale_sum'], 0)
+        self.assertEqual(events['division_requests'], events['sqrt_iterations'])
+        self.assertGreaterEqual(events['sqrt_root_digits_sum'], coefficient_digits)
+        self.assertLess(events['sqrt_root_digits_sum'],
+                        coefficient_digits * events['sqrt_iterations'])
 
     def test_scaled_division_avoids_shared_decimal_padding(self):
         def decimal(coefficient, places):
