@@ -1,0 +1,28 @@
+"""Collect logical frame counters only; no elapsed/RSS acceptance claims."""
+import hashlib,json,os,subprocess
+from pathlib import Path
+root=Path('/private/tmp/bc-207-lazy-frame-profiles');root.mkdir(exist_ok=False)
+parent=Path('/private/tmp/gd-posix-direct-numeric-results');candidate=Path('/private/tmp/gd-posix-lazy-numeric-backing')
+def sha(data):return hashlib.sha256(data).hexdigest()
+sum_source='+'.join(map(str,range(1,65)))
+programs={
+ 'generic-calls':('define f(x) {\nreturn(x*x+1)\n}\ns=0\nfor(i=0;i<175000;i++) s+=f(i)\ns\n',str(175000*174999*349999//6+175000)+'\n'),
+ 'generic-recursion':('define f(n) {\nif(n==0) return(0)\nreturn(f(n-1)+1)\n}\nf(96)\n','96\n'),
+ 'mixed-recursion':('define g(x) {\nreturn(x*x+1)\n}\ndefine f(n) {\nauto x\nx='+sum_source+'\nif(n==0) return(g(x))\nreturn(f(n-1)+g(x+n))\n}\nf(4)\ng(3)\nf(1)\ng(5)\n','21673635\n10\n8656963\n26\n')}
+manifest=dict(scope='separate incrementally built Release profiling binaries; logical counters only; not timing or RSS',cases=[],roles={})
+for role,source in [('parent',parent),('candidate',candidate)]:
+ binary=source/'build-profile/src/bc/bc';revision=subprocess.check_output(['git','rev-parse','HEAD'],cwd=source,text=True).strip()
+ assert not subprocess.check_output(['git','diff','--','src'],cwd=source)
+ metadata=dict(source_revision=revision,binary_sha256=sha(binary.read_bytes()),vm_source_sha256=sha((source/'src/bc/vm.cc').read_bytes()),compiler_cache_sha256=sha((source/'build-profile/CMakeCache.txt').read_bytes()))
+ manifest['roles'][role]=metadata
+ for name,(program,expected) in programs.items():
+  (root/(name+'.bc')).write_bytes(program.encode());(root/(name+'.expected')).write_bytes(expected.encode())
+  output=root/(role+'-'+name+'.json')
+  env={k:v for k,v in os.environ.items() if not k.startswith(('BC_','DC_','GD_BC_PROFILE_'))};env.update(LC_ALL='C',LANG='C',GD_BC_PROFILE_OUTPUT=str(output))
+  child=subprocess.run([str(binary)],input=program.encode(),stdout=subprocess.PIPE,stderr=subprocess.PIPE,env=env,timeout=120)
+  assert child.returncode==0 and not child.stderr and child.stdout==expected.encode(),(role,name,child.returncode,child.stdout,child.stderr)
+  report=json.loads(output.read_text());assert report['instrumented'] is True and report['total']['live_bytes']==0
+  record=dict(role=role,name=name,checked=True,program_sha256=sha(program.encode()),oracle_sha256=sha(expected.encode()),report=output.name,report_sha256=sha(output.read_bytes()),frames=report['allocations']['frames'],results=report['allocations']['results'])
+  manifest['cases'].append(record)
+  print(role,name,'frame peak',record['frames']['peak_live_bytes'],'result peak',record['results']['peak_live_bytes'],flush=True)
+(root/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')

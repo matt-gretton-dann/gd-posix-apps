@@ -194,11 +194,13 @@ def main():
         resource = json.loads(z.read('manifest.json'))
         assert len(resource['samples']) == 48 and all(r['checked'] for r in resource['samples'])
     further_local = runpy.run_path(str(ROOT / 'verify-further-local.py'))['verify'](ROOT)
+    root_storage = runpy.run_path(str(ROOT / 'verify-root-storage.py'))['verify'](ROOT)
     runpy.run_path(str(ROOT / 'verify-windows-controls.py'))
     summary = dict(native_checked=children, native_binaries=binaries,
                    native_inspection_outputs=inspections, local_producer_checked=local_checked, local_exact_binaries=3, local_native_outputs=6,
                    local_resource_observations=48, reports=reports,
                    further_local=further_local,
+                   root_storage=root_storage,
                    windows_deployment_checked=3024, windows_module_probes=54,
                    limitations=['recorded nominal intervals are not recomputed',
                        'local producer raw counts/hashes/controls are replayed; original collector/auditor remain alongside them',

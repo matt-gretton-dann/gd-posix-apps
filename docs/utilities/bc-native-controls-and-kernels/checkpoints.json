@@ -676,6 +676,222 @@
           "sha256": "f7f02b6c5b27535c27958b76345ac211257bf19901696ec0be365bf86e28f937"
         }
       }
+    },
+    {
+      "name": "typed-cbbc-409",
+      "base": "d1de5150e511fcc75d718a3fb8d5f680219bafff",
+      "candidate": "cbbc7542755c4474997dfee696d59b7f1a75ee52",
+      "run_id": 41508074256,
+      "minimum_checked": 5600,
+      "status": "Rejected numeric result helpers: Windows held-out calls confirmed slower",
+      "recorded_symmetric_policy": true,
+      "candidate_toom3_threshold": 0,
+      "hosts": {
+        "linux": {
+          "path": "native/typed-cbbc-409/linux.zip",
+          "sha256": "13b6e959112e27b5684dcf4353866aa59065ccbb7e96240f719753e56927f1b4"
+        },
+        "macos": {
+          "path": "native/typed-cbbc-409/macos.zip",
+          "sha256": "d922114de5705b34965bbf72d967dd451a4577fc194f1801ac89771edd6891cc"
+        },
+        "windows": {
+          "path": "native/typed-cbbc-409/windows.zip",
+          "sha256": "0794258386b48f47f563e26feef88cd7ef98eb8ab2dfbf8b02ec157e5fb60923"
+        }
+      }
+    },
+    {
+      "name": "root-535-405",
+      "base": "b165fc6c484888f0262e18b436bcda0cb1d53ef9",
+      "candidate": "535420bb4acc6052266dbd7b1b285e9fbe47f91a",
+      "run_id": 41512282021,
+      "minimum_checked": 5600,
+      "status": "Complete root translation unit: no confirmed native loss; source superseded by accepted-main integration",
+      "recorded_symmetric_policy": true,
+      "candidate_toom3_threshold": 0,
+      "hosts": {
+        "linux": {
+          "path": "native/root-535-405/linux.zip",
+          "sha256": "a518a62fa9770ef632decb4dfdcfff697101e881b7f58adc2b0becd431ff6b4b"
+        },
+        "macos": {
+          "path": "native/root-535-405/macos.zip",
+          "sha256": "cd618f796a3023b6d451ca35d4a3896c0728b65db7ef47025b5b8c4a3e6f4236"
+        },
+        "windows": {
+          "path": "native/root-535-405/windows.zip",
+          "sha256": "47414513e977d659856db7a5896315a410fb5292607fe2d267f0ea1e7c1a80bf"
+        }
+      }
+    },
+    {
+      "name": "load-conditions-414",
+      "base": "0ba232230d9e4cf10c42124009c5c389d688ff3e",
+      "candidate": "854b59e6d604c4d28b1df03a8f635dc5f095ae8d",
+      "run_id": 41524197726,
+      "minimum_checked": 2100,
+      "status": "Accepted parser correctness fix #413; all original native outputs retained",
+      "recorded_symmetric_policy": true,
+      "candidate_toom3_threshold": 0,
+      "hosts": {
+        "linux": {
+          "path": "native/load-conditions-414/linux.zip",
+          "sha256": "a46364779ca0b45e88623b25972592bcd63992a31d924e433e76a96cb00f299f"
+        },
+        "macos": {
+          "path": "native/load-conditions-414/macos.zip",
+          "sha256": "89b3f07d919e82b260ce46c7dc912267b823c1d24f7c5bd30cae2a8fbccc16c4"
+        },
+        "windows": {
+          "path": "native/load-conditions-414/windows.zip",
+          "sha256": "52bc734a977364b06fd72c354fd2b946a0a180ed3326c2e5c4418ef9ea5bb3da"
+        }
+      }
+    },
+    {
+      "name": "root-535-cpu1-405",
+      "base": "b165fc6c484888f0262e18b436bcda0cb1d53ef9",
+      "candidate": "535420bb4acc6052266dbd7b1b285e9fbe47f91a",
+      "run_id": 41512281980,
+      "minimum_checked": 5600,
+      "status": "Predetermined Windows CPU cohort; no model selection, no confirmed native loss",
+      "recorded_symmetric_policy": true,
+      "candidate_toom3_threshold": 0,
+      "hosts": {
+        "windows": {
+          "path": "native/root-535-cpu1-405/windows.zip",
+          "sha256": "cd07fc86de6dc044a527e066fce7799a45c5f8c5656b6f87452b95398e2a7261"
+        }
+      }
+    },
+    {
+      "name": "root-535-cpu2-405",
+      "base": "b165fc6c484888f0262e18b436bcda0cb1d53ef9",
+      "candidate": "535420bb4acc6052266dbd7b1b285e9fbe47f91a",
+      "run_id": 41512281980,
+      "minimum_checked": 5600,
+      "status": "Predetermined Windows CPU cohort; no model selection, no confirmed native loss",
+      "recorded_symmetric_policy": true,
+      "candidate_toom3_threshold": 0,
+      "hosts": {
+        "windows": {
+          "path": "native/root-535-cpu2-405/windows.zip",
+          "sha256": "8468bd7a3bd83ee097f6312b936e5df0323abc9048dc6e84f71964fdb78a2d68"
+        }
+      }
+    },
+    {
+      "name": "root-535-cpu3-405",
+      "base": "b165fc6c484888f0262e18b436bcda0cb1d53ef9",
+      "candidate": "535420bb4acc6052266dbd7b1b285e9fbe47f91a",
+      "run_id": 41512281980,
+      "minimum_checked": 5600,
+      "status": "Predetermined Windows CPU cohort; no model selection, no confirmed native loss",
+      "recorded_symmetric_policy": true,
+      "candidate_toom3_threshold": 0,
+      "hosts": {
+        "windows": {
+          "path": "native/root-535-cpu3-405/windows.zip",
+          "sha256": "8983f34cb395bfb840dc06d3bae3fe52f881cc03d8eec79619919b66a9ccaff4"
+        }
+      }
+    },
+    {
+      "name": "typed-sparse-8cf-409",
+      "base": "19b930d9d78286c6b959a0f75c67f8ec6e194edb",
+      "candidate": "8cf4c3b8c77c235312d095f3e6cf4c943e3112de",
+      "run_id": 41531061483,
+      "minimum_checked": 5600,
+      "status": "Rejected sparse numeric backing: confirmed Windows held-out loop regression; control inconclusive, not a waiver",
+      "recorded_symmetric_policy": true,
+      "candidate_toom3_threshold": 0,
+      "hosts": {
+        "linux": {
+          "path": "native/typed-sparse-8cf-409/linux.zip",
+          "sha256": "e8ce089b6e6a40e2bd65f7ed57888018164fd24c90fb0f5a5c8264e2898970f8"
+        },
+        "macos": {
+          "path": "native/typed-sparse-8cf-409/macos.zip",
+          "sha256": "f278f044d18c8e6f7430039775e7533716a2a778084d1d0469b7b67c2734d237"
+        },
+        "windows": {
+          "path": "native/typed-sparse-8cf-409/windows.zip",
+          "sha256": "eb061fa0ca2480bcd994e0ae854ea3f3d745f9c02ed15884c2de03cb89ad3059"
+        }
+      }
+    },
+    {
+      "name": "root-final-a9a2-405",
+      "base": "19b930d9d78286c6b959a0f75c67f8ec6e194edb",
+      "candidate": "a9a2d5915ff45c85d0ca92f42931c62f4ac9430e",
+      "run_id": 41531532145,
+      "minimum_checked": 5600,
+      "status": "Accepted exact staged-root implementation in PR #405; no confirmed candidate loss, other #197 goals remain open",
+      "recorded_symmetric_policy": true,
+      "candidate_toom3_threshold": 0,
+      "hosts": {
+        "linux": {
+          "path": "native/root-final-a9a2-405/linux.zip",
+          "sha256": "4fb597ce318eeb15b30b89b50e2a9cc01f9cf32af60a2270d4d711ee4a589fae"
+        },
+        "macos": {
+          "path": "native/root-final-a9a2-405/macos.zip",
+          "sha256": "82d416818d71f5a7df0e48bdd8ca086bff62fbacaf0d9777ae0718b3d5cb7b26"
+        },
+        "windows": {
+          "path": "native/root-final-a9a2-405/windows.zip",
+          "sha256": "25ec659a7972fa71faf6424953f8c3ed2c39fc35140ae8401e74fffb1d8d1a17"
+        }
+      }
+    },
+    {
+      "name": "root-final-a9a2-cpu1-405",
+      "base": "19b930d9d78286c6b959a0f75c67f8ec6e194edb",
+      "candidate": "a9a2d5915ff45c85d0ca92f42931c62f4ac9430e",
+      "run_id": 41531532108,
+      "minimum_checked": 5600,
+      "status": "Predetermined accepted-root CPU replica; no filtering or pooled acceptance",
+      "recorded_symmetric_policy": true,
+      "candidate_toom3_threshold": 0,
+      "hosts": {
+        "windows": {
+          "path": "native/root-final-a9a2-cpu1-405/windows.zip",
+          "sha256": "d8e1b3b07c1bd8caf3aa525deeaea6e06f6c86d0384168e845ab8f332b4b59b7"
+        }
+      }
+    },
+    {
+      "name": "root-final-a9a2-cpu2-405",
+      "base": "19b930d9d78286c6b959a0f75c67f8ec6e194edb",
+      "candidate": "a9a2d5915ff45c85d0ca92f42931c62f4ac9430e",
+      "run_id": 41531532108,
+      "minimum_checked": 5600,
+      "status": "Predetermined accepted-root CPU replica; no filtering or pooled acceptance",
+      "recorded_symmetric_policy": true,
+      "candidate_toom3_threshold": 0,
+      "hosts": {
+        "windows": {
+          "path": "native/root-final-a9a2-cpu2-405/windows.zip",
+          "sha256": "601a908393c28da5797b5f926d1063066468a501f6ef3c4e8b43d85b798de4c9"
+        }
+      }
+    },
+    {
+      "name": "root-final-a9a2-cpu3-405",
+      "base": "19b930d9d78286c6b959a0f75c67f8ec6e194edb",
+      "candidate": "a9a2d5915ff45c85d0ca92f42931c62f4ac9430e",
+      "run_id": 41531532108,
+      "minimum_checked": 5600,
+      "status": "Predetermined accepted-root CPU replica; no filtering or pooled acceptance",
+      "recorded_symmetric_policy": true,
+      "candidate_toom3_threshold": 0,
+      "hosts": {
+        "windows": {
+          "path": "native/root-final-a9a2-cpu3-405/windows.zip",
+          "sha256": "1becd0870fe38111dcc214033ccddc97e8a72210201a91e04a4266016761b8cd"
+        }
+      }
     }
   ],
   "scope": "Exact original artifact ZIPs; runtime adoption status is per checkpoint, not inferred from green jobs"

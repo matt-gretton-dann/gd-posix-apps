@@ -1,0 +1,77 @@
+"""Collect current root counters and separate RSS, never elapsed acceptance."""
+import hashlib,importlib.util,json,os,re,shutil,subprocess,zipfile
+from pathlib import Path
+scripts=Path('/Users/mgrettondann/repos/gd-posix-apps/src/bc/scripts')
+def load(name):
+ spec=importlib.util.spec_from_file_location(name,scripts/(name+'.py'));module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
+bench=load('bench-bc');profile=load('profile-bc');host=load('benchmark-ci')
+root=Path('/private/tmp/bc-212-complete-root-diagnostics');root.mkdir(exist_ok=False)
+manifest=dict(schema=1,purpose='logical counters and separate local RSS; no elapsed acceptance',collector_sha256=bench.digest_file(__file__),performance_acceptance=False,logical=[],resources=[],cases=[],profile_roles={},rss_roles={},concurrency='Owned builds and tests terminal before collection. Logical diagnostics finish before RSS. No elapsed experiment overlaps. OS-default affinity and uncontrolled host services; source/metadata work allowed.')
+bench.write_json(root/'host.json',host.host_info())
+repo=Path('/Users/mgrettondann/repos/gd-posix-apps')
+def tree(revision):return subprocess.check_output(['git','ls-tree',revision,'src','libgdsup','cmake','CMakeLists.txt'],cwd=repo)
+a='b165fc6c484888f0262e18b436bcda0cb1d53ef9';b='0ba232230d9e4cf10c42124009c5c389d688ff3e';assert tree(a)==tree(b)
+manifest['base_tree_equivalence']=dict(ci_source=a,local_profile_source=b,scope='entire src/libgdsup/cmake trees and top-level CMake blob',sha256=hashlib.sha256(tree(a)).hexdigest())
+roles=[('base',Path('/private/tmp/gd-bc-212-complete-root-main-profile/source'),Path('/private/tmp/gd-bc-212-complete-root-main-profile/build'),b),('candidate',Path('/private/tmp/gd-posix-complete-root-translation-unit'),Path('/private/tmp/gd-posix-complete-root-translation-unit/build-profile'),'535420bb4acc6052266dbd7b1b285e9fbe47f91a')]
+for role,source,build,revision in roles:
+ assert subprocess.check_output(['git','rev-parse','HEAD'],cwd=source,text=True).strip()==revision
+ assert not subprocess.check_output(['git','status','--porcelain'],cwd=source)
+ cache=(build/'CMakeCache.txt').read_text();ninja=(build/'build.ninja').read_text()
+ assert 'ENABLE_BC_PROFILE:BOOL=ON' in cache and 'CMAKE_BUILD_TYPE:STRING=Release' in cache and 'ENABLE_NON_POSIX_EXTENSIONS:BOOL=OFF' in cache and 'GD_BC_PROFILE=1' in ninja
+ binary=build/'src/bc/bc';metadata=dict(argv=[str(binary)],source_revision=revision,instrumented=True,binary_sha256=bench.digest_file(binary),snapshots={})
+ for name in ('CMakeCache.txt','build.ninja','compile_commands.json'):
+  target=root/(role+'-'+name);shutil.copyfile(build/name,target);metadata['snapshots'][name]=dict(path=target.name,sha256=bench.digest_file(target))
+ manifest['profile_roles'][role]=metadata
+archive=Path('/private/tmp/bc-405-535-native-macos.zip')
+with zipfile.ZipFile(archive) as z:
+ for preset in ('full','holdout'):
+  original=json.loads(z.read(preset+'-paired/manifest.json'));selected=[r for r in original['corpus'] if r['name'].startswith('sqrt_')];assert len(selected)==7
+  target=root/'prepared'/preset;(target/'workloads').mkdir(parents=True)
+  bench.write_json(target/'manifest.json',dict(suite='arithmetic',preset=preset,corpus=selected))
+  for case in selected:
+   for suffix in ('.bc','.expected'):
+    payload=z.read(preset+'-paired/workloads/'+case['name']+suffix);(target/'workloads'/(case['name']+suffix)).write_bytes(payload)
+ for role in ('base','candidate','aa'):
+  recipe=json.loads(z.read(role+'/implementations.json'))['implementations'][0]
+  path=Path('/private/tmp/bc-212-complete-root-ci-binaries')/role
+  assert bench.digest_file(path)==recipe['metadata']['binary_sha256'];recipe['argv']=[str(path)]
+  manifest['rss_roles'][role]=recipe
+manifest['rss_execution_scope']='Exact CI macOS-15 arm64 timing executables, now run locally on this M1 host; this is not RSS from the hosted timing runner. Three predetermined trials, all retained; resource CPU/elapsed readings are excluded from speed claims.'
+try:
+ cases=[]
+ for preset in ('full','holdout'):
+  group,_=bench.replay_corpus(root/'prepared'/preset,'arithmetic')
+  for original in group:
+   name=preset+'-'+original['name'];cases.append((name,original))
+   for mode in ('single','batch'):
+    case=dict(original)
+    if mode=='single':
+     case['program'],count=re.subn(r'for\(i=0;i<[0-9]+;i\+\+\)','for(i=0;i<1;i++)',case['program']);assert count==1
+    stem=name+'-'+mode;payload=case['program'].encode();oracle=bench.oracle_payload(case)
+    (root/(stem+'.bc')).write_bytes(payload);(root/(stem+'.expected')).write_bytes(oracle)
+    manifest['cases'].append(dict(name=name,mode=mode,parameters=original['parameters'],program_sha256=hashlib.sha256(payload).hexdigest(),oracle_sha256=hashlib.sha256(oracle).hexdigest()))
+    for role,tool in manifest['profile_roles'].items():
+     report=root/(stem+'-'+role+'.profile.json');env=bench.environment();env['GD_BC_PROFILE_OUTPUT']=str(report)
+     result=profile.run_group(tool['argv'],payload,env,120);assert not result.returncode and not result.stderr,(stem,role,result.stderr)
+     bench.check_output(case,bench.canonical_output(result.stdout),role+'/'+stem)
+     counters=json.loads(report.read_text());assert counters['instrumented'] and counters['total']['live_bytes']==0
+     assert counters['multiply_split_point']==126 and counters['limb_bytes']==4
+     manifest['logical'].append(dict(name=name,mode=mode,role=role,checked=True,report=report.name,report_sha256=bench.digest_file(report),events=counters['events'],total=counters['total'],digits=counters['allocations']['digits']))
+   print('logical',name,flush=True);bench.write_json(root/'manifest.json',manifest)
+ for name,case in cases:
+  payload=case['program'].encode()
+  for trial in range(3):
+   roles=list(manifest['rss_roles'].items())
+   for role,tool in roles if trial%2==0 else list(reversed(roles)):
+    report=root/(name+'-'+role+'-'+str(trial)+'.rss.txt')
+    result=profile.run_group(['/usr/bin/time','-l','-o',str(report)]+tool['argv'],payload,bench.environment(),120)
+    assert not result.returncode and not result.stderr,(name,role,result.stderr)
+    bench.check_output(case,bench.canonical_output(result.stdout),role+'/'+name)
+    resource=profile.rss_fields('Darwin',report.read_text());assert resource['status']=='collected'
+    manifest['resources'].append(dict(name=name,role=role,trial=trial,checked=True,report=report.name,report_sha256=bench.digest_file(report),resources=resource,output_sha256=hashlib.sha256(result.stdout).hexdigest()))
+  print('RSS',name,flush=True);bench.write_json(root/'manifest.json',manifest)
+ assert len(manifest['logical'])==56 and len(manifest['resources'])==126
+ manifest['status']='all current logical and separate RSS observations checked; no elapsed acceptance claim'
+except BaseException as error:
+ manifest.update(status='failed',failure=str(error));raise
+finally:bench.write_json(root/'manifest.json',manifest)

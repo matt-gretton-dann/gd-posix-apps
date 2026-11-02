@@ -246,3 +246,31 @@ comparison. The combined source passes 248 ASan/UBSan cases (1,233,119
 assertions), nine CLI/verifier/lifetime/signal/controller checks, 23 Release
 profiling checks and 616 ordinary-source math references. Its own complete
 native evidence is still required before adopting the combined source.
+
+
+## Accepted staged-root implementation
+
+PR #405 merged as `66cbf5d` after all twenty checks passed on final head
+`a9a2d591`. Ordinary native run 41531532145 and fixed cohort 41531532108 retain
+33,600 checked samples, eighteen exact timing executables and thirty-six native
+inspection outputs. There are no confirmed candidate regressions. The three
+predetermined Windows replicas include two EPYC 7763 hosts; no CPU model or
+unfavorable batch was removed. Scale-5000/10000 paired ratios are respectively
+0.232–0.272 and 0.208–0.222 across the six hosts, with small-scale results near
+baseline. A/A inconclusive intervals remain visible rather than being called
+universal passes.
+
+The final source includes accepted parser condition fix #413. It retains the
+same generic algorithm for narrow/custom traits, original exact-floor contract,
+precise-seed/small-root fallbacks, and external native 16/32-bit entries described
+above. Earlier sections document experiments chronologically; their rejected
+sources remain rejected. Acceptance follows the final source's own complete
+matrix and does not infer a cause for the old Windows regressions.
+
+The [retained archive](bc-native-controls-and-kernels/README.md) includes all
+final native ZIPs, previous losses, logical work counters and the separate RSS
+retry. The earlier `535420b` local memory observations remain under that exact
+source: lower tracked digit peaks coexist with higher RSS and executable size.
+Huge integer square roots still lose to Howard. This completes the precision-
+growth evaluation in #212; broader arithmetic and competitiveness work remains
+under #197/#200.

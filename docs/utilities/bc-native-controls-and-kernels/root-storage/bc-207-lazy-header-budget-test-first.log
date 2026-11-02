@@ -1,0 +1,14 @@
+F
+======================================================================
+FAIL: test_first_numeric_backing_has_bounded_frame_metadata (__main__.ProfilingCli.test_first_numeric_backing_has_bounded_frame_metadata)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-lazy-numeric-backing/src/bc/test-profiling-cli.py", line 61, in test_first_numeric_backing_has_bounded_frame_metadata
+    self.assertLessEqual(numeric['allocated_bytes'] - baseline['allocated_bytes'], 256)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 4088 not less than or equal to 256
+
+----------------------------------------------------------------------
+Ran 1 test in 0.014s
+
+FAILED (failures=1)

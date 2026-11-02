@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check that valid archived data passes and two material corruptions fail.
+"""Check retained evidence integrity and rejection of material corruptions.
 SPDX-License-Identifier: Apache-2.0
 """
 import json
@@ -68,6 +68,47 @@ class IntegrityTests(unittest.TestCase):
         replace_member(archive, name, lambda data: bytes([data[0] ^ 1]) + data[1:])
         with self.assertRaises(AssertionError):
             VERIFY(self.root)
+
+
+class RootStorageIntegrityTests(unittest.TestCase):
+    def setUp(self):
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        self.root = Path(self.directory.name)
+        shutil.copytree(ROOT / 'root-storage', self.root / 'root-storage')
+        native = self.root / 'native/root-535-405'
+        native.mkdir(parents=True)
+        shutil.copyfile(ROOT / 'native/root-535-405/macos.zip', native / 'macos.zip')
+        self.verify = runpy.run_path(str(ROOT / 'verify-root-storage.py'))['verify']
+
+    def test_original_failed_attempt_and_successful_retry_are_retained(self):
+        result = self.verify(self.root)
+        self.assertEqual((result['root_logical'], result['root_rss'],
+                          result['numeric_logical']), (56, 126, 12))
+        self.assertFalse(result['performance_acceptance'])
+
+    def test_missing_logical_observation_is_rejected(self):
+        def omit(data):
+            value = json.loads(data)
+            value['logical'].pop()
+            return json.dumps(value).encode('utf-8')
+        replace_member(self.root / 'root-storage/root-logical.zip', 'manifest.json', omit)
+        with self.assertRaises(AssertionError):
+            self.verify(self.root)
+
+    def test_changed_resource_report_is_rejected(self):
+        archive = self.root / 'root-storage/root-rss.zip'
+        with zipfile.ZipFile(archive) as z:
+            name = json.loads(z.read('manifest.json'))['samples'][0]['report']
+        replace_member(archive, name, lambda data: data.replace(b' resident ', b' altered '))
+        with self.assertRaises(AssertionError):
+            self.verify(self.root)
+
+    def test_changed_profile_executable_is_rejected(self):
+        replace_member(self.root / 'root-storage/numeric-sparse-provenance.zip',
+                       'candidate/binary', lambda data: bytes([data[0] ^ 1]) + data[1:])
+        with self.assertRaises(AssertionError):
+            self.verify(self.root)
 
 
 if __name__ == '__main__':
