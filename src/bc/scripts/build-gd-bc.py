@@ -116,6 +116,41 @@ def verified_array_layout(helper, build, requested):
     return observed
 
 
+
+def verified_toom_threshold(helper, build, requested):
+    """An opt-in cache entry alone does not prove an older revision uses it."""
+    observed = cache_values(build / 'CMakeCache.txt').get('BC_TOOM3_THRESHOLD', '0')
+    if observed != str(requested):
+        raise helper.BuildError('revision did not build the requested Toom threshold')
+    if requested:
+        commands = build / 'compile_commands.json'
+        if not commands.is_file():
+            raise helper.BuildError('cannot verify experimental Toom compilation')
+        entries = json.loads(commands.read_text(encoding='utf-8'))
+        selected = set()
+        pattern = r'(?:-D|/D)GD_BC_TOOM3_THRESHOLD=' + str(requested) + r'(?![0-9])'
+        for entry in entries:
+            name = Path(entry.get('file', '')).name
+            if name not in ('vm.cc', 'bc.cc'):
+                continue
+            command = entry.get('command', ' '.join(entry.get('arguments', [])))
+            if not re.search(pattern, command):
+                raise helper.BuildError('Toom threshold missing from a runtime compilation')
+            selected.add(name)
+        if selected != {'vm.cc', 'bc.cc'}:
+            raise helper.BuildError('cannot verify both Toom runtime compilations')
+    return int(observed)
+
+
+def toom_point(text):
+    if text == '0':
+        return 0
+    value = positive_point(text)
+    if value < 6:
+        raise argparse.ArgumentTypeError('must be 0 or an integer from 6 through 1000000000')
+    return value
+
+
 def positive_point(text):
     if not re.fullmatch(r'[1-9][0-9]*', text) or len(text) > 10 or int(text) > 1000000000:
         raise argparse.ArgumentTypeError('must be an integer from 1 through 1000000000')
@@ -142,6 +177,8 @@ def main():
     parser.add_argument('--extensions', choices=('ON', 'OFF'), default='ON')
     parser.add_argument('--array-storage', choices=('hybrid', 'paged', 'flat', 'hash', 'ordered'),
                         default='hybrid', help='explicit experimental array layout')
+    parser.add_argument('--toom3-threshold', type=toom_point, default=0,
+                        help='explicit experimental limb threshold; 0 retains Karatsuba')
     parser.add_argument('--jobs', type=int, default=2)
     parser.add_argument('--command-timeout', type=int, default=900)
     args = parser.parse_args()
@@ -179,6 +216,8 @@ def main():
                      '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON',
                      '-DCMAKE_C_COMPILER:FILEPATH=' + compiler_c['argv0'],
                      '-DCMAKE_CXX_COMPILER:FILEPATH=' + compiler_cxx['argv0']]
+        if args.toom3_threshold:
+            configure += ['-DBC_TOOM3_THRESHOLD=' + str(args.toom3_threshold)]
         if args.array_storage != 'hybrid':
             configure += ['-DBC_ARRAY_STORAGE=' + args.array_storage]
         generator = args.generator or ('Ninja' if shutil.which('ninja') else None)
@@ -199,6 +238,8 @@ def main():
                                   compiler_c, compiler_cxx)
         observed_layout = verified_array_layout(helper, build, args.array_storage)
         metadata['configuration']['array_storage'] = observed_layout
+        metadata['configuration']['toom3_threshold'] = verified_toom_threshold(
+            helper, build, args.toom3_threshold)
         metadata['binary_sha256'] = helper.digest(executable)
         metadata['standard_library'] = standard_library_info(helper, builder, compiler_cxx, root)
         helper.write_json(root / 'implementations.json', {'implementations': [

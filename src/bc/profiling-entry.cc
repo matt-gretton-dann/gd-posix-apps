@@ -38,12 +38,14 @@ void report() noexcept
     std::_Exit(EXIT_FAILURE);
   }
   auto const values = snapshot();
-  std::fprintf(
-    output,
-    "{\"schema\":1,\"instrumented\":true,"
-    "\"scope\":\"selected C++ container and literal memo requested storage; not process malloc or RSS\","
-    "\"limb_bytes\":%zu,\"limb_base\":%" PRIu64 ",\"multiply_split_point\":%d,\"total\":",
-    sizeof(Number::NumType), static_cast<std::uint64_t>(Number::base_), BC_MULTIPLY_SPLIT_POINT);
+  std::fprintf(output,
+               "{\"schema\":1,\"instrumented\":true,"
+               "\"scope\":\"selected C++ container and literal memo requested storage; not process "
+               "malloc or RSS\","
+               "\"limb_bytes\":%zu,\"limb_base\":%" PRIu64
+               ",\"multiply_split_point\":%d,\"toom3_threshold\":%d,\"total\":",
+               sizeof(Number::NumType), static_cast<std::uint64_t>(Number::base_),
+               BC_MULTIPLY_SPLIT_POINT, GD_BC_TOOM3_THRESHOLD);
   write_stats(output, values.total);
   std::fputs(",\"allocations\":{", output);
   for (std::size_t i = 0; i < values.allocations.size(); ++i) {

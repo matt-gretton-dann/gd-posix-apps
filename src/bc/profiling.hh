@@ -56,6 +56,9 @@ enum class Event : std::size_t {
   division_divisor_limbs,
   sqrt_iterations,
   sqrt_working_scale_sum,
+  toom3_multiply_calls,
+  toom_sparse_scan_limbs,
+  toom_sparse_fallbacks,
   count
 };
 

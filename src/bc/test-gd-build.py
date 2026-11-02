@@ -65,6 +65,44 @@ class GdBuild(unittest.TestCase):
         with self.assertRaises(self.helper.BuildError):
             self.module.verified_array_layout(self.helper, self.build, 'paged')
 
+    def test_experimental_toom_requires_runtime_compilations(self):
+        verify = self.module.verified_toom_threshold
+        self.assertEqual(verify(self.helper, self.build, 0), 0)
+        with self.assertRaises(self.helper.BuildError):
+            verify(self.helper, self.build, 128)
+        self.cache.write_text('BC_TOOM3_THRESHOLD:STRING=128\n')
+        commands = self.build / 'compile_commands.json'
+        for value in ([], [{'command': 'c++ -DGD_BC_TOOM3_THRESHOLD=128'}],
+                      [{'file': 'vm.cc', 'command': 'c++ -DGD_BC_TOOM3_THRESHOLD=128'}],
+                      [{'file': name, 'command': 'c++ -DGD_BC_TOOM3_THRESHOLD=1280'}
+                       for name in ('vm.cc', 'bc.cc')],
+                      [{'file': name, 'command': 'c++ -DGD_BC_TOOM3_THRESHOLD=0'}
+                       for name in ('vm.cc', 'bc.cc')]):
+            commands.write_text(json.dumps(value))
+            with self.assertRaises(self.helper.BuildError):
+                verify(self.helper, self.build, 128)
+        for prefix in ('-D', '/D'):
+            commands.write_text(json.dumps([
+                {'file': name, 'command': 'c++ ' + prefix + 'GD_BC_TOOM3_THRESHOLD=128'}
+                for name in ('vm.cc', 'bc.cc')]))
+            self.assertEqual(verify(self.helper, self.build, 128), 128)
+        commands.write_text(json.dumps([
+            {'file': name, 'arguments': ['c++', '-DGD_BC_TOOM3_THRESHOLD=128']}
+            for name in ('vm.cc', 'bc.cc')]))
+        self.assertEqual(verify(self.helper, self.build, 128), 128)
+        commands.unlink()
+        with self.assertRaises(self.helper.BuildError):
+            verify(self.helper, self.build, 128)
+        with self.assertRaises(self.helper.BuildError):
+            verify(self.helper, self.build, 0)
+
+    def test_toom_request_is_explicit_and_bounded(self):
+        for value in ('0', '6', '128', '1000000000'):
+            self.assertEqual(self.module.toom_point(value), int(value))
+        for value in ('-1', '1', '5', '6.0', '06', '1000000001', 'auto', ''):
+            with self.assertRaises(argparse.ArgumentTypeError):
+                self.module.toom_point(value)
+
     def test_instrumented_configuration_is_rejected(self):
         for variable in ('ENABLE_BC_PROFILE', 'ENABLE_BC_COVERAGE'):
             previous = self.cache.read_text()
