@@ -3,11 +3,14 @@
 SPDX-License-Identifier: Apache-2.0
 """
 import json
+import contextlib
+import io
 from pathlib import Path
 import runpy
 import shutil
 import tempfile
 import unittest
+from unittest import mock
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
@@ -30,6 +33,24 @@ class IntegrityTests(unittest.TestCase):
         self.addCleanup(self.directory.cleanup)
         self.root = Path(self.directory.name)
         shutil.copytree(ROOT / 'further-local', self.root / 'further-local')
+
+    def test_windows_report_preserves_recorded_bytes(self):
+        # Model Windows text newline translation on every host. The report is
+        # hashed evidence, so replay must not depend on the writer's host OS.
+        shutil.copytree(ROOT / 'sources', self.root / 'sources')
+        script = self.root / 'verify-windows-controls.py'
+        shutil.copyfile(ROOT / script.name, script)
+
+        def windows_text(path, data, encoding=None, errors=None, **kwargs):
+            with path.open('w', encoding=encoding, errors=errors,
+                           newline=kwargs.get('newline', '\r\n')) as output:
+                return output.write(data)
+
+        with mock.patch.object(Path, 'write_text', windows_text):
+            with contextlib.redirect_stdout(io.StringIO()):
+                runpy.run_path(str(script))
+        self.assertEqual((self.root / 'windows-controls-audit.json').read_bytes(),
+                         (ROOT / 'windows-controls-audit.json').read_bytes())
 
     def test_checked_sample_omission_is_rejected(self):
         archive = self.root / 'further-local/typed-paired.zip'

@@ -447,7 +447,7 @@
   "sources/benchmark-policy.py.txt": "f12362e171d9f6aeb3d4e17bfff3bcbcc90a7520277b4517986e2b7a864e2121",
   "sources/collect-bc-codegen.py.txt": "fe0b0d5c6583b21fbd2cc3c01ede8edacb0e39375bb963139c024b0c8d4b03aa",
   "sources/windows-image-probe.py.txt": "d3bce20f16449ec4ba30d519394edb7be315f3f985999c83425c34a2426d902f",
-  "test-verifiers.py": "bdf4c531185c465b1b2aaafe487bb4967aa60d4fb6899d321cf6b874e94f6956",
+  "test-verifiers.py": "30b48581afe719caa490a39ccc6c914538948ca6cdc1fc040c5a79add206490d",
   "validation/bc-204-toom-sparse-argument-repeat.json": "da6bcf486f5924a9a0e6b023b4c13e00d37515a159ad91418e7ed6d85a3bb980",
   "validation/bc-204-toom-sparse-on-cli-asan.log": "13b69cac2b80dba66ecd4bbf89468ef344fdea808fa06545cde53d16553c0313",
   "validation/bc-204-toom-sparse-on-cli-idle-recheck.log": "3025324e4bcf4fceda4754189998be82bf7eba96714a04d157065022a8941478",
