@@ -1,0 +1,15 @@
+{
+  "checkpoint": "405-01b-cpu2",
+  "host": "windows",
+  "base": "21b3638ed338009a7bccf022cddcc119ce620296",
+  "candidate": "01b677e3cc4c3ee3cd8d4beab4ae468f37b989bd",
+  "checked": 5630,
+  "artifact_sha256": "e59f6c17d3a40b7f0f4f1a705ed0f25de9cca7b42f4db4790a216a808e07f1c8",
+  "controls": {
+    "inconclusive-noisy": 47,
+    "pass": 65
+  },
+  "confirmed_regressions": [],
+  "performance_acceptance": false,
+  "scope": "Raw checked outputs/provenance and symmetric controls verified. No pooled pass; candidate acceptance requires all remaining evidence."
+}

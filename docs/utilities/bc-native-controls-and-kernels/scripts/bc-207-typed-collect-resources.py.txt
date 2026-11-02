@@ -1,0 +1,33 @@
+"""Run checked native diagnostics before the paired elapsed experiment."""
+import hashlib,importlib.util,json
+from pathlib import Path
+scripts=Path('/private/tmp/gd-posix-typed-result-pools/src/bc/scripts')
+def load(name):
+ s=importlib.util.spec_from_file_location(name,scripts/(name+'.py'));m=importlib.util.module_from_spec(s);s.loader.exec_module(m);return m
+bench=load('bench-bc');profile=load('profile-bc')
+root=Path('/private/tmp/bc-207-typed-native-resources');root.mkdir(exist_ok=False)
+preparation=Path('/private/tmp/bc-207-typed-preparation');assert (preparation/'complete.json').is_file()
+roles=bench.implementations(preparation/'aa.json',True)+[t for t in bench.implementations(preparation/'paired.json',True) if t['name']=='candidate']
+manifest=dict(purpose='separate native RSS diagnostics; elapsed values do not support speed claims',performance_acceptance=False,collector_sha256=bench.digest_file(__file__),trials=3,roles=roles,cases=[],samples=[])
+try:
+ for preset in ('full','holdout'):
+  cases,replay=bench.replay_corpus(preparation/preset,'arithmetic')
+  for case in [c for c in cases if c['name'].startswith('slots_')]:
+   # Use the exact frozen workload for separately collected storage diagnostics.
+   name=preset+'-'+case['name'];payload=case['program'].encode();oracle=bench.oracle_payload(case)
+   (root/(name+'.bc')).write_bytes(payload);(root/(name+'.expected')).write_bytes(oracle)
+   manifest['cases'].append(dict(name=name,parameters=case['parameters'],program_sha256=hashlib.sha256(payload).hexdigest(),oracle_sha256=hashlib.sha256(oracle).hexdigest()))
+   for trial in range(3):
+    for role in roles if trial%2==0 else list(reversed(roles)):
+     report=root/(name+'-'+role['name']+'-'+str(trial)+'.rss.txt')
+     result=profile.run_group(['/usr/bin/time','-l','-o',str(report)]+role['argv'],payload,bench.environment(),120)
+     assert not result.returncode and not result.stderr,(name,role['name'],result.stderr)
+     bench.check_output(case,bench.canonical_output(result.stdout),role['name']+'/'+name)
+     fields=profile.rss_fields('Darwin',report.read_text());assert fields['status']=='collected'
+     manifest['samples'].append(dict(name=name,role=role['name'],trial=trial,checked=True,report=report.name,resources=fields,output_sha256=hashlib.sha256(result.stdout).hexdigest()))
+   print(name,flush=True)
+  bench.write_json(root/'manifest.json',manifest)
+ manifest['status']='all 216 diagnostic children checked; no elapsed acceptance claim'
+except BaseException as error:
+ manifest['failure']=str(error);raise
+finally:bench.write_json(root/'manifest.json',manifest)
