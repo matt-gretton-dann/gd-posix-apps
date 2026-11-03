@@ -154,31 +154,37 @@ class ProfilingCli(unittest.TestCase):
         cases = [(1234 * 10 ** 90, 90, 7, 0, places) for places in (80, 90, 100)]
         cases += [(1234, 0, 7 * 10 ** 90, 90, 3),
                   (12345678, 4, 7 * 10 ** 90, 90, 3),
-                  (12345678, 4, 31234567, 5, 7)]
+                  (12345678, 4, 31234567, 5, 7),
+                  (1, 1000, 7, 0, 500), (0, 1000, 7, 0, 500),
+                  (10 ** 18, 18, 7, 0, 0)]
         for a, sa, b, sb, places in cases:
-            # Derive the oracle using unreduced exact integer powers. Only
-            # powers introduced by alignment are removed from the work bound;
-            # intrinsic coefficient zeros are deliberately left intact.
+            # Derive output from unreduced exact integer powers. Separately
+            # bound work after the quotient-preserving decimal exponent step;
+            # a negative exponent discards numerator digits before division.
             common_scale = max(sa, sb)
             numerator_shift = common_scale - sa + places
             denominator_shift = common_scale - sb
             numerator = a * 10 ** numerator_shift
             denominator = b * 10 ** denominator_shift
             quotient = numerator // denominator
-            padding = 10 ** min(numerator_shift, denominator_shift)
+            exponent = places + sb - sa
+            work_numerator = a * 10 ** exponent if exponent >= 0 else a // 10 ** (-exponent)
+            work_denominator = b
             for left_sign, right_sign in ((1, 1), (-1, 1), (1, -1), (-1, -1)):
                 with self.subTest(scales=(sa, sb, places), signs=(left_sign, right_sign)):
                     lhs = ('-' if left_sign < 0 else '') + decimal(a, sa)
                     rhs = ('-' if right_sign < 0 else '') + decimal(b, sb)
-                    expected = ('-' if left_sign != right_sign else '') + decimal(quotient, places)
+                    expected = (('-' if left_sign != right_sign else '') + decimal(quotient, places)
+                                if quotient else '0')
                     program = 'scale={}\n({})/({})\n'.format(places, lhs, rhs)
                     counters = self.profile(program, expected + '\n', numeric_continuations=True)
                     events = counters['events']
                     width = len(str(counters['limb_base'])) - 1
                     self.assertEqual(events['division_requests'], 1)
-                    for key, coefficient in [('division_dividend_limbs', numerator // padding),
-                                             ('division_divisor_limbs', denominator // padding)]:
-                        self.assertEqual(events[key], (len(str(coefficient)) + width - 1) // width)
+                    for key, coefficient in [('division_dividend_limbs', work_numerator),
+                                             ('division_divisor_limbs', work_denominator)]:
+                        limbs = (len(str(coefficient)) + width - 1) // width if coefficient else 0
+                        self.assertEqual(events[key], limbs)
 
     def test_scaled_modulo_avoids_quotient_product(self):
         def decimal(coefficient, scale):

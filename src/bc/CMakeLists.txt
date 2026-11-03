@@ -16,6 +16,8 @@ if(_bc_array_layout LESS 0)
   message(FATAL_ERROR "Unsupported BC_ARRAY_STORAGE: ${BC_ARRAY_STORAGE}")
 endif()
 target_compile_definitions(libbc PUBLIC GD_BC_ARRAY_STORAGE=${_bc_array_layout})
+# Linked clients use the native driver; standalone consumers retain the generic header.
+target_compile_definitions(libbc PUBLIC GD_BC_OUTLINED_DIVISION=1)
 target_compile_definitions(libbc PUBLIC GD_BC_PREPARED_DIVISORS=$<BOOL:${ENABLE_BC_PREPARED_DIVISORS}>)
 set_property(TARGET libbc PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
 set_property(TARGET libbc PROPERTY CXX_STANDARD_REQUIRED ON)
@@ -28,8 +30,9 @@ endif()
 set_warnings(libbc)
 gd_apply_ipo(libbc)
 
-target_sources(libbc PRIVATE execution-plan.cc instruction.cc lexer.cc number-division-cache.cc number-remainder.cc
-                            number-sqrt.cc parser.cc reader.cc token.cc verification.cc vm.cc)
+target_sources(libbc PRIVATE execution-plan.cc instruction.cc lexer.cc number-division.cc
+                            number-division-cache.cc number-remainder.cc number-sqrt.cc parser.cc
+                            reader.cc token.cc verification.cc vm.cc)
 if(ENABLE_BC_PROFILE)
   if(ENABLE_BC_COVERAGE)
     message(FATAL_ERROR "Use separate bc coverage and allocation profiling builds")
