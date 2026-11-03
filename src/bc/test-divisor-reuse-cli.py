@@ -30,8 +30,12 @@ EMIT = 'q=a/b;q;scale(q);r=a%b;r;scale(r)\n'
 class Reuse(unittest.TestCase):
     def invoke(self, program):
         try:
-            return subprocess.run([BC], input=program, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                  timeout=2, env=dict(os.environ, LC_ALL='C'))
+            environment = {key: value for key, value in os.environ.items()
+                           if not key.startswith(('BC_', 'DC_', 'GD_BC_PROFILE_'))}
+            environment['LC_ALL'] = 'C'
+            return subprocess.run([BC], input=program, universal_newlines=True,
+                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                  timeout=2, env=environment)
         except subprocess.TimeoutExpired:
             self.fail('divisor reuse program exceeded two seconds')
 

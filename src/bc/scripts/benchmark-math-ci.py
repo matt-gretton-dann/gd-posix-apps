@@ -179,13 +179,26 @@ def summary_markdown(decisions):
     return '\n'.join(lines)
 
 
+def gd_build_command(args, name, destination, cc, cxx):
+    command = [sys.executable, str(SCRIPTS / 'build-gd-bc.py'), '--source',
+               str(args.source.resolve()), '--revision', args.candidate,
+               '--split-point', '126', '--output', str(destination), '--name', name,
+               '--c-compiler', cc, '--cxx-compiler', cxx]
+    # Math A/A builds the same candidate source and must use the same mode.
+    if getattr(args, 'candidate_prepared_divisors', False):
+        command += ['--prepared-divisors', 'ON']
+    return command
+
+
 def main():
     gd_builder, bench = load('build-gd-bc'), load('bench-bc')
+    helper = load('build-bc-comparators')
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source', type=Path, required=True)
     parser.add_argument('--candidate', type=gd_builder.revision_value, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--broad', action='store_true')
+    parser.add_argument('--candidate-prepared-divisors', action='store_true')
     parser.add_argument('--samples', type=bench.positive_integer, default=15)
     parser.add_argument('--duration-seconds', type=bench.positive_timeout, default=.1)
     parser.add_argument('--total-seconds', type=bench.positive_timeout, default=4800)
@@ -209,15 +222,19 @@ def main():
         cc, cxx = ('cl', 'cl') if os.name == 'nt' else ('cc', 'c++')
         for name in ('gd', 'aa'):
             destination = root / name
-            commands.run([sys.executable, str(SCRIPTS / 'build-gd-bc.py'), '--source',
-                          str(args.source.resolve()), '--revision', args.candidate,
-                          '--split-point', '126', '--output', str(destination), '--name', name,
-                          '--c-compiler', cc, '--cxx-compiler', cxx], timeout=1200)
-            entries.append(json.loads((destination / 'implementations.json').read_text())['implementations'][0])
+            commands.run(gd_build_command(args, name, destination, cc, cxx), timeout=1200)
+            entry = json.loads((destination / 'implementations.json').read_text())['implementations'][0]
+            if args.candidate_prepared_divisors:
+                gd_builder.require_prepared_candidate(helper, entry)
+            entries.append(entry)
         destination = root / 'howard'
         commands.run([sys.executable, str(SCRIPTS / 'build-bc-comparators.py'), '--output',
                       str(destination), '--implementation', 'howard', '--cc', cc], timeout=1200)
         howard = json.loads((destination / 'implementations.json').read_text())['implementations'][0]
+        if args.candidate_prepared_divisors:
+            for entry in entries:
+                commands.run([sys.executable, str(SCRIPTS.parent / 'test-divisor-reuse-cli.py'),
+                              entry['argv'][0]], timeout=60)
         configs = configurations(*entries, howard,
                                  root / 'gd/source/src/bc/math-library.bc',
                                  root / 'aa/source/src/bc/math-library.bc', args.candidate)
@@ -290,13 +307,14 @@ def main():
             with open(github_summary, 'a', encoding='utf-8') as output:
                 output.write(summary_path.read_text(encoding='utf-8'))
         return 0
-    except (CommandFailure, OSError, ValueError, bench.BenchmarkError) as error:
+    except (CommandFailure, helper.BuildError, OSError, ValueError, bench.BenchmarkError) as error:
         write(evidence / 'failure.json', dict(error=str(error),status='hard failure; no acceptance'))
         print(str(error), file=sys.stderr)
         return 1
     finally:
         write(evidence / 'orchestration.json',dict(candidate=args.candidate,commands=commands.commands,
-              broad=args.broad,samples=args.samples,duration_target=args.duration_seconds))
+              broad=args.broad,samples=args.samples,duration_target=args.duration_seconds,
+              candidate_prepared_divisors=args.candidate_prepared_divisors))
         for path in root.glob('command-*.log'):
             shutil.copyfile(path, evidence / path.name)
         for name in ('gd', 'aa', 'howard'):
@@ -306,6 +324,8 @@ def main():
             for path in source.glob('*'):
                 if path.is_file():
                     shutil.copyfile(path, target / path.name)
+            if (source / 'prepared-policy').is_dir():
+                shutil.copytree(str(source / 'prepared-policy'), str(target / 'prepared-policy'))
             if (source / 'logs').is_dir():
                 shutil.copytree(source / 'logs', target / 'logs')
 

@@ -116,7 +116,7 @@ class NativeTrends(unittest.TestCase):
                                   if case['name'] in selected},
                                  {case['group'] for case in cases})
 
-    def exercise(self, fail=False, aa_first=None, aa_second=None):
+    def exercise(self, fail=False, aa_first=None, aa_second=None, prepared=False):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name) / 'results'
@@ -132,12 +132,18 @@ class NativeTrends(unittest.TestCase):
             def run(self, argv):
                 calls.append(argv)
                 script = Path(argv[1]).name
+                if script == 'test-divisor-reuse-cli.py':
+                    return
                 output = Path(argv[argv.index('--output') + 1])
                 output.mkdir()
                 if script in ('build-gd-bc.py', 'build-bc-comparators.py'):
+                    (output / 'prepared-policy').mkdir()
+                    (output / 'prepared-policy/libbc.vcxproj').write_text('retained fixture')
                     name = argv[argv.index('--name') + 1] if '--name' in argv else 'howard-7.0.3'
                     (output / 'implementations.json').write_text(json.dumps(
-                        {'implementations': [{'name': name, 'argv': ['fixture']}]}))
+                        {'implementations': [{'name': name, 'argv': ['fixture'], 'metadata': dict(
+                            configuration=dict(prepared_divisors_policy=dict(
+                                status='recorded', mode='ON', enabled=True)))}]}))
                     return
                 if fail:
                     raise helper.BuildError('fixture incorrect output')
@@ -177,11 +183,29 @@ class NativeTrends(unittest.TestCase):
 
         argv = [str(PATH), '--source', str(Path(temporary.name)), '--base', 'a' * 40,
                 '--candidate', 'b' * 40, '--output', str(root)]
+        if prepared:
+            argv += ['--candidate-prepared-divisors']
         with mock.patch.object(CI, 'load', modules), mock.patch.object(CI, 'host_info', return_value={}), \
                 mock.patch.object(sys, 'argv', argv), mock.patch.dict('os.environ', {}, clear=True), \
                 contextlib.redirect_stderr(io.StringIO()):
             result = CI.main()
         return root, calls, result
+
+    def test_prepared_candidate_keeps_controls_ordinary_and_guards_before_timing(self):
+        root, calls, result = self.exercise(prepared=True)
+        self.assertEqual(result, 0)
+        self.assertEqual((root / 'evidence/candidate/prepared-policy/libbc.vcxproj').read_text(),
+                         'retained fixture')
+        for index, call in enumerate(calls[:3]):
+            self.assertEqual('--prepared-divisors' in call, index == 1)
+        self.assertEqual(calls[1][calls[1].index('--prepared-divisors') + 1], 'ON')
+        self.assertEqual([Path(call[1]).name for call in calls[4:7]],
+                         ['test-divisor-reuse-cli.py'] * 3)
+        self.assertTrue(all(Path(call[1]).name == 'bench-bc.py' for call in calls[7:]))
+        ordinary, calls, result = self.exercise()
+        self.assertEqual(result, 0)
+        self.assertFalse(any('--prepared-divisors' in call for call in calls))
+        self.assertFalse(any(Path(call[1]).name == 'test-divisor-reuse-cli.py' for call in calls))
 
     def test_slow_candidate_is_reported_without_failing_performance_gate(self):
         root, calls, result = self.exercise()

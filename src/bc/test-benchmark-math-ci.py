@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Check native math roles, acceptance limits and process-tree deadlines."""
+import contextlib
 import copy
+import io
 import importlib.util
 import json
 import os
@@ -18,6 +20,47 @@ SPEC.loader.exec_module(CI)
 
 
 class NativeMath(unittest.TestCase):
+    def test_prepared_mode_is_verified_for_both_independent_candidate_builds(self):
+        for valid in (True, False):
+            with self.subTest(valid=valid), tempfile.TemporaryDirectory() as temporary:
+                source = Path(temporary)
+                (source / 'src/bc').mkdir(parents=True)
+                (source / 'src/bc/math-library.bc').write_text('scale=20\n')
+                output = source / 'results'
+                calls = []
+
+                class Commands:
+                    def __init__(self, root, timeout):
+                        self.commands = calls
+
+                    def run(self, argv, timeout=3600):
+                        calls.append(argv)
+                        if Path(argv[1]).name != 'build-gd-bc.py':
+                            raise CI.CommandFailure('stop fixture before timings')
+                        target = Path(argv[argv.index('--output') + 1])
+                        target.mkdir()
+                        (target / 'prepared-policy').mkdir()
+                        (target / 'prepared-policy/libbc.vcxproj').write_text('retained fixture')
+                        policy = dict(status='recorded', mode='ON', enabled=valid)
+                        entry = dict(argv=['fixture'], metadata=dict(configuration=dict(
+                            prepared_divisors_policy=policy)))
+                        (target / 'implementations.json').write_text(json.dumps(
+                            dict(implementations=[entry])))
+
+                argv = [str(PATH), '--source', str(source), '--candidate', 'b' * 40,
+                        '--output', str(output), '--candidate-prepared-divisors']
+                with mock.patch.object(CI, 'Commands', Commands), \
+                        mock.patch.object(sys, 'argv', argv), contextlib.redirect_stderr(io.StringIO()):
+                    self.assertEqual(CI.main(), 1)
+                self.assertEqual((output / 'evidence/gd/prepared-policy/libbc.vcxproj').read_text(),
+                                 'retained fixture')
+                self.assertEqual(len(calls), 3 if valid else 1)
+                for call in calls[:2 if valid else 1]:
+                    self.assertEqual(call[call.index('--prepared-divisors') + 1], 'ON')
+                    self.assertEqual(call[call.index('--revision') + 1], 'b' * 40)
+                failure = json.loads((output / 'evidence/failure.json').read_text())['error']
+                self.assertIn('stop fixture' if valid else 'verified explicit', failure)
+
     def test_every_regime_and_mode_has_a_prespecified_representative(self):
         bench = CI.load('bench-bc')
         for preset in ('full', 'holdout'):

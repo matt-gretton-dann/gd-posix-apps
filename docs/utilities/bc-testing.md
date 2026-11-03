@@ -394,3 +394,29 @@ reuse ON/OFF builds and output directories separate, just as for extension modes
 do not pool their line, branch or MC/DC denominators. The broad unit/native view
 and application-only mappings remain distinct. An API exercised only by unit
 traits can appear in the former even when default VM dispatch does not use it.
+
+### Verifying prepared-divisor experiments
+
+The immutable GD builder accepts `--prepared-divisors AUTO|ON|OFF`. `AUTO`
+preserves the selected source revision's default. Revisions without this
+option are recorded as `legacy-auto` with an unknown activation value, rather
+than being labelled disabled. Explicit modes require a matching CMake cache
+value and matching `GD_BC_PREPARED_DIVISORS` definitions in both the VM and CLI
+compilation commands. Native Visual Studio builds instead retain and hash both
+Release target projects. Missing or contradictory evidence fails the build.
+
+The native controllers accept `--candidate-prepared-divisors`. Integer A/B
+experiments enable only the candidate, leaving the baseline and independent
+baseline A/A build on their source defaults. Math experiments build the same
+candidate twice and enable both GD roles. Both controllers reject an unverified
+activation before timing, run the language reuse guards after all builds have
+finished, and retain the activation evidence with their artifacts. An absent
+ordinary math library is still reported as unavailable.
+
+PR branches beginning `codex/bc-native-prepared/` request this mode and the
+broad full/holdout corpus on Linux, macOS and Windows. The separate profiling
+build also enables reuse and runs its semantic and counter guards on all three
+hosts. Default production builds retain the ordinary division fallback.
+Workflow success alone does not establish a performance improvement or justify
+changing the production default; raw timing, control, allocation and memory
+results require separate review under #420 and #197.
