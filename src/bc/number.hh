@@ -1775,12 +1775,8 @@ public:
       return nullptr;
     }
     auto const fingerprint = admission_fingerprint(source);
-    if (!fingerprint) {
-      clear();
-      return nullptr;
-    }
-    if (!fingerprint_valid_ || *fingerprint != fingerprint_) {
-      fingerprint_ = *fingerprint;
+    if (!fingerprint_valid_ || fingerprint != fingerprint_) {
+      fingerprint_ = fingerprint;
       fingerprint_valid_ = true;
       rejected_ = false;
       return nullptr;
@@ -1853,17 +1849,14 @@ private:
     return true;
   }
 
-  static auto admission_fingerprint(BasicDigits const& source) noexcept
-    -> std::optional<std::uint64_t>
+  static auto admission_fingerprint(BasicDigits const& source) noexcept -> std::uint64_t
   {
+    // lookup already rejected numeric zero, and its ownership bookkeeping
+    // does not mutate the source. A second nonzero scan/optional failure path
+    // would duplicate that precondition; retain only the admission hash.
     std::uint64_t hash = 14695981039346656037ULL;
-    bool nonzero = false;
     for (auto limb : source.digits_) {
-      nonzero = nonzero || limb != 0;
       hash = (hash ^ static_cast<std::uint64_t>(limb)) * 1099511628211ULL;
-    }
-    if (!nonzero) {
-      return std::nullopt;
     }
     return (hash ^ source.coefficient_limbs()) * 1099511628211ULL;
   }
