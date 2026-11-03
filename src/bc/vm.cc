@@ -70,6 +70,21 @@ private:
 using ResultBuffer =
   std::vector<ResultSlot, Profile::Allocator<ResultSlot, Profile::AllocationKind::results>>;
 
+// Lower only verified execution. The build switch and empty lowering preserve
+// the portable wide-operand interpreter, including its full index domain.
+auto prepare_executable(Instructions const& code, ResultSlotPlan const& slots, bool persistent)
+  -> ExecutableCode
+{
+#if GD_BC_COMPACT_EXECUTION
+  return lower_executable(code, slots, persistent);
+#else
+  (void)code;
+  (void)slots;
+  (void)persistent;
+  return {};
+#endif
+}
+
 /** A borrowed instruction stream whose entry verification has completed.
  * Construction is confined to the verifier and persistent verified owners.
  * Instruction structure and metadata stay unchanged and outlive execution.
@@ -81,19 +96,22 @@ public:
   auto instructions() const -> Instructions const& { return *instructions_; }
   auto consumption() const -> ConsumptionPlan const& { return *consumption_; }
   auto result_slots() const -> ResultSlotPlan const& { return *result_slots_; }
+  auto executable() const -> ExecutableCode const& { return *executable_; }
 
 private:
   friend struct VMState;
   friend class FunctionCode;
   friend class PreparedInstructions;
   VerifiedInstructions(Instructions const& instructions, ConsumptionPlan const& consumption,
-                       ResultSlotPlan const& result_slots)
-      : instructions_(&instructions), consumption_(&consumption), result_slots_(&result_slots)
+                       ResultSlotPlan const& result_slots, ExecutableCode const& executable)
+      : instructions_(&instructions), consumption_(&consumption), result_slots_(&result_slots),
+        executable_(&executable)
   {
   }
   Instructions const* instructions_;
   ConsumptionPlan const* consumption_;
   ResultSlotPlan const* result_slots_;
+  ExecutableCode const* executable_;
 };
 
 /** Own the outer stream's prepared metadata while borrowing its instructions.
@@ -105,20 +123,23 @@ class PreparedInstructions
 public:
   auto view() const -> VerifiedInstructions
   {
-    return VerifiedInstructions(*instructions_, consumption_, result_slots_);
+    return VerifiedInstructions(*instructions_, consumption_, result_slots_, executable_);
   }
 
 private:
   friend struct VMState;
   PreparedInstructions(Instructions const& instructions, ConsumptionPlan consumption,
-                       ResultSlotPlan result_slots)
+                       ResultSlotPlan result_slots, bool compact)
       : instructions_(&instructions), consumption_(std::move(consumption)),
-        result_slots_(std::move(result_slots))
+        result_slots_(std::move(result_slots)),
+        executable_(compact ? prepare_executable(instructions, result_slots_, false)
+                            : ExecutableCode{})
   {
   }
   Instructions const* instructions_;
   ConsumptionPlan consumption_;
   ResultSlotPlan result_slots_;
+  ExecutableCode executable_;
 };
 
 /** Persistent function code can be constructed only after body verification.
@@ -133,19 +154,23 @@ public:
   auto operator=(FunctionCode&&) noexcept -> FunctionCode& = default;
   auto view() const -> VerifiedInstructions
   {
-    return VerifiedInstructions(instructions_, consumption_, result_slots_);
+    return VerifiedInstructions(instructions_, consumption_, result_slots_, executable_);
   }
 
 private:
   friend struct VMState;
-  FunctionCode(Instructions instructions, ConsumptionPlan consumption, ResultSlotPlan result_slots)
+  FunctionCode(Instructions instructions, ConsumptionPlan consumption, ResultSlotPlan result_slots,
+               bool compact)
       : instructions_(std::move(instructions)), consumption_(std::move(consumption)),
-        result_slots_(std::move(result_slots))
+        result_slots_(std::move(result_slots)),
+        executable_(compact ? prepare_executable(instructions_, result_slots_, true)
+                            : ExecutableCode{})
   {
   }
   Instructions instructions_;
   ConsumptionPlan consumption_;
   ResultSlotPlan result_slots_;
+  ExecutableCode executable_;
 };
 
 /** \brief Hold virtual machine state.
@@ -252,7 +277,8 @@ struct VMState
     validate(instructions);
     return PreparedInstructions(
       instructions, full_checks() ? ConsumptionPlan{} : plan_consumption(instructions, false),
-      full_checks() ? ResultSlotPlan{} : plan_result_slots(instructions, sizeof(ResultSlot)));
+      full_checks() ? ResultSlotPlan{} : plan_result_slots(instructions, sizeof(ResultSlot)),
+      !full_checks());
   }
   auto full_checks() const noexcept -> bool { return checks_ == VM::ExecutionChecks::full; }
 
@@ -483,6 +509,15 @@ private:
   void validate_result(Instructions::size_type i) const;
   template<bool FullChecks>
   auto execute_impl() -> std::pair<Number, bool>;
+  auto execute_compact() -> std::pair<Number, bool>;
+
+  // Shared value semantics: wide execution decodes references before calling
+  // these; compact execution supplies its already-lowered register operands.
+  void print_value(ResultSlot const& result, Instruction::Stream stream, Index result_idx);
+  void length_value(ResultSlot& result, ResultSlot const& loc, Index loc_idx);
+  void load_value(ResultSlot& result, ResultSlot const& loc, Index loc_idx);
+  void store_value(ResultSlot const& loc, ResultSlot const& result, Index loc_idx, Index expr_idx);
+  void push_value(ResultSlot const& expr, Index expr_idx);
 
   // The verified producer map preserves instruction-relative operands. Full
   // checks and unprofitable maps use the original instruction-indexed buffer.
@@ -498,6 +533,7 @@ private:
   VMState* vm_;                         ///< Virtual Machine state
   Instructions const& instrs_;          ///< Instructions to execute
   Instruction::Index pc_{0};            ///< Current program counter
+  ExecutableCode const& executable_;    ///< Immutable lowered code, or empty for wide execution.
   ResultBuffer& results_;               ///< Borrowed stable buffer for this activation.
   ConsumptionPlan const& consumption_;  ///< Immutable metadata owned beside the code.
   // Immutable plan data is owned beside the verified code and cannot relocate
@@ -648,8 +684,10 @@ void GD::Bc::Details::VMState::function(Letter func, Instructions::const_iterato
   auto consumption = full_checks() ? ConsumptionPlan{} : plan_consumption(instrs, true);
   auto result_slots =
     full_checks() ? ResultSlotPlan{} : plan_result_slots(instrs, sizeof(ResultSlot));
-  functions_.at(static_cast<unsigned>(func)) = std::make_optional(std::make_tuple(
-    FunctionCode(std::move(instrs), std::move(consumption), std::move(result_slots)), mask, loc));
+  functions_.at(static_cast<unsigned>(func)) =
+    std::make_optional(std::make_tuple(FunctionCode(std::move(instrs), std::move(consumption),
+                                                    std::move(result_slots), !full_checks()),
+                                       mask, loc));
 }
 
 auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc::Number
@@ -928,18 +966,195 @@ void GD::Bc::Details::VMState::release_results()
 }
 
 GD::Bc::Details::InstructionPack::InstructionPack(VMState* vm, VerifiedInstructions instrs)
-    : vm_(vm), instrs_(instrs.instructions()),
+    : vm_(vm), instrs_(instrs.instructions()), executable_(instrs.executable()),
       results_(vm->acquire_results(instrs.result_slots().storage_size(instrs_.size()))),
       consumption_(instrs.consumption()),
       result_indices_(instrs.result_slots().indices.empty() ? nullptr
-                                                         : instrs.result_slots().indices.data())
+                                                            : instrs.result_slots().indices.data())
 {
   assert(vm_ != nullptr);  // NOLINT
 }
 
 auto GD::Bc::Details::InstructionPack::execute() -> std::pair<GD::Bc::Number, bool>
 {
+  if (!executable_.empty())
+    return execute_compact();
   return vm_->full_checks() ? execute_impl<true>() : execute_impl<false>();
+}
+
+auto GD::Bc::Details::InstructionPack::execute_compact() -> std::pair<GD::Bc::Number, bool>
+{
+  using O = Instruction::Opcode;
+  while (pc_ < executable_.size()) {
+    if (Details::have_been_interrupted.test(std::memory_order_relaxed))
+      return std::make_pair(Number(0), true);
+    GD_BC_PROFILE_EVENT(Profile::Event::instructions_executed, 1);
+    auto const& instruction = executable_[pc_];
+    auto& destination = results_[instruction.result];
+    auto take = [&]() -> Number {
+      auto& number = std::get<Number>(*results_[instruction.first.index]);
+      if (number.has_heap_storage() && !consumption_.empty() && consumption_[pc_] != 0) {
+        GD_BC_PROFILE_EVENT(Profile::Event::temporary_consumptions, 1);
+        return std::move(number);
+      }
+      return number;
+    };
+    auto unary = [&](auto operation) {
+      Number value = take();
+      operation(value);
+      destination = std::move(value);
+    };
+    auto binary = [&](auto operation) {
+      Number lhs = take();
+      Number const& rhs = std::get<Number>(*results_[instruction.second.index]);
+      operation(lhs, rhs);
+      destination = std::move(lhs);
+    };
+    switch (instruction.opcode) {
+    case O::string:
+      destination = std::string_view(std::get<std::string>(instrs_[pc_].op1()));
+      break;
+    case O::number:
+      destination = instrs_[pc_].decoded_number(vm_->ibase());
+      break;
+    case O::variable:
+      destination = Variable(instruction.first.letter);
+      break;
+    case O::array:
+      destination = Array(instruction.first.letter);
+      break;
+    case O::array_element:
+      destination =
+        ArrayElement(Array(instruction.first.letter),
+                     std::get<Number>(*results_[instruction.second.index]).to_unsigned());
+      break;
+    case O::ibase:
+      destination = Ibase();
+      break;
+    case O::obase:
+      destination = Obase();
+      break;
+    case O::scale:
+      destination = Scale();
+      break;
+    case O::print:
+      print_value(results_[instruction.first.index],
+                  static_cast<Instruction::Stream>(instruction.second.index),
+                  instruction.first.index);
+      break;
+    case O::quit:
+      std::exit(static_cast<int>(instruction.first.index));  // NOLINT(concurrency-mt-unsafe)
+    case O::load:
+      load_value(destination, results_[instruction.first.index], instruction.first.index);
+      break;
+    case O::store:
+      store_value(results_[instruction.first.index], results_[instruction.second.index],
+                  instruction.first.index, instruction.second.index);
+      break;
+    case O::length:
+      length_value(destination, results_[instruction.first.index], instruction.first.index);
+      break;
+    case O::negate:
+      unary([](Number& value) { value.negate(); });
+      break;
+    case O::abs:
+      unary([](Number& value) { value.abs(); });
+      break;
+    case O::sqrt:
+      unary([this](Number& value) { value.sqrt(vm_->scale()); });
+      break;
+    case O::scale_expr:
+      unary([](Number& value) { value = Number(value.scale()); });
+      break;
+    case O::add:
+      binary([](Number& lhs, Number const& rhs) { lhs.add(rhs); });
+      break;
+    case O::subtract:
+      binary([](Number& lhs, Number const& rhs) { lhs.sub(rhs); });
+      break;
+    case O::multiply:
+      binary([this](Number& lhs, Number const& rhs) { lhs.multiply(rhs, vm_->scale()); });
+      break;
+    case O::divide:
+      binary([this](Number& lhs, Number const& rhs) {
+#if GD_BC_PREPARED_DIVISORS
+        if (rhs.has_heap_storage() && vm_->try_divide_with_reuse(lhs, rhs, false))
+          return;
+#endif
+        lhs.divide(rhs, vm_->scale());
+      });
+      break;
+    case O::modulo:
+      binary([this](Number& lhs, Number const& rhs) {
+#if GD_BC_PREPARED_DIVISORS
+        if (rhs.has_heap_storage() && vm_->try_divide_with_reuse(lhs, rhs, true))
+          return;
+#endif
+        lhs.modulo(rhs, vm_->scale());
+      });
+      break;
+    case O::power:
+      binary([this](Number& lhs, Number const& rhs) { lhs.power(rhs, vm_->scale()); });
+      break;
+    case O::less_than:
+      binary([](Number& lhs, Number const& rhs) { lhs = Number(lhs < rhs ? 1 : 0); });
+      break;
+    case O::less_than_equals:
+      binary([](Number& lhs, Number const& rhs) { lhs = Number(lhs <= rhs ? 1 : 0); });
+      break;
+    case O::equals:
+      binary([](Number& lhs, Number const& rhs) { lhs = Number(lhs == rhs ? 1 : 0); });
+      break;
+    case O::not_equals:
+      binary([](Number& lhs, Number const& rhs) { lhs = Number(lhs != rhs ? 1 : 0); });
+      break;
+    case O::branch:
+      pc_ = instruction.first.index;
+      continue;
+    case O::branch_zero:
+      if (std::get<Number>(*results_[instruction.first.index]).is_zero()) {
+        pc_ = instruction.second.index;
+        continue;
+      }
+      break;
+    case O::function_begin: {
+      auto const end = instruction.first.index - 1;
+      vm_->function(std::get<Letter>(instrs_[end].op1()),
+                    instrs_.begin() + static_cast<Instruction::Offset>(pc_) + 1,
+                    instrs_.begin() + static_cast<Instruction::Offset>(end),
+                    std::get<VariableMask>(instrs_[pc_].op1()),
+                    std::get<Location>(instrs_[pc_].op2()));
+      pc_ = instruction.first.index;
+      continue;
+    }
+    case O::push_param_mark:
+      vm_->push_param_pack();
+      break;
+    case O::push_param:
+      push_value(results_[instruction.first.index], instruction.first.index);
+      break;
+    case O::pop_param_mark:
+      vm_->pop_param_pack();
+      break;
+    case O::pop_param:
+      destination = vm_->pop_param();
+      break;
+    case O::pop_param_array:
+      destination = vm_->pop_param_array();
+      break;
+    case O::call:
+      destination = vm_->call(instruction.first.letter, std::get<Location>(instrs_[pc_].op2()));
+      break;
+    case O::return_:
+      return std::make_pair(std::move(std::get<Number>(*results_[instruction.first.index])), true);
+    case O::eof:
+      return std::make_pair(Number(0), false);
+    case O::function_end:
+      std::abort();  // Definition metadata cannot be reached in a verified activation.
+    }
+    ++pc_;
+  }
+  return std::make_pair(Number(0), true);
 }
 
 template<bool FullChecks>
@@ -1116,8 +1331,13 @@ void GD::Bc::Details::InstructionPack::execute_print()
 {
   assert(instrs_[pc_].opcode() == Instruction::Opcode::print);  // NOLINT
   Index const result_idx = get_offset_index(instrs_[pc_].op1());
-  std::ostream& os = vm_->stream(std::get<Instruction::Stream>(instrs_[pc_].op2()));
-  auto& result = result_at(result_idx);
+  print_value(result_at(result_idx), std::get<Instruction::Stream>(instrs_[pc_].op2()), result_idx);
+}
+
+void GD::Bc::Details::InstructionPack::print_value(ResultSlot const& result,
+                                                   Instruction::Stream stream, Index result_idx)
+{
+  std::ostream& os = vm_->stream(stream);
   assert_error(result.has_value(), Msg::empty_result, result_idx);  // NOLINT
   std::visit(Overloaded{
                // Empty slots are rejected before visiting in both execution modes.
@@ -1149,8 +1369,12 @@ void GD::Bc::Details::InstructionPack::execute_length()
 {
   assert(instrs_[pc_].opcode() == Instruction::Opcode::length);  // NOLINT
   Index const loc_idx = get_offset_index(instrs_[pc_].op1());
-  auto& result = result_at(pc_);
-  auto const& loc = result_at(loc_idx);
+  length_value(result_at(pc_), result_at(loc_idx), loc_idx);
+}
+
+void GD::Bc::Details::InstructionPack::length_value(ResultSlot& result, ResultSlot const& loc,
+                                                    Index loc_idx)
+{
   assert_error(loc.has_value(), Msg::empty_result, loc_idx);  // NOLINT
 
   std::visit(Overloaded{
@@ -1183,8 +1407,12 @@ void GD::Bc::Details::InstructionPack::execute_load()
 {
   assert(instrs_[pc_].opcode() == Instruction::Opcode::load);  // NOLINT
   Index const loc_idx = get_offset_index(instrs_.at(pc_).op1());
-  auto& result = result_at(pc_);
-  auto const& loc = result_at(loc_idx);
+  load_value(result_at(pc_), result_at(loc_idx), loc_idx);
+}
+
+void GD::Bc::Details::InstructionPack::load_value(ResultSlot& result, ResultSlot const& loc,
+                                                  Index loc_idx)
+{
   assert_error(loc.has_value(), Msg::empty_result, loc_idx);  // NOLINT
 
   std::visit(Overloaded{
@@ -1211,12 +1439,16 @@ void GD::Bc::Details::InstructionPack::execute_store()
 {
   assert(instrs_[pc_].opcode() == Instruction::Opcode::store);  // NOLINT
   Index const loc_idx = get_offset_index(instrs_[pc_].op1());
-  auto& loc = result_at(loc_idx);
-  assert_error(loc.has_value(), Msg::empty_result, loc_idx);  // NOLINT
   Index const expr_idx = get_offset_index(instrs_[pc_].op2());
-  auto& result = result_at(expr_idx);
+  store_value(result_at(loc_idx), result_at(expr_idx), loc_idx, expr_idx);
+}
+
+void GD::Bc::Details::InstructionPack::store_value(ResultSlot const& loc, ResultSlot const& result,
+                                                   Index loc_idx, Index expr_idx)
+{
+  assert_error(loc.has_value(), Msg::empty_result, loc_idx);      // NOLINT
   assert_error(result.has_value(), Msg::empty_result, expr_idx);  // NOLINT
-  auto& expr = *result;
+  auto const& expr = *result;
 
   std::visit(
     Overloaded{
@@ -1285,7 +1517,11 @@ void GD::Bc::Details::InstructionPack::execute_push_param()
 {
   assert(instrs_[pc_].opcode() == Instruction::Opcode::push_param);  // NOLINT
   Index const expr_idx = get_offset_index(instrs_[pc_].op1());
-  auto& expr = result_at(expr_idx);
+  push_value(result_at(expr_idx), expr_idx);
+}
+
+void GD::Bc::Details::InstructionPack::push_value(ResultSlot const& expr, Index expr_idx)
+{
   assert_error(expr.has_value(), Msg::empty_result, expr_idx);  // NOLINT
 
   std::visit(Overloaded{

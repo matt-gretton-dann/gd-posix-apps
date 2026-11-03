@@ -19,7 +19,8 @@ target_compile_definitions(libbc PUBLIC GD_BC_ARRAY_STORAGE=${_bc_array_layout})
 target_compile_definitions(libbc PUBLIC GD_BC_PREPARED_DIVISORS=$<BOOL:${ENABLE_BC_PREPARED_DIVISORS}>)
 set_property(TARGET libbc PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
 set_property(TARGET libbc PROPERTY CXX_STANDARD_REQUIRED ON)
-target_compile_definitions(libbc PRIVATE _CRT_SECURE_NO_WARNINGS)
+target_compile_definitions(libbc PRIVATE _CRT_SECURE_NO_WARNINGS
+  GD_BC_COMPACT_EXECUTION=$<BOOL:${ENABLE_BC_COMPACT_EXECUTION}>)
 if(ENABLE_NON_POSIX_EXTENSIONS)
   # bc.hh exposes mode-dependent inline code, so every consumer needs this.
   target_compile_definitions(bc-language-mode INTERFACE ENABLE_EXTENSIONS=1)

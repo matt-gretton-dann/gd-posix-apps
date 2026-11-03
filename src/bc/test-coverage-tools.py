@@ -49,10 +49,14 @@ class Coverage(unittest.TestCase):
             COLLECTOR.require_production_mappings(self.source, set())
 
     def test_activation_modes_remain_separate(self):
-        cache = {'ENABLE_NON_POSIX_EXTENSIONS': 'OFF', 'ENABLE_BC_PREPARED_DIVISORS': 'ON'}
+        cache = {'ENABLE_NON_POSIX_EXTENSIONS': 'OFF', 'ENABLE_BC_PREPARED_DIVISORS': 'ON',
+                 'ENABLE_BC_COMPACT_EXECUTION': 'ON'}
         self.assertEqual(COLLECTOR.build_modes(cache),
-                         {'extensions': 'OFF', 'prepared_divisors': 'ON'})
+                         {'extensions': 'OFF', 'prepared_divisors': 'ON', 'compact_execution': 'ON'})
         self.assertIsNone(COLLECTOR.build_modes({})['prepared_divisors'])
+        self.assertIsNone(COLLECTOR.build_modes({})['compact_execution'])
+        cache['ENABLE_BC_COMPACT_EXECUTION'] = 'OFF'
+        self.assertEqual(COLLECTOR.build_modes(cache)['compact_execution'], 'OFF')
 
 
 if __name__ == '__main__':

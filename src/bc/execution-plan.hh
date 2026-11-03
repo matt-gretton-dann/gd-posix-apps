@@ -1,5 +1,5 @@
 /** \file execution-plan.hh
- * Conservative last-use arithmetic ownership after entry verification.
+ * Verified executable lowering and conservative temporary ownership.
  * SPDX-License-Identifier: Apache-2.0
  */
 #ifndef GD_BC_EXECUTION_PLAN_HH_INCLUDED
@@ -47,6 +47,40 @@ struct ResultSlotPlan
 // indices and layouts without a net slot/map payload saving keep the generic
 // identity layout. slot_bytes is the caller's actual result-slot sizeof.
 auto plan_result_slots(Instructions const& code, std::size_t slot_bytes) -> ResultSlotPlan;
+
+// Opcode-specific operands in the verified execution stream. Only the member
+// selected during lowering may be read: data/control operands use index, while
+// variable/array/function immediates use letter. No discriminant is needed
+// because entry verification and the opcode establish the operand schema.
+union ExecutableOperand
+{
+  std::uint32_t index{0};
+  Letter letter;
+  ExecutableOperand() : index(0) {}
+  explicit ExecutableOperand(std::uint32_t value) : index(value) {}
+  explicit ExecutableOperand(Letter value) : letter(value) {}
+};
+
+// Common targets use 16 bytes per executable instruction. The source bytecode
+// remains the owner of strings, literal caches and diagnostic/definition data.
+// Indices are absolute register numbers for data, absolute PCs for branches.
+struct ExecutableInstruction
+{
+  Instruction::Opcode opcode;
+  std::uint32_t result;
+  ExecutableOperand first;
+  ExecutableOperand second;
+};
+using ExecutableCode =
+  std::vector<ExecutableInstruction,
+              Profile::Allocator<ExecutableInstruction, Profile::AllocationKind::execution_plans>>;
+
+// Complete verification and result-slot planning must precede lowering. Empty
+// code means use the existing interpreter: tiny transient streams and indices/immediates
+// outside the compact domain retain that generic fallback. Function bodies
+// skipped by an outer definition are lowered only when registered separately.
+auto lower_executable(Instructions const& code, ResultSlotPlan const& slots,
+                      bool persistent = false) -> ExecutableCode;
 
 // One byte per instruction: nonzero permits transferring its first arithmetic
 // operand. An empty plan keeps ordinary copies without a per-instruction table.
