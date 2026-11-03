@@ -504,8 +504,10 @@ coverage limitation rather than being described as a completed comparison.
 
 The extension definition is a public usage requirement of libbc because bc.hh
 contains a mode-dependent inline constexpr query. All linked consumers,
-including standalone lifetime/signal/offset tests, component tools and the
-tuner, inherit the same definition as the library. Disabled builds retain the
+including standalone lifetime/signal/offset tests and component tools, inherit
+the same definition as the library. The header-only tuner shares just the
+language-mode interface target; it remains independent of libbc's allocator
+and instrumentation backend. Disabled builds retain the
 header's false default. The independent consumer-mode executable receives an
 expected mode from CMake, and gets the actual extension definition exclusively
 through its library dependency.

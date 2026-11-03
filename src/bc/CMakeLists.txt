@@ -3,9 +3,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 add_library(libbc)
+# Shared by library consumers and the independent header-only calibration tool.
+add_library(bc-language-mode INTERFACE)
 target_include_directories(libbc PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_include_directories(libbc PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
-target_link_libraries(libbc PUBLIC gdsup util)
+target_link_libraries(libbc PUBLIC gdsup util bc-language-mode)
 set(BC_ARRAY_STORAGE hybrid CACHE STRING "Experimental bc array layout: hybrid, paged, flat, hash or ordered")
 set_property(CACHE BC_ARRAY_STORAGE PROPERTY STRINGS hybrid paged flat hash ordered)
 set(_bc_array_layouts hybrid paged flat hash ordered)
@@ -20,7 +22,7 @@ set_property(TARGET libbc PROPERTY CXX_STANDARD_REQUIRED ON)
 target_compile_definitions(libbc PRIVATE _CRT_SECURE_NO_WARNINGS)
 if(ENABLE_NON_POSIX_EXTENSIONS)
   # bc.hh exposes mode-dependent inline code, so every consumer needs this.
-  target_compile_definitions(libbc PUBLIC ENABLE_EXTENSIONS=1)
+  target_compile_definitions(bc-language-mode INTERFACE ENABLE_EXTENSIONS=1)
 endif()
 set_warnings(libbc)
 gd_apply_ipo(libbc)
@@ -293,7 +295,7 @@ endif()
 add_executable(find-multiply-split-point  find-multiply-split-point.cc)
 target_include_directories(find-multiply-split-point PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_include_directories(find-multiply-split-point PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
-target_link_libraries(find-multiply-split-point PUBLIC gdsup util)
+target_link_libraries(find-multiply-split-point PUBLIC gdsup util bc-language-mode)
 set_property(TARGET find-multiply-split-point  PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
 set_property(TARGET find-multiply-split-point  PROPERTY CXX_STANDARD_REQUIRED ON)
 target_compile_definitions(find-multiply-split-point PRIVATE _CRT_SECURE_NO_WARNINGS)
@@ -301,6 +303,7 @@ set_warnings(find-multiply-split-point)
 gd_apply_ipo(find-multiply-split-point)
 # The tuner exercises header-only arithmetic. Keep it independent of libbc's
 # diagnostic definition and allocator backend so instrumentation cannot tune it.
+# Share only the language-mode requirement with the library.
 add_dependencies(find-multiply-split-point "bc_messages_header")
 target_add_clang_format(find-multiply-split-point)
 
