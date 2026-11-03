@@ -1741,16 +1741,18 @@ public:
 
   /** Return a prepared value after repeated stable observations, otherwise
    * nullptr for the ordinary fallback. The returned pointer lasts until the
-   * next lookup or destruction of this cache. No strong source owner is kept
+   * next lookup, clear, or destruction of this cache. No strong source owner is kept
    * on a first observation or a miss. New ownership needs no limb scan;
-   * promotion after three stable observations may allocate or throw.
+   * promotion after three stable observations may allocate or throw. The source
+   * coefficient must remain unchanged throughout the lookup.
    */
   [[nodiscard]] auto lookup(BasicDigits const& source, NumType padding = 0)
     -> PreparedDivisor const*
   {
     auto const capacity = source.digits_.capacity();
     constexpr auto limit = max_retained_limb_bytes / sizeof(NumType);
-    auto const whole = static_cast<std::size_t>(padding) / base_log10_;
+    // Compare in the scale field's width before accepting its bounded extent.
+    auto const whole = padding / base_log10_;
     // Conservative preflight leaves room for three retained coefficient views
     // and possible shift growth. Inspect actual capacities again on promotion.
     if (!source.has_heap_storage() || source.coefficient_limbs() < 2 || capacity > limit / 3 ||
