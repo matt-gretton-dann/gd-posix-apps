@@ -249,7 +249,7 @@ public:
    *
    * We silently saturate to the maximum value of Column.
    */
-  void next_column();
+  void next_column(std::size_t count = 1);
 
   /** \brief Move to next line, and reset column to 1.
    *
@@ -299,6 +299,15 @@ public:
   /** \brief  Chew the current character. */
   void chew();
 
+  /** \brief Borrow immediately available input at the current position.
+   *  An empty view selects character-at-a-time input. The view is valid
+   *  until the next operation on this reader.
+   */
+  virtual auto contiguous() -> std::string_view { return {}; }
+
+  /** \brief Consume a prefix of the last nonempty contiguous view. */
+  virtual void chew_prefix(std::size_t size);
+
   /** \brief  Get the current source location.  */
   [[nodiscard]] auto location() const -> Location const&;
 
@@ -311,6 +320,10 @@ public:
        << Messages::get().format(Set::bc, msg, args...) << '\n';
     return os.str();
   }
+
+protected:
+  /** \brief Update diagnostics after consuming a contiguous prefix. */
+  void advance_location(std::string_view text);
 
 private:
   /** \brief  Do the actual chew of a character.  */
@@ -329,6 +342,8 @@ public:
   explicit StringReader(std::string_view s);
 
   auto peek() -> int final;
+  auto contiguous() -> std::string_view final;
+  void chew_prefix(std::size_t size) final;
 
 private:
   void do_chew() final;
@@ -347,12 +362,19 @@ public:
   explicit FileReader(std::string_view f);
 
   auto peek() -> int final;
+  auto contiguous() -> std::string_view final;
+  void chew_prefix(std::size_t size) final;
 
 private:
   void do_chew() final;
+  void check_error();
 
   GD::StreamInputFile file_;  ///< File
   int c_{EOF};                ///< Current character (EOF means needs peeking or EOF)
+  bool buffered_;             ///< Block reads are limited to owned regular files.
+  std::array<char, 8192> buffer_;
+  std::size_t position_{0};
+  std::size_t end_{0};
 };
 
 /** Lexer.  */

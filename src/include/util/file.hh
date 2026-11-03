@@ -519,6 +519,12 @@ public:
    */
   auto getc_exclusive() -> int;
 
+  /** Return whether this is an owned stream backed by a regular file. */
+  [[nodiscard]] auto is_regular_file() const -> bool;
+
+  /** Read a bounded block from an owned regular file in its current text mode. */
+  auto read_block(char* data, std::size_t size) -> std::size_t;
+
   /** \brief  Get a line of text.  Strips off the \n terminator.
    *  \return Found line.
    *
@@ -567,6 +573,7 @@ private:
   std::string filename_;                      /**< File name.  */
   FILE* file_{nullptr};                       /**< File handle.  */
   bool is_stdin_{false};                      /**< Is the File handle standard input?  */
+  int pending_read_error_{0};                 /**< Error following a partial block. */
   std::unique_ptr<std::vector<char>> buffer_; /**< Buffer of data we use.  */
 };
 
