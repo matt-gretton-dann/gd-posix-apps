@@ -47,7 +47,7 @@ bindings, function definitions or argument snapshot/evaluation order.
 
 ## Delivery state
 
-Planning/lowering and the typed VM prototype are implemented. Four ASan/UBSan
+The baseline prototype at 400b4274 is implemented. Four ASan/UBSan
 configurations pass the full 326-case unit suite and six focused CTest entries:
 typed results ON/OFF, each with extensions ON/reuse OFF and extensions OFF/reuse
 ON. The typed/default language configuration also passes all 92 bc CTest
@@ -67,8 +67,27 @@ Allocation-failure sweeps retry the same VM after each injected failure in a
 pack without output, global stores or argument frames; this is not a rollback
 guarantee after arbitrary runtime side effects.
 
-Fresh mode-specific coverage and performance validation remain pending.
-No speedup or #449 completion is claimed.
+Its local paired matrices show gains for several arithmetic/VM classes but
+a repeated 1–2% file-statement slowdown. It is not accepted under the unchanged
+macOS requirement. Its native run and sixteen-mode coverage collection remain
+separate evidence; a green advisory workflow alone does not establish adoption.
+
+The current continuation replaces simultaneously stored generic/typed layout
+and buffer headers with mutually exclusive variants. Each prepared owner holds
+one plan and executable format. Each depth slot retains capacity only for its
+current format; changing format releases the previous buffers before allocating
+their replacement. Typed packs borrow lane pointers and generic packs borrow
+their generic vector directly. A failed format or lane setup leaves an empty
+usable slot without acquiring a depth lease. The fault sweep now exercises both
+directions and retries the same VM. Typed execution is compiled only when both
+typed results and compact execution are enabled; other configurations retain
+generic execution. Coverage-guided fixtures now make every unary oracle eligible
+and exercise a raw quit opcode in isolated checked/verified processes, asserting
+its exact status and that later instructions do not run. Four ASan/UBSan and
+three profiling configurations passed the unit suite and seven focused CTest
+entries each. The default sanitizer configuration passed the broad bc suite,
+and all profiling configurations passed the profiling CLI checks. Release
+performance validation remains pending.
 
 The Debug foundation passes 140 focused assertions in four typed-plan cases,
 all 325 unit cases / 1,669,178 assertions, and all 92 bc CTest entries (47 pass,
@@ -77,8 +96,8 @@ It is not sanitizer or active typed-interpreter evidence.
 
 ENABLE_BC_TYPED_RESULTS selects the prototype. It also requires compact
 execution; disabled or unprofitable preparation retains the generic path.
-Checked execution remains independent. Per-depth buffers keep Number and
-nonnumeric lane capacities while releasing values at every exit. Allocation
+Checked execution remains independent. Per-depth buffers keep the current
+format's capacities while releasing values at every exit. Allocation
 failure during lane setup clears partially constructed lanes before the depth
 lease is acquired. Nested calls grow different deque entries and cannot resize
 an active lane, so cached lane pointers remain valid through those calls.

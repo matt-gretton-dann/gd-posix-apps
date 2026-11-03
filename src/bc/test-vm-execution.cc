@@ -182,7 +182,7 @@ TEST_CASE("Generated expressions agree across grammar bytecode and native oracle
   }
 }
 
-TEST_CASE("VM unary operations have exact observable results", "[bc][vm][execution]")
+TEST_CASE("VM unary operations have exact observable results", "[bc][vm][execution][typed-results]")
 {
   for (auto const& entry :
        {std::make_tuple(O::negate, "7", "-7"), std::make_tuple(O::abs, "7", "7"),
@@ -190,11 +190,11 @@ TEST_CASE("VM unary operations have exact observable results", "[bc][vm][executi
         std::make_tuple(O::length, "123", "3")}) {
     GD::Bc::Instructions code{I(O::number, std::get<1>(entry)), I(std::get<0>(entry), D(-1)),
                               I(O::print, D(-1), I::Stream::output), I(O::eof)};
-    CHECK(execute(code) == std::string(std::get<2>(entry)) + "\n");
+    CHECK(execute(code, true) == std::string(std::get<2>(entry)) + "\n");
   }
   GD::Bc::Instructions code{I(O::number, "7"), I(O::negate, D(-1)), I(O::abs, D(-1)),
                             I(O::print, D(-1), I::Stream::output), I(O::eof)};
-  CHECK(execute(code) == "7\n");
+  CHECK(execute(code, true) == "7\n");
 }
 
 TEST_CASE("VM conditional and unconditional branches select one output", "[bc][vm][execution]")
@@ -208,7 +208,7 @@ TEST_CASE("VM conditional and unconditional branches select one output", "[bc][v
                               I(O::string, "zero"),
                               I(O::print, D(-1), I::Stream::output),
                               I(O::eof)};
-    CHECK(execute(code) == (std::string(condition) == "0" ? "zero" : "nonzero"));
+    CHECK(execute(code, true) == (std::string(condition) == "0" ? "zero" : "nonzero"));
   }
 }
 

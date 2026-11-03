@@ -84,30 +84,33 @@ struct TypedExecutionLayout
   TypedExecutableCode code;
 };
 
-// A depth slot retains capacities, never values from a completed activation.
-// deque growth and deeper activations cannot move or resize an active lane.
-struct ActivationResults
+struct GenericExecutionLayout
 {
-  ResultBuffer generic;
+  ResultSlotPlan slots;
+  ExecutableCode code;
+};
+using ExecutionLayout = std::variant<GenericExecutionLayout, TypedExecutionLayout>;
+
+struct TypedResultBuffers
+{
   NumberBuffer numbers;
   OtherBuffer others;
-  bool typed = false;
   void clear()
   {
-    if (typed) {
-      numbers.clear();
-      others.clear();
-    }
-    else {
-      generic.clear();
-    }
+    numbers.clear();
+    others.clear();
   }
 };
+
+// Retain capacities only for the current format. A format change releases the
+// old buffers before allocating its replacement. Deque growth and deeper
+// activations cannot move or resize either lane of an active depth slot.
+using ActivationResults = std::variant<ResultBuffer, TypedResultBuffers>;
 
 struct TypedExecutionView
 {
   TypedExecutionLayout const* layout;
-  ActivationResults* buffers;
+  TypedResultBuffers* buffers;
 };
 
 auto prepare_typed_layout(Instructions const& code, ResultSlotPlan const& generic, bool persistent,
@@ -117,15 +120,14 @@ auto prepare_typed_layout(Instructions const& code, ResultSlotPlan const& generi
   if (enabled) {
     // Charge actual payload and owner/frame/view objects against the existing
     // generic representation. Runtime capacities are measured separately.
-    TypedResultCosts const costs{
-      sizeof(Number),
-      sizeof(OtherExecutionResult),
-      sizeof(ResultSlot),
-      sizeof(ResultSlotPlan) + sizeof(ExecutableCode) + sizeof(ResultBuffer),
-      sizeof(ResultSlotPlan) + sizeof(ExecutableCode) + sizeof(TypedExecutionLayout) +
-        sizeof(ActivationResults) + sizeof(TypedExecutionView),
-      sizeof(ExecutableInstruction),
-      sizeof(TypedExecutableInstruction)};
+    TypedResultCosts const costs{sizeof(Number),
+                                 sizeof(OtherExecutionResult),
+                                 sizeof(ResultSlot),
+                                 sizeof(GenericExecutionLayout) + sizeof(ResultBuffer),
+                                 sizeof(ExecutionLayout) + sizeof(ActivationResults) +
+                                   sizeof(TypedExecutionView),
+                                 sizeof(ExecutableInstruction),
+                                 sizeof(TypedExecutableInstruction)};
     auto slots = plan_typed_results(code, generic, costs, persistent);
     if (!slots.empty()) {
       auto executable = lower_typed_executable(code, slots, persistent);
@@ -157,6 +159,16 @@ auto prepare_executable(Instructions const& code, ResultSlotPlan const& slots, b
 #endif
 }
 
+auto prepare_layout(Instructions const& code, ResultSlotPlan generic, bool persistent, bool compact)
+  -> ExecutionLayout
+{
+  auto typed = prepare_typed_layout(code, generic, persistent, compact);
+  if (!typed.code.empty())
+    return ExecutionLayout{std::move(typed)};
+  auto executable = compact ? prepare_executable(code, generic, persistent) : ExecutableCode{};
+  return GenericExecutionLayout{std::move(generic), std::move(executable)};
+}
+
 /** A borrowed instruction stream whose entry verification has completed.
  * Construction is confined to the verifier and persistent verified owners.
  * Instruction structure and metadata stay unchanged and outlive execution.
@@ -167,26 +179,28 @@ class VerifiedInstructions
 public:
   auto instructions() const -> Instructions const& { return *instructions_; }
   auto consumption() const -> ConsumptionPlan const& { return *consumption_; }
-  auto result_slots() const -> ResultSlotPlan const& { return *result_slots_; }
-  auto executable() const -> ExecutableCode const& { return *executable_; }
-  auto typed_layout() const -> TypedExecutionLayout const& { return *typed_; }
+  auto layout() const -> ExecutionLayout const& { return *layout_; }
+  auto generic_layout() const -> GenericExecutionLayout const*
+  {
+    return std::get_if<GenericExecutionLayout>(layout_);
+  }
+  auto typed_layout() const -> TypedExecutionLayout const*
+  {
+    return std::get_if<TypedExecutionLayout>(layout_);
+  }
 
 private:
   friend struct VMState;
   friend class FunctionCode;
   friend class PreparedInstructions;
   VerifiedInstructions(Instructions const& instructions, ConsumptionPlan const& consumption,
-                       ResultSlotPlan const& result_slots, ExecutableCode const& executable,
-                       TypedExecutionLayout const& typed)
-      : instructions_(&instructions), consumption_(&consumption), result_slots_(&result_slots),
-        executable_(&executable), typed_(&typed)
+                       ExecutionLayout const& layout)
+      : instructions_(&instructions), consumption_(&consumption), layout_(&layout)
   {
   }
   Instructions const* instructions_;
   ConsumptionPlan const* consumption_;
-  ResultSlotPlan const* result_slots_;
-  ExecutableCode const* executable_;
-  TypedExecutionLayout const* typed_;
+  ExecutionLayout const* layout_;
 };
 
 /** Own the outer stream's prepared metadata while borrowing its instructions.
@@ -198,7 +212,7 @@ class PreparedInstructions
 public:
   auto view() const -> VerifiedInstructions
   {
-    return VerifiedInstructions(*instructions_, consumption_, result_slots_, executable_, typed_);
+    return VerifiedInstructions(*instructions_, consumption_, layout_);
   }
 
 private:
@@ -206,20 +220,12 @@ private:
   PreparedInstructions(Instructions const& instructions, ConsumptionPlan consumption,
                        ResultSlotPlan result_slots, bool compact)
       : instructions_(&instructions), consumption_(std::move(consumption)),
-        result_slots_(std::move(result_slots)),
-        typed_(prepare_typed_layout(instructions, result_slots_, false, compact)),
-        executable_(compact && typed_.code.empty()
-                      ? prepare_executable(instructions, result_slots_, false)
-                      : ExecutableCode{})
+        layout_(prepare_layout(instructions, std::move(result_slots), false, compact))
   {
-    if (!typed_.code.empty())
-      result_slots_ = {};
   }
   Instructions const* instructions_;
   ConsumptionPlan consumption_;
-  ResultSlotPlan result_slots_;
-  TypedExecutionLayout typed_;
-  ExecutableCode executable_;
+  ExecutionLayout layout_;
 };
 
 /** Persistent function code can be constructed only after body verification.
@@ -234,7 +240,7 @@ public:
   auto operator=(FunctionCode&&) noexcept -> FunctionCode& = default;
   auto view() const -> VerifiedInstructions
   {
-    return VerifiedInstructions(instructions_, consumption_, result_slots_, executable_, typed_);
+    return VerifiedInstructions(instructions_, consumption_, layout_);
   }
 
 private:
@@ -242,20 +248,12 @@ private:
   FunctionCode(Instructions instructions, ConsumptionPlan consumption, ResultSlotPlan result_slots,
                bool compact)
       : instructions_(std::move(instructions)), consumption_(std::move(consumption)),
-        result_slots_(std::move(result_slots)),
-        typed_(prepare_typed_layout(instructions_, result_slots_, true, compact)),
-        executable_(compact && typed_.code.empty()
-                      ? prepare_executable(instructions_, result_slots_, true)
-                      : ExecutableCode{})
+        layout_(prepare_layout(instructions_, std::move(result_slots), true, compact))
   {
-    if (!typed_.code.empty())
-      result_slots_ = {};
   }
   Instructions instructions_;
   ConsumptionPlan consumption_;
-  ResultSlotPlan result_slots_;
-  TypedExecutionLayout typed_;
-  ExecutableCode executable_;
+  ExecutionLayout layout_;
 };
 
 /** \brief Hold virtual machine state.
@@ -351,8 +349,9 @@ struct VMState
   auto pop_param_array() -> ArrayValues;
 
   // Each active pack owns one depth slot. deque growth preserves references
-  // held by callers; clearing a slot drops values while retaining capacity.
-  auto acquire_results(std::size_t count, TypedExecutionLayout const& typed) -> ResultBuffer&;
+  // held by callers; clearing drops values and retains the current format's
+  // capacities. Changing format discards the previous format's capacities.
+  auto acquire_results(std::size_t count, ExecutionLayout const& layout) -> ResultBuffer*;
   auto active_results() -> ActivationResults& { return result_buffers_[result_depth_ - 1]; }
   void release_results();
 
@@ -597,7 +596,9 @@ private:
   template<bool FullChecks>
   auto execute_impl() -> std::pair<Number, bool>;
   auto execute_compact() -> std::pair<Number, bool>;
+#if GD_BC_TYPED_RESULTS && GD_BC_COMPACT_EXECUTION
   auto execute_typed() -> std::pair<Number, bool>;
+#endif
 
   // Shared value semantics: wide execution decodes references before calling
   // these; compact execution supplies its already-lowered register operands.
@@ -611,18 +612,18 @@ private:
   // checks and unprofitable maps use the original instruction-indexed buffer.
   auto result_at(Index instruction) -> ResultSlot&
   {
-    return results_[result_indices_ ? result_indices_[instruction] : instruction];
+    return (*results_)[result_indices_ ? result_indices_[instruction] : instruction];
   }
   auto result_at(Index instruction) const -> ResultSlot const&
   {
-    return results_[result_indices_ ? result_indices_[instruction] : instruction];
+    return (*results_)[result_indices_ ? result_indices_[instruction] : instruction];
   }
 
   VMState* vm_;                         ///< Virtual Machine state
   Instructions const& instrs_;          ///< Instructions to execute
   Instruction::Index pc_{0};            ///< Current program counter
-  ExecutableCode const& executable_;    ///< Immutable lowered code, or empty for wide execution.
-  ResultBuffer& results_;               ///< Borrowed stable buffer for this activation.
+  ExecutableCode const* executable_;    ///< Generic lowered code, null during typed execution.
+  ResultBuffer* results_;               ///< Generic depth buffer, null during typed execution.
   ConsumptionPlan const& consumption_;  ///< Immutable metadata owned beside the code.
   // Immutable plan data is owned beside the verified code and cannot relocate
   // during this activation. Null preserves the full-width identity fallback.
@@ -1036,59 +1037,75 @@ void GD::Bc::Details::VMState::validate(Instructions const& instrs, bool functio
   }
 }
 
-auto GD::Bc::Details::VMState::acquire_results(std::size_t count, TypedExecutionLayout const& typed)
-  -> ResultBuffer&
+auto GD::Bc::Details::VMState::acquire_results(std::size_t count, ExecutionLayout const& layout)
+  -> ResultBuffer*
 {
   if (result_depth_ == result_buffers_.size()) {
     result_buffers_.emplace_back();
   }
   auto& result = result_buffers_[result_depth_];
-  assert(result.generic.empty() && result.numbers.empty() && result.others.empty());  // NOLINT
-  result.typed = !typed.code.empty();
+  assert(std::visit(
+    [](auto const& buffers) {  // NOLINT
+      if constexpr (std::is_same_v<std::decay_t<decltype(buffers)>, ResultBuffer>)
+        return buffers.empty();
+      else
+        return buffers.numbers.empty() && buffers.others.empty();
+    },
+    result));
   try {
-    if (result.typed) {
-      result.numbers.resize(typed.slots.number_count);
-      result.others.resize(typed.slots.other_count);
+    if (auto const* typed = std::get_if<TypedExecutionLayout>(&layout)) {
+      if (!std::holds_alternative<TypedResultBuffers>(result))
+        result.emplace<TypedResultBuffers>();
+      auto& buffers = std::get<TypedResultBuffers>(result);
+      buffers.numbers.resize(typed->slots.number_count);
+      buffers.others.resize(typed->slots.other_count);
     }
     else {
-      result.generic.resize(count);
+      if (!std::holds_alternative<ResultBuffer>(result))
+        result.emplace<ResultBuffer>();
+      std::get<ResultBuffer>(result).resize(
+        std::get<GenericExecutionLayout>(layout).slots.storage_size(count));
     }
   }
   catch (...) {
-    // Constructor failure does not acquire a depth lease. Drop every partially
-    // constructed lane before allowing destruction or a later activation.
-    result.generic.clear();
-    result.numbers.clear();
-    result.others.clear();
+    // No depth lease has been acquired. Leave an empty usable format even if
+    // format construction or the second lane's allocation failed.
+    if (result.valueless_by_exception())
+      result.emplace<ResultBuffer>();
+    else
+      std::visit([](auto& buffers) { buffers.clear(); }, result);
     throw;
   }
   ++result_depth_;
-  return result.generic;
+  return std::get_if<ResultBuffer>(&result);
 }
 
 void GD::Bc::Details::VMState::release_results()
 {
   assert(result_depth_ != 0);  // NOLINT
-  result_buffers_[--result_depth_].clear();
+  std::visit([](auto& buffers) { buffers.clear(); }, result_buffers_[--result_depth_]);
 }
 
 GD::Bc::Details::InstructionPack::InstructionPack(VMState* vm, VerifiedInstructions instrs)
-    : vm_(vm), instrs_(instrs.instructions()), executable_(instrs.executable()),
-      results_(vm->acquire_results(instrs.result_slots().storage_size(instrs_.size()),
-                                   instrs.typed_layout())),
+    : vm_(vm), instrs_(instrs.instructions()),
+      executable_(instrs.generic_layout() ? &instrs.generic_layout()->code : nullptr),
+      results_(vm->acquire_results(instrs_.size(), instrs.layout())),
       consumption_(instrs.consumption()),
-      result_indices_(instrs.result_slots().indices.empty() ? nullptr
-                                                            : instrs.result_slots().indices.data()),
-      typed_{&instrs.typed_layout(), &vm->active_results()}
+      result_indices_(instrs.generic_layout() && !instrs.generic_layout()->slots.indices.empty()
+                        ? instrs.generic_layout()->slots.indices.data()
+                        : nullptr),
+      typed_{instrs.typed_layout(), std::get_if<TypedResultBuffers>(&vm->active_results())}
 {
   assert(vm_ != nullptr);  // NOLINT
 }
 
 auto GD::Bc::Details::InstructionPack::execute() -> std::pair<GD::Bc::Number, bool>
 {
-  if (!typed_.layout->code.empty())
+#if GD_BC_TYPED_RESULTS && GD_BC_COMPACT_EXECUTION
+  if (typed_.layout)
     return execute_typed();
-  if (!executable_.empty())
+#endif
+  if (!executable_->empty())
     return execute_compact();
   return vm_->full_checks() ? execute_impl<true>() : execute_impl<false>();
 }
@@ -1096,14 +1113,15 @@ auto GD::Bc::Details::InstructionPack::execute() -> std::pair<GD::Bc::Number, bo
 auto GD::Bc::Details::InstructionPack::execute_compact() -> std::pair<GD::Bc::Number, bool>
 {
   using O = Instruction::Opcode;
-  while (pc_ < executable_.size()) {
+  auto const& executable = *executable_;
+  while (pc_ < executable.size()) {
     if (Details::have_been_interrupted.test(std::memory_order_relaxed))
       return std::make_pair(Number(0), true);
     GD_BC_PROFILE_EVENT(Profile::Event::instructions_executed, 1);
-    auto const& instruction = executable_[pc_];
-    auto& destination = results_[instruction.result];
+    auto const& instruction = executable[pc_];
+    auto& destination = (*results_)[instruction.result];
     auto take = [&]() -> Number {
-      auto& number = std::get<Number>(*results_[instruction.first.index]);
+      auto& number = std::get<Number>(*(*results_)[instruction.first.index]);
       if (number.has_heap_storage() && !consumption_.empty() && consumption_[pc_] != 0) {
         GD_BC_PROFILE_EVENT(Profile::Event::temporary_consumptions, 1);
         return std::move(number);
@@ -1117,7 +1135,7 @@ auto GD::Bc::Details::InstructionPack::execute_compact() -> std::pair<GD::Bc::Nu
     };
     auto binary = [&](auto operation) {
       Number lhs = take();
-      Number const& rhs = std::get<Number>(*results_[instruction.second.index]);
+      Number const& rhs = std::get<Number>(*(*results_)[instruction.second.index]);
       operation(lhs, rhs);
       destination = std::move(lhs);
     };
@@ -1137,7 +1155,7 @@ auto GD::Bc::Details::InstructionPack::execute_compact() -> std::pair<GD::Bc::Nu
     case O::array_element:
       destination =
         ArrayElement(Array(instruction.first.letter),
-                     std::get<Number>(*results_[instruction.second.index]).to_unsigned());
+                     std::get<Number>(*(*results_)[instruction.second.index]).to_unsigned());
       break;
     case O::ibase:
       destination = Ibase();
@@ -1149,21 +1167,21 @@ auto GD::Bc::Details::InstructionPack::execute_compact() -> std::pair<GD::Bc::Nu
       destination = Scale();
       break;
     case O::print:
-      print_value(results_[instruction.first.index],
+      print_value((*results_)[instruction.first.index],
                   static_cast<Instruction::Stream>(instruction.second.index),
                   instruction.first.index);
       break;
     case O::quit:
       std::exit(static_cast<int>(instruction.first.index));  // NOLINT(concurrency-mt-unsafe)
     case O::load:
-      load_value(destination, results_[instruction.first.index], instruction.first.index);
+      load_value(destination, (*results_)[instruction.first.index], instruction.first.index);
       break;
     case O::store:
-      store_value(results_[instruction.first.index], results_[instruction.second.index],
+      store_value((*results_)[instruction.first.index], (*results_)[instruction.second.index],
                   instruction.first.index, instruction.second.index);
       break;
     case O::length:
-      length_value(destination, results_[instruction.first.index], instruction.first.index);
+      length_value(destination, (*results_)[instruction.first.index], instruction.first.index);
       break;
     case O::negate:
       unary([](Number& value) { value.negate(); });
@@ -1223,7 +1241,7 @@ auto GD::Bc::Details::InstructionPack::execute_compact() -> std::pair<GD::Bc::Nu
       pc_ = instruction.first.index;
       continue;
     case O::branch_zero:
-      if (std::get<Number>(*results_[instruction.first.index]).is_zero()) {
+      if (std::get<Number>(*(*results_)[instruction.first.index]).is_zero()) {
         pc_ = instruction.second.index;
         continue;
       }
@@ -1242,7 +1260,7 @@ auto GD::Bc::Details::InstructionPack::execute_compact() -> std::pair<GD::Bc::Nu
       vm_->push_param_pack();
       break;
     case O::push_param:
-      push_value(results_[instruction.first.index], instruction.first.index);
+      push_value((*results_)[instruction.first.index], instruction.first.index);
       break;
     case O::pop_param_mark:
       vm_->pop_param_pack();
@@ -1257,7 +1275,8 @@ auto GD::Bc::Details::InstructionPack::execute_compact() -> std::pair<GD::Bc::Nu
       destination = vm_->call(instruction.first.letter, std::get<Location>(instrs_[pc_].op2()));
       break;
     case O::return_:
-      return std::make_pair(std::move(std::get<Number>(*results_[instruction.first.index])), true);
+      return std::make_pair(std::move(std::get<Number>(*(*results_)[instruction.first.index])),
+                            true);
     case O::eof:
       return std::make_pair(Number(0), false);
     case O::function_end:
@@ -1268,6 +1287,7 @@ auto GD::Bc::Details::InstructionPack::execute_compact() -> std::pair<GD::Bc::Nu
   return std::make_pair(Number(0), true);
 }
 
+#if GD_BC_TYPED_RESULTS && GD_BC_COMPACT_EXECUTION
 auto GD::Bc::Details::InstructionPack::execute_typed() -> std::pair<Number, bool>
 {
   using O = TypedOpcode;
@@ -1498,6 +1518,7 @@ auto GD::Bc::Details::InstructionPack::execute_typed() -> std::pair<Number, bool
   }
   return std::make_pair(Number(0), true);
 }
+#endif
 
 template<bool FullChecks>
 auto GD::Bc::Details::InstructionPack::execute_impl() -> std::pair<GD::Bc::Number, bool>
@@ -1952,7 +1973,7 @@ auto GD::Bc::Details::operator<<(std::ostream& os, GD::Bc::Details::InstructionP
       os << "**";
     }
     os << '\t' << instrs.instrs_[i];
-    if (!instrs.typed_.layout->code.empty()) {
+    if (instrs.typed_.layout) {
       // Entry verification proves consumer availability, not a live-value dump
       // for every future producer. Do not inspect unwritten typed registers.
       os << '\n';
