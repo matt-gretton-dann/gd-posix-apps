@@ -76,7 +76,7 @@ auto prepare_executable(Instructions const& code, ResultSlotPlan const& slots, b
   -> ExecutableCode
 {
 #if GD_BC_COMPACT_EXECUTION
-  return lower_executable(code, slots, persistent);
+  return lower_executable(code, slots, persistent, GD_BC_FUSED_LOADS != 0);
 #else
   (void)code;
   (void)slots;
@@ -984,7 +984,7 @@ auto GD::Bc::Details::InstructionPack::execute() -> std::pair<GD::Bc::Number, bo
 
 auto GD::Bc::Details::InstructionPack::execute_compact() -> std::pair<GD::Bc::Number, bool>
 {
-  using O = Instruction::Opcode;
+  using O = ExecutableOpcode;
   while (pc_ < executable_.size()) {
     if (Details::have_been_interrupted.test(std::memory_order_relaxed))
       return std::make_pair(Number(0), true);
@@ -1011,6 +1011,44 @@ auto GD::Bc::Details::InstructionPack::execute_compact() -> std::pair<GD::Bc::Nu
       destination = std::move(lhs);
     };
     switch (instruction.opcode) {
+    case O::load_variable: {
+      GD_BC_PROFILE_EVENT(Profile::Event::instructions_executed, 1);
+      Variable const location(instruction.first.letter);
+      destination = location;
+      results_[instruction.second.index] = vm_->variable(location);
+      pc_ += 2;
+      continue;
+    }
+    case O::load_array: {
+      GD_BC_PROFILE_EVENT(Profile::Event::instructions_executed, 1);
+      Array const location(instruction.first.letter);
+      destination = location;
+      results_[instruction.second.index] = vm_->array(location);
+      pc_ += 2;
+      continue;
+    }
+    case O::load_ibase: {
+      GD_BC_PROFILE_EVENT(Profile::Event::instructions_executed, 1);
+      destination = Ibase();
+      results_[instruction.second.index] = Number(vm_->ibase());
+      pc_ += 2;
+      continue;
+    }
+    case O::load_obase: {
+      GD_BC_PROFILE_EVENT(Profile::Event::instructions_executed, 1);
+      destination = Obase();
+      results_[instruction.second.index] = Number(vm_->obase());
+      pc_ += 2;
+      continue;
+    }
+    case O::load_scale: {
+      GD_BC_PROFILE_EVENT(Profile::Event::instructions_executed, 1);
+      destination = Scale();
+      results_[instruction.second.index] = Number(vm_->scale());
+      pc_ += 2;
+      continue;
+    }
+
     case O::string:
       destination = std::string_view(std::get<std::string>(instrs_[pc_].op1()));
       break;

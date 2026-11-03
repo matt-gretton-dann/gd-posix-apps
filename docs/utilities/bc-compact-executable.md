@@ -50,9 +50,10 @@ The candidate defaults ON so native CI actually measures it.
 
 This experiment starts from accepted main 609d1e08, independently of rejected
 register-reuse PR #436. It retains the accepted producer-only register layout.
-It does not implement live-register reuse, typed numeric register pools,
-superinstructions, threaded dispatch, cross-block optimization or native/JIT
-compilation. Those parts of #207 remain separate work.
+The initial compact layer does not implement live-register reuse, typed numeric
+register pools, threaded dispatch, cross-block optimization or native/JIT
+compilation. A subsequent location/load fusion experiment is documented in
+[bc-fused-loads.md](bc-fused-loads.md); other parts of #207 remain separate work.
 
 ## Validation and acceptance
 
@@ -93,5 +94,24 @@ LeakSanitizer is unavailable here (`detect_leaks=0`); the isolated ordinary
 allocation-balance test provides separate ownership evidence. These are distinct
 configurations, not an exhaustive mode matrix or a pooled coverage result. The
 coverage collector now records compact execution ON/OFF explicitly; an absent
-cache option remains unknown for historical sources. Native three-platform
-performance acceptance and fresh source-pinned LLVM coverage remain pending.
+cache option remains unknown for historical sources. These were the initial
+candidate checks at b628199e; adoption evidence follows.
+
+## Compact-stage adoption
+
+PR #437 merged as ced17fb7 after all 17 checks and strict native auditing:
+19,840 checked observations across Linux, Windows and macOS, with zero confirmed
+comparison regressions. Eight separate LLVM 23.1.4 configurations completed
+successfully, with exact source/binaries/flags/profiles and 43 configured
+consumer-mode audits per configuration. Raw default-mode coverage was
+6568/6763 lines, 3115/3449 branch outcomes and 221/277 MC/DC; adjusted feasibility
+coverage remains uncomputed. These are historical b628199e results, not results
+for subsequent fusion changes.
+
+Separate native RSS diagnostics checked 48 processes on a shared macOS host,
+including 10,000 assignments; observed median differences were small relative
+to the measured footprints. They are not all-platform memory bounds. Windows
+code payload grew by 12,288 bytes to 274,944 bytes. Inconclusive A/A controls
+remain visible, especially all 132 macOS controls. The overall Howard target
+and the remaining #207/#197 work are still open. See the PR's final evidence
+comment for immutable artifact digests and raw-record locations.

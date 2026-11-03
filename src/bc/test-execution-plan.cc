@@ -221,7 +221,7 @@ TEST_CASE("Compact operands encode register references and control targets separ
   CHECK(lowered[15].second.index == 17);
   CHECK(lowered[16].first.index == 17);
   for (I::Index i = 0; i < code.size(); ++i) {
-    CHECK(lowered[i].opcode == code[i].opcode());
+    CHECK(lowered[i].source_opcode() == code[i].opcode());
     CHECK(lowered[i].result == slots.index(i));
   }
 }
@@ -254,11 +254,51 @@ TEST_CASE("Compact definitions skip cold bodies and lower them under their own i
   REQUIRE(lowered.size() == code.size());
   CHECK(lowered[0].first.index == 5);
   for (I::Index i = 1; i < 4; ++i)
-    CHECK(lowered[i].opcode == O::eof);  // These outer entries cannot execute.
+    CHECK(lowered[i].source_opcode() == O::eof);  // These outer entries cannot execute.
   GD::Bc::Instructions body(code.begin() + 1, code.begin() + 4);
   REQUIRE_FALSE(GD::Bc::Details::verify_control_flow(body, true).has_value());
   auto const function = GD::Bc::Details::lower_executable(body, {}, true);
   REQUIRE(function.size() == 3);
-  CHECK(function[1].opcode == O::number);
+  CHECK(function[1].source_opcode() == O::number);
   CHECK(function[2].first.index == 1);
+}
+
+TEST_CASE("Location load fusion preserves both producer registers and its load suffix",
+          "[bc][vm][compact-executable][fused-loads]")
+{
+  auto opcode = GENERATE(O::variable, O::array, O::ibase, O::obase, O::scale);
+  GD::Bc::Instructions code;
+  if (opcode == O::variable)
+    code.emplace_back(opcode, GD::Bc::Variable('x'));
+  else if (opcode == O::array)
+    code.emplace_back(opcode, GD::Bc::Array('a'));
+  else
+    code.emplace_back(opcode);
+  code.emplace_back(O::load, D(-1));
+  code.emplace_back(O::print, D(-1), I::Stream::output);
+  REQUIRE_FALSE(GD::Bc::Details::verify_control_flow(code, false).has_value());
+  auto const plain = GD::Bc::Details::lower_executable(code, {}, true, false);
+  auto const fused = GD::Bc::Details::lower_executable(code, {}, true, true);
+  REQUIRE(fused.size() == 3);
+  CHECK_FALSE(plain[0].is_fused_load());
+  CHECK(fused[0].is_fused_load());
+  CHECK(fused[0].source_opcode() == opcode);
+  CHECK(fused[0].result == 0);
+  CHECK(fused[0].second.index == 1);
+  CHECK(fused[1].source_opcode() == O::load);
+  CHECK_FALSE(fused[1].is_fused_load());
+  CHECK(fused[1].first.index == 0);
+  CHECK(fused[1].result == 1);
+}
+
+TEST_CASE("Nonadjacent loads retain ordinary dispatch and their real producer",
+          "[bc][vm][compact-executable][fused-loads]")
+{
+  GD::Bc::Instructions const code{I(O::variable, GD::Bc::Variable('x')), I(O::number, "7"),
+                                  I(O::load, D(-2))};
+  REQUIRE_FALSE(GD::Bc::Details::verify_control_flow(code, false).has_value());
+  auto const lowered = GD::Bc::Details::lower_executable(code, {}, true, true);
+  REQUIRE(lowered.size() == 3);
+  CHECK_FALSE(lowered[0].is_fused_load());
+  CHECK(lowered[2].first.index == 0);
 }

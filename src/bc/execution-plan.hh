@@ -61,15 +61,74 @@ union ExecutableOperand
   explicit ExecutableOperand(Letter value) : letter(value) {}
 };
 
+// The executable owns its dispatch opcode space, including pair operations.
+// Keep ordinary opcodes first and fused operations last. Exhaustive source and
+// reverse conversion switches make schema additions explicit in both formats.
+enum class ExecutableOpcode : std::uint32_t {
+  eof,
+  print,
+  quit,
+  string,
+  number,
+  variable,
+  array_element,
+  array,
+  scale,
+  ibase,
+  obase,
+  add,
+  subtract,
+  negate,
+  multiply,
+  divide,
+  modulo,
+  power,
+  load,
+  store,
+  scale_expr,
+  sqrt,
+  abs,
+  length,
+  equals,
+  less_than_equals,
+  not_equals,
+  less_than,
+  branch,
+  branch_zero,
+  return_,
+  call,
+  push_param_mark,
+  pop_param_mark,
+  push_param,
+  pop_param,
+  pop_param_array,
+  function_begin,
+  function_end,
+  load_variable,
+  load_array,
+  load_ibase,
+  load_obase,
+  load_scale,
+};
+auto executable_opcode(Instruction::Opcode opcode) -> ExecutableOpcode;
+
 // Common targets use 16 bytes per executable instruction. The source bytecode
 // remains the owner of strings, literal caches and diagnostic/definition data.
 // Indices are absolute register numbers for data, absolute PCs for branches.
 struct ExecutableInstruction
 {
-  Instruction::Opcode opcode;
+  ExecutableOpcode opcode;
   std::uint32_t result;
   ExecutableOperand first;
   ExecutableOperand second;
+
+  ExecutableInstruction(Instruction::Opcode operation, std::uint32_t destination,
+                        ExecutableOperand lhs = {}, ExecutableOperand rhs = {})
+      : opcode(executable_opcode(operation)), result(destination), first(lhs), second(rhs)
+  {
+  }
+  auto source_opcode() const -> Instruction::Opcode;
+  auto is_fused_load() const -> bool { return opcode >= ExecutableOpcode::load_variable; }
 };
 using ExecutableCode =
   std::vector<ExecutableInstruction,
@@ -80,7 +139,7 @@ using ExecutableCode =
 // outside the compact domain retain that generic fallback. Function bodies
 // skipped by an outer definition are lowered only when registered separately.
 auto lower_executable(Instructions const& code, ResultSlotPlan const& slots,
-                      bool persistent = false) -> ExecutableCode;
+                      bool persistent = false, bool fuse_loads = false) -> ExecutableCode;
 
 // One byte per instruction: nonzero permits transferring its first arithmetic
 // operand. An empty plan keeps ordinary copies without a per-instruction table.

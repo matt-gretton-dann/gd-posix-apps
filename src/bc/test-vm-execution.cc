@@ -509,3 +509,76 @@ TEST_CASE("Compact short functions keep runtime radix and owned literal sidecars
     REQUIRE(instruction.opcode() != O::quit);
   CHECK(execute(*code) == "2\n11\n11\n");
 }
+
+TEST_CASE("Fused load suffix entry retains the location used by a later store",
+          "[bc][vm][execution][fused-loads]")
+{
+  GD::Bc::Instructions code{I(O::variable, GD::Bc::Variable('i')),
+                            I(O::load, D(-1)),
+                            I(O::print, D(-1), I::Stream::output),
+                            I(O::branch_zero, D(-2), D(2)),
+                            I(O::branch, D(12)),
+                            I(O::number, "1"),
+                            I(O::store, D(-6), D(-1)),
+                            I(O::branch, D(-6))};
+  while (code.size() < 16)
+    code.emplace_back(O::number, "0");
+  code.emplace_back(O::eof);
+  // The first entry runs 0+1 as a pair. After storing i=1, the backedge enters
+  // only load 1, reading the retained location rather than repeating a pair.
+  CHECK(execute(code) == "0\n1\n");
+}
+
+TEST_CASE("Fused scalar special and array loads retain their value alternatives",
+          "[bc][vm][execution][fused-loads]")
+{
+  GD::Bc::Instructions code{I(O::scale),
+                            I(O::load, D(-1)),
+                            I(O::print, D(-1), I::Stream::output),
+                            I(O::ibase),
+                            I(O::load, D(-1)),
+                            I(O::print, D(-1), I::Stream::output),
+                            I(O::obase),
+                            I(O::load, D(-1)),
+                            I(O::print, D(-1), I::Stream::output),
+                            I(O::array, GD::Bc::Array('a')),
+                            I(O::load, D(-1)),
+                            I(O::print, D(-1), I::Stream::output),
+                            I(O::variable, GD::Bc::Variable('x')),
+                            I(O::load, D(-1)),
+                            I(O::print, D(-1), I::Stream::output),
+                            I(O::number, "7"),
+                            I(O::eof)};
+  CHECK(execute(code) == "0\n10\n10\n<ARRAY VALUES>\n0\n");
+}
+
+#if GD_BC_PROFILE
+TEST_CASE("Fusion profiling counts logical instructions including independent suffix entries",
+          "[bc][vm][execution][fused-loads][profile]")
+{
+  for (auto checks : {GD::Bc::VM::ExecutionChecks::full, GD::Bc::VM::ExecutionChecks::verified}) {
+    GD::Bc::Instructions code{I(O::variable, GD::Bc::Variable('i')),
+                              I(O::load, D(-1)),
+                              I(O::print, D(-1), I::Stream::output),
+                              I(O::branch_zero, D(-2), D(2)),
+                              I(O::branch, D(12)),
+                              I(O::number, "1"),
+                              I(O::store, D(-6), D(-1)),
+                              I(O::branch, D(-6))};
+    while (code.size() < 16)
+      code.emplace_back(O::number, "0");
+    code.emplace_back(O::eof);
+    std::ostringstream output, errors;
+    GD::Bc::VM vm(output, errors, false, checks);
+    auto const event = static_cast<std::size_t>(GD::Bc::Profile::Event::instructions_executed);
+    auto const before = GD::Bc::Profile::snapshot();
+    CHECK_FALSE(vm.execute(code));
+    auto const after = GD::Bc::Profile::snapshot();
+    // Source PCs: 0,1,2,3,5,6,7,1,2,3,4,16. Pair dispatch must retain the
+    // source-level count even though its first two PCs share one iteration.
+    CHECK(after.events[event] - before.events[event] == 12);
+    CHECK(output.str() == "0\n1\n");
+    CHECK(errors.str().empty());
+  }
+}
+#endif
