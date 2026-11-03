@@ -1,0 +1,142 @@
+{
+  "schema": 1,
+  "source_revision": "9b1b67e2dd29cd65dfc74c02004c9db6dca433bf",
+  "archive_sha256": "f96e756ba7225b09756d8178a0d57e8905d24e9fbac3dc4ee60ee742727d6f26",
+  "archive_bytes": 273548,
+  "rss_checked": 216,
+  "adoption_accepted": false,
+  "medians": [
+    {
+      "case": "full-0-leading-1",
+      "median_peak_rss_bytes": {
+        "coefficient-control": 2883584,
+        "coefficient-divide": 2998272,
+        "coefficient-modulo": 2949120,
+        "prepare-divisor": 2916352,
+        "prepared-divide": 2981888,
+        "prepared-modulo": 2932736
+      }
+    },
+    {
+      "case": "full-0-leading-9",
+      "median_peak_rss_bytes": {
+        "coefficient-control": 2883584,
+        "coefficient-divide": 2998272,
+        "coefficient-modulo": 2949120,
+        "prepare-divisor": 2867200,
+        "prepared-divide": 2981888,
+        "prepared-modulo": 2932736
+      }
+    },
+    {
+      "case": "full-1-leading-1",
+      "median_peak_rss_bytes": {
+        "coefficient-control": 2883584,
+        "coefficient-divide": 2998272,
+        "coefficient-modulo": 2965504,
+        "prepare-divisor": 2932736,
+        "prepared-divide": 2981888,
+        "prepared-modulo": 2949120
+      }
+    },
+    {
+      "case": "full-1-leading-9",
+      "median_peak_rss_bytes": {
+        "coefficient-control": 2883584,
+        "coefficient-divide": 2981888,
+        "coefficient-modulo": 2965504,
+        "prepare-divisor": 2883584,
+        "prepared-divide": 2981888,
+        "prepared-modulo": 2949120
+      }
+    },
+    {
+      "case": "full-2-leading-1",
+      "median_peak_rss_bytes": {
+        "coefficient-control": 2899968,
+        "coefficient-divide": 2981888,
+        "coefficient-modulo": 2965504,
+        "prepare-divisor": 2932736,
+        "prepared-divide": 2981888,
+        "prepared-modulo": 2949120
+      }
+    },
+    {
+      "case": "full-2-leading-9",
+      "median_peak_rss_bytes": {
+        "coefficient-control": 2899968,
+        "coefficient-divide": 2981888,
+        "coefficient-modulo": 2965504,
+        "prepare-divisor": 2883584,
+        "prepared-divide": 2981888,
+        "prepared-modulo": 2949120
+      }
+    },
+    {
+      "case": "held-out-0-leading-1",
+      "median_peak_rss_bytes": {
+        "coefficient-control": 2883584,
+        "coefficient-divide": 2981888,
+        "coefficient-modulo": 2949120,
+        "prepare-divisor": 2916352,
+        "prepared-divide": 2981888,
+        "prepared-modulo": 2932736
+      }
+    },
+    {
+      "case": "held-out-0-leading-9",
+      "median_peak_rss_bytes": {
+        "coefficient-control": 2883584,
+        "coefficient-divide": 2981888,
+        "coefficient-modulo": 2949120,
+        "prepare-divisor": 2867200,
+        "prepared-divide": 2981888,
+        "prepared-modulo": 2932736
+      }
+    },
+    {
+      "case": "held-out-1-leading-1",
+      "median_peak_rss_bytes": {
+        "coefficient-control": 2883584,
+        "coefficient-divide": 2998272,
+        "coefficient-modulo": 2965504,
+        "prepare-divisor": 2932736,
+        "prepared-divide": 2965504,
+        "prepared-modulo": 2949120
+      }
+    },
+    {
+      "case": "held-out-1-leading-9",
+      "median_peak_rss_bytes": {
+        "coefficient-control": 2883584,
+        "coefficient-divide": 2998272,
+        "coefficient-modulo": 2965504,
+        "prepare-divisor": 2883584,
+        "prepared-divide": 2981888,
+        "prepared-modulo": 2949120
+      }
+    },
+    {
+      "case": "held-out-2-leading-1",
+      "median_peak_rss_bytes": {
+        "coefficient-control": 2899968,
+        "coefficient-divide": 2998272,
+        "coefficient-modulo": 2981888,
+        "prepare-divisor": 2949120,
+        "prepared-divide": 2981888,
+        "prepared-modulo": 2965504
+      }
+    },
+    {
+      "case": "held-out-2-leading-9",
+      "median_peak_rss_bytes": {
+        "coefficient-control": 2899968,
+        "coefficient-divide": 2981888,
+        "coefficient-modulo": 2981888,
+        "prepare-divisor": 2899968,
+        "prepared-divide": 2998272,
+        "prepared-modulo": 2965504
+      }
+    }
+  ]
+}

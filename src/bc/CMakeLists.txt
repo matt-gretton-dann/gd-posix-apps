@@ -198,6 +198,12 @@ if(RUN_INTEGRATION_TESTS)
     add_test(NAME bc/components COMMAND "${Python_EXECUTABLE}"
              "${CMAKE_CURRENT_SOURCE_DIR}/test-components.py" "$<TARGET_FILE:bc-components>")
     set_tests_properties(bc/components PROPERTIES TIMEOUT 30)
+    add_test(NAME bc/prepared-component-evidence COMMAND "${Python_EXECUTABLE}"
+             "${CMAKE_CURRENT_SOURCE_DIR}/scripts/verify-prepared-components.py")
+    add_test(NAME bc/prepared-evidence-verifier COMMAND "${Python_EXECUTABLE}"
+             "${CMAKE_CURRENT_SOURCE_DIR}/test-prepared-evidence.py")
+    set_tests_properties(bc/prepared-component-evidence bc/prepared-evidence-verifier
+                         PROPERTIES TIMEOUT 20)
   endif()
   add_test(NAME bc/comparator-builds COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-comparator-builds.py"

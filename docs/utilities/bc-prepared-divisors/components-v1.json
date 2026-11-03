@@ -1,0 +1,71 @@
+{
+  "schema": 1,
+  "source_revision": "9b1b67e2dd29cd65dfc74c02004c9db6dca433bf",
+  "archive_sha256": "6346d0013842d23ce02cb41daaafccfd96618b8966018400d36749cf154772bc",
+  "archive_bytes": 924858,
+  "profile_checked": 72,
+  "timing_checked": 576,
+  "adoption_accepted": false,
+  "median_ratios": [
+    {
+      "case": "full-0-leading-1",
+      "quotient_median_ratio": 0.8257663243217135,
+      "remainder_median_ratio": 0.8073166108978286
+    },
+    {
+      "case": "full-0-leading-9",
+      "quotient_median_ratio": 0.8364542190718919,
+      "remainder_median_ratio": 0.8022259712486633
+    },
+    {
+      "case": "full-1-leading-1",
+      "quotient_median_ratio": 0.984659442599649,
+      "remainder_median_ratio": 0.9765714881332451
+    },
+    {
+      "case": "full-1-leading-9",
+      "quotient_median_ratio": 0.9890198591088375,
+      "remainder_median_ratio": 0.9936856639094696
+    },
+    {
+      "case": "full-2-leading-1",
+      "quotient_median_ratio": 0.998379013857825,
+      "remainder_median_ratio": 0.9693533379328485
+    },
+    {
+      "case": "full-2-leading-9",
+      "quotient_median_ratio": 0.9458486086290029,
+      "remainder_median_ratio": 0.9970564364991927
+    },
+    {
+      "case": "held-out-0-leading-1",
+      "quotient_median_ratio": 0.8622608663444266,
+      "remainder_median_ratio": 0.8249385483875616
+    },
+    {
+      "case": "held-out-0-leading-9",
+      "quotient_median_ratio": 0.878255186969687,
+      "remainder_median_ratio": 0.8275075566175079
+    },
+    {
+      "case": "held-out-1-leading-1",
+      "quotient_median_ratio": 0.9794561726058508,
+      "remainder_median_ratio": 0.9756575344348385
+    },
+    {
+      "case": "held-out-1-leading-9",
+      "quotient_median_ratio": 0.9790322692888509,
+      "remainder_median_ratio": 0.982208383233533
+    },
+    {
+      "case": "held-out-2-leading-1",
+      "quotient_median_ratio": 1.0291909927619183,
+      "remainder_median_ratio": 0.9762913942918097
+    },
+    {
+      "case": "held-out-2-leading-9",
+      "quotient_median_ratio": 1.036959067874992,
+      "remainder_median_ratio": 0.9547066075522151
+    }
+  ]
+}
