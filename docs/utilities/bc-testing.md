@@ -377,3 +377,21 @@ remain visible in each raw export. The audit validated this with a genuine LLVM
 export whose verifier file entry was deliberately removed: collection rejected
 it with a missing-production-mapping error, while the unmodified export passed.
 Fault-injection profiles are separate from published measurement profiles.
+
+### Divisor admission capacity growth
+
+Issue #426 adds public-API power-of-ten fixtures near the retained-limb budget
+at 8/16/32-bit limb widths. Decimal shifts stay within each trait's scale type.
+These fixtures distinguish preflight estimates from the actual capacities after
+COW alignment and normalization. Rejection must retain no limb storage and must
+not allocate again for an unchanged rejected request. Changed values, padding
+and clear/recovery remain separately exercised. The isolated allocation test
+tracks only requests made during its armed phase.
+
+Vector capacity growth is implementation-dependent. Exact-growth libraries may
+admit the fixture when its actual retained storage stays within the budget;
+tests allow that bounded outcome and still check cleanup and ordinary fallback.
+Heap-backed coefficients shrunk to one used limb are tested independently from
+large-capacity rejection. No production fault-injection or test-only accessor is
+introduced. LLVM branch evidence, rather than test success alone, establishes
+which rejection paths a particular instrumented toolchain exercised.

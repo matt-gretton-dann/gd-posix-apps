@@ -89,6 +89,7 @@ if(RUN_UNIT_TESTS)
                  test-number-compare.cc
                  test-number-division.cc
                  test-number-prepared.cc
+                 test-divisor-cache-fixtures.hh
                  test-number-zero-scale.cc
                  test-number-modulo.cc
                  test-number-power.cc
@@ -120,7 +121,8 @@ if(RUN_UNIT_TESTS)
   set_property(TARGET test-bc-offsets PROPERTY CXX_STANDARD_REQUIRED ON)
   set_warnings(test-bc-offsets)
   target_add_clang_format(test-bc-offsets)
-  add_executable(test-divisor-cache-lifetime test-divisor-cache-lifetime.cc)
+  add_executable(test-divisor-cache-lifetime test-divisor-cache-lifetime.cc
+                 test-divisor-cache-fixtures.hh)
   target_link_libraries(test-divisor-cache-lifetime PRIVATE libbc)
   target_include_directories(test-divisor-cache-lifetime PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
   set_property(TARGET test-divisor-cache-lifetime PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")

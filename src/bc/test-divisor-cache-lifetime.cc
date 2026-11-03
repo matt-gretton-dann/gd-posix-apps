@@ -12,6 +12,7 @@
 #include <string>
 
 #include "bc.hh"
+#include "test-divisor-cache-fixtures.hh"
 
 namespace {
 // Track requests made inside the armed promotion phase, not unrelated lazy
@@ -106,6 +107,79 @@ auto exercise() -> bool
     armed = false;
     if (!valid || attempts != 0 || cache.retained_limb_bytes() != 0) {
       return fail("unexpected first-use/changing-value allocation or admission");
+    }
+  }
+
+  // Actual retained capacities can exceed the preflight estimate after COW
+  // alignment/normalization. Rejected stable requests must not allocate again.
+  {
+    phase = "capacity growth and rejected retry";
+    auto [value, places] = GD::Bc::Test::capacity_growth_source<Digits>();
+    (void)places;
+    typename Digits::DivisorCache cache;
+    auto const padding = static_cast<Limb>(Digits::base_log10_);
+    current_padding = static_cast<unsigned>(padding);
+    if (cache.lookup(value, padding) != nullptr || cache.lookup(value, padding) != nullptr) {
+      return fail("capacity fixture promoted too early");
+    }
+    auto const before = live_allocations;
+    attempts = 0;
+    fail_at = -1;
+    armed = true;
+    auto const* prepared = cache.lookup(value, padding);
+    armed = false;
+    if (cache.retained_limb_bytes() > Digits::DivisorCache::max_retained_limb_bytes) {
+      return fail("capacity growth exceeded retained budget");
+    }
+    if (prepared == nullptr) {
+      if (live_allocations != before) {
+        return fail("rejected capacity retained temporary allocations");
+      }
+      attempts = 0;
+      fail_at = 0;
+      armed = true;
+      bool valid = true;
+      try {
+        for (unsigned repeat = 0; repeat != 4; ++repeat) {
+          valid = valid && cache.lookup(value, padding) == nullptr;
+        }
+      }
+      catch (std::bad_alloc const&) {
+        valid = false;
+      }
+      armed = false;
+      if (!valid || attempts != 0 || live_allocations != before) {
+        return fail("stable rejected capacity repeated preparation");
+      }
+    }
+    // A changed value must invalidate a rejection as well as an admitted
+    // snapshot. Padding changes must start a fresh admission sequence.
+    value.mac(1, 1);
+    if (cache.lookup(value, padding) != nullptr) {
+      return fail("changed capacity source reused old preparation");
+    }
+    (void)cache.lookup(value, padding);
+    (void)cache.lookup(value, padding);
+    if (cache.retained_limb_bytes() > Digits::DivisorCache::max_retained_limb_bytes) {
+      return fail("changed capacity source exceeded retained budget");
+    }
+    if (cache.lookup(value, Limb{0}) != nullptr || cache.lookup(value, Limb{0}) != nullptr) {
+      return fail("padding change reused old preparation");
+    }
+    (void)cache.lookup(value, Limb{0});
+    if (cache.retained_limb_bytes() > Digits::DivisorCache::max_retained_limb_bytes) {
+      return fail("changed padding exceeded retained budget");
+    }
+    // Exact-growth vector implementations can admit the bounded fixture.
+    // Either result must release every armed allocation on clear.
+    cache.clear();
+    if (live_allocations != before) {
+      return fail("capacity clear retained an armed allocation");
+    }
+    auto small = source<Digits>();
+    if (cache.lookup(small) != nullptr || cache.lookup(small) != nullptr ||
+        cache.lookup(small) == nullptr) {
+      return fail("capacity rejection/clear prevented later admission");
     }
   }
 

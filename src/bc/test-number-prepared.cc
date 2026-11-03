@@ -14,6 +14,7 @@
 #include <string_view>
 
 #include "bc.hh"
+#include "test-divisor-cache-fixtures.hh"
 
 namespace {
 template<typename Digits>
@@ -424,4 +425,60 @@ TEMPLATE_TEST_CASE("Admitted divisor survives its last external source owner",
   auto replacement =
     coefficient_text<Digits>("100000000000000000000000000000000000000000000000007");
   REQUIRE(cache.lookup(replacement, 1) == nullptr);
+}
+
+TEMPLATE_TEST_CASE("Divisor admission bounds capacity grown during padding",
+                   "[bc][number][prepared][divisor-cache]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Digits = GD::Bc::Details::BasicDigits<TestType>;
+  using Limb = typename Digits::NumType;
+  auto [source, places] = GD::Bc::Test::capacity_growth_source<Digits>();
+  typename Digits::DivisorCache cache;
+  auto const padding = static_cast<Limb>(Digits::base_log10_);
+  REQUIRE(cache.lookup(source, padding) == nullptr);
+  REQUIRE(cache.lookup(source, padding) == nullptr);
+  auto const* prepared = cache.lookup(source, padding);
+  REQUIRE(cache.retained_limb_bytes() <= Digits::DivisorCache::max_retained_limb_bytes);
+  REQUIRE((prepared == nullptr) == (cache.retained_limb_bytes() == 0));
+  REQUIRE(cache.lookup(source, padding) == prepared);
+  REQUIRE(decimal(source) == "1" + std::string(places, '0'));
+
+  auto numerator = source;
+  numerator.mul_pow10(padding);
+  if (prepared != nullptr) {
+    numerator.divide(*prepared);
+  }
+  else {
+    auto denominator = source;
+    denominator.mul_pow10(padding);
+    unprepared(numerator, denominator, false);
+  }
+  REQUIRE(decimal(numerator) == "1");
+  cache.clear();
+  REQUIRE(cache.retained_limb_bytes() == 0);
+  REQUIRE(cache.lookup(source, padding) == nullptr);
+}
+
+TEMPLATE_TEST_CASE("Divisor admission rejects a heap owner shrunk to one limb",
+                   "[bc][number][prepared][divisor-cache]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Digits = GD::Bc::Details::BasicDigits<TestType>;
+  using Limb = typename Digits::NumType;
+  auto source = coefficient_text<Digits>("100000000000000000000000000000000000000000000000001");
+  source.div_pow10(Limb{50});
+  REQUIRE(source.has_heap_storage());
+  REQUIRE(source.coefficient_limbs() == 1);
+  REQUIRE(decimal(source) == "1");
+  typename Digits::DivisorCache cache;
+  for (unsigned repeat = 0; repeat != 5; ++repeat) {
+    REQUIRE(cache.lookup(source) == nullptr);
+    REQUIRE(cache.retained_limb_bytes() == 0);
+  }
+  source.mul_pow10(static_cast<Limb>(3 * Digits::base_log10_));
+  REQUIRE(cache.lookup(source) == nullptr);
+  REQUIRE(cache.lookup(source) == nullptr);
+  REQUIRE(cache.lookup(source) != nullptr);
+  REQUIRE(cache.retained_limb_bytes() <= Digits::DivisorCache::max_retained_limb_bytes);
 }
