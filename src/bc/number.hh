@@ -1004,6 +1004,18 @@ public:
    */
   void modulo(BasicDigits v) { divide_impl<true>(std::move(v)); }
 
+  /** Immutable coefficient snapshot with reusable Algorithm D normalization.
+   * Preparation rejects zero. The snapshot remains valid after its source is
+   * mutated or destroyed; no decimal scale or VM location is retained.
+   */
+  class PreparedDivisor;
+  [[nodiscard]] auto prepare_divisor() const -> PreparedDivisor;
+
+  /** Divide by a prepared positive coefficient, including less/equal inputs. */
+  void divide(PreparedDivisor const& divisor);
+  /** Take the remainder by a prepared positive coefficient. */
+  void modulo(PreparedDivisor const& divisor);
+
 private:
   /** Algorithm D shares normalization and quotient estimates between both
    * outputs. Select the result at compile time so quotient-only callers keep
@@ -1050,16 +1062,32 @@ private:
      * without increasing its limb count.
      */
     auto const n = v.digits_->size();
-    auto const m = digits_->size() - n;
 
     NumType d = (static_cast<NumType>(base_) / 2 - 1) / v.digits_->back();
     d += 1;
     if (d != 1) {
-      mac(d, 0);
       v.mac(d, 0);
     }
     assert(n == v.digits_->size());          // NOLINT
     assert(v.digits_->back() >= base_ / 2);  // NOLINT
+    divide_normalized_impl<Remainder>(std::span<NumType const>(v.digits_->begin(), n), d);
+  }
+
+  template<bool Remainder>
+  void divide_prepared_impl(PreparedDivisor const& divisor);
+
+  /** Run Algorithm D with a read-only, already normalized divisor. The caller
+   * supplies unique, tidy dividend storage and establishes dividend > divisor.
+   * Only the dividend is scaled here; prepared divisors reuse their scaled limbs.
+   */
+  template<bool Remainder>
+  void divide_normalized_impl(std::span<NumType const> divisor, NumType d)
+  {
+    auto const n = divisor.size();
+    auto const m = digits_->size() - n;
+    if (d != 1) {
+      mac(d, 0);
+    }
     digits_->push_back(0);
 
     BasicDigits q;
@@ -1071,7 +1099,6 @@ private:
     // storage modes once, after normalization/growth and before the final swap.
     // The established extents bound every index in the quotient-digit loop.
     auto dividend = std::span(digits_->begin(), digits_->size());
-    auto divisor = std::span<NumType const>(v.digits_->begin(), n);
     std::span<NumType> quotient;
     if constexpr (!Remainder) {
       quotient = std::span(q.digits_->begin(), q.digits_->size());
@@ -1607,6 +1634,90 @@ private:
   static typename DigitVector::difference_type multiply_split_point_;
   DigitVector digits_ = nullptr;  ///< BasicDigits in number.
 };
+
+template<typename Traits>
+class BasicDigits<Traits>::PreparedDivisor
+{
+public:
+  [[nodiscard]] auto coefficient_limbs() const noexcept -> std::size_t
+  {
+    return original_.coefficient_limbs();
+  }
+
+private:
+  friend class BasicDigits<Traits>;
+
+  explicit PreparedDivisor(BasicDigits const& source) : original_(source)
+  {
+    if (original_.is_zero()) {
+      throw std::domain_error("Cannot prepare a zero divisor");
+    }
+    // Trim only when necessary: a canonical source with factor one needs no
+    // writable copy. Both retained coefficients otherwise share its snapshot.
+    auto const& storage = original_.digits_;
+    if (storage->back() == 0) {
+      original_.copy_on_write();
+      original_.tidy();
+    }
+    normalized_ = original_;
+    if (storage->size() >= 2) {
+      factor_ = (static_cast<NumType>(base_) / 2 - 1) / storage->back() + 1;
+      if (factor_ != 1) {
+        normalized_.mac(factor_, 0);
+      }
+      assert(normalized_.coefficient_limbs() == original_.coefficient_limbs());  // NOLINT
+    }
+  }
+
+  BasicDigits original_;
+  BasicDigits normalized_;
+  NumType factor_ = 1;
+};
+
+template<typename Traits>
+auto BasicDigits<Traits>::prepare_divisor() const -> PreparedDivisor
+{
+  return PreparedDivisor(*this);
+}
+
+template<typename Traits>
+void BasicDigits<Traits>::divide(PreparedDivisor const& divisor)
+{
+  divide_prepared_impl<false>(divisor);
+}
+
+template<typename Traits>
+void BasicDigits<Traits>::modulo(PreparedDivisor const& divisor)
+{
+  divide_prepared_impl<true>(divisor);
+}
+
+template<typename Traits>
+template<bool Remainder>
+void BasicDigits<Traits>::divide_prepared_impl(PreparedDivisor const& divisor)
+{
+  copy_on_write();
+  tidy();
+  auto const relation = compare(divisor.original_, 0);
+  if (relation == ComparisonResult::less_than) {
+    if constexpr (!Remainder) {
+      reset();
+    }
+    return;
+  }
+  if (relation == ComparisonResult::equality) {
+    *this = BasicDigits(static_cast<NumType>(Remainder ? 0 : 1));
+    return;
+  }
+  if (divisor.coefficient_limbs() == 1 || digits_->size() == 2) {
+    // Keep the generic scalar and double-width paths for short operands.
+    divide_impl<Remainder>(divisor.original_);
+    return;
+  }
+  auto const& normalized = divisor.normalized_.digits_;
+  divide_normalized_impl<Remainder>(
+    std::span<NumType const>(normalized->begin(), normalized->size()), divisor.factor_);
+}
 
 template<typename Traits>
 typename BasicDigits<Traits>::DigitVector::difference_type

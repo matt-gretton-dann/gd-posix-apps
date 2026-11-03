@@ -9,6 +9,7 @@
 #include <iomanip>
 #include <limits>
 #include <map>
+#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -176,6 +177,156 @@ auto output_dc(Number const& value, Number::NumType base) -> std::string
   result.append(digits, position);
   return result;
 }
+// These coefficient diagnostics deliberately omit decimal scale alignment.
+// Setup preparation is reported separately from the repeated operation, while
+// prepare-divisor measures preparation on every iteration. Neither is a VM cache.
+auto coefficient_component(std::string const& component, std::uint64_t iterations,
+                           std::uint64_t split) -> int
+{
+  using Traits =
+    std::conditional_t<sizeof(void*) == 8, GD::Bc::NumberTraits32, GD::Bc::NumberTraits16>;
+  using Digits = GD::Bc::Details::BasicDigits<Traits>;
+  using Comparison = GD::Bc::Details::ComparisonResult;
+  bool const prepared = component == "prepared-divide" || component == "prepared-modulo";
+  bool const preparation = component == "prepare-divisor";
+  bool const remainder = component == "prepared-modulo" || component == "coefficient-modulo";
+  if (!prepared && !preparation && component != "coefficient-divide" &&
+      component != "coefficient-modulo" && component != "coefficient-control") {
+    throw std::runtime_error("unknown coefficient component");
+  }
+  std::string source(1024 * 1024 + 1, '\0');
+  std::cin.read(source.data(), static_cast<std::streamsize>(source.size()));
+  source.resize(static_cast<std::size_t>(std::cin.gcount()));
+  if (std::cin.bad() || source.size() > 1024 * 1024) {
+    throw std::runtime_error("unreadable or oversized coefficient input");
+  }
+  std::istringstream lines(source);
+  std::string left, right, extra;
+  std::getline(lines, left);
+  std::getline(lines, right);
+  while (std::getline(lines, extra)) {
+    if (extra.find_first_not_of(" \t\r") != std::string::npos) {
+      throw std::runtime_error("unexpected extra coefficient input");
+    }
+  }
+  auto parse = [](std::string value) {
+    if (!value.empty() && value.back() == '\r') {
+      value.pop_back();
+    }
+    if (value.empty() || value.find_first_not_of("0123456789") != std::string::npos) {
+      throw std::runtime_error("coefficient components require unsigned decimal integers");
+    }
+    Digits result(typename Digits::NumType{0});
+    for (auto digit : value) {
+      result.mac(10, static_cast<typename Digits::NumType>(digit - '0'));
+    }
+    return result;
+  };
+  auto const lhs = parse(left);
+  auto const rhs = parse(right);
+  if (rhs.is_zero()) {
+    throw std::runtime_error("zero coefficient divisor");
+  }
+  std::optional<typename Digits::PreparedDivisor> divisor;
+#if !GD_BC_PROFILE
+  auto const setup_started = std::chrono::steady_clock::now();
+#else
+  auto const setup_before = GD::Bc::Profile::snapshot();
+#endif
+  if (prepared) {
+    divisor.emplace(rhs.prepare_divisor());
+  }
+#if !GD_BC_PROFILE
+  auto const setup_seconds =
+    std::chrono::duration<double>(std::chrono::steady_clock::now() - setup_started).count();
+  auto const started = std::chrono::steady_clock::now();
+#else
+  auto const before = GD::Bc::Profile::snapshot();
+#endif
+  Digits result;
+  std::uint64_t checksum = 0;
+  auto repeat = [&](auto operation) {
+    for (std::uint64_t i = 0; i < iterations; ++i) {
+      result = lhs;
+      operation(result);
+      checksum += result.coefficient_limbs();
+    }
+  };
+  if (preparation) {
+    for (std::uint64_t i = 0; i < iterations; ++i) {
+      auto const value = rhs.prepare_divisor();
+      checksum += value.coefficient_limbs();
+    }
+    result = rhs;
+  }
+  else if (prepared) {
+    if (remainder) {
+      repeat([&](Digits& value) { value.modulo(*divisor); });
+    }
+    else {
+      repeat([&](Digits& value) { value.divide(*divisor); });
+    }
+  }
+  else if (component == "coefficient-control") {
+    repeat([](Digits&) {});
+  }
+  else {
+    repeat([&](Digits& value) {
+      auto const relation = value.compare(rhs, 0);
+      if (relation == Comparison::less_than) {
+        if (!remainder) {
+          value.reset();
+        }
+      }
+      else if (relation == Comparison::equality) {
+        value = Digits(static_cast<typename Digits::NumType>(remainder ? 0 : 1));
+      }
+      else if (remainder) {
+        value.modulo(rhs);
+      }
+      else {
+        value.divide(rhs);
+      }
+    });
+  }
+#if !GD_BC_PROFILE
+  auto const seconds =
+    std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count();
+#else
+  auto const after = GD::Bc::Profile::snapshot();
+#endif
+  std::ostringstream output;
+  if (result.is_zero()) {
+    output << '0';
+  }
+  else {
+    result.output_base10(output, 0, 0);
+  }
+  std::cout << "{\"component\":\"" << component << "\",\"iterations\":" << iterations
+            << ",\"split_point\":" << split
+            << ",\"text_base\":10,\"limb_bytes\":" << sizeof(typename Digits::NumType)
+            << ",\"checksum_mod_2_64\":" << checksum
+            << ",\"consumer\":\"stored_coefficient_limbs\",\"result\":\"" << unwrapped(output.str())
+            << "\",\"instrumented\":";
+#if GD_BC_PROFILE
+  std::cout << "true,\"seconds\":null,\"setup_seconds\":null,\"operation_allocation_calls\":"
+            << after.total.allocation_calls - before.total.allocation_calls
+            << ",\"operation_allocated_bytes\":"
+            << after.total.allocated_bytes - before.total.allocated_bytes
+            << ",\"setup_allocation_calls\":"
+            << before.total.allocation_calls - setup_before.total.allocation_calls
+            << ",\"setup_allocated_bytes\":"
+            << before.total.allocated_bytes - setup_before.total.allocated_bytes
+            << ",\"operation_cow_clones\":"
+            << after.events[static_cast<std::size_t>(GD::Bc::Profile::Event::cow_clones)] -
+                 before.events[static_cast<std::size_t>(GD::Bc::Profile::Event::cow_clones)];
+#else
+  std::cout << "false,\"seconds\":" << std::setprecision(17) << seconds
+            << ",\"setup_seconds\":" << setup_seconds;
+#endif
+  std::cout << "}\n";
+  return 0;
+}
 }  // namespace
 
 auto main(int argc, char** argv) -> int
@@ -186,6 +337,14 @@ auto main(int argc, char** argv) -> int
         "usage: bc-components COMPONENT ITERATIONS SPLIT_POINT [TEXT_BASE] < INPUT");
     }
     std::string const component(argv[1]);
+    if (component.starts_with("coefficient-") || component.starts_with("prepared-") ||
+        component == "prepare-divisor") {
+      if (argc != 4) {
+        throw std::runtime_error("coefficient diagnostics do not accept a text base");
+      }
+      return coefficient_component(component, positive(argv[2], 10000000),
+                                   positive(argv[3], Number::base_));
+    }
     bool const conversion_input = component == "conversion-in" || component == "conversion-in-dc";
     bool const conversion_output =
       component == "conversion-out" || component == "conversion-out-dc";

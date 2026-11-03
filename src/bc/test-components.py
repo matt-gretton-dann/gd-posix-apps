@@ -43,6 +43,36 @@ class Components(unittest.TestCase):
                     self.assertEqual(result['result'], str(expected))
                     self.assertEqual(result['checksum_mod_2_64'], 3 * len(str(expected)))
 
+    def test_prepared_coefficient_oracles(self):
+        for left, right in ((0, 97), (96, 97), (97, 97),
+                            (10 ** 279 + 123456789, 10 ** 134 + 987654321),
+                            (10 ** 199 - 1, 9 * 10 ** 89 + 314159)):
+            for component, expected in (
+                    ('coefficient-control', left), ('prepare-divisor', right),
+                    ('coefficient-divide', left // right),
+                    ('prepared-divide', left // right),
+                    ('coefficient-modulo', left % right),
+                    ('prepared-modulo', left % right)):
+                with self.subTest(component=component, left=left, right=right):
+                    result = self.invoke(component, f'{left}\n{right}\n')
+                    self.assertEqual(result['result'], str(expected))
+                    self.assertEqual(result['consumer'], 'stored_coefficient_limbs')
+                    if result['instrumented']:
+                        self.assertIsNone(result['setup_seconds'])
+                        self.assertGreaterEqual(result['operation_allocation_calls'], 0)
+                        self.assertGreaterEqual(result['operation_allocated_bytes'], 0)
+                    else:
+                        self.assertGreaterEqual(result['setup_seconds'], 0)
+
+    def test_coefficient_protocol_rejections(self):
+        for component in ('coefficient-divide', 'prepared-divide', 'prepare-divisor'):
+            for source in ('1\n0\n', '-1\n2\n', '1.5\n2\n', '1\n',
+                           '1\n2\n3\n', '1\n2x\n'):
+                with self.subTest(component=component, source=source):
+                    self.invoke(component, source, success=False)
+            self.invoke(component, '1\n2\n', base=10, success=False)
+        self.invoke('prepared-unknown', '1\n2\n', success=False)
+
     def test_signed_fractional_arithmetic(self):
         for component, expected in (('add', '-11.00'), ('subtract', '-13.50'),
                                     ('multiply', '-15.31'), ('divide', '-9')):
