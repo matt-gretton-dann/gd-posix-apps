@@ -76,7 +76,7 @@ def failed_test(data, entry):
 
 def verify_transport():
     hashes = json.loads((ROOT / 'sha256.json').read_text())
-    actual = {str(p.relative_to(ROOT)) for p in ROOT.rglob('*')
+    actual = {p.relative_to(ROOT).as_posix() for p in ROOT.rglob('*')
               if p.is_file() and '__pycache__' not in p.parts and p.name != 'sha256.json'}
     require(actual == set(hashes), 'package payload inventory differs')
     for name, expected in hashes.items():

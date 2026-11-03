@@ -14,5 +14,5 @@
   "native/bc-427-fa-native-macos.zip": "ff82d504ddbe46457b56929ff0f9a14e6f22b9947bc9b25822fbcb69f97ed3bf",
   "native/bc-427-fa-native-windows.zip": "4b8c35d16419132acfee983c07d4ec449670137e39cf8129efead6800f75a088",
   "test-verifier.py": "4811271df9f9ecb991ca2e6312c5f2927fcf1cd43efb1d6531998b48347f49fe",
-  "verify.py": "75701450bb65a1ffa15c2a7a666891da770bfc69721e826758369cb9fc5a36b0"
+  "verify.py": "f536997a88d4e511b579f59c8df46a2875bec2f4c65466ebd793f307432f26c6"
 }
