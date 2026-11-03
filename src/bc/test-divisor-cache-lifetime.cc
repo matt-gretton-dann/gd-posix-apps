@@ -171,6 +171,25 @@ auto exercise() -> bool
     if (cache.retained_limb_bytes() > Digits::DivisorCache::max_retained_limb_bytes) {
       return fail("changed padding exceeded retained budget");
     }
+    phase = "near-budget maximal padding preflight";
+    current_padding = static_cast<unsigned>(std::numeric_limits<Limb>::max());
+    current_failure = 0;
+    attempts = 0;
+    fail_at = 0;
+    armed = true;
+    bool valid = true;
+    try {
+      for (unsigned repeat = 0; repeat != 3; ++repeat) {
+        valid = valid && cache.lookup(value, std::numeric_limits<Limb>::max()) == nullptr;
+      }
+    }
+    catch (std::bad_alloc const&) {
+      valid = false;
+    }
+    armed = false;
+    if (!valid || attempts != 0 || cache.retained_limb_bytes() != 0 || live_allocations != before) {
+      return fail("near-budget maximal padding allocated or retained storage");
+    }
     // Exact-growth vector implementations can admit the bounded fixture.
     // Either result must release every armed allocation on clear.
     cache.clear();

@@ -1751,6 +1751,7 @@ public:
    * on a first observation or a miss. First observations compute no admission
    * fingerprint; numeric zero preflight may scan the source. Promotion after
    * three stable observations may allocate or throw.
+   * The source coefficient must remain unchanged throughout the lookup.
    */
   [[nodiscard]] auto lookup(BasicDigits const& source, NumType padding = 0)
     -> PreparedDivisor const*
@@ -1758,7 +1759,7 @@ public:
     GD_BC_PROFILE_EVENT(Profile::Event::divisor_cache_lookups, 1);
     auto const capacity = source.digits_.capacity();
     constexpr auto limit = max_retained_limb_bytes / sizeof(NumType);
-    // Keep the scale field's width until its bounded extent is established.
+    // Compare in the scale field's width before accepting its bounded extent.
     auto const whole = padding / base_log10_;
     // Conservative preflight leaves room for three retained coefficient views
     // and possible shift growth. Inspect actual capacities again on promotion.
@@ -1785,12 +1786,8 @@ public:
       return nullptr;
     }
     auto const fingerprint = admission_fingerprint(source);
-    if (!fingerprint) {
-      clear();
-      return nullptr;
-    }
-    if (!fingerprint_valid_ || *fingerprint != fingerprint_) {
-      fingerprint_ = *fingerprint;
+    if (!fingerprint_valid_ || fingerprint != fingerprint_) {
+      fingerprint_ = fingerprint;
       fingerprint_valid_ = true;
       rejected_ = false;
       return nullptr;
@@ -1865,19 +1862,16 @@ private:
     return true;
   }
 
-  static auto admission_fingerprint(BasicDigits const& source) noexcept
-    -> std::optional<std::uint64_t>
+  static auto admission_fingerprint(BasicDigits const& source) noexcept -> std::uint64_t
   {
     GD_BC_PROFILE_EVENT(Profile::Event::divisor_cache_fingerprint_limbs,
                         source.coefficient_limbs());
+    // lookup already rejected numeric zero, and its ownership bookkeeping
+    // does not mutate the source. A second nonzero scan/optional failure path
+    // would duplicate that precondition; retain only the admission hash.
     std::uint64_t hash = 14695981039346656037ULL;
-    bool nonzero = false;
     for (auto limb : source.digits_) {
-      nonzero = nonzero || limb != 0;
       hash = (hash ^ static_cast<std::uint64_t>(limb)) * 1099511628211ULL;
-    }
-    if (!nonzero) {
-      return std::nullopt;
     }
     return (hash ^ source.coefficient_limbs()) * 1099511628211ULL;
   }

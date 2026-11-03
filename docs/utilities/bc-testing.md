@@ -472,3 +472,18 @@ for fresh unique temporaries, plus clear/re-admission after a warmed entry.
 These counters describe work and ownership, not elapsed-time improvements.
 Earlier rejected native observations remain applicable to their exact sources;
 this changed candidate needs a new complete native audit before adoption.
+
+### Admission fingerprint precondition
+
+`lookup` rejects numeric zero before observing ownership or computing a
+fingerprint. The source coefficient remains stable during that operation;
+ownership bookkeeping does not change its limbs. The private hash therefore
+returns a plain 64-bit value, with the separate `fingerprint_valid_` flag tracking
+whether an observation exists. It no longer repeats zero bookkeeping inside the
+hash loop or returns an impossible optional failure after the zero preflight.
+
+The numeric zero guard remains required for noncanonical heap storage and is
+covered at all three limb widths. Hash collisions can only affect when the
+current value is prepared; exact owner/padding identity and retained immutable
+snapshots still protect hits. This simplification does not establish a speedup
+or waive the experimental VM candidate's native performance regressions.
