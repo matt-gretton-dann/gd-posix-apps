@@ -3,8 +3,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 add_library(libbc)
-# Shared by library consumers and the independent header-only calibration tool.
+# Header modes shared by clients and the independent calibration tool.
 add_library(bc-language-mode INTERFACE)
+target_compile_definitions(bc-language-mode INTERFACE
+                           GD_BC_COMPACT_DIGIT_OWNER=$<BOOL:${ENABLE_BC_COMPACT_DIGIT_OWNER}>)
 target_include_directories(libbc PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_include_directories(libbc PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_link_libraries(libbc PUBLIC gdsup util bc-language-mode)
@@ -41,6 +43,7 @@ add_dependencies("libbc" "bc_messages_header")
 target_add_clang_format(libbc)
 
 if(RUN_UNIT_TESTS)
+  find_package(Threads REQUIRED)
   add_executable(test-bc-profiling profiling.cc test-profiling.cc)
   target_compile_definitions(test-bc-profiling PRIVATE GD_BC_PROFILE=1)
   add_executable(test-bc-profiling-disabled test-profiling-disabled.cc)
@@ -57,7 +60,8 @@ if(RUN_UNIT_TESTS)
   target_link_libraries(test-bc-consumer-mode PRIVATE libbc)
   target_include_directories(test-bc-consumer-mode PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
   target_compile_definitions(test-bc-consumer-mode PRIVATE
-                             GD_BC_EXPECT_EXTENSIONS=$<BOOL:${ENABLE_NON_POSIX_EXTENSIONS}>)
+                             GD_BC_EXPECT_EXTENSIONS=$<BOOL:${ENABLE_NON_POSIX_EXTENSIONS}>
+                             GD_BC_EXPECT_COMPACT_OWNER=$<BOOL:${ENABLE_BC_COMPACT_DIGIT_OWNER}>)
   add_dependencies(test-bc-consumer-mode bc_messages_header)
   set_property(TARGET test-bc-consumer-mode PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
   set_property(TARGET test-bc-consumer-mode PROPERTY CXX_STANDARD_REQUIRED ON)
@@ -77,7 +81,7 @@ if(RUN_UNIT_TESTS)
   set_tests_properties(bc/vm-lifetime PROPERTIES TIMEOUT 10)
   add_executable(test-libbc)
   add_dependencies(test-libbc test-bc-vm-lifetime test-bc-consumer-mode)
-  target_link_libraries(test-libbc PUBLIC libbc Catch2::Catch2)
+  target_link_libraries(test-libbc PUBLIC libbc Catch2::Catch2 PRIVATE Threads::Threads)
   add_dependencies(test-libbc test-bc-profiling test-bc-profiling-disabled)
   set_property(TARGET test-libbc PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
   set_property(TARGET test-libbc PROPERTY CXX_STANDARD_REQUIRED ON)
@@ -95,6 +99,7 @@ if(RUN_UNIT_TESTS)
                  test-lexer-comments.cc
                  test-libbc-main.cc
                  test-digit-storage.cc
+                 test-coefficient-owner.cc
                  test-number.cc
                  test-number-radix.cc
                  test-number-workspace.cc

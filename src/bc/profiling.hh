@@ -150,8 +150,9 @@ struct SharedFactory
 };
 
 #if GD_BC_PROFILE
-// Profile builds deliberately use tracked containers; ordinary timing builds
-// retain exactly their original allocator types and direct make_shared calls.
+// Profile builds use tracked allocators; ordinary builds use std::allocator
+// and uninstrumented shared factories.
+// Compact coefficient owners also use this allocator alias for control blocks.
 template<typename T, AllocationKind Kind>
 using Allocator = CountingAllocator<T, Kind>;
 #  define GD_BC_PROFILE_EVENT(Which, Amount) ::GD::Bc::Profile::event(Which, Amount)
