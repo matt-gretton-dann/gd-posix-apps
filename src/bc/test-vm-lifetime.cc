@@ -2,12 +2,14 @@
  * Isolated VM/parser ownership and failure guards, without production test hooks.
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <new>
+
 #include <atomic>
 #include <cstdio>
 #include <cstdlib>
 #include <limits>
-#include <new>
 #include <sstream>
+#include <stdexcept>
 #include <type_traits>
 #include <utility>
 
@@ -203,6 +205,61 @@ auto parser_allocation_failures() -> bool
   return false;  // Do not silently accept a truncated fault sweep.
 }
 
+class InterruptibleOutput : public std::stringbuf
+{
+public:
+  bool fail = false;
+
+private:
+  auto xsputn(char const* data, std::streamsize size) -> std::streamsize override
+  {
+    if (fail)
+      throw std::runtime_error("deliberate output failure");
+    return std::stringbuf::xsputn(data, size);
+  }
+};
+
+auto restore_nested_call_after_exception() -> bool
+{
+  using Checks = GD::Bc::VM::ExecutionChecks;
+  for (auto checks : {Checks::full, Checks::verified}) {
+    InterruptibleOutput buffer;
+    std::ostream output(&buffer);
+    output.exceptions(std::ios::badbit);
+    std::ostringstream errors;
+    GD::Bc::VM vm(output, errors, true, checks);
+    auto run = [&vm](std::string const& text) {
+      GD::Bc::Parser parser(
+        std::make_unique<GD::Bc::Lexer>(std::make_unique<GD::Bc::StringReader>(text)), false);
+      auto code = parser.parse();
+      return code && !vm.execute(*code);
+    };
+    if (!run("x=17\ny=23\na[3]=9\nb[3]=2\nscale=2\n"
+             "define g(y) {\nscale=7\nibase=16\nz=8\n\"ready\"\nreturn(y)\n}\n"
+             "define f(x,a[]) {\nauto y\ny=3\nscale=4\nobase=16\nreturn(g(6))\n}\n"))
+      return false;
+    buffer.fail = true;
+    bool threw = false;
+    try {
+      (void)run("f(4,b[])\n");
+    }
+    catch (std::runtime_error const& error) {
+      threw = std::string_view(error.what()) == "deliberate output failure";
+    }
+    if (!threw)
+      return false;
+    buffer.fail = false;
+    output.clear();
+    // The global write to z occurred before the exception and survives. Each
+    // active call must still restore its local bindings and saved specials.
+    if (!run("x\ny\na[3]\nscale\nibase\nobase\nz\n") ||
+        buffer.str() != "17\n23\n9\n2\n10\n10\n8\n" || !run("f(4,b[])\n") ||
+        buffer.str() != "17\n23\n9\n2\n10\n10\n8\nready6\n" || !errors.str().empty())
+      return false;
+  }
+  return true;
+}
+
 auto run() -> bool
 {
   std::ostringstream output;
@@ -236,6 +293,10 @@ auto run() -> bool
 
 auto main() -> int
 {
+  if (!restore_nested_call_after_exception()) {
+    std::fprintf(stderr, "Nested call exception left VM locals or special registers changed\n");
+    return 1;
+  }
   // Warm lazy catalog/iostream initialization before observing VM lifetimes.
   if (!run()) {
     return 1;
