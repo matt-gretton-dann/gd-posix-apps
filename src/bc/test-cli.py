@@ -89,6 +89,15 @@ class CliTests(unittest.TestCase):
     def test_quit_with_open_stdin(self):
         self.run_bc("1+1\nquit\n", "2\n", keep_open=True)
 
+    def test_stdin_eof_across_explicit_input_operands(self):
+        with tempfile.TemporaryDirectory() as directory:
+            later = Path(directory) / "later.bc"
+            later.write_text("42\n")
+            self.run_bc("17\n", "17\n42\n", files=("-", later, "-"))
+
+    def test_quit_with_open_stdin_and_no_newline(self):
+        self.run_bc("1+1\nquit;", "2\n", keep_open=True)
+
     def test_quit_stops_all_inputs(self):
         with tempfile.TemporaryDirectory() as directory:
             first = Path(directory) / "first.bc"

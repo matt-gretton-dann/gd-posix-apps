@@ -392,6 +392,7 @@ private:
 
   GD::StreamInputFile file_;
   int c_{EOF};
+  bool at_end_{false};
 };
 
 /** Lexer.  */
