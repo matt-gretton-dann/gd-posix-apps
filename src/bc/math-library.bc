@@ -370,9 +370,9 @@ define j(n,x) {
     }
   }
   scale=0
-  /* Cancellation needs magnitude-dependent guards in the ascending series.
-     This path is separate from the large-argument remainder test. */
-  w=s+2*(x/1)+scale(x)+length(x)+2*length(s+2*(x/1)+scale(x)+length(x)+1)+32
+  /* The ascending recurrence amplifies errors by at most exp(2*x).
+     Since exp(2)<10, floor(x) decimal guards leave a factor below ten. */
+  w=s+(x/1)+scale(x)+length(x)+2*length(s+(x/1)+scale(x)+length(x)+1)+32
   scale=w
   if (scale!=w) return(1/0)
   t=1

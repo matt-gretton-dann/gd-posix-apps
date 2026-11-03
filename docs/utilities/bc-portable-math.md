@@ -221,15 +221,16 @@ conservative aggregate bound `10^6*(W+1)^2*10^D*u` remains below U/2. No
 unbounded divergent series is treated as convergent merely because a term grew.
 
 Otherwise, evaluate the ascending recurrence, including the initial
-`(x/2)^n/n!`, with W = S + 2*floor(x) + D + F +
-2*d(S+2*floor(x)+D+F+1) + 32. The extra 2*floor(x) covers cancellation and
+`(x/2)^n/n!`, with W = S + floor(x) + D + F +
+2*d(S+floor(x)+D+F+1) + 32. The extra floor(x) covers cancellation and
 propagation through the absolute series, bounded by exp(2x). After the tiny-
 result branch, the initial factor needs at most 7*(W+1) steps; the term loop
 needs at most 8*(W+1). The [ascending definition](https://dlmf.nist.gov/10.2.E2) and the
 [integer-order modified-Bessel integral](https://dlmf.nist.gov/10.32.E3)
 bound absolute series weights by exp(x). After k exceeds x, term ratios are
 at most one quarter. Absolute tail/rounding propagation is bounded by
-`10^6*(W+1)^2*exp(2x)*u`. Since `exp(2x)*10^(-2*floor(x)) < 8`, the remaining
+`10^6*(W+1)^2*exp(2x)*u`. Since `exp(2)<10` and `0<=x-floor(x)<1`,
+`exp(2x)*10^(-floor(x)) < 10`. The remaining
 guards put this below U/2. An underflowed initial factor or term is therefore
 covered by the error budget even if later exact recurrence terms would grow.
 The forward recurrence reuses terms; it does not rebuild powers/factorials.
