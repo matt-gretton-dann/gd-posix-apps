@@ -4,6 +4,8 @@
  */
 #include <new>
 
+#include <algorithm>
+#include <array>
 #include <cstdio>
 #include <cstdlib>
 #include <sstream>
@@ -12,7 +14,14 @@
 #include "bc.hh"
 
 namespace {
+// Track requests made inside the armed promotion phase, not unrelated lazy
+// standard-library allocations (for example persistent locale facets).
+std::array<void*, 64> tracked_allocations{};
 std::size_t live_allocations = 0;
+std::size_t limb_bytes = 0;
+unsigned current_padding = 0;
+unsigned current_failure = 0;
+char const* phase = "initialization";
 unsigned attempts = 0;
 int fail_at = -1;
 bool armed = false;
@@ -24,7 +33,15 @@ auto operator new(std::size_t size) -> void*
     throw std::bad_alloc();
   }
   if (auto* result = std::malloc(size == 0 ? 1 : size)) {
-    ++live_allocations;
+    if (armed) {
+      auto const slot = std::find(tracked_allocations.begin(), tracked_allocations.end(), nullptr);
+      if (slot == tracked_allocations.end()) {
+        std::free(result);
+        throw std::bad_alloc();
+      }
+      *slot = result;
+      ++live_allocations;
+    }
     return result;
   }
   throw std::bad_alloc();
@@ -32,7 +49,11 @@ auto operator new(std::size_t size) -> void*
 void operator delete(void* pointer) noexcept
 {
   if (pointer != nullptr) {
-    --live_allocations;
+    auto const slot = std::find(tracked_allocations.begin(), tracked_allocations.end(), pointer);
+    if (slot != tracked_allocations.end()) {
+      *slot = nullptr;
+      --live_allocations;
+    }
     std::free(pointer);
   }
 }
@@ -58,9 +79,20 @@ template<typename Traits>
 auto exercise() -> bool
 {
   using Digits = GD::Bc::Details::BasicDigits<Traits>;
+  using Limb = typename Digits::NumType;
+  limb_bytes = sizeof(Limb);
+  auto fail = [](char const* reason) {
+    std::fprintf(stderr,
+                 "Divisor admission: %s; phase=%s limb_bytes=%zu padding=%u "
+                 "failure=%u attempts=%u tracked=%zu\n",
+                 reason, phase, limb_bytes, current_padding, current_failure, attempts,
+                 live_allocations);
+    return false;
+  };
   // A first observation and continuously changing unique values must not
   // allocate or trigger a COW clone. All mutations fit the existing storage.
   {
+    phase = "first observation and changing unique values";
     auto value = source<Digits>();
     typename Digits::DivisorCache cache;
     attempts = 0;
@@ -73,22 +105,25 @@ auto exercise() -> bool
     }
     armed = false;
     if (!valid || attempts != 0 || cache.retained_limb_bytes() != 0) {
-      return false;
+      return fail("unexpected first-use/changing-value allocation or admission");
     }
   }
 
   // Fail each allocation in promotion. No partially constructed snapshot may
   // survive, and the same observed source must support a subsequent retry.
-  for (unsigned padding : {0U, 1U}) {
+  for (Limb padding : {Limb{0}, Limb{1}}) {
+    phase = "promotion";
+    current_padding = padding;
     bool completed = false;
     for (unsigned failure = 0; failure != 32; ++failure) {
+      current_failure = failure;
       auto const outer_live = live_allocations;
       bool threw = false;
       {
         auto value = source<Digits>();
         typename Digits::DivisorCache cache;
         if (cache.lookup(value, padding) != nullptr || cache.lookup(value, padding) != nullptr) {
-          return false;
+          return fail("promoted before three stable observations");
         }
         auto const before = live_allocations;
         attempts = 0;
@@ -104,22 +139,22 @@ auto exercise() -> bool
         armed = false;
         if (threw) {
           if (cache.retained_limb_bytes() != 0 || live_allocations != before) {
-            return false;
+            return fail("failed promotion retained a snapshot or allocation");
           }
           prepared = cache.lookup(value, padding);
         }
         if (prepared == nullptr || cache.retained_limb_bytes() == 0 ||
             cache.retained_limb_bytes() > Digits::DivisorCache::max_retained_limb_bytes) {
-          return false;
+          return fail("promotion/retry did not retain a bounded prepared value");
         }
         std::ostringstream output;
         value.output_base10(output, 0, 0);
         if (output.str() != divisor_text) {
-          return false;
+          return fail("promotion changed the source coefficient");
         }
       }
       if (live_allocations != outer_live) {
-        return false;
+        return fail("promotion allocation survived cache destruction");
       }
       if (!threw) {
         // Confirm that at least one actual promotion allocation was exercised.
@@ -128,7 +163,7 @@ auto exercise() -> bool
       }
     }
     if (!completed) {
-      return false;
+      return fail("no complete allocation-failure sequence");
     }
   }
   return true;
@@ -146,6 +181,8 @@ auto main() -> int
   }
   catch (...) {
     armed = false;
+    std::fprintf(stderr, "Unexpected allocation/exception: phase=%s limb_bytes=%zu attempts=%u\n",
+                 phase, limb_bytes, attempts);
   }
   std::fputs("Divisor admission allocation invariant failed\n", stderr);
   return 1;
