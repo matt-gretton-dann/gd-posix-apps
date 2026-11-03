@@ -1,5 +1,5 @@
 /** \file execution-plan.cc
- * Basic-block proof for transferring arithmetic temporaries.
+ * Verified operand lowering and basic-block arithmetic ownership.
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "execution-plan.hh"
@@ -143,6 +143,66 @@ auto plan_result_slots(Instructions const& code, std::size_t slot_bytes) -> Resu
       result.indices[i] = next++;
   });
   result.count = next;
+  return result;
+}
+
+auto lower_executable(Instructions const& code, ResultSlotPlan const& slots, bool persistent)
+  -> ExecutableCode
+{
+  using I = Instruction::Index;
+  using O = Instruction::Opcode;
+  using C = std::uint32_t;
+  auto const size = code.size();
+  if (size == 0 || (!persistent && size < 16) || size >= std::numeric_limits<C>::max())
+    return {};
+  ExecutableCode result(size, ExecutableInstruction{O::eof, 0, {}, {}});
+  bool representable = true;
+  auto encode = [&](I pc, Instruction::Operand const& operand, bool control) {
+    ExecutableOperand encoded;
+    std::visit(
+      Overloaded{
+        [&](Instruction::Offset offset) {
+          auto const index = pc + static_cast<I>(offset);
+          encoded = ExecutableOperand(static_cast<C>(control ? index : slots.index(index)));
+        },
+        [&](Instruction::Stream stream) { encoded = ExecutableOperand(static_cast<C>(stream)); },
+        [&](Letter letter) { encoded = ExecutableOperand(letter); },
+        [&](Variable variable) { encoded = ExecutableOperand(variable.get()); },
+        [&](Array array) { encoded = ExecutableOperand(array.get()); },
+        [&](unsigned value) {
+          if (value > std::numeric_limits<C>::max())
+            representable = false;
+          encoded = ExecutableOperand(static_cast<C>(value));
+        },
+        // Strings, locations and masks stay owned by the source sidecar. These
+        // alternatives are consulted only by their corresponding opcode helpers.
+        [](auto const&) {}},
+      operand);
+    return encoded;
+  };
+  I definition = 0;
+  visit_execution_region(code, [&](I i) {
+    auto const& source = code[i];
+    auto& lowered = result[i];
+    lowered.opcode = source.opcode();
+    lowered.result = static_cast<C>(slots.index(i));
+    if (source.opcode() == O::function_begin) {
+      definition = i;
+    }
+    else if (source.opcode() == O::function_end) {
+      // Matching definition metadata was established by verification. Bodies
+      // are not executed by this outer pack and receive independent lowering.
+      result[definition].first = ExecutableOperand(static_cast<C>(i + 1));
+    }
+    else {
+      if (source.has_op1())
+        lowered.first = encode(i, source.op1(), source.opcode() == O::branch);
+      if (source.has_op2())
+        lowered.second = encode(i, source.op2(), source.opcode() == O::branch_zero);
+    }
+  });
+  if (!representable)
+    return {};
   return result;
 }
 

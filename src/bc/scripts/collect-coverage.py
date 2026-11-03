@@ -3,7 +3,7 @@
 
 Configure and build an instrumented Debug tree first; see docs/utilities/bc-testing.md.
 Each invocation requires a new output directory. Build/tuner/manual profiles are
-never read. Extensions and experimental divisor modes must use separate build/output directories.
+never read. Extensions, divisor reuse and compact execution modes require separate build/output directories.
 """
 
 import argparse
@@ -51,7 +51,8 @@ def require_production_mappings(source, mapped):
 def build_modes(cache):
     # A missing option denotes older source; do not silently label it OFF.
     return {"extensions": cache.get("ENABLE_NON_POSIX_EXTENSIONS"),
-            "prepared_divisors": cache.get("ENABLE_BC_PREPARED_DIVISORS")}
+            "prepared_divisors": cache.get("ENABLE_BC_PREPARED_DIVISORS"),
+            "compact_execution": cache.get("ENABLE_BC_COMPACT_EXECUTION")}
 
 
 def main():

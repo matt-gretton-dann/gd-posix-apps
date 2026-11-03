@@ -457,3 +457,55 @@ TEST_CASE("Reused activation slots release mixed result alternatives",
   CHECK(errors.str().empty());
   CHECK(output.str() == expected);
 }
+
+TEST_CASE("Compact control flow preserves exact forward targets and a backedge to zero",
+          "[bc][vm][execution][compact-executable]")
+{
+  SECTION("Forward data reference through a later producer")
+  {
+    GD::Bc::Instructions code{I(O::branch, D(4)),
+                              I(O::print, D(3), I::Stream::output),
+                              I(O::number, "0"),
+                              I(O::branch, D(4)),
+                              I(O::number, "7"),
+                              I(O::branch, D(-4)),
+                              I(O::number, "0"),
+                              I(O::number, "9"),
+                              I(O::print, D(-1), I::Stream::output)};
+    while (code.size() < 16)
+      code.emplace_back(O::number, "0");
+    code.emplace_back(O::eof);
+    CHECK(execute(code) == "7\n9\n");
+  }
+  SECTION("Zero is a valid absolute branch target")
+  {
+    GD::Bc::Instructions code{I(O::variable, GD::Bc::Variable('i')),
+                              I(O::load, D(-1)),
+                              I(O::number, "1"),
+                              I(O::add, D(-2), D(-1)),
+                              I(O::store, D(-4), D(-1)),
+                              I(O::number, "3"),
+                              I(O::less_than, D(-3), D(-1)),
+                              I(O::branch_zero, D(-1), D(2)),
+                              I(O::branch, D(-8)),
+                              I(O::print, D(-6), I::Stream::output)};
+    while (code.size() < 16)
+      code.emplace_back(O::number, "0");
+    code.emplace_back(O::eof);
+    CHECK(execute(code) == "3\n");
+  }
+}
+
+TEST_CASE("Compact short functions keep runtime radix and owned literal sidecars",
+          "[bc][vm][execution][compact-executable]")
+{
+  std::string const source = "define f(x) {\nreturn(x+1)\n}\nf(1)\nibase=16\nf(A)\n"
+                             "ibase=A\nf(10)\n";
+  GD::Bc::Parser parser(
+    std::make_unique<GD::Bc::Lexer>(std::make_unique<GD::Bc::StringReader>(source)), false);
+  auto code = parser.parse();
+  REQUIRE(code != nullptr);
+  for (auto const& instruction : *code)
+    REQUIRE(instruction.opcode() != O::quit);
+  CHECK(execute(*code) == "2\n11\n11\n");
+}

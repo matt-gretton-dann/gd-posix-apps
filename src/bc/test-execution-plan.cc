@@ -182,3 +182,83 @@ TEST_CASE("Outer result slots exclude every unexecuted definition-body producer"
   // This body is almost entirely producers, so the map cannot repay its cost.
   CHECK(GD::Bc::Details::plan_result_slots(body, 48).indices.empty());
 }
+
+TEST_CASE("Compact operands encode register references and control targets separately",
+          "[bc][vm][compact-executable]")
+{
+  GD::Bc::Instructions code{I(O::variable, GD::Bc::Variable('x')),
+                            I(O::number, "7"),
+                            I(O::store, D(-2), D(-1)),
+                            I(O::load, D(-3)),
+                            I(O::array, GD::Bc::Array('a')),
+                            I(O::load, D(-1)),
+                            I(O::push_param_mark),
+                            I(O::push_param, D(-2)),
+                            I(O::call, GD::Bc::Letter('f'), GD::Bc::Location("lower", 1, 1)),
+                            I(O::length, D(-5)),
+                            I(O::number, "2"),
+                            I(O::array_element, GD::Bc::Array('a'), D(-1)),
+                            I(O::store, D(-1), D(-9)),
+                            I(O::print, D(-10), I::Stream::output),
+                            I(O::number, "0"),
+                            I(O::branch_zero, D(-1), D(2)),
+                            I(O::branch, D(1)),
+                            I(O::eof)};
+  REQUIRE_FALSE(GD::Bc::Details::verify_control_flow(code, false).has_value());
+  auto const slots = GD::Bc::Details::plan_result_slots(code, 48);
+  auto const lowered = GD::Bc::Details::lower_executable(code, slots);
+  REQUIRE(lowered.size() == code.size());
+  CHECK(lowered[0].first.letter == 'x');
+  CHECK(lowered[3].first.index == slots.index(0));
+  CHECK(lowered[7].first.index == slots.index(5));
+  CHECK(lowered[11].first.letter == 'a');
+  CHECK(lowered[11].second.index == slots.index(10));
+  CHECK(lowered[12].first.index == slots.index(11));
+  CHECK(lowered[12].second.index == slots.index(3));
+  CHECK(lowered[13].first.index == slots.index(3));
+  CHECK(lowered[13].second.index == static_cast<unsigned>(I::Stream::output));
+  CHECK(lowered[15].first.index == slots.index(14));
+  CHECK(lowered[15].second.index == 17);
+  CHECK(lowered[16].first.index == 17);
+  for (I::Index i = 0; i < code.size(); ++i) {
+    CHECK(lowered[i].opcode == code[i].opcode());
+    CHECK(lowered[i].result == slots.index(i));
+  }
+}
+
+TEST_CASE("Compact lowering keeps tiny transient streams wide but lowers persistent functions",
+          "[bc][vm][compact-executable]")
+{
+  GD::Bc::Instructions const code{I(O::pop_param_mark), I(O::number, "7"), I(O::return_, D(-1))};
+  REQUIRE_FALSE(GD::Bc::Details::verify_control_flow(code, true).has_value());
+  CHECK(GD::Bc::Details::lower_executable({}, {}, true).empty());
+  CHECK(GD::Bc::Details::lower_executable(code, {}).empty());
+  auto const lowered = GD::Bc::Details::lower_executable(code, {}, true);
+  REQUIRE(lowered.size() == code.size());
+  CHECK(lowered[2].first.index == 1);
+}
+
+TEST_CASE("Compact definitions skip cold bodies and lower them under their own index space",
+          "[bc][vm][compact-executable]")
+{
+  GD::Bc::Instructions code{
+    I(O::function_begin, GD::Bc::VariableMask(), GD::Bc::Location("lower", 1, 1)),
+    I(O::pop_param_mark), I(O::number, "7"), I(O::return_, D(-1)),
+    I(O::function_end, GD::Bc::Letter('f'), D(-4))};
+  while (code.size() < 16)
+    code.emplace_back(O::number, "0");
+  code.emplace_back(O::eof);
+  REQUIRE_FALSE(GD::Bc::Details::verify_control_flow(code, false).has_value());
+  auto const slots = GD::Bc::Details::plan_result_slots(code, 48);
+  auto const lowered = GD::Bc::Details::lower_executable(code, slots);
+  REQUIRE(lowered.size() == code.size());
+  CHECK(lowered[0].first.index == 5);
+  for (I::Index i = 1; i < 4; ++i)
+    CHECK(lowered[i].opcode == O::eof);  // These outer entries cannot execute.
+  GD::Bc::Instructions body(code.begin() + 1, code.begin() + 4);
+  REQUIRE_FALSE(GD::Bc::Details::verify_control_flow(body, true).has_value());
+  auto const function = GD::Bc::Details::lower_executable(body, {}, true);
+  REQUIRE(function.size() == 3);
+  CHECK(function[1].opcode == O::number);
+  CHECK(function[2].first.index == 1);
+}
