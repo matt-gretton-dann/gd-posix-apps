@@ -89,6 +89,14 @@ entries each. The default sanitizer configuration passed the broad bc suite,
 and all profiling configurations passed the profiling CLI checks. Release
 performance validation remains pending.
 
+The single-plan continuation counts numeric and other producers in one pass.
+It compares the generic payload against the typed payload before allocating
+either map. The chosen map retains the same indices and costs as separate
+planning, and failed typed lowering still falls back to generic execution.
+The planner fixtures compare both selectors at the profitability boundary and
+on mixed, forward-reference and function-body streams. Four sanitizer and
+three profiling configurations passed, including the wide fallback.
+
 The Debug foundation passes 140 focused assertions in four typed-plan cases,
 all 325 unit cases / 1,669,178 assertions, and all 92 bc CTest entries (47 pass,
 45 declared skips). This includes the original compact/generic execution paths.

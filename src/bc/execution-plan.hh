@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <variant>
 #include <vector>
 
 #include "bc.hh"
@@ -116,6 +117,12 @@ struct TypedResultCosts
 // unrepresentable or unprofitable streams. Cost overflow also preserves it.
 auto plan_typed_results(Instructions const& code, ResultSlotPlan const& generic,
                         TypedResultCosts costs, bool persistent = false) -> TypedResultPlan;
+
+// Compare both layouts using one producer tally and materialize only the
+// selected map. The generic alternative can retain instruction indices.
+using VerifiedResultPlan = std::variant<ResultSlotPlan, TypedResultPlan>;
+auto plan_verified_results(Instructions const& code, TypedResultCosts costs, bool persistent)
+  -> VerifiedResultPlan;
 
 // Polymorphic source operations acquire a lane-specific opcode during lowering.
 // Arithmetic then addresses Number registers directly; binding/string/array

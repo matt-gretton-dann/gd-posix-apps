@@ -273,7 +273,22 @@ auto typed_plan(GD::Bc::Instructions const& code, bool persistent = true)
 {
   REQUIRE_FALSE(GD::Bc::Details::verify_control_flow(code, false).has_value());
   auto const generic = GD::Bc::Details::plan_result_slots(code, 48);
-  return GD::Bc::Details::plan_typed_results(code, generic, typed_costs(), persistent);
+  auto typed = GD::Bc::Details::plan_typed_results(code, generic, typed_costs(), persistent);
+  auto const selected = GD::Bc::Details::plan_verified_results(code, typed_costs(), persistent);
+  if (typed.empty()) {
+    auto const* fallback = std::get_if<GD::Bc::Details::ResultSlotPlan>(&selected);
+    REQUIRE(fallback != nullptr);
+    CHECK(fallback->indices == generic.indices);
+    CHECK(fallback->count == generic.count);
+  }
+  else {
+    auto const* lanes = std::get_if<GD::Bc::Details::TypedResultPlan>(&selected);
+    REQUIRE(lanes != nullptr);
+    CHECK(lanes->indices == typed.indices);
+    CHECK(lanes->number_count == typed.number_count);
+    CHECK(lanes->other_count == typed.other_count);
+  }
+  return typed;
 }
 }  // namespace
 

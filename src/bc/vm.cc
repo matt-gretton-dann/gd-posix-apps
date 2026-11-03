@@ -113,37 +113,6 @@ struct TypedExecutionView
   TypedResultBuffers* buffers;
 };
 
-auto prepare_typed_layout(Instructions const& code, ResultSlotPlan const& generic, bool persistent,
-                          bool enabled) -> TypedExecutionLayout
-{
-#if GD_BC_TYPED_RESULTS && GD_BC_COMPACT_EXECUTION
-  if (enabled) {
-    // Charge actual payload and owner/frame/view objects against the existing
-    // generic representation. Runtime capacities are measured separately.
-    TypedResultCosts const costs{sizeof(Number),
-                                 sizeof(OtherExecutionResult),
-                                 sizeof(ResultSlot),
-                                 sizeof(GenericExecutionLayout) + sizeof(ResultBuffer),
-                                 sizeof(ExecutionLayout) + sizeof(ActivationResults) +
-                                   sizeof(TypedExecutionView),
-                                 sizeof(ExecutableInstruction),
-                                 sizeof(TypedExecutableInstruction)};
-    auto slots = plan_typed_results(code, generic, costs, persistent);
-    if (!slots.empty()) {
-      auto executable = lower_typed_executable(code, slots, persistent);
-      if (!executable.empty())
-        return {std::move(slots), std::move(executable)};
-    }
-  }
-#else
-  (void)code;
-  (void)generic;
-  (void)persistent;
-  (void)enabled;
-#endif
-  return {};
-}
-
 // Lower only verified execution. The build switch and empty lowering preserve
 // the portable wide-operand interpreter, including its full index domain.
 auto prepare_executable(Instructions const& code, ResultSlotPlan const& slots, bool persistent)
@@ -159,13 +128,32 @@ auto prepare_executable(Instructions const& code, ResultSlotPlan const& slots, b
 #endif
 }
 
-auto prepare_layout(Instructions const& code, ResultSlotPlan generic, bool persistent, bool compact)
-  -> ExecutionLayout
+auto prepare_layout(Instructions const& code, bool persistent, bool verified) -> ExecutionLayout
 {
-  auto typed = prepare_typed_layout(code, generic, persistent, compact);
-  if (!typed.code.empty())
-    return ExecutionLayout{std::move(typed)};
-  auto executable = compact ? prepare_executable(code, generic, persistent) : ExecutableCode{};
+  if (!verified)
+    return GenericExecutionLayout{};
+#if GD_BC_TYPED_RESULTS && GD_BC_COMPACT_EXECUTION
+  TypedResultCosts const costs{sizeof(Number),
+                               sizeof(OtherExecutionResult),
+                               sizeof(ResultSlot),
+                               sizeof(GenericExecutionLayout) + sizeof(ResultBuffer),
+                               sizeof(ExecutionLayout) + sizeof(ActivationResults) +
+                                 sizeof(TypedExecutionView),
+                               sizeof(ExecutableInstruction),
+                               sizeof(TypedExecutableInstruction)};
+  auto plan = plan_verified_results(code, costs, persistent);
+  if (auto* slots = std::get_if<TypedResultPlan>(&plan)) {
+    auto executable = lower_typed_executable(code, *slots, persistent);
+    if (!executable.empty())
+      return TypedExecutionLayout{std::move(*slots), std::move(executable)};
+  }
+  auto* generic_plan = std::get_if<ResultSlotPlan>(&plan);
+  auto generic =
+    generic_plan ? std::move(*generic_plan) : plan_result_slots(code, sizeof(ResultSlot));
+#else
+  auto generic = plan_result_slots(code, sizeof(ResultSlot));
+#endif
+  auto executable = prepare_executable(code, generic, persistent);
   return GenericExecutionLayout{std::move(generic), std::move(executable)};
 }
 
@@ -217,10 +205,9 @@ public:
 
 private:
   friend struct VMState;
-  PreparedInstructions(Instructions const& instructions, ConsumptionPlan consumption,
-                       ResultSlotPlan result_slots, bool compact)
+  PreparedInstructions(Instructions const& instructions, ConsumptionPlan consumption, bool verified)
       : instructions_(&instructions), consumption_(std::move(consumption)),
-        layout_(prepare_layout(instructions, std::move(result_slots), false, compact))
+        layout_(prepare_layout(instructions, false, verified))
   {
   }
   Instructions const* instructions_;
@@ -245,10 +232,9 @@ public:
 
 private:
   friend struct VMState;
-  FunctionCode(Instructions instructions, ConsumptionPlan consumption, ResultSlotPlan result_slots,
-               bool compact)
+  FunctionCode(Instructions instructions, ConsumptionPlan consumption, bool verified)
       : instructions_(std::move(instructions)), consumption_(std::move(consumption)),
-        layout_(prepare_layout(instructions_, std::move(result_slots), true, compact))
+        layout_(prepare_layout(instructions_, true, verified))
   {
   }
   Instructions instructions_;
@@ -362,7 +348,6 @@ struct VMState
     validate(instructions);
     return PreparedInstructions(
       instructions, full_checks() ? ConsumptionPlan{} : plan_consumption(instructions, false),
-      full_checks() ? ResultSlotPlan{} : plan_result_slots(instructions, sizeof(ResultSlot)),
       !full_checks());
   }
   auto full_checks() const noexcept -> bool { return checks_ == VM::ExecutionChecks::full; }
@@ -772,12 +757,8 @@ void GD::Bc::Details::VMState::function(Letter func, Instructions::const_iterato
   Instructions instrs(begin, end);
   validate(instrs, true);
   auto consumption = full_checks() ? ConsumptionPlan{} : plan_consumption(instrs, true);
-  auto result_slots =
-    full_checks() ? ResultSlotPlan{} : plan_result_slots(instrs, sizeof(ResultSlot));
-  functions_.at(static_cast<unsigned>(func)) =
-    std::make_optional(std::make_tuple(FunctionCode(std::move(instrs), std::move(consumption),
-                                                    std::move(result_slots), !full_checks()),
-                                       mask, loc));
+  functions_.at(static_cast<unsigned>(func)) = std::make_optional(std::make_tuple(
+    FunctionCode(std::move(instrs), std::move(consumption), !full_checks()), mask, loc));
 }
 
 auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc::Number

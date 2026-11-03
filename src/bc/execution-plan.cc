@@ -117,36 +117,51 @@ auto classify_result(Instructions const& code, Instruction::Index index) -> Resu
   return ResultKind::none;
 }
 
-auto plan_result_slots(Instructions const& code, std::size_t slot_bytes) -> ResultSlotPlan
+namespace {
+auto can_compact_slots(std::size_t size, std::size_t slot_bytes) -> bool
 {
   using Compact = ResultSlotPlan::CompactIndex;
-  auto const size = code.size();
   // Avoid per-item map work on tiny CLI streams and preserve the full index
   // domain through the existing representation when narrowing cannot be proved.
-  if (size < 16 || size > std::numeric_limits<Compact>::max() ||
-      size > std::numeric_limits<std::size_t>::max() / sizeof(Compact) ||
-      slot_bytes <= sizeof(Compact)) {
-    return {};
-  }
-  std::size_t producers = 0;
-  visit_execution_region(code, [&](Instruction::Index i) {
-    if (classify_result(code, i) != ResultKind::none)
-      ++producers;
-  });
+  return size >= 16 && size <= std::numeric_limits<Compact>::max() &&
+         size <= std::numeric_limits<std::size_t>::max() / sizeof(Compact) &&
+         slot_bytes > sizeof(Compact);
+}
+
+auto profitable_compact_slots(std::size_t size, std::size_t producers, std::size_t slot_bytes)
+  -> bool
+{
   // Include the shared empty sentinel and the persistent map in the payload
   // comparison. Division avoids overflowing a saved-slots * slot-bytes product.
-  if (producers >= size - 1 || size - producers - 1 <= size * sizeof(Compact) / slot_bytes) {
-    return {};
-  }
+  return can_compact_slots(size, slot_bytes) && producers < size - 1 &&
+         size - producers - 1 > size * sizeof(ResultSlotPlan::CompactIndex) / slot_bytes;
+}
+
+auto assign_generic_slots(Instructions const& code) -> ResultSlotPlan
+{
   ResultSlotPlan result;
-  result.indices.resize(size, 0);
-  Compact next = 1;
+  result.indices.resize(code.size(), 0);
+  ResultSlotPlan::CompactIndex next = 1;
   visit_execution_region(code, [&](Instruction::Index i) {
     if (classify_result(code, i) != ResultKind::none)
       result.indices[i] = next++;
   });
   result.count = next;
   return result;
+}
+}  // namespace
+
+auto plan_result_slots(Instructions const& code, std::size_t slot_bytes) -> ResultSlotPlan
+{
+  if (!can_compact_slots(code.size(), slot_bytes))
+    return {};
+  std::size_t producers = 0;
+  visit_execution_region(code, [&](Instruction::Index i) {
+    if (classify_result(code, i) != ResultKind::none)
+      ++producers;
+  });
+  return profitable_compact_slots(code.size(), producers, slot_bytes) ? assign_generic_slots(code)
+                                                                      : ResultSlotPlan{};
 }
 
 namespace {
@@ -337,18 +352,17 @@ auto typed_operation(Instructions const& code, Instruction::Index index)
 }
 }  // namespace
 
-auto plan_typed_results(Instructions const& code, ResultSlotPlan const& generic,
-                        TypedResultCosts costs, bool persistent) -> TypedResultPlan
+namespace {
+auto can_plan_typed(std::size_t size, TypedResultCosts costs, bool persistent) -> bool
 {
-  using C = TypedResultPlan::CompactIndex;
-  auto const size = code.size();
-  if (size == 0 || (!persistent && size < 16) || size >= TypedResultPlan::no_register ||
-      (!generic.indices.empty() && generic.indices.size() != size) ||
-      costs.number_slot_bytes == 0 || costs.other_slot_bytes == 0 ||
-      costs.generic_slot_bytes == 0 || costs.generic_instruction_bytes == 0 ||
-      costs.typed_instruction_bytes == 0)
-    return {};
+  return size != 0 && (persistent || size >= 16) && size < TypedResultPlan::no_register &&
+         costs.number_slot_bytes != 0 && costs.other_slot_bytes != 0 &&
+         costs.generic_slot_bytes != 0 && costs.generic_instruction_bytes != 0 &&
+         costs.typed_instruction_bytes != 0;
+}
 
+auto tally_typed_slots(Instructions const& code) -> TypedResultPlan
+{
   TypedResultPlan result;
   visit_execution_region(code, [&](Instruction::Index i) {
     auto const kind = classify_result(code, i);
@@ -357,13 +371,21 @@ auto plan_typed_results(Instructions const& code, ResultSlotPlan const& generic,
     else if (kind != ResultKind::none)
       ++result.other_count;
   });
+  return result;
+}
+
+auto select_typed_slots(Instructions const& code, TypedResultPlan result, std::size_t generic_count,
+                        std::size_t generic_map_size, TypedResultCosts costs) -> TypedResultPlan
+{
+  using C = TypedResultPlan::CompactIndex;
+  auto const size = code.size();
   if (result.number_count == 0)
     return {};
 
-  auto const generic_bytes = payload_bytes(costs.generic_fixed_bytes,
-                                           {{generic.storage_size(size), costs.generic_slot_bytes},
-                                            {generic.indices.size(), sizeof(C)},
-                                            {size, costs.generic_instruction_bytes}});
+  auto const generic_bytes =
+    payload_bytes(costs.generic_fixed_bytes, {{generic_count, costs.generic_slot_bytes},
+                                              {generic_map_size, sizeof(C)},
+                                              {size, costs.generic_instruction_bytes}});
   auto const typed_bytes =
     payload_bytes(costs.typed_fixed_bytes, {{result.number_count, costs.number_slot_bytes},
                                             {result.other_count, costs.other_slot_bytes},
@@ -383,6 +405,35 @@ auto plan_typed_results(Instructions const& code, ResultSlotPlan const& generic,
       result.indices[i] = next_other++;
   });
   return result;
+}
+}  // namespace
+
+auto plan_typed_results(Instructions const& code, ResultSlotPlan const& generic,
+                        TypedResultCosts costs, bool persistent) -> TypedResultPlan
+{
+  auto const size = code.size();
+  if (!can_plan_typed(size, costs, persistent) ||
+      (!generic.indices.empty() && generic.indices.size() != size))
+    return {};
+  return select_typed_slots(code, tally_typed_slots(code), generic.storage_size(size),
+                            generic.indices.size(), costs);
+}
+
+auto plan_verified_results(Instructions const& code, TypedResultCosts costs, bool persistent)
+  -> VerifiedResultPlan
+{
+  auto const size = code.size();
+  if (!can_plan_typed(size, costs, persistent))
+    return plan_result_slots(code, costs.generic_slot_bytes);
+
+  auto tally = tally_typed_slots(code);
+  auto const producers = tally.number_count + tally.other_count;
+  bool const compact = profitable_compact_slots(size, producers, costs.generic_slot_bytes);
+  auto typed = select_typed_slots(code, std::move(tally), compact ? producers + 1 : size,
+                                  compact ? size : 0, costs);
+  if (!typed.empty())
+    return VerifiedResultPlan{std::move(typed)};
+  return compact ? assign_generic_slots(code) : ResultSlotPlan{};
 }
 
 auto lower_typed_executable(Instructions const& code, TypedResultPlan const& slots, bool persistent)
