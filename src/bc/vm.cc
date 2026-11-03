@@ -176,6 +176,16 @@ struct VMState
   /** Get the scale base.  */
   [[nodiscard]] auto scale() const -> Number::NumType;
 
+#if GD_BC_PREPARED_DIVISORS
+  /** Try bounded reuse for heap divisors; scalar dispatch keeps its ordinary path. */
+#  if defined(_MSC_VER)
+  __declspec(noinline)
+#  elif __has_cpp_attribute(gnu::noinline)
+  [[gnu::noinline]]
+#  endif
+  auto try_divide_with_reuse(Number& lhs, Number const& rhs, bool remainder) -> bool;
+#endif
+
   /** \brief  Get the number stored in the array element ae.  */
   // Keep container-specific work outside scalar dispatch on GCC. Native Linux
   // measurements exposed broad regressions after the storage layout changed.
@@ -289,6 +299,19 @@ private:
   NumType scale_ = 0;              ///< Scale, range: [0, base_)
   bool save_specials_;             ///< Save specials on function entry?
   VM::ExecutionChecks checks_;     ///< Full diagnostic oracle or verified dispatch.
+#if GD_BC_PREPARED_DIVISORS
+  struct DivisorCacheDelete
+  {
+    void operator()(Number::DivisorCache* cache) const noexcept
+    {
+      delete cache;
+#  if GD_BC_PROFILE
+      Profile::deallocated(Profile::AllocationKind::divisors, sizeof(Number::DivisorCache));
+#  endif
+    }
+  };
+  std::unique_ptr<Number::DivisorCache, DivisorCacheDelete> divisor_cache_;
+#endif
 };
 
 /** \brief  An executable instruction pack.
@@ -534,6 +557,30 @@ GD::Bc::Details::VMState::VMState(std::ostream& out, std::ostream& err, bool sav
     : output_(out), error_(err), save_specials_(save_specials), checks_(checks)
 {
 }
+
+#if GD_BC_PREPARED_DIVISORS
+auto GD::Bc::Details::VMState::try_divide_with_reuse(Number& lhs, Number const& rhs, bool remainder)
+  -> bool
+{
+  // Query before any by-value copy can make a unique temporary appear shared.
+  // Discard an older snapshot so an unrelated request cannot pin its owner.
+  if (!rhs.has_shared_heap_storage()) {
+    if (divisor_cache_) {
+      divisor_cache_->clear();
+    }
+    return false;
+  }
+  if (!divisor_cache_) {
+    auto cache = std::make_unique<Number::DivisorCache>();
+#  if GD_BC_PROFILE
+    Profile::allocated(Profile::AllocationKind::divisors, sizeof(Number::DivisorCache));
+#  endif
+    divisor_cache_.reset(cache.release());
+  }
+  return remainder ? lhs.try_modulo_reusing(rhs, scale(), *divisor_cache_)
+                   : lhs.try_divide_reusing(rhs, scale(), *divisor_cache_);
+}
+#endif
 
 auto GD::Bc::Details::VMState::stream(Instruction::Stream stream) const -> std::ostream&
 {
@@ -963,10 +1010,26 @@ auto GD::Bc::Details::InstructionPack::execute_impl() -> std::pair<GD::Bc::Numbe
         [this](Number& lhs, Number const& rhs) { lhs.multiply(rhs, vm_->scale()); });
       break;
     case Instruction::Opcode::divide:
+#if GD_BC_PREPARED_DIVISORS
+      execute_binary_op([this](Number& lhs, Number const& rhs) {
+        if (!rhs.has_heap_storage() || !vm_->try_divide_with_reuse(lhs, rhs, false)) {
+          lhs.divide(rhs, vm_->scale());
+        }
+      });
+#else
       execute_binary_op([this](Number& lhs, Number const& rhs) { lhs.divide(rhs, vm_->scale()); });
+#endif
       break;
     case Instruction::Opcode::modulo:
+#if GD_BC_PREPARED_DIVISORS
+      execute_binary_op([this](Number& lhs, Number const& rhs) {
+        if (!rhs.has_heap_storage() || !vm_->try_divide_with_reuse(lhs, rhs, true)) {
+          lhs.modulo(rhs, vm_->scale());
+        }
+      });
+#else
       execute_binary_op([this](Number& lhs, Number const& rhs) { lhs.modulo(rhs, vm_->scale()); });
+#endif
       break;
     case Instruction::Opcode::sqrt:
       execute_unary_op([this](Number& lhs) { lhs.sqrt(vm_->scale()); });

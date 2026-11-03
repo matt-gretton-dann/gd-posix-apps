@@ -402,6 +402,77 @@ create noncanonical heap-backed zero via `mac(0, 0)`, verify rejection and cache
 clearing, then restore a nonzero value and check fresh admission. This preserves
 the numeric zero check rather than assuming every heap coefficient is normalized.
 
+
+### Coverage inventory and experimental divisor mode
+
+The collector's minimum mapping inventory now includes each implementation
+`.cc` under `src/bc`, including isolated root, remainder and cached-division
+entries, as well as the original `bc.hh`/`number.hh` header scope. Standalone
+tests, benchmarks, the split-point tuner and profiling-only translation units
+are excluded from that minimum. Losing a newly linked implementation mapping
+must fail collection rather than silently reduce the denominator.
+
+Coverage summaries record `prepared_divisors` from the configured build alongside
+`extensions`. A missing option remains null for older source. Keep experimental
+reuse ON/OFF builds and output directories separate, just as for extension modes;
+do not pool their line, branch or MC/DC denominators. The broad unit/native view
+and application-only mappings remain distinct. An API exercised only by unit
+traits can appear in the former even when default VM dispatch does not use it.
+
+### Verifying prepared-divisor experiments
+
+The immutable GD builder accepts `--prepared-divisors AUTO|ON|OFF`. `AUTO`
+preserves the selected source revision's default. Revisions without this
+option are recorded as `legacy-auto` with an unknown activation value, rather
+than being labelled disabled. Explicit modes require a matching CMake cache
+value and matching `GD_BC_PREPARED_DIVISORS` definitions in both the VM and CLI
+compilation commands. Native Visual Studio builds instead retain and hash both
+Release target projects. Missing or contradictory evidence fails the build.
+
+The native controllers accept `--candidate-prepared-divisors`. Integer A/B
+experiments enable only the candidate, leaving the baseline and independent
+baseline A/A build on their source defaults. Math experiments build the same
+candidate twice and enable both GD roles. Both controllers reject an unverified
+activation before timing, run the language reuse guards after all builds have
+finished, and retain the activation evidence with their artifacts. An absent
+ordinary math library is still reported as unavailable.
+
+PR branches beginning `codex/bc-native-prepared/` request this mode and the
+broad full/holdout corpus on Linux, macOS and Windows. The separate profiling
+build also enables reuse and runs its semantic and counter guards on all three
+hosts. Default production builds retain the ordinary division fallback.
+Workflow success alone does not establish a performance improvement or justify
+changing the production default; raw timing, control, allocation and memory
+results require separate review under #420 and #197.
+
+The arithmetic corpus now includes eight admission controls: division and
+remainder with a divisor mutated every request, a fresh `b+i` temporary each
+request, a stable divisor changed every sixteen requests, and a single cold
+request. The repeated controls print both the final result and a checksum of
+all results. Independent Python integer oracles check every request, with
+Fraction-based tests checking the generated expectations. Full and held-out
+inputs use distinct dimensions/seeds. A separate RNG stream and frozen hashes
+preserve all 58 earlier workloads. The cold rows describe whole-process latency;
+they do not isolate cache setup time or establish a repeated-work speedup.
+
+### Experimental VM cache misses
+
+The opt-in interpreter checks coefficient ownership before creating a by-value
+arithmetic operand. Unique heap temporaries bypass admission and clear an older
+entry; scalar requests retain ordinary dispatch. A shared heap request uses a
+try-only numeric entry: a miss leaves both numeric operands unchanged and the
+VM runs ordinary arithmetic directly. Numeric zero diagnostics stay with that
+ordinary entry. Cache observation itself may allocate or update weak identity.
+
+Try-only hits capture RHS scale, sign and coefficient dimensions before any LHS
+mutation, including when both references name the same object. The generic
+8-bit and native 16/32-bit tests guard misses, zeros and true self aliases.
+Profiling guards now require zero cache lookups and zero metadata allocations
+for fresh unique temporaries, plus clear/re-admission after a warmed entry.
+These counters describe work and ownership, not elapsed-time improvements.
+Earlier rejected native observations remain applicable to their exact sources;
+this changed candidate needs a new complete native audit before adoption.
+
 ### Admission fingerprint precondition
 
 `lookup` rejects numeric zero before observing ownership or computing a
@@ -416,3 +487,15 @@ covered at all three limb widths. Hash collisions can only affect when the
 current value is prepared; exact owner/padding identity and retained immutable
 snapshots still protect hits. This simplification does not establish a speedup
 or waive the experimental VM candidate's native performance regressions.
+
+### Linux divisor CPU coverage
+
+The changed VM miss route's first Linux run used an AMD EPYC 7763. The
+previous candidate's confirmed Linux losses used an Intel Xeon Platinum
+8573C; passing on the former does not demonstrate correction on the latter.
+The Linux divisor cohort workflow therefore declares three jobs in advance,
+with the complete full/holdout corpus and explicit candidate reuse activation.
+Every actual host, outcome and raw artifact is retained separately. No CPU
+filtering, favorable retries or pooled decision is permitted. The runner label
+does not guarantee the target Intel hardware; absence of that CPU remains a
+coverage limitation rather than being described as a completed comparison.

@@ -1,0 +1,55 @@
+name: bc fixed Linux divisor CPU coverage cohort
+on:
+  pull_request:
+    branches: [main, 'codex/**']
+    paths: ['.github/workflows/bc-linux-divisor-cohort.yml']
+  workflow_dispatch:
+    inputs:
+      baseline:
+        description: 'Accepted immutable source anchor (empty uses documented anchor)'
+        type: string
+        default: ''
+permissions:
+  contents: read
+concurrency:
+  group: bc-linux-divisor-cohort-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  paired:
+    name: Linux divisor CPU coverage / ${{ matrix.replica }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        replica: [1, 2, 3]
+    env:
+      BC_CANDIDATE: ${{ github.event.pull_request.head.sha || github.sha }}
+      BC_BASE: ${{ github.event.pull_request.base.sha || inputs.baseline || '97c0c7bcb90f8b7853e360bfc9d1420e3369e865' }}
+      BC_CPU_REPLICA: ${{ matrix.replica }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.BC_CANDIDATE }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Build, check and measure serial paired processes
+        shell: pwsh
+        run: |
+          python src/bc/scripts/benchmark-ci.py --source $env:GITHUB_WORKSPACE --base $env:BC_BASE --candidate $env:BC_CANDIDATE --output bc-native-results --broad --candidate-prepared-divisors
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Record the fixed cohort identity
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force 'bc-native-results/evidence' | Out-Null
+          $identity = @{replica=$env:BC_CPU_REPLICA; cohort_size=3; base=$env:BC_BASE; candidate=$env:BC_CANDIDATE; target_cpu='Intel Xeon Platinum 8573C'; policy='Three predetermined jobs; retain every outcome and actual host. No CPU filtering, favorable reruns or pooling. Target hardware is not guaranteed by the runner label.'}
+          [IO.File]::WriteAllText((Join-Path $env:GITHUB_WORKSPACE 'bc-native-results/evidence/cpu-cohort.json'), ($identity | ConvertTo-Json), [Text.UTF8Encoding]::new($false))
+      - name: Preserve raw checked samples and provenance
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bc-linux-divisor-cpu-${{ matrix.replica }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: bc-native-results/evidence/
+          if-no-files-found: error
+          retention-days: 30

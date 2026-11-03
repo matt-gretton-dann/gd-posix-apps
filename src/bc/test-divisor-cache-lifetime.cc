@@ -8,6 +8,7 @@
 #include <array>
 #include <cstdio>
 #include <cstdlib>
+#include <limits>
 #include <sstream>
 #include <string>
 
@@ -199,6 +200,23 @@ auto exercise() -> bool
     if (cache.lookup(small) != nullptr || cache.lookup(small) != nullptr ||
         cache.lookup(small) == nullptr) {
       return fail("capacity rejection/clear prevented later admission");
+    }
+  }
+
+  if constexpr (sizeof(Limb) >= 2) {
+    phase = "oversized padding preflight";
+    auto value = source<Digits>();
+    typename Digits::DivisorCache cache;
+    attempts = 0;
+    fail_at = 0;
+    armed = true;
+    bool valid = true;
+    for (unsigned repeat = 0; repeat != 3; ++repeat) {
+      valid = valid && cache.lookup(value, std::numeric_limits<Limb>::max()) == nullptr;
+    }
+    armed = false;
+    if (!valid || attempts != 0 || cache.retained_limb_bytes() != 0) {
+      return fail("oversized padding allocated before fallback");
     }
   }
 

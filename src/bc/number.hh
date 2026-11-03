@@ -139,6 +139,12 @@ public:
   /** Whether coefficient storage retains a heap owner rather than inline limbs. */
   [[nodiscard]] auto has_heap_storage() const noexcept -> bool { return digits_.has_heap(); }
 
+  /** Whether another numeric value currently shares this coefficient owner. */
+  [[nodiscard]] auto has_shared_heap_storage() const noexcept -> bool
+  {
+    return digits_.has_heap() && digits_.use_count() > 1;
+  }
+
   /** Logical stored limbs for algorithm dimensions and optional diagnostics. */
   [[nodiscard]] auto coefficient_limbs() const noexcept -> std::size_t
   {
@@ -1726,8 +1732,8 @@ void BasicDigits<Traits>::divide_prepared_impl(PreparedDivisor const& divisor)
  * A first observation holds only weak identity. A second computes an admission
  * fingerprint; a third stable observation prepares the current value and retains its unshifted
  * snapshot; cached hits therefore require exact ownership and decimal-padding identity. The
- * fingerprint never authorizes reuse of a previously prepared value. This class is not yet
- * connected to automatic VM dispatch.
+ * fingerprint never authorizes reuse of a previously prepared value. Experimental VM
+ * dispatch opts into admission; the default interpreter uses ordinary division.
  */
 template<typename Traits>
 class BasicDigits<Traits>::DivisorCache
@@ -1742,13 +1748,15 @@ public:
   /** Return a prepared value after repeated stable observations, otherwise
    * nullptr for the ordinary fallback. The returned pointer lasts until the
    * next lookup, clear, or destruction of this cache. No strong source owner is kept
-   * on a first observation or a miss. New ownership needs no limb scan;
-   * promotion after three stable observations may allocate or throw. The source
-   * coefficient must remain unchanged throughout the lookup.
+   * on a first observation or a miss. First observations compute no admission
+   * fingerprint; numeric zero preflight may scan the source. Promotion after
+   * three stable observations may allocate or throw.
+   * The source coefficient must remain unchanged throughout the lookup.
    */
   [[nodiscard]] auto lookup(BasicDigits const& source, NumType padding = 0)
     -> PreparedDivisor const*
   {
+    GD_BC_PROFILE_EVENT(Profile::Event::divisor_cache_lookups, 1);
     auto const capacity = source.digits_.capacity();
     constexpr auto limit = max_retained_limb_bytes / sizeof(NumType);
     // Compare in the scale field's width before accepting its bounded extent.
@@ -1763,6 +1771,7 @@ public:
     bool const same_owner = source.digits_.shares_owner(observed_);
     bool const same_padding = padding == padding_;
     if (entry_ && same_owner && same_padding) {
+      GD_BC_PROFILE_EVENT(Profile::Event::divisor_cache_hits, 1);
       return &entry_->prepared;
     }
 
@@ -1786,12 +1795,14 @@ public:
     if (rejected_) {
       return nullptr;
     }
+    GD_BC_PROFILE_EVENT(Profile::Event::divisor_cache_preparation_attempts, 1);
     Entry candidate(source, padding);
     if (!within_budget(candidate)) {
       rejected_ = true;
       return nullptr;
     }
     entry_.emplace(std::move(candidate));
+    GD_BC_PROFILE_EVENT(Profile::Event::divisor_cache_promotions, 1);
     return &entry_->prepared;
   }
 
@@ -1853,6 +1864,8 @@ private:
 
   static auto admission_fingerprint(BasicDigits const& source) noexcept -> std::uint64_t
   {
+    GD_BC_PROFILE_EVENT(Profile::Event::divisor_cache_fingerprint_limbs,
+                        source.coefficient_limbs());
     // lookup already rejected numeric zero, and its ownership bookkeeping
     // does not mutate the source. A second nonzero scan/optional failure path
     // would duplicate that precondition; retain only the admission hash.
@@ -1937,6 +1950,7 @@ template<typename Traits>
 class BasicNumber
 {
 public:
+  using DivisorCache = typename Details::BasicDigits<Traits>::DivisorCache;
   using NumType = typename Traits::NumType;  ///< Underlying storage type.
   using WideType =
     typename Traits::WideType;  ///< Type able to hold result of NumType::max * NumType::max
@@ -1963,6 +1977,12 @@ public:
   [[nodiscard]] auto has_heap_storage() const noexcept -> bool
   {
     return digits_.has_heap_storage();
+  }
+
+  /** Storage ownership query before making a by-value arithmetic operand. */
+  [[nodiscard]] auto has_shared_heap_storage() const noexcept -> bool
+  {
+    return digits_.has_shared_heap_storage();
   }
 
   /** \brief       Construct a number.
@@ -2503,6 +2523,36 @@ public:
 
   void modulo(BasicNumber rhs, NumType target_scale) { modulo_impl(std::move(rhs), target_scale); }
 
+  /** Try prepared arithmetic without copying the RHS on a cache miss.
+   * False leaves both numeric operands unchanged; the caller owns ordinary
+   * fallback and zero diagnostics. Cache observation may change or allocate.
+   * On a hit, capture RHS metadata before mutating a possibly aliased LHS.
+   */
+  [[nodiscard]] auto try_divide_reusing(BasicNumber const& rhs, NumType target_scale,
+                                        DivisorCache& cache) -> bool
+  {
+    return try_divide_reusing_impl<false>(rhs, target_scale, cache);
+  }
+  [[nodiscard]] auto try_modulo_reusing(BasicNumber const& rhs, NumType target_scale,
+                                        DivisorCache& cache) -> bool
+  {
+    return try_divide_reusing_impl<true>(rhs, target_scale, cache);
+  }
+
+  /** By-value compatibility entries retain ordinary arithmetic on a miss. */
+  void divide_reusing(BasicNumber rhs, NumType target_scale, DivisorCache& cache)
+  {
+    if (!try_divide_reusing(rhs, target_scale, cache)) {
+      divide(std::move(rhs), target_scale);
+    }
+  }
+  void modulo_reusing(BasicNumber rhs, NumType target_scale, DivisorCache& cache)
+  {
+    if (!try_modulo_reusing(rhs, target_scale, cache)) {
+      modulo(std::move(rhs), target_scale);
+    }
+  }
+
   void sqrt(NumType target_scale) { sqrt_impl(target_scale); }
 
   /** \brief  Are we equal to zero?
@@ -2526,6 +2576,74 @@ public:
   }
 
 private:
+  template<bool Remainder>
+  auto try_divide_reusing_impl(BasicNumber const& rhs, NumType target_scale, DivisorCache& cache)
+    -> bool
+  {
+    auto const rhs_scale = rhs.scale();
+    auto const rhs_sign = rhs.sign_;
+#if GD_BC_PROFILE
+    auto const rhs_limbs = rhs.digits_.coefficient_limbs();
+#endif
+    NumType padding = 0;
+    NumType result_scale = target_scale;
+    if constexpr (Remainder) {
+      if (target_scale > std::numeric_limits<NumType>::max() - rhs_scale) {
+        // Preserve the ordinary defensive path outside the scale field.
+        cache.clear();
+        return false;
+      }
+      result_scale = std::max(scale(), static_cast<NumType>(target_scale + rhs_scale));
+      padding = static_cast<NumType>(result_scale - rhs_scale - target_scale);
+    }
+    else if (scale() > rhs_scale) {
+      auto const difference = static_cast<NumType>(scale() - rhs_scale);
+      if (target_scale < difference) {
+        padding = static_cast<NumType>(difference - target_scale);
+      }
+    }
+
+    // Observe the unpadded owner. mul_pow10(0) also performs COW, so doing
+    // that first would lose identity and could force a clone on every miss.
+    auto const* prepared = cache.lookup(rhs.digits_, padding);
+    if (prepared == nullptr) {
+      // Leave fallback and its zero diagnostic at the caller, before any
+      // dividend mutation. lookup may already have scanned the divisor.
+      return false;
+    }
+
+    if constexpr (Remainder) {
+      digits_.mul_pow10(static_cast<NumType>(result_scale - scale()));
+    }
+    else if (scale() > rhs_scale) {
+      auto const difference = static_cast<NumType>(scale() - rhs_scale);
+      digits_.mul_pow10(
+        static_cast<NumType>(target_scale >= difference ? target_scale - difference : 0));
+    }
+    else {
+      if (scale() < rhs_scale) {
+        digits_.mul_pow10(static_cast<NumType>(rhs_scale - scale()));
+      }
+      // Keep the two numerator shifts separate: their sum can exceed NumType.
+      digits_.mul_pow10(target_scale);
+    }
+    GD_BC_PROFILE_EVENT(Profile::Event::division_requests, 1);
+    GD_BC_PROFILE_EVENT(Profile::Event::division_dividend_limbs, digits_.coefficient_limbs());
+    // Ordinary division reports unshifted RHS storage before tidying. Modulo
+    // always tidies via mul_pow10, even at zero padding; retain that convention.
+    GD_BC_PROFILE_EVENT(Profile::Event::division_divisor_limbs,
+                        !Remainder && padding == 0 ? rhs_limbs : prepared->coefficient_limbs());
+    if constexpr (Remainder) {
+      digits_.modulo(*prepared);
+    }
+    else {
+      digits_.divide(*prepared);
+      sign_ = sign_ == rhs_sign ? Sign::positive : Sign::negative;
+    }
+    scale_ = result_scale;
+    return true;
+  }
+
   // Native-width modulo entries compile this same generic body outside the VM.
   void modulo_impl(BasicNumber rhs, NumType target_scale)
   {
@@ -2901,6 +3019,44 @@ private:
   Sign sign_ = Sign::positive;           ///< Sign (+/-1).
   NumType scale_ = 0;                    ///< Scale.
 };
+
+// Keep cached arithmetic outside VM template dispatch, including with IPO.
+// Every other trait retains the same generic implementation above.
+template<>
+#if defined(_MSC_VER)
+__declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+[[gnu::noinline]]
+#endif
+auto BasicNumber<NumberTraits16>::try_divide_reusing(BasicNumber const& rhs, NumType target_scale,
+                                                     DivisorCache& cache) -> bool;
+
+template<>
+#if defined(_MSC_VER)
+__declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+[[gnu::noinline]]
+#endif
+auto BasicNumber<NumberTraits16>::try_modulo_reusing(BasicNumber const& rhs, NumType target_scale,
+                                                     DivisorCache& cache) -> bool;
+
+template<>
+#if defined(_MSC_VER)
+__declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+[[gnu::noinline]]
+#endif
+auto BasicNumber<NumberTraits32>::try_divide_reusing(BasicNumber const& rhs, NumType target_scale,
+                                                     DivisorCache& cache) -> bool;
+
+template<>
+#if defined(_MSC_VER)
+__declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+[[gnu::noinline]]
+#endif
+auto BasicNumber<NumberTraits32>::try_modulo_reusing(BasicNumber const& rhs, NumType target_scale,
+                                                     DivisorCache& cache) -> bool;
 
 // Isolate the native remainder driver from instruction dispatch. Other traits
 // keep the same generic implementation without a required compiler attribute.

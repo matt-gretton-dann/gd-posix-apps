@@ -87,8 +87,9 @@ jobs:
       - name: Check separate bc profiling build
         if: ${{ matrix.extensions == 'ON' }}
         run: |
-          cmake -S "${GITHUB_WORKSPACE}" -B "${GITHUB_WORKSPACE}/build-profile" -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DENABLE_BC_PROFILE=ON -DBC_MULTIPLY_SPLIT_POINT=126
+          cmake -S "${GITHUB_WORKSPACE}" -B "${GITHUB_WORKSPACE}/build-profile" -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DENABLE_BC_PROFILE=ON -DENABLE_BC_PREPARED_DIVISORS=ON -DBC_MULTIPLY_SPLIT_POINT=126
           cmake --build "${GITHUB_WORKSPACE}/build-profile" --target bc
+          ctest --test-dir "${GITHUB_WORKSPACE}/build-profile" -R "^bc/divisor-reuse" --output-on-failure
           python3 "${GITHUB_WORKSPACE}/src/bc/test-profiling-cli.py" "${GITHUB_WORKSPACE}/build-profile/src/bc/bc" --split-point 126
 
 
@@ -165,6 +166,8 @@ jobs:
     - name: Check separate bc profiling build
       if: ${{ matrix.extensions == 1 }}
       run: |
-        cmake -S "$Env:GITHUB_WORKSPACE" -B "$Env:GITHUB_WORKSPACE/build-profile" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DENABLE_BC_PROFILE=ON -DBC_MULTIPLY_SPLIT_POINT=126
+        cmake -S "$Env:GITHUB_WORKSPACE" -B "$Env:GITHUB_WORKSPACE/build-profile" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DENABLE_BC_PROFILE=ON -DENABLE_BC_PREPARED_DIVISORS=ON -DBC_MULTIPLY_SPLIT_POINT=126
         cmake --build "$Env:GITHUB_WORKSPACE/build-profile" --config Release --target bc
+        ctest --test-dir "$Env:GITHUB_WORKSPACE/build-profile" -C Release -R "^bc/divisor-reuse" --output-on-failure
+        if ($LASTEXITCODE) { exit $LASTEXITCODE }
         python "$Env:GITHUB_WORKSPACE/src/bc/test-profiling-cli.py" "$Env:GITHUB_WORKSPACE/build-profile/src/bc/Release/bc.exe" --split-point 126

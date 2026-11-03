@@ -3,7 +3,7 @@
 
 Configure and build an instrumented Debug tree first; see docs/utilities/bc-testing.md.
 Each invocation requires a new output directory. Build/tuner/manual profiles are
-never read. Extensions ON and OFF must use separate build and output directories.
+never read. Extensions and experimental divisor modes must use separate build/output directories.
 """
 
 import argparse
@@ -27,6 +27,31 @@ def save_run(path, command, cwd=None, env=None):
     if result.returncode:
         raise RuntimeError("command failed; see " + str(path))
     return result
+
+
+def production_mappings(source):
+    """Require new implementation objects as well as the original header scope."""
+    directory = Path(source).resolve() / "src" / "bc"
+    helpers = ("test-", "benchmark-", "find-multiply-split-point")
+    diagnostic_only = {"profiling.cc", "profiling-entry.cc"}
+    implementations = {path for path in directory.glob("*.cc")
+                       if not path.name.startswith(helpers) and path.name not in diagnostic_only}
+    headers = {directory / name for name in ("bc.hh", "number.hh")
+               if (directory / name).exists()}
+    return implementations | headers
+
+
+def require_production_mappings(source, mapped):
+    missing = production_mappings(source) - mapped
+    if missing:
+        raise RuntimeError("missing production mappings; use the default static-library build: " +
+                           ", ".join(sorted(path.name for path in missing)))
+
+
+def build_modes(cache):
+    # A missing option denotes older source; do not silently label it OFF.
+    return {"extensions": cache.get("ENABLE_NON_POSIX_EXTENSIONS"),
+            "prepared_divisors": cache.get("ENABLE_BC_PREPARED_DIVISORS")}
 
 
 def main():
@@ -93,14 +118,8 @@ def main():
         raise RuntimeError("llvm-cov export failed; see coverage-warnings.log")
     coverage = json.loads(exported.stdout)["data"][0]
     # Losing a linked implementation object must not silently shrink the scope.
-    baseline_files = {"bc.cc", "bc.hh", "instruction.cc", "lexer.cc", "number.hh",
-                      "parser.cc", "reader.cc", "token.cc", "verification.cc", "vm.cc"}
-    expected = {source / "src" / "bc" / name for name in baseline_files
-                if (source / "src" / "bc" / name).exists()}
     mapped = {Path(entry["filename"]).resolve() for entry in coverage["files"]}
-    if not expected.issubset(mapped):
-        raise RuntimeError("missing production mappings; use the default static-library build: " +
-                           ", ".join(sorted(path.name for path in expected - mapped)))
+    require_production_mappings(source, mapped)
     if not coverage["totals"].get("mcdc", {}).get("count", 0):
         raise RuntimeError("no MC/DC obligations found; use a supported Clang with -fcoverage-mcdc")
     # A second view uses only the application's mappings, excluding extra small
@@ -123,7 +142,7 @@ def main():
         "source_revision": save_run(output / "revision.txt",
                                     ["git", "-C", str(source), "rev-parse", "HEAD"]).stdout.strip(),
         "source_status": run(["git", "-C", str(source), "status", "--short"]).stdout,
-        "extensions": cache.get("ENABLE_NON_POSIX_EXTENSIONS"),
+        **build_modes(cache),
         "configuration": args.config,
         "test_exit_code": test_run.returncode,
         "selected_bc_tests": len(selected),

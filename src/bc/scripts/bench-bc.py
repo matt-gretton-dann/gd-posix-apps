@@ -571,6 +571,42 @@ def corpus(preset="full", selected=None, listing=False, seed=197200, suite='arit
             scaled(remainder, result_scale),
             dict(input_scale=sa, divisor_scale=sb, scale=places, shape=shape,
                  iterations=count, dividend_digits=len(str(a)), divisor_digits=len(str(b))))
+    # Admission controls use a separate stream so every earlier workload is
+    # byte-identical. Checksums observe all iterations, including owner changes
+    # before the final result; cold cases report whole-process latency only.
+    reuse_rng = random.Random(seed ^ 420)
+    def reuse_dense(length):
+        return str(reuse_rng.randrange(1, 10)) + ''.join(
+            str(reuse_rng.randrange(10)) for _ in range(length - 1))
+
+    for shape in ('changing', 'temporary', 'periodic', 'cold'):
+        count = 1 if shape == 'cold' else max(32, iterations(1000))
+        a, b = int(reuse_dense(dimension(600))), int(reuse_dense(dimension(230)))
+        for operation, symbol in (('divide', '/'), ('modulo', '%')):
+            prefix = ''
+            operand = 'b'
+            if shape == 'changing':
+                prefix = 'b+=1;'
+            elif shape == 'temporary':
+                operand = '(b+i)'
+            elif shape == 'periodic':
+                prefix = 'j+=1;if(j==16) {b+=1;j=0};'
+            program = ('scale=0\na={}\nb={}\ns=0\nj=0\n'
+                       'for(i=1;i<={};i++) {{{}c=a{}{};s+=c}}\nc\ns').format(
+                           a, b, count, prefix, symbol, operand)
+            def checksum(a=a, b=b, count=count, shape=shape, operation=operation):
+                total, final = 0, 0
+                for i in range(1, count + 1):
+                    offset = i if shape in ('changing', 'temporary') else i // 16 if shape == 'periodic' else 0
+                    denominator = b + offset
+                    final = a // denominator if operation == 'divide' else a % denominator
+                    total += final
+                return [final, total]
+            add('divisor_{}_{}_{}d_{}d_x{}'.format(shape, operation, len(str(a)), len(str(b)), count),
+                'divisor_' + shape + '_' + operation, program, checksum,
+                dict(dividend_digits=len(str(a)), divisor_digits=len(str(b)), iterations=count,
+                     scale=0, operation=operation, admission=shape, change_period=16 if shape == 'periodic' else 1,
+                     timing_scope='whole-process latency' if shape == 'cold' else 'repeated process workload'))
     if selected:
         missing = set(selected) - set(known)
         if missing:

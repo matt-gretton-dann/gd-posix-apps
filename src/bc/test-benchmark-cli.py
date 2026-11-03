@@ -126,7 +126,7 @@ class BenchmarkCli(unittest.TestCase):
         self.assertEqual(result.stderr, "")
         rows = [json.loads(line) for line in
                 (output / "samples.jsonl").read_text(encoding="utf-8").splitlines()]
-        self.assertEqual(len(rows), 58)
+        self.assertEqual(len(rows), 66)
         self.assertTrue(all(row["checked"] for row in rows))
         manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
         files = [case for case in manifest['corpus'] if case['group'] == 'file_streaming']
@@ -375,11 +375,50 @@ class PairedStatistics(unittest.TestCase):
         recorded = json.loads(path.read_text())
         for preset, previous in recorded['presets'].items():
             cases = module.corpus(preset, seed=previous['seed'])
-            self.assertEqual(len(cases), len(previous['cases']) + 8)
+            self.assertEqual(len(cases), len(previous['cases']) + 16)
             by_name = {case['name']: case for case in cases}
             for name, digest in previous['cases'].items():
                 payload = json.dumps(by_name[name], sort_keys=True, separators=(',', ':')).encode()
                 self.assertEqual(hashlib.sha256(payload).hexdigest(), digest)
+
+    def test_divisor_controls_preserve_prior_cases_and_check_all_requests(self):
+        from fractions import Fraction
+        module = self.module()
+        fixture = Path(__file__).resolve().parent / 'fixtures/benchmark-corpus-before-divisor-controls.json'
+        report = json.loads(fixture.read_text())
+        inventories = {}
+        for preset, previous in report['presets'].items():
+            cases = module.corpus(preset, seed=previous['seed'])
+            by_name = {case['name']: case for case in cases}
+            self.assertEqual(len(cases), len(previous['cases']) + 8)
+            for name, digest in previous['cases'].items():
+                payload = json.dumps(by_name[name], sort_keys=True, separators=(',', ':')).encode()
+                self.assertEqual(hashlib.sha256(payload).hexdigest(), digest)
+            added = [case for case in cases if case['group'].startswith('divisor_')]
+            self.assertEqual({(c['parameters']['admission'], c['parameters']['operation']) for c in added},
+                             {(shape, op) for shape in ('changing', 'temporary', 'periodic', 'cold')
+                              for op in ('divide', 'modulo')})
+            for case in added:
+                parameters = case['parameters']
+                a = Fraction(re.search(r'\na=([0-9]+)\n', case['program']).group(1))
+                b = Fraction(re.search(r'\nb=([0-9]+)\n', case['program']).group(1))
+                values = []
+                for i in range(1, parameters['iterations'] + 1):
+                    shape = parameters['admission']
+                    denominator = b + (i if shape in ('changing', 'temporary')
+                                       else i // 16 if shape == 'periodic' else 0)
+                    quotient = int(a / denominator)
+                    values.append(quotient if parameters['operation'] == 'divide'
+                                  else a - quotient * denominator)
+                self.assertEqual(list(map(Fraction, case['expected'])), [values[-1], sum(values)])
+                self.assertEqual(parameters['iterations'] == 1, parameters['admission'] == 'cold')
+                if parameters['admission'] == 'periodic':
+                    self.assertGreaterEqual(parameters['iterations'], 32)
+                self.assertIn('s+=c', case['program'])
+            inventories[preset] = added
+        for full, held in zip(inventories['full'], inventories['holdout']):
+            self.assertNotEqual(full['name'], held['name'])
+            self.assertNotEqual(full['program'], held['program'])
 
     def test_scaled_modulo_preserves_previous_corpus_and_exact_oracles(self):
         from fractions import Fraction
@@ -390,7 +429,7 @@ class PairedStatistics(unittest.TestCase):
         for preset, recorded in report['presets'].items():
             cases = module.corpus(preset, seed=recorded['seed'])
             by_name = {case['name']: case for case in cases}
-            self.assertEqual(len(cases), len(recorded['cases']) + 2)
+            self.assertEqual(len(cases), len(recorded['cases']) + 10)
             for name, digest in recorded['cases'].items():
                 payload = json.dumps(by_name[name], sort_keys=True, separators=(',', ':')).encode()
                 self.assertEqual(hashlib.sha256(payload).hexdigest(), digest)
@@ -450,7 +489,7 @@ class PairedStatistics(unittest.TestCase):
         report = json.loads(fixture.read_text())
         for preset, recorded in report['presets'].items():
             cases = module.corpus(preset, seed=recorded['seed'])
-            self.assertEqual(len(cases), 58)
+            self.assertEqual(len(cases), 66)
             for actual, previous in zip(cases[:46], recorded['cases']):
                 self.assertEqual(actual['name'], previous['name'])
                 payload = json.dumps(actual, sort_keys=True, separators=(',', ':')).encode()
