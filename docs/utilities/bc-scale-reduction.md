@@ -23,36 +23,37 @@ intrinsics or special library/function recognition are required.
 ## Compiler-selected division boundaries
 
 The all-compiler outlined prototype 64367603 retains the large division gain
-but repeats a roughly 1% local macOS loop loss. Keep that source and its raw
-confirmation; the Linux/Windows allowance does not apply to macOS. Its native
-collection remains independent of the next candidate.
+but repeats a roughly 1% local macOS loop loss. The later compiler-selected
+forwarding entry dd2fd7d1 restores the loop in local samples, while ordinary
+division retains a small positive timing signal. Keep both sources and their
+raw results; the Linux/Windows allowance does not apply to macOS.
 
-ENABLE_BC_OUTLINED_DIVISION defaults ON for MSVC-compatible builds and OFF
-elsewhere. It can be forced ON or OFF for comparisons. Linked CMake clients
-receive the same GD_BC_OUTLINED_DIVISION definition; standalone consumers keep
-the generic header implementation without a libbc dependency. Native ordinary
-division and the existing prepared-cache drivers share number-division.cc;
-only the ordinary specializations depend on this option. The exact quotient
-algorithm remains shared with all trait models. No alignment tuning is used.
+A separate profiling regression at 5b2d1e5d finds one unnecessary logical digit
+move when an unscaled dividend below its divisor produces zero, for all three
+trait models. It uses existing counters around the public operation, excluding
+setup and assertions. This is not proof of the observed CPU-time cause or a
+process-wide allocation measurement.
 
-The earlier unconditional specialization broke the independent tuner link;
-the linked-client declaration policy preserves that consumer's generic path.
-Coverage records the outlined-division option separately, including unknown
-for older sources without it. Do not pool forced-ON, forced-OFF or compiler
-default evidence, or infer Windows coverage from a macOS compiler run.
+The simplified entry retains the original exact division body and by-value
+argument lifetime. There is no forwarding helper or external ordinary-division
+specialization. ENABLE_BC_OUTLINED_DIVISION defaults ON for MSVC-compatible
+builds and OFF elsewhere; where supported, ON prevents inlining that same
+entry, while OFF keeps the compiler's normal policy. Either setting can be
+selected explicitly. The generic algorithm and numeric API are identical.
+Linked CMake clients share GD_BC_OUTLINED_DIVISION; standalone consumers retain
+the normal header path without a libbc dependency. Prepared-cache drivers
+remain in number-division-cache.cc. No alignment tuning is used.
 
-Local validation covers four ASan/UBSan configurations: compiler default and
-forced outlining, each with extensions ON / reuse OFF and extensions OFF /
-reuse ON. All pass 324 cases and six focused CTests. Both separate profiling
-configurations pass 333 cases and profiling CLI. The default configuration
-passes all 92 bc CTest entries (47 pass, 45 declared skips). The standalone
-tuner builds in every configuration. Audits distinguish 43 normal consumers
-from 44 profiling consumers, with one generic standalone tuner in each.
-
-This compiler selection is a measured design hypothesis, not proof of Windows
-recovery or macOS neutrality. Fresh tests, matched native timing, memory and
-code-size evidence are required for adoption. Historical all-compiler tests
-and timings retain their original source identity.
+Coverage records ON, OFF and older unknown modes separately. Do not pool mode
+evidence or infer Windows coverage from a macOS compiler run. Four ASan/UBSan configurations pass 324 cases and six focused CTests each.
+Two separate profiling configurations pass 336 cases / 1,973,174 assertions
+and profiling CLI, including the new zero-transfer regression. The default
+configuration passes all 92 bc CTest entries (47 pass, 45 declared skips).
+The independent tuner builds in all six configurations. Audits retain 43
+normal / 44 profiling configured consumers and their actual mode definitions.
+Fresh native timing, memory, code-size and coverage evidence is still required;
+earlier source-specific results are not relabelled as this simplification.
+No Windows recovery or macOS neutrality is assumed from a source refactor.
 
 ## Regression and oracles
 
