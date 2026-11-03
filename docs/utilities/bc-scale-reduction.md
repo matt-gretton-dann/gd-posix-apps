@@ -1,0 +1,64 @@
+# Truncate before negative-exponent division (#439, #197)
+
+For integer coefficient magnitudes A and B>0, operand scales sa/sb and requested
+quotient scale t, the result coefficient is floor(A*10^(t+sb-sa)/B). When the
+exponent is negative, k=sa-sb-t>0 and this becomes floor(A/(B*10^k)).
+
+Integer division gives the exact identity:
+
+    floor(A/(B*10^k)) = floor(floor(A/10^k)/B)
+
+Write A=q*10^k+r with 0<=r<10^k, then q=u*B+v with 0<=v<B. The remaining
+fraction is (v+r/10^k)/B<1, so both forms have quotient u. Apply the original
+signs after magnitude division to preserve truncation toward zero. Set the
+requested result scale even when the coefficient becomes zero.
+
+The implementation uses rescaled_copy(0,k) to copy only surviving numerator
+limbs, then normalizes present zero storage before coefficient comparison.
+It retains the original denominator, preserving scalar division by values such
+as seven. This avoids constructing a large denominator merely to discover that
+the quotient is zero. Positive/zero exponent behavior is unchanged. No platform
+intrinsics or special library/function recognition are required.
+
+## Regression and oracles
+
+The test-first commit e37dedd0 uses the public Number API and the existing
+isolated allocation ceiling. Inputs are parsed before the ceiling. Dividing a
+tiny coefficient with a large fractional scale by seven at scale zero must
+return exact zero without allocating a padded denominator; retained numerator
+and divisor snapshots must survive. Accepted main ced17fb7 builds the test,
+then exits 1. No production fault hooks or broken internal invariants are used.
+The fixed operation passes for 8-, 16- and 32-bit trait models.
+
+Independent uint64 coefficient/scale oracles cover all signs, scales straddling
+limb boundaries, zero/equality cases and multi-limb denominators. Output values
+and target scale are checked separately from immutable operand snapshots.
+Positive-exponent cases outside the bounded integer oracle's representable
+range are explicitly skipped; overflowing mathematical denominators imply an
+exact zero quotient for its bounded numerator. This does not claim exhaustive
+coverage of all coefficient sizes.
+
+Profiling output is still derived from unreduced exact powers. Request-dimension
+expectations now reflect the actual truncated numerator and original divisor,
+including zero coefficients. These are logical request dimensions, not timing,
+RSS or process-wide malloc counts. Prepared-cache hits may retain their older
+padded representation: their numeric result remains equivalent and their
+separate performance is not silently attributed to this ordinary path. Modulo
+is not independently rewritten by this change.
+
+## Acceptance
+
+The storage regression and 304,080 focused assertions pass under ASan/UBSan.
+The full extensions-ON / prepared-reuse-OFF suite passes 324 cases / 1,973,102
+assertions; extensions-OFF / prepared-reuse-ON passes 324 / 1,973,087. The five
+consumer, lifetime, CLI, VM CLI and independent number-oracle CTests pass in
+both configurations. The restored default configuration also passes all 92
+bc CTest entries (47 executed successfully, 45 declared skips).
+
+A separate profiling-enabled, coverage-disabled build passes 333 cases /
+1,973,156 assertions and its profiling CLI tests, including exact output and
+reduced work dimensions. These builds use a fixed multiplication split point
+of 126. Native performance and memory/code-size evidence is pending.
+LeakSanitizer is unavailable on this host; isolated ordinary-allocation balance
+remains separate evidence. Preserve every source identity and slower/inconclusive
+class; this candidate does not establish the overall Howard or #197 target.
