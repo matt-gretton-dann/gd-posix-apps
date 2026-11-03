@@ -9,6 +9,7 @@
 
 #include <array>
 #include <cstdint>
+#include <limits>
 #include <sstream>
 #include <string>
 
@@ -275,3 +276,99 @@ TEMPLATE_TEST_CASE("Scaled division agrees with native rational arithmetic",
     }
   }
 }
+
+TEMPLATE_TEST_CASE("Division decimal shifts agree with bounded integer coefficient oracles",
+                   "[bc][number][oracle][division-scale-shrink]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  using N = typename Number::NumType;
+  auto power10 = [](unsigned exponent) {
+    uint64_t value = 1;
+    while (exponent-- != 0)
+      value *= 10;
+    return value;
+  };
+  auto number = [](uint64_t coefficient, unsigned scale, bool negative) {
+    auto text = std::to_string(coefficient);
+    if (scale != 0) {
+      if (text.size() <= scale)
+        text.insert(0, scale + 1 - text.size(), '0');
+      text.insert(text.size() - scale, 1, '.');
+    }
+    Number value(text, 10);
+    if (negative && coefficient != 0)
+      value.negate();
+    return value;
+  };
+  std::array<uint64_t, 10> const dividends{
+    {0, 1, 7, 99, 100, 101, 999999, 123456789, 999999999999999999ULL, 1000000000000000000ULL}};
+  std::array<uint64_t, 7> const divisors{{1, 7, 99, 100, 101, 9999, 1000000001}};
+  for (auto a : dividends) {
+    for (auto b : divisors) {
+      for (unsigned sa : {0U, 1U, 2U, 8U, 9U, 10U, 17U, 18U}) {
+        for (unsigned sb : {0U, 1U, 3U}) {
+          for (unsigned target : {0U, 1U, 3U, 9U}) {
+            int const exponent = static_cast<int>(target + sb) - static_cast<int>(sa);
+            auto numerator = a;
+            auto denominator = b;
+            uint64_t expected = 0;
+            auto const factor = power10(static_cast<unsigned>(exponent < 0 ? -exponent : exponent));
+            if (exponent >= 0) {
+              if (a > std::numeric_limits<uint64_t>::max() / factor)
+                continue;  // Outside this independent native-integer oracle's domain.
+              numerator *= factor;
+              expected = numerator / denominator;
+            }
+            else if (b <= std::numeric_limits<uint64_t>::max() / factor) {
+              denominator *= factor;
+              expected = numerator / denominator;
+            }
+            // An overflowing mathematical denominator exceeds every representable
+            // numerator in this oracle, so its exact nonnegative quotient is zero.
+            for (bool lhs_negative : {false, true}) {
+              for (bool rhs_negative : {false, true}) {
+                INFO("a=" << a << ", b=" << b << ", sa=" << sa << ", sb=" << sb
+                          << ", target=" << target << ", base=" << Number::base_);
+                Number const original = number(a, sa, lhs_negative);
+                Number const divisor = number(b, sb, rhs_negative);
+                Number quotient = original;
+                quotient.divide(divisor, static_cast<N>(target));
+                REQUIRE(quotient == number(expected, target, lhs_negative != rhs_negative));
+                REQUIRE(quotient.scale() == target);
+                REQUIRE(original == number(a, sa, lhs_negative));
+                REQUIRE(divisor == number(b, sb, rhs_negative));
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+#if GD_BC_PROFILE
+TEMPLATE_TEST_CASE("Unscaled zero quotients avoid redundant entry transfers",
+                   "[bc][number][profile][division-entry-moves]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  using Event = GD::Bc::Profile::Event;
+  Number const original(1);
+  Number value = original;
+  Number const divisor(7);
+  // With no rescaling or quotient buffer, this public operation needs no
+  // coefficient moves. Count only the operation, excluding setup/assertions.
+  auto const before = GD::Bc::Profile::snapshot();
+  value.divide(divisor, 0);
+  auto const after = GD::Bc::Profile::snapshot();
+  auto const index = [](Event event) { return static_cast<std::size_t>(event); };
+  REQUIRE(value.is_zero());
+  REQUIRE(value.scale() == 0);
+  REQUIRE(original == Number(1));
+  REQUIRE(divisor == Number(7));
+  REQUIRE(after.events[index(Event::division_requests)] ==
+          before.events[index(Event::division_requests)] + 1);
+  REQUIRE(after.events[index(Event::digit_moves)] == before.events[index(Event::digit_moves)]);
+}
+#endif

@@ -52,11 +52,18 @@ class Coverage(unittest.TestCase):
         cache = {'ENABLE_NON_POSIX_EXTENSIONS': 'OFF', 'ENABLE_BC_PREPARED_DIVISORS': 'ON',
                  'ENABLE_BC_COMPACT_EXECUTION': 'ON'}
         self.assertEqual(COLLECTOR.build_modes(cache),
-                         {'extensions': 'OFF', 'prepared_divisors': 'ON', 'compact_execution': 'ON'})
+                         {'extensions': 'OFF', 'prepared_divisors': 'ON', 'compact_execution': 'ON',
+                          'outlined_division': None})
         self.assertIsNone(COLLECTOR.build_modes({})['prepared_divisors'])
         self.assertIsNone(COLLECTOR.build_modes({})['compact_execution'])
         cache['ENABLE_BC_COMPACT_EXECUTION'] = 'OFF'
         self.assertEqual(COLLECTOR.build_modes(cache)['compact_execution'], 'OFF')
+
+    def test_division_driver_modes_and_legacy_unknown_remain_separate(self):
+        self.assertIsNone(COLLECTOR.build_modes({}).get('outlined_division'))
+        for setting in ('ON', 'OFF'):
+            self.assertEqual(COLLECTOR.build_modes(
+                {'ENABLE_BC_OUTLINED_DIVISION': setting}).get('outlined_division'), setting)
 
 
 if __name__ == '__main__':
