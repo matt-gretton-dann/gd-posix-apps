@@ -155,3 +155,24 @@ TEMPLATE_TEST_CASE("Digit storage assignment covers every active-member transiti
   CHECK(target.use_count() == 1);
   CHECK(values(target) == std::vector<TestType>{1, 2, 3, 4});
 }
+
+TEMPLATE_TEST_CASE("Unique heap mutation preserves identity without preserving value",
+                   "[bc][number][storage][divisor-cache]", std::uint8_t, std::uint16_t,
+                   std::uint32_t)
+{
+  using Storage = GD::Bc::Details::DigitStorage<TestType>;
+  Storage value{1, 2, 3, 4};
+  REQUIRE(value.has_heap());
+  REQUIRE(value.use_count() == 1);
+  auto const* identity = value.begin();
+  value[0] = 9;
+  REQUIRE(value.begin() == identity);
+  REQUIRE(value[0] == 9);
+  REQUIRE(value.use_count() == 1);
+  // A shrinking vector can still retain its heap allocation and identity.
+  // Admission must bound retained capacity rather than just the used limbs.
+  value.resize(2);
+  REQUIRE(value.has_heap());
+  REQUIRE(value.begin() == identity);
+  REQUIRE(value.size() == 2);
+}
