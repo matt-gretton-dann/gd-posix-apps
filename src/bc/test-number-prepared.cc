@@ -458,6 +458,10 @@ TEMPLATE_TEST_CASE("Divisor admission bounds capacity grown during padding",
   cache.clear();
   REQUIRE(cache.retained_limb_bytes() == 0);
   REQUIRE(cache.lookup(source, padding) == nullptr);
+  // Even an eight-bit padding field can exceed the remaining quota when
+  // the source is near the budget. Numeric padding width is not a size bound.
+  REQUIRE(cache.lookup(source, std::numeric_limits<Limb>::max()) == nullptr);
+  REQUIRE(cache.retained_limb_bytes() == 0);
 }
 
 TEMPLATE_TEST_CASE("Divisor admission rejects a heap owner shrunk to one limb",
