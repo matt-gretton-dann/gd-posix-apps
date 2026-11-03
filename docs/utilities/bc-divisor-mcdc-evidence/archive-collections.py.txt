@@ -1,0 +1,52 @@
+#!/usr/bin/env python3
+"""Package original mode-separated reports without rerunning or pooling tests."""
+import hashlib,json,subprocess,zipfile
+from pathlib import Path
+OUT=Path('/private/tmp/gd-posix-divisor-mcdc-evidence/docs/utilities/bc-divisor-mcdc-evidence')
+SOURCE=Path('/private/tmp/gd-posix-vm-divisor-reuse')
+REVISION='f2bfdff902c49ed35ebb8f84a81f6b657499af0f'
+def sha(data):return hashlib.sha256(data).hexdigest()
+def main():
+ OUT.mkdir(parents=True,exist_ok=True);(OUT/'archives').mkdir()
+ snapshot=subprocess.check_output(['git','archive',REVISION,'src','libgdsup','cmake','CMakeLists.txt','python-lib'],cwd=str(SOURCE))
+ entries=[]
+ for reuse,ext,version,eligible in [('on','on','v1',False),('on','on','v2',True),('on','off','v1',True),('off','on','v1',True),('off','off','v1',True)]:
+  report=Path('/private/tmp')/('bc-423-mcdc-reuse-'+reuse+'-ext-'+ext+'-'+version)
+  build=SOURCE/('build-mcdc-reuse-'+reuse+'-ext-'+ext)
+  identifier=('baseline-' if eligible else 'failed-')+'ext-'+ext+'-reuse-'+reuse
+  inputs={str(p.relative_to(report)):p for p in report.rglob('*') if p.is_file()}
+  inputs.update({'binaries/bc':build/'src/bc/bc','binaries/test-libbc':build/'src/bc/test-libbc',
+                 'build/CMakeCache.txt':build/'CMakeCache.txt','build/compile_commands.json':build/'compile_commands.json',
+                 'build/multiply-threshold.hh':build/'src/bc/find-multiply-split-point.hh','source.tar':snapshot})
+  prefix='/private/tmp/bc-423-mcdc-'+reuse+'-'+ext
+  inputs['logs/configure.log']=Path(prefix+'-configure.log');inputs['logs/build.log']=Path(prefix+'-build.log')
+  inputs['logs/collect.log']=Path(prefix+'-collect'+('-v2' if version=='v2' else '')+'.log')
+  entry=dict(id=identifier,kind='application-baseline',eligible=eligible,source_revision=REVISION,extensions=ext.upper(),prepared_divisors=reuse.upper(),
+             scope='Pre-follow-up broad and application-only mappings; no adjusted coverage or performance acceptance',
+             limitations=['Debug MC/DC instrumentation, not timing evidence','SDK/runtime/dependency provisioning remains external'])
+  entries.append(package(inputs,entry))
+ for version,revision in [('v1','19e22f708b0a834298671074c37873aa08a3cbdd'),('v2','c7b8f6ac017e1ba49b8ffb338ad3e2fc7f10e985'),('v3','fa2420cc57d51b6e578fd7379282b02cff3ae266')]:
+  report=Path('/private/tmp/bc-426-focused-mcdc-'+version)
+  inputs={str(p.relative_to(report)):p for p in report.rglob('*') if p.is_file()}
+  entry=dict(id='focused-'+version,kind='focused-component',eligible=version=='v3',source_revision=revision,
+             scope='Only cache-tagged unit cases; never an application-wide percentage or an application baseline',
+             limitations=['First 8-bit fixture legitimately admitted a bounded value'] if version=='v1' else [])
+  if version=='v1':entry['limitations'].append('Original compilation database/cache not captured for this first focused iteration')
+  entries.append(package(inputs,entry))
+ inventory=dict(schema=1,compiler_family='Clang/LLVM 23.1.4 on macOS arm64',performance_acceptance=False,coverage_goal_achieved=False,collections=entries)
+ (OUT/'inventory.json').write_text(json.dumps(inventory,indent=2)+'\n')
+ (OUT/'archive-collections.py.txt').write_bytes(Path(__file__).read_bytes())
+ print('Packaged',len(entries),'collections',flush=True)
+def package(inputs,entry):
+ target=OUT/'archives'/(entry['id']+'.zip');files={}
+ with zipfile.ZipFile(target,'w',zipfile.ZIP_DEFLATED,compresslevel=9) as z:
+  for name,value in sorted(inputs.items()):
+   data=value if isinstance(value,bytes) else value.read_bytes()
+   files[name]=dict(sha256=sha(data),bytes=len(data))
+   z.writestr(name,data)
+  manifest=dict(schema=1,source_revision=entry['source_revision'],files=files,kind=entry['kind'])
+  z.writestr('_archive_manifest.json',json.dumps(manifest,indent=2)+'\n')
+ data=target.read_bytes();entry.update(path=str(target.relative_to(OUT)),sha256=sha(data),bytes=len(data),files=len(files))
+ print(entry['id'],len(files),'files',len(data),'bytes',flush=True)
+ return entry
+if __name__=='__main__':main()

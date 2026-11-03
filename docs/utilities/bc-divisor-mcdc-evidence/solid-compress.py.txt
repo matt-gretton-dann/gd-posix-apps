@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+"""Solid-compress derived coverage packages, preserving every payload byte."""
+import hashlib,io,json,tarfile,zipfile
+from pathlib import Path
+ROOT=Path('/private/tmp/gd-posix-divisor-mcdc-evidence/docs/utilities/bc-divisor-mcdc-evidence')
+def sha(data):return hashlib.sha256(data).hexdigest()
+def main():
+ inventory_path=ROOT/'inventory.json';inventory=json.loads(inventory_path.read_text())
+ (ROOT/'inventory-before-solid.json').write_bytes(inventory_path.read_bytes())
+ for entry in inventory['collections']:
+  old=ROOT/entry['path'];assert sha(old.read_bytes())==entry['sha256']
+  target=old.with_suffix('.tar.xz')
+  with zipfile.ZipFile(old) as source,tarfile.open(target,'w:xz',preset=6) as output:
+   names=source.namelist();assert len(names)==len(set(names))
+   metadata=json.loads(source.read('_archive_manifest.json'))
+   for name in names:
+    payload=source.read(name)
+    if name!='_archive_manifest.json':
+     assert len(payload)==metadata['files'][name]['bytes'] and sha(payload)==metadata['files'][name]['sha256']
+    member=tarfile.TarInfo(name);member.size=len(payload);member.mtime=0;member.mode=0o644
+    output.addfile(member,io.BytesIO(payload))
+  checked={}
+  with tarfile.open(target,'r|xz') as archive:
+   for member in archive:
+    payload=archive.extractfile(member).read()
+    assert member.name not in checked
+    if member.name=='_archive_manifest.json':assert json.loads(payload)==metadata
+    else:assert len(payload)==metadata['files'][member.name]['bytes'] and sha(payload)==metadata['files'][member.name]['sha256']
+    checked[member.name]=True
+  assert set(checked)==set(metadata['files'])|{'_archive_manifest.json'}
+  entry.update(original_zip_sha256=entry['sha256'],path=str(target.relative_to(ROOT)),container='tar.xz',sha256=sha(target.read_bytes()),bytes=target.stat().st_size)
+  inventory_path.write_text(json.dumps(inventory,indent=2)+'\n')
+  # This removes only our just-created, untracked duplicate packaging. Original
+  # profiles/reports/binaries outside this worktree are never removed.
+  old.unlink()
+  print(entry['id'],entry['bytes'],'bytes; every member verified',flush=True)
+ (ROOT/'solid-compress.py.txt').write_bytes(Path(__file__).read_bytes())
+if __name__=='__main__':main()

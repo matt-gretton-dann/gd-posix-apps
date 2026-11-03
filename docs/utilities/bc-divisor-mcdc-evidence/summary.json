@@ -1,0 +1,481 @@
+[
+  {
+    "id": "failed-ext-on-reuse-on",
+    "source_revision": "f2bfdff902c49ed35ebb8f84a81f6b657499af0f",
+    "eligible": false,
+    "extensions": "ON",
+    "prepared_divisors": "ON",
+    "profiles": 1034,
+    "test_exit_code": 8,
+    "broad": {
+      "lines": {
+        "count": 6462,
+        "covered": 6277,
+        "percent": 97.13710925410089
+      },
+      "functions": {
+        "count": 630,
+        "covered": 598,
+        "percent": 94.92063492063491
+      },
+      "instantiations": {
+        "count": 1221,
+        "covered": 1166,
+        "percent": 95.4954954954955
+      },
+      "regions": {
+        "count": 5326,
+        "covered": 4159,
+        "notcovered": 1167,
+        "percent": 78.0886218550507
+      },
+      "branches": {
+        "count": 3341,
+        "covered": 3012,
+        "notcovered": 329,
+        "percent": 90.15264890751273
+      },
+      "mcdc": {
+        "count": 280,
+        "covered": 221,
+        "notcovered": 59,
+        "percent": 78.92857142857143
+      }
+    },
+    "application_only": {
+      "lines": {
+        "count": 6322,
+        "covered": 6137,
+        "percent": 97.07371085099652
+      },
+      "functions": {
+        "count": 588,
+        "covered": 556,
+        "percent": 94.5578231292517
+      },
+      "instantiations": {
+        "count": 873,
+        "covered": 829,
+        "percent": 94.95990836197021
+      },
+      "regions": {
+        "count": 5234,
+        "covered": 4067,
+        "notcovered": 1167,
+        "percent": 77.7034772640428
+      },
+      "branches": {
+        "count": 3313,
+        "covered": 2983,
+        "notcovered": 330,
+        "percent": 90.03923936009659
+      },
+      "mcdc": {
+        "count": 276,
+        "covered": 215,
+        "notcovered": 61,
+        "percent": 77.89855072463769
+      }
+    }
+  },
+  {
+    "id": "baseline-ext-on-reuse-on",
+    "source_revision": "f2bfdff902c49ed35ebb8f84a81f6b657499af0f",
+    "eligible": true,
+    "extensions": "ON",
+    "prepared_divisors": "ON",
+    "profiles": 1034,
+    "test_exit_code": 0,
+    "broad": {
+      "lines": {
+        "count": 6462,
+        "covered": 6277,
+        "percent": 97.13710925410089
+      },
+      "functions": {
+        "count": 630,
+        "covered": 598,
+        "percent": 94.92063492063491
+      },
+      "instantiations": {
+        "count": 1221,
+        "covered": 1166,
+        "percent": 95.4954954954955
+      },
+      "regions": {
+        "count": 5326,
+        "covered": 4159,
+        "notcovered": 1167,
+        "percent": 78.0886218550507
+      },
+      "branches": {
+        "count": 3341,
+        "covered": 3012,
+        "notcovered": 329,
+        "percent": 90.15264890751273
+      },
+      "mcdc": {
+        "count": 280,
+        "covered": 221,
+        "notcovered": 59,
+        "percent": 78.92857142857143
+      }
+    },
+    "application_only": {
+      "lines": {
+        "count": 6322,
+        "covered": 6137,
+        "percent": 97.07371085099652
+      },
+      "functions": {
+        "count": 588,
+        "covered": 556,
+        "percent": 94.5578231292517
+      },
+      "instantiations": {
+        "count": 873,
+        "covered": 829,
+        "percent": 94.95990836197021
+      },
+      "regions": {
+        "count": 5234,
+        "covered": 4067,
+        "notcovered": 1167,
+        "percent": 77.7034772640428
+      },
+      "branches": {
+        "count": 3313,
+        "covered": 2983,
+        "notcovered": 330,
+        "percent": 90.03923936009659
+      },
+      "mcdc": {
+        "count": 276,
+        "covered": 215,
+        "notcovered": 61,
+        "percent": 77.89855072463769
+      }
+    }
+  },
+  {
+    "id": "baseline-ext-off-reuse-on",
+    "source_revision": "f2bfdff902c49ed35ebb8f84a81f6b657499af0f",
+    "eligible": true,
+    "extensions": "OFF",
+    "prepared_divisors": "ON",
+    "profiles": 1010,
+    "test_exit_code": 0,
+    "broad": {
+      "lines": {
+        "count": 6459,
+        "covered": 6242,
+        "percent": 96.64034680291067
+      },
+      "functions": {
+        "count": 630,
+        "covered": 597,
+        "percent": 94.76190476190476
+      },
+      "instantiations": {
+        "count": 1221,
+        "covered": 1165,
+        "percent": 95.4135954135954
+      },
+      "regions": {
+        "count": 5326,
+        "covered": 4138,
+        "notcovered": 1188,
+        "percent": 77.69432970334209
+      },
+      "branches": {
+        "count": 3341,
+        "covered": 2991,
+        "notcovered": 350,
+        "percent": 89.52409458246035
+      },
+      "mcdc": {
+        "count": 280,
+        "covered": 218,
+        "notcovered": 62,
+        "percent": 77.85714285714286
+      }
+    },
+    "application_only": {
+      "lines": {
+        "count": 6319,
+        "covered": 6102,
+        "percent": 96.56591232789998
+      },
+      "functions": {
+        "count": 588,
+        "covered": 555,
+        "percent": 94.38775510204081
+      },
+      "instantiations": {
+        "count": 873,
+        "covered": 828,
+        "percent": 94.84536082474226
+      },
+      "regions": {
+        "count": 5234,
+        "covered": 4046,
+        "notcovered": 1188,
+        "percent": 77.3022544898739
+      },
+      "branches": {
+        "count": 3313,
+        "covered": 2962,
+        "notcovered": 351,
+        "percent": 89.40537277392092
+      },
+      "mcdc": {
+        "count": 276,
+        "covered": 212,
+        "notcovered": 64,
+        "percent": 76.81159420289855
+      }
+    }
+  },
+  {
+    "id": "baseline-ext-on-reuse-off",
+    "source_revision": "f2bfdff902c49ed35ebb8f84a81f6b657499af0f",
+    "eligible": true,
+    "extensions": "ON",
+    "prepared_divisors": "OFF",
+    "profiles": 1034,
+    "test_exit_code": 0,
+    "broad": {
+      "lines": {
+        "count": 6419,
+        "covered": 6234,
+        "percent": 97.11793114192243
+      },
+      "functions": {
+        "count": 628,
+        "covered": 596,
+        "percent": 94.90445859872611
+      },
+      "instantiations": {
+        "count": 1219,
+        "covered": 1164,
+        "percent": 95.48810500410173
+      },
+      "regions": {
+        "count": 5313,
+        "covered": 4146,
+        "notcovered": 1167,
+        "percent": 78.03500846979108
+      },
+      "branches": {
+        "count": 3333,
+        "covered": 3003,
+        "notcovered": 330,
+        "percent": 90.0990099009901
+      },
+      "mcdc": {
+        "count": 280,
+        "covered": 220,
+        "notcovered": 60,
+        "percent": 78.57142857142857
+      }
+    },
+    "application_only": {
+      "lines": {
+        "count": 6076,
+        "covered": 5903,
+        "percent": 97.15273206056617
+      },
+      "functions": {
+        "count": 564,
+        "covered": 532,
+        "percent": 94.32624113475178
+      },
+      "instantiations": {
+        "count": 826,
+        "covered": 782,
+        "percent": 94.67312348668281
+      },
+      "regions": {
+        "count": 5074,
+        "covered": 3919,
+        "notcovered": 1155,
+        "percent": 77.23689396925502
+      },
+      "branches": {
+        "count": 3218,
+        "covered": 2899,
+        "notcovered": 319,
+        "percent": 90.08701056556868
+      },
+      "mcdc": {
+        "count": 257,
+        "covered": 201,
+        "notcovered": 56,
+        "percent": 78.21011673151752
+      }
+    }
+  },
+  {
+    "id": "baseline-ext-off-reuse-off",
+    "source_revision": "f2bfdff902c49ed35ebb8f84a81f6b657499af0f",
+    "eligible": true,
+    "extensions": "OFF",
+    "prepared_divisors": "OFF",
+    "profiles": 1010,
+    "test_exit_code": 0,
+    "broad": {
+      "lines": {
+        "count": 6416,
+        "covered": 6199,
+        "percent": 96.61783042394015
+      },
+      "functions": {
+        "count": 628,
+        "covered": 595,
+        "percent": 94.7452229299363
+      },
+      "instantiations": {
+        "count": 1219,
+        "covered": 1163,
+        "percent": 95.40607054963085
+      },
+      "regions": {
+        "count": 5313,
+        "covered": 4125,
+        "notcovered": 1188,
+        "percent": 77.63975155279503
+      },
+      "branches": {
+        "count": 3333,
+        "covered": 2983,
+        "notcovered": 350,
+        "percent": 89.4989498949895
+      },
+      "mcdc": {
+        "count": 280,
+        "covered": 218,
+        "notcovered": 62,
+        "percent": 77.85714285714286
+      }
+    },
+    "application_only": {
+      "lines": {
+        "count": 6073,
+        "covered": 5868,
+        "percent": 96.62440309566935
+      },
+      "functions": {
+        "count": 564,
+        "covered": 531,
+        "percent": 94.14893617021278
+      },
+      "instantiations": {
+        "count": 826,
+        "covered": 781,
+        "percent": 94.55205811138015
+      },
+      "regions": {
+        "count": 5074,
+        "covered": 3898,
+        "notcovered": 1176,
+        "percent": 76.82301931415057
+      },
+      "branches": {
+        "count": 3218,
+        "covered": 2878,
+        "notcovered": 340,
+        "percent": 89.43443132380361
+      },
+      "mcdc": {
+        "count": 257,
+        "covered": 198,
+        "notcovered": 59,
+        "percent": 77.04280155642024
+      }
+    }
+  },
+  {
+    "id": "focused-v1",
+    "source_revision": "19e22f708b0a834298671074c37873aa08a3cbdd",
+    "assertions": 843,
+    "cases": 21,
+    "application_coverage": false,
+    "eligible": false,
+    "widths": {
+      "8": {
+        "rejected_retries": 0,
+        "heap_zero_rejections": 0,
+        "wide_padding_rejections": 0,
+        "capacity_rejections": 0
+      },
+      "16": {
+        "rejected_retries": 1,
+        "heap_zero_rejections": 0,
+        "wide_padding_rejections": 0,
+        "capacity_rejections": 1
+      },
+      "32": {
+        "rejected_retries": 1,
+        "heap_zero_rejections": 0,
+        "wide_padding_rejections": 0,
+        "capacity_rejections": 1
+      }
+    }
+  },
+  {
+    "id": "focused-v2",
+    "source_revision": "c7b8f6ac017e1ba49b8ffb338ad3e2fc7f10e985",
+    "assertions": 900,
+    "cases": 24,
+    "application_coverage": false,
+    "eligible": false,
+    "widths": {
+      "8": {
+        "rejected_retries": 1,
+        "heap_zero_rejections": 4,
+        "wide_padding_rejections": 0,
+        "capacity_rejections": 1
+      },
+      "16": {
+        "rejected_retries": 1,
+        "heap_zero_rejections": 4,
+        "wide_padding_rejections": 0,
+        "capacity_rejections": 1
+      },
+      "32": {
+        "rejected_retries": 1,
+        "heap_zero_rejections": 4,
+        "wide_padding_rejections": 0,
+        "capacity_rejections": 1
+      }
+    }
+  },
+  {
+    "id": "focused-v3",
+    "source_revision": "fa2420cc57d51b6e578fd7379282b02cff3ae266",
+    "assertions": 916,
+    "cases": 26,
+    "application_coverage": false,
+    "eligible": true,
+    "widths": {
+      "8": {
+        "rejected_retries": 1,
+        "heap_zero_rejections": 4,
+        "wide_padding_rejections": 0,
+        "capacity_rejections": 1
+      },
+      "16": {
+        "rejected_retries": 1,
+        "heap_zero_rejections": 4,
+        "wide_padding_rejections": 1,
+        "capacity_rejections": 1
+      },
+      "32": {
+        "rejected_retries": 1,
+        "heap_zero_rejections": 4,
+        "wide_padding_rejections": 1,
+        "capacity_rejections": 1
+      }
+    }
+  }
+]

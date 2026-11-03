@@ -1,0 +1,195 @@
+{
+  "schema": 1,
+  "compiler_family": "Clang/LLVM 23.1.4 on macOS arm64",
+  "performance_acceptance": false,
+  "coverage_goal_achieved": false,
+  "collections": [
+    {
+      "id": "failed-ext-on-reuse-on",
+      "kind": "application-baseline",
+      "eligible": false,
+      "source_revision": "f2bfdff902c49ed35ebb8f84a81f6b657499af0f",
+      "extensions": "ON",
+      "prepared_divisors": "ON",
+      "scope": "Pre-follow-up broad and application-only mappings; no adjusted coverage or performance acceptance",
+      "limitations": [
+        "Debug MC/DC instrumentation, not timing evidence",
+        "SDK/runtime/dependency provisioning remains external"
+      ],
+      "path": "archives/failed-ext-on-reuse-on.tar.xz",
+      "sha256": "7b27f46d3a884d94fd478256efcebc9d54f857514215d6456f4ba1b15b27c539",
+      "bytes": 3631476,
+      "files": 1083,
+      "original_zip_sha256": "adf1c85d77940615069dba37b45d4424795aa5e5580885a455d475955507d929",
+      "container": "tar.xz",
+      "binary_identities": {
+        "binaries/bc": "62122755da2746897dee93f166f4e12de3c0be923427e657e9d92162320d015e",
+        "binaries/test-libbc": "108c5593a77ce6fc19d100eee7fb2af432513bdd68c34fc57b8f70f676f8c0d8"
+      }
+    },
+    {
+      "id": "baseline-ext-on-reuse-on",
+      "kind": "application-baseline",
+      "eligible": true,
+      "source_revision": "f2bfdff902c49ed35ebb8f84a81f6b657499af0f",
+      "extensions": "ON",
+      "prepared_divisors": "ON",
+      "scope": "Pre-follow-up broad and application-only mappings; no adjusted coverage or performance acceptance",
+      "limitations": [
+        "Debug MC/DC instrumentation, not timing evidence",
+        "SDK/runtime/dependency provisioning remains external"
+      ],
+      "path": "archives/baseline-ext-on-reuse-on.tar.xz",
+      "sha256": "66d5f49f19051524d23536b38629ec45513fb2e4381c494ab18ee895101924f3",
+      "bytes": 3631692,
+      "files": 1083,
+      "original_zip_sha256": "c87677a3a796baadc01b60628ae109196f0e7ad9865e6d012d45d7a5f4c607b8",
+      "container": "tar.xz",
+      "binary_identities": {
+        "binaries/bc": "62122755da2746897dee93f166f4e12de3c0be923427e657e9d92162320d015e",
+        "binaries/test-libbc": "108c5593a77ce6fc19d100eee7fb2af432513bdd68c34fc57b8f70f676f8c0d8"
+      }
+    },
+    {
+      "id": "baseline-ext-off-reuse-on",
+      "kind": "application-baseline",
+      "eligible": true,
+      "source_revision": "f2bfdff902c49ed35ebb8f84a81f6b657499af0f",
+      "extensions": "OFF",
+      "prepared_divisors": "ON",
+      "scope": "Pre-follow-up broad and application-only mappings; no adjusted coverage or performance acceptance",
+      "limitations": [
+        "Debug MC/DC instrumentation, not timing evidence",
+        "SDK/runtime/dependency provisioning remains external"
+      ],
+      "path": "archives/baseline-ext-off-reuse-on.tar.xz",
+      "sha256": "ea4b3a5d7d857df26c7a552f29b17792c3527926e2a251fb10c21b4c7697ccd3",
+      "bytes": 3601732,
+      "files": 1059,
+      "original_zip_sha256": "23ad0ec8f04f6bfecd3c15ec2f13b3e94776058f665d8c26a987fc0566f0e3b6",
+      "container": "tar.xz",
+      "binary_identities": {
+        "binaries/bc": "5a105ce4c09fb974b187e9c9a672a13fc6783de008ee17da0351c6e6e4b2d5b3",
+        "binaries/test-libbc": "8dca27c4f808ee9d7b66975d19caaa424d9acfab27adf1f65e514736f57402ae"
+      }
+    },
+    {
+      "id": "baseline-ext-on-reuse-off",
+      "kind": "application-baseline",
+      "eligible": true,
+      "source_revision": "f2bfdff902c49ed35ebb8f84a81f6b657499af0f",
+      "extensions": "ON",
+      "prepared_divisors": "OFF",
+      "scope": "Pre-follow-up broad and application-only mappings; no adjusted coverage or performance acceptance",
+      "limitations": [
+        "Debug MC/DC instrumentation, not timing evidence",
+        "SDK/runtime/dependency provisioning remains external"
+      ],
+      "path": "archives/baseline-ext-on-reuse-off.tar.xz",
+      "sha256": "671f6cf2f0bd5abc9281faa280689d7e101a3d998db1c6fadb96d465666c7d97",
+      "bytes": 3599980,
+      "files": 1083,
+      "original_zip_sha256": "5087d0dcddc8c0ce51bb2ce82322abb82fd0343f2b0b25a1f80c9a70e34702c2",
+      "container": "tar.xz",
+      "binary_identities": {
+        "binaries/bc": "ef3638f80717bba9144d78ec57cd206358e2083f4af2427f38eba524ccba6554",
+        "binaries/test-libbc": "ca751fe6f7b702f02b6f4bda2b789e5b4a033e868c50990ac1e0ba73bc46a1f9"
+      }
+    },
+    {
+      "id": "baseline-ext-off-reuse-off",
+      "kind": "application-baseline",
+      "eligible": true,
+      "source_revision": "f2bfdff902c49ed35ebb8f84a81f6b657499af0f",
+      "extensions": "OFF",
+      "prepared_divisors": "OFF",
+      "scope": "Pre-follow-up broad and application-only mappings; no adjusted coverage or performance acceptance",
+      "limitations": [
+        "Debug MC/DC instrumentation, not timing evidence",
+        "SDK/runtime/dependency provisioning remains external"
+      ],
+      "path": "archives/baseline-ext-off-reuse-off.tar.xz",
+      "sha256": "1efaead34b6b1886a44f6ccd897374215f325b592b643b63bb64b4194d784099",
+      "bytes": 3572300,
+      "files": 1059,
+      "original_zip_sha256": "3f3f5fc66d0e9f3df3b2456aac1592d188e5ad655ff34f18e5cf18083242698b",
+      "container": "tar.xz",
+      "binary_identities": {
+        "binaries/bc": "d0daa12d8646b858d8cf87f2388735802ff27732e48209b26a3025e1dd941a7c",
+        "binaries/test-libbc": "3e5c6a2813ef23779b5e05d7f1c5d551f78c46f332e6a8341612568df83dd419"
+      }
+    },
+    {
+      "id": "focused-v1",
+      "kind": "focused-component",
+      "eligible": false,
+      "source_revision": "19e22f708b0a834298671074c37873aa08a3cbdd",
+      "scope": "Only cache-tagged unit cases; never an application-wide percentage or an application baseline",
+      "limitations": [
+        "First 8-bit fixture legitimately admitted a bounded value",
+        "Original compilation database/cache not captured for this first focused iteration"
+      ],
+      "path": "archives/focused-v1.tar.xz",
+      "sha256": "70b831b88050ea344d2b283b4e25b6762f27ff55963914c93ab19157f3012333",
+      "bytes": 2383208,
+      "files": 8,
+      "original_zip_sha256": "15a0a02518e91287c391440dcfbc20b19337dc52d70aa3592ead4be7f132fcc1",
+      "container": "tar.xz",
+      "binary_identities": {
+        "test-libbc": "feafce8c38a407e53933d79046879656cd803cedb6076129c1831ccb8173042a"
+      }
+    },
+    {
+      "id": "focused-v2",
+      "kind": "focused-component",
+      "eligible": false,
+      "source_revision": "c7b8f6ac017e1ba49b8ffb338ad3e2fc7f10e985",
+      "scope": "Only cache-tagged unit cases; never an application-wide percentage or an application baseline",
+      "limitations": [],
+      "path": "archives/focused-v2.tar.xz",
+      "sha256": "30af9ca660171a7f5f556cbafd10d2823c2721df3cda5ffdd6d29a6800b30705",
+      "bytes": 2396564,
+      "files": 10,
+      "original_zip_sha256": "b00f1e00e4548c79a5f991a228346a7f1d2a9e93fe32fcb3b4edf47f7bde91f6",
+      "container": "tar.xz",
+      "binary_identities": {
+        "test-libbc": "13498ae3e09313a8a49d7018ebb50253d713af1722a75ddaf0367275c4ff7ab7"
+      }
+    },
+    {
+      "id": "focused-v3",
+      "kind": "focused-component",
+      "eligible": true,
+      "source_revision": "fa2420cc57d51b6e578fd7379282b02cff3ae266",
+      "scope": "Only cache-tagged unit cases; never an application-wide percentage or an application baseline",
+      "limitations": [],
+      "path": "archives/focused-v3.tar.xz",
+      "sha256": "d5d35eeb1504a371356c9bd210f72df9ae8fb7235c43f356ae26a461d9c2bd60",
+      "bytes": 2400024,
+      "files": 10,
+      "original_zip_sha256": "138e8984fb629b2f669cf69d288dade0e3376e5e066df2c206cfa5d37448762e",
+      "container": "tar.xz",
+      "binary_identities": {
+        "test-libbc": "15c1669dc3e87521b4d33d925df6b0adae5cd67298c3471427a8640f9efa8f70"
+      }
+    }
+  ],
+  "source_proofs": {
+    "19e22f708b0a834298671074c37873aa08a3cbdd": {
+      "path": "source-proofs/19e22f708b0a834298671074c37873aa08a3cbdd.json",
+      "sha256": "45c24bcd89eec4f10ea6a2df5dd6e5d059c504f44a1c5e3a015c27b2cb4cfbab"
+    },
+    "c7b8f6ac017e1ba49b8ffb338ad3e2fc7f10e985": {
+      "path": "source-proofs/c7b8f6ac017e1ba49b8ffb338ad3e2fc7f10e985.json",
+      "sha256": "7ce11bb285dd60853a0e221fab916f3142ee5d9b739b907050523aa432bc97df"
+    },
+    "f2bfdff902c49ed35ebb8f84a81f6b657499af0f": {
+      "path": "source-proofs/f2bfdff902c49ed35ebb8f84a81f6b657499af0f.json",
+      "sha256": "48dcd856723afe01ef36ffabbb7e40c1e8df1d74c9efd0bdf2087e3e62c88150"
+    },
+    "fa2420cc57d51b6e578fd7379282b02cff3ae266": {
+      "path": "source-proofs/fa2420cc57d51b6e578fd7379282b02cff3ae266.json",
+      "sha256": "b9b42db2646733144140b98a473e2059b4408bfd36e7f629e5738cf91ae94940"
+    }
+  }
+}
