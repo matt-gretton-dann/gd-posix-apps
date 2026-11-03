@@ -20,15 +20,36 @@ using I = GD::Bc::Instruction;
 using O = I::Opcode;
 using D = I::Offset;
 
-auto execute(GD::Bc::Instructions code) -> std::string
+auto execute(GD::Bc::Instructions code, bool typed_eligible = false) -> std::string
 {
-  auto run = [&code](GD::Bc::VM::ExecutionChecks checks) {
+  if (typed_eligible) {
+    REQUIRE_FALSE(code.empty());
+    REQUIRE(code.back().opcode() == O::eof);
+    // Cover fixed layout costs on each supported ABI. These unused producers
+    // leave earlier data offsets and branch targets unchanged.
+    code.insert(code.end() - 1, 64, I(O::number, "0"));
+  }
+  auto run = [&code, typed_eligible](GD::Bc::VM::ExecutionChecks checks) {
     auto independent = code;  // Independent literal caches and activation state.
     std::ostringstream output;
     std::ostringstream errors;
     GD::Bc::VM vm(output, errors, false, checks);
+#if GD_BC_PROFILE
+    auto const before = GD::Bc::Profile::snapshot();
+#endif
     CHECK_FALSE(vm.execute(independent));
     CHECK(errors.str().empty());
+#if GD_BC_PROFILE
+    if (typed_eligible) {
+      auto const index =
+        static_cast<std::size_t>(GD::Bc::Profile::Event::typed_instructions_executed);
+      auto const after = GD::Bc::Profile::snapshot();
+      CHECK((after.events[index] > before.events[index]) ==
+            (checks == GD::Bc::VM::ExecutionChecks::verified && GD_BC_EXPECT_TYPED_RESULTS));
+    }
+#else
+    (void)typed_eligible;
+#endif
     return output.str();
   };
   auto checked = run(GD::Bc::VM::ExecutionChecks::full);
@@ -128,6 +149,10 @@ TEST_CASE("VM binary opcodes agree with native integer arithmetic", "[bc][vm][ex
         D const at = D(code.size());
         code.emplace_back(opcode, left - at, right - at);
         code.emplace_back(O::print, D(-1), I::Stream::output);
+        // Keep this oracle eligible for verified lowered execution, including
+        // typed registers. Unused literals preserve the result/evaluation order.
+        while (code.size() < 16)
+          code.emplace_back(O::number, "0");
         code.emplace_back(O::eof);
         CHECK(execute(code) == std::to_string(expected) + "\n");
       }
@@ -157,7 +182,7 @@ TEST_CASE("Generated expressions agree across grammar bytecode and native oracle
   }
 }
 
-TEST_CASE("VM unary operations have exact observable results", "[bc][vm][execution]")
+TEST_CASE("VM unary operations have exact observable results", "[bc][vm][execution][typed-results]")
 {
   for (auto const& entry :
        {std::make_tuple(O::negate, "7", "-7"), std::make_tuple(O::abs, "7", "7"),
@@ -165,11 +190,11 @@ TEST_CASE("VM unary operations have exact observable results", "[bc][vm][executi
         std::make_tuple(O::length, "123", "3")}) {
     GD::Bc::Instructions code{I(O::number, std::get<1>(entry)), I(std::get<0>(entry), D(-1)),
                               I(O::print, D(-1), I::Stream::output), I(O::eof)};
-    CHECK(execute(code) == std::string(std::get<2>(entry)) + "\n");
+    CHECK(execute(code, true) == std::string(std::get<2>(entry)) + "\n");
   }
   GD::Bc::Instructions code{I(O::number, "7"), I(O::negate, D(-1)), I(O::abs, D(-1)),
                             I(O::print, D(-1), I::Stream::output), I(O::eof)};
-  CHECK(execute(code) == "7\n");
+  CHECK(execute(code, true) == "7\n");
 }
 
 TEST_CASE("VM conditional and unconditional branches select one output", "[bc][vm][execution]")
@@ -183,7 +208,7 @@ TEST_CASE("VM conditional and unconditional branches select one output", "[bc][v
                               I(O::string, "zero"),
                               I(O::print, D(-1), I::Stream::output),
                               I(O::eof)};
-    CHECK(execute(code) == (std::string(condition) == "0" ? "zero" : "nonzero"));
+    CHECK(execute(code, true) == (std::string(condition) == "0" ? "zero" : "nonzero"));
   }
 }
 
@@ -323,6 +348,36 @@ TEST_CASE("Repeated executable code observes replaced literal text", "[bc][vm][l
 }
 
 #if GD_BC_PROFILE
+TEST_CASE("Typed execution activates only for the configured verified path",
+          "[bc][vm][typed-results][verified-profile]")
+{
+  using Checks = GD::Bc::VM::ExecutionChecks;
+  auto count = [] {
+    return GD::Bc::Profile::snapshot()
+      .events[static_cast<std::size_t>(GD::Bc::Profile::Event::typed_instructions_executed)];
+  };
+  for (auto checks : {Checks::full, Checks::verified}) {
+    std::ostringstream output, errors;
+    GD::Bc::VM vm(output, errors, false, checks);
+    GD::Bc::Instructions code;
+    std::string expected;
+    for (unsigned i = 0; i != 64; ++i) {
+      code.emplace_back(O::number, "7");
+      code.emplace_back(O::print, D(-1), I::Stream::output);
+      expected += "7\n";
+    }
+    code.emplace_back(O::eof);
+    auto const before = count();
+    CHECK_FALSE(vm.execute(code));
+    CHECK(output.str() == expected);
+    CHECK(errors.str().empty());
+    if (checks == Checks::verified && GD_BC_EXPECT_TYPED_RESULTS)
+      CHECK(count() > before);
+    else
+      CHECK(count() == before);
+  }
+}
+
 TEST_CASE("Verified execution omits only the result diagnostic switch",
           "[bc][vm][verified-profile]")
 {
@@ -443,6 +498,10 @@ TEST_CASE("Reused activation slots release mixed result alternatives",
     // independently of the previous result kind or retained capacity.
     GD::Bc::Instructions number{I(O::number, coefficient), I(O::print, D(-1), I::Stream::output),
                                 I(O::eof)};
+    // An eligible owning numeric pack alternates with tiny generic packs.
+    // Every lane must release its snapshots before this depth slot is reused.
+    for (unsigned i = 0; i != 32; ++i)
+      number.insert(number.end() - 1, I(O::number, coefficient));
     CHECK_FALSE(vm.execute(number));
     expected += coefficient + "\n";
     GD::Bc::Instructions array{I(O::array, GD::Bc::Array('a')), I(O::load, D(-1)),
@@ -475,7 +534,7 @@ TEST_CASE("Compact control flow preserves exact forward targets and a backedge t
     while (code.size() < 16)
       code.emplace_back(O::number, "0");
     code.emplace_back(O::eof);
-    CHECK(execute(code) == "7\n9\n");
+    CHECK(execute(code, true) == "7\n9\n");
   }
   SECTION("Zero is a valid absolute branch target")
   {
@@ -492,8 +551,71 @@ TEST_CASE("Compact control flow preserves exact forward targets and a backedge t
     while (code.size() < 16)
       code.emplace_back(O::number, "0");
     code.emplace_back(O::eof);
-    CHECK(execute(code) == "3\n");
+    CHECK(execute(code, true) == "3\n");
   }
+}
+
+TEST_CASE("Typed nested calls retain snapshots and restore special registers",
+          "[bc][vm][execution][typed-results]")
+{
+  auto checks = GENERATE(GD::Bc::VM::ExecutionChecks::full, GD::Bc::VM::ExecutionChecks::verified);
+  std::string body = "auto t\n";
+  for (unsigned i = 0; i != 64; ++i)
+    body += "t=0\n";
+  // Every recursive function activation is eligible independently of the
+  // top-level stream. Changing radix at the leaf must not change the caller's
+  // literal interpretation, and passing an array must retain its snapshot.
+  std::string const source = "scale=2\na[0]=7\nx=99\ndefine f(x,a[]) {\n" + body +
+                             "if(x==0) {\nscale=3\nibase=16\nreturn(a[0])\n}\n"
+                             "a[0]+=1\nt=f(x-1,a[])\nreturn(a[0]+t+x)\n}\n"
+                             "f(3,a[])\na[0]\nx\nscale\nibase\n";
+  GD::Bc::Parser parser(
+    std::make_unique<GD::Bc::Lexer>(std::make_unique<GD::Bc::StringReader>(source)), false);
+  auto code = parser.parse();
+  REQUIRE(code != nullptr);
+  std::ostringstream output, errors;
+  GD::Bc::VM vm(output, errors, true, checks);
+#if GD_BC_PROFILE
+  auto const before = GD::Bc::Profile::snapshot();
+#endif
+  CHECK_FALSE(vm.execute(*code));
+  CHECK(output.str() == "43\n7\n99\n2\n10\n");
+  CHECK(errors.str().empty());
+#if GD_BC_PROFILE
+  auto const index = static_cast<std::size_t>(GD::Bc::Profile::Event::typed_instructions_executed);
+  auto const after = GD::Bc::Profile::snapshot();
+  CHECK((after.events[index] > before.events[index]) ==
+        (checks == GD::Bc::VM::ExecutionChecks::verified && GD_BC_EXPECT_TYPED_RESULTS));
+#endif
+  auto call = [&] {
+    GD::Bc::Parser caller(
+      std::make_unique<GD::Bc::Lexer>(std::make_unique<GD::Bc::StringReader>("f(1,a[])\n")), false);
+    auto tiny = caller.parse();
+    REQUIRE(tiny != nullptr);
+    REQUIRE(tiny->size() < 16);
+#if GD_BC_PROFILE
+    auto const count_before = GD::Bc::Profile::snapshot();
+#endif
+    CHECK_FALSE(vm.execute(*tiny));
+#if GD_BC_PROFILE
+    auto const count_after = GD::Bc::Profile::snapshot();
+    // The caller is ineligible, so this delta proves execution of the
+    // persistent function's lanes, rather than only a typed outer stream.
+    CHECK((count_after.events[index] > count_before.events[index]) ==
+          (checks == GD::Bc::VM::ExecutionChecks::verified && GD_BC_EXPECT_TYPED_RESULTS));
+#endif
+  };
+  call();
+  CHECK(output.str() == "43\n7\n99\n2\n10\n17\n");
+  std::string const replacement = "define f(x,a[]) {\n" + body + "return(42)\n}\n";
+  GD::Bc::Parser redefine(
+    std::make_unique<GD::Bc::Lexer>(std::make_unique<GD::Bc::StringReader>(replacement)), false);
+  auto definition = redefine.parse();
+  REQUIRE(definition != nullptr);
+  CHECK_FALSE(vm.execute(*definition));
+  call();
+  CHECK(output.str() == "43\n7\n99\n2\n10\n17\n42\n");
+  CHECK(errors.str().empty());
 }
 
 TEST_CASE("Compact short functions keep runtime radix and owned literal sidecars",
