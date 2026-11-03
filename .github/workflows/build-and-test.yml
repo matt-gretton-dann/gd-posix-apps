@@ -40,6 +40,13 @@ jobs:
         if: ${{ matrix.extensions == 'ON' }}
         run: python3 docs/utilities/bc-vm-native-evidence/test-verifier.py
 
+      - name: Replay retained runtime native experiments
+        if: ${{ matrix.extensions == 'ON' }}
+        run: python3 docs/utilities/bc-runtime-native-evidence/verify.py
+      - name: Reject corrupted runtime native evidence
+        if: ${{ matrix.extensions == 'ON' }}
+        run: python3 docs/utilities/bc-runtime-native-evidence/test-verifier.py
+
       - name: Replay separate divisor coverage collections
         if: ${{ matrix.extensions == 'ON' }}
         run: python3 docs/utilities/bc-divisor-mcdc-evidence/verify.py
@@ -122,6 +129,13 @@ jobs:
     - name: Reject corrupted VM native experiment evidence
       if: ${{ matrix.extensions == 1 }}
       run: python docs/utilities/bc-vm-native-evidence/test-verifier.py
+
+    - name: Replay retained runtime native experiments
+      if: ${{ matrix.extensions == 1 }}
+      run: python docs/utilities/bc-runtime-native-evidence/verify.py
+    - name: Reject corrupted runtime native evidence
+      if: ${{ matrix.extensions == 1 }}
+      run: python docs/utilities/bc-runtime-native-evidence/test-verifier.py
 
     - name: Replay separate divisor coverage collections
       if: ${{ matrix.extensions == 1 }}
