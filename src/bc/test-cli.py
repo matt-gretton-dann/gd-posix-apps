@@ -54,6 +54,25 @@ class CliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             self.run_bc("", files=(directory,), success=False)
 
+    def test_regular_file_refill_boundaries(self):
+        block = 8192
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "refill.bc"
+            text = "x" * (block + 3) + "\nlast"
+            path.write_bytes(('"' + text + '"\n42\n').encode("ascii"))
+            self.run_bc("", text + "42\n", files=(path,))
+            path.write_bytes(('"' + text + '"\n @\n').encode("ascii"))
+            self.run_bc("", text, files=(path,), success=False,
+                        error=f"{path}:3:2:")
+
+            # Place the two closing comment bytes on opposite sides of a refill.
+            path.write_bytes(("/*" + "x" * (block - 3) + "*/\n42\n").encode("ascii"))
+            self.run_bc("", "42\n", files=(path,))
+
+            # The continuation backslash is the final byte in the first block.
+            path.write_bytes((" " * (block - 2) + "1\\\n2\nquit\n@\n").encode("ascii"))
+            self.run_bc("", "12\n", files=(path,), keep_open=True)
+
     def test_quit(self):
         for text, expected in [
             ("quit\n", ""),
