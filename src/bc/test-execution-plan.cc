@@ -353,7 +353,7 @@ TEST_CASE("Typed lowering falls back for inconsistent register plans",
   CHECK(lower_typed_executable(code, plan, true).empty());
 
   plan = valid;
-  plan.indices.front() = valid.number_count;
+  plan.indices.front() = static_cast<TypedResultPlan::CompactIndex>(valid.number_count);
   CHECK(lower_typed_executable(code, plan, true).empty());
 
   plan = valid;
