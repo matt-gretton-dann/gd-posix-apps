@@ -2484,10 +2484,12 @@ public:
         digits_.mul_pow10(target_scale - difference);
       }
       else {
-        // Integer comparison requires present storage even for a zero
-        // numerator. Preserve the old identity normalization without padding.
+        // For integer magnitudes, floor(A/(B*10^k)) equals
+        // floor(floor(A/10^k)/B). Drop numerator digits first instead of
+        // padding B, retaining scalar division and only surviving storage.
+        digits_ = digits_.rescaled_copy(0, difference - target_scale);
+        // Comparison requires present storage even when every digit was cut.
         digits_.mul_pow10(0);
-        rhs.digits_.mul_pow10(difference - target_scale);
       }
     }
     else {
@@ -2497,7 +2499,7 @@ public:
       digits_.mul_pow10(target_scale);
     }
 
-    // Record logical coefficient dimensions after decimal-factor cancellation and before
+    // Record logical coefficient dimensions after decimal-exponent reduction and before
     // comparison/normalization. These are request totals, not CPU or RSS costs.
     GD_BC_PROFILE_EVENT(Profile::Event::division_requests, 1);
     GD_BC_PROFILE_EVENT(Profile::Event::division_dividend_limbs, digits_.coefficient_limbs());
