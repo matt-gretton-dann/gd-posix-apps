@@ -34,6 +34,13 @@ jobs:
         if: ${{ matrix.extensions == 'ON' }}
         run: python3 docs/utilities/bc-divisor-native-evidence/test-verifier.py
 
+      - name: Replay separate divisor coverage collections
+        if: ${{ matrix.extensions == 'ON' }}
+        run: python3 docs/utilities/bc-divisor-mcdc-evidence/verify.py
+      - name: Reject corrupted divisor coverage evidence
+        if: ${{ matrix.extensions == 'ON' }}
+        run: python3 docs/utilities/bc-divisor-mcdc-evidence/test-verifier.py
+
       - name: Verify archived bc evidence bytes
         if: ${{ matrix.extensions == 'ON' }}
         run: python3 docs/utilities/verify-bc-evidence-checkout.py
@@ -102,6 +109,13 @@ jobs:
     - name: Reject corrupted native divisor checkpoints
       if: ${{ matrix.extensions == 1 }}
       run: python docs/utilities/bc-divisor-native-evidence/test-verifier.py
+
+    - name: Replay separate divisor coverage collections
+      if: ${{ matrix.extensions == 1 }}
+      run: python docs/utilities/bc-divisor-mcdc-evidence/verify.py
+    - name: Reject corrupted divisor coverage evidence
+      if: ${{ matrix.extensions == 1 }}
+      run: python docs/utilities/bc-divisor-mcdc-evidence/test-verifier.py
 
     - name: Verify archived bc evidence bytes
       if: ${{ matrix.extensions == 1 }}

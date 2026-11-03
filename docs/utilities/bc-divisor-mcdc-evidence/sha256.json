@@ -1,0 +1,19 @@
+{
+  "archive-collections.py.txt": "4616c9fa6bd42f1ad8ae1718a35c1321db3e3c5e65b7b1ce61aa9c1112d5026c",
+  "archives/baseline-ext-off-reuse-off.tar.xz": "1efaead34b6b1886a44f6ccd897374215f325b592b643b63bb64b4194d784099",
+  "archives/baseline-ext-off-reuse-on.tar.xz": "ea4b3a5d7d857df26c7a552f29b17792c3527926e2a251fb10c21b4c7697ccd3",
+  "archives/baseline-ext-on-reuse-off.tar.xz": "671f6cf2f0bd5abc9281faa280689d7e101a3d998db1c6fadb96d465666c7d97",
+  "archives/baseline-ext-on-reuse-on.tar.xz": "66d5f49f19051524d23536b38629ec45513fb2e4381c494ab18ee895101924f3",
+  "archives/failed-ext-on-reuse-on.tar.xz": "7b27f46d3a884d94fd478256efcebc9d54f857514215d6456f4ba1b15b27c539",
+  "archives/focused-v1.tar.xz": "70b831b88050ea344d2b283b4e25b6762f27ff55963914c93ab19157f3012333",
+  "archives/focused-v2.tar.xz": "30af9ca660171a7f5f556cbafd10d2823c2721df3cda5ffdd6d29a6800b30705",
+  "archives/focused-v3.tar.xz": "d5d35eeb1504a371356c9bd210f72df9ae8fb7235c43f356ae26a461d9c2bd60",
+  "build-source-proofs.py.txt": "1b76ad31b07b79295df585e349cab2a88ba801907360456d9ab5379aeb159cd8",
+  "inventory.json": "3fb3ef328a12cdbde7a926dfda092e80db3f825a4ada4523ab79e25ecf23ea0d",
+  "solid-compress.py.txt": "33336c1b9dceb2635ebf2d64c34f1b214de02e3745e04724d745568c5c24fe1d",
+  "source-proofs/19e22f708b0a834298671074c37873aa08a3cbdd.json": "45c24bcd89eec4f10ea6a2df5dd6e5d059c504f44a1c5e3a015c27b2cb4cfbab",
+  "source-proofs/c7b8f6ac017e1ba49b8ffb338ad3e2fc7f10e985.json": "7ce11bb285dd60853a0e221fab916f3142ee5d9b739b907050523aa432bc97df",
+  "source-proofs/f2bfdff902c49ed35ebb8f84a81f6b657499af0f.json": "48dcd856723afe01ef36ffabbb7e40c1e8df1d74c9efd0bdf2087e3e62c88150",
+  "source-proofs/fa2420cc57d51b6e578fd7379282b02cff3ae266.json": "b9b42db2646733144140b98a473e2059b4408bfd36e7f629e5738cf91ae94940",
+  "summary.json": "2bfb03e04e1062dfa16cb860d64af48cb885b05a80ed3a8c79ef42c8175aa7ac"
+}
