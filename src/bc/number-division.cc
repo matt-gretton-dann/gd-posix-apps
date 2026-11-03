@@ -1,10 +1,26 @@
-/** \file number-division-cache.cc
- * Native cached arithmetic entries with a generic implementation for all traits.
+/** \file number-division.cc
+ * Native ordinary and cached division drivers, sharing generic implementations.
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #include "bc.hh"
 
 namespace GD::Bc {
+// The generic header path remains available when ordinary outlining is disabled.
+#if GD_BC_OUTLINED_DIVISION
+template<>
+void BasicNumber<NumberTraits16>::divide(BasicNumber rhs, NumType target_scale)
+{
+  divide_impl(std::move(rhs), target_scale);
+}
+
+template<>
+void BasicNumber<NumberTraits32>::divide(BasicNumber rhs, NumType target_scale)
+{
+  divide_impl(std::move(rhs), target_scale);
+}
+#endif
+
 template<>
 auto BasicNumber<NumberTraits16>::try_divide_reusing(BasicNumber const& rhs, NumType target_scale,
                                                      DivisorCache& cache) -> bool
