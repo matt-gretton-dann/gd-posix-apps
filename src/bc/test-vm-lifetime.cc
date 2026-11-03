@@ -1,5 +1,5 @@
 /** \file test-vm-lifetime.cc
- * Isolated allocation-balance regression for VM ownership, without test hooks.
+ * Isolated VM/parser ownership and failure guards, without production test hooks.
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <atomic>
@@ -22,6 +22,21 @@ std::atomic<std::size_t> allocation_calls{0};
 // coefficient growth before allocating gigabytes. It is inactive elsewhere.
 thread_local std::size_t allocation_ceiling = std::numeric_limits<std::size_t>::max();
 thread_local std::size_t denied_allocations = 0;
+// Deny one ordinary allocation, then allow exception capture and cleanup.
+thread_local std::size_t fail_after = std::numeric_limits<std::size_t>::max();
+thread_local std::size_t injected_failures = 0;
+
+class AllocationFailure
+{
+public:
+  explicit AllocationFailure(std::size_t after) : previous_(std::exchange(fail_after, after)) {}
+  ~AllocationFailure() { fail_after = previous_; }
+  AllocationFailure(AllocationFailure const&) = delete;
+  auto operator=(AllocationFailure const&) -> AllocationFailure& = delete;
+
+private:
+  std::size_t previous_;
+};
 
 class AllocationCeiling
 {
@@ -41,6 +56,14 @@ private:
 
 auto operator new(std::size_t size) -> void*
 {
+  if (fail_after == 0) {
+    fail_after = std::numeric_limits<std::size_t>::max();
+    ++injected_failures;
+    throw std::bad_alloc();
+  }
+  if (fail_after != std::numeric_limits<std::size_t>::max()) {
+    --fail_after;
+  }
   if (size > allocation_ceiling) {
     ++denied_allocations;
     throw std::bad_alloc();
@@ -123,6 +146,63 @@ auto native_sqrt_scale_boundary() -> bool
   return true;
 }
 
+// Walk ordinary allocation points while parsing a malformed second item.
+// A retry may return the recorded fatal diagnostic or rethrow a terminal
+// exception; it must never accept the remaining tail as a fresh item.
+auto parser_allocation_failures() -> bool
+{
+  using I = GD::Bc::Instruction;
+  using O = I::Opcode;
+  auto canonical_failure = [](std::shared_ptr<GD::Bc::Instructions> const& code) {
+    return code && code->size() == 4 && code->at(0).opcode() == O::string &&
+           code->at(1).opcode() == O::print &&
+           std::get<I::Stream>(code->at(1).op2()) == I::Stream::error &&
+           code->at(2).opcode() == O::quit && std::get<unsigned>(code->at(2).op1()) == 1 &&
+           code->at(3).opcode() == O::eof;
+  };
+  unsigned escaped = 0;
+  for (std::size_t point = 0; point != 128; ++point) {
+    GD::Bc::Parser parser(
+      std::make_unique<GD::Bc::Lexer>(std::make_unique<GD::Bc::StringReader>("7\n1+\n99\n")), true);
+    auto original = parser.parse();
+    if (!original || original->at(0).opcode() != O::number ||
+        std::get<std::string>(original->at(0).op1()) != "7") {
+      return false;
+    }
+    auto const before = injected_failures;
+    std::shared_ptr<GD::Bc::Instructions> code;
+    bool threw = false;
+    try {
+      AllocationFailure const failure(point);
+      code = parser.parse();
+    }
+    catch (std::bad_alloc const&) {
+      threw = true;
+      ++escaped;
+    }
+    if (!threw && !canonical_failure(code)) {
+      return false;
+    }
+    if (threw) {
+      try {
+        if (!canonical_failure(parser.parse())) {
+          return false;
+        }
+      }
+      catch (std::bad_alloc const&) {
+        // A captured exception remains terminal after the injector is gone.
+      }
+    }
+    if (std::get<std::string>(original->at(0).op1()) != "7") {
+      return false;
+    }
+    if (injected_failures == before) {
+      return escaped != 0;  // All allocation points in this parse were visited.
+    }
+  }
+  return false;  // Do not silently accept a truncated fault sweep.
+}
+
 auto run() -> bool
 {
   std::ostringstream output;
@@ -167,7 +247,16 @@ auto main() -> int
     std::fprintf(stderr, "Small-number value operations allocated or lost isolation\n");
     return 1;
   }
+  // Warm diagnostic/catalog paths before measuring the fault sweep's lifetime.
+  if (!parser_allocation_failures()) {
+    std::fprintf(stderr, "Parser allocation failure resumed a partial input item\n");
+    return 1;
+  }
   auto const before = outstanding.load(std::memory_order_relaxed);
+  if (!parser_allocation_failures()) {
+    std::fprintf(stderr, "Repeated parser allocation sweep lost terminal state\n");
+    return 1;
+  }
   if (!native_sqrt_scale_boundary<GD::Bc::NumberTraits16>() ||
       !native_sqrt_scale_boundary<GD::Bc::NumberTraits32>()) {
     std::fprintf(stderr, "Native square-root scale wrapped or lost snapshot isolation\n");

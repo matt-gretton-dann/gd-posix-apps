@@ -499,3 +499,20 @@ Every actual host, outcome and raw artifact is retained separately. No CPU
 filtering, favorable retries or pooled decision is permitted. The runner label
 does not guarantee the target Intel hardware; absence of that CPU remains a
 coverage limitation rather than being described as a completed comparison.
+
+### Exceptions during parser input consumption
+
+A failed input read or allocation can leave the lexer partway through an item.
+The public Parser API retains an exception escaping that input-parsing stage
+and rethrows it on later calls, without any more Reader access. It releases the
+abandoned instruction buffer and loop/function bookkeeping; previously returned
+instruction snapshots remain valid. Construct a new parser for a new input
+stream rather than replaying the tail of the failed item.
+
+Ordinary syntax diagnostics still produce the same terminal diagnostic/quit
+stream. Their text is moved into terminal storage before instruction emission
+can allocate. Read-time quit continues to suppress diagnostics in the discarded
+partial item. Public Reader fixtures inject both bad_alloc and a reader-specific
+exception across expressions, blocks, arguments and nested function/loop bodies;
+repeated calls preserve failure type/payload, avoid further reads and keep a
+previous successful snapshot intact. No production fault hook is introduced.

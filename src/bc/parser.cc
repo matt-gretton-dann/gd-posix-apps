@@ -181,6 +181,9 @@ void GD::Bc::Parser::emit_fatal_error(std::string const& diagnostic)
 
 auto GD::Bc::Parser::parse() -> std::shared_ptr<GD::Bc::Instructions>
 {
+  if (fatal_exception_) {
+    std::rethrow_exception(fatal_exception_);
+  }
   // Retained results are independent snapshots. Only reuse an unobserved owner;
   // clear every instruction/cache while retaining the largest item's capacity.
   // A fatal parser still cannot resume with partially consumed input.
@@ -198,11 +201,21 @@ auto GD::Bc::Parser::parse() -> std::shared_ptr<GD::Bc::Instructions>
   try {
     parse_program();
   }
-  catch (ParseError const& error) {
+  catch (ParseError& error) {
     // Keep the first diagnostic terminal even when a caller parses again instead
     // of executing its quit instruction. Recoverable parsing is separate work.
-    fatal_diagnostic_ = error.diagnostic;
+    // Moving the diagnostic does not allocate. Remember it before emitting
+    // instructions, which may itself fail and be retried by the caller.
+    fatal_diagnostic_.emplace(std::move(error.diagnostic));
     emit_fatal_error(*fatal_diagnostic_);
+  }
+  catch (...) {
+    // A Reader or allocation failure may leave the lexer midway through an
+    // item. Replaying its tail would silently change the program boundary.
+    fatal_exception_ = std::current_exception();
+    instructions_.reset();
+    clear_context();
+    throw;
   }
   return instructions_;
 }
