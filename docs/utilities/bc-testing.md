@@ -487,3 +487,15 @@ covered at all three limb widths. Hash collisions can only affect when the
 current value is prepared; exact owner/padding identity and retained immutable
 snapshots still protect hits. This simplification does not establish a speedup
 or waive the experimental VM candidate's native performance regressions.
+
+### Linux divisor CPU coverage
+
+The changed VM miss route's first Linux run used an AMD EPYC 7763. The
+previous candidate's confirmed Linux losses used an Intel Xeon Platinum
+8573C; passing on the former does not demonstrate correction on the latter.
+The Linux divisor cohort workflow therefore declares three jobs in advance,
+with the complete full/holdout corpus and explicit candidate reuse activation.
+Every actual host, outcome and raw artifact is retained separately. No CPU
+filtering, favorable retries or pooled decision is permitted. The runner label
+does not guarantee the target Intel hardware; absence of that CPU remains a
+coverage limitation rather than being described as a completed comparison.
