@@ -52,11 +52,18 @@ class Coverage(unittest.TestCase):
         cache = {'ENABLE_NON_POSIX_EXTENSIONS': 'OFF', 'ENABLE_BC_PREPARED_DIVISORS': 'ON',
                  'ENABLE_BC_COMPACT_EXECUTION': 'ON'}
         self.assertEqual(COLLECTOR.build_modes(cache),
-                         {'extensions': 'OFF', 'prepared_divisors': 'ON', 'compact_execution': 'ON'})
+                         {'extensions': 'OFF', 'prepared_divisors': 'ON', 'compact_execution': 'ON',
+                          'typed_results': None})
         self.assertIsNone(COLLECTOR.build_modes({})['prepared_divisors'])
         self.assertIsNone(COLLECTOR.build_modes({})['compact_execution'])
         cache['ENABLE_BC_COMPACT_EXECUTION'] = 'OFF'
         self.assertEqual(COLLECTOR.build_modes(cache)['compact_execution'], 'OFF')
+
+    def test_typed_result_mode_distinguishes_old_and_explicit_builds(self):
+        self.assertIsNone(COLLECTOR.build_modes({})['typed_results'])
+        for mode in ('ON', 'OFF'):
+            self.assertEqual(COLLECTOR.build_modes({'ENABLE_BC_TYPED_RESULTS': mode})[
+                'typed_results'], mode)
 
 
 if __name__ == '__main__':

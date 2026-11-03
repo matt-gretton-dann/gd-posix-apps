@@ -5,7 +5,10 @@
 #include "execution-plan.hh"
 
 #include <cassert>
+#include <initializer_list>
 #include <limits>
+#include <optional>
+#include <utility>
 
 namespace GD::Bc::Details {
 namespace {
@@ -114,30 +117,31 @@ auto classify_result(Instructions const& code, Instruction::Index index) -> Resu
   return ResultKind::none;
 }
 
-auto plan_result_slots(Instructions const& code, std::size_t slot_bytes) -> ResultSlotPlan
+namespace {
+auto can_compact_slots(std::size_t size, std::size_t slot_bytes) -> bool
 {
   using Compact = ResultSlotPlan::CompactIndex;
-  auto const size = code.size();
   // Avoid per-item map work on tiny CLI streams and preserve the full index
   // domain through the existing representation when narrowing cannot be proved.
-  if (size < 16 || size > std::numeric_limits<Compact>::max() ||
-      size > std::numeric_limits<std::size_t>::max() / sizeof(Compact) ||
-      slot_bytes <= sizeof(Compact)) {
-    return {};
-  }
-  std::size_t producers = 0;
-  visit_execution_region(code, [&](Instruction::Index i) {
-    if (classify_result(code, i) != ResultKind::none)
-      ++producers;
-  });
+  return size >= 16 && size <= std::numeric_limits<Compact>::max() &&
+         size <= std::numeric_limits<std::size_t>::max() / sizeof(Compact) &&
+         slot_bytes > sizeof(Compact);
+}
+
+auto profitable_compact_slots(std::size_t size, std::size_t producers, std::size_t slot_bytes)
+  -> bool
+{
   // Include the shared empty sentinel and the persistent map in the payload
   // comparison. Division avoids overflowing a saved-slots * slot-bytes product.
-  if (producers >= size - 1 || size - producers - 1 <= size * sizeof(Compact) / slot_bytes) {
-    return {};
-  }
+  return can_compact_slots(size, slot_bytes) && producers < size - 1 &&
+         size - producers - 1 > size * sizeof(ResultSlotPlan::CompactIndex) / slot_bytes;
+}
+
+auto assign_generic_slots(Instructions const& code) -> ResultSlotPlan
+{
   ResultSlotPlan result;
-  result.indices.resize(size, 0);
-  Compact next = 1;
+  result.indices.resize(code.size(), 0);
+  ResultSlotPlan::CompactIndex next = 1;
   visit_execution_region(code, [&](Instruction::Index i) {
     if (classify_result(code, i) != ResultKind::none)
       result.indices[i] = next++;
@@ -145,9 +149,27 @@ auto plan_result_slots(Instructions const& code, std::size_t slot_bytes) -> Resu
   result.count = next;
   return result;
 }
+}  // namespace
 
-auto lower_executable(Instructions const& code, ResultSlotPlan const& slots, bool persistent)
-  -> ExecutableCode
+auto plan_result_slots(Instructions const& code, std::size_t slot_bytes) -> ResultSlotPlan
+{
+  if (!can_compact_slots(code.size(), slot_bytes))
+    return {};
+  std::size_t producers = 0;
+  visit_execution_region(code, [&](Instruction::Index i) {
+    if (classify_result(code, i) != ResultKind::none)
+      ++producers;
+  });
+  return profitable_compact_slots(code.size(), producers, slot_bytes) ? assign_generic_slots(code)
+                                                                      : ResultSlotPlan{};
+}
+
+namespace {
+// Both layouts preserve source-PC control flow and the same sidecar ownership.
+// Only the opcode and data/result register maps differ.
+template<typename Code, typename Opcode, typename ResultIndex, typename DataIndex>
+auto lower_records(Instructions const& code, typename Code::value_type empty, bool persistent,
+                   Opcode opcode, ResultIndex result_index, DataIndex data_index) -> Code
 {
   using I = Instruction::Index;
   using O = Instruction::Opcode;
@@ -155,7 +177,7 @@ auto lower_executable(Instructions const& code, ResultSlotPlan const& slots, boo
   auto const size = code.size();
   if (size == 0 || (!persistent && size < 16) || size >= std::numeric_limits<C>::max())
     return {};
-  ExecutableCode result(size, ExecutableInstruction{O::eof, 0, {}, {}});
+  Code result(size, empty);
   bool representable = true;
   auto encode = [&](I pc, Instruction::Operand const& operand, bool control) {
     ExecutableOperand encoded;
@@ -163,7 +185,7 @@ auto lower_executable(Instructions const& code, ResultSlotPlan const& slots, boo
       Overloaded{
         [&](Instruction::Offset offset) {
           auto const index = pc + static_cast<I>(offset);
-          encoded = ExecutableOperand(static_cast<C>(control ? index : slots.index(index)));
+          encoded = ExecutableOperand(static_cast<C>(control ? index : data_index(index)));
         },
         [&](Instruction::Stream stream) { encoded = ExecutableOperand(static_cast<C>(stream)); },
         [&](Letter letter) { encoded = ExecutableOperand(letter); },
@@ -184,8 +206,13 @@ auto lower_executable(Instructions const& code, ResultSlotPlan const& slots, boo
   visit_execution_region(code, [&](I i) {
     auto const& source = code[i];
     auto& lowered = result[i];
-    lowered.opcode = source.opcode();
-    lowered.result = static_cast<C>(slots.index(i));
+    auto const operation = opcode(i);
+    if (!operation) {
+      representable = false;
+      return;
+    }
+    lowered.opcode = *operation;
+    lowered.result = static_cast<C>(result_index(i));
     if (source.opcode() == O::function_begin) {
       definition = i;
     }
@@ -204,6 +231,235 @@ auto lower_executable(Instructions const& code, ResultSlotPlan const& slots, boo
   if (!representable)
     return {};
   return result;
+}
+}  // namespace
+
+auto lower_executable(Instructions const& code, ResultSlotPlan const& slots, bool persistent)
+  -> ExecutableCode
+{
+  return lower_records<ExecutableCode>(
+    code, {Instruction::Opcode::eof, 0, {}, {}}, persistent,
+    [&](Instruction::Index i) { return std::optional<Instruction::Opcode>(code[i].opcode()); },
+    [&](Instruction::Index i) { return slots.index(i); },
+    [&](Instruction::Index i) { return slots.index(i); });
+}
+
+namespace {
+auto payload_bytes(std::size_t fixed,
+                   std::initializer_list<std::pair<std::size_t, std::size_t>> payloads)
+  -> std::optional<std::size_t>
+{
+  auto total = fixed;
+  for (auto const& [count, width] : payloads) {
+    if (width != 0 && count > (std::numeric_limits<std::size_t>::max() - total) / width)
+      return std::nullopt;
+    total += count * width;
+  }
+  return total;
+}
+
+auto typed_operation(Instructions const& code, Instruction::Index index)
+  -> std::optional<TypedOpcode>
+{
+  using O = Instruction::Opcode;
+  using T = TypedOpcode;
+  auto first_kind = [&] {
+    auto const offset = std::get<Instruction::Offset>(code[index].op1());
+    return classify_result(code, index + static_cast<Instruction::Index>(offset));
+  };
+  switch (code[index].opcode()) {
+  case O::eof:
+    return T::eof;
+  case O::quit:
+    return T::quit;
+  case O::string:
+    return T::string;
+  case O::number:
+    return T::number;
+  case O::variable:
+    return T::variable;
+  case O::array_element:
+    return T::array_element;
+  case O::array:
+    return T::array;
+  case O::scale:
+    return T::scale;
+  case O::ibase:
+    return T::ibase;
+  case O::obase:
+    return T::obase;
+  case O::add:
+    return T::add;
+  case O::subtract:
+    return T::subtract;
+  case O::negate:
+    return T::negate;
+  case O::multiply:
+    return T::multiply;
+  case O::divide:
+    return T::divide;
+  case O::modulo:
+    return T::modulo;
+  case O::power:
+    return T::power;
+  case O::scale_expr:
+    return T::scale_expr;
+  case O::sqrt:
+    return T::sqrt;
+  case O::abs:
+    return T::abs;
+  case O::equals:
+    return T::equals;
+  case O::less_than_equals:
+    return T::less_than_equals;
+  case O::not_equals:
+    return T::not_equals;
+  case O::less_than:
+    return T::less_than;
+  case O::branch:
+    return T::branch;
+  case O::branch_zero:
+    return T::branch_zero;
+  case O::return_:
+    return T::return_;
+  case O::call:
+    return T::call;
+  case O::push_param_mark:
+    return T::push_param_mark;
+  case O::pop_param_mark:
+    return T::pop_param_mark;
+  case O::pop_param:
+    return T::pop_param;
+  case O::pop_param_array:
+    return T::pop_param_array;
+  case O::function_begin:
+    return T::function_begin;
+  case O::function_end:
+    return T::function_end;
+  case O::print:
+    return first_kind() == ResultKind::number ? T::print_number : T::print_other;
+  case O::load:
+    return classify_result(code, index) == ResultKind::number ? T::load_number : T::load_array;
+  case O::store:
+    return first_kind() == ResultKind::array_location ? T::store_array : T::store_number;
+  case O::length:
+    return first_kind() == ResultKind::number ? T::length_number : T::length_array;
+  case O::push_param:
+    return first_kind() == ResultKind::number ? T::push_number : T::push_array;
+  }
+  // New source opcodes must acquire a typed contract before being enabled.
+  return std::nullopt;
+}
+}  // namespace
+
+namespace {
+auto can_plan_typed(std::size_t size, TypedResultCosts costs, bool persistent) -> bool
+{
+  return size != 0 && (persistent || size >= 16) && size < TypedResultPlan::no_register &&
+         costs.number_slot_bytes != 0 && costs.other_slot_bytes != 0 &&
+         costs.generic_slot_bytes != 0 && costs.generic_instruction_bytes != 0 &&
+         costs.typed_instruction_bytes != 0;
+}
+
+auto tally_typed_slots(Instructions const& code) -> TypedResultPlan
+{
+  TypedResultPlan result;
+  visit_execution_region(code, [&](Instruction::Index i) {
+    auto const kind = classify_result(code, i);
+    if (kind == ResultKind::number)
+      ++result.number_count;
+    else if (kind != ResultKind::none)
+      ++result.other_count;
+  });
+  return result;
+}
+
+auto select_typed_slots(Instructions const& code, TypedResultPlan result, std::size_t generic_count,
+                        std::size_t generic_map_size, TypedResultCosts costs) -> TypedResultPlan
+{
+  using C = TypedResultPlan::CompactIndex;
+  auto const size = code.size();
+  if (result.number_count == 0)
+    return {};
+
+  auto const generic_bytes =
+    payload_bytes(costs.generic_fixed_bytes, {{generic_count, costs.generic_slot_bytes},
+                                              {generic_map_size, sizeof(C)},
+                                              {size, costs.generic_instruction_bytes}});
+  auto const typed_bytes =
+    payload_bytes(costs.typed_fixed_bytes, {{result.number_count, costs.number_slot_bytes},
+                                            {result.other_count, costs.other_slot_bytes},
+                                            {size, sizeof(C)},
+                                            {size, costs.typed_instruction_bytes}});
+  if (!generic_bytes || !typed_bytes || *typed_bytes >= *generic_bytes)
+    return {};
+
+  result.indices.resize(size, TypedResultPlan::no_register);
+  C next_number = 0;
+  C next_other = 0;
+  visit_execution_region(code, [&](Instruction::Index i) {
+    auto const kind = classify_result(code, i);
+    if (kind == ResultKind::number)
+      result.indices[i] = next_number++;
+    else if (kind != ResultKind::none)
+      result.indices[i] = next_other++;
+  });
+  return result;
+}
+}  // namespace
+
+auto plan_typed_results(Instructions const& code, ResultSlotPlan const& generic,
+                        TypedResultCosts costs, bool persistent) -> TypedResultPlan
+{
+  auto const size = code.size();
+  if (!can_plan_typed(size, costs, persistent) ||
+      (!generic.indices.empty() && generic.indices.size() != size))
+    return {};
+  return select_typed_slots(code, tally_typed_slots(code), generic.storage_size(size),
+                            generic.indices.size(), costs);
+}
+
+auto plan_verified_results(Instructions const& code, TypedResultCosts costs, bool persistent)
+  -> VerifiedResultPlan
+{
+  auto const size = code.size();
+  if (!can_plan_typed(size, costs, persistent))
+    return plan_result_slots(code, costs.generic_slot_bytes);
+
+  auto tally = tally_typed_slots(code);
+  auto const producers = tally.number_count + tally.other_count;
+  bool const compact = profitable_compact_slots(size, producers, costs.generic_slot_bytes);
+  auto typed = select_typed_slots(code, std::move(tally), compact ? producers + 1 : size,
+                                  compact ? size : 0, costs);
+  if (!typed.empty())
+    return VerifiedResultPlan{std::move(typed)};
+  return compact ? assign_generic_slots(code) : ResultSlotPlan{};
+}
+
+auto lower_typed_executable(Instructions const& code, TypedResultPlan const& slots, bool persistent)
+  -> TypedExecutableCode
+{
+  if (slots.empty() || slots.indices.size() != code.size() || slots.number_count == 0 ||
+      slots.number_count >= TypedResultPlan::no_register ||
+      slots.other_count >= TypedResultPlan::no_register)
+    return {};
+  return lower_records<TypedExecutableCode>(
+    code, {TypedOpcode::eof, 0, {}, {}}, persistent,
+    [&](Instruction::Index i) -> std::optional<TypedOpcode> {
+      auto const kind = classify_result(code, i);
+      auto const index = slots.indices[i];
+      if (kind == ResultKind::none) {
+        if (index != TypedResultPlan::no_register)
+          return std::nullopt;
+      }
+      else if (index >= (kind == ResultKind::number ? slots.number_count : slots.other_count))
+        return std::nullopt;
+      return typed_operation(code, i);
+    },
+    [&](Instruction::Index i) {
+      return slots.indices[i] == TypedResultPlan::no_register ? 0 : slots.indices[i];
+    },
+    [&](Instruction::Index i) { return slots.indices[i]; });
 }
 
 auto plan_consumption(Instructions const& code, bool persistent) -> ConsumptionPlan

@@ -27,6 +27,12 @@ class OffsetTests(unittest.TestCase):
         self.assertRegex(run.stderr, r"\(file: src/bc/vm\.cc, line [1-9][0-9]*\):")
         self.assertIn("Operand 1 of instruction", run.stderr)
 
+    def test_eligible_quit_preserves_exit_status_and_stops_execution(self):
+        run = self.run_case('typed-quit')
+        self.assertEqual(run.returncode, 23, run.stderr)
+        self.assertEqual(run.stdout, 'EXECUTED\n')
+        self.assertEqual(run.stderr, '')
+
     def test_reject_before_execution(self):
         for case, operand in (("op1-end", 1), ("op1-after", 1), ("op1-before", 1), ("op1-min", 1),
                               ("op2-end", 2), ("op2-after", 2), ("op2-before", 2), ("op2-min", 2),
