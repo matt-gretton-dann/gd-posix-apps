@@ -181,8 +181,8 @@ void GD::Bc::Parser::emit_fatal_error(std::string const& diagnostic)
 
 auto GD::Bc::Parser::parse() -> std::shared_ptr<GD::Bc::Instructions>
 {
-  if (fatal_exception_) {
-    std::rethrow_exception(fatal_exception_);
+  if (auto const* exception = std::get_if<std::exception_ptr>(&fatal_failure_)) {
+    std::rethrow_exception(*exception);
   }
   // Retained results are independent snapshots. Only reuse an unobserved owner;
   // clear every instruction/cache while retaining the largest item's capacity.
@@ -194,8 +194,8 @@ auto GD::Bc::Parser::parse() -> std::shared_ptr<GD::Bc::Instructions>
     instructions_ = GD_BC_PROFILE_SHARED(Profile::AllocationKind::instructions, Instructions)();
   }
   clear_context();
-  if (fatal_diagnostic_) {
-    emit_fatal_error(*fatal_diagnostic_);
+  if (auto const* diagnostic = std::get_if<std::string>(&fatal_failure_)) {
+    emit_fatal_error(*diagnostic);
     return instructions_;
   }
   try {
@@ -206,13 +206,13 @@ auto GD::Bc::Parser::parse() -> std::shared_ptr<GD::Bc::Instructions>
     // of executing its quit instruction. Recoverable parsing is separate work.
     // Moving the diagnostic does not allocate. Remember it before emitting
     // instructions, which may itself fail and be retried by the caller.
-    fatal_diagnostic_.emplace(std::move(error.diagnostic));
-    emit_fatal_error(*fatal_diagnostic_);
+    auto const& diagnostic = fatal_failure_.emplace<std::string>(std::move(error.diagnostic));
+    emit_fatal_error(diagnostic);
   }
   catch (...) {
     // A Reader or allocation failure may leave the lexer midway through an
     // item. Replaying its tail would silently change the program boundary.
-    fatal_exception_ = std::current_exception();
+    fatal_failure_.emplace<std::exception_ptr>(std::current_exception());
     instructions_.reset();
     clear_context();
     throw;

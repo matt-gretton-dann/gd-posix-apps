@@ -1230,8 +1230,8 @@ private:
   std::shared_ptr<Instructions> instructions_;   ///< Current set of instructions
   std::stack<std::list<Index>> loop_breaks_;     ///< Stack of loop breaks.
   bool interactive_;                             ///< Are we interactive?
-  std::exception_ptr fatal_exception_;           ///< Exception from an abandoned input item.
-  std::optional<std::string> fatal_diagnostic_;  ///< Original terminal diagnostic, if any.
+  // An input failure has exactly one terminal representation, never both.
+  std::variant<std::monostate, std::string, std::exception_ptr> fatal_failure_;
   bool in_function_{false};                      ///< Are we in a function?
   bool seen_quit_{false};                        ///< Have we seen a quit token?
 };

@@ -523,3 +523,10 @@ error. The old flag checks did not constitute recovery: unexpected input
 exceptions could still resume at a consumed tail. The sticky exception state
 and diagnostic state are established before such a retry can re-enter grammar
 parsing. Their regression tests include delimiter/list contexts and early quit.
+
+A parser retains one terminal failure: either diagnostic text or an exception.
+These mutually exclusive states share a variant rather than separate fields.
+This does not change retry or snapshot semantics, and does not imply a native
+performance improvement; every changed candidate still needs its own paired
+measurements. The earlier Windows comparison regressions remain source-bound
+rejected evidence.
