@@ -127,3 +127,17 @@ confirmation, startup, memory/allocation and code-size evidence, with all losing
 and inconclusive classes retained. Linux/Windows allow up to 5% slowdown per
 change; macOS is unchanged. Smaller metadata or fewer tag checks alone does not
 establish a runtime improvement.
+
+## Target defaults and generic build
+
+Fresh configurations on Linux and Windows select typed lanes. Other targets
+default to the generic VM. Set `ENABLE_BC_TYPED_RESULTS` explicitly to override
+the target default. An existing CMake cache retains its selected value.
+
+Disabling typed results or compact execution compiles out the typed
+layout variant and activation buffers. Generic builds own a single
+generic plan and retain one vector per call depth. The checked and wide
+interpreters remain available. This policy candidate needs separate
+default-build performance results on all three hosts.
+The fresh macOS default and explicit overrides passed all four sanitizer
+and three profiling configurations, including the wide fallback.

@@ -70,6 +70,13 @@ private:
 using ResultBuffer =
   std::vector<ResultSlot, Profile::Allocator<ResultSlot, Profile::AllocationKind::results>>;
 
+struct GenericExecutionLayout
+{
+  ResultSlotPlan slots;
+  ExecutableCode code;
+};
+
+#if GD_BC_TYPED_RESULTS && GD_BC_COMPACT_EXECUTION
 using OtherExecutionResult = std::variant<std::monostate, ArrayValues, std::string_view, Variable,
                                           Array, ArrayElement, Ibase, Obase, Scale>;
 using NumberBuffer =
@@ -84,11 +91,6 @@ struct TypedExecutionLayout
   TypedExecutableCode code;
 };
 
-struct GenericExecutionLayout
-{
-  ResultSlotPlan slots;
-  ExecutableCode code;
-};
 using ExecutionLayout = std::variant<GenericExecutionLayout, TypedExecutionLayout>;
 
 struct TypedResultBuffers
@@ -116,7 +118,6 @@ struct TypedExecutionView
 auto prepare_typed_layout(Instructions const& code, ResultSlotPlan const& generic, bool persistent,
                           bool enabled) -> TypedExecutionLayout
 {
-#if GD_BC_TYPED_RESULTS && GD_BC_COMPACT_EXECUTION
   if (enabled) {
     // Charge actual payload and owner/frame/view objects against the existing
     // generic representation. Runtime capacities are measured separately.
@@ -135,14 +136,14 @@ auto prepare_typed_layout(Instructions const& code, ResultSlotPlan const& generi
         return {std::move(slots), std::move(executable)};
     }
   }
-#else
-  (void)code;
-  (void)generic;
-  (void)persistent;
-  (void)enabled;
-#endif
   return {};
 }
+
+#else
+// Compile out typed ownership and activation state when the feature is off.
+using ExecutionLayout = GenericExecutionLayout;
+using ActivationResults = ResultBuffer;
+#endif
 
 // Lower only verified execution. The build switch and empty lowering preserve
 // the portable wide-operand interpreter, including its full index domain.
@@ -162,9 +163,11 @@ auto prepare_executable(Instructions const& code, ResultSlotPlan const& slots, b
 auto prepare_layout(Instructions const& code, ResultSlotPlan generic, bool persistent, bool compact)
   -> ExecutionLayout
 {
+#if GD_BC_TYPED_RESULTS && GD_BC_COMPACT_EXECUTION
   auto typed = prepare_typed_layout(code, generic, persistent, compact);
   if (!typed.code.empty())
     return ExecutionLayout{std::move(typed)};
+#endif
   auto executable = compact ? prepare_executable(code, generic, persistent) : ExecutableCode{};
   return GenericExecutionLayout{std::move(generic), std::move(executable)};
 }
@@ -182,12 +185,18 @@ public:
   auto layout() const -> ExecutionLayout const& { return *layout_; }
   auto generic_layout() const -> GenericExecutionLayout const*
   {
+#if GD_BC_TYPED_RESULTS && GD_BC_COMPACT_EXECUTION
     return std::get_if<GenericExecutionLayout>(layout_);
+#else
+    return layout_;
+#endif
   }
+#if GD_BC_TYPED_RESULTS && GD_BC_COMPACT_EXECUTION
   auto typed_layout() const -> TypedExecutionLayout const*
   {
     return std::get_if<TypedExecutionLayout>(layout_);
   }
+#endif
 
 private:
   friend struct VMState;
@@ -352,7 +361,9 @@ struct VMState
   // held by callers; clearing drops values and retains the current format's
   // capacities. Changing format discards the previous format's capacities.
   auto acquire_results(std::size_t count, ExecutionLayout const& layout) -> ResultBuffer*;
+#if GD_BC_TYPED_RESULTS && GD_BC_COMPACT_EXECUTION
   auto active_results() -> ActivationResults& { return result_buffers_[result_depth_ - 1]; }
+#endif
   void release_results();
 
   /** \brief  Validate instruction bounds, result types and control-flow availability.  */
@@ -628,7 +639,9 @@ private:
   // Immutable plan data is owned beside the verified code and cannot relocate
   // during this activation. Null preserves the full-width identity fallback.
   ResultSlotPlan::CompactIndex const* result_indices_;
+#if GD_BC_TYPED_RESULTS && GD_BC_COMPACT_EXECUTION
   TypedExecutionView typed_;
+#endif
 };
 
 auto operator<<(std::ostream& os, InstructionPack const& instrs) -> std::ostream&;
@@ -1044,6 +1057,7 @@ auto GD::Bc::Details::VMState::acquire_results(std::size_t count, ExecutionLayou
     result_buffers_.emplace_back();
   }
   auto& result = result_buffers_[result_depth_];
+#if GD_BC_TYPED_RESULTS && GD_BC_COMPACT_EXECUTION
   assert(std::visit(
     [](auto const& buffers) {  // NOLINT
       if constexpr (std::is_same_v<std::decay_t<decltype(buffers)>, ResultBuffer>)
@@ -1078,12 +1092,22 @@ auto GD::Bc::Details::VMState::acquire_results(std::size_t count, ExecutionLayou
   }
   ++result_depth_;
   return std::get_if<ResultBuffer>(&result);
+#else
+  assert(result.empty());  // NOLINT
+  result.resize(layout.slots.storage_size(count));
+  ++result_depth_;
+  return &result;
+#endif
 }
 
 void GD::Bc::Details::VMState::release_results()
 {
   assert(result_depth_ != 0);  // NOLINT
+#if GD_BC_TYPED_RESULTS && GD_BC_COMPACT_EXECUTION
   std::visit([](auto& buffers) { buffers.clear(); }, result_buffers_[--result_depth_]);
+#else
+  result_buffers_[--result_depth_].clear();
+#endif
 }
 
 GD::Bc::Details::InstructionPack::InstructionPack(VMState* vm, VerifiedInstructions instrs)
@@ -1093,8 +1117,11 @@ GD::Bc::Details::InstructionPack::InstructionPack(VMState* vm, VerifiedInstructi
       consumption_(instrs.consumption()),
       result_indices_(instrs.generic_layout() && !instrs.generic_layout()->slots.indices.empty()
                         ? instrs.generic_layout()->slots.indices.data()
-                        : nullptr),
+                        : nullptr)
+#if GD_BC_TYPED_RESULTS && GD_BC_COMPACT_EXECUTION
+      ,
       typed_{instrs.typed_layout(), std::get_if<TypedResultBuffers>(&vm->active_results())}
+#endif
 {
   assert(vm_ != nullptr);  // NOLINT
 }
@@ -1973,12 +2000,14 @@ auto GD::Bc::Details::operator<<(std::ostream& os, GD::Bc::Details::InstructionP
       os << "**";
     }
     os << '\t' << instrs.instrs_[i];
+#if GD_BC_TYPED_RESULTS && GD_BC_COMPACT_EXECUTION
     if (instrs.typed_.layout) {
       // Entry verification proves consumer availability, not a live-value dump
       // for every future producer. Do not inspect unwritten typed registers.
       os << '\n';
       continue;
     }
+#endif
     auto const& instr{instrs.result_at(i)};
     if (instr.has_value()) {
       os << " = " << *instr;
