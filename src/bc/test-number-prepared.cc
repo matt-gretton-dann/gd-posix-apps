@@ -186,6 +186,19 @@ TEMPLATE_TEST_CASE("Prepared division handles quotient estimate boundaries",
 {
   using Digits = GD::Bc::Details::BasicDigits<TestType>;
   std::uint64_t const base = Digits::base_;
+  // Both coefficients use two limbs and the dividend exceeds the divisor.
+  // This selects the short prepared path after the less-than and equal exits.
+  auto const short_divisor = coefficient<Digits>(base + 1);
+  auto short_quotient = coefficient<Digits>(3 * (base + 1) + 2);
+  auto short_remainder = short_quotient;
+  REQUIRE(short_divisor.coefficient_limbs() == 2);
+  REQUIRE(short_quotient.coefficient_limbs() == 2);
+  auto const short_prepared = short_divisor.prepare_divisor();
+  short_quotient.divide(short_prepared);
+  short_remainder.modulo(short_prepared);
+  CHECK(decimal(short_quotient) == "3");
+  CHECK(decimal(short_remainder) == "2");
+
   auto block = [](std::uint64_t value) {
     auto text = std::to_string(value);
     return std::string(Digits::base_log10_ - text.size(), '0') + text;

@@ -211,3 +211,24 @@ No assertion was deleted, weakened, rewritten for MC/DC, or triggered using
 undefined arithmetic/private-state corruption. A failure inside any of these
 contracts would still be a bug; this classification does not substitute for the
 exact oracles, mutation checks, sanitizers and native behavior tests.
+
+## Prepared division with a two-limb dividend
+
+The compact VM checkpoint at `b628199e` recorded zero true outcomes for
+`digits_->size() == 2` in the 16-bit quotient and remainder instantiations of
+`BasicDigits::divide_prepared_impl`. Its 8-bit and 32-bit instantiations already
+exercised that outcome.
+
+The prepared quotient-estimate test now uses divisor `base + 1` and dividend
+`3 * (base + 1) + 2`. It asserts that both operands have two coefficient limbs,
+then checks quotient 3 and remainder 2. This reaches the short-dividend arm
+after the less-than and equality exits with the single-limb divisor predicate
+false.
+
+Focused LLVM 23.1.4 runs on `edd686a5` plus this fixture passed all 36
+`[prepared]` cases and 150,760 assertions separately with extensions enabled
+and disabled. Each run recorded both MC/DC conditions for all six trait and
+operation combinations. The second condition's true/false counts per operation
+were 12,091/1,786 at 8 bits, 1/1,489 at 16 bits and 16/583 at 32 bits in each
+mode. These are unit-test mappings for this decision. The remaining application
+and feasibility obligations under #426 and #197 stay open.
