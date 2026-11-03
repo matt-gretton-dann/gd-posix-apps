@@ -530,3 +530,24 @@ This does not change retry or snapshot semantics, and does not imply a native
 performance improvement; every changed candidate still needs its own paired
 measurements. The earlier Windows comparison regressions remain source-bound
 rejected evidence.
+
+### Header consumers inherit the configured extension mode
+
+The extension definition is a public usage requirement of libbc because bc.hh
+contains a mode-dependent inline constexpr query. All linked consumers,
+including standalone lifetime/signal/offset tests and component tools, inherit
+the same definition as the library. The header-only tuner shares just the
+language-mode interface target; it remains independent of libbc's allocator
+and instrumentation backend. Disabled builds retain the
+header's false default. The independent consumer-mode executable receives an
+expected mode from CMake, and gets the actual extension definition exclusively
+through its library dependency.
+
+Historical extension-ON coverage collections configured the library and CLI
+correctly but some standalone consumers lacked that definition. Keep their
+actual per-target compile commands and original profiles/counts as historical
+evidence; do not describe those commands as uniformly enabled or pool them
+with later corrected collections. Configured compile commands can also include
+tools which were not built or executed in a given collection. Fresh coverage
+should verify both configured options and consumer mode, keeping extension and
+experimental reuse configurations separate.
