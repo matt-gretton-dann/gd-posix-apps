@@ -192,5 +192,26 @@ class RuntimeEvidence(unittest.TestCase):
             V.partial_full_preset(data)
 
 
+    def rejected(self):
+        entries = json.loads((V.ROOT / 'checkpoints.json').read_text())['artifacts']
+        entry = next(e for e in entries if e['checkpoint'] == '440-41' and e['host'] == 'windows')
+        return entry, V.BASE.payloads(V.ROOT / entry['path'], entry['sha256'])
+
+    def test_complete_rejected_checkpoint_retains_ten_losses(self):
+        entry, data = self.rejected()
+        result = V.verify(data, entry)
+        self.assertTrue(result['complete'])
+        self.assertEqual(len(result['confirmed_regressions']), 10)
+
+    def test_complete_confirmed_loss_cannot_be_relabelled_pass(self):
+        entry, data = self.rejected()
+        decisions = json.loads(data['decisions.json'])
+        row = next(r for r in decisions['results'] if r['status'] == 'confirmed regression')
+        row['status'] = 'pass'
+        data['decisions.json'] = json.dumps(decisions).encode()
+        with self.assertRaisesRegex(ValueError, 'regression qualification differs'):
+            V.verify(data, entry)
+
+
 if __name__ == '__main__':
     unittest.main()

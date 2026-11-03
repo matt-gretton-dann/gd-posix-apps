@@ -486,6 +486,57 @@
         "holdout-paired": 813
       },
       "checked": 5643
+    },
+    {
+      "checkpoint": "440-41",
+      "host": "linux",
+      "path": "native/bc-440-41-native-linux.zip",
+      "sha256": "2a28759e72e85ed8e4fcfa39e14afacb221e57db8c7d94090339db05cd67e2ca",
+      "base": "ced17fb74622b5c0b7cb2b43de8fa445e97f8e8e",
+      "candidate": "418732902bf41f808e72d69108bfe011b780381e",
+      "complete": true,
+      "grid_counts": {
+        "full-aa": 1320,
+        "full-paired": 1980,
+        "holdout-aa": 1320,
+        "holdout-paired": 1980
+      },
+      "checked": 6600
+    },
+    {
+      "checkpoint": "440-41",
+      "host": "macos",
+      "path": "native/bc-440-41-native-macos.zip",
+      "sha256": "bdb948afad74bd4e3eb9b1de47eff8cb4b821f6268e82a3dc524990b08fdf987",
+      "base": "ced17fb74622b5c0b7cb2b43de8fa445e97f8e8e",
+      "candidate": "418732902bf41f808e72d69108bfe011b780381e",
+      "complete": true,
+      "grid_counts": {
+        "full-aa": 1320,
+        "full-paired": 1980,
+        "holdout-aa": 1320,
+        "holdout-aa-confirmation": 20,
+        "holdout-paired": 1980
+      },
+      "checked": 6620
+    },
+    {
+      "checkpoint": "440-41",
+      "host": "windows",
+      "path": "native/bc-440-41-native-windows.zip",
+      "sha256": "0bd7683da2021a79ee680afe0c5be39da217994395da177b34713eb17dd77178",
+      "base": "ced17fb74622b5c0b7cb2b43de8fa445e97f8e8e",
+      "candidate": "418732902bf41f808e72d69108bfe011b780381e",
+      "complete": true,
+      "grid_counts": {
+        "full-aa": 1320,
+        "full-paired": 1980,
+        "full-paired-confirmation": 150,
+        "holdout-aa": 1320,
+        "holdout-paired": 1980,
+        "holdout-paired-confirmation": 210
+      },
+      "checked": 6960
     }
   ]
 }

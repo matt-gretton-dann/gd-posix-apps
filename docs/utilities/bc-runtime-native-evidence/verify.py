@@ -78,6 +78,11 @@ CHECKPOINTS = {
             "holdout": 66
         }
     },
+    "440-41": {
+        "base": "ced17fb74622b5c0b7cb2b43de8fa445e97f8e8e",
+        "candidate": "418732902bf41f808e72d69108bfe011b780381e",
+        "corpora": {"full": 66, "holdout": 66}
+    },
     "440-b5": {
         "base": "ced17fb74622b5c0b7cb2b43de8fa445e97f8e8e",
         "candidate": "b54f0c3b714a948f8769227def16fd3f97bb1732",

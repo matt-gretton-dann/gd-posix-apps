@@ -17,6 +17,7 @@ decisions and A/A controls. Archived executables are never run by verification.
 | #438 d8 | 66 full + 66 held-out | 19,800 | Rejected locally despite favorable native advisory results |
 | #438 46 | 66 full + 66 held-out | 19,820 | Mixed benefit; remains an unmerged experiment |
 | #440 b5 | Linux/macOS complete; Windows held-out partial | 18,873 | Failed CI; six reproduced full-preset Windows multiplication losses |
+| #440 41 | 66 full + 66 held-out | 20,180 | Green correctness CI; rejected: ten confirmed Windows losses |
 
 `checkpoints.json` pins every exact base/candidate revision and archive SHA-256.
 `audit-summary.json` retains all replayed intervals, confirmed losses and control
@@ -50,8 +51,12 @@ after the later correction. Its initial Windows collection is partial after a su
 the run: 5,643 checked observations and no completed decisions.json. Its full
 initial/confirmation intervals nevertheless reproduce six multiplication losses,
 with confirmation median ratios 1.0763–1.1325. These are replayed separately and
-cannot be hidden by the incomplete held-out gate. The corrected head requires
-its own collection; no recovery is inferred from a test/documentation fix.
+cannot be hidden by the incomplete held-out gate. The corrected 41873290 head has a complete independent collection: ten confirmed
+Windows losses (four full, six held-out) prevent adoption despite green
+correctness CI. The Windows code payload SHA-256 is identical between these
+two sources: 023f1c9dea9856858632486922d3a24c80a0b8d120c5a6d54b1136adfc13327d.
+Test/documentation corrections do not establish performance recovery. A later
+native-driver isolation experiment requires separate source-bound evidence.
 
 ## Offline verification
 
