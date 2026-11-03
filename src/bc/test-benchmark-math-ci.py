@@ -10,6 +10,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import types
 import unittest
 from unittest import mock
 
@@ -49,7 +50,15 @@ class NativeMath(unittest.TestCase):
 
                 argv = [str(PATH), '--source', str(source), '--candidate', 'b' * 40,
                         '--output', str(output), '--candidate-prepared-divisors']
+                original_load = CI.load
+                def modules(name):
+                    # Exercise orchestration, not native PowerShell/CIM probes.
+                    # The production controller still records the real host.
+                    if name == 'benchmark-ci':
+                        return types.SimpleNamespace(host_info=lambda: {})
+                    return original_load(name)
                 with mock.patch.object(CI, 'Commands', Commands), \
+                        mock.patch.object(CI, 'load', modules), \
                         mock.patch.object(sys, 'argv', argv), contextlib.redirect_stderr(io.StringIO()):
                     self.assertEqual(CI.main(), 1)
                 self.assertEqual((output / 'evidence/gd/prepared-policy/libbc.vcxproj').read_text(),
