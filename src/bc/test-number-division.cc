@@ -346,3 +346,29 @@ TEMPLATE_TEST_CASE("Division decimal shifts agree with bounded integer coefficie
     }
   }
 }
+
+#if GD_BC_PROFILE
+TEMPLATE_TEST_CASE("Unscaled zero quotients avoid redundant entry transfers",
+                   "[bc][number][profile][division-entry-moves]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  using Event = GD::Bc::Profile::Event;
+  Number const original(1);
+  Number value = original;
+  Number const divisor(7);
+  // With no rescaling or quotient buffer, this public operation needs no
+  // coefficient moves. Count only the operation, excluding setup/assertions.
+  auto const before = GD::Bc::Profile::snapshot();
+  value.divide(divisor, 0);
+  auto const after = GD::Bc::Profile::snapshot();
+  auto const index = [](Event event) { return static_cast<std::size_t>(event); };
+  REQUIRE(value.is_zero());
+  REQUIRE(value.scale() == 0);
+  REQUIRE(original == Number(1));
+  REQUIRE(divisor == Number(7));
+  REQUIRE(after.events[index(Event::division_requests)] ==
+          before.events[index(Event::division_requests)] + 1);
+  REQUIRE(after.events[index(Event::digit_moves)] == before.events[index(Event::digit_moves)]);
+}
+#endif
