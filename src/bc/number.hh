@@ -1741,16 +1741,18 @@ public:
 
   /** Return a prepared value after repeated stable observations, otherwise
    * nullptr for the ordinary fallback. The returned pointer lasts until the
-   * next lookup or destruction of this cache. No strong source owner is kept
+   * next lookup, clear, or destruction of this cache. No strong source owner is kept
    * on a first observation or a miss. New ownership needs no limb scan;
-   * promotion after three stable observations may allocate or throw.
+   * promotion after three stable observations may allocate or throw. The source
+   * coefficient must remain unchanged throughout the lookup.
    */
   [[nodiscard]] auto lookup(BasicDigits const& source, NumType padding = 0)
     -> PreparedDivisor const*
   {
     auto const capacity = source.digits_.capacity();
     constexpr auto limit = max_retained_limb_bytes / sizeof(NumType);
-    auto const whole = static_cast<std::size_t>(padding) / base_log10_;
+    // Compare in the scale field's width before accepting its bounded extent.
+    auto const whole = padding / base_log10_;
     // Conservative preflight leaves room for three retained coefficient views
     // and possible shift growth. Inspect actual capacities again on promotion.
     if (!source.has_heap_storage() || source.coefficient_limbs() < 2 || capacity > limit / 3 ||
@@ -1775,12 +1777,8 @@ public:
       return nullptr;
     }
     auto const fingerprint = admission_fingerprint(source);
-    if (!fingerprint) {
-      clear();
-      return nullptr;
-    }
-    if (!fingerprint_valid_ || *fingerprint != fingerprint_) {
-      fingerprint_ = *fingerprint;
+    if (!fingerprint_valid_ || fingerprint != fingerprint_) {
+      fingerprint_ = fingerprint;
       fingerprint_valid_ = true;
       rejected_ = false;
       return nullptr;
@@ -1853,17 +1851,14 @@ private:
     return true;
   }
 
-  static auto admission_fingerprint(BasicDigits const& source) noexcept
-    -> std::optional<std::uint64_t>
+  static auto admission_fingerprint(BasicDigits const& source) noexcept -> std::uint64_t
   {
+    // lookup already rejected numeric zero, and its ownership bookkeeping
+    // does not mutate the source. A second nonzero scan/optional failure path
+    // would duplicate that precondition; retain only the admission hash.
     std::uint64_t hash = 14695981039346656037ULL;
-    bool nonzero = false;
     for (auto limb : source.digits_) {
-      nonzero = nonzero || limb != 0;
       hash = (hash ^ static_cast<std::uint64_t>(limb)) * 1099511628211ULL;
-    }
-    if (!nonzero) {
-      return std::nullopt;
     }
     return (hash ^ source.coefficient_limbs()) * 1099511628211ULL;
   }
