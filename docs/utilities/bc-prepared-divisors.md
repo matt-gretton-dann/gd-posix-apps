@@ -39,3 +39,34 @@ recursion and redefinitions. A storage address alone does not prove the value
 has not changed. Retaining strong snapshots on each first use or miss can
 force avoidable copy-on-write allocations. Both stable and changing divisor
 workloads, plus the full native regression matrix, remain adoption gates.
+
+## Component protocol
+
+`bc-components COMPONENT ITERATIONS SPLIT_POINT` accepts two unsigned decimal
+integer lines for the following diagnostics:
+
+| Component | Repeated work | Final result |
+| --- | --- | --- |
+| `coefficient-control` | Dividend copy/reset and limb-count consumer | Dividend |
+| `coefficient-divide` | Ordinary integer quotient | Quotient |
+| `coefficient-modulo` | Ordinary integer remainder | Remainder |
+| `prepared-divide` | Quotient with one prepared divisor | Quotient |
+| `prepared-modulo` | Remainder with one prepared divisor | Remainder |
+| `prepare-divisor` | Prepare the divisor anew each time | Divisor |
+
+All modes require a nonzero divisor. Signs, fractions, missing operands, extra
+nonempty lines and an explicit text-base argument are rejected. Input reading,
+decimal coefficient construction and final rendering occur outside the reported
+operation interval. Preparation in the two prepared arithmetic modes is outside
+that interval and has its own `setup_seconds`. The preparation-only mode includes
+preparation and destruction in each iteration. No control duration is subtracted.
+The split-point argument is retained for the driver protocol; these coefficient
+operations do not use the multiplication threshold.
+
+The checksum consumes stored coefficient limb counts, rather than decimal
+lengths. Ordinary quotient buffers may retain leading zero padding, so checksums
+need not match between modes; final canonical decimal results must match the
+independent oracle. Instrumented builds emit null timing fields and separate
+setup/operation allocation calls and requested bytes, plus operation COW clone
+counts. These selected allocator counters do not represent all process malloc
+traffic or process RSS, and they do not report a phase-local peak.
