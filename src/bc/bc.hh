@@ -392,7 +392,9 @@ private:
 
   GD::StreamInputFile file_;
   int c_{EOF};
+#if !defined(_WIN32)
   bool at_end_{false};
+#endif
 };
 
 /** Lexer.  */
