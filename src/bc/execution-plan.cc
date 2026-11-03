@@ -146,8 +146,8 @@ auto plan_result_slots(Instructions const& code, std::size_t slot_bytes) -> Resu
   return result;
 }
 
-auto lower_executable(Instructions const& code, ResultSlotPlan const& slots, bool persistent)
-  -> ExecutableCode
+auto lower_executable(Instructions const& code, ResultSlotPlan const& slots, bool persistent,
+                      bool fuse_loads) -> ExecutableCode
 {
   using I = Instruction::Index;
   using O = Instruction::Opcode;
@@ -184,7 +184,7 @@ auto lower_executable(Instructions const& code, ResultSlotPlan const& slots, boo
   visit_execution_region(code, [&](I i) {
     auto const& source = code[i];
     auto& lowered = result[i];
-    lowered.opcode = source.opcode();
+    lowered.opcode = static_cast<std::uint16_t>(source.opcode());
     lowered.result = static_cast<C>(slots.index(i));
     if (source.opcode() == O::function_begin) {
       definition = i;
@@ -203,6 +203,37 @@ auto lower_executable(Instructions const& code, ResultSlotPlan const& slots, boo
   });
   if (!representable)
     return {};
+  if (fuse_loads) {
+    for (I i = 0; i + 1 < size; ++i) {
+      if (result[i + 1].source_opcode() != O::load ||
+          std::get<Instruction::Offset>(code[i + 1].op1()) != -1)
+        continue;
+      auto& current = result[i];
+      switch (current.source_opcode()) {
+      case O::variable:
+        current.fusion = ExecutableFusion::load_variable;
+        break;
+      case O::array:
+        current.fusion = ExecutableFusion::load_array;
+        break;
+      case O::ibase:
+        current.fusion = ExecutableFusion::load_ibase;
+        break;
+      case O::obase:
+        current.fusion = ExecutableFusion::load_obase;
+        break;
+      case O::scale:
+        current.fusion = ExecutableFusion::load_scale;
+        break;
+      default:
+        continue;
+      }
+      // These location opcodes have no second operand. Keep the location's
+      // register and use the spare word for the following load's destination.
+      // The load record itself stays unchanged for independent suffix entry.
+      current.second = ExecutableOperand(result[i + 1].result);
+    }
+  }
   return result;
 }
 

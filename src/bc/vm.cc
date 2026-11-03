@@ -76,7 +76,7 @@ auto prepare_executable(Instructions const& code, ResultSlotPlan const& slots, b
   -> ExecutableCode
 {
 #if GD_BC_COMPACT_EXECUTION
-  return lower_executable(code, slots, persistent);
+  return lower_executable(code, slots, persistent, GD_BC_FUSED_LOADS != 0);
 #else
   (void)code;
   (void)slots;
@@ -991,6 +991,42 @@ auto GD::Bc::Details::InstructionPack::execute_compact() -> std::pair<GD::Bc::Nu
     GD_BC_PROFILE_EVENT(Profile::Event::instructions_executed, 1);
     auto const& instruction = executable_[pc_];
     auto& destination = results_[instruction.result];
+    if (instruction.fusion != ExecutableFusion::none) {
+      // Retain the location as well as the loaded snapshot: later stores may
+      // still name it, and a backedge may enter the unfused load record.
+      GD_BC_PROFILE_EVENT(Profile::Event::instructions_executed, 1);
+      auto& loaded = results_[instruction.second.index];
+      switch (instruction.fusion) {
+      case ExecutableFusion::load_variable: {
+        Variable const location(instruction.first.letter);
+        destination = location;
+        loaded = vm_->variable(location);
+        break;
+      }
+      case ExecutableFusion::load_array: {
+        Array const location(instruction.first.letter);
+        destination = location;
+        loaded = vm_->array(location);
+        break;
+      }
+      case ExecutableFusion::load_ibase:
+        destination = Ibase();
+        loaded = Number(vm_->ibase());
+        break;
+      case ExecutableFusion::load_obase:
+        destination = Obase();
+        loaded = Number(vm_->obase());
+        break;
+      case ExecutableFusion::load_scale:
+        destination = Scale();
+        loaded = Number(vm_->scale());
+        break;
+      case ExecutableFusion::none:
+        std::abort();
+      }
+      pc_ += 2;
+      continue;
+    }
     auto take = [&]() -> Number {
       auto& number = std::get<Number>(*results_[instruction.first.index]);
       if (number.has_heap_storage() && !consumption_.empty() && consumption_[pc_] != 0) {
@@ -1010,7 +1046,7 @@ auto GD::Bc::Details::InstructionPack::execute_compact() -> std::pair<GD::Bc::Nu
       operation(lhs, rhs);
       destination = std::move(lhs);
     };
-    switch (instruction.opcode) {
+    switch (instruction.source_opcode()) {
     case O::string:
       destination = std::string_view(std::get<std::string>(instrs_[pc_].op1()));
       break;

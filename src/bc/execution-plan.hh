@@ -6,6 +6,7 @@
 #define GD_BC_EXECUTION_PLAN_HH_INCLUDED
 
 #include <cstdint>
+#include <limits>
 #include <vector>
 
 #include "bc.hh"
@@ -61,15 +62,39 @@ union ExecutableOperand
   explicit ExecutableOperand(Letter value) : letter(value) {}
 };
 
+// A fused pair preserves both source results. Its second record remains an
+// ordinary load so branches entering that suffix still execute independently.
+enum class ExecutableFusion : std::uint16_t {
+  none,
+  load_variable,
+  load_array,
+  load_ibase,
+  load_obase,
+  load_scale
+};
+
 // Common targets use 16 bytes per executable instruction. The source bytecode
 // remains the owner of strings, literal caches and diagnostic/definition data.
 // Indices are absolute register numbers for data, absolute PCs for branches.
 struct ExecutableInstruction
 {
-  Instruction::Opcode opcode;
+  std::uint16_t opcode;
+  ExecutableFusion fusion{ExecutableFusion::none};
   std::uint32_t result;
   ExecutableOperand first;
   ExecutableOperand second;
+
+  ExecutableInstruction(Instruction::Opcode operation, std::uint32_t destination,
+                        ExecutableOperand lhs = {}, ExecutableOperand rhs = {})
+      : opcode(static_cast<std::uint16_t>(operation)), result(destination), first(lhs), second(rhs)
+  {
+    static_assert(static_cast<unsigned>(Instruction::Opcode::function_end) <=
+                  std::numeric_limits<std::uint16_t>::max());
+  }
+  auto source_opcode() const -> Instruction::Opcode
+  {
+    return static_cast<Instruction::Opcode>(opcode);
+  }
 };
 using ExecutableCode =
   std::vector<ExecutableInstruction,
@@ -80,7 +105,7 @@ using ExecutableCode =
 // outside the compact domain retain that generic fallback. Function bodies
 // skipped by an outer definition are lowered only when registered separately.
 auto lower_executable(Instructions const& code, ResultSlotPlan const& slots,
-                      bool persistent = false) -> ExecutableCode;
+                      bool persistent = false, bool fuse_loads = false) -> ExecutableCode;
 
 // One byte per instruction: nonzero permits transferring its first arithmetic
 // operand. An empty plan keeps ordinary copies without a per-instruction table.

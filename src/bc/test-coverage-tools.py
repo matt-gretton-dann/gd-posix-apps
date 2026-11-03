@@ -50,11 +50,12 @@ class Coverage(unittest.TestCase):
 
     def test_activation_modes_remain_separate(self):
         cache = {'ENABLE_NON_POSIX_EXTENSIONS': 'OFF', 'ENABLE_BC_PREPARED_DIVISORS': 'ON',
-                 'ENABLE_BC_COMPACT_EXECUTION': 'ON'}
+                 'ENABLE_BC_COMPACT_EXECUTION': 'ON', 'ENABLE_BC_FUSED_LOADS': 'ON'}
         self.assertEqual(COLLECTOR.build_modes(cache),
-                         {'extensions': 'OFF', 'prepared_divisors': 'ON', 'compact_execution': 'ON'})
+                         {'extensions': 'OFF', 'prepared_divisors': 'ON', 'compact_execution': 'ON', 'fused_loads': 'ON'})
         self.assertIsNone(COLLECTOR.build_modes({})['prepared_divisors'])
         self.assertIsNone(COLLECTOR.build_modes({})['compact_execution'])
+        self.assertIsNone(COLLECTOR.build_modes({})['fused_loads'])
         cache['ENABLE_BC_COMPACT_EXECUTION'] = 'OFF'
         self.assertEqual(COLLECTOR.build_modes(cache)['compact_execution'], 'OFF')
 
