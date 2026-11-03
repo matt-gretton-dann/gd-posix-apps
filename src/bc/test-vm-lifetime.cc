@@ -232,6 +232,50 @@ auto run() -> bool
   }
   return output.str() == "12345678901234567890\n7\n9\n" && errors.str().empty();
 }
+
+// Exercise every ordinary allocation in mixed verified activation setup and
+// literal execution. This extends the earlier typed-pool retry check to both
+// new lanes. A failed setup must not consume a depth or retain live slots.
+auto verified_activation_allocation_failures() -> bool
+{
+  using I = GD::Bc::Instruction;
+  using O = I::Opcode;
+  for (std::size_t point = 0; point != 1024; ++point) {
+    std::ostringstream output, errors;
+    GD::Bc::VM vm(output, errors, false, GD::Bc::VM::ExecutionChecks::verified);
+    GD::Bc::Instructions warm{I(O::eof)};
+    if (vm.execute(warm))
+      return false;
+    GD::Bc::Instructions code{I(O::array, GD::Bc::Array('a')), I(O::load, I::Offset(-1)),
+                              I(O::variable, GD::Bc::Variable('a'))};
+    for (unsigned i = 0; i != 67; ++i) {
+      code.emplace_back(O::number, "12345678901234567890123456789012345678901234567890");
+      code.emplace_back(O::branch, I::Offset(1));
+    }
+    code.emplace_back(O::eof);
+    auto const before = injected_failures;
+    bool rejected = false;
+    {
+      AllocationFailure const failure(point);
+      try {
+        if (vm.execute(code))
+          return false;
+      }
+      catch (std::bad_alloc const&) {
+        rejected = true;
+      }
+    }
+    // No output/global stores or argument frames occur in this pack. Retrying
+    // tests this boundary, not rollback/reuse after arbitrary runtime effects.
+    if (vm.execute(code) || !output.str().empty() || !errors.str().empty())
+      return false;
+    if (injected_failures == before)
+      return !rejected;
+    if (!rejected)
+      return false;
+  }
+  return false;  // A larger allocation count cannot silently truncate the sweep.
+}
 }  // namespace
 
 auto main() -> int
@@ -252,9 +296,17 @@ auto main() -> int
     std::fprintf(stderr, "Parser allocation failure resumed a partial input item\n");
     return 1;
   }
+  if (!verified_activation_allocation_failures()) {
+    std::fprintf(stderr, "Verified activation allocation failure damaged retry state\n");
+    return 1;
+  }
   auto const before = outstanding.load(std::memory_order_relaxed);
   if (!parser_allocation_failures()) {
     std::fprintf(stderr, "Repeated parser allocation sweep lost terminal state\n");
+    return 1;
+  }
+  if (!verified_activation_allocation_failures()) {
+    std::fprintf(stderr, "Repeated verified activation sweep retained state\n");
     return 1;
   }
   if (!native_sqrt_scale_boundary<GD::Bc::NumberTraits16>() ||

@@ -2,6 +2,12 @@
 
 This work starts from accepted main edd686a5 and retains its numeric ownership
 and algorithms. The ownership prototypes in #446 are separate experiments.
+The earlier #409 typed-pool prototype retained numeric-capable variants,
+tagged references and runtime pool/fallback access branches. This design uses
+lane-specific executable operations and removes Number from the nonnumeric
+variant. Earlier rejected native results remain historical evidence; they do
+not establish acceptance of this different source. The isolated allocation
+failure/retry test is carried forward and extended to the new lane setup.
 
 ## Planning and lowering contract
 
@@ -41,15 +47,48 @@ bindings, function definitions or argument snapshot/evaluation order.
 
 ## Delivery state
 
-Planning/lowering and their contract tests are implemented. The VM still
-executes its existing result representation; runtime integration, typed-path
-lifetime/failure checks, fresh mode-specific coverage and performance evidence
-remain pending. No speedup or #449 completion is claimed at this stage.
+Planning/lowering and the typed VM prototype are implemented. Four ASan/UBSan
+configurations pass the full 326-case unit suite and six focused CTest entries:
+typed results ON/OFF, each with extensions ON/reuse OFF and extensions OFF/reuse
+ON. The typed/default language configuration also passes all 92 bc CTest
+entries (47 pass, 45 declared skips). Three non-sanitized profiling configurations
+pass all 336 unit cases, the six focused entries and profiling CLI checks:
+typed ON/OFF with compact execution ON, plus typed ON with compact execution
+OFF. Each profile configuration uses extensions and prepared divisors ON.
+Compile commands verify the selected VM modes and all 43 normal / 44 profiling
+bc.hh consumers' language definitions.
+
+After the full suites, focused tests were rerun in all seven configurations
+with additional assertions proving persistent typed-function execution from
+a tiny generic caller, including after function replacement. The tests cover
+nested array snapshots and saved scale/radix state. Forward references and a
+backedge to PC zero also assert actual activation through the profiling counter.
+Allocation-failure sweeps retry the same VM after each injected failure in a
+pack without output, global stores or argument frames; this is not a rollback
+guarantee after arbitrary runtime side effects.
+
+Fresh mode-specific coverage and performance validation remain pending.
+No speedup or #449 completion is claimed.
 
 The Debug foundation passes 140 focused assertions in four typed-plan cases,
 all 325 unit cases / 1,669,178 assertions, and all 92 bc CTest entries (47 pass,
 45 declared skips). This includes the original compact/generic execution paths.
 It is not sanitizer or active typed-interpreter evidence.
+
+ENABLE_BC_TYPED_RESULTS selects the prototype. It also requires compact
+execution; disabled or unprofitable preparation retains the generic path.
+Checked execution remains independent. Per-depth buffers keep Number and
+nonnumeric lane capacities while releasing values at every exit. Allocation
+failure during lane setup clears partially constructed lanes before the depth
+lease is acquired. Nested calls grow different deque entries and cannot resize
+an active lane, so cached lane pointers remain valid through those calls.
+Retained capacities and preparation peaks still require measurement.
+
+The profiling-only typed_instructions_executed counter distinguishes actual
+activation from configuration. It is absent from ordinary execution work.
+Internal invariant dumps retain the source instruction trace without reading
+unwritten typed registers; checked execution retains its detailed value dump.
+Program print instructions continue to support every old result alternative.
 
 The new tests cover independent lane numbering, profitability and overflow,
 polymorphic operations, forward producers/backedges, skipped bodies and function
