@@ -182,6 +182,19 @@ public:
     return *this;
   }
 
+  // Weak observations retain the control block, never coefficient storage or
+  // a strong owner. Owner ordering distinguishes lifetimes even after expiry.
+  using WeakOwner = std::weak_ptr<Heap const>;
+  [[nodiscard]] auto weak_owner() const noexcept -> WeakOwner { return owner_; }
+  [[nodiscard]] auto shares_owner(WeakOwner const& other) const noexcept -> bool
+  {
+    return has_heap() && !owner_.owner_before(other) && !other.owner_before(owner_);
+  }
+  [[nodiscard]] auto capacity() const noexcept -> size_type
+  {
+    return has_heap() ? owner_->capacity() : (static_cast<bool>(*this) ? InlineCapacity : 0);
+  }
+
   [[nodiscard]] auto has_heap() const noexcept -> bool
   {
     return static_cast<bool>(owner_);

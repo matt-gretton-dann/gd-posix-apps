@@ -310,3 +310,118 @@ TEMPLATE_TEST_CASE("Preparation trims padded quotients without changing sources"
   REQUIRE(decimal(q) == "1" + std::string(width - 1, '0') + "1");
   REQUIRE(decimal(r) == "0");
 }
+
+TEMPLATE_TEST_CASE("Divisor admission observes changing values without retaining them",
+                   "[bc][number][prepared][divisor-cache]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Digits = GD::Bc::Details::BasicDigits<TestType>;
+  typename Digits::DivisorCache cache;
+  auto source = coefficient_text<Digits>("123456789012345678901234567890123456789012345678901");
+  REQUIRE(source.has_heap_storage());
+  for (unsigned change = 0; change != 100; ++change) {
+    REQUIRE(cache.lookup(source) == nullptr);
+    REQUIRE(cache.retained_limb_bytes() == 0);
+    source.mac(1, 1);
+  }
+  REQUIRE(cache.lookup(source) == nullptr);
+  auto const* prepared = cache.lookup(source);
+  REQUIRE(prepared != nullptr);
+  REQUIRE(cache.retained_limb_bytes() > 0);
+  REQUIRE(cache.retained_limb_bytes() <= Digits::DivisorCache::max_retained_limb_bytes);
+  auto const shared = source;
+  REQUIRE(cache.lookup(shared) == prepared);
+  // The admitted raw snapshot protects the old value through a subsequent COW
+  // mutation, even when normalized/padded limbs use a different storage owner.
+  source.mac(1, 1);
+  auto q = coefficient_text<Digits>("10000000000000000000000000000000000000000000000000000000000000"
+                                    "000000000000000000000000000000000012345");
+  auto r = q;
+  q.divide(*prepared);
+  r.modulo(*prepared);
+  REQUIRE(decimal(q) == "81000000729000006633900060368490549353263999114636");
+  REQUIRE(decimal(r) == "115536123190652949658059264750651051517155743053709");
+  REQUIRE(cache.lookup(source) == nullptr);
+  REQUIRE(cache.retained_limb_bytes() == 0);
+  REQUIRE(cache.lookup(source) == nullptr);
+  REQUIRE(cache.lookup(source) != nullptr);
+  REQUIRE(cache.lookup(source, 1) == nullptr);  // Different effective divisor.
+  REQUIRE(cache.lookup(source, 1) == nullptr);
+  auto const* padded = cache.lookup(source, 1);
+  REQUIRE(padded != nullptr);
+  q = coefficient_text<Digits>("1000000000000000000000000000000000000000000000000000000000000000000"
+                               "0000000000000000000000000000012345");
+  r = q;
+  q.divide(*padded);
+  r.modulo(*padded);
+  REQUIRE(decimal(q) == "8100000072900000663390006036849054935326399911463");
+  REQUIRE(decimal(r) == "775276856535727016431566611722901242897965818013085");
+  source.mac(1, 1);
+  // The padded prepared owner differs from the raw source. Admission must
+  // retain that raw snapshot too, so this mutation changes its identity.
+  REQUIRE(cache.lookup(source, 1) == nullptr);
+  REQUIRE(cache.retained_limb_bytes() == 0);
+  cache.clear();
+  REQUIRE(cache.retained_limb_bytes() == 0);
+  REQUIRE(cache.lookup(source) == nullptr);
+}
+
+TEMPLATE_TEST_CASE("Divisor admission bounds retained capacity after shrinking",
+                   "[bc][number][prepared][divisor-cache]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Digits = GD::Bc::Details::BasicDigits<TestType>;
+  using Limb = typename Digits::NumType;
+  typename Digits::DivisorCache cache;
+  auto source = coefficient<Digits>(1);
+  // Small trait scale fields require bounded increments, not wrapped shifts.
+  auto shift = [&](unsigned total, bool grow) {
+    while (total != 0) {
+      auto const part = std::min(total, 250U);
+      if (grow)
+        source.mul_pow10(static_cast<Limb>(part));
+      else
+        source.div_pow10(static_cast<Limb>(part));
+      total -= part;
+    }
+  };
+  shift(50000, true);
+  REQUIRE(source.has_heap_storage());
+  REQUIRE(cache.lookup(source) == nullptr);
+  REQUIRE(cache.lookup(source) == nullptr);
+  shift(49900, false);
+  REQUIRE(source.has_heap_storage());
+  REQUIRE(source.coefficient_limbs() < 100);
+  // A used-size-only bound would admit this tiny value and pin its large owner.
+  REQUIRE(cache.lookup(source) == nullptr);
+  REQUIRE(cache.lookup(source) == nullptr);
+  REQUIRE(cache.retained_limb_bytes() == 0);
+  REQUIRE(cache.lookup(coefficient<Digits>(0)) == nullptr);
+  REQUIRE(cache.lookup(coefficient<Digits>(97)) == nullptr);
+}
+
+TEMPLATE_TEST_CASE("Admitted divisor survives its last external source owner",
+                   "[bc][number][prepared][divisor-cache]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Digits = GD::Bc::Details::BasicDigits<TestType>;
+  typename Digits::DivisorCache cache;
+  typename Digits::PreparedDivisor const* prepared = nullptr;
+  {
+    auto source = coefficient_text<Digits>("100000000000000000000000000000000000000000000000007");
+    REQUIRE(cache.lookup(source, 1) == nullptr);
+    REQUIRE(cache.lookup(source, 1) == nullptr);
+    prepared = cache.lookup(source, 1);
+    REQUIRE(prepared != nullptr);
+  }
+  auto q = coefficient_text<Digits>("2000000000000000000000000000000000000000000000000141");
+  auto r = q;
+  q.divide(*prepared);
+  r.modulo(*prepared);
+  REQUIRE(decimal(q) == "2");
+  REQUIRE(decimal(r) == "1");
+  // Reconstructing the same number has a different ownership lifetime.
+  auto replacement =
+    coefficient_text<Digits>("100000000000000000000000000000000000000000000000007");
+  REQUIRE(cache.lookup(replacement, 1) == nullptr);
+}

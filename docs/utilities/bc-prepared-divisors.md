@@ -147,3 +147,45 @@ a general memory improvement. All modes, resource outputs and adverse results
 remain in the retained grid. The verifier binds these observations to the exact
 component executable, checks outputs, recomputes RSS medians and rejects duplicate
 observations that conceal missing samples.
+
+
+## Bounded admission prototype
+
+`BasicDigits<Traits>::DivisorCache` is a one-entry coefficient admission
+prototype; automatic VM dispatch is still pending. An eligible new owner records
+only weak ownership identity and the requested decimal padding. That first
+observation needs no limb scan, allocation or strong coefficient snapshot. A
+second observation of the same owner/padding records a fingerprint; a third
+stable observation prepares the current coefficient. Changing unique-owner
+values do not retain snapshots, so observation does not force COW allocations.
+
+The fingerprint only controls admission. It never proves that cached prepared
+limbs match the current input. A promoted entry retains an immutable unpadded
+source snapshot as well as its prepared aligned coefficient. A hit requires
+exact ownership and padding identity; subsequent writes must detach from the
+retained source. Keeping the raw snapshot is necessary when padding has already
+made the aligned coefficient detach. Weak owner ordering distinguishes control
+block lifetimes, including expiry, without using reusable storage addresses.
+
+Inline, zero and oversized inputs use the ordinary fallback. Retained limb
+capacity is conservatively charged for all three coefficient views, including
+shared views, with a 64 KiB cap. The fixed cache object, ownership control blocks
+and external owners are separate from this limb-storage bound. A shrunk vector
+can retain a large allocation, so admission checks capacity rather than used
+limbs. Promotion checks actual retained capacities before publishing the entry.
+An over-budget candidate is not retained; construction can transiently allocate
+before that check. Failed allocation unwinds the candidate and permits retry.
+
+The returned prepared pointer remains valid until the next lookup or cache
+destruction. Misses release an old retained source before the ordinary fallback.
+Tests cover changing unique owners, shared hits, padding changes and subsequent
+mutation, destruction of the last external owner, replacement lifetimes,
+capacity retained after shrinking, and clearing. An isolated executable replaces
+global new/delete only within that test process: first observation plus 100
+changing unique-owner requests require zero allocation calls, and each actual
+promotion allocation is failed in turn to check cleanup and retry. The production
+code contains no fault-injection hooks.
+
+This prototype establishes admission and lifetime behavior. It does not yet
+establish VM hit rates, whole-program performance, or a default activation policy.
+The existing scalar/short and ordinary coefficient paths remain available.

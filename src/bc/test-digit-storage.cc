@@ -155,3 +155,51 @@ TEMPLATE_TEST_CASE("Digit storage assignment covers every active-member transiti
   CHECK(target.use_count() == 1);
   CHECK(values(target) == std::vector<TestType>{1, 2, 3, 4});
 }
+
+TEMPLATE_TEST_CASE("Unique heap mutation preserves identity without preserving value",
+                   "[bc][number][storage][divisor-cache]", std::uint8_t, std::uint16_t,
+                   std::uint32_t)
+{
+  using Storage = GD::Bc::Details::DigitStorage<TestType>;
+  Storage value{1, 2, 3, 4};
+  REQUIRE(value.has_heap());
+  REQUIRE(value.use_count() == 1);
+  auto const* identity = value.begin();
+  value[0] = 9;
+  REQUIRE(value.begin() == identity);
+  REQUIRE(value[0] == 9);
+  REQUIRE(value.use_count() == 1);
+  // A shrinking vector can still retain its heap allocation and identity.
+  // Admission must bound retained capacity rather than just the used limbs.
+  value.resize(2);
+  REQUIRE(value.has_heap());
+  REQUIRE(value.begin() == identity);
+  REQUIRE(value.size() == 2);
+}
+
+TEMPLATE_TEST_CASE("Weak storage observations preserve unique ownership and expiry",
+                   "[bc][number][storage][divisor-cache]", std::uint8_t, std::uint16_t,
+                   std::uint32_t)
+{
+  using Storage = GD::Bc::Details::DigitStorage<TestType>;
+  Storage source{1, 2, 3, 4};
+  auto weak = source.weak_owner();
+  REQUIRE(source.use_count() == 1);
+  REQUIRE(source.shares_owner(weak));
+  source[0] = 9;
+  REQUIRE(source.shares_owner(weak));  // Identity is not immutable content.
+  auto copy = source;
+  REQUIRE(copy.shares_owner(weak));
+  copy = copy.clone();
+  REQUIRE_FALSE(copy.shares_owner(weak));
+  auto const retained = source.capacity();
+  source.resize(1);
+  REQUIRE(source.capacity() == retained);
+  source.reset();
+  REQUIRE(weak.expired());
+  Storage replacement{9, 2, 3, 4};
+  REQUIRE_FALSE(replacement.shares_owner(weak));
+  Storage small{1};
+  REQUIRE(small.weak_owner().expired());
+  REQUIRE_FALSE(small.shares_owner(weak));
+}

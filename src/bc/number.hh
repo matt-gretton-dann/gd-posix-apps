@@ -20,6 +20,7 @@
 #include <locale>
 #include <map>
 #include <memory>
+#include <optional>
 #include <ostream>
 #include <span>
 #include <sstream>
@@ -1009,6 +1010,7 @@ public:
    * mutated or destroyed; no decimal scale or VM location is retained.
    */
   class PreparedDivisor;
+  class DivisorCache;
   [[nodiscard]] auto prepare_divisor() const -> PreparedDivisor;
 
   /** Divide by a prepared positive coefficient, including less/equal inputs. */
@@ -1646,6 +1648,7 @@ public:
 
 private:
   friend class BasicDigits<Traits>;
+  friend class DivisorCache;
 
   explicit PreparedDivisor(BasicDigits const& source) : original_(source)
   {
@@ -1718,6 +1721,160 @@ void BasicDigits<Traits>::divide_prepared_impl(PreparedDivisor const& divisor)
   divide_normalized_impl<Remainder>(
     std::span<NumType const>(normalized->begin(), normalized->size()), divisor.factor_);
 }
+
+/** One-entry admission cache for immutable prepared coefficients.
+ * A first observation holds only weak identity. A second computes an admission
+ * fingerprint; a third stable observation prepares the current value and retains its unshifted
+ * snapshot; cached hits therefore require exact ownership and decimal-padding identity. The
+ * fingerprint never authorizes reuse of a previously prepared value. This class is not yet
+ * connected to automatic VM dispatch.
+ */
+template<typename Traits>
+class BasicDigits<Traits>::DivisorCache
+{
+public:
+  static constexpr std::size_t max_retained_limb_bytes = 64 * 1024;
+
+  DivisorCache() = default;
+  DivisorCache(DivisorCache const&) = delete;
+  auto operator=(DivisorCache const&) -> DivisorCache& = delete;
+
+  /** Return a prepared value after repeated stable observations, otherwise
+   * nullptr for the ordinary fallback. The returned pointer lasts until the
+   * next lookup or destruction of this cache. No strong source owner is kept
+   * on a first observation or a miss. New ownership needs no limb scan;
+   * promotion after three stable observations may allocate or throw.
+   */
+  [[nodiscard]] auto lookup(BasicDigits const& source, NumType padding = 0)
+    -> PreparedDivisor const*
+  {
+    auto const capacity = source.digits_.capacity();
+    constexpr auto limit = max_retained_limb_bytes / sizeof(NumType);
+    auto const whole = static_cast<std::size_t>(padding) / base_log10_;
+    // Conservative preflight leaves room for three retained coefficient views
+    // and possible shift growth. Inspect actual capacities again on promotion.
+    if (!source.has_heap_storage() || source.coefficient_limbs() < 2 || capacity > limit / 3 ||
+        whole > limit / 3 - capacity || source.is_zero()) {
+      clear();
+      return nullptr;
+    }
+    bool const same_owner = source.digits_.shares_owner(observed_);
+    bool const same_padding = padding == padding_;
+    if (entry_ && same_owner && same_padding) {
+      return &entry_->prepared;
+    }
+
+    // Release an old immutable snapshot before entering the caller's fallback.
+    // Keeping it on a miss could force an otherwise unnecessary COW clone.
+    entry_.reset();
+    if (!same_owner || !same_padding) {
+      observed_ = source.digits_.weak_owner();
+      padding_ = padding;
+      fingerprint_valid_ = false;
+      rejected_ = false;
+      return nullptr;
+    }
+    auto const fingerprint = admission_fingerprint(source);
+    if (!fingerprint) {
+      clear();
+      return nullptr;
+    }
+    if (!fingerprint_valid_ || *fingerprint != fingerprint_) {
+      fingerprint_ = *fingerprint;
+      fingerprint_valid_ = true;
+      rejected_ = false;
+      return nullptr;
+    }
+    if (rejected_) {
+      return nullptr;
+    }
+    Entry candidate(source, padding);
+    if (!within_budget(candidate)) {
+      rejected_ = true;
+      return nullptr;
+    }
+    entry_.emplace(std::move(candidate));
+    return &entry_->prepared;
+  }
+
+  void clear() noexcept
+  {
+    entry_.reset();
+    observed_.reset();
+    fingerprint_ = 0;
+    fingerprint_valid_ = false;
+    padding_ = 0;
+    rejected_ = false;
+  }
+
+  /** Conservative capacity charge, counting shared coefficient views separately.
+   * Fixed cache metadata/control blocks and external owners are not limb bytes.
+   */
+  [[nodiscard]] auto retained_limb_bytes() const noexcept -> std::size_t
+  {
+    if (!entry_) {
+      return 0;
+    }
+    return (entry_->source.digits_.capacity() + entry_->prepared.original_.digits_.capacity() +
+            entry_->prepared.normalized_.digits_.capacity()) *
+           sizeof(NumType);
+  }
+
+private:
+  struct Entry
+  {
+    Entry(BasicDigits const& value, NumType padding)
+        : source(value), prepared(prepare(value, padding))
+    {
+    }
+    static auto prepare(BasicDigits const& value, NumType padding) -> PreparedDivisor
+    {
+      auto aligned = value;
+      if (padding != 0) {
+        aligned.mul_pow10(padding);
+      }
+      return aligned.prepare_divisor();
+    }
+    BasicDigits source;
+    PreparedDivisor prepared;
+  };
+
+  static auto within_budget(Entry const& entry) noexcept -> bool
+  {
+    auto remaining = max_retained_limb_bytes / sizeof(NumType);
+    for (auto capacity :
+         {entry.source.digits_.capacity(), entry.prepared.original_.digits_.capacity(),
+          entry.prepared.normalized_.digits_.capacity()}) {
+      if (capacity > remaining) {
+        return false;
+      }
+      remaining -= capacity;
+    }
+    return true;
+  }
+
+  static auto admission_fingerprint(BasicDigits const& source) noexcept
+    -> std::optional<std::uint64_t>
+  {
+    std::uint64_t hash = 14695981039346656037ULL;
+    bool nonzero = false;
+    for (auto limb : source.digits_) {
+      nonzero = nonzero || limb != 0;
+      hash = (hash ^ static_cast<std::uint64_t>(limb)) * 1099511628211ULL;
+    }
+    if (!nonzero) {
+      return std::nullopt;
+    }
+    return (hash ^ source.coefficient_limbs()) * 1099511628211ULL;
+  }
+
+  typename DigitVector::WeakOwner observed_;
+  std::uint64_t fingerprint_ = 0;
+  NumType padding_ = 0;
+  bool rejected_ = false;
+  bool fingerprint_valid_ = false;
+  std::optional<Entry> entry_;
+};
 
 template<typename Traits>
 typename BasicDigits<Traits>::DigitVector::difference_type
