@@ -132,6 +132,29 @@ class LibraryCli(unittest.TestCase):
                     self.assertEqual(lines[4 * index + 1:4 * index + 4],
                                      [str(scale), str(base), str(scale)])
 
+    def test_atan_near_one_reduction_boundaries(self):
+        lo, hi = unit_atan_enclosure()
+        cases = [(scale, sign, text) for scale in (0, 20, 64, 100, 144, 145)
+                 for sign in ('', '-') for text in
+                 ('.799', '.8', '.801', '.999', '1.001', '1.125', '1.249', '1.25', '1.251')]
+        program = ''.join(f'scale={scale}\na({sign}{text})\n'
+                          for scale, sign, text in cases)
+        lines = self.checked_lines(program)
+        self.assertEqual(len(lines), len(cases))
+        for (scale, sign, text), output in zip(cases, lines):
+            with self.subTest(scale=scale, argument=sign + text):
+                x = Fraction(text)
+                reduced = (x - 1) / (x + 1)
+                term, total = reduced, Fraction()
+                for k in range(90):
+                    total += term / (2 * k + 1)
+                    term *= -reduced * reduced
+                other = total + term / 181
+                lower, upper = lo + min(total, other), hi + max(total, other)
+                if sign:
+                    lower, upper = -upper, -lower
+                self.assertEqual(ORACLE.classify(Fraction(output), lower, upper, scale), 'pass')
+
     def test_trig_argument_representation_preserves_certified_values(self):
         # Adding fractional zeroes changes stored precision, never the exact
         # input. Reuse independently enclosed +/-1 values for both shapes.

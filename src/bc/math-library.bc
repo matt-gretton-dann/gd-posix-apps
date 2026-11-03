@@ -17,9 +17,10 @@ scale=2*A
 
 /* Arctangent: reciprocal and half-angle reduction, alternating series. */
 define a(x) {
-  auto b,i,k,n,p,q,r,s,t,u,v,w;
+  auto b,i,k,n,p,q,r,s,t,u,v,w,y;
   /* b/s save base/scale; w is precision; n/v are sign/reciprocal flags.
-     k reconstructs half angles; p is pi/2; q/t/u are ratio, power and term. */
+     k reconstructs half angles; p is pi/2; y is the near-one correction.
+     q/t/u are ratio, power and term. */
   b=ibase
   ibase=A
   s=scale
@@ -48,6 +49,17 @@ define a(x) {
   scale=w
   if (scale!=w) return(1/0)
   v=0
+  y=0
+  /* Around one, the tangent subtraction identity reduces the argument
+     to at most 1/9 in [1,1.25] or [.8,1]. */
+  if (x>=.8) {
+    if (x<=1.25) {
+      if (x!=1) {
+        y=a(1)
+        x=(x-1)/(x+1)
+      }
+    }
+  }
   if (x>1) {
     v=1
     x=1/x
@@ -69,7 +81,7 @@ define a(x) {
     r+=u
     i+=2
   }
-  r=r*k
+  r=r*k+y
   if (v==1) r=p-r
   if (n==1) r= -r
   t=10^(-s)/2
