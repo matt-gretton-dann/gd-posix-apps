@@ -1942,6 +1942,7 @@ template<typename Traits>
 class BasicNumber
 {
 public:
+  using DivisorCache = typename Details::BasicDigits<Traits>::DivisorCache;
   using NumType = typename Traits::NumType;  ///< Underlying storage type.
   using WideType =
     typename Traits::WideType;  ///< Type able to hold result of NumType::max * NumType::max
@@ -2508,6 +2509,19 @@ public:
 
   void modulo(BasicNumber rhs, NumType target_scale) { modulo_impl(std::move(rhs), target_scale); }
 
+  /** Reuse an admitted divisor without changing language scale/sign semantics.
+   * The by-value RHS preserves aliases and matches the ordinary entry's copy
+   * policy. Misses delegate before changing the dividend or its scale.
+   */
+  void divide_reusing(BasicNumber rhs, NumType target_scale, DivisorCache& cache)
+  {
+    divide_reusing_impl<false>(std::move(rhs), target_scale, cache);
+  }
+  void modulo_reusing(BasicNumber rhs, NumType target_scale, DivisorCache& cache)
+  {
+    divide_reusing_impl<true>(std::move(rhs), target_scale, cache);
+  }
+
   void sqrt(NumType target_scale) { sqrt_impl(target_scale); }
 
   /** \brief  Are we equal to zero?
@@ -2531,6 +2545,75 @@ public:
   }
 
 private:
+  template<bool Remainder>
+  void divide_reusing_impl(BasicNumber rhs, NumType target_scale, DivisorCache& cache)
+  {
+    NumType padding = 0;
+    NumType result_scale = target_scale;
+    if constexpr (Remainder) {
+      if (target_scale > std::numeric_limits<NumType>::max() - rhs.scale()) {
+        // Preserve the ordinary defensive path outside the scale field.
+        cache.clear();
+        modulo(std::move(rhs), target_scale);
+        return;
+      }
+      result_scale = std::max(scale(), static_cast<NumType>(target_scale + rhs.scale()));
+      padding = static_cast<NumType>(result_scale - rhs.scale() - target_scale);
+    }
+    else if (scale() > rhs.scale()) {
+      auto const difference = static_cast<NumType>(scale() - rhs.scale());
+      if (target_scale < difference) {
+        padding = static_cast<NumType>(difference - target_scale);
+      }
+    }
+
+    // Observe the unpadded owner. mul_pow10(0) also performs COW, so doing
+    // that first would lose identity and could force a clone on every miss.
+    auto const* prepared = cache.lookup(rhs.digits_, padding);
+    if (prepared == nullptr) {
+      // This includes zero divisors: the ordinary entry owns the diagnostic,
+      // and no dividend mutation or duplicate zero scan precedes it here.
+      if constexpr (Remainder) {
+        modulo(std::move(rhs), target_scale);
+      }
+      else {
+        divide(std::move(rhs), target_scale);
+      }
+      return;
+    }
+
+    if constexpr (Remainder) {
+      digits_.mul_pow10(static_cast<NumType>(result_scale - scale()));
+    }
+    else if (scale() > rhs.scale()) {
+      auto const difference = static_cast<NumType>(scale() - rhs.scale());
+      digits_.mul_pow10(
+        static_cast<NumType>(target_scale >= difference ? target_scale - difference : 0));
+    }
+    else {
+      if (scale() < rhs.scale()) {
+        digits_.mul_pow10(static_cast<NumType>(rhs.scale() - scale()));
+      }
+      // Keep the two numerator shifts separate: their sum can exceed NumType.
+      digits_.mul_pow10(target_scale);
+    }
+    GD_BC_PROFILE_EVENT(Profile::Event::division_requests, 1);
+    GD_BC_PROFILE_EVENT(Profile::Event::division_dividend_limbs, digits_.coefficient_limbs());
+    // Ordinary division reports unshifted RHS storage before tidying. Modulo
+    // always tidies via mul_pow10, even at zero padding; retain that convention.
+    GD_BC_PROFILE_EVENT(Profile::Event::division_divisor_limbs, !Remainder && padding == 0
+                                                                  ? rhs.digits_.coefficient_limbs()
+                                                                  : prepared->coefficient_limbs());
+    if constexpr (Remainder) {
+      digits_.modulo(*prepared);
+    }
+    else {
+      digits_.divide(*prepared);
+      sign_ = sign_ == rhs.sign_ ? Sign::positive : Sign::negative;
+    }
+    scale_ = result_scale;
+  }
+
   // Native-width modulo entries compile this same generic body outside the VM.
   void modulo_impl(BasicNumber rhs, NumType target_scale)
   {
@@ -2906,6 +2989,44 @@ private:
   Sign sign_ = Sign::positive;           ///< Sign (+/-1).
   NumType scale_ = 0;                    ///< Scale.
 };
+
+// Keep cached arithmetic outside VM template dispatch, including with IPO.
+// Every other trait retains the same generic implementation above.
+template<>
+#if defined(_MSC_VER)
+__declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+[[gnu::noinline]]
+#endif
+void BasicNumber<NumberTraits16>::divide_reusing(BasicNumber rhs, NumType target_scale,
+                                                 DivisorCache& cache);
+
+template<>
+#if defined(_MSC_VER)
+__declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+[[gnu::noinline]]
+#endif
+void BasicNumber<NumberTraits16>::modulo_reusing(BasicNumber rhs, NumType target_scale,
+                                                 DivisorCache& cache);
+
+template<>
+#if defined(_MSC_VER)
+__declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+[[gnu::noinline]]
+#endif
+void BasicNumber<NumberTraits32>::divide_reusing(BasicNumber rhs, NumType target_scale,
+                                                 DivisorCache& cache);
+
+template<>
+#if defined(_MSC_VER)
+__declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+[[gnu::noinline]]
+#endif
+void BasicNumber<NumberTraits32>::modulo_reusing(BasicNumber rhs, NumType target_scale,
+                                                 DivisorCache& cache);
 
 // Isolate the native remainder driver from instruction dispatch. Other traits
 // keep the same generic implementation without a required compiler attribute.

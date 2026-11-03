@@ -127,6 +127,8 @@ TEMPLATE_TEST_CASE("Repeated scaled division preserves signs scales and aliases"
           rhs.negate();
         if (negative_a != negative_b)
           expected_q.negate();
+        typename Number::DivisorCache requests_cache;
+        typename Number::DivisorCache alias_cache;
         auto const saved_lhs = lhs;
         auto const saved_rhs = rhs;
         INFO("sa=" << lhs.scale() << " sb=" << rhs.scale() << " t=" << test.scale
@@ -134,8 +136,8 @@ TEMPLATE_TEST_CASE("Repeated scaled division preserves signs scales and aliases"
         for (unsigned repeat = 0; repeat != 5; ++repeat) {
           auto q = lhs;
           auto r = lhs;
-          q.divide(rhs, static_cast<Limb>(test.scale));
-          r.modulo(rhs, static_cast<Limb>(test.scale));
+          q.divide_reusing(rhs, static_cast<Limb>(test.scale), requests_cache);
+          r.modulo_reusing(rhs, static_cast<Limb>(test.scale), requests_cache);
           REQUIRE(q == expected_q);
           REQUIRE(r == expected_r);
           REQUIRE(q.scale() == test.scale);
@@ -144,14 +146,40 @@ TEMPLATE_TEST_CASE("Repeated scaled division preserves signs scales and aliases"
           REQUIRE(rhs == saved_rhs);
           q = lhs;
           r = lhs;
-          q.divide(q, static_cast<Limb>(test.scale));
-          r.modulo(r, static_cast<Limb>(test.scale));
+          q.divide_reusing(q, static_cast<Limb>(test.scale), alias_cache);
+          r.modulo_reusing(r, static_cast<Limb>(test.scale), alias_cache);
           REQUIRE(q == Number(1));
           REQUIRE(r == Number(0));
           REQUIRE(q.scale() == test.scale);
           REQUIRE(r.scale() == lhs.scale() + test.scale);
         }
+        REQUIRE(requests_cache.retained_limb_bytes() > 0);
+        REQUIRE(alias_cache.retained_limb_bytes() > 0);
       }
     }
   }
+}
+
+TEMPLATE_TEST_CASE("Admitted number divisors handle zero and smaller dividends",
+                   "[bc][number][cached-division][oracle]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  using Limb = typename Number::NumType;
+  Number const divisor("123456789012345678901234567890123456789012345678901", 10);
+  typename Number::DivisorCache cache;
+  for (unsigned repeat = 0; repeat != 5; ++repeat) {
+    for (auto literal : {"0", "0.00", "7", "7.25"}) {
+      Number const value(literal, 10);
+      auto q = value;
+      auto r = value;
+      q.divide_reusing(divisor, Limb{3}, cache);
+      r.modulo_reusing(divisor, Limb{3}, cache);
+      REQUIRE(q == Number(0));
+      REQUIRE(q.scale() == 3);
+      REQUIRE(r == value);
+      REQUIRE(r.scale() == 3);
+    }
+  }
+  REQUIRE(cache.retained_limb_bytes() > 0);
 }

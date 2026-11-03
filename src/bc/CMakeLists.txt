@@ -23,7 +23,7 @@ endif()
 set_warnings(libbc)
 gd_apply_ipo(libbc)
 
-target_sources(libbc PRIVATE execution-plan.cc instruction.cc lexer.cc number-remainder.cc
+target_sources(libbc PRIVATE execution-plan.cc instruction.cc lexer.cc number-division-cache.cc number-remainder.cc
                             number-sqrt.cc parser.cc reader.cc token.cc verification.cc vm.cc)
 if(ENABLE_BC_PROFILE)
   if(ENABLE_BC_COVERAGE)

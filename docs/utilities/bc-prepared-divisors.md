@@ -189,3 +189,30 @@ code contains no fault-injection hooks.
 This prototype establishes admission and lifetime behavior. It does not yet
 establish VM hit rates, whole-program performance, or a default activation policy.
 The existing scalar/short and ordinary coefficient paths remain available.
+
+
+## Number-layer reuse entries
+
+`BasicNumber<Traits>::divide_reusing` and `modulo_reusing` accept a caller-owned
+`DivisorCache`. The RHS remains a by-value snapshot, as in the ordinary entries,
+so aliases are preserved without adding a strong copy on a first observation.
+Misses delegate to ordinary arithmetic before changing the dividend. That path
+retains the language's zero-divisor diagnostic. Overflow of the combined modulo
+scale also delegates to the existing defensive fallback.
+
+Lookup observes the unpadded RHS owner. Quotient and remainder require the same
+effective denominator padding, `max(sa - sb - t, 0)`, computed using nonnegative
+differences. On a hit, quotient numerator alignment retains separate shifts when
+their sum would exceed the scale field. Remainder uses result scale
+`max(sa, t + sb)`, preserves the dividend sign, and unnormalizes exactly through
+the coefficient entry. Quotient sign combines the operand signs and its final
+scale is `t`. Every request records its logical dimensions once, including
+requests that fall back.
+
+Native 16/32-bit entries compile the same generic implementation outside VM
+instruction dispatch. Other traits keep that generic implementation directly.
+Tests use independent rational oracles for all signs and several operand/result
+scales, smaller and zero dividends, repeated requests and aliases. Separate
+request and alias caches are checked for successful admission, ensuring that
+both fallback and prepared hit paths are exercised. Automatic VM activation and
+its performance gates remain separate from these number-layer entries.
