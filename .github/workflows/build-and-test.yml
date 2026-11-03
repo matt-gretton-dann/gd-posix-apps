@@ -27,6 +27,13 @@ jobs:
       - name: Reject corrupted retained timing evidence
         if: ${{ matrix.extensions == 'ON' }}
         run: python3 docs/utilities/bc-native-controls-and-kernels/test-verifiers.py
+      - name: Replay native divisor checkpoints
+        if: ${{ matrix.extensions == 'ON' }}
+        run: python3 docs/utilities/bc-divisor-native-evidence/verify.py
+      - name: Reject corrupted native divisor checkpoints
+        if: ${{ matrix.extensions == 'ON' }}
+        run: python3 docs/utilities/bc-divisor-native-evidence/test-verifier.py
+
       - name: Verify archived bc evidence bytes
         if: ${{ matrix.extensions == 'ON' }}
         run: python3 docs/utilities/verify-bc-evidence-checkout.py
@@ -83,6 +90,13 @@ jobs:
     - name: Reject corrupted retained timing evidence
       if: ${{ matrix.extensions == 1 }}
       run: python docs/utilities/bc-native-controls-and-kernels/test-verifiers.py
+    - name: Replay native divisor checkpoints
+      if: ${{ matrix.extensions == 1 }}
+      run: python docs/utilities/bc-divisor-native-evidence/verify.py
+    - name: Reject corrupted native divisor checkpoints
+      if: ${{ matrix.extensions == 1 }}
+      run: python docs/utilities/bc-divisor-native-evidence/test-verifier.py
+
     - name: Verify archived bc evidence bytes
       if: ${{ matrix.extensions == 1 }}
       run: python docs/utilities/verify-bc-evidence-checkout.py

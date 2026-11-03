@@ -1,0 +1,39 @@
+{
+  "run_id": 41556208140,
+  "candidate": "173d58dcc301e1795920fdd72b4dcca2f9d6871b",
+  "scope": "Provider-decoded UTF-8 snapshots, not original transport bytes",
+  "jobs": [
+    {
+      "job_id": 125655598485,
+      "name": "Build and test on macos-latest - extensions enabled - OFF",
+      "file": "125655598485.log",
+      "sha256": "c7ec677d2389b0a1f1e588cb60ec6db44166998c860bf7acde7764929146f952",
+      "bytes": 561333,
+      "conclusion": "failure"
+    },
+    {
+      "job_id": 125655598581,
+      "name": "Build and test on windows-latest - extensions enabled - 1",
+      "file": "125655598581.log",
+      "sha256": "6a9332a76726518aa09ca388ce6bdae29ffad1e7a60ea017062f377a55091694",
+      "bytes": 56139,
+      "conclusion": "failure"
+    },
+    {
+      "job_id": 125655598821,
+      "name": "Build and test on windows-latest - extensions enabled - 0",
+      "file": "125655598821.log",
+      "sha256": "c904ea857363b1420e4b35edf0bfe7dc93e0913e647c648a8191c07dfb0b4169",
+      "bytes": 53208,
+      "conclusion": "failure"
+    },
+    {
+      "job_id": 125655599428,
+      "name": "Build and test on macos-latest - extensions enabled - ON",
+      "file": "125655599428.log",
+      "sha256": "dde3b843973f98293e8368df95cd482eec7572e952a7ae23b5f3737e268a6ae6",
+      "bytes": 569665,
+      "conclusion": "failure"
+    }
+  ]
+}

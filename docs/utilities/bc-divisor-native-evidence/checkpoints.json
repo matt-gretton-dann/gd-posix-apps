@@ -1,0 +1,248 @@
+{
+  "schema": 1,
+  "scope": "Four coefficient/admission checkpoints; partial runs are never completed gates",
+  "artifacts": [
+    {
+      "checkpoint": "421-0d971",
+      "run_id": 41551973970,
+      "host": "linux",
+      "path": "native/bc-421-0d971-native-linux.zip",
+      "sha256": "edfd2b863152fa9c1d33bec0aa4c04edda032979af78e9e2c182f7b5ef62f8d3",
+      "base": "2b2052840dfe44c50f3fd0192b38d78ab60d01be",
+      "candidate": "0d971f0fecba74354c8e980f56f2544acd81b4be",
+      "treatment": "superseded coefficient API head",
+      "complete": true,
+      "checked": 5800,
+      "grid_counts": {
+        "full-aa": 1160,
+        "full-paired": 1740,
+        "holdout-aa": 1160,
+        "holdout-paired": 1740
+      },
+      "artifact_id": 13191959058,
+      "artifact_name": "bc-native-ubuntu-24.04-41551973970-1"
+    },
+    {
+      "checkpoint": "421-0d971",
+      "run_id": 41551973970,
+      "host": "macos",
+      "path": "native/bc-421-0d971-native-macos.zip",
+      "sha256": "93d96ddce5dd889ee23f8383c7a863fd561a5e90f2e32f829dccf5f746e9b9aa",
+      "base": "2b2052840dfe44c50f3fd0192b38d78ab60d01be",
+      "candidate": "0d971f0fecba74354c8e980f56f2544acd81b4be",
+      "treatment": "superseded coefficient API head",
+      "complete": true,
+      "checked": 5830,
+      "grid_counts": {
+        "full-aa": 1160,
+        "full-paired": 1740,
+        "holdout-aa": 1160,
+        "holdout-paired": 1740,
+        "holdout-paired-confirmation": 30
+      },
+      "artifact_id": 13193697570,
+      "artifact_name": "bc-native-macos-15-41551973970-1"
+    },
+    {
+      "checkpoint": "421-0d971",
+      "run_id": 41551973970,
+      "host": "windows",
+      "path": "native/bc-421-0d971-native-windows.zip",
+      "sha256": "3792e743ffa2e2b6aea41f7d67357696ceee3255d1867ab3717ef76aee69950d",
+      "base": "2b2052840dfe44c50f3fd0192b38d78ab60d01be",
+      "candidate": "0d971f0fecba74354c8e980f56f2544acd81b4be",
+      "treatment": "superseded coefficient API head",
+      "complete": false,
+      "checked": 4246,
+      "grid_counts": {
+        "full-aa": 1160,
+        "full-paired": 1740,
+        "holdout-aa": 1160,
+        "holdout-paired": 186
+      },
+      "artifact_id": 13193378069,
+      "artifact_name": "bc-native-windows-2025-41551973970-1"
+    },
+    {
+      "checkpoint": "421-964e",
+      "run_id": 41553409459,
+      "host": "linux",
+      "path": "native/bc-421-964e-native-linux.zip",
+      "sha256": "fedd273dfd4c3a5665e6d6d41a9cb7bea9fdf1b00de913cb9c1ea73ff173ffc6",
+      "base": "2b2052840dfe44c50f3fd0192b38d78ab60d01be",
+      "candidate": "964e2488112732ede2816e0ebbac8439349355c5",
+      "treatment": "accepted coefficient API foundation",
+      "complete": true,
+      "checked": 5800,
+      "grid_counts": {
+        "full-aa": 1160,
+        "full-paired": 1740,
+        "holdout-aa": 1160,
+        "holdout-paired": 1740
+      },
+      "artifact_id": 13192649884,
+      "artifact_name": "bc-native-ubuntu-24.04-41553409459-1"
+    },
+    {
+      "checkpoint": "421-964e",
+      "run_id": 41553409459,
+      "host": "macos",
+      "path": "native/bc-421-964e-native-macos.zip",
+      "sha256": "e2fcbc9ff30860c217c3ff18b32dd355218716082554905afab7586aa17979b2",
+      "base": "2b2052840dfe44c50f3fd0192b38d78ab60d01be",
+      "candidate": "964e2488112732ede2816e0ebbac8439349355c5",
+      "treatment": "accepted coefficient API foundation",
+      "complete": true,
+      "checked": 5800,
+      "grid_counts": {
+        "full-aa": 1160,
+        "full-paired": 1740,
+        "holdout-aa": 1160,
+        "holdout-paired": 1740
+      },
+      "artifact_id": 13194196168,
+      "artifact_name": "bc-native-macos-15-41553409459-1"
+    },
+    {
+      "checkpoint": "421-964e",
+      "run_id": 41553409459,
+      "host": "windows",
+      "path": "native/bc-421-964e-native-windows.zip",
+      "sha256": "6a0a33ecc9e05eb395799d342ca178dab9d51c62a6542ab5aca353a096034759",
+      "base": "2b2052840dfe44c50f3fd0192b38d78ab60d01be",
+      "candidate": "964e2488112732ede2816e0ebbac8439349355c5",
+      "treatment": "accepted coefficient API foundation",
+      "complete": true,
+      "checked": 5800,
+      "grid_counts": {
+        "full-aa": 1160,
+        "full-paired": 1740,
+        "holdout-aa": 1160,
+        "holdout-paired": 1740
+      },
+      "artifact_id": 13195096146,
+      "artifact_name": "bc-native-windows-2025-41553409459-1"
+    },
+    {
+      "checkpoint": "422-173",
+      "run_id": 41556208349,
+      "host": "linux",
+      "path": "native/bc-422-173-native-linux.zip",
+      "sha256": "894bd5d47281b68ecec331680902017d9b05d9f6b4e9e9efef7c5fea1e82f7af",
+      "base": "964e2488112732ede2816e0ebbac8439349355c5",
+      "candidate": "173d58dcc301e1795920fdd72b4dcca2f9d6871b",
+      "treatment": "superseded admission head; portability test failures retained separately",
+      "complete": true,
+      "checked": 5800,
+      "grid_counts": {
+        "full-aa": 1160,
+        "full-paired": 1740,
+        "holdout-aa": 1160,
+        "holdout-paired": 1740
+      },
+      "artifact_id": 13194712831,
+      "artifact_name": "bc-native-ubuntu-24.04-41556208349-1"
+    },
+    {
+      "checkpoint": "422-173",
+      "run_id": 41556208349,
+      "host": "macos",
+      "path": "native/bc-422-173-native-macos.zip",
+      "sha256": "ed3ee6ea16c35fd798e36598a3dc8c218e514e65af6da989cde19cad451be568",
+      "base": "964e2488112732ede2816e0ebbac8439349355c5",
+      "candidate": "173d58dcc301e1795920fdd72b4dcca2f9d6871b",
+      "treatment": "superseded admission head; portability test failures retained separately",
+      "complete": true,
+      "checked": 5800,
+      "grid_counts": {
+        "full-aa": 1160,
+        "full-paired": 1740,
+        "holdout-aa": 1160,
+        "holdout-paired": 1740
+      },
+      "artifact_id": 13194903732,
+      "artifact_name": "bc-native-macos-15-41556208349-1"
+    },
+    {
+      "checkpoint": "422-173",
+      "run_id": 41556208349,
+      "host": "windows",
+      "path": "native/bc-422-173-native-windows.zip",
+      "sha256": "bc58f34d6d6e23a0513071240e00097ae244c94e7c67118af2c5851272c15520",
+      "base": "964e2488112732ede2816e0ebbac8439349355c5",
+      "candidate": "173d58dcc301e1795920fdd72b4dcca2f9d6871b",
+      "treatment": "superseded admission head; portability test failures retained separately",
+      "complete": false,
+      "checked": 5171,
+      "grid_counts": {
+        "full-aa": 1160,
+        "full-paired": 1740,
+        "holdout-aa": 1160,
+        "holdout-paired": 1111
+      },
+      "artifact_id": 13195194634,
+      "artifact_name": "bc-native-windows-2025-41556208349-1"
+    },
+    {
+      "checkpoint": "422-39d",
+      "run_id": 41558399367,
+      "host": "linux",
+      "path": "native/bc-422-39d-native-linux.zip",
+      "sha256": "9b111a03a52db41c803cfd9de7284551b10064521dff6423c0143c0d0bd2ed87",
+      "base": "1d4a0531ec3224cb647374aca62a716e8d5270ff",
+      "candidate": "39d5259c39989fcfb4965aca7fa715cb19c8fe62",
+      "treatment": "accepted bounded admission foundation",
+      "complete": true,
+      "checked": 5800,
+      "grid_counts": {
+        "full-aa": 1160,
+        "full-paired": 1740,
+        "holdout-aa": 1160,
+        "holdout-paired": 1740
+      },
+      "artifact_id": 13196331793,
+      "artifact_name": "bc-native-ubuntu-24.04-41558399367-1"
+    },
+    {
+      "checkpoint": "422-39d",
+      "run_id": 41558399367,
+      "host": "macos",
+      "path": "native/bc-422-39d-native-macos.zip",
+      "sha256": "0e134712aad122c30ff75b9e58b092ae5ad9c46e8b06196b22ab4195e0fc7a36",
+      "base": "1d4a0531ec3224cb647374aca62a716e8d5270ff",
+      "candidate": "39d5259c39989fcfb4965aca7fa715cb19c8fe62",
+      "treatment": "accepted bounded admission foundation",
+      "complete": true,
+      "checked": 5830,
+      "grid_counts": {
+        "full-aa": 1160,
+        "full-paired": 1740,
+        "full-paired-confirmation": 30,
+        "holdout-aa": 1160,
+        "holdout-paired": 1740
+      },
+      "artifact_id": 13196586997,
+      "artifact_name": "bc-native-macos-15-41558399367-1"
+    },
+    {
+      "checkpoint": "422-39d",
+      "run_id": 41558399367,
+      "host": "windows",
+      "path": "native/bc-422-39d-native-windows.zip",
+      "sha256": "a4ba4861273b575d1baf7fe75d840a4cc4602ab6ae4a4f1fcf4bf19077bd8b1e",
+      "base": "1d4a0531ec3224cb647374aca62a716e8d5270ff",
+      "candidate": "39d5259c39989fcfb4965aca7fa715cb19c8fe62",
+      "treatment": "accepted bounded admission foundation",
+      "complete": true,
+      "checked": 5800,
+      "grid_counts": {
+        "full-aa": 1160,
+        "full-paired": 1740,
+        "holdout-aa": 1160,
+        "holdout-paired": 1740
+      },
+      "artifact_id": 13196717853,
+      "artifact_name": "bc-native-windows-2025-41558399367-1"
+    }
+  ]
+}
