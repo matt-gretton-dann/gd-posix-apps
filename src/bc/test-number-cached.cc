@@ -7,6 +7,7 @@
 #include <catch2/catch.hpp>
 
 #include <array>
+#include <limits>
 #include <string_view>
 
 #include "bc.hh"
@@ -255,4 +256,28 @@ TEMPLATE_TEST_CASE("Shared heap storage reports ownership without making a copy"
   }
   REQUIRE_FALSE(value.has_shared_heap_storage());
   REQUIRE_FALSE(Number(7).has_shared_heap_storage());
+}
+
+TEMPLATE_TEST_CASE("Try remainder scale overflow leaves numeric operands unchanged",
+                   "[bc][number][cached-division][oracle]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  using Limb = typename Number::NumType;
+  Number const divisor("123456789012345678901234567890123456789012345678.901", 10);
+  Number const dividend("987654321098765432109876543210987654321098765432109876.54", 10);
+  typename Number::DivisorCache cache;
+  for (unsigned observation = 0; observation != 3; ++observation) {
+    auto lhs = dividend;
+    REQUIRE(lhs.try_divide_reusing(divisor, Limb{7}, cache) == (observation == 2));
+  }
+  REQUIRE(cache.retained_limb_bytes() > 0);
+  auto lhs = dividend;
+  // Public VM scales cannot reach this sum, but the generic numeric try API
+  // must still leave ordinary fallback safe at the trait's full scale width.
+  REQUIRE_FALSE(lhs.try_modulo_reusing(divisor, std::numeric_limits<Limb>::max(), cache));
+  REQUIRE(lhs == dividend);
+  REQUIRE(lhs.scale() == dividend.scale());
+  REQUIRE(divisor.scale() == 3);
+  REQUIRE(cache.retained_limb_bytes() == 0);
 }
