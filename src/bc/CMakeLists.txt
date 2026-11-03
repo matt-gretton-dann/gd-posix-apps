@@ -201,6 +201,9 @@ if(RUN_INTEGRATION_TESTS)
            "${CMAKE_CURRENT_SOURCE_DIR}/test-multiply-config.py" "${CMAKE_COMMAND}"
            "${CMAKE_SOURCE_DIR}/cmake/BcMultiplyConfig.cmake")
   set_tests_properties(bc/multiply-config PROPERTIES TIMEOUT 20)
+  add_test(NAME bc/coverage-tools COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-coverage-tools.py")
+  set_tests_properties(bc/coverage-tools PROPERTIES TIMEOUT 20)
   add_test(NAME bc/profiling-tools COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-profiling-tools.py"
            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/profile-bc.py")

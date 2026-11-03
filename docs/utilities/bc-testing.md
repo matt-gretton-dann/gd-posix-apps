@@ -377,3 +377,20 @@ remain visible in each raw export. The audit validated this with a genuine LLVM
 export whose verifier file entry was deliberately removed: collection rejected
 it with a missing-production-mapping error, while the unmodified export passed.
 Fault-injection profiles are separate from published measurement profiles.
+
+
+### Coverage inventory and experimental divisor mode
+
+The collector's minimum mapping inventory now includes each implementation
+`.cc` under `src/bc`, including isolated root, remainder and cached-division
+entries, as well as the original `bc.hh`/`number.hh` header scope. Standalone
+tests, benchmarks, the split-point tuner and profiling-only translation units
+are excluded from that minimum. Losing a newly linked implementation mapping
+must fail collection rather than silently reduce the denominator.
+
+Coverage summaries record `prepared_divisors` from the configured build alongside
+`extensions`. A missing option remains null for older source. Keep experimental
+reuse ON/OFF builds and output directories separate, just as for extension modes;
+do not pool their line, branch or MC/DC denominators. The broad unit/native view
+and application-only mappings remain distinct. An API exercised only by unit
+traits can appear in the former even when default VM dispatch does not use it.
