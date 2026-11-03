@@ -42,7 +42,10 @@ TEST_CASE("Fatal parser reuse preserves the original diagnostic stream",
   using O = I::Opcode;
   std::string_view const text =
     GENERATE("1+", "1+\n2\n", "while(1) {\n1+\n}\n", "define f() {\nwhile(1) {\n1+\n}\n}\n",
-             "1+define f() {\n}\n");
+             "1+define f() {\n}\n", "1+;2\n", "{1+;2}\n", "f(1,)\n", "f(1+,2)\n",
+             "define f(a,,b) {\nreturn(0)\n}\n",
+             "define f() {\nauto a,,b;\nreturn(0)\n}\n",
+             "define f() {\nreturn(1+)\n}\n", "return(1)\n", "1?2\n");
   bool const interactive = GENERATE(false, true);
   INFO("input = " << text << ", interactive = " << interactive);
   GD::Bc::Parser parser(
@@ -87,4 +90,33 @@ TEST_CASE("Nonfatal interactive parser reuse advances input", "[bc][parser][reus
   REQUIRE(errors.str().empty());
   REQUIRE_FALSE(parser.seen_quit());
   REQUIRE(std::get<std::string>(first->at(0).op1()) == "1");
+}
+
+TEST_CASE("Read-time quit suppresses errors in abandoned parser contexts",
+          "[bc][parser][errors][quit]")
+{
+  using I = GD::Bc::Instruction;
+  using O = I::Opcode;
+  std::string_view const text = GENERATE(
+    "quit\n\"unterminated", "if(1) {quit\n\"unterminated",
+    "while(1) {quit\n\"unterminated", "define f(a) {\nauto b;\nquit\n\"unterminated");
+  bool const interactive = GENERATE(false, true);
+  INFO("input = " << text << ", interactive = " << interactive);
+  GD::Bc::Parser parser(
+    std::make_unique<GD::Bc::Lexer>(std::make_unique<GD::Bc::StringReader>(text)), interactive);
+  for (unsigned repeat = 0; repeat != 3; ++repeat) {
+    auto code = parser.parse();
+    REQUIRE(code != nullptr);
+    REQUIRE(parser.seen_quit());
+    // The driver discards this partial item. A missing closing delimiter after
+    // quit must not become a fatal diagnostic or consume the trailing string.
+    for (auto const& instruction : *code) {
+      if (instruction.opcode() == O::quit) {
+        REQUIRE(std::get<unsigned>(instruction.op1()) == 0);
+      }
+      if (instruction.opcode() == O::print) {
+        REQUIRE(std::get<I::Stream>(instruction.op2()) != I::Stream::error);
+      }
+    }
+  }
 }
