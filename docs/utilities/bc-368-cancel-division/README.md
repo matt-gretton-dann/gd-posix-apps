@@ -120,13 +120,3 @@ and newly observed executable identities, not reuse of stale machine paths.
 The accepted frozen library baseline is preserved separately in
 `bc-217-matched-baseline`; compiler coverage and final roadmap acceptance remain
 separate work. No denominator adjustment or inferred coverage is supplied here.
-
-
-## Subsequent negative-exponent work
-
-Issue #439 extends the common-factor transformation by truncating the numerator
-before division when a residual negative decimal exponent remains. See
-[bc-scale-reduction.md](../bc-scale-reduction.md) for its integer proof, storage
-regression and current validation. This changes the logical request dimensions
-in that regime. The older source identities, measurements and counter policy
-archived above remain historical evidence and are not relabeled as #439 results.

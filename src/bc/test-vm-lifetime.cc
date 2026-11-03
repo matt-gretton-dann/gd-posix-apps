@@ -83,6 +83,12 @@ auto operator new(std::size_t size) -> void*
     handler();
   }
 }
+// Keep GCC's allocation-family analysis at the replacement boundary. Inlining
+// this intentional malloc/free pair into library cleanup can misdiagnose new
+// storage as mismatched. Other compilers retain the ordinary implementation.
+#if defined(__GNUC__) && !defined(__clang__)
+[[gnu::noinline]]
+#endif
 void operator delete(void* value) noexcept
 {
   if (value != nullptr) {
@@ -148,9 +154,6 @@ auto native_sqrt_scale_boundary() -> bool
   return true;
 }
 
-// Walk ordinary allocation points while parsing a malformed second item.
-// A retry may return the recorded fatal diagnostic or rethrow a terminal
-// exception; it must never accept the remaining tail as a fresh item.
 // A quotient which truncates to zero should not allocate the decimal padding
 // of a denominator much larger than the coefficient. Parse before the ceiling
 // so this observes division work, while retaining ordinary public snapshots.
@@ -178,6 +181,9 @@ auto shrinking_division_storage() -> bool
          divisor == Number(7);
 }
 
+// Walk ordinary allocation points while parsing a malformed second item.
+// A retry may return the recorded fatal diagnostic or rethrow a terminal
+// exception; it must never accept the remaining tail as a fresh item.
 auto parser_allocation_failures() -> bool
 {
   using I = GD::Bc::Instruction;

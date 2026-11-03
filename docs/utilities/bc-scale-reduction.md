@@ -58,7 +58,18 @@ bc CTest entries (47 executed successfully, 45 declared skips).
 A separate profiling-enabled, coverage-disabled build passes 333 cases /
 1,973,156 assertions and its profiling CLI tests, including exact output and
 reduced work dimensions. These builds use a fixed multiplication split point
-of 126. Native performance and memory/code-size evidence is pending.
+of 126. Eight separate compact/fallback × prepared-reuse × language coverage modes at
+b54f0c3b pass their 416 selected entries and retain distinct raw denominators;
+43 configured header consumers per mode have audited language definitions.
+Adjusted feasibility coverage is not computed or claimed complete.
+
+These are introduction-stage records. Current-head CI and native adoption
+evidence is recorded in [PR #440](https://github.com/matt-gretton-dann/gd-posix-apps/pull/440).
+The initial b54f0c3b build exposed a GCC replacement-delete diagnostic in the
+isolated lifetime test and an accidentally edited hash-protected historical
+README. Keep that failed checkpoint: its correction isolates GCC inlining only
+in the test and restores the archived README bytes. Neither changes the
+arithmetic. Historical evidence is linked from this document rather than edited.
 LeakSanitizer is unavailable on this host; isolated ordinary-allocation balance
 remains separate evidence. Preserve every source identity and slower/inconclusive
 class; this candidate does not establish the overall Howard or #197 target.
