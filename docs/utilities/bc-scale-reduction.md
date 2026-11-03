@@ -20,6 +20,27 @@ as seven. This avoids constructing a large denominator merely to discover that
 the quotient is zero. Positive/zero exponent behavior is unchanged. No platform
 intrinsics or special library/function recognition are required.
 
+## Native division boundary experiment
+
+The next structural candidate keeps the complete 16- and 32-bit division driver
+in `number-division.cc`, using the same private generic implementation as the
+header-defined fallback for other traits and standalone consumers. Linking the
+CMake libbc target propagates GD_BC_OUTLINED_DIVISION=1; the independent tuning
+tool retains the generic implementation and does not acquire a library dependency.
+Supported compilers keep that native
+boundary out of line even with IPO. This tests whether expanding the new
+coefficient work inside VM dispatch affects unrelated arithmetic optimization;
+it does not change the quotient algorithm or tune instruction alignment.
+The initial source's Windows multiplication losses remain rejected evidence.
+This boundary is a hypothesis requiring fresh full/held-out native comparison,
+including small division, startup and code-size costs; no recovery is assumed.
+The linked-client prototype passes both ASan/UBSan language/reuse configurations
+(324 cases each), its separate profiling suite (333 cases and profiling CLI),
+and all 92 default bc CTest entries (47 pass, 45 declared skips). The independent
+tuner builds in each configuration. Compile-command audits distinguish 44 normal
+consumers (43 outlined linked clients and one generic tuner) from 45 profiling
+consumers (one extra profiling entry), rather than pooling mode evidence.
+
 ## Regression and oracles
 
 The test-first commit e37dedd0 uses the public Number API and the existing

@@ -2462,65 +2462,13 @@ public:
   }
 
 #if defined(__APPLE__) && defined(__aarch64__) && defined(__clang__)
-  // Keep this large hot function's entry alignment stable as decoders grow.
-  // Other platforms retain their compiler's normal alignment policy.
+  // Retain the established alignment for this generic entry on Apple arm64.
+  // Other platforms use their compiler's normal alignment policy.
   __attribute__((aligned(64)))
 #endif
   void divide(BasicNumber rhs, NumType target_scale)
   {
-    if (rhs.is_zero()) {
-      Details::error(Msg::divide_by_zero);
-      return;
-    }
-
-    // For nonnegative coefficients A/B, operand scales sa/sb and result
-    // scale t, the quotient coefficient is floor(A*10^(t+sb-sa)/B).
-    // Cancel powers introduced on both sides rather than padding a small
-    // integer divisor to the numerator's fractional scale. Differences avoid
-    // overflowing a scale field when the combined exponent would be large.
-    if (scale() > rhs.scale()) {
-      NumType const difference = scale() - rhs.scale();
-      if (target_scale >= difference) {
-        digits_.mul_pow10(target_scale - difference);
-      }
-      else {
-        // For integer magnitudes, floor(A/(B*10^k)) equals
-        // floor(floor(A/10^k)/B). Drop numerator digits first instead of
-        // padding B, retaining scalar division and only surviving storage.
-        digits_ = digits_.rescaled_copy(0, difference - target_scale);
-        // Comparison requires present storage even when every digit was cut.
-        digits_.mul_pow10(0);
-      }
-    }
-    else {
-      if (scale() < rhs.scale()) {
-        digits_.mul_pow10(rhs.scale() - scale());
-      }
-      digits_.mul_pow10(target_scale);
-    }
-
-    // Record logical coefficient dimensions after decimal-exponent reduction and before
-    // comparison/normalization. These are request totals, not CPU or RSS costs.
-    GD_BC_PROFILE_EVENT(Profile::Event::division_requests, 1);
-    GD_BC_PROFILE_EVENT(Profile::Event::division_dividend_limbs, digits_.coefficient_limbs());
-    GD_BC_PROFILE_EVENT(Profile::Event::division_divisor_limbs, rhs.digits_.coefficient_limbs());
-    auto comparison = digits_.compare(rhs.digits_, 0);
-    switch (comparison) {
-    case Details::ComparisonResult::less_than:
-      digits_.reset();
-      break;
-    case Details::ComparisonResult::equality:
-      digits_ = Details::BasicDigits<Traits>(1);
-      break;
-    case Details::ComparisonResult::greater_than:
-      // The by-value divisor coefficient is dead after this call; scale/sign
-      // remain available below. Transfer it into normalization instead of copying.
-      digits_.divide(std::move(rhs.digits_));
-      break;
-    }
-
-    scale_ = target_scale;
-    sign_ = sign_ == rhs.sign_ ? Sign::positive : Sign::negative;
+    divide_impl(std::move(rhs), target_scale);
   }
 
   void modulo(BasicNumber rhs, NumType target_scale) { modulo_impl(std::move(rhs), target_scale); }
@@ -2578,6 +2526,63 @@ public:
   }
 
 private:
+  void divide_impl(BasicNumber rhs, NumType target_scale)
+  {
+    if (rhs.is_zero()) {
+      Details::error(Msg::divide_by_zero);
+      return;
+    }
+
+    // For nonnegative coefficients A/B, operand scales sa/sb and result
+    // scale t, the quotient coefficient is floor(A*10^(t+sb-sa)/B).
+    // Cancel powers introduced on both sides rather than padding a small
+    // integer divisor to the numerator's fractional scale. Differences avoid
+    // overflowing a scale field when the combined exponent would be large.
+    if (scale() > rhs.scale()) {
+      NumType const difference = scale() - rhs.scale();
+      if (target_scale >= difference) {
+        digits_.mul_pow10(target_scale - difference);
+      }
+      else {
+        // For integer magnitudes, floor(A/(B*10^k)) equals
+        // floor(floor(A/10^k)/B). Drop numerator digits first instead of
+        // padding B, retaining scalar division and only surviving storage.
+        digits_ = digits_.rescaled_copy(0, difference - target_scale);
+        // Comparison requires present storage even when every digit was cut.
+        digits_.mul_pow10(0);
+      }
+    }
+    else {
+      if (scale() < rhs.scale()) {
+        digits_.mul_pow10(rhs.scale() - scale());
+      }
+      digits_.mul_pow10(target_scale);
+    }
+
+    // Record logical coefficient dimensions after decimal-exponent reduction and before
+    // comparison/normalization. These are request totals, not CPU or RSS costs.
+    GD_BC_PROFILE_EVENT(Profile::Event::division_requests, 1);
+    GD_BC_PROFILE_EVENT(Profile::Event::division_dividend_limbs, digits_.coefficient_limbs());
+    GD_BC_PROFILE_EVENT(Profile::Event::division_divisor_limbs, rhs.digits_.coefficient_limbs());
+    auto comparison = digits_.compare(rhs.digits_, 0);
+    switch (comparison) {
+    case Details::ComparisonResult::less_than:
+      digits_.reset();
+      break;
+    case Details::ComparisonResult::equality:
+      digits_ = Details::BasicDigits<Traits>(1);
+      break;
+    case Details::ComparisonResult::greater_than:
+      // The by-value divisor coefficient is dead after this call; scale/sign
+      // remain available below. Transfer it into normalization instead of copying.
+      digits_.divide(std::move(rhs.digits_));
+      break;
+    }
+
+    scale_ = target_scale;
+    sign_ = sign_ == rhs.sign_ ? Sign::positive : Sign::negative;
+  }
+
   template<bool Remainder>
   auto try_divide_reusing_impl(BasicNumber const& rhs, NumType target_scale, DivisorCache& cache)
     -> bool
@@ -3021,6 +3026,28 @@ private:
   Sign sign_ = Sign::positive;           ///< Sign (+/-1).
   NumType scale_ = 0;                    ///< Scale.
 };
+
+// Linked clients keep native division outside VM template expansion, including
+// with IPO where supported. Standalone consumers and other traits retain the
+// same generic algorithm without an external division symbol.
+#if defined(GD_BC_OUTLINED_DIVISION) && GD_BC_OUTLINED_DIVISION
+template<>
+#  if defined(_MSC_VER)
+__declspec(noinline)
+#  elif __has_cpp_attribute(gnu::noinline)
+[[gnu::noinline]]
+#  endif
+void BasicNumber<NumberTraits16>::divide(BasicNumber rhs, NumType target_scale);
+
+template<>
+#  if defined(_MSC_VER)
+__declspec(noinline)
+#  elif __has_cpp_attribute(gnu::noinline)
+[[gnu::noinline]]
+#  endif
+void BasicNumber<NumberTraits32>::divide(BasicNumber rhs, NumType target_scale);
+
+#endif
 
 // Keep cached arithmetic outside VM template dispatch, including with IPO.
 // Every other trait retains the same generic implementation above.
