@@ -53,7 +53,7 @@ class Coverage(unittest.TestCase):
                  'ENABLE_BC_COMPACT_EXECUTION': 'ON'}
         self.assertEqual(COLLECTOR.build_modes(cache),
                          {'extensions': 'OFF', 'prepared_divisors': 'ON', 'compact_execution': 'ON',
-                          'compact_digit_owner': None})
+                          'compact_digit_owner': None, 'thread_confined_digit_owner': None})
         self.assertIsNone(COLLECTOR.build_modes({})['prepared_divisors'])
         self.assertIsNone(COLLECTOR.build_modes({})['compact_execution'])
         cache['ENABLE_BC_COMPACT_EXECUTION'] = 'OFF'
@@ -64,6 +64,12 @@ class Coverage(unittest.TestCase):
         for mode in ('ON', 'OFF'):
             self.assertEqual(COLLECTOR.build_modes({'ENABLE_BC_COMPACT_DIGIT_OWNER': mode})[
                 'compact_digit_owner'], mode)
+
+    def test_thread_confined_owner_mode_does_not_relabel_atomic_checkpoints(self):
+        self.assertIsNone(COLLECTOR.build_modes({})['thread_confined_digit_owner'])
+        for mode in ('ON', 'OFF'):
+            self.assertEqual(COLLECTOR.build_modes({'ENABLE_BC_THREAD_CONFINED_DIGIT_OWNER': mode})[
+                'thread_confined_digit_owner'], mode)
 
 
 if __name__ == '__main__':

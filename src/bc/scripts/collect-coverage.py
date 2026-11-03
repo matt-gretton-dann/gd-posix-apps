@@ -54,7 +54,8 @@ def build_modes(cache):
     return {"extensions": cache.get("ENABLE_NON_POSIX_EXTENSIONS"),
             "prepared_divisors": cache.get("ENABLE_BC_PREPARED_DIVISORS"),
             "compact_execution": cache.get("ENABLE_BC_COMPACT_EXECUTION"),
-            "compact_digit_owner": cache.get("ENABLE_BC_COMPACT_DIGIT_OWNER")}
+            "compact_digit_owner": cache.get("ENABLE_BC_COMPACT_DIGIT_OWNER"),
+            "thread_confined_digit_owner": cache.get("ENABLE_BC_THREAD_CONFINED_DIGIT_OWNER")}
 
 
 def main():
