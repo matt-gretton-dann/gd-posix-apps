@@ -4,6 +4,7 @@
  */
 #include <new>
 
+#include <algorithm>
 #include <atomic>
 #include <cstdio>
 #include <cstdlib>
@@ -83,6 +84,12 @@ auto operator new(std::size_t size) -> void*
     handler();
   }
 }
+// Keep GCC's allocation-family analysis at the replacement boundary. Inlining
+// this intentional malloc/free pair into library cleanup can misdiagnose new
+// storage as mismatched. Other compilers retain the ordinary implementation.
+#if defined(__GNUC__) && !defined(__clang__)
+[[gnu::noinline]]
+#endif
 void operator delete(void* value) noexcept
 {
   if (value != nullptr) {
@@ -146,6 +153,33 @@ auto native_sqrt_scale_boundary() -> bool
     }
   }
   return true;
+}
+
+// A quotient which truncates to zero should not allocate the decimal padding
+// of a denominator much larger than the coefficient. Parse before the ceiling
+// so this observes division work, while retaining ordinary public snapshots.
+template<typename Traits>
+auto shrinking_division_storage() -> bool
+{
+  using Number = GD::Bc::BasicNumber<Traits>;
+  using NumType = typename Number::NumType;
+  auto const zeros = std::min<std::size_t>(8000, std::numeric_limits<NumType>::max() / 2);
+  std::string const source = "0." + std::string(zeros, '0') + "1";
+  Number const original(source, 10);
+  Number value = original;
+  Number const divisor(7);
+  auto const denied_before = denied_allocations;
+  bool valid = false;
+  try {
+    AllocationCeiling const ceiling(sizeof(NumType) == 1 ? 32 : 1024);
+    value.divide(divisor, 0);
+    valid = value.is_zero() && value.scale() == 0;
+  }
+  catch (std::bad_alloc const&) {
+    return false;
+  }
+  return valid && denied_allocations == denied_before && original == Number(source, 10) &&
+         divisor == Number(7);
 }
 
 // Walk ordinary allocation points while parsing a malformed second item.
@@ -491,6 +525,12 @@ auto main() -> int
   if (!native_sqrt_scale_boundary<GD::Bc::NumberTraits16>() ||
       !native_sqrt_scale_boundary<GD::Bc::NumberTraits32>()) {
     std::fprintf(stderr, "Native square-root scale wrapped or lost snapshot isolation\n");
+    return 1;
+  }
+  if (!shrinking_division_storage<GD::Bc::NumberTraits8>() ||
+      !shrinking_division_storage<GD::Bc::NumberTraits16>() ||
+      !shrinking_division_storage<GD::Bc::NumberTraits32>()) {
+    std::fprintf(stderr, "Scale-reducing division padded its divisor or lost snapshots\n");
     return 1;
   }
   for (unsigned i = 0; i < 3; ++i) {
