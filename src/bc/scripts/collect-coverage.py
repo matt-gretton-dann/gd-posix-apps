@@ -52,7 +52,8 @@ def build_modes(cache):
     # A missing option denotes older source; do not silently label it OFF.
     return {"extensions": cache.get("ENABLE_NON_POSIX_EXTENSIONS"),
             "prepared_divisors": cache.get("ENABLE_BC_PREPARED_DIVISORS"),
-            "compact_execution": cache.get("ENABLE_BC_COMPACT_EXECUTION")}
+            "compact_execution": cache.get("ENABLE_BC_COMPACT_EXECUTION"),
+            "outlined_division": cache.get("ENABLE_BC_OUTLINED_DIVISION")}
 
 
 def main():

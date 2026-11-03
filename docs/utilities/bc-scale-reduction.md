@@ -20,26 +20,39 @@ as seven. This avoids constructing a large denominator merely to discover that
 the quotient is zero. Positive/zero exponent behavior is unchanged. No platform
 intrinsics or special library/function recognition are required.
 
-## Native division boundary experiment
+## Compiler-selected division boundaries
 
-The next structural candidate keeps the complete 16- and 32-bit division driver
-in `number-division.cc`, using the same private generic implementation as the
-header-defined fallback for other traits and standalone consumers. Linking the
-CMake libbc target propagates GD_BC_OUTLINED_DIVISION=1; the independent tuning
-tool retains the generic implementation and does not acquire a library dependency.
-Supported compilers keep that native
-boundary out of line even with IPO. This tests whether expanding the new
-coefficient work inside VM dispatch affects unrelated arithmetic optimization;
-it does not change the quotient algorithm or tune instruction alignment.
-The initial source's Windows multiplication losses remain rejected evidence.
-This boundary is a hypothesis requiring fresh full/held-out native comparison,
-including small division, startup and code-size costs; no recovery is assumed.
-The linked-client prototype passes both ASan/UBSan language/reuse configurations
-(324 cases each), its separate profiling suite (333 cases and profiling CLI),
-and all 92 default bc CTest entries (47 pass, 45 declared skips). The independent
-tuner builds in each configuration. Compile-command audits distinguish 44 normal
-consumers (43 outlined linked clients and one generic tuner) from 45 profiling
-consumers (one extra profiling entry), rather than pooling mode evidence.
+The all-compiler outlined prototype 64367603 retains the large division gain
+but repeats a roughly 1% local macOS loop loss. Keep that source and its raw
+confirmation; the Linux/Windows allowance does not apply to macOS. Its native
+collection remains independent of the next candidate.
+
+ENABLE_BC_OUTLINED_DIVISION defaults ON for MSVC-compatible builds and OFF
+elsewhere. It can be forced ON or OFF for comparisons. Linked CMake clients
+receive the same GD_BC_OUTLINED_DIVISION definition; standalone consumers keep
+the generic header implementation without a libbc dependency. Native ordinary
+division and the existing prepared-cache drivers share number-division.cc;
+only the ordinary specializations depend on this option. The exact quotient
+algorithm remains shared with all trait models. No alignment tuning is used.
+
+The earlier unconditional specialization broke the independent tuner link;
+the linked-client declaration policy preserves that consumer's generic path.
+Coverage records the outlined-division option separately, including unknown
+for older sources without it. Do not pool forced-ON, forced-OFF or compiler
+default evidence, or infer Windows coverage from a macOS compiler run.
+
+Local validation covers four ASan/UBSan configurations: compiler default and
+forced outlining, each with extensions ON / reuse OFF and extensions OFF /
+reuse ON. All pass 324 cases and six focused CTests. Both separate profiling
+configurations pass 333 cases and profiling CLI. The default configuration
+passes all 92 bc CTest entries (47 pass, 45 declared skips). The standalone
+tuner builds in every configuration. Audits distinguish 43 normal consumers
+from 44 profiling consumers, with one generic standalone tuner in each.
+
+This compiler selection is a measured design hypothesis, not proof of Windows
+recovery or macOS neutrality. Fresh tests, matched native timing, memory and
+code-size evidence are required for adoption. Historical all-compiler tests
+and timings retain their original source identity.
 
 ## Regression and oracles
 
