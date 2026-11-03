@@ -74,20 +74,17 @@ S+10 accuracy assumption.
 
 ## Arctangent
 
-For exact |x| = 1 and entry S <= 64, use an ordinary 80-decimal-place lower
-bound. The committed a-one/S100 certified enclosure has identical floors after
-multiplication by 10^80 at both endpoints. The stored literal is exactly that
-integer divided by 10^80, so its error is strictly below 10^-80. Add the exact
-half decimal unit, then truncate at S as in the dynamic path. Since S <= 64,
-the final error is at most U/2 + 10^-80 < U. Negating before truncation preserves
-this absolute bound and the existing nearest-rounding behavior for -1. Tests
-also verify that the literal and both reference endpoints round identically at
-every entry scale through 64.
+For exact |x| = 1 and entry S <= 144, use an ordinary 160-decimal-place lower
+bound. Tests enclose atan(1) with exact rational alternating remainders using
+atan(1) = 4 atan(1/5) - atan(1/239). Both enclosure endpoints yield the same
+integer floor after multiplication by 10^160, and the stored literal has error
+strictly below 10^-160. At working scale S+1, add the exact half decimal unit and
+truncate at S. The final error is at most U/2 + 10^-160 < U. Negating before
+truncation preserves nearest rounding for -1. Tests check the literal and both
+reference endpoints round identically at every entry scale through 144.
 
-This is bounded source data, not a constant claimed valid at arbitrary
-precision. The precision readback guard still executes before it, ensuring
-that the half unit is represented exactly. All other inputs and S >= 65 retain
-the dynamic calculation. Literal identity, threshold neighbors, representations
+The shortcut uses a working scale of at most 145. All other inputs and S >= 145
+retain the dynamic calculation and its working-scale readback guard. Literal identity, threshold neighbors, representations
 and caller bases are checked independently. No retained state or VM recognition
 is introduced.
 

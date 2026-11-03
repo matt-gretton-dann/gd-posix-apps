@@ -23,24 +23,19 @@ define a(x) {
   b=ibase
   ibase=A
   s=scale
-  scale=0
-  w=s+2*length(s+scale(x)+length(x)+1)+24
-  scale=w
-  if (scale!=w) return(1/0)
   n=0
   if (x<0) {
     n=1
     x= -x
   }
-  /* Certified 80-place lower bound of atan(1). At entry scales through
-     64, retain the existing nearest-rounding step with sixteen extra
-     decimal places. Higher scales and other arguments stay dynamic.
-     The enclosure and scale boundary are checked independently. */
-  if (s<=64) {
+  /* The certified 160-place lower bound leaves at least sixteen guard
+     digits. Half an output ULP is exact at scale s+1, so this case
+     needs neither magnitude-dependent working scale nor reduction. */
+  if (s<=144) {
     if (x==1) {
-      r=.78539816339744830961566084581987572104929234984377645524373614807695410157155224
-      t=10^(-s)/2
-      r+=t
+      scale=s+1
+      r=.7853981633974483096156608458198757210492923498437764552437361480769541015715522496570087063355292669955370216283205766617734611523876455579313398520321202793625
+      r+=10^(-s)/2
       if (n==1) r= -r
       scale=s
       r=r/1
@@ -48,6 +43,10 @@ define a(x) {
       return(r)
     }
   }
+  scale=0
+  w=s+2*length(s+scale(x)+length(x)+1)+24
+  scale=w
+  if (scale!=w) return(1/0)
   v=0
   if (x>1) {
     v=1
