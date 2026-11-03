@@ -88,6 +88,7 @@ if(RUN_UNIT_TESTS)
                  test-number-length.cc
                  test-number-compare.cc
                  test-number-division.cc
+                 test-number-prepared.cc
                  test-number-zero-scale.cc
                  test-number-modulo.cc
                  test-number-power.cc
