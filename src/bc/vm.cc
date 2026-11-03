@@ -247,22 +247,34 @@ public:
   FunctionCode(FunctionCode&&) noexcept = default;
   auto operator=(FunctionCode const&) -> FunctionCode& = default;
   auto operator=(FunctionCode&&) noexcept -> FunctionCode& = default;
-  auto view() const -> VerifiedInstructions
+  auto view(bool full_checks) -> VerifiedInstructions
   {
-    return VerifiedInstructions(instructions_, consumption_, layout_);
+    if (!full_checks && !prepared_) {
+      // Publish both plans together so a failed allocation leaves the
+      // verified definition ready for another preparation attempt.
+      auto consumption = plan_consumption(instructions_, true);
+      auto slots = plan_result_slots(instructions_, sizeof(ResultSlot));
+      auto layout = prepare_layout(instructions_, std::move(slots), true, true);
+      prepared_.emplace(std::move(consumption), std::move(layout));
+    }
+    auto const& plans = prepared_ ? *prepared_ : empty_plans_;
+    return VerifiedInstructions(instructions_, plans.consumption, plans.layout);
   }
 
 private:
   friend struct VMState;
-  FunctionCode(Instructions instructions, ConsumptionPlan consumption, ResultSlotPlan result_slots,
-               bool compact)
-      : instructions_(std::move(instructions)), consumption_(std::move(consumption)),
-        layout_(prepare_layout(instructions_, std::move(result_slots), true, compact))
+  explicit FunctionCode(Instructions instructions) : instructions_(std::move(instructions))
   {
   }
+
+  struct Plans
+  {
+    ConsumptionPlan consumption;
+    ExecutionLayout layout;
+  };
+  inline static Plans const empty_plans_{};
   Instructions instructions_;
-  ConsumptionPlan consumption_;
-  ExecutionLayout layout_;
+  std::optional<Plans> prepared_;
 };
 
 /** \brief Hold virtual machine state.
@@ -791,25 +803,20 @@ void GD::Bc::Details::VMState::function(Letter func, Instructions::const_iterato
 {
   Instructions instrs(begin, end);
   validate(instrs, true);
-  auto consumption = full_checks() ? ConsumptionPlan{} : plan_consumption(instrs, true);
-  auto result_slots =
-    full_checks() ? ResultSlotPlan{} : plan_result_slots(instrs, sizeof(ResultSlot));
   functions_.at(static_cast<unsigned>(func)) =
-    std::make_optional(std::make_tuple(FunctionCode(std::move(instrs), std::move(consumption),
-                                                    std::move(result_slots), !full_checks()),
-                                       mask, loc));
+    std::make_optional(std::make_tuple(FunctionCode(std::move(instrs)), mask, loc));
 }
 
 auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc::Number
 {
   GD_BC_PROFILE_EVENT(Profile::Event::function_calls, 1);
-  auto const& func_ptr{functions_.at(static_cast<unsigned>(func))};
+  auto& func_ptr{functions_.at(static_cast<unsigned>(func))};
   if (!func_ptr.has_value()) {
     Details::error(Msg::function_not_defined, func, loc.file_name(), loc.line(), loc.column());
   }
 
-  FunctionDefinition const& def = func_ptr.value();
-  auto const& func_instructions = std::get<0>(def);
+  FunctionDefinition& def = func_ptr.value();
+  auto func_instructions = std::get<0>(def).view(full_checks());
   auto locals = std::get<1>(def);
 
   // Retain offsets rather than references across execute(): recursive calls
@@ -851,7 +858,7 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
       arrays_.at(static_cast<unsigned>(l)).reset();
     });
 
-    InstructionPack fn(this, func_instructions.view());
+    InstructionPack fn(this, func_instructions);
     auto [result, cont] = fn.execute();
     restore(false);
     return result;
