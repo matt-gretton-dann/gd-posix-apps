@@ -18,7 +18,10 @@ limbs, then normalizes present zero storage before coefficient comparison.
 It retains the original denominator, preserving scalar division by values such
 as seven. This avoids constructing a large denominator merely to discover that
 the quotient is zero. Positive/zero exponent behavior is unchanged. No platform
-intrinsics or special library/function recognition are required.
+intrinsics or special library/function recognition are required. The
+negative-exponent conversion uses a separate call boundary where the compiler
+supports an explicit no-inline attribute. Other compilers use the same
+conversion and choose their own inlining.
 
 ## Regression and oracles
 
@@ -52,3 +55,10 @@ The extensions-enabled Debug build passed 329 cases and 1,973,304 assertions.
 The VM lifetime, CLI, independent number oracle and VM CLI CTests passed.
 These builds used a fixed multiplication split point of 126. The native
 performance and resource checks are separate from these correctness results.
+
+
+The initial inline candidate exceeded the Linux limit on 100-digit
+multiplication. The confirmed median ratio was 1.0571 with a 95% interval
+of [1.0535, 1.0681]. The hot multiplication body matched after address
+normalization, but its placement and the typed dispatch body changed.
+The isolated conversion requires its own paired performance measurements.

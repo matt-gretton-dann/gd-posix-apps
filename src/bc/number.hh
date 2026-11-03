@@ -742,6 +742,20 @@ public:
     return *this;
   }
 
+  // Only negative-exponent division needs this conversion. Keep its storage
+  // handling outside the common division and VM dispatch bodies.
+#if defined(_MSC_VER)
+  __declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+  [[gnu::noinline]]
+#endif
+  void truncate_dividend(std::size_t drop)
+  {
+    *this = rescaled_copy(0, drop);
+    // Comparison requires present storage even if every digit was cut.
+    mul_pow10(0);
+  }
+
   /** \brief        Add a NumType value to the digits_ at a given scale
    *  \param add    Addend.
    *  \param scale  Scale to add it at.
@@ -2487,9 +2501,7 @@ public:
         // For integer magnitudes, floor(A/(B*10^k)) equals
         // floor(floor(A/10^k)/B). Drop numerator digits first instead of
         // padding B, retaining scalar division and only surviving storage.
-        digits_ = digits_.rescaled_copy(0, difference - target_scale);
-        // Comparison requires present storage even when every digit was cut.
-        digits_.mul_pow10(0);
+        digits_.truncate_dividend(difference - target_scale);
       }
     }
     else {
