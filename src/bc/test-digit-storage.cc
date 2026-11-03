@@ -203,3 +203,66 @@ TEMPLATE_TEST_CASE("Weak storage observations preserve unique ownership and expi
   REQUIRE(small.weak_owner().expired());
   REQUIRE_FALSE(small.shares_owner(weak));
 }
+
+TEMPLATE_TEST_CASE("Weak storage assignments retain lifetime identity without a value owner",
+                   "[bc][number][storage][coefficient-owner]", std::uint8_t, std::uint16_t,
+                   std::uint32_t)
+{
+  using Storage = GD::Bc::Details::DigitStorage<TestType>;
+  Storage first{1, 2, 3, 4};
+  Storage second{4, 3, 2, 1};
+  auto observed = first.weak_owner();
+  auto copied = observed;
+  auto moved = std::move(copied);
+  REQUIRE(copied.expired());
+  REQUIRE(first.shares_owner(moved));
+  auto const& self = observed;
+  observed = self;
+  REQUIRE(first.shares_owner(observed));
+  auto* move_self = std::addressof(observed);
+  observed = std::move(*move_self);
+  REQUIRE(first.shares_owner(observed));
+
+  auto retained = first;
+  first.reset();
+  REQUIRE_FALSE(moved.expired());
+  REQUIRE(retained.use_count() == 1);
+  retained.reset();
+  REQUIRE(moved.expired());
+  REQUIRE(observed.expired());
+  REQUIRE_FALSE(second.shares_owner(moved));
+  observed = second.weak_owner();
+  REQUIRE(second.shares_owner(observed));
+  REQUIRE(second.use_count() == 1);
+  moved = observed;
+  REQUIRE(second.shares_owner(moved));
+  second.reset();
+  REQUIRE(observed.expired());
+  REQUIRE(moved.expired());
+  observed = {};
+  moved = {};
+  REQUIRE(observed.expired());
+  REQUIRE(moved.expired());
+}
+
+#if GD_BC_PROFILE
+TEMPLATE_TEST_CASE("Expired weak observations retain no coefficient limb allocation",
+                   "[bc][number][storage][coefficient-owner]", std::uint8_t, std::uint16_t,
+                   std::uint32_t)
+{
+  using Storage = GD::Bc::Details::DigitStorage<TestType>;
+  constexpr auto kind = static_cast<std::size_t>(GD::Bc::Profile::AllocationKind::digits);
+  auto const before = GD::Bc::Profile::snapshot().allocations[kind].live_bytes;
+  Storage value(10000, TestType{7});
+  auto observation = value.weak_owner();
+  auto const limb_bytes = value.capacity() * sizeof(TestType);
+  auto const allocated = GD::Bc::Profile::snapshot().allocations[kind].live_bytes;
+  REQUIRE(allocated >= before + limb_bytes);
+  value.reset();
+  REQUIRE(observation.expired());
+  auto const expired = GD::Bc::Profile::snapshot().allocations[kind].live_bytes;
+  REQUIRE(expired <= allocated - limb_bytes);
+  observation = {};
+  REQUIRE(GD::Bc::Profile::snapshot().allocations[kind].live_bytes == before);
+}
+#endif

@@ -19,6 +19,13 @@
 
 #include "profiling.hh"
 
+#ifndef GD_BC_COMPACT_DIGIT_OWNER
+#  define GD_BC_COMPACT_DIGIT_OWNER 0
+#endif
+#if GD_BC_COMPACT_DIGIT_OWNER
+#  include "coefficient-owner.hh"
+#endif
+
 namespace GD::Bc::Details {
 
 /** Contiguous coefficient storage, with explicit COW at the caller's boundary.
@@ -44,12 +51,26 @@ class DigitStorage
     std::array<Limb, InlineCapacity> limbs;
     unsigned char size = 0;
   };
-  // All members stay alive: no union, pointer tagging or explicit lifetime
-  // management. A non-null owner selects heap storage. Its inline size is absent.
+  // The inline buffer and handle stay alive together: no in-object union or
+  // pointer tagging. A non-null owner selects heap storage; inline size is absent.
   static constexpr unsigned char absent_size = 255;
+#if GD_BC_COMPACT_DIGIT_OWNER
+  using Owner = CoefficientOwner<Heap>;
+#else
   using Owner = std::shared_ptr<Heap>;
+#endif
   Inline small_;
   Owner owner_;
+
+  template<typename... Args>
+  static auto make_heap(Args&&... args) -> Owner
+  {
+#if GD_BC_COMPACT_DIGIT_OWNER
+    return Owner::make(std::forward<Args>(args)...);
+#else
+    return GD_BC_PROFILE_SHARED(Profile::AllocationKind::digits, Heap)(std::forward<Args>(args)...);
+#endif
+  }
 
   auto heap() -> Owner*
   {
@@ -97,7 +118,7 @@ class DigitStorage
     if (has_heap()) {
       return;
     }
-    auto owner = GD_BC_PROFILE_SHARED(Profile::AllocationKind::digits, Heap)();
+    auto owner = make_heap();
     owner->reserve(capacity);
     auto const& value = small();
     owner->insert(owner->end(), value.limbs.begin(), value.limbs.begin() + value.size);
@@ -130,7 +151,7 @@ public:
       small().size = static_cast<unsigned char>(count);
     }
     else {
-      owner_ = GD_BC_PROFILE_SHARED(Profile::AllocationKind::digits, Heap)(first, last);
+      owner_ = make_heap(first, last);
       small_.size = absent_size;
     }
   }
@@ -184,11 +205,19 @@ public:
 
   // Weak observations retain the control block, never coefficient storage or
   // a strong owner. Owner ordering distinguishes lifetimes even after expiry.
+#if GD_BC_COMPACT_DIGIT_OWNER
+  using WeakOwner = typename Owner::Weak;
+#else
   using WeakOwner = std::weak_ptr<Heap const>;
+#endif
   [[nodiscard]] auto weak_owner() const noexcept -> WeakOwner { return owner_; }
   [[nodiscard]] auto shares_owner(WeakOwner const& other) const noexcept -> bool
   {
+#if GD_BC_COMPACT_DIGIT_OWNER
+    return owner_.shares_owner(other);
+#else
     return has_heap() && !owner_.owner_before(other) && !other.owner_before(owner_);
+#endif
   }
   [[nodiscard]] auto capacity() const noexcept -> size_type
   {
