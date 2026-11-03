@@ -516,3 +516,10 @@ partial item. Public Reader fixtures inject both bad_alloc and a reader-specific
 exception across expressions, blocks, arguments and nested function/loop bodies;
 repeated calls preserve failure type/payload, avoid further reads and keep a
 previous successful snapshot intact. No production fault hook is introduced.
+
+Grammar helpers now rely on those explicit unwind boundaries rather than
+polling a second error flag after calls which cannot return with a pending
+error. The old flag checks did not constitute recovery: unexpected input
+exceptions could still resume at a consumed tail. The sticky exception state
+and diagnostic state are established before such a retry can re-enter grammar
+parsing. Their regression tests include delimiter/list contexts and early quit.

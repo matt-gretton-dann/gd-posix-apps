@@ -1029,7 +1029,6 @@ private:
       return ExprIndex::missing();
     }
 
-    error_ = true;
     /* If the lexer holds an error token we report that rather than the error message we've been
      * asked to report.
      */
@@ -1233,7 +1232,6 @@ private:
   bool interactive_;                             ///< Are we interactive?
   std::exception_ptr fatal_exception_;           ///< Exception from an abandoned input item.
   std::optional<std::string> fatal_diagnostic_;  ///< Original terminal diagnostic, if any.
-  bool error_{false};                            ///< Has there been an error?
   bool in_function_{false};                      ///< Are we in a function?
   bool seen_quit_{false};                        ///< Have we seen a quit token?
 };

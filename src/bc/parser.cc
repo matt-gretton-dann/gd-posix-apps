@@ -225,6 +225,8 @@ auto GD::Bc::Parser::seen_quit() const noexcept -> bool { return seen_quit_; }
 void GD::Bc::Parser::parse_program()
 {
   /* program : EOF | input_item program */
+  // Diagnostics unwind to parse(); other input failures are terminal there too.
+  // A normally returning grammar helper never carries a pending error state.
   bool cont = true;
   while (cont) {
     auto type = lexer_->peek().type();
@@ -237,9 +239,6 @@ void GD::Bc::Parser::parse_program()
     }
   }
 
-  if (error_) {
-    insert_eof();
-  }
 }
 
 auto GD::Bc::Parser::parse_input_item() -> bool
@@ -255,7 +254,7 @@ auto GD::Bc::Parser::parse_input_item() -> bool
   else {
     lexer_->chew();
   }
-  return !interactive_ && !error_;
+  return !interactive_;
 }
 
 void GD::Bc::Parser::parse_semicolon_list()
@@ -267,7 +266,7 @@ void GD::Bc::Parser::parse_semicolon_list()
    */
 
   bool cont = true;
-  while (cont && !error_) {
+  while (cont) {
     (void)parse_opt_statement();
     cont = lexer_->peek() == Token::Type::semicolon;
     if (cont) {
@@ -286,7 +285,7 @@ void GD::Bc::Parser::parse_statement_list()
    */
 
   bool cont = true;
-  while (cont && !error_) {
+  while (cont) {
     (void)parse_opt_statement();
     cont = (lexer_->peek() == Token::Type::semicolon || lexer_->peek() == Token::Type::newline);
     if (cont) {
@@ -674,7 +673,7 @@ auto GD::Bc::Parser::parse_opt_define_list(ExprIndex function_begin, bool allow_
     return expr;
   }
 
-  while (lexer_->peek() == Token::Type::comma && !error_) {
+  while (lexer_->peek() == Token::Type::comma) {
     lexer_->chew();
     expr = parse_define_element(function_begin, allow_duplicates);
   }
@@ -762,7 +761,7 @@ auto GD::Bc::Parser::parse_opt_argument_list() -> GD::Bc::Parser::ExprIndex
   }
   insert_push_param(expr);
 
-  while (lexer_->peek() == Token::Type::comma && !error_) {
+  while (lexer_->peek() == Token::Type::comma) {
     lexer_->chew();
     expr = parse_expression(POPEFlags::parse_array_slices);
     insert_push_param(expr);
