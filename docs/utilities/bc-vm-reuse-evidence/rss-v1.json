@@ -1,0 +1,236 @@
+{
+  "adoption_accepted": false,
+  "archive_bytes": 2478365,
+  "archive_sha256": "a00473b9301c47baa0a6bd9a7fde2998253a6ad30c69c4f381b4963f59d07e89",
+  "results": {
+    "binaries": [
+      {
+        "file_bytes": 515680,
+        "mode": "off",
+        "sha256": "6e15091d520c1950ccc6ea82e1dabdc6710b473c6d1b120ce1bcbed0cab3ebeb",
+        "text_section_bytes": 268996
+      },
+      {
+        "file_bytes": 534272,
+        "mode": "on",
+        "sha256": "1a696573ae58a056524943260b2fe251be6008ad378ff27e2b149d143685fdfa",
+        "text_section_bytes": 275780
+      }
+    ],
+    "checked": 156,
+    "files": 528,
+    "fixtures": 26,
+    "medians": [
+      {
+        "median_peak_rss_bytes": {
+          "off": 2129920,
+          "on": 2113536
+        },
+        "name": "divide_multilimb_1000d_900d_s1000_x500",
+        "on_minus_off_bytes": -16384
+      },
+      {
+        "median_peak_rss_bytes": {
+          "off": 2146304,
+          "on": 2097152
+        },
+        "name": "divide_multilimb_1012d_506d_s112_x875",
+        "on_minus_off_bytes": -49152
+      },
+      {
+        "median_peak_rss_bytes": {
+          "off": 2146304,
+          "on": 2129920
+        },
+        "name": "divide_multilimb_1125d_1012d_s1125_x438",
+        "on_minus_off_bytes": -16384
+      },
+      {
+        "median_peak_rss_bytes": {
+          "off": 2146304,
+          "on": 2113536
+        },
+        "name": "divide_multilimb_900d_450d_s100_x1000",
+        "on_minus_off_bytes": -32768
+      },
+      {
+        "median_peak_rss_bytes": {
+          "off": 2195456,
+          "on": 2146304
+        },
+        "name": "divisor_changing_divide_600d_230d_x1000",
+        "on_minus_off_bytes": -49152
+      },
+      {
+        "median_peak_rss_bytes": {
+          "off": 2179072,
+          "on": 2146304
+        },
+        "name": "divisor_changing_divide_675d_258d_x875",
+        "on_minus_off_bytes": -32768
+      },
+      {
+        "median_peak_rss_bytes": {
+          "off": 2146304,
+          "on": 2113536
+        },
+        "name": "divisor_changing_modulo_600d_230d_x1000",
+        "on_minus_off_bytes": -32768
+      },
+      {
+        "median_peak_rss_bytes": {
+          "off": 2146304,
+          "on": 2113536
+        },
+        "name": "divisor_changing_modulo_675d_258d_x875",
+        "on_minus_off_bytes": -32768
+      },
+      {
+        "median_peak_rss_bytes": {
+          "off": 2064384,
+          "on": 2031616
+        },
+        "name": "divisor_cold_divide_600d_230d_x1",
+        "on_minus_off_bytes": -32768
+      },
+      {
+        "median_peak_rss_bytes": {
+          "off": 2064384,
+          "on": 2031616
+        },
+        "name": "divisor_cold_divide_675d_258d_x1",
+        "on_minus_off_bytes": -32768
+      },
+      {
+        "median_peak_rss_bytes": {
+          "off": 2080768,
+          "on": 2048000
+        },
+        "name": "divisor_cold_modulo_600d_230d_x1",
+        "on_minus_off_bytes": -32768
+      },
+      {
+        "median_peak_rss_bytes": {
+          "off": 2080768,
+          "on": 2031616
+        },
+        "name": "divisor_cold_modulo_675d_258d_x1",
+        "on_minus_off_bytes": -49152
+      },
+      {
+        "median_peak_rss_bytes": {
+          "off": 2195456,
+          "on": 2146304
+        },
+        "name": "divisor_periodic_divide_600d_230d_x1000",
+        "on_minus_off_bytes": -49152
+      },
+      {
+        "median_peak_rss_bytes": {
+          "off": 2195456,
+          "on": 2146304
+        },
+        "name": "divisor_periodic_divide_675d_258d_x875",
+        "on_minus_off_bytes": -49152
+      },
+      {
+        "median_peak_rss_bytes": {
+          "off": 2162688,
+          "on": 2113536
+        },
+        "name": "divisor_periodic_modulo_600d_230d_x1000",
+        "on_minus_off_bytes": -49152
+      },
+      {
+        "median_peak_rss_bytes": {
+          "off": 2129920,
+          "on": 2113536
+        },
+        "name": "divisor_periodic_modulo_675d_258d_x875",
+        "on_minus_off_bytes": -16384
+      },
+      {
+        "median_peak_rss_bytes": {
+          "off": 2179072,
+          "on": 2146304
+        },
+        "name": "divisor_temporary_divide_600d_230d_x1000",
+        "on_minus_off_bytes": -32768
+      },
+      {
+        "median_peak_rss_bytes": {
+          "off": 2179072,
+          "on": 2146304
+        },
+        "name": "divisor_temporary_divide_675d_258d_x875",
+        "on_minus_off_bytes": -32768
+      },
+      {
+        "median_peak_rss_bytes": {
+          "off": 2113536,
+          "on": 2113536
+        },
+        "name": "divisor_temporary_modulo_600d_230d_x1000",
+        "on_minus_off_bytes": 0
+      },
+      {
+        "median_peak_rss_bytes": {
+          "off": 2129920,
+          "on": 2113536
+        },
+        "name": "divisor_temporary_modulo_675d_258d_x875",
+        "on_minus_off_bytes": -16384
+      },
+      {
+        "median_peak_rss_bytes": {
+          "off": 2113536,
+          "on": 2097152
+        },
+        "name": "modulo_1000d_350d_x3000",
+        "on_minus_off_bytes": -16384
+      },
+      {
+        "median_peak_rss_bytes": {
+          "off": 2113536,
+          "on": 2080768
+        },
+        "name": "modulo_1125d_393d_x2625",
+        "on_minus_off_bytes": -32768
+      },
+      {
+        "median_peak_rss_bytes": {
+          "off": 2129920,
+          "on": 2080768
+        },
+        "name": "modulo_scaled_divisor_s109_b41_t48_x875",
+        "on_minus_off_bytes": -49152
+      },
+      {
+        "median_peak_rss_bytes": {
+          "off": 2129920,
+          "on": 2080768
+        },
+        "name": "modulo_scaled_divisor_s97_b37_t43_x1000",
+        "on_minus_off_bytes": -49152
+      },
+      {
+        "median_peak_rss_bytes": {
+          "off": 2113536,
+          "on": 2080768
+        },
+        "name": "modulo_scaled_numerator_s3_b7_t43_x1000",
+        "on_minus_off_bytes": -32768
+      },
+      {
+        "median_peak_rss_bytes": {
+          "off": 2113536,
+          "on": 2080768
+        },
+        "name": "modulo_scaled_numerator_s4_b8_t48_x875",
+        "on_minus_off_bytes": -32768
+      }
+    ],
+    "source_revision": "d89d17c51ea3e9792df80256ee9553a192c54760"
+  },
+  "schema": 1
+}
