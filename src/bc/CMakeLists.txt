@@ -14,6 +14,7 @@ if(_bc_array_layout LESS 0)
   message(FATAL_ERROR "Unsupported BC_ARRAY_STORAGE: ${BC_ARRAY_STORAGE}")
 endif()
 target_compile_definitions(libbc PUBLIC GD_BC_ARRAY_STORAGE=${_bc_array_layout})
+target_compile_definitions(libbc PUBLIC GD_BC_PREPARED_DIVISORS=$<BOOL:${ENABLE_BC_PREPARED_DIVISORS}>)
 set_property(TARGET libbc PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
 set_property(TARGET libbc PROPERTY CXX_STANDARD_REQUIRED ON)
 target_compile_definitions(libbc PRIVATE _CRT_SECURE_NO_WARNINGS)
@@ -258,6 +259,15 @@ if(RUN_INTEGRATION_TESTS)
   add_test(NAME bc/signal-delivery COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-signal-delivery.py" "$<TARGET_FILE:bc>")
   set_tests_properties(bc/signal-delivery PROPERTIES TIMEOUT 20 SKIP_RETURN_CODE 77)
+  add_test(NAME bc/divisor-reuse-cli COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-divisor-reuse-cli.py" "$<TARGET_FILE:bc>")
+  set_tests_properties(bc/divisor-reuse-cli PROPERTIES TIMEOUT 30)
+  if(ENABLE_BC_PROFILE)
+    add_test(NAME bc/divisor-reuse-profile COMMAND "${Python_EXECUTABLE}"
+             "${CMAKE_CURRENT_SOURCE_DIR}/test-divisor-reuse-profile.py" "$<TARGET_FILE:bc>"
+             --enabled "$<IF:$<BOOL:${ENABLE_BC_PREPARED_DIVISORS}>,ON,OFF>")
+    set_tests_properties(bc/divisor-reuse-profile PROPERTIES TIMEOUT 30)
+  endif()
   add_test(NAME bc/vm-cli COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-vm-cli.py" "$<TARGET_FILE:bc>"
            --extensions "$<IF:$<BOOL:${ENABLE_NON_POSIX_EXTENSIONS}>,ON,OFF>")

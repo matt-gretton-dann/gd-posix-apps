@@ -1,8 +1,8 @@
 # Reusable coefficient divisors
 
 Issue #420 tracks immutable prepared divisors within #197. The coefficient
-API is an implementation step; it does not yet cache divisors in the VM or
-establish a performance improvement.
+API and experimental VM reuse are implementation steps. Default activation
+and a general performance improvement have not been established.
 
 `Details::BasicDigits<Traits>::prepare_divisor()` retains the original positive
 coefficient, an Algorithm D normalization factor, and normalized coefficient
@@ -152,7 +152,7 @@ observations that conceal missing samples.
 ## Bounded admission prototype
 
 `BasicDigits<Traits>::DivisorCache` is a one-entry coefficient admission
-prototype; automatic VM dispatch is still pending. An eligible new owner records
+cache. Experimental VM builds can use it; default activation remains pending. An eligible new owner records
 only weak ownership identity and the requested decimal padding. That first
 observation needs no limb scan, allocation or strong coefficient snapshot. A
 second observation of the same owner/padding records a fingerprint; a third
@@ -176,7 +176,7 @@ limbs. Promotion checks actual retained capacities before publishing the entry.
 An over-budget candidate is not retained; construction can transiently allocate
 before that check. Failed allocation unwinds the candidate and permits retry.
 
-The returned prepared pointer remains valid until the next lookup or cache
+The returned prepared pointer remains valid until the next lookup, clear, or cache
 destruction. Misses release an old retained source before the ordinary fallback.
 Tests cover changing unique owners, shared hits, padding changes and subsequent
 mutation, destruction of the last external owner, replacement lifetimes,
@@ -214,5 +214,47 @@ instruction dispatch. Other traits keep that generic implementation directly.
 Tests use independent rational oracles for all signs and several operand/result
 scales, smaller and zero dividends, repeated requests and aliases. Separate
 request and alias caches are checked for successful admission, ensuring that
-both fallback and prepared hit paths are exercised. Automatic VM activation and
+both fallback and prepared hit paths are exercised. Default VM activation and
 its performance gates remain separate from these number-layer entries.
+
+
+## Experimental VM builds
+
+`-DENABLE_BC_PREPARED_DIVISORS=ON` enables one lazily allocated cache per VM.
+The default is OFF: ordinary dispatch and VM storage retain their existing path.
+With the option enabled, inline RHS values still use ordinary arithmetic. Heap
+operands can initialize the fixed cache metadata; lookup then applies its used
+limb/capacity checks and admission policy. An oversized or otherwise rejected
+first heap operand can therefore pay the one-time metadata cost without a
+promotion. A successful entry remains bounded, and misses retain the generic
+arithmetic fallback. There is no per-instruction or per-number cache field.
+
+Quotient and remainder share the VM entry when their effective denominator
+padding matches. The cache keys numeric storage, not literal spelling,
+instruction address, function identity or a math-library name. A changed sign
+uses current number metadata; changed scales recompute padding/result scales.
+Input-base conversion creates the actual numeric coefficient before lookup.
+Tests cover stable and changing divisors, fresh temporaries, scale and sign
+changes, array elements, recursion, redefinition, aliases and zero diagnostics
+after warmup. They pass against both ordinary and experimental interpreters.
+
+Separate profiling builds add a `divisors` allocation category for the requested
+cache-object bytes. Retained coefficient owners remain in `digits`. Neither
+category includes all process malloc traffic, and the limb-capacity cap excludes
+fixed metadata/control blocks. Profiling-only event fields have these meanings:
+
+| Event | Meaning |
+| --- | --- |
+| `divisor_cache_lookups` | Calls to the coefficient cache lookup |
+| `divisor_cache_fingerprint_limbs` | Limbs scanned for admission fingerprints |
+| `divisor_cache_preparation_attempts` | Candidate preparation starts, including attempts that fail or exceed the budget |
+| `divisor_cache_promotions` | Fully constructed, bounded candidates retained |
+| `divisor_cache_hits` | Existing entries returned; the promotion call is separate |
+
+Profiling tests verify 24 stable requests produce one preparation/promotion and
+21 existing-entry hits, with exactly two divisor fingerprint scans. Fresh
+nonzero temporary divisors produce no preparation or fingerprint scan. Scalar
+requests allocate no cache metadata. All successful test processes release every
+tracked allocation. Instrumented results are work/lifetime evidence, never
+elapsed-performance samples. Native full/held-out comparisons, cold/miss costs,
+code size and process RSS remain gates before default activation.

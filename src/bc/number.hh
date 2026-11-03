@@ -1741,16 +1741,18 @@ public:
 
   /** Return a prepared value after repeated stable observations, otherwise
    * nullptr for the ordinary fallback. The returned pointer lasts until the
-   * next lookup or destruction of this cache. No strong source owner is kept
+   * next lookup, clear, or destruction of this cache. No strong source owner is kept
    * on a first observation or a miss. New ownership needs no limb scan;
    * promotion after three stable observations may allocate or throw.
    */
   [[nodiscard]] auto lookup(BasicDigits const& source, NumType padding = 0)
     -> PreparedDivisor const*
   {
+    GD_BC_PROFILE_EVENT(Profile::Event::divisor_cache_lookups, 1);
     auto const capacity = source.digits_.capacity();
     constexpr auto limit = max_retained_limb_bytes / sizeof(NumType);
-    auto const whole = static_cast<std::size_t>(padding) / base_log10_;
+    // Keep the scale field's width until its bounded extent is established.
+    auto const whole = padding / base_log10_;
     // Conservative preflight leaves room for three retained coefficient views
     // and possible shift growth. Inspect actual capacities again on promotion.
     if (!source.has_heap_storage() || source.coefficient_limbs() < 2 || capacity > limit / 3 ||
@@ -1761,6 +1763,7 @@ public:
     bool const same_owner = source.digits_.shares_owner(observed_);
     bool const same_padding = padding == padding_;
     if (entry_ && same_owner && same_padding) {
+      GD_BC_PROFILE_EVENT(Profile::Event::divisor_cache_hits, 1);
       return &entry_->prepared;
     }
 
@@ -1788,12 +1791,14 @@ public:
     if (rejected_) {
       return nullptr;
     }
+    GD_BC_PROFILE_EVENT(Profile::Event::divisor_cache_preparation_attempts, 1);
     Entry candidate(source, padding);
     if (!within_budget(candidate)) {
       rejected_ = true;
       return nullptr;
     }
     entry_.emplace(std::move(candidate));
+    GD_BC_PROFILE_EVENT(Profile::Event::divisor_cache_promotions, 1);
     return &entry_->prepared;
   }
 
@@ -1856,6 +1861,8 @@ private:
   static auto admission_fingerprint(BasicDigits const& source) noexcept
     -> std::optional<std::uint64_t>
   {
+    GD_BC_PROFILE_EVENT(Profile::Event::divisor_cache_fingerprint_limbs,
+                        source.coefficient_limbs());
     std::uint64_t hash = 14695981039346656037ULL;
     bool nonzero = false;
     for (auto limb : source.digits_) {
