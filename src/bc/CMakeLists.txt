@@ -244,7 +244,9 @@ if(RUN_INTEGRATION_TESTS)
   set_tests_properties(bc/comparator-builds PROPERTIES TIMEOUT 20)
   add_test(NAME bc/benchmark-ci COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-benchmark-ci.py")
-  set_tests_properties(bc/benchmark-ci PROPERTIES TIMEOUT 20)
+  # The controller suite includes a real subprocess fixture with its own
+  # 15-second deadline. Leave room for the remaining mocked controller tests.
+  set_tests_properties(bc/benchmark-ci PROPERTIES TIMEOUT 60)
   add_test(NAME bc/codegen-evidence COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-codegen-evidence.py")
   set_tests_properties(bc/codegen-evidence PROPERTIES TIMEOUT 30)
