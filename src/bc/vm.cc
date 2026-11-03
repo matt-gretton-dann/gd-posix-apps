@@ -347,6 +347,13 @@ struct VMState
   /** Pop the current parameter pack.  */
   void pop_param_pack();
 
+  // A terminated top-level pack can leave an argument list unfinished.
+  void discard_parameters() noexcept
+  {
+    parameters_.clear();
+    param_marks_.clear();
+  }
+
   /** \brief  Consume a scalar parameter.
    *  \return Value of parameter
    */
@@ -805,45 +812,54 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
   auto const& func_instructions = std::get<0>(def);
   auto locals = std::get<1>(def);
 
-  /* Save the locals.  */
   // Retain offsets rather than references across execute(): recursive calls
   // may grow the same buffer. Capacity remains available after restoration.
   auto const saved_begin = saved_locals_.size();
-  locals.for_each_variable([this](Letter l) {
-    saved_locals_.emplace_back(std::move(variables_.at(static_cast<unsigned>(l))));
-    variables_.at(static_cast<unsigned>(l)) = Number(0);
-  });
-  locals.for_each_array([this](Letter l) {
-    saved_locals_.emplace_back(std::move(arrays_.at(static_cast<unsigned>(l))));
-    arrays_.at(static_cast<unsigned>(l)).reset();
-  });
+  auto const saved_scale = scale_;
+  auto const saved_ibase = ibase_;
+  auto const saved_obase = obase_;
+  auto restore = [&](bool partial) noexcept {
+    auto saved = saved_begin;
+    auto const end = saved_locals_.size();
+    // Allocation can fail during frame setup. In that case restore only the
+    // prefix that was saved, in the same scalar-then-array order.
+    locals.for_each_variable([&](Letter l) {
+      if (!partial || saved < end)
+        variables_.at(static_cast<unsigned>(l)) =
+          std::move(std::get<Number>(saved_locals_[saved++]));
+    });
+    locals.for_each_array([&](Letter l) {
+      if (!partial || saved < end)
+        arrays_.at(static_cast<unsigned>(l)) =
+          std::move(std::get<ArrayValues>(saved_locals_[saved++]));
+    });
+    saved_locals_.resize(saved_begin);
+    if (save_specials_) {
+      scale_ = saved_scale;
+      ibase_ = saved_ibase;
+      obase_ = saved_obase;
+    }
+  };
 
-  /* Save specials.  */
-  auto saved_scale = scale_;
-  auto saved_ibase = ibase_;
-  auto saved_obase = obase_;
+  try {
+    locals.for_each_variable([this](Letter l) {
+      saved_locals_.emplace_back(std::move(variables_.at(static_cast<unsigned>(l))));
+      variables_.at(static_cast<unsigned>(l)) = Number(0);
+    });
+    locals.for_each_array([this](Letter l) {
+      saved_locals_.emplace_back(std::move(arrays_.at(static_cast<unsigned>(l))));
+      arrays_.at(static_cast<unsigned>(l)).reset();
+    });
 
-  InstructionPack fn(this, func_instructions.view());
-  auto [result, cont] = fn.execute();
-
-  /* Restore the locals. */
-  auto saved = saved_begin;
-  locals.for_each_variable([&saved, this](Letter l) {
-    variables_.at(static_cast<unsigned>(l)) = std::move(std::get<Number>(saved_locals_[saved++]));
-  });
-  locals.for_each_array([&saved, this](Letter l) {
-    arrays_.at(static_cast<unsigned>(l)) = std::move(std::get<ArrayValues>(saved_locals_[saved++]));
-  });
-  saved_locals_.resize(saved_begin);
-
-  /* Restore specials.  */
-  if (save_specials_) {
-    scale_ = saved_scale;
-    ibase_ = saved_ibase;
-    obase_ = saved_obase;
+    InstructionPack fn(this, func_instructions.view());
+    auto [result, cont] = fn.execute();
+    restore(false);
+    return result;
   }
-
-  return result;
+  catch (...) {
+    restore(true);
+    throw;
+  }
 }
 
 void GD::Bc::Details::VMState::ibase(Number const& num)
@@ -2128,13 +2144,21 @@ auto GD::Bc::VM::execute(Instructions& instructions) -> bool
   Details::InstructionPack instrs(state_.get(), verified.view());
   // Restore the caller's handler before reporting interruption, including when
   // execution throws (for example, through an output stream's exception mask).
-  auto const result = [&instrs]() {
-    Details::InterruptHandler handler;
-    return instrs.execute();
+  auto const result = [this, &instrs]() {
+    try {
+      Details::InterruptHandler handler;
+      return instrs.execute();
+    }
+    catch (...) {
+      state_->discard_parameters();
+      Details::have_been_interrupted.clear(std::memory_order_relaxed);
+      throw;
+    }
   }();
   if (Details::have_been_interrupted.test(std::memory_order_relaxed)) {
-    state_->stream(Instruction::Stream::error) << Messages::get().format(Msg::interrupted) << '\n';
+    state_->discard_parameters();
     Details::have_been_interrupted.clear(std::memory_order_relaxed);
+    state_->stream(Instruction::Stream::error) << Messages::get().format(Msg::interrupted) << '\n';
   }
   return result.second;
 }

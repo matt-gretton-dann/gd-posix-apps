@@ -211,3 +211,51 @@ No assertion was deleted, weakened, rewritten for MC/DC, or triggered using
 undefined arithmetic/private-state corruption. A failure inside any of these
 contracts would still be a bug; this classification does not substitute for the
 exact oracles, mutation checks, sanitizers and native behavior tests.
+
+## Prepared division with a two-limb dividend
+
+The compact VM checkpoint at `b628199e` recorded zero true outcomes for
+`digits_->size() == 2` in the 16-bit quotient and remainder instantiations of
+`BasicDigits::divide_prepared_impl`. Its 8-bit and 32-bit instantiations already
+exercised that outcome.
+
+The prepared quotient-estimate test now uses divisor `base + 1` and dividend
+`3 * (base + 1) + 2`. It asserts that both operands have two coefficient limbs,
+then checks quotient 3 and remainder 2. This reaches the short-dividend arm
+after the less-than and equality exits with the single-limb divisor predicate
+false.
+
+Focused LLVM 23.1.4 runs on `edd686a5` plus this fixture passed all 36
+`[prepared]` cases and 150,760 assertions separately with extensions enabled
+and disabled. Each run recorded both MC/DC conditions for all six trait and
+operation combinations. The second condition's true/false counts per operation
+were 12,091/1,786 at 8 bits, 1/1,489 at 16 bits and 16/583 at 32 bits in each
+mode. These are unit-test mappings for this decision. The remaining application
+and feasibility obligations under #426 and #197 stay open.
+
+## Cache admission and interrupt mode evidence
+
+The accepted compact checkpoint at `b628199e` has four separate compact-on
+collections for extension and prepared-reuse ON/OFF. Each passed 413 selected
+entries and verified 43 configured header consumers after #435. Within the
+broad unit/application export, the 8-, 16- and 32-bit instantiations of
+`lookup`, `within_budget`, `admission_fingerprint`, `Entry::prepare` and
+`retained_limb_bytes` cover every mapped branch outcome and MC/DC condition
+in each mode. These conclusions apply to the cache functions only. In
+particular, reuse OFF still exercises the cache via its direct unit API.
+The production VM cannot enter the optional reuse route in that build.
+Application-only and broad denominators remain separate.
+
+The original POSIX PTY interrupt test delivered both interrupts to tiny
+input items. The new second item adds assignments before the readiness
+marker to exercise the compact execution path. Each marker and infinite
+loop remain in one item. The test still verifies two interrupt diagnostics,
+a subsequent calculation and clean quit.
+
+The revised test ran against exact instrumented binaries from `b628199e`,
+whose production build inputs match the current test-only base. With
+compact execution enabled, LLVM recorded one interrupt exit in
+`execute_compact` and one in the verified wide interpreter in each extension
+mode. With compact execution disabled, both exits came from the wide
+interpreter. These focused replays used prepared reuse OFF. Windows lacks
+the POSIX PTY facility and retains its separate signal-state tests.
