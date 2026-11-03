@@ -37,7 +37,15 @@ def payloads(path, expected):
         return {name: source.read(name) for name in names}
 
 
-def verify(data, entry):
+def verify(data, entry, corpora=None):
+    # Existing divisor checkpoints retain their original 58-case full/holdout
+    # contract. Other archives must supply their own explicit preset inventory.
+    corpora = {'full': 58, 'holdout': 58} if corpora is None else corpora
+    require(corpora and set(corpora) <= {'full', 'holdout'} and
+            all(type(count) is int and count > 0 for count in corpora.values()),
+            'invalid corpus contract')
+    base_grids = {preset + '-' + comparison for preset in corpora
+                  for comparison in ('aa', 'paired')}
     recipes = {}
     for role in ('base', 'candidate', 'aa'):
         metadata = json.loads(data[role + '/implementations.json'])['implementations'][0]['metadata']
@@ -62,8 +70,9 @@ def verify(data, entry):
             continue
         directory = name.rsplit('/', 1)[0]
         manifest = json.loads(data[directory + '/manifest.json'])
-        if directory in ('full-aa', 'full-paired', 'holdout-aa', 'holdout-paired'):
-            require(len(manifest['corpus']) == len({c['name'] for c in manifest['corpus']}) == 58 and
+        if directory in base_grids:
+            preset = directory.split('-')[0]
+            require(len(manifest['corpus']) == len({c['name'] for c in manifest['corpus']}) == corpora[preset] and
                     manifest['samples'] == 9 and manifest['warmups'] == 1, 'base corpus dimensions differ')
             preset, comparison = directory.split('-')
             decision_keys.update((preset, c['name'], comparison) for c in manifest['corpus'])
@@ -97,7 +106,7 @@ def verify(data, entry):
             require(actual == expected, 'incomplete grid declared complete')
         grids[directory] = len(rows)
     require(grids == entry['grid_counts'] and sum(grids.values()) == entry['checked'], 'published raw counts differ')
-    require({'full-aa', 'full-paired', 'holdout-aa', 'holdout-paired'} <= set(grids), 'base grid missing')
+    require(base_grids <= set(grids), 'base grid missing')
     controls, losses = Counter(), []
     if entry['complete']:
         require('decisions.json' in data and not missing, 'completed decisions missing')
@@ -115,7 +124,7 @@ def verify(data, entry):
                 status = 'inconclusive-noisy' if row['name'] == 'startup' else POLICY.aa_status(row['ratio'], row['confirmation']).replace('inconclusive', 'inconclusive-noisy')
                 require(row['status'] == row['aa_control_status'] == status, 'control qualification differs')
                 qualifiers[row['preset'], row['name']] = status
-        require(len(qualifiers) == 116, 'control inventory differs')
+        require(len(qualifiers) == sum(corpora.values()), 'control inventory differs')
         controls.update(qualifiers.values())
         for row in decisions['results']:
             require(row['aa_control_status'] == qualifiers[row['preset'], row['name']], 'lost control qualification')

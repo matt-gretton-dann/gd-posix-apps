@@ -33,6 +33,12 @@ jobs:
       - name: Reject corrupted native divisor checkpoints
         if: ${{ matrix.extensions == 'ON' }}
         run: python3 docs/utilities/bc-divisor-native-evidence/test-verifier.py
+      - name: Replay retained VM native experiments
+        if: ${{ matrix.extensions == 'ON' }}
+        run: python3 docs/utilities/bc-vm-native-evidence/verify.py
+      - name: Reject corrupted VM native experiment evidence
+        if: ${{ matrix.extensions == 'ON' }}
+        run: python3 docs/utilities/bc-vm-native-evidence/test-verifier.py
 
       - name: Replay separate divisor coverage collections
         if: ${{ matrix.extensions == 'ON' }}
@@ -109,6 +115,12 @@ jobs:
     - name: Reject corrupted native divisor checkpoints
       if: ${{ matrix.extensions == 1 }}
       run: python docs/utilities/bc-divisor-native-evidence/test-verifier.py
+    - name: Replay retained VM native experiments
+      if: ${{ matrix.extensions == 1 }}
+      run: python docs/utilities/bc-vm-native-evidence/verify.py
+    - name: Reject corrupted VM native experiment evidence
+      if: ${{ matrix.extensions == 1 }}
+      run: python docs/utilities/bc-vm-native-evidence/test-verifier.py
 
     - name: Replay separate divisor coverage collections
       if: ${{ matrix.extensions == 1 }}
