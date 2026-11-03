@@ -27,6 +27,20 @@ def environment():
     return result
 
 
+def unit_atan_enclosure():
+    """Bound pi/4 by Machin's identity and exact alternating remainders."""
+    def inverse_atan_bounds(denominator, terms):
+        total = sum((Fraction((-1) ** k, (2 * k + 1) * denominator ** (2 * k + 1))
+                     for k in range(terms)), Fraction())
+        next_sum = total + Fraction((-1) ** terms,
+                                    (2 * terms + 1) * denominator ** (2 * terms + 1))
+        return min(total, next_sum), max(total, next_sum)
+
+    lo5, hi5 = inverse_atan_bounds(5, 130)
+    lo239, hi239 = inverse_atan_bounds(239, 40)
+    return 4 * lo5 - hi239, 4 * hi5 - lo239
+
+
 class LibraryCli(unittest.TestCase):
     def invoke(self, program, options=('-l',), files=(), binary=None, timeout=30):
         try:
@@ -68,17 +82,15 @@ class LibraryCli(unittest.TestCase):
 
     def test_atan_unit_literal_matches_the_certified_enclosure(self):
         source = Path(SOURCE).read_text(encoding='utf-8')
-        literals = re.findall(r'(?m)^\s*r=(\.\d{80})$', source)
+        literals = re.findall(r'(?m)^\s*r=(\.\d{160})$', source)
         self.assertEqual(len(literals), 1)
-        cases = json.loads((ROOT / 'fixtures/math-oracles.json').read_text())['cases']
-        reference = next(c for c in cases if c['id'] == 'a-one' and c['scale'] == 100)
-        lower, upper = Fraction(reference['lower']), Fraction(reference['upper'])
-        places = 10 ** 80
+        lower, upper = unit_atan_enclosure()
+        places = 10 ** 160
         lo = lower.numerator * places // lower.denominator
         hi = upper.numerator * places // upper.denominator
         self.assertEqual(lo, hi, 'reference must certify every stored decimal place')
         self.assertEqual(Fraction(literals[0]), Fraction(lo, places))
-        for scale in range(65):
+        for scale in range(145):
             factor = 10 ** scale
             self.assertEqual(lower.numerator * factor // lower.denominator,
                              upper.numerator * factor // upper.denominator)
@@ -88,13 +100,10 @@ class LibraryCli(unittest.TestCase):
             self.assertEqual(rounded(Fraction(literals[0])), rounded(lower))
 
     def test_atan_unit_argument_precision_boundary(self):
-        # Reuse a much tighter certified enclosure for the identical exact
-        # argument. Negating it reverses endpoints without a new approximation.
-        cases = json.loads((ROOT / 'fixtures/math-oracles.json').read_text())['cases']
-        reference = next(c for c in cases if c['id'] == 'a-one' and c['scale'] == 100)
-        lower, upper = Fraction(reference['lower']), Fraction(reference['upper'])
+        # Negating an exact enclosure reverses its endpoints.
+        lower, upper = unit_atan_enclosure()
         tests = [(scale, sign, trailing, base)
-                 for scale in (0, 1, 2, 20, 63, 64, 65)
+                 for scale in (0, 1, 2, 20, 63, 64, 65, 143, 144, 145)
                  for sign in (1, -1) for trailing in ('', '.000000000000')
                  for base in (10, 2, 16)]
         program = ['ibase=A', 'obase=A']
