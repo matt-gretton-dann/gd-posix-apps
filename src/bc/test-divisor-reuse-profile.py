@@ -80,9 +80,27 @@ class Profile(unittest.TestCase):
         if not ENABLED:
             self.check_disabled(report)
             return
-        self.assertEqual(report['events']['divisor_cache_lookups'], 2 * count)
-        for name in EVENTS[1:]:
-            self.assertEqual(report['events'][name], 0)
+        # A unique temporary never reaches admission or allocates cache metadata.
+        self.check_disabled(report)
+
+    def test_unique_request_clears_old_entry_before_stable_readmission(self):
+        a, b = ORACLE.A, ORACLE.B
+        report = self.profile(f'a={a}\nb={b}\nscale=7\n'
+                              'for(i=0;i<4;i++) q=a/b\nq\n'
+                              'q=a/(b+1)\nq\n'
+                              'for(i=0;i<4;i++) q=a/b\nq\n',
+                              [ORACLE.pair(Fraction(a), Fraction(b), 7)[0],
+                               ORACLE.pair(Fraction(a), Fraction(b + 1), 7)[0],
+                               ORACLE.pair(Fraction(a), Fraction(b), 7)[0]])
+        self.assertEqual(report['events']['division_requests'], 9)
+        if not ENABLED:
+            self.check_disabled(report)
+            return
+        events = report['events']
+        self.assertEqual(events['divisor_cache_lookups'], 8)
+        self.assertEqual(events['divisor_cache_preparation_attempts'], 2)
+        self.assertEqual(events['divisor_cache_promotions'], 2)
+        self.assertEqual(events['divisor_cache_hits'], 2)
         self.assertEqual(report['allocations']['divisors']['allocation_calls'], 1)
 
     def test_scalar_requests_do_not_allocate_cache_metadata(self):
