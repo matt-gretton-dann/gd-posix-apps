@@ -2,11 +2,13 @@
  * Isolated VM/parser ownership and failure guards, without production test hooks.
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <new>
+
+#include <algorithm>
 #include <atomic>
 #include <cstdio>
 #include <cstdlib>
 #include <limits>
-#include <new>
 #include <sstream>
 #include <type_traits>
 #include <utility>
@@ -149,6 +151,33 @@ auto native_sqrt_scale_boundary() -> bool
 // Walk ordinary allocation points while parsing a malformed second item.
 // A retry may return the recorded fatal diagnostic or rethrow a terminal
 // exception; it must never accept the remaining tail as a fresh item.
+// A quotient which truncates to zero should not allocate the decimal padding
+// of a denominator much larger than the coefficient. Parse before the ceiling
+// so this observes division work, while retaining ordinary public snapshots.
+template<typename Traits>
+auto shrinking_division_storage() -> bool
+{
+  using Number = GD::Bc::BasicNumber<Traits>;
+  using NumType = typename Number::NumType;
+  auto const zeros = std::min<std::size_t>(8000, std::numeric_limits<NumType>::max() / 2);
+  std::string const source = "0." + std::string(zeros, '0') + "1";
+  Number const original(source, 10);
+  Number value = original;
+  Number const divisor(7);
+  auto const denied_before = denied_allocations;
+  bool valid = false;
+  try {
+    AllocationCeiling const ceiling(sizeof(NumType) == 1 ? 32 : 1024);
+    value.divide(divisor, 0);
+    valid = value.is_zero() && value.scale() == 0;
+  }
+  catch (std::bad_alloc const&) {
+    return false;
+  }
+  return valid && denied_allocations == denied_before && original == Number(source, 10) &&
+         divisor == Number(7);
+}
+
 auto parser_allocation_failures() -> bool
 {
   using I = GD::Bc::Instruction;
@@ -260,6 +289,12 @@ auto main() -> int
   if (!native_sqrt_scale_boundary<GD::Bc::NumberTraits16>() ||
       !native_sqrt_scale_boundary<GD::Bc::NumberTraits32>()) {
     std::fprintf(stderr, "Native square-root scale wrapped or lost snapshot isolation\n");
+    return 1;
+  }
+  if (!shrinking_division_storage<GD::Bc::NumberTraits8>() ||
+      !shrinking_division_storage<GD::Bc::NumberTraits16>() ||
+      !shrinking_division_storage<GD::Bc::NumberTraits32>()) {
+    std::fprintf(stderr, "Scale-reducing division padded its divisor or lost snapshots\n");
     return 1;
   }
   for (unsigned i = 0; i < 3; ++i) {
