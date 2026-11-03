@@ -69,7 +69,7 @@ jobs:
           # Install test dependencies without upgrading unrelated runner
           # packages or pulling browser snaps before compilation starts.
           sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends build-essential cmake clang-format ninja-build clang-tidy
+          sudo apt-get install --yes --no-install-recommends build-essential cmake clang clang-format ninja-build clang-tidy llvm
       - name: Package install (macOS)
         if: ${{ matrix.os == 'macos-latest' }}
         run: |
@@ -84,6 +84,29 @@ jobs:
         run: |
           cd "${GITHUB_WORKSPACE}/build"
           ctest -V
+      - name: Check bc VM profile round trip
+        if: ${{ matrix.extensions == 'ON' }}
+        run: |
+          if [ "${RUNNER_OS}" = macOS ]; then
+            profdata=$(xcrun --find llvm-profdata)
+          else
+            profdata=/usr/bin/llvm-profdata
+          fi
+          profile_dir="${RUNNER_TEMP}/bc-vm-pgo"
+          mkdir -p "${profile_dir}/raw"
+          cmake -S . -B "${profile_dir}/build" -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DBC_MULTIPLY_SPLIT_POINT=126 \
+            -DCMAKE_C_COMPILER=/usr/bin/clang -DCMAKE_CXX_COMPILER=/usr/bin/clang++ \
+            -DENABLE_NON_POSIX_EXTENSIONS=ON -DENABLE_BC_VM_PGO_GENERATE=ON
+          cmake --build "${profile_dir}/build" --target bc --parallel 2
+          bc="${profile_dir}/build/src/bc/bc"
+          LLVM_PROFILE_FILE="${profile_dir}/raw/%p.profraw" \
+            python3 src/bc/test-cli.py "${bc}" --extensions ON
+          "${profdata}" merge "${profile_dir}"/raw/*.profraw -o "${profile_dir}/vm.profdata"
+          cmake -S . -B "${profile_dir}/build" \
+            -DENABLE_BC_VM_PGO_GENERATE=OFF -DBC_VM_PGO_PROFILE="${profile_dir}/vm.profdata"
+          cmake --build "${profile_dir}/build" --target bc --parallel 2
+          python3 src/bc/test-cli.py "${bc}" --extensions ON
       - name: Check pinned comparator recipes
         if: ${{ matrix.extensions == 'ON' }}
         run: |
