@@ -27,7 +27,7 @@ struct Value
   }
   ~Value() { ++*destroyed; }
 };
-using Owner = GD::Bc::Details::CoefficientOwner<Value>;
+using AtomicOwner = GD::Bc::Details::CoefficientOwner<Value, true>;
 }  // namespace
 
 TEMPLATE_TEST_CASE("Compact coefficient handles preserve strong and weak lifetimes",
@@ -96,14 +96,14 @@ TEST_CASE("Independent coefficient owners survive concurrent copy and release",
           "[bc][storage][coefficient-owner][thread]")
 {
   unsigned destroyed = 0;
-  auto owner = Owner::make(destroyed);
-  Owner::Weak observation(owner);
+  auto owner = AtomicOwner::make(destroyed);
+  AtomicOwner::Weak observation(owner);
   std::atomic<bool> correct{true};
   std::array<std::thread, 4> threads;
   try {
     for (auto& thread : threads) {
       thread = std::thread([owner, &correct] {
-        Owner::Weak weak(owner);
+        AtomicOwner::Weak weak(owner);
         for (unsigned i = 0; i != 10000; ++i) {
           auto copy = owner;
           auto moved = std::move(copy);
