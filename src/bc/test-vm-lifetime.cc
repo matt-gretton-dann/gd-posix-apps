@@ -260,6 +260,46 @@ auto restore_nested_call_after_exception() -> bool
   return true;
 }
 
+auto restore_call_after_allocation_failure() -> bool
+{
+  auto parse = [](std::string const& text) {
+    GD::Bc::Parser parser(
+      std::make_unique<GD::Bc::Lexer>(std::make_unique<GD::Bc::StringReader>(text)), false);
+    return parser.parse();
+  };
+  bool observed_failure = false;
+  for (std::size_t point = 0; point != 256; ++point) {
+    std::ostringstream output, errors;
+    GD::Bc::VM vm(output, errors, true, GD::Bc::VM::ExecutionChecks::verified);
+    auto setup = parse("x=17\ny=23\na[3]=9\nb[3]=2\nscale=2\n"
+                       "define g(y) {\nscale=7\nreturn(y)\n}\n"
+                       "define f(x,a[]) {\nauto y\ny=3\nscale=4\nreturn(g(6))\n}\n");
+    auto call = parse("q=f(4,b[])\n");
+    auto query = parse("x\ny\na[3]\nscale\n");
+    auto result = parse("q\n");
+    if (!setup || !call || !query || !result || vm.execute(*setup))
+      return false;
+    auto const before = injected_failures;
+    bool threw = false;
+    try {
+      AllocationFailure const failure(point);
+      if (vm.execute(*call))
+        return false;
+    }
+    catch (std::bad_alloc const&) {
+      threw = true;
+      observed_failure = true;
+    }
+    if (threw != (injected_failures != before) || vm.execute(*query) ||
+        output.str() != "17\n23\n9\n2\n" || (threw && vm.execute(*call)) || vm.execute(*result) ||
+        output.str() != "17\n23\n9\n2\n6\n" || !errors.str().empty())
+      return false;
+    if (!threw)
+      return observed_failure;
+  }
+  return false;  // Require a complete sweep of call setup and execution.
+}
+
 auto run() -> bool
 {
   std::ostringstream output;
@@ -313,9 +353,17 @@ auto main() -> int
     std::fprintf(stderr, "Parser allocation failure resumed a partial input item\n");
     return 1;
   }
+  if (!restore_call_after_allocation_failure()) {
+    std::fprintf(stderr, "Allocation failure damaged an active call or its retry\n");
+    return 1;
+  }
   auto const before = outstanding.load(std::memory_order_relaxed);
   if (!parser_allocation_failures()) {
     std::fprintf(stderr, "Repeated parser allocation sweep lost terminal state\n");
+    return 1;
+  }
+  if (!restore_call_after_allocation_failure()) {
+    std::fprintf(stderr, "Repeated call allocation sweep damaged recovery\n");
     return 1;
   }
   if (!native_sqrt_scale_boundary<GD::Bc::NumberTraits16>() ||
