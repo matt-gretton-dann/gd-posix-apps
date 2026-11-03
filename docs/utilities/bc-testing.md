@@ -395,3 +395,9 @@ Heap-backed coefficients shrunk to one used limb are tested independently from
 large-capacity rejection. No production fault-injection or test-only accessor is
 introduced. LLVM branch evidence, rather than test success alone, establishes
 which rejection paths a particular instrumented toolchain exercised.
+
+The near-budget fixture uses a public COW mutation by one before admission to
+avoid inheriting spare capacity from its construction shifts. Separate tests
+create noncanonical heap-backed zero via `mac(0, 0)`, verify rejection and cache
+clearing, then restore a nonzero value and check fresh admission. This preserves
+the numeric zero check rather than assuming every heap coefficient is normalized.

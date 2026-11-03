@@ -482,3 +482,34 @@ TEMPLATE_TEST_CASE("Divisor admission rejects a heap owner shrunk to one limb",
   REQUIRE(cache.lookup(source) != nullptr);
   REQUIRE(cache.retained_limb_bytes() <= Digits::DivisorCache::max_retained_limb_bytes);
 }
+
+TEMPLATE_TEST_CASE("Divisor admission clears heap-backed noncanonical zero",
+                   "[bc][number][prepared][divisor-cache]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Digits = GD::Bc::Details::BasicDigits<TestType>;
+  auto source = coefficient_text<Digits>("123456789012345678901234567890123456789012345678901");
+  typename Digits::DivisorCache cache;
+  REQUIRE(cache.lookup(source) == nullptr);
+  REQUIRE(cache.lookup(source) == nullptr);
+  REQUIRE(cache.lookup(source) != nullptr);
+  source.mac(0, 0);
+  REQUIRE(source.has_heap_storage());
+  REQUIRE(source.coefficient_limbs() >= 2);
+  REQUIRE(source.is_zero());
+  for (unsigned repeat = 0; repeat != 4; ++repeat) {
+    REQUIRE(cache.lookup(source) == nullptr);
+    REQUIRE(cache.retained_limb_bytes() == 0);
+  }
+  // The retained zero padding is still legal coefficient storage. A later
+  // nonzero value must be observed afresh, rather than inheriting rejection.
+  source.mac(1, 1);
+  REQUIRE(decimal(source) == "1");
+  REQUIRE(cache.lookup(source) == nullptr);
+  REQUIRE(cache.lookup(source) == nullptr);
+  auto const* prepared = cache.lookup(source);
+  REQUIRE(prepared != nullptr);
+  Digits quotient(typename Digits::NumType{1});
+  quotient.divide(*prepared);
+  REQUIRE(decimal(quotient) == "1");
+}
