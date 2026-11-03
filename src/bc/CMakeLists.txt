@@ -20,7 +20,8 @@ target_compile_definitions(libbc PUBLIC GD_BC_PREPARED_DIVISORS=$<BOOL:${ENABLE_
 set_property(TARGET libbc PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
 set_property(TARGET libbc PROPERTY CXX_STANDARD_REQUIRED ON)
 target_compile_definitions(libbc PRIVATE _CRT_SECURE_NO_WARNINGS
-  GD_BC_COMPACT_EXECUTION=$<BOOL:${ENABLE_BC_COMPACT_EXECUTION}>)
+  GD_BC_COMPACT_EXECUTION=$<BOOL:${ENABLE_BC_COMPACT_EXECUTION}>
+  GD_BC_TYPED_RESULTS=$<BOOL:${ENABLE_BC_TYPED_RESULTS}>)
 option(ENABLE_BC_VM_PGO_GENERATE "Collect an LLVM IR profile for the bc VM" OFF)
 set(BC_VM_PGO_PROFILE "" CACHE FILEPATH "LLVM IR profile to apply to bc vm.cc")
 if(ENABLE_BC_VM_PGO_GENERATE OR BC_VM_PGO_PROFILE)
@@ -100,6 +101,8 @@ if(RUN_UNIT_TESTS)
   add_executable(test-libbc)
   add_dependencies(test-libbc test-bc-vm-lifetime test-bc-consumer-mode)
   target_link_libraries(test-libbc PUBLIC libbc Catch2::Catch2)
+  target_compile_definitions(test-libbc PRIVATE
+    GD_BC_EXPECT_TYPED_RESULTS=$<AND:$<BOOL:${ENABLE_BC_TYPED_RESULTS}>,$<BOOL:${ENABLE_BC_COMPACT_EXECUTION}>>)
   add_dependencies(test-libbc test-bc-profiling test-bc-profiling-disabled)
   set_property(TARGET test-libbc PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
   set_property(TARGET test-libbc PROPERTY CXX_STANDARD_REQUIRED ON)
@@ -263,7 +266,9 @@ if(RUN_INTEGRATION_TESTS)
   set_tests_properties(bc/comparator-builds PROPERTIES TIMEOUT 20)
   add_test(NAME bc/benchmark-ci COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-benchmark-ci.py")
-  set_tests_properties(bc/benchmark-ci PROPERTIES TIMEOUT 20)
+  # The controller suite includes a real subprocess fixture with its own
+  # 15-second deadline. Leave room for the remaining mocked controller tests.
+  set_tests_properties(bc/benchmark-ci PROPERTIES TIMEOUT 60)
   add_test(NAME bc/codegen-evidence COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-codegen-evidence.py")
   set_tests_properties(bc/codegen-evidence PROPERTIES TIMEOUT 30)
