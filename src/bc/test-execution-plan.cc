@@ -307,6 +307,28 @@ TEST_CASE("Typed planning charges both register lanes maps and fixed layout cost
   CHECK(typed_plan(strings).empty());
 }
 
+TEST_CASE("Typed planning rejects incomplete maps and zero layout costs",
+          "[bc][vm][typed-results]")
+{
+  using namespace GD::Bc::Details;
+  GD::Bc::Instructions const code(17, I(O::number, "7"));
+  REQUIRE_FALSE(typed_plan(code).empty());
+
+  ResultSlotPlan incomplete;
+  incomplete.indices.resize(code.size() - 1);
+  CHECK(plan_typed_results(code, incomplete, typed_costs(), true).empty());
+
+  auto const fields = {&TypedResultCosts::other_slot_bytes,
+                       &TypedResultCosts::generic_slot_bytes,
+                       &TypedResultCosts::generic_instruction_bytes,
+                       &TypedResultCosts::typed_instruction_bytes};
+  for (auto field : fields) {
+    auto costs = typed_costs();
+    costs.*field = 0;
+    CHECK(plan_typed_results(code, {}, costs, true).empty());
+  }
+}
+
 TEST_CASE("Typed lowering separates Number results from locations arrays and strings",
           "[bc][vm][typed-results]")
 {
