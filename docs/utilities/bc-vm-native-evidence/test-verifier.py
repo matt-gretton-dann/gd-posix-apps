@@ -3,7 +3,9 @@
 import copy
 import importlib.util
 import json
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
+from types import SimpleNamespace
+from unittest import mock
 import unittest
 import zipfile
 
@@ -21,6 +23,23 @@ class NativeEvidence(unittest.TestCase):
 
     def test_package_transport_inventory(self):
         V.verify_transport()
+
+    def test_transport_uses_portable_paths_for_windows_checkout(self):
+        original = V.ROOT
+        paths = list(original.rglob('*'))
+
+        class WindowsCheckout:
+            def __truediv__(self, name):
+                return original / name
+
+            def rglob(self, pattern):
+                return [SimpleNamespace(is_file=path.is_file, parts=path.parts,
+                        name=path.name,
+                        relative_to=lambda root, path=path: PureWindowsPath(
+                            path.relative_to(original).as_posix())) for path in paths]
+
+        with mock.patch.object(V, 'ROOT', WindowsCheckout()):
+            V.verify_transport()
 
     def rows(self, change):
         data = dict(self.data)
