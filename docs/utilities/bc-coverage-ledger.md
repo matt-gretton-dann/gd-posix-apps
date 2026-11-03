@@ -247,3 +247,30 @@ operation combinations. The second condition's true/false counts per operation
 were 12,091/1,786 at 8 bits, 1/1,489 at 16 bits and 16/583 at 32 bits in each
 mode. These are unit-test mappings for this decision. The remaining application
 and feasibility obligations under #426 and #197 stay open.
+
+## Cache admission and interrupt mode evidence
+
+The accepted compact checkpoint at `b628199e` has four separate compact-on
+collections for extension and prepared-reuse ON/OFF. Each passed 413 selected
+entries and verified 43 configured header consumers after #435. Within the
+broad unit/application export, the 8-, 16- and 32-bit instantiations of
+`lookup`, `within_budget`, `admission_fingerprint`, `Entry::prepare` and
+`retained_limb_bytes` cover every mapped branch outcome and MC/DC condition
+in each mode. These conclusions apply to the cache functions only. In
+particular, reuse OFF still exercises the cache via its direct unit API.
+The production VM cannot enter the optional reuse route in that build.
+Application-only and broad denominators remain separate.
+
+The original POSIX PTY interrupt test delivered both interrupts to tiny
+input items. The new second item adds assignments before the readiness
+marker to exercise the compact execution path. Each marker and infinite
+loop remain in one item. The test still verifies two interrupt diagnostics,
+a subsequent calculation and clean quit.
+
+The revised test ran against exact instrumented binaries from `b628199e`,
+whose production build inputs match the current test-only base. With
+compact execution enabled, LLVM recorded one interrupt exit in
+`execute_compact` and one in the verified wide interpreter in each extension
+mode. With compact execution disabled, both exits came from the wide
+interpreter. These focused replays used prepared reuse OFF. Windows lacks
+the POSIX PTY facility and retains its separate signal-state tests.
