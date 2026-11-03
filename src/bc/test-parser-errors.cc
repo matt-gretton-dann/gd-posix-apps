@@ -120,3 +120,85 @@ TEST_CASE("Read-time quit suppresses errors in abandoned parser contexts",
     }
   }
 }
+
+namespace {
+struct InjectedReadFailure
+{
+  unsigned marker;
+};
+
+class ThrowOnceReader final : public GD::Bc::Reader
+{
+public:
+  ThrowOnceReader(std::string_view text, std::size_t fault_at, bool allocation_failure,
+                  std::size_t& reads)
+      : Reader("reader-fault"), text_(text), fault_at_(fault_at),
+        allocation_failure_(allocation_failure), reads_(reads)
+  {
+  }
+
+  auto peek() -> int override
+  {
+    ++reads_;
+    if (position_ == fault_at_ && !thrown_) {
+      thrown_ = true;
+      if (allocation_failure_) {
+        throw std::bad_alloc();
+      }
+      throw InjectedReadFailure{197};
+    }
+    return position_ == text_.size() ? EOF : static_cast<unsigned char>(text_[position_]);
+  }
+
+private:
+  void do_chew() override { ++position_; }
+
+  std::string_view text_;
+  std::size_t fault_at_;
+  bool allocation_failure_;
+  std::size_t position_ = 0;
+  bool thrown_ = false;
+  std::size_t& reads_;
+};
+}  // namespace
+
+TEST_CASE("Reader failures cannot resume a partially parsed item",
+          "[bc][parser][errors][reader-fault]")
+{
+  std::string_view const item = GENERATE("1+2\n99\n", "{\n1+2\n}\n99\n", "f(1+2)\n99\n",
+                                         "define f(a) {\nauto b;\nwhile(1) {\n1+2\n}\n}\n99\n");
+  bool const allocation_failure = GENERATE(false, true);
+  std::string const input = "7\n" + std::string(item);
+  std::size_t reads = 0;
+  auto reader =
+    std::make_unique<ThrowOnceReader>(input, input.find("1+2") + 2, allocation_failure, reads);
+  GD::Bc::Parser parser(std::make_unique<GD::Bc::Lexer>(std::move(reader)), true);
+  auto original = parser.parse();
+  REQUIRE(original != nullptr);
+  REQUIRE(std::get<std::string>(original->at(0).op1()) == "7");
+  INFO("item = " << item << ", allocation failure = " << allocation_failure);
+  auto expect_failure = [&]() {
+    if (allocation_failure) {
+      REQUIRE_THROWS_AS(parser.parse(), std::bad_alloc);
+    }
+    else {
+      bool caught = false;
+      try {
+        (void)parser.parse();
+      }
+      catch (InjectedReadFailure const& failure) {
+        caught = true;
+        REQUIRE(failure.marker == 197);
+      }
+      REQUIRE(caught);
+    }
+  };
+  expect_failure();
+  auto const reads_after_failure = reads;
+  for (unsigned repeat = 0; repeat != 3; ++repeat) {
+    expect_failure();
+    REQUIRE(reads == reads_after_failure);
+    REQUIRE(std::get<std::string>(original->at(0).op1()) == "7");
+    REQUIRE_FALSE(parser.seen_quit());
+  }
+}
