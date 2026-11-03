@@ -74,6 +74,14 @@ S+10 accuracy assumption.
 
 ## Arctangent
 
+For magnitudes in [0.8, 1.25] other than one, use
+atan(x) = atan(1) + atan((x-1)/(x+1)). The transformed magnitude is at
+most 1/9, reducing the work before the alternating series. Apply the
+original sign after the correction. The transform and correction use the
+general working precision, and all other magnitudes retain the existing
+reciprocal and half-angle paths. Exact rational enclosures cover both
+signs and inputs at and around the two reduction thresholds.
+
 For exact |x| = 1 and entry S <= 144, use an ordinary 160-decimal-place lower
 bound. Tests enclose atan(1) with exact rational alternating remainders using
 atan(1) = 4 atan(1/5) - atan(1/239). Both enclosure endpoints yield the same
