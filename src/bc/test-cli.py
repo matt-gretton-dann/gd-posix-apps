@@ -47,6 +47,14 @@ class CliTests(unittest.TestCase):
             self.run_bc("17\n", "42\n", files=(later, Path(directory) / "missing.bc"),
                         success=False)
 
+    def test_large_coefficient_square(self):
+        # (10^n - 1)^2 = (10^n - 2) * 10^n + 1.
+        # Both operands cross the experimental GMP threshold when enabled.
+        n = 74000
+        operand = "9" * n
+        expected = "9" * (n - 1) + "8" + "0" * (n - 1) + "1"
+        self.run_bc(f"a={operand}\nif (a*a == {expected}) 42\n", "42\n")
+
     def test_directory_input_error(self):
         # A directory is a controlled failing input, independent of permissions.
         # POSIX commonly opens it successfully then fails on the first read;

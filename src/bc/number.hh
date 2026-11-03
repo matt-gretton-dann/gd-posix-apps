@@ -34,6 +34,10 @@
 #include "limb-product.hh"
 #include "limb-schoolbook.hh"
 
+#ifdef GD_BC_GMP_MULTIPLY
+#  include "gmp-multiply.hh"
+#endif
+
 namespace GD::Bc {
 
 /** \brief  calculate 10 ^ \a pow. */
@@ -1521,6 +1525,19 @@ private:
                        typename DigitVector::const_iterator rhs_begin,
                        typename DigitVector::const_iterator rhs_end) -> BasicDigits
   {
+#ifdef GD_BC_GMP_MULTIPLY
+    if constexpr (std::is_same_v<Traits, NumberTraits32>) {
+      auto const lhs_size = static_cast<std::size_t>(lhs_end - lhs_begin);
+      auto const rhs_size = static_cast<std::size_t>(rhs_end - rhs_begin);
+      // Keep the generic kernel for small and highly unequal products.
+      constexpr std::size_t min_gmp_limbs = 8192;
+      auto const small = std::min(lhs_size, rhs_size);
+      if (small >= min_gmp_limbs && small >= std::max(lhs_size, rhs_size) / 2) {
+        auto const result = gmp_multiply({lhs_begin, lhs_size}, {rhs_begin, rhs_size});
+        return BasicDigits(result.data(), result.data() + result.size());
+      }
+    }
+#endif
     if (std::distance(lhs_begin, lhs_end) <= multiply_split_point_ ||
         std::distance(rhs_begin, rhs_end) <= multiply_split_point_) {
       if constexpr (LimbSquare<Traits>::supported) {
