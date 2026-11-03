@@ -183,3 +183,76 @@ TEMPLATE_TEST_CASE("Admitted number divisors handle zero and smaller dividends",
   }
   REQUIRE(cache.retained_limb_bytes() > 0);
 }
+
+TEMPLATE_TEST_CASE("Try reuse leaves misses unchanged and preserves self aliases on hits",
+                   "[bc][number][cached-division][oracle]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  using Limb = typename Number::NumType;
+  for (bool remainder : {false, true}) {
+    for (bool negative : {false, true}) {
+      Number divisor("123456789012345678901234567890123456789012345678.901", 10);
+      if (negative) {
+        divisor.negate();
+      }
+      typename Number::DivisorCache cache;
+      auto attempt = [&](Number& lhs, Number const& rhs) {
+        return remainder ? lhs.try_modulo_reusing(rhs, Limb{7}, cache)
+                         : lhs.try_divide_reusing(rhs, Limb{7}, cache);
+      };
+      Number const dividend("987654321098765432109876543210987654321098765432109876.54", 10);
+      Number const saved_divisor = divisor;
+      // Neither early observation may change either numeric operand.
+      for (unsigned observation = 0; observation != 2; ++observation) {
+        auto lhs = dividend;
+        REQUIRE_FALSE(attempt(lhs, divisor));
+        REQUIRE(lhs == dividend);
+        REQUIRE(lhs.scale() == dividend.scale());
+        REQUIRE(divisor == saved_divisor);
+        REQUIRE(divisor.scale() == saved_divisor.scale());
+      }
+      auto lhs = dividend;
+      auto expected = dividend;
+      if (remainder) {
+        expected.modulo(divisor, Limb{7});
+      }
+      else {
+        expected.divide(divisor, Limb{7});
+      }
+      REQUIRE(attempt(lhs, divisor));
+      REQUIRE(lhs == expected);
+      REQUIRE(lhs.scale() == expected.scale());
+      // The exact same object is both operands. Result mutation must not
+      // change the RHS scale/sign/limb metadata used to finish the operation.
+      auto alias = divisor;
+      REQUIRE(attempt(alias, alias));
+      REQUIRE(alias == Number(remainder ? 0 : 1));
+      REQUIRE(alias.scale() == (remainder ? divisor.scale() + 7 : 7));
+      REQUIRE(divisor == saved_divisor);
+      Number const zero("0.00", 10);
+      lhs = dividend;
+      REQUIRE_FALSE(attempt(lhs, zero));
+      REQUIRE(lhs == dividend);
+      REQUIRE(lhs.scale() == dividend.scale());
+      REQUIRE(cache.retained_limb_bytes() == 0);
+    }
+  }
+}
+
+TEMPLATE_TEST_CASE("Shared heap storage reports ownership without making a copy",
+                   "[bc][number][cached-division]", GD::Bc::NumberTraits8, GD::Bc::NumberTraits16,
+                   GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  Number value("123456789012345678901234567890123456789012345678901", 10);
+  REQUIRE(value.has_heap_storage());
+  REQUIRE_FALSE(value.has_shared_heap_storage());
+  {
+    auto copy = value;
+    REQUIRE(value.has_shared_heap_storage());
+    REQUIRE(copy.has_shared_heap_storage());
+  }
+  REQUIRE_FALSE(value.has_shared_heap_storage());
+  REQUIRE_FALSE(Number(7).has_shared_heap_storage());
+}

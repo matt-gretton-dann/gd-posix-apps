@@ -6,31 +6,31 @@
 
 namespace GD::Bc {
 template<>
-void BasicNumber<NumberTraits16>::divide_reusing(BasicNumber rhs, NumType target_scale,
-                                                 DivisorCache& cache)
+auto BasicNumber<NumberTraits16>::try_divide_reusing(BasicNumber const& rhs, NumType target_scale,
+                                                     DivisorCache& cache) -> bool
 {
-  divide_reusing_impl<false>(std::move(rhs), target_scale, cache);
+  return try_divide_reusing_impl<false>(rhs, target_scale, cache);
 }
 
 template<>
-void BasicNumber<NumberTraits16>::modulo_reusing(BasicNumber rhs, NumType target_scale,
-                                                 DivisorCache& cache)
+auto BasicNumber<NumberTraits16>::try_modulo_reusing(BasicNumber const& rhs, NumType target_scale,
+                                                     DivisorCache& cache) -> bool
 {
-  divide_reusing_impl<true>(std::move(rhs), target_scale, cache);
+  return try_divide_reusing_impl<true>(rhs, target_scale, cache);
 }
 
 template<>
-void BasicNumber<NumberTraits32>::divide_reusing(BasicNumber rhs, NumType target_scale,
-                                                 DivisorCache& cache)
+auto BasicNumber<NumberTraits32>::try_divide_reusing(BasicNumber const& rhs, NumType target_scale,
+                                                     DivisorCache& cache) -> bool
 {
-  divide_reusing_impl<false>(std::move(rhs), target_scale, cache);
+  return try_divide_reusing_impl<false>(rhs, target_scale, cache);
 }
 
 template<>
-void BasicNumber<NumberTraits32>::modulo_reusing(BasicNumber rhs, NumType target_scale,
-                                                 DivisorCache& cache)
+auto BasicNumber<NumberTraits32>::try_modulo_reusing(BasicNumber const& rhs, NumType target_scale,
+                                                     DivisorCache& cache) -> bool
 {
-  divide_reusing_impl<true>(std::move(rhs), target_scale, cache);
+  return try_divide_reusing_impl<true>(rhs, target_scale, cache);
 }
 
 }  // namespace GD::Bc

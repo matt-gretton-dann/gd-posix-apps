@@ -454,3 +454,21 @@ Fraction-based tests checking the generated expectations. Full and held-out
 inputs use distinct dimensions/seeds. A separate RNG stream and frozen hashes
 preserve all 58 earlier workloads. The cold rows describe whole-process latency;
 they do not isolate cache setup time or establish a repeated-work speedup.
+
+### Experimental VM cache misses
+
+The opt-in interpreter checks coefficient ownership before creating a by-value
+arithmetic operand. Unique heap temporaries bypass admission and clear an older
+entry; scalar requests retain ordinary dispatch. A shared heap request uses a
+try-only numeric entry: a miss leaves both numeric operands unchanged and the
+VM runs ordinary arithmetic directly. Numeric zero diagnostics stay with that
+ordinary entry. Cache observation itself may allocate or update weak identity.
+
+Try-only hits capture RHS scale, sign and coefficient dimensions before any LHS
+mutation, including when both references name the same object. The generic
+8-bit and native 16/32-bit tests guard misses, zeros and true self aliases.
+Profiling guards now require zero cache lookups and zero metadata allocations
+for fresh unique temporaries, plus clear/re-admission after a warmed entry.
+These counters describe work and ownership, not elapsed-time improvements.
+Earlier rejected native observations remain applicable to their exact sources;
+this changed candidate needs a new complete native audit before adoption.

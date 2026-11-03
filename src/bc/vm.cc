@@ -183,7 +183,7 @@ struct VMState
 #  elif __has_cpp_attribute(gnu::noinline)
   [[gnu::noinline]]
 #  endif
-  void divide_with_reuse(Number& lhs, Number const& rhs, bool remainder);
+  auto try_divide_with_reuse(Number& lhs, Number const& rhs, bool remainder) -> bool;
 #endif
 
   /** \brief  Get the number stored in the array element ae.  */
@@ -559,8 +559,17 @@ GD::Bc::Details::VMState::VMState(std::ostream& out, std::ostream& err, bool sav
 }
 
 #if GD_BC_PREPARED_DIVISORS
-void GD::Bc::Details::VMState::divide_with_reuse(Number& lhs, Number const& rhs, bool remainder)
+auto GD::Bc::Details::VMState::try_divide_with_reuse(Number& lhs, Number const& rhs, bool remainder)
+  -> bool
 {
+  // Query before any by-value copy can make a unique temporary appear shared.
+  // Discard an older snapshot so an unrelated request cannot pin its owner.
+  if (!rhs.has_shared_heap_storage()) {
+    if (divisor_cache_) {
+      divisor_cache_->clear();
+    }
+    return false;
+  }
   if (!divisor_cache_) {
     auto cache = std::make_unique<Number::DivisorCache>();
 #  if GD_BC_PROFILE
@@ -568,12 +577,8 @@ void GD::Bc::Details::VMState::divide_with_reuse(Number& lhs, Number const& rhs,
 #  endif
     divisor_cache_.reset(cache.release());
   }
-  if (remainder) {
-    lhs.modulo_reusing(rhs, scale(), *divisor_cache_);
-  }
-  else {
-    lhs.divide_reusing(rhs, scale(), *divisor_cache_);
-  }
+  return remainder ? lhs.try_modulo_reusing(rhs, scale(), *divisor_cache_)
+                   : lhs.try_divide_reusing(rhs, scale(), *divisor_cache_);
 }
 #endif
 
@@ -1007,10 +1012,7 @@ auto GD::Bc::Details::InstructionPack::execute_impl() -> std::pair<GD::Bc::Numbe
     case Instruction::Opcode::divide:
 #if GD_BC_PREPARED_DIVISORS
       execute_binary_op([this](Number& lhs, Number const& rhs) {
-        if (rhs.has_heap_storage()) {
-          vm_->divide_with_reuse(lhs, rhs, false);
-        }
-        else {
+        if (!rhs.has_heap_storage() || !vm_->try_divide_with_reuse(lhs, rhs, false)) {
           lhs.divide(rhs, vm_->scale());
         }
       });
@@ -1021,10 +1023,7 @@ auto GD::Bc::Details::InstructionPack::execute_impl() -> std::pair<GD::Bc::Numbe
     case Instruction::Opcode::modulo:
 #if GD_BC_PREPARED_DIVISORS
       execute_binary_op([this](Number& lhs, Number const& rhs) {
-        if (rhs.has_heap_storage()) {
-          vm_->divide_with_reuse(lhs, rhs, true);
-        }
-        else {
+        if (!rhs.has_heap_storage() || !vm_->try_divide_with_reuse(lhs, rhs, true)) {
           lhs.modulo(rhs, vm_->scale());
         }
       });
