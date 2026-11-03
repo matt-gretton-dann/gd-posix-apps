@@ -25,7 +25,9 @@ jobs:
         image: [ubuntu-24.04, windows-2025, macos-15]
     env:
       BC_CANDIDATE: ${{ github.event.pull_request.head.sha || github.sha }}
-      BC_BROAD: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+      BC_BROAD: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || startsWith(github.head_ref, 'codex/bc-native-prepared/') }}
+      # Opt in only this experimental topic; controls retain their source defaults.
+      BC_PREPARED: ${{ startsWith(github.head_ref, 'codex/bc-native-prepared/') }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -50,6 +52,7 @@ jobs:
         run: |
           $arguments = @('src/bc/scripts/benchmark-math-ci.py', '--source', $env:GITHUB_WORKSPACE, '--candidate', $env:BC_CANDIDATE, '--output', 'bc-math-results')
           if ($env:BC_BROAD -eq 'true') { $arguments += '--broad' }
+          if ($env:BC_PREPARED -eq 'true') { $arguments += '--candidate-prepared-divisors' }
           python @arguments
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Preserve raw checked samples and provenance

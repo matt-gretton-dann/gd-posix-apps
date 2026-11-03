@@ -30,7 +30,9 @@ jobs:
     env:
       BC_CANDIDATE: ${{ github.event.pull_request.head.sha || github.sha }}
       BC_BASE: ${{ github.event.pull_request.base.sha || inputs.baseline || '2ddf749e8b313f620ad248d680e801c409bbd3f5' }}
-      BC_BROAD: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || startsWith(github.head_ref, 'codex/bc-native-broad/') }}
+      BC_BROAD: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || startsWith(github.head_ref, 'codex/bc-native-broad/') || startsWith(github.head_ref, 'codex/bc-native-prepared/') }}
+      # Opt in only this experimental topic; controls retain their source defaults.
+      BC_PREPARED: ${{ startsWith(github.head_ref, 'codex/bc-native-prepared/') }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -55,6 +57,7 @@ jobs:
         run: |
           $arguments = @('src/bc/scripts/benchmark-ci.py', '--source', $env:GITHUB_WORKSPACE, '--base', $env:BC_BASE, '--candidate', $env:BC_CANDIDATE, '--output', 'bc-native-results')
           if ($env:BC_BROAD -eq 'true') { $arguments += '--broad' }
+          if ($env:BC_PREPARED -eq 'true') { $arguments += '--candidate-prepared-divisors' }
           python @arguments
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Preserve raw checked samples and provenance

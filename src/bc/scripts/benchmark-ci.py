@@ -119,6 +119,16 @@ def selected_cases(bench, preset, broad):
     return chosen
 
 
+def gd_build_command(args, name, revision, directory, cc, cxx):
+    command = [sys.executable, str(SCRIPTS / 'build-gd-bc.py'), '--source',
+               str(args.source.resolve()), '--revision', revision, '--split-point',
+               str(args.split_point), '--output', str(directory), '--name', name,
+               '--c-compiler', cc, '--cxx-compiler', cxx]
+    if name == 'candidate' and getattr(args, 'candidate_prepared_divisors', False):
+        command += ['--prepared-divisors', 'ON']
+    return command
+
+
 def main():
     helper = load('build-bc-comparators')
     gd = load('build-gd-bc')
@@ -128,6 +138,7 @@ def main():
     parser.add_argument('--candidate', type=gd.revision_value, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--broad', action='store_true')
+    parser.add_argument('--candidate-prepared-divisors', action='store_true')
     parser.add_argument('--samples', type=int, default=9)
     parser.add_argument('--split-point', type=gd.positive_point, default=126)
     args = parser.parse_args()
@@ -146,15 +157,22 @@ def main():
         # concurrently with any measured executable. No tuned-binary cache.
         for name, revision in (('base', args.base), ('candidate', args.candidate), ('aa', args.base)):
             directory = root / name
-            builder.run([sys.executable, str(SCRIPTS / 'build-gd-bc.py'), '--source',
-                         str(args.source.resolve()), '--revision', revision, '--split-point',
-                         str(args.split_point), '--output', str(directory), '--name', name,
-                         '--c-compiler', cc, '--cxx-compiler', cxx])
-            entries.extend(json.loads((directory / 'implementations.json').read_text())['implementations'])
+            builder.run(gd_build_command(args, name, revision, directory, cc, cxx))
+            built = json.loads((directory / 'implementations.json').read_text())['implementations']
+            if name == 'candidate' and args.candidate_prepared_divisors:
+                for entry in built:
+                    gd.require_prepared_candidate(helper, entry)
+            entries.extend(built)
         comparator = root / 'howard'
         builder.run([sys.executable, str(SCRIPTS / 'build-bc-comparators.py'), '--output',
                      str(comparator), '--cc', cc])
         howard = json.loads((comparator / 'implementations.json').read_text())['implementations']
+        if args.candidate_prepared_divisors:
+            # All owned builds are finished; validate ordinary language guards
+            # before starting any elapsed sample, including independent controls.
+            for entry in entries:
+                builder.run([sys.executable, str(SCRIPTS.parent / 'test-divisor-reuse-cli.py'),
+                             entry['argv'][0]])
         bench = load('bench-bc')
         configs = {'paired': [entries[0], entries[1]] + howard,
                    'aa': [entries[0], entries[2]]}
@@ -239,7 +257,8 @@ def main():
     finally:
         # Preserve exact recipes/logs without uploading cloned source/build trees.
         write(evidence / 'orchestration.json', {'base': args.base, 'candidate': args.candidate,
-              'split_point': args.split_point, 'commands': builder.commands})
+              'split_point': args.split_point, 'candidate_prepared_divisors': args.candidate_prepared_divisors,
+              'commands': builder.commands})
         for path in root.glob('command-*.log'):
             shutil.copyfile(str(path), str(evidence / path.name))
         for name in ('base', 'candidate', 'aa', 'howard'):
@@ -249,6 +268,8 @@ def main():
             for path in source.glob('*'):
                 if path.is_file():
                     shutil.copyfile(str(path), str(target / path.name))
+            if (source / 'prepared-policy').is_dir():
+                shutil.copytree(str(source / 'prepared-policy'), str(target / 'prepared-policy'))
             if (source / 'logs').is_dir():
                 shutil.copytree(str(source / 'logs'), str(target / 'logs'))
         # Every timed child has finished. Preserve the actual measured code

@@ -33,10 +33,10 @@ class GdBuild(unittest.TestCase):
         (self.build / 'compile_commands.json').write_text(json.dumps([
             {'command': 'c++ -O3 -DNDEBUG -std=c++20 -c source.cc'}]))
 
-    def metadata(self):
+    def metadata(self, prepared_mode='AUTO'):
         return self.module.build_metadata(self.helper, self.root, self.root / 'source',
                                            self.build, 'a' * 40, 126,
-                                           {'version': 'C'}, {'version': 'C++'})
+                                           {'version': 'C'}, {'version': 'C++'}, prepared_mode=prepared_mode)
 
     def test_records_compiled_threshold_and_commands(self):
         value = self.metadata()
@@ -47,6 +47,114 @@ class GdBuild(unittest.TestCase):
                          (self.build / 'compile_commands.json').read_bytes())
         self.assertFalse(value['instrumented'])
         self.assertEqual(value['configuration']['ipo_policy']['status'], 'legacy-auto')
+
+    def prepared_commands(self, value, arguments=False):
+        rows = []
+        for name in ('vm.cc', 'bc.cc'):
+            row = {'file': '/source/src/bc/' + name}
+            flags = ['c++', '-DGD_BC_PREPARED_DIVISORS=' + value, '-c', name]
+            row['arguments' if arguments else 'command'] = flags if arguments else ' '.join(flags)
+            rows.append(row)
+        (self.build / 'compile_commands.json').write_text(json.dumps(rows))
+
+    def test_candidate_requires_explicit_verified_activation(self):
+        policy = dict(status='recorded', mode='ON', enabled=True)
+        def entry(value):
+            return dict(metadata=dict(configuration=dict(prepared_divisors_policy=value)))
+        self.module.require_prepared_candidate(self.helper, entry(policy))
+        invalid = [None, {}, dict(policy, status='legacy-auto'), dict(policy, mode='AUTO'),
+                   dict(policy, mode='OFF'), dict(policy, enabled=False), dict(policy, enabled=1)]
+        for value in invalid:
+            with self.subTest(policy=value), self.assertRaises(self.helper.BuildError):
+                self.module.require_prepared_candidate(self.helper, entry(value))
+        for value in (None, {}, dict(metadata=None), dict(metadata=dict(configuration=None))):
+            with self.subTest(entry=value), self.assertRaises(self.helper.BuildError):
+                self.module.require_prepared_candidate(self.helper, value)
+
+    def test_prepared_legacy_auto_is_not_mislabeled_disabled(self):
+        policy = self.metadata()['configuration']['prepared_divisors_policy']
+        self.assertEqual(policy['status'], 'legacy-auto')
+        self.assertIsNone(policy['enabled'])
+        for requested in ('ON', 'OFF'):
+            with self.assertRaises(self.helper.BuildError):
+                self.module.verified_prepared_divisors(self.helper, self.build, requested)
+
+    def test_prepared_modes_verify_both_compiled_anchors(self):
+        for value, enabled in (('ON', True), ('TRUE', True), ('OFF', False), ('0', False)):
+            self.cache.write_text(self.cache.read_text() +
+                                  'ENABLE_BC_PREPARED_DIVISORS:BOOL=' + value + '\n')
+            self.prepared_commands('1' if enabled else '0', arguments=enabled)
+            policy = self.module.verified_prepared_divisors(self.helper, self.build, 'AUTO')
+            self.assertEqual(policy['enabled'], enabled)
+            self.assertEqual(policy['verification']['translation_units'], 2)
+            with self.assertRaises(self.helper.BuildError):
+                self.module.verified_prepared_divisors(
+                    self.helper, self.build, 'OFF' if enabled else 'ON')
+
+    def test_prepared_ignored_key_missing_anchor_and_override_are_rejected(self):
+        self.cache.write_text(self.cache.read_text() + 'ENABLE_BC_PREPARED_DIVISORS:BOOL=ON\n')
+        with self.assertRaises(self.helper.BuildError):
+            self.module.verified_prepared_divisors(self.helper, self.build, 'ON')
+        self.prepared_commands('1')
+        path = self.build / 'compile_commands.json'
+        original = json.loads(path.read_text())
+        for change in ('missing', 'opposite', 'undefine', 'extended-value', 'unvalued'):
+            rows = json.loads(json.dumps(original))
+            if change == 'missing':
+                rows.pop()
+            elif change == 'opposite':
+                rows[0]['command'] += ' -DGD_BC_PREPARED_DIVISORS=0'
+            elif change == 'undefine':
+                rows[0]['command'] += ' -UGD_BC_PREPARED_DIVISORS'
+            elif change == 'extended-value':
+                rows[0]['command'] = rows[0]['command'].replace('DIVISORS=1', 'DIVISORS=10')
+            else:
+                rows[0]['command'] = rows[0]['command'].replace('DIVISORS=1', 'DIVISORS')
+            path.write_text(json.dumps(rows))
+            with self.subTest(change=change), self.assertRaises(self.helper.BuildError):
+                self.module.verified_prepared_divisors(self.helper, self.build, 'ON')
+
+    def test_prepared_policy_is_retained_in_metadata(self):
+        self.cache.write_text(self.cache.read_text() + 'ENABLE_BC_PREPARED_DIVISORS:BOOL=OFF\n')
+        self.prepared_commands('0')
+        policy = self.metadata('OFF')['configuration']['prepared_divisors_policy']
+        self.assertEqual(policy['status'], 'recorded')
+        self.assertFalse(policy['enabled'])
+        self.assertEqual(policy['verification']['sha256'],
+                         hashlib.sha256((self.root / 'compile_commands.json').read_bytes()).hexdigest())
+
+    def prepared_projects(self, value='1', configuration='Release'):
+        commands = self.build / 'compile_commands.json'
+        if commands.exists():
+            commands.unlink()
+        self.cache.write_text(self.cache.read_text() + 'CMAKE_GENERATOR:INTERNAL=Visual Studio 17 2022\n'
+                              'ENABLE_BC_PREPARED_DIVISORS:BOOL=ON\n')
+        for name in ('libbc', 'bc'):
+            (self.build / ('src/bc/' + name + '.vcxproj')).write_text(
+                '<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">'
+                '<ItemDefinitionGroup Condition="config==' + configuration + '|x64">'
+                '<ClCompile><PreprocessorDefinitions>WIN32;GD_BC_PREPARED_DIVISORS=' + value +
+                ';%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile>'
+                '</ItemDefinitionGroup></Project>')
+
+    def test_prepared_native_vs_projects_are_verified_and_retained(self):
+        self.prepared_projects()
+        policy = self.metadata('ON')['configuration']['prepared_divisors_policy']
+        self.assertTrue(policy['enabled'])
+        self.assertEqual(policy['verification']['kind'], 'msbuild-projects')
+        for relative, expected in policy['verification']['files'].items():
+            self.assertEqual(hashlib.sha256((self.root / 'prepared-policy' / relative).read_bytes()).hexdigest(),
+                             expected)
+        for value, configuration in (('0', 'Release'), ('1', 'Debug')):
+            self.prepared_projects(value, configuration)
+            with self.assertRaises(self.helper.BuildError):
+                self.module.verified_prepared_divisors(self.helper, self.build, 'ON')
+
+    def test_prepared_without_compilation_evidence_is_rejected(self):
+        self.cache.write_text(self.cache.read_text() + 'ENABLE_BC_PREPARED_DIVISORS:BOOL=ON\n')
+        (self.build / 'compile_commands.json').unlink()
+        with self.assertRaises(self.helper.BuildError):
+            self.module.verified_prepared_divisors(self.helper, self.build, 'ON')
 
     def test_explicit_ipo_rejects_ignored_cache_variable(self):
         # An older revision can cache any -D value without using it. Require

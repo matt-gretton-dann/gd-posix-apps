@@ -14,6 +14,7 @@ if(_bc_array_layout LESS 0)
   message(FATAL_ERROR "Unsupported BC_ARRAY_STORAGE: ${BC_ARRAY_STORAGE}")
 endif()
 target_compile_definitions(libbc PUBLIC GD_BC_ARRAY_STORAGE=${_bc_array_layout})
+target_compile_definitions(libbc PUBLIC GD_BC_PREPARED_DIVISORS=$<BOOL:${ENABLE_BC_PREPARED_DIVISORS}>)
 set_property(TARGET libbc PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
 set_property(TARGET libbc PROPERTY CXX_STANDARD_REQUIRED ON)
 target_compile_definitions(libbc PRIVATE _CRT_SECURE_NO_WARNINGS)
@@ -23,7 +24,7 @@ endif()
 set_warnings(libbc)
 gd_apply_ipo(libbc)
 
-target_sources(libbc PRIVATE execution-plan.cc instruction.cc lexer.cc number-remainder.cc
+target_sources(libbc PRIVATE execution-plan.cc instruction.cc lexer.cc number-division-cache.cc number-remainder.cc
                             number-sqrt.cc parser.cc reader.cc token.cc verification.cc vm.cc)
 if(ENABLE_BC_PROFILE)
   if(ENABLE_BC_COVERAGE)
@@ -90,6 +91,7 @@ if(RUN_UNIT_TESTS)
                  test-number-division.cc
                  test-number-prepared.cc
                  test-divisor-cache-fixtures.hh
+                 test-number-cached.cc
                  test-number-zero-scale.cc
                  test-number-modulo.cc
                  test-number-power.cc
@@ -202,6 +204,9 @@ if(RUN_INTEGRATION_TESTS)
            "${CMAKE_CURRENT_SOURCE_DIR}/test-multiply-config.py" "${CMAKE_COMMAND}"
            "${CMAKE_SOURCE_DIR}/cmake/BcMultiplyConfig.cmake")
   set_tests_properties(bc/multiply-config PROPERTIES TIMEOUT 20)
+  add_test(NAME bc/coverage-tools COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-coverage-tools.py")
+  set_tests_properties(bc/coverage-tools PROPERTIES TIMEOUT 20)
   add_test(NAME bc/profiling-tools COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-profiling-tools.py"
            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/profile-bc.py")
@@ -260,6 +265,15 @@ if(RUN_INTEGRATION_TESTS)
   add_test(NAME bc/signal-delivery COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-signal-delivery.py" "$<TARGET_FILE:bc>")
   set_tests_properties(bc/signal-delivery PROPERTIES TIMEOUT 20 SKIP_RETURN_CODE 77)
+  add_test(NAME bc/divisor-reuse-cli COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-divisor-reuse-cli.py" "$<TARGET_FILE:bc>")
+  set_tests_properties(bc/divisor-reuse-cli PROPERTIES TIMEOUT 30)
+  if(ENABLE_BC_PROFILE)
+    add_test(NAME bc/divisor-reuse-profile COMMAND "${Python_EXECUTABLE}"
+             "${CMAKE_CURRENT_SOURCE_DIR}/test-divisor-reuse-profile.py" "$<TARGET_FILE:bc>"
+             --enabled "$<IF:$<BOOL:${ENABLE_BC_PREPARED_DIVISORS}>,ON,OFF>")
+    set_tests_properties(bc/divisor-reuse-profile PROPERTIES TIMEOUT 30)
+  endif()
   add_test(NAME bc/vm-cli COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-vm-cli.py" "$<TARGET_FILE:bc>"
            --extensions "$<IF:$<BOOL:${ENABLE_NON_POSIX_EXTENSIONS}>,ON,OFF>")
