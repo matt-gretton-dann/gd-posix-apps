@@ -1,0 +1,578 @@
+[
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-posix-portable-math/src/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/util -I/private/tmp/gd-posix-portable-math/libgdsup/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/CMakeFiles/util.dir/util/input-file/input-file-constructor.cc.o -c /private/tmp/gd-posix-portable-math/src/util/input-file/input-file-constructor.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/util/input-file/input-file-constructor.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/CMakeFiles/util.dir/util/input-file/input-file-constructor.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-posix-portable-math/src/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/util -I/private/tmp/gd-posix-portable-math/libgdsup/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/CMakeFiles/util.dir/util/input-file/input-file-getc.cc.o -c /private/tmp/gd-posix-portable-math/src/util/input-file/input-file-getc.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/util/input-file/input-file-getc.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/CMakeFiles/util.dir/util/input-file/input-file-getc.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-posix-portable-math/src/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/util -I/private/tmp/gd-posix-portable-math/libgdsup/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/CMakeFiles/util.dir/util/input-file/input-file-getline.cc.o -c /private/tmp/gd-posix-portable-math/src/util/input-file/input-file-getline.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/util/input-file/input-file-getline.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/CMakeFiles/util.dir/util/input-file/input-file-getline.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-posix-portable-math/src/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/util -I/private/tmp/gd-posix-portable-math/libgdsup/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/CMakeFiles/util.dir/util/input-file/input-file-queries.cc.o -c /private/tmp/gd-posix-portable-math/src/util/input-file/input-file-queries.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/util/input-file/input-file-queries.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/CMakeFiles/util.dir/util/input-file/input-file-queries.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-posix-portable-math/src/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/util -I/private/tmp/gd-posix-portable-math/libgdsup/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/CMakeFiles/util.dir/util/input-file/input-file-report-error.cc.o -c /private/tmp/gd-posix-portable-math/src/util/input-file/input-file-report-error.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/util/input-file/input-file-report-error.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/CMakeFiles/util.dir/util/input-file/input-file-report-error.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-posix-portable-math/src/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/util -I/private/tmp/gd-posix-portable-math/libgdsup/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/CMakeFiles/util.dir/util/input-file/input-file-setbuf.cc.o -c /private/tmp/gd-posix-portable-math/src/util/input-file/input-file-setbuf.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/util/input-file/input-file-setbuf.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/CMakeFiles/util.dir/util/input-file/input-file-setbuf.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-posix-portable-math/src/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/util -I/private/tmp/gd-posix-portable-math/libgdsup/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/CMakeFiles/util.dir/util/program-name.cc.o -c /private/tmp/gd-posix-portable-math/src/util/program-name.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/util/program-name.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/CMakeFiles/util.dir/util/program-name.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-posix-portable-math/src/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/util -I/private/tmp/gd-posix-portable-math/libgdsup/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/CMakeFiles/util.dir/util/rename.cc.o -c /private/tmp/gd-posix-portable-math/src/util/rename.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/util/rename.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/CMakeFiles/util.dir/util/rename.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src -I/private/tmp/gd-posix-portable-math/src/include -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/CMakeFiles/test-util.dir/util/tests/test-for-each-file.cc.o -c /private/tmp/gd-posix-portable-math/src/util/tests/test-for-each-file.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/util/tests/test-for-each-file.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/CMakeFiles/test-util.dir/util/tests/test-for-each-file.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src -I/private/tmp/gd-posix-portable-math/src/include -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/CMakeFiles/test-util.dir/util/tests/test-stream-input.cc.o -c /private/tmp/gd-posix-portable-math/src/util/tests/test-stream-input.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/util/tests/test-stream-input.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/CMakeFiles/test-util.dir/util/tests/test-stream-input.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src -I/private/tmp/gd-posix-portable-math/src/include -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/CMakeFiles/test-util.dir/util/tests/test-program-name.cc.o -c /private/tmp/gd-posix-portable-math/src/util/tests/test-program-name.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/util/tests/test-program-name.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/CMakeFiles/test-util.dir/util/tests/test-program-name.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src -I/private/tmp/gd-posix-portable-math/src/include -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/CMakeFiles/test-util.dir/util/tests/test-read-write-endian.cc.o -c /private/tmp/gd-posix-portable-math/src/util/tests/test-read-write-endian.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/util/tests/test-read-write-endian.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/CMakeFiles/test-util.dir/util/tests/test-read-write-endian.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src -I/private/tmp/gd-posix-portable-math/src/include -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/CMakeFiles/test-util.dir/util/tests/test-util-main.cc.o -c /private/tmp/gd-posix-portable-math/src/util/tests/test-util-main.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/util/tests/test-util-main.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/CMakeFiles/test-util.dir/util/tests/test-util-main.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/src/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/gencat -I/private/tmp/gd-posix-portable-math/libgdsup/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/gencat/CMakeFiles/gencat.dir/gencat.cc.o -c /private/tmp/gd-posix-portable-math/src/gencat/gencat.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/gencat/gencat.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/gencat/CMakeFiles/gencat.dir/gencat.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-posix-portable-math/src/ar -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/ar -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/ar/CMakeFiles/libar.dir/ar-member.cc.o -c /private/tmp/gd-posix-portable-math/src/ar/ar-member.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/ar/ar-member.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/ar/CMakeFiles/libar.dir/ar-member.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/ar -I/private/tmp/gd-posix-portable-math/src/ar -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/ar/CMakeFiles/test-libar.dir/test-libar-main.cc.o -c /private/tmp/gd-posix-portable-math/src/ar/test-libar-main.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/ar/test-libar-main.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/ar/CMakeFiles/test-libar.dir/test-libar-main.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/ar -I/private/tmp/gd-posix-portable-math/src/ar -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/ar/CMakeFiles/test-libar.dir/test-member-header.cc.o -c /private/tmp/gd-posix-portable-math/src/ar/test-member-header.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/ar/test-member-header.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/ar/CMakeFiles/test-libar.dir/test-member-header.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/src/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/ar -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/ar -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/ar/CMakeFiles/ar.dir/ar.cc.o -c /private/tmp/gd-posix-portable-math/src/ar/ar.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/ar/ar.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/ar/CMakeFiles/ar.dir/ar.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/src/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/asa -I/private/tmp/gd-posix-portable-math/libgdsup/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/asa/CMakeFiles/asa.dir/asa.cc.o -c /private/tmp/gd-posix-portable-math/src/asa/asa.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/asa/asa.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/asa/CMakeFiles/asa.dir/asa.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/src/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/basename -I/private/tmp/gd-posix-portable-math/libgdsup/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/basename/CMakeFiles/basename.dir/basename.cc.o -c /private/tmp/gd-posix-portable-math/src/basename/basename.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/basename/basename.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/basename/CMakeFiles/basename.dir/basename.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/libbc.dir/execution-plan.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/execution-plan.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/execution-plan.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/libbc.dir/execution-plan.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/libbc.dir/instruction.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/instruction.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/instruction.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/libbc.dir/instruction.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/libbc.dir/lexer.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/lexer.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/lexer.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/libbc.dir/lexer.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/libbc.dir/parser.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/parser.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/parser.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/libbc.dir/parser.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/libbc.dir/reader.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/reader.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/reader.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/libbc.dir/reader.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/libbc.dir/token.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/token.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/token.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/libbc.dir/token.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/libbc.dir/verification.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/verification.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/verification.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/libbc.dir/verification.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/libbc.dir/vm.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/vm.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/vm.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/libbc.dir/vm.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -DGD_BC_PROFILE=1 -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/bc/CMakeFiles/test-bc-profiling.dir/profiling.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/profiling.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/profiling.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-bc-profiling.dir/profiling.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -DGD_BC_PROFILE=1 -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/bc/CMakeFiles/test-bc-profiling.dir/test-profiling.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-profiling.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-profiling.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-bc-profiling.dir/test-profiling.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/bc/CMakeFiles/test-bc-profiling-disabled.dir/test-profiling-disabled.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-profiling-disabled.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-profiling-disabled.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-bc-profiling-disabled.dir/test-profiling-disabled.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/bc/CMakeFiles/test-bc-vm-lifetime.dir/test-vm-lifetime.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-vm-lifetime.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-vm-lifetime.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-bc-vm-lifetime.dir/test-vm-lifetime.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/test-libbc.dir/test-array-storage.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-array-storage.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-array-storage.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-libbc.dir/test-array-storage.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/test-libbc.dir/test-execution-plan.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-execution-plan.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-execution-plan.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-libbc.dir/test-execution-plan.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/test-libbc.dir/test-benchmark-support.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-benchmark-support.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-benchmark-support.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-libbc.dir/test-benchmark-support.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/test-libbc.dir/test-format.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-format.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-format.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-libbc.dir/test-format.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/test-libbc.dir/test-instruction.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-instruction.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-instruction.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-libbc.dir/test-instruction.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/test-libbc.dir/test-token-format.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-token-format.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-token-format.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-libbc.dir/test-token-format.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/test-libbc.dir/test-lexer.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-lexer.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-lexer.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-libbc.dir/test-lexer.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/test-libbc.dir/test-lexer-shebang.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-lexer-shebang.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-lexer-shebang.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-libbc.dir/test-lexer-shebang.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/test-libbc.dir/test-lexer-comments.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-lexer-comments.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-lexer-comments.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-libbc.dir/test-lexer-comments.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/test-libbc.dir/test-libbc-main.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-libbc-main.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-libbc-main.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-libbc.dir/test-libbc-main.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/test-libbc.dir/test-digit-storage.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-digit-storage.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-digit-storage.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-libbc.dir/test-digit-storage.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/test-libbc.dir/test-number.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-number.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-number.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-libbc.dir/test-number.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/test-libbc.dir/test-number-radix.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-number-radix.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-number-radix.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-libbc.dir/test-number-radix.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/test-libbc.dir/test-number-workspace.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-number-workspace.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-number-workspace.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-libbc.dir/test-number-workspace.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/test-libbc.dir/test-number-output.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-number-output.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-number-output.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-libbc.dir/test-number-output.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/test-libbc.dir/test-number-length.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-number-length.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-number-length.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-libbc.dir/test-number-length.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/test-libbc.dir/test-number-compare.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-number-compare.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-number-compare.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-libbc.dir/test-number-compare.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/test-libbc.dir/test-number-division.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-number-division.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-number-division.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-libbc.dir/test-number-division.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/test-libbc.dir/test-number-zero-scale.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-number-zero-scale.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-number-zero-scale.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-libbc.dir/test-number-zero-scale.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/test-libbc.dir/test-number-modulo.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-number-modulo.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-number-modulo.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-libbc.dir/test-number-modulo.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/test-libbc.dir/test-number-power.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-number-power.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-number-power.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-libbc.dir/test-number-power.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/test-libbc.dir/test-number-sqrt.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-number-sqrt.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-number-sqrt.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-libbc.dir/test-number-sqrt.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/test-libbc.dir/test-parser.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-parser.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-parser.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-libbc.dir/test-parser.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/test-libbc.dir/test-parser-errors.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-parser-errors.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-parser-errors.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-libbc.dir/test-parser-errors.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/test-libbc.dir/test-reader.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-reader.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-reader.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-libbc.dir/test-reader.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/test-libbc.dir/test-vm-arrays.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-vm-arrays.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-vm-arrays.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-libbc.dir/test-vm-arrays.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/test-libbc.dir/test-vm-execution.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-vm-execution.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-vm-execution.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-libbc.dir/test-vm-execution.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/test-libbc.dir/test-verification.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-verification.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-verification.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-libbc.dir/test-verification.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/bc/CMakeFiles/test-bc-signal.dir/test-vm-signal.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-vm-signal.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-vm-signal.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-bc-signal.dir/test-vm-signal.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/bc/CMakeFiles/test-bc-offsets.dir/test-vm-offsets.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/test-vm-offsets.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/test-vm-offsets.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/test-bc-offsets.dir/test-vm-offsets.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/src/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/bc -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc -o src/bc/CMakeFiles/bc.dir/bc.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/bc.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/bc.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/bc.dir/bc.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/bc/CMakeFiles/bc-components.dir/benchmark-components.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/benchmark-components.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/benchmark-components.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/bc-components.dir/benchmark-components.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-posix-portable-math/src/bc -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/src/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/bc/CMakeFiles/find-multiply-split-point.dir/find-multiply-split-point.cc.o -c /private/tmp/gd-posix-portable-math/src/bc/find-multiply-split-point.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/bc/find-multiply-split-point.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/bc/CMakeFiles/find-multiply-split-point.dir/find-multiply-split-point.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/src/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/cat -I/private/tmp/gd-posix-portable-math/libgdsup/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/cat/CMakeFiles/cat.dir/cat.cc.o -c /private/tmp/gd-posix-portable-math/src/cat/cat.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/cat/cat.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/cat/CMakeFiles/cat.dir/cat.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/libgdsup/include -g -std=gnu++20 -o src/cksum/CMakeFiles/gen-cksum-table.dir/gen-cksum-table.cc.o -c /private/tmp/gd-posix-portable-math/src/cksum/gen-cksum-table.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/cksum/gen-cksum-table.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/cksum/CMakeFiles/gen-cksum-table.dir/gen-cksum-table.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/src/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/cksum -I/private/tmp/gd-posix-portable-math/libgdsup/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/cksum/CMakeFiles/cksum.dir/cksum.cc.o -c /private/tmp/gd-posix-portable-math/src/cksum/cksum.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/cksum/cksum.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/cksum/CMakeFiles/cksum.dir/cksum.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/src/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/cksum -I/private/tmp/gd-posix-portable-math/libgdsup/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/cksum/CMakeFiles/cksum.dir/cksum-table.cc.o -c /private/tmp/gd-posix-portable-math/build-mcdc-off/src/cksum/cksum-table.cc",
+  "file": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/cksum/cksum-table.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/cksum/CMakeFiles/cksum.dir/cksum-table.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/src/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/dirname -I/private/tmp/gd-posix-portable-math/libgdsup/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/dirname/CMakeFiles/dirname.dir/dirname.cc.o -c /private/tmp/gd-posix-portable-math/src/dirname/dirname.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/dirname/dirname.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/dirname/CMakeFiles/dirname.dir/dirname.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/src/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/echo -I/private/tmp/gd-posix-portable-math/libgdsup/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/echo/CMakeFiles/echo.dir/echo.cc.o -c /private/tmp/gd-posix-portable-math/src/echo/echo.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/echo/echo.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/echo/CMakeFiles/echo.dir/echo.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/src/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/expr -I/private/tmp/gd-posix-portable-math/libgdsup/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/expr/CMakeFiles/expr.dir/expr.cc.o -c /private/tmp/gd-posix-portable-math/src/expr/expr.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/expr/expr.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/expr/CMakeFiles/expr.dir/expr.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/src/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/src/printf -I/private/tmp/gd-posix-portable-math/libgdsup/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/printf/CMakeFiles/printf.dir/printf.cc.o -c /private/tmp/gd-posix-portable-math/src/printf/printf.cc",
+  "file": "/private/tmp/gd-posix-portable-math/src/printf/printf.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/printf/CMakeFiles/printf.dir/printf.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang -DTRUE_FALSE_EXIT_CODE=1 -I/private/tmp/gd-posix-portable-math/src/include -I/private/tmp/gd-posix-portable-math/libgdsup/include -g -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/true-false/CMakeFiles/false.dir/true-false.c.o -c /private/tmp/gd-posix-portable-math/src/true-false/true-false.c",
+  "file": "/private/tmp/gd-posix-portable-math/src/true-false/true-false.c",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/true-false/CMakeFiles/false.dir/true-false.c.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang -DTRUE_FALSE_EXIT_CODE=0 -I/private/tmp/gd-posix-portable-math/src/include -I/private/tmp/gd-posix-portable-math/libgdsup/include -g -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/true-false/CMakeFiles/true.dir/true-false.c.o -c /private/tmp/gd-posix-portable-math/src/true-false/true-false.c",
+  "file": "/private/tmp/gd-posix-portable-math/src/true-false/true-false.c",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/src/true-false/CMakeFiles/true.dir/true-false.c.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang -D__STDC_WANT_LIB_EXT1__=1 -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup -I/private/tmp/gd-posix-portable-math/libgdsup -g -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/gdsup.dir/fcntl/__fcntl_open.c.o -c /private/tmp/gd-posix-portable-math/libgdsup/fcntl/__fcntl_open.c",
+  "file": "/private/tmp/gd-posix-portable-math/libgdsup/fcntl/__fcntl_open.c",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup/CMakeFiles/gdsup.dir/fcntl/__fcntl_open.c.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang -D__STDC_WANT_LIB_EXT1__=1 -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup -I/private/tmp/gd-posix-portable-math/libgdsup -g -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/gdsup.dir/nl_types/catclose.c.o -c /private/tmp/gd-posix-portable-math/libgdsup/nl_types/catclose.c",
+  "file": "/private/tmp/gd-posix-portable-math/libgdsup/nl_types/catclose.c",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup/CMakeFiles/gdsup.dir/nl_types/catclose.c.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang -D__STDC_WANT_LIB_EXT1__=1 -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup -I/private/tmp/gd-posix-portable-math/libgdsup -g -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/gdsup.dir/nl_types/catgets.c.o -c /private/tmp/gd-posix-portable-math/libgdsup/nl_types/catgets.c",
+  "file": "/private/tmp/gd-posix-portable-math/libgdsup/nl_types/catgets.c",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup/CMakeFiles/gdsup.dir/nl_types/catgets.c.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang -D__STDC_WANT_LIB_EXT1__=1 -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup -I/private/tmp/gd-posix-portable-math/libgdsup -g -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/gdsup.dir/nl_types/catopen.c.o -c /private/tmp/gd-posix-portable-math/libgdsup/nl_types/catopen.c",
+  "file": "/private/tmp/gd-posix-portable-math/libgdsup/nl_types/catopen.c",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup/CMakeFiles/gdsup.dir/nl_types/catopen.c.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang -D__STDC_WANT_LIB_EXT1__=1 -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup -I/private/tmp/gd-posix-portable-math/libgdsup -g -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/gdsup.dir/nl_types/__nl_types_check_cat_header.c.o -c /private/tmp/gd-posix-portable-math/libgdsup/nl_types/__nl_types_check_cat_header.c",
+  "file": "/private/tmp/gd-posix-portable-math/libgdsup/nl_types/__nl_types_check_cat_header.c",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup/CMakeFiles/gdsup.dir/nl_types/__nl_types_check_cat_header.c.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang -D__STDC_WANT_LIB_EXT1__=1 -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup -I/private/tmp/gd-posix-portable-math/libgdsup -g -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/gdsup.dir/support/empty.c.o -c /private/tmp/gd-posix-portable-math/libgdsup/support/empty.c",
+  "file": "/private/tmp/gd-posix-portable-math/libgdsup/support/empty.c",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup/CMakeFiles/gdsup.dir/support/empty.c.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang -D__STDC_WANT_LIB_EXT1__=1 -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup -I/private/tmp/gd-posix-portable-math/libgdsup -g -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/gdsup.dir/support/__support_log.c.o -c /private/tmp/gd-posix-portable-math/libgdsup/support/__support_log.c",
+  "file": "/private/tmp/gd-posix-portable-math/libgdsup/support/__support_log.c",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup/CMakeFiles/gdsup.dir/support/__support_log.c.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang -D__STDC_WANT_LIB_EXT1__=1 -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup -I/private/tmp/gd-posix-portable-math/libgdsup -g -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/gdsup.dir/support/__support_read_le_u64.c.o -c /private/tmp/gd-posix-portable-math/libgdsup/support/__support_read_le_u64.c",
+  "file": "/private/tmp/gd-posix-portable-math/libgdsup/support/__support_read_le_u64.c",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup/CMakeFiles/gdsup.dir/support/__support_read_le_u64.c.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang -D__STDC_WANT_LIB_EXT1__=1 -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup -I/private/tmp/gd-posix-portable-math/libgdsup -g -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/gdsup.dir/support/__support_read_le_u32.c.o -c /private/tmp/gd-posix-portable-math/libgdsup/support/__support_read_le_u32.c",
+  "file": "/private/tmp/gd-posix-portable-math/libgdsup/support/__support_read_le_u32.c",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup/CMakeFiles/gdsup.dir/support/__support_read_le_u32.c.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang -D__STDC_WANT_LIB_EXT1__=1 -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup -I/private/tmp/gd-posix-portable-math/libgdsup -g -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/gdsup.dir/unistd/getopt.c.o -c /private/tmp/gd-posix-portable-math/libgdsup/unistd/getopt.c",
+  "file": "/private/tmp/gd-posix-portable-math/libgdsup/unistd/getopt.c",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup/CMakeFiles/gdsup.dir/unistd/getopt.c.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang -D__STDC_WANT_LIB_EXT1__=1 -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup -I/private/tmp/gd-posix-portable-math/libgdsup -g -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/gdsup.dir/unistd/__gd_getopt_reset.c.o -c /private/tmp/gd-posix-portable-math/libgdsup/unistd/__gd_getopt_reset.c",
+  "file": "/private/tmp/gd-posix-portable-math/libgdsup/unistd/__gd_getopt_reset.c",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup/CMakeFiles/gdsup.dir/unistd/__gd_getopt_reset.c.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang -D__STDC_WANT_LIB_EXT1__=1 -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup -I/private/tmp/gd-posix-portable-math/libgdsup -g -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/gdsup.dir/unistd/__unistd_read.c.o -c /private/tmp/gd-posix-portable-math/libgdsup/unistd/__unistd_read.c",
+  "file": "/private/tmp/gd-posix-portable-math/libgdsup/unistd/__unistd_read.c",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup/CMakeFiles/gdsup.dir/unistd/__unistd_read.c.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup -I/private/tmp/gd-posix-portable-math/libgdsup -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/test-gdsup.dir/nl_types/test-catclose.cc.o -c /private/tmp/gd-posix-portable-math/libgdsup/nl_types/test-catclose.cc",
+  "file": "/private/tmp/gd-posix-portable-math/libgdsup/nl_types/test-catclose.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup/CMakeFiles/test-gdsup.dir/nl_types/test-catclose.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup -I/private/tmp/gd-posix-portable-math/libgdsup -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/test-gdsup.dir/nl_types/test-header-order.cc.o -c /private/tmp/gd-posix-portable-math/libgdsup/nl_types/test-header-order.cc",
+  "file": "/private/tmp/gd-posix-portable-math/libgdsup/nl_types/test-header-order.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup/CMakeFiles/test-gdsup.dir/nl_types/test-header-order.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup -I/private/tmp/gd-posix-portable-math/libgdsup -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/test-gdsup.dir/nl_types/test-catopen.cc.o -c /private/tmp/gd-posix-portable-math/libgdsup/nl_types/test-catopen.cc",
+  "file": "/private/tmp/gd-posix-portable-math/libgdsup/nl_types/test-catopen.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup/CMakeFiles/test-gdsup.dir/nl_types/test-catopen.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup -I/private/tmp/gd-posix-portable-math/libgdsup -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/test-gdsup.dir/nl_types/test-__nl_types_check_cat_header.cc.o -c /private/tmp/gd-posix-portable-math/libgdsup/nl_types/test-__nl_types_check_cat_header.cc",
+  "file": "/private/tmp/gd-posix-portable-math/libgdsup/nl_types/test-__nl_types_check_cat_header.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup/CMakeFiles/test-gdsup.dir/nl_types/test-__nl_types_check_cat_header.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup -I/private/tmp/gd-posix-portable-math/libgdsup -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/test-gdsup.dir/support/test-gdsup-main.cc.o -c /private/tmp/gd-posix-portable-math/libgdsup/support/test-gdsup-main.cc",
+  "file": "/private/tmp/gd-posix-portable-math/libgdsup/support/test-gdsup-main.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup/CMakeFiles/test-gdsup.dir/support/test-gdsup-main.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup -I/private/tmp/gd-posix-portable-math/libgdsup -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/test-gdsup.dir/support/test-__support_read_le_u64.cc.o -c /private/tmp/gd-posix-portable-math/libgdsup/support/test-__support_read_le_u64.cc",
+  "file": "/private/tmp/gd-posix-portable-math/libgdsup/support/test-__support_read_le_u64.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup/CMakeFiles/test-gdsup.dir/support/test-__support_read_le_u64.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup -I/private/tmp/gd-posix-portable-math/libgdsup -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/test-gdsup.dir/support/test-__support_read_le_u32.cc.o -c /private/tmp/gd-posix-portable-math/libgdsup/support/test-__support_read_le_u32.cc",
+  "file": "/private/tmp/gd-posix-portable-math/libgdsup/support/test-__support_read_le_u32.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup/CMakeFiles/test-gdsup.dir/support/test-__support_read_le_u32.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup -I/private/tmp/gd-posix-portable-math/libgdsup -I/private/tmp/gd-posix-portable-math/libgdsup/include -I/Users/mgrettondann/repos/gd-posix-apps/build/_deps/catch2-src/single_include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/CMakeFiles/test-gdsup.dir/unistd/test-getopt.cc.o -c /private/tmp/gd-posix-portable-math/libgdsup/unistd/test-getopt.cc",
+  "file": "/private/tmp/gd-posix-portable-math/libgdsup/unistd/test-getopt.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup/CMakeFiles/test-gdsup.dir/unistd/test-getopt.cc.o"
+},
+{
+  "directory": "/private/tmp/gd-posix-portable-math/build-mcdc-off",
+  "command": "/opt/homebrew/opt/llvm/bin/clang++ -I/private/tmp/gd-posix-portable-math/libgdsup/include -g -std=gnu++20 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o libgdsup/signal/CMakeFiles/test-signal-first-action.dir/test-first-action.cc.o -c /private/tmp/gd-posix-portable-math/libgdsup/signal/test-first-action.cc",
+  "file": "/private/tmp/gd-posix-portable-math/libgdsup/signal/test-first-action.cc",
+  "output": "/private/tmp/gd-posix-portable-math/build-mcdc-off/libgdsup/signal/CMakeFiles/test-signal-first-action.dir/test-first-action.cc.o"
+}
+]

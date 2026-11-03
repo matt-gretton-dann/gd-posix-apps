@@ -4,6 +4,7 @@ import contextlib
 import copy
 import io
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
@@ -49,7 +50,7 @@ class NativeMath(unittest.TestCase):
                             dict(implementations=[entry])))
 
                 argv = [str(PATH), '--source', str(source), '--candidate', 'b' * 40,
-                        '--output', str(output), '--candidate-prepared-divisors']
+                        '--base', 'a' * 40, '--output', str(output), '--candidate-prepared-divisors']
                 original_load = CI.load
                 def modules(name):
                     # Exercise orchestration, not native PowerShell/CIM probes.
@@ -63,10 +64,13 @@ class NativeMath(unittest.TestCase):
                     self.assertEqual(CI.main(), 1)
                 self.assertEqual((output / 'evidence/gd/prepared-policy/libbc.vcxproj').read_text(),
                                  'retained fixture')
-                self.assertEqual(len(calls), 3 if valid else 1)
+                self.assertEqual(len(calls), 4 if valid else 1)
                 for call in calls[:2 if valid else 1]:
                     self.assertEqual(call[call.index('--prepared-divisors') + 1], 'ON')
                     self.assertEqual(call[call.index('--revision') + 1], 'b' * 40)
+                if valid:
+                    self.assertNotIn('--prepared-divisors', calls[2])
+                    self.assertEqual(calls[2][calls[2].index('--revision') + 1], 'a' * 40)
                 failure = json.loads((output / 'evidence/failure.json').read_text())['error']
                 self.assertIn('stop fixture' if valid else 'verified explicit', failure)
 
@@ -107,6 +111,68 @@ class NativeMath(unittest.TestCase):
             howard['metadata']['source_revision'] = 'b' * 40
             with self.assertRaisesRegex(CI.CommandFailure, 'pinned'):
                 CI.configurations(gd, aa, howard, library, other, revision)
+
+    def test_separate_baseline_identity_and_regression_roles(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            library = Path(temporary) / 'candidate.bc'
+            baseline = Path(temporary) / 'base.bc'
+            library.write_bytes(b'candidate ordinary source\n')
+            baseline.write_bytes(b'baseline ordinary source\n')
+            revision, old_revision = 'a' * 40, 'b' * 40
+            gd = dict(name='gd', argv=['gd-binary'], metadata=dict(source_revision=revision))
+            old = dict(name='old', argv=['old-binary'], metadata=dict(source_revision=old_revision))
+            howard = dict(name='howard', argv=['howard-binary'], metadata=dict(
+                source_revision=CI.load('build-bc-comparators').HOWARD_REVISION))
+            original = copy.deepcopy(old)
+            configs = CI.configurations(gd, gd, howard, library, library, revision,
+                                         base=old, base_library=baseline, base_revision=old_revision)
+            self.assertEqual(old, original)
+            self.assertEqual([len(configs[k]) for k in ('preparation', 'paired', 'aa', 'regression')],
+                             [5, 4, 2, 2])
+            base, candidate = configs['regression']
+            self.assertEqual(base['name'], 'gd-base')
+            self.assertEqual(base['argv'], ['old-binary', '-l'])
+            self.assertNotEqual(base['metadata']['library']['source_sha256'],
+                                candidate['metadata']['library']['source_sha256'])
+            with self.assertRaisesRegex(CI.CommandFailure, 'baseline'):
+                CI.configurations(gd, gd, howard, library, library, revision,
+                                  base=old, base_library=baseline, base_revision=revision)
+
+    def test_regressions_require_confirmation_and_usable_controls(self):
+        slow = dict(ci95=[1.1, 1.2])
+        fast = dict(ci95=[.8, .9])
+        duration = dict(base=True, candidate=True)
+        classify = lambda first, second, control='pass', mode='repeated', target=duration: \
+            CI.regression_status(first, second, control, mode, target)
+        self.assertEqual(classify(slow, None), 'inconclusive-noisy')
+        self.assertEqual(classify(slow, slow), 'confirmed regression')
+        self.assertEqual(classify(slow, fast), 'inconclusive-noisy')
+        self.assertEqual(classify(fast, None), 'pass')
+        self.assertEqual(classify(fast, None, 'inconclusive'), 'pass; A/A inconclusive')
+        self.assertEqual(classify(None, None), 'unavailable baseline library')
+        self.assertEqual(classify(slow, slow, 'confirmed A/A bias'), 'inconclusive control bias')
+        self.assertEqual(classify(slow, slow, mode='one_shot'), 'one-shot latency observation')
+        self.assertEqual(classify(slow, slow, target={}), 'inconclusive duration shortfall')
+
+    def test_diagnostic_selection_preserves_all_regimes_at_a_declared_scale(self):
+        bench = CI.load('bench-bc')
+        for preset in ('full', 'holdout'):
+            cases = CI.diagnostic_cases(bench, preset)
+            self.assertEqual(len(cases), 10)
+            self.assertTrue(all(c['parameters']['mode'] == 'one_shot' and
+                                c['parameters']['scale'] == 100 for c in cases))
+            self.assertEqual(len({c['group'] for c in cases}), 10)
+
+    def test_profiled_config_cannot_enter_elapsed_harness(self):
+        bench = CI.load('bench-bc')
+        with tempfile.TemporaryDirectory() as temporary:
+            config = Path(temporary) / 'profile.json'
+            config.write_text(json.dumps({'implementations': [{'name': 'profile',
+                'argv': [sys.executable], 'metadata': {'instrumented': True,
+                    'source_revision': 'fixture', 'compiler': 'fixture', 'flags': 'fixture',
+                    'version': 'fixture', 'binary_sha256': bench.digest_file(sys.executable)}}]}))
+            with self.assertRaisesRegex(bench.BenchmarkError, 'instrument'):
+                bench.implementations(config, require_provenance=True)
 
     def test_control_bias_needs_same_direction_confirmation(self):
         high, low = dict(ci95=[1.1, 1.2]), dict(ci95=[.8, .9])
@@ -166,14 +232,65 @@ class NativeMath(unittest.TestCase):
                 if name == 'benchmark-ci':
                     return mock.Mock(host_info=lambda: dict(test_host='isolated fixture'))
                 return original_load(name)
-            argv = [str(PATH), '--source', str(root), '--candidate', 'a' * 40,
-                    '--output', str(root / 'results')]
+            argv = [str(PATH), '--source', str(root), '--candidate', 'a' * 40, '--base', 'b' * 40,
+                    '--output', str(root / 'results'), '--child-timeout-seconds', '.125']
             with mock.patch.object(CI, 'load', side_effect=load), mock.patch.object(sys, 'argv', argv):
                 self.assertEqual(CI.main(), 0)
             evidence = root / 'results/evidence'
             self.assertFalse(json.loads((evidence / 'unavailable.json').read_text())['performance_acceptance'])
             self.assertFalse((evidence / 'decisions.json').exists())
             self.assertEqual(json.loads((evidence / 'orchestration.json').read_text())['commands'], [])
+            self.assertEqual(json.loads((evidence / 'orchestration.json').read_text())['child_timeout_seconds'], .125)
+
+
+    def test_invalid_child_deadlines_fail_before_creating_evidence(self):
+        for value in ('0', '-1', 'nan', 'inf'):
+            with self.subTest(value=value), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                argv = [str(PATH), '--source', str(root), '--candidate', 'a' * 40,
+                        '--base', 'b' * 40, '--output', str(root / 'results'),
+                        '--child-timeout-seconds', value]
+                with mock.patch.object(sys, 'argv', argv), mock.patch.object(sys, 'stderr', io.StringIO()):
+                    with self.assertRaises(SystemExit) as failure:
+                        CI.main()
+                self.assertEqual(failure.exception.code, 2)
+                self.assertFalse((root / 'results').exists())
+
+
+    def test_selected_broad_preset_is_explicit_in_unavailable_evidence(self):
+        for preset, expected in ((None, ['full', 'holdout']), ('full', ['full']),
+                                 ('holdout', ['holdout'])):
+            with self.subTest(preset=preset), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                original_load = CI.load
+                def load(name):
+                    if name == 'benchmark-ci':
+                        return mock.Mock(host_info=lambda: dict(test_host='isolated fixture'))
+                    return original_load(name)
+                argv = [str(PATH), '--source', str(root), '--candidate', 'a' * 40,
+                        '--base', 'b' * 40, '--output', str(root / 'results'),
+                        '--broad']
+                if preset:
+                    argv += ['--broad-preset', preset]
+                with mock.patch.object(CI, 'load', side_effect=load), mock.patch.object(sys, 'argv', argv):
+                    self.assertEqual(CI.main(), 0)
+                evidence = root / 'results/evidence'
+                orchestration = json.loads((evidence / 'orchestration.json').read_text())
+                self.assertTrue(orchestration['broad'])
+                self.assertEqual(orchestration['presets'], expected)
+                self.assertFalse((evidence / 'decisions.json').exists())
+
+    def test_single_preset_requires_broad_mode(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            argv = [str(PATH), '--source', str(root), '--candidate', 'a' * 40,
+                    '--base', 'b' * 40, '--output', str(root / 'results'),
+                    '--broad-preset', 'holdout']
+            with mock.patch.object(sys, 'argv', argv), mock.patch.object(sys, 'stderr', io.StringIO()):
+                with self.assertRaises(SystemExit) as failure:
+                    CI.main()
+            self.assertEqual(failure.exception.code, 2)
+            self.assertFalse((root / 'results').exists())
 
 
 if __name__ == '__main__':

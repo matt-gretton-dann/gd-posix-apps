@@ -1,0 +1,18 @@
+F
+======================================================================
+FAIL: test_basic_exact_values_and_result_scale (__main__.LibraryCli.test_basic_exact_values_and_result_scale)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/gd-posix-portable-math/src/bc/test-math-library-cli.py", line 66, in test_basic_exact_values_and_result_scale
+    lines = self.checked_lines('scale=3\ne(0)\nl(1)\na(0)\ns(0)\nc(0)\n'
+                               'j(0,0)\nj(1,0)\nscale(e(0))\nscale(s(0))\nscale\n')
+  File "/private/tmp/gd-posix-portable-math/src/bc/test-math-library-cli.py", line 40, in checked_lines
+    self.assertEqual(result.returncode, 0, result.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : Error:-:2:3: Function e is not defined.
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.007s
+
+FAILED (failures=1)

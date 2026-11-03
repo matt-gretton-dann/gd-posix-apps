@@ -1,0 +1,13 @@
+Test project /private/tmp/gd-posix-portable-math/build-release
+    Start 14: bc/math-library-cli
+1/4 Test #14: bc/math-library-cli ..............   Passed   29.48 sec
+    Start 15: bc/math-library-source
+2/4 Test #15: bc/math-library-source ...........   Passed    0.03 sec
+    Start 24: bc/cli
+3/4 Test #24: bc/cli ...........................   Passed    0.57 sec
+    Start 28: bc/vm-cli
+4/4 Test #28: bc/vm-cli ........................   Passed    0.19 sec
+
+100% tests passed out of 4
+
+Total Test time (real) =  30.28 sec

@@ -1,0 +1,2525 @@
+{
+  "scope": "correctness preflight only; elapsed times discarded; non-frozen GD build",
+  "rows": [
+    {
+      "preset": "full",
+      "case": "math_regular_s-one_scale20_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "297b2dccc2f4d4f1d8ed8bff1505b8cea9203289b1a7f44a6bc7408a242d551a"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_s-one_scale20_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "297b2dccc2f4d4f1d8ed8bff1505b8cea9203289b1a7f44a6bc7408a242d551a"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_s-one_scale20_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "297b2dccc2f4d4f1d8ed8bff1505b8cea9203289b1a7f44a6bc7408a242d551a"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_s-one_scale20_repeated_x50",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "297b2dccc2f4d4f1d8ed8bff1505b8cea9203289b1a7f44a6bc7408a242d551a"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_s-one_scale20_repeated_x50",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "297b2dccc2f4d4f1d8ed8bff1505b8cea9203289b1a7f44a6bc7408a242d551a"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_s-one_scale20_repeated_x50",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "297b2dccc2f4d4f1d8ed8bff1505b8cea9203289b1a7f44a6bc7408a242d551a"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_s-one_scale100_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "4b17804898ae22f13335b07b50824da6c9f0bd2b5fb86aad66859973aa06cf8b"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_s-one_scale100_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "a04d0eb38970f2922226cb49c106c265825988bafbe31ddf6da1300fe06eb774"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_s-one_scale100_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "4b17804898ae22f13335b07b50824da6c9f0bd2b5fb86aad66859973aa06cf8b"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_s-one_scale100_repeated_x20",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "4b17804898ae22f13335b07b50824da6c9f0bd2b5fb86aad66859973aa06cf8b"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_s-one_scale100_repeated_x20",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "a04d0eb38970f2922226cb49c106c265825988bafbe31ddf6da1300fe06eb774"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_s-one_scale100_repeated_x20",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "4b17804898ae22f13335b07b50824da6c9f0bd2b5fb86aad66859973aa06cf8b"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_s-one_scale1000_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "19e132a43c71d692e96559fa5fffc57cc1a17926d6103099d5e3516ab64686fc"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_s-one_scale1000_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "19e132a43c71d692e96559fa5fffc57cc1a17926d6103099d5e3516ab64686fc"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_s-one_scale1000_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "19e132a43c71d692e96559fa5fffc57cc1a17926d6103099d5e3516ab64686fc"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_s-one_scale1000_repeated_x3",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "19e132a43c71d692e96559fa5fffc57cc1a17926d6103099d5e3516ab64686fc"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_s-one_scale1000_repeated_x3",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "19e132a43c71d692e96559fa5fffc57cc1a17926d6103099d5e3516ab64686fc"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_s-one_scale1000_repeated_x3",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "19e132a43c71d692e96559fa5fffc57cc1a17926d6103099d5e3516ab64686fc"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_c-one_scale20_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "14367369a91b20f797c9d1a884b83838952e542c51b9cdac697fd84a13aaf90d"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_c-one_scale20_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "14367369a91b20f797c9d1a884b83838952e542c51b9cdac697fd84a13aaf90d"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_c-one_scale20_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "14367369a91b20f797c9d1a884b83838952e542c51b9cdac697fd84a13aaf90d"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_c-one_scale20_repeated_x50",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "14367369a91b20f797c9d1a884b83838952e542c51b9cdac697fd84a13aaf90d"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_c-one_scale20_repeated_x50",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "14367369a91b20f797c9d1a884b83838952e542c51b9cdac697fd84a13aaf90d"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_c-one_scale20_repeated_x50",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "14367369a91b20f797c9d1a884b83838952e542c51b9cdac697fd84a13aaf90d"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_c-one_scale100_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "e9f041b4b03db5b89dd23d911c9b148224b755da4b22d0d5d610b0bae19ca15d"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_c-one_scale100_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "e9f041b4b03db5b89dd23d911c9b148224b755da4b22d0d5d610b0bae19ca15d"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_c-one_scale100_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "e9f041b4b03db5b89dd23d911c9b148224b755da4b22d0d5d610b0bae19ca15d"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_c-one_scale100_repeated_x20",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "e9f041b4b03db5b89dd23d911c9b148224b755da4b22d0d5d610b0bae19ca15d"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_c-one_scale100_repeated_x20",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "e9f041b4b03db5b89dd23d911c9b148224b755da4b22d0d5d610b0bae19ca15d"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_c-one_scale100_repeated_x20",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "e9f041b4b03db5b89dd23d911c9b148224b755da4b22d0d5d610b0bae19ca15d"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_c-one_scale1000_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "a9fd70eed8fa20d79f3a96990bbd87c85d10c0d9b74348cb9f0dd48796514b41"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_c-one_scale1000_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "9257c9c2a7d4c4dcbc9ea025d339873d8296c887a49739c4adfc004776ac30d6"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_c-one_scale1000_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "a9fd70eed8fa20d79f3a96990bbd87c85d10c0d9b74348cb9f0dd48796514b41"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_c-one_scale1000_repeated_x3",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "a9fd70eed8fa20d79f3a96990bbd87c85d10c0d9b74348cb9f0dd48796514b41"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_c-one_scale1000_repeated_x3",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "9257c9c2a7d4c4dcbc9ea025d339873d8296c887a49739c4adfc004776ac30d6"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_c-one_scale1000_repeated_x3",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "a9fd70eed8fa20d79f3a96990bbd87c85d10c0d9b74348cb9f0dd48796514b41"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_a-one_scale20_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "734f78aae70db9a5505a6cdfe3a22d87cb5844dfc1dc557672308325931257cf"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_a-one_scale20_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "4adbc86babd1322288769f1a562b765c6a91c2709df224dce3c160648a2bb296"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_a-one_scale20_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "734f78aae70db9a5505a6cdfe3a22d87cb5844dfc1dc557672308325931257cf"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_a-one_scale20_repeated_x50",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "734f78aae70db9a5505a6cdfe3a22d87cb5844dfc1dc557672308325931257cf"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_a-one_scale20_repeated_x50",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "4adbc86babd1322288769f1a562b765c6a91c2709df224dce3c160648a2bb296"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_a-one_scale20_repeated_x50",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "734f78aae70db9a5505a6cdfe3a22d87cb5844dfc1dc557672308325931257cf"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_a-one_scale100_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "4337c71d8993bb01a5bf06b60a4599f28f8b4e2050569e0cf948c6a80fcbb00e"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_a-one_scale100_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "50d943e5c8b402795845843682a9cd07dac72d87e5b108d9446760619bb782a6"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_a-one_scale100_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "4337c71d8993bb01a5bf06b60a4599f28f8b4e2050569e0cf948c6a80fcbb00e"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_a-one_scale100_repeated_x20",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "4337c71d8993bb01a5bf06b60a4599f28f8b4e2050569e0cf948c6a80fcbb00e"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_a-one_scale100_repeated_x20",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "50d943e5c8b402795845843682a9cd07dac72d87e5b108d9446760619bb782a6"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_a-one_scale100_repeated_x20",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "4337c71d8993bb01a5bf06b60a4599f28f8b4e2050569e0cf948c6a80fcbb00e"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_a-one_scale1000_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "f86295dfef403e16bf7e3b0bbce60daf26ba06ad9fa029b14b3e0ae6d1b7701d"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_a-one_scale1000_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "f86295dfef403e16bf7e3b0bbce60daf26ba06ad9fa029b14b3e0ae6d1b7701d"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_a-one_scale1000_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "f86295dfef403e16bf7e3b0bbce60daf26ba06ad9fa029b14b3e0ae6d1b7701d"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_a-one_scale1000_repeated_x3",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "f86295dfef403e16bf7e3b0bbce60daf26ba06ad9fa029b14b3e0ae6d1b7701d"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_a-one_scale1000_repeated_x3",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "f86295dfef403e16bf7e3b0bbce60daf26ba06ad9fa029b14b3e0ae6d1b7701d"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_a-one_scale1000_repeated_x3",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "f86295dfef403e16bf7e3b0bbce60daf26ba06ad9fa029b14b3e0ae6d1b7701d"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_l-two_scale20_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "fd5421332525543dc3d871e23c4c0edb66abdee444c91d19721f7e8f0da80960"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_l-two_scale20_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "1ea08f7836cbb18904ff36b33f71302a29d9ed28b42ddc921a7897780013ab80"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_l-two_scale20_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "fd5421332525543dc3d871e23c4c0edb66abdee444c91d19721f7e8f0da80960"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_l-two_scale20_repeated_x50",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "fd5421332525543dc3d871e23c4c0edb66abdee444c91d19721f7e8f0da80960"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_l-two_scale20_repeated_x50",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "1ea08f7836cbb18904ff36b33f71302a29d9ed28b42ddc921a7897780013ab80"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_l-two_scale20_repeated_x50",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "fd5421332525543dc3d871e23c4c0edb66abdee444c91d19721f7e8f0da80960"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_l-two_scale100_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "ab47d347a1777e8cec47a4f4c219abc31e055b1a9f7964ba63ddb552577da8bc"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_l-two_scale100_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "ab47d347a1777e8cec47a4f4c219abc31e055b1a9f7964ba63ddb552577da8bc"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_l-two_scale100_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "ab47d347a1777e8cec47a4f4c219abc31e055b1a9f7964ba63ddb552577da8bc"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_l-two_scale100_repeated_x20",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "ab47d347a1777e8cec47a4f4c219abc31e055b1a9f7964ba63ddb552577da8bc"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_l-two_scale100_repeated_x20",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "ab47d347a1777e8cec47a4f4c219abc31e055b1a9f7964ba63ddb552577da8bc"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_l-two_scale100_repeated_x20",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "ab47d347a1777e8cec47a4f4c219abc31e055b1a9f7964ba63ddb552577da8bc"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_l-two_scale1000_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "eeea2e48b7fe3abe3028f594a2b9cd925d6c84283852a6664af468222a46ab93"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_l-two_scale1000_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "662c4606e6dabed4e810b9eae021d5928876aca9bd32236b4e2de3851a165e39"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_l-two_scale1000_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "eeea2e48b7fe3abe3028f594a2b9cd925d6c84283852a6664af468222a46ab93"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_l-two_scale1000_repeated_x3",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "eeea2e48b7fe3abe3028f594a2b9cd925d6c84283852a6664af468222a46ab93"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_l-two_scale1000_repeated_x3",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "662c4606e6dabed4e810b9eae021d5928876aca9bd32236b4e2de3851a165e39"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_l-two_scale1000_repeated_x3",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "eeea2e48b7fe3abe3028f594a2b9cd925d6c84283852a6664af468222a46ab93"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_e-one_scale20_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "7bc5300f8891870f1287941e0a47e5e5694e23d142c854c4cfc9a6c936bdec5e"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_e-one_scale20_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "7bc5300f8891870f1287941e0a47e5e5694e23d142c854c4cfc9a6c936bdec5e"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_e-one_scale20_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "7bc5300f8891870f1287941e0a47e5e5694e23d142c854c4cfc9a6c936bdec5e"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_e-one_scale20_repeated_x50",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "7bc5300f8891870f1287941e0a47e5e5694e23d142c854c4cfc9a6c936bdec5e"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_e-one_scale20_repeated_x50",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "7bc5300f8891870f1287941e0a47e5e5694e23d142c854c4cfc9a6c936bdec5e"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_e-one_scale20_repeated_x50",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "7bc5300f8891870f1287941e0a47e5e5694e23d142c854c4cfc9a6c936bdec5e"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_e-one_scale100_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "af5398de2da630616ff1049b388deb98ce6700a38cbf9e2744e266c3df99c470"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_e-one_scale100_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "af5398de2da630616ff1049b388deb98ce6700a38cbf9e2744e266c3df99c470"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_e-one_scale100_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "af5398de2da630616ff1049b388deb98ce6700a38cbf9e2744e266c3df99c470"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_e-one_scale100_repeated_x20",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "af5398de2da630616ff1049b388deb98ce6700a38cbf9e2744e266c3df99c470"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_e-one_scale100_repeated_x20",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "af5398de2da630616ff1049b388deb98ce6700a38cbf9e2744e266c3df99c470"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_e-one_scale100_repeated_x20",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "af5398de2da630616ff1049b388deb98ce6700a38cbf9e2744e266c3df99c470"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_e-one_scale1000_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "ddb873896721006b24cf1b7f5f63a9fb63c599c834a306508ce4c19b7a5b7fdc"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_e-one_scale1000_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "ddb873896721006b24cf1b7f5f63a9fb63c599c834a306508ce4c19b7a5b7fdc"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_e-one_scale1000_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "ddb873896721006b24cf1b7f5f63a9fb63c599c834a306508ce4c19b7a5b7fdc"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_e-one_scale1000_repeated_x3",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "ddb873896721006b24cf1b7f5f63a9fb63c599c834a306508ce4c19b7a5b7fdc"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_e-one_scale1000_repeated_x3",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "ddb873896721006b24cf1b7f5f63a9fb63c599c834a306508ce4c19b7a5b7fdc"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_e-one_scale1000_repeated_x3",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "ddb873896721006b24cf1b7f5f63a9fb63c599c834a306508ce4c19b7a5b7fdc"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_j-zero-one_scale20_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "67760a8810665d225e2b559680ab998bb8ff01e4a612ccfa73729cce1cfe4af0"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_j-zero-one_scale20_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "1989a02443412820a81692913549149a316bd344229cf86c768eb32d06d5747e"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_j-zero-one_scale20_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "67760a8810665d225e2b559680ab998bb8ff01e4a612ccfa73729cce1cfe4af0"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_j-zero-one_scale20_repeated_x50",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "67760a8810665d225e2b559680ab998bb8ff01e4a612ccfa73729cce1cfe4af0"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_j-zero-one_scale20_repeated_x50",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "1989a02443412820a81692913549149a316bd344229cf86c768eb32d06d5747e"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_j-zero-one_scale20_repeated_x50",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "67760a8810665d225e2b559680ab998bb8ff01e4a612ccfa73729cce1cfe4af0"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_j-zero-one_scale100_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "bc1c96f0878417364feaca9c41b13e2ce247fe9ca6b5a3e95e8bb06ee850198d"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_j-zero-one_scale100_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "01d08978087fa742bc06fbb567fe7ece08690fe5c6d02e0f716ff91e4db546bd"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_j-zero-one_scale100_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "bc1c96f0878417364feaca9c41b13e2ce247fe9ca6b5a3e95e8bb06ee850198d"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_j-zero-one_scale100_repeated_x20",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "bc1c96f0878417364feaca9c41b13e2ce247fe9ca6b5a3e95e8bb06ee850198d"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_j-zero-one_scale100_repeated_x20",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "01d08978087fa742bc06fbb567fe7ece08690fe5c6d02e0f716ff91e4db546bd"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_j-zero-one_scale100_repeated_x20",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "bc1c96f0878417364feaca9c41b13e2ce247fe9ca6b5a3e95e8bb06ee850198d"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_j-zero-one_scale1000_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "f2568d30802b7cf17c1accfcc6d23d3b2df32c6036e2338188a16504da35ef80"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_j-zero-one_scale1000_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "f2568d30802b7cf17c1accfcc6d23d3b2df32c6036e2338188a16504da35ef80"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_j-zero-one_scale1000_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "f2568d30802b7cf17c1accfcc6d23d3b2df32c6036e2338188a16504da35ef80"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_j-zero-one_scale1000_repeated_x3",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "f2568d30802b7cf17c1accfcc6d23d3b2df32c6036e2338188a16504da35ef80"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_j-zero-one_scale1000_repeated_x3",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "f2568d30802b7cf17c1accfcc6d23d3b2df32c6036e2338188a16504da35ef80"
+    },
+    {
+      "preset": "full",
+      "case": "math_regular_j-zero-one_scale1000_repeated_x3",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "f2568d30802b7cf17c1accfcc6d23d3b2df32c6036e2338188a16504da35ef80"
+    },
+    {
+      "preset": "full",
+      "case": "math_turning_j-turning_scale20_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "686c449de41ab6bcff7955c96515dcb15aecc8a362964645ce880a301020c6ec"
+    },
+    {
+      "preset": "full",
+      "case": "math_turning_j-turning_scale20_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "686c449de41ab6bcff7955c96515dcb15aecc8a362964645ce880a301020c6ec"
+    },
+    {
+      "preset": "full",
+      "case": "math_turning_j-turning_scale20_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "686c449de41ab6bcff7955c96515dcb15aecc8a362964645ce880a301020c6ec"
+    },
+    {
+      "preset": "full",
+      "case": "math_turning_j-turning_scale20_repeated_x50",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "686c449de41ab6bcff7955c96515dcb15aecc8a362964645ce880a301020c6ec"
+    },
+    {
+      "preset": "full",
+      "case": "math_turning_j-turning_scale20_repeated_x50",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "686c449de41ab6bcff7955c96515dcb15aecc8a362964645ce880a301020c6ec"
+    },
+    {
+      "preset": "full",
+      "case": "math_turning_j-turning_scale20_repeated_x50",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "686c449de41ab6bcff7955c96515dcb15aecc8a362964645ce880a301020c6ec"
+    },
+    {
+      "preset": "full",
+      "case": "math_turning_j-turning_scale100_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "0f9ae78c78c9be997c811885431de0a6c917139556690b49dbd968abcf6ebb3e"
+    },
+    {
+      "preset": "full",
+      "case": "math_turning_j-turning_scale100_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "0f9ae78c78c9be997c811885431de0a6c917139556690b49dbd968abcf6ebb3e"
+    },
+    {
+      "preset": "full",
+      "case": "math_turning_j-turning_scale100_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "0f9ae78c78c9be997c811885431de0a6c917139556690b49dbd968abcf6ebb3e"
+    },
+    {
+      "preset": "full",
+      "case": "math_turning_j-turning_scale100_repeated_x20",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "0f9ae78c78c9be997c811885431de0a6c917139556690b49dbd968abcf6ebb3e"
+    },
+    {
+      "preset": "full",
+      "case": "math_turning_j-turning_scale100_repeated_x20",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "0f9ae78c78c9be997c811885431de0a6c917139556690b49dbd968abcf6ebb3e"
+    },
+    {
+      "preset": "full",
+      "case": "math_turning_j-turning_scale100_repeated_x20",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "0f9ae78c78c9be997c811885431de0a6c917139556690b49dbd968abcf6ebb3e"
+    },
+    {
+      "preset": "full",
+      "case": "math_turning_j-turning_scale1000_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "c83bd242ac15645b381027f6d95f1729b4609841f2c4b0d10f493d0b07fced93"
+    },
+    {
+      "preset": "full",
+      "case": "math_turning_j-turning_scale1000_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "e6114893b8b81a3c9beefbe9447751edeb87476641c06a4bd5dd73174e013511"
+    },
+    {
+      "preset": "full",
+      "case": "math_turning_j-turning_scale1000_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "c83bd242ac15645b381027f6d95f1729b4609841f2c4b0d10f493d0b07fced93"
+    },
+    {
+      "preset": "full",
+      "case": "math_turning_j-turning_scale1000_repeated_x3",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "c83bd242ac15645b381027f6d95f1729b4609841f2c4b0d10f493d0b07fced93"
+    },
+    {
+      "preset": "full",
+      "case": "math_turning_j-turning_scale1000_repeated_x3",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "e6114893b8b81a3c9beefbe9447751edeb87476641c06a4bd5dd73174e013511"
+    },
+    {
+      "preset": "full",
+      "case": "math_turning_j-turning_scale1000_repeated_x3",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "c83bd242ac15645b381027f6d95f1729b4609841f2c4b0d10f493d0b07fced93"
+    },
+    {
+      "preset": "full",
+      "case": "math_order_dominates_j-order-dominates_scale20_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "full",
+      "case": "math_order_dominates_j-order-dominates_scale20_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "full",
+      "case": "math_order_dominates_j-order-dominates_scale20_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "full",
+      "case": "math_order_dominates_j-order-dominates_scale20_repeated_x50",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "full",
+      "case": "math_order_dominates_j-order-dominates_scale20_repeated_x50",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "full",
+      "case": "math_order_dominates_j-order-dominates_scale20_repeated_x50",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "full",
+      "case": "math_order_dominates_j-order-dominates_scale100_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "full",
+      "case": "math_order_dominates_j-order-dominates_scale100_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "full",
+      "case": "math_order_dominates_j-order-dominates_scale100_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "full",
+      "case": "math_order_dominates_j-order-dominates_scale100_repeated_x20",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "full",
+      "case": "math_order_dominates_j-order-dominates_scale100_repeated_x20",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "full",
+      "case": "math_order_dominates_j-order-dominates_scale100_repeated_x20",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "full",
+      "case": "math_order_dominates_j-order-dominates_scale1000_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "f0b299a46f27261c6f5d4900e9b1a4c82fbbb9365d8772830d67d753989f7fa1"
+    },
+    {
+      "preset": "full",
+      "case": "math_order_dominates_j-order-dominates_scale1000_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "f0b299a46f27261c6f5d4900e9b1a4c82fbbb9365d8772830d67d753989f7fa1"
+    },
+    {
+      "preset": "full",
+      "case": "math_order_dominates_j-order-dominates_scale1000_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "f0b299a46f27261c6f5d4900e9b1a4c82fbbb9365d8772830d67d753989f7fa1"
+    },
+    {
+      "preset": "full",
+      "case": "math_order_dominates_j-order-dominates_scale1000_repeated_x3",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "f0b299a46f27261c6f5d4900e9b1a4c82fbbb9365d8772830d67d753989f7fa1"
+    },
+    {
+      "preset": "full",
+      "case": "math_order_dominates_j-order-dominates_scale1000_repeated_x3",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "f0b299a46f27261c6f5d4900e9b1a4c82fbbb9365d8772830d67d753989f7fa1"
+    },
+    {
+      "preset": "full",
+      "case": "math_order_dominates_j-order-dominates_scale1000_repeated_x3",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "f0b299a46f27261c6f5d4900e9b1a4c82fbbb9365d8772830d67d753989f7fa1"
+    },
+    {
+      "preset": "full",
+      "case": "math_argument_dominates_j-argument-dominates_scale20_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "b2b6d27657e36e45fe0876347705f61d818e21a402edecf66059fd2ccd83d7c2"
+    },
+    {
+      "preset": "full",
+      "case": "math_argument_dominates_j-argument-dominates_scale20_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "b2b6d27657e36e45fe0876347705f61d818e21a402edecf66059fd2ccd83d7c2"
+    },
+    {
+      "preset": "full",
+      "case": "math_argument_dominates_j-argument-dominates_scale20_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "b2b6d27657e36e45fe0876347705f61d818e21a402edecf66059fd2ccd83d7c2"
+    },
+    {
+      "preset": "full",
+      "case": "math_argument_dominates_j-argument-dominates_scale20_repeated_x50",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "b2b6d27657e36e45fe0876347705f61d818e21a402edecf66059fd2ccd83d7c2"
+    },
+    {
+      "preset": "full",
+      "case": "math_argument_dominates_j-argument-dominates_scale20_repeated_x50",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "b2b6d27657e36e45fe0876347705f61d818e21a402edecf66059fd2ccd83d7c2"
+    },
+    {
+      "preset": "full",
+      "case": "math_argument_dominates_j-argument-dominates_scale20_repeated_x50",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "b2b6d27657e36e45fe0876347705f61d818e21a402edecf66059fd2ccd83d7c2"
+    },
+    {
+      "preset": "full",
+      "case": "math_argument_dominates_j-argument-dominates_scale100_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "62c04899dd3e9e5890980e161889195124424d29a008714106c8a12f73c1eb68"
+    },
+    {
+      "preset": "full",
+      "case": "math_argument_dominates_j-argument-dominates_scale100_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "2c3556f3df7b12b8b2211b006343428b099ed4267fc793ad5ba5b4d4c3d0459b"
+    },
+    {
+      "preset": "full",
+      "case": "math_argument_dominates_j-argument-dominates_scale100_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "62c04899dd3e9e5890980e161889195124424d29a008714106c8a12f73c1eb68"
+    },
+    {
+      "preset": "full",
+      "case": "math_argument_dominates_j-argument-dominates_scale100_repeated_x20",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "62c04899dd3e9e5890980e161889195124424d29a008714106c8a12f73c1eb68"
+    },
+    {
+      "preset": "full",
+      "case": "math_argument_dominates_j-argument-dominates_scale100_repeated_x20",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "2c3556f3df7b12b8b2211b006343428b099ed4267fc793ad5ba5b4d4c3d0459b"
+    },
+    {
+      "preset": "full",
+      "case": "math_argument_dominates_j-argument-dominates_scale100_repeated_x20",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "62c04899dd3e9e5890980e161889195124424d29a008714106c8a12f73c1eb68"
+    },
+    {
+      "preset": "full",
+      "case": "math_argument_dominates_j-argument-dominates_scale1000_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "f34af7c30d008e556f3e721ff4f2948d9ddb0f0f1250905fe28e534bce1cd63a"
+    },
+    {
+      "preset": "full",
+      "case": "math_argument_dominates_j-argument-dominates_scale1000_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "64fdce20e1d8a02028650996e4522301b4905357e457ea31a34443e2c2441904"
+    },
+    {
+      "preset": "full",
+      "case": "math_argument_dominates_j-argument-dominates_scale1000_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "f34af7c30d008e556f3e721ff4f2948d9ddb0f0f1250905fe28e534bce1cd63a"
+    },
+    {
+      "preset": "full",
+      "case": "math_argument_dominates_j-argument-dominates_scale1000_repeated_x3",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "f34af7c30d008e556f3e721ff4f2948d9ddb0f0f1250905fe28e534bce1cd63a"
+    },
+    {
+      "preset": "full",
+      "case": "math_argument_dominates_j-argument-dominates_scale1000_repeated_x3",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "64fdce20e1d8a02028650996e4522301b4905357e457ea31a34443e2c2441904"
+    },
+    {
+      "preset": "full",
+      "case": "math_argument_dominates_j-argument-dominates_scale1000_repeated_x3",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "f34af7c30d008e556f3e721ff4f2948d9ddb0f0f1250905fe28e534bce1cd63a"
+    },
+    {
+      "preset": "full",
+      "case": "math_near_root_j-near-root_scale20_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "full",
+      "case": "math_near_root_j-near-root_scale20_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "full",
+      "case": "math_near_root_j-near-root_scale20_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "full",
+      "case": "math_near_root_j-near-root_scale20_repeated_x50",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "full",
+      "case": "math_near_root_j-near-root_scale20_repeated_x50",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "full",
+      "case": "math_near_root_j-near-root_scale20_repeated_x50",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "full",
+      "case": "math_near_root_j-near-root_scale100_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "bea93b8cc52022abab81f9a693897af7a8dc4859c1626548d00ccf6cd0a859e4"
+    },
+    {
+      "preset": "full",
+      "case": "math_near_root_j-near-root_scale100_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "91da5164e301eee3efa45b32d1385a85d1bb2ba43f6c838e52f95403f6250710"
+    },
+    {
+      "preset": "full",
+      "case": "math_near_root_j-near-root_scale100_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "02b142a0e22d532d0fcf80c9a38f85bcbcaa4b75b6c2b0b00c73a5f646e4adbb"
+    },
+    {
+      "preset": "full",
+      "case": "math_near_root_j-near-root_scale100_repeated_x20",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "bea93b8cc52022abab81f9a693897af7a8dc4859c1626548d00ccf6cd0a859e4"
+    },
+    {
+      "preset": "full",
+      "case": "math_near_root_j-near-root_scale100_repeated_x20",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "91da5164e301eee3efa45b32d1385a85d1bb2ba43f6c838e52f95403f6250710"
+    },
+    {
+      "preset": "full",
+      "case": "math_near_root_j-near-root_scale100_repeated_x20",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "02b142a0e22d532d0fcf80c9a38f85bcbcaa4b75b6c2b0b00c73a5f646e4adbb"
+    },
+    {
+      "preset": "full",
+      "case": "math_near_root_j-near-root_scale1000_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "b2164d7c82e95b4271f4938757d9bc9a598ce996b5ad4032593e57844061b484"
+    },
+    {
+      "preset": "full",
+      "case": "math_near_root_j-near-root_scale1000_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "9969e7511ccb80927d8f4479748ccbf2987a7a1a5d00873cf0aa2b087eaaac76"
+    },
+    {
+      "preset": "full",
+      "case": "math_near_root_j-near-root_scale1000_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "b2164d7c82e95b4271f4938757d9bc9a598ce996b5ad4032593e57844061b484"
+    },
+    {
+      "preset": "full",
+      "case": "math_near_root_j-near-root_scale1000_repeated_x3",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "b2164d7c82e95b4271f4938757d9bc9a598ce996b5ad4032593e57844061b484"
+    },
+    {
+      "preset": "full",
+      "case": "math_near_root_j-near-root_scale1000_repeated_x3",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "9969e7511ccb80927d8f4479748ccbf2987a7a1a5d00873cf0aa2b087eaaac76"
+    },
+    {
+      "preset": "full",
+      "case": "math_near_root_j-near-root_scale1000_repeated_x3",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "b2164d7c82e95b4271f4938757d9bc9a598ce996b5ad4032593e57844061b484"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_s-negative_scale20_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "b5445a22c6d8bc5e8bd41fae0087559f56bef6d7bf5d90ad91e8dd33d24b5318"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_s-negative_scale20_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "b5445a22c6d8bc5e8bd41fae0087559f56bef6d7bf5d90ad91e8dd33d24b5318"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_s-negative_scale20_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "b5445a22c6d8bc5e8bd41fae0087559f56bef6d7bf5d90ad91e8dd33d24b5318"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_s-negative_scale20_repeated_x44",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "b5445a22c6d8bc5e8bd41fae0087559f56bef6d7bf5d90ad91e8dd33d24b5318"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_s-negative_scale20_repeated_x44",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "b5445a22c6d8bc5e8bd41fae0087559f56bef6d7bf5d90ad91e8dd33d24b5318"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_s-negative_scale20_repeated_x44",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "b5445a22c6d8bc5e8bd41fae0087559f56bef6d7bf5d90ad91e8dd33d24b5318"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_s-negative_scale100_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "64d11ebaeec1a0a5c3320cf927f757caff810ef3d2c6283bc8adf889b99da4c3"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_s-negative_scale100_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "f2bb5f62b5d50d66519b181dbd2692b9ca11186e1d52626310aca4db668dc6ff"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_s-negative_scale100_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "64d11ebaeec1a0a5c3320cf927f757caff810ef3d2c6283bc8adf889b99da4c3"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_s-negative_scale100_repeated_x18",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "64d11ebaeec1a0a5c3320cf927f757caff810ef3d2c6283bc8adf889b99da4c3"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_s-negative_scale100_repeated_x18",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "f2bb5f62b5d50d66519b181dbd2692b9ca11186e1d52626310aca4db668dc6ff"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_s-negative_scale100_repeated_x18",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "64d11ebaeec1a0a5c3320cf927f757caff810ef3d2c6283bc8adf889b99da4c3"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_s-negative_scale1000_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "26c991ba504fe6f0ed20cd01ba4ace84a2b40e232a5d33cf620fc98071405017"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_s-negative_scale1000_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "26c991ba504fe6f0ed20cd01ba4ace84a2b40e232a5d33cf620fc98071405017"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_s-negative_scale1000_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "26c991ba504fe6f0ed20cd01ba4ace84a2b40e232a5d33cf620fc98071405017"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_s-negative_scale1000_repeated_x2",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "26c991ba504fe6f0ed20cd01ba4ace84a2b40e232a5d33cf620fc98071405017"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_s-negative_scale1000_repeated_x2",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "26c991ba504fe6f0ed20cd01ba4ace84a2b40e232a5d33cf620fc98071405017"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_s-negative_scale1000_repeated_x2",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "26c991ba504fe6f0ed20cd01ba4ace84a2b40e232a5d33cf620fc98071405017"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_c-negative_scale20_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "14367369a91b20f797c9d1a884b83838952e542c51b9cdac697fd84a13aaf90d"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_c-negative_scale20_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "14367369a91b20f797c9d1a884b83838952e542c51b9cdac697fd84a13aaf90d"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_c-negative_scale20_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "14367369a91b20f797c9d1a884b83838952e542c51b9cdac697fd84a13aaf90d"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_c-negative_scale20_repeated_x44",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "14367369a91b20f797c9d1a884b83838952e542c51b9cdac697fd84a13aaf90d"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_c-negative_scale20_repeated_x44",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "14367369a91b20f797c9d1a884b83838952e542c51b9cdac697fd84a13aaf90d"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_c-negative_scale20_repeated_x44",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "14367369a91b20f797c9d1a884b83838952e542c51b9cdac697fd84a13aaf90d"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_c-negative_scale100_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "e9f041b4b03db5b89dd23d911c9b148224b755da4b22d0d5d610b0bae19ca15d"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_c-negative_scale100_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "e9f041b4b03db5b89dd23d911c9b148224b755da4b22d0d5d610b0bae19ca15d"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_c-negative_scale100_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "e9f041b4b03db5b89dd23d911c9b148224b755da4b22d0d5d610b0bae19ca15d"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_c-negative_scale100_repeated_x18",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "e9f041b4b03db5b89dd23d911c9b148224b755da4b22d0d5d610b0bae19ca15d"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_c-negative_scale100_repeated_x18",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "e9f041b4b03db5b89dd23d911c9b148224b755da4b22d0d5d610b0bae19ca15d"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_c-negative_scale100_repeated_x18",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "e9f041b4b03db5b89dd23d911c9b148224b755da4b22d0d5d610b0bae19ca15d"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_c-negative_scale1000_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "a9fd70eed8fa20d79f3a96990bbd87c85d10c0d9b74348cb9f0dd48796514b41"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_c-negative_scale1000_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "9257c9c2a7d4c4dcbc9ea025d339873d8296c887a49739c4adfc004776ac30d6"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_c-negative_scale1000_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "a9fd70eed8fa20d79f3a96990bbd87c85d10c0d9b74348cb9f0dd48796514b41"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_c-negative_scale1000_repeated_x2",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "a9fd70eed8fa20d79f3a96990bbd87c85d10c0d9b74348cb9f0dd48796514b41"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_c-negative_scale1000_repeated_x2",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "9257c9c2a7d4c4dcbc9ea025d339873d8296c887a49739c4adfc004776ac30d6"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_c-negative_scale1000_repeated_x2",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "a9fd70eed8fa20d79f3a96990bbd87c85d10c0d9b74348cb9f0dd48796514b41"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_a-negative_scale20_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "f6624ae2c18077db13a15cefd78a9b0d8ac8ec95c44c008a4015bc6218d89c7a"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_a-negative_scale20_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "d2cd4471cd1ddb7fe1b5bfd4479a148c21ea213876e306e73f7161e50f4e0460"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_a-negative_scale20_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "f6624ae2c18077db13a15cefd78a9b0d8ac8ec95c44c008a4015bc6218d89c7a"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_a-negative_scale20_repeated_x44",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "f6624ae2c18077db13a15cefd78a9b0d8ac8ec95c44c008a4015bc6218d89c7a"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_a-negative_scale20_repeated_x44",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "d2cd4471cd1ddb7fe1b5bfd4479a148c21ea213876e306e73f7161e50f4e0460"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_a-negative_scale20_repeated_x44",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "f6624ae2c18077db13a15cefd78a9b0d8ac8ec95c44c008a4015bc6218d89c7a"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_a-negative_scale100_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "832059a6aa26ae60e91d98f608a7aec1ae8c1c82f00dbf90667e0da4a490ebc3"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_a-negative_scale100_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "5d137c15e7fd0b6aef5a7a7a9fde0f80c693a0c9cc4295687caf2114e33ebaeb"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_a-negative_scale100_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "832059a6aa26ae60e91d98f608a7aec1ae8c1c82f00dbf90667e0da4a490ebc3"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_a-negative_scale100_repeated_x18",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "832059a6aa26ae60e91d98f608a7aec1ae8c1c82f00dbf90667e0da4a490ebc3"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_a-negative_scale100_repeated_x18",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "5d137c15e7fd0b6aef5a7a7a9fde0f80c693a0c9cc4295687caf2114e33ebaeb"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_a-negative_scale100_repeated_x18",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "832059a6aa26ae60e91d98f608a7aec1ae8c1c82f00dbf90667e0da4a490ebc3"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_a-negative_scale1000_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "03203bdf9543a93d09ed413eeb9bb37c001618900008814657ee391d7402663c"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_a-negative_scale1000_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "03203bdf9543a93d09ed413eeb9bb37c001618900008814657ee391d7402663c"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_a-negative_scale1000_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "03203bdf9543a93d09ed413eeb9bb37c001618900008814657ee391d7402663c"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_a-negative_scale1000_repeated_x2",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "03203bdf9543a93d09ed413eeb9bb37c001618900008814657ee391d7402663c"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_a-negative_scale1000_repeated_x2",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "03203bdf9543a93d09ed413eeb9bb37c001618900008814657ee391d7402663c"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_a-negative_scale1000_repeated_x2",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "03203bdf9543a93d09ed413eeb9bb37c001618900008814657ee391d7402663c"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_l-tenth_scale20_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "323956eb083b2422b0a4817123cf225dffccd913a58b9f80b02d87d13b014748"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_l-tenth_scale20_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "1528b120c057f3db888559b9f1eeb8eecd21686de6d184ade33039aed3b2de81"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_l-tenth_scale20_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "323956eb083b2422b0a4817123cf225dffccd913a58b9f80b02d87d13b014748"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_l-tenth_scale20_repeated_x44",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "323956eb083b2422b0a4817123cf225dffccd913a58b9f80b02d87d13b014748"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_l-tenth_scale20_repeated_x44",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "1528b120c057f3db888559b9f1eeb8eecd21686de6d184ade33039aed3b2de81"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_l-tenth_scale20_repeated_x44",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "323956eb083b2422b0a4817123cf225dffccd913a58b9f80b02d87d13b014748"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_l-tenth_scale100_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "5041359e497a1f6fbebe85d902bd11672dc0dec1804a6dec1b2a2be0e9e21074"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_l-tenth_scale100_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "5041359e497a1f6fbebe85d902bd11672dc0dec1804a6dec1b2a2be0e9e21074"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_l-tenth_scale100_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "5041359e497a1f6fbebe85d902bd11672dc0dec1804a6dec1b2a2be0e9e21074"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_l-tenth_scale100_repeated_x18",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "5041359e497a1f6fbebe85d902bd11672dc0dec1804a6dec1b2a2be0e9e21074"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_l-tenth_scale100_repeated_x18",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "5041359e497a1f6fbebe85d902bd11672dc0dec1804a6dec1b2a2be0e9e21074"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_l-tenth_scale100_repeated_x18",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "5041359e497a1f6fbebe85d902bd11672dc0dec1804a6dec1b2a2be0e9e21074"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_l-tenth_scale1000_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "81d44cda1666f04cb3162909cd051dad9085e535421635a5360da746e934cb48"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_l-tenth_scale1000_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "21542473f439f27179c041b94b4476128d4d456407d4792ed5cd39e250cd3667"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_l-tenth_scale1000_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "81d44cda1666f04cb3162909cd051dad9085e535421635a5360da746e934cb48"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_l-tenth_scale1000_repeated_x2",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "81d44cda1666f04cb3162909cd051dad9085e535421635a5360da746e934cb48"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_l-tenth_scale1000_repeated_x2",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "21542473f439f27179c041b94b4476128d4d456407d4792ed5cd39e250cd3667"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_l-tenth_scale1000_repeated_x2",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "81d44cda1666f04cb3162909cd051dad9085e535421635a5360da746e934cb48"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_e-negative-one_scale20_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "26de11a58c498e9468fe7dd608bb6ce513e2af1cb73034485286d8f129290868"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_e-negative-one_scale20_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "9f16f4659420226c12161cb88cd00e724babbb45605b34ce23e659780c246dfa"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_e-negative-one_scale20_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "26de11a58c498e9468fe7dd608bb6ce513e2af1cb73034485286d8f129290868"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_e-negative-one_scale20_repeated_x44",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "26de11a58c498e9468fe7dd608bb6ce513e2af1cb73034485286d8f129290868"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_e-negative-one_scale20_repeated_x44",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "9f16f4659420226c12161cb88cd00e724babbb45605b34ce23e659780c246dfa"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_e-negative-one_scale20_repeated_x44",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "26de11a58c498e9468fe7dd608bb6ce513e2af1cb73034485286d8f129290868"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_e-negative-one_scale100_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "7060e2f54cc3af7b095c631e06e997c225e104fdddf4991bcc3d46560a03b98b"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_e-negative-one_scale100_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "7060e2f54cc3af7b095c631e06e997c225e104fdddf4991bcc3d46560a03b98b"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_e-negative-one_scale100_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "7060e2f54cc3af7b095c631e06e997c225e104fdddf4991bcc3d46560a03b98b"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_e-negative-one_scale100_repeated_x18",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "7060e2f54cc3af7b095c631e06e997c225e104fdddf4991bcc3d46560a03b98b"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_e-negative-one_scale100_repeated_x18",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "7060e2f54cc3af7b095c631e06e997c225e104fdddf4991bcc3d46560a03b98b"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_e-negative-one_scale100_repeated_x18",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "7060e2f54cc3af7b095c631e06e997c225e104fdddf4991bcc3d46560a03b98b"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_e-negative-one_scale1000_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "ace29f49e3e753947fe9d3fda18c75b3552f3047883f95d0a706c9f99fe82a1b"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_e-negative-one_scale1000_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "ace29f49e3e753947fe9d3fda18c75b3552f3047883f95d0a706c9f99fe82a1b"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_e-negative-one_scale1000_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "ace29f49e3e753947fe9d3fda18c75b3552f3047883f95d0a706c9f99fe82a1b"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_e-negative-one_scale1000_repeated_x2",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "ace29f49e3e753947fe9d3fda18c75b3552f3047883f95d0a706c9f99fe82a1b"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_e-negative-one_scale1000_repeated_x2",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "ace29f49e3e753947fe9d3fda18c75b3552f3047883f95d0a706c9f99fe82a1b"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_e-negative-one_scale1000_repeated_x2",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "ace29f49e3e753947fe9d3fda18c75b3552f3047883f95d0a706c9f99fe82a1b"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_j-one-one_scale20_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "c9d03aeb28c76cbcabc2206d61d196e04c8facb11442ab5a8c759ba1ed06adea"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_j-one-one_scale20_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "7f3fe969220837b12590f6095e22a0150b48619925adcf51d870e3b98b8f4099"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_j-one-one_scale20_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "c9d03aeb28c76cbcabc2206d61d196e04c8facb11442ab5a8c759ba1ed06adea"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_j-one-one_scale20_repeated_x44",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "c9d03aeb28c76cbcabc2206d61d196e04c8facb11442ab5a8c759ba1ed06adea"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_j-one-one_scale20_repeated_x44",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "7f3fe969220837b12590f6095e22a0150b48619925adcf51d870e3b98b8f4099"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_j-one-one_scale20_repeated_x44",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "c9d03aeb28c76cbcabc2206d61d196e04c8facb11442ab5a8c759ba1ed06adea"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_j-one-one_scale100_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "17d41899329f887fd935106a1b0538f19ac39d481c25d5179fcdba1c09911c52"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_j-one-one_scale100_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "7c58f15e3f49400d4044be1626543efe0546f3ee22cb39a9afa85efea91cb630"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_j-one-one_scale100_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "17d41899329f887fd935106a1b0538f19ac39d481c25d5179fcdba1c09911c52"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_j-one-one_scale100_repeated_x18",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "17d41899329f887fd935106a1b0538f19ac39d481c25d5179fcdba1c09911c52"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_j-one-one_scale100_repeated_x18",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "7c58f15e3f49400d4044be1626543efe0546f3ee22cb39a9afa85efea91cb630"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_j-one-one_scale100_repeated_x18",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "17d41899329f887fd935106a1b0538f19ac39d481c25d5179fcdba1c09911c52"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_j-one-one_scale1000_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "060361cef45a00633603db6c73f824fb021d96f1f696627a6dc4139df827789c"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_j-one-one_scale1000_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "85a85bd86d3f05d3fdeabe4fe55d4240e69777197935740b8e3575c166725592"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_j-one-one_scale1000_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "060361cef45a00633603db6c73f824fb021d96f1f696627a6dc4139df827789c"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_j-one-one_scale1000_repeated_x2",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "060361cef45a00633603db6c73f824fb021d96f1f696627a6dc4139df827789c"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_j-one-one_scale1000_repeated_x2",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "85a85bd86d3f05d3fdeabe4fe55d4240e69777197935740b8e3575c166725592"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_regular_j-one-one_scale1000_repeated_x2",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "060361cef45a00633603db6c73f824fb021d96f1f696627a6dc4139df827789c"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_turning_j-turning_symmetric_scale20_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "686c449de41ab6bcff7955c96515dcb15aecc8a362964645ce880a301020c6ec"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_turning_j-turning_symmetric_scale20_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "686c449de41ab6bcff7955c96515dcb15aecc8a362964645ce880a301020c6ec"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_turning_j-turning_symmetric_scale20_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "686c449de41ab6bcff7955c96515dcb15aecc8a362964645ce880a301020c6ec"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_turning_j-turning_symmetric_scale20_repeated_x44",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "686c449de41ab6bcff7955c96515dcb15aecc8a362964645ce880a301020c6ec"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_turning_j-turning_symmetric_scale20_repeated_x44",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "686c449de41ab6bcff7955c96515dcb15aecc8a362964645ce880a301020c6ec"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_turning_j-turning_symmetric_scale20_repeated_x44",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "686c449de41ab6bcff7955c96515dcb15aecc8a362964645ce880a301020c6ec"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_turning_j-turning_symmetric_scale100_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "0f9ae78c78c9be997c811885431de0a6c917139556690b49dbd968abcf6ebb3e"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_turning_j-turning_symmetric_scale100_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "0f9ae78c78c9be997c811885431de0a6c917139556690b49dbd968abcf6ebb3e"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_turning_j-turning_symmetric_scale100_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "0f9ae78c78c9be997c811885431de0a6c917139556690b49dbd968abcf6ebb3e"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_turning_j-turning_symmetric_scale100_repeated_x18",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "0f9ae78c78c9be997c811885431de0a6c917139556690b49dbd968abcf6ebb3e"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_turning_j-turning_symmetric_scale100_repeated_x18",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "0f9ae78c78c9be997c811885431de0a6c917139556690b49dbd968abcf6ebb3e"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_turning_j-turning_symmetric_scale100_repeated_x18",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "0f9ae78c78c9be997c811885431de0a6c917139556690b49dbd968abcf6ebb3e"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_turning_j-turning_symmetric_scale1000_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "c83bd242ac15645b381027f6d95f1729b4609841f2c4b0d10f493d0b07fced93"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_turning_j-turning_symmetric_scale1000_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "e6114893b8b81a3c9beefbe9447751edeb87476641c06a4bd5dd73174e013511"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_turning_j-turning_symmetric_scale1000_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "c83bd242ac15645b381027f6d95f1729b4609841f2c4b0d10f493d0b07fced93"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_turning_j-turning_symmetric_scale1000_repeated_x2",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "c83bd242ac15645b381027f6d95f1729b4609841f2c4b0d10f493d0b07fced93"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_turning_j-turning_symmetric_scale1000_repeated_x2",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "e6114893b8b81a3c9beefbe9447751edeb87476641c06a4bd5dd73174e013511"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_turning_j-turning_symmetric_scale1000_repeated_x2",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "c83bd242ac15645b381027f6d95f1729b4609841f2c4b0d10f493d0b07fced93"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_order_dominates_j-order-dominates_symmetric_scale20_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_order_dominates_j-order-dominates_symmetric_scale20_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_order_dominates_j-order-dominates_symmetric_scale20_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_order_dominates_j-order-dominates_symmetric_scale20_repeated_x44",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_order_dominates_j-order-dominates_symmetric_scale20_repeated_x44",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_order_dominates_j-order-dominates_symmetric_scale20_repeated_x44",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_order_dominates_j-order-dominates_symmetric_scale100_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_order_dominates_j-order-dominates_symmetric_scale100_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_order_dominates_j-order-dominates_symmetric_scale100_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_order_dominates_j-order-dominates_symmetric_scale100_repeated_x18",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_order_dominates_j-order-dominates_symmetric_scale100_repeated_x18",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_order_dominates_j-order-dominates_symmetric_scale100_repeated_x18",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_order_dominates_j-order-dominates_symmetric_scale1000_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "f0b299a46f27261c6f5d4900e9b1a4c82fbbb9365d8772830d67d753989f7fa1"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_order_dominates_j-order-dominates_symmetric_scale1000_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "f0b299a46f27261c6f5d4900e9b1a4c82fbbb9365d8772830d67d753989f7fa1"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_order_dominates_j-order-dominates_symmetric_scale1000_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "f0b299a46f27261c6f5d4900e9b1a4c82fbbb9365d8772830d67d753989f7fa1"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_order_dominates_j-order-dominates_symmetric_scale1000_repeated_x2",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "f0b299a46f27261c6f5d4900e9b1a4c82fbbb9365d8772830d67d753989f7fa1"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_order_dominates_j-order-dominates_symmetric_scale1000_repeated_x2",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "f0b299a46f27261c6f5d4900e9b1a4c82fbbb9365d8772830d67d753989f7fa1"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_order_dominates_j-order-dominates_symmetric_scale1000_repeated_x2",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "f0b299a46f27261c6f5d4900e9b1a4c82fbbb9365d8772830d67d753989f7fa1"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_argument_dominates_j-argument-dominates_symmetric_scale20_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "b2b6d27657e36e45fe0876347705f61d818e21a402edecf66059fd2ccd83d7c2"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_argument_dominates_j-argument-dominates_symmetric_scale20_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "b2b6d27657e36e45fe0876347705f61d818e21a402edecf66059fd2ccd83d7c2"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_argument_dominates_j-argument-dominates_symmetric_scale20_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "b2b6d27657e36e45fe0876347705f61d818e21a402edecf66059fd2ccd83d7c2"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_argument_dominates_j-argument-dominates_symmetric_scale20_repeated_x44",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "b2b6d27657e36e45fe0876347705f61d818e21a402edecf66059fd2ccd83d7c2"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_argument_dominates_j-argument-dominates_symmetric_scale20_repeated_x44",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "b2b6d27657e36e45fe0876347705f61d818e21a402edecf66059fd2ccd83d7c2"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_argument_dominates_j-argument-dominates_symmetric_scale20_repeated_x44",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "b2b6d27657e36e45fe0876347705f61d818e21a402edecf66059fd2ccd83d7c2"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_argument_dominates_j-argument-dominates_symmetric_scale100_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "62c04899dd3e9e5890980e161889195124424d29a008714106c8a12f73c1eb68"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_argument_dominates_j-argument-dominates_symmetric_scale100_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "2c3556f3df7b12b8b2211b006343428b099ed4267fc793ad5ba5b4d4c3d0459b"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_argument_dominates_j-argument-dominates_symmetric_scale100_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "62c04899dd3e9e5890980e161889195124424d29a008714106c8a12f73c1eb68"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_argument_dominates_j-argument-dominates_symmetric_scale100_repeated_x18",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "62c04899dd3e9e5890980e161889195124424d29a008714106c8a12f73c1eb68"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_argument_dominates_j-argument-dominates_symmetric_scale100_repeated_x18",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "2c3556f3df7b12b8b2211b006343428b099ed4267fc793ad5ba5b4d4c3d0459b"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_argument_dominates_j-argument-dominates_symmetric_scale100_repeated_x18",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "62c04899dd3e9e5890980e161889195124424d29a008714106c8a12f73c1eb68"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_argument_dominates_j-argument-dominates_symmetric_scale1000_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "f34af7c30d008e556f3e721ff4f2948d9ddb0f0f1250905fe28e534bce1cd63a"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_argument_dominates_j-argument-dominates_symmetric_scale1000_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "64fdce20e1d8a02028650996e4522301b4905357e457ea31a34443e2c2441904"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_argument_dominates_j-argument-dominates_symmetric_scale1000_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "f34af7c30d008e556f3e721ff4f2948d9ddb0f0f1250905fe28e534bce1cd63a"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_argument_dominates_j-argument-dominates_symmetric_scale1000_repeated_x2",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "f34af7c30d008e556f3e721ff4f2948d9ddb0f0f1250905fe28e534bce1cd63a"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_argument_dominates_j-argument-dominates_symmetric_scale1000_repeated_x2",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "64fdce20e1d8a02028650996e4522301b4905357e457ea31a34443e2c2441904"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_argument_dominates_j-argument-dominates_symmetric_scale1000_repeated_x2",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "f34af7c30d008e556f3e721ff4f2948d9ddb0f0f1250905fe28e534bce1cd63a"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_near_root_j-near-root_symmetric_scale20_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_near_root_j-near-root_symmetric_scale20_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_near_root_j-near-root_symmetric_scale20_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_near_root_j-near-root_symmetric_scale20_repeated_x44",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_near_root_j-near-root_symmetric_scale20_repeated_x44",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_near_root_j-near-root_symmetric_scale20_repeated_x44",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_near_root_j-near-root_symmetric_scale100_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "bea93b8cc52022abab81f9a693897af7a8dc4859c1626548d00ccf6cd0a859e4"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_near_root_j-near-root_symmetric_scale100_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "91da5164e301eee3efa45b32d1385a85d1bb2ba43f6c838e52f95403f6250710"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_near_root_j-near-root_symmetric_scale100_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "02b142a0e22d532d0fcf80c9a38f85bcbcaa4b75b6c2b0b00c73a5f646e4adbb"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_near_root_j-near-root_symmetric_scale100_repeated_x18",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "bea93b8cc52022abab81f9a693897af7a8dc4859c1626548d00ccf6cd0a859e4"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_near_root_j-near-root_symmetric_scale100_repeated_x18",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "91da5164e301eee3efa45b32d1385a85d1bb2ba43f6c838e52f95403f6250710"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_near_root_j-near-root_symmetric_scale100_repeated_x18",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "02b142a0e22d532d0fcf80c9a38f85bcbcaa4b75b6c2b0b00c73a5f646e4adbb"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_near_root_j-near-root_symmetric_scale1000_one_shot_x1",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "b2164d7c82e95b4271f4938757d9bc9a598ce996b5ad4032593e57844061b484"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_near_root_j-near-root_symmetric_scale1000_one_shot_x1",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "9969e7511ccb80927d8f4479748ccbf2987a7a1a5d00873cf0aa2b087eaaac76"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_near_root_j-near-root_symmetric_scale1000_one_shot_x1",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "b2164d7c82e95b4271f4938757d9bc9a598ce996b5ad4032593e57844061b484"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_near_root_j-near-root_symmetric_scale1000_repeated_x2",
+      "role": "gd-portable",
+      "checked": true,
+      "output_sha256": "b2164d7c82e95b4271f4938757d9bc9a598ce996b5ad4032593e57844061b484"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_near_root_j-near-root_symmetric_scale1000_repeated_x2",
+      "role": "howard-standard",
+      "checked": true,
+      "output_sha256": "9969e7511ccb80927d8f4479748ccbf2987a7a1a5d00873cf0aa2b087eaaac76"
+    },
+    {
+      "preset": "holdout",
+      "case": "math_near_root_j-near-root_symmetric_scale1000_repeated_x2",
+      "role": "howard-portable",
+      "checked": true,
+      "output_sha256": "b2164d7c82e95b4271f4938757d9bc9a598ce996b5ad4032593e57844061b484"
+    }
+  ]
+}

@@ -1,14 +1,20 @@
+# Broad checkpoint request: certified trig/Bessel source b246ec7.
 name: bc native mathematical comparisons
 on:
   pull_request:
     branches: [main, 'codex/**']
     paths: ['src/**', 'libgdsup/**', 'CMakeLists.txt', 'cmake/**', '.github/workflows/bc-math-performance.yml']
   push:
-    branches: [main]
+    branches: [main, 'codex/bc-math-broad/**']
     paths: ['src/**', 'libgdsup/**', 'CMakeLists.txt', 'cmake/**', '.github/workflows/bc-math-performance.yml']
   schedule:
     - cron: '17 3 * * 2'
   workflow_dispatch:
+    inputs:
+      base:
+        description: Immutable mathematical baseline checkpoint
+        required: false
+        default: '78a732a6c1f995b45b140d4b86d8d3af57354804'
 permissions:
   contents: read
 concurrency:
@@ -16,16 +22,20 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   paired:
-    name: Native math bc / ${{ matrix.image }}
+    name: Native math bc / ${{ matrix.image }}${{ matrix.preset == 'holdout' && ' / holdout' || '' }}
     runs-on: ${{ matrix.image }}
-    timeout-minutes: 90
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
         image: [ubuntu-24.04, windows-2025, macos-15]
+        # Each broad preset gets the existing per-job bounds and same-job pairs.
+        preset: ${{ fromJSON((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (startsWith(github.ref, 'refs/heads/codex/bc-math-broad/') || startsWith(github.head_ref, 'codex/bc-math-broad/')) || startsWith(github.head_ref, 'codex/bc-native-prepared/')) && '["full","holdout"]' || '["full"]') }}
     env:
+      BC_BASE: ${{ github.event.pull_request.base.sha || inputs.base || '78a732a6c1f995b45b140d4b86d8d3af57354804' }}
+      BC_PRESET: ${{ matrix.preset }}
       BC_CANDIDATE: ${{ github.event.pull_request.head.sha || github.sha }}
-      BC_BROAD: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || startsWith(github.head_ref, 'codex/bc-native-prepared/') }}
+      BC_BROAD: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || startsWith(github.head_ref, 'codex/bc-native-prepared/') || (startsWith(github.ref, 'refs/heads/codex/bc-math-broad/') || startsWith(github.head_ref, 'codex/bc-math-broad/')) }}
       # Opt in only this experimental topic; controls retain their source defaults.
       BC_PREPARED: ${{ startsWith(github.head_ref, 'codex/bc-native-prepared/') }}
     steps:
@@ -50,8 +60,8 @@ jobs:
       - name: Build independent controls and measure checked native math roles
         shell: pwsh
         run: |
-          $arguments = @('src/bc/scripts/benchmark-math-ci.py', '--source', $env:GITHUB_WORKSPACE, '--candidate', $env:BC_CANDIDATE, '--output', 'bc-math-results')
-          if ($env:BC_BROAD -eq 'true') { $arguments += '--broad' }
+          $arguments = @('src/bc/scripts/benchmark-math-ci.py', '--source', $env:GITHUB_WORKSPACE, '--candidate', $env:BC_CANDIDATE, '--base', $env:BC_BASE, '--total-seconds', '6600', '--output', 'bc-math-results')
+          if ($env:BC_BROAD -eq 'true') { $arguments += @('--broad', '--broad-preset', $env:BC_PRESET) }
           if ($env:BC_PREPARED -eq 'true') { $arguments += '--candidate-prepared-divisors' }
           python @arguments
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
@@ -59,7 +69,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: bc-math-native-${{ matrix.image }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: bc-math-native-${{ matrix.image }}${{ matrix.preset == 'holdout' && '-holdout' || '' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: bc-math-results/evidence/
           if-no-files-found: error
           retention-days: 30

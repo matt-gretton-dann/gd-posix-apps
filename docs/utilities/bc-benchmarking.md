@@ -421,3 +421,10 @@ fifty earlier quick/full/held-out dictionaries and seeds at source
 The maintained arithmetic corpus now has 56 cases. These additions alone make
 no speedup claim; matched release observations and separate work/allocation
 attribution are required.
+
+
+Native mathematical candidate/base and diagnostic protocols are documented in
+[bc-native-math-benchmarks.md](bc-native-math-benchmarks.md). The separate
+`build-gd-bc.py --diagnostic-profile` mode produces an explicitly instrumented
+configuration that this elapsed harness rejects. Candidate-only logical counter
+reports and native CPU/RSS observations remain separate from release ratios.

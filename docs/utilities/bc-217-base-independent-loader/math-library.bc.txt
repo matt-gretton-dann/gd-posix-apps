@@ -1,0 +1,355 @@
+/* POSIX bc -l library, evaluated as ordinary portable source.
+   SPDX-License-Identifier: Apache-2.0
+
+   Only the six public function names are defined. All work variables are
+   automatic or parameters; scale and ibase are saved and restored. Public
+   calls between functions use normal bc binding, so user redefinition has
+   ordinary language semantics. No global cache or VM assistance is used.
+
+   Each function computes at magnitude-dependent guard precision, then
+   rounds the guarded result to entry scale. Working-scale readback rejects
+   a host that silently clamps the request, using an ordinary arithmetic error.
+   See the accompanying numerical
+   error-budget document; a vanishing term alone is not an accuracy proof.
+*/
+/* Single-digit constants keep initialization independent of the caller's base. */
+scale=2*A
+
+/* Arctangent: reciprocal and half-angle reduction, alternating series. */
+define a(x) {
+  auto b,i,k,n,p,q,r,s,t,u,v,w;
+  /* b/s save base/scale; w is precision; n/v are sign/reciprocal flags.
+     k reconstructs half angles; p is pi/2; q/t/u are ratio, power and term. */
+  b=ibase
+  ibase=A
+  s=scale
+  scale=0
+  w=s+2*length(s+scale(x)+length(x)+1)+24
+  scale=w
+  if (scale!=w) return(1/0)
+  n=0
+  if (x<0) {
+    n=1
+    x= -x
+  }
+  v=0
+  if (x>1) {
+    v=1
+    x=1/x
+    p=2*a(1)
+  }
+  x=x/1
+  k=1
+  while (x>.1) {
+    x=x/(1+sqrt(1+x*x))
+    k*=2
+  }
+  q= -x*x
+  t=x
+  r=x
+  i=3
+  while (t!=0) {
+    t=t*q
+    u=t/i
+    r+=u
+    i+=2
+  }
+  r=r*k
+  if (v==1) r=p-r
+  if (n==1) r= -r
+  t=10^(-s)/2
+  if (r>=0) r+=t
+  if (r<0) r-=t
+  scale=s
+  r=r/1
+  ibase=b
+  return(r)
+}
+
+/* Exponential: positive small-argument series and repeated squaring. */
+define e(x) {
+  auto b,i,k,n,r,s,t,w;
+  /* b/s save base/scale; w is precision; n marks a negative argument.
+     k counts halvings; r/t/i are sum, Taylor term and factorial index. */
+  b=ibase
+  ibase=A
+  s=scale
+  n=0
+  if (x<0) {
+    n=1
+    x= -x
+  }
+  /* exp(-3*(s+1)) < 10^(-s): avoid materializing an enormous reciprocal. */
+  if (n==1) {
+    if (x>=3*(s+1)) {
+      scale=s
+      r=0/1
+      ibase=b
+      return(r)
+    }
+  }
+  scale=0
+  /* Leave precision for output magnitude, accumulated truncation and squaring. */
+  w=s+x/1+2*length(s+scale(x)+x/1+1)+24
+  scale=w
+  if (scale!=w) return(1/0)
+  k=0
+  while (x>.125) {
+    x=x/2
+    k+=1
+  }
+  r=1
+  t=1
+  i=1
+  while (t!=0) {
+    t=t*x/i
+    r+=t
+    i+=1
+  }
+  while (k>0) {
+    r=r*r
+    k-=1
+  }
+  if (n==1) r=1/r
+  t=10^(-s)/2
+  if (r>=0) r+=t
+  if (r<0) r-=t
+  scale=s
+  r=r/1
+  ibase=b
+  return(r)
+}
+
+/* Logarithm: square-root reduction and a bounded atanh series. */
+define l(x) {
+  auto b,i,k,q,r,s,t,u,w;
+  /* b/s save base/scale; w is precision; k reconstructs root reductions.
+     q/t/u are squared ratio, odd power and contribution; r is the sum. */
+  b=ibase
+  ibase=A
+  s=scale
+  scale=0
+  w=s+scale(x)+length(x)+2*length(s+scale(x)+length(x)+1)+24
+  scale=w
+  if (scale!=w) return(1/0)
+  if (x<=0) {
+    scale=s
+    r=0/1
+    ibase=b
+    return(r)
+  }
+  k=1
+  while (x<.8) {
+    x=sqrt(x)
+    k*=2
+  }
+  while (x>1.2) {
+    x=sqrt(x)
+    k*=2
+  }
+  t=(x-1)/(x+1)
+  q=t*t
+  r=t
+  i=3
+  while (t!=0) {
+    t=t*q
+    u=t/i
+    r+=u
+    i+=2
+  }
+  r=r*2*k
+  t=10^(-s)/2
+  if (r>=0) r+=t
+  if (r<0) r-=t
+  scale=s
+  r=r/1
+  ibase=b
+  return(r)
+}
+
+/* Sine: dynamically computed period and bounded alternating series. */
+define s(x) {
+  auto b,i,k,n,p,q,r,t,u,v,w;
+  /* b/u save base/scale; w is precision; n marks odd symmetry.
+     p is the period and k its quotient; q/t/r/i drive the Taylor recurrence. */
+  b=ibase
+  ibase=A
+  u=scale
+  scale=0
+  w=u+length(x)+scale(x)+2*length(u+length(x)+scale(x)+1)+24
+  scale=w
+  if (scale!=w) return(1/0)
+  n=0
+  if (x<0) {
+    n=1
+    x= -x
+  }
+  p=8*a(1)
+  scale=0
+  k=x/p
+  scale=w
+  if (scale!=w) return(1/0)
+  x=x-k*p
+  if (x>p/2) x=x-p
+  q= -x*x
+  t=x
+  r=x
+  i=2
+  while (t!=0) {
+    t=t*q/(i*(i+1))
+    r+=t
+    i+=2
+  }
+  if (n==1) r= -r
+  t=10^(-u)/2
+  if (r>=0) r+=t
+  if (r<0) r-=t
+  scale=u
+  r=r/1
+  ibase=b
+  return(r)
+}
+
+/* Cosine: dynamically computed period and bounded alternating series. */
+define c(x) {
+  auto b,i,k,p,q,r,t,u,w;
+  /* b/u save base/scale; w is precision; p is the period and k its quotient.
+     q/t/r/i drive the Taylor recurrence after even-symmetry reduction. */
+  b=ibase
+  ibase=A
+  u=scale
+  scale=0
+  w=u+length(x)+scale(x)+2*length(u+length(x)+scale(x)+1)+24
+  scale=w
+  if (scale!=w) return(1/0)
+  if (x<0) x= -x
+  p=8*a(1)
+  scale=0
+  k=x/p
+  scale=w
+  if (scale!=w) return(1/0)
+  x=x-k*p
+  if (x>p/2) x=x-p
+  q= -x*x
+  t=1
+  r=1
+  i=1
+  while (t!=0) {
+    t=t*q/(i*(i+1))
+    r+=t
+    i+=2
+  }
+  t=10^(-u)/2
+  if (r>=0) r+=t
+  if (r<0) r-=t
+  scale=u
+  r=r/1
+  ibase=b
+  return(r)
+}
+
+/* Bessel J: exact symmetries, tiny-result bound and two evaluation regimes. */
+define j(n,x) {
+  auto b,d,f,g,h,i,k,m,p,q,r,s,t,u,v,w;
+  /* b/s save base/scale; v is symmetry parity; w is working precision.
+     In the Hankel path: m=4*n*n, p/q are even/odd sums, t the coefficient,
+     k its index, h its four-step sign cycle, i/g signed/absolute factors,
+     f the contraction flag, u the phase and d the amplitude. r holds pi
+     temporarily and then the result. The ascending path reuses t/k/r. */
+  b=ibase
+  ibase=A
+  s=scale
+  scale=0
+  n=n/1
+  v=0
+  if (n<0) {
+    n= -n
+    v=n%2
+  }
+  if (x<0) {
+    x= -x
+    v=(v+n)%2
+  }
+  /* A factorial/exponential bound certifies this tiny-result regime. */
+  if (n>=3*x) {
+    if (n>=4*(s+1)) {
+      scale=s
+      r=0/1
+      ibase=b
+      return(r)
+    }
+  }
+  w=s+scale(x)+length(x)+2*length(s+scale(x)+length(x)+length(n)+1)+32
+  /* DLMF 10.17.14-15 bounds the Hankel remainder by less than three
+     first-omitted coefficients here. Abort if recurrence contraction is
+     lost before the working-scale truncation budget is met. */
+  if (x>8*(n*n+1)) {
+    scale=w
+    if (scale!=w) return(1/0)
+    m=4*n*n
+    p=1
+    q=0
+    t=1
+    k=0
+    h=0
+    f=1
+    while (t!=0) {
+      k+=1
+      i=m-(2*k-1)^2
+      g=i
+      if (g<0) g= -g
+      if (g>4*k*x) {
+        f=0
+        break
+      }
+      t=t*i/(8*k*x)
+      h+=1
+      if (h==4) h=0
+      if (h==0) p+=t
+      if (h==1) q+=t
+      if (h==2) p-=t
+      if (h==3) q-=t
+    }
+    if (f==1) {
+      r=4*a(1)
+      u=x-(n/2+.25)*r
+      d=sqrt(2/(r*x))
+      r=d*(c(u)*p-s(u)*q)
+      if (v==1) r= -r
+      t=10^(-s)/2
+      if (r>=0) r+=t
+      if (r<0) r-=t
+      scale=s
+      r=r/1
+      ibase=b
+      return(r)
+    }
+  }
+  scale=0
+  /* Cancellation needs magnitude-dependent guards in the ascending series.
+     This path is separate from the large-argument remainder test. */
+  w=s+2*(x/1)+scale(x)+length(x)+2*length(s+2*(x/1)+scale(x)+length(x)+1)+32
+  scale=w
+  if (scale!=w) return(1/0)
+  t=1
+  for (i=1;i<=n;i++) {
+    t=t*x/(2*i)
+    if (t==0) break
+  }
+  r=t
+  q= -x*x/4
+  k=1
+  while (t!=0) {
+    t=t*q/(k*(n+k))
+    r+=t
+    k+=1
+  }
+  if (v==1) r= -r
+  t=10^(-s)/2
+  if (r>=0) r+=t
+  if (r<0) r-=t
+  scale=s
+  r=r/1
+  ibase=b
+  return(r)
+}
