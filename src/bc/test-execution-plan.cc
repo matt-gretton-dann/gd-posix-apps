@@ -329,6 +329,38 @@ TEST_CASE("Typed planning rejects incomplete maps and zero layout costs",
   }
 }
 
+TEST_CASE("Typed lowering falls back for inconsistent register plans",
+          "[bc][vm][typed-results]")
+{
+  using namespace GD::Bc::Details;
+  GD::Bc::Instructions code(17, I(O::number, "7"));
+  code.emplace_back(O::eof);
+  auto const valid = typed_plan(code);
+  REQUIRE(lower_typed_executable(code, valid, true).size() == code.size());
+
+  auto plan = valid;
+  plan.indices.pop_back();
+  CHECK(lower_typed_executable(code, plan, true).empty());
+
+  plan = valid;
+  plan.number_count = 0;
+  CHECK(lower_typed_executable(code, plan, true).empty());
+  plan.number_count = TypedResultPlan::no_register;
+  CHECK(lower_typed_executable(code, plan, true).empty());
+
+  plan = valid;
+  plan.other_count = TypedResultPlan::no_register;
+  CHECK(lower_typed_executable(code, plan, true).empty());
+
+  plan = valid;
+  plan.indices.front() = valid.number_count;
+  CHECK(lower_typed_executable(code, plan, true).empty());
+
+  plan = valid;
+  plan.indices.back() = 0;  // EOF does not produce a result.
+  CHECK(lower_typed_executable(code, plan, true).empty());
+}
+
 TEST_CASE("Typed lowering separates Number results from locations arrays and strings",
           "[bc][vm][typed-results]")
 {
