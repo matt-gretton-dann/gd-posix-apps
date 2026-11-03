@@ -513,3 +513,23 @@ TEMPLATE_TEST_CASE("Divisor admission clears heap-backed noncanonical zero",
   quotient.divide(*prepared);
   REQUIRE(decimal(quotient) == "1");
 }
+
+TEMPLATE_TEST_CASE("Oversized wide padding clears an admitted divisor",
+                   "[bc][number][prepared][divisor-cache]", GD::Bc::NumberTraits16,
+                   GD::Bc::NumberTraits32)
+{
+  using Digits = GD::Bc::Details::BasicDigits<TestType>;
+  using Limb = typename Digits::NumType;
+  auto source = coefficient_text<Digits>("123456789012345678901234567890123456789012345678901");
+  typename Digits::DivisorCache cache;
+  REQUIRE(cache.lookup(source) == nullptr);
+  REQUIRE(cache.lookup(source) == nullptr);
+  REQUIRE(cache.lookup(source) != nullptr);
+  // The isolated allocator test checks repeated rejection without allocating.
+  // Keep this public-state guard in the instrumented unit mappings as well.
+  REQUIRE(cache.lookup(source, std::numeric_limits<Limb>::max()) == nullptr);
+  REQUIRE(cache.retained_limb_bytes() == 0);
+  REQUIRE(cache.lookup(source) == nullptr);
+  REQUIRE(cache.lookup(source) == nullptr);
+  REQUIRE(cache.lookup(source) != nullptr);
+}
