@@ -43,6 +43,21 @@ inspect the fresh per-decision MC/DC report as well as the asserted test outcome
 | Location saturation | Direct constructors reach maximum line/column values without enormous input files. | Feasible and asserted, never exempt for impractical natural file size. |
 | Numeric continuation and delimiter diagnostics | Malformed continuations (#240) and missing builtin/function delimiters (#242) exposed real bugs. | Feasible normal error handling, not invariant scope. |
 
+## Array length after a failed first store
+
+A first store can allocate array storage before insertion allocates its
+first entry. If insertion throws, the public VM can still observe a
+non-null array with zero entries. The isolated lifetime test sweeps
+allocation failures, queries length and the missing element after each
+failure, and retries the same VM. It also checks that destruction releases
+ordinary allocations.
+
+Focused LLVM 23.1.4 runs at `538f7086` plus this fixture passed separately
+with extensions on and off. In each mode, `VMState::array_length` recorded
+86/92 true/false outcomes for the null-storage test and 2/90 for the
+allocated-empty test. Both MC/DC conditions are covered in each run.
+This evidence is scoped to the lifetime executable's VM mappings.
+
 ## Remaining measurements
 
 Keep ON and OFF reports separate, and publish both the broad native/test-trait
