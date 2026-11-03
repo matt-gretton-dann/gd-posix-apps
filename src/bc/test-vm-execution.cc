@@ -457,3 +457,27 @@ TEST_CASE("Reused activation slots release mixed result alternatives",
   CHECK(errors.str().empty());
   CHECK(output.str() == expected);
 }
+
+TEST_CASE("Recycled registers preserve mixed alternatives and array snapshots",
+          "[bc][vm][execution][live-registers]")
+{
+  GD::Bc::Instructions code;
+  std::string expected;
+  for (unsigned n = 0; n < 40; ++n) {
+    code.emplace_back(O::array, GD::Bc::Array('a'));
+    code.emplace_back(O::load, D(-1));
+    code.emplace_back(O::print, D(-1), I::Stream::output);
+    code.emplace_back(O::string, "ready\n");
+    code.emplace_back(O::print, D(-1), I::Stream::output);
+    code.emplace_back(O::number, std::to_string(n));
+    code.emplace_back(O::number, "7");
+    code.emplace_back(O::add, D(-2), D(-1));
+    code.emplace_back(O::print, D(-1), I::Stream::output);
+    code.emplace_back(O::variable, GD::Bc::Variable('x'));
+    code.emplace_back(O::load, D(-1));
+    code.emplace_back(O::print, D(-1), I::Stream::output);
+    expected += "<ARRAY VALUES>\nready\n" + std::to_string(n + 7) + "\n0\n";
+  }
+  code.emplace_back(O::eof);
+  CHECK(execute(code) == expected);
+}

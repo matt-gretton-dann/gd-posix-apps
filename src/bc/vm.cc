@@ -70,6 +70,17 @@ private:
 using ResultBuffer =
   std::vector<ResultSlot, Profile::Allocator<ResultSlot, Profile::AllocationKind::results>>;
 
+// Keep the producer-only reference layout available without register reuse.
+// Checked execution always retains instruction-indexed slots independently.
+auto prepare_result_slots(Instructions const& code) -> ResultSlotPlan
+{
+#if GD_BC_LIVE_REGISTERS
+  return plan_live_result_slots(code, sizeof(ResultSlot));
+#else
+  return plan_result_slots(code, sizeof(ResultSlot));
+#endif
+}
+
 /** A borrowed instruction stream whose entry verification has completed.
  * Construction is confined to the verifier and persistent verified owners.
  * Instruction structure and metadata stay unchanged and outlive execution.
@@ -252,7 +263,7 @@ struct VMState
     validate(instructions);
     return PreparedInstructions(
       instructions, full_checks() ? ConsumptionPlan{} : plan_consumption(instructions, false),
-      full_checks() ? ResultSlotPlan{} : plan_result_slots(instructions, sizeof(ResultSlot)));
+      full_checks() ? ResultSlotPlan{} : prepare_result_slots(instructions));
   }
   auto full_checks() const noexcept -> bool { return checks_ == VM::ExecutionChecks::full; }
 
@@ -484,7 +495,7 @@ private:
   template<bool FullChecks>
   auto execute_impl() -> std::pair<Number, bool>;
 
-  // The verified producer map preserves instruction-relative operands. Full
+  // The verified register map preserves instruction-relative operands. Full
   // checks and unprofitable maps use the original instruction-indexed buffer.
   auto result_at(Index instruction) -> ResultSlot&
   {
@@ -647,7 +658,7 @@ void GD::Bc::Details::VMState::function(Letter func, Instructions::const_iterato
   validate(instrs, true);
   auto consumption = full_checks() ? ConsumptionPlan{} : plan_consumption(instrs, true);
   auto result_slots =
-    full_checks() ? ResultSlotPlan{} : plan_result_slots(instrs, sizeof(ResultSlot));
+    full_checks() ? ResultSlotPlan{} : prepare_result_slots(instrs);
   functions_.at(static_cast<unsigned>(func)) = std::make_optional(std::make_tuple(
     FunctionCode(std::move(instrs), std::move(consumption), std::move(result_slots)), mask, loc));
 }
