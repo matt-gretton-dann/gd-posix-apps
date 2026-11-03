@@ -420,3 +420,13 @@ hosts. Default production builds retain the ordinary division fallback.
 Workflow success alone does not establish a performance improvement or justify
 changing the production default; raw timing, control, allocation and memory
 results require separate review under #420 and #197.
+
+The arithmetic corpus now includes eight admission controls: division and
+remainder with a divisor mutated every request, a fresh `b+i` temporary each
+request, a stable divisor changed every sixteen requests, and a single cold
+request. The repeated controls print both the final result and a checksum of
+all results. Independent Python integer oracles check every request, with
+Fraction-based tests checking the generated expectations. Full and held-out
+inputs use distinct dimensions/seeds. A separate RNG stream and frozen hashes
+preserve all 58 earlier workloads. The cold rows describe whole-process latency;
+they do not isolate cache setup time or establish a repeated-work speedup.
