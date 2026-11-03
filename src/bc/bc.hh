@@ -1275,6 +1275,10 @@ public:
   /** \brief              Execute instructions.
    *  \param instructions Instructions to execute
    *  \return             \c true if we should continue, or \c false if we have reached EOF.
+   *
+   * An exception restores active function bindings and any saved special
+   * registers before it propagates. Completed global writes and output remain
+   * visible. A subsequent execution starts with an empty argument stack.
    */
   auto execute(Instructions& instructions) -> bool;
 

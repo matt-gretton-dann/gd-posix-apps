@@ -2,12 +2,14 @@
  * Isolated VM/parser ownership and failure guards, without production test hooks.
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <new>
+
 #include <atomic>
 #include <cstdio>
 #include <cstdlib>
 #include <limits>
-#include <new>
 #include <sstream>
+#include <stdexcept>
 #include <type_traits>
 #include <utility>
 
@@ -203,6 +205,101 @@ auto parser_allocation_failures() -> bool
   return false;  // Do not silently accept a truncated fault sweep.
 }
 
+class InterruptibleOutput : public std::stringbuf
+{
+public:
+  bool fail = false;
+
+private:
+  auto xsputn(char const* data, std::streamsize size) -> std::streamsize override
+  {
+    if (fail)
+      throw std::runtime_error("deliberate output failure");
+    return std::stringbuf::xsputn(data, size);
+  }
+};
+
+auto restore_nested_call_after_exception() -> bool
+{
+  using Checks = GD::Bc::VM::ExecutionChecks;
+  for (auto checks : {Checks::full, Checks::verified}) {
+    InterruptibleOutput buffer;
+    std::ostream output(&buffer);
+    output.exceptions(std::ios::badbit);
+    std::ostringstream errors;
+    GD::Bc::VM vm(output, errors, true, checks);
+    auto run = [&vm](std::string const& text) {
+      GD::Bc::Parser parser(
+        std::make_unique<GD::Bc::Lexer>(std::make_unique<GD::Bc::StringReader>(text)), false);
+      auto code = parser.parse();
+      return code && !vm.execute(*code);
+    };
+    if (!run("x=17\ny=23\na[3]=9\nb[3]=2\nscale=2\n"
+             "define g(y) {\nscale=7\nibase=16\nz=8\n\"ready\"\nreturn(y)\n}\n"
+             "define f(x,a[]) {\nauto y\ny=3\nscale=4\nobase=16\nreturn(g(6))\n}\n"))
+      return false;
+    buffer.fail = true;
+    bool threw = false;
+    try {
+      (void)run("f(4,b[])\n");
+    }
+    catch (std::runtime_error const& error) {
+      threw = std::string_view(error.what()) == "deliberate output failure";
+    }
+    if (!threw)
+      return false;
+    buffer.fail = false;
+    output.clear();
+    // The global write to z occurred before the exception and survives. Each
+    // active call must still restore its local bindings and saved specials.
+    if (!run("x\ny\na[3]\nscale\nibase\nobase\nz\n") ||
+        buffer.str() != "17\n23\n9\n2\n10\n10\n8\n" || !run("f(4,b[])\n") ||
+        buffer.str() != "17\n23\n9\n2\n10\n10\n8\nready6\n" || !errors.str().empty())
+      return false;
+  }
+  return true;
+}
+
+auto restore_call_after_allocation_failure() -> bool
+{
+  auto parse = [](std::string const& text) {
+    GD::Bc::Parser parser(
+      std::make_unique<GD::Bc::Lexer>(std::make_unique<GD::Bc::StringReader>(text)), false);
+    return parser.parse();
+  };
+  bool observed_failure = false;
+  for (std::size_t point = 0; point != 256; ++point) {
+    std::ostringstream output, errors;
+    GD::Bc::VM vm(output, errors, true, GD::Bc::VM::ExecutionChecks::verified);
+    auto setup = parse("x=17\ny=23\na[3]=9\nb[3]=2\nscale=2\n"
+                       "define g(y) {\nscale=7\nreturn(y)\n}\n"
+                       "define f(x,a[]) {\nauto y\ny=3\nscale=4\nreturn(g(6))\n}\n");
+    auto call = parse("q=f(4,b[])\n");
+    auto query = parse("x\ny\na[3]\nscale\n");
+    auto result = parse("q\n");
+    if (!setup || !call || !query || !result || vm.execute(*setup))
+      return false;
+    auto const before = injected_failures;
+    bool threw = false;
+    try {
+      AllocationFailure const failure(point);
+      if (vm.execute(*call))
+        return false;
+    }
+    catch (std::bad_alloc const&) {
+      threw = true;
+      observed_failure = true;
+    }
+    if (threw != (injected_failures != before) || vm.execute(*query) ||
+        output.str() != "17\n23\n9\n2\n" || (threw && vm.execute(*call)) || vm.execute(*result) ||
+        output.str() != "17\n23\n9\n2\n6\n" || !errors.str().empty())
+      return false;
+    if (!threw)
+      return observed_failure;
+  }
+  return false;  // Require a complete sweep of call setup and execution.
+}
+
 auto run() -> bool
 {
   std::ostringstream output;
@@ -236,6 +333,10 @@ auto run() -> bool
 
 auto main() -> int
 {
+  if (!restore_nested_call_after_exception()) {
+    std::fprintf(stderr, "Nested call exception left VM locals or special registers changed\n");
+    return 1;
+  }
   // Warm lazy catalog/iostream initialization before observing VM lifetimes.
   if (!run()) {
     return 1;
@@ -252,9 +353,17 @@ auto main() -> int
     std::fprintf(stderr, "Parser allocation failure resumed a partial input item\n");
     return 1;
   }
+  if (!restore_call_after_allocation_failure()) {
+    std::fprintf(stderr, "Allocation failure damaged an active call or its retry\n");
+    return 1;
+  }
   auto const before = outstanding.load(std::memory_order_relaxed);
   if (!parser_allocation_failures()) {
     std::fprintf(stderr, "Repeated parser allocation sweep lost terminal state\n");
+    return 1;
+  }
+  if (!restore_call_after_allocation_failure()) {
+    std::fprintf(stderr, "Repeated call allocation sweep damaged recovery\n");
     return 1;
   }
   if (!native_sqrt_scale_boundary<GD::Bc::NumberTraits16>() ||
