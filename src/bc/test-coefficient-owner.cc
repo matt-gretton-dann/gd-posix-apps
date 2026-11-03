@@ -9,6 +9,7 @@
 #include <memory>
 #include <stdexcept>
 #include <thread>
+#include <type_traits>
 #include <utility>
 
 #include "coefficient-owner.hh"
@@ -29,14 +30,16 @@ struct Value
 using Owner = GD::Bc::Details::CoefficientOwner<Value>;
 }  // namespace
 
-TEST_CASE("Compact coefficient handles preserve strong and weak lifetimes",
-          "[bc][storage][coefficient-owner]")
+TEMPLATE_TEST_CASE("Compact coefficient handles preserve strong and weak lifetimes",
+                   "[bc][storage][coefficient-owner]", std::true_type, std::false_type)
 {
+  using Owner = GD::Bc::Details::CoefficientOwner<Value, TestType::value>;
+  using Weak = typename Owner::Weak;
   REQUIRE(sizeof(Owner) == sizeof(void*));
-  REQUIRE(sizeof(Owner::Weak) == sizeof(void*));
+  REQUIRE(sizeof(Weak) == sizeof(void*));
   unsigned destroyed = 0;
   auto owner = Owner::make(destroyed);
-  Owner::Weak weak(owner);
+  Weak weak(owner);
   REQUIRE(owner.use_count() == 1);
   REQUIRE(owner.shares_owner(weak));
   auto cleared = weak;
@@ -68,9 +71,10 @@ TEST_CASE("Compact coefficient handles preserve strong and weak lifetimes",
   weak = {};
 }
 
-TEST_CASE("Compact coefficient construction failure releases its control block",
-          "[bc][storage][coefficient-owner]")
+TEMPLATE_TEST_CASE("Compact coefficient construction failure releases its control block",
+                   "[bc][storage][coefficient-owner]", std::true_type, std::false_type)
 {
+  using Owner = GD::Bc::Details::CoefficientOwner<Value, TestType::value>;
   unsigned destroyed = 0;
 #if GD_BC_PROFILE
   auto const before = GD::Bc::Profile::snapshot().total.live_bytes;

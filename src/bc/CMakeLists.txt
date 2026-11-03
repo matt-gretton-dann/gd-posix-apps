@@ -6,7 +6,8 @@ add_library(libbc)
 # Header modes shared by clients and the independent calibration tool.
 add_library(bc-language-mode INTERFACE)
 target_compile_definitions(bc-language-mode INTERFACE
-                           GD_BC_COMPACT_DIGIT_OWNER=$<BOOL:${ENABLE_BC_COMPACT_DIGIT_OWNER}>)
+                           GD_BC_COMPACT_DIGIT_OWNER=$<BOOL:${ENABLE_BC_COMPACT_DIGIT_OWNER}>
+                           GD_BC_THREAD_CONFINED_DIGIT_OWNER=$<BOOL:${ENABLE_BC_THREAD_CONFINED_DIGIT_OWNER}>)
 target_include_directories(libbc PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_include_directories(libbc PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_link_libraries(libbc PUBLIC gdsup util bc-language-mode)
@@ -61,7 +62,8 @@ if(RUN_UNIT_TESTS)
   target_include_directories(test-bc-consumer-mode PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
   target_compile_definitions(test-bc-consumer-mode PRIVATE
                              GD_BC_EXPECT_EXTENSIONS=$<BOOL:${ENABLE_NON_POSIX_EXTENSIONS}>
-                             GD_BC_EXPECT_COMPACT_OWNER=$<BOOL:${ENABLE_BC_COMPACT_DIGIT_OWNER}>)
+                             GD_BC_EXPECT_COMPACT_OWNER=$<BOOL:${ENABLE_BC_COMPACT_DIGIT_OWNER}>
+                             GD_BC_EXPECT_THREAD_CONFINED_OWNER=$<BOOL:${ENABLE_BC_THREAD_CONFINED_DIGIT_OWNER}>)
   add_dependencies(test-bc-consumer-mode bc_messages_header)
   set_property(TARGET test-bc-consumer-mode PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
   set_property(TARGET test-bc-consumer-mode PROPERTY CXX_STANDARD_REQUIRED ON)
@@ -225,6 +227,10 @@ if(RUN_INTEGRATION_TESTS)
   add_test(NAME bc/coverage-tools COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-coverage-tools.py")
   set_tests_properties(bc/coverage-tools PROPERTIES TIMEOUT 20)
+  add_test(NAME bc/owner-config COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-owner-configuration.py"
+           "${CMAKE_COMMAND}" "${CMAKE_SOURCE_DIR}")
+  set_tests_properties(bc/owner-config PROPERTIES TIMEOUT 120)
   add_test(NAME bc/profiling-tools COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-profiling-tools.py"
            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/profile-bc.py")

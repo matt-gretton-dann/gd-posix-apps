@@ -9,28 +9,49 @@
 #include <cassert>
 #include <cstddef>
 #include <memory>
+#include <type_traits>
 #include <utility>
 
 #include "profiling.hh"
 
 namespace GD::Bc::Details {
 
-/** One-pointer coefficient owner; independently copied handles remain safe.
+/** One-pointer coefficient owner with an explicit reference-count policy.
  *
  * This supplies only the operations needed by DigitStorage. Weak observations
  * identify a lifetime without retaining its vector or limb allocation. Their
  * control block survives expiry, preventing allocation-address reuse from
  * matching a later coefficient. There is no weak-to-strong promotion API.
  * Sharing a handle does not make concurrent mutation of its vector safe.
+ * Atomic=true preserves independent-handle concurrency. Atomic=false requires
+ * every strong/weak handle operation, including destruction, on one thread.
  */
-template<typename Heap>
+template<typename Heap, bool Atomic = true>
 class CoefficientOwner
 {
+  struct LocalCount
+  {
+    std::size_t value;
+    auto fetch_add(std::size_t amount, std::memory_order) noexcept -> std::size_t
+    {
+      auto const previous = value;
+      value += amount;
+      return previous;
+    }
+    auto fetch_sub(std::size_t amount, std::memory_order) noexcept -> std::size_t
+    {
+      auto const previous = value;
+      value -= amount;
+      return previous;
+    }
+    [[nodiscard]] auto load(std::memory_order) const noexcept -> std::size_t { return value; }
+  };
+  using Count = std::conditional_t<Atomic, std::atomic<std::size_t>, LocalCount>;
   struct Block
   {
-    std::atomic<std::size_t> strong{1};
+    Count strong{1};
     // One implicit weak reference survives while any strong owner exists.
-    std::atomic<std::size_t> weak{1};
+    Count weak{1};
     union
     {
       Heap value;

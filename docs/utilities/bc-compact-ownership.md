@@ -1,5 +1,9 @@
 # Compact coefficient ownership (#446, #197)
 
+This records the atomic prototype at 80712b82. The current experimental branch
+also compares thread-confined counts; see [its contract and mode choices](bc-thread-confined-owner.md).
+The measurements below remain bound to the atomic source, not that comparison.
+
 The prototype replaces the two-pointer shared heap handle in DigitStorage
 with one pointer to a coefficient-specific control block. Inline limbs,
 coefficient algorithms, explicit COW detach and retained vector capacity are

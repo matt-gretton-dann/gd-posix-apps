@@ -22,6 +22,12 @@
 #ifndef GD_BC_COMPACT_DIGIT_OWNER
 #  define GD_BC_COMPACT_DIGIT_OWNER 0
 #endif
+#ifndef GD_BC_THREAD_CONFINED_DIGIT_OWNER
+#  define GD_BC_THREAD_CONFINED_DIGIT_OWNER 0
+#endif
+#if GD_BC_THREAD_CONFINED_DIGIT_OWNER && !GD_BC_COMPACT_DIGIT_OWNER
+#  error Thread-confined coefficient ownership requires the compact owner
+#endif
 #if GD_BC_COMPACT_DIGIT_OWNER
 #  include "coefficient-owner.hh"
 #endif
@@ -55,7 +61,7 @@ class DigitStorage
   // pointer tagging. A non-null owner selects heap storage; inline size is absent.
   static constexpr unsigned char absent_size = 255;
 #if GD_BC_COMPACT_DIGIT_OWNER
-  using Owner = CoefficientOwner<Heap>;
+  using Owner = CoefficientOwner<Heap, GD_BC_THREAD_CONFINED_DIGIT_OWNER == 0>;
 #else
   using Owner = std::shared_ptr<Heap>;
 #endif

@@ -8,6 +8,8 @@
 
 static_assert(GD_BC_COMPACT_DIGIT_OWNER == GD_BC_EXPECT_COMPACT_OWNER,
               "Coefficient layout must match the linked library");
+static_assert(GD_BC_THREAD_CONFINED_DIGIT_OWNER == GD_BC_EXPECT_THREAD_CONFINED_OWNER,
+              "Coefficient count policy must match the linked library");
 
 auto main() -> int
 {
