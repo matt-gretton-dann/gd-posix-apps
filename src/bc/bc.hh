@@ -249,7 +249,10 @@ public:
    *
    * We silently saturate to the maximum value of Column.
    */
-  void next_column(std::size_t count = 1);
+  void next_column();
+
+  /** \brief Advance by a contiguous count without wrapping. */
+  void next_column(std::size_t count);
 
   /** \brief Move to next line, and reset column to 1.
    *
@@ -375,6 +378,20 @@ private:
   std::array<char, 8192> buffer_;
   std::size_t position_{0};
   std::size_t end_{0};
+};
+
+/** \brief Character-at-a-time input for borrowed stdin. */
+class StdinReader : public Reader
+{
+public:
+  StdinReader();
+  auto peek() -> int final;
+
+private:
+  void do_chew() final;
+
+  GD::StreamInputFile file_;
+  int c_{EOF};
 };
 
 /** Lexer.  */

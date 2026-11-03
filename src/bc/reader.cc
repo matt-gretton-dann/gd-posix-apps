@@ -33,6 +33,13 @@ auto GD::Bc::Location::column() const -> GD::Bc::Location::Column { return colum
 
 auto GD::Bc::Location::line() const -> GD::Bc::Location::Line { return line_; }
 
+void GD::Bc::Location::next_column()
+{
+  if (column_ < std::numeric_limits<Column>::max()) {
+    ++column_;
+  }
+}
+
 void GD::Bc::Location::next_column(std::size_t count)
 {
   auto const room = static_cast<std::size_t>(std::numeric_limits<Column>::max() - column_);
@@ -194,3 +201,19 @@ void GD::Bc::FileReader::chew_prefix(std::size_t size)
   advance_location({buffer_.data() + position_, size});
   position_ += size;
 }
+
+GD::Bc::StdinReader::StdinReader() : Reader("-"), file_("-") {}
+
+auto GD::Bc::StdinReader::peek() -> int
+{
+  if (c_ == EOF && !file_.eof()) {
+    c_ = file_.getc();
+    if (file_.error()) {
+      std::cerr << error(Msg::file_error, file_.filename());
+      std::exit(1);  // NOLINT(concurrency-mt-unsafe)
+    }
+  }
+  return c_;
+}
+
+void GD::Bc::StdinReader::do_chew() { c_ = EOF; }
