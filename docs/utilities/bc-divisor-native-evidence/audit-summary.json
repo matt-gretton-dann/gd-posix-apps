@@ -1,0 +1,195 @@
+{
+  "artifacts": 12,
+  "checked": 67477,
+  "complete_artifacts": 10,
+  "partial_artifacts": 2,
+  "binaries": 36,
+  "inspections": 72,
+  "reports": [
+    {
+      "checkpoint": "421-0d971",
+      "host": "linux",
+      "complete": true,
+      "checked": 5800,
+      "missing": [],
+      "controls": {
+        "inconclusive-noisy": 18,
+        "pass": 98
+      },
+      "confirmed_regressions": [],
+      "binaries": 3,
+      "inspections": 6,
+      "performance_acceptance": false
+    },
+    {
+      "checkpoint": "421-0d971",
+      "host": "macos",
+      "complete": true,
+      "checked": 5830,
+      "missing": [],
+      "controls": {
+        "inconclusive-noisy": 109,
+        "pass": 7
+      },
+      "confirmed_regressions": [],
+      "binaries": 3,
+      "inspections": 6,
+      "performance_acceptance": false
+    },
+    {
+      "checkpoint": "421-0d971",
+      "host": "windows",
+      "complete": false,
+      "checked": 4246,
+      "missing": [
+        {
+          "directory": "holdout-paired",
+          "missing_samples": 1554
+        }
+      ],
+      "controls": {},
+      "confirmed_regressions": [],
+      "binaries": 3,
+      "inspections": 6,
+      "performance_acceptance": false
+    },
+    {
+      "checkpoint": "421-964e",
+      "host": "linux",
+      "complete": true,
+      "checked": 5800,
+      "missing": [],
+      "controls": {
+        "inconclusive-noisy": 19,
+        "pass": 97
+      },
+      "confirmed_regressions": [],
+      "binaries": 3,
+      "inspections": 6,
+      "performance_acceptance": false
+    },
+    {
+      "checkpoint": "421-964e",
+      "host": "macos",
+      "complete": true,
+      "checked": 5800,
+      "missing": [],
+      "controls": {
+        "inconclusive-noisy": 115,
+        "pass": 1
+      },
+      "confirmed_regressions": [],
+      "binaries": 3,
+      "inspections": 6,
+      "performance_acceptance": false
+    },
+    {
+      "checkpoint": "421-964e",
+      "host": "windows",
+      "complete": true,
+      "checked": 5800,
+      "missing": [],
+      "controls": {
+        "inconclusive-noisy": 29,
+        "pass": 87
+      },
+      "confirmed_regressions": [],
+      "binaries": 3,
+      "inspections": 6,
+      "performance_acceptance": false
+    },
+    {
+      "checkpoint": "422-173",
+      "host": "linux",
+      "complete": true,
+      "checked": 5800,
+      "missing": [],
+      "controls": {
+        "inconclusive-noisy": 24,
+        "pass": 92
+      },
+      "confirmed_regressions": [],
+      "binaries": 3,
+      "inspections": 6,
+      "performance_acceptance": false
+    },
+    {
+      "checkpoint": "422-173",
+      "host": "macos",
+      "complete": true,
+      "checked": 5800,
+      "missing": [],
+      "controls": {
+        "inconclusive-noisy": 115,
+        "pass": 1
+      },
+      "confirmed_regressions": [],
+      "binaries": 3,
+      "inspections": 6,
+      "performance_acceptance": false
+    },
+    {
+      "checkpoint": "422-173",
+      "host": "windows",
+      "complete": false,
+      "checked": 5171,
+      "missing": [
+        {
+          "directory": "holdout-paired",
+          "missing_samples": 629
+        }
+      ],
+      "controls": {},
+      "confirmed_regressions": [],
+      "binaries": 3,
+      "inspections": 6,
+      "performance_acceptance": false
+    },
+    {
+      "checkpoint": "422-39d",
+      "host": "linux",
+      "complete": true,
+      "checked": 5800,
+      "missing": [],
+      "controls": {
+        "inconclusive-noisy": 23,
+        "pass": 93
+      },
+      "confirmed_regressions": [],
+      "binaries": 3,
+      "inspections": 6,
+      "performance_acceptance": false
+    },
+    {
+      "checkpoint": "422-39d",
+      "host": "macos",
+      "complete": true,
+      "checked": 5830,
+      "missing": [],
+      "controls": {
+        "inconclusive-noisy": 112,
+        "pass": 4
+      },
+      "confirmed_regressions": [],
+      "binaries": 3,
+      "inspections": 6,
+      "performance_acceptance": false
+    },
+    {
+      "checkpoint": "422-39d",
+      "host": "windows",
+      "complete": true,
+      "checked": 5800,
+      "missing": [],
+      "controls": {
+        "inconclusive-noisy": 30,
+        "pass": 86
+      },
+      "confirmed_regressions": [],
+      "binaries": 3,
+      "inspections": 6,
+      "performance_acceptance": false
+    }
+  ],
+  "performance_acceptance": false
+}

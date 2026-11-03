@@ -1,0 +1,4 @@
+*.json -text
+*.zip -text
+policy.py -text
+native/*.zip -text
