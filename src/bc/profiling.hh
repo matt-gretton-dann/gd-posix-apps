@@ -41,6 +41,7 @@ enum class Event : std::size_t {
   single_digit_literals,
   function_calls,
   instructions_executed,
+  typed_instructions_executed,
   array_clones,
   array_entries_copied,
   comparison_limb_positions,
