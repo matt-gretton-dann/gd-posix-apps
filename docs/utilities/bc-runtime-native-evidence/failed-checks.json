@@ -1,0 +1,26 @@
+{
+  "source_revision": "b54f0c3b714a948f8769227def16fd3f97bb1732",
+  "run_id": 41628715797,
+  "scope": "Exact diagnostic-line excerpts from decoded GitHub job logs; not complete logs",
+  "jobs": [
+    {
+      "id": 125892513572,
+      "conclusion": "failure",
+      "reason": "Historical archived README bytes changed",
+      "diagnostic_lines": [
+        "2026-11-03T11:36:03.7313578Z docs/utilities/bc-368-cancel-division/README.md: local payload hash differs",
+        "2026-11-03T11:36:03.7385806Z ##[error]Process completed with exit code 1."
+      ]
+    },
+    {
+      "id": 125892513595,
+      "conclusion": "failure",
+      "reason": "GCC 13 -O3 replacement-delete diagnostic in isolated lifetime test",
+      "diagnostic_lines": [
+        "2026-11-03T11:36:19.1719321Z /home/runner/work/gd-posix-apps/gd-posix-apps/src/bc/test-vm-lifetime.cc:90:14: error: ‘void free(void*)’ called on pointer returned from a mismatched allocation function [-Werror=mismatched-new-delete]",
+        "2026-11-03T11:36:19.1890215Z /home/runner/work/gd-posix-apps/gd-posix-apps/src/bc/test-vm-lifetime.cc:90:14: error: ‘void free(void*)’ called on pointer returned from a mismatched allocation function [-Werror=mismatched-new-delete]",
+        "2026-11-03T11:36:30.0015746Z ninja: build stopped: subcommand failed."
+      ]
+    }
+  ]
+}
