@@ -61,6 +61,9 @@ class CliTests(unittest.TestCase):
             text = "x" * (block + 3) + "\nlast"
             path.write_bytes(('"' + text + '"\n42\n').encode("ascii"))
             self.run_bc("", text + "42\n", files=(path,))
+            path.write_bytes(('"' + text + '"\n @\n').encode("ascii"))
+            self.run_bc("", text, files=(path,), success=False,
+                        error=f"{path}:3:2:")
 
             # Place the two closing comment bytes on opposite sides of a refill.
             path.write_bytes(("/*" + "x" * (block - 3) + "*/\n42\n").encode("ascii"))
