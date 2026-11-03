@@ -17,6 +17,7 @@
 #include "bc-messages.hh"
 
 #include <array>
+#include <exception>
 #include <iostream>
 #include <list>
 #include <map>
@@ -800,7 +801,9 @@ public:
    * Retained shared results remain independent. If no caller retains the previous
    * result, its owner/capacity may be reused after destroying its instructions.
    * A fatal diagnostic is terminal for this parser object: later calls return
-   * the same diagnostic/quit stream. They do not attempt error recovery.
+   * the same diagnostic/quit stream. An exception escaping input parsing is
+   * also terminal: later calls rethrow it without reading any more input.
+   * Neither path attempts to recover a partially consumed input item.
    */
   auto parse() -> std::shared_ptr<Instructions>;
 
@@ -1026,7 +1029,6 @@ private:
       return ExprIndex::missing();
     }
 
-    error_ = true;
     /* If the lexer holds an error token we report that rather than the error message we've been
      * asked to report.
      */
@@ -1228,8 +1230,8 @@ private:
   std::shared_ptr<Instructions> instructions_;   ///< Current set of instructions
   std::stack<std::list<Index>> loop_breaks_;     ///< Stack of loop breaks.
   bool interactive_;                             ///< Are we interactive?
-  std::optional<std::string> fatal_diagnostic_;  ///< Original terminal diagnostic, if any.
-  bool error_{false};                            ///< Has there been an error?
+  // An input failure has exactly one terminal representation, never both.
+  std::variant<std::monostate, std::string, std::exception_ptr> fatal_failure_;
   bool in_function_{false};                      ///< Are we in a function?
   bool seen_quit_{false};                        ///< Have we seen a quit token?
 };

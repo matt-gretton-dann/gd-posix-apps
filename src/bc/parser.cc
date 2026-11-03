@@ -181,6 +181,9 @@ void GD::Bc::Parser::emit_fatal_error(std::string const& diagnostic)
 
 auto GD::Bc::Parser::parse() -> std::shared_ptr<GD::Bc::Instructions>
 {
+  if (auto const* exception = std::get_if<std::exception_ptr>(&fatal_failure_)) {
+    std::rethrow_exception(*exception);
+  }
   // Retained results are independent snapshots. Only reuse an unobserved owner;
   // clear every instruction/cache while retaining the largest item's capacity.
   // A fatal parser still cannot resume with partially consumed input.
@@ -191,18 +194,28 @@ auto GD::Bc::Parser::parse() -> std::shared_ptr<GD::Bc::Instructions>
     instructions_ = GD_BC_PROFILE_SHARED(Profile::AllocationKind::instructions, Instructions)();
   }
   clear_context();
-  if (fatal_diagnostic_) {
-    emit_fatal_error(*fatal_diagnostic_);
+  if (auto const* diagnostic = std::get_if<std::string>(&fatal_failure_)) {
+    emit_fatal_error(*diagnostic);
     return instructions_;
   }
   try {
     parse_program();
   }
-  catch (ParseError const& error) {
+  catch (ParseError& error) {
     // Keep the first diagnostic terminal even when a caller parses again instead
     // of executing its quit instruction. Recoverable parsing is separate work.
-    fatal_diagnostic_ = error.diagnostic;
-    emit_fatal_error(*fatal_diagnostic_);
+    // Moving the diagnostic does not allocate. Remember it before emitting
+    // instructions, which may itself fail and be retried by the caller.
+    auto const& diagnostic = fatal_failure_.emplace<std::string>(std::move(error.diagnostic));
+    emit_fatal_error(diagnostic);
+  }
+  catch (...) {
+    // A Reader or allocation failure may leave the lexer midway through an
+    // item. Replaying its tail would silently change the program boundary.
+    fatal_failure_.emplace<std::exception_ptr>(std::current_exception());
+    instructions_.reset();
+    clear_context();
+    throw;
   }
   return instructions_;
 }
@@ -212,6 +225,8 @@ auto GD::Bc::Parser::seen_quit() const noexcept -> bool { return seen_quit_; }
 void GD::Bc::Parser::parse_program()
 {
   /* program : EOF | input_item program */
+  // Diagnostics unwind to parse(); other input failures are terminal there too.
+  // A normally returning grammar helper never carries a pending error state.
   bool cont = true;
   while (cont) {
     auto type = lexer_->peek().type();
@@ -224,9 +239,6 @@ void GD::Bc::Parser::parse_program()
     }
   }
 
-  if (error_) {
-    insert_eof();
-  }
 }
 
 auto GD::Bc::Parser::parse_input_item() -> bool
@@ -242,7 +254,7 @@ auto GD::Bc::Parser::parse_input_item() -> bool
   else {
     lexer_->chew();
   }
-  return !interactive_ && !error_;
+  return !interactive_;
 }
 
 void GD::Bc::Parser::parse_semicolon_list()
@@ -254,7 +266,7 @@ void GD::Bc::Parser::parse_semicolon_list()
    */
 
   bool cont = true;
-  while (cont && !error_) {
+  while (cont) {
     (void)parse_opt_statement();
     cont = lexer_->peek() == Token::Type::semicolon;
     if (cont) {
@@ -273,7 +285,7 @@ void GD::Bc::Parser::parse_statement_list()
    */
 
   bool cont = true;
-  while (cont && !error_) {
+  while (cont) {
     (void)parse_opt_statement();
     cont = (lexer_->peek() == Token::Type::semicolon || lexer_->peek() == Token::Type::newline);
     if (cont) {
@@ -661,7 +673,7 @@ auto GD::Bc::Parser::parse_opt_define_list(ExprIndex function_begin, bool allow_
     return expr;
   }
 
-  while (lexer_->peek() == Token::Type::comma && !error_) {
+  while (lexer_->peek() == Token::Type::comma) {
     lexer_->chew();
     expr = parse_define_element(function_begin, allow_duplicates);
   }
@@ -749,7 +761,7 @@ auto GD::Bc::Parser::parse_opt_argument_list() -> GD::Bc::Parser::ExprIndex
   }
   insert_push_param(expr);
 
-  while (lexer_->peek() == Token::Type::comma && !error_) {
+  while (lexer_->peek() == Token::Type::comma) {
     lexer_->chew();
     expr = parse_expression(POPEFlags::parse_array_slices);
     insert_push_param(expr);

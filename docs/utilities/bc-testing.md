@@ -500,6 +500,37 @@ filtering, favorable retries or pooled decision is permitted. The runner label
 does not guarantee the target Intel hardware; absence of that CPU remains a
 coverage limitation rather than being described as a completed comparison.
 
+### Exceptions during parser input consumption
+
+A failed input read or allocation can leave the lexer partway through an item.
+The public Parser API retains an exception escaping that input-parsing stage
+and rethrows it on later calls, without any more Reader access. It releases the
+abandoned instruction buffer and loop/function bookkeeping; previously returned
+instruction snapshots remain valid. Construct a new parser for a new input
+stream rather than replaying the tail of the failed item.
+
+Ordinary syntax diagnostics still produce the same terminal diagnostic/quit
+stream. Their text is moved into terminal storage before instruction emission
+can allocate. Read-time quit continues to suppress diagnostics in the discarded
+partial item. Public Reader fixtures inject both bad_alloc and a reader-specific
+exception across expressions, blocks, arguments and nested function/loop bodies;
+repeated calls preserve failure type/payload, avoid further reads and keep a
+previous successful snapshot intact. No production fault hook is introduced.
+
+Grammar helpers now rely on those explicit unwind boundaries rather than
+polling a second error flag after calls which cannot return with a pending
+error. The old flag checks did not constitute recovery: unexpected input
+exceptions could still resume at a consumed tail. The sticky exception state
+and diagnostic state are established before such a retry can re-enter grammar
+parsing. Their regression tests include delimiter/list contexts and early quit.
+
+A parser retains one terminal failure: either diagnostic text or an exception.
+These mutually exclusive states share a variant rather than separate fields.
+This does not change retry or snapshot semantics, and does not imply a native
+performance improvement; every changed candidate still needs its own paired
+measurements. The earlier Windows comparison regressions remain source-bound
+rejected evidence.
+
 ### Header consumers inherit the configured extension mode
 
 The extension definition is a public usage requirement of libbc because bc.hh
