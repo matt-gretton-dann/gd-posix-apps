@@ -68,10 +68,12 @@ class InterruptTest(unittest.TestCase):
                 os.close(slave)
                 slave = None
                 try:
-                    for marker in ("READY1", "READY2"):
+                    for marker, setup in (("READY1", ""), ("READY2", "a=0;" * 64)):
                         # The marker and infinite loop belong to one execution
                         # item: observing it proves the VM handler is installed.
-                        program = '{"' + marker + '\n";while(1) {}}\n'
+                        # The second item has enough producers for compact
+                        # lowering. Assignments keep the readiness output exact.
+                        program = '{' + setup + '"' + marker + '\n";while(1) {}}\n'
                         child.stdin.write(program)
                         child.stdin.flush()
                         self.assertEqual(self.read_until(master, (marker + "\n").encode()),
