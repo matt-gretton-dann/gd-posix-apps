@@ -5,7 +5,9 @@
 #ifndef GD_BC_EXECUTION_PLAN_HH_INCLUDED
 #define GD_BC_EXECUTION_PLAN_HH_INCLUDED
 
+#include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <vector>
 
 #include "bc.hh"
@@ -81,6 +83,107 @@ using ExecutableCode =
 // skipped by an outer definition are lowered only when registered separately.
 auto lower_executable(Instructions const& code, ResultSlotPlan const& slots,
                       bool persistent = false) -> ExecutableCode;
+
+// Typed registers have separate numeric and nonnumeric index spaces. Every
+// producer owns a distinct slot in its lane; there is no shared empty sentinel
+// or liveness reuse. Non-producers and skipped bodies retain no_register.
+struct TypedResultPlan
+{
+  using CompactIndex = ResultSlotPlan::CompactIndex;
+  static constexpr auto no_register = std::numeric_limits<CompactIndex>::max();
+  ResultSlotPlan::Map indices;
+  std::size_t number_count = 0;
+  std::size_t other_count = 0;
+  auto empty() const noexcept -> bool { return indices.empty(); }
+};
+
+// Charge actual caller layouts, including buffer/metadata objects and executable
+// records. Fixed costs exclude separately counted vector payloads. This avoids
+// assuming a particular standard-library vector/variant representation.
+struct TypedResultCosts
+{
+  std::size_t number_slot_bytes;
+  std::size_t other_slot_bytes;
+  std::size_t generic_slot_bytes;
+  std::size_t generic_fixed_bytes;
+  std::size_t typed_fixed_bytes;
+  std::size_t generic_instruction_bytes;
+  std::size_t typed_instruction_bytes;
+};
+
+// Complete verification and the existing generic slot plan precede this call.
+// An empty result preserves generic execution for tiny, nonnumeric,
+// unrepresentable or unprofitable streams. Cost overflow also preserves it.
+auto plan_typed_results(Instructions const& code, ResultSlotPlan const& generic,
+                        TypedResultCosts costs, bool persistent = false) -> TypedResultPlan;
+
+// Polymorphic source operations acquire a lane-specific opcode during lowering.
+// Arithmetic then addresses Number registers directly; binding/string/array
+// values keep a distinct variant lane. Diagnostic print supports every old
+// nonnumeric alternative, not just source-language string expressions.
+enum class TypedOpcode : std::uint32_t {
+  eof,
+  print_number,
+  print_other,
+  quit,
+  string,
+  number,
+  variable,
+  array_element,
+  array,
+  scale,
+  ibase,
+  obase,
+  add,
+  subtract,
+  negate,
+  multiply,
+  divide,
+  modulo,
+  power,
+  load_number,
+  load_array,
+  store_number,
+  store_array,
+  scale_expr,
+  sqrt,
+  abs,
+  length_number,
+  length_array,
+  equals,
+  less_than_equals,
+  not_equals,
+  less_than,
+  branch,
+  branch_zero,
+  return_,
+  call,
+  push_param_mark,
+  pop_param_mark,
+  push_number,
+  push_array,
+  pop_param,
+  pop_param_array,
+  function_begin,
+  function_end
+};
+
+struct TypedExecutableInstruction
+{
+  TypedOpcode opcode;
+  std::uint32_t result;
+  ExecutableOperand first;
+  ExecutableOperand second;
+};
+using TypedExecutableCode = std::vector<
+  TypedExecutableInstruction,
+  Profile::Allocator<TypedExecutableInstruction, Profile::AllocationKind::execution_plans>>;
+
+// Data operands use their producer's lane index; branches retain absolute PCs.
+// Non-producing result fields are ignored. Strings, call locations and function
+// metadata stay in the original source sidecar, as with generic compact code.
+auto lower_typed_executable(Instructions const& code, TypedResultPlan const& slots,
+                            bool persistent = false) -> TypedExecutableCode;
 
 // One byte per instruction: nonzero permits transferring its first arithmetic
 // operand. An empty plan keeps ordinary copies without a per-instruction table.

@@ -128,6 +128,10 @@ TEST_CASE("VM binary opcodes agree with native integer arithmetic", "[bc][vm][ex
         D const at = D(code.size());
         code.emplace_back(opcode, left - at, right - at);
         code.emplace_back(O::print, D(-1), I::Stream::output);
+        // Keep this oracle eligible for verified lowered execution, including
+        // typed registers. Unused literals preserve the result/evaluation order.
+        while (code.size() < 16)
+          code.emplace_back(O::number, "0");
         code.emplace_back(O::eof);
         CHECK(execute(code) == std::to_string(expected) + "\n");
       }
