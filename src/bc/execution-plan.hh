@@ -6,7 +6,6 @@
 #define GD_BC_EXECUTION_PLAN_HH_INCLUDED
 
 #include <cstdint>
-#include <limits>
 #include <vector>
 
 #include "bc.hh"
@@ -62,39 +61,74 @@ union ExecutableOperand
   explicit ExecutableOperand(Letter value) : letter(value) {}
 };
 
-// A fused pair preserves both source results. Its second record remains an
-// ordinary load so branches entering that suffix still execute independently.
-enum class ExecutableFusion : std::uint16_t {
-  none,
+// The executable owns its dispatch opcode space, including pair operations.
+// Keep ordinary opcodes first and fused operations last. Exhaustive source and
+// reverse conversion switches make schema additions explicit in both formats.
+enum class ExecutableOpcode : std::uint32_t {
+  eof,
+  print,
+  quit,
+  string,
+  number,
+  variable,
+  array_element,
+  array,
+  scale,
+  ibase,
+  obase,
+  add,
+  subtract,
+  negate,
+  multiply,
+  divide,
+  modulo,
+  power,
+  load,
+  store,
+  scale_expr,
+  sqrt,
+  abs,
+  length,
+  equals,
+  less_than_equals,
+  not_equals,
+  less_than,
+  branch,
+  branch_zero,
+  return_,
+  call,
+  push_param_mark,
+  pop_param_mark,
+  push_param,
+  pop_param,
+  pop_param_array,
+  function_begin,
+  function_end,
   load_variable,
   load_array,
   load_ibase,
   load_obase,
-  load_scale
+  load_scale,
 };
+auto executable_opcode(Instruction::Opcode opcode) -> ExecutableOpcode;
 
 // Common targets use 16 bytes per executable instruction. The source bytecode
 // remains the owner of strings, literal caches and diagnostic/definition data.
 // Indices are absolute register numbers for data, absolute PCs for branches.
 struct ExecutableInstruction
 {
-  std::uint16_t opcode;
-  ExecutableFusion fusion{ExecutableFusion::none};
+  ExecutableOpcode opcode;
   std::uint32_t result;
   ExecutableOperand first;
   ExecutableOperand second;
 
   ExecutableInstruction(Instruction::Opcode operation, std::uint32_t destination,
                         ExecutableOperand lhs = {}, ExecutableOperand rhs = {})
-      : opcode(static_cast<std::uint16_t>(operation)), result(destination), first(lhs), second(rhs)
+      : opcode(executable_opcode(operation)), result(destination), first(lhs), second(rhs)
   {
-    static_assert(static_cast<unsigned>(Instruction::Opcode::function_end) <=
-                  std::numeric_limits<std::uint16_t>::max());
   }
-  auto source_opcode() const -> Instruction::Opcode
-  {
-    return static_cast<Instruction::Opcode>(opcode);
-  }
+  auto source_opcode() const -> Instruction::Opcode;
+  auto is_fused_load() const -> bool { return opcode >= ExecutableOpcode::load_variable; }
 };
 using ExecutableCode =
   std::vector<ExecutableInstruction,

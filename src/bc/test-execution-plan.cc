@@ -280,13 +280,13 @@ TEST_CASE("Location load fusion preserves both producer registers and its load s
   auto const plain = GD::Bc::Details::lower_executable(code, {}, true, false);
   auto const fused = GD::Bc::Details::lower_executable(code, {}, true, true);
   REQUIRE(fused.size() == 3);
-  CHECK(plain[0].fusion == GD::Bc::Details::ExecutableFusion::none);
-  CHECK(fused[0].fusion != GD::Bc::Details::ExecutableFusion::none);
+  CHECK_FALSE(plain[0].is_fused_load());
+  CHECK(fused[0].is_fused_load());
   CHECK(fused[0].source_opcode() == opcode);
   CHECK(fused[0].result == 0);
   CHECK(fused[0].second.index == 1);
   CHECK(fused[1].source_opcode() == O::load);
-  CHECK(fused[1].fusion == GD::Bc::Details::ExecutableFusion::none);
+  CHECK_FALSE(fused[1].is_fused_load());
   CHECK(fused[1].first.index == 0);
   CHECK(fused[1].result == 1);
 }
@@ -299,6 +299,6 @@ TEST_CASE("Nonadjacent loads retain ordinary dispatch and their real producer",
   REQUIRE_FALSE(GD::Bc::Details::verify_control_flow(code, false).has_value());
   auto const lowered = GD::Bc::Details::lower_executable(code, {}, true, true);
   REQUIRE(lowered.size() == 3);
-  CHECK(lowered[0].fusion == GD::Bc::Details::ExecutableFusion::none);
+  CHECK_FALSE(lowered[0].is_fused_load());
   CHECK(lowered[2].first.index == 0);
 }

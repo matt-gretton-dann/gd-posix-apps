@@ -17,11 +17,13 @@ branches into the second instruction is assumed. Only a load with offset -1
 qualifies; nonadjacent loads keep their actual producer and ordinary dispatch.
 
 The pair uses the location opcode's otherwise unused second word for the load's
-destination. An explicit 16-bit opcode and 16-bit fusion kind replace the
-previous opcode word, with 32-bit result and operand words. The original opcode
-remains available through source_opcode(); the fusion kind describes the pair.
-No bit-field packing or character-code arithmetic is required. Locations and
-loaded values retain distinct producer registers under the current layout.
+destination. Dedicated pair opcodes share the same 32-bit dispatch field as
+ordinary executable operations, with 32-bit result and operand words. Source
+and executable opcode spaces have exhaustive conversion switches, so source
+schema additions must update both formats. source_opcode() recovers the original
+source operation for planning and diagnostics; the hot loop dispatches executable
+opcodes directly. No bit-field packing or character-code arithmetic is required.
+Locations and loaded values retain distinct producer registers.
 
 The interpreter executes both halves before advancing PC by two. It keeps the
 load suffix executable independently. A dispatch polls for interruption before
@@ -50,7 +52,18 @@ savings. Coverage metadata records the fusion switch explicitly. Native
 acceptance remains pending, with the revised #197 Linux/Windows 5% allowance and
 unchanged macOS requirement. No overall #207 or #197 completion is claimed.
 
-## Local candidate validation
+## Initial flag-dispatch checkpoint
+
+The following validation belongs to d8f5312f, whose first representation used a
+16-bit opcode plus a 16-bit fusion kind and checked that kind before each opcode
+dispatch. Local paired timing rejected that source: loops slowed about 9.1%,
+calls 4.4% and arrays 5.4% against accepted compact execution. Exact programs,
+oracles and all slower samples remain recorded in PR #438. Its native run was
+left running to preserve the original evidence.
+
+The single-table revision replaces the extra flag test with dedicated pair
+opcodes in one dispatch table. Its validation and measurements are independent;
+no speedup is inferred from that structural change.
 
 AppleClang 21 arm64, fixed multiplication split point 126:
 
@@ -74,3 +87,23 @@ This is a host layout measurement, not an elapsed-time improvement. Profiling
 builds are separate from timing builds. LeakSanitizer is unavailable on this
 host; ASan used detect_leaks=0, with separate ordinary-allocation balance checks.
 Native source-pinned performance and coverage acceptance remain pending.
+
+## Single-table revision validation
+
+The initial d8f5312f loop slowdown reproduced locally: candidate/base median
+1.090901 initially and 1.092040 in a fresh nine-pair confirmation, whose nominal
+95% interval was [1.089166, 1.097373]. Native CI separately retained 19,800 checked
+observations across three hosts with zero confirmed comparison losses. Those
+favorable hosts do not waive the reproduced local macOS regression.
+
+The revised dispatch passes the same four ASan/UBSan configurations and exact
+case/assertion counts listed above, all five focused CTests in each mode, and
+the broad default suite (92 entries: 47 successes, 45 declared skips). Its
+separate profiling build passes all 335 cases / 1,669,155 assertions, including
+logical source-instruction counts and independent suffix entry.
+
+The revised layout probe reports source Instruction 112 bytes, executable record
+16 bytes, operands 4 bytes each and a single 4-byte executable opcode. Exhaustive
+source/reverse conversions are preparation-time operations; the hot loop uses
+one executable-opcode switch. Fresh immutable timing, native and coverage
+evidence is required before accepting this source.

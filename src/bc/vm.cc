@@ -984,49 +984,13 @@ auto GD::Bc::Details::InstructionPack::execute() -> std::pair<GD::Bc::Number, bo
 
 auto GD::Bc::Details::InstructionPack::execute_compact() -> std::pair<GD::Bc::Number, bool>
 {
-  using O = Instruction::Opcode;
+  using O = ExecutableOpcode;
   while (pc_ < executable_.size()) {
     if (Details::have_been_interrupted.test(std::memory_order_relaxed))
       return std::make_pair(Number(0), true);
     GD_BC_PROFILE_EVENT(Profile::Event::instructions_executed, 1);
     auto const& instruction = executable_[pc_];
     auto& destination = results_[instruction.result];
-    if (instruction.fusion != ExecutableFusion::none) {
-      // Retain the location as well as the loaded snapshot: later stores may
-      // still name it, and a backedge may enter the unfused load record.
-      GD_BC_PROFILE_EVENT(Profile::Event::instructions_executed, 1);
-      auto& loaded = results_[instruction.second.index];
-      switch (instruction.fusion) {
-      case ExecutableFusion::load_variable: {
-        Variable const location(instruction.first.letter);
-        destination = location;
-        loaded = vm_->variable(location);
-        break;
-      }
-      case ExecutableFusion::load_array: {
-        Array const location(instruction.first.letter);
-        destination = location;
-        loaded = vm_->array(location);
-        break;
-      }
-      case ExecutableFusion::load_ibase:
-        destination = Ibase();
-        loaded = Number(vm_->ibase());
-        break;
-      case ExecutableFusion::load_obase:
-        destination = Obase();
-        loaded = Number(vm_->obase());
-        break;
-      case ExecutableFusion::load_scale:
-        destination = Scale();
-        loaded = Number(vm_->scale());
-        break;
-      case ExecutableFusion::none:
-        std::abort();
-      }
-      pc_ += 2;
-      continue;
-    }
     auto take = [&]() -> Number {
       auto& number = std::get<Number>(*results_[instruction.first.index]);
       if (number.has_heap_storage() && !consumption_.empty() && consumption_[pc_] != 0) {
@@ -1046,7 +1010,45 @@ auto GD::Bc::Details::InstructionPack::execute_compact() -> std::pair<GD::Bc::Nu
       operation(lhs, rhs);
       destination = std::move(lhs);
     };
-    switch (instruction.source_opcode()) {
+    switch (instruction.opcode) {
+    case O::load_variable: {
+      GD_BC_PROFILE_EVENT(Profile::Event::instructions_executed, 1);
+      Variable const location(instruction.first.letter);
+      destination = location;
+      results_[instruction.second.index] = vm_->variable(location);
+      pc_ += 2;
+      continue;
+    }
+    case O::load_array: {
+      GD_BC_PROFILE_EVENT(Profile::Event::instructions_executed, 1);
+      Array const location(instruction.first.letter);
+      destination = location;
+      results_[instruction.second.index] = vm_->array(location);
+      pc_ += 2;
+      continue;
+    }
+    case O::load_ibase: {
+      GD_BC_PROFILE_EVENT(Profile::Event::instructions_executed, 1);
+      destination = Ibase();
+      results_[instruction.second.index] = Number(vm_->ibase());
+      pc_ += 2;
+      continue;
+    }
+    case O::load_obase: {
+      GD_BC_PROFILE_EVENT(Profile::Event::instructions_executed, 1);
+      destination = Obase();
+      results_[instruction.second.index] = Number(vm_->obase());
+      pc_ += 2;
+      continue;
+    }
+    case O::load_scale: {
+      GD_BC_PROFILE_EVENT(Profile::Event::instructions_executed, 1);
+      destination = Scale();
+      results_[instruction.second.index] = Number(vm_->scale());
+      pc_ += 2;
+      continue;
+    }
+
     case O::string:
       destination = std::string_view(std::get<std::string>(instrs_[pc_].op1()));
       break;
