@@ -182,3 +182,130 @@ TEST_CASE("Outer result slots exclude every unexecuted definition-body producer"
   // This body is almost entirely producers, so the map cannot repay its cost.
   CHECK(GD::Bc::Details::plan_result_slots(body, 48).indices.empty());
 }
+
+TEST_CASE("Live registers follow peak local lifetimes rather than producer count",
+          "[bc][vm][live-registers]")
+{
+  GD::Bc::Instructions code;
+  for (unsigned i = 0; i < 200; ++i) {
+    code.emplace_back(O::number, "7");
+    code.emplace_back(O::number, "2");
+    code.emplace_back(O::add, D(-2), D(-1));
+    code.emplace_back(O::print, D(-1), I::Stream::output);
+  }
+  REQUIRE_FALSE(GD::Bc::Details::verify_control_flow(code, false).has_value());
+  auto const live = GD::Bc::Details::plan_live_result_slots(code, 48);
+  REQUIRE(live.indices.size() == code.size());
+  CHECK(live.count == 4);  // Empty sentinel plus three overlapping values.
+  CHECK(GD::Bc::Details::plan_result_slots(code, 48).count == 601);
+  for (I::Index i = 0; i < code.size(); i += 4) {
+    CHECK(live.index(i) != live.index(i + 1));
+    CHECK(live.index(i + 2) != live.index(i));
+    CHECK(live.index(i + 2) != live.index(i + 1));
+    CHECK(live.index(i + 3) == 0);
+  }
+}
+
+TEST_CASE("Local register reuse waits for the final read and pins loop invariants",
+          "[bc][vm][live-registers]")
+{
+  GD::Bc::Instructions code{I(O::number, "99")};
+  for (unsigned i = 0; i < 30; ++i) {
+    code.emplace_back(O::number, "1");
+    auto const pc = static_cast<D>(code.size());
+    code.emplace_back(O::add, -pc, D(-1));
+    code.emplace_back(O::print, D(-1), I::Stream::output);
+  }
+  auto const last = static_cast<D>(code.size());
+  code.emplace_back(O::print, -last, I::Stream::output);
+  code.emplace_back(O::branch, D(1) - static_cast<D>(code.size()));
+  REQUIRE_FALSE(GD::Bc::Details::verify_control_flow(code, false).has_value());
+  auto const live = GD::Bc::Details::plan_live_result_slots(code, 48);
+  REQUIRE(live.indices.size() == code.size());
+  CHECK(live.count == 4);
+  for (I::Index i = 1; i < static_cast<I::Index>(last); ++i) {
+    if (code[i].opcode() != O::print)
+      CHECK(live.index(i) != live.index(0));
+  }
+}
+
+TEST_CASE("Forward references keep dedicated registers through backedges",
+          "[bc][vm][live-registers]")
+{
+  GD::Bc::Instructions code{I(O::branch, D(2)), I(O::print, D(1), I::Stream::output),
+                            I(O::number, "7")};
+  for (unsigned i = 0; i < 20; ++i) {
+    code.emplace_back(O::number, "1");
+    code.emplace_back(O::print, D(-1), I::Stream::output);
+  }
+  code.emplace_back(O::branch, D(1) - static_cast<D>(code.size()));
+  REQUIRE_FALSE(GD::Bc::Details::verify_control_flow(code, false).has_value());
+  auto const live = GD::Bc::Details::plan_live_result_slots(code, 48);
+  REQUIRE(live.indices.size() == code.size());
+  CHECK(live.count == 3);
+  for (I::Index i = 3; i < code.size() - 1; i += 2)
+    CHECK(live.index(i) != live.index(2));
+}
+
+TEST_CASE("Branch targets prevent reusing values needed after a join", "[bc][vm][live-registers]")
+{
+  GD::Bc::Instructions code{I(O::number, "7"),
+                            I(O::number, "0"),
+                            I(O::branch_zero, D(-1), D(3)),
+                            I(O::number, "1"),
+                            I(O::print, D(-1), I::Stream::output),
+                            I(O::print, D(-5), I::Stream::output)};
+  for (unsigned i = 0; i < 20; ++i) {
+    code.emplace_back(O::number, "2");
+    code.emplace_back(O::print, D(-1), I::Stream::output);
+  }
+  REQUIRE_FALSE(GD::Bc::Details::verify_control_flow(code, false).has_value());
+  auto const live = GD::Bc::Details::plan_live_result_slots(code, 48);
+  REQUIRE(live.indices.size() == code.size());
+  for (I::Index i = 1; i < code.size(); ++i) {
+    if (GD::Bc::Details::classify_result(code, i) != GD::Bc::Details::ResultKind::none)
+      CHECK(live.index(i) != live.index(0));
+  }
+}
+
+TEST_CASE("Live-register planning retains identity for tiny or unprofitable streams",
+          "[bc][vm][live-registers]")
+{
+  CHECK(GD::Bc::Details::plan_live_result_slots({}, 48).indices.empty());
+  CHECK(GD::Bc::Details::plan_live_result_slots({I(O::number, "1")}, 48).indices.empty());
+  GD::Bc::Instructions code(16, I(O::number, "1"));
+  CHECK(GD::Bc::Details::plan_live_result_slots(code, 0).indices.empty());
+  CHECK(GD::Bc::Details::plan_live_result_slots(code, 4).indices.empty());
+  CHECK(GD::Bc::Details::plan_live_result_slots(code, 48).count == 2);
+}
+
+TEST_CASE("Live registers omit unexecuted function bodies and prepare them independently",
+          "[bc][vm][live-registers]")
+{
+  GD::Bc::Instructions code{
+    I(O::function_begin, GD::Bc::VariableMask(), GD::Bc::Location("unused", 1, 1)),
+    I(O::pop_param_mark)};
+  for (unsigned n = 0; n < 20; ++n) {
+    code.emplace_back(O::number, "7");
+    code.emplace_back(O::number, "2");
+    code.emplace_back(O::add, D(-2), D(-1));
+  }
+  code.emplace_back(O::return_, D(-1));
+  auto const end = code.size();
+  code.emplace_back(O::function_end, GD::Bc::Letter('f'), -static_cast<D>(end));
+  code.emplace_back(O::number, "2");
+  code.emplace_back(O::print, D(-1), I::Stream::output);
+  code.emplace_back(O::eof);
+  REQUIRE_FALSE(GD::Bc::Details::verify_control_flow(code, false).has_value());
+  auto const outer = GD::Bc::Details::plan_live_result_slots(code, 48);
+  REQUIRE(outer.indices.size() == code.size());
+  CHECK(outer.count == 2);
+  for (I::Index i = 0; i <= end; ++i)
+    CHECK(outer.index(i) == 0);
+  GD::Bc::Instructions const body(
+    code.begin() + 1, code.begin() + static_cast<GD::Bc::Instructions::difference_type>(end));
+  REQUIRE_FALSE(GD::Bc::Details::verify_control_flow(body, true).has_value());
+  auto const function = GD::Bc::Details::plan_live_result_slots(body, 48);
+  REQUIRE(function.indices.size() == body.size());
+  CHECK(function.count == 4);
+}

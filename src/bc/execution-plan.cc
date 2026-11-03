@@ -5,7 +5,9 @@
 #include "execution-plan.hh"
 
 #include <cassert>
+#include <functional>
 #include <limits>
+#include <queue>
 
 namespace GD::Bc::Details {
 namespace {
@@ -143,6 +145,116 @@ auto plan_result_slots(Instructions const& code, std::size_t slot_bytes) -> Resu
       result.indices[i] = next++;
   });
   result.count = next;
+  return result;
+}
+
+auto plan_live_result_slots(Instructions const& code, std::size_t slot_bytes) -> ResultSlotPlan
+{
+  using I = Instruction::Index;
+  using O = Instruction::Opcode;
+  using Compact = ResultSlotPlan::CompactIndex;
+  auto const size = code.size();
+  if (size < 16 || size >= std::numeric_limits<Compact>::max() ||
+      size > std::numeric_limits<std::size_t>::max() / sizeof(Compact) ||
+      slot_bytes <= sizeof(Compact)) {
+    return {};
+  }
+  auto target = [](I pc, Instruction::Operand const& operand) {
+    return pc + static_cast<I>(std::get<Instruction::Offset>(operand));
+  };
+  std::vector<bool> leader(size, false);
+  leader[0] = true;
+  auto start_block = [&](I i) {
+    if (i < size)
+      leader[i] = true;
+  };
+  visit_execution_region(code, [&](I i) {
+    switch (code[i].opcode()) {
+    case O::branch:
+      start_block(target(i, code[i].op1()));
+      start_block(i + 1);
+      break;
+    case O::branch_zero:
+      start_block(target(i, code[i].op2()));
+      start_block(i + 1);
+      break;
+    case O::function_begin:
+    case O::function_end:
+    case O::return_:
+    case O::quit:
+    case O::eof:
+      start_block(i + 1);
+      break;
+    default:
+      break;
+    }
+  });
+  std::vector<I> block(size);
+  std::vector<I> last(size);
+  I current = 0;
+  for (I i = 0; i < size; ++i) {
+    if (leader[i])
+      current = i;
+    block[i] = current;
+    last[i] = i;
+  }
+  std::vector<bool> pinned(size, false);
+  visit_execution_region(code, [&](I i) {
+    auto read = [&](Instruction::Operand const& operand) {
+      if (!std::holds_alternative<Instruction::Offset>(operand))
+        return;
+      auto const producer = target(i, operand);
+      assert(producer < size);  // NOLINT: verified data reference.
+      if (producer >= i || block[producer] != block[i])
+        pinned[producer] = true;
+      if (last[producer] < i)
+        last[producer] = i;
+    };
+    // Control offsets and definition metadata do not read result registers.
+    auto const opcode = code[i].opcode();
+    if (opcode != O::branch && opcode != O::function_end) {
+      if (code[i].has_op1())
+        read(code[i].op1());
+      if (code[i].has_op2() && opcode != O::branch_zero)
+        read(code[i].op2());
+    }
+  });
+
+  ResultSlotPlan result;
+  result.indices.resize(size, 0);
+  Compact next = 1;
+  visit_execution_region(code, [&](I i) {
+    if (pinned[i] && classify_result(code, i) != ResultKind::none)
+      result.indices[i] = next++;
+  });
+  // Only block-local values enter the reusable pool. Dedicated registers never
+  // enter it, including forward producers reached through a later backedge.
+  using Active = std::pair<I, Compact>;
+  std::priority_queue<Active, std::vector<Active>, std::greater<Active>> active;
+  std::vector<Compact> free;
+  visit_execution_region(code, [&](I i) {
+    while (!active.empty() && active.top().first < i) {
+      free.push_back(active.top().second);
+      active.pop();
+    }
+    if (pinned[i] || classify_result(code, i) == ResultKind::none)
+      return;
+    Compact slot;
+    if (free.empty()) {
+      slot = next++;
+    }
+    else {
+      slot = free.back();
+      free.pop_back();
+    }
+    result.indices[i] = slot;
+    active.emplace(last[i], slot);
+  });
+  result.count = next;
+  // Charge the sentinel and map. Avoid multiplication overflow as in the
+  // producer-only planner; a preparation with no net saving retains identity.
+  if (result.count >= size || size - result.count <= size * sizeof(Compact) / slot_bytes)
+    return {};
   return result;
 }
 

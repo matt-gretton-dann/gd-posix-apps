@@ -21,8 +21,8 @@ auto classify_result(Instructions const& code, Instruction::Index index) -> Resu
 
 // A compact map assigns slots only to value-producing instructions in this
 // execution region. Zero is a shared empty sentinel for non-producers and
-// skipped definition bodies. Producers never share slots with one another;
-// no liveness or control-flow-dependent reuse is inferred here.
+// skipped definition bodies. The producer-only planner assigns distinct slots;
+// the live-register planner may reuse slots after proved local last uses.
 struct ResultSlotPlan
 {
   using CompactIndex = std::uint32_t;
@@ -47,6 +47,14 @@ struct ResultSlotPlan
 // indices and layouts without a net slot/map payload saving keep the generic
 // identity layout. slot_bytes is the caller's actual result-slot sizeof.
 auto plan_result_slots(Instructions const& code, std::size_t slot_bytes) -> ResultSlotPlan;
+
+// Allocate reusable registers for values confined to a straight-line block.
+// Every value read across a block boundary or before its static producer keeps
+// a dedicated register. Reuse starts strictly after the final read, so operand
+// references remain distinct from the destination throughout an instruction.
+// Call only after complete entry verification. As with producer-only planning,
+// unrepresentable indices and layouts without a payload saving use identity.
+auto plan_live_result_slots(Instructions const& code, std::size_t slot_bytes) -> ResultSlotPlan;
 
 // One byte per instruction: nonzero permits transferring its first arithmetic
 // operand. An empty plan keeps ordinary copies without a per-instruction table.
