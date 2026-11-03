@@ -117,12 +117,18 @@ auto main(int argc, char** argv) -> int
 
   // EOF advances to the next input; quit must stop before opening it.
   for (auto it = args.begin() + optind; it != args.end(); ++it) {
-    auto r = std::make_unique<GD::Bc::FileReader>(*it);
+    std::unique_ptr<GD::Bc::Reader> r;
+    if (std::string_view(*it) == "-") {
+      r = std::make_unique<GD::Bc::StdinReader>();
+    }
+    else {
+      r = std::make_unique<GD::Bc::FileReader>(*it);
+    }
     if (execute(vm, std::move(r)) == InputResult::quit) {
       return 0;
     }
   }
-  auto r = std::make_unique<GD::Bc::FileReader>("-");
+  auto r = std::make_unique<GD::Bc::StdinReader>();
   execute(vm, std::move(r));
 
   return 0;

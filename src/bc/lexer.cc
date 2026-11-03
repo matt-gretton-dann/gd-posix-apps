@@ -54,6 +54,19 @@ void GD::Bc::Lexer::lex_string()
   std::string value;
 
   while (true) {
+    auto const available = r_->contiguous();
+    if (!available.empty()) {
+      auto const text = available.substr(0, available.find('"'));
+      value.append(text);
+      r_->chew_prefix(text.size());
+      if (text.size() != available.size()) {
+        r_->chew();
+        t_.emplace(Token::Type::string, std::move(value));
+        return;
+      }
+      continue;
+    }
+
     switch (r_->peek()) {
     case '"':
       r_->chew();

@@ -21,7 +21,18 @@ auto main(int argc, char** argv) -> int
   std::string_view const mode(argv[1]);
   // Invalid streams must be rejected before this observable prefix executes.
   GD::Bc::Instructions code{I(O::string, "EXECUTED\n"), I(O::print, D(-1), I::Stream::output)};
-  if (mode == "op1-end") {
+  if (mode == "typed-quit") {
+    // Cover actual verified lowering of the public quit opcode without
+    // terminating the in-process unit runner. The exit status distinguishes
+    // opcode execution from reaching this driver's normal return.
+    for (unsigned i = 0; i != 64; ++i)
+      code.emplace_back(O::number, "0");
+    code.emplace_back(O::quit, unsigned(23));
+    code.emplace_back(O::string, "NOT EXECUTED\n");
+    code.emplace_back(O::print, D(-1), I::Stream::output);
+    code.emplace_back(O::eof);
+  }
+  else if (mode == "op1-end") {
     code.emplace_back(O::print, D(1), I::Stream::output);
   }
   else if (mode == "op1-after") {
