@@ -205,6 +205,57 @@ auto parser_allocation_failures() -> bool
   return false;  // Do not silently accept a truncated fault sweep.
 }
 
+auto first_array_store_failures() -> bool
+{
+  using I = GD::Bc::Instruction;
+  using O = I::Opcode;
+  using D = I::Offset;
+  auto const array = GD::Bc::Array('a');
+  bool observed_failure = false;
+  for (std::size_t point = 0; point != 128; ++point) {
+    std::ostringstream output, errors;
+    GD::Bc::VM vm(output, errors, false);
+    GD::Bc::Instructions warm{I(O::eof)};
+    if (vm.execute(warm))
+      return false;
+    GD::Bc::Instructions store{I(O::number, "9"), I(O::array_element, array, D(-1)),
+                               I(O::number, "7"), I(O::store, D(-2), D(-1)), I(O::eof)};
+    GD::Bc::Instructions query{I(O::array, array),
+                               I(O::length, D(-1)),
+                               I(O::print, D(-1), I::Stream::output),
+                               I(O::number, "9"),
+                               I(O::array_element, array, D(-1)),
+                               I(O::load, D(-1)),
+                               I(O::print, D(-1), I::Stream::output),
+                               I(O::eof)};
+    auto const before = injected_failures;
+    bool failed = false;
+    try {
+      AllocationFailure const failure(point);
+      if (vm.execute(store))
+        return false;
+    }
+    catch (std::bad_alloc const&) {
+      failed = true;
+    }
+    if (failed != (injected_failures != before))
+      return false;
+    if (failed) {
+      observed_failure = true;
+      // Failure can leave an allocated map with no entries. Check both the
+      // length and the absent element before retrying the same VM.
+      if (vm.execute(query) || output.str() != "0\n0\n" || vm.execute(store))
+        return false;
+    }
+    if (vm.execute(query) || !errors.str().empty() ||
+        output.str() != (failed ? "0\n0\n10\n7\n" : "10\n7\n"))
+      return false;
+    if (!failed)
+      return observed_failure;
+  }
+  return false;
+}
+
 class InterruptibleOutput : public std::stringbuf
 {
 public:
@@ -411,6 +462,10 @@ auto main() -> int
     std::fprintf(stderr, "Verified activation allocation failure damaged retry state\n");
     return 1;
   }
+  if (!first_array_store_failures()) {
+    std::fprintf(stderr, "Failed first array store changed visible state or prevented retry\n");
+    return 1;
+  }
   if (!restore_call_after_allocation_failure()) {
     std::fprintf(stderr, "Allocation failure damaged an active call or its retry\n");
     return 1;
@@ -423,6 +478,10 @@ auto main() -> int
   if (!verified_activation_allocation_failures(false) ||
       !verified_activation_allocation_failures(true)) {
     std::fprintf(stderr, "Repeated verified activation sweep retained state\n");
+    return 1;
+  }
+  if (!first_array_store_failures()) {
+    std::fprintf(stderr, "Repeated array failure sweep changed visible state\n");
     return 1;
   }
   if (!restore_call_after_allocation_failure()) {
