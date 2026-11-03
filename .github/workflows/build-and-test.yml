@@ -84,6 +84,21 @@ jobs:
         run: |
           cd "${GITHUB_WORKSPACE}/build"
           ctest -V
+      - name: Check optional bc GMP multiplication
+        if: ${{ matrix.extensions == 'ON' }}
+        run: |
+          gmp_args=()
+          if [ "${RUNNER_OS}" = macOS ]; then
+            brew list --versions gmp >/dev/null || brew install gmp
+            gmp_args+=("-DCMAKE_PREFIX_PATH=$(brew --prefix gmp)")
+          else
+            sudo apt-get install --yes --no-install-recommends libgmp-dev
+          fi
+          cmake -S . -B build-bc-gmp -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_TESTING=OFF -DBC_MULTIPLY_SPLIT_POINT=126 \
+            -DENABLE_NON_POSIX_EXTENSIONS=ON -DENABLE_BC_GMP_MULTIPLY=ON "${gmp_args[@]}"
+          cmake --build build-bc-gmp --target bc --parallel 2
+          python3 src/bc/test-cli.py build-bc-gmp/src/bc/bc --extensions ON
       - name: Check pinned comparator recipes
         if: ${{ matrix.extensions == 'ON' }}
         run: |
