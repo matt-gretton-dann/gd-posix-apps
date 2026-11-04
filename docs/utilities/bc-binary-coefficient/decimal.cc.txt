@@ -1,0 +1,58 @@
+#include "bc.hh"
+
+#include <iostream>
+#include <string>
+
+using Number = GD::Bc::Number;
+
+auto parse(std::string const& text) -> Number
+{
+  bool const negative = text.front() == '-';
+  Number result(std::string_view(text).substr(negative), 10);
+  if (negative) {
+    result.negate();
+  }
+  return result;
+}
+
+int main()
+{
+  Number::multiply_split_point(126);
+  std::string operation;
+  while (std::cin >> operation) {
+    Number result(1);
+    if (operation == "mul") {
+      std::string lhs, rhs;
+      unsigned scale;
+      if (!(std::cin >> lhs >> rhs >> scale)) {
+        return 2;
+      }
+      result = parse(lhs);
+      result.multiply(parse(rhs), scale);
+    }
+    else {
+      unsigned count;
+      if (!(std::cin >> count)) {
+        return 2;
+      }
+      if (operation == "factorial") {
+        for (unsigned i = 2; i <= count; ++i) {
+          result.multiply(Number(i), 0);
+        }
+      }
+      else if (operation == "fibonacci") {
+        result = Number(0);
+        Number next(1);
+        for (unsigned i = 0; i < count; ++i) {
+          result.add(next);
+          std::swap(result, next);
+        }
+      }
+      else {
+        return 2;
+      }
+    }
+    result.output(std::cout, 10, 0);
+    std::cout << '\n';
+  }
+}

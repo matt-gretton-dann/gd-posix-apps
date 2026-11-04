@@ -1,0 +1,58 @@
+import hashlib
+import json
+import math
+from pathlib import Path
+import random
+import statistics
+import subprocess
+import sys
+import time
+
+sys.set_int_max_str_digits(0)
+root = Path(__file__).parent
+rng = random.Random(20432)
+rows = []
+
+def measure(name, binary, oracle, repetitions):
+    data = (binary + '\n').encode() * repetitions
+    expected = (str(oracle) + '\n').encode() * repetitions
+    ratios = []
+    for index in range(10):
+        roles = ['probe', 'decimal']
+        rng.shuffle(roles)
+        elapsed = {}
+        for role in roles:
+            start = time.perf_counter_ns()
+            child = subprocess.run([root / role], input=data, capture_output=True, timeout=30, check=True)
+            elapsed[role] = time.perf_counter_ns() - start
+            assert not child.stderr and child.stdout.replace(bytes((92, 10)), b"") == expected, (name, role)
+        rows.append(dict(name=name, round=index, elapsed_ns=elapsed, order=roles,
+                         output_sha256=hashlib.sha256(expected).hexdigest()))
+        if index:
+            ratios.append(elapsed['probe'] / elapsed['decimal'])
+    print(name, round(statistics.median(ratios), 3), flush=True)
+
+def digits(n):
+    return '9' + ''.join(rng.choices('0123456789', k=n-1))
+
+def scaled(s, places):
+    s = s.zfill(places + 1)
+    return s[:-places] + '.' + s[-places:] if places else s
+
+for n, m, sa, sb, scale, repeats in (
+    (100, 100, 0, 0, 0, 5000), (1000, 1000, 19, 21, 25, 1500),
+    (10000, 10000, 0, 0, 0, 100), (100000, 100000, 0, 0, 0, 3),
+    (100000, 1000, 19, 21, 25, 10)):
+    a,b = digits(n),digits(m)
+    out_scale = min(sa + sb, max(sa, sb, scale))
+    value = int(a) * int(b) // 10 ** (sa + sb - out_scale)
+    measure(f'mul-{n}-{m}-scale-{scale}', f'mul -{scaled(a,sa)} {scaled(b,sb)} {scale}',
+            '-' + scaled(str(value),out_scale), repeats)
+for n,repeats in ((1000,100),(5000,20)):
+    measure(f'factorial-{n}',f'factorial {n}',math.factorial(n),repeats)
+for n,repeats in ((1000,500),(10000,100)):
+    a,b=0,1
+    for _ in range(n):
+        a,b=b,a+b
+    measure(f'fibonacci-{n}',f'fibonacci {n}',a,repeats)
+(root/'timing.json').write_text(json.dumps(rows,indent=2)+'\n')
