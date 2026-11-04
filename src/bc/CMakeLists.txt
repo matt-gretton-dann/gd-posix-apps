@@ -204,7 +204,15 @@ unset(GD_BC_LIBRARY_SOURCE)
 
 add_utility(NAME bc NO_INT_TEST CAT_ID bc SOURCES bc.cc math-library.cc)
 target_link_libraries(bc PUBLIC libbc)
-option(ENABLE_BC_PREPARSED_LIBRARY "Parse the ordinary bc math source at build time" OFF)
+# Coverage configurations exercise the source loader. Cross builds cannot run
+# the generator on the build host and always use the source loader.
+set(_bc_library_image_default ON)
+if(ENABLE_BC_COVERAGE OR CMAKE_CROSSCOMPILING)
+  set(_bc_library_image_default OFF)
+endif()
+option(ENABLE_BC_PREPARSED_LIBRARY "Parse the ordinary bc math source at build time"
+       ${_bc_library_image_default})
+unset(_bc_library_image_default)
 if(ENABLE_BC_PREPARSED_LIBRARY AND NOT CMAKE_CROSSCOMPILING)
   add_executable(bc-preparse-math-library preparse-math-library.cc math-library.cc)
   target_link_libraries(bc-preparse-math-library PRIVATE libbc)

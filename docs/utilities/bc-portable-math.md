@@ -425,7 +425,7 @@ retains the exact interpreted source, validation logs, separate LLVM 23 ON/OFF
 profiles/reports and the existing arithmetic native control. Its measured
 revisions are explicit checkpoints; later source changes require fresh checks.
 
-## Build-time parser experiment
+## Build-time math library image
 
 `ENABLE_BC_PREPARSED_LIBRARY=ON` builds a native generator that parses the
 same embedded POSIX source and encodes the ordinary instruction operands
@@ -435,16 +435,19 @@ It registers an isolated function definition as a slice of the immutable image.
 The first call decodes and verifies that slice before installing an owned body
 with its own literal caches. User definitions replace deferred or decoded
 functions through normal registration. Item boundaries and source locations
-are preserved. The default and cross builds load the source through the
-parser. The optional image test checks deterministic regeneration.
+are preserved. Native builds enable the image by default. Cross builds
+always load the source through the parser. Native coverage builds default to
+the source loader, which any native build can select with
+`-DENABLE_BC_PREPARSED_LIBRARY=OFF`. The image test checks deterministic
+regeneration when the image is enabled.
 
 An exploratory Apple Clang arm64 Release comparison used 30 paired process
 launches per case after warmup. All outputs matched the source loader.
 The preload-only runtime ratio was 0.967 [0.956, 0.975] and the cold sine
 and Bessel ratios were 0.972 and 0.975. The no-library ratio was 0.986,
 and this run had no separate A/A control. The executable grew from
-567232 to 735296 bytes. These measurements leave the source loader as the
-default.
+567232 to 735296 bytes. These initial measurements preceded the compact encoding and deferred
+function decoding.
 
 The compact encoding reduced the executable to 583296 bytes and the
 instruction image to 10089 bytes. In a second 30-pair comparison with both
