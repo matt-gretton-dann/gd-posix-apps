@@ -391,8 +391,9 @@ define j(n,x) {
   /* Try the ascending series without guards for every input place.
      DLMF 10.9.2 gives |J_n'(x)|<=1 for real x and integer n, so
      truncating x at working precision adds less than one working unit. */
-  /* exp(2*x) < 10^(7*x/8) for x>0. Round the digit budget up. */
-  g=(7*x)/8+1
+  /* Absolute recurrence weights sum to at most exp(x).
+     exp(x) < 10^(7*x/16) for x>0. Round the digit budget up. */
+  g=(7*x)/16+1
   w=s+g+length(x)+2*length(s+g+length(x)+1)+32
   scale=w
   if (scale!=w) return(1/0)
