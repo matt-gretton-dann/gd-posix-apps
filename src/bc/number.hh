@@ -32,6 +32,9 @@
 #include "bc.hh"
 #include "digit-storage.hh"
 #include "limb-product.hh"
+#if defined(GD_BC_EXPERIMENT_NTT)
+#include "limb-ntt.hh"
+#endif
 #include "limb-schoolbook.hh"
 
 namespace GD::Bc {
@@ -1705,6 +1708,16 @@ private:
     BasicDigits result;
     result.copy_on_write();
     result.digits_->resize(lhs_size + rhs_size, NumType{0});
+#if defined(GD_BC_EXPERIMENT_NTT)
+    if constexpr (std::is_same_v<Traits, NumberTraits32>) {
+      if (Details::LimbNtt::eligible(lhs_size, rhs_size)) {
+        Details::LimbNtt::multiply({lhs_begin, lhs_end}, {rhs_begin, rhs_end},
+                                   {result.digits_->begin(), result.digits_->end()});
+        result.tidy();
+        return result;
+      }
+    }
+#endif
     std::vector<NumType, Profile::Allocator<NumType, Profile::AllocationKind::digits>> workspace(
       Kernel::workspace_size(std::max(lhs_size, rhs_size), point));
     Kernel::multiply(std::span<NumType const>(lhs_begin, lhs_end),
