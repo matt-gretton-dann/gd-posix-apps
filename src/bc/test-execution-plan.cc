@@ -307,6 +307,60 @@ TEST_CASE("Typed planning charges both register lanes maps and fixed layout cost
   CHECK(typed_plan(strings).empty());
 }
 
+TEST_CASE("Typed planning rejects incomplete maps and zero layout costs",
+          "[bc][vm][typed-results]")
+{
+  using namespace GD::Bc::Details;
+  GD::Bc::Instructions const code(17, I(O::number, "7"));
+  REQUIRE_FALSE(typed_plan(code).empty());
+
+  ResultSlotPlan incomplete;
+  incomplete.indices.resize(code.size() - 1);
+  CHECK(plan_typed_results(code, incomplete, typed_costs(), true).empty());
+
+  auto const fields = {&TypedResultCosts::other_slot_bytes,
+                       &TypedResultCosts::generic_slot_bytes,
+                       &TypedResultCosts::generic_instruction_bytes,
+                       &TypedResultCosts::typed_instruction_bytes};
+  for (auto field : fields) {
+    auto costs = typed_costs();
+    costs.*field = 0;
+    CHECK(plan_typed_results(code, {}, costs, true).empty());
+  }
+}
+
+TEST_CASE("Typed lowering falls back for inconsistent register plans",
+          "[bc][vm][typed-results]")
+{
+  using namespace GD::Bc::Details;
+  GD::Bc::Instructions code(17, I(O::number, "7"));
+  code.emplace_back(O::eof);
+  auto const valid = typed_plan(code);
+  REQUIRE(lower_typed_executable(code, valid, true).size() == code.size());
+
+  auto plan = valid;
+  plan.indices.pop_back();
+  CHECK(lower_typed_executable(code, plan, true).empty());
+
+  plan = valid;
+  plan.number_count = 0;
+  CHECK(lower_typed_executable(code, plan, true).empty());
+  plan.number_count = TypedResultPlan::no_register;
+  CHECK(lower_typed_executable(code, plan, true).empty());
+
+  plan = valid;
+  plan.other_count = TypedResultPlan::no_register;
+  CHECK(lower_typed_executable(code, plan, true).empty());
+
+  plan = valid;
+  plan.indices.front() = static_cast<TypedResultPlan::CompactIndex>(valid.number_count);
+  CHECK(lower_typed_executable(code, plan, true).empty());
+
+  plan = valid;
+  plan.indices.back() = 0;  // EOF does not produce a result.
+  CHECK(lower_typed_executable(code, plan, true).empty());
+}
+
 TEST_CASE("Typed lowering separates Number results from locations arrays and strings",
           "[bc][vm][typed-results]")
 {
