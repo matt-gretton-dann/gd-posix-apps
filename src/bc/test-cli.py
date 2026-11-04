@@ -82,6 +82,14 @@ class CliTests(unittest.TestCase):
             path.write_bytes((" " * (block - 2) + "1\\\n2\nquit\n@\n").encode("ascii"))
             self.run_bc("", "12\n", files=(path,), keep_open=True)
 
+    def test_numeric_input_across_pipe_blocks(self):
+        # Each part exceeds the bounded pipe read. Preserve fractional scale
+        # across blocks and a backslash-newline continuation.
+        whole = "7" * 4100
+        fraction = "3" * 4101
+        self.run_bc(f"scale({whole}.\\\n{fraction})\nquit;", "4101\n", keep_open=True)
+        self.run_bc(f"1.{fraction}.2\n", success=False)
+
     def test_quit(self):
         for text, expected in [
             ("quit\n", ""),
@@ -97,6 +105,21 @@ class CliTests(unittest.TestCase):
 
     def test_quit_with_open_stdin(self):
         self.run_bc("1+1\nquit\n", "2\n", keep_open=True)
+
+    @unittest.skipUnless(os.name == "posix", "requires a POSIX directory descriptor")
+    def test_stdin_read_error(self):
+        with tempfile.TemporaryDirectory() as directory:
+            descriptor = os.open(directory, os.O_RDONLY)
+            try:
+                result = subprocess.run(
+                    [BC], stdin=descriptor, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    universal_newlines=True, timeout=2, env=dict(os.environ, LC_ALL="C"),
+                )
+            finally:
+                os.close(descriptor)
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("Error:-:1:1: Abort: File system error", result.stderr)
 
     def test_stdin_eof_across_explicit_input_operands(self):
         with tempfile.TemporaryDirectory() as directory:
