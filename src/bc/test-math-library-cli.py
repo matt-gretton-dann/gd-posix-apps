@@ -118,6 +118,10 @@ class LibraryCli(unittest.TestCase):
         for scale in (999, 1000):
             for argument in ('.02', '.949999', '.95', '1.05', '1.050001', '2'):
                 cases.append((scale, argument))
+        # Check both ends of the root-free band and the W=64/65 switch.
+        for argument in ('1.599999', '1.6', '1.600001', '2.399999', '2.4', '2.400001'):
+            cases.append((20, argument))
+        cases.extend((scale, '2') for scale in (35, 36))
         # Exercise multiple blocks and the short tail close to one, on both
         # sides of zero in the logarithm's result.
         for argument in ('.96', '2.25', '.' + '9' * 100, '1.' + '0' * 99 + '1'):
@@ -140,6 +144,22 @@ class LibraryCli(unittest.TestCase):
                     value = ORACLE.decimal_fraction(lines[3 * index])
                     self.assertEqual(ORACLE.classify(value, lower, upper, scale), 'pass')
                     self.assertEqual(lines[3 * index + 1:3 * index + 3], [str(scale), '10'])
+
+    def test_logarithm_binary_reduction_literal(self):
+        source = Path(SOURCE).read_text(encoding='utf-8')
+        literals = re.findall(r'(?m)^\s*h\+=(0\.\d{80})/1$', source)
+        self.assertEqual(len(literals), 1)
+        # ln(2) = 2*atanh(1/3). The positive tail is bounded by the
+        # first omitted term times the geometric sum with ratio 1/9.
+        count = 100
+        lower = 2 * sum(Fraction(1, (2*k+1)*3**(2*k+1)) for k in range(count))
+        tail = Fraction(2, (2*count+1)*3**(2*count+1)) * Fraction(9, 8)
+        upper = lower + tail
+        for scale in (*range(65), 80):
+            factor = 10**scale
+            floors = [v.numerator * factor // v.denominator
+                      for v in (lower, upper, Fraction(literals[0]))]
+            self.assertEqual(floors, [floors[0]] * 3, scale)
 
     def test_atan_unit_literal_matches_the_certified_enclosure(self):
         source = Path(SOURCE).read_text(encoding='utf-8')

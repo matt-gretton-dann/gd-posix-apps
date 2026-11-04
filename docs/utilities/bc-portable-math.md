@@ -157,6 +157,15 @@ regimes the reduced ratio has magnitude at most 1/9 and its square is
 below .013, so fewer than W+2 terms suffice. Near one, this evaluates the small
 logarithm directly rather than subtracting large independently rounded logs.
 
+At working scale W <= 64, an argument in [1.6,2.4] can enter the
+root-free band by dividing by two and adding ln(2) to the final result.
+The quotient truncation changes its logarithm by less than 2u since the
+reduced argument is at least .8. The stored 80-place lower bound is
+certified by the positive series 2*atanh(1/3), bounding the tail by the
+first omitted term times 9/8. Truncation of this constant at W adds less
+than u. The combined error is covered by the existing budget below.
+Other arguments and precisions retain square-root reduction.
+
 At scale 1000 and above, let t be the reduced ratio and q = t².
 Cache q⁰ through q¹⁵ and evaluate blocks of 16 consecutive terms.
 For a block starting at term j, multiply the sum of q^v/(2j+2v+1)
