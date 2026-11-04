@@ -1,0 +1,4 @@
+   text	   data	    bss	    dec	    hex	filename
+ 439285	   3424	    329	 443038	  6c29e	build-portable/src/bc/bc
+ 510079	   3416	   3257	 516752	  7e290	build-sampled/src/bc/bc
+ 439285	   3424	    329	 443038	  6c29e	build-aa/src/bc/bc
