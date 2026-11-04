@@ -78,6 +78,11 @@ def main():
     for filename in ('math-oracles.json', 'math-crossover-oracles.json', 'math-trig-oracles.json',
                      'math-bessel-zero-oracles.json'):
         cases.extend(json.loads((ROOT / 'fixtures' / filename).read_text())['cases'])
+    # At this intermediate precision the selector still attempts Hankel, but
+    # contraction ends before the terms vanish. Reuse a finer enclosure.
+    hankel = next(case for case in cases
+                  if case['id'] == 'j-argument-dominates' and case['scale'] == 100)
+    cases.append(dict(hankel, scale=55))
     program = ''.join('scale={}\n{}({})\n'.format(
         case['scale'], case['function'], ','.join(case['arguments'])) for case in cases)
     result = run(args.bc, transformed, program)

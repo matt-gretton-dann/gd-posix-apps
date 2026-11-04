@@ -339,7 +339,13 @@ define j(n,x) {
   /* DLMF 10.17.14-15 bounds the Hankel remainder by less than three
      first-omitted coefficients here. Abort if recurrence contraction is
      lost before the working-scale truncation budget is met. */
-  if (x>8*(n*n+1)) {
+  /* The asymptotic terms eventually grow. When requested precision
+     approaches the argument, start with the convergent series and avoid
+     building a long asymptotic prefix that may be discarded. The
+     contraction check still decides whether an attempted prefix is usable. */
+  g=8*(n*n+1)
+  if (g<w) g=w
+  if (x>g) {
     scale=w
     if (scale!=w) return(1/0)
     m=4*n*n
