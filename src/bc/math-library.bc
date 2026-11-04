@@ -403,12 +403,39 @@ define j(n,x) {
     if (t==0) break
   }
   r=t
-  q= -x*x/4
-  k=1
-  while (t!=0) {
-    t=t*q/(k*(n+k))
-    r+=t
-    k+=1
+  u=0
+  if (scale(x)==0) {
+    if (x>=32) u=1
+  }
+  if (u==1) {
+    /* Group four terms using their common integer denominator.
+       The block sum and final term each need one truncating division. */
+    q= -x*x
+    m=q^4
+    k=1
+    while (t!=0) {
+      d=4*k*(n+k)
+      k+=1
+      f=4*k*(n+k)
+      k+=1
+      g=4*k*(n+k)
+      k+=1
+      h=4*k*(n+k)
+      k+=1
+      p=f*g*h
+      d*=p
+      r+=t*q*(p+q*(g*h+q*(h+q)))/d
+      t=t*m/d
+    }
+  }
+  if (u==0) {
+    q= -x*x/4
+    k=1
+    while (t!=0) {
+      t=t*q/(k*(n+k))
+      r+=t
+      k+=1
+    }
   }
   if (v==1) r= -r
   t=10^(-s)/2

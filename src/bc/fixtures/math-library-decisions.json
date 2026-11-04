@@ -924,10 +924,65 @@
       ]
     },
     {
+      "expression": "scale(x)==0",
+      "function": "j",
+      "kind": "if",
+      "line": 407,
+      "modeled": [],
+      "observed": [
+        "true",
+        "false"
+      ]
+    },
+    {
+      "expression": "x>=32",
+      "function": "j",
+      "kind": "if",
+      "line": 408,
+      "modeled": [],
+      "observed": [
+        "true",
+        "false"
+      ]
+    },
+    {
+      "expression": "u==1",
+      "function": "j",
+      "kind": "if",
+      "line": 410,
+      "modeled": [],
+      "observed": [
+        "true",
+        "false"
+      ]
+    },
+    {
       "expression": "t!=0",
       "function": "j",
       "kind": "while",
-      "line": 408,
+      "line": 416,
+      "modeled": [],
+      "observed": [
+        "true",
+        "false"
+      ]
+    },
+    {
+      "expression": "u==0",
+      "function": "j",
+      "kind": "if",
+      "line": 431,
+      "modeled": [],
+      "observed": [
+        "true",
+        "false"
+      ]
+    },
+    {
+      "expression": "t!=0",
+      "function": "j",
+      "kind": "while",
+      "line": 434,
       "modeled": [],
       "observed": [
         "true",
@@ -938,7 +993,7 @@
       "expression": "v==1",
       "function": "j",
       "kind": "if",
-      "line": 413,
+      "line": 440,
       "modeled": [],
       "observed": [
         "true",
@@ -949,7 +1004,7 @@
       "expression": "r>=0",
       "function": "j",
       "kind": "if",
-      "line": 415,
+      "line": 442,
       "modeled": [],
       "observed": [
         "true",
@@ -960,7 +1015,7 @@
       "expression": "r<0",
       "function": "j",
       "kind": "if",
-      "line": 416,
+      "line": 443,
       "modeled": [],
       "observed": [
         "true",
@@ -970,11 +1025,11 @@
   ],
   "fault_model": "each working-scale setter independently clipped to zero",
   "infeasible_outcomes": 2,
-  "observed_or_modeled_outcomes": 164,
-  "observed_outcomes": 155,
+  "observed_or_modeled_outcomes": 174,
+  "observed_outcomes": 165,
   "schema": 1,
   "scope": "test-side interpreted decision outcomes; not compiler MC/DC",
-  "source_sha256": "20d6c63dd4b639af2aa3ae69b047834ed47939e07cf7eef241a1aaa262f1438b",
-  "total_outcomes": 166,
+  "source_sha256": "5af5f7266d9b71fe9405e30d5d539644e1afcbd33f68a6a72ac903463bd650f4",
+  "total_outcomes": 176,
   "undefined_domain_guard_calls": 2
 }
