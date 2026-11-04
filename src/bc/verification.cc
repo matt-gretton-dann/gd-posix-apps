@@ -16,6 +16,12 @@ namespace {
 // Preserve the packed verifier's code layout on Windows, where the
 // combined shortcut caused regressions outside the frontend workloads.
 #if !defined(_WIN32)
+// Keep definition verification outside the general stream's hot scan.
+#  if __has_cpp_attribute(gnu::noinline)
+[[gnu::noinline]]
+#  endif
+auto is_verified_linear_definition(Instructions const& code) -> bool;
+
 // In an outer, straight-line region, each preceding instruction dominates
 // the current one. Fall back to the graph verifier for all other inputs,
 // including invalid ones, so its existing diagnostics retain their ordering.
@@ -31,9 +37,10 @@ auto is_verified_linear_stream(Instructions const& code) -> bool
     switch (instruction.opcode()) {
     case O::eof:
       return i + 1 == code.size();
+    case O::function_begin:
+      return i == 0 && is_verified_linear_definition(code);
     case O::branch:
     case O::branch_zero:
-    case O::function_begin:
     case O::function_end:
     case O::return_:
     case O::quit:
@@ -161,8 +168,7 @@ auto verify_control_flow(Instructions const& code, bool function_body)
   using I = Instruction::Index;
   using O = Instruction::Opcode;
 #if !defined(_WIN32)
-  if (!function_body &&
-      (is_verified_linear_stream(code) || is_verified_linear_definition(code))) {
+  if (!function_body && is_verified_linear_stream(code)) {
     return std::nullopt;
   }
 #endif
