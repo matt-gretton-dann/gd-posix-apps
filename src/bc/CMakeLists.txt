@@ -192,6 +192,24 @@ unset(GD_BC_LIBRARY_SOURCE)
 
 add_utility(NAME bc NO_INT_TEST CAT_ID bc SOURCES bc.cc math-library.cc)
 target_link_libraries(bc PUBLIC libbc)
+option(ENABLE_BC_PREPARSED_LIBRARY "Parse the ordinary bc math source at build time" OFF)
+if(ENABLE_BC_PREPARSED_LIBRARY AND NOT CMAKE_CROSSCOMPILING)
+  add_executable(bc-preparse-math-library preparse-math-library.cc math-library.cc)
+  target_link_libraries(bc-preparse-math-library PRIVATE libbc)
+  target_include_directories(bc-preparse-math-library PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+  set_property(TARGET bc-preparse-math-library PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
+  set_property(TARGET bc-preparse-math-library PROPERTY CXX_STANDARD_REQUIRED ON)
+  set_warnings(bc-preparse-math-library)
+  target_add_clang_format(bc-preparse-math-library)
+  set(_bc_library_image "${CMAKE_CURRENT_BINARY_DIR}/bc-math-library-image.inc")
+  add_custom_command(OUTPUT "${_bc_library_image}"
+    COMMAND bc-preparse-math-library "${_bc_library_image}.tmp"
+    COMMAND "${CMAKE_COMMAND}" -E rename "${_bc_library_image}.tmp" "${_bc_library_image}"
+    DEPENDS bc-preparse-math-library
+    VERBATIM)
+  target_sources(bc PRIVATE "${_bc_library_image}")
+  target_compile_definitions(bc PRIVATE GD_BC_PREPARSED_LIBRARY=1)
+endif()
 if(ENABLE_BC_PROFILE)
   target_sources(bc PRIVATE profiling-entry.cc)
 endif()
@@ -254,6 +272,14 @@ if(RUN_INTEGRATION_TESTS)
            "${CMAKE_CURRENT_SOURCE_DIR}/math-library.bc"
            "${CMAKE_CURRENT_BINARY_DIR}/bc-math-library.hh")
   set_tests_properties(bc/math-library-source PROPERTIES TIMEOUT 10)
+  if(TARGET bc-preparse-math-library)
+    add_test(NAME bc/math-library-image COMMAND "${Python_EXECUTABLE}"
+             "${CMAKE_CURRENT_SOURCE_DIR}/test-math-library-source.py"
+             "${CMAKE_CURRENT_SOURCE_DIR}/math-library.bc"
+             "${CMAKE_CURRENT_BINARY_DIR}/bc-math-library.hh"
+             "$<TARGET_FILE:bc-preparse-math-library>" "${_bc_library_image}")
+    set_tests_properties(bc/math-library-image PROPERTIES TIMEOUT 10)
+  endif()
   add_test(NAME bc/math-library-decisions COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-math-library-coverage.py" "$<TARGET_FILE:bc>")
   set_tests_properties(bc/math-library-decisions PROPERTIES TIMEOUT 650)

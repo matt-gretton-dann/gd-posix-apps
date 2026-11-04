@@ -37,6 +37,7 @@ jobs:
       BC_BROAD: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || startsWith(github.head_ref, 'codex/bc-native-prepared/') || (startsWith(github.ref, 'refs/heads/codex/bc-math-broad/') || startsWith(github.head_ref, 'codex/bc-math-broad/') || github.head_ref == 'codex/bc-217-current-integration') }}
       # Opt in only this experimental topic; controls retain their source defaults.
       BC_PREPARED: ${{ startsWith(github.head_ref, 'codex/bc-native-prepared/') }}
+      BC_PREPARSED_LIBRARY: ${{ github.head_ref == 'codex/bc-217-preparsed-library' }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -62,6 +63,7 @@ jobs:
           $arguments = @('src/bc/scripts/benchmark-math-ci.py', '--source', $env:GITHUB_WORKSPACE, '--candidate', $env:BC_CANDIDATE, '--base', $env:BC_BASE, '--total-seconds', '6600', '--output', 'bc-math-results')
           if ($env:BC_BROAD -eq 'true') { $arguments += @('--broad', '--broad-preset', $env:BC_PRESET) }
           if ($env:BC_PREPARED -eq 'true') { $arguments += '--candidate-prepared-divisors' }
+          if ($env:BC_PREPARSED_LIBRARY -eq 'true') { $arguments += '--candidate-preparsed-library' }
           python @arguments
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Preserve raw checked samples and provenance

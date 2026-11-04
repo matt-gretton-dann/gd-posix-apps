@@ -22,6 +22,29 @@ SPEC.loader.exec_module(CI)
 
 
 class NativeMath(unittest.TestCase):
+    def test_preparsed_image_mode_and_control_identity(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            args = types.SimpleNamespace(source=root, candidate='b' * 40, base='a' * 40,
+                                         candidate_preparsed_library=True)
+            for role in ('gd', 'aa', 'base'):
+                command = CI.gd_build_command(args, role, root / role, 'cc', 'c++')
+                self.assertEqual('--preparsed-library' in command, role != 'base')
+            library = root / 'library.bc'
+            library.write_bytes(b'scale=20\n')
+            gd = dict(argv=['gd'], metadata=dict(source_revision=args.candidate,
+                configuration=dict(preparsed_library_image_sha256='c' * 64)))
+            aa = copy.deepcopy(gd)
+            howard = dict(argv=['howard'], metadata=dict(
+                source_revision=CI.load('build-bc-comparators').HOWARD_REVISION))
+            config = CI.configurations(gd, aa, howard, library, library, args.candidate)
+            for entry in config['aa']:
+                self.assertEqual(entry['metadata']['library']['kind'], 'preparsed image')
+                self.assertEqual(entry['metadata']['library']['image_sha256'], 'c' * 64)
+            aa['metadata']['configuration'].clear()
+            with self.assertRaisesRegex(CI.CommandFailure, 'identical preparsed images'):
+                CI.configurations(gd, aa, howard, library, library, args.candidate)
+
     def test_prepared_mode_is_verified_for_both_independent_candidate_builds(self):
         for valid in (True, False):
             with self.subTest(valid=valid), tempfile.TemporaryDirectory() as temporary:
