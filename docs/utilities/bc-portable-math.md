@@ -435,11 +435,13 @@ It registers an isolated function definition as a slice of the immutable image.
 The first call decodes and verifies that slice before installing an owned body
 with its own literal caches. User definitions replace deferred or decoded
 functions through normal registration. Item boundaries and source locations
-are preserved. Native builds enable the image by default. Cross builds
-always load the source through the parser. Native coverage builds default to
-the source loader, which any native build can select with
-`-DENABLE_BC_PREPARSED_LIBRARY=OFF`. The image test checks deterministic
-regeneration when the image is enabled.
+are preserved. Native builds outside Windows enable the image by default.
+Windows defaults to the source loader after the all-native default
+regressed sparse-array execution in the native benchmark. Windows builds
+can opt in explicitly. Cross builds always load the source through the
+parser, and native coverage builds default to the source loader. Any native
+build can select source with `-DENABLE_BC_PREPARSED_LIBRARY=OFF`. The image
+test checks deterministic regeneration when the image is enabled.
 
 An exploratory Apple Clang arm64 Release comparison used 30 paired process
 launches per case after warmup. All outputs matched the source loader.
