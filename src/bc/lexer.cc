@@ -87,6 +87,32 @@ void GD::Bc::Lexer::lex_number()
 {
   std::string value;
   bool seen_period = false;
+  // Scan an available block without repeated virtual peek/chew calls. Leave
+  // continuations and all delimiters to the existing character parser.
+  while (true) {
+    auto const bytes = r_->contiguous();
+    if (bytes.empty()) {
+      break;
+    }
+    auto next = bytes.begin();
+    for (; next != bytes.end(); ++next) {
+      char const ch = *next;
+      if (ch == '.' && !seen_period) {
+        seen_period = true;
+      }
+      else if ((ch < '0' || ch > '9') && (ch < 'A' || ch > 'F')) {
+        break;
+      }
+    }
+    auto const count = static_cast<std::size_t>(next - bytes.begin());
+    if (count != 0) {
+      value.append(bytes.substr(0, count));
+      r_->chew_prefix(count);
+    }
+    if (count != bytes.size()) {
+      break;
+    }
+  }
   bool cont = true;
 
   while (cont) {

@@ -89,15 +89,28 @@ There is at most one confirmation batch per preset/comparison; no rerunning
 until favorable. Superseded PR jobs cancel, each job has a 90-minute cap, and
 individual child/recipe commands have bounded deadlines.
 
-## Remaining scope
+## Native workflow validation
 
 CPU/RSS/allocation diagnostics belong to the separate diagnostic collectors,
 not instrumented timing binaries. Native timing artifacts do not claim complete
-heap or hardware counter coverage. POSIX math function/regime/scale classes,
-cold library loading and the identical-source Howard comparison are pending
-#217 and must be added before closing #216. Cross-run calibration and all three
-native artifact results must also be reviewed. A dedicated stable runner may be
-needed to distinguish small changes reliably.
+heap or hardware counter coverage.
+
+The [native math workflow](bc-native-math-benchmarks.md) measures the six
+standard functions across input regimes and scales. One-shot runs include
+cold library loading. The paired runs include native Howard with its standard
+library and Howard interpreting the candidate's identical portable source.
+Competitive timing targets remain tracked under #217.
+
+The exact-head [arithmetic run for #478](https://github.com/matt-gretton-dann/gd-posix-apps/actions/runs/41753979280)
+verified 6,600 Linux, 6,600 Windows and 6,630 macOS outputs across the full and
+held-out corpora. The independent A/A controls passed on 112, 99 and 1 of 132
+workloads respectively. Its [math run](https://github.com/matt-gretton-dann/gd-posix-apps/actions/runs/41753979348)
+verified 3,915 Linux, 3,732 Windows and 3,885 macOS outputs with the library
+available in both base and candidate. The retained
+[native calibration archive](bc-native-controls-and-kernels/README.md)
+records additional runner and build controls, including losing and
+inconclusive comparisons. The workflow remains advisory. A dedicated stable
+runner may be needed to distinguish small changes reliably.
 
 ## Nondecimal output coverage
 
