@@ -694,6 +694,14 @@ public:
     return std::max(std::size_t{1}, static_cast<std::size_t>(length));
   }
 
+  // The caller has already located the highest nonzero limb.
+  [[nodiscard]] auto single_nonzero_limb(std::size_t index) const -> NumType
+  {
+    auto const first = digits_->begin();
+    auto const limb = first + index;
+    return std::all_of(first, limb, [](NumType value) { return value == 0; }) ? *limb : 0;
+  }
+
   /** Copy floor(coefficient * 10^growth / 10^drop) without an oversized owner.
    * Cancel shifts first, copy only surviving limbs when shrinking, and size
    * growing storage once. All dimensions are storage-width values.
@@ -2848,6 +2856,34 @@ private:
     auto const root_digits = radicand_digits / 2 + radicand_digits % 2;
     if (root_digits < cutoff) {
       return false;
+    }
+
+    // For a one-limb mantissa, factor the result-scale coefficient into
+    // m * 10^shift. Absorb an odd decimal place into m and construct the
+    // result directly only when the bounded mantissa is an exact square.
+    auto const high_limb = (width - 1) / base_log10_;
+    if (auto const limb = digits_.single_nonzero_limb(high_limb); limb != 0) {
+      auto const shift = high_limb * base_log10_ + std::size_t(target_scale - scale_) +
+                         std::size_t(target_scale);
+      auto const mantissa = WideType(limb) * (shift % 2 == 0 ? 1 : 10);
+      WideType low = 1;
+      WideType high = base_;
+      while (high - low > 1) {
+        auto const middle = low + (high - low) / 2;
+        if (middle * middle <= mantissa) {
+          low = middle;
+        }
+        else {
+          high = middle;
+        }
+      }
+      if (low * low == mantissa) {
+        Details::BasicDigits<Traits> root(static_cast<NumType>(low));
+        grow_coefficient(root, shift / 2);
+        digits_ = std::move(root);
+        scale_ = target_scale;
+        return true;
+      }
     }
 
     // Keep a good existing power-of-ten seed. In the original coefficient
