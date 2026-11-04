@@ -948,7 +948,8 @@ private:
   /** \brief  Parse optional argument list
    *  \return \a true if production was non-empty
    */
-  auto parse_opt_argument_list() -> ExprIndex;
+  class ExpressionTask;
+  auto parse_opt_argument_list() -> ExpressionTask;
 
   /** Parse argument list.  */
   auto parse_argument_list() -> ExprIndex;
@@ -970,31 +971,32 @@ private:
    *  \return       Index of expression's value.
    */
   auto parse_expression(POPEFlags flags = POPEFlags::parse_primary) -> ExprIndex;
+  auto parse_required_expression(POPEFlags flags = POPEFlags::parse_primary) -> ExpressionTask;
 
   /** \brief        Parse an optional assignment expression
    *  \param  flags Flags of type of expressions to accept, default primary.
    *  \return       Index of expression, and type of expression.
    */
-  auto parse_opt_assign_expression(POPEFlags flags = POPEFlags::parse_primary) -> ExprIndex;
+  auto parse_opt_assign_expression(POPEFlags flags = POPEFlags::parse_primary) -> ExpressionTask;
 
   /** \brief  Finish an expression after excluding assignment.
    *  \param  primary_expr First primary expression, or missing.
    *  \return Index and type of the expression.
    */
-  auto parse_non_assignment_expression(ExprIndex primary_expr) -> ExprIndex;
+  auto parse_non_assignment_expression(ExprIndex primary_expr) -> ExpressionTask;
 
   /** \brief  Parse a unary minus expression.
    *  \return  Index of expression, and type of expression.
    */
-  auto parse_unary_minus_expression() -> ExprIndex;
+  auto parse_unary_minus_expression() -> ExpressionTask;
 
   /** \brief  Parse an inrement/decrement expression.
    *  \return  Index of expression, and type of expression.
    */
-  auto parse_incr_decr_expression() -> ExprIndex;
+  auto parse_incr_decr_expression() -> ExpressionTask;
 
   /** Parse binary operators at or above the given precedence. */
-  auto parse_binary_expression(ExprIndex lhs, unsigned minimum_precedence) -> ExprIndex;
+  auto parse_binary_expression(ExprIndex lhs, unsigned minimum_precedence) -> ExpressionTask;
 
   /** \brief        Parse primary and named expressions
    *  \param  flags Bit mask of flags - default parse primary and named expressions
@@ -1003,7 +1005,7 @@ private:
    * This function will always parse named expression.  The flags will add primary expressions and
    * array slices to the parsing.
    */
-  auto parse_opt_primary_expression(POPEFlags flags = POPEFlags::parse_primary) -> ExprIndex;
+  auto parse_opt_primary_expression(POPEFlags flags = POPEFlags::parse_primary) -> ExpressionTask;
 
   /** \brief        Parse primary, named and optionally array_slice expressions
    *  \param  flags Flags - match array slices as well as primary & named expressions?
@@ -1016,7 +1018,7 @@ private:
    * Array_slices are only used in function calls as the top-level expression for a parameter, but
    * it is easiest to include recognising them in this function.
    */
-  auto parse_primary_expression(POPEFlags flags = POPEFlags::parse_primary) -> ExprIndex;
+  auto parse_primary_expression(POPEFlags flags = POPEFlags::parse_primary) -> ExpressionTask;
 
   /** \brief      Ensure that the value of the expression pointed to by \a idx has been loaded.
    *  \param  idx Index to check the loadedness of

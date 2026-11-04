@@ -9,10 +9,13 @@
 #include "bc-messages.hh"
 
 #include <array>
+#include <coroutine>
+#include <exception>
 #include <memory>
 #include <optional>
 #include <ostream>
 #include <string>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -43,6 +46,65 @@ constexpr auto binary_operators = [] {
   return table;
 }();
 }  // namespace
+
+// Nested expression productions suspend at their existing call sites. The
+// driver resumes one frame at a time, including while propagating failures,
+// so neither parsing nor frame destruction consumes the native stack.
+class GD::Bc::Parser::ExpressionTask
+{
+public:
+  struct promise_type;
+  using Handle = std::coroutine_handle<promise_type>;
+
+  struct promise_type
+  {
+    Handle parent{};
+    Handle child{};
+    ExprIndex result = ExprIndex::missing();
+    std::exception_ptr failure;
+
+    auto get_return_object() -> ExpressionTask
+    {
+      return ExpressionTask{Handle::from_promise(*this)};
+    }
+    auto initial_suspend() const noexcept -> std::suspend_always { return {}; }
+    auto final_suspend() const noexcept -> std::suspend_always { return {}; }
+    void return_value(ExprIndex value) noexcept { result = value; }
+    void unhandled_exception() noexcept { failure = std::current_exception(); }
+  };
+
+  ExpressionTask(ExpressionTask const&) = delete;
+  auto operator=(ExpressionTask const&) -> ExpressionTask& = delete;
+  ~ExpressionTask() { frame_.destroy(); }
+
+  auto await_ready() const noexcept -> bool { return false; }
+  void await_suspend(Handle parent) const noexcept
+  {
+    parent.promise().child = frame_;
+    frame_.promise().parent = parent;
+  }
+  auto await_resume() const -> ExprIndex
+  {
+    auto const& state = frame_.promise();
+    if (state.failure)
+      std::rethrow_exception(state.failure);
+    return state.result;
+  }
+
+  auto run() const -> ExprIndex
+  {
+    for (auto current = frame_; current;) {
+      current.promise().child = {};
+      current.resume();
+      current = current.done() ? current.promise().parent : current.promise().child;
+    }
+    return await_resume();
+  }
+
+private:
+  explicit ExpressionTask(Handle frame) : frame_(frame) {}
+  Handle frame_;
+};
 
 auto GD::Bc::operator==(Parser::ExprIndex const& lhs, Parser::ExprIndex const& rhs) -> bool
 {
@@ -780,21 +842,21 @@ auto GD::Bc::Parser::parse_define_element(ExprIndex function_begin, bool allow_d
   return result;
 }
 
-auto GD::Bc::Parser::parse_opt_argument_list() -> GD::Bc::Parser::ExprIndex
+auto GD::Bc::Parser::parse_opt_argument_list() -> ExpressionTask
 {
-  ExprIndex expr = parse_opt_expression(POPEFlags::parse_array_slices);
+  ExprIndex expr = co_await parse_opt_assign_expression(POPEFlags::parse_array_slices);
   if (expr == ExprType::missing) {
-    return expr;
+    co_return expr;
   }
   insert_push_param(expr);
 
   while (lexer_->peek() == Token::Type::comma) {
     lexer_->chew();
-    expr = parse_expression(POPEFlags::parse_array_slices);
+    expr = co_await parse_required_expression(POPEFlags::parse_array_slices);
     insert_push_param(expr);
   }
 
-  return expr;
+  co_return expr;
 }
 
 auto GD::Bc::Parser::parse_relational_expression() -> GD::Bc::Parser::ExprIndex
@@ -834,20 +896,25 @@ auto GD::Bc::Parser::parse_return_expression() -> GD::Bc::Parser::ExprIndex
 auto GD::Bc::Parser::parse_opt_expression(POPEFlags flags) -> GD::Bc::Parser::ExprIndex
 {
   /* expression : assign_expression */
-  return parse_opt_assign_expression(flags);
+  return parse_opt_assign_expression(flags).run();
 }
 
 auto GD::Bc::Parser::parse_expression(POPEFlags flags) -> GD::Bc::Parser::ExprIndex
 {
-  auto idx = parse_opt_expression(flags);
+  return parse_required_expression(flags).run();
+}
+
+auto GD::Bc::Parser::parse_required_expression(POPEFlags flags) -> ExpressionTask
+{
+  auto idx = co_await parse_opt_assign_expression(flags);
   if (idx == ExprType::missing) {
     idx = insert_error(Msg::expected_expression, lexer_->peek());
   }
 
-  return idx;
+  co_return idx;
 }
 
-auto GD::Bc::Parser::parse_opt_assign_expression(POPEFlags flags) -> GD::Bc::Parser::ExprIndex
+auto GD::Bc::Parser::parse_opt_assign_expression(POPEFlags flags) -> ExpressionTask
 {
   // Parse all assignment targets before the terminal expression, then emit
   // the stores from right to left. Only the first operand may be a slice.
@@ -856,21 +923,21 @@ auto GD::Bc::Parser::parse_opt_assign_expression(POPEFlags flags) -> GD::Bc::Par
     ExprIndex target;
     Token::Type operation;
   };
-  auto primary = parse_opt_primary_expression(flags);
+  auto primary = co_await parse_opt_primary_expression(flags);
   if (primary != ExprType::named || !lexer_->peek().is_assign_op())
-    return parse_non_assignment_expression(primary);
+    co_return co_await parse_non_assignment_expression(primary);
 
   PendingAssignment const first{primary, lexer_->peek().type()};
   lexer_->chew();
-  primary = parse_opt_primary_expression(POPEFlags::parse_primary);
+  primary = co_await parse_opt_primary_expression(POPEFlags::parse_primary);
   std::vector<PendingAssignment> pending;
   while (primary == ExprType::named && lexer_->peek().is_assign_op()) {
     pending.push_back({primary, lexer_->peek().type()});
     lexer_->chew();
-    primary = parse_opt_primary_expression(POPEFlags::parse_primary);
+    primary = co_await parse_opt_primary_expression(POPEFlags::parse_primary);
   }
 
-  auto result = parse_non_assignment_expression(primary);
+  auto result = co_await parse_non_assignment_expression(primary);
   if (result == ExprType::missing)
     result = insert_error(Msg::expected_assign_expression, lexer_->peek());
 
@@ -905,13 +972,13 @@ auto GD::Bc::Parser::parse_opt_assign_expression(POPEFlags flags) -> GD::Bc::Par
   for (auto it = pending.rbegin(); it != pending.rend(); ++it)
     store(*it);
   store(first);
-  return result;
+  co_return result;
 }
 
-auto GD::Bc::Parser::parse_non_assignment_expression(ExprIndex primary_expr) -> ExprIndex
+auto GD::Bc::Parser::parse_non_assignment_expression(ExprIndex primary_expr) -> ExpressionTask
 {
   if (primary_expr == ExprType::array_slice)
-    return primary_expr;
+    co_return primary_expr;
 
   if (primary_expr == ExprType::named) {
     /* Not an assign op but may be an post increment/decrement that needs dealing with.  */
@@ -932,32 +999,32 @@ auto GD::Bc::Parser::parse_non_assignment_expression(ExprIndex primary_expr) -> 
   if (primary_expr == ExprType::missing) {
     switch (lexer_->peek().type()) {
     case Token::Type::subtract: /* Unary minus in this case.  */
-      primary_expr = parse_unary_minus_expression();
+      primary_expr = co_await parse_unary_minus_expression();
       break;
     case Token::Type::increment:
     case Token::Type::decrement:
-      primary_expr = parse_incr_decr_expression();
+      primary_expr = co_await parse_incr_decr_expression();
       break;
     default:
-      return primary_expr;
+      co_return primary_expr;
     }
   }
 
-  return parse_binary_expression(primary_expr, 1);
+  co_return co_await parse_binary_expression(primary_expr, 1);
 }
 
 auto GD::Bc::Parser::parse_binary_expression(ExprIndex lhs, unsigned minimum_precedence)
-  -> ExprIndex
+  -> ExpressionTask
 {
   while (true) {
     auto const token = static_cast<std::size_t>(lexer_->peek().type());
     if (token >= binary_operators.size())
-      return lhs;
+      co_return lhs;
     auto const operation = binary_operators[token];
     if (operation.precedence < minimum_precedence)
-      return lhs;
+      co_return lhs;
     lexer_->chew();
-    auto rhs = parse_unary_minus_expression();
+    auto rhs = co_await parse_unary_minus_expression();
     if (operation.opcode == Opcode::power) {
       // Power is the highest binary precedence and the only right-associative
       // binary operator. Retain pending operands and reduce from the right
@@ -966,19 +1033,19 @@ auto GD::Bc::Parser::parse_binary_expression(ExprIndex lhs, unsigned minimum_pre
       while (lexer_->peek() == TokenType::power) {
         pending.push_back(rhs);
         lexer_->chew();
-        rhs = parse_unary_minus_expression();
+        rhs = co_await parse_unary_minus_expression();
       }
       for (auto it = pending.rbegin(); it != pending.rend(); ++it)
         rhs = insert_arith(Opcode::power, *it, rhs);
     }
     else {
-      rhs = parse_binary_expression(rhs, operation.right_precedence);
+      rhs = co_await parse_binary_expression(rhs, operation.right_precedence);
     }
     lhs = insert_arith(operation.opcode, lhs, rhs);
   }
 }
 
-auto GD::Bc::Parser::parse_unary_minus_expression() -> GD::Bc::Parser::ExprIndex
+auto GD::Bc::Parser::parse_unary_minus_expression() -> ExpressionTask
 {
   std::size_t negations = 0;
   while (lexer_->peek() == Token::Type::subtract) {
@@ -986,13 +1053,13 @@ auto GD::Bc::Parser::parse_unary_minus_expression() -> GD::Bc::Parser::ExprIndex
     ++negations;
   }
 
-  auto operand = parse_incr_decr_expression();
+  auto operand = co_await parse_incr_decr_expression();
   for (; negations != 0; --negations)
     operand = insert_negate(operand);
-  return operand;
+  co_return operand;
 }
 
-auto GD::Bc::Parser::parse_incr_decr_expression() -> GD::Bc::Parser::ExprIndex
+auto GD::Bc::Parser::parse_incr_decr_expression() -> ExpressionTask
 {
   /* incr_decr_expression : INCR_DECR named_expression | named_expression INCR_DECR
    *                      | primary_expression.
@@ -1010,18 +1077,18 @@ auto GD::Bc::Parser::parse_incr_decr_expression() -> GD::Bc::Parser::ExprIndex
   /* Now we expect an expression.  If we're `pre` then it must be a named expression.  If its not
    * a named expression then we can't be a post inrement or decrement.
    */
-  ExprIndex named_expr = parse_primary_expression();
+  ExprIndex named_expr = co_await parse_primary_expression();
   if (named_expr != ExprType::named) {
     if (pre) {
-      return insert_error(Msg::expected_named_expression, lexer_->peek());
+      co_return insert_error(Msg::expected_named_expression, lexer_->peek());
     }
-    return named_expr;
+    co_return named_expr;
   }
 
   /* Now we know we have a named expression, if it could be post increment/decrement check.  */
   if (!pre) {
     if (!lexer_->peek().is_incr_decr_op()) {
-      return named_expr;
+      co_return named_expr;
     }
 
     incr = lexer_->peek() == Token::Type::increment;
@@ -1033,10 +1100,10 @@ auto GD::Bc::Parser::parse_incr_decr_expression() -> GD::Bc::Parser::ExprIndex
   ExprIndex const op_idx = insert_arith(
     incr ? Instruction::Opcode::add : Instruction::Opcode::subtract, load_idx, num_idx);
   insert_store(named_expr, op_idx);
-  return pre ? op_idx : load_idx;
+  co_return pre ? op_idx : load_idx;
 }
 
-auto GD::Bc::Parser::parse_opt_primary_expression(POPEFlags flags) -> GD::Bc::Parser::ExprIndex
+auto GD::Bc::Parser::parse_opt_primary_expression(POPEFlags flags) -> ExpressionTask
 {
   bool const parse_array_slices = (flags == POPEFlags::parse_array_slices);
 
@@ -1048,19 +1115,19 @@ auto GD::Bc::Parser::parse_opt_primary_expression(POPEFlags flags) -> GD::Bc::Pa
     lexer_->chew();
     if (lexer_->peek() == Token::Type::lsquare) {
       lexer_->chew();
-      auto elt = parse_opt_expression();
+      auto elt = co_await parse_opt_assign_expression();
       if (elt == ExprType::missing && !parse_array_slices) {
-        return insert_error(Msg::expected_expression, lexer_->peek());
+        co_return insert_error(Msg::expected_expression, lexer_->peek());
       }
       if (lexer_->peek() != Token::Type::rsquare) {
-        return insert_error(Msg::expected_rsquare, lexer_->peek());
+        co_return insert_error(Msg::expected_rsquare, lexer_->peek());
       }
       lexer_->chew();
       if (elt == ExprType::missing) {
-        return insert_array_slice(Array(letter));
+        co_return insert_array_slice(Array(letter));
       }
 
-      return insert_array_element(Array(letter), elt);
+      co_return insert_array_element(Array(letter), elt);
     }
 
     if (lexer_->peek() == Token::Type::lparens) {
@@ -1068,111 +1135,111 @@ auto GD::Bc::Parser::parse_opt_primary_expression(POPEFlags flags) -> GD::Bc::Pa
       lexer_->chew();
 
       insert_push_param_mark();
-      parse_opt_argument_list();
+      co_await parse_opt_argument_list();
 
       if (lexer_->peek() != Token::Type::rparens) {
-        return insert_error(Msg::expected_rparens, lexer_->peek());
+        co_return insert_error(Msg::expected_rparens, lexer_->peek());
       }
       lexer_->chew();
 
-      return insert_call(letter, loc);
+      co_return insert_call(letter, loc);
     }
 
-    return insert_variable(Variable(letter));
+    co_return insert_variable(Variable(letter));
   }
   case Token::Type::scale: {
     lexer_->chew();
     if (lexer_->peek() == Token::Type::lparens) {
       lexer_->chew();
-      auto elt = parse_expression();
+      auto elt = co_await parse_required_expression();
       if (lexer_->peek() != Token::Type::rparens) {
-        return insert_error(Msg::expected_rparens, lexer_->peek());
+        co_return insert_error(Msg::expected_rparens, lexer_->peek());
       }
       lexer_->chew();
-      return insert_scale_expr(elt);
+      co_return insert_scale_expr(elt);
     }
 
-    return insert_scale();
+    co_return insert_scale();
   }
   case Token::Type::ibase:
     lexer_->chew();
-    return insert_ibase();
+    co_return insert_ibase();
   case Token::Type::obase:
     lexer_->chew();
-    return insert_obase();
+    co_return insert_obase();
   case Token::Type::number: {
     auto idx = insert_number(lexer_->peek().number());
     lexer_->chew();
-    return idx;
+    co_return idx;
   }
   case Token::Type::lparens: {
     lexer_->chew();
-    auto idx = parse_expression();
+    auto idx = co_await parse_required_expression();
     if (lexer_->peek() != Token::Type::rparens) {
-      return insert_error(Msg::expected_rparens, lexer_->peek());
+      co_return insert_error(Msg::expected_rparens, lexer_->peek());
     }
     lexer_->chew();
     // Parentheses form a value expression, even when the inner expression is
     // an assignment or a name. Only bare assignment statements suppress output.
     idx = ensure_expr_loaded(idx);
-    return {idx.index(), ExprType::primary};
+    co_return ExprIndex{idx.index(), ExprType::primary};
   }
   case Token::Type::sqrt: {
     lexer_->chew();
     if (lexer_->peek() != Token::Type::lparens) {
-      return insert_error(Msg::expected_lparens, lexer_->peek());
+      co_return insert_error(Msg::expected_lparens, lexer_->peek());
     }
     lexer_->chew();
-    auto elt = parse_expression();
+    auto elt = co_await parse_required_expression();
 
     if (lexer_->peek() != Token::Type::rparens) {
-      return insert_error(Msg::expected_rparens, lexer_->peek());
+      co_return insert_error(Msg::expected_rparens, lexer_->peek());
     }
     lexer_->chew();
-    return insert_sqrt(elt);
+    co_return insert_sqrt(elt);
   }
   case Token::Type::abs: {
     lexer_->chew();
     if (lexer_->peek() != Token::Type::lparens) {
-      return insert_error(Msg::expected_lparens, lexer_->peek());
+      co_return insert_error(Msg::expected_lparens, lexer_->peek());
     }
     lexer_->chew();
-    auto elt = parse_expression();
+    auto elt = co_await parse_required_expression();
 
     if (lexer_->peek() != Token::Type::rparens) {
-      return insert_error(Msg::expected_rparens, lexer_->peek());
+      co_return insert_error(Msg::expected_rparens, lexer_->peek());
     }
     lexer_->chew();
-    return insert_abs(elt);
+    co_return insert_abs(elt);
   }
   case Token::Type::length: {
     lexer_->chew();
     if (lexer_->peek() != Token::Type::lparens) {
-      return insert_error(Msg::expected_lparens, lexer_->peek());
+      co_return insert_error(Msg::expected_lparens, lexer_->peek());
     }
     lexer_->chew();
     POPEFlags const expr_flags =
       extensions_enabled() ? POPEFlags::parse_array_slices : POPEFlags::parse_primary;
-    auto elt = parse_expression(expr_flags);
+    auto elt = co_await parse_required_expression(expr_flags);
 
     if (lexer_->peek() != Token::Type::rparens) {
-      return insert_error(Msg::expected_rparens, lexer_->peek());
+      co_return insert_error(Msg::expected_rparens, lexer_->peek());
     }
     lexer_->chew();
-    return insert_length(elt);
+    co_return insert_length(elt);
   }
   default:
-    return ExprIndex::missing();
+    co_return ExprIndex::missing();
   }
 }
 
-auto GD::Bc::Parser::parse_primary_expression(POPEFlags flags) -> GD::Bc::Parser::ExprIndex
+auto GD::Bc::Parser::parse_primary_expression(POPEFlags flags) -> ExpressionTask
 {
-  auto result = parse_opt_primary_expression(flags);
+  auto result = co_await parse_opt_primary_expression(flags);
   if (result == ExprType::missing) {
     result = insert_error(Msg::expected_primary_expression, lexer_->peek());
   }
-  return result;
+  co_return result;
 }
 
 auto GD::Bc::Parser::ensure_expr_loaded(ExprIndex idx) -> GD::Bc::Parser::ExprIndex
