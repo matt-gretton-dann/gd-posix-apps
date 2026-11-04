@@ -7,6 +7,7 @@ import os
 import signal
 import subprocess
 import sys
+import tempfile
 import time
 import unittest
 
@@ -23,6 +24,67 @@ except ImportError:
 
 
 class InterruptTest(unittest.TestCase):
+    def test_second_interrupt_terminates_a_blocked_execution(self):
+        with tempfile.TemporaryFile() as program:
+            program.write(b'{"READY\n";"' + b'x' * (1024 * 1024) + b'"}\n')
+            program.seek(0)
+            with subprocess.Popen([BC], stdin=program, stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE) as child:
+                try:
+                    self.read_until(child.stdout.fileno(), b"READY\n")
+                    # Leave the large write blocked in this execution item.
+                    # The first SIGINT interrupts the VM, and the second
+                    # must still have the default terminating disposition.
+                    os.kill(child.pid, signal.SIGINT)
+                    time.sleep(0.05)
+                    self.assertIsNone(child.poll())
+                    os.kill(child.pid, signal.SIGINT)
+                    self.assertEqual(child.wait(timeout=3), -signal.SIGINT)
+                    child.communicate(timeout=3)
+                finally:
+                    if child.poll() is None:
+                        child.kill()
+                        child.communicate(timeout=3)
+
+    def test_idle_interrupt_preserves_inherited_disposition(self):
+        for disposition in (signal.SIG_DFL, signal.SIG_IGN):
+            with self.subTest(disposition=disposition), tempfile.TemporaryDirectory() as directory:
+                path = os.path.join(directory, "input")
+                os.mkfifo(path)
+                previous = signal.signal(signal.SIGINT, disposition)
+                try:
+                    child = subprocess.Popen([BC, path], stdin=subprocess.DEVNULL,
+                                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                finally:
+                    signal.signal(signal.SIGINT, previous)
+                writer = None
+                try:
+                    deadline = time.monotonic() + 3
+                    while writer is None:
+                        try:
+                            writer = os.open(path, os.O_WRONLY | os.O_NONBLOCK)
+                        except OSError as error:
+                            if error.errno != errno.ENXIO:
+                                raise
+                            self.assertLess(time.monotonic(), deadline, "bc did not open its input")
+                            time.sleep(0.005)
+                    # Opening the writer proves the CLI has reached its input
+                    # reader. With no bytes available, no item can execute.
+                    os.kill(child.pid, signal.SIGINT)
+                    if disposition == signal.SIG_IGN:
+                        os.write(writer, b"6*7\nquit;")
+                    out, err = child.communicate(timeout=3)
+                    if disposition == signal.SIG_DFL:
+                        self.assertEqual((child.returncode, out, err), (-signal.SIGINT, b"", b""))
+                    else:
+                        self.assertEqual((child.returncode, out, err), (0, b"42\n", b""))
+                finally:
+                    if writer is not None:
+                        os.close(writer)
+                    if child.poll() is None:
+                        child.kill()
+                        child.communicate(timeout=3)
+
     def read_until(self, descriptor, marker):
         result = b""
         deadline = time.monotonic() + 3
