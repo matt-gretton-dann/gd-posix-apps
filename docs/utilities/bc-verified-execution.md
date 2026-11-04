@@ -16,6 +16,13 @@ Full-check mode also verifies the extracted body independently. Redefinition
 replaces the owner and its literal caches. Both modes preserve numeric
 decoding, runtime ibase and function argument semantics.
 
+For an instruction pack containing only one function definition, a linear
+scan can establish the control-flow proof without allocating a graph. The
+body must have no branches or nested argument packs. Its result references
+must point backward within the body, and the incoming marker must be
+consumed before any return. Other shapes fall back to graph verification,
+which also retains the detailed diagnostics for malformed input.
+
 `VM::ExecutionChecks::full` retains the original per-instruction result diagnostic
 switch and remains the public C++ constructor's default. The executable selects
 `verified`, which omits that second switch after entry verification. The mode
