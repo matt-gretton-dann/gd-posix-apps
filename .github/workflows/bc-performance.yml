@@ -29,7 +29,7 @@ jobs:
         image: [ubuntu-24.04, windows-2025, macos-15]
     env:
       BC_CANDIDATE: ${{ github.event.pull_request.head.sha || github.sha }}
-      BC_BASE: ${{ github.event.pull_request.base.sha || inputs.baseline || '2ddf749e8b313f620ad248d680e801c409bbd3f5' }}
+      BC_BASE: ${{ github.event.pull_request.base.sha || inputs.baseline || '23fd6a0efcebae14a0c890d218db4d885d7a3ac3' }}
       BC_BROAD: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || startsWith(github.head_ref, 'codex/bc-native-broad/') || startsWith(github.head_ref, 'codex/bc-native-prepared/') }}
       # Opt in only this experimental topic; controls retain their source defaults.
       BC_PREPARED: ${{ startsWith(github.head_ref, 'codex/bc-native-prepared/') }}
