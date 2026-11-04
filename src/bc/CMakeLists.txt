@@ -26,6 +26,11 @@ set_property(TARGET libbc PROPERTY CXX_STANDARD_REQUIRED ON)
 target_compile_definitions(libbc PRIVATE _CRT_SECURE_NO_WARNINGS
   GD_BC_COMPACT_EXECUTION=$<BOOL:${ENABLE_BC_COMPACT_EXECUTION}>
   GD_BC_TYPED_RESULTS=$<BOOL:${ENABLE_BC_TYPED_RESULTS}>)
+option(ENABLE_BC_THREADED_DISPATCH "Enable experimental threaded dispatch for the typed bc VM" OFF)
+if(ENABLE_BC_THREADED_DISPATCH AND ENABLE_BC_TYPED_RESULTS AND ENABLE_BC_COMPACT_EXECUTION
+   AND CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$" AND NOT MSVC)
+  set_property(SOURCE vm.cc APPEND PROPERTY COMPILE_DEFINITIONS GD_BC_THREADED_DISPATCH=1)
+endif()
 option(ENABLE_BC_VM_PGO_GENERATE "Collect an LLVM IR profile for the bc VM" OFF)
 set(BC_VM_PGO_PROFILE "" CACHE FILEPATH "LLVM IR profile to apply to bc vm.cc")
 if(ENABLE_BC_VM_PGO_GENERATE OR BC_VM_PGO_PROFILE)
@@ -56,7 +61,7 @@ set_warnings(libbc)
 gd_apply_ipo(libbc)
 
 target_sources(libbc PRIVATE cli-interrupt.cc execution-plan.cc instruction.cc lexer.cc number-division-cache.cc number-remainder.cc
-                            number-sqrt.cc parser.cc reader.cc token.cc verification.cc vm.cc)
+                            number-sqrt.cc number-sqrt-sparse.cc parser.cc reader.cc token.cc verification.cc vm.cc)
 if(WIN32)
   target_sources(libbc PRIVATE verification-linear.cc)
 endif()

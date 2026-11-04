@@ -141,3 +141,16 @@ interpreters remain available. This policy candidate needs separate
 default-build performance results on all three hosts.
 The fresh macOS default and explicit overrides passed all four sanitizer
 and three profiling configurations, including the wide fallback.
+
+## Experimental threaded dispatch
+
+Set `ENABLE_BC_THREADED_DISPATCH=ON` to evaluate computed jumps in the
+verified typed executor with GCC or GNU-style Clang. The option also
+requires compact execution and typed results. Other configurations use
+the existing dispatch paths. The option defaults to OFF.
+
+The switch and threaded modes share the opcode bodies. Each threaded
+jump checks the program counter and pending interrupt and updates the
+same counters as the switch. The label table is indexed by the verified
+typed opcode. The generic checked executor is available independently
+of this option.

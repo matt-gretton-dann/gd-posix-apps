@@ -1366,6 +1366,15 @@ auto GD::Bc::Details::InstructionPack::execute_compact() -> std::pair<GD::Bc::Nu
 }
 
 #if GD_BC_TYPED_RESULTS && GD_BC_COMPACT_EXECUTION
+#if defined(GD_BC_THREADED_DISPATCH)
+#  if defined(__clang__)
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wgnu-label-as-value"
+#  elif defined(__GNUC__)
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wpedantic"
+#  endif
+#endif
 auto GD::Bc::Details::InstructionPack::execute_typed() -> std::pair<Number, bool>
 {
   using O = TypedOpcode;
@@ -1374,14 +1383,51 @@ auto GD::Bc::Details::InstructionPack::execute_typed() -> std::pair<Number, bool
   // grow other deque entries and cannot resize either active lane.
   auto* const numbers = typed_.buffers->numbers.data();
   auto* const others = typed_.buffers->others.data();
+#if defined(GD_BC_THREADED_DISPATCH)
+  // Match the contiguous TypedOpcode order. Only verified typed code
+  // reaches this executor, as with the switch fallback.
+  static void* const targets[] = {
+    &&op_eof, &&op_print_number, &&op_print_other, &&op_quit,
+    &&op_string, &&op_number, &&op_variable, &&op_array_element,
+    &&op_array, &&op_scale, &&op_ibase, &&op_obase,
+    &&op_add, &&op_subtract, &&op_negate, &&op_multiply,
+    &&op_divide, &&op_modulo, &&op_power, &&op_load_number,
+    &&op_load_array, &&op_store_number, &&op_store_array, &&op_scale_expr,
+    &&op_sqrt, &&op_abs, &&op_length_number, &&op_length_array,
+    &&op_equals, &&op_less_than_equals, &&op_not_equals, &&op_less_than,
+    &&op_branch, &&op_branch_zero, &&op_return_, &&op_call,
+    &&op_push_param_mark, &&op_pop_param_mark, &&op_push_number, &&op_push_array,
+    &&op_pop_param, &&op_pop_param_array, &&op_function_begin, &&op_function_end,
+  };
+  static_assert(std::size(targets) == static_cast<std::size_t>(O::function_end) + 1);
+  TypedExecutableInstruction const* instruction = nullptr;
+#  define GD_BC_BRANCH()                                                           \
+    do {                                                                         \
+      if (pc_ >= executable.size() ||                                            \
+          Details::have_been_interrupted.test(std::memory_order_relaxed))          \
+        return std::make_pair(Number(0), true);                                   \
+      GD_BC_PROFILE_EVENT(Profile::Event::instructions_executed, 1);               \
+      GD_BC_PROFILE_EVENT(Profile::Event::typed_instructions_executed, 1);         \
+      instruction = &executable[pc_];                                             \
+      goto *targets[static_cast<std::size_t>(instruction->opcode)];                \
+    } while (false)
+#  define GD_BC_NEXT() \
+    ++pc_;             \
+    GD_BC_BRANCH()
+#  define GD_BC_OPCODE(name) op_##name
+#else
+#  define GD_BC_OPCODE(name) case O::name
+#  define GD_BC_NEXT() break
+#  define GD_BC_BRANCH() continue
   while (pc_ < executable.size()) {
     if (Details::have_been_interrupted.test(std::memory_order_relaxed))
       return std::make_pair(Number(0), true);
     GD_BC_PROFILE_EVENT(Profile::Event::instructions_executed, 1);
     GD_BC_PROFILE_EVENT(Profile::Event::typed_instructions_executed, 1);
-    auto const& instruction = executable[pc_];
+    auto const* instruction = &executable[pc_];
+#endif
     auto take = [&]() -> Number {
-      auto& number = numbers[instruction.first.index];
+      auto& number = numbers[instruction->first.index];
       if (number.has_heap_storage() && !consumption_.empty() && consumption_[pc_] != 0) {
         GD_BC_PROFILE_EVENT(Profile::Event::temporary_consumptions, 1);
         return std::move(number);
@@ -1391,48 +1437,52 @@ auto GD::Bc::Details::InstructionPack::execute_typed() -> std::pair<Number, bool
     auto unary = [&](auto operation) {
       Number value = take();
       operation(value);
-      numbers[instruction.result] = std::move(value);
+      numbers[instruction->result] = std::move(value);
     };
     auto binary = [&](auto operation) {
       Number lhs = take();
-      Number const& rhs = numbers[instruction.second.index];
+      Number const& rhs = numbers[instruction->second.index];
       operation(lhs, rhs);
-      numbers[instruction.result] = std::move(lhs);
+      numbers[instruction->result] = std::move(lhs);
     };
-    switch (instruction.opcode) {
-    case O::string:
-      others[instruction.result] = std::string_view(std::get<std::string>(instrs_[pc_].op1()));
-      break;
-    case O::number:
-      numbers[instruction.result] = instrs_[pc_].decoded_number(vm_->ibase());
-      break;
-    case O::variable:
-      others[instruction.result] = Variable(instruction.first.letter);
-      break;
-    case O::array:
-      others[instruction.result] = Array(instruction.first.letter);
-      break;
-    case O::array_element:
-      others[instruction.result] = ArrayElement(Array(instruction.first.letter),
-                                                numbers[instruction.second.index].to_unsigned());
-      break;
-    case O::ibase:
-      others[instruction.result] = Ibase();
-      break;
-    case O::obase:
-      others[instruction.result] = Obase();
-      break;
-    case O::scale:
-      others[instruction.result] = Scale();
-      break;
-    case O::print_number: {
-      auto& output = vm_->stream(static_cast<Instruction::Stream>(instruction.second.index));
-      numbers[instruction.first.index].output(output, vm_->obase(), 0);
+#if defined(GD_BC_THREADED_DISPATCH)
+    GD_BC_BRANCH();
+#else
+    switch (instruction->opcode) {
+#endif
+    GD_BC_OPCODE(string):
+      others[instruction->result] = std::string_view(std::get<std::string>(instrs_[pc_].op1()));
+      GD_BC_NEXT();
+    GD_BC_OPCODE(number):
+      numbers[instruction->result] = instrs_[pc_].decoded_number(vm_->ibase());
+      GD_BC_NEXT();
+    GD_BC_OPCODE(variable):
+      others[instruction->result] = Variable(instruction->first.letter);
+      GD_BC_NEXT();
+    GD_BC_OPCODE(array):
+      others[instruction->result] = Array(instruction->first.letter);
+      GD_BC_NEXT();
+    GD_BC_OPCODE(array_element):
+      others[instruction->result] = ArrayElement(Array(instruction->first.letter),
+                                                numbers[instruction->second.index].to_unsigned());
+      GD_BC_NEXT();
+    GD_BC_OPCODE(ibase):
+      others[instruction->result] = Ibase();
+      GD_BC_NEXT();
+    GD_BC_OPCODE(obase):
+      others[instruction->result] = Obase();
+      GD_BC_NEXT();
+    GD_BC_OPCODE(scale):
+      others[instruction->result] = Scale();
+      GD_BC_NEXT();
+    GD_BC_OPCODE(print_number): {
+      auto& output = vm_->stream(static_cast<Instruction::Stream>(instruction->second.index));
+      numbers[instruction->first.index].output(output, vm_->obase(), 0);
       output << '\n';
-      break;
+      GD_BC_NEXT();
     }
-    case O::print_other: {
-      auto& output = vm_->stream(static_cast<Instruction::Stream>(instruction.second.index));
+    GD_BC_OPCODE(print_other): {
+      auto& output = vm_->stream(static_cast<Instruction::Stream>(instruction->second.index));
       std::visit(Overloaded{[](std::monostate) { std::abort(); },
                             [&output](std::string_view value) { output << value; },
                             [&output](Variable value) { output << value << '\n'; },
@@ -1444,13 +1494,13 @@ auto GD::Bc::Details::InstructionPack::execute_typed() -> std::pair<Number, bool
                             [&output](Ibase) { output << "ibase\n"; },
                             [&output](Obase) { output << "obase\n"; },
                             [&output](Scale) { output << "scale\n"; }},
-                 others[instruction.first.index]);
-      break;
+                 others[instruction->first.index]);
+      GD_BC_NEXT();
     }
-    case O::quit:
-      std::exit(static_cast<int>(instruction.first.index));  // NOLINT(concurrency-mt-unsafe)
-    case O::load_number: {
-      auto& destination = numbers[instruction.result];
+    GD_BC_OPCODE(quit):
+      std::exit(static_cast<int>(instruction->first.index));  // NOLINT(concurrency-mt-unsafe)
+    GD_BC_OPCODE(load_number): {
+      auto& destination = numbers[instruction->result];
       std::visit(
         Overloaded{[&destination, this](Variable value) { destination = vm_->variable(value); },
                    [&destination, this](ArrayElement const& value) {
@@ -1460,14 +1510,14 @@ auto GD::Bc::Details::InstructionPack::execute_typed() -> std::pair<Number, bool
                    [&destination, this](Obase) { destination = Number(vm_->obase()); },
                    [&destination, this](Scale) { destination = Number(vm_->scale()); },
                    [](auto const&) { std::abort(); }},
-        others[instruction.first.index]);
-      break;
+        others[instruction->first.index]);
+      GD_BC_NEXT();
     }
-    case O::load_array:
-      others[instruction.result] = vm_->array(std::get<Array>(others[instruction.first.index]));
-      break;
-    case O::store_number: {
-      auto const& value = numbers[instruction.second.index];
+    GD_BC_OPCODE(load_array):
+      others[instruction->result] = vm_->array(std::get<Array>(others[instruction->first.index]));
+      GD_BC_NEXT();
+    GD_BC_OPCODE(store_number): {
+      auto const& value = numbers[instruction->second.index];
       std::visit(Overloaded{[&value, this](Variable location) { vm_->variable(location, value); },
                             [&value, this](ArrayElement const& location) {
                               vm_->array_element(location, value);
@@ -1476,42 +1526,42 @@ auto GD::Bc::Details::InstructionPack::execute_typed() -> std::pair<Number, bool
                             [&value, this](Obase) { vm_->obase(value); },
                             [&value, this](Scale) { vm_->scale(value); },
                             [](auto const&) { std::abort(); }},
-                 others[instruction.first.index]);
-      break;
+                 others[instruction->first.index]);
+      GD_BC_NEXT();
     }
-    case O::store_array:
-      vm_->array(std::get<Array>(others[instruction.first.index]),
-                 std::get<ArrayValues>(others[instruction.second.index]));
-      break;
-    case O::length_number:
-      numbers[instruction.result] = Number(numbers[instruction.first.index].length());
-      break;
-    case O::length_array:
-      numbers[instruction.result] =
-        Number(vm_->array_length(std::get<Array>(others[instruction.first.index])));
-      break;
-    case O::negate:
+    GD_BC_OPCODE(store_array):
+      vm_->array(std::get<Array>(others[instruction->first.index]),
+                 std::get<ArrayValues>(others[instruction->second.index]));
+      GD_BC_NEXT();
+    GD_BC_OPCODE(length_number):
+      numbers[instruction->result] = Number(numbers[instruction->first.index].length());
+      GD_BC_NEXT();
+    GD_BC_OPCODE(length_array):
+      numbers[instruction->result] =
+        Number(vm_->array_length(std::get<Array>(others[instruction->first.index])));
+      GD_BC_NEXT();
+    GD_BC_OPCODE(negate):
       unary([](Number& value) { value.negate(); });
-      break;
-    case O::abs:
+      GD_BC_NEXT();
+    GD_BC_OPCODE(abs):
       unary([](Number& value) { value.abs(); });
-      break;
-    case O::sqrt:
+      GD_BC_NEXT();
+    GD_BC_OPCODE(sqrt):
       unary([this](Number& value) { value.sqrt(vm_->scale()); });
-      break;
-    case O::scale_expr:
+      GD_BC_NEXT();
+    GD_BC_OPCODE(scale_expr):
       unary([](Number& value) { value = Number(value.scale()); });
-      break;
-    case O::add:
+      GD_BC_NEXT();
+    GD_BC_OPCODE(add):
       binary([](Number& lhs, Number const& rhs) { lhs.add(rhs); });
-      break;
-    case O::subtract:
+      GD_BC_NEXT();
+    GD_BC_OPCODE(subtract):
       binary([](Number& lhs, Number const& rhs) { lhs.sub(rhs); });
-      break;
-    case O::multiply:
+      GD_BC_NEXT();
+    GD_BC_OPCODE(multiply):
       binary([this](Number& lhs, Number const& rhs) { lhs.multiply(rhs, vm_->scale()); });
-      break;
-    case O::divide:
+      GD_BC_NEXT();
+    GD_BC_OPCODE(divide):
       binary([this](Number& lhs, Number const& rhs) {
 #if GD_BC_PREPARED_DIVISORS
         if (rhs.has_heap_storage() && vm_->try_divide_with_reuse(lhs, rhs, false))
@@ -1519,8 +1569,8 @@ auto GD::Bc::Details::InstructionPack::execute_typed() -> std::pair<Number, bool
 #endif
         lhs.divide(rhs, vm_->scale());
       });
-      break;
-    case O::modulo:
+      GD_BC_NEXT();
+    GD_BC_OPCODE(modulo):
       binary([this](Number& lhs, Number const& rhs) {
 #if GD_BC_PREPARED_DIVISORS
         if (rhs.has_heap_storage() && vm_->try_divide_with_reuse(lhs, rhs, true))
@@ -1528,74 +1578,86 @@ auto GD::Bc::Details::InstructionPack::execute_typed() -> std::pair<Number, bool
 #endif
         lhs.modulo(rhs, vm_->scale());
       });
-      break;
-    case O::power:
+      GD_BC_NEXT();
+    GD_BC_OPCODE(power):
       binary([this](Number& lhs, Number const& rhs) { lhs.power(rhs, vm_->scale()); });
-      break;
-    case O::less_than:
+      GD_BC_NEXT();
+    GD_BC_OPCODE(less_than):
       binary([](Number& lhs, Number const& rhs) { lhs = Number(lhs < rhs ? 1 : 0); });
-      break;
-    case O::less_than_equals:
+      GD_BC_NEXT();
+    GD_BC_OPCODE(less_than_equals):
       binary([](Number& lhs, Number const& rhs) { lhs = Number(lhs <= rhs ? 1 : 0); });
-      break;
-    case O::equals:
+      GD_BC_NEXT();
+    GD_BC_OPCODE(equals):
       binary([](Number& lhs, Number const& rhs) { lhs = Number(lhs == rhs ? 1 : 0); });
-      break;
-    case O::not_equals:
+      GD_BC_NEXT();
+    GD_BC_OPCODE(not_equals):
       binary([](Number& lhs, Number const& rhs) { lhs = Number(lhs != rhs ? 1 : 0); });
-      break;
-    case O::branch:
-      pc_ = instruction.first.index;
-      continue;
-    case O::branch_zero:
-      if (numbers[instruction.first.index].is_zero()) {
-        pc_ = instruction.second.index;
-        continue;
+      GD_BC_NEXT();
+    GD_BC_OPCODE(branch):
+      pc_ = instruction->first.index;
+      GD_BC_BRANCH();
+    GD_BC_OPCODE(branch_zero):
+      if (numbers[instruction->first.index].is_zero()) {
+        pc_ = instruction->second.index;
+        GD_BC_BRANCH();
       }
-      break;
-    case O::function_begin: {
-      auto const end = instruction.first.index - 1;
+      GD_BC_NEXT();
+    GD_BC_OPCODE(function_begin): {
+      auto const end = instruction->first.index - 1;
       vm_->install_verified_function(
         std::get<Letter>(instrs_[end].op1()),
         instrs_.begin() + static_cast<Instruction::Offset>(pc_) + 1,
         instrs_.begin() + static_cast<Instruction::Offset>(end),
         std::get<VariableMask>(instrs_[pc_].op1()), std::get<Location>(instrs_[pc_].op2()));
-      pc_ = instruction.first.index;
-      continue;
+      pc_ = instruction->first.index;
+      GD_BC_BRANCH();
     }
-    case O::push_param_mark:
+    GD_BC_OPCODE(push_param_mark):
       vm_->push_param_pack();
-      break;
-    case O::push_number:
-      vm_->push_param(numbers[instruction.first.index]);
-      break;
-    case O::push_array:
-      vm_->push_param(std::get<ArrayValues>(others[instruction.first.index]));
-      break;
-    case O::pop_param_mark:
+      GD_BC_NEXT();
+    GD_BC_OPCODE(push_number):
+      vm_->push_param(numbers[instruction->first.index]);
+      GD_BC_NEXT();
+    GD_BC_OPCODE(push_array):
+      vm_->push_param(std::get<ArrayValues>(others[instruction->first.index]));
+      GD_BC_NEXT();
+    GD_BC_OPCODE(pop_param_mark):
       vm_->pop_param_pack();
-      break;
-    case O::pop_param:
-      numbers[instruction.result] = vm_->pop_param();
-      break;
-    case O::pop_param_array:
-      others[instruction.result] = vm_->pop_param_array();
-      break;
-    case O::call:
-      numbers[instruction.result] =
-        vm_->call(instruction.first.letter, std::get<Location>(instrs_[pc_].op2()));
-      break;
-    case O::return_:
-      return std::make_pair(std::move(numbers[instruction.first.index]), true);
-    case O::eof:
+      GD_BC_NEXT();
+    GD_BC_OPCODE(pop_param):
+      numbers[instruction->result] = vm_->pop_param();
+      GD_BC_NEXT();
+    GD_BC_OPCODE(pop_param_array):
+      others[instruction->result] = vm_->pop_param_array();
+      GD_BC_NEXT();
+    GD_BC_OPCODE(call):
+      numbers[instruction->result] =
+        vm_->call(instruction->first.letter, std::get<Location>(instrs_[pc_].op2()));
+      GD_BC_NEXT();
+    GD_BC_OPCODE(return_):
+      return std::make_pair(std::move(numbers[instruction->first.index]), true);
+    GD_BC_OPCODE(eof):
       return std::make_pair(Number(0), false);
-    case O::function_end:
+    GD_BC_OPCODE(function_end):
       std::abort();
+#if !defined(GD_BC_THREADED_DISPATCH)
     }
     ++pc_;
   }
   return std::make_pair(Number(0), true);
+#endif
+#undef GD_BC_OPCODE
+#undef GD_BC_NEXT
+#undef GD_BC_BRANCH
 }
+#if defined(GD_BC_THREADED_DISPATCH)
+#  if defined(__clang__)
+#    pragma clang diagnostic pop
+#  elif defined(__GNUC__)
+#    pragma GCC diagnostic pop
+#  endif
+#endif
 #endif
 
 template<bool FullChecks>
