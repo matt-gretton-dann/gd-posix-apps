@@ -173,13 +173,44 @@ retain 3,960 checked observations, including warmups. The
 [paired ratios](bc-compiler-apple-optimization/pgo-ratios.csv) retain both
 builds against Howard and PGO against the unprofiled control.
 
-Remaining #213 work includes matched GCC O2/O3 and LTO comparisons,
-supported instrumentation/sampling PGO, balanced training with
-cold/error/interactive paths, independent holdout, source/compiler/profile
-identity checks, optimization remarks, native code inspection, build cost,
-RSS/code size, per-workload Howard ratios and startup. Missing or stale PGO
-profiles must fail explicitly rather than silently selecting an unprofiled
-build. No compiler performance gain or PGO acceptance is claimed here.
+The [Linux GCC matrix](bc-compiler-gcc/README.md) covers matched O2/O3
+and IPO modes. The compiler experiments retain the portable release
+configuration. Missing or stale PGO profiles must fail explicitly.
+
+### Apple Clang optimization remarks
+
+Using the Apple Clang 21.0.0 arm64 O2 and O3 ThinLTO builds of
+`72485e3490bc22a91a1d63cc057e7da73c7d019e`, replay the
+`vm.cc` and `number-remainder.cc` entries from
+`compile_commands.json`. Redirect the object output to a scratch
+directory and append `-fsave-optimization-record` and
+`-foptimization-record-file=<scratch-file>.yaml`. These compile-time
+records describe the selected translation units before the ThinLTO link.
+
+For link-time decisions, replay the Ninja `bc` link command with its
+original objects and archives, a scratch executable output, and
+`-Wl,-mllvm,-pass-remarks=inline` plus
+`-Wl,-mllvm,-pass-remarks-missed=inline`. A second replay without
+the remark flags is the link control.
+
+| Optimization | VM inline passed / missed | Remainder inline passed / missed | ThinLTO inline passed / missed |
+| --- | ---: | ---: | ---: |
+| O2 | 8,333 / 3,883 | 4,166 / 1,246 | 735 / 5,453 |
+| O3 | 8,246 / 3,960 | 4,199 / 1,268 | 623 / 5,715 |
+
+The ThinLTO linker reported the same multiply inlining rejection in
+both builds. The cost was 780 against a threshold of 250 for
+`BasicDigits::multiply` into `InstructionPack::execute_compact`.
+The counts describe emitted decisions, including decisions in
+library templates and repeated decisions for individual call sites.
+
+The no-remarks link reproduced the original instruction section in
+each build. With the remark flags, the instruction section changed
+in both builds. The diagnostic links took 583,992 and 566,968 bytes
+at O2 and O3, compared with 567,760 and 567,248 for the controls.
+Both diagnostic and control links passed the CLI suite from the
+measured revision. Keep the remark binaries separate from timing
+and use disassembly of the exact timing binaries to verify their code.
 
 ### Apple Clang native target on M1
 

@@ -34,6 +34,13 @@ define a(x) {
      needs neither magnitude-dependent working scale nor reduction. */
   if (s<=144) {
     if (x==1) {
+      /* The rounded unit value already has the POSIX default scale. */
+      if (s==20) {
+        r=.78539816339744830962
+        if (n==1) r= -r
+        ibase=b
+        return(r)
+      }
       scale=s+1
       r=.7853981633974483096156608458198757210492923498437764552437361480769541015715522496570087063355292669955370216283205766617734611523876455579313398520321202793625
       r+=10^(-s)/2
@@ -116,9 +123,10 @@ define e(x) {
     }
   }
   scale=0
-  /* Only positive reconstruction amplifies errors by the output magnitude. */
+  /* For positive x, e^x < 10^(x/2). At scale zero, floor(floor(x)/2)+1
+     exceeds x/2. Negative reconstruction needs no magnitude guard. */
   w=x/1
-  w=s+(1-n)*w+2*length(s+scale(x)+w+1)+24
+  w=s+(1-n)*(w/2+1)+2*length(s+scale(x)+w+1)+24
   scale=w
   if (scale!=w) return(1/0)
   k=0
@@ -151,42 +159,107 @@ define e(x) {
 
 /* Logarithm: square-root reduction and a bounded atanh series. */
 define l(x) {
-  auto b,i,k,q,r,s,t,u,w;
+  auto b,i,k,m,q,r,s,t,u,v,w,h,p[];
   /* b/s save base/scale; w is precision; k reconstructs root reductions.
-     q/t/u are squared ratio, odd power and contribution; r is the sum. */
+     m/v are the signed and absolute decimal exponent; h holds its log term.
+     q/r are first the root bounds, then the squared ratio and sum.
+     t/u are the odd power and contribution. */
   b=ibase
   ibase=A
   s=scale
-  scale=0
-  w=s+scale(x)+length(x)+2*length(s+scale(x)+length(x)+1)+24
-  scale=w
-  if (scale!=w) return(1/0)
   if (x<=0) {
-    scale=s
     r=0/1
     ibase=b
     return(r)
   }
+  scale=0
+  m=length(x)
+  u=scale(x)
+  t=s+u+m+1
+  w=t-1+2*length(t)+24
+  m-=u+1
+  v=m
+  if (v<0) v= -v
+  h=0
+  if (v>=64) {
+    if (v>=64+s/2) {
+      q=10^v
+      w=s+2*length(t)+24
+      h=1
+    }
+  }
+  scale=w
+  if (scale!=w) return(1/0)
+  /* Normalize extreme magnitudes before square-root reduction. */
+  if (h==1) {
+    if (m<0) x=x*q/1
+    if (m>0) x=x/q
+    h=m*l(10)
+  }
+  /* Divide by two in this band to enter [.8,1.2] without roots.
+     The 80-place lower bound is sufficient at working scales up to 64. */
+  if (w<=64) {
+    if (x>=1.6) {
+      if (x<=2.4) {
+        x=x/2
+        h+=0.69314718055994530941723212145817656807550013436025525412068000949339362196969471/1
+      }
+    }
+  }
+  /* At high precision, more roots cost less than a longer series. */
+  q=.8
+  r=1.2
+  if (s>=1000) {
+    q=.95
+    r=1.05
+  }
   k=1
-  while (x<.8) {
+  while (x<q) {
     x=sqrt(x)
     k*=2
   }
-  while (x>1.2) {
+  while (x>r) {
     x=sqrt(x)
     k*=2
   }
   t=(x-1)/(x+1)
   q=t*t
-  r=t
-  i=3
-  while (t!=0) {
-    t=t*q
-    u=t/i
-    r+=u
-    i+=2
+  if (s<1000) {
+    r=t
+    i=3
+    while (t!=0) {
+      t=t*q
+      u=t/i
+      r+=u
+      i+=2
+    }
   }
-  r=r*2*k
+  if (s>=1000) {
+    /* Factor each block of 16 odd powers into a shared polynomial
+       in q and a signed leading power. Only the leading power
+       advances between blocks. */
+    p[0]=1
+    i=1
+    while (i<16) {
+      p[i]=p[i-1]*q
+      i+=1
+    }
+    q=p[i-1]*q
+    r=0
+    i=1
+    while (t!=0) {
+      v=0
+      u=0
+      while (v<16) {
+        u+=p[v]/i
+        i+=2
+        v+=1
+      }
+      r+=t*u
+      t=t*q
+    }
+  }
+  r=r*2*k+h
   t=10^(-s)/2
   if (r>=0) r+=t
   if (r<0) r-=t
@@ -218,7 +291,7 @@ define s(x) {
     n=1
     x= -x
   }
-  /* Three radians already lie within the certified series radius. */
+  /* Three radians need no period construction before angle scaling. */
   if (x>3) {
     p=8*a(1)
     scale=0
@@ -228,6 +301,8 @@ define s(x) {
     x=x-k*p
     if (x>p/2) x=x-p
   }
+  /* Evaluate at one fifth of the angle, then use the quintuple-angle identity. */
+  x=x*.2
   q= -x*x
   t=x
   r=x
@@ -237,6 +312,8 @@ define s(x) {
     r+=t
     i+=2
   }
+  q=r*r
+  r=r*(5+q*(16*q-20))
   if (n==1) r= -r
   t=10^(-u)/2
   if (r>=0) r+=t
@@ -265,7 +342,7 @@ define c(x) {
   /* Coerce only excess input precision, keeping short factors short. */
   if (scale(x)>w) x=x/1
   if (x<0) x= -x
-  /* Three radians already lie within the certified series radius. */
+  /* Three radians need no period construction before angle scaling. */
   if (x>3) {
     p=8*a(1)
     scale=0
@@ -275,6 +352,8 @@ define c(x) {
     x=x-k*p
     if (x>p/2) x=x-p
   }
+  /* Evaluate at one eighth of the angle, then double it three times. */
+  x=x*.125
   q= -x*x
   t=1
   r=1
@@ -284,6 +363,9 @@ define c(x) {
     r+=t
     i+=2
   }
+  r=2*r*r-1
+  r=2*r*r-1
+  r=2*r*r-1
   t=10^(-u)/2
   if (r>=0) r+=t
   if (r<0) r-=t
@@ -406,7 +488,8 @@ define j(n,x) {
     if (t==0) break
   }
   r=t
-  q= -x*x/4
+  /* An exact decimal quarter keeps short coefficients short. */
+  q= -x*x*.25
   k=1
   while (t!=0) {
     t=t*q/(k*(n+k))

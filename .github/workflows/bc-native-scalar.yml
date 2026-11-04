@@ -1,0 +1,93 @@
+name: bc enabled Arm64 native scalar experiment
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/bc-native-scalar.yml'
+      - 'src/bc/native-scalar.*'
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Check and compare native scalar execution
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = arm64
+          mkdir evidence
+          git rev-parse HEAD > evidence/revision.txt
+          clang++ --version > evidence/compiler.txt
+          sysctl -n machdep.cpu.brand_string > evidence/cpu.txt
+          for role in portable native aa; do
+            enabled=OFF
+            if [[ $role == native ]]; then enabled=ON; fi
+            cmake -S . -B "build-$role" -G Ninja -DCMAKE_BUILD_TYPE=Release \
+              -DBUILD_TESTING=OFF -DENABLE_NON_POSIX_EXTENSIONS=ON \
+              -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DBC_MULTIPLY_SPLIT_POINT=126 \
+              "-DENABLE_BC_NATIVE_SCALAR=$enabled" 2>&1 | tee "evidence/$role-configure.log"
+            cmake --build "build-$role" --target bc --parallel 2 \
+              2>&1 | tee "evidence/$role-build.log"
+            cp "build-$role/compile_commands.json" "evidence/$role-compile.json"
+            binary="build-$role/src/bc/bc"
+            python3 src/bc/test-cli.py "$binary" --extensions ON
+            python3 src/bc/test-vm-cli.py "$binary" --extensions ON
+            python3 src/bc/test-signal-delivery.py "$binary"
+            python3 src/bc/test-math-library-cli.py "$binary"
+          done
+          python3 - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+          import shlex
+          import subprocess
+
+          evidence = Path('evidence')
+          revision = (evidence / 'revision.txt').read_text().strip()
+          roles = []
+          for role in ('portable', 'native', 'aa'):
+              commands = (evidence / (role + '-compile.json')).read_bytes()
+              compile_rows = json.loads(commands)
+              vm = next(row for row in compile_rows if row['file'].endswith('/src/bc/vm.cc'))
+              flags = vm.get('arguments') or shlex.split(vm['command'])
+              assert ('-DGD_BC_NATIVE_SCALAR=1' in flags) == (role == 'native')
+              assert any(row['file'].endswith('/src/bc/native-scalar.cc') for row in
+                         compile_rows) == (role == 'native')
+              binary = Path('build-' + role, 'src/bc/bc').resolve()
+              # Force more backedges than the native attempt allows and
+              # verify that fallback commits the loop exactly once.
+              limit = 4_000_001
+              replay = subprocess.run(
+                  [binary], input=f'for(i=0;i<{limit};i++) s+=i\ns\ni\n',
+                  text=True, capture_output=True, check=True, timeout=30)
+              assert not replay.stderr
+              assert replay.stdout == f'{limit * (limit - 1) // 2}\n{limit}\n'
+              roles.append(dict(name=role, argv=[str(binary)], metadata=dict(
+                  source_revision=revision, compiler=(evidence / 'compiler.txt').read_text(),
+                  flags=flags, version='gd-posix-apps source ' + revision, instrumented=False,
+                  binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),
+                  binary_bytes=binary.stat().st_size,
+                  compile_commands_sha256=hashlib.sha256(commands).hexdigest())))
+          (evidence / 'implementations.json').write_text(json.dumps(dict(implementations=roles)))
+          PY
+          for preset in full holdout; do
+            python3 src/bc/scripts/bench-bc.py --config evidence/implementations.json \
+              --require-provenance --reference portable --preset "$preset" \
+              --samples 9 --warmups 1 --seed 207528 --output "evidence/$preset"
+          done
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: bc-native-scalar-${{ github.run_id }}
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 30

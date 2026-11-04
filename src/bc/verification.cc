@@ -20,6 +20,64 @@ namespace {
 using Index = Instruction::Index;
 using Edge = std::pair<Index, Index>;
 
+// An isolated definition has no outer executable instructions. With no
+// branches and only backward body-local operands, every reachable producer
+// dominates its consumer. Reject unsupported shapes to the graph verifier.
+auto verify_linear_definition(Instructions const& code) -> bool
+{
+  using O = Instruction::Opcode;
+  auto const end = code.size() - 1;
+  if (end < 2 || code[end].opcode() != O::function_end ||
+      end + static_cast<Index>(std::get<Instruction::Offset>(code[end].op2())) != 0) {
+    return false;
+  }
+
+  bool incoming_consumed = false;
+  for (Index i = 1; i < end; ++i) {
+    auto const& instruction = code[i];
+    switch (instruction.opcode()) {
+    case O::eof:
+    case O::branch:
+    case O::branch_zero:
+    case O::function_begin:
+    case O::function_end:
+    case O::quit:
+    case O::push_param_mark:
+    case O::push_param:
+    case O::call:
+      return false;
+    case O::return_:
+      if (!incoming_consumed) {
+        return false;
+      }
+      break;
+    case O::pop_param:
+    case O::pop_param_array:
+      if (incoming_consumed) {
+        return false;
+      }
+      break;
+    case O::pop_param_mark:
+      if (incoming_consumed) {
+        return false;
+      }
+      incoming_consumed = true;
+      break;
+    default:
+      break;
+    }
+    auto previous = [i](Instruction::Operand const& operand) {
+      auto const* offset = std::get_if<Instruction::Offset>(&operand);
+      return offset == nullptr || (*offset < 0 && i + static_cast<Index>(*offset) > 0);
+    };
+    if ((instruction.has_op1() && !previous(instruction.op1())) ||
+        (instruction.has_op2() && !previous(instruction.op2()))) {
+      return false;
+    }
+  }
+  return incoming_consumed;
+}
+
 // Preserve the insertion order within each node's neighbors. Flat storage
 // avoids allocating separate vectors for every edge in a small input item.
 class Adjacency
@@ -60,6 +118,10 @@ auto verify_control_flow(Instructions const& code, bool function_body)
 #else
   if (!function_body && verify_linear_stream(code)) {
 #endif
+    return std::nullopt;
+  }
+  if (!function_body && !code.empty() && code.front().opcode() == O::function_begin &&
+      verify_linear_definition(code)) {
     return std::nullopt;
   }
   I const size = code.size();

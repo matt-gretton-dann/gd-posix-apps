@@ -30,12 +30,16 @@ unprivileged execution, a read-only token and checkout without persisted Git
 credentials. Candidate code receives no repository secrets.
 
 Push-to-main and the weekly scheduled run compare against deliberately accepted
-source anchor `2ddf749e8b313f620ad248d680e801c409bbd3f5`. Manual dispatch can supply
+source anchor `23fd6a0efcebae14a0c890d218db4d885d7a3ac3`. Manual dispatch can supply
 an explicit full immutable baseline SHA. The anchor is rebuilt on the same VM;
 no earlier run's binary or timing is a baseline. Promote it only with recorded
 review of full/held-out and A/A evidence, retaining the previous anchor in Git.
-The anchor already supports fixed dispatch; older unsupported revisions fail
-rather than silently using independent tuning.
+The previous anchor `2ddf749e8b313f620ad248d680e801c409bbd3f5` predates the
+scale-limit square-root fix. The checked arithmetic corpus now exercises that
+boundary. Its scale-4096 case rejected the old anchor on all three native
+platforms in run 41881970299. The current anchor retains that oracle and the
+fixed dispatch threshold. An explicit older revision must still pass every
+selected output check.
 
 `benchmark-ci.py` builds base, head and a second independent build of base in
 fresh trees, using the same compiler, Release flags, extensions ON and fixed
@@ -53,7 +57,9 @@ are not presented as performance evidence. Scheduled/manual runs include all
 full and held-out shapes; PR and push runs select at least one full-size
 representative of every corpus group, including conversion, modulo and frontend
 work. The selection follows the corpus automatically and retains extra large,
-imbalanced, square and comparison shapes. An inventory test checks both presets
+imbalanced, square and comparison shapes. It includes the high-scale
+multilimb division grid to exercise the large-quotient kernel. An inventory
+test checks both presets
 so new workload groups cannot silently escape the native PR subset.
 Held-out dimensions and seed 197201 are reserved from PGO/tuning; the full seed
 is 197200. Timing includes process startup; arithmetic component drivers are a

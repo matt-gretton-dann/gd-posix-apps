@@ -289,6 +289,25 @@ public:
       auto const lhs_first = digits_->begin();
       auto const rhs_first = rhs.digits_->begin();
       auto index = std::max(lhs_size, rhs_size);
+#if !GD_BC_PROFILE
+      // Compare the high limb first for an immediate exit on unlike values.
+      // For long equal extents, skip equal blocks before resuming numeric
+      // ordering at the most significant limb of the first unequal block.
+      // Equality of a block is independent of byte order.
+      constexpr unsigned block_limbs = 8;
+      if (lhs_size == rhs_size && index >= 4 * block_limbs) {
+        --index;
+        if (lhs_first[index] != rhs_first[index]) {
+          return lhs_first[index] < rhs_first[index] ? Details::ComparisonResult::less_than
+                                                      : Details::ComparisonResult::greater_than;
+        }
+        while (index >= block_limbs &&
+               std::equal(lhs_first + (index - block_limbs), lhs_first + index,
+                          rhs_first + (index - block_limbs))) {
+          index -= block_limbs;
+        }
+      }
+#endif
       while (index != 0) {
         --index;
         GD_BC_PROFILE_EVENT(Profile::Event::comparison_limb_positions, 1);
@@ -787,12 +806,24 @@ public:
   {
     copy_on_write();
 
+    auto aligned_add = [](typename DigitVector::iterator it, WideType contribution) {
+      // Aligned limbs plus carry sum to less than twice the radix.
+      // Use a narrow sum when the trait can represent that range.
+      using SumType = std::conditional_t<(base_ <= std::numeric_limits<NumType>::max() / 2U + 1U),
+                                         NumType, WideType>;
+      auto const base = static_cast<SumType>(base_);
+      auto const sum = static_cast<SumType>(*it + static_cast<SumType>(contribution));
+      bool const overflow = sum >= base;
+      *it = static_cast<NumType>(overflow ? sum - base : sum);
+      return static_cast<WideType>(overflow);
+    };
+    auto scaled_add = [](typename DigitVector::iterator it, WideType contribution) {
+      WideType const result = *it + contribution;
+      *it = result % base_;
+      return result / base_;
+    };
     NumType const carry =
-      for_each(rhs, scale, [](typename DigitVector::iterator it, WideType carry) {
-        WideType const result = *it + carry;
-        *it = result % base_;
-        return result / base_;
-      });
+      scale == 0 ? for_each(rhs, 0, aligned_add) : for_each(rhs, scale, scaled_add);
 
     if (carry != 0) {
       digits_->push_back(carry);
@@ -1183,18 +1214,25 @@ private:
 
       /* D4. Multiply and subtract.   */
       WideType carry = 0;
-      for (unsigned i = 0; i < n; ++i) {
-        carry += divisor[i] * q_hat;
-        NumType const rhs_d = carry % base_;
-        carry /= base_;
-        if constexpr (ArithmeticBorrow) {
+      if constexpr (ArithmeticBorrow) {
+        // The product and subtraction have separate carry chains. Merge them
+        // only at the high limb so the multiplies can run ahead of borrows.
+        WideType borrow = 0;
+        for (typename DigitVector::size_type i = 0; i < n; ++i) {
+          WideType const product = divisor[i] * q_hat + carry;
+          carry = product / base_;
+          WideType const subtrahend = product % base_ + borrow;
           WideType const limb = dividend[j + i];
-          WideType const borrow = static_cast<WideType>(limb < rhs_d);
-          // The adjusted subtraction is nonnegative and below the radix.
-          dividend[j + i] = static_cast<NumType>(limb + base_ * borrow - rhs_d);
-          carry += borrow;
+          borrow = static_cast<WideType>(limb < subtrahend);
+          dividend[j + i] = static_cast<NumType>(limb + base_ * borrow - subtrahend);
         }
-        else {
+        carry += borrow;
+      }
+      else {
+        for (unsigned i = 0; i < n; ++i) {
+          carry += divisor[i] * q_hat;
+          NumType const rhs_d = carry % base_;
+          carry /= base_;
           if (rhs_d > dividend[j + i]) {
             dividend[j + i] += base_;
             carry += 1;
@@ -1259,6 +1297,33 @@ public:
   auto divide(NumType div) -> NumType
   {
     copy_on_write();
+
+#if defined(__APPLE__) && defined(__aarch64__) && defined(__SIZEOF_INT128__)
+    // Apple Arm64 benefits from the high product. Use hardware division
+    // elsewhere, including the x86-64 radix output workloads.
+    if constexpr (std::numeric_limits<NumType>::digits == 32 &&
+                  std::numeric_limits<WideType>::digits == 64) {
+      if (digits_->size() >= 8) {
+        // floor((2^64-1)/div) underestimates 2^64/div by at most one.
+        // Since the numerator is below 2^64, the high product is at most
+        // one below the exact quotient. Correct it using the remainder.
+        auto const reciprocal = std::numeric_limits<WideType>::max() / div;
+        WideType remainder = 0;
+        auto const finish = digits_->rend();
+        for (auto d = digits_->rbegin(); d != finish; ++d) {
+          auto const numerator = remainder * base_ + *d;
+          auto const estimate =
+            static_cast<WideType>((static_cast<__uint128_t>(numerator) * reciprocal) >> 64);
+          auto const residual = numerator - estimate * div;
+          bool const correct = residual >= div;
+          *d = static_cast<NumType>(estimate + correct);
+          remainder = residual - static_cast<WideType>(div) * correct;
+        }
+        tidy();
+        return static_cast<NumType>(remainder);
+      }
+    }
+#endif
 
     WideType carry = 0;
     auto const finish = digits_->rend();

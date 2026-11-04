@@ -363,11 +363,10 @@ def main():
                                   diagnostic_profile=args.diagnostic_profile)
         observed_layout = verified_array_layout(helper, build, args.array_storage)
         metadata['configuration']['array_storage'] = observed_layout
-        if args.preparsed_library:
-            image = build / 'src/bc/bc-math-library-image.inc'
-            if (cache_values(build / 'CMakeCache.txt').get('ENABLE_BC_PREPARSED_LIBRARY') != 'ON'
-                    or not image.is_file()):
-                raise helper.BuildError('requested preparsed math-library image was not built')
+        image = build / 'src/bc/bc-math-library-image.inc'
+        if args.preparsed_library and not image.is_file():
+            raise helper.BuildError('requested preparsed math-library image was not built')
+        if image.is_file():
             retained = root / image.name
             shutil.copyfile(image, retained)
             metadata['configuration']['preparsed_library_image_sha256'] = helper.digest(retained)

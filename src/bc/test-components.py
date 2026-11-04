@@ -181,6 +181,11 @@ class Components(unittest.TestCase):
         self.assertGreater(two['instructions'], one['instructions'])
         self.assertEqual(one['checksum_mod_2_64'], one['instructions'] * 3)
 
+    def test_parse_deep_right_associative_power(self):
+        powers = 131072
+        result = self.invoke('parse', '1^' * powers + '1\n', iterations='1')
+        self.assertEqual(result['instructions'], 2 * powers + 3)
+
     def test_invalid_boundaries(self):
         for component, source, count, split in (
                 ('unknown', '1\n', '1', '2'), ('add', '1\n', '0', '2'),
@@ -191,6 +196,33 @@ class Components(unittest.TestCase):
                 ('parse', 'quit\n', '1', '2'), ('add', '1' * (1024 * 1024 + 1), '1', '2')):
             with self.subTest(component=component, count=count, split=split):
                 self.invoke(component, source, count, split, success=False)
+
+
+    def test_parse_deep_assignment_and_negation(self):
+        for prefix, count, expected in (('a=', 65536, 131074), ('- ', 131072, 131075)):
+            with self.subTest(prefix=prefix):
+                result = self.invoke('parse', prefix * count + '1\n', iterations='1')
+                self.assertEqual(result['instructions'], expected)
+
+
+    def test_parse_deep_nested_expressions(self):
+        depth = 32768
+        for opening, closing, per_level in (('(', ')', 0), ('f(', ')', 3),
+                                            ('a[', ']', 2), ('sqrt(', ')', 1),
+                                            ('1+(', ')', 2), ('f(1,', ')', 5)):
+            with self.subTest(opening=opening):
+                source = opening * depth + '1' + closing * depth + '\n'
+                result = self.invoke('parse', source, iterations='1')
+                self.assertEqual(result['instructions'], 3 + per_level * depth)
+
+    def test_parse_deep_nested_statements(self):
+        depth = 65536
+        for name, source, count in (
+                ('if', 'if (1) ' * depth + '1\n', 2 * depth + 3),
+                ('block', '{\n' * depth + '1\n' + '}\n' * depth, 3)):
+            with self.subTest(shape=name):
+                result = self.invoke('parse', source, iterations='1')
+                self.assertEqual(result['instructions'], count)
 
 
 if __name__ == '__main__':

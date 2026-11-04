@@ -63,9 +63,9 @@ ordinary results just beside a one-ULP certification boundary; certified oracle
 intervals still decide acceptance independently. The bounded unit-arctangent
 path uses the same final rounding step and an independently certified literal.
 
-Let D = length(x) and F = scale(x), before changing x. In the supported decimal
-model D >= F and D >= 1. Let d(T) be the decimal digit count of a positive
-integer T. The formulas below use nonnegative integer quantities computed at
+Let D = length(x) and F = scale(x), before changing x. D is at least one
+and can be smaller than F for numbers with leading fractional zeros.
+Let d(T) be the decimal digit count of a positive integer T. The formulas below use nonnegative integer quantities computed at
 scale zero. For T >= 1, W <= 27T for the 24-digit formulas (and <= 35T for the
 32-digit formulas). Thus the two extra d(T) terms dominate quadratic working-
 precision factors: T < 10^d(T). The remaining 24 or 32 digits leave a large
@@ -91,7 +91,10 @@ truncate at S. The final error is at most U/2 + 10^-160 < U. Negating before
 truncation preserves nearest rounding for -1. Tests check the literal and both
 reference endpoints round identically at every entry scale through 144.
 
-The shortcut uses a working scale of at most 145. All other inputs and S >= 145
+At the POSIX default S = 20, return the independently certified rounded
+literal directly, applying the original sign. The enclosure test certifies
+the literal at that scale. Other bounded unit inputs use a working scale
+of at most 145. All other inputs and S >= 145
 retain the dynamic calculation and its working-scale readback guard. Literal identity, threshold neighbors, representations
 and caller bases are checked independently. No retained state or VM recognition
 is introduced.
@@ -123,14 +126,13 @@ propagates geometrically. Reconstruction and argument-reduction errors are
 bounded conservatively by `2^k * exp(x) * (3N+6) * u` before taking a reciprocal.
 For x > .125, 2^k < 16x; otherwise k=0.
 
-Use W = S + floor(x) + 2*d(S+F+floor(x)+1) + 24. The reconstruction factor is
-controlled because `(1+x)*exp(x)*10^-floor(x) < 6`: split x into integer and
-fractional parts and use exp(1) < 3. Consequently `2^k*exp(x)*10^-floor(x)`
-is below 128. These bounds, with the quadratic digit-count margin, remain
-below U/2 for positive arguments.
+Let T = S + F + floor(x) + 1. For positive arguments use
+W = S + G + 2*d(T) + 24, where G = floor(floor(x)/2) + 1. Since e < 3,
+e^2 < 10, and G > x/2, we have exp(x)*10^-G < 1. The remaining
+reconstruction factor is at most 16T. With N < 2W+2 and W+1 <= 29T,
+the two digit-count guards and 24 extra places keep the error below U/2.
 
-For negative arguments use W = S + 2*d(T) + 24, with
-T = S + F + floor(x) + 1. Before inversion, the reduced Taylor error and
+For negative arguments use W = S + 2*d(T) + 24. Before inversion, the reduced Taylor error and
 argument-reduction error total at most (3N+6)u: halving truncations sum
 to less than 2u at the reduced argument, and exp on [0,.125] has derivative
 below two. Both reduced exponential values are at least one, so inversion
@@ -149,18 +151,67 @@ It also avoids unnecessary reduction and squaring for very large magnitudes.
 
 Repeated square roots put a positive x in [.8,1.2], recording the power-of-two
 reconstruction multiplier. Evaluate `2*atanh((x-1)/(x+1))` using its odd-power
-series. The reduced magnitude is at most 1/9 and the squared ratio is below
-.013, so fewer than W+2 terms suffice. Near one, this evaluates the small
+series. At requested scale 1000 and above, reduce further to [.95,1.05]
+to trade additional roots for fewer full-precision series terms. In both
+regimes the reduced ratio has magnitude at most 1/9 and its square is
+below .013, so fewer than W+2 terms suffice. Near one, this evaluates the small
 logarithm directly rather than subtracting large independently rounded logs.
 
-Use W = S + F + D + 2*d(S+F+D+1) + 24. The extra F+D protects tiny original
-arguments during square-root reduction. The reconstruction multiplier is at
-most 32*(D+F+1). Bounding the chain of root perturbations and the final series
-conservatively gives `10^6*(W+10)*(D+F+1)^2*10^F*u`. Since F <= D,
-`(D+F+1)^2*10^-D <= 1` for D >= 1. The remaining digit-count/24-digit margin
-puts the bound below U/2, including cancellation near one. Original input
-precision is retained through the reductions; a tiny value is not rounded to
-zero before taking roots.
+At working scale W <= 64, an argument in [1.6,2.4] can enter the
+root-free band by dividing by two and adding ln(2) to the final result.
+The quotient truncation changes its logarithm by less than 2u since the
+reduced argument is at least .8. The stored 80-place lower bound is
+certified by the positive series 2*atanh(1/3), bounding the tail by the
+first omitted term times 9/8. Truncation of this constant at W adds less
+than u. The combined error is covered by the existing budget below.
+Other arguments and precisions retain square-root reduction.
+
+At scale 1000 and above, let t be the reduced ratio and q = t².
+Cache q⁰ through q¹⁵ and evaluate blocks of 16 consecutive terms.
+For a block starting at term j, multiply the sum of q^v/(2j+2v+1)
+for v = 0 through 15 by t*q^j. Advance that signed power using q¹⁶.
+This reduces full-precision multiplications inside the series. The
+power recurrences propagate prior rounding error with a factor below
+.013. Each cached power differs from the exact power of the rounded q
+by less than 2u. Each block has at most 16 truncated divisions, so
+its polynomial error is below 48u. Including error in the signed
+leading power and the final product, each block contributes less than
+100u of error. When the computed leading power reaches zero, the
+omitted exact leading power is within a few u, and the tail is
+geometrically bounded. The existing logarithm error budgets below
+cover these errors and the initial rounding of t and q.
+
+For positive x, its signed decimal exponent is m = D - F - 1. If
+abs(m) is at least 64 + floor(S/2), normalize to [1,10) using the exact
+integer power 10^abs(m). The cutoff avoids paying for the additional
+logarithm when ordinary root reduction is cheaper at the requested scale.
+For negative m, integer multiplication preserves the fractional operand
+scale, then division by one truncates to the working scale. For positive m,
+division by the integer power truncates directly. The normalized argument
+stays at least one, where the derivative of log is at most one. Its
+truncation therefore adds less than one working unit of error.
+
+Let T = S + F + D + 1. Use W = S + 2*d(T) + 24 on the normalized path.
+The square-root reduction of an argument in [1,10) needs at most six
+roots, including at high precision. Each root truncation is below u and later roots on [1,10)
+contract the perturbation. Add m*l(10) evaluated at scale W after
+reconstruction. The recursive l(10) uses the ordinary path because its
+decimal exponent is one. Its returned error is at most u, so this term
+adds at most abs(m)*u. The series and reduction cost at most
+10^6*(W+10)*u with the bounded root count. These bounds leave less than
+U/2 before final rounding.
+
+The ordinary path uses W = S + F + D + 2*d(T) + 24 and retains the original
+input precision through reduction. When x is tiny, the first exact root
+is at least 10^(-F/2). Its truncated value is at least half that bound
+because W includes F. Subsequent roots of small arguments stay above that
+same lower bound. Taking the logarithm of each truncated root therefore
+introduces at most 2*10^(F/2)*u error. The reconstruction multiplier is at
+most 128*(D+F+1), using the tighter reduction interval for the bound. The geometric sum of intermediate multipliers is below
+twice the final multiplier, so the root errors and the bounded atanh series
+together cost at most 10^7*(W+10)*(D+F+1)*10^F*u. The two digit-count guards
+cover the quadratic factor even when F exceeds D. The remaining margin
+keeps the pre-rounding error below U/2, including near one.
 
 ## Sine and cosine
 
@@ -172,7 +223,7 @@ than u. Sine and cosine are globally one-Lipschitz, so the resulting
 function error is below u. Shorter exact inputs retain their original scale.
 
 After sign normalization, arguments at most three radians need no period
-construction: three is below pi and already within the series radius. For
+construction because three is below pi. For
 larger arguments, compute the period as 8*a(1) at W using the ordinary public
 binding. There is no fixed period literal. Remove an integer multiple at
 scale zero, then center the reduced argument. An adjacent quotient at a
@@ -180,16 +231,29 @@ reduction boundary changes only the period representative. The period and
 phase error is bounded by 16*10^M*u, including that adjacent quotient.
 Working-scale readback still protects both the initial and reduction setters.
 
-Use alternating term recurrences with the squared reduced argument and
-successive factorial factors. Its magnitude is below four. After the first
-few terms, recurrence ratios are at most one half; fewer than 4W+32 terms
-suffice. The absolute-series bound exp(4) < 100 bounds early amplification
-and cancellation. Conservative series/rounding error is below
-4000*(W+10)*u. Include the input-coercion error as well as the phase error.
+Evaluate sine at one fifth of the centered angle and cosine at one
+eighth. The finite decimal factors incur at most one working ULP u of
+truncation, and the scaled arguments have magnitude below one. The
+alternating recurrences retain the conservative bound
+4000*(W+10)*u for series and arithmetic error. Include one additional u
+for the scaling error using the one-Lipschitz bound.
 
-Here W<=27T. Dividing the aggregate bound by U gives at most
-`[16*10^M + 4000*(27T+10) + 1] * 10^(-M-2*d(T)-24)`.
-Since M>=1, T>=2 and T<10^d(T), this is below 10^-20. The final rounding
+Reconstruct sine with y*(5 + y²*(16*y² - 20)). Reconstruct cosine by
+applying 2*y² - 1 three times. Each exact intermediate cosine lies in
+[-1,1]. On [-1.01,1.01] the sine polynomial derivative is bounded in
+magnitude by 160, and the cosine map derivative by 5. Each exact
+reconstruction step can therefore amplify the input approximation by
+at most these factors. In the sine polynomial, the square's truncation
+is amplified by less than 60 and the final two products contribute
+less than 4u. For cosine each application adds less than 2u.
+Together the reconstruction and scaled series errors are bounded by
+10^6*(W+10)*u. This bound also keeps all reconstructed cosine
+intermediates within the derivative interval.
+
+Here W<=27T. Dividing the aggregate bound, including input coercion and
+period reduction, by U gives at most
+`[16*10^M + 10^6*(27T+10) + 1] * 10^(-M-2*d(T)-24)`.
+Since M>=1, T>=2 and T<10^d(T), this is below 10^-18. The final rounding
 step adds at most U/2, preserving the one-decimal-ULP contract for arbitrary
 supported magnitudes and fractional widths. Odd/even symmetry handles
 negative input exactly. The certified +/-3 boundary fixtures and equivalent
@@ -257,8 +321,11 @@ subset of the nonnegative terms of `exp(a)*exp(a) = exp(x)`. An error
 introduced within the ascending loop propagates across k more steps with
 weight at most `a^(2*k)/(k!)^2`, bounded in sum by the same product.
 
-The stored magnitude of q is at most Q = a^2 and differs from it by at
-most 2u. To bound this perturbation, differentiate the absolute series
+The squared argument is multiplied by the exact decimal factor .25.
+This preserves a short coefficient when the product is exact at fewer
+than W places, so later multiplications need fewer limbs. Both products
+truncate at W only when their exact result needs more places. The stored
+magnitude of q is at most Q = a^2 and differs from it by at most 2u. To bound this perturbation, differentiate the absolute series
 in Q, holding the exact initial coefficient `a^n/n!` fixed. For term k
 the factor k cancels against k!, and dropping the last factor of (n+k)!
 bounds the derivative sum by
@@ -350,46 +417,51 @@ call resolves the user replacement in both extension configurations.
 condition is evaluated once. Automatic array flags distinguish loop exhaustion
 from `break`; `return` skips unreachable probes. A behavioral check covers
 skipped/exhausted/broken loops, return, nested decisions and a condition with a
-side effect before the production fixture runs. It certifies all 616 numerical
+side effect before the production fixture runs. It certifies the numerical
 results from the instrumented definitions against the same exact enclosures.
+Calls outside the logarithm domain exercise its guard and are counted
+separately from the numerical results.
 
-The source contains 78 decisions and 156 outcomes. The expected fixture requires
-145 normal outcomes, including two explicitly undefined-domain log guard calls. Nine
-separate portable-host models independently clamp a working-scale setter and
-exercise its defensive error branch without returning a numerical value.
-Together the ordinary and modeled runs must reproduce 154 outcomes. The two
-remaining outcomes require a
-negative exponential coefficient: positive Taylor terms, positive squaring
-and a positive reciprocal preserve nonnegativity, so they are infeasible.
-The committed `src/bc/fixtures/math-library-decisions.json` report records
-each source line, expression, normal and
-modeled observations, and this exception. Any other missing outcome fails
-the automated check. This is interpreted-library decision evidence, kept
-separate from C++ line/branch/compiler MC/DC reports and their ON/OFF totals.
+The [decision fixture](../../src/bc/fixtures/math-library-decisions.json)
+records the exact source digest, counts, and per-condition outcomes. A
+portable-host model independently clips each working-scale setter to exercise
+its defensive error branch. Two outcomes require a negative exponential
+coefficient and are infeasible because the series and reconstruction preserve
+nonnegativity. The automated check compares the report with the fixture and
+requires every outcome to be observed, modeled, or explicitly accounted for.
+This interpreted-library evidence is separate from compiler line, branch, and
+MC/DC coverage for the C++ build in each extension configuration.
 
 The first [correctness and coverage archive](bc-217-library-validation/README.md)
 retains the exact interpreted source, validation logs, separate LLVM 23 ON/OFF
 profiles/reports and the existing arithmetic native control. Its measured
 revisions are explicit checkpoints; later source changes require fresh checks.
 
-## Build-time parser experiment
+## Build-time math library image
 
 `ENABLE_BC_PREPARSED_LIBRARY=ON` builds a native generator that parses the
 same embedded POSIX source and encodes the ordinary instruction operands
 in a compact, build-local byte image.
-At runtime the loader constructs fresh instructions for each input item
-and passes them through the normal verifier and VM. It retains the parser's
-item boundaries and source locations. The default and cross builds load
-the source through the parser. The optional image test checks deterministic
-regeneration.
+The loader executes initialization and other top-level items in source order.
+It registers an isolated function definition as a slice of the immutable image.
+The first call decodes and verifies that slice before installing an owned body
+with its own literal caches. User definitions replace deferred or decoded
+functions through normal registration. Item boundaries and source locations
+are preserved. Native builds outside Windows enable the image by default.
+Windows defaults to the source loader after the all-native default
+regressed sparse-array execution in the native benchmark. Windows builds
+can opt in explicitly. Cross builds always load the source through the
+parser, and native coverage builds default to the source loader. Any native
+build can select source with `-DENABLE_BC_PREPARSED_LIBRARY=OFF`. The image
+test checks deterministic regeneration when the image is enabled.
 
 An exploratory Apple Clang arm64 Release comparison used 30 paired process
 launches per case after warmup. All outputs matched the source loader.
 The preload-only runtime ratio was 0.967 [0.956, 0.975] and the cold sine
 and Bessel ratios were 0.972 and 0.975. The no-library ratio was 0.986,
 and this run had no separate A/A control. The executable grew from
-567232 to 735296 bytes. These measurements leave the source loader as the
-default.
+567232 to 735296 bytes. These initial measurements preceded the compact encoding and deferred
+function decoding.
 
 The compact encoding reduced the executable to 583296 bytes and the
 instruction image to 10089 bytes. In a second 30-pair comparison with both
