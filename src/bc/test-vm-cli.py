@@ -48,6 +48,22 @@ class VMTests(unittest.TestCase):
                 self.run_bc('while(' + target + ') {\n7\nbreak\n}\n', '7\n')
                 self.run_bc('for(i=0;' + target + ';i=i+1) {\n7\nbreak\n}\n', '7\n')
 
+    def test_scalar_loop_state_and_exact_fallbacks(self):
+        cases = [
+            ('for(i=0;i<100000;i++) s+=i\ns\ni\n', '4999950000\n100000\n'),
+            ('for(i=0;i<0;i++) s+=i\ns\ni\n', '0\n0\n'),
+            ('for(i=0;i<2;i++) s+=18446744073709551615\ns\ni\n',
+             '36893488147419103230\n2\n'),
+            ('s=7\nfor(i=0;i<4;i++) s+=i\ns\ni\n', '13\n4\n'),
+            ('s=0.0\nfor(i=0;i<4;i++) s+=i\ns\nscale(s)\n', '6.0\n1\n'),
+            ('ibase=2\nfor(i=0;i<101;i++) s+=i\ns\ni\n', '10\n5\n'),
+            ('for(i=0;i<4;i++) s+=.2\nif(s==.8) 1\nscale(s)\ni\n', '1\n1\n4\n'),
+            ('for(i=0;i<4;i++) { s+=i; i; }\ns\n', '0\n1\n2\n3\n6\n'),
+        ]
+        for program, expected in cases:
+            with self.subTest(program=program):
+                self.run_bc(program, expected)
+
     def test_condition_side_effects_run_once(self):
         cases = [('n=0\nif(n=2) 7\nn\n', '7\n2\n'),
                  ('n=0\nif(n++) 7\nn\n', '1\n'),
