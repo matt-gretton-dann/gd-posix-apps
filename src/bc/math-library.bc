@@ -247,7 +247,7 @@ define s(x) {
     n=1
     x= -x
   }
-  /* Three radians already lie within the certified series radius. */
+  /* Three radians need no period construction before angle scaling. */
   if (x>3) {
     p=8*a(1)
     scale=0
@@ -257,6 +257,8 @@ define s(x) {
     x=x-k*p
     if (x>p/2) x=x-p
   }
+  /* Evaluate at one fifth of the angle, then use the quintuple-angle identity. */
+  x=x*.2
   q= -x*x
   t=x
   r=x
@@ -266,6 +268,8 @@ define s(x) {
     r+=t
     i+=2
   }
+  q=r*r
+  r=r*(5+q*(16*q-20))
   if (n==1) r= -r
   t=10^(-u)/2
   if (r>=0) r+=t
@@ -294,7 +298,7 @@ define c(x) {
   /* Coerce only excess input precision, keeping short factors short. */
   if (scale(x)>w) x=x/1
   if (x<0) x= -x
-  /* Three radians already lie within the certified series radius. */
+  /* Three radians need no period construction before angle scaling. */
   if (x>3) {
     p=8*a(1)
     scale=0
@@ -304,6 +308,8 @@ define c(x) {
     x=x-k*p
     if (x>p/2) x=x-p
   }
+  /* Evaluate at one eighth of the angle, then double it three times. */
+  x=x*.125
   q= -x*x
   t=1
   r=1
@@ -313,6 +319,9 @@ define c(x) {
     r+=t
     i+=2
   }
+  r=2*r*r-1
+  r=2*r*r-1
+  r=2*r*r-1
   t=10^(-u)/2
   if (r>=0) r+=t
   if (r<0) r-=t
