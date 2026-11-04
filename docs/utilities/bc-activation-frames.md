@@ -12,7 +12,9 @@ The binding must be among the saved locals. The remaining bytecode must
 neither read a result from the prologue nor branch into it. Argument
 evaluation and staging retain their order, and binding uses the same
 argument type and pack-size checks. Other prologues, full checks and
-instruction profiling execute the original bytecode.
+instruction profiling execute the original bytecode. Windows also uses the
+original call path because the fused build exceeded the 5% regression limit
+in the native comparison cohort.
 
 Saved locals occupy a separate contiguous vector. A call records its starting
 offset, moves the selected scalar and array values into it, and installs empty

@@ -251,7 +251,11 @@ public:
   FunctionCode(FunctionCode&&) noexcept = default;
   auto operator=(FunctionCode const&) -> FunctionCode& = default;
   auto operator=(FunctionCode&&) noexcept -> FunctionCode& = default;
+#if !defined(_WIN32)
   auto view(bool full_checks, [[maybe_unused]] VariableMask locals) -> VerifiedInstructions
+#else
+  auto view(bool full_checks) -> VerifiedInstructions
+#endif
   {
     if (!full_checks && !prepared_) {
       // Publish both plans together so a failed allocation leaves the
@@ -259,7 +263,7 @@ public:
       auto consumption = plan_consumption(instructions_, true);
       auto slots = plan_result_slots(instructions_, sizeof(ResultSlot), consumption);
       auto layout = prepare_layout(instructions_, std::move(slots), true, true);
-#if !GD_BC_PROFILE
+#if !GD_BC_PROFILE && !defined(_WIN32)
       auto parameter = prove_scalar_parameter();
       if (parameter && !locals.contains(*parameter)) {
         parameter.reset();
@@ -279,7 +283,7 @@ private:
   {
   }
 
-#if !GD_BC_PROFILE
+#if !GD_BC_PROFILE && !defined(_WIN32)
   // Prove the parser's one-scalar prologue and that the rest of the
   // function cannot read its result slots or branch back into it.
   auto prove_scalar_parameter() const -> std::optional<Variable>
@@ -314,7 +318,7 @@ private:
   {
     ConsumptionPlan consumption;
     ExecutionLayout layout;
-#if !GD_BC_PROFILE
+#if !GD_BC_PROFILE && !defined(_WIN32)
     std::optional<Variable> scalar_parameter;
 #endif
   };
@@ -549,6 +553,7 @@ public:
   auto execute() -> std::pair<Number, bool>;
 
 private:
+#if !defined(_WIN32)
   friend struct VMState;
   // Only the function entry proof can authorize a nonzero starting index.
   auto execute_from(Index start) -> std::pair<Number, bool>
@@ -556,7 +561,7 @@ private:
     pc_ = start;
     return execute();
   }
-
+#endif
 
   friend auto operator<<(std::ostream& os, InstructionPack const& instrs) -> std::ostream&;
 
@@ -941,8 +946,15 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
   }
 
   FunctionDefinition& def = func_ptr.value();
+#if defined(_WIN32)
+  // Preserve the existing call path on Windows, where native comparisons
+  // found regressions in workloads outside the fused prologue.
+  auto func_instructions = std::get<0>(def).view(full_checks());
+  auto locals = std::get<1>(def);
+#else
   auto locals = std::get<1>(def);
   auto func_instructions = std::get<0>(def).view(full_checks(), locals);
+#endif
 
   // Retain offsets rather than references across execute(): recursive calls
   // may grow the same buffer. Capacity remains available after restoration.
@@ -983,6 +995,10 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
       arrays_.at(static_cast<unsigned>(l)).reset();
     });
 
+#if defined(_WIN32)
+    InstructionPack fn(this, func_instructions);
+    auto [result, cont] = fn.execute();
+#else
     Instruction::Index start = 0;
 #if !GD_BC_PROFILE
     auto const& code = std::get<0>(def);
@@ -1001,6 +1017,7 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
     }
 #endif
     auto [result, cont] = fn.execute_from(start);
+#endif
     restore(false);
     return result;
   }
