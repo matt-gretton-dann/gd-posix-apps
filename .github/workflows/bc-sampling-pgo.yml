@@ -24,8 +24,13 @@ jobs:
           mkdir evidence
           lscpu > evidence/cpu.txt
           cat /proc/sys/kernel/perf_event_paranoid > evidence/perf-event-paranoid.txt
-          perf=$(find /usr/lib/linux-tools -name perf -type f | sort -V | tail -n 1)
-          test -x "$perf"
+          # Ubuntu's generic kernel tools directory contains symlinks to
+          # the versioned package's executables.
+          perf=$(find -L /usr/lib/linux-tools -name perf -type f | sort -V | tail -n 1)
+          if [[ ! -x $perf ]]; then
+            echo 'Could not locate the installed perf executable.' >&2
+            exit 1
+          fi
           "$perf" --version > evidence/perf-version.txt
           clang-18 --version > evidence/compiler.txt
           cat > evidence/probe.c <<'PROBE'
