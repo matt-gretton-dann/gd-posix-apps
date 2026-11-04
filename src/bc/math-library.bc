@@ -116,9 +116,10 @@ define e(x) {
     }
   }
   scale=0
-  /* Only positive reconstruction amplifies errors by the output magnitude. */
+  /* For positive x, e^x < 10^(x/2). At scale zero, floor(floor(x)/2)+1
+     exceeds x/2. Negative reconstruction needs no magnitude guard. */
   w=x/1
-  w=s+(1-n)*w+2*length(s+scale(x)+w+1)+24
+  w=s+(1-n)*(w/2+1)+2*length(s+scale(x)+w+1)+24
   scale=w
   if (scale!=w) return(1/0)
   k=0

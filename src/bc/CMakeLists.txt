@@ -57,6 +57,12 @@ if(ENABLE_NON_POSIX_EXTENSIONS)
   # bc.hh exposes mode-dependent inline code, so every consumer needs this.
   target_compile_definitions(bc-language-mode INTERFACE ENABLE_EXTENSIONS=1)
 endif()
+option(ENABLE_BC_NATIVE_SCALAR "Enable experimental Apple Arm64 native scalar execution" OFF)
+if(ENABLE_BC_NATIVE_SCALAR AND APPLE AND CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64"
+   AND NOT CMAKE_OSX_ARCHITECTURES MATCHES "x86_64|arm64e")
+  target_sources(libbc PRIVATE native-scalar.cc)
+  target_compile_definitions(libbc PRIVATE GD_BC_NATIVE_SCALAR=1)
+endif()
 set_warnings(libbc)
 gd_apply_ipo(libbc)
 
