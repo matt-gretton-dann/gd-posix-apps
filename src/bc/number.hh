@@ -1550,6 +1550,53 @@ private:
     return multiply_workspace(lhs_begin, lhs_end, rhs_begin, rhs_end);
   }
 
+#if defined(_MSC_VER)
+  __declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+  [[gnu::noinline]]
+#endif
+  static auto multiply_runs(std::size_t lhs_count, std::size_t rhs_count, WideType lhs,
+                            WideType rhs, WideType lhs_top, WideType rhs_top) -> BasicDigits
+  {
+    auto const last = lhs_count + rhs_count;
+    auto const interior = lhs * rhs;
+    auto const left_edge = lhs_top * rhs;
+    auto const right_edge = lhs * rhs_top;
+    auto const top = lhs_top * rhs_top;
+    BasicDigits result;
+    result.copy_on_write();
+    result.digits_->resize(last + 2);
+
+    // A diagonal crosses a triangular (or trapezoidal) number of equal
+    // interior products and at most one product from each leading limb.
+    // Split products at the radix before multiplying by the overlap count.
+    WideType carry = 0;
+    for (std::size_t index = 0; index < last; ++index) {
+      auto const count =
+        static_cast<WideType>(std::min({index + 1, lhs_count, rhs_count, last - index - 1}));
+      auto low = static_cast<WideType>(count * (interior % base_) + carry);
+      auto high = static_cast<WideType>(count * (interior / base_));
+      if (index >= lhs_count) {
+        low += left_edge % base_;
+        high += static_cast<WideType>(left_edge / base_);
+      }
+      if (index >= rhs_count) {
+        low += right_edge % base_;
+        high += static_cast<WideType>(right_edge / base_);
+      }
+      (*result.digits_)[index] = static_cast<NumType>(low % base_);
+      carry = high + low / base_;
+    }
+    // Keep the leading product split as well. The carry can exceed one limb
+    // in the middle of the result, even though the final carry cannot.
+    auto const low = top % base_ + carry;
+    (*result.digits_)[last] = static_cast<NumType>(low % base_);
+    auto const final_carry = top / base_ + low / base_;
+    assert(final_carry < base_);  // NOLINT
+    (*result.digits_)[last + 1] = static_cast<NumType>(final_carry);
+    return result;
+  }
+
   static auto square_basic(typename DigitVector::const_iterator first,
                            typename DigitVector::const_iterator last) -> BasicDigits
   {
@@ -1634,6 +1681,22 @@ private:
     auto const rhs_size = static_cast<std::size_t>(rhs_end - rhs_begin);
     if (lhs_size > std::numeric_limits<std::size_t>::max() - rhs_size) {
       throw std::length_error("bc multiplication result too large");
+    }
+    // Keep run detection in the recursive path. Short schoolbook products
+    // need no shape checks, and irregular recursive operands fall through.
+    constexpr std::size_t run_threshold = 32;
+    auto const shorter = std::min(lhs_size, rhs_size);
+    // With at most shorter + 1 terms on a diagonal, the low parts and
+    // incoming carry together occupy less than twice that many bases.
+    if (shorter >= run_threshold &&
+        shorter + 1 <= std::numeric_limits<WideType>::max() / base_ / 2 && lhs_begin[0] != 0 &&
+        rhs_begin[0] != 0 && lhs_begin[0] == lhs_begin[1] && rhs_begin[0] == rhs_begin[1] &&
+        std::all_of(lhs_begin + 2, lhs_end - 1,
+                    [digit = *lhs_begin](auto d) { return d == digit; }) &&
+        std::all_of(rhs_begin + 2, rhs_end - 1,
+                    [digit = *rhs_begin](auto d) { return d == digit; })) {
+      return multiply_runs(lhs_size - 1, rhs_size - 1, *lhs_begin, *rhs_begin, lhs_end[-1],
+                           rhs_end[-1]);
     }
     auto const point = static_cast<std::size_t>(multiply_split_point_);
     using Kernel = LimbProduct<Traits>;
