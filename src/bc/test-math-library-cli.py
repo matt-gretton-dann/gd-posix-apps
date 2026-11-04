@@ -108,13 +108,16 @@ class LibraryCli(unittest.TestCase):
                     self.assertEqual(ORACLE.classify(value, lower, upper, scale), 'pass')
                     self.assertEqual(lines[2 * index + 1], str(scale))
 
-    def test_logarithm_decimal_normalization(self):
+    def test_logarithm_argument_reduction(self):
         cases = []
         for scale in (20, 100, 1000):
             cutoff = 64 + scale // 2
             for exponent in (cutoff - 1, cutoff, cutoff + 33):
                 cases.append((scale, '9' + '0' * exponent))
                 cases.append((scale, '.' + '0' * (exponent - 1) + '9'))
+        for scale in (999, 1000):
+            for argument in ('.02', '.949999', '.95', '1.05', '1.050001', '2'):
+                cases.append((scale, argument))
         program = ''.join(f'scale={scale}\nr=l({argument})\nr\nscale(r)\nibase\n'
                           for scale, argument in cases)
         binaries = [BC] if OTHER_BC is None else [BC, OTHER_BC]
@@ -265,15 +268,18 @@ class LibraryCli(unittest.TestCase):
         program = 'scale=0\n' + ''.join(f'j(0,{x})\n' for x in arguments)
         self.assertEqual(self.checked_lines(program), ['1', '0'])
 
-    def test_bessel_ascending_with_large_cancellation(self):
-        for order, argument, scale in ((0, 100, 150), (300, 300, 100)):
+    def test_bessel_ascending_with_exact_rational_enclosures(self):
+        arguments = ((0, 100, 150), (300, 300, 100), (1, '1.125', 100),
+                     (1, '1.' + '23456789' * 12, 20))
+        for order, argument, scale in arguments:
             with self.subTest(order=order, argument=argument, scale=scale):
+                x = Fraction(argument)
                 term = Fraction(1)
                 for j in range(1, order + 1):
-                    term *= Fraction(argument, 2 * j)
+                    term *= x / (2 * j)
                 partial = term
                 for k in range(1, 2000):
-                    ratio = Fraction(argument**2, 4 * k * (order + k))
+                    ratio = x**2 / (4 * k * (order + k))
                     term *= -ratio
                     if ratio < 1 and abs(term) < Fraction(1, 10**(scale + 2)):
                         break

@@ -787,12 +787,24 @@ public:
   {
     copy_on_write();
 
+    auto aligned_add = [](typename DigitVector::iterator it, WideType contribution) {
+      // Aligned limbs plus carry sum to less than twice the radix.
+      // Use a narrow sum when the trait can represent that range.
+      using SumType = std::conditional_t<(base_ <= std::numeric_limits<NumType>::max() / 2U + 1U),
+                                         NumType, WideType>;
+      auto const base = static_cast<SumType>(base_);
+      auto const sum = static_cast<SumType>(*it + static_cast<SumType>(contribution));
+      bool const overflow = sum >= base;
+      *it = static_cast<NumType>(overflow ? sum - base : sum);
+      return static_cast<WideType>(overflow);
+    };
+    auto scaled_add = [](typename DigitVector::iterator it, WideType contribution) {
+      WideType const result = *it + contribution;
+      *it = result % base_;
+      return result / base_;
+    };
     NumType const carry =
-      for_each(rhs, scale, [](typename DigitVector::iterator it, WideType carry) {
-        WideType const result = *it + carry;
-        *it = result % base_;
-        return result / base_;
-      });
+      scale == 0 ? for_each(rhs, 0, aligned_add) : for_each(rhs, scale, scaled_add);
 
     if (carry != 0) {
       digits_->push_back(carry);
@@ -1259,6 +1271,33 @@ public:
   auto divide(NumType div) -> NumType
   {
     copy_on_write();
+
+#if defined(__APPLE__) && defined(__aarch64__) && defined(__SIZEOF_INT128__)
+    // Apple Arm64 benefits from the high product. Use hardware division
+    // elsewhere, including the x86-64 radix output workloads.
+    if constexpr (std::numeric_limits<NumType>::digits == 32 &&
+                  std::numeric_limits<WideType>::digits == 64) {
+      if (digits_->size() >= 8) {
+        // floor((2^64-1)/div) underestimates 2^64/div by at most one.
+        // Since the numerator is below 2^64, the high product is at most
+        // one below the exact quotient. Correct it using the remainder.
+        auto const reciprocal = std::numeric_limits<WideType>::max() / div;
+        WideType remainder = 0;
+        auto const finish = digits_->rend();
+        for (auto d = digits_->rbegin(); d != finish; ++d) {
+          auto const numerator = remainder * base_ + *d;
+          auto const estimate =
+            static_cast<WideType>((static_cast<__uint128_t>(numerator) * reciprocal) >> 64);
+          auto const residual = numerator - estimate * div;
+          bool const correct = residual >= div;
+          *d = static_cast<NumType>(estimate + correct);
+          remainder = residual - static_cast<WideType>(div) * correct;
+        }
+        tidy();
+        return static_cast<NumType>(remainder);
+      }
+    }
+#endif
 
     WideType carry = 0;
     auto const finish = digits_->rend();

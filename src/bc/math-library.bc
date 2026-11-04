@@ -155,7 +155,8 @@ define l(x) {
   auto b,i,k,m,q,r,s,t,u,v,w,h;
   /* b/s save base/scale; w is precision; k reconstructs root reductions.
      m/v are the signed and absolute decimal exponent; h holds its log term.
-     q/t/u are squared ratio, odd power and contribution; r is the sum. */
+     q/r are first the root bounds, then the squared ratio and sum.
+     t/u are the odd power and contribution. */
   b=ibase
   ibase=A
   s=scale
@@ -188,12 +189,19 @@ define l(x) {
     if (m>0) x=x/q
     h=m*l(10)
   }
+  /* At high precision, more roots cost less than a longer series. */
+  q=.8
+  r=1.2
+  if (s>=1000) {
+    q=.95
+    r=1.05
+  }
   k=1
-  while (x<.8) {
+  while (x<q) {
     x=sqrt(x)
     k*=2
   }
-  while (x>1.2) {
+  while (x>r) {
     x=sqrt(x)
     k*=2
   }
@@ -239,7 +247,7 @@ define s(x) {
     n=1
     x= -x
   }
-  /* Three radians already lie within the certified series radius. */
+  /* Three radians need no period construction before angle scaling. */
   if (x>3) {
     p=8*a(1)
     scale=0
@@ -249,6 +257,8 @@ define s(x) {
     x=x-k*p
     if (x>p/2) x=x-p
   }
+  /* Evaluate at one fifth of the angle, then use the quintuple-angle identity. */
+  x=x*.2
   q= -x*x
   t=x
   r=x
@@ -258,6 +268,8 @@ define s(x) {
     r+=t
     i+=2
   }
+  q=r*r
+  r=r*(5+q*(16*q-20))
   if (n==1) r= -r
   t=10^(-u)/2
   if (r>=0) r+=t
@@ -286,7 +298,7 @@ define c(x) {
   /* Coerce only excess input precision, keeping short factors short. */
   if (scale(x)>w) x=x/1
   if (x<0) x= -x
-  /* Three radians already lie within the certified series radius. */
+  /* Three radians need no period construction before angle scaling. */
   if (x>3) {
     p=8*a(1)
     scale=0
@@ -296,6 +308,8 @@ define c(x) {
     x=x-k*p
     if (x>p/2) x=x-p
   }
+  /* Evaluate at one eighth of the angle, then double it three times. */
+  x=x*.125
   q= -x*x
   t=1
   r=1
@@ -305,6 +319,9 @@ define c(x) {
     r+=t
     i+=2
   }
+  r=2*r*r-1
+  r=2*r*r-1
+  r=2*r*r-1
   t=10^(-u)/2
   if (r>=0) r+=t
   if (r<0) r-=t
@@ -427,7 +444,8 @@ define j(n,x) {
     if (t==0) break
   }
   r=t
-  q= -x*x/4
+  /* An exact decimal quarter keeps short coefficients short. */
+  q= -x*x*.25
   k=1
   while (t!=0) {
     t=t*q/(k*(n+k))

@@ -148,8 +148,10 @@ It also avoids unnecessary reduction and squaring for very large magnitudes.
 
 Repeated square roots put a positive x in [.8,1.2], recording the power-of-two
 reconstruction multiplier. Evaluate `2*atanh((x-1)/(x+1))` using its odd-power
-series. The reduced magnitude is at most 1/9 and the squared ratio is below
-.013, so fewer than W+2 terms suffice. Near one, this evaluates the small
+series. At requested scale 1000 and above, reduce further to [.95,1.05]
+to trade additional roots for fewer full-precision series terms. In both
+regimes the reduced ratio has magnitude at most 1/9 and its square is
+below .013, so fewer than W+2 terms suffice. Near one, this evaluates the small
 logarithm directly rather than subtracting large independently rounded logs.
 
 For positive x, its signed decimal exponent is m = D - F - 1. If
@@ -163,8 +165,8 @@ stays at least one, where the derivative of log is at most one. Its
 truncation therefore adds less than one working unit of error.
 
 Let T = S + F + D + 1. Use W = S + 2*d(T) + 24 on the normalized path.
-The square-root reduction of an argument in [1,10) needs at most four
-roots. Each root truncation is below u and later roots on [1,10)
+The square-root reduction of an argument in [1,10) needs at most six
+roots, including at high precision. Each root truncation is below u and later roots on [1,10)
 contract the perturbation. Add m*l(10) evaluated at scale W after
 reconstruction. The recursive l(10) uses the ordinary path because its
 decimal exponent is one. Its returned error is at most u, so this term
@@ -178,9 +180,9 @@ is at least 10^(-F/2). Its truncated value is at least half that bound
 because W includes F. Subsequent roots of small arguments stay above that
 same lower bound. Taking the logarithm of each truncated root therefore
 introduces at most 2*10^(F/2)*u error. The reconstruction multiplier is at
-most 32*(D+F+1). The geometric sum of intermediate multipliers is below
+most 128*(D+F+1), using the tighter reduction interval for the bound. The geometric sum of intermediate multipliers is below
 twice the final multiplier, so the root errors and the bounded atanh series
-together cost at most 10^6*(W+10)*(D+F+1)*10^F*u. The two digit-count guards
+together cost at most 10^7*(W+10)*(D+F+1)*10^F*u. The two digit-count guards
 cover the quadratic factor even when F exceeds D. The remaining margin
 keeps the pre-rounding error below U/2, including near one.
 
@@ -194,7 +196,7 @@ than u. Sine and cosine are globally one-Lipschitz, so the resulting
 function error is below u. Shorter exact inputs retain their original scale.
 
 After sign normalization, arguments at most three radians need no period
-construction: three is below pi and already within the series radius. For
+construction because three is below pi. For
 larger arguments, compute the period as 8*a(1) at W using the ordinary public
 binding. There is no fixed period literal. Remove an integer multiple at
 scale zero, then center the reduced argument. An adjacent quotient at a
@@ -202,16 +204,29 @@ reduction boundary changes only the period representative. The period and
 phase error is bounded by 16*10^M*u, including that adjacent quotient.
 Working-scale readback still protects both the initial and reduction setters.
 
-Use alternating term recurrences with the squared reduced argument and
-successive factorial factors. Its magnitude is below four. After the first
-few terms, recurrence ratios are at most one half; fewer than 4W+32 terms
-suffice. The absolute-series bound exp(4) < 100 bounds early amplification
-and cancellation. Conservative series/rounding error is below
-4000*(W+10)*u. Include the input-coercion error as well as the phase error.
+Evaluate sine at one fifth of the centered angle and cosine at one
+eighth. The finite decimal factors incur at most one working ULP u of
+truncation, and the scaled arguments have magnitude below one. The
+alternating recurrences retain the conservative bound
+4000*(W+10)*u for series and arithmetic error. Include one additional u
+for the scaling error using the one-Lipschitz bound.
 
-Here W<=27T. Dividing the aggregate bound by U gives at most
-`[16*10^M + 4000*(27T+10) + 1] * 10^(-M-2*d(T)-24)`.
-Since M>=1, T>=2 and T<10^d(T), this is below 10^-20. The final rounding
+Reconstruct sine with y*(5 + y²*(16*y² - 20)). Reconstruct cosine by
+applying 2*y² - 1 three times. Each exact intermediate cosine lies in
+[-1,1]. On [-1.01,1.01] the sine polynomial derivative is bounded in
+magnitude by 160, and the cosine map derivative by 5. Each exact
+reconstruction step can therefore amplify the input approximation by
+at most these factors. In the sine polynomial, the square's truncation
+is amplified by less than 60 and the final two products contribute
+less than 4u. For cosine each application adds less than 2u.
+Together the reconstruction and scaled series errors are bounded by
+10^6*(W+10)*u. This bound also keeps all reconstructed cosine
+intermediates within the derivative interval.
+
+Here W<=27T. Dividing the aggregate bound, including input coercion and
+period reduction, by U gives at most
+`[16*10^M + 10^6*(27T+10) + 1] * 10^(-M-2*d(T)-24)`.
+Since M>=1, T>=2 and T<10^d(T), this is below 10^-18. The final rounding
 step adds at most U/2, preserving the one-decimal-ULP contract for arbitrary
 supported magnitudes and fractional widths. Odd/even symmetry handles
 negative input exactly. The certified +/-3 boundary fixtures and equivalent
@@ -279,8 +294,11 @@ subset of the nonnegative terms of `exp(a)*exp(a) = exp(x)`. An error
 introduced within the ascending loop propagates across k more steps with
 weight at most `a^(2*k)/(k!)^2`, bounded in sum by the same product.
 
-The stored magnitude of q is at most Q = a^2 and differs from it by at
-most 2u. To bound this perturbation, differentiate the absolute series
+The squared argument is multiplied by the exact decimal factor .25.
+This preserves a short coefficient when the product is exact at fewer
+than W places, so later multiplications need fewer limbs. Both products
+truncate at W only when their exact result needs more places. The stored
+magnitude of q is at most Q = a^2 and differs from it by at most 2u. To bound this perturbation, differentiate the absolute series
 in Q, holding the exact initial coefficient `a^n/n!` fixed. For term k
 the factor k cancels against k!, and dropping the last factor of (n+k)!
 bounds the derivative sum by
