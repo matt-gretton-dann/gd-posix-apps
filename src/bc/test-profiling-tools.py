@@ -81,6 +81,39 @@ class ProfilingTools(unittest.TestCase):
             result = self.module.cpu_profile(self.bench, tool, case, 2, Path(directory), 3)
         self.assertEqual(result['status'], 'unavailable')
 
+    def test_linux_sampling_checks_output_before_decoding(self):
+        case = {'name': 'fixture', 'program': '2\n', 'expected': ['2'], 'input_mode': 'file'}
+        tool = {'argv': ['fake-bc']}
+        for mode in ('success', 'wrong-output', 'child-exit', 'empty-trace', 'decode-exit'):
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+
+                def run(argv, payload, environment, timeout):
+                    self.assertEqual(payload, b'')
+                    self.assertEqual(environment['PERF_CONFIG'], '/dev/null')
+                    if argv[1] == 'record':
+                        self.assertIn('cpu-clock:u', argv)
+                        self.assertEqual(Path(argv[-1]).read_bytes(), b'2\n2\n')
+                        (root / 'fixture.perf.data').write_bytes(b'profile')
+                        output = b'3\n3\n' if mode == 'wrong-output' else b'2\n2\n'
+                        return subprocess.CompletedProcess(argv, int(mode == 'child-exit'), output, b'')
+                    self.assertEqual(argv[1:], ['script', '-i', str(root / 'fixture.perf.data')])
+                    trace = b'' if mode == 'empty-trace' else b'cpu-clock:u sample\n'
+                    return subprocess.CompletedProcess(argv, int(mode == 'decode-exit'), trace, b'')
+
+                with mock.patch.object(self.module, 'run_group', side_effect=run) as child:
+                    args = (self.bench, tool, case, 2, root, 3, Path('/fake/perf'))
+                    if mode == 'success':
+                        report = self.module.cpu_profile(*args)
+                        self.assertTrue(report['checked'])
+                        self.assertEqual(report['input_mode'], 'file')
+                        self.assertEqual(report['trace_sha256'],
+                                         hashlib.sha256(b'cpu-clock:u sample\n').hexdigest())
+                    else:
+                        with self.assertRaises(self.bench.BenchmarkError):
+                            self.module.cpu_profile(*args)
+                    self.assertEqual(child.call_count, 1 if mode in ('wrong-output', 'child-exit') else 2)
+
     def test_memory_preserves_file_transport(self):
         case = {'name': 'file-fixture', 'program': '2\n',
                 'expected': ['2'], 'input_mode': 'file'}

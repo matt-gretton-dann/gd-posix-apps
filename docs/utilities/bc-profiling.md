@@ -190,3 +190,13 @@ unavailable even when RSS exists, and valid zero CPU times retain their printed
 precision limitation. RSS units and optional hardware counters keep their native
 meanings. Unsupported hosts retain an explicit unavailable result; this adapter
 does not infer CPU time from wall-clock duration.
+
+On Linux, add `--perf /absolute/path/to/perf` to capture userspace software
+CPU-clock samples for the same checked workload. The selected executable must
+be able to open the event under the caller's existing permissions. The
+collector runs `perf record` and `perf script` with bounded child processes.
+It checks the interpreter's status, stderr and every expected output before
+decoding the trace. The diagnostic directory retains the raw perf data,
+decoded samples, decode diagnostics and their data identities in the manifest.
+An explicit perf request fails if collection or decoding fails. Without this
+option, Linux still collects the available RSS and CPU accounting diagnostics.

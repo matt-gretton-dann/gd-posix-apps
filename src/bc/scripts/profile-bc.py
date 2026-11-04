@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Collect checked release CPU/RSS diagnostics separately from benchmark timings.
 
-Darwin sample and native time adapters are optional. Other hosts retain an
-explicit unavailable status rather than invented CPU/RSS observations.
+Darwin sample, opt-in Linux perf and native time are optional adapters.
+Other hosts retain an explicit unavailable status.
 Python 3.6+; SPDX-License-Identifier: Apache-2.0
 """
 import argparse
@@ -69,7 +69,33 @@ def diagnostic_input(bench, tool, case, repetitions):
         yield argv, payload, metadata
 
 
-def cpu_profile(bench, tool, case, repetitions, root, timeout):
+def linux_cpu_profile(bench, tool, case, repetitions, root, timeout, perf):
+    data = root / (case['name'] + '.perf.data')
+    trace = root / (case['name'] + '.perf.txt')
+    environment = bench.environment()
+    environment.pop('GD_BC_PROFILE_OUTPUT', None)
+    # Avoid machine-local perf settings and build-ID cache writes.
+    environment['PERF_CONFIG'] = '/dev/null'
+    command = [str(perf), 'record', '-q', '--no-buildid-cache', '--no-buildid-mmap',
+               '-e', 'cpu-clock:u', '-F', '999', '-o', str(data), '--']
+    with diagnostic_input(bench, tool, case, repetitions) as (argv, payload, metadata):
+        command += argv
+        child = run_group(command, payload, environment, timeout)
+    check(bench, case, repetitions, child.returncode, child.stdout, child.stderr)
+    script = [str(perf), 'script', '-i', str(data)]
+    decoded = run_group(script, b'', environment, timeout)
+    (root / (case['name'] + '.sampler.log')).write_bytes(decoded.stderr)
+    if decoded.returncode != 0 or not decoded.stdout.strip():
+        raise bench.BenchmarkError(case['name'] + ' perf script produced no usable samples')
+    trace.write_bytes(decoded.stdout)
+    return dict(metadata, status='collected', checked=True, event='cpu-clock:u',
+                repetitions=repetitions, argv=command, decode_argv=script,
+                data_sha256=bench.digest_file(data), trace_sha256=bench.digest_file(trace))
+
+
+def cpu_profile(bench, tool, case, repetitions, root, timeout, perf=None):
+    if perf is not None:
+        return linux_cpu_profile(bench, tool, case, repetitions, root, timeout, perf)
     output = root / (case['name'] + '.sample.txt')
     environment = bench.environment()
     environment.pop('GD_BC_PROFILE_OUTPUT', None)
@@ -207,10 +233,15 @@ def main():
     parser.add_argument('--workload', action='append', required=True)
     parser.add_argument('--suite', choices=('arithmetic', 'math'), default='arithmetic')
     parser.add_argument('--replay-corpus', type=Path, help='exact frozen benchmark programs and oracles')
+    parser.add_argument('--perf', type=Path, help='Linux perf executable for checked CPU sampling')
     parser.add_argument('--timeout', type=float, default=60)
     args = parser.parse_args()
     if not math.isfinite(args.timeout) or args.timeout <= 0:
         parser.error('--timeout must be finite and positive')
+    if args.perf is not None:
+        args.perf = args.perf.resolve()
+        if platform.system() != 'Linux' or not args.perf.is_file() or not os.access(args.perf, os.X_OK):
+            parser.error('--perf requires an executable file on Linux')
     root = args.output.resolve()
     try:
         root.mkdir(parents=True, exist_ok=False)
@@ -257,7 +288,7 @@ def main():
             row = {'oracle_sha256': bench.hashlib.sha256(oracle).hexdigest(),
                    'input_mode': case.get('input_mode', 'stdin'), 'name': case['name'], 'parameters': case['parameters'],
                    'program_sha256': bench.hashlib.sha256(case['program'].encode('utf-8')).hexdigest(),
-                   'cpu': cpu_profile(bench, tool, case, repetitions, root, args.timeout),
+                   'cpu': cpu_profile(bench, tool, case, repetitions, root, args.timeout, args.perf),
                    'memory': rss_profile(bench, tool, case, root, args.timeout), 'checked': True}
             manifest['workloads'].append(row)
             bench.write_json(root / 'manifest.json', manifest)
