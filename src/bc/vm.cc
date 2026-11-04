@@ -1390,8 +1390,9 @@ auto GD::Bc::Details::InstructionPack::execute_typed() -> std::pair<Number, bool
     &&op_branch, &&op_branch_zero, &&op_return_, &&op_call,
     &&op_push_param_mark, &&op_pop_param_mark, &&op_push_number, &&op_push_array,
     &&op_pop_param, &&op_pop_param_array, &&op_function_begin, &&op_function_end,
+    &&op_load_scalar, &&op_store_scalar,
   };
-  static_assert(std::size(targets) == static_cast<std::size_t>(O::function_end) + 1);
+  static_assert(std::size(targets) == static_cast<std::size_t>(O::store_scalar) + 1);
   TypedExecutableInstruction const* instruction = nullptr;
 #  define GD_BC_BRANCH()                                                           \
     do {                                                                         \
@@ -1491,6 +1492,12 @@ auto GD::Bc::Details::InstructionPack::execute_typed() -> std::pair<Number, bool
     }
     GD_BC_OPCODE(quit):
       std::exit(static_cast<int>(instruction->first.index));  // NOLINT(concurrency-mt-unsafe)
+    GD_BC_OPCODE(load_scalar):
+      numbers[instruction->result] = vm_->variable(Variable(instruction->first.letter));
+      GD_BC_NEXT();
+    GD_BC_OPCODE(store_scalar):
+      vm_->variable(Variable(instruction->first.letter), numbers[instruction->second.index]);
+      GD_BC_NEXT();
     GD_BC_OPCODE(load_number): {
       auto& destination = numbers[instruction->result];
       std::visit(

@@ -421,10 +421,12 @@ TEST_CASE("Typed lowering separates Number results from locations arrays and str
   auto const lowered = lower_typed_executable(code, slots);
   REQUIRE(lowered.size() == code.size());
   CHECK(lowered[0].first.letter == 'x');
-  CHECK(lowered[2].opcode == TypedOpcode::store_number);
-  CHECK(lowered[2].first.index == 0);   // Location lane.
+  CHECK(lowered[2].opcode == TypedOpcode::store_scalar);
+  CHECK(lowered[2].first.letter == 'x');
   CHECK(lowered[2].second.index == 0);  // Independent Number lane.
-  CHECK(lowered[3].opcode == TypedOpcode::load_number);
+  CHECK(lowered[3].opcode == TypedOpcode::load_scalar);
+  CHECK(lowered[3].first.letter == 'x');
+  CHECK(lowered[9].opcode == TypedOpcode::load_number);  // Array element uses the location lane.
   CHECK(lowered[5].opcode == TypedOpcode::load_array);
   CHECK(lowered[6].opcode == TypedOpcode::length_array);
   CHECK(lowered[8].second.index == 3);

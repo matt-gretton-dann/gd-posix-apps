@@ -168,7 +168,9 @@ enum class TypedOpcode : std::uint32_t {
   pop_param,
   pop_param_array,
   function_begin,
-  function_end
+  function_end,
+  load_scalar,
+  store_scalar
 };
 
 struct TypedExecutableInstruction

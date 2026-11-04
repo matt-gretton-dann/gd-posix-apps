@@ -142,6 +142,12 @@ default-build performance results on all three hosts.
 The fresh macOS default and explicit overrides passed all four sanitizer
 and three profiling configurations, including the wide fallback.
 
+For a verified scalar load or store whose producer is a plain variable,
+the typed instruction carries the variable letter directly. It still
+reads or writes the current VM value at the original instruction
+boundary. The location producer remains available to other consumers,
+and arrays and special variables continue through the location lane.
+
 ## Experimental threaded dispatch
 
 Set `ENABLE_BC_THREADED_DISPATCH=ON` to evaluate computed jumps in the
