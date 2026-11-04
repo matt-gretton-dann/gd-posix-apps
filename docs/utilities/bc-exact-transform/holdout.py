@@ -16,11 +16,13 @@ if hasattr(sys, 'set_int_max_str_digits'):
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('base')
 parser.add_argument('ntt')
-parser.add_argument('howard')
 parser.add_argument('output', type=Path)
+parser.add_argument('--howard')
+parser.add_argument('--aa', help='second baseline executable for a timing control')
+parser.add_argument('--rss', action='store_true', help='collect macOS peak RSS separately')
 args = parser.parse_args()
 binaries = {role: str(Path(getattr(args, role)).resolve())
-            for role in ('base', 'ntt', 'howard')}
+            for role in ('base', 'ntt', 'howard', 'aa') if getattr(args, role)}
 rng = random.Random(2042026)
 schedule = random.Random(2026204)
 environment = dict(os.environ, LC_ALL='C', BC_LINE_LENGTH='70', BC_ENV_ARGS='')
@@ -47,20 +49,24 @@ for size, shape in cases:
                                    timeout=120, env=environment)
             elapsed = time.perf_counter() - before
             assert child.returncode == 0 and not child.stderr, (size, shape, role, child.stderr)
-            assert child.stdout.replace(b'\\\n', b'') == expected, (size, shape, role)
+            assert child.stdout.replace(b'\r\n', b'\n').replace(b'\\\n', b'') == expected, (size, shape, role)
             samples[role].append(elapsed)
-    print(size, shape, 'ntt/base', round(statistics.median(
-        a / b for a, b in zip(samples['ntt'][1:], samples['base'][1:])), 3),
-        'ntt/howard', round(statistics.median(
-        a / b for a, b in zip(samples['ntt'][1:], samples['howard'][1:])), 3), flush=True)
+    ratios = {
+        role: round(statistics.median(
+            measured / reference for measured, reference in zip(samples['ntt'][1:], times[1:])), 3)
+        for role, times in samples.items() if role != 'ntt'
+    }
+    print(size, shape, ratios, flush=True)
     rss = {}
-    for role, binary in binaries.items():
-        child = subprocess.run(['/usr/bin/time', '-l', binary], input=program,
-                               capture_output=True, timeout=120, env=environment)
-        assert child.returncode == 0 and child.stdout.replace(b'\\\n', b'') == expected
-        rss[role] = next(int(line.split()[0]) for line in child.stderr.splitlines()
-                         if b'maximum resident set size' in line)
-    records.append(dict(rss_bytes=rss, size=size, shape=shape, checked=True, samples=samples,
+    if args.rss:
+        for role, binary in binaries.items():
+            child = subprocess.run(['/usr/bin/time', '-l', binary], input=program,
+                                   capture_output=True, timeout=120, env=environment)
+            output = child.stdout.replace(b'\\\n', b'')
+            assert child.returncode == 0 and output == expected
+            rss[role] = next(int(line.split()[0]) for line in child.stderr.splitlines()
+                             if b'maximum resident set size' in line)
+    records.append(dict(rss_bytes=rss, ratios=ratios, size=size, shape=shape, checked=True, samples=samples,
                         program_sha256=hashlib.sha256(program).hexdigest(),
                         output_sha256=hashlib.sha256(expected).hexdigest()))
     args.output.write_text(json.dumps(records, indent=2) + '\n')

@@ -51,8 +51,9 @@ and peak process RSS are still needed before enabling the tier.
 An independent held-out grid uses five sizes from 99,990 to 300,011
 digits and a new operand seed. It checked 360 output samples and 45
 separate output-checked RSS launches. The [runner](holdout.py) takes
-the base, candidate and Howard executables followed by a JSON output
-path. It uses macOS `/usr/bin/time -l` for the separate RSS launches.
+the base and candidate executables and a JSON output path. Pass
+`--howard /path/to/bc --rss` to reproduce the macOS measurements.
+The RSS option runs macOS `/usr/bin/time -l` in separate launches.
 The [raw results](holdout.json) retain all timings and peak RSS.
 
 | Dense square digits | Candidate / baseline time | Baseline peak RSS bytes | Candidate peak RSS bytes |
@@ -74,3 +75,10 @@ passed the 34 CLI and 50 large integer oracle cases. Release and
 sanitized builds also passed three signed decimal squares with
 scale-three truncation, including inputs on both sides of the
 dispatch threshold.
+
+The dedicated pull-request workflow builds the exact base and candidate
+revisions on Linux and Windows. It enables the transform only in the
+candidate, checks the CLI, and replays the holdout with a byte-identical
+second baseline executable. The artifact records the CMake caches,
+binary identities and checked samples. Native timing is advisory and
+the workflow leaves ordinary builds on the existing kernel.
