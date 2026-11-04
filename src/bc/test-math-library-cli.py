@@ -118,6 +118,10 @@ class LibraryCli(unittest.TestCase):
         for scale in (999, 1000):
             for argument in ('.02', '.949999', '.95', '1.05', '1.050001', '2'):
                 cases.append((scale, argument))
+        # Exercise multiple blocks and the short tail close to one, on both
+        # sides of zero in the logarithm's result.
+        for argument in ('.96', '2.25', '.' + '9' * 100, '1.' + '0' * 99 + '1'):
+            cases.append((2400, argument))
         program = ''.join(f'scale={scale}\nr=l({argument})\nr\nscale(r)\nibase\n'
                           for scale, argument in cases)
         binaries = [BC] if OTHER_BC is None else [BC, OTHER_BC]
