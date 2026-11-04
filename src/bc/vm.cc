@@ -251,7 +251,11 @@ public:
   FunctionCode(FunctionCode&&) noexcept = default;
   auto operator=(FunctionCode const&) -> FunctionCode& = default;
   auto operator=(FunctionCode&&) noexcept -> FunctionCode& = default;
+#if !defined(_WIN32)
+  auto view(bool full_checks, [[maybe_unused]] VariableMask locals) -> VerifiedInstructions
+#else
   auto view(bool full_checks) -> VerifiedInstructions
+#endif
   {
     if (!full_checks && !prepared_) {
       // Publish both plans together so a failed allocation leaves the
@@ -259,7 +263,15 @@ public:
       auto consumption = plan_consumption(instructions_, true);
       auto slots = plan_result_slots(instructions_, sizeof(ResultSlot), consumption);
       auto layout = prepare_layout(instructions_, std::move(slots), true, true);
+#if !GD_BC_PROFILE && !defined(_WIN32)
+      auto parameter = prove_scalar_parameter();
+      if (parameter && !locals.contains(*parameter)) {
+        parameter.reset();
+      }
+      prepared_.emplace(std::move(consumption), std::move(layout), parameter);
+#else
       prepared_.emplace(std::move(consumption), std::move(layout));
+#endif
     }
     auto const& plans = prepared_ ? *prepared_ : empty_plans_;
     return VerifiedInstructions(instructions_, plans.consumption, plans.layout);
@@ -271,10 +283,44 @@ private:
   {
   }
 
+#if !GD_BC_PROFILE && !defined(_WIN32)
+  // Prove the parser's one-scalar prologue and that the rest of the
+  // function cannot read its result slots or branch back into it.
+  auto prove_scalar_parameter() const -> std::optional<Variable>
+  {
+    using O = Instruction::Opcode;
+    using D = Instruction::Offset;
+    constexpr auto body = scalar_prologue_size_;
+    if (instructions_.size() <= body || instructions_[0].opcode() != O::pop_param ||
+        instructions_[1].opcode() != O::variable || instructions_[2].opcode() != O::store ||
+        instructions_[3].opcode() != O::pop_param_mark ||
+        std::get<D>(instructions_[2].op1()) != -1 ||
+        std::get<D>(instructions_[2].op2()) != -2) {
+      return std::nullopt;
+    }
+    for (Instruction::Index i = body; i < instructions_.size(); ++i) {
+      auto uses_prologue = [i](Instruction::Operand const& operand) {
+        auto const* offset = std::get_if<D>(&operand);
+        return offset != nullptr && i + static_cast<Instruction::Index>(*offset) < body;
+      };
+      auto const& instruction = instructions_[i];
+      if ((instruction.has_op1() && uses_prologue(instruction.op1())) ||
+          (instruction.has_op2() && uses_prologue(instruction.op2()))) {
+        return std::nullopt;
+      }
+    }
+    return std::get<Variable>(instructions_[1].op1());
+  }
+  static constexpr Instruction::Index scalar_prologue_size_ = 4;
+#endif
+
   struct Plans
   {
     ConsumptionPlan consumption;
     ExecutionLayout layout;
+#if !GD_BC_PROFILE && !defined(_WIN32)
+    std::optional<Variable> scalar_parameter;
+#endif
   };
   inline static Plans const empty_plans_{};
   Instructions instructions_;
@@ -507,6 +553,16 @@ public:
   auto execute() -> std::pair<Number, bool>;
 
 private:
+#if !defined(_WIN32)
+  friend struct VMState;
+  // Only the function entry proof can authorize a nonzero starting index.
+  auto execute_from(Index start) -> std::pair<Number, bool>
+  {
+    pc_ = start;
+    return execute();
+  }
+#endif
+
   friend auto operator<<(std::ostream& os, InstructionPack const& instrs) -> std::ostream&;
 
   template<typename... Ts>
@@ -890,8 +946,15 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
   }
 
   FunctionDefinition& def = func_ptr.value();
+#if defined(_WIN32)
+  // Preserve the existing call path on Windows, where native comparisons
+  // found regressions in workloads outside the fused prologue.
   auto func_instructions = std::get<0>(def).view(full_checks());
   auto locals = std::get<1>(def);
+#else
+  auto locals = std::get<1>(def);
+  auto func_instructions = std::get<0>(def).view(full_checks(), locals);
+#endif
 
   // Retain offsets rather than references across execute(): recursive calls
   // may grow the same buffer. Capacity remains available after restoration.
@@ -932,8 +995,29 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
       arrays_.at(static_cast<unsigned>(l)).reset();
     });
 
+#if defined(_WIN32)
     InstructionPack fn(this, func_instructions);
     auto [result, cont] = fn.execute();
+#else
+    Instruction::Index start = 0;
+#if !GD_BC_PROFILE
+    auto const& code = std::get<0>(def);
+    auto const parameter = code.prepared_ ? code.prepared_->scalar_parameter : std::nullopt;
+    if (parameter) {
+      start = FunctionCode::scalar_prologue_size_;
+    }
+#endif
+    InstructionPack fn(this, func_instructions);
+#if !GD_BC_PROFILE
+    if (start != 0 && !have_been_interrupted.test(std::memory_order_relaxed)) {
+      variables_.at(static_cast<unsigned>(parameter->get())) = pop_param();
+      if (!have_been_interrupted.test(std::memory_order_relaxed)) {
+        pop_param_pack();
+      }
+    }
+#endif
+    auto [result, cont] = fn.execute_from(start);
+#endif
     restore(false);
     return result;
   }
