@@ -41,3 +41,8 @@ for attribution when the host lacks branch-stack support. The workflow keeps
 the runner CPU, perf permissions, tool versions and failure diagnostics in
 the artifact. This probe establishes collection capability. Workload training,
 holdout timing and correctness for a sample-profiled `bc` are separate.
+
+Hosted run 41807427320 reported `perf_event_paranoid=4` and denied both
+unprivileged events. The workflow also tries a privileged collector on its
+disposable runner, with the probe running under the regular runner UID and
+GID. It keeps the host perf policy intact and records both attempts.

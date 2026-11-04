@@ -57,13 +57,28 @@ jobs:
           clang-18 -O2 -gline-tables-only -fdebug-info-for-profiling \
             evidence/probe.c -o probe
           ./probe > evidence/expected.txt
-          if timeout 30s "$perf" record -o cpu-clock.data -e cpu-clock:u \
-            -- ./probe > clock-output.txt 2> evidence/cpu-clock.log; then
-            cmp evidence/expected.txt clock-output.txt
+          record() {
+            local name=$1
+            shift
+            if timeout 30s "$perf" record -o "$name.data" "$@" \
+              -- ./probe > "$name-output.txt" 2> "evidence/$name.log"; then
+              return
+            fi
+            # Elevate the collector on this disposable runner. Keep the
+            # sampled program unprivileged and leave the kernel policy alone.
+            if timeout 30s sudo -n "$perf" record -o "$name-root.data" "$@" \
+              -- /usr/bin/setpriv --reuid "$(id -u)" --regid "$(id -g)" \
+                --init-groups ./probe > "$name-output.txt" 2> "evidence/$name-root.log"; then
+              sudo -n cat "$name-root.data" > "$name.data"
+            else
+              return 1
+            fi
+          }
+          if record cpu-clock -e cpu-clock:u; then
+            cmp evidence/expected.txt cpu-clock-output.txt
             "$perf" script -i cpu-clock.data > evidence/cpu-clock-samples.txt
           fi
-          if ! timeout 30s "$perf" record -o branches.data -e cycles:u -b \
-            -- ./probe > branch-output.txt 2> evidence/branches.log; then
+          if ! record branches -e cycles:u -b; then
             echo 'Hosted runner could not record userspace branch stacks.' | tee evidence/result.txt
             exit 0
           fi
