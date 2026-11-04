@@ -5,6 +5,10 @@
 
 #include "verification.hh"
 
+#if !defined(_WIN32)
+#  include "verification-linear.hh"
+#endif
+
 #include <algorithm>
 #include <numeric>
 #include <span>
@@ -51,7 +55,11 @@ auto verify_control_flow(Instructions const& code, bool function_body)
 {
   using I = Instruction::Index;
   using O = Instruction::Opcode;
+#if defined(_WIN32)
   if (!function_body && is_verified_linear_stream(code)) {
+#else
+  if (!function_body && verify_linear_stream(code)) {
+#endif
     return std::nullopt;
   }
   I const size = code.size();
