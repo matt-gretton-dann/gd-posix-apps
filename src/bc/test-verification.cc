@@ -145,3 +145,33 @@ TEST_CASE("Verifier rejects missing ends and conditional region escapes",
   escape[3] = I(O::branch_zero, D(-1), D(1));
   CHECK_FALSE(GD::Bc::Details::verify_control_flow(escape, false).has_value());
 }
+
+TEST_CASE("Linear verification requires strictly earlier producers", "[bc][vm][verifier]")
+{
+  using I = GD::Bc::Instruction;
+  using O = I::Opcode;
+  using D = I::Offset;
+  GD::Bc::Instructions code{I(O::number, "2"), I(O::negate, D(-1)),
+                            I(O::number, "3"), I(O::add, D(-2), D(-1)), I(O::eof)};
+  CHECK_FALSE(GD::Bc::Details::verify_control_flow(code, false).has_value());
+
+  code[1].op1(D(1));
+  auto const forward = GD::Bc::Details::verify_control_flow(code, false);
+  REQUIRE(forward.has_value());
+  CHECK(forward->instruction == 1);
+  CHECK(forward->reason == "operand 1 producer is unavailable on an incoming path");
+
+  code[1].op1(D(-1));
+  code[3].op2(D(0));
+  auto const self = GD::Bc::Details::verify_control_flow(code, false);
+  REQUIRE(self.has_value());
+  CHECK(self->instruction == 3);
+  CHECK(self->reason == "operand 2 producer is unavailable on an incoming path");
+
+  code[3].op2(D(-1));
+  code.emplace_back(O::number, "4");
+  auto const early_eof = GD::Bc::Details::verify_control_flow(code, false);
+  REQUIRE(early_eof.has_value());
+  CHECK(early_eof->instruction == 4);
+  CHECK(early_eof->reason == "EOF is only valid at the end of the outer stream");
+}
