@@ -23,6 +23,10 @@
 #include "number.hh"
 #include "verification.hh"
 
+#ifdef GD_BC_NATIVE_SCALAR
+#  include "native-scalar.hh"
+#endif
+
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define STRINGIFY2(a) #a
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
@@ -2251,9 +2255,42 @@ auto GD::Bc::VM::execute_impl(Instructions& instructions, bool cli_interrupts) -
   Details::InstructionPack instrs(state_.get(), verified.view());
   // Restore the caller's handler before reporting interruption, including when
   // execution throws (for example, through an output stream's exception mask).
-  auto const result = [this, &instrs, cli_interrupts]() {
+  auto const result = [&, this, cli_interrupts]() {
     try {
       Details::InterruptHandler handler(cli_interrupts);
+#ifdef GD_BC_NATIVE_SCALAR
+      if (!state_->full_checks() && state_->ibase() == 10 &&
+          !Details::have_been_interrupted.test(std::memory_order_relaxed)) {
+        auto const variables = Details::native_scalar_variables(instructions);
+        auto const variable = [](unsigned index) {
+          return Variable(static_cast<char>('a' + index));
+        };
+        bool eligible = variables.any();
+        for (unsigned index = 0; eligible && index < Letter::count_; ++index) {
+          if (variables.test(index)) {
+            auto const& value = state_->variable(variable(index));
+            eligible = value.is_zero() && value.scale() == 0;
+          }
+        }
+        if (eligible) {
+          auto const result = Details::run_native_scalar(instructions, variables);
+          if (result && !Details::have_been_interrupted.test(std::memory_order_relaxed)) {
+            std::array<Number, Letter::count_> pending;
+            for (unsigned index = 0; index < Letter::count_; ++index) {
+              if (variables.test(index))
+                pending[index] = Number(std::to_string((*result)[index]), 10);
+            }
+            if (!Details::have_been_interrupted.test(std::memory_order_relaxed)) {
+              for (unsigned index = 0; index < Letter::count_; ++index) {
+                if (variables.test(index))
+                  state_->variable(variable(index), pending[index]);
+              }
+              return std::make_pair(Number(0), true);
+            }
+          }
+        }
+      }
+#endif
       return instrs.execute();
     }
     catch (...) {
