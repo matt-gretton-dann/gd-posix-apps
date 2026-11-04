@@ -51,8 +51,9 @@ jobs:
             $revision = git -C $source rev-parse HEAD
             $expected = if ($role -eq 'base') { $env:BC_BASE } else { $env:BC_CANDIDATE }
             if ($revision -ne $expected) { throw "Unexpected $role revision" }
-            $flags = if ($role -eq 'candidate') { '-DGD_BC_EXPERIMENT_NTT=1' } else { '' }
-            cmake -S $source -B $build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DBC_MULTIPLY_SPLIT_POINT=126 "-DCMAKE_CXX_FLAGS=$flags"
+            $options = @()
+            if ($role -eq 'candidate') { $options += '-DENABLE_BC_EXACT_SQUARE=ON' }
+            cmake -S $source -B $build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DBC_MULTIPLY_SPLIT_POINT=126 @options
             Copy-Item "$build/CMakeCache.txt" "evidence/$role-CMakeCache.txt"
             cmake --build $build --config Release --target bc --parallel 2
             $binary = if ($IsWindows) { "$build/src/bc/Release/bc.exe" } else { "$build/src/bc/bc" }

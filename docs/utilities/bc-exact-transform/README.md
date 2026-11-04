@@ -1,7 +1,7 @@
 # Exact transform experiment
 
 Refs #204. Enable this experiment with
-`-DCMAKE_CXX_FLAGS=-DGD_BC_EXPERIMENT_NTT=1` in a fresh CMake build.
+`-DENABLE_BC_EXACT_SQUARE=ON` in a fresh CMake build.
 Use Release and `-DBC_MULTIPLY_SPLIT_POINT=126` for both the candidate
 and the reference. The option is off in normal builds.
 
