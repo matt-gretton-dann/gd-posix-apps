@@ -301,3 +301,34 @@ across all three test trait widths. The raw profile archives contain 4,268
 members across the four modes. Archive and member hashes, compiler commands,
 binaries and raw exports are retained with the collection. These raw
 figures leave the broader feasibility audit under #197 open.
+
+## Packed verifier and stdin checkpoint
+
+Clang/LLVM 23 collected two separate broad views at
+`a08257741662b4d658553abf9b4831849b81b61a`, with compact execution
+enabled and typed results and prepared divisors disabled. Each selected
+423 entries and reported zero failures. The harness recorded its
+declared skips separately.
+
+| Extensions | Lines | Branch outcomes | MC/DC conditions | Raw profiles |
+| --- | ---: | ---: | ---: | ---: |
+| ON | 6918/7147 | 3304/3663 | 247/310 | 1083 |
+| OFF | 6883/7144 | 3283/3663 | 244/310 | 1059 |
+
+The matching prior views recorded 238/310 and 235/310 MC/DC conditions.
+Production source changes also changed the line and branch denominators.
+The profiles were archived separately and checked against their member
+hashes before deleting the loose copies.
+
+The packed verifier recorded 328/328 lines, 209/210 branch outcomes,
+and 35/36 MC/DC conditions in each language mode. The uncovered outcome
+is the absent marker state in the prologue cycle pass. The preceding
+walk initializes each entry before enqueueing it and initializes every
+successor before adding it to the queue. It visits all queued nodes
+before the cycle pass begins. The cycle pass starts only from queued
+nodes and follows those same edges, so the absent-state outcome is
+infeasible after a successful walk. Keep it visible in the raw counts.
+
+The current execution-plan and reader files recorded 39/48 and 5/9
+MC/DC conditions respectively in both views. These results do not
+establish the broader feasible-coverage target under #197.
