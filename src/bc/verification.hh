@@ -8,6 +8,14 @@
 #include "bc.hh"
 
 namespace GD::Bc::Details {
+#if !defined(_WIN32)
+// Used only after structural validation, before the full graph verifier.
+#  if __has_cpp_attribute(gnu::noinline)
+[[gnu::noinline]]
+#  endif
+auto is_verified_linear_definition(Instructions const& code) -> bool;
+#endif
+
 struct VerificationError
 {
   Instruction::Index instruction;

@@ -31,9 +31,10 @@ auto is_verified_linear_stream(Instructions const& code) -> bool
     switch (instruction.opcode()) {
     case O::eof:
       return i + 1 == code.size();
+    case O::function_begin:
+      return i == 0 && is_verified_linear_definition(code);
     case O::branch:
     case O::branch_zero:
-    case O::function_begin:
     case O::function_end:
     case O::return_:
     case O::quit:

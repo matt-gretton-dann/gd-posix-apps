@@ -175,3 +175,39 @@ TEST_CASE("Linear verification requires strictly earlier producers", "[bc][vm][v
   CHECK(early_eof->instruction == 4);
   CHECK(early_eof->reason == "EOF is only valid at the end of the outer stream");
 }
+
+TEST_CASE("Linear definition verification preserves body boundaries", "[bc][vm][verifier]")
+{
+  using I = GD::Bc::Instruction;
+  using O = I::Opcode;
+  using D = I::Offset;
+  GD::Bc::Instructions code{
+    I(O::function_begin, GD::Bc::VariableMask(), GD::Bc::Location("fixture", 1, 1)),
+    I(O::pop_param),
+    I(O::pop_param_mark),
+    I(O::number, "2"),
+    I(O::return_, D(-1)),
+    I(O::function_end, GD::Bc::Letter('f'), D(-5))};
+  auto verify = [&] { return GD::Bc::Details::verify_control_flow(code, false); };
+  CHECK_FALSE(verify().has_value());
+
+  code[4].op1(D(-4));
+  auto failure = verify();
+  REQUIRE(failure.has_value());
+  CHECK(failure->instruction == 4);
+  CHECK(failure->reason == "operand 1 producer is unavailable on an incoming path");
+
+  code[4].op1(D(-1));
+  code[2] = I(O::number, "1");
+  failure = verify();
+  REQUIRE(failure.has_value());
+  CHECK(failure->instruction == 4);
+  CHECK(failure->reason == "execution exits with an unconsumed parameter marker");
+
+  code[2] = I(O::pop_param_mark);
+  code[5].op2(D(-4));
+  failure = verify();
+  REQUIRE(failure.has_value());
+  CHECK(failure->instruction == 5);
+  CHECK(failure->reason == "function end does not match its beginning");
+}
