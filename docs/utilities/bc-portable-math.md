@@ -349,22 +349,20 @@ call resolves the user replacement in both extension configurations.
 condition is evaluated once. Automatic array flags distinguish loop exhaustion
 from `break`; `return` skips unreachable probes. A behavioral check covers
 skipped/exhausted/broken loops, return, nested decisions and a condition with a
-side effect before the production fixture runs. It certifies all 616 numerical
+side effect before the production fixture runs. It certifies the numerical
 results from the instrumented definitions against the same exact enclosures.
+Calls outside the logarithm domain exercise its guard and are counted
+separately from the numerical results.
 
-The source contains 78 decisions and 156 outcomes. The expected fixture requires
-145 normal outcomes, including two explicitly undefined-domain log guard calls. Nine
-separate portable-host models independently clamp a working-scale setter and
-exercise its defensive error branch without returning a numerical value.
-Together the ordinary and modeled runs must reproduce 154 outcomes. The two
-remaining outcomes require a
-negative exponential coefficient: positive Taylor terms, positive squaring
-and a positive reciprocal preserve nonnegativity, so they are infeasible.
-The committed `src/bc/fixtures/math-library-decisions.json` report records
-each source line, expression, normal and
-modeled observations, and this exception. Any other missing outcome fails
-the automated check. This is interpreted-library decision evidence, kept
-separate from C++ line/branch/compiler MC/DC reports and their ON/OFF totals.
+The [decision fixture](../../src/bc/fixtures/math-library-decisions.json)
+records the exact source digest, counts, and per-condition outcomes. A
+portable-host model independently clips each working-scale setter to exercise
+its defensive error branch. Two outcomes require a negative exponential
+coefficient and are infeasible because the series and reconstruction preserve
+nonnegativity. The automated check compares the report with the fixture and
+requires every outcome to be observed, modeled, or explicitly accounted for.
+This interpreted-library evidence is separate from compiler line, branch, and
+MC/DC coverage for the C++ build in each extension configuration.
 
 The first [correctness and coverage archive](bc-217-library-validation/README.md)
 retains the exact interpreted source, validation logs, separate LLVM 23 ON/OFF
