@@ -12,13 +12,14 @@
 #include "bc.hh"
 
 namespace GD::Bc::Details {
+using NativeInterruptCheck = bool (*)() noexcept;
 using NativeScalarResult = std::array<std::uint64_t, Letter::count_>;
 
 // Accepts only fully verified top-level streams with zero-initialized
 // referenced scalars. A failed attempt never changes VM state or emits output.
 auto native_scalar_variables(Instructions const& code) -> std::bitset<Letter::count_>;
-auto run_native_scalar(Instructions const& code, std::bitset<Letter::count_> variables)
-  -> std::optional<NativeScalarResult>;
+auto run_native_scalar(Instructions const& code, std::bitset<Letter::count_> variables,
+                       NativeInterruptCheck interrupted) -> std::optional<NativeScalarResult>;
 }  // namespace GD::Bc::Details
 
 #endif

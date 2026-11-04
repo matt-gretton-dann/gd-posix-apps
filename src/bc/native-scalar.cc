@@ -23,6 +23,13 @@ constexpr unsigned sp = 31;
 constexpr unsigned output = 0;
 constexpr unsigned fuel = 1;
 constexpr unsigned zero = 31;
+constexpr unsigned callback = 2;
+constexpr unsigned link = 30;
+constexpr Index output_slot = result_slots + Letter::count_;
+constexpr Index callback_slot = output_slot + 1;
+constexpr Index fuel_slot = callback_slot + 1;
+constexpr Index link_slot = fuel_slot + 1;
+static_assert((link_slot + 1) * sizeof(std::uint64_t) <= stack_bytes);
 constexpr std::uint64_t max_backedges = 4'000'000;
 constexpr Index failure_label = result_slots + 1;
 
@@ -84,8 +91,25 @@ struct Emitter
     }
   }
 
+  void poll_interrupt()
+  {
+    // Backedges check the flag at multiples of 1,024 remaining steps.
+    // Preserve the live argument registers across the AAPCS64 call.
+    words.push_back(0xf240243fU);  // TST x1, #0x3ff
+    auto const skip = words.size();
+    words.push_back(0x54000001U);  // B.NE past the callback
+    memory(false, fuel, sp, fuel_slot);
+    memory(true, second, sp, callback_slot);
+    words.push_back(0xd63f0120U);               // BLR x9
+    branch(failure_label, 0x35000000U, 19, 5);  // CBNZ w0, failure
+    memory(true, output, sp, output_slot);
+    memory(true, fuel, sp, fuel_slot);
+    words[skip] |= static_cast<Word>(words.size() - skip) << 5;
+  }
+
   void return_status(unsigned status)
   {
+    memory(true, link, sp, link_slot);
     immediate(output, status);
     words.push_back(0x910003ffU | (stack_bytes << 10));  // ADD sp, sp, #frame
     words.push_back(0xd65f03c0U);                        // RET
@@ -121,10 +145,11 @@ public:
   CodePage(CodePage const&) = delete;
   auto operator=(CodePage const&) -> CodePage& = delete;
 
-  auto run(std::uint64_t* output_values) const -> bool
+  auto run(std::uint64_t* output_values, NativeInterruptCheck interrupted) const -> bool
   {
-    using Function = unsigned (*)(std::uint64_t*, std::uint64_t);
-    return ready_ && reinterpret_cast<Function>(memory_)(output_values, max_backedges) == 0;
+    using Function = unsigned (*)(std::uint64_t*, std::uint64_t, NativeInterruptCheck);
+    return ready_ &&
+           reinterpret_cast<Function>(memory_)(output_values, max_backedges, interrupted) == 0;
   }
 
 private:
@@ -175,12 +200,15 @@ auto native_scalar_variables(Instructions const& code) -> std::bitset<Letter::co
   return backedge ? variables : std::bitset<Letter::count_>{};
 }
 
-auto run_native_scalar(Instructions const& code, std::bitset<Letter::count_> variables)
-  -> std::optional<NativeScalarResult>
+auto run_native_scalar(Instructions const& code, std::bitset<Letter::count_> variables,
+                       NativeInterruptCheck interrupted) -> std::optional<NativeScalarResult>
 {
   Emitter emit;
   NativeScalarResult result{};
   emit.words.push_back(0xd10003ffU | (stack_bytes << 10));  // SUB sp, sp, #frame
+  emit.memory(false, output, sp, output_slot);
+  emit.memory(false, callback, sp, callback_slot);
+  emit.memory(false, link, sp, link_slot);
   for (unsigned variable = 0; variable < Letter::count_; ++variable) {
     if (variables.test(variable))
       emit.memory(false, zero, sp, result_slots + variable);
@@ -226,6 +254,7 @@ auto run_native_scalar(Instructions const& code, std::bitset<Letter::count_> var
       if (target <= pc) {
         emit.words.push_back(0xf1000400U | (fuel << 5) | fuel);  // SUBS x1, x1, #1
         emit.branch(failure_label, 0x54000003U, 19, 5);          // B.LO (exhausted)
+        emit.poll_interrupt();
       }
       emit.branch(target, 0x14000000U, 26, 0);
       break;
@@ -251,7 +280,7 @@ auto run_native_scalar(Instructions const& code, std::bitset<Letter::count_> var
   emit.labels[failure_label] = emit.words.size();
   emit.return_status(1);
   emit.finish();
-  if (!CodePage(emit.words).run(result.data()))
+  if (!CodePage(emit.words).run(result.data(), interrupted))
     return {};
   return result;
 }

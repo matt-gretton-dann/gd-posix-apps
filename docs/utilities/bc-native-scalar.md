@@ -21,9 +21,10 @@ after one attempt. It generates code from verified instructions and never
 loads a compiled program from disk. Scalar results are staged as ordinary
 numbers before being published. If an interrupt is observed before commit,
 the staged values are discarded and the ordinary interruption path runs.
-The prototype does not poll for interrupts inside the generated region, so
-latency is bounded by the backedge budget and instruction cap. No native
-code is cached across function or variable changes.
+Generated backedges poll the existing VM interrupt flag every 1,024
+backedges. The emitter preserves the live registers and return address
+across the callback. No native code is cached across function or
+variable changes.
 
 In a local matched Release ON/OFF screen, the checked million-iteration
 scalar loop took 8.0 ms with the option versus 165.3 ms with it disabled.
@@ -32,3 +33,10 @@ case used eight alternating measured pairs following a warmup pair. This
 screen has no independently rebuilt A/A role. It covers one host and a
 small opcode subset, with function specialization and native compilation
 of mixed numeric workloads still open.
+
+A local PTY probe sent SIGINT 4 ms after submitting a long loop. All ten
+trials per role recovered and processed subsequent input. The observed
+signal-to-diagnostic medians were 0.089 ms with native polling and 0.060 ms
+with native execution disabled. This samples one interruption point. It
+does not establish a worst-case latency bound. The checked million-iteration
+loop still took 7.77 ms versus 165.92 ms in eight matched measured pairs.
