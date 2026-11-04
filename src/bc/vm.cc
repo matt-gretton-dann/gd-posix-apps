@@ -416,7 +416,17 @@ struct VMState
   }
   auto full_checks() const noexcept -> bool { return checks_ == VM::ExecutionChecks::full; }
 
+#if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
+  auto stack_enabled() const noexcept -> bool { return stack_enabled_ && !full_checks(); }
+#endif
+
 private:
+#if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
+  const bool stack_enabled_ = [] {
+    auto const* mode = std::getenv("GD_BC_STACK_CONTROL_REGISTER");
+    return mode == nullptr || std::string_view(mode) != "1";
+  }();
+#endif
   template<typename... Ts>
   [[noreturn]] void error(char const* func, char const* file, unsigned line, char const* test,
                           Msg msg, Ts... args) const
@@ -865,7 +875,7 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
 
   FunctionDefinition& def = func_ptr.value();
 #if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
-  auto const* stack = full_checks() ? nullptr : std::get<0>(def).stack_code();
+  auto const* stack = stack_enabled() ? std::get<0>(def).stack_code() : nullptr;
   auto func_instructions = std::get<0>(def).view(full_checks() || stack != nullptr);
 #else
   auto func_instructions = std::get<0>(def).view(full_checks());
@@ -2419,7 +2429,7 @@ auto GD::Bc::VM::execute_impl(Instructions& instructions, bool cli_interrupts) -
   auto const verified = state_->verify(instructions);
 #if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
   auto const stack =
-    state_->full_checks() ? std::nullopt : Details::plan_stack_execution(instructions);
+    state_->stack_enabled() ? Details::plan_stack_execution(instructions) : std::nullopt;
   std::optional<Details::InstructionPack> instrs;
   if (!stack)
     instrs.emplace(state_.get(), verified.view());
