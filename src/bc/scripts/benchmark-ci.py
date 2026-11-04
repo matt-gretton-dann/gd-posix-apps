@@ -107,11 +107,13 @@ def selected_cases(bench, preset, broad):
     # Preserve the existing small-multiply winner and representative large,
     # sparse and imbalanced shapes, whose algorithmic behavior differs. Retain
     # large-scale and both tiny-fraction sqrt regimes rather than measuring only
-    # the first, small sqrt representative.
+    # the first, small sqrt representative. Keep the high-scale division
+    # grid so native jobs exercise the large-quotient kernel.
     for case in cases:
         parameters = case['parameters']
         if (case['group'] == 'comparison' or case['group'] == 'sqrt_tiny' or
                 (case['group'] == 'sqrt' and parameters.get('scale', 0) >= 5000) or
+                (case['group'] == 'divide_multilimb' and parameters.get('scale', 0) >= 1000) or
                 (case['group'] == 'square' and parameters.get('digits', 0) >= 10000) or
                 (case['group'] == 'multiply' and parameters.get('left_digits', 0) >= 10000)):
             if case['name'] not in chosen:
