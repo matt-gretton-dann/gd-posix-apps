@@ -337,3 +337,21 @@ The first [correctness and coverage archive](bc-217-library-validation/README.md
 retains the exact interpreted source, validation logs, separate LLVM 23 ON/OFF
 profiles/reports and the existing arithmetic native control. Its measured
 revisions are explicit checkpoints; later source changes require fresh checks.
+
+## Build-time parser experiment
+
+`ENABLE_BC_PREPARSED_LIBRARY=ON` builds a native generator that parses the
+same embedded POSIX source and emits the ordinary instruction operands.
+At runtime the loader constructs fresh instructions for each input item
+and passes them through the normal verifier and VM. It retains the parser's
+item boundaries and source locations. The default and cross builds load
+the source through the parser. The optional image test checks deterministic
+regeneration.
+
+An exploratory Apple Clang arm64 Release comparison used 30 paired process
+launches per case after warmup. All outputs matched the source loader.
+The preload-only runtime ratio was 0.967 [0.956, 0.975] and the cold sine
+and Bessel ratios were 0.972 and 0.975. The no-library ratio was 0.986,
+and this run had no separate A/A control. The executable grew from
+567232 to 735296 bytes. These measurements leave the source loader as the
+default.

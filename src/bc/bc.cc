@@ -27,6 +27,9 @@
 
 namespace GD::Bc::Library {
 auto text() -> std::string_view;
+#if defined(GD_BC_PREPARSED_LIBRARY)
+void load(VM& vm);
+#endif
 }
 
 using Msg = GD::Bc::Msg;
@@ -174,8 +177,12 @@ auto main(int argc, char** argv) -> int
   GD::Bc::Number::multiply_split_point(BC_MULTIPLY_SPLIT_POINT);
 
   if (load_library) {
+#if defined(GD_BC_PREPARSED_LIBRARY)
+    GD::Bc::Library::load(vm);
+#else
     auto r = std::make_unique<GD::Bc::StringReader>(GD::Bc::Library::text());
     execute(vm, std::move(r));
+#endif
   }
 
   // EOF advances to the next input; quit must stop before opening it.
