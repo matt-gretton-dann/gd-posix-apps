@@ -24,8 +24,8 @@ jobs:
       matrix:
         replica: [1, 2, 3]
     env:
-      BC_CANDIDATE: ${{ github.event.pull_request.head.sha || github.sha }}
-      BC_BASE: ${{ github.event.pull_request.base.sha || inputs.baseline || '21b3638ed338009a7bccf022cddcc119ce620296' }}
+      BC_CANDIDATE: '65d23ff969730609c10e9651e2bf8c1a3bb50d30'
+      BC_BASE: 'ec4976842105de6acc890f49bc5eaaa351b9903b'
       BC_BROAD: 'true'
       BC_CPU_REPLICA: ${{ matrix.replica }}
     steps:
