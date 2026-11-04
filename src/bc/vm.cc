@@ -253,7 +253,7 @@ public:
       // Publish both plans together so a failed allocation leaves the
       // verified definition ready for another preparation attempt.
       auto consumption = plan_consumption(instructions_, true);
-      auto slots = plan_result_slots(instructions_, sizeof(ResultSlot));
+      auto slots = plan_result_slots(instructions_, sizeof(ResultSlot), consumption);
       auto layout = prepare_layout(instructions_, std::move(slots), true, true);
       prepared_.emplace(std::move(consumption), std::move(layout));
     }
@@ -676,15 +676,26 @@ __EXTERN_C void handle_sigint(int /*signal*/)
   (void)have_been_interrupted.test_and_set(std::memory_order_relaxed);
 }
 
+void set_cli_interrupt_active(bool active) noexcept;
+
 /** Install the VM handler only for execution, preserving all caller signal state.
  * A failed installation leaves the existing handler responsible for interruption.
  */
 class InterruptHandler
 {
 public:
-  InterruptHandler()
+  explicit InterruptHandler(bool cli)
   {
     have_been_interrupted.clear(std::memory_order_relaxed);
+#if !defined(_WIN32)
+    if (cli) {
+      cli_ = true;
+      set_cli_interrupt_active(true);
+      return;
+    }
+#else
+    (void)cli;
+#endif
     struct sigaction action{};
     action.sa_handler = handle_sigint;
     sigemptyset(&action.sa_mask);
@@ -694,6 +705,12 @@ public:
 
   ~InterruptHandler()
   {
+#if !defined(_WIN32)
+    if (cli_) {
+      set_cli_interrupt_active(false);
+      return;
+    }
+#endif
     if (installed_) {
       (void)sigaction(SIGINT, &previous_, nullptr);
     }
@@ -705,6 +722,9 @@ public:
 private:
   struct sigaction previous_{};
   bool installed_{false};
+#if !defined(_WIN32)
+  bool cli_{false};
+#endif
 };
 
 }  // namespace GD::Bc::Details
@@ -2147,13 +2167,24 @@ auto GD::Bc::VM::operator=(VM&&) noexcept -> VM& = default;
 
 auto GD::Bc::VM::execute(Instructions& instructions) -> bool
 {
+  return execute_impl(instructions, false);
+}
+
+auto GD::Bc::VM::execute_cli(Instructions& instructions, Details::CliInterruptScope const& cli)
+  -> bool
+{
+  return execute_impl(instructions, cli.installed());
+}
+
+auto GD::Bc::VM::execute_impl(Instructions& instructions, bool cli_interrupts) -> bool
+{
   auto const verified = state_->verify(instructions);
   Details::InstructionPack instrs(state_.get(), verified.view());
   // Restore the caller's handler before reporting interruption, including when
   // execution throws (for example, through an output stream's exception mask).
-  auto const result = [this, &instrs]() {
+  auto const result = [this, &instrs, cli_interrupts]() {
     try {
-      Details::InterruptHandler handler;
+      Details::InterruptHandler handler(cli_interrupts);
       return instrs.execute();
     }
     catch (...) {

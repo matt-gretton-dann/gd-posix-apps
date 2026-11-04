@@ -247,7 +247,8 @@ class ProfilingCli(unittest.TestCase):
     def test_blocked_products_count_as_schoolbook_leaves(self):
         for digits in (100, 1000):
             with self.subTest(digits=digits):
-                a, b = '7' * digits, '8' * digits
+                # Distinct low limbs keep this on the generic product path.
+                a, b = '7' * (digits - 1) + '6', '8' * (digits - 1) + '5'
                 expected = str(int(a) * int(b))
                 counters = self.profile('a={};b={};r=a*b;r-{}\n'.format(a, b, expected),
                                         '0\n')
@@ -259,7 +260,8 @@ class ProfilingCli(unittest.TestCase):
         # Multi-limb operands avoid the single-limb multiply-accumulate path.
         for digits in (40, 2000):
             with self.subTest(digits=digits):
-                value = '9' * digits
+                # Distinct low limbs keep this on the generic square path.
+                value = '9' * (digits - 1) + '8'
                 counters = self.profile('a={}\nb=a*a\nb-a*a\nlength(b)\n'.format(value),
                                         '0\n{}\n'.format(2 * digits))
                 self.assertGreater(counters['events']['square_multiply_calls'], 0)

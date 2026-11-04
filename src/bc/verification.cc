@@ -5,6 +5,10 @@
 
 #include "verification.hh"
 
+#if !defined(_WIN32)
+#  include "verification-linear.hh"
+#endif
+
 #include <algorithm>
 #include <numeric>
 #include <span>
@@ -13,50 +17,6 @@
 
 namespace GD::Bc::Details {
 namespace {
-// Preserve the packed verifier's code layout on Windows, where the
-// combined shortcut caused regressions outside the frontend workloads.
-#if !defined(_WIN32)
-// In an outer, straight-line region, each preceding instruction dominates
-// the current one. Fall back to the graph verifier for all other inputs,
-// including invalid ones, so its existing diagnostics retain their ordering.
-auto is_verified_linear_stream(Instructions const& code) -> bool
-{
-  using O = Instruction::Opcode;
-  auto is_previous = [](Instruction::Operand const& operand) {
-    auto const* offset = std::get_if<Instruction::Offset>(&operand);
-    return offset == nullptr || *offset < 0;
-  };
-  for (Instruction::Index i = 0; i < code.size(); ++i) {
-    auto const& instruction = code[i];
-    switch (instruction.opcode()) {
-    case O::eof:
-      return i + 1 == code.size();
-    case O::branch:
-    case O::branch_zero:
-    case O::function_begin:
-    case O::function_end:
-    case O::return_:
-    case O::quit:
-    case O::push_param_mark:
-    case O::push_param:
-    case O::call:
-    case O::pop_param:
-    case O::pop_param_array:
-    case O::pop_param_mark:
-      return false;
-    default:
-      break;
-    }
-    if ((instruction.has_op1() && !is_previous(instruction.op1())) ||
-        (instruction.has_op2() && !is_previous(instruction.op2()))) {
-      return false;
-    }
-  }
-  return true;
-}
-
-#endif
-
 using Index = Instruction::Index;
 using Edge = std::pair<Index, Index>;
 
@@ -95,11 +55,13 @@ auto verify_control_flow(Instructions const& code, bool function_body)
 {
   using I = Instruction::Index;
   using O = Instruction::Opcode;
-#if !defined(_WIN32)
+#if defined(_WIN32)
   if (!function_body && is_verified_linear_stream(code)) {
+#else
+  if (!function_body && verify_linear_stream(code)) {
+#endif
     return std::nullopt;
   }
-#endif
   I const size = code.size();
   I const root = size + 1;
   I const absent = size + 2;

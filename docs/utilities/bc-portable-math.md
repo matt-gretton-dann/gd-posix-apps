@@ -209,7 +209,7 @@ precedes the test, and zero is independent of the recorded parity. The
 ordinary decimal product 16*x is exact because multiplication retains x's
 fractional scale. No transcendental bound calculation runs in the interpreter.
 
-For x > 8*(n*n+1), attempt the real large-argument expansion from
+For x > max(8*(n*n+1), W), attempt the real large-argument expansion from
 [NIST DLMF 10.17](https://dlmf.nist.gov/10.17). Coefficients satisfy
 `b_0=1; b_k=b_(k-1)*(4*n*n-(2*k-1)^2)/(8*k*x)`.
 Split their alternating even/odd sums and reconstruct with phase
@@ -218,7 +218,9 @@ DLMF 10.17.14-15 bounds the Hankel remainder by
 `2*abs(b_k)*exp(abs(n*n-1/4)/x)`, less than `3*abs(b_k)` in this regime.
 Taking the real part preserves that bound.
 
-Use W = S + D + F + 2*d(S+D+F+length(n)+1) + 32. Before each coefficient,
+Use W = S + D + F + 2*d(S+D+F+length(n)+1) + 32. The W cutoff avoids
+building a long asymptotic prefix when working precision approaches the
+argument. It only selects a series. Before each Hankel coefficient,
 check its exact recurrence ratio against one half. If contraction is lost
 before the budget is met, abandon this regime and use the ascending series.
 While contracted, truncation propagation is below 2u. When a stored next
@@ -229,22 +231,23 @@ conservative aggregate bound `10^6*(W+1)^2*10^D*u` remains below U/2. No
 unbounded divergent series is treated as convergent merely because a term grew.
 
 Otherwise, evaluate the ascending recurrence, including the initial
-`(x/2)^n/n!`, with W = S + floor(x) + D +
-2*d(S+floor(x)+D+1) + 32. Truncate the argument only if it has more
+`(x/2)^n/n!`, with G = floor(7*x/8) + 1 and
+W = S + G + D + 2*d(S+G+D+1) + 32. Truncate the argument only if it has more
 than W fractional places. Differentiating the real integer-order
 [Bessel integral](https://dlmf.nist.gov/10.9.E2) gives `|J_n'(x)| <= 1`,
 so truncating the argument adds less than one working unit of error.
-The extra floor(x) covers cancellation and
+The extra G covers cancellation and
 propagation through the absolute series, bounded by exp(2x). After the tiny-
 result branch, the initial factor needs at most 7*(W+1) steps; the term loop
 needs at most 8*(W+1). The [ascending definition](https://dlmf.nist.gov/10.2.E2) and the
 [integer-order modified-Bessel integral](https://dlmf.nist.gov/10.32.E3)
 bound absolute series weights by exp(x). After k exceeds x, term ratios are
 at most one quarter. Absolute tail/rounding propagation is bounded by
-`10^6*(W+1)^2*exp(2x)*u`. Since `exp(2)<10` and `0<=x-floor(x)<1`,
-`exp(2x)*10^(-floor(x)) < 10`. The remaining
+`10^6*(W+1)^2*exp(2x)*u`. The exponential series gives
+`e < 87/32`, and `87^16 < 10^7 * 32^16`. Thus
+`exp(2x)*10^(-G) < 1` for the nonnegative argument. The remaining
 guards keep the total error below half an output unit. With
-`T = S + floor(x) + D + 1 >= 2`, `W+1 <= 19*T` and `T < 10^d(T)`.
+`T = S + G + D + 1 >= 2`, `W+1 <= 19*T` and `T < 10^d(T)`.
 The bound in output units is below `19^2*10^-25`, leaving room for
 the argument truncation error. Rounding to the requested scale adds at
 most half an output unit, so the total is below one decimal ULP.
@@ -337,3 +340,30 @@ The first [correctness and coverage archive](bc-217-library-validation/README.md
 retains the exact interpreted source, validation logs, separate LLVM 23 ON/OFF
 profiles/reports and the existing arithmetic native control. Its measured
 revisions are explicit checkpoints; later source changes require fresh checks.
+
+## Build-time parser experiment
+
+`ENABLE_BC_PREPARSED_LIBRARY=ON` builds a native generator that parses the
+same embedded POSIX source and encodes the ordinary instruction operands
+in a compact, build-local byte image.
+At runtime the loader constructs fresh instructions for each input item
+and passes them through the normal verifier and VM. It retains the parser's
+item boundaries and source locations. The default and cross builds load
+the source through the parser. The optional image test checks deterministic
+regeneration.
+
+An exploratory Apple Clang arm64 Release comparison used 30 paired process
+launches per case after warmup. All outputs matched the source loader.
+The preload-only runtime ratio was 0.967 [0.956, 0.975] and the cold sine
+and Bessel ratios were 0.972 and 0.975. The no-library ratio was 0.986,
+and this run had no separate A/A control. The executable grew from
+567232 to 735296 bytes. These measurements leave the source loader as the
+default.
+
+The compact encoding reduced the executable to 583296 bytes and the
+instruction image to 10089 bytes. In a second 30-pair comparison with both
+image implementations and the source loader, the compact preload ratio was
+0.962 [0.957, 0.970]. The generated-statement ratio was 0.960 [0.955, 0.969].
+The compact no-library ratio was 0.988 [0.978, 1.008]. Both image builds
+matched the source loader's output on the timed cases. Both language modes
+also passed the math CLI checks and regenerated the compact image exactly.

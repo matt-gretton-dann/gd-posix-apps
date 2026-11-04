@@ -152,6 +152,24 @@ TEST_CASE("Producer slots retain forward data references and backedges", "[bc][v
     CHECK(compact.index(i) == (i == 2 ? 1 : 0));
 }
 
+TEST_CASE("Verified arithmetic chains reuse the consumed operand slot", "[bc][vm][result-slots]")
+{
+  GD::Bc::Instructions code{I(O::number, "7")};
+  for (int term = 0; term < 8; ++term) {
+    code.emplace_back(O::number, "1");
+    code.emplace_back(O::add, D(-2), D(-1));
+  }
+  code.emplace_back(O::print, D(-1), I::Stream::output);
+  auto const consumption = plan(code);
+  auto const slots = GD::Bc::Details::plan_result_slots(code, 48, consumption);
+  REQUIRE(slots.indices.size() == code.size());
+  CHECK(slots.count == 10);
+  for (I::Index index = 2; index < code.size() - 1; index += 2) {
+    CHECK(slots.index(index) == slots.index(0));
+    CHECK(slots.index(index - 1) != slots.index(0));
+  }
+}
+
 TEST_CASE("Outer result slots exclude every unexecuted definition-body producer",
           "[bc][vm][result-slots]")
 {

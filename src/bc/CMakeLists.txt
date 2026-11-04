@@ -17,6 +17,10 @@ if(_bc_array_layout LESS 0)
 endif()
 target_compile_definitions(libbc PUBLIC GD_BC_ARRAY_STORAGE=${_bc_array_layout})
 target_compile_definitions(libbc PUBLIC GD_BC_PREPARED_DIVISORS=$<BOOL:${ENABLE_BC_PREPARED_DIVISORS}>)
+option(ENABLE_BC_EXACT_SQUARE "Enable the experimental exact transform square" OFF)
+if(ENABLE_BC_EXACT_SQUARE)
+  target_compile_definitions(libbc PUBLIC GD_BC_EXPERIMENT_NTT=1)
+endif()
 set_property(TARGET libbc PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
 set_property(TARGET libbc PROPERTY CXX_STANDARD_REQUIRED ON)
 target_compile_definitions(libbc PRIVATE _CRT_SECURE_NO_WARNINGS
@@ -51,8 +55,11 @@ endif()
 set_warnings(libbc)
 gd_apply_ipo(libbc)
 
-target_sources(libbc PRIVATE execution-plan.cc instruction.cc lexer.cc number-division-cache.cc number-remainder.cc
+target_sources(libbc PRIVATE cli-interrupt.cc execution-plan.cc instruction.cc lexer.cc number-division-cache.cc number-remainder.cc
                             number-sqrt.cc number-sqrt-sparse.cc parser.cc reader.cc token.cc verification.cc vm.cc)
+if(WIN32)
+  target_sources(libbc PRIVATE verification-linear.cc)
+endif()
 if(ENABLE_BC_PROFILE)
   if(ENABLE_BC_COVERAGE)
     message(FATAL_ERROR "Use separate bc coverage and allocation profiling builds")
@@ -185,6 +192,24 @@ unset(GD_BC_LIBRARY_SOURCE)
 
 add_utility(NAME bc NO_INT_TEST CAT_ID bc SOURCES bc.cc math-library.cc)
 target_link_libraries(bc PUBLIC libbc)
+option(ENABLE_BC_PREPARSED_LIBRARY "Parse the ordinary bc math source at build time" OFF)
+if(ENABLE_BC_PREPARSED_LIBRARY AND NOT CMAKE_CROSSCOMPILING)
+  add_executable(bc-preparse-math-library preparse-math-library.cc math-library.cc)
+  target_link_libraries(bc-preparse-math-library PRIVATE libbc)
+  target_include_directories(bc-preparse-math-library PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+  set_property(TARGET bc-preparse-math-library PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
+  set_property(TARGET bc-preparse-math-library PROPERTY CXX_STANDARD_REQUIRED ON)
+  set_warnings(bc-preparse-math-library)
+  target_add_clang_format(bc-preparse-math-library)
+  set(_bc_library_image "${CMAKE_CURRENT_BINARY_DIR}/bc-math-library-image.inc")
+  add_custom_command(OUTPUT "${_bc_library_image}"
+    COMMAND bc-preparse-math-library "${_bc_library_image}.tmp"
+    COMMAND "${CMAKE_COMMAND}" -E rename "${_bc_library_image}.tmp" "${_bc_library_image}"
+    DEPENDS bc-preparse-math-library
+    VERBATIM)
+  target_sources(bc PRIVATE "${_bc_library_image}")
+  target_compile_definitions(bc PRIVATE GD_BC_PREPARSED_LIBRARY=1)
+endif()
 if(ENABLE_BC_PROFILE)
   target_sources(bc PRIVATE profiling-entry.cc)
 endif()
@@ -247,6 +272,14 @@ if(RUN_INTEGRATION_TESTS)
            "${CMAKE_CURRENT_SOURCE_DIR}/math-library.bc"
            "${CMAKE_CURRENT_BINARY_DIR}/bc-math-library.hh")
   set_tests_properties(bc/math-library-source PROPERTIES TIMEOUT 10)
+  if(TARGET bc-preparse-math-library)
+    add_test(NAME bc/math-library-image COMMAND "${Python_EXECUTABLE}"
+             "${CMAKE_CURRENT_SOURCE_DIR}/test-math-library-source.py"
+             "${CMAKE_CURRENT_SOURCE_DIR}/math-library.bc"
+             "${CMAKE_CURRENT_BINARY_DIR}/bc-math-library.hh"
+             "$<TARGET_FILE:bc-preparse-math-library>" "${_bc_library_image}")
+    set_tests_properties(bc/math-library-image PROPERTIES TIMEOUT 10)
+  endif()
   add_test(NAME bc/math-library-decisions COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-math-library-coverage.py" "$<TARGET_FILE:bc>")
   set_tests_properties(bc/math-library-decisions PROPERTIES TIMEOUT 650)

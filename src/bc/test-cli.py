@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import subprocess
 import tempfile
+import time
 import unittest
 
 
@@ -106,6 +107,36 @@ class CliTests(unittest.TestCase):
     def test_quit_with_open_stdin(self):
         self.run_bc("1+1\nquit\n", "2\n", keep_open=True)
 
+    @unittest.skipUnless(os.name == "posix", "requires a nonblocking POSIX pipe")
+    def test_nonblocking_stdin_waits_for_input(self):
+        import resource
+
+        read_end, write_end = os.pipe()
+        try:
+            os.set_blocking(read_end, False)
+            before = resource.getrusage(resource.RUSAGE_CHILDREN)
+            with subprocess.Popen(
+                [BC], stdin=read_end, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                universal_newlines=True, env=dict(os.environ, LC_ALL="C"),
+            ) as child:
+                try:
+                    # Leave the pipe empty with a live writer. A busy retry
+                    # consumes CPU throughout this wait on an idle host.
+                    time.sleep(0.35)
+                    os.write(write_end, b"6*7\nquit;")
+                    out, err = child.communicate(timeout=2)
+                finally:
+                    if child.poll() is None:
+                        child.kill()
+                        child.communicate(timeout=2)
+            after = resource.getrusage(resource.RUSAGE_CHILDREN)
+        finally:
+            os.close(write_end)
+            os.close(read_end)
+        self.assertEqual((child.returncode, out, err), (0, "42\n", ""))
+        cpu_seconds = after.ru_utime - before.ru_utime + after.ru_stime - before.ru_stime
+        self.assertLess(cpu_seconds, 0.175, "bc busy-waited for nonblocking stdin")
+
     @unittest.skipUnless(os.name == "posix", "requires a POSIX directory descriptor")
     def test_stdin_read_error(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -117,6 +148,22 @@ class CliTests(unittest.TestCase):
                 )
             finally:
                 os.close(descriptor)
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("Error:-:1:1: Abort: File system error", result.stderr)
+
+    @unittest.skipUnless(os.name == "posix", "requires POSIX pipe descriptors")
+    def test_pipe_stdin_read_error(self):
+        read_end, write_end = os.pipe()
+        try:
+            # fstat identifies the write end as a pipe, but read must fail.
+            result = subprocess.run(
+                [BC], stdin=write_end, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                universal_newlines=True, timeout=2, env=dict(os.environ, LC_ALL="C"),
+            )
+        finally:
+            os.close(write_end)
+            os.close(read_end)
         self.assertEqual(result.returncode, 1)
         self.assertEqual(result.stdout, "")
         self.assertIn("Error:-:1:1: Abort: File system error", result.stderr)
@@ -220,6 +267,16 @@ class CliTests(unittest.TestCase):
             with self.subTest(text=text):
                 self.run_bc(text, success=False)
         self.run_bc("2+3\ndefine f() {\nreturn (1\n}\n", "5\n", success=False)
+
+    def test_named_file_diagnostics_follow_item_execution(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "items.bc"
+            source.write_text("2+3\n1 2\n")
+            self.run_bc("17\n", "5\n", files=(source,), success=False,
+                        error="Expected new-line")
+            source.write_text("1/0\n1 2\n")
+            self.run_bc("17\n", files=(source,), success=False,
+                        error="Attempt to divide by zero.")
 
     def test_malformed_item_is_discarded(self):
         self.run_bc("1 2\n", success=False)
