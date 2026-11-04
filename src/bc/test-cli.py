@@ -268,6 +268,16 @@ class CliTests(unittest.TestCase):
                 self.run_bc(text, success=False)
         self.run_bc("2+3\ndefine f() {\nreturn (1\n}\n", "5\n", success=False)
 
+    def test_named_file_diagnostics_follow_item_execution(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "items.bc"
+            source.write_text("2+3\n1 2\n")
+            self.run_bc("17\n", "5\n", files=(source,), success=False,
+                        error="Expected new-line")
+            source.write_text("1/0\n1 2\n")
+            self.run_bc("17\n", files=(source,), success=False,
+                        error="Attempt to divide by zero.")
+
     def test_malformed_item_is_discarded(self):
         self.run_bc("1 2\n", success=False)
         self.run_bc("1", success=False)
