@@ -7,14 +7,14 @@
 
 namespace GD::Bc {
 template<>
-auto BasicNumber<NumberTraits16>::sqrt_sparse_exact(std::size_t width, NumType target_scale) -> bool
+auto BasicNumber<NumberTraits16>::sqrt_sparse_exact(NumType working_scale, NumType target_scale) -> bool
 {
-  return sqrt_sparse_exact_impl(width, target_scale);
+  return sqrt_sparse_exact_impl(working_scale, target_scale);
 }
 
 template<>
-auto BasicNumber<NumberTraits32>::sqrt_sparse_exact(std::size_t width, NumType target_scale) -> bool
+auto BasicNumber<NumberTraits32>::sqrt_sparse_exact(NumType working_scale, NumType target_scale) -> bool
 {
-  return sqrt_sparse_exact_impl(width, target_scale);
+  return sqrt_sparse_exact_impl(working_scale, target_scale);
 }
 }  // namespace GD::Bc
