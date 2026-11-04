@@ -1592,15 +1592,15 @@ private:
     for (std::size_t index = 0; index < last; ++index) {
       auto const count =
         static_cast<WideType>(std::min({index + 1, lhs_count, rhs_count, last - index - 1}));
-      WideType low = count * (interior % base_) + carry;
-      WideType high = count * (interior / base_);
+      auto low = static_cast<WideType>(count * (interior % base_) + carry);
+      auto high = static_cast<WideType>(count * (interior / base_));
       if (index >= lhs_count) {
         low += left_edge % base_;
-        high += left_edge / base_;
+        high += static_cast<WideType>(left_edge / base_);
       }
       if (index >= rhs_count) {
         low += right_edge % base_;
-        high += right_edge / base_;
+        high += static_cast<WideType>(right_edge / base_);
       }
       (*result.digits_)[index] = static_cast<NumType>(low % base_);
       carry = high + low / base_;
