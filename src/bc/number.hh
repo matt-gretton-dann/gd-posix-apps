@@ -1535,26 +1535,8 @@ private:
                        typename DigitVector::const_iterator rhs_begin,
                        typename DigitVector::const_iterator rhs_end) -> BasicDigits
   {
-    // Small products and other coefficient shapes use the existing kernels.
-    constexpr auto run_threshold = 32;
-    auto const lhs_size = lhs_end - lhs_begin;
-    auto const rhs_size = rhs_end - rhs_begin;
-    if (std::min(lhs_size, rhs_size) >= run_threshold && lhs_begin[0] != 0 && rhs_begin[0] != 0 &&
-        lhs_begin[0] == lhs_begin[1] && rhs_begin[0] == rhs_begin[1] &&
-        std::all_of(lhs_begin + 2, lhs_end - 1,
-                    [digit = *lhs_begin](auto d) { return d == digit; }) &&
-        std::all_of(rhs_begin + 2, rhs_end - 1,
-                    [digit = *rhs_begin](auto d) { return d == digit; })) {
-      // With at most min(size) + 1 terms on a diagonal, the low parts
-      // and incoming carry together occupy less than twice that many bases.
-      auto const terms = static_cast<std::size_t>(std::min(lhs_size, rhs_size)) + 1;
-      if (terms <= std::numeric_limits<WideType>::max() / base_ / 2) {
-        return multiply_runs(static_cast<std::size_t>(lhs_size - 1),
-                             static_cast<std::size_t>(rhs_size - 1), *lhs_begin, *rhs_begin,
-                             lhs_end[-1], rhs_end[-1]);
-      }
-    }
-    if (lhs_size <= multiply_split_point_ || rhs_size <= multiply_split_point_) {
+    if (std::distance(lhs_begin, lhs_end) <= multiply_split_point_ ||
+        std::distance(rhs_begin, rhs_end) <= multiply_split_point_) {
       if constexpr (LimbSquare<Traits>::supported) {
         // Keep the ordinary schoolbook body unchanged. Recognition belongs to
         // dispatch, before either coefficient kernel allocates its output.
@@ -1699,6 +1681,22 @@ private:
     auto const rhs_size = static_cast<std::size_t>(rhs_end - rhs_begin);
     if (lhs_size > std::numeric_limits<std::size_t>::max() - rhs_size) {
       throw std::length_error("bc multiplication result too large");
+    }
+    // Keep run detection in the recursive path. Short schoolbook products
+    // need no shape checks, and irregular recursive operands fall through.
+    constexpr std::size_t run_threshold = 32;
+    auto const shorter = std::min(lhs_size, rhs_size);
+    // With at most shorter + 1 terms on a diagonal, the low parts and
+    // incoming carry together occupy less than twice that many bases.
+    if (shorter >= run_threshold &&
+        shorter + 1 <= std::numeric_limits<WideType>::max() / base_ / 2 && lhs_begin[0] != 0 &&
+        rhs_begin[0] != 0 && lhs_begin[0] == lhs_begin[1] && rhs_begin[0] == rhs_begin[1] &&
+        std::all_of(lhs_begin + 2, lhs_end - 1,
+                    [digit = *lhs_begin](auto d) { return d == digit; }) &&
+        std::all_of(rhs_begin + 2, rhs_end - 1,
+                    [digit = *rhs_begin](auto d) { return d == digit; })) {
+      return multiply_runs(lhs_size - 1, rhs_size - 1, *lhs_begin, *rhs_begin, lhs_end[-1],
+                           rhs_end[-1]);
     }
     auto const point = static_cast<std::size_t>(multiply_split_point_);
     using Kernel = LimbProduct<Traits>;
