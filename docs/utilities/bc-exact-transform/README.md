@@ -47,3 +47,30 @@ and narrowed grids checked 600 outputs each. See the raw paired
 samples in [broad.json](broad.json) and [square.json](square.json).
 The shared grid informed dispatch selection, so independent timing
 and peak process RSS are still needed before enabling the tier.
+
+An independent held-out grid uses five sizes from 99,990 to 300,011
+digits and a new operand seed. It checked 360 output samples and 45
+separate output-checked RSS launches. The [runner](holdout.py) takes
+the base, candidate and Howard executables followed by a JSON output
+path. It uses macOS `/usr/bin/time -l` for the separate RSS launches.
+The [raw results](holdout.json) retain all timings and peak RSS.
+
+| Dense square digits | Candidate / baseline time | Baseline peak RSS bytes | Candidate peak RSS bytes |
+| ---: | ---: | ---: | ---: |
+| 99,990 | 1.004 | 2506752 | 2473984 |
+| 100,008 | 0.797 | 2506752 | 3276800 |
+| 145,003 | 0.443 | 2686976 | 3325952 |
+| 210,007 | 0.534 | 2932736 | 4472832 |
+| 300,011 | 0.359 | 3375104 | 4603904 |
+
+The transform traded more peak memory for lower elapsed time. The
+210,007-digit square had the largest observed memory increase, about
+53%. Held-out general products and sparse squares stayed within
+about 3% of baseline median time. Linux and Windows measurements
+with the transform enabled remain pending.
+
+The enabled Debug build with AddressSanitizer and UndefinedBehaviorSanitizer
+passed the 34 CLI and 50 large integer oracle cases. Release and
+sanitized builds also passed three signed decimal squares with
+scale-three truncation, including inputs on both sides of the
+dispatch threshold.
