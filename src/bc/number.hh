@@ -73,6 +73,18 @@ struct NumberTraitsBase
 /** Number traits with underlying 32-bit Number type.  */
 using NumberTraits32 = NumberTraitsBase<::uint32_t, ::uint64_t>;
 
+namespace Details {
+// Keep the 32-bit recursive coefficient kernel out of VM template dispatch.
+#if defined(_MSC_VER)
+__declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+[[gnu::noinline]]
+#endif
+void multiply_recursive32(std::span<::uint32_t const> lhs, std::span<::uint32_t const> rhs,
+                          std::span<::uint32_t> result, std::span<::uint32_t> scratch,
+                          std::size_t split_point);
+}  // namespace Details
+
 /** Number traits with 16-bit limbs and 32-bit widened arithmetic.  */
 using NumberTraits16 = NumberTraitsBase<::uint16_t, ::uint32_t>;
 
@@ -1644,10 +1656,15 @@ private:
     result.digits_->resize(lhs_size + rhs_size, NumType{0});
     std::vector<NumType, Profile::Allocator<NumType, Profile::AllocationKind::digits>> workspace(
       Kernel::workspace_size(std::max(lhs_size, rhs_size), point));
-    Kernel::multiply(std::span<NumType const>(lhs_begin, lhs_end),
-                     std::span<NumType const>(rhs_begin, rhs_end),
-                     std::span<NumType>(result.digits_->begin(), result.digits_->end()),
-                     std::span<NumType>(workspace), point);
+    auto const lhs = std::span<NumType const>(lhs_begin, lhs_end);
+    auto const rhs = std::span<NumType const>(rhs_begin, rhs_end);
+    auto const output = std::span<NumType>(result.digits_->begin(), result.digits_->end());
+    if constexpr (std::is_same_v<Traits, NumberTraits32>) {
+      multiply_recursive32(lhs, rhs, output, workspace, point);
+    }
+    else {
+      Kernel::multiply(lhs, rhs, output, workspace, point);
+    }
     result.tidy();
     return result;
   }
