@@ -443,7 +443,9 @@ private:
     std::string_view image;
     Instructions (*decode)(std::string_view) = nullptr;
   };
-  std::array<DeferredDefinition, Letter::count_> deferred_functions_{};
+  using DeferredDefinitions = std::array<DeferredDefinition, Letter::count_>;
+  // Ordinary invocations never allocate or initialize the image's entries.
+  std::unique_ptr<DeferredDefinitions> deferred_functions_;
 #endif
   std::array<Number, Letter::count_> variables_;  ///< Array of scalar variables, indexed by Letter.
   Params parameters_;                             ///< Contiguous values for active argument packs.
@@ -857,8 +859,11 @@ void GD::Bc::Details::VMState::defer_library_function(Letter name, std::string_v
                                                      Instructions (*decode)(std::string_view))
 {
   auto const index = static_cast<unsigned>(name);
+  if (!deferred_functions_) {
+    deferred_functions_ = std::make_unique<DeferredDefinitions>();
+  }
   functions_.at(index).reset();
-  deferred_functions_.at(index) = {image, decode};
+  deferred_functions_->at(index) = {image, decode};
 }
 #endif
 
@@ -868,8 +873,8 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
   auto const index = static_cast<unsigned>(func);
   auto& func_ptr = functions_.at(index);
 #if defined(GD_BC_PREPARSED_LIBRARY)
-  if (!func_ptr.has_value()) {
-    auto& deferred = deferred_functions_.at(index);
+  if (!func_ptr.has_value() && deferred_functions_) {
+    auto& deferred = deferred_functions_->at(index);
     if (deferred.decode != nullptr) {
       auto const code = deferred.decode(deferred.image);
       validate(code);

@@ -432,6 +432,8 @@ same embedded POSIX source and encodes the ordinary instruction operands
 in a compact, build-local byte image.
 The loader executes initialization and other top-level items in source order.
 It registers an isolated function definition as a slice of the immutable image.
+The VM allocates the table of slices when the image registers its first
+definition, so ordinary invocations without `-l` need no table.
 The first call decodes and verifies that slice before installing an owned body
 with its own literal caches. User definitions replace deferred or decoded
 functions through normal registration. Item boundaries and source locations
