@@ -1,0 +1,79 @@
+name: bc GCC native target experiment
+
+on:
+  pull_request:
+    branches: [main]
+    paths: ['.github/workflows/bc-gcc-native-target.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Compare GCC portable and native targets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir evidence
+          git rev-parse HEAD > evidence/revision.txt
+          g++ --version > evidence/compiler.txt
+          lscpu > evidence/cpu.txt
+          for role in portable native aa; do
+            flags=
+            if [[ $role == native ]]; then flags=-march=native; fi
+            /usr/bin/time -p cmake -S . -B "build-$role" -G Ninja \
+              -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+              -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DIPO_MODE=REQUIRED \
+              -DBUILD_TESTING=OFF -DBC_MULTIPLY_SPLIT_POINT=126 \
+              "-DCMAKE_C_FLAGS=$flags" "-DCMAKE_CXX_FLAGS=$flags" \
+              2>&1 | tee "evidence/$role-configure.log"
+            /usr/bin/time -p cmake --build "build-$role" --target bc --parallel 2 \
+              2>&1 | tee "evidence/$role-build.log"
+            cp "build-$role/compile_commands.json" "evidence/$role-compile.json"
+            python3 src/bc/test-cli.py "build-$role/src/bc/bc" --extensions ON
+            python3 src/bc/test-math-library-cli.py "build-$role/src/bc/bc"
+          done
+          python3 src/bc/scripts/build-bc-comparators.py --implementation howard \
+            --cc gcc --output howard
+          python3 - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+          import shlex
+
+          evidence = Path('evidence')
+          roles = []
+          for role in ('portable', 'native', 'aa'):
+              commands = (evidence / (role + '-compile.json')).read_bytes()
+              vm = next(row for row in json.loads(commands) if row['file'].endswith('/src/bc/vm.cc'))
+              flags = vm.get('arguments') or shlex.split(vm['command'])
+              assert ('-march=native' in flags) == (role == 'native')
+              assert '-O3' in flags and any(f.startswith('-flto') for f in flags)
+              binary = Path('build-' + role, 'src/bc/bc').resolve()
+              roles.append(dict(name=role, argv=[str(binary)], metadata=dict(
+                  source_revision=(evidence / 'revision.txt').read_text().strip(),
+                  binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),
+                  binary_bytes=binary.stat().st_size,
+                  compile_commands_sha256=hashlib.sha256(commands).hexdigest())))
+          roles.extend(json.loads(Path('howard/implementations.json').read_text())['implementations'])
+          (evidence / 'implementations.json').write_text(json.dumps(dict(implementations=roles)))
+          PY
+          for preset in full holdout; do
+            python3 src/bc/scripts/bench-bc.py --config evidence/implementations.json \
+              --reference portable --preset "$preset" --samples 9 --warmups 1 \
+              --seed 213518 --output "evidence/$preset"
+          done
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: bc-gcc-native-target-${{ github.run_id }}
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 30
