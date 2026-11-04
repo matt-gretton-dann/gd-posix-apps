@@ -347,7 +347,7 @@ if(RUN_INTEGRATION_TESTS)
   set_tests_properties(bc/vm-cli PROPERTIES TIMEOUT 45)
 endif()
 
-add_executable(find-multiply-split-point  find-multiply-split-point.cc)
+add_executable(find-multiply-split-point find-multiply-split-point.cc number-multiply.cc)
 target_include_directories(find-multiply-split-point PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_include_directories(find-multiply-split-point PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_link_libraries(find-multiply-split-point PUBLIC gdsup util bc-language-mode)
@@ -356,9 +356,8 @@ set_property(TARGET find-multiply-split-point  PROPERTY CXX_STANDARD_REQUIRED ON
 target_compile_definitions(find-multiply-split-point PRIVATE _CRT_SECURE_NO_WARNINGS)
 set_warnings(find-multiply-split-point)
 gd_apply_ipo(find-multiply-split-point)
-# The tuner exercises header-only arithmetic. Keep it independent of libbc's
-# diagnostic definition and allocator backend so instrumentation cannot tune it.
-# Share only the language-mode requirement with the library.
+# Compile the coefficient kernel into the tuner without linking libbc, so its
+# diagnostics and allocator instrumentation cannot affect calibration.
 add_dependencies(find-multiply-split-point "bc_messages_header")
 target_add_clang_format(find-multiply-split-point)
 
