@@ -154,6 +154,21 @@ regimes the reduced ratio has magnitude at most 1/9 and its square is
 below .013, so fewer than W+2 terms suffice. Near one, this evaluates the small
 logarithm directly rather than subtracting large independently rounded logs.
 
+At scale 1000 and above, let t be the reduced ratio and q = t².
+Cache q⁰ through q¹⁵ and evaluate blocks of 16 consecutive terms.
+For a block starting at term j, multiply the sum of q^v/(2j+2v+1)
+for v = 0 through 15 by t*q^j. Advance that signed power using q¹⁶.
+This reduces full-precision multiplications inside the series. The
+power recurrences propagate prior rounding error with a factor below
+.013. Each cached power differs from the exact power of the rounded q
+by less than 2u. Each block has at most 16 truncated divisions, so
+its polynomial error is below 48u. Including error in the signed
+leading power and the final product, each block contributes less than
+100u of error. When the computed leading power reaches zero, the
+omitted exact leading power is within a few u, and the tail is
+geometrically bounded. The existing logarithm error budgets below
+cover these errors and the initial rounding of t and q.
+
 For positive x, its signed decimal exponent is m = D - F - 1. If
 abs(m) is at least 64 + floor(S/2), normalize to [1,10) using the exact
 integer power 10^abs(m). The cutoff avoids paying for the additional
