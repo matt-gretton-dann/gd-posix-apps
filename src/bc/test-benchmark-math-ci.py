@@ -146,7 +146,8 @@ class NativeMath(unittest.TestCase):
             baseline.write_bytes(b'baseline ordinary source\n')
             revision, old_revision = 'a' * 40, 'b' * 40
             gd = dict(name='gd', argv=['gd-binary'], metadata=dict(source_revision=revision))
-            old = dict(name='old', argv=['old-binary'], metadata=dict(source_revision=old_revision))
+            old = dict(name='old', argv=['old-binary'], metadata=dict(
+                source_revision=old_revision, configuration=dict(preparsed_library_image_sha256='c' * 64)))
             howard = dict(name='howard', argv=['howard-binary'], metadata=dict(
                 source_revision=CI.load('build-bc-comparators').HOWARD_REVISION))
             original = copy.deepcopy(old)
@@ -158,6 +159,9 @@ class NativeMath(unittest.TestCase):
             base, candidate = configs['regression']
             self.assertEqual(base['name'], 'gd-base')
             self.assertEqual(base['argv'], ['old-binary', '-l'])
+            self.assertEqual(base['metadata']['library']['kind'], 'preparsed image')
+            self.assertEqual(base['metadata']['library']['image_sha256'], 'c' * 64)
+            self.assertEqual(candidate['metadata']['library']['kind'], 'embedded ordinary source')
             self.assertNotEqual(base['metadata']['library']['source_sha256'],
                                 candidate['metadata']['library']['source_sha256'])
             with self.assertRaisesRegex(CI.CommandFailure, 'baseline'):
