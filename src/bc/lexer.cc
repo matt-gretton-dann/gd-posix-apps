@@ -8,11 +8,13 @@
 
 #include "bc-messages.hh"
 
+#include <algorithm>
+#include <array>
 #include <cstdint>
 #include <memory>
 #include <optional>
 #include <string_view>
-#include <unordered_map>
+#include <utility>
 
 #include "bc.hh"
 
@@ -172,17 +174,6 @@ void GD::Bc::Lexer::lex_number()
 
 void GD::Bc::Lexer::lex_letter_or_keyword()
 {
-  static const std::unordered_map<std::string, Token::Type> token_map
-  {
-    {"auto", Token::Type::auto_}, {"break", Token::Type::break_}, {"define", Token::Type::define},
-      {"ibase", Token::Type::ibase}, {"if", Token::Type::if_}, {"for", Token::Type::for_},
-      {"length", Token::Type::length}, {"obase", Token::Type::obase}, {"quit", Token::Type::quit},
-      {"return", Token::Type::return_}, {"scale", Token::Type::scale}, {"sqrt", Token::Type::sqrt},
-      {"while", Token::Type::while_},
-#if ENABLE_EXTENSIONS
-      {"abs", Token::Type::abs}, {"halt", Token::Type::halt},
-#endif
-  };
   std::string value;
   bool cont = true;
 
@@ -229,8 +220,27 @@ void GD::Bc::Lexer::lex_letter_or_keyword()
     return;
   }
 
-  auto it = token_map.find(value);
-  if (it != token_map.end()) {
+  // Keyword spellings are fixed in each language mode. A sorted table needs
+  // no first-use construction or allocation when lexing a variable.
+  using Keyword = std::pair<std::string_view, Token::Type>;
+  static constexpr std::array keywords{
+#if ENABLE_EXTENSIONS
+    Keyword{"abs", Token::Type::abs},
+#endif
+    Keyword{"auto", Token::Type::auto_},    Keyword{"break", Token::Type::break_},
+    Keyword{"define", Token::Type::define}, Keyword{"for", Token::Type::for_},
+#if ENABLE_EXTENSIONS
+    Keyword{"halt", Token::Type::halt},
+#endif
+    Keyword{"ibase", Token::Type::ibase},   Keyword{"if", Token::Type::if_},
+    Keyword{"length", Token::Type::length}, Keyword{"obase", Token::Type::obase},
+    Keyword{"quit", Token::Type::quit},     Keyword{"return", Token::Type::return_},
+    Keyword{"scale", Token::Type::scale},   Keyword{"sqrt", Token::Type::sqrt},
+    Keyword{"while", Token::Type::while_},
+  };
+  static_assert(std::ranges::is_sorted(keywords, {}, &Keyword::first));
+  auto const it = std::ranges::lower_bound(keywords, std::string_view(value), {}, &Keyword::first);
+  if (it != keywords.end() && it->first == value) {
     t_.emplace(it->second);
     if (it->second == Token::Type::quit) {
       seen_quit_ = true;
