@@ -54,6 +54,15 @@ class CliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             self.run_bc("", files=(directory,), success=False)
 
+    @unittest.skipUnless(os.name == "posix" and Path("/dev/fd/0").exists(),
+                         "requires a reopenable POSIX stdin descriptor")
+    def test_named_pipe_input(self):
+        # Opening the pipe through a file operand uses FileReader's unbuffered
+        # path. Parsing a string also requests a contiguous view from it.
+        self.run_bc('"pipe\ntext"\n6*7\n', "pipe\ntext42\n", files=("/dev/fd/0",))
+        self.run_bc("6*7\nquit;", "42\n", files=("/dev/fd/0",), keep_open=True)
+        self.run_bc("1", files=("/dev/fd/0",), success=False)
+
     def test_regular_file_refill_boundaries(self):
         block = 8192
         with tempfile.TemporaryDirectory() as directory:
