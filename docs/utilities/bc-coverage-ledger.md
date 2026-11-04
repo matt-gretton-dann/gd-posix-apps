@@ -361,3 +361,24 @@ stdin read branch. They recorded 137/142 lines, 48/54 branch outcomes and
 on the buffered prefix API, whose valid callers supply a prefix of an
 available block. The raw denominators retain all these outcomes.
 Interpreted math decisions are recorded separately from host LLVM coverage.
+
+## Bounded pipe scanner checkpoint
+
+At `72485e3490bc22a91a1d63cc057e7da73c7d019e`, Clang/LLVM 23 collected
+the same compact execution configuration with typed results and prepared
+divisors disabled. Each language mode selected 428 entries and reported zero
+failures. The raw profiles were archived separately and verified against
+their member hashes.
+
+| Extensions | Lines | Branch outcomes | MC/DC conditions | Raw profiles |
+| --- | ---: | ---: | ---: | ---: |
+| ON | 7029/7256 | 3395/3756 | 268/333 | 1210 |
+| OFF | 6994/7253 | 3374/3756 | 264/333 | 1186 |
+
+The fatal pipe-read test ran separately on each exact checkpoint binary.
+Combining its profile with the matching baseline added three lines and
+four branch outcomes to `bc.cc` in each mode. Extensions ON moved from
+105/109 to 108/109 lines and 44/55 to 48/55 branch outcomes. Extensions OFF
+moved from 100/109 to 103/109 lines and 42/55 to 46/55 branch outcomes.
+Both retained 6/11 MC/DC conditions. The table above retains the original
+full-suite counts, before the supplemental test.

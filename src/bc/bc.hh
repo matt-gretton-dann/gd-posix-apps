@@ -1289,6 +1289,22 @@ auto operator-(Parser::ExprIndex const& lhs, Parser::ExprIndex const& rhs) -> Pa
 namespace Details {
 /* Forward declaration of class that holds VMState.  */
 struct VMState;
+
+// Single-threaded CLI only. Embedders use the VM's per-execution handler.
+class CliInterruptScope
+{
+public:
+  CliInterruptScope();
+  ~CliInterruptScope();
+  CliInterruptScope(CliInterruptScope const&) = delete;
+  auto operator=(CliInterruptScope const&) -> CliInterruptScope& = delete;
+
+  [[nodiscard]] auto installed() const noexcept -> bool { return state_ != nullptr; }
+
+private:
+  struct State;
+  std::unique_ptr<State> state_;
+};
 }  // namespace Details
 
 /** \brief  Virtual Machine
@@ -1324,7 +1340,12 @@ public:
    */
   auto execute(Instructions& instructions) -> bool;
 
+  // The CLI supplies its live process scope. If it could not install the
+  // shared handler, execute with the same per-item scope as embedders.
+  auto execute_cli(Instructions& instructions, Details::CliInterruptScope const& cli) -> bool;
+
 private:
+  auto execute_impl(Instructions& instructions, bool cli_interrupts) -> bool;
   std::unique_ptr<Details::VMState> state_;  ///< Sole owner of this interpreter's state.
 };
 

@@ -209,7 +209,7 @@ precedes the test, and zero is independent of the recorded parity. The
 ordinary decimal product 16*x is exact because multiplication retains x's
 fractional scale. No transcendental bound calculation runs in the interpreter.
 
-For x > 8*(n*n+1), attempt the real large-argument expansion from
+For x > max(8*(n*n+1), W), attempt the real large-argument expansion from
 [NIST DLMF 10.17](https://dlmf.nist.gov/10.17). Coefficients satisfy
 `b_0=1; b_k=b_(k-1)*(4*n*n-(2*k-1)^2)/(8*k*x)`.
 Split their alternating even/odd sums and reconstruct with phase
@@ -218,7 +218,9 @@ DLMF 10.17.14-15 bounds the Hankel remainder by
 `2*abs(b_k)*exp(abs(n*n-1/4)/x)`, less than `3*abs(b_k)` in this regime.
 Taking the real part preserves that bound.
 
-Use W = S + D + F + 2*d(S+D+F+length(n)+1) + 32. Before each coefficient,
+Use W = S + D + F + 2*d(S+D+F+length(n)+1) + 32. The W cutoff avoids
+building a long asymptotic prefix when working precision approaches the
+argument. It only selects a series. Before each Hankel coefficient,
 check its exact recurrence ratio against one half. If contraction is lost
 before the budget is met, abandon this regime and use the ascending series.
 While contracted, truncation propagation is below 2u. When a stored next
