@@ -111,8 +111,10 @@ auto verify_control_flow(Instructions const& code, bool function_body)
   for (auto entry : entries) {
     edge(root, entry);
   }
+  bool has_branch = false;
   for (I i = 0; i < size; ++i) {
     auto branch = [&](Instruction::Operand const& operand) -> bool {
+      has_branch = true;
       I const destination = target(i, operand);
       if (destination == size ? owner[i] != 0 : owner[destination] != owner[i]) {
         return false;
@@ -147,7 +149,6 @@ auto verify_control_flow(Instructions const& code, bool function_body)
   }
 
   Adjacency const successors(size + 2, edges);
-  Adjacency const predecessors(size + 2, edges, true);
 
   // Each execution region starts with no owned argument packs. A function
   // additionally receives one caller-owned pack, consumed by its prologue.
@@ -214,6 +215,44 @@ auto verify_control_flow(Instructions const& code, bool function_body)
       }
     }
   }
+
+  auto check_operands = [&](auto available) -> std::optional<VerificationError> {
+    for (I i = 0; i < size; ++i) {
+      auto check = [&](Instruction::Operand const& operand) -> bool {
+        if (!std::holds_alternative<Instruction::Offset>(operand)) {
+          return true;
+        }
+        I const producer = target(i, operand);
+        if (owner[producer] != owner[i]) {
+          return false;
+        }
+        // Unreachable consumers cannot execute a read. Reachable ones require a
+        // strictly dominating producer; previous loop iterations are not assumed.
+        return available(producer, i);
+      };
+      if (code[i].opcode() == O::branch || code[i].opcode() == O::function_end) {
+        continue;
+      }
+      if (code[i].has_op1() && !check(code[i].op1())) {
+        return VerificationError{i, "operand 1 producer is unavailable on an incoming path"};
+      }
+      if (code[i].has_op2() && code[i].opcode() != O::branch_zero && !check(code[i].op2())) {
+        return VerificationError{i, "operand 2 producer is unavailable on an incoming path"};
+      }
+    }
+    return std::nullopt;
+  };
+
+  // Without explicit branches, each region has one forward path from
+  // its own entry. Marker propagation already identified its reachable
+  // instructions. Within a region, a reachable earlier producer dominates.
+  if (!has_branch) {
+    return check_operands([&](I producer, I consumer) {
+      return !states[consumer] || (states[producer] && producer < consumer);
+    });
+  }
+
+  Adjacency const predecessors(size + 2, edges, true);
 
   // A cycle before the incoming pack is consumed can bypass the prologue
   // forever. Remove acyclic nodes from that subgraph; any remainder is a cycle.
@@ -333,30 +372,10 @@ auto verify_control_flow(Instructions const& code, bool function_body)
     }
   }
 
-  for (I i = 0; i < size; ++i) {
-    auto check = [&](Instruction::Operand const& operand) -> bool {
-      if (!std::holds_alternative<Instruction::Offset>(operand)) {
-        return true;
-      }
-      I const producer = target(i, operand);
-      if (owner[producer] != owner[i]) {
-        return false;
-      }
-      // Unreachable consumers cannot execute a read. Reachable ones require a
-      // strictly dominating producer; previous loop iterations are not assumed.
-      return !visited[i] || (producer != i && visited[producer] && enter[producer] <= enter[i] &&
-                             enter[i] < leave[producer]);
-    };
-    if (code[i].opcode() == O::branch || code[i].opcode() == O::function_end) {
-      continue;
-    }
-    if (code[i].has_op1() && !check(code[i].op1())) {
-      return VerificationError{i, "operand 1 producer is unavailable on an incoming path"};
-    }
-    if (code[i].has_op2() && code[i].opcode() != O::branch_zero && !check(code[i].op2())) {
-      return VerificationError{i, "operand 2 producer is unavailable on an incoming path"};
-    }
-  }
-  return std::nullopt;
+  return check_operands([&](I producer, I consumer) {
+    return !visited[consumer] || (producer != consumer && visited[producer] &&
+                                  enter[producer] <= enter[consumer] &&
+                                  enter[consumer] < leave[producer]);
+  });
 }
 }  // namespace GD::Bc::Details
