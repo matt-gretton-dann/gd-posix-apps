@@ -24,7 +24,7 @@ The initial broad candidate selected balanced products with at least
 2048 limbs per operand. At 200,003 decimal digits, a dense product took
 1.474 times baseline, a sparse product took 6.763 times baseline, and a
 dense square took 0.587 times baseline. Those results motivate keeping
-the existing kernel for general products. The revised candidate applies
+the existing kernel for general products. The first square-only candidate applied
 the transform only to aliased squares of at least 11112 limbs, with at
 least half of the limbs nonzero. Uniform runs and all other traits
 continue to use the existing kernels.
@@ -82,3 +82,30 @@ candidate, checks the CLI, and replays the holdout with a byte-identical
 second baseline executable. The artifact records the CMake caches,
 binary identities and checked samples. Native timing is advisory and
 the workflow leaves ordinary builds on the existing kernel.
+
+## Native padding boundary
+
+The initial enabled Linux and Windows grid checked 360 outputs per
+host. The second baseline was near parity for the dense squares.
+
+| Dense square digits | Linux candidate / base | Windows candidate / base |
+| ---: | ---: | ---: |
+| 99,990 | 1.005 | 1.000 |
+| 100,008 | 1.206 | 1.372 |
+| 145,003 | 0.674 | 0.837 |
+| 210,007 | 0.813 | 0.995 |
+| 300,011 | 0.530 | 0.689 |
+
+A transform can double in size when one extra base-10^9 limb crosses
+a power-of-two boundary. The follow-up requires at least 16,384 limbs
+and at least 75% occupancy of the padded transform, as well as the
+previous density and alias checks. This is an experimental cutoff
+selected from the native grid. The independent boundary grid uses
+a fresh seed and exercises adjacent limb counts at the cutoff and
+padding jump. Run it with `--padding-boundaries`.
+
+The local boundary run checked 576 outputs with a second baseline.
+The 147,447- and 196,606-digit squares stayed near baseline, while
+147,448 and 196,605 digits took 0.521 and 0.322 times baseline.
+The 300,011-digit square retained its improvement at 0.361 times
+baseline. Native boundary runs are required to qualify the new cutoff.

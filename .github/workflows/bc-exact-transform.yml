@@ -64,7 +64,7 @@ jobs:
           $aa = Join-Path $PWD (Split-Path $binaries.base -Leaf)
           Copy-Item $binaries.base $aa
           python candidate/src/bc/test-cli.py $binaries.candidate --extensions ON
-          python candidate/docs/utilities/bc-exact-transform/holdout.py $binaries.base $binaries.candidate evidence/holdout.json --aa $aa
+          python candidate/docs/utilities/bc-exact-transform/holdout.py $binaries.base $binaries.candidate evidence/holdout.json --aa $aa --padding-boundaries
       - uses: actions/upload-artifact@v7
         if: always()
         with:

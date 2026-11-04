@@ -19,14 +19,18 @@ parser.add_argument('ntt')
 parser.add_argument('output', type=Path)
 parser.add_argument('--howard')
 parser.add_argument('--aa', help='second baseline executable for a timing control')
+parser.add_argument('--padding-boundaries', action='store_true',
+                    help='replay a fresh grid around the padding-aware cutoff')
 parser.add_argument('--rss', action='store_true', help='collect macOS peak RSS separately')
 args = parser.parse_args()
 binaries = {role: str(Path(getattr(args, role)).resolve())
             for role in ('base', 'ntt', 'howard', 'aa') if getattr(args, role)}
-rng = random.Random(2042026)
+rng = random.Random(2042027 if args.padding_boundaries else 2042026)
 schedule = random.Random(2026204)
 environment = dict(os.environ, LC_ALL='C', BC_LINE_LENGTH='70', BC_ENV_ARGS='')
-cases = [(size, shape) for size in (99990, 100008, 145003, 210007, 300011)
+sizes = ((100008, 147447, 147448, 196605, 196606, 294903, 294904, 300011)
+         if args.padding_boundaries else (99990, 100008, 145003, 210007, 300011))
+cases = [(size, shape) for size in sizes
          for shape in ('square', 'dense', 'sparse-square')]
 records = []
 for size, shape in cases:

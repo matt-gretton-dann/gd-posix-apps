@@ -110,9 +110,14 @@ class LimbNtt
 public:
   static auto eligible(std::span<std::uint32_t const> limbs) -> bool
   {
-    // The first measured dense-square win was at 100,000 decimal digits.
-    // Leave sparse inputs on the existing kernel, even at large sizes.
-    return limbs.size() >= 11112 && limbs.size() <= maximum_transform / (2 * chunks_per_limb) &&
+    if (limbs.size() < 16384 || limbs.size() > maximum_transform / (2 * chunks_per_limb)) {
+      return false;
+    }
+    // A transform's cost jumps when its padded size doubles. The native
+    // holdout lost near half occupancy and improved on both hosts at
+    // about three quarters. Keep sparse inputs on the existing kernel.
+    auto const chunks = 2 * chunks_per_limb * limbs.size();
+    return chunks >= std::bit_ceil(chunks) * 3 / 4 &&
            static_cast<std::size_t>(std::ranges::count(limbs, 0U)) <= limbs.size() / 2;
   }
 
