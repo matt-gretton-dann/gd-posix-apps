@@ -34,3 +34,8 @@ on EPYC 9V74 checked 480 observations. Stack/register ratios were
 were wider than their holdout counterparts. Both modes used the same
 timing executable within each run. The hosts differed between runs, so
 the change across runs does not isolate the effect of the code edit.
+
+The next lowering combines an adjacent scalar comparison and conditional
+branch when the branch has no separate entry. It consumes the same two
+operands without constructing a numeric Boolean or dispatching a second
+instruction. Non-fused comparisons still produce a numeric result.

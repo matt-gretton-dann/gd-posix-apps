@@ -118,14 +118,35 @@ auto plan_stack_execution(Instructions const& source, bool function_body)
         return {};
       record.operand = static_cast<std::uint16_t>(std::get<Instruction::Stream>(source[pc].op2()));
       break;
-    case Op::branch_zero:
+    case Op::branch_zero: {
       if (!pop(relative(pc, false)))
         return {};
-      [[fallthrough]];
+      if (!stack.empty())
+        return {};
+      record.operand = static_cast<std::uint16_t>(relative(pc, true));
+      // A verified adjacent comparison has a single consumer here. Keep
+      // ordinary branches for any independently reachable instruction.
+      if (pc != 0 && !entries[pc] && relative(pc, false) == pc - 1) {
+        switch (source[pc - 1].opcode()) {
+        case Op::less_than:
+        case Op::less_than_equals:
+        case Op::equals:
+        case Op::not_equals:
+          code.instructions.back().operand = record.operand;
+          code.instructions.back().branch_on_false = true;
+          jumps.push_back(code.instructions.size() - 1);
+          continue;
+        default:
+          break;
+        }
+      }
+      jumps.push_back(code.instructions.size());
+      break;
+    }
     case Op::branch:
       if (!stack.empty())
         return {};
-      record.operand = static_cast<std::uint16_t>(relative(pc, op == Op::branch_zero));
+      record.operand = static_cast<std::uint16_t>(relative(pc, false));
       jumps.push_back(code.instructions.size());
       break;
     case Op::eof:

@@ -14,6 +14,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <deque>
+#include <functional>
 #include <ostream>
 #include <type_traits>
 #include <utility>
@@ -2299,6 +2300,20 @@ auto execute_stack(VMState& vm, Instructions const& source, StackCode const& cod
     auto const variable = [&instruction] {
       return Variable(static_cast<char>('a' + instruction.operand));
     };
+    auto const compare = [&]<typename Predicate>(Predicate predicate) {
+      auto const& top = stack.back();
+      auto& bottom = stack[stack.size() - 2];
+      auto const result = instruction.reversed ? predicate(top, bottom) : predicate(bottom, top);
+      stack.pop_back();
+      if (instruction.branch_on_false) {
+        stack.pop_back();
+        if (!result)
+          pc = instruction.operand;
+      }
+      else {
+        bottom = Number(result ? 1 : 0);
+      }
+    };
     switch (op) {
     case Op::number:
       stack.push_back(source[instruction.operand].decoded_number(vm.ibase()));
@@ -2357,6 +2372,18 @@ auto execute_stack(VMState& vm, Instructions const& source, StackCode const& cod
     case Op::branch:
       pc = instruction.operand;
       break;
+    case Op::less_than:
+      compare(std::less<>{});
+      break;
+    case Op::less_than_equals:
+      compare(std::less_equal<>{});
+      break;
+    case Op::equals:
+      compare(std::equal_to<>{});
+      break;
+    case Op::not_equals:
+      compare(std::not_equal_to<>{});
+      break;
     case Op::pop_param:
       stack.push_back(vm.pop_param());
       break;
@@ -2387,18 +2414,6 @@ auto execute_stack(VMState& vm, Instructions const& source, StackCode const& cod
         break;
       case Op::power:
         lhs.power(rhs, vm.scale());
-        break;
-      case Op::less_than:
-        lhs = Number(lhs < rhs ? 1 : 0);
-        break;
-      case Op::less_than_equals:
-        lhs = Number(lhs <= rhs ? 1 : 0);
-        break;
-      case Op::equals:
-        lhs = Number(lhs == rhs ? 1 : 0);
-        break;
-      case Op::not_equals:
-        lhs = Number(lhs != rhs ? 1 : 0);
         break;
       default:
         std::abort();
