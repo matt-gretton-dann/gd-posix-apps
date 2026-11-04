@@ -174,6 +174,8 @@ def main():
                 builder.run([sys.executable, str(SCRIPTS.parent / 'test-divisor-reuse-cli.py'),
                              entry['argv'][0]])
         bench = load('bench-bc')
+        base_digest = entries[0]['metadata'].get('binary_sha256')
+        identical_binaries = bool(base_digest) and base_digest == entries[1]['metadata'].get('binary_sha256')
         configs = {'paired': [entries[0], entries[1]] + howard,
                    'aa': [entries[0], entries[2]]}
         for name, implementations in configs.items():
@@ -226,6 +228,9 @@ def main():
                               decision(ratio, second, startup=row['name'] == 'startup'))
                     if comparison == 'aa':
                         controls[row['name']] = status
+                    elif identical_binaries and status == 'confirmed regression':
+                        # Identical bytes can still time differently under separate launch paths.
+                        status = 'confirmed timing bias (identical binaries)'
                     reports.append({'preset': preset, 'comparison': comparison, 'name': row['name'],
                                     'ratio': ratio, 'confirmation': second,
                                     'status': status, 'aa_control_status': controls[row['name']],
@@ -238,6 +243,8 @@ def main():
                  '', 'Candidate is the exact PR head (not a synthetic merge), or checked push/main SHA.',
                  'A/A independently rebuilds the same base; its entire CI must lie in [0.95,1.05] to pass. Startup remains inconclusive until calibrated.',
                  'Paired status retains the raw A/B signal; the A/A qualifier limits attribution and competitive claims.', '',
+                 'When base and candidate hashes match, a confirmed slowdown is labeled timing bias. '
+                 'The original ratios and confirmation remain in the artifact.', '',
                  '| Preset | Comparison | Workload | Ratio [95%] | Advisory status | A/A qualifier |',
                  '| --- | --- | --- | --- | --- | --- |']
         for row in reports:
