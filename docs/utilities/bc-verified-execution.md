@@ -41,3 +41,10 @@ These are incremental #207 stages. Numeric slot specialization, operand compacti
 liveness/fusion and dispatch alternatives remain separate measured decisions.
 Keeping two executor instantiations may increase code size; paired benchmarks
 must include small scripts and startup as well as hot loops.
+
+Graph verification uses a local scratch arena for streams of at most 24
+instructions. Graph edges, traversal state and dominance scratch live only
+for the verification call. Larger graphs use the normal heap resource,
+which can release temporary buffers as their vectors are destroyed. If a
+small graph exhausts the arena, its upstream resource supplies the rest.
+The storage choice changes neither the graph nor the validation rules.
