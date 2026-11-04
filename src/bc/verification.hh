@@ -8,6 +8,14 @@
 #include "bc.hh"
 
 namespace GD::Bc::Details {
+// Keep the shortcut outside the graph verifier even under IPO.
+#if defined(_MSC_VER)
+__declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+[[gnu::noinline]]
+#endif
+auto is_verified_linear_stream(Instructions const& code) -> bool;
+
 struct VerificationError
 {
   Instruction::Index instruction;
