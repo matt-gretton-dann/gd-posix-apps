@@ -107,7 +107,7 @@ class NativeMath(unittest.TestCase):
             self.assertEqual(len({(row['group'], row['parameters']['mode']) for row in regular}), 20)
             extra = [row['parameters'] for row in rows if row['parameters']['scale'] != 100]
             self.assertEqual([(p['function'], p['mode'], p['scale']) for p in extra],
-                             [('l', 'repeated', 1000)])
+                             [('l', 'repeated', 20), ('l', 'repeated', 1000)])
             self.assertEqual(len(CI.selected_cases(bench, preset, True)), 60)
 
     def test_roles_pin_both_host_and_library_without_mutating_recipes(self):
