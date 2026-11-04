@@ -121,6 +121,22 @@ class CliTests(unittest.TestCase):
         self.assertEqual(result.stdout, "")
         self.assertIn("Error:-:1:1: Abort: File system error", result.stderr)
 
+    @unittest.skipUnless(os.name == "posix", "requires POSIX pipe descriptors")
+    def test_pipe_stdin_read_error(self):
+        read_end, write_end = os.pipe()
+        try:
+            # fstat identifies the write end as a pipe, but read must fail.
+            result = subprocess.run(
+                [BC], stdin=write_end, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                universal_newlines=True, timeout=2, env=dict(os.environ, LC_ALL="C"),
+            )
+        finally:
+            os.close(write_end)
+            os.close(read_end)
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("Error:-:1:1: Abort: File system error", result.stderr)
+
     def test_stdin_eof_across_explicit_input_operands(self):
         with tempfile.TemporaryDirectory() as directory:
             later = Path(directory) / "later.bc"
