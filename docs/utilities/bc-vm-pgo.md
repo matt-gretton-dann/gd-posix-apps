@@ -46,3 +46,16 @@ Hosted run 41807427320 reported `perf_event_paranoid=4` and denied both
 unprivileged events. The workflow also tries a privileged collector on its
 disposable runner, with the probe running under the regular runner UID and
 GID. It keeps the host perf policy intact and records both attempts.
+
+[Hosted run 41807637935](https://github.com/matt-gretton-dann/gd-posix-apps/actions/runs/41807637935)
+used Ubuntu Clang 18.1.3 and perf 7.0.14 on an AMD EPYC 9V45 x86-64
+runner. The collector recorded 2,573 software CPU-clock samples, including
+2,569 attributed to the probe's training function. The sampled program
+produced the expected output. The PMU exposed by this runner rejected
+branch-stack recording even with the privileged collector.
+
+Use the CPU-clock trace for CPU attribution. This run did not produce the
+branch-stack input needed by the workflow's LLVM converter, so it provides
+no sample-profiled executable or performance comparison. The original
+artifact ZIP SHA-256 was
+`8a6cd8afedfebbbdc34eebc86b8cd3235eeb5dd53d4e0864a48527c58e4cbdaa`.
