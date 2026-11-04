@@ -1,0 +1,52 @@
+name: bc Linux matched file input
+on:
+  pull_request:
+    branches: [main]
+    paths: ['.github/workflows/bc-linux-file-input-control.yml', 'src/bc/scripts/compare-file-input.py']
+permissions:
+  contents: read
+jobs:
+  matched-input:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Build fixed revisions and retain compiler provenance
+        run: |
+          mkdir evidence
+          lscpu --json > evidence/host.json
+          build() {
+            python3 src/bc/scripts/build-gd-bc.py --revision "$2" --split-point 126 \
+              --output "results/$1" --name "$1" --c-compiler cc --cxx-compiler c++
+            mkdir "evidence/$1"
+            cp "results/$1/"*.json "results/$1/"*.log "evidence/$1/"
+          }
+          build anchor 23fd6a0efcebae14a0c890d218db4d885d7a3ac3
+          build previous b7b12d895db328f3a73cd1c5cd158bc5f934c4ac
+          build current 57467e1292529b1e82b67d55ce34aa85d481718d
+      - name: Check identical bytes via named file and redirected stdin
+        run: |
+          python3 -c 'print("s=0\n" + "s+=1\n" * 20000 + "s")' > evidence/input.bc
+          echo 'c4152672d2f743bc5893c5f564f728e9764b251c0faa153905e7eb515ee123c9  evidence/input.bc' | sha256sum --check
+          binary() {
+            python3 -c 'import json, sys; print(json.load(sys.stdin)["implementations"][0]["argv"][0])' < "results/$1/implementations.json"
+          }
+          compare() {
+            python3 src/bc/scripts/compare-file-input.py "$(binary "$1")" "$(binary "$2")" \
+              evidence/input.bc > "evidence/$1-$2.csv"
+          }
+          compare anchor anchor
+          compare anchor previous
+          compare anchor current
+          compare previous current
+      - name: Preserve checked samples and provenance
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bc-linux-matched-input-${{ github.run_id }}-${{ github.run_attempt }}
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 30
