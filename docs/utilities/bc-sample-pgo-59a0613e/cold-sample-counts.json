@@ -1,0 +1,23 @@
+{
+  "error": {
+    "other_module": 10937,
+    "profiled": 63,
+    "total": 11041,
+    "unmapped_line": 30,
+    "unmapped_symbol": 11
+  },
+  "interactive": {
+    "other_module": 10774,
+    "profiled": 230,
+    "total": 11073,
+    "unmapped_line": 52,
+    "unmapped_symbol": 17
+  },
+  "startup": {
+    "other_module": 10850,
+    "profiled": 94,
+    "total": 10982,
+    "unmapped_line": 31,
+    "unmapped_symbol": 7
+  }
+}
