@@ -115,10 +115,12 @@ auto main(int argc, char** argv) -> int
   }
 
   // EOF advances to the next input; quit must stop before opening it.
+  // Only this CLI thread reads stdin. Library readers keep locked access.
+  auto constexpr stdin_access = GD::Bc::StdinReader::Access::unshared;
   for (auto it = args.begin() + optind; it != args.end(); ++it) {
     std::unique_ptr<GD::Bc::Reader> r;
     if (std::string_view(*it) == "-") {
-      r = std::make_unique<GD::Bc::StdinReader>();
+      r = std::make_unique<GD::Bc::StdinReader>(stdin_access);
     }
     else {
       r = std::make_unique<GD::Bc::FileReader>(*it);
@@ -127,7 +129,7 @@ auto main(int argc, char** argv) -> int
       return 0;
     }
   }
-  auto r = std::make_unique<GD::Bc::StdinReader>();
+  auto r = std::make_unique<GD::Bc::StdinReader>(stdin_access);
   execute(vm, std::move(r));
 
   return 0;
