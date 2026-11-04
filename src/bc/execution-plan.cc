@@ -117,7 +117,8 @@ auto classify_result(Instructions const& code, Instruction::Index index) -> Resu
   return ResultKind::none;
 }
 
-auto plan_result_slots(Instructions const& code, std::size_t slot_bytes) -> ResultSlotPlan
+auto plan_result_slots(Instructions const& code, std::size_t slot_bytes,
+                       std::span<std::uint8_t const> consumption) -> ResultSlotPlan
 {
   using Compact = ResultSlotPlan::CompactIndex;
   auto const size = code.size();
@@ -128,9 +129,12 @@ auto plan_result_slots(Instructions const& code, std::size_t slot_bytes) -> Resu
       slot_bytes <= sizeof(Compact)) {
     return {};
   }
+  auto const reuses_operand = [consumption](Instruction::Index i) {
+    return !consumption.empty() && consumption[i] != 0;
+  };
   std::size_t producers = 0;
   visit_execution_region(code, [&](Instruction::Index i) {
-    if (classify_result(code, i) != ResultKind::none)
+    if (classify_result(code, i) != ResultKind::none && !reuses_operand(i))
       ++producers;
   });
   // Include the shared empty sentinel and the persistent map in the payload
@@ -142,8 +146,18 @@ auto plan_result_slots(Instructions const& code, std::size_t slot_bytes) -> Resu
   result.indices.resize(size, 0);
   Compact next = 1;
   visit_execution_region(code, [&](Instruction::Index i) {
-    if (classify_result(code, i) != ResultKind::none)
+    if (reuses_operand(i)) {
+      // The transfer proof excludes any other read, including a second
+      // operand that aliases this producer. Arithmetic computes into a local
+      // value and assigns its destination after reading both operands.
+      auto const producer = i + static_cast<Instruction::Index>(
+                                  std::get<Instruction::Offset>(code[i].op1()));
+      assert(producer < i && result.indices[producer] != 0);  // NOLINT
+      result.indices[i] = result.indices[producer];
+    }
+    else if (classify_result(code, i) != ResultKind::none) {
       result.indices[i] = next++;
+    }
   });
   result.count = next;
   return result;
