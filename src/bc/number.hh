@@ -787,12 +787,24 @@ public:
   {
     copy_on_write();
 
+    auto aligned_add = [](typename DigitVector::iterator it, WideType contribution) {
+      // Aligned limbs plus carry sum to less than twice the radix.
+      // Use a narrow sum when the trait can represent that range.
+      using SumType = std::conditional_t<(base_ <= std::numeric_limits<NumType>::max() / 2U + 1U),
+                                         NumType, WideType>;
+      auto const base = static_cast<SumType>(base_);
+      auto const sum = static_cast<SumType>(*it + static_cast<SumType>(contribution));
+      bool const overflow = sum >= base;
+      *it = static_cast<NumType>(overflow ? sum - base : sum);
+      return static_cast<WideType>(overflow);
+    };
+    auto scaled_add = [](typename DigitVector::iterator it, WideType contribution) {
+      WideType const result = *it + contribution;
+      *it = result % base_;
+      return result / base_;
+    };
     NumType const carry =
-      for_each(rhs, scale, [](typename DigitVector::iterator it, WideType carry) {
-        WideType const result = *it + carry;
-        *it = result % base_;
-        return result / base_;
-      });
+      scale == 0 ? for_each(rhs, 0, aligned_add) : for_each(rhs, scale, scaled_add);
 
     if (carry != 0) {
       digits_->push_back(carry);
