@@ -2832,32 +2832,13 @@ private:
     return sqrt_prefix_impl(working_scale, target_scale);
   }
 
-  auto sqrt_prefix_impl(NumType working_scale, NumType target_scale) -> bool
+  auto sqrt_sparse_exact(std::size_t width, NumType target_scale) -> bool
   {
-    constexpr std::size_t cutoff = 128;
-    constexpr auto maximum = std::numeric_limits<std::size_t>::max();
-    auto const limbs = digits_.coefficient_limbs();
-    auto const first_shift = std::size_t(working_scale - scale_);
-    auto const second_shift = std::size_t(working_scale);
-    // A storage-width overflow keeps the established resource/error path.
-    if (limbs > maximum / base_log10_ || first_shift > maximum - second_shift) {
-      return false;
-    }
-    auto const extra = first_shift + second_shift;
-    auto const upper = limbs * base_log10_;
-    if (upper > maximum - extra || upper + extra < 2 * cutoff - 1) {
-      return false;
-    }
-    auto const width = digits_.coefficient_digits();
-    if (width > maximum - extra) {
-      return false;
-    }
-    auto const radicand_digits = width + extra;
-    auto const root_digits = radicand_digits / 2 + radicand_digits % 2;
-    if (root_digits < cutoff) {
-      return false;
-    }
+    return sqrt_sparse_exact_impl(width, target_scale);
+  }
 
+  auto sqrt_sparse_exact_impl(std::size_t width, NumType target_scale) -> bool
+  {
     // For a one-limb mantissa, factor the result-scale coefficient into
     // m * 10^shift. Absorb an odd decimal place into m and construct the
     // result directly only when the bounded mantissa is an exact square.
@@ -2884,6 +2865,38 @@ private:
         scale_ = target_scale;
         return true;
       }
+    }
+    return false;
+  }
+
+  auto sqrt_prefix_impl(NumType working_scale, NumType target_scale) -> bool
+  {
+    constexpr std::size_t cutoff = 128;
+    constexpr auto maximum = std::numeric_limits<std::size_t>::max();
+    auto const limbs = digits_.coefficient_limbs();
+    auto const first_shift = std::size_t(working_scale - scale_);
+    auto const second_shift = std::size_t(working_scale);
+    // A storage-width overflow keeps the established resource/error path.
+    if (limbs > maximum / base_log10_ || first_shift > maximum - second_shift) {
+      return false;
+    }
+    auto const extra = first_shift + second_shift;
+    auto const upper = limbs * base_log10_;
+    if (upper > maximum - extra || upper + extra < 2 * cutoff - 1) {
+      return false;
+    }
+    auto const width = digits_.coefficient_digits();
+    if (width > maximum - extra) {
+      return false;
+    }
+    auto const radicand_digits = width + extra;
+    auto const root_digits = radicand_digits / 2 + radicand_digits % 2;
+    if (root_digits < cutoff) {
+      return false;
+    }
+
+    if (sqrt_sparse_exact(width, target_scale)) {
+      return true;
     }
 
     // Keep a good existing power-of-ten seed. In the original coefficient
@@ -3163,6 +3176,25 @@ __declspec(noinline)
 [[gnu::noinline]]
 #endif
 auto BasicNumber<NumberTraits32>::sqrt_prefix_if_large(NumType working_scale, NumType target_scale)
+  -> bool;
+
+// Keep the sparse exact constructor outside the native Newton kernel.
+template<>
+#if defined(_MSC_VER)
+__declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+[[gnu::noinline]]
+#endif
+auto BasicNumber<NumberTraits16>::sqrt_sparse_exact(std::size_t width, NumType target_scale)
+  -> bool;
+
+template<>
+#if defined(_MSC_VER)
+__declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+[[gnu::noinline]]
+#endif
+auto BasicNumber<NumberTraits32>::sqrt_sparse_exact(std::size_t width, NumType target_scale)
   -> bool;
 
 template<typename Traits>
