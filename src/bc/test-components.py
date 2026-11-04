@@ -181,6 +181,11 @@ class Components(unittest.TestCase):
         self.assertGreater(two['instructions'], one['instructions'])
         self.assertEqual(one['checksum_mod_2_64'], one['instructions'] * 3)
 
+    def test_parse_deep_right_associative_power(self):
+        powers = 131072
+        result = self.invoke('parse', '1^' * powers + '1\n', iterations='1')
+        self.assertEqual(result['instructions'], 2 * powers + 3)
+
     def test_invalid_boundaries(self):
         for component, source, count, split in (
                 ('unknown', '1\n', '1', '2'), ('add', '1\n', '0', '2'),
