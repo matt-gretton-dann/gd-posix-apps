@@ -11,6 +11,9 @@
 
 #include <algorithm>
 #include <cstddef>
+#if defined(GD_BC_ARENA_CONTROL)
+#  include <cstdlib>
+#endif
 #include <memory_resource>
 #include <numeric>
 #include <span>
@@ -78,7 +81,12 @@ auto verify_control_flow(Instructions const& code, bool function_body)
   // Use ordinary allocations for larger graphs so temporary adjacency
   // cursors and old vector capacity can be released as soon as they die.
   bool const small = size <= 24;
+#if defined(GD_BC_ARENA_CONTROL)
+  static bool const use_arena = std::getenv("GD_BC_GRAPH_HEAP_CONTROL") == nullptr;
+  auto* storage = small && use_arena ? &arena : std::pmr::new_delete_resource();
+#else
   auto* storage = small ? &arena : std::pmr::new_delete_resource();
+#endif
   std::pmr::vector<I> owner(size, 0, storage);
   std::pmr::vector<I> function_end(size, absent, storage);
   std::pmr::vector<I> entries(storage);
