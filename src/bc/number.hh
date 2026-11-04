@@ -1116,6 +1116,24 @@ private:
   template<bool Remainder>
   void divide_normalized_impl(std::span<NumType const> divisor, NumType d)
   {
+#if defined(__APPLE__) && defined(__aarch64__)
+    if constexpr (!Remainder && base_ == 1000000000U) {
+      auto const n = divisor.size();
+      auto const m = digits_->size() - n;
+      // Keep the predictable borrow branch for small quotient grids. Divide
+      // the threshold instead of multiplying potentially large limb counts.
+      if (n >= 80 && m >= 63 && m >= 8191 / n) {
+        divide_normalized_kernel<Remainder, true>(divisor, d);
+        return;
+      }
+    }
+#endif
+    divide_normalized_kernel<Remainder, false>(divisor, d);
+  }
+
+  template<bool Remainder, bool ArithmeticBorrow>
+  void divide_normalized_kernel(std::span<NumType const> divisor, NumType d)
+  {
     auto const n = divisor.size();
     auto const m = digits_->size() - n;
     if (d != 1) {
@@ -1169,11 +1187,20 @@ private:
         carry += divisor[i] * q_hat;
         NumType const rhs_d = carry % base_;
         carry /= base_;
-        if (rhs_d > dividend[j + i]) {
-          dividend[j + i] += base_;
-          carry += 1;
+        if constexpr (ArithmeticBorrow) {
+          WideType const limb = dividend[j + i];
+          WideType const borrow = static_cast<WideType>(limb < rhs_d);
+          // The adjusted subtraction is nonnegative and below the radix.
+          dividend[j + i] = static_cast<NumType>(limb + base_ * borrow - rhs_d);
+          carry += borrow;
         }
-        dividend[j + i] -= rhs_d;
+        else {
+          if (rhs_d > dividend[j + i]) {
+            dividend[j + i] += base_;
+            carry += 1;
+          }
+          dividend[j + i] -= rhs_d;
+        }
       }
       if (carry != 0) {
         NumType const rhs_d = carry % base_;

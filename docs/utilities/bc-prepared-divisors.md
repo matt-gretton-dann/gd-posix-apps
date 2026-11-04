@@ -258,3 +258,18 @@ requests allocate no cache metadata. All successful test processes release every
 tracked allocation. Instrumented results are work/lifetime evidence, never
 elapsed-performance samples. Native full/held-out comparisons, cold/miss costs,
 code size and process RSS remain gates before default activation.
+
+## Large quotient borrow update on arm64 macOS
+
+Normalized quotient division can use an arithmetic borrow update on arm64
+macOS with base-10^9 limbs. It is selected for divisors of at least 80 limbs
+and quotient grids with at least 64 columns and 8,192 limb updates. Both
+prepared and ordinary division use the same selection. Remainder operations
+and other targets use the generic borrow branch.
+
+The cutoff comes from a local crossover study using fixed and varying
+operands. On the checked full and holdout division cases, the large grids
+took 0.832 and 0.793 times baseline. The unconditional prototype slowed
+smaller division and modulo. With the guard, the small full case and both
+modulo comparisons were near parity. The small holdout interval crossed
+parity. These figures describe the measured macOS host.
