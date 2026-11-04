@@ -1,0 +1,94 @@
+{
+  "scales": [
+    0,
+    1,
+    15,
+    16,
+    17,
+    20,
+    100,
+    250
+  ],
+  "cases": [
+    {
+      "id": "j-decimal-bound-ratio-below",
+      "function": "j",
+      "arguments": [
+        "16",
+        ".999999"
+      ]
+    },
+    {
+      "id": "j-decimal-bound-ratio-exact",
+      "function": "j",
+      "arguments": [
+        "16",
+        "1"
+      ]
+    },
+    {
+      "id": "j-decimal-bound-ratio-above",
+      "function": "j",
+      "arguments": [
+        "16",
+        "1.000001"
+      ]
+    },
+    {
+      "id": "j-decimal-bound-lower-order",
+      "function": "j",
+      "arguments": [
+        "15",
+        "1"
+      ]
+    },
+    {
+      "id": "j-decimal-bound-negative-order-even",
+      "function": "j",
+      "arguments": [
+        "-16",
+        "1"
+      ]
+    },
+    {
+      "id": "j-decimal-bound-negative-order-odd",
+      "function": "j",
+      "arguments": [
+        "-17",
+        "1"
+      ]
+    },
+    {
+      "id": "j-decimal-bound-negative-argument-odd",
+      "function": "j",
+      "arguments": [
+        "17",
+        "-1"
+      ]
+    },
+    {
+      "id": "j-decimal-bound-both-negative-odd",
+      "function": "j",
+      "arguments": [
+        "-17",
+        "-1"
+      ]
+    },
+    {
+      "id": "j-decimal-bound-old-tiny-bound",
+      "function": "j",
+      "arguments": [
+        "40",
+        "10"
+      ]
+    },
+    {
+      "id": "j-decimal-bound-zero-order",
+      "function": "j",
+      "arguments": [
+        "0",
+        "0"
+      ]
+    }
+  ]
+}

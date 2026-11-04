@@ -1,0 +1,207 @@
+{
+  "coverage_checkpoint": "2579bfe23d2785d1bd0c3052b32275fc70b66a20",
+  "integrated_sanitizer_source": "4136d2f6957210854b4cd789189fb1c0eb245006",
+  "coverage": [
+    {
+      "configuration": "on",
+      "source_revision": "2579bfe23d2785d1bd0c3052b32275fc70b66a20",
+      "profiles": 955,
+      "passed": 257,
+      "skipped": 45,
+      "raw_totals": {
+        "lines": {
+          "count": 5783,
+          "covered": 5634,
+          "percent": 97.42348262147674
+        },
+        "functions": {
+          "count": 538,
+          "covered": 511,
+          "percent": 94.9814126394052
+        },
+        "instantiations": {
+          "count": 959,
+          "covered": 910,
+          "percent": 94.8905109489051
+        },
+        "regions": {
+          "count": 4930,
+          "covered": 3749,
+          "notcovered": 1181,
+          "percent": 76.04462474645031
+        },
+        "branches": {
+          "count": 3103,
+          "covered": 2807,
+          "notcovered": 296,
+          "percent": 90.46084434418304
+        },
+        "mcdc": {
+          "count": 241,
+          "covered": 190,
+          "notcovered": 51,
+          "percent": 78.83817427385893
+        }
+      },
+      "application_totals": {
+        "lines": {
+          "count": 5752,
+          "covered": 5603,
+          "percent": 97.4095966620306
+        },
+        "functions": {
+          "count": 532,
+          "covered": 505,
+          "percent": 94.92481203007519
+        },
+        "instantiations": {
+          "count": 654,
+          "covered": 617,
+          "percent": 94.34250764525994
+        },
+        "regions": {
+          "count": 4916,
+          "covered": 3735,
+          "notcovered": 1181,
+          "percent": 75.97640358014645
+        },
+        "branches": {
+          "count": 3101,
+          "covered": 2805,
+          "notcovered": 296,
+          "percent": 90.45469203482747
+        },
+        "mcdc": {
+          "count": 241,
+          "covered": 190,
+          "notcovered": 51,
+          "percent": 78.83817427385893
+        }
+      }
+    },
+    {
+      "configuration": "off",
+      "source_revision": "2579bfe23d2785d1bd0c3052b32275fc70b66a20",
+      "profiles": 931,
+      "passed": 239,
+      "skipped": 63,
+      "raw_totals": {
+        "lines": {
+          "count": 5780,
+          "covered": 5599,
+          "percent": 96.86851211072664
+        },
+        "functions": {
+          "count": 538,
+          "covered": 510,
+          "percent": 94.79553903345726
+        },
+        "instantiations": {
+          "count": 959,
+          "covered": 909,
+          "percent": 94.78623566214807
+        },
+        "regions": {
+          "count": 4930,
+          "covered": 3728,
+          "notcovered": 1202,
+          "percent": 75.61866125760649
+        },
+        "branches": {
+          "count": 3103,
+          "covered": 2787,
+          "notcovered": 316,
+          "percent": 89.81630679987109
+        },
+        "mcdc": {
+          "count": 241,
+          "covered": 187,
+          "notcovered": 54,
+          "percent": 77.59336099585063
+        }
+      },
+      "application_totals": {
+        "lines": {
+          "count": 5749,
+          "covered": 5568,
+          "percent": 96.85162636980344
+        },
+        "functions": {
+          "count": 532,
+          "covered": 504,
+          "percent": 94.73684210526315
+        },
+        "instantiations": {
+          "count": 654,
+          "covered": 616,
+          "percent": 94.18960244648318
+        },
+        "regions": {
+          "count": 4916,
+          "covered": 3714,
+          "notcovered": 1202,
+          "percent": 75.5492270138324
+        },
+        "branches": {
+          "count": 3101,
+          "covered": 2785,
+          "notcovered": 316,
+          "percent": 89.80973879393744
+        },
+        "mcdc": {
+          "count": 241,
+          "covered": 187,
+          "notcovered": 54,
+          "percent": 77.59336099585063
+        }
+      }
+    }
+  ],
+  "identities": {
+    "on": {
+      "cache": {
+        "BC_MULTIPLY_SPLIT_POINT": "portable",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_COMPILER": "/opt/homebrew/opt/llvm/bin/clang++",
+        "CMAKE_CXX_FLAGS": "",
+        "CMAKE_CXX_FLAGS_DEBUG": "-g",
+        "CMAKE_C_COMPILER": "/opt/homebrew/opt/llvm/bin/clang",
+        "CMAKE_C_FLAGS": "",
+        "CMAKE_C_FLAGS_DEBUG": "-g",
+        "ENABLE_BC_COVERAGE": "ON",
+        "ENABLE_BC_PROFILE": "OFF",
+        "ENABLE_NON_POSIX_EXTENSIONS": "ON",
+        "CMAKE_GENERATOR": "Ninja"
+      },
+      "binaries": {
+        "src/bc/bc": "e1ac4cedecf36aaaecd2cd4014a6a65baae3d3d94bbd47bd4bc2aef8001d00c7",
+        "src/bc/test-libbc": "8a06185097feee37c5857f43244160527ad78afbc9a762b7c9a205a077e8dd5a"
+      },
+      "archive_sha256": "04a0cf789ba6b6b93c0c11b4c6ce5860bbe171adf07606e7665ec22dcbd96e4e"
+    },
+    "off": {
+      "cache": {
+        "BC_MULTIPLY_SPLIT_POINT": "portable",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_COMPILER": "/opt/homebrew/opt/llvm/bin/clang++",
+        "CMAKE_CXX_FLAGS": "",
+        "CMAKE_CXX_FLAGS_DEBUG": "-g",
+        "CMAKE_C_COMPILER": "/opt/homebrew/opt/llvm/bin/clang",
+        "CMAKE_C_FLAGS": "",
+        "CMAKE_C_FLAGS_DEBUG": "-g",
+        "ENABLE_BC_COVERAGE": "ON",
+        "ENABLE_BC_PROFILE": "OFF",
+        "ENABLE_NON_POSIX_EXTENSIONS": "OFF",
+        "CMAKE_GENERATOR": "Ninja"
+      },
+      "binaries": {
+        "src/bc/bc": "1710bd25fdfff8e8b4b32e34e8730d1425df22dbfd404cc5d2d637cd67a4ccd2",
+        "src/bc/test-libbc": "71c384b492cea2feb7bd19eaa8e51b98c1ce523e454942e528e4ccddf2b2d588"
+      },
+      "archive_sha256": "dd0924e88b0deb4788b66593a7bad814e191e99df29fcac7d7d7dd94c75f3ce8"
+    }
+  },
+  "manual_profile_scope": "Both summaries record an untracked default.profraw from manual unit validation. It is excluded from every isolated profile manifest and retained outside these archives. Tracked code matches the stated checkpoint.",
+  "interpreted_scope": "476 certified results;121/132 normal outcomes,130/132 including nine clipping models;two infeasible negative-exponential outcomes",
+  "earlier_preflight_scope": "Exploratory non-frozen GD build, actual inputs checked, elapsed times discarded; not timing acceptance"
+}

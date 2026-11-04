@@ -1,0 +1,164 @@
+from pathlib import Path
+import hashlib,json,re,shutil,subprocess,zipfile
+
+w=Path('/private/tmp/gd-posix-portable-math')
+r=w/'docs/utilities/bc-217-library-validation';r.mkdir()
+(r/'.gitattributes').write_text('* -text\n*.log whitespace=-blank-at-eol,-blank-at-eof\n*.txt whitespace=-blank-at-eol,-blank-at-eof\n')
+checkpoint='2579bfe23d2785d1bd0c3052b32275fc70b66a20'
+validated='4136d2f6957210854b4cd789189fb1c0eb245006'
+assert subprocess.check_output(['git','rev-parse','HEAD'],cwd=w).decode().strip()==validated
+rows=[];identities={}
+safe_cache={'CMAKE_BUILD_TYPE','CMAKE_C_COMPILER','CMAKE_CXX_COMPILER','CMAKE_C_FLAGS',
+ 'CMAKE_CXX_FLAGS','CMAKE_C_FLAGS_DEBUG','CMAKE_CXX_FLAGS_DEBUG','ENABLE_BC_COVERAGE',
+ 'ENABLE_NON_POSIX_EXTENSIONS','ENABLE_BC_PROFILE','RUN_UNIT_TESTS','RUN_INTEGRATION_TESTS',
+ 'BC_MULTIPLY_SPLIT_POINT','CMAKE_GENERATOR'}
+for mode in ['on','off']:
+ src=Path('/private/tmp/bc-217-loader-mcdc-'+mode+'-evidence')
+ summary=json.loads((src/'summary.json').read_text())
+ assert summary['source_revision']==checkpoint and summary['test_exit_code']==0
+ assert set(summary['source_status'].splitlines()) <= {'?? default.profraw'}
+ profiles=(src/'profiles.txt').read_text().splitlines()
+ assert len(profiles)==summary['profile_count']
+ assert all(Path(p).parent==src/'test-profiles' and 'default.profraw' not in p for p in profiles)
+ for name in ['coverage-warnings.log','native-warnings.log']:assert not (src/name).read_bytes()
+ archive=r/('mcdc-'+mode+'.zip')
+ with zipfile.ZipFile(archive,'w',zipfile.ZIP_DEFLATED) as z:
+  for path in sorted(src.rglob('*')):
+   if path.is_file():z.write(path,str(path.relative_to(src)))
+ shutil.copyfile(src/'summary.json',r/('mcdc-'+mode+'-summary.json'))
+ build=w/('build-mcdc-'+mode);cache={}
+ for line in (build/'CMakeCache.txt').read_text().splitlines():
+  if '=' in line and not line.startswith(('#','//')):
+   key,value=line.split('=',1);key=key.split(':',1)[0]
+   if key in safe_cache:cache[key]=value
+ assert cache['ENABLE_NON_POSIX_EXTENSIONS']==mode.upper()
+ binaries={str(path.relative_to(build)):hashlib.sha256(path.read_bytes()).hexdigest()
+           for path in [build/'src/bc/bc',build/'src/bc/test-libbc']}
+ shutil.copyfile(build/'compile_commands.json',r/('mcdc-'+mode+'-compile-commands.json'))
+ log=(src/'tests.log').read_text()
+ rows.append(dict(configuration=mode,source_revision=checkpoint,profiles=len(profiles),
+                  passed=sum(' Passed' in line for line in log.splitlines()),
+                  skipped=sum('(Skipped)' in line for line in log.splitlines()),
+                  raw_totals=summary['raw_totals'],application_totals=summary['application_mappings_totals']))
+ identities[mode]=dict(cache=cache,binaries=binaries,
+                       archive_sha256=hashlib.sha256(archive.read_bytes()).hexdigest())
+
+for name in ['bc-217-runtime-before.log','bc-217-portable-comments-tests.log',
+ 'bc-217-library-python39-all.log','bc-217-final-comment-portability.log',
+ 'bc-217-expanded-portability.log','bc-217-final-oracle-tests.log',
+ 'bc-217-final-oracle-python39.log','bc-217-imported-final-off-asan.log',
+ 'bc-217-integrated-release-unit.log','bc-217-integrated-release-cli.log',
+ 'bc-217-main-integration-tests.log','bc-217-integrated-off-asan-build.log',
+ 'bc-217-integrated-off-asan-tests.log','bc-217-decisions-python39.log',
+ 'bc-217-imported-generation.log']:
+ shutil.copyfile('/private/tmp/'+name,r/name)
+for name in ['math-library.bc','test-math-library-cli.py','test-math-imported.py',
+             'test-math-library-coverage.py','scripts/math_library_coverage.py']:
+ shutil.copyfile(w/'src/bc'/name,r/(Path(name).name+'.txt'))
+shutil.copyfile(w/'src/bc/fixtures/math-library-decisions.json',r/'interpreted-decisions.json')
+shutil.copyfile('/private/tmp/bc-217-pinned-howard.json',r/'pinned-howard.json')
+for name in ['bc-216-math-state-preflight.json','bc-216-math-correctness-preflight.json']:
+ shutil.copyfile('/private/tmp/'+name,r/name)
+(r/'metadata.json').write_text(json.dumps(dict(
+ coverage_checkpoint=checkpoint,integrated_sanitizer_source=validated,coverage=rows,
+ identities=identities,manual_profile_scope='Both summaries record an untracked default.profraw from manual unit validation. It is excluded from every isolated profile manifest and retained outside these archives. Tracked code matches the stated checkpoint.',
+ interpreted_scope='476 certified results;121/132 normal outcomes,130/132 including nine clipping models;two infeasible negative-exponential outcomes',
+ earlier_preflight_scope='Exploratory non-frozen GD build, actual inputs checked, elapsed times discarded; not timing acceptance'),indent=2)+'\n')
+n=r/'native-checkpoint';n.mkdir();audits=[]
+for os in ['linux','macos','windows']:
+ p=Path('/private/tmp/bc-359-checkpoint-native-'+os+'.zip')
+ a=json.loads(p.with_suffix('.audit.json').read_text())
+ assert hashlib.sha256(p.read_bytes()).hexdigest()==a['sha256'] and not a['confirmed']
+ assert a['checked']==2000;audits.append(a);shutil.copyfile(p,n/(os+'.zip'))
+(n/'audit.json').write_text(json.dumps(dict(workflow_run=41340731137,checks='fourteen successful',rows=audits),indent=2)+'\n')
+shutil.copyfile('/private/tmp/bc-359-checkpoint-audit-native.py',n/'audit.py.txt')
+lines=['# Portable library correctness and coverage checkpoint','','Refs #217, #214, #216 and #197.',
+'', 'The ordinary mathematical definitions and their state/argument behavior are',
+'validated independently of timing. This archive does not establish a competitive',
+'performance target. The canonical definitions at this checkpoint initialize',
+'scale with the original literal20; later source changes require new validation.',
+'', '## Numerical, state and portability evidence','',
+'Original336 plus140 crossover enclosures certify476 function/scale cases.',
+'The integrated source4136d2f passes all four actual extensions-OFF ASan/UBSan',
+'groups in397.37s: runtime264.10, identity0.04, interpreted decisions125.43,',
+'imported calls7.79. Test elapsed times are correctness diagnostics, not speedups.',
+'The identical ordinary source also passes476 cases in pinned Howard7.0.3',
+'without its standard library. Fourteen oracle groups pass on Python3.9/3.15.',
+'', 'Imported adapters account for1581 calls:1073 certified results,507 explicit',
+'undefined-domain inputs and one ordinary identity replacement. Generated',
+'atan/Bessel input, generator hashes and the strict return/halt adjustments',
+'remain in the committed fixtures and adapter. The earlier360-invocation',
+'three-role preflights use a non-frozen GD build and discard elapsed times;',
+'they are preliminary correctness checks, not performance acceptance.',
+'', 'Interpreted probes preserve one evaluation of each original condition and',
+'distinguish loop exhaustion, break and return. The report observes121/132',
+'normal outcomes and130/132 including nine independently clipped setters.',
+'The two remaining outcomes require a negative exponential coefficient and',
+'are infeasible by positive-series/squaring/reciprocal construction. The',
+'per-line report and portable test-side transformer are retained separately',
+'from C++ source coverage. Source/hash and missing-outcome checks run in CTest.',
+'', '## Isolated LLVM23 C++ coverage','',
+'Both configurations measure exact source2579bfe, with Homebrew Clang23.1.4',
+'Debug on macOS27.2/AppleM1. Empty warning logs, all asserted tests successful.',
+'The ON run has257 passes/45 explicit skips and955 fresh profiles; OFF has',
+'239 passes/63 skips and931 fresh profiles. Each selects302 CTest entries.',
+'Legacy exact-output imported skips remain explicit; mathematical calls are',
+'checked by the independent numerical adapter rather than those snapshots.',
+'', '| Configuration / mappings | Lines | Branch outcomes | MC/DC conditions |',
+'| --- | --- | --- | --- |']
+for row in rows:
+ for label,key in [('broad','raw_totals'),('application','application_totals')]:
+  t=row[key];values=['{}/{}'.format(t[k]['covered'],t[k]['count']) for k in ['lines','branches','mcdc']]
+  lines.append('| '+row['configuration'].upper()+' / '+label+' | '+' | '.join(values)+' |')
+lines+=['','The driverbc.cc has61/62 lines,25/27 branches and1/2 MC/DC ON;',
+'OFF is56/62,23/27 and1/2. Library loading is exercised in both directions.',
+'The existing null-instruction invariant, unreachable post-error break and',
+'option-schema/extension constraints remain visible in raw counts and the',
+'feasibility ledger. No new eligible denominator or overall completion claim',
+'is inferred. LLVM23/source changes preclude treating older LLVM21 percentages',
+'as a pure test-only before/after comparison. Never pool ON/OFF profiles.',
+'', 'Both summaries honestly record an untracked default.profraw from manual',
+'unit validation. Every isolated manifest was checked to exclude it; tracked',
+'source equals the stated checkpoint. Only the fresh test-profiles directories',
+'are merged. Raw profiles, profdata, exports, HTML, logs, inventories, source',
+'revision/status and compiler metadata are retained in the two ZIPs.',
+'', 'For reproduction, check out2579bfe, use the recorded compiler/configuration',
+'and the collector commands frombc-testing.md, in separate ON/OFF builds.',
+'The original absolute paths in manifests/reports are retained, not relabeled;',
+'recreate their build/source prefix or regenerate the profile list after',
+'extraction. Rebuild the matching mapping binaries from that source before',
+'using llvm-cov with retained profiles. Later source changes require fresh',
+'coverage. The canonical source and test-side scripts here identify exactly',
+'the interpreted definitions tested at this checkpoint.', '',
+'## Existing arithmetic native control','',
+'Native run41340731137 measures base8bf47fa and candidate2579bfe. All fourteen',
+'checks pass and each OS verifies2000 invocations,6000 total, with no confirmed',
+'regression. macOS and Windows retain noisy/inconclusive intervals; these are',
+'not equivalence claims. The raw ZIPs and audits are retained. This checkpoint',
+'uses its original IID interval policy and the arithmetic corpus; it does not',
+'establish native mathematical performance or apply later inference policies.', '']
+readme='\n'.join(lines)
+human={
+ 'literal20':'literal `20`', 'Original336':'The original 336', 'plus140':'plus 140',
+ 'certify476':'certify 476', 'source4136d2f':'source `4136d2f`', 'in397.37s':'in 397.37 s',
+ 'runtime264.10':'runtime 264.10 s', 'identity0.04':'identity 0.04 s',
+ 'decisions125.43':'decisions 125.43 s', 'calls7.79':'calls 7.79 s',
+ 'passes476':'passes 476', 'Howard7.0.3':'Howard 7.0.3', 'Python3.9/3.15':'Python 3.9/3.15',
+ 'for1581':'for 1581', 'calls:1073':'calls: 1073', 'results,507':'results, 507',
+ 'earlier360':'earlier 360', 'observes121':'observes 121', 'and130':'and 130',
+ 'LLVM23':'LLVM 23', 'LLVM21':'LLVM 21', 'source2579bfe':'source `2579bfe`',
+ 'Clang23.1.4':'Clang 23.1.4', 'macOS27.2/AppleM1':'macOS 27.2/Apple M1',
+ 'has257':'has 257', 'and955':'and 955', 'and931':'and 931', 'selects302':'selects 302',
+ 'driverbc.cc':'driver `bc.cc`', 'has61/62':'has 61/62', 'lines,25':'lines, 25',
+ 'and1/2':'and 1/2', 'is56/62,23/27':'is 56/62, 23/27',
+ 'default.profraw':'`default.profraw`', 'out2579bfe':'out `2579bfe`',
+ 'frombc-testing.md':'from [bc-testing.md](../bc-testing.md)',
+ 'run41340731137':'run 41340731137', 'base8bf47fa':'base `8bf47fa`',
+ 'candidate2579bfe':'candidate `2579bfe`', 'verifies2000':'verifies 2000',
+ 'invocations,6000':'invocations, 6000'}
+for before,after in human.items():readme=readme.replace(before,after)
+(r/'README.md').write_text(readme)
+shutil.copyfile(__file__,r/'archive.py.txt')
+proof={str(p.relative_to(r)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(r.rglob('*')) if p.is_file()}
+(r/'sha256.json').write_text(json.dumps(proof,indent=2)+'\n')
+print('Preserved',len(proof),'validation payloads; coverage configurations stay separate')
