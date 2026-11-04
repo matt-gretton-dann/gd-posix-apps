@@ -170,6 +170,23 @@ TEMPLATE_TEST_CASE("Knuth normalization can promote inline storage before quotie
   CHECK(divisor == Number(divisor_text, 10));
 }
 
+TEST_CASE("Large normalized division preserves the exact quotient and remainder",
+          "[bc][number][oracle][long-division]")
+{
+  using Number = GD::Bc::BasicNumber<GD::Bc::NumberTraits32>;
+  // Let P = 10^864. (P^2 + 2P + 2) / (P + 1) is P + 1, remainder 1.
+  // These dimensions exercise the large quotient grid on arm64 macOS.
+  std::string const gap(863, '0');
+  Number const dividend("1" + gap + "2" + gap + "2", 10);
+  Number const divisor("1" + gap + "1", 10);
+  auto quotient = dividend;
+  quotient.divide(divisor, 0);
+  CHECK(quotient == divisor);
+  auto remainder = dividend;
+  remainder.modulo(divisor, 0);
+  CHECK(remainder == Number("1", 10));
+}
+
 TEMPLATE_TEST_CASE("Zero rescale and whole-limb shifts retain normalized coefficients",
                    "[bc][number][storage]", GD::Bc::NumberTraits8, GD::Bc::NumberTraits16,
                    GD::Bc::NumberTraits32)
