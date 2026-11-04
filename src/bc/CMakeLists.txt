@@ -65,6 +65,11 @@ if(ENABLE_BC_NATIVE_SCALAR AND APPLE AND CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64"
 endif()
 set_warnings(libbc)
 gd_apply_ipo(libbc)
+# Keep the verifier out of GCC's LTO unit to limit its influence on
+# optimization of the hot VM dispatch code.
+if(ENABLE_IPO AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  set_property(SOURCE verification.cc APPEND PROPERTY COMPILE_OPTIONS -fno-lto)
+endif()
 
 target_sources(libbc PRIVATE cli-interrupt.cc execution-plan.cc instruction.cc lexer.cc number-division-cache.cc number-remainder.cc
                             number-sqrt.cc number-sqrt-sparse.cc parser.cc reader.cc token.cc verification.cc vm.cc)
