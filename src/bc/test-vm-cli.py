@@ -57,7 +57,7 @@ class VMTests(unittest.TestCase):
             ('s=7\nfor(i=0;i<4;i++) s+=i\ns\ni\n', '13\n4\n'),
             ('s=0.0\nfor(i=0;i<4;i++) s+=i\ns\nscale(s)\n', '6.0\n1\n'),
             ('ibase=2\nfor(i=0;i<101;i++) s+=i\ns\ni\n', '10\n5\n'),
-            ('for(i=0;i<4;i++) s+=.2\ns\ni\n', '.8\n4\n'),
+            ('for(i=0;i<4;i++) s+=.2\nif(s==.8) 1\nscale(s)\ni\n', '1\n1\n4\n'),
             ('for(i=0;i<4;i++) { s+=i; i; }\ns\n', '0\n1\n2\n3\n6\n'),
         ]
         for program, expected in cases:
