@@ -1195,18 +1195,25 @@ private:
 
       /* D4. Multiply and subtract.   */
       WideType carry = 0;
-      for (unsigned i = 0; i < n; ++i) {
-        carry += divisor[i] * q_hat;
-        NumType const rhs_d = carry % base_;
-        carry /= base_;
-        if constexpr (ArithmeticBorrow) {
+      if constexpr (ArithmeticBorrow) {
+        // The product and subtraction have separate carry chains. Merge them
+        // only at the high limb so the multiplies can run ahead of borrows.
+        WideType borrow = 0;
+        for (typename DigitVector::size_type i = 0; i < n; ++i) {
+          WideType const product = divisor[i] * q_hat + carry;
+          carry = product / base_;
+          WideType const subtrahend = product % base_ + borrow;
           WideType const limb = dividend[j + i];
-          WideType const borrow = static_cast<WideType>(limb < rhs_d);
-          // The adjusted subtraction is nonnegative and below the radix.
-          dividend[j + i] = static_cast<NumType>(limb + base_ * borrow - rhs_d);
-          carry += borrow;
+          borrow = static_cast<WideType>(limb < subtrahend);
+          dividend[j + i] = static_cast<NumType>(limb + base_ * borrow - subtrahend);
         }
-        else {
+        carry += borrow;
+      }
+      else {
+        for (unsigned i = 0; i < n; ++i) {
+          carry += divisor[i] * q_hat;
+          NumType const rhs_d = carry % base_;
+          carry /= base_;
           if (rhs_d > dividend[j + i]) {
             dividend[j + i] += base_;
             carry += 1;
