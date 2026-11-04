@@ -7,6 +7,7 @@
 #include "bc.hh"
 
 #include "gd/stdlib.h"
+#include "gd/sys/stat.h"
 #include "gd/unistd.h"
 
 #include "util/file.hh"
@@ -14,7 +15,9 @@
 
 #include "bc-messages.hh"
 
+#include <array>
 #include <cassert>
+#include <cerrno>
 #include <clocale>
 #include <iostream>
 #include <memory>
@@ -48,6 +51,67 @@ template<typename... Ts>
 }
 
 enum class InputResult { eof, quit };
+
+#if !defined(_WIN32)
+// The CLI can own the sole input pipe for a complete run. Read only what the
+// pipe currently supplies, so a writer need not fill a block or close before
+// the parser executes an item. Terminals and explicit operands keep stdio.
+class PipeReader final : public GD::Bc::Reader
+{
+public:
+  PipeReader() : Reader("-") {}
+
+  auto peek() -> int override
+  {
+    auto const bytes = contiguous();
+    return bytes.empty() ? EOF : static_cast<unsigned char>(bytes.front());
+  }
+
+  auto contiguous() -> std::string_view override
+  {
+    if (position_ == end_ && !at_end_) {
+      ssize_t count;
+      do {
+        count = ::read(STDIN_FILENO, bytes_.data(), bytes_.size());
+      } while (count < 0 && (errno == EINTR || errno == EAGAIN));
+      if (count < 0) {
+        std::cerr << error(Msg::file_error, "(standard input)");
+        std::exit(1);  // NOLINT(concurrency-mt-unsafe)
+      }
+      position_ = 0;
+      end_ = static_cast<std::size_t>(count);
+      at_end_ = count == 0;
+    }
+    return {bytes_.data() + position_, end_ - position_};
+  }
+
+  void chew_prefix(std::size_t size) override
+  {
+    assert(size <= end_ - position_);
+    advance_location({bytes_.data() + position_, size});
+    position_ += size;
+  }
+
+private:
+  void do_chew() override
+  {
+    if (position_ != end_) {
+      ++position_;
+    }
+  }
+
+  std::array<char, 4096> bytes_;
+  std::size_t position_{0};
+  std::size_t end_{0};
+  bool at_end_{false};
+};
+
+auto stdin_is_pipe() -> bool
+{
+  struct stat info {};
+  return ::fstat(STDIN_FILENO, &info) == 0 && S_ISFIFO(info.st_mode);
+}
+#endif
 
 /** Execute complete input items until EOF or read-time quit.
  * Quit discards the current item, including partial function/branch code. Output
@@ -127,6 +191,12 @@ auto main(int argc, char** argv) -> int
       return 0;
     }
   }
+#if !defined(_WIN32)
+  if (optind == argc && stdin_is_pipe()) {
+    execute(vm, std::make_unique<PipeReader>());
+    return 0;
+  }
+#endif
   auto r = std::make_unique<GD::Bc::StdinReader>();
   execute(vm, std::move(r));
 
