@@ -116,8 +116,9 @@ define e(x) {
     }
   }
   scale=0
-  /* Leave precision for output magnitude, accumulated truncation and squaring. */
-  w=s+x/1+2*length(s+scale(x)+x/1+1)+24
+  /* Only positive reconstruction amplifies errors by the output magnitude. */
+  w=x/1
+  w=s+(1-n)*w+2*length(s+scale(x)+w+1)+24
   scale=w
   if (scale!=w) return(1/0)
   k=0
@@ -133,11 +134,12 @@ define e(x) {
     r+=t
     i+=1
   }
+  /* Invert the reduced exponential so negative reconstruction stays <= 1. */
+  if (n==1) r=1/r
   while (k>0) {
     r=r*r
     k-=1
   }
-  if (n==1) r=1/r
   t=10^(-s)/2
   if (r>=0) r+=t
   if (r<0) r-=t

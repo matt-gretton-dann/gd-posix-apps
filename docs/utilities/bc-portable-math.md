@@ -116,7 +116,8 @@ termination event under this contraction bound, not the accuracy justification.
 
 Use x = |argument|, halve until the reduced argument is at most .125, evaluate
 the positive Taylor recurrence, then square the result for every halving.
-Negative arguments use the reciprocal. The series contracts by at least .125
+For negative arguments, take the reciprocal of the reduced result before
+squaring. Its stored and exact magnitudes stay at most one. The series contracts by at least .125
 per step after the first; fewer than 2W+2 terms suffice. Per-term truncation
 propagates geometrically. Reconstruction and argument-reduction errors are
 bounded conservatively by `2^k * exp(x) * (3N+6) * u` before taking a reciprocal.
@@ -125,13 +126,24 @@ For x > .125, 2^k < 16x; otherwise k=0.
 Use W = S + floor(x) + 2*d(S+F+floor(x)+1) + 24. The reconstruction factor is
 controlled because `(1+x)*exp(x)*10^-floor(x) < 6`: split x into integer and
 fractional parts and use exp(1) < 3. Consequently `2^k*exp(x)*10^-floor(x)`
-is below 128. Taking the negative-argument reciprocal multiplies the small
-error by at most four and adds one division unit. These bounds, with the
-quadratic digit-count margin, remain below U/2.
+is below 128. These bounds, with the quadratic digit-count margin, remain
+below U/2 for positive arguments.
+
+For negative arguments use W = S + 2*d(T) + 24, with
+T = S + F + floor(x) + 1. Before inversion, the reduced Taylor error and
+argument-reduction error total at most (3N+6)u: halving truncations sum
+to less than 2u at the reduced argument, and exp on [0,.125] has derivative
+below two. Both reduced exponential values are at least one, so inversion
+does not amplify that error and adds at most u. The squaring map on [0,1]
+is 2-Lipschitz, giving total error at most 2^k*(3N+8)u after squaring.
+Here 2^k is at most 16T, N < 2W+2, and W+1 <= 29T. As T < 10^d(T),
+the two digit-count guards and 24 extra places keep the error below U/2,
+even if a stored value underflows to zero. Final rounding adds at most
+another U/2.
 
 For a negative argument with x >= 3*(S+1), return zero directly.
 `exp(-3*(S+1)) < 10^-S` certifies that branch, independent of a vanishing term.
-It also avoids constructing an enormous positive exponential just to invert it.
+It also avoids unnecessary reduction and squaring for very large magnitudes.
 
 ## Logarithm
 
