@@ -884,8 +884,11 @@ private:
    */
   auto parse_opt_statement() -> bool;
 
-  /** Parse statement production.  */
-  void parse_statement();
+  /** Parse a statement that does not contain other statements. */
+  auto parse_leaf_statement(Token const& token) -> bool;
+
+  /** Parse a structured statement with explicit pending bodies. */
+  void parse_structured_statement();
 
   /** Parse a break statement production.  */
   void parse_break_statement();
@@ -893,14 +896,11 @@ private:
   /** Parse a return statement production.  */
   void parse_return_statement();
 
-  /** Parse a for statement production.  */
-  void parse_for_statement();
+  /** Parse a for header and return the branch target for the body exit. */
+  auto parse_for_header() -> std::optional<ExprIndex>;
 
-  /** Parse an if statement production.  */
-  void parse_if_statement();
-
-  /** Parse a while statement production.  */
-  void parse_while_statement();
+  /** Parse an if or while header and return its pending branch index. */
+  auto parse_condition_header(bool loop) -> std::optional<ExprIndex>;
 
   /** Parse function production. */
   void parse_function();

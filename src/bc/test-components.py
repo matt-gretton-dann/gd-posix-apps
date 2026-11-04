@@ -215,6 +215,15 @@ class Components(unittest.TestCase):
                 result = self.invoke('parse', source, iterations='1')
                 self.assertEqual(result['instructions'], 3 + per_level * depth)
 
+    def test_parse_deep_nested_statements(self):
+        depth = 65536
+        for name, source, count in (
+                ('if', 'if (1) ' * depth + '1\n', 2 * depth + 3),
+                ('block', '{\n' * depth + '1\n' + '}\n' * depth, 3)):
+            with self.subTest(shape=name):
+                result = self.invoke('parse', source, iterations='1')
+                self.assertEqual(result['instructions'], count)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
