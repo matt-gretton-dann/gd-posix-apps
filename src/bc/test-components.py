@@ -205,6 +205,16 @@ class Components(unittest.TestCase):
                 self.assertEqual(result['instructions'], expected)
 
 
+    def test_parse_deep_nested_expressions(self):
+        depth = 32768
+        for opening, closing, per_level in (('(', ')', 0), ('f(', ')', 3),
+                                            ('a[', ']', 2), ('sqrt(', ')', 1),
+                                            ('1+(', ')', 2), ('f(1,', ')', 5)):
+            with self.subTest(opening=opening):
+                source = opening * depth + '1' + closing * depth + '\n'
+                result = self.invoke('parse', source, iterations='1')
+                self.assertEqual(result['instructions'], 3 + per_level * depth)
+
     def test_parse_deep_nested_statements(self):
         depth = 65536
         for name, source, count in (
