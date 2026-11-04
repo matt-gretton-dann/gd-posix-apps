@@ -170,6 +170,28 @@ TEMPLATE_TEST_CASE("Knuth normalization can promote inline storage before quotie
   CHECK(divisor == Number(divisor_text, 10));
 }
 
+TEST_CASE("Single-limb division preserves exact digits across the long-input cutoff",
+          "[bc][number][division]")
+{
+  using Number = GD::Bc::BasicNumber<GD::Bc::NumberTraits32>;
+  for (unsigned limbs : {6U, 7U, 8U}) {
+    // For B = 10^9, (B^limbs + 1) / (B - 1) has quotient
+    // B^(limbs-1) + ... + B + 1 and remainder two.
+    Number const dividend("1" + std::string(9 * limbs - 1, '0') + "1", 10);
+    Number const divisor("999999999", 10);
+    std::string digits = "1";
+    for (unsigned i = 1; i < limbs; ++i) {
+      digits += "000000001";
+    }
+    auto quotient = dividend;
+    quotient.divide(divisor, 0);
+    CHECK(quotient == Number(digits, 10));
+    auto remainder = dividend;
+    remainder.modulo(divisor, 0);
+    CHECK(remainder == Number("2", 10));
+  }
+}
+
 TEST_CASE("Large normalized division preserves the exact quotient and remainder",
           "[bc][number][oracle][long-division]")
 {

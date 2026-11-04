@@ -1279,6 +1279,33 @@ public:
   {
     copy_on_write();
 
+#if defined(__APPLE__) && defined(__aarch64__) && defined(__SIZEOF_INT128__)
+    // Apple Arm64 benefits from the high product. Use hardware division
+    // elsewhere, including the x86-64 radix output workloads.
+    if constexpr (std::numeric_limits<NumType>::digits == 32 &&
+                  std::numeric_limits<WideType>::digits == 64) {
+      if (digits_->size() >= 8) {
+        // floor((2^64-1)/div) underestimates 2^64/div by at most one.
+        // Since the numerator is below 2^64, the high product is at most
+        // one below the exact quotient. Correct it using the remainder.
+        auto const reciprocal = std::numeric_limits<WideType>::max() / div;
+        WideType remainder = 0;
+        auto const finish = digits_->rend();
+        for (auto d = digits_->rbegin(); d != finish; ++d) {
+          auto const numerator = remainder * base_ + *d;
+          auto const estimate =
+            static_cast<WideType>((static_cast<__uint128_t>(numerator) * reciprocal) >> 64);
+          auto const residual = numerator - estimate * div;
+          bool const correct = residual >= div;
+          *d = static_cast<NumType>(estimate + correct);
+          remainder = residual - static_cast<WideType>(div) * correct;
+        }
+        tidy();
+        return static_cast<NumType>(remainder);
+      }
+    }
+#endif
+
     WideType carry = 0;
     auto const finish = digits_->rend();
     for (auto d = digits_->rbegin(); d != finish; ++d) {
