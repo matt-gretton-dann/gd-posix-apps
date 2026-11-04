@@ -8,6 +8,7 @@
 #include <type_traits>
 
 #include "bc.hh"
+#include "math-library-image.hh"
 
 namespace GD::Bc::Library {
 auto text() -> std::string_view;
@@ -16,61 +17,99 @@ auto text() -> std::string_view;
 namespace {
 using namespace GD::Bc;
 
-// Encode every byte independently. Numeric escapes also preserve embedded NULs
-// and avoid relying on the source file's execution character encoding.
-void write_string(std::ostream& out, std::string_view value)
-{
-  constexpr std::string_view octal = "01234567";
-  out << "std::string(\"";
-  for (char character : value) {
-    auto const byte = static_cast<unsigned char>(character);
-    out << '\\' << octal[byte >> 6U] << octal[(byte >> 3U) & 7U] << octal[byte & 7U];
-  }
-  out << "\", " << value.size() << ')';
-}
+using namespace GD::Bc::Library;
 
-void write_operand(std::ostream& out, Instruction::Operand const& operand)
+class ImageWriter
 {
+public:
+  explicit ImageWriter(std::ostream& out) : out_(out) {}
+
+  void byte(unsigned value)
+  {
+    if (value > 255) {
+      throw std::runtime_error("math library image byte overflow");
+    }
+    constexpr std::string_view octal = "01234567";
+    if (count_++ % 24 == 0) {
+      out_ << "\"\n\"";
+    }
+    out_ << '\\' << octal[value >> 6U] << octal[(value >> 3U) & 7U] << octal[value & 7U];
+  }
+
+  void word(std::size_t value)
+  {
+    if (value > image_word_max) {
+      throw std::runtime_error("math library image word overflow");
+    }
+    byte(static_cast<unsigned>(value & 255U));
+    byte(static_cast<unsigned>(value >> 8U));
+  }
+
+  void string(std::string_view value)
+  {
+    word(value.size());
+    for (char character : value) {
+      byte(static_cast<unsigned char>(character));
+    }
+  }
+
+private:
+  std::ostream& out_;
+  std::size_t count_{0};
+};
+
+void write_operand(ImageWriter& out, Instruction::Operand const& operand)
+{
+  auto tag = [&out](ImageOperand kind) { out.byte(static_cast<unsigned>(kind)); };
   std::visit(
-    [&out](auto const& value) {
+    [&out, tag](auto const& value) {
       using T = std::remove_cvref_t<decltype(value)>;
       if constexpr (std::is_same_v<T, std::string>) {
-        write_string(out, value);
+        tag(ImageOperand::string);
+        out.string(value);
       }
       else if constexpr (std::is_same_v<T, Instruction::Stream>) {
-        out << "static_cast<Instruction::Stream>(" << static_cast<unsigned>(value) << ')';
+        tag(ImageOperand::stream);
+        out.byte(static_cast<unsigned>(value));
       }
       else if constexpr (std::is_same_v<T, Instruction::Offset>) {
-        out << "Instruction::Offset{" << value << '}';
+        if (value < -image_offset_bias || value >= image_offset_bias) {
+          throw std::runtime_error("math library image offset overflow");
+        }
+        tag(ImageOperand::offset);
+        out.word(static_cast<unsigned>(value + image_offset_bias));
       }
       else if constexpr (std::is_same_v<T, Location>) {
-        out << "Location(";
-        write_string(out, value.file_name());
-        out << ", " << value.line() << ", " << value.column() << ')';
+        tag(ImageOperand::location);
+        out.string(value.file_name());
+        out.word(value.line());
+        out.word(value.column());
       }
       else if constexpr (std::is_same_v<T, VariableMask>) {
+        tag(ImageOperand::mask);
         std::ostringstream variables;
         std::ostringstream arrays;
         value.for_each_variable([&](Letter letter) { variables << letter; });
         value.for_each_array([&](Letter letter) { arrays << letter; });
-        out << "VariableMask(";
-        write_string(out, variables.str());
-        out << ", ";
-        write_string(out, arrays.str());
-        out << ')';
+        out.string(variables.str());
+        out.string(arrays.str());
       }
       else if constexpr (std::is_same_v<T, unsigned>) {
-        out << value << 'U';
+        tag(ImageOperand::unsigned_);
+        out.word(value);
       }
       else if constexpr (std::is_same_v<T, Letter>) {
-        out << "Letter('" << value << "')";
+        tag(ImageOperand::letter);
+        out.byte(static_cast<unsigned>(value));
       }
       else if constexpr (std::is_same_v<T, Variable>) {
-        out << "Variable('" << value.get() << "')";
+        tag(ImageOperand::variable);
+        out.byte(static_cast<unsigned>(value.get()));
       }
       else {
         static_assert(std::is_same_v<T, Array>);
-        out << "Array('" << value.get() << "')";
+        tag(ImageOperand::array);
+        out.byte(static_cast<unsigned>(value.get()));
       }
     },
     operand);
@@ -79,7 +118,9 @@ void write_operand(std::ostream& out, Instruction::Operand const& operand)
 void generate(std::string_view source, std::ostream& out)
 {
   Parser parser(std::make_unique<Lexer>(std::make_unique<StringReader>(source)), true);
-  out << "// Generated from math-library.bc by the ordinary bc parser.\n";
+  out << "// Generated from math-library.bc by the ordinary bc parser.\n"
+         "constexpr char image[] = \"";
+  ImageWriter image(out);
   for (;;) {
     auto const instructions = parser.parse();
     if (parser.seen_quit() ||
@@ -88,22 +129,18 @@ void generate(std::string_view source, std::ostream& out)
         })) {
       throw std::runtime_error("math library contains quit, halt, or a parse error");
     }
-    out << "code.clear();\ncode.reserve(" << instructions->size() << ");\n";
+    image.word(instructions->size());
     for (auto const& instruction : *instructions) {
-      out << "code.emplace_back(static_cast<Instruction::Opcode>("
-          << static_cast<unsigned>(instruction.opcode()) << ')';
+      image.byte(static_cast<unsigned>(instruction.opcode()));
       if (instruction.has_op1()) {
-        out << ", ";
-        write_operand(out, instruction.op1());
+        write_operand(image, instruction.op1());
       }
       if (instruction.has_op2()) {
-        out << ", ";
-        write_operand(out, instruction.op2());
+        write_operand(image, instruction.op2());
       }
-      out << ");\n";
     }
-    out << "if (!vm.execute(code)) { return; }\n";
     if (!instructions->empty() && instructions->back().opcode() == Instruction::Opcode::eof) {
+      out << "\";\n";
       return;
     }
   }

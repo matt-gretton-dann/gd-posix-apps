@@ -341,7 +341,8 @@ revisions are explicit checkpoints; later source changes require fresh checks.
 ## Build-time parser experiment
 
 `ENABLE_BC_PREPARSED_LIBRARY=ON` builds a native generator that parses the
-same embedded POSIX source and emits the ordinary instruction operands.
+same embedded POSIX source and encodes the ordinary instruction operands
+in a compact, build-local byte image.
 At runtime the loader constructs fresh instructions for each input item
 and passes them through the normal verifier and VM. It retains the parser's
 item boundaries and source locations. The default and cross builds load
@@ -355,3 +356,11 @@ and Bessel ratios were 0.972 and 0.975. The no-library ratio was 0.986,
 and this run had no separate A/A control. The executable grew from
 567232 to 735296 bytes. These measurements leave the source loader as the
 default.
+
+The compact encoding reduced the executable to 583296 bytes and the
+instruction image to 10089 bytes. In a second 30-pair comparison with both
+image implementations and the source loader, the compact preload ratio was
+0.962 [0.957, 0.970]. The generated-statement ratio was 0.960 [0.955, 0.969].
+The compact no-library ratio was 0.988 [0.978, 1.008]. Both image builds
+matched the source loader's output on the timed cases. Both language modes
+also passed the math CLI checks and regenerated the compact image exactly.
