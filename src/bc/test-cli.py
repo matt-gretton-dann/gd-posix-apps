@@ -98,6 +98,21 @@ class CliTests(unittest.TestCase):
     def test_quit_with_open_stdin(self):
         self.run_bc("1+1\nquit\n", "2\n", keep_open=True)
 
+    @unittest.skipUnless(os.name == "posix", "requires a POSIX directory descriptor")
+    def test_stdin_read_error(self):
+        with tempfile.TemporaryDirectory() as directory:
+            descriptor = os.open(directory, os.O_RDONLY)
+            try:
+                result = subprocess.run(
+                    [BC], stdin=descriptor, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    universal_newlines=True, timeout=2, env=dict(os.environ, LC_ALL="C"),
+                )
+            finally:
+                os.close(descriptor)
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("Error:-:1:1: Abort: File system error", result.stderr)
+
     def test_stdin_eof_across_explicit_input_operands(self):
         with tempfile.TemporaryDirectory() as directory:
             later = Path(directory) / "later.bc"
