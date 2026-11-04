@@ -1441,6 +1441,12 @@ auto GD::Bc::Details::InstructionPack::execute_typed() -> std::pair<Number, bool
     }
     case O::quit:
       std::exit(static_cast<int>(instruction.first.index));  // NOLINT(concurrency-mt-unsafe)
+    case O::load_scalar:
+      numbers[instruction.result] = vm_->variable(Variable(instruction.first.letter));
+      break;
+    case O::store_scalar:
+      vm_->variable(Variable(instruction.first.letter), numbers[instruction.second.index]);
+      break;
     case O::load_number: {
       auto& destination = numbers[instruction.result];
       std::visit(

@@ -225,6 +225,18 @@ auto lower_records(Instructions const& code, typename Code::value_type empty, bo
         lowered.first = encode(i, source.op1(), source.opcode() == O::branch);
       if (source.has_op2())
         lowered.second = encode(i, source.op2(), source.opcode() == O::branch_zero);
+      if constexpr (std::is_same_v<typename Code::value_type, TypedExecutableInstruction>) {
+        using T = TypedOpcode;
+        if (lowered.opcode == T::load_number || lowered.opcode == T::store_number) {
+          auto const producer = i + static_cast<I>(std::get<Instruction::Offset>(source.op1()));
+          if (code[producer].opcode() == O::variable) {
+            // The producer denotes a fixed letter, independent of the current
+            // scalar value. Keep its result for any other instruction using it.
+            lowered.first = ExecutableOperand(std::get<Variable>(code[producer].op1()).get());
+            lowered.opcode = lowered.opcode == T::load_number ? T::load_scalar : T::store_scalar;
+          }
+        }
+      }
     }
   });
   if (!representable)
