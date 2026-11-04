@@ -77,11 +77,14 @@ class ProfilingCli(unittest.TestCase):
 
     def test_large_square_root_reports_integer_coefficient_precision(self):
         places = 200
-        counters = self.profile('scale={}\nsqrt(4)\n'.format(places),
-                                '2.' + '0' * places + '\n', numeric_continuations=True)
+        # Use a square with multiple nonzero limbs so Newton stages are needed.
+        root = 12345678901234567890
+        counters = self.profile('scale={}\nsqrt({})\n'.format(places, root * root),
+                                str(root) + '.' + '0' * places + '\n',
+                                numeric_continuations=True)
         events = counters['events']
         width = len(str(counters['limb_base'])) - 1
-        coefficient_digits = places + width + 2
+        coefficient_digits = places + width + 1 + len(str(root))
         self.assertGreater(events['sqrt_precision_stages'], 1)
         self.assertEqual(events['sqrt_working_scale_sum'], 0)
         self.assertEqual(events['division_requests'], events['sqrt_iterations'])
@@ -89,13 +92,13 @@ class ProfilingCli(unittest.TestCase):
         self.assertLess(events['sqrt_root_digits_sum'],
                         coefficient_digits * events['sqrt_iterations'])
 
-    def test_exact_power_seed_does_not_add_newton_requests(self):
+    def test_exact_sparse_root_skips_newton_requests(self):
         places = 200
         events = self.profile('scale={}\nsqrt(1)\n'.format(places),
                               '1.' + '0' * places + '\n',
                               numeric_continuations=True)['events']
-        self.assertLessEqual(events['sqrt_iterations'], 1)
-        self.assertLessEqual(events['division_requests'], 1)
+        self.assertEqual(events['sqrt_iterations'], 0)
+        self.assertEqual(events['division_requests'], 0)
 
     def test_near_square_seed_retains_its_short_newton_path(self):
         places = 256
@@ -109,14 +112,15 @@ class ProfilingCli(unittest.TestCase):
 
     def test_tiny_square_root_avoids_a_redundant_almost_full_stage(self):
         places = 1024
-        value = '.' + '0' * (places - 1) + '4'
-        expected = '0.' + '0' * (places // 2 - 1) + '2' + '0' * (places // 2) + '\n'
+        root = 12345678901
+        value = '.' + str(root * root).zfill(places)
+        expected = '0.' + str(root).zfill(places // 2) + '0' * (places // 2) + '\n'
         # POSIX mode retains the leading zero; extensions mode omits it.
         # Both spellings must retain every exact fractional and trailing digit.
         counters = self.profile('scale=0\nsqrt({})\n'.format(value),
                                 (expected, expected[1:]), numeric_continuations=True)
         width = len(str(counters['limb_base'])) - 1
-        root_digits = places + width + 1 - places // 2 + 1
+        root_digits = places + width + 1 - places // 2 + len(str(root))
         # For this exact square, a balanced geometric prefix ladder plus its
         # short initial convergence stays near twice the final digit budget.
         self.assertLessEqual(counters['events']['sqrt_root_digits_sum'], 2 * root_digits + 64)

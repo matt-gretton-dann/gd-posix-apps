@@ -697,6 +697,14 @@ public:
     return std::max(std::size_t{1}, static_cast<std::size_t>(length));
   }
 
+  // The caller has already located the highest nonzero limb.
+  [[nodiscard]] auto single_nonzero_limb(std::size_t index) const -> NumType
+  {
+    auto const first = digits_->begin();
+    auto const limb = first + index;
+    return std::all_of(first, limb, [](NumType value) { return value == 0; }) ? *limb : 0;
+  }
+
   /** Copy floor(coefficient * 10^growth / 10^drop) without an oversized owner.
    * Cancel shifts first, copy only surviving limbs when shrinking, and size
    * growing storage once. All dimensions are storage-width values.
@@ -2783,6 +2791,8 @@ private:
     }
   }
 
+  static constexpr std::size_t sqrt_prefix_cutoff_ = 128;
+
   // Keep the generic algorithm available for every trait. Native-width entry
   // points below call this same implementation from number-sqrt.cc.
   void sqrt_impl(NumType target_scale)
@@ -2811,6 +2821,13 @@ private:
     NumType const working_scale = target_scale <= std::numeric_limits<NumType>::max() - guards
                                     ? static_cast<NumType>(target_scale + guards)
                                     : target_scale;
+    // With at most two limbs, their contribution to the root width is at
+    // most one limb. Leave ordinary small roots on the Newton path directly.
+    if (working_scale >= sqrt_prefix_cutoff_ - base_log10_ || digits_.coefficient_limbs() > 2) {
+      if (sqrt_sparse_exact(working_scale, target_scale)) {
+        return;
+      }
+    }
     if (sqrt_prefix_if_large(working_scale, target_scale)) {
       return;
     }
@@ -2901,9 +2918,59 @@ private:
     return sqrt_prefix_impl(working_scale, target_scale);
   }
 
+  auto sqrt_sparse_exact(NumType working_scale, NumType target_scale) -> bool
+  {
+    return sqrt_sparse_exact_impl(working_scale, target_scale);
+  }
+
+  auto sqrt_sparse_exact_impl(NumType working_scale, NumType target_scale) -> bool
+  {
+    constexpr auto maximum = std::numeric_limits<std::size_t>::max();
+    auto const first_shift = std::size_t(working_scale - scale_);
+    auto const second_shift = std::size_t(working_scale);
+    if (digits_.coefficient_limbs() > maximum / base_log10_ ||
+        first_shift > maximum - second_shift) {
+      return false;
+    }
+    auto const width = digits_.coefficient_digits();
+    auto const extra = first_shift + second_shift;
+    if (width > maximum - extra || width + extra < 2 * sqrt_prefix_cutoff_ - 1) {
+      return false;
+    }
+
+    // For a one-limb mantissa, factor the result-scale coefficient into
+    // m * 10^shift. Absorb an odd decimal place into m and construct the
+    // result directly only when the bounded mantissa is an exact square.
+    auto const high_limb = (width - 1) / base_log10_;
+    if (auto const limb = digits_.single_nonzero_limb(high_limb); limb != 0) {
+      auto const shift = high_limb * base_log10_ + std::size_t(target_scale - scale_) +
+                         std::size_t(target_scale);
+      auto const mantissa = WideType(limb) * (shift % 2 == 0 ? 1 : 10);
+      WideType low = 1;
+      WideType high = base_;
+      while (high - low > 1) {
+        auto const middle = static_cast<WideType>(low + (high - low) / 2);
+        if (middle * middle <= mantissa) {
+          low = middle;
+        }
+        else {
+          high = middle;
+        }
+      }
+      if (low * low == mantissa) {
+        Details::BasicDigits<Traits> root(static_cast<NumType>(low));
+        grow_coefficient(root, shift / 2);
+        digits_ = std::move(root);
+        scale_ = target_scale;
+        return true;
+      }
+    }
+    return false;
+  }
+
   auto sqrt_prefix_impl(NumType working_scale, NumType target_scale) -> bool
   {
-    constexpr std::size_t cutoff = 128;
+    constexpr auto cutoff = sqrt_prefix_cutoff_;
     constexpr auto maximum = std::numeric_limits<std::size_t>::max();
     auto const limbs = digits_.coefficient_limbs();
     auto const first_shift = std::size_t(working_scale - scale_);
@@ -3204,6 +3271,25 @@ __declspec(noinline)
 [[gnu::noinline]]
 #endif
 auto BasicNumber<NumberTraits32>::sqrt_prefix_if_large(NumType working_scale, NumType target_scale)
+  -> bool;
+
+// Keep the sparse exact constructor outside the native Newton kernel.
+template<>
+#if defined(_MSC_VER)
+__declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+[[gnu::noinline]]
+#endif
+auto BasicNumber<NumberTraits16>::sqrt_sparse_exact(NumType working_scale, NumType target_scale)
+  -> bool;
+
+template<>
+#if defined(_MSC_VER)
+__declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+[[gnu::noinline]]
+#endif
+auto BasicNumber<NumberTraits32>::sqrt_sparse_exact(NumType working_scale, NumType target_scale)
   -> bool;
 
 template<typename Traits>
