@@ -62,13 +62,19 @@ TEMPLATE_TEST_CASE("Recursive workspace stays within planned buffers",
   auto const guard = static_cast<Limb>(TestType::base_ - 1);
   for (std::size_t count : {4U, 5U, 7U, 13U, 32U, 63U}) {
     for (std::size_t shorter : {count, count / 2 + 1, count / 3}) {
-      for (unsigned leading_zero : {0U, 1U}) {
+      for (unsigned shape : {0U, 1U, 2U, 3U}) {
         std::vector<Limb> a(count, guard);
         std::vector<Limb> b(shorter, guard);
-        if (leading_zero != 0) {
+        if (shape == 1) {
           // The planner sees the original extents. Trimming can change both
           // the recursive shape and whether a schoolbook fallback is selected.
           std::fill(b.begin() + static_cast<std::ptrdiff_t>(shorter / 2), b.end(), Limb{0});
+        }
+        if (shape >= 2) {
+          // Even equal-length halves retain their shared high limbs while
+          // these low changes select same-sign and opposite-sign differences.
+          a.front() = 0;
+          b[shape == 2 ? 0 : shorter / 2] = 0;
         }
         auto const size = Kernel::workspace_size(count, 1);
         std::vector<Limb> scratch(size + 2, guard);

@@ -11,6 +11,7 @@
 #include <limits>
 #include <span>
 #include <stdexcept>
+#include <utility>
 
 #include "limb-schoolbook.hh"
 #include "limb-square.hh"
@@ -55,8 +56,43 @@ class LimbProduct
     return trim(result.first(count + 1));
   }
 
-  // Middle = (a0+a1)*(b0+b1)-a0*b0-a1*b1 is nonnegative after
-  // either subtraction. Long leading zero ranges are allowed in either input.
+  static auto has_cancelling_prefix(Input a, Input b) -> bool
+  {
+    // Matching high nonzero limbs predict a shorter difference. Skip the
+    // probe for unequal lengths and padded sparse halves.
+    if (a.size() != b.size() || a.back() == 0 || a.back() != b.back()) {
+      return false;
+    }
+    auto const count = std::max(a.size() / 4, std::size_t{1});
+    return std::equal(a.last(count).begin(), a.end(), b.last(count).begin());
+  }
+
+  // Return the magnitude and sign of a-b. Equal high limbs cancel before
+  // the subtraction, so the recursive middle product can be much smaller.
+  static auto difference(Input a, Input b, Buffer result) -> std::pair<Input, bool>
+  {
+    a = trim(a);
+    b = trim(b);
+    if (a.size() == b.size()) {
+      while (!a.empty() && a.back() == b.back()) {
+        a = a.first(a.size() - 1);
+        b = b.first(b.size() - 1);
+      }
+      if (a.empty()) {
+        return {{}, false};
+      }
+    }
+    bool const negative = a.size() < b.size() || (a.size() == b.size() && a.back() < b.back());
+    if (negative) {
+      std::swap(a, b);
+    }
+    result = result.first(a.size());
+    std::copy(a.begin(), a.end(), result.begin());
+    subtract(result, b);
+    return {trim(result), negative};
+  }
+
+  // Subtract a magnitude no larger than value. Leading zero limbs are allowed.
   static void subtract(Buffer value, Input rhs)
   {
     assert(value.size() >= rhs.size());
@@ -121,10 +157,10 @@ class LimbProduct
 
 public:
   /** Reserve a conservative bound for the largest recursive branch.
-   * Each level uses two sums of at most k limbs and their 2k-limb product,
+   * Each level reserves two k-limb operands and their 2k-limb product,
    * where k=ceil(n/2)+1. Low/high calls reuse the whole buffer sequentially;
    * the middle call uses its suffix. At n>=4, k<n, so the bound terminates.
-   * A three-limb leaf avoids nonshrinking carry sums at tiny split points.
+   * Keep a three-limb leaf at tiny split points.
    */
   static auto workspace_size(std::size_t count, std::size_t split_point) -> std::size_t
   {
@@ -171,16 +207,38 @@ public:
     auto const b_count = std::max(b0.size(), b1.size()) + 1;
     auto const middle_count = a_count + b_count;
     assert(scratch.size() >= 2 * middle_count);
-    auto const a_sum = sum(a0, a1, scratch.first(a_count));
-    // Preserve coefficient identity through the middle square as well.
-    auto const b_sum = a.data() == b.data() && a.size() == b.size()
-                         ? a_sum
-                         : sum(b0, b1, scratch.subspan(a_count, b_count));
     auto const middle = scratch.subspan(middle_count, middle_count);
+    auto const child_scratch = scratch.subspan(2 * middle_count);
     std::fill(middle.begin(), middle.end(), Limb{0});
-    multiply(a_sum, b_sum, middle, scratch.subspan(2 * middle_count), split_point);
-    subtract(middle, low);
-    subtract(middle, high);
+    auto const square = a.data() == b.data() && a.size() == b.size();
+    if (!has_cancelling_prefix(a0, a1) && (square || !has_cancelling_prefix(b0, b1))) {
+      auto const a_sum = sum(a0, a1, scratch.first(a_count));
+      auto const b_sum = square ? a_sum : sum(b0, b1, scratch.subspan(a_count, b_count));
+      multiply(a_sum, b_sum, middle, child_scratch, split_point);
+      subtract(middle, low);
+      subtract(middle, high);
+      accumulate(result.subspan(half), middle);
+      return;
+    }
+    auto const [a_difference, a_negative] = difference(a0, a1, scratch.first(a_count));
+    // Preserve coefficient identity through the middle square as well.
+    auto const [b_difference, b_negative] =
+      square ? std::pair{a_difference, a_negative}
+             : difference(b0, b1, scratch.subspan(a_count, b_count));
+    multiply(a_difference, b_difference, middle, child_scratch, split_point);
+    // Cross coefficient = low + high - (a0-a1)*(b0-b1).
+    if (a_negative == b_negative) {
+      // Use the first two regions again once the difference product is done.
+      auto const cross = scratch.first(middle_count);
+      std::fill(cross.begin(), cross.end(), Limb{0});
+      accumulate(cross, low);
+      accumulate(cross, high);
+      subtract(cross, middle);
+      accumulate(result.subspan(half), cross);
+      return;
+    }
+    accumulate(middle, low);
+    accumulate(middle, high);
     accumulate(result.subspan(half), middle);
   }
 };
