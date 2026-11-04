@@ -17,6 +17,7 @@
 #include "bc-messages.hh"
 
 #include <array>
+#include <bit>
 #include <exception>
 #include <iostream>
 #include <list>
@@ -78,6 +79,9 @@ public:
   auto operator==(char l) const -> bool;
 
 private:
+  friend class VariableMask;
+  struct EncodedIndex {};
+  Letter(unsigned index, EncodedIndex) : letter_(index) {}
   static auto encode(char l) -> unsigned;
   unsigned letter_;  ///< The letter.
 };
@@ -548,15 +552,11 @@ private:
   template<typename Fn>
   static void for_each_internal(Fn fn, ::uint32_t mask)
   {
-    /* Can't assume letters are contiguous code-points.  */
-    std::string_view const letters = "abcdefghijklmnopqrstuvwxyz";
-    std::string_view::const_iterator letter = letters.begin();
-    while (letter != letters.end() && mask != 0) {
-      if (mask & 1) {
-        fn(Letter(*letter));
-      }
-      mask >>= 1;
-      ++letter;
+    // Bit positions are already Letter indices, independent of character codes.
+    while (mask != 0) {
+      auto const index = static_cast<unsigned>(std::countr_zero(mask));
+      fn(Letter(index, Letter::EncodedIndex{}));
+      mask &= mask - 1U;
     }
   }
 
