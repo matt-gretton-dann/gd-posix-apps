@@ -23,3 +23,19 @@ matched screen after enabling scalar function bodies measured calls at
 0.909 on holdout. An earlier screen without function-body lowering put
 the scalar loops near parity. These are local checked observations with
 no independent A/A rebuild. The option defaults off.
+
+The first [same-image Linux comparison](https://github.com/matt-gretton-dann/gd-posix-apps/actions/runs/41828805835)
+reproduced the stack loop and high-comparison losses on EPYC 7763.
+Sparse arrays remained near parity in both modes. An
+[in-place operand follow-up](https://github.com/matt-gretton-dann/gd-posix-apps/actions/runs/41829468608)
+on EPYC 9V74 checked 480 observations. Stack/register ratios were
+0.897 for calls in both presets, 0.925/0.911 for recursion, and
+0.966/0.963 for the loop. The full-loop and high-comparison intervals
+were wider than their holdout counterparts. Both modes used the same
+timing executable within each run. The hosts differed between runs, so
+the change across runs does not isolate the effect of the code edit.
+
+The next lowering combines an adjacent scalar comparison and conditional
+branch when the branch has no separate entry. It consumes the same two
+operands without constructing a numeric Boolean or dispatching a second
+instruction. Non-fused comparisons still produce a numeric result.

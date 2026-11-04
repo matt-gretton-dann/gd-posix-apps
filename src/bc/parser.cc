@@ -8,6 +8,7 @@
 
 #include "bc-messages.hh"
 
+#include <array>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -16,6 +17,32 @@
 #include <vector>
 
 #include "bc.hh"
+
+namespace {
+using TokenType = GD::Bc::Token::Type;
+using Opcode = GD::Bc::Instruction::Opcode;
+
+struct BinaryOperator
+{
+  Opcode opcode{};
+  unsigned precedence{};
+  unsigned right_precedence{};
+};
+
+// Zero precedence marks every token outside the arithmetic grammar. The
+// right operand of ^ admits another ^, whereas the left-associative
+// operators require strictly higher precedence on their right.
+constexpr auto binary_operators = [] {
+  std::array<BinaryOperator, static_cast<std::size_t>(TokenType::semicolon) + 1> table{};
+  table[static_cast<std::size_t>(TokenType::add)] = {Opcode::add, 1, 2};
+  table[static_cast<std::size_t>(TokenType::subtract)] = {Opcode::subtract, 1, 2};
+  table[static_cast<std::size_t>(TokenType::multiply)] = {Opcode::multiply, 2, 3};
+  table[static_cast<std::size_t>(TokenType::divide)] = {Opcode::divide, 2, 3};
+  table[static_cast<std::size_t>(TokenType::modulo)] = {Opcode::modulo, 2, 3};
+  table[static_cast<std::size_t>(TokenType::power)] = {Opcode::power, 3, 3};
+  return table;
+}();
+}  // namespace
 
 auto GD::Bc::operator==(Parser::ExprIndex const& lhs, Parser::ExprIndex const& rhs) -> bool
 {
@@ -901,14 +928,7 @@ auto GD::Bc::Parser::parse_opt_assign_expression(POPEFlags flags) -> GD::Bc::Par
     }
   }
 
-  /* If we've reached here we're definitely some form of expression and we have its left hand
-   * side. We just need to walk up the parsing stack to see what are.
-   */
-  auto result = parse_power_expression(primary_expr);
-  result = parse_mul_expression(result);
-  result = parse_add_expression(result);
-
-  return result;
+  return parse_binary_expression(primary_expr, 1);
 }
 
 auto GD::Bc::Parser::parse_assign_expression(POPEFlags flags) -> GD::Bc::Parser::ExprIndex
@@ -921,81 +941,21 @@ auto GD::Bc::Parser::parse_assign_expression(POPEFlags flags) -> GD::Bc::Parser:
   return idx;
 }
 
-auto GD::Bc::Parser::parse_add_expression() -> GD::Bc::Parser::ExprIndex
+auto GD::Bc::Parser::parse_binary_expression(ExprIndex lhs, unsigned minimum_precedence)
+  -> ExprIndex
 {
-  return parse_add_expression(parse_mul_expression());
-}
-
-auto GD::Bc::Parser::parse_add_expression(GD::Bc::Parser::ExprIndex lhs)
-  -> GD::Bc::Parser::ExprIndex
-{
-  /* add_expression : add_expression ADD_OP mul_expression | mul_expression */
-
-  while (lexer_->peek().is_add_op()) {
-    Token::Type const type = lexer_->peek().type();
+  while (true) {
+    auto const token = static_cast<std::size_t>(lexer_->peek().type());
+    if (token >= binary_operators.size())
+      return lhs;
+    auto const operation = binary_operators[token];
+    if (operation.precedence < minimum_precedence)
+      return lhs;
     lexer_->chew();
-    ExprIndex const rhs = parse_mul_expression();
-    switch (type) {
-    case Token::Type::add:
-      lhs = insert_arith(Instruction::Opcode::add, lhs, rhs);
-      break;
-    case Token::Type::subtract:
-      lhs = insert_arith(Instruction::Opcode::subtract, lhs, rhs);
-      break;
-    default:
-      abort();
-    }
+    auto rhs = parse_unary_minus_expression();
+    rhs = parse_binary_expression(rhs, operation.right_precedence);
+    lhs = insert_arith(operation.opcode, lhs, rhs);
   }
-  return lhs;
-}
-
-auto GD::Bc::Parser::parse_mul_expression() -> GD::Bc::Parser::ExprIndex
-{
-  return parse_mul_expression(parse_power_expression());
-}
-
-auto GD::Bc::Parser::parse_mul_expression(GD::Bc::Parser::ExprIndex lhs)
-  -> GD::Bc::Parser::ExprIndex
-{
-  /* mul_expression : mul_expression MUL_OP power_expression | power_expression */
-
-  while (lexer_->peek().is_mul_op()) {
-    Token::Type const type = lexer_->peek().type();
-    lexer_->chew();
-    ExprIndex const rhs = parse_power_expression();
-    switch (type) {
-    case Token::Type::multiply:
-      lhs = insert_arith(Instruction::Opcode::multiply, lhs, rhs);
-      break;
-    case Token::Type::divide:
-      lhs = insert_arith(Instruction::Opcode::divide, lhs, rhs);
-      break;
-    case Token::Type::modulo:
-      lhs = insert_arith(Instruction::Opcode::modulo, lhs, rhs);
-      break;
-    default:
-      abort();
-    }
-  }
-  return lhs;
-}
-
-auto GD::Bc::Parser::parse_power_expression() -> GD::Bc::Parser::ExprIndex
-{
-  return parse_power_expression(parse_unary_minus_expression());
-}
-
-auto GD::Bc::Parser::parse_power_expression(GD::Bc::Parser::ExprIndex lhs)
-  -> GD::Bc::Parser::ExprIndex
-{
-  /* power_expression : unary_minus_expression '^' power_expression | unary_minus_expression */
-
-  while (lexer_->peek() == Token::Type::power) {
-    lexer_->chew();
-    ExprIndex const rhs = parse_power_expression();
-    lhs = insert_arith(Instruction::Opcode::power, lhs, rhs);
-  }
-  return lhs;
 }
 
 auto GD::Bc::Parser::parse_unary_minus_expression() -> GD::Bc::Parser::ExprIndex

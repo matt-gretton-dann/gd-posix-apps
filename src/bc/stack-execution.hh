@@ -19,7 +19,8 @@ struct StackInstruction
 {
   std::uint16_t operand{};
   std::uint8_t opcode{};
-  bool reversed{};
+  bool reversed : 1 {};
+  bool branch_on_false : 1 {};
 };
 
 struct StackCode

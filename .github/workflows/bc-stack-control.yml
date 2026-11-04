@@ -9,20 +9,32 @@ permissions:
 
 jobs:
   compare:
-    runs-on: ubuntu-24.04
+    runs-on: windows-2025
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Establish native MSVC environment
+        shell: pwsh
+        run: |
+          $installation = & "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe" -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (!$installation) { throw 'Native x64 MSVC is unavailable' }
+          $variables = & cmd /c "`"$installation\Common7\Tools\VsDevCmd.bat`" -arch=x64 -host_arch=x64 >nul && set"
+          if ($LASTEXITCODE) { throw 'Cannot initialize MSVC' }
+          foreach ($line in $variables) {
+            if ($line -match '^(PATH|INCLUDE|LIB|LIBPATH|VCToolsInstallDir|VCINSTALLDIR|VSINSTALLDIR|WindowsSdkDir|WindowsSDKVersion|UniversalCRTSdkDir|UCRTVersion|Platform)=(.*)$') {
+              "$($matches[1])=$($matches[2])" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            }
+          }
       - name: Compare both execution modes inside one executable
         shell: bash
         run: |
           set -euo pipefail
           mkdir evidence
           git rev-parse HEAD > evidence/revision.txt
-          c++ --version > evidence/compiler.txt
-          lscpu > evidence/cpu.txt
+          export CC=cl CXX=cl
+          powershell.exe -NoProfile -Command "Get-CimInstance Win32_Processor | Select-Object Name,NumberOfCores,NumberOfLogicalProcessors | Format-List" > evidence/cpu.txt
           for role in independent image; do
             option=OFF
             if [[ $role == image ]]; then option=ON; fi
@@ -35,9 +47,9 @@ jobs:
           done
           for mode in 0 1; do
             GD_BC_STACK_CONTROL_REGISTER="$mode" \
-              python3 src/bc/test-vm-cli.py build-image/src/bc/bc --extensions ON
+              python src/bc/test-vm-cli.py build-image/src/bc/bc.exe --extensions ON
           done
-          python3 - <<'PY'
+          python - <<'PY'
           import hashlib
           import json
           import os
@@ -48,22 +60,22 @@ jobs:
 
           evidence = Path('evidence')
           roles = []
-          for name in ('independent', 'registers', 'stack'):
+          for name in ('independent', 'registers', 'stack', 'register-aa'):
               role = 'independent' if name == 'independent' else 'image'
-              binary = Path('build-' + role, 'src/bc/bc').resolve()
+              binary = Path('build-' + role, 'src/bc/bc.exe').resolve()
               commands = (evidence / (role + '-compile.json')).read_text()
               assert ('GD_BC_STACK_EXECUTION=1' in commands) == (role == 'image')
               roles.append(dict(name=name, argv=[str(binary)], metadata=dict(
                   binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),
-                  register_control=name == 'registers')))
-          assert roles[1]['metadata']['binary_sha256'] == roles[2]['metadata']['binary_sha256']
+                  register_control=name in ('registers', 'register-aa'))))
+          assert len({role['metadata']['binary_sha256'] for role in roles[1:]}) == 1
           (evidence / 'implementations.json').write_text(json.dumps(dict(implementations=roles)))
           bench = runpy.run_path('src/bc/scripts/bench-bc.py')
           main = bench['main']
           checked = bench['run_checked']
 
           def run_checked(implementation, case, timeout, program_path=None):
-              mode = '1' if implementation['name'] == 'registers' else '0'
+              mode = '1' if implementation['name'] in ('registers', 'register-aa') else '0'
               with patch.dict(os.environ, GD_BC_STACK_CONTROL_REGISTER=mode):
                   return checked(implementation, case, timeout, program_path)
 
@@ -71,13 +83,22 @@ jobs:
           for preset in ('full', 'holdout'):
               cases = bench['corpus'](preset, listing=True)
               prefixes = ('loop_', 'calls_', 'recursion_', 'array_', 'sparse_array_',
-                          'compare_high_', 'streaming_statements_', 'frontend_definitions_')
+                          'compare_high_', 'streaming_statements_', 'frontend_definitions_',
+                          'ibase_literal_flip_', 'decimal_input_', 'binary_input_', 'fibonacci_')
               selected = [part for case in cases if case['name'].startswith(prefixes)
                           for part in ('--workload', case['name'])]
               sys.argv = ['bench-bc.py', '--config', str(evidence / 'implementations.json'),
                           '--output', str(evidence / preset), '--preset', preset,
                           '--reference', 'registers', '--seed', '207530', *selected]
               assert main() == 0
+          for role in roles:
+              role['argv'].append('-l')
+          (evidence / 'math.json').write_text(json.dumps(dict(implementations=roles)))
+          sys.argv = ['bench-bc.py', '--config', str(evidence / 'math.json'),
+                      '--output', str(evidence / 'math-quick'), '--suite', 'math',
+                      '--preset', 'quick', '--reference', 'registers', '--seed', '207530',
+                      '--calibrate-seconds', '0.05']
+          assert main() == 0
           PY
       - uses: actions/upload-artifact@v7
         if: always()

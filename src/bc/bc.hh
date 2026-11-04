@@ -993,38 +993,8 @@ private:
    */
   auto parse_incr_decr_expression() -> ExprIndex;
 
-  /** \brief      Parse an add expression
-   *  \return     Index of result
-   */
-  auto parse_add_expression() -> ExprIndex;
-
-  /** \brief      Parse a mul expression
-   *  \return     Index of result
-   */
-  auto parse_mul_expression() -> ExprIndex;
-
-  /** \brief      Parse a power expression
-   *  \return     Index of result, may be \a lhs if this isn't a power expression.
-   */
-  auto parse_power_expression() -> ExprIndex;
-
-  /** \brief      Parse an add expression
-   *  \param  lhs Left hand side of expression
-   *  \return     Index of result, may be \a lhs if this isn't an add expression.
-   */
-  auto parse_add_expression(ExprIndex lhs) -> ExprIndex;
-
-  /** \brief      Parse a mul expression
-   *  \param  lhs Left hand side of expression
-   *  \return     Index of result, may be \a lhs if this isn't a mul expression.
-   */
-  auto parse_mul_expression(ExprIndex lhs) -> ExprIndex;
-
-  /** \brief      Parse a power expression
-   *  \param  lhs Left hand side of expression
-   *  \return     Index of result, may be \a lhs if this isn't a power expression.
-   */
-  auto parse_power_expression(ExprIndex lhs) -> ExprIndex;
+  /** Parse binary operators at or above the given precedence. */
+  auto parse_binary_expression(ExprIndex lhs, unsigned minimum_precedence) -> ExprIndex;
 
   /** \brief        Parse primary and named expressions
    *  \param  flags Bit mask of flags - default parse primary and named expressions
