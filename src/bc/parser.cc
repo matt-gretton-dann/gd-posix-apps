@@ -861,9 +861,9 @@ auto GD::Bc::Parser::parse_expression(POPEFlags flags) -> GD::Bc::Parser::ExprIn
 struct GD::Bc::Parser::Primary
 {
   ExprIndex result = ExprIndex::missing();
-  std::optional<TokenType> opener;
+  std::optional<TokenType> opener{};
   Letter letter{'a'};
-  std::optional<Location> location;
+  std::optional<Location> location{};
 };
 
 auto GD::Bc::Parser::begin_primary(TokenType token) -> Primary
