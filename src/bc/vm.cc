@@ -2291,11 +2291,6 @@ auto execute_stack(VMState& vm, Instructions const& source, StackCode const& cod
   using Op = Instruction::Opcode;
   std::vector<Number> stack;
   stack.reserve(code.depth);
-  auto const pop = [&stack] {
-    auto value = std::move(stack.back());
-    stack.pop_back();
-    return value;
-  };
   for (std::size_t pc = 0; pc < code.instructions.size();) {
     if (have_been_interrupted.test(std::memory_order_relaxed))
       return {Number(0), true};
@@ -2312,13 +2307,15 @@ auto execute_stack(VMState& vm, Instructions const& source, StackCode const& cod
       stack.push_back(vm.variable(variable()));
       break;
     case Op::store:
-      vm.variable(variable(), pop());
+      vm.variable(variable(), stack.back());
+      stack.pop_back();
       break;
     case Op::push_param_mark:
       vm.push_param_pack();
       break;
     case Op::push_param:
-      vm.push_param(pop());
+      vm.push_param(stack.back());
+      stack.pop_back();
       break;
     case Op::pop_param_mark:
       vm.pop_param_pack();
@@ -2345,14 +2342,18 @@ auto execute_stack(VMState& vm, Instructions const& source, StackCode const& cod
       break;
     case Op::print: {
       auto& stream = vm.stream(static_cast<Instruction::Stream>(instruction.operand));
-      pop().output(stream, vm.obase(), 0);
+      stack.back().output(stream, vm.obase(), 0);
+      stack.pop_back();
       stream << '\n';
       break;
     }
-    case Op::branch_zero:
-      if (!pop().is_zero())
-        break;
-      [[fallthrough]];
+    case Op::branch_zero: {
+      auto const zero = stack.back().is_zero();
+      stack.pop_back();
+      if (zero)
+        pc = instruction.operand;
+      break;
+    }
     case Op::branch:
       pc = instruction.operand;
       break;
@@ -2360,12 +2361,12 @@ auto execute_stack(VMState& vm, Instructions const& source, StackCode const& cod
       stack.push_back(vm.pop_param());
       break;
     case Op::return_:
-      return {pop(), true};
+      return {std::move(stack.back()), true};
     case Op::eof:
       return {Number(0), false};
     default: {
-      auto top = pop();
-      auto& bottom = stack.back();
+      auto& top = stack.back();
+      auto& bottom = stack[stack.size() - 2];
       auto& lhs = instruction.reversed ? top : bottom;
       auto const& rhs = instruction.reversed ? bottom : top;
       switch (op) {
@@ -2404,6 +2405,7 @@ auto execute_stack(VMState& vm, Instructions const& source, StackCode const& cod
       }
       if (instruction.reversed)
         bottom = std::move(top);
+      stack.pop_back();
       break;
     }
     }
