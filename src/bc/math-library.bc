@@ -189,6 +189,16 @@ define l(x) {
     if (m>0) x=x/q
     h=m*l(10)
   }
+  /* Divide by two in this band to enter [.8,1.2] without roots.
+     The 80-place lower bound is sufficient at working scales up to 64. */
+  if (w<=64) {
+    if (x>=1.6) {
+      if (x<=2.4) {
+        x=x/2
+        h+=0.69314718055994530941723212145817656807550013436025525412068000949339362196969471/1
+      }
+    }
+  }
   /* At high precision, more roots cost less than a longer series. */
   q=.8
   r=1.2
