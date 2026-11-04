@@ -1,0 +1,127 @@
+diff --git a/src/bc/CMakeLists.txt b/src/bc/CMakeLists.txt
+index afa6d6f7..51062901 100644
+--- a/src/bc/CMakeLists.txt
++++ b/src/bc/CMakeLists.txt
+@@ -7,0 +8,12 @@ add_library(bc-language-mode INTERFACE)
++option(ENABLE_BC_GMP_MULTIPLY "Experiment with GMP for large balanced bc products" OFF)
++if(ENABLE_BC_GMP_MULTIPLY)
++  find_path(BC_GMP_INCLUDE_DIR gmpxx.h REQUIRED)
++  find_library(BC_GMP_LIBRARY gmp REQUIRED)
++  find_library(BC_GMPXX_LIBRARY gmpxx REQUIRED)
++  add_library(bc-gmp-multiply STATIC gmp-multiply.cc)
++  target_include_directories(bc-gmp-multiply SYSTEM PRIVATE "${BC_GMP_INCLUDE_DIR}")
++  target_link_libraries(bc-gmp-multiply PRIVATE "${BC_GMPXX_LIBRARY}" "${BC_GMP_LIBRARY}")
++  target_compile_features(bc-gmp-multiply PRIVATE cxx_std_20)
++  target_compile_definitions(bc-language-mode INTERFACE GD_BC_GMP_MULTIPLY=1)
++  target_link_libraries(bc-language-mode INTERFACE bc-gmp-multiply)
++endif()
+diff --git a/src/bc/gmp-multiply.cc b/src/bc/gmp-multiply.cc
+new file mode 100644
+index 00000000..26de18a7
+--- /dev/null
++++ b/src/bc/gmp-multiply.cc
+@@ -0,0 +1,45 @@
++/** Experimental GMP multiplication of base-10^9 coefficients.
++ * SPDX-License-Identifier: Apache-2.0
++ */
++#include "gmp-multiply.hh"
++
++#include <algorithm>
++#include <charconv>
++#include <string>
++
++#include <gmpxx.h>
++
++namespace {
++constexpr std::size_t limb_digits = 9;
++
++auto coefficient(std::span<std::uint32_t const> limbs) -> mpz_class
++{
++  std::string text(limbs.size() * limb_digits, '0');
++  auto* end = text.data() + text.size();
++  for (auto limb : limbs) {
++    char digits[limb_digits];
++    auto const result = std::to_chars(digits, digits + limb_digits, limb);
++    std::copy_backward(digits, result.ptr, end);
++    end -= limb_digits;
++  }
++  return mpz_class(text, 10);
++}
++}
++
++auto GD::Bc::Details::gmp_multiply(std::span<std::uint32_t const> lhs,
++                                  std::span<std::uint32_t const> rhs)
++  -> std::vector<std::uint32_t>
++{
++  mpz_class const product = coefficient(lhs) * coefficient(rhs);
++  auto const text = product.get_str();
++  std::vector<std::uint32_t> result;
++  result.reserve(text.size() / limb_digits + 1);
++  for (auto end = text.size(); end != 0;) {
++    auto const begin = end - std::min(end, limb_digits);
++    std::uint32_t limb{};
++    std::from_chars(text.data() + begin, text.data() + end, limb);
++    result.push_back(limb);
++    end = begin;
++  }
++  return result;
++}
+diff --git a/src/bc/gmp-multiply.hh b/src/bc/gmp-multiply.hh
+new file mode 100644
+index 00000000..1ff2cc9c
+--- /dev/null
++++ b/src/bc/gmp-multiply.hh
+@@ -0,0 +1,17 @@
++/** Experimental GMP multiplication of base-10^9 coefficients.
++ * SPDX-License-Identifier: Apache-2.0
++ */
++#ifndef SRC_BC_GMP_MULTIPLY_HH_INCLUDED
++#define SRC_BC_GMP_MULTIPLY_HH_INCLUDED
++
++#include <cstdint>
++#include <span>
++#include <vector>
++
++namespace GD::Bc::Details {
++/** Multiply nonempty little-endian base-10^9 coefficients exactly. */
++auto gmp_multiply(std::span<std::uint32_t const> lhs, std::span<std::uint32_t const> rhs)
++  -> std::vector<std::uint32_t>;
++}
++
++#endif
+diff --git a/src/bc/number.hh b/src/bc/number.hh
+index 8add039a..8a70917e 100644
+--- a/src/bc/number.hh
++++ b/src/bc/number.hh
+@@ -39,0 +40,4 @@
++#ifdef GD_BC_GMP_MULTIPLY
++#  include "gmp-multiply.hh"
++#endif
++
+@@ -1540,0 +1545,13 @@ private:
++#ifdef GD_BC_GMP_MULTIPLY
++    if constexpr (std::is_same_v<Traits, NumberTraits32>) {
++      auto const lhs_size = static_cast<std::size_t>(lhs_end - lhs_begin);
++      auto const rhs_size = static_cast<std::size_t>(rhs_end - rhs_begin);
++      // Keep the generic kernel for small and highly unequal products.
++      constexpr std::size_t min_gmp_limbs = 8192;
++      auto const small = std::min(lhs_size, rhs_size);
++      if (small >= min_gmp_limbs && small >= std::max(lhs_size, rhs_size) / 2) {
++        auto const result = gmp_multiply({lhs_begin, lhs_size}, {rhs_begin, rhs_size});
++        return BasicDigits(result.data(), result.data() + result.size());
++      }
++    }
++#endif
+diff --git a/src/bc/test-cli.py b/src/bc/test-cli.py
+index e19d3b80..31b8ffae 100644
+--- a/src/bc/test-cli.py
++++ b/src/bc/test-cli.py
+@@ -50,0 +51,8 @@ class CliTests(unittest.TestCase):
++    def test_large_coefficient_square(self):
++        # (10^n - 1)^2 = (10^n - 2) * 10^n + 1.
++        # Both operands cross the experimental GMP threshold when enabled.
++        n = 74000
++        operand = "9" * n
++        expected = "9" * (n - 1) + "8" + "0" * (n - 1) + "1"
++        self.run_bc(f"a={operand}\nif (a*a == {expected}) 42\n", "42\n")
++

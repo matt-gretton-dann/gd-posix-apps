@@ -1,0 +1,34 @@
+from pathlib import Path
+import hashlib,json,random,statistics,subprocess,sys,time
+sys.set_int_max_str_digits(0)
+root=Path(__file__).parent
+roles={name:root/name/'src/bc/bc' for name in ('base','gmp')}
+rng=random.Random(204230)
+records=[]
+for n,m,sa,sb,scale,negative in [(70000,70000,0,0,0,False),(75000,75000,19,21,25,True),
+                                (100000,100000,0,0,0,False),(100000,1000,0,0,0,False),
+                                (150000,150000,0,0,0,False)]:
+ def digits(k):
+  return '9'+''.join(str(rng.randrange(10)) for _ in range(k-1))
+ a,b=digits(n),digits(m)
+ def fmt(s,places):
+  return s[:-places]+'.'+s[-places:] if places else s
+ operand_a=('-' if negative else '')+fmt(a,sa)
+ operand_b=fmt(b,sb)
+ actual_scale=min(sa+sb,max(sa,sb,scale))
+ coefficient=int(a)*int(b)//10**(sa+sb-actual_scale)
+ expected=(('-' if negative else '')+fmt(str(coefficient),actual_scale)).encode()
+ data=f'scale={scale}\na = {operand_a}\nb = {operand_b}\na*b\n'.encode()
+ ratios=[]
+ for pair in range(8):
+  elapsed={}
+  order=list(roles);rng.shuffle(order)
+  for role in order:
+   start=time.perf_counter_ns()
+   result=subprocess.run([roles[role]],input=data,capture_output=True,timeout=45)
+   elapsed[role]=time.perf_counter_ns()-start
+   assert result.returncode == 0 and not result.stderr and result.stdout.replace(b'\\\n',b'').strip()==expected,(role,n,m,result.stderr)
+  if pair:ratios.append(elapsed['gmp']/elapsed['base'])
+  records.append(dict(digits=[n,m],scales=[sa,sb,scale],pair=pair,order=order,elapsed_ns=elapsed,output_sha256=hashlib.sha256(expected).hexdigest()))
+ print(n,m,sa,sb,round(statistics.median(ratios),5),flush=True)
+(root/'cli-current-main.json').write_text(json.dumps(records,indent=2)+'\n')
