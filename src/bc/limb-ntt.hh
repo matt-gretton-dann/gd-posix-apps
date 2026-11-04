@@ -97,45 +97,33 @@ class LimbNtt
   }
 
   template<std::uint32_t Modulus>
-  static void convolve(std::span<std::uint32_t const> lhs, std::span<std::uint32_t const> rhs,
-                       std::span<std::uint32_t> left, std::span<std::uint32_t> right)
+  static void square_modulo(std::span<std::uint32_t const> limbs, std::span<std::uint32_t> values)
   {
-    unpack(lhs, left);
-    transform<Modulus>(left, false);
-    if (lhs.data() == rhs.data() && lhs.size() == rhs.size()) {
-      for (auto& value : left) {
-        value = product<Modulus>(value, value);
-      }
+    unpack(limbs, values);
+    transform<Modulus>(values, false);
+    for (auto& value : values) {
+      value = product<Modulus>(value, value);
     }
-    else {
-      unpack(rhs, right);
-      transform<Modulus>(right, false);
-      for (std::size_t index = 0; index < left.size(); ++index) {
-        left[index] = product<Modulus>(left[index], right[index]);
-      }
-    }
-    transform<Modulus>(left, true);
+    transform<Modulus>(values, true);
   }
 
 public:
-  static auto eligible(std::size_t lhs, std::size_t rhs) -> bool
+  static auto eligible(std::span<std::uint32_t const> limbs) -> bool
   {
-    auto const shorter = std::min(lhs, rhs);
-    auto const longer = std::max(lhs, rhs);
-    // Exclude small and highly unequal products from the transform experiment.
-    return shorter >= 2048 && longer <= maximum_transform / chunks_per_limb &&
-           shorter + longer <= maximum_transform / chunks_per_limb && longer <= 2 * shorter;
+    // The first measured dense-square win was at 100,000 decimal digits.
+    // Leave sparse inputs on the existing kernel, even at large sizes.
+    return limbs.size() >= 11112 && limbs.size() <= maximum_transform / (2 * chunks_per_limb) &&
+           static_cast<std::size_t>(std::ranges::count(limbs, 0U)) <= limbs.size() / 2;
   }
 
-  static void multiply(std::span<std::uint32_t const> lhs, std::span<std::uint32_t const> rhs,
-                       std::span<std::uint32_t> output)
+  static void square(std::span<std::uint32_t const> limbs, std::span<std::uint32_t> output)
   {
-    assert(eligible(lhs.size(), rhs.size()));
-    assert(output.size() == lhs.size() + rhs.size());
+    assert(eligible(limbs));
+    assert(output.size() == 2 * limbs.size());
     auto const size = std::bit_ceil(chunks_per_limb * output.size());
-    std::vector<std::uint32_t> first(size), second(size), scratch(size);
-    convolve<first_prime>(lhs, rhs, first, scratch);
-    convolve<second_prime>(lhs, rhs, second, scratch);
+    std::vector<std::uint32_t> first(size), second(size);
+    square_modulo<first_prime>(limbs, first);
+    square_modulo<second_prime>(limbs, second);
 
     // Both primes admit every radix-2 length through 2^21, with primitive
     // root 3. A coefficient is at most (2^21 / 2) * 999^2, less than

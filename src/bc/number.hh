@@ -1710,9 +1710,10 @@ private:
     result.digits_->resize(lhs_size + rhs_size, NumType{0});
 #if defined(GD_BC_EXPERIMENT_NTT)
     if constexpr (std::is_same_v<Traits, NumberTraits32>) {
-      if (Details::LimbNtt::eligible(lhs_size, rhs_size)) {
-        Details::LimbNtt::multiply({lhs_begin, lhs_end}, {rhs_begin, rhs_end},
-                                   {result.digits_->begin(), result.digits_->end()});
+      auto const left = std::span<NumType const>(lhs_begin, lhs_end);
+      if (lhs_size == rhs_size && std::to_address(lhs_begin) == std::to_address(rhs_begin) &&
+          Details::LimbNtt::eligible(left)) {
+        Details::LimbNtt::square(left, {result.digits_->begin(), result.digits_->end()});
         result.tidy();
         return result;
       }
