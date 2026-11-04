@@ -23,8 +23,8 @@ auto classify_result(Instructions const& code, Instruction::Index index) -> Resu
 
 // A compact map assigns slots only to value-producing instructions in this
 // execution region. Zero is a shared empty sentinel for non-producers and
-// skipped definition bodies. Producers never share slots with one another;
-// no liveness or control-flow-dependent reuse is inferred here.
+// skipped definition bodies. The persistent function planner can recycle
+// proven block-local numeric slots.
 struct ResultSlotPlan
 {
   using CompactIndex = std::uint32_t;
@@ -49,6 +49,10 @@ struct ResultSlotPlan
 // indices and layouts without a net slot/map payload saving keep the generic
 // identity layout. slot_bytes is the caller's actual result-slot sizeof.
 auto plan_result_slots(Instructions const& code, std::size_t slot_bytes) -> ResultSlotPlan;
+
+// For verified persistent bodies, recycle only numeric values whose uses all
+// follow the producer in the same basic block. Other values own distinct slots.
+auto plan_function_result_slots(Instructions const& code, std::size_t slot_bytes) -> ResultSlotPlan;
 
 // Opcode-specific operands in the verified execution stream. Only the member
 // selected during lowering may be read: data/control operands use index, while

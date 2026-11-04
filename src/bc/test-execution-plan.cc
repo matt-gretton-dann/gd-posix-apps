@@ -152,6 +152,38 @@ TEST_CASE("Producer slots retain forward data references and backedges", "[bc][v
     CHECK(compact.index(i) == (i == 2 ? 1 : 0));
 }
 
+TEST_CASE("Function result slots preserve operands until both reads finish",
+          "[bc][vm][result-slots]")
+{
+  GD::Bc::Instructions code{I(O::number, "7")};
+  for (int term = 0; term < 64; ++term)
+    code.emplace_back(O::add, D(-1), D(-1));
+  code.emplace_back(O::print, D(-1), I::Stream::output);
+  REQUIRE_FALSE(GD::Bc::Details::verify_control_flow(code, false).has_value());
+  auto const slots = GD::Bc::Details::plan_function_result_slots(code, 48);
+  REQUIRE(slots.indices.size() == code.size());
+  CHECK(slots.count == 3);
+  for (I::Index index = 1; index < code.size() - 1; ++index)
+    CHECK(slots.index(index) != slots.index(index - 1));
+}
+
+TEST_CASE("Function result slots pin values used across a branch",
+          "[bc][vm][result-slots]")
+{
+  GD::Bc::Instructions code{I(O::number, "7"), I(O::number, "0"),
+                            I(O::branch_zero, D(-1), D(2)), I(O::number, "1")};
+  for (int term = 0; term < 64; ++term)
+    code.emplace_back(O::number, "9");
+  code.emplace_back(O::print, D(-static_cast<D>(code.size())), I::Stream::output);
+  REQUIRE_FALSE(GD::Bc::Details::verify_control_flow(code, false).has_value());
+  auto const slots = GD::Bc::Details::plan_function_result_slots(code, 48);
+  REQUIRE(slots.indices.size() == code.size());
+  CHECK(slots.count == 3);
+  for (I::Index index = 1; index < code.size() - 1; ++index)
+    if (index != 2)
+      CHECK(slots.index(index) != slots.index(0));
+}
+
 TEST_CASE("Outer result slots exclude every unexecuted definition-body producer",
           "[bc][vm][result-slots]")
 {

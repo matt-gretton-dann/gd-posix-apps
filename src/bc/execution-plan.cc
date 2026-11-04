@@ -150,6 +150,107 @@ auto plan_result_slots(Instructions const& code, std::size_t slot_bytes) -> Resu
 }
 
 namespace {
+template<typename Fn>
+void visit_data_uses(Instruction const& instruction, Instruction::Index pc, Fn&& visit)
+{
+  using O = Instruction::Opcode;
+  auto const opcode = instruction.opcode();
+  if (opcode == O::branch || opcode == O::function_end)
+    return;
+  auto const operand = [&](Instruction::Operand const& value) {
+    if (auto const* offset = std::get_if<Instruction::Offset>(&value))
+      visit(pc + static_cast<Instruction::Index>(*offset));
+  };
+  if (instruction.has_op1())
+    operand(instruction.op1());
+  if (instruction.has_op2() && opcode != O::branch_zero)
+    operand(instruction.op2());
+}
+}  // namespace
+
+auto plan_function_result_slots(Instructions const& code, std::size_t slot_bytes) -> ResultSlotPlan
+{
+  using I = Instruction::Index;
+  using O = Instruction::Opcode;
+  using Compact = ResultSlotPlan::CompactIndex;
+  auto const size = code.size();
+  if (size < 64 || size >= std::numeric_limits<Compact>::max() ||
+      size > std::numeric_limits<std::size_t>::max() / sizeof(Compact) ||
+      slot_bytes <= sizeof(Compact))
+    return plan_result_slots(code, slot_bytes);
+
+  std::vector<bool> leader(size, false);
+  leader[0] = true;
+  auto const mark = [&](I index) {
+    if (index < size)
+      leader[index] = true;
+  };
+  visit_execution_region(code, [&](I i) {
+    auto const opcode = code[i].opcode();
+    if (opcode == O::branch || opcode == O::branch_zero) {
+      auto const& operand = opcode == O::branch ? code[i].op1() : code[i].op2();
+      mark(i + static_cast<I>(std::get<Instruction::Offset>(operand)));
+      mark(i + 1);
+    }
+    else if (opcode == O::return_ || opcode == O::quit || opcode == O::eof ||
+             opcode == O::function_begin || opcode == O::function_end) {
+      mark(i + 1);
+    }
+  });
+
+  std::vector<I> block(size);
+  I current = 0;
+  for (I i = 0; i < size; ++i) {
+    if (leader[i])
+      current = i;
+    block[i] = current;
+  }
+  // A sentinel marks producers that need storage for the entire activation.
+  // Otherwise last[i] is the last static use, or the producer if unused.
+  std::vector<I> last(size, size);
+  visit_execution_region(code, [&](I i) {
+    if (classify_result(code, i) == ResultKind::number)
+      last[i] = i;
+  });
+  visit_execution_region(code, [&](I i) {
+    visit_data_uses(code[i], i, [&](I producer) {
+      if (last[producer] != size)
+        last[producer] = producer < i && block[producer] == block[i] ? i : size;
+    });
+  });
+
+  ResultSlotPlan result;
+  result.indices.resize(size, 0);
+  std::vector<Compact> available;
+  Compact next = 1;
+  visit_execution_region(code, [&](I i) {
+    if (classify_result(code, i) != ResultKind::none) {
+      if (last[i] == size || available.empty()) {
+        result.indices[i] = next++;
+      }
+      else {
+        result.indices[i] = available.back();
+        available.pop_back();
+      }
+    }
+    // Allocate the destination first. An opcode can keep references to its
+    // operands until the destination assignment, even at their last use.
+    auto const retire = [&](I producer) {
+      if (last[producer] == i) {
+        available.push_back(result.indices[producer]);
+        last[producer] = size;
+      }
+    };
+    visit_data_uses(code[i], i, retire);
+    retire(i);
+  });
+  if (next >= size || size - next <= size * sizeof(Compact) / slot_bytes)
+    return plan_result_slots(code, slot_bytes);
+  result.count = next;
+  return result;
+}
+
+namespace {
 // Both layouts preserve source-PC control flow and the same sidecar ownership.
 // Only the opcode and data/result register maps differ.
 template<typename Code, typename Opcode, typename ResultIndex, typename DataIndex>
@@ -451,20 +552,10 @@ auto plan_consumption(Instructions const& code, bool persistent) -> ConsumptionP
              opcode == O::quit || opcode == O::eof) {
       begin_block(i + 1);
     }
-    auto count = [&](Instruction::Operand const& operand) {
-      if (std::holds_alternative<Instruction::Offset>(operand)) {
-        auto const producer = target(i, operand);
-        assert(producer < size);  // NOLINT: verified data operands name results.
-        ++uses[producer];
-      }
-    };
-    // Branch/definition offsets are control metadata, never data uses.
-    if (opcode != O::branch && opcode != O::function_end) {
-      if (code[i].has_op1())
-        count(code[i].op1());
-      if (code[i].has_op2() && opcode != O::branch_zero)
-        count(code[i].op2());
-    }
+    visit_data_uses(code[i], i, [&](I producer) {
+      assert(producer < size);  // NOLINT: verified data operands name results.
+      ++uses[producer];
+    });
   });
   I current = 0;
   for (I i = 0; i < size; ++i) {
