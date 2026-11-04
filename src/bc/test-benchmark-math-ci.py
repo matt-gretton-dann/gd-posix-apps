@@ -102,9 +102,12 @@ class NativeMath(unittest.TestCase):
         for preset in ('full', 'holdout'):
             selected = set(CI.selected_cases(bench, preset, False))
             rows = [row for row in bench.corpus(preset, suite='math') if row['name'] in selected]
-            self.assertEqual(len(rows), 20)
-            self.assertEqual(len({(row['group'], row['parameters']['mode']) for row in rows}), 20)
-            self.assertTrue(all(row['parameters']['scale'] == 100 for row in rows))
+            regular = [row for row in rows if row['parameters']['scale'] == 100]
+            self.assertEqual(len(regular), 20)
+            self.assertEqual(len({(row['group'], row['parameters']['mode']) for row in regular}), 20)
+            extra = [row['parameters'] for row in rows if row['parameters']['scale'] != 100]
+            self.assertEqual([(p['function'], p['mode'], p['scale']) for p in extra],
+                             [('l', 'repeated', 1000)])
             self.assertEqual(len(CI.selected_cases(bench, preset, True)), 60)
 
     def test_roles_pin_both_host_and_library_without_mutating_recipes(self):
