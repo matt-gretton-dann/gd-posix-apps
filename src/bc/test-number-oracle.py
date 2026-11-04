@@ -241,6 +241,10 @@ class NumberOracle(unittest.TestCase):
             inputs += [("4", places) for places in (5000, 10000)]
             square = (10 ** 100 + 37) ** 2
             inputs += [(str(square + offset), 100) for offset in (-1, 0, 1)]
+            # Exercise both decimal parities of the highest limb, and keep
+            # nonsquare mantissas and coefficients with a nonzero low limb.
+            inputs += [("4" + "0" * 360, 37), ("4" + "0" * 352, 37),
+                       ("2" + "0" * 352, 37), ("4" + "0" * 351 + "1", 37)]
             # Input scale exceeds the requested scale; a tiny perfect square
             # also exercises the initial estimate far below one.
             inputs += [("." + "0" * 1023 + "4", 0),
