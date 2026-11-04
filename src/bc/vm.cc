@@ -253,7 +253,15 @@ public:
       // Publish both plans together so a failed allocation leaves the
       // verified definition ready for another preparation attempt.
       auto consumption = plan_consumption(instructions_, true);
+#if defined(GD_BC_RESULT_PLAN_CONTROL)
+      // Compare the two planners in one diagnostic executable with fixed code layout.
+      static bool const block_local = std::getenv("GD_BC_USE_CHAIN_RESULT_PLAN") == nullptr;
+      auto slots = block_local
+                     ? plan_function_result_slots(instructions_, sizeof(ResultSlot), consumption)
+                     : plan_result_slots(instructions_, sizeof(ResultSlot), consumption);
+#else
       auto slots = plan_function_result_slots(instructions_, sizeof(ResultSlot), consumption);
+#endif
       auto layout = prepare_layout(instructions_, std::move(slots), true, true);
       prepared_.emplace(std::move(consumption), std::move(layout));
     }
