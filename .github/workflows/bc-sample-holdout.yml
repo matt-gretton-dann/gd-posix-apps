@@ -1,0 +1,219 @@
+name: bc Clang software profile holdout
+
+on:
+  pull_request:
+    branches: [main]
+    paths: ['.github/workflows/bc-sample-holdout.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Install Clang and perf
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends clang-18 lld-18 llvm-18 linux-tools-generic
+      - name: Build, train and check held-out inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir evidence
+          git rev-parse HEAD > evidence/revision.txt
+          clang++-18 --version > evidence/compiler.txt
+          lscpu > evidence/cpu.txt
+          perf=$(find -L /usr/lib/linux-tools -name perf -type f | sort -V | tail -n 1)
+          test -x "$perf"
+          "$perf" --version > evidence/perf-version.txt
+          export GD_PERF_EXECUTABLE="$perf"
+          export PERF_CONFIG=/dev/null
+
+          # Privilege only the collector and leave the runner's perf policy intact.
+          cat > "$RUNNER_TEMP/bc-perf" <<'WRAPPER'
+          #!/bin/bash
+          set -euo pipefail
+          if [[ $1 == script ]]; then
+            exec "$GD_PERF_EXECUTABLE" "$@"
+          fi
+          args=()
+          data=
+          while [[ $1 != -- ]]; do
+            if [[ $1 == -o ]]; then data=$2; fi
+            args+=("$1")
+            shift
+          done
+          test -n "$data"
+          shift
+          sudo -n /usr/bin/env PERF_CONFIG=/dev/null "$GD_PERF_EXECUTABLE" "${args[@]}" -- \
+            /usr/bin/setpriv --reuid "$(id -u)" --regid "$(id -g)" --init-groups "$@"
+          sudo -n /usr/bin/chown "$(id -u):$(id -g)" "$data"
+          WRAPPER
+          chmod +x "$RUNNER_TEMP/bc-perf"
+
+          # Defer until libbc exists and scope the option to its vm.cc source.
+          cat > "$RUNNER_TEMP/bc-vm-sample.cmake" <<'CMAKE'
+          function(bc_vm_sample)
+            set_property(SOURCE "${CMAKE_SOURCE_DIR}/src/bc/vm.cc" TARGET_DIRECTORY libbc
+              APPEND PROPERTY COMPILE_OPTIONS
+              "-fprofile-sample-use=${CMAKE_SOURCE_DIR}/evidence/training.prof"
+              -Werror=profile-instr-out-of-date)
+            set_property(SOURCE "${CMAKE_SOURCE_DIR}/src/bc/vm.cc" TARGET_DIRECTORY libbc
+              APPEND PROPERTY OBJECT_DEPENDS "${CMAKE_SOURCE_DIR}/evidence/training.prof")
+          endfunction()
+          cmake_language(DEFER CALL bc_vm_sample)
+          CMAKE
+
+          build() {
+            local role=$1
+            local flags='-gline-tables-only -fdebug-info-for-profiling'
+            local extra=()
+            if [[ $role == sampled ]]; then
+              flags+=" -fprofile-sample-use=$PWD/evidence/training.prof -Werror=profile-instr-out-of-date"
+            elif [[ $role == sampled-vm ]]; then
+              extra+=("-DCMAKE_PROJECT_TOP_LEVEL_INCLUDES=$RUNNER_TEMP/bc-vm-sample.cmake")
+            fi
+            /usr/bin/time -p cmake -S . -B "build-$role" -G Ninja \
+              -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+              -DCMAKE_C_COMPILER=clang-18 -DCMAKE_CXX_COMPILER=clang++-18 \
+              -DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld-18 -DIPO_MODE=REQUIRED \
+              -DENABLE_NON_POSIX_EXTENSIONS=ON -DBUILD_TESTING=OFF \
+              -DBC_MULTIPLY_SPLIT_POINT=126 "-DCMAKE_CXX_FLAGS=$flags" "${extra[@]}" \
+              2>&1 | tee "evidence/$role-configure.log"
+            /usr/bin/time -p cmake --build "build-$role" --target bc --parallel 2 \
+              2>&1 | tee "evidence/$role-build.log"
+            cp "build-$role/compile_commands.json" "evidence/$role-compile.json"
+            cp "build-$role/gd-ipo-policy.json" "evidence/$role-ipo.json"
+            python3 src/bc/test-cli.py "build-$role/src/bc/bc" --extensions ON
+            python3 src/bc/test-math-library-cli.py "build-$role/src/bc/bc"
+          }
+
+          config() {
+            python3 - "$@" <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+          import shlex
+          import sys
+
+          evidence = Path('evidence')
+          revision = (evidence / 'revision.txt').read_text().strip()
+          roles = []
+          for role in sys.argv[1:]:
+              commands = (evidence / (role + '-compile.json')).read_bytes()
+              profiled_sources = []
+              for row in json.loads(commands):
+                  flags = row.get('arguments') or shlex.split(row['command'])
+                  if any(flag.startswith('-fprofile-sample-use=') for flag in flags):
+                      profiled_sources.append(row['file'])
+                  if row['file'].endswith('/src/bc/vm.cc'):
+                      vm_flags = flags
+              assert '-O3' in vm_flags and '-flto=thin' in vm_flags
+              if role == 'sampled-vm':
+                  assert len(profiled_sources) == 1 and profiled_sources[0].endswith('/src/bc/vm.cc')
+              elif role == 'sampled':
+                  assert len(profiled_sources) > 1 and any(
+                      f.endswith('/src/bc/vm.cc') for f in profiled_sources)
+              else:
+                  assert not profiled_sources
+              binary = Path('build-' + role, 'src/bc/bc').resolve()
+              metadata = dict(
+                  source_revision=revision,
+                  compiler=(evidence / 'compiler.txt').read_text().strip(),
+                  flags=vm_flags,
+                  profiled_sources=profiled_sources,
+                  version='gd-posix-apps source ' + revision,
+                  binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),
+                  binary_bytes=binary.stat().st_size,
+                  instrumented=False,
+                  compile_commands_sha256=hashlib.sha256(commands).hexdigest())
+              roles.append(dict(name=role, argv=[str(binary)], metadata=metadata))
+          comparator = Path('howard/implementations.json')
+          if comparator.exists():
+              roles.extend(json.loads(comparator.read_text())['implementations'])
+          print(json.dumps(dict(implementations=roles), indent=2))
+          PY
+          }
+
+          build portable
+          config portable > evidence/training-config.json
+          training=()
+          for workload in loop_1000000 calls_200000 sparse_array_200000 \
+            frontend_definitions_2000 decimal_input_4000d_x100 multiply_1000d_x10000 \
+            divide_multilimb_900d_450d_s100_x1000 sqrt_scale100_x5000; do
+            training+=(--workload "$workload")
+          done
+          python3 src/bc/scripts/bench-bc.py --config evidence/training-config.json \
+            --corpus-seed 213525 --samples 3 --warmups 1 "${training[@]}" \
+            --output evidence/training-corpus
+          python3 src/bc/scripts/profile-bc.py --config evidence/training-config.json \
+            --implementation portable --summary evidence/training-corpus/summary.json \
+            --replay-corpus evidence/training-corpus "${training[@]}" \
+            --output evidence/training-samples --perf "$RUNNER_TEMP/bc-perf"
+
+          # Also sample the checked CLI suite, including startup, pipes and errors.
+          binary="$PWD/build-portable/src/bc/bc"
+          "$RUNNER_TEMP/bc-perf" record -q --no-buildid-cache --no-buildid-mmap \
+            -e cpu-clock:u -F 999 -o evidence/training-samples/cli.perf.data -- \
+            python3 src/bc/test-cli.py "$binary" --extensions ON \
+            > evidence/training-samples/cli.log 2>&1
+          profiles=()
+          for data in evidence/training-samples/*.perf.data; do
+            prefix=${data%.perf.data}
+            "$perf" script --no-demangle -F ip,sym,symoff,dso -i "$data" > "$prefix.pcs"
+            python3 src/bc/scripts/convert-perf-samples.py "$binary" "$prefix.pcs" \
+              --llvm-suffix=-18 > "$prefix.prof" 2> "$prefix.conversion.json"
+            profiles+=("$prefix.prof")
+          done
+          llvm-profdata-18 merge --sample "${profiles[@]}" -o evidence/training.prof
+          llvm-profdata-18 show --sample --all-functions evidence/training.prof \
+            > evidence/training-profile.txt
+          sha256sum evidence/training.prof > evidence/training.sha256
+
+          build sampled
+          build sampled-vm
+          sha256sum --check evidence/training.sha256
+          build aa
+          llvm-size-18 build-{portable,sampled,sampled-vm,aa}/src/bc/bc > evidence/section-sizes.txt
+          for role in portable sampled sampled-vm aa; do
+            llvm-objcopy-18 --dump-section ".text=evidence/$role.text" \
+              "build-$role/src/bc/bc" "$RUNNER_TEMP/bc-objcopy"
+          done
+          sha256sum evidence/*.text > evidence/text-sections.sha256
+          rm evidence/*.text "$RUNNER_TEMP/bc-objcopy"
+          python3 src/bc/scripts/build-bc-comparators.py --implementation howard \
+            --cc gcc --output howard
+          config portable sampled sampled-vm aa > evidence/implementations.json
+          python3 src/bc/scripts/bench-bc.py --config evidence/implementations.json \
+            --require-provenance --reference portable --preset holdout --corpus-seed 213526 \
+            --seed 213526 --samples 9 --warmups 1 --output evidence/holdout
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          import runpy
+
+          evidence = Path('evidence')
+          holdout = evidence / 'holdout'
+          manifest = json.loads((holdout / 'manifest.json').read_text())
+          training = json.loads((evidence / 'training-corpus/manifest.json').read_text())
+          assert {case['program_sha256'] for case in training['corpus']}.isdisjoint(
+              case['program_sha256'] for case in manifest['corpus'])
+          rows = [json.loads(row) for row in (holdout / 'samples.jsonl').read_text().splitlines()]
+          bench = runpy.run_path('src/bc/scripts/bench-bc.py')
+          comparison = bench['summarize'](manifest['corpus'], rows, 'howard-7.0.3',
+                                         213526, manifest['bootstrap_resamples'])
+          bench['write_json'](holdout / 'summary-vs-howard.json', comparison)
+          PY
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: bc-clang-software-holdout-${{ github.run_id }}
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 30
