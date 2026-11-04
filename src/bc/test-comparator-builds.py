@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Reject invalid comparator builds before publishing usable provenance."""
 import argparse
+import hashlib
 import importlib.util
 import io
 import json
@@ -11,6 +12,7 @@ import tarfile
 import tempfile
 import types
 import unittest
+from unittest import mock
 
 
 class ComparatorBuilds(unittest.TestCase):
@@ -64,6 +66,28 @@ class ComparatorBuilds(unittest.TestCase):
         manifest = json.loads((output / 'build-manifest.json').read_text())
         self.assertIn('checksum', manifest['failure'])
         self.assertFalse((output / 'implementations.json').exists())
+
+    def test_gnu_download_retries_transient_failure(self):
+        if sys.platform == 'win32':
+            self.skipTest('GNU configure recipe is POSIX-only')
+        payload = b'pinned test archive'
+
+        class InterruptedDownload(io.BytesIO):
+            def read(self, size=-1):
+                if self.tell():
+                    raise TimeoutError('transient download failure')
+                return super().read(4)
+
+        with mock.patch.object(self.module.urllib.request, 'urlopen',
+                               side_effect=[InterruptedDownload(payload), io.BytesIO(payload)]) as download, \
+             mock.patch.object(self.module, 'GNU_SHA256', hashlib.sha256(payload).hexdigest()), \
+             mock.patch.object(self.module, 'safe_extract',
+                               side_effect=self.module.BuildError('verified archive')) as extract:
+            with self.assertRaisesRegex(self.module.BuildError, 'verified archive'):
+                self.module.build_gnu(self.module.Builder(self.root, 3),
+                                      types.SimpleNamespace(gnu_archive=None))
+        self.assertEqual(download.call_count, 2)
+        self.assertEqual(extract.call_args[0][0].read_bytes(), payload)
 
     def test_archive_path_cannot_escape(self):
         archive = self.root / 'unsafe.tar.gz'
