@@ -1,0 +1,17 @@
+{
+  "gd": {
+    "sha256": "bcf4a43c0d14cdee8ebe52b378844e953c4a69e7f576f8c9d3d54f3db72300c6",
+    "bytes": 568080,
+    "version": ""
+  },
+  "howard-source": {
+    "sha256": "2ca4cdb63a38d828d5a3f3ca2cd51ba14eecdbcb4d7596cae3779391d2f286c8",
+    "bytes": 179872,
+    "version": "bc 7.0.3\nCopyright (c) 2018-2024 Gavin D. Howard and contributors\nReport bugs at: https://git.gavinhoward.com/gavin/bc\n\nThis is free software with ABSOLUTELY NO WARRANTY.\n"
+  },
+  "howard-apple": {
+    "sha256": "0217ca16eb2d577dbe8edc729c3b561f9888af7ecfcf875b79defa9c8d7149f8",
+    "bytes": 513152,
+    "version": "bc 7.0.3\nCopyright (c) 2018-2025 Gavin D. Howard and contributors\nReport bugs at: https://git.gavinhoward.com/gavin/bc\n\nThis is free software with ABSOLUTELY NO WARRANTY.\n"
+  }
+}
