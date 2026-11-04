@@ -88,14 +88,6 @@ def main():
         status = classify(decimal_fraction(value), Fraction(case['lower']),
                           Fraction(case['upper']), case['scale'])
         assert status == 'pass', (case['id'], case['scale'], status)
-    # The CLI test independently certifies these adjacent midpoint inputs.
-    midpoint = run(args.bc, transformed,
-                   'scale=0\nj(0,1.52114405766876514815130187)\n'
-                   'j(0,1.52114405766876514815130188)\n')
-    assert midpoint.returncode == 0 and not midpoint.stderr, midpoint.stderr
-    midpoint_plain, midpoint_outcomes = strip_probes(midpoint.stdout)
-    assert midpoint_plain == ['1', '0']
-    outcomes.update(midpoint_outcomes)
     # These are guard-behavior cases, not mathematical accuracy claims for
     # logarithms outside their domain. Keep their accounting separate.
     domain = run(args.bc, transformed, 'scale=20\nl(0)\nl(-1)\n')
