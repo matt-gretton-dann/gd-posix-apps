@@ -175,3 +175,32 @@ TEST_CASE("Linear verification requires strictly earlier producers", "[bc][vm][v
   CHECK(early_eof->instruction == 4);
   CHECK(early_eof->reason == "EOF is only valid at the end of the outer stream");
 }
+
+TEST_CASE("Branchless functions retain independent producer paths", "[bc][vm][verifier]")
+{
+  using I = GD::Bc::Instruction;
+  using O = I::Opcode;
+  using D = I::Offset;
+  GD::Bc::Instructions code{
+    I(O::number, "2"),
+    I(O::function_begin, GD::Bc::VariableMask(), GD::Bc::Location("fixture", 1, 1)),
+    I(O::pop_param_mark),
+    I(O::number, "3"),
+    I(O::return_, D(-1)),
+    I(O::negate, D(0)),  // Unreachable after the return.
+    I(O::function_end, GD::Bc::Letter('f'), D(-5)),
+    I(O::negate, D(-7)),
+    I(O::eof)};
+  CHECK_FALSE(GD::Bc::Details::verify_control_flow(code, false).has_value());
+
+  code[4].op1(D(1));
+  auto const forward = GD::Bc::Details::verify_control_flow(code, false);
+  REQUIRE(forward.has_value());
+  CHECK(forward->instruction == 4);
+
+  code[4].op1(D(-1));
+  code[5].op1(D(-5));
+  auto const unreachable_cross_region = GD::Bc::Details::verify_control_flow(code, false);
+  REQUIRE(unreachable_cross_region.has_value());
+  CHECK(unreachable_cross_region->instruction == 5);
+}
