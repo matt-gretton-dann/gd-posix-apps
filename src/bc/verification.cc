@@ -10,6 +10,8 @@
 #endif
 
 #include <algorithm>
+#include <cstddef>
+#include <memory_resource>
 #include <numeric>
 #include <span>
 #include <utility>
@@ -25,14 +27,15 @@ using Edge = std::pair<Index, Index>;
 class Adjacency
 {
 public:
-  Adjacency(Index nodes, std::span<Edge const> edges, bool reverse = false)
-      : bounds_(nodes + 1), neighbors_(edges.size())
+  Adjacency(Index nodes, std::span<Edge const> edges, std::pmr::memory_resource* storage,
+            bool reverse = false)
+      : bounds_(nodes + 1, storage), neighbors_(edges.size(), storage)
   {
     for (auto const& [from, to] : edges) {
       ++bounds_[(reverse ? to : from) + 1];
     }
     std::partial_sum(bounds_.begin(), bounds_.end(), bounds_.begin());
-    auto next = bounds_;
+    std::pmr::vector<Index> next(bounds_, storage);
     for (auto const& [from, to] : edges) {
       neighbors_[next[reverse ? to : from]++] = reverse ? from : to;
     }
@@ -40,13 +43,13 @@ public:
 
   [[nodiscard]] auto operator[](Index node) const -> std::span<Index const>
   {
-    return std::span<Index const>(neighbors_).subspan(bounds_[node],
-                                                      bounds_[node + 1] - bounds_[node]);
+    return std::span<Index const>(neighbors_)
+      .subspan(bounds_[node], bounds_[node + 1] - bounds_[node]);
   }
 
 private:
-  std::vector<Index> bounds_;
-  std::vector<Index> neighbors_;
+  std::pmr::vector<Index> bounds_;
+  std::pmr::vector<Index> neighbors_;
 };
 }  // namespace
 
@@ -68,9 +71,18 @@ auto verify_control_flow(Instructions const& code, bool function_body)
   auto target = [](I index, Instruction::Operand const& operand) {
     return index + static_cast<I>(std::get<Instruction::Offset>(operand));
   };
-  std::vector<I> owner(size, 0);
-  std::vector<I> function_end(size, absent);
-  std::vector<I> entries{0};
+  // Graph scratch dies together at the end of verification. Keep small
+  // graphs off the heap and let larger graphs use the upstream resource.
+  alignas(std::max_align_t) std::byte scratch[4096];
+  std::pmr::monotonic_buffer_resource arena(scratch, sizeof scratch);
+  // Use ordinary allocations for larger graphs so temporary adjacency
+  // cursors and old vector capacity can be released as soon as they die.
+  bool const small = size <= 24;
+  auto* storage = small ? &arena : std::pmr::new_delete_resource();
+  std::pmr::vector<I> owner(size, 0, storage);
+  std::pmr::vector<I> function_end(size, absent, storage);
+  std::pmr::vector<I> entries(storage);
+  entries.push_back(0);
   I active = absent;
   for (I i = 0; i < size; ++i) {
     if (code[i].opcode() == O::function_begin) {
@@ -105,7 +117,7 @@ auto verify_control_flow(Instructions const& code, bool function_body)
   // The outer stream and each function body have separate roots. Function-end
   // nodes represent body fall-through, never execution of that metadata opcode.
   // A synthetic root lets a single dominance calculation serve all regions.
-  std::vector<Edge> edges;
+  std::pmr::vector<Edge> edges(storage);
   edges.reserve(size + entries.size());
   auto edge = [&](I from, I to) { edges.emplace_back(from, to); };
   for (auto entry : entries) {
@@ -146,8 +158,8 @@ auto verify_control_flow(Instructions const& code, bool function_body)
     }
   }
 
-  Adjacency const successors(size + 2, edges);
-  Adjacency const predecessors(size + 2, edges, true);
+  Adjacency const successors(size + 2, edges, storage);
+  Adjacency const predecessors(size + 2, edges, storage, true);
 
   // Each execution region starts with no owned argument packs. A function
   // additionally receives one caller-owned pack, consumed by its prologue.
@@ -157,8 +169,11 @@ auto verify_control_flow(Instructions const& code, bool function_body)
     I owned;
     bool incoming_consumed;
   };
-  std::vector<std::optional<MarkerState>> states(size + 2);
-  std::vector<I> pending;
+  std::pmr::vector<std::optional<MarkerState>> states(size + 2, storage);
+  std::pmr::vector<I> pending(storage);
+  if (small) {
+    pending.reserve(size + 2);
+  }
   for (I entry : entries) {
     bool const incoming = function_body || (entry < size && owner[entry] != 0);
     states[entry] = MarkerState{0, !incoming};
@@ -218,7 +233,7 @@ auto verify_control_flow(Instructions const& code, bool function_body)
   // A cycle before the incoming pack is consumed can bypass the prologue
   // forever. Remove acyclic nodes from that subgraph; any remainder is a cycle.
   // Ordinary function loops after prologue consumption remain valid.
-  std::vector<I> indegree(size + 2, 0);
+  std::pmr::vector<I> indegree(size + 2, 0, storage);
   auto unconsumed = [&](I node) { return states[node] && !states[node]->incoming_consumed; };
   for (I node : pending) {
     if (unconsumed(node)) {
@@ -229,7 +244,7 @@ auto verify_control_flow(Instructions const& code, bool function_body)
       }
     }
   }
-  std::vector<I> acyclic;
+  std::pmr::vector<I> acyclic(storage);
   for (I node : pending) {
     if (unconsumed(node) && indegree[node] == 0) {
       acyclic.push_back(node);
@@ -249,9 +264,14 @@ auto verify_control_flow(Instructions const& code, bool function_body)
   }
 
   // Iterative DFS avoids making host stack depth depend on source length.
-  std::vector<bool> visited(size + 2, false);
-  std::vector<std::pair<I, I>> stack{{root, 0}};
-  std::vector<I> postorder;
+  std::pmr::vector<bool> visited(size + 2, false, storage);
+  std::pmr::vector<std::pair<I, I>> stack(storage);
+  std::pmr::vector<I> postorder(storage);
+  if (small) {
+    stack.reserve(size + 2);
+    postorder.reserve(size + 2);
+  }
+  stack.emplace_back(root, 0);
   visited[root] = true;
   while (!stack.empty()) {
     auto& frame = stack.back();
@@ -268,11 +288,11 @@ auto verify_control_flow(Instructions const& code, bool function_body)
     }
   }
   std::reverse(postorder.begin(), postorder.end());
-  std::vector<I> rank(size + 2, absent);
+  std::pmr::vector<I> rank(size + 2, absent, storage);
   for (I i = 0; i < postorder.size(); ++i) {
     rank[postorder[i]] = i;
   }
-  std::vector<I> dominator(size + 2, absent);
+  std::pmr::vector<I> dominator(size + 2, absent, storage);
   dominator[root] = root;
   auto intersect = [&](I left, I right) {
     while (left != right) {
@@ -314,9 +334,9 @@ auto verify_control_flow(Instructions const& code, bool function_body)
       edge(dominator[node], node);
     }
   }
-  Adjacency const children(size + 2, edges);
-  std::vector<I> enter(size + 2, 0);
-  std::vector<I> leave(size + 2, 0);
+  Adjacency const children(size + 2, edges, storage);
+  std::pmr::vector<I> enter(size + 2, 0, storage);
+  std::pmr::vector<I> leave(size + 2, 0, storage);
   I clock = 0;
   stack.emplace_back(root, 0);
   enter[root] = clock++;
