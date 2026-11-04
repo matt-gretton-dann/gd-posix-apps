@@ -85,3 +85,6 @@ on hosted runners. The experiment does not select a new release default.
 
 The [first whole-program run](bc-sample-pgo-ecbff8b7/README.md) improved loop,
 call and sparse-array timing but regressed several arithmetic cases.
+The [VM-only follow-up](bc-sample-pgo-74f513fd/README.md) avoided the
+multi-limb modulo regression but slowed several interpreter workloads.
+Both application scopes remain experimental.
