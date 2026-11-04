@@ -451,6 +451,29 @@ struct VMState
    */
   auto pop_param_array() -> ArrayValues;
 
+#if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
+  using OperandStack = std::vector<Number, Profile::Allocator<Number, Profile::AllocationKind::frames>>;
+
+  class OperandLease
+  {
+  public:
+    OperandLease(VMState& vm, std::size_t count)
+        : vm_(vm), stack_(vm.acquire_operands(count)) {}
+    OperandLease(OperandLease const&) = delete;
+    auto operator=(OperandLease const&) -> OperandLease& = delete;
+    ~OperandLease()
+    {
+      stack_.clear();
+      --vm_.operand_depth_;
+    }
+    auto stack() const noexcept -> OperandStack& { return stack_; }
+
+  private:
+    VMState& vm_;
+    OperandStack& stack_;
+  };
+#endif
+
   // Each active pack owns one depth slot. deque growth preserves references
   // held by callers; clearing drops values and retains the current format's
   // capacities. Changing format discards the previous format's capacities.
@@ -514,6 +537,22 @@ private:
   std::array<Number, Letter::count_> variables_;  ///< Array of scalar variables, indexed by Letter.
   Params parameters_;                             ///< Contiguous values for active argument packs.
   ParamMarks param_marks_;                        ///< Pack offsets; indices survive vector growth.
+#if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
+  // A nested call can grow the pool without invalidating its caller's lease.
+  std::deque<OperandStack, Profile::Allocator<OperandStack, Profile::AllocationKind::frames>>
+    operand_stacks_;
+  std::size_t operand_depth_ = 0;
+
+  auto acquire_operands(std::size_t count) -> OperandStack&
+  {
+    if (operand_depth_ == operand_stacks_.size())
+      operand_stacks_.emplace_back();
+    auto& stack = operand_stacks_[operand_depth_];
+    stack.reserve(count);
+    ++operand_depth_;
+    return stack;
+  }
+#endif
   Params saved_locals_;                           ///< Contiguous saved locals for active calls.
   std::deque<ActivationResults,
              Profile::Allocator<ActivationResults, Profile::AllocationKind::frames>>
@@ -2439,8 +2478,8 @@ namespace {
 auto execute_stack(VMState& vm, Instructions const& source, StackCode const& code) -> std::pair<Number, bool>
 {
   using Op = Instruction::Opcode;
-  std::vector<Number> stack;
-  stack.reserve(code.depth);
+  VMState::OperandLease operands(vm, code.depth);
+  auto& stack = operands.stack();
   for (std::size_t pc = 0; pc < code.instructions.size();) {
     if (have_been_interrupted.test(std::memory_order_relaxed))
       return {Number(0), true};

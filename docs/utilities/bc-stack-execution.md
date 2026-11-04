@@ -43,3 +43,10 @@ The next lowering combines an adjacent scalar comparison and conditional
 branch when the branch has no separate entry. It consumes the same two
 operands without constructing a numeric Boolean or dispatching a second
 instruction. Non-fused comparisons still produce a numeric result.
+
+The operand pool experiment leases a vector for each active stack depth.
+A lease clears its values on return, interruption or exception, while
+retaining capacity for the next execution at that depth. Deque growth
+preserves active vectors across recursive calls. Retained capacity
+therefore follows the largest operand count used at each visited depth
+over the VM's lifetime.
