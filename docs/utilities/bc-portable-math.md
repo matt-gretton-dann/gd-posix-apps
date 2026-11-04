@@ -231,25 +231,44 @@ conservative aggregate bound `10^6*(W+1)^2*10^D*u` remains below U/2. No
 unbounded divergent series is treated as convergent merely because a term grew.
 
 Otherwise, evaluate the ascending recurrence, including the initial
-`(x/2)^n/n!`, with G = floor(7*x/8) + 1 and
+`(x/2)^n/n!`, with G = floor(7*x/16) + 1 and
 W = S + G + D + 2*d(S+G+D+1) + 32. Truncate the argument only if it has more
 than W fractional places. Differentiating the real integer-order
 [Bessel integral](https://dlmf.nist.gov/10.9.E2) gives `|J_n'(x)| <= 1`,
 so truncating the argument adds less than one working unit of error.
-The extra G covers cancellation and
-propagation through the absolute series, bounded by exp(2x). After the tiny-
-result branch, the initial factor needs at most 7*(W+1) steps; the term loop
-needs at most 8*(W+1). The [ascending definition](https://dlmf.nist.gov/10.2.E2) and the
-[integer-order modified-Bessel integral](https://dlmf.nist.gov/10.32.E3)
-bound absolute series weights by exp(x). After k exceeds x, term ratios are
-at most one quarter. Absolute tail/rounding propagation is bounded by
-`10^6*(W+1)^2*exp(2x)*u`. The exponential series gives
+The extra G covers cancellation and propagation through the absolute
+recurrence. Write a = x/2. An error introduced at initial coefficient j
+reaches ascending term k with absolute weight at most
+`a^(n-j+2*k)/(k!*(n-j+k)!)`. The bound follows by replacing the product
+of integers from j+1 through n+k by (n-j+k)!. Summing over k gives a
+subset of the nonnegative terms of `exp(a)*exp(a) = exp(x)`. An error
+introduced within the ascending loop propagates across k more steps with
+weight at most `a^(2*k)/(k!)^2`, bounded in sum by the same product.
+
+The stored magnitude of q is at most Q = a^2 and differs from it by at
+most 2u. To bound this perturbation, differentiate the absolute series
+in Q, holding the exact initial coefficient `a^n/n!` fixed. For term k
+the factor k cancels against k!, and dropping the last factor of (n+k)!
+bounds the derivative sum by
+`sum_(h>=0) a^(n+2*h)/(h!*(n+h)!) <= exp(x)`, with h = k-1.
+Thus the q perturbation also costs at most 2u*exp(x). Each recurrence
+step adds at most two working units of local truncation error.
+The [ascending definition](https://dlmf.nist.gov/10.2.E2) gives these
+absolute weights independently of the signs or cancellation in the result.
+
+After the tiny-result branches the initial factor takes at most
+7*(W+1) steps. After k exceeds x, term ratios are at most one quarter.
+Each stored term is bounded by its exact absolute term, which is at most
+exp(x). Since x < 16*W/7, the term loop takes fewer than 8*(W+1) steps
+before truncation makes its term zero.
+The tail and all truncation propagation are bounded by
+`10^6*(W+1)^2*exp(x)*u`. The exponential series gives
 `e < 87/32`, and `87^16 < 10^7 * 32^16`. Thus
-`exp(2x)*10^(-G) < 1` for the nonnegative argument. The remaining
+`exp(x)*10^(-G) < 1` for the nonnegative argument. The remaining
 guards keep the total error below half an output unit. With
 `T = S + G + D + 1 >= 2`, `W+1 <= 19*T` and `T < 10^d(T)`.
-The bound in output units is below `19^2*10^-25`, leaving room for
-the argument truncation error. Rounding to the requested scale adds at
+The bound in output units is below `19^2*10^-25`, leaving room for the
+argument truncation error. Rounding to the requested scale adds at
 most half an output unit, so the total is below one decimal ULP.
 An underflowed initial factor or term is therefore
 covered by the error budget even if later exact recurrence terms would grow.
