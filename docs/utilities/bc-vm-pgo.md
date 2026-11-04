@@ -36,11 +36,15 @@ from one host. See issue #213 for the training and evaluation scope.
 
 The sampling PGO capability workflow tests whether the hosted Linux runner can
 capture userspace branch stacks with `perf` and whether LLVM can convert and
-consume the resulting profile. It also attempts software CPU-clock sampling
-for attribution when the host lacks branch-stack support. The workflow keeps
-the runner CPU, perf permissions, tool versions and failure diagnostics in
-the artifact. This probe establishes collection capability. Workload training,
-holdout timing and correctness for a sample-profiled `bc` are separate.
+consume the resulting profile. The software CPU-clock probe also tests
+whether Clang can apply a profile built from sampled instruction addresses
+alone. `convert-perf-samples.py` resolves symbol-relative addresses against
+the exact sampled ELF and uses DWARF line tables and inline frames to build
+the sample profile. It reports discarded samples and records zero measured
+function entries. The workflow checks that Clang applies counts and that the
+rebuilt probe produces identical output. The artifact keeps the runner CPU,
+perf permissions, tool versions and failure diagnostics. Training, holdout
+timing and correctness for a sample-profiled `bc` are separate.
 
 Hosted run 41807427320 reported `perf_event_paranoid=4` and denied both
 unprivileged events. The workflow also tries a privileged collector on its
