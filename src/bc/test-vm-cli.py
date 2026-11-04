@@ -34,6 +34,23 @@ class VMTests(unittest.TestCase):
             with self.subTest(condition=condition, setup=setup):
                 self.run_bc(setup + 'if(' + condition + ') 7\n', expected)
 
+    def test_comparison_branches_preserve_operand_order(self):
+        self.run_bc("""define f(a,b) {
+auto r
+r=0
+if(a<b) r=r+1
+if(a<=b) r=r+2
+if(a==b) r=r+4
+if(a!=b) r=r+8
+if(a>b) r=r+16
+if(a>=b) r=r+32
+return(r)
+}
+f(-.1,0)
+f(1.00,1)
+f(2,1)
+""", '11\n38\n56\n')
+
     def test_bare_loop_conditions_observe_each_iteration(self):
         for target in ('n', 'a[2]', 'scale'):
             for kind in ('while', 'for'):
@@ -47,6 +64,10 @@ class VMTests(unittest.TestCase):
             with self.subTest(target=target):
                 self.run_bc('while(' + target + ') {\n7\nbreak\n}\n', '7\n')
                 self.run_bc('for(i=0;' + target + ';i=i+1) {\n7\nbreak\n}\n', '7\n')
+
+    def test_scalar_block_preserves_arithmetic_operand_order(self):
+        self.run_bc('{a=20;b=3;c=(a-b)*2;d=a/(b+1);if(c>d) c-=d;c;d;}\n'
+                    'a\nb\n', '29\n5\n20\n3\n')
 
     def test_scalar_loop_state_and_exact_fallbacks(self):
         cases = [

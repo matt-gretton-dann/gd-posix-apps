@@ -14,6 +14,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <deque>
+#include <functional>
 #include <ostream>
 #include <type_traits>
 #include <utility>
@@ -22,6 +23,10 @@
 #include "execution-plan.hh"
 #include "number.hh"
 #include "verification.hh"
+
+#if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
+#  include "stack-execution.hh"
+#endif
 
 #ifdef GD_BC_NATIVE_SCALAR
 #  include "native-scalar.hh"
@@ -277,6 +282,7 @@ public:
     return VerifiedInstructions(instructions_, plans.consumption, plans.layout);
   }
 
+
 private:
   friend struct VMState;
   explicit FunctionCode(Instructions instructions) : instructions_(std::move(instructions))
@@ -431,6 +437,29 @@ struct VMState
    */
   auto pop_param_array() -> ArrayValues;
 
+#if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
+  using OperandStack = std::vector<Number, Profile::Allocator<Number, Profile::AllocationKind::frames>>;
+
+  class OperandLease
+  {
+  public:
+    OperandLease(VMState& vm, std::size_t count)
+        : vm_(vm), stack_(vm.acquire_operands(count)) {}
+    OperandLease(OperandLease const&) = delete;
+    auto operator=(OperandLease const&) -> OperandLease& = delete;
+    ~OperandLease()
+    {
+      stack_.clear();
+      --vm_.operand_depth_;
+    }
+    auto stack() const noexcept -> OperandStack& { return stack_; }
+
+  private:
+    VMState& vm_;
+    OperandStack& stack_;
+  };
+#endif
+
   // Each active pack owns one depth slot. deque growth preserves references
   // held by callers; clearing drops values and retains the current format's
   // capacities. Changing format discards the previous format's capacities.
@@ -516,6 +545,41 @@ private:
     }
   };
   std::unique_ptr<Number::DivisorCache, DivisorCacheDelete> divisor_cache_;
+#endif
+#if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
+  // Keep experimental state outside the register VM's function entries and
+  // after its fields so enabling stack execution preserves their offsets.
+  struct StackPlan
+  {
+    std::optional<StackCode> code;
+    bool attempted = false;
+  };
+  std::array<StackPlan, Letter::count_> stack_plans_{};
+
+  auto stack_code(unsigned index, FunctionCode const& function) -> StackCode const*
+  {
+    auto& plan = stack_plans_[index];
+    if (!plan.attempted) {
+      plan.code = plan_stack_execution(function.instructions_, true);
+      plan.attempted = true;
+    }
+    return plan.code ? &*plan.code : nullptr;
+  }
+
+  // A nested call can grow the pool without invalidating its caller's lease.
+  std::deque<OperandStack, Profile::Allocator<OperandStack, Profile::AllocationKind::frames>>
+    operand_stacks_;
+  std::size_t operand_depth_ = 0;
+
+  auto acquire_operands(std::size_t count) -> OperandStack&
+  {
+    if (operand_depth_ == operand_stacks_.size())
+      operand_stacks_.emplace_back();
+    auto& stack = operand_stacks_[operand_depth_];
+    stack.reserve(count);
+    ++operand_depth_;
+    return stack;
+  }
 #endif
 };
 
@@ -906,7 +970,19 @@ void GD::Bc::Details::VMState::function(Letter func, Instructions::const_iterato
   }
   functions_.at(static_cast<unsigned>(func)) =
     std::make_optional(std::make_tuple(FunctionCode(std::move(instrs)), mask, loc));
+#if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
+  stack_plans_[static_cast<unsigned>(func)] = {};
+#endif
 }
+
+#if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
+namespace GD::Bc::Details {
+namespace {
+auto execute_stack(VMState& vm, Instructions const& source, StackCode const& code)
+  -> std::pair<Number, bool>;
+}  // namespace
+}  // namespace GD::Bc::Details
+#endif
 
 #if defined(GD_BC_PREPARSED_LIBRARY)
 void GD::Bc::Details::VMState::defer_library_function(Letter name, std::string_view image,
@@ -914,6 +990,9 @@ void GD::Bc::Details::VMState::defer_library_function(Letter name, std::string_v
 {
   auto const index = static_cast<unsigned>(name);
   functions_.at(index).reset();
+#if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
+  stack_plans_[index] = {};
+#endif
   deferred_functions_.at(index) = {image, decode};
 }
 #endif
@@ -946,14 +1025,20 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
   }
 
   FunctionDefinition& def = func_ptr.value();
+#if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
+  auto const* stack = full_checks() ? nullptr : stack_code(index, std::get<0>(def));
+  auto const use_source = full_checks() || stack != nullptr;
+#else
+  auto const use_source = full_checks();
+#endif
 #if defined(_WIN32)
   // Preserve the existing call path on Windows, where native comparisons
   // found regressions in workloads outside the fused prologue.
-  auto func_instructions = std::get<0>(def).view(full_checks());
+  auto func_instructions = std::get<0>(def).view(use_source);
   auto locals = std::get<1>(def);
 #else
   auto locals = std::get<1>(def);
-  auto func_instructions = std::get<0>(def).view(full_checks(), locals);
+  auto func_instructions = std::get<0>(def).view(use_source, locals);
 #endif
 
   // Retain offsets rather than references across execute(): recursive calls
@@ -995,6 +1080,13 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
       arrays_.at(static_cast<unsigned>(l)).reset();
     });
 
+#if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
+    if (stack != nullptr) {
+      auto result = execute_stack(*this, func_instructions.instructions(), *stack);
+      restore(false);
+      return std::move(result.first);
+    }
+#endif
 #if defined(_WIN32)
     InstructionPack fn(this, func_instructions);
     auto [result, cont] = fn.execute();
@@ -2391,10 +2483,165 @@ auto GD::Bc::VM::execute_cli(Instructions& instructions, Details::CliInterruptSc
   return execute_impl(instructions, cli.installed());
 }
 
+#if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
+namespace GD::Bc::Details {
+namespace {
+auto execute_stack(VMState& vm, Instructions const& source, StackCode const& code) -> std::pair<Number, bool>
+{
+  using Op = Instruction::Opcode;
+  VMState::OperandLease operands(vm, code.depth);
+  auto& stack = operands.stack();
+  for (std::size_t pc = 0; pc < code.instructions.size();) {
+    if (have_been_interrupted.test(std::memory_order_relaxed))
+      return {Number(0), true};
+    auto const instruction = code.instructions[pc++];
+    auto const op = static_cast<Op>(instruction.opcode);
+    auto const variable = [&instruction] {
+      return Variable(static_cast<char>('a' + instruction.operand));
+    };
+    auto const compare = [&]<typename Predicate>(Predicate predicate) {
+      auto const& top = stack.back();
+      auto& bottom = stack[stack.size() - 2];
+      auto const result = instruction.reversed ? predicate(top, bottom) : predicate(bottom, top);
+      stack.pop_back();
+      if (instruction.branch_on_false) {
+        stack.pop_back();
+        if (!result)
+          pc = instruction.operand;
+      }
+      else {
+        bottom = Number(result ? 1 : 0);
+      }
+    };
+    switch (op) {
+    case Op::number:
+      stack.push_back(source[instruction.operand].decoded_number(vm.ibase()));
+      break;
+    case Op::load:
+      stack.push_back(vm.variable(variable()));
+      break;
+    case Op::store:
+      vm.variable(variable(), stack.back());
+      stack.pop_back();
+      break;
+    case Op::push_param_mark:
+      vm.push_param_pack();
+      break;
+    case Op::push_param:
+      vm.push_param(stack.back());
+      stack.pop_back();
+      break;
+    case Op::pop_param_mark:
+      vm.pop_param_pack();
+      break;
+    case Op::call: {
+      auto const& call = source[instruction.operand];
+      stack.push_back(vm.call(std::get<Letter>(call.op1()), std::get<Location>(call.op2())));
+      break;
+    }
+    case Op::negate:
+      stack.back().negate();
+      break;
+    case Op::abs:
+      stack.back().abs();
+      break;
+    case Op::length:
+      stack.back() = Number(stack.back().length());
+      break;
+    case Op::scale_expr:
+      stack.back() = Number(stack.back().scale());
+      break;
+    case Op::sqrt:
+      stack.back().sqrt(vm.scale());
+      break;
+    case Op::print: {
+      auto& stream = vm.stream(static_cast<Instruction::Stream>(instruction.operand));
+      stack.back().output(stream, vm.obase(), 0);
+      stack.pop_back();
+      stream << '\n';
+      break;
+    }
+    case Op::branch_zero: {
+      auto const zero = stack.back().is_zero();
+      stack.pop_back();
+      if (zero)
+        pc = instruction.operand;
+      break;
+    }
+    case Op::branch:
+      pc = instruction.operand;
+      break;
+    case Op::less_than:
+      compare(std::less<>{});
+      break;
+    case Op::less_than_equals:
+      compare(std::less_equal<>{});
+      break;
+    case Op::equals:
+      compare(std::equal_to<>{});
+      break;
+    case Op::not_equals:
+      compare(std::not_equal_to<>{});
+      break;
+    case Op::pop_param:
+      stack.push_back(vm.pop_param());
+      break;
+    case Op::return_:
+      return {std::move(stack.back()), true};
+    case Op::eof:
+      return {Number(0), false};
+    default: {
+      auto& top = stack.back();
+      auto& bottom = stack[stack.size() - 2];
+      auto& lhs = instruction.reversed ? top : bottom;
+      auto const& rhs = instruction.reversed ? bottom : top;
+      switch (op) {
+      case Op::add:
+        lhs.add(rhs);
+        break;
+      case Op::subtract:
+        lhs.sub(rhs);
+        break;
+      case Op::multiply:
+        lhs.multiply(rhs, vm.scale());
+        break;
+      case Op::divide:
+        lhs.divide(rhs, vm.scale());
+        break;
+      case Op::modulo:
+        lhs.modulo(rhs, vm.scale());
+        break;
+      case Op::power:
+        lhs.power(rhs, vm.scale());
+        break;
+      default:
+        std::abort();
+      }
+      if (instruction.reversed)
+        bottom = std::move(top);
+      stack.pop_back();
+      break;
+    }
+    }
+  }
+  return {Number(0), true};
+}
+}  // namespace
+}  // namespace GD::Bc::Details
+#endif
+
 auto GD::Bc::VM::execute_impl(Instructions& instructions, bool cli_interrupts) -> bool
 {
   auto const verified = state_->verify(instructions);
+#if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
+  auto const stack =
+    state_->full_checks() ? std::nullopt : Details::plan_stack_execution(instructions);
+  std::optional<Details::InstructionPack> instrs;
+  if (!stack)
+    instrs.emplace(state_.get(), verified.view());
+#else
   Details::InstructionPack instrs(state_.get(), verified.view());
+#endif
   // Restore the caller's handler before reporting interruption, including when
   // execution throws (for example, through an output stream's exception mask).
   auto const result = [&, this, cli_interrupts]() {
@@ -2436,7 +2683,13 @@ auto GD::Bc::VM::execute_impl(Instructions& instructions, bool cli_interrupts) -
         }
       }
 #endif
+#if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
+      if (stack)
+        return Details::execute_stack(*state_, instructions, *stack);
+      return instrs->execute();
+#else
       return instrs.execute();
+#endif
     }
     catch (...) {
       state_->discard_parameters();
