@@ -81,10 +81,12 @@ class LibraryCli(unittest.TestCase):
                 self.assertEqual(lines[4 * index + 1:4 * index + 4],
                                  [str(case['scale']), '10', str(case['scale'])])
 
-    def test_negative_exponential_reconstruction(self):
+    def test_exponential_reconstruction(self):
         cases = [(2, '-.125'), (20, '-.125000000001'), (100, '-200'),
                  (300, '-125.00000001'), (1000, '-1000'), (1000, '-2000'),
-                 (1000, '-2300'), (1000, '-3002.999'), (1000, '-3003')]
+                 (1000, '-2300'), (1000, '-3002.999'), (1000, '-3003'),
+                 (20, '1.999999999'), (20, '2'), (20, '2.000000001'),
+                 (100, '200'), (300, '500.125'), (1000, '1000'), (1000, '2300')]
         program = ''.join(f'scale={scale}\nr=e({argument})\nr\nscale(r)\n'
                           for scale, argument in cases)
         binaries = [BC] if OTHER_BC is None else [BC, OTHER_BC]
@@ -96,8 +98,10 @@ class LibraryCli(unittest.TestCase):
                     # Decimal.exp is correctly rounded. Its adjacent decimal
                     # values enclose the result for the exact input.
                     with localcontext() as context:
-                        context.prec = scale + 32
-                        reference = Decimal(argument).exp()
+                        exact_argument = Decimal(argument)
+                        # Allow integer digits as well as the requested scale.
+                        context.prec = scale + max(0, int(exact_argument)) + 32
+                        reference = exact_argument.exp()
                         lower = Fraction(reference.next_minus())
                         upper = Fraction(reference.next_plus())
                     value = ORACLE.decimal_fraction(lines[2 * index])

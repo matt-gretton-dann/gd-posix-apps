@@ -123,14 +123,13 @@ propagates geometrically. Reconstruction and argument-reduction errors are
 bounded conservatively by `2^k * exp(x) * (3N+6) * u` before taking a reciprocal.
 For x > .125, 2^k < 16x; otherwise k=0.
 
-Use W = S + floor(x) + 2*d(S+F+floor(x)+1) + 24. The reconstruction factor is
-controlled because `(1+x)*exp(x)*10^-floor(x) < 6`: split x into integer and
-fractional parts and use exp(1) < 3. Consequently `2^k*exp(x)*10^-floor(x)`
-is below 128. These bounds, with the quadratic digit-count margin, remain
-below U/2 for positive arguments.
+Let T = S + F + floor(x) + 1. For positive arguments use
+W = S + G + 2*d(T) + 24, where G = floor(floor(x)/2) + 1. Since e < 3,
+e^2 < 10, and G > x/2, we have exp(x)*10^-G < 1. The remaining
+reconstruction factor is at most 16T. With N < 2W+2 and W+1 <= 29T,
+the two digit-count guards and 24 extra places keep the error below U/2.
 
-For negative arguments use W = S + 2*d(T) + 24, with
-T = S + F + floor(x) + 1. Before inversion, the reduced Taylor error and
+For negative arguments use W = S + 2*d(T) + 24. Before inversion, the reduced Taylor error and
 argument-reduction error total at most (3N+6)u: halving truncations sum
 to less than 2u at the reduced argument, and exp on [0,.125] has derivative
 below two. Both reduced exponential values are at least one, so inversion
