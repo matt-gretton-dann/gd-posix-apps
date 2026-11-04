@@ -382,23 +382,45 @@ define j(n,x) {
     }
   }
   scale=0
-  /* The ascending recurrence amplifies errors by at most exp(2*x).
-     Since exp(2)<10, floor(x) decimal guards leave a factor below ten. */
-  w=s+(x/1)+scale(x)+length(x)+2*length(s+(x/1)+scale(x)+length(x)+1)+32
-  scale=w
-  if (scale!=w) return(1/0)
-  t=1
-  for (i=1;i<=n;i++) {
-    t=t*x/(2*i)
-    if (t==0) break
-  }
-  r=t
-  q= -x*x/4
-  k=1
-  while (t!=0) {
-    t=t*q/(k*(n+k))
-    r+=t
-    k+=1
+  /* Try the ascending series without guards for every input place.
+     DLMF 10.9.2 gives |J_n'(x)|<=1 for real x and integer n, so
+     truncating x at working precision adds less than one working unit. */
+  u=x
+  for (f=0;f<2;f+=1) {
+    scale=0
+    x=u
+    w=s+(x/1)+length(x)+2*length(s+(x/1)+length(x)+1)+32
+    if (f!=0) w=s+(x/1)+scale(x)+length(x)+2*length(s+(x/1)+scale(x)+length(x)+1)+32
+    scale=w
+    if (scale!=w) return(1/0)
+    if (f==0) {
+      if (scale(x)>w) x=x/1
+    }
+    t=1
+    for (i=1;i<=n;i++) {
+      t=t*x/(2*i)
+      if (t==0) break
+    }
+    r=t
+    q= -x*x/4
+    k=1
+    while (t!=0) {
+      t=t*q/(k*(n+k))
+      r+=t
+      k+=1
+    }
+    if (f==0) {
+      /* Near a rounding midpoint, retry with the original argument and
+         full input-scale guards. Take the magnitude before the remainder. */
+      p=r
+      if (p<0) p= -p
+      p=p*10^s
+      scale=0
+      p=p%1
+      scale=w
+      if (p<.49) break
+      if (p>.51) break
+    }
   }
   if (v==1) r= -r
   t=10^(-s)/2

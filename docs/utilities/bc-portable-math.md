@@ -229,8 +229,14 @@ conservative aggregate bound `10^6*(W+1)^2*10^D*u` remains below U/2. No
 unbounded divergent series is treated as convergent merely because a term grew.
 
 Otherwise, evaluate the ascending recurrence, including the initial
-`(x/2)^n/n!`, with W = S + floor(x) + D + F +
-2*d(S+floor(x)+D+F+1) + 32. The extra floor(x) covers cancellation and
+`(x/2)^n/n!`, with W = S + floor(x) + D +
+2*d(S+floor(x)+D+1) + 32. Truncate the argument only if it has more
+than W fractional places. Differentiating the real integer-order
+[Bessel integral](https://dlmf.nist.gov/10.9.E2) gives `|J_n'(x)| <= 1`,
+so truncating the argument adds less than one working unit of error.
+If the fractional part of the result magnitude in output units is in
+[0.49, 0.51], repeat with the original argument and add F to the scale
+and to the argument of d. The extra floor(x) covers cancellation and
 propagation through the absolute series, bounded by exp(2x). After the tiny-
 result branch, the initial factor needs at most 7*(W+1) steps; the term loop
 needs at most 8*(W+1). The [ascending definition](https://dlmf.nist.gov/10.2.E2) and the

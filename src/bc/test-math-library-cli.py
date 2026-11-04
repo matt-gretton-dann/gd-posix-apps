@@ -197,6 +197,20 @@ class LibraryCli(unittest.TestCase):
     def test_all_certified_function_regimes(self):
         self.certified()
 
+    def test_bessel_ascending_rounding_midpoint(self):
+        arguments = ('1.52114405766876514815', '1.52114405766876514816')
+        for argument, expected in zip(arguments, (1, 0)):
+            x = Fraction(argument)
+            term = partial = Fraction(1)
+            # The terms alternate and decrease for these arguments below two.
+            for k in range(1, 40):
+                term *= -x * x / (4 * k * k)
+                partial += term
+            upper = partial - term * x * x / (4 * 40 * 40)
+            self.assertEqual(ORACLE.classify(Fraction(expected), partial, upper, 0), 'pass')
+        program = 'scale=0\n' + ''.join(f'j(0,{x})\n' for x in arguments)
+        self.assertEqual(self.checked_lines(program), ['1', '0'])
+
     def test_identical_source_loads_as_ordinary_input(self):
         self.certified(options=(), files=(SOURCE,))
 
