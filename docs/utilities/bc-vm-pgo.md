@@ -59,3 +59,20 @@ branch-stack input needed by the workflow's LLVM converter, so it provides
 no sample-profiled executable or performance comparison. The original
 artifact ZIP SHA-256 was
 `8a6cd8afedfebbbdc34eebc86b8cd3235eeb5dd53d4e0864a48527c58e4cbdaa`.
+
+### Software-profiled interpreter holdout
+
+The Clang software profile holdout workflow uses Linux userspace CPU-clock
+samples from the exact Clang Release/ThinLTO baseline. It profiles eight
+checked arithmetic and interpreter workloads using corpus seed 213525. It
+also samples the CLI regression suite, which exercises startup, pipe input,
+and diagnostics. These short paths may receive few samples.
+
+The workflow builds a profiled candidate and an independent baseline rebuild
+using the same source and compiler. It checks all three binaries with the
+CLI and math library suites, then evaluates the arithmetic holdout with
+corpus seed 213526. The holdout records per-workload ratios against both the
+matched Clang baseline and the pinned Howard comparator from the same
+paired rounds. The artifact includes the compiler flags, profile identities,
+build logs, section sizes, and checked raw observations. Timing is advisory
+on hosted runners. The experiment does not select a new release default.
