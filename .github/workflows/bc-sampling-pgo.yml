@@ -91,9 +91,15 @@ jobs:
           grep -Eq 'Function: train: [1-9][0-9]*,' evidence/cpu-clock-profile.txt
           clang-18 -O2 -gline-tables-only -fdebug-info-for-profiling \
             -fprofile-sample-use=evidence/cpu-clock.prof -Werror=profile-instr-out-of-date \
-            -Rpass-analysis=sample-profile evidence/probe.c -o probe-cpu-clock \
+            -S -emit-llvm evidence/probe.c -o evidence/cpu-clock.ll \
             2> evidence/cpu-clock-compiler.log
-          grep -Eq 'Applied [1-9][0-9]* samples' evidence/cpu-clock-compiler.log
+          # Positive entry metadata on train is inferred from the matched
+          # body samples. The converter wrote zero measured entry counts.
+          profile_id=$(sed -nE '/^define .*@train\(/s/.*!prof !([0-9]+).*/\1/p' evidence/cpu-clock.ll)
+          test -n "$profile_id"
+          grep -Eq "^!$profile_id"' = !\{!"function_entry_count", i64 [1-9][0-9]*\}' \
+            evidence/cpu-clock.ll
+          clang-18 -O2 evidence/cpu-clock.ll -o probe-cpu-clock
           ./probe-cpu-clock > cpu-clock-profile-output.txt
           cmp evidence/expected.txt cpu-clock-profile-output.txt
           echo 'Recorded and applied a PC-only software profile.' | tee evidence/cpu-clock-result.txt

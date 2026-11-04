@@ -65,6 +65,17 @@ def addresses(binary, trace, nm, stats):
     return counts
 
 
+def base_discriminator(raw):
+    # LLVM's non-FS DWARF discriminator starts with the prefix-encoded
+    # base component. The remaining bits describe duplication and copies.
+    # See llvm/Support/Discriminator.h.
+    if raw & 1:
+        return 0
+    value = raw >> 1
+    low = value & 0x1f
+    return low | ((value >> 1) & 0xfe0) if value & 0x20 else low
+
+
 def line_frames(symbols):
     frames = []
     # DWARF inline frames arrive from the leaf to the containing function.
@@ -74,8 +85,9 @@ def line_frames(symbols):
         if not name or not start or line < start:
             return []
         location = str(line - start)
-        if symbol['Discriminator']:
-            location += f".{symbol['Discriminator']}"
+        discriminator = base_discriminator(symbol['Discriminator'])
+        if discriminator:
+            location += f'.{discriminator}'
         frames.append((name, location))
     return frames
 
