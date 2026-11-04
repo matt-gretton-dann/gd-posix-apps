@@ -289,6 +289,25 @@ public:
       auto const lhs_first = digits_->begin();
       auto const rhs_first = rhs.digits_->begin();
       auto index = std::max(lhs_size, rhs_size);
+#if !GD_BC_PROFILE
+      // Compare the high limb first for an immediate exit on unlike values.
+      // For long equal extents, skip equal blocks before resuming numeric
+      // ordering at the most significant limb of the first unequal block.
+      // Equality of a block is independent of byte order.
+      constexpr unsigned block_limbs = 8;
+      if (lhs_size == rhs_size && index >= 4 * block_limbs) {
+        --index;
+        if (lhs_first[index] != rhs_first[index]) {
+          return lhs_first[index] < rhs_first[index] ? Details::ComparisonResult::less_than
+                                                      : Details::ComparisonResult::greater_than;
+        }
+        while (index >= block_limbs &&
+               std::equal(lhs_first + (index - block_limbs), lhs_first + index,
+                          rhs_first + (index - block_limbs))) {
+          index -= block_limbs;
+        }
+      }
+#endif
       while (index != 0) {
         --index;
         GD_BC_PROFILE_EVENT(Profile::Event::comparison_limb_positions, 1);
