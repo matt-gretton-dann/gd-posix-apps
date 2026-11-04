@@ -119,11 +119,18 @@ def configurations(gd, aa, howard, library, aa_library, revision,
         raise CommandFailure('GD recipe source does not match the requested candidate')
     if howard['metadata']['source_revision'] != helper.HOWARD_REVISION:
         raise CommandFailure('Howard comparison is not the pinned source revision')
+    images = [entry['metadata'].get('configuration', {}).get('preparsed_library_image_sha256')
+              for entry in (gd, aa)]
+    if images[0] != images[1]:
+        raise CommandFailure('independent GD builds do not contain identical preparsed images')
     gd, aa, standard, portable = map(copy.deepcopy, (gd, aa, howard, howard))
+    image = images[0]
     for entry, name in ((gd, 'gd-portable'), (aa, 'gd-aa')):
         entry.update(name=name, argv=entry['argv'] + ['-l'])
-        entry['metadata']['library'] = dict(kind='embedded ordinary source',
+        entry['metadata']['library'] = dict(kind='preparsed image' if image else 'embedded ordinary source',
                                             source_revision=revision, source_sha256=digest)
+        if image:
+            entry['metadata']['library']['image_sha256'] = image
     standard.update(name='howard-standard', role='reference', argv=standard['argv'] + ['-l'])
     standard['metadata']['library'] = dict(kind='pinned standard library',
                                            source_revision=helper.HOWARD_REVISION)
@@ -282,6 +289,8 @@ def gd_build_command(args, name, destination, cc, cxx):
     # Math A/A builds the same candidate source and must use the same mode.
     if name != 'base' and getattr(args, 'candidate_prepared_divisors', False):
         command += ['--prepared-divisors', 'ON']
+    if name != 'base' and getattr(args, 'candidate_preparsed_library', False):
+        command += ['--preparsed-library']
     return command
 
 
@@ -295,6 +304,7 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--broad', action='store_true')
     parser.add_argument('--candidate-prepared-divisors', action='store_true')
+    parser.add_argument('--candidate-preparsed-library', action='store_true')
     parser.add_argument('--broad-preset', choices=('full', 'holdout'))
     parser.add_argument('--samples', type=bench.positive_integer, default=15)
     parser.add_argument('--duration-seconds', type=bench.positive_timeout, default=.1)
@@ -348,10 +358,13 @@ def main():
                                  root / 'aa/source/src/bc/math-library.bc', args.candidate,
                                  base=baseline, base_library=base_library, base_revision=args.base)
         profile_root = root / 'profile'
-        commands.run([sys.executable, str(SCRIPTS / 'build-gd-bc.py'), '--source',
+        profile_command = [sys.executable, str(SCRIPTS / 'build-gd-bc.py'), '--source',
                       str(args.source.resolve()), '--revision', args.candidate,
                       '--split-point', '126', '--output', str(profile_root), '--name', 'gd-profile',
-                      '--diagnostic-profile', '--c-compiler', cc, '--cxx-compiler', cxx], timeout=1200)
+                      '--diagnostic-profile', '--c-compiler', cc, '--cxx-compiler', cxx]
+        if args.candidate_preparsed_library:
+            profile_command += ['--preparsed-library']
+        commands.run(profile_command, timeout=1200)
         profiled = json.loads((profile_root / 'implementations.json').read_text())['implementations'][0]
         # All builds and correctness checks finish before elapsed measurements.
         commands.run([sys.executable, str(SCRIPTS.parent / 'test-math-library-cli.py'),
@@ -474,7 +487,8 @@ def main():
         write(evidence / 'orchestration.json',dict(candidate=args.candidate,base=args.base,baseline_library_available=bool(configs.get('regression')),commands=commands.commands,
               broad=args.broad,presets=list(presets),samples=args.samples,duration_target=args.duration_seconds,
               child_timeout_seconds=args.child_timeout_seconds,total_seconds=args.total_seconds,
-              candidate_prepared_divisors=args.candidate_prepared_divisors))
+              candidate_prepared_divisors=args.candidate_prepared_divisors,
+              candidate_preparsed_library=args.candidate_preparsed_library))
         for path in root.glob('command-*.log'):
             shutil.copyfile(path, evidence / path.name)
         for name in ('gd', 'aa', 'base', 'profile', 'howard'):

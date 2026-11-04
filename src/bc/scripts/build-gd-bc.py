@@ -292,6 +292,8 @@ def main():
                         help='automatic IPO policy; explicit modes require source support')
     parser.add_argument('--prepared-divisors', choices=('AUTO', 'ON', 'OFF'), default='AUTO',
                         help='VM divisor reuse policy; explicit modes require compiled source support')
+    parser.add_argument('--preparsed-library', action='store_true',
+                        help='enable and retain the generated math-library image')
     parser.add_argument('--array-storage', choices=('hybrid', 'paged', 'flat', 'hash', 'ordered'),
                         default='hybrid', help='explicit experimental array layout')
     parser.add_argument('--diagnostic-profile', action='store_true',
@@ -338,6 +340,8 @@ def main():
             configure += ['-DBC_ARRAY_STORAGE=' + args.array_storage]
         if args.prepared_divisors != 'AUTO':
             configure += ['-DENABLE_BC_PREPARED_DIVISORS=' + args.prepared_divisors]
+        if args.preparsed_library:
+            configure += ['-DENABLE_BC_PREPARSED_LIBRARY=ON']
         if args.ipo_mode != 'AUTO':
             configure += ['-DIPO_MODE=' + args.ipo_mode]
         generator = args.generator or ('Ninja' if shutil.which('ninja') else None)
@@ -359,6 +363,14 @@ def main():
                                   diagnostic_profile=args.diagnostic_profile)
         observed_layout = verified_array_layout(helper, build, args.array_storage)
         metadata['configuration']['array_storage'] = observed_layout
+        if args.preparsed_library:
+            image = build / 'src/bc/bc-math-library-image.inc'
+            if (cache_values(build / 'CMakeCache.txt').get('ENABLE_BC_PREPARSED_LIBRARY') != 'ON'
+                    or not image.is_file()):
+                raise helper.BuildError('requested preparsed math-library image was not built')
+            retained = root / image.name
+            shutil.copyfile(image, retained)
+            metadata['configuration']['preparsed_library_image_sha256'] = helper.digest(retained)
         metadata['binary_sha256'] = helper.digest(executable)
         metadata['standard_library'] = standard_library_info(helper, builder, compiler_cxx, root)
         helper.write_json(root / 'implementations.json', {'implementations': [
