@@ -953,7 +953,22 @@ auto GD::Bc::Parser::parse_binary_expression(ExprIndex lhs, unsigned minimum_pre
       return lhs;
     lexer_->chew();
     auto rhs = parse_unary_minus_expression();
-    rhs = parse_binary_expression(rhs, operation.right_precedence);
+    if (operation.opcode == Opcode::power) {
+      // Power is the highest binary precedence and the only right-associative
+      // binary operator. Retain pending operands and reduce from the right
+      // without consuming host stack for each operator.
+      std::vector<ExprIndex> pending;
+      while (lexer_->peek() == TokenType::power) {
+        pending.push_back(rhs);
+        lexer_->chew();
+        rhs = parse_unary_minus_expression();
+      }
+      for (auto it = pending.rbegin(); it != pending.rend(); ++it)
+        rhs = insert_arith(Opcode::power, *it, rhs);
+    }
+    else {
+      rhs = parse_binary_expression(rhs, operation.right_precedence);
+    }
     lhs = insert_arith(operation.opcode, lhs, rhs);
   }
 }
