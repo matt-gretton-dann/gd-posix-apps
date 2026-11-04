@@ -324,6 +324,18 @@ class CliTests(unittest.TestCase):
                 with self.subTest(text=text):
                     self.run_bc(text, success=False)
 
+    def test_function_return_grammar_by_mode(self):
+        # Keep the opening newline in both cases so return syntax is tested
+        # independently of the extension for a same-line function body.
+        bare_value = "define f() {\nreturn 7\n}\nf()\n"
+        self.run_bc("define f() {\nreturn (7)\n}\nf()\n", "7\n")
+        if EXTENSIONS:
+            self.run_bc(bare_value, "7\n")
+        else:
+            self.run_bc(bare_value, success=False)
+        self.run_bc("define f() {\ndefine g() {\n}\n}\nf()\n",
+                    success=False)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)

@@ -742,6 +742,20 @@ public:
     return *this;
   }
 
+  // Only negative-exponent division needs this conversion. Keep its storage
+  // handling outside the common division and VM dispatch bodies.
+#if defined(_MSC_VER)
+  __declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+  [[gnu::noinline]]
+#endif
+  void truncate_dividend(std::size_t drop)
+  {
+    *this = rescaled_copy(0, drop);
+    // Comparison requires present storage even if every digit was cut.
+    mul_pow10(0);
+  }
+
   /** \brief        Add a NumType value to the digits_ at a given scale
    *  \param add    Addend.
    *  \param scale  Scale to add it at.
@@ -2484,10 +2498,10 @@ public:
         digits_.mul_pow10(target_scale - difference);
       }
       else {
-        // Integer comparison requires present storage even for a zero
-        // numerator. Preserve the old identity normalization without padding.
-        digits_.mul_pow10(0);
-        rhs.digits_.mul_pow10(difference - target_scale);
+        // For integer magnitudes, floor(A/(B*10^k)) equals
+        // floor(floor(A/10^k)/B). Drop numerator digits first instead of
+        // padding B, retaining scalar division and only surviving storage.
+        digits_.truncate_dividend(difference - target_scale);
       }
     }
     else {
@@ -2497,7 +2511,7 @@ public:
       digits_.mul_pow10(target_scale);
     }
 
-    // Record logical coefficient dimensions after decimal-factor cancellation and before
+    // Record logical coefficient dimensions after decimal-exponent reduction and before
     // comparison/normalization. These are request totals, not CPU or RSS costs.
     GD_BC_PROFILE_EVENT(Profile::Event::division_requests, 1);
     GD_BC_PROFILE_EVENT(Profile::Event::division_dividend_limbs, digits_.coefficient_limbs());

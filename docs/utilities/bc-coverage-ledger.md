@@ -274,3 +274,30 @@ compact execution enabled, LLVM recorded one interrupt exit in
 mode. With compact execution disabled, both exits came from the wide
 interpreter. These focused replays used prepared reuse OFF. Windows lacks
 the POSIX PTY facility and retains its separate signal-state tests.
+
+## Current compact VM checkpoint
+
+Clang/LLVM 23 at `cc426380097faf41bbc1dd0dff5292676bd1ee43` collected
+four broad unit/application views with compact execution enabled and typed
+results disabled. Each selected 421 entries with zero failures. The 45
+extension-enabled and 63 strict-mode skips per configuration were declared
+by the test harness.
+
+| Extensions | Prepared divisors | Executed | Skipped | Lines | Branch outcomes | MC/DC conditions |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| ON | ON | 376 | 45 | 6949/7180 | 3305/3675 | 243/318 |
+| OFF | ON | 358 | 63 | 6914/7177 | 3284/3675 | 240/318 |
+| ON | OFF | 376 | 45 | 6900/7131 | 3283/3651 | 238/310 |
+| OFF | OFF | 358 | 63 | 6865/7128 | 3262/3651 | 235/310 |
+
+The strict return-expression decision has an independence pair for the
+parenthesis condition. With extensions enabled the decision always accepts
+an expression, and the bare-expression test executes the extension operand.
+The extension setting is constant within a build. Keep each MC/DC
+denominator separate.
+
+The allocation-ceiling division test exercises the scale-reducing path
+across all three test trait widths. The raw profile archives contain 4,268
+members across the four modes. Archive and member hashes, compiler commands,
+binaries and raw exports are retained with the collection. These raw
+figures leave the broader feasibility audit under #197 open.

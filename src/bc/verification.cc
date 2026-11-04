@@ -6,10 +6,46 @@
 #include "verification.hh"
 
 #include <algorithm>
+#include <numeric>
+#include <span>
 #include <utility>
 #include <vector>
 
 namespace GD::Bc::Details {
+namespace {
+using Index = Instruction::Index;
+using Edge = std::pair<Index, Index>;
+
+// Preserve the insertion order within each node's neighbors. Flat storage
+// avoids allocating separate vectors for every edge in a small input item.
+class Adjacency
+{
+public:
+  Adjacency(Index nodes, std::span<Edge const> edges, bool reverse = false)
+      : bounds_(nodes + 1), neighbors_(edges.size())
+  {
+    for (auto const& [from, to] : edges) {
+      ++bounds_[(reverse ? to : from) + 1];
+    }
+    std::partial_sum(bounds_.begin(), bounds_.end(), bounds_.begin());
+    auto next = bounds_;
+    for (auto const& [from, to] : edges) {
+      neighbors_[next[reverse ? to : from]++] = reverse ? from : to;
+    }
+  }
+
+  [[nodiscard]] auto operator[](Index node) const -> std::span<Index const>
+  {
+    return std::span<Index const>(neighbors_).subspan(bounds_[node],
+                                                      bounds_[node + 1] - bounds_[node]);
+  }
+
+private:
+  std::vector<Index> bounds_;
+  std::vector<Index> neighbors_;
+};
+}  // namespace
+
 auto verify_control_flow(Instructions const& code, bool function_body)
   -> std::optional<VerificationError>
 {
@@ -58,12 +94,9 @@ auto verify_control_flow(Instructions const& code, bool function_body)
   // The outer stream and each function body have separate roots. Function-end
   // nodes represent body fall-through, never execution of that metadata opcode.
   // A synthetic root lets a single dominance calculation serve all regions.
-  std::vector<std::vector<I>> successors(size + 2);
-  std::vector<std::vector<I>> predecessors(size + 2);
-  auto edge = [&](I from, I to) {
-    successors[from].push_back(to);
-    predecessors[to].push_back(from);
-  };
+  std::vector<Edge> edges;
+  edges.reserve(size + entries.size());
+  auto edge = [&](I from, I to) { edges.emplace_back(from, to); };
   for (auto entry : entries) {
     edge(root, entry);
   }
@@ -101,6 +134,9 @@ auto verify_control_flow(Instructions const& code, bool function_body)
       break;
     }
   }
+
+  Adjacency const successors(size + 2, edges);
+  Adjacency const predecessors(size + 2, edges, true);
 
   // Each execution region starts with no owned argument packs. A function
   // additionally receives one caller-owned pack, consumed by its prologue.
@@ -261,12 +297,13 @@ auto verify_control_flow(Instructions const& code, bool function_body)
   // Domination queries use tree intervals, avoiding a repeated walk through a
   // long expression's ancestors for every operand. No quadratic bitset matrix
   // or recursive traversal is needed.
-  std::vector<std::vector<I>> children(size + 2);
+  edges.clear();
   for (I node : postorder) {
     if (node != root) {
-      children[dominator[node]].push_back(node);
+      edge(dominator[node], node);
     }
   }
+  Adjacency const children(size + 2, edges);
   std::vector<I> enter(size + 2, 0);
   std::vector<I> leave(size + 2, 0);
   I clock = 0;
