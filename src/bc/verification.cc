@@ -81,7 +81,8 @@ auto verify_control_flow(Instructions const& code, bool function_body)
   auto* storage = small ? &arena : std::pmr::new_delete_resource();
   std::pmr::vector<I> owner(size, 0, storage);
   std::pmr::vector<I> function_end(size, absent, storage);
-  std::pmr::vector<I> entries({0}, storage);
+  std::pmr::vector<I> entries(storage);
+  entries.push_back(0);
   I active = absent;
   for (I i = 0; i < size; ++i) {
     if (code[i].opcode() == O::function_begin) {
