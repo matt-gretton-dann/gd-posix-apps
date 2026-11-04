@@ -36,7 +36,8 @@ scales 20, 100 and 1000, each with one-shot and repeated modes. Held-out cases
 change magnitudes and Bessel orders; their reference file is independently
 certified. A hash fixture preserves all sixty original full cases.
 
-PR jobs prespecify scale 100 for every regime and both modes (twenty cases).
+PR jobs prespecify scale 100 for every regime and both modes, plus a
+repeated scale-1000 logarithm to exercise its high-precision reduction.
 Scheduled and manual jobs run both complete corpora. Selection never depends on
 observed speed. Each repeated case doubles its invocation count independently
 for every preparation role until three checked trials have median duration at
