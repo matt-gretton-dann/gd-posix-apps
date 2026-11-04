@@ -981,7 +981,7 @@
       ]
     },
     {
-      "expression": "p<.49",
+      "expression": "p<.4999999999999999999999",
       "function": "j",
       "kind": "if",
       "line": 421,
@@ -992,7 +992,7 @@
       ]
     },
     {
-      "expression": "p>.51",
+      "expression": "p>.5000000000000000000001",
       "function": "j",
       "kind": "if",
       "line": 422,
@@ -1042,7 +1042,7 @@
   "observed_outcomes": 167,
   "schema": 1,
   "scope": "test-side interpreted decision outcomes; not compiler MC/DC",
-  "source_sha256": "703e5193369f7e84f51527f7aca088a1b2ee843862e29a4ce8bc6f98f791e053",
+  "source_sha256": "45285c953faf60f67fccb8d58610fd940c1ce285e42742cab499784e6ce3d527",
   "total_outcomes": 178,
   "undefined_domain_guard_calls": 2
 }

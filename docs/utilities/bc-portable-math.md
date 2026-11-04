@@ -234,8 +234,8 @@ Otherwise, evaluate the ascending recurrence, including the initial
 than W fractional places. Differentiating the real integer-order
 [Bessel integral](https://dlmf.nist.gov/10.9.E2) gives `|J_n'(x)| <= 1`,
 so truncating the argument adds less than one working unit of error.
-If the fractional part of the result magnitude in output units is in
-[0.49, 0.51], repeat with the original argument and add F to the scale
+If the fractional part of the result magnitude in output units is
+within `10^-22` of one half, repeat with the original argument and add F to the scale
 and to the argument of d. The extra floor(x) covers cancellation and
 propagation through the absolute series, bounded by exp(2x). After the tiny-
 result branch, the initial factor needs at most 7*(W+1) steps; the term loop
@@ -245,7 +245,10 @@ bound absolute series weights by exp(x). After k exceeds x, term ratios are
 at most one quarter. Absolute tail/rounding propagation is bounded by
 `10^6*(W+1)^2*exp(2x)*u`. Since `exp(2)<10` and `0<=x-floor(x)<1`,
 `exp(2x)*10^(-floor(x)) < 10`. The remaining
-guards put this below U/2. An underflowed initial factor or term is therefore
+guards put this below the retry margin on the first attempt. With
+`T = S + floor(x) + D + 1 >= 2`, `W+1 <= 19*T` and `T < 10^d(T)`.
+The bound in output units is below `19^2*10^-25`, leaving room for
+the argument truncation error. An underflowed initial factor or term is therefore
 covered by the error budget even if later exact recurrence terms would grow.
 The forward recurrence reuses terms; it does not rebuild powers/factorials.
 

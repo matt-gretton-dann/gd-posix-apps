@@ -198,7 +198,7 @@ class LibraryCli(unittest.TestCase):
         self.certified()
 
     def test_bessel_ascending_rounding_midpoint(self):
-        arguments = ('1.52114405766876514815', '1.52114405766876514816')
+        arguments = ('1.52114405766876514815130187', '1.52114405766876514815130188')
         for argument, expected in zip(arguments, (1, 0)):
             x = Fraction(argument)
             term = partial = Fraction(1)

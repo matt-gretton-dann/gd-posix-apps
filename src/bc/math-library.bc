@@ -418,8 +418,8 @@ define j(n,x) {
       scale=0
       p=p%1
       scale=w
-      if (p<.49) break
-      if (p>.51) break
+      if (p<.4999999999999999999999) break
+      if (p>.5000000000000000000001) break
     }
   }
   if (v==1) r= -r
