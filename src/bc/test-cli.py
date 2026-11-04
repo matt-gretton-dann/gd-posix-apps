@@ -82,6 +82,14 @@ class CliTests(unittest.TestCase):
             path.write_bytes((" " * (block - 2) + "1\\\n2\nquit\n@\n").encode("ascii"))
             self.run_bc("", "12\n", files=(path,), keep_open=True)
 
+    def test_numeric_input_across_pipe_blocks(self):
+        # Each part exceeds the bounded pipe read. Preserve fractional scale
+        # across blocks and a backslash-newline continuation.
+        whole = "7" * 4100
+        fraction = "3" * 4101
+        self.run_bc(f"scale({whole}.\\\n{fraction})\nquit;", "4101\n", keep_open=True)
+        self.run_bc(f"1.{fraction}.2\n", success=False)
+
     def test_quit(self):
         for text, expected in [
             ("quit\n", ""),
