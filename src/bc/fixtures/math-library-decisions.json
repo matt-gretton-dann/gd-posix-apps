@@ -950,7 +950,7 @@
   "observed_outcomes": 151,
   "schema": 1,
   "scope": "test-side interpreted decision outcomes; not compiler MC/DC",
-  "source_sha256": "6012cb271e96d87dd5cc42ec460f16d4214b4b218c47b1baa0bd1c53c4f69d00",
+  "source_sha256": "155d3d2852bf543ba987d01d3f5deb755b2feae6716ead41a5ee2d089b5b8c64",
   "total_outcomes": 162,
   "undefined_domain_guard_calls": 2
 }
