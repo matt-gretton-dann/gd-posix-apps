@@ -41,3 +41,11 @@ These are incremental #207 stages. Numeric slot specialization, operand compacti
 liveness/fusion and dispatch alternatives remain separate measured decisions.
 Keeping two executor instantiations may increase code size; paired benchmarks
 must include small scripts and startup as well as hot loops.
+
+A function definition is checked as a separate entry in the enclosing
+stream's verification graph. The graph checks its incoming argument
+marker and keeps its branches and result operands within the region.
+Registration copies the verified body into an immutable owner. Relative
+offsets survive the copy, and a branch to the definition's end marker
+becomes a branch to the copied body's end. Verified execution reuses this
+proof. Full diagnostic execution also verifies the copied body.

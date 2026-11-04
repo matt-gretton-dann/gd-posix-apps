@@ -337,9 +337,6 @@ struct VMState
   void array(Array a, ArrayValues av);
   [[nodiscard]] auto array_length(Array a) const -> Number::NumType;
 
-  void function(Letter func, Instructions::const_iterator const& begin,
-                Instructions::const_iterator const& end, VariableMask mask, Location const& loc);
-
   /** \brief       Do a call
    *  \param  func Function to call.
    *  \param  loc  Location of call.
@@ -398,6 +395,11 @@ struct VMState
   auto full_checks() const noexcept -> bool { return checks_ == VM::ExecutionChecks::full; }
 
 private:
+  friend struct InstructionPack;
+  void install_verified_function(Letter func, Instructions::const_iterator const& begin,
+                                 Instructions::const_iterator const& end, VariableMask mask,
+                                 Location const& loc);
+
   template<typename... Ts>
   [[noreturn]] void error(char const* func, char const* file, unsigned line, char const* test,
                           Msg msg, Ts... args) const
@@ -817,12 +819,18 @@ auto GD::Bc::Details::VMState::pop_param_array() -> GD::Bc::ArrayValues
   return std::move(std::get<ArrayValues>(value));
 }
 
-void GD::Bc::Details::VMState::function(Letter func, Instructions::const_iterator const& begin,
-                                        Instructions::const_iterator const& end, VariableMask mask,
-                                        Location const& loc)
+void GD::Bc::Details::VMState::install_verified_function(
+  Letter func, Instructions::const_iterator const& begin, Instructions::const_iterator const& end,
+  VariableMask mask, Location const& loc)
 {
   Instructions instrs(begin, end);
-  validate(instrs, true);
+  // The enclosing verifier treats each body as an independent entry,
+  // checks its incoming marker, and rejects cross-region operands.
+  // Copying the body preserves relative offsets. A branch to its end
+  // marker becomes the permitted one-past-end branch of the copy.
+  if (full_checks()) {
+    validate(instrs, true);
+  }
   functions_.at(static_cast<unsigned>(func)) =
     std::make_optional(std::make_tuple(FunctionCode(std::move(instrs)), mask, loc));
 }
@@ -1318,11 +1326,11 @@ auto GD::Bc::Details::InstructionPack::execute_compact() -> std::pair<GD::Bc::Nu
       break;
     case O::function_begin: {
       auto const end = instruction.first.index - 1;
-      vm_->function(std::get<Letter>(instrs_[end].op1()),
-                    instrs_.begin() + static_cast<Instruction::Offset>(pc_) + 1,
-                    instrs_.begin() + static_cast<Instruction::Offset>(end),
-                    std::get<VariableMask>(instrs_[pc_].op1()),
-                    std::get<Location>(instrs_[pc_].op2()));
+      vm_->install_verified_function(
+        std::get<Letter>(instrs_[end].op1()),
+        instrs_.begin() + static_cast<Instruction::Offset>(pc_) + 1,
+        instrs_.begin() + static_cast<Instruction::Offset>(end),
+        std::get<VariableMask>(instrs_[pc_].op1()), std::get<Location>(instrs_[pc_].op2()));
       pc_ = instruction.first.index;
       continue;
     }
@@ -1547,11 +1555,11 @@ auto GD::Bc::Details::InstructionPack::execute_typed() -> std::pair<Number, bool
       break;
     case O::function_begin: {
       auto const end = instruction.first.index - 1;
-      vm_->function(std::get<Letter>(instrs_[end].op1()),
-                    instrs_.begin() + static_cast<Instruction::Offset>(pc_) + 1,
-                    instrs_.begin() + static_cast<Instruction::Offset>(end),
-                    std::get<VariableMask>(instrs_[pc_].op1()),
-                    std::get<Location>(instrs_[pc_].op2()));
+      vm_->install_verified_function(
+        std::get<Letter>(instrs_[end].op1()),
+        instrs_.begin() + static_cast<Instruction::Offset>(pc_) + 1,
+        instrs_.begin() + static_cast<Instruction::Offset>(end),
+        std::get<VariableMask>(instrs_[pc_].op1()), std::get<Location>(instrs_[pc_].op2()));
       pc_ = instruction.first.index;
       continue;
     }
@@ -1935,8 +1943,9 @@ auto GD::Bc::Details::InstructionPack::execute_function_begin() -> GD::Bc::Instr
   Index const given_start = get_offset_index(instrs_[pc_].op2());
   assert_error(start == given_start, Msg::bad_function_definition);  // NOLINT
 
-  vm_->function(func, instrs_.begin() + static_cast<Instruction::Offset>(start) + 1,
-                instrs_.begin() + static_cast<Instruction::Offset>(pc_), mask, loc);
+  vm_->install_verified_function(func,
+                                 instrs_.begin() + static_cast<Instruction::Offset>(start) + 1,
+                                 instrs_.begin() + static_cast<Instruction::Offset>(pc_), mask, loc);
   return pc_ + 1;
 }
 
