@@ -217,6 +217,8 @@ unset(_bc_library_image_default)
 if(ENABLE_BC_PREPARSED_LIBRARY AND NOT CMAKE_CROSSCOMPILING)
   add_executable(bc-preparse-math-library preparse-math-library.cc math-library.cc)
   target_link_libraries(bc-preparse-math-library PRIVATE libbc)
+  # The generator must link libbc even when it contains IPO bitcode.
+  gd_apply_ipo(bc-preparse-math-library)
   target_include_directories(bc-preparse-math-library PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
   set_property(TARGET bc-preparse-math-library PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
   set_property(TARGET bc-preparse-math-library PROPERTY CXX_STANDARD_REQUIRED ON)
