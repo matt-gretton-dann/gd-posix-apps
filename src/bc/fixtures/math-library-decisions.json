@@ -882,7 +882,7 @@
       "expression": "scale!=w",
       "function": "j",
       "kind": "if",
-      "line": 396,
+      "line": 398,
       "modeled": [
         "true"
       ],
@@ -894,7 +894,7 @@
       "expression": "scale(x)>w",
       "function": "j",
       "kind": "if",
-      "line": 397,
+      "line": 399,
       "modeled": [],
       "observed": [
         "true",
@@ -905,7 +905,7 @@
       "expression": "i=1;i<=n;i++",
       "function": "j",
       "kind": "for",
-      "line": 399,
+      "line": 401,
       "modeled": [],
       "observed": [
         "true",
@@ -916,7 +916,7 @@
       "expression": "t==0",
       "function": "j",
       "kind": "if",
-      "line": 401,
+      "line": 403,
       "modeled": [],
       "observed": [
         "true",
@@ -927,7 +927,7 @@
       "expression": "t!=0",
       "function": "j",
       "kind": "while",
-      "line": 406,
+      "line": 408,
       "modeled": [],
       "observed": [
         "true",
@@ -938,7 +938,7 @@
       "expression": "v==1",
       "function": "j",
       "kind": "if",
-      "line": 411,
+      "line": 413,
       "modeled": [],
       "observed": [
         "true",
@@ -949,7 +949,7 @@
       "expression": "r>=0",
       "function": "j",
       "kind": "if",
-      "line": 413,
+      "line": 415,
       "modeled": [],
       "observed": [
         "true",
@@ -960,7 +960,7 @@
       "expression": "r<0",
       "function": "j",
       "kind": "if",
-      "line": 414,
+      "line": 416,
       "modeled": [],
       "observed": [
         "true",
@@ -974,7 +974,7 @@
   "observed_outcomes": 155,
   "schema": 1,
   "scope": "test-side interpreted decision outcomes; not compiler MC/DC",
-  "source_sha256": "db411d447450d187acd859583abd684f1dbe99611f99b083c706a2ded9eb01f4",
+  "source_sha256": "20d6c63dd4b639af2aa3ae69b047834ed47939e07cf7eef241a1aaa262f1438b",
   "total_outcomes": 166,
   "undefined_domain_guard_calls": 2
 }

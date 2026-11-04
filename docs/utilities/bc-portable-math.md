@@ -231,22 +231,23 @@ conservative aggregate bound `10^6*(W+1)^2*10^D*u` remains below U/2. No
 unbounded divergent series is treated as convergent merely because a term grew.
 
 Otherwise, evaluate the ascending recurrence, including the initial
-`(x/2)^n/n!`, with W = S + floor(x) + D +
-2*d(S+floor(x)+D+1) + 32. Truncate the argument only if it has more
+`(x/2)^n/n!`, with G = floor(7*x/8) + 1 and
+W = S + G + D + 2*d(S+G+D+1) + 32. Truncate the argument only if it has more
 than W fractional places. Differentiating the real integer-order
 [Bessel integral](https://dlmf.nist.gov/10.9.E2) gives `|J_n'(x)| <= 1`,
 so truncating the argument adds less than one working unit of error.
-The extra floor(x) covers cancellation and
+The extra G covers cancellation and
 propagation through the absolute series, bounded by exp(2x). After the tiny-
 result branch, the initial factor needs at most 7*(W+1) steps; the term loop
 needs at most 8*(W+1). The [ascending definition](https://dlmf.nist.gov/10.2.E2) and the
 [integer-order modified-Bessel integral](https://dlmf.nist.gov/10.32.E3)
 bound absolute series weights by exp(x). After k exceeds x, term ratios are
 at most one quarter. Absolute tail/rounding propagation is bounded by
-`10^6*(W+1)^2*exp(2x)*u`. Since `exp(2)<10` and `0<=x-floor(x)<1`,
-`exp(2x)*10^(-floor(x)) < 10`. The remaining
+`10^6*(W+1)^2*exp(2x)*u`. The exponential series gives
+`e < 87/32`, and `87^16 < 10^7 * 32^16`. Thus
+`exp(2x)*10^(-G) < 1` for the nonnegative argument. The remaining
 guards keep the total error below half an output unit. With
-`T = S + floor(x) + D + 1 >= 2`, `W+1 <= 19*T` and `T < 10^d(T)`.
+`T = S + G + D + 1 >= 2`, `W+1 <= 19*T` and `T < 10^d(T)`.
 The bound in output units is below `19^2*10^-25`, leaving room for
 the argument truncation error. Rounding to the requested scale adds at
 most half an output unit, so the total is below one decimal ULP.
