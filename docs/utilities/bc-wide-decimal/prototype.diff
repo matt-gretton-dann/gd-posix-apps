@@ -1,0 +1,11 @@
+--- a/src/bc/number.hh
++++ b/src/bc/number.hh
+@@ -67 +67 @@
+-  static constexpr WideType base_ = static_cast<WideType>(pow10(bl10));
++  static constexpr WideType base_ = pow10(static_cast<WideType>(bl10));
+@@ -3239,0 +3240,3 @@
++#if defined(GD_BC_PROBE_WIDE_DECIMAL) && defined(__SIZEOF_INT128__)
++using Number = BasicNumber<NumberTraitsBase<::uint64_t, __uint128_t, 18>>;
++#else
+@@ -3240,0 +3244 @@
++#endif
