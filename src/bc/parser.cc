@@ -321,25 +321,101 @@ void GD::Bc::Parser::parse_statement_list()
   }
 }
 
-void GD::Bc::Parser::parse_statement()
+auto GD::Bc::Parser::parse_opt_statement() -> bool
 {
-  if (!parse_opt_statement()) {
-    insert_error(Msg::expected_statement, lexer_->peek());
+  auto const& token = lexer_->peek();
+  switch (token.type()) {
+  case Token::Type::for_:
+  case Token::Type::if_:
+  case Token::Type::while_:
+  case Token::Type::lbrace:
+    parse_structured_statement();
+    return true;
+  default:
+    return parse_leaf_statement(token);
   }
 }
 
-auto GD::Bc::Parser::parse_opt_statement() -> bool
+void GD::Bc::Parser::parse_structured_statement()
 {
-  /* statement : expression | STRING | Break | Quit | Return | Return '(' return_expression ')'
-               | For '(' expression ';' relational_expression ';' expression ')' statement
-               | If '(' relational_expression ')' statement
-               | While '(' relational_expression ')' statement
-               | '{' statement_list '}'
-     If extensions enabled:
-               | Halt
-  */
+  enum class Body { block, conditional, loop };
+  struct Pending
+  {
+    Body body;
+    ExprIndex branch;
+  };
+  std::vector<Pending> pending;
 
-  auto const& token = lexer_->peek();
+  for (;;) {
+    auto const& token = lexer_->peek();
+    bool present = true;
+    switch (token.type()) {
+    case Token::Type::lbrace:
+      lexer_->chew();
+      pending.push_back({Body::block, ExprIndex::missing()});
+      continue;
+    case Token::Type::for_:
+      if (auto const update = parse_for_header()) {
+        pending.push_back({Body::loop, *update});
+        continue;
+      }
+      break;
+    case Token::Type::if_:
+    case Token::Type::while_: {
+      bool const loop = token.type() == Token::Type::while_;
+      if (auto const branch = parse_condition_header(loop)) {
+        pending.push_back({loop ? Body::loop : Body::conditional, *branch});
+        continue;
+      }
+      break;
+    }
+    default:
+      present = parse_leaf_statement(token);
+      break;
+    }
+
+    // Complete enclosing bodies until a block separator starts another
+    // optional statement. The top-level item keeps its own delimiters.
+    while (!pending.empty()) {
+      auto const [body, branch] = pending.back();
+      if (body == Body::block) {
+        auto const delimiter = lexer_->peek().type();
+        if (delimiter == Token::Type::semicolon || delimiter == Token::Type::newline) {
+          lexer_->chew();
+          break;
+        }
+        if (delimiter == Token::Type::rbrace) {
+          lexer_->chew();
+        }
+        else {
+          insert_error(Msg::expected_rbrace, lexer_->peek());
+        }
+      }
+      else {
+        if (!present) {
+          insert_error(Msg::expected_statement, lexer_->peek());
+        }
+        if (body == Body::conditional) {
+          ExprIndex const end(instructions_->size());
+          instructions_->at(branch.index()).op2(end - branch);
+        }
+        else {
+          insert_branch(branch);
+          update_loop_exits(instructions_->size());
+          pop_loop();
+        }
+      }
+      pending.pop_back();
+      present = true;
+    }
+    if (pending.empty()) {
+      return;
+    }
+  }
+}
+
+auto GD::Bc::Parser::parse_leaf_statement(Token const& token) -> bool
+{
   switch (token.type()) {
   case Token::Type::string: {
     auto s = insert_string(token.string());
@@ -360,25 +436,6 @@ auto GD::Bc::Parser::parse_opt_statement() -> bool
     return true;
   case Token::Type::return_:
     parse_return_statement();
-    return true;
-  case Token::Type::for_:
-    parse_for_statement();
-    return true;
-  case Token::Type::if_:
-    parse_if_statement();
-    return true;
-  case Token::Type::while_:
-    parse_while_statement();
-    return true;
-  case Token::Type::lbrace:
-    lexer_->chew();
-    parse_statement_list();
-    if (lexer_->peek() != Token::Type::rbrace) {
-      insert_error(Msg::expected_rbrace, lexer_->peek());
-    }
-    else {
-      lexer_->chew();
-    }
     return true;
   default: {
     ExprIndex const idx = parse_opt_expression();
@@ -447,7 +504,7 @@ void GD::Bc::Parser::parse_return_statement()
   insert_return(expr);
 }
 
-void GD::Bc::Parser::parse_for_statement()
+auto GD::Bc::Parser::parse_for_header() -> std::optional<ExprIndex>
 {
   /* Because we generate code as we parse it we end up with a bit of a mess here but for the loop
    *
@@ -472,7 +529,7 @@ void GD::Bc::Parser::parse_for_statement()
 
   if (lexer_->peek() != Token::Type::lparens) {
     insert_error(Msg::expected_lparens, lexer_->peek());
-    return;
+    return std::nullopt;
   }
   lexer_->chew();
 
@@ -481,7 +538,7 @@ void GD::Bc::Parser::parse_for_statement()
 
   if (lexer_->peek() != Token::Type::semicolon) {
     insert_error(Msg::expected_semicolon, lexer_->peek());
-    return;
+    return std::nullopt;
   }
   lexer_->chew();
 
@@ -491,7 +548,7 @@ void GD::Bc::Parser::parse_for_statement()
 
   if (lexer_->peek() != Token::Type::semicolon) {
     insert_error(Msg::expected_semicolon, lexer_->peek());
-    return;
+    return std::nullopt;
   }
   lexer_->chew();
 
@@ -506,55 +563,22 @@ void GD::Bc::Parser::parse_for_statement()
   insert_branch(begin);
   if (lexer_->peek() != Token::Type::rparens) {
     insert_error(Msg::expected_rparens, lexer_->peek());
-    return;
+    return std::nullopt;
   }
   lexer_->chew();
 
   ExprIndex const body(instructions_->size());
-  parse_statement();
-  insert_branch(update);
-
   instructions_->at(b_to_body.index()).op1(body - b_to_body);
-  update_loop_exits(instructions_->size());
-  pop_loop();
+  return update;
 }
 
-void GD::Bc::Parser::parse_if_statement()
+auto GD::Bc::Parser::parse_condition_header(bool loop) -> std::optional<ExprIndex>
 {
-  assert(lexer_->peek() == Token::Type::if_);  // NOLINT
   lexer_->chew();
 
   if (lexer_->peek() != Token::Type::lparens) {
     insert_error(Msg::expected_lparens, lexer_->peek());
-    return;
-  }
-  lexer_->chew();
-
-  ExprIndex const begin(instructions_->size());
-  auto rel_expr = parse_relational_expression();
-
-  if (lexer_->peek() != Token::Type::rparens) {
-    insert_error(Msg::expected_rparens, lexer_->peek());
-    return;
-  }
-  lexer_->chew();
-
-  auto const bz = insert_branch_zero(rel_expr, ExprIndex(0));
-
-  parse_statement();
-  ExprIndex const end(instructions_->size());
-  instructions_->at(bz.index()).op2(end - bz);
-}
-
-void GD::Bc::Parser::parse_while_statement()
-{
-  assert(lexer_->peek() == Token::Type::while_);  // NOLINT
-
-  lexer_->chew();
-
-  if (lexer_->peek() != Token::Type::lparens) {
-    insert_error(Msg::expected_lparens, lexer_->peek());
-    return;
+    return std::nullopt;
   }
   lexer_->chew();
 
@@ -563,18 +587,17 @@ void GD::Bc::Parser::parse_while_statement()
 
   if (lexer_->peek() != Token::Type::rparens) {
     insert_error(Msg::expected_rparens, lexer_->peek());
-    return;
+    return std::nullopt;
   }
   lexer_->chew();
 
-  auto bz = insert_branch_zero(rel_expr, ExprIndex(0));
-  push_loop();
-  add_loop_exit(bz.index());
-
-  parse_statement();
-  insert_branch(begin);
-  update_loop_exits(instructions_->size());
-  pop_loop();
+  auto const bz = insert_branch_zero(rel_expr, ExprIndex(0));
+  if (loop) {
+    push_loop();
+    add_loop_exit(bz.index());
+    return begin;
+  }
+  return bz;
 }
 
 void GD::Bc::Parser::push_loop() { loop_breaks_.push({}); }
