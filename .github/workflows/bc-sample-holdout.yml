@@ -229,8 +229,11 @@ jobs:
                                          213526, manifest['bootstrap_resamples'])
           bench['write_json'](holdout / 'summary-vs-howard.json', comparison)
 
-          # Inspect the exact timing images only after every measured child exits.
-          roles = json.loads((evidence / 'implementations.json').read_text())['implementations']
+          # Inspect the four GD builds after timing. Howard is a benchmark reference only.
+          implementations = json.loads((evidence / 'implementations.json').read_text())['implementations']
+          names = {'portable', 'sampled', 'sampled-vm', 'aa'}
+          roles = [role for role in implementations if role['name'] in names]
+          assert len(roles) == len(names) and {role['name'] for role in roles} == names
           codegen = runpy.run_path('src/bc/scripts/collect-bc-codegen.py')
           report = codegen['collect'](roles, evidence / 'codegen')
           assert all(role['disassembly']['status'] == 'collected'
