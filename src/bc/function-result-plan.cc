@@ -27,7 +27,8 @@ void visit_data_uses(Instruction const& instruction, Instruction::Index pc, Fn&&
 }
 }  // namespace
 
-auto plan_function_result_slots(Instructions const& code, std::size_t slot_bytes) -> ResultSlotPlan
+auto plan_function_result_slots(Instructions const& code, std::size_t slot_bytes,
+                                std::span<std::uint8_t const> consumption) -> ResultSlotPlan
 {
   using I = Instruction::Index;
   using O = Instruction::Opcode;
@@ -36,13 +37,13 @@ auto plan_function_result_slots(Instructions const& code, std::size_t slot_bytes
   if (size < 64 || size >= std::numeric_limits<Compact>::max() ||
       size > std::numeric_limits<std::size_t>::max() / sizeof(Compact) ||
       slot_bytes <= sizeof(Compact))
-    return plan_result_slots(code, slot_bytes);
+    return plan_result_slots(code, slot_bytes, consumption);
 
   // Persistent bodies have no nested definitions. Keep the existing plan
   // for any stream that contains definition metadata.
   for (auto const& instruction : code) {
     if (instruction.opcode() == O::function_begin || instruction.opcode() == O::function_end)
-      return plan_result_slots(code, slot_bytes);
+      return plan_result_slots(code, slot_bytes, consumption);
   }
   auto const visit_body = [&](auto&& visit) {
     for (I index = 0; index < size; ++index)
@@ -91,8 +92,11 @@ auto plan_function_result_slots(Instructions const& code, std::size_t slot_bytes
   result.indices.resize(size, 0);
   std::vector<Compact> available;
   Compact next = 1;
+  std::size_t chain_count = 1;
   visit_body([&](I i) {
     if (classify_result(code, i) != ResultKind::none) {
+      if (consumption.empty() || consumption[i] == 0)
+        ++chain_count;
       if (last[i] == size || available.empty()) {
         result.indices[i] = next++;
       }
@@ -112,8 +116,8 @@ auto plan_function_result_slots(Instructions const& code, std::size_t slot_bytes
     visit_data_uses(code[i], i, retire);
     retire(i);
   });
-  if (next >= size || size - next <= size * sizeof(Compact) / slot_bytes)
-    return plan_result_slots(code, slot_bytes);
+  if (next >= chain_count || next >= size || size - next <= size * sizeof(Compact) / slot_bytes)
+    return plan_result_slots(code, slot_bytes, consumption);
   result.count = next;
   return result;
 }

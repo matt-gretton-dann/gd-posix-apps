@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <span>
 #include <vector>
 
 #include "bc.hh"
@@ -23,8 +24,8 @@ auto classify_result(Instructions const& code, Instruction::Index index) -> Resu
 
 // A compact map assigns slots only to value-producing instructions in this
 // execution region. Zero is a shared empty sentinel for non-producers and
-// skipped definition bodies. The persistent function planner can recycle
-// proven block-local numeric slots.
+// skipped definition bodies. Verified arithmetic may reuse the slot of a
+// first operand whose sole use is in the same straight-line block.
 struct ResultSlotPlan
 {
   using CompactIndex = std::uint32_t;
@@ -48,11 +49,14 @@ struct ResultSlotPlan
 // Call after complete verification. Small streams, unrepresentable compact
 // indices and layouts without a net slot/map payload saving keep the generic
 // identity layout. slot_bytes is the caller's actual result-slot sizeof.
-auto plan_result_slots(Instructions const& code, std::size_t slot_bytes) -> ResultSlotPlan;
+// Optional consumption flags must come from plan_consumption for this code.
+auto plan_result_slots(Instructions const& code, std::size_t slot_bytes,
+                       std::span<std::uint8_t const> consumption = {}) -> ResultSlotPlan;
 
-// For verified persistent bodies, recycle only numeric values whose uses all
-// follow the producer in the same basic block. Other values own distinct slots.
-auto plan_function_result_slots(Instructions const& code, std::size_t slot_bytes) -> ResultSlotPlan;
+// Large persistent functions may recycle proven block-local numeric slots.
+// The accepted operand-slot plan remains the fallback when it is smaller.
+auto plan_function_result_slots(Instructions const& code, std::size_t slot_bytes,
+                                std::span<std::uint8_t const> consumption = {}) -> ResultSlotPlan;
 
 // Opcode-specific operands in the verified execution stream. Only the member
 // selected during lowering may be read: data/control operands use index, while
