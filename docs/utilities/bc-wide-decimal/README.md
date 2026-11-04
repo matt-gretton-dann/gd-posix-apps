@@ -56,3 +56,33 @@ or isolate the cost of 128-bit division from other trait-specific effects.
 
 [Full samples](full.jsonl.gz) · [Full summary](full-summary.json) ·
 [Holdout samples](holdout.jsonl.gz) · [Holdout summary](holdout-summary.json)
+
+## Follow-up peak RSS
+
+The same binaries were replayed under macOS `/usr/bin/time -l`. Use
+the [GMP RSS runner](../bc-gmp-multiply/measure-rss.py.txt) with its
+`gmp` role replaced by `wide` and the executable paths set to the
+two builds above. Each role had one warmup and three measured
+launches per shape. All 40 product outputs matched independent integer
+oracles, including the negative scaled product. Peak RSS is process
+memory, so this does not isolate scratch buffers.
+
+| Operand digits | Median wide / baseline peak RSS |
+| --- | ---: |
+| 70,000 × 70,000 | 0.988 |
+| 75,000 × 75,000, signed and scaled | 1.000 |
+| 100,000 × 100,000 | 1.000 |
+| 100,000 × 1,000 | 0.994 |
+| 150,000 × 150,000 | 0.994 |
+
+This memory check leaves the timing decision unchanged. The independent
+[Toom evidence](../bc-native-controls-and-kernels/README.md) retained
+adverse cases. The [exact transform](../bc-exact-transform/README.md)
+is available for opt-in dense squares with portable fallback.
+The [GMP bridge](../bc-gmp-multiply/README.md) traded speed for memory,
+and the [persistent binary probe](../bc-binary-coefficient/README.md)
+showed recurrence gains alongside an unequal scaled-product loss.
+The [NEON tile](../bc-neon-schoolbook/README.md) did not improve its
+tested component shapes.
+
+[Raw RSS observations](rss.json)
