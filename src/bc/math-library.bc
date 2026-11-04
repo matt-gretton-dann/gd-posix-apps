@@ -34,6 +34,13 @@ define a(x) {
      needs neither magnitude-dependent working scale nor reduction. */
   if (s<=144) {
     if (x==1) {
+      /* The rounded unit value already has the POSIX default scale. */
+      if (s==20) {
+        r=.78539816339744830962
+        if (n==1) r= -r
+        ibase=b
+        return(r)
+      }
       scale=s+1
       r=.7853981633974483096156608458198757210492923498437764552437361480769541015715522496570087063355292669955370216283205766617734611523876455579313398520321202793625
       r+=10^(-s)/2

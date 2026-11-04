@@ -106,11 +106,11 @@ def selected_cases(bench, preset, broad):
         if previous is None or abs(case['parameters']['scale'] - 100) < abs(previous['parameters']['scale'] - 100):
             chosen[key] = case
     names = {case['name'] for case in chosen.values()}
-    # Exercise both bounded binary and high-precision logarithm reduction.
+    # Cover the default-scale shortcuts and high-precision logarithm.
+    extra = {('a', 20), ('l', 20), ('l', 1000)}
     names.update(case['name'] for case in cases
-                 if case['parameters']['function'] == 'l' and
-                 case['parameters']['mode'] == 'repeated' and
-                 case['parameters']['scale'] in (20, 1000))
+                 if case['parameters']['mode'] == 'repeated' and
+                 (case['parameters']['function'], case['parameters']['scale']) in extra)
     return [case['name'] for case in cases if case['name'] in names]
 
 

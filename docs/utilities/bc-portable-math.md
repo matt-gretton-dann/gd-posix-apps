@@ -91,7 +91,10 @@ truncate at S. The final error is at most U/2 + 10^-160 < U. Negating before
 truncation preserves nearest rounding for -1. Tests check the literal and both
 reference endpoints round identically at every entry scale through 144.
 
-The shortcut uses a working scale of at most 145. All other inputs and S >= 145
+At the POSIX default S = 20, return the independently certified rounded
+literal directly, applying the original sign. The enclosure test certifies
+the literal at that scale. Other bounded unit inputs use a working scale
+of at most 145. All other inputs and S >= 145
 retain the dynamic calculation and its working-scale readback guard. Literal identity, threshold neighbors, representations
 and caller bases are checked independently. No retained state or VM recognition
 is introduced.
