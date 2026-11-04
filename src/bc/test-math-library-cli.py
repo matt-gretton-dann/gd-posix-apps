@@ -268,15 +268,18 @@ class LibraryCli(unittest.TestCase):
         program = 'scale=0\n' + ''.join(f'j(0,{x})\n' for x in arguments)
         self.assertEqual(self.checked_lines(program), ['1', '0'])
 
-    def test_bessel_ascending_with_large_cancellation(self):
-        for order, argument, scale in ((0, 100, 150), (300, 300, 100)):
+    def test_bessel_ascending_with_exact_rational_enclosures(self):
+        arguments = ((0, 100, 150), (300, 300, 100), (1, '1.125', 100),
+                     (1, '1.' + '23456789' * 12, 20))
+        for order, argument, scale in arguments:
             with self.subTest(order=order, argument=argument, scale=scale):
+                x = Fraction(argument)
                 term = Fraction(1)
                 for j in range(1, order + 1):
-                    term *= Fraction(argument, 2 * j)
+                    term *= x / (2 * j)
                 partial = term
                 for k in range(1, 2000):
-                    ratio = Fraction(argument**2, 4 * k * (order + k))
+                    ratio = x**2 / (4 * k * (order + k))
                     term *= -ratio
                     if ratio < 1 and abs(term) < Fraction(1, 10**(scale + 2)):
                         break

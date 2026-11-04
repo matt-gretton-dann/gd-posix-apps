@@ -444,7 +444,8 @@ define j(n,x) {
     if (t==0) break
   }
   r=t
-  q= -x*x/4
+  /* An exact decimal quarter keeps short coefficients short. */
+  q= -x*x*.25
   k=1
   while (t!=0) {
     t=t*q/(k*(n+k))
