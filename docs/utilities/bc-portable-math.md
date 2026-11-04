@@ -148,8 +148,10 @@ It also avoids unnecessary reduction and squaring for very large magnitudes.
 
 Repeated square roots put a positive x in [.8,1.2], recording the power-of-two
 reconstruction multiplier. Evaluate `2*atanh((x-1)/(x+1))` using its odd-power
-series. The reduced magnitude is at most 1/9 and the squared ratio is below
-.013, so fewer than W+2 terms suffice. Near one, this evaluates the small
+series. At requested scale 1000 and above, reduce further to [.95,1.05]
+to trade additional roots for fewer full-precision series terms. In both
+regimes the reduced ratio has magnitude at most 1/9 and its square is
+below .013, so fewer than W+2 terms suffice. Near one, this evaluates the small
 logarithm directly rather than subtracting large independently rounded logs.
 
 For positive x, its signed decimal exponent is m = D - F - 1. If
@@ -163,8 +165,8 @@ stays at least one, where the derivative of log is at most one. Its
 truncation therefore adds less than one working unit of error.
 
 Let T = S + F + D + 1. Use W = S + 2*d(T) + 24 on the normalized path.
-The square-root reduction of an argument in [1,10) needs at most four
-roots. Each root truncation is below u and later roots on [1,10)
+The square-root reduction of an argument in [1,10) needs at most six
+roots, including at high precision. Each root truncation is below u and later roots on [1,10)
 contract the perturbation. Add m*l(10) evaluated at scale W after
 reconstruction. The recursive l(10) uses the ordinary path because its
 decimal exponent is one. Its returned error is at most u, so this term
@@ -178,9 +180,9 @@ is at least 10^(-F/2). Its truncated value is at least half that bound
 because W includes F. Subsequent roots of small arguments stay above that
 same lower bound. Taking the logarithm of each truncated root therefore
 introduces at most 2*10^(F/2)*u error. The reconstruction multiplier is at
-most 32*(D+F+1). The geometric sum of intermediate multipliers is below
+most 128*(D+F+1), using the tighter reduction interval for the bound. The geometric sum of intermediate multipliers is below
 twice the final multiplier, so the root errors and the bounded atanh series
-together cost at most 10^6*(W+10)*(D+F+1)*10^F*u. The two digit-count guards
+together cost at most 10^7*(W+10)*(D+F+1)*10^F*u. The two digit-count guards
 cover the quadratic factor even when F exceeds D. The remaining margin
 keeps the pre-rounding error below U/2, including near one.
 

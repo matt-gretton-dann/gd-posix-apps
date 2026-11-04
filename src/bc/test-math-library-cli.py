@@ -108,13 +108,16 @@ class LibraryCli(unittest.TestCase):
                     self.assertEqual(ORACLE.classify(value, lower, upper, scale), 'pass')
                     self.assertEqual(lines[2 * index + 1], str(scale))
 
-    def test_logarithm_decimal_normalization(self):
+    def test_logarithm_argument_reduction(self):
         cases = []
         for scale in (20, 100, 1000):
             cutoff = 64 + scale // 2
             for exponent in (cutoff - 1, cutoff, cutoff + 33):
                 cases.append((scale, '9' + '0' * exponent))
                 cases.append((scale, '.' + '0' * (exponent - 1) + '9'))
+        for scale in (999, 1000):
+            for argument in ('.02', '.949999', '.95', '1.05', '1.050001', '2'):
+                cases.append((scale, argument))
         program = ''.join(f'scale={scale}\nr=l({argument})\nr\nscale(r)\nibase\n'
                           for scale, argument in cases)
         binaries = [BC] if OTHER_BC is None else [BC, OTHER_BC]
