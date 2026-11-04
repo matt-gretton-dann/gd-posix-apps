@@ -382,11 +382,13 @@ define j(n,x) {
     }
   }
   scale=0
-  /* The ascending recurrence amplifies errors by at most exp(2*x).
-     Since exp(2)<10, floor(x) decimal guards leave a factor below ten. */
-  w=s+(x/1)+scale(x)+length(x)+2*length(s+(x/1)+scale(x)+length(x)+1)+32
+  /* Try the ascending series without guards for every input place.
+     DLMF 10.9.2 gives |J_n'(x)|<=1 for real x and integer n, so
+     truncating x at working precision adds less than one working unit. */
+  w=s+(x/1)+length(x)+2*length(s+(x/1)+length(x)+1)+32
   scale=w
   if (scale!=w) return(1/0)
+  if (scale(x)>w) x=x/1
   t=1
   for (i=1;i<=n;i++) {
     t=t*x/(2*i)
