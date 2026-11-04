@@ -1,0 +1,107 @@
+name: bc enabled portable operand stack experiment
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/bc/stack-execution.*'
+      - '.github/workflows/bc-stack-execution.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bc-stack-execution-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  compare:
+    name: Operand stack / ${{ matrix.image }}
+    runs-on: ${{ matrix.image }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [ubuntu-24.04, windows-2025, macos-15]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Establish native MSVC environment
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installation = & "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe" -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (!$installation) { throw 'Native x64 MSVC is unavailable' }
+          $variables = & cmd /c "`"$installation\Common7\Tools\VsDevCmd.bat`" -arch=x64 -host_arch=x64 >nul && set"
+          if ($LASTEXITCODE) { throw 'Cannot initialize MSVC' }
+          foreach ($line in $variables) {
+            if ($line -match '^(PATH|INCLUDE|LIB|LIBPATH|VCToolsInstallDir|VCINSTALLDIR|VSINSTALLDIR|WindowsSdkDir|WindowsSDKVersion|UniversalCRTSdkDir|UCRTVersion|Platform)=(.*)$') {
+              "$($matches[1])=$($matches[2])" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            }
+          }
+      - name: Compare the enabled stack against register controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir evidence
+          git rev-parse HEAD > evidence/revision.txt
+          python_cmd=python3
+          if [[ $RUNNER_OS == Windows ]]; then
+            export CC=cl CXX=cl
+            python_cmd=python
+          fi
+          for role in registers stack aa; do
+            option=OFF
+            if [[ $role == stack ]]; then option=ON; fi
+            cmake -S . -B "build-$role" -G Ninja -DCMAKE_BUILD_TYPE=Release \
+              -DBUILD_TESTING=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+              -DENABLE_NON_POSIX_EXTENSIONS=ON -DENABLE_BC_PREPARED_DIVISORS=OFF \
+              -DENABLE_BC_STACK_EXECUTION="$option" \
+              -DBC_MULTIPLY_SPLIT_POINT=126
+            cmake --build "build-$role" --target bc --parallel 2
+            cp "build-$role/compile_commands.json" "evidence/$role-compile.json"
+            binary="build-$role/src/bc/bc"
+            if [[ $RUNNER_OS == Windows ]]; then binary+=".exe"; fi
+            "$python_cmd" src/bc/test-cli.py "$binary" --extensions ON
+            "$python_cmd" src/bc/test-vm-cli.py "$binary" --extensions ON
+            if [[ $RUNNER_OS != Windows ]]; then
+              "$python_cmd" src/bc/test-signal-delivery.py "$binary"
+            fi
+            "$python_cmd" src/bc/test-math-library-cli.py "$binary"
+          done
+          "$python_cmd" - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          roles = []
+          for name in ('registers', 'stack', 'aa'):
+              binary = Path('build-' + name, 'src/bc', 'bc.exe' if os.name == 'nt' else 'bc').resolve()
+              commands = Path('evidence', name + '-compile.json').read_text()
+              assert ('GD_BC_STACK_EXECUTION=1' in commands) == (name == 'stack')
+              assert ('stack-execution.cc' in commands) == (name == 'stack')
+              roles.append(dict(name=name, argv=[str(binary)],
+                                metadata=dict(binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest())))
+          Path('evidence/arithmetic.json').write_text(json.dumps(dict(implementations=roles)))
+          for role in roles:
+              role['argv'].append('-l')
+          Path('evidence/math.json').write_text(json.dumps(dict(implementations=roles)))
+          PY
+          for preset in full holdout; do
+            "$python_cmd" src/bc/scripts/bench-bc.py --config evidence/arithmetic.json \
+              --reference registers --preset "$preset" --samples 9 --warmups 1 \
+              --seed 207530 --output "evidence/arithmetic-$preset"
+          done
+          "$python_cmd" src/bc/scripts/bench-bc.py --config evidence/math.json \
+            --suite math --reference registers --preset quick --samples 9 --warmups 1 \
+            --calibrate-seconds 0.05 --seed 207530 --output evidence/math-quick
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: bc-stack-execution-${{ matrix.image }}-${{ github.run_id }}
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 30
