@@ -428,3 +428,40 @@ Native mathematical candidate/base and diagnostic protocols are documented in
 `build-gd-bc.py --diagnostic-profile` mode produces an explicitly instrumented
 configuration that this elapsed harness rejects. Candidate-only logical counter
 reports and native CPU/RSS observations remain separate from release ratios.
+
+## Coefficient ownership comparison
+
+Issue #446 compared the production shared owner with two one-pointer
+prototypes. [PR #447](https://github.com/matt-gretton-dann/gd-posix-apps/pull/447)
+preserved atomic strong and weak counts. [PR #448](https://github.com/matt-gretton-dann/gd-posix-apps/pull/448)
+used non-atomic counts in a thread-confined CLI experiment. The production
+shared owner remains the portable implementation.
+
+The exact native revisions were `80712b82512c5235eed1f5ec2a00461efbeb3e14`
+and `546ec9e82849ef09997f0f5c2e1817920a4f86b6`, respectively. Both used
+baseline `edd686a51463391e94805520968c49855dce64d3`. Each host measured
+66 full and 66 held-out workloads with separate A/A controls. The archive
+audit checked the source revisions, output samples and ownership compiler
+definitions for both the CLI and VM.
+
+| Owner | Host | Output checks | Passing A/A controls | Confirmed slowdowns above 5% |
+| --- | --- | ---: | ---: | ---: |
+| Atomic | Linux | 6,870 | 106 | 6 |
+| Atomic | macOS | 6,600 | 0 | 0 |
+| Atomic | Windows | 6,600 | 99 | 0 |
+| Thread-confined | Linux | 7,020 | 107 | 13 |
+| Thread-confined | macOS | 6,620 | 1 | 0 |
+| Thread-confined | Windows | 6,990 | 101 | 13 |
+
+The atomic layout reduced the measured macOS 32-bit-limb Number from
+40 to 32 bytes and its execution result slot from 48 to 40 bytes. Both
+prototypes also reduced RSS in the local dense-array workload. Local
+paired runs repeated elapsed-time losses for both prototypes, and
+the Linux and Windows results above rule out adoption under the 5% gate.
+The native macOS controls were mostly noisy, limiting the native timing
+conclusions. Thread-confined execution was a CLI measurement assumption.
+Public Number copies retain the existing cross-thread ownership contract.
+
+The [raw native archives](bc-coefficient-owner-evidence/) retain favorable,
+losing and noisy observations alongside build and sample provenance.
+`SHA256SUMS` records the archive identities.
