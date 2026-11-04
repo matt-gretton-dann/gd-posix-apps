@@ -72,11 +72,16 @@ checked arithmetic and interpreter workloads using corpus seed 213525. It
 also samples the CLI regression suite, which exercises startup, pipe input,
 and diagnostics. These short paths may receive few samples.
 
-The workflow builds a profiled candidate and an independent baseline rebuild
-using the same source and compiler. It checks all three binaries with the
-CLI and math library suites, then evaluates the arithmetic holdout with
+The workflow builds whole-program and VM-only profiled candidates and an
+independent baseline rebuild using the same source and compiler. The VM-only
+role adds the sample option only to vm.cc, as checked in the compile commands.
+It checks the interpreter binaries with the CLI and math library suites,
+then evaluates the arithmetic holdout with
 corpus seed 213526. The holdout records per-workload ratios against both the
 matched Clang baseline and the pinned Howard comparator from the same
 paired rounds. The artifact includes the compiler flags, profile identities,
 build logs, section sizes, and checked raw observations. Timing is advisory
 on hosted runners. The experiment does not select a new release default.
+
+The [first whole-program run](bc-sample-pgo-ecbff8b7/README.md) improved loop,
+call and sparse-array timing but regressed several arithmetic cases.

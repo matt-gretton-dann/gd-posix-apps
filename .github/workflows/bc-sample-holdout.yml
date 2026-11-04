@@ -57,18 +57,34 @@ jobs:
           WRAPPER
           chmod +x "$RUNNER_TEMP/bc-perf"
 
+          # Defer until libbc exists and scope the option to its vm.cc source.
+          cat > "$RUNNER_TEMP/bc-vm-sample.cmake" <<'CMAKE'
+          function(bc_vm_sample)
+            set_property(SOURCE "${CMAKE_SOURCE_DIR}/src/bc/vm.cc" TARGET_DIRECTORY libbc
+              APPEND PROPERTY COMPILE_OPTIONS
+              "-fprofile-sample-use=${CMAKE_SOURCE_DIR}/evidence/training.prof"
+              -Werror=profile-instr-out-of-date)
+            set_property(SOURCE "${CMAKE_SOURCE_DIR}/src/bc/vm.cc" TARGET_DIRECTORY libbc
+              APPEND PROPERTY OBJECT_DEPENDS "${CMAKE_SOURCE_DIR}/evidence/training.prof")
+          endfunction()
+          cmake_language(DEFER CALL bc_vm_sample)
+          CMAKE
+
           build() {
             local role=$1
             local flags='-gline-tables-only -fdebug-info-for-profiling'
+            local extra=()
             if [[ $role == sampled ]]; then
               flags+=" -fprofile-sample-use=$PWD/evidence/training.prof -Werror=profile-instr-out-of-date"
+            elif [[ $role == sampled-vm ]]; then
+              extra+=("-DCMAKE_PROJECT_TOP_LEVEL_INCLUDES=$RUNNER_TEMP/bc-vm-sample.cmake")
             fi
             /usr/bin/time -p cmake -S . -B "build-$role" -G Ninja \
               -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
               -DCMAKE_C_COMPILER=clang-18 -DCMAKE_CXX_COMPILER=clang++-18 \
               -DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld-18 -DIPO_MODE=REQUIRED \
               -DENABLE_NON_POSIX_EXTENSIONS=ON -DBUILD_TESTING=OFF \
-              -DBC_MULTIPLY_SPLIT_POINT=126 "-DCMAKE_CXX_FLAGS=$flags" \
+              -DBC_MULTIPLY_SPLIT_POINT=126 "-DCMAKE_CXX_FLAGS=$flags" "${extra[@]}" \
               2>&1 | tee "evidence/$role-configure.log"
             /usr/bin/time -p cmake --build "build-$role" --target bc --parallel 2 \
               2>&1 | tee "evidence/$role-build.log"
@@ -91,15 +107,27 @@ jobs:
           roles = []
           for role in sys.argv[1:]:
               commands = (evidence / (role + '-compile.json')).read_bytes()
-              vm = next(row for row in json.loads(commands) if row['file'].endswith('/src/bc/vm.cc'))
-              flags = vm.get('arguments') or shlex.split(vm['command'])
-              assert '-O3' in flags and '-flto=thin' in flags
-              assert any(f.startswith('-fprofile-sample-use=') for f in flags) == (role == 'sampled')
+              profiled_sources = []
+              for row in json.loads(commands):
+                  flags = row.get('arguments') or shlex.split(row['command'])
+                  if any(flag.startswith('-fprofile-sample-use=') for flag in flags):
+                      profiled_sources.append(row['file'])
+                  if row['file'].endswith('/src/bc/vm.cc'):
+                      vm_flags = flags
+              assert '-O3' in vm_flags and '-flto=thin' in vm_flags
+              if role == 'sampled-vm':
+                  assert len(profiled_sources) == 1 and profiled_sources[0].endswith('/src/bc/vm.cc')
+              elif role == 'sampled':
+                  assert len(profiled_sources) > 1 and any(
+                      f.endswith('/src/bc/vm.cc') for f in profiled_sources)
+              else:
+                  assert not profiled_sources
               binary = Path('build-' + role, 'src/bc/bc').resolve()
               metadata = dict(
                   source_revision=revision,
                   compiler=(evidence / 'compiler.txt').read_text().strip(),
-                  flags=flags,
+                  flags=vm_flags,
+                  profiled_sources=profiled_sources,
                   version='gd-posix-apps source ' + revision,
                   binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),
                   binary_bytes=binary.stat().st_size,
@@ -149,10 +177,11 @@ jobs:
           sha256sum evidence/training.prof > evidence/training.sha256
 
           build sampled
+          build sampled-vm
           sha256sum --check evidence/training.sha256
           build aa
-          llvm-size-18 build-{portable,sampled,aa}/src/bc/bc > evidence/section-sizes.txt
-          for role in portable sampled aa; do
+          llvm-size-18 build-{portable,sampled,sampled-vm,aa}/src/bc/bc > evidence/section-sizes.txt
+          for role in portable sampled sampled-vm aa; do
             llvm-objcopy-18 --dump-section ".text=evidence/$role.text" \
               "build-$role/src/bc/bc" "$RUNNER_TEMP/bc-objcopy"
           done
@@ -160,7 +189,7 @@ jobs:
           rm evidence/*.text "$RUNNER_TEMP/bc-objcopy"
           python3 src/bc/scripts/build-bc-comparators.py --implementation howard \
             --cc gcc --output howard
-          config portable sampled aa > evidence/implementations.json
+          config portable sampled sampled-vm aa > evidence/implementations.json
           python3 src/bc/scripts/bench-bc.py --config evidence/implementations.json \
             --require-provenance --reference portable --preset holdout --corpus-seed 213526 \
             --seed 213526 --samples 9 --warmups 1 --output evidence/holdout
