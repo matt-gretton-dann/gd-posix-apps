@@ -37,7 +37,7 @@ jobs:
       BC_BROAD: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || startsWith(github.head_ref, 'codex/bc-native-prepared/') || (startsWith(github.ref, 'refs/heads/codex/bc-math-broad/') || startsWith(github.head_ref, 'codex/bc-math-broad/') || github.head_ref == 'codex/bc-217-current-integration') }}
       # Opt in only this experimental topic; controls retain their source defaults.
       BC_PREPARED: ${{ startsWith(github.head_ref, 'codex/bc-native-prepared/') }}
-      BC_PREPARSED_LIBRARY: ${{ github.head_ref == 'codex/bc-217-preparsed-library' }}
+      BC_PREPARSED_LIBRARY: ${{ github.head_ref == 'codex/bc-217-preparsed-library' || github.head_ref == 'codex/bc-217-defer-library-functions' }}
     steps:
       - uses: actions/checkout@v7
         with:
