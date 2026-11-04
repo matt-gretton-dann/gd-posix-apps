@@ -180,3 +180,22 @@ identity checks, optimization remarks, native code inspection, build cost,
 RSS/code size, per-workload Howard ratios and startup. Missing or stale PGO
 profiles must fail explicitly rather than silently selecting an unprofiled
 build. No compiler performance gain or PGO acceptance is claimed here.
+
+### Apple Clang native target on M1
+
+On macOS arm64, Apple Clang 21.0.0 (clang-2100.3.34.2) selected
+`apple-m1` both by default and with `-mcpu=native`, as reported by
+`clang++ -###`. At revision `4934a4e0`, configure three independent Ninja
+Release builds with `BUILD_TESTING=OFF` and the default extension and
+ThinLTO settings. Set `CMAKE_CXX_FLAGS=-mcpu=native` in one build and
+leave it empty in both portable controls. Build the `bc` target and
+verify the flag in the native compilation database.
+
+All three executables were 568,080 bytes and had SHA-256
+`466d774e457249996f8de523d8ee468271386588689f597273f055708216baf6`.
+Each passed 36 CLI checks and 18 math checks with one optional math
+check skipped. Build times were 11.43 s and 11.04 s for the portable
+controls and 11.02 s for the native build, one measurement per build.
+The matching binaries give no reason to add a target flag for this
+compiler and host. Other CPU and compiler combinations need separate
+measurements.
