@@ -292,8 +292,11 @@ subset of the nonnegative terms of `exp(a)*exp(a) = exp(x)`. An error
 introduced within the ascending loop propagates across k more steps with
 weight at most `a^(2*k)/(k!)^2`, bounded in sum by the same product.
 
-The stored magnitude of q is at most Q = a^2 and differs from it by at
-most 2u. To bound this perturbation, differentiate the absolute series
+The squared argument is multiplied by the exact decimal factor .25.
+This preserves a short coefficient when the product is exact at fewer
+than W places, so later multiplications need fewer limbs. Both products
+truncate at W only when their exact result needs more places. The stored
+magnitude of q is at most Q = a^2 and differs from it by at most 2u. To bound this perturbation, differentiate the absolute series
 in Q, holding the exact initial coefficient `a^n/n!` fixed. For term k
 the factor k cancels against k!, and dropping the last factor of (n+k)!
 bounds the derivative sum by
