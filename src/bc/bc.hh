@@ -964,7 +964,7 @@ private:
   auto parse_expression(POPEFlags flags = POPEFlags::parse_primary) -> ExprIndex;
 
   struct Primary;
-  auto begin_primary() -> Primary;
+  auto begin_primary(Token::Type token) -> Primary;
   auto finish_primary(Primary const& primary, ExprIndex inner, POPEFlags flags) -> ExprIndex;
 
   /** \brief      Ensure that the value of the expression pointed to by \a idx has been loaded.

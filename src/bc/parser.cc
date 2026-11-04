@@ -866,9 +866,8 @@ struct GD::Bc::Parser::Primary
   std::optional<Location> location;
 };
 
-auto GD::Bc::Parser::begin_primary() -> Primary
+auto GD::Bc::Parser::begin_primary(TokenType token) -> Primary
 {
-  auto const token = lexer_->peek().type();
   switch (token) {
   case TokenType::letter: {
     auto const letter = lexer_->peek().letter();
@@ -1031,18 +1030,21 @@ auto GD::Bc::Parser::parse_opt_expression(POPEFlags flags) -> ExprIndex
     case Phase::operand: {
       frame.required_operand = frame.phase == Phase::operand;
       frame.negations = 0;
-      while (lexer_->peek() == TokenType::subtract) {
+      auto token = lexer_->peek().type();
+      while (token == TokenType::subtract) {
         lexer_->chew();
         ++frame.negations;
         frame.required_operand = true;
+        token = lexer_->peek().type();
       }
       frame.prefix_increment.reset();
-      if (lexer_->peek().is_incr_decr_op()) {
-        frame.prefix_increment = lexer_->peek() == TokenType::increment;
+      if (token == TokenType::increment || token == TokenType::decrement) {
+        frame.prefix_increment = token == TokenType::increment;
         lexer_->chew();
         frame.required_operand = true;
+        token = lexer_->peek().type();
       }
-      auto primary = begin_primary();
+      auto primary = begin_primary(token);
       frame.phase = Phase::primary_ready;
       if (primary.opener) {
         auto const opener = *primary.opener;
