@@ -1,0 +1,78 @@
+name: bc fixed-layout definition verification control
+
+on:
+  push:
+    branches: ['codex/bc-207-definition-proof-control']
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: candidate
+          persist-credentials: false
+      - uses: actions/checkout@v7
+        with:
+          ref: 6211a7007cea00dbbd1c979a08b8855310fd049a
+          path: baseline
+          persist-credentials: false
+      - name: Compare both policies in one executable
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir evidence
+          for role in baseline candidate; do
+            options=()
+            if [[ $role == candidate ]]; then
+              options+=(-DCMAKE_CXX_FLAGS=-DGD_BC_DEFINITION_PROOF_CONTROL=1)
+            fi
+            cmake -S "$role" -B "build-$role" -G Ninja -DCMAKE_BUILD_TYPE=Release \
+              -DBUILD_TESTING=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+              -DBC_MULTIPLY_SPLIT_POINT=126 "${options[@]}"
+            cmake --build "build-$role" --target bc --parallel 2
+            git -C "$role" rev-parse HEAD > "evidence/$role-revision.txt"
+            cp "build-$role/compile_commands.json" "evidence/$role-compile.json"
+            sha256sum "build-$role/src/bc/bc" >> evidence/binaries.txt
+          done
+          python3 candidate/src/bc/test-vm-cli.py build-candidate/src/bc/bc --extensions ON
+          GD_BC_REVALIDATE_DEFINITIONS=1 python3 candidate/src/bc/test-vm-cli.py \
+            build-candidate/src/bc/bc --extensions ON
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          base = str(Path('build-baseline/src/bc/bc').resolve())
+          candidate = str(Path('build-candidate/src/bc/bc').resolve())
+          key = 'GD_BC_REVALIDATE_DEFINITIONS'
+          roles = [
+              ('baseline', ['/usr/bin/env', '-u', key, base]),
+              ('revalidate', ['/usr/bin/env', key + '=1', candidate]),
+              ('reuse', ['/usr/bin/env', '-u', key, candidate]),
+          ]
+          Path('evidence/config.json').write_text(json.dumps(dict(implementations=[
+              dict(name=name, argv=argv) for name, argv in roles
+          ])))
+          PY
+          for preset in full holdout; do
+            args=()
+            while IFS= read -r name; do
+              args+=(--workload "$name")
+            done < <(python3 candidate/src/bc/scripts/bench-bc.py --list --preset "$preset" |
+              python3 -c 'import json,sys; print(*[w["name"] for w in json.load(sys.stdin) if w["name"].startswith(("modulo_", "frontend_definitions_", "calls_", "loop_", "recursion_"))], sep="\n")')
+            test "${#args[@]}" -ge 10
+            python3 candidate/src/bc/scripts/bench-bc.py --config evidence/config.json \
+              --reference baseline --preset "$preset" --samples 11 --warmups 1 \
+              --seed 207516 --output "evidence/$preset" "${args[@]}"
+          done
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: bc-definition-proof-control-${{ github.run_id }}
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 30

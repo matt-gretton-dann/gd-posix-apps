@@ -828,7 +828,11 @@ void GD::Bc::Details::VMState::install_verified_function(
   // checks its incoming marker, and rejects cross-region operands.
   // Copying the body preserves relative offsets. A branch to its end
   // marker becomes the permitted one-past-end branch of the copy.
-  if (full_checks()) {
+  bool revalidate = full_checks();
+#if defined(GD_BC_DEFINITION_PROOF_CONTROL)
+  revalidate = revalidate || std::getenv("GD_BC_REVALIDATE_DEFINITIONS") != nullptr;
+#endif
+  if (revalidate) {
     validate(instrs, true);
   }
   functions_.at(static_cast<unsigned>(func)) =
