@@ -228,6 +228,13 @@ jobs:
           comparison = bench['summarize'](manifest['corpus'], rows, 'howard-7.0.3',
                                          213526, manifest['bootstrap_resamples'])
           bench['write_json'](holdout / 'summary-vs-howard.json', comparison)
+
+          # Inspect the exact timing images only after every measured child exits.
+          roles = json.loads((evidence / 'implementations.json').read_text())['implementations']
+          codegen = runpy.run_path('src/bc/scripts/collect-bc-codegen.py')
+          report = codegen['collect'](roles, evidence / 'codegen')
+          assert all(role['disassembly']['status'] == 'collected'
+                     for role in report['observations'])
           PY
       - uses: actions/upload-artifact@v7
         if: always()

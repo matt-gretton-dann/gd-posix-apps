@@ -95,3 +95,8 @@ call and sparse-array timing but regressed several arithmetic cases.
 The [VM-only follow-up](bc-sample-pgo-74f513fd/README.md) avoided the
 multi-limb modulo regression but slowed several interpreter workloads.
 Both application scopes remain experimental.
+
+The [cold-cohort follow-up](bc-sample-pgo-59a0613e/README.md) passed the
+sample threshold in each family. Both profile scopes still exceeded the
+Linux regression allowance. The workflow preserves and disassembles the
+exact timing images after all measurements finish.
