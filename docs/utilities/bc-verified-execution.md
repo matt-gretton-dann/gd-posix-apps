@@ -7,10 +7,14 @@ only the verifier or a persistent verified function owner can construct it.
 The executor accepts this view rather than an unchecked instruction vector.
 The source retains the existing borrowed lifetime contract.
 
-Function bodies are verified before registration and stored in `FunctionCode`,
-which exposes a read-only verified view. Redefinition replaces the owner and
-its literal caches. The verified view changes no numeric decoding, runtime
-ibase behavior or function argument semantics.
+The outer verifier checks each function body as a separate execution region,
+including its incoming argument pack. It rejects control-flow and result
+references that cross the region boundary. Registration copies the verified
+body into `FunctionCode`. Relative offsets are preserved, and a branch to the
+function-end marker becomes a branch to the end of the extracted body.
+Full-check mode also verifies the extracted body independently. Redefinition
+replaces the owner and its literal caches. Both modes preserve numeric
+decoding, runtime ibase and function argument semantics.
 
 `VM::ExecutionChecks::full` retains the original per-instruction result diagnostic
 switch and remains the public C++ constructor's default. The executable selects

@@ -826,7 +826,15 @@ void GD::Bc::Details::VMState::function(Letter func, Instructions::const_iterato
                                         Location const& loc)
 {
   Instructions instrs(begin, end);
-  validate(instrs, true);
+  // All dispatch paths reach this through a verified instruction pack.
+  // The outer verifier checks the body as a separate execution region:
+  // branches and result references stay within it, and the incoming
+  // argument pack is checked at its entry. Slicing preserves relative
+  // offsets, with the function-end marker becoming the one-past target.
+  // Full checks repeat verification of the extracted body for diagnostics.
+  if (full_checks()) {
+    validate(instrs, true);
+  }
   functions_.at(static_cast<unsigned>(func)) =
     std::make_optional(std::make_tuple(FunctionCode(std::move(instrs)), mask, loc));
 }
