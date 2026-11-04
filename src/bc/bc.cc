@@ -23,6 +23,10 @@
 #include <memory>
 #include <variant>
 
+#if !defined(_WIN32)
+#  include <poll.h>
+#endif
+
 #include "find-multiply-split-point.hh"
 
 namespace GD::Bc::Library {
@@ -73,7 +77,7 @@ public:
       ssize_t count;
       do {
         count = ::read(STDIN_FILENO, bytes_.data(), bytes_.size());
-      } while (count < 0 && (errno == EINTR || errno == EAGAIN));
+      } while (count < 0 && (errno == EINTR || (errno == EAGAIN && wait_for_input())));
       if (count < 0) {
         std::cerr << error(Msg::file_error, "(standard input)");
         std::exit(1);  // NOLINT(concurrency-mt-unsafe)
@@ -93,6 +97,19 @@ public:
   }
 
 private:
+  static auto wait_for_input() -> bool
+  {
+    // An inherited nonblocking pipe can be empty while its writer is open.
+    // Wait without changing its shared flags. Read again after a hangup so
+    // buffered bytes and EOF follow the same path as ordinary blocking input.
+    struct pollfd input{STDIN_FILENO, POLLIN, 0};
+    int ready;
+    do {
+      ready = ::poll(&input, 1, -1);
+    } while (ready < 0 && errno == EINTR);
+    return ready > 0;
+  }
+
   void do_chew() override
   {
     if (position_ != end_) {
