@@ -1,0 +1,90 @@
+#include <gmpxx.h>
+
+#include <algorithm>
+#include <iostream>
+#include <string>
+
+struct Decimal
+{
+  mpz_class coefficient;
+  unsigned scale;
+};
+
+auto parse(std::string text) -> Decimal
+{
+  auto point = text.find('.');
+  unsigned scale = 0;
+  if (point != std::string::npos) {
+    scale = static_cast<unsigned>(text.size() - point - 1);
+    text.erase(point, 1);
+  }
+  return {mpz_class(text, 10), scale};
+}
+
+auto format(Decimal const& value) -> std::string
+{
+  bool const negative = value.coefficient < 0;
+  mpz_class const magnitude = abs(value.coefficient);
+  auto text = magnitude.get_str();
+  if (value.scale > 0) {
+    if (text.size() <= value.scale) {
+      text.insert(0, value.scale - text.size() + 1, '0');
+    }
+    text.insert(text.size() - value.scale, 1, '.');
+  }
+  if (negative) {
+    text.insert(0, 1, '-');
+  }
+  return text;
+}
+
+auto product(Decimal const& lhs, Decimal const& rhs, unsigned target) -> Decimal
+{
+  auto const sum = lhs.scale + rhs.scale;
+  auto const scale = std::min(sum, std::max({lhs.scale, rhs.scale, target}));
+  mpz_class result = lhs.coefficient * rhs.coefficient;
+  if (scale < sum) {
+    mpz_class divisor;
+    mpz_ui_pow_ui(divisor.get_mpz_t(), 10, sum - scale);
+    mpz_tdiv_q(result.get_mpz_t(), result.get_mpz_t(), divisor.get_mpz_t());
+  }
+  return {result, scale};
+}
+
+int main()
+{
+  std::string operation;
+  while (std::cin >> operation) {
+    if (operation == "mul") {
+      std::string lhs, rhs;
+      unsigned scale;
+      if (!(std::cin >> lhs >> rhs >> scale)) {
+        return 2;
+      }
+      std::cout << format(product(parse(lhs), parse(rhs), scale)) << '\n';
+      continue;
+    }
+    unsigned count;
+    if (!(std::cin >> count)) {
+      return 2;
+    }
+    mpz_class result = 1;
+    if (operation == "factorial") {
+      for (unsigned i = 2; i <= count; ++i) {
+        result *= i;
+      }
+    }
+    else if (operation == "fibonacci") {
+      result = 0;
+      mpz_class next = 1;
+      for (unsigned i = 0; i < count; ++i) {
+        result += next;
+        result.swap(next);
+      }
+    }
+    else {
+      return 2;
+    }
+    std::cout << result << '\n';
+  }
+}

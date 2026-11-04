@@ -1,0 +1,1172 @@
+[
+  {
+    "name": "mul-100-100-scale-0",
+    "round": 0,
+    "elapsed_ns": {
+      "decimal": 87732083,
+      "probe": 91450666
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "b5d12a3493f4b21832484180aa6e812a7ef81eb8a6bce4ad2e61a939b3e9d293"
+  },
+  {
+    "name": "mul-100-100-scale-0",
+    "round": 1,
+    "elapsed_ns": {
+      "probe": 86171792,
+      "decimal": 83928167
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "b5d12a3493f4b21832484180aa6e812a7ef81eb8a6bce4ad2e61a939b3e9d293"
+  },
+  {
+    "name": "mul-100-100-scale-0",
+    "round": 2,
+    "elapsed_ns": {
+      "decimal": 84023667,
+      "probe": 86286125
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "b5d12a3493f4b21832484180aa6e812a7ef81eb8a6bce4ad2e61a939b3e9d293"
+  },
+  {
+    "name": "mul-100-100-scale-0",
+    "round": 3,
+    "elapsed_ns": {
+      "probe": 85592375,
+      "decimal": 84900250
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "b5d12a3493f4b21832484180aa6e812a7ef81eb8a6bce4ad2e61a939b3e9d293"
+  },
+  {
+    "name": "mul-100-100-scale-0",
+    "round": 4,
+    "elapsed_ns": {
+      "decimal": 83978416,
+      "probe": 87035958
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "b5d12a3493f4b21832484180aa6e812a7ef81eb8a6bce4ad2e61a939b3e9d293"
+  },
+  {
+    "name": "mul-100-100-scale-0",
+    "round": 5,
+    "elapsed_ns": {
+      "decimal": 85933417,
+      "probe": 86351334
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "b5d12a3493f4b21832484180aa6e812a7ef81eb8a6bce4ad2e61a939b3e9d293"
+  },
+  {
+    "name": "mul-100-100-scale-0",
+    "round": 6,
+    "elapsed_ns": {
+      "decimal": 84297834,
+      "probe": 85627583
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "b5d12a3493f4b21832484180aa6e812a7ef81eb8a6bce4ad2e61a939b3e9d293"
+  },
+  {
+    "name": "mul-100-100-scale-0",
+    "round": 7,
+    "elapsed_ns": {
+      "decimal": 83946375,
+      "probe": 85514292
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "b5d12a3493f4b21832484180aa6e812a7ef81eb8a6bce4ad2e61a939b3e9d293"
+  },
+  {
+    "name": "mul-100-100-scale-0",
+    "round": 8,
+    "elapsed_ns": {
+      "decimal": 83744125,
+      "probe": 85320083
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "b5d12a3493f4b21832484180aa6e812a7ef81eb8a6bce4ad2e61a939b3e9d293"
+  },
+  {
+    "name": "mul-100-100-scale-0",
+    "round": 9,
+    "elapsed_ns": {
+      "probe": 85375208,
+      "decimal": 83990541
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "b5d12a3493f4b21832484180aa6e812a7ef81eb8a6bce4ad2e61a939b3e9d293"
+  },
+  {
+    "name": "mul-1000-1000-scale-25",
+    "round": 0,
+    "elapsed_ns": {
+      "decimal": 212224750,
+      "probe": 217455625
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "335bbb8bd05a0fbb7737afe7e5f09fd089edb30337d628a9b780aebf3b04e3c8"
+  },
+  {
+    "name": "mul-1000-1000-scale-25",
+    "round": 1,
+    "elapsed_ns": {
+      "decimal": 209622458,
+      "probe": 212419417
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "335bbb8bd05a0fbb7737afe7e5f09fd089edb30337d628a9b780aebf3b04e3c8"
+  },
+  {
+    "name": "mul-1000-1000-scale-25",
+    "round": 2,
+    "elapsed_ns": {
+      "probe": 212264833,
+      "decimal": 209445375
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "335bbb8bd05a0fbb7737afe7e5f09fd089edb30337d628a9b780aebf3b04e3c8"
+  },
+  {
+    "name": "mul-1000-1000-scale-25",
+    "round": 3,
+    "elapsed_ns": {
+      "decimal": 209258916,
+      "probe": 211539375
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "335bbb8bd05a0fbb7737afe7e5f09fd089edb30337d628a9b780aebf3b04e3c8"
+  },
+  {
+    "name": "mul-1000-1000-scale-25",
+    "round": 4,
+    "elapsed_ns": {
+      "decimal": 209241542,
+      "probe": 211398167
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "335bbb8bd05a0fbb7737afe7e5f09fd089edb30337d628a9b780aebf3b04e3c8"
+  },
+  {
+    "name": "mul-1000-1000-scale-25",
+    "round": 5,
+    "elapsed_ns": {
+      "decimal": 209185458,
+      "probe": 210897041
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "335bbb8bd05a0fbb7737afe7e5f09fd089edb30337d628a9b780aebf3b04e3c8"
+  },
+  {
+    "name": "mul-1000-1000-scale-25",
+    "round": 6,
+    "elapsed_ns": {
+      "probe": 218567958,
+      "decimal": 211782750
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "335bbb8bd05a0fbb7737afe7e5f09fd089edb30337d628a9b780aebf3b04e3c8"
+  },
+  {
+    "name": "mul-1000-1000-scale-25",
+    "round": 7,
+    "elapsed_ns": {
+      "probe": 212955083,
+      "decimal": 209261125
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "335bbb8bd05a0fbb7737afe7e5f09fd089edb30337d628a9b780aebf3b04e3c8"
+  },
+  {
+    "name": "mul-1000-1000-scale-25",
+    "round": 8,
+    "elapsed_ns": {
+      "probe": 211130792,
+      "decimal": 208923875
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "335bbb8bd05a0fbb7737afe7e5f09fd089edb30337d628a9b780aebf3b04e3c8"
+  },
+  {
+    "name": "mul-1000-1000-scale-25",
+    "round": 9,
+    "elapsed_ns": {
+      "probe": 211126208,
+      "decimal": 209235250
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "335bbb8bd05a0fbb7737afe7e5f09fd089edb30337d628a9b780aebf3b04e3c8"
+  },
+  {
+    "name": "mul-10000-10000-scale-0",
+    "round": 0,
+    "elapsed_ns": {
+      "decimal": 158101375,
+      "probe": 157547584
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "3d9ca7071d6a9fac1a7de1a4578935ef4ce82eab2475d00e3a4258e9ad04d903"
+  },
+  {
+    "name": "mul-10000-10000-scale-0",
+    "round": 1,
+    "elapsed_ns": {
+      "probe": 156873875,
+      "decimal": 157642792
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "3d9ca7071d6a9fac1a7de1a4578935ef4ce82eab2475d00e3a4258e9ad04d903"
+  },
+  {
+    "name": "mul-10000-10000-scale-0",
+    "round": 2,
+    "elapsed_ns": {
+      "probe": 156969125,
+      "decimal": 157547333
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "3d9ca7071d6a9fac1a7de1a4578935ef4ce82eab2475d00e3a4258e9ad04d903"
+  },
+  {
+    "name": "mul-10000-10000-scale-0",
+    "round": 3,
+    "elapsed_ns": {
+      "decimal": 161461833,
+      "probe": 157898666
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "3d9ca7071d6a9fac1a7de1a4578935ef4ce82eab2475d00e3a4258e9ad04d903"
+  },
+  {
+    "name": "mul-10000-10000-scale-0",
+    "round": 4,
+    "elapsed_ns": {
+      "probe": 158590458,
+      "decimal": 157173500
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "3d9ca7071d6a9fac1a7de1a4578935ef4ce82eab2475d00e3a4258e9ad04d903"
+  },
+  {
+    "name": "mul-10000-10000-scale-0",
+    "round": 5,
+    "elapsed_ns": {
+      "decimal": 157018833,
+      "probe": 156769542
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "3d9ca7071d6a9fac1a7de1a4578935ef4ce82eab2475d00e3a4258e9ad04d903"
+  },
+  {
+    "name": "mul-10000-10000-scale-0",
+    "round": 6,
+    "elapsed_ns": {
+      "decimal": 156796666,
+      "probe": 156360208
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "3d9ca7071d6a9fac1a7de1a4578935ef4ce82eab2475d00e3a4258e9ad04d903"
+  },
+  {
+    "name": "mul-10000-10000-scale-0",
+    "round": 7,
+    "elapsed_ns": {
+      "decimal": 156857042,
+      "probe": 156588167
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "3d9ca7071d6a9fac1a7de1a4578935ef4ce82eab2475d00e3a4258e9ad04d903"
+  },
+  {
+    "name": "mul-10000-10000-scale-0",
+    "round": 8,
+    "elapsed_ns": {
+      "decimal": 157022750,
+      "probe": 156457083
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "3d9ca7071d6a9fac1a7de1a4578935ef4ce82eab2475d00e3a4258e9ad04d903"
+  },
+  {
+    "name": "mul-10000-10000-scale-0",
+    "round": 9,
+    "elapsed_ns": {
+      "decimal": 156847209,
+      "probe": 156514708
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "3d9ca7071d6a9fac1a7de1a4578935ef4ce82eab2475d00e3a4258e9ad04d903"
+  },
+  {
+    "name": "mul-100000-100000-scale-0",
+    "round": 0,
+    "elapsed_ns": {
+      "decimal": 77008916,
+      "probe": 71373500
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "3f3a3514ca3b0e5f9f18e70243a41322bc5e59cfc74a342e6f6ef6985918a1a1"
+  },
+  {
+    "name": "mul-100000-100000-scale-0",
+    "round": 1,
+    "elapsed_ns": {
+      "probe": 69435958,
+      "decimal": 77455500
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "3f3a3514ca3b0e5f9f18e70243a41322bc5e59cfc74a342e6f6ef6985918a1a1"
+  },
+  {
+    "name": "mul-100000-100000-scale-0",
+    "round": 2,
+    "elapsed_ns": {
+      "decimal": 76328250,
+      "probe": 67363375
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "3f3a3514ca3b0e5f9f18e70243a41322bc5e59cfc74a342e6f6ef6985918a1a1"
+  },
+  {
+    "name": "mul-100000-100000-scale-0",
+    "round": 3,
+    "elapsed_ns": {
+      "decimal": 76029916,
+      "probe": 67239292
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "3f3a3514ca3b0e5f9f18e70243a41322bc5e59cfc74a342e6f6ef6985918a1a1"
+  },
+  {
+    "name": "mul-100000-100000-scale-0",
+    "round": 4,
+    "elapsed_ns": {
+      "decimal": 75981250,
+      "probe": 67170042
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "3f3a3514ca3b0e5f9f18e70243a41322bc5e59cfc74a342e6f6ef6985918a1a1"
+  },
+  {
+    "name": "mul-100000-100000-scale-0",
+    "round": 5,
+    "elapsed_ns": {
+      "probe": 67302417,
+      "decimal": 75962583
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "3f3a3514ca3b0e5f9f18e70243a41322bc5e59cfc74a342e6f6ef6985918a1a1"
+  },
+  {
+    "name": "mul-100000-100000-scale-0",
+    "round": 6,
+    "elapsed_ns": {
+      "probe": 67845750,
+      "decimal": 78951500
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "3f3a3514ca3b0e5f9f18e70243a41322bc5e59cfc74a342e6f6ef6985918a1a1"
+  },
+  {
+    "name": "mul-100000-100000-scale-0",
+    "round": 7,
+    "elapsed_ns": {
+      "probe": 72060917,
+      "decimal": 80171625
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "3f3a3514ca3b0e5f9f18e70243a41322bc5e59cfc74a342e6f6ef6985918a1a1"
+  },
+  {
+    "name": "mul-100000-100000-scale-0",
+    "round": 8,
+    "elapsed_ns": {
+      "decimal": 79705041,
+      "probe": 70469958
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "3f3a3514ca3b0e5f9f18e70243a41322bc5e59cfc74a342e6f6ef6985918a1a1"
+  },
+  {
+    "name": "mul-100000-100000-scale-0",
+    "round": 9,
+    "elapsed_ns": {
+      "decimal": 77029917,
+      "probe": 67378167
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "3f3a3514ca3b0e5f9f18e70243a41322bc5e59cfc74a342e6f6ef6985918a1a1"
+  },
+  {
+    "name": "mul-100000-1000-scale-25",
+    "round": 0,
+    "elapsed_ns": {
+      "decimal": 74462000,
+      "probe": 101893958
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "494dde75426913d7b36184d2f6f59dde4ed52890742c4824d9bdfb067a5c565c"
+  },
+  {
+    "name": "mul-100000-1000-scale-25",
+    "round": 1,
+    "elapsed_ns": {
+      "probe": 101322250,
+      "decimal": 73860125
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "494dde75426913d7b36184d2f6f59dde4ed52890742c4824d9bdfb067a5c565c"
+  },
+  {
+    "name": "mul-100000-1000-scale-25",
+    "round": 2,
+    "elapsed_ns": {
+      "probe": 101831583,
+      "decimal": 73998458
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "494dde75426913d7b36184d2f6f59dde4ed52890742c4824d9bdfb067a5c565c"
+  },
+  {
+    "name": "mul-100000-1000-scale-25",
+    "round": 3,
+    "elapsed_ns": {
+      "probe": 100859834,
+      "decimal": 73667500
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "494dde75426913d7b36184d2f6f59dde4ed52890742c4824d9bdfb067a5c565c"
+  },
+  {
+    "name": "mul-100000-1000-scale-25",
+    "round": 4,
+    "elapsed_ns": {
+      "decimal": 73594750,
+      "probe": 101255083
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "494dde75426913d7b36184d2f6f59dde4ed52890742c4824d9bdfb067a5c565c"
+  },
+  {
+    "name": "mul-100000-1000-scale-25",
+    "round": 5,
+    "elapsed_ns": {
+      "decimal": 74807375,
+      "probe": 101418542
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "494dde75426913d7b36184d2f6f59dde4ed52890742c4824d9bdfb067a5c565c"
+  },
+  {
+    "name": "mul-100000-1000-scale-25",
+    "round": 6,
+    "elapsed_ns": {
+      "probe": 101324958,
+      "decimal": 73576916
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "494dde75426913d7b36184d2f6f59dde4ed52890742c4824d9bdfb067a5c565c"
+  },
+  {
+    "name": "mul-100000-1000-scale-25",
+    "round": 7,
+    "elapsed_ns": {
+      "decimal": 73848417,
+      "probe": 101071917
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "494dde75426913d7b36184d2f6f59dde4ed52890742c4824d9bdfb067a5c565c"
+  },
+  {
+    "name": "mul-100000-1000-scale-25",
+    "round": 8,
+    "elapsed_ns": {
+      "decimal": 73545042,
+      "probe": 101308583
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "494dde75426913d7b36184d2f6f59dde4ed52890742c4824d9bdfb067a5c565c"
+  },
+  {
+    "name": "mul-100000-1000-scale-25",
+    "round": 9,
+    "elapsed_ns": {
+      "decimal": 74080708,
+      "probe": 101894250
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "494dde75426913d7b36184d2f6f59dde4ed52890742c4824d9bdfb067a5c565c"
+  },
+  {
+    "name": "factorial-1000",
+    "round": 0,
+    "elapsed_ns": {
+      "decimal": 38889792,
+      "probe": 8375917
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "7f0e5f1a0686bc0a1fb3b2cd0c2440403e0dbeeaebed784d926b5d9a0d28deef"
+  },
+  {
+    "name": "factorial-1000",
+    "round": 1,
+    "elapsed_ns": {
+      "decimal": 38472500,
+      "probe": 8748833
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "7f0e5f1a0686bc0a1fb3b2cd0c2440403e0dbeeaebed784d926b5d9a0d28deef"
+  },
+  {
+    "name": "factorial-1000",
+    "round": 2,
+    "elapsed_ns": {
+      "probe": 8036375,
+      "decimal": 37618709
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "7f0e5f1a0686bc0a1fb3b2cd0c2440403e0dbeeaebed784d926b5d9a0d28deef"
+  },
+  {
+    "name": "factorial-1000",
+    "round": 3,
+    "elapsed_ns": {
+      "decimal": 37705500,
+      "probe": 8342042
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "7f0e5f1a0686bc0a1fb3b2cd0c2440403e0dbeeaebed784d926b5d9a0d28deef"
+  },
+  {
+    "name": "factorial-1000",
+    "round": 4,
+    "elapsed_ns": {
+      "probe": 7987208,
+      "decimal": 38483708
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "7f0e5f1a0686bc0a1fb3b2cd0c2440403e0dbeeaebed784d926b5d9a0d28deef"
+  },
+  {
+    "name": "factorial-1000",
+    "round": 5,
+    "elapsed_ns": {
+      "decimal": 37851042,
+      "probe": 8867584
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "7f0e5f1a0686bc0a1fb3b2cd0c2440403e0dbeeaebed784d926b5d9a0d28deef"
+  },
+  {
+    "name": "factorial-1000",
+    "round": 6,
+    "elapsed_ns": {
+      "decimal": 38698208,
+      "probe": 7972000
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "7f0e5f1a0686bc0a1fb3b2cd0c2440403e0dbeeaebed784d926b5d9a0d28deef"
+  },
+  {
+    "name": "factorial-1000",
+    "round": 7,
+    "elapsed_ns": {
+      "probe": 7871708,
+      "decimal": 37746083
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "7f0e5f1a0686bc0a1fb3b2cd0c2440403e0dbeeaebed784d926b5d9a0d28deef"
+  },
+  {
+    "name": "factorial-1000",
+    "round": 8,
+    "elapsed_ns": {
+      "decimal": 37791292,
+      "probe": 8211125
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "7f0e5f1a0686bc0a1fb3b2cd0c2440403e0dbeeaebed784d926b5d9a0d28deef"
+  },
+  {
+    "name": "factorial-1000",
+    "round": 9,
+    "elapsed_ns": {
+      "probe": 8062584,
+      "decimal": 38140084
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "7f0e5f1a0686bc0a1fb3b2cd0c2440403e0dbeeaebed784d926b5d9a0d28deef"
+  },
+  {
+    "name": "factorial-5000",
+    "round": 0,
+    "elapsed_ns": {
+      "decimal": 181883750,
+      "probe": 21934583
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "82f912d6f3c521a37991add836d05ec97c799ef02277fbac109120748fe19b75"
+  },
+  {
+    "name": "factorial-5000",
+    "round": 1,
+    "elapsed_ns": {
+      "decimal": 179997917,
+      "probe": 21537167
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "82f912d6f3c521a37991add836d05ec97c799ef02277fbac109120748fe19b75"
+  },
+  {
+    "name": "factorial-5000",
+    "round": 2,
+    "elapsed_ns": {
+      "decimal": 179836459,
+      "probe": 21407875
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "82f912d6f3c521a37991add836d05ec97c799ef02277fbac109120748fe19b75"
+  },
+  {
+    "name": "factorial-5000",
+    "round": 3,
+    "elapsed_ns": {
+      "probe": 20977167,
+      "decimal": 179918583
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "82f912d6f3c521a37991add836d05ec97c799ef02277fbac109120748fe19b75"
+  },
+  {
+    "name": "factorial-5000",
+    "round": 4,
+    "elapsed_ns": {
+      "probe": 21697500,
+      "decimal": 180385792
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "82f912d6f3c521a37991add836d05ec97c799ef02277fbac109120748fe19b75"
+  },
+  {
+    "name": "factorial-5000",
+    "round": 5,
+    "elapsed_ns": {
+      "probe": 22625292,
+      "decimal": 180419000
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "82f912d6f3c521a37991add836d05ec97c799ef02277fbac109120748fe19b75"
+  },
+  {
+    "name": "factorial-5000",
+    "round": 6,
+    "elapsed_ns": {
+      "probe": 21529875,
+      "decimal": 181839167
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "82f912d6f3c521a37991add836d05ec97c799ef02277fbac109120748fe19b75"
+  },
+  {
+    "name": "factorial-5000",
+    "round": 7,
+    "elapsed_ns": {
+      "decimal": 186007625,
+      "probe": 22520833
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "82f912d6f3c521a37991add836d05ec97c799ef02277fbac109120748fe19b75"
+  },
+  {
+    "name": "factorial-5000",
+    "round": 8,
+    "elapsed_ns": {
+      "decimal": 180363125,
+      "probe": 21634666
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "82f912d6f3c521a37991add836d05ec97c799ef02277fbac109120748fe19b75"
+  },
+  {
+    "name": "factorial-5000",
+    "round": 9,
+    "elapsed_ns": {
+      "probe": 21031500,
+      "decimal": 179756917
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "82f912d6f3c521a37991add836d05ec97c799ef02277fbac109120748fe19b75"
+  },
+  {
+    "name": "fibonacci-1000",
+    "round": 0,
+    "elapsed_ns": {
+      "probe": 11659750,
+      "decimal": 20863375
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "5ea0dca0edf2dbc1b3fe91242f63ec64972297b9fc65bce465e6cb2756ab50b8"
+  },
+  {
+    "name": "fibonacci-1000",
+    "round": 1,
+    "elapsed_ns": {
+      "decimal": 20401375,
+      "probe": 9813375
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "5ea0dca0edf2dbc1b3fe91242f63ec64972297b9fc65bce465e6cb2756ab50b8"
+  },
+  {
+    "name": "fibonacci-1000",
+    "round": 2,
+    "elapsed_ns": {
+      "probe": 10058250,
+      "decimal": 20108500
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "5ea0dca0edf2dbc1b3fe91242f63ec64972297b9fc65bce465e6cb2756ab50b8"
+  },
+  {
+    "name": "fibonacci-1000",
+    "round": 3,
+    "elapsed_ns": {
+      "decimal": 19590750,
+      "probe": 9225334
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "5ea0dca0edf2dbc1b3fe91242f63ec64972297b9fc65bce465e6cb2756ab50b8"
+  },
+  {
+    "name": "fibonacci-1000",
+    "round": 4,
+    "elapsed_ns": {
+      "decimal": 19511250,
+      "probe": 9068625
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "5ea0dca0edf2dbc1b3fe91242f63ec64972297b9fc65bce465e6cb2756ab50b8"
+  },
+  {
+    "name": "fibonacci-1000",
+    "round": 5,
+    "elapsed_ns": {
+      "probe": 9166667,
+      "decimal": 19526709
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "5ea0dca0edf2dbc1b3fe91242f63ec64972297b9fc65bce465e6cb2756ab50b8"
+  },
+  {
+    "name": "fibonacci-1000",
+    "round": 6,
+    "elapsed_ns": {
+      "probe": 9024958,
+      "decimal": 19371000
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "5ea0dca0edf2dbc1b3fe91242f63ec64972297b9fc65bce465e6cb2756ab50b8"
+  },
+  {
+    "name": "fibonacci-1000",
+    "round": 7,
+    "elapsed_ns": {
+      "decimal": 19408625,
+      "probe": 9019834
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "5ea0dca0edf2dbc1b3fe91242f63ec64972297b9fc65bce465e6cb2756ab50b8"
+  },
+  {
+    "name": "fibonacci-1000",
+    "round": 8,
+    "elapsed_ns": {
+      "decimal": 19341416,
+      "probe": 8946334
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "5ea0dca0edf2dbc1b3fe91242f63ec64972297b9fc65bce465e6cb2756ab50b8"
+  },
+  {
+    "name": "fibonacci-1000",
+    "round": 9,
+    "elapsed_ns": {
+      "probe": 8904958,
+      "decimal": 19282292
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "5ea0dca0edf2dbc1b3fe91242f63ec64972297b9fc65bce465e6cb2756ab50b8"
+  },
+  {
+    "name": "fibonacci-10000",
+    "round": 0,
+    "elapsed_ns": {
+      "decimal": 245906625,
+      "probe": 23861125
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "6fd8f23779c4a33ac8ccc8f24d3adba3d44018097fdfb15203a91b1219cb6c34"
+  },
+  {
+    "name": "fibonacci-10000",
+    "round": 1,
+    "elapsed_ns": {
+      "decimal": 246226167,
+      "probe": 24162291
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "6fd8f23779c4a33ac8ccc8f24d3adba3d44018097fdfb15203a91b1219cb6c34"
+  },
+  {
+    "name": "fibonacci-10000",
+    "round": 2,
+    "elapsed_ns": {
+      "decimal": 245368000,
+      "probe": 23473500
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "6fd8f23779c4a33ac8ccc8f24d3adba3d44018097fdfb15203a91b1219cb6c34"
+  },
+  {
+    "name": "fibonacci-10000",
+    "round": 3,
+    "elapsed_ns": {
+      "probe": 23191125,
+      "decimal": 245544250
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "6fd8f23779c4a33ac8ccc8f24d3adba3d44018097fdfb15203a91b1219cb6c34"
+  },
+  {
+    "name": "fibonacci-10000",
+    "round": 4,
+    "elapsed_ns": {
+      "decimal": 246613833,
+      "probe": 23860750
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "6fd8f23779c4a33ac8ccc8f24d3adba3d44018097fdfb15203a91b1219cb6c34"
+  },
+  {
+    "name": "fibonacci-10000",
+    "round": 5,
+    "elapsed_ns": {
+      "decimal": 246809709,
+      "probe": 23960500
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "6fd8f23779c4a33ac8ccc8f24d3adba3d44018097fdfb15203a91b1219cb6c34"
+  },
+  {
+    "name": "fibonacci-10000",
+    "round": 6,
+    "elapsed_ns": {
+      "decimal": 245122125,
+      "probe": 23819541
+    },
+    "order": [
+      "decimal",
+      "probe"
+    ],
+    "output_sha256": "6fd8f23779c4a33ac8ccc8f24d3adba3d44018097fdfb15203a91b1219cb6c34"
+  },
+  {
+    "name": "fibonacci-10000",
+    "round": 7,
+    "elapsed_ns": {
+      "probe": 23039000,
+      "decimal": 246313792
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "6fd8f23779c4a33ac8ccc8f24d3adba3d44018097fdfb15203a91b1219cb6c34"
+  },
+  {
+    "name": "fibonacci-10000",
+    "round": 8,
+    "elapsed_ns": {
+      "probe": 23699541,
+      "decimal": 245632458
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "6fd8f23779c4a33ac8ccc8f24d3adba3d44018097fdfb15203a91b1219cb6c34"
+  },
+  {
+    "name": "fibonacci-10000",
+    "round": 9,
+    "elapsed_ns": {
+      "probe": 23742000,
+      "decimal": 245328000
+    },
+    "order": [
+      "probe",
+      "decimal"
+    ],
+    "output_sha256": "6fd8f23779c4a33ac8ccc8f24d3adba3d44018097fdfb15203a91b1219cb6c34"
+  }
+]
