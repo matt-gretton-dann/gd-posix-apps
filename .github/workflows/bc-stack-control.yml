@@ -9,13 +9,18 @@ permissions:
 
 jobs:
   compare:
-    runs-on: windows-2025
+    runs-on: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [ubuntu-24.04, windows-2025]
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Establish native MSVC environment
+        if: runner.os == 'Windows'
         shell: pwsh
         run: |
           $installation = & "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe" -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
@@ -33,8 +38,16 @@ jobs:
           set -euo pipefail
           mkdir evidence
           git rev-parse HEAD > evidence/revision.txt
-          export CC=cl CXX=cl
-          powershell.exe -NoProfile -Command "Get-CimInstance Win32_Processor | Select-Object Name,NumberOfCores,NumberOfLogicalProcessors | Format-List" > evidence/cpu.txt
+          python_cmd=python3
+          suffix=
+          if [[ $RUNNER_OS == Windows ]]; then
+            export CC=cl CXX=cl
+            python_cmd=python
+            suffix=.exe
+            powershell.exe -NoProfile -Command "Get-CimInstance Win32_Processor | Select-Object Name,NumberOfCores,NumberOfLogicalProcessors | Format-List" > evidence/cpu.txt
+          else
+            lscpu > evidence/cpu.txt
+          fi
           for role in independent image; do
             option=OFF
             if [[ $role == image ]]; then option=ON; fi
@@ -47,9 +60,9 @@ jobs:
           done
           for mode in 0 1; do
             GD_BC_STACK_CONTROL_REGISTER="$mode" \
-              python src/bc/test-vm-cli.py build-image/src/bc/bc.exe --extensions ON
+              "$python_cmd" src/bc/test-vm-cli.py "build-image/src/bc/bc$suffix" --extensions ON
           done
-          python - <<'PY'
+          "$python_cmd" - <<'PY'
           import hashlib
           import json
           import os
@@ -62,7 +75,7 @@ jobs:
           roles = []
           for name in ('independent', 'registers', 'stack', 'register-aa'):
               role = 'independent' if name == 'independent' else 'image'
-              binary = Path('build-' + role, 'src/bc/bc.exe').resolve()
+              binary = Path('build-' + role, 'src/bc/bc.exe' if os.name == 'nt' else 'src/bc/bc').resolve()
               commands = (evidence / (role + '-compile.json')).read_text()
               assert ('GD_BC_STACK_EXECUTION=1' in commands) == (role == 'image')
               roles.append(dict(name=name, argv=[str(binary)], metadata=dict(
@@ -103,7 +116,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: bc-stack-control-${{ github.run_id }}
+          name: bc-stack-control-${{ matrix.image }}-${{ github.run_id }}
           path: evidence/
           if-no-files-found: error
           retention-days: 30

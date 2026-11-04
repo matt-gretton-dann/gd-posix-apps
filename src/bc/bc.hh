@@ -17,6 +17,7 @@
 #include "bc-messages.hh"
 
 #include <array>
+#include <bit>
 #include <exception>
 #include <iostream>
 #include <list>
@@ -78,6 +79,9 @@ public:
   auto operator==(char l) const -> bool;
 
 private:
+  friend class VariableMask;
+  struct EncodedIndex {};
+  Letter(unsigned index, EncodedIndex) : letter_(index) {}
   static auto encode(char l) -> unsigned;
   unsigned letter_;  ///< The letter.
 };
@@ -548,15 +552,11 @@ private:
   template<typename Fn>
   static void for_each_internal(Fn fn, ::uint32_t mask)
   {
-    /* Can't assume letters are contiguous code-points.  */
-    std::string_view const letters = "abcdefghijklmnopqrstuvwxyz";
-    std::string_view::const_iterator letter = letters.begin();
-    while (letter != letters.end() && mask != 0) {
-      if (mask & 1) {
-        fn(Letter(*letter));
-      }
-      mask >>= 1;
-      ++letter;
+    // Bit positions are already Letter indices, independent of character codes.
+    while (mask != 0) {
+      auto const index = static_cast<unsigned>(std::countr_zero(mask));
+      fn(Letter(index, Letter::EncodedIndex{}));
+      mask &= mask - 1U;
     }
   }
 
@@ -784,7 +784,7 @@ public:
   using Offset = Instruction::Offset;  ///< Offset into instructions list.
   using Index = Instruction::Index;    ///< Index into instructions list.
 
-  /** Flags for parse_opt_primary_expression.  */
+  /** Flags for expression parsing.  */
   enum class POPEFlags {
     parse_primary = 0x0,      ///< Primary and named expressions.
     parse_array_slices = 0x1  ///< Array slices, primary and named expressions.
@@ -884,8 +884,11 @@ private:
    */
   auto parse_opt_statement() -> bool;
 
-  /** Parse statement production.  */
-  void parse_statement();
+  /** Parse a statement that does not contain other statements. */
+  auto parse_leaf_statement(Token const& token) -> bool;
+
+  /** Parse a structured statement with explicit pending bodies. */
+  void parse_structured_statement();
 
   /** Parse a break statement production.  */
   void parse_break_statement();
@@ -893,14 +896,11 @@ private:
   /** Parse a return statement production.  */
   void parse_return_statement();
 
-  /** Parse a for statement production.  */
-  void parse_for_statement();
+  /** Parse a for header and return the branch target for the body exit. */
+  auto parse_for_header() -> std::optional<ExprIndex>;
 
-  /** Parse an if statement production.  */
-  void parse_if_statement();
-
-  /** Parse a while statement production.  */
-  void parse_while_statement();
+  /** Parse an if or while header and return its pending branch index. */
+  auto parse_condition_header(bool loop) -> std::optional<ExprIndex>;
 
   /** Parse function production. */
   void parse_function();
@@ -945,14 +945,6 @@ private:
    */
   auto parse_define_element(ExprIndex function_begin, bool allow_duplicates) -> ExprIndex;
 
-  /** \brief  Parse optional argument list
-   *  \return \a true if production was non-empty
-   */
-  auto parse_opt_argument_list() -> ExprIndex;
-
-  /** Parse argument list.  */
-  auto parse_argument_list() -> ExprIndex;
-
   /** Parse relational expression.  */
   auto parse_relational_expression() -> ExprIndex;
 
@@ -971,52 +963,9 @@ private:
    */
   auto parse_expression(POPEFlags flags = POPEFlags::parse_primary) -> ExprIndex;
 
-  /** \brief        Parse an optional assignment expression
-   *  \param  flags Flags of type of expressions to accept, default primary.
-   *  \return       Index of expression, and type of expression.
-   */
-  auto parse_opt_assign_expression(POPEFlags flags = POPEFlags::parse_primary) -> ExprIndex;
-
-  /** \brief        Parse an optional assignment expression
-   *  \param  flags Flags of type of expressions to accept, default primary.
-   *  \return       Index of expression, and type of expression.
-   */
-  auto parse_assign_expression(POPEFlags flags = POPEFlags::parse_primary) -> ExprIndex;
-
-  /** \brief  Parse a unary minus expression.
-   *  \return  Index of expression, and type of expression.
-   */
-  auto parse_unary_minus_expression() -> ExprIndex;
-
-  /** \brief  Parse an inrement/decrement expression.
-   *  \return  Index of expression, and type of expression.
-   */
-  auto parse_incr_decr_expression() -> ExprIndex;
-
-  /** Parse binary operators at or above the given precedence. */
-  auto parse_binary_expression(ExprIndex lhs, unsigned minimum_precedence) -> ExprIndex;
-
-  /** \brief        Parse primary and named expressions
-   *  \param  flags Bit mask of flags - default parse primary and named expressions
-   *  \return       Expression index.
-   *
-   * This function will always parse named expression.  The flags will add primary expressions and
-   * array slices to the parsing.
-   */
-  auto parse_opt_primary_expression(POPEFlags flags = POPEFlags::parse_primary) -> ExprIndex;
-
-  /** \brief        Parse primary, named and optionally array_slice expressions
-   *  \param  flags Flags - match array slices as well as primary & named expressions?
-   *  \return       Expression index.
-   *
-   * This is the most complicated of the parsing functions.  Everywhere the grammar accepts a
-   * named_expression it also accepts a primary_expression, and the recognisers are intertwined.
-   * Therefore we recognise both in one function and return the type in the result.
-   *
-   * Array_slices are only used in function calls as the top-level expression for a parameter, but
-   * it is easiest to include recognising them in this function.
-   */
-  auto parse_primary_expression(POPEFlags flags = POPEFlags::parse_primary) -> ExprIndex;
+  struct Primary;
+  auto begin_primary(Token::Type token) -> Primary;
+  auto finish_primary(Primary const& primary, ExprIndex inner, POPEFlags flags) -> ExprIndex;
 
   /** \brief      Ensure that the value of the expression pointed to by \a idx has been loaded.
    *  \param  idx Index to check the loadedness of
@@ -1277,6 +1226,11 @@ private:
 };
 }  // namespace Details
 
+class VM;
+namespace Library {
+void load(VM& vm);
+}
+
 /** \brief  Virtual Machine
  *
  * This is the object that executes instructions.
@@ -1315,6 +1269,11 @@ public:
   auto execute_cli(Instructions& instructions, Details::CliInterruptScope const& cli) -> bool;
 
 private:
+  friend void Library::load(VM& vm);
+  // The image bytes have static lifetime. This entry point is used only
+  // by the native, mechanically generated library image.
+  void defer_library_function(Letter name, std::string_view image,
+                              Instructions (*decode)(std::string_view));
   auto execute_impl(Instructions& instructions, bool cli_interrupts) -> bool;
   std::unique_ptr<Details::VMState> state_;  ///< Sole owner of this interpreter's state.
 };

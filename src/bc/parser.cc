@@ -8,41 +8,16 @@
 
 #include "bc-messages.hh"
 
-#include <array>
 #include <memory>
 #include <optional>
 #include <ostream>
 #include <string>
+#include <utility>
 #include <variant>
 #include <vector>
 
 #include "bc.hh"
 
-namespace {
-using TokenType = GD::Bc::Token::Type;
-using Opcode = GD::Bc::Instruction::Opcode;
-
-struct BinaryOperator
-{
-  Opcode opcode{};
-  unsigned precedence{};
-  unsigned right_precedence{};
-};
-
-// Zero precedence marks every token outside the arithmetic grammar. The
-// right operand of ^ admits another ^, whereas the left-associative
-// operators require strictly higher precedence on their right.
-constexpr auto binary_operators = [] {
-  std::array<BinaryOperator, static_cast<std::size_t>(TokenType::semicolon) + 1> table{};
-  table[static_cast<std::size_t>(TokenType::add)] = {Opcode::add, 1, 2};
-  table[static_cast<std::size_t>(TokenType::subtract)] = {Opcode::subtract, 1, 2};
-  table[static_cast<std::size_t>(TokenType::multiply)] = {Opcode::multiply, 2, 3};
-  table[static_cast<std::size_t>(TokenType::divide)] = {Opcode::divide, 2, 3};
-  table[static_cast<std::size_t>(TokenType::modulo)] = {Opcode::modulo, 2, 3};
-  table[static_cast<std::size_t>(TokenType::power)] = {Opcode::power, 3, 3};
-  return table;
-}();
-}  // namespace
 
 auto GD::Bc::operator==(Parser::ExprIndex const& lhs, Parser::ExprIndex const& rhs) -> bool
 {
@@ -321,25 +296,101 @@ void GD::Bc::Parser::parse_statement_list()
   }
 }
 
-void GD::Bc::Parser::parse_statement()
+auto GD::Bc::Parser::parse_opt_statement() -> bool
 {
-  if (!parse_opt_statement()) {
-    insert_error(Msg::expected_statement, lexer_->peek());
+  auto const& token = lexer_->peek();
+  switch (token.type()) {
+  case Token::Type::for_:
+  case Token::Type::if_:
+  case Token::Type::while_:
+  case Token::Type::lbrace:
+    parse_structured_statement();
+    return true;
+  default:
+    return parse_leaf_statement(token);
   }
 }
 
-auto GD::Bc::Parser::parse_opt_statement() -> bool
+void GD::Bc::Parser::parse_structured_statement()
 {
-  /* statement : expression | STRING | Break | Quit | Return | Return '(' return_expression ')'
-               | For '(' expression ';' relational_expression ';' expression ')' statement
-               | If '(' relational_expression ')' statement
-               | While '(' relational_expression ')' statement
-               | '{' statement_list '}'
-     If extensions enabled:
-               | Halt
-  */
+  enum class Body { block, conditional, loop };
+  struct Pending
+  {
+    Body body;
+    ExprIndex branch;
+  };
+  std::vector<Pending> pending;
 
-  auto const& token = lexer_->peek();
+  for (;;) {
+    auto const& token = lexer_->peek();
+    bool present = true;
+    switch (token.type()) {
+    case Token::Type::lbrace:
+      lexer_->chew();
+      pending.push_back({Body::block, ExprIndex::missing()});
+      continue;
+    case Token::Type::for_:
+      if (auto const update = parse_for_header()) {
+        pending.push_back({Body::loop, *update});
+        continue;
+      }
+      break;
+    case Token::Type::if_:
+    case Token::Type::while_: {
+      bool const loop = token.type() == Token::Type::while_;
+      if (auto const branch = parse_condition_header(loop)) {
+        pending.push_back({loop ? Body::loop : Body::conditional, *branch});
+        continue;
+      }
+      break;
+    }
+    default:
+      present = parse_leaf_statement(token);
+      break;
+    }
+
+    // Complete enclosing bodies until a block separator starts another
+    // optional statement. The top-level item keeps its own delimiters.
+    while (!pending.empty()) {
+      auto const [body, branch] = pending.back();
+      if (body == Body::block) {
+        auto const delimiter = lexer_->peek().type();
+        if (delimiter == Token::Type::semicolon || delimiter == Token::Type::newline) {
+          lexer_->chew();
+          break;
+        }
+        if (delimiter == Token::Type::rbrace) {
+          lexer_->chew();
+        }
+        else {
+          insert_error(Msg::expected_rbrace, lexer_->peek());
+        }
+      }
+      else {
+        if (!present) {
+          insert_error(Msg::expected_statement, lexer_->peek());
+        }
+        if (body == Body::conditional) {
+          ExprIndex const end(instructions_->size());
+          instructions_->at(branch.index()).op2(end - branch);
+        }
+        else {
+          insert_branch(branch);
+          update_loop_exits(instructions_->size());
+          pop_loop();
+        }
+      }
+      pending.pop_back();
+      present = true;
+    }
+    if (pending.empty()) {
+      return;
+    }
+  }
+}
+
+auto GD::Bc::Parser::parse_leaf_statement(Token const& token) -> bool
+{
   switch (token.type()) {
   case Token::Type::string: {
     auto s = insert_string(token.string());
@@ -360,25 +411,6 @@ auto GD::Bc::Parser::parse_opt_statement() -> bool
     return true;
   case Token::Type::return_:
     parse_return_statement();
-    return true;
-  case Token::Type::for_:
-    parse_for_statement();
-    return true;
-  case Token::Type::if_:
-    parse_if_statement();
-    return true;
-  case Token::Type::while_:
-    parse_while_statement();
-    return true;
-  case Token::Type::lbrace:
-    lexer_->chew();
-    parse_statement_list();
-    if (lexer_->peek() != Token::Type::rbrace) {
-      insert_error(Msg::expected_rbrace, lexer_->peek());
-    }
-    else {
-      lexer_->chew();
-    }
     return true;
   default: {
     ExprIndex const idx = parse_opt_expression();
@@ -447,7 +479,7 @@ void GD::Bc::Parser::parse_return_statement()
   insert_return(expr);
 }
 
-void GD::Bc::Parser::parse_for_statement()
+auto GD::Bc::Parser::parse_for_header() -> std::optional<ExprIndex>
 {
   /* Because we generate code as we parse it we end up with a bit of a mess here but for the loop
    *
@@ -472,7 +504,7 @@ void GD::Bc::Parser::parse_for_statement()
 
   if (lexer_->peek() != Token::Type::lparens) {
     insert_error(Msg::expected_lparens, lexer_->peek());
-    return;
+    return std::nullopt;
   }
   lexer_->chew();
 
@@ -481,7 +513,7 @@ void GD::Bc::Parser::parse_for_statement()
 
   if (lexer_->peek() != Token::Type::semicolon) {
     insert_error(Msg::expected_semicolon, lexer_->peek());
-    return;
+    return std::nullopt;
   }
   lexer_->chew();
 
@@ -491,7 +523,7 @@ void GD::Bc::Parser::parse_for_statement()
 
   if (lexer_->peek() != Token::Type::semicolon) {
     insert_error(Msg::expected_semicolon, lexer_->peek());
-    return;
+    return std::nullopt;
   }
   lexer_->chew();
 
@@ -506,55 +538,22 @@ void GD::Bc::Parser::parse_for_statement()
   insert_branch(begin);
   if (lexer_->peek() != Token::Type::rparens) {
     insert_error(Msg::expected_rparens, lexer_->peek());
-    return;
+    return std::nullopt;
   }
   lexer_->chew();
 
   ExprIndex const body(instructions_->size());
-  parse_statement();
-  insert_branch(update);
-
   instructions_->at(b_to_body.index()).op1(body - b_to_body);
-  update_loop_exits(instructions_->size());
-  pop_loop();
+  return update;
 }
 
-void GD::Bc::Parser::parse_if_statement()
+auto GD::Bc::Parser::parse_condition_header(bool loop) -> std::optional<ExprIndex>
 {
-  assert(lexer_->peek() == Token::Type::if_);  // NOLINT
   lexer_->chew();
 
   if (lexer_->peek() != Token::Type::lparens) {
     insert_error(Msg::expected_lparens, lexer_->peek());
-    return;
-  }
-  lexer_->chew();
-
-  ExprIndex const begin(instructions_->size());
-  auto rel_expr = parse_relational_expression();
-
-  if (lexer_->peek() != Token::Type::rparens) {
-    insert_error(Msg::expected_rparens, lexer_->peek());
-    return;
-  }
-  lexer_->chew();
-
-  auto const bz = insert_branch_zero(rel_expr, ExprIndex(0));
-
-  parse_statement();
-  ExprIndex const end(instructions_->size());
-  instructions_->at(bz.index()).op2(end - bz);
-}
-
-void GD::Bc::Parser::parse_while_statement()
-{
-  assert(lexer_->peek() == Token::Type::while_);  // NOLINT
-
-  lexer_->chew();
-
-  if (lexer_->peek() != Token::Type::lparens) {
-    insert_error(Msg::expected_lparens, lexer_->peek());
-    return;
+    return std::nullopt;
   }
   lexer_->chew();
 
@@ -563,18 +562,17 @@ void GD::Bc::Parser::parse_while_statement()
 
   if (lexer_->peek() != Token::Type::rparens) {
     insert_error(Msg::expected_rparens, lexer_->peek());
-    return;
+    return std::nullopt;
   }
   lexer_->chew();
 
-  auto bz = insert_branch_zero(rel_expr, ExprIndex(0));
-  push_loop();
-  add_loop_exit(bz.index());
-
-  parse_statement();
-  insert_branch(begin);
-  update_loop_exits(instructions_->size());
-  pop_loop();
+  auto const bz = insert_branch_zero(rel_expr, ExprIndex(0));
+  if (loop) {
+    push_loop();
+    add_loop_exit(bz.index());
+    return begin;
+  }
+  return bz;
 }
 
 void GD::Bc::Parser::push_loop() { loop_breaks_.push({}); }
@@ -780,23 +778,6 @@ auto GD::Bc::Parser::parse_define_element(ExprIndex function_begin, bool allow_d
   return result;
 }
 
-auto GD::Bc::Parser::parse_opt_argument_list() -> GD::Bc::Parser::ExprIndex
-{
-  ExprIndex expr = parse_opt_expression(POPEFlags::parse_array_slices);
-  if (expr == ExprType::missing) {
-    return expr;
-  }
-  insert_push_param(expr);
-
-  while (lexer_->peek() == Token::Type::comma) {
-    lexer_->chew();
-    expr = parse_expression(POPEFlags::parse_array_slices);
-    insert_push_param(expr);
-  }
-
-  return expr;
-}
-
 auto GD::Bc::Parser::parse_relational_expression() -> GD::Bc::Parser::ExprIndex
 {
   auto lhs = parse_expression();
@@ -829,328 +810,6 @@ auto GD::Bc::Parser::parse_relational_expression() -> GD::Bc::Parser::ExprIndex
 auto GD::Bc::Parser::parse_return_expression() -> GD::Bc::Parser::ExprIndex
 {
   return parse_opt_expression();
-}
-
-auto GD::Bc::Parser::parse_opt_expression(POPEFlags flags) -> GD::Bc::Parser::ExprIndex
-{
-  /* expression : assign_expression */
-  return parse_opt_assign_expression(flags);
-}
-
-auto GD::Bc::Parser::parse_expression(POPEFlags flags) -> GD::Bc::Parser::ExprIndex
-{
-  auto idx = parse_opt_expression(flags);
-  if (idx == ExprType::missing) {
-    idx = insert_error(Msg::expected_expression, lexer_->peek());
-  }
-
-  return idx;
-}
-
-auto GD::Bc::Parser::parse_opt_assign_expression(POPEFlags flags) -> GD::Bc::Parser::ExprIndex
-{
-  /* assign_expression : named_exprssion ASSIGN_OP assign_expression | add_expression
-   *
-   * This is awkward because named_expression can also be the first part of add_expression.  So we
-   * do a lot of bits by hand.  We basically process the first 'primary' token by hand and then
-   * roll up the precedence stack to calculate the correct value.
-   *
-   * The first tokens can be: named_expression, primary_expression, '-', '++', '--'.
-   *
-   * Of which only named_expression can be followed by a assign_op.
-   */
-  ExprIndex primary_expr = parse_opt_primary_expression(flags);
-
-  /* If this was an array slice we just return the result.  */
-  if (primary_expr == ExprType::array_slice) {
-    return primary_expr;
-  }
-
-  /* It was a named expression so see if we are an assign op and handle that if we are.  */
-  if (primary_expr == ExprType::named) {
-    if (lexer_->peek().is_assign_op()) {
-      Token::Type const assign_type = lexer_->peek().type();
-      lexer_->chew();
-      ExprIndex assign_index = parse_assign_expression();
-      if (assign_type != Token::Type::assign) {
-        switch (assign_type) {
-        case Token::Type::add_assign:
-          assign_index = insert_arith(Instruction::Opcode::add, primary_expr, assign_index);
-          break;
-        case Token::Type::subtract_assign:
-          assign_index = insert_arith(Instruction::Opcode::subtract, primary_expr, assign_index);
-          break;
-        case Token::Type::multiply_assign:
-          assign_index = insert_arith(Instruction::Opcode::multiply, primary_expr, assign_index);
-          break;
-        case Token::Type::divide_assign:
-          assign_index = insert_arith(Instruction::Opcode::divide, primary_expr, assign_index);
-          break;
-        case Token::Type::modulo_assign:
-          assign_index = insert_arith(Instruction::Opcode::modulo, primary_expr, assign_index);
-          break;
-        case Token::Type::power_assign:
-          assign_index = insert_arith(Instruction::Opcode::power, primary_expr, assign_index);
-          break;
-        default:
-          abort();
-        }
-      }
-      return insert_store(primary_expr, assign_index);
-    }
-
-    /* Not an assign op but may be an post increment/decrement that needs dealing with.  */
-    if (lexer_->peek().is_incr_decr_op()) {
-      bool const incr = lexer_->peek() == Token::Type::increment;
-      lexer_->chew();
-      ExprIndex const load = insert_load(primary_expr);
-      ExprIndex const num1 = insert_number("1");
-      ExprIndex const assign_index =
-        insert_arith(incr ? Instruction::Opcode::add : Instruction::Opcode::subtract, load, num1);
-      insert_store(primary_expr, assign_index);
-      primary_expr = load;
-    }
-  }
-
-  /* We aren't a primary expression so see if we're a unary minus or incr/decr expression, or if
-   * there really isn't anything to read here.  */
-  if (primary_expr == ExprType::missing) {
-    switch (lexer_->peek().type()) {
-    case Token::Type::subtract: /* Unary minus in this case.  */
-      primary_expr = parse_unary_minus_expression();
-      break;
-    case Token::Type::increment:
-    case Token::Type::decrement:
-      primary_expr = parse_incr_decr_expression();
-      break;
-    default:
-      return primary_expr;
-    }
-  }
-
-  return parse_binary_expression(primary_expr, 1);
-}
-
-auto GD::Bc::Parser::parse_assign_expression(POPEFlags flags) -> GD::Bc::Parser::ExprIndex
-{
-  auto idx = parse_opt_assign_expression(flags);
-  if (idx == ExprType::missing) {
-    idx = insert_error(Msg::expected_assign_expression, lexer_->peek());
-  }
-
-  return idx;
-}
-
-auto GD::Bc::Parser::parse_binary_expression(ExprIndex lhs, unsigned minimum_precedence)
-  -> ExprIndex
-{
-  while (true) {
-    auto const token = static_cast<std::size_t>(lexer_->peek().type());
-    if (token >= binary_operators.size())
-      return lhs;
-    auto const operation = binary_operators[token];
-    if (operation.precedence < minimum_precedence)
-      return lhs;
-    lexer_->chew();
-    auto rhs = parse_unary_minus_expression();
-    rhs = parse_binary_expression(rhs, operation.right_precedence);
-    lhs = insert_arith(operation.opcode, lhs, rhs);
-  }
-}
-
-auto GD::Bc::Parser::parse_unary_minus_expression() -> GD::Bc::Parser::ExprIndex
-{
-  /* unary_minus_expr : '-' unary_minus_expression | incr_decr_expression */
-
-  if (lexer_->peek() == Token::Type::subtract) {
-    lexer_->chew();
-    return insert_negate(parse_unary_minus_expression());
-  }
-
-  return parse_incr_decr_expression();
-}
-
-auto GD::Bc::Parser::parse_incr_decr_expression() -> GD::Bc::Parser::ExprIndex
-{
-  /* incr_decr_expression : INCR_DECR named_expression | named_expression INCR_DECR
-   *                      | primary_expression.
-   */
-
-  bool pre = false;
-  bool incr = false;
-
-  if (lexer_->peek().is_incr_decr_op()) {
-    pre = true;
-    incr = lexer_->peek() == Token::Type::increment;
-    lexer_->chew();
-  }
-
-  /* Now we expect an expression.  If we're `pre` then it must be a named expression.  If its not
-   * a named expression then we can't be a post inrement or decrement.
-   */
-  ExprIndex named_expr = parse_primary_expression();
-  if (named_expr != ExprType::named) {
-    if (pre) {
-      return insert_error(Msg::expected_named_expression, lexer_->peek());
-    }
-    return named_expr;
-  }
-
-  /* Now we know we have a named expression, if it could be post increment/decrement check.  */
-  if (!pre) {
-    if (!lexer_->peek().is_incr_decr_op()) {
-      return named_expr;
-    }
-
-    incr = lexer_->peek() == Token::Type::increment;
-    lexer_->chew();
-  }
-
-  ExprIndex const load_idx = insert_load(named_expr);
-  ExprIndex const num_idx = insert_number("1");
-  ExprIndex const op_idx = insert_arith(
-    incr ? Instruction::Opcode::add : Instruction::Opcode::subtract, load_idx, num_idx);
-  insert_store(named_expr, op_idx);
-  return pre ? op_idx : load_idx;
-}
-
-auto GD::Bc::Parser::parse_opt_primary_expression(POPEFlags flags) -> GD::Bc::Parser::ExprIndex
-{
-  bool const parse_array_slices = (flags == POPEFlags::parse_array_slices);
-
-  /* Because of the number of special cases for named_expression vs primary_expression we do
-   * both in here.  */
-  switch (lexer_->peek().type()) {
-  case Token::Type::letter: {
-    auto letter = lexer_->peek().letter();
-    lexer_->chew();
-    if (lexer_->peek() == Token::Type::lsquare) {
-      lexer_->chew();
-      auto elt = parse_opt_expression();
-      if (elt == ExprType::missing && !parse_array_slices) {
-        return insert_error(Msg::expected_expression, lexer_->peek());
-      }
-      if (lexer_->peek() != Token::Type::rsquare) {
-        return insert_error(Msg::expected_rsquare, lexer_->peek());
-      }
-      lexer_->chew();
-      if (elt == ExprType::missing) {
-        return insert_array_slice(Array(letter));
-      }
-
-      return insert_array_element(Array(letter), elt);
-    }
-
-    if (lexer_->peek() == Token::Type::lparens) {
-      Location const loc = lexer_->location();
-      lexer_->chew();
-
-      insert_push_param_mark();
-      parse_opt_argument_list();
-
-      if (lexer_->peek() != Token::Type::rparens) {
-        return insert_error(Msg::expected_rparens, lexer_->peek());
-      }
-      lexer_->chew();
-
-      return insert_call(letter, loc);
-    }
-
-    return insert_variable(Variable(letter));
-  }
-  case Token::Type::scale: {
-    lexer_->chew();
-    if (lexer_->peek() == Token::Type::lparens) {
-      lexer_->chew();
-      auto elt = parse_expression();
-      if (lexer_->peek() != Token::Type::rparens) {
-        return insert_error(Msg::expected_rparens, lexer_->peek());
-      }
-      lexer_->chew();
-      return insert_scale_expr(elt);
-    }
-
-    return insert_scale();
-  }
-  case Token::Type::ibase:
-    lexer_->chew();
-    return insert_ibase();
-  case Token::Type::obase:
-    lexer_->chew();
-    return insert_obase();
-  case Token::Type::number: {
-    auto idx = insert_number(lexer_->peek().number());
-    lexer_->chew();
-    return idx;
-  }
-  case Token::Type::lparens: {
-    lexer_->chew();
-    auto idx = parse_expression();
-    if (lexer_->peek() != Token::Type::rparens) {
-      return insert_error(Msg::expected_rparens, lexer_->peek());
-    }
-    lexer_->chew();
-    // Parentheses form a value expression, even when the inner expression is
-    // an assignment or a name. Only bare assignment statements suppress output.
-    idx = ensure_expr_loaded(idx);
-    return {idx.index(), ExprType::primary};
-  }
-  case Token::Type::sqrt: {
-    lexer_->chew();
-    if (lexer_->peek() != Token::Type::lparens) {
-      return insert_error(Msg::expected_lparens, lexer_->peek());
-    }
-    lexer_->chew();
-    auto elt = parse_expression();
-
-    if (lexer_->peek() != Token::Type::rparens) {
-      return insert_error(Msg::expected_rparens, lexer_->peek());
-    }
-    lexer_->chew();
-    return insert_sqrt(elt);
-  }
-  case Token::Type::abs: {
-    lexer_->chew();
-    if (lexer_->peek() != Token::Type::lparens) {
-      return insert_error(Msg::expected_lparens, lexer_->peek());
-    }
-    lexer_->chew();
-    auto elt = parse_expression();
-
-    if (lexer_->peek() != Token::Type::rparens) {
-      return insert_error(Msg::expected_rparens, lexer_->peek());
-    }
-    lexer_->chew();
-    return insert_abs(elt);
-  }
-  case Token::Type::length: {
-    lexer_->chew();
-    if (lexer_->peek() != Token::Type::lparens) {
-      return insert_error(Msg::expected_lparens, lexer_->peek());
-    }
-    lexer_->chew();
-    POPEFlags const expr_flags =
-      extensions_enabled() ? POPEFlags::parse_array_slices : POPEFlags::parse_primary;
-    auto elt = parse_expression(expr_flags);
-
-    if (lexer_->peek() != Token::Type::rparens) {
-      return insert_error(Msg::expected_rparens, lexer_->peek());
-    }
-    lexer_->chew();
-    return insert_length(elt);
-  }
-  default:
-    return ExprIndex::missing();
-  }
-}
-
-auto GD::Bc::Parser::parse_primary_expression(POPEFlags flags) -> GD::Bc::Parser::ExprIndex
-{
-  auto result = parse_opt_primary_expression(flags);
-  if (result == ExprType::missing) {
-    result = insert_error(Msg::expected_primary_expression, lexer_->peek());
-  }
-  return result;
 }
 
 auto GD::Bc::Parser::ensure_expr_loaded(ExprIndex idx) -> GD::Bc::Parser::ExprIndex

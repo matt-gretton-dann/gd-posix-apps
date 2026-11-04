@@ -102,9 +102,12 @@ class NativeMath(unittest.TestCase):
         for preset in ('full', 'holdout'):
             selected = set(CI.selected_cases(bench, preset, False))
             rows = [row for row in bench.corpus(preset, suite='math') if row['name'] in selected]
-            self.assertEqual(len(rows), 20)
-            self.assertEqual(len({(row['group'], row['parameters']['mode']) for row in rows}), 20)
-            self.assertTrue(all(row['parameters']['scale'] == 100 for row in rows))
+            regular = [row for row in rows if row['parameters']['scale'] == 100]
+            self.assertEqual(len(regular), 20)
+            self.assertEqual(len({(row['group'], row['parameters']['mode']) for row in regular}), 20)
+            extra = [row['parameters'] for row in rows if row['parameters']['scale'] != 100]
+            self.assertEqual([(p['function'], p['mode'], p['scale']) for p in extra],
+                             [('a', 'repeated', 20), ('l', 'repeated', 20), ('l', 'repeated', 1000)])
             self.assertEqual(len(CI.selected_cases(bench, preset, True)), 60)
 
     def test_roles_pin_both_host_and_library_without_mutating_recipes(self):
@@ -143,7 +146,8 @@ class NativeMath(unittest.TestCase):
             baseline.write_bytes(b'baseline ordinary source\n')
             revision, old_revision = 'a' * 40, 'b' * 40
             gd = dict(name='gd', argv=['gd-binary'], metadata=dict(source_revision=revision))
-            old = dict(name='old', argv=['old-binary'], metadata=dict(source_revision=old_revision))
+            old = dict(name='old', argv=['old-binary'], metadata=dict(
+                source_revision=old_revision, configuration=dict(preparsed_library_image_sha256='c' * 64)))
             howard = dict(name='howard', argv=['howard-binary'], metadata=dict(
                 source_revision=CI.load('build-bc-comparators').HOWARD_REVISION))
             original = copy.deepcopy(old)
@@ -155,6 +159,9 @@ class NativeMath(unittest.TestCase):
             base, candidate = configs['regression']
             self.assertEqual(base['name'], 'gd-base')
             self.assertEqual(base['argv'], ['old-binary', '-l'])
+            self.assertEqual(base['metadata']['library']['kind'], 'preparsed image')
+            self.assertEqual(base['metadata']['library']['image_sha256'], 'c' * 64)
+            self.assertEqual(candidate['metadata']['library']['kind'], 'embedded ordinary source')
             self.assertNotEqual(base['metadata']['library']['source_sha256'],
                                 candidate['metadata']['library']['source_sha256'])
             with self.assertRaisesRegex(CI.CommandFailure, 'baseline'):

@@ -12,7 +12,11 @@ parameter APIs. Function bodies cache an accepted or rejected stack plan
 with the verified definition, so redefinition discards the plan. Local
 variables, recursion and error cleanup use the ordinary call machinery.
 Arrays, unsupported instructions, full-check execution, and prepared
-divisors use the register executor.
+divisors use the register executor. Register calls retain their usual
+scalar-parameter prologue where supported. A stack call executes the
+original parameter instructions itself. If the experimental Apple Arm64
+native scalar backend is also enabled, it gets first refusal on CLI
+items and can fall back to the stack or register executor.
 
 The CLI loop item lowered from 22 source instructions to 17 four-byte
 instructions, with two live stack values. The caller loop lowered from

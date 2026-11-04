@@ -99,6 +99,9 @@ class NativeTrends(unittest.TestCase):
             self.assertIn(name, subset)
         for position in ('high', 'low', 'equal'):
             self.assertIn('compare_{}_1000d_x100000'.format(position), subset)
+        self.assertIn('divide_multilimb_1000d_900d_s1000_x500', subset)
+        self.assertIn('divide_multilimb_1125d_1012d_s1125_x438',
+                      CI.selected_cases(bench, 'holdout', False))
         self.assertIn('divide_scaled_dense_s1000_t1000_x5000', subset)
         self.assertIn('divide_scaled_trailing_zero_s1000_t1000_x5000', subset)
         self.assertLess(len(subset), len(full))

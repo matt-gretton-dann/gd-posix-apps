@@ -17,6 +17,8 @@ import shutil
 import subprocess
 import sys
 import tarfile
+import time
+import urllib.error
 import urllib.request
 
 HOWARD_REVISION = 'c8dabac65d39fd527a9264a5e505a99b1d8df3d8'
@@ -176,6 +178,22 @@ def build_howard(builder, args):
                          'tuning': {'BC_NUM_KARATSUBA_LEN': 32}}}
 
 
+def download_gnu_archive(archive):
+    for attempt in range(3):
+        try:
+            # A retry starts a new transfer and truncates any partial file.
+            with urllib.request.urlopen(GNU_URL, timeout=30) as remote, archive.open('wb') as local:
+                shutil.copyfileobj(remote, local)
+            return
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as error:
+            if isinstance(error, urllib.error.HTTPError):
+                if error.code not in (408, 429) and not 500 <= error.code < 600:
+                    raise
+            if attempt == 2:
+                raise
+            time.sleep(2 ** attempt)
+
+
 def build_gnu(builder, args):
     if os.name == 'nt':
         raise BuildError('GNU POSIX configure recipe is unavailable on native Windows; select Howard')
@@ -183,8 +201,7 @@ def build_gnu(builder, args):
     if args.gnu_archive:
         shutil.copyfile(str(args.gnu_archive), str(archive))
     else:
-        with urllib.request.urlopen(GNU_URL, timeout=30) as remote, archive.open('wb') as local:
-            shutil.copyfileobj(remote, local)
+        download_gnu_archive(archive)
     if digest(archive) != GNU_SHA256:
         raise BuildError('GNU archive checksum does not match the pinned 1.08.2 source')
     safe_extract(archive, builder.root)

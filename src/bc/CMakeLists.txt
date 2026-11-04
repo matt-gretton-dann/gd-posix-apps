@@ -62,11 +62,18 @@ if(ENABLE_BC_STACK_EXECUTION)
   target_sources(libbc PRIVATE stack-execution.cc)
   target_compile_definitions(libbc PRIVATE GD_BC_STACK_EXECUTION=1)
 endif()
+option(ENABLE_BC_NATIVE_SCALAR "Enable experimental Apple Arm64 native scalar execution" OFF)
+if(ENABLE_BC_NATIVE_SCALAR AND APPLE AND CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64"
+   AND NOT CMAKE_OSX_ARCHITECTURES MATCHES "x86_64|arm64e")
+  target_sources(libbc PRIVATE native-scalar.cc)
+  target_compile_definitions(libbc PRIVATE GD_BC_NATIVE_SCALAR=1)
+endif()
 set_warnings(libbc)
 gd_apply_ipo(libbc)
 
 target_sources(libbc PRIVATE cli-interrupt.cc execution-plan.cc instruction.cc lexer.cc number-division-cache.cc number-remainder.cc
-                            number-sqrt.cc number-sqrt-sparse.cc parser.cc reader.cc token.cc verification.cc vm.cc)
+                            number-sqrt.cc number-sqrt-sparse.cc parser.cc parser-expression.cc reader.cc
+                            token.cc verification.cc vm.cc)
 if(WIN32)
   target_sources(libbc PRIVATE verification-linear.cc)
 endif()
@@ -202,10 +209,21 @@ unset(GD_BC_LIBRARY_SOURCE)
 
 add_utility(NAME bc NO_INT_TEST CAT_ID bc SOURCES bc.cc math-library.cc)
 target_link_libraries(bc PUBLIC libbc)
-option(ENABLE_BC_PREPARSED_LIBRARY "Parse the ordinary bc math source at build time" OFF)
+# Windows keeps the source loader because the image regressed ordinary array
+# workloads. Coverage configurations exercise the source loader. Cross builds cannot run
+# the generator on the build host and always use the source loader.
+set(_bc_library_image_default ON)
+if(WIN32 OR ENABLE_BC_COVERAGE OR CMAKE_CROSSCOMPILING)
+  set(_bc_library_image_default OFF)
+endif()
+option(ENABLE_BC_PREPARSED_LIBRARY "Parse the ordinary bc math source at build time"
+       ${_bc_library_image_default})
+unset(_bc_library_image_default)
 if(ENABLE_BC_PREPARSED_LIBRARY AND NOT CMAKE_CROSSCOMPILING)
   add_executable(bc-preparse-math-library preparse-math-library.cc math-library.cc)
   target_link_libraries(bc-preparse-math-library PRIVATE libbc)
+  # The generator must link libbc even when it contains IPO bitcode.
+  gd_apply_ipo(bc-preparse-math-library)
   target_include_directories(bc-preparse-math-library PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
   set_property(TARGET bc-preparse-math-library PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
   set_property(TARGET bc-preparse-math-library PROPERTY CXX_STANDARD_REQUIRED ON)
@@ -219,6 +237,7 @@ if(ENABLE_BC_PREPARSED_LIBRARY AND NOT CMAKE_CROSSCOMPILING)
     VERBATIM)
   target_sources(bc PRIVATE "${_bc_library_image}")
   target_compile_definitions(bc PRIVATE GD_BC_PREPARSED_LIBRARY=1)
+  target_compile_definitions(libbc PRIVATE GD_BC_PREPARSED_LIBRARY=1)
 endif()
 if(ENABLE_BC_PROFILE)
   target_sources(bc PRIVATE profiling-entry.cc)

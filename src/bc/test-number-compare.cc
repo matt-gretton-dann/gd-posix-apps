@@ -85,3 +85,27 @@ TEMPLATE_TEST_CASE("Equal-scale comparison tolerates untrimmed digit storage",
   CHECK(low.compare(high, 0) == Result::less_than);
   CHECK(high.compare(high, 0) == Result::equality);
 }
+
+TEMPLATE_TEST_CASE("Long equal-scale comparisons preserve the first unequal limb",
+                   "[bc][number][oracle][comparison]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  constexpr auto limb_width = GD::Bc::Details::BasicDigits<TestType>::base_log10_;
+  for (unsigned limbs : {31U, 32U, 33U, 40U, 41U}) {
+    std::string const text(limbs * limb_width, '4');
+    Number const lhs(text, 10);
+    CHECK(lhs == Number(text, 10));
+    for (unsigned limb = 0; limb < limbs; ++limb) {
+      // An opposing difference in a lower limb must never determine order.
+      auto rhs_text = text;
+      rhs_text[limb * limb_width] = '5';
+      if (limb + 1 < limbs) {
+        rhs_text.back() = '3';
+      }
+      Number const rhs(rhs_text, 10);
+      CHECK(lhs < rhs);
+      CHECK(rhs > lhs);
+    }
+  }
+}

@@ -81,10 +81,12 @@ class LibraryCli(unittest.TestCase):
                 self.assertEqual(lines[4 * index + 1:4 * index + 4],
                                  [str(case['scale']), '10', str(case['scale'])])
 
-    def test_negative_exponential_reconstruction(self):
+    def test_exponential_reconstruction(self):
         cases = [(2, '-.125'), (20, '-.125000000001'), (100, '-200'),
                  (300, '-125.00000001'), (1000, '-1000'), (1000, '-2000'),
-                 (1000, '-2300'), (1000, '-3002.999'), (1000, '-3003')]
+                 (1000, '-2300'), (1000, '-3002.999'), (1000, '-3003'),
+                 (20, '1.999999999'), (20, '2'), (20, '2.000000001'),
+                 (100, '200'), (300, '500.125'), (1000, '1000'), (1000, '2300')]
         program = ''.join(f'scale={scale}\nr=e({argument})\nr\nscale(r)\n'
                           for scale, argument in cases)
         binaries = [BC] if OTHER_BC is None else [BC, OTHER_BC]
@@ -96,13 +98,68 @@ class LibraryCli(unittest.TestCase):
                     # Decimal.exp is correctly rounded. Its adjacent decimal
                     # values enclose the result for the exact input.
                     with localcontext() as context:
-                        context.prec = scale + 32
-                        reference = Decimal(argument).exp()
+                        exact_argument = Decimal(argument)
+                        # Allow integer digits as well as the requested scale.
+                        context.prec = scale + max(0, int(exact_argument)) + 32
+                        reference = exact_argument.exp()
                         lower = Fraction(reference.next_minus())
                         upper = Fraction(reference.next_plus())
                     value = ORACLE.decimal_fraction(lines[2 * index])
                     self.assertEqual(ORACLE.classify(value, lower, upper, scale), 'pass')
                     self.assertEqual(lines[2 * index + 1], str(scale))
+
+    def test_logarithm_argument_reduction(self):
+        cases = []
+        for scale in (20, 100, 1000):
+            cutoff = 64 + scale // 2
+            for exponent in (cutoff - 1, cutoff, cutoff + 33):
+                cases.append((scale, '9' + '0' * exponent))
+                cases.append((scale, '.' + '0' * (exponent - 1) + '9'))
+        for scale in (999, 1000):
+            for argument in ('.02', '.949999', '.95', '1.05', '1.050001', '2'):
+                cases.append((scale, argument))
+        # Check both ends of the root-free band and the W=64/65 switch.
+        for argument in ('1.599999', '1.6', '1.600001', '2.399999', '2.4', '2.400001'):
+            cases.append((20, argument))
+        cases.extend((scale, '2') for scale in (35, 36))
+        # Exercise multiple blocks and the short tail close to one, on both
+        # sides of zero in the logarithm's result.
+        for argument in ('.96', '2.25', '.' + '9' * 100, '1.' + '0' * 99 + '1'):
+            cases.append((2400, argument))
+        program = ''.join(f'scale={scale}\nr=l({argument})\nr\nscale(r)\nibase\n'
+                          for scale, argument in cases)
+        binaries = [BC] if OTHER_BC is None else [BC, OTHER_BC]
+        for binary in binaries:
+            lines = self.checked_lines(program, options=(), files=(SOURCE,), binary=binary)
+            self.assertEqual(len(lines), 3 * len(cases))
+            for index, (scale, argument) in enumerate(cases):
+                with self.subTest(binary=binary, scale=scale, argument=argument):
+                    # The correctly rounded Decimal logarithm is enclosed
+                    # by its adjacent representable values.
+                    with localcontext() as context:
+                        context.prec = scale + 64
+                        reference = Decimal(argument).ln()
+                        lower = Fraction(reference.next_minus())
+                        upper = Fraction(reference.next_plus())
+                    value = ORACLE.decimal_fraction(lines[3 * index])
+                    self.assertEqual(ORACLE.classify(value, lower, upper, scale), 'pass')
+                    self.assertEqual(lines[3 * index + 1:3 * index + 3], [str(scale), '10'])
+
+    def test_logarithm_binary_reduction_literal(self):
+        source = Path(SOURCE).read_text(encoding='utf-8')
+        literals = re.findall(r'(?m)^\s*h\+=(0\.\d{80})/1$', source)
+        self.assertEqual(len(literals), 1)
+        # ln(2) = 2*atanh(1/3). The positive tail is bounded by the
+        # first omitted term times the geometric sum with ratio 1/9.
+        count = 100
+        lower = 2 * sum(Fraction(1, (2*k+1)*3**(2*k+1)) for k in range(count))
+        tail = Fraction(2, (2*count+1)*3**(2*count+1)) * Fraction(9, 8)
+        upper = lower + tail
+        for scale in (*range(65), 80):
+            factor = 10**scale
+            floors = [v.numerator * factor // v.denominator
+                      for v in (lower, upper, Fraction(literals[0]))]
+            self.assertEqual(floors, [floors[0]] * 3, scale)
 
     def test_atan_unit_literal_matches_the_certified_enclosure(self):
         source = Path(SOURCE).read_text(encoding='utf-8')
@@ -122,6 +179,10 @@ class LibraryCli(unittest.TestCase):
                 return (2 * value.numerator * factor + value.denominator) // (2 * value.denominator)
             self.assertEqual(rounded(lower), rounded(upper))
             self.assertEqual(rounded(Fraction(literals[0])), rounded(lower))
+            if scale == 20:
+                shortcut = re.findall(r'(?m)^\s*r=(\.\d{20})$', source)
+                self.assertEqual([Fraction(value) for value in shortcut],
+                                 [Fraction(rounded(lower), factor)])
 
     def test_atan_unit_argument_precision_boundary(self):
         # Negating an exact enclosure reverses its endpoints.
@@ -235,15 +296,18 @@ class LibraryCli(unittest.TestCase):
         program = 'scale=0\n' + ''.join(f'j(0,{x})\n' for x in arguments)
         self.assertEqual(self.checked_lines(program), ['1', '0'])
 
-    def test_bessel_ascending_with_large_cancellation(self):
-        for order, argument, scale in ((0, 100, 150), (300, 300, 100)):
+    def test_bessel_ascending_with_exact_rational_enclosures(self):
+        arguments = ((0, 100, 150), (300, 300, 100), (1, '1.125', 100),
+                     (1, '1.' + '23456789' * 12, 20))
+        for order, argument, scale in arguments:
             with self.subTest(order=order, argument=argument, scale=scale):
+                x = Fraction(argument)
                 term = Fraction(1)
                 for j in range(1, order + 1):
-                    term *= Fraction(argument, 2 * j)
+                    term *= x / (2 * j)
                 partial = term
                 for k in range(1, 2000):
-                    ratio = Fraction(argument**2, 4 * k * (order + k))
+                    ratio = x**2 / (4 * k * (order + k))
                     term *= -ratio
                     if ratio < 1 and abs(term) < Fraction(1, 10**(scale + 2)):
                         break
@@ -282,6 +346,10 @@ class LibraryCli(unittest.TestCase):
         lines = self.checked_lines('define e(x) {\nreturn(7)\n}\ne(0)\nscale(e(0))\nscale\n')
         # The replacement is an ordinary user function, including its scale.
         self.assertEqual(lines, ['7', '0', '20'])
+
+    def test_user_definition_replaces_a_called_library_function(self):
+        lines = self.checked_lines('e(0)\ndefine e(x) {\nreturn(7)\n}\ne(0)\nscale(e(0))\n')
+        self.assertEqual([Fraction(line) for line in lines], [1, 7, 0])
 
     def test_user_file_redefinition_precedes_stdin(self):
         with tempfile.TemporaryDirectory() as directory:

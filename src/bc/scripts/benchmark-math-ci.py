@@ -106,7 +106,21 @@ def selected_cases(bench, preset, broad):
         if previous is None or abs(case['parameters']['scale'] - 100) < abs(previous['parameters']['scale'] - 100):
             chosen[key] = case
     names = {case['name'] for case in chosen.values()}
+    # Cover the default-scale shortcuts and high-precision logarithm.
+    extra = {('a', 20), ('l', 20), ('l', 1000)}
+    names.update(case['name'] for case in cases
+                 if case['parameters']['mode'] == 'repeated' and
+                 (case['parameters']['function'], case['parameters']['scale']) in extra)
     return [case['name'] for case in cases if case['name'] in names]
+
+
+def embedded_library_metadata(entry, revision, source_digest):
+    image = entry['metadata'].get('configuration', {}).get('preparsed_library_image_sha256')
+    result = dict(kind='preparsed image' if image else 'embedded ordinary source',
+                  source_revision=revision, source_sha256=source_digest)
+    if image:
+        result['image_sha256'] = image
+    return result
 
 
 def configurations(gd, aa, howard, library, aa_library, revision,
@@ -124,13 +138,9 @@ def configurations(gd, aa, howard, library, aa_library, revision,
     if images[0] != images[1]:
         raise CommandFailure('independent GD builds do not contain identical preparsed images')
     gd, aa, standard, portable = map(copy.deepcopy, (gd, aa, howard, howard))
-    image = images[0]
     for entry, name in ((gd, 'gd-portable'), (aa, 'gd-aa')):
         entry.update(name=name, argv=entry['argv'] + ['-l'])
-        entry['metadata']['library'] = dict(kind='preparsed image' if image else 'embedded ordinary source',
-                                            source_revision=revision, source_sha256=digest)
-        if image:
-            entry['metadata']['library']['image_sha256'] = image
+        entry['metadata']['library'] = embedded_library_metadata(entry, revision, digest)
     standard.update(name='howard-standard', role='reference', argv=standard['argv'] + ['-l'])
     standard['metadata']['library'] = dict(kind='pinned standard library',
                                            source_revision=helper.HOWARD_REVISION)
@@ -145,8 +155,8 @@ def configurations(gd, aa, howard, library, aa_library, revision,
             raise CommandFailure('GD base recipe does not match the requested baseline')
         baseline = copy.deepcopy(base)
         baseline.update(name='gd-base', role='candidate', argv=baseline['argv'] + ['-l'])
-        baseline['metadata']['library'] = dict(kind='embedded ordinary source',
-            source_revision=base_revision, source_sha256=helper.digest(base_library))
+        baseline['metadata']['library'] = embedded_library_metadata(
+            baseline, base_revision, helper.digest(base_library))
         result['preparation'].append(baseline)
         result['paired'].append(baseline)
         result['regression'] = [baseline, gd]

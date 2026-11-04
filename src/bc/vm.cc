@@ -28,6 +28,10 @@
 #  include "stack-execution.hh"
 #endif
 
+#ifdef GD_BC_NATIVE_SCALAR
+#  include "native-scalar.hh"
+#endif
+
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define STRINGIFY2(a) #a
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
@@ -252,7 +256,11 @@ public:
   FunctionCode(FunctionCode&&) noexcept = default;
   auto operator=(FunctionCode const&) -> FunctionCode& = default;
   auto operator=(FunctionCode&&) noexcept -> FunctionCode& = default;
+#if !defined(_WIN32)
+  auto view(bool full_checks, [[maybe_unused]] VariableMask locals) -> VerifiedInstructions
+#else
   auto view(bool full_checks) -> VerifiedInstructions
+#endif
   {
     if (!full_checks && !prepared_) {
       // Publish both plans together so a failed allocation leaves the
@@ -260,7 +268,15 @@ public:
       auto consumption = plan_consumption(instructions_, true);
       auto slots = plan_result_slots(instructions_, sizeof(ResultSlot), consumption);
       auto layout = prepare_layout(instructions_, std::move(slots), true, true);
+#if !GD_BC_PROFILE && !defined(_WIN32)
+      auto parameter = prove_scalar_parameter();
+      if (parameter && !locals.contains(*parameter)) {
+        parameter.reset();
+      }
+      prepared_.emplace(std::move(consumption), std::move(layout), parameter);
+#else
       prepared_.emplace(std::move(consumption), std::move(layout));
+#endif
     }
     auto const& plans = prepared_ ? *prepared_ : empty_plans_;
     return VerifiedInstructions(instructions_, plans.consumption, plans.layout);
@@ -283,10 +299,44 @@ private:
   {
   }
 
+#if !GD_BC_PROFILE && !defined(_WIN32)
+  // Prove the parser's one-scalar prologue and that the rest of the
+  // function cannot read its result slots or branch back into it.
+  auto prove_scalar_parameter() const -> std::optional<Variable>
+  {
+    using O = Instruction::Opcode;
+    using D = Instruction::Offset;
+    constexpr auto body = scalar_prologue_size_;
+    if (instructions_.size() <= body || instructions_[0].opcode() != O::pop_param ||
+        instructions_[1].opcode() != O::variable || instructions_[2].opcode() != O::store ||
+        instructions_[3].opcode() != O::pop_param_mark ||
+        std::get<D>(instructions_[2].op1()) != -1 ||
+        std::get<D>(instructions_[2].op2()) != -2) {
+      return std::nullopt;
+    }
+    for (Instruction::Index i = body; i < instructions_.size(); ++i) {
+      auto uses_prologue = [i](Instruction::Operand const& operand) {
+        auto const* offset = std::get_if<D>(&operand);
+        return offset != nullptr && i + static_cast<Instruction::Index>(*offset) < body;
+      };
+      auto const& instruction = instructions_[i];
+      if ((instruction.has_op1() && uses_prologue(instruction.op1())) ||
+          (instruction.has_op2() && uses_prologue(instruction.op2()))) {
+        return std::nullopt;
+      }
+    }
+    return std::get<Variable>(instructions_[1].op1());
+  }
+  static constexpr Instruction::Index scalar_prologue_size_ = 4;
+#endif
+
   struct Plans
   {
     ConsumptionPlan consumption;
     ExecutionLayout layout;
+#if !GD_BC_PROFILE && !defined(_WIN32)
+    std::optional<Variable> scalar_parameter;
+#endif
   };
   inline static Plans const empty_plans_{};
   Instructions instructions_;
@@ -356,6 +406,11 @@ struct VMState
   [[nodiscard]] auto array(Array a) const -> ArrayValues;
   void array(Array a, ArrayValues av);
   [[nodiscard]] auto array_length(Array a) const -> Number::NumType;
+
+#if defined(GD_BC_PREPARSED_LIBRARY)
+  void defer_library_function(Letter name, std::string_view image,
+                              Instructions (*decode)(std::string_view));
+#endif
 
   void function(Letter func, Instructions::const_iterator const& begin,
                 Instructions::const_iterator const& end, VariableMask mask, Location const& loc);
@@ -458,6 +513,14 @@ private:
   std::array<ArrayValues, Letter::count_> arrays_;  ///< Array of arrays, indexed by Letter.
   std::array<std::optional<FunctionDefinition>, Letter::count_>
     functions_;  ///< Array of (optional) functions, indexed by letter.
+#if defined(GD_BC_PREPARSED_LIBRARY)
+  struct DeferredDefinition
+  {
+    std::string_view image;
+    Instructions (*decode)(std::string_view) = nullptr;
+  };
+  std::array<DeferredDefinition, Letter::count_> deferred_functions_{};
+#endif
   std::array<Number, Letter::count_> variables_;  ///< Array of scalar variables, indexed by Letter.
   Params parameters_;                             ///< Contiguous values for active argument packs.
   ParamMarks param_marks_;                        ///< Pack offsets; indices survive vector growth.
@@ -520,6 +583,16 @@ public:
   auto execute() -> std::pair<Number, bool>;
 
 private:
+#if !defined(_WIN32)
+  friend struct VMState;
+  // Only the function entry proof can authorize a nonzero starting index.
+  auto execute_from(Index start) -> std::pair<Number, bool>
+  {
+    pc_ = start;
+    return execute();
+  }
+#endif
+
   friend auto operator<<(std::ostream& os, InstructionPack const& instrs) -> std::ostream&;
 
   template<typename... Ts>
@@ -852,7 +925,15 @@ void GD::Bc::Details::VMState::function(Letter func, Instructions::const_iterato
                                         Location const& loc)
 {
   Instructions instrs(begin, end);
-  validate(instrs, true);
+  // All dispatch paths reach this through a verified instruction pack.
+  // The outer verifier checks the body as a separate execution region:
+  // branches and result references stay within it, and the incoming
+  // argument pack is checked at its entry. Slicing preserves relative
+  // offsets, with the function-end marker becoming the one-past target.
+  // Full checks repeat verification of the extracted body for diagnostics.
+  if (full_checks()) {
+    validate(instrs, true);
+  }
   functions_.at(static_cast<unsigned>(func)) =
     std::make_optional(std::make_tuple(FunctionCode(std::move(instrs)), mask, loc));
 }
@@ -866,10 +947,39 @@ auto execute_stack(VMState& vm, Instructions const& source, StackCode const& cod
 }  // namespace GD::Bc::Details
 #endif
 
+#if defined(GD_BC_PREPARSED_LIBRARY)
+void GD::Bc::Details::VMState::defer_library_function(Letter name, std::string_view image,
+                                                     Instructions (*decode)(std::string_view))
+{
+  auto const index = static_cast<unsigned>(name);
+  functions_.at(index).reset();
+  deferred_functions_.at(index) = {image, decode};
+}
+#endif
+
 auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc::Number
 {
   GD_BC_PROFILE_EVENT(Profile::Event::function_calls, 1);
-  auto& func_ptr{functions_.at(static_cast<unsigned>(func))};
+  auto const index = static_cast<unsigned>(func);
+  auto& func_ptr = functions_.at(index);
+#if defined(GD_BC_PREPARSED_LIBRARY)
+  if (!func_ptr.has_value()) {
+    auto& deferred = deferred_functions_.at(index);
+    if (deferred.decode != nullptr) {
+      auto const code = deferred.decode(deferred.image);
+      validate(code);
+      // The generator records only isolated definition items here. Outer
+      // validation proves the extracted function's offsets and operands.
+      assert(code.front().opcode() == Instruction::Opcode::function_begin);
+      assert(code.back().opcode() == Instruction::Opcode::function_end);
+      assert(std::get<Letter>(code.back().op1()) == func);
+      function(func, code.cbegin() + 1, code.cend() - 1,
+               std::get<VariableMask>(code.front().op1()),
+               std::get<Location>(code.front().op2()));
+      deferred = {};
+    }
+  }
+#endif
   if (!func_ptr.has_value()) {
     Details::error(Msg::function_not_defined, func, loc.file_name(), loc.line(), loc.column());
   }
@@ -877,11 +987,19 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
   FunctionDefinition& def = func_ptr.value();
 #if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
   auto const* stack = stack_enabled() ? std::get<0>(def).stack_code() : nullptr;
-  auto func_instructions = std::get<0>(def).view(full_checks() || stack != nullptr);
+  auto const use_source = full_checks() || stack != nullptr;
 #else
-  auto func_instructions = std::get<0>(def).view(full_checks());
+  auto const use_source = full_checks();
 #endif
+#if defined(_WIN32)
+  // Preserve the existing call path on Windows, where native comparisons
+  // found regressions in workloads outside the fused prologue.
+  auto func_instructions = std::get<0>(def).view(use_source);
   auto locals = std::get<1>(def);
+#else
+  auto locals = std::get<1>(def);
+  auto func_instructions = std::get<0>(def).view(use_source, locals);
+#endif
 
   // Retain offsets rather than references across execute(): recursive calls
   // may grow the same buffer. Capacity remains available after restoration.
@@ -923,11 +1041,34 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
     });
 
 #if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
-    auto [result, cont] = stack ? execute_stack(*this, func_instructions.instructions(), *stack)
-                                : InstructionPack(this, func_instructions).execute();
-#else
+    if (stack != nullptr) {
+      auto result = execute_stack(*this, func_instructions.instructions(), *stack);
+      restore(false);
+      return std::move(result.first);
+    }
+#endif
+#if defined(_WIN32)
     InstructionPack fn(this, func_instructions);
     auto [result, cont] = fn.execute();
+#else
+    Instruction::Index start = 0;
+#if !GD_BC_PROFILE
+    auto const& code = std::get<0>(def);
+    auto const parameter = code.prepared_ ? code.prepared_->scalar_parameter : std::nullopt;
+    if (parameter) {
+      start = FunctionCode::scalar_prologue_size_;
+    }
+#endif
+    InstructionPack fn(this, func_instructions);
+#if !GD_BC_PROFILE
+    if (start != 0 && !have_been_interrupted.test(std::memory_order_relaxed)) {
+      variables_.at(static_cast<unsigned>(parameter->get())) = pop_param();
+      if (!have_been_interrupted.test(std::memory_order_relaxed)) {
+        pop_param_pack();
+      }
+    }
+#endif
+    auto [result, cont] = fn.execute_from(start);
 #endif
     restore(false);
     return result;
@@ -2283,6 +2424,14 @@ GD::Bc::VM::~VM() = default;
 GD::Bc::VM::VM(VM&&) noexcept = default;
 auto GD::Bc::VM::operator=(VM&&) noexcept -> VM& = default;
 
+#if defined(GD_BC_PREPARSED_LIBRARY)
+void GD::Bc::VM::defer_library_function(Letter name, std::string_view image,
+                                       Instructions (*decode)(std::string_view))
+{
+  state_->defer_library_function(name, image, decode);
+}
+#endif
+
 auto GD::Bc::VM::execute(Instructions& instructions) -> bool
 {
   return execute_impl(instructions, false);
@@ -2458,6 +2607,42 @@ auto GD::Bc::VM::execute_impl(Instructions& instructions, bool cli_interrupts) -
   auto const result = [&, this, cli_interrupts]() {
     try {
       Details::InterruptHandler handler(cli_interrupts);
+#ifdef GD_BC_NATIVE_SCALAR
+      if (!state_->full_checks() && state_->ibase() == 10 &&
+          !Details::have_been_interrupted.test(std::memory_order_relaxed)) {
+        auto const variables = Details::native_scalar_variables(instructions);
+        auto const variable = [](unsigned index) {
+          return Variable(static_cast<char>('a' + index));
+        };
+        bool eligible = variables.any();
+        for (unsigned index = 0; eligible && index < Letter::count_; ++index) {
+          if (variables.test(index)) {
+            auto const& value = state_->variable(variable(index));
+            eligible = value.is_zero() && value.scale() == 0;
+          }
+        }
+        if (eligible) {
+          auto const interrupted = []() noexcept {
+            return Details::have_been_interrupted.test(std::memory_order_relaxed);
+          };
+          auto const result = Details::run_native_scalar(instructions, variables, interrupted);
+          if (result && !Details::have_been_interrupted.test(std::memory_order_relaxed)) {
+            std::array<Number, Letter::count_> pending;
+            for (unsigned index = 0; index < Letter::count_; ++index) {
+              if (variables.test(index))
+                pending[index] = Number(std::to_string((*result)[index]), 10);
+            }
+            if (!Details::have_been_interrupted.test(std::memory_order_relaxed)) {
+              for (unsigned index = 0; index < Letter::count_; ++index) {
+                if (variables.test(index))
+                  state_->variable(variable(index), pending[index]);
+              }
+              return std::make_pair(Number(0), true);
+            }
+          }
+        }
+      }
+#endif
 #if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
       if (stack)
         return Details::execute_stack(*state_, instructions, *stack);
