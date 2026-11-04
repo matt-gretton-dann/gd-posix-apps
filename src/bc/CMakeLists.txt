@@ -67,7 +67,8 @@ set_warnings(libbc)
 gd_apply_ipo(libbc)
 
 target_sources(libbc PRIVATE cli-interrupt.cc execution-plan.cc instruction.cc lexer.cc number-division-cache.cc number-remainder.cc
-                            number-sqrt.cc number-sqrt-sparse.cc parser.cc reader.cc token.cc verification.cc vm.cc)
+                            number-sqrt.cc number-sqrt-sparse.cc parser.cc parser-expression.cc reader.cc
+                            token.cc verification.cc vm.cc)
 if(WIN32)
   target_sources(libbc PRIVATE verification-linear.cc)
 endif()
