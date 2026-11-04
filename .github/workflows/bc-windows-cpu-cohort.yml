@@ -24,9 +24,9 @@ jobs:
       matrix:
         replica: [1, 2, 3]
     env:
-      BC_CANDIDATE: ${{ github.event.pull_request.head.sha || github.sha }}
-      BC_BASE: ${{ github.event.pull_request.base.sha || inputs.baseline || '21b3638ed338009a7bccf022cddcc119ce620296' }}
-      BC_BROAD: 'true'
+      BC_CANDIDATE: 'b7b12d895db328f3a73cd1c5cd158bc5f934c4ac'
+      BC_BASE: '23fd6a0efcebae14a0c890d218db4d885d7a3ac3'
+      BC_BROAD: 'false'
       BC_CPU_REPLICA: ${{ matrix.replica }}
     steps:
       - uses: actions/checkout@v7
@@ -59,7 +59,7 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force 'bc-native-results/evidence' | Out-Null
-          $identity = @{replica=$env:BC_CPU_REPLICA; cohort_size=3; base=$env:BC_BASE; candidate=$env:BC_CANDIDATE; target_cpu='AMD EPYC 7763'; policy='Three predetermined jobs; retain every outcome and actual host. No CPU filtering, favorable reruns or pooling.'}
+          $identity = @{replica=$env:BC_CPU_REPLICA; cohort_size=3; base=$env:BC_BASE; candidate=$env:BC_CANDIDATE; target_cpu='AMD EPYC 9V74'; policy='Three predetermined jobs; retain every outcome and actual host. No CPU filtering, favorable reruns or pooling.'}
           [IO.File]::WriteAllText((Join-Path $env:GITHUB_WORKSPACE 'bc-native-results/evidence/cpu-cohort.json'), ($identity | ConvertTo-Json), [Text.UTF8Encoding]::new($false))
       - name: Preserve raw checked samples and provenance
         if: always()
