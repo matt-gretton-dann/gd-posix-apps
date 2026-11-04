@@ -175,3 +175,45 @@ TEST_CASE("Linear verification requires strictly earlier producers", "[bc][vm][v
   CHECK(early_eof->instruction == 4);
   CHECK(early_eof->reason == "EOF is only valid at the end of the outer stream");
 }
+
+TEST_CASE("Isolated linear definitions agree with graph verification", "[bc][vm][verifier]")
+{
+  using I = GD::Bc::Instruction;
+  using O = I::Opcode;
+  using D = I::Offset;
+  using GD::Bc::Details::verify_control_flow;
+  GD::Bc::Instructions code{
+    I(O::function_begin, GD::Bc::VariableMask(), GD::Bc::Location("fixture", 1, 1)),
+    I(O::pop_param_mark),
+    I(O::number, "7"),
+    I(O::return_, D(-1)),
+    I(O::number, "0"),
+    I(O::return_, D(-1)),
+    I(O::function_end, GD::Bc::Letter('f'), D(-6))};
+
+  auto compare = [](GD::Bc::Instructions const& body) {
+    auto with_eof = body;
+    with_eof.emplace_back(O::eof);
+    auto const isolated = verify_control_flow(body, false);
+    auto const graph = verify_control_flow(with_eof, false);
+    REQUIRE(isolated.has_value() == graph.has_value());
+    if (isolated) {
+      CHECK(isolated->instruction == graph->instruction);
+      CHECK(isolated->reason == graph->reason);
+    }
+    return isolated.has_value();
+  };
+  CHECK_FALSE(compare(code));
+
+  auto duplicate_marker = code;
+  duplicate_marker[4] = I(O::pop_param_mark);
+  duplicate_marker[5] = I(O::return_, D(-3));
+  // The duplicate marker is unreachable. Let the graph decide this shape.
+  CHECK_FALSE(compare(duplicate_marker));
+
+  code[1] = I(O::number, "0");
+  CHECK(compare(code));
+  code[1] = I(O::pop_param_mark);
+  code[3] = I(O::return_, D(1));
+  CHECK(compare(code));
+}
