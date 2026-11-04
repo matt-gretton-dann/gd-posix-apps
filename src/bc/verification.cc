@@ -147,7 +147,6 @@ auto verify_control_flow(Instructions const& code, bool function_body)
   }
 
   Adjacency const successors(size + 2, edges);
-  Adjacency const predecessors(size + 2, edges, true);
 
   // Each execution region starts with no owned argument packs. A function
   // additionally receives one caller-owned pack, consumed by its prologue.
@@ -248,19 +247,52 @@ auto verify_control_flow(Instructions const& code, bool function_body)
     }
   }
 
+  // Dominance needs only the entries and exits of straight-line runs.
+  // Keep marker-state propagation above on instruction nodes so errors
+  // retain their existing locations and order.
+  std::vector<I> block_of(size + 2, 0);
+  for (auto const& [from, to] : edges) {
+    if (to != from + 1)
+      block_of[to] = absent;
+  }
+  I blocks = 0;
+  for (I node = 0; node < size + 2; ++node) {
+    bool join_previous = false;
+    if (node != 0 && node < size && block_of[node] != absent) {
+      auto const preceding = successors[node - 1];
+      join_previous = preceding.size() == 1 && preceding.front() == node;
+    }
+    if (!join_previous)
+      ++blocks;
+    block_of[node] = blocks - 1;
+  }
+
+  edges.clear();
+  for (I node = 0; node < size + 2; ++node) {
+    // Only a coalesced immediate edge is implicit. Preserve backedges
+    // within a block, including an explicit branch to its own entry.
+    if (node < root && block_of[node] == block_of[node + 1])
+      continue;
+    for (I next : successors[node])
+      edge(block_of[node], block_of[next]);
+  }
+  I const block_root = block_of[root];
+  Adjacency const block_successors(blocks, edges);
+  Adjacency const block_predecessors(blocks, edges, true);
+
   // Iterative DFS avoids making host stack depth depend on source length.
-  std::vector<bool> visited(size + 2, false);
-  std::vector<std::pair<I, I>> stack{{root, 0}};
+  std::vector<bool> visited(blocks, false);
+  std::vector<std::pair<I, I>> stack{{block_root, 0}};
   std::vector<I> postorder;
-  visited[root] = true;
+  visited[block_root] = true;
   while (!stack.empty()) {
     auto& frame = stack.back();
-    if (frame.second == successors[frame.first].size()) {
+    if (frame.second == block_successors[frame.first].size()) {
       postorder.push_back(frame.first);
       stack.pop_back();
     }
     else {
-      I const next = successors[frame.first][frame.second++];
+      I const next = block_successors[frame.first][frame.second++];
       if (!visited[next]) {
         visited[next] = true;
         stack.emplace_back(next, 0);
@@ -268,12 +300,12 @@ auto verify_control_flow(Instructions const& code, bool function_body)
     }
   }
   std::reverse(postorder.begin(), postorder.end());
-  std::vector<I> rank(size + 2, absent);
+  std::vector<I> rank(blocks, absent);
   for (I i = 0; i < postorder.size(); ++i) {
     rank[postorder[i]] = i;
   }
-  std::vector<I> dominator(size + 2, absent);
-  dominator[root] = root;
+  std::vector<I> dominator(blocks, absent);
+  dominator[block_root] = block_root;
   auto intersect = [&](I left, I right) {
     while (left != right) {
       if (rank[left] > rank[right]) {
@@ -289,11 +321,11 @@ auto verify_control_flow(Instructions const& code, bool function_body)
   do {
     changed = false;
     for (I node : postorder) {
-      if (node == root) {
+      if (node == block_root) {
         continue;
       }
       I parent = absent;
-      for (I predecessor : predecessors[node]) {
+      for (I predecessor : block_predecessors[node]) {
         if (dominator[predecessor] != absent) {
           parent = parent == absent ? predecessor : intersect(parent, predecessor);
         }
@@ -310,16 +342,16 @@ auto verify_control_flow(Instructions const& code, bool function_body)
   // or recursive traversal is needed.
   edges.clear();
   for (I node : postorder) {
-    if (node != root) {
+    if (node != block_root) {
       edge(dominator[node], node);
     }
   }
-  Adjacency const children(size + 2, edges);
-  std::vector<I> enter(size + 2, 0);
-  std::vector<I> leave(size + 2, 0);
+  Adjacency const children(blocks, edges);
+  std::vector<I> enter(blocks, 0);
+  std::vector<I> leave(blocks, 0);
   I clock = 0;
-  stack.emplace_back(root, 0);
-  enter[root] = clock++;
+  stack.emplace_back(block_root, 0);
+  enter[block_root] = clock++;
   while (!stack.empty()) {
     auto& frame = stack.back();
     if (frame.second == children[frame.first].size()) {
@@ -344,8 +376,14 @@ auto verify_control_flow(Instructions const& code, bool function_body)
       }
       // Unreachable consumers cannot execute a read. Reachable ones require a
       // strictly dominating producer; previous loop iterations are not assumed.
-      return !visited[i] || (producer != i && visited[producer] && enter[producer] <= enter[i] &&
-                             enter[i] < leave[producer]);
+      auto const consumer_block = block_of[i];
+      auto const producer_block = block_of[producer];
+      if (!visited[consumer_block])
+        return true;
+      if (producer_block == consumer_block)
+        return producer < i;
+      return visited[producer_block] && enter[producer_block] <= enter[consumer_block] &&
+             enter[consumer_block] < leave[producer_block];
     };
     if (code[i].opcode() == O::branch || code[i].opcode() == O::function_end) {
       continue;
