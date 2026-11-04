@@ -1,0 +1,83 @@
+name: bc enabled threaded dispatch experiment
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/bc/vm.cc'
+      - 'src/bc/CMakeLists.txt'
+      - '.github/workflows/bc-threaded-dispatch.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bc-threaded-dispatch-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  compare:
+    name: Threaded dispatch / ${{ matrix.image }}
+    runs-on: ${{ matrix.image }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [ubuntu-24.04, macos-15]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Compare matched typed executables
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir evidence
+          git rev-parse HEAD > evidence/revision.txt
+          for role in switch threaded aa; do
+            option=OFF
+            if [[ $role == threaded ]]; then option=ON; fi
+            cmake -S . -B "build-$role" -G Ninja -DCMAKE_BUILD_TYPE=Release \
+              -DBUILD_TESTING=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+              -DENABLE_BC_TYPED_RESULTS=ON -DENABLE_BC_THREADED_DISPATCH="$option" \
+              -DBC_MULTIPLY_SPLIT_POINT=126
+            cmake --build "build-$role" --target bc --parallel 2
+            cp "build-$role/compile_commands.json" "evidence/$role-compile.json"
+            python3 src/bc/test-cli.py "build-$role/src/bc/bc" --extensions ON
+            python3 src/bc/test-vm-cli.py "build-$role/src/bc/bc" --extensions ON
+            python3 src/bc/test-signal-delivery.py "build-$role/src/bc/bc"
+            python3 src/bc/test-math-library-cli.py "build-$role/src/bc/bc"
+          done
+          python3 - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          roles = []
+          for name in ('switch', 'threaded', 'aa'):
+              binary = Path('build-' + name, 'src/bc/bc').resolve()
+              commands = Path('evidence', name + '-compile.json').read_text()
+              assert ('-DGD_BC_THREADED_DISPATCH=1' in commands) == (name == 'threaded')
+              roles.append(dict(name=name, argv=[str(binary)],
+                                metadata=dict(binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest())))
+          Path('evidence/arithmetic.json').write_text(json.dumps(dict(implementations=roles)))
+          for role in roles:
+              role['argv'].append('-l')
+          Path('evidence/math.json').write_text(json.dumps(dict(implementations=roles)))
+          PY
+          for preset in full holdout; do
+            python3 src/bc/scripts/bench-bc.py --config evidence/arithmetic.json \
+              --reference switch --preset "$preset" --samples 9 --warmups 1 \
+              --seed 207513 --output "evidence/arithmetic-$preset"
+          done
+          python3 src/bc/scripts/bench-bc.py --config evidence/math.json \
+            --suite math --reference switch --preset quick --samples 9 --warmups 1 \
+            --calibrate-seconds 0.05 --seed 207513 --output evidence/math-quick
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: bc-threaded-dispatch-${{ matrix.image }}-${{ github.run_id }}
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 30
