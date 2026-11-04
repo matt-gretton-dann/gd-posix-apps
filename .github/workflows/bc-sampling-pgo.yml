@@ -1,0 +1,83 @@
+name: bc Linux sampling PGO capability
+
+on:
+  pull_request:
+    branches: [main]
+    paths: ['.github/workflows/bc-sampling-pgo.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  sample:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Install the sampling tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends clang-18 llvm-18 linux-tools-generic
+      - name: Record and validate a userspace branch profile
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir evidence
+          lscpu > evidence/cpu.txt
+          cat /proc/sys/kernel/perf_event_paranoid > evidence/perf-event-paranoid.txt
+          perf=$(find /usr/lib/linux-tools -name perf -type f | sort -V | tail -n 1)
+          test -x "$perf"
+          "$perf" --version > evidence/perf-version.txt
+          clang-18 --version > evidence/compiler.txt
+          cat > evidence/probe.c <<'PROBE'
+          #include <stdint.h>
+          #include <stdio.h>
+
+          __attribute__((noinline)) uint32_t train(uint32_t state, unsigned iterations)
+          {
+            for (unsigned i = 0; i < iterations; ++i) {
+              if (state & 1)
+                state = state * 1664525u + 1013904223u;
+              else
+                state = (state >> 1) ^ (state * 33u);
+            }
+            return state;
+          }
+
+          int main(int argc, char **argv)
+          {
+            (void)argv;
+            printf("%u\n", train((uint32_t)argc, 300000000));
+          }
+          PROBE
+          clang-18 -O2 -gline-tables-only -fdebug-info-for-profiling \
+            evidence/probe.c -o probe
+          ./probe > evidence/expected.txt
+          if timeout 30s "$perf" record -o cpu-clock.data -e cpu-clock:u \
+            -- ./probe > clock-output.txt 2> evidence/cpu-clock.log; then
+            cmp evidence/expected.txt clock-output.txt
+            "$perf" script -i cpu-clock.data > evidence/cpu-clock-samples.txt
+          fi
+          if ! timeout 30s "$perf" record -o branches.data -e cycles:u -b \
+            -- ./probe > branch-output.txt 2> evidence/branches.log; then
+            echo 'Hosted runner could not record userspace branch stacks.' | tee evidence/result.txt
+            exit 0
+          fi
+          cmp evidence/expected.txt branch-output.txt
+          llvm-profgen-18 --binary=probe --perfdata=branches.data \
+            --output=evidence/probe.prof 2> evidence/profgen.log
+          llvm-profdata-18 show --sample --all-functions evidence/probe.prof \
+            > evidence/profile.txt
+          grep -Eq "Function: train: [1-9][0-9]*," evidence/profile.txt
+          clang-18 -O2 -gline-tables-only -fdebug-info-for-profiling \
+            -fprofile-sample-use=evidence/probe.prof -Werror=profile-instr-out-of-date \
+            evidence/probe.c -o probe-profiled
+          ./probe-profiled > profile-output.txt
+          cmp evidence/expected.txt profile-output.txt
+          echo 'Recorded and consumed a nonempty userspace branch profile.' | tee evidence/result.txt
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: bc-sampling-pgo-capability-${{ github.run_id }}
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 30

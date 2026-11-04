@@ -31,3 +31,13 @@ two runs, the call workload took about 31% less time, loops 28% less, and
 sparse arrays 24% less. Square-root intervals included parity in the first
 run and showed a 0.34% slowdown in the second. These are advisory results
 from one host. See issue #213 for the training and evaluation scope.
+
+## Linux sample profile capability
+
+The sampling PGO capability workflow tests whether the hosted Linux runner can
+capture userspace branch stacks with `perf` and whether LLVM can convert and
+consume the resulting profile. It also attempts software CPU-clock sampling
+for attribution when the host lacks branch-stack support. The workflow keeps
+the runner CPU, perf permissions, tool versions and failure diagnostics in
+the artifact. This probe establishes collection capability. Workload training,
+holdout timing and correctness for a sample-profiled `bc` are separate.
