@@ -36,3 +36,38 @@ The held-out large division case also took 1.426 times the comparator.
 
 [Per-workload ratios](ratios.csv) · [Full observations](full.jsonl.gz) ·
 [Holdout observations](holdout.jsonl.gz)
+
+## Focused follow-up at c31e75b4
+
+A local macOS arm64 run remeasured ten full and ten holdout workloads to
+locate the remaining gaps after the sparse-root and scalar VM changes.
+The current Release executable was built from the runtime sources in
+`c31e75b4`, using Apple Clang 21 and split point 126. The run interleaved
+that executable, its identical A/A role, the earlier GD executable, and
+the same two Howard executables. The source-built Howard executable was
+the reference. The harness used seed 197851, one warm-up and twelve
+measurements per role. Each preset checked 650 outputs, with matching
+output hashes across all roles for each workload.
+
+| Workload family | Full GD / Howard | Holdout GD / Howard |
+| --- | ---: | ---: |
+| Function definitions | 2.161 | 2.090 |
+| Recursion | 1.359 | 1.359 |
+| Function calls | 1.141 | 1.142 |
+| Temporary arithmetic chain | 1.064 | 1.157 |
+| Larger multi-limb division | 0.956 | 1.425 |
+| Sparse integer square root | 1.028 | 1.013 |
+
+The older GD executable took 1.789 and 1.893 times the source-built
+Howard time for sparse integer square root in these same runs. The
+targeted selection retains both improvements and misses. The A/A role
+repeats the same executable, so this checkpoint measures timing
+variability on one host. Cross-platform acceptance requires separate native runs.
+
+[Binary identities](current-gap-binaries.json) ·
+[Full samples](current-gap-full-samples.jsonl.gz) ·
+[Full summary](current-gap-full-summary.json.gz) ·
+[Full manifest](current-gap-full-manifest.json.gz) ·
+[Holdout samples](current-gap-holdout-samples.jsonl.gz) ·
+[Holdout summary](current-gap-holdout-summary.json.gz) ·
+[Holdout manifest](current-gap-holdout-manifest.json.gz)
