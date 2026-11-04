@@ -83,8 +83,51 @@ The [full](bc-compiler-apple-optimization/full.jsonl.gz) and
 [holdout](bc-compiler-apple-optimization/holdout.jsonl.gz) archives retain
 the original checked samples.
 
-Remaining #213 work includes matched GCC O2/O3 and thin/full/no-LTO
-comparisons, supported instrumentation/sampling PGO, balanced training with
+## Apple Clang LTO comparison
+
+Repeat the build at the same source and split point for each combination of
+`-O2` or `-O3` and no LTO, ThinLTO or full LTO. Use a fresh build directory
+for each configuration. For ThinLTO use the recipe above. For no LTO use
+`IPO_MODE=OFF`. For full LTO use `IPO_MODE=OFF` and append `-flto=full`
+to both Release flags. The latter disables CMake's automatic IPO and
+lets the explicit compiler flag select full LTO. Check the actual compile
+and link commands before interpreting the results.
+
+The two rebuilt ThinLTO executables were byte-identical to the first pair.
+All six builds passed the 19 extensions-enabled VM CLI tests. Run the
+same two arithmetic presets with seven interleaved roles, including the
+same Howard binary and `-O3` ThinLTO as reference.
+
+| Level | LTO | Configure wall seconds | Build wall seconds | Executable bytes |
+| --- | --- | ---: | ---: | ---: |
+| `-O2` | None | 2.37 | 9.15 | 746896 |
+| `-O2` | Thin | 2.57 | 8.97 | 567744 |
+| `-O2` | Full | 2.26 | 10.10 | 533104 |
+| `-O3` | None | 2.42 | 9.60 | 754752 |
+| `-O3` | Thin | 2.61 | 9.46 | 567232 |
+| `-O3` | Full | 2.25 | 9.53 | 531872 |
+
+In the full preset, the `-O3` full-LTO binary ran
+`factorial_5000_x5` at 1.398 times the reference runtime with a nominal
+95% interval of [1.390, 1.399]. Without LTO, the `-O3` build ran
+`file_statements_20000` at 1.125 times the reference runtime with an
+interval of [1.124, 1.129].
+
+The held-out `factorial_5625_x5` case showed a similar full-LTO cost
+at 1.408 [1.400, 1.411]. The held-out `file_statements_17500` case
+without LTO ran at 1.120 [1.103, 1.127]. Both comparisons use the
+`-O3` builds. Full LTO made the executable smaller, and ThinLTO
+remains the default for this configuration. These single-host
+measurements had no separate A/A control and use pointwise intervals.
+
+The [full](bc-compiler-apple-optimization/lto-full.jsonl.gz) and
+[holdout](bc-compiler-apple-optimization/lto-holdout.jsonl.gz) archives
+contain 9,240 checked observations in total, including warmups.
+The [paired ratios](bc-compiler-apple-optimization/lto-ratios.csv)
+include comparisons with the ThinLTO reference and with Howard.
+
+Remaining #213 work includes matched GCC O2/O3 and LTO comparisons,
+supported instrumentation/sampling PGO, balanced training with
 cold/error/interactive paths, independent holdout, source/compiler/profile
 identity checks, optimization remarks, native code inspection, build cost,
 RSS/code size, per-workload Howard ratios and startup. Missing or stale PGO
