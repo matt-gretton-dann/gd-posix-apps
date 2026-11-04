@@ -51,6 +51,11 @@ jobs:
           if [[ $RUNNER_OS == Windows ]]; then
             export CC=cl CXX=cl
             python_cmd=python
+            powershell.exe -NoProfile -Command "Get-CimInstance Win32_Processor | Select-Object Name,NumberOfCores,NumberOfLogicalProcessors | Format-List" > evidence/cpu.txt
+          elif [[ $RUNNER_OS == Linux ]]; then
+            lscpu > evidence/cpu.txt
+          else
+            sysctl hw.model hw.ncpu > evidence/cpu.txt
           fi
           for role in registers stack aa; do
             option=OFF
@@ -64,6 +69,8 @@ jobs:
             cp "build-$role/compile_commands.json" "evidence/$role-compile.json"
             binary="build-$role/src/bc/bc"
             if [[ $RUNNER_OS == Windows ]]; then binary+=".exe"; fi
+            mkdir "evidence/$role"
+            cp "$binary" "evidence/$role/"
             "$python_cmd" src/bc/test-cli.py "$binary" --extensions ON
             "$python_cmd" src/bc/test-vm-cli.py "$binary" --extensions ON
             if [[ $RUNNER_OS != Windows ]]; then
@@ -81,6 +88,8 @@ jobs:
           for name in ('registers', 'stack', 'aa'):
               binary = Path('build-' + name, 'src/bc', 'bc.exe' if os.name == 'nt' else 'bc').resolve()
               commands = Path('evidence', name + '-compile.json').read_text()
+              retained = Path('evidence', name, binary.name)
+              assert retained.read_bytes() == binary.read_bytes()
               assert ('GD_BC_STACK_EXECUTION=1' in commands) == (name == 'stack')
               assert ('stack-execution.cc' in commands) == (name == 'stack')
               roles.append(dict(name=name, argv=[str(binary)],
