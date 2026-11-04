@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Certify ordinary -l functions and their observable language behavior."""
 import argparse
+from decimal import Decimal, localcontext
 from fractions import Fraction
 import importlib.util
 import json
@@ -79,6 +80,29 @@ class LibraryCli(unittest.TestCase):
                 self.assertEqual(status, 'pass', diagnostic)
                 self.assertEqual(lines[4 * index + 1:4 * index + 4],
                                  [str(case['scale']), '10', str(case['scale'])])
+
+    def test_negative_exponential_reconstruction(self):
+        cases = [(2, '-.125'), (20, '-.125000000001'), (100, '-200'),
+                 (300, '-125.00000001'), (1000, '-1000'), (1000, '-2000'),
+                 (1000, '-2300'), (1000, '-3002.999'), (1000, '-3003')]
+        program = ''.join(f'scale={scale}\nr=e({argument})\nr\nscale(r)\n'
+                          for scale, argument in cases)
+        binaries = [BC] if OTHER_BC is None else [BC, OTHER_BC]
+        for binary in binaries:
+            lines = self.checked_lines(program, options=(), files=(SOURCE,), binary=binary)
+            self.assertEqual(len(lines), 2 * len(cases))
+            for index, (scale, argument) in enumerate(cases):
+                with self.subTest(binary=binary, scale=scale, argument=argument):
+                    # Decimal.exp is correctly rounded. Its adjacent decimal
+                    # values enclose the result for the exact input.
+                    with localcontext() as context:
+                        context.prec = scale + 32
+                        reference = Decimal(argument).exp()
+                        lower = Fraction(reference.next_minus())
+                        upper = Fraction(reference.next_plus())
+                    value = ORACLE.decimal_fraction(lines[2 * index])
+                    self.assertEqual(ORACLE.classify(value, lower, upper, scale), 'pass')
+                    self.assertEqual(lines[2 * index + 1], str(scale))
 
     def test_atan_unit_literal_matches_the_certified_enclosure(self):
         source = Path(SOURCE).read_text(encoding='utf-8')
