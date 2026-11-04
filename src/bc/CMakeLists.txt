@@ -57,6 +57,11 @@ if(ENABLE_NON_POSIX_EXTENSIONS)
   # bc.hh exposes mode-dependent inline code, so every consumer needs this.
   target_compile_definitions(bc-language-mode INTERFACE ENABLE_EXTENSIONS=1)
 endif()
+option(ENABLE_BC_STACK_EXECUTION "Enable experimental scalar operand-stack execution" OFF)
+if(ENABLE_BC_STACK_EXECUTION)
+  target_sources(libbc PRIVATE stack-execution.cc)
+  target_compile_definitions(libbc PRIVATE GD_BC_STACK_EXECUTION=1)
+endif()
 set_warnings(libbc)
 gd_apply_ipo(libbc)
 

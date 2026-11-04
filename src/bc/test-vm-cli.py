@@ -48,6 +48,10 @@ class VMTests(unittest.TestCase):
                 self.run_bc('while(' + target + ') {\n7\nbreak\n}\n', '7\n')
                 self.run_bc('for(i=0;' + target + ';i=i+1) {\n7\nbreak\n}\n', '7\n')
 
+    def test_scalar_block_preserves_arithmetic_operand_order(self):
+        self.run_bc('{a=20;b=3;c=(a-b)*2;d=a/(b+1);if(c>d) c-=d;c;d;}\n'
+                    'a\nb\n', '29\n5\n20\n3\n')
+
     def test_condition_side_effects_run_once(self):
         cases = [('n=0\nif(n=2) 7\nn\n', '7\n2\n'),
                  ('n=0\nif(n++) 7\nn\n', '1\n'),

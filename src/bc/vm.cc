@@ -23,6 +23,10 @@
 #include "number.hh"
 #include "verification.hh"
 
+#if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
+#  include "stack-execution.hh"
+#endif
+
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define STRINGIFY2(a) #a
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
@@ -261,6 +265,17 @@ public:
     return VerifiedInstructions(instructions_, plans.consumption, plans.layout);
   }
 
+#if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
+  auto stack_code() -> StackCode const*
+  {
+    if (!stack_planned_) {
+      stack_ = plan_stack_execution(instructions_, true);
+      stack_planned_ = true;
+    }
+    return stack_ ? &*stack_ : nullptr;
+  }
+#endif
+
 private:
   friend struct VMState;
   explicit FunctionCode(Instructions instructions) : instructions_(std::move(instructions))
@@ -275,6 +290,10 @@ private:
   inline static Plans const empty_plans_{};
   Instructions instructions_;
   std::optional<Plans> prepared_;
+#if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
+  std::optional<StackCode> stack_;
+  bool stack_planned_{};
+#endif
 };
 
 /** \brief Hold virtual machine state.
@@ -827,6 +846,15 @@ void GD::Bc::Details::VMState::function(Letter func, Instructions::const_iterato
     std::make_optional(std::make_tuple(FunctionCode(std::move(instrs)), mask, loc));
 }
 
+#if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
+namespace GD::Bc::Details {
+namespace {
+auto execute_stack(VMState& vm, Instructions const& source, StackCode const& code)
+  -> std::pair<Number, bool>;
+}  // namespace
+}  // namespace GD::Bc::Details
+#endif
+
 auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc::Number
 {
   GD_BC_PROFILE_EVENT(Profile::Event::function_calls, 1);
@@ -836,7 +864,12 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
   }
 
   FunctionDefinition& def = func_ptr.value();
+#if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
+  auto const* stack = full_checks() ? nullptr : std::get<0>(def).stack_code();
+  auto func_instructions = std::get<0>(def).view(full_checks() || stack != nullptr);
+#else
   auto func_instructions = std::get<0>(def).view(full_checks());
+#endif
   auto locals = std::get<1>(def);
 
   // Retain offsets rather than references across execute(): recursive calls
@@ -878,8 +911,13 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
       arrays_.at(static_cast<unsigned>(l)).reset();
     });
 
+#if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
+    auto [result, cont] = stack ? execute_stack(*this, func_instructions.instructions(), *stack)
+                                : InstructionPack(this, func_instructions).execute();
+#else
     InstructionPack fn(this, func_instructions);
     auto [result, cont] = fn.execute();
+#endif
     restore(false);
     return result;
   }
@@ -2245,16 +2283,161 @@ auto GD::Bc::VM::execute_cli(Instructions& instructions, Details::CliInterruptSc
   return execute_impl(instructions, cli.installed());
 }
 
+#if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
+namespace GD::Bc::Details {
+namespace {
+auto execute_stack(VMState& vm, Instructions const& source, StackCode const& code) -> std::pair<Number, bool>
+{
+  using Op = Instruction::Opcode;
+  std::vector<Number> stack;
+  stack.reserve(code.depth);
+  auto const pop = [&stack] {
+    auto value = std::move(stack.back());
+    stack.pop_back();
+    return value;
+  };
+  for (std::size_t pc = 0; pc < code.instructions.size();) {
+    if (have_been_interrupted.test(std::memory_order_relaxed))
+      return {Number(0), true};
+    auto const instruction = code.instructions[pc++];
+    auto const op = static_cast<Op>(instruction.opcode);
+    auto const variable = [&instruction] {
+      return Variable(static_cast<char>('a' + instruction.operand));
+    };
+    switch (op) {
+    case Op::number:
+      stack.push_back(source[instruction.operand].decoded_number(vm.ibase()));
+      break;
+    case Op::load:
+      stack.push_back(vm.variable(variable()));
+      break;
+    case Op::store:
+      vm.variable(variable(), pop());
+      break;
+    case Op::push_param_mark:
+      vm.push_param_pack();
+      break;
+    case Op::push_param:
+      vm.push_param(pop());
+      break;
+    case Op::pop_param_mark:
+      vm.pop_param_pack();
+      break;
+    case Op::call: {
+      auto const& call = source[instruction.operand];
+      stack.push_back(vm.call(std::get<Letter>(call.op1()), std::get<Location>(call.op2())));
+      break;
+    }
+    case Op::negate:
+      stack.back().negate();
+      break;
+    case Op::abs:
+      stack.back().abs();
+      break;
+    case Op::length:
+      stack.back() = Number(stack.back().length());
+      break;
+    case Op::scale_expr:
+      stack.back() = Number(stack.back().scale());
+      break;
+    case Op::sqrt:
+      stack.back().sqrt(vm.scale());
+      break;
+    case Op::print: {
+      auto& stream = vm.stream(static_cast<Instruction::Stream>(instruction.operand));
+      pop().output(stream, vm.obase(), 0);
+      stream << '\n';
+      break;
+    }
+    case Op::branch_zero:
+      if (!pop().is_zero())
+        break;
+      [[fallthrough]];
+    case Op::branch:
+      pc = instruction.operand;
+      break;
+    case Op::pop_param:
+      stack.push_back(vm.pop_param());
+      break;
+    case Op::return_:
+      return {pop(), true};
+    case Op::eof:
+      return {Number(0), false};
+    default: {
+      auto top = pop();
+      auto& bottom = stack.back();
+      auto& lhs = instruction.reversed ? top : bottom;
+      auto const& rhs = instruction.reversed ? bottom : top;
+      switch (op) {
+      case Op::add:
+        lhs.add(rhs);
+        break;
+      case Op::subtract:
+        lhs.sub(rhs);
+        break;
+      case Op::multiply:
+        lhs.multiply(rhs, vm.scale());
+        break;
+      case Op::divide:
+        lhs.divide(rhs, vm.scale());
+        break;
+      case Op::modulo:
+        lhs.modulo(rhs, vm.scale());
+        break;
+      case Op::power:
+        lhs.power(rhs, vm.scale());
+        break;
+      case Op::less_than:
+        lhs = Number(lhs < rhs ? 1 : 0);
+        break;
+      case Op::less_than_equals:
+        lhs = Number(lhs <= rhs ? 1 : 0);
+        break;
+      case Op::equals:
+        lhs = Number(lhs == rhs ? 1 : 0);
+        break;
+      case Op::not_equals:
+        lhs = Number(lhs != rhs ? 1 : 0);
+        break;
+      default:
+        std::abort();
+      }
+      if (instruction.reversed)
+        bottom = std::move(top);
+      break;
+    }
+    }
+  }
+  return {Number(0), true};
+}
+}  // namespace
+}  // namespace GD::Bc::Details
+#endif
+
 auto GD::Bc::VM::execute_impl(Instructions& instructions, bool cli_interrupts) -> bool
 {
   auto const verified = state_->verify(instructions);
+#if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
+  auto const stack =
+    state_->full_checks() ? std::nullopt : Details::plan_stack_execution(instructions);
+  std::optional<Details::InstructionPack> instrs;
+  if (!stack)
+    instrs.emplace(state_.get(), verified.view());
+#else
   Details::InstructionPack instrs(state_.get(), verified.view());
+#endif
   // Restore the caller's handler before reporting interruption, including when
   // execution throws (for example, through an output stream's exception mask).
-  auto const result = [this, &instrs, cli_interrupts]() {
+  auto const result = [&, this, cli_interrupts]() {
     try {
       Details::InterruptHandler handler(cli_interrupts);
+#if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
+      if (stack)
+        return Details::execute_stack(*state_, instructions, *stack);
+      return instrs->execute();
+#else
       return instrs.execute();
+#endif
     }
     catch (...) {
       state_->discard_parameters();
