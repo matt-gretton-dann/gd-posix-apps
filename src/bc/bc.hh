@@ -1226,6 +1226,11 @@ private:
 };
 }  // namespace Details
 
+class VM;
+namespace Library {
+void load(VM& vm);
+}
+
 /** \brief  Virtual Machine
  *
  * This is the object that executes instructions.
@@ -1264,6 +1269,11 @@ public:
   auto execute_cli(Instructions& instructions, Details::CliInterruptScope const& cli) -> bool;
 
 private:
+  friend void Library::load(VM& vm);
+  // The image bytes have static lifetime. This entry point is used only
+  // by the native, mechanically generated library image.
+  void defer_library_function(Letter name, std::string_view image,
+                              Instructions (*decode)(std::string_view));
   auto execute_impl(Instructions& instructions, bool cli_interrupts) -> bool;
   std::unique_ptr<Details::VMState> state_;  ///< Sole owner of this interpreter's state.
 };

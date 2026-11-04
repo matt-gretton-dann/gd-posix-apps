@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <string>
 #include <type_traits>
+#include <vector>
 
 #include "bc.hh"
 #include "math-library-image.hh"
@@ -23,6 +24,8 @@ class ImageWriter
 {
 public:
   explicit ImageWriter(std::ostream& out) : out_(out) {}
+
+  [[nodiscard]] auto size() const noexcept -> std::size_t { return count_; }
 
   void byte(unsigned value)
   {
@@ -121,6 +124,7 @@ void generate(std::string_view source, std::ostream& out)
   out << "// Generated from math-library.bc by the ordinary bc parser.\n"
          "constexpr char image[] = \"";
   ImageWriter image(out);
+  std::vector<ImageItem> items;
   for (;;) {
     auto const instructions = parser.parse();
     if (parser.seen_quit() ||
@@ -129,6 +133,7 @@ void generate(std::string_view source, std::ostream& out)
         })) {
       throw std::runtime_error("math library contains quit, halt, or a parse error");
     }
+    auto const begin = image.size();
     image.word(instructions->size());
     for (auto const& instruction : *instructions) {
       image.byte(static_cast<unsigned>(instruction.opcode()));
@@ -139,8 +144,23 @@ void generate(std::string_view source, std::ostream& out)
         write_operand(image, instruction.op2());
       }
     }
-    if (!instructions->empty() && instructions->back().opcode() == Instruction::Opcode::eof) {
-      out << "\";\n";
+    // Only a complete, isolated definition can be deferred without changing
+    // the timing of top-level execution or its observable side effects.
+    using O = Instruction::Opcode;
+    auto function = static_cast<unsigned>(Letter::count_);
+    if (instructions->size() >= 2 && instructions->front().opcode() == O::function_begin &&
+        instructions->back().opcode() == O::function_end &&
+        std::get<Instruction::Offset>(instructions->back().op2()) ==
+          -static_cast<Instruction::Offset>(instructions->size() - 1)) {
+      function = static_cast<unsigned>(std::get<Letter>(instructions->back().op1()));
+    }
+    items.push_back({begin, image.size() - begin, function});
+    if (!instructions->empty() && instructions->back().opcode() == O::eof) {
+      out << "\";\nconstexpr ImageItem items[] = {\n";
+      for (auto const& item : items) {
+        out << "  {" << item.begin << ", " << item.size << ", " << item.function << "},\n";
+      }
+      out << "};\n";
       return;
     }
   }

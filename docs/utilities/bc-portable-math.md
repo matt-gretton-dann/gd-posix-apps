@@ -430,11 +430,13 @@ revisions are explicit checkpoints; later source changes require fresh checks.
 `ENABLE_BC_PREPARSED_LIBRARY=ON` builds a native generator that parses the
 same embedded POSIX source and encodes the ordinary instruction operands
 in a compact, build-local byte image.
-At runtime the loader constructs fresh instructions for each input item
-and passes them through the normal verifier and VM. It retains the parser's
-item boundaries and source locations. The default and cross builds load
-the source through the parser. The optional image test checks deterministic
-regeneration.
+The loader executes initialization and other top-level items in source order.
+It registers an isolated function definition as a slice of the immutable image.
+The first call decodes and verifies that slice before installing an owned body
+with its own literal caches. User definitions replace deferred or decoded
+functions through normal registration. Item boundaries and source locations
+are preserved. The default and cross builds load the source through the
+parser. The optional image test checks deterministic regeneration.
 
 An exploratory Apple Clang arm64 Release comparison used 30 paired process
 launches per case after warmup. All outputs matched the source loader.

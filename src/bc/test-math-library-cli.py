@@ -323,6 +323,10 @@ class LibraryCli(unittest.TestCase):
         # The replacement is an ordinary user function, including its scale.
         self.assertEqual(lines, ['7', '0', '20'])
 
+    def test_user_definition_replaces_a_called_library_function(self):
+        lines = self.checked_lines('e(0)\ndefine e(x) {\nreturn(7)\n}\ne(0)\nscale(e(0))\n')
+        self.assertEqual([Fraction(line) for line in lines], [1, 7, 0])
+
     def test_user_file_redefinition_precedes_stdin(self):
         with tempfile.TemporaryDirectory() as directory:
             user = Path(directory) / 'user math.bc'

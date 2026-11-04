@@ -341,6 +341,11 @@ struct VMState
   void array(Array a, ArrayValues av);
   [[nodiscard]] auto array_length(Array a) const -> Number::NumType;
 
+#if defined(GD_BC_PREPARSED_LIBRARY)
+  void defer_library_function(Letter name, std::string_view image,
+                              Instructions (*decode)(std::string_view));
+#endif
+
   void function(Letter func, Instructions::const_iterator const& begin,
                 Instructions::const_iterator const& end, VariableMask mask, Location const& loc);
 
@@ -432,6 +437,14 @@ private:
   std::array<ArrayValues, Letter::count_> arrays_;  ///< Array of arrays, indexed by Letter.
   std::array<std::optional<FunctionDefinition>, Letter::count_>
     functions_;  ///< Array of (optional) functions, indexed by letter.
+#if defined(GD_BC_PREPARSED_LIBRARY)
+  struct DeferredDefinition
+  {
+    std::string_view image;
+    Instructions (*decode)(std::string_view) = nullptr;
+  };
+  std::array<DeferredDefinition, Letter::count_> deferred_functions_{};
+#endif
   std::array<Number, Letter::count_> variables_;  ///< Array of scalar variables, indexed by Letter.
   Params parameters_;                             ///< Contiguous values for active argument packs.
   ParamMarks param_marks_;                        ///< Pack offsets; indices survive vector growth.
@@ -839,10 +852,39 @@ void GD::Bc::Details::VMState::function(Letter func, Instructions::const_iterato
     std::make_optional(std::make_tuple(FunctionCode(std::move(instrs)), mask, loc));
 }
 
+#if defined(GD_BC_PREPARSED_LIBRARY)
+void GD::Bc::Details::VMState::defer_library_function(Letter name, std::string_view image,
+                                                     Instructions (*decode)(std::string_view))
+{
+  auto const index = static_cast<unsigned>(name);
+  functions_.at(index).reset();
+  deferred_functions_.at(index) = {image, decode};
+}
+#endif
+
 auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc::Number
 {
   GD_BC_PROFILE_EVENT(Profile::Event::function_calls, 1);
-  auto& func_ptr{functions_.at(static_cast<unsigned>(func))};
+  auto const index = static_cast<unsigned>(func);
+  auto& func_ptr = functions_.at(index);
+#if defined(GD_BC_PREPARSED_LIBRARY)
+  if (!func_ptr.has_value()) {
+    auto& deferred = deferred_functions_.at(index);
+    if (deferred.decode != nullptr) {
+      auto const code = deferred.decode(deferred.image);
+      validate(code);
+      // The generator records only isolated definition items here. Outer
+      // validation proves the extracted function's offsets and operands.
+      assert(code.front().opcode() == Instruction::Opcode::function_begin);
+      assert(code.back().opcode() == Instruction::Opcode::function_end);
+      assert(std::get<Letter>(code.back().op1()) == func);
+      function(func, code.cbegin() + 1, code.cend() - 1,
+               std::get<VariableMask>(code.front().op1()),
+               std::get<Location>(code.front().op2()));
+      deferred = {};
+    }
+  }
+#endif
   if (!func_ptr.has_value()) {
     Details::error(Msg::function_not_defined, func, loc.file_name(), loc.line(), loc.column());
   }
@@ -2245,6 +2287,14 @@ GD::Bc::VM::VM(std::ostream& out, std::ostream& err, bool save_specials, Executi
 GD::Bc::VM::~VM() = default;
 GD::Bc::VM::VM(VM&&) noexcept = default;
 auto GD::Bc::VM::operator=(VM&&) noexcept -> VM& = default;
+
+#if defined(GD_BC_PREPARSED_LIBRARY)
+void GD::Bc::VM::defer_library_function(Letter name, std::string_view image,
+                                       Instructions (*decode)(std::string_view))
+{
+  state_->defer_library_function(name, image, decode);
+}
+#endif
 
 auto GD::Bc::VM::execute(Instructions& instructions) -> bool
 {
