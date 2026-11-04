@@ -206,6 +206,9 @@ GD::Bc::StdinReader::StdinReader() : Reader("-"), file_("-") {}
 
 auto GD::Bc::StdinReader::peek() -> int
 {
+#if defined(_WIN32)
+  // Retain the generic reader on Windows. Native timing found unrelated
+  // comparison regressions with the status-query change in the MSVC image.
   if (c_ == EOF && !file_.eof()) {
     c_ = file_.getc();
     if (file_.error()) {
@@ -213,6 +216,19 @@ auto GD::Bc::StdinReader::peek() -> int
       std::exit(1);  // NOLINT(concurrency-mt-unsafe)
     }
   }
+#else
+  if (c_ == EOF && !at_end_) {
+    c_ = file_.getc();
+    // A successful read needs no separate locked stream status query.
+    if (c_ == EOF) {
+      if (file_.error()) {
+        std::cerr << error(Msg::file_error, file_.filename());
+        std::exit(1);  // NOLINT(concurrency-mt-unsafe)
+      }
+      at_end_ = true;
+    }
+  }
+#endif
   return c_;
 }
 
