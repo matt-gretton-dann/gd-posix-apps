@@ -1,0 +1,35 @@
+name: bc GCC optimization matrix
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/utilities/bc-compiler-gcc/run.sh'
+      - '.github/workflows/bc-gcc-matrix.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bc-gcc-matrix-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  matrix:
+    name: GCC O2/O3 and IPO holdout
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Build and compare the four variants
+        run: bash docs/utilities/bc-compiler-gcc/run.sh "$GITHUB_WORKSPACE" gcc-matrix
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: bc-gcc-matrix-${{ github.run_id }}
+          path: gcc-matrix/evidence/
+          if-no-files-found: error
+          retention-days: 30
