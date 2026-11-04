@@ -106,6 +106,11 @@ def selected_cases(bench, preset, broad):
         if previous is None or abs(case['parameters']['scale'] - 100) < abs(previous['parameters']['scale'] - 100):
             chosen[key] = case
     names = {case['name'] for case in chosen.values()}
+    # Exercise the high-precision logarithm reduction as well as its fallback.
+    names.update(case['name'] for case in cases
+                 if case['parameters']['function'] == 'l' and
+                 case['parameters']['mode'] == 'repeated' and
+                 case['parameters']['scale'] == 1000)
     return [case['name'] for case in cases if case['name'] in names]
 
 

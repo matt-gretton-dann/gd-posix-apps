@@ -155,7 +155,8 @@ define l(x) {
   auto b,i,k,m,q,r,s,t,u,v,w,h;
   /* b/s save base/scale; w is precision; k reconstructs root reductions.
      m/v are the signed and absolute decimal exponent; h holds its log term.
-     q/t/u are squared ratio, odd power and contribution; r is the sum. */
+     q/r are first the root bounds, then the squared ratio and sum.
+     t/u are the odd power and contribution. */
   b=ibase
   ibase=A
   s=scale
@@ -188,12 +189,19 @@ define l(x) {
     if (m>0) x=x/q
     h=m*l(10)
   }
+  /* At high precision, more roots cost less than a longer series. */
+  q=.8
+  r=1.2
+  if (s>=1000) {
+    q=.95
+    r=1.05
+  }
   k=1
-  while (x<.8) {
+  while (x<q) {
     x=sqrt(x)
     k*=2
   }
-  while (x>1.2) {
+  while (x>r) {
     x=sqrt(x)
     k*=2
   }
