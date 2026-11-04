@@ -89,6 +89,15 @@ class ComparatorBuilds(unittest.TestCase):
         self.assertEqual(download.call_count, 2)
         self.assertEqual(extract.call_args[0][0].read_bytes(), payload)
 
+    def test_gnu_download_retry_limit(self):
+        error = self.module.urllib.error.URLError('network unavailable')
+        with mock.patch.object(self.module.urllib.request, 'urlopen', side_effect=error) as download, \
+             mock.patch.object(self.module.time, 'sleep') as delay:
+            with self.assertRaises(self.module.urllib.error.URLError):
+                self.module.download_gnu_archive(self.root / 'archive')
+        self.assertEqual(download.call_count, 3)
+        self.assertEqual(delay.call_args_list, [mock.call(1), mock.call(2)])
+
     def test_archive_path_cannot_escape(self):
         archive = self.root / 'unsafe.tar.gz'
         with tarfile.open(str(archive), 'w:gz') as output:
