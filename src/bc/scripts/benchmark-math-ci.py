@@ -111,6 +111,12 @@ def selected_cases(bench, preset, broad):
                  if case['parameters']['function'] == 'l' and
                  case['parameters']['mode'] == 'repeated' and
                  case['parameters']['scale'] == 1000)
+    # The POSIX default scale has a distinct unit-arctangent path. Keep
+    # its exact full case and the non-unit holdout in routine PR timing.
+    names.update(case['name'] for case in cases
+                 if case['parameters']['function'] == 'a' and
+                 case['parameters']['mode'] == 'repeated' and
+                 case['parameters']['scale'] == 20)
     return [case['name'] for case in cases if case['name'] in names]
 
 
