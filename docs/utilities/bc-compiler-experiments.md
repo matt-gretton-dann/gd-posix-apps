@@ -126,6 +126,53 @@ contain 9,240 checked observations in total, including warmups.
 The [paired ratios](bc-compiler-apple-optimization/lto-ratios.csv)
 include comparisons with the ThinLTO reference and with Howard.
 
+## Apple Clang VM profile-guided optimization
+
+Use the same source, compiler, split point and `-O3` ThinLTO recipe as the
+compiler matrix. Configure the training build with
+`-DENABLE_BC_VM_PGO_GENERATE=ON` and set `LLVM_PROFILE_FILE` to a fresh
+directory with a `%p.profraw` filename. Train on the arithmetic `quick`
+preset with corpus seed 21301, one warmup and one measured iteration per
+workload. Also run `test-cli.py --extensions ON`,
+`test-signal-delivery.py` and `test-math-library-cli.py` to include error
+paths, interrupt recovery and portable math. Merge the 410 raw profiles
+with the matching `xcrun llvm-profdata`. The merged IR profile covered
+402 functions and had SHA-256
+`0f168c6369c63ec140216cec7f438f1dc9cc81a07a3cb7fa9c38fb1d61620d61`.
+
+Configure a fresh build with `-DBC_VM_PGO_PROFILE=/path/to/training.profdata`
+and no profile generation. The compilation database showed profile use
+only in `vm.cc`. The resulting binary passed 71 local checks, with one
+optional external math test skipped. The training and profile-use builds
+took 9.35 and 9.82 seconds respectively, with one build per variant.
+The profiled binary was 649040 bytes versus 567232 for the unprofiled
+ThinLTO control.
+
+Use the full and holdout arithmetic presets with the same Howard binary,
+reference `base` for unprofiled ThinLTO, and role `pgo` for the profiled
+build. Use nine measured pairs and one warmup. The quick training
+programs and held-out arithmetic programs shared one exact program, the
+startup probe. Startup is reported separately.
+
+The full preset showed faster loops and calls at 0.763 times control
+runtime in each case. The large factorial workload ran at 1.385
+[1.331, 1.392], and `divide_multilimb_900d_450d_s100_x1000` at 1.296
+[1.260, 1.329]. The intervals are nominal pointwise 95% intervals on one
+host without a separate A/A control.
+
+The held-out loop and call ratios were 0.764 and 0.765. Large factorial
+ran at 1.399 [1.397, 1.404] and the corresponding multi-limb division
+case at 1.169 [1.164, 1.198]. A different held-out multi-limb division
+case ran at 0.779 [0.776, 0.792]. Startup intervals included parity in
+both presets. The workload tradeoff leaves this profile opt-in.
+
+The [training corpus hashes](bc-compiler-apple-optimization/pgo-training.json)
+identify the quick inputs. The [full](bc-compiler-apple-optimization/pgo-full.jsonl.gz)
+and [holdout](bc-compiler-apple-optimization/pgo-holdout.jsonl.gz) archives
+retain 3,960 checked observations, including warmups. The
+[paired ratios](bc-compiler-apple-optimization/pgo-ratios.csv) retain both
+builds against Howard and PGO against the unprofiled control.
+
 Remaining #213 work includes matched GCC O2/O3 and LTO comparisons,
 supported instrumentation/sampling PGO, balanced training with
 cold/error/interactive paths, independent holdout, source/compiler/profile
