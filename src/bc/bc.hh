@@ -977,11 +977,11 @@ private:
    */
   auto parse_opt_assign_expression(POPEFlags flags = POPEFlags::parse_primary) -> ExprIndex;
 
-  /** \brief        Parse an optional assignment expression
-   *  \param  flags Flags of type of expressions to accept, default primary.
-   *  \return       Index of expression, and type of expression.
+  /** \brief  Finish an expression after excluding assignment.
+   *  \param  primary_expr First primary expression, or missing.
+   *  \return Index and type of the expression.
    */
-  auto parse_assign_expression(POPEFlags flags = POPEFlags::parse_primary) -> ExprIndex;
+  auto parse_non_assignment_expression(ExprIndex primary_expr) -> ExprIndex;
 
   /** \brief  Parse a unary minus expression.
    *  \return  Index of expression, and type of expression.

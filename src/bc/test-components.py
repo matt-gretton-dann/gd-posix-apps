@@ -193,6 +193,13 @@ class Components(unittest.TestCase):
                 self.invoke(component, source, count, split, success=False)
 
 
+    def test_parse_deep_assignment_and_negation(self):
+        for prefix, count, expected in (('a=', 65536, 131074), ('- ', 131072, 131075)):
+            with self.subTest(prefix=prefix):
+                result = self.invoke('parse', prefix * count + '1\n', iterations='1')
+                self.assertEqual(result['instructions'], expected)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('driver')
