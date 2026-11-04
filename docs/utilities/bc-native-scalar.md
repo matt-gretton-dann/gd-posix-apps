@@ -40,3 +40,10 @@ signal-to-diagnostic medians were 0.089 ms with native polling and 0.060 ms
 with native execution disabled. This samples one interruption point. It
 does not establish a worst-case latency bound. The checked million-iteration
 loop still took 7.77 ms versus 165.92 ms in eight matched measured pairs.
+
+The dedicated Arm64 workflow checks that the candidate really includes the
+backend and the two independently built controls omit it. It runs the CLI,
+VM, signal and math suites on each image. A loop beyond the backedge budget
+checks that interpreter replay commits the exact result once. The full and
+holdout corpora are then timed in paired rounds, with raw observations and
+build provenance retained as an artifact.
