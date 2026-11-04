@@ -37,3 +37,13 @@ No alternative had an interval wholly below 0.95 relative to O3
 with IPO required. Startup medians for the three alternatives ranged
 from 0.999 to 1.048 relative to that reference across both presets.
 This run supports retaining the existing release configuration.
+
+## Native target experiment
+
+The separate GCC native-target workflow compares Release O3 with IPO
+using the portable target, an explicit `-march=native` build, and an
+independently rebuilt portable control. It records CPU features,
+compiler and executable identities, build time, size, and checked
+full and holdout timing with the pinned Howard comparator. The native
+setting is confined to the workflow build and depends on the runner's
+CPU. The project's distributable target remains portable.
