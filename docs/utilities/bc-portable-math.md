@@ -194,7 +194,7 @@ than u. Sine and cosine are globally one-Lipschitz, so the resulting
 function error is below u. Shorter exact inputs retain their original scale.
 
 After sign normalization, arguments at most three radians need no period
-construction: three is below pi and already within the series radius. For
+construction because three is below pi. For
 larger arguments, compute the period as 8*a(1) at W using the ordinary public
 binding. There is no fixed period literal. Remove an integer multiple at
 scale zero, then center the reduced argument. An adjacent quotient at a
@@ -202,16 +202,29 @@ reduction boundary changes only the period representative. The period and
 phase error is bounded by 16*10^M*u, including that adjacent quotient.
 Working-scale readback still protects both the initial and reduction setters.
 
-Use alternating term recurrences with the squared reduced argument and
-successive factorial factors. Its magnitude is below four. After the first
-few terms, recurrence ratios are at most one half; fewer than 4W+32 terms
-suffice. The absolute-series bound exp(4) < 100 bounds early amplification
-and cancellation. Conservative series/rounding error is below
-4000*(W+10)*u. Include the input-coercion error as well as the phase error.
+Evaluate sine at one fifth of the centered angle and cosine at one
+eighth. The finite decimal factors incur at most one working ULP u of
+truncation, and the scaled arguments have magnitude below one. The
+alternating recurrences retain the conservative bound
+4000*(W+10)*u for series and arithmetic error. Include one additional u
+for the scaling error using the one-Lipschitz bound.
 
-Here W<=27T. Dividing the aggregate bound by U gives at most
-`[16*10^M + 4000*(27T+10) + 1] * 10^(-M-2*d(T)-24)`.
-Since M>=1, T>=2 and T<10^d(T), this is below 10^-20. The final rounding
+Reconstruct sine with y*(5 + y²*(16*y² - 20)). Reconstruct cosine by
+applying 2*y² - 1 three times. Each exact intermediate cosine lies in
+[-1,1]. On [-1.01,1.01] the sine polynomial derivative is bounded in
+magnitude by 160, and the cosine map derivative by 5. Each exact
+reconstruction step can therefore amplify the input approximation by
+at most these factors. In the sine polynomial, the square's truncation
+is amplified by less than 60 and the final two products contribute
+less than 4u. For cosine each application adds less than 2u.
+Together the reconstruction and scaled series errors are bounded by
+10^6*(W+10)*u. This bound also keeps all reconstructed cosine
+intermediates within the derivative interval.
+
+Here W<=27T. Dividing the aggregate bound, including input coercion and
+period reduction, by U gives at most
+`[16*10^M + 10^6*(27T+10) + 1] * 10^(-M-2*d(T)-24)`.
+Since M>=1, T>=2 and T<10^d(T), this is below 10^-18. The final rounding
 step adds at most U/2, preserving the one-decimal-ULP contract for arbitrary
 supported magnitudes and fractional widths. Odd/even symmetry handles
 negative input exactly. The certified +/-3 boundary fixtures and equivalent
