@@ -332,3 +332,32 @@ infeasible after a successful walk. Keep it visible in the raw counts.
 The current execution-plan and reader files recorded 39/48 and 5/9
 MC/DC conditions respectively in both views. These results do not
 establish the broader feasible-coverage target under #197.
+
+## Straight-line verifier, math and stdin checkpoint
+
+Clang/LLVM 23 collected separate views at
+`9a813273f858ec0ccd9f114846ae299f92b4ce07`, with compact execution enabled
+and typed results and prepared divisors disabled. Each view selected 428
+entries with zero failures. The raw profiles were archived and checked
+against their member hashes before removing the loose copies.
+
+| Extensions | Executed | Skipped | Lines | Branch outcomes | MC/DC conditions | Raw profiles |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| ON | 383 | 45 | 6972/7191 | 3362/3709 | 257/318 | 1208 |
+| OFF | 365 | 63 | 6937/7188 | 3341/3709 | 253/318 | 1184 |
+
+Both views recorded 371/371 lines, 253/256 branch outcomes and 42/44
+MC/DC conditions in the verifier. The absent marker remains unreachable
+after the traversal described above. The other missing independence pair
+requires an outer entry at or beyond the stream size. An empty outer stream
+returns through the straight-line check on this platform. A function entry
+is within the stream after its matching end is verified, and the isolated
+function-body mode short-circuits the condition. These observations apply
+to the collected build, which uses the straight-line path.
+
+Both reader views reached both nonregular file condition pairs and the fatal
+stdin read branch. They recorded 137/142 lines, 48/54 branch outcomes and
+7/9 MC/DC conditions. The two missing conditions come from the assertions
+on the buffered prefix API, whose valid callers supply a prefix of an
+available block. The raw denominators retain all these outcomes.
+Interpreted math decisions are recorded separately from host LLVM coverage.
