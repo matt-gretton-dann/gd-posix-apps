@@ -97,7 +97,8 @@ jobs:
               cases = bench['corpus'](preset, listing=True)
               prefixes = ('loop_', 'calls_', 'recursion_', 'array_', 'sparse_array_',
                           'compare_high_', 'streaming_statements_', 'frontend_definitions_',
-                          'ibase_literal_flip_', 'decimal_input_', 'binary_input_', 'fibonacci_')
+                          'ibase_literal_flip_', 'decimal_input_', 'binary_input_', 'fibonacci_',
+                          'file_statements_', 'divisor_temporary_modulo_')
               selected = [part for case in cases if case['name'].startswith(prefixes)
                           for part in ('--workload', case['name'])]
               sys.argv = ['bench-bc.py', '--config', str(evidence / 'implementations.json'),
