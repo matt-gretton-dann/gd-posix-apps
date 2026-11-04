@@ -165,7 +165,7 @@ jobs:
           for scenario in startup error interactive; do
             "$RUNNER_TEMP/bc-perf" record -q --no-buildid-cache --no-buildid-mmap \
               -e cpu-clock:u -F 9990 -o "evidence/training-samples/cold-$scenario.perf.data" -- \
-              python3 src/bc/scripts/train-bc-cold.py "$binary" "$scenario" \
+              python3 src/bc/scripts/train-bc-cold.py "$binary" "$scenario" --repetitions 2048 \
               > "evidence/training-samples/cold-$scenario.log" 2>&1
           done
           profiles=()
@@ -177,19 +177,19 @@ jobs:
             # Weight the 999 Hz traces tenfold to match the requested cold
             # sample frequency, without inventing a function-entry count.
             weight=10
-            if [[ ${prefix##*/} == cold-* ]]; then
-              weight=1
-              python3 - "$prefix.conversion.json" <<'PY'
-          import json
-          from pathlib import Path
-          import sys
-
-          counts = json.loads(Path(sys.argv[1]).read_text())
-          assert counts.get('profiled', 0) >= 32, counts
-          PY
-            fi
+            if [[ ${prefix##*/} == cold-* ]]; then weight=1; fi
             profiles+=("--weighted-input=$weight,$prefix.prof")
           done
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path('evidence/training-samples')
+          counts = {name: json.loads((root / f'cold-{name}.conversion.json').read_text())
+                    for name in ('startup', 'error', 'interactive')}
+          print(json.dumps(counts, indent=2))
+          assert all(case.get('profiled', 0) >= 32 for case in counts.values()), counts
+          PY
           llvm-profdata-18 merge --sample "${profiles[@]}" -o evidence/training.prof
           llvm-profdata-18 show --sample --all-functions evidence/training.prof \
             > evidence/training-profile.txt

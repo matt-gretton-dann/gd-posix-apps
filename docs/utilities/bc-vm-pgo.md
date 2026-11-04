@@ -70,8 +70,10 @@ The Clang software profile holdout workflow uses Linux userspace CPU-clock
 samples from the exact Clang Release/ThinLTO baseline. It profiles eight
 checked arithmetic and interpreter workloads using corpus seed 213525. It
 originally sampled the CLI regression suite, which yielded only one or
-two executable samples. The follow-up records 256 checked children each
-for startup, an arithmetic error, and a two-step interactive PTY session.
+two executable samples. The first repeated cohort checked 256 children
+per family but mapped only 22 samples in the arithmetic-error family.
+The follow-up records 2,048 children each for startup, an arithmetic error,
+and a two-step interactive PTY session.
 Each cold family must produce at least 32 mapped executable samples.
 The cold traces request ten times the throughput-sampling frequency, so
 the profile merge weights the throughput profiles tenfold. Frequency
