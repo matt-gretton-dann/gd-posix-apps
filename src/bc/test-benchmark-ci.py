@@ -116,7 +116,8 @@ class NativeTrends(unittest.TestCase):
                                   if case['name'] in selected},
                                  {case['group'] for case in cases})
 
-    def exercise(self, fail=False, aa_first=None, aa_second=None, prepared=False):
+    def exercise(self, fail=False, aa_first=None, aa_second=None, prepared=False,
+                 identical=False):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name) / 'results'
@@ -142,6 +143,7 @@ class NativeTrends(unittest.TestCase):
                     name = argv[argv.index('--name') + 1] if '--name' in argv else 'howard-7.0.3'
                     (output / 'implementations.json').write_text(json.dumps(
                         {'implementations': [{'name': name, 'argv': ['fixture'], 'metadata': dict(
+                            binary_sha256=('b' if name == 'candidate' and not identical else 'a') * 64,
                             configuration=dict(prepared_divisors_policy=dict(
                                 status='recorded', mode='ON', enabled=True)))}]}))
                     return
@@ -226,6 +228,19 @@ class NativeTrends(unittest.TestCase):
         aa = [row for row in report['results'] if row['comparison'] == 'aa' and row['name'] != 'startup']
         self.assertTrue(all(row['status'] == 'pass' for row in aa))
         self.assertTrue((root / 'evidence/summary.md').is_file())
+
+    def test_identical_candidate_retains_slow_samples_without_source_attribution(self):
+        root, _, result = self.exercise(identical=True)
+        self.assertEqual(result, 0)
+        report = json.loads((root / 'evidence/decisions.json').read_text())
+        paired = [row for row in report['results']
+                  if row['comparison'] == 'paired' and row['name'] != 'startup']
+        self.assertTrue(paired)
+        for row in paired:
+            self.assertEqual(row['status'], 'confirmed timing bias (identical binaries)')
+            self.assertEqual(row['ratio']['median_paired_ratio'], 1.2)
+            self.assertEqual(row['confirmation']['median_paired_ratio'], 1.2)
+            self.assertEqual(row['aa_control_status'], 'pass')
 
     def test_aa_bias_in_either_direction_gets_one_distinct_confirmation(self):
         for ratio in (dict(median_paired_ratio=.91, ci95=[.90, .92]),
