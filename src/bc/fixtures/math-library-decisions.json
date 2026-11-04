@@ -869,7 +869,7 @@
       "expression": "scale!=w",
       "function": "j",
       "kind": "if",
-      "line": 389,
+      "line": 390,
       "modeled": [
         "true"
       ],
@@ -878,10 +878,21 @@
       ]
     },
     {
+      "expression": "scale(x)>w",
+      "function": "j",
+      "kind": "if",
+      "line": 391,
+      "modeled": [],
+      "observed": [
+        "true",
+        "false"
+      ]
+    },
+    {
       "expression": "i=1;i<=n;i++",
       "function": "j",
       "kind": "for",
-      "line": 391,
+      "line": 393,
       "modeled": [],
       "observed": [
         "true",
@@ -892,7 +903,7 @@
       "expression": "t==0",
       "function": "j",
       "kind": "if",
-      "line": 393,
+      "line": 395,
       "modeled": [],
       "observed": [
         "true",
@@ -903,7 +914,7 @@
       "expression": "t!=0",
       "function": "j",
       "kind": "while",
-      "line": 398,
+      "line": 400,
       "modeled": [],
       "observed": [
         "true",
@@ -914,7 +925,7 @@
       "expression": "v==1",
       "function": "j",
       "kind": "if",
-      "line": 403,
+      "line": 405,
       "modeled": [],
       "observed": [
         "true",
@@ -925,7 +936,7 @@
       "expression": "r>=0",
       "function": "j",
       "kind": "if",
-      "line": 405,
+      "line": 407,
       "modeled": [],
       "observed": [
         "true",
@@ -936,7 +947,7 @@
       "expression": "r<0",
       "function": "j",
       "kind": "if",
-      "line": 406,
+      "line": 408,
       "modeled": [],
       "observed": [
         "true",
@@ -946,11 +957,11 @@
   ],
   "fault_model": "each working-scale setter independently clipped to zero",
   "infeasible_outcomes": 2,
-  "observed_or_modeled_outcomes": 160,
-  "observed_outcomes": 151,
+  "observed_or_modeled_outcomes": 162,
+  "observed_outcomes": 153,
   "schema": 1,
   "scope": "test-side interpreted decision outcomes; not compiler MC/DC",
-  "source_sha256": "155d3d2852bf543ba987d01d3f5deb755b2feae6716ead41a5ee2d089b5b8c64",
-  "total_outcomes": 162,
+  "source_sha256": "b2f0caa23911caf2b70f84ef07444024d477fdff510fc71e7a715c3ed47a8bc7",
+  "total_outcomes": 164,
   "undefined_domain_guard_calls": 2
 }

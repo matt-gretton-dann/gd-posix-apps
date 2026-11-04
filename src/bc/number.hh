@@ -2850,7 +2850,7 @@ private:
       WideType low = 1;
       WideType high = base_;
       while (high - low > 1) {
-        auto const middle = low + (high - low) / 2;
+        auto const middle = static_cast<WideType>(low + (high - low) / 2);
         if (middle * middle <= mantissa) {
           low = middle;
         }
