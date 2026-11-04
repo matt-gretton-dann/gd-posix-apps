@@ -185,6 +185,14 @@ TEST_CASE("Large normalized division preserves the exact quotient and remainder"
   auto remainder = dividend;
   remainder.modulo(divisor, 0);
   CHECK(remainder == Number("1", 10));
+
+  // (P - 1)^2 - 1 = (P - 1)(P - 2) + (P - 2). Both the dense
+  // quotient and the all-nines divisor exercise long carry and borrow chains.
+  std::string const almost_power = std::string(863, '9') + "8";
+  Number const dense_divisor(std::string(864, '9'), 10);
+  quotient = Number(almost_power + std::string(864, '0'), 10);
+  quotient.divide(dense_divisor, 0);
+  CHECK(quotient == Number(almost_power, 10));
 }
 
 TEMPLATE_TEST_CASE("Zero rescale and whole-limb shifts retain normalized coefficients",
