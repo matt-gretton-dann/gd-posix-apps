@@ -849,56 +849,71 @@ auto GD::Bc::Parser::parse_expression(POPEFlags flags) -> GD::Bc::Parser::ExprIn
 
 auto GD::Bc::Parser::parse_opt_assign_expression(POPEFlags flags) -> GD::Bc::Parser::ExprIndex
 {
-  /* assign_expression : named_exprssion ASSIGN_OP assign_expression | add_expression
-   *
-   * This is awkward because named_expression can also be the first part of add_expression.  So we
-   * do a lot of bits by hand.  We basically process the first 'primary' token by hand and then
-   * roll up the precedence stack to calculate the correct value.
-   *
-   * The first tokens can be: named_expression, primary_expression, '-', '++', '--'.
-   *
-   * Of which only named_expression can be followed by a assign_op.
-   */
-  ExprIndex primary_expr = parse_opt_primary_expression(flags);
+  // Parse all assignment targets before the terminal expression, then emit
+  // the stores from right to left. Only the first operand may be a slice.
+  struct PendingAssignment
+  {
+    ExprIndex target;
+    Token::Type operation;
+  };
+  auto primary = parse_opt_primary_expression(flags);
+  if (primary != ExprType::named || !lexer_->peek().is_assign_op())
+    return parse_non_assignment_expression(primary);
 
-  /* If this was an array slice we just return the result.  */
-  if (primary_expr == ExprType::array_slice) {
-    return primary_expr;
+  PendingAssignment const first{primary, lexer_->peek().type()};
+  lexer_->chew();
+  primary = parse_opt_primary_expression(POPEFlags::parse_primary);
+  std::vector<PendingAssignment> pending;
+  while (primary == ExprType::named && lexer_->peek().is_assign_op()) {
+    pending.push_back({primary, lexer_->peek().type()});
+    lexer_->chew();
+    primary = parse_opt_primary_expression(POPEFlags::parse_primary);
   }
 
-  /* It was a named expression so see if we are an assign op and handle that if we are.  */
-  if (primary_expr == ExprType::named) {
-    if (lexer_->peek().is_assign_op()) {
-      Token::Type const assign_type = lexer_->peek().type();
-      lexer_->chew();
-      ExprIndex assign_index = parse_assign_expression();
-      if (assign_type != Token::Type::assign) {
-        switch (assign_type) {
-        case Token::Type::add_assign:
-          assign_index = insert_arith(Instruction::Opcode::add, primary_expr, assign_index);
-          break;
-        case Token::Type::subtract_assign:
-          assign_index = insert_arith(Instruction::Opcode::subtract, primary_expr, assign_index);
-          break;
-        case Token::Type::multiply_assign:
-          assign_index = insert_arith(Instruction::Opcode::multiply, primary_expr, assign_index);
-          break;
-        case Token::Type::divide_assign:
-          assign_index = insert_arith(Instruction::Opcode::divide, primary_expr, assign_index);
-          break;
-        case Token::Type::modulo_assign:
-          assign_index = insert_arith(Instruction::Opcode::modulo, primary_expr, assign_index);
-          break;
-        case Token::Type::power_assign:
-          assign_index = insert_arith(Instruction::Opcode::power, primary_expr, assign_index);
-          break;
-        default:
-          abort();
-        }
-      }
-      return insert_store(primary_expr, assign_index);
-    }
+  auto result = parse_non_assignment_expression(primary);
+  if (result == ExprType::missing)
+    result = insert_error(Msg::expected_assign_expression, lexer_->peek());
 
+  auto const store = [this, &result](PendingAssignment const& assignment) {
+    auto const target = assignment.target;
+    switch (assignment.operation) {
+    case Token::Type::assign:
+      break;
+    case Token::Type::add_assign:
+      result = insert_arith(Opcode::add, target, result);
+      break;
+    case Token::Type::subtract_assign:
+      result = insert_arith(Opcode::subtract, target, result);
+      break;
+    case Token::Type::multiply_assign:
+      result = insert_arith(Opcode::multiply, target, result);
+      break;
+    case Token::Type::divide_assign:
+      result = insert_arith(Opcode::divide, target, result);
+      break;
+    case Token::Type::modulo_assign:
+      result = insert_arith(Opcode::modulo, target, result);
+      break;
+    case Token::Type::power_assign:
+      result = insert_arith(Opcode::power, target, result);
+      break;
+    default:
+      abort();
+    }
+    result = insert_store(target, result);
+  };
+  for (auto it = pending.rbegin(); it != pending.rend(); ++it)
+    store(*it);
+  store(first);
+  return result;
+}
+
+auto GD::Bc::Parser::parse_non_assignment_expression(ExprIndex primary_expr) -> ExprIndex
+{
+  if (primary_expr == ExprType::array_slice)
+    return primary_expr;
+
+  if (primary_expr == ExprType::named) {
     /* Not an assign op but may be an post increment/decrement that needs dealing with.  */
     if (lexer_->peek().is_incr_decr_op()) {
       bool const incr = lexer_->peek() == Token::Type::increment;
@@ -931,16 +946,6 @@ auto GD::Bc::Parser::parse_opt_assign_expression(POPEFlags flags) -> GD::Bc::Par
   return parse_binary_expression(primary_expr, 1);
 }
 
-auto GD::Bc::Parser::parse_assign_expression(POPEFlags flags) -> GD::Bc::Parser::ExprIndex
-{
-  auto idx = parse_opt_assign_expression(flags);
-  if (idx == ExprType::missing) {
-    idx = insert_error(Msg::expected_assign_expression, lexer_->peek());
-  }
-
-  return idx;
-}
-
 auto GD::Bc::Parser::parse_binary_expression(ExprIndex lhs, unsigned minimum_precedence)
   -> ExprIndex
 {
@@ -960,14 +965,16 @@ auto GD::Bc::Parser::parse_binary_expression(ExprIndex lhs, unsigned minimum_pre
 
 auto GD::Bc::Parser::parse_unary_minus_expression() -> GD::Bc::Parser::ExprIndex
 {
-  /* unary_minus_expr : '-' unary_minus_expression | incr_decr_expression */
-
-  if (lexer_->peek() == Token::Type::subtract) {
+  std::size_t negations = 0;
+  while (lexer_->peek() == Token::Type::subtract) {
     lexer_->chew();
-    return insert_negate(parse_unary_minus_expression());
+    ++negations;
   }
 
-  return parse_incr_decr_expression();
+  auto operand = parse_incr_decr_expression();
+  for (; negations != 0; --negations)
+    operand = insert_negate(operand);
+  return operand;
 }
 
 auto GD::Bc::Parser::parse_incr_decr_expression() -> GD::Bc::Parser::ExprIndex
