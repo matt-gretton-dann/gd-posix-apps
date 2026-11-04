@@ -282,16 +282,6 @@ public:
     return VerifiedInstructions(instructions_, plans.consumption, plans.layout);
   }
 
-#if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
-  auto stack_code() -> StackCode const*
-  {
-    if (!stack_planned_) {
-      stack_ = plan_stack_execution(instructions_, true);
-      stack_planned_ = true;
-    }
-    return stack_ ? &*stack_ : nullptr;
-  }
-#endif
 
 private:
   friend struct VMState;
@@ -341,10 +331,6 @@ private:
   inline static Plans const empty_plans_{};
   Instructions instructions_;
   std::optional<Plans> prepared_;
-#if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
-  std::optional<StackCode> stack_;
-  bool stack_planned_{};
-#endif
 };
 
 /** \brief Hold virtual machine state.
@@ -537,22 +523,6 @@ private:
   std::array<Number, Letter::count_> variables_;  ///< Array of scalar variables, indexed by Letter.
   Params parameters_;                             ///< Contiguous values for active argument packs.
   ParamMarks param_marks_;                        ///< Pack offsets; indices survive vector growth.
-#if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
-  // A nested call can grow the pool without invalidating its caller's lease.
-  std::deque<OperandStack, Profile::Allocator<OperandStack, Profile::AllocationKind::frames>>
-    operand_stacks_;
-  std::size_t operand_depth_ = 0;
-
-  auto acquire_operands(std::size_t count) -> OperandStack&
-  {
-    if (operand_depth_ == operand_stacks_.size())
-      operand_stacks_.emplace_back();
-    auto& stack = operand_stacks_[operand_depth_];
-    stack.reserve(count);
-    ++operand_depth_;
-    return stack;
-  }
-#endif
   Params saved_locals_;                           ///< Contiguous saved locals for active calls.
   std::deque<ActivationResults,
              Profile::Allocator<ActivationResults, Profile::AllocationKind::frames>>
@@ -575,6 +545,41 @@ private:
     }
   };
   std::unique_ptr<Number::DivisorCache, DivisorCacheDelete> divisor_cache_;
+#endif
+#if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
+  // Keep experimental state outside the register VM's function entries and
+  // after its fields so enabling stack execution preserves their offsets.
+  struct StackPlan
+  {
+    std::optional<StackCode> code;
+    bool attempted = false;
+  };
+  std::array<StackPlan, Letter::count_> stack_plans_{};
+
+  auto stack_code(unsigned index, FunctionCode const& function) -> StackCode const*
+  {
+    auto& plan = stack_plans_[index];
+    if (!plan.attempted) {
+      plan.code = plan_stack_execution(function.instructions_, true);
+      plan.attempted = true;
+    }
+    return plan.code ? &*plan.code : nullptr;
+  }
+
+  // A nested call can grow the pool without invalidating its caller's lease.
+  std::deque<OperandStack, Profile::Allocator<OperandStack, Profile::AllocationKind::frames>>
+    operand_stacks_;
+  std::size_t operand_depth_ = 0;
+
+  auto acquire_operands(std::size_t count) -> OperandStack&
+  {
+    if (operand_depth_ == operand_stacks_.size())
+      operand_stacks_.emplace_back();
+    auto& stack = operand_stacks_[operand_depth_];
+    stack.reserve(count);
+    ++operand_depth_;
+    return stack;
+  }
 #endif
 };
 
@@ -965,6 +970,9 @@ void GD::Bc::Details::VMState::function(Letter func, Instructions::const_iterato
   }
   functions_.at(static_cast<unsigned>(func)) =
     std::make_optional(std::make_tuple(FunctionCode(std::move(instrs)), mask, loc));
+#if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
+  stack_plans_[static_cast<unsigned>(func)] = {};
+#endif
 }
 
 #if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
@@ -982,6 +990,9 @@ void GD::Bc::Details::VMState::defer_library_function(Letter name, std::string_v
 {
   auto const index = static_cast<unsigned>(name);
   functions_.at(index).reset();
+#if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
+  stack_plans_[index] = {};
+#endif
   deferred_functions_.at(index) = {image, decode};
 }
 #endif
@@ -1015,7 +1026,7 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
 
   FunctionDefinition& def = func_ptr.value();
 #if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
-  auto const* stack = full_checks() ? nullptr : std::get<0>(def).stack_code();
+  auto const* stack = full_checks() ? nullptr : stack_code(index, std::get<0>(def));
   auto const use_source = full_checks() || stack != nullptr;
 #else
   auto const use_source = full_checks();

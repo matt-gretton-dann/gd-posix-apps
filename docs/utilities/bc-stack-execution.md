@@ -9,7 +9,9 @@ subtraction, division and comparisons keep their original semantics.
 
 The interpreter uses the existing Number arithmetic and VM scalar and
 parameter APIs. Function bodies cache an accepted or rejected stack plan
-with the verified definition, so redefinition discards the plan. Local
+in a separate table keyed by function name. Redefinition invalidates the
+entry. The plan table and operand pool follow the existing VM fields
+to preserve the register executor’s field offsets. Local
 variables, recursion and error cleanup use the ordinary call machinery.
 Arrays, unsupported instructions, full-check execution, and prepared
 divisors use the register executor. Register calls retain their usual
