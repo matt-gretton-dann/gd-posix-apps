@@ -1,0 +1,74 @@
+name: bc enabled exact-square experiment
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/bc/limb-ntt.hh'
+      - 'docs/utilities/bc-exact-transform/holdout.py'
+      - '.github/workflows/bc-exact-transform.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bc-exact-transform-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  holdout:
+    name: Exact-square holdout / ${{ matrix.image }}
+    runs-on: ${{ matrix.image }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [ubuntu-24.04, windows-2025]
+    env:
+      BC_BASE: ${{ github.event.pull_request.base.sha }}
+      BC_CANDIDATE: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.BC_CANDIDATE }}
+          path: candidate
+          persist-credentials: false
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.BC_BASE }}
+          path: base
+          persist-credentials: false
+      - name: Build matched variants and check held-out outputs
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          New-Item -ItemType Directory evidence | Out-Null
+          $binaries = @{}
+          foreach ($role in @('base', 'candidate')) {
+            $source = $role
+            $build = "build-$role"
+            $revision = git -C $source rev-parse HEAD
+            $expected = if ($role -eq 'base') { $env:BC_BASE } else { $env:BC_CANDIDATE }
+            if ($revision -ne $expected) { throw "Unexpected $role revision" }
+            $options = @()
+            if ($role -eq 'candidate') { $options += '-DENABLE_BC_EXACT_SQUARE=ON' }
+            cmake -S $source -B $build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DBC_MULTIPLY_SPLIT_POINT=126 @options
+            Copy-Item "$build/CMakeCache.txt" "evidence/$role-CMakeCache.txt"
+            cmake --build $build --config Release --target bc --parallel 2
+            $binary = if ($IsWindows) { "$build/src/bc/Release/bc.exe" } else { "$build/src/bc/bc" }
+            $binaries[$role] = (Resolve-Path $binary).Path
+            $hash = (Get-FileHash $binary -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$role $revision $hash" | Add-Content evidence/builds.txt
+          }
+          $aa = Join-Path $PWD (Split-Path $binaries.base -Leaf)
+          Copy-Item $binaries.base $aa
+          python candidate/src/bc/test-cli.py $binaries.candidate --extensions ON
+          python candidate/docs/utilities/bc-exact-transform/holdout.py $binaries.base $binaries.candidate evidence/holdout.json --aa $aa --padding-boundaries
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: bc-exact-transform-${{ matrix.image }}-${{ github.run_id }}
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 30
