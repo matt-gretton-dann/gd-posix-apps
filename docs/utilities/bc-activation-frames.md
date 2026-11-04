@@ -6,6 +6,14 @@ expressions may grow the vector; no pointer or iterator is retained across a
 call. Consuming parameters preserves source order. Popping the pack releases
 its values and retains capacity for later calls.
 
+Verified functions can bind one scalar parameter directly when the prepared
+body starts with the usual extraction, variable, store and marker sequence.
+The binding must be among the saved locals. The remaining bytecode must
+neither read a result from the prologue nor branch into it. Argument
+evaluation and staging retain their order, and binding uses the same
+argument type and pack-size checks. Other prologues, full checks and
+instruction profiling execute the original bytecode.
+
 Saved locals occupy a separate contiguous vector. A call records its starting
 offset, moves the selected scalar and array values into it, and installs empty
 locals. After execution it restores those values from the recorded offsets.

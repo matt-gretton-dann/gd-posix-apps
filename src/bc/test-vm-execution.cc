@@ -631,3 +631,25 @@ TEST_CASE("Compact short functions keep runtime radix and owned literal sidecars
     REQUIRE(instruction.opcode() != O::quit);
   CHECK(execute(*code) == "2\n11\n11\n");
 }
+
+TEST_CASE("Function bodies can retain an incoming parameter result",
+          "[bc][vm][execution]")
+{
+  auto const loc = GD::Bc::Location("fixture", 1, 1);
+  auto const name = GD::Bc::Letter('f');
+  GD::Bc::Instructions code{
+    I(O::function_begin, GD::Bc::VariableMask("x", ""), loc),
+    I(O::pop_param),
+    I(O::variable, GD::Bc::Variable('x')),
+    I(O::store, D(-1), D(-2)),
+    I(O::pop_param_mark),
+    I(O::return_, D(-4)),
+    I(O::function_end, name, D(-6)),
+    I(O::push_param_mark),
+    I(O::number, "7"),
+    I(O::push_param, D(-1)),
+    I(O::call, name, loc),
+    I(O::print, D(-1), I::Stream::output),
+    I(O::eof)};
+  CHECK(execute(code) == "7\n");
+}
