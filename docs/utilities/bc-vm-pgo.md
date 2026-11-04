@@ -69,8 +69,13 @@ artifact ZIP SHA-256 was
 The Clang software profile holdout workflow uses Linux userspace CPU-clock
 samples from the exact Clang Release/ThinLTO baseline. It profiles eight
 checked arithmetic and interpreter workloads using corpus seed 213525. It
-also samples the CLI regression suite, which exercises startup, pipe input,
-and diagnostics. These short paths may receive few samples.
+originally sampled the CLI regression suite, which yielded only one or
+two executable samples. The follow-up records 256 checked children each
+for startup, an arithmetic error, and a two-step interactive PTY session.
+Each cold family must produce at least 32 mapped executable samples.
+The cold traces request ten times the throughput-sampling frequency, so
+the profile merge weights the throughput profiles tenfold. Frequency
+throttling and per-process sampling bias can still affect the mix.
 
 The workflow builds whole-program and VM-only profiled candidates and an
 independent baseline rebuild using the same source and compiler. The VM-only

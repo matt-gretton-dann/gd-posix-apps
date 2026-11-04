@@ -3,7 +3,9 @@ name: bc Clang software profile holdout
 on:
   pull_request:
     branches: [main]
-    paths: ['.github/workflows/bc-sample-holdout.yml']
+    paths:
+      - '.github/workflows/bc-sample-holdout.yml'
+      - 'src/bc/scripts/train-bc-cold.py'
 
 permissions:
   contents: read
@@ -157,19 +159,36 @@ jobs:
             --replay-corpus evidence/training-corpus "${training[@]}" \
             --output evidence/training-samples --perf "$RUNNER_TEMP/bc-perf"
 
-          # Also sample the checked CLI suite, including startup, pipes and errors.
+          # Short-lived tasks often exit before the 999 Hz sampling period.
+          # Sample repeated, checked cold processes separately at 9,990 Hz.
           binary="$PWD/build-portable/src/bc/bc"
-          "$RUNNER_TEMP/bc-perf" record -q --no-buildid-cache --no-buildid-mmap \
-            -e cpu-clock:u -F 999 -o evidence/training-samples/cli.perf.data -- \
-            python3 src/bc/test-cli.py "$binary" --extensions ON \
-            > evidence/training-samples/cli.log 2>&1
+          for scenario in startup error interactive; do
+            "$RUNNER_TEMP/bc-perf" record -q --no-buildid-cache --no-buildid-mmap \
+              -e cpu-clock:u -F 9990 -o "evidence/training-samples/cold-$scenario.perf.data" -- \
+              python3 src/bc/scripts/train-bc-cold.py "$binary" "$scenario" \
+              > "evidence/training-samples/cold-$scenario.log" 2>&1
+          done
           profiles=()
           for data in evidence/training-samples/*.perf.data; do
             prefix=${data%.perf.data}
             "$perf" script --no-demangle -F ip,sym,symoff,dso -i "$data" > "$prefix.pcs"
             python3 src/bc/scripts/convert-perf-samples.py "$binary" "$prefix.pcs" \
               --llvm-suffix=-18 > "$prefix.prof" 2> "$prefix.conversion.json"
-            profiles+=("$prefix.prof")
+            # Weight the 999 Hz traces tenfold to match the requested cold
+            # sample frequency, without inventing a function-entry count.
+            weight=10
+            if [[ ${prefix##*/} == cold-* ]]; then
+              weight=1
+              python3 - "$prefix.conversion.json" <<'PY'
+          import json
+          from pathlib import Path
+          import sys
+
+          counts = json.loads(Path(sys.argv[1]).read_text())
+          assert counts.get('profiled', 0) >= 32, counts
+          PY
+            fi
+            profiles+=("--weighted-input=$weight,$prefix.prof")
           done
           llvm-profdata-18 merge --sample "${profiles[@]}" -o evidence/training.prof
           llvm-profdata-18 show --sample --all-functions evidence/training.prof \
