@@ -253,7 +253,7 @@ public:
       // Publish both plans together so a failed allocation leaves the
       // verified definition ready for another preparation attempt.
       auto consumption = plan_consumption(instructions_, true);
-      auto slots = plan_result_slots(instructions_, sizeof(ResultSlot), consumption);
+      auto slots = plan_function_result_slots(instructions_, sizeof(ResultSlot), consumption);
       auto layout = prepare_layout(instructions_, std::move(slots), true, true);
       prepared_.emplace(std::move(consumption), std::move(layout));
     }

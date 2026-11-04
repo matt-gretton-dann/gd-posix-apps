@@ -53,6 +53,11 @@ struct ResultSlotPlan
 auto plan_result_slots(Instructions const& code, std::size_t slot_bytes,
                        std::span<std::uint8_t const> consumption = {}) -> ResultSlotPlan;
 
+// Large persistent functions may recycle proven block-local numeric slots.
+// The accepted operand-slot plan remains the fallback when it is smaller.
+auto plan_function_result_slots(Instructions const& code, std::size_t slot_bytes,
+                                std::span<std::uint8_t const> consumption = {}) -> ResultSlotPlan;
+
 // Opcode-specific operands in the verified execution stream. Only the member
 // selected during lowering may be read: data/control operands use index, while
 // variable/array/function immediates use letter. No discriminant is needed
