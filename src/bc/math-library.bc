@@ -151,21 +151,41 @@ define e(x) {
 
 /* Logarithm: square-root reduction and a bounded atanh series. */
 define l(x) {
-  auto b,i,k,q,r,s,t,u,w;
+  auto b,i,k,m,q,r,s,t,u,v,w,h;
   /* b/s save base/scale; w is precision; k reconstructs root reductions.
+     m/v are the signed and absolute decimal exponent; h holds its log term.
      q/t/u are squared ratio, odd power and contribution; r is the sum. */
   b=ibase
   ibase=A
   s=scale
-  scale=0
-  w=s+scale(x)+length(x)+2*length(s+scale(x)+length(x)+1)+24
-  scale=w
-  if (scale!=w) return(1/0)
   if (x<=0) {
-    scale=s
     r=0/1
     ibase=b
     return(r)
+  }
+  scale=0
+  m=length(x)
+  u=scale(x)
+  t=s+u+m+1
+  w=t-1+2*length(t)+24
+  m-=u+1
+  v=m
+  if (v<0) v= -v
+  h=0
+  if (v>=64) {
+    if (v>=64+s/2) {
+      q=10^v
+      w=s+2*length(t)+24
+      h=1
+    }
+  }
+  scale=w
+  if (scale!=w) return(1/0)
+  /* Normalize extreme magnitudes before square-root reduction. */
+  if (h==1) {
+    if (m<0) x=x*q/1
+    if (m>0) x=x/q
+    h=m*l(10)
   }
   k=1
   while (x<.8) {
@@ -186,7 +206,7 @@ define l(x) {
     r+=u
     i+=2
   }
-  r=r*2*k
+  r=r*2*k+h
   t=10^(-s)/2
   if (r>=0) r+=t
   if (r<0) r-=t

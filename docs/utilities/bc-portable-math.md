@@ -63,9 +63,9 @@ ordinary results just beside a one-ULP certification boundary; certified oracle
 intervals still decide acceptance independently. The bounded unit-arctangent
 path uses the same final rounding step and an independently certified literal.
 
-Let D = length(x) and F = scale(x), before changing x. In the supported decimal
-model D >= F and D >= 1. Let d(T) be the decimal digit count of a positive
-integer T. The formulas below use nonnegative integer quantities computed at
+Let D = length(x) and F = scale(x), before changing x. D is at least one
+and can be smaller than F for numbers with leading fractional zeros.
+Let d(T) be the decimal digit count of a positive integer T. The formulas below use nonnegative integer quantities computed at
 scale zero. For T >= 1, W <= 27T for the 24-digit formulas (and <= 35T for the
 32-digit formulas). Thus the two extra d(T) terms dominate quadratic working-
 precision factors: T < 10^d(T). The remaining 24 or 32 digits leave a large
@@ -153,14 +153,37 @@ series. The reduced magnitude is at most 1/9 and the squared ratio is below
 .013, so fewer than W+2 terms suffice. Near one, this evaluates the small
 logarithm directly rather than subtracting large independently rounded logs.
 
-Use W = S + F + D + 2*d(S+F+D+1) + 24. The extra F+D protects tiny original
-arguments during square-root reduction. The reconstruction multiplier is at
-most 32*(D+F+1). Bounding the chain of root perturbations and the final series
-conservatively gives `10^6*(W+10)*(D+F+1)^2*10^F*u`. Since F <= D,
-`(D+F+1)^2*10^-D <= 1` for D >= 1. The remaining digit-count/24-digit margin
-puts the bound below U/2, including cancellation near one. Original input
-precision is retained through the reductions; a tiny value is not rounded to
-zero before taking roots.
+For positive x, its signed decimal exponent is m = D - F - 1. If
+abs(m) is at least 64 + floor(S/2), normalize to [1,10) using the exact
+integer power 10^abs(m). The cutoff avoids paying for the additional
+logarithm when ordinary root reduction is cheaper at the requested scale.
+For negative m, integer multiplication preserves the fractional operand
+scale, then division by one truncates to the working scale. For positive m,
+division by the integer power truncates directly. The normalized argument
+stays at least one, where the derivative of log is at most one. Its
+truncation therefore adds less than one working unit of error.
+
+Let T = S + F + D + 1. Use W = S + 2*d(T) + 24 on the normalized path.
+The square-root reduction of an argument in [1,10) needs at most four
+roots. Each root truncation is below u and later roots on [1,10)
+contract the perturbation. Add m*l(10) evaluated at scale W after
+reconstruction. The recursive l(10) uses the ordinary path because its
+decimal exponent is one. Its returned error is at most u, so this term
+adds at most abs(m)*u. The series and reduction cost at most
+10^6*(W+10)*u with the bounded root count. These bounds leave less than
+U/2 before final rounding.
+
+The ordinary path uses W = S + F + D + 2*d(T) + 24 and retains the original
+input precision through reduction. When x is tiny, the first exact root
+is at least 10^(-F/2). Its truncated value is at least half that bound
+because W includes F. Subsequent roots of small arguments stay above that
+same lower bound. Taking the logarithm of each truncated root therefore
+introduces at most 2*10^(F/2)*u error. The reconstruction multiplier is at
+most 32*(D+F+1). The geometric sum of intermediate multipliers is below
+twice the final multiplier, so the root errors and the bounded atanh series
+together cost at most 10^6*(W+10)*(D+F+1)*10^F*u. The two digit-count guards
+cover the quadratic factor even when F exceeds D. The remaining margin
+keeps the pre-rounding error below U/2, including near one.
 
 ## Sine and cosine
 

@@ -104,6 +104,32 @@ class LibraryCli(unittest.TestCase):
                     self.assertEqual(ORACLE.classify(value, lower, upper, scale), 'pass')
                     self.assertEqual(lines[2 * index + 1], str(scale))
 
+    def test_logarithm_decimal_normalization(self):
+        cases = []
+        for scale in (20, 100, 1000):
+            cutoff = 64 + scale // 2
+            for exponent in (cutoff - 1, cutoff, cutoff + 33):
+                cases.append((scale, '9' + '0' * exponent))
+                cases.append((scale, '.' + '0' * (exponent - 1) + '9'))
+        program = ''.join(f'scale={scale}\nr=l({argument})\nr\nscale(r)\nibase\n'
+                          for scale, argument in cases)
+        binaries = [BC] if OTHER_BC is None else [BC, OTHER_BC]
+        for binary in binaries:
+            lines = self.checked_lines(program, options=(), files=(SOURCE,), binary=binary)
+            self.assertEqual(len(lines), 3 * len(cases))
+            for index, (scale, argument) in enumerate(cases):
+                with self.subTest(binary=binary, scale=scale, argument=argument):
+                    # The correctly rounded Decimal logarithm is enclosed
+                    # by its adjacent representable values.
+                    with localcontext() as context:
+                        context.prec = scale + 64
+                        reference = Decimal(argument).ln()
+                        lower = Fraction(reference.next_minus())
+                        upper = Fraction(reference.next_plus())
+                    value = ORACLE.decimal_fraction(lines[3 * index])
+                    self.assertEqual(ORACLE.classify(value, lower, upper, scale), 'pass')
+                    self.assertEqual(lines[3 * index + 1:3 * index + 3], [str(scale), '10'])
+
     def test_atan_unit_literal_matches_the_certified_enclosure(self):
         source = Path(SOURCE).read_text(encoding='utf-8')
         literals = re.findall(r'(?m)^\s*r=(\.\d{160})$', source)
