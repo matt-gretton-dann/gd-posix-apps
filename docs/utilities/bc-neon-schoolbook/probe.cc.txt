@@ -1,0 +1,63 @@
+#if defined(PROBE_NEON)
+#include "neon-schoolbook.hh"
+#else
+#include "limb-schoolbook.hh"
+#endif
+
+#include <cstdint>
+#include <cstdlib>
+#include <iostream>
+#include <random>
+#include <vector>
+
+struct DecimalTraits
+{
+  using NumType = std::uint32_t;
+  using WideType = std::uint64_t;
+  static constexpr WideType base_ = 1000000000;
+};
+
+using Digit = DecimalTraits::NumType;
+using Wide = DecimalTraits::WideType;
+
+auto reference(std::vector<Digit> const& lhs, std::vector<Digit> const& rhs)
+  -> std::vector<Digit>
+{
+  std::vector<Digit> result(lhs.size() + rhs.size());
+  for (std::size_t i = 0; i < lhs.size(); ++i) {
+    Wide carry = 0;
+    for (std::size_t j = 0; j < rhs.size(); ++j) {
+      carry += Wide(lhs[i]) * rhs[j] + result[i + j];
+      result[i + j] = static_cast<Digit>(carry % DecimalTraits::base_);
+      carry /= DecimalTraits::base_;
+    }
+    result[i + rhs.size()] = static_cast<Digit>(carry);
+  }
+  return result;
+}
+
+int main(int argc, char** argv)
+{
+  if (argc != 5) {
+    return 2;
+  }
+  auto const lhs_size = std::strtoul(argv[1], nullptr, 10);
+  auto const rhs_size = std::strtoul(argv[2], nullptr, 10);
+  auto const repetitions = std::strtoul(argv[3], nullptr, 10);
+  std::mt19937 rng(std::strtoul(argv[4], nullptr, 10));
+  std::vector<Digit> lhs(lhs_size), rhs(rhs_size), product(lhs_size + rhs_size);
+  for (auto* input : {&lhs, &rhs}) {
+    std::generate(input->begin(), input->end(), [&] { return rng() % DecimalTraits::base_; });
+  }
+  std::uint64_t digest = 0;
+  for (unsigned i = 0; i < repetitions; ++i) {
+    lhs.front() = (lhs.front() + 1) % DecimalTraits::base_;
+    std::fill(product.begin(), product.end(), 0);
+    GD::Bc::Details::LimbSchoolbook<DecimalTraits>::multiply(lhs, rhs, product);
+    if (repetitions <= 3 && product != reference(lhs, rhs)) {
+      return 1;
+    }
+    digest = digest * 1099511628211ULL + product[i % product.size()];
+  }
+  std::cout << digest << '\n';
+}
