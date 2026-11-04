@@ -20,8 +20,11 @@
 #include <memory>
 #include <variant>
 
-#include "bc-math-library.hh"
 #include "find-multiply-split-point.hh"
+
+namespace GD::Bc::Library {
+auto text() -> std::string_view;
+}
 
 using Msg = GD::Bc::Msg;
 
@@ -107,7 +110,7 @@ auto main(int argc, char** argv) -> int
   GD::Bc::Number::multiply_split_point(BC_MULTIPLY_SPLIT_POINT);
 
   if (load_library) {
-    auto r = std::make_unique<GD::Bc::StringReader>(GD::Bc::Library::source);
+    auto r = std::make_unique<GD::Bc::StringReader>(GD::Bc::Library::text());
     execute(vm, std::move(r));
   }
 

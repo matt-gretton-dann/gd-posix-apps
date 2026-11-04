@@ -183,7 +183,7 @@ file(READ "${CMAKE_CURRENT_SOURCE_DIR}/math-library.bc" GD_BC_LIBRARY_SOURCE)
 configure_file(math-library.hh.in bc-math-library.hh @ONLY NEWLINE_STYLE LF)
 unset(GD_BC_LIBRARY_SOURCE)
 
-add_utility(NAME bc NO_INT_TEST CAT_ID bc SOURCES bc.cc)
+add_utility(NAME bc NO_INT_TEST CAT_ID bc SOURCES bc.cc math-library.cc)
 target_link_libraries(bc PUBLIC libbc)
 if(ENABLE_BC_PROFILE)
   target_sources(bc PRIVATE profiling-entry.cc)
