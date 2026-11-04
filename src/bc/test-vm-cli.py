@@ -2,6 +2,7 @@
 """Assert VM behavior and runtime failures in bounded, isolated processes."""
 
 import argparse
+from decimal import Context, Decimal
 import os
 import subprocess
 import unittest
@@ -81,6 +82,19 @@ class VMTests(unittest.TestCase):
             with self.subTest(text=text):
                 self.run_bc(text, success=False,
                             diagnostic="Attempted to raise to fractional power " + exponent + ".")
+
+    def test_long_repeated_coefficient_products(self):
+        lhs = '19' + '7' * 3204
+        rhs = '543' + '9' * 2700
+        interrupted = lhs[:600] + '8' + lhs[601:]
+        for left, right, expression in ((lhs, rhs, 'a*b'),
+                                        (rhs, lhs, 'a*b'),
+                                        (lhs, lhs, 'a*a'),
+                                        (interrupted, rhs, 'a*b'),
+                                        ('-' + lhs, rhs, 'a*b')):
+            with self.subTest(expression=expression, left_prefix=left[:3], right_prefix=right[:3]):
+                expected = Context(prec=len(left) + len(right)).multiply(Decimal(left), Decimal(right))
+                self.run_bc(f'a = {left}\nb = {right}\nif({expression} == {expected}) 1\n', '1\n')
 
     def test_radix_bounds_and_output(self):
         for text, output in (("ibase=2\n10\n", "2\n"), ("ibase=16\nF\n", "15\n"),
