@@ -4,6 +4,7 @@ import argparse
 from fractions import Fraction
 import importlib.util
 import json
+from math import factorial
 import os
 import re
 from pathlib import Path
@@ -196,6 +197,33 @@ class LibraryCli(unittest.TestCase):
 
     def test_all_certified_function_regimes(self):
         self.certified()
+
+    def test_bessel_grouped_series_boundaries(self):
+        cases = ((0, '31'), (0, '32'), (0, '33'), (0, '32.00'), (10, '32.25'),
+                 (0, '100'), (50, '50'), (0, '200'), (1, '201'))
+        scale = 300
+        lines = self.checked_lines(f'scale={scale}\n' +
+                                   ''.join(f'j({order},{x})\n' for order, x in cases))
+        self.assertEqual(len(lines), len(cases))
+        for (order, text), line in zip(cases, lines):
+            with self.subTest(order=order, argument=text):
+                x = Fraction(text)
+                term = (x / 2) ** order / factorial(order)
+                total = term
+                tolerance = Fraction(1, 10 ** (scale + 10))
+                for k in range(1, 2000):
+                    denominator = 4 * k * (order + k)
+                    term *= -(x * x) / denominator
+                    # Later ratios decrease, so the alternating remainder
+                    # lies between zero and this first omitted term.
+                    if denominator >= x * x and abs(term) < tolerance:
+                        break
+                    total += term
+                else:
+                    self.fail('exact rational enclosure did not contract')
+                lower, upper = sorted((total, total + term))
+                self.assertEqual(ORACLE.classify(ORACLE.decimal_fraction(line),
+                                                lower, upper, scale), 'pass')
 
     def test_bessel_ascending_rounding_midpoint(self):
         arguments = ('1.52114405766876514815130187', '1.52114405766876514815130188')

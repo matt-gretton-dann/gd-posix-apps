@@ -255,6 +255,20 @@ An underflowed initial factor or term is therefore
 covered by the error budget even if later exact recurrence terms would grow.
 The forward recurrence reuses terms; it does not rebuild powers/factorials.
 
+The ascending path groups four terms for scale-zero arguments of magnitude
+at least 32. Let `q=-x^2` and let `d,f,g,h` be the four consecutive
+denominators `4*k*(n+k)`. Given the previous term `t`, the block adds
+`t*q*(f*g*h+q*(g*h+q*(h+q)))/(d*f*g*h)` and advances the term to
+`t*q^4/(d*f*g*h)`. All coefficients are integers, and multiplication
+of `t` by an integer preserves its working scale. The two divisions
+therefore introduce at most two working units of error per block.
+Each term error propagates through a suffix of the same absolute series,
+whose sum is at most `exp(x)` because later denominators are no smaller.
+If the final term rounds to zero, the omitted suffix has that same bound
+times the accumulated term error. The existing aggregate error budget
+also covers the three extra positions of a final block. Small or
+fractional-scale arguments use the single-term recurrence.
+
 ## Resource limits and validation scope
 
 Working precision is a value in ordinary bc. Requests exceeding GD's
