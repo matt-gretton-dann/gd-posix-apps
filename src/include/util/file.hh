@@ -519,6 +519,12 @@ public:
    */
   auto getc_exclusive() -> int;
 
+  /** Read without stdio locking when the caller owns access to the underlying
+   * FILE, including when it is borrowed stdin in a single-threaded program.
+   * Platforms without unlocked stdio use the regular locked implementation.
+   */
+  auto getc_unshared() -> int;
+
   /** Return whether this is an owned stream backed by a regular file. */
   [[nodiscard]] auto is_regular_file() const -> bool;
 

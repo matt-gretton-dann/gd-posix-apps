@@ -57,6 +57,8 @@ auto GD::StreamInputFile::getc_exclusive() -> int
   return is_stdin_ ? getc_impl<true>() : getc_impl<false>();
 }
 
+auto GD::StreamInputFile::getc_unshared() -> int { return getc_impl<false>(); }
+
 auto GD::StreamInputFile::is_regular_file() const -> bool
 {
   if (is_stdin_ || file_ == nullptr) {

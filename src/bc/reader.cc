@@ -202,7 +202,11 @@ void GD::Bc::FileReader::chew_prefix(std::size_t size)
   position_ += size;
 }
 
-GD::Bc::StdinReader::StdinReader() : Reader("-"), file_("-") {}
+GD::Bc::StdinReader::StdinReader() : StdinReader(Access::shared) {}
+
+GD::Bc::StdinReader::StdinReader(Access access) : Reader("-"), file_("-"), access_(access)
+{
+}
 
 auto GD::Bc::StdinReader::peek() -> int
 {
@@ -218,7 +222,7 @@ auto GD::Bc::StdinReader::peek() -> int
   }
 #else
   if (c_ == EOF && !at_end_) {
-    c_ = file_.getc();
+    c_ = access_ == Access::unshared ? file_.getc_unshared() : file_.getc();
     // A successful read needs no separate locked stream status query.
     if (c_ == EOF) {
       if (file_.error()) {

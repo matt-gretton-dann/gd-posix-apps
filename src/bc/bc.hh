@@ -384,7 +384,10 @@ private:
 class StdinReader : public Reader
 {
 public:
+  enum class Access { shared, unshared };
+
   StdinReader();
+  explicit StdinReader(Access access);
   auto peek() -> int final;
 
 private:
@@ -392,6 +395,7 @@ private:
 
   GD::StreamInputFile file_;
   int c_{EOF};
+  [[maybe_unused]] Access access_;
 #if !defined(_WIN32)
   bool at_end_{false};
 #endif
