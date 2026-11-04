@@ -3,7 +3,9 @@ name: bc Linux sampling PGO capability
 on:
   pull_request:
     branches: [main]
-    paths: ['.github/workflows/bc-sampling-pgo.yml']
+    paths:
+      - '.github/workflows/bc-sampling-pgo.yml'
+      - 'src/bc/scripts/convert-perf-samples.py'
 
 permissions:
   contents: read
@@ -13,11 +15,15 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
       - name: Install the sampling tools
         run: |
           sudo apt-get update
           sudo apt-get install --yes --no-install-recommends clang-18 llvm-18 linux-tools-generic
-      - name: Record and validate a userspace branch profile
+      - name: Record and validate userspace sample profiles
         shell: bash
         run: |
           set -euo pipefail
@@ -74,10 +80,23 @@ jobs:
               return 1
             fi
           }
-          if record cpu-clock -e cpu-clock:u; then
-            cmp evidence/expected.txt cpu-clock-output.txt
-            "$perf" script -i cpu-clock.data > evidence/cpu-clock-samples.txt
-          fi
+          record cpu-clock -e cpu-clock:u -F 999 --no-buildid-cache
+          cmp evidence/expected.txt cpu-clock-output.txt
+          "$perf" script --no-demangle -F ip,sym,symoff,dso -i cpu-clock.data \
+            > evidence/cpu-clock-samples.txt
+          python3 src/bc/scripts/convert-perf-samples.py ./probe evidence/cpu-clock-samples.txt \
+            --llvm-suffix=-18 > evidence/cpu-clock.prof 2> evidence/cpu-clock-conversion.json
+          llvm-profdata-18 show --sample --all-functions evidence/cpu-clock.prof \
+            > evidence/cpu-clock-profile.txt
+          grep -Eq 'Function: train: [1-9][0-9]*,' evidence/cpu-clock-profile.txt
+          clang-18 -O2 -gline-tables-only -fdebug-info-for-profiling \
+            -fprofile-sample-use=evidence/cpu-clock.prof -Werror=profile-instr-out-of-date \
+            -Rpass-analysis=sample-profile evidence/probe.c -o probe-cpu-clock \
+            2> evidence/cpu-clock-compiler.log
+          grep -Eq 'Applied [1-9][0-9]* samples' evidence/cpu-clock-compiler.log
+          ./probe-cpu-clock > cpu-clock-profile-output.txt
+          cmp evidence/expected.txt cpu-clock-profile-output.txt
+          echo 'Recorded and applied a PC-only software profile.' | tee evidence/cpu-clock-result.txt
           if ! record branches -e cycles:u -b; then
             echo 'Hosted runner could not record userspace branch stacks.' | tee evidence/result.txt
             exit 0
