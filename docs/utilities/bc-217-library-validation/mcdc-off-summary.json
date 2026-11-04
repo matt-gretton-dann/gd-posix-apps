@@ -1,0 +1,1286 @@
+{
+  "compiler_version": "Homebrew clang version 23.1.4",
+  "coverage_option": "ON",
+  "platform": {
+    "system": "Darwin",
+    "release": "27.2.0",
+    "machine": "arm64"
+  },
+  "python_version": "3.15.2",
+  "ctest_version": "ctest version 4.4.5",
+  "source_revision": "2579bfe23d2785d1bd0c3052b32275fc70b66a20",
+  "source_status": "?? default.profraw\n",
+  "extensions": "OFF",
+  "configuration": "Debug",
+  "test_exit_code": 0,
+  "selected_bc_tests": 302,
+  "profile_count": 931,
+  "raw_totals": {
+    "lines": {
+      "count": 5780,
+      "covered": 5599,
+      "percent": 96.86851211072664
+    },
+    "functions": {
+      "count": 538,
+      "covered": 510,
+      "percent": 94.79553903345726
+    },
+    "instantiations": {
+      "count": 959,
+      "covered": 909,
+      "percent": 94.78623566214807
+    },
+    "regions": {
+      "count": 4930,
+      "covered": 3728,
+      "notcovered": 1202,
+      "percent": 75.61866125760649
+    },
+    "branches": {
+      "count": 3103,
+      "covered": 2787,
+      "notcovered": 316,
+      "percent": 89.81630679987109
+    },
+    "mcdc": {
+      "count": 241,
+      "covered": 187,
+      "notcovered": 54,
+      "percent": 77.59336099585063
+    }
+  },
+  "files": {
+    "/private/tmp/gd-posix-portable-math/src/bc/array-storage.hh": {
+      "lines": {
+        "count": 58,
+        "covered": 58,
+        "percent": 100
+      },
+      "functions": {
+        "count": 9,
+        "covered": 9,
+        "percent": 100
+      },
+      "instantiations": {
+        "count": 23,
+        "covered": 23,
+        "percent": 100
+      },
+      "regions": {
+        "count": 45,
+        "covered": 45,
+        "notcovered": 0,
+        "percent": 100
+      },
+      "branches": {
+        "count": 26,
+        "covered": 26,
+        "notcovered": 0,
+        "percent": 100
+      },
+      "mcdc": {
+        "count": 6,
+        "covered": 6,
+        "notcovered": 0,
+        "percent": 100
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/bc.cc": {
+      "lines": {
+        "count": 62,
+        "covered": 56,
+        "percent": 90.32258064516128
+      },
+      "functions": {
+        "count": 3,
+        "covered": 3,
+        "percent": 100
+      },
+      "instantiations": {
+        "count": 3,
+        "covered": 3,
+        "percent": 100
+      },
+      "regions": {
+        "count": 31,
+        "covered": 28,
+        "notcovered": 3,
+        "percent": 90.32258064516128
+      },
+      "branches": {
+        "count": 27,
+        "covered": 23,
+        "notcovered": 4,
+        "percent": 85.18518518518519
+      },
+      "mcdc": {
+        "count": 2,
+        "covered": 1,
+        "notcovered": 1,
+        "percent": 50
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/bc.hh": {
+      "lines": {
+        "count": 75,
+        "covered": 75,
+        "percent": 100
+      },
+      "functions": {
+        "count": 18,
+        "covered": 18,
+        "percent": 100
+      },
+      "instantiations": {
+        "count": 44,
+        "covered": 44,
+        "percent": 100
+      },
+      "regions": {
+        "count": 44,
+        "covered": 44,
+        "notcovered": 0,
+        "percent": 100
+      },
+      "branches": {
+        "count": 18,
+        "covered": 18,
+        "notcovered": 0,
+        "percent": 100
+      },
+      "mcdc": {
+        "count": 6,
+        "covered": 6,
+        "notcovered": 0,
+        "percent": 100
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/digit-storage.hh": {
+      "lines": {
+        "count": 191,
+        "covered": 188,
+        "percent": 98.42931937172776
+      },
+      "functions": {
+        "count": 42,
+        "covered": 42,
+        "percent": 100
+      },
+      "instantiations": {
+        "count": 126,
+        "covered": 125,
+        "percent": 99.20634920634922
+      },
+      "regions": {
+        "count": 203,
+        "covered": 153,
+        "notcovered": 50,
+        "percent": 75.36945812807882
+      },
+      "branches": {
+        "count": 76,
+        "covered": 64,
+        "notcovered": 12,
+        "percent": 84.21052631578947
+      },
+      "mcdc": {
+        "count": 6,
+        "covered": 4,
+        "notcovered": 2,
+        "percent": 66.66666666666666
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/execution-plan.cc": {
+      "lines": {
+        "count": 162,
+        "covered": 162,
+        "percent": 100
+      },
+      "functions": {
+        "count": 9,
+        "covered": 9,
+        "percent": 100
+      },
+      "instantiations": {
+        "count": 11,
+        "covered": 11,
+        "percent": 100
+      },
+      "regions": {
+        "count": 103,
+        "covered": 98,
+        "notcovered": 5,
+        "percent": 95.14563106796116
+      },
+      "branches": {
+        "count": 94,
+        "covered": 87,
+        "notcovered": 7,
+        "percent": 92.5531914893617
+      },
+      "mcdc": {
+        "count": 17,
+        "covered": 12,
+        "notcovered": 5,
+        "percent": 70.58823529411765
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/instruction.cc": {
+      "lines": {
+        "count": 426,
+        "covered": 425,
+        "percent": 99.76525821596243
+      },
+      "functions": {
+        "count": 39,
+        "covered": 39,
+        "percent": 100
+      },
+      "instantiations": {
+        "count": 47,
+        "covered": 47,
+        "percent": 100
+      },
+      "regions": {
+        "count": 657,
+        "covered": 411,
+        "notcovered": 246,
+        "percent": 62.55707762557078
+      },
+      "branches": {
+        "count": 380,
+        "covered": 326,
+        "notcovered": 54,
+        "percent": 85.78947368421052
+      },
+      "mcdc": {
+        "count": 6,
+        "covered": 4,
+        "notcovered": 2,
+        "percent": 66.66666666666666
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/lexer.cc": {
+      "lines": {
+        "count": 402,
+        "covered": 385,
+        "percent": 95.77114427860697
+      },
+      "functions": {
+        "count": 13,
+        "covered": 13,
+        "percent": 100
+      },
+      "instantiations": {
+        "count": 13,
+        "covered": 13,
+        "percent": 100
+      },
+      "regions": {
+        "count": 286,
+        "covered": 238,
+        "notcovered": 48,
+        "percent": 83.21678321678321
+      },
+      "branches": {
+        "count": 320,
+        "covered": 295,
+        "notcovered": 25,
+        "percent": 92.1875
+      },
+      "mcdc": {
+        "count": 6,
+        "covered": 0,
+        "notcovered": 6,
+        "percent": 0
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/limb-product.hh": {
+      "lines": {
+        "count": 123,
+        "covered": 121,
+        "percent": 98.3739837398374
+      },
+      "functions": {
+        "count": 7,
+        "covered": 7,
+        "percent": 100
+      },
+      "instantiations": {
+        "count": 27,
+        "covered": 24,
+        "percent": 88.88888888888889
+      },
+      "regions": {
+        "count": 144,
+        "covered": 103,
+        "notcovered": 41,
+        "percent": 71.52777777777779
+      },
+      "branches": {
+        "count": 64,
+        "covered": 53,
+        "notcovered": 11,
+        "percent": 82.8125
+      },
+      "mcdc": {
+        "count": 10,
+        "covered": 7,
+        "notcovered": 3,
+        "percent": 70
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/limb-schoolbook.hh": {
+      "lines": {
+        "count": 58,
+        "covered": 58,
+        "percent": 100
+      },
+      "functions": {
+        "count": 3,
+        "covered": 3,
+        "percent": 100
+      },
+      "instantiations": {
+        "count": 15,
+        "covered": 13,
+        "percent": 86.66666666666667
+      },
+      "regions": {
+        "count": 62,
+        "covered": 47,
+        "notcovered": 15,
+        "percent": 75.80645161290323
+      },
+      "branches": {
+        "count": 29,
+        "covered": 26,
+        "notcovered": 3,
+        "percent": 89.65517241379311
+      },
+      "mcdc": {
+        "count": 1,
+        "covered": 1,
+        "notcovered": 0,
+        "percent": 100
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/limb-square.hh": {
+      "lines": {
+        "count": 26,
+        "covered": 26,
+        "percent": 100
+      },
+      "functions": {
+        "count": 1,
+        "covered": 1,
+        "percent": 100
+      },
+      "instantiations": {
+        "count": 3,
+        "covered": 3,
+        "percent": 100
+      },
+      "regions": {
+        "count": 31,
+        "covered": 21,
+        "notcovered": 10,
+        "percent": 67.74193548387096
+      },
+      "branches": {
+        "count": 12,
+        "covered": 10,
+        "notcovered": 2,
+        "percent": 83.33333333333334
+      },
+      "mcdc": {
+        "count": 0,
+        "covered": 0,
+        "notcovered": 0,
+        "percent": 0
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/number.hh": {
+      "lines": {
+        "count": 1448,
+        "covered": 1428,
+        "percent": 98.61878453038673
+      },
+      "functions": {
+        "count": 87,
+        "covered": 87,
+        "percent": 100
+      },
+      "instantiations": {
+        "count": 256,
+        "covered": 250,
+        "percent": 97.65625
+      },
+      "regions": {
+        "count": 1214,
+        "covered": 980,
+        "notcovered": 234,
+        "percent": 80.72487644151565
+      },
+      "branches": {
+        "count": 660,
+        "covered": 585,
+        "notcovered": 75,
+        "percent": 88.63636363636364
+      },
+      "mcdc": {
+        "count": 71,
+        "covered": 51,
+        "notcovered": 20,
+        "percent": 71.83098591549296
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/parser.cc": {
+      "lines": {
+        "count": 954,
+        "covered": 911,
+        "percent": 95.49266247379455
+      },
+      "functions": {
+        "count": 83,
+        "covered": 81,
+        "percent": 97.59036144578313
+      },
+      "instantiations": {
+        "count": 83,
+        "covered": 81,
+        "percent": 97.59036144578313
+      },
+      "regions": {
+        "count": 521,
+        "covered": 453,
+        "notcovered": 68,
+        "percent": 86.9481765834933
+      },
+      "branches": {
+        "count": 343,
+        "covered": 314,
+        "notcovered": 29,
+        "percent": 91.54518950437318
+      },
+      "mcdc": {
+        "count": 29,
+        "covered": 20,
+        "notcovered": 9,
+        "percent": 68.96551724137932
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/profiling.hh": {
+      "lines": {
+        "count": 0,
+        "covered": 0,
+        "percent": 0
+      },
+      "functions": {
+        "count": 0,
+        "covered": 0,
+        "percent": 0
+      },
+      "instantiations": {
+        "count": 0,
+        "covered": 0,
+        "percent": 0
+      },
+      "regions": {
+        "count": 0,
+        "covered": 0,
+        "notcovered": 0,
+        "percent": 0
+      },
+      "branches": {
+        "count": 0,
+        "covered": 0,
+        "notcovered": 0,
+        "percent": 0
+      },
+      "mcdc": {
+        "count": 0,
+        "covered": 0,
+        "notcovered": 0,
+        "percent": 0
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/reader.cc": {
+      "lines": {
+        "count": 75,
+        "covered": 75,
+        "percent": 100
+      },
+      "functions": {
+        "count": 20,
+        "covered": 20,
+        "percent": 100
+      },
+      "instantiations": {
+        "count": 20,
+        "covered": 20,
+        "percent": 100
+      },
+      "regions": {
+        "count": 60,
+        "covered": 60,
+        "notcovered": 0,
+        "percent": 100
+      },
+      "branches": {
+        "count": 24,
+        "covered": 24,
+        "notcovered": 0,
+        "percent": 100
+      },
+      "mcdc": {
+        "count": 5,
+        "covered": 5,
+        "notcovered": 0,
+        "percent": 100
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/token.cc": {
+      "lines": {
+        "count": 412,
+        "covered": 408,
+        "percent": 99.02912621359224
+      },
+      "functions": {
+        "count": 39,
+        "covered": 39,
+        "percent": 100
+      },
+      "instantiations": {
+        "count": 39,
+        "covered": 39,
+        "percent": 100
+      },
+      "regions": {
+        "count": 247,
+        "covered": 210,
+        "notcovered": 37,
+        "percent": 85.02024291497976
+      },
+      "branches": {
+        "count": 266,
+        "covered": 257,
+        "notcovered": 9,
+        "percent": 96.61654135338345
+      },
+      "mcdc": {
+        "count": 23,
+        "covered": 20,
+        "notcovered": 3,
+        "percent": 86.95652173913044
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/verification.cc": {
+      "lines": {
+        "count": 316,
+        "covered": 316,
+        "percent": 100
+      },
+      "functions": {
+        "count": 7,
+        "covered": 7,
+        "percent": 100
+      },
+      "instantiations": {
+        "count": 7,
+        "covered": 7,
+        "percent": 100
+      },
+      "regions": {
+        "count": 213,
+        "covered": 213,
+        "notcovered": 0,
+        "percent": 100
+      },
+      "branches": {
+        "count": 200,
+        "covered": 199,
+        "notcovered": 1,
+        "percent": 99.5
+      },
+      "mcdc": {
+        "count": 36,
+        "covered": 35,
+        "notcovered": 1,
+        "percent": 97.22222222222221
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/vm.cc": {
+      "lines": {
+        "count": 992,
+        "covered": 907,
+        "percent": 91.43145161290323
+      },
+      "functions": {
+        "count": 158,
+        "covered": 132,
+        "percent": 83.54430379746836
+      },
+      "instantiations": {
+        "count": 242,
+        "covered": 206,
+        "percent": 85.12396694214877
+      },
+      "regions": {
+        "count": 1069,
+        "covered": 624,
+        "notcovered": 445,
+        "percent": 58.37231057062675
+      },
+      "branches": {
+        "count": 564,
+        "covered": 480,
+        "notcovered": 84,
+        "percent": 85.1063829787234
+      },
+      "mcdc": {
+        "count": 17,
+        "covered": 15,
+        "notcovered": 2,
+        "percent": 88.23529411764706
+      }
+    }
+  },
+  "application_mappings_totals": {
+    "lines": {
+      "count": 5749,
+      "covered": 5568,
+      "percent": 96.85162636980344
+    },
+    "functions": {
+      "count": 532,
+      "covered": 504,
+      "percent": 94.73684210526315
+    },
+    "instantiations": {
+      "count": 654,
+      "covered": 616,
+      "percent": 94.18960244648318
+    },
+    "regions": {
+      "count": 4916,
+      "covered": 3714,
+      "notcovered": 1202,
+      "percent": 75.5492270138324
+    },
+    "branches": {
+      "count": 3101,
+      "covered": 2785,
+      "notcovered": 316,
+      "percent": 89.80973879393744
+    },
+    "mcdc": {
+      "count": 241,
+      "covered": 187,
+      "notcovered": 54,
+      "percent": 77.59336099585063
+    }
+  },
+  "application_mappings_files": {
+    "/private/tmp/gd-posix-portable-math/src/bc/array-storage.hh": {
+      "lines": {
+        "count": 41,
+        "covered": 41,
+        "percent": 100
+      },
+      "functions": {
+        "count": 6,
+        "covered": 6,
+        "percent": 100
+      },
+      "instantiations": {
+        "count": 6,
+        "covered": 6,
+        "percent": 100
+      },
+      "regions": {
+        "count": 37,
+        "covered": 37,
+        "notcovered": 0,
+        "percent": 100
+      },
+      "branches": {
+        "count": 26,
+        "covered": 26,
+        "notcovered": 0,
+        "percent": 100
+      },
+      "mcdc": {
+        "count": 6,
+        "covered": 6,
+        "notcovered": 0,
+        "percent": 100
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/bc.cc": {
+      "lines": {
+        "count": 62,
+        "covered": 56,
+        "percent": 90.32258064516128
+      },
+      "functions": {
+        "count": 3,
+        "covered": 3,
+        "percent": 100
+      },
+      "instantiations": {
+        "count": 3,
+        "covered": 3,
+        "percent": 100
+      },
+      "regions": {
+        "count": 31,
+        "covered": 28,
+        "notcovered": 3,
+        "percent": 90.32258064516128
+      },
+      "branches": {
+        "count": 27,
+        "covered": 23,
+        "notcovered": 4,
+        "percent": 85.18518518518519
+      },
+      "mcdc": {
+        "count": 2,
+        "covered": 1,
+        "notcovered": 1,
+        "percent": 50
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/bc.hh": {
+      "lines": {
+        "count": 72,
+        "covered": 72,
+        "percent": 100
+      },
+      "functions": {
+        "count": 17,
+        "covered": 17,
+        "percent": 100
+      },
+      "instantiations": {
+        "count": 38,
+        "covered": 38,
+        "percent": 100
+      },
+      "regions": {
+        "count": 43,
+        "covered": 43,
+        "notcovered": 0,
+        "percent": 100
+      },
+      "branches": {
+        "count": 18,
+        "covered": 18,
+        "notcovered": 0,
+        "percent": 100
+      },
+      "mcdc": {
+        "count": 6,
+        "covered": 6,
+        "notcovered": 0,
+        "percent": 100
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/digit-storage.hh": {
+      "lines": {
+        "count": 191,
+        "covered": 188,
+        "percent": 98.42931937172776
+      },
+      "functions": {
+        "count": 42,
+        "covered": 42,
+        "percent": 100
+      },
+      "instantiations": {
+        "count": 42,
+        "covered": 42,
+        "percent": 100
+      },
+      "regions": {
+        "count": 203,
+        "covered": 153,
+        "notcovered": 50,
+        "percent": 75.36945812807882
+      },
+      "branches": {
+        "count": 76,
+        "covered": 64,
+        "notcovered": 12,
+        "percent": 84.21052631578947
+      },
+      "mcdc": {
+        "count": 6,
+        "covered": 4,
+        "notcovered": 2,
+        "percent": 66.66666666666666
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/execution-plan.cc": {
+      "lines": {
+        "count": 162,
+        "covered": 162,
+        "percent": 100
+      },
+      "functions": {
+        "count": 9,
+        "covered": 9,
+        "percent": 100
+      },
+      "instantiations": {
+        "count": 11,
+        "covered": 11,
+        "percent": 100
+      },
+      "regions": {
+        "count": 103,
+        "covered": 98,
+        "notcovered": 5,
+        "percent": 95.14563106796116
+      },
+      "branches": {
+        "count": 94,
+        "covered": 87,
+        "notcovered": 7,
+        "percent": 92.5531914893617
+      },
+      "mcdc": {
+        "count": 17,
+        "covered": 12,
+        "notcovered": 5,
+        "percent": 70.58823529411765
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/instruction.cc": {
+      "lines": {
+        "count": 426,
+        "covered": 425,
+        "percent": 99.76525821596243
+      },
+      "functions": {
+        "count": 39,
+        "covered": 39,
+        "percent": 100
+      },
+      "instantiations": {
+        "count": 47,
+        "covered": 47,
+        "percent": 100
+      },
+      "regions": {
+        "count": 657,
+        "covered": 411,
+        "notcovered": 246,
+        "percent": 62.55707762557078
+      },
+      "branches": {
+        "count": 380,
+        "covered": 326,
+        "notcovered": 54,
+        "percent": 85.78947368421052
+      },
+      "mcdc": {
+        "count": 6,
+        "covered": 4,
+        "notcovered": 2,
+        "percent": 66.66666666666666
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/lexer.cc": {
+      "lines": {
+        "count": 402,
+        "covered": 385,
+        "percent": 95.77114427860697
+      },
+      "functions": {
+        "count": 13,
+        "covered": 13,
+        "percent": 100
+      },
+      "instantiations": {
+        "count": 13,
+        "covered": 13,
+        "percent": 100
+      },
+      "regions": {
+        "count": 286,
+        "covered": 238,
+        "notcovered": 48,
+        "percent": 83.21678321678321
+      },
+      "branches": {
+        "count": 320,
+        "covered": 295,
+        "notcovered": 25,
+        "percent": 92.1875
+      },
+      "mcdc": {
+        "count": 6,
+        "covered": 0,
+        "notcovered": 6,
+        "percent": 0
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/limb-product.hh": {
+      "lines": {
+        "count": 123,
+        "covered": 121,
+        "percent": 98.3739837398374
+      },
+      "functions": {
+        "count": 7,
+        "covered": 7,
+        "percent": 100
+      },
+      "instantiations": {
+        "count": 7,
+        "covered": 7,
+        "percent": 100
+      },
+      "regions": {
+        "count": 144,
+        "covered": 103,
+        "notcovered": 41,
+        "percent": 71.52777777777779
+      },
+      "branches": {
+        "count": 64,
+        "covered": 53,
+        "notcovered": 11,
+        "percent": 82.8125
+      },
+      "mcdc": {
+        "count": 10,
+        "covered": 7,
+        "notcovered": 3,
+        "percent": 70
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/limb-schoolbook.hh": {
+      "lines": {
+        "count": 58,
+        "covered": 58,
+        "percent": 100
+      },
+      "functions": {
+        "count": 3,
+        "covered": 3,
+        "percent": 100
+      },
+      "instantiations": {
+        "count": 3,
+        "covered": 3,
+        "percent": 100
+      },
+      "regions": {
+        "count": 62,
+        "covered": 47,
+        "notcovered": 15,
+        "percent": 75.80645161290323
+      },
+      "branches": {
+        "count": 29,
+        "covered": 26,
+        "notcovered": 3,
+        "percent": 89.65517241379311
+      },
+      "mcdc": {
+        "count": 1,
+        "covered": 1,
+        "notcovered": 0,
+        "percent": 100
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/limb-square.hh": {
+      "lines": {
+        "count": 26,
+        "covered": 26,
+        "percent": 100
+      },
+      "functions": {
+        "count": 1,
+        "covered": 1,
+        "percent": 100
+      },
+      "instantiations": {
+        "count": 1,
+        "covered": 1,
+        "percent": 100
+      },
+      "regions": {
+        "count": 31,
+        "covered": 21,
+        "notcovered": 10,
+        "percent": 67.74193548387096
+      },
+      "branches": {
+        "count": 12,
+        "covered": 10,
+        "notcovered": 2,
+        "percent": 83.33333333333334
+      },
+      "mcdc": {
+        "count": 0,
+        "covered": 0,
+        "notcovered": 0,
+        "percent": 0
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/number.hh": {
+      "lines": {
+        "count": 1437,
+        "covered": 1417,
+        "percent": 98.60821155184412
+      },
+      "functions": {
+        "count": 85,
+        "covered": 85,
+        "percent": 100
+      },
+      "instantiations": {
+        "count": 92,
+        "covered": 92,
+        "percent": 100
+      },
+      "regions": {
+        "count": 1209,
+        "covered": 975,
+        "notcovered": 234,
+        "percent": 80.64516129032258
+      },
+      "branches": {
+        "count": 658,
+        "covered": 583,
+        "notcovered": 75,
+        "percent": 88.60182370820668
+      },
+      "mcdc": {
+        "count": 71,
+        "covered": 51,
+        "notcovered": 20,
+        "percent": 71.83098591549296
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/parser.cc": {
+      "lines": {
+        "count": 954,
+        "covered": 911,
+        "percent": 95.49266247379455
+      },
+      "functions": {
+        "count": 83,
+        "covered": 81,
+        "percent": 97.59036144578313
+      },
+      "instantiations": {
+        "count": 83,
+        "covered": 81,
+        "percent": 97.59036144578313
+      },
+      "regions": {
+        "count": 521,
+        "covered": 453,
+        "notcovered": 68,
+        "percent": 86.9481765834933
+      },
+      "branches": {
+        "count": 343,
+        "covered": 314,
+        "notcovered": 29,
+        "percent": 91.54518950437318
+      },
+      "mcdc": {
+        "count": 29,
+        "covered": 20,
+        "notcovered": 9,
+        "percent": 68.96551724137932
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/profiling.hh": {
+      "lines": {
+        "count": 0,
+        "covered": 0,
+        "percent": 0
+      },
+      "functions": {
+        "count": 0,
+        "covered": 0,
+        "percent": 0
+      },
+      "instantiations": {
+        "count": 0,
+        "covered": 0,
+        "percent": 0
+      },
+      "regions": {
+        "count": 0,
+        "covered": 0,
+        "notcovered": 0,
+        "percent": 0
+      },
+      "branches": {
+        "count": 0,
+        "covered": 0,
+        "notcovered": 0,
+        "percent": 0
+      },
+      "mcdc": {
+        "count": 0,
+        "covered": 0,
+        "notcovered": 0,
+        "percent": 0
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/reader.cc": {
+      "lines": {
+        "count": 75,
+        "covered": 75,
+        "percent": 100
+      },
+      "functions": {
+        "count": 20,
+        "covered": 20,
+        "percent": 100
+      },
+      "instantiations": {
+        "count": 20,
+        "covered": 20,
+        "percent": 100
+      },
+      "regions": {
+        "count": 60,
+        "covered": 60,
+        "notcovered": 0,
+        "percent": 100
+      },
+      "branches": {
+        "count": 24,
+        "covered": 24,
+        "notcovered": 0,
+        "percent": 100
+      },
+      "mcdc": {
+        "count": 5,
+        "covered": 5,
+        "notcovered": 0,
+        "percent": 100
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/token.cc": {
+      "lines": {
+        "count": 412,
+        "covered": 408,
+        "percent": 99.02912621359224
+      },
+      "functions": {
+        "count": 39,
+        "covered": 39,
+        "percent": 100
+      },
+      "instantiations": {
+        "count": 39,
+        "covered": 39,
+        "percent": 100
+      },
+      "regions": {
+        "count": 247,
+        "covered": 210,
+        "notcovered": 37,
+        "percent": 85.02024291497976
+      },
+      "branches": {
+        "count": 266,
+        "covered": 257,
+        "notcovered": 9,
+        "percent": 96.61654135338345
+      },
+      "mcdc": {
+        "count": 23,
+        "covered": 20,
+        "notcovered": 3,
+        "percent": 86.95652173913044
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/verification.cc": {
+      "lines": {
+        "count": 316,
+        "covered": 316,
+        "percent": 100
+      },
+      "functions": {
+        "count": 7,
+        "covered": 7,
+        "percent": 100
+      },
+      "instantiations": {
+        "count": 7,
+        "covered": 7,
+        "percent": 100
+      },
+      "regions": {
+        "count": 213,
+        "covered": 213,
+        "notcovered": 0,
+        "percent": 100
+      },
+      "branches": {
+        "count": 200,
+        "covered": 199,
+        "notcovered": 1,
+        "percent": 99.5
+      },
+      "mcdc": {
+        "count": 36,
+        "covered": 35,
+        "notcovered": 1,
+        "percent": 97.22222222222221
+      }
+    },
+    "/private/tmp/gd-posix-portable-math/src/bc/vm.cc": {
+      "lines": {
+        "count": 992,
+        "covered": 907,
+        "percent": 91.43145161290323
+      },
+      "functions": {
+        "count": 158,
+        "covered": 132,
+        "percent": 83.54430379746836
+      },
+      "instantiations": {
+        "count": 242,
+        "covered": 206,
+        "percent": 85.12396694214877
+      },
+      "regions": {
+        "count": 1069,
+        "covered": 624,
+        "notcovered": 445,
+        "percent": 58.37231057062675
+      },
+      "branches": {
+        "count": 564,
+        "covered": 480,
+        "notcovered": 84,
+        "percent": 85.1063829787234
+      },
+      "mcdc": {
+        "count": 17,
+        "covered": 15,
+        "notcovered": 2,
+        "percent": 88.23529411764706
+      }
+    }
+  },
+  "application_mappings_warnings": "",
+  "warnings": "",
+  "adjusted_coverage": null,
+  "scope": "production src/bc; broad native and test-trait header instantiations"
+}
