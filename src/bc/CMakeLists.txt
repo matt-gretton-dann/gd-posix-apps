@@ -129,6 +129,13 @@ if(RUN_UNIT_TESTS)
   target_add_clang_format(test-bc-vm-lifetime)
   add_test(NAME bc/vm-lifetime COMMAND "$<TARGET_FILE:test-bc-vm-lifetime>")
   set_tests_properties(bc/vm-lifetime PROPERTIES TIMEOUT 10)
+  if(ENABLE_BC_INTEGER_FUNCTIONS)
+    add_test(NAME bc/integer-layout COMMAND "${Python_EXECUTABLE}"
+             "${CMAKE_CURRENT_SOURCE_DIR}/test-integer-layout.py"
+             --compile-commands "${CMAKE_BINARY_DIR}/compile_commands.json"
+             --output "${CMAKE_CURRENT_BINARY_DIR}/integer-layout-evidence")
+    set_tests_properties(bc/integer-layout PROPERTIES TIMEOUT 150 SKIP_RETURN_CODE 77)
+  endif()
   add_executable(test-libbc)
   add_dependencies(test-libbc test-bc-vm-lifetime test-bc-consumer-mode)
   target_link_libraries(test-libbc PUBLIC libbc Catch2::Catch2)

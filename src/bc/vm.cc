@@ -342,12 +342,6 @@ private:
   inline static Plans const empty_plans_{};
   Instructions instructions_;
   std::optional<Plans> prepared_;
-#if defined(GD_BC_INTEGER_FUNCTIONS)
-  unsigned integer_calls_ = 0;
-  bool integer_attempted_ = false;
-  std::optional<IntegerFunction> integer_plan_;
-  std::optional<std::int64_t> integer_rejected_argument_;
-#endif
 };
 
 /** \brief Hold virtual machine state.
@@ -556,10 +550,6 @@ private:
   NumType scale_ = 0;              ///< Scale, range: [0, base_)
   bool save_specials_;             ///< Save specials on function entry?
   VM::ExecutionChecks checks_;     ///< Full diagnostic oracle or verified dispatch.
-#if defined(GD_BC_INTEGER_FUNCTIONS)
-  IntegerFunctionScratch integer_scratch_; ///< Isolated reusable speculative state.
-  bool integer_fallback_active_ = false; ///< Suppress repeated speculation within fallback calls.
-#endif
 #if GD_BC_PREPARED_DIVISORS
   struct DivisorCacheDelete
   {
@@ -606,6 +596,47 @@ private:
     stack.reserve(count);
     ++operand_depth_;
     return stack;
+  }
+#endif
+#if defined(GD_BC_INTEGER_FUNCTIONS)
+  // Keep the verified function entries and all common VM offsets independent
+  // of this experiment. Allocate the table only after a call passes the
+  // VM-scale, arity and scalar-type entry guards.
+  struct IntegerPlan
+  {
+    unsigned calls = 0;
+    bool attempted = false;
+    std::optional<IntegerFunction> code;
+    std::optional<std::int64_t> rejected_argument;
+  };
+  struct IntegerState
+  {
+    std::array<IntegerPlan, Letter::count_> plans{};
+    IntegerFunctionScratch scratch;
+    bool fallback_active = false;
+  };
+  struct IntegerStateDelete
+  {
+    void operator()(IntegerState* state) const noexcept
+    {
+      delete state;
+#  if GD_BC_PROFILE
+      Profile::deallocated(Profile::AllocationKind::execution_plans, sizeof(IntegerState));
+#  endif
+    }
+  };
+  std::unique_ptr<IntegerState, IntegerStateDelete> integer_state_;
+
+  auto ensure_integer_state() -> IntegerState&
+  {
+    if (!integer_state_) {
+      auto state = std::make_unique<IntegerState>();
+#  if GD_BC_PROFILE
+      Profile::allocated(Profile::AllocationKind::execution_plans, sizeof(IntegerState));
+#  endif
+      integer_state_.reset(state.release());
+    }
+    return *integer_state_;
   }
 #endif
 };
@@ -997,6 +1028,10 @@ void GD::Bc::Details::VMState::function(Letter func, Instructions::const_iterato
   }
   functions_.at(static_cast<unsigned>(func)) =
     std::make_optional(std::make_tuple(FunctionCode(std::move(instrs)), mask, loc));
+#if defined(GD_BC_INTEGER_FUNCTIONS)
+  if (integer_state_)
+    integer_state_->plans[static_cast<unsigned>(func)] = {};
+#endif
 #if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
   stack_plans_[static_cast<unsigned>(func)] = {};
 #endif
@@ -1017,6 +1052,10 @@ void GD::Bc::Details::VMState::defer_library_function(Letter name, std::string_v
 {
   auto const index = static_cast<unsigned>(name);
   functions_.at(index).reset();
+#if defined(GD_BC_INTEGER_FUNCTIONS)
+  if (integer_state_)
+    integer_state_->plans[index] = {};
+#endif
 #if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
   stack_plans_[index] = {};
 #endif
@@ -1060,53 +1099,66 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
 #if defined(GD_BC_INTEGER_FUNCTIONS)
   struct RestoreIntegerFallback
   {
-    bool& active;
-    bool saved;
-    ~RestoreIntegerFallback() { active = saved; }
-  } restore_integer_fallback{integer_fallback_active_, integer_fallback_active_};
-  if (!integer_fallback_active_ && !full_checks() && scale_ == 0 && !param_marks_.empty()) {
-    auto const mark = param_marks_.back();
-    Number const* incoming = nullptr;
+    // Only the call that starts fallback arms this guard. Nested generic
+    // calls leave its existing flag alone, including on exception paths.
+    IntegerState* state = nullptr;
+    ~RestoreIntegerFallback()
+    {
+      if (state)
+        state->fallback_active = false;
+    }
+  } restore_integer_fallback;
+  if (!full_checks() && scale_ == 0 && !param_marks_.empty()) {
+    auto* integer = integer_state_.get();
+    if (integer == nullptr || !integer->fallback_active) {
+      auto const mark = param_marks_.back();
+      Number const* incoming = nullptr;
 #  if GD_BC_FORWARD_SCALAR_ARGUMENT
-    if (argument != nullptr && mark.begin == parameters_.size() && mark.next == mark.begin)
-      incoming = argument;
+      if (argument != nullptr && mark.begin == parameters_.size() && mark.next == mark.begin)
+        incoming = argument;
 #  endif
-    if (incoming == nullptr && mark.begin == mark.next && parameters_.size() == mark.begin + 1)
-      incoming = std::get_if<Number>(&parameters_[mark.begin]);
-    if (incoming != nullptr) {
-      auto& code = std::get<0>(def);
-      if (!code.integer_attempted_ && ++code.integer_calls_ >= 8) {
-        // Cache only in the verified function generation that owns the proof.
-        // Redefinition/deferred replacement destroys both code and integer plan.
-        code.integer_plan_ = plan_integer_function(code.instructions_, std::get<1>(def), func);
-        code.integer_attempted_ = true;
-      }
-      if (code.integer_plan_) {
-        auto const value = incoming->to_machine_integer();
-        if (value) {
-          // A previous rejection proves only that this exact input should use
-          // the generic path. Keep one bounded entry, owned by this generation.
-          std::optional<Number> result;
-          if (code.integer_rejected_argument_ != value) {
-            result = run_integer_function(*code.integer_plan_, *value, integer_scratch_,
-              []() noexcept { return have_been_interrupted.test(std::memory_order_relaxed); });
+      if (incoming == nullptr && mark.begin == mark.next && parameters_.size() == mark.begin + 1)
+        incoming = std::get_if<Number>(&parameters_[mark.begin]);
+      if (incoming != nullptr) {
+        if (integer == nullptr) {
+          integer = &ensure_integer_state();
+        }
+        auto& plan = integer->plans[index];
+        if (!plan.attempted && ++plan.calls >= 8) {
+          // Definition and deferred-library replacement reset this letter's
+          // cache. Lowered IR owns its data and never borrows source storage.
+          plan.code = plan_integer_function(std::get<0>(def).instructions_, std::get<1>(def), func);
+          plan.attempted = true;
+        }
+        if (plan.code) {
+          auto const value = incoming->to_machine_integer();
+          if (value) {
+            // A previous rejection proves only that this exact input should use
+            // the generic path. Keep one bounded entry, owned by this generation.
+            std::optional<Number> result;
+            if (plan.rejected_argument != value) {
+              result = run_integer_function(*plan.code, *value, integer->scratch, []() noexcept {
+                return have_been_interrupted.test(std::memory_order_relaxed);
+              });
+            }
+            if (result && !have_been_interrupted.test(std::memory_order_relaxed)) {
+              // Box before consuming the untouched caller pack, so allocation
+              // failure cannot publish a partial call. Guard failure restarts
+              // ordinary execution: the accepted plan has no observable effects.
+              auto boxed = std::move(*result);
+              parameters_.resize(mark.begin);
+              param_marks_.pop_back();
+              return boxed;
+            }
+            // A failed pure attempt may recurse through the generic interpreter.
+            // Suppress speculation throughout that chain, then restore the prior
+            // state on every return/exception. Otherwise overflow near the bottom
+            // repeats the same speculative prefix at every recursive level.
+            if (!have_been_interrupted.test(std::memory_order_relaxed))
+              plan.rejected_argument = *value;
+            restore_integer_fallback.state = integer;
+            integer->fallback_active = true;
           }
-          if (result && !have_been_interrupted.test(std::memory_order_relaxed)) {
-            // Box before consuming the untouched caller pack, so allocation
-            // failure cannot publish a partial call. Guard failure restarts
-            // ordinary execution: the accepted plan has no observable effects.
-            auto boxed = std::move(*result);
-            parameters_.resize(mark.begin);
-            param_marks_.pop_back();
-            return boxed;
-          }
-          // A failed pure attempt may recurse through the generic interpreter.
-          // Suppress speculation throughout that chain, then restore the prior
-          // state on every return/exception. Otherwise overflow near the bottom
-          // repeats the same speculative prefix at every recursive level.
-          if (!have_been_interrupted.test(std::memory_order_relaxed))
-            code.integer_rejected_argument_ = *value;
-          integer_fallback_active_ = true;
         }
       }
     }

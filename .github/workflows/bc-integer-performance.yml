@@ -19,12 +19,14 @@ jobs:
   qualify:
     # This fixed topic starts qualification without needing a dispatch API.
     # Ordinary PRs retain the fast semantic workflow; manual replay stays available.
-    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'codex/bc-598-hybrid-integers'
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'codex/bc-598-hybrid-integers' || startsWith(github.head_ref, 'codex/bc-607-')
     strategy:
       fail-fast: false
       matrix:
         image: [ubuntu-24.04, macos-15, windows-2025]
-        suite: [arithmetic, math-full, math-holdout]
+        # Isolate the state-layout hypothesis with arithmetic first. A separate
+        # immutable qualification topic or manual replay still runs all suites.
+        suite: ${{ fromJSON(github.head_ref == 'codex/bc-607-integer-state' && '["arithmetic"]' || '["arithmetic","math-full","math-holdout"]') }}
     runs-on: ${{ matrix.image }}
     timeout-minutes: 360
     env:

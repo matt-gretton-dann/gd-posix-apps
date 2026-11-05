@@ -33,7 +33,7 @@ jobs:
       - name: Build diagnostic engine and contracts
         run: cmake --build build-profile --config Release --parallel 2
       - name: Check diagnostic execution and ownership
-        run: ctest --test-dir build-profile -C Release --output-on-failure --no-tests=error -R "Pure integer|^bc/(integer-profile|profiling-cli|profiling-allocator|profiling-disabled|vm-cli|vm-lifetime)$"
+        run: ctest --test-dir build-profile -C Release --output-on-failure --no-tests=error -R "Pure integer|^bc/(integer-profile|integer-layout|profiling-cli|profiling-allocator|profiling-disabled|vm-cli|vm-lifetime)$"
   integer-functions:
     strategy:
       fail-fast: false
@@ -52,4 +52,4 @@ jobs:
       - name: Build the portable experiment
         run: cmake --build build-integer --config Release --parallel 2
       - name: Run integer guards and existing VM contracts
-        run: ctest --test-dir build-integer -C Release --output-on-failure --no-tests=error -R "Pure integer|^bc/(vm-cli|vm-lifetime|signal.*|math-library-cli)$"
+        run: ctest --test-dir build-integer -C Release --output-on-failure --no-tests=error -R "Pure integer|^bc/(integer-layout|vm-cli|vm-lifetime|signal.*|math-library-cli)$"
