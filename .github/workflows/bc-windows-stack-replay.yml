@@ -1,0 +1,95 @@
+name: bc Windows retained stack replay
+
+on:
+  pull_request:
+    branches: [main]
+    paths: ['.github/workflows/bc-windows-stack-replay.yml']
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  replay:
+    name: Windows retained stack replay / ${{ matrix.replica }}
+    runs-on: windows-2025
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        replica: [1, 2]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Download retained binaries and corpus
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for artifact in 13374286016 13376312074; do
+            gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact/zip" > "$artifact.zip"
+          done
+      - name: Replay identical checked inputs with randomized pairing
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir evidence
+          powershell.exe -NoProfile -Command "Get-CimInstance Win32_Processor | Select-Object Name,NumberOfCores,NumberOfLogicalProcessors | Format-List" > evidence/cpu.txt
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+          from zipfile import ZipFile
+
+          files = (
+              ('register', 13376312074, 'codegen/base/binary.exe',
+               'ca08b179ff448b81b8657ac16d7dcf3bfa406dc225f0c0962915bc51eadeffea'),
+              ('aa', 13376312074, 'codegen/aa/binary.exe',
+               '40669cec502b1a8b2fb0fee5cb58a9aa35e48333b8089dd6a18963689aaebe62'),
+              ('old_register', 13374286016, 'registers/bc.exe',
+               'ae8f3a2d52c5418737fc5ce31b3194bbc02caa9bd2b758aa3bbd4cc763db161f'),
+              ('old_stack', 13374286016, 'stack/bc.exe',
+               '0af43e76fdeffd54096ffa545b8c96b32660202d6ff3126365bf4727b97bd3b7'),
+              ('new_stack', 13376312074, 'codegen/candidate/binary.exe',
+               '2fea71325b35e256f8dca8eaad040a74aa5116c1250772ef69e162e271879387'),
+          )
+          implementations = []
+          for role, artifact, member, expected in files:
+              with ZipFile(f'{artifact}.zip') as archive:
+                  contents = archive.read(member)
+              actual = hashlib.sha256(contents).hexdigest()
+              if actual != expected:
+                  raise RuntimeError(f'{role}: unexpected executable digest {actual}')
+              binary = Path(role, 'bc.exe').resolve()
+              binary.parent.mkdir()
+              binary.write_bytes(contents)
+              implementations.append(dict(name=role, argv=[str(binary)],
+                                          metadata=dict(artifact=artifact, binary_sha256=actual)))
+          Path('evidence/config.json').write_text(json.dumps(dict(implementations=implementations)))
+
+          with ZipFile('13376312074.zip') as archive:
+              for preset, workload in (('full', 'streaming_statements_20000'),
+                                       ('holdout', 'streaming_statements_17500')):
+                  folder = f'{preset}-paired'
+                  for member in ('manifest.json', f'workloads/{workload}.bc',
+                                 f'workloads/{workload}.expected'):
+                      archive.extract(f'{folder}/{member}', 'corpus')
+          PY
+          for preset in full holdout; do
+            workload=streaming_statements_20000
+            if [[ $preset == holdout ]]; then workload=streaming_statements_17500; fi
+            python src/bc/scripts/bench-bc.py --config evidence/config.json \
+              --reference register --replay-corpus "corpus/$preset-paired" \
+              --workload "$workload" --samples 31 --warmups 3 \
+              --seed "$((570207 + ${{ matrix.replica }}))" --output "evidence/$preset"
+          done
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: bc-windows-stack-replay-${{ github.run_id }}-${{ matrix.replica }}
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 30
