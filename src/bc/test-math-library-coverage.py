@@ -63,6 +63,19 @@ return(r)
     assert plain == original.stdout.splitlines() == ['2', '2', '7', '0', '2']
     assert outcomes
 
+    # Nested probe indices must stay distinct before a library sets ibase.
+    # Lines 24 and 32 can alias when emitted under a nondecimal input base.
+    source = 'define h(x) {\nauto r;\n' + '\n' * 21 + (
+        'if (x>0) {\n' + '\n' * 7 + '  if (x>1) return(2)\n}\nreturn(1)\n}\n')
+    transformed, decisions = instrument(source)
+    outer, inner = (item['line'] for item in decisions)
+    for base in (10, 2, 8, 16):
+        traced = run(binary, transformed, 'ibase={}\nh(1)\nh(2)\n'.format(base))
+        assert traced.returncode == 0 and not traced.stderr, traced.stderr
+        plain, outcomes = strip_probes(traced.stdout)
+        assert plain == ['1', '2'], (base, plain)
+        assert outcomes == {(outer, 'true'), (inner, 'true'), (inner, 'false')}, (base, outcomes)
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
