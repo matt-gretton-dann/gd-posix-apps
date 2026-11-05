@@ -7,6 +7,13 @@ these controls make its initial comparisons explicit and reproducible.
 `IPO_MODE=OFF` disables the automatic IPO properties on project-managed
 utility and bc targets. `IPO_MODE=REQUIRED` fails configuration if CMake's
 joint C/CXX IPO capability probe fails, including an explicit Debug request.
+
+The OFF policy also overrides inherited per-configuration CMake IPO defaults,
+including configured custom configurations. It does not remove caller-supplied
+compiler/link flags; those remain separately recorded. The native `bc/ipo-policy`
+regression enables inherited general, Release and custom Bench defaults, then
+checks the managed opt-out, retained caller flags and a real tiny compilation.
+Generated command inventories are checked when the generator provides them.
 Unsupported AUTO builds retain the generic fallback. Explicit compiler/link
 flags remain separate caller inputs; mode selection is not a claim about
 those manually supplied flags or about target-specific instruction selection.

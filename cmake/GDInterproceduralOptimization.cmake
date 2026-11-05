@@ -45,5 +45,13 @@ function(gd_apply_ipo target)
     # An explicit opt-out also overrides an inherited CMake IPO default on
     # targets managed here. Caller-supplied compiler/link flags stay explicit.
     set_property(TARGET "${target}" PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
+    # Per-configuration defaults are copied onto a new target and take
+    # precedence over the general property, including custom configurations.
+    foreach(_gd_config DEBUG RELEASE RELWITHDEBINFO MINSIZEREL
+                       ${CMAKE_CONFIGURATION_TYPES} ${CMAKE_BUILD_TYPE})
+      string(TOUPPER "${_gd_config}" _gd_config_upper)
+      set_property(TARGET "${target}" PROPERTY
+                   "INTERPROCEDURAL_OPTIMIZATION_${_gd_config_upper}" FALSE)
+    endforeach()
   endif()
 endfunction()
