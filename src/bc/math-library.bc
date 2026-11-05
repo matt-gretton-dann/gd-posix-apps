@@ -21,43 +21,50 @@ define a(x) {
   /* b/s save base/scale; w is precision; n/v are sign/reciprocal flags.
      k reconstructs half angles; p is pi/2; y is the near-one correction.
      q/t/u are ratio, power and term. */
-  /* This literal is already rounded. A decimal caller needs no state
-     changes, so return before setting up the general reduction path.
-     Other input bases must decode the literal before restoring ibase. */
-  if (x==1) {
-    if (ibase==A) {
-      if (scale==20) return(.78539816339744830962)
-    }
-  }
   b=ibase
   ibase=A
   s=scale
-  n=0
-  if (x<0) {
-    n=1
-    x= -x
-  }
-  /* The certified 160-place lower bound leaves at least sixteen guard
-     digits. Half an output ULP is exact at scale s+1, so this case
-     needs neither magnitude-dependent working scale nor reduction. */
-  if (s<=144) {
-    if (x==1) {
-      /* The rounded unit value already has the POSIX default scale. */
+  /* Positive units need no sign setup. The certified 160-place lower
+     bound leaves sixteen guard digits through scale 144; the rounded
+     scale-20 constant avoids the precision-dependent rounding work. */
+  if (x==1) {
+    if (s<=144) {
       if (s==20) {
+        if (b==A) return(.78539816339744830962)
         r=.78539816339744830962
-        if (n==1) r= -r
         ibase=b
         return(r)
       }
       scale=s+1
       r=.7853981633974483096156608458198757210492923498437764552437361480769541015715522496570087063355292669955370216283205766617734611523876455579313398520321202793625
       r+=10^(-s)/2
-      if (n==1) r= -r
       scale=s
       r=r/1
       ibase=b
       return(r)
     }
+  }
+  /* auto n starts at zero. Handle negative units while their sign is
+     known; set the general sign flag only for the remaining negative path. */
+  if (x<0) {
+    x= -x
+    if (s<=144) {
+      if (x==1) {
+        if (s==20) {
+          r= -.78539816339744830962
+          ibase=b
+          return(r)
+        }
+        scale=s+1
+        r= -.7853981633974483096156608458198757210492923498437764552437361480769541015715522496570087063355292669955370216283205766617734611523876455579313398520321202793625
+        r-=10^(-s)/2
+        scale=s
+        r=r/1
+        ibase=b
+        return(r)
+      }
+    }
+    n=1
   }
   scale=0
   w=s+2*length(s+scale(x)+length(x)+1)+24
