@@ -83,10 +83,13 @@ After every elapsed stage finishes, native CPU/RSS wrappers collect one cold
 invocation per regime and release role near scale 100, for both presets in broad
 runs. Linux reports GNU time user/system seconds and KiB RSS; Darwin reports
 native user/system seconds and byte RSS, plus optional counters where time emits
-them. Printed CPU times can round short calls to zero. Windows has an explicit
-unavailable native CPU/RSS adapter; portable candidate allocation counters remain
-available. Unavailable adapters run no child and are not counted as checked
-measurements. Diagnostic wrapper elapsed fields never replace paired timing.
+them. Printed CPU times can round short calls to zero. Windows queries the
+retained child-process handle for peak working-set bytes, peak commit-charge
+bytes and user/kernel CPU time. Adapter failures remain explicitly unavailable;
+portable candidate allocation counters are separate. Missing native adapters
+run no child and are not counted as checked measurements. Resource-query
+availability remains separate from an invoked child's output checks.
+Diagnostic wrapper elapsed fields never replace paired timing.
 
 The workflow uploads checked raw samples, frozen inputs, calibration trials,
 recipes, source snapshots, diagnostic reports, logs, host metadata and per-class
@@ -117,6 +120,13 @@ confirmations and separate diagnostic invocations, and records it in the
 orchestration artifact. This is distinct from the retained 6600-second workflow
 experiment bound and 120-minute job limit; it changes no sample count,
 substantive-duration target, correctness check or acceptance threshold.
+
+Sampling stages without a shorter explicit command deadline use the remaining
+`--total-seconds` budget. They have no additional implicit one-hour cap. Explicit
+preparation limits are clipped to that remaining budget, and individual child
+deadlines still apply. Exhaustion is a hard failure with partial logs retained;
+it does not shorten the matrix or establish performance acceptance. Resource
+diagnostics retain their separately documented per-child limits.
 
 A common calibrated batch can exceed the standalone harness's 30-second
 default when the candidate is substantially faster than a comparator. The

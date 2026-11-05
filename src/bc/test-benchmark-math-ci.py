@@ -22,6 +22,30 @@ SPEC.loader.exec_module(CI)
 
 
 class NativeMath(unittest.TestCase):
+    def test_measurements_use_remaining_total_budget_without_a_hidden_hour_limit(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            child = mock.MagicMock()
+            child.communicate.return_value = (b'checked fixture\n', None)
+            child.returncode = 0
+            with mock.patch.object(CI.time, 'monotonic', return_value=0) as clock, \
+                    mock.patch.object(CI.subprocess, 'Popen') as popen:
+                popen.return_value.__enter__.return_value = child
+                commands = CI.Commands(root, 18000)
+                commands.run(['fixture', 'paired'])
+                self.assertEqual(child.communicate.call_args[1]['timeout'], 18000)
+                commands.run(['fixture', 'build'], timeout=1200)
+                self.assertEqual(child.communicate.call_args[1]['timeout'], 1200)
+                clock.return_value = 17990
+                commands.run(['fixture', 'confirmation'])
+                self.assertEqual(child.communicate.call_args[1]['timeout'], 10)
+                commands.run(['fixture', 'build'], timeout=1200)
+                self.assertEqual(child.communicate.call_args[1]['timeout'], 10)
+            self.assertEqual([row['timeout_seconds'] for row in commands.commands],
+                             [18000, 1200, 10, 10])
+            self.assertTrue(all((root / row['log']).read_bytes() == b'checked fixture\n'
+                                for row in commands.commands))
+
     def test_preparsed_image_mode_and_control_identity(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
