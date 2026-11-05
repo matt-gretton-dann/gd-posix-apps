@@ -21,7 +21,7 @@ jobs:
       - run: python src/bc/scripts/test-integer-resources.py
   native:
     # One declared resource cohort, not another timing experiment.
-    if: github.head_ref == 'codex/bc-598-integer-resources'
+    if: github.head_ref == 'codex/bc-624-opaque-resources'
     needs: collector-tests
     strategy:
       fail-fast: false
@@ -37,7 +37,7 @@ jobs:
       - name: Check out the immutable candidate source separately
         uses: actions/checkout@v7
         with:
-          ref: ab9a6ab4c2ebea38db594babdf915bce7c56dbe4
+          ref: 2aba8ec2cc1ed23a3806079d2f6dc1caa6cfc27d
           path: candidate-source
           persist-credentials: false
       - name: Establish native MSVC environment
@@ -54,7 +54,7 @@ jobs:
             }
           }
       - name: Check native CPU/RSS and separate allocation/event roles
-        run: python src/bc/scripts/collect-integer-resources.py --source candidate-source --revision ab9a6ab4c2ebea38db594babdf915bce7c56dbe4 --output integer-resources
+        run: python src/bc/scripts/collect-integer-resources.py --source candidate-source --revision 2aba8ec2cc1ed23a3806079d2f6dc1caa6cfc27d --output integer-resources
       - name: Preserve complete and partial diagnostic evidence
         if: always()
         uses: actions/upload-artifact@v7
