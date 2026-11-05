@@ -22,18 +22,18 @@ auto interrupted() noexcept -> bool { return true; }
 
 auto prologue() -> Instructions
 {
-  return {I(O::pop_param), I(O::variable, Variable(Letter('x'))), I(O::store, D(-1), D(-2)),
+  return {I(O::pop_param), I(O::variable, Variable('x')), I(O::store, D(-1), D(-2)),
           I(O::pop_param_mark)};
 }
 auto factorial() -> Instructions
 {
   auto code = prologue();
   for (auto const& instruction :
-       {I(O::variable, Variable(Letter('x'))), I(O::number, "1"),
-        I(O::less_than_equals, D(-2), D(-1)), I(O::branch_zero, D(-1), D(3)), I(O::number, "1"),
-        I(O::return_, D(-1)), I(O::push_param_mark), I(O::variable, Variable(Letter('x'))),
-        I(O::number, "1"), I(O::subtract, D(-2), D(-1)), I(O::push_param, D(-1)),
-        I(O::call, Letter('f'), Location("integer-test")), I(O::variable, Variable(Letter('x'))),
+       {I(O::variable, Variable('x')), I(O::number, "1"), I(O::less_than_equals, D(-2), D(-1)),
+        I(O::branch_zero, D(-1), D(3)), I(O::number, "1"), I(O::return_, D(-1)),
+        I(O::push_param_mark), I(O::variable, Variable('x')), I(O::number, "1"),
+        I(O::subtract, D(-2), D(-1)), I(O::push_param, D(-1)),
+        I(O::call, Letter('f'), Location("integer-test")), I(O::variable, Variable('x')),
         I(O::multiply, D(-1), D(-2)), I(O::return_, D(-1))})
     code.push_back(instruction);
   return code;
@@ -63,8 +63,8 @@ TEST_CASE("Pure integer functions use bounded iterative self calls", "[bc][integ
 TEST_CASE("Pure integer operands preserve locations until consumed", "[bc][integer-function]")
 {
   auto source = prologue();
-  source.emplace_back(O::variable, Variable(Letter('x')));
-  source.emplace_back(O::variable, Variable(Letter('x')));
+  source.emplace_back(O::variable, Variable('x'));
+  source.emplace_back(O::variable, Variable('x'));
   source.emplace_back(O::number, "2");
   source.emplace_back(O::store, D(-2), D(-1));
   source.emplace_back(O::add, D(-4), D(-2));
@@ -96,7 +96,7 @@ TEST_CASE("Pure integer plans reject observable effects and base dependence",
   CHECK_FALSE(plan_integer_function(source, VariableMask("x", ""), Letter('f')));
   for (auto const& instruction :
        {I(O::print, D(-1), I::Stream::output), I(O::scale), I(O::ibase), I(O::obase),
-        I(O::array, Array(Letter('a'))), I(O::divide, D(-1), D(-1)), I(O::power, D(-1), D(-1)),
+        I(O::array, Array('a')), I(O::divide, D(-1), D(-1)), I(O::power, D(-1), D(-1)),
         I(O::pop_param), I(O::pop_param_array), I(O::quit, 0U)}) {
     source = factorial();
     source[5] = instruction;
@@ -108,7 +108,7 @@ TEST_CASE("Pure integer arithmetic guards both signed endpoints", "[bc][integer-
 {
   for (auto opcode : {O::add, O::subtract, O::multiply}) {
     auto source = prologue();
-    source.emplace_back(O::variable, Variable(Letter('x')));
+    source.emplace_back(O::variable, Variable('x'));
     source.emplace_back(O::number, "2");
     source.emplace_back(opcode, D(-2), D(-1));
     source.emplace_back(O::return_, D(-1));
