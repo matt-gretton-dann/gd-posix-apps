@@ -387,6 +387,11 @@ if(RUN_INTEGRATION_TESTS)
     add_test(NAME bc/profiling-cli COMMAND "${Python_EXECUTABLE}"
              "${CMAKE_CURRENT_SOURCE_DIR}/test-profiling-cli.py" "$<TARGET_FILE:bc>")
     set_tests_properties(bc/profiling-cli PROPERTIES TIMEOUT 30)
+    if(ENABLE_BC_INTEGER_FUNCTIONS)
+      add_test(NAME bc/integer-profile COMMAND "${Python_EXECUTABLE}"
+               "${CMAKE_CURRENT_SOURCE_DIR}/test-integer-profile.py" "$<TARGET_FILE:bc>")
+      set_tests_properties(bc/integer-profile PROPERTIES TIMEOUT 30)
+    endif()
   endif()
   add_test(NAME bc/cli COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-cli.py" "$<TARGET_FILE:bc>"

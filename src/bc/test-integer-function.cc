@@ -67,6 +67,32 @@ auto parsed_function(std::string const& definition) -> IntegerFunction
 }
 }  // namespace
 
+#if GD_BC_PROFILE
+TEST_CASE("Pure integer diagnostics own tracked scratch and plan storage", "[bc][integer-function]")
+{
+  auto const before = Profile::snapshot();
+  auto const frames = static_cast<std::size_t>(Profile::AllocationKind::frames);
+  auto const plans = static_cast<std::size_t>(Profile::AllocationKind::execution_plans);
+  {
+    auto plan = plan_integer_function(factorial(), VariableMask("x", ""), Letter('f'));
+    REQUIRE(plan);
+    IntegerFunctionScratch scratch;
+    REQUIRE(run_integer_function(*plan, 50, scratch, running));
+    auto const live = Profile::snapshot();
+    // This direct engine call has no generic VM frames to hide an untracked
+    // scratch pool. Cleared contents still own the reusable vector capacity.
+    CHECK(live.allocations[frames].allocated_bytes > before.allocations[frames].allocated_bytes);
+    CHECK(live.allocations[frames].live_bytes > before.allocations[frames].live_bytes);
+    CHECK(live.allocations[plans].allocated_bytes > before.allocations[plans].allocated_bytes);
+    CHECK(scratch.values.empty());
+    CHECK(scratch.spills.empty());
+  }
+  auto const after = Profile::snapshot();
+  CHECK(after.allocations[frames].live_bytes == before.allocations[frames].live_bytes);
+  CHECK(after.allocations[plans].live_bytes == before.allocations[plans].live_bytes);
+}
+#endif
+
 TEST_CASE("Pure integer continuations retain exact large results", "[bc][integer-function]")
 {
   auto const plan = plan_integer_function(factorial(), VariableMask("x", ""), Letter('f'));

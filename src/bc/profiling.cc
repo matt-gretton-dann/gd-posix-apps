@@ -112,7 +112,14 @@ auto name(Event which) noexcept -> char const*
                              "divisor_cache_fingerprint_limbs",
                              "divisor_cache_preparation_attempts",
                              "divisor_cache_promotions",
-                             "divisor_cache_hits"};
+                             "divisor_cache_hits",
+                             "integer_function_attempts",
+                             "integer_function_successes",
+                             "integer_function_abandonments",
+                             "integer_function_instructions",
+                             "integer_function_self_calls",
+                             "integer_function_promotions",
+                             "integer_function_demotions"};
   static_assert(names.size() == static_cast<std::size_t>(Event::count));
   return names[static_cast<std::size_t>(which)];
 }

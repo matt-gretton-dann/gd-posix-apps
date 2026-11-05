@@ -66,6 +66,13 @@ enum class Event : std::size_t {
   divisor_cache_preparation_attempts,
   divisor_cache_promotions,
   divisor_cache_hits,
+  integer_function_attempts,
+  integer_function_successes,
+  integer_function_abandonments,
+  integer_function_instructions,
+  integer_function_self_calls,
+  integer_function_promotions,
+  integer_function_demotions,
   count
 };
 

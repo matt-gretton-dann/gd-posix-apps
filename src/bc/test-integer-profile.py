@@ -8,6 +8,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+import sys
 
 
 class IntegerProfile(unittest.TestCase):
@@ -54,6 +55,25 @@ class IntegerProfile(unittest.TestCase):
         data = self.profile('define f(x) {\ns=s+1\nreturn (x)\n}\n'
                             'for(i=0;i<20;i++) a=f(i)\ns\n', '20\n')
         self.assertEqual(data['events'].get('integer_function_attempts', 0), 0)
+
+    def test_cancellation_reports_demotion(self):
+        data = self.profile('define f(x) {\nauto a\na=x*x\nreturn (a-a)\n}\n'
+                            'for(i=0;i<12;i++) a=f(9223372036854775807)\na\n', '0\n')
+        self.assertGreater(data['events']['integer_function_promotions'], 0)
+        self.assertGreater(data['events']['integer_function_demotions'], 0)
+        self.assertEqual(data['events']['integer_function_abandonments'], 0)
+
+    def test_size_guard_reports_abandonment_and_reuses_generic_fallback(self):
+        if hasattr(sys, 'set_int_max_str_digits'):
+            sys.set_int_max_str_digits(0)
+        expected = str(len(str(9 ** (2 ** 14)))) + '\n'
+        data = self.profile('define f(x) {\nauto y\ny=9\n'
+                            'while(x>0) {\ny=y*y\nx=x-1\n}\nreturn (y)\n}\n'
+                            'for(i=0;i<12;i++) a=f(14)\nlength(a)\n', expected)
+        self.assertGreater(data['events']['integer_function_abandonments'], 0)
+        self.assertEqual(data['events']['integer_function_successes'], 0)
+        self.assertEqual(data['events']['integer_function_attempts'],
+                         data['events']['integer_function_abandonments'])
 
 
 if __name__ == '__main__':
