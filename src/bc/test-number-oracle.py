@@ -158,6 +158,24 @@ class NumberOracle(unittest.TestCase):
                                   truncate(value, places), places))
         self.assert_program(cases)
 
+    def test_large_quotient_kernel_boundaries(self):
+        rng = random.Random(SEED)
+
+        def coefficient(limbs):
+            return rng.randrange(10 ** (9 * limbs - 1), 10 ** (9 * limbs))
+
+        cases = []
+        # Vary divisor and quotient length around the thresholds for the
+        # independent-product kernel in the nine-digit limb model.
+        for n, m in ((15, 32), (16, 15), (16, 16), (17, 17),
+                     (48, 15), (48, 16), (80, 102), (130, 63)):
+            dividend, divisor = coefficient(n + m), coefficient(n)
+            for places in (0, 9, 117):
+                value = Fraction(dividend, divisor)
+                cases.append((f"({dividend})/({divisor})", places,
+                              truncate(value, places), places))
+        self.assert_program(cases)
+
     def test_powers(self):
         cases = []
         for a in ("0", "1", "-1", "2", "-2", "1.23", "-1.23", ".001", "123456789"):

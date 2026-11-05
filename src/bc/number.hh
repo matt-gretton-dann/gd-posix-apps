@@ -1151,9 +1151,8 @@ private:
     if constexpr (!Remainder && base_ == 1000000000U) {
       auto const n = divisor.size();
       auto const m = digits_->size() - n;
-      // Keep the predictable borrow branch for small quotient grids. Divide
-      // the threshold instead of multiplying potentially large limb counts.
-      if (n >= 80 && m >= 63 && m >= 8191 / n) {
+      // Retain the generic kernel for short divisors or quotient grids.
+      if (n >= 16 && m >= 16) {
         divide_normalized_kernel<Remainder, true>(divisor, d);
         return;
       }
@@ -1163,6 +1162,11 @@ private:
   }
 
   template<bool Remainder, bool ArithmeticBorrow>
+#if defined(__APPLE__) && defined(__aarch64__) && defined(__clang__)
+  // Keep the neighboring generic kernel's entry aligned as the large-grid
+  // specialization changes. An unaligned build slowed the smaller grids.
+  __attribute__((aligned(64)))
+#endif
   void divide_normalized_kernel(std::span<NumType const> divisor, NumType d)
   {
     auto const n = divisor.size();
@@ -1215,15 +1219,17 @@ private:
       /* D4. Multiply and subtract.   */
       WideType carry = 0;
       if constexpr (ArithmeticBorrow) {
-        // The product and subtraction have separate carry chains. Merge them
-        // only at the high limb so the multiplies can run ahead of borrows.
+        // Split each product independently. A limb subtracts its own low
+        // product limb and the preceding high limb. Their sum and the
+        // previous borrow can require borrowing up to two radix units.
         WideType borrow = 0;
         for (typename DigitVector::size_type i = 0; i < n; ++i) {
-          WideType const product = divisor[i] * q_hat + carry;
+          WideType const product = divisor[i] * q_hat;
+          WideType const subtrahend = product % base_ + carry + borrow;
           carry = product / base_;
-          WideType const subtrahend = product % base_ + borrow;
           WideType const limb = dividend[j + i];
-          borrow = static_cast<WideType>(limb < subtrahend);
+          borrow = static_cast<WideType>(limb < subtrahend) +
+                   static_cast<WideType>(limb + base_ < subtrahend);
           dividend[j + i] = static_cast<NumType>(limb + base_ * borrow - subtrahend);
         }
         carry += borrow;
