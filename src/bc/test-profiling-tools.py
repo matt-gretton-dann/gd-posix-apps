@@ -25,13 +25,17 @@ class ProfilingTools(unittest.TestCase):
 
     def test_windows_accounting_preserves_pointer_and_counter_widths(self):
         api = mock.Mock()
+        wide = ctypes.sizeof(ctypes.c_size_t) == 8
+        handle_value = 0x123456789ABC if wide else 0x12345678
+        peak = 8589934592 if wide else 1073741824
         def memory(handle, pointer, size):
             counters = pointer._obj
-            self.assertEqual(handle, 0x123456789ABC)
+            self.assertEqual(handle, handle_value)
             self.assertEqual(counters.cb, size)
+            self.assertEqual(size, 72 if wide else 40)
             self.assertEqual(type(counters).PeakWorkingSetSize.offset, 8)
-            counters.PeakWorkingSetSize = 8589934592
-            counters.PeakPagefileUsage = 17179869184
+            counters.PeakWorkingSetSize = peak
+            counters.PeakPagefileUsage = peak + 1
             return 1
         def times(handle, created, exited, kernel, user):
             kernel._obj.low = 10000000
@@ -39,9 +43,9 @@ class ProfilingTools(unittest.TestCase):
             return 1
         api.K32GetProcessMemoryInfo.side_effect = memory
         api.GetProcessTimes.side_effect = times
-        result = self.module.windows_process_fields(0x123456789ABC, api)
-        self.assertEqual(result['peak_rss_native'], 8589934592)
-        self.assertEqual(result['peak_commit_charge_bytes'], 17179869184)
+        result = self.module.windows_process_fields(handle_value, api)
+        self.assertEqual(result['peak_rss_native'], peak)
+        self.assertEqual(result['peak_commit_charge_bytes'], peak + 1)
         self.assertIn('bytes', result['native_unit'])
         self.assertEqual(result['cpu_time']['system_seconds'], 1)
         self.assertEqual(result['cpu_time']['user_ticks_100ns'], (1 << 32) + 5000000)
@@ -60,6 +64,40 @@ class ProfilingTools(unittest.TestCase):
         self.assertEqual(result['cpu_time']['winerror'], 5)
         self.assertNotIn('peak_rss_native', result)
         self.assertEqual(self.module.windows_process_fields(None)['status'], 'unavailable')
+        self.assertEqual(self.module.windows_process_fields(1, object())['status'], 'unavailable')
+
+    def test_windows_cpu_and_memory_availability_are_independent(self):
+        for memory_ok, cpu_ok in ((True, False), (False, True)):
+            api = mock.Mock()
+            def memory(handle, pointer, size):
+                pointer._obj.PeakWorkingSetSize = 123
+                return int(memory_ok)
+            api.K32GetProcessMemoryInfo.side_effect = memory
+            api.GetProcessTimes.return_value = int(cpu_ok)
+            with mock.patch.object(ctypes, 'get_last_error', return_value=5, create=True):
+                result = self.module.windows_process_fields(1, api)
+            self.assertEqual(result['status'], 'collected' if memory_ok else 'unavailable')
+            self.assertEqual(result['cpu_time']['status'], 'collected' if cpu_ok else 'unavailable')
+            if cpu_ok:
+                self.assertEqual(result['cpu_time']['user_seconds'], 0)
+                self.assertEqual(result['cpu_time']['system_seconds'], 0)
+
+    def test_windows_reads_accounting_before_releasing_the_child_handle(self):
+        child = mock.MagicMock()
+        child._handle, child.returncode = 123, 0
+        child.communicate.return_value = (b'2\n', b'')
+        with mock.patch.object(self.module.subprocess, 'Popen') as popen, \
+                mock.patch.object(self.module, 'windows_process_fields') as fields:
+            popen.return_value.__enter__.return_value = child
+            def read(handle):
+                self.assertEqual(handle, 123)
+                child.communicate.assert_called_once_with(b'input', timeout=3)
+                popen.return_value.__exit__.assert_not_called()
+                return {'status': 'collected'}
+            fields.side_effect = read
+            result, usage = self.module.run_windows_process(['fake'], b'input', {}, 3)
+        self.assertEqual(result.stdout, b'2\n')
+        self.assertEqual(usage['status'], 'collected')
 
     def test_windows_memory_checks_file_transport_and_child_output(self):
         case = {'name': 'file-fixture', 'program': '2\n',
