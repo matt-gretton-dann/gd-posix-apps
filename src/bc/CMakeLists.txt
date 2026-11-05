@@ -359,9 +359,10 @@ if(RUN_INTEGRATION_TESTS)
   set_tests_properties(bc/comparator-builds PROPERTIES TIMEOUT 20)
   add_test(NAME bc/benchmark-ci COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-benchmark-ci.py")
-  # The controller suite includes a real subprocess fixture with its own
-  # 15-second deadline. Leave room for the remaining mocked controller tests.
-  set_tests_properties(bc/benchmark-ci PROPERTIES TIMEOUT 60)
+  # The fixed sparse protocol exercises 828 serial fixture processes, plus a
+  # separate 15-second deadline test. Allow slower hosted process startup while
+  # retaining every output/sample assertion and the children's own deadlines.
+  set_tests_properties(bc/benchmark-ci PROPERTIES TIMEOUT 180)
   add_test(NAME bc/codegen-evidence COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-codegen-evidence.py")
   set_tests_properties(bc/codegen-evidence PROPERTIES TIMEOUT 30)

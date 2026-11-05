@@ -28,10 +28,15 @@ On POSIX hosts both builds explicitly use the chosen C compiler, `-O3 -DNDEBUG`,
 empty incoming CPPFLAGS/LDFLAGS, and no configuration site file. BC_/DC_ options
 are removed from the build environment. Howard uses upstream optimization level
 3 with NLS, history, dc, manual generation, generated tests and stripping
-disabled. Its extra math remains enabled and its upstream Karatsuba threshold
+disabled. Its POSIX target and host-generator compilation both select
+`-std=gnu17`: the pinned source uses pre-C23 boolean-token construction, so
+newer compiler defaults must not silently change its language mode. This does
+not patch the upstream source or change the native MSVC project recipe. Its extra math remains enabled and its upstream Karatsuba threshold
 is 32 limbs. GNU disables NLS/readline and builds only `lib` and `bc`, avoiding a
 Texinfo dependency for unused documentation. Their exact expanded Makefile
-CC/CFLAGS/CPPFLAGS/LDFLAGS values are recorded rather than approximated.
+CC/HOSTCC/CFLAGS/HOSTCFLAGS/CPPFLAGS/LDFLAGS values are recorded rather than
+approximated. Historical receipts retain their original flags; the current
+recipe selection is recorded under its own builder checksum.
 
 For Windows run from an x64 Visual Studio developer command prompt:
 
@@ -50,7 +55,7 @@ not the POSIX history-disabled configuration. See the pinned
 [upstream build guide](https://github.com/gavinhoward/bc/blob/7.0.3/manuals/build.md).
 The GNU configure recipe is explicitly unavailable on native Windows; use the
 native Howard comparison there. Native CI checks the supported recipes and the
-36 quick output oracles; these one-sample checks make no speed claim.
+quick output oracles; these one-sample checks make no speed claim.
 
 `implementations.json` can be passed directly to the checked benchmark runner.
 Add separately built GD base/candidate entries for a competitive experiment.
