@@ -1,0 +1,65 @@
+name: bc integer tier resource diagnostics
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/bc/scripts/collect-integer-resources.py'
+      - 'src/bc/scripts/test-integer-resources.py'
+      - '.github/workflows/bc-integer-resources.yml'
+permissions:
+  contents: read
+concurrency:
+  group: bc-integer-resources-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+jobs:
+  collector-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - run: python src/bc/scripts/test-integer-resources.py
+  native:
+    # One declared resource cohort, not another timing experiment.
+    if: github.head_ref == 'codex/bc-598-integer-resources'
+    needs: collector-tests
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [ubuntu-24.04, macos-15, windows-2025]
+    runs-on: ${{ matrix.image }}
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Check out the immutable candidate source separately
+        uses: actions/checkout@v7
+        with:
+          ref: ab9a6ab4c2ebea38db594babdf915bce7c56dbe4
+          path: candidate-source
+          persist-credentials: false
+      - name: Establish native MSVC environment
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installation = & "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe" -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (!$installation) { throw 'Native x64 MSVC is unavailable' }
+          $variables = & cmd /c "`"$installation\Common7\Tools\VsDevCmd.bat`" -arch=x64 -host_arch=x64 >nul && set"
+          if ($LASTEXITCODE) { throw 'Cannot initialize MSVC' }
+          foreach ($line in $variables) {
+            if ($line -match '^(PATH|INCLUDE|LIB|LIBPATH|VCToolsInstallDir|VCINSTALLDIR|VSINSTALLDIR|WindowsSdkDir|WindowsSDKVersion|UniversalCRTSdkDir|UCRTVersion|Platform)=(.*)$') {
+              "$($matches[1])=$($matches[2])" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            }
+          }
+      - name: Check native CPU/RSS and separate allocation/event roles
+        run: python src/bc/scripts/collect-integer-resources.py --source candidate-source --revision ab9a6ab4c2ebea38db594babdf915bce7c56dbe4 --output integer-resources
+      - name: Preserve complete and partial diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bc-integer-resources-${{ matrix.image }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: integer-resources/evidence/
+          if-no-files-found: error
+          retention-days: 30
