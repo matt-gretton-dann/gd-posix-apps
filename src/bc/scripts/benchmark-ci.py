@@ -178,6 +178,8 @@ def gd_build_command(args, name, revision, directory, cc, cxx):
                '--c-compiler', cc, '--cxx-compiler', cxx]
     if name == 'candidate' and getattr(args, 'candidate_prepared_divisors', False):
         command += ['--prepared-divisors', 'ON']
+    if getattr(args, 'candidate_integer_functions', False):
+        command += ['--integer-functions', 'ON' if name == 'candidate' else 'OFF']
     return command
 
 
@@ -192,6 +194,7 @@ def main():
     parser.add_argument('--broad', action='store_true')
     parser.add_argument('--sparse-qualification', action='store_true')
     parser.add_argument('--candidate-prepared-divisors', action='store_true')
+    parser.add_argument('--candidate-integer-functions', action='store_true')
     parser.add_argument('--samples', type=int, default=9)
     parser.add_argument('--split-point', type=gd.positive_point, default=126)
     args = parser.parse_args()
@@ -212,6 +215,9 @@ def main():
             directory = root / name
             builder.run(gd_build_command(args, name, revision, directory, cc, cxx))
             built = json.loads((directory / 'implementations.json').read_text())['implementations']
+            if args.candidate_integer_functions:
+                for entry in built:
+                    gd.require_integer_mode(helper, entry, name == 'candidate')
             if name == 'candidate' and args.candidate_prepared_divisors:
                 for entry in built:
                     gd.require_prepared_candidate(helper, entry)
@@ -320,6 +326,7 @@ def main():
         # Preserve exact recipes/logs without uploading cloned source/build trees.
         write(evidence / 'orchestration.json', {'base': args.base, 'candidate': args.candidate,
               'split_point': args.split_point, 'candidate_prepared_divisors': args.candidate_prepared_divisors,
+              'candidate_integer_functions': args.candidate_integer_functions,
               'sparse_qualification': args.sparse_qualification,
               'commands': builder.commands})
         for path in root.glob('command-*.log'):
@@ -333,6 +340,8 @@ def main():
                     shutil.copyfile(str(path), str(target / path.name))
             if (source / 'prepared-policy').is_dir():
                 shutil.copytree(str(source / 'prepared-policy'), str(target / 'prepared-policy'))
+            if (source / 'integer-policy').is_dir():
+                shutil.copytree(str(source / 'integer-policy'), str(target / 'integer-policy'))
             if (source / 'logs').is_dir():
                 shutil.copytree(str(source / 'logs'), str(target / 'logs'))
         # Every timed child has finished. Preserve the actual measured code

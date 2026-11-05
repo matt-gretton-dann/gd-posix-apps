@@ -65,7 +65,8 @@ def cache_values(path):
 
 
 def build_metadata(helper, root, source, build, revision, split, compiler_c, compiler_cxx,
-                   ipo_mode='AUTO', prepared_mode='AUTO', diagnostic_profile=False):
+                   ipo_mode='AUTO', prepared_mode='AUTO', diagnostic_profile=False,
+                   integer_mode='AUTO'):
     cache = cache_values(build / 'CMakeCache.txt')
     for flag in ('ENABLE_BC_PROFILE', 'ENABLE_BC_COVERAGE'):
         allowed = ('ON', 'TRUE', 'YES', '1') if diagnostic_profile and flag == 'ENABLE_BC_PROFILE' else ('OFF', 'FALSE', 'NO', '0')
@@ -104,6 +105,11 @@ def build_metadata(helper, root, source, build, revision, split, compiler_c, com
         shutil.copyfile(str(build / 'gd-ipo-policy.json'), str(root / 'gd-ipo-policy.json'))
         ipo['report_sha256'] = helper.digest(root / 'gd-ipo-policy.json')
     prepared = verified_prepared_divisors(helper, build, prepared_mode)
+    integer = verified_integer_functions(helper, build, integer_mode)
+    if integer.get('verification', {}).get('kind') == 'msbuild-project':
+        target = root / 'integer-policy/libbc.vcxproj'
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(str(build / 'src/bc/libbc.vcxproj'), str(target))
     if prepared.get('verification', {}).get('kind') == 'msbuild-projects':
         for relative in prepared['verification']['files']:
             target = root / 'prepared-policy' / relative
@@ -117,11 +123,99 @@ def build_metadata(helper, root, source, build, revision, split, compiler_c, com
                               'extensions': cache.get('ENABLE_NON_POSIX_EXTENSIONS'),
                               'ipo_policy': ipo,
                               'prepared_divisors_policy': prepared,
+                              'integer_functions_policy': integer,
                               'multiply_split_point': split,
                               'diagnostic_profile': diagnostic_profile,
                               'threshold_header_sha256': helper.digest(root / 'multiply-threshold.hh')},
             'limitations': ['Provision compiler, C/C++ runtime and SDK separately; this is not an OS image',
                             'Compiler defaults and actual commands are recorded, not claimed identical across hosts']}
+
+
+def verified_integer_functions(helper, build, requested):
+    """Verify opt-in execution in real compiler commands, not just a cache key."""
+    observed = cache_values(build / 'CMakeCache.txt').get('ENABLE_BC_INTEGER_FUNCTIONS')
+    if requested not in ('AUTO', 'ON', 'OFF'):
+        raise helper.BuildError('invalid integer-function mode')
+    if observed is None:
+        if requested != 'AUTO':
+            raise helper.BuildError('source cannot verify requested integer-function mode')
+        return dict(status='legacy-auto', mode='AUTO', enabled=None)
+    if observed.upper() not in ('ON', 'OFF', 'TRUE', 'FALSE', 'YES', 'NO', '1', '0'):
+        raise helper.BuildError('invalid configured integer-function mode')
+    enabled = observed.upper() in ('ON', 'TRUE', 'YES', '1')
+    if requested != 'AUTO' and enabled != (requested == 'ON'):
+        raise helper.BuildError('source did not configure requested integer-function mode')
+    define = re.compile(r'''(?:^|[\s"'])[-/]D\s*["']?GD_BC_INTEGER_FUNCTIONS\b(?:=([^\s"';]+))?''')
+    undefine = re.compile(r'''(?:^|[\s"'])[-/]U\s*["']?GD_BC_INTEGER_FUNCTIONS\b''')
+    expected_files = {'vm.cc', 'integer-function.cc'} if enabled else {'vm.cc'}
+    commands = build / 'compile_commands.json'
+    if commands.is_file():
+        try:
+            rows = json.loads(commands.read_text(encoding='utf-8'))
+            selected = set()
+            if not isinstance(rows, list):
+                raise ValueError('not a command inventory')
+            for row in rows:
+                filename = str(row['file']).replace('\\', '/')
+                if not filename.endswith(('/src/bc/vm.cc', '/src/bc/integer-function.cc')):
+                    continue
+                command = ' '.join(row['arguments']) if 'arguments' in row else row['command']
+                values = define.findall(command)
+                if (values != ['1'] if enabled else bool(values)) or undefine.search(command):
+                    raise helper.BuildError('compiled integer-function mode contradicts configuration')
+                selected.add(filename.rsplit('/', 1)[-1])
+            if selected != expected_files:
+                raise helper.BuildError('missing or unexpected integer-function translation unit')
+        except (KeyError, TypeError, ValueError) as error:
+            raise helper.BuildError('invalid integer-function command inventory: ' + str(error))
+        proof = dict(kind='compile-commands', sha256=helper.digest(commands))
+    else:
+        import xml.etree.ElementTree as ET
+        if not cache_values(build / 'CMakeCache.txt').get('CMAKE_GENERATOR', '').startswith('Visual Studio'):
+            raise helper.BuildError('integer-function mode needs compile commands or native VS projects')
+        project = build / 'src/bc/libbc.vcxproj'
+        try:
+            tree = ET.parse(str(project)).getroot()
+        except (OSError, ET.ParseError) as error:
+            raise helper.BuildError('missing integer-function compiler evidence: ' + str(error))
+        selected, release = set(), False
+        for node in tree.iter():
+            tag = node.tag.rsplit('}', 1)[-1]
+            text = node.text or ''
+            if tag == 'ClCompile' and node.get('Include'):
+                filename = node.get('Include').replace('\\', '/').rsplit('/', 1)[-1]
+                if filename in ('vm.cc', 'integer-function.cc'):
+                    selected.add(filename)
+            if tag == 'UndefinePreprocessorDefinitions' and 'GD_BC_INTEGER_FUNCTIONS' in text:
+                raise helper.BuildError('project undefines integer-function mode')
+            if tag == 'AdditionalOptions':
+                values = define.findall(text)
+                if (values and (not enabled or values != ['1'])) or undefine.search(text):
+                    raise helper.BuildError('project contradicts integer-function mode')
+            if tag != 'ItemDefinitionGroup':
+                continue
+            condition = node.get('Condition', '')
+            if condition and not re.search(r'Release\|', condition, re.IGNORECASE):
+                continue
+            for compiler in node:
+                if compiler.tag.rsplit('}', 1)[-1] != 'ClCompile':
+                    continue
+                for child in compiler:
+                    if child.tag.rsplit('}', 1)[-1] == 'PreprocessorDefinitions':
+                        values = re.findall(r'(?:^|;)GD_BC_INTEGER_FUNCTIONS\b(?:=([^;]+))?', child.text or '')
+                        if values != (['1'] if enabled else []):
+                            raise helper.BuildError('Release project contradicts integer-function mode')
+                        release = True
+        if not release or selected != expected_files:
+            raise helper.BuildError('missing integer-function Release source/definition proof')
+        proof = dict(kind='msbuild-project', sha256=helper.digest(project))
+    return dict(status='verified', mode=requested, enabled=enabled, verification=proof)
+
+
+def require_integer_mode(helper, entry, enabled=True):
+    policy = entry.get('metadata', {}).get('configuration', {}).get('integer_functions_policy', {})
+    if policy.get('status') != 'verified' or policy.get('enabled') is not enabled or not policy.get('verification'):
+        raise helper.BuildError('missing verified integer-function mode for timing role')
 
 
 def verified_ipo_policy(helper, build, requested):
@@ -292,6 +386,8 @@ def main():
                         help='automatic IPO policy; explicit modes require source support')
     parser.add_argument('--prepared-divisors', choices=('AUTO', 'ON', 'OFF'), default='AUTO',
                         help='VM divisor reuse policy; explicit modes require compiled source support')
+    parser.add_argument('--integer-functions', choices=('AUTO', 'ON', 'OFF'), default='AUTO',
+                        help='pure integer execution; explicit modes require compiled source support')
     parser.add_argument('--preparsed-library', action='store_true',
                         help='enable and retain the generated math-library image')
     parser.add_argument('--array-storage', choices=('hybrid', 'paged', 'flat', 'hash', 'ordered'),
@@ -340,6 +436,8 @@ def main():
             configure += ['-DBC_ARRAY_STORAGE=' + args.array_storage]
         if args.prepared_divisors != 'AUTO':
             configure += ['-DENABLE_BC_PREPARED_DIVISORS=' + args.prepared_divisors]
+        if args.integer_functions != 'AUTO':
+            configure += ['-DENABLE_BC_INTEGER_FUNCTIONS=' + args.integer_functions]
         if args.preparsed_library:
             configure += ['-DENABLE_BC_PREPARSED_LIBRARY=ON']
         if args.ipo_mode != 'AUTO':
@@ -360,7 +458,7 @@ def main():
             raise helper.BuildError('build did not produce the expected bc executable')
         metadata = build_metadata(helper, root, source, build, actual, args.split_point,
                                   compiler_c, compiler_cxx, args.ipo_mode, args.prepared_divisors,
-                                  diagnostic_profile=args.diagnostic_profile)
+                                  diagnostic_profile=args.diagnostic_profile, integer_mode=args.integer_functions)
         observed_layout = verified_array_layout(helper, build, args.array_storage)
         metadata['configuration']['array_storage'] = observed_layout
         image = build / 'src/bc/bc-math-library-image.inc'

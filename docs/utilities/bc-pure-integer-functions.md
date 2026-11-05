@@ -109,3 +109,22 @@ Keep the tier experimental until differential semantic tests, cold and warm
 full/holdout measurements, and native Linux/macOS/Windows resource evidence
 justify adoption. Preserve adverse and inconclusive classes; the overall #197
 competitive requirements remain open.
+
+## Native qualification recipe
+
+`bc-integer-performance.yml` compares OFF and ON at the same immutable source
+on Linux, macOS and Windows. It starts for the fixed experiment topic and also
+supports manual replay with a full source SHA. Ordinary PRs retain the separate
+fast semantic workflow. Arithmetic includes the full/holdout corpus and fixed
+sparse latency/duration controls. Math runs full and holdout separately with a
+0.25-second calibration target, 600-second child deadlines and a bounded total.
+
+`build-gd-bc.py --integer-functions ON|OFF` verifies both the configured option
+and actual VM/engine compiler definitions and source inventory. Native Visual
+Studio Release projects are retained when compile commands are unavailable.
+The arithmetic A/A independently builds OFF; math A/A independently builds ON,
+matching the existing controllers' control definitions. Raw outcomes, actual
+hosts, commands, policies and artifacts remain separate per job; no favorable
+rerun or pooling is implied. Green workflow status remains distinct from every
+class's runtime/resource acceptance. Same-source mode isolation must also be
+followed by final integrated-tree qualification against accepted main.

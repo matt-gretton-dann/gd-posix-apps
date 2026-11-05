@@ -22,6 +22,14 @@ SPEC.loader.exec_module(CI)
 
 
 class NativeMath(unittest.TestCase):
+    def test_integer_tier_uses_candidate_mode_for_independent_math_aa(self):
+        args = types.SimpleNamespace(source=Path('.'), base='a' * 40, candidate='b' * 40,
+                                     candidate_integer_functions=True)
+        for name in ('base', 'gd', 'aa'):
+            command = CI.gd_build_command(args, name, Path('output'), 'cc', 'c++')
+            self.assertEqual(command[command.index('--integer-functions') + 1],
+                             'OFF' if name == 'base' else 'ON')
+
     def test_preparsed_image_mode_and_control_identity(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
