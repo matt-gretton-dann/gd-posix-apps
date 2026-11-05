@@ -372,6 +372,12 @@ if(RUN_INTEGRATION_TESTS)
            "${CMAKE_CURRENT_SOURCE_DIR}/test-comparator-builds.py"
            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/build-bc-comparators.py")
   set_tests_properties(bc/comparator-builds PROPERTIES TIMEOUT 20)
+  add_test(NAME bc/ipo-policy COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-ipo-policy.py"
+           --module "${CMAKE_SOURCE_DIR}/cmake/GDInterproceduralOptimization.cmake"
+           --cmake "${CMAKE_COMMAND}" --compiler "${CMAKE_CXX_COMPILER}"
+           --generator "${CMAKE_GENERATOR}")
+  set_tests_properties(bc/ipo-policy PROPERTIES TIMEOUT 180)
   add_test(NAME bc/benchmark-ci COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-benchmark-ci.py")
   # The fixed sparse protocol exercises 828 serial fixture processes, plus a
