@@ -74,6 +74,19 @@ S+10 accuracy assumption.
 
 ## Arctangent
 
+Positive unit arguments through scale 144 return before general sign setup.
+Negative units are handled inside the sign-normalization branch, before setting
+the general sign flag. That flag is automatic and starts at zero in every
+activation; tests preload the caller's flag and alternate call signs. This
+avoids extra scale-20 entry guards penalizing higher-precision unit calls.
+
+At scale 20 the decimal-caller positive path returns its certified rounded
+literal without a temporary store/reload. Other bases decode the literal in
+decimal before restoring the caller's input base. Negative units use the
+matching negative literal. Other precisions use the signed certified bound and
+round away from zero before truncation. All caller bindings and bases retain
+their normal restoration behavior.
+
 For magnitudes in [0.8, 1.25] other than one, use
 atan(x) = atan(1) + atan((x-1)/(x+1)). The transformed magnitude is at
 most 1/9, reducing the work before the alternating series. Apply the
@@ -85,13 +98,35 @@ the recursive unit evaluation. All other magnitudes retain the existing
 reciprocal and half-angle paths. Exact rational enclosures cover both
 signs and inputs at and around the two reduction thresholds.
 
+At entry S = 20, evaluate the transformed non-unit argument z directly
+with twelve alternating terms using Horner's rule. This avoids the term
+divisions and half-angle square roots on |z| <= 1/9. The first omitted
+term bounds the tail by 1/(25*9^25), which is less than 6*10^-26.
+The eleven nontrivial reciprocal coefficients are rounded to 32 decimal
+places. Their propagated error is bounded by
+(10^-32/2)*|z|*|z|^2/(1-|z|^2) < 10^-34.
+
+The general working-scale rule gives W >= 48 on this path. The stored
+argument and squared ratio stay within the same magnitude bounds after
+truncation. Each Horner multiplication contributes less than u, while
+addition is exact and error propagation contracts by at most 1/81.
+Allowing 64*u covers the argument quotient, squared ratio, Horner products,
+final product and unit correction. The total pre-rounding error
+is below 10^-25, so adding nearest rounding gives an error below
+U/2 + 10^-25 < U at S = 20. The near-one magnitude is positive, so add
+the exact half-ULP literal before restoring the sign and truncating.
+Exact rational tests check the coefficient bytes, half-ULP literal and
+this budget, alongside the numerical reduction-boundary cases.
+
 For exact |x| = 1 and entry S <= 144, use an ordinary 160-decimal-place lower
 bound. Tests enclose atan(1) with exact rational alternating remainders using
 atan(1) = 4 atan(1/5) - atan(1/239). Both enclosure endpoints yield the same
 integer floor after multiplication by 10^160, and the stored literal has error
-strictly below 10^-160. At working scale S+1, add the exact half decimal unit and
-truncate at S. The final error is at most U/2 + 10^-160 < U. Negating before
-truncation preserves nearest rounding for -1. Tests check the literal and both
+strictly below 10^-160. Both signed paths store that certified magnitude. At
+working scale S+1, add a half decimal unit to the positive bound or subtract it
+from the negative bound, then truncate at S. The final error is at most
+U/2 + 10^-160 < U. Negating before truncation preserves nearest rounding for -1.
+Tests check the literal and both
 reference endpoints round identically at every entry scale through 144.
 
 At the POSIX default S = 20, return the independently certified rounded
@@ -423,6 +458,10 @@ from `break`; `return` skips unreachable probes. A behavioral check covers
 skipped/exhausted/broken loops, return, nested decisions and a condition with a
 side effect before the production fixture runs. It certifies the numerical
 results from the instrumented definitions against the same exact enclosures.
+Probe indices use single digits and A to retain their decimal line identities
+under every supported input base. Nested-flag regressions exercise bases 2,
+8, 10 and 16 before any library base normalization. The certified unit cases
+also exercise the nondecimal fallback in the production definitions.
 Calls outside the logarithm domain exercise its guard and are counted
 separately from the numerical results.
 

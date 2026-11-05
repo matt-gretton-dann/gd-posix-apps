@@ -63,6 +63,19 @@ return(r)
     assert plain == original.stdout.splitlines() == ['2', '2', '7', '0', '2']
     assert outcomes
 
+    # Nested probe indices must stay distinct before a library sets ibase.
+    # Lines 24 and 32 can alias when emitted under a nondecimal input base.
+    source = 'define h(x) {\nauto r;\n' + '\n' * 21 + (
+        'if (x>0) {\n' + '\n' * 7 + '  if (x>1) return(2)\n}\nreturn(1)\n}\n')
+    transformed, decisions = instrument(source)
+    outer, inner = (item['line'] for item in decisions)
+    for base in (10, 2, 8, 16):
+        traced = run(binary, transformed, 'ibase={}\nh(1)\nh(2)\n'.format(base))
+        assert traced.returncode == 0 and not traced.stderr, traced.stderr
+        plain, outcomes = strip_probes(traced.stdout)
+        assert plain == ['1', '2'], (base, plain)
+        assert outcomes == {(outer, 'true'), (inner, 'true'), (inner, 'false')}, (base, outcomes)
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -83,8 +96,23 @@ def main():
     hankel = next(case for case in cases
                   if case['id'] == 'j-argument-dominates' and case['scale'] == 100)
     cases.append(dict(hankel, scale=55))
-    program = ''.join('scale={}\n{}({})\n'.format(
-        case['scale'], case['function'], ','.join(case['arguments'])) for case in cases)
+    # Oddness reflects the certified positive enclosure exactly. Exercise
+    # sign restoration inside the scale-20 near-one polynomial as well.
+    near_one = next(case for case in cases
+                    if case['id'] == 'a-reciprocal-above' and case['scale'] == 20)
+    cases.append(dict(near_one, id='a-negative-near-one',
+                      arguments=['-' + near_one['arguments'][0]],
+                      lower=str(-Fraction(near_one['upper'])),
+                      upper=str(-Fraction(near_one['lower']))))
+    # The early unit return only admits decimal callers. The same certified
+    # enclosure checks the nondecimal fallback without weakening its accuracy.
+    unit = next(case for case in cases if case['id'] == 'a-one' and case['scale'] == 20)
+    for base in (2, 8, 16):
+        cases.append(dict(unit, id='a-one-input-base-' + str(base), ibase=base))
+    program = ''.join('ibase=A\nscale={}\nibase={}\n{}({})\n'.format(
+        case['scale'], case.get('ibase', 10), case['function'], ','.join(case['arguments']))
+        for case in cases)
+    program += 'ibase=A\n'
     result = run(args.bc, transformed, program)
     assert result.returncode == 0 and not result.stderr, result.stderr
     plain, outcomes = strip_probes(result.stdout)

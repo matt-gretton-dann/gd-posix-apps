@@ -163,16 +163,19 @@ class LibraryCli(unittest.TestCase):
 
     def test_atan_unit_literal_matches_the_certified_enclosure(self):
         source = Path(SOURCE).read_text(encoding='utf-8')
-        literals = re.findall(r'(?m)^\s*r=(\.\d{160})$', source)
+        literals = re.findall(r'(?m)^\s*r= ?(-?\.\d{160})$', source)
         correction = re.findall(r'(?m)^\s*if \(w<=144\) y=(\.\d{160})/1$', source)
-        self.assertEqual(len(literals), 1)
-        self.assertEqual(correction, literals)
+        self.assertTrue(literals)
+        self.assertTrue(correction)
         lower, upper = unit_atan_enclosure()
         places = 10 ** 160
         lo = lower.numerator * places // lower.denominator
         hi = upper.numerator * places // upper.denominator
         self.assertEqual(lo, hi, 'reference must certify every stored decimal place')
-        self.assertEqual(Fraction(literals[0]), Fraction(lo, places))
+        for value in literals:
+            self.assertEqual(abs(Fraction(value)), Fraction(lo, places))
+        for value in correction:
+            self.assertEqual(Fraction(value), Fraction(lo, places))
         for scale in range(145):
             factor = 10 ** scale
             self.assertEqual(lower.numerator * factor // lower.denominator,
@@ -180,11 +183,31 @@ class LibraryCli(unittest.TestCase):
             def rounded(value):
                 return (2 * value.numerator * factor + value.denominator) // (2 * value.denominator)
             self.assertEqual(rounded(lower), rounded(upper))
-            self.assertEqual(rounded(Fraction(literals[0])), rounded(lower))
+            self.assertEqual(rounded(abs(Fraction(literals[0]))), rounded(lower))
             if scale == 20:
-                shortcut = re.findall(r'(?m)^\s*r=(\.\d{20})$', source)
-                self.assertEqual([Fraction(value) for value in shortcut],
-                                 [Fraction(rounded(lower), factor)])
+                shortcut = re.findall(r'(?m)^\s*r= ?(-?\.\d{20})$', source)
+                shortcut += re.findall(r'\breturn\((-?\.\d{20})\)', source)
+                self.assertTrue(shortcut)
+                for value in shortcut:
+                    self.assertEqual(abs(Fraction(value)), Fraction(rounded(lower), factor))
+
+    def test_atan_general_sign_is_independent_of_the_callers_n(self):
+        cases = json.loads((ROOT / 'fixtures/math-crossover-oracles.json').read_text())['cases']
+        case = next(item for item in cases
+                    if item['id'] == 'a-half-angle-exact' and item['scale'] == 20)
+        lower, upper = Fraction(case['lower']), Fraction(case['upper'])
+        # A negative call followed by a positive one exercises fresh automatic
+        # sign state, including reused scalar cells. The caller's n stays one.
+        program = 'n=1\nscale=20\na(-.1)\na(.1)\nn\nscale\nibase\n'
+        modes = [(BC, ('-l',), ()), (BC, (), (SOURCE,))]
+        if OTHER_BC:
+            modes.append((OTHER_BC, (), (SOURCE,)))
+        for binary, options, files in modes:
+            lines = self.checked_lines(program, binary=binary, options=options, files=files)
+            self.assertEqual(len(lines), 5)
+            self.assertEqual(lines[2:], ['1', '20', '10'])
+            for value, bounds in zip(lines[:2], [(-upper, -lower), (lower, upper)]):
+                self.assertEqual(ORACLE.classify(ORACLE.decimal_fraction(value), *bounds, 20), 'pass')
 
     def test_atan_unit_argument_precision_boundary(self):
         # Negating an exact enclosure reverses its endpoints.
@@ -218,6 +241,31 @@ class LibraryCli(unittest.TestCase):
                     self.assertEqual(candidate, sign * Fraction(rounded_lower, factor))
                     self.assertEqual(lines[4 * index + 1:4 * index + 4],
                                      [str(scale), str(base), str(scale)])
+
+    def test_atan_scale20_polynomial_error_budget(self):
+        source = Path(SOURCE).read_text(encoding='utf-8')
+        arctangent = source.split('define a(x) {', 1)[1].split('/* Exponential:', 1)[0]
+        block = re.search(r'if \(s==20\) \{\s+q= -x\*x(.*?)return\(r\)', arctangent, re.DOTALL)
+        self.assertIsNotNone(block)
+        half = re.search(r'r=x\*\(1\+q\*t\)\+y\+(\.\d+)', block.group(1))
+        self.assertIsNotNone(half)
+        self.assertEqual(Fraction(half.group(1)), Fraction(1, 2 * 10 ** 20))
+        coefficients = re.findall(r'\bt=(\.\d+)', block.group(1))
+        denominators = list(range(23, 2, -2))
+        self.assertEqual(len(coefficients), len(denominators))
+        # Bind the actual decimal bytes to a whole-interval rational bound.
+        z = Fraction(1, 9)
+        coefficient_error = Fraction()
+        for text, denominator in zip(coefficients, denominators):
+            error = abs(Fraction(text) - Fraction(1, denominator))
+            self.assertLessEqual(error, Fraction(1, 2 * 10 ** 32))
+            coefficient_error += z ** denominator * error
+        self.assertLess(coefficient_error, Fraction(1, 10 ** 34))
+        tail = z ** 25 / 25
+        arithmetic = Fraction(64, 10 ** 48)
+        total = tail + coefficient_error + arithmetic
+        self.assertLess(total, Fraction(1, 10 ** 25))
+        self.assertLess(total + Fraction(1, 2 * 10 ** 20), Fraction(1, 10 ** 20))
 
     def test_atan_near_one_reduction_boundaries(self):
         lo, hi = unit_atan_enclosure()
@@ -367,6 +415,7 @@ class LibraryCli(unittest.TestCase):
                                  for index, name in enumerate(letters))
         queries = '\n'.join(letters) + '\n'
         for call, expected in [('e(0)', 1), ('l(1)', 0), ('a(0)', 0),
+                               ('a(1)', Fraction('.78539816339744830962')),
                                ('s(0)', 0), ('c(0)', 1), ('j(0,0)', 1)]:
             with self.subTest(call=call):
                 lines = self.checked_lines(initialization + call + '\n' + queries)

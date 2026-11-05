@@ -20,12 +20,21 @@ def instrument(source):
     def probe(number, outcome, indent):
         return [indent + '"{}{} {} "'.format(MARKER, number, outcome), indent + '0']
 
+    def flag(number):
+        # Single digits and A keep decimal line identities independent of ibase.
+        # Multi-digit bc literals can alias before the library normalizes it.
+        digits = str(number)
+        index = digits[0]
+        for digit in digits[1:]:
+            index = '({}*A+{})'.format(index, digit)
+        return 'z[{}]'.format(index)
+
     def statement(line, loop):
         if line.strip() == 'break':
             if loop is None:
                 raise ValueError('break outside a recognized loop')
             indent = line[:len(line) - len(line.lstrip())]
-            return [indent + 'z[{}]=1'.format(loop), line]
+            return [indent + flag(loop) + '=1', line]
         return [line]
 
     def block(start, stop, loop=None):
@@ -76,20 +85,20 @@ def instrument(source):
                 following = index + 1
             else:
                 raise ValueError('unrecognized control statement')
-            result.append(indent + 'z[{}]=0'.format(number))
+            result.append(indent + flag(number) + '=0')
             result.append(line[:closing + 1] + ' {')
             if kind == 'if':
-                result.append(indent + '  z[{}]=1'.format(number))
+                result.append(indent + '  ' + flag(number) + '=1')
             result.extend(probe(number, 'true', indent + '  '))
             result.extend(body)
             if kind == 'if':
                 result.append(indent + '}')
-                result.append(indent + 'if (z[{}]==0) {{'.format(number))
+                result.append(indent + 'if ({}==0) {{'.format(flag(number)))
                 result.extend(probe(number, 'false', indent + '  '))
                 result.append(indent + '}')
             else:
                 result.append(indent + '}')
-                result.append(indent + 'if (z[{}]==0) {{'.format(number))
+                result.append(indent + 'if ({}==0) {{'.format(flag(number)))
                 result.extend(probe(number, 'false', indent + '  '))
                 result.append(indent + '}')
             index = following

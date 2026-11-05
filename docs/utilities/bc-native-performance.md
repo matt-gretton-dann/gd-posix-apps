@@ -15,6 +15,36 @@ header-library markers, compile/link flags and binary hashes are artifacts.
 CPU affinity and frequency are left to the OS; no hardware isolation is claimed.
 No package-wide upgrade runs inside these jobs.
 
+## Supplemental sparse qualification
+
+The sparse full and held-out programs can finish in roughly three milliseconds,
+so a nine-pair process measurement can be dominated by startup and scheduling.
+Broad workflow runs additionally request `--sparse-qualification`. This keeps
+all original workload programs, samples, controls and decisions, and adds fixed
+cohorts for both operand shapes:
+
+- Original 1,000/875-iteration programs with three warm-ups and 101 paired rounds
+  measure process latency without changing the workload.
+- Separate 1,000,000/875,000-iteration programs with three warm-ups and 31 paired
+  rounds measure longer-running throughput. Each GD role's median must reach
+  0.25 seconds; otherwise the supplemental result has a duration shortfall.
+
+Base, candidate and the independent second base build share each randomized
+round. Use the same exact product oracle and operand dimensions. The explicit
+`--sparse-iterations` override changes only this loop count, and records the new
+count in the workload name, parameters and manifest. It cannot modify a replayed
+corpus or a mathematical suite. All programs, oracles, samples, control ratios
+and role provenance are archived. The fixed cohorts run once; no automatic
+retry continues until a result becomes favorable.
+
+Report the latency and throughput observations separately. A throughput pass
+cannot establish that the original short process latency is within its
+allowance. The A/A qualifier still limits attribution, and noisy controls or
+duration shortfalls remain inconclusive. The supplement compares the three GD
+builds only; the existing full/held-out Howard comparisons remain unchanged.
+This improves measurement precision, not the runtime implementation or its
+acceptance threshold.
+
 ## Sources and controls
 
 Build/test, CodeQL and paired trends check pull requests targeting `main` or a
