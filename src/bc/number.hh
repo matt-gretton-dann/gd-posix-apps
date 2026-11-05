@@ -1100,12 +1100,16 @@ private:
 
     if (v.digits_->size() == 1) {
       auto const divisor = v.digits_->at(0);
+#if defined(_WIN32) || (defined(__APPLE__) && defined(__aarch64__))
+      // Keep the existing kernel on other targets. Linux paired runs found
+      // regressions in unrelated workloads with the periodic fill enabled.
       if constexpr (!Remainder) {
         if (digits_->size() >= 8 && (*digits_)[0] == 0 && (*digits_)[1] == 0 &&
             try_divide_periodic(divisor)) {
           return;
         }
       }
+#endif
       auto const remainder = divide(divisor);
       if constexpr (Remainder) {
         digits_ = DigitVector(std::initializer_list<NumType>{remainder});
@@ -1305,6 +1309,7 @@ private:
     }
   }
 
+#if defined(_WIN32) || (defined(__APPLE__) && defined(__aarch64__))
   // Keep the periodic fill separate from the shared short-division loop.
   // The caller has made storage unique and checked the size and low limbs.
 #if defined(_MSC_VER)
@@ -1341,6 +1346,7 @@ private:
     tidy();
     return true;
   }
+#endif
 
 public:
   /** \brief  Divide by the number \a div.  Returns remainder.  */
