@@ -1292,36 +1292,52 @@ private:
     }
   }
 
+  // Keep the periodic fill separate from the shared short-division loop.
+  // The caller has made storage unique and checked the size and low limbs.
+#if defined(_MSC_VER)
+  __declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+  [[gnu::noinline]]
+#endif
+  auto try_divide_periodic(NumType div) -> std::optional<NumType>
+  {
+    auto const first_limb = digits_->begin();
+    auto const count = digits_->size() - 1;
+    auto const high = first_limb[count];
+    WideType const initial = high % div;
+    WideType const first = initial * base_;
+    WideType const middle = first % div;
+    WideType const second = middle * base_;
+    // The remainder must repeat after two steps and every lower limb must
+    // be zero. Check both conditions before replacing any input limb.
+    if (second % div != initial ||
+        !std::all_of(first_limb, first_limb + count, [](auto limb) { return limb == 0; })) {
+      return std::nullopt;
+    }
+
+    auto const q1 = static_cast<NumType>(first / div);
+    auto const q2 = static_cast<NumType>(second / div);
+    first_limb[count] = high / div;
+    auto const odd = count % 2;
+    for (std::size_t i = odd; i < count; i += 2) {
+      first_limb[i] = q2;
+      first_limb[i + 1] = q1;
+    }
+    if (odd != 0)
+      first_limb[0] = q1;
+    tidy();
+    return static_cast<NumType>(odd != 0 ? middle : initial);
+  }
+
 public:
   /** \brief  Divide by the number \a div.  Returns remainder.  */
   auto divide(NumType div) -> NumType
   {
     copy_on_write();
 
-    // A decimal shift can leave a long run of zero limbs. If its remainder
-    // repeats after two steps, the quotient limbs repeat in the same order.
-    // Validate the whole run before replacing any input limb.
     if (digits_->size() >= 8 && (*digits_)[0] == 0 && (*digits_)[1] == 0) {
-      auto const high = digits_->back();
-      WideType const initial = high % div;
-      WideType const first = initial * base_;
-      WideType const middle = first % div;
-      WideType const second = middle * base_;
-      if (second % div == initial &&
-          std::all_of(digits_->begin(), digits_->end() - 1, [](auto limb) { return limb == 0; })) {
-        auto const q1 = static_cast<NumType>(first / div);
-        auto const q2 = static_cast<NumType>(second / div);
-        digits_->back() = high / div;
-        auto const count = digits_->size() - 1;
-        auto const odd = count % 2;
-        for (std::size_t i = odd; i < count; i += 2) {
-          (*digits_)[i] = q2;
-          (*digits_)[i + 1] = q1;
-        }
-        if (odd != 0)
-          (*digits_)[0] = q1;
-        tidy();
-        return static_cast<NumType>(odd != 0 ? middle : initial);
+      if (auto const remainder = try_divide_periodic(div)) {
+        return *remainder;
       }
     }
 
