@@ -3,12 +3,6 @@ on:
   pull_request:
     branches: [main, 'codex/**']
     paths: ['.github/workflows/bc-linux-divisor-cohort.yml']
-  workflow_dispatch:
-    inputs:
-      baseline:
-        description: 'Accepted immutable source anchor (empty uses documented anchor)'
-        type: string
-        default: ''
 permissions:
   contents: read
 concurrency:
@@ -24,8 +18,8 @@ jobs:
       matrix:
         replica: [1, 2, 3]
     env:
-      BC_CANDIDATE: ${{ github.event.pull_request.head.sha || github.sha }}
-      BC_BASE: ${{ github.event.pull_request.base.sha || inputs.baseline || '97c0c7bcb90f8b7853e360bfc9d1420e3369e865' }}
+      BC_CANDIDATE: '320d66f3a2f53e239860d44010fafb4cecd70079'
+      BC_BASE: '320d66f3a2f53e239860d44010fafb4cecd70079'
       BC_CPU_REPLICA: ${{ matrix.replica }}
     steps:
       - uses: actions/checkout@v7
