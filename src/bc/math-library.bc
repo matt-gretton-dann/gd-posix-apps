@@ -66,6 +66,32 @@ define a(x) {
         if (w<=144) y=.7853981633974483096156608458198757210492923498437764552437361480769541015715522496570087063355292669955370216283205766617734611523876455579313398520321202793625/1
         if (w>144) y=a(1)
         x=(x-1)/(x+1)
+        if (s==20) {
+          q= -x*x
+          /* Twelve alternating terms suffice at scale 20. The reduced
+             argument has magnitude at most 1/9, so the omitted tail is
+             bounded by (1/9)^25/25. Coefficients rounded to 32 places
+             add less than 10^-34. Working precision is at least 48.
+             The reconstructed magnitude is positive, so add the half ULP
+             before restoring the original sign. */
+          t=.04347826086956521739130434782609
+          t=.04761904761904761904761904761905+q*t
+          t=.05263157894736842105263157894737+q*t
+          t=.05882352941176470588235294117647+q*t
+          t=.06666666666666666666666666666667+q*t
+          t=.07692307692307692307692307692308+q*t
+          t=.09090909090909090909090909090909+q*t
+          t=.11111111111111111111111111111111+q*t
+          t=.14285714285714285714285714285714+q*t
+          t=.2+q*t
+          t=.33333333333333333333333333333333+q*t
+          r=x*(1+q*t)+y+.000000000000000000005
+          if (n==1) r= -r
+          scale=s
+          r=r/1
+          ibase=b
+          return(r)
+        }
       }
     }
   }

@@ -85,6 +85,26 @@ the recursive unit evaluation. All other magnitudes retain the existing
 reciprocal and half-angle paths. Exact rational enclosures cover both
 signs and inputs at and around the two reduction thresholds.
 
+At entry S = 20, evaluate the transformed non-unit argument z directly
+with twelve alternating terms using Horner's rule. This avoids the term
+divisions and half-angle square roots on |z| <= 1/9. The first omitted
+term bounds the tail by 1/(25*9^25), which is less than 6*10^-26.
+The eleven nontrivial reciprocal coefficients are rounded to 32 decimal
+places. Their propagated error is bounded by
+(10^-32/2)*|z|*|z|^2/(1-|z|^2) < 10^-34.
+
+The general working-scale rule gives W >= 48 on this path. The stored
+argument and squared ratio stay within the same magnitude bounds after
+truncation. Each Horner multiplication contributes less than u, while
+addition is exact and error propagation contracts by at most 1/81.
+Allowing 64*u covers the argument quotient, squared ratio, Horner products,
+final product and unit correction. The total pre-rounding error
+is below 10^-25, so adding nearest rounding gives an error below
+U/2 + 10^-25 < U at S = 20. The near-one magnitude is positive, so add
+the exact half-ULP literal before restoring the sign and truncating.
+Exact rational tests check the coefficient bytes, half-ULP literal and
+this budget, alongside the numerical reduction-boundary cases.
+
 For exact |x| = 1 and entry S <= 144, use an ordinary 160-decimal-place lower
 bound. Tests enclose atan(1) with exact rational alternating remainders using
 atan(1) = 4 atan(1/5) - atan(1/239). Both enclosure endpoints yield the same

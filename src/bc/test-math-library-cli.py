@@ -219,6 +219,31 @@ class LibraryCli(unittest.TestCase):
                     self.assertEqual(lines[4 * index + 1:4 * index + 4],
                                      [str(scale), str(base), str(scale)])
 
+    def test_atan_scale20_polynomial_error_budget(self):
+        source = Path(SOURCE).read_text(encoding='utf-8')
+        arctangent = source.split('define a(x) {', 1)[1].split('/* Exponential:', 1)[0]
+        block = re.search(r'if \(s==20\) \{\s+q= -x\*x(.*?)return\(r\)', arctangent, re.DOTALL)
+        self.assertIsNotNone(block)
+        half = re.search(r'r=x\*\(1\+q\*t\)\+y\+(\.\d+)', block.group(1))
+        self.assertIsNotNone(half)
+        self.assertEqual(Fraction(half.group(1)), Fraction(1, 2 * 10 ** 20))
+        coefficients = re.findall(r'\bt=(\.\d+)', block.group(1))
+        denominators = list(range(23, 2, -2))
+        self.assertEqual(len(coefficients), len(denominators))
+        # Bind the actual decimal bytes to a whole-interval rational bound.
+        z = Fraction(1, 9)
+        coefficient_error = Fraction()
+        for text, denominator in zip(coefficients, denominators):
+            error = abs(Fraction(text) - Fraction(1, denominator))
+            self.assertLessEqual(error, Fraction(1, 2 * 10 ** 32))
+            coefficient_error += z ** denominator * error
+        self.assertLess(coefficient_error, Fraction(1, 10 ** 34))
+        tail = z ** 25 / 25
+        arithmetic = Fraction(64, 10 ** 48)
+        total = tail + coefficient_error + arithmetic
+        self.assertLess(total, Fraction(1, 10 ** 25))
+        self.assertLess(total + Fraction(1, 2 * 10 ** 20), Fraction(1, 10 ** 20))
+
     def test_atan_near_one_reduction_boundaries(self):
         lo, hi = unit_atan_enclosure()
         # Entry scales 114 and 115 produce working scales 144 and 145
