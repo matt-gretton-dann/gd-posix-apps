@@ -154,6 +154,7 @@ auto run_integer_function(IntegerFunction const& function, V argument,
   -> std::optional<Number>
 {
   using Value = IntegerFunctionScratch::Value;
+  GD_BC_PROFILE_EVENT(Profile::Event::integer_function_attempts, 1);
   auto& values = scratch.values;
   auto& spills = scratch.spills;
   auto& frames = scratch.frames;
@@ -165,8 +166,15 @@ auto run_integer_function(IntegerFunction const& function, V argument,
   struct Clear
   {
     IntegerFunctionScratch& scratch;
+#if GD_BC_PROFILE
+    bool complete = false;
+#endif
     ~Clear()
     {
+#if GD_BC_PROFILE
+      if (!complete)
+        GD_BC_PROFILE_EVENT(Profile::Event::integer_function_abandonments, 1);
+#endif
       scratch.values.clear();
       scratch.spills.clear();
       scratch.frames.clear();
@@ -192,6 +200,7 @@ auto run_integer_function(IntegerFunction const& function, V argument,
   };
   auto normalize = [&](Value& target, Number value) {
     if (auto const small = value.to_machine_integer()) {
+      GD_BC_PROFILE_EVENT(Profile::Event::integer_function_demotions, 1);
       target = {*small, false};
       return true;
     }
@@ -205,6 +214,7 @@ auto run_integer_function(IntegerFunction const& function, V argument,
     // reallocation. Dead records remain owned and charged until this attempt ends.
     auto const index = spills.size();
     spills.push_back({std::move(value), charge});
+    GD_BC_PROFILE_EVENT(Profile::Event::integer_function_promotions, 1);
     coefficients += charge;
     target = {static_cast<V>(index), true};
     return true;
@@ -233,6 +243,7 @@ auto run_integer_function(IntegerFunction const& function, V argument,
                     ((operand & local_tag) != 0 ? operand & ~local_tag : locals_size + operand)];
     };
     auto& destination = values[base + locals_size + pc];
+    GD_BC_PROFILE_EVENT(Profile::Event::integer_function_instructions, 1);
     ++frame.pc;
     switch (instruction.opcode) {
     case O::variable:
@@ -337,6 +348,7 @@ auto run_integer_function(IntegerFunction const& function, V argument,
     case O::call: {
       if (arguments.size() <= frame.marks || !arguments.back().present)
         return {};
+      GD_BC_PROFILE_EVENT(Profile::Event::integer_function_self_calls, 1);
       auto value = std::move(arguments.back().value);
       arguments.pop_back();
       if (!enter(std::move(value)))
@@ -349,8 +361,16 @@ auto run_integer_function(IntegerFunction const& function, V argument,
         return {};
       frames.pop_back();
       values.resize(base);
-      if (frames.empty())
+      if (frames.empty()) {
+#if GD_BC_PROFILE
+        auto result = number(value);
+        clear.complete = true;
+        GD_BC_PROFILE_EVENT(Profile::Event::integer_function_successes, 1);
+        return result;
+#else
         return number(value);
+#endif
+      }
       if (!assign(values[(frames.size() - 1) * stride + locals_size + frames.back().pc - 1],
                   std::move(value)))
         return {};

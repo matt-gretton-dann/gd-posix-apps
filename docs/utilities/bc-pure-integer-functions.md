@@ -35,7 +35,9 @@ scalar state, single decimal digit literals, scale-zero signed integers,
 checked addition/subtraction/multiplication, comparisons, branches, stores
 and self-calls. Arrays, special-register access, I/O, other callees and
 unsupported instructions reject the plan, even in unreachable code.
-Full-check and allocation-profile builds use the original interpreter.
+Full-check execution uses the original interpreter. Allocation-profile builds
+execute the selected tier and report its owned storage and speculative work;
+they remain separate from uninstrumented timing builds.
 
 Variable operands remain locations until consumption; explicit loads snapshot
 values. Self-calls use explicit continuations instead of native recursion.
@@ -97,6 +99,35 @@ recursion at 0.962x; it remains preserved separately from the compact cells.
 Native performance, resource measurements and sanitizer checks
 are still required. The signed-zero boundary correction #601 must be accepted
 and integrated before adoption; this experiment canonicalizes numeric zero.
+
+## Diagnostic execution
+
+When both profile and integer-function options are ON, diagnostics execute the
+actual engine rather than substituting generic interpretation. Its values,
+spills, continuations and argument vectors use the existing `frames` allocation
+category; persistent integer IR uses `execution_plans`. These scoped counters
+include requested vector capacity and owned spill objects. Heap coefficient
+storage remains in `digits`; inline coefficients live within their owning
+objects. Allocator overhead, compiler/runtime temporaries and RSS stay outside
+the selected-container counters.
+
+Explicit `integer_function_*` events count engine attempts, produced results,
+abandonments, dispatched instructions, attempted self-calls, promotions and
+demotions. Abandonments include guards, interrupts and exceptions. They can
+include work later repeated by generic fallback; they are not semantic call or
+instruction totals. Existing generic instruction/function counters retain their
+interpreter-entry meaning. A result counter records engine completion before
+the caller's final interrupt/commit check. Exact output and post-VM teardown
+zero live bytes are tested separately. Profiling builds must never supply
+elapsed-time acceptance evidence.
+
+The isolated VM lifetime executable also walks allocation failures through a
+recursive integer call until it reaches the first fully completed allocation
+walk. It covers generic warmup, plan publication, scratch growth, large spills
+and boxing, then checks caller globals, correct retry and complete ordinary
+allocation teardown. The sweep is enabled only when the integer tier is built;
+it runs in both instrumented and ordinary configurations without production
+fault-injection hooks.
 
 Tests cover the engine, signed endpoints, lvalue timing, explicit loads,
 interruptions, depth exhaustion, scratch reuse and effect rejection. Parsed

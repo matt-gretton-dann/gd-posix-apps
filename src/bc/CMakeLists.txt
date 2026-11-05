@@ -119,6 +119,8 @@ if(RUN_UNIT_TESTS)
   set_tests_properties(bc/consumer-mode PROPERTIES TIMEOUT 10)
   add_executable(test-bc-vm-lifetime test-vm-lifetime.cc)
   target_link_libraries(test-bc-vm-lifetime PRIVATE libbc)
+  target_compile_definitions(test-bc-vm-lifetime PRIVATE
+    GD_BC_EXPECT_INTEGER_FUNCTIONS=$<BOOL:${ENABLE_BC_INTEGER_FUNCTIONS}>)
   target_include_directories(test-bc-vm-lifetime PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
   add_dependencies(test-bc-vm-lifetime bc_messages_header)
   set_property(TARGET test-bc-vm-lifetime PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
@@ -387,6 +389,11 @@ if(RUN_INTEGRATION_TESTS)
     add_test(NAME bc/profiling-cli COMMAND "${Python_EXECUTABLE}"
              "${CMAKE_CURRENT_SOURCE_DIR}/test-profiling-cli.py" "$<TARGET_FILE:bc>")
     set_tests_properties(bc/profiling-cli PROPERTIES TIMEOUT 30)
+    if(ENABLE_BC_INTEGER_FUNCTIONS)
+      add_test(NAME bc/integer-profile COMMAND "${Python_EXECUTABLE}"
+               "${CMAKE_CURRENT_SOURCE_DIR}/test-integer-profile.py" "$<TARGET_FILE:bc>")
+      set_tests_properties(bc/integer-profile PROPERTIES TIMEOUT 30)
+    endif()
   endif()
   add_test(NAME bc/cli COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-cli.py" "$<TARGET_FILE:bc>"

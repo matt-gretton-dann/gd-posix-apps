@@ -16,6 +16,24 @@ concurrency:
   group: bc-integer-functions-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
+  integer-profile:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2025]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Configure actual tier diagnostics
+        run: cmake -S . -B build-profile -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DENABLE_BC_INTEGER_FUNCTIONS=ON -DENABLE_BC_PROFILE=ON
+      - name: Build diagnostic engine and contracts
+        run: cmake --build build-profile --config Release --parallel 2
+      - name: Check diagnostic execution and ownership
+        run: ctest --test-dir build-profile -C Release --output-on-failure --no-tests=error -R "Pure integer|^bc/(integer-profile|profiling-cli|profiling-allocator|profiling-disabled|vm-cli|vm-lifetime)$"
   integer-functions:
     strategy:
       fail-fast: false

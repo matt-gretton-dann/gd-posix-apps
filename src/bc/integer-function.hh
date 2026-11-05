@@ -20,7 +20,10 @@ struct IntegerFunctionInstruction
 
 struct IntegerFunction
 {
-  std::vector<IntegerFunctionInstruction> code;
+  std::vector<
+    IntegerFunctionInstruction,
+    Profile::Allocator<IntegerFunctionInstruction, Profile::AllocationKind::execution_plans>>
+    code;
   unsigned parameter{};
 };
 
@@ -52,10 +55,10 @@ struct IntegerFunctionScratch
     Value value{};
     bool present = false;
   };
-  std::vector<Value> values;
-  std::vector<Spill> spills;
-  std::vector<Frame> frames;
-  std::vector<Argument> arguments;
+  std::vector<Value, Profile::Allocator<Value, Profile::AllocationKind::frames>> values;
+  std::vector<Spill, Profile::Allocator<Spill, Profile::AllocationKind::frames>> spills;
+  std::vector<Frame, Profile::Allocator<Frame, Profile::AllocationKind::frames>> frames;
+  std::vector<Argument, Profile::Allocator<Argument, Profile::AllocationKind::frames>> arguments;
 };
 
 // A guard failure leaves every caller-owned value intact. Execution uses at

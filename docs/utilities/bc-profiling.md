@@ -53,6 +53,17 @@ requests include their element sizes, while stack values are outside allocator
 counters. Large coefficients retain heap COW storage. Fewer allocation calls do
 not by themselves establish a lower process RSS or a smaller value object.
 
+With `ENABLE_BC_INTEGER_FUNCTIONS=ON`, diagnostic builds execute the selected
+integer tier. Its scratch vectors and immutable spill bank use `frames`, and
+owned integer IR uses `execution_plans`; heap coefficients still use `digits`.
+The `integer_function_*` events distinguish attempts, produced results,
+abandonments, dispatched instructions, attempted self-calls, promotions and
+demotions. Abandoned speculative work can be repeated by generic fallback, so
+these counters are not semantic instruction/call totals. Existing generic VM
+counters keep their interpreter-entry meaning. The logical 1 MiB guard differs
+from retained capacity, selected-allocator peaks and process RSS; see the
+[integer-tier contract](bc-pure-integer-functions.md#diagnostic-execution).
+
 Events count BasicDigits copy/move construction and assignment, copies retaining
 a non-null shared digit owner (`owned_digit_copies`), the historical
 `iterator_owner_copies` event (now zero because mutable iterator checks borrow

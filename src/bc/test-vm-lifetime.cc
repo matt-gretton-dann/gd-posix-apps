@@ -345,6 +345,59 @@ auto restore_nested_call_after_exception() -> bool
   return true;
 }
 
+auto restore_integer_call_after_allocation_failure() -> bool
+{
+#if GD_BC_EXPECT_INTEGER_FUNCTIONS
+  auto parse = [](std::string const& text) {
+    GD::Bc::Parser parser(
+      std::make_unique<GD::Bc::Lexer>(std::make_unique<GD::Bc::StringReader>(text)), false);
+    return parser.parse();
+  };
+  bool observed_failure = false;
+  for (std::size_t point = 0; point != 512; ++point) {
+    std::ostringstream output, errors;
+    GD::Bc::VM vm(output, errors, false, GD::Bc::VM::ExecutionChecks::verified);
+    auto setup = parse("x=17\nq=0\ndefine f(x) {\nif(x<=1) return (1)\n"
+                       "return (x*f(x-1))\n}\n");
+    auto call = parse("q=f(50)\n");
+    auto query = parse("x\nq\n");
+    if (!setup || !call || !query || vm.execute(*setup))
+      return false;
+    auto const before = injected_failures;
+    bool threw = false;
+    try {
+      // Cross generic warmup, plan publication, scratch growth, immutable
+      // spills and result boxing. The caller's global x and q are observable.
+      AllocationFailure const failure(point);
+      if (vm.execute(*call))
+        return false;
+    }
+    catch (std::bad_alloc const&) {
+      threw = true;
+      observed_failure = true;
+    }
+    if (threw != (injected_failures != before))
+      return false;
+    if (threw) {
+      if (vm.execute(*query) || output.str() != "17\n0\n" || vm.execute(*call))
+        return false;
+    }
+    auto const prefix = threw ? "17\n0\n" : "";
+    if (vm.execute(*query) ||
+        output.str() !=
+          std::string(prefix) +
+            "17\n30414093201713378043612608166064768844377641568960512000000000000\n" ||
+        !errors.str().empty())
+      return false;
+    if (!threw)
+      return observed_failure;
+  }
+  return false;  // Require the first completed allocation walk, not a fixed prefix.
+#else
+  return true;
+#endif
+}
+
 auto restore_call_after_allocation_failure() -> bool
 {
   auto parse = [](std::string const& text) {
@@ -505,6 +558,10 @@ auto main() -> int
     return 1;
   }
   auto const before = outstanding.load(std::memory_order_relaxed);
+  if (!restore_integer_call_after_allocation_failure()) {
+    std::fprintf(stderr, "Integer tier allocation failure damaged caller state or retry\n");
+    return 1;
+  }
   if (!parser_allocation_failures()) {
     std::fprintf(stderr, "Repeated parser allocation sweep lost terminal state\n");
     return 1;

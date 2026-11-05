@@ -24,7 +24,7 @@
 #include "number.hh"
 #include "verification.hh"
 
-#if defined(GD_BC_INTEGER_FUNCTIONS) && !GD_BC_PROFILE
+#if defined(GD_BC_INTEGER_FUNCTIONS)
 #  include "integer-function.hh"
 #endif
 
@@ -342,7 +342,7 @@ private:
   inline static Plans const empty_plans_{};
   Instructions instructions_;
   std::optional<Plans> prepared_;
-#if defined(GD_BC_INTEGER_FUNCTIONS) && !GD_BC_PROFILE
+#if defined(GD_BC_INTEGER_FUNCTIONS)
   unsigned integer_calls_ = 0;
   bool integer_attempted_ = false;
   std::optional<IntegerFunction> integer_plan_;
@@ -556,7 +556,7 @@ private:
   NumType scale_ = 0;              ///< Scale, range: [0, base_)
   bool save_specials_;             ///< Save specials on function entry?
   VM::ExecutionChecks checks_;     ///< Full diagnostic oracle or verified dispatch.
-#if defined(GD_BC_INTEGER_FUNCTIONS) && !GD_BC_PROFILE
+#if defined(GD_BC_INTEGER_FUNCTIONS)
   IntegerFunctionScratch integer_scratch_; ///< Isolated reusable speculative state.
   bool integer_fallback_active_ = false; ///< Suppress repeated speculation within fallback calls.
 #endif
@@ -1057,7 +1057,7 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
   }
 
   FunctionDefinition& def = func_ptr.value();
-#if defined(GD_BC_INTEGER_FUNCTIONS) && !GD_BC_PROFILE
+#if defined(GD_BC_INTEGER_FUNCTIONS)
   struct RestoreIntegerFallback
   {
     bool& active;
