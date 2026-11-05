@@ -23,7 +23,10 @@
 #include <memory>
 #include <variant>
 
-#if !defined(_WIN32)
+#if defined(_WIN32)
+#  include <io.h>
+#  include <windows.h>
+#else
 #  include <poll.h>
 #endif
 
@@ -59,7 +62,6 @@ template<typename... Ts>
 
 enum class InputResult { eof, quit };
 
-#if !defined(_WIN32)
 // The CLI can own the sole input pipe for a complete run. Read only what the
 // pipe currently supplies, so a writer need not fill a block or close before
 // the parser executes an item. Terminals and explicit operands keep stdio.
@@ -80,7 +82,11 @@ public:
       ssize_t count;
       do {
         count = ::read(STDIN_FILENO, bytes_.data(), bytes_.size());
+#if defined(_WIN32)
+      } while (count < 0 && errno == EINTR);
+#else
       } while (count < 0 && (errno == EINTR || (errno == EAGAIN && wait_for_input())));
+#endif
       if (count < 0) {
         std::cerr << error(Msg::file_error, "(standard input)");
         std::exit(1);  // NOLINT(concurrency-mt-unsafe)
@@ -100,6 +106,7 @@ public:
   }
 
 private:
+#if !defined(_WIN32)
   static auto wait_for_input() -> bool
   {
     // An inherited nonblocking pipe can be empty while its writer is open.
@@ -112,6 +119,7 @@ private:
     } while (ready < 0 && errno == EINTR);
     return ready > 0;
   }
+#endif
 
   void do_chew() override
   {
@@ -128,10 +136,19 @@ private:
 
 auto stdin_is_pipe() -> bool
 {
+#if defined(_WIN32)
+  // Use the handle behind the CRT descriptor that read() will consume.
+  // CRT text translation keeps CRLF and Ctrl-Z handling unchanged.
+  auto const handle = reinterpret_cast<HANDLE>(::_get_osfhandle(STDIN_FILENO));
+  DWORD flags = 0;
+  return ::GetFileType(handle) == FILE_TYPE_PIPE &&
+         ::GetNamedPipeInfo(handle, &flags, nullptr, nullptr, nullptr) != 0 &&
+         (flags & PIPE_TYPE_MESSAGE) == 0;
+#else
   struct stat info {};
   return ::fstat(STDIN_FILENO, &info) == 0 && S_ISFIFO(info.st_mode);
-}
 #endif
+}
 
 /** Execute complete input items until EOF or read-time quit.
  * Quit discards the current item, including partial function/branch code. Output
@@ -217,12 +234,10 @@ auto main(int argc, char** argv) -> int
       return 0;
     }
   }
-#if !defined(_WIN32)
   if (optind == argc && stdin_is_pipe()) {
     execute(vm, interrupts, std::make_unique<PipeReader>());
     return 0;
   }
-#endif
   auto r = std::make_unique<GD::Bc::StdinReader>();
   execute(vm, interrupts, std::move(r));
 
