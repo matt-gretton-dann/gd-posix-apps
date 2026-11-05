@@ -1086,7 +1086,7 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
         if (value) {
           // A previous rejection proves only that this exact input should use
           // the generic path. Keep one bounded entry, owned by this generation.
-          std::optional<std::int64_t> result;
+          std::optional<Number> result;
           if (code.integer_rejected_argument_ != value) {
             result = run_integer_function(*code.integer_plan_, *value, integer_scratch_,
               []() noexcept { return have_been_interrupted.test(std::memory_order_relaxed); });
@@ -1095,7 +1095,7 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
             // Box before consuming the untouched caller pack, so allocation
             // failure cannot publish a partial call. Guard failure restarts
             // ordinary execution: the accepted plan has no observable effects.
-            auto boxed = Number::from_machine_integer(*result);
+            auto boxed = std::move(*result);
             parameters_.resize(mark.begin);
             param_marks_.pop_back();
             return boxed;
