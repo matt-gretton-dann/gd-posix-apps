@@ -217,6 +217,24 @@ f(2,1)
         if EXTENSIONS:
             self.run_bc(text, "2\n2\n10\n", options=("-g",))
 
+    def test_large_sparse_products_and_dense_fallback(self):
+        radix = 10 ** 9
+        cases = (
+            ((0, 2, 198, 300), (0, 2, 198, 300)),
+            ((0, 2, 198, 300), (3, 101, 256, 320)),
+            ((0, 2, 198, 299, 300), (0, 2, 198, 300)),
+            ((0, 255), (0, 256)),
+        )
+        for left_indices, right_indices in cases:
+            with self.subTest(left=left_indices, right=right_indices):
+                # Full limbs force carries through overlapping diagonals.
+                left = sum((radix - 1) * radix ** i for i in left_indices)
+                right = sum((radix - 1) * radix ** i for i in right_indices)
+                operands = [format(Decimal(n), 'f') for n in (left, right, left * right)]
+                a, b, product = operands
+                self.run_bc(f'a={a}\nb={b}\nc={product}\nif(a*b==c) 1\nif((-a)*b== -c) 1\n',
+                            '1\n1\n')
+
     def test_sparse_array_defaults(self):
         self.run_bc("a[1000000]=9\na[0]\na[1000000]\n", "0\n9\n")
 
