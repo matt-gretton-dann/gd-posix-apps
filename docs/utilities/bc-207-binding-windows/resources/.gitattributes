@@ -1,0 +1,3 @@
+* -text
+*.txt whitespace=-blank-at-eol
+*.log whitespace=-blank-at-eol

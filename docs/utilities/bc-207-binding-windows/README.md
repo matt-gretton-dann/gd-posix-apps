@@ -61,7 +61,40 @@ This supports the intended wide-local mechanism, while the existing
 `x*x+1` call workload still loses. Binding count alone therefore does not prove
 that an arbitrary function benefits. No cutoff is selected to hide that loss.
 
-The complete native full/holdout matrix, independent rebuilt A/A, fixed sparse
-latency/throughput cohorts, allocations, cold costs, RSS and code size still
-need qualification. Keep this experiment held until its adverse classes are
-resolved. The retained-buffer candidate #588 is a separate comparison.
+The native full/holdout matrix, independent rebuilt A/A and fixed sparse
+latency/throughput cohorts are recorded in PR #590. Local resource diagnostics
+below supplement those reports. Cold timing and cross-platform resource costs
+still need qualification. Keep this experiment held until its adverse classes
+are resolved. The retained-buffer candidate #588 is a separate comparison.
+
+## Local resource diagnostics
+
+[Raw resource observations](resources/) preserve checked programs, seven native
+RSS observations per role/workload, selected-allocation counters, scripts,
+compiler commands, build logs and hashes. These are diagnostics, not paired
+elapsed-time acceptance. The RSS binaries match the original local screen's
+hashes. Separate Release profile builds use the same source
+`5019aea78164102541fa14b2d1716aed61c7177c`, portable arithmetic thresholds,
+and binding windows ON/OFF; they do not replace either timing binary.
+
+| Case | Fallback frame peak bytes | Window frame peak bytes | Fallback/window allocations |
+| --- | ---: | ---: | ---: |
+| Scalar loop | 4,088 | 4,088 | 2 / 2 |
+| One cold call | 4,200 | 8,288 | 5 / 7 |
+| 200,000 calls | 4,200 | 8,288 | 5 / 7 |
+| 50-deep recursion repeated 1,000 times | 8,760 | 10,640 | 11 / 56 |
+| One 50-deep recursion with 26 scalar bindings | 151,608 | 71,888 | 16 / 57 |
+
+The window adds a deque block and per-depth slot allocations. Narrow cold calls
+therefore retain more frame storage, whereas wide recursion needs less peak
+storage and moves fewer values (6,589 to 1,890 in this example). Allocation
+counts and cumulative traffic are distinct: wide recursion requests 200,712
+bytes cumulatively in the fallback and 71,888 in the window. Both roles finish
+every checked program with zero live tracked bytes. These counters cover
+selected allocator payloads, not all process allocations or allocator metadata.
+
+Native macOS RSS medians are about 2.0 MB for loops/calls, 24.3 MB for arrays,
+2.3 MB for Fibonacci and 2.2 MB for recursion. Differences are within 32 KB
+between roles in this small screen; this is no universal memory bound. The
+uninstrumented executable grows from 606,816 to 606,976 bytes. Hosted resource
+evidence and mixed-depth/width retention behavior remain acceptance work.

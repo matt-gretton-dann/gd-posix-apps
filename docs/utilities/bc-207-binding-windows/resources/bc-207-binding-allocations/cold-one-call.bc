@@ -1,0 +1,2 @@
+define f(x) { return(x*x+1) }
+f(4)

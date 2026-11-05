@@ -1,0 +1,82 @@
+-- The C compiler identification is AppleClang 21.0.0.21000334
+-- The CXX compiler identification is AppleClang 21.0.0.21000334
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Not using gd-posix-apps-tests as testing is disabled
+-- Could NOT find ClangFormat (missing: ClangFormat_COMMAND) (found version "")
+-- Could NOT find ClangTidy (missing: ClangTidy_COMMAND) (found version "")
+-- Found Python: /opt/homebrew/Frameworks/Python.framework/Versions/3.15/bin/python3.15 (found suitable version "3.15.2", minimum required is "3.6") found components: Interpreter
+-- Using C++20 Standard
+-- Inter-procedural optimizations are enabled.
+-- bc multiplication split point: 126 (stable portable default)
+-- Not using gd-posix-app-tests for 
+-- Checking Looking for Library for <filesystem>
+-- Checking Looking for Library for <filesystem> - found: No extra library needed
+-- Checking Looking for library for <format>
+-- Checking Looking for library for <format> - found: Using standard library
+-- Performing Test LIBC_PROVIDES_BASENAME
+-- Performing Test LIBC_PROVIDES_BASENAME - Success
+-- Performing Test LIBC_PROVIDES_DIRNAME
+-- Performing Test LIBC_PROVIDES_DIRNAME - Success
+-- Integration testing: OFF
+-- Unit testing: OFF
+-- Configuring done (2.9s)
+-- Generating done (0.0s)
+-- Build files have been written to: /private/tmp/bc-207-binding-profile-build
+[1/48] Building C object libgdsup/CMakeFiles/gdsup.dir/fcntl/__fcntl_open.c.o
+[2/48] Generating i18n header for util
+[3/48] Building C object libgdsup/CMakeFiles/gdsup.dir/nl_types/catclose.c.o
+[4/48] Building C object libgdsup/CMakeFiles/gdsup.dir/nl_types/catgets.c.o
+[5/48] Building C object libgdsup/CMakeFiles/gdsup.dir/nl_types/__nl_types_check_cat_header.c.o
+[6/48] Building C object libgdsup/CMakeFiles/gdsup.dir/nl_types/catopen.c.o
+[7/48] Building C object libgdsup/CMakeFiles/gdsup.dir/support/empty.c.o
+[8/48] Building C object libgdsup/CMakeFiles/gdsup.dir/support/__support_log.c.o
+[9/48] Building C object libgdsup/CMakeFiles/gdsup.dir/support/__support_read_le_u64.c.o
+[10/48] Building C object libgdsup/CMakeFiles/gdsup.dir/support/__support_read_le_u32.c.o
+[11/48] Building C object libgdsup/CMakeFiles/gdsup.dir/unistd/__gd_getopt_reset.c.o
+[12/48] Building C object libgdsup/CMakeFiles/gdsup.dir/unistd/getopt.c.o
+[13/48] Building C object libgdsup/CMakeFiles/gdsup.dir/unistd/__unistd_read.c.o
+[14/48] Generating i18n header for bc: bc-messages.hh
+[15/48] Building CXX object src/CMakeFiles/util.dir/util/input-file/input-file-getc.cc.o
+[16/48] Building CXX object src/CMakeFiles/util.dir/util/input-file/input-file-constructor.cc.o
+[17/48] Building CXX object src/CMakeFiles/util.dir/util/input-file/input-file-queries.cc.o
+[18/48] Building CXX object src/CMakeFiles/util.dir/util/input-file/input-file-getline.cc.o
+[19/48] Building CXX object src/CMakeFiles/util.dir/util/input-file/input-file-setbuf.cc.o
+[20/48] Building CXX object src/CMakeFiles/util.dir/util/program-name.cc.o
+[21/48] Building CXX object src/CMakeFiles/util.dir/util/input-file/input-file-report-error.cc.o
+[22/48] Linking C static library libgdsup/libgdsup.a
+[23/48] Building CXX object src/CMakeFiles/util.dir/util/rename.cc.o
+[24/48] Linking CXX static library src/libutil.a
+[25/48] Building CXX object src/bc/CMakeFiles/libbc.dir/cli-interrupt.cc.o
+[26/48] Building CXX object src/bc/CMakeFiles/libbc.dir/execution-plan.cc.o
+[27/48] Building CXX object src/bc/CMakeFiles/libbc.dir/lexer.cc.o
+[28/48] Building CXX object src/bc/CMakeFiles/libbc.dir/instruction.cc.o
+[29/48] Building CXX object src/bc/CMakeFiles/libbc.dir/number-division-cache.cc.o
+[30/48] Building CXX object src/bc/CMakeFiles/libbc.dir/number-remainder.cc.o
+[31/48] Building CXX object src/bc/CMakeFiles/libbc.dir/number-sqrt-sparse.cc.o
+[32/48] Building CXX object src/bc/CMakeFiles/libbc.dir/number-sqrt.cc.o
+[33/48] Building CXX object src/bc/CMakeFiles/libbc.dir/parser-expression.cc.o
+[34/48] Building CXX object src/bc/CMakeFiles/libbc.dir/parser.cc.o
+[35/48] Building CXX object src/bc/CMakeFiles/libbc.dir/token.cc.o
+[36/48] Building CXX object src/bc/CMakeFiles/libbc.dir/reader.cc.o
+[37/48] Building CXX object src/bc/CMakeFiles/libbc.dir/verification.cc.o
+[38/48] Building CXX object src/bc/CMakeFiles/libbc.dir/profiling.cc.o
+[39/48] Building CXX object src/bc/CMakeFiles/bc-preparse-math-library.dir/preparse-math-library.cc.o
+[40/48] Building CXX object src/bc/CMakeFiles/bc-preparse-math-library.dir/math-library.cc.o
+[41/48] Building CXX object src/bc/CMakeFiles/libbc.dir/vm.cc.o
+[42/48] Linking CXX static library src/bc/liblibbc.a
+[43/48] Linking CXX executable src/bc/bc-preparse-math-library
+[44/48] Generating bc-math-library-image.inc
+[45/48] Building CXX object src/bc/CMakeFiles/bc.dir/math-library.cc.o
+[46/48] Building CXX object src/bc/CMakeFiles/bc.dir/bc.cc.o
+[47/48] Building CXX object src/bc/CMakeFiles/bc.dir/profiling-entry.cc.o
+[48/48] Linking CXX executable src/bc/bc
+ld: warning: ignoring duplicate libraries: 'libgdsup/libgdsup.a', 'src/libutil.a'

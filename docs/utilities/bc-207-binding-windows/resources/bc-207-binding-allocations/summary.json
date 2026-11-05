@@ -1,0 +1,268 @@
+{
+  "source_revision": "5019aea78164102541fa14b2d1716aed61c7177c",
+  "purpose": "instrumented selected-allocation diagnostics, not elapsed-time/RSS evidence",
+  "roles": {
+    "off": {
+      "path": "/private/tmp/bc-207-binding-profile-off-build/src/bc/bc",
+      "bytes": 664064,
+      "sha256": "f870a3e7d2e3999b921f8806e75c72ef7d51f0f8a9a53c481ccc6a6bb37a87d3"
+    },
+    "on": {
+      "path": "/private/tmp/bc-207-binding-profile-build/src/bc/bc",
+      "bytes": 664576,
+      "sha256": "aac9b73b657f7f1e7c4597ce71757a660681dcf4bac4e726f4cc9e5fd8a663ae"
+    }
+  },
+  "cases": [
+    {
+      "name": "loop_1000000",
+      "program_sha256": "74aa1d696c8c54be05d25ad82b085aedd6791012c90b5faf9f3d9d91f94ebdba",
+      "roles": {
+        "off": {
+          "total": {
+            "allocation_calls": 15,
+            "deallocation_calls": 15,
+            "allocated_bytes": 12614,
+            "live_bytes": 0,
+            "peak_live_bytes": 9656
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "events": {
+            "digit_copies": 12000005,
+            "digit_moves": 6000011,
+            "function_calls": 0,
+            "instructions_executed": 19000015
+          }
+        },
+        "on": {
+          "total": {
+            "allocation_calls": 15,
+            "deallocation_calls": 15,
+            "allocated_bytes": 12614,
+            "live_bytes": 0,
+            "peak_live_bytes": 9656
+          },
+          "frames": {
+            "allocation_calls": 2,
+            "deallocation_calls": 2,
+            "allocated_bytes": 4088,
+            "live_bytes": 0,
+            "peak_live_bytes": 4088
+          },
+          "events": {
+            "digit_copies": 12000005,
+            "digit_moves": 6000011,
+            "function_calls": 0,
+            "instructions_executed": 19000015
+          }
+        }
+      }
+    },
+    {
+      "name": "calls_200000",
+      "program_sha256": "738d33209381c5f554a34bc05ed399ed53973ff7ae75a0cd72e464875841c63e",
+      "roles": {
+        "off": {
+          "total": {
+            "allocation_calls": 25,
+            "deallocation_calls": 25,
+            "allocated_bytes": 15683,
+            "live_bytes": 0,
+            "peak_live_bytes": 11699
+          },
+          "frames": {
+            "allocation_calls": 5,
+            "deallocation_calls": 5,
+            "allocated_bytes": 4200,
+            "live_bytes": 0,
+            "peak_live_bytes": 4200
+          },
+          "events": {
+            "digit_copies": 4000006,
+            "digit_moves": 3800009,
+            "function_calls": 200000,
+            "instructions_executed": 6800016
+          }
+        },
+        "on": {
+          "total": {
+            "allocation_calls": 27,
+            "deallocation_calls": 27,
+            "allocated_bytes": 19771,
+            "live_bytes": 0,
+            "peak_live_bytes": 15787
+          },
+          "frames": {
+            "allocation_calls": 7,
+            "deallocation_calls": 7,
+            "allocated_bytes": 8288,
+            "live_bytes": 0,
+            "peak_live_bytes": 8288
+          },
+          "events": {
+            "digit_copies": 4000006,
+            "digit_moves": 3400009,
+            "function_calls": 200000,
+            "instructions_executed": 6800016
+          }
+        }
+      }
+    },
+    {
+      "name": "recursion_50_x1000",
+      "program_sha256": "51c7a305c6b6635ba3e821f927f9da4b06c5c2aff088ddabca2d6d6456ea3859",
+      "roles": {
+        "off": {
+          "total": {
+            "allocation_calls": 52081,
+            "deallocation_calls": 52081,
+            "allocated_bytes": 1911942,
+            "live_bytes": 0,
+            "peak_live_bytes": 49190
+          },
+          "frames": {
+            "allocation_calls": 11,
+            "deallocation_calls": 11,
+            "allocated_bytes": 10248,
+            "live_bytes": 0,
+            "peak_live_bytes": 8760
+          },
+          "events": {
+            "digit_copies": 455005,
+            "digit_moves": 801075,
+            "function_calls": 50000,
+            "instructions_executed": 1010013
+          }
+        },
+        "on": {
+          "total": {
+            "allocation_calls": 52126,
+            "deallocation_calls": 52126,
+            "allocated_bytes": 1912334,
+            "live_bytes": 0,
+            "peak_live_bytes": 52606
+          },
+          "frames": {
+            "allocation_calls": 56,
+            "deallocation_calls": 56,
+            "allocated_bytes": 10640,
+            "live_bytes": 0,
+            "peak_live_bytes": 10640
+          },
+          "events": {
+            "digit_copies": 455005,
+            "digit_moves": 701012,
+            "function_calls": 50000,
+            "instructions_executed": 1010013
+          }
+        }
+      }
+    },
+    {
+      "name": "cold-one-call",
+      "program_sha256": "1308427a170311ee400bfd8c86e777e42cd18dd19521cbb433f59cdc52ecd8c9",
+      "roles": {
+        "off": {
+          "total": {
+            "allocation_calls": 19,
+            "deallocation_calls": 19,
+            "allocated_bytes": 10806,
+            "live_bytes": 0,
+            "peak_live_bytes": 8758
+          },
+          "frames": {
+            "allocation_calls": 5,
+            "deallocation_calls": 5,
+            "allocated_bytes": 4200,
+            "live_bytes": 0,
+            "peak_live_bytes": 4200
+          },
+          "events": {
+            "digit_copies": 8,
+            "digit_moves": 17,
+            "function_calls": 1,
+            "instructions_executed": 19
+          }
+        },
+        "on": {
+          "total": {
+            "allocation_calls": 21,
+            "deallocation_calls": 21,
+            "allocated_bytes": 14894,
+            "live_bytes": 0,
+            "peak_live_bytes": 12846
+          },
+          "frames": {
+            "allocation_calls": 7,
+            "deallocation_calls": 7,
+            "allocated_bytes": 8288,
+            "live_bytes": 0,
+            "peak_live_bytes": 8288
+          },
+          "events": {
+            "digit_copies": 8,
+            "digit_moves": 15,
+            "function_calls": 1,
+            "instructions_executed": 19
+          }
+        }
+      }
+    },
+    {
+      "name": "wide-recursive-26",
+      "program_sha256": "e350b050319d361bc5db79c8fe9f5e58cd8952fed6da0f538082165b44958f94",
+      "roles": {
+        "off": {
+          "total": {
+            "allocation_calls": 83,
+            "deallocation_calls": 83,
+            "allocated_bytes": 243535,
+            "live_bytes": 0,
+            "peak_live_bytes": 182923
+          },
+          "frames": {
+            "allocation_calls": 16,
+            "deallocation_calls": 16,
+            "allocated_bytes": 200712,
+            "live_bytes": 0,
+            "peak_live_bytes": 151608
+          },
+          "events": {
+            "digit_copies": 456,
+            "digit_moves": 6589,
+            "function_calls": 51,
+            "instructions_executed": 968
+          }
+        },
+        "on": {
+          "total": {
+            "allocation_calls": 124,
+            "deallocation_calls": 124,
+            "allocated_bytes": 114711,
+            "live_bytes": 0,
+            "peak_live_bytes": 110691
+          },
+          "frames": {
+            "allocation_calls": 57,
+            "deallocation_calls": 57,
+            "allocated_bytes": 71888,
+            "live_bytes": 0,
+            "peak_live_bytes": 71888
+          },
+          "events": {
+            "digit_copies": 456,
+            "digit_moves": 1890,
+            "function_calls": 51,
+            "instructions_executed": 968
+          }
+        }
+      }
+    }
+  ]
+}
