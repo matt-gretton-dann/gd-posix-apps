@@ -52,6 +52,15 @@ the original path. Redefinition resets the plan and hotness count. Deferred
 definitions materialize normally. Both forwarded and packed arguments are
 supported.
 
+A failed attempt suppresses speculation throughout its generic fallback call
+chain. One rejected machine argument per function generation is remembered;
+the same argument enters generic execution directly, while different arguments
+remain eligible. This bounded performance hint changes no numeric semantics.
+Without it, overflow near the bottom of recursion repeatedly executes the same
+speculative prefix at each generic level. The preserved first local diagnostic
+observed calls at 0.623x baseline but factorial recursion at 3.572x baseline.
+That two-role probe has no independent A/A control and establishes no acceptance.
+
 Tests cover the engine, signed endpoints, lvalue timing, explicit loads,
 interruptions, depth exhaustion, scratch reuse and effect rejection. Parsed
 hot-call programs compare verified execution with the full-check interpreter,

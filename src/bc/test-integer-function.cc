@@ -149,6 +149,12 @@ TEST_CASE("Pure integer VM calls agree with the full diagnostic interpreter",
       auto const end = program.find("f(1.0)", begin);
       program.erase(begin, end - begin);
     }
+    if (program.find("f(x-1)") != std::string::npos) {
+      auto const position = program.find("scale=2");
+      // Factorial exceeds int64: repeated failed speculation must retain
+      // exact results and allow a later small argument to use the tier again.
+      program.insert(position, "f(50)\nf(50)\nf(5)\n");
+    }
     auto run = [&](VM::ExecutionChecks checks) {
       Parser parser(std::make_unique<Lexer>(std::make_unique<StringReader>(program)), false);
       auto source = parser.parse();
