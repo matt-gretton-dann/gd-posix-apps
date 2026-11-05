@@ -1,0 +1,34 @@
+name: bc Windows resource adapter
+on:
+  pull_request:
+    branches: [main, 'codex/**']
+    paths:
+      - 'src/bc/scripts/profile-bc.py'
+      - 'src/bc/scripts/bench-bc.py'
+      - 'src/bc/test-profiling-tools.py'
+      - '.github/workflows/bc-windows-resources.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/bc/scripts/profile-bc.py'
+      - 'src/bc/scripts/bench-bc.py'
+      - 'src/bc/test-profiling-tools.py'
+      - '.github/workflows/bc-windows-resources.yml'
+permissions:
+  contents: read
+concurrency:
+  group: bc-windows-resources-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  resources:
+    runs-on: windows-2025
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      # No bc build is needed for the real Windows handle/peak-memory fixture.
+      # Run it independently so ABI failures surface before the larger builds.
+      - name: Check native process accounting and portable contracts
+        run: python src/bc/test-profiling-tools.py src/bc/scripts/profile-bc.py

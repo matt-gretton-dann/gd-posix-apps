@@ -7,6 +7,7 @@ Python 3.6+; SPDX-License-Identifier: Apache-2.0
 """
 import argparse
 import contextlib
+import ctypes
 import importlib.util
 import json
 import math
@@ -203,9 +204,91 @@ def rss_fields(system, content):
     return result
 
 
+def windows_process_fields(handle, api=None):
+    """Read kernel-maintained peaks while Popen still owns the process handle.
+
+    Explicit Win32 widths also make the ABI testable on non-Windows hosts;
+    ctypes.c_ulong follows the host ABI and is not always a 32-bit DWORD.
+    """
+    unavailable = {'status': 'unavailable', 'reason': 'no Windows process accounting handle',
+                   'cpu_time': {'status': 'unavailable', 'reason': 'no Windows process accounting handle'}}
+    if handle is None:
+        return unavailable
+    class MemoryCounters(ctypes.Structure):
+        _fields_ = [('cb', ctypes.c_uint32), ('PageFaultCount', ctypes.c_uint32)] + [
+            (name, ctypes.c_size_t) for name in (
+                'PeakWorkingSetSize', 'WorkingSetSize', 'QuotaPeakPagedPoolUsage',
+                'QuotaPagedPoolUsage', 'QuotaPeakNonPagedPoolUsage',
+                'QuotaNonPagedPoolUsage', 'PagefileUsage', 'PeakPagefileUsage')]
+    class FileTime(ctypes.Structure):
+        _fields_ = [('low', ctypes.c_uint32), ('high', ctypes.c_uint32)]
+    try:
+        if api is None:
+            api = ctypes.WinDLL('kernel32', use_last_error=True)
+        memory = api.K32GetProcessMemoryInfo
+        times = api.GetProcessTimes
+    except (AttributeError, OSError):
+        unavailable['reason'] = 'Windows process accounting API unavailable'
+        unavailable['cpu_time']['reason'] = unavailable['reason']
+        return unavailable
+    memory.argtypes = [ctypes.c_void_p, ctypes.POINTER(MemoryCounters), ctypes.c_uint32]
+    memory.restype = ctypes.c_int
+    times.argtypes = [ctypes.c_void_p] + [ctypes.POINTER(FileTime)] * 4
+    times.restype = ctypes.c_int
+    counters = MemoryCounters()
+    counters.cb = ctypes.sizeof(counters)
+    if memory(int(handle), ctypes.byref(counters), counters.cb):
+        result = dict(status='collected', peak_rss_native=counters.PeakWorkingSetSize,
+                      native_unit='bytes (Windows peak working set)',
+                      peak_commit_charge_bytes=counters.PeakPagefileUsage)
+    else:
+        result = dict(status='unavailable', reason='K32GetProcessMemoryInfo failed',
+                      winerror=ctypes.get_last_error())
+    created, exited, kernel, user = [FileTime() for _ in range(4)]
+    if times(int(handle), ctypes.byref(created), ctypes.byref(exited),
+             ctypes.byref(kernel), ctypes.byref(user)):
+        kernel_ticks = (kernel.high << 32) | kernel.low
+        user_ticks = (user.high << 32) | user.low
+        result['cpu_time'] = dict(status='collected', user_ticks_100ns=user_ticks,
+            system_ticks_100ns=kernel_ticks, user_seconds=user_ticks / 10000000,
+            system_seconds=kernel_ticks / 10000000, native_unit='seconds',
+            precision='100-nanosecond counter units; native accounting resolution may be coarser',
+            scope='native child CPU accounting; not paired elapsed timing or hardware counters')
+    else:
+        result['cpu_time'] = dict(status='unavailable', reason='GetProcessTimes failed',
+                                  winerror=ctypes.get_last_error())
+    return result
+
+
+def run_windows_process(argv, payload, environment, timeout):
+    # CPython owns this handle until Popen is destroyed. Query it after waiting,
+    # before leaving the context; opening by PID after exit would race teardown.
+    # Other Python implementations without this handle retain unavailable data.
+    with subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                          stderr=subprocess.PIPE, env=environment) as child:
+        try:
+            output, errors = child.communicate(payload, timeout=timeout)
+        except BaseException:
+            child.kill()
+            child.communicate()
+            raise
+        fields = windows_process_fields(getattr(child, '_handle', None))
+        return subprocess.CompletedProcess(argv, child.returncode, output, errors), fields
+
+
 def rss_profile(bench, tool, case, root, timeout):
     report = root / (case['name'] + '.rss.txt')
     system = platform.system()
+    if system == 'Windows':
+        environment = bench.environment()
+        environment.pop('GD_BC_PROFILE_OUTPUT', None)
+        with diagnostic_input(bench, tool, case, 1) as (argv, payload, metadata):
+            child, result = run_windows_process(argv, payload, environment, timeout)
+        check(bench, case, 1, child.returncode, child.stdout, child.stderr)
+        (root / (case['name'] + '.rss.json')).write_text(
+            json.dumps(result, indent=2) + '\n', encoding='utf-8')
+        result.update(metadata, argv=argv, repetitions=1, checked=True)
+        return result
     if not Path('/usr/bin/time').is_file() or system not in ('Darwin', 'Linux'):
         return {'status': 'unavailable', 'reason': 'no native per-process memory adapter',
                 'cpu_time': cpu_time_fields(system, ''), 'checked': False}
