@@ -551,3 +551,21 @@ with later corrected collections. Configured compile commands can also include
 tools which were not built or executed in a given collection. Fresh coverage
 should verify both configured options and consumer mode, keeping extension and
 experimental reuse configurations separate.
+
+### Allocation-failure fixtures and IPO
+
+`bc/vm-lifetime` replaces ordinary allocation functions only inside its isolated
+test executable. When project-managed IPO is enabled, `bc/vm-lifetime-ipo`
+builds the same complete fault sweep with IPO explicitly enabled as well.
+Both retain caller-state/retry checks and the zero-outstanding-allocation
+assertion. Neither fixture changes production allocators or supplies elapsed
+performance measurements.
+
+The replacement `new`/`delete` boundary uses compiler noinline annotations where
+available. A generic compiler retains the ordinary functions and all assertions.
+The IPO regression was reproduced on accepted main without the integer tier:
+the ordinary fixture passed while its IPO copy reported eight outstanding
+allocations. A separate integer-tier configuration reported 138, while a native
+leak checker found zero unreachable leaked bytes. These are distinct measures;
+neither a counter failure nor a zero-leak report alone proves complete ownership.
+Preserve the actual compile context and the complete fault sweep.
