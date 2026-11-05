@@ -1099,7 +1099,18 @@ private:
     assert(digits_->size() >= v.digits_->size());  // NOLINT
 
     if (v.digits_->size() == 1) {
-      auto const remainder = divide(v.digits_->at(0));
+      auto const divisor = v.digits_->at(0);
+#if defined(__APPLE__) && defined(__aarch64__)
+      // Keep the existing kernel on other targets. Linux and Windows runs
+      // found regressions in other workloads with the periodic fill enabled.
+      if constexpr (!Remainder) {
+        if (digits_->size() >= 8 && (*digits_)[0] == 0 && (*digits_)[1] == 0 &&
+            try_divide_periodic(divisor)) {
+          return;
+        }
+      }
+#endif
+      auto const remainder = divide(divisor);
       if constexpr (Remainder) {
         digits_ = DigitVector(std::initializer_list<NumType>{remainder});
         tidy();
@@ -1297,6 +1308,45 @@ private:
       std::swap(q.digits_, digits_);
     }
   }
+
+#if defined(__APPLE__) && defined(__aarch64__)
+  // Keep the periodic fill separate from the shared short-division loop.
+  // The caller has made storage unique and checked the size and low limbs.
+#if defined(_MSC_VER)
+  __declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+  [[gnu::noinline]]
+#endif
+  auto try_divide_periodic(NumType div) -> bool
+  {
+    auto const first_limb = digits_->begin();
+    auto const count = digits_->size() - 1;
+    auto const high = first_limb[count];
+    WideType const initial = high % div;
+    WideType const first = initial * base_;
+    WideType const middle = first % div;
+    WideType const second = middle * base_;
+    // The remainder must repeat after two steps and every lower limb must
+    // be zero. Check both conditions before replacing any input limb.
+    if (second % div != initial ||
+        !std::all_of(first_limb, first_limb + count, [](auto limb) { return limb == 0; })) {
+      return false;
+    }
+
+    auto const q1 = static_cast<NumType>(first / div);
+    auto const q2 = static_cast<NumType>(second / div);
+    first_limb[count] = high / div;
+    auto const odd = count % 2;
+    for (std::size_t i = odd; i < count; i += 2) {
+      first_limb[i] = q2;
+      first_limb[i + 1] = q1;
+    }
+    if (odd != 0)
+      first_limb[0] = q1;
+    tidy();
+    return true;
+  }
+#endif
 
 public:
   /** \brief  Divide by the number \a div.  Returns remainder.  */

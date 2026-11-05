@@ -147,6 +147,17 @@ class NumberOracle(unittest.TestCase):
             with self.subTest(operator=op):
                 self.assert_program(cases)
 
+    def test_single_limb_division_with_decimal_padding(self):
+        cases = []
+        # Cover both quotient parities, longer cycles, and a nonzero interior limb.
+        for a in ("1", "-1", "17", "1000000001"):
+            for b in ("2", "7", "-7", "11", "17"):
+                value = Fraction(a) / Fraction(b)
+                for places in (62, 63, 70, 71, 72, 80, 81, 112, 113, 500):
+                    cases.append((literal(a) + "/" + literal(b), places,
+                                  truncate(value, places), places))
+        self.assert_program(cases)
+
     def test_large_quotient_kernel_boundaries(self):
         rng = random.Random(SEED)
 
