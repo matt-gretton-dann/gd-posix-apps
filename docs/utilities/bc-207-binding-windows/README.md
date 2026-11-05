@@ -37,8 +37,8 @@ global restoration and independently owned heap returns.
 Enabled Release and the sanitizer build each pass 25 VM CLI and 24 math CLI
 cases, with one optional external-interpreter case skipped. Sanitizer runs
 use `ASAN_OPTIONS=detect_leaks=0`; the independent lifetime allocator counters
-remain active. This is not a leak-sanitizer result. Hosted checks and profile
-configuration validation remain pending.
+remain active. This is not a leak-sanitizer result. Hosted checks remain
+pending; local profile configurations are validated below.
 
 ## Local performance observations
 
@@ -76,6 +76,8 @@ elapsed-time acceptance. The RSS binaries match the original local screen's
 hashes. Separate Release profile builds use the same source
 `5019aea78164102541fa14b2d1716aed61c7177c`, portable arithmetic thresholds,
 and binding windows ON/OFF; they do not replace either timing binary.
+Both profile configurations pass all 24 profiling CLI tests, including frame
+capacity reuse and ownership accounting; their test logs are retained here.
 
 | Case | Fallback frame peak bytes | Window frame peak bytes | Fallback/window allocations |
 | --- | ---: | ---: | ---: |

@@ -95,5 +95,7 @@
   "bc-207-binding-rss-checked/recursion_50_x1000.bc": "51c7a305c6b6635ba3e821f927f9da4b06c5c2aff088ddabca2d6d6456ea3859",
   "bc-207-binding-rss-checked/report.json": "e616a96beee6a7ff7dbe46cd32ca5e6a6c7462501fcd0b1047d18dc42beaf986",
   "bc-207-binding-rss.py": "aef51a02f445e0836791d33ede2123731fb665d7bdd14ccbbae038258ae86c72",
-  "vm-compile-commands.json": "8de0fec9640250b4b3396400dd506a3e13007f921be8b2f7df62e1f3e85a7fc9"
+  "vm-compile-commands.json": "8de0fec9640250b4b3396400dd506a3e13007f921be8b2f7df62e1f3e85a7fc9",
+  "bc-207-binding-profile-cli.log": "5593437c74c684c785c2ecb03d335f1712009545884eaf11bb1d08fd6f34a234",
+  "bc-207-binding-profile-off-cli.log": "b68eb22cac7366582d8d5d5a5b56b103adf209eba0060d95fb1fc5df123fa7b9"
 }
