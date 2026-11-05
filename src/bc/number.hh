@@ -1775,6 +1775,54 @@ private:
     return result;
   }
 
+#if defined(_MSC_VER)
+  __declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+  [[gnu::noinline]]
+#endif
+  static auto multiply_sparse(std::span<NumType const> lhs, std::span<NumType const> rhs)
+    -> std::optional<BasicDigits>
+  {
+    // Stop at the fifth nonzero limb. Dense operands usually exit after
+    // reading a few limbs, and sparse products need no recursive workspace.
+    auto collect = [](std::span<NumType const> input, auto& terms) -> std::size_t {
+      std::size_t count = 0;
+      for (std::size_t index = 0; index < input.size(); ++index) {
+        if (input[index] != 0) {
+          if (count == terms.size())
+            return 0;
+          terms[count++] = index;
+        }
+      }
+      return count;
+    };
+    std::array<std::size_t, 4> left{}, right{};
+    auto const left_count = collect(lhs, left);
+    if (left_count == 0)
+      return std::nullopt;
+    auto const right_count = collect(rhs, right);
+    if (right_count == 0)
+      return std::nullopt;
+
+    BasicDigits result;
+    result.copy_on_write();
+    result.digits_->resize(lhs.size() + rhs.size(), NumType{0});
+    for (std::size_t l = 0; l < left_count; ++l) {
+      for (std::size_t r = 0; r < right_count; ++r) {
+        auto index = left[l] + right[r];
+        auto carry = static_cast<WideType>(lhs[left[l]]) * rhs[right[r]];
+        // Each addition is a single limb product plus one stored limb.
+        // The coefficient bound guarantees the final carry fits the output.
+        while (carry != 0) {
+          carry += (*result.digits_)[index];
+          (*result.digits_)[index++] = static_cast<NumType>(carry % base_);
+          carry /= base_;
+        }
+      }
+    }
+    return result;
+  }
+
   static auto multiply_workspace(typename DigitVector::const_iterator lhs_begin,
                                  typename DigitVector::const_iterator lhs_end,
                                  typename DigitVector::const_iterator rhs_begin,
@@ -1784,6 +1832,13 @@ private:
     auto const rhs_size = static_cast<std::size_t>(rhs_end - rhs_begin);
     if (lhs_size > std::numeric_limits<std::size_t>::max() - rhs_size) {
       throw std::length_error("bc multiplication result too large");
+    }
+    constexpr std::size_t sparse_threshold = 256;
+    if (std::min(lhs_size, rhs_size) >= sparse_threshold &&
+        lhs_begin[1] == 0 && rhs_begin[1] == 0) {
+      auto sparse = multiply_sparse({lhs_begin, lhs_end}, {rhs_begin, rhs_end});
+      if (sparse)
+        return std::move(*sparse);
     }
     // Keep run detection in the recursive path. Short schoolbook products
     // need no shape checks, and irregular recursive operands fall through.
