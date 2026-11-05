@@ -59,7 +59,7 @@ int getopt(int argc, char* const argv[], const char* optstring) __NOEXCEPT  // N
     }
   }
 
-  char* ps = strchr(optstring, *opt);
+  char const* ps = strchr(optstring, *opt);
 
   if (ps == NULL) {
     /* *opt doesn't point to a valid option.  */
