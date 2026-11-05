@@ -74,6 +74,8 @@ struct ExecutableInstruction
   Instruction::Opcode opcode;
   std::uint32_t result;
   ExecutableOperand first;
+  // Generic returns use second.index for a proven cleanup prefix. Zero
+  // requests the full buffer, including returns inside backward-edge spans.
   ExecutableOperand second;
 };
 using ExecutableCode =
