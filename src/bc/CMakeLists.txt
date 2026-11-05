@@ -185,8 +185,27 @@ if(RUN_UNIT_TESTS)
       set_tests_properties(bc/integer-symbols PROPERTIES TIMEOUT 40 SKIP_RETURN_CODE 77)
     endif()
   endif()
+  # Also exercise the replacement allocator through whole-program optimisation.
+  # The ordinary fixture does not request IPO, but callers can inherit it.
+  set(_bc_lifetime_ipo_target "")
+  if(ENABLE_IPO)
+    add_executable(test-bc-vm-lifetime-ipo test-vm-lifetime.cc)
+    target_link_libraries(test-bc-vm-lifetime-ipo PRIVATE libbc)
+    target_include_directories(test-bc-vm-lifetime-ipo PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+    target_compile_definitions(test-bc-vm-lifetime-ipo PRIVATE
+      GD_BC_EXPECT_INTEGER_FUNCTIONS=$<BOOL:${ENABLE_BC_INTEGER_FUNCTIONS}>)
+    add_dependencies(test-bc-vm-lifetime-ipo bc_messages_header)
+    set_property(TARGET test-bc-vm-lifetime-ipo PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
+    set_property(TARGET test-bc-vm-lifetime-ipo PROPERTY CXX_STANDARD_REQUIRED ON)
+    set_warnings(test-bc-vm-lifetime-ipo)
+    target_add_clang_format(test-bc-vm-lifetime-ipo)
+    gd_apply_ipo(test-bc-vm-lifetime-ipo)
+    add_test(NAME bc/vm-lifetime-ipo COMMAND "$<TARGET_FILE:test-bc-vm-lifetime-ipo>")
+    set_tests_properties(bc/vm-lifetime-ipo PROPERTIES TIMEOUT 10)
+    set(_bc_lifetime_ipo_target test-bc-vm-lifetime-ipo)
+  endif()
   add_executable(test-libbc)
-  add_dependencies(test-libbc test-bc-vm-lifetime test-bc-consumer-mode)
+  add_dependencies(test-libbc test-bc-vm-lifetime test-bc-consumer-mode ${_bc_lifetime_ipo_target})
   target_link_libraries(test-libbc PUBLIC libbc Catch2::Catch2)
   target_compile_definitions(test-libbc PRIVATE
     GD_BC_EXPECT_TYPED_RESULTS=$<AND:$<BOOL:${ENABLE_BC_TYPED_RESULTS}>,$<BOOL:${ENABLE_BC_COMPACT_EXECUTION}>>)
@@ -419,6 +438,12 @@ if(RUN_INTEGRATION_TESTS)
            "${CMAKE_CURRENT_SOURCE_DIR}/test-comparator-builds.py"
            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/build-bc-comparators.py")
   set_tests_properties(bc/comparator-builds PROPERTIES TIMEOUT 20)
+  add_test(NAME bc/ipo-policy COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-ipo-policy.py"
+           --module "${CMAKE_SOURCE_DIR}/cmake/GDInterproceduralOptimization.cmake"
+           --cmake "${CMAKE_COMMAND}" --compiler "${CMAKE_CXX_COMPILER}"
+           --generator "${CMAKE_GENERATOR}")
+  set_tests_properties(bc/ipo-policy PROPERTIES TIMEOUT 180)
   add_test(NAME bc/benchmark-ci COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-benchmark-ci.py")
   # The fixed sparse protocol exercises 828 serial fixture processes, plus a

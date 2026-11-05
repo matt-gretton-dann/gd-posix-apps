@@ -16,6 +16,35 @@ concurrency:
   group: bc-integer-functions-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
+  integer-sanitizers:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      ASAN_OPTIONS: detect_leaks=1
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Configure checked ownership diagnostics
+        run: cmake -S . -B build-sanitized -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DENABLE_BC_INTEGER_FUNCTIONS=ON -DENABLE_BC_PROFILE=ON -DIPO_MODE=OFF -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer" -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer"
+      - name: Build diagnostic engine and fixtures
+        run: cmake --build build-sanitized --config Release --target bc test-libbc --parallel 2
+      - name: Check exact values, aliases, guards and allocation failures
+        run: ctest --test-dir build-sanitized -C Release --output-on-failure --no-tests=error -R "Pure integer|^bc/(integer-profile|integer-symbols|profiling-cli|profiling-allocator|profiling-disabled|vm-cli|vm-lifetime)$"
+      - name: Preserve ownership diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bc-integer-sanitizers-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build-sanitized/Testing/Temporary/LastTest.log
+            build-sanitized/src/bc/integer-symbol-evidence/
+            build-sanitized/src/bc/**/integer-function.cc.o
+            build-sanitized/bc-integer-isolation.json
+          if-no-files-found: warn
+          retention-days: 30
   integer-profile:
     strategy:
       fail-fast: false
@@ -42,6 +71,8 @@ jobs:
           path: |
             build-profile/src/bc/integer-symbol-evidence/
             build-profile/src/bc/integer-layout-evidence/
+            build-profile/src/bc/**/integer-function*.obj
+            build-profile/src/bc/**/integer-function.cc.o
             build-profile/bc-integer-isolation.json
           if-no-files-found: warn
           retention-days: 30
@@ -72,6 +103,8 @@ jobs:
           path: |
             build-integer/src/bc/integer-symbol-evidence/
             build-integer/src/bc/integer-layout-evidence/
+            build-integer/src/bc/**/integer-function*.obj
+            build-integer/src/bc/**/integer-function.cc.o
             build-integer/bc-integer-isolation.json
           if-no-files-found: warn
           retention-days: 30

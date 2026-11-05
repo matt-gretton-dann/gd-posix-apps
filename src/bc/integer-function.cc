@@ -149,74 +149,22 @@ auto plan_integer_function(Instructions const& source, VariableMask locals, Lett
   return result;
 }
 
-auto run_integer_function(IntegerFunction const& function, V argument,
-                          IntegerFunctionScratch& scratch, bool (*interrupted)() noexcept)
-  -> std::optional<Number>
+auto run_integer_core(IntegerFunction const& function, V argument, IntegerFunctionScratch& scratch,
+                      bool (*interrupted)() noexcept) -> std::optional<IntegerFunctionValue>
 {
   using Value = IntegerFunctionScratch::Value;
-  GD_BC_PROFILE_EVENT(Profile::Event::integer_function_attempts, 1);
   auto& values = scratch.values;
   auto& spills = scratch.spills;
   auto& frames = scratch.frames;
   auto& arguments = scratch.arguments;
-  values.clear();
-  spills.clear();
-  frames.clear();
-  arguments.clear();
-  struct Clear
-  {
-    IntegerFunctionScratch& scratch;
-#if GD_BC_PROFILE
-    bool complete = false;
-#endif
-    ~Clear()
-    {
-#if GD_BC_PROFILE
-      if (!complete)
-        GD_BC_PROFILE_EVENT(Profile::Event::integer_function_abandonments, 1);
-#endif
-      scratch.values.clear();
-      scratch.spills.clear();
-      scratch.frames.clear();
-      scratch.arguments.clear();
-    }
-  } clear{scratch};
   auto const stride = locals_size + function.code.size();
-  std::size_t coefficients = 0;
-  auto fits = [&](std::size_t extra) {
+  auto used = [&]() {
     return values.size() * sizeof(Value) + frames.size() * sizeof(IntegerFunctionScratch::Frame) +
-             arguments.size() * sizeof(IntegerFunctionScratch::Argument) +
-             spills.size() * sizeof(IntegerFunctionScratch::Spill) + coefficients + extra <=
-           scratch_limit;
+           arguments.size() * sizeof(IntegerFunctionScratch::Argument) + spills.logical_bytes();
   };
+  auto fits = [&](std::size_t extra) { return used() + extra <= scratch_limit; };
   auto assign = [](Value& target, Value value) {
     target = value;
-    return true;
-  };
-  auto number = [&](Value const& value) {
-    if (!value.big)
-      return Number::from_machine_integer(value.payload);
-    return spills[static_cast<std::size_t>(value.payload)].value;
-  };
-  auto normalize = [&](Value& target, Number value) {
-    if (auto const small = value.to_machine_integer()) {
-      GD_BC_PROFILE_EVENT(Profile::Event::integer_function_demotions, 1);
-      target = {*small, false};
-      return true;
-    }
-    auto const digits = value.length();
-    if (digits > 4096)
-      return false;
-    auto const charge = std::size_t(digits) * sizeof(Number::NumType);
-    if (!fits(sizeof(IntegerFunctionScratch::Spill) + charge))
-      return false;
-    // Immutable records make aliases independent of cell overwrites and bank
-    // reallocation. Dead records remain owned and charged until this attempt ends.
-    auto const index = spills.size();
-    spills.push_back({std::move(value), charge});
-    GD_BC_PROFILE_EVENT(Profile::Event::integer_function_promotions, 1);
-    coefficients += charge;
-    target = {static_cast<V>(index), true};
     return true;
   };
   auto enter = [&](Value value) {
@@ -267,9 +215,7 @@ auto run_integer_function(IntegerFunction const& function, V argument,
           return {};
       }
       else {
-        auto value = number(input);
-        value.negate();
-        if (!normalize(destination, std::move(value)))
+        if (!spills.negate(input, destination, scratch_limit - used()))
           return {};
       }
       break;
@@ -293,12 +239,7 @@ auto run_integer_function(IntegerFunction const& function, V argument,
       }
       // Overflow promotes only this exact operation. The pure function's
       // continuation remains intact; no recursive prefix is replayed.
-      auto value = number(left);
-      auto const rhs = number(right);
-      auto result = integer_number_binary(instruction.opcode, std::move(value), rhs);
-      if (!result)
-        return {};
-      if (!normalize(destination, std::move(*result)))
+      if (!spills.binary(instruction.opcode, left, right, destination, scratch_limit - used()))
         return {};
       break;
     }
@@ -307,8 +248,9 @@ auto run_integer_function(IntegerFunction const& function, V argument,
       break;
     case O::branch_zero: {
       auto const& value = read(instruction.left);
-      if (!value.big ? value.payload == 0
-                     : spills[static_cast<std::size_t>(value.payload)].value.is_zero())
+      // Normalization stores every scale-zero numeric zero as a small cell.
+      // Big cells therefore cannot take the zero branch.
+      if (!value.big && value.payload == 0)
         frame.pc = instruction.right;
       break;
     }
@@ -340,14 +282,7 @@ auto run_integer_function(IntegerFunction const& function, V argument,
       frames.pop_back();
       values.resize(base);
       if (frames.empty()) {
-#if GD_BC_PROFILE
-        auto result = number(value);
-        clear.complete = true;
-        GD_BC_PROFILE_EVENT(Profile::Event::integer_function_successes, 1);
-        return result;
-#else
-        return number(value);
-#endif
+        return value;
       }
       if (!assign(values[(frames.size() - 1) * stride + locals_size + frames.back().pc - 1],
                   std::move(value)))
