@@ -74,6 +74,13 @@ S+10 accuracy assumption.
 
 ## Arctangent
 
+A positive unit argument at scale 20 with decimal input base returns its
+certified rounded literal before changing any state. This avoids general
+reduction setup and a temporary store/reload. Other input bases and the
+negative unit case retain the existing path, which decodes the literal in
+decimal before restoring the caller's input base. No caller binding or base
+change is skipped for those fallback cases.
+
 For magnitudes in [0.8, 1.25] other than one, use
 atan(x) = atan(1) + atan((x-1)/(x+1)). The transformed magnitude is at
 most 1/9, reducing the work before the alternating series. Apply the
@@ -443,6 +450,10 @@ from `break`; `return` skips unreachable probes. A behavioral check covers
 skipped/exhausted/broken loops, return, nested decisions and a condition with a
 side effect before the production fixture runs. It certifies the numerical
 results from the instrumented definitions against the same exact enclosures.
+Probe indices use single digits and A to retain their decimal line identities
+under every supported input base. Nested-flag regressions exercise bases 2,
+8, 10 and 16 before any library base normalization. The certified unit cases
+also exercise the nondecimal fallback in the production definitions.
 Calls outside the logarithm domain exercise its guard and are counted
 separately from the numerical results.
 

@@ -392,6 +392,7 @@ class LibraryCli(unittest.TestCase):
                                  for index, name in enumerate(letters))
         queries = '\n'.join(letters) + '\n'
         for call, expected in [('e(0)', 1), ('l(1)', 0), ('a(0)', 0),
+                               ('a(1)', Fraction('.78539816339744830962')),
                                ('s(0)', 0), ('c(0)', 1), ('j(0,0)', 1)]:
             with self.subTest(call=call):
                 lines = self.checked_lines(initialization + call + '\n' + queries)

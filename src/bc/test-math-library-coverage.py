@@ -104,8 +104,15 @@ def main():
                       arguments=['-' + near_one['arguments'][0]],
                       lower=str(-Fraction(near_one['upper'])),
                       upper=str(-Fraction(near_one['lower']))))
-    program = ''.join('scale={}\n{}({})\n'.format(
-        case['scale'], case['function'], ','.join(case['arguments'])) for case in cases)
+    # The early unit return only admits decimal callers. The same certified
+    # enclosure checks the nondecimal fallback without weakening its accuracy.
+    unit = next(case for case in cases if case['id'] == 'a-one' and case['scale'] == 20)
+    for base in (2, 8, 16):
+        cases.append(dict(unit, id='a-one-input-base-' + str(base), ibase=base))
+    program = ''.join('ibase=A\nscale={}\nibase={}\n{}({})\n'.format(
+        case['scale'], case.get('ibase', 10), case['function'], ','.join(case['arguments']))
+        for case in cases)
+    program += 'ibase=A\n'
     result = run(args.bc, transformed, program)
     assert result.returncode == 0 and not result.stderr, result.stderr
     plain, outcomes = strip_probes(result.stdout)

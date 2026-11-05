@@ -21,6 +21,14 @@ define a(x) {
   /* b/s save base/scale; w is precision; n/v are sign/reciprocal flags.
      k reconstructs half angles; p is pi/2; y is the near-one correction.
      q/t/u are ratio, power and term. */
+  /* This literal is already rounded. A decimal caller needs no state
+     changes, so return before setting up the general reduction path.
+     Other input bases must decode the literal before restoring ibase. */
+  if (x==1) {
+    if (ibase==A) {
+      if (scale==20) return(.78539816339744830962)
+    }
+  }
   b=ibase
   ibase=A
   s=scale
