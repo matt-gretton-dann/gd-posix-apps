@@ -39,6 +39,27 @@ class VMTests(unittest.TestCase):
             with self.subTest(text=text):
                 self.run_bc(text, success=False, diagnostic="it is negative")
 
+    def test_cold_and_hot_function_zero_unsigned_boundaries(self):
+        # Tier preparation must not change whether the same exact zero can
+        # be used as a register value or subscript.
+        definition = "define f(x) {\nreturn (-x)\n}\n"
+        for calls in (0, 12):
+            warmup = f"for(i=0;i<{calls};i++) q=f(0)\n"
+            for boundary, output in (("scale=f(0)\nscale\n", "0\n"),
+                                     ("a[f(0)]=7\na[0]\n", "7\n")):
+                with self.subTest(calls=calls, boundary=boundary):
+                    self.run_bc(definition + warmup + boundary, output)
+
+    def test_cold_and_hot_function_negative_unsigned_boundaries(self):
+        definition = "define f(x) {\nreturn (-x)\n}\n"
+        for calls in (0, 12):
+            warmup = f"for(i=0;i<{calls};i++) q=f(0)\n"
+            for value in (".1", "1"):
+                for boundary in (f"scale=f({value})\n", f"a[f({value})]=7\n"):
+                    with self.subTest(calls=calls, value=value, boundary=boundary):
+                        self.run_bc(definition + warmup + boundary, success=False,
+                                    diagnostic="it is negative")
+
     def test_bare_if_conditions(self):
         cases = [('n=0\n', 'n', ''), ('n = -2\n', 'n', '7\n'),
                  ('a[2]=0\n', 'a[2]', ''), ('a[2] = -3\n', 'a[2]', '7\n'),
