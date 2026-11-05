@@ -121,6 +121,14 @@ the caller's final interrupt/commit check. Exact output and post-VM teardown
 zero live bytes are tested separately. Profiling builds must never supply
 elapsed-time acceptance evidence.
 
+The isolated VM lifetime executable also walks allocation failures through a
+recursive integer call until it reaches the first fully completed allocation
+walk. It covers generic warmup, plan publication, scratch growth, large spills
+and boxing, then checks caller globals, correct retry and complete ordinary
+allocation teardown. The sweep is enabled only when the integer tier is built;
+it runs in both instrumented and ordinary configurations without production
+fault-injection hooks.
+
 Tests cover the engine, signed endpoints, lvalue timing, explicit loads,
 interruptions, depth exhaustion, scratch reuse and effect rejection. Parsed
 hot-call programs compare verified execution with the full-check interpreter,

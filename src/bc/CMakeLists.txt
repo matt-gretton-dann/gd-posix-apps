@@ -119,6 +119,8 @@ if(RUN_UNIT_TESTS)
   set_tests_properties(bc/consumer-mode PROPERTIES TIMEOUT 10)
   add_executable(test-bc-vm-lifetime test-vm-lifetime.cc)
   target_link_libraries(test-bc-vm-lifetime PRIVATE libbc)
+  target_compile_definitions(test-bc-vm-lifetime PRIVATE
+    GD_BC_EXPECT_INTEGER_FUNCTIONS=$<BOOL:${ENABLE_BC_INTEGER_FUNCTIONS}>)
   target_include_directories(test-bc-vm-lifetime PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
   add_dependencies(test-bc-vm-lifetime bc_messages_header)
   set_property(TARGET test-bc-vm-lifetime PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
