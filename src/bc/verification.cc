@@ -10,6 +10,7 @@
 #endif
 
 #include <algorithm>
+#include <array>
 #include <numeric>
 #include <span>
 #include <utility>
@@ -107,6 +108,89 @@ private:
   std::vector<Index> neighbors_;
 };
 }  // namespace
+
+// Prove the common short scalar case in one pass. Every referenced
+// instruction has already executed in this branch-free stream. A rejected
+// shape goes through the general verifier for its full checks and diagnostics.
+auto verify_short_scalar_stream(Instructions const& code) -> bool
+{
+  using O = Instruction::Opcode;
+  enum class Kind { none, number, location, string };
+  std::array<Kind, 16> results;
+  if (code.size() > results.size())
+    return false;
+
+  for (Index i = 0; i < code.size(); ++i) {
+    auto const& instruction = code[i];
+    auto input = [&](Instruction::Operand const& operand) {
+      auto const* offset = std::get_if<Instruction::Offset>(&operand);
+      if (offset == nullptr || *offset >= 0 || static_cast<Index>(-(*offset + 1)) >= i)
+        return Kind::none;
+      return results[i + static_cast<Index>(*offset)];
+    };
+    auto const opcode = instruction.opcode();
+    switch (opcode) {
+    case O::eof:
+      return i + 1 == code.size();
+    case O::number:
+    case O::string:
+      if (!std::holds_alternative<std::string>(instruction.op1()))
+        return false;
+      results[i] = opcode == O::number ? Kind::number : Kind::string;
+      break;
+    case O::variable:
+      if (!std::holds_alternative<Variable>(instruction.op1()))
+        return false;
+      [[fallthrough]];
+    case O::scale:
+    case O::ibase:
+    case O::obase:
+      results[i] = Kind::location;
+      break;
+    case O::load:
+      if (input(instruction.op1()) != Kind::location)
+        return false;
+      results[i] = Kind::number;
+      break;
+    case O::store:
+      if (input(instruction.op1()) != Kind::location || input(instruction.op2()) != Kind::number)
+        return false;
+      results[i] = Kind::none;
+      break;
+    case O::print:
+      if (input(instruction.op1()) == Kind::none ||
+          !std::holds_alternative<Instruction::Stream>(instruction.op2()))
+        return false;
+      results[i] = Kind::none;
+      break;
+    case O::add:
+    case O::subtract:
+    case O::multiply:
+    case O::divide:
+    case O::modulo:
+    case O::power:
+    case O::equals:
+    case O::less_than_equals:
+    case O::not_equals:
+    case O::less_than:
+      if (input(instruction.op2()) != Kind::number)
+        return false;
+      [[fallthrough]];
+    case O::negate:
+    case O::sqrt:
+    case O::abs:
+    case O::scale_expr:
+    case O::length:
+      if (input(instruction.op1()) != Kind::number)
+        return false;
+      results[i] = Kind::number;
+      break;
+    default:
+      return false;
+    }
+  }
+  return true;
+}
 
 auto verify_control_flow(Instructions const& code, bool function_body)
   -> std::optional<VerificationError>
