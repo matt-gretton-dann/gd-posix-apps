@@ -110,6 +110,16 @@ def build_metadata(helper, root, source, build, revision, split, compiler_c, com
         target = root / 'integer-policy/libbc.vcxproj'
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(str(build / 'src/bc/libbc.vcxproj'), str(target))
+    elif integer.get('verification', {}).get('kind') == 'msbuild-projects':
+        for relative in integer['verification']['files']:
+            target = root / 'integer-policy' / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(str(build / relative), str(target))
+    isolation = verified_integer_isolation(helper, build, integer)
+    if isolation['status'] != 'legacy':
+        target = root / 'integer-policy/bc-integer-isolation.json'
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(str(build / 'bc-integer-isolation.json'), str(target))
     if prepared.get('verification', {}).get('kind') == 'msbuild-projects':
         for relative in prepared['verification']['files']:
             target = root / 'prepared-policy' / relative
@@ -124,6 +134,7 @@ def build_metadata(helper, root, source, build, revision, split, compiler_c, com
                               'ipo_policy': ipo,
                               'prepared_divisors_policy': prepared,
                               'integer_functions_policy': integer,
+                              'integer_isolation_policy': isolation,
                               'multiply_split_point': split,
                               'diagnostic_profile': diagnostic_profile,
                               'threshold_header_sha256': helper.digest(root / 'multiply-threshold.hh')},
@@ -173,43 +184,119 @@ def verified_integer_functions(helper, build, requested):
         import xml.etree.ElementTree as ET
         if not cache_values(build / 'CMakeCache.txt').get('CMAKE_GENERATOR', '').startswith('Visual Studio'):
             raise helper.BuildError('integer-function mode needs compile commands or native VS projects')
-        project = build / 'src/bc/libbc.vcxproj'
-        try:
-            tree = ET.parse(str(project)).getroot()
-        except (OSError, ET.ParseError) as error:
-            raise helper.BuildError('missing integer-function compiler evidence: ' + str(error))
-        selected, release = set(), False
-        for node in tree.iter():
-            tag = node.tag.rsplit('}', 1)[-1]
-            text = node.text or ''
-            if tag == 'ClCompile' and node.get('Include'):
-                filename = node.get('Include').replace('\\', '/').rsplit('/', 1)[-1]
-                if filename in ('vm.cc', 'integer-function.cc'):
-                    selected.add(filename)
-            if tag == 'UndefinePreprocessorDefinitions' and 'GD_BC_INTEGER_FUNCTIONS' in text:
-                raise helper.BuildError('project undefines integer-function mode')
-            if tag == 'AdditionalOptions':
-                values = define.findall(text)
-                if (values and (not enabled or values != ['1'])) or undefine.search(text):
-                    raise helper.BuildError('project contradicts integer-function mode')
-            if tag != 'ItemDefinitionGroup':
-                continue
-            condition = node.get('Condition', '')
-            if condition and not re.search(r'Release\|', condition, re.IGNORECASE):
-                continue
-            for compiler in node:
-                if compiler.tag.rsplit('}', 1)[-1] != 'ClCompile':
+        projects = [build / 'src/bc/libbc.vcxproj']
+        if enabled and cache_values(build / 'CMakeCache.txt').get(
+                'ENABLE_BC_INTEGER_ENGINE_ISOLATION', '').upper() in ('ON', 'TRUE', 'YES', '1'):
+            projects.append(build / 'src/bc/bc-integer-engine.vcxproj')
+        selected = set()
+        for project in projects:
+            try:
+                tree = ET.parse(str(project)).getroot()
+            except (OSError, ET.ParseError) as error:
+                raise helper.BuildError('missing integer-function compiler evidence: ' + str(error))
+            release = False
+            for node in tree.iter():
+                tag = node.tag.rsplit('}', 1)[-1]
+                text = node.text or ''
+                if tag == 'ClCompile' and node.get('Include'):
+                    filename = node.get('Include').replace('\\', '/').rsplit('/', 1)[-1]
+                    if filename in ('vm.cc', 'integer-function.cc'):
+                        selected.add(filename)
+                if tag == 'UndefinePreprocessorDefinitions' and 'GD_BC_INTEGER_FUNCTIONS' in text:
+                    raise helper.BuildError('project undefines integer-function mode')
+                if tag == 'AdditionalOptions':
+                    values = define.findall(text)
+                    if (values and (not enabled or values != ['1'])) or undefine.search(text):
+                        raise helper.BuildError('project contradicts integer-function mode')
+                if tag != 'ItemDefinitionGroup':
                     continue
-                for child in compiler:
-                    if child.tag.rsplit('}', 1)[-1] == 'PreprocessorDefinitions':
-                        values = re.findall(r'(?:^|;)GD_BC_INTEGER_FUNCTIONS\b(?:=([^;]+))?', child.text or '')
-                        if values != (['1'] if enabled else []):
-                            raise helper.BuildError('Release project contradicts integer-function mode')
-                        release = True
-        if not release or selected != expected_files:
+                condition = node.get('Condition', '')
+                if condition and not re.search(r'Release\|', condition, re.IGNORECASE):
+                    continue
+                for compiler in node:
+                    if compiler.tag.rsplit('}', 1)[-1] != 'ClCompile':
+                        continue
+                    for child in compiler:
+                        if child.tag.rsplit('}', 1)[-1] == 'PreprocessorDefinitions':
+                            values = re.findall(r'(?:^|;)GD_BC_INTEGER_FUNCTIONS\b(?:=([^;]+))?', child.text or '')
+                            if values != (['1'] if enabled else []):
+                                raise helper.BuildError('Release project contradicts integer-function mode')
+                            release = True
+            if not release:
+                raise helper.BuildError('missing integer-function Release definition proof')
+        if selected != expected_files:
             raise helper.BuildError('missing integer-function Release source/definition proof')
-        proof = dict(kind='msbuild-project', sha256=helper.digest(project))
+        proof = (dict(kind='msbuild-project', sha256=helper.digest(projects[0])) if len(projects) == 1
+                 else dict(kind='msbuild-projects', files={str(p.relative_to(build)): helper.digest(p)
+                                                          for p in projects}))
     return dict(status='verified', mode=requested, enabled=enabled, verification=proof)
+
+
+def verified_integer_isolation(helper, build, integer):
+    """Attest the optional native-object boundary, retaining legacy uncertainty."""
+    path = build / 'bc-integer-isolation.json'
+    cache = cache_values(build / 'CMakeCache.txt')
+    configured = cache.get('ENABLE_BC_INTEGER_ENGINE_ISOLATION')
+    if not path.is_file():
+        if configured is not None:
+            raise helper.BuildError('missing integer-isolation policy report')
+        return dict(status='legacy', isolated=None)
+    try:
+        report = json.loads(path.read_text(encoding='utf-8'))
+        valid = isinstance(report, dict) and type(report.get('schema')) is int and report['schema'] == 1
+        valid = valid and type(report.get('feature_enabled')) is bool and type(report.get('isolated')) is bool
+        if not valid or configured is None or configured.upper() not in ('ON', 'OFF', 'TRUE', 'FALSE', 'YES', 'NO', '1', '0'):
+            raise ValueError('invalid policy/configuration')
+        isolated = bool(integer.get('enabled')) and configured.upper() in ('ON', 'TRUE', 'YES', '1')
+        target = 'bc-integer-engine' if isolated else 'libbc'
+        if (report['feature_enabled'] is not integer.get('enabled') or
+                report['isolated'] is not isolated or report.get('target') != target):
+            raise ValueError('policy contradicts feature/configuration')
+    except (OSError, ValueError, TypeError) as error:
+        raise helper.BuildError('invalid integer-isolation policy: ' + str(error))
+    proof = dict(report_sha256=helper.digest(path))
+    if isolated:
+        ipo = re.compile(r'''(?:^|[\s"'])(?:-flto(?:=[^\s"']+)?|/GL)(?=$|[\s"'])''', re.IGNORECASE)
+        commands = build / 'compile_commands.json'
+        if commands.is_file():
+            try:
+                inventory = json.loads(commands.read_text(encoding='utf-8'))
+                if not isinstance(inventory, list) or any(not isinstance(row, dict) for row in inventory):
+                    raise ValueError('invalid command inventory')
+                rows = [row for row in inventory
+                        if str(row.get('file', '')).replace('\\', '/').endswith('/src/bc/integer-function.cc')]
+                if len(rows) != 1:
+                    raise ValueError('missing or ambiguous engine command')
+                row = rows[0]
+                command = ' '.join(row['arguments']) if 'arguments' in row else row['command']
+                if 'bc-integer-engine.dir' not in command or ipo.search(command):
+                    raise ValueError('engine is not an isolated native object')
+            except (KeyError, TypeError, ValueError) as error:
+                raise helper.BuildError('invalid integer-isolation compiler proof: ' + str(error))
+            proof.update(kind='compile-commands', sha256=helper.digest(commands))
+        else:
+            import xml.etree.ElementTree as ET
+            project = build / 'src/bc/bc-integer-engine.vcxproj'
+            try:
+                tree = ET.parse(str(project)).getroot()
+                sources, release = [], False
+                for node in tree.iter():
+                    tag = node.tag.rsplit('}', 1)[-1]
+                    if tag == 'ClCompile' and node.get('Include'):
+                        sources.append(node.get('Include').replace('\\', '/').rsplit('/', 1)[-1])
+                    if tag == 'WholeProgramOptimization' and (node.text or '').strip().lower() not in ('false', '0'):
+                        raise ValueError('engine project enables whole-program optimization')
+                    if tag == 'AdditionalOptions' and ipo.search(node.text or ''):
+                        raise ValueError('engine project contains an IPO flag')
+                    if tag == 'ItemDefinitionGroup' and re.search(r'Release\|', node.get('Condition', ''), re.IGNORECASE):
+                        release = True
+                if sources != ['integer-function.cc'] or not release:
+                    raise ValueError('missing isolated Release engine project')
+            except (OSError, ET.ParseError, ValueError) as error:
+                raise helper.BuildError('invalid integer-isolation project proof: ' + str(error))
+            proof.update(kind='msbuild-project', sha256=helper.digest(project))
+    return dict(status='verified', isolated=isolated, target=target, verification=proof,
+                scope='project-managed IPO; explicit enabling flags on the engine are rejected')
 
 
 def require_integer_mode(helper, entry, enabled=True):

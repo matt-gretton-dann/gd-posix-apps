@@ -173,6 +173,21 @@ competitive requirements remain open.
 
 ## Native qualification recipe
 
+The compiler-isolation experiment (#614) builds the optional engine as a native
+object target with project IPO disabled, including configuration-specific
+inherited IPO defaults. It inherits the library's language, definitions,
+diagnostic and coverage options. Other library translation units retain their
+normal optimisation policy. `ENABLE_BC_INTEGER_ENGINE_ISOLATION=OFF` restores
+the original engine compilation path. The integer feature itself remains OFF
+by default, and no engine object is built in that configuration.
+
+`bc-integer-isolation.json` records the configured boundary. Build evidence
+verifies the separate engine command and rejects explicit engine LTO flags;
+native Visual Studio projects retain both owning targets and reject enabled
+whole-program optimisation in the engine project. Earlier sources without this
+report retain a legacy/unknown isolation status. This evidence establishes a
+compiler boundary, not a performance win or proof that IPO caused a slowdown.
+
 `bc-integer-performance.yml` compares OFF and ON at the same immutable source
 on Linux, macOS and Windows. It starts for the fixed experiment topic and also
 supports manual replay with a full source SHA. Ordinary PRs retain the separate
@@ -196,7 +211,7 @@ rerun or pooling is implied. Green workflow status remains distinct from every
 class's runtime/resource acceptance. Same-source mode isolation must also be
 followed by final integrated-tree qualification against accepted main.
 
-The state-isolation topic starts with the three-platform arithmetic stage.
+The state- and compiler-isolation topics start with three-platform arithmetic.
 That stage tests the structural hypothesis while preserving the earlier source
 and its separate fixed Windows confirmation. It does not replace full/holdout
 math, resource or final integration requirements. A separate immutable
