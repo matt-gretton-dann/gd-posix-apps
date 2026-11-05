@@ -1099,7 +1099,14 @@ private:
     assert(digits_->size() >= v.digits_->size());  // NOLINT
 
     if (v.digits_->size() == 1) {
-      auto const remainder = divide(v.digits_->at(0));
+      auto const divisor = v.digits_->at(0);
+      if constexpr (!Remainder) {
+        if (digits_->size() >= 8 && (*digits_)[0] == 0 && (*digits_)[1] == 0 &&
+            try_divide_periodic(divisor)) {
+          return;
+        }
+      }
+      auto const remainder = divide(divisor);
       if constexpr (Remainder) {
         digits_ = DigitVector(std::initializer_list<NumType>{remainder});
         tidy();
@@ -1305,7 +1312,7 @@ private:
 #elif __has_cpp_attribute(gnu::noinline)
   [[gnu::noinline]]
 #endif
-  auto try_divide_periodic(NumType div) -> std::optional<NumType>
+  auto try_divide_periodic(NumType div) -> bool
   {
     auto const first_limb = digits_->begin();
     auto const count = digits_->size() - 1;
@@ -1318,7 +1325,7 @@ private:
     // be zero. Check both conditions before replacing any input limb.
     if (second % div != initial ||
         !std::all_of(first_limb, first_limb + count, [](auto limb) { return limb == 0; })) {
-      return std::nullopt;
+      return false;
     }
 
     auto const q1 = static_cast<NumType>(first / div);
@@ -1332,7 +1339,7 @@ private:
     if (odd != 0)
       first_limb[0] = q1;
     tidy();
-    return static_cast<NumType>(odd != 0 ? middle : initial);
+    return true;
   }
 
 public:
@@ -1340,12 +1347,6 @@ public:
   auto divide(NumType div) -> NumType
   {
     copy_on_write();
-
-    if (digits_->size() >= 8 && (*digits_)[0] == 0 && (*digits_)[1] == 0) {
-      if (auto const remainder = try_divide_periodic(div)) {
-        return *remainder;
-      }
-    }
 
 #if defined(__APPLE__) && defined(__aarch64__) && defined(__SIZEOF_INT128__)
     // Apple Arm64 benefits from the high product. Use hardware division
