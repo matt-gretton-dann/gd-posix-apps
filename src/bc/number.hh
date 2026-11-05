@@ -276,16 +276,18 @@ public:
 #endif
   auto compare(BasicDigits const& rhs, NumType scale) const -> Details::ComparisonResult
   {
+    assert(digits_);      // NOLINT
+    assert(rhs.digits_);  // NOLINT
     if (scale == 0) {
       // Inspect the most significant unequal limb first. Zero-extension keeps
       // this valid for temporary ranges that still contain leading zero limbs;
       // storage length alone does not establish numeric ordering.
       // Neither operand changes during comparison. Select inline/heap storage
       // and capture both extents once rather than rechecking each limb access.
-      auto const lhs_size = digits_ ? digits_->size() : 0;
-      auto const rhs_size = rhs.digits_ ? rhs.digits_->size() : 0;
-      auto const lhs_first = digits_ ? digits_->begin() : nullptr;
-      auto const rhs_first = rhs.digits_ ? rhs.digits_->begin() : nullptr;
+      auto const lhs_size = digits_->size();
+      auto const rhs_size = rhs.digits_->size();
+      auto const lhs_first = digits_->begin();
+      auto const rhs_first = rhs.digits_->begin();
       auto index = std::max(lhs_size, rhs_size);
 #if !GD_BC_PROFILE
       // Compare the high limb first for an immediate exit on unlike values.
@@ -320,8 +322,6 @@ public:
       }
       return Details::ComparisonResult::equality;
     }
-    assert(digits_);      // NOLINT
-    assert(rhs.digits_);  // NOLINT
     Details::ComparisonResult result = Details::ComparisonResult::equality;
     for_each(rhs, scale, [&result](NumType lhs, NumType rhs) {
       GD_BC_PROFILE_EVENT(Profile::Event::comparison_limb_positions, 1);
@@ -3296,14 +3296,6 @@ private:
 #endif
   auto compare(BasicNumber const& rhs) const -> Details::ComparisonResult
   {
-#if !GD_BC_PROFILE
-    // For the same sign and scale, zero extension already handles zero and
-    // padded coefficients. Compare in reverse magnitude order for negatives.
-    if (scale_ == rhs.scale_ && sign_ == rhs.sign_) {
-      return sign_ == Sign::positive ? digits_.compare(rhs.digits_, 0)
-                                     : rhs.digits_.compare(digits_, 0);
-    }
-#endif
     bool const lhs_zero = digits_.is_zero();
     bool const rhs_zero = rhs.digits_.is_zero();
 
