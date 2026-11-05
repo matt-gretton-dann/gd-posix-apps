@@ -191,6 +191,30 @@ precision limitation. RSS units and optional hardware counters keep their native
 meanings. Unsupported hosts retain an explicit unavailable result; this adapter
 does not infer CPU time from wall-clock duration.
 
+On Windows, the standard-library `ctypes` adapter reads the kernel's peak
+working set and peak commit charge in bytes through
+[K32GetProcessMemoryInfo](https://learn.microsoft.com/en-us/windows/win32/api/psapi/nf-psapi-getprocessmemoryinfo).
+These are distinct counters; commit charge is not resident memory. The adapter
+queries the actual child's retained CPython `Popen` process handle after the
+child finishes, rather than reopening a possibly reused PID or polling current
+working set. A native test touches and releases 64 MiB before exit to check that
+the peak remains available. The process handle stays owned by `Popen`.
+
+[GetProcessTimes](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes)
+supplies user/kernel CPU counters. Reports retain the raw 100-nanosecond ticks
+and their conversion to seconds; the operating system's accounting resolution
+can be coarser than that unit. Zero CPU counters remain valid. API failures
+retain their Windows error code independently for memory and CPU accounting;
+Python implementations without the process handle retain explicit unavailable
+data. No external Python package or change to the measured interpreter is
+required. Counts cover this process, not a descendant process tree.
+
+Windows raw counter observations use `.rss.json`; Linux/macOS keep their native
+`.rss.txt` reports. Every supported adapter still checks exit status, stderr,
+all numerical output and caller state before accepting an observation. These
+cold resource observations are separate from paired release elapsed samples,
+software allocator counters and cross-platform performance acceptance.
+
 On Linux, add `--perf /absolute/path/to/perf` to capture userspace software
 CPU-clock samples for the same checked workload. The selected executable must
 be able to open the event under the caller's existing permissions. The
