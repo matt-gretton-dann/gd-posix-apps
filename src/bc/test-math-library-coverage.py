@@ -96,12 +96,14 @@ def main():
     # The decimal unit shortcut and the nondecimal fallback return the
     # same certified value. Keep the caller's input base and scale visible.
     unit = run(args.bc, transformed,
-               'scale=20\na(-1)\nibase=16\na(1)\na(-1)\nibase\nscale\n')
+               'scale=20\na(-1)\nibase=16\na(1)\na(-1)\nibase\nscale\n'
+               'scale=20\na(1)\nibase\nscale\n')
     assert unit.returncode == 0 and not unit.stderr, unit.stderr
     unit_plain, unit_outcomes = strip_probes(unit.stdout)
     assert [decimal_fraction(value) for value in unit_plain] == [
         Fraction('-.78539816339744830962'), Fraction('.78539816339744830962'),
         Fraction('-.78539816339744830962'), 16, 20,
+        Fraction('.78539816339744830961566084581988'), 16, 32,
     ]
     outcomes.update(unit_outcomes)
     # These are guard-behavior cases, not mathematical accuracy claims for
