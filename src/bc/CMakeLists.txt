@@ -59,10 +59,51 @@ if(ENABLE_NON_POSIX_EXTENSIONS)
 endif()
 option(ENABLE_BC_STACK_EXECUTION "Enable experimental scalar operand-stack execution" OFF)
 option(ENABLE_BC_INTEGER_FUNCTIONS "Enable experimental portable pure integer functions" OFF)
+option(ENABLE_BC_INTEGER_ENGINE_ISOLATION "Keep the optional integer engine outside project IPO" ON)
+set(_bc_integer_feature false)
+set(_bc_integer_isolated false)
+set(_bc_integer_target libbc)
 if(ENABLE_BC_INTEGER_FUNCTIONS)
-  target_sources(libbc PRIVATE integer-function.cc)
+  set(_bc_integer_feature true)
+  if(ENABLE_BC_INTEGER_ENGINE_ISOLATION)
+    # Native objects form a portable boundary against whole-program importing.
+    # Inherit the owning library's complete language/diagnostic context, including
+    # definitions/options added below, but not its IPO target property.
+    add_library(bc-integer-engine OBJECT integer-function.cc)
+    target_link_libraries(bc-integer-engine PRIVATE gdsup util bc-language-mode)
+    target_include_directories(bc-integer-engine PRIVATE
+      "$<TARGET_PROPERTY:libbc,INCLUDE_DIRECTORIES>")
+    target_compile_definitions(bc-integer-engine PRIVATE
+      "$<TARGET_PROPERTY:libbc,COMPILE_DEFINITIONS>")
+    target_compile_options(bc-integer-engine PRIVATE
+      "$<TARGET_PROPERTY:libbc,COMPILE_OPTIONS>")
+    set_property(TARGET bc-integer-engine PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
+    set_property(TARGET bc-integer-engine PROPERTY CXX_STANDARD_REQUIRED ON)
+    get_target_property(_bc_integer_pic libbc POSITION_INDEPENDENT_CODE)
+    if(NOT _bc_integer_pic STREQUAL "_bc_integer_pic-NOTFOUND")
+      set_property(TARGET bc-integer-engine PROPERTY POSITION_INDEPENDENT_CODE "${_bc_integer_pic}")
+    endif()
+    set_property(TARGET bc-integer-engine PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
+    # Configuration-specific inherited defaults otherwise override the general
+    # property on multi-configuration generators and caller-configured builds.
+    foreach(_bc_config DEBUG RELEASE RELWITHDEBINFO MINSIZEREL
+                       ${CMAKE_CONFIGURATION_TYPES} ${CMAKE_BUILD_TYPE})
+      string(TOUPPER "${_bc_config}" _bc_config_upper)
+      set_property(TARGET bc-integer-engine PROPERTY
+                   "INTERPROCEDURAL_OPTIMIZATION_${_bc_config_upper}" FALSE)
+    endforeach()
+    add_dependencies(bc-integer-engine bc_messages_header)
+    target_sources(libbc PRIVATE $<TARGET_OBJECTS:bc-integer-engine>)
+    set(_bc_integer_isolated true)
+    set(_bc_integer_target bc-integer-engine)
+  else()
+    # Keep the original compilation path available for comparison and fallback.
+    target_sources(libbc PRIVATE integer-function.cc)
+  endif()
   target_compile_definitions(libbc PRIVATE GD_BC_INTEGER_FUNCTIONS=1)
 endif()
+file(WRITE "${CMAKE_BINARY_DIR}/bc-integer-isolation.json"
+     "{\"schema\":1,\"feature_enabled\":${_bc_integer_feature},\"isolated\":${_bc_integer_isolated},\"target\":\"${_bc_integer_target}\"}\n")
 if(ENABLE_BC_STACK_EXECUTION)
   target_sources(libbc PRIVATE stack-execution.cc)
   target_compile_definitions(libbc PRIVATE GD_BC_STACK_EXECUTION=1)

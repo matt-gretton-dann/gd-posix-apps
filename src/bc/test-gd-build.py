@@ -112,6 +112,86 @@ class GdBuild(unittest.TestCase):
             with self.assertRaises(self.helper.BuildError):
                 self.module.verified_integer_functions(self.helper, self.build, mode)
 
+    def isolation_fixture(self, isolated=True, enabled=True):
+        self.cache.write_text(self.cache.read_text() +
+            'ENABLE_BC_INTEGER_FUNCTIONS:BOOL=' + ('ON' if enabled else 'OFF') + '\n' +
+            'ENABLE_BC_INTEGER_ENGINE_ISOLATION:BOOL=' + ('ON' if isolated else 'OFF') + '\n')
+        target = 'bc-integer-engine' if isolated and enabled else 'libbc'
+        report = dict(schema=1, feature_enabled=enabled, isolated=isolated and enabled, target=target)
+        (self.build / 'bc-integer-isolation.json').write_text(json.dumps(report))
+        return dict(enabled=enabled), report
+
+    def test_integer_isolation_requires_native_object_and_rejects_ipo_flags(self):
+        integer, _ = self.isolation_fixture()
+        commands = self.build / 'compile_commands.json'
+        row = dict(file='/source/src/bc/integer-function.cc',
+                   arguments=['c++', '-O3', '-c', 'integer-function.cc', '-o',
+                              'CMakeFiles/bc-integer-engine.dir/integer-function.cc.o'])
+        commands.write_text(json.dumps([row]))
+        result = self.module.verified_integer_isolation(self.helper, self.build, integer)
+        self.assertTrue(result['isolated'])
+        self.assertEqual(result['verification']['kind'], 'compile-commands')
+        for flag in ('-flto', '-flto=thin', '-flto=auto', '/GL'):
+            with self.subTest(flag=flag):
+                commands.write_text(json.dumps([dict(row, arguments=row['arguments'] + [flag])]))
+                with self.assertRaises(self.helper.BuildError):
+                    self.module.verified_integer_isolation(self.helper, self.build, integer)
+        for corrupt in ([], [row, row], {}, [None],
+                        [dict(row, arguments=['c++', '-c', 'integer-function.cc'])]):
+            commands.write_text(json.dumps(corrupt))
+            with self.assertRaises(self.helper.BuildError):
+                self.module.verified_integer_isolation(self.helper, self.build, integer)
+
+    def test_integer_isolation_legacy_disabled_and_report_mismatches(self):
+        self.assertEqual(self.module.verified_integer_isolation(self.helper, self.build, {})['status'], 'legacy')
+        for isolated, enabled in ((False, True), (True, False), (False, False)):
+            integer, report = self.isolation_fixture(isolated, enabled)
+            result = self.module.verified_integer_isolation(self.helper, self.build, integer)
+            self.assertFalse(result['isolated'])
+            self.assertEqual(result['target'], 'libbc')
+            path = self.build / 'bc-integer-isolation.json'
+            for corrupt in (dict(report, schema=True), dict(report, feature_enabled=not enabled),
+                            dict(report, isolated=True), dict(report, target='wrong'), []):
+                path.write_text(json.dumps(corrupt))
+                with self.assertRaises(self.helper.BuildError):
+                    self.module.verified_integer_isolation(self.helper, self.build, integer)
+            path.unlink()
+            with self.assertRaises(self.helper.BuildError):
+                self.module.verified_integer_isolation(self.helper, self.build, integer)
+
+    def test_integer_isolation_retains_both_native_release_projects(self):
+        integer, _ = self.isolation_fixture()
+        self.cache.write_text(self.cache.read_text() + 'CMAKE_GENERATOR:INTERNAL=Visual Studio 17 2022\n')
+        (self.build / 'compile_commands.json').unlink()
+        projects = {}
+        for target, source in (('libbc', 'vm.cc'), ('bc-integer-engine', 'integer-function.cc')):
+            path = self.build / ('src/bc/' + target + '.vcxproj')
+            text = '''<Project><ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+<ClCompile><PreprocessorDefinitions>WIN32;GD_BC_INTEGER_FUNCTIONS=1</PreprocessorDefinitions>
+<WholeProgramOptimization>false</WholeProgramOptimization></ClCompile></ItemDefinitionGroup>
+<ItemGroup><ClCompile Include="C:/source/src/bc/''' + source + '''"/></ItemGroup></Project>'''
+            path.write_text(text)
+            projects[target] = (path, text)
+        result = self.module.verified_integer_functions(self.helper, self.build, 'ON')
+        self.assertEqual(result['verification']['kind'], 'msbuild-projects')
+        self.assertEqual(len(result['verification']['files']), 2)
+        result = self.module.verified_integer_isolation(self.helper, self.build, integer)
+        self.assertTrue(result['isolated'])
+        metadata = self.metadata()
+        self.assertTrue(metadata['configuration']['integer_isolation_policy']['isolated'])
+        for relative in ('src/bc/libbc.vcxproj', 'src/bc/bc-integer-engine.vcxproj',
+                         'bc-integer-isolation.json'):
+            self.assertTrue((self.root / 'integer-policy' / relative).is_file())
+        engine, text = projects['bc-integer-engine']
+        for corrupt in (text.replace('false', 'true'), text.replace('Release|', 'Debug|'),
+                        text.replace('integer-function.cc', 'vm.cc')):
+            engine.write_text(corrupt)
+            with self.assertRaises(self.helper.BuildError):
+                self.module.verified_integer_isolation(self.helper, self.build, integer)
+        engine.write_text(text.replace('=1', '=0'))
+        with self.assertRaises(self.helper.BuildError):
+            self.module.verified_integer_functions(self.helper, self.build, 'ON')
+
     def prepared_commands(self, value, arguments=False):
         rows = []
         for name in ('vm.cc', 'bc.cc'):
