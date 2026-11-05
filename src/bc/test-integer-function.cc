@@ -5,6 +5,7 @@
 
 #include <catch2/catch.hpp>
 
+#include <algorithm>
 #include <limits>
 #include <memory>
 #include <sstream>
@@ -152,6 +153,18 @@ TEST_CASE("Pure integer VM calls agree with the full diagnostic interpreter",
       Parser parser(std::make_unique<Lexer>(std::make_unique<StringReader>(program)), false);
       auto source = parser.parse();
       REQUIRE(source);
+      auto const begin = std::find_if(source->begin(), source->end(), [](auto const& instruction) {
+        return instruction.opcode() == O::function_begin;
+      });
+      REQUIRE(begin != source->end());
+      auto const end = std::find_if(begin, source->end(), [](auto const& instruction) {
+        return instruction.opcode() == O::function_end;
+      });
+      REQUIRE(end != source->end());
+      // Prove real parser output reaches the tier, rather than allowing the
+      // differential check to pass solely through unsupported-code fallback.
+      REQUIRE(plan_integer_function(Instructions(begin + 1, end),
+                                    std::get<VariableMask>(begin->op1()), Letter('f')));
       std::ostringstream out;
       std::ostringstream err;
       VM vm(out, err, false, checks);
@@ -162,4 +175,38 @@ TEST_CASE("Pure integer VM calls agree with the full diagnostic interpreter",
     INFO(definition);
     CHECK(run(VM::ExecutionChecks::verified) == run(VM::ExecutionChecks::full));
   }
+}
+
+TEST_CASE("Pure integer products cover every sign and zero", "[bc][integer-function]")
+{
+  IntegerFunctionScratch scratch;
+  for (int b : {-9, -1, 0, 1, 9}) {
+    auto source = prologue();
+    source.emplace_back(O::variable, Variable('x'));
+    source.emplace_back(O::number, std::to_string(b < 0 ? -b : b));
+    if (b < 0)
+      source.emplace_back(O::negate, D(-1));
+    source.emplace_back(O::multiply, D(4) - static_cast<D>(source.size()), D(-1));
+    source.emplace_back(O::return_, D(-1));
+    auto const plan = plan_integer_function(source, VariableMask("x", ""), Letter('f'));
+    REQUIRE(plan);
+    for (std::int64_t a = -128; a <= 127; ++a)
+      CHECK(run_integer_function(*plan, a, scratch, running) == a * b);
+    if (b == -1) {
+      CHECK_FALSE(
+        run_integer_function(*plan, std::numeric_limits<std::int64_t>::min(), scratch, running));
+      CHECK(run_integer_function(*plan, std::numeric_limits<std::int64_t>::max(), scratch,
+                                 running) == -std::numeric_limits<std::int64_t>::max());
+    }
+  }
+  auto source = prologue();
+  source.emplace_back(O::variable, Variable('x'));
+  source.emplace_back(O::negate, D(-1));
+  source.emplace_back(O::return_, D(-1));
+  auto const plan = plan_integer_function(source, VariableMask("x", ""), Letter('f'));
+  REQUIRE(plan);
+  CHECK_FALSE(
+    run_integer_function(*plan, std::numeric_limits<std::int64_t>::min(), scratch, running));
+  CHECK(run_integer_function(*plan, 0, scratch, running) == 0);
+  CHECK(run_integer_function(*plan, -1, scratch, running) == 1);
 }
