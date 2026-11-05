@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Exercise advisory decisions, independent builds and bounded confirmation."""
 import contextlib
+import hashlib
 import importlib.util
 import io
 import json
@@ -19,6 +20,60 @@ SPEC.loader.exec_module(CI)
 
 
 class NativeTrends(unittest.TestCase):
+    def test_sparse_duration_requires_every_independent_role(self):
+        row = dict(implementations={role: dict(median_seconds=.25)
+                                    for role in ('base', 'aa', 'candidate')})
+        self.assertTrue(CI.sparse_duration_sufficient(row))
+        for role in row['implementations']:
+            row['implementations'][role]['median_seconds'] = .249
+            self.assertFalse(CI.sparse_duration_sufficient(row), role)
+            row['implementations'][role]['median_seconds'] = .25
+
+    def test_sparse_supplement_checks_outputs_and_rejects_short_samples(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            evidence = root / 'evidence'
+            evidence.mkdir()
+            fixture = root / 'sparse-fixture.py'
+            fixture.write_text(
+                'import re,sys\n'
+                'if hasattr(sys,"set_int_max_str_digits"): sys.set_int_max_str_digits(1000000)\n'
+                'source=sys.stdin.read()\n'
+                'assert re.search(r"i<(1000|875|1000000|875000);",source)\n'
+                'a=int(re.search(r"^a=(\\d+)$",source,re.M)[1])\n'
+                'b=int(re.search(r"^b=(\\d+)$",source,re.M)[1])\n'
+                'print(a*b)\n')
+            binary = Path(sys.executable).resolve()
+            metadata = dict(source_revision='test fixture', compiler='Python fixture',
+                            flags=['fixture'], version=sys.version, instrumented=False,
+                            binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest())
+            entries = [dict(name=role, argv=[str(binary), str(fixture)], metadata=metadata,
+                            input_artifacts=[dict(path=str(fixture),
+                                sha256=hashlib.sha256(fixture.read_bytes()).hexdigest(),
+                                purpose='checked sparse fixture')])
+                       for role in ('base', 'candidate', 'aa')]
+            builder = CI.load('build-bc-comparators').Builder(root, 30)
+            reports = CI.qualify_sparse(builder, evidence, entries)
+            self.assertEqual(len(reports), 8)
+            self.assertTrue(all(row['status'] == 'inconclusive-duration-shortfall'
+                                for row in reports if row['preset'].endswith('-long')))
+            for preset, count in (('full', 1000000), ('holdout', 875000)):
+                target = evidence / (preset + '-sparse-long')
+                manifest = json.loads((target / 'manifest.json').read_text())
+                self.assertEqual(manifest['sparse_iteration_override'], count)
+                self.assertEqual(manifest['samples'], 31)
+                samples = [json.loads(line) for line in (target / 'samples.jsonl').read_text().splitlines()]
+                self.assertTrue(all(row['checked'] for row in samples))
+                self.assertEqual(sum(row['phase'] == 'measurement' for row in samples), 93)
+                latency = evidence / (preset + '-sparse-latency')
+                manifest = json.loads((latency / 'manifest.json').read_text())
+                self.assertNotIn('sparse_iteration_override', manifest)
+                self.assertEqual(manifest['samples'], 101)
+                self.assertEqual(manifest['corpus'][0]['parameters']['iterations'], count // 1000)
+                samples = [json.loads(line) for line in (latency / 'samples.jsonl').read_text().splitlines()]
+                self.assertTrue(all(row['checked'] for row in samples))
+                self.assertEqual(sum(row['phase'] == 'measurement' for row in samples), 303)
+
     def test_advisory_decisions_need_bounded_confirmation(self):
         slow = {'ci95': [1.15, 1.25]}
         self.assertEqual(CI.decision(slow), 'inconclusive-noisy')

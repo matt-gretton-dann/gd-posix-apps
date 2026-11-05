@@ -56,7 +56,7 @@ jobs:
         shell: pwsh
         run: |
           $arguments = @('src/bc/scripts/benchmark-ci.py', '--source', $env:GITHUB_WORKSPACE, '--base', $env:BC_BASE, '--candidate', $env:BC_CANDIDATE, '--output', 'bc-native-results')
-          if ($env:BC_BROAD -eq 'true') { $arguments += '--broad' }
+          if ($env:BC_BROAD -eq 'true') { $arguments += @('--broad', '--sparse-qualification') }
           if ($env:BC_PREPARED -eq 'true') { $arguments += '--candidate-prepared-divisors' }
           python @arguments
           if ($LASTEXITCODE) { exit $LASTEXITCODE }

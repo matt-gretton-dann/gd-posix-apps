@@ -121,6 +121,56 @@ def selected_cases(bench, preset, broad):
     return chosen
 
 
+def sparse_duration_sufficient(row):
+    """A millisecond process sample cannot qualify this supplemental cohort."""
+    return all(row['implementations'][role]['median_seconds'] >= .25
+               for role in ('base', 'aa', 'candidate'))
+
+
+def qualify_sparse(builder, evidence, entries):
+    """Fixed latency and throughput cohorts; never retry until a result passes.
+
+    Retain full-size operands and their exact product oracle. Increase only the
+    loop count for throughput, preserving the original latency shape separately.
+    Every original broad report remains independent. All three
+    GD roles share each randomized round, including the independently built A/A.
+    """
+    config = evidence / 'sparse-qualification.json'
+    write(config, {'implementations': entries})
+    reports = []
+    for preset, digits, original in (('full', 10000, 1000), ('holdout', 11250, 875)):
+        for kind, multiplier, samples in (('latency', 1, 101), ('long', 1000, 31)):
+            count = original * multiplier
+            name = 'multiply_sparse_{}d_x{}'.format(digits, count)
+            label = preset + '-sparse-' + kind
+            target = evidence / label
+            command = [sys.executable, str(SCRIPTS / 'bench-bc.py'), '--config', str(config),
+                       '--output', str(target), '--reference', 'base', '--preset', preset,
+                       '--workload', name, '--samples', str(samples), '--warmups', '3',
+                       '--seed', '197588', '--corpus-seed',
+                       '197201' if preset == 'holdout' else '197200', '--require-provenance']
+            if kind == 'long':
+                command += ['--sparse-iterations', str(count)]
+            builder.timeout = 1800
+            builder.run(command)
+            row, = json.loads((target / 'summary.json').read_text())['workloads']
+            sufficient = kind == 'latency' or sparse_duration_sufficient(row)
+            control = aa_decision(row['candidate_over_reference']['aa'])
+            if not sufficient:
+                control = 'inconclusive-duration-shortfall'
+            for comparison, role in (('aa', 'aa'), ('paired', 'candidate')):
+                ratio = row['candidate_over_reference'][role]
+                status = control if comparison == 'aa' else decision(ratio)
+                if not sufficient:
+                    status = 'inconclusive-duration-shortfall'
+                reports.append(dict(preset=label, comparison=comparison, name=name,
+                                    ratio=ratio, confirmation=None, status=status,
+                                    aa_control_status=control, candidate_over_howard=None,
+                                    minimum_role_median_seconds=.25 if kind == 'long' else None,
+                                    fixed_samples=samples))
+    return reports
+
+
 def gd_build_command(args, name, revision, directory, cc, cxx):
     command = [sys.executable, str(SCRIPTS / 'build-gd-bc.py'), '--source',
                str(args.source.resolve()), '--revision', revision, '--split-point',
@@ -140,6 +190,7 @@ def main():
     parser.add_argument('--candidate', type=gd.revision_value, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--broad', action='store_true')
+    parser.add_argument('--sparse-qualification', action='store_true')
     parser.add_argument('--candidate-prepared-divisors', action='store_true')
     parser.add_argument('--samples', type=int, default=9)
     parser.add_argument('--split-point', type=gd.positive_point, default=126)
@@ -237,6 +288,8 @@ def main():
                                     'ratio': ratio, 'confirmation': second,
                                     'status': status, 'aa_control_status': controls[row['name']],
                                     'candidate_over_howard': competitive})
+        if args.sparse_qualification:
+            reports.extend(qualify_sparse(builder, evidence, entries))
         write(evidence / 'decisions.json', {'advisory': True, 'results': reports,
               'aa_policy_sha256': AA_POLICY.source_sha256(),
               'policy': '5% is provisional; no performance failure gate; startup uncalibrated',
@@ -267,6 +320,7 @@ def main():
         # Preserve exact recipes/logs without uploading cloned source/build trees.
         write(evidence / 'orchestration.json', {'base': args.base, 'candidate': args.candidate,
               'split_point': args.split_point, 'candidate_prepared_divisors': args.candidate_prepared_divisors,
+              'sparse_qualification': args.sparse_qualification,
               'commands': builder.commands})
         for path in root.glob('command-*.log'):
             shutil.copyfile(str(path), str(evidence / path.name))
