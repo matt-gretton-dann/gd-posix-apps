@@ -155,9 +155,11 @@ auto run_integer_function(IntegerFunction const& function, V argument,
 {
   using Value = IntegerFunctionScratch::Value;
   auto& values = scratch.values;
+  auto& spills = scratch.spills;
   auto& frames = scratch.frames;
   auto& arguments = scratch.arguments;
   values.clear();
+  spills.clear();
   frames.clear();
   arguments.clear();
   struct Clear
@@ -166,52 +168,56 @@ auto run_integer_function(IntegerFunction const& function, V argument,
     ~Clear()
     {
       scratch.values.clear();
+      scratch.spills.clear();
       scratch.frames.clear();
       scratch.arguments.clear();
     }
   } clear{scratch};
   auto const stride = locals_size + function.code.size();
   std::size_t coefficients = 0;
-  auto charge = [](Value const& value) -> std::size_t {
-    auto const* big = std::get_if<Number>(&value);
-    if (big == nullptr)
-      return 0;
-    auto const digits = big->length();
-    return digits <= 4096 ? std::size_t(digits) * sizeof(Number::NumType) : scratch_limit + 1;
-  };
   auto fits = [&](std::size_t extra) {
     return values.size() * sizeof(Value) + frames.size() * sizeof(IntegerFunctionScratch::Frame) +
-             arguments.size() * sizeof(IntegerFunctionScratch::Argument) + coefficients + extra <=
+             arguments.size() * sizeof(IntegerFunctionScratch::Argument) +
+             spills.size() * sizeof(IntegerFunctionScratch::Spill) + coefficients + extra <=
            scratch_limit;
   };
-  auto assign = [&](Value& target, Value value) {
-    auto const old = charge(target);
-    auto const next = charge(value);
-    if (next > old && !fits(next - old))
-      return false;
-    coefficients = coefficients - old + next;
-    target = std::move(value);
+  auto assign = [](Value& target, Value value) {
+    target = value;
     return true;
   };
-  auto number = [](Value const& value) {
-    if (auto const* small = std::get_if<V>(&value))
-      return Number::from_machine_integer(*small);
-    return std::get<Number>(value);
+  auto number = [&](Value const& value) {
+    if (!value.big)
+      return Number::from_machine_integer(value.payload);
+    return spills[static_cast<std::size_t>(value.payload)].value;
   };
-  auto normalize = [](Number value) -> Value {
-    if (auto const small = value.to_machine_integer())
-      return *small;
-    return value;
+  auto normalize = [&](Value& target, Number value) {
+    if (auto const small = value.to_machine_integer()) {
+      target = {*small, false};
+      return true;
+    }
+    auto const digits = value.length();
+    if (digits > 4096)
+      return false;
+    auto const charge = std::size_t(digits) * sizeof(Number::NumType);
+    if (!fits(sizeof(IntegerFunctionScratch::Spill) + charge))
+      return false;
+    // Immutable records make aliases independent of cell overwrites and bank
+    // reallocation. Dead records remain owned and charged until this attempt ends.
+    auto const index = spills.size();
+    spills.push_back({std::move(value), charge});
+    coefficients += charge;
+    target = {static_cast<V>(index), true};
+    return true;
   };
   auto enter = [&](Value value) {
-    if (!fits(stride * sizeof(Value) + sizeof(IntegerFunctionScratch::Frame) + charge(value)))
+    if (!fits(stride * sizeof(Value) + sizeof(IntegerFunctionScratch::Frame)))
       return false;
     auto const base = values.size();
     values.resize(base + stride);
     frames.push_back({4, arguments.size()});
-    return assign(values[base + function.parameter], std::move(value));
+    return assign(values[base + function.parameter], value);
   };
-  if (!enter(argument))
+  if (!enter({argument, false}))
     return {};
   while (!frames.empty()) {
     if (interrupted())
@@ -232,7 +238,7 @@ auto run_integer_function(IntegerFunction const& function, V argument,
     case O::variable:
       break;
     case O::number:
-      if (!assign(destination, V(instruction.left)))
+      if (!assign(destination, {V(instruction.left), false}))
         return {};
       break;
     case O::load:
@@ -245,15 +251,14 @@ auto run_integer_function(IntegerFunction const& function, V argument,
       break;
     case O::negate: {
       auto const& input = read(instruction.left);
-      if (auto const* small = std::get_if<V>(&input);
-          small != nullptr && *small != std::numeric_limits<V>::min()) {
-        if (!assign(destination, -*small))
+      if (!input.big && input.payload != std::numeric_limits<V>::min()) {
+        if (!assign(destination, {-input.payload, false}))
           return {};
       }
       else {
         auto value = number(input);
         value.negate();
-        if (!assign(destination, normalize(std::move(value))))
+        if (!normalize(destination, std::move(value)))
           return {};
       }
       break;
@@ -267,12 +272,10 @@ auto run_integer_function(IntegerFunction const& function, V argument,
     case O::not_equals: {
       auto const& left = read(instruction.left);
       auto const& right = read(instruction.right);
-      auto const* a = std::get_if<V>(&left);
-      auto const* b = std::get_if<V>(&right);
-      if (a != nullptr && b != nullptr) {
-        auto const small = checked_binary(instruction.opcode, *a, *b);
+      if (!left.big && !right.big) {
+        auto const small = checked_binary(instruction.opcode, left.payload, right.payload);
         if (small) {
-          if (!assign(destination, *small))
+          if (!assign(destination, {*small, false}))
             return {};
           break;
         }
@@ -306,7 +309,7 @@ auto run_integer_function(IntegerFunction const& function, V argument,
       default:
         return {};
       }
-      if (!assign(destination, normalize(std::move(value))))
+      if (!normalize(destination, std::move(value)))
         return {};
       break;
     }
@@ -315,8 +318,8 @@ auto run_integer_function(IntegerFunction const& function, V argument,
       break;
     case O::branch_zero: {
       auto const& value = read(instruction.left);
-      auto const* small = std::get_if<V>(&value);
-      if (small != nullptr ? *small == 0 : std::get<Number>(value).is_zero())
+      if (!value.big ? value.payload == 0
+                     : spills[static_cast<std::size_t>(value.payload)].value.is_zero())
         frame.pc = instruction.right;
       break;
     }
@@ -335,7 +338,6 @@ auto run_integer_function(IntegerFunction const& function, V argument,
       if (arguments.size() <= frame.marks || !arguments.back().present)
         return {};
       auto value = std::move(arguments.back().value);
-      coefficients -= charge(value);
       arguments.pop_back();
       if (!enter(std::move(value)))
         return {};
@@ -345,8 +347,6 @@ auto run_integer_function(IntegerFunction const& function, V argument,
       auto value = read(instruction.left);
       if (arguments.size() != frame.marks)
         return {};
-      for (std::size_t i = base; i < values.size(); ++i)
-        coefficients -= charge(values[i]);
       frames.pop_back();
       values.resize(base);
       if (frames.empty())

@@ -88,9 +88,25 @@ TEST_CASE("Pure integer continuations retain exact large results", "[bc][integer
   auto const bounded =
     parsed_function("define f(x) {\nauto y\ny=9\nwhile(x>0) {\ny=y*y\nx=x-1\n}\nreturn (y)\n}\n");
   CHECK_FALSE(run_integer_function(bounded, 14, scratch, running));
+  CHECK(scratch.spills.empty());
   CHECK(scratch.values.empty());
   CHECK(scratch.frames.empty());
   CHECK(scratch.arguments.empty());
+  CHECK(run_small(*plan, 5, scratch, running) == 120);
+  auto const aliases = parsed_function("define f(x) {\nauto y,z,k\ny=x*x\nz=y\ny=0\n"
+                                       "for(k=0;k<9;k++) y=z*z\nreturn (z+z)\n}\n");
+  result =
+    run_integer_function(aliases, std::numeric_limits<std::int64_t>::max(), scratch, running);
+  REQUIRE(result);
+  CHECK(*result == Number("170141183460469231694793815568465002498", 10));
+  auto const dead_records =
+    parsed_function("define f(x) {\nauto a,b,k\na=9\na=a*a\na=a*a\na=a*a\na=a*a\na=a*a\n"
+                    "for(k=0;k<x;k++) b=a*a\nreturn (b)\n}\n");
+  // Every coefficient is small enough, but the immutable bank must also
+  // charge overwritten records instead of growing with an unbounded loop.
+  CHECK_FALSE(run_integer_function(dead_records, 8000, scratch, running));
+  CHECK(scratch.spills.empty());
+  CHECK(scratch.values.empty());
   CHECK(run_small(*plan, 5, scratch, running) == 120);
 }
 
@@ -108,6 +124,7 @@ TEST_CASE("Pure integer functions use bounded iterative self calls", "[bc][integ
   CHECK_FALSE(run_small(*plan, 21, scratch, running));
   CHECK_FALSE(run_small(*plan, 100000, scratch, running));
   CHECK_FALSE(run_small(*plan, 5, scratch, interrupted));
+  CHECK(scratch.spills.empty());
   CHECK(scratch.values.empty());
   CHECK(scratch.frames.empty());
   CHECK(scratch.arguments.empty());

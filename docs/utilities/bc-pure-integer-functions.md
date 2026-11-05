@@ -74,9 +74,14 @@ integer semantics. No division, scale-sensitive operation or new effect is
 introduced. In particular, factorial recursion can retain its large result
 without repeatedly abandoning the machine tier at integer overflow.
 
-Logical scratch charges the actual slot/frame/argument object sizes plus a
-conservative `decimal digits * sizeof(Number::NumType)` charge for each big
-value. Shared coefficients are charged separately per reference. The combined
+Small cells contain a signed payload and a large-value tag. Large values live
+in a separate immutable spill bank; cells and arguments borrow indices, so bank
+growth and cell overwrites preserve aliases. Logical scratch charges actual
+cell/frame/argument/spill object sizes plus a conservative
+`decimal digits * sizeof(Number::NumType)` charge per owned spill. Shared
+coefficients in separate spills are charged separately. Dead spill records stay
+owned and charged until the attempt ends; a long loop can reach the guard and
+fall back even when its most recent value is small. The combined
 limit remains 1 MiB, with a 4096-decimal-digit limit per live value. A single
 multiply can temporarily produce at most twice that digit bound before its
 publication guard; bounded arithmetic temporaries, allocator overhead and
@@ -85,8 +90,11 @@ Exceeding either guard restarts generic execution with the input pack intact.
 The earlier backoff-only candidate and adverse measurements remain separate.
 
 Direct tests additionally cover exact factorial(50), signed-minimum negation,
-promotion followed by cancellation/demotion, large-value guard failure and
-scratch reuse. Native performance, resource measurements and sanitizer checks
+promotion followed by cancellation/demotion, aliases across cell overwrites and
+bank growth, per-value and dead-record budget failure, and scratch reuse.
+The first large-variant diagnostic observed calls at 0.935x baseline and
+recursion at 0.962x; it remains preserved separately from the compact cells.
+Native performance, resource measurements and sanitizer checks
 are still required. The signed-zero boundary correction #601 must be accepted
 and integrated before adoption; this experiment canonicalizes numeric zero.
 
