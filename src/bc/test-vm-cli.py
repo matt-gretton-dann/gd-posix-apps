@@ -168,6 +168,15 @@ f(2,1)
         self.run_bc("define f(a,b) {\nreturn (a*10+b)\n}\n"
                     "define g(a) {\nreturn (f(a,3))\n}\ng(2)\n", "23\n")
 
+    def test_scalar_call_with_nested_and_redefined_callees(self):
+        large = "1234567890" * 12
+        self.run_bc("define f(a) {\nreturn (a+1)\n}\n"
+                    "define g(a,b) {\nreturn (a-b)\n}\n"
+                    "define h(a) {\nreturn (g(a,f(a)))\n}\n"
+                    f"h({large})\n"
+                    "define f(a) {\nreturn (a+2)\n}\n"
+                    f"h({large})\n", "-1\n-2\n")
+
     def test_locals_and_redefinition(self):
         self.run_bc("a=10\ndefine f(a) {\nauto b\nb=a+1\nreturn (b)\n}\n"
                     "f(2)\na\nb\n", "3\n10\n0\n")
