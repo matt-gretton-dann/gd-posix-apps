@@ -11,6 +11,12 @@
 #include "bc.hh"
 
 namespace GD::Bc::Details {
+// Instantiate promoted arithmetic in the ordinary library compiler context,
+// rather than exporting shared arithmetic definitions from the native engine.
+// The left operand is an owned snapshot; unsupported operations return empty.
+auto integer_number_binary(Instruction::Opcode opcode, Number left, Number const& right)
+  -> std::optional<Number>;
+
 struct IntegerFunctionInstruction
 {
   Instruction::Opcode opcode;

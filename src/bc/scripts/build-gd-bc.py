@@ -159,6 +159,16 @@ def verified_integer_functions(helper, build, requested):
     define = re.compile(r'''(?:^|[\s"'])[-/]D\s*["']?GD_BC_INTEGER_FUNCTIONS\b(?:=([^\s"';]+))?''')
     undefine = re.compile(r'''(?:^|[\s"'])[-/]U\s*["']?GD_BC_INTEGER_FUNCTIONS\b''')
     expected_files = {'vm.cc', 'integer-function.cc'} if enabled else {'vm.cc'}
+    report = build / 'bc-integer-isolation.json'
+    if report.is_file():
+        try:
+            value = json.loads(report.read_text(encoding='utf-8'))
+            if not isinstance(value, dict) or value.get('arithmetic_bridge') not in (None, '', 'integer-number.cc'):
+                raise ValueError('invalid arithmetic bridge declaration')
+            if enabled and value.get('arithmetic_bridge'):
+                expected_files.add('integer-number.cc')
+        except (OSError, ValueError) as error:
+            raise helper.BuildError('invalid integer-function policy: ' + str(error))
     commands = build / 'compile_commands.json'
     if commands.is_file():
         try:
@@ -168,7 +178,7 @@ def verified_integer_functions(helper, build, requested):
                 raise ValueError('not a command inventory')
             for row in rows:
                 filename = str(row['file']).replace('\\', '/')
-                if not filename.endswith(('/src/bc/vm.cc', '/src/bc/integer-function.cc')):
+                if not filename.endswith(('/src/bc/vm.cc', '/src/bc/integer-function.cc', '/src/bc/integer-number.cc')):
                     continue
                 command = ' '.join(row['arguments']) if 'arguments' in row else row['command']
                 values = define.findall(command)
@@ -200,7 +210,7 @@ def verified_integer_functions(helper, build, requested):
                 text = node.text or ''
                 if tag == 'ClCompile' and node.get('Include'):
                     filename = node.get('Include').replace('\\', '/').rsplit('/', 1)[-1]
-                    if filename in ('vm.cc', 'integer-function.cc'):
+                    if filename in ('vm.cc', 'integer-function.cc', 'integer-number.cc'):
                         selected.add(filename)
                 if tag == 'UndefinePreprocessorDefinitions' and 'GD_BC_INTEGER_FUNCTIONS' in text:
                     raise helper.BuildError('project undefines integer-function mode')
@@ -229,6 +239,7 @@ def verified_integer_functions(helper, build, requested):
         proof = (dict(kind='msbuild-project', sha256=helper.digest(projects[0])) if len(projects) == 1
                  else dict(kind='msbuild-projects', files={str(p.relative_to(build)): helper.digest(p)
                                                           for p in projects}))
+    proof['translation_units'] = sorted(expected_files)
     return dict(status='verified', mode=requested, enabled=enabled, verification=proof)
 
 
