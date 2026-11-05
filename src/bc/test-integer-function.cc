@@ -180,6 +180,34 @@ TEST_CASE("Pure integer opaque banks preserve handles across moves and guards",
   CHECK(bank.number(value) == expected);
 }
 
+TEST_CASE("Pure integer bank self moves preserve live cells", "[bc][integer-function]")
+{
+  IntegerSpillBank bank;
+  using Cell = IntegerFunctionValue;
+  Cell const operand{std::numeric_limits<std::int64_t>::max(), false};
+  Cell positive, negative;
+  REQUIRE(bank.binary(O::multiply, operand, operand, positive, 1024 * 1024));
+  REQUIRE(bank.negate(positive, negative, 1024 * 1024));
+  auto const expected_positive = bank.number(positive);
+  auto const expected_negative = bank.number(negative);
+  auto const charge = bank.logical_bytes();
+  CHECK_FALSE(bank.empty());
+
+  // A cell borrows its bank's record. Moving through an alias of the same
+  // owner must preserve both records and their logical scratch charge.
+  auto& same_bank = bank;
+  auto const* result = &(bank = std::move(same_bank));
+  CHECK(result == &bank);
+  CHECK_FALSE(bank.empty());
+  CHECK(bank.logical_bytes() == charge);
+  CHECK(bank.number(positive) == expected_positive);
+  CHECK(bank.number(negative) == expected_negative);
+  Cell zero;
+  REQUIRE(bank.binary(O::add, positive, negative, zero, 0));
+  CHECK_FALSE(zero.big);
+  CHECK(zero.payload == 0);
+}
+
 TEST_CASE("Pure integer continuations retain exact large results", "[bc][integer-function]")
 {
   auto const plan = plan_integer_function(factorial(), VariableMask("x", ""), Letter('f'));

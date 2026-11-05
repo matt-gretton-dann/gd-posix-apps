@@ -261,3 +261,31 @@ That stage tests the structural hypothesis while preserving the earlier source
 and its separate fixed Windows confirmation. It does not replace full/holdout
 math, resource or final integration requirements. A separate immutable
 qualification topic or manual replay runs all suites before any adoption.
+
+### Focused ownership coverage
+
+A separate Apple LLVM 21 collection at runtime source
+`2aba8ec2cc1ed23a3806079d2f6dc1caa6cfc27d` instruments only
+`integer-function.cc` and `integer-number.cc`, reusing the unchanged Release
+objects elsewhere. The unit executable is supplied first to `llvm-cov`, with
+the CLI executable as an additional object. This measures those implementations
+and their mapped header code; it is not whole-program coverage, a timing run,
+or a substitute for native hosted checks.
+
+The collection checks the integer unit cases, 32 programs against independent
+numeric oracles and a separate allocation-profile binary, and 25 VM CLI tests.
+The self-move follow-up verifies that a populated bank preserves both borrowed
+cells and its logical charge when move-assigned through an alias of itself;
+subsequent arithmetic must still consume those cells correctly. A populated
+bank must also report nonempty. These tests change no runtime implementation.
+
+After that follow-up, `integer-number.cc` covers all 126 mapped lines, 52 branch
+outcomes and four supported MC/DC conditions. The ordinary integer unit suite
+passes 11,066 assertions in 14 cases; its profile counterpart passes 14,155 in
+15 cases. The wider `integer-function.cc` collection remains at 289/313 lines,
+216/256 branch outcomes and 19/43 supported MC/DC conditions. In addition,
+LLVM explicitly excludes the nested Boolean multiplication-overflow expression
+from MC/DC instrumentation. The supported denominator must not be presented as
+proof for that expression or for every planner/engine guard. Raw profiles,
+objects, binaries, commands, source hashes and before/after exports are retained
+separately from performance artifacts.
