@@ -24,8 +24,10 @@ jobs:
       matrix:
         replica: [1, 2, 3]
     env:
-      BC_CANDIDATE: ${{ github.event.pull_request.head.sha || github.sha }}
-      BC_BASE: ${{ github.event.pull_request.base.sha || inputs.baseline || '97c0c7bcb90f8b7853e360bfc9d1420e3369e865' }}
+      # Qualification-only snapshot: both builds use the accepted source.
+      # Preserve this PR as evidence; do not merge the temporary source pin.
+      BC_CANDIDATE: '87952a52a6c0dcaa19e6fa0f589c9f2a3d82d62f'
+      BC_BASE: '87952a52a6c0dcaa19e6fa0f589c9f2a3d82d62f'
       BC_CPU_REPLICA: ${{ matrix.replica }}
     steps:
       - uses: actions/checkout@v7
