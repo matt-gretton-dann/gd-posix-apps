@@ -274,6 +274,7 @@ public:
       // verified definition ready for another preparation attempt.
       auto consumption = plan_consumption(instructions_, true);
       auto slots = plan_result_slots(instructions_, sizeof(ResultSlot), consumption);
+      reuse_block_result_slots(instructions_, slots);
       auto layout = prepare_layout(instructions_, std::move(slots), true, true);
 #if !GD_BC_PROFILE && !defined(_WIN32)
       auto parameter = prove_scalar_parameter();
