@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check that the native integer object does not define shared arithmetic."""
+"""Check that the native integer object does not define Number ownership/math."""
 import argparse
 import hashlib
 import json
@@ -53,9 +53,13 @@ def main():
     if not all(name + '(' in symbols for name in ('plan_integer_function', 'run_integer_function')):
         return finish('failure', 1, reason='selected object does not define the integer engine')
     arithmetic = re.compile(r'Basic(?:Digits|Number)<.*>::(?:add|sub|multiply(?:_[A-Za-z0-9]+)?)\(')
-    forbidden = [line for line in symbols.splitlines() if arithmetic.search(line)]
+    # Ownership/conversion definitions can also escape a non-IPO object. Keep
+    # every generic Number/Digits instantiation in the ordinary library context.
+    number = re.compile(r'\bBasic(?:Digits|Number)<')
+    forbidden = [line for line in symbols.splitlines() if number.search(line)]
     return finish('failure' if forbidden else 'pass', 1 if forbidden else 0,
-                  arithmetic_definitions=forbidden)
+                  arithmetic_definitions=[line for line in forbidden if arithmetic.search(line)],
+                  number_definitions=forbidden)
 
 
 if __name__ == '__main__':
