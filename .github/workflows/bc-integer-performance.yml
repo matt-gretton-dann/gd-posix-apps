@@ -19,14 +19,14 @@ jobs:
   qualify:
     # This fixed topic starts qualification without needing a dispatch API.
     # Ordinary PRs retain the fast semantic workflow; manual replay stays available.
-    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'codex/bc-598-hybrid-integers' || startsWith(github.head_ref, 'codex/bc-607-') || github.head_ref == 'codex/bc-614-integer-isolation' || github.head_ref == 'codex/bc-614-number-boundary'
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'codex/bc-598-hybrid-integers' || startsWith(github.head_ref, 'codex/bc-607-') || github.head_ref == 'codex/bc-614-integer-isolation' || github.head_ref == 'codex/bc-614-number-boundary' || github.head_ref == 'codex/bc-624-opaque-number'
     strategy:
       fail-fast: false
       matrix:
         image: [ubuntu-24.04, macos-15, windows-2025]
         # Test layout/compiler isolation with arithmetic first. A separate
         # immutable qualification topic or manual replay still runs all suites.
-        suite: ${{ fromJSON((github.head_ref == 'codex/bc-607-integer-state' || github.head_ref == 'codex/bc-614-integer-isolation' || github.head_ref == 'codex/bc-614-number-boundary') && '["arithmetic"]' || '["arithmetic","math-full","math-holdout"]') }}
+        suite: ${{ fromJSON((github.head_ref == 'codex/bc-607-integer-state' || github.head_ref == 'codex/bc-614-integer-isolation' || github.head_ref == 'codex/bc-614-number-boundary' || github.head_ref == 'codex/bc-624-opaque-number') && '["arithmetic"]' || '["arithmetic","math-full","math-holdout"]') }}
     runs-on: ${{ matrix.image }}
     timeout-minutes: 360
     env:
