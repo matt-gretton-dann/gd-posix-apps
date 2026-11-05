@@ -22,3 +22,10 @@ Square/workspace evidence is linked from the benchmark documentation. The
 rejected operand-order experiment supplies evidence, not a selected runtime
 path. Blocked/asymmetric kernels, robust candidate sweeps and stable
 portable default selection remain open work.
+
+Large recursive products can use a direct sparse path when both
+coefficients contain at most four nonzero limbs. The probe requires at
+least 256 limbs per operand and a zero second limb, then stops at the
+fifth nonzero limb. The direct path accumulates each nonzero pair into
+the ordinary coefficient buffer with radix carries. Other operands
+continue through the uniform-run or recursive kernels.
