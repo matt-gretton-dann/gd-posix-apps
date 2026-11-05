@@ -83,6 +83,14 @@ def main():
     hankel = next(case for case in cases
                   if case['id'] == 'j-argument-dominates' and case['scale'] == 100)
     cases.append(dict(hankel, scale=55))
+    # Oddness reflects the certified positive enclosure exactly. Exercise
+    # sign restoration inside the scale-20 near-one polynomial as well.
+    near_one = next(case for case in cases
+                    if case['id'] == 'a-reciprocal-above' and case['scale'] == 20)
+    cases.append(dict(near_one, id='a-negative-near-one',
+                      arguments=['-' + near_one['arguments'][0]],
+                      lower=str(-Fraction(near_one['upper'])),
+                      upper=str(-Fraction(near_one['lower']))))
     program = ''.join('scale={}\n{}({})\n'.format(
         case['scale'], case['function'], ','.join(case['arguments'])) for case in cases)
     result = run(args.bc, transformed, program)
