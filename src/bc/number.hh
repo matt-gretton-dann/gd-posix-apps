@@ -1298,6 +1298,33 @@ public:
   {
     copy_on_write();
 
+    // A decimal shift can leave a long run of zero limbs. If its remainder
+    // repeats after two steps, the quotient limbs repeat in the same order.
+    // Validate the whole run before replacing any input limb.
+    if (digits_->size() >= 8 && (*digits_)[0] == 0 && (*digits_)[1] == 0) {
+      auto const high = digits_->back();
+      WideType const initial = high % div;
+      WideType const first = initial * base_;
+      WideType const middle = first % div;
+      WideType const second = middle * base_;
+      if (second % div == initial &&
+          std::all_of(digits_->begin(), digits_->end() - 1, [](auto limb) { return limb == 0; })) {
+        auto const q1 = static_cast<NumType>(first / div);
+        auto const q2 = static_cast<NumType>(second / div);
+        digits_->back() = high / div;
+        auto const count = digits_->size() - 1;
+        auto const odd = count % 2;
+        for (std::size_t i = odd; i < count; i += 2) {
+          (*digits_)[i] = q2;
+          (*digits_)[i + 1] = q1;
+        }
+        if (odd != 0)
+          (*digits_)[0] = q1;
+        tidy();
+        return static_cast<NumType>(odd != 0 ? middle : initial);
+      }
+    }
+
 #if defined(__APPLE__) && defined(__aarch64__) && defined(__SIZEOF_INT128__)
     // Apple Arm64 benefits from the high product. Use hardware division
     // elsewhere, including the x86-64 radix output workloads.
