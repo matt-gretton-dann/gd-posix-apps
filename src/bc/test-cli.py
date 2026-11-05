@@ -91,6 +91,12 @@ class CliTests(unittest.TestCase):
         self.run_bc(f"scale({whole}.\\\n{fraction})\nquit;", "4101\n", keep_open=True)
         self.run_bc(f"1.{fraction}.2\n", success=False)
 
+    @unittest.skipUnless(os.name == "nt", "requires Windows CRT text input")
+    def test_pipe_preserves_windows_text_mode(self):
+        # Popen text mode writes CRLF. The CRT also interprets Ctrl-Z as EOF.
+        self.run_bc("1+1\n\x1a\n@invalid\n", "2\n")
+        self.run_bc("1+1\nquit\n", "2\n", keep_open=True)
+
     def test_quit(self):
         for text, expected in [
             ("quit\n", ""),
