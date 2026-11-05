@@ -1,0 +1,6 @@
+unit repeated aa 1.0002 [0.9986, 1.0006] base ms 168.423
+unit repeated candidate 0.9323 [0.9311, 0.9353] base ms 168.423
+near-one repeated aa 0.9992 [0.9977, 1.0013] base ms 142.39
+near-one repeated candidate 0.9959 [0.9937, 0.9978] base ms 142.39
+reciprocal repeated aa 0.9999 [0.9963, 1.0032] base ms 288.435
+reciprocal repeated candidate 0.9901 [0.987, 0.9926] base ms 288.435

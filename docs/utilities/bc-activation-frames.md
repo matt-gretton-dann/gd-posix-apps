@@ -16,7 +16,7 @@ instruction profiling execute the original bytecode. Windows also uses the
 original call path because the fused build exceeded the 5% regression limit
 in the native comparison cohort.
 
-Saved locals occupy a separate contiguous vector. A call records its starting
+With scalar binding windows disabled, saved locals occupy a separate contiguous vector. A call records its starting
 offset, moves the selected scalar and array values into it, and installs empty
 locals. After execution it restores those values from the recorded offsets.
 Recursive calls can grow the same vector without invalidating the offsets.
@@ -45,3 +45,9 @@ behavior. The [acceptance report](bc-208-frames/accepted-native/README.md) recor
 the decision to retain host recursion, complete native evidence and limitations.
 Deep-recursion limits remain #184 work; retaining capacity does not establish a
 new recursion-depth guarantee.
+
+The [scalar binding-window experiment](bc-207-binding-windows/README.md) replaces
+scalar save/restore traffic with reusable cells and a dynamic binding table in
+verified execution. Its disabled and full-checking paths retain the lifecycle
+above; array snapshots retain it in every configuration. The experiment has
+local gains and losses and remains subject to full native qualification.
