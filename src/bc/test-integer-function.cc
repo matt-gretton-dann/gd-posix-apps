@@ -52,6 +52,15 @@ auto parsed_function(std::string const& definition) -> IntegerFunction
   Parser parser(std::make_unique<Lexer>(std::make_unique<StringReader>(definition)), false);
   auto source = parser.parse();
   REQUIRE(source);
+  std::ostringstream diagnostics;
+  for (auto const& instruction : *source) {
+    if (instruction.has_op1()) {
+      if (auto const* text = std::get_if<std::string>(&instruction.op1()))
+        diagnostics << *text << '\n';
+    }
+  }
+  INFO(definition);
+  INFO(diagnostics.str());
   auto const begin = std::find_if(source->begin(), source->end(), [](auto const& instruction) {
     return instruction.opcode() == O::function_begin;
   });
@@ -170,6 +179,57 @@ TEST_CASE("Pure integer continuations retain exact large results", "[bc][integer
   CHECK(run_small(*plan, 5, scratch, running) == 120);
 }
 
+TEST_CASE("Pure integer large values preserve branch and negation semantics",
+          "[bc][integer-function]")
+{
+  auto const min = std::numeric_limits<std::int64_t>::min();
+  auto const max = std::numeric_limits<std::int64_t>::max();
+  auto const conditional = parsed_function(
+    "define f(x) {\nauto y\ny=x*x\nif(y) return(-y)\nreturn(0)\n}\n");
+  auto const double_negation =
+    parsed_function("define f(x) {\nauto y\ny=x*x\ny= -y\nreturn(-y)\n}\n");
+  IntegerFunctionScratch scratch;
+  for (auto input : {min, min + 1, std::int64_t(-2), std::int64_t(-1), std::int64_t(0),
+                     std::int64_t(1), std::int64_t(2), max - 1, max}) {
+    auto const operand = Number::from_machine_integer(input);
+    auto square = operand;
+    square.multiply(operand, 0);
+    auto negative = square;
+    negative.negate();
+    for (auto const& plan : {&conditional, &double_negation}) {
+      auto const result = run_integer_function(*plan, input, scratch, running);
+      REQUIRE(result);
+      CHECK(*result == (plan == &conditional ? negative : square));
+      CHECK(scratch.values.empty());
+      CHECK(scratch.spills.empty());
+      CHECK(scratch.frames.empty());
+      CHECK(scratch.arguments.empty());
+    }
+  }
+}
+
+TEST_CASE("Pure integer preparation accepts its exact instruction limit",
+          "[bc][integer-function]")
+{
+  auto source = prologue();
+  // Unused numeric results are still valid verified instructions. Boundaries
+  // include the prologue and return, not only executed arithmetic operations.
+  while (source.size() != 1023)
+    source.emplace_back(O::number, "1");
+  source.emplace_back(O::return_, D(-1));
+  auto const plan = plan_integer_function(source, VariableMask("x", ""), Letter('f'));
+  REQUIRE(plan);
+  CHECK(plan->code.size() == 1024);
+  IntegerFunctionScratch scratch;
+  CHECK(run_small(*plan, 0, scratch, running) == 1);
+  CHECK(scratch.values.empty());
+  CHECK(scratch.spills.empty());
+  CHECK(scratch.frames.empty());
+  CHECK(scratch.arguments.empty());
+  source.insert(source.end() - 1, I(O::number, "1"));
+  CHECK_FALSE(plan_integer_function(source, VariableMask("x", ""), Letter('f')));
+}
+
 TEST_CASE("Pure integer functions use bounded iterative self calls", "[bc][integer-function]")
 {
   auto const plan = plan_integer_function(factorial(), VariableMask("x", ""), Letter('f'));
@@ -254,6 +314,104 @@ TEST_CASE("Pure integer arithmetic guards both signed endpoints", "[bc][integer-
     CHECK(run_small(*plan, min, scratch, running).has_value() == (opcode == O::add));
     CHECK(run_small(*plan, max, scratch, running).has_value() == (opcode == O::subtract));
   }
+}
+
+TEST_CASE("Pure integer signed edges agree with generic arithmetic", "[bc][integer-function]")
+{
+  auto const min = std::numeric_limits<std::int64_t>::min();
+  auto const max = std::numeric_limits<std::int64_t>::max();
+  std::int64_t const inputs[]{min, min + 1, min / 2, -2, -1, 0, 1, 2, max / 2, max - 1, max};
+  IntegerFunctionScratch scratch;
+  for (auto opcode : {O::add, O::subtract, O::multiply, O::less_than, O::less_than_equals,
+                     O::equals, O::not_equals}) {
+    // Fixed signed digits probe all operand signs and overflow boundaries.
+    // The last plan uses x twice, including INT64_MIN as the right operand.
+    for (int rhs = -9; rhs <= 10; ++rhs) {
+      auto source = prologue();
+      source.emplace_back(O::variable, Variable('x'));
+      if (rhs == 10) {
+        source.emplace_back(O::variable, Variable('x'));
+      }
+      else {
+        source.emplace_back(O::number, std::to_string(rhs < 0 ? -rhs : rhs));
+        if (rhs < 0)
+          source.emplace_back(O::negate, D(-1));
+      }
+      source.emplace_back(opcode, D(4) - static_cast<D>(source.size()), D(-1));
+      source.emplace_back(O::return_, D(-1));
+      auto const plan = plan_integer_function(source, VariableMask("x", ""), Letter('f'));
+      REQUIRE(plan);
+      for (auto const input : inputs) {
+        auto const right = rhs == 10 ? input : std::int64_t(rhs);
+        auto expected = Number::from_machine_integer(input);
+        auto const operand = Number::from_machine_integer(right);
+        switch (opcode) {
+        case O::add:
+          expected.add(operand);
+          break;
+        case O::subtract:
+          expected.sub(operand);
+          break;
+        case O::multiply:
+          expected.multiply(operand, 0);
+          break;
+        case O::less_than:
+          expected = Number(input < right ? 1 : 0);
+          break;
+        case O::less_than_equals:
+          expected = Number(input <= right ? 1 : 0);
+          break;
+        case O::equals:
+          expected = Number(input == right ? 1 : 0);
+          break;
+        case O::not_equals:
+          expected = Number(input != right ? 1 : 0);
+          break;
+        default:
+          FAIL("unexpected test operation");
+        }
+#if GD_BC_PROFILE
+        auto const promotions = static_cast<std::size_t>(Profile::Event::integer_function_promotions);
+        auto const demotions = static_cast<std::size_t>(Profile::Event::integer_function_demotions);
+        auto const before = Profile::snapshot().events;
+#endif
+        INFO("opcode=" << static_cast<int>(opcode) << " left=" << input << " right=" << right);
+        auto const result = run_integer_function(*plan, input, scratch, running);
+        REQUIRE(result);
+        CHECK(*result == expected);
+        CHECK(scratch.values.empty());
+        CHECK(scratch.spills.empty());
+        CHECK(scratch.frames.empty());
+        CHECK(scratch.arguments.empty());
+#if GD_BC_PROFILE
+        // A value oracle alone would also pass through unnecessary Number work.
+        auto const after = Profile::snapshot().events;
+        CHECK(after[promotions] == before[promotions] + !expected.to_machine_integer());
+        CHECK(after[demotions] == before[demotions]);
+#endif
+      }
+    }
+  }
+}
+
+TEST_CASE("Pure integer large comparisons cover every relation", "[bc][integer-function]")
+{
+  Number const values[]{Number("18446744073709551616", 10), Number("18446744073709551617", 10)};
+  for (unsigned left = 0; left != 2; ++left) {
+    for (unsigned right = 0; right != 2; ++right) {
+      for (auto opcode : {O::less_than, O::less_than_equals, O::equals, O::not_equals}) {
+        auto const expected = opcode == O::less_than          ? left < right
+                              : opcode == O::less_than_equals ? left <= right
+                              : opcode == O::equals           ? left == right
+                                                              : left != right;
+        auto const result = integer_number_binary(opcode, values[left], values[right]);
+        REQUIRE(result);
+        CHECK(*result == Number(expected ? 1 : 0));
+      }
+    }
+  }
+  CHECK(values[0] == Number("18446744073709551616", 10));
+  CHECK(values[1] == Number("18446744073709551617", 10));
 }
 
 TEST_CASE("Pure integer VM calls agree with the full diagnostic interpreter",
