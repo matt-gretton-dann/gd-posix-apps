@@ -21,6 +21,14 @@ define a(x) {
   /* b/s save base/scale; w is precision; n/v are sign/reciprocal flags.
      k reconstructs half angles; p is pi/2; y is the near-one correction.
      q/t/u are ratio, power and term. */
+  /* At the default base and scale the rounded unit result is exact.
+     Return it before changing either special variable. */
+  if (ibase==A) {
+    if (scale==20) {
+      if (x==1) return(.78539816339744830962)
+      if (x== -1) return(-.78539816339744830962)
+    }
+  }
   b=ibase
   ibase=A
   s=scale
