@@ -8,6 +8,7 @@
 #include <catch2/catch.hpp>
 
 #include <array>
+#include <limits>
 #include <random>
 #include <vector>
 
@@ -216,4 +217,39 @@ TEST_CASE("Isolated linear definitions agree with graph verification", "[bc][vm]
   code[1] = I(O::pop_param_mark);
   code[3] = I(O::return_, D(1));
   CHECK(compare(code));
+}
+
+TEST_CASE("Short scalar proof requires earlier operands of the right kind", "[bc][vm][verifier]")
+{
+  using I = GD::Bc::Instruction;
+  using O = I::Opcode;
+  using D = I::Offset;
+  using GD::Bc::Details::verify_short_scalar_stream;
+
+  GD::Bc::Instructions const code{I(O::scale),
+                                  I(O::load, D(-1)),
+                                  I(O::number, "1"),
+                                  I(O::add, D(-2), D(-1)),
+                                  I(O::store, D(-4), D(-1)),
+                                  I(O::print, D(-2), I::Stream::output),
+                                  I(O::eof)};
+  CHECK(verify_short_scalar_stream(code));
+
+  auto changed = code;
+  for (auto offset : {D(0), D(1), D(-4), std::numeric_limits<D>::min()}) {
+    changed[3].op1(offset);
+    CHECK_FALSE(verify_short_scalar_stream(changed));
+  }
+  changed = code;
+  changed[3].op2(D(-3));  // A location is not a numeric operand.
+  CHECK_FALSE(verify_short_scalar_stream(changed));
+  changed = code;
+  changed[5].op1(D(-1));  // Store produces no result.
+  CHECK_FALSE(verify_short_scalar_stream(changed));
+
+  changed = code;
+  changed.emplace_back(O::number, "2");
+  CHECK_FALSE(verify_short_scalar_stream(changed));  // Early EOF.
+  CHECK_FALSE(verify_short_scalar_stream({I(O::branch, D(1)), I(O::eof)}));
+  CHECK_FALSE(verify_short_scalar_stream(GD::Bc::Instructions(17, I(O::number, "1"))));
 }

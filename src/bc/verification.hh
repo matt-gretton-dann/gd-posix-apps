@@ -18,6 +18,8 @@ __declspec(noinline)
 auto is_verified_linear_stream(Instructions const& code) -> bool;
 #endif
 
+auto verify_short_scalar_stream(Instructions const& code) -> bool;
+
 struct VerificationError
 {
   Instruction::Index instruction;
