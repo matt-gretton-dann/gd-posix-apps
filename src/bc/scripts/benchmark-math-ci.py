@@ -64,11 +64,13 @@ class Commands:
         self.root, self.deadline = root, time.monotonic() + total_seconds
         self.commands = []
 
-    def run(self, argv, timeout=3600):
+    def run(self, argv, timeout=None):
         remaining = self.deadline - time.monotonic()
         if remaining <= 0:
             raise CommandFailure('native math experiment exhausted its total deadline')
-        timeout = min(timeout, remaining)
+        # Sampling stages use the declared experiment budget; preparation
+        # callers can still request a shorter explicit command deadline.
+        timeout = remaining if timeout is None else min(timeout, remaining)
         log = self.root / 'command-{:03d}.log'.format(len(self.commands) + 1)
         row = dict(argv=list(map(str, argv)), cwd=str(self.root), log=log.name,
                    timeout_seconds=timeout)
