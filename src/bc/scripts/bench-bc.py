@@ -288,7 +288,8 @@ def replay_corpus(directory, suite, selected=None):
         raise BenchmarkError('invalid replay corpus: ' + str(error))
 
 
-def corpus(preset="full", selected=None, listing=False, seed=197200, suite='arithmetic'):
+def corpus(preset="full", selected=None, listing=False, seed=197200, suite='arithmetic',
+           sparse_iterations=None):
     """Keep the historical sixteen cases, then add explicitly named classes.
 
     Quick mode reduces both dimensions and iterations; its parameterized names
@@ -389,6 +390,10 @@ def corpus(preset="full", selected=None, listing=False, seed=197200, suite='arit
     multiply("multiply_unbalanced_{}d_{}d_x{}".format(large, small, repeats),
              dense(large), dense(small), repeats, "unbalanced")
     digits, repeats = dimension(10000), iterations(1000)
+    if sparse_iterations is not None:
+        if type(sparse_iterations) is not int or sparse_iterations <= 0:
+            raise BenchmarkError('sparse iteration count must be a positive integer')
+        repeats = sparse_iterations
     sparse = "1" + "0" * (digits - 2) + "1"
     multiply("multiply_sparse_{}d_x{}".format(digits, repeats), sparse, sparse,
              repeats, "sparse")
@@ -892,6 +897,8 @@ def main():
     parser.add_argument("--workload", action="append", help="select an exact name; repeatable")
     parser.add_argument("--reference", help="reference implementation (default: first configured)")
     parser.add_argument("--samples", type=positive_integer, default=9)
+    parser.add_argument('--sparse-iterations', type=positive_integer,
+                        help='override only the sparse product loop count; retain operand dimensions')
     parser.add_argument("--warmups", type=nonnegative_integer, default=1)
     parser.add_argument("--timeout", type=positive_timeout, default=30)
     parser.add_argument("--seed", type=int, default=197200, help="schedule/bootstrap seed")
@@ -907,12 +914,14 @@ def main():
     parser.add_argument('--replay-corpus', type=Path,
                         help='reuse an experiment directory\'s exact hashed programs and oracles')
     args = parser.parse_args()
+    if args.sparse_iterations is not None and (args.suite != 'arithmetic' or args.replay_corpus):
+        parser.error('--sparse-iterations requires a fresh arithmetic corpus')
     if args.list:
         try:
             cases = (replay_corpus(args.replay_corpus, args.suite, args.workload)[0]
                      if args.replay_corpus else
                      corpus(args.preset, args.workload, listing=True, seed=args.corpus_seed,
-                            suite=args.suite))
+                            suite=args.suite, sparse_iterations=args.sparse_iterations))
         except BenchmarkError as error:
             parser.error(str(error))
         print(json.dumps([{key: case[key] for key in ("name", "group", "parameters")}
@@ -968,7 +977,8 @@ def main():
         if args.replay_corpus:
             cases, replay = replay_corpus(args.replay_corpus, args.suite, args.workload)
         else:
-            cases = corpus(args.preset, args.workload, seed=args.corpus_seed, suite=args.suite)
+            cases = corpus(args.preset, args.workload, seed=args.corpus_seed, suite=args.suite,
+                           sparse_iterations=args.sparse_iterations)
         calibration = None
         if args.calibrate_seconds is not None:
             cases, calibration = calibrate_math(cases, tools, args.calibrate_seconds,
@@ -1017,6 +1027,8 @@ def main():
                 if replay else digest_file(scripts.parent / 'fixtures/math-benchmark-oracles.json'))
         if calibration is not None:
             manifest['duration_calibration'] = calibration
+        if args.sparse_iterations is not None:
+            manifest['sparse_iteration_override'] = args.sparse_iterations
         if replay is not None:
             manifest['replayed_corpus'] = replay
         write_json(output / "manifest.json", manifest)

@@ -17,6 +17,29 @@ from unittest import mock
 
 
 class BenchmarkCli(unittest.TestCase):
+    def test_sparse_iteration_override_preserves_dimensions_and_oracle(self):
+        spec = importlib.util.spec_from_file_location('bc_sparse_corpus', BENCHMARK)
+        bench = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(bench)
+        for preset, digits, count in (('quick', 1000, 10), ('full', 10000, 1000),
+                                     ('holdout', 11250, 875)):
+            original, = bench.corpus(preset, ['multiply_sparse_{}d_x{}'.format(digits, count)])
+            changed, = bench.corpus(preset, ['multiply_sparse_{}d_x3'.format(digits)],
+                                    sparse_iterations=3)
+            self.assertEqual(changed['program'], original['program'].replace(
+                'i<{};'.format(count), 'i<3;'))
+            self.assertEqual(changed['expected'], original['expected'])
+            self.assertEqual(changed['parameters']['iterations'], 3)
+            if BC_BINARY:
+                result = subprocess.run([BC_BINARY], input=changed['program'].encode(),
+                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                        timeout=10, check=True)
+                self.assertFalse(result.stderr)
+                bench.check_output(changed, bench.canonical_output(result.stdout), 'native sparse')
+        for value in (0, -1, True):
+            with self.assertRaises(bench.BenchmarkError):
+                bench.corpus('quick', sparse_iterations=value)
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
