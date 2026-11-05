@@ -38,7 +38,7 @@ control blocks, array dense-prefix buffers/sparse nodes/shared control blocks,
 instruction vectors/shared control blocks, reusable parameter/local/frame
 vectors, instruction-result vectors, decoded literal memo payloads, and
 `execution_plans` byte buffers. Memo payloads account for their typed object
-size at construction/destruction. Plan owner headers, and temporary ordinary
+size at construction/destruction. Generic plan owner headers, and temporary ordinary
 vectors used by verification/plan construction, are outside those byte counters.
 Other byte counts are storage requested through these allocators; they exclude allocator metadata, strings, I/O buffers, other
 containers and operating-system storage. They are **not process malloc traffic
@@ -56,6 +56,10 @@ not by themselves establish a lower process RSS or a smaller value object.
 With `ENABLE_BC_INTEGER_FUNCTIONS=ON`, diagnostic builds execute the selected
 integer tier. Its scratch vectors and immutable spill bank use `frames`, and
 owned integer IR uses `execution_plans`; heap coefficients still use `digits`.
+The lazy integer metadata table (26 entries and scratch headers) is explicitly
+charged to `execution_plans` as one owned object. Its owner pointer sits after
+the common VM fields, and a program without calls allocates no table. This
+fixed metadata is separate from the per-attempt logical scratch bound.
 The `integer_function_*` events distinguish attempts, produced results,
 abandonments, dispatched instructions, attempted self-calls, promotions and
 demotions. Abandoned speculative work can be repeated by generic fallback, so

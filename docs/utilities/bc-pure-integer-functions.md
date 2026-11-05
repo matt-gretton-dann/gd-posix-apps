@@ -54,6 +54,24 @@ the original path. Redefinition resets the plan and hotness count. Deferred
 definitions materialize normally. Both forwarded and packed arguments are
 supported.
 
+The experiment's metadata is owned by a lazy per-VM table outside the common
+function entries and VM prefix. A program without calls allocates no table.
+Allocation occurs only after the VM-scale, arity and scalar-type guards pass;
+warmup metadata can still be allocated for a function whose body later fails
+the purity proof. The table has 26 bounded entries plus scratch headers, and
+profiling charges that fixed object to `execution_plans`. It is outside the
+per-attempt 1 MiB scratch limit, as are cached IR and retained vector capacity.
+Both ordinary definition replacement and deferred-library replacement reset
+the affected entry. Lowered IR owns its data and borrows no source storage.
+
+`test-integer-layout.py` toggles the feature in one real Clang compiler context
+and compares actual records. Common function layout and all pre-existing VM
+field offsets must match; total VM size can include the tail owner pointer.
+Source/command hashes and each mode's records are retained. Unsupported
+compiler/generator evidence is explicitly unavailable; portable semantic,
+redefinition and allocation-failure tests remain required. Layout equality
+does not establish runtime acceptance or explain a host's slowdown by itself.
+
 A failed attempt suppresses speculation throughout its generic fallback call
 chain. One rejected machine argument per function generation is remembered;
 the same argument enters generic execution directly, while different arguments
@@ -79,9 +97,11 @@ without repeatedly abandoning the machine tier at integer overflow.
 Small cells contain a signed payload and a large-value tag. Large values live
 in a separate immutable spill bank; cells and arguments borrow indices, so bank
 growth and cell overwrites preserve aliases. Logical scratch charges actual
-cell/frame/argument/spill object sizes plus a conservative
+cell/frame/argument/spill object sizes plus a decimal-length estimate,
 `decimal digits * sizeof(Number::NumType)` charge per owned spill. Shared
-coefficients in separate spills are charged separately. Dead spill records stay
+coefficients in separate spills are charged separately. The estimate is not a
+measurement of retained heap capacity after arithmetic shrinks a coefficient.
+Dead spill records stay
 owned and charged until the attempt ends; a long loop can reach the guard and
 fall back even when its most recent value is small. The combined
 limit remains 1 MiB, with a 4096-decimal-digit limit per live value. A single
@@ -159,3 +179,9 @@ hosts, commands, policies and artifacts remain separate per job; no favorable
 rerun or pooling is implied. Green workflow status remains distinct from every
 class's runtime/resource acceptance. Same-source mode isolation must also be
 followed by final integrated-tree qualification against accepted main.
+
+The state-isolation topic starts with the three-platform arithmetic stage.
+That stage tests the structural hypothesis while preserving the earlier source
+and its pending fixed Windows confirmation. It does not replace full/holdout
+math, resource or final integration requirements. A separate immutable
+qualification topic or manual replay runs all suites before any adoption.

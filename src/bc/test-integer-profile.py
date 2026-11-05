@@ -56,6 +56,20 @@ class IntegerProfile(unittest.TestCase):
                             'for(i=0;i<20;i++) a=f(i)\ns\n', '20\n')
         self.assertEqual(data['events'].get('integer_function_attempts', 0), 0)
 
+    def test_redefinition_discards_a_previously_eligible_plan(self):
+        data = self.profile('define f(x) {\nreturn (x*x+1)\n}\n'
+                            'for(i=0;i<20;i++) a=f(i)\n'
+                            'define f(x) {\ns=s+1\nreturn (x)\n}\n'
+                            'for(i=0;i<20;i++) a=f(i)\ns\n', '20\n')
+        self.assertGreater(data['events']['integer_function_successes'], 0)
+
+    def test_redefinition_discards_a_previously_rejected_plan(self):
+        data = self.profile('define f(x) {\ns=s+1\nreturn (x)\n}\n'
+                            'for(i=0;i<20;i++) a=f(i)\n'
+                            'define f(x) {\nreturn (x*x+1)\n}\n'
+                            'for(i=0;i<20;i++) a=f(i)\ns\na\n', '20\n362\n')
+        self.assertGreater(data['events']['integer_function_successes'], 0)
+
     def test_cancellation_reports_demotion(self):
         data = self.profile('define f(x) {\nauto a\na=x*x\nreturn (a-a)\n}\n'
                             'for(i=0;i<12;i++) a=f(9223372036854775807)\na\n', '0\n')

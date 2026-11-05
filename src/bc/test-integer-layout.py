@@ -15,6 +15,10 @@ import sys
 import tempfile
 
 
+class UnavailableEvidence(Exception):
+    pass
+
+
 def records(text):
     result, active = {}, None
     for line in text.splitlines():
@@ -52,6 +56,8 @@ def main():
     receipt = dict(scope='compiler layout evidence only; not runtime acceptance', status='running')
     status = 1
     try:
+        if not args.compile_commands.is_file():
+            raise UnavailableEvidence('generator supplied no compilation database')
         rows = json.loads(args.compile_commands.read_text())
         row = next(row for row in rows if str(row.get('file', '')).replace('\\', '/').endswith('/src/bc/vm.cc'))
         receipt['source_vm_sha256'] = hashlib.sha256(Path(row['file']).read_bytes()).hexdigest()
@@ -70,7 +76,7 @@ def main():
                 if arg in ('-o', '-MF', '-MT', '-MQ'):
                     i += 2
                     continue
-                if arg not in ('-c', '-MD', '-MMD', '-MP') and not arg.startswith('-DGD_BC_INTEGER_FUNCTIONS'):
+                if arg not in ('-c', '-MD', '-MMD', '-MP') and not re.match(r'^-DGD_BC_INTEGER_FUNCTIONS(?:=|$)', arg):
                     clean.append(arg)
                 i += 1
             modes = {}
@@ -88,6 +94,10 @@ def main():
                 modes[label] = dict(argv=argv, cwd=row['directory'], records=records(run.stdout))
             receipt['modes'] = modes
             off, on = modes['OFF']['records'], modes['ON']['records']
+            has_integer = lambda data: any(name.startswith('integer_')
+                                           for item in data.values() for name in item['fields'])
+            if has_integer(off) or not has_integer(on):
+                raise ValueError('compiler records do not prove the requested feature modes')
             differences = []
             if off['FunctionCode'] != on['FunctionCode']:
                 differences.append('common FunctionCode layout changes')
@@ -96,6 +106,9 @@ def main():
                     differences.append('common VM offset changes: ' + field)
             receipt.update(differences=differences, status='fail' if differences else 'pass')
             status = 1 if differences else 0
+    except UnavailableEvidence as error:
+        receipt.update(status='unavailable', reason=str(error))
+        status = 77
     except (OSError, ValueError, KeyError, StopIteration, subprocess.TimeoutExpired) as error:
         receipt.update(status='error', error=str(error))
     (output / 'report.json').write_text(json.dumps(receipt, indent=2, sort_keys=True) + '\n')

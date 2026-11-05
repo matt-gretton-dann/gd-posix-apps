@@ -62,10 +62,11 @@ struct IntegerFunctionScratch
 };
 
 // A guard failure leaves every caller-owned value intact. Execution uses at
-// most 1 MiB of logical scratch, conservatively charging decimal digits times
+// most 1 MiB of logical scratch, charging decimal digits times
 // limb size for each owned big value, even when coefficients are shared. Each
 // value is limited to 4096 decimal digits; bounded arithmetic temporaries and
-// vector capacity are separate from that logical bound. Spill records are
+// retained coefficient/vector capacity are separate from that logical bound.
+// Spill records are
 // immutable until the attempt ends, so copied cells retain stable indices.
 // Dead spill records remain charged. Poll every instruction.
 // Capacities can be retained between attempts; all live state is cleared.
