@@ -24,8 +24,8 @@ Tests compare the boundary against independent decimal-text construction in
 8-, 16- and 32-bit traits. They cover signed extrema, radix/limb boundaries,
 values beyond both signed endpoints, shared heap and inline coefficients,
 declared scales, and the complete integer range from -1024 through 1024.
-Compiler/runtime validation uses hosted CI while a separate local benchmark is
-running; a local diff check alone is not a build or execution result.
+Compiler/runtime validation uses the enabled native workflow; a local diff
+check alone is not a build or execution result.
 
 ## Execution contract
 
@@ -156,6 +156,16 @@ including overflow fallback, fractional inputs, scale changes and redefinition.
 The dedicated native workflow enables the experiment on Linux, macOS and
 Windows with extensions ON and OFF. These checks establish no speed claim.
 
+The diagnostic CLI tests also use fixed-seed generated pure functions with
+independent Python integer expectations. They cover signed endpoint inputs,
+mixed-sign products, large comparisons, loop branches, recursive products and
+nested self-call argument marks. Each generation is warmed before its asserted
+inputs. Engine counters must prove successful tier execution without fallback;
+every invocation checks complete numeric output and zero tracked live bytes
+after teardown. Decimal continuation lines are unfolded for these numeric
+oracles; separate CLI tests cover their formatting. The generators are bounded
+semantic probes, not exhaustive coverage or timing measurements.
+
 Keep the tier experimental until differential semantic tests, cold and warm
 full/holdout measurements, and native Linux/macOS/Windows resource evidence
 justify adoption. Preserve adverse and inconclusive classes; the overall #197
@@ -188,6 +198,6 @@ followed by final integrated-tree qualification against accepted main.
 
 The state-isolation topic starts with the three-platform arithmetic stage.
 That stage tests the structural hypothesis while preserving the earlier source
-and its pending fixed Windows confirmation. It does not replace full/holdout
+and its separate fixed Windows confirmation. It does not replace full/holdout
 math, resource or final integration requirements. A separate immutable
 qualification topic or manual replay runs all suites before any adoption.
