@@ -32,6 +32,13 @@
 #  include "native-scalar.hh"
 #endif
 
+// Native comparisons found a Linux math slowdown with direct forwarding.
+#if defined(__APPLE__) && defined(__aarch64__) && !GD_BC_PROFILE
+#  define GD_BC_FORWARD_SCALAR_ARGUMENT 1
+#else
+#  define GD_BC_FORWARD_SCALAR_ARGUMENT 0
+#endif
+
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define STRINGIFY2(a) #a
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
@@ -407,8 +414,11 @@ struct VMState
    *  \param  argument Optional scalar borrowed from the caller's result slot.
    *  \return      Result of call.
    */
-  auto call(Letter func, Location const& loc, [[maybe_unused]] Number const* argument = nullptr)
-    -> Number;
+#if GD_BC_FORWARD_SCALAR_ARGUMENT
+  auto call(Letter func, Location const& loc, Number const* argument = nullptr) -> Number;
+#else
+  auto call(Letter func, Location const& loc) -> Number;
+#endif
 
   /** Push a new parameter pack onto the parameter stack.  */
   void push_param_pack();
@@ -1000,8 +1010,12 @@ void GD::Bc::Details::VMState::defer_library_function(Letter name, std::string_v
 }
 #endif
 
-auto GD::Bc::Details::VMState::call(Letter func, Location const& loc,
-                                    [[maybe_unused]] Number const* argument) -> GD::Bc::Number
+#if GD_BC_FORWARD_SCALAR_ARGUMENT
+auto GD::Bc::Details::VMState::call(Letter func, Location const& loc, Number const* argument)
+  -> GD::Bc::Number
+#else
+auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc::Number
+#endif
 {
   GD_BC_PROFILE_EVENT(Profile::Event::function_calls, 1);
   auto const index = static_cast<unsigned>(func);
@@ -1045,7 +1059,7 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc,
   auto func_instructions = std::get<0>(def).view(use_source, locals);
 #endif
 
-#if !defined(_WIN32) && !GD_BC_PROFILE
+#if GD_BC_FORWARD_SCALAR_ARGUMENT
   auto const& code = std::get<0>(def);
   auto const parameter = code.prepared_ ? code.prepared_->scalar_parameter : std::nullopt;
   // A forwarded scalar can bind directly only when this is the entire
@@ -1110,6 +1124,10 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc,
 #else
     Instruction::Index start = 0;
 #if !GD_BC_PROFILE
+#  if !GD_BC_FORWARD_SCALAR_ARGUMENT
+    auto const& code = std::get<0>(def);
+    auto const parameter = code.prepared_ ? code.prepared_->scalar_parameter : std::nullopt;
+#  endif
     if (parameter) {
       start = FunctionCode::scalar_prologue_size_;
     }
@@ -1117,11 +1135,15 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc,
     InstructionPack fn(this, func_instructions);
 #if !GD_BC_PROFILE
     if (start != 0 && !have_been_interrupted.test(std::memory_order_relaxed)) {
+#  if GD_BC_FORWARD_SCALAR_ARGUMENT
       auto& variable = variables_.at(static_cast<unsigned>(parameter->get()));
       if (argument != nullptr)
         variable = *argument;
       else
         variable = pop_param();
+#  else
+      variables_.at(static_cast<unsigned>(parameter->get())) = pop_param();
+#  endif
       if (!have_been_interrupted.test(std::memory_order_relaxed)) {
         pop_param_pack();
       }
@@ -1578,9 +1600,9 @@ auto GD::Bc::Details::InstructionPack::execute_compact() -> std::pair<GD::Bc::Nu
     case O::push_param_mark:
       vm_->push_param_pack();
       break;
+#if GD_BC_FORWARD_SCALAR_ARGUMENT
     case O::push_param: {
       auto const& value = (*results_)[instruction.first.index];
-#if !defined(_WIN32) && !GD_BC_PROFILE
       // A scalar push immediately followed by a call can forward the value
       // from this activation's result buffer. Calls reached independently
       // still use the ordinary argument pack.
@@ -1593,10 +1615,14 @@ auto GD::Bc::Details::InstructionPack::execute_compact() -> std::pair<GD::Bc::Nu
           break;
         }
       }
-#endif
       push_value(value, instruction.first.index);
       break;
     }
+#else
+    case O::push_param:
+      push_value((*results_)[instruction.first.index], instruction.first.index);
+      break;
+#endif
     case O::pop_param_mark:
       vm_->pop_param_pack();
       break;
