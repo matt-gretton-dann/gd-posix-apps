@@ -57,7 +57,17 @@ private:
 };
 }  // namespace
 
-auto operator new(std::size_t size) -> void*
+// Keep counters and injected failures at an explicit replacement boundary,
+// including caller-enabled IPO. Validate these observations with both ordinary
+// and IPO builds; this isolated fixture changes no production allocator.
+#if defined(_MSC_VER)
+#  define GD_BC_TEST_NOINLINE __declspec(noinline)
+#elif defined(__GNUC__) || defined(__clang__)
+#  define GD_BC_TEST_NOINLINE [[gnu::noinline]]
+#else
+#  define GD_BC_TEST_NOINLINE
+#endif
+GD_BC_TEST_NOINLINE auto operator new(std::size_t size) -> void*
 {
   if (fail_after == 0) {
     fail_after = std::numeric_limits<std::size_t>::max();
@@ -84,13 +94,9 @@ auto operator new(std::size_t size) -> void*
     handler();
   }
 }
-// Keep GCC's allocation-family analysis at the replacement boundary. Inlining
-// this intentional malloc/free pair into library cleanup can misdiagnose new
-// storage as mismatched. Other compilers retain the ordinary implementation.
-#if defined(__GNUC__) && !defined(__clang__)
-[[gnu::noinline]]
-#endif
-void operator delete(void* value) noexcept
+// This also keeps GCC's allocation-family analysis at the intentional
+// malloc/free boundary instead of diagnosing inlined cleanup as mismatched.
+GD_BC_TEST_NOINLINE void operator delete(void* value) noexcept
 {
   if (value != nullptr) {
     outstanding.fetch_sub(1, std::memory_order_relaxed);
@@ -101,6 +107,7 @@ auto operator new[](std::size_t size) -> void* { return ::operator new(size); }
 void operator delete[](void* value) noexcept { ::operator delete(value); }
 void operator delete(void* value, std::size_t) noexcept { ::operator delete(value); }
 void operator delete[](void* value, std::size_t) noexcept { ::operator delete(value); }
+#undef GD_BC_TEST_NOINLINE
 
 namespace {
 template<typename Traits>
