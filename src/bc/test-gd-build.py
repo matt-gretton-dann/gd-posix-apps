@@ -48,6 +48,70 @@ class GdBuild(unittest.TestCase):
         self.assertFalse(value['instrumented'])
         self.assertEqual(value['configuration']['ipo_policy']['status'], 'legacy-auto')
 
+    def test_integer_mode_requires_compiled_vm_and_engine(self):
+        self.cache.write_text(self.cache.read_text() + 'ENABLE_BC_INTEGER_FUNCTIONS:BOOL=ON\n')
+        commands = self.build / 'compile_commands.json'
+        rows = [dict(file='/source/src/bc/' + name, command='c++ -DGD_BC_INTEGER_FUNCTIONS=1 -c ' + name)
+                for name in ('vm.cc', 'integer-function.cc')]
+        commands.write_text(json.dumps(rows))
+        policy = self.module.verified_integer_functions(self.helper, self.build, 'ON')
+        self.assertTrue(policy['enabled'])
+        self.assertEqual(policy['verification']['kind'], 'compile-commands')
+        for replacement in ('', '-DGD_BC_INTEGER_FUNCTIONS=0', '-UGD_BC_INTEGER_FUNCTIONS',
+                            '-DGD_BC_INTEGER_FUNCTIONS=1 -DGD_BC_INTEGER_FUNCTIONS=0'):
+            with self.subTest(replacement=replacement):
+                corrupt = [dict(row) for row in rows]
+                corrupt[0]['command'] = 'c++ ' + replacement + ' -c vm.cc'
+                commands.write_text(json.dumps(corrupt))
+                with self.assertRaises(self.helper.BuildError):
+                    self.module.verified_integer_functions(self.helper, self.build, 'ON')
+        commands.write_text(json.dumps(rows[:1]))
+        with self.assertRaises(self.helper.BuildError):
+            self.module.verified_integer_functions(self.helper, self.build, 'ON')
+
+    def test_integer_off_rejects_an_enabled_or_unexpected_engine(self):
+        self.cache.write_text(self.cache.read_text() + 'ENABLE_BC_INTEGER_FUNCTIONS:BOOL=OFF\n')
+        commands = self.build / 'compile_commands.json'
+        row = dict(file='/source/src/bc/vm.cc', arguments=['c++', '-c', 'vm.cc'])
+        commands.write_text(json.dumps([row]))
+        self.assertFalse(self.module.verified_integer_functions(self.helper, self.build, 'OFF')['enabled'])
+        row['arguments'].append('-DGD_BC_INTEGER_FUNCTIONS=1')
+        commands.write_text(json.dumps([row]))
+        with self.assertRaises(self.helper.BuildError):
+            self.module.verified_integer_functions(self.helper, self.build, 'OFF')
+        row['arguments'].pop()
+        commands.write_text(json.dumps([row, dict(file='/source/src/bc/integer-function.cc', command='c++ -c integer-function.cc')]))
+        with self.assertRaises(self.helper.BuildError):
+            self.module.verified_integer_functions(self.helper, self.build, 'OFF')
+
+    def test_integer_mode_requires_source_support_and_owned_proof(self):
+        self.assertEqual(self.module.verified_integer_functions(self.helper, self.build, 'AUTO')['status'], 'legacy-auto')
+        with self.assertRaises(self.helper.BuildError):
+            self.module.verified_integer_functions(self.helper, self.build, 'ON')
+        for policy in ({}, dict(status='verified', enabled=False, verification=dict(kind='fixture')),
+                       dict(status='verified', enabled=True)):
+            with self.assertRaises(self.helper.BuildError):
+                self.module.require_integer_mode(self.helper, dict(metadata=dict(configuration=dict(integer_functions_policy=policy))))
+
+    def test_integer_native_release_project_and_contradictions(self):
+        (self.build / 'compile_commands.json').unlink()
+        project = self.build / 'src/bc/libbc.vcxproj'
+        for enabled in (False, True):
+            mode = 'ON' if enabled else 'OFF'
+            self.cache.write_text('CMAKE_GENERATOR:INTERNAL=Visual Studio 17 2022\nENABLE_BC_INTEGER_FUNCTIONS:BOOL=' + mode + '\n')
+            definitions = 'WIN32;GD_BC_INTEGER_FUNCTIONS=1' if enabled else 'WIN32'
+            text = '''<Project><ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+<ClCompile><PreprocessorDefinitions>''' + definitions + '''</PreprocessorDefinitions></ClCompile>
+</ItemDefinitionGroup><ItemGroup><ClCompile Include="C:/source/src/bc/vm.cc"/>''' + (
+                '<ClCompile Include="C:/source/src/bc/integer-function.cc"/>' if enabled else '') + '</ItemGroup></Project>'
+            project.write_text(text)
+            policy = self.module.verified_integer_functions(self.helper, self.build, mode)
+            self.assertEqual(policy['enabled'], enabled)
+            self.assertEqual(policy['verification']['kind'], 'msbuild-project')
+            project.write_text(text.replace(definitions, 'WIN32;GD_BC_INTEGER_FUNCTIONS=0'))
+            with self.assertRaises(self.helper.BuildError):
+                self.module.verified_integer_functions(self.helper, self.build, mode)
+
     def prepared_commands(self, value, arguments=False):
         rows = []
         for name in ('vm.cc', 'bc.cc'):

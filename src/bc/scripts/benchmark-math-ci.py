@@ -299,6 +299,8 @@ def gd_build_command(args, name, destination, cc, cxx):
     # Math A/A builds the same candidate source and must use the same mode.
     if name != 'base' and getattr(args, 'candidate_prepared_divisors', False):
         command += ['--prepared-divisors', 'ON']
+    if getattr(args, 'candidate_integer_functions', False):
+        command += ['--integer-functions', 'OFF' if name == 'base' else 'ON']
     if name != 'base' and getattr(args, 'candidate_preparsed_library', False):
         command += ['--preparsed-library']
     return command
@@ -314,6 +316,7 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--broad', action='store_true')
     parser.add_argument('--candidate-prepared-divisors', action='store_true')
+    parser.add_argument('--candidate-integer-functions', action='store_true')
     parser.add_argument('--candidate-preparsed-library', action='store_true')
     parser.add_argument('--broad-preset', choices=('full', 'holdout'))
     parser.add_argument('--samples', type=bench.positive_integer, default=15)
@@ -346,6 +349,8 @@ def main():
             destination = root / name
             commands.run(gd_build_command(args, name, destination, cc, cxx), timeout=1200)
             entry = json.loads((destination / 'implementations.json').read_text())['implementations'][0]
+            if args.candidate_integer_functions:
+                gd_builder.require_integer_mode(helper, entry, name != 'base')
             if args.candidate_prepared_divisors and name != 'base':
                 gd_builder.require_prepared_candidate(helper, entry)
             entries.append(entry)
@@ -498,6 +503,7 @@ def main():
               broad=args.broad,presets=list(presets),samples=args.samples,duration_target=args.duration_seconds,
               child_timeout_seconds=args.child_timeout_seconds,total_seconds=args.total_seconds,
               candidate_prepared_divisors=args.candidate_prepared_divisors,
+              candidate_integer_functions=args.candidate_integer_functions,
               candidate_preparsed_library=args.candidate_preparsed_library))
         for path in root.glob('command-*.log'):
             shutil.copyfile(path, evidence / path.name)
@@ -510,6 +516,8 @@ def main():
                     shutil.copyfile(path, target / path.name)
             if (source / 'prepared-policy').is_dir():
                 shutil.copytree(str(source / 'prepared-policy'), str(target / 'prepared-policy'))
+            if (source / 'integer-policy').is_dir():
+                shutil.copytree(str(source / 'integer-policy'), str(target / 'integer-policy'))
             if (source / 'logs').is_dir():
                 shutil.copytree(source / 'logs', target / 'logs')
 

@@ -20,6 +20,14 @@ SPEC.loader.exec_module(CI)
 
 
 class NativeTrends(unittest.TestCase):
+    def test_integer_tier_keeps_both_independent_controls_off(self):
+        args = types.SimpleNamespace(source=Path('.'), split_point=126,
+                                     candidate_integer_functions=True)
+        for name in ('base', 'candidate', 'aa'):
+            command = CI.gd_build_command(args, name, 'a' * 40, Path('output'), 'cc', 'c++')
+            self.assertEqual(command[command.index('--integer-functions') + 1],
+                             'ON' if name == 'candidate' else 'OFF')
+
     def test_sparse_duration_requires_every_independent_role(self):
         row = dict(implementations={role: dict(median_seconds=.25)
                                     for role in ('base', 'aa', 'candidate')})

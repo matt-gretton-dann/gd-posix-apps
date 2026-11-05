@@ -21,6 +21,13 @@ using D = I::Offset;
 auto running() noexcept -> bool { return false; }
 auto interrupted() noexcept -> bool { return true; }
 
+auto run_small(IntegerFunction const& code, std::int64_t argument, IntegerFunctionScratch& scratch,
+               bool (*check)() noexcept) -> std::optional<std::int64_t>
+{
+  auto const result = run_integer_function(code, argument, scratch, check);
+  return result ? result->to_machine_integer() : std::nullopt;
+}
+
 auto prologue() -> Instructions
 {
   return {I(O::pop_param), I(O::variable, Variable('x')), I(O::store, D(-1), D(-2)),
@@ -39,7 +46,69 @@ auto factorial() -> Instructions
     code.push_back(instruction);
   return code;
 }
+
+auto parsed_function(std::string const& definition) -> IntegerFunction
+{
+  Parser parser(std::make_unique<Lexer>(std::make_unique<StringReader>(definition)), false);
+  auto source = parser.parse();
+  REQUIRE(source);
+  auto const begin = std::find_if(source->begin(), source->end(), [](auto const& instruction) {
+    return instruction.opcode() == O::function_begin;
+  });
+  REQUIRE(begin != source->end());
+  auto const end = std::find_if(begin, source->end(), [](auto const& instruction) {
+    return instruction.opcode() == O::function_end;
+  });
+  REQUIRE(end != source->end());
+  auto result = plan_integer_function(Instructions(begin + 1, end),
+                                      std::get<VariableMask>(begin->op1()), Letter('f'));
+  REQUIRE(result);
+  return std::move(*result);
+}
 }  // namespace
+
+TEST_CASE("Pure integer continuations retain exact large results", "[bc][integer-function]")
+{
+  auto const plan = plan_integer_function(factorial(), VariableMask("x", ""), Letter('f'));
+  REQUIRE(plan);
+  IntegerFunctionScratch scratch;
+  auto result = run_integer_function(*plan, 50, scratch, running);
+  REQUIRE(result);
+  CHECK(*result == Number("30414093201713378043612608166064768844377641568960512000000000000", 10));
+  auto const cancellation = parsed_function("define f(x) {\nauto y\ny=x*x\nreturn (y-y)\n}\n");
+  result =
+    run_integer_function(cancellation, std::numeric_limits<std::int64_t>::max(), scratch, running);
+  REQUIRE(result);
+  CHECK(result->to_machine_integer() == 0);
+  auto const negation = parsed_function("define f(x) {\nreturn (-x)\n}\n");
+  result =
+    run_integer_function(negation, std::numeric_limits<std::int64_t>::min(), scratch, running);
+  REQUIRE(result);
+  CHECK(*result == Number("9223372036854775808", 10));
+  auto const bounded =
+    parsed_function("define f(x) {\nauto y\ny=9\nwhile(x>0) {\ny=y*y\nx=x-1\n}\nreturn (y)\n}\n");
+  CHECK_FALSE(run_integer_function(bounded, 14, scratch, running));
+  CHECK(scratch.spills.empty());
+  CHECK(scratch.values.empty());
+  CHECK(scratch.frames.empty());
+  CHECK(scratch.arguments.empty());
+  CHECK(run_small(*plan, 5, scratch, running) == 120);
+  auto const aliases = parsed_function("define f(x) {\nauto y,z,k\ny=x*x\nz=y\ny=0\n"
+                                       "for(k=0;k<9;k++) y=z*z\nreturn (z+z)\n}\n");
+  result =
+    run_integer_function(aliases, std::numeric_limits<std::int64_t>::max(), scratch, running);
+  REQUIRE(result);
+  CHECK(*result == Number("170141183460469231694793815568465002498", 10));
+  auto const dead_records =
+    parsed_function("define f(x) {\nauto a,b,k\na=9\na=a*a\na=a*a\na=a*a\na=a*a\na=a*a\n"
+                    "for(k=0;k<x;k++) b=a*a\nreturn (b)\n}\n");
+  // Every coefficient is small enough, but the immutable bank must also
+  // charge overwritten records instead of growing with an unbounded loop.
+  CHECK_FALSE(run_integer_function(dead_records, 8000, scratch, running));
+  CHECK(scratch.spills.empty());
+  CHECK(scratch.values.empty());
+  CHECK(run_small(*plan, 5, scratch, running) == 120);
+}
 
 TEST_CASE("Pure integer functions use bounded iterative self calls", "[bc][integer-function]")
 {
@@ -50,15 +119,16 @@ TEST_CASE("Pure integer functions use bounded iterative self calls", "[bc][integ
   for (std::int64_t n = 0; n <= 20; ++n) {
     if (n != 0)
       expected *= n;
-    CHECK(run_integer_function(*plan, n, scratch, running) == expected);
+    CHECK(run_small(*plan, n, scratch, running) == expected);
   }
-  CHECK_FALSE(run_integer_function(*plan, 21, scratch, running));
-  CHECK_FALSE(run_integer_function(*plan, 100000, scratch, running));
-  CHECK_FALSE(run_integer_function(*plan, 5, scratch, interrupted));
+  CHECK_FALSE(run_small(*plan, 21, scratch, running));
+  CHECK_FALSE(run_small(*plan, 100000, scratch, running));
+  CHECK_FALSE(run_small(*plan, 5, scratch, interrupted));
+  CHECK(scratch.spills.empty());
   CHECK(scratch.values.empty());
   CHECK(scratch.frames.empty());
   CHECK(scratch.arguments.empty());
-  CHECK(run_integer_function(*plan, 5, scratch, running) == 120);
+  CHECK(run_small(*plan, 5, scratch, running) == 120);
 }
 
 TEST_CASE("Pure integer operands preserve locations until consumed", "[bc][integer-function]")
@@ -73,13 +143,13 @@ TEST_CASE("Pure integer operands preserve locations until consumed", "[bc][integ
   auto plan = plan_integer_function(source, VariableMask("x", ""), Letter('f'));
   REQUIRE(plan);
   IntegerFunctionScratch scratch;
-  CHECK(run_integer_function(*plan, 7, scratch, running) == 4);
+  CHECK(run_small(*plan, 7, scratch, running) == 4);
   // An explicit load is a snapshot even if the underlying scalar changes.
   source.insert(source.begin() + 5, I(O::load, D(-1)));
   source[9] = I(O::add, D(-4), D(-2));
   plan = plan_integer_function(source, VariableMask("x", ""), Letter('f'));
   REQUIRE(plan);
-  CHECK(run_integer_function(*plan, 7, scratch, running) == 9);
+  CHECK(run_small(*plan, 7, scratch, running) == 9);
   source[5] = I(O::load, D(-4));  // Prologue references are deliberately rejected.
   CHECK_FALSE(plan_integer_function(source, VariableMask("x", ""), Letter('f')));
 }
@@ -118,12 +188,11 @@ TEST_CASE("Pure integer arithmetic guards both signed endpoints", "[bc][integer-
     IntegerFunctionScratch scratch;
     auto const min = std::numeric_limits<std::int64_t>::min();
     auto const max = std::numeric_limits<std::int64_t>::max();
-    CHECK(run_integer_function(*plan, 7, scratch, running) == (opcode == O::add        ? 9
-                                                               : opcode == O::subtract ? 5
-                                                                                       : 14));
-    CHECK(run_integer_function(*plan, min, scratch, running).has_value() == (opcode == O::add));
-    CHECK(run_integer_function(*plan, max, scratch, running).has_value() ==
-          (opcode == O::subtract));
+    CHECK(run_small(*plan, 7, scratch, running) == (opcode == O::add        ? 9
+                                                    : opcode == O::subtract ? 5
+                                                                            : 14));
+    CHECK(run_small(*plan, min, scratch, running).has_value() == (opcode == O::add));
+    CHECK(run_small(*plan, max, scratch, running).has_value() == (opcode == O::subtract));
   }
 }
 
@@ -197,12 +266,11 @@ TEST_CASE("Pure integer products cover every sign and zero", "[bc][integer-funct
     auto const plan = plan_integer_function(source, VariableMask("x", ""), Letter('f'));
     REQUIRE(plan);
     for (std::int64_t a = -128; a <= 127; ++a)
-      CHECK(run_integer_function(*plan, a, scratch, running) == a * b);
+      CHECK(run_small(*plan, a, scratch, running) == a * b);
     if (b == -1) {
-      CHECK_FALSE(
-        run_integer_function(*plan, std::numeric_limits<std::int64_t>::min(), scratch, running));
-      CHECK(run_integer_function(*plan, std::numeric_limits<std::int64_t>::max(), scratch,
-                                 running) == -std::numeric_limits<std::int64_t>::max());
+      CHECK_FALSE(run_small(*plan, std::numeric_limits<std::int64_t>::min(), scratch, running));
+      CHECK(run_small(*plan, std::numeric_limits<std::int64_t>::max(), scratch, running) ==
+            -std::numeric_limits<std::int64_t>::max());
     }
   }
   auto source = prologue();
@@ -211,8 +279,7 @@ TEST_CASE("Pure integer products cover every sign and zero", "[bc][integer-funct
   source.emplace_back(O::return_, D(-1));
   auto const plan = plan_integer_function(source, VariableMask("x", ""), Letter('f'));
   REQUIRE(plan);
-  CHECK_FALSE(
-    run_integer_function(*plan, std::numeric_limits<std::int64_t>::min(), scratch, running));
-  CHECK(run_integer_function(*plan, 0, scratch, running) == 0);
-  CHECK(run_integer_function(*plan, -1, scratch, running) == 1);
+  CHECK_FALSE(run_small(*plan, std::numeric_limits<std::int64_t>::min(), scratch, running));
+  CHECK(run_small(*plan, 0, scratch, running) == 0);
+  CHECK(run_small(*plan, -1, scratch, running) == 1);
 }

@@ -151,12 +151,15 @@ auto plan_integer_function(Instructions const& source, VariableMask locals, Lett
 
 auto run_integer_function(IntegerFunction const& function, V argument,
                           IntegerFunctionScratch& scratch, bool (*interrupted)() noexcept)
-  -> std::optional<V>
+  -> std::optional<Number>
 {
+  using Value = IntegerFunctionScratch::Value;
   auto& values = scratch.values;
+  auto& spills = scratch.spills;
   auto& frames = scratch.frames;
   auto& arguments = scratch.arguments;
   values.clear();
+  spills.clear();
   frames.clear();
   arguments.clear();
   struct Clear
@@ -165,37 +168,67 @@ auto run_integer_function(IntegerFunction const& function, V argument,
     ~Clear()
     {
       scratch.values.clear();
+      scratch.spills.clear();
       scratch.frames.clear();
       scratch.arguments.clear();
     }
   } clear{scratch};
   auto const stride = locals_size + function.code.size();
-  auto const max_depth =
-    scratch_limit / (stride * sizeof(V) + sizeof(IntegerFunctionScratch::Frame));
-  auto enter = [&](V value) {
-    if (frames.size() >= max_depth ||
-        (frames.size() + 1) * (stride * sizeof(V) + sizeof(IntegerFunctionScratch::Frame)) +
-            arguments.size() * sizeof(IntegerFunctionScratch::Argument) >
-          scratch_limit)
-      return false;
-    auto const base = values.size();
-    values.resize(base + stride, 0);
-    values[base + function.parameter] = value;
-    frames.push_back({4, arguments.size()});
+  std::size_t coefficients = 0;
+  auto fits = [&](std::size_t extra) {
+    return values.size() * sizeof(Value) + frames.size() * sizeof(IntegerFunctionScratch::Frame) +
+             arguments.size() * sizeof(IntegerFunctionScratch::Argument) +
+             spills.size() * sizeof(IntegerFunctionScratch::Spill) + coefficients + extra <=
+           scratch_limit;
+  };
+  auto assign = [](Value& target, Value value) {
+    target = value;
     return true;
   };
-  if (!enter(argument))
+  auto number = [&](Value const& value) {
+    if (!value.big)
+      return Number::from_machine_integer(value.payload);
+    return spills[static_cast<std::size_t>(value.payload)].value;
+  };
+  auto normalize = [&](Value& target, Number value) {
+    if (auto const small = value.to_machine_integer()) {
+      target = {*small, false};
+      return true;
+    }
+    auto const digits = value.length();
+    if (digits > 4096)
+      return false;
+    auto const charge = std::size_t(digits) * sizeof(Number::NumType);
+    if (!fits(sizeof(IntegerFunctionScratch::Spill) + charge))
+      return false;
+    // Immutable records make aliases independent of cell overwrites and bank
+    // reallocation. Dead records remain owned and charged until this attempt ends.
+    auto const index = spills.size();
+    spills.push_back({std::move(value), charge});
+    coefficients += charge;
+    target = {static_cast<V>(index), true};
+    return true;
+  };
+  auto enter = [&](Value value) {
+    if (!fits(stride * sizeof(Value) + sizeof(IntegerFunctionScratch::Frame)))
+      return false;
+    auto const base = values.size();
+    values.resize(base + stride);
+    frames.push_back({4, arguments.size()});
+    return assign(values[base + function.parameter], value);
+  };
+  if (!enter({argument, false}))
     return {};
   while (!frames.empty()) {
     if (interrupted())
       return {};
     auto& frame = frames.back();
     if (frame.pc >= function.code.size())
-      return {};  // Falling off a function belongs to the generic interpreter.
+      return {};
     auto const pc = frame.pc;
     auto const base = (frames.size() - 1) * stride;
     auto const& instruction = function.code[pc];
-    auto read = [&](std::uint16_t operand) {
+    auto read = [&](std::uint16_t operand) -> Value const& {
       return values[base +
                     ((operand & local_tag) != 0 ? operand & ~local_tag : locals_size + operand)];
     };
@@ -205,19 +238,31 @@ auto run_integer_function(IntegerFunction const& function, V argument,
     case O::variable:
       break;
     case O::number:
-      destination = instruction.left;
+      if (!assign(destination, {V(instruction.left), false}))
+        return {};
       break;
     case O::load:
-      destination = read(instruction.left);
+      if (!assign(destination, read(instruction.left)))
+        return {};
       break;
     case O::store:
-      values[base + (instruction.left & ~local_tag)] = read(instruction.right);
-      break;
-    case O::negate:
-      if (read(instruction.left) == std::numeric_limits<V>::min())
+      if (!assign(values[base + (instruction.left & ~local_tag)], read(instruction.right)))
         return {};
-      destination = -read(instruction.left);
       break;
+    case O::negate: {
+      auto const& input = read(instruction.left);
+      if (!input.big && input.payload != std::numeric_limits<V>::min()) {
+        if (!assign(destination, {-input.payload, false}))
+          return {};
+      }
+      else {
+        auto value = number(input);
+        value.negate();
+        if (!normalize(destination, std::move(value)))
+          return {};
+      }
+      break;
+    }
     case O::add:
     case O::subtract:
     case O::multiply:
@@ -225,50 +270,90 @@ auto run_integer_function(IntegerFunction const& function, V argument,
     case O::less_than_equals:
     case O::equals:
     case O::not_equals: {
-      auto const value =
-        checked_binary(instruction.opcode, read(instruction.left), read(instruction.right));
-      if (!value)
+      auto const& left = read(instruction.left);
+      auto const& right = read(instruction.right);
+      if (!left.big && !right.big) {
+        auto const small = checked_binary(instruction.opcode, left.payload, right.payload);
+        if (small) {
+          if (!assign(destination, {*small, false}))
+            return {};
+          break;
+        }
+      }
+      // Overflow promotes only this exact operation. The pure function's
+      // continuation remains intact; no recursive prefix is replayed.
+      auto value = number(left);
+      auto const rhs = number(right);
+      switch (instruction.opcode) {
+      case O::add:
+        value.add(rhs);
+        break;
+      case O::subtract:
+        value.sub(rhs);
+        break;
+      case O::multiply:
+        value.multiply(rhs, 0);
+        break;
+      case O::less_than:
+        value = Number(value < rhs ? 1 : 0);
+        break;
+      case O::less_than_equals:
+        value = Number(value <= rhs ? 1 : 0);
+        break;
+      case O::equals:
+        value = Number(value == rhs ? 1 : 0);
+        break;
+      case O::not_equals:
+        value = Number(value != rhs ? 1 : 0);
+        break;
+      default:
         return {};
-      destination = *value;
+      }
+      if (!normalize(destination, std::move(value)))
+        return {};
       break;
     }
     case O::branch:
       frame.pc = instruction.left;
       break;
-    case O::branch_zero:
-      if (read(instruction.left) == 0)
+    case O::branch_zero: {
+      auto const& value = read(instruction.left);
+      if (!value.big ? value.payload == 0
+                     : spills[static_cast<std::size_t>(value.payload)].value.is_zero())
         frame.pc = instruction.right;
       break;
+    }
     case O::push_param_mark:
-      if (frames.size() * (stride * sizeof(V) + sizeof(IntegerFunctionScratch::Frame)) +
-            (arguments.size() + 1) * sizeof(IntegerFunctionScratch::Argument) >
-          scratch_limit)
+      if (!fits(sizeof(IntegerFunctionScratch::Argument)))
         return {};
       arguments.emplace_back();
       break;
     case O::push_param:
-      if (arguments.size() <= frame.marks || arguments.back().present)
+      if (arguments.size() <= frame.marks || arguments.back().present ||
+          !assign(arguments.back().value, read(instruction.left)))
         return {};
-      arguments.back() = {read(instruction.left), true};
+      arguments.back().present = true;
       break;
     case O::call: {
       if (arguments.size() <= frame.marks || !arguments.back().present)
         return {};
-      auto const value = arguments.back().value;
+      auto value = std::move(arguments.back().value);
       arguments.pop_back();
-      if (!enter(value))
+      if (!enter(std::move(value)))
         return {};
       break;
     }
     case O::return_: {
-      auto const value = read(instruction.left);
+      auto value = read(instruction.left);
       if (arguments.size() != frame.marks)
         return {};
       frames.pop_back();
       values.resize(base);
       if (frames.empty())
-        return value;
-      values[(frames.size() - 1) * stride + locals_size + frames.back().pc - 1] = value;
+        return number(value);
+      if (!assign(values[(frames.size() - 1) * stride + locals_size + frames.back().pc - 1],
+                  std::move(value)))
+        return {};
       break;
     }
     default:
