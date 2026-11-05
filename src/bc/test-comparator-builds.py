@@ -5,6 +5,7 @@ import hashlib
 import importlib.util
 import io
 import json
+import shlex
 from pathlib import Path
 import subprocess
 import sys
@@ -51,6 +52,37 @@ class ComparatorBuilds(unittest.TestCase):
                 return 'wrong-commit' if argv[1] == 'rev-parse' else ''
         with self.assertRaisesRegex(self.module.BuildError, 'pinned commit'):
             self.module.build_howard(WrongSource(), types.SimpleNamespace(howard_repository='cache'))
+
+    @unittest.skipIf(sys.platform == 'win32', 'POSIX configure recipe')
+    def test_howard_target_and_host_use_an_explicit_compatible_dialect(self):
+        calls = []
+        module = self.module
+        root = self.root
+
+        class Source:
+            def __init__(self):
+                self.root = root
+
+            def run(self, argv, cwd=None, env=None):
+                calls.append((argv, env))
+                if argv[:2] == ['git', 'rev-parse']:
+                    return module.HOWARD_REVISION
+                if argv[0] == 'make':
+                    binary = root / 'howard-source/bin/bc'
+                    binary.parent.mkdir(parents=True)
+                    binary.write_bytes(b'checked build fixture')
+                return 'bc 7.0.3' if argv[-1] == '--version' else ''
+
+        args = types.SimpleNamespace(howard_repository='fixture', cc='cc', make='make', jobs=2)
+        with mock.patch.object(module, 'compiler_metadata', return_value={'argv0': 'cc'}), \
+             mock.patch.object(module, 'make_variables', return_value={'CFLAGS': 'recorded'}):
+            module.build_howard(Source(), args)
+        environments = [env for argv, env in calls if argv[0] in ('sh', 'make')]
+        self.assertEqual(len(environments), 2)
+        for env in environments:
+            for name in ('CFLAGS', 'HOSTCFLAGS'):
+                standards = [flag for flag in shlex.split(env[name]) if flag.startswith('-std=')]
+                self.assertEqual(standards, ['-std=gnu17'], (name, env[name]))
 
     def test_bad_gnu_archive_never_publishes_implementation(self):
         if sys.platform == 'win32':
