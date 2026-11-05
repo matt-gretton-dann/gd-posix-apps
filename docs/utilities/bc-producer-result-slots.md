@@ -26,8 +26,20 @@ existing prepared stream/function-code lifetime; no view outlives its owner.
 The full-checking VM keeps the original buffer as an independent execution
 oracle. The verified VM retains semantic errors, numeric and array COW behavior,
 argument snapshots, caller state, interrupt polling and result destruction.
-Per-depth buffers still clear all live values on release while retaining their
-capacity. No pointers into a relocatable caller buffer are introduced.
+Generic per-depth buffers reset live values to the empty variant on release
+and retain their length as well as capacity. Reacquiring an equally sized
+activation avoids reconstructing every empty slot. Typed lanes keep their
+existing clear-and-resize lifecycle. No pointers into a relocatable caller
+buffer are introduced.
+
+A verified generic function return can carry a cleanup prefix. Lowering bounds
+that prefix by the highest result index encountered through the return's source
+PC, including identity-indexed layouts. A return crossed by a backward edge
+retains full cleanup because a later producer may have executed first. Other
+returns can only have populated the proved prefix. Exceptions, interrupts and
+other exits retain full cleanup; debug assertions check the untouched tail.
+Tests cover conditional and unconditional backedges, mapped and identity result
+indices, and a return that reads a later producer through a backward edge.
 
 Tests include a failing logical-storage budget for a large function that is
 registered but never called, independently checked producer maps and payload
@@ -41,3 +53,10 @@ Measure cold registration, warm calls/loops, recursion, alternating frame sizes,
 arrays, streaming input and ordinary portable math source on the full/held-out
 native matrix. Keep losing and inconclusive cases. Typed executable operands,
 CFG-aware liveness, direct call windows and fusion remain separate #207 work.
+
+The retained-buffer and cleanup-prefix candidate remains experimental. Earlier
+native qualification found a Linux sparse-multiplication regression, despite
+unchanged normalized sparse-kernel instructions. Its integration with the
+separately emitted GCC sparse kernel is being qualified on full and holdout
+native workloads. Neither passing correctness checks nor local speedups alone
+establish performance acceptance.
