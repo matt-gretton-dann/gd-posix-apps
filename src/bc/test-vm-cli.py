@@ -25,6 +25,20 @@ class VMTests(unittest.TestCase):
         if diagnostic is not None:
             self.assertIn(diagnostic, run.stderr)
 
+    def test_negative_zero_unsigned_boundaries(self):
+        # Negation and arithmetic can preserve a negative sign on exact zero.
+        for zero in ("-0", "-(0.000)", "-1+1", "0*-1", "-1-(-1)"):
+            for text, output in ((f"scale= {zero}\nscale\n", "0\n"),
+                                 (f"a[{zero}]=7\na[0]\n", "7\n")):
+                with self.subTest(zero=zero, text=text):
+                    self.run_bc(text, output)
+
+    def test_negative_fraction_unsigned_boundaries(self):
+        # Truncation must not let a genuinely negative fraction become zero.
+        for text in ("scale= -.1\n", "a[-.1]=7\n"):
+            with self.subTest(text=text):
+                self.run_bc(text, success=False, diagnostic="it is negative")
+
     def test_bare_if_conditions(self):
         cases = [('n=0\n', 'n', ''), ('n = -2\n', 'n', '7\n'),
                  ('a[2]=0\n', 'a[2]', ''), ('a[2] = -3\n', 'a[2]', '7\n'),
