@@ -475,7 +475,8 @@ struct VMState
   void validate(Instructions const& instrs, bool function_body = false) const;
   auto verify(Instructions const& instructions) const -> PreparedInstructions
   {
-    validate(instructions);
+    if (full_checks() || !verify_short_scalar_stream(instructions))
+      validate(instructions);
     return PreparedInstructions(
       instructions, full_checks() ? ConsumptionPlan{} : plan_consumption(instructions, false),
       full_checks() ? ResultSlotPlan{} : plan_result_slots(instructions, sizeof(ResultSlot)),
