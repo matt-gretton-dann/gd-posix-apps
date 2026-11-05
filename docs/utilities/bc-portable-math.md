@@ -74,12 +74,18 @@ S+10 accuracy assumption.
 
 ## Arctangent
 
-A positive unit argument at scale 20 with decimal input base returns its
-certified rounded literal before changing any state. This avoids general
-reduction setup and a temporary store/reload. Other input bases and the
-negative unit case retain the existing path, which decodes the literal in
-decimal before restoring the caller's input base. No caller binding or base
-change is skipped for those fallback cases.
+Positive unit arguments through scale 144 return before general sign setup.
+Negative units are handled inside the sign-normalization branch, before setting
+the general sign flag. That flag is automatic and starts at zero in every
+activation; tests preload the caller's flag and alternate call signs. This
+avoids extra scale-20 entry guards penalizing higher-precision unit calls.
+
+At scale 20 the decimal-caller positive path returns its certified rounded
+literal without a temporary store/reload. Other bases decode the literal in
+decimal before restoring the caller's input base. Negative units use the
+matching negative literal. Other precisions use the signed certified bound and
+round away from zero before truncation. All caller bindings and bases retain
+their normal restoration behavior.
 
 For magnitudes in [0.8, 1.25] other than one, use
 atan(x) = atan(1) + atan((x-1)/(x+1)). The transformed magnitude is at
@@ -116,9 +122,11 @@ For exact |x| = 1 and entry S <= 144, use an ordinary 160-decimal-place lower
 bound. Tests enclose atan(1) with exact rational alternating remainders using
 atan(1) = 4 atan(1/5) - atan(1/239). Both enclosure endpoints yield the same
 integer floor after multiplication by 10^160, and the stored literal has error
-strictly below 10^-160. At working scale S+1, add the exact half decimal unit and
-truncate at S. The final error is at most U/2 + 10^-160 < U. Negating before
-truncation preserves nearest rounding for -1. Tests check the literal and both
+strictly below 10^-160. Both signed paths store that certified magnitude. At
+working scale S+1, add a half decimal unit to the positive bound or subtract it
+from the negative bound, then truncate at S. The final error is at most
+U/2 + 10^-160 < U. Negating before truncation preserves nearest rounding for -1.
+Tests check the literal and both
 reference endpoints round identically at every entry scale through 144.
 
 At the POSIX default S = 20, return the independently certified rounded
