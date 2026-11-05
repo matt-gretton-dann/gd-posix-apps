@@ -8,6 +8,9 @@ if (WIN32)
 endif()
 
 add_gdsup_source(UNIT_TEST test-getopt.cc SOURCES getopt.c)
+if(RUN_UNIT_TESTS)
+  target_sources(test-gdsup PRIVATE test-getopt-const.cc)
+endif()
 add_gdsup_source(SOURCES __gd_getopt_reset.c)
 
 add_gdsup_source(SOURCES __unistd_read.c unistd.h)
