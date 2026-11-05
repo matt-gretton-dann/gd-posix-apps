@@ -202,6 +202,45 @@ TEST_CASE("Outer result slots exclude every unexecuted definition-body producer"
   CHECK(GD::Bc::Details::plan_result_slots(body, 48).indices.empty());
 }
 
+TEST_CASE("Persistent returns bound cleanup before an unexecuted suffix",
+          "[bc][vm][compact-executable]")
+{
+  GD::Bc::Instructions code{I(O::pop_param_mark), I(O::number, "7"), I(O::return_, D(-1))};
+  for (unsigned n = 0; n < 32; ++n) {
+    code.emplace_back(O::number, "0");
+    code.emplace_back(O::print, D(-1), I::Stream::output);
+  }
+  code.emplace_back(O::return_, D(-2));
+  REQUIRE_FALSE(GD::Bc::Details::verify_control_flow(code, true).has_value());
+  auto const identity = GD::Bc::Details::lower_executable(code, {}, true);
+  REQUIRE(identity.size() == code.size());
+  CHECK(identity[2].second.index == 3);
+  auto const slots = GD::Bc::Details::plan_result_slots(code, 48);
+  REQUIRE_FALSE(slots.indices.empty());
+  auto const mapped = GD::Bc::Details::lower_executable(code, slots, true);
+  REQUIRE(mapped.size() == code.size());
+  CHECK(mapped[2].second.index == slots.index(1) + 1);
+  auto const transient = GD::Bc::Details::lower_executable(code, slots, false);
+  REQUIRE(transient.size() == code.size());
+  CHECK(transient[2].second.index == 0);
+}
+
+TEST_CASE("Backward edges crossing returns retain full cleanup", "[bc][vm][compact-executable]")
+{
+  for (bool conditional : {false, true}) {
+    GD::Bc::Instructions code{
+      I(O::pop_param_mark), I(O::branch, D(3)),
+      I(O::return_, D(2)),  I(O::branch, D(3)),
+      I(O::number, "7"),    conditional ? I(O::branch_zero, D(-1), D(-3)) : I(O::branch, D(-3)),
+      I(O::number, "0"),    I(O::return_, D(-1))};
+    REQUIRE_FALSE(GD::Bc::Details::verify_control_flow(code, true).has_value());
+    auto const lowered = GD::Bc::Details::lower_executable(code, {}, true);
+    REQUIRE(lowered.size() == code.size());
+    CHECK(lowered[2].second.index == 0);
+    CHECK(lowered[7].second.index == 8);
+  }
+}
+
 TEST_CASE("Compact operands encode register references and control targets separately",
           "[bc][vm][compact-executable]")
 {

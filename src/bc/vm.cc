@@ -480,7 +480,7 @@ struct VMState
 #if GD_BC_TYPED_RESULTS && GD_BC_COMPACT_EXECUTION
   auto active_results() -> ActivationResults& { return result_buffers_[result_depth_ - 1]; }
 #endif
-  void release_results();
+  void release_results(std::size_t limit);
 
   /** \brief  Validate instruction bounds, result types and control-flow availability.  */
   void validate(Instructions const& instrs, bool function_body = false) const;
@@ -621,7 +621,7 @@ public:
    *  \param instrs Instructions to hold.
    */
   InstructionPack(VMState* vm, VerifiedInstructions instrs);
-  ~InstructionPack() { vm_->release_results(); }
+  ~InstructionPack() { vm_->release_results(cleanup_limit_); }
   InstructionPack(InstructionPack const&) = delete;
   auto operator=(InstructionPack const&) -> InstructionPack& = delete;
 
@@ -809,6 +809,7 @@ private:
   // Immutable plan data is owned beside the verified code and cannot relocate
   // during this activation. Null preserves the full-width identity fallback.
   ResultSlotPlan::CompactIndex const* result_indices_;
+  std::size_t cleanup_limit_ = std::numeric_limits<std::size_t>::max();
 #if GD_BC_TYPED_RESULTS && GD_BC_COMPACT_EXECUTION
   TypedExecutionView typed_;
 #endif
@@ -1417,15 +1418,18 @@ auto GD::Bc::Details::VMState::acquire_results(std::size_t count, ExecutionLayou
 #endif
 }
 
-void GD::Bc::Details::VMState::release_results()
+void GD::Bc::Details::VMState::release_results(std::size_t limit)
 {
   assert(result_depth_ != 0);  // NOLINT
 #if GD_BC_TYPED_RESULTS && GD_BC_COMPACT_EXECUTION
   std::visit(
-    [](auto& buffers) {
+    [limit](auto& buffers) {
       if constexpr (std::is_same_v<std::decay_t<decltype(buffers)>, ResultBuffer>) {
-        for (auto& slot : buffers)
-          slot.reset();
+        auto const count = std::min(limit, buffers.size());
+        assert(std::all_of(buffers.begin() + count, buffers.end(),
+                           [](auto const& slot) { return !slot.has_value(); }));  // NOLINT
+        for (std::size_t i = 0; i < count; ++i)
+          buffers[i].reset();
       }
       else
         buffers.clear();
@@ -1433,10 +1437,14 @@ void GD::Bc::Details::VMState::release_results()
     result_buffers_[--result_depth_]);
 #else
   // Retain empty slots so the next activation does not initialize them again.
-  // Clear all values on every exit, including exception unwinding.
+  // A proven prefix covers every slot that could have acquired a value.
+  // Unbounded exits reset the full buffer.
   auto& buffers = result_buffers_[--result_depth_];
-  for (auto& slot : buffers)
-    slot.reset();
+  auto const count = std::min(limit, buffers.size());
+  assert(std::all_of(buffers.begin() + count, buffers.end(),
+                     [](auto const& slot) { return !slot.has_value(); }));  // NOLINT
+  for (std::size_t i = 0; i < count; ++i)
+    buffers[i].reset();
 #endif
 }
 
@@ -1652,6 +1660,8 @@ auto GD::Bc::Details::InstructionPack::execute_compact() -> std::pair<GD::Bc::Nu
       destination = vm_->call(instruction.first.letter, std::get<Location>(instrs_[pc_].op2()));
       break;
     case O::return_:
+      if (instruction.second.index != 0)
+        cleanup_limit_ = instruction.second.index;
       return std::make_pair(std::move(std::get<Number>(*(*results_)[instruction.first.index])),
                             true);
     case O::eof:
