@@ -69,6 +69,7 @@ class ResultSlot
 {
 public:
   auto has_value() const noexcept -> bool { return value_.index() != 0; }
+  void reset() noexcept { value_.emplace<0>(); }
   auto operator*() -> ExecutionResult& { return value_; }
   auto operator*() const -> ExecutionResult const& { return value_; }
 
@@ -1375,7 +1376,8 @@ auto GD::Bc::Details::VMState::acquire_results(std::size_t count, ExecutionLayou
   assert(std::visit(
     [](auto const& buffers) {  // NOLINT
       if constexpr (std::is_same_v<std::decay_t<decltype(buffers)>, ResultBuffer>)
-        return buffers.empty();
+        return std::all_of(buffers.begin(), buffers.end(),
+                           [](auto const& slot) { return !slot.has_value(); });
       else
         return buffers.numbers.empty() && buffers.others.empty();
     },
@@ -1407,7 +1409,8 @@ auto GD::Bc::Details::VMState::acquire_results(std::size_t count, ExecutionLayou
   ++result_depth_;
   return std::get_if<ResultBuffer>(&result);
 #else
-  assert(result.empty());  // NOLINT
+  assert(std::all_of(result.begin(), result.end(),
+                     [](auto const& slot) { return !slot.has_value(); }));  // NOLINT
   result.resize(layout.slots.storage_size(count));
   ++result_depth_;
   return &result;
@@ -1418,9 +1421,22 @@ void GD::Bc::Details::VMState::release_results()
 {
   assert(result_depth_ != 0);  // NOLINT
 #if GD_BC_TYPED_RESULTS && GD_BC_COMPACT_EXECUTION
-  std::visit([](auto& buffers) { buffers.clear(); }, result_buffers_[--result_depth_]);
+  std::visit(
+    [](auto& buffers) {
+      if constexpr (std::is_same_v<std::decay_t<decltype(buffers)>, ResultBuffer>) {
+        for (auto& slot : buffers)
+          slot.reset();
+      }
+      else
+        buffers.clear();
+    },
+    result_buffers_[--result_depth_]);
 #else
-  result_buffers_[--result_depth_].clear();
+  // Retain empty slots so the next activation does not initialize them again.
+  // Clear all values on every exit, including exception unwinding.
+  auto& buffers = result_buffers_[--result_depth_];
+  for (auto& slot : buffers)
+    slot.reset();
 #endif
 }
 

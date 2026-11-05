@@ -467,6 +467,32 @@ auto verified_activation_allocation_failures(bool typed_first) -> bool
   }
   return false;  // A larger allocation count cannot silently truncate the sweep.
 }
+// Empty result capacity may survive an activation, but its owned coefficients
+// must be released before another pack runs at the same depth.
+auto result_values_release_between_packs() -> bool
+{
+  using I = GD::Bc::Instruction;
+  using O = I::Opcode;
+  std::ostringstream output, errors;
+  GD::Bc::VM vm(output, errors, false, GD::Bc::VM::ExecutionChecks::verified);
+  GD::Bc::Instructions large;
+  for (unsigned i = 0; i < 24; ++i) {
+    large.emplace_back(O::number, "12345678901234567890123456789012345678901234567890");
+    large.emplace_back(O::number, "98765432109876543210987654321098765432109876543210");
+    large.emplace_back(O::multiply, I::Offset(-2), I::Offset(-1));
+  }
+  large.emplace_back(O::eof);
+  GD::Bc::Instructions small{I(O::eof)};
+  if (vm.execute(large) || vm.execute(small))
+    return false;
+  auto const empty = outstanding.load(std::memory_order_relaxed);
+  for (unsigned i = 0; i < 8; ++i) {
+    if (vm.execute(large) || outstanding.load(std::memory_order_relaxed) != empty ||
+        vm.execute(small) || outstanding.load(std::memory_order_relaxed) != empty)
+      return false;
+  }
+  return output.str().empty() && errors.str().empty();
+}
 }  // namespace
 
 auto main() -> int
@@ -502,6 +528,12 @@ auto main() -> int
   }
   if (!restore_call_after_allocation_failure()) {
     std::fprintf(stderr, "Allocation failure damaged an active call or its retry\n");
+    return 1;
+  }
+  auto const result_baseline = outstanding.load(std::memory_order_relaxed);
+  if (!result_values_release_between_packs() ||
+      outstanding.load(std::memory_order_relaxed) != result_baseline) {
+    std::fprintf(stderr, "Result buffers retained owned values between activations\n");
     return 1;
   }
   auto const before = outstanding.load(std::memory_order_relaxed);
