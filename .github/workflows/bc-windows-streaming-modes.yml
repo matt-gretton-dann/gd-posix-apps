@@ -1,0 +1,93 @@
+name: bc Windows streaming input modes
+
+on:
+  pull_request:
+    branches: [main]
+    paths: ['.github/workflows/bc-windows-streaming-modes.yml']
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  replay:
+    name: Windows streaming input modes / ${{ matrix.replica }}
+    runs-on: windows-2025
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        replica: [1, 2]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Download retained binaries and corpus
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/13379567032/zip" > 13379567032.zip
+      - name: Replay identical checked inputs with randomized pairing
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir evidence
+          powershell.exe -NoProfile -Command "Get-CimInstance Win32_Processor | Select-Object Name,NumberOfCores,NumberOfLogicalProcessors | Format-List" > evidence/cpu.txt
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+          from zipfile import ZipFile
+
+          files = (
+              ('base', 13379567032, 'codegen/base/binary.exe',
+               'b4ad385a9ba5378dfe476592a901db042a92cb907df39a8d5e98395a4024f90f'),
+              ('aa', 13379567032, 'codegen/aa/binary.exe',
+               'e830bff63c7e59dc56994bb48a6e643fdebeb4388540b35731643151dc2257de'),
+              ('stack', 13379567032, 'codegen/candidate/binary.exe',
+               '77ead04006a1ec6a43c8b7e7e06ce45a1f15c457dcb1f9cba56f979f3bcad91e'),
+          )
+          implementations = []
+          for role, artifact, member, expected in files:
+              with ZipFile(f'{artifact}.zip') as archive:
+                  contents = archive.read(member)
+              actual = hashlib.sha256(contents).hexdigest()
+              if actual != expected:
+                  raise RuntimeError(f'{role}: unexpected executable digest {actual}')
+              binary = Path(role, 'bc.exe').resolve()
+              binary.parent.mkdir()
+              binary.write_bytes(contents)
+              implementations.append(dict(name=role, argv=[str(binary)],
+                                          metadata=dict(artifact=artifact, binary_sha256=actual)))
+          Path('evidence/config.json').write_text(json.dumps(dict(implementations=implementations)))
+
+          corpus = Path('corpus')
+          programs = corpus / 'workloads'
+          programs.mkdir(parents=True)
+          entries = []
+          with ZipFile('13379567032.zip') as archive:
+              prefix = 'holdout-paired/'
+              manifest = json.loads(archive.read(prefix + 'manifest.json'))
+              for original in ('streaming_statements_17500', 'file_statements_17500'):
+                  entry = next(item for item in manifest['corpus'] if item['name'] == original)
+                  for mode in ('stdin', 'file'):
+                      name = f'{original}_{mode}'
+                      entries.append(dict(entry, name=name, input_mode=mode))
+                      for suffix in ('.bc', '.expected'):
+                          payload = archive.read(f'{prefix}workloads/{original}{suffix}')
+                          (programs / (name + suffix)).write_bytes(payload)
+          (corpus / 'manifest.json').write_text(json.dumps(dict(corpus=entries)))
+          PY
+          python src/bc/scripts/bench-bc.py --config evidence/config.json \
+            --reference base --replay-corpus corpus --samples 31 --warmups 3 \
+            --seed "$((574207 + ${{ matrix.replica }}))" --output evidence/paired
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: bc-windows-streaming-modes-${{ github.run_id }}-${{ matrix.replica }}
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 30
