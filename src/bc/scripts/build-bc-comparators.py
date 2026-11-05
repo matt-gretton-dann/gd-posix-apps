@@ -98,7 +98,7 @@ def make_variables(builder, source, make):
     # Ask make to expand its actual compiler flags; raw $(CPPFLAGS) references
     # are insufficient provenance. This target performs no compilation.
     recipe = source / 'gd-provenance.mk'
-    names = ('CC', 'CFLAGS', 'CPPFLAGS', 'LDFLAGS')
+    names = ('CC', 'HOSTCC', 'CFLAGS', 'HOSTCFLAGS', 'CPPFLAGS', 'LDFLAGS')
     recipe.write_text('.PHONY: gd-provenance\ngd-provenance:\n' + ''.join(
         '\t@$(info GD_FLAGS_{}=$({}))\n'.format(name, name) for name in names),
         encoding='utf-8')
@@ -159,6 +159,10 @@ def build_howard(builder, args):
     else:
         compiler = compiler_metadata(builder, args.cc or 'cc')
         environment = build_environment(compiler)
+        # The source pin uses pre-C23 boolean-token construction. Select the
+        # same compatible dialect for the program and its build-time generators.
+        for name in ('CFLAGS', 'HOSTCFLAGS'):
+            environment[name] += ' -std=gnu17'
         configure = ['sh', 'configure.sh', '--opt=3', '--disable-nls', '--disable-history',
                      '--disable-dc', '--disable-man-pages', '--disable-generated-tests',
                      '--disable-strip']
