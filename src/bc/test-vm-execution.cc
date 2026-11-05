@@ -632,6 +632,29 @@ TEST_CASE("Compact short functions keep runtime radix and owned literal sidecars
   CHECK(execute(*code) == "2\n11\n11\n");
 }
 
+TEST_CASE("Compact return cleanup covers later producers reached by backedges",
+          "[bc][vm][execution][compact-executable]")
+{
+  auto const loc = GD::Bc::Location("fixture", 1, 1);
+  auto const name = GD::Bc::Letter('f');
+  std::string const large = "12345678901234567890123456789012345678901234567890";
+  GD::Bc::Instructions code{I(O::function_begin, GD::Bc::VariableMask(), loc),
+                            I(O::pop_param_mark),
+                            I(O::branch, D(3)),
+                            I(O::return_, D(2)),
+                            I(O::branch, D(3)),
+                            I(O::number, large),
+                            I(O::branch, D(-3)),
+                            I(O::number, "0"),
+                            I(O::return_, D(-1)),
+                            I(O::function_end, name, D(-9)),
+                            I(O::push_param_mark),
+                            I(O::call, name, loc),
+                            I(O::print, D(-1), I::Stream::output),
+                            I(O::eof)};
+  CHECK(execute(code) == large + "\n");
+}
+
 TEST_CASE("Function bodies can retain an incoming parameter result",
           "[bc][vm][execution]")
 {
