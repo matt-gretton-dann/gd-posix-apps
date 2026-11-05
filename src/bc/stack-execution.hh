@@ -29,6 +29,9 @@ struct StackCode
   std::size_t depth{};
 };
 
+// Statement items below this size cannot amortize stack lowering.
+inline constexpr std::size_t stack_statement_min_size = 16;
+
 // All operand bounds and control flow must already have been verified.
 // A stack plan additionally proves exact operand order and empty joins.
 auto plan_stack_execution(Instructions const& source, bool function_body = false)

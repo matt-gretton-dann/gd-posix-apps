@@ -28,7 +28,10 @@ matched screen after enabling scalar function bodies measured calls at
 0.965 and 0.957 times baseline on full and holdout, and recursion at
 0.909 on holdout. An earlier screen without function-body lowering put
 the scalar loops near parity. These are local checked observations with
-no independent A/A rebuild. The option defaults off.
+no independent A/A rebuild. Native builds default to the stack executor for eligible scalar code.
+Set `ENABLE_BC_STACK_EXECUTION=OFF` to use register dispatch throughout.
+Coverage, profiling, cross builds and prepared-divisor configurations
+default to register dispatch.
 
 The first [same-image Linux comparison](https://github.com/matt-gretton-dann/gd-posix-apps/actions/runs/41828805835)
 reproduced the stack loop and high-comparison losses on EPYC 7763.
