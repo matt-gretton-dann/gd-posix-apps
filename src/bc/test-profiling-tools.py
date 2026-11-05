@@ -5,6 +5,7 @@ import importlib.util
 import os
 import io
 import contextlib
+import ctypes
 import hashlib
 import json
 from pathlib import Path
@@ -21,6 +22,97 @@ class ProfilingTools(unittest.TestCase):
         self.module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(self.module)
         self.bench = self.module.load_benchmark()
+
+    def test_windows_accounting_preserves_pointer_and_counter_widths(self):
+        api = mock.Mock()
+        def memory(handle, pointer, size):
+            counters = pointer._obj
+            self.assertEqual(handle, 0x123456789ABC)
+            self.assertEqual(counters.cb, size)
+            self.assertEqual(type(counters).PeakWorkingSetSize.offset, 8)
+            counters.PeakWorkingSetSize = 8589934592
+            counters.PeakPagefileUsage = 17179869184
+            return 1
+        def times(handle, created, exited, kernel, user):
+            kernel._obj.low = 10000000
+            user._obj.high, user._obj.low = 1, 5000000
+            return 1
+        api.K32GetProcessMemoryInfo.side_effect = memory
+        api.GetProcessTimes.side_effect = times
+        result = self.module.windows_process_fields(0x123456789ABC, api)
+        self.assertEqual(result['peak_rss_native'], 8589934592)
+        self.assertEqual(result['peak_commit_charge_bytes'], 17179869184)
+        self.assertIn('bytes', result['native_unit'])
+        self.assertEqual(result['cpu_time']['system_seconds'], 1)
+        self.assertEqual(result['cpu_time']['user_ticks_100ns'], (1 << 32) + 5000000)
+        self.assertEqual(result['cpu_time']['user_seconds'], ((1 << 32) + 5000000) / 10000000)
+        self.assertEqual(api.K32GetProcessMemoryInfo.argtypes[0], ctypes.c_void_p)
+
+    def test_windows_api_failures_remain_explicit_and_independent(self):
+        api = mock.Mock()
+        api.K32GetProcessMemoryInfo.return_value = 0
+        api.GetProcessTimes.return_value = 0
+        with mock.patch.object(ctypes, 'get_last_error', return_value=5, create=True):
+            result = self.module.windows_process_fields(123, api)
+        self.assertEqual(result['status'], 'unavailable')
+        self.assertEqual(result['winerror'], 5)
+        self.assertEqual(result['cpu_time']['status'], 'unavailable')
+        self.assertEqual(result['cpu_time']['winerror'], 5)
+        self.assertNotIn('peak_rss_native', result)
+        self.assertEqual(self.module.windows_process_fields(None)['status'], 'unavailable')
+
+    def test_windows_memory_checks_file_transport_and_child_output(self):
+        case = {'name': 'file-fixture', 'program': '2\n',
+                'expected': ['2'], 'input_mode': 'file'}
+        for output in (b'2\n', b'3\n'):
+            def run(argv, payload, environment, timeout):
+                self.assertEqual(payload, b'')
+                self.assertEqual(Path(argv[-1]).read_bytes(), b'2\n')
+                return (subprocess.CompletedProcess(argv, 0, output, b''),
+                        {'status': 'collected', 'peak_rss_native': 123,
+                         'native_unit': 'bytes (Windows peak working set)'})
+            with tempfile.TemporaryDirectory() as directory, \
+                    mock.patch.object(self.module.platform, 'system', return_value='Windows'), \
+                    mock.patch.object(self.module, 'run_windows_process', side_effect=run):
+                if output == b'2\n':
+                    result = self.module.rss_profile(self.bench, {'argv': ['fake']},
+                                                     case, Path(directory), 3)
+                    self.assertTrue(result['checked'])
+                    self.assertEqual(result['peak_rss_native'], 123)
+                    self.assertEqual(result['input_mode'], 'file')
+                    self.assertTrue((Path(directory) / 'file-fixture.rss.json').is_file())
+                else:
+                    with self.assertRaises(self.bench.BenchmarkError):
+                        self.module.rss_profile(self.bench, {'argv': ['fake']},
+                                                case, Path(directory), 3)
+
+    def test_windows_deadline_kills_and_reaps_before_propagating(self):
+        child = mock.MagicMock()
+        child.communicate.side_effect = [subprocess.TimeoutExpired(['fake'], 1), (b'', b'')]
+        with mock.patch.object(self.module.subprocess, 'Popen') as popen, \
+                mock.patch.object(self.module, 'windows_process_fields') as fields:
+            popen.return_value.__enter__.return_value = child
+            with self.assertRaises(subprocess.TimeoutExpired):
+                self.module.run_windows_process(['fake'], b'', {}, 1)
+        child.kill.assert_called_once_with()
+        self.assertEqual(child.communicate.call_count, 2)
+        fields.assert_not_called()
+
+    @unittest.skipUnless(sys.platform == 'win32', 'native Windows process accounting')
+    def test_windows_peak_survives_child_exit_and_memory_release(self):
+        # Touch then release memory before exit: the kernel peak must survive,
+        # rather than reflecting a sampled current working set or the parent.
+        code = ('import sys; b=bytearray(64*1024*1024); '
+                'b[::4096]=bytes([1])*len(b[::4096]); del b; print(2)')
+        case = {'name': 'native-windows', 'program': '', 'expected': ['2']}
+        with tempfile.TemporaryDirectory() as directory:
+            result = self.module.rss_profile(self.bench, {'argv': [sys.executable, '-c', code]},
+                                             case, Path(directory), 20)
+        self.assertTrue(result['checked'])
+        self.assertEqual(result['status'], 'collected')
+        self.assertGreaterEqual(result['peak_rss_native'], 64 * 1024 * 1024)
+        self.assertEqual(result['cpu_time']['status'], 'collected')
+        self.assertGreaterEqual(result['cpu_time']['user_seconds'], 0)
 
     def test_native_memory_units_and_optional_counters(self):
         darwin = self.module.rss_fields('Darwin',
