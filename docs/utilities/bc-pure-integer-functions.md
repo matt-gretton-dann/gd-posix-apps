@@ -170,6 +170,12 @@ fast semantic workflow. Arithmetic includes the full/holdout corpus and fixed
 sparse latency/duration controls. Math runs full and holdout separately with a
 0.25-second calibration target, 600-second child deadlines and a bounded total.
 
+Calibration, paired sampling and confirmation commands use the remaining
+explicit total command budget rather than a hidden one-hour stage cap.
+Shorter explicit build/test deadlines and individual benchmark-child deadlines
+still apply. Exhaustion remains a hard failure with partial evidence retained;
+longer budgets do not reduce counts, controls or correctness checks.
+
 `build-gd-bc.py --integer-functions ON|OFF` verifies both the configured option
 and actual VM/engine compiler definitions and source inventory. Native Visual
 Studio Release projects are retained when compile commands are unavailable.
