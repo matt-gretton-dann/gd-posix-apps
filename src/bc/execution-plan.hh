@@ -53,6 +53,10 @@ struct ResultSlotPlan
 auto plan_result_slots(Instructions const& code, std::size_t slot_bytes,
                        std::span<std::uint8_t const> consumption = {}) -> ResultSlotPlan;
 
+// Reuse block-local slots in persistent verified code. Cross-block values
+// retain dedicated storage and existing ownership aliases stay intact.
+void reuse_block_result_slots(Instructions const& code, ResultSlotPlan& slots);
+
 // Opcode-specific operands in the verified execution stream. Only the member
 // selected during lowering may be read: data/control operands use index, while
 // variable/array/function immediates use letter. No discriminant is needed

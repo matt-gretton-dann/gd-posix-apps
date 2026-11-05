@@ -177,6 +177,31 @@ f(2,1)
                     "define f(a) {\nreturn (a+2)\n}\n"
                     f"h({large})\n", "-1\n-2\n")
 
+    def test_function_results_survive_block_changes_and_early_return(self):
+        large = 10 ** 39 + 7
+        program = """define f(a[],n) {
+auto i,j,r,t
+if(n<0) return(a[0])
+r=a[0]
+for(i=0;i<n;i++) {
+if(i%2==0) r=r+a[1]
+if(i%2!=0) r=r-a[2]
+if(i==3) {
+t=0
+for(j=0;j<5;j++) t=t+j*j
+r=r+t-t
+}
+}
+return(r)
+}
+"""
+        program += f"a[0]={large}\na[1]=1\na[2]=2\n"
+        for count in (-1, 0, 1, 8, 9):
+            program += f"f(a[],{count})\n"
+        program += "a[0]\n"
+        expected = [large, large, large + 1, large - 4, large - 3, large]
+        self.run_bc(program, "".join(str(value) + "\n" for value in expected))
+
     def test_locals_and_redefinition(self):
         self.run_bc("a=10\ndefine f(a) {\nauto b\nb=a+1\nreturn (b)\n}\n"
                     "f(2)\na\nb\n", "3\n10\n0\n")
