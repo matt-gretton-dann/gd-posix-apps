@@ -455,6 +455,76 @@ void check_native_pair(int64_t lhs, int64_t rhs)
 }
 }  // namespace
 
+TEMPLATE_TEST_CASE("Machine integer boundary preserves exact values and ownership",
+                   "[bc][number][oracle][machine-integer]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  static_assert(noexcept(std::declval<Number const&>().to_machine_integer()));
+  auto reference = [](std::int64_t value) {
+    auto const text = std::to_string(value);
+    Number result(value < 0 ? std::string_view(text).substr(1) : std::string_view(text), 10);
+    if (value < 0) {
+      result.negate();
+    }
+    return result;
+  };
+  std::array<std::int64_t, 18> const values{
+    {0, 1, -1, 99, -99, 100, -100, 999999999, -999999999, 1000000000, -1000000000,
+     4294967296LL, -4294967296LL, 1000000000000000000LL, -1000000000000000000LL,
+     std::numeric_limits<std::int64_t>::min(), std::numeric_limits<std::int64_t>::max(),
+     std::numeric_limits<std::int64_t>::min() + 1}};
+  for (auto const value : values) {
+    INFO("value = " << value);
+    auto actual = Number::from_machine_integer(value);
+    auto const expected = reference(value);
+    REQUIRE(actual == expected);
+    REQUIRE(actual.scale() == 0);
+    REQUIRE(actual.to_machine_integer() == value);
+    REQUIRE(expected.to_machine_integer() == value);
+    auto const alias = actual;
+    auto const shared = actual.has_shared_heap_storage();
+    REQUIRE(actual.to_machine_integer() == value);
+    REQUIRE(actual.has_shared_heap_storage() == shared);
+    REQUIRE(alias == expected);
+    actual.negate();
+    REQUIRE(alias == expected);
+  }
+  for (std::int64_t value = -1024; value <= 1024; ++value) {
+    auto const actual = Number::from_machine_integer(value);
+    REQUIRE(actual == reference(value));
+    REQUIRE(actual.to_machine_integer() == value);
+  }
+}
+
+TEMPLATE_TEST_CASE("Machine integer guard rejects scale and out-of-range values",
+                   "[bc][number][oracle][machine-integer]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  for (auto const text : {"9223372036854775808", "9223372036854775809",
+                           "18446744073709551615", "18446744073709551616",
+                           "99999999999999999999999999999999999999999999999999"}) {
+    Number value(text, 10);
+    auto const alias = value;
+    REQUIRE_FALSE(value.to_machine_integer().has_value());
+    REQUIRE(value == alias);
+    value.negate();
+    REQUIRE(value.to_machine_integer().has_value() ==
+            (std::string_view(text) == "9223372036854775808"));
+    REQUIRE(alias == Number(text, 10));
+  }
+  for (auto const text : {"0.0", "1.0", "1.00", ".5", "9223372036854775807.0"}) {
+    Number value(text, 10);
+    auto const alias = value;
+    REQUIRE(value.scale() != 0);
+    REQUIRE_FALSE(value.to_machine_integer().has_value());
+    value.negate();
+    REQUIRE_FALSE(value.to_machine_integer().has_value());
+    REQUIRE(alias == Number(text, 10));
+  }
+}
+
 TEST_CASE("Number8 exhaustive one-limb arithmetic", "[bc][number][oracle]")
 {
   RestoreMultiplyThreshold<Number8> const restore;
