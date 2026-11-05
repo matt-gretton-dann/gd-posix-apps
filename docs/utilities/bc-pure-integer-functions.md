@@ -166,6 +166,16 @@ after teardown. Decimal continuation lines are unfolded for these numeric
 oracles; separate CLI tests cover their formatting. The generators are bounded
 semantic probes, not exhaustive coverage or timing measurements.
 
+Direct signed-edge tests compare each arithmetic operation with generic
+`Number` arithmetic over signed extrema, near-extrema, zero and mixed signs.
+They also exercise each supported comparison with both machine and large
+operands. Profile assertions check that an operation promotes exactly when its
+result exceeds the signed range and does not demote unnecessarily; exact values
+alone would not catch redundant generic arithmetic. Each attempted execution
+must release its live scratch entries. These bounded tests improve feasible
+branch coverage without establishing complete condition coverage of the engine
+or verifier rejection paths.
+
 Keep the tier experimental until differential semantic tests, cold and warm
 full/holdout measurements, and native Linux/macOS/Windows resource evidence
 justify adoption. Preserve adverse and inconclusive classes; the overall #197
