@@ -78,7 +78,10 @@ For magnitudes in [0.8, 1.25] other than one, use
 atan(x) = atan(1) + atan((x-1)/(x+1)). The transformed magnitude is at
 most 1/9, reducing the work before the alternating series. Apply the
 original sign after the correction. The transform and correction use the
-general working precision, and all other magnitudes retain the existing
+general working precision. Through W = 144, use the certified lower bound
+below, truncated at W. The enclosure and literal have the same floor at W,
+so the correction error is less than one working ULP. Above that limit use
+the recursive unit evaluation. All other magnitudes retain the existing
 reciprocal and half-angle paths. Exact rational enclosures cover both
 signs and inputs at and around the two reduction thresholds.
 
@@ -110,7 +113,8 @@ one. Input is rounded to W before the series.
 Evaluate atan(t) with its alternating odd-power recurrence. The stored squared
 ratio is below .011. Term propagation contracts; each multiplication/division
 introduces less than u, and summation is exact. The loop takes fewer than W+2
-terms. A conservative pre-rounding bound is 300*(N+1)*u, including transforms,
+terms. Allowing one additional working ULP for the truncated near-one constant,
+a conservative pre-rounding bound is 301*(N+1)*u. This includes transforms,
 constant reconstruction and N terms. Use W = S + 2*d(S+F+D+1) + 24. The bound
 is far below U/2 by the digit-count inequality above. Term disappearance is a
 termination event under this contraction bound, not the accuracy justification.

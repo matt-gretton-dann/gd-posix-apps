@@ -164,7 +164,9 @@ class LibraryCli(unittest.TestCase):
     def test_atan_unit_literal_matches_the_certified_enclosure(self):
         source = Path(SOURCE).read_text(encoding='utf-8')
         literals = re.findall(r'(?m)^\s*r=(\.\d{160})$', source)
+        correction = re.findall(r'(?m)^\s*if \(w<=144\) y=(\.\d{160})/1$', source)
         self.assertEqual(len(literals), 1)
+        self.assertEqual(correction, literals)
         lower, upper = unit_atan_enclosure()
         places = 10 ** 160
         lo = lower.numerator * places // lower.denominator
@@ -219,7 +221,9 @@ class LibraryCli(unittest.TestCase):
 
     def test_atan_near_one_reduction_boundaries(self):
         lo, hi = unit_atan_enclosure()
-        cases = [(scale, sign, text) for scale in (0, 20, 64, 100, 144, 145)
+        # Entry scales 114 and 115 produce working scales 144 and 145
+        # for these short arguments, straddling constant admission.
+        cases = [(scale, sign, text) for scale in (0, 20, 64, 100, 114, 115, 144, 145)
                  for sign in ('', '-') for text in
                  ('.799', '.8', '.801', '.999', '1.001', '1.125', '1.249', '1.25', '1.251')]
         program = ''.join(f'scale={scale}\na({sign}{text})\n'
