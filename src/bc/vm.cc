@@ -32,6 +32,13 @@
 #  include "native-scalar.hh"
 #endif
 
+// Native comparisons found a Linux math slowdown with direct forwarding.
+#if defined(__APPLE__) && defined(__aarch64__) && !GD_BC_PROFILE
+#  define GD_BC_FORWARD_SCALAR_ARGUMENT 1
+#else
+#  define GD_BC_FORWARD_SCALAR_ARGUMENT 0
+#endif
+
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define STRINGIFY2(a) #a
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
@@ -404,9 +411,14 @@ struct VMState
   /** \brief       Do a call
    *  \param  func Function to call.
    *  \param  loc  Location of call.
+   *  \param  argument Optional scalar borrowed from the caller's result slot.
    *  \return      Result of call.
    */
+#if GD_BC_FORWARD_SCALAR_ARGUMENT
+  auto call(Letter func, Location const& loc, Number const* argument = nullptr) -> Number;
+#else
   auto call(Letter func, Location const& loc) -> Number;
+#endif
 
   /** Push a new parameter pack onto the parameter stack.  */
   void push_param_pack();
@@ -998,7 +1010,12 @@ void GD::Bc::Details::VMState::defer_library_function(Letter name, std::string_v
 }
 #endif
 
+#if GD_BC_FORWARD_SCALAR_ARGUMENT
+auto GD::Bc::Details::VMState::call(Letter func, Location const& loc, Number const* argument)
+  -> GD::Bc::Number
+#else
 auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc::Number
+#endif
 {
   GD_BC_PROFILE_EVENT(Profile::Event::function_calls, 1);
   auto const index = static_cast<unsigned>(func);
@@ -1040,6 +1057,19 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
 #else
   auto locals = std::get<1>(def);
   auto func_instructions = std::get<0>(def).view(use_source, locals);
+#endif
+
+#if GD_BC_FORWARD_SCALAR_ARGUMENT
+  auto const& code = std::get<0>(def);
+  auto const parameter = code.prepared_ ? code.prepared_->scalar_parameter : std::nullopt;
+  // A forwarded scalar can bind directly only when this is the entire
+  // incoming pack and the callee's verified prologue supports direct binding.
+  if (argument != nullptr &&
+      (use_source || !parameter || param_marks_.empty() ||
+       param_marks_.back().begin != parameters_.size())) {
+    push_param(*argument);
+    argument = nullptr;
+  }
 #endif
 
   // Retain offsets rather than references across execute(): recursive calls
@@ -1094,8 +1124,10 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
 #else
     Instruction::Index start = 0;
 #if !GD_BC_PROFILE
+#  if !GD_BC_FORWARD_SCALAR_ARGUMENT
     auto const& code = std::get<0>(def);
     auto const parameter = code.prepared_ ? code.prepared_->scalar_parameter : std::nullopt;
+#  endif
     if (parameter) {
       start = FunctionCode::scalar_prologue_size_;
     }
@@ -1103,7 +1135,15 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
     InstructionPack fn(this, func_instructions);
 #if !GD_BC_PROFILE
     if (start != 0 && !have_been_interrupted.test(std::memory_order_relaxed)) {
+#  if GD_BC_FORWARD_SCALAR_ARGUMENT
+      auto& variable = variables_.at(static_cast<unsigned>(parameter->get()));
+      if (argument != nullptr)
+        variable = *argument;
+      else
+        variable = pop_param();
+#  else
       variables_.at(static_cast<unsigned>(parameter->get())) = pop_param();
+#  endif
       if (!have_been_interrupted.test(std::memory_order_relaxed)) {
         pop_param_pack();
       }
@@ -1560,9 +1600,29 @@ auto GD::Bc::Details::InstructionPack::execute_compact() -> std::pair<GD::Bc::Nu
     case O::push_param_mark:
       vm_->push_param_pack();
       break;
+#if GD_BC_FORWARD_SCALAR_ARGUMENT
+    case O::push_param: {
+      auto const& value = (*results_)[instruction.first.index];
+      // A scalar push immediately followed by a call can forward the value
+      // from this activation's result buffer. Calls reached independently
+      // still use the ordinary argument pack.
+      if (pc_ + 1 < executable.size() && executable[pc_ + 1].opcode == O::call &&
+          value.has_value() && !have_been_interrupted.test(std::memory_order_relaxed)) {
+        if (auto const* number = std::get_if<Number>(&*value)) {
+          auto const& call = executable[++pc_];
+          (*results_)[call.result] =
+            vm_->call(call.first.letter, std::get<Location>(instrs_[pc_].op2()), number);
+          break;
+        }
+      }
+      push_value(value, instruction.first.index);
+      break;
+    }
+#else
     case O::push_param:
       push_value((*results_)[instruction.first.index], instruction.first.index);
       break;
+#endif
     case O::pop_param_mark:
       vm_->pop_param_pack();
       break;
