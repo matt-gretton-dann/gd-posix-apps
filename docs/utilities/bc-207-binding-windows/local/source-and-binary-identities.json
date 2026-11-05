@@ -1,0 +1,27 @@
+{
+  "aa_scope": "same baseline executable and path; no independent A/A rebuild in these local exploratory screens",
+  "baseline_note": "Linux-only sparse-codegen selection is inactive on this local AppleClang build; generic default arithmetic path",
+  "baseline_source_revision": "250c8f6bdc80f1ae32f6c815a859d6cc60bd88cb",
+  "candidate_feature_commit": "75a2c419",
+  "candidate_source_revision": "0ef83ca0f3d6408aef268c2a1bce812b1bbee344",
+  "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin\n",
+  "limitations": "Local observations only; hosted correctness, full/holdout acceptance, cold cost, RSS and retained frame memory remain unqualified",
+  "roles": {
+    "base": {
+      "binary_bytes": 606816,
+      "binary_sha256": "5d341b2b1c74b1e3c343d61a4f8bbdf34167116c9abf385b63d2a65e40366b64",
+      "vm_compile_command": "/usr/bin/c++ -DENABLE_EXTENSIONS=1 -DGD_BC_ARRAY_STORAGE=0 -DGD_BC_COMPACT_EXECUTION=1 -DGD_BC_PREPARED_DIVISORS=0 -DGD_BC_PREPARSED_LIBRARY=1 -DGD_BC_TYPED_RESULTS=0 -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-posix-bc-sparse-codegen/src/bc -I/private/tmp/bc-200-sparse-codegen-build/src/bc -I/private/tmp/gd-posix-bc-sparse-codegen/libgdsup/include -I/private/tmp/gd-posix-bc-sparse-codegen/src/include -O3 -DNDEBUG -std=gnu++20 -flto=thin -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/bc/CMakeFiles/libbc.dir/vm.cc.o -c /private/tmp/gd-posix-bc-sparse-codegen/src/bc/vm.cc"
+    },
+    "candidate": {
+      "binary_bytes": 606976,
+      "binary_sha256": "938e4f29acf1ba8c60ffa3f7455c082dba9a698fa1ab73ecbe1a74ef8b3a61d3",
+      "vm_compile_command": "/usr/bin/c++ -DENABLE_EXTENSIONS=1 -DGD_BC_ARRAY_STORAGE=0 -DGD_BC_BINDING_WINDOWS=1 -DGD_BC_COMPACT_EXECUTION=1 -DGD_BC_PREPARED_DIVISORS=0 -DGD_BC_PREPARSED_LIBRARY=1 -DGD_BC_TYPED_RESULTS=0 -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-posix-bc-binding-windows/src/bc -I/private/tmp/bc-207-binding-windows-build/src/bc -I/private/tmp/gd-posix-bc-binding-windows/libgdsup/include -I/private/tmp/gd-posix-bc-binding-windows/src/include -O3 -DNDEBUG -std=gnu++20 -flto=thin -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/bc/CMakeFiles/libbc.dir/vm.cc.o -c /private/tmp/gd-posix-bc-binding-windows/src/bc/vm.cc"
+    }
+  },
+  "source_sha256": {
+    "src/bc/CMakeLists.txt": "6127d3f767b805a3628c5b3a24e0e3eeb85e01f8994c2c2fdfab9c3ec6134c84",
+    "src/bc/bc.hh": "fe2bfb6024fffe39f4a1e7f2a48dccb1843f461c07106765db7e15f39915975c",
+    "src/bc/test-vm-execution.cc": "99f54be0a72ab4a959dbc6de866e6ddcca8de33765497c497d4e137b4c62099f",
+    "src/bc/vm.cc": "677f379f5ad9f28b90f3b07839cb6ecdbebea0a6edfdea1c15d32e2feff43acf"
+  }
+}

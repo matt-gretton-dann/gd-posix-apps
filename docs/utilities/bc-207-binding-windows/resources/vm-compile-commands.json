@@ -1,0 +1,18 @@
+{
+  "on": [
+    {
+      "directory": "/private/tmp/bc-207-binding-profile-build",
+      "command": "/usr/bin/c++ -DENABLE_EXTENSIONS=1 -DGD_BC_ARRAY_STORAGE=0 -DGD_BC_BINDING_WINDOWS=1 -DGD_BC_COMPACT_EXECUTION=1 -DGD_BC_PREPARED_DIVISORS=0 -DGD_BC_PREPARSED_LIBRARY=1 -DGD_BC_PROFILE=1 -DGD_BC_TYPED_RESULTS=0 -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-posix-bc-binding-windows/src/bc -I/private/tmp/bc-207-binding-profile-build/src/bc -I/private/tmp/gd-posix-bc-binding-windows/libgdsup/include -I/private/tmp/gd-posix-bc-binding-windows/src/include -O3 -DNDEBUG -std=gnu++20 -flto=thin -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/bc/CMakeFiles/libbc.dir/vm.cc.o -c /private/tmp/gd-posix-bc-binding-windows/src/bc/vm.cc",
+      "file": "/private/tmp/gd-posix-bc-binding-windows/src/bc/vm.cc",
+      "output": "/private/tmp/bc-207-binding-profile-build/src/bc/CMakeFiles/libbc.dir/vm.cc.o"
+    }
+  ],
+  "off": [
+    {
+      "directory": "/private/tmp/bc-207-binding-profile-off-build",
+      "command": "/usr/bin/c++ -DENABLE_EXTENSIONS=1 -DGD_BC_ARRAY_STORAGE=0 -DGD_BC_COMPACT_EXECUTION=1 -DGD_BC_PREPARED_DIVISORS=0 -DGD_BC_PREPARSED_LIBRARY=1 -DGD_BC_PROFILE=1 -DGD_BC_TYPED_RESULTS=0 -D_CRT_SECURE_NO_WARNINGS -I/private/tmp/gd-posix-bc-binding-windows/src/bc -I/private/tmp/bc-207-binding-profile-off-build/src/bc -I/private/tmp/gd-posix-bc-binding-windows/libgdsup/include -I/private/tmp/gd-posix-bc-binding-windows/src/include -O3 -DNDEBUG -std=gnu++20 -flto=thin -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-deprecated-declarations -o src/bc/CMakeFiles/libbc.dir/vm.cc.o -c /private/tmp/gd-posix-bc-binding-windows/src/bc/vm.cc",
+      "file": "/private/tmp/gd-posix-bc-binding-windows/src/bc/vm.cc",
+      "output": "/private/tmp/bc-207-binding-profile-off-build/src/bc/CMakeFiles/libbc.dir/vm.cc.o"
+    }
+  ]
+}

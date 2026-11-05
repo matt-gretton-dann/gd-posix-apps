@@ -1,0 +1,43 @@
+{
+  "calibration_max_iterations": 1048576,
+  "calibration_samples": 3,
+  "calibration_target_seconds": null,
+  "harness_sha256": "eb25981ccd8cc9dd374be9518c3dc1e2ff9b055b5611df2bdd14b8ef1f53f28a",
+  "implementations": [
+    {
+      "argv": [
+        "/private/tmp/bc-200-sparse-codegen-build/src/bc/bc"
+      ],
+      "binary_sha256": "5d341b2b1c74b1e3c343d61a4f8bbdf34167116c9abf385b63d2a65e40366b64",
+      "complete_provenance": false,
+      "metadata": {},
+      "name": "base",
+      "role": "candidate"
+    },
+    {
+      "argv": [
+        "/private/tmp/bc-200-sparse-codegen-build/src/bc/bc"
+      ],
+      "binary_sha256": "5d341b2b1c74b1e3c343d61a4f8bbdf34167116c9abf385b63d2a65e40366b64",
+      "complete_provenance": false,
+      "metadata": {},
+      "name": "aa",
+      "role": "candidate"
+    },
+    {
+      "argv": [
+        "/private/tmp/bc-207-binding-windows-build/src/bc/bc"
+      ],
+      "binary_sha256": "938e4f29acf1ba8c60ffa3f7455c082dba9a698fa1ab73ecbe1a74ef8b3a61d3",
+      "complete_provenance": false,
+      "metadata": {},
+      "name": "candidate",
+      "role": "candidate"
+    }
+  ],
+  "requested_preset": "full",
+  "requested_suite": "arithmetic",
+  "scope": "validated input snapshot before calibration or paired trials",
+  "source_config_sha256": "25bff2f4de8a9ec7daf77739d1e7733cc5fff324cdf5aa5e9cc4cbec7dd6f89a",
+  "timeout": 30
+}

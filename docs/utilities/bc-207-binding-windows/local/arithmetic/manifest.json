@@ -1,0 +1,119 @@
+{
+  "bootstrap_resamples": 2000,
+  "clock": {
+    "implementation": "mach_absolute_time()",
+    "monotonic": true,
+    "resolution": 4.166666666666666e-08
+  },
+  "corpus": [
+    {
+      "group": "loop",
+      "name": "loop_1000000",
+      "oracle_sha256": "dbb4498f673634c698bd6e593ef54bdadf465654b13fb7bfe689016e602e7ef8",
+      "parameters": {
+        "iterations": 1000000
+      },
+      "program_sha256": "74aa1d696c8c54be05d25ad82b085aedd6791012c90b5faf9f3d9d91f94ebdba"
+    },
+    {
+      "group": "calls",
+      "name": "calls_200000",
+      "oracle_sha256": "34812d12902217c2ca460d074d75599c4704fbce9e15d1f8780da9463bf0bf9a",
+      "parameters": {
+        "iterations": 200000
+      },
+      "program_sha256": "738d33209381c5f554a34bc05ed399ed53973ff7ae75a0cd72e464875841c63e"
+    },
+    {
+      "group": "array",
+      "name": "array_200000",
+      "oracle_sha256": "ef55be1f845002931219ae88320c4744651b322de6447340a573287179119427",
+      "parameters": {
+        "elements": 200000
+      },
+      "program_sha256": "f6a730c098c8d10032b60dd95a00eb18349ad719604fe3582bad5a1e61e5b054"
+    },
+    {
+      "group": "fibonacci",
+      "name": "fibonacci_1000_x100",
+      "oracle_sha256": "a7c08fc8246fdd9775ffd65e21f82638373172fc8bec3ebbc5c7c765c0bd9010",
+      "parameters": {
+        "index": 1000,
+        "iterations": 100
+      },
+      "program_sha256": "1a99529043a0c9a2eed2bd64ec3df2ee15a819a23550a1d0871dfe777a9c0675"
+    },
+    {
+      "group": "recursion",
+      "name": "recursion_50_x1000",
+      "oracle_sha256": "89ce918086eeda222f36711d8b97b2eeec8ef9ae01affaf19478c4669d358998",
+      "parameters": {
+        "depth": 50,
+        "iterations": 1000
+      },
+      "program_sha256": "51c7a305c6b6635ba3e821f927f9da4b06c5c2aff088ddabca2d6d6456ea3859"
+    }
+  ],
+  "corpus_seed": 197200,
+  "environment": {
+    "BC_ENV_ARGS": "",
+    "BC_LINE_LENGTH": "70",
+    "LANG": "C",
+    "LC_ALL": "C"
+  },
+  "harness_sha256": "eb25981ccd8cc9dd374be9518c3dc1e2ff9b055b5611df2bdd14b8ef1f53f28a",
+  "implementations": [
+    {
+      "argv": [
+        "/private/tmp/bc-200-sparse-codegen-build/src/bc/bc"
+      ],
+      "binary_sha256": "5d341b2b1c74b1e3c343d61a4f8bbdf34167116c9abf385b63d2a65e40366b64",
+      "complete_provenance": false,
+      "metadata": {},
+      "name": "base",
+      "role": "candidate"
+    },
+    {
+      "argv": [
+        "/private/tmp/bc-200-sparse-codegen-build/src/bc/bc"
+      ],
+      "binary_sha256": "5d341b2b1c74b1e3c343d61a4f8bbdf34167116c9abf385b63d2a65e40366b64",
+      "complete_provenance": false,
+      "metadata": {},
+      "name": "aa",
+      "role": "candidate"
+    },
+    {
+      "argv": [
+        "/private/tmp/bc-207-binding-windows-build/src/bc/bc"
+      ],
+      "binary_sha256": "938e4f29acf1ba8c60ffa3f7455c082dba9a698fa1ab73ecbe1a74ef8b3a61d3",
+      "complete_provenance": false,
+      "metadata": {},
+      "name": "candidate",
+      "role": "candidate"
+    }
+  ],
+  "pending_classes": [
+    {
+      "group": "posix_math_library",
+      "issue": 217,
+      "status": "not selected; not a performance pass"
+    }
+  ],
+  "platform": {
+    "machine": "arm64",
+    "python": "3.15.2",
+    "release": "27.2.0",
+    "system": "Darwin"
+  },
+  "preset": "full",
+  "reference": "base",
+  "samples": 17,
+  "schema": 1,
+  "seed": 197200,
+  "started_utc": "2026-11-05T08:21:02.482053+00:00",
+  "suite": "arithmetic",
+  "timeout": 30,
+  "warmups": 2
+}

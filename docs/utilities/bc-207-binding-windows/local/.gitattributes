@@ -1,0 +1,5 @@
+# Preserve exact benchmark program, oracle and timing bytes.
+* -text
+# The CSV writer uses CRLF; retain the exploratory script exactly as executed.
+*.csv whitespace=cr-at-eol
+bc-207-bindings-math-screen.py whitespace=-blank-at-eol

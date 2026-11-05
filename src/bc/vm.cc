@@ -9,6 +9,7 @@
 
 #include "bc-messages.hh"
 
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <cassert>
@@ -516,6 +517,22 @@ private:
   using Index = Instruction::Index;    ///< Index into the instructions
   using Offset = Instruction::Offset;  ///< Offset from current instruction
   using NumType = Number::NumType;     ///< Number type
+  auto scalar_slot(Letter letter) -> Number&
+  {
+#if defined(GD_BC_BINDING_WINDOWS)
+    return *scalar_bindings_.at(static_cast<unsigned>(letter));
+#else
+    return variables_.at(static_cast<unsigned>(letter));
+#endif
+  }
+  auto scalar_slot(Letter letter) const -> Number const&
+  {
+#if defined(GD_BC_BINDING_WINDOWS)
+    return *scalar_bindings_.at(static_cast<unsigned>(letter));
+#else
+    return variables_.at(static_cast<unsigned>(letter));
+#endif
+  }
   using FunctionDefinition =
     std::tuple<FunctionCode, VariableMask, Location>;  ///< Function definition.
 
@@ -534,6 +551,24 @@ private:
   std::array<DeferredDefinition, Letter::count_> deferred_functions_{};
 #endif
   std::array<Number, Letter::count_> variables_;  ///< Array of scalar variables, indexed by Letter.
+#if defined(GD_BC_BINDING_WINDOWS)
+  struct ScalarBinding
+  {
+    Number value;
+    Number* previous = nullptr;
+  };
+  struct BindingFrame
+  {
+    std::vector<ScalarBinding,
+                Profile::Allocator<ScalarBinding, Profile::AllocationKind::frames>> slots;
+  };
+  // Deque growth preserves active frame addresses. Slot vectors grow only
+  // before an inactive frame is leased; active scalar pointers never relocate.
+  std::deque<BindingFrame, Profile::Allocator<BindingFrame, Profile::AllocationKind::frames>>
+    binding_frames_;
+  std::array<Number*, Letter::count_> scalar_bindings_{};
+  std::size_t binding_depth_ = 0;
+#endif
   Params parameters_;                             ///< Contiguous values for active argument packs.
   ParamMarks param_marks_;                        ///< Pack offsets; indices survive vector growth.
   Params saved_locals_;                           ///< Contiguous saved locals for active calls.
@@ -884,6 +919,10 @@ GD::Bc::Details::VMState::VMState(std::ostream& out, std::ostream& err, bool sav
                                   VM::ExecutionChecks checks)
     : output_(out), error_(err), save_specials_(save_specials), checks_(checks)
 {
+#if defined(GD_BC_BINDING_WINDOWS)
+  for (std::size_t i = 0; i != scalar_bindings_.size(); ++i)
+    scalar_bindings_[i] = &variables_[i];
+#endif
 }
 
 #if GD_BC_PREPARED_DIVISORS
@@ -1078,14 +1117,35 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
   auto const saved_scale = scale_;
   auto const saved_ibase = ibase_;
   auto const saved_obase = obase_;
+#if defined(GD_BC_BINDING_WINDOWS)
+  BindingFrame* binding_frame = nullptr;
+  std::size_t bound_scalars = 0;
+#endif
   auto restore = [&](bool partial) noexcept {
     auto saved = saved_begin;
     auto const end = saved_locals_.size();
     // Allocation can fail during frame setup. In that case restore only the
     // prefix that was saved, in the same scalar-then-array order.
+#if defined(GD_BC_BINDING_WINDOWS)
+    if (binding_frame != nullptr) {
+      std::size_t index = 0;
+      locals.for_each_variable([&](Letter l) {
+        if (index < bound_scalars) {
+          auto& slot = binding_frame->slots[index++];
+          scalar_bindings_[static_cast<unsigned>(l)] = slot.previous;
+          slot.previous = nullptr;
+          slot.value = Number(0);
+        }
+      });
+      assert(binding_depth_ != 0 && binding_frame == &binding_frames_[binding_depth_ - 1]);
+      --binding_depth_;
+      binding_frame = nullptr;
+    }
+    else
+#endif
     locals.for_each_variable([&](Letter l) {
       if (!partial || saved < end)
-        variables_.at(static_cast<unsigned>(l)) =
+        scalar_slot(l) =
           std::move(std::get<Number>(saved_locals_[saved++]));
     });
     locals.for_each_array([&](Letter l) {
@@ -1102,9 +1162,31 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
   };
 
   try {
+#if defined(GD_BC_BINDING_WINDOWS)
+    if (!full_checks() && locals.variable_count() != 0) {
+      if (binding_depth_ == binding_frames_.size())
+        binding_frames_.emplace_back();
+      auto& frame = binding_frames_[binding_depth_];
+      frame.slots.resize(std::max(frame.slots.size(),
+                                 static_cast<std::size_t>(locals.variable_count())));
+      // Complete all allocation before publishing bindings. Preserve an exact
+      // bound prefix so restoration also tolerates a partially installed frame.
+      binding_frame = &frame;
+      ++binding_depth_;
+      locals.for_each_variable([&](Letter l) {
+        auto& slot = frame.slots[bound_scalars];
+        assert(slot.previous == nullptr && slot.value.is_zero());
+        auto& binding = scalar_bindings_.at(static_cast<unsigned>(l));
+        slot.previous = binding;
+        binding = &slot.value;
+        ++bound_scalars;
+      });
+    }
+    else
+#endif
     locals.for_each_variable([this](Letter l) {
-      saved_locals_.emplace_back(std::move(variables_.at(static_cast<unsigned>(l))));
-      variables_.at(static_cast<unsigned>(l)) = Number(0);
+      saved_locals_.emplace_back(std::move(scalar_slot(l)));
+      scalar_slot(l) = Number(0);
     });
     locals.for_each_array([this](Letter l) {
       saved_locals_.emplace_back(std::move(arrays_.at(static_cast<unsigned>(l))));
@@ -1136,13 +1218,13 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
 #if !GD_BC_PROFILE
     if (start != 0 && !have_been_interrupted.test(std::memory_order_relaxed)) {
 #  if GD_BC_FORWARD_SCALAR_ARGUMENT
-      auto& variable = variables_.at(static_cast<unsigned>(parameter->get()));
+      auto& variable = scalar_slot(parameter->get());
       if (argument != nullptr)
         variable = *argument;
       else
         variable = pop_param();
 #  else
-      variables_.at(static_cast<unsigned>(parameter->get())) = pop_param();
+      scalar_slot(parameter->get()) = pop_param();
 #  endif
       if (!have_been_interrupted.test(std::memory_order_relaxed)) {
         pop_param_pack();
@@ -1216,12 +1298,12 @@ auto GD::Bc::Details::VMState::array_element(ArrayElement const& ae) const -> GD
 
 auto GD::Bc::Details::VMState::variable(Variable v) const -> GD::Bc::Number const&
 {
-  return variables_.at(static_cast<unsigned>(v.get()));
+  return scalar_slot(v.get());
 }
 
 void GD::Bc::Details::VMState::variable(Variable v, Number const& num)
 {
-  variables_.at(static_cast<unsigned>(v.get())) = num;
+  scalar_slot(v.get()) = num;
 }
 
 auto GD::Bc::Details::VMState::array(Array a) const -> GD::Bc::ArrayValues
