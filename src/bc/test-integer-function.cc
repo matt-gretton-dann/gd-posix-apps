@@ -111,11 +111,10 @@ TEST_CASE("Pure integer promoted arithmetic preserves caller snapshots", "[bc][i
     O opcode;
     char const* expected;
   };
-  for (auto const& example : {Example{O::add, "9223372036854775809"},
-                             Example{O::subtract, "9223372036854775805"},
-                             Example{O::multiply, "18446744073709551614"},
-                             Example{O::less_than, "0"}, Example{O::less_than_equals, "0"},
-                             Example{O::equals, "0"}, Example{O::not_equals, "1"}}) {
+  for (auto const& example :
+       {Example{O::add, "9223372036854775809"}, Example{O::subtract, "9223372036854775805"},
+        Example{O::multiply, "18446744073709551614"}, Example{O::less_than, "0"},
+        Example{O::less_than_equals, "0"}, Example{O::equals, "0"}, Example{O::not_equals, "1"}}) {
     auto const result = integer_number_binary(example.opcode, left, right);
     REQUIRE(result);
     CHECK(*result == Number(example.expected, 10));
@@ -134,6 +133,51 @@ TEST_CASE("Pure integer promoted arithmetic preserves caller snapshots", "[bc][i
   CHECK_FALSE(integer_number_binary(O::divide, left, right));
   CHECK(left == Number("9223372036854775807", 10));
   CHECK(right == Number(2));
+}
+
+TEST_CASE("Pure integer opaque banks preserve handles across moves and guards",
+          "[bc][integer-function]")
+{
+  IntegerSpillBank bank;
+  using Cell = IntegerFunctionValue;
+  Cell const operand{std::numeric_limits<std::int64_t>::max(), false};
+  Cell value;
+  REQUIRE(bank.empty());
+  CHECK(bank.logical_bytes() == 0);
+  REQUIRE(bank.binary(O::multiply, operand, operand, value, 1024 * 1024));
+  REQUIRE(value.big);
+  auto const expected = bank.number(value);
+  auto const charge = bank.logical_bytes();
+  CHECK(charge > 0);
+  // A refused publication cannot disturb an existing cell or bank record.
+  Cell unchanged = value;
+  CHECK_FALSE(bank.binary(O::multiply, value, value, unchanged, 0));
+  CHECK(unchanged.payload == value.payload);
+  CHECK(unchanged.big);
+  CHECK(bank.logical_bytes() == charge);
+  CHECK(bank.number(value) == expected);
+  CHECK_FALSE(bank.binary(O::divide, operand, operand, unchanged, 1024 * 1024));
+  CHECK(bank.number(value) == expected);
+
+  IntegerSpillBank moved(std::move(bank));
+  CHECK(bank.empty());
+  CHECK(bank.logical_bytes() == 0);
+  CHECK(moved.number(value) == expected);
+  bank = std::move(moved);
+  CHECK(moved.empty());
+  CHECK(moved.logical_bytes() == 0);
+  CHECK(bank.number(value) == expected);
+  Cell zero;
+  REQUIRE(bank.binary(O::subtract, value, value, zero, 0));
+  CHECK_FALSE(zero.big);
+  CHECK(zero.payload == 0);
+  bank.clear();
+  CHECK(bank.empty());
+  CHECK(bank.logical_bytes() > 0);  // Retained opaque header stays charged.
+  CHECK(bank.logical_bytes() < charge);
+  CHECK(bank.number(zero) == Number(0));
+  REQUIRE(bank.binary(O::multiply, operand, operand, value, 1024 * 1024));
+  CHECK(bank.number(value) == expected);
 }
 
 TEST_CASE("Pure integer continuations retain exact large results", "[bc][integer-function]")
@@ -184,8 +228,8 @@ TEST_CASE("Pure integer large values preserve branch and negation semantics",
 {
   auto const min = std::numeric_limits<std::int64_t>::min();
   auto const max = std::numeric_limits<std::int64_t>::max();
-  auto const conditional = parsed_function(
-    "define f(x) {\nauto y\ny=x*x\nif(y) return(-y)\nreturn(0)\n}\n");
+  auto const conditional =
+    parsed_function("define f(x) {\nauto y\ny=x*x\nif(y) return(-y)\nreturn(0)\n}\n");
   auto const double_negation =
     parsed_function("define f(x) {\nauto y\ny=x*x\ny= -y\nreturn(-y)\n}\n");
   IntegerFunctionScratch scratch;
@@ -208,8 +252,7 @@ TEST_CASE("Pure integer large values preserve branch and negation semantics",
   }
 }
 
-TEST_CASE("Pure integer preparation accepts its exact instruction limit",
-          "[bc][integer-function]")
+TEST_CASE("Pure integer preparation accepts its exact instruction limit", "[bc][integer-function]")
 {
   auto source = prologue();
   // Unused numeric results are still valid verified instructions. Boundaries
@@ -323,7 +366,7 @@ TEST_CASE("Pure integer signed edges agree with generic arithmetic", "[bc][integ
   std::int64_t const inputs[]{min, min + 1, min / 2, -2, -1, 0, 1, 2, max / 2, max - 1, max};
   IntegerFunctionScratch scratch;
   for (auto opcode : {O::add, O::subtract, O::multiply, O::less_than, O::less_than_equals,
-                     O::equals, O::not_equals}) {
+                      O::equals, O::not_equals}) {
     // Fixed signed digits probe all operand signs and overflow boundaries.
     // The last plan uses x twice, including INT64_MIN as the right operand.
     for (int rhs = -9; rhs <= 10; ++rhs) {
@@ -371,7 +414,8 @@ TEST_CASE("Pure integer signed edges agree with generic arithmetic", "[bc][integ
           FAIL("unexpected test operation");
         }
 #if GD_BC_PROFILE
-        auto const promotions = static_cast<std::size_t>(Profile::Event::integer_function_promotions);
+        auto const promotions =
+          static_cast<std::size_t>(Profile::Event::integer_function_promotions);
         auto const demotions = static_cast<std::size_t>(Profile::Event::integer_function_demotions);
         auto const before = Profile::snapshot().events;
 #endif

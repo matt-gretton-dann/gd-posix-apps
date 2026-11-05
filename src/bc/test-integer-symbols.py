@@ -50,7 +50,7 @@ def main():
         return finish('unavailable', 77, reason='symbol adapter rejected this object/options',
                       returncode=run.returncode)
     symbols = run.stdout.decode('utf-8', errors='replace')
-    if not all(name + '(' in symbols for name in ('plan_integer_function', 'run_integer_function')):
+    if not all(name + '(' in symbols for name in ('plan_integer_function', 'run_integer_core')):
         return finish('failure', 1, reason='selected object does not define the integer engine')
     arithmetic = re.compile(r'Basic(?:Digits|Number)<.*>::(?:add|sub|multiply(?:_[A-Za-z0-9]+)?)\(')
     # Ownership/conversion definitions can also escape a non-IPO object. Keep

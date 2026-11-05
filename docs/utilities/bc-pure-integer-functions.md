@@ -96,7 +96,10 @@ without repeatedly abandoning the machine tier at integer overflow.
 
 Small cells contain a signed payload and a large-value tag. Large values live
 in a separate immutable spill bank; cells and arguments borrow indices, so bank
-growth and cell overwrites preserve aliases. Logical scratch charges actual
+growth and cell overwrites preserve aliases. The bank's Number storage is opaque
+to the native engine. Its header is allocated on the first promotion, retained
+for reuse and charged to the logical limit, even after its records are cleared.
+Logical scratch charges actual
 cell/frame/argument/spill object sizes plus a decimal-length estimate,
 `decimal digits * sizeof(Number::NumType)` charge per owned spill. Shared
 coefficients in separate spills are charged separately. The estimate is not a
@@ -204,21 +207,31 @@ compiler boundary, not a performance win or proof that IPO caused a slowdown.
 
 The follow-up Number boundary keeps promoted addition, subtraction,
 multiplication and comparison in `integer-number.cc`, compiled with the ordinary
-library policy. The native engine owns its snapshots and receives the exact
-result through an out-of-line call. It does not instantiate those arithmetic
-routines itself. This changes neither the accepted operations nor the checked
+library policy. The opaque-ownership follow-up also keeps Number construction,
+destruction, conversion, spill ownership, normalization and final boxing there.
+The native engine passes only scalar cells and immutable bank indices across
+this boundary. The ordinary adapter takes both owned input snapshots before
+arithmetic or bank growth. Every zero result normalizes to a small cell, so a
+big cell cannot take a zero branch. Final boxing precedes cleanup and success
+accounting, including exceptions. This changes neither the accepted operations nor the checked
 machine path, generic fallback, scratch guards or mathematical algorithms.
 The build helper additionally verifies the bridge's compiled source/definition
 alongside the VM and engine.
 
 `bc/integer-symbols` inspects the actual native engine object, requires its
-entry points and rejects defined Number/Digits addition, subtraction and
-multiplication routines. It retains object/tool hashes and raw symbols. A missing
+planner/scalar-core entry points and rejects every defined Number/Digits
+instantiation, including ownership and conversion. It retains object/tool
+hashes, raw symbols and the narrower arithmetic-definition inventory for
+comparison with earlier sources. A missing
 or incompatible symbol adapter is explicitly unavailable rather than passing
 proof; portable numeric and ownership tests still run. Native workflow artifacts
-retain this evidence and the actual record-layout checks. The original isolated
-object fails this guard with generic arithmetic definitions present. Removing
-them does not by itself establish a runtime gain or explain previous losses.
+retain this evidence, actual engine objects (including COFF when available) and
+the actual record-layout checks. An archived object alone is not a successful
+symbol-adapter result. The original isolated
+object fails the arithmetic guard; the later arithmetic-only boundary still
+fails the expanded ownership guard. Removing these definitions does not by
+itself establish a runtime gain or explain previous losses. Native evidence,
+complete fault sweeps and new full/holdout qualification remain required.
 
 `bc-integer-performance.yml` compares OFF and ON at the same immutable source
 on Linux, macOS and Windows. It starts for the fixed experiment topic and also
