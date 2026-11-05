@@ -52,6 +52,15 @@ auto parsed_function(std::string const& definition) -> IntegerFunction
   Parser parser(std::make_unique<Lexer>(std::make_unique<StringReader>(definition)), false);
   auto source = parser.parse();
   REQUIRE(source);
+  std::ostringstream diagnostics;
+  for (auto const& instruction : *source) {
+    if (instruction.has_op1()) {
+      if (auto const* text = std::get_if<std::string>(&instruction.op1()))
+        diagnostics << *text << '\n';
+    }
+  }
+  INFO(definition);
+  INFO(diagnostics.str());
   auto const begin = std::find_if(source->begin(), source->end(), [](auto const& instruction) {
     return instruction.opcode() == O::function_begin;
   });
@@ -168,6 +177,57 @@ TEST_CASE("Pure integer continuations retain exact large results", "[bc][integer
   CHECK(scratch.spills.empty());
   CHECK(scratch.values.empty());
   CHECK(run_small(*plan, 5, scratch, running) == 120);
+}
+
+TEST_CASE("Pure integer large values preserve branch and negation semantics",
+          "[bc][integer-function]")
+{
+  auto const min = std::numeric_limits<std::int64_t>::min();
+  auto const max = std::numeric_limits<std::int64_t>::max();
+  auto const conditional = parsed_function(
+    "define f(x) {\nauto y\ny=x*x\nif(y) return(-y)\nreturn(0)\n}\n");
+  auto const double_negation =
+    parsed_function("define f(x) {\nauto y\ny=x*x\ny= -y\nreturn(-y)\n}\n");
+  IntegerFunctionScratch scratch;
+  for (auto input : {min, min + 1, std::int64_t(-2), std::int64_t(-1), std::int64_t(0),
+                     std::int64_t(1), std::int64_t(2), max - 1, max}) {
+    auto const operand = Number::from_machine_integer(input);
+    auto square = operand;
+    square.multiply(operand, 0);
+    auto negative = square;
+    negative.negate();
+    for (auto const& plan : {&conditional, &double_negation}) {
+      auto const result = run_integer_function(*plan, input, scratch, running);
+      REQUIRE(result);
+      CHECK(*result == (plan == &conditional ? negative : square));
+      CHECK(scratch.values.empty());
+      CHECK(scratch.spills.empty());
+      CHECK(scratch.frames.empty());
+      CHECK(scratch.arguments.empty());
+    }
+  }
+}
+
+TEST_CASE("Pure integer preparation accepts its exact instruction limit",
+          "[bc][integer-function]")
+{
+  auto source = prologue();
+  // Unused numeric results are still valid verified instructions. Boundaries
+  // include the prologue and return, not only executed arithmetic operations.
+  while (source.size() != 1023)
+    source.emplace_back(O::number, "1");
+  source.emplace_back(O::return_, D(-1));
+  auto const plan = plan_integer_function(source, VariableMask("x", ""), Letter('f'));
+  REQUIRE(plan);
+  CHECK(plan->code.size() == 1024);
+  IntegerFunctionScratch scratch;
+  CHECK(run_small(*plan, 0, scratch, running) == 1);
+  CHECK(scratch.values.empty());
+  CHECK(scratch.spills.empty());
+  CHECK(scratch.frames.empty());
+  CHECK(scratch.arguments.empty());
+  source.insert(source.end() - 1, I(O::number, "1"));
+  CHECK_FALSE(plan_integer_function(source, VariableMask("x", ""), Letter('f')));
 }
 
 TEST_CASE("Pure integer functions use bounded iterative self calls", "[bc][integer-function]")

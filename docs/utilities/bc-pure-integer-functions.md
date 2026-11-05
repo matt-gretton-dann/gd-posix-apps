@@ -175,6 +175,10 @@ alone would not catch redundant generic arithmetic. Each attempted execution
 must release its live scratch entries. These bounded tests improve feasible
 branch coverage without establishing complete condition coverage of the engine
 or verifier rejection paths.
+Large-value tests also exercise truth tests, negation and double negation after
+promotion, including zero and both signed endpoints. Preparation tests accept
+and execute a 1024-instruction body and reject the otherwise valid 1025-entry
+body, counting the prologue and return in that limit.
 
 Keep the tier experimental until differential semantic tests, cold and warm
 full/holdout measurements, and native Linux/macOS/Windows resource evidence
