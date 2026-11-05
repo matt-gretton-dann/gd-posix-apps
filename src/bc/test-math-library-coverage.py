@@ -93,6 +93,17 @@ def main():
         status = classify(decimal_fraction(value), Fraction(case['lower']),
                           Fraction(case['upper']), case['scale'])
         assert status == 'pass', (case['id'], case['scale'], status)
+    # The decimal unit shortcut and the nondecimal fallback return the
+    # same certified value. Keep the caller's input base and scale visible.
+    unit = run(args.bc, transformed,
+               'scale=20\na(-1)\nibase=16\na(1)\na(-1)\nibase\nscale\n')
+    assert unit.returncode == 0 and not unit.stderr, unit.stderr
+    unit_plain, unit_outcomes = strip_probes(unit.stdout)
+    assert [decimal_fraction(value) for value in unit_plain] == [
+        Fraction('-.78539816339744830962'), Fraction('.78539816339744830962'),
+        Fraction('-.78539816339744830962'), 16, 20,
+    ]
+    outcomes.update(unit_outcomes)
     # These are guard-behavior cases, not mathematical accuracy claims for
     # logarithms outside their domain. Keep their accounting separate.
     domain = run(args.bc, transformed, 'scale=20\nl(0)\nl(-1)\n')
