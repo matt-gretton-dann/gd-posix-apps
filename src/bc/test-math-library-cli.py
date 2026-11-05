@@ -181,8 +181,11 @@ class LibraryCli(unittest.TestCase):
             self.assertEqual(rounded(Fraction(literals[0])), rounded(lower))
             if scale == 20:
                 shortcut = re.findall(r'(?m)^\s*r=(\.\d{20})$', source)
-                self.assertEqual([Fraction(value) for value in shortcut],
-                                 [Fraction(rounded(lower), factor)])
+                early_returns = re.findall(r'return\((-?\.\d{20})\)', source)
+                expected = Fraction(rounded(lower), factor)
+                self.assertEqual([Fraction(value) for value in shortcut], [expected])
+                self.assertEqual([Fraction(value) for value in early_returns],
+                                 [expected, -expected])
 
     def test_atan_unit_argument_precision_boundary(self):
         # Negating an exact enclosure reverses its endpoints.

@@ -92,8 +92,11 @@ truncation preserves nearest rounding for -1. Tests check the literal and both
 reference endpoints round identically at every entry scale through 144.
 
 At the POSIX default S = 20, return the independently certified rounded
-literal directly, applying the original sign. The enclosure test certifies
-the literal at that scale. Other bounded unit inputs use a working scale
+literal directly. With decimal input, return the signed literal before
+saving or changing the input base. With other input bases, interpret the
+literal after switching to decimal and restore the caller's base before
+returning. The enclosure test certifies each literal at that scale.
+Other bounded unit inputs use a working scale
 of at most 145. All other inputs and S >= 145
 retain the dynamic calculation and its working-scale readback guard. Literal identity, threshold neighbors, representations
 and caller bases are checked independently. No retained state or VM recognition
