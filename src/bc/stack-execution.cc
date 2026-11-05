@@ -13,7 +13,7 @@ auto plan_stack_execution(Instructions const& source, bool function_body)
   using Op = Instruction::Opcode;
   using Index = Instruction::Index;
   auto const size = source.size();
-  if (size == 0 || (!function_body && size < 16) ||
+  if (size == 0 || (!function_body && size < stack_statement_min_size) ||
       size >= std::numeric_limits<std::uint16_t>::max())
     return {};
 

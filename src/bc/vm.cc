@@ -2634,8 +2634,11 @@ auto GD::Bc::VM::execute_impl(Instructions& instructions, bool cli_interrupts) -
 {
   auto const verified = state_->verify(instructions);
 #if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
-  auto const stack =
-    state_->full_checks() ? std::nullopt : Details::plan_stack_execution(instructions);
+  // Reject short streaming items before calling the stack planner.
+  auto const stack = instructions.size() >= Details::stack_statement_min_size &&
+                         !state_->full_checks()
+                       ? Details::plan_stack_execution(instructions)
+                       : std::nullopt;
   std::optional<Details::InstructionPack> instrs;
   if (!stack)
     instrs.emplace(state_.get(), verified.view());
