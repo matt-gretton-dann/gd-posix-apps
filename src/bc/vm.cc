@@ -24,6 +24,10 @@
 #include "number.hh"
 #include "verification.hh"
 
+#if defined(GD_BC_INTEGER_FUNCTIONS) && !GD_BC_PROFILE
+#  include "integer-function.hh"
+#endif
+
 #if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
 #  include "stack-execution.hh"
 #endif
@@ -338,6 +342,11 @@ private:
   inline static Plans const empty_plans_{};
   Instructions instructions_;
   std::optional<Plans> prepared_;
+#if defined(GD_BC_INTEGER_FUNCTIONS) && !GD_BC_PROFILE
+  unsigned integer_calls_ = 0;
+  bool integer_attempted_ = false;
+  std::optional<IntegerFunction> integer_plan_;
+#endif
 };
 
 /** \brief Hold virtual machine state.
@@ -546,6 +555,9 @@ private:
   NumType scale_ = 0;              ///< Scale, range: [0, base_)
   bool save_specials_;             ///< Save specials on function entry?
   VM::ExecutionChecks checks_;     ///< Full diagnostic oracle or verified dispatch.
+#if defined(GD_BC_INTEGER_FUNCTIONS) && !GD_BC_PROFILE
+  IntegerFunctionScratch integer_scratch_; ///< Isolated reusable speculative state.
+#endif
 #if GD_BC_PREPARED_DIVISORS
   struct DivisorCacheDelete
   {
@@ -1043,6 +1055,43 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
   }
 
   FunctionDefinition& def = func_ptr.value();
+#if defined(GD_BC_INTEGER_FUNCTIONS) && !GD_BC_PROFILE
+  if (!full_checks() && scale_ == 0 && !param_marks_.empty()) {
+    auto const mark = param_marks_.back();
+    Number const* incoming = nullptr;
+#  if GD_BC_FORWARD_SCALAR_ARGUMENT
+    if (argument != nullptr && mark.begin == parameters_.size() && mark.next == mark.begin)
+      incoming = argument;
+#  endif
+    if (incoming == nullptr && mark.begin == mark.next && parameters_.size() == mark.begin + 1)
+      incoming = std::get_if<Number>(&parameters_[mark.begin]);
+    if (incoming != nullptr) {
+      auto& code = std::get<0>(def);
+      if (!code.integer_attempted_ && ++code.integer_calls_ >= 8) {
+        // Cache only in the verified function generation that owns the proof.
+        // Redefinition/deferred replacement destroys both code and integer plan.
+        code.integer_plan_ = plan_integer_function(code.instructions_, std::get<1>(def), func);
+        code.integer_attempted_ = true;
+      }
+      if (code.integer_plan_) {
+        auto const value = incoming->to_machine_integer();
+        if (value) {
+          auto const result = run_integer_function(*code.integer_plan_, *value, integer_scratch_,
+            []() noexcept { return have_been_interrupted.test(std::memory_order_relaxed); });
+          if (result && !have_been_interrupted.test(std::memory_order_relaxed)) {
+            // Box before consuming the untouched caller pack, so allocation
+            // failure cannot publish a partial call. Guard failure restarts
+            // ordinary execution: the accepted plan has no observable effects.
+            auto boxed = Number::from_machine_integer(*result);
+            parameters_.resize(mark.begin);
+            param_marks_.pop_back();
+            return boxed;
+          }
+        }
+      }
+    }
+  }
+#endif
 #if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
   auto const* stack = full_checks() ? nullptr : stack_code(index, std::get<0>(def));
   auto const use_source = full_checks() || stack != nullptr;

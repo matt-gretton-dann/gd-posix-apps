@@ -1,0 +1,37 @@
+name: bc experimental integer functions
+on:
+  pull_request:
+    branches: [main, 'codex/**']
+    paths:
+      - 'src/bc/**'
+      - '.github/workflows/bc-integer-functions.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/bc/**'
+      - '.github/workflows/bc-integer-functions.yml'
+permissions:
+  contents: read
+concurrency:
+  group: bc-integer-functions-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  integer-functions:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2025]
+        extensions: [ON, OFF]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Configure the opt-in tier
+        run: cmake -S . -B build-integer -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DENABLE_BC_INTEGER_FUNCTIONS=ON -DENABLE_NON_POSIX_EXTENSIONS=${{ matrix.extensions }}
+      - name: Build the portable experiment
+        run: cmake --build build-integer --config Release --parallel 2
+      - name: Run integer guards and existing VM contracts
+        run: ctest --test-dir build-integer -C Release --output-on-failure --no-tests=error -R "Pure integer|^bc/(vm-cli|vm-lifetime|signal.*|math-library-cli)$"
