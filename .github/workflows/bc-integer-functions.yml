@@ -33,7 +33,18 @@ jobs:
       - name: Build diagnostic engine and contracts
         run: cmake --build build-profile --config Release --parallel 2
       - name: Check diagnostic execution and ownership
-        run: ctest --test-dir build-profile -C Release --output-on-failure --no-tests=error -R "Pure integer|^bc/(integer-profile|integer-layout|profiling-cli|profiling-allocator|profiling-disabled|vm-cli|vm-lifetime)$"
+        run: ctest --test-dir build-profile -C Release --output-on-failure --no-tests=error -R "Pure integer|^bc/(integer-profile|integer-layout|integer-symbols|profiling-cli|profiling-allocator|profiling-disabled|vm-cli|vm-lifetime)$"
+      - name: Preserve actual compilation boundaries
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bc-integer-boundaries-${{ matrix.os }}-profile-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build-profile/src/bc/integer-symbol-evidence/
+            build-profile/src/bc/integer-layout-evidence/
+            build-profile/bc-integer-isolation.json
+          if-no-files-found: warn
+          retention-days: 30
   integer-functions:
     strategy:
       fail-fast: false
@@ -52,4 +63,15 @@ jobs:
       - name: Build the portable experiment
         run: cmake --build build-integer --config Release --parallel 2
       - name: Run integer guards and existing VM contracts
-        run: ctest --test-dir build-integer -C Release --output-on-failure --no-tests=error -R "Pure integer|^bc/(integer-layout|vm-cli|vm-lifetime|signal.*|math-library-cli)$"
+        run: ctest --test-dir build-integer -C Release --output-on-failure --no-tests=error -R "Pure integer|^bc/(integer-layout|integer-symbols|vm-cli|vm-lifetime|signal.*|math-library-cli)$"
+      - name: Preserve actual compilation boundaries
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bc-integer-boundaries-${{ matrix.os }}-${{ matrix.extensions }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build-integer/src/bc/integer-symbol-evidence/
+            build-integer/src/bc/integer-layout-evidence/
+            build-integer/bc-integer-isolation.json
+          if-no-files-found: warn
+          retention-days: 30

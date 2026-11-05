@@ -93,6 +93,40 @@ TEST_CASE("Pure integer diagnostics own tracked scratch and plan storage", "[bc]
 }
 #endif
 
+TEST_CASE("Pure integer promoted arithmetic preserves caller snapshots", "[bc][integer-function]")
+{
+  Number const left("9223372036854775807", 10);
+  Number const right(2);
+  struct Example
+  {
+    O opcode;
+    char const* expected;
+  };
+  for (auto const& example : {Example{O::add, "9223372036854775809"},
+                             Example{O::subtract, "9223372036854775805"},
+                             Example{O::multiply, "18446744073709551614"},
+                             Example{O::less_than, "0"}, Example{O::less_than_equals, "0"},
+                             Example{O::equals, "0"}, Example{O::not_equals, "1"}}) {
+    auto const result = integer_number_binary(example.opcode, left, right);
+    REQUIRE(result);
+    CHECK(*result == Number(example.expected, 10));
+    CHECK(left == Number("9223372036854775807", 10));
+    CHECK(right == Number(2));
+  }
+  Number negative("9223372036854775808", 10);
+  negative.negate();
+  auto const snapshot = negative;
+  Number factor(2);
+  factor.negate();
+  auto const result = integer_number_binary(O::multiply, negative, factor);
+  REQUIRE(result);
+  CHECK(*result == Number("18446744073709551616", 10));
+  CHECK(negative == snapshot);
+  CHECK_FALSE(integer_number_binary(O::divide, left, right));
+  CHECK(left == Number("9223372036854775807", 10));
+  CHECK(right == Number(2));
+}
+
 TEST_CASE("Pure integer continuations retain exact large results", "[bc][integer-function]")
 {
   auto const plan = plan_integer_function(factorial(), VariableMask("x", ""), Letter('f'));

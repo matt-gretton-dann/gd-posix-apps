@@ -159,6 +159,28 @@ class GdBuild(unittest.TestCase):
             with self.assertRaises(self.helper.BuildError):
                 self.module.verified_integer_isolation(self.helper, self.build, integer)
 
+    def test_integer_bridge_requires_its_actual_compiler_definition(self):
+        _, report = self.isolation_fixture()
+        report['arithmetic_bridge'] = 'integer-number.cc'
+        path = self.build / 'bc-integer-isolation.json'
+        path.write_text(json.dumps(report))
+        rows = [dict(file='/source/src/bc/' + name,
+                     command='c++ -DGD_BC_INTEGER_FUNCTIONS=1 -c ' + name)
+                for name in ('vm.cc', 'integer-function.cc', 'integer-number.cc')]
+        commands = self.build / 'compile_commands.json'
+        commands.write_text(json.dumps(rows))
+        result = self.module.verified_integer_functions(self.helper, self.build, 'ON')
+        self.assertEqual(result['verification']['translation_units'],
+                         ['integer-function.cc', 'integer-number.cc', 'vm.cc'])
+        for corrupt in (rows[:2], rows[:2] + [dict(rows[2], command='c++ -c integer-number.cc')]):
+            commands.write_text(json.dumps(corrupt))
+            with self.assertRaises(self.helper.BuildError):
+                self.module.verified_integer_functions(self.helper, self.build, 'ON')
+        commands.write_text(json.dumps(rows))
+        path.write_text(json.dumps(dict(report, arithmetic_bridge='wrong.cc')))
+        with self.assertRaises(self.helper.BuildError):
+            self.module.verified_integer_functions(self.helper, self.build, 'ON')
+
     def test_integer_isolation_retains_both_native_release_projects(self):
         integer, _ = self.isolation_fixture()
         self.cache.write_text(self.cache.read_text() + 'CMAKE_GENERATOR:INTERNAL=Visual Studio 17 2022\n')
@@ -189,6 +211,27 @@ class GdBuild(unittest.TestCase):
             with self.assertRaises(self.helper.BuildError):
                 self.module.verified_integer_isolation(self.helper, self.build, integer)
         engine.write_text(text.replace('=1', '=0'))
+        with self.assertRaises(self.helper.BuildError):
+            self.module.verified_integer_functions(self.helper, self.build, 'ON')
+
+    def test_integer_bridge_is_present_in_native_release_inventory(self):
+        _, report = self.isolation_fixture()
+        (self.build / 'bc-integer-isolation.json').write_text(json.dumps(
+            dict(report, arithmetic_bridge='integer-number.cc')))
+        self.cache.write_text(self.cache.read_text() + 'CMAKE_GENERATOR:INTERNAL=Visual Studio 17 2022\n')
+        (self.build / 'compile_commands.json').unlink()
+        group = '''<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+<ClCompile><PreprocessorDefinitions>GD_BC_INTEGER_FUNCTIONS=1</PreprocessorDefinitions></ClCompile>
+</ItemDefinitionGroup>'''
+        owner = self.build / 'src/bc/libbc.vcxproj'
+        owner.write_text('<Project>' + group + '<ItemGroup><ClCompile Include="C:/src/bc/vm.cc"/>'
+                         '<ClCompile Include="C:/src/bc/integer-number.cc"/></ItemGroup></Project>')
+        (self.build / 'src/bc/bc-integer-engine.vcxproj').write_text('<Project>' + group +
+            '<ItemGroup><ClCompile Include="C:/src/bc/integer-function.cc"/></ItemGroup></Project>')
+        result = self.module.verified_integer_functions(self.helper, self.build, 'ON')
+        self.assertEqual(len(result['verification']['translation_units']), 3)
+        owner.write_text('<Project>' + group +
+                         '<ItemGroup><ClCompile Include="C:/src/bc/vm.cc"/></ItemGroup></Project>')
         with self.assertRaises(self.helper.BuildError):
             self.module.verified_integer_functions(self.helper, self.build, 'ON')
 

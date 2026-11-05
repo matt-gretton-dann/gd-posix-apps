@@ -64,6 +64,7 @@ set(_bc_integer_feature false)
 set(_bc_integer_isolated false)
 set(_bc_integer_target libbc)
 if(ENABLE_BC_INTEGER_FUNCTIONS)
+  target_sources(libbc PRIVATE integer-number.cc)
   set(_bc_integer_feature true)
   if(ENABLE_BC_INTEGER_ENGINE_ISOLATION)
     # Native objects form a portable boundary against whole-program importing.
@@ -103,7 +104,7 @@ if(ENABLE_BC_INTEGER_FUNCTIONS)
   target_compile_definitions(libbc PRIVATE GD_BC_INTEGER_FUNCTIONS=1)
 endif()
 file(WRITE "${CMAKE_BINARY_DIR}/bc-integer-isolation.json"
-     "{\"schema\":1,\"feature_enabled\":${_bc_integer_feature},\"isolated\":${_bc_integer_isolated},\"target\":\"${_bc_integer_target}\"}\n")
+     "{\"schema\":1,\"feature_enabled\":${_bc_integer_feature},\"isolated\":${_bc_integer_isolated},\"target\":\"${_bc_integer_target}\",\"arithmetic_bridge\":\"integer-number.cc\"}\n")
 if(ENABLE_BC_STACK_EXECUTION)
   target_sources(libbc PRIVATE stack-execution.cc)
   target_compile_definitions(libbc PRIVATE GD_BC_STACK_EXECUTION=1)
@@ -176,6 +177,13 @@ if(RUN_UNIT_TESTS)
              --compile-commands "${CMAKE_BINARY_DIR}/compile_commands.json"
              --output "${CMAKE_CURRENT_BINARY_DIR}/integer-layout-evidence")
     set_tests_properties(bc/integer-layout PROPERTIES TIMEOUT 150 SKIP_RETURN_CODE 77)
+    if(TARGET bc-integer-engine)
+      add_test(NAME bc/integer-symbols COMMAND "${Python_EXECUTABLE}"
+               "${CMAKE_CURRENT_SOURCE_DIR}/test-integer-symbols.py"
+               --nm "${CMAKE_NM}" --object "$<TARGET_OBJECTS:bc-integer-engine>"
+               --output "${CMAKE_CURRENT_BINARY_DIR}/integer-symbol-evidence")
+      set_tests_properties(bc/integer-symbols PROPERTIES TIMEOUT 40 SKIP_RETURN_CODE 77)
+    endif()
   endif()
   add_executable(test-libbc)
   add_dependencies(test-libbc test-bc-vm-lifetime test-bc-consumer-mode)

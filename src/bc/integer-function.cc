@@ -295,32 +295,10 @@ auto run_integer_function(IntegerFunction const& function, V argument,
       // continuation remains intact; no recursive prefix is replayed.
       auto value = number(left);
       auto const rhs = number(right);
-      switch (instruction.opcode) {
-      case O::add:
-        value.add(rhs);
-        break;
-      case O::subtract:
-        value.sub(rhs);
-        break;
-      case O::multiply:
-        value.multiply(rhs, 0);
-        break;
-      case O::less_than:
-        value = Number(value < rhs ? 1 : 0);
-        break;
-      case O::less_than_equals:
-        value = Number(value <= rhs ? 1 : 0);
-        break;
-      case O::equals:
-        value = Number(value == rhs ? 1 : 0);
-        break;
-      case O::not_equals:
-        value = Number(value != rhs ? 1 : 0);
-        break;
-      default:
+      auto result = integer_number_binary(instruction.opcode, std::move(value), rhs);
+      if (!result)
         return {};
-      }
-      if (!normalize(destination, std::move(value)))
+      if (!normalize(destination, std::move(*result)))
         return {};
       break;
     }

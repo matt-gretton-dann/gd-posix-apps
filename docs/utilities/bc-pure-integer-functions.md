@@ -188,6 +188,24 @@ whole-program optimisation in the engine project. Earlier sources without this
 report retain a legacy/unknown isolation status. This evidence establishes a
 compiler boundary, not a performance win or proof that IPO caused a slowdown.
 
+The follow-up Number boundary keeps promoted addition, subtraction,
+multiplication and comparison in `integer-number.cc`, compiled with the ordinary
+library policy. The native engine owns its snapshots and receives the exact
+result through an out-of-line call. It does not instantiate those arithmetic
+routines itself. This changes neither the accepted operations nor the checked
+machine path, generic fallback, scratch guards or mathematical algorithms.
+The build helper additionally verifies the bridge's compiled source/definition
+alongside the VM and engine.
+
+`bc/integer-symbols` inspects the actual native engine object, requires its
+entry points and rejects defined Number/Digits addition, subtraction and
+multiplication routines. It retains object/tool hashes and raw symbols. A missing
+or incompatible symbol adapter is explicitly unavailable rather than passing
+proof; portable numeric and ownership tests still run. Native workflow artifacts
+retain this evidence and the actual record-layout checks. The original isolated
+object fails this guard with generic arithmetic definitions present. Removing
+them does not by itself establish a runtime gain or explain previous losses.
+
 `bc-integer-performance.yml` compares OFF and ON at the same immutable source
 on Linux, macOS and Windows. It starts for the fixed experiment topic and also
 supports manual replay with a full source SHA. Ordinary PRs retain the separate
