@@ -182,6 +182,8 @@ def gd_build_command(args, name, revision, directory, cc, cxx):
                '--c-compiler', cc, '--cxx-compiler', cxx]
     if name == 'candidate' and getattr(args, 'candidate_prepared_divisors', False):
         command += ['--prepared-divisors', 'ON']
+    if name == 'candidate' and getattr(args, 'candidate_prefix_results', False):
+        command += ['--prefix-results', 'ON']
     return command
 
 
@@ -196,6 +198,7 @@ def main():
     parser.add_argument('--broad', action='store_true')
     parser.add_argument('--sparse-qualification', action='store_true')
     parser.add_argument('--candidate-prepared-divisors', action='store_true')
+    parser.add_argument('--candidate-prefix-results', action='store_true')
     parser.add_argument('--samples', type=int, default=9)
     parser.add_argument('--split-point', type=gd.positive_point, default=126)
     args = parser.parse_args()
@@ -219,6 +222,9 @@ def main():
             if name == 'candidate' and args.candidate_prepared_divisors:
                 for entry in built:
                     gd.require_prepared_candidate(helper, entry)
+            if name == 'candidate' and args.candidate_prefix_results:
+                for entry in built:
+                    gd.require_prefix_candidate(helper, entry)
             entries.extend(built)
         comparator = root / 'howard'
         builder.run([sys.executable, str(SCRIPTS / 'build-bc-comparators.py'), '--output',
@@ -326,6 +332,7 @@ def main():
         write(evidence / 'orchestration.json', {'base': args.base, 'candidate': args.candidate,
               'split_point': args.split_point, 'candidate_prepared_divisors': args.candidate_prepared_divisors,
               'sparse_qualification': args.sparse_qualification,
+              'candidate_prefix_results': args.candidate_prefix_results,
               'commands': builder.commands})
         for path in root.glob('command-*.log'):
             shutil.copyfile(str(path), str(evidence / path.name))
@@ -336,8 +343,9 @@ def main():
             for path in source.glob('*'):
                 if path.is_file():
                     shutil.copyfile(str(path), str(target / path.name))
-            if (source / 'prepared-policy').is_dir():
-                shutil.copytree(str(source / 'prepared-policy'), str(target / 'prepared-policy'))
+            for policy_root in ('prepared-policy', 'prefix-policy'):
+                if (source / policy_root).is_dir():
+                    shutil.copytree(str(source / policy_root), str(target / policy_root))
             if (source / 'logs').is_dir():
                 shutil.copytree(str(source / 'logs'), str(target / 'logs'))
         # Every timed child has finished. Preserve the actual measured code

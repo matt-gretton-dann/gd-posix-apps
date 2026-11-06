@@ -65,7 +65,7 @@ def cache_values(path):
 
 
 def build_metadata(helper, root, source, build, revision, split, compiler_c, compiler_cxx,
-                   ipo_mode='AUTO', prepared_mode='AUTO', diagnostic_profile=False):
+                   ipo_mode='AUTO', prepared_mode='AUTO', diagnostic_profile=False, prefix_mode='AUTO'):
     cache = cache_values(build / 'CMakeCache.txt')
     for flag in ('ENABLE_BC_PROFILE', 'ENABLE_BC_COVERAGE'):
         allowed = ('ON', 'TRUE', 'YES', '1') if diagnostic_profile and flag == 'ENABLE_BC_PROFILE' else ('OFF', 'FALSE', 'NO', '0')
@@ -104,11 +104,14 @@ def build_metadata(helper, root, source, build, revision, split, compiler_c, com
         shutil.copyfile(str(build / 'gd-ipo-policy.json'), str(root / 'gd-ipo-policy.json'))
         ipo['report_sha256'] = helper.digest(root / 'gd-ipo-policy.json')
     prepared = verified_prepared_divisors(helper, build, prepared_mode)
-    if prepared.get('verification', {}).get('kind') == 'msbuild-projects':
-        for relative in prepared['verification']['files']:
-            target = root / 'prepared-policy' / relative
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(str(build / relative), str(target))
+    prefix = verified_prefix_results(helper, build, prefix_mode)
+    for policy in (prepared, prefix):
+        verification = policy.get('verification', {})
+        if verification.get('kind') == 'msbuild-projects':
+            for relative in verification['files']:
+                target = root / verification['retained_root'] / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(str(build / relative), str(target))
     return {'source_revision': revision,
             'compiler': {'C': compiler_c, 'CXX': compiler_cxx}, 'flags': flags,
             'version': 'gd-posix-apps source ' + revision, 'instrumented': diagnostic_profile,
@@ -117,6 +120,7 @@ def build_metadata(helper, root, source, build, revision, split, compiler_c, com
                               'extensions': cache.get('ENABLE_NON_POSIX_EXTENSIONS'),
                               'ipo_policy': ipo,
                               'prepared_divisors_policy': prepared,
+                              'prefix_results_policy': prefix,
                               'multiply_split_point': split,
                               'diagnostic_profile': diagnostic_profile,
                               'threshold_header_sha256': helper.digest(root / 'multiply-threshold.hh')},
@@ -148,37 +152,37 @@ def verified_ipo_policy(helper, build, requested):
                 automatic_ipo=value['automatic_ipo'])
 
 
-def verified_prepared_divisors(helper, build, requested):
-    """Verify the configured mode in compiled VM/entrypoint definitions."""
+def verified_vm_mode(helper, build, requested, option, macro, anchors, projects, label, policy_root):
+    """Verify configured mode in the feature's owning translation units."""
     if requested not in ('AUTO', 'ON', 'OFF'):
-        raise helper.BuildError('invalid prepared-divisor mode')
-    observed = cache_values(build / 'CMakeCache.txt').get('ENABLE_BC_PREPARED_DIVISORS')
+        raise helper.BuildError(f'invalid {label} mode')
+    observed = cache_values(build / 'CMakeCache.txt').get(option)
     if observed is None:
         if requested != 'AUTO':
-            raise helper.BuildError('source revision cannot verify the requested divisor mode')
+            raise helper.BuildError(f'source revision cannot verify the requested {label} mode')
         return dict(status='legacy-auto', mode='AUTO', enabled=None,
-                    scope='source predates explicit VM reuse policy; inspect its immutable source')
+                    scope=f'source predates explicit {label} policy; inspect its immutable source')
     normalized = observed.upper()
     if normalized not in ('ON', 'TRUE', 'YES', '1', 'OFF', 'FALSE', 'NO', '0'):
-        raise helper.BuildError('invalid configured prepared-divisor mode')
+        raise helper.BuildError(f'invalid configured {label} mode')
     enabled = normalized in ('ON', 'TRUE', 'YES', '1')
     if requested != 'AUTO' and enabled != (requested == 'ON'):
-        raise helper.BuildError('source did not configure the requested divisor mode')
+        raise helper.BuildError(f'source did not configure the requested {label} mode')
     expected = '1' if enabled else '0'
-    define = re.compile(r'''(?:^|[\s"'])[-/]D\s*["']?GD_BC_PREPARED_DIVISORS\b(?:=([^\s"';]+))?''')
-    undefine = re.compile(r'''(?:^|[\s"'])[-/]U\s*["']?GD_BC_PREPARED_DIVISORS\b''')
+    define = re.compile(rf'''(?:^|[\s"'])[-/]D\s*["']?{re.escape(macro)}\b(?:=([^\s"';]+))?''')
+    undefine = re.compile(rf'''(?:^|[\s"'])[-/]U\s*["']?{re.escape(macro)}\b''')
     commands = build / 'compile_commands.json'
     if commands.is_file():
         try:
             entries = json.loads(commands.read_text(encoding='utf-8'))
         except (ValueError, OSError) as error:
-            raise helper.BuildError('invalid compiled divisor-mode evidence: ' + str(error))
+            raise helper.BuildError(f'invalid compiled {label}-mode evidence: ' + str(error))
         if not isinstance(entries, list) or any(not isinstance(row, dict) for row in entries):
-            raise helper.BuildError('invalid compiled divisor-mode command inventory')
+            raise helper.BuildError(f'invalid compiled {label}-mode command inventory')
         selected = []
         for row in entries:
             filename = '/' + str(row.get('file', '')).replace('\\', '/').lstrip('/')
-            if not filename.endswith(('/src/bc/vm.cc', '/src/bc/bc.cc')):
+            if not filename.endswith(tuple('/src/bc/' + name for name in anchors)):
                 continue
             if isinstance(row.get('arguments'), list):
                 if not all(isinstance(arg, str) for arg in row['arguments']):
@@ -190,53 +194,66 @@ def verified_prepared_divisors(helper, build, requested):
                 raise helper.BuildError('invalid compiler command')
             definitions = define.findall(command)
             if not definitions or any(value != expected for value in definitions) or undefine.search(command):
-                raise helper.BuildError('compiled VM/entrypoint did not select the configured divisor mode')
+                raise helper.BuildError(f'compiled VM/entrypoint did not select the configured {label} mode')
             selected.append(filename.rsplit('/', 1)[-1])
-        if set(selected) != {'vm.cc', 'bc.cc'}:
-            raise helper.BuildError('missing compiled VM/entrypoint divisor-mode definitions')
+        if set(selected) != set(anchors):
+            raise helper.BuildError(f'missing compiled VM/entrypoint {label}-mode definitions')
         evidence = dict(kind='compile-commands', sha256=helper.digest(commands),
                         translation_units=len(selected))
     else:
         # Native VS generators have no compilation database. Inspect and retain
-        # both Release target projects rather than accepting an ignored -D key.
+        # the owning Release target projects rather than accepting an ignored -D key.
         import xml.etree.ElementTree as ET
         generator = cache_values(build / 'CMakeCache.txt').get('CMAKE_GENERATOR', '')
         if not generator.startswith('Visual Studio'):
-            raise helper.BuildError('compiled divisor mode needs compile commands or native VS projects')
+            raise helper.BuildError(f'compiled {label} mode needs compile commands or native VS projects')
         files = {}
-        for name in ('libbc', 'bc'):
+        for name in projects:
             relative = 'src/bc/' + name + '.vcxproj'
             path = build / relative
             try:
                 root = ET.parse(str(path)).getroot()
             except (ET.ParseError, OSError) as error:
-                raise helper.BuildError('cannot verify compiled divisor mode: ' + str(error))
+                raise helper.BuildError(f'cannot verify compiled {label} mode: ' + str(error))
             release = False
             for node in root.iter():
                 tag = node.tag.rsplit('}', 1)[-1]
-                if tag == 'UndefinePreprocessorDefinitions' and 'GD_BC_PREPARED_DIVISORS' in (node.text or ''):
-                    raise helper.BuildError('project undefines the divisor mode')
+                if tag == 'UndefinePreprocessorDefinitions' and macro in (node.text or ''):
+                    raise helper.BuildError(f'project undefines the {label} mode')
                 if tag == 'AdditionalOptions':
                     values = define.findall(node.text or '')
                     if any(value != expected for value in values) or undefine.search(node.text or ''):
-                        raise helper.BuildError('project options contradict the divisor mode')
+                        raise helper.BuildError(f'project options contradict the {label} mode')
                 if tag == 'PreprocessorDefinitions':
-                    values = re.findall(r'(?:^|;)GD_BC_PREPARED_DIVISORS\b(?:=([^;]+))?', node.text or '')
+                    values = re.findall(rf'(?:^|;){re.escape(macro)}\b(?:=([^;]+))?', node.text or '')
                     if any(value != expected for value in values):
-                        raise helper.BuildError('project contradicts the configured divisor mode')
+                        raise helper.BuildError(f'project contradicts the configured {label} mode')
                 if tag == 'ItemDefinitionGroup':
                     condition = node.get('Condition', '')
                     if condition and not re.search(r'Release\|', condition, re.IGNORECASE):
                         continue
                     for definition in node.iter():
                         if definition.tag.rsplit('}', 1)[-1] == 'PreprocessorDefinitions':
-                            values = re.findall(r'(?:^|;)GD_BC_PREPARED_DIVISORS\b(?:=([^;]+))?', definition.text or '')
+                            values = re.findall(rf'(?:^|;){re.escape(macro)}\b(?:=([^;]+))?', definition.text or '')
                             release = release or values == [expected]
             if not release:
-                raise helper.BuildError('Release project did not select the divisor mode')
+                raise helper.BuildError(f'Release project did not select the {label} mode')
             files[relative] = helper.digest(path)
-        evidence = dict(kind='msbuild-projects', files=files, retained_root='prepared-policy')
+        evidence = dict(kind='msbuild-projects', files=files, retained_root=policy_root)
     return dict(status='recorded', mode=requested, enabled=enabled, verification=evidence)
+
+
+def verified_prepared_divisors(helper, build, requested):
+    return verified_vm_mode(helper, build, requested, 'ENABLE_BC_PREPARED_DIVISORS',
+                            'GD_BC_PREPARED_DIVISORS', ('vm.cc', 'bc.cc'), ('libbc', 'bc'),
+                            'prepared-divisor', 'prepared-policy')
+
+
+def verified_prefix_results(helper, build, requested):
+    # Prefix storage belongs to the private VM, not the CLI entrypoint.
+    return verified_vm_mode(helper, build, requested, 'ENABLE_BC_PREFIX_RESULTS',
+                            'GD_BC_PREFIX_RESULTS', ('vm.cc',), ('libbc',),
+                            'result-prefix', 'prefix-policy')
 
 
 def require_prepared_candidate(helper, entry):
@@ -247,6 +264,16 @@ def require_prepared_candidate(helper, entry):
     if (not isinstance(policy, dict) or policy.get('status') != 'recorded' or
             policy.get('mode') != 'ON' or policy.get('enabled') is not True):
         raise helper.BuildError('candidate lacks verified explicit prepared-divisor activation')
+
+
+def require_prefix_candidate(helper, entry):
+    """Require an explicit compiled ON mode before measuring the experiment."""
+    metadata = entry.get('metadata') if isinstance(entry, dict) else None
+    configuration = metadata.get('configuration') if isinstance(metadata, dict) else None
+    policy = configuration.get('prefix_results_policy') if isinstance(configuration, dict) else None
+    if (not isinstance(policy, dict) or policy.get('status') != 'recorded' or
+            policy.get('mode') != 'ON' or policy.get('enabled') is not True):
+        raise helper.BuildError('candidate lacks verified explicit result-prefix activation')
 
 
 def verified_array_layout(helper, build, requested):
@@ -292,6 +319,8 @@ def main():
                         help='automatic IPO policy; explicit modes require source support')
     parser.add_argument('--prepared-divisors', choices=('AUTO', 'ON', 'OFF'), default='AUTO',
                         help='VM divisor reuse policy; explicit modes require compiled source support')
+    parser.add_argument('--prefix-results', choices=('AUTO', 'ON', 'OFF'), default='AUTO',
+                        help='explicit generic result-prefix storage mode; AUTO retains source policy')
     parser.add_argument('--preparsed-library', action='store_true',
                         help='enable and retain the generated math-library image')
     parser.add_argument('--array-storage', choices=('hybrid', 'paged', 'flat', 'hash', 'ordered'),
@@ -340,6 +369,8 @@ def main():
             configure += ['-DBC_ARRAY_STORAGE=' + args.array_storage]
         if args.prepared_divisors != 'AUTO':
             configure += ['-DENABLE_BC_PREPARED_DIVISORS=' + args.prepared_divisors]
+        if args.prefix_results != 'AUTO':
+            configure += ['-DENABLE_BC_PREFIX_RESULTS=' + args.prefix_results]
         if args.preparsed_library:
             configure += ['-DENABLE_BC_PREPARSED_LIBRARY=ON']
         if args.ipo_mode != 'AUTO':
@@ -360,7 +391,7 @@ def main():
             raise helper.BuildError('build did not produce the expected bc executable')
         metadata = build_metadata(helper, root, source, build, actual, args.split_point,
                                   compiler_c, compiler_cxx, args.ipo_mode, args.prepared_divisors,
-                                  diagnostic_profile=args.diagnostic_profile)
+                                  diagnostic_profile=args.diagnostic_profile, prefix_mode=args.prefix_results)
         observed_layout = verified_array_layout(helper, build, args.array_storage)
         metadata['configuration']['array_storage'] = observed_layout
         image = build / 'src/bc/bc-math-library-image.inc'

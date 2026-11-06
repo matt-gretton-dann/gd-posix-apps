@@ -98,3 +98,29 @@ twenty for exact reserve. Other standard libraries may choose different
 capacities. Changes in allocation frequency and retained capacity must be
 reported alongside per-access branch cost in native qualification. Construction counts are logical
 work evidence, not elapsed time, CPU attribution or RSS.
+
+### Qualification build modes (#657)
+
+The reproducible builder accepts `--prefix-results ON|OFF|AUTO`. Explicit
+modes must match both the configured option and the VM's compiled definition.
+Native Visual Studio builds retain the owning Release project. Builds with a
+compilation database retain their exact command inventory. AUTO preserves immutable source
+policy and reports an unknown legacy mode when that source predates the option,
+rather than claiming the old binary has a verified explicit mode.
+
+The arithmetic collector's `--candidate-prefix-results` enables only the
+candidate; its independent A/A builds still use the baseline source and mode.
+For math, both independent candidate builds and the instrumented allocation
+build select ON, while the baseline keeps its own source policy. Collectors
+reject missing or contradictory candidate activation before measuring. Profile
+binaries remain separately instrumented and ineligible for elapsed timing.
+Native policy records and selected-mode orchestration are retained with the
+original source/binary hashes and raw outcomes.
+
+This is preparation for qualification, not an elapsed result. The default-OFF
+footprint and same-source OFF/ON comparisons require their own frozen full and
+held-out native cohort after #650 is terminal and preserved. Comparative
+allocation/retained-memory and code-size evidence must also be completed; the
+existing candidate-only allocation reports and single cold RSS observations
+cannot establish those comparisons. No adoption or issue closure follows from
+mode wiring or green correctness checks.
