@@ -66,6 +66,7 @@ enum class Event : std::size_t {
   divisor_cache_preparation_attempts,
   divisor_cache_promotions,
   divisor_cache_hits,
+  result_slot_initializations,
   count
 };
 

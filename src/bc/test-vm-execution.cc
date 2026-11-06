@@ -400,6 +400,34 @@ TEST_CASE("Verified execution omits only the result diagnostic switch",
       CHECK(count() == before);
   }
 }
+
+TEST_CASE("Result prefix mode constructs actual accessed slots and keeps dense checks",
+          "[bc][vm][verified-profile][prefix]")
+{
+  using P = GD::Bc::Profile::Event;
+  using Checks = GD::Bc::VM::ExecutionChecks;
+  auto run = [](Checks checks) {
+    std::ostringstream output, errors;
+    GD::Bc::VM vm(output, errors, false, checks);
+    GD::Bc::Instructions code{I(O::number, "7"), I(O::print, D(-1), I::Stream::output),
+                              I(O::return_, D(-2))};
+    // Keep this transient stream below both planner profitability gates.
+    // The unused producers still occupy the original identity buffer.
+    code.insert(code.end(), 8, I(O::number, "9"));
+    code.emplace_back(O::eof);
+    auto const before = GD::Bc::Profile::snapshot();
+    CHECK(vm.execute(code));
+    auto const after = GD::Bc::Profile::snapshot();
+    CHECK(output.str() == "7\n");
+    CHECK(errors.str().empty());
+    auto const typed = static_cast<std::size_t>(P::typed_instructions_executed);
+    CHECK(after.events[typed] == before.events[typed]);
+    auto const initialized = static_cast<std::size_t>(P::result_slot_initializations);
+    return after.events[initialized] - before.events[initialized];
+  };
+  CHECK(run(Checks::full) == 12);
+  CHECK(run(Checks::verified) == (GD_BC_EXPECT_PREFIX_RESULTS ? 1 : 12));
+}
 #endif
 
 TEST_CASE("A producer outside a loop retains its value on every iteration",

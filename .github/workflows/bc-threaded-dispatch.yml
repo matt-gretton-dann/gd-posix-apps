@@ -17,7 +17,8 @@ concurrency:
 
 jobs:
   compare:
-    if: github.head_ref != 'codex/bc-652-competitive-margin'
+    # Policy review and prefix correctness preflight reuse retained timing evidence.
+    if: github.head_ref != 'codex/bc-652-competitive-margin' && github.head_ref != 'codex/bc-651-prefix-results'
     name: Threaded dispatch / ${{ matrix.image }}
     runs-on: ${{ matrix.image }}
     timeout-minutes: 45

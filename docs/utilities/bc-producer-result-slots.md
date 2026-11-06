@@ -41,3 +41,60 @@ Measure cold registration, warm calls/loops, recursion, alternating frame sizes,
 arrays, streaming input and ordinary portable math source on the full/held-out
 native matrix. Keep losing and inconclusive cases. Typed executable operands,
 CFG-aware liveness, direct call windows and fusion remain separate #207 work.
+
+## On-demand result prefixes (#651)
+
+An independent prototype reserves the complete planned capacity before taking
+an activation lease, but constructs the contiguous prefix only as indices are
+accessed. The vector's existing size records that prefix, without a bitmap,
+touched list, generation tag or additional owner header. Access adds a branch;
+dense workloads can lose time even when early-return workloads avoid unused
+slot construction. No elapsed improvement is assumed.
+
+The helper preserves capacity and active references, clears every constructed
+owner on release and supports eager initialization for full-check diagnostics.
+Preparation failure must leave an empty usable buffer. Growth failure must
+restore the preceding prefix. Tests exposed libc++ retaining partially appended
+cells after a throwing default constructor; explicit rollback now supplies
+those guarantees independently of that behavior. The failing contracts were
+committed before their repair, and their original logs remain preserved.
+
+Eight deterministic component tests cover construction work, stable references,
+allocation failure/retry, partial initialization, dense initialization, escaped
+owners, amortized growth and allocator limits. VM integration and focused
+interruption/fault checks also pass locally. Native cross-platform correctness
+and resource qualification remain required. It does not repeat or supersede #585/#588's retained
+object and static cleanup-prefix experiments or their adverse/inconclusive
+native results. No new timing cohort starts while #650 is running, and no
+adoption or parent issue closure is claimed.
+
+The VM integration is controlled by `ENABLE_BC_PREFIX_RESULTS`, initially OFF.
+When enabled, generic verified activations prepare reserved capacity and grow
+their initialized prefix on access; full-check execution still constructs the
+entire identity buffer eagerly. Typed lanes keep their existing lifecycle.
+Both paths release constructed values through the existing depth lease and
+exception/interrupt cleanup. The actual result-buffer header size is statically
+checked against the original vector, and result slots have nonthrowing default
+construction. Valid active accesses therefore need no allocation or relocation.
+
+Profile builds count actual default result-slot initialization with
+`result_slot_initializations`; ordinary builds retain their original slot
+constructor. An executed short early-return bytecode stream proves one cell is
+initialized with the option enabled versus twelve in OFF/full-check modes,
+including configurations with typed execution enabled. This uses the existing
+independent expected-mode definition on the test consumer, rather than a private
+library macro. The enabled CTest integration group also exercises all VM-tagged
+component tests, including mixed alternatives, recursive snapshots and control
+flow. Allocation-failure and signal fixtures remain separate checks.
+
+There is one vector owner and no auxiliary allocation structure. That does not
+promise identical lifetime allocation totals: `reserve` can choose a different
+growth capacity from the old empty-vector `resize` on a standard library.
+Preparation grows capacity geometrically, saturating safely at the allocator
+limit, rather than requesting an exact reserve on every larger activation. A
+deterministic local libc++ probe for requested sizes 1 through 20 showed six
+capacity changes for both the old eager vector and this helper, instead of
+twenty for exact reserve. Other standard libraries may choose different
+capacities. Changes in allocation frequency and retained capacity must be
+reported alongside per-access branch cost in native qualification. Construction counts are logical
+work evidence, not elapsed time, CPU attribution or RSS.

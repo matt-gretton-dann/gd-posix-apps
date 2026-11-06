@@ -25,6 +25,7 @@ set_property(TARGET libbc PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
 set_property(TARGET libbc PROPERTY CXX_STANDARD_REQUIRED ON)
 target_compile_definitions(libbc PRIVATE _CRT_SECURE_NO_WARNINGS
   GD_BC_COMPACT_EXECUTION=$<BOOL:${ENABLE_BC_COMPACT_EXECUTION}>
+  GD_BC_PREFIX_RESULTS=$<BOOL:${ENABLE_BC_PREFIX_RESULTS}>
   GD_BC_TYPED_RESULTS=$<BOOL:${ENABLE_BC_TYPED_RESULTS}>)
 option(ENABLE_BC_THREADED_DISPATCH "Enable experimental threaded dispatch for the typed bc VM" OFF)
 if(ENABLE_BC_THREADED_DISPATCH AND ENABLE_BC_TYPED_RESULTS AND ENABLE_BC_COMPACT_EXECUTION
@@ -145,6 +146,7 @@ if(RUN_UNIT_TESTS)
   add_dependencies(test-libbc test-bc-vm-lifetime test-bc-consumer-mode ${_bc_lifetime_ipo_target})
   target_link_libraries(test-libbc PUBLIC libbc Catch2::Catch2)
   target_compile_definitions(test-libbc PRIVATE
+    GD_BC_EXPECT_PREFIX_RESULTS=$<BOOL:${ENABLE_BC_PREFIX_RESULTS}>
     GD_BC_EXPECT_TYPED_RESULTS=$<AND:$<BOOL:${ENABLE_BC_TYPED_RESULTS}>,$<BOOL:${ENABLE_BC_COMPACT_EXECUTION}>>)
   add_dependencies(test-libbc test-bc-profiling test-bc-profiling-disabled)
   set_property(TARGET test-libbc PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
@@ -154,6 +156,7 @@ if(RUN_UNIT_TESTS)
   target_sources(test-libbc PRIVATE
                  test-array-storage.cc
                  test-execution-plan.cc
+                 test-result-prefix-buffer.cc
                  test-benchmark-support.cc
                  test-format.cc
                  test-instruction.cc
@@ -197,6 +200,12 @@ if(RUN_UNIT_TESTS)
                        TIMEOUT 10 SKIP_RETURN_CODE 77)
   catch_discover_tests(test-libbc PROPERTIES FIXTURES_REQUIRED testutil_setup TIMEOUT 120
                       EXTRA_ARGS "--rng-seed" "197199")
+  if(ENABLE_BC_PREFIX_RESULTS)
+    add_test(NAME bc/prefix-integration COMMAND "$<TARGET_FILE:test-libbc>"
+             "[bc][vm]" --rng-seed 197199)
+    set_tests_properties(bc/prefix-integration PROPERTIES
+                         FIXTURES_REQUIRED testutil_setup TIMEOUT 180)
+  endif()
   add_executable(test-bc-offsets test-vm-offsets.cc)
   target_link_libraries(test-bc-offsets PRIVATE libbc)
   target_include_directories(test-bc-offsets PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
