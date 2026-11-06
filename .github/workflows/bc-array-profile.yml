@@ -1,0 +1,50 @@
+name: bc native array allocation contracts
+on:
+  pull_request:
+    branches: [main, 'codex/**']
+    paths: ['src/bc/**', 'CMakeLists.txt', 'cmake/**', '.github/workflows/bc-array-profile.yml']
+  push:
+    branches: [main]
+    paths: ['src/bc/**', 'CMakeLists.txt', 'cmake/**', '.github/workflows/bc-array-profile.yml']
+permissions:
+  contents: read
+concurrency:
+  group: bc-array-profile-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  contracts:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2025]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Record immutable source
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force evidence | Out-Null
+          git rev-parse HEAD | Out-File evidence/revision.txt -Encoding utf8
+      - name: Configure actual allocation diagnostics
+        run: cmake -S . -B build-profile -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DENABLE_BC_PROFILE=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+      - name: Build profile contracts
+        run: cmake --build build-profile --config Release --target test-libbc --parallel 2
+      - name: Check array storage, aliases and bounded sparse allocations
+        run: ctest --test-dir build-profile -C Release --output-on-failure --no-tests=error -R "^Sparse high writes|^Array assignment protects|^Hybrid arrays preserve|^Array layout candidates preserve"
+      - name: Preserve native profile evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bc-array-profile-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            evidence/
+            build-profile/CMakeCache.txt
+            build-profile/compile_commands.json
+            build-profile/src/bc/*.vcxproj
+            build-profile/Testing/Temporary/LastTest.log
+          if-no-files-found: error
+          retention-days: 30
