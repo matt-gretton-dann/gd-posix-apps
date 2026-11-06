@@ -34,6 +34,35 @@ def write(path, value):
     path.write_text(json.dumps(value, indent=2, sort_keys=True) + '\n', encoding='utf-8')
 
 
+def frame_cases(preset):
+    """Finite warm reuse with different plans and identical escaped array state.
+
+    Array parameters prevent treating these as scalar-only function entries.
+    Tail sizes and rounds are fixed before any native resource observation.
+    """
+    if preset not in ('full', 'holdout'):
+        raise ValueError('unknown frame diagnostic preset')
+    tails = [1, 2, 4, 8, 16, 32, 64, 128] if preset == 'full' else [3, 5, 9, 17, 33, 65, 129, 257]
+    rounds = 256 if preset == 'full' else 224
+    functions = list('fghjklmn')
+    definitions = []
+    for name, count in zip(functions, tails):
+        definitions.append('define ' + name + '(x,a[]) {\nif (x) return(x)\n'
+                           'a[0]=0\n' + 'x=x+1\n' * count + 'return(x)\n}\n')
+    cases = []
+    for path, argument in (('early_return', 1), ('dense', 0)):
+        calls = functions + functions[::-1]
+        source = ''.join(definitions) + 'a[0]=7\ns=0\nfor(i=0;i<' + str(rounds) + ';i++) {\n'
+        source += ''.join('s+=' + name + '(' + str(argument) + ',a[])\n' for name in calls)
+        source += '}\ns\na[0]\n'
+        result = 2 * rounds * (len(tails) if argument else sum(tails))
+        cases.append(dict(name='resource_frame_' + preset + '_' + path, group='frame_reuse',
+                          program=source, expected=[str(result), '7'],
+                          parameters=dict(path=path, tail_additions=tails, rounds=rounds,
+                                          scope='finite ascending/descending generic frame reuse; not an elapsed sample')))
+    return cases
+
+
 def representatives(bench, preset, suite):
     """Fixed resource cases; no timing results influence their selection."""
     if suite == 'arithmetic':
@@ -42,7 +71,7 @@ def representatives(bench, preset, suite):
         cases = [case for case in bench.corpus(preset) if case['group'] in groups]
         if {case['group'] for case in cases} != groups:
             raise ValueError('resource corpus is missing a required arithmetic group')
-        return cases
+        return cases + frame_cases(preset)
     if suite != 'math':
         raise ValueError('unknown resource suite')
     chosen, boundary = {}, []

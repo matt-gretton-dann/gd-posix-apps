@@ -159,3 +159,29 @@ resource reports never grant merge eligibility. Review longer-lived frame
 reuse and any remaining resource uncertainty before adoption. This option also
 preserves actual math timing binaries and their native code-section reports
 after elapsed children exit, without rebuilding or changing flags.
+
+Finite frame-reuse diagnostics add two cases to each arithmetic resource preset.
+Eight array-parameter functions grow and shrink the planned result counts; an
+early-return input skips their tails, while a dense input executes every tail.
+Both paths preserve the caller's array value after local writes. Full tail sizes
+are 1, 2, 4, 8, 16, 32, 64 and 128 additions over 256 forward/reverse rounds;
+held-out sizes are 3, 5, 9, 17, 33, 65, 129 and 257 over 224 rounds. These fixed
+inputs are separate from elapsed samples and also run as ordinary CLI oracles.
+
+A local SDK-27.2 libc++ check, with profile counters ON and typed lanes OFF in
+both builds, recorded the following actual result-slot initializations:
+
+| Preset/path | Eager | Prefix |
+| --- | ---: | ---: |
+| Full early return | 583826 | 37005 |
+| Full dense | 583826 | 579725 |
+| Held-out early return | 982162 | 32397 |
+| Held-out dense | 982162 | 978573 |
+
+For these finite programs, result allocations and peak requested result storage
+matched between modes: nine allocations / 49680 peak bytes for full, ten /
+130320 for held-out. All tracked storage was released, and both paths' outputs
+matched the independent sums and escaped-array oracle. This demonstrates the
+work reduction and bounded reuse on this library; other libraries can retain
+different capacities. No elapsed or RSS observations were collected locally,
+and fewer instrumented constructions do not prove a release-build speedup.

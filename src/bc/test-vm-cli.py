@@ -3,7 +3,9 @@
 
 import argparse
 from decimal import Context, Decimal
+import importlib.util
 import os
+from pathlib import Path
 import subprocess
 import unittest
 
@@ -38,6 +40,19 @@ class VMTests(unittest.TestCase):
         for text in ("scale= -.1\n", "a[-.1]=7\n"):
             with self.subTest(text=text):
                 self.run_bc(text, success=False, diagnostic="it is negative")
+
+    def test_growing_and_shrinking_function_frames_preserve_array_snapshots(self):
+        path = Path(__file__).resolve().parent / 'scripts/compare-bc-resources.py'
+        spec = importlib.util.spec_from_file_location('frame_resource_cases', path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        # Independent sums and the escaped caller value check both return paths.
+        expected = {'full': {'early_return': '4096\n7\n', 'dense': '130560\n7\n'},
+                    'holdout': {'early_return': '3584\n7\n', 'dense': '232064\n7\n'}}
+        for preset in ('full', 'holdout'):
+            for case in module.frame_cases(preset):
+                with self.subTest(preset=preset, path=case['parameters']['path']):
+                    self.run_bc(case['program'], expected[preset][case['parameters']['path']])
 
     def test_bare_if_conditions(self):
         cases = [('n=0\n', 'n', ''), ('n = -2\n', 'n', '7\n'),
