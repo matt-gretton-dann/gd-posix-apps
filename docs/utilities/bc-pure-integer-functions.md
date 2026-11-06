@@ -452,7 +452,7 @@ injection, OS signals or elapsed performance. #642 remains held because its
 actual Windows router objects export Number/Digits destructors; passing reload
 coverage neither removes that isolation failure nor adopts the parent.
 
-### Router ABI and native guard repair
+### Earlier router ABI preflights (unmerged)
 
 #645 follows the concrete Windows object failure. The router and callbacks
 now use identical free-function signatures, including a borrowed entry-context
@@ -501,5 +501,88 @@ destructor members instead of their enclosing classes. The ownership guard
 continues to reject every Number/Digits definition; it gains no exemption.
 Local ordinary/profile suites, eight/seven focused contracts, 35 exact
 programs with matching event maps/allocation totals and the non-isolated CLI
-pass. Native Windows confirmation remains pending. The original preflight
-objects, binaries, failed reports and logs are retained separately.
+pass locally. Native preflight at `c65b776c` fails: GCC rejects the
+defaulted-destructor declarations, and MSVC still exports both destructors.
+PR #646 is closed without merging. Both preflights' objects, binaries,
+failed reports and logs are retained separately.
+
+### Opaque routed return ownership
+
+#647 replaces both failed suppression approaches. The native router includes
+only the minimal Letter declaration and standard array support; Number and
+the large VM header are absent. Its matching callbacks return void and carry
+borrowed opaque argument/result pointers. All numeric construction, moves and
+destruction belong to the ordinary compiler context. The Letter declaration
+and public binding are unchanged by extracting its minimal header.
+
+Generic table entries are null and enter the existing generic body directly.
+Only speculative entries use the opaque transport. An ordinary-context helper
+owns its return storage behind the supported helper boundary, keeping that
+object out of generic callers. The incoming Number is completely constructed
+before the helper's `construct(Number&&)` call begins. Placement construction
+inside aligned union storage performs only a nonthrowing move; ownership is
+then recorded. A throwing argument expression never enters that call. Taking
+the result performs a second nonthrowing move, then destroys the moved-from
+owner normally. This retains the complete-box-before-pack-commit rule and
+adds no return allocation.
+
+Those transfers are real costs: profile mode records two extra digit moves
+per opaque routed call. They are not hidden or compared as unchanged counters.
+The initial factory-based transport recorded one extra move per call; its first
+35 independent checked programs preserve every other event and all allocation
+totals against #642, while reporting 8--40 extra moves per program. Those
+original profiles remain separate from the completed-value implementation.
+Generic/full-check calls bypass the transport. Native stack/code costs and
+elapsed behavior still require actual measurement; a smaller router alone
+does not establish an improvement.
+
+Focused tests cover empty and partial initialization, a throwing factory that
+has already allocated, recovery, escaped heap aliases and the exact extra move.
+The existing full VM, 643 interruption cuts, ordinary/IPO allocation-failure
+sweeps, loader reload and generation/state tests remain required. The symbol
+guard is unchanged and rejects every native Number/Digits definition. This
+topic runs correctness/object preflight with timing skipped; no native repair,
+performance adoption or #197 completion is inferred from local results.
+
+The first opaque-transport preflight at `f8e50c43` passes GCC, Apple Clang
+and sanitizer jobs. MSVC rejects the always-throwing test factory during
+link-time code generation: the ownership publication after that factory is
+provably unreachable (`C4702`, treated as an error). The fixture now reads a
+volatile condition before throwing, leaving both factory outcomes reachable
+without changing production code or weakening the ownership guard. The
+original failed source, logs and objects remain retained; fresh native
+validation is required for the corrected fixture.
+
+At `1a8c86a2`, the corrected fixture builds on MSVC and its native symbol
+guard passes. Nine of ten semantic jobs pass; the Windows profile job reports
+68 tracked bytes still live after the named-return throwing factory. This
+does not yet distinguish actual retained storage from a counter or compiler
+cleanup problem. Keep that failing test and add direct named-return and
+opaque prvalue-return controls, plus all four direct/opaque and named/prvalue
+combinations in the ordinary-allocation lifetime executable, with and without
+IPO. Preserve the failed source and archives; production code and adoption
+requirements remain unchanged while these controls establish the cause.
+
+At `38e06ac7`, Windows profile controls pass for a direct named return and
+an opaque prvalue return, but the original opaque named-return case still
+retains 68 tracked bytes. The ordinary-allocation matrix was incorrectly
+guarded by the private library macro and did not compile into its consumer
+fixtures. Use their existing `GD_BC_EXPECT_INTEGER_FUNCTIONS` definition;
+the previous lifetime passes do not prove that matrix. Retain the failing
+case and rerun the correctly enabled ordinary/IPO controls.
+
+The completed-value implementation removes factory invocation from the
+placement-new expression. Direct named-return cleanup and opaque prvalue
+cleanup passed in the native controls; the original combined expression did
+not. Requiring a fully constructed Number argument separates those lifetimes
+portably, without a compiler-specific exception or weaker ownership checks.
+Keep the original named-return failure/recovery scenario and both controls,
+and account for the extra publication move. Full local ordinary/profile
+suites and the correctly enabled lifetime controls pass; fresh native
+confirmation remains required before qualification.
+
+The completed-value 35-program differential preserves exact outputs, every
+non-move event and every allocation category against #642. Its 16--80 extra
+moves per program are exactly twice the initial transport's counts. Keep
+both raw collections and their source/binary identities; neither collection
+measures elapsed performance.

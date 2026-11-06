@@ -50,6 +50,7 @@ inline constexpr auto extensions_enabled() -> bool
 
 #include "array-storage-candidates.hh"
 #include "array-storage.hh"
+#include "letter.hh"
 #include "number.hh"
 
 #ifndef ENABLE_EXTENSIONS
@@ -59,32 +60,6 @@ inline constexpr auto extensions_enabled() -> bool
 
 namespace GD::Bc {
 
-/** \brief A letter
- *
- * Used for variable, function, and array names.
- */
-class Letter
-{
-public:
-  static constexpr unsigned count_ = 26;
-
-  /** \brief  Construct letter from char. */
-  explicit Letter(char l);
-
-  /** \brief Convert to unsigned.  */
-  explicit operator unsigned() const;
-
-  /* Comparison operators.  */
-  auto operator==(Letter l) const -> bool;
-  auto operator==(char l) const -> bool;
-
-private:
-  friend class VariableMask;
-  struct EncodedIndex {};
-  Letter(unsigned index, EncodedIndex) : letter_(index) {}
-  static auto encode(char l) -> unsigned;
-  unsigned letter_;  ///< The letter.
-};
 
 auto operator<<(std::ostream& /*os*/, Letter l) -> std::ostream&;
 
