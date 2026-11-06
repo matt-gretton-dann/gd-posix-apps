@@ -75,7 +75,16 @@ void check_paths(Instructions const& code, ResultSlotPlan const& slots)
       auto next = pc + 1;
       switch (code[pc].opcode()) {
       case O::number:
+      case O::variable:
         produces = true;
+        break;
+      case O::load:
+        read(code[pc].op1());
+        produces = true;
+        break;
+      case O::store:
+        read(code[pc].op1());
+        read(code[pc].op2());
         break;
       case O::add:
         read(code[pc].op1());
@@ -118,7 +127,154 @@ void check_paths(Instructions const& code, ResultSlotPlan const& slots)
     }
   }
 }
+
+using GD::Bc::Details::LiveResultPlans;
+using GD::Bc::Details::TypedResultCosts;
+using GD::Bc::Details::TypedResultPlan;
+
+constexpr TypedResultCosts lane_costs{16, 8, 48, 0, 0, 16, 16};
+
+auto fixture_variable(char name) -> GD::Bc::Variable
+{
+  auto const letter = GD::Bc::Letter(name);
+  return GD::Bc::Variable(letter);
+}
+
+auto layout_fallback(Instructions const& code, TypedResultCosts costs = lane_costs)
+  -> LiveResultPlans
+{
+  auto generic = old_plan(code);
+  auto typed = GD::Bc::Details::plan_typed_results(code, generic, costs, true);
+  return {std::move(generic), std::move(typed)};
+}
+
+auto optimize_layouts(Instructions const& code, bool body = false,
+                      TypedResultCosts costs = lane_costs, LivenessBudget budget = {})
+  -> LiveResultPlans
+{
+  REQUIRE_FALSE(GD::Bc::Details::verify_control_flow(code, body).has_value());
+  return GD::Bc::Details::plan_live_result_layouts(code, layout_fallback(code, costs), costs, true,
+                                                   budget);
+}
+
+// Independent fixture schemas flatten separate lanes only for the path oracle.
+// Equal numeric/other indices denote disjoint storage, not an alias. Skipped
+// bodies retain no_register; unreachable producers still need valid indices
+// because the existing typed lowerer checks every instruction in the region.
+void check_typed_paths(Instructions const& code, TypedResultPlan const& typed)
+{
+  REQUIRE_FALSE(typed.empty());
+  REQUIRE(typed.indices.size() == code.size());
+  ResultSlotPlan flattened;
+  flattened.indices.resize(code.size(), 0);
+  flattened.count = typed.number_count + typed.other_count + 1;
+  bool body = false;
+  for (I::Index i = 0; i < code.size(); ++i) {
+    auto const opcode = code[i].opcode();
+    if (opcode == O::function_begin) {
+      body = true;
+      CHECK(typed.indices[i] == TypedResultPlan::no_register);
+    }
+    else if (opcode == O::function_end) {
+      body = false;
+      CHECK(typed.indices[i] == TypedResultPlan::no_register);
+    }
+    else if (body) {
+      CHECK(typed.indices[i] == TypedResultPlan::no_register);
+    }
+    else if (opcode == O::number || opcode == O::add || opcode == O::load) {
+      REQUIRE(typed.indices[i] < typed.number_count);
+      flattened.indices[i] = typed.indices[i] + 1;
+    }
+    else if (opcode == O::variable) {
+      REQUIRE(typed.indices[i] < typed.other_count);
+      flattened.indices[i] =
+        static_cast<ResultSlotPlan::CompactIndex>(typed.number_count + typed.indices[i] + 1);
+    }
+    else {
+      CHECK(typed.indices[i] == TypedResultPlan::no_register);
+    }
+  }
+  check_paths(code, flattened);
+  CHECK_FALSE(GD::Bc::Details::lower_typed_executable(code, typed, true).empty());
+}
 }  // namespace
+
+TEST_CASE("Typed liveness colors numeric values without an empty numeric sentinel",
+          "[bc][vm][live-results][live-typed]")
+{
+  auto const code = dense(80);
+  auto const plans = optimize_layouts(code);
+  REQUIRE(plans.generic.storage_size(code.size()) <= 4);
+  REQUIRE(plans.typed.number_count <= 3);
+  CHECK(plans.typed.other_count == 0);
+  check_paths(code, plans.generic);
+  check_typed_paths(code, plans.typed);
+}
+
+TEST_CASE("Numeric and location colors use compatible independent lanes",
+          "[bc][vm][live-results][live-typed]")
+{
+  Instructions code;
+  for (unsigned group = 0; group < 12; ++group) {
+    code.emplace_back(O::variable, fixture_variable('x'));
+    code.emplace_back(O::load, D(-1));
+    code.emplace_back(O::number, "1");
+    code.emplace_back(O::add, D(-2), D(-1));
+    code.emplace_back(O::print, D(-1), I::Stream::output);
+  }
+  auto const plans = optimize_layouts(code);
+  REQUIRE(plans.typed.number_count <= 3);
+  REQUIRE(plans.typed.other_count == 1);
+  check_paths(code, plans.generic);
+  check_typed_paths(code, plans.typed);
+}
+
+TEST_CASE("Unreachable typed producers retain valid lowerer indices",
+          "[bc][vm][live-results][live-typed]")
+{
+  Instructions const code{I(O::pop_param_mark),    I(O::number, "7"),
+                          I(O::return_, D(-1)),    I(O::variable, fixture_variable('x')),
+                          I(O::load, D(-1)),       I(O::number, "1"),
+                          I(O::add, D(-2), D(-1)), I(O::print, D(-1), I::Stream::output)};
+  auto const plans = optimize_layouts(code, true);
+  REQUIRE(plans.typed.number_count == 1);
+  REQUIRE(plans.typed.other_count == 1);
+  check_typed_paths(code, plans.typed);
+}
+
+TEST_CASE("Typed coloring excludes skipped definition bodies", "[bc][vm][live-results][live-typed]")
+{
+  Instructions code(8, I(O::number, "99"));
+  auto const begin = code.size();
+  code.emplace_back(O::function_begin, GD::Bc::VariableMask(), GD::Bc::Location("typed", 1, 1));
+  code.emplace_back(O::pop_param_mark);
+  auto body = dense();
+  body.back() = I(O::return_, D(-1));
+  code.insert(code.end(), body.begin(), body.end());
+  auto const end = code.size();
+  code.emplace_back(O::function_end, GD::Bc::Letter('f'), -static_cast<D>(end - begin));
+  code.emplace_back(O::number, "9");
+  code.emplace_back(O::print, D(-1), I::Stream::output);
+  code.emplace_back(O::eof);
+  auto const plans = optimize_layouts(code);
+  REQUIRE(plans.typed.number_count == 1);
+  CHECK(plans.typed.other_count == 0);
+  check_typed_paths(code, plans.typed);
+}
+
+TEST_CASE("Layout budget failure preserves both complete original candidates",
+          "[bc][vm][live-results][live-typed]")
+{
+  auto const code = dense(80);
+  auto const fallback = layout_fallback(code);
+  auto const result = optimize_layouts(code, false, lane_costs, LivenessBudget{4096, 20});
+  CHECK(result.generic.indices == fallback.generic.indices);
+  CHECK(result.generic.count == fallback.generic.count);
+  CHECK(result.typed.indices == fallback.typed.indices);
+  CHECK(result.typed.number_count == fallback.typed.number_count);
+  CHECK(result.typed.other_count == fallback.typed.other_count);
+}
 
 TEST_CASE("Live result colors reuse dense dead literals without destination aliases",
           "[bc][vm][live-results]")

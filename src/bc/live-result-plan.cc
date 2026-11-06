@@ -333,4 +333,10 @@ auto plan_live_result_slots(Instructions const& code, ResultSlotPlan fallback,
     return fallback;
   }
 }
+
+auto plan_live_result_layouts(Instructions const&, LiveResultPlans fallback, TypedResultCosts, bool,
+                              LivenessBudget) -> LiveResultPlans
+{
+  return fallback;
+}
 }  // namespace GD::Bc::Details

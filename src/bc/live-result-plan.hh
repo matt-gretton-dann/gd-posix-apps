@@ -26,5 +26,20 @@ struct LivenessBudget
 auto plan_live_result_slots(Instructions const& code, ResultSlotPlan fallback,
                             std::size_t slot_bytes, bool persistent, LivenessBudget budget = {})
   -> ResultSlotPlan;
+
+// Construction-only candidates. The eventual VM must retain only the selected
+// layout, never these analysis alternatives beside each active frame.
+struct LiveResultPlans
+{
+  ResultSlotPlan generic;
+  TypedResultPlan typed;
+};
+
+// Share one liveness proof across generic and compatible numeric/other lanes.
+// On decline preserve both original candidates; cost checks still determine
+// whether a typed layout is worthwhile relative to the best generic layout.
+auto plan_live_result_layouts(Instructions const& code, LiveResultPlans fallback,
+                              TypedResultCosts costs, bool persistent, LivenessBudget budget = {})
+  -> LiveResultPlans;
 }  // namespace GD::Bc::Details
 #endif
