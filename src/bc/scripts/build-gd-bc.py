@@ -64,6 +64,17 @@ def cache_values(path):
     return result
 
 
+def verified_live_results(helper, build, requested):
+    """Retain unknown legacy mode until compiled liveness evidence is checked."""
+    if requested != 'AUTO':
+        raise helper.BuildError('source revision cannot verify the requested live-result mode')
+    return dict(status='legacy-auto', mode='AUTO', enabled=None)
+
+
+def require_live_candidate(helper, entry):
+    raise helper.BuildError('live-result activation is not yet verified')
+
+
 def build_metadata(helper, root, source, build, revision, split, compiler_c, compiler_cxx,
                    ipo_mode='AUTO', prepared_mode='AUTO', diagnostic_profile=False):
     cache = cache_values(build / 'CMakeCache.txt')

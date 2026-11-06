@@ -57,6 +57,147 @@ class GdBuild(unittest.TestCase):
             rows.append(row)
         (self.build / 'compile_commands.json').write_text(json.dumps(rows))
 
+    def live_commands(self, enabled=True, arguments=False):
+        self.cache.write_text(self.cache.read_text() + 'ENABLE_BC_LIVE_RESULTS:BOOL=' +
+                              ('ON' if enabled else 'OFF') + '\n')
+        rows = []
+        for name in ('vm.cc', 'live-result-plan.cc') if enabled else ('vm.cc',):
+            flags = ['c++', '-DGD_BC_LIVE_RESULTS=' + ('1' if enabled else '0'),
+                     '-o', 'src/bc/CMakeFiles/libbc.dir/' + name + '.o', '-c', name]
+            rows.append({'file': '/source/src/bc/' + name,
+                         'arguments' if arguments else 'command': flags if arguments else ' '.join(flags)})
+        path = self.build / 'compile_commands.json'
+        path.write_text(json.dumps(rows))
+        return rows
+
+    def test_live_legacy_mode_is_unknown_and_explicit_modes_decline(self):
+        value = self.module.verified_live_results(self.helper, self.build, 'AUTO')
+        self.assertEqual(value['status'], 'legacy-auto')
+        self.assertIsNone(value['enabled'])
+        for requested in ('ON', 'OFF', 'invalid'):
+            with self.subTest(mode=requested), self.assertRaises(self.helper.BuildError):
+                self.module.verified_live_results(self.helper, self.build, requested)
+
+    def test_live_compilation_proves_enabled_and_disabled_library_inventory(self):
+        for enabled in (False, True):
+            self.live_commands(enabled, arguments=enabled)
+            value = self.module.verified_live_results(self.helper, self.build, 'ON' if enabled else 'OFF')
+            self.assertIs(value['enabled'], enabled)
+            self.assertEqual(value['status'], 'recorded')
+            self.assertEqual(value['verification']['translation_units'], 2 if enabled else 1)
+            with self.assertRaises(self.helper.BuildError):
+                self.module.verified_live_results(self.helper, self.build, 'OFF' if enabled else 'ON')
+
+    def test_live_options_have_compiler_token_boundaries(self):
+        path = self.build / 'compile_commands.json'
+        for spelling in ('-D GD_BC_LIVE_RESULTS=1', '/DGD_BC_LIVE_RESULTS=1',
+                         '/D"GD_BC_LIVE_RESULTS=1"'):
+            rows = self.live_commands()
+            for row in rows:
+                row['command'] = row['command'].replace('-DGD_BC_LIVE_RESULTS=1', spelling)
+            path.write_text(json.dumps(rows))
+            self.assertTrue(self.module.verified_live_results(self.helper, self.build, 'ON')['enabled'])
+        rows = self.live_commands()
+        for row in rows:
+            row['command'] = row['command'].replace('-DGD_BC_LIVE_RESULTS=1',
+                                                  '-DOTHER="literal -DGD_BC_LIVE_RESULTS=1"')
+        path.write_text(json.dumps(rows))
+        with self.assertRaises(self.helper.BuildError):
+            self.module.verified_live_results(self.helper, self.build, 'ON')
+
+    def test_live_cache_only_conflicts_and_unverifiable_inputs_decline(self):
+        path = self.build / 'compile_commands.json'
+        for change in ('missing-vm', 'missing-planner', 'test-only-planner', 'opposite', 'undefine',
+                       'bare', 'extended', 'response', 'malformed', 'bad-arguments'):
+            rows = self.live_commands()
+            if change == 'missing-vm':
+                rows.pop(0)
+            elif change == 'missing-planner':
+                rows.pop()
+            elif change == 'test-only-planner':
+                rows[1]['command'] = rows[1]['command'].replace('libbc.dir', 'test-libbc.dir')
+            elif change == 'opposite':
+                rows[0]['command'] += ' -DGD_BC_LIVE_RESULTS=0'
+            elif change == 'undefine':
+                rows[0]['command'] += ' -UGD_BC_LIVE_RESULTS'
+            elif change == 'bare':
+                rows[0]['command'] = rows[0]['command'].replace('LIVE_RESULTS=1', 'LIVE_RESULTS')
+            elif change == 'extended':
+                rows[0]['command'] = rows[0]['command'].replace('LIVE_RESULTS=1', 'LIVE_RESULTS=10')
+            elif change == 'response':
+                rows[0]['command'] += ' @unexpanded-options.rsp'
+            elif change == 'bad-arguments':
+                rows[0]['arguments'] = [42]
+            path.write_text('{' if change == 'malformed' else json.dumps(rows))
+            with self.subTest(change=change), self.assertRaises(self.helper.BuildError):
+                self.module.verified_live_results(self.helper, self.build, 'ON')
+
+    def live_project(self, enabled=True, override=None, exclude=False, configuration='Release'):
+        from xml.etree import ElementTree as ET
+        commands = self.build / 'compile_commands.json'
+        if commands.exists():
+            commands.unlink()
+        self.cache.write_text(self.cache.read_text() + 'CMAKE_GENERATOR:INTERNAL=Visual Studio 17 2022\n'
+                              'ENABLE_BC_LIVE_RESULTS:BOOL=' + ('ON' if enabled else 'OFF') + '\n')
+        root = ET.Element('Project', xmlns='http://schemas.microsoft.com/developer/msbuild/2003')
+        group = ET.SubElement(root, 'ItemDefinitionGroup',
+                              Condition="'$(Configuration)|$(Platform)'=='" + configuration + "|x64'")
+        compile = ET.SubElement(group, 'ClCompile')
+        ET.SubElement(compile, 'PreprocessorDefinitions').text = (
+            '%(PreprocessorDefinitions);GD_BC_LIVE_RESULTS=' + ('1' if enabled else '0'))
+        items = ET.SubElement(root, 'ItemGroup')
+        vm = ET.SubElement(items, 'ClCompile', Include='C:\\source\\src\\bc\\vm.cc')
+        if override is not None:
+            ET.SubElement(vm, 'PreprocessorDefinitions').text = override
+        if exclude:
+            ET.SubElement(vm, 'ExcludedFromBuild').text = 'true'
+        if enabled:
+            ET.SubElement(items, 'ClCompile', Include='C:\\source\\src\\bc\\live-result-plan.cc')
+        path = self.build / 'src/bc/libbc.vcxproj'
+        ET.ElementTree(root).write(str(path), encoding='utf-8')
+        return path
+
+    def test_live_native_projects_prove_release_mode_and_source_inventory(self):
+        for enabled in (True, False):
+            self.live_project(enabled)
+            value = self.module.verified_live_results(self.helper, self.build, 'ON' if enabled else 'OFF')
+            self.assertIs(value['enabled'], enabled)
+            self.assertEqual(value['verification']['kind'], 'msbuild-projects')
+            self.assertIn('src/bc/libbc.vcxproj', value['verification']['files'])
+        for options in ({'override': '%(PreprocessorDefinitions);GD_BC_LIVE_RESULTS=0'},
+                        {'override': 'OTHER=1'}, {'exclude': True}, {'configuration': 'Debug'}):
+            self.live_project(**options)
+            with self.subTest(options=options), self.assertRaises(self.helper.BuildError):
+                self.module.verified_live_results(self.helper, self.build, 'ON')
+
+    def test_live_mode_is_retained_in_build_metadata(self):
+        self.live_commands()
+        value = self.metadata()['configuration']['live_results_policy']
+        self.assertTrue(value['enabled'])
+        self.assertEqual(value['verification']['sha256'],
+                         hashlib.sha256((self.root / 'compile_commands.json').read_bytes()).hexdigest())
+        project = self.live_project()
+        value = self.metadata()['configuration']['live_results_policy']
+        relative = 'src/bc/libbc.vcxproj'
+        self.assertEqual((self.root / 'live-results-policy' / relative).read_bytes(), project.read_bytes())
+        self.assertEqual(value['verification']['files'][relative], hashlib.sha256(project.read_bytes()).hexdigest())
+
+    def test_live_candidate_requires_explicit_verified_activation(self):
+        policy = dict(status='recorded', mode='ON', enabled=True)
+        def entry(value):
+            return dict(metadata=dict(configuration=dict(live_results_policy=value)))
+        self.module.require_live_candidate(self.helper, entry(policy))
+        for value in (None, {}, dict(policy, mode='AUTO'), dict(policy, status='legacy-auto'),
+                      dict(policy, enabled=False), dict(policy, enabled=1)):
+            with self.subTest(policy=value), self.assertRaises(self.helper.BuildError):
+                self.module.require_live_candidate(self.helper, entry(value))
+
+    def test_live_option_is_exposed_by_builder(self):
+        child = subprocess.run([sys.executable, BUILDER, '--help'], stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE, timeout=5, universal_newlines=True)
+        self.assertEqual(child.returncode, 0)
+        self.assertIn('--live-results', child.stdout)
+
     def test_candidate_requires_explicit_verified_activation(self):
         policy = dict(status='recorded', mode='ON', enabled=True)
         def entry(value):
