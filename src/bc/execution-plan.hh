@@ -88,8 +88,10 @@ auto lower_executable(Instructions const& code, ResultSlotPlan const& slots,
                       bool persistent = false) -> ExecutableCode;
 
 // Typed registers have separate numeric and nonnumeric index spaces. Every
-// producer owns a distinct slot in its lane; there is no shared empty sentinel
-// or liveness reuse. Non-producers and skipped bodies retain no_register.
+// producer owns a slot in its lane; there is no shared empty sentinel. The
+// ordinary planner gives each producer a distinct slot; the standalone
+// liveness experiment may reuse proven noninterfering slots. Non-producers
+// and skipped bodies retain no_register.
 struct TypedResultPlan
 {
   using CompactIndex = ResultSlotPlan::CompactIndex;

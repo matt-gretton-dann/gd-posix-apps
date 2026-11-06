@@ -276,6 +276,56 @@ TEST_CASE("Layout budget failure preserves both complete original candidates",
   CHECK(result.typed.other_count == fallback.typed.other_count);
 }
 
+TEST_CASE("Typed payload ties prefer generic storage and one saved byte permits typed",
+          "[bc][vm][live-results][live-typed]")
+{
+  auto const code = dense();
+  auto costs = lane_costs;
+  // Four generic slots at 48 bytes versus three numeric slots at 16 bytes.
+  // Maps and instruction widths are equal, leaving a 144-byte fixed-cost tie.
+  costs.typed_fixed_bytes = 144;
+  auto const equal = optimize_layouts(code, false, costs);
+  CHECK(equal.generic.storage_size(code.size()) == 4);
+  CHECK(equal.typed.empty());
+  costs.typed_fixed_bytes = 143;
+  auto const smaller = optimize_layouts(code, false, costs);
+  REQUIRE(smaller.typed.number_count == 3);
+  check_typed_paths(code, smaller.typed);
+}
+
+TEST_CASE("Invalid and overflowing layout costs preserve both original candidates",
+          "[bc][vm][live-results][live-typed]")
+{
+  auto const code = dense();
+  for (unsigned variant = 0; variant < 4; ++variant) {
+    auto costs = lane_costs;
+    if (variant == 0)
+      costs.typed_fixed_bytes = std::numeric_limits<std::size_t>::max();
+    else if (variant == 1)
+      costs.number_slot_bytes = std::numeric_limits<std::size_t>::max();
+    else if (variant == 2)
+      costs.generic_fixed_bytes = std::numeric_limits<std::size_t>::max();
+    else
+      costs.other_slot_bytes = 0;
+    auto const original = layout_fallback(code, costs);
+    auto const result = optimize_layouts(code, false, costs);
+    CHECK(result.generic.indices == original.generic.indices);
+    CHECK(result.generic.count == original.generic.count);
+    CHECK(result.typed.indices == original.typed.indices);
+    CHECK(result.typed.number_count == original.typed.number_count);
+    CHECK(result.typed.other_count == original.typed.other_count);
+  }
+}
+
+TEST_CASE("Nonnumeric-only regions do not invent a numeric lane",
+          "[bc][vm][live-results][live-typed]")
+{
+  Instructions const code{I(O::string, "hello"), I(O::print, D(-1), I::Stream::output)};
+  auto const plans = optimize_layouts(code);
+  CHECK(plans.typed.empty());
+  CHECK(plans.typed.number_count == 0);
+}
+
 TEST_CASE("Live result colors reuse dense dead literals without destination aliases",
           "[bc][vm][live-results]")
 {
@@ -309,6 +359,9 @@ TEST_CASE("Liveness preserves outer values across a repeated loop consumer",
   CHECK(slots.index(8) != slots.index(11));
   CHECK(slots.index(9) != slots.index(11));
   check_paths(code, slots);
+  auto const layouts = optimize_layouts(code);
+  REQUIRE(layouts.typed.number_count <= 3);
+  check_typed_paths(code, layouts.typed);
 }
 
 TEST_CASE("Disjoint diamond branches share colors without sharing live operands",
@@ -337,6 +390,9 @@ TEST_CASE("Disjoint diamond branches share colors without sharing live operands"
   CHECK(first.size() == 3);
   CHECK(first == second);
   check_paths(code, slots);
+  auto const layouts = optimize_layouts(code);
+  REQUIRE(layouts.typed.number_count <= 3);
+  check_typed_paths(code, layouts.typed);
 }
 
 TEST_CASE("Forward producer references follow execution order rather than source order",
@@ -354,6 +410,9 @@ TEST_CASE("Forward producer references follow execution order rather than source
   REQUIRE(slots.storage_size(code.size()) <= 2);
   CHECK(slots.index(11) != 0);
   check_paths(code, slots);
+  auto const layouts = optimize_layouts(code);
+  REQUIRE(layouts.typed.number_count == 1);
+  check_typed_paths(code, layouts.typed);
 }
 
 TEST_CASE("Repeated operands stay intact until both reads complete", "[bc][vm][live-results]")
@@ -497,5 +556,8 @@ TEST_CASE("Generated diamonds preserve an outer owner across disjoint lifetimes"
     auto const slots = optimize(code);
     REQUIRE(slots.storage_size(code.size()) <= 5);
     check_paths(code, slots);
+    auto const layouts = optimize_layouts(code);
+    REQUIRE(layouts.typed.number_count <= 4);
+    check_typed_paths(code, layouts.typed);
   }
 }

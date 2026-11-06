@@ -9,7 +9,11 @@
 #include <array>
 #include <bit>
 #include <cstdint>
+#include <initializer_list>
 #include <limits>
+#include <optional>
+#include <type_traits>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -19,6 +23,7 @@ using Index = Instruction::Index;
 using Opcode = Instruction::Opcode;
 using Word = std::uint64_t;
 using Color = ResultSlotPlan::CompactIndex;
+enum class Domain { all, number, other };
 constexpr std::size_t word_bits = 64;
 
 auto bit(Index index) -> Word { return Word(1) << (index % word_bits); }
@@ -30,6 +35,7 @@ struct Node
   std::size_t next_count = 0;
   std::size_t read_count = 0;
   ResultKind kind = ResultKind::none;
+  bool in_region = true;
 };
 
 class Analysis
@@ -54,7 +60,11 @@ public:
         if (definition == size_)
           return false;
         definition_end[definition] = i;
+        nodes_[i].in_region = false;
         definition = size_;
+      }
+      else if (definition != size_) {
+        nodes_[i].in_region = false;
       }
     }
     if (definition != size_)
@@ -221,12 +231,12 @@ public:
     return true;
   }
 
-  auto color(std::vector<Color>& colors, std::size_t& count) -> bool
+  auto color(std::vector<Color>& colors, std::size_t& count, Domain domain = Domain::all) -> bool
   {
     std::vector<Index> seen(size_ + 1);
     Color maximum = 0;
     for (Index i = 0; i < size_; ++i) {
-      if (!reachable_[i] || nodes_[i].kind == ResultKind::none)
+      if (!reachable_[i] || !matches(i, domain))
         continue;
       auto const generation = i + 1;
       if (!spend(words_))
@@ -237,7 +247,7 @@ public:
           if (!spend(1))
             return false;
           auto const other = w * word_bits + static_cast<std::size_t>(std::countr_zero(neighbors));
-          if (colors[other] != 0)
+          if (matches(other, domain) && colors[other] != 0)
             seen[colors[other]] = generation;
           neighbors &= neighbors - 1;
         }
@@ -256,7 +266,43 @@ public:
     return true;
   }
 
+  auto typed_plan(std::vector<Color> const& colors, std::size_t numbers, std::size_t others) const
+    -> TypedResultPlan
+  {
+    // The lowerer validates all region producers, even after an unconditional
+    // return. Unreachable producers need valid placeholders; skipped bodies
+    // remain outside the region and retain no_register.
+    for (auto const& node : nodes_) {
+      if (!node.in_region)
+        continue;
+      if (node.kind == ResultKind::number && numbers == 0)
+        numbers = 1;
+      else if (node.kind != ResultKind::none && node.kind != ResultKind::number && others == 0)
+        others = 1;
+    }
+    if (numbers == 0)
+      return {};
+    TypedResultPlan result;
+    result.number_count = numbers;
+    result.other_count = others;
+    result.indices.resize(size_, TypedResultPlan::no_register);
+    for (Index i = 0; i < size_; ++i) {
+      if (nodes_[i].in_region && nodes_[i].kind != ResultKind::none)
+        result.indices[i] = reachable_[i] ? colors[i] - 1 : 0;
+    }
+    return result;
+  }
+
 private:
+  auto matches(Index i, Domain domain) const -> bool
+  {
+    auto const kind = nodes_[i].kind;
+    if (kind == ResultKind::none)
+      return false;
+    if (domain == Domain::number)
+      return kind == ResultKind::number;
+    return domain == Domain::all || kind != ResultKind::number;
+  }
   auto spend(std::size_t amount) -> bool
   {
     if (amount > remaining_)
@@ -290,6 +336,45 @@ private:
   std::vector<bool> reachable_;
   std::vector<Word> interference_;
 };
+
+// Match the existing typed gate's retained headers, slots, maps and executable
+// records. Check every product and sum; overflow cannot justify a candidate.
+auto payload_bytes(std::size_t fixed,
+                   std::initializer_list<std::pair<std::size_t, std::size_t>> parts)
+  -> std::optional<std::size_t>
+{
+  auto total = fixed;
+  auto const limit = std::numeric_limits<std::size_t>::max();
+  for (auto const& [count, bytes] : parts) {
+    if (bytes != 0 && count > limit / bytes)
+      return std::nullopt;
+    auto const payload = count * bytes;
+    if (payload > limit - total)
+      return std::nullopt;
+    total += payload;
+  }
+  return total;
+}
+
+auto generic_bytes(std::size_t size, ResultSlotPlan const& plan, TypedResultCosts costs)
+  -> std::optional<std::size_t>
+{
+  return payload_bytes(costs.generic_fixed_bytes,
+                       {{plan.storage_size(size), costs.generic_slot_bytes},
+                        {plan.indices.size(), sizeof(Color)},
+                        {size, costs.generic_instruction_bytes}});
+}
+
+auto typed_bytes(std::size_t size, TypedResultPlan const& plan, TypedResultCosts costs)
+  -> std::optional<std::size_t>
+{
+  if (plan.empty())
+    return std::nullopt;
+  return payload_bytes(costs.typed_fixed_bytes, {{plan.number_count, costs.number_slot_bytes},
+                                                 {plan.other_count, costs.other_slot_bytes},
+                                                 {size, sizeof(Color)},
+                                                 {size, costs.typed_instruction_bytes}});
+}
 }  // namespace
 
 auto plan_live_result_slots(Instructions const& code, ResultSlotPlan fallback,
@@ -334,9 +419,80 @@ auto plan_live_result_slots(Instructions const& code, ResultSlotPlan fallback,
   }
 }
 
-auto plan_live_result_layouts(Instructions const&, LiveResultPlans fallback, TypedResultCosts, bool,
-                              LivenessBudget) -> LiveResultPlans
+auto plan_live_result_layouts(Instructions const& code, LiveResultPlans fallback,
+                              TypedResultCosts costs, bool persistent, LivenessBudget budget)
+  -> LiveResultPlans
 {
-  return fallback;
+  static_assert(std::is_nothrow_move_constructible_v<LiveResultPlans>);
+  static_assert(std::is_nothrow_default_constructible_v<TypedResultPlan>);
+  static_assert(std::is_nothrow_move_assignable_v<TypedResultPlan>);
+  auto const size = code.size();
+  auto const limit = std::numeric_limits<std::size_t>::max();
+  if (size == 0 || (!persistent && size < 16) || size > LivenessBudget::instruction_limit ||
+      size > budget.max_instructions || budget.max_word_operations == 0 ||
+      costs.generic_slot_bytes <= sizeof(Color) || costs.number_slot_bytes == 0 ||
+      costs.other_slot_bytes == 0 || costs.generic_instruction_bytes == 0 ||
+      costs.typed_instruction_bytes == 0 ||
+      (!fallback.generic.indices.empty() && fallback.generic.indices.size() != size) ||
+      (!fallback.typed.empty() && fallback.typed.indices.size() != size))
+    return fallback;
+  auto const words = (size + word_bits - 1) / word_bits;
+  if (size > limit / words || !generic_bytes(size, fallback.generic, costs) ||
+      (!fallback.typed.empty() && !typed_bytes(size, fallback.typed, costs)))
+    return fallback;
+  try {
+    Analysis analysis(size, words,
+                      std::min(budget.max_word_operations, LivenessBudget::word_operation_limit));
+    if (!analysis.build(code) || !analysis.compute())
+      return fallback;
+    std::vector<Color> generic_colors(size);
+    std::vector<Color> typed_colors(size);
+    std::size_t generic_count = 0;
+    std::size_t number_palette = 0;
+    std::size_t other_palette = 0;
+    if (!analysis.color(generic_colors, generic_count) ||
+        !analysis.color(typed_colors, number_palette, Domain::number) ||
+        !analysis.color(typed_colors, other_palette, Domain::other))
+      return fallback;
+
+    auto const proposed_generic_bytes =
+      payload_bytes(costs.generic_fixed_bytes, {{generic_count, costs.generic_slot_bytes},
+                                                {size, sizeof(Color)},
+                                                {size, costs.generic_instruction_bytes}});
+    if (!proposed_generic_bytes)
+      return fallback;
+    bool const improve_generic =
+      *proposed_generic_bytes < *generic_bytes(size, fallback.generic, costs);
+    ResultSlotPlan proposed_generic;
+    if (improve_generic) {
+      proposed_generic.indices.assign(generic_colors.begin(), generic_colors.end());
+      proposed_generic.count = generic_count;
+    }
+    auto const& best_generic = improve_generic ? proposed_generic : fallback.generic;
+    auto const best_generic_bytes = *generic_bytes(size, best_generic, costs);
+    auto proposed_typed = analysis.typed_plan(typed_colors, number_palette - 1, other_palette - 1);
+    auto const proposed_typed_bytes = typed_bytes(size, proposed_typed, costs);
+    if (!proposed_typed.empty() && !proposed_typed_bytes)
+      return fallback;
+    auto const original_typed_bytes = typed_bytes(size, fallback.typed, costs);
+    bool const keep_original_typed =
+      original_typed_bytes && *original_typed_bytes < best_generic_bytes;
+    bool const use_proposed_typed =
+      proposed_typed_bytes && *proposed_typed_bytes < best_generic_bytes &&
+      (!keep_original_typed || *proposed_typed_bytes < *original_typed_bytes);
+
+    // Finish every analysis/allocation/cost check before moving an original
+    // plan. These publication moves cannot throw or expose half a pair.
+    LiveResultPlans result{
+      improve_generic ? std::move(proposed_generic) : std::move(fallback.generic), {}};
+    if (use_proposed_typed)
+      result.typed = std::move(proposed_typed);
+    else if (keep_original_typed)
+      result.typed = std::move(fallback.typed);
+    return result;
+  }
+  catch (std::bad_alloc const&) {
+    return fallback;
+  }
 }
 }  // namespace GD::Bc::Details
