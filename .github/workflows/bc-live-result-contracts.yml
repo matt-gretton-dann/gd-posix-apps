@@ -1,0 +1,69 @@
+name: bc opt-in liveness contracts
+on:
+  pull_request:
+    branches: [main, 'codex/**']
+    paths: ['src/bc/**', 'CMakeLists.txt', 'cmake/**', '.github/workflows/bc-live-result-contracts.yml']
+  push:
+    branches: [main]
+    paths: ['src/bc/**', 'CMakeLists.txt', 'cmake/**', '.github/workflows/bc-live-result-contracts.yml']
+permissions:
+  contents: read
+concurrency:
+  group: bc-live-result-contracts-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  contracts:
+    name: contracts (${{ matrix.os }}, typed=${{ matrix.mode.typed }}, profile=${{ matrix.mode.profile }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2025]
+        mode:
+          - {typed: 'OFF', profile: 'OFF'}
+          - {typed: 'ON', profile: 'OFF'}
+          - {typed: 'OFF', profile: 'ON'}
+          - {typed: 'ON', profile: 'ON'}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Record immutable source and requested modes
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force evidence | Out-Null
+          git rev-parse HEAD | Out-File evidence/revision.txt -Encoding utf8
+          'live=ON typed=${{ matrix.mode.typed }} profile=${{ matrix.mode.profile }}' | Out-File evidence/mode.txt -Encoding utf8
+      - name: Configure explicit opt-in correctness build
+        run: >-
+          cmake -S . -B build-live -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
+          -DENABLE_BC_LIVE_RESULTS=ON -DENABLE_BC_TYPED_RESULTS=${{ matrix.mode.typed }}
+          -DENABLE_BC_PROFILE=${{ matrix.mode.profile }} -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+      - name: Build exact VM, ownership and signal contracts
+        run: cmake --build build-live --config Release --target test-libbc test-bc-signal test-bc-offsets bc --parallel 2
+      - name: Run complete unit semantics and independent planner oracle
+        shell: pwsh
+        run: |
+          $unit = './build-live/src/bc/test-libbc'
+          if ($IsWindows) { $unit = './build-live/src/bc/Release/test-libbc.exe' }
+          & $unit --rng-seed 197199 2>&1 | Tee-Object evidence/unit.log
+          if ($LASTEXITCODE -ne 0) { throw "Unit contracts failed with $LASTEXITCODE" }
+      - name: Check allocation recovery, CLI, interrupts and offset verification
+        run: >-
+          ctest --test-dir build-live -C Release --output-on-failure --no-tests=error
+          -R "^bc/(profiling-allocator|profiling-disabled|consumer-mode|vm-lifetime|vm-lifetime-ipo|signal-normal|signal-delivery|verifier-offsets|vm-cli)$"
+      - name: Preserve exact mode and every outcome
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bc-live-results-${{ matrix.os }}-typed-${{ matrix.mode.typed }}-profile-${{ matrix.mode.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            evidence/
+            build-live/CMakeCache.txt
+            build-live/compile_commands.json
+            build-live/src/bc/*.vcxproj
+            build-live/Testing/Temporary/LastTest.log
+          if-no-files-found: error
+          retention-days: 30
