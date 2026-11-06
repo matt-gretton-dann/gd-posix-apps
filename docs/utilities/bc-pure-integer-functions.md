@@ -539,3 +539,12 @@ sweeps, loader reload and generation/state tests remain required. The symbol
 guard is unchanged and rejects every native Number/Digits definition. This
 topic runs correctness/object preflight with timing skipped; no native repair,
 performance adoption or #197 completion is inferred from local results.
+
+The first opaque-transport preflight at `f8e50c43` passes GCC, Apple Clang
+and sanitizer jobs. MSVC rejects the always-throwing test factory during
+link-time code generation: the ownership publication after that factory is
+provably unreachable (`C4702`, treated as an error). The fixture now reads a
+volatile condition before throwing, leaving both factory outcomes reachable
+without changing production code or weakening the ownership guard. The
+original failed source, logs and objects remain retained; fresh native
+validation is required for the corrected fixture.

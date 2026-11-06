@@ -34,11 +34,14 @@ TEST_CASE("Pure integer return storage survives throwing factories", "[bc][integ
 #endif
   {
     IntegerCallResult result;
+    // Keep both outcomes possible for link-time reachability diagnostics.
+    volatile bool throw_after_allocating = true;
     CHECK_FALSE(result.has_value());
-    CHECK_THROWS_AS(result.construct([]() -> Number {
+    CHECK_THROWS_AS(result.construct([&]() -> Number {
       Number allocated(large, 10);
-      (void)allocated;
-      throw std::bad_alloc();
+      if (throw_after_allocating)
+        throw std::bad_alloc();
+      return allocated;
     }),
                     std::bad_alloc);
     CHECK_FALSE(result.has_value());
