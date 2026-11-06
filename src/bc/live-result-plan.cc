@@ -17,6 +17,8 @@
 #include <variant>
 #include <vector>
 
+#include "profiling.hh"
+
 namespace GD::Bc::Details {
 namespace {
 using Index = Instruction::Index;
@@ -410,6 +412,7 @@ auto plan_live_result_slots(Instructions const& code, ResultSlotPlan fallback,
     ResultSlotPlan result;
     result.indices.assign(colors.begin(), colors.end());
     result.count = count;
+    GD_BC_PROFILE_EVENT(Profile::Event::live_result_plan_improvements, 1);
     return result;
   }
   catch (std::bad_alloc const&) {
@@ -489,6 +492,8 @@ auto plan_live_result_layouts(Instructions const& code, LiveResultPlans fallback
       result.typed = std::move(proposed_typed);
     else if (keep_original_typed)
       result.typed = std::move(fallback.typed);
+    if (improve_generic || use_proposed_typed)
+      GD_BC_PROFILE_EVENT(Profile::Event::live_result_plan_improvements, 1);
     return result;
   }
   catch (std::bad_alloc const&) {

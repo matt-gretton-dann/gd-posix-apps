@@ -19,7 +19,7 @@ struct LivenessBudget
   std::size_t max_word_operations = word_operation_limit;
 };
 
-// Standalone experiment, not selected by the VM. Complete entry verification
+// Opt-in experiment; the default VM retains its old planner. Complete entry verification
 // must precede this call. Retain the supplied producer/identity plan whenever
 // analysis is declined; no partially constructed map may escape. New colors
 // must keep a destination distinct from its instruction's borrowed operands.

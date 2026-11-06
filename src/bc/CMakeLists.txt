@@ -70,6 +70,9 @@ if(ENABLE_BC_NATIVE_SCALAR AND APPLE AND CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64"
   target_compile_definitions(libbc PRIVATE GD_BC_NATIVE_SCALAR=1)
 endif()
 set_warnings(libbc)
+if(ENABLE_BC_LIVE_RESULTS)
+  target_sources(libbc PRIVATE live-result-plan.cc)
+endif()
 gd_apply_ipo(libbc)
 
 target_sources(libbc PRIVATE cli-interrupt.cc execution-plan.cc instruction.cc lexer.cc number-division-cache.cc number-remainder.cc
@@ -115,6 +118,8 @@ if(RUN_UNIT_TESTS)
   set_tests_properties(bc/consumer-mode PROPERTIES TIMEOUT 10)
   add_executable(test-bc-vm-lifetime test-vm-lifetime.cc)
   target_link_libraries(test-bc-vm-lifetime PRIVATE libbc)
+  target_compile_definitions(test-bc-vm-lifetime PRIVATE
+    GD_BC_EXPECT_LIVE_RESULTS=$<BOOL:${ENABLE_BC_LIVE_RESULTS}>)
   target_include_directories(test-bc-vm-lifetime PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
   add_dependencies(test-bc-vm-lifetime bc_messages_header)
   set_property(TARGET test-bc-vm-lifetime PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
@@ -131,6 +136,7 @@ if(RUN_UNIT_TESTS)
     target_link_libraries(test-bc-vm-lifetime-ipo PRIVATE libbc)
     target_include_directories(test-bc-vm-lifetime-ipo PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
     target_compile_definitions(test-bc-vm-lifetime-ipo PRIVATE
+      GD_BC_EXPECT_LIVE_RESULTS=$<BOOL:${ENABLE_BC_LIVE_RESULTS}>
       GD_BC_EXPECT_INTEGER_FUNCTIONS=$<BOOL:${ENABLE_BC_INTEGER_FUNCTIONS}>)
     add_dependencies(test-bc-vm-lifetime-ipo bc_messages_header)
     set_property(TARGET test-bc-vm-lifetime-ipo PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
@@ -154,7 +160,6 @@ if(RUN_UNIT_TESTS)
   target_include_directories(test-libbc PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
   set_warnings(test-libbc)
   target_sources(test-libbc PRIVATE
-                 live-result-plan.cc
                  test-live-result-plan.cc
                  test-array-storage.cc
                  test-execution-plan.cc
@@ -187,6 +192,9 @@ if(RUN_UNIT_TESTS)
                  test-vm-arrays.cc
                  test-vm-execution.cc
                  test-verification.cc)
+  if(NOT ENABLE_BC_LIVE_RESULTS)
+    target_sources(test-libbc PRIVATE live-result-plan.cc)
+  endif()
   target_add_clang_format(test-libbc)
   add_executable(test-bc-signal test-vm-signal.cc)
   target_link_libraries(test-bc-signal PRIVATE libbc)

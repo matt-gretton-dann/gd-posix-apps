@@ -15,6 +15,9 @@
 #include <utility>
 
 #include "bc.hh"
+#if GD_BC_EXPECT_LIVE_RESULTS
+#  include "live-result-plan.hh"
+#endif
 
 namespace {
 // These replacements belong only to this small regression executable. They
@@ -382,11 +385,14 @@ auto restore_call_after_allocation_failure() -> bool
       threw = true;
       observed_failure = true;
     }
-    if (threw != (injected_failures != before) || vm.execute(*query) ||
-        output.str() != "17\n23\n9\n2\n" || (threw && vm.execute(*call)) || vm.execute(*result) ||
-        output.str() != "17\n23\n9\n2\n6\n" || !errors.str().empty())
+    auto const injected = injected_failures != before;
+    if ((threw && !injected) || (!GD_BC_EXPECT_LIVE_RESULTS && threw != injected) ||
+        vm.execute(*query) || output.str() != "17\n23\n9\n2\n" || (threw && vm.execute(*call)) ||
+        vm.execute(*result) || output.str() != "17\n23\n9\n2\n6\n" || !errors.str().empty())
       return false;
-    if (!threw)
+    // Optional liveness may absorb a failure and complete the call. Continue
+    // the sweep until a call actually passes every allocation point.
+    if (!injected)
       return observed_failure;
   }
   return false;  // Require a complete sweep of call setup and execution.
@@ -439,6 +445,16 @@ auto verified_activation_allocation_failures(bool typed_first) -> bool
       code.emplace_back(O::number, "12345678901234567890123456789012345678901234567890");
       code.emplace_back(O::branch, I::Offset(1));
     }
+    // Keep the numbers simultaneously live, so the large layout is still
+    // eligible for typed storage after dead-slot reuse. There are no visible
+    // effects to roll back if a literal or activation allocation fails.
+    auto accumulator = I::Index(3);
+    for (unsigned i = 1; i != 67; ++i) {
+      auto const pc = code.size();
+      code.emplace_back(O::add, I::Offset(accumulator) - I::Offset(pc),
+                        I::Offset(3 + 2 * i) - I::Offset(pc));
+      accumulator = pc;
+    }
     code.emplace_back(O::eof);
     GD::Bc::Instructions warm{I(O::eof)};
     if (typed_first) {
@@ -469,15 +485,76 @@ auto verified_activation_allocation_failures(bool typed_first) -> bool
       return false;
     if (injected_failures == before)
       return !rejected;
-    if (!rejected)
+    // Optional analysis can return its untouched producer plan instead of
+    // propagating bad_alloc. Mandatory setup/runtime failures must still reject.
+    if (!rejected && !GD_BC_EXPECT_LIVE_RESULTS)
       return false;
   }
   return false;  // A larger allocation count cannot silently truncate the sweep.
 }
+
+#if GD_BC_EXPECT_LIVE_RESULTS
+auto optional_liveness_allocation_failures(bool typed_lanes) -> bool
+{
+  using namespace GD::Bc::Details;
+  using I = GD::Bc::Instruction;
+  using O = I::Opcode;
+  GD::Bc::Instructions code;
+  for (unsigned i = 0; i != 64; ++i) {
+    code.emplace_back(O::number, "7");
+    code.emplace_back(O::print, I::Offset(-1), I::Stream::output);
+  }
+  code.emplace_back(O::eof);
+  TypedResultCosts const costs{16, 32, 48, 0, 0, 24, 24};
+  auto const generic = plan_result_slots(code, costs.generic_slot_bytes);
+  auto const typed = plan_typed_results(code, generic, costs, true);
+  auto candidates = [&] { return LiveResultPlans{generic, typed}; };
+  auto plan = [&](LiveResultPlans fallback) {
+    if (typed_lanes)
+      return plan_live_result_layouts(code, std::move(fallback), costs, true);
+    return LiveResultPlans{
+      plan_live_result_slots(code, std::move(fallback.generic), costs.generic_slot_bytes, true),
+      std::move(fallback.typed)};
+  };
+  auto original = candidates();
+  auto const before = allocation_calls.load(std::memory_order_relaxed);
+  auto success = plan(std::move(original));
+  auto const points = allocation_calls.load(std::memory_order_relaxed) - before;
+  if (points == 0 || points > 1024 || success.generic.count >= generic.count)
+    return false;
+  for (std::size_t point = 0; point != points; ++point) {
+    auto const outstanding_before = outstanding.load(std::memory_order_relaxed);
+    {
+      auto fallback = candidates();  // Allocate the original maps before arming.
+      auto const injected_before = injected_failures;
+      AllocationFailure const failure(point);
+      auto result = plan(std::move(fallback));
+      if (injected_failures != injected_before + 1 || result.generic.indices != generic.indices ||
+          result.generic.count != generic.count || result.typed.indices != typed.indices ||
+          result.typed.number_count != typed.number_count ||
+          result.typed.other_count != typed.other_count)
+        return false;
+    }
+    if (outstanding.load(std::memory_order_relaxed) != outstanding_before)
+      return false;
+  }
+  std::fprintf(stdout,
+               "Native %s liveness: %zu allocation failure points restored original plans\n",
+               typed_lanes ? "typed" : "generic", points);
+  return true;
+}
+#endif
 }  // namespace
 
 auto main() -> int
 {
+#if GD_BC_EXPECT_LIVE_RESULTS
+  if (!optional_liveness_allocation_failures(false) ||
+      !optional_liveness_allocation_failures(true)) {
+    std::fprintf(stderr, "Optional liveness allocation failure changed original plans or leaked\n");
+    return 1;
+  }
+#endif
   if (!restore_nested_call_after_exception()) {
     std::fprintf(stderr, "Nested call exception left VM locals or special registers changed\n");
     return 1;

@@ -1,11 +1,10 @@
 # Control-flow-aware result lifetimes
 
-Issue #661 continues #207/#197. The current stage is a standalone generic/typed
-planner compiled into the unit tests only. The VM does not select it, no new
-build mode is enabled, and no elapsed improvement or adoption is claimed.
-VM integration remains outstanding. Linux and Windows currently default to
-typed execution, so generic-only results cannot establish an improvement to
-those configurations.
+Issue #661 continues #207/#197. The generic/typed planner is an opt-in VM
+experiment, enabled with `-DENABLE_BC_LIVE_RESULTS=ON`. Its production default
+remains OFF; that build links the planner into unit tests only. No elapsed
+improvement or adoption is claimed. Linux and Windows retain their typed
+defaults; generic-only results cannot establish an improvement there.
 
 The existing producer plan and arithmetic consumption proof remain independent
 fallbacks. They compact producers and can reuse a consumed first operand inside
@@ -32,12 +31,24 @@ index because lowering validates all producers. Skipped function bodies keep
 The retained generic representation is the existing result map and count, with
 zero as the empty sentinel. Unreachable generic instructions and skipped bodies
 require no producer storage in this region. Typed plans use the existing two
-lane counts and map, with no sentinel slot. No runtime liveness table, extra activation
-header or changed instruction ordering is introduced. There is no literal-value
+lane counts and map, with no sentinel slot. No runtime liveness table, extra
+activation header or changed instruction ordering is introduced. There is no literal-value
 folding or assumption about runtime bases, scales, globals or function names.
-Before VM integration, implicit argument borrowing, fused operations, entry and
-continuation rules, owning snapshots and every supported result alternative
-still need explicit review and semantic differentials.
+Verified transient streams prepare once per execution; persistent function
+bodies prepare on first use and retain only their selected layout. Full-check
+execution does not request liveness analysis. Generic wide execution remains
+available when compact or typed lowering declines. Redefinition installs a new
+function owner and preparation state.
+
+Result alternatives own numbers and shared array snapshots, or retain code-owned
+string views and value wrappers. Explicit borrowed operands interfere with their
+destination. The Apple Arm64 compact push/call fusion can additionally borrow
+an argument whose slot becomes the call destination: the entire right-hand call
+finishes before assignment overwrites the slot, and recursion uses separate
+depth buffers. A scalar-prologue skip requires the existing independent proof
+that no later operand/branch refers to that prologue. Root-zero liveness is
+conservative for this restricted alternate entry. Keep these assumptions under
+review if operations, fusions or entry rules change.
 
 Analysis has hard limits of 4,096 instructions and 4,194,304 logical work units;
 callers can lower either limit. Work counts node/word propagation, interference
@@ -58,8 +69,8 @@ or failed optional allocation, and no partial pair is published.
 The test-first scaffold compiled successfully and failed seven of eight initial
 contracts while preserving its original-plan fallback. The implementation now
 passes nineteen contracts and 101,317 assertions. The typed test-first extension
-failed four of five contracts before implementation. A bounded path oracle independently
-compares logical value versions against physical slots, without solving
+failed four of five contracts before implementation. A bounded path oracle
+independently compares logical value versions against physical slots, without solving
 liveness or using the planner's result classifier. It explores both conditional
 edges and repeated paths, with finite test-only step limits. Cases include dense
 dead literals, repeated operands, joins, live outer values across a backedge,
@@ -68,11 +79,48 @@ diamonds, exhausted work followed by retry, hard bounds and unprofitable layouts
 Typed cases additionally exercise mixed lanes, unreachable producer placeholders,
 existing lowerer compatibility, exact cost ties, one-byte savings and overflow.
 
-The complete local Release unit executable passes 363 cases and 2,075,821
-assertions. These results establish standalone planner contracts and preserve
-the existing unit behavior. They do not execute the new planner through the VM,
-prove native allocation-failure injection, establish source/MC/DC coverage, or
-qualify another platform for this revision. Keep those limitations visible through
-VM differentials, mode verification and the eventual full native performance,
-startup and resource cohort. Do not alter or restart the independent frozen
-#658 prefix qualification to incorporate this work.
+The VM activation test compiled before integration and failed its two preparation
+checks. It now requires both preparation and improvement events, exact distinct
+numeric outputs, and typed instruction execution for a simultaneously-live
+numeric fixture when typed execution is configured. A separate tiny-caller
+contract proves persistent preparation occurs once. Reuse can make generic
+storage cheaper even in a typed-enabled build; dead padding no longer forces
+typed execution in other semantic fixtures.
+
+`live_result_preparations` counts requested VM analyses, including declined tiny
+streams. `live_result_plan_improvements` counts accepted improved construction
+candidates, including standalone test calls. Neither is an instruction-execution
+count or proof that each alternative was selected. Read them alongside actual
+compiled mode definitions, exact outputs and `typed_instructions_executed`.
+
+Local Release profile builds with liveness ON and typed execution both ON and
+OFF each pass 376 unit cases / 2,075,958 assertions and nine focused CTest
+targets, including CLI semantics, signals, offset verification and ordinary/IPO
+ownership guards. Native replacement-allocation sweeps exercise every observed
+optional allocation in each planner API, require exact original maps/counts on
+recovery and check outstanding allocation balance. Whole-VM sweeps continue
+past absorbed optional failures until a genuinely uninjected call completes;
+mandatory allocation failures retain their existing exception behavior.
+On this host, the two native sweeps cover nine generic and thirteen combined
+typed allocation points in both ordinary and IPO fixtures. The final liveness
+OFF / typed ON profile build also passes 376 unit cases / 2,075,958 assertions
+and the same nine focused targets, retaining the strict legacy failure checks.
+The ordinary generic build passes 364 cases / 2,075,836 assertions and the same
+nine focused targets. Its additional borrowed-argument fixture proves the
+proposed map can reuse the argument as the call destination, then checks exact
+heap-backed results on two calls in full and verified modes. This exercises
+the Apple Arm64 fusion in ordinary builds; profile builds use argument packs.
+
+The native correctness workflow requests all four typed/profile combinations
+with liveness ON on Linux, macOS and Windows, preserving source, cache, compiled
+commands or native projects, unit output and CTest outcomes. These twelve jobs
+contain no performance measurements. Their results remain pending for this
+revision; existing native checks of the earlier standalone planner do not
+qualify the integration.
+
+These results do not establish source/branch/MC/DC coverage, native Windows or
+Linux qualification, all ordinary compiler paths, or performance acceptance.
+Actual compiled/project mode verification, broader coverage and the complete
+native performance/startup/resource cohort remain required. Do not alter or
+restart the independent frozen #658 prefix qualification to incorporate this
+work.

@@ -14,11 +14,34 @@
 #include <tuple>
 
 #include "bc.hh"
+#include "live-result-plan.hh"
+#include "verification.hh"
 
 namespace {
 using I = GD::Bc::Instruction;
 using O = I::Opcode;
 using D = I::Offset;
+
+#if GD_BC_PROFILE
+void check_typed_selection(GD::Bc::Profile::Snapshot const& before,
+                           GD::Bc::Profile::Snapshot const& after,
+                           GD::Bc::VM::ExecutionChecks checks)
+{
+  using Event = GD::Bc::Profile::Event;
+  auto const typed = static_cast<std::size_t>(Event::typed_instructions_executed);
+  if (checks == GD::Bc::VM::ExecutionChecks::full || !GD_BC_EXPECT_TYPED_RESULTS)
+    CHECK(after.events[typed] == before.events[typed]);
+  else if (!GD_BC_EXPECT_LIVE_RESULTS)
+    CHECK(after.events[typed] > before.events[typed]);
+  else {
+    // Dead padding no longer guarantees profitable typed storage. The
+    // simultaneous-live-values contract separately requires typed execution;
+    // these semantic fixtures may select either valid layout after reuse.
+    auto const executed = static_cast<std::size_t>(Event::instructions_executed);
+    CHECK(after.events[executed] > before.events[executed]);
+  }
+}
+#endif
 
 auto execute(GD::Bc::Instructions code, bool typed_eligible = false) -> std::string
 {
@@ -41,11 +64,8 @@ auto execute(GD::Bc::Instructions code, bool typed_eligible = false) -> std::str
     CHECK(errors.str().empty());
 #if GD_BC_PROFILE
     if (typed_eligible) {
-      auto const index =
-        static_cast<std::size_t>(GD::Bc::Profile::Event::typed_instructions_executed);
       auto const after = GD::Bc::Profile::snapshot();
-      CHECK((after.events[index] > before.events[index]) ==
-            (checks == GD::Bc::VM::ExecutionChecks::verified && GD_BC_EXPECT_TYPED_RESULTS));
+      check_typed_selection(before, after, checks);
     }
 #else
     (void)typed_eligible;
@@ -389,14 +409,10 @@ TEST_CASE("Configured liveness prepares verified layouts and preserves live nume
   }
 }
 
-TEST_CASE("Typed execution activates only for the configured verified path",
+TEST_CASE("Typed execution respects configuration and profitable layout selection",
           "[bc][vm][typed-results][verified-profile]")
 {
   using Checks = GD::Bc::VM::ExecutionChecks;
-  auto count = [] {
-    return GD::Bc::Profile::snapshot()
-      .events[static_cast<std::size_t>(GD::Bc::Profile::Event::typed_instructions_executed)];
-  };
   for (auto checks : {Checks::full, Checks::verified}) {
     std::ostringstream output, errors;
     GD::Bc::VM vm(output, errors, false, checks);
@@ -408,14 +424,53 @@ TEST_CASE("Typed execution activates only for the configured verified path",
       expected += "7\n";
     }
     code.emplace_back(O::eof);
-    auto const before = count();
+    auto const before = GD::Bc::Profile::snapshot();
     CHECK_FALSE(vm.execute(code));
     CHECK(output.str() == expected);
     CHECK(errors.str().empty());
-    if (checks == Checks::verified && GD_BC_EXPECT_TYPED_RESULTS)
-      CHECK(count() > before);
-    else
-      CHECK(count() == before);
+    check_typed_selection(before, GD::Bc::Profile::snapshot(), checks);
+  }
+}
+
+TEST_CASE("Persistent liveness is prepared once behind a tiny caller",
+          "[bc][vm][live-results][verified-profile]")
+{
+  using Checks = GD::Bc::VM::ExecutionChecks;
+  using Event = GD::Bc::Profile::Event;
+  auto parse = [](std::string const& source) {
+    GD::Bc::Parser parser(
+      std::make_unique<GD::Bc::Lexer>(std::make_unique<GD::Bc::StringReader>(source)), false);
+    return parser.parse();
+  };
+  std::string body;
+  for (unsigned i = 0; i != 64; ++i)
+    body += "t=1\n";
+  for (auto checks : {Checks::full, Checks::verified}) {
+    std::ostringstream output, errors;
+    GD::Bc::VM vm(output, errors, false, checks);
+    auto definition = parse("define f(a[]) {\nauto t\n" + body + "return(a[0]+7)\n}\n");
+    REQUIRE(definition != nullptr);
+    CHECK_FALSE(vm.execute(*definition));
+    auto caller = parse("f(a[])\n");
+    REQUIRE(caller != nullptr);
+    REQUIRE(caller->size() < 16);
+    auto const before = GD::Bc::Profile::snapshot();
+    CHECK_FALSE(vm.execute(*caller));
+    auto const first = GD::Bc::Profile::snapshot();
+    auto const prepared = static_cast<std::size_t>(Event::live_result_preparations);
+    auto const improved = static_cast<std::size_t>(Event::live_result_plan_improvements);
+    auto const active = checks == Checks::verified && GD_BC_EXPECT_LIVE_RESULTS;
+    CHECK((first.events[improved] > before.events[improved]) == active);
+    // The transient caller itself also attempts bounded preparation. Only
+    // the first call may additionally prepare the persistent body.
+    auto const cold = first.events[prepared] - before.events[prepared];
+    CHECK_FALSE(vm.execute(*caller));
+    auto const second = GD::Bc::Profile::snapshot();
+    auto const warm = second.events[prepared] - first.events[prepared];
+    CHECK(cold == warm + (active ? 1 : 0));
+    CHECK(second.events[improved] == first.events[improved]);
+    CHECK(output.str() == "7\n7\n");
+    CHECK(errors.str().empty());
   }
 }
 
@@ -623,10 +678,8 @@ TEST_CASE("Typed nested calls retain snapshots and restore special registers",
   CHECK(output.str() == "43\n7\n99\n2\n10\n");
   CHECK(errors.str().empty());
 #if GD_BC_PROFILE
-  auto const index = static_cast<std::size_t>(GD::Bc::Profile::Event::typed_instructions_executed);
   auto const after = GD::Bc::Profile::snapshot();
-  CHECK((after.events[index] > before.events[index]) ==
-        (checks == GD::Bc::VM::ExecutionChecks::verified && GD_BC_EXPECT_TYPED_RESULTS));
+  check_typed_selection(before, after, checks);
 #endif
   auto call = [&] {
     GD::Bc::Parser caller(
@@ -640,10 +693,9 @@ TEST_CASE("Typed nested calls retain snapshots and restore special registers",
     CHECK_FALSE(vm.execute(*tiny));
 #if GD_BC_PROFILE
     auto const count_after = GD::Bc::Profile::snapshot();
-    // The caller is ineligible, so this delta proves execution of the
-    // persistent function's lanes, rather than only a typed outer stream.
-    CHECK((count_after.events[index] > count_before.events[index]) ==
-          (checks == GD::Bc::VM::ExecutionChecks::verified && GD_BC_EXPECT_TYPED_RESULTS));
+    // The caller is ineligible. Without liveness, this proves execution of
+    // the function's lanes; reuse can instead make its generic plan cheaper.
+    check_typed_selection(count_before, count_after, checks);
 #endif
   };
   call();
@@ -671,6 +723,43 @@ TEST_CASE("Compact short functions keep runtime radix and owned literal sidecars
   for (auto const& instruction : *code)
     REQUIRE(instruction.opcode() != O::quit);
   CHECK(execute(*code) == "2\n11\n11\n");
+}
+
+TEST_CASE("A call may overwrite its forwarded argument only after consuming the borrow",
+          "[bc][vm][live-results][execution]")
+{
+  auto const location = GD::Bc::Location("borrow", 1, 1);
+  GD::Bc::Instructions caller;
+  for (unsigned i = 0; i != 20; ++i)
+    caller.emplace_back(O::number, "0");
+  caller.emplace_back(O::push_param_mark);
+  auto const argument = caller.size();
+  caller.emplace_back(O::number, "123456789012345678901234567890");
+  caller.emplace_back(O::push_param, D(-1));
+  auto const call = caller.size();
+  caller.emplace_back(O::call, GD::Bc::Letter('f'), location);
+  caller.emplace_back(O::print, D(-1), I::Stream::output);
+  caller.emplace_back(O::eof);
+  REQUIRE_FALSE(GD::Bc::Details::verify_control_flow(caller, false).has_value());
+  auto fallback = GD::Bc::Details::plan_result_slots(caller, 48);
+  auto slots = GD::Bc::Details::plan_live_result_slots(caller, std::move(fallback), 48, false);
+  REQUIRE_FALSE(slots.indices.empty());
+  REQUIRE(slots.index(argument) == slots.index(call));
+  for (auto checks : {GD::Bc::VM::ExecutionChecks::full, GD::Bc::VM::ExecutionChecks::verified}) {
+    GD::Bc::Parser parser(std::make_unique<GD::Bc::Lexer>(std::make_unique<GD::Bc::StringReader>(
+                            "define f(x) {\nreturn(x+1)\n}\n")),
+                          false);
+    auto definition = parser.parse();
+    REQUIRE(definition != nullptr);
+    std::ostringstream output, errors;
+    GD::Bc::VM vm(output, errors, false, checks);
+    CHECK_FALSE(vm.execute(*definition));
+    auto independent = caller;
+    CHECK_FALSE(vm.execute(independent));
+    CHECK_FALSE(vm.execute(independent));
+    CHECK(errors.str().empty());
+    CHECK(output.str() == "123456789012345678901234567891\n123456789012345678901234567891\n");
+  }
 }
 
 TEST_CASE("Function bodies can retain an incoming parameter result", "[bc][vm][execution]")

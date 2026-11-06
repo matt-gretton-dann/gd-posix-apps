@@ -23,6 +23,9 @@
 #include "execution-plan.hh"
 #include "number.hh"
 #include "verification.hh"
+#if GD_BC_LIVE_RESULTS
+#  include "live-result-plan.hh"
+#endif
 
 #if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
 #  include "stack-execution.hh"
@@ -131,7 +134,7 @@ struct TypedExecutionView
   TypedResultBuffers* buffers;
 };
 
-auto prepare_typed_layout(Instructions const& code, ResultSlotPlan const& generic, bool persistent,
+auto prepare_typed_layout(Instructions const& code, ResultSlotPlan& generic, bool persistent,
                           bool enabled) -> TypedExecutionLayout
 {
   if (enabled) {
@@ -146,6 +149,15 @@ auto prepare_typed_layout(Instructions const& code, ResultSlotPlan const& generi
                                  sizeof(ExecutableInstruction),
                                  sizeof(TypedExecutableInstruction)};
     auto slots = plan_typed_results(code, generic, costs, persistent);
+#if GD_BC_LIVE_RESULTS
+    // Move complete original candidates into optional analysis. Its bounded
+    // failure path returns both unchanged; no activation retains alternatives.
+    GD_BC_PROFILE_EVENT(Profile::Event::live_result_preparations, 1);
+    auto plans = plan_live_result_layouts(
+      code, {std::move(generic), std::move(slots)}, costs, persistent);
+    generic = std::move(plans.generic);
+    slots = std::move(plans.typed);
+#endif
     if (!slots.empty()) {
       auto executable = lower_typed_executable(code, slots, persistent);
       if (!executable.empty())
@@ -183,6 +195,11 @@ auto prepare_layout(Instructions const& code, ResultSlotPlan generic, bool persi
   auto typed = prepare_typed_layout(code, generic, persistent, compact);
   if (!typed.code.empty())
     return ExecutionLayout{std::move(typed)};
+#elif GD_BC_LIVE_RESULTS
+  if (compact) {
+    GD_BC_PROFILE_EVENT(Profile::Event::live_result_preparations, 1);
+    generic = plan_live_result_slots(code, std::move(generic), sizeof(ResultSlot), persistent);
+  }
 #endif
   auto executable = compact ? prepare_executable(code, generic, persistent) : ExecutableCode{};
   return GenericExecutionLayout{std::move(generic), std::move(executable)};
@@ -1610,6 +1627,9 @@ auto GD::Bc::Details::InstructionPack::execute_compact() -> std::pair<GD::Bc::Nu
           value.has_value() && !have_been_interrupted.test(std::memory_order_relaxed)) {
         if (auto const* number = std::get_if<Number>(&*value)) {
           auto const& call = executable[++pc_];
+          // Liveness may give the call result this argument's slot. The
+          // entire RHS call consumes the borrow before assignment overwrites
+          // that slot; recursive activations own separate depth buffers.
           (*results_)[call.result] =
             vm_->call(call.first.letter, std::get<Location>(instrs_[pc_].op2()), number);
           break;
