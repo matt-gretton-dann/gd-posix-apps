@@ -1,0 +1,267 @@
+/** Contracts for CFG-aware dead-result coloring, independent of VM activation.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <catch2/catch.hpp>
+
+#include <cstddef>
+#include <cstdint>
+#include <limits>
+#include <random>
+#include <set>
+#include <utility>
+#include <vector>
+
+#include "live-result-plan.hh"
+#include "verification.hh"
+
+namespace {
+using GD::Bc::Instructions;
+using GD::Bc::Details::LivenessBudget;
+using GD::Bc::Details::ResultSlotPlan;
+using I = GD::Bc::Instruction;
+using O = I::Opcode;
+using D = I::Offset;
+
+auto dense(unsigned terms = 8) -> Instructions
+{
+  Instructions code{I(O::number, "7")};
+  for (unsigned i = 0; i < terms; ++i) {
+    code.emplace_back(O::number, "1");
+    code.emplace_back(O::add, D(-2), D(-1));
+  }
+  code.emplace_back(O::print, D(-1), I::Stream::output);
+  return code;
+}
+
+auto old_plan(Instructions const& code) -> ResultSlotPlan
+{
+  return GD::Bc::Details::plan_result_slots(
+    code, 48, GD::Bc::Details::plan_consumption(code, true));
+}
+
+auto optimize(Instructions const& code, bool persistent = true, bool body = false,
+              LivenessBudget budget = {}) -> ResultSlotPlan
+{
+  REQUIRE_FALSE(GD::Bc::Details::verify_control_flow(code, body).has_value());
+  return GD::Bc::Details::plan_live_result_slots(code, old_plan(code), 48, persistent, budget);
+}
+
+// An independent bounded path oracle tracks versions in original logical
+// registers and in proposed physical slots. It performs no liveness analysis
+// or coloring, and never uses the planner's result classifier. Conditional
+// edges deliberately explore both outcomes rather than trusting fixture values.
+void check_paths(Instructions const& code, ResultSlotPlan const& slots)
+{
+  for (I::Index i = 0; i < code.size(); ++i)
+    REQUIRE(slots.index(i) < slots.storage_size(code.size()));
+  for (unsigned seed = 0; seed < 16; ++seed) {
+    std::minstd_rand random(seed + 661);
+    std::vector<std::uint64_t> logical(code.size());
+    std::vector<std::uint64_t> physical(slots.storage_size(code.size()));
+    std::uint64_t version = 0;
+    I::Index pc = 0;
+    for (std::size_t step = 0; step < code.size() * 8 + 64 && pc < code.size(); ++step) {
+      auto target = [&](I::Operand const& operand) {
+        return pc + static_cast<I::Index>(std::get<D>(operand));
+      };
+      auto read = [&](I::Operand const& operand) {
+        auto const producer = target(operand);
+        REQUIRE(producer < code.size());
+        REQUIRE(logical[producer] != 0);
+        CHECK(physical[slots.index(producer)] == logical[producer]);
+      };
+      bool produces = false;
+      auto next = pc + 1;
+      switch (code[pc].opcode()) {
+      case O::number:
+        produces = true;
+        break;
+      case O::add:
+        read(code[pc].op1());
+        read(code[pc].op2());
+        produces = true;
+        break;
+      case O::print:
+        read(code[pc].op1());
+        break;
+      case O::branch:
+        next = target(code[pc].op1());
+        break;
+      case O::branch_zero:
+        read(code[pc].op1());
+        if (random() % 2 != 0)
+          next = target(code[pc].op2());
+        break;
+      case O::function_begin:
+        while (code[next].opcode() != O::function_end)
+          ++next;
+        ++next;
+        break;
+      case O::pop_param_mark:
+        break;
+      case O::return_:
+        read(code[pc].op1());
+        next = code.size();
+        break;
+      case O::eof:
+        next = code.size();
+        break;
+      default:
+        FAIL("path oracle lacks a fixture opcode");
+      }
+      if (produces) {
+        logical[pc] = ++version;
+        physical[slots.index(pc)] = version;
+      }
+      pc = next;
+    }
+  }
+}
+}  // namespace
+
+TEST_CASE("Live result colors reuse dense dead literals without destination aliases",
+          "[bc][vm][live-results]")
+{
+  auto const code = dense();
+  auto const slots = optimize(code);
+  REQUIRE(slots.storage_size(code.size()) <= 4);  // Three values and empty sentinel.
+  CHECK(slots.storage_size(code.size()) < old_plan(code).storage_size(code.size()));
+  for (I::Index i = 2; i < code.size() - 1; i += 2) {
+    CHECK(slots.index(i) != slots.index(i - 1));
+    CHECK(slots.index(i) != slots.index(i - 2));
+  }
+  check_paths(code, slots);
+  auto const repeated = optimize(code);
+  CHECK(slots.indices == repeated.indices);
+  CHECK(slots.count == repeated.count);
+}
+
+TEST_CASE("Liveness preserves outer values across a repeated loop consumer",
+          "[bc][vm][live-results]")
+{
+  Instructions code(8, I(O::number, "99"));
+  code.emplace_back(O::number, "7");       // 8, live across the backedge.
+  code.emplace_back(O::number, "1");       // 9, also live across the backedge.
+  code.emplace_back(O::add, D(-2), D(-1));  // 10, repeatedly reads 8 and 9.
+  code.emplace_back(O::number, "9");       // 11, cannot overwrite either outer value.
+  code.emplace_back(O::branch, D(-2));     // 12 -> 10.
+  while (code.size() < 16)
+    code.emplace_back(O::branch, D(1));
+  auto const slots = optimize(code);
+  REQUIRE(slots.storage_size(code.size()) <= 4);
+  CHECK(slots.index(8) != slots.index(11));
+  CHECK(slots.index(9) != slots.index(11));
+  check_paths(code, slots);
+}
+
+TEST_CASE("Disjoint diamond branches share colors without sharing live operands",
+          "[bc][vm][live-results]")
+{
+  Instructions code(8, I(O::number, "99"));
+  Instructions const tail{
+    I(O::number, "1"), I(O::branch_zero, D(-1), D(6)),
+    I(O::number, "2"), I(O::number, "3"), I(O::add, D(-2), D(-1)),
+    I(O::print, D(-1), I::Stream::output), I(O::branch, D(5)),
+    I(O::number, "4"), I(O::number, "5"), I(O::add, D(-2), D(-1)),
+    I(O::print, D(-1), I::Stream::output), I(O::number, "9"),
+    I(O::print, D(-1), I::Stream::output), I(O::eof)};
+  code.insert(code.end(), tail.begin(), tail.end());
+  auto const slots = optimize(code);
+  REQUIRE(slots.storage_size(code.size()) <= 4);
+  std::set<I::Index> const first{slots.index(10), slots.index(11), slots.index(12)};
+  std::set<I::Index> const second{slots.index(15), slots.index(16), slots.index(17)};
+  CHECK(first.size() == 3);
+  CHECK(first == second);
+  check_paths(code, slots);
+}
+
+TEST_CASE("Forward producer references follow execution order rather than source order",
+          "[bc][vm][live-results]")
+{
+  Instructions code(8, I(O::number, "99"));
+  code.emplace_back(O::branch, D(3));                 // 8 -> 11.
+  code.emplace_back(O::print, D(2), I::Stream::output);  // 9 reads 11.
+  code.emplace_back(O::number, "99");                // 10 dies before 11 redefines.
+  code.emplace_back(O::number, "7");                 // 11 dominates 9.
+  code.emplace_back(O::branch, D(-3));                // 12 -> 9.
+  while (code.size() < 16)
+    code.emplace_back(O::branch, D(1));
+  auto const slots = optimize(code);
+  REQUIRE(slots.storage_size(code.size()) <= 2);
+  CHECK(slots.index(11) != 0);
+  check_paths(code, slots);
+}
+
+TEST_CASE("Repeated operands stay intact until both reads complete", "[bc][vm][live-results]")
+{
+  Instructions code(8, I(O::number, "99"));
+  code.emplace_back(O::number, "7");
+  code.emplace_back(O::add, D(-1), D(-1));
+  code.emplace_back(O::print, D(-1), I::Stream::output);
+  while (code.size() < 16)
+    code.emplace_back(O::branch, D(1));
+  auto const slots = optimize(code);
+  REQUIRE(slots.storage_size(code.size()) <= 3);
+  CHECK(slots.index(8) != slots.index(9));
+  check_paths(code, slots);
+}
+
+TEST_CASE("Definition bodies get independent liveness regions", "[bc][vm][live-results]")
+{
+  Instructions code(8, I(O::number, "99"));
+  auto const begin = code.size();
+  code.emplace_back(O::function_begin, GD::Bc::VariableMask(), GD::Bc::Location("live", 1, 1));
+  code.emplace_back(O::pop_param_mark);
+  auto body = dense();
+  body.back() = I(O::return_, D(-1));
+  code.insert(code.end(), body.begin(), body.end());
+  auto const end = code.size();
+  code.emplace_back(O::function_end, GD::Bc::Letter('f'),
+                    -static_cast<D>(end - begin));
+  code.emplace_back(O::number, "9");
+  code.emplace_back(O::print, D(-1), I::Stream::output);
+  code.emplace_back(O::eof);
+  auto const slots = optimize(code);
+  REQUIRE(slots.storage_size(code.size()) <= 2);
+  for (auto i = begin + 1; i <= end; ++i)
+    CHECK(slots.index(i) == 0);
+  check_paths(code, slots);
+  Instructions const region(code.begin() + static_cast<Instructions::difference_type>(begin + 1),
+                            code.begin() + static_cast<Instructions::difference_type>(end));
+  auto const local = optimize(region, true, true);
+  CHECK(local.storage_size(region.size()) <= 4);
+  check_paths(region, local);
+}
+
+TEST_CASE("Warm tiny regions can improve while transient streams retain their fallback",
+          "[bc][vm][live-results]")
+{
+  auto const code = dense(4);
+  REQUIRE(code.size() < 16);
+  auto const warm = optimize(code);
+  CHECK(warm.storage_size(code.size()) <= 4);
+  auto const cold = optimize(code, false);
+  auto const fallback = old_plan(code);
+  CHECK(cold.indices == fallback.indices);
+  CHECK(cold.count == fallback.count);
+  check_paths(code, warm);
+  check_paths(code, cold);
+}
+
+TEST_CASE("Declined liveness budgets preserve the complete original plan",
+          "[bc][vm][live-results]")
+{
+  auto const code = dense();
+  auto const fallback = old_plan(code);
+  for (auto budget : {LivenessBudget{code.size() - 1, 1024}, LivenessBudget{4096, 0}}) {
+    auto const slots = optimize(code, true, false, budget);
+    CHECK(slots.indices == fallback.indices);
+    CHECK(slots.count == fallback.count);
+    check_paths(code, slots);
+  }
+  for (auto bytes : {std::size_t(0), std::numeric_limits<std::size_t>::max()}) {
+    auto const slots = GD::Bc::Details::plan_live_result_slots(code, fallback, bytes, true);
+    CHECK(slots.indices == fallback.indices);
+    CHECK(slots.count == fallback.count);
+  }
+}
