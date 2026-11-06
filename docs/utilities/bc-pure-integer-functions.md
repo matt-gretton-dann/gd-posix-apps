@@ -586,3 +586,28 @@ non-move event and every allocation category against #642. Its 16--80 extra
 moves per program are exactly twice the initial transport's counts. Keep
 both raw collections and their source/binary identities; neither collection
 measures elapsed performance.
+
+### Completed-value native qualification
+
+#649 prepares the dedicated `codex/bc-649-opaque-qualification` topic. Its
+runtime is unchanged from `c5685ae7`; only workflow selection and this protocol
+are added. Do not open its performance PR until the completed-value native
+preflight establishes cleanup and object isolation. The rejected #642 cohort
+is complete, with all 30 archives retained; its Windows holdout loss remains
+authoritative.
+
+Freeze and declare the final source before opening one draft PR against the
+accepted main anchor. Run nine default-OFF versus main jobs and nine independent
+same-source OFF/ON jobs: arithmetic, full math and held-out math on native
+Linux/macOS/Windows. Each arithmetic job retains both full and held-out inputs.
+Use the existing controls, certified inputs, seeds, samples, duration targets,
+confirmation policy and budgets. The plain branch name avoids duplicate
+push-only math runs; threaded compatibility reports remain separate.
+
+Retain every source-bound archive, host/toolchain/binary identity, adverse row
+and inconclusive outcome, verifying provider hashes and ZIP integrity. Review
+per-workload time, resources and code size; green advisory jobs do not establish
+acceptance. Linux/Windows keep the 5% allowance and macOS policy is unchanged.
+Do not pool gains, waive losses or replay a failed source for favorable timing.
+Any later runtime change needs a separately declared frozen evaluation. This
+protocol adds no local implementation elapsed benchmark or adoption claim.
