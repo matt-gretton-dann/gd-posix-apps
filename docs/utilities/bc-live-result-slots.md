@@ -67,8 +67,8 @@ prefer generic storage. Both original candidates survive any declined analysis
 or failed optional allocation, and no partial pair is published.
 
 The test-first scaffold compiled successfully and failed seven of eight initial
-contracts while preserving its original-plan fallback. The implementation now
-passes nineteen contracts and 101,317 assertions. The typed test-first extension
+contracts while preserving its original-plan fallback. The initial implementation
+passed nineteen contracts and 101,317 assertions. The typed test-first extension
 failed four of five contracts before implementation. A bounded path oracle
 independently compares logical value versions against physical slots, without solving
 liveness or using the planner's result classifier. It explores both conditional
@@ -93,7 +93,8 @@ candidates, including standalone test calls. Neither is an instruction-execution
 count or proof that each alternative was selected. Read them alongside actual
 compiled mode definitions, exact outputs and `typed_instructions_executed`.
 
-Local Release profile builds with liveness ON and typed execution both ON and
+At the initial VM-integration checkpoint `8fc2d9d0`, local Release profile builds
+with liveness ON and typed execution both ON and
 OFF each pass 376 unit cases / 2,075,958 assertions and nine focused CTest
 targets, including CLI semantics, signals, offset verification and ordinary/IPO
 ownership guards. Native replacement-allocation sweeps exercise every observed
@@ -158,9 +159,16 @@ CLI-only view uses only asserted CLI child profiles and application mappings.
 Do not pool configurations or add raw MC/DC records; the displayed denominators
 come from LLVM's summaries.
 
-Remaining gaps include independently exhausting budgets during interference
-and coloring, a numeric lane needed only by an unreachable producer, compound
-guard MC/DC and verified-input rejection paths. Several arithmetic guards are
+That checkpoint's gaps included independently exhausting budgets during
+interference and coloring, a numeric lane needed only by an unreachable
+producer, compound guard MC/DC and verified-input rejection paths. Follow-up
+contracts now sweep every work allowance from 0 through 1,024 for both APIs,
+requiring the exact original or complete layout and monotonic completion. They
+also cover the unreachable-only numeric lane and preservation of an already
+valid candidate pair under unsupported costs. The expanded focused suite passes
+23 cases / 106,602 assertions; all 367 local Debug unit cases pass 2,081,106
+assertions. Fresh coverage and hosted validation of those added contracts remain
+pending. Several arithmetic guards are
 not reachable at this host width under the hard instruction cap. These are
 recorded gaps, not exclusions that establish complete coverage. The focused
 results do not qualify every instruction/application path or other platforms'

@@ -263,6 +263,106 @@ TEST_CASE("Typed coloring excludes skipped definition bodies", "[bc][vm][live-re
   check_typed_paths(code, plans.typed);
 }
 
+TEST_CASE("An unreachable numeric producer still has a valid typed placeholder",
+          "[bc][vm][live-results][live-typed]")
+{
+  Instructions const code{I(O::variable, fixture_variable('x')), I(O::branch, D(2)),
+                          I(O::number, "7"), I(O::eof)};
+  auto const plans = optimize_layouts(code);
+  REQUIRE(plans.typed.number_count == 1);
+  REQUIRE(plans.typed.other_count == 1);
+  CHECK(plans.typed.indices[2] == 0);
+  check_typed_paths(code, plans.typed);
+}
+
+TEST_CASE("Every bounded-work frontier returns an original or complete layout",
+          "[bc][vm][live-results][live-typed]")
+{
+  auto const code = dense();
+  auto const original = layout_fallback(code);
+  auto const complete = optimize_layouts(code);
+  auto const generic_complete = optimize(code);
+  REQUIRE(complete.generic.count < original.generic.count);
+  check_paths(code, generic_complete);
+  check_typed_paths(code, complete.typed);
+  bool generic_seen = false;
+  bool combined_seen = false;
+  for (std::size_t work = 0; work <= 1024; ++work) {
+    INFO("logical work budget: " << work);
+    auto const generic = GD::Bc::Details::plan_live_result_slots(code, original.generic, 48, true,
+                                                                 LivenessBudget{4096, work});
+    bool const generic_ready =
+      generic.indices == generic_complete.indices && generic.count == generic_complete.count;
+    if (!generic_ready) {
+      CHECK(generic.indices == original.generic.indices);
+      CHECK(generic.count == original.generic.count);
+    }
+    CHECK_FALSE((generic_seen && !generic_ready));
+    generic_seen = generic_seen || generic_ready;
+
+    auto const combined = GD::Bc::Details::plan_live_result_layouts(
+      code, original, lane_costs, true, LivenessBudget{4096, work});
+    bool const combined_ready = combined.generic.indices == complete.generic.indices &&
+                                combined.generic.count == complete.generic.count &&
+                                combined.typed.indices == complete.typed.indices &&
+                                combined.typed.number_count == complete.typed.number_count &&
+                                combined.typed.other_count == complete.typed.other_count;
+    if (!combined_ready) {
+      CHECK(combined.generic.indices == original.generic.indices);
+      CHECK(combined.generic.count == original.generic.count);
+      CHECK(combined.typed.indices == original.typed.indices);
+      CHECK(combined.typed.number_count == original.typed.number_count);
+      CHECK(combined.typed.other_count == original.typed.other_count);
+    }
+    // A larger budget must not expose a partial map after a smaller budget
+    // has already completed the deterministic analysis.
+    CHECK_FALSE((combined_seen && !combined_ready));
+    combined_seen = combined_seen || combined_ready;
+  }
+  CHECK(generic_seen);
+  CHECK(combined_seen);
+}
+
+TEST_CASE("Unsupported layout costs preserve an already valid pair of candidates",
+          "[bc][vm][live-results][live-typed]")
+{
+  auto const code = dense();
+  auto const original = layout_fallback(code);
+  REQUIRE_FALSE(original.typed.empty());
+  for (unsigned invalid = 0; invalid != 7; ++invalid) {
+    auto costs = lane_costs;
+    switch (invalid) {
+    case 0:
+      costs.number_slot_bytes = 0;
+      break;
+    case 1:
+      costs.other_slot_bytes = 0;
+      break;
+    case 2:
+      costs.generic_slot_bytes = 0;
+      break;
+    case 3:
+      costs.generic_instruction_bytes = 0;
+      break;
+    case 4:
+      costs.typed_instruction_bytes = 0;
+      break;
+    case 5:
+      costs.generic_fixed_bytes = std::numeric_limits<std::size_t>::max();
+      break;
+    case 6:
+      costs.typed_fixed_bytes = std::numeric_limits<std::size_t>::max();
+      break;
+    }
+    auto const result = GD::Bc::Details::plan_live_result_layouts(code, original, costs, true);
+    CHECK(result.generic.indices == original.generic.indices);
+    CHECK(result.generic.count == original.generic.count);
+    CHECK(result.typed.indices == original.typed.indices);
+    CHECK(result.typed.number_count == original.typed.number_count);
+    CHECK(result.typed.other_count == original.typed.other_count);
+  }
+}
+
 TEST_CASE("Layout budget failure preserves both complete original candidates",
           "[bc][vm][live-results][live-typed]")
 {
