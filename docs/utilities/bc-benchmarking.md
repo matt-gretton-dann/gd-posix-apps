@@ -235,6 +235,14 @@ Artifacts:
   pairing/order, checked status, elapsed time and output hash/size.
 - `summary.json`: per-case dispersion and paired comparisons, after success.
 
+The post-sampling code-generation collector preserves exact executable bytes
+and hashes, even when a native inspection tool is unavailable. Its portable
+role-directory labels allow nonempty ASCII letter/digit/underscore/hyphen
+segments separated by dots, including `howard-7.0.3` and `gnu-1.08.2`.
+Duplicate names, path separators, and empty dot segments are rejected before
+creating a role directory. An archive failure remains incomplete evidence;
+a later rebuild cannot replace a missing original measured executable.
+
 ## Source and build provenance
 
 When a recipe declares `binary_sha256` in its metadata or normalized entry,

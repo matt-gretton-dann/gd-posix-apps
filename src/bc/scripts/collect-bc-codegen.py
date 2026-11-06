@@ -114,7 +114,9 @@ def collect(entries, directory, timeout=60):
     try:
         for entry in entries:
             name = entry['name']
-            if not re.fullmatch(r'[A-Za-z0-9_-]+', name) or name in names:
+            # Real comparator labels contain version separators. Require
+            # nonempty portable segments, excluding dot path components.
+            if not re.fullmatch(r'[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*', name) or name in names:
                 raise CodegenError('invalid/duplicate role name')
             names.add(name)
             row = dict(name=name, source_revision=entry['metadata'].get('source_revision'), status='incomplete')
