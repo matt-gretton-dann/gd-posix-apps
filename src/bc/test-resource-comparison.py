@@ -149,6 +149,51 @@ class ResourceComparison(unittest.TestCase):
                                 c['parameters']['scale'] == 20 for c in math_cases))
             self.assertTrue(any(c['parameters']['scale'] == 100 for c in math_cases))
 
+    def test_malformed_counters_fail_and_new_counters_remain_missing_in_old_sources(self):
+        total = dict(allocation_calls=0, deallocation_calls=0, allocated_bytes=0,
+                     live_bytes=0, peak_live_bytes=0)
+        good = dict(schema=1, instrumented=True, total=total,
+                    allocations=dict(results=total), events=dict(old=0))
+        for change in ('schema', 'categories', 'bool', 'negative', 'events'):
+            report = copy.deepcopy(good)
+            if change == 'schema':
+                report['schema'] = True
+            elif change == 'categories':
+                report['allocations'] = None
+            elif change == 'bool':
+                report['total']['allocated_bytes'] = True
+            elif change == 'negative':
+                report['events']['old'] = -1
+            else:
+                report['events'] = []
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                self.module.checked_counters(report)
+        candidate = copy.deepcopy(good)
+        candidate['events']['new'] = 7
+        report = self.module.allocation_comparison(good, candidate)
+        self.assertEqual(report['events']['new']['status'], 'missing counter')
+        self.assertIsNone(report['events']['new']['base'])
+        self.assertNotIn('candidate_over_base', report['events']['new'])
+        self.assertIsNone(report['total']['allocated_bytes']['candidate_over_base'])
+
+    def test_profile_builds_match_candidate_options_and_keep_baseline_policy(self):
+        args = types.SimpleNamespace(source=self.root, base='a' * 40, candidate='b' * 40,
+                                     split_point=126, candidate_prefix_results=True,
+                                     candidate_prepared_divisors=True, candidate_preparsed_library=True)
+        math = load('benchmark-math-ci')
+        arithmetic = load('benchmark-ci')
+        for baseline in (True, False):
+            role = 'base' if baseline else 'candidate'
+            revision = args.base if baseline else args.candidate
+            commands = [math.profile_build_command(args, self.root / role, 'cc', 'c++', baseline=baseline),
+                        arithmetic.profile_build_command(args, role, revision, self.root / role, 'cc', 'c++')]
+            for command in commands:
+                self.assertIn('--diagnostic-profile', command)
+                self.assertEqual(command[command.index('--revision') + 1], revision)
+                self.assertEqual('--prefix-results' in command, not baseline)
+                self.assertEqual('--prepared-divisors' in command, not baseline)
+            self.assertEqual('--preparsed-library' in commands[0], not baseline)
+
 
 if __name__ == '__main__':
     unittest.main()
