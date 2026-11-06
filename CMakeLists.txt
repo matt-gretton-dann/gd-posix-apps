@@ -108,6 +108,17 @@ if(RUN_UNIT_TESTS)
   include(Catch)
 endif()
 
+if(RUN_INTEGRATION_TESTS)
+  # Fetched Catch2 sources are now known, allowing a real installed-package
+  # check as well as the missing-package fallback without any downloads.
+  add_test(NAME build/offline-configure
+           COMMAND "${Python_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/cmake/tests/test-offline-configure.py"
+                   --cmake "${CMAKE_COMMAND}" --ctest "${CMAKE_CTEST_COMMAND}"
+                   --source "${CMAKE_SOURCE_DIR}" --generator "${CMAKE_GENERATOR}"
+                   --catch-source "${Catch2_SOURCE_DIR}")
+  set_tests_properties(build/offline-configure PROPERTIES TIMEOUT 240)
+endif()
+
 set(CMAKE_C_STANDAD 11)
 set(CMAKE_C_STANDARD_REQUIRED 11)
 
