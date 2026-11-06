@@ -624,6 +624,28 @@ TEMPLATE_TEST_CASE("Generic input conversion and width boundaries", "[bc][number
   REQUIRE(wrapped == (GD::Bc::extensions_enabled() ? fraction.substr(1) : fraction));
 }
 
+TEMPLATE_TEST_CASE("Unsigned number conversion accepts signed exact zero", "[bc][number][oracle]",
+                   GD::Bc::NumberTraits8, GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  for (auto const* text : {"0", "0.000", "0.00000000000000000000"}) {
+    auto zero = Number(text, 10);
+    zero.negate();
+    CHECK(zero.is_zero());
+    CHECK(zero.to_unsigned() == 0);
+  }
+
+  auto negative_one = Number("1", 10);
+  negative_one.negate();
+  auto cancellation = negative_one;
+  cancellation.add(Number("1", 10));
+  CHECK(cancellation.to_unsigned() == 0);
+
+  auto product = Number("0.000", 10);
+  product.multiply(negative_one, 3);
+  CHECK(product.to_unsigned() == 0);
+}
+
 TEMPLATE_TEST_CASE("Unsigned digit conversion agrees with exact integer division",
                    "[bc][number][oracle][unsigned-conversion]", GD::Bc::NumberTraits8,
                    GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)

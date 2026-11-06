@@ -117,6 +117,15 @@ class IntegerProfile(unittest.TestCase):
         self.assertGreater(events['integer_function_promotions'], 0)
         self.assertEqual(events['integer_function_abandonments'], 0)
 
+    def test_cold_and_hot_zero_results_accept_unsigned_boundaries(self):
+        # The first call uses the generic interpreter; later calls must
+        # actually use the integer tier and preserve the same zero contract.
+        data = self.profile('define f(x) {\nreturn (-x)\n}\nscale=f(0)\n'
+                            'for(i=0;i<12;i++) q=f(0)\nscale=f(0)\n'
+                            'a[f(0)]=7\nscale\na[0]\n', '0\n7\n')
+        self.assertGreater(data['events']['integer_function_successes'], 0)
+        self.assertEqual(data['events']['integer_function_abandonments'], 0)
+
     def test_effectful_functions_remain_on_the_generic_path(self):
         data = self.profile('define f(x) {\ns=s+1\nreturn (x)\n}\n'
                             'for(i=0;i<20;i++) a=f(i)\ns\n', '20\n')
