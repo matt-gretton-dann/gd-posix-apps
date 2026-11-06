@@ -25,6 +25,7 @@ set_property(TARGET libbc PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
 set_property(TARGET libbc PROPERTY CXX_STANDARD_REQUIRED ON)
 target_compile_definitions(libbc PRIVATE _CRT_SECURE_NO_WARNINGS
   GD_BC_COMPACT_EXECUTION=$<BOOL:${ENABLE_BC_COMPACT_EXECUTION}>
+  GD_BC_LIVE_RESULTS=$<BOOL:${ENABLE_BC_LIVE_RESULTS}>
   GD_BC_TYPED_RESULTS=$<BOOL:${ENABLE_BC_TYPED_RESULTS}>)
 option(ENABLE_BC_THREADED_DISPATCH "Enable experimental threaded dispatch for the typed bc VM" OFF)
 if(ENABLE_BC_THREADED_DISPATCH AND ENABLE_BC_TYPED_RESULTS AND ENABLE_BC_COMPACT_EXECUTION
@@ -145,6 +146,7 @@ if(RUN_UNIT_TESTS)
   add_dependencies(test-libbc test-bc-vm-lifetime test-bc-consumer-mode ${_bc_lifetime_ipo_target})
   target_link_libraries(test-libbc PUBLIC libbc Catch2::Catch2)
   target_compile_definitions(test-libbc PRIVATE
+    GD_BC_EXPECT_LIVE_RESULTS=$<BOOL:${ENABLE_BC_LIVE_RESULTS}>
     GD_BC_EXPECT_TYPED_RESULTS=$<AND:$<BOOL:${ENABLE_BC_TYPED_RESULTS}>,$<BOOL:${ENABLE_BC_COMPACT_EXECUTION}>>)
   add_dependencies(test-libbc test-bc-profiling test-bc-profiling-disabled)
   set_property(TARGET test-libbc PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")

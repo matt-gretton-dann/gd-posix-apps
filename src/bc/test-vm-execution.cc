@@ -348,6 +348,47 @@ TEST_CASE("Repeated executable code observes replaced literal text", "[bc][vm][l
 }
 
 #if GD_BC_PROFILE
+TEST_CASE("Configured liveness prepares verified layouts and preserves live numeric registers",
+          "[bc][vm][live-results][verified-profile]")
+{
+  using Checks = GD::Bc::VM::ExecutionChecks;
+  using Event = GD::Bc::Profile::Event;
+  auto event = [](GD::Bc::Profile::Snapshot const& snapshot, Event which) {
+    return snapshot.events[static_cast<std::size_t>(which)];
+  };
+  for (auto checks : {Checks::full, Checks::verified}) {
+    GD::Bc::Instructions code;
+    std::string expected;
+    // Keep many distinct values simultaneously live. Unlike dead padding,
+    // this also leaves typed storage profitable after liveness reuse.
+    for (unsigned i = 0; i != 64; ++i) {
+      code.emplace_back(O::number, std::to_string(i));
+      expected += std::to_string(i) + "\n";
+    }
+    for (unsigned i = 0; i != 64; ++i) {
+      auto const pc = code.size();
+      code.emplace_back(O::print, D(i) - D(pc), I::Stream::output);
+      code.emplace_back(O::number, "999");
+    }
+    code.emplace_back(O::eof);
+    std::ostringstream output, errors;
+    GD::Bc::VM vm(output, errors, false, checks);
+    auto const before = GD::Bc::Profile::snapshot();
+    CHECK_FALSE(vm.execute(code));
+    auto const after = GD::Bc::Profile::snapshot();
+    CHECK(output.str() == expected);
+    CHECK(errors.str().empty());
+    auto const active = checks == Checks::verified && GD_BC_EXPECT_LIVE_RESULTS;
+    CHECK((event(after, Event::live_result_preparations) >
+           event(before, Event::live_result_preparations)) == active);
+    CHECK((event(after, Event::live_result_plan_improvements) >
+           event(before, Event::live_result_plan_improvements)) == active);
+    CHECK((event(after, Event::typed_instructions_executed) >
+           event(before, Event::typed_instructions_executed)) ==
+          (checks == Checks::verified && GD_BC_EXPECT_TYPED_RESULTS));
+  }
+}
+
 TEST_CASE("Typed execution activates only for the configured verified path",
           "[bc][vm][typed-results][verified-profile]")
 {
@@ -632,24 +673,22 @@ TEST_CASE("Compact short functions keep runtime radix and owned literal sidecars
   CHECK(execute(*code) == "2\n11\n11\n");
 }
 
-TEST_CASE("Function bodies can retain an incoming parameter result",
-          "[bc][vm][execution]")
+TEST_CASE("Function bodies can retain an incoming parameter result", "[bc][vm][execution]")
 {
   auto const loc = GD::Bc::Location("fixture", 1, 1);
   auto const name = GD::Bc::Letter('f');
-  GD::Bc::Instructions code{
-    I(O::function_begin, GD::Bc::VariableMask("x", ""), loc),
-    I(O::pop_param),
-    I(O::variable, GD::Bc::Variable('x')),
-    I(O::store, D(-1), D(-2)),
-    I(O::pop_param_mark),
-    I(O::return_, D(-4)),
-    I(O::function_end, name, D(-6)),
-    I(O::push_param_mark),
-    I(O::number, "7"),
-    I(O::push_param, D(-1)),
-    I(O::call, name, loc),
-    I(O::print, D(-1), I::Stream::output),
-    I(O::eof)};
+  GD::Bc::Instructions code{I(O::function_begin, GD::Bc::VariableMask("x", ""), loc),
+                            I(O::pop_param),
+                            I(O::variable, GD::Bc::Variable('x')),
+                            I(O::store, D(-1), D(-2)),
+                            I(O::pop_param_mark),
+                            I(O::return_, D(-4)),
+                            I(O::function_end, name, D(-6)),
+                            I(O::push_param_mark),
+                            I(O::number, "7"),
+                            I(O::push_param, D(-1)),
+                            I(O::call, name, loc),
+                            I(O::print, D(-1), I::Stream::output),
+                            I(O::eof)};
   CHECK(execute(code) == "7\n");
 }

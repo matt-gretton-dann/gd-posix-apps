@@ -18,6 +18,7 @@ set(ENABLE_NON_POSIX_EXTENSIONS ON CACHE BOOL "Enable non-POSIX extensions")
 set(ENABLE_BC_COMPONENT_BENCHMARKS OFF CACHE BOOL "Build separate bc component measurement drivers")
 set(ENABLE_BC_PROFILE OFF CACHE BOOL "Enable separate bc allocation and copy diagnostics")
 set(ENABLE_BC_COMPACT_EXECUTION ON CACHE BOOL "Enable compact verified bc executable operands")
+set(ENABLE_BC_LIVE_RESULTS OFF CACHE BOOL "Enable experimental verified CFG result-slot reuse")
 # Default to the generic VM on hosts without accepted typed-result measurements.
 # The cache option still allows explicit typed testing on those hosts.
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR WIN32)
