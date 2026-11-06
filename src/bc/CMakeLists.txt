@@ -70,7 +70,7 @@ if(ENABLE_BC_INTEGER_FUNCTIONS)
     # Native objects form a portable boundary against whole-program importing.
     # Inherit the owning library's complete language/diagnostic context, including
     # definitions/options added below, but not its IPO target property.
-    add_library(bc-integer-engine OBJECT integer-function.cc)
+    add_library(bc-integer-engine OBJECT integer-function.cc integer-call.cc)
     target_link_libraries(bc-integer-engine PRIVATE gdsup util bc-language-mode)
     target_include_directories(bc-integer-engine PRIVATE
       "$<TARGET_PROPERTY:libbc,INCLUDE_DIRECTORIES>")
@@ -99,12 +99,12 @@ if(ENABLE_BC_INTEGER_FUNCTIONS)
     set(_bc_integer_target bc-integer-engine)
   else()
     # Keep the original compilation path available for comparison and fallback.
-    target_sources(libbc PRIVATE integer-function.cc)
+    target_sources(libbc PRIVATE integer-function.cc integer-call.cc)
   endif()
   target_compile_definitions(libbc PRIVATE GD_BC_INTEGER_FUNCTIONS=1)
 endif()
 file(WRITE "${CMAKE_BINARY_DIR}/bc-integer-isolation.json"
-     "{\"schema\":1,\"feature_enabled\":${_bc_integer_feature},\"isolated\":${_bc_integer_isolated},\"target\":\"${_bc_integer_target}\",\"arithmetic_bridge\":\"integer-number.cc\"}\n")
+     "{\"schema\":1,\"feature_enabled\":${_bc_integer_feature},\"isolated\":${_bc_integer_isolated},\"target\":\"${_bc_integer_target}\",\"arithmetic_bridge\":\"integer-number.cc\",\"call_router\":\"integer-call.cc\"}\n")
 if(ENABLE_BC_STACK_EXECUTION)
   target_sources(libbc PRIVATE stack-execution.cc)
   target_compile_definitions(libbc PRIVATE GD_BC_STACK_EXECUTION=1)

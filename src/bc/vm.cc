@@ -25,6 +25,7 @@
 #include "verification.hh"
 
 #if defined(GD_BC_INTEGER_FUNCTIONS)
+#  include "integer-call.hh"
 #  include "integer-function.hh"
 // Keep speculative Number temporaries out of the ordinary call frame where
 // the compiler supports an explicit boundary. Other compilers retain the
@@ -429,9 +430,29 @@ struct VMState
    *  \return      Result of call.
    */
 #if GD_BC_FORWARD_SCALAR_ARGUMENT
+#  if defined(GD_BC_INTEGER_FUNCTIONS)
+  auto call_generic(Letter func, Location const& loc, Number const* argument) -> Number;
+  auto call(Letter func, Location const& loc, Number const* argument = nullptr) -> Number
+  {
+    GD_BC_PROFILE_EVENT(Profile::Event::function_calls, 1);
+    return dispatch_integer_call(integer_calls_->at(static_cast<unsigned>(func)), this, func, loc,
+                                 argument);
+  }
+#  else
   auto call(Letter func, Location const& loc, Number const* argument = nullptr) -> Number;
+#  endif
 #else
+#  if defined(GD_BC_INTEGER_FUNCTIONS)
+  auto call_generic(Letter func, Location const& loc, Number const* argument) -> Number;
+  auto call(Letter func, Location const& loc) -> Number
+  {
+    GD_BC_PROFILE_EVENT(Profile::Event::function_calls, 1);
+    return dispatch_integer_call(integer_calls_->at(static_cast<unsigned>(func)), this, func, loc,
+                                 nullptr);
+  }
+#  else
   auto call(Letter func, Location const& loc) -> Number;
+#  endif
 #endif
 
   /** Push a new parameter pack onto the parameter stack.  */
@@ -609,6 +630,21 @@ private:
   }
 #endif
 #if defined(GD_BC_INTEGER_FUNCTIONS)
+  static auto generic_call_entry(void* state, Letter func, Location const& loc,
+                                 Number const* argument) -> Number;
+  static auto speculative_call_entry(void* state, Letter func, Location const& loc,
+                                     Number const* argument) -> Number;
+  inline static constexpr auto generic_calls_ = [] {
+    IntegerCallEntries entries{};
+    entries.fill(generic_call_entry);
+    return entries;
+  }();
+  inline static constexpr auto speculative_calls_ = [] {
+    IntegerCallEntries entries{};
+    entries.fill(speculative_call_entry);
+    return entries;
+  }();
+
   // Keep the verified function entries and all common VM offsets independent
   // of this experiment. Allocate the table only after a call passes the
   // VM-scale, arity and scalar-type entry guards.
@@ -622,6 +658,7 @@ private:
   struct IntegerState
   {
     std::array<IntegerPlan, Letter::count_> plans{};
+    IntegerCallEntries calls = speculative_calls_;
     IntegerFunctionScratch scratch;
     // Fully box before committing the caller's pack, without reserving a
     // speculative optional<Number> in every generic call's stack frame.
@@ -639,6 +676,17 @@ private:
     }
   };
   std::unique_ptr<IntegerState, IntegerStateDelete> integer_state_;
+  IntegerCallEntries const* integer_calls_ = &generic_calls_;
+
+  // Scale writes and fallback boundaries select a whole table in constant
+  // time. An ordinary call does not inspect speculative state or own a guard.
+  void refresh_integer_calls() noexcept
+  {
+    integer_calls_ = &generic_calls_;
+    if (!full_checks() && scale_ == 0 && (!integer_state_ || !integer_state_->fallback_active)) {
+      integer_calls_ = integer_state_ ? &integer_state_->calls : &speculative_calls_;
+    }
+  }
 
   auto ensure_integer_state() -> IntegerState&
   {
@@ -648,6 +696,7 @@ private:
       Profile::allocated(Profile::AllocationKind::execution_plans, sizeof(IntegerState));
 #  endif
       integer_state_.reset(state.release());
+      refresh_integer_calls();
     }
     return *integer_state_;
   }
@@ -947,6 +996,9 @@ GD::Bc::Details::VMState::VMState(std::ostream& out, std::ostream& err, bool sav
                                   VM::ExecutionChecks checks)
     : output_(out), error_(err), save_specials_(save_specials), checks_(checks)
 {
+#if defined(GD_BC_INTEGER_FUNCTIONS)
+  refresh_integer_calls();
+#endif
 }
 
 #if GD_BC_PREPARED_DIVISORS
@@ -1047,8 +1099,10 @@ void GD::Bc::Details::VMState::function(Letter func, Instructions::const_iterato
   functions_.at(static_cast<unsigned>(func)) =
     std::make_optional(std::make_tuple(FunctionCode(std::move(instrs)), mask, loc));
 #if defined(GD_BC_INTEGER_FUNCTIONS)
-  if (integer_state_)
+  if (integer_state_) {
     integer_state_->plans[static_cast<unsigned>(func)] = {};
+    integer_state_->calls[static_cast<unsigned>(func)] = speculative_call_entry;
+  }
 #endif
 #if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
   stack_plans_[static_cast<unsigned>(func)] = {};
@@ -1071,8 +1125,10 @@ void GD::Bc::Details::VMState::defer_library_function(Letter name, std::string_v
   auto const index = static_cast<unsigned>(name);
   functions_.at(index).reset();
 #if defined(GD_BC_INTEGER_FUNCTIONS)
-  if (integer_state_)
+  if (integer_state_) {
     integer_state_->plans[index] = {};
+    integer_state_->calls[index] = speculative_call_entry;
+  }
 #endif
 #if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
   stack_plans_[index] = {};
@@ -1110,6 +1166,8 @@ auto GD::Bc::Details::VMState::try_integer_call(FunctionDefinition& def, Letter 
     // Lowered IR owns its data and never borrows source storage.
     plan.code = plan_integer_function(std::get<0>(def).instructions_, std::get<1>(def), func);
     plan.attempted = true;
+    if (!plan.code)
+      integer->calls[static_cast<unsigned>(func)] = generic_call_entry;
   }
   if (!plan.code)
     return false;
@@ -1149,14 +1207,60 @@ auto GD::Bc::Details::VMState::take_integer_result() noexcept -> GD::Bc::Number
 }
 #endif
 
-#if GD_BC_FORWARD_SCALAR_ARGUMENT
+#if defined(GD_BC_INTEGER_FUNCTIONS)
+auto GD::Bc::Details::VMState::generic_call_entry(void* state, Letter func, Location const& loc,
+                                                  Number const* argument) -> Number
+{
+  return static_cast<VMState*>(state)->call_generic(func, loc, argument);
+}
+
+auto GD::Bc::Details::VMState::speculative_call_entry(void* state, Letter func, Location const& loc,
+                                                      Number const* argument) -> Number
+{
+  auto& vm = *static_cast<VMState*>(state);
+  auto& definition = vm.functions_.at(static_cast<unsigned>(func));
+  // The generic entry owns undefined/deferred lookup and its diagnostics.
+  // A newly decoded definition becomes eligible for later warmup calls.
+  if (!definition || vm.param_marks_.empty())
+    return vm.call_generic(func, loc, argument);
+
+  struct RestoreIntegerFallback
+  {
+    VMState& vm;
+    IntegerState* state = nullptr;
+    ~RestoreIntegerFallback()
+    {
+      if (state) {
+        state->fallback_active = false;
+        vm.refresh_integer_calls();
+      }
+    }
+  } restore{vm};
+  if (vm.try_integer_call(*definition, func, argument, restore.state)) {
+    auto const mark = vm.param_marks_.back();
+    vm.parameters_.resize(mark.begin);
+    vm.param_marks_.pop_back();
+    return vm.take_integer_result();
+  }
+  if (restore.state)
+    vm.refresh_integer_calls();
+  return vm.call_generic(func, loc, argument);
+}
+
+auto GD::Bc::Details::VMState::call_generic(Letter func, Location const& loc,
+                                            Number const* argument) -> GD::Bc::Number
+#elif GD_BC_FORWARD_SCALAR_ARGUMENT
 auto GD::Bc::Details::VMState::call(Letter func, Location const& loc, Number const* argument)
   -> GD::Bc::Number
 #else
 auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc::Number
 #endif
 {
+#if !defined(GD_BC_INTEGER_FUNCTIONS)
   GD_BC_PROFILE_EVENT(Profile::Event::function_calls, 1);
+#elif !GD_BC_FORWARD_SCALAR_ARGUMENT
+  (void)argument;
+#endif
   auto const index = static_cast<unsigned>(func);
   auto& func_ptr = functions_.at(index);
 #if defined(GD_BC_PREPARSED_LIBRARY)
@@ -1182,34 +1286,6 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
   }
 
   FunctionDefinition& def = func_ptr.value();
-#if defined(GD_BC_INTEGER_FUNCTIONS)
-  struct RestoreIntegerFallback
-  {
-    // Only the call that starts fallback arms this guard. Nested generic
-    // calls leave its existing flag alone, including on exception paths.
-    IntegerState* state = nullptr;
-    ~RestoreIntegerFallback()
-    {
-      if (state)
-        state->fallback_active = false;
-    }
-  } restore_integer_fallback;
-  if (!full_checks() && scale_ == 0 && !param_marks_.empty()) {
-#  if GD_BC_FORWARD_SCALAR_ARGUMENT
-    auto const* forwarded = argument;
-#  else
-    Number const* forwarded = nullptr;
-#  endif
-    if (try_integer_call(def, func, forwarded, restore_integer_fallback.state)) {
-      // The helper owns the fully materialized box. Only now consume the
-      // untouched caller pack, then transfer directly to the return slot.
-      auto const mark = param_marks_.back();
-      parameters_.resize(mark.begin);
-      param_marks_.pop_back();
-      return take_integer_result();
-    }
-  }
-#endif
 #if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
   auto const* stack = full_checks() ? nullptr : stack_code(index, std::get<0>(def));
   auto const use_source = full_checks() || stack != nullptr;
@@ -1265,6 +1341,9 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
       scale_ = saved_scale;
       ibase_ = saved_ibase;
       obase_ = saved_obase;
+#if defined(GD_BC_INTEGER_FUNCTIONS)
+      refresh_integer_calls();
+#endif
     }
   };
 
@@ -1349,7 +1428,13 @@ void GD::Bc::Details::VMState::obase(Number const& num)
 
 auto GD::Bc::Details::VMState::obase() const -> GD::Bc::Number::NumType { return obase_; }
 
-void GD::Bc::Details::VMState::scale(Number const& num) { scale_ = num.to_unsigned(); }
+void GD::Bc::Details::VMState::scale(Number const& num)
+{
+  scale_ = num.to_unsigned();
+#if defined(GD_BC_INTEGER_FUNCTIONS)
+  refresh_integer_calls();
+#endif
+}
 
 auto GD::Bc::Details::VMState::scale() const -> GD::Bc::Number::NumType { return scale_; }
 

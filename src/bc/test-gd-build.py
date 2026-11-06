@@ -235,6 +235,58 @@ class GdBuild(unittest.TestCase):
         with self.assertRaises(self.helper.BuildError):
             self.module.verified_integer_functions(self.helper, self.build, 'ON')
 
+    def test_call_router_requires_an_isolated_defined_translation_unit(self):
+        integer, report = self.isolation_fixture()
+        report.update(arithmetic_bridge='integer-number.cc', call_router='integer-call.cc')
+        (self.build / 'bc-integer-isolation.json').write_text(json.dumps(report))
+        names = ('vm.cc', 'integer-number.cc', 'integer-function.cc', 'integer-call.cc')
+        rows = [dict(file='/source/src/bc/' + name,
+                     command='c++ -DGD_BC_INTEGER_FUNCTIONS=1 -c ' + name +
+                     ' -o CMakeFiles/' + ('bc-integer-engine' if name in names[2:] else 'libbc') +
+                     '.dir/' + name + '.o') for name in names]
+        commands = self.build / 'compile_commands.json'
+        commands.write_text(json.dumps(rows))
+        policy = self.module.verified_integer_functions(self.helper, self.build, 'ON')
+        self.assertEqual(policy['verification']['translation_units'], sorted(names))
+        self.assertTrue(self.module.verified_integer_isolation(self.helper, self.build, integer)['isolated'])
+        for corrupt in (rows[:-1], rows + [rows[-1]],
+                        rows[:-1] + [dict(rows[-1], command=rows[-1]['command'] + ' -flto')],
+                        rows[:-1] + [dict(rows[-1], command=rows[-1]['command'].replace(
+                            'bc-integer-engine.dir', 'libbc.dir'))]):
+            commands.write_text(json.dumps(corrupt))
+            with self.assertRaises(self.helper.BuildError):
+                self.module.verified_integer_isolation(self.helper, self.build, integer)
+        commands.write_text(json.dumps(rows[:-1]))
+        with self.assertRaises(self.helper.BuildError):
+            self.module.verified_integer_functions(self.helper, self.build, 'ON')
+
+    def test_call_router_requires_native_release_project_evidence(self):
+        integer, report = self.isolation_fixture()
+        (self.build / 'compile_commands.json').unlink()
+        report.update(arithmetic_bridge='integer-number.cc', call_router='integer-call.cc')
+        (self.build / 'bc-integer-isolation.json').write_text(json.dumps(report))
+        self.cache.write_text(self.cache.read_text() + 'CMAKE_GENERATOR:INTERNAL=Visual Studio 18 2026\n')
+        group = ('<ItemDefinitionGroup Condition="Release|x64">'
+                 '<ClCompile><PreprocessorDefinitions>GD_BC_INTEGER_FUNCTIONS=1</PreprocessorDefinitions>'
+                 '</ClCompile><WholeProgramOptimization>false</WholeProgramOptimization>'
+                 '</ItemDefinitionGroup>')
+        directory = self.build / 'src/bc'
+        directory.mkdir(parents=True, exist_ok=True)
+        for target, names in (('libbc', ('vm.cc', 'integer-number.cc')),
+                              ('bc-integer-engine', ('integer-function.cc', 'integer-call.cc'))):
+            items = ''.join('<ClCompile Include="C:/src/bc/' + name + '"/>' for name in names)
+            (directory / (target + '.vcxproj')).write_text(
+                '<Project>' + group + '<ItemGroup>' + items + '</ItemGroup></Project>')
+        self.assertEqual(len(self.module.verified_integer_functions(
+            self.helper, self.build, 'ON')['verification']['translation_units']), 4)
+        self.assertTrue(self.module.verified_integer_isolation(self.helper, self.build, integer)['isolated'])
+        engine = directory / 'bc-integer-engine.vcxproj'
+        engine.write_text(engine.read_text().replace('integer-call.cc', 'wrong.cc'))
+        with self.assertRaises(self.helper.BuildError):
+            self.module.verified_integer_isolation(self.helper, self.build, integer)
+        with self.assertRaises(self.helper.BuildError):
+            self.module.verified_integer_functions(self.helper, self.build, 'ON')
+
     def prepared_commands(self, value, arguments=False):
         rows = []
         for name in ('vm.cc', 'bc.cc'):

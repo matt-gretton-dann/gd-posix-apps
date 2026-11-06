@@ -42,6 +42,7 @@ jobs:
             build-sanitized/Testing/Temporary/LastTest.log
             build-sanitized/src/bc/integer-symbol-evidence/
             build-sanitized/src/bc/**/integer-function.cc.o
+            build-sanitized/src/bc/**/integer-call.cc.o
             build-sanitized/bc-integer-isolation.json
           if-no-files-found: warn
           retention-days: 30
@@ -74,6 +75,8 @@ jobs:
             build-profile/src/bc/integer-layout-evidence/
             build-profile/src/bc/**/integer-function*.obj
             build-profile/src/bc/**/integer-function.cc.o
+            build-profile/src/bc/**/integer-call*.obj
+            build-profile/src/bc/**/integer-call.cc.o
             build-profile/bc-integer-isolation.json
           if-no-files-found: warn
           retention-days: 30
@@ -106,6 +109,8 @@ jobs:
             build-integer/src/bc/integer-layout-evidence/
             build-integer/src/bc/**/integer-function*.obj
             build-integer/src/bc/**/integer-function.cc.o
+            build-integer/src/bc/**/integer-call*.obj
+            build-integer/src/bc/**/integer-call.cc.o
             build-integer/bc-integer-isolation.json
           if-no-files-found: warn
           retention-days: 30

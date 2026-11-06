@@ -66,7 +66,7 @@ the affected entry. Lowered IR owns its data and borrows no source storage.
 
 `test-integer-layout.py` toggles the feature in one real Clang compiler context
 and compares actual records. Common function layout and all pre-existing VM
-field offsets must match; total VM size can include the tail owner pointer.
+field offsets must match; total VM size can include the tail owner and routing pointers.
 Source/command hashes and each mode's records are retained. Unsupported
 compiler/generator evidence is explicitly unavailable; portable semantic,
 redefinition and allocation-failure tests remain required. Layout equality
@@ -350,3 +350,70 @@ after destruction. This deterministic callback test covers engine cleanup, not
 OS signal delivery, caller-level recovery or elapsed performance.
 The current factorial fixture visits 643 polls; its focused test passes 7,086
 assertions normally and 7,096 with profiling. Both fresh full C++ suites pass.
+
+### Separate call-entry experiment
+
+#636 completed its nine native qualification jobs and closed unmerged. A
+Windows held-out order-dominant Bessel case confirmed a slowdown above 5%,
+despite executing no integer instructions in the checked local profile. The
+old caller/helper measurements above are retained evidence, not acceptance
+of that source or proof of the native cause.
+
+#641 moves the speculative guards and fallback scope into a distinct call
+entry. A small non-owning router forwards the caller's result destination to
+either the generic or speculative entry. At nonzero scale and in full-check
+mode, every entry is generic. At zero scale, eligible generations can warm
+and execute speculatively. A statically rejected generation gets a generic
+entry until ordinary or deferred redefinition resets it. Argument-dependent
+rejection remains the separate one-value memo; it must not disable a valid
+generation for all other arguments.
+
+Scale writes and saved-special restoration select a complete table in constant
+time. A failed attempt selects the generic table for its entire fallback
+chain, including scale writes and nested calls. Only the initiating entry
+clears that suppression, on normal or exceptional return, and then selects
+the table for the current scale. Generic calls own no speculative fallback
+guard and construct no speculative result box. The complete box still exists
+before pack consumption and transfers without throwing or allocating.
+
+Two shared tables each contain 26 function pointers. The lazy per-VM state
+adds another 26-pointer table, and the VM tail adds one table pointer. These
+are explicit storage costs, outside the bounded execution scratch. No table
+is allocated merely to enter full-check or nonzero-scale generic execution.
+The existing allocation accounting includes the lazy table. The VM header,
+shared static image storage and RSS require separate reporting.
+
+The router joins the engine's native object target outside project-managed
+IPO; the non-isolated comparison retains portable behavior. Both objects
+must pass the ownership/math symbol guard, and build provenance verifies the
+actual router translation unit and its isolation in compile commands or
+native Release projects. Source-level prvalue elision guarantees no
+intermediate Number owner. A machine tail transfer is a separately inspected
+compiler result, not a portability requirement or a performance claim.
+
+The transition regressions precede this implementation and check both
+execution-check modes and saved-special settings, redefinition of accepted
+and rejected generations, and exact tier-event counts across scale changes.
+Native correctness, resources and full/held-out per-workload qualification
+remain necessary. #601 is still an independent adoption prerequisite; no
+earlier adverse or inconclusive measurement is superseded by this design.
+
+Local Apple Release validation passes 2,005,518 assertions in 366 ordinary
+cases and 2,008,705 in 377 profile cases. The ordinary/profile call contracts,
+including complete allocation-failure fixtures with and without IPO, pass.
+Thirty-five independent checked programs agree across ordinary/profile builds
+and the frozen #636 profile binary, including complete semantic event maps;
+all tracked live storage returns to zero. Allocation counts are unchanged,
+while requested and peak tracked bytes each increase by 208 in these programs.
+That is the lazy 26-pointer table on this ABI, not a memory saving. Actual
+compiler records put the VM at 6,408 bytes with the feature OFF and 6,424 ON,
+preserving all common field offsets. The non-isolated CLI passes 29 tests.
+
+The local Arm64 router is seven instructions ending in an indirect branch,
+with no stack adjustment or Number/Digits definitions. Its generic-entry
+adapter is six instructions ending in a branch to the generic caller. The
+generic caller spans 2,680 bytes versus the prior 2,876-byte caller, but both
+reserve 0x190 stack bytes. The speculative entry separately reserves 0x50.
+These exact-build observations neither prove native Windows/Linux behavior
+nor establish elapsed performance. Raw counters, binaries, object reports,
+source/command hashes and disassembly are retained separately.

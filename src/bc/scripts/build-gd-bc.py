@@ -167,6 +167,10 @@ def verified_integer_functions(helper, build, requested):
                 raise ValueError('invalid arithmetic bridge declaration')
             if enabled and value.get('arithmetic_bridge'):
                 expected_files.add('integer-number.cc')
+            if value.get('call_router') not in (None, '', 'integer-call.cc'):
+                raise ValueError('invalid call router declaration')
+            if enabled and value.get('call_router'):
+                expected_files.add('integer-call.cc')
         except (OSError, ValueError) as error:
             raise helper.BuildError('invalid integer-function policy: ' + str(error))
     commands = build / 'compile_commands.json'
@@ -178,7 +182,8 @@ def verified_integer_functions(helper, build, requested):
                 raise ValueError('not a command inventory')
             for row in rows:
                 filename = str(row['file']).replace('\\', '/')
-                if not filename.endswith(('/src/bc/vm.cc', '/src/bc/integer-function.cc', '/src/bc/integer-number.cc')):
+                if not filename.endswith(('/src/bc/vm.cc', '/src/bc/integer-function.cc',
+                                          '/src/bc/integer-number.cc', '/src/bc/integer-call.cc')):
                     continue
                 command = ' '.join(row['arguments']) if 'arguments' in row else row['command']
                 values = define.findall(command)
@@ -210,7 +215,7 @@ def verified_integer_functions(helper, build, requested):
                 text = node.text or ''
                 if tag == 'ClCompile' and node.get('Include'):
                     filename = node.get('Include').replace('\\', '/').rsplit('/', 1)[-1]
-                    if filename in ('vm.cc', 'integer-function.cc', 'integer-number.cc'):
+                    if filename in ('vm.cc', 'integer-function.cc', 'integer-number.cc', 'integer-call.cc'):
                         selected.add(filename)
                 if tag == 'UndefinePreprocessorDefinitions' and 'GD_BC_INTEGER_FUNCTIONS' in text:
                     raise helper.BuildError('project undefines integer-function mode')
@@ -263,6 +268,11 @@ def verified_integer_isolation(helper, build, integer):
         if (report['feature_enabled'] is not integer.get('enabled') or
                 report['isolated'] is not isolated or report.get('target') != target):
             raise ValueError('policy contradicts feature/configuration')
+        if report.get('call_router') not in (None, '', 'integer-call.cc'):
+            raise ValueError('invalid call router declaration')
+        native_sources = {'integer-function.cc'}
+        if report.get('call_router'):
+            native_sources.add('integer-call.cc')
     except (OSError, ValueError, TypeError) as error:
         raise helper.BuildError('invalid integer-isolation policy: ' + str(error))
     proof = dict(report_sha256=helper.digest(path))
@@ -274,14 +284,15 @@ def verified_integer_isolation(helper, build, integer):
                 inventory = json.loads(commands.read_text(encoding='utf-8'))
                 if not isinstance(inventory, list) or any(not isinstance(row, dict) for row in inventory):
                     raise ValueError('invalid command inventory')
-                rows = [row for row in inventory
-                        if str(row.get('file', '')).replace('\\', '/').endswith('/src/bc/integer-function.cc')]
-                if len(rows) != 1:
+                rows = [row for row in inventory if
+                        str(row.get('file', '')).replace('\\', '/').rsplit('/', 1)[-1] in native_sources]
+                if len(rows) != len(native_sources) or {
+                        str(row['file']).replace('\\', '/').rsplit('/', 1)[-1] for row in rows} != native_sources:
                     raise ValueError('missing or ambiguous engine command')
-                row = rows[0]
-                command = ' '.join(row['arguments']) if 'arguments' in row else row['command']
-                if 'bc-integer-engine.dir' not in command or ipo.search(command):
-                    raise ValueError('engine is not an isolated native object')
+                for row in rows:
+                    command = ' '.join(row['arguments']) if 'arguments' in row else row['command']
+                    if 'bc-integer-engine.dir' not in command or ipo.search(command):
+                        raise ValueError('engine/router is not an isolated native object')
             except (KeyError, TypeError, ValueError) as error:
                 raise helper.BuildError('invalid integer-isolation compiler proof: ' + str(error))
             proof.update(kind='compile-commands', sha256=helper.digest(commands))
@@ -301,7 +312,7 @@ def verified_integer_isolation(helper, build, integer):
                         raise ValueError('engine project contains an IPO flag')
                     if tag == 'ItemDefinitionGroup' and re.search(r'Release\|', node.get('Condition', ''), re.IGNORECASE):
                         release = True
-                if sources != ['integer-function.cc'] or not release:
+                if len(sources) != len(native_sources) or set(sources) != native_sources or not release:
                     raise ValueError('missing isolated Release engine project')
             except (OSError, ET.ParseError, ValueError) as error:
                 raise helper.BuildError('invalid integer-isolation project proof: ' + str(error))
