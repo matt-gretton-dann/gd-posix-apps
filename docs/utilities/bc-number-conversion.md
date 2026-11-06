@@ -1,5 +1,12 @@
 # Numeric text conversion
 
+Unsigned register and array-index conversion truncates a nonnegative value's
+fractional part within the existing single-limb range. Exact zero is accepted
+regardless of its stored sign and decimal scale. A negative signed zero returns
+zero immediately after checking the complete coefficient; a genuinely negative
+value, including a negative fraction with magnitude below one, remains invalid.
+This does not extend the range of accepted register values or array indices.
+
 Number stores an integer coefficient and a separate decimal scale. Native
 coefficients use base 10^9 limbs; test traits use smaller decimal limbs. Decimal
 input can populate those limbs directly without repeatedly multiplying the

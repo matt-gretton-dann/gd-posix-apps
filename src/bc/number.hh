@@ -2485,11 +2485,16 @@ public:
 
   /** Convert a nonnegative bc value to its truncated integer part.
    * The current conversion domain is [0, base_); larger domains belong to
-   * the separate size/scale work. Preserve the existing negative-input check.
+   * the separate size/scale work. A negative sign on exact zero does not
+   * change its numeric value; genuinely negative values remain invalid.
    */
   [[nodiscard]] auto to_unsigned() const -> NumType
   {
     if (sign_ == Sign::negative) {
+      // Avoid coefficient conversion once its exact value is known to be zero.
+      if (digits_.is_zero()) {
+        return 0;
+      }
       Details::error(Msg::number_to_unsigned_failed_negative, *this);
     }
     // POSIX register assignments and array subscripts discard the fraction.
