@@ -7,6 +7,7 @@
 #include <cassert>
 #include <cstddef>
 #include <memory>
+#include <type_traits>
 #include <vector>
 
 namespace GD::Bc::Details {
@@ -22,24 +23,48 @@ namespace GD::Bc::Details {
  * constructed value and retains capacity, including during exception cleanup.
  * Const access requires an already constructed cell. The eager preparation
  * mode supplies an independent full-length initialization path for diagnostics.
+ * Failed preparation leaves an empty buffer; failed prefix growth restores
+ * the previous prefix without moving its cells, even if vector retains partial
+ * construction on the underlying standard library.
  */
 template<typename Value, typename Allocator = std::allocator<Value>>
 class ResultPrefixBuffer
 {
+  static_assert(std::is_nothrow_destructible_v<Value>);
+
 public:
   void prepare(std::size_t count, bool eager = false)
   {
     assert(values_.empty());
-    values_.reserve(count);
-    if (eager)
-      values_.resize(count);
+    try {
+      values_.reserve(count);
+      if (eager)
+        values_.resize(count);
+    }
+    catch (...) {
+      // Some vector implementations retain partially appended cells when a
+      // default constructor throws. No activation lease exists yet.
+      values_.clear();
+      throw;
+    }
   }
 
   auto operator[](std::size_t index) -> Value&
   {
     assert(index < values_.capacity());
-    if (index >= values_.size())
-      values_.resize(index + 1);
+    if (index >= values_.size()) {
+      auto const previous = values_.size();
+      try {
+        values_.resize(index + 1);
+      }
+      catch (...) {
+        // Preserve the old prefix and its references independently of the
+        // standard library's partial-construction rollback policy.
+        while (values_.size() > previous)
+          values_.pop_back();
+        throw;
+      }
+    }
     return values_[index];
   }
 

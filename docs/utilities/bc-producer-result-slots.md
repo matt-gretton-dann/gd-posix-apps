@@ -41,3 +41,29 @@ Measure cold registration, warm calls/loops, recursion, alternating frame sizes,
 arrays, streaming input and ordinary portable math source on the full/held-out
 native matrix. Keep losing and inconclusive cases. Typed executable operands,
 CFG-aware liveness, direct call windows and fusion remain separate #207 work.
+
+## On-demand result prefixes (#651)
+
+An independent prototype reserves the complete planned capacity before taking
+an activation lease, but constructs the contiguous prefix only as indices are
+accessed. The vector's existing size records that prefix, without a bitmap,
+touched list, generation tag or additional owner header. Access adds a branch;
+dense workloads can lose time even when early-return workloads avoid unused
+slot construction. No elapsed improvement is assumed.
+
+The helper preserves capacity and active references, clears every constructed
+owner on release and supports eager initialization for full-check diagnostics.
+Preparation failure must leave an empty usable buffer. Growth failure must
+restore the preceding prefix. Tests exposed libc++ retaining partially appended
+cells after a throwing default constructor; explicit rollback now supplies
+those guarantees independently of that behavior. The failing contracts were
+committed before their repair, and their original logs remain preserved.
+
+Six deterministic component tests cover construction work, stable references,
+allocation failure/retry, partial initialization, dense initialization and
+escaped owners. The full local profile suite passes. This is the storage
+foundation only; VM integration, interruption/fault tests and actual mode-use
+evidence remain required. It does not repeat or supersede #585/#588's retained
+object and static cleanup-prefix experiments or their adverse/inconclusive
+native results. No new timing cohort starts while #650 is running, and no
+adoption or parent issue closure is claimed.
