@@ -112,6 +112,15 @@ class Acceptance(unittest.TestCase):
         self.assertEqual(POLICY.acceptance_review([row], 'Linux', 'arithmetic', 9)
                          ['results'][0]['acceptance'], 'excluded observation')
 
+    def test_math_keeps_baseline_pass_when_only_howard_is_too_short(self):
+        row = dict(name='work', parameters=dict(mode='repeated'), aa_status='pass',
+                   candidate_over_base=ratio(.99, 1.04),
+                   candidate_over_standard=ratio(.1, .2),
+                   duration_target_met={'gd-portable': True, 'gd-base': True,
+                                        'howard-standard': False}, regression_status='pass')
+        result = POLICY.acceptance_review([row], 'Linux', 'math', 9)
+        self.assertEqual(result['results'][0]['acceptance'], 'within regression limit')
+
 
 if __name__ == '__main__':
     unittest.main()
