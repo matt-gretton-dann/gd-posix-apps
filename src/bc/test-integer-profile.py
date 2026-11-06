@@ -126,6 +126,20 @@ class IntegerProfile(unittest.TestCase):
         self.assertGreater(data['events']['integer_function_successes'], 0)
         self.assertEqual(data['events']['integer_function_abandonments'], 0)
 
+    def test_escaped_results_survive_later_calls_and_redefinition(self):
+        large = 2 ** 63 - 1
+        data = self.profile('define f(x) {\nreturn (x*x)\n}\n'
+                            'define g(x) {\nreturn (x*x*x)\n}\n'
+                            'for(i=0;i<12;i++) {\nq=f(2)\nq=g(2)\n}\n'
+                            f'a=f({large})\nb=g(-{large})\nq=f(3)\n'
+                            'scale=1\nq=f(2)\nscale=0\n'
+                            'define g(x) {\nreturn (x+1)\n}\n'
+                            'for(i=0;i<12;i++) q=g(2)\nq=g(3)\na\nb\nq\n',
+                            f'{large ** 2}\n{-large ** 3}\n4\n', unfold=True)
+        self.assertGreaterEqual(data['events']['integer_function_successes'], 4)
+        self.assertGreater(data['events']['integer_function_promotions'], 0)
+        self.assertEqual(data['events']['integer_function_abandonments'], 0)
+
     def test_effectful_functions_remain_on_the_generic_path(self):
         data = self.profile('define f(x) {\ns=s+1\nreturn (x)\n}\n'
                             'for(i=0;i<20;i++) a=f(i)\ns\n', '20\n')
