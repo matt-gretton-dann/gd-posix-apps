@@ -426,3 +426,28 @@ native performance remains inconclusive, and the earlier #602/#631 losses
 remain binding evidence about those sources. The combined routing/conversion
 source requires its own qualification before any adoption; neither bug-fix
 correctness nor routing-only measurements qualify that final source.
+
+### Library reload coverage
+
+#643 adds an isolated public-loader fixture after the frozen #642 source.
+It warms a pure function, retains an escaped exact promoted result, reloads
+the real library and checks that its ordinary binding replaces the old plan.
+It also warms a statically rejected generation and redefines a deferred
+library function before materialization. Both full/verified execution and
+saved-special settings are exercised. The exact zero oracle and independent
+cubic integer result check outputs and the retained value, while profile
+events prove actual tier execution and promotion where enabled. Each mode
+must restore every tracked live allocation category after VM destruction.
+
+The fixture uses the native image when configured and parses the identical
+maintained source otherwise. It adds no production test hooks or runtime
+changes. Local ordinary image, profile image, profile source and feature-OFF
+profile configurations pass all four VM modes. The ordinary/profile CLI
+binaries are byte-identical to the parent in the checked Apple builds; this
+is not a claim about Windows PE timestamps or other toolchains.
+
+Native semantic/profile/sanitizer selections include the new fixture. These
+checks cover loader replacement and ownership, not allocation-failure
+injection, OS signals or elapsed performance. #642 remains held because its
+actual Windows router objects export Number/Digits destructors; passing reload
+coverage neither removes that isolation failure nor adopts the parent.
