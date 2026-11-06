@@ -19,7 +19,7 @@ jobs:
   qualify:
     # This fixed topic starts qualification without needing a dispatch API.
     # Ordinary PRs retain the fast semantic workflow; manual replay stays available.
-    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'codex/bc-598-hybrid-integers' || startsWith(github.head_ref, 'codex/bc-607-') || github.head_ref == 'codex/bc-614-integer-isolation' || github.head_ref == 'codex/bc-614-number-boundary' || github.head_ref == 'codex/bc-624-opaque-number'
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'codex/bc-641-call-entries' || github.head_ref == 'codex/bc-598-hybrid-integers' || startsWith(github.head_ref, 'codex/bc-607-') || github.head_ref == 'codex/bc-614-integer-isolation' || github.head_ref == 'codex/bc-614-number-boundary' || github.head_ref == 'codex/bc-624-opaque-number'
     strategy:
       fail-fast: false
       matrix:

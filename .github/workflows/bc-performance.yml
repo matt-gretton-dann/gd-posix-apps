@@ -30,7 +30,7 @@ jobs:
     env:
       BC_CANDIDATE: ${{ github.event.pull_request.head.sha || github.sha }}
       BC_BASE: ${{ github.event.pull_request.base.sha || inputs.baseline || '23fd6a0efcebae14a0c890d218db4d885d7a3ac3' }}
-      BC_BROAD: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || startsWith(github.head_ref, 'codex/bc-native-broad/') || startsWith(github.head_ref, 'codex/bc-native-prepared/') }}
+      BC_BROAD: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.head_ref == 'codex/bc-641-call-entries' || startsWith(github.head_ref, 'codex/bc-native-broad/') || startsWith(github.head_ref, 'codex/bc-native-prepared/') }}
       # Opt in only this experimental topic; controls retain their source defaults.
       BC_PREPARED: ${{ startsWith(github.head_ref, 'codex/bc-native-prepared/') }}
     steps:
