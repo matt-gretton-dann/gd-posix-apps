@@ -5,6 +5,7 @@
 
 #include <catch2/catch.hpp>
 
+#include <algorithm>
 #include <limits>
 #include <memory>
 #include <stdexcept>
@@ -45,6 +46,7 @@ struct Allocations
   inline static bool deny = false;
   inline static std::size_t attempts = 0;
   inline static std::size_t live = 0;
+  inline static std::size_t max_count = std::numeric_limits<std::size_t>::max();
 };
 
 template<typename Value>
@@ -71,6 +73,11 @@ struct Allocator
     --Allocations::live;
     std::allocator<Value>{}.deallocate(value, count);
   }
+  auto max_size() const noexcept -> std::size_t
+  {
+    return std::min(Allocations::max_count, std::allocator_traits<std::allocator<Value>>::max_size(
+                                              std::allocator<Value>{}));
+  }
   template<typename Other>
   auto operator==(Allocator<Other> const&) const noexcept -> bool
   {
@@ -87,6 +94,7 @@ void reset_counts()
   Cell::remaining = std::numeric_limits<std::size_t>::max();
   Allocations::deny = false;
   Allocations::attempts = 0;
+  Allocations::max_count = std::numeric_limits<std::size_t>::max();
 }
 }  // namespace
 
@@ -231,4 +239,45 @@ TEST_CASE("Result prefixes destroy owned cells while escaped values survive", "[
   CHECK(weak.expired());
   buffer.prepare(6);
   CHECK_FALSE(buffer[4]);
+}
+
+TEST_CASE("Result prefixes amortize successively larger activation reservations",
+          "[bc][vm][prefix]")
+{
+  reset_counts();
+  {
+    Buffer buffer;
+    for (unsigned count = 1; count <= 64; ++count) {
+      buffer.prepare(count);
+      CHECK(buffer.capacity() >= count);
+      CHECK(buffer.capacity() < 2 * count);
+      CHECK(buffer.empty());
+      buffer.clear();
+    }
+    CHECK(Allocations::attempts <= 7);
+    CHECK(Cell::constructions == 0);
+  }
+  CHECK(Allocations::live == 0);
+}
+
+TEST_CASE("Result prefixes bound geometric growth at allocator limits", "[bc][vm][prefix]")
+{
+  reset_counts();
+  {
+    Allocations::max_count = 17;
+    Buffer buffer;
+    buffer.prepare(6);
+    buffer.prepare(7);
+    buffer.prepare(13);
+    CHECK(buffer.capacity() == 17);
+    CHECK_THROWS_AS(buffer.prepare(18), std::length_error);
+    CHECK(buffer.empty());
+    CHECK(Cell::live == 0);
+    auto const allocations = Allocations::attempts;
+    buffer.prepare(13);
+    CHECK(buffer[12].value == 0);
+    CHECK(Allocations::attempts == allocations);
+  }
+  CHECK(Cell::live == 0);
+  CHECK(Allocations::live == 0);
 }
