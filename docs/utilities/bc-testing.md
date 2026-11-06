@@ -3,6 +3,26 @@
 Arithmetic optimization is gated by correctness tests; agreement between two
 implementations of multiplication alone is not an independent oracle.
 
+## Integer tier resource qualification
+
+`scripts/collect-integer-resources.py` builds OFF and ON from one immutable
+revision, using that revision's verified compiler-mode builder. Each mode has a
+release binary for native CPU/RSS and a separate instrumented binary for
+allocation/event counts. Full and held-out startup, call and recursive workloads
+use the existing checked corpus and exact oracles. Each diagnostic is one cold
+process; it is not paired elapsed-performance evidence or a warmed-process RSS
+estimate. Native counter availability and precision remain explicit per record.
+
+Instrumented runs must release every tracked allocation category. ON call and
+recursion records must prove successful integer execution without abandonment;
+OFF and startup controls must record no integer attempts. Instrumented elapsed
+time is discarded. The native workflow pins the candidate separately from the
+collector, retaining programs, expected bytes, raw counters, binaries, compiler
+policies and partial failures. Passing diagnostics alone do not qualify the
+experimental tier for adoption or close #598/#200/#197.
+
+## Arithmetic oracles
+
 `test-number.cc` uses the following complementary checks:
 
 * NumberTraits8 exhausts all 100 by 100 one-limb pairs for addition,

@@ -1,0 +1,1386 @@
+{
+  "bootstrap_resamples": 2000,
+  "clock": {
+    "implementation": "clock_gettime(CLOCK_MONOTONIC)",
+    "monotonic": true,
+    "resolution": 1e-09
+  },
+  "corpus": [
+    {
+      "group": "math_s_regular",
+      "name": "math_regular_s-one_scale20_one_shot_x1",
+      "oracle_sha256": "02072c8dd92656a6e15e7d89e99047ce024d7a2521eecf8e333e8b460fd0623e",
+      "parameters": {
+        "arguments": [
+          "1"
+        ],
+        "calibration": "fixed count; not calibrated",
+        "function": "s",
+        "iterations": 1,
+        "mode": "one_shot",
+        "scale": 20
+      },
+      "program_sha256": "4887a96af7cb5664e559bc82411769a72f55de547561b67e199691102ef2388f"
+    },
+    {
+      "group": "math_s_regular",
+      "name": "math_regular_s-one_scale20_repeated_x32768",
+      "oracle_sha256": "02072c8dd92656a6e15e7d89e99047ce024d7a2521eecf8e333e8b460fd0623e",
+      "parameters": {
+        "arguments": [
+          "1"
+        ],
+        "calibration": "bounded per-role median duration; common maximum",
+        "duration_target_seconds": 0.25,
+        "function": "s",
+        "iterations": 32768,
+        "mode": "repeated",
+        "scale": 20
+      },
+      "program_sha256": "56ef3d6762d5008e5f2c6157f66794b2e265c50783d54b4fea3a81277bf404d4"
+    },
+    {
+      "group": "math_s_regular",
+      "name": "math_regular_s-one_scale100_one_shot_x1",
+      "oracle_sha256": "7b7e0677aa2ec2ab51ba4ff53f4459e379511786d2301cdef5bdc90e8118ca65",
+      "parameters": {
+        "arguments": [
+          "1"
+        ],
+        "calibration": "fixed count; not calibrated",
+        "function": "s",
+        "iterations": 1,
+        "mode": "one_shot",
+        "scale": 100
+      },
+      "program_sha256": "d6376cb97c46d788e46a87c72c46e55a3bf8479464547bd4dd32ece5e7983fa8"
+    },
+    {
+      "group": "math_s_regular",
+      "name": "math_regular_s-one_scale100_repeated_x16384",
+      "oracle_sha256": "7b7e0677aa2ec2ab51ba4ff53f4459e379511786d2301cdef5bdc90e8118ca65",
+      "parameters": {
+        "arguments": [
+          "1"
+        ],
+        "calibration": "bounded per-role median duration; common maximum",
+        "duration_target_seconds": 0.25,
+        "function": "s",
+        "iterations": 16384,
+        "mode": "repeated",
+        "scale": 100
+      },
+      "program_sha256": "3e2396a0dd2ac2a3acb3e31fcf2bd21ead59cafdb5cefb21eff0939b4fa96a2a"
+    },
+    {
+      "group": "math_s_regular",
+      "name": "math_regular_s-one_scale1000_one_shot_x1",
+      "oracle_sha256": "d598f42a472c7c0e80147f0ecac94920cc5951a0cfc9d6266622a1c56be7b1af",
+      "parameters": {
+        "arguments": [
+          "1"
+        ],
+        "calibration": "fixed count; not calibrated",
+        "function": "s",
+        "iterations": 1,
+        "mode": "one_shot",
+        "scale": 1000
+      },
+      "program_sha256": "5b66a977e2b25c80734bb33d98de3bc464fad741083fba40c73b1c451dd7fbe6"
+    },
+    {
+      "group": "math_s_regular",
+      "name": "math_regular_s-one_scale1000_repeated_x1024",
+      "oracle_sha256": "d598f42a472c7c0e80147f0ecac94920cc5951a0cfc9d6266622a1c56be7b1af",
+      "parameters": {
+        "arguments": [
+          "1"
+        ],
+        "calibration": "bounded per-role median duration; common maximum",
+        "duration_target_seconds": 0.25,
+        "function": "s",
+        "iterations": 1024,
+        "mode": "repeated",
+        "scale": 1000
+      },
+      "program_sha256": "391a4f0778c04806ec6388bfffa4abbba979ed0991884b03895e905dd310b9aa"
+    },
+    {
+      "group": "math_c_regular",
+      "name": "math_regular_c-one_scale20_one_shot_x1",
+      "oracle_sha256": "ab1ac587430e53fa540e86be1a26bddf44c4d11c5343ee8bc34187534d300e3e",
+      "parameters": {
+        "arguments": [
+          "1"
+        ],
+        "calibration": "fixed count; not calibrated",
+        "function": "c",
+        "iterations": 1,
+        "mode": "one_shot",
+        "scale": 20
+      },
+      "program_sha256": "0f317bab9cb64a823a8ca52dd0a0ff120956abf6634ccf75e35ff705d0772955"
+    },
+    {
+      "group": "math_c_regular",
+      "name": "math_regular_c-one_scale20_repeated_x32768",
+      "oracle_sha256": "ab1ac587430e53fa540e86be1a26bddf44c4d11c5343ee8bc34187534d300e3e",
+      "parameters": {
+        "arguments": [
+          "1"
+        ],
+        "calibration": "bounded per-role median duration; common maximum",
+        "duration_target_seconds": 0.25,
+        "function": "c",
+        "iterations": 32768,
+        "mode": "repeated",
+        "scale": 20
+      },
+      "program_sha256": "8d02072158176c697623c775d0984c21611dcab74343b743aadb3e422bc699d5"
+    },
+    {
+      "group": "math_c_regular",
+      "name": "math_regular_c-one_scale100_one_shot_x1",
+      "oracle_sha256": "787b546652b4a611b8032e31a4a0eda7a310d31bba869e089386ecf9bfd2fc03",
+      "parameters": {
+        "arguments": [
+          "1"
+        ],
+        "calibration": "fixed count; not calibrated",
+        "function": "c",
+        "iterations": 1,
+        "mode": "one_shot",
+        "scale": 100
+      },
+      "program_sha256": "b1e2b0f7db8cc8a0bd639e96ce6612a3326b72b97e1a4256d6898a06cfb57724"
+    },
+    {
+      "group": "math_c_regular",
+      "name": "math_regular_c-one_scale100_repeated_x16384",
+      "oracle_sha256": "787b546652b4a611b8032e31a4a0eda7a310d31bba869e089386ecf9bfd2fc03",
+      "parameters": {
+        "arguments": [
+          "1"
+        ],
+        "calibration": "bounded per-role median duration; common maximum",
+        "duration_target_seconds": 0.25,
+        "function": "c",
+        "iterations": 16384,
+        "mode": "repeated",
+        "scale": 100
+      },
+      "program_sha256": "f546dc2a8b8ff0b44cbe87a4f7c5b62ddba01771ffd824f689acf1b208dbf4db"
+    },
+    {
+      "group": "math_c_regular",
+      "name": "math_regular_c-one_scale1000_one_shot_x1",
+      "oracle_sha256": "043cbd1dd38232f9138a0fe6e8bb2e8804c6f5b3cc2b253c4f6e9b1e174677b7",
+      "parameters": {
+        "arguments": [
+          "1"
+        ],
+        "calibration": "fixed count; not calibrated",
+        "function": "c",
+        "iterations": 1,
+        "mode": "one_shot",
+        "scale": 1000
+      },
+      "program_sha256": "0a56ec9e7f2a5beb05f9789385695128a3ec13eb1f776bc5f71cd20ff0ac09ea"
+    },
+    {
+      "group": "math_c_regular",
+      "name": "math_regular_c-one_scale1000_repeated_x1024",
+      "oracle_sha256": "043cbd1dd38232f9138a0fe6e8bb2e8804c6f5b3cc2b253c4f6e9b1e174677b7",
+      "parameters": {
+        "arguments": [
+          "1"
+        ],
+        "calibration": "bounded per-role median duration; common maximum",
+        "duration_target_seconds": 0.25,
+        "function": "c",
+        "iterations": 1024,
+        "mode": "repeated",
+        "scale": 1000
+      },
+      "program_sha256": "31778a953dfaa2dea470d454e40951486ee0b8fcc214f2df23d0dea59cc781ea"
+    },
+    {
+      "group": "math_a_regular",
+      "name": "math_regular_a-one_scale20_one_shot_x1",
+      "oracle_sha256": "c452fb0865f497ec58e4da2ce293787ad82906648497c53daeedda7730c05c3c",
+      "parameters": {
+        "arguments": [
+          "1"
+        ],
+        "calibration": "fixed count; not calibrated",
+        "function": "a",
+        "iterations": 1,
+        "mode": "one_shot",
+        "scale": 20
+      },
+      "program_sha256": "57ccd2b003168921e8b047948b818f5b826d5f4a0859a36428220f4b5c282ecb"
+    },
+    {
+      "group": "math_a_regular",
+      "name": "math_regular_a-one_scale20_repeated_x262144",
+      "oracle_sha256": "c452fb0865f497ec58e4da2ce293787ad82906648497c53daeedda7730c05c3c",
+      "parameters": {
+        "arguments": [
+          "1"
+        ],
+        "calibration": "bounded per-role median duration; common maximum",
+        "duration_target_seconds": 0.25,
+        "function": "a",
+        "iterations": 262144,
+        "mode": "repeated",
+        "scale": 20
+      },
+      "program_sha256": "e403b60ffcc671e0e2b94285b246b4ef6f4c5684aed9fc85cab18ff114973039"
+    },
+    {
+      "group": "math_a_regular",
+      "name": "math_regular_a-one_scale100_one_shot_x1",
+      "oracle_sha256": "0cfc2e0f0a7d21b968766132ed7cf50228942bc5a9224e79ae419ff00fc334a1",
+      "parameters": {
+        "arguments": [
+          "1"
+        ],
+        "calibration": "fixed count; not calibrated",
+        "function": "a",
+        "iterations": 1,
+        "mode": "one_shot",
+        "scale": 100
+      },
+      "program_sha256": "4171200593d1b894d7a36463406d9762ec38341d657694b908aacb318c14f7d0"
+    },
+    {
+      "group": "math_a_regular",
+      "name": "math_regular_a-one_scale100_repeated_x131072",
+      "oracle_sha256": "0cfc2e0f0a7d21b968766132ed7cf50228942bc5a9224e79ae419ff00fc334a1",
+      "parameters": {
+        "arguments": [
+          "1"
+        ],
+        "calibration": "bounded per-role median duration; common maximum",
+        "duration_target_seconds": 0.25,
+        "function": "a",
+        "iterations": 131072,
+        "mode": "repeated",
+        "scale": 100
+      },
+      "program_sha256": "8ca0740c947c86bda940495048d563ba2bac294eadfc12109d509108a8680273"
+    },
+    {
+      "group": "math_a_regular",
+      "name": "math_regular_a-one_scale1000_one_shot_x1",
+      "oracle_sha256": "b8ee955ef8e5865fd84d24f0a017efd35184b35381a7e04c917ed8c87b629a9d",
+      "parameters": {
+        "arguments": [
+          "1"
+        ],
+        "calibration": "fixed count; not calibrated",
+        "function": "a",
+        "iterations": 1,
+        "mode": "one_shot",
+        "scale": 1000
+      },
+      "program_sha256": "2051fa72e4b60348afff070b2d98d24588c79994354187f670e37075615c3e14"
+    },
+    {
+      "group": "math_a_regular",
+      "name": "math_regular_a-one_scale1000_repeated_x64",
+      "oracle_sha256": "b8ee955ef8e5865fd84d24f0a017efd35184b35381a7e04c917ed8c87b629a9d",
+      "parameters": {
+        "arguments": [
+          "1"
+        ],
+        "calibration": "bounded per-role median duration; common maximum",
+        "duration_target_seconds": 0.25,
+        "function": "a",
+        "iterations": 64,
+        "mode": "repeated",
+        "scale": 1000
+      },
+      "program_sha256": "dfc44e43f37297c14ca5da50ad68d22d102c2bc09d63b48327c11961fdb7c317"
+    },
+    {
+      "group": "math_l_regular",
+      "name": "math_regular_l-two_scale20_one_shot_x1",
+      "oracle_sha256": "4a629aeb44482faaffc14dd3dc76829e66e8d5880fb968a6bc3870ff37718b9d",
+      "parameters": {
+        "arguments": [
+          "2"
+        ],
+        "calibration": "fixed count; not calibrated",
+        "function": "l",
+        "iterations": 1,
+        "mode": "one_shot",
+        "scale": 20
+      },
+      "program_sha256": "104e75bfe6d9ad315076435eb019ea48a4a979596ac399ebd9160b88a71db6da"
+    },
+    {
+      "group": "math_l_regular",
+      "name": "math_regular_l-two_scale20_repeated_x65536",
+      "oracle_sha256": "4a629aeb44482faaffc14dd3dc76829e66e8d5880fb968a6bc3870ff37718b9d",
+      "parameters": {
+        "arguments": [
+          "2"
+        ],
+        "calibration": "bounded per-role median duration; common maximum",
+        "duration_target_seconds": 0.25,
+        "function": "l",
+        "iterations": 65536,
+        "mode": "repeated",
+        "scale": 20
+      },
+      "program_sha256": "8f3a0cdbee33e3fe70e27b5a837bd584d1b518d1207e2dd12592d1ab307c9876"
+    },
+    {
+      "group": "math_l_regular",
+      "name": "math_regular_l-two_scale100_one_shot_x1",
+      "oracle_sha256": "1340671482e4f6f26ef45a41f4ee9da203655d4dfe545f32c0b958081b3105f6",
+      "parameters": {
+        "arguments": [
+          "2"
+        ],
+        "calibration": "fixed count; not calibrated",
+        "function": "l",
+        "iterations": 1,
+        "mode": "one_shot",
+        "scale": 100
+      },
+      "program_sha256": "cdcc408bb1e3a111d5942697a3d6ee6df6704a61461a3477a8d7a8f0fad699da"
+    },
+    {
+      "group": "math_l_regular",
+      "name": "math_regular_l-two_scale100_repeated_x4096",
+      "oracle_sha256": "1340671482e4f6f26ef45a41f4ee9da203655d4dfe545f32c0b958081b3105f6",
+      "parameters": {
+        "arguments": [
+          "2"
+        ],
+        "calibration": "bounded per-role median duration; common maximum",
+        "duration_target_seconds": 0.25,
+        "function": "l",
+        "iterations": 4096,
+        "mode": "repeated",
+        "scale": 100
+      },
+      "program_sha256": "3bffaec3b8235b16f034827dc4f3875f6e65a4cd86e709276ce776552fdb9ee5"
+    },
+    {
+      "group": "math_l_regular",
+      "name": "math_regular_l-two_scale1000_one_shot_x1",
+      "oracle_sha256": "9b98d1dc3705a7fa42fad1c64d2818250cfb51743c5380451547275dde1c7216",
+      "parameters": {
+        "arguments": [
+          "2"
+        ],
+        "calibration": "fixed count; not calibrated",
+        "function": "l",
+        "iterations": 1,
+        "mode": "one_shot",
+        "scale": 1000
+      },
+      "program_sha256": "afd1829fd3bc61b6dcb94e8f5f7bfed7dd7d77d439708857c8ec8144c4c9ae6f"
+    },
+    {
+      "group": "math_l_regular",
+      "name": "math_regular_l-two_scale1000_repeated_x128",
+      "oracle_sha256": "9b98d1dc3705a7fa42fad1c64d2818250cfb51743c5380451547275dde1c7216",
+      "parameters": {
+        "arguments": [
+          "2"
+        ],
+        "calibration": "bounded per-role median duration; common maximum",
+        "duration_target_seconds": 0.25,
+        "function": "l",
+        "iterations": 128,
+        "mode": "repeated",
+        "scale": 1000
+      },
+      "program_sha256": "bf6df061d7bb841909d8ad09583849501a765443b9185db4d392742d7d7c36e3"
+    },
+    {
+      "group": "math_e_regular",
+      "name": "math_regular_e-one_scale20_one_shot_x1",
+      "oracle_sha256": "43078904f9f3742ea37f0ee42e22dd89b7d9902169292697074687186bd5603e",
+      "parameters": {
+        "arguments": [
+          "1"
+        ],
+        "calibration": "fixed count; not calibrated",
+        "function": "e",
+        "iterations": 1,
+        "mode": "one_shot",
+        "scale": 20
+      },
+      "program_sha256": "37c19aa801c53fb93b24670c290c1b15631d1bd5f73eaaac89cb393e5cfab9c4"
+    },
+    {
+      "group": "math_e_regular",
+      "name": "math_regular_e-one_scale20_repeated_x16384",
+      "oracle_sha256": "43078904f9f3742ea37f0ee42e22dd89b7d9902169292697074687186bd5603e",
+      "parameters": {
+        "arguments": [
+          "1"
+        ],
+        "calibration": "bounded per-role median duration; common maximum",
+        "duration_target_seconds": 0.25,
+        "function": "e",
+        "iterations": 16384,
+        "mode": "repeated",
+        "scale": 20
+      },
+      "program_sha256": "927ff25c58438c1e2a165f767d6b6e82a5c3ccbcbf686d9fcecfeef7f87b34c1"
+    },
+    {
+      "group": "math_e_regular",
+      "name": "math_regular_e-one_scale100_one_shot_x1",
+      "oracle_sha256": "699fb4c5c02e7cabfef34e7bcd5d134fc9e758cad002bec2c72901fc5b8c0991",
+      "parameters": {
+        "arguments": [
+          "1"
+        ],
+        "calibration": "fixed count; not calibrated",
+        "function": "e",
+        "iterations": 1,
+        "mode": "one_shot",
+        "scale": 100
+      },
+      "program_sha256": "84983a5aec15b8245328be1add6455e7eb92385c56cb5fa7b99abb3e542552d1"
+    },
+    {
+      "group": "math_e_regular",
+      "name": "math_regular_e-one_scale100_repeated_x8192",
+      "oracle_sha256": "699fb4c5c02e7cabfef34e7bcd5d134fc9e758cad002bec2c72901fc5b8c0991",
+      "parameters": {
+        "arguments": [
+          "1"
+        ],
+        "calibration": "bounded per-role median duration; common maximum",
+        "duration_target_seconds": 0.25,
+        "function": "e",
+        "iterations": 8192,
+        "mode": "repeated",
+        "scale": 100
+      },
+      "program_sha256": "e51b822e1c989b26f120478bff1a2f84f098cf62724ed0f5b822e96b8f0f2460"
+    },
+    {
+      "group": "math_e_regular",
+      "name": "math_regular_e-one_scale1000_one_shot_x1",
+      "oracle_sha256": "952f383344ee181336978949f32a4d95c2fb74d63604cba9419b151209fc5b5d",
+      "parameters": {
+        "arguments": [
+          "1"
+        ],
+        "calibration": "fixed count; not calibrated",
+        "function": "e",
+        "iterations": 1,
+        "mode": "one_shot",
+        "scale": 1000
+      },
+      "program_sha256": "07d589ae90b1a939abd86004d681e70ef14fb9336c978ce638a04724a68292a3"
+    },
+    {
+      "group": "math_e_regular",
+      "name": "math_regular_e-one_scale1000_repeated_x512",
+      "oracle_sha256": "952f383344ee181336978949f32a4d95c2fb74d63604cba9419b151209fc5b5d",
+      "parameters": {
+        "arguments": [
+          "1"
+        ],
+        "calibration": "bounded per-role median duration; common maximum",
+        "duration_target_seconds": 0.25,
+        "function": "e",
+        "iterations": 512,
+        "mode": "repeated",
+        "scale": 1000
+      },
+      "program_sha256": "94f486df9b0113ae3e0b9be1c26a57e2f5988649b8f512e5c66d3a492f51f420"
+    },
+    {
+      "group": "math_j_regular",
+      "name": "math_regular_j-zero-one_scale20_one_shot_x1",
+      "oracle_sha256": "d14f5f55a88954d5750b587cf2caf024f58ed56cf7db4da81804346a32580528",
+      "parameters": {
+        "arguments": [
+          "0",
+          "1"
+        ],
+        "calibration": "fixed count; not calibrated",
+        "function": "j",
+        "iterations": 1,
+        "mode": "one_shot",
+        "scale": 20
+      },
+      "program_sha256": "732060750b54c67d0f8abd5b7db2e78c1540fa2a9fda4ad7cc31c84de2fea794"
+    },
+    {
+      "group": "math_j_regular",
+      "name": "math_regular_j-zero-one_scale20_repeated_x16384",
+      "oracle_sha256": "d14f5f55a88954d5750b587cf2caf024f58ed56cf7db4da81804346a32580528",
+      "parameters": {
+        "arguments": [
+          "0",
+          "1"
+        ],
+        "calibration": "bounded per-role median duration; common maximum",
+        "duration_target_seconds": 0.25,
+        "function": "j",
+        "iterations": 16384,
+        "mode": "repeated",
+        "scale": 20
+      },
+      "program_sha256": "c962df7c7d60b51125b7d654ada0810d2a36c7954f20e0c35d05624cd5b5c02e"
+    },
+    {
+      "group": "math_j_regular",
+      "name": "math_regular_j-zero-one_scale100_one_shot_x1",
+      "oracle_sha256": "cc8c838640750bc130dedcdd81fcdac9c718d66009d34149dd2d762f986e71e3",
+      "parameters": {
+        "arguments": [
+          "0",
+          "1"
+        ],
+        "calibration": "fixed count; not calibrated",
+        "function": "j",
+        "iterations": 1,
+        "mode": "one_shot",
+        "scale": 100
+      },
+      "program_sha256": "84112fee4e78ff4a850b301261c434f10544595437253c2550e4bb7bcfdb741d"
+    },
+    {
+      "group": "math_j_regular",
+      "name": "math_regular_j-zero-one_scale100_repeated_x8192",
+      "oracle_sha256": "cc8c838640750bc130dedcdd81fcdac9c718d66009d34149dd2d762f986e71e3",
+      "parameters": {
+        "arguments": [
+          "0",
+          "1"
+        ],
+        "calibration": "bounded per-role median duration; common maximum",
+        "duration_target_seconds": 0.25,
+        "function": "j",
+        "iterations": 8192,
+        "mode": "repeated",
+        "scale": 100
+      },
+      "program_sha256": "d19c8ce8be38953e5a6b2a33ba9056c521e3c7b45b46628f6a07328f476a324e"
+    },
+    {
+      "group": "math_j_regular",
+      "name": "math_regular_j-zero-one_scale1000_one_shot_x1",
+      "oracle_sha256": "599c5758f9d66e136a75c5e2ccbdaf961d8eaf99b905960852652bc1cca14875",
+      "parameters": {
+        "arguments": [
+          "0",
+          "1"
+        ],
+        "calibration": "fixed count; not calibrated",
+        "function": "j",
+        "iterations": 1,
+        "mode": "one_shot",
+        "scale": 1000
+      },
+      "program_sha256": "3c40160bed056c8aaf51acf074ff58610c73e803ccf9163dc9866e43c2c070a2"
+    },
+    {
+      "group": "math_j_regular",
+      "name": "math_regular_j-zero-one_scale1000_repeated_x1024",
+      "oracle_sha256": "599c5758f9d66e136a75c5e2ccbdaf961d8eaf99b905960852652bc1cca14875",
+      "parameters": {
+        "arguments": [
+          "0",
+          "1"
+        ],
+        "calibration": "bounded per-role median duration; common maximum",
+        "duration_target_seconds": 0.25,
+        "function": "j",
+        "iterations": 1024,
+        "mode": "repeated",
+        "scale": 1000
+      },
+      "program_sha256": "75f858096fc513de98d1ef05fb4cb63ddad60b4f4a91cc57e71360075ea79e5d"
+    },
+    {
+      "group": "math_j_turning",
+      "name": "math_turning_j-turning_scale20_one_shot_x1",
+      "oracle_sha256": "424e4b5a76a07fc125403b6a4d366fa3c14e1329179509571b0aaa5e82eaf0f6",
+      "parameters": {
+        "arguments": [
+          "20",
+          "20"
+        ],
+        "calibration": "fixed count; not calibrated",
+        "function": "j",
+        "iterations": 1,
+        "mode": "one_shot",
+        "scale": 20
+      },
+      "program_sha256": "53160a5e813b469636dd3d2f86e2bcfc1b79d563ae735ff0462569326afb931c"
+    },
+    {
+      "group": "math_j_turning",
+      "name": "math_turning_j-turning_scale20_repeated_x8192",
+      "oracle_sha256": "424e4b5a76a07fc125403b6a4d366fa3c14e1329179509571b0aaa5e82eaf0f6",
+      "parameters": {
+        "arguments": [
+          "20",
+          "20"
+        ],
+        "calibration": "bounded per-role median duration; common maximum",
+        "duration_target_seconds": 0.25,
+        "function": "j",
+        "iterations": 8192,
+        "mode": "repeated",
+        "scale": 20
+      },
+      "program_sha256": "80c90db8a2a0421faf7408233771f5c429f8b94c66e6b7554a142597bb6a4728"
+    },
+    {
+      "group": "math_j_turning",
+      "name": "math_turning_j-turning_scale100_one_shot_x1",
+      "oracle_sha256": "19ceef61986f8cb214e6d377c570ca00d5c4650cbe6e1db7a52a2f6747b0fcc3",
+      "parameters": {
+        "arguments": [
+          "20",
+          "20"
+        ],
+        "calibration": "fixed count; not calibrated",
+        "function": "j",
+        "iterations": 1,
+        "mode": "one_shot",
+        "scale": 100
+      },
+      "program_sha256": "b7f42130801b12233d79e4aec6e92feec221c076c36c46002a080914a061f73a"
+    },
+    {
+      "group": "math_j_turning",
+      "name": "math_turning_j-turning_scale100_repeated_x4096",
+      "oracle_sha256": "19ceef61986f8cb214e6d377c570ca00d5c4650cbe6e1db7a52a2f6747b0fcc3",
+      "parameters": {
+        "arguments": [
+          "20",
+          "20"
+        ],
+        "calibration": "bounded per-role median duration; common maximum",
+        "duration_target_seconds": 0.25,
+        "function": "j",
+        "iterations": 4096,
+        "mode": "repeated",
+        "scale": 100
+      },
+      "program_sha256": "430e8570ced4f4fab71ffe38424745733853404f3ba871579a3aa50fc76478f9"
+    },
+    {
+      "group": "math_j_turning",
+      "name": "math_turning_j-turning_scale1000_one_shot_x1",
+      "oracle_sha256": "de0aa4121ac38c84f815b3af8b816d75c26afc75d495e39be51ad6fa96bf2174",
+      "parameters": {
+        "arguments": [
+          "20",
+          "20"
+        ],
+        "calibration": "fixed count; not calibrated",
+        "function": "j",
+        "iterations": 1,
+        "mode": "one_shot",
+        "scale": 1000
+      },
+      "program_sha256": "563850925563b41d064722638751516ec3def5fd4e3e5ad089137a6c29b0f8f1"
+    },
+    {
+      "group": "math_j_turning",
+      "name": "math_turning_j-turning_scale1000_repeated_x512",
+      "oracle_sha256": "de0aa4121ac38c84f815b3af8b816d75c26afc75d495e39be51ad6fa96bf2174",
+      "parameters": {
+        "arguments": [
+          "20",
+          "20"
+        ],
+        "calibration": "bounded per-role median duration; common maximum",
+        "duration_target_seconds": 0.25,
+        "function": "j",
+        "iterations": 512,
+        "mode": "repeated",
+        "scale": 1000
+      },
+      "program_sha256": "d1d24e4f9f8f7df8743e6cdd440cbe020bab52317e3439e430341f4a4e894671"
+    },
+    {
+      "group": "math_j_order_dominates",
+      "name": "math_order_dominates_j-order-dominates_scale20_one_shot_x1",
+      "oracle_sha256": "9c89f42e02c80a58a4ed70999a3b32ba5303fb2080b023269eb118a9e9e60452",
+      "parameters": {
+        "arguments": [
+          "100",
+          "1"
+        ],
+        "calibration": "fixed count; not calibrated",
+        "function": "j",
+        "iterations": 1,
+        "mode": "one_shot",
+        "scale": 20
+      },
+      "program_sha256": "4ac27ad76d4753d6ca9a6276ad932378718ca61ac9ccba23a78821c47a151ca5"
+    },
+    {
+      "group": "math_j_order_dominates",
+      "name": "math_order_dominates_j-order-dominates_scale20_repeated_x262144",
+      "oracle_sha256": "9c89f42e02c80a58a4ed70999a3b32ba5303fb2080b023269eb118a9e9e60452",
+      "parameters": {
+        "arguments": [
+          "100",
+          "1"
+        ],
+        "calibration": "bounded per-role median duration; common maximum",
+        "duration_target_seconds": 0.25,
+        "function": "j",
+        "iterations": 262144,
+        "mode": "repeated",
+        "scale": 20
+      },
+      "program_sha256": "fff773c1439cae4ad22a45731d6d09175dd20f8496f587f4fcadeeae6c5bad70"
+    },
+    {
+      "group": "math_j_order_dominates",
+      "name": "math_order_dominates_j-order-dominates_scale100_one_shot_x1",
+      "oracle_sha256": "36354de2d6c40953e0a8656cfdd511dead1aec7c45102976f5af10e047029a4d",
+      "parameters": {
+        "arguments": [
+          "100",
+          "1"
+        ],
+        "calibration": "fixed count; not calibrated",
+        "function": "j",
+        "iterations": 1,
+        "mode": "one_shot",
+        "scale": 100
+      },
+      "program_sha256": "f0be4a15daf41009ec92454bc333187d5b4cc935ae3a3834c730fd2ee272157c"
+    },
+    {
+      "group": "math_j_order_dominates",
+      "name": "math_order_dominates_j-order-dominates_scale100_repeated_x131072",
+      "oracle_sha256": "36354de2d6c40953e0a8656cfdd511dead1aec7c45102976f5af10e047029a4d",
+      "parameters": {
+        "arguments": [
+          "100",
+          "1"
+        ],
+        "calibration": "bounded per-role median duration; common maximum",
+        "duration_target_seconds": 0.25,
+        "function": "j",
+        "iterations": 131072,
+        "mode": "repeated",
+        "scale": 100
+      },
+      "program_sha256": "5eac5b779df6aa7acc2d09217fdc9f57f2ed0a565652eb405bc273bee57b2f96"
+    },
+    {
+      "group": "math_j_order_dominates",
+      "name": "math_order_dominates_j-order-dominates_scale1000_one_shot_x1",
+      "oracle_sha256": "ab9e9533638fc88f669d8136af01c0ae94a688057ddeb064f12106e41138399d",
+      "parameters": {
+        "arguments": [
+          "100",
+          "1"
+        ],
+        "calibration": "fixed count; not calibrated",
+        "function": "j",
+        "iterations": 1,
+        "mode": "one_shot",
+        "scale": 1000
+      },
+      "program_sha256": "147495055782bfa17165fd32e452d1bffe28b52468893b88902fad766382d92b"
+    },
+    {
+      "group": "math_j_order_dominates",
+      "name": "math_order_dominates_j-order-dominates_scale1000_repeated_x1024",
+      "oracle_sha256": "ab9e9533638fc88f669d8136af01c0ae94a688057ddeb064f12106e41138399d",
+      "parameters": {
+        "arguments": [
+          "100",
+          "1"
+        ],
+        "calibration": "bounded per-role median duration; common maximum",
+        "duration_target_seconds": 0.25,
+        "function": "j",
+        "iterations": 1024,
+        "mode": "repeated",
+        "scale": 1000
+      },
+      "program_sha256": "14c74225a16673e0561c16ec79398e3084033442627ad128893890a871040a6e"
+    },
+    {
+      "group": "math_j_argument_dominates",
+      "name": "math_argument_dominates_j-argument-dominates_scale20_one_shot_x1",
+      "oracle_sha256": "d53a35a44c95a9fc18934797682e49082080c595f01c2568dda9217236b2f5ef",
+      "parameters": {
+        "arguments": [
+          "0",
+          "100"
+        ],
+        "calibration": "fixed count; not calibrated",
+        "function": "j",
+        "iterations": 1,
+        "mode": "one_shot",
+        "scale": 20
+      },
+      "program_sha256": "e654d9c513b060fd86214f170c877b56711167510b46f8efbeb0d2d5f5710358"
+    },
+    {
+      "group": "math_j_argument_dominates",
+      "name": "math_argument_dominates_j-argument-dominates_scale20_repeated_x2048",
+      "oracle_sha256": "d53a35a44c95a9fc18934797682e49082080c595f01c2568dda9217236b2f5ef",
+      "parameters": {
+        "arguments": [
+          "0",
+          "100"
+        ],
+        "calibration": "bounded per-role median duration; common maximum",
+        "duration_target_seconds": 0.25,
+        "function": "j",
+        "iterations": 2048,
+        "mode": "repeated",
+        "scale": 20
+      },
+      "program_sha256": "71e7f5b58dbfdc8df04357dbcb96e29613f6f40141ad1b21fe8c3a07bdf9c88d"
+    },
+    {
+      "group": "math_j_argument_dominates",
+      "name": "math_argument_dominates_j-argument-dominates_scale100_one_shot_x1",
+      "oracle_sha256": "3a9e7fef0f074bab3c89749a9f9087938fbbe35448874cf481381390e8367a4d",
+      "parameters": {
+        "arguments": [
+          "0",
+          "100"
+        ],
+        "calibration": "fixed count; not calibrated",
+        "function": "j",
+        "iterations": 1,
+        "mode": "one_shot",
+        "scale": 100
+      },
+      "program_sha256": "75993f907918786782455ef16c1c61de37ac26bc81f7e1d72593f095bcf572c5"
+    },
+    {
+      "group": "math_j_argument_dominates",
+      "name": "math_argument_dominates_j-argument-dominates_scale100_repeated_x2048",
+      "oracle_sha256": "3a9e7fef0f074bab3c89749a9f9087938fbbe35448874cf481381390e8367a4d",
+      "parameters": {
+        "arguments": [
+          "0",
+          "100"
+        ],
+        "calibration": "bounded per-role median duration; common maximum",
+        "duration_target_seconds": 0.25,
+        "function": "j",
+        "iterations": 2048,
+        "mode": "repeated",
+        "scale": 100
+      },
+      "program_sha256": "5834877afb122ce4d6dee058d3a36785ad3686928a57c34265240d5599509270"
+    },
+    {
+      "group": "math_j_argument_dominates",
+      "name": "math_argument_dominates_j-argument-dominates_scale1000_one_shot_x1",
+      "oracle_sha256": "be84f002e688c60b04991c0caf46deadff260c4aa0fa97168d5d9479d1b497bb",
+      "parameters": {
+        "arguments": [
+          "0",
+          "100"
+        ],
+        "calibration": "fixed count; not calibrated",
+        "function": "j",
+        "iterations": 1,
+        "mode": "one_shot",
+        "scale": 1000
+      },
+      "program_sha256": "171516436109fead3a777d4a997a6226d6ab64810b43785dab4e89c1547c52dc"
+    },
+    {
+      "group": "math_j_argument_dominates",
+      "name": "math_argument_dominates_j-argument-dominates_scale1000_repeated_x256",
+      "oracle_sha256": "be84f002e688c60b04991c0caf46deadff260c4aa0fa97168d5d9479d1b497bb",
+      "parameters": {
+        "arguments": [
+          "0",
+          "100"
+        ],
+        "calibration": "bounded per-role median duration; common maximum",
+        "duration_target_seconds": 0.25,
+        "function": "j",
+        "iterations": 256,
+        "mode": "repeated",
+        "scale": 1000
+      },
+      "program_sha256": "39c38fbedb3ea765ad003ac591aa1930d19783cff1ea71b575c3b89f49b7e809"
+    },
+    {
+      "group": "math_j_near_root",
+      "name": "math_near_root_j-near-root_scale20_one_shot_x1",
+      "oracle_sha256": "6af5d131f6f84d0bacaf21bd3eede8ea800f077f39989dec223068add919451d",
+      "parameters": {
+        "arguments": [
+          "0",
+          "2.4048255576957727686216318793264546431242449091460"
+        ],
+        "calibration": "fixed count; not calibrated",
+        "function": "j",
+        "iterations": 1,
+        "mode": "one_shot",
+        "scale": 20
+      },
+      "program_sha256": "c46528d35e96eb7d14b00658fa547ba63aeac1e30013cde1201ab34ef56c3aad"
+    },
+    {
+      "group": "math_j_near_root",
+      "name": "math_near_root_j-near-root_scale20_repeated_x16384",
+      "oracle_sha256": "6af5d131f6f84d0bacaf21bd3eede8ea800f077f39989dec223068add919451d",
+      "parameters": {
+        "arguments": [
+          "0",
+          "2.4048255576957727686216318793264546431242449091460"
+        ],
+        "calibration": "bounded per-role median duration; common maximum",
+        "duration_target_seconds": 0.25,
+        "function": "j",
+        "iterations": 16384,
+        "mode": "repeated",
+        "scale": 20
+      },
+      "program_sha256": "d3964d65e8d8c9b87a14e20e87c807492e713a7869a7351ffb7976f0a3340032"
+    },
+    {
+      "group": "math_j_near_root",
+      "name": "math_near_root_j-near-root_scale100_one_shot_x1",
+      "oracle_sha256": "eb92058cfd425d3c7a48c434098cb306e944c914b8b2d5dd708e915ddc9e1444",
+      "parameters": {
+        "arguments": [
+          "0",
+          "2.4048255576957727686216318793264546431242449091460"
+        ],
+        "calibration": "fixed count; not calibrated",
+        "function": "j",
+        "iterations": 1,
+        "mode": "one_shot",
+        "scale": 100
+      },
+      "program_sha256": "a01eea21299853c2cc3c3c3b68d97b9876698f9aa5cfadbe15f19103873a6e27"
+    },
+    {
+      "group": "math_j_near_root",
+      "name": "math_near_root_j-near-root_scale100_repeated_x4096",
+      "oracle_sha256": "eb92058cfd425d3c7a48c434098cb306e944c914b8b2d5dd708e915ddc9e1444",
+      "parameters": {
+        "arguments": [
+          "0",
+          "2.4048255576957727686216318793264546431242449091460"
+        ],
+        "calibration": "bounded per-role median duration; common maximum",
+        "duration_target_seconds": 0.25,
+        "function": "j",
+        "iterations": 4096,
+        "mode": "repeated",
+        "scale": 100
+      },
+      "program_sha256": "ae1418f78cb583349e50b1263c08e5edfe3490f54347a7c5458afffd68860f43"
+    },
+    {
+      "group": "math_j_near_root",
+      "name": "math_near_root_j-near-root_scale1000_one_shot_x1",
+      "oracle_sha256": "72318669b62f136b66471f9fe978600118a0cbd3bd14c6796f1778f5ce535be6",
+      "parameters": {
+        "arguments": [
+          "0",
+          "2.4048255576957727686216318793264546431242449091460"
+        ],
+        "calibration": "fixed count; not calibrated",
+        "function": "j",
+        "iterations": 1,
+        "mode": "one_shot",
+        "scale": 1000
+      },
+      "program_sha256": "c02b6ccd115a24f420f51c8ba0bcf58dd3516bda17a9f22eae8a121f713827e1"
+    },
+    {
+      "group": "math_j_near_root",
+      "name": "math_near_root_j-near-root_scale1000_repeated_x512",
+      "oracle_sha256": "72318669b62f136b66471f9fe978600118a0cbd3bd14c6796f1778f5ce535be6",
+      "parameters": {
+        "arguments": [
+          "0",
+          "2.4048255576957727686216318793264546431242449091460"
+        ],
+        "calibration": "bounded per-role median duration; common maximum",
+        "duration_target_seconds": 0.25,
+        "function": "j",
+        "iterations": 512,
+        "mode": "repeated",
+        "scale": 1000
+      },
+      "program_sha256": "6bf61549d4e02c6807214b332463007d2042a75abcd69e69a408ab063586f703"
+    }
+  ],
+  "corpus_seed": 197200,
+  "environment": {
+    "BC_ENV_ARGS": "",
+    "BC_LINE_LENGTH": "70",
+    "LANG": "C",
+    "LC_ALL": "C"
+  },
+  "harness_sha256": "eb25981ccd8cc9dd374be9518c3dc1e2ff9b055b5611df2bdd14b8ef1f53f28a",
+  "implementations": [
+    {
+      "argv": [
+        "/home/runner/work/gd-posix-apps/gd-posix-apps/bc-integer-results/howard/howard-source/bin/bc",
+        "-l"
+      ],
+      "binary_sha256": "00abfbe224b0e843f53ae648dff9f39f11c154e3ed7585c8a0fcca36ae3c2ff7",
+      "complete_provenance": true,
+      "metadata": {
+        "binary_sha256": "00abfbe224b0e843f53ae648dff9f39f11c154e3ed7585c8a0fcca36ae3c2ff7",
+        "compiler": {
+          "argv0": "/usr/bin/x86_64-linux-gnu-gcc-13",
+          "sha256": "1b99826121ae6682a634e5efe09bd3e3df58ce58e0b28f849114ab5b89139c26",
+          "version": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0\nCopyright (C) 2023 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
+        },
+        "configuration": [
+          "--opt=3",
+          "--disable-nls",
+          "--disable-history",
+          "--disable-dc",
+          "--disable-man-pages",
+          "--disable-generated-tests",
+          "--disable-strip"
+        ],
+        "flags": {
+          "CC": "/usr/bin/x86_64-linux-gnu-gcc-13",
+          "CFLAGS": "-DBC_ENABLED=1 -DDC_ENABLED=0 -I./include/ -DBUILD_TYPE=HN  -DEXECPREFIX= -DMAINEXEC=bc   -DBC_NUM_KARATSUBA_LEN=32 -DBC_ENABLE_NLS=0 -DBC_ENABLE_EXTRA_MATH=1 -DBC_ENABLE_HISTORY=0 -DBC_ENABLE_LIBRARY=0 -DBC_ENABLE_MEMCHECK=0 -DBC_ENABLE_AFL=0 -DBC_ENABLE_OSSFUZZ=0 -DBC_DEFAULT_BANNER=0 -DBC_DEFAULT_SIGINT_RESET=1 -DBC_DEFAULT_TTY_MODE=1 -DBC_DEFAULT_PROMPT=1 -DBC_DEFAULT_EXPR_EXIT=1 -DBC_DEFAULT_DIGIT_CLAMP=0 -DDC_DEFAULT_SIGINT_RESET=1 -DDC_DEFAULT_TTY_MODE=0 -DDC_DEFAULT_PROMPT=0 -DDC_DEFAULT_EXPR_EXIT=1 -DDC_DEFAULT_DIGIT_CLAMP=0 -DNDEBUG  -D_POSIX_C_SOURCE=200809L -D_XOPEN_SOURCE=700 -O3 -O3 -DNDEBUG -std=gnu17 -DBC_ENABLE_EDITLINE=0 -DBC_ENABLE_READLINE=0",
+          "CPPFLAGS": "-DBC_ENABLED=1 -DDC_ENABLED=0 -I./include/ -DBUILD_TYPE=HN  -DEXECPREFIX= -DMAINEXEC=bc   -DBC_NUM_KARATSUBA_LEN=32 -DBC_ENABLE_NLS=0 -DBC_ENABLE_EXTRA_MATH=1 -DBC_ENABLE_HISTORY=0 -DBC_ENABLE_LIBRARY=0 -DBC_ENABLE_MEMCHECK=0 -DBC_ENABLE_AFL=0 -DBC_ENABLE_OSSFUZZ=0",
+          "HOSTCC": "/usr/bin/x86_64-linux-gnu-gcc-13",
+          "HOSTCFLAGS": "-O3 -DNDEBUG -std=gnu17",
+          "LDFLAGS": ""
+        },
+        "instrumented": false,
+        "library": {
+          "kind": "pinned standard library",
+          "source_revision": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8"
+        },
+        "source_revision": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8",
+        "source_url": "https://github.com/gavinhoward/bc.git",
+        "tuning": {
+          "BC_NUM_KARATSUBA_LEN": 32
+        },
+        "version": "bc 7.0.3\nCopyright (c) 2018-2024 Gavin D. Howard and contributors\nReport bugs at: https://git.gavinhoward.com/gavin/bc\n\nThis is free software with ABSOLUTELY NO WARRANTY."
+      },
+      "name": "howard-standard",
+      "role": "reference"
+    },
+    {
+      "argv": [
+        "/home/runner/work/gd-posix-apps/gd-posix-apps/bc-integer-results/gd/build/src/bc/bc",
+        "-l"
+      ],
+      "binary_sha256": "b803087c4bcd8a26146465edbe6f25ee80ec288341d9f87819920042751f4834",
+      "complete_provenance": true,
+      "metadata": {
+        "binary_sha256": "b803087c4bcd8a26146465edbe6f25ee80ec288341d9f87819920042751f4834",
+        "compiler": {
+          "C": {
+            "argv0": "/usr/bin/cc",
+            "realpath": "/usr/bin/x86_64-linux-gnu-gcc-13",
+            "sha256": "1b99826121ae6682a634e5efe09bd3e3df58ce58e0b28f849114ab5b89139c26",
+            "version": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0\nCopyright (C) 2023 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
+          },
+          "CXX": {
+            "argv0": "/usr/bin/c++",
+            "realpath": "/usr/bin/x86_64-linux-gnu-g++-13",
+            "sha256": "1353e9bdd29a7295c7226bf6c63abccce056d8cac31f112e5cdbecc3f28c2769",
+            "version": "c++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0\nCopyright (C) 2023 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
+          }
+        },
+        "configuration": {
+          "array_storage": "hybrid",
+          "build_type": "Release",
+          "diagnostic_profile": false,
+          "extensions": "ON",
+          "generator": "Ninja",
+          "integer_functions_policy": {
+            "enabled": true,
+            "mode": "ON",
+            "status": "verified",
+            "verification": {
+              "kind": "compile-commands",
+              "sha256": "b1a4e6b841193b2dae8ff18679f23c2b0161414158c45c750745d3d54e911a8f",
+              "translation_units": [
+                "integer-function.cc",
+                "integer-number.cc",
+                "vm.cc"
+              ]
+            }
+          },
+          "integer_isolation_policy": {
+            "isolated": true,
+            "scope": "project-managed IPO; explicit enabling flags on the engine are rejected",
+            "status": "verified",
+            "target": "bc-integer-engine",
+            "verification": {
+              "kind": "compile-commands",
+              "report_sha256": "50ebc99168d32cd9aa15cc77b6cc719b6f980a23794d3420e6b4cfde232825e0",
+              "sha256": "b1a4e6b841193b2dae8ff18679f23c2b0161414158c45c750745d3d54e911a8f"
+            }
+          },
+          "ipo_policy": {
+            "automatic_ipo": true,
+            "mode": "AUTO",
+            "report_sha256": "8a3b8d2dfbb3588838be94b965f679dfe5362a2b530f4771620fecf57d2787b9",
+            "schema": 1,
+            "status": "recorded"
+          },
+          "multiply_split_point": 126,
+          "prepared_divisors_policy": {
+            "enabled": false,
+            "mode": "AUTO",
+            "status": "recorded",
+            "verification": {
+              "kind": "compile-commands",
+              "sha256": "b1a4e6b841193b2dae8ff18679f23c2b0161414158c45c750745d3d54e911a8f",
+              "translation_units": 2
+            }
+          },
+          "preparsed_library_image_sha256": "d94d523397c41ada7f801b02d3481d6bbed3d3801b52629f0ce4ce693ffc8a96",
+          "threshold_header_sha256": "c5b539c9f87d032bfcb436bb8da8972048d2ed1780a980265b7c3fe0e5e45626"
+        },
+        "flags": {
+          "CMAKE_CXX_FLAGS": "",
+          "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+          "CMAKE_C_FLAGS": "",
+          "CMAKE_C_FLAGS_RELEASE": "-O3 -DNDEBUG",
+          "CMAKE_EXE_LINKER_FLAGS": "",
+          "CMAKE_EXE_LINKER_FLAGS_RELEASE": "",
+          "compile_commands_sha256": "b1a4e6b841193b2dae8ff18679f23c2b0161414158c45c750745d3d54e911a8f"
+        },
+        "instrumented": false,
+        "library": {
+          "image_sha256": "d94d523397c41ada7f801b02d3481d6bbed3d3801b52629f0ce4ce693ffc8a96",
+          "kind": "preparsed image",
+          "source_revision": "2aba8ec2cc1ed23a3806079d2f6dc1caa6cfc27d",
+          "source_sha256": "de8aa164cebbd2c9733dd61d6d59211fa45e16f484e4959ef59134447eb9683b"
+        },
+        "limitations": [
+          "Provision compiler, C/C++ runtime and SDK separately; this is not an OS image",
+          "Compiler defaults and actual commands are recorded, not claimed identical across hosts"
+        ],
+        "source_revision": "2aba8ec2cc1ed23a3806079d2f6dc1caa6cfc27d",
+        "standard_library": {
+          "header_macros": {
+            "_GLIBCXX_RELEASE": "13",
+            "__GLIBCXX__": "20240904",
+            "__GLIBC_MINOR__": "39",
+            "__GLIBC__": "2"
+          },
+          "scope": "standard-library header identity; provision runtime and SDK separately",
+          "status": "recorded"
+        },
+        "version": "gd-posix-apps source 2aba8ec2cc1ed23a3806079d2f6dc1caa6cfc27d"
+      },
+      "name": "gd-portable",
+      "role": "candidate"
+    },
+    {
+      "argv": [
+        "/home/runner/work/gd-posix-apps/gd-posix-apps/bc-integer-results/howard/howard-source/bin/bc",
+        "/home/runner/work/gd-posix-apps/gd-posix-apps/bc-integer-results/gd/source/src/bc/math-library.bc"
+      ],
+      "binary_sha256": "00abfbe224b0e843f53ae648dff9f39f11c154e3ed7585c8a0fcca36ae3c2ff7",
+      "complete_provenance": true,
+      "input_artifacts": [
+        {
+          "archived_as": "declared-inputs/2-0-math-library.bc",
+          "path": "/home/runner/work/gd-posix-apps/gd-posix-apps/bc-integer-results/gd/source/src/bc/math-library.bc",
+          "purpose": "ordinary math library",
+          "realpath": "/home/runner/work/gd-posix-apps/gd-posix-apps/bc-integer-results/gd/source/src/bc/math-library.bc",
+          "sha256": "de8aa164cebbd2c9733dd61d6d59211fa45e16f484e4959ef59134447eb9683b"
+        }
+      ],
+      "metadata": {
+        "binary_sha256": "00abfbe224b0e843f53ae648dff9f39f11c154e3ed7585c8a0fcca36ae3c2ff7",
+        "compiler": {
+          "argv0": "/usr/bin/x86_64-linux-gnu-gcc-13",
+          "sha256": "1b99826121ae6682a634e5efe09bd3e3df58ce58e0b28f849114ab5b89139c26",
+          "version": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0\nCopyright (C) 2023 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
+        },
+        "configuration": [
+          "--opt=3",
+          "--disable-nls",
+          "--disable-history",
+          "--disable-dc",
+          "--disable-man-pages",
+          "--disable-generated-tests",
+          "--disable-strip"
+        ],
+        "flags": {
+          "CC": "/usr/bin/x86_64-linux-gnu-gcc-13",
+          "CFLAGS": "-DBC_ENABLED=1 -DDC_ENABLED=0 -I./include/ -DBUILD_TYPE=HN  -DEXECPREFIX= -DMAINEXEC=bc   -DBC_NUM_KARATSUBA_LEN=32 -DBC_ENABLE_NLS=0 -DBC_ENABLE_EXTRA_MATH=1 -DBC_ENABLE_HISTORY=0 -DBC_ENABLE_LIBRARY=0 -DBC_ENABLE_MEMCHECK=0 -DBC_ENABLE_AFL=0 -DBC_ENABLE_OSSFUZZ=0 -DBC_DEFAULT_BANNER=0 -DBC_DEFAULT_SIGINT_RESET=1 -DBC_DEFAULT_TTY_MODE=1 -DBC_DEFAULT_PROMPT=1 -DBC_DEFAULT_EXPR_EXIT=1 -DBC_DEFAULT_DIGIT_CLAMP=0 -DDC_DEFAULT_SIGINT_RESET=1 -DDC_DEFAULT_TTY_MODE=0 -DDC_DEFAULT_PROMPT=0 -DDC_DEFAULT_EXPR_EXIT=1 -DDC_DEFAULT_DIGIT_CLAMP=0 -DNDEBUG  -D_POSIX_C_SOURCE=200809L -D_XOPEN_SOURCE=700 -O3 -O3 -DNDEBUG -std=gnu17 -DBC_ENABLE_EDITLINE=0 -DBC_ENABLE_READLINE=0",
+          "CPPFLAGS": "-DBC_ENABLED=1 -DDC_ENABLED=0 -I./include/ -DBUILD_TYPE=HN  -DEXECPREFIX= -DMAINEXEC=bc   -DBC_NUM_KARATSUBA_LEN=32 -DBC_ENABLE_NLS=0 -DBC_ENABLE_EXTRA_MATH=1 -DBC_ENABLE_HISTORY=0 -DBC_ENABLE_LIBRARY=0 -DBC_ENABLE_MEMCHECK=0 -DBC_ENABLE_AFL=0 -DBC_ENABLE_OSSFUZZ=0",
+          "HOSTCC": "/usr/bin/x86_64-linux-gnu-gcc-13",
+          "HOSTCFLAGS": "-O3 -DNDEBUG -std=gnu17",
+          "LDFLAGS": ""
+        },
+        "instrumented": false,
+        "library": {
+          "kind": "ordinary source file",
+          "source_revision": "2aba8ec2cc1ed23a3806079d2f6dc1caa6cfc27d",
+          "source_sha256": "de8aa164cebbd2c9733dd61d6d59211fa45e16f484e4959ef59134447eb9683b"
+        },
+        "source_revision": "c8dabac65d39fd527a9264a5e505a99b1d8df3d8",
+        "source_url": "https://github.com/gavinhoward/bc.git",
+        "tuning": {
+          "BC_NUM_KARATSUBA_LEN": 32
+        },
+        "version": "bc 7.0.3\nCopyright (c) 2018-2024 Gavin D. Howard and contributors\nReport bugs at: https://git.gavinhoward.com/gavin/bc\n\nThis is free software with ABSOLUTELY NO WARRANTY."
+      },
+      "name": "howard-portable",
+      "role": "candidate"
+    },
+    {
+      "argv": [
+        "/home/runner/work/gd-posix-apps/gd-posix-apps/bc-integer-results/base/build/src/bc/bc",
+        "-l"
+      ],
+      "binary_sha256": "4fda9ca4039e9064a533373b36fd90a8e344670e4a0eac264cd1ce88e76fe65a",
+      "complete_provenance": true,
+      "metadata": {
+        "binary_sha256": "4fda9ca4039e9064a533373b36fd90a8e344670e4a0eac264cd1ce88e76fe65a",
+        "compiler": {
+          "C": {
+            "argv0": "/usr/bin/cc",
+            "realpath": "/usr/bin/x86_64-linux-gnu-gcc-13",
+            "sha256": "1b99826121ae6682a634e5efe09bd3e3df58ce58e0b28f849114ab5b89139c26",
+            "version": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0\nCopyright (C) 2023 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
+          },
+          "CXX": {
+            "argv0": "/usr/bin/c++",
+            "realpath": "/usr/bin/x86_64-linux-gnu-g++-13",
+            "sha256": "1353e9bdd29a7295c7226bf6c63abccce056d8cac31f112e5cdbecc3f28c2769",
+            "version": "c++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0\nCopyright (C) 2023 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
+          }
+        },
+        "configuration": {
+          "array_storage": "hybrid",
+          "build_type": "Release",
+          "diagnostic_profile": false,
+          "extensions": "ON",
+          "generator": "Ninja",
+          "integer_functions_policy": {
+            "enabled": false,
+            "mode": "OFF",
+            "status": "verified",
+            "verification": {
+              "kind": "compile-commands",
+              "sha256": "14a015265a2f4a019c19c162a681456ebccfda3a3428f18906402e52b27fb5ee",
+              "translation_units": [
+                "vm.cc"
+              ]
+            }
+          },
+          "integer_isolation_policy": {
+            "isolated": false,
+            "scope": "project-managed IPO; explicit enabling flags on the engine are rejected",
+            "status": "verified",
+            "target": "libbc",
+            "verification": {
+              "report_sha256": "d8b1c2ea8a39ec7cec2bb89f9270913eee7f2f712662d726ebc5bb21a80c62b5"
+            }
+          },
+          "ipo_policy": {
+            "automatic_ipo": true,
+            "mode": "AUTO",
+            "report_sha256": "8a3b8d2dfbb3588838be94b965f679dfe5362a2b530f4771620fecf57d2787b9",
+            "schema": 1,
+            "status": "recorded"
+          },
+          "multiply_split_point": 126,
+          "prepared_divisors_policy": {
+            "enabled": false,
+            "mode": "AUTO",
+            "status": "recorded",
+            "verification": {
+              "kind": "compile-commands",
+              "sha256": "14a015265a2f4a019c19c162a681456ebccfda3a3428f18906402e52b27fb5ee",
+              "translation_units": 2
+            }
+          },
+          "preparsed_library_image_sha256": "d94d523397c41ada7f801b02d3481d6bbed3d3801b52629f0ce4ce693ffc8a96",
+          "threshold_header_sha256": "c5b539c9f87d032bfcb436bb8da8972048d2ed1780a980265b7c3fe0e5e45626"
+        },
+        "flags": {
+          "CMAKE_CXX_FLAGS": "",
+          "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+          "CMAKE_C_FLAGS": "",
+          "CMAKE_C_FLAGS_RELEASE": "-O3 -DNDEBUG",
+          "CMAKE_EXE_LINKER_FLAGS": "",
+          "CMAKE_EXE_LINKER_FLAGS_RELEASE": "",
+          "compile_commands_sha256": "14a015265a2f4a019c19c162a681456ebccfda3a3428f18906402e52b27fb5ee"
+        },
+        "instrumented": false,
+        "library": {
+          "image_sha256": "d94d523397c41ada7f801b02d3481d6bbed3d3801b52629f0ce4ce693ffc8a96",
+          "kind": "preparsed image",
+          "source_revision": "2aba8ec2cc1ed23a3806079d2f6dc1caa6cfc27d",
+          "source_sha256": "de8aa164cebbd2c9733dd61d6d59211fa45e16f484e4959ef59134447eb9683b"
+        },
+        "limitations": [
+          "Provision compiler, C/C++ runtime and SDK separately; this is not an OS image",
+          "Compiler defaults and actual commands are recorded, not claimed identical across hosts"
+        ],
+        "source_revision": "2aba8ec2cc1ed23a3806079d2f6dc1caa6cfc27d",
+        "standard_library": {
+          "header_macros": {
+            "_GLIBCXX_RELEASE": "13",
+            "__GLIBCXX__": "20240904",
+            "__GLIBC_MINOR__": "39",
+            "__GLIBC__": "2"
+          },
+          "scope": "standard-library header identity; provision runtime and SDK separately",
+          "status": "recorded"
+        },
+        "version": "gd-posix-apps source 2aba8ec2cc1ed23a3806079d2f6dc1caa6cfc27d"
+      },
+      "name": "gd-base",
+      "role": "candidate"
+    }
+  ],
+  "oracle_checker_sha256": "addc5373f2b61b6a237b0d7b9d320a184bd10ad87a9149f6b26eb3fccb0ae37e",
+  "pending_classes": [],
+  "platform": {
+    "machine": "x86_64",
+    "python": "3.12.3",
+    "release": "7.0.0-1017-azure",
+    "system": "Linux"
+  },
+  "preset": "full",
+  "reference": "howard-standard",
+  "reference_fixture_sha256": "7f9c0a40673d6d38ef4d595e35594a9ccc5bc4f355038c7787e399260943bb37",
+  "replayed_corpus": {
+    "original_corpus_seed": 197200,
+    "original_preset": "full",
+    "original_reference_fixture_sha256": "7f9c0a40673d6d38ef4d595e35594a9ccc5bc4f355038c7787e399260943bb37",
+    "scope": "frozen program/oracle replay; no new duration calibration",
+    "source_directory": "/home/runner/work/gd-posix-apps/gd-posix-apps/bc-integer-results/evidence/full-prepared",
+    "source_manifest_sha256": "b8fa84f01832359f395724e8745258c3f1d139099551fce30b62674c9725d134"
+  },
+  "samples": 15,
+  "schema": 1,
+  "seed": 1972170,
+  "started_utc": "2026-11-05T23:06:24.628132+00:00",
+  "suite": "math",
+  "timeout": 600.0,
+  "warmups": 3
+}
