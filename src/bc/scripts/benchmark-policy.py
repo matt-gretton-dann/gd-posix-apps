@@ -47,7 +47,8 @@ ACCEPTANCE_POLICY = '2026-11-06-competitive-margin-v1'
 
 
 def regression_acceptance(first, competitive, control, system, second=None,
-                          substantive=True, measured=True, required_pairs=3):
+                          substantive=True, measured=True, competitive_measured=True,
+                          required_pairs=3):
     """Assess one row only; worthwhile gains, resources and merge need review.
 
     Collectors establish matched, output-checked roles. Statistics must retain
@@ -77,7 +78,7 @@ def regression_acceptance(first, competitive, control, system, second=None,
         return 'inconclusive'
     if all(interval[1] <= cap for interval in intervals):
         return 'within regression limit'
-    margin = qualified(competitive)
+    margin = qualified(competitive) if competitive_measured is True else None
     if margin is not None and margin[1] <= .90:
         return 'allowed with Howard margin'
     if len(intervals) == 2 and all(interval[0] > cap for interval in intervals):
@@ -93,14 +94,15 @@ def acceptance_review(rows, system, kind, required_pairs):
     for row in rows:
         if kind == 'math':
             duration = row.get('duration_target_met') or {}
-            measured = all(duration.get(role) is True
-                           for role in ('gd-portable', 'gd-base', 'howard-standard'))
+            measured = all(duration.get(role) is True for role in ('gd-portable', 'gd-base'))
             arguments = dict(first=row.get('candidate_over_base'),
                              second=row.get('regression_confirmation'),
                              competitive=row.get('candidate_over_standard'),
                              control=row.get('aa_status'),
                              substantive=(row.get('parameters') or {}).get('mode') == 'repeated',
-                             measured=measured, required_pairs=required_pairs)
+                             measured=measured,
+                             competitive_measured=duration.get('howard-standard') is True,
+                             required_pairs=required_pairs)
         else:
             raw = row.get('status', '')
             arguments = dict(first=row.get('ratio'), second=row.get('confirmation'),

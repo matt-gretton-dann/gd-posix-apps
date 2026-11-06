@@ -13,11 +13,15 @@ must supply the evidence; do not combine ratios from different machines.
 
 The exception requires passing A/A controls, valid finite ordered intervals,
 the declared paired sample counts and all required measurement-duration checks.
-Unavailable or biased controls cannot be waived. Startup and one-shot latency
-retain their separate requirements. For native math, the competitive comparator
+Unavailable or biased controls cannot be waived. Startup retains its requirement
+of no statistically significant regression; uncalibrated startup remains
+unqualified. One-shot latency is recorded separately and cannot use this
+exception. For native math, the competitive comparator
 is the existing primary `howard-standard` role; never select whichever Howard
-library happens to give a favorable ratio. Required GD candidate/base and primary
-Howard durations must pass. Portable-library controls remain separately recorded.
+library happens to give a favorable ratio. GD candidate/base duration checks
+always apply. The primary Howard duration must also pass when using the
+exception; a short Howard role does not invalidate an otherwise qualified
+ordinary regression-cap pass. Portable-library controls remain separately recorded.
 
 Otherwise the original caps apply. A missing competitive interval supplies no
 exception. An allowance on one row does not cancel a loss or inconclusive result

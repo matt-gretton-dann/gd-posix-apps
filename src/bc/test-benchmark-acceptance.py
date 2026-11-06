@@ -91,7 +91,7 @@ class Acceptance(unittest.TestCase):
             self.assertEqual(row, original)
         math_row['duration_target_met']['howard-standard'] = False
         result = POLICY.acceptance_review([math_row], 'Linux', 'math', 9)
-        self.assertEqual(result['results'][0]['acceptance'], 'inconclusive')
+        self.assertEqual(result['results'][0]['acceptance'], 'exceeds regression limit')
         math_row['duration_target_met']['howard-standard'] = True
         math_row['candidate_over_standard'] = ratio(.95, 1.1)
         math_row['candidate_over_portable'] = ratio(.1, .2)
