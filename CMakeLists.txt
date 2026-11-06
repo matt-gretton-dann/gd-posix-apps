@@ -92,7 +92,7 @@ if(BUILD_TESTING)
     list(PREPEND CMAKE_MODULE_PATH "${Catch2_SOURCE_DIR}/contrib")
     set(RUN_UNIT_TESTS ON)
   else()
-    find_packacge(Catch2 2.13.1)
+    find_package(Catch2 2.13.1)
     if(NOT Catch2_FOUND)
       message(WARNING "Unable to find Catch2 - unit tests will be disabled")
       set(RUN_UNIT_TESTS OFF)
@@ -106,6 +106,17 @@ endif()
 
 if(RUN_UNIT_TESTS)
   include(Catch)
+endif()
+
+if(RUN_INTEGRATION_TESTS)
+  # Fetched Catch2 sources are now known, allowing a real installed-package
+  # check as well as the missing-package fallback without any downloads.
+  add_test(NAME build/offline-configure
+           COMMAND "${Python_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/cmake/tests/test-offline-configure.py"
+                   --cmake "${CMAKE_COMMAND}" --ctest "${CMAKE_CTEST_COMMAND}"
+                   --source "${CMAKE_SOURCE_DIR}" --generator "${CMAKE_GENERATOR}"
+                   --catch-source "${Catch2_SOURCE_DIR}")
+  set_tests_properties(build/offline-configure PROPERTIES TIMEOUT 240)
 endif()
 
 set(CMAKE_C_STANDAD 11)
