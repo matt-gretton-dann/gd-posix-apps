@@ -91,8 +91,11 @@ TEST_CASE("Sparse high writes do not materialize their index range",
   {
     GD::Bc::ArrayStorage values;
     GD::Bc::ArrayIndex const high = GD::Bc::Number::base_ - 1;
+    // Some standard libraries allocate an empty-tree sentinel at construction.
+    // Attribute only allocations during the lookup to this read-only operation.
+    auto const before_lookup = stats().allocation_calls;
     CHECK(values.lookup(high) == nullptr);
-    CHECK(stats().allocation_calls == before.allocation_calls);
+    CHECK(stats().allocation_calls == before_lookup);
     values.insert_or_assign(high, GD::Bc::Number(0));
     CHECK(values.length() == GD::Bc::Number::base_);
     CHECK(values.size() == 1);
