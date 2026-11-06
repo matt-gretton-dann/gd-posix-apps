@@ -122,9 +122,9 @@ termination event under this contraction bound, not the accuracy justification.
 ### Low-scale rational candidate (#639)
 
 The separate candidate evaluates `x*P(z)/Q(z)`, `z=x*x`, with positive
-degree-six integer polynomials. Dividing their coefficients by `Q(0)` gives
-a [6/6] Padé approximation to `atan(sqrt(z))/sqrt(z)`: the exact convolution
-with `sum((-z)^j/(2*j+1))` matches through degree twelve. This is a proposed
+degree-five integer polynomials. Dividing their coefficients by `Q(0)` gives
+a [5/5] Padé approximation to `atan(sqrt(z))/sqrt(z)`: the exact convolution
+with `sum((-z)^j/(2*j+1))` matches through degree ten. This candidate uses the
 ordinary-source kernel for entry scales through 20; it does not replace the
 higher-scale series, public function binding, reductions or final rounding.
 
@@ -133,7 +133,7 @@ steps at least halve an argument at most one, so the conservative reconstruction
 bound is 16. Put `h=1/81` and `q_j=Q_j/Q_0`. Because `Q(z)/Q_0>=1`, the absolute
 approximation error after reconstruction is at most
 
-`(16/9)*h^13/(1-h)*sum(q_j/(2*(13-j)+1), j=0..6) < 1.284e-25`.
+`(16/9)*h^11/(1-h)*sum(q_j/(2*(11-j)+1), j=0..5) < 6.779e-22`.
 
 All coefficients are positive. Both exact and finite-decimal Horner
 denominators retain their positive constant `Q_0`. Each Horner error is less
@@ -145,13 +145,34 @@ arithmetic bound below `1024u`, before reconstruction. No floating-point
 estimate or sampled agreement establishes these uniform bounds.
 
 Retaining the existing reduction/constant bound conservatively, the candidate's
-pre-rounding budget is `301*(W+3)*u + 16*1024u + 1.284e-25`. For every entry
+pre-rounding budget is `301*(W+3)*u + 16*1024u + 6.779e-22`. For every entry
 scale 0 through 20 and `W>=S+26`, this is below half an output ULP. The expression
 `(W+3)*10^-W` decreases over that domain, so its smallest W is the worst case.
-Exact-Fraction tests check coefficient cancellation, the full interval budget
-and a separate truncating decimal model against alternating-series enclosures.
-Full ordinary-source integration, certified end-to-end cases, fallback/state
-tests, interpreted decision coverage and hosted performance remain required.
+The degree-five bound does not certify the same pre-rounding allowance at
+scale 21, so the cutoff is an accuracy condition rather than a measured
+crossover. Exact-Fraction tests bind the maintained coefficients to their
+cancellation identities and full interval budget, and check a separate
+truncating decimal model against alternating-series enclosures.
+
+Local validation passes all 25 math CLI tests, including the maintained source
+under pinned Howard 7.0.3. The new 1,008-case reference covers every entry scale
+through 21, both signs, reduction boundaries, caller bases, input snapshots and
+restored state. Generated-image, extensions-OFF and source-only configurations
+pass their math contracts. The interpreted decision fixture certifies 617
+results: 197 observed outcomes, nine additional modeled outcomes and two
+infeasible outcomes account for all 208. This is not compiler MC/DC.
+
+[Local profile diagnostics](bc-639-rational-atan/local-profile-diagnostics.json)
+retain the exact programs, source/fixture hashes and counters. Apple Clang
+Release profile builds use the same generated-image configuration. For 32
+scale-20 `a(1.125)` calls, instructions decrease from 27,509 to 10,837, division
+requests from 832 to 224 and allocation calls from 3,531 to 1,497. Tracked peak
+bytes increase from 97,494 to 125,046: the larger definition has a storage cost.
+The unit-argument instruction count is unchanged; 32 scale-100 fallback calls
+execute 320 extra instructions. Every tracked allocation category returns to
+zero live bytes. These diagnostic counters are not elapsed benchmarks. Native
+full/holdout qualification, cold-loading costs and final-main integration
+remain required before performance acceptance.
 
 ## Exponential
 

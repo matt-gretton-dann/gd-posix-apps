@@ -15,12 +15,12 @@
 /* Single-digit constants keep initialization independent of the caller's base. */
 scale=2*A
 
-/* Arctangent: reciprocal and half-angle reduction, alternating series. */
+/* Arctangent: reciprocal and half-angle reduction, bounded rational or series. */
 define a(x) {
   auto b,i,k,n,p,q,r,s,t,u,v,w,y;
   /* b/s save base/scale; w is precision; n/v are sign/reciprocal flags.
      k reconstructs half angles; p is pi/2; y is the near-one correction.
-     q/t/u are ratio, power and term. */
+     q/t/u hold the squared ratio and rational polynomials, or power/term. */
   b=ibase
   ibase=A
   s=scale
@@ -80,15 +80,36 @@ define a(x) {
     x=x/(1+sqrt(1+x*x))
     k*=2
   }
-  q= -x*x
-  t=x
-  r=x
-  i=3
-  while (t!=0) {
-    t=t*q
-    u=t/i
-    r+=u
-    i+=2
+  /* For entry scales through 20, |x|<=1/9 admits this certified [5/5]
+     approximation. Positive coefficients keep the denominator bounded
+     away from zero. Higher scales retain the convergent generic series. */
+  if (s<=20) {
+    q=x*x
+    t=327680
+    t=t*q+19225635
+    t=t*q+175855680
+    t=t*q+552473922
+    t=t*q+698377680
+    t=t*q+305540235
+    u=2401245
+    u=u*q+52026975
+    u=u*q+312161850
+    u=u*q+758107350
+    u=u*q+800224425
+    u=u*q+305540235
+    r=x*t/u
+  }
+  if (s>20) {
+    q= -x*x
+    t=x
+    r=x
+    i=3
+    while (t!=0) {
+      t=t*q
+      u=t/i
+      r+=u
+      i+=2
+    }
   }
   r=r*k+y
   if (v==1) r=p-r

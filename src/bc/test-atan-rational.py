@@ -5,14 +5,16 @@ This is test-side algebra and a fixed-decimal arithmetic model, not a runtime
 oracle dependency. The alternating series supplies independent enclosures.
 """
 from fractions import Fraction as F
+from pathlib import Path
+import re
 import unittest
 
 
 # Ascending coefficients. Their common scale cancels in P(z)/Q(z).
-P = (58561878375, 163192434405, 169269290190, 80191217106,
-     16979477515, 1296036105, 15728640)
-Q = (58561878375, 182713060530, 218461268025, 124835010300,
-     34493884425, 4058104050, 135270135)
+P = (305540235, 698377680, 552473922, 175855680, 19225635, 327680)
+Q = (305540235, 800224425, 758107350, 312161850, 52026975, 2401245)
+DEGREE = len(P) - 1
+ORDER = 2 * DEGREE + 1
 H = F(1, 81)
 RECONSTRUCTION = 16
 
@@ -43,11 +45,11 @@ def decimal_kernel(value, places):
 
 
 def approximation_bound():
-    # Q(z)*sum((-z)^k/(2*k+1))-P(z) vanishes through degree 12.
+    # Q(z)*sum((-z)^k/(2*k+1))-P(z) vanishes through degree 2*DEGREE.
     # Bound every remaining coefficient convolution by a geometric tail.
     normalized = [F(q, Q[0]) for q in Q]
-    return (F(RECONSTRUCTION, 9) * H ** 13 / (1 - H) *
-            sum(normalized[j] / (2 * (13 - j) + 1) for j in range(7)))
+    return (F(RECONSTRUCTION, 9) * H ** ORDER / (1 - H) *
+            sum(normalized[j] / (2 * (ORDER - j) + 1) for j in range(DEGREE + 1)))
 
 
 def arithmetic_coefficient():
@@ -56,8 +58,8 @@ def arithmetic_coefficient():
     pn = [F(p, Q[0]) for p in P]
     qn = [F(q, Q[0]) for q in Q]
     pmax = sum(pn)
-    pd = sum(i * pn[i] for i in range(1, 7))
-    qd = sum(i * qn[i] for i in range(1, 7))
+    pd = sum(i * pn[i] for i in range(1, DEGREE + 1))
+    qd = sum(i * qn[i] for i in range(1, DEGREE + 1))
     # Squaring changes z by <u; bound the derivative of P/Q on [0,H]
     # using the larger positive coefficient sums at z=1.
     argument = (pd + pmax * qd) / 9
@@ -69,17 +71,30 @@ def arithmetic_coefficient():
 
 
 class RationalAtan(unittest.TestCase):
-    def test_coefficients_match_the_independent_series_through_degree_twelve(self):
+    def test_maintained_source_coefficients_are_bound_to_the_proof(self):
+        source = (Path(__file__).resolve().parent / 'math-library.bc').read_text(encoding='utf-8')
+        atan = source.split('define a(x) {', 1)[1].split('define e(x)', 1)[0]
+        branch = re.search(r'if \(s<=20\) \{\n(.*?)\n  \}', atan, re.DOTALL)
+        self.assertIsNotNone(branch, 'the proof admits only entry scales through 20')
+        for variable, coefficients in (('t', P), ('u', Q)):
+            initial = re.findall(r'(?m)^\s*' + variable + r'=(\d+)$', branch.group(1))
+            updates = re.findall(r'(?m)^\s*' + variable + '=' + variable +
+                                 r'\*q\+(\d+)$', branch.group(1))
+            self.assertEqual(len(initial), 1)
+            self.assertEqual(tuple(reversed(tuple(map(int, initial + updates)))), coefficients)
+
+    def test_coefficients_match_the_independent_series_through_twice_the_degree(self):
         self.assertEqual(P[0], Q[0])
         self.assertTrue(all(coefficient > 0 for coefficient in P + Q))
-        for power in range(13):
+        for power in range(ORDER):
             residual = sum(F(Q[j] * (-1) ** (power - j), 2 * (power - j) + 1)
-                           for j in range(min(power, 6) + 1))
-            self.assertEqual(residual, P[power] if power < 7 else 0)
+                           for j in range(min(power, DEGREE) + 1))
+            self.assertEqual(residual, P[power] if power <= DEGREE else 0)
 
     def test_whole_interval_approximation_and_decimal_budget(self):
-        approximation = approximation_bound()
-        self.assertLess(approximation, F(1, 65536 * 10 ** 20))
+        approximation = F(6779, 10 ** 25)
+        self.assertLess(approximation_bound(), approximation)
+        self.assertLess(approximation, F(68, 1000 * 10 ** 20))
         self.assertLess(arithmetic_coefficient(), 1024)
         for scale in range(21):
             # W>=S+26. (W+3)*10^-W decreases on this domain, so the
