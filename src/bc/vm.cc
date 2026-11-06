@@ -25,6 +25,7 @@
 #include "verification.hh"
 
 #if defined(GD_BC_INTEGER_FUNCTIONS)
+#  include "integer-call-result.hh"
 #  include "integer-call.hh"
 #  include "integer-function.hh"
 // Keep speculative Number temporaries out of the ordinary call frame where
@@ -435,8 +436,10 @@ struct VMState
   auto call(Letter func, Location const& loc, Number const* argument = nullptr) -> Number
   {
     GD_BC_PROFILE_EVENT(Profile::Event::function_calls, 1);
-    return dispatch_integer_call(&integer_calls_->at(static_cast<unsigned>(func)), this, func, loc,
-                                 argument);
+    auto const* entry = &integer_calls_->at(static_cast<unsigned>(func));
+    if (!entry->function)
+      return call_generic(func, loc, argument);
+    return call_speculative(entry, func, loc, argument);
   }
 #  else
   auto call(Letter func, Location const& loc, Number const* argument = nullptr) -> Number;
@@ -447,8 +450,10 @@ struct VMState
   auto call(Letter func, Location const& loc) -> Number
   {
     GD_BC_PROFILE_EVENT(Profile::Event::function_calls, 1);
-    return dispatch_integer_call(&integer_calls_->at(static_cast<unsigned>(func)), this, func, loc,
-                                 nullptr);
+    auto const* entry = &integer_calls_->at(static_cast<unsigned>(func));
+    if (!entry->function)
+      return call_generic(func, loc, nullptr);
+    return call_speculative(entry, func, loc, nullptr);
   }
 #  else
   auto call(Letter func, Location const& loc) -> Number;
@@ -630,15 +635,12 @@ private:
   }
 #endif
 #if defined(GD_BC_INTEGER_FUNCTIONS)
-  static auto generic_call_entry(IntegerCallEntry const* entry, void* state, Letter func,
-                                 Location const& loc, Number const* argument) -> Number;
-  static auto speculative_call_entry(IntegerCallEntry const* entry, void* state, Letter func,
-                                     Location const& loc, Number const* argument) -> Number;
-  inline static constexpr auto generic_calls_ = [] {
-    IntegerCallEntries entries{};
-    entries.fill({generic_call_entry});
-    return entries;
-  }();
+  GD_BC_INTEGER_BOUNDARY_NOINLINE auto call_speculative(IntegerCallEntry const* entry, Letter func,
+                                                        Location const& loc, Number const* argument)
+    -> Number;
+  static void speculative_call_entry(IntegerCallEntry const* entry, void* state, Letter func,
+                                     Location const& loc, void const* argument, void* result);
+  inline static constexpr IntegerCallEntries generic_calls_{};
   inline static constexpr auto speculative_calls_ = [] {
     IntegerCallEntries entries{};
     entries.fill({speculative_call_entry});
@@ -1167,7 +1169,7 @@ auto GD::Bc::Details::VMState::try_integer_call(FunctionDefinition& def, Letter 
     plan.code = plan_integer_function(std::get<0>(def).instructions_, std::get<1>(def), func);
     plan.attempted = true;
     if (!plan.code)
-      integer->calls[static_cast<unsigned>(func)] = {generic_call_entry};
+      integer->calls[static_cast<unsigned>(func)] = {};
   }
   if (!plan.code)
     return false;
@@ -1208,26 +1210,30 @@ auto GD::Bc::Details::VMState::take_integer_result() noexcept -> GD::Bc::Number
 #endif
 
 #if defined(GD_BC_INTEGER_FUNCTIONS)
-auto GD::Bc::Details::VMState::generic_call_entry(IntegerCallEntry const* entry, void* state,
-                                                  Letter func, Location const& loc,
-                                                  Number const* argument) -> Number
+auto GD::Bc::Details::VMState::call_speculative(IntegerCallEntry const* entry, Letter func,
+                                                Location const& loc, Number const* argument)
+  -> Number
 {
-  (void)entry;
-  return static_cast<VMState*>(state)->call_generic(func, loc, argument);
+  IntegerCallResult result;
+  dispatch_integer_call(entry, this, func, loc, argument, &result);
+  return result.take();
 }
 
-auto GD::Bc::Details::VMState::speculative_call_entry(IntegerCallEntry const* entry, void* state,
+void GD::Bc::Details::VMState::speculative_call_entry(IntegerCallEntry const* entry, void* state,
                                                       Letter func, Location const& loc,
-                                                      Number const* argument) -> Number
+                                                      void const* argument, void* result)
 {
   (void)entry;
   auto& vm = *static_cast<VMState*>(state);
+  auto& output = *static_cast<IntegerCallResult*>(result);
+  auto const* incoming = static_cast<Number const*>(argument);
+  auto generic = [&] { output.construct([&] { return vm.call_generic(func, loc, incoming); }); };
   auto& definition = vm.functions_.at(static_cast<unsigned>(func));
-  // The generic entry owns undefined/deferred lookup and its diagnostics.
-  // A newly decoded definition becomes eligible for later warmup calls.
-  if (!definition || vm.param_marks_.empty())
-    return vm.call_generic(func, loc, argument);
-
+  // Undefined and deferred definitions retain the generic lookup/diagnostics.
+  if (!definition || vm.param_marks_.empty()) {
+    generic();
+    return;
+  }
   struct RestoreIntegerFallback
   {
     VMState& vm;
@@ -1240,15 +1246,16 @@ auto GD::Bc::Details::VMState::speculative_call_entry(IntegerCallEntry const* en
       }
     }
   } restore{vm};
-  if (vm.try_integer_call(*definition, func, argument, restore.state)) {
+  if (vm.try_integer_call(*definition, func, incoming, restore.state)) {
     auto const mark = vm.param_marks_.back();
     vm.parameters_.resize(mark.begin);
     vm.param_marks_.pop_back();
-    return vm.take_integer_result();
+    output.construct([&]() noexcept { return vm.take_integer_result(); });
+    return;
   }
   if (restore.state)
     vm.refresh_integer_calls();
-  return vm.call_generic(func, loc, argument);
+  generic();
 }
 
 auto GD::Bc::Details::VMState::call_generic(Letter func, Location const& loc,

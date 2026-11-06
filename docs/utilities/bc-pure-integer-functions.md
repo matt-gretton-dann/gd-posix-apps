@@ -452,7 +452,7 @@ injection, OS signals or elapsed performance. #642 remains held because its
 actual Windows router objects export Number/Digits destructors; passing reload
 coverage neither removes that isolation failure nor adopts the parent.
 
-### Router ABI and native guard repair
+### Earlier router ABI preflights (unmerged)
 
 #645 follows the concrete Windows object failure. The router and callbacks
 now use identical free-function signatures, including a borrowed entry-context
@@ -501,5 +501,41 @@ destructor members instead of their enclosing classes. The ownership guard
 continues to reject every Number/Digits definition; it gains no exemption.
 Local ordinary/profile suites, eight/seven focused contracts, 35 exact
 programs with matching event maps/allocation totals and the non-isolated CLI
-pass. Native Windows confirmation remains pending. The original preflight
-objects, binaries, failed reports and logs are retained separately.
+pass locally. Native preflight at `c65b776c` fails: GCC rejects the
+defaulted-destructor declarations, and MSVC still exports both destructors.
+PR #646 is closed without merging. Both preflights' objects, binaries,
+failed reports and logs are retained separately.
+
+### Opaque routed return ownership
+
+#647 replaces both failed suppression approaches. The native router includes
+only the minimal Letter declaration and standard array support; Number and
+the large VM header are absent. Its matching callbacks return void and carry
+borrowed opaque argument/result pointers. All numeric construction, moves and
+destruction belong to the ordinary compiler context. The Letter declaration
+and public binding are unchanged by extracting its minimal header.
+
+Generic table entries are null and enter the existing generic body directly.
+Only speculative entries use the opaque transport. An ordinary-context helper
+owns its return storage behind the supported helper boundary, keeping that
+object out of generic callers. A factory constructs Number directly in aligned
+union storage. Ownership is recorded only after successful construction; a
+throwing factory leaves no active Number to destroy. Successful extraction
+uses one nonthrowing move, then destroys the moved-from owner normally. This
+retains the complete-box-before-pack-commit rule and adds no return allocation.
+
+That final transfer is a real cost: profile mode records an extra digit move
+per opaque routed call. It is not hidden or compared as an unchanged counter.
+The first 35 independent checked programs preserve every other event and all
+allocation totals against #642, while reporting 8--40 extra moves per program.
+Generic/full-check calls bypass the transport. Native stack/code costs and
+elapsed behavior still require actual measurement; a smaller router alone
+does not establish an improvement.
+
+Focused tests cover empty and partial initialization, a throwing factory that
+has already allocated, recovery, escaped heap aliases and the exact extra move.
+The existing full VM, 643 interruption cuts, ordinary/IPO allocation-failure
+sweeps, loader reload and generation/state tests remain required. The symbol
+guard is unchanged and rejects every native Number/Digits definition. This
+topic runs correctness/object preflight with timing skipped; no native repair,
+performance adoption or #197 completion is inferred from local results.

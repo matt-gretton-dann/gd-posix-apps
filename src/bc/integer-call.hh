@@ -1,24 +1,28 @@
-/** Non-owning call routing for the optional integer tier.
+/** Non-owning call routing with no numeric ownership dependencies.
  * SPDX-License-Identifier: Apache-2.0
  */
 #ifndef GD_BC_INTEGER_CALL_HH_INCLUDED
 #define GD_BC_INTEGER_CALL_HH_INCLUDED
 
-#include "bc.hh"
+#include <array>
 
-namespace GD::Bc::Details {
-// The router and callbacks have identical signatures, including the borrowed
-// entry context. This permits forwarding the return slot without reshuffling
-// the ABI's argument positions. A machine tail transfer still needs inspection.
+#include "letter.hh"
+
+namespace GD::Bc {
+class Location;
+namespace Details {
+// Matching signatures forward borrowed storage on supported ABIs. Numeric
+// arguments and results belong entirely to the ordinary compiler context.
 struct IntegerCallEntry
 {
-  using Function = auto (*)(IntegerCallEntry const*, void*, Letter, Location const&, Number const*)
-    -> Number;
+  using Function = void (*)(IntegerCallEntry const*, void*, Letter, Location const&, void const*,
+                            void*);
   Function function;
 };
 using IntegerCallEntries = std::array<IntegerCallEntry, Letter::count_>;
 
-auto dispatch_integer_call(IntegerCallEntry const* entry, void* state, Letter function,
-                           Location const& location, Number const* argument) -> Number;
-}  // namespace GD::Bc::Details
+void dispatch_integer_call(IntegerCallEntry const* entry, void* state, Letter function,
+                           Location const& location, void const* argument, void* result);
+}  // namespace Details
+}  // namespace GD::Bc
 #endif
