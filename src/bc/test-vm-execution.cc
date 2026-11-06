@@ -406,6 +406,25 @@ TEST_CASE("Configured liveness prepares verified layouts and preserves live nume
     CHECK((event(after, Event::typed_instructions_executed) >
            event(before, Event::typed_instructions_executed)) ==
           (checks == Checks::verified && GD_BC_EXPECT_TYPED_RESULTS));
+    auto const generic = event(after, Event::generic_result_slots_acquired) -
+                         event(before, Event::generic_result_slots_acquired);
+    auto const numbers = event(after, Event::number_result_slots_acquired) -
+                         event(before, Event::number_result_slots_acquired);
+    auto const others = event(after, Event::other_result_slots_acquired) -
+                        event(before, Event::other_result_slots_acquired);
+    if (checks == Checks::full) {
+      CHECK(generic == code.size());
+      CHECK(numbers == 0);
+    }
+    else if (GD_BC_EXPECT_TYPED_RESULTS) {
+      CHECK(generic == 0);
+      CHECK(numbers == (GD_BC_EXPECT_LIVE_RESULTS ? 64 : 128));
+    }
+    else {
+      CHECK(generic == (GD_BC_EXPECT_LIVE_RESULTS ? 65 : 129));
+      CHECK(numbers == 0);
+    }
+    CHECK(others == 0);
   }
 }
 

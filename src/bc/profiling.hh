@@ -22,6 +22,7 @@ enum class AllocationKind : std::size_t {
   literals,
   execution_plans,
   divisors,
+  result_analysis,
   count
 };
 enum class Event : std::size_t {
@@ -68,6 +69,9 @@ enum class Event : std::size_t {
   divisor_cache_hits,
   live_result_preparations,
   live_result_plan_improvements,
+  generic_result_slots_acquired,
+  number_result_slots_acquired,
+  other_result_slots_acquired,
   count
 };
 

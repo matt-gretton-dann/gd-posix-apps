@@ -65,8 +65,9 @@ auto snapshot() noexcept -> Snapshot
 }
 auto name(AllocationKind kind) noexcept -> char const*
 {
-  constexpr std::array names{"digits",  "arrays",   "instructions",    "frames",
-                             "results", "literals", "execution_plans", "divisors"};
+  constexpr std::array names{"digits",          "arrays",   "instructions",
+                             "frames",          "results",  "literals",
+                             "execution_plans", "divisors", "result_analysis"};
   static_assert(names.size() == static_cast<std::size_t>(AllocationKind::count));
   return names[static_cast<std::size_t>(kind)];
 }
@@ -114,7 +115,10 @@ auto name(Event which) noexcept -> char const*
                              "divisor_cache_promotions",
                              "divisor_cache_hits",
                              "live_result_preparations",
-                             "live_result_plan_improvements"};
+                             "live_result_plan_improvements",
+                             "generic_result_slots_acquired",
+                             "number_result_slots_acquired",
+                             "other_result_slots_acquired"};
   static_assert(names.size() == static_cast<std::size_t>(Event::count));
   return names[static_cast<std::size_t>(which)];
 }

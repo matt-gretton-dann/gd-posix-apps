@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "live-result-plan.hh"
+#include "profiling.hh"
 #include "verification.hh"
 
 namespace {
@@ -199,6 +200,43 @@ void check_typed_paths(Instructions const& code, TypedResultPlan const& typed)
   CHECK_FALSE(GD::Bc::Details::lower_typed_executable(code, typed, true).empty());
 }
 }  // namespace
+
+#if GD_BC_PROFILE
+TEST_CASE("Liveness accounts for temporary matrices and releases all analysis storage",
+          "[bc][vm][live-results][verified-profile]")
+{
+  namespace P = GD::Bc::Profile;
+  auto const code = dense(80);
+  auto const original = layout_fallback(code);
+  auto stats = [] {
+    return P::snapshot().allocations[static_cast<std::size_t>(P::AllocationKind::result_analysis)];
+  };
+  for (bool typed : {false, true}) {
+    auto const before = stats();
+    if (typed) {
+      auto const plan = GD::Bc::Details::plan_live_result_layouts(code, original, lane_costs, true);
+      CHECK(plan.generic.count < original.generic.count);
+    }
+    else {
+      auto const plan = GD::Bc::Details::plan_live_result_slots(code, original.generic, 48, true);
+      CHECK(plan.count < original.generic.count);
+    }
+    auto const after = stats();
+    auto const words = (code.size() + 63) / 64;
+    CHECK(after.allocated_bytes - before.allocated_bytes >=
+          2 * code.size() * words * sizeof(std::uint64_t));
+    CHECK(after.allocation_calls > before.allocation_calls);
+    CHECK(after.allocation_calls - before.allocation_calls ==
+          after.deallocation_calls - before.deallocation_calls);
+    CHECK(after.live_bytes == before.live_bytes);
+  }
+  auto const before = stats();
+  auto const declined = GD::Bc::Details::plan_live_result_layouts(code, original, lane_costs, true,
+                                                                  LivenessBudget{4096, 0});
+  CHECK(declined.generic.indices == original.generic.indices);
+  CHECK(stats().allocation_calls == before.allocation_calls);
+}
+#endif
 
 TEST_CASE("Typed liveness colors numeric values without an empty numeric sentinel",
           "[bc][vm][live-results][live-typed]")
