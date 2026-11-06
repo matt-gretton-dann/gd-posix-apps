@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 """Check fixed startup calibration decisions using synthetic fixtures only."""
 import copy
+import hashlib
 import importlib.util
+import io
+import json
 from pathlib import Path
+import tempfile
+import time
 import unittest
+from unittest import mock
 
 
 class StartupCalibration(unittest.TestCase):
@@ -80,6 +86,58 @@ class StartupCalibration(unittest.TestCase):
         stages['initial']['candidate'] = dict(ci95=[.99, 1.01], pairs=151)
         self.assertEqual(self.module.assess_candidate(calibration, stages)['status'], 'inconclusive')
         self.assertEqual(self.module.assess_candidate(dict(status='inconclusive'), stages)['status'], 'inconclusive')
+
+    def test_independent_build_and_uninstrumented_identity_are_required(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            tools = []
+            for name in ('base', 'aa', 'candidate'):
+                path = Path(temporary) / name
+                path.write_bytes(name.encode())
+                tools.append(dict(name=name, argv=[str(path)], metadata=dict(
+                    source_revision='a' * 40, compiler='fixture', flags=['fixture'], version='fixture',
+                    instrumented=False, binary_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
+                    configuration=dict(diagnostic_profile=False))))
+            self.module.validate_tools(tools)
+            for change in ('alias', 'source', 'instrumented', 'hash'):
+                invalid = copy.deepcopy(tools)
+                if change == 'alias':
+                    invalid[1] = dict(copy.deepcopy(invalid[0]), name='aa')
+                elif change == 'source':
+                    invalid[1]['metadata']['source_revision'] = 'b' * 40
+                elif change == 'instrumented':
+                    invalid[2]['metadata']['instrumented'] = True
+                else:
+                    invalid[0]['metadata']['binary_sha256'] = '0' * 64
+                with self.subTest(change=change), self.assertRaises(ValueError):
+                    self.module.validate_tools(invalid)
+
+    def test_phase_retains_all_checked_samples_and_fixed_counts_without_bc(self):
+        spec = importlib.util.spec_from_file_location('startup_fixture_bench',
+            Path(__file__).resolve().parent / 'scripts/bench-bc.py')
+        bench = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(bench)
+        tools = [dict(name=name) for name in ('base', 'self', 'aa')]
+        case = dict(name='startup', group='startup', program='1+1\n', expected=['2'], parameters={})
+        raw = io.StringIO()
+        calls = []
+
+        def fixture(tool, case, timeout):
+            calls.append(tool['name'])
+            return dict(seconds=.001, checked=True, output_bytes=2, output_sha256='f' * 64)
+
+        with mock.patch.object(bench, 'run_checked', fixture):
+            report = self.module.collect_phase(bench, tools, case, raw, 0, 'initial', 200659,
+                                                time.monotonic() + 30)
+        rows = [json.loads(line) for line in raw.getvalue().splitlines()]
+        self.assertEqual(len(calls), (151 + 5) * 3)
+        self.assertEqual(len(rows), len(calls))
+        self.assertTrue(all(row['checked'] for row in rows))
+        self.assertEqual(report['ratios']['aa']['pairs'], 151)
+        self.assertEqual(report['ratios']['self']['ci95'], [1, 1])
+        self.assertEqual(report['base_median_seconds'], .001)
+        with mock.patch.object(bench, 'run_checked', fixture), self.assertRaises(TimeoutError):
+            self.module.collect_phase(bench, tools, case, io.StringIO(), 1, 'initial', 200659,
+                                      time.monotonic() - 1)
 
 
 if __name__ == '__main__':
