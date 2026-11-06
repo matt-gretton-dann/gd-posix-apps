@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Competitive-margin acceptance keeps observations and controls independent."""
 import importlib.util
+import copy
 import math
 from pathlib import Path
 import unittest
+from unittest import mock
 
 PATH = Path(__file__).resolve().parent / 'scripts/benchmark-policy.py'
 SPEC = importlib.util.spec_from_file_location('acceptance_policy', str(PATH))
@@ -61,6 +63,54 @@ class Acceptance(unittest.TestCase):
         statuses = [self.assess(competitive=ratio(.1, .2)),
                     self.assess(competitive=ratio(.95, 1.1), second=ratio(1.06, 1.08))]
         self.assertEqual(statuses, ['allowed with Howard margin', 'exceeds regression limit'])
+
+    def test_collectors_emit_a_separate_review_without_rewriting_observations(self):
+        arithmetic = dict(name='work', preset='full', comparison='paired',
+                          ratio=ratio(1.06, 1.1), confirmation=ratio(1.06, 1.09),
+                          candidate_over_howard=ratio(.1, .2),
+                          aa_control_status='pass', status='confirmed regression')
+        math_row = dict(name='work', preset='full', parameters=dict(mode='repeated'),
+                        candidate_over_base=ratio(1.06, 1.1),
+                        regression_confirmation=ratio(1.06, 1.09),
+                        candidate_over_standard=ratio(.1, .2),
+                        candidate_over_portable=ratio(.95, 1.1), aa_status='pass',
+                        duration_target_met={'gd-portable': True, 'gd-base': True,
+                                             'howard-standard': True, 'howard-portable': False},
+                        regression_status='confirmed regression')
+        for name, row in [('benchmark-ci', arithmetic), ('benchmark-math-ci', math_row)]:
+            path = PATH.parent / (name + '.py')
+            spec = importlib.util.spec_from_file_location(name.replace('-', '_'), str(path))
+            collector = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(collector)
+            original = copy.deepcopy(row)
+            with mock.patch.object(collector.platform, 'system', return_value='Linux'):
+                result = collector.acceptance_report([row], 9)
+            self.assertEqual(result['results'][0]['acceptance'], 'allowed with Howard margin')
+            self.assertEqual(result['results'][0]['raw_status'], 'confirmed regression')
+            self.assertFalse(result['merge_eligible'])
+            self.assertEqual(row, original)
+        math_row['duration_target_met']['howard-standard'] = False
+        result = POLICY.acceptance_review([math_row], 'Linux', 'math', 9)
+        self.assertEqual(result['results'][0]['acceptance'], 'inconclusive')
+        math_row['duration_target_met']['howard-standard'] = True
+        math_row['candidate_over_standard'] = ratio(.95, 1.1)
+        math_row['candidate_over_portable'] = ratio(.1, .2)
+        result = POLICY.acceptance_review([math_row], 'Linux', 'math', 9)
+        self.assertEqual(result['results'][0]['acceptance'], 'exceeds regression limit')
+
+    def test_control_and_fixed_duration_rows_keep_their_original_obligations(self):
+        row = dict(name='work', comparison='paired', ratio=ratio(.99, 1.01, 31),
+                   candidate_over_howard=None, fixed_samples=31, aa_control_status='pass',
+                   status='pass')
+        self.assertEqual(POLICY.acceptance_review([row], 'Linux', 'arithmetic', 9)
+                         ['results'][0]['acceptance'], 'within regression limit')
+        row['status'] = 'inconclusive-duration-shortfall'
+        self.assertEqual(POLICY.acceptance_review([row], 'Linux', 'arithmetic', 9)
+                         ['results'][0]['acceptance'], 'inconclusive')
+        row['status'] = 'pass'
+        row['comparison'] = 'aa'
+        self.assertEqual(POLICY.acceptance_review([row], 'Linux', 'arithmetic', 9)
+                         ['results'][0]['acceptance'], 'excluded observation')
 
 
 if __name__ == '__main__':

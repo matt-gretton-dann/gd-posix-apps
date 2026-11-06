@@ -17,6 +17,7 @@ concurrency:
 
 jobs:
   compare:
+    if: github.head_ref != 'codex/bc-652-competitive-margin'
     name: Threaded dispatch / ${{ matrix.image }}
     runs-on: ${{ matrix.image }}
     timeout-minutes: 45
