@@ -2578,7 +2578,11 @@ public:
    */
   [[nodiscard]] auto to_unsigned() const -> NumType
   {
-    if (sign_ == Sign::negative && !digits_.is_zero()) {
+    if (sign_ == Sign::negative) {
+      // Exact signed zero needs no further coefficient conversion.
+      if (digits_.is_zero()) {
+        return 0;
+      }
       Details::error(Msg::number_to_unsigned_failed_negative, *this);
     }
     // POSIX register assignments and array subscripts discard the fraction.

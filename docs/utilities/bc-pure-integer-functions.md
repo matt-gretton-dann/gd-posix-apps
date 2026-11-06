@@ -398,7 +398,8 @@ Native correctness, resources and full/held-out per-workload qualification
 remain necessary. #601 is still an independent adoption prerequisite; no
 earlier adverse or inconclusive measurement is superseded by this design.
 
-Local Apple Release validation passes 2,005,518 assertions in 366 ordinary
+Routing-only source `92c7ba05` passes local Apple Release validation with
+2,005,518 assertions in 366 ordinary
 cases and 2,008,705 in 377 profile cases. The ordinary/profile call contracts,
 including complete allocation-failure fixtures with and without IPO, pass.
 Thirty-five independent checked programs agree across ordinary/profile builds
@@ -417,3 +418,11 @@ reserve 0x190 stack bytes. The speculative entry separately reserves 0x50.
 These exact-build observations neither prove native Windows/Linux behavior
 nor establish elapsed performance. Raw counters, binaries, object reports,
 source/command hashes and disassembly are retained separately.
+
+The combined candidate carries #637's terminal signed-zero conversion
+into this experiment, retaining the original nonnegative continuation and
+returning immediately for a negative exact-zero coefficient. Its independent
+native performance remains inconclusive, and the earlier #602/#631 losses
+remain binding evidence about those sources. The combined routing/conversion
+source requires its own qualification before any adoption; neither bug-fix
+correctness nor routing-only measurements qualify that final source.
