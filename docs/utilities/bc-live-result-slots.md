@@ -208,8 +208,11 @@ inherit that hosted result. Locally, the new typed Release profile suite passes
 passes with both other resource contracts (42 assertions across three cases).
 The ordinary allocator build passes 367 cases / 2,081,106 assertions and nine
 focused ownership/CLI/signal targets; the profile configurations pass eleven
-focused targets. Native revalidation and performance qualification remain
-outstanding for this resource-accounting revision.
+focused targets. At resource checkpoint `5366b3a1`, all 23 hosted checks pass and fifteen
+source-pinned archives are preserved; all twelve emitted mode records
+independently match their retained production compiler/project evidence.
+Controller/resource follow-up validation is tracked separately in #662.
+Performance qualification remains outstanding.
 
 Remaining gaps include compound guard MC/DC, empty/transient-small combined
 requests and defensive verified-input rejection paths. Several arithmetic
@@ -245,3 +248,27 @@ the source-library evidence. Inspection tools never execute the archived bc
 binary, and unavailable native inspection has a generic binary/hash fallback.
 The frozen rejected prefix cohort is unchanged; its missing math A/A executable
 cannot be supplied retroactively by a new build.
+
+
+Fresh generic and typed collections at runtime/controller source `c20f376d`
+now cover the resource-accounting revision, separately from the historical
+`f1550c4a` profiles. Both use Apple LLVM 21, Debug, extensions ON, liveness ON,
+profile OFF and explicit IPO OFF. Each retains 101 raw profiles (one unit,
+99 asserted CLI children, one native allocation-fault process), exact binaries,
+source hashes, compiler commands and warning-free broad/application/CLI exports.
+Both run the 77-case VM/component selection (494,846 assertions), 27 CLI tests
+and native allocation-failure fixture. The raw planner summaries remain:
+
+| Mode and scope | Lines | Branches | MC/DC |
+| --- | ---: | ---: | ---: |
+| Generic broad / application mappings | 398/413 | 343/382 | 53/90 |
+| Generic CLI-only | 269/413 | 211/382 | 14/90 |
+| Typed broad / application mappings | 398/413 | 346/382 | 55/90 |
+| Typed CLI-only | 345/413 | 275/382 | 20/90 |
+
+The allocator alias and profiling-event macros add no executable planner lines
+in these profile-OFF configurations; identical totals do not establish new
+condition coverage. Profile-ON accounting behavior has separate asserted native
+mode/resource contracts, not an LLVM coverage claim. The documented guard,
+verified-input and combined small-request gaps remain. No configurations or raw
+MC/DC record counts are pooled, and no performance result is inferred.
