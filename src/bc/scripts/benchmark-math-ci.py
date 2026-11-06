@@ -311,6 +311,19 @@ def gd_build_command(args, name, destination, cc, cxx):
     return command
 
 
+def profile_build_command(args, destination, cc, cxx, baseline=False):
+    # Preserve the existing profile recipe until role-inheritance contracts
+    # establish which ordinary mode each diagnostic build must match.
+    command = [sys.executable, str(SCRIPTS / 'build-gd-bc.py'), '--source',
+               str(args.source.resolve()), '--revision', args.base if baseline else args.candidate,
+               '--split-point', '126', '--output', str(destination), '--name',
+               'gd-base-profile' if baseline else 'gd-profile', '--diagnostic-profile',
+               '--c-compiler', cc, '--cxx-compiler', cxx]
+    if not baseline and getattr(args, 'candidate_preparsed_library', False):
+        command += ['--preparsed-library']
+    return command
+
+
 def main():
     gd_builder, bench = load('build-gd-bc'), load('bench-bc')
     helper = load('build-bc-comparators')
@@ -375,12 +388,7 @@ def main():
                                  root / 'aa/source/src/bc/math-library.bc', args.candidate,
                                  base=baseline, base_library=base_library, base_revision=args.base)
         profile_root = root / 'profile'
-        profile_command = [sys.executable, str(SCRIPTS / 'build-gd-bc.py'), '--source',
-                      str(args.source.resolve()), '--revision', args.candidate,
-                      '--split-point', '126', '--output', str(profile_root), '--name', 'gd-profile',
-                      '--diagnostic-profile', '--c-compiler', cc, '--cxx-compiler', cxx]
-        if args.candidate_preparsed_library:
-            profile_command += ['--preparsed-library']
+        profile_command = profile_build_command(args, profile_root, cc, cxx)
         commands.run(profile_command, timeout=1200)
         profiled = json.loads((profile_root / 'implementations.json').read_text())['implementations'][0]
         # All builds and correctness checks finish before elapsed measurements.

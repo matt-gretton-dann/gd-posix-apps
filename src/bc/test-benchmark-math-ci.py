@@ -22,6 +22,29 @@ SPEC.loader.exec_module(CI)
 
 
 class NativeMath(unittest.TestCase):
+    def test_live_modes_follow_candidate_independent_aa_and_profile_roles(self):
+        args = types.SimpleNamespace(source=Path('/fixture'), base='a' * 40, candidate='b' * 40,
+            candidate_prepared_divisors=True, candidate_preparsed_library=True,
+            candidate_live_results='ON', base_live_results='OFF')
+        for role, mode in (('base', 'OFF'), ('gd', 'ON'), ('aa', 'ON')):
+            command = CI.gd_build_command(args, role, Path('/output'), 'cc', 'c++')
+            self.assertIn('--live-results', command)
+            self.assertEqual(command[command.index('--live-results') + 1], mode)
+        for baseline, mode, revision in ((True, 'OFF', args.base), (False, 'ON', args.candidate)):
+            command = CI.profile_build_command(args, Path('/profile'), 'cc', 'c++', baseline=baseline)
+            self.assertEqual(command[command.index('--live-results') + 1], mode)
+            self.assertEqual(command[command.index('--revision') + 1], revision)
+            self.assertIn('--diagnostic-profile', command)
+
+    def test_profile_build_inherits_existing_candidate_divisor_mode(self):
+        args = types.SimpleNamespace(source=Path('/fixture'), base='a' * 40, candidate='b' * 40,
+            candidate_prepared_divisors=True, candidate_preparsed_library=False)
+        command = CI.profile_build_command(args, Path('/profile'), 'cc', 'c++')
+        self.assertIn('--prepared-divisors', command)
+        self.assertEqual(command[command.index('--prepared-divisors') + 1], 'ON')
+        baseline = CI.profile_build_command(args, Path('/base-profile'), 'cc', 'c++', baseline=True)
+        self.assertNotIn('--prepared-divisors', baseline)
+
     def test_measurements_use_remaining_total_budget_without_a_hidden_hour_limit(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

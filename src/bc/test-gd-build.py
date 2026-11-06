@@ -221,6 +221,16 @@ class GdBuild(unittest.TestCase):
         self.assertEqual(child.returncode, 0)
         self.assertIn('--live-results', child.stdout)
 
+    def test_live_explicit_control_requires_recorded_off(self):
+        policy = dict(status='recorded', mode='OFF', enabled=False)
+        def entry(value):
+            return dict(metadata=dict(configuration=dict(live_results_policy=value)))
+        self.module.require_live_mode(self.helper, entry(policy), 'OFF')
+        for value in (None, {}, dict(policy, mode='AUTO'), dict(policy, enabled=True),
+                      dict(policy, enabled=0), dict(policy, status='legacy-auto')):
+            with self.subTest(policy=value), self.assertRaises(self.helper.BuildError):
+                self.module.require_live_mode(self.helper, entry(value), 'OFF')
+
     def test_candidate_requires_explicit_verified_activation(self):
         policy = dict(status='recorded', mode='ON', enabled=True)
         def entry(value):

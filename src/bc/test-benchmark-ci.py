@@ -20,6 +20,22 @@ SPEC.loader.exec_module(CI)
 
 
 class NativeTrends(unittest.TestCase):
+    def test_live_modes_follow_each_ordinary_and_profile_role(self):
+        args = types.SimpleNamespace(source=Path('/fixture'), split_point=126,
+            candidate_prepared_divisors=True, candidate_live_results='ON', base_live_results='OFF')
+        for role, mode, revision in (('base', 'OFF', 'a' * 40), ('aa', 'OFF', 'a' * 40),
+                                     ('candidate', 'ON', 'b' * 40)):
+            ordinary = CI.gd_build_command(args, role, revision, Path('/output'), 'cc', 'c++')
+            self.assertIn('--live-results', ordinary)
+            self.assertEqual(ordinary[ordinary.index('--live-results') + 1], mode)
+            profile = CI.profile_build_command(args, role, revision, Path('/profile'), 'cc', 'c++')
+            self.assertEqual(profile[profile.index('--live-results') + 1], mode)
+            self.assertIn('--diagnostic-profile', profile)
+            self.assertEqual(profile[profile.index('--revision') + 1], revision)
+        args.base_live_results = args.candidate_live_results = 'AUTO'
+        self.assertNotIn('--live-results', CI.gd_build_command(args, 'base', 'a' * 40,
+                                                              Path('/legacy'), 'cc', 'c++'))
+
     def test_sparse_duration_requires_every_independent_role(self):
         row = dict(implementations={role: dict(median_seconds=.25)
                                     for role in ('base', 'aa', 'candidate')})
