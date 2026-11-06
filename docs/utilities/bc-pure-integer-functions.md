@@ -451,3 +451,41 @@ checks cover loader replacement and ownership, not allocation-failure
 injection, OS signals or elapsed performance. #642 remains held because its
 actual Windows router objects export Number/Digits destructors; passing reload
 coverage neither removes that isolation failure nor adopts the parent.
+
+### Router ABI and native guard repair
+
+#645 follows the concrete Windows object failure. The router and callbacks
+now use identical free-function signatures, including a borrowed entry-context
+pointer. Each table cell still contains one function pointer, and the context
+does not own VM or Number state. Exact signature matching keeps argument
+positions consistent across the forwarding boundary; a machine tail transfer
+remains a separately inspected compiler result. Scoped explicit-instantiation
+declarations in the router translation unit keep Number/Digits ownership
+definitions in the ordinary library context. Native Windows confirmation of
+that intended boundary is required before accepting the repair.
+
+The symbol collector tries the configured adapter, available LLVM and generic
+nm adapters in order, deduplicates equivalent paths and retains failed attempts
+as well as the selected commands and outputs. A missing or incompatible
+configured adapter no longer hides an available compatible one. Genuine
+adapter absence remains explicitly unavailable. Borrowed Number signatures
+are accepted; actual ownership definitions and missing engine/router identities
+fail. Eight independent adapter tests cover fallback, rejection, exceptions,
+timeouts, exhaustion, identity and the observed COFF destructor definitions.
+
+Three regression tests fail on the previous collector before the repair.
+The new collector also correctly rejects the preserved old Windows objects
+through LLVM fallback. Fresh local ordinary/profile suites pass 2,005,518 and
+2,008,705 assertions, with allocation-failure, loader, layout, symbol and profile
+contracts passing. Thirty-five independent programs preserve complete semantic
+event maps and allocation totals against #642; the non-isolated CLI passes
+29 tests. The local Apple Arm64 router has three instructions ending in an
+indirect branch, without stack adjustment. These are local correctness and
+compiler observations, without an elapsed-performance or Windows acceptance
+claim.
+
+The exact repair branch runs native correctness/object preflight with timing
+jobs skipped. #642 and #644 remain frozen. A new runtime performance cohort
+requires successful preflight, completion and preservation of #642's declared
+cohort, and a separately frozen qualification source. No prior losing or
+inconclusive observation is superseded by this repair.

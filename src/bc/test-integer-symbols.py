@@ -37,26 +37,43 @@ def main():
     if not all(path.is_file() for path in objects):
         return finish('failure', 1, reason='engine object is missing')
     report['objects'] = [dict(path=str(path), sha256=digest(path)) for path in objects]
-    tool = shutil.which(args.nm) if args.nm else None
-    if not tool:
+    candidates = []
+    seen = set()
+    for name in (args.nm, 'llvm-nm', 'nm'):
+        tool = shutil.which(name) if name else None
+        if tool and str(Path(tool).resolve()) not in seen:
+            candidates.append(tool)
+            seen.add(str(Path(tool).resolve()))
+    report['adapter_attempts'] = []
+    selected = False
+    for index, tool in enumerate(candidates):
+        attempt = dict(tool=tool, tool_sha256=digest(Path(tool)), argv=[])
+        report['adapter_attempts'].append(attempt)
+        outputs, errors = [], []
+        for path in objects:
+            command = [tool, '--defined-only', '--demangle', str(path)]
+            attempt['argv'].append(command)
+            try:
+                run = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30)
+            except (OSError, subprocess.TimeoutExpired) as error:
+                attempt['reason'] = str(error)
+                break
+            outputs.append(run.stdout)
+            errors.append(run.stderr)
+            if run.returncode:
+                attempt.update(reason='symbol adapter rejected this object/options',
+                               returncode=run.returncode)
+                break
+        (root / ('adapter-%02d-symbols.txt' % index)).write_bytes(b'\n'.join(outputs))
+        (root / ('adapter-%02d-stderr.txt' % index)).write_bytes(b'\n'.join(errors))
+        if 'reason' not in attempt:
+            report.update(tool=tool, tool_sha256=attempt['tool_sha256'], argv=attempt['argv'])
+            (root / 'symbols.txt').write_bytes(b'\n'.join(outputs))
+            (root / 'stderr.txt').write_bytes(b'\n'.join(errors))
+            selected = True
+            break
+    if not selected:
         return finish('unavailable', 77, reason='no compatible native symbol adapter')
-    report.update(tool=tool, tool_sha256=digest(Path(tool)))
-    outputs, errors, commands = [], [], []
-    for path in objects:
-        command = [tool, '--defined-only', '--demangle', str(path)]
-        commands.append(command)
-        report['argv'] = commands
-        try:
-            run = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30)
-        except (OSError, subprocess.TimeoutExpired) as error:
-            return finish('unavailable', 77, reason=str(error))
-        outputs.append(run.stdout)
-        errors.append(run.stderr)
-        (root / 'symbols.txt').write_bytes(b'\n'.join(outputs))
-        (root / 'stderr.txt').write_bytes(b'\n'.join(errors))
-        if run.returncode:
-            return finish('unavailable', 77, reason='symbol adapter rejected this object/options',
-                          returncode=run.returncode)
     symbols = b'\n'.join(outputs).decode('utf-8', errors='replace')
     if not all(name + '(' in symbols for name in ('plan_integer_function', 'run_integer_core')):
         return finish('failure', 1, reason='selected object does not define the integer engine')

@@ -435,7 +435,7 @@ struct VMState
   auto call(Letter func, Location const& loc, Number const* argument = nullptr) -> Number
   {
     GD_BC_PROFILE_EVENT(Profile::Event::function_calls, 1);
-    return dispatch_integer_call(integer_calls_->at(static_cast<unsigned>(func)), this, func, loc,
+    return dispatch_integer_call(&integer_calls_->at(static_cast<unsigned>(func)), this, func, loc,
                                  argument);
   }
 #  else
@@ -447,7 +447,7 @@ struct VMState
   auto call(Letter func, Location const& loc) -> Number
   {
     GD_BC_PROFILE_EVENT(Profile::Event::function_calls, 1);
-    return dispatch_integer_call(integer_calls_->at(static_cast<unsigned>(func)), this, func, loc,
+    return dispatch_integer_call(&integer_calls_->at(static_cast<unsigned>(func)), this, func, loc,
                                  nullptr);
   }
 #  else
@@ -630,18 +630,18 @@ private:
   }
 #endif
 #if defined(GD_BC_INTEGER_FUNCTIONS)
-  static auto generic_call_entry(void* state, Letter func, Location const& loc,
-                                 Number const* argument) -> Number;
-  static auto speculative_call_entry(void* state, Letter func, Location const& loc,
-                                     Number const* argument) -> Number;
+  static auto generic_call_entry(IntegerCallEntry const* entry, void* state, Letter func,
+                                 Location const& loc, Number const* argument) -> Number;
+  static auto speculative_call_entry(IntegerCallEntry const* entry, void* state, Letter func,
+                                     Location const& loc, Number const* argument) -> Number;
   inline static constexpr auto generic_calls_ = [] {
     IntegerCallEntries entries{};
-    entries.fill(generic_call_entry);
+    entries.fill({generic_call_entry});
     return entries;
   }();
   inline static constexpr auto speculative_calls_ = [] {
     IntegerCallEntries entries{};
-    entries.fill(speculative_call_entry);
+    entries.fill({speculative_call_entry});
     return entries;
   }();
 
@@ -1101,7 +1101,7 @@ void GD::Bc::Details::VMState::function(Letter func, Instructions::const_iterato
 #if defined(GD_BC_INTEGER_FUNCTIONS)
   if (integer_state_) {
     integer_state_->plans[static_cast<unsigned>(func)] = {};
-    integer_state_->calls[static_cast<unsigned>(func)] = speculative_call_entry;
+    integer_state_->calls[static_cast<unsigned>(func)] = {speculative_call_entry};
   }
 #endif
 #if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
@@ -1127,7 +1127,7 @@ void GD::Bc::Details::VMState::defer_library_function(Letter name, std::string_v
 #if defined(GD_BC_INTEGER_FUNCTIONS)
   if (integer_state_) {
     integer_state_->plans[index] = {};
-    integer_state_->calls[index] = speculative_call_entry;
+    integer_state_->calls[index] = {speculative_call_entry};
   }
 #endif
 #if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
@@ -1167,7 +1167,7 @@ auto GD::Bc::Details::VMState::try_integer_call(FunctionDefinition& def, Letter 
     plan.code = plan_integer_function(std::get<0>(def).instructions_, std::get<1>(def), func);
     plan.attempted = true;
     if (!plan.code)
-      integer->calls[static_cast<unsigned>(func)] = generic_call_entry;
+      integer->calls[static_cast<unsigned>(func)] = {generic_call_entry};
   }
   if (!plan.code)
     return false;
@@ -1208,15 +1208,19 @@ auto GD::Bc::Details::VMState::take_integer_result() noexcept -> GD::Bc::Number
 #endif
 
 #if defined(GD_BC_INTEGER_FUNCTIONS)
-auto GD::Bc::Details::VMState::generic_call_entry(void* state, Letter func, Location const& loc,
+auto GD::Bc::Details::VMState::generic_call_entry(IntegerCallEntry const* entry, void* state,
+                                                  Letter func, Location const& loc,
                                                   Number const* argument) -> Number
 {
+  (void)entry;
   return static_cast<VMState*>(state)->call_generic(func, loc, argument);
 }
 
-auto GD::Bc::Details::VMState::speculative_call_entry(void* state, Letter func, Location const& loc,
+auto GD::Bc::Details::VMState::speculative_call_entry(IntegerCallEntry const* entry, void* state,
+                                                      Letter func, Location const& loc,
                                                       Number const* argument) -> Number
 {
+  (void)entry;
   auto& vm = *static_cast<VMState*>(state);
   auto& definition = vm.functions_.at(static_cast<unsigned>(func));
   // The generic entry owns undefined/deferred lookup and its diagnostics.

@@ -20,7 +20,8 @@ OWNER = (b'00000000 T public: __cdecl GD::Bc::BasicNumber<T>::~BasicNumber<T>(vo
 
 
 class SymbolAdapter(unittest.TestCase):
-    def collect(self, missing=False, incompatible=False, owner=False, available=True):
+    def collect(self, missing=False, incompatible=False, owner=False, available=True,
+                exception=None, reject_all=False, omit=None):
         spec = importlib.util.spec_from_file_location(
             'integer_symbols', Path(__file__).with_name('test-integer-symbols.py'))
         module = importlib.util.module_from_spec(spec)
@@ -39,9 +40,14 @@ class SymbolAdapter(unittest.TestCase):
                 return str(llvm) if name in ('llvm-nm', 'llvm-nm.exe') else None
 
             def run(command, **unused):
-                if incompatible and command[0] == str(preferred):
+                if exception is not None and command[0] == str(preferred):
+                    raise exception
+                if reject_all or (incompatible and command[0] == str(preferred)):
                     return subprocess.CompletedProcess(command, 1, b'', b'unsupported options')
-                data = ENGINE if 'integer-function' in command[-1] else ROUTER + (OWNER if owner else b'')
+                engine = 'integer-function' in command[-1]
+                data = ENGINE if engine else ROUTER + (OWNER if owner else b'')
+                if omit == ('engine' if engine else 'router'):
+                    data = b''
                 return subprocess.CompletedProcess(command, 0, data, b'')
 
             args = ['collector', '--nm', str(preferred), '--object',
@@ -76,6 +82,25 @@ class SymbolAdapter(unittest.TestCase):
     def test_real_absence_remains_explicitly_unavailable(self):
         status, report = self.collect(available=False)
         self.assertEqual((status, report['status']), (77, 'unavailable'))
+
+    def test_adapter_exceptions_keep_trying(self):
+        for error in (OSError('adapter cannot execute'), subprocess.TimeoutExpired(['adapter'], 30)):
+            with self.subTest(error=type(error).__name__):
+                status, report = self.collect(exception=error)
+                self.assertEqual((status, report['status']), (0, 'pass'))
+                self.assertEqual(len(report['adapter_attempts']), 2)
+                self.assertIn('reason', report['adapter_attempts'][0])
+
+    def test_exhausted_adapters_remain_unavailable(self):
+        status, report = self.collect(reject_all=True)
+        self.assertEqual((status, report['status']), (77, 'unavailable'))
+        self.assertEqual(len(report['adapter_attempts']), 2)
+
+    def test_missing_engine_or_router_identity_fails(self):
+        for name in ('engine', 'router'):
+            with self.subTest(name=name):
+                status, report = self.collect(omit=name)
+                self.assertEqual((status, report['status']), (1, 'failure'))
 
 
 if __name__ == '__main__':

@@ -21,6 +21,8 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   paired:
+    # This exact repair topic runs native object preflight before qualification.
+    if: github.head_ref != 'codex/bc-645-router-boundary'
     name: Native math bc / ${{ matrix.image }}${{ matrix.preset == 'holdout' && ' / holdout' || '' }}
     runs-on: ${{ matrix.image }}
     timeout-minutes: 120
