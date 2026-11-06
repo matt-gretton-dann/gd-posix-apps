@@ -167,12 +167,23 @@ requiring the exact original or complete layout and monotonic completion. They
 also cover the unreachable-only numeric lane and preservation of an already
 valid candidate pair under unsupported costs. The expanded focused suite passes
 23 cases / 106,602 assertions; all 367 local Debug unit cases pass 2,081,106
-assertions. Fresh coverage and hosted validation of those added contracts remain
-pending. Several arithmetic guards are
-not reachable at this host width under the hard instruction cap. These are
-recorded gaps, not exclusions that establish complete coverage. The focused
-results do not qualify every instruction/application path or other platforms'
-coverage, and they establish no performance improvement. Broader coverage and
-the complete native performance/startup/resource cohort remain required. Do not
-alter or restart the independent frozen #658 prefix qualification to incorporate
-this work.
+assertions. Fresh, separately retained coverage at `f1550c4a` runs 77 VM/component
+cases / 494,846 assertions, the same 27 CLI cases and native faults in each
+configuration. Broad/application-mapping planner coverage is now 398/413 lines,
+343/382 branches and 53/90 MC/DC for generic execution; typed execution reaches
+398/413, 346/382 and 55/90 respectively. CLI-only counters remain at the earlier
+values because these follow-ups add direct planner contracts, not application
+paths. Each configuration retains its own 101 raw profiles and exact binaries;
+all three exports are warning-free. Hosted validation of the added contracts
+remains pending.
+
+Remaining gaps include compound guard MC/DC, empty/transient-small combined
+requests and defensive verified-input rejection paths. Several arithmetic
+guards are not reachable at this host width under the hard instruction cap.
+These are recorded gaps, not exclusions that establish complete coverage. The
+focused results do not qualify every instruction/application path or other
+platforms' coverage, and they establish no performance improvement. Broader
+coverage and the complete native performance/startup/resource cohort remain
+required. The independent frozen #658 prefix cohort is complete and its
+candidate is rejected under #653; retain its adverse and inconclusive evidence
+without source adjustments or measurement restarts.
