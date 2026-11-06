@@ -343,7 +343,7 @@ class ResourceComparison(unittest.TestCase):
                 self.assertTrue(all(i < min(timings) for i in builds))
                 names = {e['name'] for e in archived}
                 self.assertTrue({'gd-base', 'gd-portable', 'gd-aa', 'howard-standard', 'howard-portable'} <= names
-                                if kind == 'math' else {'base', 'candidate', 'aa'} <= names)
+                                if kind == 'math' else {'base', 'candidate', 'aa', 'howard-7.0.3'} <= names)
                 profiles = json.loads((output / 'evidence/resource-profiles.json').read_text())['implementations']
                 ordinary = json.loads((output / 'evidence/resource-ordinary.json').read_text())['implementations']
                 self.assertTrue(all(e['metadata']['instrumented'] is True for e in profiles))
