@@ -172,6 +172,9 @@ if(RUN_UNIT_TESTS)
   add_test(NAME bc/vm-lifetime COMMAND "$<TARGET_FILE:test-bc-vm-lifetime>")
   set_tests_properties(bc/vm-lifetime PROPERTIES TIMEOUT 10)
   if(ENABLE_BC_INTEGER_FUNCTIONS)
+    add_test(NAME bc/integer-symbol-adapter COMMAND "${Python_EXECUTABLE}"
+             "${CMAKE_CURRENT_SOURCE_DIR}/test-integer-symbol-adapter.py")
+    set_tests_properties(bc/integer-symbol-adapter PROPERTIES TIMEOUT 15)
     add_test(NAME bc/integer-layout COMMAND "${Python_EXECUTABLE}"
              "${CMAKE_CURRENT_SOURCE_DIR}/test-integer-layout.py"
              --compile-commands "${CMAKE_BINARY_DIR}/compile_commands.json"
