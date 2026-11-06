@@ -154,6 +154,7 @@ if(RUN_UNIT_TESTS)
   target_sources(test-libbc PRIVATE
                  test-array-storage.cc
                  test-execution-plan.cc
+                 test-result-prefix-buffer.cc
                  test-benchmark-support.cc
                  test-format.cc
                  test-instruction.cc
