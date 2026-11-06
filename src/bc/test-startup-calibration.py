@@ -6,9 +6,11 @@ import importlib.util
 import io
 import json
 from pathlib import Path
+import sys
 import tempfile
 import time
 import unittest
+import types
 from unittest import mock
 
 
@@ -116,7 +118,9 @@ class StartupCalibration(unittest.TestCase):
             Path(__file__).resolve().parent / 'scripts/bench-bc.py')
         bench = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(bench)
-        tools = [dict(name=name) for name in ('base', 'self', 'aa')]
+        tools = [dict(name=name, argv=[sys.executable], metadata=dict(instrumented=False,
+                      binary_sha256=hashlib.sha256(Path(sys.executable).read_bytes()).hexdigest()))
+                 for name in ('base', 'self', 'aa')]
         case = dict(name='startup', group='startup', program='1+1\n', expected=['2'], parameters={})
         raw = io.StringIO()
         calls = []
@@ -138,6 +142,56 @@ class StartupCalibration(unittest.TestCase):
         with mock.patch.object(bench, 'run_checked', fixture), self.assertRaises(TimeoutError):
             self.module.collect_phase(bench, tools, case, io.StringIO(), 1, 'initial', 200659,
                                       time.monotonic() - 1)
+
+    def test_checked_timer_fixture_rejects_wrong_output_and_deadline(self):
+        bench = self.module.load('bench-bc')
+        case = dict(name='startup', program='1+1\n', expected=['2'], parameters={})
+        with tempfile.TemporaryDirectory() as temporary:
+            fixture = Path(temporary) / 'fixture.py'
+            fixture.write_text('import sys,time\ntime.sleep(float(sys.argv[1]))\n'
+                               'sys.stdin.read()\nprint(sys.argv[2])\n')
+            tool = dict(name='fixture-only', argv=[sys.executable, str(fixture), '.15', '2'])
+            report = bench.run_checked(tool, case, 5)
+            self.assertTrue(report['checked'])
+            self.assertGreaterEqual(report['seconds'], .1)
+            tool['argv'][-1] = '3'
+            with self.assertRaises(bench.BenchmarkError):
+                bench.run_checked(tool, case, 5)
+            tool['argv'][-2:] = ['10', '2']
+            with self.assertRaises(bench.BenchmarkError):
+                bench.run_checked(tool, case, .02)
+
+    def test_main_keeps_fixed_null_and_candidate_stages_and_writes_manifest(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            tools = []
+            for name in ('base', 'aa', 'candidate'):
+                path = root / name
+                path.write_bytes(name.encode())
+                tools.append(dict(name=name, argv=[str(path)], metadata=dict(
+                    instrumented=False, source_revision='a' * 40, compiler='fixture',
+                    flags=['fixture'], version='fixture', binary_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
+                    configuration=dict(diagnostic_profile=False))))
+            case = dict(name='startup', program='1+1\n', expected=['2'], parameters={})
+            bench = types.SimpleNamespace(positive_timeout=float, implementations=lambda *a, **k: tools,
+                corpus=lambda *a, **k: [case], oracle_payload=lambda c: b'2\n', BenchmarkError=ValueError)
+            config = root / 'config.json'
+            config.write_text('{}')
+            output = root / 'output'
+            phase = dict(base_median_seconds=.001, ratios={name: copy.deepcopy(self.stat)
+                         for name in ('aa', 'self', 'candidate')})
+            argv = ['fixture', '--config', str(config), '--output', str(output)]
+            with mock.patch.object(self.module, 'load', return_value=bench), \
+                    mock.patch.object(self.module, 'collect_phase', return_value=phase) as collect, \
+                    mock.patch.object(sys, 'argv', argv):
+                self.assertEqual(self.module.main(), 0)
+            self.assertEqual(collect.call_count, 60 * 2 + 2)
+            report = json.loads((output / 'manifest.json').read_text())
+            self.assertEqual(report['status'], 'collected')
+            self.assertEqual(report['calibration']['status'], 'qualified empirical study')
+            self.assertEqual(report['candidate_assessment']['status'],
+                             'no statistically significant startup regression observed')
+            self.assertFalse(report['merge_eligible'])
 
 
 if __name__ == '__main__':
