@@ -76,6 +76,37 @@ class CodegenEvidence(unittest.TestCase):
             self.assertEqual(row['pe_code']['status'], 'unavailable')
             self.assertEqual(row['file_bytes'], source.stat().st_size)
 
+    def test_versioned_comparators_preserve_both_exact_executables(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            entries = []
+            for index, name in enumerate(('howard-7.0.3', 'gnu-1.08.2')):
+                source = root / ('fixture-' + str(index))
+                source.write_bytes(image(timestamp=index + 1))
+                entries.append(self.entry(source, name))
+            with mock.patch.object(CG, 'native_commands', return_value=[]):
+                report = CG.collect(entries, root / 'evidence')
+            self.assertEqual(report['status'], 'preserved')
+            self.assertEqual([r['name'] for r in report['observations']], [e['name'] for e in entries])
+            for entry, row in zip(entries, report['observations']):
+                self.assertEqual(row['status'], 'preserved')
+                self.assertEqual((root / 'evidence' / row['binary']).read_bytes(), Path(entry['argv'][0]).read_bytes())
+                self.assertEqual(row['binary_sha256'], entry['metadata']['binary_sha256'])
+                self.assertEqual(row['disassembly']['status'], 'unavailable')
+
+    def test_duplicate_versioned_role_cannot_overwrite_its_first_binary(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / 'fixture'
+            source.write_bytes(image())
+            entry = self.entry(source, 'howard-7.0.3')
+            with mock.patch.object(CG, 'native_commands', return_value=[]), self.assertRaises(CG.CodegenError):
+                CG.collect([entry, entry], root / 'evidence')
+            report = json.loads((root / 'evidence/manifest.json').read_text())
+            self.assertEqual(report['status'], 'error')
+            self.assertEqual(len(report['observations']), 1)
+            self.assertEqual((root / 'evidence' / report['observations'][0]['binary']).read_bytes(), source.read_bytes())
+
     def test_missing_changed_or_instrumented_binaries_are_hard_errors(self):
         for mode in ('missing', 'changed', 'instrumented'):
             with self.subTest(mode=mode), tempfile.TemporaryDirectory() as temporary:
@@ -99,9 +130,10 @@ class CodegenEvidence(unittest.TestCase):
             root = Path(temporary)
             source = root / 'binary'
             source.write_bytes(image())
-            for name in ('../outside', '/absolute', 'a/b'):
+            for index, name in enumerate(('../outside', '/absolute', 'a/b', '.', '..',
+                                          '.candidate', 'candidate.', 'candidate..other')):
                 with self.subTest(name=name), self.assertRaises(CG.CodegenError):
-                    CG.collect([self.entry(source, name)], root / ('evidence' + str(len(name))))
+                    CG.collect([self.entry(source, name)], root / ('evidence' + str(index)))
             self.assertFalse((root / 'outside').exists())
 
     def test_native_output_is_hashed_and_binary_remains_unchanged(self):
