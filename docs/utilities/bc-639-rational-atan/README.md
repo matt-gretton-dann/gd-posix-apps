@@ -10,7 +10,7 @@ IPO and the stable multiplication split point 126. No runtime ISA option changes
 file by hash. The exact programs are under `programs/`; raw counter files are
 retained alongside the report. Run each binary with `-l`, the program on stdin
 and `GD_BC_PROFILE_OUTPUT` set to a fresh JSON path to reproduce the counters.
-Compare values with the committed `math-benchmark-oracles.json` enclosures for
+Compare values with the [committed benchmark enclosures](../../../src/bc/fixtures/math-benchmark-oracles.json) for
 `a-one` and `held-a-nine-eighths` at the recorded scales. Both oracle endpoints
 must certify the one-ULP decision. All twelve outputs passed; every tracked
 allocation category returns to zero live bytes.

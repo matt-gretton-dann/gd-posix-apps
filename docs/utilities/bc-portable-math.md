@@ -104,14 +104,16 @@ is introduced.
 
 Use odd symmetry, and for |x| > 1 use pi/2 - atan(1/|x|). Compute pi/2 as
 2*a(1) at working precision; the recursive argument one needs no reciprocal,
-so this is a finite dependency. Repeated half-angle reduction
-`x/(1+sqrt(1+x*x))` takes arguments at most one into [0,.1] in at most three
+so this is a finite dependency. The positive-argument half-angle loop
+`x/(1+sqrt(1+x*x))` takes arguments in [0,1] into [0,.1] in at most three
 steps. The reconstruction multiplier is at most eight. Each transform is
 well-conditioned on this interval; reciprocal input has derivative at most
 one. Input is rounded to W before the series.
 
 Evaluate atan(t) with its alternating odd-power recurrence. The stored squared
-ratio is below .011. Term propagation contracts; each multiplication/division
+ratio has magnitude at most 1/81: near-one reduction can leave a negative
+argument close to -1/9, which does not enter the positive half-angle loop.
+Term propagation contracts by at most 1/81; each multiplication/division
 introduces less than u, and summation is exact. The loop takes fewer than W+2
 terms. Allowing one additional working ULP for the truncated near-one constant,
 a conservative pre-rounding bound is 301*(N+1)*u. This includes transforms,
