@@ -4,6 +4,7 @@
 #ifndef GD_BC_RESULT_PREFIX_BUFFER_HH_INCLUDED
 #define GD_BC_RESULT_PREFIX_BUFFER_HH_INCLUDED
 
+#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <memory>
@@ -37,7 +38,14 @@ public:
   {
     assert(values_.empty());
     try {
-      values_.reserve(count);
+      if (count > values_.capacity()) {
+        // Exact reserve on successively larger empty activations can allocate
+        // on every call. Retain geometric growth, saturating before doubling.
+        auto const capacity = values_.capacity();
+        auto const limit = values_.max_size();
+        auto const grown = capacity > limit / 2 ? limit : 2 * capacity;
+        values_.reserve(std::max(count, grown));
+      }
       if (eager)
         values_.resize(count);
     }
