@@ -342,6 +342,9 @@ if(RUN_INTEGRATION_TESTS)
   add_test(NAME bc/math-oracle COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-math-oracle.py")
   set_tests_properties(bc/math-oracle PROPERTIES TIMEOUT 30)
+  add_test(NAME bc/atan-rational COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-atan-rational.py")
+  set_tests_properties(bc/atan-rational PROPERTIES TIMEOUT 30)
   add_test(NAME bc/gd-build-provenance COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-gd-build.py"
            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/build-gd-bc.py")

@@ -119,6 +119,40 @@ constant reconstruction and N terms. Use W = S + 2*d(S+F+D+1) + 24. The bound
 is far below U/2 by the digit-count inequality above. Term disappearance is a
 termination event under this contraction bound, not the accuracy justification.
 
+### Low-scale rational candidate (#639)
+
+The separate candidate evaluates `x*P(z)/Q(z)`, `z=x*x`, with positive
+degree-six integer polynomials. Dividing their coefficients by `Q(0)` gives
+a [6/6] Padé approximation to `atan(sqrt(z))/sqrt(z)`: the exact convolution
+with `sum((-z)^j/(2*j+1))` matches through degree twelve. This is a proposed
+ordinary-source kernel for entry scales through 20; it does not replace the
+higher-scale series, public function binding, reductions or final rounding.
+
+The reduced stored argument has magnitude at most 1/9. Positive half-angle
+steps at least halve an argument at most one, so the conservative reconstruction
+bound is 16. Put `h=1/81` and `q_j=Q_j/Q_0`. Because `Q(z)/Q_0>=1`, the absolute
+approximation error after reconstruction is at most
+
+`(16/9)*h^13/(1-h)*sum(q_j/(2*(13-j)+1), j=0..6) < 1.284e-25`.
+
+All coefficients are positive. Both exact and finite-decimal Horner
+denominators retain their positive constant `Q_0`. Each Horner error is less
+than `u/(1-h)` for working ULP `u=10^-W`. Squaring the argument adds less than
+`u` to its squared-value error. Positive coefficient sums and their derivative
+sums at one bound the resulting rational sensitivity; including both Horners,
+the numerator multiply and the final division gives a conservative kernel
+arithmetic bound below `1024u`, before reconstruction. No floating-point
+estimate or sampled agreement establishes these uniform bounds.
+
+Retaining the existing reduction/constant bound conservatively, the candidate's
+pre-rounding budget is `301*(W+3)*u + 16*1024u + 1.284e-25`. For every entry
+scale 0 through 20 and `W>=S+26`, this is below half an output ULP. The expression
+`(W+3)*10^-W` decreases over that domain, so its smallest W is the worst case.
+Exact-Fraction tests check coefficient cancellation, the full interval budget
+and a separate truncating decimal model against alternating-series enclosures.
+Full ordinary-source integration, certified end-to-end cases, fallback/state
+tests, interpreted decision coverage and hosted performance remain required.
+
 ## Exponential
 
 Use x = |argument|, halve until the reduced argument is at most .125, evaluate
