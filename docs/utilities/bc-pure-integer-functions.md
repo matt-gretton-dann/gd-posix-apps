@@ -304,3 +304,37 @@ it does not change the unsigned range or fraction rules.
 This integration does not replace the fixed #627 source cohort or the earlier
 standalone #602 adverse Linux result. The changed source still requires its
 own hosted correctness and performance evidence before merging or adoption.
+
+### Speculative caller boundary
+
+The #635 experiment moves preparation, speculative execution and ownership of
+the completed `Number` box into separate helpers and the lazy `IntegerState`.
+The generic caller retains its scale/check/pack guards and fallback-chain scope.
+It consumes the untouched argument pack only after the helper has produced the
+complete box. A nonthrowing transfer helper moves that box into the return value
+and immediately clears its owner. No borrowed result escapes the tier state.
+The result storage is outside logical scratch, as the earlier caller-local box
+was; its fixed header is included in the tracked state-metadata allocation.
+
+Supported GCC/Clang and MSVC builds enforce the helper boundary with their
+no-inline attributes. Other compilers retain the same standard C++ behavior
+without guaranteed outlining. Entry eligibility, bounded scratch, rejection
+memoization, source generations, interrupt checks and generic fallback are
+unchanged. Tests preserve escaped promoted values across later calls, another
+function's redefinition and a scale-guard fallback.
+
+Local Apple Clang Release validation passes 1,998,416 assertions in 364 ordinary
+cases and 2,001,593 in 375 profile cases. Thirty-four checked programs agree
+across ordinary/profile binaries and the signed-zero parent. All tracked live
+storage returns to zero; allocation counts are unchanged, while requested and
+peak tracked bytes increase by 48 per VM in these programs. This is a persistent
+metadata cost, not a memory saving. Ordinary and IPO allocation-failure fixtures
+pass in both modes, alongside supported record-layout and native-symbol checks.
+The non-isolated configuration also retains the portable interpreter behavior.
+
+The local profile caller's span to the next symbol decreases from 3,516 to 2,876
+bytes, with actual calls to both helpers. Its stack reservation remains 0x190
+bytes. These compiler-specific observations supply no elapsed-performance claim
+and do not predict another platform's frame. Full native qualification, resource
+review and final-main integration remain required. The controlled #627 loss and
+all earlier adverse/inconclusive cohorts remain preserved separately.
