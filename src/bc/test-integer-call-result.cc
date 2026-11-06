@@ -44,10 +44,10 @@ TEST_CASE("Pure integer return storage survives throwing factories", "[bc][integ
       if (throw_after_allocating)
         throw std::bad_alloc();
       return allocated;
-    }),
+    }()),
                     std::bad_alloc);
     CHECK_FALSE(result.has_value());
-    result.construct([] { return Number(9); });
+    result.construct(Number(9));
     CHECK(result.has_value());
     CHECK(result.take() == Number(9));
   }
@@ -92,7 +92,7 @@ TEST_CASE("Pure integer return storage releases prvalue throwing factories",
         throw std::bad_alloc();
       // Control separating the local owner from the factory's return object.
       return Number(9);
-    }),
+    }()),
                     std::bad_alloc);
     CHECK_FALSE(result.has_value());
   }
@@ -111,7 +111,7 @@ TEST_CASE("Pure integer return storage retains escaped aliases", "[bc][integer-f
     {
       Number source(large, 10);
       IntegerCallResult result;
-      result.construct([&] { return source; });
+      result.construct(Number(source));
       source.add(Number(1));
       escaped = result.take();
       CHECK(escaped == Number(large, 10));
@@ -125,14 +125,16 @@ TEST_CASE("Pure integer return storage retains escaped aliases", "[bc][integer-f
 }
 
 #if GD_BC_PROFILE
-TEST_CASE("Pure integer return transport accounts for its extra move", "[bc][integer-function]")
+TEST_CASE("Pure integer return transport accounts for both extra moves", "[bc][integer-function]")
 {
   IntegerCallResult result;
-  result.construct([] { return Number(7); });
+  auto const move = static_cast<std::size_t>(GD::Bc::Profile::Event::digit_moves);
+  auto const entry = GD::Bc::Profile::snapshot();
+  result.construct(Number(7));
   auto const before = GD::Bc::Profile::snapshot();
+  CHECK(before.events[move] == entry.events[move] + 1);
   auto value = result.take();
   auto const after = GD::Bc::Profile::snapshot();
-  auto const move = static_cast<std::size_t>(GD::Bc::Profile::Event::digit_moves);
   CHECK(after.events[move] == before.events[move] + 1);
   CHECK(value == Number(7));
 }

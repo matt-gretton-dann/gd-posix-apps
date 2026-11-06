@@ -1227,7 +1227,7 @@ void GD::Bc::Details::VMState::speculative_call_entry(IntegerCallEntry const* en
   auto& vm = *static_cast<VMState*>(state);
   auto& output = *static_cast<IntegerCallResult*>(result);
   auto const* incoming = static_cast<Number const*>(argument);
-  auto generic = [&] { output.construct([&] { return vm.call_generic(func, loc, incoming); }); };
+  auto generic = [&] { output.construct(vm.call_generic(func, loc, incoming)); };
   auto& definition = vm.functions_.at(static_cast<unsigned>(func));
   // Undefined and deferred definitions retain the generic lookup/diagnostics.
   if (!definition || vm.param_marks_.empty()) {
@@ -1250,7 +1250,7 @@ void GD::Bc::Details::VMState::speculative_call_entry(IntegerCallEntry const* en
     auto const mark = vm.param_marks_.back();
     vm.parameters_.resize(mark.begin);
     vm.param_marks_.pop_back();
-    output.construct([&]() noexcept { return vm.take_integer_result(); });
+    output.construct(vm.take_integer_result());
     return;
   }
   if (restore.state)

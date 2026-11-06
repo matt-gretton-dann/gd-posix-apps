@@ -558,7 +558,7 @@ auto main() -> int
     try {
       if (routed) {
         GD::Bc::Details::IntegerCallResult result;
-        result.construct(factory);
+        result.construct(factory());
       }
       else {
         auto result = factory();

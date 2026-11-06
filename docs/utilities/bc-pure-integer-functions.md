@@ -518,16 +518,20 @@ and public binding are unchanged by extracting its minimal header.
 Generic table entries are null and enter the existing generic body directly.
 Only speculative entries use the opaque transport. An ordinary-context helper
 owns its return storage behind the supported helper boundary, keeping that
-object out of generic callers. A factory constructs Number directly in aligned
-union storage. Ownership is recorded only after successful construction; a
-throwing factory leaves no active Number to destroy. Successful extraction
-uses one nonthrowing move, then destroys the moved-from owner normally. This
-retains the complete-box-before-pack-commit rule and adds no return allocation.
+object out of generic callers. The incoming Number is completely constructed
+before the helper's `construct(Number&&)` call begins. Placement construction
+inside aligned union storage performs only a nonthrowing move; ownership is
+then recorded. A throwing argument expression never enters that call. Taking
+the result performs a second nonthrowing move, then destroys the moved-from
+owner normally. This retains the complete-box-before-pack-commit rule and
+adds no return allocation.
 
-That final transfer is a real cost: profile mode records an extra digit move
-per opaque routed call. It is not hidden or compared as an unchanged counter.
-The first 35 independent checked programs preserve every other event and all
-allocation totals against #642, while reporting 8--40 extra moves per program.
+Those transfers are real costs: profile mode records two extra digit moves
+per opaque routed call. They are not hidden or compared as unchanged counters.
+The initial factory-based transport recorded one extra move per call; its first
+35 independent checked programs preserve every other event and all allocation
+totals against #642, while reporting 8--40 extra moves per program. Those
+original profiles remain separate from the completed-value implementation.
 Generic/full-check calls bypass the transport. Native stack/code costs and
 elapsed behavior still require actual measurement; a smaller router alone
 does not establish an improvement.
@@ -566,3 +570,19 @@ guarded by the private library macro and did not compile into its consumer
 fixtures. Use their existing `GD_BC_EXPECT_INTEGER_FUNCTIONS` definition;
 the previous lifetime passes do not prove that matrix. Retain the failing
 case and rerun the correctly enabled ordinary/IPO controls.
+
+The completed-value implementation removes factory invocation from the
+placement-new expression. Direct named-return cleanup and opaque prvalue
+cleanup passed in the native controls; the original combined expression did
+not. Requiring a fully constructed Number argument separates those lifetimes
+portably, without a compiler-specific exception or weaker ownership checks.
+Keep the original named-return failure/recovery scenario and both controls,
+and account for the extra publication move. Full local ordinary/profile
+suites and the correctly enabled lifetime controls pass; fresh native
+confirmation remains required before qualification.
+
+The completed-value 35-program differential preserves exact outputs, every
+non-move event and every allocation category against #642. Its 16--80 extra
+moves per program are exactly twice the initial transport's counts. Keep
+both raw collections and their source/binary identities; neither collection
+measures elapsed performance.

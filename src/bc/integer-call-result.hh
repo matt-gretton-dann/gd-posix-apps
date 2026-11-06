@@ -14,8 +14,9 @@
 #include "bc.hh"
 
 namespace GD::Bc::Details {
-// This owning helper belongs outside the native router. A throwing factory
-// leaves no Number to destroy; extraction adds one explicit nonthrowing move.
+// This owning helper belongs outside the native router. A complete argument
+// owns the value before placement construction starts. Publishing and taking
+// the result each add one explicit nonthrowing move.
 class IntegerCallResult
 {
 public:
@@ -30,15 +31,13 @@ public:
 
   auto has_value() const noexcept -> bool { return constructed_; }
 
-  template<typename Factory>
-  void construct(Factory&& factory)
+  void construct(Number&& value) noexcept
   {
-    static_assert(std::is_same_v<decltype(std::forward<Factory>(factory)()), Number>);
+    static_assert(std::is_nothrow_move_constructible_v<Number>);
     assert(!constructed_);
-    // Same-type prvalue initialization constructs directly in this storage.
-    // Publish ownership only after complete successful construction.
-    ::new (static_cast<void*>(std::addressof(storage_.number)))
-      Number(std::forward<Factory>(factory)());
+    // Argument evaluation, including any throwing factory, completes before
+    // this call. Only a nonthrowing transfer happens inside placement storage.
+    ::new (static_cast<void*>(std::addressof(storage_.number))) Number(std::move(value));
     constructed_ = true;
   }
 
