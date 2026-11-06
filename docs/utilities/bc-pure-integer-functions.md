@@ -489,3 +489,17 @@ jobs skipped. #642 and #644 remain frozen. A new runtime performance cohort
 requires successful preflight, completion and preservation of #642's declared
 cohort, and a separately frozen qualification source. No prior losing or
 inconclusive observation is superseded by this repair.
+
+The first native preflight at `0a2b26a4` exposes the ownership failure with a
+working Windows LLVM adapter: both defaulted destructors are still exported.
+Matching signatures shrink that router from 0x33 to 0x28 bytes, while its
+saved RBX and 0x40-byte stack reservation remain. Numeric, reload and lifetime
+checks pass; this does not establish the required compiler boundary.
+
+The follow-up targets explicit instantiation declarations at the two defaulted
+destructor members instead of their enclosing classes. The ownership guard
+continues to reject every Number/Digits definition; it gains no exemption.
+Local ordinary/profile suites, eight/seven focused contracts, 35 exact
+programs with matching event maps/allocation totals and the non-isolated CLI
+pass. Native Windows confirmation remains pending. The original preflight
+objects, binaries, failed reports and logs are retained separately.

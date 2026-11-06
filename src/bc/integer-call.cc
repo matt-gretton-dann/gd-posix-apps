@@ -5,13 +5,17 @@
 
 #include <type_traits>
 
-// Keep MSVC's eagerly emitted ownership definitions in the ordinary library
-// context as well. These declarations suppress this TU's instantiations; they
-// do not change Number's representation or the callback's return contract.
-extern template class GD::Bc::BasicNumber<
-  std::conditional_t<sizeof(void*) == 8, GD::Bc::NumberTraits32, GD::Bc::NumberTraits16>>;
-extern template class GD::Bc::Details::BasicDigits<
-  std::conditional_t<sizeof(void*) == 8, GD::Bc::NumberTraits32, GD::Bc::NumberTraits16>>;
+// Explicitly suppress the two ownership members rather than only their
+// enclosing classes: MSVC still emitted defaulted destructors with class-level
+// extern declarations. The ordinary library supplies any required definition.
+using RouterNumberTraits =
+  std::conditional_t<sizeof(void*) == 8, GD::Bc::NumberTraits32, GD::Bc::NumberTraits16>;
+namespace GD::Bc {
+extern template BasicNumber<RouterNumberTraits>::~BasicNumber() noexcept;
+namespace Details {
+extern template BasicDigits<RouterNumberTraits>::~BasicDigits();
+}  // namespace Details
+}  // namespace GD::Bc
 
 auto GD::Bc::Details::dispatch_integer_call(IntegerCallEntry const* entry, void* state,
                                             Letter function, Location const& location,
