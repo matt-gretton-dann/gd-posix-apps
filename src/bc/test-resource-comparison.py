@@ -213,6 +213,19 @@ class ResourceComparison(unittest.TestCase):
         self.assertNotIn('candidate_over_base', report['events']['new'])
         self.assertIsNone(report['total']['allocated_bytes']['candidate_over_base'])
 
+    def test_math_resource_configs_use_the_same_library_arguments(self):
+        calls = []
+        self.module.run_diagnostics(lambda argv: calls.append(argv), self.profiles,
+                                    self.ordinary, ('full',), 'math', self.root)
+        profiles = json.loads((self.root / 'resource-profiles.json').read_text())['implementations']
+        ordinary = json.loads((self.root / 'resource-ordinary.json').read_text())['implementations']
+        for role, profile, release in zip(('base', 'candidate'), profiles, ordinary):
+            self.assertEqual(profile['argv'][1:], ['-l'])
+            self.assertEqual(release['argv'][1:], ['-l'])
+        self.module.validate_roles(self.bench, {e['name']: e for e in profiles},
+                                   {e['name']: e for e in ordinary})
+        self.assertEqual(len(calls), 1)
+
     def test_profile_builds_match_candidate_options_and_keep_baseline_policy(self):
         args = types.SimpleNamespace(source=self.root, base='a' * 40, candidate='b' * 40,
                                      split_point=126, candidate_live_results="ON", base_live_results="OFF",

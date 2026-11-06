@@ -76,6 +76,42 @@ class CodegenEvidence(unittest.TestCase):
             self.assertEqual(row['pe_code']['status'], 'unavailable')
             self.assertEqual(row['file_bytes'], source.stat().st_size)
 
+    def test_library_recipe_and_exact_input_are_preserved(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source, library = root / 'binary', root / 'library with spaces.bc'
+            source.write_bytes(b'not executable')
+            library.write_bytes(b'define f(x) { return(x) }\n')
+            entry = self.entry(source, 'howard-portable')
+            entry['argv'].append(str(library))
+            entry['input_artifacts'] = [dict(path=str(library), sha256=CG.digest(library),
+                                              purpose='ordinary math library')]
+            with mock.patch.object(CG, 'native_commands', return_value=[]):
+                report = CG.collect([entry], root / 'evidence')
+            row = report['observations'][0]
+            self.assertEqual(row['implementation'], entry)
+            artifact = row['input_artifacts'][0]
+            self.assertEqual(artifact['sha256'], CG.digest(library))
+            self.assertEqual((root / 'evidence' / artifact['archive_path']).read_bytes(), library.read_bytes())
+            self.assertEqual(artifact['purpose'], 'ordinary math library')
+
+    def test_missing_or_changed_library_input_is_a_hard_error(self):
+        for mode in ('missing', 'changed'):
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                source, library = root / 'binary', root / 'library.bc'
+                source.write_bytes(b'not executable')
+                library.write_bytes(b'1+1\n')
+                entry = self.entry(source)
+                entry['input_artifacts'] = [dict(path=str(library), sha256=CG.digest(library))]
+                if mode == 'missing':
+                    library.unlink()
+                else:
+                    library.write_bytes(b'1+2\n')
+                with mock.patch.object(CG, 'native_commands', return_value=[]), self.assertRaises(CG.CodegenError):
+                    CG.collect([entry], root / 'evidence')
+                self.assertEqual(json.loads((root / 'evidence/manifest.json').read_text())['status'], 'error')
+
     def test_missing_changed_or_instrumented_binaries_are_hard_errors(self):
         for mode in ('missing', 'changed', 'instrumented'):
             with self.subTest(mode=mode), tempfile.TemporaryDirectory() as temporary:
