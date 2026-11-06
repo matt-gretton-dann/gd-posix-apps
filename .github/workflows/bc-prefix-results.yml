@@ -1,0 +1,78 @@
+name: bc on-demand result prefix contracts
+
+on:
+  pull_request:
+    branches: [main, 'codex/**']
+    paths: ['src/bc/**', 'CMakeLists.txt', 'cmake/**', '.github/workflows/bc-prefix-results.yml']
+  push:
+    branches: [main]
+    paths: ['src/bc/**', 'CMakeLists.txt', 'cmake/**', '.github/workflows/bc-prefix-results.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bc-prefix-results-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  contracts:
+    name: Prefix contracts / ${{ matrix.os }} / typed ${{ matrix.typed }} / sanitizers ${{ matrix.sanitizers }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2025]
+        typed: ['ON', 'OFF']
+        sanitizers: ['OFF']
+        include:
+          - os: ubuntu-24.04
+            typed: 'OFF'
+            sanitizers: 'ON'
+    env:
+      ASAN_OPTIONS: detect_leaks=1
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Record immutable source and requested mode
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force evidence | Out-Null
+          git rev-parse HEAD | Out-File evidence/revision.txt -Encoding utf8
+          'prefix=ON profile=ON typed=${{ matrix.typed }} sanitizers=${{ matrix.sanitizers }}' | Out-File evidence/requested-mode.txt -Encoding utf8
+      - name: Configure enabled storage and actual mode diagnostics
+        shell: pwsh
+        run: |
+          $arguments = @('-S', '.', '-B', 'build-prefix', '-DCMAKE_BUILD_TYPE=Release', '-DBUILD_TESTING=ON', '-DENABLE_BC_PREFIX_RESULTS=ON', '-DENABLE_BC_PROFILE=ON', '-DENABLE_BC_TYPED_RESULTS=${{ matrix.typed }}', '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON')
+          if ('${{ matrix.sanitizers }}' -eq 'ON') {
+            $arguments += @('-DIPO_MODE=OFF', '-DCMAKE_C_COMPILER=clang', '-DCMAKE_CXX_COMPILER=clang++', '-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer', '-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer')
+          }
+          cmake @arguments
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Build engine and all selected fixtures
+        shell: pwsh
+        run: |
+          cmake --build build-prefix --config Release --target bc test-libbc test-bc-signal --parallel 2
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Check mode use, ownership, failure recovery and semantics
+        shell: pwsh
+        run: |
+          ctest --test-dir build-prefix -C Release --output-on-failure --no-tests=error -R '^bc/(prefix-integration|vm-lifetime(-ipo)?|vm-cli|signal.*|math-.*|profiling-cli)$'
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Preserve actual compilation and contract results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bc-prefix-${{ matrix.os }}-typed-${{ matrix.typed }}-sanitizers-${{ matrix.sanitizers }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            evidence/
+            build-prefix/CMakeCache.txt
+            build-prefix/compile_commands.json
+            build-prefix/src/bc/*.vcxproj
+            build-prefix/Testing/Temporary/LastTest.log
+          if-no-files-found: error
+          retention-days: 30
