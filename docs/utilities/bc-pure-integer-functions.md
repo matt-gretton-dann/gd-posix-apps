@@ -289,3 +289,18 @@ from MC/DC instrumentation. The supported denominator must not be presented as
 proof for that expression or for every planner/engine guard. Raw profiles,
 objects, binaries, commands, source hashes and before/after exports are retained
 separately from performance artifacts.
+
+### Signed-zero integration prerequisite
+
+Unsigned boundaries must accept exact numeric zero regardless of its stored
+sign before the integer tier can be adopted. A cold generic function returning
+`-0` and its prepared integer version must behave identically when the result
+sets `scale` or indexes an array. The #601 integration tests exercise both cold
+and warmed calls, reject genuine negative fractions and integers in both
+states, and separately assert successful tier execution and complete tracked
+cleanup. The correction checks the magnitude before rejecting a negative sign;
+it does not change the unsigned range or fraction rules.
+
+This integration does not replace the fixed #627 source cohort or the earlier
+standalone #602 adverse Linux result. The changed source still requires its
+own hosted correctness and performance evidence before merging or adoption.
