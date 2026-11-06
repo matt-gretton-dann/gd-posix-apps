@@ -395,6 +395,9 @@ if(RUN_INTEGRATION_TESTS)
   add_test(NAME bc/prefix-build-policy COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-prefix-build.py")
   set_tests_properties(bc/prefix-build-policy PROPERTIES TIMEOUT 15)
+  add_test(NAME bc/resource-comparison COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-resource-comparison.py")
+  set_tests_properties(bc/resource-comparison PROPERTIES TIMEOUT 15)
   # The fixed sparse protocol exercises 828 serial fixture processes, plus a
   # separate 15-second deadline test. Allow slower hosted process startup while
   # retaining every output/sample assertion and the children's own deadlines.
