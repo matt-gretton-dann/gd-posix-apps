@@ -12,6 +12,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import platform
 import shutil
 import signal
 import subprocess
@@ -29,6 +30,10 @@ def load(name):
 
 
 AA_POLICY = load('benchmark-policy')
+
+
+def acceptance_report(rows, samples):
+    return AA_POLICY.acceptance_review(rows, platform.system(), 'math', samples)
 
 
 def write(path, value):
@@ -480,6 +485,7 @@ def main():
         for preset in presets:
             resource_diagnostics(bench, evidence / 'paired.json', diagnostic_cases(bench, preset),
                                  evidence / (preset + '-resource-diagnostics'), timeout=args.child_timeout_seconds)
+        write(evidence / 'acceptance.json', acceptance_report(decisions, args.samples))
         write(evidence / 'decisions.json', dict(advisory=True, results=decisions,
              aa_policy_sha256=AA_POLICY.source_sha256(),
              goal='median<=0.90 and nominal CI upper<1 for substantive repeated classes',

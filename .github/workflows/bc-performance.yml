@@ -20,8 +20,8 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   paired:
-    # Correctness preflight only; retain the frozen #650 timing cohort.
-    if: github.head_ref != 'codex/bc-651-prefix-results'
+    # Policy review and prefix correctness preflight reuse retained timing evidence.
+    if: github.head_ref != 'codex/bc-652-competitive-margin' && github.head_ref != 'codex/bc-651-prefix-results'
     name: Paired native bc / ${{ matrix.image }}
     runs-on: ${{ matrix.image }}
     timeout-minutes: 90

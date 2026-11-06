@@ -28,6 +28,10 @@ def load(name):
 AA_POLICY = load('benchmark-policy')
 
 
+def acceptance_report(rows, samples):
+    return AA_POLICY.acceptance_review(rows, platform.system(), 'arithmetic', samples)
+
+
 def write(path, value):
     path.write_text(json.dumps(value, indent=2, sort_keys=True) + '\n', encoding='utf-8')
 
@@ -290,9 +294,10 @@ def main():
                                     'candidate_over_howard': competitive})
         if args.sparse_qualification:
             reports.extend(qualify_sparse(builder, evidence, entries))
+        write(evidence / 'acceptance.json', acceptance_report(reports, args.samples))
         write(evidence / 'decisions.json', {'advisory': True, 'results': reports,
               'aa_policy_sha256': AA_POLICY.source_sha256(),
-              'policy': '5% is provisional; no performance failure gate; startup uncalibrated',
+              'policy': 'Raw signals retained; see acceptance.json for competitive-margin policy; startup uncalibrated',
               'pending': ['POSIX math library #217', 'cross-run A/A calibration and autocorrelation policy']})
         lines = ['# bc native paired results', '', 'Performance decisions are advisory; correctness, builds and deadlines are hard failures.',
                  '', 'Candidate is the exact PR head (not a synthetic merge), or checked push/main SHA.',
