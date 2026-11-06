@@ -20,8 +20,8 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   paired:
-    # Policy review and prefix correctness preflight reuse retained timing evidence.
-    if: github.head_ref != 'codex/bc-652-competitive-margin' && github.head_ref != 'codex/bc-651-prefix-results'
+    # These exact policy/correctness topics reuse retained elapsed evidence.
+    if: github.head_ref != 'codex/bc-652-competitive-margin' && github.head_ref != 'codex/bc-651-prefix-results' && github.head_ref != 'codex/bc-655-array-profile' && github.head_ref != 'codex/bc-657-prefix-qualification'
     name: Paired native bc / ${{ matrix.image }}
     runs-on: ${{ matrix.image }}
     timeout-minutes: 90
