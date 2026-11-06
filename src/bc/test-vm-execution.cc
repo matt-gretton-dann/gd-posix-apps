@@ -428,6 +428,60 @@ TEST_CASE("Configured liveness prepares verified layouts and preserves live nume
   }
 }
 
+TEST_CASE("Acquired mixed lanes report numeric and array snapshot storage independently",
+          "[bc][vm][live-results][verified-profile]")
+{
+  using Checks = GD::Bc::VM::ExecutionChecks;
+  using Event = GD::Bc::Profile::Event;
+  for (auto checks : {Checks::full, Checks::verified}) {
+    GD::Bc::Instructions code{I(O::array, GD::Bc::Array('a'))};
+    for (unsigned i = 0; i != 64; ++i) {
+      auto const pc = code.size();
+      code.emplace_back(O::load, -D(pc));
+    }
+    auto const numeric_begin = code.size();
+    for (unsigned i = 0; i != 64; ++i)
+      code.emplace_back(O::number, std::to_string(i));
+    std::string expected;
+    for (unsigned i = 0; i != 64; ++i) {
+      auto const pc = code.size();
+      code.emplace_back(O::print, D(numeric_begin + i) - D(pc), I::Stream::output);
+      code.emplace_back(O::print, D(1 + i) - D(pc + 1), I::Stream::output);
+      code.emplace_back(O::number, "999");
+      expected += std::to_string(i) + "\n<ARRAY VALUES>\n";
+    }
+    code.emplace_back(O::eof);
+    std::ostringstream output, errors;
+    GD::Bc::VM vm(output, errors, false, checks);
+    auto const before = GD::Bc::Profile::snapshot();
+    CHECK_FALSE(vm.execute(code));
+    auto const after = GD::Bc::Profile::snapshot();
+    auto acquired = [&](Event which) {
+      auto const index = static_cast<std::size_t>(which);
+      return after.events[index] - before.events[index];
+    };
+    CHECK(output.str() == expected);
+    CHECK(errors.str().empty());
+    if (checks == Checks::full) {
+      CHECK(acquired(Event::generic_result_slots_acquired) == code.size());
+      CHECK(acquired(Event::number_result_slots_acquired) == 0);
+      CHECK(acquired(Event::other_result_slots_acquired) == 0);
+    }
+    else if (GD_BC_EXPECT_TYPED_RESULTS) {
+      CHECK(acquired(Event::generic_result_slots_acquired) == 0);
+      CHECK(acquired(Event::number_result_slots_acquired) ==
+            (GD_BC_EXPECT_LIVE_RESULTS ? 64 : 128));
+      CHECK(acquired(Event::other_result_slots_acquired) == 65);
+    }
+    else {
+      CHECK(acquired(Event::generic_result_slots_acquired) ==
+            (GD_BC_EXPECT_LIVE_RESULTS ? 129 : 194));
+      CHECK(acquired(Event::number_result_slots_acquired) == 0);
+      CHECK(acquired(Event::other_result_slots_acquired) == 0);
+    }
+  }
+}
+
 TEST_CASE("Typed execution respects configuration and profitable layout selection",
           "[bc][vm][typed-results][verified-profile]")
 {

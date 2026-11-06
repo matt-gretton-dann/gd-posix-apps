@@ -1404,12 +1404,18 @@ auto GD::Bc::Details::VMState::acquire_results(std::size_t count, ExecutionLayou
       auto& buffers = std::get<TypedResultBuffers>(result);
       buffers.numbers.resize(typed->slots.number_count);
       buffers.others.resize(typed->slots.other_count);
+      // Publish acquired sizes only after both lanes succeed. These describe
+      // live slot elements, not reserved capacity or constructor invocations.
+      GD_BC_PROFILE_EVENT(Profile::Event::number_result_slots_acquired, buffers.numbers.size());
+      GD_BC_PROFILE_EVENT(Profile::Event::other_result_slots_acquired, buffers.others.size());
     }
     else {
       if (!std::holds_alternative<ResultBuffer>(result))
         result.emplace<ResultBuffer>();
       std::get<ResultBuffer>(result).resize(
         std::get<GenericExecutionLayout>(layout).slots.storage_size(count));
+      GD_BC_PROFILE_EVENT(Profile::Event::generic_result_slots_acquired,
+                          std::get<ResultBuffer>(result).size());
     }
   }
   catch (...) {
@@ -1426,6 +1432,7 @@ auto GD::Bc::Details::VMState::acquire_results(std::size_t count, ExecutionLayou
 #else
   assert(result.empty());  // NOLINT
   result.resize(layout.slots.storage_size(count));
+  GD_BC_PROFILE_EVENT(Profile::Event::generic_result_slots_acquired, result.size());
   ++result_depth_;
   return &result;
 #endif

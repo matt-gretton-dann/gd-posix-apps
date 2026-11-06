@@ -25,6 +25,14 @@ using Index = Instruction::Index;
 using Opcode = Instruction::Opcode;
 using Word = std::uint64_t;
 using Color = ResultSlotPlan::CompactIndex;
+// Track construction scratch separately from retained execution maps. With
+// profiling disabled this resolves to the original std::allocator vector.
+template<typename T>
+using AnalysisBuffer =
+  std::vector<T, Profile::Allocator<T, Profile::AllocationKind::result_analysis>>;
+#if !GD_BC_PROFILE
+static_assert(std::is_same_v<AnalysisBuffer<Word>, std::vector<Word>>);
+#endif
 enum class Domain { all, number, other };
 constexpr std::size_t word_bits = 64;
 
@@ -50,7 +58,7 @@ public:
 
   auto build(Instructions const& code) -> bool
   {
-    std::vector<Index> definition_end(size_, size_);
+    AnalysisBuffer<Index> definition_end(size_, size_);
     Index definition = size_;
     for (Index i = 0; i < size_; ++i) {
       if (code[i].opcode() == Opcode::function_begin) {
@@ -157,7 +165,7 @@ public:
           return false;
       }
     }
-    std::vector<Index> pending{0};
+    AnalysisBuffer<Index> pending{0};
     reachable_[0] = true;
     while (!pending.empty()) {
       auto const i = pending.back();
@@ -184,7 +192,7 @@ public:
 
   auto compute() -> bool
   {
-    std::vector<Word> live(size_ * words_);
+    AnalysisBuffer<Word> live(size_ * words_);
     bool changed = true;
     while (changed) {
       changed = false;
@@ -233,9 +241,9 @@ public:
     return true;
   }
 
-  auto color(std::vector<Color>& colors, std::size_t& count, Domain domain = Domain::all) -> bool
+  auto color(AnalysisBuffer<Color>& colors, std::size_t& count, Domain domain = Domain::all) -> bool
   {
-    std::vector<Index> seen(size_ + 1);
+    AnalysisBuffer<Index> seen(size_ + 1);
     Color maximum = 0;
     for (Index i = 0; i < size_; ++i) {
       if (!reachable_[i] || !matches(i, domain))
@@ -268,8 +276,8 @@ public:
     return true;
   }
 
-  auto typed_plan(std::vector<Color> const& colors, std::size_t numbers, std::size_t others) const
-    -> TypedResultPlan
+  auto typed_plan(AnalysisBuffer<Color> const& colors, std::size_t numbers,
+                  std::size_t others) const -> TypedResultPlan
   {
     // The lowerer validates all region producers, even after an unconditional
     // return. Unreachable producers need valid placeholders; skipped bodies
@@ -313,7 +321,7 @@ private:
     return true;
   }
 
-  auto out(std::vector<Word> const& live, Index i, std::size_t word) const -> Word
+  auto out(AnalysisBuffer<Word> const& live, Index i, std::size_t word) const -> Word
   {
     Word result = 0;
     for (std::size_t n = 0; n < nodes_[i].next_count; ++n)
@@ -334,9 +342,9 @@ private:
   std::size_t size_;
   std::size_t words_;
   std::size_t remaining_;
-  std::vector<Node> nodes_;
-  std::vector<bool> reachable_;
-  std::vector<Word> interference_;
+  AnalysisBuffer<Node> nodes_;
+  AnalysisBuffer<bool> reachable_;
+  AnalysisBuffer<Word> interference_;
 };
 
 // Match the existing typed gate's retained headers, slots, maps and executable
@@ -402,7 +410,7 @@ auto plan_live_result_slots(Instructions const& code, ResultSlotPlan fallback,
                       std::min(budget.max_word_operations, LivenessBudget::word_operation_limit));
     if (!analysis.build(code) || !analysis.compute())
       return fallback;
-    std::vector<Color> colors(size);
+    AnalysisBuffer<Color> colors(size);
     std::size_t count = 0;
     if (!analysis.color(colors, count) || count >= old_count || count > limit / slot_bytes ||
         count * slot_bytes > limit - size * sizeof(Color) ||
@@ -448,8 +456,8 @@ auto plan_live_result_layouts(Instructions const& code, LiveResultPlans fallback
                       std::min(budget.max_word_operations, LivenessBudget::word_operation_limit));
     if (!analysis.build(code) || !analysis.compute())
       return fallback;
-    std::vector<Color> generic_colors(size);
-    std::vector<Color> typed_colors(size);
+    AnalysisBuffer<Color> generic_colors(size);
+    AnalysisBuffer<Color> typed_colors(size);
     std::size_t generic_count = 0;
     std::size_t number_palette = 0;
     std::size_t other_palette = 0;

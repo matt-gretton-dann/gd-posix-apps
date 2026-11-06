@@ -22,7 +22,7 @@ enum class AllocationKind : std::size_t {
   literals,
   execution_plans,
   divisors,
-  result_analysis,
+  result_analysis,  // Optional construction scratch, excluding retained maps.
   count
 };
 enum class Event : std::size_t {
@@ -69,6 +69,7 @@ enum class Event : std::size_t {
   divisor_cache_hits,
   live_result_preparations,
   live_result_plan_improvements,
+  // Successful activation sizes, not reserved capacity or constructor calls.
   generic_result_slots_acquired,
   number_result_slots_acquired,
   other_result_slots_acquired,

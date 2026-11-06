@@ -93,6 +93,25 @@ candidates, including standalone test calls. Neither is an instruction-execution
 count or proof that each alternative was selected. Read them alongside actual
 compiled mode definitions, exact outputs and `typed_instructions_executed`.
 
+Diagnostic builds additionally track every planner scratch vector in the
+`result_analysis` allocation category: region metadata, reachability, pending
+work, both bit matrices, colors and neighbor marks. Retained maps stay in
+`execution_plans`. Scratch live bytes must return to their prior value after
+either API returns; its peak and cumulative allocations remain visible even
+when analysis declines. This closes the earlier selected-container accounting
+gap; it is still not a count of every process allocation. With profiling OFF,
+the scratch alias resolves to the original `std::allocator` vector type.
+
+`generic_result_slots_acquired`, `number_result_slots_acquired` and
+`other_result_slots_acquired` sum the live element counts successfully acquired
+by activations. Generic counts include the sentinel when a compact map uses
+one. Typed counts use separate numeric/other domains. They count neither
+reserved capacity nor constructor calls; both typed resizes must succeed before
+either typed count is published. These observations identify the actual selected
+buffer representation without an activation field or per-access tracking.
+Mixed-lane contracts keep 64 numbers and 64 array snapshots live together and
+check both nonzero and zero counter cases against full execution.
+
 At the initial VM-integration checkpoint `8fc2d9d0`, local Release profile builds
 with liveness ON and typed execution both ON and
 OFF each pass 376 unit cases / 2,075,958 assertions and nine focused CTest
@@ -174,8 +193,18 @@ configuration. Broad/application-mapping planner coverage is now 398/413 lines,
 398/413, 346/382 and 55/90 respectively. CLI-only counters remain at the earlier
 values because these follow-ups add direct planner contracts, not application
 paths. Each configuration retains its own 101 raw profiles and exact binaries;
-all three exports are warning-free. Hosted validation of the added contracts
-remains pending.
+all three exports are warning-free. At `02b906e8`, all 23 hosted checks passed,
+including all twelve native mode configurations and emitted provenance gates;
+their fifteen archives and exact gate records are independently verified. The
+subsequent resource-accounting changes have separate validation and do not
+inherit that hosted result. Locally, the new typed Release profile suite passes
+381 cases / 2,081,258 assertions. The generic profile suite passes 380 cases /
+2,081,246 assertions before adding the mixed-lane fixture, which separately
+passes with both other resource contracts (42 assertions across three cases).
+The ordinary allocator build passes 367 cases / 2,081,106 assertions and nine
+focused ownership/CLI/signal targets; the profile configurations pass eleven
+focused targets. Native revalidation and performance qualification remain
+outstanding for this resource-accounting revision.
 
 Remaining gaps include compound guard MC/DC, empty/transient-small combined
 requests and defensive verified-input rejection paths. Several arithmetic
