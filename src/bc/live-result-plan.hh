@@ -11,8 +11,12 @@
 namespace GD::Bc::Details {
 struct LivenessBudget
 {
-  std::size_t max_instructions = 4096;
-  std::size_t max_word_operations = 4 * 1024 * 1024;
+  static constexpr std::size_t instruction_limit = 4096;
+  static constexpr std::size_t word_operation_limit = 4 * 1024 * 1024;
+  // Callers can lower either hard limit. Work counts node/word propagation
+  // steps, interference/color neighbor visits and color probes.
+  std::size_t max_instructions = instruction_limit;
+  std::size_t max_word_operations = word_operation_limit;
 };
 
 // Standalone experiment, not selected by the VM. Complete entry verification
@@ -20,7 +24,7 @@ struct LivenessBudget
 // analysis is declined; no partially constructed map may escape. New colors
 // must keep a destination distinct from its instruction's borrowed operands.
 auto plan_live_result_slots(Instructions const& code, ResultSlotPlan fallback,
-                            std::size_t slot_bytes, bool persistent,
-                            LivenessBudget budget = {}) -> ResultSlotPlan;
+                            std::size_t slot_bytes, bool persistent, LivenessBudget budget = {})
+  -> ResultSlotPlan;
 }  // namespace GD::Bc::Details
 #endif

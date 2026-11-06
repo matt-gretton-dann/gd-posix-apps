@@ -35,8 +35,8 @@ auto dense(unsigned terms = 8) -> Instructions
 
 auto old_plan(Instructions const& code) -> ResultSlotPlan
 {
-  return GD::Bc::Details::plan_result_slots(
-    code, 48, GD::Bc::Details::plan_consumption(code, true));
+  return GD::Bc::Details::plan_result_slots(code, 48,
+                                            GD::Bc::Details::plan_consumption(code, true));
 }
 
 auto optimize(Instructions const& code, bool persistent = true, bool body = false,
@@ -140,11 +140,11 @@ TEST_CASE("Liveness preserves outer values across a repeated loop consumer",
           "[bc][vm][live-results]")
 {
   Instructions code(8, I(O::number, "99"));
-  code.emplace_back(O::number, "7");       // 8, live across the backedge.
-  code.emplace_back(O::number, "1");       // 9, also live across the backedge.
+  code.emplace_back(O::number, "7");        // 8, live across the backedge.
+  code.emplace_back(O::number, "1");        // 9, also live across the backedge.
   code.emplace_back(O::add, D(-2), D(-1));  // 10, repeatedly reads 8 and 9.
-  code.emplace_back(O::number, "9");       // 11, cannot overwrite either outer value.
-  code.emplace_back(O::branch, D(-2));     // 12 -> 10.
+  code.emplace_back(O::number, "9");        // 11, cannot overwrite either outer value.
+  code.emplace_back(O::branch, D(-2));      // 12 -> 10.
   while (code.size() < 16)
     code.emplace_back(O::branch, D(1));
   auto const slots = optimize(code);
@@ -158,13 +158,20 @@ TEST_CASE("Disjoint diamond branches share colors without sharing live operands"
           "[bc][vm][live-results]")
 {
   Instructions code(8, I(O::number, "99"));
-  Instructions const tail{
-    I(O::number, "1"), I(O::branch_zero, D(-1), D(6)),
-    I(O::number, "2"), I(O::number, "3"), I(O::add, D(-2), D(-1)),
-    I(O::print, D(-1), I::Stream::output), I(O::branch, D(5)),
-    I(O::number, "4"), I(O::number, "5"), I(O::add, D(-2), D(-1)),
-    I(O::print, D(-1), I::Stream::output), I(O::number, "9"),
-    I(O::print, D(-1), I::Stream::output), I(O::eof)};
+  Instructions const tail{I(O::number, "1"),
+                          I(O::branch_zero, D(-1), D(6)),
+                          I(O::number, "2"),
+                          I(O::number, "3"),
+                          I(O::add, D(-2), D(-1)),
+                          I(O::print, D(-1), I::Stream::output),
+                          I(O::branch, D(5)),
+                          I(O::number, "4"),
+                          I(O::number, "5"),
+                          I(O::add, D(-2), D(-1)),
+                          I(O::print, D(-1), I::Stream::output),
+                          I(O::number, "9"),
+                          I(O::print, D(-1), I::Stream::output),
+                          I(O::eof)};
   code.insert(code.end(), tail.begin(), tail.end());
   auto const slots = optimize(code);
   REQUIRE(slots.storage_size(code.size()) <= 4);
@@ -179,11 +186,11 @@ TEST_CASE("Forward producer references follow execution order rather than source
           "[bc][vm][live-results]")
 {
   Instructions code(8, I(O::number, "99"));
-  code.emplace_back(O::branch, D(3));                 // 8 -> 11.
+  code.emplace_back(O::branch, D(3));                    // 8 -> 11.
   code.emplace_back(O::print, D(2), I::Stream::output);  // 9 reads 11.
-  code.emplace_back(O::number, "99");                // 10 dies before 11 redefines.
-  code.emplace_back(O::number, "7");                 // 11 dominates 9.
-  code.emplace_back(O::branch, D(-3));                // 12 -> 9.
+  code.emplace_back(O::number, "99");                    // 10 dies before 11 redefines.
+  code.emplace_back(O::number, "7");                     // 11 dominates 9.
+  code.emplace_back(O::branch, D(-3));                   // 12 -> 9.
   while (code.size() < 16)
     code.emplace_back(O::branch, D(1));
   auto const slots = optimize(code);
@@ -216,8 +223,7 @@ TEST_CASE("Definition bodies get independent liveness regions", "[bc][vm][live-r
   body.back() = I(O::return_, D(-1));
   code.insert(code.end(), body.begin(), body.end());
   auto const end = code.size();
-  code.emplace_back(O::function_end, GD::Bc::Letter('f'),
-                    -static_cast<D>(end - begin));
+  code.emplace_back(O::function_end, GD::Bc::Letter('f'), -static_cast<D>(end - begin));
   code.emplace_back(O::number, "9");
   code.emplace_back(O::print, D(-1), I::Stream::output);
   code.emplace_back(O::eof);
@@ -248,8 +254,7 @@ TEST_CASE("Warm tiny regions can improve while transient streams retain their fa
   check_paths(code, cold);
 }
 
-TEST_CASE("Declined liveness budgets preserve the complete original plan",
-          "[bc][vm][live-results]")
+TEST_CASE("Declined liveness budgets preserve the complete original plan", "[bc][vm][live-results]")
 {
   auto const code = dense();
   auto const fallback = old_plan(code);
@@ -263,5 +268,77 @@ TEST_CASE("Declined liveness budgets preserve the complete original plan",
     auto const slots = GD::Bc::Details::plan_live_result_slots(code, fallback, bytes, true);
     CHECK(slots.indices == fallback.indices);
     CHECK(slots.count == fallback.count);
+  }
+}
+
+TEST_CASE("Liveness crosses bitset words and abandons partially spent work safely",
+          "[bc][vm][live-results]")
+{
+  auto const code = dense(80);
+  REQUIRE(code.size() > 128);
+  auto const slots = optimize(code);
+  REQUIRE(slots.storage_size(code.size()) <= 4);
+  check_paths(code, slots);
+  auto const fallback = old_plan(code);
+  auto const exhausted = optimize(code, true, false, LivenessBudget{4096, 20});
+  CHECK(exhausted.indices == fallback.indices);
+  CHECK(exhausted.count == fallback.count);
+  check_paths(code, exhausted);
+  auto const retry = optimize(code);
+  CHECK(retry.indices == slots.indices);
+}
+
+TEST_CASE("Hard analysis limits and unprofitable interference retain the old layout",
+          "[bc][vm][live-results]")
+{
+  Instructions const oversized(4097, I(O::number, "1"));
+  auto const large = optimize(oversized, true, false, LivenessBudget{8192, 4 * 1024 * 1024});
+  CHECK(large.indices.empty());
+  CHECK(large.storage_size(oversized.size()) == oversized.size());
+
+  Instructions simultaneous(20, I(O::number, "1"));
+  for (I::Index i = 0; i < 20; ++i)
+    simultaneous.emplace_back(O::print, static_cast<D>(i) - static_cast<D>(simultaneous.size()),
+                              I::Stream::output);
+  auto const fallback = old_plan(simultaneous);
+  auto const unchanged = optimize(simultaneous);
+  CHECK(unchanged.indices == fallback.indices);
+  CHECK(unchanged.count == fallback.count);
+  check_paths(simultaneous, unchanged);
+}
+
+TEST_CASE("Generated diamonds preserve an outer owner across disjoint lifetimes",
+          "[bc][vm][live-results]")
+{
+  for (unsigned seed = 0; seed < 8; ++seed) {
+    std::minstd_rand random(seed + 661197);
+    Instructions code{I(O::number, "777")};
+    for (unsigned group = 0; group < 12; ++group) {
+      for (unsigned n = 0, count = random() % 4; n < count; ++n)
+        code.emplace_back(O::number, "99");
+      code.emplace_back(O::number, "1");
+      auto const conditional = code.size();
+      code.emplace_back(O::branch_zero, D(-1), D(1));
+      for (unsigned arm = 0; arm < 2; ++arm) {
+        auto const first = code.size();
+        if (arm == 1) {
+          code[conditional] = I(O::branch_zero, D(-1), static_cast<D>(first - conditional));
+          code[first - 1] = I(O::branch, D(5));  // Skip four right-arm instructions.
+        }
+        code.emplace_back(O::number, "2");
+        code.emplace_back(O::number, "3");
+        auto const second_operand = random() % 2 == 0 ? D(-1) : -static_cast<D>(code.size());
+        code.emplace_back(O::add, D(-2), second_operand);
+        code.emplace_back(O::print, D(-1), I::Stream::output);
+        if (arm == 0)
+          code.emplace_back(O::branch, D(1));
+      }
+    }
+    code.emplace_back(O::print, -static_cast<D>(code.size()), I::Stream::output);
+    code.emplace_back(O::eof);
+    REQUIRE(code.size() > 128);
+    auto const slots = optimize(code);
+    REQUIRE(slots.storage_size(code.size()) <= 5);
+    check_paths(code, slots);
   }
 }
