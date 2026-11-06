@@ -9,6 +9,7 @@
 #include <random>
 #include <set>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "live-result-plan.hh"
@@ -314,7 +315,7 @@ TEST_CASE("Generated diamonds preserve an outer owner across disjoint lifetimes"
     std::minstd_rand random(seed + 661197);
     Instructions code{I(O::number, "777")};
     for (unsigned group = 0; group < 12; ++group) {
-      for (unsigned n = 0, count = random() % 4; n < count; ++n)
+      for (unsigned n = 0, count = static_cast<unsigned>(random() % 4); n < count; ++n)
         code.emplace_back(O::number, "99");
       code.emplace_back(O::number, "1");
       auto const conditional = code.size();
