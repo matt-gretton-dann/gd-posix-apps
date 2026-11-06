@@ -308,20 +308,18 @@ def gd_build_command(args, name, destination, cc, cxx):
         command += ['--prepared-divisors', 'ON']
     if name != 'base' and getattr(args, 'candidate_preparsed_library', False):
         command += ['--preparsed-library']
+    mode = getattr(args, 'base_live_results' if name == 'base' else 'candidate_live_results', 'AUTO')
+    if mode != 'AUTO':
+        command += ['--live-results', mode]
     return command
 
 
 def profile_build_command(args, destination, cc, cxx, baseline=False):
-    # Preserve the existing profile recipe until role-inheritance contracts
-    # establish which ordinary mode each diagnostic build must match.
-    command = [sys.executable, str(SCRIPTS / 'build-gd-bc.py'), '--source',
-               str(args.source.resolve()), '--revision', args.base if baseline else args.candidate,
-               '--split-point', '126', '--output', str(destination), '--name',
-               'gd-base-profile' if baseline else 'gd-profile', '--diagnostic-profile',
-               '--c-compiler', cc, '--cxx-compiler', cxx]
-    if not baseline and getattr(args, 'candidate_preparsed_library', False):
-        command += ['--preparsed-library']
-    return command
+    # Keep every diagnostic policy coupled to its own ordinary role, including
+    # existing divisor/image choices and the independently selected live mode.
+    command = gd_build_command(args, 'base' if baseline else 'gd', destination, cc, cxx)
+    command[command.index('--name') + 1] = 'gd-base-profile' if baseline else 'gd-profile'
+    return command + ['--diagnostic-profile']
 
 
 def main():
@@ -334,6 +332,8 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--broad', action='store_true')
     parser.add_argument('--candidate-prepared-divisors', action='store_true')
+    parser.add_argument('--candidate-live-results', choices=('AUTO', 'ON', 'OFF'), default='AUTO')
+    parser.add_argument('--base-live-results', choices=('AUTO', 'ON', 'OFF'), default='AUTO')
     parser.add_argument('--candidate-preparsed-library', action='store_true')
     parser.add_argument('--broad-preset', choices=('full', 'holdout'))
     parser.add_argument('--samples', type=bench.positive_integer, default=15)
@@ -368,6 +368,9 @@ def main():
             entry = json.loads((destination / 'implementations.json').read_text())['implementations'][0]
             if args.candidate_prepared_divisors and name != 'base':
                 gd_builder.require_prepared_candidate(helper, entry)
+            mode = args.base_live_results if name == 'base' else args.candidate_live_results
+            if mode != 'AUTO':
+                gd_builder.require_live_mode(helper, entry, mode)
             entries.append(entry)
         destination = root / 'howard'
         commands.run([sys.executable, str(SCRIPTS / 'build-bc-comparators.py'), '--output',
@@ -391,6 +394,10 @@ def main():
         profile_command = profile_build_command(args, profile_root, cc, cxx)
         commands.run(profile_command, timeout=1200)
         profiled = json.loads((profile_root / 'implementations.json').read_text())['implementations'][0]
+        if args.candidate_prepared_divisors:
+            gd_builder.require_prepared_candidate(helper, profiled)
+        if args.candidate_live_results != 'AUTO':
+            gd_builder.require_live_mode(helper, profiled, args.candidate_live_results)
         # All builds and correctness checks finish before elapsed measurements.
         commands.run([sys.executable, str(SCRIPTS.parent / 'test-math-library-cli.py'),
                       configs['paired'][1]['argv'][0], '--source',
@@ -514,6 +521,7 @@ def main():
               broad=args.broad,presets=list(presets),samples=args.samples,duration_target=args.duration_seconds,
               child_timeout_seconds=args.child_timeout_seconds,total_seconds=args.total_seconds,
               candidate_prepared_divisors=args.candidate_prepared_divisors,
+              base_live_results=args.base_live_results,candidate_live_results=args.candidate_live_results,
               candidate_preparsed_library=args.candidate_preparsed_library))
         for path in root.glob('command-*.log'):
             shutil.copyfile(path, evidence / path.name)
@@ -524,8 +532,9 @@ def main():
             for path in source.glob('*'):
                 if path.is_file():
                     shutil.copyfile(path, target / path.name)
-            if (source / 'prepared-policy').is_dir():
-                shutil.copytree(str(source / 'prepared-policy'), str(target / 'prepared-policy'))
+            for policy_root in ('prepared-policy', 'live-results-policy'):
+                if (source / policy_root).is_dir():
+                    shutil.copytree(str(source / policy_root), str(target / policy_root))
             if (source / 'logs').is_dir():
                 shutil.copytree(source / 'logs', target / 'logs')
 

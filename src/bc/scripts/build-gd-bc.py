@@ -236,14 +236,21 @@ def verified_live_results(helper, build, requested):
     return dict(status='recorded', mode=requested, enabled=enabled, verification=evidence)
 
 
-def require_live_candidate(helper, entry):
-    """Candidate timing requires explicit, verified ON, not a default cache value."""
+def require_live_mode(helper, entry, requested):
+    """Explicit role requests require matching recorded production evidence."""
+    if requested not in ('ON', 'OFF'):
+        raise helper.BuildError('live-result role needs an explicit ON or OFF request')
     metadata = entry.get('metadata') if isinstance(entry, dict) else None
     configuration = metadata.get('configuration') if isinstance(metadata, dict) else None
     policy = configuration.get('live_results_policy') if isinstance(configuration, dict) else None
     if (not isinstance(policy, dict) or policy.get('status') != 'recorded' or
-            policy.get('mode') != 'ON' or policy.get('enabled') is not True):
-        raise helper.BuildError('candidate lacks explicit verified live-result activation')
+            policy.get('mode') != requested or policy.get('enabled') is not (requested == 'ON')):
+        raise helper.BuildError('role lacks the requested verified live-result mode')
+
+
+def require_live_candidate(helper, entry):
+    """Candidate timing requires explicit, verified ON, not a default cache value."""
+    require_live_mode(helper, entry, 'ON')
 
 
 def build_metadata(helper, root, source, build, revision, split, compiler_c, compiler_cxx,

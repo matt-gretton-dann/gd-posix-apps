@@ -182,7 +182,16 @@ def gd_build_command(args, name, revision, directory, cc, cxx):
                '--c-compiler', cc, '--cxx-compiler', cxx]
     if name == 'candidate' and getattr(args, 'candidate_prepared_divisors', False):
         command += ['--prepared-divisors', 'ON']
+    mode = getattr(args, 'candidate_live_results' if name == 'candidate' else 'base_live_results', 'AUTO')
+    if mode != 'AUTO':
+        command += ['--live-results', mode]
     return command
+
+
+def profile_build_command(args, name, revision, directory, cc, cxx):
+    command = gd_build_command(args, name, revision, directory, cc, cxx)
+    command[command.index('--name') + 1] = name + '-profile'
+    return command + ['--diagnostic-profile']
 
 
 def main():
@@ -196,6 +205,8 @@ def main():
     parser.add_argument('--broad', action='store_true')
     parser.add_argument('--sparse-qualification', action='store_true')
     parser.add_argument('--candidate-prepared-divisors', action='store_true')
+    parser.add_argument('--candidate-live-results', choices=('AUTO', 'ON', 'OFF'), default='AUTO')
+    parser.add_argument('--base-live-results', choices=('AUTO', 'ON', 'OFF'), default='AUTO')
     parser.add_argument('--samples', type=int, default=9)
     parser.add_argument('--split-point', type=gd.positive_point, default=126)
     args = parser.parse_args()
@@ -219,6 +230,10 @@ def main():
             if name == 'candidate' and args.candidate_prepared_divisors:
                 for entry in built:
                     gd.require_prepared_candidate(helper, entry)
+            mode = args.candidate_live_results if name == 'candidate' else args.base_live_results
+            if mode != 'AUTO':
+                for entry in built:
+                    gd.require_live_mode(helper, entry, mode)
             entries.extend(built)
         comparator = root / 'howard'
         builder.run([sys.executable, str(SCRIPTS / 'build-bc-comparators.py'), '--output',
@@ -324,6 +339,7 @@ def main():
     finally:
         # Preserve exact recipes/logs without uploading cloned source/build trees.
         write(evidence / 'orchestration.json', {'base': args.base, 'candidate': args.candidate,
+              'base_live_results': args.base_live_results, 'candidate_live_results': args.candidate_live_results,
               'split_point': args.split_point, 'candidate_prepared_divisors': args.candidate_prepared_divisors,
               'sparse_qualification': args.sparse_qualification,
               'commands': builder.commands})
@@ -336,8 +352,9 @@ def main():
             for path in source.glob('*'):
                 if path.is_file():
                     shutil.copyfile(str(path), str(target / path.name))
-            if (source / 'prepared-policy').is_dir():
-                shutil.copytree(str(source / 'prepared-policy'), str(target / 'prepared-policy'))
+            for policy_root in ('prepared-policy', 'live-results-policy'):
+                if (source / policy_root).is_dir():
+                    shutil.copytree(str(source / policy_root), str(target / policy_root))
             if (source / 'logs').is_dir():
                 shutil.copytree(str(source / 'logs'), str(target / 'logs'))
         # Every timed child has finished. Preserve the actual measured code

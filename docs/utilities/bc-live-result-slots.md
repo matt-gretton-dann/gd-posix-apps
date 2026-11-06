@@ -149,9 +149,14 @@ ignored cache key, conflicting/undefined macro, per-file override, excluded VM
 source or unexpanded response file cannot establish activation. Native project
 records are retained under `live-results-policy/`; metadata records the policy
 and evidence hashes. Old revisions without this API remain `legacy-auto` with
-an unknown `enabled` value. A candidate role must pass `require_live_candidate`
+an unknown `enabled` value. An opt-in candidate role must pass `require_live_candidate`
 with explicit, recorded ON; AUTO is not an explicit opt-in even when its default
-is known. The gate's fixture suite covers compiler token boundaries and Windows
+is known. Both benchmark controllers accept independent base and candidate
+`--*-live-results` modes. Arithmetic A/A inherits the base mode; math A/A
+inherits the candidate mode. Explicit ON and OFF require matching recorded
+production compilation; legacy AUTO remains unknown. Diagnostic builds derive
+from their own ordinary role recipes, including divisor and library-image
+settings, so counters cannot silently describe a different configuration. The gate's fixture suite covers compiler token boundaries and Windows
 paths as well as missing, contradictory and native Release evidence.
 
 Focused Apple LLVM 21 coverage at runtime source `8fc2d9d0` retains separate
