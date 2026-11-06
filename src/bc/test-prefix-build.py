@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 """Reject ignored prefix activation and preserve independent collector roles."""
 import importlib.util
+import contextlib
+import io
 import json
 from pathlib import Path
+import sys
 import tempfile
 import types
 import unittest
+from unittest import mock
 
 
 SCRIPTS = Path(__file__).resolve().parent / 'scripts'
@@ -125,6 +129,64 @@ class PrefixBuild(unittest.TestCase):
         self.assertIn('--diagnostic-profile', command)
         self.assertEqual(command[command.index('--prefix-results') + 1], 'ON')
         self.assertIn(args.candidate, command)
+
+    def test_collectors_reject_unverified_candidate_before_any_timing(self):
+        for kind in ('arithmetic', 'math'):
+            for valid in (True, False):
+                with self.subTest(kind=kind, valid=valid), tempfile.TemporaryDirectory() as temporary:
+                    source = Path(temporary)
+                    (source / 'src/bc').mkdir(parents=True)
+                    (source / 'src/bc/math-library.bc').write_text('scale=20\n')
+                    ci = load('benchmark-math-ci' if kind == 'math' else 'benchmark-ci')
+                    helper = ci.load('build-bc-comparators')
+                    calls = []
+
+                    class Commands:
+                        def __init__(self, root, timeout):
+                            self.commands = calls
+
+                        def run(self, argv, **unused):
+                            calls.append(argv)
+                            if Path(argv[1]).name != 'build-gd-bc.py':
+                                error = ci.CommandFailure if kind == 'math' else helper.BuildError
+                                raise error('stop fixture before timings')
+                            destination = Path(argv[argv.index('--output') + 1])
+                            destination.mkdir()
+                            (destination / 'prefix-policy').mkdir()
+                            (destination / 'prefix-policy/libbc.vcxproj').write_text('retained fixture')
+                            entry = dict(name=argv[argv.index('--name') + 1], argv=['fixture'],
+                                         metadata=dict(configuration=dict(prefix_results_policy=dict(
+                                             status='recorded', mode='ON', enabled=valid))))
+                            (destination / 'implementations.json').write_text(json.dumps(
+                                dict(implementations=[entry])))
+
+                    original_load = ci.load
+
+                    def modules(name):
+                        if name == 'benchmark-ci':
+                            return types.SimpleNamespace(host_info=lambda: {})
+                        if kind == 'arithmetic' and name == 'build-bc-comparators':
+                            return types.SimpleNamespace(Builder=Commands, BuildError=helper.BuildError)
+                        if name == 'collect-bc-codegen':
+                            return types.SimpleNamespace(collect=lambda entries, directory: None)
+                        return original_load(name)
+
+                    output = source / 'results'
+                    argv = ['fixture', '--source', str(source), '--base', 'a' * 40,
+                            '--candidate', 'b' * 40, '--output', str(output), '--candidate-prefix-results']
+                    with mock.patch.object(ci, 'load', modules), mock.patch.object(sys, 'argv', argv), \
+                            mock.patch.object(ci, 'Commands', Commands, create=True), \
+                            mock.patch.object(ci, 'host_info', lambda: {}, create=True), \
+                            contextlib.redirect_stderr(io.StringIO()):
+                        self.assertEqual(ci.main(), 1)
+                    self.assertEqual(len(calls), 4 if valid else (1 if kind == 'math' else 2))
+                    error = json.loads((output / 'evidence/failure.json').read_text())['error']
+                    self.assertIn('stop fixture' if valid else 'verified explicit', error)
+                    role = 'gd' if kind == 'math' else 'candidate'
+                    self.assertEqual((output / ('evidence/' + role + '/prefix-policy/libbc.vcxproj')).read_text(),
+                                     'retained fixture')
+                    record = json.loads((output / 'evidence/orchestration.json').read_text())
+                    self.assertIs(record['candidate_prefix_results'], True)
 
 
 if __name__ == '__main__':
