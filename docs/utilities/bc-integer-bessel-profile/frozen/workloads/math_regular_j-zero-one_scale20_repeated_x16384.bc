@@ -1,0 +1,6 @@
+scale=20
+for(i=0;i<16384;i++) r=j(0,1)
+r
+scale
+ibase
+scale(r)
