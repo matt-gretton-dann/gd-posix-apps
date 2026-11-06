@@ -238,6 +238,68 @@ TEST_CASE("Liveness accounts for temporary matrices and releases all analysis st
 }
 #endif
 
+#if GD_BC_PROFILE
+TEST_CASE("Minimal producer plans decline before allocating liveness scratch",
+          "[bc][vm][live-results][layout-admission][verified-profile]")
+{
+  namespace P = GD::Bc::Profile;
+  Instructions code{I(O::function_begin, GD::Bc::VariableMask(), GD::Bc::Location("minimal", 1, 1)),
+                    I(O::pop_param_mark)};
+  auto body = dense(16);
+  body.back() = I(O::return_, D(-1));
+  code.insert(code.end(), body.begin(), body.end());
+  auto const end = code.size();
+  code.emplace_back(O::function_end, GD::Bc::Letter('f'), -static_cast<D>(end));
+  code.emplace_back(O::eof);
+  REQUIRE_FALSE(GD::Bc::Details::verify_control_flow(code, false).has_value());
+  auto const original = layout_fallback(code);
+  REQUIRE_FALSE(original.generic.indices.empty());
+  REQUIRE(original.generic.count == 1);
+  REQUIRE(original.typed.empty());
+  auto stats = [] {
+    return P::snapshot().allocations[static_cast<std::size_t>(P::AllocationKind::result_analysis)];
+  };
+  for (bool combined : {false, true}) {
+    auto const before = stats();
+    auto const result =
+      combined ? GD::Bc::Details::plan_live_result_layouts(code, original, lane_costs, false)
+               : LiveResultPlans{
+                   GD::Bc::Details::plan_live_result_slots(code, original.generic, 48, false), {}};
+    CHECK(result.generic.indices == original.generic.indices);
+    CHECK(result.generic.count == original.generic.count);
+    CHECK(result.typed.empty());
+    auto const after = stats();
+    CHECK(after.allocation_calls == before.allocation_calls);
+    CHECK(after.allocated_bytes == before.allocated_bytes);
+    CHECK(after.live_bytes == before.live_bytes);
+    check_paths(code, result.generic);
+  }
+}
+#endif
+
+TEST_CASE("Liveness preserves an already profitable typed execution family",
+          "[bc][vm][live-results][live-typed][layout-admission]")
+{
+  auto const code = dense();
+  for (unsigned extra : {0U, 1U, 32U}) {
+    auto costs = lane_costs;
+    costs.typed_fixed_bytes = 144 + extra;
+    auto const original = layout_fallback(code, costs);
+    REQUIRE_FALSE(original.typed.empty());
+    // The original typed representation is cheaper than the original generic
+    // one. Coloring makes generic smaller still, but should not demote the
+    // selected execution family merely to minimize retained bytes further.
+    auto const result = optimize_layouts(code, false, costs);
+    REQUIRE_FALSE(result.typed.empty());
+    CHECK(result.typed.number_count == 3);
+    CHECK(result.typed.other_count == 0);
+    CHECK(result.typed.number_count < original.typed.number_count);
+    CHECK(result.generic.count < original.generic.count);
+    check_paths(code, result.generic);
+    check_typed_paths(code, result.typed);
+  }
+}
+
 TEST_CASE("Typed liveness colors numeric values without an empty numeric sentinel",
           "[bc][vm][live-results][live-typed]")
 {
