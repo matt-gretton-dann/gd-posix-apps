@@ -6,6 +6,7 @@
 #include <catch2/catch.hpp>
 
 #include <algorithm>
+#include <cstddef>
 #include <limits>
 #include <memory>
 #include <sstream>
@@ -20,6 +21,40 @@ using O = I::Opcode;
 using D = I::Offset;
 auto running() noexcept -> bool { return false; }
 auto interrupted() noexcept -> bool { return true; }
+
+// Exercise cancellation at deterministic engine polls, without scheduling or
+// signal-delivery assumptions. The callback records the state it interrupts.
+struct InterruptProbe
+{
+  IntegerFunctionScratch const& scratch;
+  std::size_t stop_at;
+  std::size_t polls = 0;
+  bool saw_spills = false;
+  bool saw_recursion = false;
+  bool saw_arguments = false;
+  static inline InterruptProbe* active = nullptr;
+
+  InterruptProbe(IntegerFunctionScratch const& storage, std::size_t stop)
+      : scratch(storage), stop_at(stop)
+  {
+    REQUIRE(active == nullptr);
+    active = this;
+  }
+  ~InterruptProbe() { active = nullptr; }
+  InterruptProbe(InterruptProbe const&) = delete;
+  auto operator=(InterruptProbe const&) -> InterruptProbe& = delete;
+
+  static auto check() noexcept -> bool
+  {
+    auto& probe = *active;
+    if (probe.polls++ != probe.stop_at)
+      return false;
+    probe.saw_spills = !probe.scratch.spills.empty();
+    probe.saw_recursion = probe.scratch.frames.size() > 1;
+    probe.saw_arguments = !probe.scratch.arguments.empty();
+    return true;
+  }
+};
 
 auto run_small(IntegerFunction const& code, std::int64_t argument, IntegerFunctionScratch& scratch,
                bool (*check)() noexcept) -> std::optional<std::int64_t>
@@ -320,6 +355,83 @@ TEST_CASE("Pure integer functions use bounded iterative self calls", "[bc][integ
   CHECK(scratch.frames.empty());
   CHECK(scratch.arguments.empty());
   CHECK(run_small(*plan, 5, scratch, running) == 120);
+}
+
+TEST_CASE("Pure integer interruptions clear every partially executed state",
+          "[bc][integer-function]")
+{
+#if GD_BC_PROFILE
+  auto const allocations_before = Profile::snapshot().allocations;
+  auto const events_before = Profile::snapshot().events;
+#endif
+  {
+    auto const plan = plan_integer_function(factorial(), VariableMask("x", ""), Letter('f'));
+    REQUIRE(plan);
+    IntegerFunctionScratch scratch;
+    Number const expected("30414093201713378043612608166064768844377641568960512000000000000",
+                          10);  // Exact 50!, independently generated with Python math.factorial.
+    std::optional<Number> escaped;
+    std::size_t polls = 0;
+    {
+      // Also bound the probe if a regression stops this finite function from
+      // terminating. Counting a successful run defines all execution cuts.
+      InterruptProbe probe(scratch, 10000);
+      escaped = run_integer_function(*plan, 50, scratch, InterruptProbe::check);
+      REQUIRE(escaped);
+      REQUIRE(*escaped == expected);
+      polls = probe.polls;
+    }
+    REQUIRE(polls > 1);
+    REQUIRE(polls < 10000);
+    REQUIRE(scratch.spills.empty());
+    // Promotion retains its opaque header after clearing, and the header
+    // remains charged to the scratch limit even when no values are live.
+    auto const retained_charge = scratch.spills.logical_bytes();
+    REQUIRE(retained_charge > 0);
+    bool interrupted_spills = false;
+    bool interrupted_recursion = false;
+    bool interrupted_arguments = false;
+    for (std::size_t cut = 0; cut != polls; ++cut) {
+      INFO("interrupt poll=" << cut << " of " << polls);
+      {
+        InterruptProbe probe(scratch, cut);
+        CHECK_FALSE(run_integer_function(*plan, 50, scratch, InterruptProbe::check));
+        CHECK(probe.polls == cut + 1);
+        interrupted_spills |= probe.saw_spills;
+        interrupted_recursion |= probe.saw_recursion;
+        interrupted_arguments |= probe.saw_arguments;
+      }
+      CHECK(scratch.values.empty());
+      CHECK(scratch.spills.empty());
+      CHECK(scratch.spills.logical_bytes() == retained_charge);
+      CHECK(scratch.frames.empty());
+      CHECK(scratch.arguments.empty());
+      CHECK(*escaped == expected);
+      // Reuse the interrupted scratch, including any retained bank capacity.
+      CHECK(run_small(*plan, 5, scratch, running) == 120);
+      CHECK(*escaped == expected);
+    }
+    CHECK(interrupted_spills);
+    CHECK(interrupted_recursion);
+    CHECK(interrupted_arguments);
+    CHECK(run_integer_function(*plan, 50, scratch, running) == escaped);
+    CHECK(*escaped == expected);
+#if GD_BC_PROFILE
+    auto const events_after = Profile::snapshot().events;
+    auto const abandonments =
+      static_cast<std::size_t>(Profile::Event::integer_function_abandonments);
+    auto const promotions = static_cast<std::size_t>(Profile::Event::integer_function_promotions);
+    CHECK(events_after[abandonments] == events_before[abandonments] + polls);
+    CHECK(events_after[promotions] > events_before[promotions]);
+#endif
+  }
+#if GD_BC_PROFILE
+  auto const allocations_after = Profile::snapshot().allocations;
+  for (std::size_t kind = 0; kind != allocations_before.size(); ++kind) {
+    INFO("allocation kind=" << kind);
+    CHECK(allocations_after[kind].live_bytes == allocations_before[kind].live_bytes);
+  }
+#endif
 }
 
 TEST_CASE("Pure integer operands preserve locations until consumed", "[bc][integer-function]")
