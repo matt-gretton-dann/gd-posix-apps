@@ -61,7 +61,7 @@ jobs:
       - name: Check mode use, ownership, failure recovery and semantics
         shell: pwsh
         run: |
-          ctest --test-dir build-prefix -C Release --output-on-failure --no-tests=error -R '^bc/(prefix-integration|prefix-build-policy|vm-lifetime(-ipo)?|vm-cli|signal.*|math-.*|profiling-cli)$'
+          ctest --test-dir build-prefix -C Release --output-on-failure --no-tests=error -R '^bc/(prefix-integration|prefix-build-policy|resource-comparison|vm-lifetime(-ipo)?|vm-cli|signal.*|math-.*|profiling-cli)$'
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Preserve actual compilation and contract results
         if: always()

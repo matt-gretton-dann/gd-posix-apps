@@ -3,8 +3,9 @@
 
 All builds finish before timing. A/A uses a second build of the same GD source;
 the standard and portable Howard libraries remain separately identified roles.
-An exact GD base is rebuilt separately. Candidate-only software counters and
-native CPU/RSS wrappers are diagnostics, never elapsed-performance samples.
+An exact GD base is rebuilt separately. Software counters and native CPU/RSS
+wrappers are separate diagnostics, never elapsed-performance samples. Matched
+base/candidate resource collection is explicitly opt-in.
 """
 import argparse
 import copy
@@ -314,15 +315,18 @@ def gd_build_command(args, name, destination, cc, cxx):
 
 
 
-def profile_build_command(args, destination, cc, cxx):
-    # Allocation diagnostics must observe the selected candidate lifecycle too.
+def profile_build_command(args, destination, cc, cxx, baseline=False):
+    # Diagnostics use each role's own source and selected lifecycle policy.
     command = [sys.executable, str(SCRIPTS / 'build-gd-bc.py'), '--source',
-               str(args.source.resolve()), '--revision', args.candidate,
-               '--split-point', '126', '--output', str(destination), '--name', 'gd-profile',
+               str(args.source.resolve()), '--revision', args.base if baseline else args.candidate,
+               '--split-point', '126', '--output', str(destination), '--name',
+               'gd-base-profile' if baseline else 'gd-profile',
                '--diagnostic-profile', '--c-compiler', cc, '--cxx-compiler', cxx]
-    if getattr(args, 'candidate_preparsed_library', False):
+    if not baseline and getattr(args, 'candidate_preparsed_library', False):
         command += ['--preparsed-library']
-    if getattr(args, 'candidate_prefix_results', False):
+    if not baseline and getattr(args, 'candidate_prepared_divisors', False):
+        command += ['--prepared-divisors', 'ON']
+    if not baseline and getattr(args, 'candidate_prefix_results', False):
         command += ['--prefix-results', 'ON']
     return command
 
@@ -337,6 +341,7 @@ def main():
     parser.add_argument('--broad', action='store_true')
     parser.add_argument('--candidate-prepared-divisors', action='store_true')
     parser.add_argument('--candidate-prefix-results', action='store_true')
+    parser.add_argument('--compare-resources', action='store_true')
     parser.add_argument('--candidate-preparsed-library', action='store_true')
     parser.add_argument('--broad-preset', choices=('full', 'holdout'))
     parser.add_argument('--samples', type=bench.positive_integer, default=15)
@@ -398,6 +403,18 @@ def main():
         profiled = json.loads((profile_root / 'implementations.json').read_text())['implementations'][0]
         if args.candidate_prefix_results:
             gd_builder.require_prefix_candidate(helper, profiled)
+        if args.candidate_prepared_divisors:
+            gd_builder.require_prepared_candidate(helper, profiled)
+        if args.compare_resources:
+            if baseline is None:
+                raise CommandFailure('comparative resources require an available ordinary baseline library')
+            base_profile_root = root / 'base-profile'
+            commands.run(profile_build_command(args, base_profile_root, cc, cxx, baseline=True), timeout=1200)
+            base_profile = json.loads((base_profile_root / 'implementations.json').read_text())['implementations'][0]
+            load('compare-bc-resources').run_diagnostics(
+                commands.run, dict(base=base_profile, candidate=profiled),
+                dict(base=configs['regression'][0], candidate=configs['regression'][1]),
+                presets, 'math', evidence, timeout=args.child_timeout_seconds)
         # All builds and correctness checks finish before elapsed measurements.
         commands.run([sys.executable, str(SCRIPTS.parent / 'test-math-library-cli.py'),
                       configs['paired'][1]['argv'][0], '--source',
@@ -522,10 +539,11 @@ def main():
               child_timeout_seconds=args.child_timeout_seconds,total_seconds=args.total_seconds,
               candidate_prepared_divisors=args.candidate_prepared_divisors,
               candidate_preparsed_library=args.candidate_preparsed_library,
-              candidate_prefix_results=args.candidate_prefix_results))
+              candidate_prefix_results=args.candidate_prefix_results,
+              compare_resources=args.compare_resources))
         for path in root.glob('command-*.log'):
             shutil.copyfile(path, evidence / path.name)
-        for name in ('gd', 'aa', 'base', 'profile', 'howard'):
+        for name in ('gd', 'aa', 'base', 'profile', 'base-profile', 'howard'):
             source = root / name
             target = evidence / name
             target.mkdir(exist_ok=True)
@@ -537,6 +555,10 @@ def main():
                     shutil.copytree(str(source / policy_root), str(target / policy_root))
             if (source / 'logs').is_dir():
                 shutil.copytree(source / 'logs', target / 'logs')
+        if args.compare_resources and configs.get('regression'):
+            # All timed children have exited; inspect those exact ordinary
+            # binaries without rebuilding or changing their flags.
+            load('collect-bc-codegen').collect(configs['regression'], evidence / 'codegen')
 
 
 if __name__ == '__main__':

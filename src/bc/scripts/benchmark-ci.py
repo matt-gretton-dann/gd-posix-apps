@@ -187,6 +187,12 @@ def gd_build_command(args, name, revision, directory, cc, cxx):
     return command
 
 
+def profile_build_command(args, name, revision, directory, cc, cxx):
+    command = gd_build_command(args, name, revision, directory, cc, cxx)
+    command[command.index('--name') + 1] = name + '-profile'
+    return command + ['--diagnostic-profile']
+
+
 def main():
     helper = load('build-bc-comparators')
     gd = load('build-gd-bc')
@@ -199,6 +205,7 @@ def main():
     parser.add_argument('--sparse-qualification', action='store_true')
     parser.add_argument('--candidate-prepared-divisors', action='store_true')
     parser.add_argument('--candidate-prefix-results', action='store_true')
+    parser.add_argument('--compare-resources', action='store_true')
     parser.add_argument('--samples', type=int, default=9)
     parser.add_argument('--split-point', type=gd.positive_point, default=126)
     args = parser.parse_args()
@@ -243,6 +250,15 @@ def main():
                    'aa': [entries[0], entries[2]]}
         for name, implementations in configs.items():
             write(root / (name + '.json'), {'implementations': implementations})
+        if args.compare_resources:
+            profiles = {}
+            for name, revision in (('base', args.base), ('candidate', args.candidate)):
+                directory = root / (name + '-profile')
+                builder.run(profile_build_command(args, name, revision, directory, cc, cxx))
+                profiles[name] = json.loads((directory / 'implementations.json').read_text())['implementations'][0]
+            load('compare-bc-resources').run_diagnostics(
+                builder.run, profiles, dict(base=entries[0], candidate=entries[1]),
+                ('full', 'holdout') if args.broad else ('full',), 'arithmetic', evidence)
         reports = []
         for preset in (('full', 'holdout') if args.broad else ('full',)):
             names = selected_cases(bench, preset, args.broad)
@@ -333,10 +349,11 @@ def main():
               'split_point': args.split_point, 'candidate_prepared_divisors': args.candidate_prepared_divisors,
               'sparse_qualification': args.sparse_qualification,
               'candidate_prefix_results': args.candidate_prefix_results,
+              'compare_resources': args.compare_resources,
               'commands': builder.commands})
         for path in root.glob('command-*.log'):
             shutil.copyfile(str(path), str(evidence / path.name))
-        for name in ('base', 'candidate', 'aa', 'howard'):
+        for name in ('base', 'candidate', 'aa', 'base-profile', 'candidate-profile', 'howard'):
             source = root / name
             target = evidence / name
             target.mkdir(exist_ok=True)

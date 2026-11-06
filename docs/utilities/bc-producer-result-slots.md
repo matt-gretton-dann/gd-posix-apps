@@ -124,3 +124,38 @@ allocation/retained-memory and code-size evidence must also be completed; the
 existing candidate-only allocation reports and single cold RSS observations
 cannot establish those comparisons. No adoption or issue closure follows from
 mode wiring or green correctness checks.
+
+
+The collectors' `--compare-resources` option independently builds the baseline
+and candidate with software counters, preserving each role's own source and
+selected options. Math reuses its existing candidate profile build. The
+comparison checks each profile against its ordinary binary's source, compiler,
+explicit flags, library-image identity and recorded execution policies. A
+profile with ignored activation or mismatched options cannot supply a resource
+comparison. Both ordinary and instrumented binaries are rehashed before each
+child invocation.
+
+Resource inputs are fixed before observing results. Arithmetic covers startup,
+dense loops, calls, recursion, dense/sparse arrays, streamed/file input and long
+temporary chains in both existing presets. Math retains one cold case closest
+to scale 100 for every regime, plus the scale-20 arctangent case for each preset.
+The full unit input and held-out nine-eighths input remain distinct. File-input
+cases use staged bytes identical to the recorded program; all invoked outputs
+must match the existing oracle.
+
+Each resource case records separate base/candidate software allocation reports
+and five ordinary-process native RSS pairs. The first role order is seeded;
+successive pairs alternate order. Reports retain raw native units and CPU
+availability, adverse counts/ratios, and missing measurements. A missing counter
+in an older source is unknown, not zero. Instrumented durations are discarded.
+Counter reports must release all tracked storage; failure restores diagnostic
+environment state and preserves partial evidence.
+
+These are selected-container requested-storage counts and cold native RSS
+observations. They do not cover all process malloc, prove steady-state retained
+memory, establish RSS confidence intervals, or supply elapsed-performance
+samples. Unsupported native adapters and unit mismatches remain inconclusive;
+resource reports never grant merge eligibility. Review longer-lived frame
+reuse and any remaining resource uncertainty before adoption. This option also
+preserves actual math timing binaries and their native code-section reports
+after elapsed children exit, without rebuilding or changing flags.
