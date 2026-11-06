@@ -221,3 +221,27 @@ coverage and the complete native performance/startup/resource cohort remain
 required. The independent frozen #658 prefix cohort is complete and its
 candidate is rejected under #653; retain its adverse and inconclusive evidence
 without source adjustments or measurement restarts.
+
+
+Both benchmark controllers offer `--compare-resources`. They build matched
+base and candidate diagnostic executables before any elapsed collection, check
+source/compiler/flags/build-policy identities against each ordinary role, then
+collect software counts and five alternating native cold-RSS pairs per fixed
+representative after every elapsed stage. Arithmetic covers the full and
+held-out startup, loop, calls, recursion, arrays, streaming and temporary groups,
+plus finite ascending/descending frames with array parameters. Math covers the
+fixed one-shot regime representatives near scale 100 and atan at scale 20.
+Both math resource roles receive `-l`; instrumented durations are discarded.
+These diagnostics do not replace substantive elapsed workloads or establish
+steady-state retention. Unknown old-source categories remain missing counters,
+not zero. Native RSS unavailability remains explicit and cannot become a pass.
+
+Post-sampling code-generation archives retain every ordinary math preparation
+role, including the separately built A/A executable and the primary/portable
+Howard recipes. Each row retains its original argv and metadata; external
+library inputs are hashed and copied, with missing or changed files a hard
+error. Embedded GD libraries retain their source hashes and copied sources in
+the source-library evidence. Inspection tools never execute the archived bc
+binary, and unavailable native inspection has a generic binary/hash fallback.
+The frozen rejected prefix cohort is unchanged; its missing math A/A executable
+cannot be supplied retroactively by a new build.

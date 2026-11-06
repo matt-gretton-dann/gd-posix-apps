@@ -332,6 +332,7 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--broad', action='store_true')
     parser.add_argument('--candidate-prepared-divisors', action='store_true')
+    parser.add_argument('--compare-resources', action='store_true')
     parser.add_argument('--candidate-live-results', choices=('AUTO', 'ON', 'OFF'), default='AUTO')
     parser.add_argument('--base-live-results', choices=('AUTO', 'ON', 'OFF'), default='AUTO')
     parser.add_argument('--candidate-preparsed-library', action='store_true')
@@ -398,6 +399,17 @@ def main():
             gd_builder.require_prepared_candidate(helper, profiled)
         if args.candidate_live_results != 'AUTO':
             gd_builder.require_live_mode(helper, profiled, args.candidate_live_results)
+        profiles = dict(candidate=profiled)
+        ordinary = dict(base=entries[2], candidate=entries[0])
+        if args.compare_resources:
+            if baseline is None:
+                raise CommandFailure('matched math resources require the baseline library')
+            directory = root / 'base-profile'
+            commands.run(profile_build_command(args, directory, cc, cxx, baseline=True), timeout=1200)
+            profiles['base'] = json.loads((directory / 'implementations.json').read_text())['implementations'][0]
+            if args.base_live_results != 'AUTO':
+                gd_builder.require_live_mode(helper, profiles['base'], args.base_live_results)
+            load('compare-bc-resources').validate_roles(bench, profiles, ordinary)
         # All builds and correctness checks finish before elapsed measurements.
         commands.run([sys.executable, str(SCRIPTS.parent / 'test-math-library-cli.py'),
                       configs['paired'][1]['argv'][0], '--source',
@@ -496,6 +508,11 @@ def main():
                         regression_confirmation.get(row['name']), controls[row['name']],
                         row['parameters']['mode'], {role: (row.get('duration_target_met') or {}).get(role, False)
                             for role in ('gd-portable', 'gd-base')})))
+        # All profile builds finish before timing. Matched wrappers run afterwards.
+        if args.compare_resources:
+            load('compare-bc-resources').run_diagnostics(
+                commands.run, profiles, ordinary, presets, 'math', evidence,
+                timeout=args.child_timeout_seconds)
         # Resource wrappers run after all elapsed stages, never concurrently.
         for preset in presets:
             resource_diagnostics(bench, evidence / 'paired.json', diagnostic_cases(bench, preset),
@@ -520,12 +537,12 @@ def main():
         write(evidence / 'orchestration.json',dict(candidate=args.candidate,base=args.base,baseline_library_available=bool(configs.get('regression')),commands=commands.commands,
               broad=args.broad,presets=list(presets),samples=args.samples,duration_target=args.duration_seconds,
               child_timeout_seconds=args.child_timeout_seconds,total_seconds=args.total_seconds,
-              candidate_prepared_divisors=args.candidate_prepared_divisors,
+              candidate_prepared_divisors=args.candidate_prepared_divisors, compare_resources=args.compare_resources,
               base_live_results=args.base_live_results,candidate_live_results=args.candidate_live_results,
               candidate_preparsed_library=args.candidate_preparsed_library))
         for path in root.glob('command-*.log'):
             shutil.copyfile(path, evidence / path.name)
-        for name in ('gd', 'aa', 'base', 'profile', 'howard'):
+        for name in ('gd', 'aa', 'base', 'profile', 'base-profile', 'howard'):
             source = root / name
             target = evidence / name
             target.mkdir(exist_ok=True)
@@ -537,6 +554,10 @@ def main():
                     shutil.copytree(str(source / policy_root), str(target / policy_root))
             if (source / 'logs').is_dir():
                 shutil.copytree(source / 'logs', target / 'logs')
+        # Preserve every ordinary role, including the independently built A/A
+        # and both distinct Howard library recipes. Names are unique across
+        # preparation roles; shared binaries still retain each actual argv.
+        load('collect-bc-codegen').collect(configs.get('preparation', []), evidence / 'codegen')
 
 
 if __name__ == '__main__':
