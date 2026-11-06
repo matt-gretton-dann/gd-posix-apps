@@ -401,6 +401,10 @@ auto plan_live_result_slots(Instructions const& code, ResultSlotPlan fallback,
   if (size > limit / words || size > limit / sizeof(Color))
     return fallback;
   auto const old_count = fallback.storage_size(size);
+  // A generic coloring always needs at least its empty sentinel. The
+  // existing plan cannot be reduced further, so do not allocate a graph.
+  if (old_count <= 1)
+    return fallback;
   auto const old_map = fallback.indices.size();
   if (old_count > limit / slot_bytes || old_map > limit / sizeof(Color) ||
       old_count * slot_bytes > limit - old_map * sizeof(Color))
@@ -447,6 +451,10 @@ auto plan_live_result_layouts(Instructions const& code, LiveResultPlans fallback
       (!fallback.generic.indices.empty() && fallback.generic.indices.size() != size) ||
       (!fallback.typed.empty() && fallback.typed.indices.size() != size))
     return fallback;
+  // Producer compaction already excludes skipped definition bodies. A map
+  // containing only the empty sentinel has no active value to color.
+  if (!fallback.generic.indices.empty() && fallback.generic.count == 1)
+    return fallback;
   auto const words = (size + word_bits - 1) / word_bits;
   if (size > limit / words || !generic_bytes(size, fallback.generic, costs) ||
       (!fallback.typed.empty() && !typed_bytes(size, fallback.typed, costs)))
@@ -486,11 +494,14 @@ auto plan_live_result_layouts(Instructions const& code, LiveResultPlans fallback
     if (!proposed_typed.empty() && !proposed_typed_bytes)
       return fallback;
     auto const original_typed_bytes = typed_bytes(size, fallback.typed, costs);
+    // Preserve a typed family that was already profitable before coloring.
+    // A smaller generic buffer is not a CPU-cost proof for demoting it. Typed
+    // compaction must improve that original retained payload; a newly selected
+    // typed family must still beat the best generic layout strictly.
     bool const keep_original_typed =
-      original_typed_bytes && *original_typed_bytes < best_generic_bytes;
-    bool const use_proposed_typed =
-      proposed_typed_bytes && *proposed_typed_bytes < best_generic_bytes &&
-      (!keep_original_typed || *proposed_typed_bytes < *original_typed_bytes);
+      original_typed_bytes && *original_typed_bytes < *generic_bytes(size, fallback.generic, costs);
+    auto const typed_limit = keep_original_typed ? *original_typed_bytes : best_generic_bytes;
+    bool const use_proposed_typed = proposed_typed_bytes && *proposed_typed_bytes < typed_limit;
 
     // Finish every analysis/allocation/cost check before moving an original
     // plan. These publication moves cannot throw or expose half a pair.

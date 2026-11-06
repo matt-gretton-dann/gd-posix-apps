@@ -61,10 +61,17 @@ reduce total slot and map payload, including its empty sentinel. An allocation
 failure inside analysis also retains the untouched existing plan where possible;
 caller-side construction of that original plan is outside this recovery.
 The combined planner charges the existing caller-supplied headers, instruction
-records, maps and lane payloads with checked arithmetic. It selects a typed
-candidate only when strictly cheaper than the best generic candidate; ties
-prefer generic storage. Both original candidates survive any declined analysis
-or failed optional allocation, and no partial pair is published.
+records, maps and lane payloads with checked arithmetic. Preserve a typed
+family that was already strictly cheaper than the original generic layout;
+compacting generic storage further is not a CPU-cost proof for demotion.
+A replacement typed map must reduce that original typed payload. When no
+profitable typed family was established, a newly selected typed candidate must
+still beat the best generic retained cost strictly, with generic preferred on
+ties. These are per-layout payload bounds, not buffer-capacity or RSS claims.
+Both original candidates survive any declined analysis or failed optional
+allocation, and no partial pair is published. An already minimal compact
+producer map containing only its empty sentinel declines before graph allocation;
+there is no active value to color, including skipped definition bodies.
 
 The test-first scaffold compiled successfully and failed seven of eight initial
 contracts while preserving its original-plan fallback. The initial implementation
@@ -83,9 +90,10 @@ The VM activation test compiled before integration and failed its two preparatio
 checks. It now requires both preparation and improvement events, exact distinct
 numeric outputs, and typed instruction execution for a simultaneously-live
 numeric fixture when typed execution is configured. A separate tiny-caller
-contract proves persistent preparation occurs once. Reuse can make generic
-storage cheaper even in a typed-enabled build; dead padding no longer forces
-typed execution in other semantic fixtures.
+contract proves persistent preparation occurs once. Typed execution assertions
+use an explicit simultaneously-live numeric fixture. Other semantic fixtures
+must not infer either execution family merely from an enabled build switch;
+the original profitable selection is preserved before optional compaction.
 
 `live_result_preparations` counts requested VM analyses, including declined tiny
 streams. `live_result_plan_improvements` counts accepted improved construction
@@ -272,3 +280,36 @@ condition coverage. Profile-ON accounting behavior has separate asserted native
 mode/resource contracts, not an LLVM coverage claim. The documented guard,
 verified-input and combined small-request gaps remain. No configurations or raw
 MC/DC record counts are pooled, and no performance result is inferred.
+
+
+## Isolated admission and execution-family follow-up
+
+Frozen source `a9bc6194` remains unchanged in its original qualification. All six
+arithmetic collectors failed post-sampling archival because their versioned
+Howard role name was rejected (#663/#664), leaving Howard executables and fresh
+startup studies absent. Their raw observations remain preserved and unqualified.
+Separately replayed Windows ON results contain three confirmed #653 limit losses
+(two Fibonacci shapes and frontend definitions), so an archive-only repair does
+not justify adopting that VM candidate. The remaining math jobs continue.
+
+Post-hoc, counter-only Apple/arm64 diagnostics at the same frozen source forced
+typed execution support ON in both OFF/ON builds, with Release/profile ON and
+coverage OFF. All six full/held-out Fibonacci/definition programs matched their
+independent outputs and each other's output hashes. Most Fibonacci instructions
+changed from typed to generic; 2,000 uncalled definitions incurred 22,000 analysis
+allocations with no improved plan (held-out 1,750: 19,250 allocations). These are
+software counts, not Windows CPU-cost attribution or local elapsed benchmarks.
+
+A separate dependent worktree now tests conservative admission and preservation
+of an already profitable typed family, without changing the frozen source or
+routing by benchmark names. Test-first commit `d97268d1` builds and fails both
+new contracts (five failed assertions of 95). The follow-up passes all 31 planner
+cases / 115,212 assertions and the local Debug/typed/profile/liveness-ON unit
+suite: 385 cases / 2,089,788 assertions. Its graph minimum and initial generic
+tie cases retain independent path/lowering checks. The profiling-disabled unit
+suite passes 370 cases / 2,089,544 assertions. Seven focused CLI, lifetime,
+profiling-mode, signal and verifier-offset CTests pass in each profiling mode.
+IPO/native checks, new source-bound coverage and a complete independent performance/startup/resource
+qualification remain separate obligations; none is inherited from the original
+cohort or these counters. Production defaults remain OFF and both portable
+fallback paths remain available.

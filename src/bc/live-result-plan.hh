@@ -36,8 +36,10 @@ struct LiveResultPlans
 };
 
 // Share one liveness proof across generic and compatible numeric/other lanes.
-// On decline preserve both original candidates; cost checks still determine
-// whether a typed layout is worthwhile relative to the best generic layout.
+// On decline preserve both original candidates. Keep an already profitable
+// typed family while compacting it; retained-byte savings alone do not justify
+// demotion to generic execution. A newly selected typed family must beat the
+// best generic retained cost strictly. Minimal producer maps decline early.
 auto plan_live_result_layouts(Instructions const& code, LiveResultPlans fallback,
                               TypedResultCosts costs, bool persistent, LivenessBudget budget = {})
   -> LiveResultPlans;

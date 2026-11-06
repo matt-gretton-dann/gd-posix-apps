@@ -300,6 +300,41 @@ TEST_CASE("Liveness preserves an already profitable typed execution family",
   }
 }
 
+TEST_CASE("An unprofitable typed candidate cannot override generic fallback",
+          "[bc][vm][live-results][live-typed][layout-admission]")
+{
+  auto const code = dense();
+  auto const original = layout_fallback(code);
+  REQUIRE_FALSE(original.typed.empty());
+  auto costs = lane_costs;
+  costs.typed_fixed_bytes = 500;
+  auto const result = GD::Bc::Details::plan_live_result_layouts(code, original, costs, true);
+  CHECK(result.typed.empty());
+  CHECK(result.generic.count < original.generic.count);
+  check_paths(code, result.generic);
+}
+
+TEST_CASE("Identity fallback ignores an unused count during liveness admission",
+          "[bc][vm][live-results][live-typed][layout-admission]")
+{
+  auto const code = dense();
+  ResultSlotPlan identity;
+  // Empty indices select instruction-indexed storage; count is ignored. A
+  // retained count must not be mistaken for a compact empty-sentinel map.
+  identity.count = 1;
+  REQUIRE(identity.storage_size(code.size()) == code.size());
+  auto const generic = GD::Bc::Details::plan_live_result_slots(code, identity, 48, true);
+  CHECK(generic.count == 4);
+  check_paths(code, generic);
+  auto const combined =
+    GD::Bc::Details::plan_live_result_layouts(code, {identity, {}}, lane_costs, true);
+  REQUIRE_FALSE(combined.typed.empty());
+  CHECK(combined.generic.count == 4);
+  CHECK(combined.typed.number_count == 3);
+  check_paths(code, combined.generic);
+  check_typed_paths(code, combined.typed);
+}
+
 TEST_CASE("Typed liveness colors numeric values without an empty numeric sentinel",
           "[bc][vm][live-results][live-typed]")
 {
@@ -481,13 +516,16 @@ TEST_CASE("Typed payload ties prefer generic storage and one saved byte permits 
 {
   auto const code = dense();
   auto costs = lane_costs;
-  // Four generic slots at 48 bytes versus three numeric slots at 16 bytes.
-  // Maps and instruction widths are equal, leaving a 144-byte fixed-cost tie.
-  costs.typed_fixed_bytes = 144;
+  // No typed family is established: its original producer payload is too
+  // large. Four generic slots at 48 bytes tie three numeric slots at 32 bytes
+  // plus 96 fixed bytes after coloring; maps/instruction widths are equal.
+  costs.number_slot_bytes = 32;
+  costs.typed_fixed_bytes = 96;
+  REQUIRE(layout_fallback(code, costs).typed.empty());
   auto const equal = optimize_layouts(code, false, costs);
   CHECK(equal.generic.storage_size(code.size()) == 4);
   CHECK(equal.typed.empty());
-  costs.typed_fixed_bytes = 143;
+  costs.typed_fixed_bytes = 95;
   auto const smaller = optimize_layouts(code, false, costs);
   REQUIRE(smaller.typed.number_count == 3);
   check_typed_paths(code, smaller.typed);
