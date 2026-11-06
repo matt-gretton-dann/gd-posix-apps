@@ -618,6 +618,38 @@ TEST_CASE("Typed nested calls retain snapshots and restore special registers",
   CHECK(errors.str().empty());
 }
 
+TEST_CASE("Function calls retain routing state across scale restoration and redefinition",
+          "[bc][vm][execution][call-entries]")
+{
+  auto checks = GENERATE(GD::Bc::VM::ExecutionChecks::full, GD::Bc::VM::ExecutionChecks::verified);
+  bool const save_specials = GENERATE(false, true);
+  std::ostringstream output, errors;
+  GD::Bc::VM vm(output, errors, save_specials, checks);
+  auto run = [&](std::string const& text) {
+    GD::Bc::Parser parser(
+      std::make_unique<GD::Bc::Lexer>(std::make_unique<GD::Bc::StringReader>(text)), false);
+    auto code = parser.parse();
+    REQUIRE(code != nullptr);
+    CHECK_FALSE(vm.execute(*code));
+    CHECK(errors.str().empty());
+  };
+  run("define f(x) {\nreturn(x*x)\n}\nfor(i=0;i<18;i++) a=f(3)\n"
+      "define g(x) {\nscale=2\nreturn(f(x))\n}\n"
+      "for(i=0;i<18;i++) {\nscale=0\na=g(3)\n}\n"
+      "scale=0\ng(3)\nscale\n"
+      "define h(x) {\nscale=0\nreturn(f(x))\n}\n"
+      "scale=2\nh(4)\nscale\n");
+  CHECK(output.str() == (save_specials ? "9\n0\n16\n2\n" : "9\n2\n16\n0\n"));
+  // A cached rejection must not survive replacement by a pure definition,
+  // and a formerly pure definition must not hide newly introduced effects.
+  run("scale=0\ndefine f(x) {\nk+=1\nreturn(x)\n}\n"
+      "for(i=0;i<18;i++) a=f(3)\n"
+      "define f(x) {\nreturn(x+1)\n}\n"
+      "for(i=0;i<18;i++) a=f(3)\na\nk\n");
+  CHECK(output.str() ==
+        (save_specials ? "9\n0\n16\n2\n4\n18\n" : "9\n2\n16\n0\n4\n18\n"));
+}
+
 TEST_CASE("Compact short functions keep runtime radix and owned literal sidecars",
           "[bc][vm][execution][compact-executable]")
 {

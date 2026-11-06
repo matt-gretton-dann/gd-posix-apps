@@ -159,6 +159,19 @@ class IntegerProfile(unittest.TestCase):
                             'for(i=0;i<20;i++) a=f(i)\ns\na\n', '20\n362\n')
         self.assertGreater(data['events']['integer_function_successes'], 0)
 
+    def test_scale_changes_suspend_and_resume_a_hot_generation(self):
+        # Every phase calls the same already-warmed definition. Nonzero scale
+        # must suspend the tier without forgetting its generation or warmup.
+        data = self.profile('define f(x) {\nreturn (x*x)\n}\n'
+                            'for(i=0;i<24;i++) a=f(3)\n'
+                            'scale=2\nfor(i=0;i<24;i++) a=f(3)\n'
+                            'scale=0\nfor(i=0;i<12;i++) a=f(3)\na\nscale\n',
+                            '9\n0\n')
+        self.assertEqual(data['events']['function_calls'], 60)
+        self.assertEqual(data['events']['integer_function_attempts'], 29)
+        self.assertEqual(data['events']['integer_function_successes'], 29)
+        self.assertEqual(data['events']['integer_function_abandonments'], 0)
+
     def test_cancellation_reports_demotion(self):
         data = self.profile('define f(x) {\nauto a\na=x*x\nreturn (a-a)\n}\n'
                             'for(i=0;i<12;i++) a=f(9223372036854775807)\na\n', '0\n')
