@@ -1,0 +1,19 @@
+{
+  "source": "2aba8ec2cc1ed23a3806079d2f6dc1caa6cfc27d",
+  "artifact_id": 13464962613,
+  "artifact_sha256": "a74288b822de3084a70d0072f085277a9afaf574edca36ebcf7b4aa8fe2eba12",
+  "run_id": 42124822343,
+  "workloads": [
+    "math_regular_j-zero-one_scale20_repeated_x16384",
+    "math_near_root_j-near-root_scale20_repeated_x16384"
+  ],
+  "files": {
+    "manifest.json": "2b1b3f663571d824f5d3202f42612d8d36b19fb71c88fef33587180c27b6f9aa",
+    "summary.json": "efda0536cfaa6d8ee9fc95da57fe206fb1437e36e034c3ca9fac6e92cc42195e",
+    "workloads/math_regular_j-zero-one_scale20_repeated_x16384.bc": "c962df7c7d60b51125b7d654ada0810d2a36c7954f20e0c35d05624cd5b5c02e",
+    "workloads/math_regular_j-zero-one_scale20_repeated_x16384.expected": "d14f5f55a88954d5750b587cf2caf024f58ed56cf7db4da81804346a32580528",
+    "workloads/math_near_root_j-near-root_scale20_repeated_x16384.bc": "d3964d65e8d8c9b87a14e20e87c807492e713a7869a7351ffb7976f0a3340032",
+    "workloads/math_near_root_j-near-root_scale20_repeated_x16384.expected": "6af5d131f6f84d0bacaf21bd3eede8ea800f077f39989dec223068add919451d"
+  },
+  "scope": "Exact selected program/oracle bytes with original full manifest/summary; other workload files intentionally not copied"
+}
