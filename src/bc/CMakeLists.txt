@@ -380,6 +380,9 @@ if(RUN_INTEGRATION_TESTS)
   set_tests_properties(bc/ipo-policy PROPERTIES TIMEOUT 180)
   add_test(NAME bc/benchmark-ci COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-benchmark-ci.py")
+  add_test(NAME bc/benchmark-acceptance COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-benchmark-acceptance.py")
+  set_tests_properties(bc/benchmark-acceptance PROPERTIES TIMEOUT 15)
   # The fixed sparse protocol exercises 828 serial fixture processes, plus a
   # separate 15-second deadline test. Allow slower hosted process startup while
   # retaining every output/sample assertion and the children's own deadlines.

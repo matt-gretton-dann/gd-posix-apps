@@ -21,6 +21,8 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   paired:
+    # Policy-only review reuses retained measurements; do not start a new cohort.
+    if: github.head_ref != 'codex/bc-652-competitive-margin'
     name: Native math bc / ${{ matrix.image }}${{ matrix.preset == 'holdout' && ' / holdout' || '' }}
     runs-on: ${{ matrix.image }}
     timeout-minutes: 120
