@@ -219,6 +219,71 @@ class LibraryCli(unittest.TestCase):
                     self.assertEqual(lines[4 * index + 1:4 * index + 4],
                                      [str(scale), str(base), str(scale)])
 
+    def test_atan_low_scale_kernel_and_fallback_against_exact_enclosures(self):
+        unit_lower, unit_upper = unit_atan_enclosure()
+
+        def small_enclosure(value):
+            self.assertLessEqual(abs(value), Fraction(1, 2))
+            power, total = value, Fraction()
+            for index in range(512):
+                total += power / (2 * index + 1)
+                power *= -value * value
+                next_term = power / (2 * index + 3)
+                if abs(next_term) < Fraction(1, 10 ** 90):
+                    return tuple(sorted((total, total + next_term)))
+            self.fail('independent alternating reference exhausted its term budget')
+
+        def enclosure(value):
+            # The reference uses exact rational pi/4 and reciprocal identities,
+            # not the production half-angle reductions or rational kernel.
+            if value < 0:
+                lower, upper = enclosure(-value)
+                return -upper, -lower
+            if value > 1:
+                lower, upper = enclosure(1 / value)
+                return 2 * unit_lower - upper, 2 * unit_upper - lower
+            if value > Fraction(1, 2):
+                lower, upper = small_enclosure((value - 1) / (value + 1))
+                return unit_lower + lower, unit_upper + upper
+            return small_enclosure(value)
+
+        arguments = ('0', '.0000000000000000000000000000000000000001',
+                     '.09999999999999999999', '.1', '.10000000000000000001',
+                     '.79999999999999999999', '.8', '.80000000000000000001',
+                     '.99999999999999999999', '1', '1.00000000000000000001',
+                     '1.125', '1.24999999999999999999', '1.25',
+                     '1.25000000000000000001', '2', '8',
+                     '10000000000000000000000000000000000000000')
+        references = {sign + text: enclosure(Fraction(sign + text))
+                      for sign in ('', '-') for text in arguments}
+        cases = [(scale, argument, base) for scale in range(22)
+                 for argument in references
+                 for base in ((10, 2, 16) if scale in (0, 20, 21) else (10,))]
+        program = ['ibase=A', 'obase=A']
+        for scale, argument, base in cases:
+            # Store decimal inputs before switching base, preserving their
+            # exact value and testing the caller's variable snapshot as well.
+            program += ['ibase=A', 'scale=' + str(scale), 'x= ' + argument,
+                        'ibase=' + str(base), 'r=a(x)', 'r', 'scale', 'ibase',
+                        'scale(r)', 'x']
+        modes = [(BC, ('-l',), ()), (BC, (), (SOURCE,))]
+        if OTHER_BC:
+            modes.append((OTHER_BC, (), (SOURCE,)))
+        for binary, options, files in modes:
+            lines = self.checked_lines('\n'.join(program) + '\n', binary=binary,
+                                       options=options, files=files)
+            self.assertEqual(len(lines), 5 * len(cases))
+            for index, (scale, argument, base) in enumerate(cases):
+                with self.subTest(binary=binary, options=options, scale=scale,
+                                  argument=argument, base=base):
+                    lower, upper = references[argument]
+                    result = ORACLE.decimal_fraction(lines[5 * index])
+                    self.assertEqual(ORACLE.classify(result, lower, upper, scale), 'pass')
+                    self.assertEqual(lines[5 * index + 1:5 * index + 4],
+                                     [str(scale), str(base), str(scale)])
+                    self.assertEqual(ORACLE.decimal_fraction(lines[5 * index + 4]),
+                                     Fraction(argument))
+
     def test_atan_near_one_reduction_boundaries(self):
         lo, hi = unit_atan_enclosure()
         # Entry scales 114 and 115 produce working scales 144 and 145
