@@ -287,7 +287,7 @@ class NativeTrends(unittest.TestCase):
         root, calls, result = self.exercise()
         self.assertEqual(result, 0)
         capture = json.loads((root / 'evidence/codegen/manifest.json').read_text())
-        self.assertEqual(capture['names'], ['base', 'candidate', 'aa'])
+        self.assertEqual(capture['names'], ['base', 'candidate', 'aa', 'howard-7.0.3'])
         self.assertEqual(capture['commands_before_capture'], len(calls))
         self.assertEqual([Path(call[1]).name for call in calls[:4]],
                          ['build-gd-bc.py'] * 3 + ['build-bc-comparators.py'])
