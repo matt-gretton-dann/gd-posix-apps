@@ -1,0 +1,103 @@
+name: bc native startup calibration pilot
+on:
+  pull_request:
+    branches: [main]
+    paths: ['src/bc/scripts/startup-calibration.py', 'src/bc/test-startup-calibration.py', '.github/workflows/bc-startup-calibration.yml']
+permissions:
+  contents: read
+concurrency:
+  group: bc-startup-calibration-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  pilot:
+    # One declared infrastructure pilot. Future candidate studies must use
+    # their own immutable source/protocol and cannot reuse this host result.
+    if: github.head_ref == 'codex/bc-659-startup-calibration'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2025]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    env:
+      BC_RUNTIME: '1881c6aeba8435168e64428ed425c85a7855de5b'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Record collector source
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force evidence | Out-Null
+          git rev-parse HEAD | Out-File evidence/collector-revision.txt -Encoding utf8
+          $env:BC_RUNTIME | Out-File evidence/runtime-revision.txt -Encoding utf8
+      - name: Establish native MSVC environment
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installation = & "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe" -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (!$installation) { throw 'Native x64 MSVC is unavailable' }
+          $variables = & cmd /c "`"$installation\Common7\Tools\VsDevCmd.bat`" -arch=x64 -host_arch=x64 >nul && set"
+          if ($LASTEXITCODE) { throw 'Cannot initialize MSVC' }
+          foreach ($line in $variables) {
+            if ($line -match '^(PATH|INCLUDE|LIB|LIBPATH|VCToolsInstallDir|VCINSTALLDIR|VSINSTALLDIR|WindowsSdkDir|WindowsSDKVersion|UniversalCRTSdkDir|UCRTVersion|Platform)=(.*)$') {
+              "$($matches[1])=$($matches[2])" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            }
+          }
+      - name: Independently build fixed accepted runtime twice
+        shell: pwsh
+        run: |
+          $cc = if ($env:RUNNER_OS -eq 'Windows') { 'cl' } else { 'cc' }
+          $cxx = if ($env:RUNNER_OS -eq 'Windows') { 'cl' } else { 'c++' }
+          foreach ($role in @('base', 'aa')) {
+            python src/bc/scripts/build-gd-bc.py --source $env:GITHUB_WORKSPACE --revision $env:BC_RUNTIME --split-point 126 --output "startup-builds/$role" --name $role --c-compiler $cc --cxx-compiler $cxx
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          }
+      - name: Declare null candidate and fixed study configuration
+        shell: python
+        run: |
+          import copy, json
+          from pathlib import Path
+          entries = [json.loads(Path('startup-builds', name, 'implementations.json').read_text())['implementations'][0] for name in ('base', 'aa')]
+          candidate = copy.deepcopy(entries[0])
+          candidate['name'] = 'candidate'
+          Path('evidence/config.json').write_text(json.dumps(dict(implementations=entries + [candidate]), indent=2) + '\n')
+      - name: Collect one fixed native null study
+        shell: pwsh
+        run: |
+          python src/bc/scripts/startup-calibration.py --config evidence/config.json --output evidence/study --total-seconds 2400 --child-timeout-seconds 5
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Preserve exact sampled executables after collection
+        if: always()
+        shell: python
+        run: |
+          import importlib.util, json
+          from pathlib import Path
+          config = Path('evidence/config.json')
+          if config.is_file():
+              path = Path('src/bc/scripts/collect-bc-codegen.py')
+              spec = importlib.util.spec_from_file_location('codegen', path)
+              module = importlib.util.module_from_spec(spec)
+              spec.loader.exec_module(module)
+              module.collect(json.loads(config.read_text())['implementations'], Path('evidence/codegen'))
+      - name: Retain every checked sample and recipe
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bc-startup-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            evidence/
+            startup-builds/base/*.json
+            startup-builds/base/*.log
+            startup-builds/base/*.hh
+            startup-builds/base/*.inc
+            startup-builds/base/prepared-policy/
+            startup-builds/aa/*.json
+            startup-builds/aa/*.log
+            startup-builds/aa/*.hh
+            startup-builds/aa/*.inc
+            startup-builds/aa/prepared-policy/
+          if-no-files-found: error
+          retention-days: 30
