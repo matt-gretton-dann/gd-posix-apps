@@ -289,8 +289,11 @@ arithmetic collectors failed post-sampling archival because their versioned
 Howard role name was rejected (#663/#664), leaving Howard executables and fresh
 startup studies absent. Their raw observations remain preserved and unqualified.
 Separately replayed Windows ON results contain three confirmed #653 limit losses
-(two Fibonacci shapes and frontend definitions), so an archive-only repair does
-not justify adopting that VM candidate. The remaining math jobs continue.
+(two Fibonacci shapes and frontend definitions). Independently replayed Linux
+ON math adds five confirmed losses: four full-corpus scale-20 exponential/Bessel
+cases and one held-out scale-1000 logarithm. An archive-only repair therefore
+does not justify adopting that VM candidate. Every original outcome remains
+preserved; incomplete or inconclusive results are not relabeled as passes.
 
 Post-hoc, counter-only Apple/arm64 diagnostics at the same frozen source forced
 typed execution support ON in both OFF/ON builds, with Release/profile ON and
@@ -309,7 +312,37 @@ suite: 385 cases / 2,089,788 assertions. Its graph minimum and initial generic
 tie cases retain independent path/lowering checks. The profiling-disabled unit
 suite passes 370 cases / 2,089,544 assertions. Seven focused CLI, lifetime,
 profiling-mode, signal and verifier-offset CTests pass in each profiling mode.
-IPO/native checks, new source-bound coverage and a complete independent performance/startup/resource
-qualification remain separate obligations; none is inherited from the original
-cohort or these counters. Production defaults remain OFF and both portable
-fallback paths remain available.
+At runtime checkpoint `8c4f8e64`, all twelve native liveness contracts across
+Linux/macOS/Windows typed/profile ON/OFF and all three native array checks pass.
+All fifteen provider-digest/ZIP-verified archives are retained; the twelve actual
+CMake caches, production compiler commands/MSBuild definitions and test logs
+independently agree with their requested modes. Ordinary CI and CodeQL have
+separate exact-source obligations.
+
+Fresh Apple LLVM 21 coverage at that checkpoint uses Debug/live ON/profile OFF,
+IPO OFF, extensions ON, in independent generic and typed configurations. Each
+passes 80 VM/component cases / 503,300 assertions, 27 CLI cases and native
+allocation-failure checks, retaining 101 raw profiles and exact binaries. All
+six exports have empty diagnostic output. Broad planner coverage is 400/416
+lines in each configuration: generic 346/386 branches and 51/90 MC/DC records;
+typed 349/386 and 55/90. CLI-only coverage is generic 257/416 lines, 202/386
+branches, 12/90 MC/DC; typed 329/416, 254/386, 18/90. Broad and application-mapping
+views share the broad profiles; direct planner calls still contribute. CLI-only
+profiles exclude those calls. The separate configurations/scopes are not pooled,
+and remaining guards and uncovered records remain visible.
+
+Same-source Release/profile ON Apple/arm64 diagnostics force typed ON for both
+liveness OFF/ON builds. Six full/held-out arithmetic and 22 fixed math resource
+representatives match their program/output hashes and total/typed instruction
+counts. Both uncalled-definition shapes incur zero analysis allocations with
+liveness ON. These are checked software counters, not elapsed measurements,
+native Linux/Windows CPU attribution, or a substitute for qualification. Smaller
+retained result buffers still require transient analysis: for the fixed sine(1)
+scale-100 diagnostic, category peaks change from 8,936 to 776 result bytes and
+from zero to 41,384 analysis bytes. Category peaks need not be simultaneous and
+do not establish total process RSS or a net peak-memory reduction.
+
+A complete independent performance/startup/resource qualification remains
+required; none is inherited from the original cohort or these counters.
+Production defaults remain OFF and both portable fallback paths remain
+available.
