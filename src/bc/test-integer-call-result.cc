@@ -19,8 +19,10 @@ void check_live(GD::Bc::Profile::Snapshot const& entry)
 {
   auto const exit = GD::Bc::Profile::snapshot();
   CHECK(exit.total.live_bytes == entry.total.live_bytes);
-  for (std::size_t i = 0; i != exit.allocations.size(); ++i)
+  for (std::size_t i = 0; i != exit.allocations.size(); ++i) {
+    INFO(GD::Bc::Profile::name(static_cast<GD::Bc::Profile::AllocationKind>(i)));
     CHECK(exit.allocations[i].live_bytes == entry.allocations[i].live_bytes);
+  }
 }
 #endif
 }  // namespace
@@ -48,6 +50,51 @@ TEST_CASE("Pure integer return storage survives throwing factories", "[bc][integ
     result.construct([] { return Number(9); });
     CHECK(result.has_value());
     CHECK(result.take() == Number(9));
+  }
+#if GD_BC_PROFILE
+  check_live(entry);
+#endif
+}
+
+TEST_CASE("Pure integer direct throwing factories release named values", "[bc][integer-function]")
+{
+#if GD_BC_PROFILE
+  auto const entry = GD::Bc::Profile::snapshot();
+#endif
+  {
+    volatile bool throw_after_allocating = true;
+    auto factory = [&]() -> Number {
+      Number allocated(large, 10);
+      if (throw_after_allocating)
+        throw std::bad_alloc();
+      return allocated;
+    };
+    // Control for the same named return without opaque placement storage.
+    CHECK_THROWS_AS(factory(), std::bad_alloc);
+  }
+#if GD_BC_PROFILE
+  check_live(entry);
+#endif
+}
+
+TEST_CASE("Pure integer return storage releases prvalue throwing factories",
+          "[bc][integer-function]")
+{
+#if GD_BC_PROFILE
+  auto const entry = GD::Bc::Profile::snapshot();
+#endif
+  {
+    IntegerCallResult result;
+    volatile bool throw_after_allocating = true;
+    CHECK_THROWS_AS(result.construct([&]() -> Number {
+      Number allocated(large, 10);
+      if (throw_after_allocating)
+        throw std::bad_alloc();
+      // Control separating the local owner from the factory's return object.
+      return Number(9);
+    }),
+                    std::bad_alloc);
+    CHECK_FALSE(result.has_value());
   }
 #if GD_BC_PROFILE
   check_live(entry);

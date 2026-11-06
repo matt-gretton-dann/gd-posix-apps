@@ -548,3 +548,13 @@ volatile condition before throwing, leaving both factory outcomes reachable
 without changing production code or weakening the ownership guard. The
 original failed source, logs and objects remain retained; fresh native
 validation is required for the corrected fixture.
+
+At `1a8c86a2`, the corrected fixture builds on MSVC and its native symbol
+guard passes. Nine of ten semantic jobs pass; the Windows profile job reports
+68 tracked bytes still live after the named-return throwing factory. This
+does not yet distinguish actual retained storage from a counter or compiler
+cleanup problem. Keep that failing test and add direct named-return and
+opaque prvalue-return controls, plus all four direct/opaque and named/prvalue
+combinations in the ordinary-allocation lifetime executable, with and without
+IPO. Preserve the failed source and archives; production code and adoption
+requirements remain unchanged while these controls establish the cause.

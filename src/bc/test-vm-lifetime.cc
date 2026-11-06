@@ -15,6 +15,9 @@
 #include <utility>
 
 #include "bc.hh"
+#if defined(GD_BC_INTEGER_FUNCTIONS)
+#  include "integer-call-result.hh"
+#endif
 
 namespace {
 // These replacements belong only to this small regression executable. They
@@ -531,6 +534,56 @@ auto verified_activation_allocation_failures(bool typed_first) -> bool
 
 auto main() -> int
 {
+#if defined(GD_BC_INTEGER_FUNCTIONS)
+  // Compare ordinary allocation balance with and without the opaque slot.
+  // Named-return and prvalue factories distinguish optional NRVO cleanup
+  // from the placement-storage lifetime protocol under native IPO.
+  auto named_factory = []() -> GD::Bc::Number {
+    GD::Bc::Number allocated("123456789012345678901234567890123456789012345678901234567890", 10);
+    volatile bool fail = true;
+    if (fail)
+      throw std::bad_alloc();
+    return allocated;
+  };
+  auto prvalue_factory = []() -> GD::Bc::Number {
+    GD::Bc::Number allocated("123456789012345678901234567890123456789012345678901234567890", 10);
+    volatile bool fail = true;
+    if (fail)
+      throw std::bad_alloc();
+    return GD::Bc::Number(9);
+  };
+  auto check_factory = [&](auto&& factory, bool routed, char const* name) {
+    auto const before = outstanding.load(std::memory_order_relaxed);
+    bool caught = false;
+    try {
+      if (routed) {
+        GD::Bc::Details::IntegerCallResult result;
+        result.construct(factory);
+      }
+      else {
+        auto result = factory();
+        (void)result;
+      }
+    }
+    catch (std::bad_alloc const&) {
+      caught = true;
+    }
+    auto const retained = outstanding.load(std::memory_order_relaxed) - before;
+    if (!caught || retained != 0) {
+      std::fprintf(stderr, "%s factory (%s) caught=%d retained=%td ordinary allocations\n", name,
+                   routed ? "opaque" : "direct", caught, retained);
+      return false;
+    }
+    return true;
+  };
+  bool factories_valid = true;
+  factories_valid = check_factory(named_factory, false, "named") && factories_valid;
+  factories_valid = check_factory(named_factory, true, "named") && factories_valid;
+  factories_valid = check_factory(prvalue_factory, false, "prvalue") && factories_valid;
+  factories_valid = check_factory(prvalue_factory, true, "prvalue") && factories_valid;
+  if (!factories_valid)
+    return 1;
+#endif
   if (!restore_nested_call_after_exception()) {
     std::fprintf(stderr, "Nested call exception left VM locals or special registers changed\n");
     return 1;
