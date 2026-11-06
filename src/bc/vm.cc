@@ -24,6 +24,10 @@
 #include "number.hh"
 #include "verification.hh"
 
+#if GD_BC_PREFIX_RESULTS
+#  include "result-prefix-buffer.hh"
+#endif
+
 #if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
 #  include "stack-execution.hh"
 #endif
@@ -68,6 +72,11 @@ using ExecutionResult = std::variant<std::monostate, Number, ArrayValues, std::s
 class ResultSlot
 {
 public:
+#if GD_BC_PROFILE
+  // Count actual default initialization, rather than inferring active mode
+  // from a compile flag or counting the frame's reserved capacity.
+  ResultSlot() noexcept { GD_BC_PROFILE_EVENT(Profile::Event::result_slot_initializations, 1); }
+#endif
   auto has_value() const noexcept -> bool { return value_.index() != 0; }
   auto operator*() -> ExecutionResult& { return value_; }
   auto operator*() const -> ExecutionResult const& { return value_; }
@@ -83,8 +92,26 @@ public:
 private:
   ExecutionResult value_;
 };
-using ResultBuffer =
-  std::vector<ResultSlot, Profile::Allocator<ResultSlot, Profile::AllocationKind::results>>;
+using ResultAllocator = Profile::Allocator<ResultSlot, Profile::AllocationKind::results>;
+#if GD_BC_PREFIX_RESULTS
+using ResultBuffer = ResultPrefixBuffer<ResultSlot, ResultAllocator>;
+static_assert(std::is_nothrow_default_constructible_v<ResultSlot>);
+static_assert(sizeof(ResultBuffer) == sizeof(std::vector<ResultSlot, ResultAllocator>));
+#else
+using ResultBuffer = std::vector<ResultSlot, ResultAllocator>;
+#endif
+
+void prepare_results(ResultBuffer& buffer, std::size_t count, bool full_checks)
+{
+#if GD_BC_PREFIX_RESULTS
+  // Reserve before the lease: subsequent verified accesses cannot relocate
+  // references or allocate. Full checking keeps eager independent lifetimes.
+  buffer.prepare(count, full_checks);
+#else
+  (void)full_checks;
+  buffer.resize(count);
+#endif
+}
 
 struct GenericExecutionLayout
 {
@@ -1391,8 +1418,9 @@ auto GD::Bc::Details::VMState::acquire_results(std::size_t count, ExecutionLayou
     else {
       if (!std::holds_alternative<ResultBuffer>(result))
         result.emplace<ResultBuffer>();
-      std::get<ResultBuffer>(result).resize(
-        std::get<GenericExecutionLayout>(layout).slots.storage_size(count));
+      prepare_results(std::get<ResultBuffer>(result),
+                      std::get<GenericExecutionLayout>(layout).slots.storage_size(count),
+                      full_checks());
     }
   }
   catch (...) {
@@ -1408,7 +1436,7 @@ auto GD::Bc::Details::VMState::acquire_results(std::size_t count, ExecutionLayou
   return std::get_if<ResultBuffer>(&result);
 #else
   assert(result.empty());  // NOLINT
-  result.resize(layout.slots.storage_size(count));
+  prepare_results(result, layout.slots.storage_size(count), full_checks());
   ++result_depth_;
   return &result;
 #endif
