@@ -104,6 +104,18 @@ class GdBuild(unittest.TestCase):
         path.write_text(json.dumps(rows))
         with self.assertRaises(self.helper.BuildError):
             self.module.verified_live_results(self.helper, self.build, 'ON')
+        rows = self.live_commands()
+        rows[1]['command'] = rows[1]['command'].replace('libbc.dir', 'test-libbc.dir')
+        rows[1]['command'] += ' -DOTHER="fake/CMakeFiles/libbc.dir/claim.o"'
+        path.write_text(json.dumps(rows))
+        with self.assertRaises(self.helper.BuildError):
+            self.module.verified_live_results(self.helper, self.build, 'ON')
+        rows = self.live_commands()
+        for row in rows:
+            name = row['file'].rsplit('/', 1)[-1]
+            row['command'] = 'cl /DGD_BC_LIVE_RESULTS=1 /Fosrc\\bc\\CMakeFiles\\libbc.dir\\' + name + '.obj /c ' + name
+        path.write_text(json.dumps(rows))
+        self.assertTrue(self.module.verified_live_results(self.helper, self.build, 'ON')['enabled'])
 
     def test_live_cache_only_conflicts_and_unverifiable_inputs_decline(self):
         path = self.build / 'compile_commands.json'
@@ -168,6 +180,17 @@ class GdBuild(unittest.TestCase):
                         {'override': 'OTHER=1'}, {'exclude': True}, {'configuration': 'Debug'}):
             self.live_project(**options)
             with self.subTest(options=options), self.assertRaises(self.helper.BuildError):
+                self.module.verified_live_results(self.helper, self.build, 'ON')
+        from xml.etree import ElementTree as ET
+        for key, text in [('AdditionalOptions', '/UGD_BC_LIVE_RESULTS'),
+                          ('AdditionalOptions', '/DGD_BC_LIVE_RESULTS=0'),
+                          ('UndefinePreprocessorDefinitions', ' GD_BC_LIVE_RESULTS;OTHER')]:
+            project = self.live_project()
+            root = ET.parse(str(project))
+            vm = next(n for n in root.iter() if n.get('Include', '').endswith('vm.cc'))
+            ET.SubElement(vm, key).text = text
+            root.write(str(project), encoding='utf-8')
+            with self.subTest(key=key, text=text), self.assertRaises(self.helper.BuildError):
                 self.module.verified_live_results(self.helper, self.build, 'ON')
 
     def test_live_mode_is_retained_in_build_metadata(self):

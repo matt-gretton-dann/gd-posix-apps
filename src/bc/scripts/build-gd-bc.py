@@ -13,6 +13,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shlex
 import shutil
 import sys
 
@@ -65,18 +66,188 @@ def cache_values(path):
 
 
 def verified_live_results(helper, build, requested):
-    """Retain unknown legacy mode until compiled liveness evidence is checked."""
-    if requested != 'AUTO':
-        raise helper.BuildError('source revision cannot verify the requested live-result mode')
-    return dict(status='legacy-auto', mode='AUTO', enabled=None)
+    """Check production VM definitions and the optional library source inventory."""
+    if requested not in ('AUTO', 'ON', 'OFF'):
+        raise helper.BuildError('invalid live-result mode')
+    cache = cache_values(build / 'CMakeCache.txt')
+    observed = cache.get('ENABLE_BC_LIVE_RESULTS')
+    if observed is None:
+        if requested != 'AUTO':
+            raise helper.BuildError('source revision cannot verify the requested live-result mode')
+        return dict(status='legacy-auto', mode='AUTO', enabled=None,
+                    scope='source predates explicit liveness policy; mode is unknown')
+    if observed.upper() not in ('ON', 'TRUE', 'YES', '1', 'OFF', 'FALSE', 'NO', '0'):
+        raise helper.BuildError('invalid configured live-result mode')
+    enabled = observed.upper() in ('ON', 'TRUE', 'YES', '1')
+    if requested != 'AUTO' and enabled != (requested == 'ON'):
+        raise helper.BuildError('source did not configure the requested live-result mode')
+    expected = '1' if enabled else '0'
+    macro = 'GD_BC_LIVE_RESULTS'
+
+    def arguments(text):
+        if not isinstance(text, str):
+            raise helper.BuildError('invalid live-result compiler option text')
+        try:
+            # CMake quotes paths containing spaces. Preserve literal Windows
+            # separators instead of treating every unquoted backslash as a
+            # POSIX shell escape; no command is executed by this reader.
+            lexer = shlex.shlex(text, posix=True)
+            lexer.whitespace_split = True
+            lexer.commenters = ''
+            lexer.escape = ''
+            return list(lexer)
+        except (ValueError, TypeError) as error:
+            raise helper.BuildError('unreadable live-result compiler options: ' + str(error))
+
+    def check_options(argv, required):
+        # Inspect compiler option tokens, never definitions embedded inside
+        # another macro's string value. Unexpanded response files are unknown.
+        if not isinstance(argv, list) or not all(isinstance(arg, str) for arg in argv):
+            raise helper.BuildError('invalid live-result compiler arguments')
+        definitions = []
+        index = 0
+        while index < len(argv):
+            arg = argv[index]
+            if arg.startswith('@'):
+                raise helper.BuildError('unexpanded live-result response file')
+            option = arg[:2]
+            if option in ('-D', '/D', '-U', '/U'):
+                value = arg[2:]
+                if not value:
+                    index += 1
+                    if index == len(argv):
+                        raise helper.BuildError('missing compiler definition argument')
+                    value = argv[index]
+                key, _, setting = value.partition('=')
+                if key == macro:
+                    if option in ('-U', '/U') or setting != expected:
+                        raise helper.BuildError('compiler options contradict the live-result mode')
+                    definitions.append(setting)
+            index += 1
+        if required and not definitions:
+            raise helper.BuildError('missing compiled live-result definition')
+
+    commands = build / 'compile_commands.json'
+    if commands.is_file():
+        try:
+            rows = json.loads(commands.read_text(encoding='utf-8'))
+        except (ValueError, OSError) as error:
+            raise helper.BuildError('invalid live-result compilation inventory: ' + str(error))
+        if not isinstance(rows, list) or any(not isinstance(row, dict) for row in rows):
+            raise helper.BuildError('invalid live-result compilation inventory')
+        selected = []
+        for row in rows:
+            filename = '/' + str(row.get('file', '')).replace('\\', '/').lstrip('/')
+            if not filename.endswith(('/src/bc/vm.cc', '/src/bc/live-result-plan.cc')):
+                continue
+            argv = row['arguments'] if 'arguments' in row else arguments(row.get('command', ''))
+            if not isinstance(argv, list) or not all(isinstance(arg, str) for arg in argv):
+                raise helper.BuildError('invalid live-result compiler arguments')
+            outputs = []
+            for index, arg in enumerate(argv):
+                if arg == '-o' and index + 1 < len(argv):
+                    outputs.append(argv[index + 1])
+                elif arg.startswith(('/Fo', '-Fo')):
+                    value = arg[3:]
+                    if not value and index + 1 < len(argv):
+                        value = argv[index + 1]
+                    outputs.append(value)
+            if 'output' in row:
+                if not isinstance(row['output'], str):
+                    raise helper.BuildError('invalid live-result compiler output path')
+                outputs.append(row['output'])
+            if not outputs or not all('/libbc.dir/' in ('/' + output.replace('\\', '/'))
+                                      for output in outputs):
+                continue  # A standalone unit-test planner cannot activate the VM.
+            check_options(argv, True)
+            selected.append(filename.rsplit('/', 1)[-1])
+        expected_sources = ['vm.cc', 'live-result-plan.cc'] if enabled else ['vm.cc']
+        if sorted(selected) != sorted(expected_sources):
+            raise helper.BuildError('compiled production liveness source inventory disagrees with mode')
+        evidence = dict(kind='compile-commands', sha256=helper.digest(commands),
+                        translation_units=len(selected))
+    else:
+        import xml.etree.ElementTree as ET
+        if not cache.get('CMAKE_GENERATOR', '').startswith('Visual Studio'):
+            raise helper.BuildError('live-result mode needs compile commands or native VS projects')
+        relative = 'src/bc/libbc.vcxproj'
+        project = build / relative
+        try:
+            root = ET.parse(str(project)).getroot()
+        except (ET.ParseError, OSError) as error:
+            raise helper.BuildError('cannot read live-result project evidence: ' + str(error))
+
+        def tag(node):
+            return node.tag.rsplit('}', 1)[-1]
+
+        def release(node):
+            condition = node.get('Condition', '').strip()
+            if not condition:
+                return True
+            match = re.fullmatch(r'''['"]\$\(Configuration\)(?:\|\$\(Platform\))?['"]\s*==\s*['"]([^'"]+)['"]''', condition)
+            if not match:
+                raise helper.BuildError('unsupported conditional live-result project evidence')
+            return match.group(1).split('|')[0] == 'Release'
+
+        def check_compile(node, inherit=False):
+            found = inherit
+            for child in node:
+                if not release(child):
+                    continue
+                text = child.text or ''
+                if tag(child) == 'PreprocessorDefinitions':
+                    parts = [part.strip() for part in text.split(';')]
+                    definitions = [part for part in parts if part.partition('=')[0] == macro]
+                    check_options(['-D' + part for part in definitions], False)
+                    found = bool(definitions) or (found and '%(PreprocessorDefinitions)' in parts)
+                elif tag(child) == 'AdditionalOptions':
+                    check_options(arguments(text), False)
+                elif tag(child) == 'UndefinePreprocessorDefinitions' and macro in (
+                        part.strip() for part in text.split(';')):
+                    raise helper.BuildError('project undefines the live-result mode')
+                elif tag(child) == 'ExcludedFromBuild' and text.strip().lower() != 'false':
+                    raise helper.BuildError('production liveness source is excluded from Release')
+            if not found:
+                raise helper.BuildError('Release project lost the live-result definition')
+
+        groups = [node for node in root if tag(node) == 'ItemDefinitionGroup' and release(node)]
+        compiles = [child for group in groups for child in group
+                    if tag(child) == 'ClCompile' and release(child)]
+        if not compiles:
+            raise helper.BuildError('missing Release compiler settings for liveness')
+        for compile in compiles:
+            check_compile(compile)
+        selected = []
+        for group in root:
+            if tag(group) != 'ItemGroup' or not release(group):
+                continue
+            for item in group:
+                filename = '/' + item.get('Include', '').replace('\\', '/').lstrip('/')
+                if tag(item) != 'ClCompile' or not release(item) or not filename.endswith(
+                        ('/src/bc/vm.cc', '/src/bc/live-result-plan.cc')):
+                    continue
+                check_compile(item, inherit=True)
+                selected.append(filename.rsplit('/', 1)[-1])
+        expected_sources = ['vm.cc', 'live-result-plan.cc'] if enabled else ['vm.cc']
+        if sorted(selected) != sorted(expected_sources):
+            raise helper.BuildError('native production liveness source inventory disagrees with mode')
+        evidence = dict(kind='msbuild-projects', files={relative: helper.digest(project)},
+                        retained_root='live-results-policy')
+    return dict(status='recorded', mode=requested, enabled=enabled, verification=evidence)
 
 
 def require_live_candidate(helper, entry):
-    raise helper.BuildError('live-result activation is not yet verified')
+    """Candidate timing requires explicit, verified ON, not a default cache value."""
+    metadata = entry.get('metadata') if isinstance(entry, dict) else None
+    configuration = metadata.get('configuration') if isinstance(metadata, dict) else None
+    policy = configuration.get('live_results_policy') if isinstance(configuration, dict) else None
+    if (not isinstance(policy, dict) or policy.get('status') != 'recorded' or
+            policy.get('mode') != 'ON' or policy.get('enabled') is not True):
+        raise helper.BuildError('candidate lacks explicit verified live-result activation')
 
 
 def build_metadata(helper, root, source, build, revision, split, compiler_c, compiler_cxx,
-                   ipo_mode='AUTO', prepared_mode='AUTO', diagnostic_profile=False):
+                   ipo_mode='AUTO', prepared_mode='AUTO', diagnostic_profile=False, live_mode='AUTO'):
     cache = cache_values(build / 'CMakeCache.txt')
     for flag in ('ENABLE_BC_PROFILE', 'ENABLE_BC_COVERAGE'):
         allowed = ('ON', 'TRUE', 'YES', '1') if diagnostic_profile and flag == 'ENABLE_BC_PROFILE' else ('OFF', 'FALSE', 'NO', '0')
@@ -115,6 +286,12 @@ def build_metadata(helper, root, source, build, revision, split, compiler_c, com
         shutil.copyfile(str(build / 'gd-ipo-policy.json'), str(root / 'gd-ipo-policy.json'))
         ipo['report_sha256'] = helper.digest(root / 'gd-ipo-policy.json')
     prepared = verified_prepared_divisors(helper, build, prepared_mode)
+    live = verified_live_results(helper, build, live_mode)
+    if live.get('verification', {}).get('kind') == 'msbuild-projects':
+        for relative in live['verification']['files']:
+            target = root / 'live-results-policy' / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(str(build / relative), str(target))
     if prepared.get('verification', {}).get('kind') == 'msbuild-projects':
         for relative in prepared['verification']['files']:
             target = root / 'prepared-policy' / relative
@@ -128,6 +305,7 @@ def build_metadata(helper, root, source, build, revision, split, compiler_c, com
                               'extensions': cache.get('ENABLE_NON_POSIX_EXTENSIONS'),
                               'ipo_policy': ipo,
                               'prepared_divisors_policy': prepared,
+                              'live_results_policy': live,
                               'multiply_split_point': split,
                               'diagnostic_profile': diagnostic_profile,
                               'threshold_header_sha256': helper.digest(root / 'multiply-threshold.hh')},
@@ -303,6 +481,8 @@ def main():
                         help='automatic IPO policy; explicit modes require source support')
     parser.add_argument('--prepared-divisors', choices=('AUTO', 'ON', 'OFF'), default='AUTO',
                         help='VM divisor reuse policy; explicit modes require compiled source support')
+    parser.add_argument('--live-results', choices=('AUTO', 'ON', 'OFF'), default='AUTO',
+                        help='CFG result reuse; explicit modes require production compilation evidence')
     parser.add_argument('--preparsed-library', action='store_true',
                         help='enable and retain the generated math-library image')
     parser.add_argument('--array-storage', choices=('hybrid', 'paged', 'flat', 'hash', 'ordered'),
@@ -351,6 +531,8 @@ def main():
             configure += ['-DBC_ARRAY_STORAGE=' + args.array_storage]
         if args.prepared_divisors != 'AUTO':
             configure += ['-DENABLE_BC_PREPARED_DIVISORS=' + args.prepared_divisors]
+        if args.live_results != 'AUTO':
+            configure += ['-DENABLE_BC_LIVE_RESULTS=' + args.live_results]
         if args.preparsed_library:
             configure += ['-DENABLE_BC_PREPARSED_LIBRARY=ON']
         if args.ipo_mode != 'AUTO':
@@ -371,7 +553,7 @@ def main():
             raise helper.BuildError('build did not produce the expected bc executable')
         metadata = build_metadata(helper, root, source, build, actual, args.split_point,
                                   compiler_c, compiler_cxx, args.ipo_mode, args.prepared_divisors,
-                                  diagnostic_profile=args.diagnostic_profile)
+                                  diagnostic_profile=args.diagnostic_profile, live_mode=args.live_results)
         observed_layout = verified_array_layout(helper, build, args.array_storage)
         metadata['configuration']['array_storage'] = observed_layout
         image = build / 'src/bc/bc-math-library-image.inc'

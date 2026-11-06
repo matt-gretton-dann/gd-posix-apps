@@ -43,6 +43,25 @@ jobs:
           -DENABLE_BC_PROFILE=${{ matrix.mode.profile }} -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
       - name: Build exact VM, ownership and signal contracts
         run: cmake --build build-live --config Release --target test-libbc test-bc-signal test-bc-offsets bc --parallel 2
+      - name: Verify actual production liveness compilation
+        shell: python
+        run: |
+          import importlib.util
+          import json
+          from pathlib import Path
+          import shutil
+          path = Path('src/bc/scripts/build-gd-bc.py')
+          spec = importlib.util.spec_from_file_location('gd_builder', path)
+          builder = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(builder)
+          build = Path('build-live')
+          policy = builder.verified_live_results(builder.helpers(), build, 'ON')
+          verification = policy['verification']
+          for relative in verification.get('files', {}):
+              target = Path('evidence') / verification['retained_root'] / relative
+              target.parent.mkdir(parents=True, exist_ok=True)
+              shutil.copyfile(build / relative, target)
+          Path('evidence/live-policy.json').write_text(json.dumps(policy, indent=2) + '\n')
       - name: Run complete unit semantics and independent planner oracle
         shell: pwsh
         run: |

@@ -114,13 +114,57 @@ the Apple Arm64 fusion in ordinary builds; profile builds use argument packs.
 The native correctness workflow requests all four typed/profile combinations
 with liveness ON on Linux, macOS and Windows, preserving source, cache, compiled
 commands or native projects, unit output and CTest outcomes. These twelve jobs
-contain no performance measurements. Their results remain pending for this
-revision; existing native checks of the earlier standalone planner do not
-qualify the integration.
+contain no performance measurements. All twelve passed at `8fc2d9d0` in
+[run 42246344254](https://github.com/matt-gretton-dann/gd-posix-apps/actions/runs/42246344254),
+and their source-pinned, provider-hash/ZIP-verified archives are retained.
+Replaying the new provenance gate against those exact archives verifies both
+compiler-command and native MSBuild evidence, including production source
+inventory. These checks establish correctness configurations, not performance
+acceptance.
 
-These results do not establish source/branch/MC/DC coverage, native Windows or
-Linux qualification, all ordinary compiler paths, or performance acceptance.
-Actual compiled/project mode verification, broader coverage and the complete
-native performance/startup/resource cohort remain required. Do not alter or
-restart the independent frozen #658 prefix qualification to incorporate this
-work.
+The immutable builder accepts `--live-results AUTO|ON|OFF`. Explicit modes
+require matching production VM compiler definitions and planner library objects,
+or Release project settings and source inventory. A test-only planner object,
+ignored cache key, conflicting/undefined macro, per-file override, excluded VM
+source or unexpanded response file cannot establish activation. Native project
+records are retained under `live-results-policy/`; metadata records the policy
+and evidence hashes. Old revisions without this API remain `legacy-auto` with
+an unknown `enabled` value. A candidate role must pass `require_live_candidate`
+with explicit, recorded ON; AUTO is not an explicit opt-in even when its default
+is known. The gate's fixture suite covers compiler token boundaries and Windows
+paths as well as missing, contradictory and native Release evidence.
+
+Focused Apple LLVM 21 coverage at runtime source `8fc2d9d0` retains separate
+generic and typed builds: Debug, extensions ON, liveness ON, profile OFF and IPO
+OFF. Each collection runs 74 VM/component cases (489,576 assertions), 27 CLI
+cases and the native allocation-failure fixture, retaining 101 raw profiles,
+exact executables, source/command hashes and all tool output. No export warnings
+were emitted. The initial generic scope label incorrectly said 28 CLI cases;
+corrected metadata and its original are both retained, with raw evidence intact.
+
+| Planner scope | Lines | Branches | MC/DC |
+| --- | ---: | ---: | ---: |
+| Generic broad / application mappings | 390/413 | 329/382 | 39/90 |
+| Generic CLI-only | 269/413 | 211/382 | 14/90 |
+| Typed broad / application mappings | 391/413 | 334/382 | 43/90 |
+| Typed CLI-only | 345/413 | 275/382 | 20/90 |
+
+The broad view includes direct planner contracts and injected allocation
+failures, with the exercised unit executable as the primary mapping object.
+The application-mapping view uses that same profile set and only application
+executable mappings; direct component calls still contribute. Their planner
+counters coincide because these are the same non-template functions. The
+CLI-only view uses only asserted CLI child profiles and application mappings.
+Do not pool configurations or add raw MC/DC records; the displayed denominators
+come from LLVM's summaries.
+
+Remaining gaps include independently exhausting budgets during interference
+and coloring, a numeric lane needed only by an unreachable producer, compound
+guard MC/DC and verified-input rejection paths. Several arithmetic guards are
+not reachable at this host width under the hard instruction cap. These are
+recorded gaps, not exclusions that establish complete coverage. The focused
+results do not qualify every instruction/application path or other platforms'
+coverage, and they establish no performance improvement. Broader coverage and
+the complete native performance/startup/resource cohort remain required. Do not
+alter or restart the independent frozen #658 prefix qualification to incorporate
+this work.
