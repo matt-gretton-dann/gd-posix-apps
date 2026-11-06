@@ -558,3 +558,11 @@ opaque prvalue-return controls, plus all four direct/opaque and named/prvalue
 combinations in the ordinary-allocation lifetime executable, with and without
 IPO. Preserve the failed source and archives; production code and adoption
 requirements remain unchanged while these controls establish the cause.
+
+At `38e06ac7`, Windows profile controls pass for a direct named return and
+an opaque prvalue return, but the original opaque named-return case still
+retains 68 tracked bytes. The ordinary-allocation matrix was incorrectly
+guarded by the private library macro and did not compile into its consumer
+fixtures. Use their existing `GD_BC_EXPECT_INTEGER_FUNCTIONS` definition;
+the previous lifetime passes do not prove that matrix. Retain the failing
+case and rerun the correctly enabled ordinary/IPO controls.

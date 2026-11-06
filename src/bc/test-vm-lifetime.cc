@@ -15,7 +15,7 @@
 #include <utility>
 
 #include "bc.hh"
-#if defined(GD_BC_INTEGER_FUNCTIONS)
+#if GD_BC_EXPECT_INTEGER_FUNCTIONS
 #  include "integer-call-result.hh"
 #endif
 
@@ -534,7 +534,7 @@ auto verified_activation_allocation_failures(bool typed_first) -> bool
 
 auto main() -> int
 {
-#if defined(GD_BC_INTEGER_FUNCTIONS)
+#if GD_BC_EXPECT_INTEGER_FUNCTIONS
   // Compare ordinary allocation balance with and without the opaque slot.
   // Named-return and prvalue factories distinguish optional NRVO cleanup
   // from the placement-storage lifetime protocol under native IPO.
