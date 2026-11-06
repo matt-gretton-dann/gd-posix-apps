@@ -78,6 +78,15 @@ fetching test dependencies. Other missing facilities can still require installed
 supplemental dependencies. CI checks a nested testing-disabled configuration and
 verifies that unit-test targets are absent.
 
+With `BUILD_TESTING=ON` and downloads disabled, configuration looks for an
+installed Catch2 package (at least 2.13.1). If it is unavailable, configuration
+warns and disables the Catch2 unit targets; Python integration tests remain
+available. The external imported test suite is not fetched in this mode.
+The `build/offline-configure` regression checks both the missing-package path
+and a real installed Catch2 package without downloading dependencies. Its
+installed-package check is explicitly skipped when Catch2 sources are not
+available to prepare the temporary installation.
+
 Style checks are opt-in because their diagnostics and formatting rules vary
 between tool versions. Compiler warnings remain enabled and are treated as errors.
 
