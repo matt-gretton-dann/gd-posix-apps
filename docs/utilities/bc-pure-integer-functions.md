@@ -338,3 +338,15 @@ bytes. These compiler-specific observations supply no elapsed-performance claim
 and do not predict another platform's frame. Full native qualification, resource
 review and final-main integration remain required. The controlled #627 loss and
 all earlier adverse/inconclusive cohorts remain preserved separately.
+
+The interrupt ownership test also sweeps every execution poll of a finite
+recursive factorial that promotes beyond the machine-integer range. At each
+cut it requires abandonment, empty value/frame/argument contents, the retained
+bank-header charge, an unchanged escaped exact result and successful scratch
+reuse. The probe proves that some
+cuts interrupt live promoted values, recursive frames and argument marks;
+profile mode checks abandonment counts and restoration of tracked live bytes
+after destruction. This deterministic callback test covers engine cleanup, not
+OS signal delivery, caller-level recovery or elapsed performance.
+The current factorial fixture visits 643 polls; its focused test passes 7,086
+assertions normally and 7,096 with profiling. Both fresh full C++ suites pass.
