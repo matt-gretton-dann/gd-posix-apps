@@ -156,7 +156,7 @@ class ResourceComparison(unittest.TestCase):
 
     def test_representatives_cover_both_presets_and_the_unit_atan_boundary(self):
         groups = {'startup', 'loop', 'calls', 'recursion', 'array', 'array_sparse',
-                  'streaming', 'file_streaming', 'temporary_chain'}
+                  'streaming', 'file_streaming', 'temporary_chain', 'frame_reuse'}
         for preset in ('full', 'holdout'):
             cases = self.module.representatives(self.bench, preset, 'arithmetic')
             self.assertEqual({c['group'] for c in cases}, groups)
@@ -165,6 +165,26 @@ class ResourceComparison(unittest.TestCase):
             self.assertTrue(any(c['parameters']['function'] == 'a' and
                                 c['parameters']['scale'] == 20 for c in math_cases))
             self.assertTrue(any(c['parameters']['scale'] == 100 for c in math_cases))
+
+    def test_frame_cases_pair_early_return_with_dense_reuse_and_distinct_holdout(self):
+        names, programs = set(), set()
+        for preset in ('full', 'holdout'):
+            cases = self.module.frame_cases(preset)
+            self.assertEqual({c['parameters']['path'] for c in cases}, {'early_return', 'dense'})
+            for case in cases:
+                parameters = case['parameters']
+                tails, rounds = parameters['tail_additions'], parameters['rounds']
+                self.assertEqual(len(tails), 8)
+                self.assertEqual(tails, sorted(set(tails)))
+                self.assertGreater(rounds, 1)
+                result = (len(tails) if parameters['path'] == 'early_return' else sum(tails)) * 2 * rounds
+                self.assertEqual(case['expected'], [str(result), '7'])
+                self.assertEqual(case['group'], 'frame_reuse')
+                self.assertIn('a[]', case['program'])
+                names.add(case['name'])
+                programs.add(case['program'])
+        self.assertEqual(len(names), 4)
+        self.assertEqual(len(programs), 4)
 
     def test_malformed_counters_fail_and_new_counters_remain_missing_in_old_sources(self):
         total = dict(allocation_calls=0, deallocation_calls=0, allocated_bytes=0,
