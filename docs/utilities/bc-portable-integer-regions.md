@@ -48,6 +48,31 @@ interruption and conversion allocation failure retain the original public state
 for ordinary interpreter handling. Existing Apple Arm64 emission has priority
 when both experimental backends are requested.
 
+The optional transaction is compiled as the separate `bc-portable-scalar`
+object target. Its entry receives the encoded scalar span, input base,
+verification mode and a synchronous interrupt callback with caller-owned
+context. Planning, integer scratch, Number conversion and exception handling
+stay outside the central interpreter. Conversion finishes before the final
+interrupt check and nonthrowing publication; a declined transaction preserves
+every public scalar. The Apple emitter retains its existing priority.
+
+Local Apple Clang 21 Release coverage of this boundary (typed execution on,
+profiling off) covers 271/271 executor lines, 156/158 branch outcomes and 26/26
+MC/DC obligations. The two uncovered private enum defaults cannot be built by
+the checked planner. The adapter covers 48/51 lines, 34/34 branch outcomes and
+9/9 MC/DC obligations; its two allocation-failure handlers remain unexercised
+on this host's inline integer representation. Native fault sweeps and hosted
+mode checks remain separate evidence. These local totals are not a
+cross-platform coverage or performance claim.
+
+This target explicitly disables IPO in every configuration while the core keeps
+its ordinary IPO policy. This portable CMake boundary is an experiment in
+optimizer isolation, not evidence that it removes the earlier factorial
+regressions. A shared interface carries array layout, prepared-divisor,
+profiling and language definitions to both targets and their consumers. Coverage
+must instrument the backend objects themselves. Deterministic callback tests
+exercise every publication checkpoint separately from real OS signal tests.
+
 Profiling reports `portable_scalar_attempts`, `portable_scalar_successes` and
 `portable_scalar_fallbacks`. Attempts count entry into the executor after shape
 and initial-state guards; analysis declines do not increment them. Fallbacks
@@ -78,8 +103,10 @@ Linux, macOS and Windows, with language extensions both enabled and disabled,
 portable execution enabled and Apple emission
 disabled, retaining immutable source, actual compiler commands/projects, native
 caches and unit/CLI/ownership/signal logs. Its binding check requires the portable
-component in the production library and checks its private enabling definition.
-Only this topic enables those jobs; ordinary elapsed workflows exclude it until
+objects linked into the production library, shared ABI definitions and the
+actual IPO boundary. Compiler commands and native project references must agree
+with the generated target-property contract; all are retained for review.
+Only the isolated backend topic enables those jobs; ordinary elapsed workflows exclude it until
 a separate immutable qualification is declared. Green correctness contracts do not demonstrate speed or adoption eligibility.
 
 Before any adoption, the integrated implementation still needs completed native
@@ -97,7 +124,11 @@ prove VM activation. The helper disables and verifies the separate Apple emitter
 for these isolated comparisons. A source predating this option is supported only
 through `AUTO`, with its mode recorded as unknown rather than disabled. Unexpanded
 response files, contradictory definitions and unverifiable project overrides
-fail closed.
+fail closed. Current object-boundary revisions also retain the evaluated
+Release target contract and verify the two production objects, their inclusion
+in the core library, shared mode definitions and the absence of backend IPO.
+Older revisions without this boundary retain their historical in-library
+validation; their evidence is not upgraded to an opaque boundary claim.
 
 Arithmetic and mathematical collectors accept `--base-portable-scalar` and
 `--candidate-portable-scalar`, propagating each role into both ordinary and
