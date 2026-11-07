@@ -1,0 +1,91 @@
+name: bc portable scalar component contracts
+on:
+  pull_request:
+    branches: [main, 'codex/**']
+    paths: ['src/bc/**', 'CMakeLists.txt', 'cmake/**', '.github/workflows/bc-portable-scalar-contracts.yml']
+permissions:
+  contents: read
+concurrency:
+  group: bc-portable-scalar-contracts-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  contracts:
+    if: github.head_ref == 'codex/bc-666-portable-scalar'
+    name: contracts (${{ matrix.os }}, typed=${{ matrix.mode.typed }}, profile=${{ matrix.mode.profile }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2025]
+        mode:
+          - {typed: 'OFF', profile: 'OFF'}
+          - {typed: 'ON', profile: 'OFF'}
+          - {typed: 'OFF', profile: 'ON'}
+          - {typed: 'ON', profile: 'ON'}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Record immutable source and requested modes
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force evidence | Out-Null
+          git rev-parse HEAD | Out-File evidence/revision.txt -Encoding utf8
+          'phase=standalone typed=${{ matrix.mode.typed }} profile=${{ matrix.mode.profile }}' | Out-File evidence/mode.txt -Encoding utf8
+      - name: Configure standalone component and ordinary VM contracts
+        run: >-
+          cmake -S . -B build-scalar -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
+          -DENABLE_BC_TYPED_RESULTS=${{ matrix.mode.typed }}
+          -DENABLE_BC_PROFILE=${{ matrix.mode.profile }} -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+      - name: Build exact VM, ownership and signal contracts
+        run: cmake --build build-scalar --config Release --target test-libbc test-bc-signal test-bc-offsets bc --parallel 2
+      - name: Bind standalone test compilation to the immutable source
+        shell: python
+        run: |
+          import hashlib
+          import json
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          build = Path('build-scalar')
+          if (build / 'compile_commands.json').is_file():
+              rows = json.loads((build / 'compile_commands.json').read_text())
+              component = [r for r in rows if r['file'].replace(chr(92), '/').endswith('/portable-scalar.cc')]
+              assert len(component) == 1 and 'CMakeFiles/test-libbc.dir/' in component[0]['command'].replace(chr(92), '/')
+              binding = dict(kind='native compiler command', component=component)
+          else:
+              unit = ET.parse(build / 'src/bc/test-libbc.vcxproj').getroot()
+              library = ET.parse(build / 'src/bc/libbc.vcxproj').getroot()
+              def includes(root):
+                  return [n.attrib.get('Include', '').replace(chr(92), '/') for n in root.iter() if n.tag.rsplit('}', 1)[-1] == 'ClCompile']
+              assert sum(p.endswith('/portable-scalar.cc') for p in includes(unit)) == 1
+              assert not any(p.endswith('/portable-scalar.cc') for p in includes(library))
+              binding = dict(kind='native MSBuild projects', standalone_unit_only=True)
+          binding['scope'] = 'Standalone test component only; production does not call this executor'
+          binding['sources'] = {name: hashlib.sha256(Path('src/bc', name).read_bytes()).hexdigest() for name in ('portable-scalar.hh', 'portable-scalar.cc', 'test-portable-scalar.cc')}
+          Path('evidence/component-binding.json').write_text(json.dumps(binding, indent=2) + '\n')
+      - name: Run complete unit semantics including portable scalar contracts
+        shell: pwsh
+        run: |
+          $unit = './build-scalar/src/bc/test-libbc'
+          if ($IsWindows) { $unit = './build-scalar/src/bc/Release/test-libbc.exe' }
+          & $unit --rng-seed 197199 2>&1 | Tee-Object evidence/unit.log
+          if ($LASTEXITCODE -ne 0) { throw "Unit contracts failed with $LASTEXITCODE" }
+      - name: Check allocation recovery, CLI, interrupts and offset verification
+        run: >-
+          ctest --test-dir build-scalar -C Release --output-on-failure --no-tests=error
+          -R "^bc/(profiling-allocator|profiling-disabled|consumer-mode|vm-lifetime|vm-lifetime-ipo|signal-normal|signal-delivery|verifier-offsets|vm-cli)$"
+      - name: Preserve exact mode and every outcome
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bc-portable-scalar-${{ matrix.os }}-typed-${{ matrix.mode.typed }}-profile-${{ matrix.mode.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            evidence/
+            build-scalar/CMakeCache.txt
+            build-scalar/compile_commands.json
+            build-scalar/src/bc/*.vcxproj
+            build-scalar/Testing/Temporary/LastTest.log
+          if-no-files-found: error
+          retention-days: 30
