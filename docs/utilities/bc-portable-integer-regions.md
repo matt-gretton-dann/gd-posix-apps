@@ -53,6 +53,14 @@ size/opcode boundaries, bad offsets and producer types, and failed dominance.
 Release tests additionally exercise malformed operand representations which
 Instruction's own constructor assertions prohibit in Debug builds.
 
+The dedicated preflight workflow checks all four typed/profile combinations on
+Linux, macOS and Windows, retaining immutable source, actual compiler
+commands/projects, native caches and unit/CLI/ownership/signal logs. Its binding
+check requires the component to be compiled into the test executable alone.
+Only this topic enables those jobs; ordinary elapsed workflows exclude it until
+a separate immutable qualification is declared. Green component contracts would
+not demonstrate activation or speed of a production VM backend.
+
 Before any adoption, the integrated implementation still needs differential VM
 and CLI tests, both language-extension configurations, exercised native build
 mode evidence, fault/coverage review, and a newly declared immutable
