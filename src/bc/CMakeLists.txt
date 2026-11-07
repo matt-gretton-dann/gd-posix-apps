@@ -380,6 +380,9 @@ if(RUN_INTEGRATION_TESTS)
   add_test(NAME bc/resource-comparison COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-resource-comparison.py")
   set_tests_properties(bc/resource-comparison PROPERTIES TIMEOUT 30)
+  add_test(NAME bc/portable-scalar-workflow COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-portable-scalar-workflow.py")
+  set_tests_properties(bc/portable-scalar-workflow PROPERTIES TIMEOUT 20)
   add_test(NAME bc/multiply-config COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-multiply-config.py" "${CMAKE_COMMAND}"
            "${CMAKE_SOURCE_DIR}/cmake/BcMultiplyConfig.cmake")
