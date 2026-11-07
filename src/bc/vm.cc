@@ -2772,7 +2772,8 @@ auto GD::Bc::VM::execute_impl(Instructions& instructions, bool cli_interrupts) -
         if (plan) {
           auto const variables = plan->variables();
           auto const variable = [](unsigned index) {
-            return Variable(static_cast<char>('a' + index));
+            // Letter uses encoded alphabet indices, not contiguous character codes.
+            return Variable("abcdefghijklmnopqrstuvwxyz"[index]);
           };
           bool eligible = true;
           for (unsigned index = 0; eligible && index < Letter::count_; ++index) {
