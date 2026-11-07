@@ -11,10 +11,12 @@
 
 #include <array>
 #include <atomic>
+#include <bitset>
 #include <cassert>
 #include <cstdlib>
 #include <deque>
 #include <functional>
+#include <new>
 #include <ostream>
 #include <type_traits>
 #include <utility>
@@ -30,6 +32,9 @@
 
 #ifdef GD_BC_NATIVE_SCALAR
 #  include "native-scalar.hh"
+#endif
+#if GD_BC_PORTABLE_SCALAR
+#  include "portable-scalar.hh"
 #endif
 
 // Native comparisons found a Linux math slowdown with direct forwarding.
@@ -395,6 +400,20 @@ struct VMState
 
   [[nodiscard]] auto variable(Variable v) const -> Number const&;
   void variable(Variable v, Number const& num);
+
+#if GD_BC_PORTABLE_SCALAR
+  // All conversions finish before entry. Publication has no allocation or
+  // throwing Number copy, so failure cannot leave a subset of scalar writes.
+  void publish_portable_scalars(std::bitset<Letter::count_> variables,
+                                std::array<Number, Letter::count_>& pending) noexcept
+  {
+    static_assert(std::is_nothrow_move_assignable_v<Number>);
+    for (unsigned index = 0; index < Letter::count_; ++index) {
+      if (variables.test(index))
+        variables_[index] = std::move(pending[index]);
+    }
+  }
+#endif
 
   [[nodiscard]] auto array(Array a) const -> ArrayValues;
   void array(Array a, ArrayValues av);
@@ -2740,6 +2759,52 @@ auto GD::Bc::VM::execute_impl(Instructions& instructions, bool cli_interrupts) -
               }
               return std::make_pair(Number(0), true);
             }
+          }
+        }
+      }
+#endif
+#if GD_BC_PORTABLE_SCALAR
+      // Keep the separately requested Apple emitter's existing first choice.
+      // Neither backend publishes partial work before an interpreter replay.
+      if (!state_->full_checks() && state_->ibase() == 10 &&
+          !Details::have_been_interrupted.test(std::memory_order_relaxed)) {
+        auto const plan = Details::plan_portable_scalar(instructions);
+        if (plan) {
+          auto const variables = plan->variables();
+          auto const variable = [](unsigned index) {
+            return Variable(static_cast<char>('a' + index));
+          };
+          bool eligible = true;
+          for (unsigned index = 0; eligible && index < Letter::count_; ++index) {
+            if (variables.test(index)) {
+              auto const& value = state_->variable(variable(index));
+              eligible = value.is_zero() && value.scale() == 0;
+            }
+          }
+          if (eligible) {
+            GD_BC_PROFILE_EVENT(Profile::Event::portable_scalar_attempts, 1);
+            auto const interrupted = []() noexcept {
+              return Details::have_been_interrupted.test(std::memory_order_relaxed);
+            };
+            auto const values = plan->run(interrupted);
+            if (values && !interrupted()) {
+              try {
+                std::array<Number, Letter::count_> pending;
+                for (unsigned index = 0; index < Letter::count_; ++index) {
+                  if (variables.test(index))
+                    pending[index] = Number(std::to_string((*values)[index]), 10);
+                }
+                if (!interrupted()) {
+                  state_->publish_portable_scalars(variables, pending);
+                  GD_BC_PROFILE_EVENT(Profile::Event::portable_scalar_successes, 1);
+                  return std::make_pair(Number(0), true);
+                }
+              }
+              catch (std::bad_alloc const&) {
+                // Pending conversions own all new storage until publication.
+              }
+            }
+            GD_BC_PROFILE_EVENT(Profile::Event::portable_scalar_fallbacks, 1);
           }
         }
       }
