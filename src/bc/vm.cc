@@ -1480,6 +1480,13 @@ auto GD::Bc::Details::InstructionPack::execute_compact() -> std::pair<GD::Bc::Nu
       operation(lhs, rhs);
       destination = std::move(lhs);
     };
+    // Relations produce a new number. Borrow both operands until the
+    // condition is known, including when the destination reuses a slot.
+    auto relation = [&](auto compare) {
+      auto const& lhs = std::get<Number>(*(*results_)[instruction.first.index]);
+      auto const& rhs = std::get<Number>(*(*results_)[instruction.second.index]);
+      destination = Number(compare(lhs, rhs) ? 1 : 0);
+    };
     switch (instruction.opcode) {
     case O::string:
       destination = std::string_view(std::get<std::string>(instrs_[pc_].op1()));
@@ -1567,16 +1574,16 @@ auto GD::Bc::Details::InstructionPack::execute_compact() -> std::pair<GD::Bc::Nu
       binary([this](Number& lhs, Number const& rhs) { lhs.power(rhs, vm_->scale()); });
       break;
     case O::less_than:
-      binary([](Number& lhs, Number const& rhs) { lhs = Number(lhs < rhs ? 1 : 0); });
+      relation([](Number const& lhs, Number const& rhs) { return lhs < rhs; });
       break;
     case O::less_than_equals:
-      binary([](Number& lhs, Number const& rhs) { lhs = Number(lhs <= rhs ? 1 : 0); });
+      relation([](Number const& lhs, Number const& rhs) { return lhs <= rhs; });
       break;
     case O::equals:
-      binary([](Number& lhs, Number const& rhs) { lhs = Number(lhs == rhs ? 1 : 0); });
+      relation([](Number const& lhs, Number const& rhs) { return lhs == rhs; });
       break;
     case O::not_equals:
-      binary([](Number& lhs, Number const& rhs) { lhs = Number(lhs != rhs ? 1 : 0); });
+      relation([](Number const& lhs, Number const& rhs) { return lhs != rhs; });
       break;
     case O::branch:
       pc_ = instruction.first.index;
