@@ -308,7 +308,18 @@ def gd_build_command(args, name, destination, cc, cxx):
         command += ['--prepared-divisors', 'ON']
     if name != 'base' and getattr(args, 'candidate_preparsed_library', False):
         command += ['--preparsed-library']
+    mode = getattr(args, 'base_portable_scalar' if name == 'base' else 'candidate_portable_scalar', 'AUTO')
+    if mode != 'AUTO':
+        command += ['--portable-scalar', mode]
     return command
+
+
+def profile_build_command(args, destination, cc, cxx, baseline=False):
+    # Keep every diagnostic policy coupled to its own ordinary role, including
+    # existing divisor/image choices and the independently selected portable mode.
+    command = gd_build_command(args, 'base' if baseline else 'gd', destination, cc, cxx)
+    command[command.index('--name') + 1] = 'gd-base-profile' if baseline else 'gd-profile'
+    return command + ['--diagnostic-profile']
 
 
 def main():
@@ -321,6 +332,9 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--broad', action='store_true')
     parser.add_argument('--candidate-prepared-divisors', action='store_true')
+    parser.add_argument('--compare-resources', action='store_true')
+    parser.add_argument('--candidate-portable-scalar', choices=('AUTO', 'ON', 'OFF'), default='AUTO')
+    parser.add_argument('--base-portable-scalar', choices=('AUTO', 'ON', 'OFF'), default='AUTO')
     parser.add_argument('--candidate-preparsed-library', action='store_true')
     parser.add_argument('--broad-preset', choices=('full', 'holdout'))
     parser.add_argument('--samples', type=bench.positive_integer, default=15)
@@ -355,6 +369,9 @@ def main():
             entry = json.loads((destination / 'implementations.json').read_text())['implementations'][0]
             if args.candidate_prepared_divisors and name != 'base':
                 gd_builder.require_prepared_candidate(helper, entry)
+            mode = args.base_portable_scalar if name == 'base' else args.candidate_portable_scalar
+            if mode != 'AUTO':
+                gd_builder.require_portable_mode(helper, entry, mode)
             entries.append(entry)
         destination = root / 'howard'
         commands.run([sys.executable, str(SCRIPTS / 'build-bc-comparators.py'), '--output',
@@ -375,14 +392,24 @@ def main():
                                  root / 'aa/source/src/bc/math-library.bc', args.candidate,
                                  base=baseline, base_library=base_library, base_revision=args.base)
         profile_root = root / 'profile'
-        profile_command = [sys.executable, str(SCRIPTS / 'build-gd-bc.py'), '--source',
-                      str(args.source.resolve()), '--revision', args.candidate,
-                      '--split-point', '126', '--output', str(profile_root), '--name', 'gd-profile',
-                      '--diagnostic-profile', '--c-compiler', cc, '--cxx-compiler', cxx]
-        if args.candidate_preparsed_library:
-            profile_command += ['--preparsed-library']
+        profile_command = profile_build_command(args, profile_root, cc, cxx)
         commands.run(profile_command, timeout=1200)
         profiled = json.loads((profile_root / 'implementations.json').read_text())['implementations'][0]
+        if args.candidate_prepared_divisors:
+            gd_builder.require_prepared_candidate(helper, profiled)
+        if args.candidate_portable_scalar != 'AUTO':
+            gd_builder.require_portable_mode(helper, profiled, args.candidate_portable_scalar)
+        profiles = dict(candidate=profiled)
+        ordinary = dict(base=entries[2], candidate=entries[0])
+        if args.compare_resources:
+            if baseline is None:
+                raise CommandFailure('matched math resources require the baseline library')
+            directory = root / 'base-profile'
+            commands.run(profile_build_command(args, directory, cc, cxx, baseline=True), timeout=1200)
+            profiles['base'] = json.loads((directory / 'implementations.json').read_text())['implementations'][0]
+            if args.base_portable_scalar != 'AUTO':
+                gd_builder.require_portable_mode(helper, profiles['base'], args.base_portable_scalar)
+            load('compare-bc-resources').validate_roles(bench, profiles, ordinary)
         # All builds and correctness checks finish before elapsed measurements.
         commands.run([sys.executable, str(SCRIPTS.parent / 'test-math-library-cli.py'),
                       configs['paired'][1]['argv'][0], '--source',
@@ -481,6 +508,11 @@ def main():
                         regression_confirmation.get(row['name']), controls[row['name']],
                         row['parameters']['mode'], {role: (row.get('duration_target_met') or {}).get(role, False)
                             for role in ('gd-portable', 'gd-base')})))
+        # All profile builds finish before timing. Matched wrappers run afterwards.
+        if args.compare_resources:
+            load('compare-bc-resources').run_diagnostics(
+                commands.run, profiles, ordinary, presets, 'math', evidence,
+                timeout=args.child_timeout_seconds)
         # Resource wrappers run after all elapsed stages, never concurrently.
         for preset in presets:
             resource_diagnostics(bench, evidence / 'paired.json', diagnostic_cases(bench, preset),
@@ -505,21 +537,27 @@ def main():
         write(evidence / 'orchestration.json',dict(candidate=args.candidate,base=args.base,baseline_library_available=bool(configs.get('regression')),commands=commands.commands,
               broad=args.broad,presets=list(presets),samples=args.samples,duration_target=args.duration_seconds,
               child_timeout_seconds=args.child_timeout_seconds,total_seconds=args.total_seconds,
-              candidate_prepared_divisors=args.candidate_prepared_divisors,
+              candidate_prepared_divisors=args.candidate_prepared_divisors, compare_resources=args.compare_resources,
+              base_portable_scalar=args.base_portable_scalar,candidate_portable_scalar=args.candidate_portable_scalar,
               candidate_preparsed_library=args.candidate_preparsed_library))
         for path in root.glob('command-*.log'):
             shutil.copyfile(path, evidence / path.name)
-        for name in ('gd', 'aa', 'base', 'profile', 'howard'):
+        for name in ('gd', 'aa', 'base', 'profile', 'base-profile', 'howard'):
             source = root / name
             target = evidence / name
             target.mkdir(exist_ok=True)
             for path in source.glob('*'):
                 if path.is_file():
                     shutil.copyfile(path, target / path.name)
-            if (source / 'prepared-policy').is_dir():
-                shutil.copytree(str(source / 'prepared-policy'), str(target / 'prepared-policy'))
+            for policy_root in ('prepared-policy', 'portable-scalar-policy'):
+                if (source / policy_root).is_dir():
+                    shutil.copytree(str(source / policy_root), str(target / policy_root))
             if (source / 'logs').is_dir():
                 shutil.copytree(source / 'logs', target / 'logs')
+        # Preserve every ordinary role, including the independently built A/A
+        # and both distinct Howard library recipes. Names are unique across
+        # preparation roles; shared binaries still retain each actual argv.
+        load('collect-bc-codegen').collect(configs.get('preparation', []), evidence / 'codegen')
 
 
 if __name__ == '__main__':

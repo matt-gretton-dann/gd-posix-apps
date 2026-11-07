@@ -89,3 +89,21 @@ Linux/macOS/Windows qualification cohort. Apply #653 independently to full and
 held-out arithmetic/math, startup, allocation, memory and executable size.
 Preserve adverse and inconclusive results. No local production elapsed study,
 native speedup, merge eligibility or completion of #207/#197 is claimed here.
+
+The immutable build helper accepts `--portable-scalar AUTO|ON|OFF`. Explicit
+modes require the configured value, the private production compiler definition
+and the matching library source inventory; a standalone test component cannot
+prove VM activation. The helper disables and verifies the separate Apple emitter
+for these isolated comparisons. A source predating this option is supported only
+through `AUTO`, with its mode recorded as unknown rather than disabled. Unexpanded
+response files, contradictory definitions and unverifiable project overrides
+fail closed.
+
+Arithmetic and mathematical collectors accept `--base-portable-scalar` and
+`--candidate-portable-scalar`, propagating each role into both ordinary and
+separate diagnostic builds. `--compare-resources` builds those diagnostic roles
+before elapsed sampling, verifies their source, mode, toolchain and ordinary
+binary identity, and runs matched counter/RSS diagnostics after all elapsed
+stages. Counter totals describe instrumented software categories, not process
+malloc or RSS. Resource repetitions remain descriptive; they cannot substitute
+for the independently required elapsed, startup or #653 acceptance evidence.

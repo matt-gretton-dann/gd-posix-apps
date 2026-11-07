@@ -182,7 +182,16 @@ def gd_build_command(args, name, revision, directory, cc, cxx):
                '--c-compiler', cc, '--cxx-compiler', cxx]
     if name == 'candidate' and getattr(args, 'candidate_prepared_divisors', False):
         command += ['--prepared-divisors', 'ON']
+    mode = getattr(args, 'candidate_portable_scalar' if name == 'candidate' else 'base_portable_scalar', 'AUTO')
+    if mode != 'AUTO':
+        command += ['--portable-scalar', mode]
     return command
+
+
+def profile_build_command(args, name, revision, directory, cc, cxx):
+    command = gd_build_command(args, name, revision, directory, cc, cxx)
+    command[command.index('--name') + 1] = name + '-profile'
+    return command + ['--diagnostic-profile']
 
 
 def main():
@@ -195,7 +204,10 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--broad', action='store_true')
     parser.add_argument('--sparse-qualification', action='store_true')
+    parser.add_argument('--compare-resources', action='store_true')
     parser.add_argument('--candidate-prepared-divisors', action='store_true')
+    parser.add_argument('--candidate-portable-scalar', choices=('AUTO', 'ON', 'OFF'), default='AUTO')
+    parser.add_argument('--base-portable-scalar', choices=('AUTO', 'ON', 'OFF'), default='AUTO')
     parser.add_argument('--samples', type=int, default=9)
     parser.add_argument('--split-point', type=gd.positive_point, default=126)
     args = parser.parse_args()
@@ -208,7 +220,7 @@ def main():
     write(evidence / 'host.json', host_info())
     builder = helper.Builder(root, 900)
     cc, cxx = ('cl', 'cl') if os.name == 'nt' else ('cc', 'c++')
-    entries = []
+    entries, howard = [], []
     try:
         # Independent A/A build measures source/build noise; no build runs
         # concurrently with any measured executable. No tuned-binary cache.
@@ -219,6 +231,10 @@ def main():
             if name == 'candidate' and args.candidate_prepared_divisors:
                 for entry in built:
                     gd.require_prepared_candidate(helper, entry)
+            mode = args.candidate_portable_scalar if name == 'candidate' else args.base_portable_scalar
+            if mode != 'AUTO':
+                for entry in built:
+                    gd.require_portable_mode(helper, entry, mode)
             entries.extend(built)
         comparator = root / 'howard'
         builder.run([sys.executable, str(SCRIPTS / 'build-bc-comparators.py'), '--output',
@@ -237,6 +253,20 @@ def main():
                    'aa': [entries[0], entries[2]]}
         for name, implementations in configs.items():
             write(root / (name + '.json'), {'implementations': implementations})
+        profiles = {}
+        if args.compare_resources:
+            for name, revision in (('base', args.base), ('candidate', args.candidate)):
+                directory = root / (name + '-profile')
+                builder.run(profile_build_command(args, name, revision, directory, cc, cxx))
+                profile = json.loads((directory / 'implementations.json').read_text())['implementations'][0]
+                mode = args.base_portable_scalar if name == 'base' else args.candidate_portable_scalar
+                if mode != 'AUTO':
+                    gd.require_portable_mode(helper, profile, mode)
+                if name == 'candidate' and args.candidate_prepared_divisors:
+                    gd.require_prepared_candidate(helper, profile)
+                profiles[name] = profile
+            load('compare-bc-resources').validate_roles(
+                bench, profiles, dict(base=entries[0], candidate=entries[1]))
         reports = []
         for preset in (('full', 'holdout') if args.broad else ('full',)):
             names = selected_cases(bench, preset, args.broad)
@@ -294,6 +324,11 @@ def main():
                                     'candidate_over_howard': competitive})
         if args.sparse_qualification:
             reports.extend(qualify_sparse(builder, evidence, entries))
+        # All owned builds precede sampling; wrappers follow every elapsed stage.
+        if args.compare_resources:
+            load('compare-bc-resources').run_diagnostics(
+                builder.run, profiles, dict(base=entries[0], candidate=entries[1]),
+                ('full', 'holdout') if args.broad else ('full',), 'arithmetic', evidence)
         write(evidence / 'acceptance.json', acceptance_report(reports, args.samples))
         write(evidence / 'decisions.json', {'advisory': True, 'results': reports,
               'aa_policy_sha256': AA_POLICY.source_sha256(),
@@ -324,25 +359,27 @@ def main():
     finally:
         # Preserve exact recipes/logs without uploading cloned source/build trees.
         write(evidence / 'orchestration.json', {'base': args.base, 'candidate': args.candidate,
+              'base_portable_scalar': args.base_portable_scalar, 'candidate_portable_scalar': args.candidate_portable_scalar,
               'split_point': args.split_point, 'candidate_prepared_divisors': args.candidate_prepared_divisors,
-              'sparse_qualification': args.sparse_qualification,
+              'sparse_qualification': args.sparse_qualification, 'compare_resources': args.compare_resources,
               'commands': builder.commands})
         for path in root.glob('command-*.log'):
             shutil.copyfile(str(path), str(evidence / path.name))
-        for name in ('base', 'candidate', 'aa', 'howard'):
+        for name in ('base', 'candidate', 'aa', 'howard', 'base-profile', 'candidate-profile'):
             source = root / name
             target = evidence / name
             target.mkdir(exist_ok=True)
             for path in source.glob('*'):
                 if path.is_file():
                     shutil.copyfile(str(path), str(target / path.name))
-            if (source / 'prepared-policy').is_dir():
-                shutil.copytree(str(source / 'prepared-policy'), str(target / 'prepared-policy'))
+            for policy_root in ('prepared-policy', 'portable-scalar-policy'):
+                if (source / policy_root).is_dir():
+                    shutil.copytree(str(source / policy_root), str(target / policy_root))
             if (source / 'logs').is_dir():
                 shutil.copytree(str(source / 'logs'), str(target / 'logs'))
         # Every timed child has finished. Preserve the actual measured code
         # without rebuilding, relinking or changing compiler flags.
-        load('collect-bc-codegen').collect(entries, evidence / 'codegen')
+        load('collect-bc-codegen').collect(entries + howard, evidence / 'codegen')
 
 
 if __name__ == '__main__':
