@@ -142,6 +142,7 @@ def verify(helper, build, cache, enabled):
                     outputs.append(argv[index + 1])
                 elif arg.startswith(('/Fo', '-Fo')):
                     outputs.append(arg[3:] or (argv[index + 1] if index + 1 < len(argv) else ''))
+            command_output_count = len(outputs)
             if 'output' in row:
                 outputs.append(row['output'])
             owner = 'libbc' if name == 'vm.cc' else BACKEND
@@ -157,10 +158,19 @@ def verify(helper, build, cache, enabled):
             selected.append(name)
             if name in SOURCES:
                 absolute = set()
-                for output in outputs:
+                if not command_output_count:
+                    fail('backend command does not declare its output')
+                for index, output in enumerate(outputs):
                     output = normal(output)
                     if not output.startswith('/') and not re.match(r'^[A-Za-z]:/', output):
-                        output = normal(posixpath.join(str(row.get('directory', build)).replace('\\', '/'), output))
+                        # CMake Makefiles compile from a per-target directory,
+                        # but their extra JSON output field is build-relative.
+                        # Resolve each actual record using its own CMake base;
+                        # mismatches must still fail after normalization.
+                        base = (row.get('directory', str(build.absolute()))
+                                if index < command_output_count else
+                                cache.get('CMAKE_CACHEFILE_DIR', str(build.absolute())))
+                        output = normal(posixpath.join(str(base).replace('\\', '/'), output))
                     absolute.add(output)
                 if len(absolute) != 1:
                     fail('compiler outputs disagree')
