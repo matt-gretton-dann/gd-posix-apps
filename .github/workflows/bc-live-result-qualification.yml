@@ -16,7 +16,7 @@ jobs:
   qualify:
     # One declared cohort, after the correctness/resource preflight. Keep
     # failures and inconclusive rows; a green job is not adoption approval.
-    if: github.head_ref == 'codex/bc-661-live-results'
+    if: github.head_ref == 'codex/bc-661-layout-admission'
     strategy:
       fail-fast: false
       matrix:
@@ -28,7 +28,7 @@ jobs:
     timeout-minutes: 360
     env:
       BC_CANDIDATE: ${{ github.event.pull_request.head.sha }}
-      BC_BASE: ${{ matrix.comparison == 'live-on' && github.event.pull_request.head.sha || '92fb2c62c9293c5bc10a953776ab148733e1587a' }}
+      BC_BASE: ${{ matrix.comparison == 'live-on' && github.event.pull_request.head.sha || 'f704340ae3e8b4e57f8abfe18d2c98809938b78d' }}
       BC_LIVE: ${{ matrix.comparison == 'live-on' }}
       BC_SUITE: ${{ matrix.suite }}
     steps:

@@ -5,19 +5,39 @@ Issue #661 evaluates bounded CFG-aware reuse of dead result slots for #207 and
 allocation recovery and verified compiler activation precede performance
 collection; fewer slots alone do not establish an end-to-end improvement.
 
-The runtime/resource checkpoint 5366b3a1 passed all 23 hosted checks and all
-fifteen archives are retained with provider hashes and ZIP validation. All
-twelve emitted mode records independently replay against their retained
-compiler or MSBuild evidence. Controller/resource checkpoint c20f376d adds
-matched post-sampling diagnostics and complete executable/input retention.
-Native preflight found an older fixture that still expected only the three GD
-executables in the arithmetic archive. Follow-up f3bbc91e requires Howard too;
-all fifteen local controller tests pass. The corrected source now passes all
-23 hosted checks. Its fifteen provider-hash/ZIP-verified native archives are
-preserved, and all twelve emitted mode records independently replay against
-their exact retained compiler/project evidence.
-The final publication changes only documentation and the workflow; the immutable
-source SHA is recorded in #661 before the push that starts collection.
+## Prior cohort and independent follow-up
+
+The original source `a9bc6194` is rejected and PR #662 is closed without merging.
+Its fixed eighteen-job cohort is completely terminal: six post-sampling
+arithmetic archival failures and twelve successful mathematical collectors.
+All thirty-three correctness/qualification archives remain preserved with
+provider digests and ZIP/CRC checks, and all eighteen source/protocol bindings
+were independently checked. The raw results contain twenty-one independently
+replayed regression-limit violations. All six arithmetic jobs also lack their
+Howard executable and fresh startup study because of the versioned-role archive
+bug. Neither a new build nor another source's startup study replaces that
+missing original-run evidence. Preserve all adverse and inconclusive results.
+
+PR #665 follows up separately. It declines graph allocation when producer
+compaction already leaves only the empty sentinel, and preserves an originally
+profitable typed execution family while compacting its lanes. A newly selected
+typed family must still beat the best generic retained cost strictly. These are
+generic admission/execution rules, without benchmark or library recognition.
+The independently green archive fix #664 is integrated before publication.
+
+Runtime checkpoint `8c4f8e64` and documentation checkpoint `945cbdb7` each passed
+all twenty-three native checks, with fifteen archives and twelve actual native
+compiler/cache/test records independently rechecked. Source-bound generic/typed
+coverage and checked counter-only diagnostics are recorded in
+[the planner evidence](bc-live-result-slots.md). They establish neither native
+elapsed speed nor acceptance for the final publication. The final integration
+must retain its runtime source-file byte identity or refresh those checks as appropriate;
+its collector tests, exact-source native checks and this new fixed cohort remain
+separate obligations. No acceptance transfers from the rejected source.
+
+The immutable final source SHA and this protocol/workflow hashes are recorded
+in #661 before the push that starts collection. Do not edit the frozen source,
+change budgets/selectors, or restart an unfavorable or incomplete cohort.
 
 ## Fixed cohort
 
@@ -25,7 +45,7 @@ Run one declared cohort on ubuntu-24.04, macos-15 and windows-2025. Each platfor
 has two independent comparisons:
 
 - Candidate default OFF versus accepted main
-  92fb2c62c9293c5bc10a953776ab148733e1587a. The candidate is explicitly verified
+  f704340ae3e8b4e57f8abfe18d2c98809938b78d. The candidate is explicitly verified
   OFF. The old baseline uses AUTO and reports its unavailable liveness API as
   unknown; do not manufacture evidence that its source supported the option.
 - Independently built OFF and ON roles at the exact same candidate source.
@@ -96,12 +116,15 @@ erase a loss or inconclusive result elsewhere. Review full/held-out elapsed,
 controls, startup, counters, retained storage, cold RSS and executable size
 before any adoption. Green collection jobs alone do not establish acceptance.
 
-Fresh generic/typed profile-OFF runtime coverage at c20f376d remains separately
-source-bound in [the planner evidence](bc-live-result-slots.md), including the
-resource-accounting source. Profile-ON accounting has separate native asserted
-contracts rather than an LLVM coverage claim. Remaining feasible coverage and fault obligations
-remain open. Keep the generic fallback and default OFF unless qualification
-supports adoption. Do not close #661, #207 or #197 on infrastructure or partial
-performance evidence. The rejected frozen #658 source and all adverse evidence
-remain unchanged; its missing math A/A executable cannot be recreated as
-original-run evidence by this cohort.
+Fresh generic/typed profile-OFF runtime coverage at `8c4f8e64` remains separately
+source-bound in [the planner evidence](bc-live-result-slots.md). These are
+independent Debug configurations with exact retained binaries/profiles; the
+broad and CLI-only scopes are not pooled. Profile-ON accounting has separate
+native asserted contracts rather than an LLVM coverage claim. The final
+integration verifies runtime-file identity before applying those bounded
+coverage observations; source changes require fresh evidence. Remaining feasible
+coverage/fault and complete qualification obligations stay explicit. Keep the
+generic fallback and default OFF unless qualification supports adoption. Do not
+close #661, #207 or #197 on infrastructure, counters or partial performance
+evidence. The rejected #658 and #662 sources and all adverse archives remain
+unchanged; no missing measured binary or startup study is reconstructed.
