@@ -209,6 +209,7 @@ def main():
     builder = helper.Builder(root, 900)
     cc, cxx = ('cl', 'cl') if os.name == 'nt' else ('cc', 'c++')
     entries = []
+    howard = []
     try:
         # Independent A/A build measures source/build noise; no build runs
         # concurrently with any measured executable. No tuned-binary cache.
@@ -340,9 +341,9 @@ def main():
                 shutil.copytree(str(source / 'prepared-policy'), str(target / 'prepared-policy'))
             if (source / 'logs').is_dir():
                 shutil.copytree(str(source / 'logs'), str(target / 'logs'))
-        # Every timed child has finished. Preserve the actual measured code
-        # without rebuilding, relinking or changing compiler flags.
-        load('collect-bc-codegen').collect(entries, evidence / 'codegen')
+        # Every timed child has finished. Preserve every measured GD and Howard
+        # image without rebuilding, relinking or changing compiler flags.
+        load('collect-bc-codegen').collect(entries + howard, evidence / 'codegen')
 
 
 if __name__ == '__main__':
