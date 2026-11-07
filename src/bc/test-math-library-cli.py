@@ -60,7 +60,7 @@ class LibraryCli(unittest.TestCase):
     def certified(self, options=('-l',), files=(), binary=None):
         cases = []
         for filename in ('math-oracles.json', 'math-crossover-oracles.json', 'math-trig-oracles.json',
-                         'math-bessel-zero-oracles.json'):
+                         'math-bessel-zero-oracles.json', 'math-bessel-bounded-oracles.json'):
             cases.extend(json.loads((ROOT / 'fixtures' / filename).read_text())['cases'])
         program = []
         for case in cases:
@@ -299,6 +299,36 @@ class LibraryCli(unittest.TestCase):
             self.assertEqual(ORACLE.classify(Fraction(expected), partial, upper, 0), 'pass')
         program = 'scale=0\n' + ''.join(f'j(0,{x})\n' for x in arguments)
         self.assertEqual(self.checked_lines(program), ['1', '0'])
+
+    def test_bounded_bessel_guard_error_budget(self):
+        # Bound exp(8) using a rational Taylor prefix and a geometric tail.
+        term = total = Fraction(1)
+        for k in range(1, 65):
+            term *= Fraction(8, k)
+            total += term
+        next_term = term * Fraction(8, 65)
+        upper = total + next_term / (1 - Fraction(8, 66))
+        self.assertLess(upper, 3000)
+        for scale in range(101):
+            with self.subTest(scale=scale):
+                working = scale + 9
+                # Otherwise the existing n>=3*x, n>=4*(scale+1)
+                # tiny-result branch would already have returned zero.
+                coefficient_steps = max(24, 4 * (scale + 1)) - 1
+                series_steps = 2 * working + 16
+                self.assertLessEqual(coefficient_steps, 403)
+                self.assertLessEqual(series_steps, 234)
+                # At k>=8, |q|/(k*(n+k))<=16/64. Stored
+                # magnitudes never exceed the exact absolute terms.
+                self.assertLess(Fraction(3000, 4 ** (2 * working + 8)),
+                                Fraction(1, 10 ** working))
+                # Each coefficient/term step loses at most two working
+                # units, with absolute propagation below exp(8). Add
+                # the squared-argument and input-truncation budgets.
+                working_units = 1 + 2 * 3000 * (coefficient_steps + series_steps + 1)
+                output_units = Fraction(working_units, 10 ** 9)
+                self.assertLess(output_units, Fraction(4, 1000))
+                self.assertLess(output_units + Fraction(1, 2), 1)
 
     def test_bessel_ascending_with_exact_rational_enclosures(self):
         arguments = ((0, 100, 150), (300, 300, 100), (1, '1.125', 100),
