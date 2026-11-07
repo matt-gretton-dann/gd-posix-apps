@@ -118,6 +118,20 @@ class ControlAuditTests(unittest.TestCase):
         self.assertEqual(stage['platform']['system'], 'Windows')
         self.assertTrue(stage['binary_bytes_identical'])
 
+    def test_flat_provider_archives_accept_explicit_root_prefix(self):
+        original, _ = self.archive(self.fixture())
+        flat = self.root / 'flat.zip'
+        with zipfile.ZipFile(original) as source, zipfile.ZipFile(flat, 'w') as target:
+            for name in source.namelist():
+                self.assertTrue(name.startswith('evidence/'))
+                target.writestr(name[len('evidence/'):], source.read(name))
+        for prefix in ('', '.'):
+            with self.subTest(prefix=prefix):
+                report = AUDIT.audit(flat, AUDIT.digest(flat.read_bytes()), prefix,
+                                     ['full-aa'], 'aa', SOURCE)
+                self.assertEqual(report['stages'][0]['checked_rows'], 32)
+                self.assertFalse(report['merge_eligible'])
+
     def test_same_source_and_length_do_not_hide_different_binary_bytes(self):
         stage = self.run_audit(self.fixture(different_binary=True))['stages'][0]
         self.assertEqual(stage['identities']['base']['file_bytes'], stage['identities']['aa']['file_bytes'])
