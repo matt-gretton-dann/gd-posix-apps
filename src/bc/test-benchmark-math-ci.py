@@ -347,5 +347,168 @@ class NativeMath(unittest.TestCase):
             self.assertFalse((root / 'results').exists())
 
 
+class MathEvidenceOrchestration(unittest.TestCase):
+    """Simulate a complete two-preset controller; never execute fixture images."""
+
+    def exercise(self, fail_elapsed=False, corrupt_asset=False, interrupt_elapsed=False):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        source = Path(temporary.name)
+        (source / 'src/bc').mkdir(parents=True)
+        (source / 'src/bc/math-library.bc').write_bytes(b'scale=20\n')
+        root, events = source / 'results', []
+        self.last_root = root
+        original_load = CI.load
+        bench = original_load('bench-bc')
+        codegen = original_load('collect-bc-codegen')
+        arithmetic = original_load('benchmark-ci')
+        original_collect = codegen.collect
+        howard_revision = original_load('build-bc-comparators').HOWARD_REVISION
+
+        class Commands:
+            def __init__(self, destination, timeout):
+                self.commands = []
+                self.deadline = CI.time.monotonic() + timeout
+
+            def run(self, argv, timeout=None):
+                self.commands.append(dict(argv=list(map(str, argv))))
+                script = Path(argv[1]).name
+                if script in ('build-gd-bc.py', 'build-bc-comparators.py'):
+                    target = Path(argv[argv.index('--output') + 1])
+                    target.mkdir()
+                    binary = target / 'build/src/bc/fixture-image'
+                    binary.parent.mkdir(parents=True)
+                    binary.write_bytes(b'fixture image; must never be executed')
+                    revision = (howard_revision if script == 'build-bc-comparators.py' else
+                                argv[argv.index('--revision') + 1])
+                    name = ('howard' if script == 'build-bc-comparators.py' else
+                            argv[argv.index('--name') + 1])
+                    entry = dict(name=name, argv=[str(binary)], metadata=dict(
+                        instrumented='--diagnostic-profile' in argv,
+                        source_revision=revision, binary_sha256=bench.digest_file(binary)))
+                    (target / 'implementations.json').write_text(json.dumps(dict(implementations=[entry])))
+                    if script == 'build-gd-bc.py':
+                        library = target / 'source/src/bc/math-library.bc'
+                        library.parent.mkdir(parents=True)
+                        library.write_bytes(b'scale=20\n')
+                    events.append(('build', name))
+                    return
+                if script == 'test-math-library-cli.py':
+                    events.append(('correctness', 'fixture'))
+                    return
+                if script != 'bench-bc.py':
+                    raise AssertionError('unexpected orchestration command: ' + script)
+                target = Path(argv[argv.index('--output') + 1])
+                target.mkdir()
+                events.append(('elapsed', target.name))
+                if '--calibrate-only' in argv:
+                    return
+                tools = json.loads(Path(argv[argv.index('--config') + 1]).read_text())['implementations']
+                reference = argv[argv.index('--reference') + 1]
+                preset = target.name.split('-')[0]
+                name = preset + '_fixture'
+                ratio = dict(median_paired_ratio=1.0, ci95=[1.0, 1.0], pairs=3)
+                row = dict(name=name, group='math_fixture', parameters=dict(mode='repeated', scale=20),
+                           duration_target_met={tool['name']: True for tool in tools},
+                           candidate_over_reference={tool['name']: copy.deepcopy(ratio)
+                                                     for tool in tools if tool['name'] != reference})
+                (target / 'summary.json').write_text(json.dumps(dict(workloads=[row])))
+                samples = [dict(phase='measurement', round=index, workload=name,
+                                implementation=tool['name'], seconds=1.0, checked=True)
+                           for index in range(3) for tool in tools]
+                (target / 'samples.jsonl').write_text('\n'.join(json.dumps(r) for r in samples))
+                if interrupt_elapsed and target.name == 'full-paired':
+                    raise KeyboardInterrupt()
+                if fail_elapsed and target.name == 'full-paired':
+                    raise CI.CommandFailure('forced elapsed failure after fixture samples')
+
+        def modules(name):
+            if name == 'benchmark-ci':
+                return arithmetic
+            if name == 'collect-bc-codegen':
+                return codegen
+            return original_load(name)
+
+        def collect(*args, **kwargs):
+            events.append(('archive', 'ordinary roles'))
+            return original_collect(*args, **kwargs)
+
+        def resources(*args, **kwargs):
+            events.append(('resource', 'fixture'))
+            if corrupt_asset:
+                (root / 'gd/source/src/bc/math-library.bc').write_bytes(b'changed after elapsed')
+
+        argv = [str(PATH), '--source', str(source), '--candidate', 'b' * 40,
+                '--base', 'a' * 40, '--output', str(root), '--broad', '--samples', '3']
+        with mock.patch.object(CI, 'Commands', Commands), mock.patch.object(CI, 'load', modules), \
+                mock.patch.object(arithmetic, 'host_info', return_value=dict(test_host='fixture')), \
+                mock.patch.object(CI, 'selected_cases', side_effect=lambda bench, preset, broad: [preset + '_fixture']), \
+                mock.patch.object(CI, 'diagnostic_cases', return_value=[]), \
+                mock.patch.object(CI, 'allocation_diagnostics', side_effect=lambda *a, **k: events.append(('allocation', 'fixture'))), \
+                mock.patch.object(CI, 'resource_diagnostics', side_effect=resources), \
+                mock.patch.object(codegen, 'collect', side_effect=collect), \
+                mock.patch.object(codegen, 'native_commands', return_value=[]), \
+                mock.patch.dict(os.environ, {'GITHUB_STEP_SUMMARY': ''}), \
+                mock.patch.object(sys, 'argv', argv), contextlib.redirect_stderr(io.StringIO()):
+            status = CI.main()
+        return status, root, events
+
+    def test_all_diagnostic_probes_follow_both_elapsed_presets(self):
+        status, root, events = self.exercise()
+        self.assertEqual(status, 0)
+        elapsed = [i for i, event in enumerate(events) if event[0] == 'elapsed']
+        diagnostics = [i for i, event in enumerate(events) if event[0] in ('allocation', 'resource')]
+        self.assertEqual(len(elapsed), 6)
+        self.assertGreater(min(diagnostics), max(elapsed))
+
+    def test_math_archive_contains_all_measured_roles_and_external_inputs(self):
+        status, root, events = self.exercise()
+        self.assertEqual(status, 0)
+        manifest = root / 'evidence/codegen/manifest.json'
+        self.assertTrue(manifest.is_file())
+        report = json.loads(manifest.read_text())
+        self.assertEqual(report['status'], 'preserved')
+        self.assertEqual({r['name'] for r in report['observations']},
+                         {'gd-portable', 'gd-aa', 'gd-base', 'howard-standard', 'howard-portable'})
+        for row in report['observations']:
+            self.assertFalse(row['implementation']['metadata']['instrumented'])
+            self.assertEqual((manifest.parent / row['binary']).read_bytes(),
+                             b'fixture image; must never be executed')
+            for copied in row['input_artifacts']:
+                self.assertEqual((manifest.parent / copied['archive_path']).read_bytes(), b'scale=20\n')
+
+    def test_failed_elapsed_run_still_preserves_completed_ordinary_assets(self):
+        status, root, events = self.exercise(fail_elapsed=True)
+        self.assertEqual(status, 1)
+        self.assertIn('forced elapsed failure', (root / 'evidence/failure.json').read_text())
+        manifest = root / 'evidence/codegen/manifest.json'
+        self.assertTrue(manifest.is_file())
+        self.assertEqual(json.loads(manifest.read_text())['status'], 'preserved')
+        self.assertFalse(any(event[0] in ('allocation', 'resource') for event in events))
+
+    def test_archival_failure_cannot_turn_successful_elapsed_stages_green(self):
+        status, root, events = self.exercise(corrupt_asset=True)
+        self.assertEqual(status, 1)
+        failure = json.loads((root / 'evidence/preservation-failure.json').read_text())
+        self.assertIn('no acceptance', failure['status'])
+        self.assertIn('input changed', failure['error'])
+        self.assertEqual(json.loads((root / 'evidence/codegen/manifest.json').read_text())['status'], 'error')
+
+    def test_python_interrupt_propagates_after_completed_assets_are_preserved(self):
+        with self.assertRaises(KeyboardInterrupt):
+            self.exercise(interrupt_elapsed=True)
+        manifest = self.last_root / 'evidence/codegen/manifest.json'
+        self.assertEqual(json.loads(manifest.read_text())['status'], 'preserved')
+
+    def test_contradictory_ordinary_role_recipes_are_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            first = dict(name='same', argv=['first'])
+            second = dict(name='same', argv=['second'])
+            with self.assertRaisesRegex(CI.CommandFailure, 'contradictory'):
+                CI.preserve_ordinary(dict(aa=[first], paired=[second]), root, deadline=0)
+            self.assertFalse((root / 'codegen').exists())
+
+
 if __name__ == '__main__':
     unittest.main()

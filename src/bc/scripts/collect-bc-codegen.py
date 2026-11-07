@@ -6,6 +6,7 @@ and the COFF timestamp field, but include encoded addresses and raw padding.
 Identical code bytes alone do not establish identical runtime behavior.
 SPDX-License-Identifier: Apache-2.0
 """
+import copy
 import hashlib
 import importlib.util
 import json
@@ -15,6 +16,7 @@ import platform
 import re
 import shutil
 import struct
+import time
 
 
 class CodegenError(RuntimeError):
@@ -96,20 +98,26 @@ def native_commands(binary, system):
     return [[tool, *args, str(binary)] for args in arguments] if tool else []
 
 
-def collect(entries, directory, timeout=60):
+def collect(entries, directory, timeout=60, deadline=None):
     """Archive declared, uninstrumented binaries; unavailable tools are explicit.
 
     Call only after every elapsed child has finished. Hash mismatch/missing
     declared binaries are hard errors; diagnostics cannot legitimize a changed
-    executable. Native tools inspect the copy and never run the bc program.
+    executable or declared input. Copy every role before optional inspection.
+    An absolute monotonic deadline bounds inspection, not asset preservation;
+    expired budgets retain exact bytes with explicit unavailable diagnostics.
+    Native tools inspect the copy and never run the bc program.
     """
     if not math.isfinite(timeout) or timeout <= 0:
         raise ValueError("inspection timeout must be finite and positive")
+    if deadline is not None and (type(deadline) not in (int, float) or not math.isfinite(deadline)):
+        raise ValueError('inspection deadline must be a finite monotonic timestamp')
     directory = Path(directory)
     directory.mkdir(exist_ok=False)
     report = dict(schema=1, purpose='post-sampling executable/code-generation evidence; not timing or performance acceptance',
-                  collector_sha256=digest(__file__), system=platform.system(), observations=[])
-    names = set()
+                  collector_sha256=digest(__file__), system=platform.system(), observations=[],
+                  inspection_timeout_seconds=timeout, inspection_deadline_monotonic=deadline)
+    names, snapshots = set(), []
     failed = False
     try:
         for entry in entries:
@@ -119,7 +127,9 @@ def collect(entries, directory, timeout=60):
             if not re.fullmatch(r'[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*', name) or name in names:
                 raise CodegenError('invalid/duplicate role name')
             names.add(name)
-            row = dict(name=name, source_revision=entry['metadata'].get('source_revision'), status='incomplete')
+            row = dict(name=name, source_revision=entry['metadata'].get('source_revision'),
+                       implementation=copy.deepcopy(entry), input_artifacts=[], status='incomplete',
+                       disassembly=dict(status='unavailable', reason='inspection not attempted'))
             report['observations'].append(row)
             target = directory / name
             target.mkdir()
@@ -136,9 +146,32 @@ def collect(entries, directory, timeout=60):
                     raise CodegenError('archived executable identity mismatch: ' + name)
             except OSError as error:
                 raise CodegenError('cannot preserve declared executable ' + name + ': ' + str(error))
-            row.update(status='preserved', binary=str(binary.relative_to(directory)),
+            row.update(binary=str(binary.relative_to(directory)),
                        binary_sha256=expected, file_bytes=binary.stat().st_size,
                        pe_code=pe_code(binary.read_bytes()))
+            inputs = []
+            for index, original in enumerate(entry.get('input_artifacts', [])):
+                input_source, expected_input = Path(original['path']), original['sha256']
+                if not isinstance(expected_input, str) or not re.fullmatch('[0-9a-f]{64}', expected_input):
+                    raise CodegenError('declared input lacks a SHA-256 identity: ' + name)
+                if digest(input_source) != expected_input:
+                    raise CodegenError('declared input changed before archival: ' + name)
+                copied = target / ('input-' + str(index))
+                shutil.copyfile(input_source, copied)
+                if digest(copied) != expected_input:
+                    raise CodegenError('archived input identity mismatch: ' + name)
+                record = copy.deepcopy(original)
+                record['archive_path'] = str(copied.relative_to(directory))
+                row['input_artifacts'].append(record)
+                inputs.append((input_source, copied, expected_input))
+            row['status'] = 'preserved'
+            snapshots.append((row, source, binary, inputs))
+        # A slow/unavailable inspector must not prevent later roles being copied.
+        for row, source, binary, inputs in snapshots:
+            target = directory / row['name']
+            if deadline is not None and time.monotonic() >= deadline:
+                row['disassembly'] = dict(status='unavailable', reason='collection deadline exhausted')
+                continue
             commands = native_commands(binary.resolve(), report['system'])
             row['disassembly'] = dict(status='unavailable', reason='no supported native inspection tool')
             if commands:
@@ -147,11 +180,15 @@ def collect(entries, directory, timeout=60):
                 module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(module)
                 runner = module.Commands(target, 2 * timeout + 5)
-                native = dict(status='incomplete', tool=commands[0][0], tool_sha256=digest(commands[0][0]), commands=runner.commands)
+                native = dict(status='incomplete', tool=commands[0][0], commands=runner.commands)
                 row['disassembly'] = native
                 try:
+                    native['tool_sha256'] = digest(commands[0][0])
                     for command in commands:
-                        runner.run(command, timeout=timeout)
+                        remaining = timeout if deadline is None else min(timeout, deadline - time.monotonic())
+                        if remaining <= 0:
+                            raise module.CommandFailure('collection deadline exhausted')
+                        runner.run(command, timeout=remaining)
                     native['status'] = 'collected'
                 except (OSError, module.CommandFailure) as error:
                     native.update(status='unavailable', reason=str(error))
@@ -160,8 +197,12 @@ def collect(entries, directory, timeout=60):
                     if log.is_file():
                         command['log_sha256'] = digest(log)
                         command['log_bytes'] = log.stat().st_size
-            if digest(source) != expected or digest(binary) != expected:
-                raise CodegenError('executable changed during inspection: ' + name)
+        for row, source, binary, inputs in snapshots:
+            if digest(source) != row['binary_sha256'] or digest(binary) != row['binary_sha256']:
+                raise CodegenError('executable changed during inspection: ' + row['name'])
+            for original, copied, expected in inputs:
+                if digest(original) != expected or digest(copied) != expected:
+                    raise CodegenError('declared input changed during inspection: ' + row['name'])
         report['status'] = 'preserved' if entries else 'unavailable: no completed build roles'
     except (CodegenError, KeyError, TypeError, OSError) as error:
         report.update(status='error', error=str(error))

@@ -311,6 +311,188 @@ def gd_build_command(args, name, destination, cc, cxx):
     return command
 
 
+def preserve_ordinary(configs, evidence, deadline):
+    """Retain actual elapsed-role recipes/assets once, including failed runs.
+
+    This is post-sampling archival, never a rebuild. Optional inspection shares
+    the experiment's remaining deadline; exhausted budgets still retain bytes.
+    """
+    entries = {}
+    for comparison in ('aa', 'paired'):
+        for entry in configs.get(comparison, []):
+            name = entry['name']
+            if name in entries and entries[name] != entry:
+                raise CommandFailure('ordinary role has contradictory recipes: ' + name)
+            entries[name] = entry
+    if not entries:
+        return
+    codegen = load('collect-bc-codegen')
+    try:
+        codegen.collect(list(entries.values()), evidence / 'codegen', timeout=15, deadline=deadline)
+    except (codegen.CodegenError, OSError, ValueError) as error:
+        raise CommandFailure('ordinary asset preservation failed: ' + str(error)) from error
+
+
+def run_math(args, root, evidence, commands, configs, gd_builder, bench, helper, presets):
+    """Build/check and collect the fixed stages; caller owns final archival."""
+    if not (args.source / 'src/bc/math-library.bc').is_file():
+        write(evidence / 'unavailable.json', dict(status='ordinary library source unavailable',
+                                                 candidate=args.candidate, base=args.base,
+                                                 performance_acceptance=False))
+        return 0
+    entries = []
+    cc, cxx = ('cl', 'cl') if os.name == 'nt' else ('cc', 'c++')
+    for name in ('gd', 'aa', 'base'):
+        destination = root / name
+        commands.run(gd_build_command(args, name, destination, cc, cxx), timeout=1200)
+        entry = json.loads((destination / 'implementations.json').read_text())['implementations'][0]
+        if args.candidate_prepared_divisors and name != 'base':
+            gd_builder.require_prepared_candidate(helper, entry)
+        entries.append(entry)
+    destination = root / 'howard'
+    commands.run([sys.executable, str(SCRIPTS / 'build-bc-comparators.py'), '--output',
+                  str(destination), '--implementation', 'howard', '--cc', cc], timeout=1200)
+    howard = json.loads((destination / 'implementations.json').read_text())['implementations'][0]
+    if args.candidate_prepared_divisors:
+        for entry in entries[:2]:
+            commands.run([sys.executable, str(SCRIPTS.parent / 'test-divisor-reuse-cli.py'),
+                          entry['argv'][0]], timeout=60)
+    base_library = root / 'base/source/src/bc/math-library.bc'
+    baseline = entries[2] if base_library.is_file() else None
+    if baseline is None:
+        write(evidence / 'baseline-unavailable.json', dict(base=args.base,
+            reason='base revision predates the ordinary library; no candidate/base performance acceptance',
+            performance_acceptance=False))
+    configs.update(configurations(entries[0], entries[1], howard,
+                             root / 'gd/source/src/bc/math-library.bc',
+                             root / 'aa/source/src/bc/math-library.bc', args.candidate,
+                             base=baseline, base_library=base_library, base_revision=args.base))
+    profile_root = root / 'profile'
+    profile_command = [sys.executable, str(SCRIPTS / 'build-gd-bc.py'), '--source',
+                  str(args.source.resolve()), '--revision', args.candidate,
+                  '--split-point', '126', '--output', str(profile_root), '--name', 'gd-profile',
+                  '--diagnostic-profile', '--c-compiler', cc, '--cxx-compiler', cxx]
+    if args.candidate_preparsed_library:
+        profile_command += ['--preparsed-library']
+    commands.run(profile_command, timeout=1200)
+    profiled = json.loads((profile_root / 'implementations.json').read_text())['implementations'][0]
+    # All builds and correctness checks finish before elapsed measurements.
+    commands.run([sys.executable, str(SCRIPTS.parent / 'test-math-library-cli.py'),
+                  configs['paired'][1]['argv'][0], '--source',
+                  str(root / 'gd/source/src/bc/math-library.bc'), '--other-bc',
+                  howard['argv'][0]], timeout=600)
+    libraries = evidence / 'source-libraries'
+    libraries.mkdir()
+    shutil.copyfile(root / 'gd/source/src/bc/math-library.bc', libraries / 'candidate.bc')
+    if baseline:
+        shutil.copyfile(base_library, libraries / 'base.bc')
+    for name, entries in configs.items():
+        write(evidence / (name + '.json'), dict(implementations=entries))
+    decisions = []
+    for preset in presets:
+        prepared = evidence / (preset + '-prepared')
+        command = [sys.executable, str(SCRIPTS / 'bench-bc.py'), '--suite', 'math',
+                   '--config', str(evidence / 'preparation.json'), '--output', str(prepared),
+                   '--preset', preset, '--calibrate-seconds', str(args.duration_seconds),
+                   '--calibrate-only', '--timeout', str(args.child_timeout_seconds), '--require-provenance']
+        for name in selected_cases(bench, preset, args.broad):
+            command += ['--workload', name]
+        commands.run(command)
+        reports = {}
+        for comparison, reference in (('aa', 'gd-portable'), ('paired', 'howard-standard')):
+            target = evidence / (preset + '-' + comparison)
+            command = [sys.executable, str(SCRIPTS / 'bench-bc.py'), '--suite', 'math',
+                       '--config', str(evidence / (comparison + '.json')), '--output', str(target),
+                       '--replay-corpus', str(prepared), '--reference', reference,
+                       '--samples', str(args.samples), '--warmups', '3', '--seed', '1972170',
+                       '--timeout', str(args.child_timeout_seconds), '--require-provenance']
+            commands.run(command)
+            summary = json.loads((target / 'summary.json').read_text())
+            measurements(target)
+            confirmation = {}
+            if comparison == 'aa':
+                suspects = [row['name'] for row in summary['workloads']
+                            if (row['candidate_over_reference']['gd-aa']['ci95'][0] > 1.05 or
+                                row['candidate_over_reference']['gd-aa']['ci95'][1] < .95)]
+                if suspects:
+                    confirm = command + [part for name in suspects for part in ('--workload', name)]
+                    confirm[confirm.index('--output') + 1] = str(evidence / (preset + '-aa-confirmation'))
+                    confirm[confirm.index('--seed') + 1] = '1972171'
+                    commands.run(confirm)
+                    measurements(evidence / (preset + '-aa-confirmation'))
+                    confirmed = json.loads((evidence / (preset + '-aa-confirmation/summary.json')).read_text())
+                    confirmation = {row['name']: row for row in confirmed['workloads']}
+            reports[comparison] = dict(summary=summary, confirmation=confirmation)
+        controls = {}
+        for row in reports['aa']['summary']['workloads']:
+            second = reports['aa']['confirmation'].get(row['name'], {})
+            status = aa_status(row['candidate_over_reference']['gd-aa'],
+                second.get('candidate_over_reference', {}).get('gd-aa'))
+            if row['parameters']['mode'] != 'one_shot' and (
+                    not row.get('duration_target_met') or not all(row['duration_target_met'].values())):
+                status = 'inconclusive duration shortfall'
+            controls[row['name']] = status
+        regression = {}
+        regression_confirmation = {}
+        raw = measurements(evidence / (preset + '-paired'))
+        if baseline:
+            for row in reports['paired']['summary']['workloads']:
+                def times(role):
+                    return [sample['seconds'] for sample in sorted(raw, key=lambda item: item['round'])
+                            if sample['phase'] == 'measurement' and sample['workload'] == row['name']
+                            and sample['implementation'] == role]
+                regression[row['name']] = bench.paired_statistics(times('gd-portable'), times('gd-base'), 1972160)
+            suspects = [row['name'] for row in reports['paired']['summary']['workloads']
+                if row['parameters']['mode'] != 'one_shot' and regression[row['name']]['ci95'][0] > 1.05]
+            if suspects:
+                target = evidence / (preset + '-regression-confirmation')
+                confirm = [sys.executable, str(SCRIPTS / 'bench-bc.py'), '--suite', 'math',
+                    '--config', str(evidence / 'regression.json'), '--output', str(target),
+                    '--replay-corpus', str(prepared), '--reference', 'gd-base',
+                    '--samples', str(args.samples), '--warmups', '3', '--seed', '1972161', '--timeout', str(args.child_timeout_seconds), '--require-provenance']
+                confirm += [part for name in suspects for part in ('--workload', name)]
+                commands.run(confirm)
+                measurements(target)
+                regression_confirmation = {row['name']: row['candidate_over_reference']['gd-portable']
+                    for row in json.loads((target / 'summary.json').read_text())['workloads']}
+        for row in reports['paired']['summary']['workloads']:
+            def times(role):
+                return [sample['seconds'] for sample in sorted(raw, key=lambda item: item['round'])
+                        if sample['phase'] == 'measurement' and sample['workload'] == row['name']
+                        and sample['implementation'] == role]
+            decisions.append(dict(preset=preset, name=row['name'], parameters=row['parameters'],
+                candidate_over_standard=row['candidate_over_reference']['gd-portable'],
+                portable_over_standard=row['candidate_over_reference']['howard-portable'],
+                candidate_over_portable=bench.paired_statistics(times('gd-portable'),times('howard-portable'),1972170),
+                aa_status=controls[row['name']], status=goal_status(row,controls[row['name']]),
+                duration_target_met=row.get('duration_target_met'),
+                candidate_over_base=regression.get(row['name']),
+                regression_confirmation=regression_confirmation.get(row['name']),
+                regression_status=regression_status(regression.get(row['name']),
+                    regression_confirmation.get(row['name']), controls[row['name']],
+                    row['parameters']['mode'], {role: (row.get('duration_target_met') or {}).get(role, False)
+                        for role in ('gd-portable', 'gd-base')})))
+    # Every diagnostic probe follows every elapsed preset/confirmation.
+    allocation_diagnostics(bench, profiled, diagnostic_cases(bench, presets[0]), evidence / 'allocation-diagnostics',
+                           timeout=args.child_timeout_seconds)
+    # Resource wrappers run after all elapsed stages, never concurrently.
+    for preset in presets:
+        resource_diagnostics(bench, evidence / 'paired.json', diagnostic_cases(bench, preset),
+                             evidence / (preset + '-resource-diagnostics'), timeout=args.child_timeout_seconds)
+    write(evidence / 'acceptance.json', acceptance_report(decisions, args.samples))
+    write(evidence / 'decisions.json', dict(advisory=True, results=decisions,
+         aa_policy_sha256=AA_POLICY.source_sha256(),
+         goal='median<=0.90 and nominal CI upper<1 for substantive repeated classes',
+         pending='CPU/RSS availability and precision are per observation; allocation counts are candidate-only; no aggregate pass'))
+    summary_path = evidence / 'summary.md'
+    summary_path.write_text(summary_markdown(decisions), encoding='utf-8')
+    github_summary = os.environ.get('GITHUB_STEP_SUMMARY')
+    if github_summary:
+        with open(github_summary, 'a', encoding='utf-8') as output:
+            output.write(summary_path.read_text(encoding='utf-8'))
+    return 0
+
+
 def main():
     gd_builder, bench = load('build-gd-bc'), load('bench-bc')
     helper = load('build-bc-comparators')
@@ -341,166 +523,13 @@ def main():
     write(evidence / 'host.json', load('benchmark-ci').host_info())
     commands = Commands(root, args.total_seconds)
     configs = {}
+    result, preservation_failed = 1, False
     try:
-        if not (args.source / 'src/bc/math-library.bc').is_file():
-            write(evidence / 'unavailable.json', dict(status='ordinary library source unavailable',
-                                                     candidate=args.candidate, base=args.base,
-                                                     performance_acceptance=False))
-            return 0
-        entries = []
-        cc, cxx = ('cl', 'cl') if os.name == 'nt' else ('cc', 'c++')
-        for name in ('gd', 'aa', 'base'):
-            destination = root / name
-            commands.run(gd_build_command(args, name, destination, cc, cxx), timeout=1200)
-            entry = json.loads((destination / 'implementations.json').read_text())['implementations'][0]
-            if args.candidate_prepared_divisors and name != 'base':
-                gd_builder.require_prepared_candidate(helper, entry)
-            entries.append(entry)
-        destination = root / 'howard'
-        commands.run([sys.executable, str(SCRIPTS / 'build-bc-comparators.py'), '--output',
-                      str(destination), '--implementation', 'howard', '--cc', cc], timeout=1200)
-        howard = json.loads((destination / 'implementations.json').read_text())['implementations'][0]
-        if args.candidate_prepared_divisors:
-            for entry in entries[:2]:
-                commands.run([sys.executable, str(SCRIPTS.parent / 'test-divisor-reuse-cli.py'),
-                              entry['argv'][0]], timeout=60)
-        base_library = root / 'base/source/src/bc/math-library.bc'
-        baseline = entries[2] if base_library.is_file() else None
-        if baseline is None:
-            write(evidence / 'baseline-unavailable.json', dict(base=args.base,
-                reason='base revision predates the ordinary library; no candidate/base performance acceptance',
-                performance_acceptance=False))
-        configs = configurations(entries[0], entries[1], howard,
-                                 root / 'gd/source/src/bc/math-library.bc',
-                                 root / 'aa/source/src/bc/math-library.bc', args.candidate,
-                                 base=baseline, base_library=base_library, base_revision=args.base)
-        profile_root = root / 'profile'
-        profile_command = [sys.executable, str(SCRIPTS / 'build-gd-bc.py'), '--source',
-                      str(args.source.resolve()), '--revision', args.candidate,
-                      '--split-point', '126', '--output', str(profile_root), '--name', 'gd-profile',
-                      '--diagnostic-profile', '--c-compiler', cc, '--cxx-compiler', cxx]
-        if args.candidate_preparsed_library:
-            profile_command += ['--preparsed-library']
-        commands.run(profile_command, timeout=1200)
-        profiled = json.loads((profile_root / 'implementations.json').read_text())['implementations'][0]
-        # All builds and correctness checks finish before elapsed measurements.
-        commands.run([sys.executable, str(SCRIPTS.parent / 'test-math-library-cli.py'),
-                      configs['paired'][1]['argv'][0], '--source',
-                      str(root / 'gd/source/src/bc/math-library.bc'), '--other-bc',
-                      howard['argv'][0]], timeout=600)
-        libraries = evidence / 'source-libraries'
-        libraries.mkdir()
-        shutil.copyfile(root / 'gd/source/src/bc/math-library.bc', libraries / 'candidate.bc')
-        if baseline:
-            shutil.copyfile(base_library, libraries / 'base.bc')
-        allocation_diagnostics(bench, profiled, diagnostic_cases(bench, presets[0]), evidence / 'allocation-diagnostics',
-                               timeout=args.child_timeout_seconds)
-        for name, entries in configs.items():
-            write(evidence / (name + '.json'), dict(implementations=entries))
-        decisions = []
-        for preset in presets:
-            prepared = evidence / (preset + '-prepared')
-            command = [sys.executable, str(SCRIPTS / 'bench-bc.py'), '--suite', 'math',
-                       '--config', str(evidence / 'preparation.json'), '--output', str(prepared),
-                       '--preset', preset, '--calibrate-seconds', str(args.duration_seconds),
-                       '--calibrate-only', '--timeout', str(args.child_timeout_seconds), '--require-provenance']
-            for name in selected_cases(bench, preset, args.broad):
-                command += ['--workload', name]
-            commands.run(command)
-            reports = {}
-            for comparison, reference in (('aa', 'gd-portable'), ('paired', 'howard-standard')):
-                target = evidence / (preset + '-' + comparison)
-                command = [sys.executable, str(SCRIPTS / 'bench-bc.py'), '--suite', 'math',
-                           '--config', str(evidence / (comparison + '.json')), '--output', str(target),
-                           '--replay-corpus', str(prepared), '--reference', reference,
-                           '--samples', str(args.samples), '--warmups', '3', '--seed', '1972170',
-                           '--timeout', str(args.child_timeout_seconds), '--require-provenance']
-                commands.run(command)
-                summary = json.loads((target / 'summary.json').read_text())
-                measurements(target)
-                confirmation = {}
-                if comparison == 'aa':
-                    suspects = [row['name'] for row in summary['workloads']
-                                if (row['candidate_over_reference']['gd-aa']['ci95'][0] > 1.05 or
-                                    row['candidate_over_reference']['gd-aa']['ci95'][1] < .95)]
-                    if suspects:
-                        confirm = command + [part for name in suspects for part in ('--workload', name)]
-                        confirm[confirm.index('--output') + 1] = str(evidence / (preset + '-aa-confirmation'))
-                        confirm[confirm.index('--seed') + 1] = '1972171'
-                        commands.run(confirm)
-                        measurements(evidence / (preset + '-aa-confirmation'))
-                        confirmed = json.loads((evidence / (preset + '-aa-confirmation/summary.json')).read_text())
-                        confirmation = {row['name']: row for row in confirmed['workloads']}
-                reports[comparison] = dict(summary=summary, confirmation=confirmation)
-            controls = {}
-            for row in reports['aa']['summary']['workloads']:
-                second = reports['aa']['confirmation'].get(row['name'], {})
-                status = aa_status(row['candidate_over_reference']['gd-aa'],
-                    second.get('candidate_over_reference', {}).get('gd-aa'))
-                if row['parameters']['mode'] != 'one_shot' and (
-                        not row.get('duration_target_met') or not all(row['duration_target_met'].values())):
-                    status = 'inconclusive duration shortfall'
-                controls[row['name']] = status
-            regression = {}
-            regression_confirmation = {}
-            raw = measurements(evidence / (preset + '-paired'))
-            if baseline:
-                for row in reports['paired']['summary']['workloads']:
-                    def times(role):
-                        return [sample['seconds'] for sample in sorted(raw, key=lambda item: item['round'])
-                                if sample['phase'] == 'measurement' and sample['workload'] == row['name']
-                                and sample['implementation'] == role]
-                    regression[row['name']] = bench.paired_statistics(times('gd-portable'), times('gd-base'), 1972160)
-                suspects = [row['name'] for row in reports['paired']['summary']['workloads']
-                    if row['parameters']['mode'] != 'one_shot' and regression[row['name']]['ci95'][0] > 1.05]
-                if suspects:
-                    target = evidence / (preset + '-regression-confirmation')
-                    confirm = [sys.executable, str(SCRIPTS / 'bench-bc.py'), '--suite', 'math',
-                        '--config', str(evidence / 'regression.json'), '--output', str(target),
-                        '--replay-corpus', str(prepared), '--reference', 'gd-base',
-                        '--samples', str(args.samples), '--warmups', '3', '--seed', '1972161', '--timeout', str(args.child_timeout_seconds), '--require-provenance']
-                    confirm += [part for name in suspects for part in ('--workload', name)]
-                    commands.run(confirm)
-                    measurements(target)
-                    regression_confirmation = {row['name']: row['candidate_over_reference']['gd-portable']
-                        for row in json.loads((target / 'summary.json').read_text())['workloads']}
-            for row in reports['paired']['summary']['workloads']:
-                def times(role):
-                    return [sample['seconds'] for sample in sorted(raw, key=lambda item: item['round'])
-                            if sample['phase'] == 'measurement' and sample['workload'] == row['name']
-                            and sample['implementation'] == role]
-                decisions.append(dict(preset=preset, name=row['name'], parameters=row['parameters'],
-                    candidate_over_standard=row['candidate_over_reference']['gd-portable'],
-                    portable_over_standard=row['candidate_over_reference']['howard-portable'],
-                    candidate_over_portable=bench.paired_statistics(times('gd-portable'),times('howard-portable'),1972170),
-                    aa_status=controls[row['name']], status=goal_status(row,controls[row['name']]),
-                    duration_target_met=row.get('duration_target_met'),
-                    candidate_over_base=regression.get(row['name']),
-                    regression_confirmation=regression_confirmation.get(row['name']),
-                    regression_status=regression_status(regression.get(row['name']),
-                        regression_confirmation.get(row['name']), controls[row['name']],
-                        row['parameters']['mode'], {role: (row.get('duration_target_met') or {}).get(role, False)
-                            for role in ('gd-portable', 'gd-base')})))
-        # Resource wrappers run after all elapsed stages, never concurrently.
-        for preset in presets:
-            resource_diagnostics(bench, evidence / 'paired.json', diagnostic_cases(bench, preset),
-                                 evidence / (preset + '-resource-diagnostics'), timeout=args.child_timeout_seconds)
-        write(evidence / 'acceptance.json', acceptance_report(decisions, args.samples))
-        write(evidence / 'decisions.json', dict(advisory=True, results=decisions,
-             aa_policy_sha256=AA_POLICY.source_sha256(),
-             goal='median<=0.90 and nominal CI upper<1 for substantive repeated classes',
-             pending='CPU/RSS availability and precision are per observation; allocation counts are candidate-only; no aggregate pass'))
-        summary_path = evidence / 'summary.md'
-        summary_path.write_text(summary_markdown(decisions), encoding='utf-8')
-        github_summary = os.environ.get('GITHUB_STEP_SUMMARY')
-        if github_summary:
-            with open(github_summary, 'a', encoding='utf-8') as output:
-                output.write(summary_path.read_text(encoding='utf-8'))
-        return 0
+        result = run_math(args, root, evidence, commands, configs, gd_builder, bench, helper, presets)
     except (CommandFailure, helper.BuildError, OSError, ValueError, bench.BenchmarkError) as error:
         write(evidence / 'failure.json', dict(error=str(error),status='hard failure; no acceptance'))
         print(str(error), file=sys.stderr)
-        return 1
+        result = 1
     finally:
         write(evidence / 'orchestration.json',dict(candidate=args.candidate,base=args.base,baseline_library_available=bool(configs.get('regression')),commands=commands.commands,
               broad=args.broad,presets=list(presets),samples=args.samples,duration_target=args.duration_seconds,
@@ -520,6 +549,15 @@ def main():
                 shutil.copytree(str(source / 'prepared-policy'), str(target / 'prepared-policy'))
             if (source / 'logs').is_dir():
                 shutil.copytree(source / 'logs', target / 'logs')
+        try:
+            if configs:
+                preserve_ordinary(configs, evidence, commands.deadline)
+        except CommandFailure as error:
+            write(evidence / 'preservation-failure.json', dict(error=str(error),
+                  status='hard failure; measured assets incomplete; no acceptance'))
+            print(str(error), file=sys.stderr)
+            preservation_failed = True
+    return 1 if preservation_failed else result
 
 
 if __name__ == '__main__':

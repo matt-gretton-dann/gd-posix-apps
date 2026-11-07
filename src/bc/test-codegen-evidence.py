@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """Check post-sampling executable identity and bounded native inspection."""
 import hashlib
+import copy
 import importlib.util
 import json
 from pathlib import Path
 import struct
 import sys
 import tempfile
+import types
 import unittest
 from unittest import mock
 
@@ -93,6 +95,113 @@ class CodegenEvidence(unittest.TestCase):
                 self.assertEqual((root / 'evidence' / row['binary']).read_bytes(), Path(entry['argv'][0]).read_bytes())
                 self.assertEqual(row['binary_sha256'], entry['metadata']['binary_sha256'])
                 self.assertEqual(row['disassembly']['status'], 'unavailable')
+
+    def test_recipes_and_declared_external_inputs_are_preserved_exactly(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source, library = root / 'binary', root / 'library.bc'
+            source.write_bytes(image())
+            library.write_bytes(b'scale=20\n')
+            entry = self.entry(source)
+            entry['argv'].append(str(library))
+            entry['input_artifacts'] = [dict(path=str(library), sha256=CG.digest(library),
+                                             purpose='ordinary library')]
+            original = copy.deepcopy(entry)
+            with mock.patch.object(CG, 'native_commands', return_value=[]):
+                report = CG.collect([entry], root / 'evidence')
+            row = report['observations'][0]
+            self.assertEqual(entry, original)
+            self.assertEqual(row['implementation'], original)
+            self.assertEqual(len(row['input_artifacts']), 1)
+            retained = row['input_artifacts'][0]
+            self.assertEqual((root / 'evidence' / retained['archive_path']).read_bytes(), library.read_bytes())
+            self.assertEqual(retained['sha256'], CG.digest(library))
+
+    def test_all_assets_are_copied_before_native_inspection(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            entries = []
+            for name in ('first', 'second'):
+                source = root / name
+                source.write_bytes(image())
+                entries.append(self.entry(source, name))
+            def inspect(binary, system):
+                self.assertTrue((root / 'evidence/second/binary').is_file())
+                return []
+            with mock.patch.object(CG, 'native_commands', side_effect=inspect):
+                self.assertEqual(CG.collect(entries, root / 'evidence')['status'], 'preserved')
+
+    def test_expired_collection_deadline_keeps_assets_without_starting_tools(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / 'binary'
+            source.write_bytes(image())
+            with mock.patch.object(CG, 'native_commands') as native:
+                report = CG.collect([self.entry(source)], root / 'evidence', deadline=0)
+            native.assert_not_called()
+            self.assertEqual(report['status'], 'preserved')
+            row = report['observations'][0]
+            self.assertEqual((root / 'evidence' / row['binary']).read_bytes(), source.read_bytes())
+            self.assertEqual(row['disassembly']['status'], 'unavailable')
+
+    def test_missing_or_changed_declared_inputs_are_hard_errors(self):
+        for mode in ('missing', 'changed', 'copy'):
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                source, library = root / 'binary', root / 'library.bc'
+                source.write_bytes(image())
+                library.write_bytes(b'scale=20\n')
+                entry = self.entry(source)
+                entry['input_artifacts'] = [dict(path=str(library), sha256=CG.digest(library))]
+                if mode == 'missing': library.unlink()
+                elif mode == 'changed': library.write_bytes(b'changed')
+                original_copy = CG.shutil.copyfile
+                def copy_file(src, dst):
+                    original_copy(src, dst)
+                    if mode == 'copy' and Path(src) == library:
+                        Path(dst).write_bytes(b'changed copy')
+                with mock.patch.object(CG.shutil, 'copyfile', side_effect=copy_file), \
+                        self.assertRaises(CG.CodegenError):
+                    CG.collect([entry], root / 'evidence')
+                self.assertEqual(json.loads((root / 'evidence/manifest.json').read_text())['status'], 'error')
+
+    def test_deadline_expiry_between_inspection_commands_stops_further_tools(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / 'binary'
+            source.write_bytes(image())
+            marker = root / 'second-command-ran'
+            commands = [[sys.executable, '-c', 'print("first fixture")'],
+                        [sys.executable, '-c', 'from pathlib import Path;import sys;Path(sys.argv[1]).touch()',
+                         str(marker)]]
+            clock = types.SimpleNamespace(monotonic=mock.Mock(side_effect=[0, 1, 300]))
+            with mock.patch.object(CG, 'time', clock), \
+                    mock.patch.object(CG, 'native_commands', return_value=commands):
+                report = CG.collect([self.entry(source)], root / 'evidence', deadline=300)
+            self.assertFalse(marker.exists())
+            self.assertEqual(report['status'], 'preserved')
+            native = report['observations'][0]['disassembly']
+            self.assertEqual(native['status'], 'unavailable')
+            self.assertEqual(len(native['commands']), 1)
+            self.assertIn('deadline', native['reason'])
+
+    def test_inspection_cannot_change_original_or_copied_external_inputs(self):
+        for archived in (False, True):
+            with self.subTest(archived=archived), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                source, library = root / 'binary', root / 'library.bc'
+                source.write_bytes(image())
+                library.write_bytes(b'scale=20\n')
+                entry = self.entry(source)
+                entry['input_artifacts'] = [dict(path=str(library), sha256=CG.digest(library))]
+                changed = root / 'evidence/candidate/input-0' if archived else library
+                commands = [[sys.executable, '-c',
+                             'from pathlib import Path;import sys;Path(sys.argv[1]).write_bytes(b"changed")',
+                             str(changed)]]
+                with mock.patch.object(CG, 'native_commands', return_value=commands), \
+                        self.assertRaises(CG.CodegenError):
+                    CG.collect([entry], root / 'evidence')
+                self.assertEqual(json.loads((root / 'evidence/manifest.json').read_text())['status'], 'error')
 
     def test_duplicate_versioned_role_cannot_overwrite_its_first_binary(self):
         with tempfile.TemporaryDirectory() as temporary:
