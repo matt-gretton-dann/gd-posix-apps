@@ -420,8 +420,6 @@ def main():
         shutil.copyfile(root / 'gd/source/src/bc/math-library.bc', libraries / 'candidate.bc')
         if baseline:
             shutil.copyfile(base_library, libraries / 'base.bc')
-        allocation_diagnostics(bench, profiled, diagnostic_cases(bench, presets[0]), evidence / 'allocation-diagnostics',
-                               timeout=args.child_timeout_seconds)
         for name, entries in configs.items():
             write(evidence / (name + '.json'), dict(implementations=entries))
         decisions = []
@@ -508,7 +506,9 @@ def main():
                         regression_confirmation.get(row['name']), controls[row['name']],
                         row['parameters']['mode'], {role: (row.get('duration_target_met') or {}).get(role, False)
                             for role in ('gd-portable', 'gd-base')})))
-        # All profile builds finish before timing. Matched wrappers run afterwards.
+        # Every instrumented/resource run follows all ordinary elapsed stages.
+        allocation_diagnostics(bench, profiled, diagnostic_cases(bench, presets[0]), evidence / 'allocation-diagnostics',
+                               timeout=args.child_timeout_seconds)
         if args.compare_resources:
             load('compare-bc-resources').run_diagnostics(
                 commands.run, profiles, ordinary, presets, 'math', evidence,
