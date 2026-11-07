@@ -405,6 +405,9 @@ if(RUN_INTEGRATION_TESTS)
   add_test(NAME bc/image-controls COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-image-controls.py")
   set_tests_properties(bc/image-controls PROPERTIES TIMEOUT 30)
+  add_test(NAME bc/process-controls COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-process-controls.py")
+  set_tests_properties(bc/process-controls PROPERTIES TIMEOUT 30)
   add_test(NAME bc/benchmark-cli COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-benchmark-cli.py"
            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/bench-bc.py" --bc "$<TARGET_FILE:bc>")

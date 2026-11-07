@@ -1,0 +1,55 @@
+name: bc accepted-source CPU and wrapper controls
+on:
+  pull_request:
+    branches: [main]
+    paths: ['.github/workflows/bc-process-controls.yml', 'src/bc/scripts/benchmark-process-controls.py', 'src/bc/test-process-controls.py']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: bc-process-controls-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  controls:
+    name: Windows process controls / ${{ matrix.replica }}
+    runs-on: windows-2025
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        replica: [1, 2, 3]
+    env:
+      BC_CONTROL_SOURCE: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.BC_CONTROL_SOURCE }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Establish native MSVC environment
+        shell: pwsh
+        run: |
+          $installation = & "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe" -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (!$installation) { throw 'Native x64 MSVC is unavailable' }
+          $variables = & cmd /c "`"$installation\Common7\Tools\VsDevCmd.bat`" -arch=x64 -host_arch=x64 >nul && set"
+          if ($LASTEXITCODE) { throw 'Cannot initialize MSVC' }
+          foreach ($line in $variables) {
+            if ($line -match '^(PATH|INCLUDE|LIB|LIBPATH|VCToolsInstallDir|VCINSTALLDIR|VSINSTALLDIR|WindowsSdkDir|WindowsSDKVersion|UniversalCRTSdkDir|UCRTVersion|Platform)=(.*)$') {
+              "$($matches[1])=$($matches[2])" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            }
+          }
+      - name: Measure the complete fixed accepted-source diagnostic
+        shell: pwsh
+        run: |
+          $actual = git rev-parse HEAD
+          if ($actual -ne $env:BC_CONTROL_SOURCE) { throw 'Controller checkout differs from declared source' }
+          python src/bc/scripts/benchmark-process-controls.py --source $env:GITHUB_WORKSPACE --output bc-process-results --replica ${{ matrix.replica }}
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Preserve every completed image and checked observation
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bc-process-controls-${{ matrix.replica }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: bc-process-results/evidence/
+          if-no-files-found: error
+          retention-days: 30
