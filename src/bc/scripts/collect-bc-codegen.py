@@ -119,7 +119,8 @@ def collect(entries, directory, timeout=60):
             if not re.fullmatch(r'[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*', name) or name in names:
                 raise CodegenError('invalid/duplicate role name')
             names.add(name)
-            row = dict(name=name, source_revision=entry['metadata'].get('source_revision'), status='incomplete')
+            row = dict(name=name, source_revision=entry['metadata'].get('source_revision'),
+                       implementation=entry, input_artifacts=[], status='incomplete')
             report['observations'].append(row)
             target = directory / name
             target.mkdir()
@@ -136,6 +137,19 @@ def collect(entries, directory, timeout=60):
                     raise CodegenError('archived executable identity mismatch: ' + name)
             except OSError as error:
                 raise CodegenError('cannot preserve declared executable ' + name + ': ' + str(error))
+            for index, artifact in enumerate(entry.get('input_artifacts', [])):
+                identity = artifact.get('sha256')
+                if not isinstance(identity, str) or not re.fullmatch('[0-9a-f]{64}', identity):
+                    raise CodegenError('input artifact lacks a SHA-256: ' + name)
+                original = Path(artifact['path'])
+                copied = target / ('input-' + str(index))
+                if digest(original) != identity:
+                    raise CodegenError('declared input changed before archival: ' + name)
+                shutil.copyfile(str(original), str(copied))
+                if digest(copied) != identity:
+                    raise CodegenError('archived input identity mismatch: ' + name)
+                row['input_artifacts'].append(dict(artifact,
+                    archive_path=str(copied.relative_to(directory))))
             row.update(status='preserved', binary=str(binary.relative_to(directory)),
                        binary_sha256=expected, file_bytes=binary.stat().st_size,
                        pe_code=pe_code(binary.read_bytes()))
@@ -160,6 +174,10 @@ def collect(entries, directory, timeout=60):
                     if log.is_file():
                         command['log_sha256'] = digest(log)
                         command['log_bytes'] = log.stat().st_size
+            for artifact in row['input_artifacts']:
+                if (digest(artifact['path']) != artifact['sha256'] or
+                        digest(directory / artifact['archive_path']) != artifact['sha256']):
+                    raise CodegenError('input changed during inspection: ' + name)
             if digest(source) != expected or digest(binary) != expected:
                 raise CodegenError('executable changed during inspection: ' + name)
         report['status'] = 'preserved' if entries else 'unavailable: no completed build roles'

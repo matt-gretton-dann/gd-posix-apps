@@ -40,8 +40,11 @@ enum class Event : std::size_t {
   literal_cache_misses,
   single_digit_literals,
   function_calls,
-  instructions_executed,
+  instructions_executed,  // Interpreter dispatch only; guarded regions are separate.
   typed_instructions_executed,
+  portable_scalar_attempts,  // Executor starts after shape and initial-state guards.
+  portable_scalar_successes,
+  portable_scalar_fallbacks,  // Started executor could not publish; interpreter resumes.
   array_clones,
   array_entries_copied,
   comparison_limb_positions,

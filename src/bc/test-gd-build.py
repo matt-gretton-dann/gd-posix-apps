@@ -25,6 +25,7 @@ class GdBuild(unittest.TestCase):
         (self.build / 'src/bc').mkdir(parents=True)
         self.cache = self.build / 'CMakeCache.txt'
         self.cache.write_text('ENABLE_BC_PROFILE:BOOL=OFF\nENABLE_BC_COVERAGE:BOOL=OFF\n'
+                              'ENABLE_BC_NATIVE_SCALAR:BOOL=OFF\n'
                               'CMAKE_BUILD_TYPE:STRING=Release\nCMAKE_CXX_FLAGS:STRING=\n'
                               'CMAKE_CXX_FLAGS_RELEASE:STRING=-O3 -DNDEBUG\n')
         self.header = self.build / 'src/bc/find-multiply-split-point.hh'
@@ -56,6 +57,202 @@ class GdBuild(unittest.TestCase):
             row['arguments' if arguments else 'command'] = flags if arguments else ' '.join(flags)
             rows.append(row)
         (self.build / 'compile_commands.json').write_text(json.dumps(rows))
+
+    def portable_commands(self, enabled=True, arguments=False):
+        self.cache.write_text(self.cache.read_text() + 'ENABLE_BC_PORTABLE_SCALAR:BOOL=' +
+                              ('ON' if enabled else 'OFF') + '\n')
+        rows = []
+        for name in ('vm.cc', 'portable-scalar.cc') if enabled else ('vm.cc',):
+            flags = ['c++', '-DGD_BC_PORTABLE_SCALAR=' + ('1' if enabled else '0'),
+                     '-o', 'src/bc/CMakeFiles/libbc.dir/' + name + '.o', '-c', name]
+            rows.append({'file': '/source/src/bc/' + name,
+                         'arguments' if arguments else 'command': flags if arguments else ' '.join(flags)})
+        path = self.build / 'compile_commands.json'
+        path.write_text(json.dumps(rows))
+        return rows
+
+    def test_portable_legacy_mode_is_unknown_and_explicit_modes_decline(self):
+        value = self.module.verified_portable_scalar(self.helper, self.build, 'AUTO')
+        self.assertEqual(value['status'], 'legacy-auto')
+        self.assertIsNone(value['enabled'])
+        for requested in ('ON', 'OFF', 'invalid'):
+            with self.subTest(mode=requested), self.assertRaises(self.helper.BuildError):
+                self.module.verified_portable_scalar(self.helper, self.build, requested)
+
+    def test_portable_compilation_proves_enabled_and_disabled_library_inventory(self):
+        for enabled in (False, True):
+            self.portable_commands(enabled, arguments=enabled)
+            value = self.module.verified_portable_scalar(self.helper, self.build, 'ON' if enabled else 'OFF')
+            self.assertIs(value['enabled'], enabled)
+            self.assertEqual(value['status'], 'recorded')
+            self.assertEqual(value['verification']['translation_units'], 2 if enabled else 1)
+            with self.assertRaises(self.helper.BuildError):
+                self.module.verified_portable_scalar(self.helper, self.build, 'OFF' if enabled else 'ON')
+
+    def test_portable_rejects_separate_native_emission(self):
+        self.portable_commands()
+        self.cache.write_text(self.cache.read_text() + 'ENABLE_BC_NATIVE_SCALAR:BOOL=ON\n')
+        with self.assertRaises(self.helper.BuildError):
+            self.module.verified_portable_scalar(self.helper, self.build, 'ON')
+        self.cache.write_text(self.cache.read_text() + 'ENABLE_BC_NATIVE_SCALAR:BOOL=OFF\n')
+        path = self.build / 'compile_commands.json'
+        original = json.loads(path.read_text())
+        for option in ('-DGD_BC_NATIVE_SCALAR=1', '-DGD_BC_NATIVE_SCALAR=0',
+                       '-DGD_BC_NATIVE_SCALAR', '-UGD_BC_NATIVE_SCALAR'):
+            rows = json.loads(json.dumps(original))
+            rows[0]['command'] += ' ' + option
+            path.write_text(json.dumps(rows))
+            with self.subTest(option=option), self.assertRaises(self.helper.BuildError):
+                self.module.verified_portable_scalar(self.helper, self.build, 'ON')
+        project = self.portable_project()
+        project.write_text(project.read_text().replace(
+            'GD_BC_PORTABLE_SCALAR=1', 'GD_BC_PORTABLE_SCALAR=1;GD_BC_NATIVE_SCALAR=0'))
+        with self.assertRaises(self.helper.BuildError):
+            self.module.verified_portable_scalar(self.helper, self.build, 'ON')
+
+    def test_portable_options_have_compiler_token_boundaries(self):
+        path = self.build / 'compile_commands.json'
+        for spelling in ('-D GD_BC_PORTABLE_SCALAR=1', '/DGD_BC_PORTABLE_SCALAR=1',
+                         '/D"GD_BC_PORTABLE_SCALAR=1"'):
+            rows = self.portable_commands()
+            for row in rows:
+                row['command'] = row['command'].replace('-DGD_BC_PORTABLE_SCALAR=1', spelling)
+            path.write_text(json.dumps(rows))
+            self.assertTrue(self.module.verified_portable_scalar(self.helper, self.build, 'ON')['enabled'])
+        rows = self.portable_commands()
+        for row in rows:
+            row['command'] = row['command'].replace('-DGD_BC_PORTABLE_SCALAR=1',
+                                                  '-DOTHER="literal -DGD_BC_PORTABLE_SCALAR=1"')
+        path.write_text(json.dumps(rows))
+        with self.assertRaises(self.helper.BuildError):
+            self.module.verified_portable_scalar(self.helper, self.build, 'ON')
+        rows = self.portable_commands()
+        rows[1]['command'] = rows[1]['command'].replace('libbc.dir', 'test-libbc.dir')
+        rows[1]['command'] += ' -DOTHER="fake/CMakeFiles/libbc.dir/claim.o"'
+        path.write_text(json.dumps(rows))
+        with self.assertRaises(self.helper.BuildError):
+            self.module.verified_portable_scalar(self.helper, self.build, 'ON')
+        rows = self.portable_commands()
+        for row in rows:
+            name = row['file'].rsplit('/', 1)[-1]
+            row['command'] = 'cl /DGD_BC_PORTABLE_SCALAR=1 /Fosrc\\bc\\CMakeFiles\\libbc.dir\\' + name + '.obj /c ' + name
+        path.write_text(json.dumps(rows))
+        self.assertTrue(self.module.verified_portable_scalar(self.helper, self.build, 'ON')['enabled'])
+
+    def test_portable_cache_only_conflicts_and_unverifiable_inputs_decline(self):
+        path = self.build / 'compile_commands.json'
+        for change in ('missing-vm', 'missing-planner', 'test-only-planner', 'opposite', 'undefine',
+                       'bare', 'extended', 'response', 'malformed', 'bad-arguments'):
+            rows = self.portable_commands()
+            if change == 'missing-vm':
+                rows.pop(0)
+            elif change == 'missing-planner':
+                rows.pop()
+            elif change == 'test-only-planner':
+                rows[1]['command'] = rows[1]['command'].replace('libbc.dir', 'test-libbc.dir')
+            elif change == 'opposite':
+                rows[0]['command'] += ' -DGD_BC_PORTABLE_SCALAR=0'
+            elif change == 'undefine':
+                rows[0]['command'] += ' -UGD_BC_PORTABLE_SCALAR'
+            elif change == 'bare':
+                rows[0]['command'] = rows[0]['command'].replace('PORTABLE_SCALAR=1', 'PORTABLE_SCALAR')
+            elif change == 'extended':
+                rows[0]['command'] = rows[0]['command'].replace('PORTABLE_SCALAR=1', 'PORTABLE_SCALAR=10')
+            elif change == 'response':
+                rows[0]['command'] += ' @unexpanded-options.rsp'
+            elif change == 'bad-arguments':
+                rows[0]['arguments'] = [42]
+            path.write_text('{' if change == 'malformed' else json.dumps(rows))
+            with self.subTest(change=change), self.assertRaises(self.helper.BuildError):
+                self.module.verified_portable_scalar(self.helper, self.build, 'ON')
+
+    def portable_project(self, enabled=True, override=None, exclude=False, configuration='Release'):
+        from xml.etree import ElementTree as ET
+        commands = self.build / 'compile_commands.json'
+        if commands.exists():
+            commands.unlink()
+        self.cache.write_text(self.cache.read_text() + 'CMAKE_GENERATOR:INTERNAL=Visual Studio 17 2022\n'
+                              'ENABLE_BC_PORTABLE_SCALAR:BOOL=' + ('ON' if enabled else 'OFF') + '\n'
+                              'ENABLE_BC_NATIVE_SCALAR:BOOL=OFF\n')
+        root = ET.Element('Project', xmlns='http://schemas.microsoft.com/developer/msbuild/2003')
+        group = ET.SubElement(root, 'ItemDefinitionGroup',
+                              Condition="'$(Configuration)|$(Platform)'=='" + configuration + "|x64'")
+        compile = ET.SubElement(group, 'ClCompile')
+        ET.SubElement(compile, 'PreprocessorDefinitions').text = (
+            '%(PreprocessorDefinitions);GD_BC_PORTABLE_SCALAR=' + ('1' if enabled else '0'))
+        items = ET.SubElement(root, 'ItemGroup')
+        vm = ET.SubElement(items, 'ClCompile', Include='C:\\source\\src\\bc\\vm.cc')
+        if override is not None:
+            ET.SubElement(vm, 'PreprocessorDefinitions').text = override
+        if exclude:
+            ET.SubElement(vm, 'ExcludedFromBuild').text = 'true'
+        if enabled:
+            ET.SubElement(items, 'ClCompile', Include='C:\\source\\src\\bc\\portable-scalar.cc')
+        path = self.build / 'src/bc/libbc.vcxproj'
+        ET.ElementTree(root).write(str(path), encoding='utf-8')
+        return path
+
+    def test_portable_native_projects_prove_release_mode_and_source_inventory(self):
+        for enabled in (True, False):
+            self.portable_project(enabled)
+            value = self.module.verified_portable_scalar(self.helper, self.build, 'ON' if enabled else 'OFF')
+            self.assertIs(value['enabled'], enabled)
+            self.assertEqual(value['verification']['kind'], 'msbuild-projects')
+            self.assertIn('src/bc/libbc.vcxproj', value['verification']['files'])
+        for options in ({'override': '%(PreprocessorDefinitions);GD_BC_PORTABLE_SCALAR=0'},
+                        {'override': 'OTHER=1'}, {'exclude': True}, {'configuration': 'Debug'}):
+            self.portable_project(**options)
+            with self.subTest(options=options), self.assertRaises(self.helper.BuildError):
+                self.module.verified_portable_scalar(self.helper, self.build, 'ON')
+        from xml.etree import ElementTree as ET
+        for key, text in [('AdditionalOptions', '/UGD_BC_PORTABLE_SCALAR'),
+                          ('AdditionalOptions', '/DGD_BC_PORTABLE_SCALAR=0'),
+                          ('UndefinePreprocessorDefinitions', ' GD_BC_PORTABLE_SCALAR;OTHER')]:
+            project = self.portable_project()
+            root = ET.parse(str(project))
+            vm = next(n for n in root.iter() if n.get('Include', '').endswith('vm.cc'))
+            ET.SubElement(vm, key).text = text
+            root.write(str(project), encoding='utf-8')
+            with self.subTest(key=key, text=text), self.assertRaises(self.helper.BuildError):
+                self.module.verified_portable_scalar(self.helper, self.build, 'ON')
+
+    def test_portable_mode_is_retained_in_build_metadata(self):
+        self.portable_commands()
+        value = self.metadata()['configuration']['portable_scalar_policy']
+        self.assertTrue(value['enabled'])
+        self.assertEqual(value['verification']['sha256'],
+                         hashlib.sha256((self.root / 'compile_commands.json').read_bytes()).hexdigest())
+        project = self.portable_project()
+        value = self.metadata()['configuration']['portable_scalar_policy']
+        relative = 'src/bc/libbc.vcxproj'
+        self.assertEqual((self.root / 'portable-scalar-policy' / relative).read_bytes(), project.read_bytes())
+        self.assertEqual(value['verification']['files'][relative], hashlib.sha256(project.read_bytes()).hexdigest())
+
+    def test_portable_candidate_requires_explicit_verified_activation(self):
+        policy = dict(status='recorded', mode='ON', enabled=True)
+        def entry(value):
+            return dict(metadata=dict(configuration=dict(portable_scalar_policy=value)))
+        self.module.require_portable_candidate(self.helper, entry(policy))
+        for value in (None, {}, dict(policy, mode='AUTO'), dict(policy, status='legacy-auto'),
+                      dict(policy, enabled=False), dict(policy, enabled=1)):
+            with self.subTest(policy=value), self.assertRaises(self.helper.BuildError):
+                self.module.require_portable_candidate(self.helper, entry(value))
+
+    def test_portable_option_is_exposed_by_builder(self):
+        child = subprocess.run([sys.executable, BUILDER, '--help'], stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE, timeout=5, universal_newlines=True)
+        self.assertEqual(child.returncode, 0)
+        self.assertIn('--portable-scalar', child.stdout)
+
+    def test_portable_explicit_control_requires_recorded_off(self):
+        policy = dict(status='recorded', mode='OFF', enabled=False)
+        def entry(value):
+            return dict(metadata=dict(configuration=dict(portable_scalar_policy=value)))
+        self.module.require_portable_mode(self.helper, entry(policy), 'OFF')
+        for value in (None, {}, dict(policy, mode='AUTO'), dict(policy, enabled=True),
+                      dict(policy, enabled=0), dict(policy, status='legacy-auto')):
+            with self.subTest(policy=value), self.assertRaises(self.helper.BuildError):
+                self.module.require_portable_mode(self.helper, entry(value), 'OFF')
 
     def test_candidate_requires_explicit_verified_activation(self):
         policy = dict(status='recorded', mode='ON', enabled=True)

@@ -20,6 +20,22 @@ SPEC.loader.exec_module(CI)
 
 
 class NativeTrends(unittest.TestCase):
+    def test_portable_modes_follow_each_ordinary_and_profile_role(self):
+        args = types.SimpleNamespace(source=Path('/fixture'), split_point=126,
+            candidate_prepared_divisors=True, candidate_portable_scalar='ON', base_portable_scalar='OFF')
+        for role, mode, revision in (('base', 'OFF', 'a' * 40), ('aa', 'OFF', 'a' * 40),
+                                     ('candidate', 'ON', 'b' * 40)):
+            ordinary = CI.gd_build_command(args, role, revision, Path('/output'), 'cc', 'c++')
+            self.assertIn('--portable-scalar', ordinary)
+            self.assertEqual(ordinary[ordinary.index('--portable-scalar') + 1], mode)
+            profile = CI.profile_build_command(args, role, revision, Path('/profile'), 'cc', 'c++')
+            self.assertEqual(profile[profile.index('--portable-scalar') + 1], mode)
+            self.assertIn('--diagnostic-profile', profile)
+            self.assertEqual(profile[profile.index('--revision') + 1], revision)
+        args.base_portable_scalar = args.candidate_portable_scalar = 'AUTO'
+        self.assertNotIn('--portable-scalar', CI.gd_build_command(args, 'base', 'a' * 40,
+                                                              Path('/legacy'), 'cc', 'c++'))
+
     def test_sparse_duration_requires_every_independent_role(self):
         row = dict(implementations={role: dict(median_seconds=.25)
                                     for role in ('base', 'aa', 'candidate')})
@@ -271,7 +287,7 @@ class NativeTrends(unittest.TestCase):
         root, calls, result = self.exercise()
         self.assertEqual(result, 0)
         capture = json.loads((root / 'evidence/codegen/manifest.json').read_text())
-        self.assertEqual(capture['names'], ['base', 'candidate', 'aa'])
+        self.assertEqual(capture['names'], ['base', 'candidate', 'aa', 'howard-7.0.3'])
         self.assertEqual(capture['commands_before_capture'], len(calls))
         self.assertEqual([Path(call[1]).name for call in calls[:4]],
                          ['build-gd-bc.py'] * 3 + ['build-bc-comparators.py'])

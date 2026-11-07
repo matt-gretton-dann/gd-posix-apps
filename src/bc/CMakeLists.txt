@@ -63,10 +63,17 @@ if(ENABLE_BC_STACK_EXECUTION)
   target_compile_definitions(libbc PRIVATE GD_BC_STACK_EXECUTION=1)
 endif()
 option(ENABLE_BC_NATIVE_SCALAR "Enable experimental Apple Arm64 native scalar execution" OFF)
+set(_bc_native_scalar_compiled OFF)
 if(ENABLE_BC_NATIVE_SCALAR AND APPLE AND CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64"
    AND NOT CMAKE_OSX_ARCHITECTURES MATCHES "x86_64|arm64e")
   target_sources(libbc PRIVATE native-scalar.cc)
   target_compile_definitions(libbc PRIVATE GD_BC_NATIVE_SCALAR=1)
+  set(_bc_native_scalar_compiled ON)
+endif()
+option(ENABLE_BC_PORTABLE_SCALAR "Enable experimental portable checked integer execution" OFF)
+target_compile_definitions(libbc PRIVATE GD_BC_PORTABLE_SCALAR=$<BOOL:${ENABLE_BC_PORTABLE_SCALAR}>)
+if(ENABLE_BC_PORTABLE_SCALAR)
+  target_sources(libbc PRIVATE portable-scalar.cc)
 endif()
 set_warnings(libbc)
 gd_apply_ipo(libbc)
@@ -113,6 +120,8 @@ if(RUN_UNIT_TESTS)
   add_test(NAME bc/consumer-mode COMMAND "$<TARGET_FILE:test-bc-consumer-mode>")
   set_tests_properties(bc/consumer-mode PROPERTIES TIMEOUT 10)
   add_executable(test-bc-vm-lifetime test-vm-lifetime.cc)
+  target_compile_definitions(test-bc-vm-lifetime PRIVATE
+    GD_BC_EXPECT_PORTABLE_SCALAR=$<BOOL:${ENABLE_BC_PORTABLE_SCALAR}>)
   target_link_libraries(test-bc-vm-lifetime PRIVATE libbc)
   target_include_directories(test-bc-vm-lifetime PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
   add_dependencies(test-bc-vm-lifetime bc_messages_header)
@@ -127,6 +136,8 @@ if(RUN_UNIT_TESTS)
   set(_bc_lifetime_ipo_target "")
   if(ENABLE_IPO)
     add_executable(test-bc-vm-lifetime-ipo test-vm-lifetime.cc)
+    target_compile_definitions(test-bc-vm-lifetime-ipo PRIVATE
+      GD_BC_EXPECT_PORTABLE_SCALAR=$<BOOL:${ENABLE_BC_PORTABLE_SCALAR}>)
     target_link_libraries(test-bc-vm-lifetime-ipo PRIVATE libbc)
     target_include_directories(test-bc-vm-lifetime-ipo PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
     target_compile_definitions(test-bc-vm-lifetime-ipo PRIVATE
@@ -145,13 +156,17 @@ if(RUN_UNIT_TESTS)
   add_dependencies(test-libbc test-bc-vm-lifetime test-bc-consumer-mode ${_bc_lifetime_ipo_target})
   target_link_libraries(test-libbc PUBLIC libbc Catch2::Catch2)
   target_compile_definitions(test-libbc PRIVATE
-    GD_BC_EXPECT_TYPED_RESULTS=$<AND:$<BOOL:${ENABLE_BC_TYPED_RESULTS}>,$<BOOL:${ENABLE_BC_COMPACT_EXECUTION}>>)
+    GD_BC_EXPECT_TYPED_RESULTS=$<AND:$<BOOL:${ENABLE_BC_TYPED_RESULTS}>,$<BOOL:${ENABLE_BC_COMPACT_EXECUTION}>>
+    GD_BC_EXPECT_PORTABLE_SCALAR=$<BOOL:${ENABLE_BC_PORTABLE_SCALAR}>
+    GD_BC_EXPECT_NATIVE_SCALAR=$<BOOL:${_bc_native_scalar_compiled}>)
   add_dependencies(test-libbc test-bc-profiling test-bc-profiling-disabled)
   set_property(TARGET test-libbc PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
   set_property(TARGET test-libbc PROPERTY CXX_STANDARD_REQUIRED ON)
   target_include_directories(test-libbc PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
   set_warnings(test-libbc)
   target_sources(test-libbc PRIVATE
+                 test-portable-scalar.cc
+                 test-portable-scalar-vm.cc
                  test-array-storage.cc
                  test-execution-plan.cc
                  test-benchmark-support.cc
@@ -183,6 +198,22 @@ if(RUN_UNIT_TESTS)
                  test-vm-arrays.cc
                  test-vm-execution.cc
                  test-verification.cc)
+  if(NOT ENABLE_BC_PORTABLE_SCALAR)
+    target_sources(test-libbc PRIVATE portable-scalar.cc)
+  endif()
+  if(ENABLE_BC_PORTABLE_SCALAR AND ENABLE_BC_PROFILE AND NOT _bc_native_scalar_compiled)
+    add_executable(test-bc-portable-fault test-portable-scalar-fault.cc)
+    target_link_libraries(test-bc-portable-fault PRIVATE libbc)
+    target_include_directories(test-bc-portable-fault PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+    set_property(TARGET test-bc-portable-fault PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
+    set_property(TARGET test-bc-portable-fault PROPERTY CXX_STANDARD_REQUIRED ON)
+    set_warnings(test-bc-portable-fault)
+    target_add_clang_format(test-bc-portable-fault)
+    gd_apply_ipo(test-bc-portable-fault)
+    add_test(NAME bc/portable-scalar-allocation-fallback COMMAND "$<TARGET_FILE:test-bc-portable-fault>")
+    set_tests_properties(bc/portable-scalar-allocation-fallback PROPERTIES TIMEOUT 20)
+    add_dependencies(test-libbc test-bc-portable-fault)
+  endif()
   target_add_clang_format(test-libbc)
   add_executable(test-bc-signal test-vm-signal.cc)
   target_link_libraries(test-bc-signal PRIVATE libbc)
@@ -346,6 +377,12 @@ if(RUN_INTEGRATION_TESTS)
            "${CMAKE_CURRENT_SOURCE_DIR}/test-gd-build.py"
            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/build-gd-bc.py")
   set_tests_properties(bc/gd-build-provenance PROPERTIES TIMEOUT 20)
+  add_test(NAME bc/resource-comparison COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-resource-comparison.py")
+  set_tests_properties(bc/resource-comparison PROPERTIES TIMEOUT 30)
+  add_test(NAME bc/portable-scalar-workflow COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-portable-scalar-workflow.py")
+  set_tests_properties(bc/portable-scalar-workflow PROPERTIES TIMEOUT 20)
   add_test(NAME bc/multiply-config COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-multiply-config.py" "${CMAKE_COMMAND}"
            "${CMAKE_SOURCE_DIR}/cmake/BcMultiplyConfig.cmake")
