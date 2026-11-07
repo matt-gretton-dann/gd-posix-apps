@@ -21,7 +21,7 @@ concurrency:
 jobs:
   paired:
     # These topics use separate declared studies or do not change runtime.
-    if: github.head_ref != 'codex/bc-652-competitive-margin' && github.head_ref != 'codex/bc-655-array-profile' && github.head_ref != 'codex/bc-659-startup-calibration' && github.head_ref != 'codex/bc-661-live-results' && github.head_ref != 'codex/bc-661-layout-admission'
+    if: github.head_ref != 'codex/bc-652-competitive-margin' && github.head_ref != 'codex/bc-655-array-profile' && github.head_ref != 'codex/bc-659-startup-calibration' && github.head_ref != 'codex/bc-661-live-results' && github.head_ref != 'codex/bc-661-layout-admission' && github.head_ref != 'codex/bc-663-versioned-roles'
     name: Paired native bc / ${{ matrix.image }}
     runs-on: ${{ matrix.image }}
     timeout-minutes: 90
