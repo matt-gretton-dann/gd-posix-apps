@@ -2,7 +2,8 @@ name: bc native array allocation contracts
 on:
   pull_request:
     branches: [main, 'codex/**']
-    paths: ['src/bc/**', 'CMakeLists.txt', 'cmake/**', '.github/workflows/bc-array-profile.yml']
+    # Protocol publication refreshes correctness at its exact frozen head.
+    paths: ['src/bc/**', 'CMakeLists.txt', 'cmake/**', '.github/workflows/bc-array-profile.yml', '.github/workflows/bc-portable-scalar-qualification.yml', 'docs/utilities/bc-portable-scalar-qualification.md']
   push:
     branches: [main]
     paths: ['src/bc/**', 'CMakeLists.txt', 'cmake/**', '.github/workflows/bc-array-profile.yml']

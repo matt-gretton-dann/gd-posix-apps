@@ -1,58 +1,86 @@
-# Portable scalar qualification
+# Portable scalar qualification with an opaque backend
 
-Issue #666 evaluates portable guarded integer execution for #207 and #197.
-`ENABLE_BC_PORTABLE_SCALAR` defaults OFF. The bounded unsigned scalar subset,
-private execution, staged publication and generic fallback are described in
-[the implementation notes](bc-portable-integer-regions.md). No benchmark,
-function name or library source is recognized. Unsupported workloads, including
-arbitrary-precision factorial recursion, retain ordinary execution.
+This protocol declares one independent cohort for the opaque backend. Source,
+protocol and workflow hashes must be recorded in #666 before the publication
+push. No earlier candidate's correctness or elapsed acceptance substitutes for
+the evidence required below.
+
+Issue #666 evaluates the opaque portable integer transaction for #207 and #197.
+`ENABLE_BC_PORTABLE_SCALAR` remains OFF by default. Unsupported instructions,
+nonzero/fractional entry state, overflow, interruption and bounded execution
+retain the generic interpreter. No benchmark, function or library names are
+recognized; arbitrary-precision recursion continues through ordinary execution.
 
 ## Independent source and correctness evidence
 
-This experiment does not reuse acceptance from the rejected liveness source
-#665. That source and all adverse or inconclusive evidence remain unchanged.
-Its collection infrastructure is reused without its liveness runtime code.
+The rejected #665 cohort and complete c018/#667 cohort remain protected and
+unchanged. All 53 c018 jobs succeeded (35 correctness and 18 collection); all
+45 provider archives were rehashed/CRC-checked and independently replayed.
+The final inventory includes 122,592 ordinary observations, 342,576 startup
+observations across 732 interval stages, 2,352 decision rows and 264 resource
+cases. Counts inventory evidence and are not a pooled performance score.
 
-Integrated checkpoint `c9c0f67aa514ae520407e43b499bd41491e50749` passed all 35
-native checks, with all 27 provider archives retained and independently replayed.
-Actual production compiler/cache/source/test bindings cover Linux, macOS and
-Windows, all four typed/profile combinations, and language extensions ON/OFF.
-Every Linux and Windows profiled mode exercised two actual staged-conversion
-allocation failures with complete replay and preserved unrelated state. Every
-Mac profiled mode explicitly recorded no ordinary allocation for that fixture.
-These are finite correctness and fault observations, not performance evidence.
+c018 has two confirmed Linux ON factorial regressions beyond 5% without the
+primary Howard margin. Roughly sixfold loop gains cannot erase those losses;
+#667 is closed unmerged. No additional math cap violation was found. Three
+startup studies remain inconclusive; the other three report only no statistically
+significant startup regression observed, not equivalence. All noisy controls,
+raw binaries, inputs and limitations remain binding to that old source. The
+private consolidator's omitted math-confirmation seed handling was corrected
+with failing regression tests, enforcing the actual unchanged controller rules.
+This structural hypothesis receives no acceptance from that rejected cohort.
 
-Test commit `6cb3a6e1` adds independent malformed-operand rejection fixtures.
-Local Apple Clang 21 Release coverage with typed ON and profiling OFF exercises
-262/262 executor lines and 26/26 MC/DC conditions. Its 154/156 branch outcomes
-exclude only two switch defaults not constructible through successful private
-lowering. The full 360-case unit run and eight focused CTests are independently
-bound to exercised binaries, source hashes, compiler settings and raw profiles.
-VM asynchronous publication-interrupt guards remain unexercised in that local
-coverage run; native allocation fault logs are separate evidence, not a
-cross-platform coverage percentage.
+The new implementation moves planning, scratch, conversion and exception state
+out of the central VM into the optimized `bc-portable-scalar` object target.
+IPO is explicitly disabled at that boundary in every configuration; core IPO
+policy remains ordinary and separately recorded. The shared array layout,
+prepared-divisor, profile and language definitions must match across both
+translation units, core and consumers. Actual compile commands/native MSBuild
+project references and evaluated target properties must prove that both objects
+are linked into the production core. A standalone test object cannot do so.
 
-Collector checkpoint `768435f8d9857b1c0c547c7bb6ef04f78f95ed13` adds source-bound
-production ON/OFF verification and matched resources. All 35 checks passed; all
-27 archives and 24 actual native mode bindings are retained and replayed. The
-following test-first
-portability fix `f6b62b825b8c0cf48a631b302bd96f3ac37faa6a` maps encoded scalar
-indices through the spelled alphabet, matching Letter rather than assuming
-contiguous character codes. Available ASCII hosts cannot reproduce the affected
-encoding, but the test checks all 26 guards and all-zero activation there.
-All 35 native checks for that fixed source passed before protocol publication;
-all 27 provider archives and 24 actual mode bindings are retained and replayed. The final publication must retain
-runtime-file byte identity with that preflight or refresh the affected evidence.
-Fresh local coverage at the fixed source retains 262/262 executor lines and
-26/26 MC/DC conditions; raw profiles and exercised binaries remain separate from
-the earlier checkpoints. VM asynchronous publication-interrupt guards remain
-unexercised in this local coverage run. The final controller
-moves the legacy candidate-only allocation diagnostic after elapsed collection;
-all other counts, selectors and budgets below remain fixed.
+Source checkpoint ede6324128e74e9eb018cc9a0ba7f80a63583686 passed all 35
+native checks: 24 typed/profile/extension backend modes, six ordinary build/test
+checks, three array contracts and two CodeQL analyses. All 27 provider archives
+are protected with verified SHA-256/ZIP CRCs. Independent replay of all 24 actual
+cache/compiler/native-project/object-linkage/source/test bindings passed.
+All eight Linux/Windows profiled modes exercise two actual staged-conversion
+allocation failures; all four Mac modes explicitly record inline conversion.
+Each of twelve profiled modes passes four complete VM allocation/retry sweeps.
+
+The test-first Makefile output-base correction is collector-only. Its initial
+35 outcomes and all 26 available archives are retained separately, including
+12 failures and seven cancellations; a cancelled mode lacking an archive is
+not reconstructed. Current-head checks pass independently. No timing acceptance
+transfers from c018 or any earlier checkpoint. The final publication must retain
+the exact `src/bc` tree of this complete preflight, including runtime, collectors,
+tests and build policy; otherwise refresh all affected evidence.
+
+Local Apple Clang 21 Release tests cover 375 cases with profile ON and IPO OFF
+and REQUIRED, plus 361 default-OFF cases. In the REQUIRED build, the VM command
+has LTO and both backend commands lack it. Local typed-ON/profile-OFF coverage
+has executor 271/271 lines, 156/158 branch outcomes and 26/26 MC/DC obligations;
+the two private enum defaults cannot be constructed by checked lowering. The
+adapter has 48/51 lines, 34/34 branch outcomes and 9/9 MC/DC obligations. Both
+bad_alloc handlers remain unexercised locally on this host's inline integer
+representation. Native conversion-allocation injection and all-mode ownership
+sweeps are recorded separately without becoming a local coverage percentage. Deterministic callback tests exercise each
+transaction checkpoint; they do not establish all possible OS signal timing.
+
+An additional local Apple Clang 21 Debug ASan/UBSan build at the same runtime
+source, with typed execution and extensions OFF, passes 365 unit cases
+(1,976,473 assertions) and six consumer/ownership/verifier/CLI/signal checks.
+Both production backend objects and the VM have actual sanitizer flags.
+Exercised binaries, compiler/cache/commands, source snapshots and logs are
+retained. This complements the separate Release malformed-operand tests;
+constructor assertions deliberately preclude some such representations in
+Debug. No universal memory-safety or elapsed claim follows.
 
 Before the push that starts collection, record the immutable final source SHA
-and protocol/workflow hashes in #666. Do not edit that source or restart its
-cohort to replace unfavorable, noisy, incomplete or failed observations.
+and protocol/workflow hashes in #666. The final publication must retain runtime
+byte identity with the reviewed preflight or refresh affected correctness and
+coverage evidence. Do not edit that source or restart its cohort to replace
+unfavorable, noisy, incomplete or failed observations.
 
 ## Fixed cohort
 
@@ -72,14 +100,18 @@ jobs total. Arithmetic retains the broad full/held-out selections, nine pairs,
 one warmup, fixed seeds, existing bounded confirmation rules and sparse
 supplements. Math retains fifteen pairs, three warmups, a 0.25-second minimum
 repeated duration, a 600-second child bound and an 18,000-second controller
-budget per preset. Each job is bounded to 360 minutes. No observation changes
-source, workload selection, sample counts, budgets or confirmation rules.
+budget per preset. Existing bounded math A/A and candidate/base confirmations
+remain mandatory when the frozen controller's suspect rules trigger. Their
+order seeds are 1972171 and 1972161 respectively; ordinary math uses 1972170.
+These are declared confirmations, never optional favorable restarts.
+Each job is bounded to 360 minutes. No observation changes source, workload
+selection, sample counts, budgets or confirmation rules.
 
 Arithmetic A/A independently builds the base source and mode. Math A/A
 independently builds the candidate source and mode. All ordinary and diagnostic
 builds finish before elapsed sampling. Explicit modes require production
-compiler/project definitions and the matching library source inventory;
-standalone unit objects and cache keys cannot establish activation. Keep source,
+compiler/project definitions, matching shared ABI modes and the evaluated
+production object/linkage contract; standalone unit objects and cache keys cannot establish activation. Keep source,
 pinned Howard, platform/toolchain, flags, libraries and binary identities bound
 to each role. Do not pool ratios across hosts or revisions.
 

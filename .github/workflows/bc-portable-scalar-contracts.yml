@@ -2,7 +2,8 @@ name: bc portable scalar VM contracts
 on:
   pull_request:
     branches: [main, 'codex/**']
-    paths: ['src/bc/**', 'CMakeLists.txt', 'cmake/**', '.github/workflows/bc-portable-scalar-contracts.yml']
+    # Protocol publication refreshes correctness at its exact frozen head.
+    paths: ['src/bc/**', 'CMakeLists.txt', 'cmake/**', '.github/workflows/bc-portable-scalar-contracts.yml', '.github/workflows/bc-portable-scalar-qualification.yml', 'docs/utilities/bc-portable-scalar-qualification.md']
 permissions:
   contents: read
 concurrency:

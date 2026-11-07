@@ -16,7 +16,7 @@ jobs:
   qualify:
     # One declared cohort, after the correctness/resource preflight. Keep
     # failures and inconclusive rows; a green job is not adoption approval.
-    if: github.head_ref == 'codex/bc-666-portable-scalar'
+    if: github.head_ref == 'codex/bc-666-isolated-backend'
     strategy:
       fail-fast: false
       matrix:
