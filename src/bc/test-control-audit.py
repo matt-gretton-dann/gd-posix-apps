@@ -225,6 +225,7 @@ class ControlAuditTests(unittest.TestCase):
 
     def test_path_traversal_and_duplicate_selection_are_rejected(self):
         for options in [dict(prefix='../evidence'), dict(prefix='C:\\evidence'),
+                        dict(prefix='/'), dict(prefix='//'),
                         dict(stages=['full-aa', 'full-aa']),
                         dict(stages=['../full-aa']), dict(control='base')]:
             with self.subTest(options=options), self.assertRaises(ValueError):

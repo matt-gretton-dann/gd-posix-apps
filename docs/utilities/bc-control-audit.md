@@ -19,7 +19,11 @@ python3 src/bc/scripts/audit-bc-controls.py \
 ```
 
 Both digest and source arguments are mandatory. Choose a new output path; the
-tool refuses to overwrite an existing observation. For math, use the stage's
+tool refuses to overwrite an existing observation. Normal trend uploads flatten
+the evidence directory into the ZIP root: use `--prefix .` for those archives.
+An empty prefix is also accepted. This root-prefix handling does not allow empty,
+absolute or parent-traversing file members. Nested archives retain their explicit
+prefix, as in the example above. For math, use the stage's
 `gd-aa` control role and its independently built candidate source. Arithmetic
 A/A usually rebuilds the base source. The control revision can therefore differ
 from the candidate/cohort revision. The stage manifest supplies the reference

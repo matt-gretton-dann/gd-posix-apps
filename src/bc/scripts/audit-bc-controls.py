@@ -207,7 +207,9 @@ def audit(path, archive_sha256, prefix, stages, control, source):
     require(re.fullmatch('[0-9a-f]{40}', source) is not None, 'invalid source revision')
     raw = Path(path).read_bytes()
     require(digest(raw) == archive_sha256, 'archive digest mismatch')
-    prefix = member(prefix).rstrip('/') + '/'
+    # upload-artifact retains the evidence directory's contents at the ZIP
+    # root for normal trend jobs. Root is a prefix, never a file member.
+    prefix = '' if prefix in ('', '.') else member(prefix).rstrip('/') + '/'
     require(len(stages) == len(set(stages)) and stages, 'empty/duplicate stage selection')
     with zipfile.ZipFile(path) as archive:
         require(len(archive.namelist()) == len(set(archive.namelist())), 'duplicate archive members')
