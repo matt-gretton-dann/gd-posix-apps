@@ -102,6 +102,16 @@ class ControlAuditTests(unittest.TestCase):
         options.update(kwargs)
         return AUDIT.audit(**options)
 
+    def legacy_fixture(self):
+        fixture = self.fixture()
+        for tool, observation in zip(fixture[0]['implementations'], fixture[3]['observations']):
+            fixture[4]['evidence/' + tool['name'] + '/implementations.json'] = json.dumps(
+                dict(implementations=[copy.deepcopy(tool)])).encode()
+            del observation['implementation']
+            del observation['input_artifacts']
+            observation['source_revision'] = SOURCE
+        return fixture
+
     def test_identical_bytes_do_not_erase_observed_control_bias(self):
         report = self.run_audit(self.fixture())
         stage = report['stages'][0]
@@ -118,6 +128,20 @@ class ControlAuditTests(unittest.TestCase):
         self.assertEqual(stage['platform']['system'], 'Windows')
         self.assertTrue(stage['binary_bytes_identical'])
 
+    def test_flat_provider_archives_accept_explicit_root_prefix(self):
+        original, _ = self.archive(self.fixture())
+        flat = self.root / 'flat.zip'
+        with zipfile.ZipFile(original) as source, zipfile.ZipFile(flat, 'w') as target:
+            for name in source.namelist():
+                self.assertTrue(name.startswith('evidence/'))
+                target.writestr(name[len('evidence/'):], source.read(name))
+        for prefix in ('', '.'):
+            with self.subTest(prefix=prefix):
+                report = AUDIT.audit(flat, AUDIT.digest(flat.read_bytes()), prefix,
+                                     ['full-aa'], 'aa', SOURCE)
+                self.assertEqual(report['stages'][0]['checked_rows'], 32)
+                self.assertFalse(report['merge_eligible'])
+
     def test_same_source_and_length_do_not_hide_different_binary_bytes(self):
         stage = self.run_audit(self.fixture(different_binary=True))['stages'][0]
         self.assertEqual(stage['identities']['base']['file_bytes'], stage['identities']['aa']['file_bytes'])
@@ -126,6 +150,60 @@ class ControlAuditTests(unittest.TestCase):
     def test_missing_configuration_is_unknown_not_equal(self):
         self.assertIsNone(self.run_audit(self.fixture(configurations=False))['stages'][0][
             'declared_configurations_equal'])
+
+    def test_legacy_records_need_explicit_archived_role_configurations(self):
+        with self.assertRaisesRegex(ValueError, 'explicit archived role configuration'):
+            self.run_audit(self.legacy_fixture())
+        for path in ('../base/implementations.json', '/base/implementations.json',
+                     'C:\\base\\implementations.json'):
+            with self.subTest(path=path), self.assertRaises(ValueError):
+                self.run_audit(self.legacy_fixture(), reference_config=path,
+                               control_config='aa/implementations.json')
+
+    def test_legacy_recipes_are_verified_without_reconstructing_metadata(self):
+        report = self.run_audit(self.legacy_fixture(), reference_config='base/implementations.json',
+                                control_config='aa/implementations.json')
+        identities = report['stages'][0]['identities']
+        self.assertTrue(report['stages'][0]['binary_bytes_identical'])
+        self.assertEqual({i['recipe_kind'] for i in identities.values()},
+                         {'archived role configuration'})
+        self.assertFalse(report['merge_eligible'])
+
+    def test_legacy_recipe_mismatches_and_missing_inputs_are_rejected(self):
+        for mutation in ('hash', 'source', 'argv', 'metadata', 'duplicate', 'role', 'input'):
+            fixture = self.legacy_fixture()
+            name = 'evidence/base/implementations.json'
+            config = json.loads(fixture[4][name])
+            entry = config['implementations'][0]
+            if mutation == 'hash': entry['metadata']['binary_sha256'] = '0' * 64
+            elif mutation == 'source': entry['metadata']['source_revision'] = 'b' * 40
+            elif mutation == 'argv': entry['argv'] = ['changed']
+            elif mutation == 'metadata': entry['metadata']['configuration']['build_type'] = 'Debug'
+            elif mutation == 'duplicate': config['implementations'].append(copy.deepcopy(entry))
+            elif mutation == 'role': entry['name'] = 'other'
+            elif mutation == 'input':
+                entry['input_artifacts'] = [dict(path='/missing/library.bc', sha256='0' * 64)]
+            fixture[4][name] = json.dumps(config).encode()
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                self.run_audit(fixture, reference_config='base/implementations.json',
+                               control_config='aa/implementations.json')
+
+    def test_inline_and_archived_recipe_disagreement_is_rejected(self):
+        fixture = self.fixture()
+        entry = copy.deepcopy(fixture[0]['implementations'][0])
+        entry['argv'] = ['different']
+        fixture[4]['evidence/base/implementations.json'] = json.dumps(
+            dict(implementations=[entry])).encode()
+        with self.assertRaises(ValueError):
+            self.run_audit(fixture, reference_config='base/implementations.json')
+
+    def test_unselected_codegen_roles_are_explicitly_out_of_scope(self):
+        fixture = self.legacy_fixture()
+        fixture[3]['observations'].append(dict(name='unrelated', status='unavailable'))
+        report = self.run_audit(fixture, reference_config='base/implementations.json',
+                                control_config='aa/implementations.json')
+        self.assertEqual(set(report['stages'][0]['identities']), {'base', 'aa'})
+        self.assertTrue(any('other codegen roles are not' in item for item in report['limits']))
 
     def test_configuration_difference_remains_visible_without_a_waiver(self):
         fixture = self.fixture()
@@ -211,6 +289,7 @@ class ControlAuditTests(unittest.TestCase):
 
     def test_path_traversal_and_duplicate_selection_are_rejected(self):
         for options in [dict(prefix='../evidence'), dict(prefix='C:\\evidence'),
+                        dict(prefix='/'), dict(prefix='//'),
                         dict(stages=['full-aa', 'full-aa']),
                         dict(stages=['../full-aa']), dict(control='base')]:
             with self.subTest(options=options), self.assertRaises(ValueError):
