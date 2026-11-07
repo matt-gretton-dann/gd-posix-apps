@@ -308,3 +308,39 @@ TEST_CASE("Portable scalar graph proof rejects skipped and previous-iteration pr
   skipped[5] = I(O::branch, D(-3));
   CHECK_FALSE(plan_portable_scalar(skipped));
 }
+
+TEST_CASE("Portable scalar lowering checks every operand role before graph analysis",
+          "[bc][vm][portable-scalar]")
+{
+  auto code = sum_loop(2);
+  code[10].op1(D(-11));  // Load location before the stream.
+  CHECK_FALSE(plan_portable_scalar(code));
+  code = sum_loop(2);
+  code[13].op2(D(5));  // Store source at the exit, never a value.
+  CHECK_FALSE(plan_portable_scalar(code));
+  code = sum_loop(2);
+  code[12].op2(D(1));  // Invalid second arithmetic operand independently.
+  CHECK_FALSE(plan_portable_scalar(code));
+  code = sum_loop(2);
+  code[17].op1(D(2));  // Unconditional destination beyond the exit.
+  CHECK_FALSE(plan_portable_scalar(code));
+  code = sum_loop(2);
+  code[9].op1(D(4));  // Conditional source names a store with no result.
+  CHECK_FALSE(plan_portable_scalar(code));
+  code = sum_loop(2);
+  code[9].op2(D(10));  // Conditional destination beyond the exit.
+  CHECK_FALSE(plan_portable_scalar(code));
+  Instructions no_variables(16, I(O::number, "0"));
+  no_variables.back() = I(O::branch, D(-1));
+  CHECK_FALSE(plan_portable_scalar(no_variables));
+#ifdef NDEBUG
+  // Letter's constructor asserts for this invalid character in Debug. Its
+  // Release representation still must not reach a private scalar subscript.
+  code = sum_loop(2);
+  code[0] = I(O::variable, Variable('?'));
+  CHECK_FALSE(plan_portable_scalar(code));
+  code = sum_loop(2);
+  code[10] = I(O::load, I::Stream::output);
+  CHECK_FALSE(plan_portable_scalar(code));
+#endif
+}
