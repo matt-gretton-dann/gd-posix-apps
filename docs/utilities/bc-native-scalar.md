@@ -47,3 +47,8 @@ VM, signal and math suites on each image. A loop beyond the backedge budget
 checks that interpreter replay commits the exact result once. The full and
 holdout corpora are then timed in paired rounds, with raw observations and
 build provenance retained as an artifact.
+
+Issue #666 separately evaluates a [portable integer component](bc-portable-integer-regions.md)
+for the same bounded scalar domain. Its initial checkpoint is linked only into
+unit tests, without VM integration or performance evidence. It does not change
+this Apple Arm64 emitter or inherit its qualification.

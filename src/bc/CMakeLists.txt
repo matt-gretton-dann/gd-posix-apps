@@ -152,6 +152,8 @@ if(RUN_UNIT_TESTS)
   target_include_directories(test-libbc PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
   set_warnings(test-libbc)
   target_sources(test-libbc PRIVATE
+                 portable-scalar.cc
+                 test-portable-scalar.cc
                  test-array-storage.cc
                  test-execution-plan.cc
                  test-benchmark-support.cc
