@@ -350,13 +350,14 @@ class NativeMath(unittest.TestCase):
 class MathEvidenceOrchestration(unittest.TestCase):
     """Simulate a complete two-preset controller; never execute fixture images."""
 
-    def exercise(self, fail_elapsed=False):
+    def exercise(self, fail_elapsed=False, corrupt_asset=False, interrupt_elapsed=False):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         source = Path(temporary.name)
         (source / 'src/bc').mkdir(parents=True)
         (source / 'src/bc/math-library.bc').write_bytes(b'scale=20\n')
         root, events = source / 'results', []
+        self.last_root = root
         original_load = CI.load
         bench = original_load('bench-bc')
         codegen = original_load('collect-bc-codegen')
@@ -416,6 +417,8 @@ class MathEvidenceOrchestration(unittest.TestCase):
                                 implementation=tool['name'], seconds=1.0, checked=True)
                            for index in range(3) for tool in tools]
                 (target / 'samples.jsonl').write_text('\n'.join(json.dumps(r) for r in samples))
+                if interrupt_elapsed and target.name == 'full-paired':
+                    raise KeyboardInterrupt()
                 if fail_elapsed and target.name == 'full-paired':
                     raise CI.CommandFailure('forced elapsed failure after fixture samples')
 
@@ -430,6 +433,11 @@ class MathEvidenceOrchestration(unittest.TestCase):
             events.append(('archive', 'ordinary roles'))
             return original_collect(*args, **kwargs)
 
+        def resources(*args, **kwargs):
+            events.append(('resource', 'fixture'))
+            if corrupt_asset:
+                (root / 'gd/source/src/bc/math-library.bc').write_bytes(b'changed after elapsed')
+
         argv = [str(PATH), '--source', str(source), '--candidate', 'b' * 40,
                 '--base', 'a' * 40, '--output', str(root), '--broad', '--samples', '3']
         with mock.patch.object(CI, 'Commands', Commands), mock.patch.object(CI, 'load', modules), \
@@ -437,7 +445,7 @@ class MathEvidenceOrchestration(unittest.TestCase):
                 mock.patch.object(CI, 'selected_cases', side_effect=lambda bench, preset, broad: [preset + '_fixture']), \
                 mock.patch.object(CI, 'diagnostic_cases', return_value=[]), \
                 mock.patch.object(CI, 'allocation_diagnostics', side_effect=lambda *a, **k: events.append(('allocation', 'fixture'))), \
-                mock.patch.object(CI, 'resource_diagnostics', side_effect=lambda *a, **k: events.append(('resource', 'fixture'))), \
+                mock.patch.object(CI, 'resource_diagnostics', side_effect=resources), \
                 mock.patch.object(codegen, 'collect', side_effect=collect), \
                 mock.patch.object(codegen, 'native_commands', return_value=[]), \
                 mock.patch.dict(os.environ, {'GITHUB_STEP_SUMMARY': ''}), \
@@ -477,6 +485,29 @@ class MathEvidenceOrchestration(unittest.TestCase):
         self.assertTrue(manifest.is_file())
         self.assertEqual(json.loads(manifest.read_text())['status'], 'preserved')
         self.assertFalse(any(event[0] in ('allocation', 'resource') for event in events))
+
+    def test_archival_failure_cannot_turn_successful_elapsed_stages_green(self):
+        status, root, events = self.exercise(corrupt_asset=True)
+        self.assertEqual(status, 1)
+        failure = json.loads((root / 'evidence/preservation-failure.json').read_text())
+        self.assertIn('no acceptance', failure['status'])
+        self.assertIn('input changed', failure['error'])
+        self.assertEqual(json.loads((root / 'evidence/codegen/manifest.json').read_text())['status'], 'error')
+
+    def test_python_interrupt_propagates_after_completed_assets_are_preserved(self):
+        with self.assertRaises(KeyboardInterrupt):
+            self.exercise(interrupt_elapsed=True)
+        manifest = self.last_root / 'evidence/codegen/manifest.json'
+        self.assertEqual(json.loads(manifest.read_text())['status'], 'preserved')
+
+    def test_contradictory_ordinary_role_recipes_are_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            first = dict(name='same', argv=['first'])
+            second = dict(name='same', argv=['second'])
+            with self.assertRaisesRegex(CI.CommandFailure, 'contradictory'):
+                CI.preserve_ordinary(dict(aa=[first], paired=[second]), root, deadline=0)
+            self.assertFalse((root / 'codegen').exists())
 
 
 if __name__ == '__main__':

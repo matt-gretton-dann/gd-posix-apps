@@ -11,6 +11,9 @@ A/A build, the exact requested GD base, and pinned Howard with matching
 uninstrumented release settings and fixed split point 126. A separate candidate
 counter build is explicitly instrumented and forbidden to the timing harness.
 All builds and correctness/portability checks finish before elapsed measurements.
+Allocation probes, CPU/RSS wrappers and executable inspection follow all elapsed
+presets and their confirmations. A probe cannot run between full and held-out
+elapsed presets in a combined standalone experiment.
 
 The PR base is its actual immutable base SHA. Push, scheduled and default manual
 runs use mathematical checkpoint `78a732a6c1f995b45b140d4b86d8d3af57354804`,
@@ -79,7 +82,7 @@ enclosures are retained, with zero outstanding tracked storage checked at EOF.
 These allocator-request/event counts are not total process malloc, RSS or
 hardware instruction counts, and cannot establish a baseline allocation delta.
 
-After every elapsed stage finishes, native CPU/RSS wrappers collect one cold
+After all elapsed stages and confirmations finish, native CPU/RSS wrappers collect one cold
 invocation per regime and release role near scale 100, for both presets in broad
 runs. Linux reports GNU time user/system seconds and KiB RSS; Darwin reports
 native user/system seconds and byte RSS, plus optional counters where time emits
@@ -93,7 +96,29 @@ Diagnostic wrapper elapsed fields never replace paired timing.
 
 The workflow uploads checked raw samples, frozen inputs, calibration trials,
 recipes, source snapshots, diagnostic reports, logs, host metadata and per-class
-decisions even after failure. Build trees are not uploaded. Parent and descendant
+decisions even after failure. The `codegen/manifest.json` artifact also binds the
+actual uninstrumented elapsed-role recipes and executable copies, including both
+Howard library recipes, plus copies of every declared external input. Duplicate
+role names must have identical recipes. Profiled executables cannot enter this
+set. Missing or changed declared assets make archival a hard failure; successful
+elapsed stages cannot hide that failure or establish acceptance.
+
+All role assets are copied and hash-checked before optional native inspection.
+The original and retained bytes are checked again afterward. Missing inspectors
+or exhausted inspection budgets retain the exact files with an explicit
+unavailable diagnostic; they do not cause a rebuild or a performance pass.
+Math inspection commands have a 15-second maximum clipped to the experiment's
+remaining monotonic deadline. Asset preservation still runs after an elapsed
+failure or exhausted budget. Exceptions already propagating through cleanup,
+including Python interrupts, are not suppressed by final archival attempts.
+
+Older standard math artifacts did not retain measured binaries or all external
+input copies. Those missing assets remain unavailable. A later rebuild cannot
+repair their binary provenance or qualify an earlier experiment. The new copies
+improve future evidence; they do not change historical labels, acceptance rules,
+sample counts, calibration, fixed seeds, corpus selection or timing budgets.
+
+Build trees are not uploaded. Parent and descendant
 processes are terminated at experiment deadlines on POSIX and Windows; other
 Python platforms retain a direct-child fallback. No instrumented configuration
 enters the release matrix, and no diagnostic child runs concurrently with timing.
