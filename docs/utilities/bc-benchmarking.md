@@ -242,6 +242,10 @@ segments separated by dots, including `howard-7.0.3` and `gnu-1.08.2`.
 Duplicate names, path separators, and empty dot segments are rejected before
 creating a role directory. An archive failure remains incomplete evidence;
 a later rebuild cannot replace a missing original measured executable.
+The native arithmetic controller preserves all three GD images and the pinned
+Howard image after elapsed measurements, including when a checked run fails.
+Older arithmetic archives may retain only the three GD images; the Howard
+recipe and its declared hash do not replace the missing measured bytes.
 
 ## Source and build provenance
 
