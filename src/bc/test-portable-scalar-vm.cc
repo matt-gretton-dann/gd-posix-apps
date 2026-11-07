@@ -9,6 +9,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <tuple>
 
 #include "bc.hh"
@@ -37,8 +38,8 @@ auto parse(std::string const& program) -> GD::Bc::Instructions
   return *code;
 }
 
-auto observe(std::string const& program, Checks checks, std::string const& initial = {})
-  -> Observation
+auto observe(std::string const& program, Checks checks, std::string const& initial = {},
+             bool all_locations = false) -> Observation
 {
   std::ostringstream output;
   std::ostringstream errors;
@@ -48,6 +49,12 @@ auto observe(std::string const& program, Checks checks, std::string const& initi
     REQUIRE(vm.execute(setup));
   }
   auto code = parse(program);
+  if (all_locations) {
+    GD::Bc::Instructions locations;
+    for (char letter : std::string_view("abcdefghijklmnopqrstuvwxyz"))
+      locations.emplace_back(O::variable, Variable(letter));
+    code.insert(code.begin(), locations.begin(), locations.end());
+  }
 #if GD_BC_PROFILE
   auto const before = GD::Bc::Profile::snapshot();
 #endif
@@ -151,5 +158,24 @@ TEST_CASE("Portable scalar VM declines output array and call streams without cha
       observe("for(i=0;i<3;i++)s=s+f(i)\n", checks, "define f(x){\nreturn(x+1)\n}\n");
     CHECK(calls.output == "3\n6\n0\n0\n0\n");
     activation(calls, checks, false);
+  }
+}
+
+TEST_CASE("Portable scalar VM guards every encoded scalar location", "[bc][vm][portable-scalar-vm]")
+{
+  // Prefix unused location producers so the plan's entry guard includes all
+  // letters without exceeding its instruction bound. Spell the alphabet:
+  // character codes need not be contiguous on a supported target.
+  for (Checks checks : {Checks::full, Checks::verified}) {
+    auto const zero = observe("for(i=0;i<5;i++)s+=i\n", checks, {}, true);
+    CHECK(zero.output == "5\n10\n0\n0\n0\n");
+    activation(zero, checks, true);
+    for (char letter : std::string_view("abcdefghijklmnopqrstuvwxyz")) {
+      auto const initial = std::string(1, letter) + "=7\n";
+      auto const observed = observe("for(i=0;i<1;i++)s+=i\n", checks, initial, true);
+      CHECK(observed.output == std::string("1\n") + (letter == 's' ? "7" : "0") + "\n0\n" +
+                                 (letter == 'a' ? "7" : "0") + "\n0\n");
+      activation(observed, checks, false);
+    }
   }
 }
