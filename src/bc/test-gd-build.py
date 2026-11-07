@@ -133,6 +133,23 @@ class GdBuild(unittest.TestCase):
                     if native and enabled:
                         self.assertIn('src/bc/bc-portable-scalar.vcxproj', value['verification']['files'])
 
+    def test_makefile_command_and_declared_outputs_use_their_cmake_bases(self):
+        # CMake Makefiles compile in src/bc, while the extra output field is
+        # relative to the top-level build. These name the same actual objects.
+        rows = self.object_boundary()
+        self.cache.write_text(self.cache.read_text() +
+                              'CMAKE_GENERATOR:INTERNAL=Unix Makefiles\n' +
+                              'CMAKE_CACHEFILE_DIR:INTERNAL=' + str(self.build) + '\n')
+        for row in rows:
+            args = row['arguments']
+            index = args.index('-o') + 1
+            row['output'] = args[index]
+            args[index] = args[index][len('src/bc/'):]
+            row['directory'] = str(self.build / 'src/bc')
+        (self.build / 'compile_commands.json').write_text(json.dumps(rows))
+        value = self.module.verified_portable_scalar(self.helper, self.build, 'ON')
+        self.assertEqual(value['boundary']['linked_object_count'], 2)
+
     def test_object_boundary_rejects_unlinked_ipo_and_misidentified_targets(self):
         for change in ('missing', 'unlinked', 'owner', 'ipo', 'config-ipo', 'duplicate', 'unknown'):
             self.object_boundary()
