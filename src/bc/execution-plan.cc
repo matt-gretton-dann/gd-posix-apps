@@ -4,6 +4,7 @@
  */
 #include "execution-plan.hh"
 
+#include <algorithm>
 #include <cassert>
 #include <initializer_list>
 #include <limits>
@@ -248,11 +249,37 @@ auto lower_records(Instructions const& code, typename Code::value_type empty, bo
 auto lower_executable(Instructions const& code, ResultSlotPlan const& slots, bool persistent)
   -> ExecutableCode
 {
-  return lower_records<ExecutableCode>(
-    code, {Instruction::Opcode::eof, 0, {}, {}}, persistent,
-    [&](Instruction::Index i) { return std::optional<Instruction::Opcode>(code[i].opcode()); },
-    [&](Instruction::Index i) { return slots.index(i); },
-    [&](Instruction::Index i) { return slots.index(i); });
+  using I = Instruction::Index;
+  using O = Instruction::Opcode;
+  using C = ResultSlotPlan::CompactIndex;
+  auto result = lower_records<ExecutableCode>(
+    code, {O::eof, 0, {}, {}}, persistent, [&](I i) { return std::optional<O>(code[i].opcode()); },
+    [&](I i) { return slots.index(i); }, [&](I i) { return slots.index(i); });
+  if (!persistent || result.empty())
+    return result;
+
+  // A return can have visited a later source instruction only if a backward
+  // edge crosses its PC. Keep full cleanup for returns inside such intervals.
+  // This linear overapproximation also covers forward data references.
+  std::vector<C> backward_end(code.size(), 0);
+  visit_execution_region(code, [&](I i) {
+    auto const opcode = code[i].opcode();
+    if (opcode == O::branch || opcode == O::branch_zero) {
+      auto const& operand = opcode == O::branch ? code[i].op1() : code[i].op2();
+      auto const target = i + static_cast<I>(std::get<Instruction::Offset>(operand));
+      if (target < i)
+        backward_end[target] = std::max(backward_end[target], static_cast<C>(i));
+    }
+  });
+  C last_backward_source = 0;
+  C prefix_slots = 0;
+  visit_execution_region(code, [&](I i) {
+    last_backward_source = std::max(last_backward_source, backward_end[i]);
+    prefix_slots = std::max(prefix_slots, static_cast<C>(slots.index(i) + 1));
+    if (code[i].opcode() == O::return_ && last_backward_source <= i)
+      result[i].second = ExecutableOperand(prefix_slots);
+  });
+  return result;
 }
 
 namespace {
