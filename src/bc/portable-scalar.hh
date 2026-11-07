@@ -13,6 +13,7 @@
 
 namespace GD::Bc::Details {
 using ScalarInterruptCheck = bool (*)() noexcept;
+using ScalarContextInterruptCheck = bool (*)(void const*) noexcept;
 using ScalarValues = std::array<std::uint64_t, Letter::count_>;
 
 class PortableScalarPlan
@@ -29,6 +30,12 @@ public:
   // deterministic exhaustion/polling tests.
   [[nodiscard]] auto run(ScalarInterruptCheck interrupted = nullptr,
                          std::uint64_t fuel = backedge_limit) const noexcept
+    -> std::optional<ScalarValues>;
+
+  // Caller-owned context avoids hidden global/TLS callback state across an
+  // opaque backend boundary. The legacy no-context entry remains available.
+  [[nodiscard]] auto run_with_context(ScalarContextInterruptCheck interrupted, void const* context,
+                                      std::uint64_t fuel = backedge_limit) const noexcept
     -> std::optional<ScalarValues>;
 
 private:

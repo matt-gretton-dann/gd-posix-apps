@@ -73,6 +73,22 @@ class ResourceComparison(unittest.TestCase):
                 rss_profile=rss or self.observed_rss), self.profiles, self.ordinary,
                 [self.case], self.root / 'results', repetitions=5, seed=657197, timeout=10)
 
+    def test_profile_and_ordinary_require_the_same_object_boundary(self):
+        ordinary = self.ordinary['candidate']['metadata']['configuration']
+        profile = self.profiles['candidate']['metadata']['configuration']
+        boundary = dict(kind='opaque-object', target='bc-portable-scalar', ipo=False,
+                        configuration='Release', linked_object_count=2)
+        ordinary['portable_scalar_policy']['boundary'] = copy.deepcopy(boundary)
+        profile['portable_scalar_policy']['boundary'] = copy.deepcopy(boundary)
+        self.module.validate_roles(self.bench, self.profiles, self.ordinary)
+        for key, value in [('ipo', True), ('linked_object_count', 0), ('kind', 'disabled-object')]:
+            profile['portable_scalar_policy']['boundary'] = dict(boundary, **{key: value})
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                self.module.validate_roles(self.bench, self.profiles, self.ordinary)
+        profile['portable_scalar_policy'].pop('boundary')
+        with self.assertRaises(ValueError):
+            self.module.validate_roles(self.bench, self.profiles, self.ordinary)
+
     def test_same_inputs_preserve_losing_resources_without_elapsed_claims(self):
         report = self.collect()
         self.assertFalse(report['merge_eligible'])

@@ -5,9 +5,13 @@
 add_library(libbc)
 # Shared by library consumers and the independent header-only calibration tool.
 add_library(bc-language-mode INTERFACE)
+# Header layout and diagnostic ABI must agree across opaque backend objects.
+add_library(bc-runtime-mode INTERFACE)
+target_link_libraries(bc-runtime-mode INTERFACE gdsup util bc-language-mode)
+target_compile_definitions(bc-runtime-mode INTERFACE GD_BC_PROFILE=$<BOOL:${ENABLE_BC_PROFILE}>)
 target_include_directories(libbc PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_include_directories(libbc PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
-target_link_libraries(libbc PUBLIC gdsup util bc-language-mode)
+target_link_libraries(libbc PUBLIC bc-runtime-mode)
 set(BC_ARRAY_STORAGE hybrid CACHE STRING "Experimental bc array layout: hybrid, paged, flat, hash or ordered")
 set_property(CACHE BC_ARRAY_STORAGE PROPERTY STRINGS hybrid paged flat hash ordered)
 set(_bc_array_layouts hybrid paged flat hash ordered)
@@ -15,11 +19,11 @@ list(FIND _bc_array_layouts "${BC_ARRAY_STORAGE}" _bc_array_layout)
 if(_bc_array_layout LESS 0)
   message(FATAL_ERROR "Unsupported BC_ARRAY_STORAGE: ${BC_ARRAY_STORAGE}")
 endif()
-target_compile_definitions(libbc PUBLIC GD_BC_ARRAY_STORAGE=${_bc_array_layout})
-target_compile_definitions(libbc PUBLIC GD_BC_PREPARED_DIVISORS=$<BOOL:${ENABLE_BC_PREPARED_DIVISORS}>)
+target_compile_definitions(bc-runtime-mode INTERFACE GD_BC_ARRAY_STORAGE=${_bc_array_layout})
+target_compile_definitions(bc-runtime-mode INTERFACE GD_BC_PREPARED_DIVISORS=$<BOOL:${ENABLE_BC_PREPARED_DIVISORS}>)
 option(ENABLE_BC_EXACT_SQUARE "Enable the experimental exact transform square" OFF)
 if(ENABLE_BC_EXACT_SQUARE)
-  target_compile_definitions(libbc PUBLIC GD_BC_EXPERIMENT_NTT=1)
+  target_compile_definitions(bc-runtime-mode INTERFACE GD_BC_EXPERIMENT_NTT=1)
 endif()
 set_property(TARGET libbc PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
 set_property(TARGET libbc PROPERTY CXX_STANDARD_REQUIRED ON)
@@ -71,10 +75,37 @@ if(ENABLE_BC_NATIVE_SCALAR AND APPLE AND CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64"
   set(_bc_native_scalar_compiled ON)
 endif()
 option(ENABLE_BC_PORTABLE_SCALAR "Enable experimental portable checked integer execution" OFF)
+set(BC_PORTABLE_SCALAR_BOUNDARY "opaque-object-v1" CACHE INTERNAL
+    "Portable scalar transaction object-boundary contract" FORCE)
 target_compile_definitions(libbc PRIVATE GD_BC_PORTABLE_SCALAR=$<BOOL:${ENABLE_BC_PORTABLE_SCALAR}>)
 if(ENABLE_BC_PORTABLE_SCALAR)
-  target_sources(libbc PRIVATE portable-scalar.cc)
+  # Keep optional transaction state and its optimizer IR outside the central
+  # interpreter. This object boundary intentionally does not participate in IPO.
+  add_library(bc-portable-scalar OBJECT portable-scalar.cc portable-scalar-vm.cc)
+  target_link_libraries(bc-portable-scalar PRIVATE bc-runtime-mode)
+  target_include_directories(bc-portable-scalar PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
+                                                      "${CMAKE_CURRENT_BINARY_DIR}")
+  target_compile_definitions(bc-portable-scalar PRIVATE GD_BC_PORTABLE_SCALAR=1 _CRT_SECURE_NO_WARNINGS)
+  set_target_properties(bc-portable-scalar PROPERTIES
+                        CXX_STANDARD "${CMAKE_CXX_STANDARD}" CXX_STANDARD_REQUIRED ON
+                        INTERPROCEDURAL_OPTIMIZATION FALSE)
+  foreach(_bc_backend_config Debug Release RelWithDebInfo MinSizeRel ${CMAKE_CONFIGURATION_TYPES} ${CMAKE_BUILD_TYPE})
+    string(TOUPPER "${_bc_backend_config}" _bc_backend_config_upper)
+    set_property(TARGET bc-portable-scalar PROPERTY
+                 INTERPROCEDURAL_OPTIMIZATION_${_bc_backend_config_upper} FALSE)
+  endforeach()
+  add_dependencies(bc-portable-scalar bc_messages_header)
+  set_warnings(bc-portable-scalar)
+  target_add_clang_format(bc-portable-scalar)
+  target_sources(libbc PRIVATE $<TARGET_OBJECTS:bc-portable-scalar>)
+  set(_bc_portable_boundary "backend=bc-portable-scalar\nipo=$<TARGET_PROPERTY:bc-portable-scalar,INTERPROCEDURAL_OPTIMIZATION>\nconfig-ipo=$<TARGET_PROPERTY:bc-portable-scalar,INTERPROCEDURAL_OPTIMIZATION_$<UPPER_CASE:$<CONFIG>>>\n[objects]\n$<JOIN:$<TARGET_OBJECTS:bc-portable-scalar>,\n>\n")
+else()
+  set(_bc_portable_boundary "backend=disabled\nipo=not-applicable\nconfig-ipo=not-applicable\n[objects]\n")
 endif()
+# These are evaluated target properties, not a cache-only assertion that an
+# optional source was compiled or its objects were included in the library.
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/portable-scalar-boundary-$<CONFIG>.txt"
+     CONTENT "schema=1\nmode=$<IF:$<BOOL:${ENABLE_BC_PORTABLE_SCALAR}>,ON,OFF>\nconfiguration=$<CONFIG>\ncore=libbc\n${_bc_portable_boundary}[library-sources]\n$<JOIN:$<TARGET_GENEX_EVAL:libbc,$<TARGET_PROPERTY:libbc,SOURCES>>,\n>\n")
 set_warnings(libbc)
 gd_apply_ipo(libbc)
 
@@ -88,7 +119,6 @@ if(ENABLE_BC_PROFILE)
   if(ENABLE_BC_COVERAGE)
     message(FATAL_ERROR "Use separate bc coverage and allocation profiling builds")
   endif()
-  target_compile_definitions(libbc PUBLIC GD_BC_PROFILE=1)
   target_sources(libbc PRIVATE profiling.cc)
 endif()
 add_dependencies("libbc" "bc_messages_header")
@@ -198,7 +228,9 @@ if(RUN_UNIT_TESTS)
                  test-vm-arrays.cc
                  test-vm-execution.cc
                  test-verification.cc)
-  if(NOT ENABLE_BC_PORTABLE_SCALAR)
+  if(ENABLE_BC_PORTABLE_SCALAR)
+    target_sources(test-libbc PRIVATE test-portable-scalar-transaction.cc)
+  else()
     target_sources(test-libbc PRIVATE portable-scalar.cc)
   endif()
   if(ENABLE_BC_PORTABLE_SCALAR AND ENABLE_BC_PROFILE AND NOT _bc_native_scalar_compiled)
@@ -328,6 +360,10 @@ if(ENABLE_BC_COVERAGE)
     target_compile_options(${_bc_target} PRIVATE
                            -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc)
   endforeach()
+  if(TARGET bc-portable-scalar)
+    target_compile_options(bc-portable-scalar PRIVATE
+                           -fprofile-instr-generate -fcoverage-mapping -fcoverage-mcdc)
+  endif()
   # Consumers (including the build-time tuner) need the profile runtime when
   # linking the instrumented library. Only asserted test profiles are collected.
   target_link_options(libbc INTERFACE -fprofile-instr-generate)

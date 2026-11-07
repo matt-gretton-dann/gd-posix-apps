@@ -115,7 +115,12 @@ def mode_identity(configuration, key):
     elif policy.get('mode') not in ('AUTO', 'ON', 'OFF') or (
             policy['mode'] != 'AUTO' and enabled != (policy['mode'] == 'ON')):
         raise ValueError('contradictory recorded resource role mode')
-    return {key: policy.get(key) for key in ('status', 'mode', 'enabled')}
+    identity = {key: policy.get(key) for key in ('status', 'mode', 'enabled')}
+    if 'boundary' in policy:
+        # Paths and hashes differ between ordinary and instrumented builds;
+        # the compiled boundary policy must still describe the same mode.
+        identity['boundary'] = policy['boundary']
+    return identity
 
 
 def validate_roles(bench, profiles, ordinary):

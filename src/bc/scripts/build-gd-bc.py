@@ -83,6 +83,18 @@ def verified_portable_scalar(helper, build, requested):
         raise helper.BuildError('source did not configure the requested portable-scalar mode')
     if cache.get('ENABLE_BC_NATIVE_SCALAR', '').upper() not in ('OFF', 'FALSE', 'NO', '0'):
         raise helper.BuildError('portable qualification requires the separate native emitter OFF')
+    boundary_kind = cache.get('BC_PORTABLE_SCALAR_BOUNDARY')
+    if boundary_kind is not None:
+        if boundary_kind != 'opaque-object-v1':
+            raise helper.BuildError('unknown portable-scalar object boundary')
+        path = Path(__file__).with_name('portable-boundary.py')
+        spec = importlib.util.spec_from_file_location('bc_portable_boundary', str(path))
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        boundary, evidence = module.verify(helper, build, cache, enabled)
+        return dict(status='recorded', mode=requested, enabled=enabled,
+                    boundary=boundary, verification=evidence)
+    # Older explicit-policy revisions compiled the planner inside libbc.
     expected = '1' if enabled else '0'
     macro = 'GD_BC_PORTABLE_SCALAR'
 
@@ -303,6 +315,12 @@ def build_metadata(helper, root, source, build, revision, split, compiler_c, com
             target = root / 'portable-scalar-policy' / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(str(build / relative), str(target))
+    boundary_report = portable.get('verification', {}).get('boundary_report')
+    if boundary_report:
+        relative = boundary_report['path']
+        target = root / 'portable-scalar-policy' / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(str(build / relative), str(target))
     if prepared.get('verification', {}).get('kind') == 'msbuild-projects':
         for relative in prepared['verification']['files']:
             target = root / 'prepared-policy' / relative

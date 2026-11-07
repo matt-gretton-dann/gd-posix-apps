@@ -194,7 +194,17 @@ auto plan_portable_scalar(Instructions const& code) -> std::optional<PortableSca
 auto PortableScalarPlan::run(ScalarInterruptCheck interrupted, std::uint64_t fuel) const noexcept
   -> std::optional<ScalarValues>
 {
-  if (interrupted && interrupted())
+  auto const call = [](void const* context) noexcept {
+    return (*static_cast<ScalarInterruptCheck const*>(context))();
+  };
+  return run_with_context(interrupted ? +call : nullptr, &interrupted, fuel);
+}
+
+auto PortableScalarPlan::run_with_context(ScalarContextInterruptCheck interrupted,
+                                          void const* context, std::uint64_t fuel) const noexcept
+  -> std::optional<ScalarValues>
+{
+  if (interrupted && interrupted(context))
     return {};
   if (fuel > backedge_limit)
     fuel = backedge_limit;
@@ -233,7 +243,7 @@ auto PortableScalarPlan::run(ScalarInterruptCheck interrupted, std::uint64_t fue
           return {};
         --fuel;
         if (--until_poll == 0) {
-          if (interrupted && interrupted())
+          if (interrupted && interrupted(context))
             return {};
           until_poll = 1024;
         }
@@ -249,7 +259,7 @@ auto PortableScalarPlan::run(ScalarInterruptCheck interrupted, std::uint64_t fue
     }
     ++pc;
   }
-  if (interrupted && interrupted())
+  if (interrupted && interrupted(context))
     return {};
   return variables;
 }

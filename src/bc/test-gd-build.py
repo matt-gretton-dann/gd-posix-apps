@@ -71,6 +71,143 @@ class GdBuild(unittest.TestCase):
         path.write_text(json.dumps(rows))
         return rows
 
+    def object_boundary(self, enabled=True, native=False):
+        """Generate target and compiler evidence independently, then corrupt each."""
+        definitions = ['GD_BC_PORTABLE_SCALAR=' + ('1' if enabled else '0'),
+                       'GD_BC_PROFILE=0', 'GD_BC_PREPARED_DIVISORS=0',
+                       'GD_BC_ARRAY_STORAGE=0', 'ENABLE_EXTENSIONS=1']
+        self.cache.write_text(self.cache.read_text() +
+            'BC_PORTABLE_SCALAR_BOUNDARY:INTERNAL=opaque-object-v1\n'
+            'ENABLE_BC_PORTABLE_SCALAR:BOOL=' + ('ON' if enabled else 'OFF') + '\n'
+            'ENABLE_BC_PREPARED_DIVISORS:BOOL=OFF\nENABLE_BC_EXACT_SQUARE:BOOL=OFF\n'
+            'ENABLE_NON_POSIX_EXTENSIONS:BOOL=ON\nBC_ARRAY_STORAGE:STRING=hybrid\n')
+        names = ['portable-scalar.cc', 'portable-scalar-vm.cc'] if enabled else []
+        objects = [str(self.build / ('src/bc/CMakeFiles/bc-portable-scalar.dir/' +
+                                     name + ('.obj' if native else '.o'))) for name in names]
+        self.contract = self.build / 'src/bc/portable-scalar-boundary-Release.txt'
+        self.contract.write_text('schema=1\nmode=' + ('ON' if enabled else 'OFF') +
+            '\nconfiguration=Release\ncore=libbc\nbackend=' +
+            ('bc-portable-scalar\nipo=FALSE\nconfig-ipo=FALSE' if enabled else
+             'disabled\nipo=not-applicable\nconfig-ipo=not-applicable') +
+            '\n[objects]\n' + ''.join(p + '\n' for p in objects) +
+            '[library-sources]\nvm.cc\n' + ''.join(p + '\n' for p in objects))
+        rows = []
+        for name in ['bc.cc', 'vm.cc'] + names:
+            owner = 'bc' if name == 'bc.cc' else ('libbc' if name == 'vm.cc' else 'bc-portable-scalar')
+            rows.append(dict(file='/source/src/bc/' + name, directory=str(self.build),
+                arguments=['c++'] + ['-D' + d for d in definitions] +
+                ['-o', 'src/bc/CMakeFiles/' + owner + '.dir/' + name + '.o', '-c', name]))
+        commands = self.build / 'compile_commands.json'
+        commands.write_text(json.dumps(rows))
+        if native:
+            from xml.etree import ElementTree as ET
+            commands.unlink()
+            self.cache.write_text(self.cache.read_text() +
+                                  'CMAKE_GENERATOR:INTERNAL=Visual Studio 17 2022\n')
+            for target, sources in [('bc', ['bc.cc']), ('libbc', ['vm.cc'])] + (
+                    [('bc-portable-scalar', names)] if enabled else []):
+                root = ET.Element('Project')
+                group = ET.SubElement(root, 'ItemDefinitionGroup',
+                    Condition="'$(Configuration)|$(Platform)'=='Release|x64'")
+                compile = ET.SubElement(group, 'ClCompile')
+                ET.SubElement(compile, 'PreprocessorDefinitions').text = ';'.join(definitions)
+                ET.SubElement(compile, 'WholeProgramOptimization').text = 'false'
+                items = ET.SubElement(root, 'ItemGroup')
+                for name in sources:
+                    ET.SubElement(items, 'ClCompile', Include='/source/src/bc/' + name)
+                if target == 'libbc' and enabled:
+                    ET.SubElement(items, 'ProjectReference', Include='bc-portable-scalar.vcxproj')
+                ET.ElementTree(root).write(str(self.build / ('src/bc/' + target + '.vcxproj')))
+        return rows
+
+    def test_object_boundary_proves_production_linkage_and_retains_contract(self):
+        for native in (False, True):
+            for enabled in (False, True):
+                with self.subTest(native=native, enabled=enabled):
+                    self.object_boundary(enabled, native)
+                    value = self.metadata()['configuration']['portable_scalar_policy']
+                    self.assertEqual(value['boundary']['linked_object_count'], 2 if enabled else 0)
+                    relative = value['verification']['boundary_report']['path']
+                    self.assertEqual((self.root / 'portable-scalar-policy' / relative).read_bytes(),
+                                     self.contract.read_bytes())
+                    if native and enabled:
+                        self.assertIn('src/bc/bc-portable-scalar.vcxproj', value['verification']['files'])
+
+    def test_object_boundary_rejects_unlinked_ipo_and_misidentified_targets(self):
+        for change in ('missing', 'unlinked', 'owner', 'ipo', 'config-ipo', 'duplicate', 'unknown'):
+            self.object_boundary()
+            text = self.contract.read_text()
+            if change == 'missing':
+                self.contract.unlink()
+            elif change == 'unknown':
+                self.cache.write_text(self.cache.read_text() +
+                                      'BC_PORTABLE_SCALAR_BOUNDARY:INTERNAL=unknown\n')
+            else:
+                if change == 'unlinked':
+                    text = text.split('[library-sources]')[0] + '[library-sources]\nvm.cc\n'
+                elif change == 'owner':
+                    text = text.replace('bc-portable-scalar.dir', 'test-bc-unit.dir')
+                elif change in ('ipo', 'config-ipo'):
+                    text = text.replace('\n' + change + '=FALSE', '\n' + change + '=TRUE')
+                else:
+                    text = text.replace('[objects]\n', '[objects]\n' + text.split('[objects]\n')[1].splitlines()[0] + '\n')
+                self.contract.write_text(text)
+            with self.subTest(change=change), self.assertRaises(self.helper.BuildError):
+                self.module.verified_portable_scalar(self.helper, self.build, 'ON')
+
+    def test_object_boundary_rejects_mixed_compiler_abi_and_test_substitutes(self):
+        for change in ('profile', 'array', 'prepared', 'language', 'square', 'ipo',
+                       'response', 'undef', 'test-only', 'inside-core', 'output', 'native'):
+            rows = self.object_boundary()
+            args = rows[-1]['arguments']
+            if change in ('profile', 'array', 'prepared', 'language', 'square'):
+                macro = dict(profile='GD_BC_PROFILE', array='GD_BC_ARRAY_STORAGE',
+                             prepared='GD_BC_PREPARED_DIVISORS', language='ENABLE_EXTENSIONS',
+                             square='GD_BC_EXPERIMENT_NTT')[change]
+                args.append('-D' + macro + '=' + ('0' if change == 'language' else '1'))
+            elif change == 'ipo':
+                args.append('-flto=thin')
+            elif change == 'response':
+                args.append('@unknown.rsp')
+            elif change == 'undef':
+                args.append('-UGD_BC_PROFILE')
+            elif change in ('test-only', 'inside-core'):
+                args[args.index('-o') + 1] = args[args.index('-o') + 1].replace(
+                    'bc-portable-scalar.dir', 'test-bc-unit.dir' if change == 'test-only' else 'libbc.dir')
+            elif change == 'output':
+                rows[-1]['output'] = '/different/portable-scalar-vm.cc.o'
+            else:
+                args.append('-DGD_BC_NATIVE_SCALAR=0')
+            (self.build / 'compile_commands.json').write_text(json.dumps(rows))
+            with self.subTest(change=change), self.assertRaises(self.helper.BuildError):
+                self.module.verified_portable_scalar(self.helper, self.build, 'ON')
+
+    def test_object_boundary_rejects_native_reference_and_file_overrides(self):
+        from xml.etree import ElementTree as ET
+        for change in ('reference', 'disabled-reference', 'profile', 'ipo', 'undef',
+                       'replacement', 'excluded', 'inside-core'):
+            self.object_boundary(native=True)
+            relative = 'libbc' if change in ('reference', 'disabled-reference', 'inside-core') else 'bc-portable-scalar'
+            path = self.build / ('src/bc/' + relative + '.vcxproj')
+            root = ET.parse(str(path))
+            items = root.find('ItemGroup')
+            if change == 'reference':
+                items.remove(items.find('ProjectReference'))
+            elif change == 'disabled-reference':
+                ET.SubElement(items.find('ProjectReference'), 'BuildReference').text = 'false'
+            elif change == 'inside-core':
+                ET.SubElement(items, 'ClCompile', Include='/source/src/bc/portable-scalar.cc')
+            else:
+                item = items.find('ClCompile')
+                key, text = dict(profile=('AdditionalOptions', '/DGD_BC_PROFILE=1'),
+                    ipo=('AdditionalOptions', '/GL'), undef=('UndefinePreprocessorDefinitions', 'GD_BC_PROFILE'),
+                    replacement=('PreprocessorDefinitions', 'OTHER=1'),
+                    excluded=('ExcludedFromBuild', 'true'))[change]
+                ET.SubElement(item, key).text = text
+            root.write(str(path))
+            with self.subTest(change=change), self.assertRaises(self.helper.BuildError):
+                self.module.verified_portable_scalar(self.helper, self.build, 'ON')
+
     def test_portable_legacy_mode_is_unknown_and_explicit_modes_decline(self):
         value = self.module.verified_portable_scalar(self.helper, self.build, 'AUTO')
         self.assertEqual(value['status'], 'legacy-auto')
