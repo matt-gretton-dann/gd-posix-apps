@@ -8,6 +8,7 @@ from pathlib import Path
 import struct
 import sys
 import tempfile
+import types
 import unittest
 from unittest import mock
 
@@ -142,6 +143,65 @@ class CodegenEvidence(unittest.TestCase):
             row = report['observations'][0]
             self.assertEqual((root / 'evidence' / row['binary']).read_bytes(), source.read_bytes())
             self.assertEqual(row['disassembly']['status'], 'unavailable')
+
+    def test_missing_or_changed_declared_inputs_are_hard_errors(self):
+        for mode in ('missing', 'changed', 'copy'):
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                source, library = root / 'binary', root / 'library.bc'
+                source.write_bytes(image())
+                library.write_bytes(b'scale=20\n')
+                entry = self.entry(source)
+                entry['input_artifacts'] = [dict(path=str(library), sha256=CG.digest(library))]
+                if mode == 'missing': library.unlink()
+                elif mode == 'changed': library.write_bytes(b'changed')
+                original_copy = CG.shutil.copyfile
+                def copy_file(src, dst):
+                    original_copy(src, dst)
+                    if mode == 'copy' and Path(src) == library:
+                        Path(dst).write_bytes(b'changed copy')
+                with mock.patch.object(CG.shutil, 'copyfile', side_effect=copy_file), \
+                        self.assertRaises(CG.CodegenError):
+                    CG.collect([entry], root / 'evidence')
+                self.assertEqual(json.loads((root / 'evidence/manifest.json').read_text())['status'], 'error')
+
+    def test_deadline_expiry_between_inspection_commands_stops_further_tools(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / 'binary'
+            source.write_bytes(image())
+            marker = root / 'second-command-ran'
+            commands = [[sys.executable, '-c', 'print("first fixture")'],
+                        [sys.executable, '-c', 'from pathlib import Path;import sys;Path(sys.argv[1]).touch()',
+                         str(marker)]]
+            clock = types.SimpleNamespace(monotonic=mock.Mock(side_effect=[0, 1, 300]))
+            with mock.patch.object(CG, 'time', clock), \
+                    mock.patch.object(CG, 'native_commands', return_value=commands):
+                report = CG.collect([self.entry(source)], root / 'evidence', deadline=300)
+            self.assertFalse(marker.exists())
+            self.assertEqual(report['status'], 'preserved')
+            native = report['observations'][0]['disassembly']
+            self.assertEqual(native['status'], 'unavailable')
+            self.assertEqual(len(native['commands']), 1)
+            self.assertIn('deadline', native['reason'])
+
+    def test_inspection_cannot_change_original_or_copied_external_inputs(self):
+        for archived in (False, True):
+            with self.subTest(archived=archived), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                source, library = root / 'binary', root / 'library.bc'
+                source.write_bytes(image())
+                library.write_bytes(b'scale=20\n')
+                entry = self.entry(source)
+                entry['input_artifacts'] = [dict(path=str(library), sha256=CG.digest(library))]
+                changed = root / 'evidence/candidate/input-0' if archived else library
+                commands = [[sys.executable, '-c',
+                             'from pathlib import Path;import sys;Path(sys.argv[1]).write_bytes(b"changed")',
+                             str(changed)]]
+                with mock.patch.object(CG, 'native_commands', return_value=commands), \
+                        self.assertRaises(CG.CodegenError):
+                    CG.collect([entry], root / 'evidence')
+                self.assertEqual(json.loads((root / 'evidence/manifest.json').read_text())['status'], 'error')
 
     def test_duplicate_versioned_role_cannot_overwrite_its_first_binary(self):
         with tempfile.TemporaryDirectory() as temporary:
