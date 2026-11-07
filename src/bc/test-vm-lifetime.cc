@@ -476,6 +476,78 @@ auto verified_activation_allocation_failures(bool typed_first) -> bool
 }
 }  // namespace
 
+#if GD_BC_EXPECT_PORTABLE_SCALAR
+namespace {
+auto portable_scalar_allocation_failures() -> bool
+{
+  auto instructions = [](std::string_view source) {
+    GD::Bc::Parser parser(
+      std::make_unique<GD::Bc::Lexer>(std::make_unique<GD::Bc::StringReader>(source)), false);
+    auto code = parser.parse();
+    if (!code)
+      throw std::logic_error("missing portable allocation-test stream");
+    if (!code->empty() && code->back().opcode() == GD::Bc::Instruction::Opcode::eof)
+      code->pop_back();
+    return *code;
+  };
+  std::size_t handled = 0;
+  std::size_t propagated = 0;
+  for (std::size_t point = 0; point < 1024; ++point) {
+    std::ostringstream output, errors;
+    GD::Bc::VM vm(output, errors, false, GD::Bc::VM::ExecutionChecks::verified);
+    auto setup = instructions("{a=7;a[0]=11;}\n");
+    if (!vm.execute(setup))
+      return false;
+    auto code = instructions(
+      "for(i=i+18446744073709551614;i<18446744073709551615;i++)s+=i\n");
+    auto query = instructions("{i;s;scale(s);a;a[0];}\n");
+    auto const before = injected_failures;
+    bool rejected = false;
+    bool completed = false;
+    {
+      AllocationFailure const failure(point);
+      try {
+        completed = vm.execute(code);
+      }
+      catch (std::bad_alloc const&) {
+        rejected = true;
+      }
+    }
+    bool const denied = injected_failures != before;
+    if (rejected) {
+      // An escaped setup failure precedes public execution. The ordinary VM
+      // remains usable, with every scalar/array still at its entry value.
+      if (!denied || !vm.execute(query) || output.str() != "0\n0\n0\n7\n11\n" ||
+          !errors.str().empty())
+        return false;
+      ++propagated;
+      output.str("");
+      output.clear();
+      if (!vm.execute(code))
+        return false;
+    }
+    else {
+      if (!completed)
+        return false;
+      handled += denied ? 1 : 0;
+    }
+    // On handled graph/conversion failures, the interpreter must replay the
+    // original state exactly once. Both i's initializer and s read old values,
+    // so an early partial publication would change these independent answers.
+    if (!vm.execute(query) || !errors.str().empty() ||
+        output.str() != "18446744073709551615\n18446744073709551614\n0\n7\n11\n")
+      return false;
+    if (!denied) {
+      std::printf("%zu portable VM allocation points: %zu handled, %zu propagated; retry/state verified\n",
+                  point, handled, propagated);
+      return !rejected;
+    }
+  }
+  return false;  // Never silently truncate the source's allocation sweep.
+}
+}  // namespace
+#endif
+
 auto main() -> int
 {
   if (!restore_nested_call_after_exception()) {
@@ -486,6 +558,12 @@ auto main() -> int
   if (!run()) {
     return 1;
   }
+#if GD_BC_EXPECT_PORTABLE_SCALAR
+  if (!portable_scalar_allocation_failures()) {
+    std::fprintf(stderr, "Portable scalar allocation failure changed public state or its retry\n");
+    return 1;
+  }
+#endif
   // Measure real ordinary allocations in this isolated executable, including
   // constructor/copy/COW arithmetic, rather than inferring them from a tag.
   if (!inline_numbers<GD::Bc::NumberTraits8>() || !inline_numbers<GD::Bc::NumberTraits16>() ||
@@ -512,6 +590,12 @@ auto main() -> int
     return 1;
   }
   auto const before = outstanding.load(std::memory_order_relaxed);
+#if GD_BC_EXPECT_PORTABLE_SCALAR
+  if (!portable_scalar_allocation_failures()) {
+    std::fprintf(stderr, "Repeated portable allocation sweep changed state or retained storage\n");
+    return 1;
+  }
+#endif
   if (!parser_allocation_failures()) {
     std::fprintf(stderr, "Repeated parser allocation sweep lost terminal state\n");
     return 1;
