@@ -67,14 +67,39 @@ def exact(actual, saved, path='summary'):
         require(type(actual) is type(saved) and actual == saved, path)
 
 
-def binaries(archive, prefix):
+def binaries(archive, prefix, roles, configuration_paths):
     report = json.loads(archive.read(prefix + 'codegen/manifest.json'))
     require(report['status'] == 'preserved', 'codegen evidence is incomplete')
-    bindings = {}
+    bindings, seen = {}, set()
     for row in report['observations']:
         name = row['name']
-        require(name not in bindings and row['status'] == 'preserved', 'duplicate/incomplete binary')
-        implementation = row['implementation']
+        require(name not in seen, 'duplicate binary role')
+        seen.add(name)
+        if name not in roles:
+            continue
+        require(row['status'] == 'preserved', 'incomplete selected binary')
+        recipe, recipe_file = None, None
+        if configuration_paths.get(name) is not None:
+            recipe_file = prefix + member(configuration_paths[name])
+            recipe_bytes = archive.read(recipe_file)
+            entries = json.loads(recipe_bytes)['implementations']
+            matches = [entry for entry in entries if entry['name'] == name]
+            require(len(matches) == 1, 'archived configuration needs exactly one matching role')
+            recipe = matches[0]
+        if 'implementation' in row:
+            implementation = row['implementation']
+            kind = 'inline codegen recipe'
+            if recipe is not None:
+                for key in ('metadata', 'argv', 'input_artifacts'):
+                    require(implementation.get(key, []) == recipe.get(key, []),
+                            'inline and archived role recipes disagree')
+        else:
+            require(recipe is not None, 'legacy codegen needs explicit archived role configuration')
+            implementation = recipe
+            kind = 'archived role configuration'
+            require(row['source_revision'] == implementation['metadata']['source_revision'],
+                    'legacy source identity mismatch')
+        require(implementation['name'] == name, 'codegen role and recipe disagree')
         raw = archive.read(prefix + 'codegen/' + member(row['binary']))
         require(digest(raw) == row['binary_sha256'] == implementation['metadata']['binary_sha256'],
                 'binary identity mismatch')
@@ -82,13 +107,17 @@ def binaries(archive, prefix):
         require(len(raw) == row['file_bytes'] and CODEGEN.pe_code(raw) == row['pe_code'],
                 'binary size/code identity mismatch')
         declared = implementation.get('input_artifacts', [])
-        require(len(declared) == len(row['input_artifacts']), 'missing external input')
-        for original, copied in zip(declared, row['input_artifacts']):
+        copied_inputs = row.get('input_artifacts', [])
+        require(len(declared) == len(copied_inputs), 'missing preserved external input copies')
+        for original, copied in zip(declared, copied_inputs):
             require(all(copied.get(k) == v for k, v in original.items()), 'input recipe mismatch')
             require(digest(archive.read(prefix + 'codegen/' + member(copied['archive_path']))) ==
                     original['sha256'], 'external input identity mismatch')
         bindings[name] = dict(implementation=implementation, sha256=digest(raw),
-                              file_bytes=len(raw), pe_code=row['pe_code'])
+                              file_bytes=len(raw), pe_code=row['pe_code'], recipe_kind=kind,
+                              recipe_file=recipe_file,
+                              recipe_file_sha256=digest(recipe_bytes) if recipe_file else None)
+    require(bindings.keys() == roles, 'missing selected binary role')
     return bindings
 
 
@@ -202,7 +231,8 @@ def stage(archive, prefix, name, control, source, bindings):
                 duration_bands={k: dict(v) for k, v in bands.items()}, controls=controls)
 
 
-def audit(path, archive_sha256, prefix, stages, control, source):
+def audit(path, archive_sha256, prefix, stages, control, source,
+          reference_config=None, control_config=None):
     require(re.fullmatch('[0-9a-f]{64}', archive_sha256) is not None, 'invalid archive digest')
     require(re.fullmatch('[0-9a-f]{40}', source) is not None, 'invalid source revision')
     raw = Path(path).read_bytes()
@@ -214,12 +244,20 @@ def audit(path, archive_sha256, prefix, stages, control, source):
     with zipfile.ZipFile(path) as archive:
         require(len(archive.namelist()) == len(set(archive.namelist())), 'duplicate archive members')
         require(archive.testzip() is None, 'archive CRC mismatch')
-        bindings = binaries(archive, prefix)
+        references = set()
+        for name in stages:
+            require(re.fullmatch(r'[A-Za-z0-9_-]+', name) is not None, 'invalid stage name')
+            references.add(json.loads(archive.read(prefix + name + '/manifest.json'))['reference'])
+        configurations = {role: reference_config for role in references}
+        configurations[control] = control_config
+        bindings = binaries(archive, prefix, references | {control}, configurations)
         results = [stage(archive, prefix, name, control, source, bindings) for name in stages]
     return dict(schema=1, source_revision=source, archive_sha256=archive_sha256,
                 auditor_sha256=digest(Path(__file__).read_bytes()), stages=results,
                 merge_eligible=False, performance_acceptance=False,
                 limits=['Descriptive intervals and duration bands; no power or causality claim',
+                        'Only selected A/A executable roles are audited; other codegen roles are not',
+                        'Only declared external inputs are checked; undeclared inputs cannot be ruled out',
                         'Stages and hosts remain separate; counts are not pooled effects',
                         'Same source or matching file length does not prove identical instructions',
                         'Byte identity does not establish equal latency or equivalence',
@@ -237,10 +275,13 @@ def main(argv=None):
     parser.add_argument('--stage', action='append', required=True)
     parser.add_argument('--control-role', required=True)
     parser.add_argument('--source', required=True)
+    parser.add_argument('--reference-config', help='explicit archived reference recipe for legacy codegen')
+    parser.add_argument('--control-config', help='explicit archived control recipe for legacy codegen')
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args(argv)
     try:
-        report = audit(args.archive, args.sha256, args.prefix, args.stage, args.control_role, args.source)
+        report = audit(args.archive, args.sha256, args.prefix, args.stage, args.control_role, args.source,
+                       args.reference_config, args.control_config)
         payload = json.dumps(report, indent=2, allow_nan=False) + '\n'
         # A previous observation is evidence; require a new path instead of replacing it.
         with args.output.open('x', encoding='utf-8') as output:

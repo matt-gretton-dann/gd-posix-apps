@@ -32,8 +32,19 @@ Source revision and corpus identities come from the explicit inputs and archive.
 The auditor does not substitute fixed cohort counts or measurement durations
 for those declared by the stage manifest.
 
-The auditor verifies archive digest/CRC, unique members, retained binary and
-external-input bytes, stage/binary metadata and argv agreement, workload and
+Older codegen manifests retain hashes and source revisions but keep full recipes
+in separate archived configurations. Supply their paths relative to the same
+evidence root, for example `--reference-config base/implementations.json
+--control-config aa/implementations.json`. Each file must contain exactly one
+matching role. The auditor verifies recipe/binary/source and stage metadata/argv
+agreement and records the recipe member and hash. It does not manufacture a
+missing inline recipe or guess configuration filenames. When both inline and
+explicit recipes exist, they must agree. Declared external inputs still require
+their actual preserved copies; absent copies are rejected, not reconstructed.
+
+The auditor verifies archive digest/CRC, unique members, the selected control
+roles' retained binary and declared external-input bytes, stage/binary metadata
+and argv agreement, workload and
 oracle hashes, uninstrumented complete role provenance, declared sample counts,
 fixed-seed sample order and stable checked-output identities. It then replays the
 complete summary using the matching local harness. The harness hash must match
@@ -41,6 +52,8 @@ the collector's native LF or Windows CRLF checkout bytes; a different harness
 revision is rejected. The only rounding tolerance is 1e-15 absolute for the
 non-decision lag-one autocorrelation diagnostic. Paired intervals must match
 exactly. Numeric stdout is not independently replayed by this tool.
+Other codegen roles remain explicitly unaudited. Neither format establishes the
+absence of inputs that were not declared by the collector.
 
 Each requested stage retains its own identities, platform, declared parameters,
 pair count, original interval, interval width, role duration medians and counts

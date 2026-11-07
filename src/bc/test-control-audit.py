@@ -154,6 +154,11 @@ class ControlAuditTests(unittest.TestCase):
     def test_legacy_records_need_explicit_archived_role_configurations(self):
         with self.assertRaisesRegex(ValueError, 'explicit archived role configuration'):
             self.run_audit(self.legacy_fixture())
+        for path in ('../base/implementations.json', '/base/implementations.json',
+                     'C:\\base\\implementations.json'):
+            with self.subTest(path=path), self.assertRaises(ValueError):
+                self.run_audit(self.legacy_fixture(), reference_config=path,
+                               control_config='aa/implementations.json')
 
     def test_legacy_recipes_are_verified_without_reconstructing_metadata(self):
         report = self.run_audit(self.legacy_fixture(), reference_config='base/implementations.json',
@@ -163,6 +168,42 @@ class ControlAuditTests(unittest.TestCase):
         self.assertEqual({i['recipe_kind'] for i in identities.values()},
                          {'archived role configuration'})
         self.assertFalse(report['merge_eligible'])
+
+    def test_legacy_recipe_mismatches_and_missing_inputs_are_rejected(self):
+        for mutation in ('hash', 'source', 'argv', 'metadata', 'duplicate', 'role', 'input'):
+            fixture = self.legacy_fixture()
+            name = 'evidence/base/implementations.json'
+            config = json.loads(fixture[4][name])
+            entry = config['implementations'][0]
+            if mutation == 'hash': entry['metadata']['binary_sha256'] = '0' * 64
+            elif mutation == 'source': entry['metadata']['source_revision'] = 'b' * 40
+            elif mutation == 'argv': entry['argv'] = ['changed']
+            elif mutation == 'metadata': entry['metadata']['configuration']['build_type'] = 'Debug'
+            elif mutation == 'duplicate': config['implementations'].append(copy.deepcopy(entry))
+            elif mutation == 'role': entry['name'] = 'other'
+            elif mutation == 'input':
+                entry['input_artifacts'] = [dict(path='/missing/library.bc', sha256='0' * 64)]
+            fixture[4][name] = json.dumps(config).encode()
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                self.run_audit(fixture, reference_config='base/implementations.json',
+                               control_config='aa/implementations.json')
+
+    def test_inline_and_archived_recipe_disagreement_is_rejected(self):
+        fixture = self.fixture()
+        entry = copy.deepcopy(fixture[0]['implementations'][0])
+        entry['argv'] = ['different']
+        fixture[4]['evidence/base/implementations.json'] = json.dumps(
+            dict(implementations=[entry])).encode()
+        with self.assertRaises(ValueError):
+            self.run_audit(fixture, reference_config='base/implementations.json')
+
+    def test_unselected_codegen_roles_are_explicitly_out_of_scope(self):
+        fixture = self.legacy_fixture()
+        fixture[3]['observations'].append(dict(name='unrelated', status='unavailable'))
+        report = self.run_audit(fixture, reference_config='base/implementations.json',
+                                control_config='aa/implementations.json')
+        self.assertEqual(set(report['stages'][0]['identities']), {'base', 'aa'})
+        self.assertTrue(any('other codegen roles are not' in item for item in report['limits']))
 
     def test_configuration_difference_remains_visible_without_a_waiver(self):
         fixture = self.fixture()
