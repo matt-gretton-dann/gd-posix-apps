@@ -357,6 +357,65 @@ An underflowed initial factor or term is therefore
 covered by the error budget even if later exact recurrence terms would grow.
 The forward recurrence reuses terms; it does not rebuild powers/factorials.
 
+### Bounded ascending pass and rounding fallback
+
+For `0 <= x <= 8` and `0 <= S <= 100`, first use `W = S+9`.
+This domain bound applies after the existing integer-order symmetry and tiny
+result tests. It is independent of benchmark names, particular arguments,
+proximity to a root or the interpreter executing the ordinary source.
+
+The same absolute propagation and input-derivative bounds above apply. A
+rational Taylor prefix with a geometric tail gives `exp(8) < 3000`.
+If `n >= max(24,4*(S+1))`, the first tiny-result test must have returned,
+since `3*x <= 24`. Thus the coefficient loop has at most
+`N = max(24,4*(S+1))-1 <= 403` iterations. This deliberately conservative
+bound does not need the second tiny-result shortcut.
+
+Every stored term's magnitude is no greater than its exact absolute term:
+all coefficient products/divisions truncate toward zero, and the stored
+squared-argument magnitude is at most `x*x/4 <= 16`. Each exact absolute
+term is part of the nonnegative double exponential sum and is below 3000.
+For term index `k >= 8`, the recurrence multiplier is at most
+`16/(k*(n+k)) <= 1/4`. After at most `2*W+8` such contractions,
+`3000/4^(2*W+8) < 10^-W` for every `W >= 9`. A stored term is a multiple
+of the working unit, so it must be zero by then. Conservatively there are
+at most `K = 2*W+16 <= 234` term steps.
+
+Each coefficient or term step introduces less than two working units.
+Each error's total absolute propagation into the infinite ascending sum is
+below `exp(x) < 3000`, as derived above. Extending an underflowed stored
+sequence with zeros introduces no further local errors: the same propagation
+bound includes the omitted exact tail. The squared-argument perturbation
+adds at most `2*3000*u`, and truncating the input adds less than `u` by the
+integer-order [Bessel integral derivative bound](https://dlmf.nist.gov/10.9.E2).
+Consequently the error before output rounding is less than
+
+```
+[1 + 2*3000*(N+K+1)] * 10^(-W)
+<= 3828001 * 10^(-9) * U
+= .003828001 * U < .004 * U.
+```
+
+The exact-rational budget test checks the exponential enclosure, all 101
+scale-dependent step bounds, contraction inequality and final error budget.
+Independent Arb enclosures additionally check 110 argument/scale combinations,
+including zero, symmetry, long fractional inputs, order/argument/scale
+boundaries, nearby Bessel roots and rounding midpoints. These finite tests
+support the implementation; the inequalities establish the domain bound.
+
+Before output rounding, compute the distance of `abs(r)` from the nearest
+half-output-unit boundary. Truncation to the output grid and the distance
+calculation use exact stored decimals. If that distance is at most `.004*U`,
+repeat the ascending recurrence at the original generic precision using the
+saved untruncated input. This retains existing near-midpoint behavior rather
+than relying on the weaker one-ULP contract to change an observed rounding.
+Otherwise the true result cannot cross the boundary: its distance exceeds
+`(.004-.003828001)*U`, far greater than the generic pass's error bound.
+The first pass and the previous algorithm therefore choose the same output
+rounding cell. Final rounding adds at most `U/2`, keeping the total below
+one output ULP. There are at most two passes; ambiguous inputs can cost extra
+work. Other arguments/scales use the original generic precision and algorithm.
+
 ## Resource limits and validation scope
 
 Working precision is a value in ordinary bc. Requests exceeding GD's
