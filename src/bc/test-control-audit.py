@@ -102,6 +102,16 @@ class ControlAuditTests(unittest.TestCase):
         options.update(kwargs)
         return AUDIT.audit(**options)
 
+    def legacy_fixture(self):
+        fixture = self.fixture()
+        for tool, observation in zip(fixture[0]['implementations'], fixture[3]['observations']):
+            fixture[4]['evidence/' + tool['name'] + '/implementations.json'] = json.dumps(
+                dict(implementations=[copy.deepcopy(tool)])).encode()
+            del observation['implementation']
+            del observation['input_artifacts']
+            observation['source_revision'] = SOURCE
+        return fixture
+
     def test_identical_bytes_do_not_erase_observed_control_bias(self):
         report = self.run_audit(self.fixture())
         stage = report['stages'][0]
@@ -140,6 +150,19 @@ class ControlAuditTests(unittest.TestCase):
     def test_missing_configuration_is_unknown_not_equal(self):
         self.assertIsNone(self.run_audit(self.fixture(configurations=False))['stages'][0][
             'declared_configurations_equal'])
+
+    def test_legacy_records_need_explicit_archived_role_configurations(self):
+        with self.assertRaisesRegex(ValueError, 'explicit archived role configuration'):
+            self.run_audit(self.legacy_fixture())
+
+    def test_legacy_recipes_are_verified_without_reconstructing_metadata(self):
+        report = self.run_audit(self.legacy_fixture(), reference_config='base/implementations.json',
+                                control_config='aa/implementations.json')
+        identities = report['stages'][0]['identities']
+        self.assertTrue(report['stages'][0]['binary_bytes_identical'])
+        self.assertEqual({i['recipe_kind'] for i in identities.values()},
+                         {'archived role configuration'})
+        self.assertFalse(report['merge_eligible'])
 
     def test_configuration_difference_remains_visible_without_a_waiver(self):
         fixture = self.fixture()
