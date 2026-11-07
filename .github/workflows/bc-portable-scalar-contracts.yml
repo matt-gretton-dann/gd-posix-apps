@@ -1,4 +1,4 @@
-name: bc portable scalar component contracts
+name: bc portable scalar VM contracts
 on:
   pull_request:
     branches: [main, 'codex/**']
@@ -11,11 +11,12 @@ concurrency:
 jobs:
   contracts:
     if: github.head_ref == 'codex/bc-666-portable-scalar'
-    name: contracts (${{ matrix.os }}, typed=${{ matrix.mode.typed }}, profile=${{ matrix.mode.profile }})
+    name: contracts (${{ matrix.os }}, typed=${{ matrix.mode.typed }}, profile=${{ matrix.mode.profile }}, extensions=${{ matrix.extensions }})
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, macos-15, windows-2025]
+        extensions: ['OFF', 'ON']
         mode:
           - {typed: 'OFF', profile: 'OFF'}
           - {typed: 'ON', profile: 'OFF'}
@@ -33,15 +34,17 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force evidence | Out-Null
           git rev-parse HEAD | Out-File evidence/revision.txt -Encoding utf8
-          'phase=standalone typed=${{ matrix.mode.typed }} profile=${{ matrix.mode.profile }}' | Out-File evidence/mode.txt -Encoding utf8
-      - name: Configure standalone component and ordinary VM contracts
+          'phase=integrated typed=${{ matrix.mode.typed }} profile=${{ matrix.mode.profile }} extensions=${{ matrix.extensions }}' | Out-File evidence/mode.txt -Encoding utf8
+      - name: Configure portable VM and ordinary contracts
         run: >-
           cmake -S . -B build-scalar -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
+          -DENABLE_NON_POSIX_EXTENSIONS=${{ matrix.extensions }}
+          -DENABLE_BC_PORTABLE_SCALAR=ON -DENABLE_BC_NATIVE_SCALAR=OFF
           -DENABLE_BC_TYPED_RESULTS=${{ matrix.mode.typed }}
           -DENABLE_BC_PROFILE=${{ matrix.mode.profile }} -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
       - name: Build exact VM, ownership and signal contracts
         run: cmake --build build-scalar --config Release --target test-libbc test-bc-signal test-bc-offsets bc --parallel 2
-      - name: Bind standalone test compilation to the immutable source
+      - name: Bind production backend compilation to the immutable source
         shell: python
         run: |
           import hashlib
@@ -52,18 +55,29 @@ jobs:
           if (build / 'compile_commands.json').is_file():
               rows = json.loads((build / 'compile_commands.json').read_text())
               component = [r for r in rows if r['file'].replace(chr(92), '/').endswith('/portable-scalar.cc')]
-              assert len(component) == 1 and 'CMakeFiles/test-libbc.dir/' in component[0]['command'].replace(chr(92), '/')
+              assert len(component) == 1 and 'CMakeFiles/libbc.dir/' in component[0]['command'].replace(chr(92), '/')
+              vm = [r for r in rows if r['file'].replace(chr(92), '/').endswith('/vm.cc')]
+              assert len(vm) == 1
+              import shlex
+              for row in (component[0], vm[0]):
+                  argv = row.get('arguments') or shlex.split(row['command'])
+                  assert '-DGD_BC_PORTABLE_SCALAR=1' in argv
+                  assert not any(a.startswith(('-UGD_BC_', '@')) for a in argv)
+                  assert not any(a.startswith('-DGD_BC_NATIVE_SCALAR') for a in argv)
               binding = dict(kind='native compiler command', component=component)
           else:
               unit = ET.parse(build / 'src/bc/test-libbc.vcxproj').getroot()
               library = ET.parse(build / 'src/bc/libbc.vcxproj').getroot()
               def includes(root):
                   return [n.attrib.get('Include', '').replace(chr(92), '/') for n in root.iter() if n.tag.rsplit('}', 1)[-1] == 'ClCompile']
-              assert sum(p.endswith('/portable-scalar.cc') for p in includes(unit)) == 1
-              assert not any(p.endswith('/portable-scalar.cc') for p in includes(library))
-              binding = dict(kind='native MSBuild projects', standalone_unit_only=True)
-          binding['scope'] = 'Standalone test component only; production does not call this executor'
-          binding['sources'] = {name: hashlib.sha256(Path('src/bc', name).read_bytes()).hexdigest() for name in ('portable-scalar.hh', 'portable-scalar.cc', 'test-portable-scalar.cc')}
+              assert not any(p.endswith('/portable-scalar.cc') for p in includes(unit))
+              assert sum(p.endswith('/portable-scalar.cc') for p in includes(library)) == 1
+              definitions = [n.text or '' for n in library.iter() if n.tag.rsplit('}', 1)[-1] == 'PreprocessorDefinitions']
+              assert definitions and all('GD_BC_PORTABLE_SCALAR=1' in d.split(';') for d in definitions)
+              assert not any('GD_BC_NATIVE_SCALAR' in d for d in definitions)
+              binding = dict(kind='native MSBuild projects', production_backend=True)
+          binding['scope'] = 'Integrated portable VM backend; Apple emitter disabled; no elapsed qualification'
+          binding['sources'] = {name: hashlib.sha256(Path('src/bc', name).read_bytes()).hexdigest() for name in ('portable-scalar.hh', 'portable-scalar.cc', 'test-portable-scalar.cc', 'test-portable-scalar-vm.cc', 'vm.cc', 'profiling.hh', 'profiling.cc')}
           Path('evidence/component-binding.json').write_text(json.dumps(binding, indent=2) + '\n')
       - name: Run complete unit semantics including portable scalar contracts
         shell: pwsh
@@ -75,12 +89,12 @@ jobs:
       - name: Check allocation recovery, CLI, interrupts and offset verification
         run: >-
           ctest --test-dir build-scalar -C Release --output-on-failure --no-tests=error
-          -R "^bc/(profiling-allocator|profiling-disabled|consumer-mode|vm-lifetime|vm-lifetime-ipo|signal-normal|signal-delivery|verifier-offsets|vm-cli)$"
+          -R "^bc/(profiling-allocator|profiling-disabled|consumer-mode|vm-lifetime|vm-lifetime-ipo|portable-scalar-allocation-fallback|signal-normal|signal-delivery|verifier-offsets|vm-cli)$"
       - name: Preserve exact mode and every outcome
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: bc-portable-scalar-${{ matrix.os }}-typed-${{ matrix.mode.typed }}-profile-${{ matrix.mode.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: bc-portable-scalar-${{ matrix.os }}-typed-${{ matrix.mode.typed }}-profile-${{ matrix.mode.profile }}-extensions-${{ matrix.extensions }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             evidence/
             build-scalar/CMakeCache.txt
