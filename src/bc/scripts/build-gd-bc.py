@@ -162,7 +162,8 @@ def profiling_execution_policy(helper, builder, root, source, build):
 
 
 def build_metadata(helper, root, source, build, revision, split, compiler_c, compiler_cxx,
-                   ipo_mode='AUTO', prepared_mode='AUTO', diagnostic_profile=False, builder=None):
+                   ipo_mode='AUTO', prepared_mode='AUTO', diagnostic_profile=False, builder=None,
+                   private_scalars_mode='AUTO'):
     cache = cache_values(build / 'CMakeCache.txt')
     for flag in ('ENABLE_BC_PROFILE', 'ENABLE_BC_COVERAGE'):
         allowed = ('ON', 'TRUE', 'YES', '1') if diagnostic_profile and flag == 'ENABLE_BC_PROFILE' else ('OFF', 'FALSE', 'NO', '0')
@@ -201,6 +202,12 @@ def build_metadata(helper, root, source, build, revision, split, compiler_c, com
         shutil.copyfile(str(build / 'gd-ipo-policy.json'), str(root / 'gd-ipo-policy.json'))
         ipo['report_sha256'] = helper.digest(root / 'gd-ipo-policy.json')
     prepared = verified_prepared_divisors(helper, build, prepared_mode)
+    private = verified_private_scalars(helper, build, private_scalars_mode)
+    if private.get('verification', {}).get('kind') == 'msbuild-projects':
+        for relative in private['verification']['files']:
+            target = root / 'private-scalars-policy' / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(str(build / relative), str(target))
     if prepared.get('verification', {}).get('kind') == 'msbuild-projects':
         for relative in prepared['verification']['files']:
             target = root / 'prepared-policy' / relative
@@ -214,6 +221,7 @@ def build_metadata(helper, root, source, build, revision, split, compiler_c, com
                               'extensions': cache.get('ENABLE_NON_POSIX_EXTENSIONS'),
                               'ipo_policy': ipo,
                               'prepared_divisors_policy': prepared,
+                              'private_scalars_policy': private,
                               'multiply_split_point': split,
                               'diagnostic_profile': diagnostic_profile,
                               'profiling_execution_policy': profiling_execution_policy(
@@ -348,6 +356,117 @@ def require_prepared_candidate(helper, entry):
         raise helper.BuildError('candidate lacks verified explicit prepared-divisor activation')
 
 
+def verified_private_scalars(helper, build, requested):
+    """Verify the presence-style VM switch, including its absent OFF mode.
+
+    Checking the cache alone accepts a -D option ignored by older sources.
+    Checking GD_BC_PRIVATE_SCALARS=0 as disabled is also wrong: the source
+    deliberately uses #if defined, so any definition activates the feature.
+    """
+    if requested not in ('AUTO', 'ON', 'OFF'):
+        raise helper.BuildError('invalid private-scalar mode')
+    cache = cache_values(build / 'CMakeCache.txt')
+    key, macro = 'ENABLE_BC_PRIVATE_SCALARS', 'GD_BC_PRIVATE_SCALARS'
+    observed = cache.get(key)
+    if observed is None:
+        if requested != 'AUTO':
+            raise helper.BuildError('source revision cannot verify the requested private-scalar mode')
+        return dict(status='legacy-auto', mode='AUTO', enabled=None,
+                    scope='source predates the explicit private-scalar option')
+    cache_text = (build / 'CMakeCache.txt').read_text(encoding='utf-8')
+    if not re.search(r'^' + key + r':BOOL=', cache_text, re.MULTILINE):
+        raise helper.BuildError('source did not declare the private-scalar option')
+    if observed.upper() not in ('ON', 'TRUE', 'YES', '1', 'OFF', 'FALSE', 'NO', '0'):
+        raise helper.BuildError('invalid configured private-scalar mode')
+    enabled = observed.upper() in ('ON', 'TRUE', 'YES', '1')
+    if requested != 'AUTO' and enabled != (requested == 'ON'):
+        raise helper.BuildError('source did not configure the requested private-scalar mode')
+    expected = ['1'] if enabled else []
+    define = re.compile(r'''(?:^|[\s"'])[-/]D\s*["']?GD_BC_PRIVATE_SCALARS\b(?:=([^\s"';]+))?''')
+    undefine = re.compile(r'''(?:^|[\s"'])[-/]U\s*["']?GD_BC_PRIVATE_SCALARS\b''')
+    commands = build / 'compile_commands.json'
+    if commands.is_file():
+        try:
+            entries = json.loads(commands.read_text(encoding='utf-8'))
+        except (ValueError, OSError) as error:
+            raise helper.BuildError('invalid private-scalar compilation database: ' + str(error))
+        if not isinstance(entries, list) or any(not isinstance(row, dict) for row in entries):
+            raise helper.BuildError('invalid private-scalar compilation inventory')
+        selected = []
+        for row in entries:
+            filename = str(row.get('file', '')).replace('\\', '/')
+            if not filename.endswith('/src/bc/vm.cc'):
+                continue
+            arguments = row.get('arguments')
+            if arguments is not None:
+                if not isinstance(arguments, list) or not all(isinstance(x, str) for x in arguments):
+                    raise helper.BuildError('invalid private-scalar compiler arguments')
+                command = ' '.join(arguments)
+            else:
+                command = row.get('command', '')
+            if not isinstance(command, str) or define.findall(command) != expected or undefine.search(command):
+                raise helper.BuildError('compiled VM disagrees with the private-scalar mode')
+            selected.append(filename)
+        if len(selected) != 1:
+            raise helper.BuildError('missing or ambiguous private-scalar VM compilation')
+        evidence = dict(kind='compile-commands', sha256=helper.digest(commands), translation_units=1)
+    else:
+        import xml.etree.ElementTree as ET
+        if not cache.get('CMAKE_GENERATOR', '').startswith('Visual Studio'):
+            raise helper.BuildError('private-scalar mode needs compile commands or native VS projects')
+        relative = 'src/bc/libbc.vcxproj'
+        path = build / relative
+        try:
+            project = ET.parse(str(path)).getroot()
+        except (ET.ParseError, OSError) as error:
+            raise helper.BuildError('cannot verify compiled private-scalar mode: ' + str(error))
+        release = False
+        vm_item = False
+        for node in project.iter():
+            tag = node.tag.rsplit('}', 1)[-1]
+            if tag == 'UndefinePreprocessorDefinitions' and macro in (node.text or ''):
+                raise helper.BuildError('project undefines the private-scalar mode')
+            if tag == 'AdditionalOptions' and (define.findall(node.text or '') or undefine.search(node.text or '')):
+                raise helper.BuildError('project options override the private-scalar mode')
+            if tag == 'PreprocessorDefinitions':
+                values = re.findall(r'(?:^|;)GD_BC_PRIVATE_SCALARS\b(?:=([^;]+))?', node.text or '')
+                if values and values != expected:
+                    raise helper.BuildError('project contradicts the private-scalar mode')
+            if tag == 'ClCompile' and node.get('Include', '').replace('\\', '/').rsplit('/', 1)[-1] == 'vm.cc':
+                vm_item = True
+                for child in node:
+                    if child.tag.rsplit('}', 1)[-1] == 'PreprocessorDefinitions':
+                        text = child.text or ''
+                        values = re.findall(r'(?:^|;)GD_BC_PRIVATE_SCALARS\b(?:=([^;]+))?', text)
+                        if values != expected and '%(PreprocessorDefinitions)' not in text:
+                            raise helper.BuildError('VM item overrides the private-scalar mode')
+            if tag != 'ItemDefinitionGroup':
+                continue
+            condition = node.get('Condition', '')
+            if condition and not re.search(r'Release\|', condition, re.IGNORECASE):
+                continue
+            for definition in node.iter():
+                if definition.tag.rsplit('}', 1)[-1] == 'PreprocessorDefinitions':
+                    values = re.findall(r'(?:^|;)GD_BC_PRIVATE_SCALARS\b(?:=([^;]+))?', definition.text or '')
+                    if values != expected:
+                        raise helper.BuildError('Release project disagrees with the private-scalar mode')
+                    release = True
+        if not release or not vm_item:
+            raise helper.BuildError('Release project lacks private-scalar definition evidence')
+        evidence = dict(kind='msbuild-projects', files={relative: helper.digest(path)},
+                        retained_root='private-scalars-policy')
+    return dict(status='recorded', mode=requested, enabled=enabled, verification=evidence)
+
+
+def require_private_scalars_candidate(helper, entry):
+    metadata = entry.get('metadata') if isinstance(entry, dict) else None
+    config = metadata.get('configuration') if isinstance(metadata, dict) else None
+    policy = config.get('private_scalars_policy') if isinstance(config, dict) else None
+    if (not isinstance(policy, dict) or policy.get('status') != 'recorded' or
+            policy.get('mode') != 'ON' or policy.get('enabled') is not True):
+        raise helper.BuildError('candidate lacks verified explicit private-scalar activation')
+
+
 def verified_array_layout(helper, build, requested):
     """Do not accept a cache variable ignored by an older source revision."""
     observed = cache_values(build / 'CMakeCache.txt').get('BC_ARRAY_STORAGE', 'hybrid')
@@ -391,6 +510,8 @@ def main():
                         help='automatic IPO policy; explicit modes require source support')
     parser.add_argument('--prepared-divisors', choices=('AUTO', 'ON', 'OFF'), default='AUTO',
                         help='VM divisor reuse policy; explicit modes require compiled source support')
+    parser.add_argument('--private-scalars', choices=('AUTO', 'ON', 'OFF'), default='AUTO',
+                        help='private scalar activations; explicit modes require compiled source support')
     parser.add_argument('--preparsed-library', action='store_true',
                         help='enable and retain the generated math-library image')
     parser.add_argument('--array-storage', choices=('hybrid', 'paged', 'flat', 'hash', 'ordered'),
@@ -439,6 +560,8 @@ def main():
             configure += ['-DBC_ARRAY_STORAGE=' + args.array_storage]
         if args.prepared_divisors != 'AUTO':
             configure += ['-DENABLE_BC_PREPARED_DIVISORS=' + args.prepared_divisors]
+        if args.private_scalars != 'AUTO':
+            configure += ['-DENABLE_BC_PRIVATE_SCALARS=' + args.private_scalars]
         if args.preparsed_library:
             configure += ['-DENABLE_BC_PREPARSED_LIBRARY=ON']
         if args.ipo_mode != 'AUTO':
@@ -457,7 +580,8 @@ def main():
             raise helper.BuildError('build did not produce the expected bc executable')
         metadata = build_metadata(helper, root, source, build, actual, args.split_point,
                                   compiler_c, compiler_cxx, args.ipo_mode, args.prepared_divisors,
-                                  diagnostic_profile=args.diagnostic_profile, builder=builder)
+                                  diagnostic_profile=args.diagnostic_profile, builder=builder,
+                                  private_scalars_mode=args.private_scalars)
         observed_layout = verified_array_layout(helper, build, args.array_storage)
         metadata['configuration']['array_storage'] = observed_layout
         image = build / 'src/bc/bc-math-library-image.inc'

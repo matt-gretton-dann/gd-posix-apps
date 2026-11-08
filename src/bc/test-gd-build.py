@@ -34,10 +34,11 @@ class GdBuild(unittest.TestCase):
         (self.build / 'compile_commands.json').write_text(json.dumps([
             {'command': 'c++ -O3 -DNDEBUG -std=c++20 -c source.cc'}]))
 
-    def metadata(self, prepared_mode='AUTO'):
+    def metadata(self, prepared_mode='AUTO', private_mode='AUTO'):
         return self.module.build_metadata(self.helper, self.root, self.root / 'source',
                                            self.build, 'a' * 40, 126,
-                                           {'version': 'C'}, {'version': 'C++'}, prepared_mode=prepared_mode)
+                                           {'version': 'C'}, {'version': 'C++'}, prepared_mode=prepared_mode,
+                                           private_scalars_mode=private_mode)
 
     def test_records_compiled_threshold_and_commands(self):
         value = self.metadata()
@@ -48,6 +49,79 @@ class GdBuild(unittest.TestCase):
                          (self.build / 'compile_commands.json').read_bytes())
         self.assertFalse(value['instrumented'])
         self.assertEqual(value['configuration']['ipo_policy']['status'], 'legacy-auto')
+
+    def private_policy(self, mode='AUTO'):
+        return self.module.verified_private_scalars(self.helper, self.build, mode)
+
+    def private_fixture(self, enabled, command=None):
+        self.cache.write_text(self.cache.read_text() +
+                              'ENABLE_BC_PRIVATE_SCALARS:BOOL=' + ('ON' if enabled else 'OFF') + '\n')
+        command = command or ('c++ -c vm.cc' + (' -DGD_BC_PRIVATE_SCALARS=1' if enabled else ''))
+        (self.build / 'compile_commands.json').write_text(json.dumps([
+            dict(file='/checkout/src/bc/vm.cc', command=command)]))
+
+    def test_private_scalars_require_declared_and_compiled_activation(self):
+        self.assertEqual(self.private_policy()['status'], 'legacy-auto')
+        for mode in ('ON', 'OFF', 'bad'):
+            with self.subTest(mode=mode), self.assertRaises(self.helper.BuildError):
+                self.private_policy(mode)
+        self.private_fixture(True)
+        self.assertTrue(self.private_policy('ON')['enabled'])
+        self.assertEqual(self.metadata()['configuration']['private_scalars_policy']['status'], 'recorded')
+        with self.assertRaises(self.helper.BuildError):
+            self.private_policy('OFF')
+
+    def test_private_scalars_disabled_means_absent_not_defined_zero(self):
+        self.private_fixture(False)
+        self.assertFalse(self.private_policy('OFF')['enabled'])
+        for flag in ('-DGD_BC_PRIVATE_SCALARS=0', '-DGD_BC_PRIVATE_SCALARS',
+                     '/DGD_BC_PRIVATE_SCALARS=1', '-UGD_BC_PRIVATE_SCALARS'):
+            with self.subTest(flag=flag):
+                (self.build / 'compile_commands.json').write_text(json.dumps([
+                    dict(file='/checkout/src/bc/vm.cc', command='c++ -c vm.cc '+flag)]))
+                with self.assertRaises(self.helper.BuildError): self.private_policy('OFF')
+
+    def test_private_scalars_reject_ignored_option_and_missing_or_ambiguous_vm(self):
+        self.private_fixture(True)
+        for rows in ([], [dict(file='/checkout/src/bc/bc.cc', command='c++ -DGD_BC_PRIVATE_SCALARS=1')],
+                     [dict(file='/checkout/src/bc/vm.cc', command='c++ -c vm.cc')],
+                     [dict(file='/checkout/src/bc/vm.cc', command='c++ -DGD_BC_PRIVATE_SCALARS=1')]*2):
+            (self.build / 'compile_commands.json').write_text(json.dumps(rows))
+            with self.assertRaises(self.helper.BuildError): self.private_policy('ON')
+        self.cache.write_text(self.cache.read_text().replace(':BOOL=ON', ':UNINITIALIZED=ON'))
+        with self.assertRaises(self.helper.BuildError): self.private_policy('ON')
+
+    def test_private_scalars_verify_native_release_and_vm_item(self):
+        self.private_fixture(True)
+        (self.build / 'compile_commands.json').unlink()
+        self.cache.write_text(self.cache.read_text()+'CMAKE_GENERATOR:INTERNAL=Visual Studio 18 2026\n')
+        project = self.build / 'src/bc/libbc.vcxproj'
+        text = '''<Project><ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+          <ClCompile><PreprocessorDefinitions>GD_BC_PRIVATE_SCALARS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile>
+          </ItemDefinitionGroup><ItemGroup><ClCompile Include="source/src/bc/vm.cc" /></ItemGroup></Project>'''
+        project.write_text(text)
+        policy = self.private_policy('ON')
+        self.assertEqual(policy['verification']['kind'], 'msbuild-projects')
+        metadata = self.metadata(private_mode='ON')
+        retained = self.root / 'private-scalars-policy/src/bc/libbc.vcxproj'
+        self.assertEqual(retained.read_bytes(), project.read_bytes())
+        self.assertEqual(metadata['configuration']['private_scalars_policy'], policy)
+        for bad in (text.replace('GD_BC_PRIVATE_SCALARS=1', 'GD_BC_PRIVATE_SCALARS=0'),
+                    text.replace('source/src/bc/vm.cc', 'source/src/bc/other.cc'),
+                    text.replace('Include="source/src/bc/vm.cc" />',
+                                 'Include="source/src/bc/vm.cc"><PreprocessorDefinitions>OTHER=1</PreprocessorDefinitions></ClCompile>')):
+            project.write_text(bad)
+            with self.assertRaises(self.helper.BuildError): self.private_policy('ON')
+
+    def test_private_scalar_candidate_cannot_use_unknown_or_disabled_policy(self):
+        for policy in (None, {}, dict(status='legacy-auto', mode='AUTO', enabled=None),
+                       dict(status='recorded', mode='ON', enabled=False),
+                       dict(status='recorded', mode='AUTO', enabled=True)):
+            with self.subTest(policy=policy), self.assertRaises(self.helper.BuildError):
+                self.module.require_private_scalars_candidate(self.helper,
+                    dict(metadata=dict(configuration=dict(private_scalars_policy=policy))))
+        self.module.require_private_scalars_candidate(self.helper,
+            dict(metadata=dict(configuration=dict(private_scalars_policy=dict(status='recorded', mode='ON', enabled=True)))))
 
     def test_missing_profile_policy_evidence_is_not_mislabeled_disabled(self):
         policy = self.metadata()['configuration']['profiling_execution_policy']
