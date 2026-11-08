@@ -308,7 +308,8 @@ private:
 
 #if defined(GD_BC_NATIVE_FUNCTIONS)
   // Cache only code derived from this immutable definition. Replacing a
-  // function releases its executable page; failed allocations can be retried.
+  // function discards its page and cached rejection state. Failed allocations
+  // and executable-memory publication can be retried.
   GD_BC_LEAF_NOINLINE auto native_leaf(VariableMask locals) -> NativeExpression const*;
   std::shared_ptr<NativeExpression const> native_leaf_;
   bool native_leaf_rejected_ = false;
@@ -1109,7 +1110,11 @@ auto GD::Bc::Details::FunctionCode::native_leaf(VariableMask locals) -> NativeEx
       auto const result = operand(instruction.op1());
       if (result < 0)
         return reject();
-      native_leaf_ = NativeExpression::compile(operations, static_cast<std::uint8_t>(result));
+      auto failure = NativeExpression::Failure::unavailable;
+      native_leaf_ =
+        NativeExpression::compile(operations, static_cast<std::uint8_t>(result), &failure);
+      if (failure == NativeExpression::Failure::unsupported)
+        return reject();
       return native_leaf_.get();
     }
     default:

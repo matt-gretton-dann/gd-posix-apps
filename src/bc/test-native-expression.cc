@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <limits>
 #include <random>
+#include <span>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -24,8 +25,10 @@ TEST_CASE("Cached native expressions preserve input and exact results", "[bc][na
 {
   std::array<Op, 4> const square{
     {{K::argument}, {K::multiply, 0, 0}, {K::constant, 0, 0, 1}, {K::add, 1, 2}}};
-  auto code = NativeExpression::compile(square, 3);
+  auto failure = NativeExpression::Failure::unsupported;
+  auto code = NativeExpression::compile(square, 3, &failure);
   REQUIRE(code);
+  CHECK(failure == NativeExpression::Failure::none);
   CHECK_FALSE(code->code_bytes().empty());
   for (std::uint64_t x :
        {0ULL, 1ULL, 2ULL, 19ULL, 65535ULL, 200000ULL, 999999999ULL, 3037000499ULL}) {
@@ -90,16 +93,22 @@ TEST_CASE("Native expression signed bounds decline before publication", "[bc][na
 
 TEST_CASE("Native expression limits retain generic fallback", "[bc][native-expression]")
 {
-  CHECK_FALSE(NativeExpression::compile({}, 0));
+  auto rejects_permanently = [](std::span<Op const> operations, std::uint8_t result) {
+    auto failure = NativeExpression::Failure::none;
+    auto code = NativeExpression::compile(operations, result, &failure);
+    CHECK(failure == NativeExpression::Failure::unsupported);
+    return !code;
+  };
+  CHECK(rejects_permanently({}, 0));
   std::array<Op, 1> const forward{{{K::add, 0, 0}}};
-  CHECK_FALSE(NativeExpression::compile(forward, 0));
+  CHECK(rejects_permanently(forward, 0));
   std::array<Op, 1> const unknown{{{static_cast<K>(255)}}};
-  CHECK_FALSE(NativeExpression::compile(unknown, 0));
+  CHECK(rejects_permanently(unknown, 0));
   std::array<Op, 1> const constant{
     {{K::constant, 0, 0, std::numeric_limits<std::uint64_t>::max()}}};
-  CHECK_FALSE(NativeExpression::compile(constant, 0));
+  CHECK(rejects_permanently(constant, 0));
   std::vector<Op> too_large(65, Op{K::argument});
-  CHECK_FALSE(NativeExpression::compile(too_large, 0));
+  CHECK(rejects_permanently(too_large, 0));
   // Six simultaneously live constants exceed the five-register leaf budget.
   // A fallback is required rather than an unrecorded spill/stack frame.
   std::array<Op, 11> const pressure{{{K::constant, 0, 0, 1},
@@ -113,7 +122,7 @@ TEST_CASE("Native expression limits retain generic fallback", "[bc][native-expre
                                      {K::add, 4, 5},
                                      {K::add, 6, 7},
                                      {K::add, 9, 8}}};
-  CHECK_FALSE(NativeExpression::compile(pressure, 10));
+  CHECK(rejects_permanently(pressure, 10));
 }
 
 TEST_CASE("Native expression DAGs agree with checked integer oracles", "[bc][native-expression]")

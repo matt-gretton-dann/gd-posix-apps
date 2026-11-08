@@ -27,8 +27,11 @@ struct NativeExpressionOp
 class NativeExpression
 {
 public:
-  static auto compile(std::span<NativeExpressionOp const> operations, std::uint8_t result)
-    -> std::shared_ptr<NativeExpression const>;
+  enum class Failure { none, unsupported, unavailable };
+  // Unsupported plans can be cached for this immutable definition. Resource
+  // unavailability must remain retryable. When supplied, failure is always set.
+  static auto compile(std::span<NativeExpressionOp const> operations, std::uint8_t result,
+                      Failure* failure = nullptr) -> std::shared_ptr<NativeExpression const>;
   ~NativeExpression();
   NativeExpression(NativeExpression const&) = delete;
   auto operator=(NativeExpression const&) -> NativeExpression& = delete;

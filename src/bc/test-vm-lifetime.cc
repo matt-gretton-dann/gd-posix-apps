@@ -570,15 +570,17 @@ auto native_leaf_allocation_failures() -> bool
   for (std::size_t offset = 0; offset != 128; ++offset) {
     auto const failures = injected_failures;
     std::shared_ptr<NativeExpression const> code;
+    auto failure = NativeExpression::Failure::none;
     try {
       AllocationFailure const fault(offset);
-      code = NativeExpression::compile(square, 3);
+      code = NativeExpression::compile(square, 3, &failure);
     }
     catch (std::bad_alloc const&) {
       return false;  // An optional compiler must decline without consuming input.
     }
     bool const injected = injected_failures != failures;
-    if ((injected && code) || (!injected && !correct(code)))
+    if ((injected && (code || failure != NativeExpression::Failure::unavailable)) ||
+        (!injected && (!correct(code) || failure != NativeExpression::Failure::none)))
       return false;
     code.reset();
     if (outstanding.load(std::memory_order_relaxed) != live ||
@@ -590,6 +592,50 @@ auto native_leaf_allocation_failures() -> bool
     }
   }
   return false;
+}
+
+auto native_leaf_rejection_cache() -> bool
+{
+  using namespace GD::Bc;
+  auto parse = [](std::string const& text) {
+    Parser parser(std::make_unique<Lexer>(std::make_unique<StringReader>(text)), false);
+    return parser.parse();
+  };
+  std::ostringstream output, errors;
+  VM vm(output, errors, true, VM::ExecutionChecks::verified);
+  // Six pending constants exceed either backend's five temporary registers.
+  // The generic arithmetic and all results still fit inline Number storage.
+  auto setup = parse("define f(y) {\nreturn(1+(2+(3+(4+(5+(6+y))))))\n}\n");
+  auto one = parse("n=1\n");
+  auto eight = parse("n=8\n");
+  auto calls = parse("i=0\nwhile(i<n) {\nq=f(0)\ni=i+1\n}\n");
+  auto query = parse("q\n");
+  if (!setup || !one || !eight || !calls || !query || vm.execute(*setup) || vm.execute(*eight) ||
+      vm.execute(*calls) || vm.execute(*calls))
+    return false;
+  auto measure = [&]() {
+    auto const before = allocation_calls.load(std::memory_order_relaxed);
+    bool const quit = vm.execute(*calls);
+    return std::make_pair(quit, allocation_calls.load(std::memory_order_relaxed) - before);
+  };
+  if (vm.execute(*one))
+    return false;
+  auto const short_run = measure();
+  if (vm.execute(*eight))
+    return false;
+  auto const long_run = measure();
+  if (short_run.first || long_run.first || short_run.second != long_run.second ||
+      vm.execute(*query) || output.str() != "21\n" || !errors.str().empty()) {
+    std::fprintf(stderr, "Native leaf rejection repeated allocation work: one=%zu eight=%zu\n",
+                 short_run.second, long_run.second);
+    return false;
+  }
+  // A new immutable definition must not inherit the old rejection.
+  std::fprintf(stdout, "Native leaf rejected-call allocation control: one=%zu eight=%zu\n",
+               short_run.second, long_run.second);
+  auto replacement = parse("define f(y) {\nreturn(y+1)\n}\n");
+  return replacement && !vm.execute(*replacement) && !vm.execute(*calls) && !vm.execute(*query) &&
+         output.str() == "21\n1\n" && errors.str().empty();
 }
 
 auto native_leaf_call_failures() -> bool
@@ -670,6 +716,10 @@ auto main() -> int
     return 1;
   }
 #if defined(GD_BC_TEST_NATIVE_FUNCTIONS)
+  if (!native_leaf_rejection_cache()) {
+    std::fprintf(stderr, "Native leaf permanent rejection was not cached\n");
+    return 1;
+  }
   if (!native_leaf_call_failures()) {
     std::fprintf(stderr, "Native leaf call allocation failure damaged arguments or retry\n");
     return 1;
