@@ -58,6 +58,10 @@ if(ENABLE_NON_POSIX_EXTENSIONS)
   target_compile_definitions(bc-language-mode INTERFACE ENABLE_EXTENSIONS=1)
 endif()
 option(ENABLE_BC_STACK_EXECUTION "Enable experimental scalar operand-stack execution" OFF)
+option(ENABLE_BC_PRIVATE_SCALARS "Enable experimental lazy private scalar activations" OFF)
+if(ENABLE_BC_PRIVATE_SCALARS)
+  target_compile_definitions(libbc PRIVATE GD_BC_PRIVATE_SCALARS=1)
+endif()
 if(ENABLE_BC_STACK_EXECUTION)
   target_sources(libbc PRIVATE stack-execution.cc)
   target_compile_definitions(libbc PRIVATE GD_BC_STACK_EXECUTION=1)
@@ -153,6 +157,7 @@ if(RUN_UNIT_TESTS)
   set_warnings(test-libbc)
   target_sources(test-libbc PRIVATE
                  test-array-storage.cc
+                 test-scalar-activation.cc
                  test-execution-plan.cc
                  test-benchmark-support.cc
                  test-format.cc
@@ -183,6 +188,8 @@ if(RUN_UNIT_TESTS)
                  test-vm-arrays.cc
                  test-vm-execution.cc
                  test-verification.cc)
+  target_compile_definitions(test-libbc PRIVATE
+    GD_BC_EXPECT_PRIVATE_SCALARS=$<BOOL:${ENABLE_BC_PRIVATE_SCALARS}>)
   target_add_clang_format(test-libbc)
   add_executable(test-bc-signal test-vm-signal.cc)
   target_link_libraries(test-bc-signal PRIVATE libbc)

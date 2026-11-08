@@ -392,6 +392,46 @@ auto restore_call_after_allocation_failure() -> bool
   return false;  // Require a complete sweep of call setup and execution.
 }
 
+auto restore_private_call_after_allocation_failure() -> bool
+{
+  auto parse = [](std::string const& text) {
+    GD::Bc::Parser parser(
+      std::make_unique<GD::Bc::Lexer>(std::make_unique<GD::Bc::StringReader>(text)), false);
+    return parser.parse();
+  };
+  bool observed_failure = false;
+  for (std::size_t point = 0; point != 256; ++point) {
+    std::ostringstream output, errors;
+    GD::Bc::VM vm(output, errors, true, GD::Bc::VM::ExecutionChecks::verified);
+    auto setup = parse("x=17\ny=23\nz=99\nscale=2\n"
+                       "define f(x) {\nauto y,z\nscale=7\nif(x==0) return(z)\n"
+                       "y=x\nz=f(x-1)\nreturn(y+z)\n}\n");
+    auto call = parse("q=f(20)\n");
+    auto query = parse("x\ny\nz\nscale\n");
+    auto result = parse("q\n");
+    if (!setup || !call || !query || !result || vm.execute(*setup))
+      return false;
+    auto const before = injected_failures;
+    bool threw = false;
+    try {
+      AllocationFailure const failure(point);
+      if (vm.execute(*call))
+        return false;
+    }
+    catch (std::bad_alloc const&) {
+      threw = true;
+      observed_failure = true;
+    }
+    if (threw != (injected_failures != before) || vm.execute(*query) ||
+        output.str() != "17\n23\n99\n2\n" || (threw && vm.execute(*call)) || vm.execute(*result) ||
+        output.str() != "17\n23\n99\n2\n210\n" || !errors.str().empty())
+      return false;
+    if (!threw)
+      return observed_failure;
+  }
+  return false;
+}
+
 auto run() -> bool
 {
   std::ostringstream output;
@@ -511,6 +551,10 @@ auto main() -> int
     std::fprintf(stderr, "Allocation failure damaged an active call or its retry\n");
     return 1;
   }
+  if (!restore_private_call_after_allocation_failure()) {
+    std::fprintf(stderr, "Private scalar allocation failure damaged recursive activation state\n");
+    return 1;
+  }
   auto const before = outstanding.load(std::memory_order_relaxed);
   if (!parser_allocation_failures()) {
     std::fprintf(stderr, "Repeated parser allocation sweep lost terminal state\n");
@@ -527,6 +571,10 @@ auto main() -> int
   }
   if (!restore_call_after_allocation_failure()) {
     std::fprintf(stderr, "Repeated call allocation sweep damaged recovery\n");
+    return 1;
+  }
+  if (!restore_private_call_after_allocation_failure()) {
+    std::fprintf(stderr, "Repeated private scalar failure sweep damaged recovery\n");
     return 1;
   }
   if (!native_sqrt_scale_boundary<GD::Bc::NumberTraits16>() ||

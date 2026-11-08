@@ -45,3 +45,42 @@ behavior. The [acceptance report](bc-208-frames/accepted-native/README.md) recor
 the decision to retain host recursion, complete native evidence and limitations.
 Deep-recursion limits remain #184 work; retaining capacity does not establish a
 new recursion-depth guarantee.
+
+## Experimental private scalar activations
+
+`ENABLE_BC_PRIVATE_SCALARS=ON` enables an unqualified #207 experiment; its
+default is OFF on every platform. Verified functions may use private cells
+when all ordinary scalar references belong to their parameter/auto mask,
+there are no arrays or output, and every outgoing call is self-recursion.
+Special registers remain VM state and retain the existing saved-specials
+contract. The eligibility proof is cached with the prepared definition and
+is replaced with that definition. Full checks, the optional operand-stack
+engine and ineligible bodies use ordinary dynamic bindings.
+
+Eligible activations leave global bindings untouched. Their scalar cells
+start empty and read as exact zero; the first write constructs a Number.
+Incoming arguments retain their existing evaluation order, pack ownership
+and snapshot behavior. The existing fused scalar prologue writes the private
+parameter cell when applicable. This experiment does not bypass argument
+staging or borrow pointers into the growable argument vector.
+
+A VM-owned arena supplies contiguous slices from stable 32-cell chunks.
+Nested calls can grow the chunk list without moving active cells. Leases
+clear their owned values and restore the cursor in LIFO order on both normal
+return and exceptions. Chunks retain the largest simultaneous chunk demand
+until VM destruction, including end-of-chunk padding; they do not retain a
+maximum frame for each historical depth. Allocation counters include arena
+chunks and their directory under `frames`, and proof metadata under
+`execution_plans`. `private_scalar_calls` counts successful lease acquisitions
+in separate profiling builds; it does not establish identical ordinary and
+profiled machine paths or a speedup.
+
+The proof deliberately excludes calls to unrelated functions because bc uses
+dynamic bindings: a callee could otherwise observe a caller's unpublished
+auto. Such bodies, free-variable accesses, arrays and output remain on the
+generic path. The option adds an active-frame check to scalar access, so it
+can slow unrelated programs even when they never use private storage.
+Recursion still uses the host stack. This prototype has no performance
+acceptance or new supported recursion-depth claim. Adoption requires complete
+native correctness, elapsed, startup and resource evidence for both eligible
+and fallback workloads.

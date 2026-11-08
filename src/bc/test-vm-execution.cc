@@ -94,6 +94,36 @@ auto expression(std::mt19937& rng, unsigned depth, GD::Bc::Instructions& code) -
 }
 }  // namespace
 
+TEST_CASE("Closed scalar recursion preserves locals and nested argument snapshots",
+          "[bc][vm][execution][private-scalars]")
+{
+  using namespace GD::Bc;
+  std::string body;
+  for (unsigned i = 0; i != 64; ++i)
+    body += "t=0\n";
+  std::string const source = "x=99\nt=88\nz=77\n"
+                             "define f(x) {\nauto t,z\n" +
+                             body +
+                             "if(x==0) return(z)\n"
+                             "t=x\nz=f(x-1)+f(0)\nreturn(t+z)\n}\n"
+                             "f(40)\nf(f(2))\nx\nt\nz\n"
+                             // A free binding and a non-self call force the ordinary dynamic path.
+                             "define g(t) {\nreturn(t+z)\n}\n"
+                             "define h(z) {\nreturn(g(1))\n}\nh(7)\nz\n";
+  Parser parser(std::make_unique<Lexer>(std::make_unique<StringReader>(source)), false);
+  auto code = parser.parse();
+  REQUIRE(code != nullptr);
+#if GD_BC_PROFILE
+  auto const before = GD::Bc::Profile::snapshot();
+#endif
+  CHECK(execute(*code, true) == "820\n6\n99\n88\n77\n8\n77\n");
+#if GD_BC_PROFILE
+  auto const after = GD::Bc::Profile::snapshot();
+  auto const index = static_cast<std::size_t>(GD::Bc::Profile::Event::private_scalar_calls);
+  CHECK(after.events[index] - before.events[index] == (GD_BC_EXPECT_PRIVATE_SCALARS ? 93U : 0U));
+#endif
+}
+
 TEST_CASE("VM binary opcodes agree with native integer arithmetic", "[bc][vm][execution]")
 {
   for (int64_t lhs = -4; lhs <= 4; ++lhs) {

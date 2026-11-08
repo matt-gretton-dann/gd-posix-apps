@@ -24,6 +24,10 @@
 #include "number.hh"
 #include "verification.hh"
 
+#if defined(GD_BC_PRIVATE_SCALARS)
+#  include "scalar-activation.hh"
+#endif
+
 #if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
 #  include "stack-execution.hh"
 #endif
@@ -331,8 +335,24 @@ private:
   {
     ConsumptionPlan consumption;
     ExecutionLayout layout;
+#if defined(GD_BC_PRIVATE_SCALARS)
+    // Immutable proof metadata may be shared when verified definitions copy.
+    std::shared_ptr<PrivateScalarPlan const> private_scalars;
+#endif
 #if !GD_BC_PROFILE && !defined(_WIN32)
     std::optional<Variable> scalar_parameter;
+#endif
+#if defined(GD_BC_PRIVATE_SCALARS)
+    Plans() = default;
+    Plans(ConsumptionPlan c, ExecutionLayout l, std::optional<Variable> parameter = std::nullopt)
+        : consumption(std::move(c)), layout(std::move(l))
+    {
+#  if !GD_BC_PROFILE && !defined(_WIN32)
+      scalar_parameter = parameter;
+#  else
+      (void)parameter;
+#  endif
+    }
 #endif
   };
   inline static Plans const empty_plans_{};
@@ -593,6 +613,10 @@ private:
     ++operand_depth_;
     return stack;
   }
+#endif
+#if defined(GD_BC_PRIVATE_SCALARS)
+  ScalarActivationArena scalar_activations_;
+  PrivateScalarFrame* private_scalars_ = nullptr;
 #endif
 };
 
@@ -1072,6 +1096,29 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
   }
 #endif
 
+#if defined(GD_BC_PRIVATE_SCALARS)
+  std::optional<ScalarActivationArena::Lease> private_lease;
+  PrivateScalarFrame private_frame{};
+  auto* const previous_private = private_scalars_;
+  auto& prepared = std::get<0>(def).prepared_;
+  if (!use_source) {
+    if (!prepared->private_scalars) {
+      prepared->private_scalars =
+        GD_BC_PROFILE_SHARED(Profile::AllocationKind::execution_plans, PrivateScalarPlan)(
+          plan_private_scalars(std::get<0>(def).instructions_, locals, func));
+    }
+    auto const& plan = *prepared->private_scalars;
+    if (plan.eligible) {
+      private_lease.emplace(scalar_activations_, plan.count);
+      GD_BC_PROFILE_EVENT(Profile::Event::private_scalar_calls, 1);
+      private_frame = {&plan, private_lease->cells()};
+      // No eligible body can call an unrelated body that observes its locals.
+      // Leave the ordinary dynamic bindings untouched throughout this call.
+      locals = VariableMask{};
+    }
+  }
+#endif
+
   // Retain offsets rather than references across execute(): recursive calls
   // may grow the same buffer. Capacity remains available after restoration.
   auto const saved_begin = saved_locals_.size();
@@ -1079,6 +1126,9 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
   auto const saved_ibase = ibase_;
   auto const saved_obase = obase_;
   auto restore = [&](bool partial) noexcept {
+#if defined(GD_BC_PRIVATE_SCALARS)
+    private_scalars_ = previous_private;
+#endif
     auto saved = saved_begin;
     auto const end = saved_locals_.size();
     // Allocation can fail during frame setup. In that case restore only the
@@ -1102,6 +1152,10 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
   };
 
   try {
+#if defined(GD_BC_PRIVATE_SCALARS)
+    if (private_lease)
+      private_scalars_ = &private_frame;
+#endif
     locals.for_each_variable([this](Letter l) {
       saved_locals_.emplace_back(std::move(variables_.at(static_cast<unsigned>(l))));
       variables_.at(static_cast<unsigned>(l)) = Number(0);
@@ -1136,13 +1190,31 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
 #if !GD_BC_PROFILE
     if (start != 0 && !have_been_interrupted.test(std::memory_order_relaxed)) {
 #  if GD_BC_FORWARD_SCALAR_ARGUMENT
-      auto& variable = variables_.at(static_cast<unsigned>(parameter->get()));
-      if (argument != nullptr)
-        variable = *argument;
-      else
-        variable = pop_param();
+#      if defined(GD_BC_PRIVATE_SCALARS)
+      if (private_lease) {
+        auto& value = private_frame.cell(*parameter);
+        if (argument != nullptr)
+          value.emplace(*argument);
+        else
+          value.emplace(pop_param());
+      }
+      else {
+#      endif
+        auto& variable = variables_.at(static_cast<unsigned>(parameter->get()));
+        if (argument != nullptr)
+          variable = *argument;
+        else
+          variable = pop_param();
+#      if defined(GD_BC_PRIVATE_SCALARS)
+      }
+#      endif
 #  else
-      variables_.at(static_cast<unsigned>(parameter->get())) = pop_param();
+#      if defined(GD_BC_PRIVATE_SCALARS)
+      if (private_lease)
+        private_frame.cell(*parameter).emplace(pop_param());
+      else
+#      endif
+        variables_.at(static_cast<unsigned>(parameter->get())) = pop_param();
 #  endif
       if (!have_been_interrupted.test(std::memory_order_relaxed)) {
         pop_param_pack();
@@ -1216,11 +1288,25 @@ auto GD::Bc::Details::VMState::array_element(ArrayElement const& ae) const -> GD
 
 auto GD::Bc::Details::VMState::variable(Variable v) const -> GD::Bc::Number const&
 {
+#if defined(GD_BC_PRIVATE_SCALARS)
+  if (private_scalars_ != nullptr)
+    return private_scalars_->read(v);
+#endif
   return variables_.at(static_cast<unsigned>(v.get()));
 }
 
 void GD::Bc::Details::VMState::variable(Variable v, Number const& num)
 {
+#if defined(GD_BC_PRIVATE_SCALARS)
+  if (private_scalars_ != nullptr) {
+    auto& value = private_scalars_->cell(v);
+    if (value)
+      *value = num;
+    else
+      value.emplace(num);
+    return;
+  }
+#endif
   variables_.at(static_cast<unsigned>(v.get())) = num;
 }
 
