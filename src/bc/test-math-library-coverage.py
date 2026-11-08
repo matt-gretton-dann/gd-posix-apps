@@ -83,6 +83,21 @@ def main():
     hankel = next(case for case in cases
                   if case['id'] == 'j-argument-dominates' and case['scale'] == 100)
     cases.append(dict(hankel, scale=55))
+    # Exact alternating enclosures straddle a scale-zero rounding midpoint.
+    # They exercise the bounded ascending-series precision retry, including
+    # the second pass, without adding production instrumentation or hooks.
+    for argument in ('1.52114405766876514815130187',
+                     '1.52114405766876514815130188'):
+        x = Fraction(argument)
+        term = partial = Fraction(1)
+        for k in range(1, 40):
+            term *= -x*x/(4*k*k)
+            partial += term
+        other = partial - term*x*x/(4*40*40)
+        lower, upper = sorted((partial, other))
+        cases.append(dict(id='j-rounding-midpoint-' + argument, function='j',
+                          arguments=['0', argument], scale=0,
+                          lower=str(lower), upper=str(upper)))
     program = ''.join('scale={}\n{}({})\n'.format(
         case['scale'], case['function'], ','.join(case['arguments'])) for case in cases)
     result = run(args.bc, transformed, program)

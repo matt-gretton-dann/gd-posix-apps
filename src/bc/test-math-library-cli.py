@@ -298,11 +298,21 @@ class LibraryCli(unittest.TestCase):
             upper = partial - term * x * x / (4 * 40 * 40)
             self.assertEqual(ORACLE.classify(Fraction(expected), partial, upper, 0), 'pass')
         program = 'scale=0\n' + ''.join(f'j(0,{x})\n' for x in arguments)
-        self.assertEqual(self.checked_lines(program), ['1', '0'])
+        modes = [(BC, ('-l',), ()), (BC, (), (SOURCE,))]
+        if OTHER_BC:
+            modes.append((OTHER_BC, (), (SOURCE,)))
+        for binary, options, files in modes:
+            with self.subTest(binary=binary, options=options):
+                self.assertEqual(self.checked_lines(program, binary=binary,
+                                                    options=options, files=files), ['1', '0'])
 
     def test_bessel_ascending_with_exact_rational_enclosures(self):
         arguments = ((0, 100, 150), (300, 300, 100), (1, '1.125', 100),
-                     (1, '1.' + '23456789' * 12, 20))
+                     (1, '1.' + '23456789' * 12, 20),
+                     (1, '1.' + '23456789' * 40, 20), (50, 2, 100),
+                     (20, 20, 20),
+                     *((0, '2.4048255576957727686216318793264546431242449091460', scale)
+                       for scale in (0, 1, 2, 20, 100)))
         for order, argument, scale in arguments:
             with self.subTest(order=order, argument=argument, scale=scale):
                 x = Fraction(argument)
@@ -321,8 +331,17 @@ class LibraryCli(unittest.TestCase):
                 # After the ratio falls below one, all subsequent ratios
                 # decrease. The first omitted term bounds the alternating tail.
                 lower, upper = sorted((partial, partial + term))
-                result, = self.checked_lines(f'scale={scale}\nj({order},{argument})\n')
-                self.assertEqual(ORACLE.classify(Fraction(result), lower, upper, scale), 'pass')
+                program = f'scale={scale}\nr=j({order},{argument})\nr\nscale(r)\nscale\nibase\n'
+                modes = [(BC, ('-l',), ()), (BC, (), (SOURCE,))]
+                if OTHER_BC:
+                    modes.append((OTHER_BC, (), (SOURCE,)))
+                for binary, options, files in modes:
+                    with self.subTest(binary=binary, options=options):
+                        result, places, restored_scale, base = self.checked_lines(
+                            program, binary=binary, options=options, files=files)
+                        self.assertEqual(ORACLE.classify(Fraction(result), lower, upper, scale), 'pass')
+                        self.assertEqual((places, restored_scale, base),
+                                         (str(scale), str(scale), '10'))
 
     def test_identical_source_loads_as_ordinary_input(self):
         self.certified(options=(), files=(SOURCE,))
