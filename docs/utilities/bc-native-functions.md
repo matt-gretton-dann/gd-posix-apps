@@ -87,6 +87,12 @@ and macOS ARM64 native execution plus explicit OFF fallback configurations,
 preserves the compile database and runs VM, CLI, signal, math and lifetime
 regressions.
 
+The dedicated matrix includes the four-case POSIX PTY suite in ordinary native,
+profiling and explicit OFF modes. It warms a scalar function, interrupts repeated
+calls and checks subsequent argument reuse and the restored global binding.
+Unsupported PTY hosts report an explicit skip. This observes recovery around
+calls without identifying the particular machine-code instruction interrupted.
+
 `native_function_attempts` counts eligible-domain kernel attempts and
 `native_function_completions` counts boxed results committed by the VM. These
 are software diagnostics, not speed measurements. Emitter vectors, shared-owner

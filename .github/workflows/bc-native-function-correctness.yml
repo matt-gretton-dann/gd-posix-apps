@@ -103,8 +103,10 @@ jobs:
           fi
           build-native/src/bc/test-libbc${executable_suffix} '[bc][vm]' \
             2>&1 | tee evidence/vm-tests.log
+          # Include CLI recovery around calls as well as the VM signal guards.
+          # Unsupported PTY hosts retain the fixture's explicit skip.
           ctest --test-dir build-native --no-tests=error --output-on-failure \
-            -R '^bc/(vm-lifetime(-ipo)?|signal-(normal|exception)|math-library-(cli|source|image|decisions)|math-imported|math-oracle)$' \
+            -R '^bc/(vm-lifetime(-ipo)?|signal-(normal|exception|delivery)|math-library-(cli|source|image|decisions)|math-imported|math-oracle)$' \
             2>&1 | tee evidence/ctest.log
           "$python_cmd" src/bc/test-cli.py "build-native/src/bc/bc${executable_suffix}" \
             --extensions ${{ matrix.mode.extensions }} 2>&1 | tee evidence/cli.log
