@@ -48,6 +48,76 @@ class GdBuild(unittest.TestCase):
         self.assertFalse(value['instrumented'])
         self.assertEqual(value['configuration']['ipo_policy']['status'], 'legacy-auto')
 
+    def test_missing_profile_policy_evidence_is_not_mislabeled_disabled(self):
+        policy = self.metadata()['configuration']['profiling_execution_policy']
+        self.assertEqual(policy['schema'], 1)
+        self.assertEqual(policy['path_identity'], 'not established')
+        forwarding = policy['scalar_argument_forwarding']
+        self.assertEqual(forwarding['status'], 'unavailable')
+        self.assertIsNone(forwarding['enabled'])
+
+    def profile_policy_source(self):
+        source = self.root / 'source/src/bc/vm.cc'
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_text('#if defined(__APPLE__) && defined(__aarch64__) && !GD_BC_PROFILE\n'
+                          '#  define GD_BC_FORWARD_SCALAR_ARGUMENT 1\n'
+                          '#else\n#  define GD_BC_FORWARD_SCALAR_ARGUMENT 0\n#endif\n')
+        return source
+
+    @unittest.skipUnless(os.name == 'posix', 'GNU-style compiler probe fixture')
+    def test_profile_policy_uses_the_vm_compile_context(self):
+        source = self.profile_policy_source()
+        compiler = self.root / 'c++'
+        compiler.write_text('#!' + sys.executable + '\n'
+            'from pathlib import Path\nimport sys\n'
+            'args = sys.argv[1:]\n'
+            'assert "-E" in args and "-P" in args\n'
+            'assert not any(x in args for x in ["-c", "-o", "-MF", "-MMD", "-flto=thin"])\n'
+            'probe = next(Path(x) for x in args if x.endswith("profile-forwarding-probe.cc"))\n'
+            'assert "vm.cc" in probe.read_text()\n'
+            'print("GD_BC_PROFILE_FORWARDING", 0 if "-DGD_BC_PROFILE=1" in args else 1)\n')
+        compiler.chmod(0o755)
+        for diagnostic in (False, True):
+            with self.subTest(diagnostic=diagnostic):
+                self.cache.write_text(self.cache.read_text().replace(
+                    'ENABLE_BC_PROFILE:BOOL=' + ('OFF' if diagnostic else 'ON'),
+                    'ENABLE_BC_PROFILE:BOOL=' + ('ON' if diagnostic else 'OFF')))
+                commands = [dict(file=str(source), directory=str(self.root), arguments=[
+                    str(compiler), '-DGD_BC_PROFILE=' + str(int(diagnostic)), '-O3',
+                    '-flto=thin', '-MMD', '-MF', 'ignored.d', '-c', str(source), '-o', 'ignored.o'])]
+                (self.build / 'compile_commands.json').write_text(json.dumps(commands))
+                builder = self.helper.Builder(self.root, 3)
+                value = self.module.build_metadata(
+                    self.helper, self.root, self.root / 'source', self.build, 'a' * 40, 126,
+                    {'version': 'C'}, {'version': 'C++'}, diagnostic_profile=diagnostic,
+                    builder=builder)
+                policy = value['configuration']['profiling_execution_policy']
+                self.assertEqual(policy['path_identity'], 'not established')
+                forwarding = policy['scalar_argument_forwarding']
+                self.assertEqual(forwarding['status'], 'recorded')
+                self.assertEqual(forwarding['enabled'], not diagnostic)
+                self.assertEqual(forwarding['source_sha256'],
+                                 hashlib.sha256(source.read_bytes()).hexdigest())
+                evidence = forwarding['verification']
+                self.assertEqual(evidence['kind'], 'vm-preprocessor')
+                self.assertEqual(evidence['log_sha256'], hashlib.sha256(
+                    (self.root / evidence['log']).read_bytes()).hexdigest())
+                self.assertFalse((self.root / 'ignored.o').exists())
+                self.assertFalse((self.root / 'ignored.d').exists())
+
+    def test_unrecognized_forwarding_guard_stays_unknown(self):
+        source = self.profile_policy_source()
+        source.write_text(source.read_text().replace('!GD_BC_PROFILE', 'GD_BC_PROFILE'))
+        policy = self.metadata()['configuration']['profiling_execution_policy']
+        self.assertEqual(policy['scalar_argument_forwarding']['status'], 'unknown')
+        self.assertIsNone(policy['scalar_argument_forwarding']['enabled'])
+
+    def test_missing_vm_commands_and_probe_runner_stay_unavailable(self):
+        self.profile_policy_source()
+        policy = self.metadata()['configuration']['profiling_execution_policy']
+        self.assertEqual(policy['scalar_argument_forwarding']['status'], 'unavailable')
+        self.assertIsNone(policy['scalar_argument_forwarding']['enabled'])
+
     def prepared_commands(self, value, arguments=False):
         rows = []
         for name in ('vm.cc', 'bc.cc'):
