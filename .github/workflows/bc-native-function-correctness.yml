@@ -29,8 +29,9 @@ jobs:
       matrix:
         os: [ubuntu-24.04, macos-15, windows-2025]
         mode:
-          - {name: ordinary, typed: 'OFF', profile: 'OFF', extensions: 'ON'}
-          - {name: profile, typed: 'ON', profile: 'ON', extensions: 'OFF'}
+          - {name: ordinary, native: 'ON', typed: 'OFF', profile: 'OFF', extensions: 'ON'}
+          - {name: profile, native: 'ON', typed: 'ON', profile: 'ON', extensions: 'OFF'}
+          - {name: fallback, native: 'OFF', typed: 'OFF', profile: 'OFF', extensions: 'ON'}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -64,7 +65,7 @@ jobs:
           fi
           cmake -S . -B build-native -G Ninja -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DBUILD_TESTING=ON \
-            -DENABLE_BC_NATIVE_SCALAR=OFF -DENABLE_BC_NATIVE_FUNCTIONS=ON \
+            -DENABLE_BC_NATIVE_SCALAR=OFF -DENABLE_BC_NATIVE_FUNCTIONS=${{ matrix.mode.native }} \
             -DENABLE_BC_TYPED_RESULTS=${{ matrix.mode.typed }} \
             -DENABLE_BC_PROFILE=${{ matrix.mode.profile }} \
             -DENABLE_NON_POSIX_EXTENSIONS=${{ matrix.mode.extensions }} \
@@ -82,17 +83,20 @@ jobs:
           command=vm[0].get('command') or ' '.join(vm[0]['arguments'])
           import os
           names={r['file'].replace(chr(92),'/').split('/')[-1] for r in rows}
-          expected=os.environ['RUNNER_OS']!='macOS'
+          expected='${{ matrix.mode.native }}'=='ON'
           selected='GD_BC_NATIVE_FUNCTIONS=1' in command
           assert selected==expected
-          assert ('native-expression-x64.cc' in names)==expected
+          backends=names & {'native-expression-x64.cc','native-expression-arm64.cc'}
+          assert len(backends)==int(expected)
+          expected_backend='native-expression-arm64.cc' if os.environ['RUNNER_OS']=='macOS' else 'native-expression-x64.cc'
+          assert not expected or backends=={expected_backend}
           Path('evidence/native-build.json').write_text(json.dumps(dict(
               native_functions_selected=selected,expected_native_functions=expected,
-              backend='native-expression-x64.cc' if selected else 'generic fallback',
+              backend=next(iter(backends)) if selected else 'generic fallback',
               compile_commands_sha256=hashlib.sha256(database.read_bytes()).hexdigest(),
-              scope='Compiled selection; positive-entry profiling tests follow on x64; macOS arm64 retains generic execution; no timing acceptance'),indent=2)+'\n')
+              scope='Compiled selection; positive-entry profiling tests follow on enabled targets; explicit OFF builds retain generic execution; no timing acceptance'),indent=2)+'\n')
           PYCODE
-          if [[ $RUNNER_OS != macOS ]]; then
+          if [[ '${{ matrix.mode.native }}' == ON ]]; then
             build-native/src/bc/test-libbc${executable_suffix} '[native-expression]' \
               2>&1 | tee evidence/native-tests.log
             grep -q 'All tests passed' evidence/native-tests.log
