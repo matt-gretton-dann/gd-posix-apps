@@ -85,9 +85,8 @@ changes; the proof rejects reads or writes of that special register.
 Each function generation has an allocation-free, saturating eight-call warmup
 counter at the VM tail. Scale/length guards precede counting; exact signed-range
 conversion waits until warmup completes. Only a hot eligible call creates the
-lazily owned tier
-table. Its at-most-26 entries own decoded programs and static rejection flags;
-ordinary definition replacement and deferred-library replacement reset both
+lazily owned tier table. Its at-most-26 entries own decoded programs and static
+rejection flags; ordinary definition replacement and deferred-library replacement reset both
 the counter and entry. No field is added to the common function records or
 pre-existing VM prefix. Unsupported bodies cache rejection before subsequent
 numeric conversion checks. The existing native leaf tier has priority when
@@ -131,9 +130,8 @@ checking parameter/auto restoration and later calls through the same generation.
 It tests recovery around calls without claiming a particular instruction PC.
 
 `bc-word-function-correctness.yml` builds explicit ordinary, profiling, OFF and
-native-leaf coexistence
-configurations on native Linux/macOS/Windows. It retains actual VM/test compiler
-definitions, core object ownership, source bytes, fault/semantic/CLI logs and
+native-leaf coexistence configurations on native Linux/macOS/Windows. It retains
+actual VM/test compiler definitions, core object ownership, source bytes, fault/semantic/CLI logs and
 explicit unavailable PTY skips. Enabled profiling VM cases require positive
 completion counters; full-check and OFF cases require generic execution. This
 does not establish dynamic ordinary/profile path identity or a runtime speedup.
@@ -142,6 +140,25 @@ The former signed-zero prerequisite #601 is already accepted on this baseline:
 `Number::to_unsigned` accepts an exact zero with either stored sign. Do not
 reintroduce the old assumption that it remains unfixed or add a new conversion
 method to implement this tier. General Number ownership/layout stays unchanged.
+
+The immutable builder's `--word-functions AUTO|ON|OFF` option records the actual
+production VM definition, all three library translation units, and six source
+inputs. Test-only copies do not establish production activation. Explicit modes
+require a declared boolean source option; an older source can establish absence
+from its actual VM inventory. Unknown selection never satisfies qualification.
+Both arithmetic and math controllers accept `--require-candidate-word-functions`
+to reject inactive candidates or unverified generic baselines before sampling.
+
+With `--compare-resources`, matched ordinary and diagnostic builds retain source,
+toolchain and mode identities. Diagnostics follow all elapsed stages, preserve
+their instrumented images separately, and require actual word completions in
+call/recursion probes. Additional fixed controls cover all 26 simultaneous
+caches, cold entry, signed endpoints and out-of-range/fractional fallback,
+promotion, demotion, and static effect rejection. Counts describe selected
+containers; cold RSS pairs are descriptive, and neither proves ordinary/profile
+dynamic path identity or process-wide allocation bounds. The control machinery
+reuses the retained native qualification experiment from #686; its rejected
+measurements remain separate from this new tier.
 
 Before any adoption, require native Linux/macOS/Windows semantic preflight,
 actual include/object/layout evidence, and a prospectively frozen full/held-out
