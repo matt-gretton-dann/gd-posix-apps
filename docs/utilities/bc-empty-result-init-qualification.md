@@ -27,6 +27,11 @@ no test relies on inactive bytes or a standard-library layout. Native hosted
 correctness on the final head remains required. Normal generic fallback,
 variant lifetimes and checked access remain available on every platform.
 
+With typed results and allocation profiling both enabled, the Release build
+also passes 58 VM cases (388,302 assertions) and six focused profiling,
+consumer and lifetime CTests. This checks the instrumented mode used by the
+resource collector without using its durations as elapsed evidence.
+
 The reused opt-in resource collector has 17 fake-process fixtures. Instrumented
 observations and their durations never become ordinary performance samples.
 
