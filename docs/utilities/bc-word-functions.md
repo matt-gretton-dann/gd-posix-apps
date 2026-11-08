@@ -73,8 +73,10 @@ changing/destroying the source. These tests do not exercise a VM tier route.
 
 ## Experimental VM integration
 
-`-DENABLE_BC_WORD_FUNCTIONS=ON` enables the general-purpose tier; its default is
-OFF. Full-check execution remains generic. The VM accepts exactly representable
+The qualification candidate defaults `ENABLE_BC_WORD_FUNCTIONS` to ON; this is
+an unmerged experiment pending the full acceptance review described in
+`bc-word-function-qualification.md`. Explicit OFF builds retain the generic
+implementation. Full-check execution remains generic. The VM accepts exactly representable
 scale-zero signed 64-bit arguments, including both endpoints and signed zero.
 Inline one-limb arguments use the existing unsigned conversion; other possible
 word values use existing read-only decimal output and checked `from_chars`.

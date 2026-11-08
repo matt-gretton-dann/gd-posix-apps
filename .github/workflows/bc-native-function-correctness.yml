@@ -65,7 +65,7 @@ jobs:
           fi
           cmake -S . -B build-native -G Ninja -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DBUILD_TESTING=ON \
-            -DENABLE_BC_NATIVE_SCALAR=OFF -DENABLE_BC_NATIVE_FUNCTIONS=${{ matrix.mode.native }} \
+            -DENABLE_BC_WORD_FUNCTIONS=OFF -DENABLE_BC_NATIVE_SCALAR=OFF -DENABLE_BC_NATIVE_FUNCTIONS=${{ matrix.mode.native }} \
             -DENABLE_BC_TYPED_RESULTS=${{ matrix.mode.typed }} \
             -DENABLE_BC_PROFILE=${{ matrix.mode.profile }} \
             -DENABLE_NON_POSIX_EXTENSIONS=${{ matrix.mode.extensions }} \
