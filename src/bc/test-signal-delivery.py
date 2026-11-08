@@ -120,6 +120,41 @@ class InterruptTest(unittest.TestCase):
                 return result
             result += chunk
 
+    def test_scalar_function_interrupt_preserves_bindings_and_argument_reuse(self):
+        master, slave = pty.openpty()
+        try:
+            tty.setraw(slave)
+            with subprocess.Popen([BC], stdin=subprocess.PIPE, stdout=slave,
+                                  stderr=subprocess.PIPE, universal_newlines=True,
+                                  env=dict(os.environ, LC_ALL="C")) as child:
+                os.close(slave)
+                slave = None
+                try:
+                    # The first eligible call completes before readiness;
+                    # repeated bounded scalar calls then run in one item with
+                    # the VM handler installed. This tests recovery around
+                    # calls without claiming a particular machine-code PC.
+                    child.stdin.write('define f(y) {\nreturn(y+1)\n}\ny=73\n'
+                                      '{t=f(4);"READY\n";while(1) {t=f(t%1000)}}\n')
+                    child.stdin.flush()
+                    self.assertEqual(self.read_until(master, b"READY\n"), b"READY\n")
+                    os.kill(child.pid, signal.SIGINT)
+                    child.stdin.write("f(2)\ny\n")
+                    child.stdin.flush()
+                    self.assertEqual(self.read_until(master, b"73\n"), b"3\n73\n")
+                    _, errors = child.communicate("quit\n", timeout=3)
+                    self.assertEqual(child.returncode, 0, errors)
+                    self.assertEqual(errors, "Execution interrupted.\n")
+                    self.assertEqual(self.drain(master), b"")
+                finally:
+                    if child.poll() is None:
+                        child.kill()
+                        child.communicate(timeout=3)
+        finally:
+            os.close(master)
+            if slave is not None:
+                os.close(slave)
+
     def test_two_interrupts_then_recovery(self):
         master, slave = pty.openpty()
         try:
