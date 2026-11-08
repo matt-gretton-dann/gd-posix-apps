@@ -161,6 +161,41 @@ class LibraryCli(unittest.TestCase):
                       for v in (lower, upper, Fraction(literals[0]))]
             self.assertEqual(floors, [floors[0]] * 3, scale)
 
+    def test_atan_reciprocal_reconstruction(self):
+        # atan(x) = pi/2 - atan(1/x) for positive x. Bound the small
+        # reciprocal directly by consecutive exact alternating partial sums;
+        # this oracle does not use the library's half-angle reconstruction.
+        unit_lower, unit_upper = unit_atan_enclosure()
+        bounds = {}
+        for argument in (2, 8, 1024):
+            count = 320
+            total = sum((Fraction((-1) ** k, (2*k+1)*argument**(2*k+1))
+                         for k in range(count)), Fraction())
+            following = total + Fraction((-1) ** count,
+                                         (2*count+1)*argument**(2*count+1))
+            lower, upper = min(total, following), max(total, following)
+            bounds[argument] = 2*unit_lower-upper, 2*unit_upper-lower
+        cases = [(scale, sign, argument) for scale in (0, 1, 2, 20, 100, 145)
+                 for sign in (1, -1) for argument in bounds]
+        program = ''.join('scale={}\nr=a({})\nr\nscale(r)\nscale\nibase\n'.format(
+            scale, sign*argument) for scale, sign, argument in cases)
+        modes = [(BC, ('-l',), ()), (BC, (), (SOURCE,))]
+        if OTHER_BC:
+            modes.append((OTHER_BC, (), (SOURCE,)))
+        for binary, options, files in modes:
+            lines = self.checked_lines(program, binary=binary, options=options, files=files)
+            self.assertEqual(len(lines), 4*len(cases))
+            for index, (scale, sign, argument) in enumerate(cases):
+                with self.subTest(binary=binary, options=options, scale=scale,
+                                  sign=sign, argument=argument):
+                    lower, upper = bounds[argument]
+                    if sign < 0:
+                        lower, upper = -upper, -lower
+                    value = ORACLE.decimal_fraction(lines[4*index])
+                    self.assertEqual(ORACLE.classify(value, lower, upper, scale), 'pass')
+                    self.assertEqual(lines[4*index+1:4*index+4],
+                                     [str(scale), str(scale), '10'])
+
     def test_atan_unit_literal_matches_the_certified_enclosure(self):
         source = Path(SOURCE).read_text(encoding='utf-8')
         literals = re.findall(r'(?m)^\s*r=(\.\d{160})$', source)
