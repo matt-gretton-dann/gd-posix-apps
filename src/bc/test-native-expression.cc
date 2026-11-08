@@ -6,6 +6,7 @@
 #include <array>
 #include <cstdint>
 #include <limits>
+#include <random>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -32,7 +33,8 @@ TEST_CASE("Cached native expressions preserve input and exact results", "[bc][na
     REQUIRE(code->execute(x, result));
     CHECK(result == x * x + 1);
   }
-  for (auto value : {3037000500ULL, std::numeric_limits<unsigned long long>::max()}) {
+  for (auto value : {3037000500ULL, 4294967296ULL, 9223372036854775807ULL,
+                     std::numeric_limits<unsigned long long>::max()}) {
     std::uint64_t unchanged = 77;
     CHECK_FALSE(code->execute(value, unchanged));
     CHECK(unchanged == 77);
@@ -78,6 +80,12 @@ TEST_CASE("Native expression signed bounds decline before publication", "[bc][na
   CHECK(result == maximum);
   CHECK_FALSE(code->execute(maximum + 1, result));
   CHECK(result == maximum);
+  std::array<Op, 1> const wide_constant{{{K::constant, 0, 0, maximum}}};
+  auto literal = NativeExpression::compile(wide_constant, 0);
+  REQUIRE(literal);
+  result = 0;
+  REQUIRE(literal->execute(0, result));
+  CHECK(result == maximum);
 }
 
 TEST_CASE("Native expression limits retain generic fallback", "[bc][native-expression]")
@@ -106,6 +114,55 @@ TEST_CASE("Native expression limits retain generic fallback", "[bc][native-expre
                                      {K::add, 6, 7},
                                      {K::add, 9, 8}}};
   CHECK_FALSE(NativeExpression::compile(pressure, 10));
+}
+
+TEST_CASE("Native expression DAGs agree with checked integer oracles", "[bc][native-expression]")
+{
+  std::mt19937 random(683);
+  unsigned accepted = 0;
+  auto const maximum = static_cast<std::uint64_t>(std::numeric_limits<std::int64_t>::max());
+  for (unsigned trial = 0; trial != 256; ++trial) {
+    std::vector<Op> operations{{K::argument}};
+    auto const count = 2U + random() % 11U;
+    for (unsigned i = 1; i != count; ++i) {
+      auto const kind = static_cast<K>(random() % 4U);
+      operations.push_back({kind, static_cast<std::uint8_t>(random() % i),
+                            static_cast<std::uint8_t>(random() % i), random() % 10U});
+    }
+    auto const result_index = static_cast<std::uint8_t>(random() % count);
+    auto code = NativeExpression::compile(operations, result_index);
+    if (!code)
+      continue;  // Register pressure can require a generic activation.
+    ++accepted;
+    for (auto input : {0ULL, 1ULL, 7ULL, 999999999ULL, 4294967296ULL, 9223372036854775807ULL}) {
+      std::vector<std::uint64_t> values;
+      bool valid = true;
+      for (auto const& op : operations) {
+        std::uint64_t value = 0;
+        if (op.kind == K::argument)
+          value = input;
+        else if (op.kind == K::constant)
+          value = op.constant;
+        else {
+          auto const left = values[op.left];
+          auto const right = values[op.right];
+          if ((op.kind == K::add && left > maximum - right) ||
+              (op.kind == K::multiply && left != 0 && right > maximum / left)) {
+            valid = false;
+            break;
+          }
+          value = op.kind == K::add ? left + right : left * right;
+        }
+        values.push_back(value);
+      }
+      std::uint64_t result = 123;
+      INFO("trial " << trial << ", input " << input);
+      REQUIRE(code->execute(input, result) == valid);
+      CHECK(result == (valid ? values[result_index] : 123));
+    }
+  }
+  // Rejecting every plan must not turn the oracle into an unexercised pass.
+  CHECK(accepted >= 200);
 }
 
 namespace {

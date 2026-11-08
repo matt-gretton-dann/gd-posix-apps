@@ -6,10 +6,11 @@ dispatch costs under #207 and #197. `ENABLE_BC_NATIVE_FUNCTIONS` defaults to
 benefit or default activation is established by the implementation or its
 correctness workflow.
 
-The initial backend supports x86-64 Windows and POSIX targets with an actual
-x86-64 compiler. ARM64EC, universal Apple builds and other architectures retain
-generic execution even when the option is requested. The CMake capability
-probe checks compiler target macros as well as the configured processor.
+Backends support x86-64 Windows/POSIX and ordinary Apple ARM64 targets with a
+matching compiler. ARM64EC, Apple arm64e, universal Apple builds and other
+architectures retain generic execution even when the option is requested.
+The CMake capability probe checks compiler target macros as well as the configured
+processor.
 
 ## Eligibility and ownership
 
@@ -22,6 +23,7 @@ decimal digits have the same value at every bc input base; wider literals must
 use the generic runtime decoder. An explicit return makes the parser's trailing
 implicit return unreachable.
 
+Both backends share bounded SSA validation and last-use register allocation.
 Each immutable function definition owns its lazy executable page and structural
 rejection state. Repeated calls reuse the page; redefining the function replaces
 the cache. A failed compilation leaves the arguments and bindings intact and
@@ -32,8 +34,10 @@ radix. The kernel accepts only nonnegative signed-64 intermediates. Any overflow
 declines before publishing a result. The ordinary VM constructs the exact bc
 result, using its decimal constructor for values wider than one limb. Only
 after successful result construction and an interrupt check does it consume
-the parameter pack. Negative, fractional, large, heap and incorrectly shaped
-arguments retain the generic call semantics, including diagnostics. Native
+the parameter pack. On ordinary Apple ARM64 calls, an eligible borrowed argument
+retains its existing caller-owned result slot through preparation and execution;
+fallback forwards the same borrowing contract to the generic activation.
+Negative, fractional, large, heap and incorrectly shaped arguments retain the generic call semantics, including diagnostics. Native
 execution never installs dynamic parameter bindings because an eligible body
 cannot observe anything except its incoming scalar value.
 
@@ -44,6 +48,10 @@ The x86-64 emitter uses five volatile temporaries, preserves input registers,
 never changes RSP, writes no nonvolatile registers and makes no calls. Excess
 register pressure declines rather than spilling. Code includes ENDBR64 and
 checked arithmetic. As a true Windows leaf it needs no frame-unwind record.
+The Apple ARM64 emitter uses X9-X13 as temporaries and X14 for a high product.
+It preserves X0/X1 until publication and never changes SP, FP, LR, X18 or other
+nonvolatile registers. ADDS/overflow and UMULH/MUL checks enforce the same
+nonnegative signed-64 domain; the entry includes BTI c. It makes no calls.
 An output word is written only after every operation succeeds.
 
 Pages are allocated writable, populated, then changed to executable/read-only;
@@ -62,13 +70,15 @@ source-bound comparison.
 ## Validation and limits
 
 `test-native-expression.cc` checks independent integer oracles, overflow,
-register lifetime/pressure, exact wide outputs, dynamic bindings, function
+register lifetime/pressure, 256 deterministic DAGs against checked integer
+oracles, exact wide outputs, dynamic bindings, function
 redefinition, ibase and fallback bodies. Profile builds assert positive native
 completion and exclusion under full checks. The isolated ordinary/IPO lifetime
 fixtures inject failures throughout emitter allocation and require cleanup and
 successful retry. The dedicated workflow checks Linux/Windows x64 selection
-and macOS ARM64 generic fallback, preserves the compile database and runs VM,
-CLI, signal, math and lifetime regressions.
+and macOS ARM64 native execution plus explicit OFF fallback configurations,
+preserves the compile database and runs VM, CLI, signal, math and lifetime
+regressions.
 
 `native_function_attempts` counts eligible-domain kernel attempts and
 `native_function_completions` counts boxed results committed by the VM. These

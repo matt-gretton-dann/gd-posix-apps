@@ -438,9 +438,15 @@ struct VMState
   auto call(Letter func, Location const& loc) -> Number;
 #endif
 #if defined(GD_BC_NATIVE_FUNCTIONS)
+#  if GD_BC_FORWARD_SCALAR_ARGUMENT
+  GD_BC_LEAF_NOINLINE auto call_generic(Letter func, Location const& loc,
+                                        Number const* argument = nullptr) -> Number;
+#  else
   GD_BC_LEAF_NOINLINE auto call_generic(Letter func, Location const& loc) -> Number;
+#  endif
   GD_BC_LEAF_NOINLINE auto call_native_leaf(Letter func, Location const& loc,
-                                            NativeExpression const& code) -> Number;
+                                            NativeExpression const& code,
+                                            Number const* borrowed = nullptr) -> Number;
 #endif
 
   /** Push a new parameter pack onto the parameter stack.  */
@@ -1118,15 +1124,26 @@ auto GD::Bc::Details::FunctionCode::native_leaf(VariableMask locals) -> NativeEx
   return reject();
 }
 
+#  if GD_BC_FORWARD_SCALAR_ARGUMENT
+auto GD::Bc::Details::VMState::call(Letter func, Location const& loc, Number const* argument)
+  -> GD::Bc::Number
+#  else
 auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc::Number
+#  endif
 {
   GD_BC_PROFILE_EVENT(Profile::Event::function_calls, 1);
   if (!full_checks() && !have_been_interrupted.test(std::memory_order_relaxed) &&
       !param_marks_.empty()) {
     auto const& mark = param_marks_.back();
     auto& definition = functions_.at(static_cast<unsigned>(func));
-    if (definition && mark.next == mark.begin && parameters_.size() - mark.begin == 1 &&
-        std::holds_alternative<Number>(parameters_.back())) {
+    auto const scalar_pack = parameters_.size() - mark.begin == 1 &&
+                             std::holds_alternative<Number>(parameters_.back());
+#  if GD_BC_FORWARD_SCALAR_ARGUMENT
+    auto const one_argument = argument != nullptr ? parameters_.size() == mark.begin : scalar_pack;
+#  else
+    auto const one_argument = scalar_pack;
+#  endif
+    if (definition && mark.next == mark.begin && one_argument) {
       // Deferred library definitions keep their normal first-call loader.
       // No Number owner lives in this routing frame on a generic call.
       NativeExpression const* code = nullptr;
@@ -1136,18 +1153,31 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
       catch (std::bad_alloc const&) {
         // Preparation has not consumed arguments or changed dynamic bindings.
       }
-      if (code != nullptr)
+      if (code != nullptr) {
+#  if GD_BC_FORWARD_SCALAR_ARGUMENT
+        return call_native_leaf(func, loc, *code, argument);
+#  else
         return call_native_leaf(func, loc, *code);
+#  endif
+      }
     }
   }
+#  if GD_BC_FORWARD_SCALAR_ARGUMENT
+  return call_generic(func, loc, argument);
+#  else
   return call_generic(func, loc);
+#  endif
 }
 
 auto GD::Bc::Details::VMState::call_native_leaf(Letter func, Location const& loc,
-                                                NativeExpression const& code) -> GD::Bc::Number
+                                              NativeExpression const& code,
+                                              Number const* borrowed) -> GD::Bc::Number
 {
   static_assert(std::is_nothrow_move_constructible_v<Number>);
-  auto const& argument = std::get<Number>(parameters_.back());
+  // Apple ARM64's ordinary caller can lend a result-slot Number instead of
+  // copying it into the pack. Neither cache preparation nor the leaf kernel
+  // invalidates that owner; a fallback forwards the same borrowing contract.
+  auto const& argument = borrowed != nullptr ? *borrowed : std::get<Number>(parameters_.back());
   // to_unsigned is nonthrowing in this conservative subdomain. Keep larger,
   // negative, fractional and heap inputs in the generic Number interpreter.
   if (!argument.has_heap_storage() && argument.scale() == 0 &&
@@ -1174,10 +1204,19 @@ auto GD::Bc::Details::VMState::call_native_leaf(Letter func, Location const& loc
       // The incoming pack is still intact, including when boxing failed.
     }
   }
+#  if GD_BC_FORWARD_SCALAR_ARGUMENT
+  return call_generic(func, loc, borrowed);
+#  else
   return call_generic(func, loc);
+#  endif
 }
 
+#  if GD_BC_FORWARD_SCALAR_ARGUMENT
+auto GD::Bc::Details::VMState::call_generic(Letter func, Location const& loc, Number const* argument)
+  -> GD::Bc::Number
+#  else
 auto GD::Bc::Details::VMState::call_generic(Letter func, Location const& loc) -> GD::Bc::Number
+#  endif
 #elif GD_BC_FORWARD_SCALAR_ARGUMENT
 auto GD::Bc::Details::VMState::call(Letter func, Location const& loc, Number const* argument)
   -> GD::Bc::Number
