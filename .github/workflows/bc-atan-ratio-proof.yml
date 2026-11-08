@@ -1,0 +1,31 @@
+name: bc arctangent rational proof
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - docs/utilities/bc-portable-math.md
+      - docs/utilities/bc-atan-ratio-proof/**
+      - src/bc/math-library.bc
+      - .github/workflows/bc-atan-ratio-proof.yml
+  push:
+    branches: [main]
+    paths:
+      - docs/utilities/bc-portable-math.md
+      - docs/utilities/bc-atan-ratio-proof/**
+      - src/bc/math-library.bc
+      - .github/workflows/bc-atan-ratio-proof.yml
+
+permissions:
+  contents: read
+
+jobs:
+  proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Check exact contraction and rounding bounds
+        run: python3 docs/utilities/bc-atan-ratio-proof/test-proof.py
