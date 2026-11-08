@@ -384,7 +384,9 @@ define j(n,x) {
      In the Hankel path: m=4*n*n, p/q are even/odd sums, t the coefficient,
      k its index, h its four-step sign cycle, i/g signed/absolute factors,
      f the contraction flag, u the phase and d the amplitude. r holds pi
-     temporarily and then the result. The ascending path reuses t/k/r. */
+     temporarily and then the result. The ascending path reuses t/k/r;
+     u saves the exact input, f requests a retry, h records that retry,
+     and p/d measure the distance from a rounding boundary. */
   b=ibase
   ibase=A
   s=scale
@@ -480,23 +482,52 @@ define j(n,x) {
   /* Absolute recurrence weights sum to at most exp(x).
      exp(x) < 10^(7*x/16) for x>0. Round the digit budget up. */
   g=(7*x)/16+1
-  w=s+g+length(x)+2*length(s+g+length(x)+1)+32
-  scale=w
-  if (scale!=w) return(1/0)
-  if (scale(x)>w) x=x/1
-  t=1
-  for (i=1;i<=n;i++) {
-    t=t*x/(2*i)
-    if (t==0) break
-  }
-  r=t
-  /* An exact decimal quarter keeps short coefficients short. */
-  q= -x*x*.25
-  k=1
-  while (t!=0) {
-    t=t*q/(k*(n+k))
-    r+=t
-    k+=1
+  /* The derivative bound also removes dependence on the input's stored
+     length. Sixteen residual guards bound recurrence error below 10^-8
+     output units; magnitude and digit-count guards remain adaptive. */
+  w=s+g+2*length(s+g+1)+16
+  u=x
+  h=0
+  f=1
+  while (f==1) {
+    f=0
+    scale=w
+    if (scale!=w) return(1/0)
+    if (scale(x)>w) x=x/1
+    t=1
+    for (i=1;i<=n;i++) {
+      t=t*x/(2*i)
+      if (t==0) break
+    }
+    r=t
+    /* An exact decimal quarter keeps short coefficients short. */
+    q= -x*x*.25
+    k=1
+    while (t!=0) {
+      t=t*q/(k*(n+k))
+      r+=t
+      k+=1
+    }
+    if (h==0) {
+      /* Away from a rounding boundary the error budget proves the same
+         nearest result. Retry once at the previous precision near a tie. */
+      p=r
+      if (p<0) p= -p
+      q=10^(-s)
+      p=p/q
+      scale=0
+      d=p/1
+      scale=w
+      p=p-d-.5
+      if (p<0) p= -p
+      if (p<.00000002) {
+        h=1
+        scale=0
+        w=s+g+length(u)+2*length(s+g+length(u)+1)+32
+        x=u
+        f=1
+      }
+    }
   }
   if (v==1) r= -r
   t=10^(-s)/2
