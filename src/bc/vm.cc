@@ -68,6 +68,11 @@ using ExecutionResult = std::variant<std::monostate, Number, ArrayValues, std::s
 class ResultSlot
 {
 public:
+  // Vector growth value-initializes slots. A user-provided constructor avoids
+  // zeroing the inactive payload before constructing the empty alternative.
+  // Keep normal variant lifetimes and the existing checked access protocol.
+  ResultSlot() noexcept : value_(std::in_place_type<std::monostate>) {}
+
   auto has_value() const noexcept -> bool { return value_.index() != 0; }
   auto operator*() -> ExecutionResult& { return value_; }
   auto operator*() const -> ExecutionResult const& { return value_; }
