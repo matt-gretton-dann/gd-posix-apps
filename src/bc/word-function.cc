@@ -3,6 +3,7 @@
  */
 #include "word-function.hh"
 
+#include <array>
 #include <bitset>
 #include <limits>
 #include <utility>
@@ -217,7 +218,36 @@ auto Program::prepare(std::span<Instruction const> code, unsigned parameter)
       break;
     }
   }
-  return Program(code, parameter);
+  // Validation above still uses the decoded letter namespace, including
+  // unreachable instructions. Rename only the owned, validated copy so a
+  // sparse source name does not force unused locals into every recursive frame.
+  std::bitset<local_count> used_locals;
+  used_locals.set(parameter);
+  auto use_local = [&](std::uint16_t value) {
+    if ((value & local_tag) != 0)
+      used_locals.set(value & ~local_tag);
+  };
+  for (auto const& i : code) {
+    use_local(i.left);
+    use_local(i.right);
+  }
+  std::array<unsigned, local_count> local_indices{};
+  unsigned slots = 0;
+  for (unsigned name = 0; name != local_count; ++name) {
+    if (used_locals.test(name))
+      local_indices[name] = slots++;
+  }
+  Program result(code, local_indices[parameter]);
+  result.local_slots_ = slots;
+  auto rename_local = [&](std::uint16_t& value) {
+    if ((value & local_tag) != 0)
+      value = static_cast<std::uint16_t>(local_tag | local_indices[value & ~local_tag]);
+  };
+  for (auto& i : result.code_) {
+    rename_local(i.left);
+    rename_local(i.right);
+  }
+  return result;
 }
 
 void Scratch::clear() noexcept
@@ -246,7 +276,8 @@ auto execute(Program const& program, V argument, Scratch& scratch, Callbacks con
   // A moved-from owner is valid C++, but no longer names an executable plan.
   if (code.empty())
     return {};
-  auto const stride = local_count + code.size();
+  auto const locals = program.local_slots();
+  auto const stride = locals + code.size();
   auto used = [&]() {
     return values.size() * sizeof(Value) + frames.size() * sizeof(Scratch::Frame) +
            arguments.size() * sizeof(Scratch::Argument);
@@ -280,10 +311,9 @@ auto execute(Program const& program, V argument, Scratch& scratch, Callbacks con
     auto const base = (frames.size() - 1) * stride;
     auto const& i = code[pc];
     auto read = [&](std::uint16_t operand) -> Value {
-      return values[base +
-                    ((operand & local_tag) != 0 ? operand & ~local_tag : local_count + operand)];
+      return values[base + ((operand & local_tag) != 0 ? operand & ~local_tag : locals + operand)];
     };
-    auto& destination = values[base + local_count + pc];
+    auto& destination = values[base + locals + pc];
     ++counters.instructions;
     switch (i.opcode) {
     case O::location:
@@ -358,7 +388,7 @@ auto execute(Program const& program, V argument, Scratch& scratch, Callbacks con
       values.resize(base);
       if (frames.empty())
         return value;
-      values[(frames.size() - 1) * stride + local_count + frames.back().pc - 1] = value;
+      values[(frames.size() - 1) * stride + locals + frames.back().pc - 1] = value;
       break;
     }
     }

@@ -41,8 +41,9 @@ struct Instruction
   std::uint16_t right = 0;
 };
 
-// Operands below local_tag name producer instructions. Tagged operands name
-// one of 26 zero-initialized scalar locals; load explicitly snapshots a local.
+// Decoded operands below local_tag name producer instructions. Tagged operands
+// name one of 26 scalar locals. Preparation remaps used names to dense private
+// slots; every activation starts those slots at zero. Loads snapshot a local.
 inline constexpr std::uint16_t local_tag = 0x8000;
 inline constexpr std::size_t local_count = 26;
 inline constexpr std::size_t instruction_limit = 1024;
@@ -62,7 +63,9 @@ public:
   static auto prepare(std::span<Instruction const> code, unsigned parameter)
     -> std::optional<Program>;
   [[nodiscard]] auto instructions() const noexcept -> std::span<Instruction const> { return code_; }
+  // Prepared instructions and the parameter use dense activation-slot indices.
   [[nodiscard]] auto parameter() const noexcept -> unsigned { return parameter_; }
+  [[nodiscard]] auto local_slots() const noexcept -> unsigned { return local_slots_; }
 
 private:
   Program(std::span<Instruction const> code, unsigned parameter)
@@ -71,6 +74,7 @@ private:
   }
   Storage<Instruction, Profile::AllocationKind::execution_plans> code_;
   unsigned parameter_;
+  unsigned local_slots_ = local_count;
 };
 
 struct Value

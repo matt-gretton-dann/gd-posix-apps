@@ -1,5 +1,9 @@
 # Number-independent recursive word executor
 
+The compact-slot follow-up in this branch is unpublished. The original frozen
+activation study at `516f50c2` is separate; its results do not qualify this new
+storage layout. Keep the full qualification and timebox requirements below.
+
 Issue #690 evaluates a distinct compiler boundary for the earlier portable
 integer experiments (#598/#607/#635/#641/#647). Those experiments already
 implemented checked word arithmetic, exact promotion and explicit recursive
@@ -16,7 +20,13 @@ earlier producer slots or one of 26 scalar locals. Explicit loads snapshot
 values; local operands retain location semantics until consumption. The
 instruction set contains single decimal digit constants, loads/stores, checked
 signed addition/subtraction/multiplication, comparisons, branches and self-call
-argument marks. All locals initially contain zero, except the scalar parameter.
+argument marks. Decoded local names still cover all 26 letters. After checking
+the complete decoded plan, preparation rewrites only its owned copy to dense
+private slots for the referenced names and parameter. Each activation reserves
+those slots rather than all 26 possible names. Referenced slots initially
+contain zero, except the scalar parameter; unreferenced bindings are unobservable
+because the source compiler has already proved the body pure. Producer indices,
+branches, argument marks and source instruction storage stay unchanged.
 
 Preparation rejects malformed opcodes, operand bounds/kinds, fallthrough beyond
 the plan, incompatible argument-mark states and non-dominating producers at

@@ -67,8 +67,10 @@ def frame_cases(preset):
 def private_frame_cases(preset):
     """Closed scalar bodies with fixed narrow/wide recursion and reuse.
 
-    Unused autos still belong to each activation. Both visitation orders
-    expose retained arena padding and historical frame-width growth.
+    Auto declarations establish local bindings even when never read. An eligible
+    tier may avoid materializing those unused bindings. Both visitation orders
+    expose retained arena padding and historical frame-width growth; the widths
+    below count declared locals rather than claiming a physical frame layout.
     """
     if preset not in ('full', 'holdout'):
         raise ValueError('unknown private frame diagnostic preset')

@@ -351,6 +351,93 @@ TEST_CASE("Word locations remain lazy while loads snapshot and scratch resets", 
   }
 }
 
+TEST_CASE("Sparse word local names fit a small execution budget", "[bc][word][word-locals]")
+{
+  // A single used local must not reserve every possible letter at entry.
+  // Exercise each source name, including the high names that need remapping.
+  for (unsigned parameter = 0; parameter != W::local_count; ++parameter) {
+    auto const local = static_cast<std::uint16_t>(W::local_tag | parameter);
+    std::array<I, 4> source{{{O::load, local}, {O::constant, 1}, {O::add, 0, 1}, {O::return_, 2}}};
+    auto program = W::Program::prepare(source, parameter);
+    REQUIRE(program);
+    CHECK(source[0].left == local);  // Preparation owns its rewritten copy.
+    W::Scratch scratch;
+    W::Counters counters;
+    for (V input : {-37, 0, 41}) {
+      auto result = W::execute(*program, input, scratch, {}, counters, 256);
+      REQUIRE(result);
+      CHECK(result->payload == input + 1);
+      CHECK_FALSE(result->big);
+      empty(scratch);
+    }
+  }
+}
+
+TEST_CASE("Sparse recursive word locals retain each activation", "[bc][word][word-locals]")
+{
+  auto const parameter = static_cast<std::uint16_t>(W::local_tag | 13);
+  auto const first = W::local_tag;
+  auto const last = static_cast<std::uint16_t>(W::local_tag | 25);
+  std::array<I, 18> source{{{O::constant, 0},
+                            {O::equal, parameter, 0},
+                            {O::branch_zero, 1, 6},
+                            {O::add, first, last},
+                            {O::return_, 3},
+                            {O::location},
+                            {O::load, parameter},
+                            {O::store, first, 6},
+                            {O::constant, 1},
+                            {O::add, parameter, 8},
+                            {O::store, last, 9},
+                            {O::subtract, parameter, 8},
+                            {O::mark},
+                            {O::push, 11},
+                            {O::call},
+                            {O::add, first, last},
+                            {O::add, 14, 15},
+                            {O::return_, 16}}};
+  auto program = W::Program::prepare(source, 13);
+  REQUIRE(program);
+  W::Scratch scratch;
+  for (V input : {0, 1, 25, 64, 0}) {
+    W::Counters counters;
+    auto result = W::execute(*program, input, scratch, {}, counters);
+    REQUIRE(result);
+    // Each frame adds its original x and x+1 after the child returns.
+    CHECK(result->payload == input * input + 2 * input);
+    CHECK(counters.self_calls == static_cast<std::uint64_t>(input));
+    empty(scratch);
+  }
+}
+
+TEST_CASE("All word local names remain distinct", "[bc][word][word-locals]")
+{
+  std::vector<I> source;
+  auto append = [&](I instruction) {
+    auto index = static_cast<std::uint16_t>(source.size());
+    source.push_back(instruction);
+    return index;
+  };
+  auto one = append({O::constant, 1});
+  auto value = append({O::constant, 0});
+  for (unsigned name = 0; name != W::local_count; ++name) {
+    value = append({O::add, value, one});
+    append({O::store, static_cast<std::uint16_t>(W::local_tag | name), value});
+  }
+  auto sum = append({O::load, W::local_tag});
+  for (unsigned name = 1; name != W::local_count; ++name)
+    sum = append({O::add, sum, static_cast<std::uint16_t>(W::local_tag | name)});
+  append({O::return_, sum});
+  auto program = W::Program::prepare(source, 13);
+  REQUIRE(program);
+  W::Scratch scratch;
+  W::Counters counters;
+  auto result = W::execute(*program, 7, scratch, {}, counters);
+  REQUIRE(result);
+  CHECK(result->payload == 351);  // Distinct assignments 1 through 26.
+  empty(scratch);
+}
+
 TEST_CASE("Explicit continuations retain promoted recursive results", "[bc][word]")
 {
   auto program = factorial();
