@@ -111,13 +111,57 @@ well-conditioned on this interval; reciprocal input has derivative at most
 one. Input is rounded to W before the series.
 
 Evaluate atan(t) with its alternating odd-power recurrence. The stored squared
-ratio is below .011. Term propagation contracts; each multiplication/division
+ratio has magnitude at most 1/81. The negative near-one correction can approach
+-1/9 and bypasses the positive half-angle loop; .011 would not bound its square.
+Term propagation contracts; each multiplication/division
 introduces less than u, and summation is exact. The loop takes fewer than W+2
 terms. Allowing one additional working ULP for the truncated near-one constant,
 a conservative pre-rounding bound is 301*(N+1)*u. This includes transforms,
 constant reconstruction and N terms. Use W = S + 2*d(S+F+D+1) + 24. The bound
 is far below U/2 by the digit-count inequality above. Term disappearance is a
 termination event under this contraction bound, not the accuracy justification.
+
+The bound includes that negative correction. For stored reduced argument z,
+let p_j = z*(-z*z)^j be the exact odd power and t_j the stored power. With
+Q = 1/81, the rounded squared ratio differs from -z*z by less than u and
+has magnitude at most Q. Starting with E_0 = |t_0-p_0| = 0, multiplication
+and truncation give
+
+```
+E_(j+1) <= Q*E_j + (|z|*Q^j+1)*u <= Q*E_j + (10/9)*u.
+```
+
+Thus E_j < (9/8)*u. Dividing an odd power introduces at most another u,
+so each added term has error below (17/8)*u. Once a stored power vanishes,
+the subsequent exact tail is below (9/640)*u. Allowing 2u for that tail,
+the accumulated series error is below `(17*N/8+2)*u`. Stored multiplication
+does not increase magnitude, so `|t_j| <= (1/9)*(1/81)^j`. At j = W+1 this
+is below u, forcing the stored power to zero and proving N <= W+1.
+
+For completeness, the nonnegative half-angle map H is 1/2-Lipschitz.
+Rounding the square perturbs its square root by less than u/2; square-root
+truncation adds less than u. Both division denominators are at least two,
+so a stored half angle differs from exact H by less than `(11/8)*u < 2u`.
+The initial transformed-argument error is at most u. Three half angles
+therefore leave less than `(29/8)*u < 4u` argument error. At W >= 26,
+rational square-root bounds also give the stored upper-bound chain
+`1 -> .415 -> .2 -> .1`; hence at most three steps and multiplier eight.
+Negative corrections use no half-angle steps and remain bounded by 1/9.
+
+The arctangent is one-Lipschitz. Reconstruction therefore contributes at
+most 32u argument error and 2u constant error, in addition to eight times
+the series error. The total is below `(17*N+50)*u`, which is bounded by
+the existing `301*(N+1)*u` budget for every N >= 0. With
+T = S+F+D+1 and d = d(T), the unchanged W = S+2d+24 satisfies W+2 <= 29T.
+Since T < 10^d and d >= 1, the pre-rounding error is below
+`8729*10^(-25)*U < U/2`. The final nearest rounding adds at most U/2.
+The corrected ratio bound thus requires no precision or runtime change.
+
+The [exact rational proof checks](bc-atan-ratio-proof/test-proof.py) cover
+the endpoint counterexample, source reduction premises, power/term/tail
+bounds, three half-angle bounds and rounding headroom. They supplement
+the independent numerical enclosures; they do not replace interpreter
+correctness tests or constitute compiler MC/DC.
 
 ## Exponential
 
