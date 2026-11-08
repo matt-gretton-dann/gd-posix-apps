@@ -69,8 +69,9 @@ Let d(T) be the decimal digit count of a positive integer T. The formulas below 
 scale zero. For T >= 1, W <= 27T for the 24-digit formulas (and <= 35T for the
 32-digit formulas). Thus the two extra d(T) terms dominate quadratic working-
 precision factors: T < 10^d(T). The remaining 24 or 32 digits leave a large
-explicit margin for the conservative constants below. They are not a fixed
-S+10 accuracy assumption.
+explicit margin for the conservative constants below. The ascending Bessel
+regime uses sixteen residual digits with its separate explicit bound below.
+These are not fixed S+10 accuracy assumptions.
 
 ## Arctangent
 
@@ -356,7 +357,7 @@ unbounded divergent series is treated as convergent merely because a term grew.
 
 Otherwise, evaluate the ascending recurrence, including the initial
 `(x/2)^n/n!`, with G = floor(7*x/16) + 1 and
-W = S + G + D + 2*d(S+G+D+1) + 32. Truncate the argument only if it has more
+W = S + G + 2*d(S+G+1) + 16. Truncate the argument only if it has more
 than W fractional places. Differentiating the real integer-order
 [Bessel integral](https://dlmf.nist.gov/10.9.E2) gives `|J_n'(x)| <= 1`,
 so truncating the argument adds less than one working unit of error.
@@ -392,10 +393,30 @@ The tail and all truncation propagation are bounded by
 `10^6*(W+1)^2*exp(x)*u`. The exponential series gives
 `e < 87/32`, and `87^16 < 10^7 * 32^16`. Thus
 `exp(x)*10^(-G) < 1` for the nonnegative argument. The remaining
-guards keep the total error below half an output unit. With
-`T = S + G + D + 1 >= 2`, `W+1 <= 19*T` and `T < 10^d(T)`.
-The bound in output units is below `19^2*10^-25`, leaving room for the
-argument truncation error. Rounding to the requested scale adds at
+guards keep the total error below half an output unit. Let
+`T = S + G + 1 >= 2` and `d = d(T)`. Since `d <= T-1`,
+`W+1 = T+2*d+16 <= 3*T+14 <= 10*T`. Also `T < 10^d`.
+In output units the aggregate recurrence bound is therefore strictly below
+`10^6 * (10*T)^2 * 10^(-2*d-16) < 10^-8`.
+The separate input truncation adds less than `10^(-G-2*d-16)` output
+units, at most `10^-19` because `G,d >= 1`. Their sum is below half
+an output unit with a wide margin. This argument retains the adaptive
+magnitude and digit-count guards, including cancellation and an underflowed
+initial coefficient. The derivative bound makes an additional guard for the
+input's stored length unnecessary: long decimal representations are truncated
+at W before the recurrence, with their error already charged above. The
+residual guard is also sixteen digits smaller than the previous formula.
+Before final rounding, measure the fractional distance from a half-unit
+boundary in output units. Division by the exact output unit adds less than
+one working unit to this comparison; `W >= 19`, so a distance of at least
+`2*10^-8` proves the same nearest result despite the aggregate error above.
+Closer results are evaluated once more at the previous working scale
+`S+G+D+2*d(S+G+D+1)+32`, using the saved exact input. This preserves the
+established behavior on the nearly half-unit test inputs. The second attempt
+uses the original error budget and is not retried; arbitrary correct rounding
+is still not promised. Both attempts check the assigned working scale.
+The Hankel working scale and contraction/fallback rule are unchanged.
+Rounding to the requested scale adds at
 most half an output unit, so the total is below one decimal ULP.
 An underflowed initial factor or term is therefore
 covered by the error budget even if later exact recurrence terms would grow.
