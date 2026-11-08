@@ -78,3 +78,24 @@ allocation counters; code pages also require separate process-memory review.
 Compilation cost, cache footprint, cold startup and unrelated workloads remain
 part of any later acceptance study. This feature is not a general bc JIT and
 does not accelerate recursive or branching function bodies.
+
+## Qualification provenance
+
+The immutable-source builder records `native_function_policy` separately from
+the loop tier. It verifies the VM presence definition and selected backend in
+the compilation database or native Release project. Enabled leaf builds also
+retain the backend and its same-directory shared planner with byte hashes.
+Requesting the CMake option on an unsupported target remains a recorded generic
+fallback. `--require-candidate-native-functions` rejects that fallback, an ignored
+option or a missing planner before either comparison controller starts sampling.
+
+Matched resource diagnostics require the ordinary and instrumented roles to
+agree on source, compiler, mode and planner inputs. Compilation does not prove
+execution: call diagnostics must complete native calls, and fixed overflow
+cases must attempt then decline the kernel before generic replay. Separate
+full/held cache inputs keep all 26 function caches alive together, requiring
+1,664/1,378 native completions. Cold RSS observes process memory separately;
+selected-container allocation counters exclude executable mappings and compiler
+buffers. Profiling can still change other execution paths, particularly Apple
+scalar argument forwarding, so these counts do not establish ordinary-path
+identity or replace elapsed, startup and code-size review.
