@@ -15,7 +15,7 @@ namespace {
 using Op = Instruction::Opcode;
 using Index = Instruction::Index;
 using Word = std::uint32_t;
-constexpr Index result_slots = 64;
+constexpr Index result_slots = native_scalar_result_slots;
 constexpr unsigned stack_bytes = 768;
 constexpr unsigned scratch = 8;
 constexpr unsigned second = 9;
@@ -159,46 +159,6 @@ private:
 };
 }  // namespace
 
-auto native_scalar_variables(Instructions const& code) -> std::bitset<Letter::count_>
-{
-  if (code.size() < 16 || code.size() > result_slots)
-    return {};
-  std::bitset<Letter::count_> variables;
-  bool backedge = false;
-  for (Index pc = 0; pc < code.size(); ++pc) {
-    auto const& instruction = code[pc];
-    switch (instruction.opcode()) {
-    case Op::variable:
-      variables.set(scalar(instruction));
-      break;
-    case Op::number:
-    case Op::add:
-    case Op::less_than:
-      break;
-    case Op::load:
-    case Op::store:
-      if (code[relative(pc, instruction.op1())].opcode() != Op::variable)
-        return {};
-      break;
-    case Op::branch: {
-      auto const target = relative(pc, instruction.op1());
-      if (target > code.size())
-        return {};
-      backedge |= target <= pc;
-      break;
-    }
-    case Op::branch_zero: {
-      auto const target = relative(pc, instruction.op2());
-      if (target <= pc || target > code.size())
-        return {};
-      break;
-    }
-    default:
-      return {};
-    }
-  }
-  return backedge ? variables : std::bitset<Letter::count_>{};
-}
 
 auto run_native_scalar(Instructions const& code, std::bitset<Letter::count_> variables,
                        NativeInterruptCheck interrupted) -> std::optional<NativeScalarResult>

@@ -14,6 +14,7 @@
 namespace GD::Bc::Details {
 using NativeInterruptCheck = bool (*)() noexcept;
 using NativeScalarResult = std::array<std::uint64_t, Letter::count_>;
+inline constexpr Instruction::Index native_scalar_result_slots = 64;
 
 // Accepts only fully verified top-level streams with zero-initialized
 // referenced scalars. A failed attempt never changes VM state or emits output.
