@@ -68,6 +68,8 @@ enum class Event : std::size_t {
   divisor_cache_hits,
   native_scalar_attempts,
   native_scalar_completions,
+  native_function_attempts,
+  native_function_completions,
   count
 };
 
