@@ -5,6 +5,7 @@ from decimal import Decimal, localcontext
 from fractions import Fraction
 import importlib.util
 import json
+import math
 import os
 import re
 from pathlib import Path
@@ -43,6 +44,67 @@ def unit_atan_enclosure():
 
 
 class LibraryCli(unittest.TestCase):
+    def test_bessel_four_term_identity_and_local_error_bounds(self):
+        # Compare the common-denominator identity with four independently
+        # advanced exact terms. This includes fractional arguments, unlike
+        # the earlier integer-only grouping experiment.
+        def truncate(value, places):
+            return Fraction(int(value * 10 ** places), 10 ** places)
+
+        for order in (0, 1, 7, 23, 403):
+            for index in (1, 2, 7, 8, 31, 234):
+                denominators = [(index + offset) * (order + index + offset)
+                                for offset in range(4)]
+                d1, d2, d3, d4 = denominators
+                denominator = d1 * d2 * d3 * d4
+                self.assertGreaterEqual(denominator, 576)
+                for q in map(Fraction, ('-16', '-15.999999', '-4', '-.25', '-.000001', '0')):
+                    polynomial = d2*d3*d4 + q*(d3*d4 + q*(d4+q))
+                    term = Fraction(7, 3)
+                    direct = Fraction()
+                    for divisor in denominators:
+                        term = term*q/divisor
+                        direct += term
+                    self.assertEqual(direct, Fraction(7, 3)*q*polynomial/denominator)
+                    self.assertEqual(term, Fraction(7, 3)*q**4/denominator)
+                    self.assertLess(abs(polynomial)/denominator, 20)
+                    for places in (6, 12):
+                        unit = Fraction(1, 10**places)
+                        stored_q = truncate(q, places)
+                        squared = truncate(stored_q*stored_q, places)
+                        fourth = truncate(squared*squared, places)
+                        self.assertLessEqual(abs(fourth-stored_q**4), 513*unit)
+                        stored_p = truncate(truncate((stored_q+d4)*stored_q, places)
+                                            + d3*d4, places)
+                        stored_p = truncate(stored_p*stored_q, places) + d2*d3*d4
+                        exact_p = d2*d3*d4 + stored_q*(d3*d4 + stored_q*(d4+stored_q))
+                        self.assertLessEqual(abs(stored_p-exact_p), 17*unit)
+                        for value in (Fraction(0), Fraction(1), Fraction(2999),
+                                      Fraction(2999999999, 1000000)):
+                            advanced = truncate(truncate(value*fourth, places)/denominator, places)
+                            self.assertLess(abs(advanced-value*stored_q**4/denominator), 2675*unit)
+                            block = truncate(truncate(truncate(value*stored_q, places)
+                                                      * stored_p, places)/denominator, places)
+                            self.assertLess(abs(block-value*stored_q*exact_p/denominator), 1441*unit)
+
+    def test_bessel_four_term_bounded_error_budget(self):
+        # A first pass through |x|<=8, S<=100 uses W=S+12. Reuse
+        # exp(8)<3000 for propagation, but account for every extra product
+        # truncation introduced by the four-term recurrence.
+        prefix = sum((Fraction(8)**k / math.factorial(k)
+                      for k in range(65)), Fraction())
+        tail = Fraction(8)**65 / math.factorial(65)
+        self.assertLess(prefix + tail/(1-Fraction(8, 66)), 3000)
+        self.assertLess(2675*3000 + 1441, 8030000)
+        for scale in range(101):
+            working = scale + 12
+            coefficient_steps = max(24, 4*(scale+1))-1
+            term_steps = 2*working+16
+            blocks = (term_steps+3)//4
+            self.assertLess(Fraction(3000, 4**(2*working+8)), Fraction(1, 10**working))
+            error_units = 1 + 2*3000*(coefficient_steps+1) + 8030000*blocks
+            self.assertLess(Fraction(error_units, 10**12), Fraction(1, 1000))
+
     def invoke(self, program, options=('-l',), files=(), binary=None, timeout=30):
         try:
             return subprocess.run([binary or BC, *options, *map(str, files)], input=program,
@@ -60,7 +122,7 @@ class LibraryCli(unittest.TestCase):
     def certified(self, options=('-l',), files=(), binary=None):
         cases = []
         for filename in ('math-oracles.json', 'math-crossover-oracles.json', 'math-trig-oracles.json',
-                         'math-bessel-zero-oracles.json'):
+                         'math-bessel-zero-oracles.json', 'math-bessel-bounded-oracles.json'):
             cases.extend(json.loads((ROOT / 'fixtures' / filename).read_text())['cases'])
         program = []
         for case in cases:
@@ -299,6 +361,36 @@ class LibraryCli(unittest.TestCase):
             self.assertEqual(ORACLE.classify(Fraction(expected), partial, upper, 0), 'pass')
         program = 'scale=0\n' + ''.join(f'j(0,{x})\n' for x in arguments)
         self.assertEqual(self.checked_lines(program), ['1', '0'])
+
+    def test_bounded_bessel_guard_error_budget(self):
+        # Bound exp(8) using a rational Taylor prefix and a geometric tail.
+        term = total = Fraction(1)
+        for k in range(1, 65):
+            term *= Fraction(8, k)
+            total += term
+        next_term = term * Fraction(8, 65)
+        upper = total + next_term / (1 - Fraction(8, 66))
+        self.assertLess(upper, 3000)
+        for scale in range(101):
+            with self.subTest(scale=scale):
+                working = scale + 9
+                # Otherwise the existing n>=3*x, n>=4*(scale+1)
+                # tiny-result branch would already have returned zero.
+                coefficient_steps = max(24, 4 * (scale + 1)) - 1
+                series_steps = 2 * working + 16
+                self.assertLessEqual(coefficient_steps, 403)
+                self.assertLessEqual(series_steps, 234)
+                # At k>=8, |q|/(k*(n+k))<=16/64. Stored
+                # magnitudes never exceed the exact absolute terms.
+                self.assertLess(Fraction(3000, 4 ** (2 * working + 8)),
+                                Fraction(1, 10 ** working))
+                # Each coefficient/term step loses at most two working
+                # units, with absolute propagation below exp(8). Add
+                # the squared-argument and input-truncation budgets.
+                working_units = 1 + 2 * 3000 * (coefficient_steps + series_steps + 1)
+                output_units = Fraction(working_units, 10 ** 9)
+                self.assertLess(output_units, Fraction(4, 1000))
+                self.assertLess(output_units + Fraction(1, 2), 1)
 
     def test_bessel_ascending_with_exact_rational_enclosures(self):
         arguments = ((0, 100, 150), (300, 300, 100), (1, '1.125', 100),
