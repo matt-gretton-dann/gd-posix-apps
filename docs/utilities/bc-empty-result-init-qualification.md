@@ -8,13 +8,18 @@ Constructing the empty variant explicitly may avoid inactive payload stores,
 but instruction count, code layout and cache effects may offset that work.
 No elapsed gain is established by the static inspection or correctness tests.
 
-Finish and preserve every original PR #675 job and record its complete
-disposition before publishing this qualification workflow or starting its
-cohort. Record the final immutable source, protocol and workflow hashes in #207
-before publication. Never edit that source, cancel an adverse job, or restart
-the cohort for acceptance. Other experiments' gains, losses, incomplete and
-inconclusive observations retain their own source identities and do not qualify
-this source. No local production elapsed benchmarks are permitted.
+Preserve every original PR #675 job under its frozen source and protocol. This
+independent VM topic may qualify in parallel using its own job group, source
+identity and within-job controls. Publication does not replace or restart any
+#675 job. Complete that study's original review and disposition before an
+integration merge; never transfer its observations to this source.
+
+Record the final immutable source, protocol and workflow hashes in #207 before
+publication. Never edit that source, cancel an adverse job, or restart the cohort
+for acceptance. Other experiments' gains, losses, incomplete and inconclusive
+observations retain their own identities. No local production elapsed benchmarks
+are permitted. This prospective sequencing plan was revised before publication;
+all measurement and acceptance requirements remain unchanged.
 
 ## Correctness preflight
 
