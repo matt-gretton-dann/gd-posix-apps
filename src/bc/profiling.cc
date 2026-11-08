@@ -114,7 +114,9 @@ auto name(Event which) noexcept -> char const*
                              "divisor_cache_promotions",
                              "divisor_cache_hits",
                              "native_scalar_attempts",
-                             "native_scalar_completions"};
+                             "native_scalar_completions",
+                             "native_function_attempts",
+                             "native_function_completions"};
   static_assert(names.size() == static_cast<std::size_t>(Event::count));
   return names[static_cast<std::size_t>(which)];
 }

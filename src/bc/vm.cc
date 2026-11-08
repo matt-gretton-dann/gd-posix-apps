@@ -31,6 +31,16 @@
 #ifdef GD_BC_NATIVE_SCALAR
 #  include "native-scalar.hh"
 #endif
+#ifdef GD_BC_NATIVE_FUNCTIONS
+#  include "native-expression.hh"
+#  if defined(_MSC_VER)
+#    define GD_BC_LEAF_NOINLINE __declspec(noinline)
+#  elif defined(__GNUC__) || defined(__clang__)
+#    define GD_BC_LEAF_NOINLINE __attribute__((noinline))
+#  else
+#    define GD_BC_LEAF_NOINLINE
+#  endif
+#endif
 
 // Native comparisons found a Linux math slowdown with direct forwarding.
 #if defined(__APPLE__) && defined(__aarch64__) && !GD_BC_PROFILE
@@ -296,6 +306,14 @@ private:
   {
   }
 
+#if defined(GD_BC_NATIVE_FUNCTIONS)
+  // Cache only code derived from this immutable definition. Replacing a
+  // function releases its executable page; failed allocations can be retried.
+  GD_BC_LEAF_NOINLINE auto native_leaf(VariableMask locals) -> NativeExpression const*;
+  std::shared_ptr<NativeExpression const> native_leaf_;
+  bool native_leaf_rejected_ = false;
+#endif
+
 #if !GD_BC_PROFILE && !defined(_WIN32)
   // Prove the parser's one-scalar prologue and that the rest of the
   // function cannot read its result slots or branch back into it.
@@ -418,6 +436,11 @@ struct VMState
   auto call(Letter func, Location const& loc, Number const* argument = nullptr) -> Number;
 #else
   auto call(Letter func, Location const& loc) -> Number;
+#endif
+#if defined(GD_BC_NATIVE_FUNCTIONS)
+  GD_BC_LEAF_NOINLINE auto call_generic(Letter func, Location const& loc) -> Number;
+  GD_BC_LEAF_NOINLINE auto call_native_leaf(Letter func, Location const& loc,
+                                            NativeExpression const& code) -> Number;
 #endif
 
   /** Push a new parameter pack onto the parameter stack.  */
@@ -1010,14 +1033,161 @@ void GD::Bc::Details::VMState::defer_library_function(Letter name, std::string_v
 }
 #endif
 
-#if GD_BC_FORWARD_SCALAR_ARGUMENT
+#if defined(GD_BC_NATIVE_FUNCTIONS)
+auto GD::Bc::Details::FunctionCode::native_leaf(VariableMask locals) -> NativeExpression const*
+{
+  if (native_leaf_ || native_leaf_rejected_)
+    return native_leaf_.get();
+  using O = Instruction::Opcode;
+  using D = Instruction::Offset;
+  using K = NativeExpressionOp::Kind;
+  constexpr Instruction::Index body = 4;
+  constexpr Instruction::Index limit = 132;
+  auto reject = [&]() -> NativeExpression const* {
+    native_leaf_rejected_ = true;
+    return nullptr;
+  };
+  if (instructions_.size() <= body || instructions_.size() > limit ||
+      instructions_[0].opcode() != O::pop_param || instructions_[1].opcode() != O::variable ||
+      instructions_[2].opcode() != O::store || instructions_[3].opcode() != O::pop_param_mark ||
+      std::get<D>(instructions_[2].op1()) != -1 || std::get<D>(instructions_[2].op2()) != -2)
+    return reject();
+  auto const parameter = std::get<Variable>(instructions_[1].op1());
+  if (!locals.contains(parameter))
+    return reject();
+  std::array<int, limit> values;
+  values.fill(-1);
+  std::vector<NativeExpressionOp> operations;
+  for (Instruction::Index i = body; i < instructions_.size(); ++i) {
+    auto const& instruction = instructions_[i];
+    auto operand = [&](Instruction::Operand const& value) -> int {
+      auto const* offset = std::get_if<D>(&value);
+      if (offset == nullptr || *offset >= 0 || *offset < -static_cast<D>(i - body))
+        return -1;
+      return values[static_cast<Instruction::Index>(static_cast<D>(i) + *offset)];
+    };
+    switch (instruction.opcode()) {
+    case O::variable:
+      if (std::get<Variable>(instruction.op1()) != parameter)
+        return reject();
+      values[i] = -2;  // A location is not yet a numeric operand.
+      continue;
+    case O::load:
+      if (operand(instruction.op1()) != -2)
+        return reject();
+      values[i] = static_cast<int>(operations.size());
+      operations.push_back({K::argument});
+      break;
+    case O::number: {
+      auto const& text = std::get<std::string>(instruction.op1());
+      // bc treats a single decimal digit independently of ibase. Wider
+      // literals must retain the generic decoder's execution-time base.
+      if (text.size() != 1 || text[0] < '0' || text[0] > '9')
+        return reject();
+      values[i] = static_cast<int>(operations.size());
+      operations.push_back({K::constant, 0, 0, static_cast<std::uint64_t>(text[0] - '0')});
+      break;
+    }
+    case O::add:
+    case O::multiply: {
+      auto const left = operand(instruction.op1());
+      auto const right = operand(instruction.op2());
+      if (left < 0 || right < 0)
+        return reject();
+      values[i] = static_cast<int>(operations.size());
+      operations.push_back({instruction.opcode() == O::add ? K::add : K::multiply,
+                            static_cast<std::uint8_t>(left), static_cast<std::uint8_t>(right)});
+      break;
+    }
+    case O::return_: {
+      auto const result = operand(instruction.op1());
+      if (result < 0)
+        return reject();
+      native_leaf_ = NativeExpression::compile(operations, static_cast<std::uint8_t>(result));
+      return native_leaf_.get();
+    }
+    default:
+      // In particular, no stores, branches, calls, I/O or special registers
+      // may execute before this return. The parser's implicit final return
+      // after an explicit return is unreachable and needs no native code.
+      return reject();
+    }
+    if (operations.size() > 64)
+      return reject();
+  }
+  return reject();
+}
+
+auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc::Number
+{
+  GD_BC_PROFILE_EVENT(Profile::Event::function_calls, 1);
+  if (!full_checks() && !have_been_interrupted.test(std::memory_order_relaxed) &&
+      !param_marks_.empty()) {
+    auto const& mark = param_marks_.back();
+    auto& definition = functions_.at(static_cast<unsigned>(func));
+    if (definition && mark.next == mark.begin && parameters_.size() - mark.begin == 1 &&
+        std::holds_alternative<Number>(parameters_.back())) {
+      // Deferred library definitions keep their normal first-call loader.
+      // No Number owner lives in this routing frame on a generic call.
+      NativeExpression const* code = nullptr;
+      try {
+        code = std::get<0>(*definition).native_leaf(std::get<1>(*definition));
+      }
+      catch (std::bad_alloc const&) {
+        // Preparation has not consumed arguments or changed dynamic bindings.
+      }
+      if (code != nullptr)
+        return call_native_leaf(func, loc, *code);
+    }
+  }
+  return call_generic(func, loc);
+}
+
+auto GD::Bc::Details::VMState::call_native_leaf(Letter func, Location const& loc,
+                                                NativeExpression const& code) -> GD::Bc::Number
+{
+  static_assert(std::is_nothrow_move_constructible_v<Number>);
+  auto const& argument = std::get<Number>(parameters_.back());
+  // to_unsigned is nonthrowing in this conservative subdomain. Keep larger,
+  // negative, fractional and heap inputs in the generic Number interpreter.
+  if (!argument.has_heap_storage() && argument.scale() == 0 &&
+      argument.length() <= Number::base_log10_ && argument >= Number(0)) {
+    try {
+      std::uint64_t value = 0;
+      GD_BC_PROFILE_EVENT(Profile::Event::native_function_attempts, 1);
+      if (!have_been_interrupted.test(std::memory_order_relaxed) &&
+          code.execute(argument.to_unsigned(), value)) {
+        // Complete all potentially throwing result construction before the
+        // parameter pack is consumed. The generated kernel never owns Numbers.
+        Number result = value < Number::base_ ? Number(static_cast<Number::NumType>(value))
+                                              : Number(std::to_string(value), 10);
+        if (!have_been_interrupted.test(std::memory_order_relaxed)) {
+          auto const begin = param_marks_.back().begin;
+          parameters_.resize(begin);
+          param_marks_.pop_back();
+          GD_BC_PROFILE_EVENT(Profile::Event::native_function_completions, 1);
+          return result;
+        }
+      }
+    }
+    catch (std::bad_alloc const&) {
+      // The incoming pack is still intact, including when boxing failed.
+    }
+  }
+  return call_generic(func, loc);
+}
+
+auto GD::Bc::Details::VMState::call_generic(Letter func, Location const& loc) -> GD::Bc::Number
+#elif GD_BC_FORWARD_SCALAR_ARGUMENT
 auto GD::Bc::Details::VMState::call(Letter func, Location const& loc, Number const* argument)
   -> GD::Bc::Number
 #else
 auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc::Number
 #endif
 {
+#if !defined(GD_BC_NATIVE_FUNCTIONS)
   GD_BC_PROFILE_EVENT(Profile::Event::function_calls, 1);
+#endif
   auto const index = static_cast<unsigned>(func);
   auto& func_ptr = functions_.at(index);
 #if defined(GD_BC_PREPARSED_LIBRARY)

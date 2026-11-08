@@ -5,16 +5,22 @@
 #include <new>
 
 #include <algorithm>
+#include <array>
 #include <atomic>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <limits>
+#include <memory>
 #include <sstream>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
 
 #include "bc.hh"
+#if defined(GD_BC_TEST_NATIVE_FUNCTIONS)
+#  include "native-expression.hh"
+#endif
 #if defined(GD_BC_TEST_NATIVE_SCALAR)
 #  include "native-scalar.hh"
 #  include "verification.hh"
@@ -546,8 +552,109 @@ auto native_emitter_allocation_failures() -> bool
 }  // namespace
 #endif
 
+#if defined(GD_BC_TEST_NATIVE_FUNCTIONS)
+namespace {
+auto native_leaf_allocation_failures() -> bool
+{
+  using namespace GD::Bc::Details;
+  using K = NativeExpressionOp::Kind;
+  std::array<NativeExpressionOp, 4> const square{
+    {{K::argument}, {K::multiply, 0, 0}, {K::constant, 0, 0, 1}, {K::add, 1, 2}}};
+  auto correct = [](auto const& code) {
+    std::uint64_t result = 0;
+    return code && code->execute(19, result) && result == 362;
+  };
+  if (!correct(NativeExpression::compile(square, 3)))
+    return false;
+  auto const live = outstanding.load(std::memory_order_relaxed);
+  for (std::size_t offset = 0; offset != 128; ++offset) {
+    auto const failures = injected_failures;
+    std::shared_ptr<NativeExpression const> code;
+    try {
+      AllocationFailure const fault(offset);
+      code = NativeExpression::compile(square, 3);
+    }
+    catch (std::bad_alloc const&) {
+      return false;  // An optional compiler must decline without consuming input.
+    }
+    bool const injected = injected_failures != failures;
+    if ((injected && code) || (!injected && !correct(code)))
+      return false;
+    code.reset();
+    if (outstanding.load(std::memory_order_relaxed) != live ||
+        !correct(NativeExpression::compile(square, 3)))
+      return false;
+    if (!injected) {
+      std::fprintf(stdout, "Native leaf fault sweep covered %zu allocations\n", offset);
+      return offset != 0;
+    }
+  }
+  return false;
+}
+
+auto native_leaf_call_failures() -> bool
+{
+  using namespace GD::Bc;
+  auto parse = [](std::string const& text) {
+    Parser parser(std::make_unique<Lexer>(std::make_unique<StringReader>(text)), false);
+    return parser.parse();
+  };
+  bool observed_failure = false;
+  auto const live = outstanding.load(std::memory_order_relaxed);
+  for (std::size_t point = 0; point != 256; ++point) {
+    bool injected = false;
+    {
+      std::ostringstream output, errors;
+      VM vm(output, errors, true, VM::ExecutionChecks::verified);
+      auto setup = parse("x=17\ndefine f(x) {\nreturn(x*x+1)\n}\n");
+      auto call = parse("q=f(999999999)\n");
+      auto query = parse("x\nq\n");
+      if (!setup || !call || !query || vm.execute(*setup))
+        return false;
+      auto const failures = injected_failures;
+      bool threw = false;
+      try {
+        AllocationFailure const fault(point);
+        if (vm.execute(*call))
+          return false;
+      }
+      catch (std::bad_alloc const&) {
+        threw = true;
+      }
+      injected = failures != injected_failures;
+      observed_failure = observed_failure || injected;
+      // Optional compilation and result boxing can absorb a failure by using
+      // the generic path. Generic failures must leave a reusable VM as well.
+      if ((threw && !injected) || (threw && vm.execute(*call)) || vm.execute(*query) ||
+          output.str() != "17\n999999998000000002\n" || !errors.str().empty()) {
+        std::fprintf(stderr, "Native leaf call sweep failed at %zu (injected=%d, threw=%d)\n",
+                     point, int(injected), int(threw));
+        return false;
+      }
+    }
+    if (outstanding.load(std::memory_order_relaxed) != live) {
+      std::fprintf(stderr, "Native leaf call sweep retained %td allocations at %zu\n",
+                   outstanding.load(std::memory_order_relaxed) - live, point);
+      return false;
+    }
+    if (!injected) {
+      std::fprintf(stdout, "Native leaf call fault sweep covered %zu allocations\n", point);
+      return observed_failure;
+    }
+  }
+  return false;
+}
+}  // namespace
+#endif
+
 auto main() -> int
 {
+#if defined(GD_BC_TEST_NATIVE_FUNCTIONS)
+  if (!native_leaf_allocation_failures()) {
+    std::fprintf(stderr, "Native leaf allocation failure damaged cleanup or retry\n");
+    return 1;
+  }
+#endif
 #if defined(GD_BC_TEST_NATIVE_SCALAR)
   if (!native_emitter_allocation_failures()) {
     std::fprintf(stderr, "Native emitter allocation failure prevented generic fallback\n");
@@ -562,6 +669,12 @@ auto main() -> int
   if (!run()) {
     return 1;
   }
+#if defined(GD_BC_TEST_NATIVE_FUNCTIONS)
+  if (!native_leaf_call_failures()) {
+    std::fprintf(stderr, "Native leaf call allocation failure damaged arguments or retry\n");
+    return 1;
+  }
+#endif
   // Measure real ordinary allocations in this isolated executable, including
   // constructor/copy/COW arithmetic, rather than inferring them from a tag.
   if (!inline_numbers<GD::Bc::NumberTraits8>() || !inline_numbers<GD::Bc::NumberTraits16>() ||
