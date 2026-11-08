@@ -268,6 +268,29 @@ declarations checked for completeness; source/build recipes must independently
 establish their accuracy. The executable checksum is calculated automatically.
 Timing rejects explicitly instrumented binaries; profiling uses separate runs.
 
+GD recipes also record `configuration.profiling_execution_policy`. For the
+recognized VM guard, a POSIX preprocessor probe uses the VM's retained compile
+command, target/language/include/definition flags and the sanitized build
+environment. Object, dependency and LTO output options are removed. The source,
+compile-command database, probe and command log have recorded hashes; the probe
+and logs accompany the build recipe. This preprocesses code without executing
+GD or using an instrumented duration as performance evidence.
+
+The recorded scalar-argument-forwarding state describes compile-time
+eligibility, not whether a particular call forwards. Apple arm64 ordinary builds
+can enable that path while profiling builds disable it. Software counters then
+describe the instrumented fallback path and cannot alone establish exact
+ordinary-path forwarding allocations. Check ordinary-image RSS separately.
+Even a recorded gate leaves full execution-path identity **not established**.
+
+Missing source/compilation evidence, unsupported compiler contexts (including
+the native Windows probe fallback), failed probes and unrecognized guards keep
+the state unknown or unavailable with `enabled: null`. They are not relabeled
+disabled. Older recipes without this field provide no such policy evidence;
+preserve them unchanged and bind any later source-based review to their original
+archive and source hashes. This metadata grants no elapsed acceptance or merge
+eligibility.
+
 An OS-installed comparator uses `role: installed`, remains visibly incomplete
 when its build is unknown, and cannot be the controlled reference in strict
 mode. Keep Apple's installed Howard separate from the pinned source-built

@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 
 class GdBuild(unittest.TestCase):
@@ -69,9 +70,10 @@ class GdBuild(unittest.TestCase):
         source = self.profile_policy_source()
         compiler = self.root / 'c++'
         compiler.write_text('#!' + sys.executable + '\n'
-            'from pathlib import Path\nimport sys\n'
+            'from pathlib import Path\nimport os\nimport sys\n'
             'args = sys.argv[1:]\n'
             'assert "-E" in args and "-P" in args\n'
+            'assert not any(key in os.environ for key in ["CXXFLAGS", "CL", "BC_PROFILE_FIXTURE"])\n'
             'assert not any(x in args for x in ["-c", "-o", "-MF", "-MMD", "-flto=thin"])\n'
             'probe = next(Path(x) for x in args if x.endswith("profile-forwarding-probe.cc"))\n'
             'assert "vm.cc" in probe.read_text()\n'
@@ -87,10 +89,12 @@ class GdBuild(unittest.TestCase):
                     '-flto=thin', '-MMD', '-MF', 'ignored.d', '-c', str(source), '-o', 'ignored.o'])]
                 (self.build / 'compile_commands.json').write_text(json.dumps(commands))
                 builder = self.helper.Builder(self.root, 3)
-                value = self.module.build_metadata(
-                    self.helper, self.root, self.root / 'source', self.build, 'a' * 40, 126,
-                    {'version': 'C'}, {'version': 'C++'}, diagnostic_profile=diagnostic,
-                    builder=builder)
+                with mock.patch.dict(os.environ, {'CXXFLAGS': 'fixture', 'CL': 'fixture',
+                                                  'BC_PROFILE_FIXTURE': 'fixture'}):
+                    value = self.module.build_metadata(
+                        self.helper, self.root, self.root / 'source', self.build, 'a' * 40, 126,
+                        {'version': 'C'}, {'version': 'C++'}, diagnostic_profile=diagnostic,
+                        builder=builder)
                 policy = value['configuration']['profiling_execution_policy']
                 self.assertEqual(policy['path_identity'], 'not established')
                 forwarding = policy['scalar_argument_forwarding']
@@ -117,6 +121,25 @@ class GdBuild(unittest.TestCase):
         policy = self.metadata()['configuration']['profiling_execution_policy']
         self.assertEqual(policy['scalar_argument_forwarding']['status'], 'unavailable')
         self.assertIsNone(policy['scalar_argument_forwarding']['enabled'])
+
+    @unittest.skipUnless(os.name == 'posix', 'GNU-style compiler probe fixture')
+    def test_failed_or_ambiguous_profile_probe_does_not_claim_disabled(self):
+        source = self.profile_policy_source()
+        compiler = self.root / 'c++'
+        (self.build / 'compile_commands.json').write_text(json.dumps([dict(
+            file=str(source), directory=str(self.root),
+            arguments=[str(compiler), '-c', str(source), '-o', 'ignored.o'])]))
+        for program in ('raise SystemExit(2)', 'print("GD_BC_PROFILE_FORWARDING 10")',
+                        'print("GD_BC_PROFILE_FORWARDING 0\\nGD_BC_PROFILE_FORWARDING 1")'):
+            with self.subTest(program=program):
+                compiler.write_text('#!' + sys.executable + '\n' + program + '\n')
+                compiler.chmod(0o755)
+                value = self.module.build_metadata(
+                    self.helper, self.root, self.root / 'source', self.build, 'a' * 40, 126,
+                    {'version': 'C'}, {'version': 'C++'}, builder=self.helper.Builder(self.root, 3))
+                policy = value['configuration']['profiling_execution_policy']
+                self.assertEqual(policy['scalar_argument_forwarding']['status'], 'unavailable')
+                self.assertIsNone(policy['scalar_argument_forwarding']['enabled'])
 
     def prepared_commands(self, value, arguments=False):
         rows = []

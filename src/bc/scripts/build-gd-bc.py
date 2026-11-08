@@ -13,6 +13,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shlex
 import shutil
 import sys
 
@@ -64,8 +65,104 @@ def cache_values(path):
     return result
 
 
+def build_environment():
+    return {key: value for key, value in os.environ.items()
+            if not key.startswith(('BC_', 'DC_')) and
+            key not in ('CFLAGS', 'CXXFLAGS', 'CPPFLAGS', 'LDFLAGS', 'CL', '_CL_')}
+
+
+def profiling_execution_policy(helper, builder, root, source, build):
+    """Record one compile-time eligibility gate, not dynamic path identity.
+
+    Counter instrumentation can intentionally select a fallback. Probe the
+    known VM guard with its own compile definitions/target; do not infer an
+    inactive feature from missing source or unsupported compiler evidence.
+    """
+    forwarding = dict(status='unavailable', enabled=None)
+    policy = dict(schema=1, path_identity='not established',
+                  scalar_argument_forwarding=forwarding)
+    vm = source / 'src/bc/vm.cc'
+    if not vm.is_file():
+        forwarding['reason'] = 'VM source unavailable'
+        return policy
+    source_bytes = vm.read_bytes()
+    forwarding['source_sha256'] = helper.digest(vm)
+    guard = ('#if defined(__APPLE__) && defined(__aarch64__) && !GD_BC_PROFILE\n'
+             '#  define GD_BC_FORWARD_SCALAR_ARGUMENT 1\n#else\n'
+             '#  define GD_BC_FORWARD_SCALAR_ARGUMENT 0\n#endif')
+    text = source_bytes.decode('utf-8', errors='replace').replace('\r\n', '\n')
+    definitions = re.findall(r'^\s*#\s*define\s+GD_BC_FORWARD_SCALAR_ARGUMENT\b', text, re.M)
+    if text.count(guard) != 1 or len(definitions) != 2 or re.search(
+            r'^\s*#\s*undef\s+GD_BC_FORWARD_SCALAR_ARGUMENT\b', text, re.M):
+        forwarding.update(status='unknown', reason='unrecognized or absent VM eligibility guard')
+        return policy
+    commands = build / 'compile_commands.json'
+    if builder is None or os.name != 'posix' or not commands.is_file():
+        forwarding['reason'] = 'GNU-style VM compilation context/probe runner unavailable'
+        return policy
+    try:
+        entries = json.loads(commands.read_text(encoding='utf-8'))
+        if not isinstance(entries, list) or any(not isinstance(entry, dict) for entry in entries):
+            raise ValueError('unsupported VM compilation database')
+        matches = [entry for entry in entries if Path(entry.get('file', '')).resolve() == vm.resolve()]
+        if len(matches) != 1:
+            raise ValueError('VM compilation command is not unique')
+        entry = matches[0]
+        argv = entry.get('arguments') or shlex.split(entry['command'])
+        if not isinstance(argv, list) or not argv or any(
+                not isinstance(arg, str) or arg.startswith('@') for arg in argv):
+            raise ValueError('unsupported VM compiler arguments')
+        probe = root / 'profile-forwarding-probe.cc'
+        if any(char in vm.as_posix() for char in ('"', '\n', '\r')):
+            raise ValueError('unsupported VM include path')
+        probe.write_text('#include "' + vm.as_posix() + '"\n'
+                         'GD_BC_PROFILE_FORWARDING GD_BC_FORWARD_SCALAR_ARGUMENT\n', encoding='utf-8')
+        # Keep target, language, include and definition flags. Suppress object,
+        # dependency and LTO outputs, which have no role in this known guard.
+        filtered, skip, replaced = [], False, 0
+        for arg in argv:
+            if skip:
+                skip = False
+                continue
+            if arg in ('-o', '-MF', '-MT', '-MQ', '-MJ', '-serialize-diagnostics'):
+                skip = True
+            elif arg in ('-c', '-MD', '-MMD', '-MP') or arg.startswith(
+                    ('-flto', '-fno-lto', '-MF', '-MT', '-MQ', '-MJ', '--serialize-diagnostics=')):
+                continue
+            elif arg == entry['file']:
+                filtered.append(str(probe))
+                replaced += 1
+            elif arg.startswith('-o') and arg != argv[0]:
+                raise ValueError('unsupported attached output/driver option')
+            else:
+                filtered.append(arg)
+        if skip or replaced != 1:
+            raise ValueError('unsupported VM source/output arguments')
+        output = builder.run(filtered + ['-E', '-P'], cwd=entry.get('directory', build),
+                             environment=build_environment())
+        state = re.findall(r'^GD_BC_PROFILE_FORWARDING ([01])$', output, re.M)
+        if len(state) != 1 or output.splitlines()[-1] != 'GD_BC_PROFILE_FORWARDING ' + state[0]:
+            raise ValueError('VM probe did not provide one final boolean eligibility state')
+        if vm.read_bytes() != source_bytes:
+            raise ValueError('VM source changed during the probe')
+        log = builder.commands[-1]['log']
+        forwarding.update(status='recorded', enabled=state[0] == '1',
+                          verification=dict(kind='vm-preprocessor', log=log,
+                                            log_sha256=helper.digest(root / log),
+                                            probe=probe.name,
+                                            probe_sha256=helper.digest(probe),
+                                            compile_commands_sha256=helper.digest(commands)),
+                          scope='Compile-time eligibility only; not evidence that a call forwards or that all release/profile paths match')
+    except helper.BuildError:
+        forwarding.update(status='unavailable',
+                          reason='VM preprocessor probe failed; see build command logs')
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        forwarding.update(status='unavailable', reason=str(error))
+    return policy
+
+
 def build_metadata(helper, root, source, build, revision, split, compiler_c, compiler_cxx,
-                   ipo_mode='AUTO', prepared_mode='AUTO', diagnostic_profile=False):
+                   ipo_mode='AUTO', prepared_mode='AUTO', diagnostic_profile=False, builder=None):
     cache = cache_values(build / 'CMakeCache.txt')
     for flag in ('ENABLE_BC_PROFILE', 'ENABLE_BC_COVERAGE'):
         allowed = ('ON', 'TRUE', 'YES', '1') if diagnostic_profile and flag == 'ENABLE_BC_PROFILE' else ('OFF', 'FALSE', 'NO', '0')
@@ -119,6 +216,8 @@ def build_metadata(helper, root, source, build, revision, split, compiler_c, com
                               'prepared_divisors_policy': prepared,
                               'multiply_split_point': split,
                               'diagnostic_profile': diagnostic_profile,
+                              'profiling_execution_policy': profiling_execution_policy(
+                                  helper, builder, root, source, build),
                               'threshold_header_sha256': helper.digest(root / 'multiply-threshold.hh')},
             'limitations': ['Provision compiler, C/C++ runtime and SDK separately; this is not an OS image',
                             'Compiler defaults and actual commands are recorded, not claimed identical across hosts']}
@@ -347,9 +446,7 @@ def main():
         generator = args.generator or ('Ninja' if shutil.which('ninja') else None)
         if generator:
             configure += ['-G', generator]
-        environment = {key: value for key, value in os.environ.items()
-                       if not key.startswith(('BC_', 'DC_')) and
-                       key not in ('CFLAGS', 'CXXFLAGS', 'CPPFLAGS', 'LDFLAGS', 'CL', '_CL_')}
+        environment = build_environment()
         builder.run(configure, environment=environment)
         builder.run(['cmake', '--build', str(build), '--config', 'Release', '--target', 'bc',
                      '--parallel', str(args.jobs), '--verbose'], environment=environment)
@@ -360,7 +457,7 @@ def main():
             raise helper.BuildError('build did not produce the expected bc executable')
         metadata = build_metadata(helper, root, source, build, actual, args.split_point,
                                   compiler_c, compiler_cxx, args.ipo_mode, args.prepared_divisors,
-                                  diagnostic_profile=args.diagnostic_profile)
+                                  diagnostic_profile=args.diagnostic_profile, builder=builder)
         observed_layout = verified_array_layout(helper, build, args.array_storage)
         metadata['configuration']['array_storage'] = observed_layout
         image = build / 'src/bc/bc-math-library-image.inc'
