@@ -1,8 +1,11 @@
 # Number-independent recursive word executor
 
-The compact-slot follow-up in this branch is unpublished. The original frozen
-activation study at `516f50c2` is separate; its results do not qualify this new
-storage layout. Keep the full qualification and timebox requirements below.
+The compact-slot follow-up requires its own native correctness preflight and
+prospective full qualification. The original frozen activation study at
+`516f50c2` is separate; its results do not qualify this new storage layout.
+The topic skips ordinary narrow PR timing jobs during preflight; this does
+not waive full/held, startup or resource requirements before adoption. Keep
+the full qualification and total timebox requirements below.
 
 Issue #690 evaluates a distinct compiler boundary for the earlier portable
 integer experiments (#598/#607/#635/#641/#647). Those experiments already

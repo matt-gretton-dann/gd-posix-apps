@@ -20,9 +20,9 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   paired:
-    # Policy reviews reuse retained measurements; the declared word cohort
-    # replaces only its topic branch's redundant narrow comparisons.
-    if: github.head_ref != 'codex/bc-652-competitive-margin' && github.head_ref != 'codex/bc-655-array-profile' && github.head_ref != 'codex/bc-659-startup-calibration' && github.head_ref != 'codex/bc-663-versioned-roles' && github.head_ref != 'codex/bc-200-control-audit' && github.head_ref != 'codex/bc-200-root-control-audit' && github.head_ref != 'codex/bc-200-math-evidence' && github.head_ref != 'codex/bc-200-arithmetic-images' && github.head_ref != 'codex/bc-200-process-controls' && github.head_ref != 'codex/bc-200-profile-policy' && github.head_ref != 'codex/bc-number-free-recursion'
+    # Policy reviews reuse retained measurements. Word experiments retain
+    # correctness preflight and require separately declared full qualification.
+    if: github.head_ref != 'codex/bc-652-competitive-margin' && github.head_ref != 'codex/bc-655-array-profile' && github.head_ref != 'codex/bc-659-startup-calibration' && github.head_ref != 'codex/bc-663-versioned-roles' && github.head_ref != 'codex/bc-200-control-audit' && github.head_ref != 'codex/bc-200-root-control-audit' && github.head_ref != 'codex/bc-200-math-evidence' && github.head_ref != 'codex/bc-200-arithmetic-images' && github.head_ref != 'codex/bc-200-process-controls' && github.head_ref != 'codex/bc-200-profile-policy' && github.head_ref != 'codex/bc-number-free-recursion' && github.head_ref != 'codex/bc-compact-word-locals'
     name: Paired native bc / ${{ matrix.image }}
     runs-on: ${{ matrix.image }}
     timeout-minutes: 90
