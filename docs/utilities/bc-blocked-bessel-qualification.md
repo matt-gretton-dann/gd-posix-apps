@@ -98,6 +98,13 @@ study or #673 diagnostic substitutes for it.
 
 ## Review and adoption
 
+The competitive goal uses a paired median at most .90 and nominal interval
+upper bound below one, with valid controls and declared measurement checks.
+This differs from the stricter regression exception below: observing the
+competitive goal does not automatically provide a beyond-cap allowance.
+The collector's original goal labels, including inconclusive controls and
+duration shortfalls, remain recorded separately from regression acceptance.
+
 Apply unchanged `bc-performance-acceptance.md`: Linux/Windows retain 5% per
 change and macOS its existing cap. Beyond-cap exceptions require primary-Howard
 upper 95% bound at most .90, valid controls, declared samples/durations and a
