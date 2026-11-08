@@ -8,7 +8,7 @@ its values and retains capacity for later calls.
 
 Verified functions can bind one scalar parameter directly when the prepared
 body starts with the usual extraction, variable, store and marker sequence.
-The binding must be among the saved locals. The remaining bytecode must
+The binding must be among the declared locals. The remaining bytecode must
 neither read a result from the prologue nor branch into it. Argument
 evaluation and staging retain their order, and binding uses the same
 argument type and pack-size checks. Other prologues, full checks and

@@ -20,6 +20,19 @@ SPEC.loader.exec_module(CI)
 
 
 class NativeTrends(unittest.TestCase):
+    def test_private_scalar_mode_is_identical_in_candidate_resource_build(self):
+        args = types.SimpleNamespace(source=Path('.'), split_point=126,
+                                     candidate_private_scalars=True)
+        for role in ('base', 'candidate', 'aa'):
+            command = CI.gd_build_command(args, role, 'a'*40, Path(role), 'cc', 'c++')
+            profile = CI.profile_build_command(args, role, 'a'*40, Path(role+'-profile'), 'cc', 'c++')
+            self.assertEqual('--private-scalars' in command, role=='candidate')
+            self.assertEqual('--private-scalars' in profile, role=='candidate')
+            self.assertIn('--diagnostic-profile', profile)
+            if role=='candidate':
+                self.assertEqual(command[command.index('--private-scalars')+1], 'ON')
+                self.assertEqual(profile[profile.index('--private-scalars')+1], 'ON')
+
     def test_sparse_duration_requires_every_independent_role(self):
         row = dict(implementations={role: dict(median_seconds=.25)
                                     for role in ('base', 'aa', 'candidate')})
@@ -175,7 +188,7 @@ class NativeTrends(unittest.TestCase):
                                  {case['group'] for case in cases})
 
     def exercise(self, fail=False, aa_first=None, aa_second=None, prepared=False,
-                 identical=False):
+                 identical=False, private=False):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name) / 'results'
@@ -191,19 +204,25 @@ class NativeTrends(unittest.TestCase):
             def run(self, argv):
                 calls.append(argv)
                 script = Path(argv[1]).name
-                if script == 'test-divisor-reuse-cli.py':
+                if script in ('test-divisor-reuse-cli.py','test-cli.py','test-vm-cli.py'):
                     return
                 output = Path(argv[argv.index('--output') + 1])
                 output.mkdir()
                 if script in ('build-gd-bc.py', 'build-bc-comparators.py'):
                     (output / 'prepared-policy').mkdir()
                     (output / 'prepared-policy/libbc.vcxproj').write_text('retained fixture')
+                    activated='--private-scalars' in argv
+                    if activated:
+                        (output / 'private-scalars-policy').mkdir()
+                        (output / 'private-scalars-policy/libbc.vcxproj').write_text('private fixture')
                     name = argv[argv.index('--name') + 1] if '--name' in argv else 'howard-7.0.3'
                     (output / 'implementations.json').write_text(json.dumps(
                         {'implementations': [{'name': name, 'argv': ['fixture'], 'metadata': dict(
                             binary_sha256=('b' if name == 'candidate' and not identical else 'a') * 64,
                             configuration=dict(prepared_divisors_policy=dict(
-                                status='recorded', mode='ON', enabled=True)))}]}))
+                                status='recorded', mode='ON', enabled=True),
+                                private_scalars_policy=dict(status='recorded' if activated else 'legacy-auto',
+                                    mode='ON' if activated else 'AUTO', enabled=True if activated else None)))}]}))
                     return
                 if fail:
                     raise helper.BuildError('fixture incorrect output')
@@ -245,11 +264,24 @@ class NativeTrends(unittest.TestCase):
                 '--candidate', 'b' * 40, '--output', str(root)]
         if prepared:
             argv += ['--candidate-prepared-divisors']
+        if private:
+            argv += ['--candidate-private-scalars']
         with mock.patch.object(CI, 'load', modules), mock.patch.object(CI, 'host_info', return_value={}), \
                 mock.patch.object(sys, 'argv', argv), mock.patch.dict('os.environ', {}, clear=True), \
                 contextlib.redirect_stderr(io.StringIO()):
             result = CI.main()
         return root, calls, result
+
+    def test_private_scalar_candidate_checks_all_roles_before_timing(self):
+        root,calls,result=self.exercise(private=True)
+        self.assertEqual(result,0)
+        for index,call in enumerate(calls[:3]):
+            self.assertEqual('--private-scalars' in call,index==1)
+        self.assertEqual([Path(call[1]).name for call in calls[4:10]],
+                         ['test-cli.py','test-vm-cli.py']*3)
+        self.assertTrue(all(Path(call[1]).name=='bench-bc.py' for call in calls[10:]))
+        self.assertTrue(json.loads((root/'evidence/orchestration.json').read_text())['candidate_private_scalars'])
+        self.assertEqual((root/'evidence/candidate/private-scalars-policy/libbc.vcxproj').read_text(),'private fixture')
 
     def test_prepared_candidate_keeps_controls_ordinary_and_guards_before_timing(self):
         root, calls, result = self.exercise(prepared=True)

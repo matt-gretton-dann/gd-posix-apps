@@ -22,6 +22,18 @@ SPEC.loader.exec_module(CI)
 
 
 class NativeMath(unittest.TestCase):
+    def test_private_mode_covers_both_candidates_and_matching_profile(self):
+        args=types.SimpleNamespace(source=Path('.'), candidate='b'*40, base='a'*40,
+                                   candidate_private_scalars=True)
+        for role in ('gd','aa','base'):
+            command=CI.gd_build_command(args,role,Path(role),'cc','c++')
+            self.assertEqual('--private-scalars' in command,role!='base')
+            if role!='base':self.assertEqual(command[command.index('--private-scalars')+1],'ON')
+        for baseline in (False,True):
+            command=CI.profile_build_command(args,Path('profile'),'cc','c++',baseline=baseline)
+            self.assertEqual('--private-scalars' in command,not baseline)
+            self.assertIn('--diagnostic-profile',command)
+
     def test_measurements_use_remaining_total_budget_without_a_hidden_hour_limit(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -350,7 +362,7 @@ class NativeMath(unittest.TestCase):
 class MathEvidenceOrchestration(unittest.TestCase):
     """Simulate a complete two-preset controller; never execute fixture images."""
 
-    def exercise(self, fail_elapsed=False, corrupt_asset=False, interrupt_elapsed=False):
+    def exercise(self, fail_elapsed=False, corrupt_asset=False, interrupt_elapsed=False, private=False):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         source = Path(temporary.name)
@@ -385,7 +397,11 @@ class MathEvidenceOrchestration(unittest.TestCase):
                             argv[argv.index('--name') + 1])
                     entry = dict(name=name, argv=[str(binary)], metadata=dict(
                         instrumented='--diagnostic-profile' in argv,
-                        source_revision=revision, binary_sha256=bench.digest_file(binary)))
+                        source_revision=revision, binary_sha256=bench.digest_file(binary),
+                        configuration=dict(private_scalars_policy=dict(
+                            status='recorded' if '--private-scalars' in argv else 'legacy-auto',
+                            mode='ON' if '--private-scalars' in argv else 'AUTO',
+                            enabled=True if '--private-scalars' in argv else None))))
                     (target / 'implementations.json').write_text(json.dumps(dict(implementations=[entry])))
                     if script == 'build-gd-bc.py':
                         library = target / 'source/src/bc/math-library.bc'
@@ -393,7 +409,7 @@ class MathEvidenceOrchestration(unittest.TestCase):
                         library.write_bytes(b'scale=20\n')
                     events.append(('build', name))
                     return
-                if script == 'test-math-library-cli.py':
+                if script in ('test-math-library-cli.py','test-cli.py','test-vm-cli.py'):
                     events.append(('correctness', 'fixture'))
                     return
                 if script != 'bench-bc.py':
@@ -440,6 +456,7 @@ class MathEvidenceOrchestration(unittest.TestCase):
 
         argv = [str(PATH), '--source', str(source), '--candidate', 'b' * 40,
                 '--base', 'a' * 40, '--output', str(root), '--broad', '--samples', '3']
+        if private:argv += ['--candidate-private-scalars']
         with mock.patch.object(CI, 'Commands', Commands), mock.patch.object(CI, 'load', modules), \
                 mock.patch.object(arithmetic, 'host_info', return_value=dict(test_host='fixture')), \
                 mock.patch.object(CI, 'selected_cases', side_effect=lambda bench, preset, broad: [preset + '_fixture']), \
@@ -452,6 +469,18 @@ class MathEvidenceOrchestration(unittest.TestCase):
                 mock.patch.object(sys, 'argv', argv), contextlib.redirect_stderr(io.StringIO()):
             status = CI.main()
         return status, root, events
+
+    def test_private_scalar_preflight_precedes_every_elapsed_stage(self):
+        status,root,events=self.exercise(private=True)
+        self.assertEqual(status,0)
+        checks=[i for i,event in enumerate(events) if event[0]=='correctness']
+        elapsed=[i for i,event in enumerate(events) if event[0]=='elapsed']
+        self.assertEqual(len(checks),7)
+        self.assertLess(max(checks),min(elapsed))
+        self.assertTrue(json.loads((root/'evidence/orchestration.json').read_text())['candidate_private_scalars'])
+        for name in ('gd','aa','profile'):
+            metadata=json.loads((root/name/'implementations.json').read_text())['implementations'][0]['metadata']
+            self.assertIs(metadata['configuration']['private_scalars_policy']['enabled'],True)
 
     def test_all_diagnostic_probes_follow_both_elapsed_presets(self):
         status, root, events = self.exercise()

@@ -247,6 +247,31 @@ Howard image after elapsed measurements, including when a checked run fails.
 Older arithmetic archives may retain only the three GD images; the Howard
 recipe and its declared hash do not replace the missing measured bytes.
 
+The native arithmetic and math controllers accept `--compare-resources` for
+matched baseline/candidate diagnostics. Separate counter-enabled builds use
+their corresponding ordinary source and common build options; all builds finish
+before elapsed sampling. After every elapsed stage, fixed representative cases
+collect selected-container allocation/refcount events and five alternating
+native cold RSS pairs. Math representatives include all five Bessel regimes
+at scales 20 and 100 and the scale-20 arctangent boundary. These are software
+counts and cold peak memory, not process malloc totals, steady-state retention
+or elapsed performance. Unavailable adapters and incomplete pairs stay explicit.
+
+Resource profiles must match their own ordinary source, compiler and checked
+common configuration, including declared optional-backend policies. A policy
+absent from both builds remains absent. Retain both execution-policy records:
+matching common settings does not establish release/profile path identity.
+Apple arm64 scalar forwarding can differ, so counters describe the instrumented
+fallback; cold RSS uses ordinary images separately. Actual instrumented images
+and recipes are retained under `profile-images/`, separately from ordinary
+`codegen/` roles. Instrumented durations never become elapsed samples.
+
+`--candidate-private-scalars` enables the optional private activation path in
+candidate ordinary and profiling builds. The recipe's `--private-scalars`
+mode is checked against actual VM compilation evidence; a cache key alone is
+insufficient. Arithmetic A/A retains base mode; math A/A matches the candidate.
+See [the fixed qualification protocol](bc-private-scalar-qualification.md).
+
 ## Source and build provenance
 
 When a recipe declares `binary_sha256` in its metadata or normalized entry,
