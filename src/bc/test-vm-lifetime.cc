@@ -570,15 +570,17 @@ auto native_leaf_allocation_failures() -> bool
   for (std::size_t offset = 0; offset != 128; ++offset) {
     auto const failures = injected_failures;
     std::shared_ptr<NativeExpression const> code;
+    auto failure = NativeExpression::Failure::none;
     try {
       AllocationFailure const fault(offset);
-      code = NativeExpression::compile(square, 3);
+      code = NativeExpression::compile(square, 3, &failure);
     }
     catch (std::bad_alloc const&) {
       return false;  // An optional compiler must decline without consuming input.
     }
     bool const injected = injected_failures != failures;
-    if ((injected && code) || (!injected && !correct(code)))
+    if ((injected && (code || failure != NativeExpression::Failure::unavailable)) ||
+        (!injected && (!correct(code) || failure != NativeExpression::Failure::none)))
       return false;
     code.reset();
     if (outstanding.load(std::memory_order_relaxed) != live ||
@@ -629,6 +631,8 @@ auto native_leaf_rejection_cache() -> bool
     return false;
   }
   // A new immutable definition must not inherit the old rejection.
+  std::fprintf(stdout, "Native leaf rejected-call allocation control: one=%zu eight=%zu\n",
+               short_run.second, long_run.second);
   auto replacement = parse("define f(y) {\nreturn(y+1)\n}\n");
   return replacement && !vm.execute(*replacement) && !vm.execute(*calls) && !vm.execute(*query) &&
          output.str() == "21\n1\n" && errors.str().empty();

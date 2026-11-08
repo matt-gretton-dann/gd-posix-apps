@@ -93,13 +93,18 @@ struct Emitter
 };
 }  // namespace
 
-auto NativeExpression::compile(std::span<NativeExpressionOp const> operations, std::uint8_t result)
-  -> std::shared_ptr<NativeExpression const>
+auto NativeExpression::compile(std::span<NativeExpressionOp const> operations, std::uint8_t result,
+                               Failure* failure) -> std::shared_ptr<NativeExpression const>
 try {
+  if (failure != nullptr)
+    *failure = Failure::unavailable;
   auto generated =
     emit_native_expression<Emitter, argument_register>(operations, result, temporary_registers);
-  if (!generated)
+  if (!generated) {
+    if (failure != nullptr)
+      *failure = Failure::unsupported;
     return {};
+  }
   auto const& emit = *generated;
   auto program = std::shared_ptr<NativeExpression>(new NativeExpression);
   auto const page_size = sysconf(_SC_PAGESIZE);
@@ -119,6 +124,8 @@ try {
   __builtin___clear_cache(static_cast<char*>(program->memory_),
                           static_cast<char*>(program->memory_) + byte_count);
   program->code_size_ = byte_count;
+  if (failure != nullptr)
+    *failure = Failure::none;
   return program;
 }
 catch (std::bad_alloc const&) {

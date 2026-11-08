@@ -24,10 +24,13 @@ use the generic runtime decoder. An explicit return makes the parser's trailing
 implicit return unreachable.
 
 Both backends share bounded SSA validation and last-use register allocation.
-Each immutable function definition owns its lazy executable page and structural
-rejection state. Repeated calls reuse the page; redefining the function replaces
-the cache. A failed compilation leaves the arguments and bindings intact and
-may be retried. Full-check execution always retains the generic interpreter.
+Each immutable function definition owns its lazy executable page and permanent
+rejection state. Repeated calls reuse the page or cached rejection, including
+invalid native operation plans and excessive register pressure. Redefining replaces
+both. Compilation reports resource unavailability separately, so allocation and
+executable-memory publication failures remain retryable. Every failure leaves
+arguments and bindings intact. Full-check execution always retains the generic
+interpreter.
 
 Inputs must be nonnegative, integral, inline Numbers below the Number limb
 radix. The kernel accepts only nonnegative signed-64 intermediates. Any overflow
@@ -75,7 +78,11 @@ oracles, exact wide outputs, dynamic bindings, function
 redefinition, ibase and fallback bodies. Profile builds assert positive native
 completion and exclusion under full checks. The isolated ordinary/IPO lifetime
 fixtures inject failures throughout emitter allocation and require cleanup and
-successful retry. The dedicated workflow checks Linux/Windows x64 selection
+successful retry. They also compare ordinary allocations for one and eight
+warmed calls to a register-pressure fallback: additional calls must not repeat
+compiler allocation work. A subsequent redefinition checks cache replacement.
+These are allocation and semantic checks, not elapsed-performance measurements.
+The dedicated workflow checks Linux/Windows x64 selection
 and macOS ARM64 native execution plus explicit OFF fallback configurations,
 preserves the compile database and runs VM, CLI, signal, math and lifetime
 regressions.
