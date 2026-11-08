@@ -15,6 +15,10 @@
 #include <utility>
 
 #include "bc.hh"
+#if defined(GD_BC_TEST_NATIVE_SCALAR)
+#  include "native-scalar.hh"
+#  include "verification.hh"
+#endif
 
 namespace {
 // These replacements belong only to this small regression executable. They
@@ -476,8 +480,80 @@ auto verified_activation_allocation_failures(bool typed_first) -> bool
 }
 }  // namespace
 
+#if defined(GD_BC_TEST_NATIVE_SCALAR)
+namespace {
+auto native_emitter_allocation_failures() -> bool
+{
+  using namespace GD::Bc;
+  using namespace GD::Bc::Details;
+  using O = Instruction::Opcode;
+  using D = Instruction::Offset;
+  // Build and verify the independent loop oracle before denying allocations.
+  Instructions code{{O::variable, Variable('i')},
+                    {O::number, "0"},
+                    {O::store, D(-2), D(-1)},
+                    {O::variable, Variable('s')},
+                    {O::number, "0"},
+                    {O::store, D(-2), D(-1)},
+                    {O::load, D(-6)},
+                    {O::number, "19"},
+                    {O::less_than, D(-2), D(-1)},
+                    {O::branch_zero, D(-1), D(10)},
+                    {O::load, D(-7)},
+                    {O::load, D(-11)},
+                    {O::add, D(-2), D(-1)},
+                    {O::store, D(-10), D(-1)},
+                    {O::load, D(-14)},
+                    {O::number, "1"},
+                    {O::add, D(-2), D(-1)},
+                    {O::store, D(-17), D(-1)},
+                    {O::branch, D(-12)}};
+  if (verify_control_flow(code, false))
+    return false;
+  auto const variables = native_scalar_variables(code);
+  if (variables.count() != 2)
+    return false;
+  auto const interrupted = []() noexcept { return false; };
+  auto const correct = [](auto const& result) {
+    return result && (*result)[static_cast<unsigned>(Letter('i'))] == 19 &&
+           (*result)[static_cast<unsigned>(Letter('s'))] == 171;
+  };
+  if (!correct(run_native_scalar(code, variables, interrupted)))
+    return false;
+  auto const live = outstanding.load(std::memory_order_relaxed);
+  for (std::size_t offset = 0; offset != 64; ++offset) {
+    auto const failures = injected_failures;
+    std::optional<NativeScalarResult> result;
+    try {
+      AllocationFailure const fault(offset);
+      result = run_native_scalar(code, variables, interrupted);
+    }
+    catch (std::bad_alloc const&) {
+      std::fprintf(stderr, "Native emitter leaked bad_alloc at injected allocation %zu\n", offset);
+      return false;  // An optional compiler must decline, not abort evaluation.
+    }
+    if (outstanding.load(std::memory_order_relaxed) != live)
+      return false;
+    if (injected_failures == failures) {
+      std::fprintf(stdout, "Native emitter fault sweep covered %zu allocations\n", offset);
+      return offset != 0 && correct(result);
+    }
+    if (result || !correct(run_native_scalar(code, variables, interrupted)))
+      return false;
+  }
+  return false;  // Never silently truncate a larger allocation inventory.
+}
+}  // namespace
+#endif
+
 auto main() -> int
 {
+#if defined(GD_BC_TEST_NATIVE_SCALAR)
+  if (!native_emitter_allocation_failures()) {
+    std::fprintf(stderr, "Native emitter allocation failure prevented generic fallback\n");
+    return 1;
+  }
+#endif
   if (!restore_nested_call_after_exception()) {
     std::fprintf(stderr, "Nested call exception left VM locals or special registers changed\n");
     return 1;
