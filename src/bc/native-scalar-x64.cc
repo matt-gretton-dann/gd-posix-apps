@@ -1,6 +1,8 @@
 /** Experimental x86-64 lowering for bounded verified scalar streams.
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <new>
+
 #include <charconv>
 #include <cstring>
 #include <vector>
@@ -245,7 +247,7 @@ private:
 
 auto run_native_scalar(Instructions const& code, std::bitset<Letter::count_> variables,
                        NativeInterruptCheck interrupted) -> std::optional<NativeScalarResult>
-{
+try {
   Emitter emit;
   NativeScalarResult result{};
   // ENDBR64 permits an indirect entry with CET IBT; it is a no-op otherwise.
@@ -350,5 +352,10 @@ auto run_native_scalar(Instructions const& code, std::bitset<Letter::count_> var
   if (!CodePage(emit.bytes).run(result.data(), interrupted))
     return {};
   return result;
+}
+catch (std::bad_alloc const&) {
+  // Emitter storage is optional; no VM state has been published. Let the
+  // ordinary interpreter continue when compilation cannot allocate scratch.
+  return {};
 }
 }  // namespace GD::Bc::Details

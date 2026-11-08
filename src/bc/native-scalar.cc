@@ -3,6 +3,8 @@
  */
 #include "native-scalar.hh"
 
+#include <new>
+
 #include <charconv>
 #include <cstring>
 #include <unistd.h>
@@ -159,10 +161,9 @@ private:
 };
 }  // namespace
 
-
 auto run_native_scalar(Instructions const& code, std::bitset<Letter::count_> variables,
                        NativeInterruptCheck interrupted) -> std::optional<NativeScalarResult>
-{
+try {
   Emitter emit;
   NativeScalarResult result{};
   emit.words.push_back(0xd10003ffU | (stack_bytes << 10));  // SUB sp, sp, #frame
@@ -243,5 +244,10 @@ auto run_native_scalar(Instructions const& code, std::bitset<Letter::count_> var
   if (!CodePage(emit.words).run(result.data(), interrupted))
     return {};
   return result;
+}
+catch (std::bad_alloc const&) {
+  // Emitter storage is optional; no VM state has been published. Let the
+  // ordinary interpreter continue when compilation cannot allocate scratch.
+  return {};
 }
 }  // namespace GD::Bc::Details

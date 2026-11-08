@@ -38,6 +38,12 @@ protect or flush code falls back to the interpreter. No exception may propagate
 through a generated frame. POSIX generated frames have no registered DWARF
 unwind information; profiling tools may stop at them.
 
+Emitter buffer allocation failure also declines native execution before any
+VM result is published. The isolated lifetime tests deny each ordinary emitter
+allocation in turn and require balanced cleanup and an exact successful retry,
+including the IPO fixture. OS executable-page and unwind-table bookkeeping
+are not covered by this replacement-allocator sweep.
+
 Separate profiling builds record VM `native_scalar_attempts` and
 `native_scalar_completions`. A completion counts a successful kernel result
 before ordinary Number staging, which can still fail or be interrupted.
