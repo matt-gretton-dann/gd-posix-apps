@@ -59,11 +59,27 @@ mutations of decoded plans. Its test-only bank uses ordinary `Number` arithmetic
 and known decimal answers. A compile-time dependency guard rejects Number,
 Digits or VM headers in the actual executor translation unit on every compiler.
 
+`lower_word_function` runs in the ordinary compiler context. It accepts already
+schema/type-verified VM instructions, proves the parser's one-scalar prologue,
+and rejects globals, arrays, special registers, other callees and unsupported
+operations throughout the body. Relative offsets are bounded before addition;
+lowered producer indices and branches exclude the consumed prologue. Single
+decimal digit literals preserve runtime input-base semantics. The decoded plan
+then receives the core's independent control-flow/argument-state checks.
+Differential tests compare parsed expressions, local stores, loops and nested
+self-calls against independent full-check VM states, and retain plans after
+changing/destroying the source. These tests do not exercise a VM tier route.
+
 This component is not yet connected to VM calls. Production execution and
-defaults are unchanged. Source-to-plan lowering, immutable generation ownership,
+defaults are unchanged. Immutable generation ownership,
 redefinition, deferred replacement, fallback-chain suppression, final pack
 publication and ordinary/IPO allocation-failure integration remain required.
 Do not infer a speedup, complete VM coverage or default adoption from core tests.
+
+The former signed-zero prerequisite #601 is already accepted on this baseline:
+`Number::to_unsigned` accepts an exact zero with either stored sign. Do not
+reintroduce the old assumption that it remains unfixed or add a new conversion
+method to implement this tier. General Number ownership/layout stays unchanged.
 
 Before any adoption, require native Linux/macOS/Windows semantic preflight,
 actual include/object/layout evidence, and a prospectively frozen full/held-out

@@ -272,7 +272,8 @@ if(RUN_UNIT_TESTS)
   target_add_clang_format(test-libbc)
   # This independent executor has no Number/VM dependencies. Its test-side
   # opaque bank uses ordinary libbc arithmetic; production routing is separate.
-  add_executable(test-bc-word-function word-function.cc test-word-function.cc test-libbc-main.cc)
+  add_executable(test-bc-word-function word-function.cc word-lowering.cc
+    test-word-function.cc test-word-lowering.cc test-libbc-main.cc)
   target_link_libraries(test-bc-word-function PRIVATE libbc Catch2::Catch2)
   target_include_directories(test-bc-word-function PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
   set_property(TARGET test-bc-word-function PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
