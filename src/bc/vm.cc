@@ -45,6 +45,14 @@
 #  else
 #    define GD_BC_LEAF_NOINLINE
 #  endif
+#  if defined(GD_BC_NATIVE_FUNCTIONS)
+#    define GD_BC_GENERIC_CALL_NOINLINE GD_BC_LEAF_NOINLINE
+#  else
+// A Word-only build must not impose the native-leaf call graph on generic
+// work. Keep the compiler's normal choice for this body, as in the original
+// VM; Word preparation and fallback cleanup remain separately outlined.
+#    define GD_BC_GENERIC_CALL_NOINLINE
+#  endif
 #endif
 
 // Native comparisons found a Linux math slowdown with direct forwarding.
@@ -445,10 +453,10 @@ struct VMState
 #endif
 #if defined(GD_BC_NATIVE_FUNCTIONS) || defined(GD_BC_WORD_FUNCTIONS)
 #  if GD_BC_FORWARD_SCALAR_ARGUMENT
-  GD_BC_LEAF_NOINLINE auto call_generic(Letter func, Location const& loc,
-                                        Number const* argument = nullptr) -> Number;
+  GD_BC_GENERIC_CALL_NOINLINE auto call_generic(Letter func, Location const& loc,
+                                                Number const* argument = nullptr) -> Number;
 #  else
-  GD_BC_LEAF_NOINLINE auto call_generic(Letter func, Location const& loc) -> Number;
+  GD_BC_GENERIC_CALL_NOINLINE auto call_generic(Letter func, Location const& loc) -> Number;
 #  endif
 #endif
 #if defined(GD_BC_NATIVE_FUNCTIONS)

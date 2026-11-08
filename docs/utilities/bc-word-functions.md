@@ -1,11 +1,22 @@
 # Number-independent recursive word executor
 
-The compact-slot follow-up requires its own native correctness preflight and
-prospective full qualification. The original frozen activation study at
-`516f50c2` is separate; its results do not qualify this new storage layout.
+The compact-slot and generic-call follow-up requires its own native correctness
+preflight and prospective full qualification. The original frozen activation
+study at `516f50c2` was rejected for three confirmed Windows scale-20 math losses
+and its PR was closed unmerged after all nine outcomes were retained. Those
+results do not qualify the new candidate. Local storage reductions alone cannot
+resolve the general-path regressions.
 The topic skips ordinary narrow PR timing jobs during preflight; this does
 not waive full/held, startup or resource requirements before adoption. Keep
 the full qualification and total timebox requirements below.
+
+Word-only builds leave the generic call body's inlining choice to the compiler,
+as the original VM does. Native-leaf configurations retain their deliberate
+out-of-line generic fallback. Word entry preparation and failure cleanup remain
+outlined in both configurations. This removes an extra compiler constraint on
+ordinary work; it does not guarantee inlining or establish a fix for the Windows
+losses. No argument, publication, allocation, lifetime or fallback contract is
+changed. Native correctness and new elapsed evidence must test that hypothesis.
 
 Issue #690 evaluates a distinct compiler boundary for the earlier portable
 integer experiments (#598/#607/#635/#641/#647). Those experiments already
