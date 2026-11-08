@@ -39,6 +39,128 @@ class GdBuild(unittest.TestCase):
                                            self.build, 'a' * 40, 126,
                                            {'version': 'C'}, {'version': 'C++'}, prepared_mode=prepared_mode)
 
+    def native_inventory(self, option='ON', definition='-DGD_BC_NATIVE_SCALAR=1',
+                         backend='native-scalar-x64.cc', shared=True):
+        self.cache.write_text(self.cache.read_text() + 'ENABLE_BC_NATIVE_SCALAR:BOOL=' + option + '\n')
+        rows = [dict(file='/source/src/bc/vm.cc', command='c++ ' + definition + ' -c vm.cc')]
+        if backend:
+            rows.append(dict(file='/source/src/bc/' + backend, command='c++ -c ' + backend))
+        if shared:
+            rows.append(dict(file='/source/src/bc/native-scalar-plan.cc', command='c++ -c native-scalar-plan.cc'))
+        (self.build / 'compile_commands.json').write_text(json.dumps(rows))
+
+    def test_native_selection_verifies_compiled_backend(self):
+        self.native_inventory()
+        value = self.metadata()['configuration']['native_scalar_policy']
+        self.assertTrue(value['configured'])
+        self.assertTrue(value['enabled'])
+        self.assertEqual(value['backend'], 'native-scalar-x64.cc')
+        self.module.require_native_candidate(self.helper, dict(metadata=dict(
+            configuration=dict(native_scalar_policy=value))))
+        self.assertEqual((self.root / 'native-policy/CMakeCache.txt').read_bytes(), self.cache.read_bytes())
+
+    def test_native_unsupported_target_remains_generic_and_cannot_qualify(self):
+        self.native_inventory(definition='', backend=None, shared=False)
+        value = self.module.verified_native_scalars(self.helper, self.build)
+        self.assertTrue(value['configured'])
+        self.assertFalse(value['enabled'])
+        self.assertIsNone(value['backend'])
+        with self.assertRaises(self.helper.BuildError):
+            self.module.require_native_candidate(self.helper, dict(metadata=dict(
+                configuration=dict(native_scalar_policy=value))))
+
+    def test_native_disabled_mode_is_verified_without_presence_definition(self):
+        self.native_inventory(option='OFF', definition='', backend=None, shared=False)
+        value = self.module.verified_native_scalars(self.helper, self.build)
+        self.assertFalse(value['configured'])
+        self.assertFalse(value['enabled'])
+
+    def test_native_legacy_source_is_not_mislabeled_disabled(self):
+        value = self.module.verified_native_scalars(self.helper, self.build)
+        self.assertEqual(value['status'], 'legacy-auto')
+        self.assertIsNone(value['enabled'])
+        with self.assertRaises(self.helper.BuildError):
+            self.module.require_native_candidate(self.helper, dict(metadata=dict(
+                configuration=dict(native_scalar_policy=value))))
+
+    def test_native_ignored_cache_option_cannot_qualify(self):
+        self.native_inventory()
+        self.cache.write_text(self.cache.read_text().replace('NATIVE_SCALAR:BOOL', 'NATIVE_SCALAR:UNINITIALIZED'))
+        with self.assertRaises(self.helper.BuildError):
+            self.module.verified_native_scalars(self.helper, self.build)
+
+    def test_native_presence_definition_zero_or_override_is_rejected(self):
+        self.native_inventory()
+        path = self.build / 'compile_commands.json'
+        original = json.loads(path.read_text())
+        for definition in ('-DGD_BC_NATIVE_SCALAR=0', '-DGD_BC_NATIVE_SCALAR',
+                           '-DGD_BC_NATIVE_SCALAR=1 -DGD_BC_NATIVE_SCALAR=1',
+                           '-DGD_BC_NATIVE_SCALAR=1 -UGD_BC_NATIVE_SCALAR'):
+            with self.subTest(definition=definition):
+                rows = [dict(row) for row in original]
+                rows[0]['command'] = 'c++ ' + definition + ' -c vm.cc'
+                path.write_text(json.dumps(rows))
+                with self.assertRaises(self.helper.BuildError):
+                    self.module.verified_native_scalars(self.helper, self.build)
+
+    def test_native_missing_or_ambiguous_backend_is_rejected(self):
+        self.native_inventory()
+        path = self.build / 'compile_commands.json'
+        original = json.loads(path.read_text())
+        for rows in (original[:1], original + [dict(file='/source/src/bc/native-scalar.cc')],
+                     original + [original[0]], original[1:]):
+            with self.subTest(rows=rows):
+                path.write_text(json.dumps(rows))
+                with self.assertRaises(self.helper.BuildError):
+                    self.module.verified_native_scalars(self.helper, self.build)
+
+    def test_native_cached_off_cannot_compile_a_backend(self):
+        self.native_inventory(option='OFF')
+        with self.assertRaises(self.helper.BuildError):
+            self.module.verified_native_scalars(self.helper, self.build)
+
+    def test_native_shared_plan_is_required_for_candidate(self):
+        self.native_inventory(shared=False)
+        value = self.module.verified_native_scalars(self.helper, self.build)
+        self.assertTrue(value['enabled'])
+        with self.assertRaises(self.helper.BuildError):
+            self.module.require_native_candidate(self.helper, dict(metadata=dict(
+                configuration=dict(native_scalar_policy=value))))
+
+    def native_project(self, definitions='GD_BC_NATIVE_SCALAR=1', item=''):
+        self.native_inventory()
+        (self.build / 'compile_commands.json').unlink()
+        self.cache.write_text(self.cache.read_text() + 'CMAKE_GENERATOR:INTERNAL=Visual Studio 17 2022\n')
+        project = self.build / 'src/bc/libbc.vcxproj'
+        project.write_text('<Project><ItemDefinitionGroup Condition="Release|x64">'
+            '<ClCompile><PreprocessorDefinitions>' + definitions + '</PreprocessorDefinitions>'
+            '</ClCompile></ItemDefinitionGroup><ItemGroup><ClCompile Include="vm.cc">' + item +
+            '</ClCompile><ClCompile Include="native-scalar-x64.cc"/>'
+            '<ClCompile Include="native-scalar-plan.cc"/></ItemGroup></Project>')
+        return project
+
+    def test_native_visual_studio_release_project_is_retained(self):
+        project = self.native_project()
+        value = self.metadata()['configuration']['native_scalar_policy']
+        self.assertTrue(value['enabled'])
+        self.assertEqual(value['verification']['kind'], 'msbuild-projects')
+        self.assertEqual((self.root / 'native-policy/src/bc/libbc.vcxproj').read_bytes(), project.read_bytes())
+
+    def test_native_visual_studio_vm_override_is_rejected(self):
+        self.native_project(item='<PreprocessorDefinitions>GD_BC_NATIVE_SCALAR=0</PreprocessorDefinitions>')
+        with self.assertRaises(self.helper.BuildError):
+            self.module.verified_native_scalars(self.helper, self.build)
+
+    def test_native_visual_studio_zero_presence_definition_is_rejected(self):
+        self.native_project(definitions='GD_BC_NATIVE_SCALAR=0')
+        with self.assertRaises(self.helper.BuildError):
+            self.module.verified_native_scalars(self.helper, self.build)
+
+    def test_native_visual_studio_missing_selection_is_rejected(self):
+        self.native_project(definitions='OTHER=1')
+        with self.assertRaises(self.helper.BuildError):
+            self.module.verified_native_scalars(self.helper, self.build)
+
     def test_records_compiled_threshold_and_commands(self):
         value = self.metadata()
         self.assertEqual(value['configuration']['multiply_split_point'], 126)

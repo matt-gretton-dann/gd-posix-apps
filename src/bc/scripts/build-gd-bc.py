@@ -201,6 +201,15 @@ def build_metadata(helper, root, source, build, revision, split, compiler_c, com
         shutil.copyfile(str(build / 'gd-ipo-policy.json'), str(root / 'gd-ipo-policy.json'))
         ipo['report_sha256'] = helper.digest(root / 'gd-ipo-policy.json')
     prepared = verified_prepared_divisors(helper, build, prepared_mode)
+    native = verified_native_scalars(helper, build)
+    if native.get('verification', {}).get('kind') == 'msbuild-projects':
+        for relative in native['verification']['files']:
+            target = root / 'native-policy' / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(str(build / relative), str(target))
+    if native['status'] == 'recorded':
+        (root / 'native-policy').mkdir(exist_ok=True)
+        shutil.copyfile(str(build / 'CMakeCache.txt'), str(root / 'native-policy/CMakeCache.txt'))
     if prepared.get('verification', {}).get('kind') == 'msbuild-projects':
         for relative in prepared['verification']['files']:
             target = root / 'prepared-policy' / relative
@@ -214,6 +223,7 @@ def build_metadata(helper, root, source, build, revision, split, compiler_c, com
                               'extensions': cache.get('ENABLE_NON_POSIX_EXTENSIONS'),
                               'ipo_policy': ipo,
                               'prepared_divisors_policy': prepared,
+                              'native_scalar_policy': native,
                               'multiply_split_point': split,
                               'diagnostic_profile': diagnostic_profile,
                               'profiling_execution_policy': profiling_execution_policy(
@@ -346,6 +356,118 @@ def require_prepared_candidate(helper, entry):
     if (not isinstance(policy, dict) or policy.get('status') != 'recorded' or
             policy.get('mode') != 'ON' or policy.get('enabled') is not True):
         raise helper.BuildError('candidate lacks verified explicit prepared-divisor activation')
+
+
+def verified_native_scalars(helper, build):
+    """Record actual native selection, including unsupported-target fallback.
+
+    ENABLE_BC_NATIVE_SCALAR requests compilation; it does not prove that the
+    target has a backend. Inspect the VM definition and compiled backend, so
+    an ignored cache key or unsupported target cannot qualify as native.
+    """
+    cache_path = build / 'CMakeCache.txt'
+    cache = cache_values(cache_path)
+    key, macro = 'ENABLE_BC_NATIVE_SCALAR', 'GD_BC_NATIVE_SCALAR'
+    configured = cache.get(key)
+    if configured is None:
+        return dict(status='legacy-auto', mode='AUTO', configured=None, enabled=None, backend=None,
+                    scope='source predates the native-scalar option; activation unknown')
+    if (not re.search(r'^' + key + r':BOOL=', cache_path.read_text(), re.MULTILINE) or
+            configured.upper() not in ('ON', 'TRUE', 'YES', '1', 'OFF', 'FALSE', 'NO', '0')):
+        raise helper.BuildError('source did not declare a boolean native-scalar option')
+    configured = configured.upper() in ('ON', 'TRUE', 'YES', '1')
+    define = re.compile(r'''(?:^|[\s"'])[-/]D\s*["']?GD_BC_NATIVE_SCALAR\b(?:=([^\s"';]+))?''')
+    undefine = re.compile(r'''(?:^|[\s"'])[-/]U\s*["']?GD_BC_NATIVE_SCALAR\b''')
+    database = build / 'compile_commands.json'
+    if database.is_file():
+        try:
+            rows = json.loads(database.read_text())
+        except (ValueError, OSError) as error:
+            raise helper.BuildError('invalid native compilation database: ' + str(error))
+        if not isinstance(rows, list) or any(not isinstance(r, dict) for r in rows):
+            raise helper.BuildError('invalid native compilation inventory')
+        vm = [r for r in rows if str(r.get('file', '')).replace('\\', '/').endswith('/src/bc/vm.cc')]
+        if len(vm) != 1:
+            raise helper.BuildError('missing or ambiguous native VM compilation')
+        arguments = vm[0].get('arguments')
+        if arguments is not None:
+            if not isinstance(arguments, list) or not all(isinstance(x, str) for x in arguments):
+                raise helper.BuildError('invalid native VM compiler arguments')
+            command = ' '.join(arguments)
+        else:
+            command = vm[0].get('command')
+        if not isinstance(command, str) or undefine.search(command):
+            raise helper.BuildError('invalid or overridden native VM definition')
+        values = define.findall(command)
+        if values not in ([], ['1']):
+            raise helper.BuildError('native presence-style definition must be absent or exactly one')
+        names = {str(r.get('file', '')).replace('\\', '/').rsplit('/', 1)[-1] for r in rows}
+        evidence = dict(kind='compile-commands', sha256=helper.digest(database))
+    else:
+        import xml.etree.ElementTree as ET
+        if not cache.get('CMAKE_GENERATOR', '').startswith('Visual Studio'):
+            raise helper.BuildError('native selection needs compile commands or native VS projects')
+        relative = 'src/bc/libbc.vcxproj'
+        project = build / relative
+        try:
+            tree = ET.parse(str(project)).getroot()
+        except (ET.ParseError, OSError) as error:
+            raise helper.BuildError('invalid native Release project: ' + str(error))
+        names = set()
+        definitions = []
+        vm_items = []
+        for node in tree.iter():
+            tag = node.tag.rsplit('}', 1)[-1]
+            if tag == 'ClCompile' and node.get('Include'):
+                name = node.get('Include').replace('\\', '/').rsplit('/', 1)[-1]
+                names.add(name)
+                if name == 'vm.cc':
+                    vm_items.append(node)
+            if tag == 'AdditionalOptions' and (define.findall(node.text or '') or undefine.search(node.text or '')):
+                raise helper.BuildError('native project options override its definition')
+            if tag == 'UndefinePreprocessorDefinitions' and macro in (node.text or ''):
+                raise helper.BuildError('native project undefines its selection')
+            if tag != 'ItemDefinitionGroup':
+                continue
+            condition = node.get('Condition', '')
+            if condition and not re.search(r'Release\|', condition, re.IGNORECASE):
+                continue
+            for child in node.iter():
+                if child.tag.rsplit('}', 1)[-1] == 'PreprocessorDefinitions':
+                    definitions.append(re.findall(r'(?:^|;)GD_BC_NATIVE_SCALAR\b(?:=([^;]+))?', child.text or ''))
+        if len(vm_items) != 1 or not definitions or any(d != definitions[0] for d in definitions):
+            raise helper.BuildError('missing or ambiguous native Release definitions')
+        values = definitions[0]
+        if values not in ([], ['1']):
+            raise helper.BuildError('invalid native Release definition')
+        for child in vm_items[0]:
+            if child.tag.rsplit('}', 1)[-1] == 'PreprocessorDefinitions':
+                text = child.text or ''
+                own = re.findall(r'(?:^|;)GD_BC_NATIVE_SCALAR\b(?:=([^;]+))?', text)
+                if (own and own != values) or (own != values and '%(PreprocessorDefinitions)' not in text):
+                    raise helper.BuildError('native VM item overrides Release definitions')
+        evidence = dict(kind='msbuild-projects', files={relative: helper.digest(project)},
+                        retained_root='native-policy')
+    backends = names & {'native-scalar.cc', 'native-scalar-x64.cc'}
+    enabled = values == ['1']
+    if ((enabled and (not configured or len(backends) != 1)) or
+            (not enabled and (backends or 'native-scalar-plan.cc' in names))):
+        raise helper.BuildError('native option, VM and compiled backend disagree')
+    return dict(status='recorded', mode='AUTO', configured=configured, enabled=enabled,
+                backend=next(iter(backends)) if enabled else None,
+                shared_plan='native-scalar-plan.cc' in names,
+                verification=evidence, cache_sha256=helper.digest(cache_path),
+                scope='Compile-time eligibility only; no assertion that any input executes native code')
+
+
+def require_native_candidate(helper, entry):
+    metadata = entry.get('metadata') if isinstance(entry, dict) else None
+    config = metadata.get('configuration') if isinstance(metadata, dict) else None
+    policy = config.get('native_scalar_policy') if isinstance(config, dict) else None
+    if (not isinstance(policy, dict) or policy.get('status') != 'recorded' or
+            policy.get('configured') is not True or policy.get('enabled') is not True or
+            policy.get('shared_plan') is not True):
+        raise helper.BuildError('candidate lacks verified native backend and shared eligibility proof')
 
 
 def verified_array_layout(helper, build, requested):

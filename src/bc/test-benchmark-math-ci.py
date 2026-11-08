@@ -22,6 +22,17 @@ SPEC.loader.exec_module(CI)
 
 
 class NativeMath(unittest.TestCase):
+    def test_native_candidate_and_profile_use_the_declared_source(self):
+        args=types.SimpleNamespace(source=Path('.'), candidate='b'*40, base='a'*40,
+                                   require_candidate_native=True)
+        for role in ('gd','aa','base'):
+            command=CI.gd_build_command(args,role,Path(role),'cc','c++')
+            self.assertEqual(command[command.index('--revision')+1],args.base if role=='base' else args.candidate)
+        for baseline in (False,True):
+            command=CI.profile_build_command(args,Path('profile'),'cc','c++',baseline=baseline)
+            self.assertEqual(command[command.index('--revision')+1],args.base if baseline else args.candidate)
+            self.assertIn('--diagnostic-profile',command)
+
     def test_measurements_use_remaining_total_budget_without_a_hidden_hour_limit(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -350,7 +361,7 @@ class NativeMath(unittest.TestCase):
 class MathEvidenceOrchestration(unittest.TestCase):
     """Simulate a complete two-preset controller; never execute fixture images."""
 
-    def exercise(self, fail_elapsed=False, corrupt_asset=False, interrupt_elapsed=False):
+    def exercise(self, fail_elapsed=False, corrupt_asset=False, interrupt_elapsed=False, native=False, disabled_native=False):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         source = Path(temporary.name)
@@ -385,7 +396,8 @@ class MathEvidenceOrchestration(unittest.TestCase):
                             argv[argv.index('--name') + 1])
                     entry = dict(name=name, argv=[str(binary)], metadata=dict(
                         instrumented='--diagnostic-profile' in argv,
-                        source_revision=revision, binary_sha256=bench.digest_file(binary)))
+                        source_revision=revision, binary_sha256=bench.digest_file(binary),
+                        configuration=dict(native_scalar_policy=dict(status='recorded', mode='AUTO', configured=native and not disabled_native and name not in ('base','base-profile','howard'), enabled=native and not disabled_native and name not in ('base','base-profile','howard'), shared_plan=True, backend='native-scalar-x64.cc'))))
                     (target / 'implementations.json').write_text(json.dumps(dict(implementations=[entry])))
                     if script == 'build-gd-bc.py':
                         library = target / 'source/src/bc/math-library.bc'
@@ -393,7 +405,7 @@ class MathEvidenceOrchestration(unittest.TestCase):
                         library.write_bytes(b'scale=20\n')
                     events.append(('build', name))
                     return
-                if script == 'test-math-library-cli.py':
+                if script in ('test-math-library-cli.py','test-cli.py','test-vm-cli.py'):
                     events.append(('correctness', 'fixture'))
                     return
                 if script != 'bench-bc.py':
@@ -440,6 +452,7 @@ class MathEvidenceOrchestration(unittest.TestCase):
 
         argv = [str(PATH), '--source', str(source), '--candidate', 'b' * 40,
                 '--base', 'a' * 40, '--output', str(root), '--broad', '--samples', '3']
+        if native:argv += ['--require-candidate-native']
         with mock.patch.object(CI, 'Commands', Commands), mock.patch.object(CI, 'load', modules), \
                 mock.patch.object(arithmetic, 'host_info', return_value=dict(test_host='fixture')), \
                 mock.patch.object(CI, 'selected_cases', side_effect=lambda bench, preset, broad: [preset + '_fixture']), \
@@ -452,6 +465,23 @@ class MathEvidenceOrchestration(unittest.TestCase):
                 mock.patch.object(sys, 'argv', argv), contextlib.redirect_stderr(io.StringIO()):
             status = CI.main()
         return status, root, events
+
+    def test_disabled_native_candidate_never_reaches_elapsed_sampling(self):
+        status, root, events = self.exercise(native=True, disabled_native=True)
+        self.assertEqual(status, 1)
+        self.assertFalse(any(event[0] == 'elapsed' for event in events))
+
+    def test_native_preflight_precedes_every_elapsed_stage(self):
+        status,root,events=self.exercise(native=True)
+        self.assertEqual(status,0)
+        checks=[i for i,event in enumerate(events) if event[0]=='correctness']
+        elapsed=[i for i,event in enumerate(events) if event[0]=='elapsed']
+        self.assertEqual(len(checks),7)
+        self.assertLess(max(checks),min(elapsed))
+        self.assertTrue(json.loads((root/'evidence/orchestration.json').read_text())['require_candidate_native'])
+        for name in ('gd','aa','profile'):
+            metadata=json.loads((root/name/'implementations.json').read_text())['implementations'][0]['metadata']
+            self.assertIs(metadata['configuration']['native_scalar_policy']['enabled'],True)
 
     def test_all_diagnostic_probes_follow_both_elapsed_presets(self):
         status, root, events = self.exercise()

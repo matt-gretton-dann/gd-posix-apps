@@ -44,6 +44,16 @@ allocation in turn and require balanced cleanup and an exact successful retry,
 including the IPO fixture. OS executable-page and unwind-table bookkeeping
 are not covered by this replacement-allocator sweep.
 
+Benchmark build metadata records the configured native option separately from
+the actual VM definition and selected backend. Unsupported targets can request
+the option while retaining generic execution. `--require-candidate-native` on
+the arithmetic/math collectors rejects that fallback before elapsed sampling;
+it also requires the shared eligibility proof in ordinary and diagnostic
+candidate builds. Native VS Release projects are retained when the generator
+does not provide a compilation database. These are compilation checks, not
+proof that every benchmark enters native code or that profiled and ordinary
+execution paths are identical.
+
 Separate profiling builds record VM `native_scalar_attempts` and
 `native_scalar_completions`. A completion counts a successful kernel result
 before ordinary Number staging, which can still fail or be interrupted.

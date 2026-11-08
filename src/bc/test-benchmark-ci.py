@@ -20,6 +20,7 @@ SPEC.loader.exec_module(CI)
 
 
 class NativeTrends(unittest.TestCase):
+
     def test_sparse_duration_requires_every_independent_role(self):
         row = dict(implementations={role: dict(median_seconds=.25)
                                     for role in ('base', 'aa', 'candidate')})
@@ -175,7 +176,7 @@ class NativeTrends(unittest.TestCase):
                                  {case['group'] for case in cases})
 
     def exercise(self, fail=False, aa_first=None, aa_second=None, prepared=False,
-                 identical=False):
+                 identical=False, native=False, disabled_native=False):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name) / 'results'
@@ -191,19 +192,24 @@ class NativeTrends(unittest.TestCase):
             def run(self, argv):
                 calls.append(argv)
                 script = Path(argv[1]).name
-                if script == 'test-divisor-reuse-cli.py':
+                if script in ('test-divisor-reuse-cli.py','test-cli.py','test-vm-cli.py'):
                     return
                 output = Path(argv[argv.index('--output') + 1])
                 output.mkdir()
                 if script in ('build-gd-bc.py', 'build-bc-comparators.py'):
                     (output / 'prepared-policy').mkdir()
                     (output / 'prepared-policy/libbc.vcxproj').write_text('retained fixture')
+                    activated=native and not disabled_native and '--name' in argv and argv[argv.index('--name')+1].startswith('candidate')
+                    if activated:
+                        (output / 'native-policy').mkdir()
+                        (output / 'native-policy/libbc.vcxproj').write_text('native fixture')
                     name = argv[argv.index('--name') + 1] if '--name' in argv else 'howard-7.0.3'
                     (output / 'implementations.json').write_text(json.dumps(
                         {'implementations': [{'name': name, 'argv': ['fixture'], 'metadata': dict(
                             binary_sha256=('b' if name == 'candidate' and not identical else 'a') * 64,
                             configuration=dict(prepared_divisors_policy=dict(
-                                status='recorded', mode='ON', enabled=True)))}]}))
+                                status='recorded', mode='ON', enabled=True),
+                                native_scalar_policy=dict(status='recorded', mode='AUTO', configured=activated, enabled=activated, shared_plan=activated, backend='native-scalar-x64.cc' if activated else None)))}]}))
                     return
                 if fail:
                     raise helper.BuildError('fixture incorrect output')
@@ -245,11 +251,29 @@ class NativeTrends(unittest.TestCase):
                 '--candidate', 'b' * 40, '--output', str(root)]
         if prepared:
             argv += ['--candidate-prepared-divisors']
+        if native:
+            argv += ['--require-candidate-native']
         with mock.patch.object(CI, 'load', modules), mock.patch.object(CI, 'host_info', return_value={}), \
                 mock.patch.object(sys, 'argv', argv), mock.patch.dict('os.environ', {}, clear=True), \
                 contextlib.redirect_stderr(io.StringIO()):
             result = CI.main()
         return root, calls, result
+
+    def test_disabled_native_candidate_never_reaches_elapsed_sampling(self):
+        root, calls, result = self.exercise(native=True, disabled_native=True)
+        self.assertEqual(result, 1)
+        self.assertFalse(any(Path(call[1]).name == 'bench-bc.py' for call in calls))
+
+    def test_native_candidate_checks_all_roles_before_timing(self):
+        root,calls,result=self.exercise(native=True)
+        self.assertEqual(result,0)
+        for index,call in enumerate(calls[:3]):
+            self.assertNotIn('--native-scalars',call)
+        self.assertEqual([Path(call[1]).name for call in calls[4:10]],
+                         ['test-cli.py','test-vm-cli.py']*3)
+        self.assertTrue(all(Path(call[1]).name=='bench-bc.py' for call in calls[10:]))
+        self.assertTrue(json.loads((root/'evidence/orchestration.json').read_text())['require_candidate_native'])
+        self.assertEqual((root/'evidence/candidate/native-policy/libbc.vcxproj').read_text(),'native fixture')
 
     def test_prepared_candidate_keeps_controls_ordinary_and_guards_before_timing(self):
         root, calls, result = self.exercise(prepared=True)
