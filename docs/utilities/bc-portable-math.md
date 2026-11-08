@@ -106,14 +106,26 @@ Use odd symmetry, and for |x| > 1 use pi/2 - atan(1/|x|). Compute pi/2 as
 2*a(1) at working precision; the recursive argument one needs no reciprocal,
 so this is a finite dependency. Repeated half-angle reduction
 `x/(1+sqrt(1+x*x))` takes arguments at most one into [0,.1] in at most three
-steps. The reconstruction multiplier is at most eight. Each transform is
+steps. The absolute reconstruction multiplier is at most eight. The source
+keeps a signed multiplier and a single additive offset: the near-one path
+uses the unit-arctangent offset with a positive multiplier; the reciprocal
+path uses the pi/2 offset with a negative multiplier. These paths are
+mutually exclusive after reduction. For the same stored offset p and
+nonnegative factor h, `p-(r*h)` and `r*(-h)+p` have identical decimal values
+and scales: negation and addition are exact. This representation changes
+neither the precision budget nor the rounding schedule. Each transform is
 well-conditioned on this interval; reciprocal input has derivative at most
 one. Input is rounded to W before the series.
 
 Evaluate atan(t) with its alternating odd-power recurrence. The stored squared
 ratio is below .011. Term propagation contracts; each multiplication/division
-introduces less than u, and summation is exact. The loop takes fewer than W+2
-terms. Allowing one additional working ULP for the truncated near-one constant,
+introduces less than u, and summation is exact. The divided term is added
+directly rather than stored in a separate automatic scalar; division still
+truncates at the same working scale before addition. Together with the signed
+reconstruction this removes three automatic scalars and a final reciprocal
+branch, without adding retained state or changing the unit-argument shortcut.
+The loop takes fewer than W+2 terms. Allowing one additional working ULP for
+the truncated near-one constant,
 a conservative pre-rounding bound is 301*(N+1)*u. This includes transforms,
 constant reconstruction and N terms. Use W = S + 2*d(S+F+D+1) + 24. The bound
 is far below U/2 by the digit-count inequality above. Term disappearance is a

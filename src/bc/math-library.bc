@@ -17,10 +17,10 @@ scale=2*A
 
 /* Arctangent: reciprocal and half-angle reduction, alternating series. */
 define a(x) {
-  auto b,i,k,n,p,q,r,s,t,u,v,w,y;
-  /* b/s save base/scale; w is precision; n/v are sign/reciprocal flags.
-     k reconstructs half angles; p is pi/2; y is the near-one correction.
-     q/t/u are ratio, power and term. */
+  auto b,i,k,n,p,q,r,s,t,w;
+  /* b/s save base/scale; w is precision; n saves the original sign.
+     k is the signed half-angle factor; p is the reconstruction offset.
+     q/t are the squared ratio and current odd power. */
   b=ibase
   ibase=A
   s=scale
@@ -55,27 +55,27 @@ define a(x) {
   w=s+2*length(s+scale(x)+length(x)+1)+24
   scale=w
   if (scale!=w) return(1/0)
-  v=0
-  y=0
+  k=1
+  p=0
   /* Around one, the tangent subtraction identity reduces the argument
      to at most 1/9 in [1,1.25] or [.8,1]. */
   if (x>=.8) {
     if (x<=1.25) {
       if (x!=1) {
         /* The certified lower bound loses less than one working ULP. */
-        if (w<=144) y=.7853981633974483096156608458198757210492923498437764552437361480769541015715522496570087063355292669955370216283205766617734611523876455579313398520321202793625/1
-        if (w>144) y=a(1)
+        if (w<=144) p=.7853981633974483096156608458198757210492923498437764552437361480769541015715522496570087063355292669955370216283205766617734611523876455579313398520321202793625/1
+        if (w>144) p=a(1)
         x=(x-1)/(x+1)
       }
     }
   }
   if (x>1) {
-    v=1
+    /* pi/2-atan(1/x) uses a negative reconstruction factor. */
+    k= -1
     x=1/x
     p=2*a(1)
   }
   x=x/1
-  k=1
   while (x>.1) {
     x=x/(1+sqrt(1+x*x))
     k*=2
@@ -86,12 +86,10 @@ define a(x) {
   i=3
   while (t!=0) {
     t=t*q
-    u=t/i
-    r+=u
+    r+=t/i
     i+=2
   }
-  r=r*k+y
-  if (v==1) r=p-r
+  r=r*k+p
   if (n==1) r= -r
   t=10^(-s)/2
   if (r>=0) r+=t

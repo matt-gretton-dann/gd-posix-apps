@@ -199,7 +199,7 @@ class LibraryCli(unittest.TestCase):
     def test_atan_unit_literal_matches_the_certified_enclosure(self):
         source = Path(SOURCE).read_text(encoding='utf-8')
         literals = re.findall(r'(?m)^\s*r=(\.\d{160})$', source)
-        correction = re.findall(r'(?m)^\s*if \(w<=144\) y=(\.\d{160})/1$', source)
+        correction = re.findall(r'(?m)^\s*if \(w<=144\) p=(\.\d{160})/1$', source)
         self.assertEqual(len(literals), 1)
         self.assertEqual(correction, literals)
         lower, upper = unit_atan_enclosure()
