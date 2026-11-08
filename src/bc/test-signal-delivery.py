@@ -130,18 +130,55 @@ class InterruptTest(unittest.TestCase):
                 os.close(slave)
                 slave = None
                 try:
-                    # The first eligible call completes before readiness;
+                    # Warm eligible calls complete before readiness, including
+                    # the recursive word tier's bounded eight-call warmup;
                     # repeated bounded scalar calls then run in one item with
                     # the VM handler installed. This tests recovery around
                     # calls without claiming a particular machine-code PC.
                     child.stdin.write('define f(y) {\nreturn(y+1)\n}\ny=73\n'
-                                      '{t=f(4);"READY\n";while(1) {t=f(t%1000)}}\n')
+                                      '{for(t=0;t<8;t++)v=f(4);"READY\n";while(1) {t=f(t%1000)}}\n')
                     child.stdin.flush()
                     self.assertEqual(self.read_until(master, b"READY\n"), b"READY\n")
                     os.kill(child.pid, signal.SIGINT)
                     child.stdin.write("f(2)\ny\n")
                     child.stdin.flush()
                     self.assertEqual(self.read_until(master, b"73\n"), b"3\n73\n")
+                    _, errors = child.communicate("quit\n", timeout=3)
+                    self.assertEqual(child.returncode, 0, errors)
+                    self.assertEqual(errors, "Execution interrupted.\n")
+                    self.assertEqual(self.drain(master), b"")
+                finally:
+                    if child.poll() is None:
+                        child.kill()
+                        child.communicate(timeout=3)
+        finally:
+            os.close(master)
+            if slave is not None:
+                os.close(slave)
+
+    def test_hot_loop_function_interrupt_restores_parameter_and_auto(self):
+        master, slave = pty.openpty()
+        try:
+            tty.setraw(slave)
+            with subprocess.Popen([BC], stdin=subprocess.PIPE, stdout=slave,
+                                  stderr=subprocess.PIPE, universal_newlines=True,
+                                  env=dict(os.environ, LC_ALL="C")) as child:
+                os.close(slave)
+                slave = None
+                try:
+                    # Warm a pure function containing a backedge before the
+                    # marker. The interrupted call may be in the word tier or
+                    # its generic fallback; no particular PC is asserted.
+                    child.stdin.write('define f(x) {\nauto i\nif(x==0)return(0)\n'
+                                      'i=x\nwhile(i>0)i+=1\nreturn(i)\n}\n'
+                                      'x=73\ni=29\n{for(t=0;t<8;t++)v=f(0);'
+                                      '"READY\n";q=f(1)}\n')
+                    child.stdin.flush()
+                    self.assertEqual(self.read_until(master, b"READY\n"), b"READY\n")
+                    os.kill(child.pid, signal.SIGINT)
+                    child.stdin.write("f(0)\nx\ni\n")
+                    child.stdin.flush()
+                    self.assertEqual(self.read_until(master, b"29\n"), b"0\n73\n29\n")
                     _, errors = child.communicate("quit\n", timeout=3)
                     self.assertEqual(child.returncode, 0, errors)
                     self.assertEqual(errors, "Execution interrupted.\n")

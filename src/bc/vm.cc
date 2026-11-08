@@ -33,6 +33,11 @@
 #endif
 #ifdef GD_BC_NATIVE_FUNCTIONS
 #  include "native-expression.hh"
+#endif
+#ifdef GD_BC_WORD_FUNCTIONS
+#  include "word-runtime.hh"
+#endif
+#if defined(GD_BC_NATIVE_FUNCTIONS) || defined(GD_BC_WORD_FUNCTIONS)
 #  if defined(_MSC_VER)
 #    define GD_BC_LEAF_NOINLINE __declspec(noinline)
 #  elif defined(__GNUC__) || defined(__clang__)
@@ -438,16 +443,24 @@ struct VMState
 #else
   auto call(Letter func, Location const& loc) -> Number;
 #endif
-#if defined(GD_BC_NATIVE_FUNCTIONS)
+#if defined(GD_BC_NATIVE_FUNCTIONS) || defined(GD_BC_WORD_FUNCTIONS)
 #  if GD_BC_FORWARD_SCALAR_ARGUMENT
   GD_BC_LEAF_NOINLINE auto call_generic(Letter func, Location const& loc,
                                         Number const* argument = nullptr) -> Number;
 #  else
   GD_BC_LEAF_NOINLINE auto call_generic(Letter func, Location const& loc) -> Number;
 #  endif
+#endif
+#if defined(GD_BC_NATIVE_FUNCTIONS)
   GD_BC_LEAF_NOINLINE auto call_native_leaf(Letter func, Location const& loc,
                                             NativeExpression const& code,
                                             Number const* borrowed = nullptr) -> Number;
+#endif
+#if defined(GD_BC_WORD_FUNCTIONS)
+  GD_BC_LEAF_NOINLINE auto try_word_call(Letter func, Number const* borrowed)
+    -> WordFunctions::Outcome;
+  GD_BC_LEAF_NOINLINE auto call_word_fallback(Letter func, Location const& loc,
+                                              Number const* borrowed) -> Number;
 #endif
 
   /** Push a new parameter pack onto the parameter stack.  */
@@ -623,6 +636,13 @@ private:
     ++operand_depth_;
     return stack;
   }
+#endif
+#if defined(GD_BC_WORD_FUNCTIONS)
+  // Keep tier metadata out of FunctionCode and the existing VM field prefix.
+  // No-call/unsupported-value programs allocate no word tier owner.
+  std::unique_ptr<WordFunctions> word_functions_;
+  std::array<std::uint8_t, Letter::count_> word_hot_{};
+  bool word_fallback_ = false;
 #endif
 };
 
@@ -1013,6 +1033,11 @@ void GD::Bc::Details::VMState::function(Letter func, Instructions::const_iterato
   }
   functions_.at(static_cast<unsigned>(func)) =
     std::make_optional(std::make_tuple(FunctionCode(std::move(instrs)), mask, loc));
+#if defined(GD_BC_WORD_FUNCTIONS)
+  word_hot_.at(static_cast<unsigned>(func)) = 0;
+  if (word_functions_)
+    word_functions_->reset(static_cast<unsigned>(func));
+#endif
 #if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
   stack_plans_[static_cast<unsigned>(func)] = {};
 #endif
@@ -1033,7 +1058,12 @@ void GD::Bc::Details::VMState::defer_library_function(Letter name, std::string_v
 {
   auto const index = static_cast<unsigned>(name);
   functions_.at(index).reset();
-#if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
+#  if defined(GD_BC_WORD_FUNCTIONS)
+  word_hot_.at(index) = 0;
+  if (word_functions_)
+    word_functions_->reset(index);
+#  endif
+#  if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
   stack_plans_[index] = {};
 #endif
   deferred_functions_.at(index) = {image, decode};
@@ -1128,7 +1158,9 @@ auto GD::Bc::Details::FunctionCode::native_leaf(VariableMask locals) -> NativeEx
   }
   return reject();
 }
+#endif
 
+#if defined(GD_BC_NATIVE_FUNCTIONS) || defined(GD_BC_WORD_FUNCTIONS)
 #  if GD_BC_FORWARD_SCALAR_ARGUMENT
 auto GD::Bc::Details::VMState::call(Letter func, Location const& loc, Number const* argument)
   -> GD::Bc::Number
@@ -1137,6 +1169,18 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
 #  endif
 {
   GD_BC_PROFILE_EVENT(Profile::Event::function_calls, 1);
+#  if defined(GD_BC_WORD_FUNCTIONS) && !defined(GD_BC_NATIVE_FUNCTIONS)
+  // A cached effect rejection needs no numeric entry checks or tier helper.
+  // Full checks and an active fallback scope likewise stay directly generic.
+  if (full_checks() || word_fallback_ ||
+      (word_functions_ && word_functions_->rejected(static_cast<unsigned>(func)))) {
+#    if GD_BC_FORWARD_SCALAR_ARGUMENT
+    return call_generic(func, loc, argument);
+#    else
+    return call_generic(func, loc);
+#    endif
+  }
+#  endif
   if (!full_checks() && !have_been_interrupted.test(std::memory_order_relaxed) &&
       !param_marks_.empty()) {
     auto const& mark = param_marks_.back();
@@ -1149,8 +1193,9 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
     auto const one_argument = scalar_pack;
 #  endif
     if (definition && mark.next == mark.begin && one_argument) {
-      // Deferred library definitions keep their normal first-call loader.
-      // No Number owner lives in this routing frame on a generic call.
+      // Deferred definitions retain the normal first-call loader. This router
+      // owns no speculative Number, whether it selects a tier or the VM.
+#  if defined(GD_BC_NATIVE_FUNCTIONS)
       NativeExpression const* code = nullptr;
       try {
         code = std::get<0>(*definition).native_leaf(std::get<1>(*definition));
@@ -1159,12 +1204,41 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
         // Preparation has not consumed arguments or changed dynamic bindings.
       }
       if (code != nullptr) {
-#  if GD_BC_FORWARD_SCALAR_ARGUMENT
+#    if GD_BC_FORWARD_SCALAR_ARGUMENT
         return call_native_leaf(func, loc, *code, argument);
-#  else
+#    else
         return call_native_leaf(func, loc, *code);
-#  endif
+#    endif
       }
+#  endif
+#  if defined(GD_BC_WORD_FUNCTIONS)
+      if (!word_fallback_) {
+#    if GD_BC_FORWARD_SCALAR_ARGUMENT
+        auto outcome = try_word_call(func, argument);
+#    else
+        auto outcome = try_word_call(func, nullptr);
+#    endif
+        if (outcome == WordFunctions::Outcome::ready) {
+          if (!have_been_interrupted.test(std::memory_order_relaxed)) {
+            auto const begin = param_marks_.back().begin;
+            parameters_.resize(begin);
+            param_marks_.pop_back();
+            GD_BC_PROFILE_EVENT(Profile::Event::word_function_completions, 1);
+            return word_functions_->take_result();
+          }
+          word_functions_->discard_result();
+          GD_BC_PROFILE_EVENT(Profile::Event::word_function_abandonments, 1);
+          outcome = WordFunctions::Outcome::failed;
+        }
+        if (outcome == WordFunctions::Outcome::failed) {
+#    if GD_BC_FORWARD_SCALAR_ARGUMENT
+          return call_word_fallback(func, loc, argument);
+#    else
+          return call_word_fallback(func, loc, nullptr);
+#    endif
+        }
+      }
+#  endif
     }
   }
 #  if GD_BC_FORWARD_SCALAR_ARGUMENT
@@ -1174,6 +1248,7 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
 #  endif
 }
 
+#  if defined(GD_BC_NATIVE_FUNCTIONS)
 auto GD::Bc::Details::VMState::call_native_leaf(Letter func, Location const& loc,
                                               NativeExpression const& code,
                                               Number const* borrowed) -> GD::Bc::Number
@@ -1215,6 +1290,61 @@ auto GD::Bc::Details::VMState::call_native_leaf(Letter func, Location const& loc
   return call_generic(func, loc);
 #  endif
 }
+#  endif
+
+#  if defined(GD_BC_WORD_FUNCTIONS)
+auto GD::Bc::Details::VMState::call_word_fallback(Letter func, Location const& loc,
+                                                  Number const* borrowed) -> GD::Bc::Number
+{
+  // Keep cleanup ownership out of the ordinary routing frame. One abandoned
+  // pure attempt suppresses speculation until its generic fallback returns.
+  auto previous = std::exchange(word_fallback_, true);
+  struct Restore
+  {
+    bool& value;
+    bool previous;
+    ~Restore() { value = previous; }
+  } restore{word_fallback_, previous};
+#    if GD_BC_FORWARD_SCALAR_ARGUMENT
+  return call_generic(func, loc, borrowed);
+#    else
+  (void)borrowed;
+  return call_generic(func, loc);
+#    endif
+}
+
+auto GD::Bc::Details::VMState::try_word_call(Letter func, Number const* borrowed)
+  -> WordFunctions::Outcome
+{
+  auto index = static_cast<unsigned>(func);
+  if (word_functions_ && word_functions_->rejected(index))
+    return WordFunctions::Outcome::declined;
+  auto const& argument = borrowed ? *borrowed : std::get<Number>(parameters_.back());
+  // Count potentially eligible calls without allocating conversion storage.
+  // Confirm the exact signed range only after the allocation-free warmup.
+  if (argument.scale() != 0 || argument.length() > 19)
+    return WordFunctions::Outcome::declined;
+  auto& calls = word_hot_.at(index);
+  if (calls < 8 && ++calls < 8)
+    return WordFunctions::Outcome::declined;
+  try {
+    auto value = WordFunctions::argument(argument);
+    if (!value)
+      return WordFunctions::Outcome::declined;
+    if (!word_functions_)
+      word_functions_ = WordFunctions::create();
+    auto& definition = *functions_.at(index);
+    return word_functions_->try_call(
+      index, std::get<0>(definition).instructions_, std::get<1>(definition), func, *value,
+      []() noexcept { return have_been_interrupted.test(std::memory_order_relaxed); });
+  }
+  catch (std::bad_alloc const&) {
+    // The lazy owner and incoming parameter pack remain unpublished/intact.
+    GD_BC_PROFILE_EVENT(Profile::Event::word_function_abandonments, 1);
+    return WordFunctions::Outcome::failed;
+  }
+}
+#  endif
 
 #  if GD_BC_FORWARD_SCALAR_ARGUMENT
 auto GD::Bc::Details::VMState::call_generic(Letter func, Location const& loc, Number const* argument)
@@ -1229,7 +1359,7 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc, Number con
 auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc::Number
 #endif
 {
-#if !defined(GD_BC_NATIVE_FUNCTIONS)
+#if !defined(GD_BC_NATIVE_FUNCTIONS) && !defined(GD_BC_WORD_FUNCTIONS)
   GD_BC_PROFILE_EVENT(Profile::Event::function_calls, 1);
 #endif
   auto const index = static_cast<unsigned>(func);

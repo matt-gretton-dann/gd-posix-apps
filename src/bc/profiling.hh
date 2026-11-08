@@ -70,6 +70,15 @@ enum class Event : std::size_t {
   native_scalar_completions,
   native_function_attempts,
   native_function_completions,
+  word_function_plan_attempts,
+  word_function_rejections,
+  word_function_attempts,
+  word_function_completions,
+  word_function_abandonments,
+  word_function_instructions,
+  word_function_self_calls,
+  word_function_promotions,
+  word_function_demotions,
   count
 };
 

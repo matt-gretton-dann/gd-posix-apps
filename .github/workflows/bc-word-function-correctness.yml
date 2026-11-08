@@ -1,0 +1,164 @@
+name: bc recursive word function correctness
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/bc/**'
+      - 'CMakeLists.txt'
+      - 'cmake/**'
+      - '.github/workflows/bc-word-function-correctness.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/bc/**'
+      - 'CMakeLists.txt'
+      - 'cmake/**'
+      - '.github/workflows/bc-word-function-correctness.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  correctness:
+    name: Word functions / ${{ matrix.os }} / ${{ matrix.mode.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2025]
+        mode:
+          - {name: ordinary, word: 'ON', native: 'OFF', typed: 'OFF', profile: 'OFF', extensions: 'ON'}
+          - {name: profile, word: 'ON', native: 'OFF', typed: 'ON', profile: 'ON', extensions: 'OFF'}
+          - {name: fallback, word: 'OFF', native: 'OFF', typed: 'OFF', profile: 'OFF', extensions: 'ON'}
+          - {name: coexist, word: 'ON', native: 'ON', typed: 'ON', profile: 'ON', extensions: 'OFF'}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Establish native MSVC environment
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installation = & "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe" -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (!$installation) { throw 'Native x64 MSVC is unavailable' }
+          $variables = & cmd /c "`"$installation\Common7\Tools\VsDevCmd.bat`" -arch=x64 -host_arch=x64 >nul && set"
+          if ($LASTEXITCODE) { throw 'Cannot initialize MSVC' }
+          foreach ($line in $variables) {
+            if ($line -match '^(PATH|INCLUDE|LIB|LIBPATH|VCToolsInstallDir|VCINSTALLDIR|VSINSTALLDIR|WindowsSdkDir|WindowsSDKVersion|UniversalCRTSdkDir|UCRTVersion|Platform)=(.*)$') {
+              "$($matches[1])=$($matches[2])" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            }
+          }
+      - name: Build and check word execution and fallback
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir evidence
+          git rev-parse HEAD > evidence/revision.txt
+          python_cmd=python3
+          executable_suffix=
+          if [[ $RUNNER_OS == Windows ]]; then
+            export CC=cl CXX=cl
+            python_cmd=python
+            executable_suffix=.exe
+          fi
+          cmake -S . -B build-word -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DBUILD_TESTING=ON \
+            -DENABLE_BC_NATIVE_SCALAR=OFF -DENABLE_BC_NATIVE_FUNCTIONS=${{ matrix.mode.native }} \
+            -DENABLE_BC_WORD_FUNCTIONS=${{ matrix.mode.word }} \
+            -DENABLE_BC_TYPED_RESULTS=${{ matrix.mode.typed }} \
+            -DENABLE_BC_PROFILE=${{ matrix.mode.profile }} \
+            -DENABLE_NON_POSIX_EXTENSIONS=${{ matrix.mode.extensions }} \
+            -DRUN_CLANG_FORMAT=OFF -DRUN_CLANG_TIDY=OFF -DBC_MULTIPLY_SPLIT_POINT=126 \
+            2>&1 | tee evidence/configure.log
+          cmake --build build-word --target test-libbc test-bc-word-function bc test-bc-signal --parallel 2 \
+            2>&1 | tee evidence/build.log
+          "$python_cmd" - <<'PYCODE'
+          import hashlib,json
+          from pathlib import Path
+          database=Path('build-word/compile_commands.json')
+          rows=json.loads(database.read_text())
+          command=lambda row:row.get('command') or ' '.join(row['arguments'])
+          normalized=lambda row:row['file'].replace(chr(92),'/')
+          vm=[r for r in rows if normalized(r).endswith('/src/bc/vm.cc')]
+          assert len(vm)==1
+          expected='${{ matrix.mode.word }}'=='ON'
+          selected='GD_BC_WORD_FUNCTIONS=1' in command(vm[0])
+          assert selected==expected
+          expected_native='${{ matrix.mode.native }}'=='ON'
+          assert ('GD_BC_NATIVE_FUNCTIONS=1' in command(vm[0]))==expected_native
+          assert 'GD_BC_NATIVE_SCALAR=1' not in command(vm[0])
+          names={normalized(r).split('/')[-1] for r in rows}
+          backends=names & {'native-expression-arm64.cc','native-expression-x64.cc'}
+          assert len(backends)==int(expected_native)
+          core=[]
+          for name in ('word-function.cc','word-lowering.cc','word-runtime.cc'):
+              definitions=[r for r in rows if normalized(r).endswith('/src/bc/'+name)]
+              assert len(definitions)==1
+              ordinary_library='libbc.dir' in command(definitions[0])
+              assert ordinary_library==expected
+              core.append(dict(source=name,library_context=ordinary_library,command=command(definitions[0])))
+          tests=[r for r in rows if normalized(r).endswith('/src/bc/test-word-runtime.cc')]
+          assert len(tests)==1
+          assert 'GD_BC_EXPECT_WORD_FUNCTIONS='+str(int(expected)) in command(tests[0])
+          Path('evidence/word-build.json').write_text(json.dumps(dict(
+              word_functions_selected=selected,expected_word_functions=expected,
+              native_functions_selected=expected_native,native_backends=sorted(backends),
+              compile_commands_sha256=hashlib.sha256(database.read_bytes()).hexdigest(),
+              core=core,dependency_guard='Compiled in the actual word-function.cc on every compiler',
+              scope='Actual compiled selection; enabled profile VM cases require positive completion, full checks and OFF require generic execution; no dynamic ordinary/profile identity or performance acceptance'),indent=2)+'\n')
+          PYCODE
+          build-word/src/bc/test-bc-word-function${executable_suffix} \
+            2>&1 | tee evidence/word-tests.log
+          grep -q 'All tests passed' evidence/word-tests.log
+          if [[ '${{ matrix.mode.native }}' == ON ]]; then
+            build-word/src/bc/test-libbc${executable_suffix} '[native-expression]' \
+              2>&1 | tee evidence/native-tests.log
+            grep -q 'All tests passed' evidence/native-tests.log
+          fi
+          build-word/src/bc/test-libbc${executable_suffix} '[bc][vm]' \
+            2>&1 | tee evidence/vm-tests.log
+          # Include CLI recovery around calls as well as the VM signal guards.
+          # Unsupported PTY hosts retain the fixture's explicit skip.
+          ctest --test-dir build-word --no-tests=error --output-on-failure \
+            -R '^bc/(vm-lifetime(-ipo)?|signal-(normal|exception|delivery)|math-library-(cli|source|image|decisions)|math-imported|math-oracle)$' \
+            2>&1 | tee evidence/ctest.log
+          "$python_cmd" src/bc/test-cli.py "build-word/src/bc/bc${executable_suffix}" \
+            --extensions ${{ matrix.mode.extensions }} 2>&1 | tee evidence/cli.log
+          "$python_cmd" src/bc/test-vm-cli.py "build-word/src/bc/bc${executable_suffix}" \
+            --extensions ${{ matrix.mode.extensions }} 2>&1 | tee evidence/vm-cli.log
+      - name: Preserve configuration and correctness logs
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p evidence
+          for path in build-word/CMakeCache.txt build-word/compile_commands.json; do
+            if [[ -f $path ]]; then cp "$path" evidence/; fi
+          done
+          if [[ -d build-word/Testing ]]; then cp -R build-word/Testing evidence/; fi
+          python_cmd=python3
+          if [[ $RUNNER_OS == Windows ]]; then python_cmd=python; fi
+          "$python_cmd" - <<'PYCODE'
+          import hashlib,json,shutil
+          from pathlib import Path
+          root=Path('evidence/core-objects');root.mkdir(exist_ok=True)
+          objects=[]
+          for path in Path('build-word').rglob('word-function.cc.*'):
+              if path.suffix not in ('.o','.obj'):continue
+              dest=root/path.name;shutil.copyfile(path,dest)
+              objects.append(dict(path=str(path),retained=str(dest),sha256=hashlib.sha256(dest.read_bytes()).hexdigest()))
+          Path('evidence/core-objects.json').write_text(json.dumps(objects,indent=2)+'\n')
+          source=Path('evidence/source');source.mkdir(exist_ok=True)
+          for name in ('word-function.hh','word-function.cc','word-lowering.hh','word-lowering.cc','word-runtime.hh','word-runtime.cc','profiling.hh','vm.cc'):
+              path=Path('src/bc')/name
+              shutil.copyfile(path,source/name)
+          PYCODE
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: bc-word-function-correctness-${{ matrix.os }}-${{ matrix.mode.name }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 30

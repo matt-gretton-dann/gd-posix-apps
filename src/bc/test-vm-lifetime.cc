@@ -693,6 +693,88 @@ auto native_leaf_call_failures() -> bool
 }  // namespace
 #endif
 
+#if defined(GD_BC_TEST_WORD_FUNCTIONS)
+namespace {
+auto word_call_failures(bool prepared, bool wide = false) -> bool
+{
+  using namespace GD::Bc;
+  auto parse = [](std::string const& text) {
+    Parser parser(std::make_unique<Lexer>(std::make_unique<StringReader>(text)), false);
+    return parser.parse();
+  };
+  std::string const prefix = wide ? "17\n73\n5\n" : "17\n73\n25\n";
+  std::string const expected = prefix + (wide ? "85070591730234615847396907784232501250\n"
+                                              : "999999996000000007999999992000000004\n");
+  std::string const final = expected + (wide ? "10\n" : "100\n");
+  bool observed = false;
+  auto live = outstanding.load(std::memory_order_relaxed);
+  for (std::size_t point = 0; point != 1024; ++point) {
+    bool injected = false;
+    {
+      std::ostringstream output, errors;
+      VM vm(output, errors, true, VM::ExecutionChecks::verified);
+      // The auto store also keeps this case outside the native leaf subset
+      // when both experimental tiers are enabled together.
+      auto setup = parse(wide ? "x=17\ny=73\ndefine f(x) {\nauto y\ny=x*x+1\nreturn(y)\n}\n"
+                              : "x=17\ny=73\ndefine f(x) {\nauto y\ny=x*x+1\nreturn(y*y)\n}\n");
+      auto warm = parse("q=f(2)\n");
+      auto call = parse(wide ? "r=f(9223372036854775807)\n" : "r=f(999999999)\n");
+      auto globals = parse("x\ny\nq\n");
+      auto result = parse("r\n");
+      auto retry = parse("r=f(3)\n");
+      if (!setup || !warm || !call || !globals || !result || !retry || vm.execute(*setup))
+        return false;
+      for (unsigned n = 0; n != (prepared ? 8U : 7U); ++n)
+        if (vm.execute(*warm))
+          return false;
+      auto failures = injected_failures;
+      bool threw = false;
+      try {
+        AllocationFailure const failure(point);
+        if (vm.execute(*call))
+          return false;
+      }
+      catch (std::bad_alloc const&) {
+        threw = true;
+      }
+      injected = failures != injected_failures;
+      observed = observed || injected;
+      if ((threw && !injected) || vm.execute(*globals) || output.str() != prefix ||
+          (threw && vm.execute(*call)) || vm.execute(*result) || output.str() != expected ||
+          !errors.str().empty()) {
+        std::fprintf(stderr,
+                     "Word call failure at %zu (prepared=%d wide=%d injected=%d threw=%d)\n", point,
+                     int(prepared), int(wide), int(injected), int(threw));
+        return false;
+      }
+#  if GD_BC_PROFILE
+      auto before = Profile::snapshot();
+#  endif
+      if (vm.execute(*retry) || vm.execute(*result) || output.str() != final ||
+          !errors.str().empty())
+        return false;
+#  if GD_BC_PROFILE
+      auto event = static_cast<std::size_t>(Profile::Event::word_function_completions);
+      if (Profile::snapshot().events[event] <= before.events[event])
+        return false;
+#  endif
+    }
+    if (outstanding.load(std::memory_order_relaxed) != live) {
+      std::fprintf(stderr, "Word call failure retained %td allocations at %zu\n",
+                   outstanding.load(std::memory_order_relaxed) - live, point);
+      return false;
+    }
+    if (!injected) {
+      std::fprintf(stdout, "Word call fault sweep (prepared=%d wide=%d) covered %zu allocations\n",
+                   int(prepared), int(wide), point);
+      return observed;
+    }
+  }
+  return false;
+}
+}  // namespace
+#endif
+
 auto main() -> int
 {
 #if defined(GD_BC_TEST_NATIVE_FUNCTIONS)
@@ -715,6 +797,13 @@ auto main() -> int
   if (!run()) {
     return 1;
   }
+#if defined(GD_BC_TEST_WORD_FUNCTIONS)
+  if (!word_call_failures(false) || !word_call_failures(true) || !word_call_failures(false, true) ||
+      !word_call_failures(true, true)) {
+    std::fprintf(stderr, "Word call allocation failure damaged publication, fallback or cleanup\n");
+    return 1;
+  }
+#endif
 #if defined(GD_BC_TEST_NATIVE_FUNCTIONS)
   if (!native_leaf_rejection_cache()) {
     std::fprintf(stderr, "Native leaf permanent rejection was not cached\n");

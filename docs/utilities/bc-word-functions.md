@@ -46,8 +46,9 @@ Logical scratch counts live cell/frame/argument objects plus the callback's
 reported bank bytes. It does not measure allocator overhead, retained capacity,
 temporary coefficients or process RSS. Existing profiling allocators count
 selected requested vector allocations; these are not complete process malloc
-statistics. Execution counters currently run in ordinary and diagnostic core
-builds alike, so their cost is part of any future ordinary timing image.
+statistics. Both core source configurations expose execution counters;
+optimizers may remove unobserved ordinary updates. Qualify the actual ordinary
+image separately from the diagnostic counter image.
 
 ## Current implementation and evidence limits
 
@@ -70,11 +71,72 @@ Differential tests compare parsed expressions, local stores, loops and nested
 self-calls against independent full-check VM states, and retain plans after
 changing/destroying the source. These tests do not exercise a VM tier route.
 
-This component is not yet connected to VM calls. Production execution and
-defaults are unchanged. Immutable generation ownership,
-redefinition, deferred replacement, fallback-chain suppression, final pack
-publication and ordinary/IPO allocation-failure integration remain required.
-Do not infer a speedup, complete VM coverage or default adoption from core tests.
+## Experimental VM integration
+
+`-DENABLE_BC_WORD_FUNCTIONS=ON` enables the general-purpose tier; its default is
+OFF. Full-check execution remains generic. The VM accepts exactly representable
+scale-zero signed 64-bit arguments, including both endpoints and signed zero.
+Inline one-limb arguments use the existing unsigned conversion; other possible
+word values use existing read-only decimal output and checked `from_chars`.
+Other inputs retain ordinary Number execution. No Number API is added.
+The accepted operations preserve scale zero even when the VM's global scale
+changes; the proof rejects reads or writes of that special register.
+
+Each function generation has an allocation-free, saturating eight-call warmup
+counter at the VM tail. Scale/length guards precede counting; exact signed-range
+conversion waits until warmup completes. Only a hot eligible call creates the
+lazily owned tier
+table. Its at-most-26 entries own decoded programs and static rejection flags;
+ordinary definition replacement and deferred-library replacement reset both
+the counter and entry. No field is added to the common function records or
+pre-existing VM prefix. Unsupported bodies cache rejection before subsequent
+numeric conversion checks. The existing native leaf tier has priority when
+both optional tiers are enabled; recursive and store-containing functions can
+still use the word tier.
+
+The ordinary-context boundary owns immutable promoted Number records. It
+charges each live record's Number object plus decimal digits times limb size,
+rejecting values above 4,096 decimal digits. This conservative coefficient
+estimate is not retained heap capacity. The fixed tier table, counter array,
+vector headers and result owner are bounded metadata outside the 1 MiB
+per-attempt logical payload bound and must be measured separately. Dead spill
+records stay charged until the attempt ends. Selected profiling allocators
+track requested table/vector/limb storage; they do not include every process
+allocation or all arithmetic temporaries.
+
+All throwing execution and boxing finish before the VM consumes an incoming
+argument pack. Successful publication moves the boxed owner without allocating;
+escaped values can outlive both later calls and the tier owner. Scratch and
+spill live state clear on every exit. An abandoned attempt enters an outlined,
+exception-safe suppression scope until its generic fallback call chain returns.
+One deterministic failing word argument is remembered per generation and also
+enters that suppression scope. Interrupted attempts and allocation failures do
+not poison that hint and remain retryable. The routing frame owns no speculative
+Number or fallback cleanup object.
+
+Diagnostic `word_function_attempts` count core executions; completions count
+successful VM pack publication. Abandonments also include conversion and
+preparation allocation failures, so they need not be bounded by attempts.
+Instruction/self-call work survives exception cleanup in the diagnostic counts.
+Promotion/demotion events describe the ordinary-context spill boundary; generic
+VM counters retain their interpreter-entry meaning.
+
+VM differential tests cover ordinary/full checks, changed bases/scales,
+argument snapshots, globals, redefinition and escaped promoted results. Existing
+allocation-failure tests remain intact; additional ordinary/IPO sweeps cover
+first plan preparation, promotion, publication, generic fallback and retry.
+The five-case POSIX signal fixture warms eight eligible calls before its
+readiness markers. It includes an interrupted pure function with a backedge,
+checking parameter/auto restoration and later calls through the same generation.
+It tests recovery around calls without claiming a particular instruction PC.
+
+`bc-word-function-correctness.yml` builds explicit ordinary, profiling, OFF and
+native-leaf coexistence
+configurations on native Linux/macOS/Windows. It retains actual VM/test compiler
+definitions, core object ownership, source bytes, fault/semantic/CLI logs and
+explicit unavailable PTY skips. Enabled profiling VM cases require positive
+completion counters; full-check and OFF cases require generic execution. This
+does not establish dynamic ordinary/profile path identity or a runtime speedup.
 
 The former signed-zero prerequisite #601 is already accepted on this baseline:
 `Number::to_unsigned` accepts an exact zero with either stored sign. Do not

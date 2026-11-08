@@ -87,7 +87,7 @@ and macOS ARM64 native execution plus explicit OFF fallback configurations,
 preserves the compile database and runs VM, CLI, signal, math and lifetime
 regressions.
 
-The dedicated matrix includes the four-case POSIX PTY suite in ordinary native,
+The dedicated matrix includes the five-case POSIX PTY suite in ordinary native,
 profiling and explicit OFF modes. It warms a scalar function, interrupts repeated
 calls and checks subsequent argument reuse and the restored global binding.
 Unsupported PTY hosts report an explicit skip. This observes recovery around
