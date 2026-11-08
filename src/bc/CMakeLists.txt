@@ -111,19 +111,31 @@ if(_bc_native_source)
 endif()
 option(ENABLE_BC_NATIVE_FUNCTIONS "Enable experimental cached native scalar functions" OFF)
 set(_bc_native_leaf_selected FALSE)
-if(ENABLE_BC_NATIVE_FUNCTIONS AND CMAKE_SIZEOF_VOID_P EQUAL 8
-   AND _bc_native_arch MATCHES "^(x86_64|AMD64|amd64)$"
-   AND (WIN32 OR (UNIX AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")))
+if(ENABLE_BC_NATIVE_FUNCTIONS AND CMAKE_SIZEOF_VOID_P EQUAL 8)
   include(CheckCXXSourceCompiles)
-  unset(_bc_native_leaf_x64_target CACHE)
-  check_cxx_source_compiles("#if (!defined(__x86_64__) && !defined(_M_X64)) || defined(_M_ARM64EC)
-    #error unsupported native scalar function target
-    #endif
-    int main() { return 0; }" _bc_native_leaf_x64_target)
-  if(_bc_native_leaf_x64_target)
-    target_sources(libbc PRIVATE native-expression-x64.cc)
-    target_compile_definitions(libbc PRIVATE GD_BC_NATIVE_FUNCTIONS=1)
-    set(_bc_native_leaf_selected TRUE)
+  if(APPLE AND _bc_native_arch STREQUAL "arm64")
+    unset(_bc_native_leaf_arm64_target CACHE)
+    check_cxx_source_compiles("#if !defined(__aarch64__) || defined(__arm64e__)
+      #error unsupported native scalar function target
+      #endif
+      int main() { return 0; }" _bc_native_leaf_arm64_target)
+    if(_bc_native_leaf_arm64_target)
+      target_sources(libbc PRIVATE native-expression-arm64.cc)
+      target_compile_definitions(libbc PRIVATE GD_BC_NATIVE_FUNCTIONS=1)
+      set(_bc_native_leaf_selected TRUE)
+    endif()
+  elseif(_bc_native_arch MATCHES "^(x86_64|AMD64|amd64)$"
+         AND (WIN32 OR (UNIX AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")))
+    unset(_bc_native_leaf_x64_target CACHE)
+    check_cxx_source_compiles("#if (!defined(__x86_64__) && !defined(_M_X64)) || defined(_M_ARM64EC)
+      #error unsupported native scalar function target
+      #endif
+      int main() { return 0; }" _bc_native_leaf_x64_target)
+    if(_bc_native_leaf_x64_target)
+      target_sources(libbc PRIVATE native-expression-x64.cc)
+      target_compile_definitions(libbc PRIVATE GD_BC_NATIVE_FUNCTIONS=1)
+      set(_bc_native_leaf_selected TRUE)
+    endif()
   endif()
 endif()
 set_warnings(libbc)
