@@ -5,14 +5,13 @@
 
 #include <array>
 #include <cstring>
-#include <limits>
-#include <utility>
 #include <vector>
 
 #if (!defined(__x86_64__) && !defined(_M_X64)) || defined(_M_ARM64EC)
 #  error Native leaf expressions require the x86-64 ABI
 #endif
 
+#include "native-expression-plan.hh"
 #include "native-expression.hh"
 
 #if defined(_WIN32)
@@ -32,7 +31,6 @@
 namespace GD::Bc::Details {
 namespace {
 using Kind = NativeExpressionOp::Kind;
-constexpr unsigned maximum_operations = 64;
 #if defined(_WIN32)
 constexpr unsigned argument_register = 1;  // RCX
 constexpr unsigned output_register = 2;    // RDX
@@ -47,6 +45,15 @@ struct Emitter
 {
   std::vector<std::uint8_t> bytes;
   std::vector<std::size_t> failures;
+  void start(unsigned argument)
+  {
+    for (auto value : {0xf3U, 0x0fU, 0x1eU, 0xfaU})
+      byte(value);  // ENDBR64, including as a no-op on processors without IBT.
+    byte(0x48);
+    byte(0x85);
+    byte(0xc0U | (argument << 3) | argument);
+    conditional_failure(8);  // JS: input above INT64_MAX.
+  }
   void byte(unsigned value) { bytes.push_back(static_cast<std::uint8_t>(value)); }
   void word(std::uint32_t value)
   {
@@ -116,90 +123,11 @@ struct Emitter
 auto NativeExpression::compile(std::span<NativeExpressionOp const> operations, std::uint8_t result)
   -> std::shared_ptr<NativeExpression const>
 try {
-  if (operations.empty() || operations.size() > maximum_operations || result >= operations.size())
+  auto generated =
+    emit_native_expression<Emitter, argument_register>(operations, result, temporary_registers);
+  if (!generated)
     return {};
-  std::array<unsigned, maximum_operations> last_use{};
-  for (unsigned i = 0; i != operations.size(); ++i) {
-    auto const& op = operations[i];
-    switch (op.kind) {
-    case Kind::argument:
-      break;
-    case Kind::constant:
-      if (op.constant > static_cast<std::uint64_t>(std::numeric_limits<std::int64_t>::max()))
-        return {};
-      break;
-    case Kind::add:
-    case Kind::multiply:
-      if (op.left >= i || op.right >= i)
-        return {};
-      last_use[op.left] = i;
-      last_use[op.right] = i;
-      break;
-    default:
-      return {};
-    }
-  }
-  last_use[result] = static_cast<unsigned>(operations.size());
-  Emitter emit;
-  for (auto value : {0xf3U, 0x0fU, 0x1eU, 0xfaU})
-    emit.byte(value);  // ENDBR64, including on processors where it is a no-op.
-  emit.byte(0x48);
-  emit.byte(0x85);
-  emit.byte(0xc0U | (argument_register << 3) | argument_register);
-  emit.conditional_failure(8);  // JS: reject unsigned arguments above INT64_MAX.
-  std::array<int, maximum_operations> registers;
-  registers.fill(-1);
-  std::array<bool, 16> occupied{};
-  auto free_register = [&]() -> int {
-    for (auto reg : temporary_registers)
-      if (!occupied[reg])
-        return static_cast<int>(reg);
-    return -1;
-  };
-  for (unsigned i = 0; i != operations.size(); ++i) {
-    auto const& op = operations[i];
-    int destination = -1;
-    if (op.kind == Kind::argument) {
-      destination = static_cast<int>(argument_register);
-    }
-    else if (op.kind == Kind::constant) {
-      destination = free_register();
-      if (destination < 0)
-        return {};
-      emit.constant(static_cast<unsigned>(destination), op.constant);
-    }
-    else {
-      auto left = registers[op.left];
-      auto right = registers[op.right];
-      if (left < 0 || right < 0)
-        return {};
-      if (left != static_cast<int>(argument_register) && last_use[op.left] == i)
-        destination = left;
-      else if (right != static_cast<int>(argument_register) && last_use[op.right] == i) {
-        destination = right;
-        std::swap(left, right);  // Both supported operations are commutative.
-      }
-      else
-        destination = free_register();
-      if (destination < 0)
-        return {};
-      emit.move(static_cast<unsigned>(destination), static_cast<unsigned>(left));
-      emit.binary(op.kind, static_cast<unsigned>(destination), static_cast<unsigned>(right));
-    }
-    for (unsigned old = 0; old < i; ++old) {
-      if (last_use[old] == i && registers[old] != static_cast<int>(argument_register)) {
-        if (registers[old] >= 0 && registers[old] != destination)
-          occupied[static_cast<unsigned>(registers[old])] = false;
-        registers[old] = -1;
-      }
-    }
-    registers[i] = destination;
-    if (destination != static_cast<int>(argument_register))
-      occupied[static_cast<unsigned>(destination)] = last_use[i] > i;
-  }
-  if (registers[result] < 0)
-    return {};
-  emit.finish(static_cast<unsigned>(registers[result]));
+  auto const& emit = *generated;
   auto program = std::shared_ptr<NativeExpression>(new NativeExpression);
 #if defined(_WIN32)
   SYSTEM_INFO info{};
