@@ -1,7 +1,7 @@
 # Experimental native scalar regions
 
 `ENABLE_BC_NATIVE_SCALAR=ON` enables bounded native scalar execution on Apple
-Arm64 and x86-64 POSIX/Windows builds. The ordinary VM remains the default.
+Arm64 and x86-64 POSIX/Windows builds. This unqualified activation candidate requests native lowering by default.
 Unsupported targets, 32-bit builds and Apple universal builds use the
 interpreter even if the option is requested. The x86-64 extension is an
 unqualified experiment; its presence does not establish a performance gain.

@@ -149,6 +149,41 @@ class ResourceComparison(unittest.TestCase):
         return dict(status='collected', checked=True, native_unit='fixture bytes',
                     peak_rss_native=100 if role == 'base' else 120)
 
+    def native_loop_roles(self):
+        self.case['group'] = 'loop'
+        for roles in (self.profiles, self.ordinary):
+            for role, tool in roles.items():
+                active = role == 'candidate'
+                tool['metadata']['configuration']['native_scalar_policy'] = dict(
+                    status='recorded', mode='AUTO', configured=active, enabled=active,
+                    shared_plan=active, backend='native-scalar-x64.cc' if active else None)
+
+    def test_compiled_native_loop_without_dynamic_completion_is_rejected(self):
+        self.native_loop_roles()
+        with self.assertRaisesRegex(ValueError, 'did not complete native'):
+            self.collect()
+        manifest = json.loads((self.root / 'results/manifest.json').read_text())
+        self.assertEqual(manifest['status'], 'incomplete')
+        self.assertFalse(manifest['merge_eligible'])
+
+    def test_native_loop_completion_counters_survive_the_resource_report(self):
+        self.native_loop_roles()
+        observe = self.observed_profile
+        def profile(tool, case, timeout, program_path=None):
+            result = observe(tool, case, timeout, program_path)
+            path = Path(os.environ['GD_BC_PROFILE_OUTPUT'])
+            counters = json.loads(path.read_text())
+            active = int(tool['name'] == 'candidate')
+            counters['events'].update(native_scalar_attempts=active, native_scalar_completions=active)
+            path.write_text(json.dumps(counters))
+            return result
+        with mock.patch.object(self, 'observed_profile', profile):
+            report = self.collect()
+        self.assertEqual(report['status'], 'collected')
+        events = report['results'][0]['allocation_comparison']['events']
+        self.assertEqual(events['native_scalar_completions']['candidate'], 1)
+        self.assertEqual(events['native_scalar_completions']['base'], 0)
+
     def collect(self, rss=None):
         with mock.patch.object(self.bench, 'run_checked', self.observed_profile):
             return self.module.collect(self.bench, types.SimpleNamespace(

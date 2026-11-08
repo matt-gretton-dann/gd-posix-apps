@@ -362,6 +362,15 @@ def collect(bench, adapter, profiles, ordinary, cases, directory, repetitions=5,
                     raise ValueError('unchecked resource counter output')
                 write(target / (role + '-profile.json'), observed)
                 counters[role] = checked_counters(json.loads(path.read_text(encoding='utf-8')))
+                if case.get('group') == 'loop':
+                    policy = profiles[role]['metadata']['configuration'].get('native_scalar_policy') or {}
+                    events = counters[role]['events']
+                    attempts = events.get('native_scalar_attempts')
+                    completed = events.get('native_scalar_completions')
+                    if policy.get('enabled') is True and (not attempts or completed != attempts):
+                        raise ValueError('native loop resource case did not complete native execution')
+                    if policy.get('enabled') is False and attempts not in (None, 0):
+                        raise ValueError('disabled native resource role attempted native execution')
             row['allocation_comparison'] = allocation_comparison(counters['base'], counters['candidate'])
             randomizer = random.Random(str(seed) + ':' + name)
             first = randomizer.randrange(2)
