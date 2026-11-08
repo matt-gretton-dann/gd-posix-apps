@@ -247,6 +247,22 @@ Howard image after elapsed measurements, including when a checked run fails.
 Older arithmetic archives may retain only the three GD images; the Howard
 recipe and its declared hash do not replace the missing measured bytes.
 
+The native arithmetic and math controllers accept `--compare-resources` for
+matched baseline/candidate diagnostics. Separate counter-enabled builds use
+their corresponding ordinary source and build options; all builds finish before
+elapsed sampling. After every elapsed stage, fixed representative cases collect
+selected-container allocation/refcount events and five alternating native cold
+RSS pairs. The math representatives include all five Bessel regimes at scales
+20 and 100 and the scale-20 arctangent boundary. These are software counts and
+cold peak memory, not process malloc totals, steady-state retention or elapsed
+performance. Unavailable native adapters and incomplete pairs remain explicit.
+
+Resource profiles must match their own ordinary source/compiler/configuration,
+including any declared optional-backend policy. A policy absent from both builds
+remains absent, not an invented disabled-mode assertion. Actual instrumented
+images and recipes are retained under `profile-images/`, separately from the
+ordinary `codegen/` roles; no instrumented duration becomes timing evidence.
+
 ## Source and build provenance
 
 When a recipe declares `binary_sha256` in its metadata or normalized entry,
