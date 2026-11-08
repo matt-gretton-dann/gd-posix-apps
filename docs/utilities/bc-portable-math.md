@@ -357,6 +357,74 @@ An underflowed initial factor or term is therefore
 covered by the error budget even if later exact recurrence terms would grow.
 The forward recurrence reuses terms; it does not rebuild powers/factorials.
 
+### Bounded four-term ascending pass
+
+For `0 <= x <= 8` and entry `0 <= S <= 100`, first use `W=S+12`.
+The existing symmetry, tiny-result and Hankel choices still run first.
+This path accepts fractional arguments; it does not recognize benchmark
+names or cache results. Other arguments/scales retain the single-term
+recurrence. The earlier integer-only grouping experiment in #498 is separate
+and its adverse measurements do not qualify this source.
+
+Write `D_i=(k+i-1)*(n+k+i-1)`, `D=D_1*D_2*D_3*D_4`, and let `t` be
+the term before index k. The next four exact terms sum to
+
+```
+t*q*(D_2*D_3*D_4 + q*(D_3*D_4 + q*(D_4+q)))/D.
+```
+
+Their final term is `t*q^4/D`. Thus two divisions add and advance four
+terms. Integer denominators/products are exact, but the fractional Horner
+polynomial and stored fourth power need additional truncation bounds.
+
+The existing absolute-series bound gives each stored term magnitude below
+`exp(8)<3000`. Stored `|q|<=16` and `D>=576`. With working unit `u=10^-W`,
+forming `(q*q)^2` introduces less than `513u` error. Advancing a term then
+introduces less than `(3000*513/576+1/576+1)u < 2675u`.
+The two Horner products introduce less than `17u` error. The exact
+polynomial divided by D has magnitude below
+`1+16/4+256/36+4096/576 < 20`; its stored counterpart is below 21.
+The block sum's three truncated multiply/divide operations therefore add
+less than `(3000*16*17/576+21+1+1)u < 1441u` local error.
+
+Every advanced-term error propagates into the remaining series with absolute
+weight below 3000, by the same exponential bound as the generic recurrence.
+Thus one block contributes less than
+`(2675*3000+1441)u < 8030000u` total error. This includes the omitted tail
+after the stored term vanishes: extending its recurrence with zeros adds
+no further local errors. Block sums are added exactly at working scale.
+
+The first tiny-result test implies at most
+`N=max(24,4*(S+1))-1 <=403` coefficient steps. Since term multipliers
+are at most one quarter from index eight, the last stored term vanishes
+within `K=2*W+16 <=240` steps: the exact-rational budget check proves
+`3000/4^(2*W+8) < 10^-W`. Four-step advancement therefore needs at most
+`B=ceil(K/4)<=60` blocks. Include initial coefficient propagation,
+squared-argument perturbation and the integral input-derivative bound:
+
+```
+error < [1 + 2*3000*(N+1) + 8030000*B] * 10^-W
+      <= .000484224001 * U < .001 * U,  U=10^-S.
+```
+
+Before output rounding, calculate the exact decimal distance from `abs(r)`
+to the nearest half-output-unit boundary. At distance at most `.001U`,
+repeat the original single-term recurrence at generic precision using the
+saved untruncated argument. Otherwise the exact result and generic pass
+cannot cross that boundary. At most two passes run; ambiguous inputs can
+cost extra. All three Bessel working-scale readback guards remain, including
+restoration after the exact output-grid distance calculation.
+
+Independent Arb enclosures cover 110 bounded argument/scale cases and prior
+rounding boundaries. Separate exact-rational tests check the four-term
+identity against independently advanced terms, local truncation inequalities
+and every entry scale through 100. All 27 CLI contracts pass on unchanged
+accepted main and this prototype, including ordinary-source execution on
+Howard. These tests and proof are correctness evidence, not elapsed-time
+qualification. Larger source/result frames, two additional automatic scalars,
+cold loading and generic fallback costs still require native resource and
+performance review.
+
 ## Resource limits and validation scope
 
 Working precision is a value in ordinary bc. Requests exceeding GD's
@@ -427,8 +495,10 @@ Calls outside the logarithm domain exercise its guard and are counted
 separately from the numerical results.
 
 The [decision fixture](../../src/bc/fixtures/math-library-decisions.json)
-records the exact source digest, counts, and per-condition outcomes. A
-portable-host model independently clips each working-scale setter to exercise
+records the exact source digest, counts, and per-condition outcomes. The
+current run certifies 727 numerical results and observes 214 of 226 outcomes;
+independent scale-clamp models account for 224, with two infeasible outcomes.
+A portable-host model independently clips each working-scale setter to exercise
 its defensive error branch. Two outcomes require a negative exponential
 coefficient and are infeasible because the series and reconstruction preserve
 nonnegativity. The automated check compares the report with the fixture and

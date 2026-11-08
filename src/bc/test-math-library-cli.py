@@ -362,7 +362,10 @@ class LibraryCli(unittest.TestCase):
         program = 'scale=0\n' + ''.join(f'j(0,{x})\n' for x in arguments)
         self.assertEqual(self.checked_lines(program), ['1', '0'])
 
-    def test_bounded_bessel_guard_error_budget(self):
+    def test_bessel_single_term_comparison_error_budget(self):
+        # Mathematical comparison for the earlier nine-guard single-term
+        # pass. This is not the blocked pass's working-precision budget;
+        # its extra product errors are checked separately above.
         # Bound exp(8) using a rational Taylor prefix and a geometric tail.
         term = total = Fraction(1)
         for k in range(1, 65):

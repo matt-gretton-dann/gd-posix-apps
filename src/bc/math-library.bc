@@ -379,12 +379,15 @@ define c(x) {
 
 /* Bessel J: exact symmetries, tiny-result bound and two evaluation regimes. */
 define j(n,x) {
-  auto b,d,f,g,h,i,k,m,p,q,r,s,t,u,v,w;
+  auto b,d,e,f,g,h,i,k,m,o,p,q,r,s,t,u,v,w;
   /* b/s save base/scale; v is symmetry parity; w is working precision.
      In the Hankel path: m=4*n*n, p/q are even/odd sums, t the coefficient,
      k its index, h its four-step sign cycle, i/g signed/absolute factors,
      f the contraction flag, u the phase and d the amplitude. r holds pi
-     temporarily and then the result. The ascending path reuses t/k/r. */
+     temporarily and then the result. The ascending path reuses t/k/r;
+     m/d retain generic precision/input, p requests a pass, and f enables
+     the bounded four-term pass and rounding check. In that pass, o holds
+     q^4, e the block polynomial, and i/u/g/h its integer denominators. */
   b=ibase
   ibase=A
   s=scale
@@ -481,22 +484,78 @@ define j(n,x) {
      exp(x) < 10^(7*x/16) for x>0. Round the digit budget up. */
   g=(7*x)/16+1
   w=s+g+length(x)+2*length(s+g+length(x)+1)+32
-  scale=w
-  if (scale!=w) return(1/0)
-  if (scale(x)>w) x=x/1
-  t=1
-  for (i=1;i<=n;i++) {
-    t=t*x/(2*i)
-    if (t==0) break
+  m=w
+  d=x
+  f=0
+  /* In this bounded first pass, absolute propagation is below exp(8)<3000
+     and there are at most 403 coefficient steps and 60 four-term blocks.
+     Twelve guard places cover product truncations in each block, with
+     error below .001 output ULP before rounding. */
+  if (s<=100) {
+    if (x<=8) {
+      w=s+12
+      f=1
+    }
   }
-  r=t
-  /* An exact decimal quarter keeps short coefficients short. */
-  q= -x*x*.25
-  k=1
-  while (t!=0) {
-    t=t*q/(k*(n+k))
-    r+=t
-    k+=1
+  p=1
+  while (p==1) {
+    scale=w
+    if (scale!=w) return(1/0)
+    x=d
+    if (scale(x)>w) x=x/1
+    t=1
+    for (i=1;i<=n;i++) {
+      t=t*x/(2*i)
+      if (t==0) break
+    }
+    r=t
+    /* An exact decimal quarter keeps short coefficients short. */
+    q= -x*x*.25
+    k=1
+    if (f==1) {
+      /* Add four consecutive terms with one common denominator, then
+         advance by four with a second division. The stored fourth power
+         and Horner polynomial each have their own truncation budget. */
+      o=q*q
+      o*=o
+      while (t!=0) {
+        u=(k+1)*(n+k+1)
+        g=(k+2)*(n+k+2)
+        h=(k+3)*(n+k+3)
+        i=k*(n+k)*u*g*h
+        e=u*g*h+q*(g*h+q*(h+q))
+        r+=t*q*e/i
+        t=t*o/i
+        k+=4
+      }
+    }
+    if (f==0) {
+      while (t!=0) {
+        t=t*q/(k*(n+k))
+        r+=t
+        k+=1
+      }
+    }
+    p=0
+    if (f==1) {
+      /* Keep the original rounding behavior near a half-ULP boundary.
+         The grid truncation and distance calculation are exact. Repeat
+         at generic precision only when the certified error can cross it. */
+      q=r
+      if (q<0) q= -q
+      scale=s
+      u=q/1
+      scale=w
+      if (scale!=w) return(1/0)
+      h=10^(-s)
+      q=q-u-h/2
+      if (q<0) q= -q
+      if (q<=h*.001) {
+        w=m
+        f=0
+        p=1
+      }
+    }
   }
   if (v==1) r= -r
   t=10^(-s)/2
