@@ -2723,11 +2723,13 @@ auto GD::Bc::VM::execute_impl(Instructions& instructions, bool cli_interrupts) -
           }
         }
         if (eligible) {
+          GD_BC_PROFILE_EVENT(Profile::Event::native_scalar_attempts, 1);
           auto const interrupted = []() noexcept {
             return Details::have_been_interrupted.test(std::memory_order_relaxed);
           };
           auto const result = Details::run_native_scalar(instructions, variables, interrupted);
           if (result && !Details::have_been_interrupted.test(std::memory_order_relaxed)) {
+            GD_BC_PROFILE_EVENT(Profile::Event::native_scalar_completions, 1);
             std::array<Number, Letter::count_> pending;
             for (unsigned index = 0; index < Letter::count_; ++index) {
               if (variables.test(index))
