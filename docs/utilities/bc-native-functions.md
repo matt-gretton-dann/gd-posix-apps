@@ -1,0 +1,80 @@
+# Experimental cached native functions
+
+Issue #683 explores a separate way to reduce function-call and expression
+dispatch costs under #207 and #197. `ENABLE_BC_NATIVE_FUNCTIONS` defaults to
+`OFF`; this option is independent of `ENABLE_BC_NATIVE_SCALAR`. No performance
+benefit or default activation is established by the implementation or its
+correctness workflow.
+
+The initial backend supports x86-64 Windows and POSIX targets with an actual
+x86-64 compiler. ARM64EC, universal Apple builds and other architectures retain
+generic execution even when the option is requested. The CMake capability
+probe checks compiler target macros as well as the configured processor.
+
+## Eligibility and ownership
+
+Only verified functions with the parser's one-scalar parameter prologue and
+straight-line parameter loads, single decimal digits, addition, multiplication
+and a return are eligible. There are at most 132 source instructions and 64
+native operations. Stores, global reads, branches, calls, arrays, I/O, special
+registers and other operations before the return reject the definition. Single
+decimal digits have the same value at every bc input base; wider literals must
+use the generic runtime decoder. An explicit return makes the parser's trailing
+implicit return unreachable.
+
+Each immutable function definition owns its lazy executable page and structural
+rejection state. Repeated calls reuse the page; redefining the function replaces
+the cache. A failed compilation leaves the arguments and bindings intact and
+may be retried. Full-check execution always retains the generic interpreter.
+
+Inputs must be nonnegative, integral, inline Numbers below the Number limb
+radix. The kernel accepts only nonnegative signed-64 intermediates. Any overflow
+declines before publishing a result. The ordinary VM constructs the exact bc
+result, using its decimal constructor for values wider than one limb. Only
+after successful result construction and an interrupt check does it consume
+the parameter pack. Negative, fractional, large, heap and incorrectly shaped
+arguments retain the generic call semantics, including diagnostics. Native
+execution never installs dynamic parameter bindings because an eligible body
+cannot observe anything except its incoming scalar value.
+
+## Generated code and fallbacks
+
+The integer-only kernel interface contains no Number objects or C++ ownership.
+The x86-64 emitter uses five volatile temporaries, preserves input registers,
+never changes RSP, writes no nonvolatile registers and makes no calls. Excess
+register pressure declines rather than spilling. Code includes ENDBR64 and
+checked arithmetic. As a true Windows leaf it needs no frame-unwind record.
+An output word is written only after every operation succeeds.
+
+Pages are allocated writable, populated, then changed to executable/read-only;
+there is no writable/executable phase. Allocation, protection, instruction-cache
+publication and ordinary allocation failures decline native execution. The
+page owner releases partially prepared and published mappings. Interrupts are
+checked before the bounded kernel and before committing its result. Unsupported
+operating systems and architectures keep the generic implementation.
+
+The routing frame owns no speculative Number. Compilation, native result boxing
+and the original generic activation use separate non-inlined functions on the
+supported compilers. This bounds one source of generic-frame growth found in
+earlier integer-tier experiments; actual performance still requires a new
+source-bound comparison.
+
+## Validation and limits
+
+`test-native-expression.cc` checks independent integer oracles, overflow,
+register lifetime/pressure, exact wide outputs, dynamic bindings, function
+redefinition, ibase and fallback bodies. Profile builds assert positive native
+completion and exclusion under full checks. The isolated ordinary/IPO lifetime
+fixtures inject failures throughout emitter allocation and require cleanup and
+successful retry. The dedicated workflow checks Linux/Windows x64 selection
+and macOS ARM64 generic fallback, preserves the compile database and runs VM,
+CLI, signal, math and lifetime regressions.
+
+`native_function_attempts` counts eligible-domain kernel attempts and
+`native_function_completions` counts boxed results committed by the VM. These
+are software diagnostics, not speed measurements. Emitter vectors, shared-owner
+headers, strings and executable mappings are outside the selected-container
+allocation counters; code pages also require separate process-memory review.
+Compilation cost, cache footprint, cold startup and unrelated workloads remain
+part of any later acceptance study. This feature is not a general bc JIT and
+does not accelerate recursive or branching function bodies.
