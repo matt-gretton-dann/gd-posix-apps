@@ -166,7 +166,8 @@ TEST_CASE("Native scalar profiling distinguishes completion and fallback", "[bc]
 #if defined(_WIN32)
 namespace {
 bool unwind_seen = false;
-unsigned stack_depth = 0;
+bool callback_unwound = false;
+bool native_unwound = false;
 #  if defined(_MSC_VER)
 __declspec(noinline)
 #  elif defined(__GNUC__)
@@ -180,9 +181,33 @@ auto unwind_probe() noexcept -> bool
 #  else
   auto const pc = reinterpret_cast<DWORD64>(__builtin_return_address(0));
 #  endif
-  unwind_seen = RtlLookupFunctionEntry(pc, &image_base, nullptr) != nullptr;
-  void* frames[16]{};
-  stack_depth = RtlCaptureStackBackTrace(0, 16, frames, nullptr);
+  auto* native_entry = RtlLookupFunctionEntry(pc, &image_base, nullptr);
+  unwind_seen = native_entry != nullptr;
+  // Exercise the dynamic table directly. The fast stack-capture path on
+  // Windows can stop at generated code despite a registered function entry.
+  CONTEXT context{};
+  RtlCaptureContext(&context);
+  DWORD64 callback_base = 0;
+  auto* callback_entry = RtlLookupFunctionEntry(context.Rip, &callback_base, nullptr);
+  if (callback_entry == nullptr || native_entry == nullptr)
+    return false;
+  void* handler_data = nullptr;
+  DWORD64 establisher = 0;
+  RtlVirtualUnwind(UNW_FLAG_NHANDLER, callback_base, context.Rip, callback_entry,
+                   &context, &handler_data, &establisher, nullptr);
+  callback_unwound = context.Rip == pc;
+  if (!callback_unwound)
+    return false;
+  auto const native_sp = context.Rsp;
+  RtlVirtualUnwind(UNW_FLAG_NHANDLER, image_base, context.Rip, native_entry,
+                   &context, &handler_data, &establisher, nullptr);
+  DWORD64 caller_base = 0;
+  auto* caller_entry = RtlLookupFunctionEntry(context.Rip, &caller_base, nullptr);
+  // The generated frame reserves 808 bytes plus the caller's return address.
+  // Require restoration to a registered caller in the executable, not merely
+  // discovery of the generated frame's metadata.
+  native_unwound = context.Rsp == native_sp + 816 && caller_entry != nullptr &&
+                   caller_base == callback_base && caller_base != image_base;
   return false;
 }
 }  // namespace
@@ -193,6 +218,7 @@ TEST_CASE("Windows native scalar callbacks have registered unwind information",
   auto result = run_native_scalar(code, native_scalar_variables(code), unwind_probe);
   REQUIRE(result.has_value());
   CHECK(unwind_seen);
-  CHECK(stack_depth >= 4);
+  CHECK(callback_unwound);
+  CHECK(native_unwound);
 }
 #endif

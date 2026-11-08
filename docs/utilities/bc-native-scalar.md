@@ -48,12 +48,16 @@ container allocator counts; ordinary cold RSS remains a separate observation.
 Direct native tests exercise arithmetic, branches, caller restoration across
 polls, unsigned overflow fallback, fuel exhaustion and interruption. Checked
 and verified VM results are compared independently. Windows tests also look up
-the callback's native return address in the runtime function table and capture
-a stack trace across the generated frame. Native x86-64 execution under Rosetta
+the callback's native return address in the runtime function table and use
+`RtlVirtualUnwind` to restore the callback and generated frames, checking the
+exact stack adjustment and return to the executable. Fast stack-capture tools
+can stop at the generated frame even when its dynamic table is registered.
+Native x86-64 execution under Rosetta
 is local correctness evidence, not validation of Linux or Windows ABIs.
 
 References: [Windows x64 calling convention](https://learn.microsoft.com/en-us/cpp/build/x64-calling-convention),
 [runtime unwind tables](https://learn.microsoft.com/en-us/cpp/build/exception-handling-x64),
+[virtual unwinding](https://learn.microsoft.com/en-us/windows/win32/api/winnt/nf-winnt-rtlvirtualunwind),
 [executable-page protection](https://learn.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-virtualprotect)
 and [Intel instruction reference](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html).
 The emitted x86 instruction encodings are also checked against LLVM's assembler
