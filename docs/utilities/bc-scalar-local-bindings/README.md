@@ -37,3 +37,10 @@ sources' observations as candidate results or retry for favorable data.
 No local production elapsed benchmarks or native CPU sampling. Preserve the
 864000 total goal-second cap and 20GiB free disk floor; unmet parent issues
 remain open at the cap. Initial performance and memory benefit are unknown.
+
+Qualification preparation carries eight matched-resource collector/test files
+from signed source `5a805f0a`; it imports no square, storage or other unqualified
+runtime backend. Generic legacy policy queries remain metadata only. The
+held-out resource operand-seed regression is retained test-first, then corrected
+to match elapsed corpus seed 197201. Fresh frame programs and exact-input
+resource coverage still require their own source-bound policy and cohort.

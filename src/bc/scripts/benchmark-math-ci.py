@@ -311,6 +311,12 @@ def gd_build_command(args, name, destination, cc, cxx):
     return command
 
 
+def profile_build_command(args, destination, cc, cxx, baseline=False):
+    command = gd_build_command(args, 'base' if baseline else 'gd', destination, cc, cxx)
+    command[command.index('--name') + 1] = 'gd-base-profile' if baseline else 'gd-profile'
+    return command + ['--diagnostic-profile']
+
+
 def preserve_ordinary(configs, evidence, deadline):
     """Retain actual elapsed-role recipes/assets once, including failed runs.
 
@@ -348,6 +354,14 @@ def run_math(args, root, evidence, commands, configs, gd_builder, bench, helper,
         entry = json.loads((destination / 'implementations.json').read_text())['implementations'][0]
         if args.candidate_prepared_divisors and name != 'base':
             gd_builder.require_prepared_candidate(helper, entry)
+        if getattr(args, 'require_candidate_native', False) and name != 'base':
+            gd_builder.require_native_candidate(helper, entry)
+        if getattr(args, 'require_candidate_native_functions', False) and name != 'base':
+            gd_builder.require_native_function_candidate(helper, entry)
+        if getattr(args, 'require_candidate_word_functions', False):
+            gd_builder.require_word_function_baseline(helper, entry) if name == 'base' else gd_builder.require_word_function_candidate(helper, entry)
+        if getattr(args, 'require_candidate_prefix_results', False):
+            gd_builder.require_prefix_result_baseline(helper, entry) if name == 'base' else gd_builder.require_prefix_result_candidate(helper, entry)
         entries.append(entry)
     destination = root / 'howard'
     commands.run([sys.executable, str(SCRIPTS / 'build-bc-comparators.py'), '--output',
@@ -357,6 +371,14 @@ def run_math(args, root, evidence, commands, configs, gd_builder, bench, helper,
         for entry in entries[:2]:
             commands.run([sys.executable, str(SCRIPTS.parent / 'test-divisor-reuse-cli.py'),
                           entry['argv'][0]], timeout=60)
+    if (getattr(args, 'require_candidate_native', False) or
+            getattr(args, 'require_candidate_native_functions', False) or
+            getattr(args, 'require_candidate_word_functions', False) or
+            getattr(args, 'require_candidate_prefix_results', False)):
+        for entry in entries:
+            for script in ('test-cli.py', 'test-vm-cli.py'):
+                commands.run([sys.executable, str(SCRIPTS.parent / script),
+                              entry['argv'][0], '--extensions', 'ON'], timeout=600)
     base_library = root / 'base/source/src/bc/math-library.bc'
     baseline = entries[2] if base_library.is_file() else None
     if baseline is None:
@@ -368,14 +390,34 @@ def run_math(args, root, evidence, commands, configs, gd_builder, bench, helper,
                              root / 'aa/source/src/bc/math-library.bc', args.candidate,
                              base=baseline, base_library=base_library, base_revision=args.base))
     profile_root = root / 'profile'
-    profile_command = [sys.executable, str(SCRIPTS / 'build-gd-bc.py'), '--source',
-                  str(args.source.resolve()), '--revision', args.candidate,
-                  '--split-point', '126', '--output', str(profile_root), '--name', 'gd-profile',
-                  '--diagnostic-profile', '--c-compiler', cc, '--cxx-compiler', cxx]
-    if args.candidate_preparsed_library:
-        profile_command += ['--preparsed-library']
+    profile_command = profile_build_command(args, profile_root, cc, cxx)
     commands.run(profile_command, timeout=1200)
     profiled = json.loads((profile_root / 'implementations.json').read_text())['implementations'][0]
+    if getattr(args, 'require_candidate_native', False):
+        gd_builder.require_native_candidate(helper, profiled)
+    if getattr(args, 'require_candidate_native_functions', False):
+        gd_builder.require_native_function_candidate(helper, profiled)
+    if getattr(args, 'require_candidate_word_functions', False):
+        gd_builder.require_word_function_candidate(helper, profiled)
+    if getattr(args, 'require_candidate_prefix_results', False):
+        gd_builder.require_prefix_result_candidate(helper, profiled)
+    if getattr(args, 'compare_resources', False):
+        if baseline is None:
+            raise CommandFailure('matched math resources require the baseline library')
+        profiles = dict(candidate=profiled)
+        ordinary = dict(base=entries[2], candidate=entries[0])
+        # Shared archival state, not another elapsed comparison configuration.
+        configs['profiles'] = profiles
+        directory = root / 'base-profile'
+        commands.run(profile_build_command(args, directory, cc, cxx, baseline=True), timeout=1200)
+        profiles['base'] = json.loads((directory / 'implementations.json').read_text())['implementations'][0]
+        if getattr(args, 'require_candidate_word_functions', False):
+            gd_builder.require_word_function_baseline(helper, profiles['base'])
+        if getattr(args, 'require_candidate_prefix_results', False):
+            gd_builder.require_prefix_result_baseline(helper, profiles['base'])
+        load('compare-bc-resources').validate_roles(
+            bench, profiles, ordinary)
+
     # All builds and correctness checks finish before elapsed measurements.
     commands.run([sys.executable, str(SCRIPTS.parent / 'test-math-library-cli.py'),
                   configs['paired'][1]['argv'][0], '--source',
@@ -387,6 +429,8 @@ def run_math(args, root, evidence, commands, configs, gd_builder, bench, helper,
     if baseline:
         shutil.copyfile(base_library, libraries / 'base.bc')
     for name, entries in configs.items():
+        if name == 'profiles':
+            continue
         write(evidence / (name + '.json'), dict(implementations=entries))
     decisions = []
     for preset in presets:
@@ -475,6 +519,10 @@ def run_math(args, root, evidence, commands, configs, gd_builder, bench, helper,
     # Every diagnostic probe follows every elapsed preset/confirmation.
     allocation_diagnostics(bench, profiled, diagnostic_cases(bench, presets[0]), evidence / 'allocation-diagnostics',
                            timeout=args.child_timeout_seconds)
+    if getattr(args, 'compare_resources', False):
+        load('compare-bc-resources').run_diagnostics(
+            commands.run, profiles, ordinary,
+            presets, 'math', evidence, timeout=args.child_timeout_seconds)
     # Resource wrappers run after all elapsed stages, never concurrently.
     for preset in presets:
         resource_diagnostics(bench, evidence / 'paired.json', diagnostic_cases(bench, preset),
@@ -502,7 +550,12 @@ def main():
     parser.add_argument('--candidate', type=gd_builder.revision_value, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--broad', action='store_true')
+    parser.add_argument('--compare-resources', action='store_true')
     parser.add_argument('--candidate-prepared-divisors', action='store_true')
+    parser.add_argument('--require-candidate-native', action='store_true')
+    parser.add_argument('--require-candidate-native-functions', action='store_true')
+    parser.add_argument('--require-candidate-word-functions', action='store_true')
+    parser.add_argument('--require-candidate-prefix-results', action='store_true')
     parser.add_argument('--candidate-preparsed-library', action='store_true')
     parser.add_argument('--broad-preset', choices=('full', 'holdout'))
     parser.add_argument('--samples', type=bench.positive_integer, default=15)
@@ -534,11 +587,15 @@ def main():
         write(evidence / 'orchestration.json',dict(candidate=args.candidate,base=args.base,baseline_library_available=bool(configs.get('regression')),commands=commands.commands,
               broad=args.broad,presets=list(presets),samples=args.samples,duration_target=args.duration_seconds,
               child_timeout_seconds=args.child_timeout_seconds,total_seconds=args.total_seconds,
-              candidate_prepared_divisors=args.candidate_prepared_divisors,
+              compare_resources=args.compare_resources,candidate_prepared_divisors=args.candidate_prepared_divisors,
+              require_candidate_native=args.require_candidate_native,
+              require_candidate_native_functions=args.require_candidate_native_functions,
+              require_candidate_word_functions=args.require_candidate_word_functions,
+              require_candidate_prefix_results=args.require_candidate_prefix_results,
               candidate_preparsed_library=args.candidate_preparsed_library))
         for path in root.glob('command-*.log'):
             shutil.copyfile(path, evidence / path.name)
-        for name in ('gd', 'aa', 'base', 'profile', 'howard'):
+        for name in ('gd', 'aa', 'base', 'profile', 'base-profile', 'howard'):
             source = root / name
             target = evidence / name
             target.mkdir(exist_ok=True)
@@ -547,11 +604,21 @@ def main():
                     shutil.copyfile(path, target / path.name)
             if (source / 'prepared-policy').is_dir():
                 shutil.copytree(str(source / 'prepared-policy'), str(target / 'prepared-policy'))
+            if (source / 'native-policy').is_dir():
+                shutil.copytree(str(source / 'native-policy'), str(target / 'native-policy'))
+            if (source / 'native-function-policy').is_dir():
+                shutil.copytree(str(source / 'native-function-policy'), str(target / 'native-function-policy'))
+            if (source / 'word-function-policy').is_dir():
+                shutil.copytree(str(source / 'word-function-policy'), str(target / 'word-function-policy'))
+            if (source / 'prefix-result-policy').is_dir():
+                shutil.copytree(str(source / 'prefix-result-policy'), str(target / 'prefix-result-policy'))
             if (source / 'logs').is_dir():
                 shutil.copytree(source / 'logs', target / 'logs')
         try:
             if configs:
                 preserve_ordinary(configs, evidence, commands.deadline)
+            if configs.get('profiles'):
+                load('compare-bc-resources').preserve_profiles(configs['profiles'], evidence / 'profile-images')
         except CommandFailure as error:
             write(evidence / 'preservation-failure.json', dict(error=str(error),
                   status='hard failure; measured assets incomplete; no acceptance'))
