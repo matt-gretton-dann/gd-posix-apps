@@ -88,6 +88,8 @@ class HornerQualification(unittest.TestCase):
                 root = Path(temporary) / 'corpus'
                 expected = self.corpus.partition(self.corpus.cases(self.bench, preset), 'low')
                 self.corpus.write_partition(self.bench, preset, 'low', root)
+                self.assertEqual(json.loads((root / 'manifest.json').read_text())['kind'],
+                                 'unmeasured-math-inputs-v1')
                 replayed, metadata = self.bench.replay_corpus(root, 'math')
                 self.assertEqual(replayed, expected)
                 self.assertEqual(metadata['source_manifest_sha256'],

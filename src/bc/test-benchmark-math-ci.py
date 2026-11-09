@@ -2,6 +2,8 @@
 """Check native math roles, acceptance limits and process-tree deadlines."""
 import contextlib
 import copy
+from fractions import Fraction
+import hashlib
 import io
 import importlib.util
 import io
@@ -22,6 +24,61 @@ SPEC.loader.exec_module(CI)
 
 
 class NativeMath(unittest.TestCase):
+    def test_horner_controller_preparation_runs_the_actual_input_phase_cli(self):
+        # Synthetic Python outputs exercise phase/argv/schema plumbing only.
+        # This is not a production timing or numerical-accuracy experiment.
+        bench = CI.load('bench-bc')
+        with tempfile.TemporaryDirectory() as temporary:
+            evidence = Path(temporary)
+            args = types.SimpleNamespace(horner_partition='low', broad=True,
+                duration_seconds=.000001, child_timeout_seconds=5)
+            command, declared = CI.preparation_command(bench, args, 'full', evidence)
+            manifest = json.loads((declared / 'manifest.json').read_text())
+            table = {}
+            for case in manifest['corpus']:
+                oracle = json.loads((declared / 'workloads' / (case['name'] + '.expected')).read_text())
+                scale = case['parameters']['scale']
+                middle = (Fraction(oracle['lower']) + Fraction(oracle['upper'])) / 2
+                units = abs(middle) * 10**scale + Fraction(1, 2)
+                value = str(units.numerator // units.denominator).zfill(scale + 1)
+                if scale:
+                    value = value[:-scale] + '.' + value[-scale:]
+                if middle < 0:
+                    value = '-' + value
+                key = str(scale) + ':' + case['parameters']['function'] + '(' + ','.join(case['parameters']['arguments']) + ')'
+                result = [value] + oracle['expected_state']
+                self.assertEqual(table.setdefault(key, result), result)
+            lookup = evidence / 'synthetic-values.json'
+            lookup.write_text(json.dumps(table), encoding='utf-8')
+            fixture = evidence / 'synthetic-math.py'
+            fixture.write_text('import json,re,sys\nfrom pathlib import Path\n'
+                'source=sys.stdin.read()\n'
+                'scale=re.search(r"^scale=(\\d+)",source)[1]\n'
+                'call=re.search(r"r=([a-z]\\([^)]*\\))",source)[1]\n'
+                'values=json.loads(Path(sys.argv[1]).read_text())\n'
+                'print("\\n".join(values[scale+":"+call]))\n', encoding='utf-8')
+            binary = Path(sys.executable).resolve()
+            config = dict(implementations=[dict(name='synthetic-controller-phase-fixture',
+                argv=[str(binary), str(fixture), str(lookup)],
+                metadata=dict(source_revision='synthetic fixture only', compiler='Python fixture',
+                    flags=['fixture only'], version=sys.version, instrumented=False,
+                    binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest()),
+                input_artifacts=[dict(path=str(path), purpose='synthetic phase fixture',
+                    sha256=hashlib.sha256(path.read_bytes()).hexdigest()) for path in (fixture, lookup)])])
+            (evidence / 'preparation.json').write_text(json.dumps(config), encoding='utf-8')
+            result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                universal_newlines=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            prepared = evidence / 'full-prepared'
+            actual = json.loads((prepared / 'manifest.json').read_text())
+            self.assertEqual(len(actual['corpus']), 34)
+            self.assertIn('declared_input', actual)
+            self.assertNotIn('replayed_corpus', actual)
+            self.assertFalse((prepared / 'samples.jsonl').exists())
+            trials = [json.loads(line) for line in (prepared / 'calibration/samples.jsonl').read_text().splitlines()]
+            self.assertEqual(len(trials), 51)
+            self.assertTrue(all(row['checked'] for row in trials))
+
     def test_horner_partition_requires_the_declared_measurement_contract(self):
         args = types.SimpleNamespace(horner_partition='low', broad=True,
                                      broad_preset='full', samples=31,
