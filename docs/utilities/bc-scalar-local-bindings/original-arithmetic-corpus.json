@@ -1,0 +1,1438 @@
+{
+  "full": [
+    {
+      "name": "startup",
+      "group": "startup",
+      "parameters": {},
+      "program_sha256": "a7684d1961bc3c87aeea07cbfd22792a6c875687fa1d0f3c18ace930a373040e"
+    },
+    {
+      "name": "loop_1000000",
+      "group": "loop",
+      "parameters": {
+        "iterations": 1000000
+      },
+      "program_sha256": "74aa1d696c8c54be05d25ad82b085aedd6791012c90b5faf9f3d9d91f94ebdba"
+    },
+    {
+      "name": "calls_200000",
+      "group": "calls",
+      "parameters": {
+        "iterations": 200000
+      },
+      "program_sha256": "738d33209381c5f554a34bc05ed399ed53973ff7ae75a0cd72e464875841c63e"
+    },
+    {
+      "name": "array_200000",
+      "group": "array",
+      "parameters": {
+        "elements": 200000
+      },
+      "program_sha256": "f6a730c098c8d10032b60dd95a00eb18349ad719604fe3582bad5a1e61e5b054"
+    },
+    {
+      "name": "compare_high_1000d_x100000",
+      "group": "comparison",
+      "parameters": {
+        "digits": 1000,
+        "iterations": 100000,
+        "first_unequal_limb": "high"
+      },
+      "program_sha256": "1592c96a7a3807bc318c69e45c69d1837b3194c219481c6f0ee159bd9ad5f057"
+    },
+    {
+      "name": "compare_low_1000d_x100000",
+      "group": "comparison",
+      "parameters": {
+        "digits": 1000,
+        "iterations": 100000,
+        "first_unequal_limb": "low"
+      },
+      "program_sha256": "65f427eade6749f96db6392b4a66e68248b90fd30ac32020aad51be98990f47c"
+    },
+    {
+      "name": "compare_equal_1000d_x100000",
+      "group": "comparison",
+      "parameters": {
+        "digits": 1000,
+        "iterations": 100000,
+        "first_unequal_limb": "equal"
+      },
+      "program_sha256": "e9f2a5c85feb5736a4a4faf469f8d593280c7b7c3b8290b49be6cef834038ff1"
+    },
+    {
+      "name": "fibonacci_1000_x100",
+      "group": "fibonacci",
+      "parameters": {
+        "index": 1000,
+        "iterations": 100
+      },
+      "program_sha256": "1a99529043a0c9a2eed2bd64ec3df2ee15a819a23550a1d0871dfe777a9c0675"
+    },
+    {
+      "name": "fibonacci_10000_x10",
+      "group": "fibonacci",
+      "parameters": {
+        "index": 10000,
+        "iterations": 10
+      },
+      "program_sha256": "cafa569a1e0259262731ec77ba810fabc76a3ae8eeae60c328f8cb78815bcf1f"
+    },
+    {
+      "name": "factorial_1000_x50",
+      "group": "factorial",
+      "parameters": {
+        "argument": 1000,
+        "iterations": 50
+      },
+      "program_sha256": "c5f62530bb22594f7bfc55d867b2be7554356b94a976fca91cffc94471bed182"
+    },
+    {
+      "name": "factorial_5000_x5",
+      "group": "factorial",
+      "parameters": {
+        "argument": 5000,
+        "iterations": 5
+      },
+      "program_sha256": "808583dd419f15a7145ba5455481fd0da1143cbe69b971a03749edea6bd0af6c"
+    },
+    {
+      "name": "multiply_100d_x100000",
+      "group": "multiply",
+      "parameters": {
+        "left_digits": 100,
+        "right_digits": 100,
+        "iterations": 100000,
+        "shape": "repeated"
+      },
+      "program_sha256": "00265d8ce3e2d4f3fe5d5cffc742ccf26ec23aa7d88001d42072cb742e916eed"
+    },
+    {
+      "name": "multiply_1000d_x10000",
+      "group": "multiply",
+      "parameters": {
+        "left_digits": 1000,
+        "right_digits": 1000,
+        "iterations": 10000,
+        "shape": "repeated"
+      },
+      "program_sha256": "c5ba1f3e963a6e3fbe4b6c1180790a7f3f8ba66f9ca00ca53e63209aa739c210"
+    },
+    {
+      "name": "multiply_10000d_x1000",
+      "group": "multiply",
+      "parameters": {
+        "left_digits": 10000,
+        "right_digits": 10000,
+        "iterations": 1000,
+        "shape": "repeated"
+      },
+      "program_sha256": "834a93e1304c2fd9c706943a98f5dbf15c6fce738e0b07d01e0cb68fb9e9ee41"
+    },
+    {
+      "name": "divide_scale100_x100000",
+      "group": "divide_single_limb",
+      "parameters": {
+        "scale": 100,
+        "iterations": 100000,
+        "divisor": "7"
+      },
+      "program_sha256": "19c25d96059bd1a0a252ed2100292fe1abbb1bcb437aad307e7078010845e795"
+    },
+    {
+      "name": "divide_scale1000_x10000",
+      "group": "divide_single_limb",
+      "parameters": {
+        "scale": 1000,
+        "iterations": 10000,
+        "divisor": "7"
+      },
+      "program_sha256": "268fc3af6c9f5a54b17fe46bcd57128974349fb1f07043afbc567b85a70f7c4f"
+    },
+    {
+      "name": "divide_scale5000_x5000",
+      "group": "divide_single_limb",
+      "parameters": {
+        "scale": 5000,
+        "iterations": 5000,
+        "divisor": "7"
+      },
+      "program_sha256": "95e2527229b6c1261b98ec596d3e25eea72d6f58bced0a9019ee159e23d7b1d2"
+    },
+    {
+      "name": "sqrt_scale100_x5000",
+      "group": "sqrt",
+      "parameters": {
+        "scale": 100,
+        "iterations": 5000
+      },
+      "program_sha256": "776a0a5e34050036c7e3d2dce7b192c09b624a528588da06999c5ec243d32458"
+    },
+    {
+      "name": "sqrt_scale1000_x50",
+      "group": "sqrt",
+      "parameters": {
+        "scale": 1000,
+        "iterations": 50
+      },
+      "program_sha256": "9bed475982441bfe7cef8eb52978f6814ff55110a466ad2eadfeb3a0f0312fc1"
+    },
+    {
+      "name": "sqrt_scale5000_x5",
+      "group": "sqrt",
+      "parameters": {
+        "scale": 5000,
+        "iterations": 5
+      },
+      "program_sha256": "c13f95db6aa11b8fcd0cc94087d55ec39210d535f570dedc86696ddbd698ac79"
+    },
+    {
+      "name": "multiply_dense_1000d_x5000",
+      "group": "multiply",
+      "parameters": {
+        "left_digits": 1000,
+        "right_digits": 1000,
+        "iterations": 5000,
+        "shape": "seeded_dense"
+      },
+      "program_sha256": "2a96c42d44d7ebc2bd37389ad94c4e985592ee4cec7e1ea77914ecc1a1c3616f"
+    },
+    {
+      "name": "multiply_dense_10000d_x500",
+      "group": "multiply",
+      "parameters": {
+        "left_digits": 10000,
+        "right_digits": 10000,
+        "iterations": 500,
+        "shape": "seeded_dense"
+      },
+      "program_sha256": "0e2e2c1e7cd1ed996201ba01c744f650baf67a86666cb471e4a82e9996c9c345"
+    },
+    {
+      "name": "multiply_unbalanced_10000d_100d_x2000",
+      "group": "multiply",
+      "parameters": {
+        "left_digits": 10000,
+        "right_digits": 100,
+        "iterations": 2000,
+        "shape": "unbalanced"
+      },
+      "program_sha256": "f2db34e568ec54dc60e916b85674dcec88085445533deb690917e763a84b6545"
+    },
+    {
+      "name": "multiply_sparse_10000d_x1000",
+      "group": "multiply",
+      "parameters": {
+        "left_digits": 10000,
+        "right_digits": 10000,
+        "iterations": 1000,
+        "shape": "sparse"
+      },
+      "program_sha256": "82eea516e61e12e526afbbc4efae6c5d6bc24f4efb34e84cce4b435dc5ec5d24"
+    },
+    {
+      "name": "divide_multilimb_900d_450d_s100_x1000",
+      "group": "divide_multilimb",
+      "parameters": {
+        "dividend_digits": 900,
+        "divisor_digits": 450,
+        "scale": 100,
+        "iterations": 1000
+      },
+      "program_sha256": "3e526fbb9e7ce363f37d717ee26d12d1562e85f4e82d4c671cbc0970f2c048d2"
+    },
+    {
+      "name": "divide_multilimb_1000d_900d_s1000_x500",
+      "group": "divide_multilimb",
+      "parameters": {
+        "dividend_digits": 1000,
+        "divisor_digits": 900,
+        "scale": 1000,
+        "iterations": 500
+      },
+      "program_sha256": "1dd61158cf4374d878b0750e40180e1cb105064e19a33c1b224479d3e8eb381a"
+    },
+    {
+      "name": "modulo_1000d_350d_x3000",
+      "group": "modulo",
+      "parameters": {
+        "dividend_digits": 1000,
+        "divisor_digits": 350,
+        "iterations": 3000
+      },
+      "program_sha256": "349c0e4a8bd53d08ab50a00b93b79ed3111cf0fa4dd1f1c8ea7f15705b418817"
+    },
+    {
+      "name": "power_100d_e17_x1000",
+      "group": "power",
+      "parameters": {
+        "digits": 100,
+        "exponent": 17,
+        "iterations": 1000
+      },
+      "program_sha256": "45ae4dcbf8b7a7a484ba774e1e4db1f58f5aecd79d66d4c2d81b6d7d4fce668e"
+    },
+    {
+      "name": "power_20d_e32_x2000",
+      "group": "power",
+      "parameters": {
+        "digits": 20,
+        "exponent": 32,
+        "iterations": 2000
+      },
+      "program_sha256": "ab699ad4e3d4f68531c41bc1215f5b137ff9e0071dcb4c09dab1d422e7892f16"
+    },
+    {
+      "name": "ibase_literal_flip_20000",
+      "group": "literal_base",
+      "parameters": {
+        "iterations": 20000,
+        "bases": [
+          2,
+          10
+        ]
+      },
+      "program_sha256": "a3fb77c74b1f846daf6bba2f96e7ddb71bc1cfb221aeddc6921da35eb1dfdaa0"
+    },
+    {
+      "name": "recursion_50_x1000",
+      "group": "recursion",
+      "parameters": {
+        "depth": 50,
+        "iterations": 1000
+      },
+      "program_sha256": "51c7a305c6b6635ba3e821f927f9da4b06c5c2aff088ddabca2d6d6456ea3859"
+    },
+    {
+      "name": "sparse_array_200000",
+      "group": "array_sparse",
+      "parameters": {
+        "iterations": 200000,
+        "keys": 31,
+        "stride": 313
+      },
+      "program_sha256": "ceb9864b7d2e0654c73b4f8efd65cd6eba5a27bbc352705e354b07cb8b49ba1b"
+    },
+    {
+      "name": "frontend_definitions_2000",
+      "group": "frontend_definition",
+      "parameters": {
+        "definitions": 2000
+      },
+      "program_sha256": "36a2bf8899f52e86536ad0fd9763b1dc8b59d565f1da60cb6508d8d213cd8916"
+    },
+    {
+      "name": "decimal_input_4000d_x100",
+      "group": "decimal_input",
+      "parameters": {
+        "digits": 4000,
+        "literals": 100
+      },
+      "program_sha256": "f52167d78167be3e447e2b6d40465d288f7981bd3bd081c7da06d4b8980ecbe1"
+    },
+    {
+      "name": "decimal_output_200d_x1000",
+      "group": "decimal_output",
+      "parameters": {
+        "digits": 200,
+        "lines": 1000
+      },
+      "program_sha256": "491c747f387a04807d616d44a9eae25a10f2d07b08d60068aae97c7adaccf8ae"
+    },
+    {
+      "name": "streaming_statements_20000",
+      "group": "streaming",
+      "parameters": {
+        "statements": 40001,
+        "output_lines": 20000,
+        "termination": "EOF"
+      },
+      "program_sha256": "9258f13cfeeaf263faaa3c79b841727a0bed8428422355c012a96e80f6839be3"
+    },
+    {
+      "name": "square_100d_x100000",
+      "group": "square",
+      "parameters": {
+        "digits": 100,
+        "iterations": 100000,
+        "shape": "aliased"
+      },
+      "program_sha256": "06b43a72821a8146185bf4db472f97a309ea61afa6a884c7be91569f7a1db3c7"
+    },
+    {
+      "name": "square_1000d_x10000",
+      "group": "square",
+      "parameters": {
+        "digits": 1000,
+        "iterations": 10000,
+        "shape": "aliased"
+      },
+      "program_sha256": "7248a6558ceb7612d5aa63a204773d57ef1c83ddb1b5ab88336e76fce7c2e340"
+    },
+    {
+      "name": "square_10000d_x500",
+      "group": "square",
+      "parameters": {
+        "digits": 10000,
+        "iterations": 500,
+        "shape": "aliased"
+      },
+      "program_sha256": "108d014f2803284e3a7e9e242430eb11a0d0bc98f570718cf60cec3633c2fc05"
+    },
+    {
+      "name": "literal_repeat_2000d_x2000",
+      "group": "literal_repeat",
+      "parameters": {
+        "digits": 2000,
+        "iterations": 2000
+      },
+      "program_sha256": "a1ac2e26647d04476e86adc828ad089dc49f6402c58b41b2a5de9c2a4a5ebc7c"
+    },
+    {
+      "name": "binary_output_1000d_x300",
+      "group": "binary_output",
+      "parameters": {
+        "digits": 1000,
+        "lines": 300,
+        "output_base": 2
+      },
+      "program_sha256": "7542569af5657835dbf426b32640c7c282248e31f23fe81b9b597fffeeebd06c"
+    },
+    {
+      "name": "octal_output_1000d_x300",
+      "group": "octal_output",
+      "parameters": {
+        "digits": 1000,
+        "lines": 300,
+        "output_base": 8
+      },
+      "program_sha256": "61a674d7da923a8f5c9eea102da2e7e1782266ae273c03d1d9be24f7d7837f5f"
+    },
+    {
+      "name": "binary_input_100000d_x3",
+      "group": "binary_input",
+      "parameters": {
+        "digits": 100000,
+        "literals": 3,
+        "input_base": 2
+      },
+      "program_sha256": "5708591ea9ef5b6f865e2697e54474f21b008fce56222ee9f914bed6c92e76cc"
+    },
+    {
+      "name": "hex_input_100000d_x3",
+      "group": "hex_input",
+      "parameters": {
+        "digits": 100000,
+        "literals": 3,
+        "input_base": 16
+      },
+      "program_sha256": "ac6a53ff2dd5fe039ff93d69b42355e5d2dedf641822fb12ae90d5251dad70c7"
+    },
+    {
+      "name": "temporary_chain_1000d_x50000",
+      "group": "temporary_chain",
+      "parameters": {
+        "digits": 1000,
+        "iterations": 50000,
+        "terms": 8
+      },
+      "program_sha256": "627c528d666e851353a773210f5e5f8a0e1bbd383116e310241c03703ebf3930"
+    },
+    {
+      "name": "file_statements_20000",
+      "group": "file_streaming",
+      "parameters": {
+        "statements": 20000
+      },
+      "program_sha256": "c4152672d2f743bc5893c5f564f728e9764b251c0faa153905e7eb515ee123c9"
+    },
+    {
+      "name": "sqrt_large_scale10000_x5",
+      "group": "sqrt_large_scale",
+      "parameters": {
+        "scale": 10000,
+        "iterations": 5,
+        "radicand": "2"
+      },
+      "program_sha256": "6f040bb0ca08b7c9dcd1efd7042c6bf637084f3b831662d0fd5da649cbb12be5"
+    },
+    {
+      "name": "sqrt_tiny_scale1024_x30",
+      "group": "sqrt_tiny",
+      "parameters": {
+        "input_scale": 1024,
+        "scale": 0,
+        "iterations": 30,
+        "coefficient": "4"
+      },
+      "program_sha256": "79cd19dfc6e90500f4bae2858675e449a8c5e31accdec363fe088fbeb7672141"
+    },
+    {
+      "name": "sqrt_tiny_scale4096_x1",
+      "group": "sqrt_tiny",
+      "parameters": {
+        "input_scale": 4096,
+        "scale": 0,
+        "iterations": 1,
+        "coefficient": "4"
+      },
+      "program_sha256": "7a4e84604f6dbde2f8c04b2a2abd600fc54669cf5a628a0e6db53ea08ae1c931"
+    },
+    {
+      "name": "sqrt_integer_power2000_scale100_x10",
+      "group": "sqrt_large_integer",
+      "parameters": {
+        "root_power": 2000,
+        "input_digits": 4001,
+        "scale": 100,
+        "iterations": 10,
+        "coefficient": "4"
+      },
+      "program_sha256": "3552c797fae31d128b9369d1d0ce12a48191840f458a5361eecf93ac557fa08f"
+    },
+    {
+      "name": "divide_scaled_dense_s1000_t1000_x5000",
+      "group": "divide_scaled_dense",
+      "parameters": {
+        "input_scale": 1000,
+        "scale": 1000,
+        "iterations": 5000,
+        "divisor": "7",
+        "shape": "dense",
+        "coefficient_digits": 1004
+      },
+      "program_sha256": "a9ca9eca3abec08cab47c783669f8277b8c64e80d5fe71d7859895934dec08a6"
+    },
+    {
+      "name": "divide_scaled_dense_s1000_t500_x5000",
+      "group": "divide_scaled_dense",
+      "parameters": {
+        "input_scale": 1000,
+        "scale": 500,
+        "iterations": 5000,
+        "divisor": "7",
+        "shape": "dense",
+        "coefficient_digits": 1004
+      },
+      "program_sha256": "83c6f37743059a38859b23079585d650e2aa80178050de8618f2a0a84949a02a"
+    },
+    {
+      "name": "divide_scaled_dense_s1000_t2000_x5000",
+      "group": "divide_scaled_dense",
+      "parameters": {
+        "input_scale": 1000,
+        "scale": 2000,
+        "iterations": 5000,
+        "divisor": "7",
+        "shape": "dense",
+        "coefficient_digits": 1004
+      },
+      "program_sha256": "1a4f218ce1ee8aa7f4ed45e92b68adfc51f71e8a9af4004076d22cb4b9994fb9"
+    },
+    {
+      "name": "divide_scaled_trailing_zero_s1000_t1000_x5000",
+      "group": "divide_scaled_trailing_zero",
+      "parameters": {
+        "input_scale": 1000,
+        "scale": 1000,
+        "iterations": 5000,
+        "divisor": "7",
+        "shape": "trailing_zero",
+        "coefficient_digits": 1004
+      },
+      "program_sha256": "6242a6d809ea01e55ee69f46096ec1451a89aa715db6abfa498dd2ebbdfa230f"
+    },
+    {
+      "name": "divide_scaled_trailing_zero_s1000_t500_x5000",
+      "group": "divide_scaled_trailing_zero",
+      "parameters": {
+        "input_scale": 1000,
+        "scale": 500,
+        "iterations": 5000,
+        "divisor": "7",
+        "shape": "trailing_zero",
+        "coefficient_digits": 1004
+      },
+      "program_sha256": "e0828eb6d701093030de2b6b2bee6f8cd4ddde6aa1295bb467848ed252e187ff"
+    },
+    {
+      "name": "divide_scaled_trailing_zero_s1000_t2000_x5000",
+      "group": "divide_scaled_trailing_zero",
+      "parameters": {
+        "input_scale": 1000,
+        "scale": 2000,
+        "iterations": 5000,
+        "divisor": "7",
+        "shape": "trailing_zero",
+        "coefficient_digits": 1004
+      },
+      "program_sha256": "76e6874c9996bc55afbe165df34bb5fcfdd0d1455fdfea7b5d9b57000d46b847"
+    },
+    {
+      "name": "modulo_scaled_numerator_s3_b7_t43_x1000",
+      "group": "modulo_scaled_numerator",
+      "parameters": {
+        "input_scale": 3,
+        "divisor_scale": 7,
+        "scale": 43,
+        "shape": "numerator",
+        "iterations": 1000,
+        "dividend_digits": 600,
+        "divisor_digits": 230
+      },
+      "program_sha256": "136a6725afb389e1eed0bbd82d07a7beb8e22174e3021780ca175d5d0b0c4c6d"
+    },
+    {
+      "name": "modulo_scaled_divisor_s97_b37_t43_x1000",
+      "group": "modulo_scaled_divisor",
+      "parameters": {
+        "input_scale": 97,
+        "divisor_scale": 37,
+        "scale": 43,
+        "shape": "divisor",
+        "iterations": 1000,
+        "dividend_digits": 600,
+        "divisor_digits": 230
+      },
+      "program_sha256": "6f6f6874cecf449d583421df4d23e5af438b3ee3ee2d964a1199692867aa6776"
+    },
+    {
+      "name": "divisor_changing_divide_600d_230d_x1000",
+      "group": "divisor_changing_divide",
+      "parameters": {
+        "dividend_digits": 600,
+        "divisor_digits": 230,
+        "iterations": 1000,
+        "scale": 0,
+        "operation": "divide",
+        "admission": "changing",
+        "change_period": 1,
+        "timing_scope": "repeated process workload"
+      },
+      "program_sha256": "c6b4a093ee94fd940027f471526e92cc77d122d9a304548c0256cec28d511fc9"
+    },
+    {
+      "name": "divisor_changing_modulo_600d_230d_x1000",
+      "group": "divisor_changing_modulo",
+      "parameters": {
+        "dividend_digits": 600,
+        "divisor_digits": 230,
+        "iterations": 1000,
+        "scale": 0,
+        "operation": "modulo",
+        "admission": "changing",
+        "change_period": 1,
+        "timing_scope": "repeated process workload"
+      },
+      "program_sha256": "ce950b66f3828b69fd97d432d4dbb81f5d453dddf67e2314612d5cae5ba1b593"
+    },
+    {
+      "name": "divisor_temporary_divide_600d_230d_x1000",
+      "group": "divisor_temporary_divide",
+      "parameters": {
+        "dividend_digits": 600,
+        "divisor_digits": 230,
+        "iterations": 1000,
+        "scale": 0,
+        "operation": "divide",
+        "admission": "temporary",
+        "change_period": 1,
+        "timing_scope": "repeated process workload"
+      },
+      "program_sha256": "f26c965c58f3dc032fde772fdf0913ff814cb03a236ba2a7cc237a1d8eb16738"
+    },
+    {
+      "name": "divisor_temporary_modulo_600d_230d_x1000",
+      "group": "divisor_temporary_modulo",
+      "parameters": {
+        "dividend_digits": 600,
+        "divisor_digits": 230,
+        "iterations": 1000,
+        "scale": 0,
+        "operation": "modulo",
+        "admission": "temporary",
+        "change_period": 1,
+        "timing_scope": "repeated process workload"
+      },
+      "program_sha256": "98b7bdb5943b98b8724e15b650417731d7275db8805f15e383cc9c9fdeb18d19"
+    },
+    {
+      "name": "divisor_periodic_divide_600d_230d_x1000",
+      "group": "divisor_periodic_divide",
+      "parameters": {
+        "dividend_digits": 600,
+        "divisor_digits": 230,
+        "iterations": 1000,
+        "scale": 0,
+        "operation": "divide",
+        "admission": "periodic",
+        "change_period": 16,
+        "timing_scope": "repeated process workload"
+      },
+      "program_sha256": "9ed5eac80a073299b873cf6581d3db5cd338bf80a77769b9fcae25f99cb59e8d"
+    },
+    {
+      "name": "divisor_periodic_modulo_600d_230d_x1000",
+      "group": "divisor_periodic_modulo",
+      "parameters": {
+        "dividend_digits": 600,
+        "divisor_digits": 230,
+        "iterations": 1000,
+        "scale": 0,
+        "operation": "modulo",
+        "admission": "periodic",
+        "change_period": 16,
+        "timing_scope": "repeated process workload"
+      },
+      "program_sha256": "b01426ce8bc1f25dffa79f658f0bfa27e44386b20f46036ded647fb2e9bd6fc3"
+    },
+    {
+      "name": "divisor_cold_divide_600d_230d_x1",
+      "group": "divisor_cold_divide",
+      "parameters": {
+        "dividend_digits": 600,
+        "divisor_digits": 230,
+        "iterations": 1,
+        "scale": 0,
+        "operation": "divide",
+        "admission": "cold",
+        "change_period": 1,
+        "timing_scope": "whole-process latency"
+      },
+      "program_sha256": "29a06cbcb97d6ab87d1d94c7291a1ee0338caaaa0a5bd6736b1ac0993c6d913a"
+    },
+    {
+      "name": "divisor_cold_modulo_600d_230d_x1",
+      "group": "divisor_cold_modulo",
+      "parameters": {
+        "dividend_digits": 600,
+        "divisor_digits": 230,
+        "iterations": 1,
+        "scale": 0,
+        "operation": "modulo",
+        "admission": "cold",
+        "change_period": 1,
+        "timing_scope": "whole-process latency"
+      },
+      "program_sha256": "a46aafb1eba3a896650f87cfd246d59b87dbf0d3e1ba33dbf57da4676e5f32cb"
+    }
+  ],
+  "holdout": [
+    {
+      "name": "startup",
+      "group": "startup",
+      "parameters": {},
+      "program_sha256": "a7684d1961bc3c87aeea07cbfd22792a6c875687fa1d0f3c18ace930a373040e"
+    },
+    {
+      "name": "loop_875000",
+      "group": "loop",
+      "parameters": {
+        "iterations": 875000
+      },
+      "program_sha256": "a8f6915341a237fd46158c8fef11073a945e45db742cf04c770e12683209c06a"
+    },
+    {
+      "name": "calls_175000",
+      "group": "calls",
+      "parameters": {
+        "iterations": 175000
+      },
+      "program_sha256": "0ba20ae8e3073193a1fda806ec80d38241af95de09dd0d17a8891dbb90f1ce54"
+    },
+    {
+      "name": "array_175000",
+      "group": "array",
+      "parameters": {
+        "elements": 175000
+      },
+      "program_sha256": "54a2ef7821380c9f6495fd0fb52009d4339a2421587b63a47d1516461180c952"
+    },
+    {
+      "name": "compare_high_1125d_x87500",
+      "group": "comparison",
+      "parameters": {
+        "digits": 1125,
+        "iterations": 87500,
+        "first_unequal_limb": "high"
+      },
+      "program_sha256": "0a59d0f0bfe45c654e8f36d7d4e60320907c54ffbf493aa3e80e470b974f4834"
+    },
+    {
+      "name": "compare_low_1125d_x87500",
+      "group": "comparison",
+      "parameters": {
+        "digits": 1125,
+        "iterations": 87500,
+        "first_unequal_limb": "low"
+      },
+      "program_sha256": "b085ce1aa265bd81f0415f8fcebb3b82abff756af9f159107bd68f70b5b1c4d2"
+    },
+    {
+      "name": "compare_equal_1125d_x87500",
+      "group": "comparison",
+      "parameters": {
+        "digits": 1125,
+        "iterations": 87500,
+        "first_unequal_limb": "equal"
+      },
+      "program_sha256": "fe72c0a2d8970ff6a6f56a02d10520cbb505fbd3828c4592567d8b30cdc776de"
+    },
+    {
+      "name": "fibonacci_1125_x88",
+      "group": "fibonacci",
+      "parameters": {
+        "index": 1125,
+        "iterations": 88
+      },
+      "program_sha256": "c6689ec488f9b5abc22822be4c54e9743bede8203cb5341629df48839139de52"
+    },
+    {
+      "name": "fibonacci_11250_x9",
+      "group": "fibonacci",
+      "parameters": {
+        "index": 11250,
+        "iterations": 9
+      },
+      "program_sha256": "edcdead783278ab0e1babcfc51c9420ad525ab72dc23ef6ae1c60bf1d4fe8bca"
+    },
+    {
+      "name": "factorial_1125_x44",
+      "group": "factorial",
+      "parameters": {
+        "argument": 1125,
+        "iterations": 44
+      },
+      "program_sha256": "a411f784f8baf3604d6baab385e0d2af13a5206262b958125d27898059070397"
+    },
+    {
+      "name": "factorial_5625_x5",
+      "group": "factorial",
+      "parameters": {
+        "argument": 5625,
+        "iterations": 5
+      },
+      "program_sha256": "2f357cb370778044c7a50e9f6f17d4c050ebc3849614f3fd5f817c79acf854a4"
+    },
+    {
+      "name": "multiply_112d_x87500",
+      "group": "multiply",
+      "parameters": {
+        "left_digits": 112,
+        "right_digits": 112,
+        "iterations": 87500,
+        "shape": "repeated"
+      },
+      "program_sha256": "83af957bb8e9f75e9496e20a8d810ace4f8add442ffa224f83eb738db641a894"
+    },
+    {
+      "name": "multiply_1125d_x8750",
+      "group": "multiply",
+      "parameters": {
+        "left_digits": 1125,
+        "right_digits": 1125,
+        "iterations": 8750,
+        "shape": "repeated"
+      },
+      "program_sha256": "a81f8e5855375f6ddefc3406f41723c4a1d8cff93303afbbefa50bd299ccb935"
+    },
+    {
+      "name": "multiply_11250d_x875",
+      "group": "multiply",
+      "parameters": {
+        "left_digits": 11250,
+        "right_digits": 11250,
+        "iterations": 875,
+        "shape": "repeated"
+      },
+      "program_sha256": "2c5b52a6fdbdacb6364c8e54be70ada580d1c5f26bb8c598abbeccc870c75c76"
+    },
+    {
+      "name": "divide_scale112_x87500",
+      "group": "divide_single_limb",
+      "parameters": {
+        "scale": 112,
+        "iterations": 87500,
+        "divisor": "7"
+      },
+      "program_sha256": "0c8471deee623687599f8792db38c8953b5d0852e57351e6d68cfdc6d81b72aa"
+    },
+    {
+      "name": "divide_scale1125_x8750",
+      "group": "divide_single_limb",
+      "parameters": {
+        "scale": 1125,
+        "iterations": 8750,
+        "divisor": "7"
+      },
+      "program_sha256": "bca3a8210f2385ab22c45e75c9c19c9dd6c5d457f7895f9de4511cb0ae7ae547"
+    },
+    {
+      "name": "divide_scale5625_x4375",
+      "group": "divide_single_limb",
+      "parameters": {
+        "scale": 5625,
+        "iterations": 4375,
+        "divisor": "7"
+      },
+      "program_sha256": "a512de160f80cc6d1a28d9f716017a35ef58f941c127e94405b9c6f4060ad863"
+    },
+    {
+      "name": "sqrt_scale112_x4375",
+      "group": "sqrt",
+      "parameters": {
+        "scale": 112,
+        "iterations": 4375
+      },
+      "program_sha256": "b89c0a6f8269e04ef6b5e21c9eb410dcf563bc939e8645862294cce71e92e3fc"
+    },
+    {
+      "name": "sqrt_scale1125_x44",
+      "group": "sqrt",
+      "parameters": {
+        "scale": 1125,
+        "iterations": 44
+      },
+      "program_sha256": "6234fcb85becaa4911ea2604e276890a431e487d0d74fa1c658d38112047b961"
+    },
+    {
+      "name": "sqrt_scale5625_x5",
+      "group": "sqrt",
+      "parameters": {
+        "scale": 5625,
+        "iterations": 5
+      },
+      "program_sha256": "94dcb9afeaa53b25719195f1e3454d781a3d0272629f47393b2a4da125e3678a"
+    },
+    {
+      "name": "multiply_dense_1125d_x4375",
+      "group": "multiply",
+      "parameters": {
+        "left_digits": 1125,
+        "right_digits": 1125,
+        "iterations": 4375,
+        "shape": "seeded_dense"
+      },
+      "program_sha256": "82651baa2be77ebeded30bd857107de5fedc0df80d2d31c35d378fb055985660"
+    },
+    {
+      "name": "multiply_dense_11250d_x438",
+      "group": "multiply",
+      "parameters": {
+        "left_digits": 11250,
+        "right_digits": 11250,
+        "iterations": 438,
+        "shape": "seeded_dense"
+      },
+      "program_sha256": "0882487821da6d11722317345d704bbdae54d8aa7b607f14fbd1b0a40cea24a1"
+    },
+    {
+      "name": "multiply_unbalanced_11250d_112d_x1750",
+      "group": "multiply",
+      "parameters": {
+        "left_digits": 11250,
+        "right_digits": 112,
+        "iterations": 1750,
+        "shape": "unbalanced"
+      },
+      "program_sha256": "26cededecd6b93d816751c3cd8ebe53fb97429857a37520343dbdc7a12aaa485"
+    },
+    {
+      "name": "multiply_sparse_11250d_x875",
+      "group": "multiply",
+      "parameters": {
+        "left_digits": 11250,
+        "right_digits": 11250,
+        "iterations": 875,
+        "shape": "sparse"
+      },
+      "program_sha256": "d05a0a84deb66a9ad9a5f34fd2044cef2fbed59c8bfdfb11f53bc5a9162d35fd"
+    },
+    {
+      "name": "divide_multilimb_1012d_506d_s112_x875",
+      "group": "divide_multilimb",
+      "parameters": {
+        "dividend_digits": 1012,
+        "divisor_digits": 506,
+        "scale": 112,
+        "iterations": 875
+      },
+      "program_sha256": "96420ea16ce37378346ba19ab601e2c7da2a378eab16c080e199bf9d20d9bf07"
+    },
+    {
+      "name": "divide_multilimb_1125d_1012d_s1125_x438",
+      "group": "divide_multilimb",
+      "parameters": {
+        "dividend_digits": 1125,
+        "divisor_digits": 1012,
+        "scale": 1125,
+        "iterations": 438
+      },
+      "program_sha256": "4fc584759ea62c0d893fa3f7dde83842d4d790a23f12233c2762fd59711b2732"
+    },
+    {
+      "name": "modulo_1125d_393d_x2625",
+      "group": "modulo",
+      "parameters": {
+        "dividend_digits": 1125,
+        "divisor_digits": 393,
+        "iterations": 2625
+      },
+      "program_sha256": "60321129a27884994e129302a1478debb319058a5b187d6ddcc07c6da18d153b"
+    },
+    {
+      "name": "power_112d_e17_x875",
+      "group": "power",
+      "parameters": {
+        "digits": 112,
+        "exponent": 17,
+        "iterations": 875
+      },
+      "program_sha256": "d4e1d095be5223a0275ccfed63d109990f56e1355e97843a92fb49e33970195e"
+    },
+    {
+      "name": "power_22d_e32_x1750",
+      "group": "power",
+      "parameters": {
+        "digits": 22,
+        "exponent": 32,
+        "iterations": 1750
+      },
+      "program_sha256": "7ad2cb0897ae9eabc16f80cc507e190625ca0e623afe9dadfea97006ac3dd599"
+    },
+    {
+      "name": "ibase_literal_flip_17500",
+      "group": "literal_base",
+      "parameters": {
+        "iterations": 17500,
+        "bases": [
+          2,
+          10
+        ]
+      },
+      "program_sha256": "2729cfd97e0b31e5a9d11c0fa11e2f43d175f8ccd2bcac4cc20b6b0bf60ea491"
+    },
+    {
+      "name": "recursion_56_x875",
+      "group": "recursion",
+      "parameters": {
+        "depth": 56,
+        "iterations": 875
+      },
+      "program_sha256": "eac066153af40fc96291b61372a9a6b36b3323830e20060a6608ea1190c7bb15"
+    },
+    {
+      "name": "sparse_array_175000",
+      "group": "array_sparse",
+      "parameters": {
+        "iterations": 175000,
+        "keys": 31,
+        "stride": 313
+      },
+      "program_sha256": "35f7a046664be53d5c3497e208ea3400d01969890a398e9dbeab123d7fa5994e"
+    },
+    {
+      "name": "frontend_definitions_1750",
+      "group": "frontend_definition",
+      "parameters": {
+        "definitions": 1750
+      },
+      "program_sha256": "e10c90381a7ca598140e91ae11152ee5bcad8f0d0ba3b1e8c4ea73316af3a099"
+    },
+    {
+      "name": "decimal_input_4500d_x88",
+      "group": "decimal_input",
+      "parameters": {
+        "digits": 4500,
+        "literals": 88
+      },
+      "program_sha256": "2e1475e9f4d4d49421e10a31a3b1ac196ce2b87430cff028659f865b33a93431"
+    },
+    {
+      "name": "decimal_output_225d_x875",
+      "group": "decimal_output",
+      "parameters": {
+        "digits": 225,
+        "lines": 875
+      },
+      "program_sha256": "48e9d64ae0c70cc9ffa43b3ca7b30d532db84a6b89a83be2841ed1b54c3c6221"
+    },
+    {
+      "name": "streaming_statements_17500",
+      "group": "streaming",
+      "parameters": {
+        "statements": 35001,
+        "output_lines": 17500,
+        "termination": "EOF"
+      },
+      "program_sha256": "cbc5a7209d674f221f4441a9c8577ed2fce0d624a569e91aacf072e2263d0fa9"
+    },
+    {
+      "name": "square_112d_x87500",
+      "group": "square",
+      "parameters": {
+        "digits": 112,
+        "iterations": 87500,
+        "shape": "aliased"
+      },
+      "program_sha256": "0821f45a7cefa9911f9d408c62554cc7c843195f32180a6e5d3d7afab83090a0"
+    },
+    {
+      "name": "square_1125d_x8750",
+      "group": "square",
+      "parameters": {
+        "digits": 1125,
+        "iterations": 8750,
+        "shape": "aliased"
+      },
+      "program_sha256": "339517b594df61ab83e0311d7a8a05853ae7df5270710b2447e42113d316e51b"
+    },
+    {
+      "name": "square_11250d_x438",
+      "group": "square",
+      "parameters": {
+        "digits": 11250,
+        "iterations": 438,
+        "shape": "aliased"
+      },
+      "program_sha256": "1049c9899e64ae5fe319c78b64edac0b2abd56a519de09107e4226a521450c04"
+    },
+    {
+      "name": "literal_repeat_2250d_x1750",
+      "group": "literal_repeat",
+      "parameters": {
+        "digits": 2250,
+        "iterations": 1750
+      },
+      "program_sha256": "75a954cc08fefe8751482a70326244320e715bba5f7ec7aac7cb84c8b24beaba"
+    },
+    {
+      "name": "binary_output_1125d_x263",
+      "group": "binary_output",
+      "parameters": {
+        "digits": 1125,
+        "lines": 263,
+        "output_base": 2
+      },
+      "program_sha256": "c9033dfe747ee86b9406a2c71ca4b5df4b2272674fb8ff377097d0b5a04c9a4c"
+    },
+    {
+      "name": "octal_output_1125d_x263",
+      "group": "octal_output",
+      "parameters": {
+        "digits": 1125,
+        "lines": 263,
+        "output_base": 8
+      },
+      "program_sha256": "fd81763019938afb447c4273b57242488390b77a7be1b21e0e7f8eb8b77f96b5"
+    },
+    {
+      "name": "binary_input_112500d_x3",
+      "group": "binary_input",
+      "parameters": {
+        "digits": 112500,
+        "literals": 3,
+        "input_base": 2
+      },
+      "program_sha256": "5189880a2eadc61ffa9b253d03be794b2072973bc13c1542aa335573691d2e18"
+    },
+    {
+      "name": "hex_input_112500d_x3",
+      "group": "hex_input",
+      "parameters": {
+        "digits": 112500,
+        "literals": 3,
+        "input_base": 16
+      },
+      "program_sha256": "0ceb8cfe59f8ab1239823057612ad93d4da4ab0d1961c02df2c205299ea40b6b"
+    },
+    {
+      "name": "temporary_chain_1125d_x43750",
+      "group": "temporary_chain",
+      "parameters": {
+        "digits": 1125,
+        "iterations": 43750,
+        "terms": 8
+      },
+      "program_sha256": "9cbe7113550f8b662a96a201d7007a77ce8dc19295d7838ee5096749faafc48b"
+    },
+    {
+      "name": "file_statements_17500",
+      "group": "file_streaming",
+      "parameters": {
+        "statements": 17500
+      },
+      "program_sha256": "92729397453ae4304f88af1de97fe4618241013687d52ce6780f78364c56b240"
+    },
+    {
+      "name": "sqrt_large_scale11250_x5",
+      "group": "sqrt_large_scale",
+      "parameters": {
+        "scale": 11250,
+        "iterations": 5,
+        "radicand": "2"
+      },
+      "program_sha256": "4cb1c56238cb59266bd49955cc40a6067fb534a285d0d704b5487d0db13bee80"
+    },
+    {
+      "name": "sqrt_tiny_scale1152_x27",
+      "group": "sqrt_tiny",
+      "parameters": {
+        "input_scale": 1152,
+        "scale": 0,
+        "iterations": 27,
+        "coefficient": "4"
+      },
+      "program_sha256": "4931adbcdc0aca13598e58da339cb714f6b482fbf1ba1a6ac8db563c396cb5c1"
+    },
+    {
+      "name": "sqrt_tiny_scale4608_x1",
+      "group": "sqrt_tiny",
+      "parameters": {
+        "input_scale": 4608,
+        "scale": 0,
+        "iterations": 1,
+        "coefficient": "4"
+      },
+      "program_sha256": "e6ece9124c25016cef58a7c79ce3ce2e61a091142c09c6ac512ac0f0a0d20e51"
+    },
+    {
+      "name": "sqrt_integer_power2250_scale112_x9",
+      "group": "sqrt_large_integer",
+      "parameters": {
+        "root_power": 2250,
+        "input_digits": 4501,
+        "scale": 112,
+        "iterations": 9,
+        "coefficient": "4"
+      },
+      "program_sha256": "da8bf8317502ff6affee720822bb2824a77f45fdfa541bbcc5c8ba3ef06cac13"
+    },
+    {
+      "name": "divide_scaled_dense_s1125_t1125_x4375",
+      "group": "divide_scaled_dense",
+      "parameters": {
+        "input_scale": 1125,
+        "scale": 1125,
+        "iterations": 4375,
+        "divisor": "13",
+        "shape": "dense",
+        "coefficient_digits": 1129
+      },
+      "program_sha256": "11b5c4d93ac4fbd1f99315c0505a008d8bb802ada64e37b4423a5680151e9633"
+    },
+    {
+      "name": "divide_scaled_dense_s1125_t562_x4375",
+      "group": "divide_scaled_dense",
+      "parameters": {
+        "input_scale": 1125,
+        "scale": 562,
+        "iterations": 4375,
+        "divisor": "13",
+        "shape": "dense",
+        "coefficient_digits": 1129
+      },
+      "program_sha256": "e7b5626876f352d2caad4eca1767ff047c0caf526a360f28ba9d2f2256280945"
+    },
+    {
+      "name": "divide_scaled_dense_s1125_t2250_x4375",
+      "group": "divide_scaled_dense",
+      "parameters": {
+        "input_scale": 1125,
+        "scale": 2250,
+        "iterations": 4375,
+        "divisor": "13",
+        "shape": "dense",
+        "coefficient_digits": 1129
+      },
+      "program_sha256": "70ed55e54a15ab1a0d8abc6a4278ef1bc61ee5de33d12aa8c8d7e6d82cc88e46"
+    },
+    {
+      "name": "divide_scaled_trailing_zero_s1125_t1125_x4375",
+      "group": "divide_scaled_trailing_zero",
+      "parameters": {
+        "input_scale": 1125,
+        "scale": 1125,
+        "iterations": 4375,
+        "divisor": "13",
+        "shape": "trailing_zero",
+        "coefficient_digits": 1129
+      },
+      "program_sha256": "559944800a71b56928c3df9c529800ec97514fcf84d897a0e1fc82354a08705f"
+    },
+    {
+      "name": "divide_scaled_trailing_zero_s1125_t562_x4375",
+      "group": "divide_scaled_trailing_zero",
+      "parameters": {
+        "input_scale": 1125,
+        "scale": 562,
+        "iterations": 4375,
+        "divisor": "13",
+        "shape": "trailing_zero",
+        "coefficient_digits": 1129
+      },
+      "program_sha256": "a2b050dd02e6c8f015ffe391d14aab12733b3ba65f9175350083c8003f52fe36"
+    },
+    {
+      "name": "divide_scaled_trailing_zero_s1125_t2250_x4375",
+      "group": "divide_scaled_trailing_zero",
+      "parameters": {
+        "input_scale": 1125,
+        "scale": 2250,
+        "iterations": 4375,
+        "divisor": "13",
+        "shape": "trailing_zero",
+        "coefficient_digits": 1129
+      },
+      "program_sha256": "b6fefb17c6edc128ce01420977e983db0d3d2efb35cf470d03825e45f70f6fbd"
+    },
+    {
+      "name": "modulo_scaled_numerator_s4_b8_t48_x875",
+      "group": "modulo_scaled_numerator",
+      "parameters": {
+        "input_scale": 4,
+        "divisor_scale": 8,
+        "scale": 48,
+        "shape": "numerator",
+        "iterations": 875,
+        "dividend_digits": 675,
+        "divisor_digits": 258
+      },
+      "program_sha256": "055462846669c707ec0eb959af508b6b02c9e0114741df3762f48da37869f282"
+    },
+    {
+      "name": "modulo_scaled_divisor_s109_b41_t48_x875",
+      "group": "modulo_scaled_divisor",
+      "parameters": {
+        "input_scale": 109,
+        "divisor_scale": 41,
+        "scale": 48,
+        "shape": "divisor",
+        "iterations": 875,
+        "dividend_digits": 675,
+        "divisor_digits": 258
+      },
+      "program_sha256": "1c85017e519febb4e1008cf2c15abc69f11653cf9b8af9f4c70e34a916e5db83"
+    },
+    {
+      "name": "divisor_changing_divide_675d_258d_x875",
+      "group": "divisor_changing_divide",
+      "parameters": {
+        "dividend_digits": 675,
+        "divisor_digits": 258,
+        "iterations": 875,
+        "scale": 0,
+        "operation": "divide",
+        "admission": "changing",
+        "change_period": 1,
+        "timing_scope": "repeated process workload"
+      },
+      "program_sha256": "5571b5c28d276f85b7f993f45112337b6fa70ed7ad1eeab2685ae21c2bd3e0e7"
+    },
+    {
+      "name": "divisor_changing_modulo_675d_258d_x875",
+      "group": "divisor_changing_modulo",
+      "parameters": {
+        "dividend_digits": 675,
+        "divisor_digits": 258,
+        "iterations": 875,
+        "scale": 0,
+        "operation": "modulo",
+        "admission": "changing",
+        "change_period": 1,
+        "timing_scope": "repeated process workload"
+      },
+      "program_sha256": "a3352cfd215a0fac5a7e212be69a8f8b540caebedf1ce5901819507e0ebac8d4"
+    },
+    {
+      "name": "divisor_temporary_divide_675d_258d_x875",
+      "group": "divisor_temporary_divide",
+      "parameters": {
+        "dividend_digits": 675,
+        "divisor_digits": 258,
+        "iterations": 875,
+        "scale": 0,
+        "operation": "divide",
+        "admission": "temporary",
+        "change_period": 1,
+        "timing_scope": "repeated process workload"
+      },
+      "program_sha256": "666a741b4265b671cbf8732f1a1836969ad2d6648359296cf21ac6d27810d729"
+    },
+    {
+      "name": "divisor_temporary_modulo_675d_258d_x875",
+      "group": "divisor_temporary_modulo",
+      "parameters": {
+        "dividend_digits": 675,
+        "divisor_digits": 258,
+        "iterations": 875,
+        "scale": 0,
+        "operation": "modulo",
+        "admission": "temporary",
+        "change_period": 1,
+        "timing_scope": "repeated process workload"
+      },
+      "program_sha256": "c2397c61d603a7b344136e31d0182d1299cb0f6ea21d1da42f2857019a7ba90d"
+    },
+    {
+      "name": "divisor_periodic_divide_675d_258d_x875",
+      "group": "divisor_periodic_divide",
+      "parameters": {
+        "dividend_digits": 675,
+        "divisor_digits": 258,
+        "iterations": 875,
+        "scale": 0,
+        "operation": "divide",
+        "admission": "periodic",
+        "change_period": 16,
+        "timing_scope": "repeated process workload"
+      },
+      "program_sha256": "b6a37c837aea0db0ccd85ea86063a9eebfc59a854fe87575d541cde339def53a"
+    },
+    {
+      "name": "divisor_periodic_modulo_675d_258d_x875",
+      "group": "divisor_periodic_modulo",
+      "parameters": {
+        "dividend_digits": 675,
+        "divisor_digits": 258,
+        "iterations": 875,
+        "scale": 0,
+        "operation": "modulo",
+        "admission": "periodic",
+        "change_period": 16,
+        "timing_scope": "repeated process workload"
+      },
+      "program_sha256": "943851932add2694051a66094eee8562010017d3022700b07d13c6bdd00538f2"
+    },
+    {
+      "name": "divisor_cold_divide_675d_258d_x1",
+      "group": "divisor_cold_divide",
+      "parameters": {
+        "dividend_digits": 675,
+        "divisor_digits": 258,
+        "iterations": 1,
+        "scale": 0,
+        "operation": "divide",
+        "admission": "cold",
+        "change_period": 1,
+        "timing_scope": "whole-process latency"
+      },
+      "program_sha256": "22fad50b36076bd6cd7db39d48f70f976fb4ce052e799a5392de3d7bd2c51eb5"
+    },
+    {
+      "name": "divisor_cold_modulo_675d_258d_x1",
+      "group": "divisor_cold_modulo",
+      "parameters": {
+        "dividend_digits": 675,
+        "divisor_digits": 258,
+        "iterations": 1,
+        "scale": 0,
+        "operation": "modulo",
+        "admission": "cold",
+        "change_period": 1,
+        "timing_scope": "whole-process latency"
+      },
+      "program_sha256": "c9d6a8a1737893f38841d01026d001cc8c0c6aad2d1d687809147ca055a334b7"
+    }
+  ]
+}
