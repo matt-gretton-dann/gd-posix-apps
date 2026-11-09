@@ -26,6 +26,18 @@ def load(name):
 
 
 class ResourceComparison(unittest.TestCase):
+    def test_common_resource_inputs_match_each_elapsed_preset_seed(self):
+        for preset, seed in [('full', 197200), ('holdout', 197201)]:
+            elapsed = {case['name']: case for case in self.bench.corpus(preset, seed=seed)}
+            resources = self.module.representatives(self.bench, preset, 'arithmetic')
+            common = [case for case in resources if case['name'] in elapsed]
+            self.assertEqual(len(common), 9)
+            for case in common:
+                with self.subTest(preset=preset, workload=case['name']):
+                    self.assertEqual(case, elapsed[case['name']])
+                    self.assertEqual(self.bench.oracle_payload(case),
+                                     self.bench.oracle_payload(elapsed[case['name']]))
+
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
