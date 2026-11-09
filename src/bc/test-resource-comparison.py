@@ -46,6 +46,42 @@ class ResourceComparison(unittest.TestCase):
         self.case = dict(name='fixture', group='fixture', program='1+1\n', expected=['2'], parameters={})
         self.calls = []
 
+    def test_square_modes_and_source_identities_must_match_ordinary_images(self):
+        for roles in (self.profiles, self.ordinary):
+            for name, tool in roles.items():
+                names = ['CMakeLists.txt', 'number.hh']
+                if name == 'candidate':
+                    names += ['limb-subtractive-square.hh', 'limb-square.hh', 'limb-product.hh']
+                tool['metadata']['configuration']['subtractive_square_policy'] = dict(
+                    status='recorded' if name == 'candidate' else 'legacy-auto', mode='AUTO',
+                    enabled=True if name == 'candidate' else None,
+                    source_inputs=[dict(path='src/bc/' + p, sha256='a' * 64) for p in names])
+        self.module.validate_roles(self.bench, self.profiles, self.ordinary)
+        policy = self.profiles['candidate']['metadata']['configuration']['subtractive_square_policy']
+        policy['source_inputs'][0]['sha256'] = 'b' * 64
+        with self.assertRaisesRegex(ValueError, 'resource modes differ'):
+            self.module.validate_roles(self.bench, self.profiles, self.ordinary)
+        policy['source_inputs'][0]['sha256'] = 'a' * 64
+        policy['enabled'] = False
+        with self.assertRaisesRegex(ValueError, 'resource modes differ'):
+            self.module.validate_roles(self.bench, self.profiles, self.ordinary)
+        policy['enabled'] = True
+        policy['source_inputs'].pop()
+        with self.assertRaisesRegex(ValueError, 'square resource source inputs'):
+            self.module.validate_roles(self.bench, self.profiles, self.ordinary)
+
+    def test_medium_square_resources_require_positive_recursive_entry(self):
+        config = dict(subtractive_square_policy=dict(enabled=True))
+        case = dict(group='square', parameters=dict(digits=1000))
+        with self.assertRaisesRegex(ValueError, 'did not enter recursive'):
+            self.module.verify_native_path(config, dict(events={}), case)
+        self.module.verify_native_path(config, dict(events=dict(karatsuba_multiply_calls=1)), case)
+        config['subtractive_square_policy']['enabled'] = False
+        self.module.verify_native_path(config, dict(events={}), case)
+        config['subtractive_square_policy']['enabled'] = True
+        case['parameters']['digits'] = 100
+        self.module.verify_native_path(config, dict(events={}), case)
+
     def test_matching_absent_optional_backend_policy_is_supported(self):
         for roles in (self.profiles, self.ordinary):
             for tool in roles.values():
@@ -390,7 +426,8 @@ class ResourceComparison(unittest.TestCase):
 
     def test_representatives_cover_both_presets_and_low_scale_math_boundaries(self):
         groups = {'startup', 'loop', 'calls', 'recursion', 'array', 'array_sparse',
-                  'streaming', 'file_streaming', 'temporary_chain', 'frame_reuse', 'private_frame_reuse',
+                  'streaming', 'file_streaming', 'temporary_chain', 'square',
+                  'frame_reuse', 'private_frame_reuse',
                   'native_function_cache', 'native_function_fallback', 'word_cache',
                   'word_conversion', 'word_promotion', 'word_demotion', 'word_rejection', 'word_cold'}
         for preset in ('full', 'holdout'):

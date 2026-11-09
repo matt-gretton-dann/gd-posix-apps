@@ -809,6 +809,105 @@ class GdBuild(unittest.TestCase):
             with self.subTest(change=change), self.assertRaises(self.helper.BuildError):
                 self.module.verified_word_functions(self.helper, self.build, self.root / 'source')
 
+    def square_inventory(self, mode='ON', definition='1'):
+        source = self.root / 'square-source'
+        (source / 'src/bc').mkdir(parents=True, exist_ok=True)
+        (source / 'src/bc/CMakeLists.txt').write_text(
+            'option(ENABLE_BC_SUBTRACTIVE_SQUARE "square" OFF)\n'
+            'target_compile_definitions(libbc PUBLIC GD_BC_SUBTRACTIVE_SQUARE=1)\n')
+        (source / 'src/bc/number.hh').write_text(
+            '#if GD_BC_SUBTRACTIVE_SQUARE\nusing Square = LimbSubtractiveSquare<Traits>;\n#endif\n')
+        for name in ('limb-subtractive-square.hh', 'limb-square.hh', 'limb-product.hh'):
+            (source / 'src/bc' / name).write_text('square fixture ' + name)
+        self.cache.write_text('ENABLE_BC_SUBTRACTIVE_SQUARE:BOOL=' + mode + '\n')
+        rows = [dict(file='/source/src/bc/' + name,
+                     command='c++ -DGD_BC_SUBTRACTIVE_SQUARE=' + definition + ' -c ' + name)
+                for name in ('vm.cc', 'number-remainder.cc', 'bc.cc')]
+        (self.build / 'compile_commands.json').write_text(json.dumps(rows))
+        return source, rows
+
+    def test_square_selection_and_explicit_fallback_bind_all_consumers(self):
+        for mode, definition in (('ON', '1'), ('OFF', '0')):
+            source, rows = self.square_inventory(mode, definition)
+            value = self.module.verified_subtractive_squares(self.helper, self.build, source)
+            self.assertIs(value['enabled'], mode == 'ON')
+            self.assertEqual(value['verification']['translation_units'],
+                             ['vm.cc', 'number-remainder.cc', 'bc.cc'])
+            self.assertEqual(len(value['source_inputs']), 5)
+            entry = dict(metadata=dict(configuration=dict(subtractive_square_policy=value)))
+            if mode == 'ON':
+                self.module.require_subtractive_square_role(self.helper, entry, True)
+            else:
+                with self.assertRaises(self.helper.BuildError):
+                    self.module.require_subtractive_square_role(self.helper, entry, True)
+
+    def test_square_rejects_bad_missing_ambiguous_and_overridden_definitions(self):
+        for change in ('zero', 'missing', 'duplicate', 'undefine', 'response', 'list', 'json'):
+            source, rows = self.square_inventory()
+            if change == 'zero': rows[0]['command'] = rows[0]['command'].replace('=1', '=0')
+            if change == 'missing': rows.pop()
+            if change == 'duplicate': rows.append(dict(rows[0]))
+            if change == 'undefine': rows[0]['command'] += ' -UGD_BC_SUBTRACTIVE_SQUARE'
+            if change == 'response': rows[0]['command'] += ' @hidden.rsp'
+            if change == 'list': rows[0]['arguments'] = ['c++', 1]
+            path = self.build / 'compile_commands.json'
+            path.write_text('{' if change == 'json' else json.dumps(rows))
+            with self.subTest(change=change), self.assertRaises(self.helper.BuildError):
+                self.module.verified_subtractive_squares(self.helper, self.build, source)
+
+    def test_square_rejects_ignored_option_missing_source_and_non_boolean_cache(self):
+        for change in ('header', 'number', 'cache', 'unknown'):
+            source, rows = self.square_inventory()
+            if change == 'header': (source / 'src/bc/limb-subtractive-square.hh').unlink()
+            if change == 'number': (source / 'src/bc/number.hh').write_text('no square implementation')
+            if change == 'cache': self.cache.write_text('')
+            if change == 'unknown': self.cache.write_text('ENABLE_BC_SUBTRACTIVE_SQUARE:BOOL=perhaps\n')
+            with self.subTest(change=change), self.assertRaises(self.helper.BuildError):
+                self.module.verified_subtractive_squares(self.helper, self.build, source)
+
+    def test_square_legacy_absence_requires_real_source_inputs_to_qualify(self):
+        source = self.root / 'legacy-square'
+        (source / 'src/bc').mkdir(parents=True)
+        self.cache.write_text('')
+        value = self.module.verified_subtractive_squares(self.helper, self.build, source)
+        entry = dict(metadata=dict(configuration=dict(subtractive_square_policy=value)))
+        with self.assertRaises(self.helper.BuildError):
+            self.module.require_subtractive_square_role(self.helper, entry, False)
+        for name in ('CMakeLists.txt', 'number.hh'):
+            (source / 'src/bc' / name).write_text('legacy source')
+        value = self.module.verified_subtractive_squares(self.helper, self.build, source)
+        self.assertEqual(value['status'], 'legacy-auto')
+        self.assertIsNone(value['enabled'])
+        entry['metadata']['configuration']['subtractive_square_policy'] = value
+        self.module.require_subtractive_square_role(self.helper, entry, False)
+        with self.assertRaises(self.helper.BuildError):
+            self.module.require_subtractive_square_role(self.helper, entry, True)
+
+    def test_square_native_release_projects_reject_overrides_and_missing_targets(self):
+        for change in ('valid', 'zero', 'override', 'missing', 'unknown-generator'):
+            source, rows = self.square_inventory()
+            (self.build / 'compile_commands.json').unlink()
+            self.cache.write_text(self.cache.read_text() + 'CMAKE_GENERATOR:INTERNAL=' +
+                                 ('Ninja' if change == 'unknown-generator' else 'Visual Studio 17 2022') + '\n')
+            project = ('<Project><ItemDefinitionGroup Condition="Release|x64">'
+                       '<ClCompile><PreprocessorDefinitions>GD_BC_SUBTRACTIVE_SQUARE=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>'
+                       '</ClCompile></ItemDefinitionGroup><ItemGroup><ClCompile Include="vm.cc"/></ItemGroup></Project>')
+            for name in ('libbc', 'bc'):
+                text = project
+                if change == 'zero': text = text.replace('SQUARE=1', 'SQUARE=0')
+                if change == 'override': text = text.replace('<ClCompile Include="vm.cc"/>',
+                    '<ClCompile Include="vm.cc"><UndefinePreprocessorDefinitions>GD_BC_SUBTRACTIVE_SQUARE</UndefinePreprocessorDefinitions></ClCompile>')
+                (self.build / ('src/bc/' + name + '.vcxproj')).write_text(text)
+            if change == 'missing': (self.build / 'src/bc/bc.vcxproj').unlink()
+            if change == 'valid':
+                value = self.module.verified_subtractive_squares(self.helper, self.build, source)
+                self.assertTrue(value['enabled'])
+                self.assertEqual(value['verification']['kind'], 'msbuild-projects')
+                self.assertEqual(len(value['verification']['files']), 2)
+            else:
+                with self.subTest(change=change), self.assertRaises(self.helper.BuildError):
+                    self.module.verified_subtractive_squares(self.helper, self.build, source)
+
     def test_failed_source_checkout_never_publishes_config(self):
         source = self.root / 'not-a-repository'
         source.mkdir()

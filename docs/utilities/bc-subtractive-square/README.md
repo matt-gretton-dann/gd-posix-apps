@@ -57,3 +57,17 @@ compile selection, software counters, native RSS and startup data. Historical
 performance results remain bound to their original sources and are not pooled
 or transferred. Ordinary/profile compile eligibility is recorded separately;
 matching selected counters cannot establish identical dynamic execution paths.
+
+`--require-candidate-subtractive-square` makes both native collectors reject
+unverified roles before elapsed sampling. The immutable accepted base must lack
+the experiment and retain its CMake/Number source identities; the candidate must
+have verified ON compilation and retain all five relevant source files. Cache
+booleans alone cannot activate the experiment: three Number consumers must agree
+in the compilation database, or both native Visual Studio Release projects must
+provide the same unambiguous definition without per-file overrides. Actual
+cache, source and project bytes are archived in `subtractive-square-policy`.
+Resource roles must match their ordinary build's selection and source hashes.
+The original three square sizes also receive matched resource checks, with a
+positive recursion-counter requirement for medium/large enabled cases. These
+checks record compile selection and diagnostic execution, not ordinary/profile
+dynamic-path identity or elapsed acceptance.

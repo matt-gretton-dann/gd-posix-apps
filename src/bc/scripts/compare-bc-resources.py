@@ -156,7 +156,7 @@ def representatives(bench, preset, suite):
     """Fixed resource cases; no timing results influence their selection."""
     if suite == 'arithmetic':
         groups = {'startup', 'loop', 'calls', 'recursion', 'array', 'array_sparse',
-                  'streaming', 'file_streaming', 'temporary_chain'}
+                  'streaming', 'file_streaming', 'temporary_chain', 'square'}
         cases = [case for case in bench.corpus(preset) if case['group'] in groups]
         if {case['group'] for case in cases} != groups:
             raise ValueError('resource corpus is missing a required arithmetic group')
@@ -263,6 +263,17 @@ def mode_identity(configuration, key):
             raise ValueError('invalid prefix_result_policy source inputs')
         identity.update(implementation_present=present, configured=configured,
                         source_inputs=sorted((item['path'], item['sha256']) for item in inputs))
+    if key == 'subtractive_square_policy':
+        inputs = policy.get('source_inputs')
+        expected = {'src/bc/CMakeLists.txt', 'src/bc/number.hh'}
+        if policy.get('status') == 'recorded':
+            expected |= {'src/bc/limb-subtractive-square.hh', 'src/bc/limb-square.hh', 'src/bc/limb-product.hh'}
+        if (not isinstance(inputs, list) or len(inputs) != len(expected) or
+                any(not isinstance(item, dict) or not isinstance(item.get('path'), str) or
+                    not re.fullmatch('[0-9a-f]{64}', str(item.get('sha256', ''))) for item in inputs) or
+                {item['path'] for item in inputs} != expected):
+            raise ValueError('invalid square resource source inputs')
+        identity['source_inputs'] = sorted((item['path'], item['sha256']) for item in inputs)
     return identity
 
 
@@ -299,7 +310,7 @@ def validate_roles(bench, profiles, ordinary):
                     'preparsed_library_image_sha256'):
             if pc.get(key) != rc.get(key):
                 raise ValueError('profile and ordinary resource configurations differ: ' + key)
-        for key in ('portable_scalar_policy', 'prepared_divisors_policy', 'native_scalar_policy', 'native_function_policy'):
+        for key in ('portable_scalar_policy', 'prepared_divisors_policy', 'native_scalar_policy', 'native_function_policy', 'subtractive_square_policy'):
             if mode_identity(pc, key) != mode_identity(rc, key):
                 raise ValueError('profile and ordinary resource modes differ: ' + key)
         if mode_identity(pc, 'word_function_policy') != mode_identity(rc, 'word_function_policy'):
@@ -435,6 +446,11 @@ def preserve_profiles(profiles, directory):
 
 def verify_native_path(configuration, counters, case):
     """A compiled option does not prove completion in a resource input."""
+    square = configuration.get('subtractive_square_policy') or {}
+    if (square.get('enabled') is True and str(case.get('group', '')).startswith('square') and
+            case.get('parameters', {}).get('digits', 0) > 64 * 9):
+        if counters['events'].get('karatsuba_multiply_calls', 0) == 0:
+            raise ValueError('square resource case did not enter recursive multiplication')
     events = counters['events']
     for key, prefix, group in (('native_scalar_policy', 'native_scalar', 'loop'),
                                 ('native_function_policy', 'native_function', 'calls')):
