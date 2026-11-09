@@ -3,8 +3,9 @@
 Refs #700, #694, #696, #207, #200 and #197. This separate topic starts at
 accepted main `b0247467ebf007f5d316a1e1ff6eb8ac03e363ef`. It reuses the corrected
 prefix-buffer and portable Bessel source foundation, without transferring any
-qualification or importing the Word runtime. Prefix tracking remains default
-OFF during correctness preflight; explicit OFF keeps ordinary vector cleanup.
+qualification or importing the Word runtime. Prefix tracking was default
+OFF during correctness preflight. The declared qualification candidate selects
+ON by default; explicit OFF keeps ordinary vector cleanup.
 
 ## Evidence and change
 
@@ -70,7 +71,8 @@ source without the implementation. Matching policies establish compiled
 selection; they do not prove dynamic ordinary/profile path identity. The
 collector fixtures run through CTest as well as directly.
 
-Before adoption, declare and freeze this candidate's own complete three-platform
+The [prospective qualification protocol](bc-reconstructed-results-qualification.md)
+declares this candidate's own complete three-platform
 full/held arithmetic, math, startup and resource study against accepted main.
 Keep the approved policy, caps, Howard-margin exception, competitive targets,
 controls, precision, duration, one-shot, memory and code-size requirements. Do
