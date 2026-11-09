@@ -1,10 +1,14 @@
 # Subtractive Karatsuba square experiment — #703
 
 This experiment follows #197/#200 and retains the accepted multiplication and
-triangular-square kernels as the generic fallback. It is **OFF by default**;
-`ENABLE_BC_SUBTRACTIVE_SQUARE=ON` explicitly selects it for supported traits.
-Its 64-limb crossover is independent of the ordinary product crossover and is
-fixed before performance collection. No performance improvement is claimed.
+triangular-square kernels as the generic fallback. The unmerged qualification
+candidate proposes **ON by default** for supported traits; explicit
+`ENABLE_BC_SUBTRACTIVE_SQUARE=OFF` retains the fallback. Accepted main 1281233d
+predates the experiment and the immutable afeca987 correctness preflight was
+OFF by default. Enabling the unmerged candidate qualifies the exact proposed
+configuration before adoption, without a later configuration change. Its
+64-limb crossover is independent of the ordinary product crossover and stays
+fixed. No performance improvement or adoption approval is claimed.
 
 The exact ordinary Linux images sampled in #702 placed 98.2% of CPU periods for
 `square_1000d_x10000` in `LimbSquare`. This is a leaf-sample observation from a
