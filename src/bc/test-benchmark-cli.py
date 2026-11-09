@@ -131,6 +131,22 @@ class BenchmarkCli(unittest.TestCase):
         self.assertEqual(result.returncode, 1, result.stderr)
         self.assertIn('invalid dimensions', result.stderr)
 
+    def test_declared_repeated_program_cannot_be_replaced_during_calibration(self):
+        directory, declaration, config = self.declared_math_fixture()
+        case = declaration['corpus'][0]
+        path = directory / 'workloads' / (case['name'] + '.bc')
+        payload = path.read_bytes() + b'1\n'
+        path.write_bytes(payload)
+        case['program_sha256'] = hashlib.sha256(payload).hexdigest()
+        (directory / 'manifest.json').write_text(json.dumps(declaration))
+        result = subprocess.run([sys.executable, BENCHMARK, '--suite', 'math',
+            '--input-corpus', str(directory), '--config', str(config),
+            '--output', str(self.root / 'changed-program'),
+            '--calibrate-seconds', '.000001', '--calibrate-only'],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, timeout=8)
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn('program differs from its declared mathematical call', result.stderr)
+
     def test_sparse_iteration_override_preserves_dimensions_and_oracle(self):
         spec = importlib.util.spec_from_file_location('bc_sparse_corpus', BENCHMARK)
         bench = importlib.util.module_from_spec(spec)
