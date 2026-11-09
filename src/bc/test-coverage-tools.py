@@ -121,6 +121,29 @@ class Coverage(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'compile_commands.json'):
             COLLECTOR.production_mappings(self.source, build)
 
+    def test_command_include_path_cannot_spoof_a_production_target(self):
+        self.files('bc.cc', 'vm.cc', 'verification.cc')
+        build, rows = self.compilation(['bc.cc', 'vm.cc', 'verification.cc'])
+        del rows[1]['output']
+        rows[1]['command'] = 'clang++ -I src/CMakeFiles/libbc.dir -c vm.cc -o src/CMakeFiles/test-libbc.dir/vm.cc.o'
+        (build / 'compile_commands.json').write_text(json.dumps(rows))
+        with self.assertRaisesRegex(RuntimeError, 'vm.cc'):
+            COLLECTOR.production_mappings(self.source, build)
+
+    def test_argument_inventory_and_windows_output_paths_preserve_scope(self):
+        expected = self.files('bc.cc', 'vm.cc', 'verification.cc', 'bc.hh', 'number.hh')
+        build, rows = self.compilation(['bc.cc', 'vm.cc', 'verification.cc'])
+        for row in rows:
+            output = row.pop('output')
+            del row['command']
+            row['arguments'] = ['clang++', '-c', row['file'], '-o', output]
+        (build / 'compile_commands.json').write_text(json.dumps(rows))
+        self.assertEqual(COLLECTOR.production_mappings(self.source, build), expected)
+        for row in rows:
+            row['output'] = row['arguments'][-1].replace('/', '\\')
+        (build / 'compile_commands.json').write_text(json.dumps(rows))
+        self.assertEqual(COLLECTOR.production_mappings(self.source, build), expected)
+
     def test_nonrunnable_selected_test_fails_before_profile_collection(self):
         for command in (None, [], [str(self.source / 'test-divisor-cache-lifetime')]):
             test = dict(name='bc/divisor-cache-lifetime')
