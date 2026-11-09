@@ -22,6 +22,32 @@ SPEC.loader.exec_module(CI)
 
 
 class NativeMath(unittest.TestCase):
+    def test_horner_partition_requires_the_declared_measurement_contract(self):
+        args = types.SimpleNamespace(horner_partition='low', broad=True,
+                                     broad_preset='full', samples=31,
+                                     compare_resources=True)
+        CI.validate_horner_arguments(args)
+        for field, wrong in [('broad', False), ('broad_preset', None),
+                             ('samples', 15), ('compare_resources', False)]:
+            changed = copy.copy(args)
+            setattr(changed, field, wrong)
+            with self.assertRaises(ValueError):
+                CI.validate_horner_arguments(changed)
+
+    def test_horner_preparation_uses_the_declared_replay_instead_of_regeneration(self):
+        args = types.SimpleNamespace(horner_partition='middle')
+        generator = mock.Mock()
+        bench = object()
+        with tempfile.TemporaryDirectory() as temporary, \
+                mock.patch.object(CI, 'load', return_value=generator) as loaded:
+            root = Path(temporary)
+            result = CI.horner_input(bench, args, 'holdout', root)
+            self.assertEqual(result, root / 'holdout-declared-corpus')
+            generator.write_partition.assert_called_once_with(
+                bench, 'holdout', 'middle', result)
+            loaded.assert_called_once_with('bessel-horner-corpus')
+        self.assertIsNone(CI.horner_input(bench, types.SimpleNamespace(), 'full', Path('.')))
+
     def test_native_candidate_and_profile_use_the_declared_source(self):
         args=types.SimpleNamespace(source=Path('.'), candidate='b'*40, base='a'*40,
                                    require_candidate_native=True)

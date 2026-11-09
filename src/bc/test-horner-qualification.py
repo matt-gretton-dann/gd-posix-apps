@@ -103,6 +103,19 @@ class HornerQualification(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.corpus.partition([], 'best')
 
+    def test_resource_additions_are_exact_one_shot_inputs_from_the_same_partition(self):
+        resources = load('compare-bc-resources')
+        for name, count in [('low', 7), ('middle', 5), ('high', 5)]:
+            with tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary) / 'corpus'
+                self.corpus.write_partition(self.bench, 'holdout', name, root)
+                selected = resources.additional_cases(self.bench, root)
+                entire = self.corpus.partition(self.corpus.cases(self.bench, 'holdout'), name)
+                expected = [c for c in entire if c['parameters'].get('horner_experiment')
+                            and c['parameters']['mode'] == 'one_shot']
+                self.assertEqual(selected, expected)
+                self.assertEqual(len(selected), count)
+
 
 if __name__ == '__main__':
     unittest.main()
