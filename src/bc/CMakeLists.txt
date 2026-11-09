@@ -26,7 +26,7 @@ set_property(TARGET libbc PROPERTY CXX_STANDARD_REQUIRED ON)
 target_compile_definitions(libbc PRIVATE _CRT_SECURE_NO_WARNINGS
   GD_BC_COMPACT_EXECUTION=$<BOOL:${ENABLE_BC_COMPACT_EXECUTION}>
   GD_BC_TYPED_RESULTS=$<BOOL:${ENABLE_BC_TYPED_RESULTS}>)
-option(ENABLE_BC_PREFIX_CLEAR_RESULTS "Retain empty bc result objects and clear accessed prefixes" OFF)
+option(ENABLE_BC_PREFIX_CLEAR_RESULTS "Retain empty bc result objects and clear accessed prefixes" ON)
 target_compile_definitions(libbc PRIVATE
   GD_BC_PREFIX_CLEAR_RESULTS=$<BOOL:${ENABLE_BC_PREFIX_CLEAR_RESULTS}>)
 option(ENABLE_BC_THREADED_DISPATCH "Enable experimental threaded dispatch for the typed bc VM" OFF)

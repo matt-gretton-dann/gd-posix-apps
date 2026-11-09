@@ -93,3 +93,8 @@ No local production elapsed benchmark is run. The ten-day TOTAL #197 goal clock
 includes implementation, queues, collection and review; stop qualification at
 864,000 seconds, preserving accepted/rejected/unmet results and leaving unmet
 issues open. Keep at least 20 GiB free and preserve active source and evidence.
+
+The prospective [integrated qualification](bc-frame-math-qualification.md)
+selects prefix results ON in the candidate and retains explicit OFF. Its nine
+original jobs qualify only the declared final source; the completed preflight
+and earlier studies remain separately pinned.
