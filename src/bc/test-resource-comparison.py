@@ -26,6 +26,21 @@ def load(name):
 
 
 class ResourceComparison(unittest.TestCase):
+    def test_all_common_frame_resources_match_actual_elapsed_programs(self):
+        for preset, seed in [('full', 197200), ('holdout', 197201)]:
+            elapsed = {c['name']: c for c in self.bench.corpus(preset, seed=seed)}
+            resources = self.module.representatives(self.bench, preset, 'arithmetic')
+            common = {c['name']: c for c in resources if c['name'] in elapsed}
+            self.assertEqual(len(resources), 24)
+            self.assertEqual(len(common), 12)
+            fresh = {c['group'] for c in common.values() if c['group'].startswith('bindings_')}
+            self.assertEqual(fresh, {'bindings_wide_locals', 'bindings_dynamic_chain',
+                                     'bindings_recursion_snapshots'})
+            for name, case in common.items():
+                self.assertEqual(case, elapsed[name])
+                self.assertEqual(self.bench.oracle_payload(case),
+                                 self.bench.oracle_payload(elapsed[name]))
+
     def test_arithmetic_resource_operands_match_elapsed_corpus_seed(self):
         for preset, expected_seed in [('full', 197200), ('holdout', 197201)]:
             observed = []
@@ -407,6 +422,7 @@ class ResourceComparison(unittest.TestCase):
     def test_representatives_cover_both_presets_and_low_scale_math_boundaries(self):
         groups = {'startup', 'loop', 'calls', 'recursion', 'array', 'array_sparse',
                   'streaming', 'file_streaming', 'temporary_chain', 'frame_reuse', 'private_frame_reuse',
+                  'bindings_wide_locals', 'bindings_dynamic_chain', 'bindings_recursion_snapshots',
                   'native_function_cache', 'native_function_fallback', 'word_cache',
                   'word_conversion', 'word_promotion', 'word_demotion', 'word_rejection', 'word_cold'}
         for preset in ('full', 'holdout'):
