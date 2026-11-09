@@ -542,7 +542,12 @@ TEST_CASE("Repeated early paths avoid rebuilding unused result objects",
   };
   auto const initialized = delta(GD::Bc::Profile::Event::result_slot_initializations);
   auto const reset = delta(GD::Bc::Profile::Event::result_slot_resets);
-  CAPTURE(initialized, reset);
+  auto const moves = delta(GD::Bc::Profile::Event::digit_moves);
+  CAPTURE(initialized, reset, moves);
+  // Each execution permits two ordinary result/return transfers. Clearing an
+  // accessed numeric lane must not add a temporary-zero move per slot. This
+  // upper bound also permits future elimination of either ordinary transfer.
+  CHECK(moves <= 2 * 30);
 #  if GD_BC_EXPECT_PREFIX_CLEAR_RESULTS
   CHECK(initialized == 0);
   CHECK(reset > 0);
