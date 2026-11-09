@@ -101,6 +101,7 @@ class BenchmarkCli(unittest.TestCase):
                 self.assertEqual(result.returncode, 1, result.stderr)
                 self.assertIn('invalid input declaration', result.stderr)
                 self.assertNotIn('Traceback', result.stderr)
+                self.assertTrue((output / 'failure.json').exists())
                 self.assertFalse((output / 'calibration').exists())
                 self.assertFalse((output / 'samples.jsonl').exists())
             if marker.exists():

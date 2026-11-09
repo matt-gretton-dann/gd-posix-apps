@@ -313,12 +313,13 @@ def declared_corpus(directory, suite, selected=None):
         cases, metadata = replay_corpus(directory, suite)
         for case in cases:
             parameters = case['parameters']
+            oracle = case.get('oracle')
             mode, count = parameters.get('mode'), parameters.get('iterations')
             if (parameters.get('calibration') != 'fixed count; not calibrated' or
                     'duration_target_seconds' in parameters or
                     mode not in ('one_shot', 'repeated') or type(count) is not int or
                     (count != 1 if mode == 'one_shot' else count < 2) or
-                    case.get('oracle', {}).get('kind') != 'decimal-ulp'):
+                    not isinstance(oracle, dict) or oracle.get('kind') != 'decimal-ulp'):
                 raise ValueError('input declaration contains calibrated or invalid dimensions')
             if mode == 'repeated':
                 canonical = math_iterations(case, count)
