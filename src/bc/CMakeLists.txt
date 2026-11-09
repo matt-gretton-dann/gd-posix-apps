@@ -438,6 +438,9 @@ if(RUN_INTEGRATION_TESTS)
   add_test(NAME bc/resource-comparison COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-resource-comparison.py")
   set_tests_properties(bc/resource-comparison PROPERTIES TIMEOUT 30)
+  add_test(NAME bc/horner-qualification COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-horner-qualification.py")
+  set_tests_properties(bc/horner-qualification PROPERTIES TIMEOUT 30)
   add_test(NAME bc/multiply-config COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-multiply-config.py" "${CMAKE_COMMAND}"
            "${CMAKE_SOURCE_DIR}/cmake/BcMultiplyConfig.cmake")

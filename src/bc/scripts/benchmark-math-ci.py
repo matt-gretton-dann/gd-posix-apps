@@ -121,6 +121,22 @@ def selected_cases(bench, preset, broad):
     return [case['name'] for case in cases if case['name'] in names]
 
 
+def validate_horner_arguments(args):
+    if getattr(args, 'horner_partition', None) and (
+            not args.broad or args.broad_preset not in ('full', 'holdout') or
+            args.samples != 31 or not args.compare_resources):
+        raise ValueError('Horner partition requires a broad full/holdout preset, '
+                         '31 samples and matched resource comparisons')
+
+
+def horner_input(bench, args, preset, evidence):
+    if not getattr(args, 'horner_partition', None):
+        return None
+    directory = evidence / (preset + '-declared-corpus')
+    load('bessel-horner-corpus').write_partition(bench, preset, args.horner_partition, directory)
+    return directory
+
+
 def embedded_library_metadata(entry, revision, source_digest):
     image = entry['metadata'].get('configuration', {}).get('preparsed_library_image_sha256')
     result = dict(kind='preparsed image' if image else 'embedded ordinary source',
@@ -433,14 +449,22 @@ def run_math(args, root, evidence, commands, configs, gd_builder, bench, helper,
             continue
         write(evidence / (name + '.json'), dict(implementations=entries))
     decisions = []
+    declared_corpora = {}
     for preset in presets:
         prepared = evidence / (preset + '-prepared')
         command = [sys.executable, str(SCRIPTS / 'bench-bc.py'), '--suite', 'math',
                    '--config', str(evidence / 'preparation.json'), '--output', str(prepared),
                    '--preset', preset, '--calibrate-seconds', str(args.duration_seconds),
                    '--calibrate-only', '--timeout', str(args.child_timeout_seconds), '--require-provenance']
-        for name in selected_cases(bench, preset, args.broad):
-            command += ['--workload', name]
+        declared = horner_input(bench, args, preset, evidence)
+        if declared is not None:
+            # The unchanged harness calibrates this exact byte-checked input,
+            # then replays the resulting frozen counts for every timed role.
+            declared_corpora[preset] = declared
+            command += ['--replay-corpus', str(declared)]
+        else:
+            for name in selected_cases(bench, preset, args.broad):
+                command += ['--workload', name]
         commands.run(command)
         reports = {}
         for comparison, reference in (('aa', 'gd-portable'), ('paired', 'howard-standard')):
@@ -520,9 +544,12 @@ def run_math(args, root, evidence, commands, configs, gd_builder, bench, helper,
     allocation_diagnostics(bench, profiled, diagnostic_cases(bench, presets[0]), evidence / 'allocation-diagnostics',
                            timeout=args.child_timeout_seconds)
     if getattr(args, 'compare_resources', False):
+        resource_arguments = ({'additional_corpora': declared_corpora}
+                              if declared_corpora else {})
         load('compare-bc-resources').run_diagnostics(
             commands.run, profiles, ordinary,
-            presets, 'math', evidence, timeout=args.child_timeout_seconds)
+            presets, 'math', evidence, timeout=args.child_timeout_seconds,
+            **resource_arguments)
     # Resource wrappers run after all elapsed stages, never concurrently.
     for preset in presets:
         resource_diagnostics(bench, evidence / 'paired.json', diagnostic_cases(bench, preset),
@@ -558,11 +585,17 @@ def main():
     parser.add_argument('--require-candidate-prefix-results', action='store_true')
     parser.add_argument('--candidate-preparsed-library', action='store_true')
     parser.add_argument('--broad-preset', choices=('full', 'holdout'))
+    parser.add_argument('--horner-partition', choices=('low', 'middle', 'high'),
+                        help='prospective finite-Bessel study; retain disjoint scale groups')
     parser.add_argument('--samples', type=bench.positive_integer, default=15)
     parser.add_argument('--duration-seconds', type=bench.positive_timeout, default=.1)
     parser.add_argument('--child-timeout-seconds', type=bench.positive_timeout, default=120)
     parser.add_argument('--total-seconds', type=bench.positive_timeout, default=4800)
     args = parser.parse_args()
+    try:
+        validate_horner_arguments(args)
+    except ValueError as error:
+        parser.error(str(error))
     if args.samples < 3:
         parser.error('at least three paired samples are required')
     if args.broad_preset and not args.broad:
@@ -585,7 +618,8 @@ def main():
         result = 1
     finally:
         write(evidence / 'orchestration.json',dict(candidate=args.candidate,base=args.base,baseline_library_available=bool(configs.get('regression')),commands=commands.commands,
-              broad=args.broad,presets=list(presets),samples=args.samples,duration_target=args.duration_seconds,
+              broad=args.broad,presets=list(presets),horner_partition=args.horner_partition,
+              samples=args.samples,duration_target=args.duration_seconds,
               child_timeout_seconds=args.child_timeout_seconds,total_seconds=args.total_seconds,
               compare_resources=args.compare_resources,candidate_prepared_divisors=args.candidate_prepared_divisors,
               require_candidate_native=args.require_candidate_native,

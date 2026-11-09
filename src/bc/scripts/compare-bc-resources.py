@@ -392,16 +392,33 @@ def role_configuration(roles, library=False):
     return dict(implementations=entries)
 
 
-def run_diagnostics(run, profiles, ordinary, presets, suite, evidence, timeout=60):
+def additional_cases(bench, directory):
+    """Read new one-shot diagnostics from the actual declared elapsed input."""
+    corpus, _ = bench.replay_corpus(directory, 'math')
+    result = [case for case in corpus
+              if case['parameters'].get('horner_experiment') is True
+              and case['parameters']['mode'] == 'one_shot']
+    if not result:
+        raise ValueError('additional math corpus contains no declared one-shot inputs')
+    return result
+
+
+def run_diagnostics(run, profiles, ordinary, presets, suite, evidence, timeout=60,
+                    additional_corpora=None):
     """Invoke resource wrappers after all elapsed children have finished."""
     profile_path, ordinary_path = evidence / 'resource-profiles.json', evidence / 'resource-ordinary.json'
     write(profile_path, role_configuration(profiles, library=suite == 'math'))
     write(ordinary_path, role_configuration(ordinary, library=suite == 'math'))
     for preset in presets:
-        run([sys.executable, str(Path(__file__).resolve()), '--profiles', str(profile_path),
+        arguments = [sys.executable, str(Path(__file__).resolve()), '--profiles', str(profile_path),
              '--ordinary', str(ordinary_path), '--suite', suite, '--preset', preset,
              '--output', str(evidence / (preset + '-resource-comparison')),
-             '--repetitions', '5', '--seed', '661197', '--child-timeout-seconds', str(timeout)])
+             '--repetitions', '5', '--seed', '661197', '--child-timeout-seconds', str(timeout)]
+        if additional_corpora is not None:
+            if suite != 'math' or set(additional_corpora) != set(presets):
+                raise ValueError('additional math inputs must match the declared presets')
+            arguments += ['--additional-corpus', str(additional_corpora[preset])]
+        run(arguments)
 
 
 def preserve_profiles(profiles, directory):
@@ -556,6 +573,8 @@ def main():
     parser.add_argument('--repetitions', type=bench.positive_integer, default=5)
     parser.add_argument('--seed', type=int, default=661197)
     parser.add_argument('--child-timeout-seconds', type=bench.positive_timeout, default=60)
+    parser.add_argument('--additional-corpus', type=Path,
+                        help='append new one-shot math diagnostics from a checked partition')
     args = parser.parse_args()
     try:
         profiles = json.loads(args.profiles.read_text(encoding='utf-8'))['implementations']
@@ -564,8 +583,12 @@ def main():
             raise ValueError('resource configuration requires two roles')
         profiles = {entry['name']: entry for entry in profiles}
         ordinary = {entry['name']: entry for entry in ordinary}
-        collect(bench, load('profile-bc'), profiles, ordinary,
-                representatives(bench, args.preset, args.suite), args.output,
+        cases = representatives(bench, args.preset, args.suite)
+        if args.additional_corpus is not None:
+            if args.suite != 'math':
+                raise ValueError('additional partition inputs require the math suite')
+            cases += additional_cases(bench, args.additional_corpus)
+        collect(bench, load('profile-bc'), profiles, ordinary, cases, args.output,
                 args.repetitions, args.seed, args.child_timeout_seconds)
         return 0
     except (ValueError, OSError, KeyError, TypeError, bench.BenchmarkError) as error:

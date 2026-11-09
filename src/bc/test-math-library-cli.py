@@ -74,6 +74,27 @@ def small_bessel_enclosure(order, argument, scale):
 
 
 class LibraryCli(unittest.TestCase):
+    def test_horner_qualification_one_shot_oracles_and_state(self):
+        scripts = Path(__file__).resolve().parent / 'scripts'
+        modules = []
+        for name in ('bench-bc', 'bessel-horner-corpus'):
+            spec = importlib.util.spec_from_file_location(name, scripts / (name + '.py'))
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            modules.append(module)
+        bench, generator = modules
+        cases = [case for preset in ('full', 'holdout')
+                 for case in generator.cases(bench, preset)
+                 if case['parameters']['mode'] == 'one_shot']
+        self.assertEqual(len(cases), 94)
+        program = ''.join(case['program'] for case in cases)
+        for binary in [BC] if OTHER_BC is None else [BC, OTHER_BC]:
+            lines = self.checked_lines(program, binary=binary, timeout=180)
+            self.assertEqual(len(lines), 4 * len(cases))
+            for index, case in enumerate(cases):
+                with self.subTest(binary=binary, workload=case['name']):
+                    bench.check_output(case, lines[4 * index:4 * index + 4], case['name'])
+
     def invoke(self, program, options=('-l',), files=(), binary=None, timeout=30):
         try:
             return subprocess.run([binary or BC, *options, *map(str, files)], input=program,
