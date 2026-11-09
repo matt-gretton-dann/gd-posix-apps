@@ -112,6 +112,25 @@ class BenchmarkCli(unittest.TestCase):
             self.assertEqual(result.returncode, 2)
             self.assertIn('--input-corpus requires', result.stderr)
 
+    def test_declared_input_selection_cannot_hide_a_calibrated_member(self):
+        directory, declaration, config = self.declared_math_fixture()
+        first = declaration['corpus'][0]
+        other = json.loads(json.dumps(first))
+        other['name'] = 'math_unselected_scale2_repeated_x2'
+        other['parameters']['calibration'] = 'already calibrated'
+        declaration['corpus'].append(other)
+        for suffix in ('.bc', '.expected'):
+            (directory / 'workloads' / (other['name'] + suffix)).write_bytes(
+                (directory / 'workloads' / (first['name'] + suffix)).read_bytes())
+        (directory / 'manifest.json').write_text(json.dumps(declaration))
+        result = subprocess.run([sys.executable, BENCHMARK, '--suite', 'math',
+            '--input-corpus', str(directory), '--workload', first['name'],
+            '--config', str(config), '--output', str(self.root / 'hidden-calibration'),
+            '--calibrate-seconds', '.000001', '--calibrate-only'],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, timeout=8)
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn('invalid dimensions', result.stderr)
+
     def test_sparse_iteration_override_preserves_dimensions_and_oracle(self):
         spec = importlib.util.spec_from_file_location('bc_sparse_corpus', BENCHMARK)
         bench = importlib.util.module_from_spec(spec)
