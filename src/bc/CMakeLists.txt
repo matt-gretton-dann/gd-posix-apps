@@ -5,7 +5,8 @@
 add_library(libbc)
 # Shared by library consumers and the independent header-only calibration tool.
 add_library(bc-language-mode INTERFACE)
-option(ENABLE_BC_COMPACT_DIGITS "Enable experimental live-prefix variant coefficients" OFF)
+# Proposed default; adoption requires the frozen #705 qualification cohort.
+option(ENABLE_BC_COMPACT_DIGITS "Enable experimental live-prefix variant coefficients" ON)
 target_compile_definitions(bc-language-mode INTERFACE
   GD_BC_COMPACT_DIGITS=$<BOOL:${ENABLE_BC_COMPACT_DIGITS}>)
 target_include_directories(libbc PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")

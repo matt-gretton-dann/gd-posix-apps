@@ -1,0 +1,6 @@
+{
+  "src/bc/number.hh": "d41c229737e0c7b318da1af183d103855b324c9882df4e1d036dae7869dc103a",
+  "src/bc/digit-storage.hh": "3e94c8a5ee76309a0bbf42aa56bcc0df31441ddce7e84198d5474cedb051f812",
+  "src/bc/compact-digit-storage.hh": "a66ea1242e595aec841c02b24324cff1dbb83614a8dd2a47e188b02f38833a71",
+  "src/bc/selected-digit-storage.hh": "82a4e843be2610553a3c3fa3b9247931d99aae1a7e3cdd5e0921801e249e528e"
+}

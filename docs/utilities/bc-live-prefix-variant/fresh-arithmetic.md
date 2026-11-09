@@ -1,13 +1,13 @@
 # Prospective storage-transition arithmetic cases
 
-Declared in [issue705 before generation](https://github.com/matt-gretton-dann/gd-posix-apps/issues/705#issuecomment-6738238949).
-These append to every original66-case arithmetic corpus, giving69 cases per
-preset. `original-arithmetic-corpus.json` preserves all132 original full/held
+Declared in [issue #705 before generation](https://github.com/matt-gretton-dann/gd-posix-apps/issues/705#issuecomment-6738238949).
+These append to every original 66-case arithmetic corpus, giving 69 cases per
+preset. `original-arithmetic-corpus.json` preserves all 132 original full/held
 names, groups, parameters and program hashes. No original RNG draws change.
 
 The new generator uses its own `Random(corpus_seed XOR705197)` stream. Initial
-values begin with1 and have independently drawn remaining decimal digits.
-Full operand seed is197200; held-out is197201. The checksum modulus is1000000007.
+values begin with 1 and have independently drawn remaining decimal digits.
+Full operand seed is 197200; held-out is 197201. The checksum modulus is 1000000007.
 All operations are ordinary bc statements, with no production name recognition.
 
 | Class | Initial decimal digits full / held | Iterations full / held |
@@ -31,15 +31,15 @@ a heap snapshot across detachment, and returns a slot to inline storage.
 With q=N//97 and r=N%97, its checksum is
 `(N*(2*a+B)+2*(q*97*96/2+r*(r-1)/2)) mod M`.
 
-Quick fixtures keep these operand sizes and divide full iterations by100;
+Quick fixtures keep these operand sizes and divide full iterations by 100;
 they are functional validation, never qualification. Tests independently
 execute the integer checksum loops for all three presets and preserve every
 original full/held program identity. Separate functional checks run only the
-three quick programs on retained reference source20920, without collecting
-elapsed values; this does not claim that the new705 runtime was tested there.
+three quick programs on retained reference source `20920`, without collecting
+elapsed values; this does not claim that the new #705 runtime was tested there.
 
 All three full/held classes are included in matched resource observations.
-Their input generation uses exactly the elapsed corpus seeds, including197201
+Their input generation uses exactly the elapsed corpus seeds, including 197201
 for held-out. Resource-only lifetime/cache probes remain separate. Every
 neutral, adverse and inconclusive outcome must remain visible in the prospective
 immutable full native study; no performance result is implied by these cases.
