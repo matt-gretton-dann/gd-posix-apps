@@ -785,7 +785,8 @@ class GdBuild(unittest.TestCase):
         policy = self.module.verified_scalar_bindings(self.helper, self.build, self.root / 'source')
         self.assertFalse(policy['enabled'])
         self.assertEqual(policy['verification']['kind'], 'msbuild-projects')
-        for changed in [text.replace('RESULTS=0', 'RESULTS=1'), text.replace('<ClCompile Include="vm.cc"/>', '<ClCompile Include="vm.cc"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>'), text.replace('<ClCompile Include="vm.cc"/>', '<ClCompile Include="vm.cc"><PreprocessorDefinitions>GD_BC_SCALAR_BINDINGS=1</PreprocessorDefinitions></ClCompile>')]:
+        for changed in [text.replace('BINDINGS=0', 'BINDINGS=1'), text.replace('<ClCompile Include="vm.cc"/>', '<ClCompile Include="vm.cc"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>'), text.replace('<ClCompile Include="vm.cc"/>', '<ClCompile Include="vm.cc"><PreprocessorDefinitions>GD_BC_SCALAR_BINDINGS=1</PreprocessorDefinitions></ClCompile>')]:
+            self.assertNotEqual(changed, text)
             p.write_text(changed)
             with self.assertRaises(self.helper.BuildError):
                 self.module.verified_scalar_bindings(self.helper, self.build, self.root / 'source')

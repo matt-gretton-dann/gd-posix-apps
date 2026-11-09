@@ -42,5 +42,24 @@ Qualification preparation carries eight matched-resource collector/test files
 from signed source `5a805f0a`; it imports no square, storage or other unqualified
 runtime backend. Generic legacy policy queries remain metadata only. The
 held-out resource operand-seed regression is retained test-first, then corrected
-to match elapsed corpus seed 197201. Fresh frame programs and exact-input
-resource coverage still require their own source-bound policy and cohort.
+to match elapsed corpus seed 197201. The 24 arithmetic resources include all
+three fresh frame classes: twelve common program/parameter/oracle payloads
+match elapsed generation exactly, alongside twelve separate lifetime probes.
+
+Both elapsed controllers accept `--require-candidate-scalar-bindings`. Before
+sampling, it requires compiled ON for ordinary/profile candidate roles and
+genuine source absence for the pinned accepted baseline. Explicit OFF is
+verified separately and cannot masquerade as that older source. The builder
+retains the actual cache, VM compilation evidence and three source inputs
+(VM, CMake declaration and scalar-bindings header). Native Visual Studio
+Release projects are supported when compilation databases are unavailable;
+ambiguous definitions, undefines and unsupported response files are rejected.
+The resource consumer independently compares ordinary/profile mode and source
+identities. A real producer/repository-source integration test prevents a
+matching typo in two synthetic inventories from passing.
+
+This proves configured compilation and source identities, not per-workload
+entry or equivalent ordinary/profile dynamic paths. In particular, Apple's
+accepted argument forwarding intentionally differs under instrumentation.
+Counters and native RSS remain diagnostic observations; qualification still
+needs its own prospectively frozen source, protocol and original cohort.

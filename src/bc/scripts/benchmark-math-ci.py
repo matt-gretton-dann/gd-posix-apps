@@ -362,6 +362,8 @@ def run_math(args, root, evidence, commands, configs, gd_builder, bench, helper,
             gd_builder.require_word_function_baseline(helper, entry) if name == 'base' else gd_builder.require_word_function_candidate(helper, entry)
         if getattr(args, 'require_candidate_prefix_results', False):
             gd_builder.require_prefix_result_baseline(helper, entry) if name == 'base' else gd_builder.require_prefix_result_candidate(helper, entry)
+        if getattr(args, 'require_candidate_scalar_bindings', False):
+            gd_builder.require_scalar_binding_baseline(helper, entry) if name == 'base' else gd_builder.require_scalar_binding_candidate(helper, entry)
         entries.append(entry)
     destination = root / 'howard'
     commands.run([sys.executable, str(SCRIPTS / 'build-bc-comparators.py'), '--output',
@@ -374,7 +376,8 @@ def run_math(args, root, evidence, commands, configs, gd_builder, bench, helper,
     if (getattr(args, 'require_candidate_native', False) or
             getattr(args, 'require_candidate_native_functions', False) or
             getattr(args, 'require_candidate_word_functions', False) or
-            getattr(args, 'require_candidate_prefix_results', False)):
+            getattr(args, 'require_candidate_prefix_results', False) or
+            getattr(args, 'require_candidate_scalar_bindings', False)):
         for entry in entries:
             for script in ('test-cli.py', 'test-vm-cli.py'):
                 commands.run([sys.executable, str(SCRIPTS.parent / script),
@@ -401,6 +404,8 @@ def run_math(args, root, evidence, commands, configs, gd_builder, bench, helper,
         gd_builder.require_word_function_candidate(helper, profiled)
     if getattr(args, 'require_candidate_prefix_results', False):
         gd_builder.require_prefix_result_candidate(helper, profiled)
+    if getattr(args, 'require_candidate_scalar_bindings', False):
+        gd_builder.require_scalar_binding_candidate(helper, profiled)
     if getattr(args, 'compare_resources', False):
         if baseline is None:
             raise CommandFailure('matched math resources require the baseline library')
@@ -415,6 +420,8 @@ def run_math(args, root, evidence, commands, configs, gd_builder, bench, helper,
             gd_builder.require_word_function_baseline(helper, profiles['base'])
         if getattr(args, 'require_candidate_prefix_results', False):
             gd_builder.require_prefix_result_baseline(helper, profiles['base'])
+        if getattr(args, 'require_candidate_scalar_bindings', False):
+            gd_builder.require_scalar_binding_baseline(helper, profiles['base'])
         load('compare-bc-resources').validate_roles(
             bench, profiles, ordinary)
 
@@ -556,6 +563,7 @@ def main():
     parser.add_argument('--require-candidate-native-functions', action='store_true')
     parser.add_argument('--require-candidate-word-functions', action='store_true')
     parser.add_argument('--require-candidate-prefix-results', action='store_true')
+    parser.add_argument('--require-candidate-scalar-bindings', action='store_true')
     parser.add_argument('--candidate-preparsed-library', action='store_true')
     parser.add_argument('--broad-preset', choices=('full', 'holdout'))
     parser.add_argument('--samples', type=bench.positive_integer, default=15)
@@ -592,6 +600,7 @@ def main():
               require_candidate_native_functions=args.require_candidate_native_functions,
               require_candidate_word_functions=args.require_candidate_word_functions,
               require_candidate_prefix_results=args.require_candidate_prefix_results,
+              require_candidate_scalar_bindings=args.require_candidate_scalar_bindings,
               candidate_preparsed_library=args.candidate_preparsed_library))
         for path in root.glob('command-*.log'):
             shutil.copyfile(path, evidence / path.name)
@@ -612,6 +621,8 @@ def main():
                 shutil.copytree(str(source / 'word-function-policy'), str(target / 'word-function-policy'))
             if (source / 'prefix-result-policy').is_dir():
                 shutil.copytree(str(source / 'prefix-result-policy'), str(target / 'prefix-result-policy'))
+            if (source / 'scalar-binding-policy').is_dir():
+                shutil.copytree(str(source / 'scalar-binding-policy'), str(target / 'scalar-binding-policy'))
             if (source / 'logs').is_dir():
                 shutil.copytree(source / 'logs', target / 'logs')
         try:
