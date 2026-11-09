@@ -64,3 +64,12 @@ selection alias (C2027). The original source, failed artifact and diagnostics
 remain preserved. A selector class defers those layout queries until class
 instantiation, retaining the identical selection rule. Native confirmation is
 required; local Clang success alone did not detect the original failure.
+
+Original native setup also exposed Bash3's empty-array/nounset behavior on
+macOS and GCC13 sanitizer warnings inside Catch2's standard-library regex
+implementation. Test-first shell fixtures execute the actual workflow argument
+block against a mock cmake command. Ordinary builds retain their native
+compiler; the additional sanitizer configuration explicitly selects Clang,
+records that toolchain, and disables IPO for sanitizer instrumentation. The
+ordinary options array retains explicit AUTO IPO so strict Bash3 sees a
+nonempty array. No warning suppression or production compiler change is used.
