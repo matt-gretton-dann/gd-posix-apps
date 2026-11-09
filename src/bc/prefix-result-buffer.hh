@@ -52,6 +52,9 @@ public:
 
   [[nodiscard]] auto size() const noexcept -> std::size_t { return active_; }
   [[nodiscard]] auto empty() const noexcept -> bool { return active_ == 0; }
+  // Logical object counts for diagnostics, not allocator capacity or RSS.
+  [[nodiscard]] auto retained_size() const noexcept -> std::size_t { return storage_.size(); }
+  [[nodiscard]] auto accessed_size() const noexcept -> std::size_t { return accessed_; }
 
   void resize(std::size_t count)
   {
