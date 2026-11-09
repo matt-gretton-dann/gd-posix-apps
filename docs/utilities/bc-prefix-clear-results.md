@@ -64,6 +64,13 @@ construction with ON, and at most 90 cleanup visits. OFF must reconstruct and
 clear at least 15,360 slots. Existing mixed-kind, recursive snapshot, array,
 allocation-fault, signal and CLI tests remain required in each relevant mode.
 Sanitizers and native compiler checks supplement these finite contracts.
+The topic's native correctness workflow selects six modes on each of Linux,
+Windows and macOS: ordinary ON, explicit OFF, generic/profile, typed/profile,
+wide/profile and native-function coexistence. It retains actual compiler-mode
+inventories, changed source inputs, VM objects, correctness images and logs.
+This preflight dispatches no elapsed qualification cohort. Only this topic's
+redundant narrow PR timing jobs are skipped; main, manual, scheduled and
+unrelated selections retain their existing behavior.
 
 ## Qualification limits
 
