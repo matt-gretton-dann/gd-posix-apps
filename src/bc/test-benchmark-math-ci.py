@@ -361,7 +361,7 @@ class NativeMath(unittest.TestCase):
 class MathEvidenceOrchestration(unittest.TestCase):
     """Simulate a complete two-preset controller; never execute fixture images."""
 
-    def exercise(self, fail_elapsed=False, corrupt_asset=False, interrupt_elapsed=False, native=False, disabled_native=False, native_functions=False, word_functions=False, word_baseline_unknown=False, prefix_results=False):
+    def exercise(self, fail_elapsed=False, corrupt_asset=False, interrupt_elapsed=False, native=False, disabled_native=False, native_functions=False, word_functions=False, word_baseline_unknown=False, prefix_results=False, scalar_bindings=False):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         source = Path(temporary.name)
@@ -428,6 +428,17 @@ class MathEvidenceOrchestration(unittest.TestCase):
                     if present:
                         (target / 'prefix-result-policy').mkdir()
                         (target / 'prefix-result-policy/core.cc').write_text('retained prefix source fixture')
+                    present = scalar_bindings and name not in ('base','base-profile','gd-base-profile','howard')
+                    selected = present and not disabled_native
+                    names = ['vm.cc', 'CMakeLists.txt'] + (['scalar-bindings.hh'] if present else [])
+                    policy = dict(status='recorded', mode='AUTO', enabled=selected,
+                        configured=selected if present else None, implementation_present=present,
+                        source_inputs=[dict(path='src/bc/' + n, sha256='e' * 64) for n in names])
+                    if word_baseline_unknown and name=='base': policy=dict(status='legacy-auto', mode='AUTO', enabled=None)
+                    entry['metadata']['configuration']['scalar_binding_policy'] = policy
+                    if present:
+                        (target / 'scalar-binding-policy').mkdir()
+                        (target / 'scalar-binding-policy/core.cc').write_text('retained prefix source fixture')
                     (target / 'implementations.json').write_text(json.dumps(dict(implementations=[entry])))
                     if script == 'build-gd-bc.py':
                         library = target / 'source/src/bc/math-library.bc'
@@ -487,6 +498,8 @@ class MathEvidenceOrchestration(unittest.TestCase):
         if word_functions:argv += ['--require-candidate-word-functions']
         if prefix_results:
             argv += ['--require-candidate-prefix-results']
+        if scalar_bindings:
+            argv += ['--require-candidate-scalar-bindings']
         with mock.patch.object(CI, 'Commands', Commands), mock.patch.object(CI, 'load', modules), \
                 mock.patch.object(arithmetic, 'host_info', return_value=dict(test_host='fixture')), \
                 mock.patch.object(CI, 'selected_cases', side_effect=lambda bench, preset, broad: [preset + '_fixture']), \
@@ -527,6 +540,20 @@ class MathEvidenceOrchestration(unittest.TestCase):
         self.assertGreaterEqual(sum(e[0]=='correctness' for e in events[:first]), 6)
         self.assertTrue((root/'evidence/gd/prefix-result-policy/core.cc').is_file())
         self.assertTrue(json.loads((root/'evidence/orchestration.json').read_text())['require_candidate_prefix_results'])
+
+    def test_scalar_binding_selection_and_known_baseline_are_required_before_elapsed(self):
+        for disabled, unknown in [(True, False), (False, True)]:
+            status, root, events = self.exercise(scalar_bindings=True, disabled_native=disabled, word_baseline_unknown=unknown)
+            self.assertEqual(status, 1)
+            self.assertFalse(any(e[0]=='elapsed' for e in events))
+
+    def test_scalar_binding_preflight_and_source_policy_are_preserved(self):
+        status, root, events = self.exercise(scalar_bindings=True)
+        self.assertEqual(status, 0)
+        first = next(i for i,e in enumerate(events) if e[0]=='elapsed')
+        self.assertGreaterEqual(sum(e[0]=='correctness' for e in events[:first]), 6)
+        self.assertTrue((root/'evidence/gd/scalar-binding-policy/core.cc').is_file())
+        self.assertTrue(json.loads((root/'evidence/orchestration.json').read_text())['require_candidate_scalar_bindings'])
 
     def test_disabled_native_functions_never_reach_elapsed_sampling(self):
         status, root, events = self.exercise(native_functions=True, disabled_native=True)

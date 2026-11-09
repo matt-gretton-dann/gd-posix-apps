@@ -26,6 +26,25 @@ def load(name):
 
 
 class ResourceComparison(unittest.TestCase):
+    def test_scalar_resource_consumer_accepts_real_source_policy_producer(self):
+        builder = load('build-gd-bc')
+        build = self.root / 'actual-binding-policy'
+        build.mkdir()
+        (build / 'CMakeCache.txt').write_text('ENABLE_BC_SCALAR_BINDINGS:BOOL=ON\n')
+        source = SCRIPTS.parents[2]
+        row = dict(file=str(source / 'src/bc/vm.cc'),
+                   command='c++ -DGD_BC_SCALAR_BINDINGS=1 -c vm.cc')
+        (build / 'compile_commands.json').write_text(json.dumps([row]))
+        policy = builder.verified_scalar_bindings(builder.helpers(), build, source)
+        for roles in (self.profiles, self.ordinary):
+            roles['candidate']['metadata']['configuration']['scalar_binding_policy'] = copy.deepcopy(policy)
+        self.module.validate_roles(self.bench, self.profiles, self.ordinary)
+        # A real producer inventory, not a second hand-written filename list,
+        # must be accepted. Different instrumented source bytes must fail.
+        self.profiles['candidate']['metadata']['configuration']['scalar_binding_policy']['source_inputs'][0]['sha256'] = 'f' * 64
+        with self.assertRaisesRegex(ValueError, 'scalar_binding_policy'):
+            self.module.validate_roles(self.bench, self.profiles, self.ordinary)
+
     def test_all_common_frame_resources_match_actual_elapsed_programs(self):
         for preset, seed in [('full', 197200), ('holdout', 197201)]:
             elapsed = {c['name']: c for c in self.bench.corpus(preset, seed=seed)}
@@ -158,6 +177,36 @@ class ResourceComparison(unittest.TestCase):
                 policy[field] = value
                 with self.subTest(present=present, enabled=enabled, field=field), self.assertRaises(ValueError):
                     self.module.mode_identity(dict(prefix_result_policy=policy), 'prefix_result_policy')
+
+    def scalar_binding_policy(self, enabled=True, present=True):
+        names = ['vm.cc', 'CMakeLists.txt'] + (['scalar-bindings.hh'] if present else [])
+        return dict(status='recorded', mode='AUTO', configured=enabled if present else None,
+                    enabled=enabled, implementation_present=present,
+                    source_inputs=[dict(path='src/bc/' + name, sha256='a' * 64) for name in names])
+
+    def test_scalar_binding_profile_selection_and_source_must_match_ordinary(self):
+        for roles in (self.profiles, self.ordinary):
+            for role, tool in roles.items():
+                tool['metadata']['configuration']['scalar_binding_policy'] = self.scalar_binding_policy(role == 'candidate', role == 'candidate')
+        self.module.validate_roles(self.bench, self.profiles, self.ordinary)
+        policy = self.profiles['candidate']['metadata']['configuration']['scalar_binding_policy']
+        policy['source_inputs'][0]['sha256'] = 'b' * 64
+        with self.assertRaisesRegex(ValueError, 'scalar_binding_policy'):
+            self.module.validate_roles(self.bench, self.profiles, self.ordinary)
+        self.profiles['candidate']['metadata']['configuration']['scalar_binding_policy'] = self.scalar_binding_policy(False)
+        with self.assertRaisesRegex(ValueError, 'scalar_binding_policy'):
+            self.module.validate_roles(self.bench, self.profiles, self.ordinary)
+
+    def test_scalar_binding_policy_rejects_missing_or_contradictory_source(self):
+        for present, enabled in [(False, False), (True, False), (True, True)]:
+            good = self.scalar_binding_policy(enabled, present)
+            self.module.mode_identity(dict(scalar_binding_policy=good), 'scalar_binding_policy')
+            for field, value in [('implementation_present', 1), ('source_inputs', []),
+                                 ('configured', not enabled if present else False)]:
+                policy = copy.deepcopy(good)
+                policy[field] = value
+                with self.subTest(present=present, enabled=enabled, field=field), self.assertRaises(ValueError):
+                    self.module.mode_identity(dict(scalar_binding_policy=policy), 'scalar_binding_policy')
 
     def function_policy(self, enabled=True):
         return dict(status='recorded', mode='AUTO', configured=enabled, enabled=enabled,
