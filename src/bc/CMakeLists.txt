@@ -470,6 +470,9 @@ if(RUN_INTEGRATION_TESTS)
   set_tests_properties(bc/ipo-policy PROPERTIES TIMEOUT 180)
   add_test(NAME bc/benchmark-ci COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-benchmark-ci.py")
+  add_test(NAME bc/resource-comparison COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-resource-comparison.py")
+  set_tests_properties(bc/resource-comparison PROPERTIES TIMEOUT 90)
   add_test(NAME bc/benchmark-acceptance COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-benchmark-acceptance.py")
   set_tests_properties(bc/benchmark-acceptance PROPERTIES TIMEOUT 15)

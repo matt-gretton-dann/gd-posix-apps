@@ -47,3 +47,13 @@ do not pool hosts, retry for favorable results or waive startup requirements.
 The ten-day TOTAL recorded goal-time cap includes all prior implementation,
 queueing and review. At the cap, preserve incomplete results and leave unmet
 requirements open.
+
+The qualification continuation reuses the matched resource collectors and their
+tests from immutable source `4205accd05ff938e9860b349f27117c8323297ab` (including
+the #700 resource collection changes in `f4c496df`). Only collector/test files
+are carried over: no prefix-buffer, typed-reset, word-runtime or math-library
+implementation is imported. Every new study must retain its own source, images,
+compile selection, software counters, native RSS and startup data. Historical
+performance results remain bound to their original sources and are not pooled
+or transferred. Ordinary/profile compile eligibility is recorded separately;
+matching selected counters cannot establish identical dynamic execution paths.
