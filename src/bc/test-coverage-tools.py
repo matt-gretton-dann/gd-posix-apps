@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Prevent new implementation objects or build modes disappearing from coverage."""
 import importlib.util
+import json
 from pathlib import Path
+import sys
 import tempfile
 import unittest
 
@@ -64,6 +66,97 @@ class Coverage(unittest.TestCase):
         for mode in ('ON', 'OFF'):
             self.assertEqual(COLLECTOR.build_modes({'ENABLE_BC_TYPED_RESULTS': mode})[
                 'typed_results'], mode)
+
+    def compilation(self, names):
+        build = self.source / 'build'
+        build.mkdir(exist_ok=True)
+        rows = []
+        for name in names:
+            target = 'bc' if name == 'bc.cc' else 'libbc'
+            output = build / ('src/bc/CMakeFiles/' + target + '.dir/' + name + '.o')
+            rows.append(dict(directory=str(build), file=str(self.directory / name),
+                             output=str(output), command='clang++ -c ' + name + ' -o ' + str(output)))
+        (build / 'compile_commands.json').write_text(json.dumps(rows))
+        return build, rows
+
+    def test_active_inventory_excludes_foreign_disabled_and_build_only_units(self):
+        active = self.files('bc.cc', 'vm.cc', 'verification.cc', 'bc.hh', 'number.hh')
+        self.files('native-expression-arm64.cc', 'native-expression-x64.cc',
+                   'stack-execution.cc', 'verification-linear.cc', 'preparse-math-library.cc')
+        build, _ = self.compilation(['bc.cc', 'vm.cc', 'verification.cc'])
+        self.assertEqual(COLLECTOR.production_mappings(self.source, build), active)
+        COLLECTOR.require_production_mappings(self.source, active, build)
+
+    def test_active_optional_and_new_implementations_cannot_disappear(self):
+        active = self.files('bc.cc', 'vm.cc', 'verification.cc', 'bc.hh', 'number.hh',
+                            'native-expression-arm64.cc', 'future-kernel.cc')
+        build, _ = self.compilation(['bc.cc', 'vm.cc', 'verification.cc',
+                                     'native-expression-arm64.cc', 'future-kernel.cc'])
+        for name in ('native-expression-arm64.cc', 'future-kernel.cc', 'vm.cc'):
+            with self.subTest(name=name), self.assertRaisesRegex(RuntimeError, name):
+                COLLECTOR.require_production_mappings(self.source, active - {self.directory / name}, build)
+        COLLECTOR.require_production_mappings(self.source, active, build)
+
+    def test_test_target_inventory_cannot_replace_a_production_core(self):
+        self.files('bc.cc', 'vm.cc', 'verification.cc')
+        build, rows = self.compilation(['bc.cc', 'vm.cc', 'verification.cc'])
+        rows[1]['output'] = rows[1]['output'].replace('libbc.dir', 'test-libbc.dir')
+        rows[1]['command'] = rows[1]['command'].replace('libbc.dir', 'test-libbc.dir')
+        (build / 'compile_commands.json').write_text(json.dumps(rows))
+        with self.assertRaisesRegex(RuntimeError, 'vm.cc'):
+            COLLECTOR.production_mappings(self.source, build)
+
+    def test_compile_command_fallback_supports_older_cmake_inventory(self):
+        expected = self.files('bc.cc', 'vm.cc', 'verification.cc', 'bc.hh', 'number.hh')
+        build, rows = self.compilation(['bc.cc', 'vm.cc', 'verification.cc'])
+        for row in rows:
+            del row['output']
+        (build / 'compile_commands.json').write_text(json.dumps(rows))
+        self.assertEqual(COLLECTOR.production_mappings(self.source, build), expected)
+
+    def test_missing_inventory_fails_instead_of_shrinking_mapping_scope(self):
+        self.files('bc.cc', 'vm.cc')
+        build = self.source / 'build'
+        build.mkdir()
+        with self.assertRaisesRegex(RuntimeError, 'compile_commands.json'):
+            COLLECTOR.production_mappings(self.source, build)
+
+    def test_command_include_path_cannot_spoof_a_production_target(self):
+        self.files('bc.cc', 'vm.cc', 'verification.cc')
+        build, rows = self.compilation(['bc.cc', 'vm.cc', 'verification.cc'])
+        del rows[1]['output']
+        rows[1]['command'] = 'clang++ -I src/CMakeFiles/libbc.dir -c vm.cc -o src/CMakeFiles/test-libbc.dir/vm.cc.o'
+        (build / 'compile_commands.json').write_text(json.dumps(rows))
+        with self.assertRaisesRegex(RuntimeError, 'vm.cc'):
+            COLLECTOR.production_mappings(self.source, build)
+
+    def test_argument_inventory_and_windows_output_paths_preserve_scope(self):
+        expected = self.files('bc.cc', 'vm.cc', 'verification.cc', 'bc.hh', 'number.hh')
+        build, rows = self.compilation(['bc.cc', 'vm.cc', 'verification.cc'])
+        for row in rows:
+            output = row.pop('output')
+            del row['command']
+            row['arguments'] = ['clang++', '-c', row['file'], '-o', output]
+        (build / 'compile_commands.json').write_text(json.dumps(rows))
+        self.assertEqual(COLLECTOR.production_mappings(self.source, build), expected)
+        for row in rows:
+            row['output'] = row['arguments'][-1].replace('/', '\\')
+        (build / 'compile_commands.json').write_text(json.dumps(rows))
+        self.assertEqual(COLLECTOR.production_mappings(self.source, build), expected)
+
+    def test_nonrunnable_selected_test_fails_before_profile_collection(self):
+        for command in (None, [], [str(self.source / 'test-divisor-cache-lifetime')]):
+            test = dict(name='bc/divisor-cache-lifetime')
+            if command is not None:
+                test['command'] = command
+            with self.subTest(command=command), self.assertRaisesRegex(RuntimeError, 'bc/divisor-cache-lifetime'):
+                COLLECTOR.coverage_tests([test])
+
+    def test_coverage_selection_keeps_bc_and_unit_tests_and_explicit_skips(self):
+        selected = [dict(name='bc/cli', command=[sys.executable, 'test-cli.py']),
+                    dict(name='Number adds', command=[sys.executable, 'test-libbc']),
+                    dict(name='bc/imported-skip', command=[sys.executable, 'skip.py'])]
+        self.assertEqual(COLLECTOR.coverage_tests(selected + [dict(name='ar/unbuilt')]), selected)
 
 
 if __name__ == '__main__':

@@ -207,9 +207,11 @@ smaller coverage denominator.
 ```sh
 cmake -S . -B build/bc-coverage-on -G Ninja -DCMAKE_BUILD_TYPE=Debug \
   -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+  -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
   -DENABLE_NON_POSIX_EXTENSIONS=ON -DENABLE_BC_COVERAGE=ON
 cmake --build build/bc-coverage-on --target bc test-libbc test-util \
-  test-bc-offsets test-bc-signal
+  test-bc-offsets test-bc-signal test-bc-consumer-mode test-bc-vm-lifetime \
+  test-divisor-cache-lifetime
 python3 src/bc/scripts/collect-coverage.py build/bc-coverage-on build/bc-report-on
 ```
 
@@ -219,6 +221,21 @@ output directory, runs the discovered bc tests, and merges only profiles written
 by that test run. Build-time tuner, benchmark and manual-smoke profiles cannot
 enter the report. Unsupported imported entries retain their explicit skip
 results. It returns failure if tests fail or MC/DC instrumentation is absent.
+
+The collector checks that every selected test is runnable before executing any
+of them. Build newly added helper executables as well; CTest omits the command
+from its JSON inventory when a target has not been built. This is an incomplete
+build, not an unsupported test or a smaller coverage scope.
+
+Required production mappings come from the actual `bc` and `libbc` targets in
+`compile_commands.json`, plus mandatory core/header checks. Disabled optional
+backends, foreign architectures and standalone build-time generators cannot be
+required simultaneously. Newly compiled implementation objects remain mandatory;
+a unit-test compilation cannot substitute for a missing production core. The
+collector retains the database and `mapping-scope.json` with its hash, required,
+mapped, missing and not-required inventories. The not-required list describes
+this guard only: the full LLVM exports and their raw denominators are unchanged.
+Missing or malformed compilation evidence fails rather than guessing a scope.
 
 On macOS, select matching tools with `--llvm-cov "$(xcrun --find llvm-cov)"`
 and `--llvm-profdata "$(xcrun --find llvm-profdata)"`. Other hosts can pass explicit

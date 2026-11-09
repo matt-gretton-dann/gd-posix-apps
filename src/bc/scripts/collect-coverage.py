@@ -7,11 +7,13 @@ never read. Extensions, divisor reuse and compact execution modes require separa
 """
 
 import argparse
+import hashlib
 import json
 import os
 import platform
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import sys
 
@@ -29,8 +31,14 @@ def save_run(path, command, cwd=None, env=None):
     return result
 
 
-def production_mappings(source):
-    """Require new implementation objects as well as the original header scope."""
+def production_mappings(source, build=None):
+    """Require configured production objects, preserving mandatory core mappings.
+
+    The source-only inventory remains useful for legacy callers and for listing
+    files not required by this configuration. It cannot identify active targets.
+    A real collection must supply its build's compilation database instead of
+    assuming every optional backend and build-time generator can be linked.
+    """
     directory = Path(source).resolve() / "src" / "bc"
     helpers = ("test-", "benchmark-", "find-multiply-split-point")
     diagnostic_only = {"profiling.cc", "profiling-entry.cc"}
@@ -38,14 +46,83 @@ def production_mappings(source):
                        if not path.name.startswith(helpers) and path.name not in diagnostic_only}
     headers = {directory / name for name in ("bc.hh", "number.hh")
                if (directory / name).exists()}
-    return implementations | headers
+    if build is None:
+        return implementations | headers
+    database = Path(build) / 'compile_commands.json'
+    try:
+        rows = json.loads(database.read_text(encoding='utf-8'))
+    except (OSError, ValueError) as error:
+        raise RuntimeError('coverage needs compile_commands.json; configure a supported '
+                           'generator with CMAKE_EXPORT_COMPILE_COMMANDS=ON: ' + str(error))
+    if not isinstance(rows, list) or not rows:
+        raise RuntimeError('invalid or empty coverage compilation inventory')
+    compiled = set()
+    target = re.compile(r'(?:^|/)CMakeFiles/(?:bc|libbc)\.dir/')
+    for row in rows:
+        if not isinstance(row, dict) or not isinstance(row.get('file'), str):
+            raise RuntimeError('invalid source in coverage compilation inventory')
+        output = row.get('output')
+        if output is None:
+            # CMake 3.15 databases need not provide an output field. Target
+            # directories in the generated compiler command identify the same
+            # production units; unit-test and generator targets cannot replace
+            # them. This is inventory inspection, never command execution.
+            command = row.get('command')
+            if command is None:
+                args = row.get('arguments')
+                if isinstance(args, list) and all(isinstance(a, str) for a in args):
+                    outputs = [args[i + 1] for i, arg in enumerate(args[:-1]) if arg == '-o']
+                    outputs += [arg[3:] for arg in args if arg.startswith('/Fo')]
+                    output = outputs[0] if len(outputs) == 1 else None
+            elif isinstance(command, str):
+                # Inspect only the output argument. An include/definition path
+                # mentioning libbc.dir must not turn a test unit into production.
+                outputs = re.findall(r'''(?:^|\s)(?:-o\s+|/Fo)("[^"]*"|'[^']*'|[^\s]+)''', command)
+                output = outputs[0].strip('"\'') if len(outputs) == 1 else None
+        if not isinstance(output, str):
+            raise RuntimeError('missing target in coverage compilation inventory')
+        if not target.search(output.replace('\\', '/')):
+            continue
+        path = Path(row['file'])
+        if not path.is_absolute():
+            if not isinstance(row.get('directory'), str):
+                raise RuntimeError('relative coverage source lacks its build directory')
+            path = Path(row['directory']) / path
+        path = path.resolve()
+        if path.suffix in ('.c', '.cc', '.cpp', '.cxx') and path.name not in diagnostic_only:
+            compiled.add(path)
+    # These core objects must not vanish merely because the database is empty,
+    # truncated, or contains a test-only compilation of the same source.
+    core = {directory / name for name in ('bc.cc', 'vm.cc', 'verification.cc', 'lexer.cc', 'parser.cc')
+            if (directory / name).exists()}
+    missing = core - compiled
+    if missing:
+        raise RuntimeError('missing production compilation inventory: ' +
+                           ', '.join(sorted(path.name for path in missing)))
+    return compiled | headers
 
 
-def require_production_mappings(source, mapped):
-    missing = production_mappings(source) - mapped
+def require_production_mappings(source, mapped, build=None):
+    missing = production_mappings(source, build) - mapped
     if missing:
         raise RuntimeError("missing production mappings; use the default static-library build: " +
                            ", ".join(sorted(path.name for path in missing)))
+
+
+def coverage_tests(tests):
+    """Reject incomplete selected builds before executing or merging profiles."""
+    selected = [test for test in tests if test['name'].startswith('bc/') or
+                any('test-libbc' in part for part in (test.get('command') or []))]
+    if not selected:
+        raise RuntimeError('no bc tests discovered')
+    for test in selected:
+        command = test.get('command')
+        if (not isinstance(command, list) or not command or
+                not all(isinstance(part, str) for part in command) or
+                shutil.which(command[0]) is None):
+            raise RuntimeError('selected coverage test is not runnable; build its executable first: ' +
+                               test['name'])
+    return selected
 
 
 def build_modes(cache):
@@ -79,11 +156,19 @@ def main():
     inventory = save_run(output / "inventory.json",
                          [args.ctest, "-C", args.config, "--show-only=json-v1"], cwd=build)
     tests = json.loads(inventory.stdout)["tests"]
-    selected = [test for test in tests if test["name"].startswith("bc/") or
-                any("test-libbc" in part for part in test.get("command", []))]
-    if not selected:
-        raise RuntimeError("no bc tests discovered")
+    selected = coverage_tests(tests)
     (output / "selected-tests.json").write_text(json.dumps(selected, indent=2) + "\n")
+    expected = production_mappings(source, build)
+    database = build / 'compile_commands.json'
+    database_hash = hashlib.sha256(database.read_bytes()).hexdigest()
+    shutil.copyfile(str(database), str(output / 'compile_commands.json'))
+    scope = dict(schema=1, targets=['bc', 'libbc'],
+                 compile_commands_sha256=database_hash,
+                 collector_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+                 required=sorted(str(path) for path in expected),
+                 not_required=sorted(str(path) for path in production_mappings(source) - expected),
+                 scope='Required-mapping guard only; full LLVM exports and raw denominators are unchanged')
+    (output / 'mapping-scope.json').write_text(json.dumps(scope, indent=2) + '\n')
 
     # Resolve the actual tested binaries, including multi-configuration layouts.
     unit_commands = [test["command"] for test in selected
@@ -121,7 +206,12 @@ def main():
     coverage = json.loads(exported.stdout)["data"][0]
     # Losing a linked implementation object must not silently shrink the scope.
     mapped = {Path(entry["filename"]).resolve() for entry in coverage["files"]}
-    require_production_mappings(source, mapped)
+    scope.update(mapped=sorted(str(path) for path in mapped),
+                 missing=sorted(str(path) for path in expected - mapped))
+    (output / 'mapping-scope.json').write_text(json.dumps(scope, indent=2) + '\n')
+    if hashlib.sha256(database.read_bytes()).hexdigest() != database_hash:
+        raise RuntimeError('coverage compilation inventory changed during collection')
+    require_production_mappings(source, mapped, build)
     if not coverage["totals"].get("mcdc", {}).get("count", 0):
         raise RuntimeError("no MC/DC obligations found; use a supported Clang with -fcoverage-mcdc")
     # A second view uses only the application's mappings, excluding extra small
