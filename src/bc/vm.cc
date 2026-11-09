@@ -16,6 +16,7 @@
 #include <deque>
 #include <functional>
 #include <ostream>
+#include <span>
 #include <type_traits>
 #include <utility>
 
@@ -23,6 +24,10 @@
 #include "execution-plan.hh"
 #include "number.hh"
 #include "verification.hh"
+
+#if GD_BC_SCALAR_BINDINGS
+#  include "scalar-bindings.hh"
+#endif
 
 #if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
 #  include "stack-execution.hh"
@@ -563,7 +568,13 @@ private:
   };
   std::array<DeferredDefinition, Letter::count_> deferred_functions_{};
 #endif
+#if GD_BC_SCALAR_BINDINGS
+  ScalarBindings<Number, Letter::count_,
+                 Profile::Allocator<Number, Profile::AllocationKind::frames>>
+    variables_;  ///< Dynamically bound globals/locals, with stable storage per active depth.
+#else
   std::array<Number, Letter::count_> variables_;  ///< Array of scalar variables, indexed by Letter.
+#endif
   Params parameters_;                             ///< Contiguous values for active argument packs.
   ParamMarks param_marks_;                        ///< Pack offsets; indices survive vector growth.
   Params saved_locals_;                           ///< Contiguous saved locals for active calls.
@@ -1286,6 +1297,16 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
   }
 #endif
 
+#if GD_BC_SCALAR_BINDINGS
+  // Only selected letters acquire new values. Unselected letters retain their
+  // dynamic caller bindings. Lease destruction restores bindings on every exit,
+  // including failed array setup and nested execution exceptions.
+  std::array<unsigned, Letter::count_> scalar_keys;
+  std::size_t scalar_count = 0;
+  locals.for_each_variable([&](Letter l) { scalar_keys[scalar_count++] = static_cast<unsigned>(l); });
+  auto scalar_frame = variables_.enter(std::span<unsigned const>(scalar_keys.data(), scalar_count));
+#endif
+
   // Retain offsets rather than references across execute(): recursive calls
   // may grow the same buffer. Capacity remains available after restoration.
   auto const saved_begin = saved_locals_.size();
@@ -1296,12 +1317,15 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
     auto saved = saved_begin;
     auto const end = saved_locals_.size();
     // Allocation can fail during frame setup. In that case restore only the
-    // prefix that was saved, in the same scalar-then-array order.
+    // prefix that was saved, in the same scalar-then-array order. Rebound
+    // scalars use their own lease, so that mode saves only arrays here.
+#if !GD_BC_SCALAR_BINDINGS
     locals.for_each_variable([&](Letter l) {
       if (!partial || saved < end)
         variables_.at(static_cast<unsigned>(l)) =
           std::move(std::get<Number>(saved_locals_[saved++]));
     });
+#endif
     locals.for_each_array([&](Letter l) {
       if (!partial || saved < end)
         arrays_.at(static_cast<unsigned>(l)) =
@@ -1316,10 +1340,12 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
   };
 
   try {
+#if !GD_BC_SCALAR_BINDINGS
     locals.for_each_variable([this](Letter l) {
       saved_locals_.emplace_back(std::move(variables_.at(static_cast<unsigned>(l))));
       variables_.at(static_cast<unsigned>(l)) = Number(0);
     });
+#endif
     locals.for_each_array([this](Letter l) {
       saved_locals_.emplace_back(std::move(arrays_.at(static_cast<unsigned>(l))));
       arrays_.at(static_cast<unsigned>(l)).reset();

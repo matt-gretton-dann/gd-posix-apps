@@ -2,15 +2,16 @@
  * Dynamic scalar binding, ownership and setup-failure contracts for #707.
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "scalar-bindings.hh"
+#include <new>
 
 #include <array>
 #include <cstddef>
 #include <iostream>
 #include <memory>
-#include <new>
 #include <span>
 #include <stdexcept>
+
+#include "scalar-bindings.hh"
 
 namespace {
 struct AllocationControl
@@ -21,13 +22,22 @@ template<typename T>
 struct Allocator : std::allocator<T>
 {
   using value_type = T;
-  template<typename U> struct rebind { using other = Allocator<U>; };
+  template<typename U>
+  struct rebind
+  {
+    using other = Allocator<U>;
+  };
   Allocator() = default;
-  template<typename U> Allocator(Allocator<U> const&) {}
+  template<typename U>
+  Allocator(Allocator<U> const&)
+  {
+  }
   auto allocate(std::size_t n) -> T*
   {
-    if (AllocationControl::remaining == 0) throw std::bad_alloc();
-    if (AllocationControl::remaining > 0) --AllocationControl::remaining;
+    if (AllocationControl::remaining == 0)
+      throw std::bad_alloc();
+    if (AllocationControl::remaining > 0)
+      --AllocationControl::remaining;
     return std::allocator<T>{}.allocate(n);
   }
 };
@@ -39,8 +49,10 @@ struct Value
   std::shared_ptr<int> owner;
   Value()
   {
-    if (constructions == 0) throw std::bad_alloc();
-    if (constructions > 0) --constructions;
+    if (constructions == 0)
+      throw std::bad_alloc();
+    if (constructions > 0)
+      --constructions;
   }
   Value(Value const& other) : value(other.value), owner(other.owner) { ++transfers; }
   Value(Value&& other) noexcept : value(other.value), owner(std::move(other.owner)) { ++transfers; }
@@ -50,7 +62,8 @@ struct Value
 using Bindings = GD::Bc::Details::ScalarBindings<Value, 4, Allocator<Value>>;
 void require(bool value)
 {
-  if (!value) throw std::runtime_error("scalar binding contract failed");
+  if (!value)
+    throw std::runtime_error("scalar binding contract failed");
 }
 void deep(Bindings& values, unsigned depth)
 {
@@ -58,7 +71,8 @@ void deep(Bindings& values, unsigned depth)
   auto frame = values.enter(keys);
   auto* address = &values.at(1);
   values.at(1).value = static_cast<int>(depth);
-  if (depth != 0) deep(values, depth - 1);
+  if (depth != 0)
+    deep(values, depth - 1);
   require(&values.at(1) == address && values.at(1).value == static_cast<int>(depth));
 }
 }  // namespace
@@ -88,7 +102,7 @@ auto main() -> int
         require(&values.at(0) == outer_value && values.at(2).value == 0);
         values.at(0).value = 44;  // A callee can modify an inherited local.
         values.at(1).value = 55;  // Or an inherited global.
-        deep(values, 128);       // Deque/vector growth cannot relocate active values.
+        deep(values, 128);        // Deque/vector growth cannot relocate active values.
         require(values.at(1).value == 55);
       }
       require(&values.at(0) == outer_value && values.at(0).value == 44);
@@ -105,13 +119,24 @@ auto main() -> int
     require(Value::transfers == 0);  // Binding alone must not move/copy values.
     for (auto const keys : {std::array<unsigned, 2>{0, 4}, std::array<unsigned, 2>{0, 0}}) {
       bool rejected = false;
-      try { auto invalid = values.enter(keys); }
-      catch (std::out_of_range const&) { rejected = true; }
-      catch (std::invalid_argument const&) { rejected = true; }
+      try {
+        auto invalid = values.enter(keys);
+      }
+      catch (std::out_of_range const&) {
+        rejected = true;
+      }
+      catch (std::invalid_argument const&) {
+        rejected = true;
+      }
       require(rejected && &values.at(0) == global && values.at(0).value == 11);
     }
     bool bounds = false;
-    try { (void)values.at(4); } catch (std::out_of_range const&) { bounds = true; }
+    try {
+      (void)values.at(4);
+    }
+    catch (std::out_of_range const&) {
+      bounds = true;
+    }
     require(bounds);
     unsigned denied = 0;
     for (int budget = 0; budget != 20; ++budget) {
@@ -119,29 +144,64 @@ auto main() -> int
       fresh.at(0).value = 71;
       auto* before = &fresh.at(0);
       AllocationControl::remaining = budget;
-      try { auto frame = fresh.enter(first); }
-      catch (std::bad_alloc const&) { ++denied; }
+      try {
+        auto frame = fresh.enter(first);
+      }
+      catch (std::bad_alloc const&) {
+        ++denied;
+      }
       AllocationControl::remaining = -1;
       require(&fresh.at(0) == before && fresh.at(0).value == 71);
       auto recovered = fresh.enter(first);
       require(fresh.at(0).value == 0);
     }
     require(denied != 0);
+    unsigned nested_denials = 0;
+    unsigned nested_completions = 0;
+    for (int budget = 0; budget != 512; ++budget) {
+      Bindings fresh;
+      auto outer = fresh.enter(first);
+      fresh.at(0).value = 91;
+      fresh.at(1).value = 82;
+      auto* before = &fresh.at(0);
+      AllocationControl::remaining = budget;
+      try {
+        deep(fresh, 128);
+        ++nested_completions;
+      }
+      catch (std::bad_alloc const&) {
+        ++nested_denials;
+      }
+      AllocationControl::remaining = -1;
+      require(&fresh.at(0) == before && fresh.at(0).value == 91 && fresh.at(1).value == 82);
+      deep(fresh, 8);
+      require(&fresh.at(0) == before && fresh.at(1).value == 82);
+    }
+    require(nested_denials != 0 && nested_completions != 0);
     for (int budget = 0; budget != 2; ++budget) {
       Bindings fresh;
       fresh.at(0).value = 81;
       Value::constructions = budget;
       bool failed = false;
-      try { auto frame = fresh.enter(first); }
-      catch (std::bad_alloc const&) { failed = true; }
+      try {
+        auto frame = fresh.enter(first);
+      }
+      catch (std::bad_alloc const&) {
+        failed = true;
+      }
       Value::constructions = -1;
       require(failed && fresh.at(0).value == 81);
       auto recovered = fresh.enter(first);
       require(fresh.at(0).value == 0 && fresh.at(2).value == 0);
     }
     std::array<unsigned, 0> const none{};
-    { auto empty = values.enter(none); require(&values.at(0) == global); }
+    AllocationControl::remaining = 0;
+    {
+      auto empty = values.enter(none);
+      require(&values.at(0) == global);
+    }
     require(values.at(0).value == 11);
+    AllocationControl::remaining = -1;
     std::cout << "scalar binding contracts passed\n";
   }
   catch (std::exception const& error) {
