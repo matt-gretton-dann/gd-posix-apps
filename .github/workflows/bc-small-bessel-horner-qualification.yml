@@ -1,0 +1,122 @@
+name: bc finite Bessel qualification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/bc/**'
+      - '.github/workflows/bc-small-bessel-horner-qualification.yml'
+      - 'docs/utilities/bc-small-bessel-horner/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bc-small-bessel-horner-qualification-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  qualify:
+    if: github.head_ref == 'codex/bc-small-bessel-horner'
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [ubuntu-24.04, macos-15, windows-2025]
+        suite: [arithmetic, full-low, full-middle, full-high, holdout-low, holdout-middle, holdout-high]
+    name: Finite Bessel / ${{ matrix.image }} / ${{ matrix.suite }}
+    runs-on: ${{ matrix.image }}
+    timeout-minutes: 360
+    env:
+      BC_CANDIDATE: ${{ github.event.pull_request.head.sha }}
+      BC_BASE: '1281233d822f090668a3327760018bc0fd5b6c39'
+      BC_SUITE: ${{ matrix.suite }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.BC_CANDIDATE }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Record the prospective source and protocol
+        shell: python
+        run: |
+          import hashlib,json,os,shutil,subprocess
+          from pathlib import Path
+          if os.environ['GITHUB_RUN_ATTEMPT'] != '1':
+              raise SystemExit('A frozen cohort cannot be restarted for acceptance')
+          source=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          assert source==os.environ['BC_CANDIDATE']
+          root=Path('cohort');root.mkdir()
+          (root/'source.txt').write_text(source+'\n',encoding='utf-8')
+          (root/'comparison.txt').write_text(os.environ['BC_SUITE']+' base='+os.environ['BC_BASE']+
+              ' finite-bessel-runtime=4a5d0122 native-scalar=default-OFF native-functions=default-OFF split=126\n',encoding='utf-8')
+          directory=Path('docs/utilities/bc-small-bessel-horner')
+          shutil.copyfile(directory/'qualification.md',root/'protocol.md')
+          shutil.copyfile(directory/'qualification-hashes.json',root/'qualification-hashes.json')
+          pinned=json.loads((directory/'qualification-hashes.json').read_text(encoding='utf-8'))
+          retained={}
+          for name,digest in pinned['files'].items():
+              raw=Path(name).read_bytes()
+              # Git checks out Windows text with CRLF; compare canonical source
+              # while retaining and hashing the actual native checkout bytes.
+              assert hashlib.sha256(raw.replace(b'\r\n',b'\n')).hexdigest()==digest,name
+              target=root/'source-inputs'/name
+              target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(raw)
+              retained[name]=hashlib.sha256(raw).hexdigest()
+          (root/'source-input-manifest.json').write_text(json.dumps(dict(source=source,files=retained,
+              scope='Actual native checkout bytes; canonical prospective source verified separately.'),indent=2)+'\n',encoding='utf-8')
+      - name: Establish native MSVC environment
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installation = & "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe" -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (!$installation) { throw 'Native x64 MSVC is unavailable' }
+          $variables = & cmd /c "`"$installation\Common7\Tools\VsDevCmd.bat`" -arch=x64 -host_arch=x64 >nul && set"
+          if ($LASTEXITCODE) { throw 'Cannot initialize MSVC' }
+          foreach ($line in $variables) {
+            if ($line -match '^(PATH|INCLUDE|LIB|LIBPATH|VCToolsInstallDir|VCINSTALLDIR|VSINSTALLDIR|WindowsSdkDir|WindowsSDKVersion|UniversalCRTSdkDir|UCRTVersion|Platform)=(.*)$') {
+              "$($matches[1])=$($matches[2])" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            }
+          }
+      - name: Collect the original elapsed and resource cohort
+        shell: python
+        run: |
+          import os,subprocess,sys
+          if os.environ['GITHUB_RUN_ATTEMPT'] != '1':
+              raise SystemExit('A frozen cohort cannot be restarted for acceptance')
+          suite=os.environ['BC_SUITE']
+          script='benchmark-ci.py' if suite=='arithmetic' else 'benchmark-math-ci.py'
+          arguments=[sys.executable,'src/bc/scripts/'+script,'--source',os.environ['GITHUB_WORKSPACE'],
+              '--base',os.environ['BC_BASE'],'--candidate',os.environ['BC_CANDIDATE'],
+              '--output','horner-results','--broad','--compare-resources','--samples','31']
+          if suite=='arithmetic':
+              arguments+=['--sparse-qualification']
+          else:
+              preset,partition=suite.split('-')
+              arguments+=['--broad-preset',preset,'--horner-partition',partition,
+                  '--duration-seconds','.25','--child-timeout-seconds','600','--total-seconds','20000']
+          subprocess.run(arguments,check=True)
+      - name: Bind startup roles to the exact arithmetic images
+        if: matrix.suite == 'arithmetic'
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+          roles=[json.loads(Path('horner-results',role,'implementations.json').read_text())['implementations'][0]
+              for role in ('base','aa','candidate')]
+          Path('cohort/startup-config.json').write_text(json.dumps(dict(implementations=roles),indent=2)+'\n')
+      - name: Collect the unchanged startup study
+        if: matrix.suite == 'arithmetic'
+        shell: pwsh
+        run: |
+          python src/bc/scripts/startup-calibration.py --config cohort/startup-config.json --output cohort/startup --total-seconds 2400 --child-timeout-seconds 5
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Preserve every original outcome and available input
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bc-horner-qualification-${{ matrix.image }}-${{ matrix.suite }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            cohort/
+            horner-results/evidence/
+          include-hidden-files: true
+          if-no-files-found: error

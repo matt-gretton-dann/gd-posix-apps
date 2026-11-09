@@ -58,3 +58,8 @@ implementation, queues and review. Keep the original first outcomes and
 the approved regression, Howard-margin and startup rules. Do not pool
 hosts/sources, retry for acceptance or treat green CI as qualification.
 The broader #197/#200/#207/#217 goals stay open where unmet.
+
+The separate [first qualification protocol](qualification.md) declares all
+historical and additional inputs, disjoint groups, original native cohorts,
+resource/startup requirements and unchanged gates. Its existence does not
+establish performance or adoption.
