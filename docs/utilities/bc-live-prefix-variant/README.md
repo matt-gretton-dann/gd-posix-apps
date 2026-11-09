@@ -73,3 +73,10 @@ compiler; the additional sanitizer configuration explicitly selects Clang,
 records that toolchain, and disables IPO for sanitizer instrumentation. The
 ordinary options array retains explicit AUTO IPO so strict Bash3 sees a
 nonempty array. No warning suppression or production compiler change is used.
+
+Qualification tooling carries the ordinary/profile resource collectors and
+their fixtures from source5a805f0a, without importing its square implementation
+or changing this backend's default. The tooling retains actual images, source
+and build policies, allocation events and separate cold RSS observations.
+Compact-layout source/consumer gates and the prospective study protocol must
+be completed before launching an enabled qualification cohort.
