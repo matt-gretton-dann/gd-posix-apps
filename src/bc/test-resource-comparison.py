@@ -46,6 +46,30 @@ class ResourceComparison(unittest.TestCase):
         self.case = dict(name='fixture', group='fixture', program='1+1\n', expected=['2'], parameters={})
         self.calls = []
 
+    def test_compact_modes_and_source_identities_must_match_ordinary_images(self):
+        for roles in (self.profiles, self.ordinary):
+            for name, tool in roles.items():
+                names = ['CMakeLists.txt', 'number.hh']
+                if name == 'candidate':
+                    names += ['limb-compact-digits.hh', 'selected-digit-storage.hh', 'digit-storage.hh']
+                tool['metadata']['configuration']['compact_digit_policy'] = dict(
+                    status='recorded' if name == 'candidate' else 'legacy-auto', mode='AUTO',
+                    enabled=True if name == 'candidate' else None,
+                    source_inputs=[dict(path='src/bc/' + p, sha256='a' * 64) for p in names])
+        self.module.validate_roles(self.bench, self.profiles, self.ordinary)
+        policy = self.profiles['candidate']['metadata']['configuration']['compact_digit_policy']
+        policy['source_inputs'][0]['sha256'] = 'b' * 64
+        with self.assertRaisesRegex(ValueError, 'resource modes differ'):
+            self.module.validate_roles(self.bench, self.profiles, self.ordinary)
+        policy['source_inputs'][0]['sha256'] = 'a' * 64
+        policy['enabled'] = False
+        with self.assertRaisesRegex(ValueError, 'resource modes differ'):
+            self.module.validate_roles(self.bench, self.profiles, self.ordinary)
+        policy['enabled'] = True
+        policy['source_inputs'].pop()
+        with self.assertRaisesRegex(ValueError, 'compact resource source inputs'):
+            self.module.validate_roles(self.bench, self.profiles, self.ordinary)
+
     def test_matching_absent_optional_backend_policy_is_supported(self):
         for roles in (self.profiles, self.ordinary):
             for tool in roles.values():

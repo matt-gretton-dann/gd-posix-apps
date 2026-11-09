@@ -176,7 +176,7 @@ class NativeTrends(unittest.TestCase):
                                  {case['group'] for case in cases})
 
     def exercise(self, fail=False, aa_first=None, aa_second=None, prepared=False,
-                 identical=False, native=False, disabled_native=False, native_functions=False, word_functions=False, word_baseline_unknown=False, prefix_results=False):
+                 identical=False, native=False, disabled_native=False, native_functions=False, word_functions=False, word_baseline_unknown=False, prefix_results=False, compact_digits=False):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name) / 'results'
@@ -242,6 +242,16 @@ class NativeTrends(unittest.TestCase):
                     if present:
                         (output / 'prefix-result-policy').mkdir()
                         (output / 'prefix-result-policy/core.cc').write_text('retained prefix source fixture')
+                    if compact_digits:
+                        present = name.startswith('candidate')
+                        names = ['CMakeLists.txt', 'number.hh'] + (['compact-digit-storage.hh', 'selected-digit-storage.hh', 'digit-storage.hh'] if present else [])
+                        policy = dict(status='recorded' if present else 'legacy-auto', mode='AUTO',
+                            enabled=(not disabled_native) if present else None,
+                            source_inputs=[dict(path='src/bc/' + n, sha256='f' * 64) for n in names])
+                        if word_baseline_unknown and name == 'base': policy['source_inputs'] = []
+                        saved['implementations'][0]['metadata']['configuration']['compact_digit_policy'] = policy
+                        (output / 'compact-digit-policy').mkdir()
+                        (output / 'compact-digit-policy/CMakeCache.txt').write_text('retained compact storage cache fixture')
                     path.write_text(json.dumps(saved))
                     return
                 if fail:
@@ -292,6 +302,8 @@ class NativeTrends(unittest.TestCase):
             argv += ['--require-candidate-word-functions']
         if prefix_results:
             argv += ['--require-candidate-prefix-results']
+        if compact_digits:
+            argv += ['--require-candidate-compact-digits']
         with mock.patch.object(CI, 'load', modules), mock.patch.object(CI, 'host_info', return_value={}), \
                 mock.patch.object(sys, 'argv', argv), mock.patch.dict('os.environ', {}, clear=True), \
                 contextlib.redirect_stderr(io.StringIO()):
@@ -311,6 +323,20 @@ class NativeTrends(unittest.TestCase):
         self.assertEqual(sum(Path(c[1]).name=='test-cli.py' for c in calls[:first]), 3)
         self.assertTrue((root/'evidence/candidate/word-function-policy/core.cc').is_file())
         self.assertTrue(json.loads((root/'evidence/orchestration.json').read_text())['require_candidate_word_functions'])
+
+    def test_compact_activation_and_legacy_sources_are_checked_before_elapsed(self):
+        for disabled, unknown in [(True, False), (False, True)]:
+            root, calls, result = self.exercise(compact_digits=True, disabled_native=disabled, word_baseline_unknown=unknown)
+            self.assertEqual(result, 1)
+            self.assertFalse(any(Path(c[1]).name == 'bench-bc.py' for c in calls))
+
+    def test_compact_preflight_policy_is_retained(self):
+        root, calls, result = self.exercise(compact_digits=True)
+        self.assertEqual(result, 0)
+        first = next(i for i,c in enumerate(calls) if Path(c[1]).name == 'bench-bc.py')
+        self.assertEqual(sum(Path(c[1]).name == 'test-cli.py' for c in calls[:first]), 3)
+        self.assertTrue((root/'evidence/candidate/compact-digit-policy/CMakeCache.txt').is_file())
+        self.assertTrue(json.loads((root/'evidence/orchestration.json').read_text())['require_candidate_compact_digits'])
 
     def test_prefix_selection_and_known_baseline_are_required_before_elapsed(self):
         for disabled, unknown in [(True, False), (False, True)]:

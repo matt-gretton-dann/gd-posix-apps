@@ -206,6 +206,18 @@ def build_metadata(helper, root, source, build, revision, split, compiler_c, com
     native_functions = verified_native_functions(helper, build, source)
     word_functions = verified_word_functions(helper, build, source, word_mode)
     prefix_results = verified_prefix_results(helper, build, source)
+    compact_digits = verified_compact_digit_storage(helper, build, source)
+    directory = root / 'compact-digit-policy'
+    directory.mkdir(exist_ok=True)
+    shutil.copyfile(str(build / 'CMakeCache.txt'), str(directory / 'CMakeCache.txt'))
+    for relative in compact_digits.get('verification', {}).get('files', {}):
+        target = directory / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(str(build / relative), str(target))
+    for item in compact_digits['source_inputs']:
+        target = directory / item['retained_path']
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(str(source / item['path']), str(target))
     if prefix_results['status'] == 'recorded':
         directory = root / 'prefix-result-policy'
         directory.mkdir(exist_ok=True)
@@ -268,6 +280,7 @@ def build_metadata(helper, root, source, build, revision, split, compiler_c, com
                               'native_function_policy': native_functions,
                               'word_function_policy': word_functions,
                               'prefix_result_policy': prefix_results,
+                              'compact_digit_policy': compact_digits,
                               'multiply_split_point': split,
                               'diagnostic_profile': diagnostic_profile,
                               'profiling_execution_policy': profiling_execution_policy(
@@ -275,6 +288,131 @@ def build_metadata(helper, root, source, build, revision, split, compiler_c, com
                               'threshold_header_sha256': helper.digest(root / 'multiply-threshold.hh')},
             'limitations': ['Provision compiler, C/C++ runtime and SDK separately; this is not an OS image',
                             'Compiler defaults and actual commands are recorded, not claimed identical across hosts']}
+
+
+def verified_compact_digit_storage(helper, build, source):
+    """Bind compact coefficient selection to cache, Number consumers and retained source.
+
+    This verifies compile selection, not that a particular input takes the
+    selected variant or that diagnostic and ordinary dynamic paths coincide.
+    """
+    macro = 'GD_BC_COMPACT_DIGITS'
+    option = 'ENABLE_BC_COMPACT_DIGITS'
+    observed = cache_values(build / 'CMakeCache.txt').get(option)
+    names = ['src/bc/CMakeLists.txt', 'src/bc/number.hh']
+    header = source / 'src/bc/compact-digit-storage.hh'
+    if observed is None:
+        if header.exists() or (source / 'src/bc/selected-digit-storage.hh').exists():
+            raise helper.BuildError('compact coefficient implementation lacks configured selection')
+        # Old revisions genuinely lack this experiment. Missing fixture sources
+        # remain missing; the qualification role check below requires both.
+        inputs = [dict(path=name, sha256=helper.digest(source / name),
+                       retained_path='source/' + name) for name in names if (source / name).is_file()]
+        if any(macro in (source / name).read_text() or option in (source / name).read_text() or
+               'SelectedDigitStorage' in (source / name).read_text()
+               for name in names if (source / name).is_file()):
+            raise helper.BuildError('compact coefficient source selection lacks its configured option')
+        return dict(status='legacy-auto', mode='AUTO', enabled=None, source_inputs=inputs,
+                    scope='Source predates this compact coefficient policy; no disabled-mode or dynamic-path claim')
+    if observed.upper() not in ('ON', 'TRUE', 'YES', '1', 'OFF', 'FALSE', 'NO', '0'):
+        raise helper.BuildError('invalid configured compact coefficient mode')
+    enabled = observed.upper() in ('ON', 'TRUE', 'YES', '1')
+    names += ['src/bc/compact-digit-storage.hh', 'src/bc/selected-digit-storage.hh', 'src/bc/digit-storage.hh']
+    if any(not (source / name).is_file() for name in names):
+        raise helper.BuildError('compact coefficient option lacks its source implementation')
+    cmake = (source / names[0]).read_text()
+    number = (source / names[1]).read_text()
+    if (not re.search(r'option\(ENABLE_BC_COMPACT_DIGITS\b', cmake) or
+            macro not in cmake or macro not in (source / 'src/bc/selected-digit-storage.hh').read_text() or
+            'SelectedDigitStorage<NumType>' not in number or
+            not re.search(r'sizeof\(CompactDigitStorage<Limb>\)\s*<\s*sizeof\(DigitStorage<Limb>\)',
+                          (source / 'src/bc/selected-digit-storage.hh').read_text())):
+        raise helper.BuildError('compact coefficient option and Number dispatch disagree')
+    expected = str(int(enabled))
+    define = re.compile(r'''(?:^|[\s"'])[-/]D\s*["']?GD_BC_COMPACT_DIGITS\b(?:=([^\s"';]+))?''')
+    undefine = re.compile(r'''(?:^|[\s"'])[-/]U\s*["']?GD_BC_COMPACT_DIGITS\b''')
+    database = build / 'compile_commands.json'
+    if database.is_file():
+        try:
+            rows = json.loads(database.read_text(encoding='utf-8'))
+        except (OSError, ValueError) as error:
+            raise helper.BuildError('invalid compact coefficient compilation database: ' + str(error))
+        if not isinstance(rows, list) or any(not isinstance(row, dict) for row in rows):
+            raise helper.BuildError('invalid compact coefficient compilation inventory')
+        units = ('vm.cc', 'number-remainder.cc', 'bc.cc', 'find-multiply-split-point.cc')
+        for name in units:
+            matches = [row for row in rows if str(row.get('file', '')).replace(chr(92), '/').endswith('/src/bc/' + name)]
+            if len(matches) != 1:
+                raise helper.BuildError('missing or ambiguous compact coefficient consumer: ' + name)
+            row = matches[0]
+            arguments = row.get('arguments')
+            if arguments is not None and (not isinstance(arguments, list) or
+                    any(not isinstance(arg, str) for arg in arguments)):
+                raise helper.BuildError('invalid compact coefficient compiler arguments')
+            command = ' '.join(arguments) if arguments is not None else row.get('command')
+            if not isinstance(command, str) or '@' in command:
+                raise helper.BuildError('unsupported compact coefficient compiler command or response file')
+            definitions = define.findall(command)
+            if definitions != [expected] or undefine.search(command):
+                raise helper.BuildError('compiled compact coefficient consumer disagrees with cache: ' + name)
+        verification = dict(kind='compile-commands', sha256=helper.digest(database),
+                            translation_units=list(units))
+    else:
+        import xml.etree.ElementTree as ET
+        if not cache_values(build / 'CMakeCache.txt').get('CMAKE_GENERATOR', '').startswith('Visual Studio'):
+            raise helper.BuildError('compact coefficient selection needs compile commands or native VS projects')
+        files = {}
+        for project in ('libbc', 'bc', 'find-multiply-split-point'):
+            relative = 'src/bc/' + project + '.vcxproj'
+            try:
+                tree = ET.parse(str(build / relative)).getroot()
+            except (OSError, ET.ParseError) as error:
+                raise helper.BuildError('invalid compact coefficient project: ' + str(error))
+            release = False
+            for node in tree.iter():
+                tag = node.tag.rsplit('}', 1)[-1]
+                text = node.text or ''
+                if tag in ('AdditionalOptions', 'UndefinePreprocessorDefinitions') and (macro in text or '@' in text):
+                    raise helper.BuildError('compact coefficient project overrides its global selection')
+                if tag == 'PreprocessorDefinitions':
+                    values = re.findall(r'(?:^|;)GD_BC_COMPACT_DIGITS\b(?:=([^;]+))?', text)
+                    if values and values != [expected]:
+                        raise helper.BuildError('compact coefficient project definitions disagree with cache')
+                if tag == 'ClCompile' and node.get('Include'):
+                    if any(macro in (child.text or '') for child in node.iter()):
+                        raise helper.BuildError('compact coefficient consumer overrides project selection')
+                if tag == 'ItemDefinitionGroup' and re.search(r'Release\|', node.get('Condition', ''), re.I):
+                    values = [value for child in node.iter() if child.tag.rsplit('}', 1)[-1] == 'PreprocessorDefinitions'
+                              for value in re.findall(r'(?:^|;)GD_BC_COMPACT_DIGITS\b(?:=([^;]+))?', child.text or '')]
+                    if values != [expected]:
+                        raise helper.BuildError('compact coefficient Release project lacks unique selection')
+                    release = True
+            if not release:
+                raise helper.BuildError('compact coefficient project lacks Release selection')
+            files[relative] = helper.digest(build / relative)
+        verification = dict(kind='msbuild-projects', files=files, retained_root='compact-digit-policy')
+    return dict(status='recorded', mode='AUTO', enabled=enabled, verification=verification,
+                source_inputs=[dict(path=name, sha256=helper.digest(source / name),
+                                    retained_path='source/' + name) for name in names],
+                scope='Compiled opt-in and source size rule only; per-input and ordinary/profile path identity not established')
+
+
+def require_compact_digits_role(helper, entry, candidate):
+    metadata = entry.get('metadata') if isinstance(entry, dict) else None
+    config = metadata.get('configuration') if isinstance(metadata, dict) else None
+    policy = config.get('compact_digit_policy') if isinstance(config, dict) else None
+    if not isinstance(policy, dict) or type(candidate) is not bool:
+        raise helper.BuildError('compact coefficient qualification role lacks a structured selection policy')
+    expected = {'src/bc/CMakeLists.txt', 'src/bc/number.hh'}
+    if candidate:
+        expected |= {'src/bc/compact-digit-storage.hh', 'src/bc/selected-digit-storage.hh', 'src/bc/digit-storage.hh'}
+    inputs = policy.get('source_inputs')
+    if (policy.get('status') != ('recorded' if candidate else 'legacy-auto') or
+            policy.get('enabled') is not (True if candidate else None) or
+            policy.get('mode') != 'AUTO' or not isinstance(inputs, list) or len(inputs) != len(expected) or
+            any(not isinstance(item, dict) or not re.fullmatch('[0-9a-f]{64}', str(item.get('sha256', ''))) for item in inputs) or
+            {item.get('path') for item in inputs} != expected):
+        raise helper.BuildError('compact coefficient qualification role lacks verified selection and source inputs')
 
 
 def verified_ipo_policy(helper, build, requested):

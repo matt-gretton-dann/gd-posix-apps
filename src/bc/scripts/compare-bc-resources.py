@@ -263,6 +263,17 @@ def mode_identity(configuration, key):
             raise ValueError('invalid prefix_result_policy source inputs')
         identity.update(implementation_present=present, configured=configured,
                         source_inputs=sorted((item['path'], item['sha256']) for item in inputs))
+    if key == 'compact_digit_policy':
+        inputs = policy.get('source_inputs')
+        expected = {'src/bc/CMakeLists.txt', 'src/bc/number.hh'}
+        if policy.get('status') == 'recorded':
+            expected |= {'src/bc/limb-compact-digits.hh', 'src/bc/selected-digit-storage.hh', 'src/bc/digit-storage.hh'}
+        if (not isinstance(inputs, list) or len(inputs) != len(expected) or
+                any(not isinstance(item, dict) or not isinstance(item.get('path'), str) or
+                    not re.fullmatch('[0-9a-f]{64}', str(item.get('sha256', ''))) for item in inputs) or
+                {item['path'] for item in inputs} != expected):
+            raise ValueError('invalid compact resource source inputs')
+        identity['source_inputs'] = sorted((item['path'], item['sha256']) for item in inputs)
     return identity
 
 
@@ -299,7 +310,7 @@ def validate_roles(bench, profiles, ordinary):
                     'preparsed_library_image_sha256'):
             if pc.get(key) != rc.get(key):
                 raise ValueError('profile and ordinary resource configurations differ: ' + key)
-        for key in ('portable_scalar_policy', 'prepared_divisors_policy', 'native_scalar_policy', 'native_function_policy'):
+        for key in ('portable_scalar_policy', 'prepared_divisors_policy', 'native_scalar_policy', 'native_function_policy', 'compact_digit_policy'):
             if mode_identity(pc, key) != mode_identity(rc, key):
                 raise ValueError('profile and ordinary resource modes differ: ' + key)
         if mode_identity(pc, 'word_function_policy') != mode_identity(rc, 'word_function_policy'):

@@ -361,7 +361,7 @@ class NativeMath(unittest.TestCase):
 class MathEvidenceOrchestration(unittest.TestCase):
     """Simulate a complete two-preset controller; never execute fixture images."""
 
-    def exercise(self, fail_elapsed=False, corrupt_asset=False, interrupt_elapsed=False, native=False, disabled_native=False, native_functions=False, word_functions=False, word_baseline_unknown=False, prefix_results=False):
+    def exercise(self, fail_elapsed=False, corrupt_asset=False, interrupt_elapsed=False, native=False, disabled_native=False, native_functions=False, word_functions=False, word_baseline_unknown=False, prefix_results=False, compact_digits=False):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         source = Path(temporary.name)
@@ -428,6 +428,16 @@ class MathEvidenceOrchestration(unittest.TestCase):
                     if present:
                         (target / 'prefix-result-policy').mkdir()
                         (target / 'prefix-result-policy/core.cc').write_text('retained prefix source fixture')
+                    if compact_digits:
+                        present = name not in ('base','base-profile','gd-base-profile','howard')
+                        names = ['CMakeLists.txt', 'number.hh'] + (['compact-digit-storage.hh', 'selected-digit-storage.hh', 'digit-storage.hh'] if present else [])
+                        policy = dict(status='recorded' if present else 'legacy-auto', mode='AUTO',
+                            enabled=(not disabled_native) if present else None,
+                            source_inputs=[dict(path='src/bc/' + n, sha256='f' * 64) for n in names])
+                        if word_baseline_unknown and name == 'base': policy['source_inputs'] = []
+                        entry['metadata']['configuration']['compact_digit_policy'] = policy
+                        (target / 'compact-digit-policy').mkdir()
+                        (target / 'compact-digit-policy/CMakeCache.txt').write_text('retained compact storage cache fixture')
                     (target / 'implementations.json').write_text(json.dumps(dict(implementations=[entry])))
                     if script == 'build-gd-bc.py':
                         library = target / 'source/src/bc/math-library.bc'
@@ -487,6 +497,8 @@ class MathEvidenceOrchestration(unittest.TestCase):
         if word_functions:argv += ['--require-candidate-word-functions']
         if prefix_results:
             argv += ['--require-candidate-prefix-results']
+        if compact_digits:
+            argv += ['--require-candidate-compact-digits']
         with mock.patch.object(CI, 'Commands', Commands), mock.patch.object(CI, 'load', modules), \
                 mock.patch.object(arithmetic, 'host_info', return_value=dict(test_host='fixture')), \
                 mock.patch.object(CI, 'selected_cases', side_effect=lambda bench, preset, broad: [preset + '_fixture']), \
@@ -513,6 +525,20 @@ class MathEvidenceOrchestration(unittest.TestCase):
         self.assertGreaterEqual(sum(e[0]=='correctness' for e in events[:first]), 6)
         self.assertTrue((root/'evidence/gd/word-function-policy/core.cc').is_file())
         self.assertTrue(json.loads((root/'evidence/orchestration.json').read_text())['require_candidate_word_functions'])
+
+    def test_compact_activation_and_legacy_sources_are_checked_before_elapsed(self):
+        for disabled, unknown in [(True, False), (False, True)]:
+            status, root, events = self.exercise(compact_digits=True, disabled_native=disabled, word_baseline_unknown=unknown)
+            self.assertEqual(status, 1)
+            self.assertFalse(any(e[0] == 'elapsed' for e in events))
+
+    def test_compact_preflight_policy_is_retained(self):
+        status, root, events = self.exercise(compact_digits=True)
+        self.assertEqual(status, 0)
+        first = next(i for i,e in enumerate(events) if e[0] == 'elapsed')
+        self.assertGreaterEqual(sum(e[0] == 'correctness' for e in events[:first]), 6)
+        self.assertTrue((root/'evidence/gd/compact-digit-policy/CMakeCache.txt').is_file())
+        self.assertTrue(json.loads((root/'evidence/orchestration.json').read_text())['require_candidate_compact_digits'])
 
     def test_prefix_selection_and_known_baseline_are_required_before_elapsed(self):
         for disabled, unknown in [(True, False), (False, True)]:

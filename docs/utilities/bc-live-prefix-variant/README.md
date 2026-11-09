@@ -78,5 +78,13 @@ Qualification tooling carries the ordinary/profile resource collectors and
 their fixtures from source5a805f0a, without importing its square implementation
 or changing this backend's default. The tooling retains actual images, source
 and build policies, allocation events and separate cold RSS observations.
-Compact-layout source/consumer gates and the prospective study protocol must
-be completed before launching an enabled qualification cohort.
+The compact policy binds the configured option to the VM, remainder, CLI and
+independent tuner's compilation commands, or all three native Visual Studio
+projects. It retains the CMake cache and five source inputs, rejects missing,
+duplicate or overridden definitions, and distinguishes legacy absence from an
+explicit OFF configuration. Arithmetic and math controllers check candidate
+and baseline roles before elapsed work, including separate profile builds.
+Resource comparisons require matching ordinary/profile selections and source
+hashes. The opt-in flag does not itself prove that the size condition selects
+the variant, or establish dynamic identity of ordinary and diagnostic paths.
+The prospective immutable study protocol remains required before launch.
