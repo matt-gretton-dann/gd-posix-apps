@@ -507,6 +507,9 @@ if(RUN_INTEGRATION_TESTS)
            "${CMAKE_CURRENT_SOURCE_DIR}/test-benchmark-cli.py"
            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/bench-bc.py" --bc "$<TARGET_FILE:bc>")
   set_tests_properties(bc/benchmark-cli PROPERTIES TIMEOUT 30)
+  add_test(NAME bc/scalar-binding-corpus COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-scalar-binding-corpus.py")
+  set_tests_properties(bc/scalar-binding-corpus PROPERTIES TIMEOUT 20)
   if(ENABLE_BC_PROFILE)
     add_test(NAME bc/profiling-cli COMMAND "${Python_EXECUTABLE}"
              "${CMAKE_CURRENT_SOURCE_DIR}/test-profiling-cli.py" "$<TARGET_FILE:bc>")

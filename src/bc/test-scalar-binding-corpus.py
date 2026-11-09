@@ -5,8 +5,6 @@ import importlib.util
 import json
 from pathlib import Path
 import random
-import re
-import sys
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
