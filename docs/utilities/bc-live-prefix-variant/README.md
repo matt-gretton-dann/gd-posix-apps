@@ -57,3 +57,10 @@ compilation, counter and correctness results are distinct from qualification.
 The original square PR704 cohort and source remain untouched. All work,
 queues and review must fit the user's864000 total recorded #197 seconds and
 maintain20GiB local free space; unmet goals remain open at the cap.
+
+The first native source3abc25a2 failed enabled Windows compilation before
+runtime tests: MSVC rejected dependent sizeof arguments directly in the
+selection alias (C2027). The original source, failed artifact and diagnostics
+remain preserved. A selector class defers those layout queries until class
+instantiation, retaining the identical selection rule. Native confirmation is
+required; local Clang success alone did not detect the original failure.

@@ -14,13 +14,21 @@
 #endif
 
 namespace GD::Bc::Details {
-template<typename Limb>
-using SelectedDigitStorage =
 #if GD_BC_COMPACT_DIGITS
-  std::conditional_t<(sizeof(CompactDigitStorage<Limb>) < sizeof(DigitStorage<Limb>)),
-                     CompactDigitStorage<Limb>, DigitStorage<Limb>>;
+// Keep dependent layout queries inside a class-template instantiation. Native
+// MSVC rejects these sizeof arguments directly in the alias template.
+template<typename Limb>
+struct DigitStorageSelection
+{
+  using Type = std::conditional_t<(sizeof(CompactDigitStorage<Limb>) < sizeof(DigitStorage<Limb>)),
+                                  CompactDigitStorage<Limb>, DigitStorage<Limb>>;
+};
+
+template<typename Limb>
+using SelectedDigitStorage = typename DigitStorageSelection<Limb>::Type;
 #else
-  DigitStorage<Limb>;
+template<typename Limb>
+using SelectedDigitStorage = DigitStorage<Limb>;
 #endif
 }  // namespace GD::Bc::Details
 #endif
