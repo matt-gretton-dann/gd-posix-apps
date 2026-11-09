@@ -46,6 +46,13 @@ correctness remains in the dedicated matrix. Main, manual, scheduled and
 unrelated branch timing behavior is unchanged. This preflight does not
 declare or qualify an elapsed cohort.
 
+The original uploaded artifact is downloaded by its returned artifact ID
+and checked against every declared input and image hash. This checks the
+actual retained payload, rather than only the producer directory. Hidden
+files are enabled within the explicit evidence directory so the copied
+public `.github` workflow is retained; the repository workspace is not an
+upload target. Original incomplete archives remain separately identified.
+
 The 864,000 total recorded goal-second limit includes all preceding
 implementation, queues and review. Keep the original first outcomes and
 the approved regression, Howard-margin and startup rules. Do not pool
