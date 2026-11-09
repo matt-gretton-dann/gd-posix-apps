@@ -288,6 +288,56 @@ def replay_corpus(directory, suite, selected=None):
         raise BenchmarkError('invalid replay corpus: ' + str(error))
 
 
+def declared_corpus(directory, suite, selected=None):
+    """Read unmeasured mathematical inputs for one initial calibration phase.
+
+    The marker and absence of measurement artifacts establish a declared
+    format, not proof that nobody has previously observed these values.
+    Frozen/calibrated replay remains a separate, non-recalibrating API.
+    """
+    try:
+        manifest = json.loads((directory / 'manifest.json').read_text(encoding='utf-8'))
+        if (suite != 'math' or not isinstance(manifest, dict) or
+                manifest.get('kind') != 'unmeasured-math-inputs-v1' or
+                manifest.get('suite') != 'math'):
+            raise ValueError('expected an unmeasured mathematical input declaration')
+        if ('duration_calibration' in manifest or
+                any((directory / name).exists() for name in
+                    ('samples.jsonl', 'summary.json', 'calibration', 'calibration-only.json'))):
+            raise ValueError('input declaration contains calibration or measurement artifacts')
+        reference = manifest.get('reference_fixture_sha256')
+        if not isinstance(reference, str) or not re.fullmatch('[0-9a-f]{64}', reference):
+            raise ValueError('input declaration requires a reference fixture identity')
+        # Validate the complete declaration before filtering. Otherwise a
+        # selector could conceal calibrated dimensions or corrupt members.
+        cases, metadata = replay_corpus(directory, suite)
+        for case in cases:
+            parameters = case['parameters']
+            oracle = case.get('oracle')
+            mode, count = parameters.get('mode'), parameters.get('iterations')
+            if (parameters.get('calibration') != 'fixed count; not calibrated' or
+                    'duration_target_seconds' in parameters or
+                    mode not in ('one_shot', 'repeated') or type(count) is not int or
+                    (count != 1 if mode == 'one_shot' else count < 2) or
+                    not isinstance(oracle, dict) or oracle.get('kind') != 'decimal-ulp'):
+                raise ValueError('input declaration contains calibrated or invalid dimensions')
+            if mode == 'repeated':
+                canonical = math_iterations(case, count)
+                if canonical['program'] != case['program'] or canonical['name'] != case['name']:
+                    raise ValueError('repeated program differs from its declared mathematical call')
+        if selected:
+            unknown = set(selected) - {case['name'] for case in cases}
+            if unknown:
+                raise ValueError('unknown declared workload: ' + ', '.join(sorted(unknown)))
+            cases = [case for case in cases if case['name'] in selected]
+        metadata.update(declaration_kind=manifest['kind'],
+                        scope='Byte-checked unmeasured input declaration for initial calibration; '
+                              'not proof of previously unobserved values or performance.')
+        return cases, metadata
+    except (OSError, KeyError, TypeError, ValueError, BenchmarkError) as error:
+        raise BenchmarkError('invalid input declaration: ' + str(error))
+
+
 def corpus(preset="full", selected=None, listing=False, seed=197200, suite='arithmetic',
            sparse_iterations=None):
     """Keep the historical sixteen cases, then add explicitly named classes.
@@ -911,17 +961,28 @@ def main():
     parser.add_argument('--calibration-max-iterations', type=positive_integer, default=1048576)
     parser.add_argument('--calibrate-only', action='store_true',
                         help='prepare the calibrated corpus without paired timing samples')
-    parser.add_argument('--replay-corpus', type=Path,
+    inputs = parser.add_mutually_exclusive_group()
+    inputs.add_argument('--replay-corpus', type=Path,
                         help='reuse an experiment directory\'s exact hashed programs and oracles')
+    inputs.add_argument('--input-corpus', type=Path,
+                        help='initial calibration of explicitly declared unmeasured math inputs')
     args = parser.parse_args()
-    if args.sparse_iterations is not None and (args.suite != 'arithmetic' or args.replay_corpus):
+    if args.input_corpus and (args.suite != 'math' or (not args.list and
+            (args.calibrate_seconds is None or not args.calibrate_only))):
+        parser.error('--input-corpus requires math --calibrate-seconds and --calibrate-only '
+                     '(or math --list)')
+    if args.sparse_iterations is not None and (
+            args.suite != 'arithmetic' or args.replay_corpus or args.input_corpus):
         parser.error('--sparse-iterations requires a fresh arithmetic corpus')
     if args.list:
         try:
-            cases = (replay_corpus(args.replay_corpus, args.suite, args.workload)[0]
-                     if args.replay_corpus else
-                     corpus(args.preset, args.workload, listing=True, seed=args.corpus_seed,
-                            suite=args.suite, sparse_iterations=args.sparse_iterations))
+            if args.replay_corpus:
+                cases = replay_corpus(args.replay_corpus, args.suite, args.workload)[0]
+            elif args.input_corpus:
+                cases = declared_corpus(args.input_corpus, args.suite, args.workload)[0]
+            else:
+                cases = corpus(args.preset, args.workload, listing=True, seed=args.corpus_seed,
+                               suite=args.suite, sparse_iterations=args.sparse_iterations)
         except BenchmarkError as error:
             parser.error(str(error))
         print(json.dumps([{key: case[key] for key in ("name", "group", "parameters")}
@@ -973,12 +1034,15 @@ def main():
         if args.require_provenance and next(tool for tool in tools
                                            if tool["name"] == reference)["role"] == "installed":
             raise BenchmarkError("an installed comparator cannot be the controlled reference")
-        replay = None
+        replay, declaration = None, None
         if args.replay_corpus:
             cases, replay = replay_corpus(args.replay_corpus, args.suite, args.workload)
+        elif args.input_corpus:
+            cases, declaration = declared_corpus(args.input_corpus, args.suite, args.workload)
         else:
             cases = corpus(args.preset, args.workload, seed=args.corpus_seed, suite=args.suite,
                            sparse_iterations=args.sparse_iterations)
+        origin = replay or declaration
         calibration = None
         if args.calibrate_seconds is not None:
             cases, calibration = calibrate_math(cases, tools, args.calibrate_seconds,
@@ -996,11 +1060,11 @@ def main():
         clock = time.get_clock_info("perf_counter")
         manifest = {"schema": 1, "started_utc": datetime.now(timezone.utc).isoformat(),
                     "implementations": tools, "reference": reference,
-                    "preset": replay['original_preset'] if replay else args.preset,
+                    "preset": origin['original_preset'] if origin else args.preset,
                     'suite': args.suite,
                     "samples": args.samples, "warmups": args.warmups, "timeout": args.timeout,
                     "seed": args.seed,
-                    "corpus_seed": replay['original_corpus_seed'] if replay else args.corpus_seed,
+                    "corpus_seed": origin['original_corpus_seed'] if origin else args.corpus_seed,
                     "harness_sha256": digest_file(__file__),
                     "bootstrap_resamples": args.bootstrap,
                     "platform": {"system": platform.system(), "release": platform.release(),
@@ -1023,14 +1087,16 @@ def main():
         if args.suite == 'math':
             scripts = Path(__file__).resolve().parent
             manifest['oracle_checker_sha256'] = digest_file(scripts / 'math_oracle.py')
-            manifest['reference_fixture_sha256'] = (replay['original_reference_fixture_sha256']
-                if replay else digest_file(scripts.parent / 'fixtures/math-benchmark-oracles.json'))
+            manifest['reference_fixture_sha256'] = (origin['original_reference_fixture_sha256']
+                if origin else digest_file(scripts.parent / 'fixtures/math-benchmark-oracles.json'))
         if calibration is not None:
             manifest['duration_calibration'] = calibration
         if args.sparse_iterations is not None:
             manifest['sparse_iteration_override'] = args.sparse_iterations
         if replay is not None:
             manifest['replayed_corpus'] = replay
+        if declaration is not None:
+            manifest['declared_input'] = declaration
         write_json(output / "manifest.json", manifest)
         if args.calibrate_only:
             write_json(output / 'calibration-only.json', dict(status='prepared; no paired samples',
