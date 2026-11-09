@@ -517,6 +517,48 @@ TEST_CASE("Reused activation slots release mixed result alternatives",
   CHECK(output.str() == expected);
 }
 
+#if GD_BC_PROFILE
+TEST_CASE("Repeated early paths avoid rebuilding unused result objects",
+          "[bc][vm][execution][prefix-results-profile]")
+{
+  auto checks = GENERATE(GD::Bc::VM::ExecutionChecks::full, GD::Bc::VM::ExecutionChecks::verified);
+  std::ostringstream output;
+  std::ostringstream errors;
+  GD::Bc::VM vm(output, errors, false, checks);
+  std::string const coefficient = "987654321098765432109876543210";
+  GD::Bc::Instructions code{I(O::number, coefficient), I(O::print, D(-1), I::Stream::output),
+                            I(O::branch, D(513))};
+  code.insert(code.end(), 512, I(O::number, coefficient));
+  code.emplace_back(O::eof);
+  // Warm the same depth/format, including literal and executable preparation.
+  REQUIRE_FALSE(vm.execute(code));
+  auto const before = GD::Bc::Profile::snapshot();
+  for (unsigned i = 0; i < 30; ++i)
+    REQUIRE_FALSE(vm.execute(code));
+  auto const after = GD::Bc::Profile::snapshot();
+  auto delta = [&](GD::Bc::Profile::Event event) {
+    return after.events[static_cast<std::size_t>(event)] -
+           before.events[static_cast<std::size_t>(event)];
+  };
+  auto const initialized = delta(GD::Bc::Profile::Event::result_slot_initializations);
+  auto const reset = delta(GD::Bc::Profile::Event::result_slot_resets);
+  CAPTURE(initialized, reset);
+#  if GD_BC_EXPECT_PREFIX_CLEAR_RESULTS
+  CHECK(initialized == 0);
+  CHECK(reset > 0);
+  CHECK(reset <= 90);
+#  else
+  CHECK(initialized >= 30 * 512);
+  CHECK(reset == initialized);
+#  endif
+  std::string expected;
+  for (unsigned i = 0; i < 31; ++i)
+    expected += coefficient + '\n';
+  CHECK(output.str() == expected);
+  CHECK(errors.str().empty());
+}
+#endif
+
 TEST_CASE("Compact control flow preserves exact forward targets and a backedge to zero",
           "[bc][vm][execution][compact-executable]")
 {

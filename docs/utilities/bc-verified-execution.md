@@ -38,6 +38,10 @@ The storage allocator still reports actual bytes, separately from process RSS.
 Activation release destroys every owning alternative before retaining buffer
 capacity. Repeated mixed number/array/string packs exercise that reset in both
 modes, alongside recursive snapshots and the existing lifetime regression.
+The default-OFF [prefix cleanup experiment](bc-prefix-clear-results.md) retains
+empty objects too, while resetting every potentially accessed owning slot
+before reuse. Its active bounds, format changes and typed lanes have separate
+ownership tests; elapsed acceptance remains outstanding.
 Empty-result diagnostics remain checked before visiting a slot. Operand
 compaction and fused instructions remain separate experiments.
 

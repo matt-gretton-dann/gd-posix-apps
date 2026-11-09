@@ -59,6 +59,13 @@ a non-null shared digit owner (`owned_digit_copies`), the historical
 the caller-owned vector), COW clones and payload bytes, copied iterator
 range payload bytes, basic/Karatsuba/triangular-square calls, literal conversions, cache hits/misses and single-digit literal fast paths,
 function calls, executed instructions and array clones/entries copied.
+`result_slot_initializations` counts completed default constructions during
+result-buffer growth, excluding reallocating moves and temporary values.
+`result_slot_resets` counts slots visited at activation cleanup. Ordinary
+vector buffers visit their full active size; the optional
+[prefix cleanup experiment](bc-prefix-clear-results.md) visits a conservative
+accessed prefix while retaining empty objects. These are logical work counts,
+not all Number constructors, allocation counts or elapsed costs.
 The optional cached native-function tier reports `native_function_attempts`
 when a supported input reaches its integer kernel and
 `native_function_completions` only after the VM boxes and commits the result.
