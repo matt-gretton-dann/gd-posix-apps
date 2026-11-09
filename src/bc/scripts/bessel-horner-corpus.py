@@ -103,7 +103,7 @@ def partition(corpus, name):
 
 
 def write_partition(bench, preset, name, directory):
-    """Serialize actual programs/oracles for the unchanged checked replay path."""
+    """Declare inputs for initial calibration, then frozen-count replay."""
     selected = partition(cases(bench, preset), name)
     directory.mkdir(parents=True, exist_ok=False)
     workloads = directory / 'workloads'
@@ -117,7 +117,8 @@ def write_partition(bench, preset, name, directory):
             program_sha256=hashlib.sha256(program).hexdigest(),
             oracle_sha256=hashlib.sha256(oracle).hexdigest()))
     fixture = Path(__file__).resolve().parents[1] / 'fixtures/math-benchmark-oracles.json'
-    manifest = dict(suite='math', preset=preset, corpus_seed=SEEDS[preset], partition=name,
+    manifest = dict(kind='unmeasured-math-inputs-v1', suite='math', preset=preset,
+        corpus_seed=SEEDS[preset], partition=name,
         generator_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         reference_fixture_sha256=hashlib.sha256(fixture.read_bytes()).hexdigest(),
         corpus=records, scope='Prospective input snapshot before calibration or elapsed observations; '

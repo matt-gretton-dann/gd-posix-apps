@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   correctness:
-    if: github.head_ref == 'codex/bc-small-bessel-horner'
+    if: github.head_ref == 'codex/bc-bessel-declared-qualification'
     name: Small Bessel / ${{ matrix.os }} / ${{ matrix.mode.name }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45

@@ -17,7 +17,8 @@ concurrency:
 
 jobs:
   qualify:
-    if: github.head_ref == 'codex/bc-small-bessel-horner'
+    # Correctness-only preparation. Activate only after an independent final declaration.
+    if: false
     strategy:
       fail-fast: false
       matrix:
@@ -28,7 +29,7 @@ jobs:
     timeout-minutes: 360
     env:
       BC_CANDIDATE: ${{ github.event.pull_request.head.sha }}
-      BC_BASE: '1281233d822f090668a3327760018bc0fd5b6c39'
+      BC_BASE: '3beebb1461ac7549832707f9b84e547127e3c14a'
       BC_SUITE: ${{ matrix.suite }}
     steps:
       - uses: actions/checkout@v7

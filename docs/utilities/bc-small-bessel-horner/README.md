@@ -63,3 +63,10 @@ The separate [first qualification protocol](qualification.md) declares all
 historical and additional inputs, disjoint groups, original native cohorts,
 resource/startup requirements and unchanged gates. Its existence does not
 establish performance or adoption.
+
+Corrected-setup preparation uses accepted main `3beebb14` and the explicit
+unmeasured-input phase. The original `18a25510` study failed before math
+calibration and remains frozen. The real controller argv now passes a
+synthetic process fixture; all 188 original program/oracle/parameter payloads
+are unchanged. This branch runs correctness only until the original outcomes
+and the accepted merge's own CI are reviewed and a new protocol is declared.

@@ -1,7 +1,10 @@
-> UNPUBLISHED CORRECTED-SETUP PREPARATION. The historical protocol below
-> describes failed source18a25510, not an active new cohort. No new timing
-> starts before all original outcomes and main3beebb14 CI are reviewed.
-> A final source/protocol declaration must replace this preparation notice.
+> CORRECTNESS-ONLY CORRECTED-SETUP PREPARATION. No new timing cohort is active.
+> The historical protocol below records failed source18a25510. All its
+> original failures and inconclusive arithmetic evidence remain preserved.
+> Preparation is based on main3beebb14; its own CI and all original21
+> outcomes must be reviewed before a separate final source/protocol declaration.
+> The qualification job is disabled and ordinary timing workflows exclude
+> this branch. The mathematical runtime and all188 input payloads are unchanged.
 
 # Finite backward Bessel first qualification
 

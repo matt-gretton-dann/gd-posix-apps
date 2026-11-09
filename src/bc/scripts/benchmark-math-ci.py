@@ -146,7 +146,9 @@ def preparation_command(bench, args, preset, evidence):
                '--calibrate-only', '--timeout', str(args.child_timeout_seconds), '--require-provenance']
     declared = horner_input(bench, args, preset, evidence)
     if declared is not None:
-        command += ['--replay-corpus', str(declared)]
+        # An unmeasured declaration needs initial calibration. Frozen replay
+        # is reserved for the resulting common counts in the paired stages.
+        command += ['--input-corpus', str(declared)]
     else:
         for name in selected_cases(bench, preset, args.broad):
             command += ['--workload', name]
