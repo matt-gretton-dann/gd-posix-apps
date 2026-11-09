@@ -18,6 +18,7 @@
 #include <cstdlib>
 #include <deque>
 #include <functional>
+#include <memory>
 #include <ostream>
 #include <type_traits>
 #include <utility>
@@ -122,8 +123,9 @@ void size_result_buffer(Buffer& buffer, std::size_t count)
 #  endif
 #endif
   buffer.resize(count);
-  // Completed default constructions only; reallocating moves and requested
-  // storage bytes are separate costs. Failed growth publishes no activation.
+  // Completed creations of backing slots only. Relocating moves, Number
+  // reconstruction during reset and storage bytes are separate costs.
+  // Failed growth publishes no activation.
   GD_BC_PROFILE_EVENT(Profile::Event::result_slot_initializations,
                       count > before ? count - before : 0);
 }
@@ -153,9 +155,11 @@ struct ResetNumberResult
 {
   void operator()(Number& number) const noexcept
   {
-    // Default Number construction is an allocation-free zero; moving
-    // it releases the previous coefficient without retaining its heap owner.
-    number = Number();
+    // Release the old coefficient and restore the allocation-free default zero
+    // directly. Moving an empty temporary would add a digit move per reset.
+    // Activation cleanup ends all slot borrows; escaped values own their data.
+    std::destroy_at(std::addressof(number));
+    std::construct_at(std::addressof(number));
   }
 };
 struct ResetOtherResult

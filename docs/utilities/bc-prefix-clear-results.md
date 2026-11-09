@@ -25,6 +25,10 @@ the existing allocation-free default Number; typed nonnumeric slots reset to
 monostate. Numeric zero construction during reset remains work, separately
 from buffer object initialization. The Number representation and public API
 are unchanged. Full-check and verified execution use the same ownership rule.
+Typed numeric cleanup destroys the old Number and constructs its default zero
+directly in the retained slot. This releases its old coefficient without a
+temporary-zero move assignment. All slot borrows end with the activation;
+escaped language values keep their ordinary ownership.
 Typed execution accesses the owning buffers rather than cached raw pointers.
 Generic compact execution obtains a destination only for an operation that
 produces a value. Eagerly touching a branch or EOF destination would otherwise
@@ -49,9 +53,10 @@ architecture-specific kernel; the OFF representation remains available.
 ## Diagnostic counters and tests
 
 Separate `ENABLE_BC_PROFILE=ON` images report completed
-`result_slot_initializations` and `result_slot_resets`. The first counts default
-construction when a result vector grows, excluding reallocating moves and
-temporary values. The second counts slots visited during activation cleanup:
+`result_slot_initializations` and `result_slot_resets`. The first counts new
+backing slots when a result vector grows, excluding reallocating moves and all
+reset construction, including in-place Number replacement. The second counts
+slots visited during activation cleanup:
 the full active size in OFF builds, or the accessed prefix in ON builds. These
 counts do not count every Number constructor, complete malloc traffic or CPU
 time. Failed growth contributes no completed initialization event.
@@ -64,8 +69,10 @@ eight-slot activations. It measures work, not elapsed performance.
 
 The VM profiling regression warms a real 512-producer pack, executes only its
 early prefix and then repeats it 30 times in both full-check and verified
-modes. It requires exact heap-coefficient output, no repeated slot object
-construction with ON, and at most 90 cleanup visits. OFF must reconstruct and
+modes. It requires exact heap-coefficient output, no new backing slots with
+ON, at most 90 cleanup visits, and at most two ordinary digit
+moves per execution. Clearing a numeric lane must not add temporary-zero moves;
+fewer ordinary transfers remain valid. OFF must reconstruct and
 clear at least 15,360 slots. Existing mixed-kind, recursive snapshot, array,
 allocation-fault, signal and CLI tests remain required in each relevant mode.
 Sanitizers and native compiler checks supplement these finite contracts.
