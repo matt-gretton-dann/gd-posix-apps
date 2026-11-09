@@ -74,7 +74,7 @@ class BenchmarkCli(unittest.TestCase):
     def test_declared_input_rejects_calibrated_measured_or_corrupt_payloads(self):
         directory, declaration, config = self.declared_math_fixture()
         original = json.loads(json.dumps(declaration))
-        for defect in ('kind', 'calibrated', 'measured', 'program', 'dimensions'):
+        for defect in ('kind', 'calibrated', 'measured', 'program', 'dimensions', 'oracle'):
             manifest = json.loads(json.dumps(original))
             marker = directory / 'samples.jsonl'
             if defect == 'kind':
@@ -85,8 +85,12 @@ class BenchmarkCli(unittest.TestCase):
                 marker.write_text('[]\n')
             elif defect == 'program':
                 manifest['corpus'][0]['program_sha256'] = 'f' * 64
-            else:
+            elif defect == 'dimensions':
                 manifest['corpus'][0]['parameters']['calibration'] = 'already calibrated'
+            else:
+                entry = manifest['corpus'][0]
+                (directory / 'workloads' / (entry['name'] + '.expected')).write_bytes(b'[]')
+                entry['oracle_sha256'] = hashlib.sha256(b'[]').hexdigest()
             (directory / 'manifest.json').write_text(json.dumps(manifest))
             output = self.root / ('bad-declaration-' + defect)
             result = subprocess.run([sys.executable, BENCHMARK, '--suite', 'math',
@@ -95,6 +99,8 @@ class BenchmarkCli(unittest.TestCase):
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, timeout=8)
             with self.subTest(defect=defect):
                 self.assertEqual(result.returncode, 1, result.stderr)
+                self.assertIn('invalid input declaration', result.stderr)
+                self.assertNotIn('Traceback', result.stderr)
                 self.assertFalse((output / 'calibration').exists())
                 self.assertFalse((output / 'samples.jsonl').exists())
             if marker.exists():
