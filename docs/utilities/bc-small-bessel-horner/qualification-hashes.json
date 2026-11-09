@@ -44,7 +44,7 @@
     "src/bc/test-resource-comparison.py": "07849ff33a6016b91e66178cead90205d0d05a6a0953b57202ac287855ad1f34",
     "src/bc/vm.cc": "4d47005e91a6362d5555325f24141b4b9d3b60ff076df6ecd0c7197057562100"
   },
-  "scope": "Unpublished correctness preparation; qualification disabled and ordinary timing excluded. Original18kernel/data retained without qualification transfer.",
+  "scope": "Correctness-only preparation; qualification disabled and ordinary timing excluded. Original18kernel/data retained without qualification transfer.",
   "phase": "CORRECTNESS_ONLY_HANDOFF_FIXED_NO_TIMING_COHORT",
   "prior_study_source": "18a25510d9816860bca190615fbab99d59badc1b"
 }

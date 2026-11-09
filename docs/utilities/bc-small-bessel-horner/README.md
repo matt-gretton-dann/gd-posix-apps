@@ -1,7 +1,8 @@
 # Finite small-argument Bessel experiment
 
 Refs #217 and #197. This is an unqualified ordinary-source algorithm
-experiment based on accepted main `1281233d822f090668a3327760018bc0fd5b6c39`.
+experiment now composed on accepted main `3beebb1461ac7549832707f9b84e547127e3c14a`.
+The numerical implementation remains the original `4a5d0122` kernel.
 It changes the Bessel evaluation order, rather than repeating PR692's
 guard-only reduction. It does not alter frozen PR708 or reuse its elapsed
 results. No performance gain or adoption is established.
@@ -59,10 +60,10 @@ the approved regression, Howard-margin and startup rules. Do not pool
 hosts/sources, retry for acceptance or treat green CI as qualification.
 The broader #197/#200/#207/#217 goals stay open where unmet.
 
-The separate [first qualification protocol](qualification.md) declares all
-historical and additional inputs, disjoint groups, original native cohorts,
-resource/startup requirements and unchanged gates. Its existence does not
-establish performance or adoption.
+The [protocol record](qualification.md) identifies the failed original
+study and the current correctness-only preparation. It preserves the original
+inputs, groups, resource/startup requirements and gates; it does not declare
+an active corrected timing cohort or establish performance/adoption.
 
 Corrected-setup preparation uses accepted main `3beebb14` and the explicit
 unmeasured-input phase. The original `18a25510` study failed before math
