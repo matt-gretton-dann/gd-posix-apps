@@ -136,6 +136,16 @@ jobs:
               'scripts/bench-bc.py','fixtures/math-benchmark-oracles.json',
               'test-math-library-coverage.py','fixtures/math-library-decisions.json',
               'scripts/math_library_coverage.py','scripts/math_oracle.py')]
+          # Retain the accepted phase-aware CLI and the actual controller test
+          # dependencies as well as the numerical source. This whitelist is
+          # committed public source, not a workspace or environment snapshot.
+          pin=Path('docs/utilities/bc-small-bessel-horner/qualification-hashes.json')
+          declaration=json.loads(pin.read_text(encoding='utf-8'))
+          for name,digest in declaration['files'].items():
+              canonical=Path(name).read_bytes().replace(b'\r\n',b'\n')
+              assert hashlib.sha256(canonical).hexdigest()==digest,name
+          files+=list(declaration['files'])+[str(pin)]
+          files=list(dict.fromkeys(files))
           files+=['build-native/src/bc/bc-math-library.hh']
           image=Path('build-native/src/bc/bc-math-library-image.inc')
           if image.is_file(): files.append(str(image))
@@ -171,7 +181,7 @@ jobs:
           build-native/src/bc/test-libbc${executable_suffix} '[bc][vm]' \
             2>&1 | tee evidence/vm-tests.log
           ctest --test-dir build-native --no-tests=error --output-on-failure \
-            -R '^bc/(vm-lifetime(-ipo)?|signal-(normal|exception|delivery)|consumer-mode|divisor-cache-lifetime|horner-qualification|math-library-(cli|source|image|decisions)|math-bessel-horner-proof|math-imported|math-oracle)$' \
+            -R '^bc/(vm-lifetime(-ipo)?|signal-(normal|exception|delivery)|consumer-mode|divisor-cache-lifetime|horner-qualification|math-benchmark-ci|math-library-(cli|source|image|decisions)|math-bessel-horner-proof|math-imported|math-oracle)$' \
             2>&1 | tee evidence/ctest.log
           "$python_cmd" src/bc/test-cli.py "build-native/src/bc/bc${executable_suffix}" \
             --extensions ${{ matrix.mode.extensions }} 2>&1 | tee evidence/cli.log
