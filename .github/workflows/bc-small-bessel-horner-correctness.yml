@@ -131,6 +131,7 @@ jobs:
               'math-library.bc','math-library.cc','math-library.hh.in','math-library-image.hh',
               'vm.cc','number.hh','digit-storage.hh','CMakeLists.txt',
               'test-bessel-horner-proof.py','test-math-library-cli.py',
+              'test-horner-evidence-retention.py',
               'test-math-library-coverage.py','fixtures/math-library-decisions.json',
               'scripts/math_library_coverage.py','scripts/math_oracle.py')]
           files+=['build-native/src/bc/bc-math-library.hh']
@@ -209,9 +210,25 @@ jobs:
               files=retained,scope='Available original bytes only; not a successful-build or qualification claim.'),indent=2)+'\n',encoding='utf-8')
           PYCODE
       - uses: actions/upload-artifact@v7
+        id: native_upload
         if: always()
         with:
           name: bc-small-bessel-horner-correctness-${{ matrix.os }}-${{ matrix.mode.name }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: evidence/
           if-no-files-found: error
           retention-days: 30
+      - name: Download the original uploaded native evidence
+        id: native_download
+        if: always() && steps.native_upload.outcome == 'success'
+        uses: actions/download-artifact@v8
+        with:
+          artifact-ids: ${{ steps.native_upload.outputs.artifact-id }}
+          path: uploaded-evidence
+      - name: Check the uploaded byte-retention contract
+        if: always() && steps.native_download.outcome == 'success'
+        shell: python
+        run: |
+          import subprocess,sys
+          subprocess.run([sys.executable, 'src/bc/test-horner-evidence-retention.py',
+                          'uploaded-evidence', '--source',
+                          '${{ github.event.pull_request.head.sha }}'], check=True)
