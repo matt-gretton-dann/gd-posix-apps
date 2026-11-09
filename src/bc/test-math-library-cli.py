@@ -5,6 +5,7 @@ from decimal import Decimal, localcontext
 from fractions import Fraction
 import importlib.util
 import json
+import math
 import os
 import re
 from pathlib import Path
@@ -42,6 +43,36 @@ def unit_atan_enclosure():
     return 4 * lo5 - hi239, 4 * hi5 - lo239
 
 
+def small_bessel_enclosure(order, argument, scale):
+    """Bound the infinite forward series with exact rational arithmetic.
+
+    This oracle is independent of finite backward evaluation: sum forward
+    until the absolute uncomputed tail fits a strict geometric bound.
+    Its bounded domain includes both sides of the proposed runtime regime.
+    """
+    n, x = abs(order), abs(Fraction(argument))
+    if n > 2 or x > 5 or not 0 <= scale <= 101:
+        raise ValueError('small Bessel oracle resource bound exceeded')
+    sign = -1 if order < 0 and n % 2 else 1
+    if Fraction(argument) < 0 and n % 2:
+        sign = -sign
+    q = x * x / 4
+    term = (x / 2) ** n / math.factorial(n)
+    total = term
+    budget = Fraction(1, 10 ** (scale + 12))
+    for k in range(1, 513):
+        term *= -q / (k * (n + k))
+        total += term
+        omitted = abs(term) * q / ((k + 1) * (n + k + 1))
+        contraction = q / ((k + 2) * (n + k + 2))
+        if contraction < 1:
+            tail = omitted / (1 - contraction)
+            if tail < budget:
+                lower, upper = total - tail, total + tail
+                return (lower, upper) if sign > 0 else (-upper, -lower)
+    raise AssertionError('small Bessel oracle did not certify its tail')
+
+
 class LibraryCli(unittest.TestCase):
     def invoke(self, program, options=('-l',), files=(), binary=None, timeout=30):
         try:
@@ -56,6 +87,35 @@ class LibraryCli(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stderr, '')
         return result.stdout.replace('\\\r\n', '').replace('\\\n', '').splitlines()
+
+    def test_small_bessel_enclosures_and_regime_boundaries(self):
+        # Orders 1/2, argument 4 and scales 100/101 straddle the proposed
+        # algorithm boundaries. Long exact decimals exercise input truncation
+        # and caller-owned heap coefficients, including near cancellation.
+        points = ['0', '.0000000000000000001', '1', '1.125',
+                  '3.8317059702075123156144358863081607665645452742878',
+                  '3.' + '9' * 50, '4', '4.' + '0' * 49 + '1']
+        cases = [(scale, order, x) for scale in (0, 1, 2, 20, 100, 101)
+                 for order in (0, 1, 2) for x in points]
+        cases += [(scale, order, x) for scale in (0, 20, 100)
+                  for order in (-1, 0, 1) for x in ('-4', '-1.125')]
+        program = ''.join(
+            'scale={}\nx={}\nn={}\nr=j(n,x)\nr\nscale\nibase\n'
+            'scale(r)\nx\nn\n'.format(scale, x, order)
+            for scale, order, x in cases)
+        for binary in [BC] if OTHER_BC is None else [BC, OTHER_BC]:
+            lines = self.checked_lines(program, options=(), files=(SOURCE,),
+                                       binary=binary, timeout=120)
+            self.assertEqual(len(lines), 6 * len(cases))
+            for index, (scale, order, x) in enumerate(cases):
+                with self.subTest(binary=binary, scale=scale, order=order, x=x):
+                    lower, upper = small_bessel_enclosure(order, x, scale)
+                    value = ORACLE.decimal_fraction(lines[6 * index])
+                    self.assertEqual(ORACLE.classify(value, lower, upper, scale), 'pass')
+                    self.assertEqual(lines[6 * index + 1:6 * index + 4],
+                                     [str(scale), '10', str(scale)])
+                    self.assertEqual([Fraction(v) for v in lines[6 * index + 4:6 * index + 6]],
+                                     [Fraction(x), order])
 
     def certified(self, options=('-l',), files=(), binary=None):
         cases = []
