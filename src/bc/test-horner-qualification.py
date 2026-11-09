@@ -6,6 +6,7 @@ import importlib.util
 import json
 from pathlib import Path
 import random
+import re
 import tempfile
 import unittest
 
@@ -24,6 +25,24 @@ class HornerQualification(unittest.TestCase):
     def setUpClass(cls):
         cls.bench = load('bench-bc')
         cls.corpus = load('bessel-horner-corpus')
+
+    def test_first_math_study_cannot_replace_original_arithmetic_controls(self):
+        root = Path(__file__).resolve().parents[2]
+        workflow = (root / '.github/workflows/bc-small-bessel-horner-qualification.yml').read_text()
+        suites = re.search(r'^        suite: \[([^\]]+)\]$', workflow, re.M)
+        self.assertIsNotNone(suites)
+        self.assertEqual([name.strip() for name in suites[1].split(',')],
+                         ['full-low', 'full-middle', 'full-high',
+                          'holdout-low', 'holdout-middle', 'holdout-high'])
+        self.assertIn('image: [ubuntu-24.04, macos-15, windows-2025]', workflow)
+        self.assertIn("if: github.head_ref == 'codex/bc-bessel-declared-qualification'", workflow)
+        self.assertNotIn('startup-calibration.py', workflow)
+        self.assertNotIn('scripts/benchmark-ci.py', workflow)
+        self.assertIn("'src/bc/scripts/benchmark-math-ci.py'", workflow)
+        self.assertIn("os.environ['GITHUB_RUN_ATTEMPT'] != '1'", workflow)
+        original = root / 'docs/utilities/bc-small-bessel-horner/qualification-original.md'
+        self.assertEqual(hashlib.sha256(original.read_bytes().replace(b'\r\n', b'\n')).hexdigest(),
+                         'c9c9e250a87d662bebaba62605b06cc96cc03aefa7bab8645d19c36adc4b4a04')
 
     def test_partitions_retain_every_historical_payload_and_new_regime(self):
         for preset in ('full', 'holdout'):

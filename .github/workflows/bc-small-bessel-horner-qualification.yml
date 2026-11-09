@@ -1,4 +1,4 @@
-name: bc finite Bessel qualification
+name: bc finite Bessel first math measurements
 
 on:
   pull_request:
@@ -17,13 +17,14 @@ concurrency:
 
 jobs:
   qualify:
-    # Correctness-only preparation. Activate only after an independent final declaration.
-    if: false
+    # First math observations after the original pre-calibration setup failure.
+    # Original arithmetic/startup evidence remains unqualified and is not rerun.
+    if: github.head_ref == 'codex/bc-bessel-declared-qualification'
     strategy:
       fail-fast: false
       matrix:
         image: [ubuntu-24.04, macos-15, windows-2025]
-        suite: [arithmetic, full-low, full-middle, full-high, holdout-low, holdout-middle, holdout-high]
+        suite: [full-low, full-middle, full-high, holdout-low, holdout-middle, holdout-high]
     name: Finite Bessel / ${{ matrix.image }} / ${{ matrix.suite }}
     runs-on: ${{ matrix.image }}
     timeout-minutes: 360
@@ -85,32 +86,13 @@ jobs:
           if os.environ['GITHUB_RUN_ATTEMPT'] != '1':
               raise SystemExit('A frozen cohort cannot be restarted for acceptance')
           suite=os.environ['BC_SUITE']
-          script='benchmark-ci.py' if suite=='arithmetic' else 'benchmark-math-ci.py'
-          arguments=[sys.executable,'src/bc/scripts/'+script,'--source',os.environ['GITHUB_WORKSPACE'],
+          preset,partition=suite.split('-')
+          arguments=[sys.executable,'src/bc/scripts/benchmark-math-ci.py','--source',os.environ['GITHUB_WORKSPACE'],
               '--base',os.environ['BC_BASE'],'--candidate',os.environ['BC_CANDIDATE'],
               '--output','horner-results','--broad','--compare-resources','--samples','31']
-          if suite=='arithmetic':
-              arguments+=['--sparse-qualification']
-          else:
-              preset,partition=suite.split('-')
-              arguments+=['--broad-preset',preset,'--horner-partition',partition,
-                  '--duration-seconds','.25','--child-timeout-seconds','600','--total-seconds','20000']
+          arguments+=['--broad-preset',preset,'--horner-partition',partition,
+              '--duration-seconds','.25','--child-timeout-seconds','600','--total-seconds','20000']
           subprocess.run(arguments,check=True)
-      - name: Bind startup roles to the exact arithmetic images
-        if: matrix.suite == 'arithmetic'
-        shell: python
-        run: |
-          import json
-          from pathlib import Path
-          roles=[json.loads(Path('horner-results',role,'implementations.json').read_text())['implementations'][0]
-              for role in ('base','aa','candidate')]
-          Path('cohort/startup-config.json').write_text(json.dumps(dict(implementations=roles),indent=2)+'\n')
-      - name: Collect the unchanged startup study
-        if: matrix.suite == 'arithmetic'
-        shell: pwsh
-        run: |
-          python src/bc/scripts/startup-calibration.py --config cohort/startup-config.json --output cohort/startup --total-seconds 2400 --child-timeout-seconds 5
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Preserve every original outcome and available input
         if: always()
         uses: actions/upload-artifact@v7

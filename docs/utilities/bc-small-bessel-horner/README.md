@@ -60,14 +60,18 @@ the approved regression, Howard-margin and startup rules. Do not pool
 hosts/sources, retry for acceptance or treat green CI as qualification.
 The broader #197/#200/#207/#217 goals stay open where unmet.
 
-The [protocol record](qualification.md) identifies the failed original
-study and the current correctness-only preparation. It preserves the original
-inputs, groups, resource/startup requirements and gates; it does not declare
-an active corrected timing cohort or establish performance/adoption.
+The [current protocol](qualification.md) prospectively collects the first
+math observations after the original setup failure. The exact original
+protocol is retained separately. Original arithmetic and startup uncertainty
+remains binding; the corrected workflow has no arithmetic/startup rerun.
+Favorable math observations alone cannot establish performance adoption.
 
 Corrected-setup preparation uses accepted main `3beebb14` and the explicit
 unmeasured-input phase. The original `18a25510` study failed before math
 calibration and remains frozen. The real controller argv now passes a
-synthetic process fixture; all 188 original program/oracle/parameter payloads
-are unchanged. This branch runs correctness only until the original outcomes
-and the accepted merge's own CI are reviewed and a new protocol is declared.
+synthetic process fixture for all six partitions; all 188 original
+program/oracle/parameter payloads are unchanged. The first math declaration
+requires reviewed original outcomes, the accepted merge's own CI, and the
+correctness-only preflight before publication. Its 18 math jobs preserve
+every original case, fallback and acceptance requirement. The ordinary
+timing workflows remain excluded for this branch.

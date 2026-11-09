@@ -4,8 +4,8 @@
   "prospective_comment": 6748002125,
   "files": {
     ".github/workflows/bc-small-bessel-horner-correctness.yml": "15cd77555ae54d13206acdea4f414216661cd01c20b7fbebba557efaa8382443",
-    ".github/workflows/bc-small-bessel-horner-qualification.yml": "616f96f719851ccc11b606e333640a4e8f526856ee0c409f8c2f39761d99f6df",
-    "docs/utilities/bc-small-bessel-horner/qualification.md": "97cf27df62ad8148f62a249e00d2b6d6f6c1bfc66e839227d09b67fc23a87794",
+    ".github/workflows/bc-small-bessel-horner-qualification.yml": "5556a6623563c169274d37ae8136436e890c82b8ab005c6c6690236fa15d4d43",
+    "docs/utilities/bc-small-bessel-horner/qualification.md": "ee3ebec9f59879cf1a75e6d039b049ea46a84526d74b2abf7201e3f75321240b",
     "src/bc/CMakeLists.txt": "7e4f1663b28319536267e7df2abb272acf08e23e51d0c1553c3c45288f2c0fe2",
     "src/bc/digit-storage.hh": "3e94c8a5ee76309a0bbf42aa56bcc0df31441ddce7e84198d5474cedb051f812",
     "src/bc/fixtures/math-benchmark-oracles.json": "7f9c0a40673d6d38ef4d595e35594a9ccc5bc4f355038c7787e399260943bb37",
@@ -37,14 +37,15 @@
     "src/bc/scripts/verify-prepared-components.py": "e79c0ba5c572903750032bc567dcf3b73e85d22e78bb823bdeffdb8ed3353266",
     "src/bc/scripts/windows-image-probe.py": "d3bce20f16449ec4ba30d519394edb7be315f3f985999c83425c34a2426d902f",
     "src/bc/test-benchmark-ci.py": "f8040fa34ab6ba1dca582941ff18ee65849e2a3248e4d203555575c76a59f479",
-    "src/bc/test-benchmark-math-ci.py": "92412392d539da981bad9d4f5886c3e623b599d227c301c8861554c2cadaad5d",
+    "src/bc/test-benchmark-math-ci.py": "b5c22f2cf85067103c1d1f6612b1bc1e13a96530126ae76e95a964869702289c",
     "src/bc/test-gd-build.py": "0d2c62519520dd822b198f1cfafe98ec9a7c8d73f9df8d2af85951673361f76d",
-    "src/bc/test-horner-qualification.py": "1f13ee12c8e899f4b3c1a70280376e2c2e17fead42bfdd382315010314a5ae73",
+    "src/bc/test-horner-qualification.py": "99276efdc34b22a0fad0cff9cef93382043bd1aa5b9856513421228f5b7380fc",
     "src/bc/test-math-library-cli.py": "678ccb4ce737d349a5e986420111c2ad1ad1046f76b01d5d392f3fbc53ab7cc3",
     "src/bc/test-resource-comparison.py": "07849ff33a6016b91e66178cead90205d0d05a6a0953b57202ac287855ad1f34",
-    "src/bc/vm.cc": "4d47005e91a6362d5555325f24141b4b9d3b60ff076df6ecd0c7197057562100"
+    "src/bc/vm.cc": "4d47005e91a6362d5555325f24141b4b9d3b60ff076df6ecd0c7197057562100",
+    "docs/utilities/bc-small-bessel-horner/qualification-original.md": "c9c9e250a87d662bebaba62605b06cc96cc03aefa7bab8645d19c36adc4b4a04"
   },
   "scope": "Correctness-only preparation; qualification disabled and ordinary timing excluded. Original18kernel/data retained without qualification transfer.",
-  "phase": "CORRECTNESS_ONLY_HANDOFF_FIXED_NO_TIMING_COHORT",
+  "phase": "first-math-only; original arithmetic and startup blockers retained",
   "prior_study_source": "18a25510d9816860bca190615fbab99d59badc1b"
 }
