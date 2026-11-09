@@ -18,6 +18,10 @@ endif()
 target_compile_definitions(libbc PUBLIC GD_BC_ARRAY_STORAGE=${_bc_array_layout})
 target_compile_definitions(libbc PUBLIC GD_BC_PREPARED_DIVISORS=$<BOOL:${ENABLE_BC_PREPARED_DIVISORS}>)
 option(ENABLE_BC_EXACT_SQUARE "Enable the experimental exact transform square" OFF)
+option(ENABLE_BC_SUBTRACTIVE_SQUARE "Enable experimental bounded-scratch Karatsuba squares" OFF)
+# Number templates are visible to consumers; keep their dispatch consistent.
+target_compile_definitions(libbc PUBLIC
+  GD_BC_SUBTRACTIVE_SQUARE=$<BOOL:${ENABLE_BC_SUBTRACTIVE_SQUARE}>)
 if(ENABLE_BC_EXACT_SQUARE)
   target_compile_definitions(libbc PUBLIC GD_BC_EXPERIMENT_NTT=1)
 endif()

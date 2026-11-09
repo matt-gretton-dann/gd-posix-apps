@@ -16,6 +16,7 @@
 #include "bc.hh"
 #include "limb-product.hh"
 #include "limb-schoolbook.hh"
+#include "profiling.hh"
 
 namespace {
 // This oracle uses decimal characters, not the implementation's limb radix,
@@ -86,6 +87,32 @@ TEMPLATE_TEST_CASE("Recursive workspace stays within planned buffers",
   }
 }
 }  // namespace
+
+#if defined(GD_BC_PROFILE) && GD_BC_SUBTRACTIVE_SQUARE
+TEST_CASE("Medium squares recurse independently of the product crossover",
+          "[bc][number][multiply][square][subtractive]")
+{
+  using Number = GD::Bc::Number;
+  using N = Number::NumType;
+  struct Restore
+  {
+    ~Restore() { Number::multiply_split_point(1); }
+  } const restore;
+  Number::multiply_split_point(N(126));
+  std::string input(112 * Number::base_log10_, '9');
+  for (std::size_t i = 1; i < input.size(); ++i)
+    input[i] = static_cast<char>('0' + (i * 7 + i / 13) % 10);
+  Number value(input, N(10));
+  auto const snapshot = value;
+  auto const before = GD::Bc::Profile::snapshot();
+  value.multiply(value, N(0));
+  auto const after = GD::Bc::Profile::snapshot();
+  auto const index = static_cast<std::size_t>(GD::Bc::Profile::Event::square_multiply_calls);
+  CHECK(after.events[index] - before.events[index] == 3);
+  CHECK(value == Number(decimal_product(input, input), N(10)));
+  CHECK(snapshot == Number(input, N(10)));
+}
+#endif
 
 TEMPLATE_TEST_CASE("Recursive products agree with decimal convolution",
                    "[bc][number][multiply][workspace]", GD::Bc::NumberTraits8,
