@@ -1,6 +1,7 @@
 # Reusable scalar-local bindings experiment
 
-Refs #707, #207 and #197. Default OFF; no performance acceptance is claimed.
+Refs #707, #207 and #197. The unmerged qualification candidate proposes default
+ON; explicit OFF retains accepted execution. No performance acceptance is claimed.
 
 The accepted VM moves each declared scalar into a mixed saved-local buffer,
 installs a zero, then moves the saved Number back on return. The experiment
