@@ -156,8 +156,12 @@ def representatives(bench, preset, suite):
     """Fixed resource cases; no timing results influence their selection."""
     if suite == 'arithmetic':
         groups = {'startup', 'loop', 'calls', 'recursion', 'array', 'array_sparse',
-                  'streaming', 'file_streaming', 'temporary_chain'}
-        cases = [case for case in bench.corpus(preset) if case['group'] in groups]
+                  'streaming', 'file_streaming', 'temporary_chain', 'bindings_wide_locals',
+                  'bindings_dynamic_chain', 'bindings_recursion_snapshots'}
+        # Match operand generation, independently of measurement schedule seeds.
+        # Every common resource program/oracle must match its timed counterpart.
+        seed = 197201 if preset == 'holdout' else 197200
+        cases = [case for case in bench.corpus(preset, seed=seed) if case['group'] in groups]
         if {case['group'] for case in cases} != groups:
             raise ValueError('resource corpus is missing a required arithmetic group')
         return cases + frame_cases(preset) + private_frame_cases(preset) + native_function_cases(preset) + word_function_cases(preset)
