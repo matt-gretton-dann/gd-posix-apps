@@ -55,6 +55,21 @@ signals and CLI/numerical oracles. A new native preflight must retain actual
 compiler policies, VM objects, images, source inputs and logs for this source.
 No local or historical result substitutes for final-head native checks.
 
+The immutable `e563159a` preflight completed all 49 hosted checks and all 38
+original native archive reviews. Its prefix modes retain actual VM objects,
+images, compiler definitions and eleven source inputs; profile fixtures pass
+the same move bound. This establishes correctness evidence for that revision,
+not elapsed performance or qualification of a later revision.
+
+Qualification collectors retain each ordinary and diagnostic image and its
+source/build policy. Before sampling, require actual prefix ON for candidate
+roles and implementation absence for the accepted baseline. Check the VM
+compiler command or Visual Studio Release definitions against the CMake option,
+retaining the VM, CMake and header inputs. Explicit OFF is distinct from an old
+source without the implementation. Matching policies establish compiled
+selection; they do not prove dynamic ordinary/profile path identity. The
+collector fixtures run through CTest as well as directly.
+
 Before adoption, declare and freeze this candidate's own complete three-platform
 full/held arithmetic, math, startup and resource study against accepted main.
 Keep the approved policy, caps, Howard-margin exception, competitive targets,
