@@ -26,6 +26,11 @@ monostate. Numeric zero construction during reset remains work, separately
 from buffer object initialization. The Number representation and public API
 are unchanged. Full-check and verified execution use the same ownership rule.
 Typed execution accesses the owning buffers rather than cached raw pointers.
+Generic compact execution obtains a destination only for an operation that
+produces a value. Eagerly touching a branch or EOF destination would otherwise
+expand cleanup to the instruction index when slot compaction is unprofitable,
+even though that instruction stores nothing. The early-prefix test covers this
+identity-map case as well as full-check and typed execution.
 
 Each active depth still owns stable independent storage. Escaped results retain
 their ordinary value ownership. A failed growth publishes no activation. Copy
