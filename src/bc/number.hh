@@ -32,6 +32,7 @@
 #include "bc.hh"
 #include "digit-storage.hh"
 #include "limb-product.hh"
+#include "limb-subtractive-square.hh"
 #if defined(GD_BC_EXPERIMENT_NTT)
 #include "limb-ntt.hh"
 #endif
@@ -1694,6 +1695,16 @@ private:
                        typename DigitVector::const_iterator rhs_begin,
                        typename DigitVector::const_iterator rhs_end) -> BasicDigits
   {
+#if defined(GD_BC_SUBTRACTIVE_SQUARE) && GD_BC_SUBTRACTIVE_SQUARE
+    if constexpr (LimbSquare<Traits>::supported) {
+      // The experimental square crossover is independent of the product
+      // crossover. Keep shape dispatch before any recursive allocation.
+      if (lhs_end - lhs_begin > 64 && lhs_end - lhs_begin <= multiply_split_point_ &&
+          std::to_address(lhs_begin) == std::to_address(rhs_begin) &&
+          lhs_end - lhs_begin == rhs_end - rhs_begin)
+        return multiply_workspace(lhs_begin, lhs_end, rhs_begin, rhs_end);
+    }
+#endif
     if (std::distance(lhs_begin, lhs_end) <= multiply_split_point_ ||
         std::distance(rhs_begin, rhs_end) <= multiply_split_point_) {
       if constexpr (LimbSquare<Traits>::supported) {
@@ -1919,6 +1930,20 @@ private:
     BasicDigits result;
     result.copy_on_write();
     result.digits_->resize(lhs_size + rhs_size, NumType{0});
+#if defined(GD_BC_SUBTRACTIVE_SQUARE) && GD_BC_SUBTRACTIVE_SQUARE
+    if constexpr (LimbSquare<Traits>::supported) {
+      if (lhs_size > 64 && lhs_size == rhs_size &&
+          std::to_address(lhs_begin) == std::to_address(rhs_begin)) {
+        using Square = LimbSubtractiveSquare<Traits>;
+        std::vector<NumType, Profile::Allocator<NumType, Profile::AllocationKind::digits>> scratch(
+          Square::workspace_size(lhs_size, 64));
+        Square::multiply({lhs_begin, lhs_end}, {result.digits_->begin(), result.digits_->end()},
+                         scratch, 64);
+        result.tidy();
+        return result;
+      }
+    }
+#endif
 #if defined(GD_BC_EXPERIMENT_NTT)
     if constexpr (std::is_same_v<Traits, NumberTraits32>) {
       auto const left = std::span<NumType const>(lhs_begin, lhs_end);
