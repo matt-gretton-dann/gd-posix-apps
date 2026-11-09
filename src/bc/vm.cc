@@ -1753,7 +1753,9 @@ auto GD::Bc::Details::InstructionPack::execute_compact() -> std::pair<GD::Bc::Nu
       return std::make_pair(Number(0), true);
     GD_BC_PROFILE_EVENT(Profile::Event::instructions_executed, 1);
     auto const& instruction = executable[pc_];
-    auto& destination = (*results_)[instruction.result];
+    // Non-producing instructions must not extend the cleanup prefix when
+    // an unprofitable slot map retains instruction-indexed result storage.
+    auto destination = [&]() -> ResultSlot& { return (*results_)[instruction.result]; };
     auto take = [&]() -> Number {
       auto& number = std::get<Number>(*(*results_)[instruction.first.index]);
       if (number.has_heap_storage() && !consumption_.empty() && consumption_[pc_] != 0) {
@@ -1765,40 +1767,40 @@ auto GD::Bc::Details::InstructionPack::execute_compact() -> std::pair<GD::Bc::Nu
     auto unary = [&](auto operation) {
       Number value = take();
       operation(value);
-      destination = std::move(value);
+      destination() = std::move(value);
     };
     auto binary = [&](auto operation) {
       Number lhs = take();
       Number const& rhs = std::get<Number>(*(*results_)[instruction.second.index]);
       operation(lhs, rhs);
-      destination = std::move(lhs);
+      destination() = std::move(lhs);
     };
     switch (instruction.opcode) {
     case O::string:
-      destination = std::string_view(std::get<std::string>(instrs_[pc_].op1()));
+      destination() = std::string_view(std::get<std::string>(instrs_[pc_].op1()));
       break;
     case O::number:
-      destination = instrs_[pc_].decoded_number(vm_->ibase());
+      destination() = instrs_[pc_].decoded_number(vm_->ibase());
       break;
     case O::variable:
-      destination = Variable(instruction.first.letter);
+      destination() = Variable(instruction.first.letter);
       break;
     case O::array:
-      destination = Array(instruction.first.letter);
+      destination() = Array(instruction.first.letter);
       break;
     case O::array_element:
-      destination =
+      destination() =
         ArrayElement(Array(instruction.first.letter),
                      std::get<Number>(*(*results_)[instruction.second.index]).to_unsigned());
       break;
     case O::ibase:
-      destination = Ibase();
+      destination() = Ibase();
       break;
     case O::obase:
-      destination = Obase();
+      destination() = Obase();
       break;
     case O::scale:
-      destination = Scale();
+      destination() = Scale();
       break;
     case O::print:
       print_value((*results_)[instruction.first.index],
@@ -1808,14 +1810,14 @@ auto GD::Bc::Details::InstructionPack::execute_compact() -> std::pair<GD::Bc::Nu
     case O::quit:
       std::exit(static_cast<int>(instruction.first.index));  // NOLINT(concurrency-mt-unsafe)
     case O::load:
-      load_value(destination, (*results_)[instruction.first.index], instruction.first.index);
+      load_value(destination(), (*results_)[instruction.first.index], instruction.first.index);
       break;
     case O::store:
       store_value((*results_)[instruction.first.index], (*results_)[instruction.second.index],
                   instruction.first.index, instruction.second.index);
       break;
     case O::length:
-      length_value(destination, (*results_)[instruction.first.index], instruction.first.index);
+      length_value(destination(), (*results_)[instruction.first.index], instruction.first.index);
       break;
     case O::negate:
       unary([](Number& value) { value.negate(); });
@@ -1920,13 +1922,13 @@ auto GD::Bc::Details::InstructionPack::execute_compact() -> std::pair<GD::Bc::Nu
       vm_->pop_param_pack();
       break;
     case O::pop_param:
-      destination = vm_->pop_param();
+      destination() = vm_->pop_param();
       break;
     case O::pop_param_array:
-      destination = vm_->pop_param_array();
+      destination() = vm_->pop_param_array();
       break;
     case O::call:
-      destination = vm_->call(instruction.first.letter, std::get<Location>(instrs_[pc_].op2()));
+      destination() = vm_->call(instruction.first.letter, std::get<Location>(instrs_[pc_].op2()));
       break;
     case O::return_:
       return std::make_pair(std::move(std::get<Number>(*(*results_)[instruction.first.index])),
