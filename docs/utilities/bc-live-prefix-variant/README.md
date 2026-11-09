@@ -88,3 +88,10 @@ Resource comparisons require matching ordinary/profile selections and source
 hashes. The opt-in flag does not itself prove that the size condition selects
 the variant, or establish dynamic identity of ordinary and diagnostic paths.
 The prospective immutable study protocol remains required before launch.
+
+Resource representatives use the elapsed arithmetic corpus seed: 197200 full,
+197201 held-out. A test-first regression caught the prior default seed in
+held-out resource generation. Common resource and elapsed cases now retain
+identical program and oracle dictionaries; additional lifetime/cache probes
+remain explicitly separate diagnostic cases. Frozen #703 data is unchanged
+and records the earlier seed mismatch as a resource-correspondence limitation.

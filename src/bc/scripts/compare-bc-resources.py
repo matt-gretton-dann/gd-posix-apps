@@ -157,7 +157,10 @@ def representatives(bench, preset, suite):
     if suite == 'arithmetic':
         groups = {'startup', 'loop', 'calls', 'recursion', 'array', 'array_sparse',
                   'streaming', 'file_streaming', 'temporary_chain'}
-        cases = [case for case in bench.corpus(preset) if case['group'] in groups]
+        # Match the elapsed controller's operand seed, independently of its
+        # randomized measurement schedule. Seeded holdouts must keep their bytes.
+        seed = 197201 if preset == 'holdout' else 197200
+        cases = [case for case in bench.corpus(preset, seed=seed) if case['group'] in groups]
         if {case['group'] for case in cases} != groups:
             raise ValueError('resource corpus is missing a required arithmetic group')
         return cases + frame_cases(preset) + private_frame_cases(preset) + native_function_cases(preset) + word_function_cases(preset)
