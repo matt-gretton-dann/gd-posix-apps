@@ -333,7 +333,59 @@ precedes the test, and zero is independent of the recorded parity. The
 ordinary decimal product 16*x is exact because multiplication retains x's
 fractional scale. No transcendental bound calculation runs in the interpreter.
 
-For x > max(8*(n*n+1), W), attempt the real large-argument expansion from
+### Finite backward series for small orders
+
+For normalized order n=0 or 1, argument 0<=x<=4 and entry scale S<=100,
+evaluate a finite backward polynomial before trying the general regimes.
+The limits are declared algorithm domains, not measured crossovers. At
+scale zero choose K=16+ceil(S/2), then use working scale W=S+16 and u=10^-W.
+Save the original exact argument before truncating it to W places. Compute
+q=(x*x)*.25 at W, start r=1 and, for k from K down to 1, evaluate
+`r=1-q*r/(k*(n+k))`. For n=1 finish with `r=(r*x)/2` in that order.
+This is the finite form of the [ascending definition](https://dlmf.nist.gov/10.2.E2).
+The normalization n! is one for both admitted orders.
+
+The absolute polynomial, propagation-weight sum and derivative with respect
+to q are each below exp(4)<64. For the derivative, the coefficients are
+`4^j/((j+1)*(j!)^2)`; comparison with `sum(4^j/j!)` bounds all three sums.
+The [exact rational checks](../../src/bc/test-bessel-horner-proof.py) bound
+exp(4) by a finite positive sum and a geometric remainder.
+
+Argument truncation changes x*x/4 by less than 2u. The square and subsequent
+quarter multiplication contribute at most u/4+u, so the stored q stays in
+[0,4] and differs from the exact coefficient by less than 4u. Each Horner
+step adds at most 2u of local multiplication/division error; subtraction
+from one is exact at W. The total polynomial error is below
+`2*64u+4*64u=384u`. For order one, multiplying by x and dividing by two,
+including argument error in this final factor, costs at most
+`2*384u+32u+u/2+u=801.5u`. A common bound of 1024u covers either order.
+
+The omitted tail is at most
+`T=2*4^(K+1)/((K+1)!)^2/(1-4/(K+2)^2)`. The leading factor two bounds x/2;
+factorial squares bound both orders' denominators. Exact rational checks
+cover every integer S from zero through 100 and prove
+`T<10^(-S-12)` and `T+1024u<10^(-S-11)`.
+
+Apply the existing sign normalization and symmetric half-unit rounding.
+Return the finite result only when its computed distance from either
+rounding boundary exceeds E=10^(-S-11). Otherwise restore the exact input
+and evaluate the accepted generic series. The generic series' error bound
+below is much smaller than this exclusion window, so an accepted finite
+result chooses the same rounding side. Exact midpoint and nearby decimal
+tests retain the generic result choices. Both working-scale assignments
+check readback before any result is returned.
+
+The independent forward-series CLI oracle checks the output ULP, caller
+values, bases and scales on both sides of the order, argument and precision
+boundaries. Test-side decision probes cover the finite path and both
+uncertainty exits; clipped-setter models check its defensive failures.
+These tests do not establish a speed, allocation or code-size improvement.
+The extra predicates, saved input and rounding-window work remain costs.
+
+### Large arguments and generic ascending series
+
+Outside the finite domain, or after its uncertainty fallback, for
+x > max(8*(n*n+1), W), attempt the real large-argument expansion from
 [NIST DLMF 10.17](https://dlmf.nist.gov/10.17). Coefficients satisfy
 `b_0=1; b_k=b_(k-1)*(4*n*n-(2*k-1)^2)/(8*k*x)`.
 Split their alternating even/odd sums and reconstruct with phase

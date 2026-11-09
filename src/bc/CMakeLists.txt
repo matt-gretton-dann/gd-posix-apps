@@ -401,6 +401,9 @@ if(RUN_INTEGRATION_TESTS)
   add_test(NAME bc/math-library-cli COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-math-library-cli.py" "$<TARGET_FILE:bc>")
   set_tests_properties(bc/math-library-cli PROPERTIES TIMEOUT 650)
+  add_test(NAME bc/math-bessel-horner-proof COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-bessel-horner-proof.py")
+  set_tests_properties(bc/math-bessel-horner-proof PROPERTIES TIMEOUT 30)
   add_test(NAME bc/math-library-source COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-math-library-source.py"
            "${CMAKE_CURRENT_SOURCE_DIR}/math-library.bc"
@@ -432,6 +435,12 @@ if(RUN_INTEGRATION_TESTS)
            "${CMAKE_CURRENT_SOURCE_DIR}/test-gd-build.py"
            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/build-gd-bc.py")
   set_tests_properties(bc/gd-build-provenance PROPERTIES TIMEOUT 20)
+  add_test(NAME bc/resource-comparison COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-resource-comparison.py")
+  set_tests_properties(bc/resource-comparison PROPERTIES TIMEOUT 30)
+  add_test(NAME bc/horner-qualification COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-horner-qualification.py")
+  set_tests_properties(bc/horner-qualification PROPERTIES TIMEOUT 30)
   add_test(NAME bc/multiply-config COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-multiply-config.py" "${CMAKE_COMMAND}"
            "${CMAKE_SOURCE_DIR}/cmake/BcMultiplyConfig.cmake")

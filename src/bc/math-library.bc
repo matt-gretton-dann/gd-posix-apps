@@ -421,6 +421,53 @@ define j(n,x) {
       }
     }
   }
+  /* Finite backward evaluation bounds work for small orders/arguments.
+     K=16+ceil(s/2), W=s+16: the omitted tail and all truncation are
+     below 10^(-s-11). Keep the exact input for midpoint fallback.
+     See docs/utilities/bc-portable-math.md for the error bounds. */
+  if (n<=1) {
+    if (x<=4) {
+      if (s<=100) {
+        d=x
+        m=16+(s+1)/2
+        w=s+16
+        scale=w
+        if (scale!=w) return(1/0)
+        if (scale(x)>w) x=x/1
+        q=x*x*.25
+        r=1
+        for (k=m;k>0;k--) {
+          r=1-q*r/(k*(n+k))
+        }
+        if (n==1) r=r*x/2
+        f=v
+        if (r<0) {
+          r= -r
+          f=1-f
+        }
+        t=10^(-s)
+        p=t*.00000000001
+        u=r+t/2
+        scale=s
+        h=u/1
+        scale=w
+        if (scale!=w) return(1/0)
+        u-=h
+        /* Do not choose a rounding side when the certified interval
+           can meet a half-unit boundary. Use the original series. */
+        if (u>p) {
+          if (t-u>p) {
+            if (f==1) h= -h
+            scale=s
+            ibase=b
+            return(h)
+          }
+        }
+        x=d
+        scale=0
+      }
+    }
+  }
   w=s+scale(x)+length(x)+2*length(s+scale(x)+length(x)+length(n)+1)+32
   /* DLMF 10.17.14-15 bounds the Hankel remainder by less than three
      first-omitted coefficients here. Abort if recurrence contraction is

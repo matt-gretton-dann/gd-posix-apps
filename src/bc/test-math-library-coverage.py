@@ -83,6 +83,22 @@ def main():
     hankel = next(case for case in cases
                   if case['id'] == 'j-argument-dominates' and case['scale'] == 100)
     cases.append(dict(hankel, scale=55))
+    # Exact alternating forward enclosures at a rounding boundary exercise
+    # both sides of finite Horner's uncertainty window and its fallback.
+    # These do not use the runtime polynomial or its working precision.
+    for index, argument in enumerate(('1.52114405766876514815130187',
+                                      '1.52114405766876514815130188',
+                                      '1.5211440576687', '1.5211440576688')):
+        x = Fraction(argument)
+        term = partial = Fraction(1)
+        for k in range(1, 40):
+            term *= -x * x / (4 * k * k)
+            partial += term
+        following = partial - term * x * x / (4 * 40 * 40)
+        lower, upper = sorted((partial, following))
+        cases.append(dict(id='j-horner-midpoint-' + str(index), scale=0,
+                          function='j', arguments=['0', argument],
+                          lower=str(lower), upper=str(upper)))
     program = ''.join('scale={}\n{}({})\n'.format(
         case['scale'], case['function'], ','.join(case['arguments'])) for case in cases)
     result = run(args.bc, transformed, program)
@@ -106,7 +122,7 @@ def main():
     modeled = set()
     j_guards = [item['line'] for item in decisions
                 if item['function'] == 'j' and item['expression'] == 'scale!=w']
-    assert len(j_guards) == 2
+    assert len(j_guards) == 4
     for decision in decisions:
         if decision['expression'] != 'scale!=w':
             continue
@@ -120,7 +136,10 @@ def main():
         call = {'a': 'a(0)', 'e': 'e(0)', 'l': 'l(1)',
                 's': 's(4)', 'c': 'c(4)'}.get(function)
         if function == 'j':
-            call = 'j(0,1000)' if decision['line'] == j_guards[0] else 'j(0,1)'
+            # Both finite-evaluation setters must be clipped independently.
+            # Argument 5 bypasses that regime for the generic-series setter.
+            calls = ['j(0,1)', 'j(0,1)', 'j(0,1000)', 'j(0,5)']
+            call = calls[j_guards.index(decision['line'])]
         fault = run(args.bc, model, call + '\n')
         assert fault.returncode != 0 and fault.stderr
         fault_plain, fault_outcomes = strip_probes(fault.stdout)
