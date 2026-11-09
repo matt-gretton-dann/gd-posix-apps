@@ -71,3 +71,24 @@ The original three square sizes also receive matched resource checks, with a
 positive recursion-counter requirement for medium/large enabled cases. These
 checks record compile selection and diagnostic execution, not ordinary/profile
 dynamic-path identity or elapsed acceptance.
+
+The fresh workload declaration is #703 comment 6734551250. The kernel and its
+crossover were fixed before generating these inputs. An independent RNG uses
+the existing preset corpus seed XOR 703197. Three cases are appended after all
+existing RNG draws, increasing each arithmetic preset from 66 to 69 cases:
+
+| Shape | Full digits / iterations | Held-out digits / iterations |
+| --- | --- | --- |
+| Irregular dense | 1062 / 10000 | 1089 / 8750 |
+| Irregular upper half, zero lower half | 1179 / 10000 | 1215 / 8750 |
+| Two identical irregular halves | 2124 / 3000 | 2250 / 2625 |
+
+Shapes use native 9-decimal-digit limbs; every irregular segment starts nonzero.
+Zero suffixes occupy floor(n/2) complete limbs; the identical-halves extents are
+even. Quick mode reduces dimensions and iterations and is not qualification.
+All six old/new square cases in each full/held-out preset receive matched
+resource checks. `original-arithmetic-corpus.json` retains every original name,
+group, parameter and program SHA-256. Tests compare all 132 original identities,
+the declared new dimensions and shapes, and modular oracle checks. Historical
+oracle/hash tests remain active with the expanded counts. Local fixture runs
+omit the native quick timing test explicitly; hosted correctness retains it.

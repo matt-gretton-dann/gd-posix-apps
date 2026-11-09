@@ -156,7 +156,8 @@ def representatives(bench, preset, suite):
     """Fixed resource cases; no timing results influence their selection."""
     if suite == 'arithmetic':
         groups = {'startup', 'loop', 'calls', 'recursion', 'array', 'array_sparse',
-                  'streaming', 'file_streaming', 'temporary_chain', 'square'}
+                  'streaming', 'file_streaming', 'temporary_chain', 'square',
+                  'square_fresh_irregular', 'square_fresh_zero_low', 'square_fresh_equal_halves'}
         cases = [case for case in bench.corpus(preset) if case['group'] in groups]
         if {case['group'] for case in cases} != groups:
             raise ValueError('resource corpus is missing a required arithmetic group')
