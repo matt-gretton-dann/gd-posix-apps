@@ -205,6 +205,19 @@ def build_metadata(helper, root, source, build, revision, split, compiler_c, com
     native = verified_native_scalars(helper, build)
     native_functions = verified_native_functions(helper, build, source)
     word_functions = verified_word_functions(helper, build, source, word_mode)
+    prefix_results = verified_prefix_results(helper, build, source)
+    if prefix_results['status'] == 'recorded':
+        directory = root / 'prefix-result-policy'
+        directory.mkdir(exist_ok=True)
+        shutil.copyfile(str(build / 'CMakeCache.txt'), str(directory / 'CMakeCache.txt'))
+        for relative in prefix_results['verification'].get('files', {}):
+            target = directory / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(str(build / relative), str(target))
+        for item in prefix_results['source_inputs']:
+            target = directory / item['retained_path']
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(str(source / item['path']), str(target))
     if word_functions['status'] == 'recorded':
         directory = root / 'word-function-policy'
         directory.mkdir(exist_ok=True)
@@ -254,6 +267,7 @@ def build_metadata(helper, root, source, build, revision, split, compiler_c, com
                               'native_scalar_policy': native,
                               'native_function_policy': native_functions,
                               'word_function_policy': word_functions,
+                              'prefix_result_policy': prefix_results,
                               'multiply_split_point': split,
                               'diagnostic_profile': diagnostic_profile,
                               'profiling_execution_policy': profiling_execution_policy(
@@ -619,6 +633,163 @@ def verified_word_functions(helper, build, source, requested='AUTO'):
                 translation_units=sorted(units), verification=evidence, source_inputs=inputs,
                 cache_sha256=helper.digest(cache_path),
                 scope='Actual production compilation and source identities; not dynamic execution or profile/release path identity')
+
+
+def verified_prefix_results(helper, build, source, requested='AUTO'):
+    """Bind the boolean selection and implementation to the actual VM build.
+
+    An older source must prove both compilation and implementation absence;
+    missing metadata alone is never evidence of the generic fallback.
+    """
+    if requested not in ('AUTO', 'ON', 'OFF'):
+        raise helper.BuildError('invalid prefix-result mode')
+    key, macro = 'ENABLE_BC_PREFIX_CLEAR_RESULTS', 'GD_BC_PREFIX_CLEAR_RESULTS'
+    cache_path = build / 'CMakeCache.txt'
+    cache = cache_values(cache_path)
+    configured = cache.get(key)
+    if configured is not None:
+        if (not re.search(r'^' + key + r':BOOL=', cache_path.read_text(), re.M) or
+                configured.upper() not in ('ON', 'TRUE', 'YES', '1', 'OFF', 'FALSE', 'NO', '0')):
+            raise helper.BuildError('source did not declare a boolean prefix-result option')
+        configured = configured.upper() in ('ON', 'TRUE', 'YES', '1')
+    elif requested != 'AUTO':
+        raise helper.BuildError('source predates the requested prefix-result option')
+    define = re.compile(r'''(?:^|[\s"'])[-/]D\s*["']?''' + macro + r'''\b(?:=([^\s"';]+))?''')
+    undefine = re.compile(r'''(?:^|[\s"'])[-/]U\s*["']?''' + macro + r'''\b''')
+    database = build / 'compile_commands.json'
+    if database.is_file():
+        rows = json.loads(database.read_text())
+        if not isinstance(rows, list) or any(not isinstance(r, dict) for r in rows):
+            raise helper.BuildError('invalid prefix-result compilation inventory')
+        def command(row):
+            args = row.get('arguments')
+            if args is not None:
+                if not isinstance(args, list) or not all(isinstance(a, str) for a in args):
+                    raise helper.BuildError('invalid prefix-result compiler arguments')
+                result = ' '.join(args)
+                if any(a.startswith('@') for a in args):
+                    raise helper.BuildError('prefix selection cannot verify compiler response files')
+                return result
+            if not isinstance(row.get('command'), str):
+                raise helper.BuildError('missing prefix-result compiler command')
+            if re.search(r'(?:^|\s)@', row['command']):
+                raise helper.BuildError('prefix selection cannot verify compiler response files')
+            return row['command']
+        filename = lambda row: str(row.get('file', '')).replace('\\', '/').rsplit('/', 1)[-1]
+        vm = [r for r in rows if filename(r) == 'vm.cc']
+        if not vm and configured is None:
+            return dict(status='legacy-auto', mode='AUTO', configured=None, enabled=None,
+                        scope='No real VM inventory; absence has not been established')
+        if len(vm) != 1:
+            raise helper.BuildError('missing or ambiguous prefix-result VM compilation')
+        commands = [command(vm[0])]
+        evidence = dict(kind='compile-commands', sha256=helper.digest(database))
+    else:
+        import xml.etree.ElementTree as ET
+        if not cache.get('CMAKE_GENERATOR', '').startswith('Visual Studio'):
+            raise helper.BuildError('prefix selection needs compile commands or native VS projects')
+        relative = 'src/bc/libbc.vcxproj'
+        project = build / relative
+        try:
+            tree = ET.parse(str(project)).getroot()
+        except (ET.ParseError, OSError) as error:
+            raise helper.BuildError('invalid prefix Release project: ' + str(error))
+        definitions, vm = [], []
+        for node in tree.iter():
+            tag = node.tag.rsplit('}', 1)[-1]
+            if tag == 'ClCompile' and node.get('Include'):
+                name = node.get('Include').replace('\\', '/').rsplit('/', 1)[-1]
+                if name == 'vm.cc':
+                    if any(c.tag.rsplit('}', 1)[-1] == 'ExcludedFromBuild' and (c.text or '').lower() == 'true' for c in node):
+                        raise helper.BuildError('prefix VM has excluded configurations')
+                    vm.append(node)
+            if tag == 'AdditionalOptions' and (define.search(node.text or '') or undefine.search(node.text or '')):
+                raise helper.BuildError('prefix project options override its definition')
+            if tag == 'UndefinePreprocessorDefinitions' and macro in (node.text or ''):
+                raise helper.BuildError('prefix project undefines its selection')
+            if tag != 'ItemDefinitionGroup':
+                continue
+            condition = node.get('Condition', '')
+            if condition and not re.search(r'Release\|', condition, re.I):
+                continue
+            for child in node.iter():
+                if child.tag.rsplit('}', 1)[-1] == 'PreprocessorDefinitions':
+                    definitions.append(re.findall(r'(?:^|;)' + macro + r'\b(?:=([^;]+))?', child.text or ''))
+        if not vm and configured is None:
+            return dict(status='legacy-auto', mode='AUTO', configured=None, enabled=None,
+                        scope='No real VM inventory; absence has not been established')
+        if len(vm) != 1 or not definitions or any(d != definitions[0] for d in definitions):
+            raise helper.BuildError('ambiguous prefix Release definitions')
+        for child in vm[0]:
+            if child.tag.rsplit('}', 1)[-1] == 'PreprocessorDefinitions':
+                own = re.findall(r'(?:^|;)' + macro + r'\b(?:=([^;]+))?', child.text or '')
+                if (own and own != definitions[0]) or (own != definitions[0] and '%(PreprocessorDefinitions)' not in (child.text or '')):
+                    raise helper.BuildError('prefix VM item overrides Release definitions')
+        commands = [' '.join('-D' + macro + '=' + v for v in definitions[0])]
+        evidence = dict(kind='msbuild-projects', files={relative: helper.digest(project)},
+                        retained_root='prefix-result-policy')
+    if any(undefine.search(c) for c in commands):
+        raise helper.BuildError('prefix VM undefines its selection')
+    values = define.findall(commands[0])
+    if values not in ([], ['0'], ['1']):
+        raise helper.BuildError('prefix definition must be absent, zero, or one')
+    enabled = values == ['1']
+    if ((configured is not None and values != [str(int(configured))]) or
+            (configured is None and values != [])):
+        raise helper.BuildError('prefix option and production VM disagree')
+    if requested != 'AUTO' and enabled != (requested == 'ON'):
+        raise helper.BuildError('compiled prefix mode differs from request')
+    # Source absence is a separate state from a compiled explicit OFF.
+    # Keep the VM/CMake bytes even for an older baseline so that absence can
+    # be independently checked against its pinned source revision.
+    inputs = []
+    required = ['src/bc/vm.cc', 'src/bc/CMakeLists.txt']
+    header = source / 'src/bc/prefix-result-buffer.hh'
+    if configured is not None:
+        required.append('src/bc/prefix-result-buffer.hh')
+    elif header.exists():
+        raise helper.BuildError('prefix implementation exists without a declared option')
+    for name in required:
+        path = source / name
+        if not path.is_file():
+            raise helper.BuildError('missing prefix source input: ' + name)
+        text = path.read_text(encoding='utf-8')
+        marker = macro if name.endswith('vm.cc') else key
+        if name != 'src/bc/prefix-result-buffer.hh' and ((marker in text) != (configured is not None)):
+            raise helper.BuildError('prefix source and declared option disagree')
+        inputs.append(dict(path=name, sha256=helper.digest(path), retained_path='source/' + name))
+    return dict(status='recorded', mode=requested, configured=configured, enabled=enabled,
+                implementation_present=configured is not None, verification=evidence, source_inputs=inputs,
+                cache_sha256=helper.digest(cache_path),
+                scope='Actual production compilation and source identities; not dynamic execution or profile/release path identity')
+
+
+def require_prefix_result_role(helper, entry, candidate):
+    """Require source-bound ON for a candidate and absence for its old base."""
+    metadata = entry.get('metadata') if isinstance(entry, dict) else None
+    config = metadata.get('configuration') if isinstance(metadata, dict) else None
+    policy = config.get('prefix_result_policy') if isinstance(config, dict) else None
+    expected = {'src/bc/vm.cc', 'src/bc/CMakeLists.txt'}
+    if candidate:
+        expected.add('src/bc/prefix-result-buffer.hh')
+    inputs = policy.get('source_inputs') if isinstance(policy, dict) else None
+    if (not isinstance(policy, dict) or policy.get('status') != 'recorded' or
+            policy.get('enabled') is not candidate or
+            policy.get('implementation_present') is not candidate or
+            (policy.get('configured') is not True if candidate else policy.get('configured') is not None) or
+            not isinstance(inputs, list) or len(inputs) != len(expected) or
+            any(not isinstance(item, dict) or not isinstance(item.get('sha256'), str) or
+                not re.fullmatch('[0-9a-f]{64}', item['sha256']) for item in inputs) or
+            {item.get('path') for item in inputs} != expected):
+        raise helper.BuildError('role lacks verified prefix-result compilation and source inputs')
+
+
+def require_prefix_result_candidate(helper, entry):
+    require_prefix_result_role(helper, entry, True)
+
+
+def require_prefix_result_baseline(helper, entry):
+    require_prefix_result_role(helper, entry, False)
 
 
 def require_word_function_candidate(helper, entry):

@@ -176,7 +176,7 @@ class NativeTrends(unittest.TestCase):
                                  {case['group'] for case in cases})
 
     def exercise(self, fail=False, aa_first=None, aa_second=None, prepared=False,
-                 identical=False, native=False, disabled_native=False, native_functions=False, word_functions=False, word_baseline_unknown=False):
+                 identical=False, native=False, disabled_native=False, native_functions=False, word_functions=False, word_baseline_unknown=False, prefix_results=False):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name) / 'results'
@@ -231,6 +231,17 @@ class NativeTrends(unittest.TestCase):
                     if selected:
                         (output / 'word-function-policy').mkdir()
                         (output / 'word-function-policy/core.cc').write_text('retained word source fixture')
+                    present = prefix_results and name.startswith('candidate')
+                    selected = present and not disabled_native
+                    names = ['vm.cc', 'CMakeLists.txt'] + (['prefix-result-buffer.hh'] if present else [])
+                    policy = dict(status='recorded', mode='AUTO', enabled=selected,
+                        configured=selected if present else None, implementation_present=present,
+                        source_inputs=[dict(path='src/bc/' + n, sha256='e' * 64) for n in names])
+                    if word_baseline_unknown and name=='base': policy=dict(status='legacy-auto', mode='AUTO', enabled=None)
+                    saved['implementations'][0]['metadata']['configuration']['prefix_result_policy'] = policy
+                    if present:
+                        (output / 'prefix-result-policy').mkdir()
+                        (output / 'prefix-result-policy/core.cc').write_text('retained prefix source fixture')
                     path.write_text(json.dumps(saved))
                     return
                 if fail:
@@ -279,6 +290,8 @@ class NativeTrends(unittest.TestCase):
             argv += ['--require-candidate-native-functions']
         if word_functions:
             argv += ['--require-candidate-word-functions']
+        if prefix_results:
+            argv += ['--require-candidate-prefix-results']
         with mock.patch.object(CI, 'load', modules), mock.patch.object(CI, 'host_info', return_value={}), \
                 mock.patch.object(sys, 'argv', argv), mock.patch.dict('os.environ', {}, clear=True), \
                 contextlib.redirect_stderr(io.StringIO()):
@@ -298,6 +311,20 @@ class NativeTrends(unittest.TestCase):
         self.assertEqual(sum(Path(c[1]).name=='test-cli.py' for c in calls[:first]), 3)
         self.assertTrue((root/'evidence/candidate/word-function-policy/core.cc').is_file())
         self.assertTrue(json.loads((root/'evidence/orchestration.json').read_text())['require_candidate_word_functions'])
+
+    def test_prefix_selection_and_known_baseline_are_required_before_elapsed(self):
+        for disabled, unknown in [(True, False), (False, True)]:
+            root, calls, result = self.exercise(prefix_results=True, disabled_native=disabled, word_baseline_unknown=unknown)
+            self.assertEqual(result, 1)
+            self.assertFalse(any(Path(c[1]).name=='bench-bc.py' for c in calls))
+
+    def test_prefix_preflight_and_source_policy_are_preserved(self):
+        root, calls, result = self.exercise(prefix_results=True)
+        self.assertEqual(result, 0)
+        first = next(i for i,c in enumerate(calls) if Path(c[1]).name=='bench-bc.py')
+        self.assertEqual(sum(Path(c[1]).name=='test-cli.py' for c in calls[:first]), 3)
+        self.assertTrue((root/'evidence/candidate/prefix-result-policy/core.cc').is_file())
+        self.assertTrue(json.loads((root/'evidence/orchestration.json').read_text())['require_candidate_prefix_results'])
 
     def test_disabled_native_functions_never_reach_elapsed_sampling(self):
         root, calls, result = self.exercise(native_functions=True, disabled_native=True)

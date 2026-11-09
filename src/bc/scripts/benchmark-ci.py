@@ -206,6 +206,7 @@ def main():
     parser.add_argument('--require-candidate-native', action='store_true')
     parser.add_argument('--require-candidate-native-functions', action='store_true')
     parser.add_argument('--require-candidate-word-functions', action='store_true')
+    parser.add_argument('--require-candidate-prefix-results', action='store_true')
     parser.add_argument('--samples', type=int, default=9)
     parser.add_argument('--split-point', type=gd.positive_point, default=126)
     args = parser.parse_args()
@@ -240,6 +241,9 @@ def main():
             if args.require_candidate_word_functions:
                 for entry in built:
                     gd.require_word_function_candidate(helper, entry) if name == 'candidate' else gd.require_word_function_baseline(helper, entry)
+            if args.require_candidate_prefix_results:
+                for entry in built:
+                    gd.require_prefix_result_candidate(helper, entry) if name == 'candidate' else gd.require_prefix_result_baseline(helper, entry)
             entries.extend(built)
         comparator = root / 'howard'
         builder.run([sys.executable, str(SCRIPTS / 'build-bc-comparators.py'), '--output',
@@ -251,7 +255,7 @@ def main():
             for entry in entries:
                 builder.run([sys.executable, str(SCRIPTS.parent / 'test-divisor-reuse-cli.py'),
                              entry['argv'][0]])
-        if args.require_candidate_native or args.require_candidate_native_functions or args.require_candidate_word_functions:
+        if args.require_candidate_native or args.require_candidate_native_functions or args.require_candidate_word_functions or args.require_candidate_prefix_results:
             for entry in entries:
                 for script in ('test-cli.py', 'test-vm-cli.py'):
                     builder.run([sys.executable, str(SCRIPTS.parent / script),
@@ -276,6 +280,8 @@ def main():
                     gd.require_native_function_candidate(helper, profile)
                 if args.require_candidate_word_functions:
                     gd.require_word_function_candidate(helper, profile) if name == 'candidate' else gd.require_word_function_baseline(helper, profile)
+                if args.require_candidate_prefix_results:
+                    gd.require_prefix_result_candidate(helper, profile) if name == 'candidate' else gd.require_prefix_result_baseline(helper, profile)
                 profiles[name] = profile
             load('compare-bc-resources').validate_roles(
                 bench, profiles, dict(base=entries[0], candidate=entries[1]))
@@ -375,6 +381,7 @@ def main():
               'require_candidate_native': args.require_candidate_native,
               'require_candidate_native_functions': args.require_candidate_native_functions,
               'require_candidate_word_functions': args.require_candidate_word_functions,
+              'require_candidate_prefix_results': args.require_candidate_prefix_results,
               'sparse_qualification': args.sparse_qualification, 'compare_resources': args.compare_resources,
               'commands': builder.commands})
         for path in root.glob('command-*.log'):
@@ -394,6 +401,8 @@ def main():
                 shutil.copytree(str(source / 'native-function-policy'), str(target / 'native-function-policy'))
             if (source / 'word-function-policy').is_dir():
                 shutil.copytree(str(source / 'word-function-policy'), str(target / 'word-function-policy'))
+            if (source / 'prefix-result-policy').is_dir():
+                shutil.copytree(str(source / 'prefix-result-policy'), str(target / 'prefix-result-policy'))
             if (source / 'logs').is_dir():
                 shutil.copytree(str(source / 'logs'), str(target / 'logs'))
         # Every timed child has finished. Preserve every measured GD and Howard

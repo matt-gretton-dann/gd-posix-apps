@@ -245,6 +245,24 @@ def mode_identity(configuration, key):
             raise ValueError('invalid word-function source input inventory')
         identity.update(configured=policy.get('configured'), translation_units=policy['translation_units'],
                         source_inputs=sorted((item['path'], item['sha256']) for item in inputs))
+    if key == 'prefix_result_policy' and policy.get('status') == 'recorded':
+        present, configured = policy.get('implementation_present'), policy.get('configured')
+        if (type(present) is not bool or
+                (present and (type(configured) is not bool or configured is not enabled)) or
+                (not present and (configured is not None or enabled is not False))):
+            raise ValueError('invalid prefix_result_policy resource selection')
+        inputs = policy.get('source_inputs')
+        expected = {'src/bc/vm.cc', 'src/bc/CMakeLists.txt'}
+        if present:
+            expected.add('src/bc/prefix-result-buffer.hh')
+        if (not isinstance(inputs, list) or len(inputs) != len(expected) or
+                any(not isinstance(item, dict) or not isinstance(item.get('path'), str) or
+                    not isinstance(item.get('sha256'), str) or
+                    not re.fullmatch('[0-9a-f]{64}', item['sha256']) for item in inputs) or
+                {item['path'] for item in inputs} != expected):
+            raise ValueError('invalid prefix_result_policy source inputs')
+        identity.update(implementation_present=present, configured=configured,
+                        source_inputs=sorted((item['path'], item['sha256']) for item in inputs))
     return identity
 
 
@@ -286,6 +304,8 @@ def validate_roles(bench, profiles, ordinary):
                 raise ValueError('profile and ordinary resource modes differ: ' + key)
         if mode_identity(pc, 'word_function_policy') != mode_identity(rc, 'word_function_policy'):
             raise ValueError('profile and ordinary resource modes differ: word_function_policy')
+        if mode_identity(pc, 'prefix_result_policy') != mode_identity(rc, 'prefix_result_policy'):
+            raise ValueError('profile and ordinary resource modes differ: prefix_result_policy')
         for key in ('status', 'schema', 'mode', 'automatic_ipo'):
             if (pc.get('ipo_policy') or {}).get(key) != (rc.get('ipo_policy') or {}).get(key):
                 raise ValueError('profile and ordinary resource IPO policies differ')

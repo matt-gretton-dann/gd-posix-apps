@@ -63,6 +63,23 @@ resource study. Bind actual prefix source/compiler policy in both ordinary and
 diagnostic images, including the baseline's absent implementation. Flags alone
 do not prove dynamic ordinary/profile path identity.
 
+The qualification builders record `prefix_result_policy` from the actual VM
+compilation database or native Visual Studio Release project. The declared
+boolean option must agree with exactly one compiled `0` or `1`; duplicate,
+conflicting, undefined and response-file selections are rejected. Retain the
+cache, compilation/project evidence and pinned VM, CMake and implementation
+inputs. An older baseline must prove an absent option, absent VM selection and
+absent implementation header, retaining its VM/CMake inputs. This differs from
+the candidate's explicit OFF fallback. Unknown or missing metadata proves
+neither state.
+
+`--require-candidate-prefix-results` requires verified ON for each candidate
+ordinary/diagnostic role and verified absence for each old-baseline role before
+sampling. Math A/A uses a separately built candidate and must also prove ON;
+arithmetic A/A uses the old baseline and must prove absence. Resource comparison
+matches ordinary/diagnostic selections and source hashes for each role. These
+checks establish compilation and source identity, not dynamic path identity.
+
 ## Acceptance and limits
 
 Keep the approved per-change caps, Howard-margin exception, separate competitive

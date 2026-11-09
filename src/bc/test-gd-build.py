@@ -28,6 +28,10 @@ class GdBuild(unittest.TestCase):
         self.cache.write_text('ENABLE_BC_PROFILE:BOOL=OFF\nENABLE_BC_COVERAGE:BOOL=OFF\n'
                               'CMAKE_BUILD_TYPE:STRING=Release\nCMAKE_CXX_FLAGS:STRING=\n'
                               'CMAKE_CXX_FLAGS_RELEASE:STRING=-O3 -DNDEBUG\n')
+        source = self.root / 'source/src/bc'
+        source.mkdir(parents=True)
+        (source / 'vm.cc').write_text('// baseline VM fixture\n')
+        (source / 'CMakeLists.txt').write_text('# baseline source fixture\n')
         self.header = self.build / 'src/bc/find-multiply-split-point.hh'
         self.header.write_text('// explicit BC_MULTIPLY_SPLIT_POINT\n'
                                '#define BC_MULTIPLY_SPLIT_POINT 126\n')
@@ -259,6 +263,7 @@ class GdBuild(unittest.TestCase):
         self.assertEqual(value['configuration']['ipo_policy']['status'], 'legacy-auto')
 
     def test_missing_profile_policy_evidence_is_not_mislabeled_disabled(self):
+        (self.root / 'source/src/bc/vm.cc').unlink()
         policy = self.metadata()['configuration']['profiling_execution_policy']
         self.assertEqual(policy['schema'], 1)
         self.assertEqual(policy['path_identity'], 'not established')
@@ -584,6 +589,106 @@ class GdBuild(unittest.TestCase):
         process = subprocess.run([value['argv0'], '--version'], stdout=subprocess.PIPE,
                                  universal_newlines=True, timeout=3)
         self.assertEqual(process.stdout.strip(), 'clang++')
+
+    def prefix_inventory(self, enabled=None):
+        source = self.root / 'source/src/bc'
+        source.mkdir(parents=True, exist_ok=True)
+        (source / 'vm.cc').write_text('// VM\n' if enabled is None else '#if GD_BC_PREFIX_CLEAR_RESULTS\n#endif\n')
+        (source / 'CMakeLists.txt').write_text('# baseline\n' if enabled is None else 'option(ENABLE_BC_PREFIX_CLEAR_RESULTS "fixture" OFF)\n')
+        if enabled is not None:
+            self.cache.write_text(self.cache.read_text() + 'ENABLE_BC_PREFIX_CLEAR_RESULTS:BOOL=' + ('ON' if enabled else 'OFF') + '\n')
+            (source / 'prefix-result-buffer.hh').write_text('// retained implementation\n')
+        row = dict(file=str(source / 'vm.cc'), command='c++ ' + ('' if enabled is None else '-DGD_BC_PREFIX_CLEAR_RESULTS=' + str(int(enabled))) + ' -c vm.cc')
+        (self.build / 'compile_commands.json').write_text(json.dumps([row]))
+        return source, row
+
+    def test_prefix_absence_and_explicit_fallback_have_distinct_provenance(self):
+        for enabled in (None, False, True):
+            with self.subTest(enabled=enabled):
+                self.setUp()
+                self.prefix_inventory(enabled)
+                p = self.module.verified_prefix_results(self.helper, self.build, self.root / 'source')
+                self.assertEqual(p['status'], 'recorded')
+                self.assertIs(p['configured'], enabled)
+                self.assertIs(p['enabled'], enabled is True)
+                self.assertIs(p['implementation_present'], enabled is not None)
+                self.assertEqual(len(p['source_inputs']), 2 if enabled is None else 3)
+                metadata = self.metadata()
+                self.assertEqual(metadata['configuration']['prefix_result_policy'], p)
+                entry = dict(metadata=metadata)
+                if enabled is None:
+                    self.module.require_prefix_result_baseline(self.helper, entry)
+                elif enabled is True:
+                    self.module.require_prefix_result_candidate(self.helper, entry)
+                else:
+                    for require in (self.module.require_prefix_result_baseline, self.module.require_prefix_result_candidate):
+                        with self.assertRaises(self.helper.BuildError):
+                            require(self.helper, entry)
+                for item in p['source_inputs']:
+                    retained = self.root / 'prefix-result-policy' / item['retained_path']
+                    self.assertEqual(hashlib.sha256(retained.read_bytes()).hexdigest(), item['sha256'])
+
+    def test_prefix_corrupt_compilation_and_source_are_rejected(self):
+        source, row = self.prefix_inventory(True)
+        original = row['command']
+        for command in [original.replace('=1', '=0'), original.replace('=1', '=2'),
+                        original + ' -DGD_BC_PREFIX_CLEAR_RESULTS=1', original + ' -UGD_BC_PREFIX_CLEAR_RESULTS',
+                        original + ' @flags.rsp', 'c++ -c vm.cc']:
+            with self.subTest(command=command):
+                row['command'] = command
+                (self.build / 'compile_commands.json').write_text(json.dumps([row]))
+                with self.assertRaises(self.helper.BuildError):
+                    self.module.verified_prefix_results(self.helper, self.build, self.root / 'source')
+        row['command'] = original
+        (self.build / 'compile_commands.json').write_text(json.dumps([row]))
+        for name in ['vm.cc', 'CMakeLists.txt', 'prefix-result-buffer.hh']:
+            p = source / name
+            content = p.read_bytes()
+            p.unlink()
+            with self.assertRaises(self.helper.BuildError):
+                self.module.verified_prefix_results(self.helper, self.build, self.root / 'source')
+            p.write_bytes(content)
+        with self.assertRaises(self.helper.BuildError):
+            self.module.verified_prefix_results(self.helper, self.build, self.root / 'source', 'OFF')
+
+    def test_prefix_role_requires_exact_booleans_and_source_inventory(self):
+        import copy
+        self.prefix_inventory(True)
+        good = self.module.verified_prefix_results(self.helper, self.build, self.root / 'source')
+        for key, value in [('configured', 1), ('enabled', 1), ('implementation_present', 1),
+                           ('source_inputs', []), ('status', 'legacy-auto')]:
+            policy = copy.deepcopy(good)
+            policy[key] = value
+            with self.subTest(key=key), self.assertRaises(self.helper.BuildError):
+                self.module.require_prefix_result_candidate(self.helper, dict(metadata=dict(configuration=dict(prefix_result_policy=policy))))
+        for entry in ({}, dict(metadata={}), dict(metadata=dict(configuration={})),
+                      dict(metadata=dict(configuration=dict(prefix_result_policy=None)))):
+            for require in (self.module.require_prefix_result_baseline, self.module.require_prefix_result_candidate):
+                with self.assertRaises(self.helper.BuildError):
+                    require(self.helper, entry)
+
+    def test_prefix_legacy_option_must_not_be_ignored(self):
+        source, row = self.prefix_inventory()
+        with self.assertRaises(self.helper.BuildError):
+            self.module.verified_prefix_results(self.helper, self.build, self.root / 'source', 'OFF')
+        (source / 'prefix-result-buffer.hh').write_text('// unexpected implementation')
+        with self.assertRaises(self.helper.BuildError):
+            self.module.verified_prefix_results(self.helper, self.build, self.root / 'source')
+
+    def test_prefix_native_release_project_matches_boolean_option(self):
+        source, row = self.prefix_inventory(False)
+        (self.build / 'compile_commands.json').unlink()
+        self.cache.write_text(self.cache.read_text() + 'CMAKE_GENERATOR:STRING=Visual Studio 17 2022\n')
+        p = self.build / 'src/bc/libbc.vcxproj'
+        text = '<Project><ItemDefinitionGroup Condition="Release|x64"><ClCompile><PreprocessorDefinitions>GD_BC_PREFIX_CLEAR_RESULTS=0;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile></ItemDefinitionGroup><ItemGroup><ClCompile Include="vm.cc"/></ItemGroup></Project>'
+        p.write_text(text)
+        policy = self.module.verified_prefix_results(self.helper, self.build, self.root / 'source')
+        self.assertFalse(policy['enabled'])
+        self.assertEqual(policy['verification']['kind'], 'msbuild-projects')
+        for changed in [text.replace('RESULTS=0', 'RESULTS=1'), text.replace('<ClCompile Include="vm.cc"/>', '<ClCompile Include="vm.cc"><ExcludedFromBuild>true</ExcludedFromBuild></ClCompile>'), text.replace('<ClCompile Include="vm.cc"/>', '<ClCompile Include="vm.cc"><PreprocessorDefinitions>GD_BC_PREFIX_CLEAR_RESULTS=1</PreprocessorDefinitions></ClCompile>')]:
+            p.write_text(changed)
+            with self.assertRaises(self.helper.BuildError):
+                self.module.verified_prefix_results(self.helper, self.build, self.root / 'source')
 
     def word_inventory(self, enabled=True, tests=False, declared=True):
         self.cache.write_text(self.cache.read_text() + (

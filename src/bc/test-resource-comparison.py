@@ -98,6 +98,36 @@ class ResourceComparison(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'native_scalar_policy'):
             self.module.validate_roles(self.bench, self.profiles, self.ordinary)
 
+    def prefix_policy(self, enabled=True, present=True):
+        names = ['vm.cc', 'CMakeLists.txt'] + (['prefix-result-buffer.hh'] if present else [])
+        return dict(status='recorded', mode='AUTO', configured=enabled if present else None,
+                    enabled=enabled, implementation_present=present,
+                    source_inputs=[dict(path='src/bc/' + name, sha256='a' * 64) for name in names])
+
+    def test_prefix_profile_selection_and_source_must_match_ordinary(self):
+        for roles in (self.profiles, self.ordinary):
+            for role, tool in roles.items():
+                tool['metadata']['configuration']['prefix_result_policy'] = self.prefix_policy(role == 'candidate', role == 'candidate')
+        self.module.validate_roles(self.bench, self.profiles, self.ordinary)
+        policy = self.profiles['candidate']['metadata']['configuration']['prefix_result_policy']
+        policy['source_inputs'][0]['sha256'] = 'b' * 64
+        with self.assertRaisesRegex(ValueError, 'prefix_result_policy'):
+            self.module.validate_roles(self.bench, self.profiles, self.ordinary)
+        self.profiles['candidate']['metadata']['configuration']['prefix_result_policy'] = self.prefix_policy(False)
+        with self.assertRaisesRegex(ValueError, 'prefix_result_policy'):
+            self.module.validate_roles(self.bench, self.profiles, self.ordinary)
+
+    def test_prefix_policy_rejects_missing_or_contradictory_source(self):
+        for present, enabled in [(False, False), (True, False), (True, True)]:
+            good = self.prefix_policy(enabled, present)
+            self.module.mode_identity(dict(prefix_result_policy=good), 'prefix_result_policy')
+            for field, value in [('implementation_present', 1), ('source_inputs', []),
+                                 ('configured', not enabled if present else False)]:
+                policy = copy.deepcopy(good)
+                policy[field] = value
+                with self.subTest(present=present, enabled=enabled, field=field), self.assertRaises(ValueError):
+                    self.module.mode_identity(dict(prefix_result_policy=policy), 'prefix_result_policy')
+
     def function_policy(self, enabled=True):
         return dict(status='recorded', mode='AUTO', configured=enabled, enabled=enabled,
             shared_plan=enabled, backend='native-expression-arm64.cc' if enabled else None,
