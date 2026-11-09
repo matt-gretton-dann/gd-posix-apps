@@ -1,0 +1,82 @@
+{
+  "artifact_id": 13651188167,
+  "artifact_name": "bc-reconstructed-results-qualification-ubuntu-24.04-arithmetic-42563261508-1",
+  "artifact_sha256": "387cae90f520aedd5a396c2a11aa4dffa43a2bea3e11bc2a45ddb280286f6adc",
+  "base": "b0247467ebf007f5d316a1e1ff6eb8ac03e363ef",
+  "codegen": "reconstructed-results/evidence/codegen/manifest.json",
+  "files": {
+    "reconstructed-results/evidence/codegen/base/binary": "d50da1d7e18fcbcbc4ba3469a6f50a86e00a0cf1d2947c542133f9a8e33a687d",
+    "reconstructed-results/evidence/codegen/candidate/binary": "d857b9e99de7dfc8fb5f198ff232dfd5585c593318e5b480a33991b8bc830f3c",
+    "reconstructed-results/evidence/codegen/manifest.json": "a28df4ac4a56492220c0770b7bf9f8bbce738d1d3d5e8ca800a3e046286ec52d",
+    "reconstructed-results/evidence/full-paired/manifest.json": "12b2dd0000d11215aa0207cb9d3c7b5062f7a6c406705fda7d841fdbfaf545b0",
+    "reconstructed-results/evidence/full-paired/summary.json": "8c0dd5c842fb12beb1529734e401884cc858138b056514ac3fba6c1f7dc8cfef",
+    "reconstructed-results/evidence/full-paired/workloads/divisor_cold_divide_600d_230d_x1.bc": "29a06cbcb97d6ab87d1d94c7291a1ee0338caaaa0a5bd6736b1ac0993c6d913a",
+    "reconstructed-results/evidence/full-paired/workloads/divisor_cold_divide_600d_230d_x1.expected": "45a09cd0363259dd929e983c9d76d01affc3f79cab094c79f7e5c83ac105c105",
+    "reconstructed-results/evidence/full-paired/workloads/file_statements_20000.bc": "c4152672d2f743bc5893c5f564f728e9764b251c0faa153905e7eb515ee123c9",
+    "reconstructed-results/evidence/full-paired/workloads/file_statements_20000.expected": "0be508172e87a2af98f344d18610bbaaa0e6bbfcef0c7804b24457f839e129c9",
+    "reconstructed-results/evidence/full-paired/workloads/frontend_definitions_2000.bc": "36a2bf8899f52e86536ad0fd9763b1dc8b59d565f1da60cb6508d8d213cd8916",
+    "reconstructed-results/evidence/full-paired/workloads/frontend_definitions_2000.expected": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+    "reconstructed-results/evidence/full-paired/workloads/loop_1000000.bc": "74aa1d696c8c54be05d25ad82b085aedd6791012c90b5faf9f3d9d91f94ebdba",
+    "reconstructed-results/evidence/full-paired/workloads/loop_1000000.expected": "dbb4498f673634c698bd6e593ef54bdadf465654b13fb7bfe689016e602e7ef8",
+    "reconstructed-results/evidence/full-paired/workloads/recursion_50_x1000.bc": "51c7a305c6b6635ba3e821f927f9da4b06c5c2aff088ddabca2d6d6456ea3859",
+    "reconstructed-results/evidence/full-paired/workloads/recursion_50_x1000.expected": "89ce918086eeda222f36711d8b97b2eeec8ef9ae01affaf19478c4669d358998",
+    "reconstructed-results/evidence/full-paired/workloads/sqrt_integer_power2000_scale100_x10.bc": "3552c797fae31d128b9369d1d0ce12a48191840f458a5361eecf93ac557fa08f",
+    "reconstructed-results/evidence/full-paired/workloads/sqrt_integer_power2000_scale100_x10.expected": "b1199974fc58d8aa83572fdda7f195de608c14f31237c9e01991659af33efeed",
+    "reconstructed-results/evidence/full-paired/workloads/square_1000d_x10000.bc": "7248a6558ceb7612d5aa63a204773d57ef1c83ddb1b5ab88336e76fce7c2e340",
+    "reconstructed-results/evidence/full-paired/workloads/square_1000d_x10000.expected": "82b8cea2132061b2192e6b1346fdb2485454628a43c61dac7916377d75410ad7",
+    "reconstructed-results/evidence/holdout-paired/manifest.json": "464f0bf777a83347cd786e8c7e2a9be26870720155184258b90806f83b974464",
+    "reconstructed-results/evidence/holdout-paired/summary.json": "b0f2dc580616de3e14dd10456b254ffb49fd17bf37818562317c4d6b3369564f",
+    "reconstructed-results/evidence/holdout-paired/workloads/divisor_cold_divide_675d_258d_x1.bc": "22fad50b36076bd6cd7db39d48f70f976fb4ce052e799a5392de3d7bd2c51eb5",
+    "reconstructed-results/evidence/holdout-paired/workloads/divisor_cold_divide_675d_258d_x1.expected": "1524de442861414056ef1cbf07627d6f9f3104b84bf1e19a21748abd7c60432f",
+    "reconstructed-results/evidence/holdout-paired/workloads/frontend_definitions_1750.bc": "e10c90381a7ca598140e91ae11152ee5bcad8f0d0ba3b1e8c4ea73316af3a099",
+    "reconstructed-results/evidence/holdout-paired/workloads/frontend_definitions_1750.expected": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+    "reconstructed-results/evidence/holdout-paired/workloads/recursion_56_x875.bc": "eac066153af40fc96291b61372a9a6b36b3323830e20060a6608ea1190c7bb15",
+    "reconstructed-results/evidence/holdout-paired/workloads/recursion_56_x875.expected": "2d7d76e34875d340e5de6ab401a568eeb4610f6951dc1309a5cf62b78241cd4e"
+  },
+  "groups": {
+    "full": {
+      "path": "reconstructed-results/evidence/full-paired/",
+      "workloads": [
+        "loop_1000000",
+        "recursion_50_x1000",
+        "frontend_definitions_2000",
+        "square_1000d_x10000",
+        "file_statements_20000",
+        "sqrt_integer_power2000_scale100_x10",
+        "divisor_cold_divide_600d_230d_x1"
+      ]
+    },
+    "holdout": {
+      "path": "reconstructed-results/evidence/holdout-paired/",
+      "workloads": [
+        "recursion_56_x875",
+        "frontend_definitions_1750",
+        "divisor_cold_divide_675d_258d_x1"
+      ]
+    }
+  },
+  "images": {
+    "base": {
+      "bytes": 512152,
+      "path": "reconstructed-results/evidence/codegen/base/binary",
+      "sha256": "d50da1d7e18fcbcbc4ba3469a6f50a86e00a0cf1d2947c542133f9a8e33a687d",
+      "source_revision": "b0247467ebf007f5d316a1e1ff6eb8ac03e363ef"
+    },
+    "candidate": {
+      "bytes": 517752,
+      "path": "reconstructed-results/evidence/codegen/candidate/binary",
+      "sha256": "d857b9e99de7dfc8fb5f198ff232dfd5585c593318e5b480a33991b8bc830f3c",
+      "source_revision": "4205accd05ff938e9860b349f27117c8323297ab"
+    }
+  },
+  "repo": "matt-gretton-dann/gd-posix-apps",
+  "repository_id": 325338702,
+  "run_id": 42563261508,
+  "schema": 1,
+  "scope": "Exact retained ordinary ELF and input replay; original timing summaries only estimate CPU repetitions; no new paired elapsed or qualification",
+  "scripts": {
+    "bench-bc.py": "eb25981ccd8cc9dd374be9518c3dc1e2ff9b055b5611df2bdd14b8ef1f53f28a",
+    "profile-bc.py": "bf5f4c80c49eeb8fbff58ab32c34b79d55334f01fa20ae37d7267a811fde93b3"
+  },
+  "source": "4205accd05ff938e9860b349f27117c8323297ab"
+}

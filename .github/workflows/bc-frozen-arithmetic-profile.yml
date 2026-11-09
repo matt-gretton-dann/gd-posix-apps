@@ -1,0 +1,99 @@
+name: bc frozen ordinary arithmetic attribution
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/bc-frozen-arithmetic-profile.yml'
+      - 'docs/utilities/bc-frozen-arithmetic-profile/**'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: bc-frozen-arithmetic-profile-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  collector-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - run: python3 docs/utilities/bc-frozen-arithmetic-profile/test-collect.py --scripts src/bc/scripts
+      - run: python3 src/bc/test-profiling-tools.py src/bc/scripts/profile-bc.py
+
+  native:
+    # One declared diagnostic cohort. This never collects paired elapsed data.
+    if: github.head_ref == 'codex/bc-frozen-arithmetic-cpu-profile'
+    needs: collector-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Keep the original attempt and obtain the immutable artifact
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          mkdir cpu-diagnostics
+          git rev-parse HEAD > cpu-diagnostics/collector-revision.txt
+          gh --version > cpu-diagnostics/gh-version.txt
+          gh api repos/matt-gretton-dann/gd-posix-apps/actions/artifacts/13651188167 > cpu-diagnostics/provider-metadata.json
+          gh api repos/matt-gretton-dann/gd-posix-apps/actions/artifacts/13651188167/zip > cpu-diagnostics/original-input.zip
+      - name: Install the existing userspace perf adapter
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends linux-tools-generic
+      - name: Profile exact retained ordinary images and preserve every outcome
+        shell: bash
+        run: |
+          set -euo pipefail
+          perf_path=$(find -L /usr/lib/linux-tools -name perf -type f | sort -V | tail -n 1)
+          test -x "$perf_path"
+          export GD_PERF_EXECUTABLE="$perf_path"
+          "$perf_path" --version > cpu-diagnostics/perf-version.txt
+          # Match the accepted adapter. Only perf is privileged; bc is not.
+          cat > "$RUNNER_TEMP/bc-perf" <<'WRAPPER'
+          #!/bin/bash
+          set -euo pipefail
+          if [[ $1 == script ]]; then
+            exec "$GD_PERF_EXECUTABLE" "$@"
+          fi
+          args=()
+          data=
+          while [[ $1 != -- ]]; do
+            if [[ $1 == -o ]]; then data=$2; fi
+            args+=("$1")
+            shift
+          done
+          test -n "$data"
+          shift
+          sudo -n /usr/bin/env PERF_CONFIG=/dev/null "$GD_PERF_EXECUTABLE" "${args[@]}" -- \
+            /usr/bin/setpriv --reuid "$(id -u)" --regid "$(id -g)" --init-groups "$@"
+          sudo -n /usr/bin/chown "$(id -u):$(id -g)" "$data"
+          WRAPPER
+          chmod +x "$RUNNER_TEMP/bc-perf"
+          cp "$RUNNER_TEMP/bc-perf" cpu-diagnostics/perf-adapter.sh
+          python3 docs/utilities/bc-frozen-arithmetic-profile/collect.py \
+            --archive cpu-diagnostics/original-input.zip \
+            --artifact-metadata cpu-diagnostics/provider-metadata.json \
+            --scripts src/bc/scripts --output cpu-diagnostics/evidence \
+            --perf "$RUNNER_TEMP/bc-perf"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: bc-frozen-arithmetic-cpu-${{ github.run_id }}-${{ github.run_attempt }}
+          path: cpu-diagnostics/
+          if-no-files-found: warn
+          retention-days: 30
