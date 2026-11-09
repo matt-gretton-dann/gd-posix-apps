@@ -36,6 +36,16 @@ saved input, rounding-window work, executable bytes and library loading
 may cost more than the shorter arithmetic saves. Both one-shot latency
 and repeated work must remain visible, along with allocations and RSS.
 
+The correctness workflow covers 12 configurations: ordinary, profile and
+generic execution on all three platforms, Linux Clang ASan/UBSan, and
+Linux/macOS threaded execution. It checks actual cache/compile definitions,
+source and generated library data, and retains executable bytes and logs,
+including available partial results after failure. This topic alone skips
+the ordinary arithmetic, math and threaded timing workflows; threaded
+correctness remains in the dedicated matrix. Main, manual, scheduled and
+unrelated branch timing behavior is unchanged. This preflight does not
+declare or qualify an elapsed cohort.
+
 The 864,000 total recorded goal-second limit includes all preceding
 implementation, queues and review. Keep the original first outcomes and
 the approved regression, Howard-margin and startup rules. Do not pool
