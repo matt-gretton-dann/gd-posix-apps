@@ -27,6 +27,7 @@ class FunctionSlot
   static_assert(std::is_nothrow_destructible_v<Pending>);
 
 public:
+  // Match the optional owner's access protocol: pending is not decoded yet.
   [[nodiscard]] auto has_value() const noexcept -> bool { return state_.index() == 1; }
   explicit operator bool() const noexcept { return has_value(); }
   auto value() -> Value& { return std::get<1>(state_); }
