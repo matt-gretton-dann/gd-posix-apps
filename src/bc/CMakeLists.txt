@@ -5,6 +5,9 @@
 add_library(libbc)
 # Shared by library consumers and the independent header-only calibration tool.
 add_library(bc-language-mode INTERFACE)
+option(ENABLE_BC_COMPACT_DIGITS "Enable experimental live-prefix variant coefficients" OFF)
+target_compile_definitions(bc-language-mode INTERFACE
+  GD_BC_COMPACT_DIGITS=$<BOOL:${ENABLE_BC_COMPACT_DIGITS}>)
 target_include_directories(libbc PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_include_directories(libbc PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_link_libraries(libbc PUBLIC gdsup util bc-language-mode)
@@ -174,7 +177,8 @@ if(RUN_UNIT_TESTS)
   target_link_libraries(test-bc-consumer-mode PRIVATE libbc)
   target_include_directories(test-bc-consumer-mode PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
   target_compile_definitions(test-bc-consumer-mode PRIVATE
-                             GD_BC_EXPECT_EXTENSIONS=$<BOOL:${ENABLE_NON_POSIX_EXTENSIONS}>)
+                             GD_BC_EXPECT_EXTENSIONS=$<BOOL:${ENABLE_NON_POSIX_EXTENSIONS}>
+                             GD_BC_EXPECT_COMPACT_DIGITS=$<BOOL:${ENABLE_BC_COMPACT_DIGITS}>)
   add_dependencies(test-bc-consumer-mode bc_messages_header)
   set_property(TARGET test-bc-consumer-mode PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
   set_property(TARGET test-bc-consumer-mode PROPERTY CXX_STANDARD_REQUIRED ON)
@@ -243,6 +247,7 @@ if(RUN_UNIT_TESTS)
                  test-lexer-comments.cc
                  test-libbc-main.cc
                  test-digit-storage.cc
+                 test-compact-digit-storage.cc
                  test-number.cc
                  test-number-radix.cc
                  test-number-workspace.cc
@@ -544,7 +549,7 @@ set_warnings(find-multiply-split-point)
 gd_apply_ipo(find-multiply-split-point)
 # The tuner exercises header-only arithmetic. Keep it independent of libbc's
 # diagnostic definition and allocator backend so instrumentation cannot tune it.
-# Share only the language-mode requirement with the library.
+# Share language and public coefficient-layout requirements with the library.
 add_dependencies(find-multiply-split-point "bc_messages_header")
 target_add_clang_format(find-multiply-split-point)
 

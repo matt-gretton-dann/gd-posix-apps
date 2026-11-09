@@ -2,9 +2,14 @@
  * Public-header configuration must follow the linked library usage requirements.
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <cstdint>
 #include <cstdio>
 
 #include "bc.hh"
+#include "selected-digit-storage.hh"
+
+static_assert(GD_BC_COMPACT_DIGITS == GD_BC_EXPECT_COMPACT_DIGITS,
+              "Coefficient layout must propagate from the linked library");
 
 auto main() -> int
 {
@@ -15,5 +20,10 @@ auto main() -> int
                  GD_BC_EXPECT_EXTENSIONS, static_cast<int>(GD::Bc::extensions_enabled()));
     return 1;
   }
+  std::printf(
+    "Compact coefficient option %d; selected storage bytes %zu/%zu/%zu; Number bytes %zu\n",
+    GD_BC_COMPACT_DIGITS, sizeof(GD::Bc::Details::SelectedDigitStorage<std::uint8_t>),
+    sizeof(GD::Bc::Details::SelectedDigitStorage<std::uint16_t>),
+    sizeof(GD::Bc::Details::SelectedDigitStorage<std::uint32_t>), sizeof(GD::Bc::Number));
   return 0;
 }

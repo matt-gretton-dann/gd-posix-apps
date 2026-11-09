@@ -30,7 +30,7 @@
 #include <vector>
 
 #include "bc.hh"
-#include "digit-storage.hh"
+#include "selected-digit-storage.hh"
 #include "limb-product.hh"
 #if defined(GD_BC_EXPERIMENT_NTT)
 #include "limb-ntt.hh"
@@ -1489,7 +1489,7 @@ private:
     }
   }
 #endif
-  using DigitVector = DigitStorage<NumType>;
+  using DigitVector = SelectedDigitStorage<NumType>;
 
   /** Construct basic digits based on an iterator range [begin, end).  */
   BasicDigits(typename DigitVector::const_iterator begin, typename DigitVector::const_iterator end)
