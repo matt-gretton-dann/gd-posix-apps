@@ -56,3 +56,16 @@ future timing study must be separately declared, preserve every original
 outcome, retain the approved regression/Howard/startup rules and fit the
 864,000 total recorded goal-second cap. PR #712's failures, inconclusive
 arithmetic/startup observations and missing native artifact remain separate.
+
+## Correctness publication
+
+The topic branch's dedicated native workflow covers Linux, macOS and
+Windows with image, source fallback, profile and native-function modes,
+plus supported threaded modes and a Linux sanitizer build. It retains the
+actual tested executables, generated library data, public source inputs,
+compiler commands and CTest logs. A verifier checks the original uploaded
+artifact against its recorded hashes; its synthetic fixture tests reject
+missing, corrupt or misidentified bytes. This checks retention, not runtime
+qualification. Partial builds retain available bytes without being accepted
+as complete. Ordinary elapsed workflows exclude this exact topic branch;
+correctness publication starts no replacement performance cohort.

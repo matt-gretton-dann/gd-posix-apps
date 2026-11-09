@@ -412,6 +412,9 @@ endif()
 
 # These local CLI regressions run in both extension configurations and on Windows.
 if(RUN_INTEGRATION_TESTS)
+  add_test(NAME bc/function-slot-evidence COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-function-slot-evidence.py")
+  set_tests_properties(bc/function-slot-evidence PROPERTIES TIMEOUT 10)
   # Native performance inputs use the 64-bit-host Number model's index range.
   # All layouts still have generic 8/16/32-bit storage tests on other targets.
   if(CMAKE_SIZEOF_VOID_P GREATER 4)
