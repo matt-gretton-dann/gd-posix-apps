@@ -100,7 +100,7 @@ class LibraryCli(unittest.TestCase):
         cases += [(scale, order, x) for scale in (0, 20, 100)
                   for order in (-1, 0, 1) for x in ('-4', '-1.125')]
         program = ''.join(
-            'scale={}\nx={}\nn={}\nr=j(n,x)\nr\nscale\nibase\n'
+            'scale={}\nx= {}\nn= {}\nr=j(n,x)\nr\nscale\nibase\n'
             'scale(r)\nx\nn\n'.format(scale, x, order)
             for scale, order, x in cases)
         for binary in [BC] if OTHER_BC is None else [BC, OTHER_BC]:
@@ -347,8 +347,9 @@ class LibraryCli(unittest.TestCase):
         self.certified()
 
     def test_bessel_ascending_rounding_midpoint(self):
-        arguments = ('1.52114405766876514815130187', '1.52114405766876514815130188')
-        for argument, expected in zip(arguments, (1, 0)):
+        arguments = ('1.52114405766876514815130187', '1.52114405766876514815130188',
+                     '1.5211440576687', '1.5211440576688')
+        for argument, expected in zip(arguments, (1, 0, 1, 0)):
             x = Fraction(argument)
             term = partial = Fraction(1)
             # The terms alternate and decrease for these arguments below two.
@@ -358,7 +359,7 @@ class LibraryCli(unittest.TestCase):
             upper = partial - term * x * x / (4 * 40 * 40)
             self.assertEqual(ORACLE.classify(Fraction(expected), partial, upper, 0), 'pass')
         program = 'scale=0\n' + ''.join(f'j(0,{x})\n' for x in arguments)
-        self.assertEqual(self.checked_lines(program), ['1', '0'])
+        self.assertEqual(self.checked_lines(program), ['1', '0', '1', '0'])
 
     def test_bessel_ascending_with_exact_rational_enclosures(self):
         arguments = ((0, 100, 150), (300, 300, 100), (1, '1.125', 100),
