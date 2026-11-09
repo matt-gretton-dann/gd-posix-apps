@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   correctness:
-    if: github.head_ref == 'codex/bc-prefix-clear-results'
+    if: github.head_ref == 'codex/bc-prefix-clear-results' || github.head_ref == 'codex/bc-frame-math-integration'
     name: Prefix results / ${{ matrix.os }} / ${{ matrix.mode.name }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
@@ -85,7 +85,7 @@ jobs:
               assert define+'='+str(int(expected[key]=='ON')) in command
           for key,define in [('profile','GD_BC_PROFILE=1'),('native','GD_BC_NATIVE_FUNCTIONS=1')]:
               assert (define in command)==(expected[key]=='ON')
-          inputs=['src/bc/vm.cc','src/bc/prefix-result-buffer.hh','src/bc/profiling.hh','src/bc/profiling.cc','src/bc/test-vm-execution.cc','src/bc/test-prefix-result-buffer.cc','src/bc/CMakeLists.txt']
+          inputs=['src/bc/vm.cc','src/bc/prefix-result-buffer.hh','src/bc/profiling.hh','src/bc/profiling.cc','src/bc/test-vm-execution.cc','src/bc/test-prefix-result-buffer.cc','src/bc/CMakeLists.txt','src/bc/math-library.bc','src/bc/test-math-library-cli.py','src/bc/test-math-library-coverage.py','src/bc/fixtures/math-library-decisions.json']
           source={}
           for name in inputs:
               p=Path(name);q=root/'source'/name;q.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(p,q);source[name]=hashlib.sha256(p.read_bytes()).hexdigest()
