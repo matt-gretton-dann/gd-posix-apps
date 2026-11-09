@@ -17,6 +17,101 @@ from unittest import mock
 
 
 class BenchmarkCli(unittest.TestCase):
+    def declared_math_fixture(self):
+        spec = importlib.util.spec_from_file_location('declared_fixture_bench', BENCHMARK)
+        bench = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(bench)
+        case, = bench.corpus('quick', ['math_regular_s-one_scale2_repeated_x2'], suite='math')
+        directory = self.root / 'declared-inputs'
+        workloads = directory / 'workloads'
+        workloads.mkdir(parents=True)
+        program = case['program'].encode('utf-8')
+        oracle = bench.oracle_payload(case)
+        (workloads / (case['name'] + '.bc')).write_bytes(program)
+        (workloads / (case['name'] + '.expected')).write_bytes(oracle)
+        manifest = dict(kind='unmeasured-math-inputs-v1', suite='math', preset='quick',
+            corpus_seed=197200, reference_fixture_sha256='a' * 64,
+            corpus=[dict(name=case['name'], group=case['group'], parameters=case['parameters'],
+                program_sha256=hashlib.sha256(program).hexdigest(),
+                oracle_sha256=hashlib.sha256(oracle).hexdigest())])
+        (directory / 'manifest.json').write_text(json.dumps(manifest), encoding='utf-8')
+        config = self.root / 'declared-config.json'
+        config.write_text(json.dumps(dict(implementations=[dict(name='fake-math',
+            argv=[sys.executable, '-c', "print('.84\\n2\\n10\\n2')"])])), encoding='utf-8')
+        return directory, manifest, config
+
+    def test_declared_inputs_calibrate_once_then_replay_frozen_counts(self):
+        directory, declaration, config = self.declared_math_fixture()
+        prepared = self.root / 'declared-prepared'
+        result = subprocess.run([sys.executable, BENCHMARK, '--suite', 'math',
+            '--input-corpus', str(directory), '--config', str(config), '--output', str(prepared),
+            '--calibrate-seconds', '.000001', '--calibrate-only'],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, timeout=8)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        manifest = json.loads((prepared / 'manifest.json').read_text())
+        self.assertEqual(manifest['declared_input']['source_manifest_sha256'],
+                         hashlib.sha256((directory / 'manifest.json').read_bytes()).hexdigest())
+        self.assertIn('duration_calibration', manifest)
+        self.assertNotIn('replayed_corpus', manifest)
+        self.assertFalse((prepared / 'samples.jsonl').exists())
+        calibration = [json.loads(line) for line in
+                       (prepared / 'calibration/samples.jsonl').read_text().splitlines()]
+        self.assertEqual(len(calibration), 3)
+        self.assertTrue(all(row['checked'] for row in calibration))
+        replayed = self.root / 'declared-replayed'
+        arguments = [sys.executable, BENCHMARK, '--suite', 'math', '--replay-corpus', str(prepared),
+            '--config', str(config), '--output', str(replayed), '--samples', '1', '--warmups', '0']
+        result = subprocess.run(arguments, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                universal_newlines=True, timeout=8)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads((replayed / 'manifest.json').read_text())['corpus'], manifest['corpus'])
+        self.assertFalse((replayed / 'calibration').exists())
+        rejected = subprocess.run(arguments + ['--calibrate-seconds', '.000001'],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, timeout=8)
+        self.assertEqual(rejected.returncode, 2)
+        self.assertIn('mutually exclusive', rejected.stderr)
+
+    def test_declared_input_rejects_calibrated_measured_or_corrupt_payloads(self):
+        directory, declaration, config = self.declared_math_fixture()
+        original = json.loads(json.dumps(declaration))
+        for defect in ('kind', 'calibrated', 'measured', 'program', 'dimensions'):
+            manifest = json.loads(json.dumps(original))
+            marker = directory / 'samples.jsonl'
+            if defect == 'kind':
+                manifest['kind'] = 'frozen'
+            elif defect == 'calibrated':
+                manifest['duration_calibration'] = {}
+            elif defect == 'measured':
+                marker.write_text('[]\n')
+            elif defect == 'program':
+                manifest['corpus'][0]['program_sha256'] = 'f' * 64
+            else:
+                manifest['corpus'][0]['parameters']['calibration'] = 'already calibrated'
+            (directory / 'manifest.json').write_text(json.dumps(manifest))
+            output = self.root / ('bad-declaration-' + defect)
+            result = subprocess.run([sys.executable, BENCHMARK, '--suite', 'math',
+                '--input-corpus', str(directory), '--config', str(config), '--output', str(output),
+                '--calibrate-seconds', '.000001', '--calibrate-only'],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, timeout=8)
+            with self.subTest(defect=defect):
+                self.assertEqual(result.returncode, 1, result.stderr)
+                self.assertFalse((output / 'calibration').exists())
+                self.assertFalse((output / 'samples.jsonl').exists())
+            if marker.exists():
+                marker.unlink()
+
+    def test_declared_input_requires_initial_math_preparation(self):
+        directory, declaration, config = self.declared_math_fixture()
+        base = [sys.executable, BENCHMARK, '--input-corpus', str(directory),
+                '--config', str(config), '--output', str(self.root / 'invalid-mode')]
+        for options in (['--suite', 'math'],
+                        ['--suite', 'math', '--calibrate-seconds', '.000001'],
+                        ['--suite', 'arithmetic', '--calibrate-seconds', '.000001', '--calibrate-only']):
+            result = subprocess.run(base + options, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                    universal_newlines=True, timeout=8)
+            self.assertEqual(result.returncode, 2)
+            self.assertIn('--input-corpus requires', result.stderr)
+
     def test_sparse_iteration_override_preserves_dimensions_and_oracle(self):
         spec = importlib.util.spec_from_file_location('bc_sparse_corpus', BENCHMARK)
         bench = importlib.util.module_from_spec(spec)
