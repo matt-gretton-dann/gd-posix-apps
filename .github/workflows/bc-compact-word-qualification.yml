@@ -1,0 +1,101 @@
+name: bc compact Word execution qualification
+
+on:
+  pull_request:
+    branches: [main]
+    paths: ['src/bc/**', '.github/workflows/bc-compact-word-qualification.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bc-compact-word-qualification-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  qualify:
+    # One declared cohort, after the correctness/resource preflight. Keep
+    # failures and inconclusive rows; a green job is not adoption approval.
+    if: github.head_ref == 'codex/bc-compact-word-locals'
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [ubuntu-24.04, macos-15, windows-2025]
+        suite: [arithmetic, math-full, math-holdout]
+    name: Compact Word execution / ${{ matrix.image }} / ${{ matrix.suite }}
+    runs-on: ${{ matrix.image }}
+    timeout-minutes: 360
+    env:
+      BC_CANDIDATE: ${{ github.event.pull_request.head.sha }}
+      BC_BASE: '7989a2e8505d35f8ebe4a1ff04d3033499b0b48f'
+      BC_SUITE: ${{ matrix.suite }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.BC_CANDIDATE }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Record declared comparison
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force cohort | Out-Null
+          git rev-parse HEAD | Out-File cohort/source.txt -Encoding utf8
+          '${{ matrix.suite }} base=${{ env.BC_BASE }} candidate-word-functions-default=ON baseline-word-tier=absent native-functions-default=OFF native-scalar-default=OFF' | Out-File cohort/comparison.txt -Encoding utf8
+          Copy-Item docs/utilities/bc-compact-word-qualification.md cohort/protocol.md
+      - name: Establish native MSVC environment
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installation = & "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe" -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (!$installation) { throw 'Native x64 MSVC is unavailable' }
+          $variables = & cmd /c "`"$installation\Common7\Tools\VsDevCmd.bat`" -arch=x64 -host_arch=x64 >nul && set"
+          if ($LASTEXITCODE) { throw 'Cannot initialize MSVC' }
+          foreach ($line in $variables) {
+            if ($line -match '^(PATH|INCLUDE|LIB|LIBPATH|VCToolsInstallDir|VCINSTALLDIR|VSINSTALLDIR|WindowsSdkDir|WindowsSDKVersion|UniversalCRTSdkDir|UCRTVersion|Platform)=(.*)$') {
+              "$($matches[1])=$($matches[2])" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            }
+          }
+      - name: Collect fixed full and held-out elapsed and resource evidence
+        shell: python
+        run: |
+          import os
+          import subprocess
+          import sys
+          if os.environ['GITHUB_RUN_ATTEMPT'] != '1':
+              raise SystemExit('A frozen cohort cannot be restarted for acceptance')
+          suite = os.environ['BC_SUITE']
+          script = 'benchmark-ci.py' if suite == 'arithmetic' else 'benchmark-math-ci.py'
+          arguments = [sys.executable, 'src/bc/scripts/' + script, '--source', os.environ['GITHUB_WORKSPACE'],
+                       '--base', os.environ['BC_BASE'], '--candidate', os.environ['BC_CANDIDATE'],
+                       '--output', 'compact-word-results', '--broad', '--compare-resources',
+                       '--require-candidate-word-functions']
+          if suite == 'arithmetic':
+              arguments += ['--sparse-qualification', '--samples', '31']
+          else:
+              arguments += ['--broad-preset', suite[5:], '--duration-seconds', '.25',
+                            '--child-timeout-seconds', '600', '--total-seconds', '18000']
+          subprocess.run(arguments, check=True)
+      - name: Bind startup roles to the exact arithmetic executables
+        if: matrix.suite == 'arithmetic'
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+          roles = [json.loads(Path('compact-word-results', role, 'implementations.json').read_text())['implementations'][0] for role in ('base', 'aa', 'candidate')]
+          Path('cohort/startup-config.json').write_text(json.dumps(dict(implementations=roles), indent=2) + '\n')
+      - name: Collect candidate-specific startup study after ordinary timing
+        if: matrix.suite == 'arithmetic'
+        shell: pwsh
+        run: |
+          python src/bc/scripts/startup-calibration.py --config cohort/startup-config.json --output cohort/startup --total-seconds 2400 --child-timeout-seconds 5
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Preserve every outcome, exact binary and recipe
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bc-compact-word-qualification-${{ matrix.image }}-${{ matrix.suite }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            cohort/
+            compact-word-results/evidence/
+          if-no-files-found: error
+          retention-days: 30

@@ -1,9 +1,10 @@
 # Recursive word activation qualification
 
-Historical protocol: this document describes the immutable `516f50c2` study.
-The unpublished compact-slot follow-up changes the runtime and will need a new
-prospective declaration after the original outcomes are retained. Do not use
-this protocol or its results as qualification for that follow-up.
+Historical protocol: this document describes the immutable `516f50c2` study,
+which was rejected after all nine original outcomes were retained. The distinct
+compact-slot and generic-call candidate uses `bc-compact-word-qualification.md`
+and its own prospective declaration. Do not use this protocol or its results
+as qualification for that changed runtime.
 
 This prospective #690/#598/#207/#200/#197 cohort qualifies the complete recursive
 word tier against accepted main `7989a2e8505d35f8ebe4a1ff04d3033499b0b48f`.
