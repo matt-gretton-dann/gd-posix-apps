@@ -1,0 +1,138 @@
+name: bc subtractive square correctness
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/bc/**'
+      - 'CMakeLists.txt'
+      - 'cmake/**'
+      - '.github/workflows/bc-subtractive-square-correctness.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/bc/**'
+      - 'CMakeLists.txt'
+      - 'cmake/**'
+      - '.github/workflows/bc-subtractive-square-correctness.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  correctness:
+    name: Subtractive square / ${{ matrix.os }} / ${{ matrix.mode.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2025]
+        mode:
+          - {name: ordinary, square: 'ON', typed: 'OFF', profile: 'OFF', extensions: 'ON'}
+          - {name: profile, square: 'ON', typed: 'ON', profile: 'ON', extensions: 'OFF'}
+          - {name: fallback, square: 'OFF', typed: 'OFF', profile: 'OFF', extensions: 'ON'}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Establish native MSVC environment
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installation = & "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe" -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (!$installation) { throw 'Native x64 MSVC is unavailable' }
+          $variables = & cmd /c "`"$installation\Common7\Tools\VsDevCmd.bat`" -arch=x64 -host_arch=x64 >nul && set"
+          if ($LASTEXITCODE) { throw 'Cannot initialize MSVC' }
+          foreach ($line in $variables) {
+            if ($line -match '^(PATH|INCLUDE|LIB|LIBPATH|VCToolsInstallDir|VCINSTALLDIR|VSINSTALLDIR|WindowsSdkDir|WindowsSDKVersion|UniversalCRTSdkDir|UCRTVersion|Platform)=(.*)$') {
+              "$($matches[1])=$($matches[2])" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            }
+          }
+      - name: Check square algorithms, public dispatch and generic fallback
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir evidence
+          git rev-parse HEAD > evidence/revision.txt
+          python_cmd=python3
+          executable_suffix=
+          if [[ $RUNNER_OS == Windows ]]; then
+            export CC=cl CXX=cl
+            python_cmd=python
+            executable_suffix=.exe
+          fi
+          cmake -S . -B build-native -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DBUILD_TESTING=ON \
+            -DENABLE_BC_NATIVE_SCALAR=OFF -DENABLE_BC_NATIVE_FUNCTIONS=OFF \
+            -DENABLE_BC_SUBTRACTIVE_SQUARE=${{ matrix.mode.square }} \
+            -DENABLE_BC_TYPED_RESULTS=${{ matrix.mode.typed }} \
+            -DENABLE_BC_PROFILE=${{ matrix.mode.profile }} \
+            -DENABLE_NON_POSIX_EXTENSIONS=${{ matrix.mode.extensions }} \
+            -DRUN_CLANG_FORMAT=OFF -DRUN_CLANG_TIDY=OFF -DBC_MULTIPLY_SPLIT_POINT=126 \
+            2>&1 | tee evidence/configure.log
+          cmake --build build-native --target test-libbc bc test-bc-signal --parallel 2 \
+            2>&1 | tee evidence/build.log
+          "$python_cmd" - <<'PYCODE'
+          import hashlib,json,os,subprocess
+          from pathlib import Path
+          database=Path('build-native/compile_commands.json')
+          rows=json.loads(database.read_text())
+          expected=int('${{ matrix.mode.square }}'=='ON')
+          public=[]
+          for name in ('vm.cc','number-remainder.cc','test-number-workspace.cc','bc.cc'):
+              matches=[r for r in rows if r['file'].replace(chr(92),'/').endswith('/src/bc/'+name)]
+              assert len(matches)==1
+              command=matches[0].get('command') or ' '.join(matches[0]['arguments'])
+              assert 'GD_BC_SUBTRACTIVE_SQUARE='+str(expected) in command
+              public.append(dict(file=name,enabled=bool(expected)))
+          inputs={}
+          for name in ('number.hh','limb-subtractive-square.hh','limb-square.hh','limb-product.hh','test-number-workspace.cc','CMakeLists.txt'):
+              path=Path('src/bc',name)
+              inputs[name]=hashlib.sha256(path.read_bytes()).hexdigest()
+          images={}
+          suffix='.exe' if os.environ['RUNNER_OS']=='Windows' else ''
+          for name in ('bc','test-libbc'):
+              path=Path('build-native/src/bc',name+suffix)
+              target=Path('evidence/images',path.name)
+              target.parent.mkdir(parents=True,exist_ok=True)
+              target.write_bytes(path.read_bytes())
+              images[path.name]=hashlib.sha256(path.read_bytes()).hexdigest()
+          Path('evidence/square-build.json').write_text(json.dumps(dict(
+              source=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
+              square_enabled=bool(expected),square_crossover_limbs=64,public_compile_selection=public,
+              compile_commands_sha256=hashlib.sha256(database.read_bytes()).hexdigest(),
+              sources=inputs,images=images,
+              scope='Compiled selection and asserted correctness; profile mode checks positive recursive selection. No elapsed or adoption acceptance.'),indent=2)+'\n')
+          PYCODE
+          build-native/src/bc/test-libbc${executable_suffix} '[number]' \
+            2>&1 | tee evidence/number-tests.log
+          grep -q 'All tests passed' evidence/number-tests.log
+          build-native/src/bc/test-libbc${executable_suffix} '[bc][vm]' \
+            2>&1 | tee evidence/vm-tests.log
+          # Include CLI recovery around calls as well as the VM signal guards.
+          # Unsupported PTY hosts retain the fixture's explicit skip.
+          ctest --test-dir build-native --no-tests=error --output-on-failure \
+            -R '^bc/(vm-lifetime(-ipo)?|signal-(normal|exception|delivery)|math-library-(cli|source|image|decisions)|math-imported|math-oracle)$' \
+            2>&1 | tee evidence/ctest.log
+          "$python_cmd" src/bc/test-cli.py "build-native/src/bc/bc${executable_suffix}" \
+            --extensions ${{ matrix.mode.extensions }} 2>&1 | tee evidence/cli.log
+          "$python_cmd" src/bc/test-vm-cli.py "build-native/src/bc/bc${executable_suffix}" \
+            --extensions ${{ matrix.mode.extensions }} 2>&1 | tee evidence/vm-cli.log
+      - name: Preserve configuration and correctness logs
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p evidence
+          for path in build-native/CMakeCache.txt build-native/compile_commands.json; do
+            if [[ -f $path ]]; then cp "$path" evidence/; fi
+          done
+          if [[ -d build-native/Testing ]]; then cp -R build-native/Testing evidence/; fi
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: bc-subtractive-square-correctness-${{ matrix.os }}-${{ matrix.mode.name }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 30
