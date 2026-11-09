@@ -26,6 +26,22 @@ def load(name):
 
 
 class ResourceComparison(unittest.TestCase):
+    def test_arithmetic_resource_operands_match_elapsed_corpus_seed(self):
+        for preset, expected_seed in [('full', 197200), ('holdout', 197201)]:
+            observed = []
+
+            def corpus(selected_preset, seed=197200):
+                observed.append((selected_preset, seed))
+                return self.bench.corpus(selected_preset, seed=seed)
+
+            bench = types.SimpleNamespace(corpus=corpus)
+            resources = self.module.representatives(bench, preset, 'arithmetic')
+            self.assertEqual(observed, [(preset, expected_seed)])
+            elapsed = {row['name']: row for row in self.bench.corpus(preset, seed=expected_seed)}
+            for case in resources:
+                if case['name'] in elapsed:
+                    self.assertEqual(case, elapsed[case['name']])
+
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
