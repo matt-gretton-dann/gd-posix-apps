@@ -149,7 +149,7 @@ class BenchmarkCli(unittest.TestCase):
         self.assertEqual(result.stderr, "")
         rows = [json.loads(line) for line in
                 (output / "samples.jsonl").read_text(encoding="utf-8").splitlines()]
-        self.assertEqual(len(rows), 66)
+        self.assertEqual(len(rows), 69)
         self.assertTrue(all(row["checked"] for row in rows))
         manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
         files = [case for case in manifest['corpus'] if case['group'] == 'file_streaming']
@@ -379,6 +379,50 @@ class PairedStatistics(unittest.TestCase):
             actual = hashlib.sha256(Path(sys.executable).read_bytes()).hexdigest()
             self.assertEqual(entry['binary_sha256'], actual)
 
+    def test_storage_cases_keep_all_original_full_and_held_identities(self):
+        module = self.module()
+        fixture = Path(__file__).resolve().parents[2] / 'docs/utilities/bc-live-prefix-variant/original-arithmetic-corpus.json'
+        original = json.loads(fixture.read_text())
+        for preset, seed in [('full', 197200), ('holdout', 197201)]:
+            cases = module.corpus(preset, listing=True, seed=seed)
+            self.assertEqual(len(cases), 69)
+            self.assertEqual(len(original[preset]), 66)
+            for case, previous in zip(cases[:66], original[preset]):
+                self.assertEqual(case['name'], previous['name'])
+                self.assertEqual(case['group'], previous['group'])
+                self.assertEqual(case['parameters'], previous['parameters'])
+                self.assertEqual(hashlib.sha256(case['program'].encode()).hexdigest(), previous['program_sha256'])
+
+    def test_storage_checksums_match_independent_integer_loop_execution(self):
+        module = self.module()
+        shapes = ('inline_prefix', 'heap_snapshots', 'promotion_churn')
+        for preset, seed, digits, counts in [('quick',197200,(17,180,27),(2000,500,1000)),
+                                             ('full',197200,(17,180,27),(200000,50000,100000)),
+                                             ('holdout',197201,(18,207,26),(175000,43750,87500))]:
+            catalog = module.corpus(preset, listing=True, seed=seed)
+            fresh = module.corpus(preset, [c['name'] for c in catalog[66:]], seed=seed)
+            self.assertEqual(len(fresh), 3)
+            for case, shape, width, count in zip(fresh, shapes, digits, counts):
+                self.assertEqual(case['group'], 'storage_' + shape)
+                self.assertEqual(case['parameters']['operand_seed'], seed ^ 705197)
+                self.assertEqual(case['parameters']['digits'], width)
+                self.assertEqual(case['parameters']['iterations'], count)
+                a = int(re.search(r'\na=([0-9]+)\n', case['program']).group(1))
+                self.assertEqual(len(str(a)), width)
+                self.assertTrue(str(a).startswith('1'))
+                self.assertEqual(int(re.search(r'for\(i=0;i<([0-9]+);', case['program']).group(1)), count)
+                checksum = 0
+                for i in range(count):
+                    if shape == 'inline_prefix':
+                        value = (a + i) * 123456789
+                    elif shape == 'heap_snapshots':
+                        value = a
+                        a += 1
+                    else:
+                        value = 2 * (a + i % 97) + 10 ** 27
+                    checksum = (checksum + value) % 1000000007
+                self.assertEqual(case['expected'], [str(checksum)])
+
     def test_legacy_full_corpus_retains_its_programs_and_oracles(self):
         module = self.module()
         baseline = Path(__file__).resolve().parents[2] / (
@@ -398,7 +442,7 @@ class PairedStatistics(unittest.TestCase):
         recorded = json.loads(path.read_text())
         for preset, previous in recorded['presets'].items():
             cases = module.corpus(preset, seed=previous['seed'])
-            self.assertEqual(len(cases), len(previous['cases']) + 16)
+            self.assertEqual(len(cases), len(previous['cases']) + 19)
             by_name = {case['name']: case for case in cases}
             for name, digest in previous['cases'].items():
                 payload = json.dumps(by_name[name], sort_keys=True, separators=(',', ':')).encode()
@@ -413,7 +457,7 @@ class PairedStatistics(unittest.TestCase):
         for preset, previous in report['presets'].items():
             cases = module.corpus(preset, seed=previous['seed'])
             by_name = {case['name']: case for case in cases}
-            self.assertEqual(len(cases), len(previous['cases']) + 8)
+            self.assertEqual(len(cases), len(previous['cases']) + 11)
             for name, digest in previous['cases'].items():
                 payload = json.dumps(by_name[name], sort_keys=True, separators=(',', ':')).encode()
                 self.assertEqual(hashlib.sha256(payload).hexdigest(), digest)
@@ -452,7 +496,7 @@ class PairedStatistics(unittest.TestCase):
         for preset, recorded in report['presets'].items():
             cases = module.corpus(preset, seed=recorded['seed'])
             by_name = {case['name']: case for case in cases}
-            self.assertEqual(len(cases), len(recorded['cases']) + 10)
+            self.assertEqual(len(cases), len(recorded['cases']) + 13)
             for name, digest in recorded['cases'].items():
                 payload = json.dumps(by_name[name], sort_keys=True, separators=(',', ':')).encode()
                 self.assertEqual(hashlib.sha256(payload).hexdigest(), digest)
@@ -512,7 +556,7 @@ class PairedStatistics(unittest.TestCase):
         report = json.loads(fixture.read_text())
         for preset, recorded in report['presets'].items():
             cases = module.corpus(preset, seed=recorded['seed'])
-            self.assertEqual(len(cases), 66)
+            self.assertEqual(len(cases), 69)
             for actual, previous in zip(cases[:46], recorded['cases']):
                 self.assertEqual(actual['name'], previous['name'])
                 payload = json.dumps(actual, sort_keys=True, separators=(',', ':')).encode()

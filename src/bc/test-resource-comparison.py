@@ -430,7 +430,8 @@ class ResourceComparison(unittest.TestCase):
 
     def test_representatives_cover_both_presets_and_low_scale_math_boundaries(self):
         groups = {'startup', 'loop', 'calls', 'recursion', 'array', 'array_sparse',
-                  'streaming', 'file_streaming', 'temporary_chain', 'frame_reuse', 'private_frame_reuse',
+                  'streaming', 'file_streaming', 'temporary_chain', 'storage_inline_prefix',
+                  'storage_heap_snapshots', 'storage_promotion_churn', 'frame_reuse', 'private_frame_reuse',
                   'native_function_cache', 'native_function_fallback', 'word_cache',
                   'word_conversion', 'word_promotion', 'word_demotion', 'word_rejection', 'word_cold'}
         for preset in ('full', 'holdout'):

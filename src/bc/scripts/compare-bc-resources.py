@@ -156,7 +156,8 @@ def representatives(bench, preset, suite):
     """Fixed resource cases; no timing results influence their selection."""
     if suite == 'arithmetic':
         groups = {'startup', 'loop', 'calls', 'recursion', 'array', 'array_sparse',
-                  'streaming', 'file_streaming', 'temporary_chain'}
+                  'streaming', 'file_streaming', 'temporary_chain', 'storage_inline_prefix',
+                  'storage_heap_snapshots', 'storage_promotion_churn'}
         # Match the elapsed controller's operand seed, independently of its
         # randomized measurement schedule. Seeded holdouts must keep their bytes.
         seed = 197201 if preset == 'holdout' else 197200

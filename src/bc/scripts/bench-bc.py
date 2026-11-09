@@ -292,7 +292,8 @@ def corpus(preset="full", selected=None, listing=False, seed=197200, suite='arit
            sparse_iterations=None):
     """Keep the historical sixteen cases, then add explicitly named classes.
 
-    Quick mode reduces both dimensions and iterations; its parameterized names
+    Quick mode reduces dimensions and iterations, except storage boundary sizes.
+    Its parameterized names
     and manifest distinguish it from the full baseline. Oracles are evaluated
     only for selected cases, so startup-only validation stays inexpensive.
     """
@@ -612,6 +613,34 @@ def corpus(preset="full", selected=None, listing=False, seed=197200, suite='arit
                 dict(dividend_digits=len(str(a)), divisor_digits=len(str(b)), iterations=count,
                      scale=0, operation=operation, admission=shape, change_period=16 if shape == 'periodic' else 1,
                      timing_scope='whole-process latency' if shape == 'cold' else 'repeated process workload'))
+    # #705's prospective storage cases follow every original corpus/RNG draw.
+    # Use a separate stream so all 132 historical full/held identities survive.
+    storage_rng = random.Random(seed ^ 705197)
+    storage_digits = (18, 207, 26) if preset == 'holdout' else (17, 180, 27)
+    modulus = 1000000007
+    for shape, digits, repeats in zip(('inline_prefix', 'heap_snapshots', 'promotion_churn'),
+                                      storage_digits, (200000, 50000, 100000)):
+        initial = int('1' + ''.join(str(storage_rng.randrange(10)) for _ in range(digits - 1)))
+        count = iterations(repeats)
+        if shape == 'inline_prefix':
+            program = ('scale=0\na={}\ns=0\nfor(i=0;i<{};i++) '
+                       '{{b=a+i;c=b*123456789;s=(s+c)%{};b=i}}\ns').format(initial, count, modulus)
+            oracle = 123456789 * (count * initial + count * (count - 1) // 2) % modulus
+        elif shape == 'heap_snapshots':
+            program = ('scale=0\na={}\ns=0\nfor(i=0;i<{};i++) '
+                       '{{b=a;c=b;a+=1;s=(s+c)%{}}}\ns').format(initial, count, modulus)
+            oracle = (count * initial + count * (count - 1) // 2) % modulus
+        else:
+            boundary = 10 ** 27
+            program = ('scale=0\na={}\ns=0\nfor(i=0;i<{};i++) '
+                       '{{b=a+(i%97);c=b+{};d=c;c=c-{};s=(s+d+c)%{};c=i}}\ns').format(
+                           initial, count, boundary, boundary, modulus)
+            blocks, tail = divmod(count, 97)
+            offsets = blocks * 97 * 96 // 2 + tail * (tail - 1) // 2
+            oracle = (count * (2 * initial + boundary) + 2 * offsets) % modulus
+        add('storage_{}_{}d_x{}'.format(shape, digits, count), 'storage_' + shape,
+            program, oracle, dict(digits=digits, iterations=count, shape=shape,
+                                  checksum_modulus=modulus, operand_seed=seed ^ 705197))
     if selected:
         missing = set(selected) - set(known)
         if missing:
