@@ -170,6 +170,49 @@ TEST_CASE("Verified arithmetic chains reuse the consumed operand slot", "[bc][vm
   }
 }
 
+TEST_CASE("Block result slots preserve joins and arithmetic ownership", "[bc][vm][result-slots]")
+{
+  GD::Bc::Instructions code{I(O::number, "7"),
+                            I(O::number, "0"),
+                            I(O::branch_zero, D(-1), D(5)),
+                            I(O::number, "11"),
+                            I(O::number, "12"),
+                            I(O::add, D(-2), D(-1)),
+                            I(O::branch, D(5)),
+                            I(O::number, "21"),
+                            I(O::number, "22"),
+                            I(O::add, D(-2), D(-1)),
+                            I(O::print, D(-1), I::Stream::output)};
+  while (code.size() < 16)
+    code.emplace_back(O::print, D(-static_cast<D>(code.size())), I::Stream::output);
+  auto const consumption = plan(code);
+  auto slots = GD::Bc::Details::plan_result_slots(code, 48, consumption);
+  REQUIRE(slots.indices.size() == code.size());
+  GD::Bc::Details::reuse_block_result_slots(code, slots);
+  CHECK(slots.count == 4);
+  CHECK(slots.index(3) == slots.index(5));
+  CHECK(slots.index(7) == slots.index(9));
+  CHECK(slots.index(3) == slots.index(7));
+  CHECK(slots.index(4) == slots.index(8));
+  CHECK(slots.index(0) != slots.index(3));
+  CHECK(slots.index(0) != slots.index(4));
+  CHECK(slots.index(2) == 0);
+}
+
+TEST_CASE("Block result slots retain forward references across backedges", "[bc][vm][result-slots]")
+{
+  GD::Bc::Instructions code{I(O::branch, D(2)), I(O::print, D(1), I::Stream::output),
+                            I(O::number, "7"), I(O::branch, D(-2))};
+  while (code.size() < 16)
+    code.emplace_back(O::branch, D(1));
+  REQUIRE_FALSE(GD::Bc::Details::verify_control_flow(code, false).has_value());
+  auto slots = GD::Bc::Details::plan_result_slots(code, 48);
+  GD::Bc::Details::reuse_block_result_slots(code, slots);
+  CHECK(slots.count == 2);
+  CHECK(slots.index(2) == 1);
+  CHECK(slots.index(0) == 0);
+}
+
 TEST_CASE("Outer result slots exclude every unexecuted definition-body producer",
           "[bc][vm][result-slots]")
 {

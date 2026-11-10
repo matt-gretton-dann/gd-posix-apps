@@ -4,6 +4,7 @@
  */
 #include "execution-plan.hh"
 
+#include <algorithm>
 #include <cassert>
 #include <initializer_list>
 #include <limits>
@@ -514,4 +515,93 @@ auto plan_consumption(Instructions const& code, bool persistent) -> ConsumptionP
     return {};
   return result;
 }
+
+// Plan once per persistent function. Keep preparation out of the hot VM code
+// region on compilers that support it. Other compilers use the same analysis.
+#if defined(_MSC_VER)
+__declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline) && __has_cpp_attribute(gnu::cold)
+[[gnu::noinline, gnu::cold]]
+#endif
+void reuse_block_result_slots(Instructions const& code, ResultSlotPlan& slots)
+{
+  using I = Instruction::Index;
+  using O = Instruction::Opcode;
+  using C = ResultSlotPlan::CompactIndex;
+  if (slots.indices.empty())
+    return;
+
+  // An entry into the middle of a source interval starts a separate block,
+  // including loop back edges. A slot touched from more than one block must
+  // survive block changes and cannot share the scratch region.
+  auto const size = code.size();
+  std::vector<bool> leaders(size + 1);
+  auto target = [](I pc, Instruction::Operand const& operand) {
+    return pc + static_cast<I>(std::get<Instruction::Offset>(operand));
+  };
+  visit_execution_region(code, [&](I i) {
+    switch (code[i].opcode()) {
+    case O::branch:
+      leaders[target(i, code[i].op1())] = leaders[i + 1] = true;
+      break;
+    case O::branch_zero:
+      leaders[target(i, code[i].op2())] = leaders[i + 1] = true;
+      break;
+    case O::return_:
+    case O::quit:
+    case O::eof:
+    case O::function_begin:
+    case O::function_end:
+      leaders[i + 1] = true;
+      break;
+    default:
+      break;
+    }
+  });
+
+  I const shared = size + 1;
+  std::vector<I> owner(slots.count, size);
+  I block = 0;
+  visit_execution_region(code, [&](I i) {
+    if (leaders[i])
+      block = i;
+    auto touch = [&](C slot) {
+      if (owner[slot] == size)
+        owner[slot] = block;
+      else if (owner[slot] != block)
+        owner[slot] = shared;
+    };
+    if (slots.indices[i] != 0)
+      touch(slots.indices[i]);
+    auto read = [&](Instruction::Operand const& operand) {
+      if (std::holds_alternative<Instruction::Offset>(operand))
+        touch(slots.indices[target(i, operand)]);
+    };
+    auto const opcode = code[i].opcode();
+    if (opcode != O::branch && opcode != O::function_end && code[i].has_op1())
+      read(code[i].op1());
+    if (opcode != O::branch_zero && opcode != O::function_end && code[i].has_op2())
+      read(code[i].op2());
+  });
+
+  // Preserve the original ownership-transfer aliases. Each original slot
+  // gets exactly one new index, either dedicated or relative to its block.
+  std::vector<C> remap(slots.count);
+  C fixed = 1;  // Keep the no-result sentinel at zero.
+  for (C slot = 1; slot < slots.count; ++slot)
+    if (owner[slot] == shared)
+      remap[slot] = fixed++;
+  std::vector<C> scratch(size);
+  C count = fixed;
+  for (C slot = 1; slot < slots.count; ++slot) {
+    if (owner[slot] < size) {
+      remap[slot] = fixed + scratch[owner[slot]]++;
+      count = std::max(count, static_cast<C>(remap[slot] + 1));
+    }
+  }
+  for (auto& slot : slots.indices)
+    slot = remap[slot];
+  slots.count = count;
+}
+
 }  // namespace GD::Bc::Details
