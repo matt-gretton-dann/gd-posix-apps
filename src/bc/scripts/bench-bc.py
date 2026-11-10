@@ -30,7 +30,7 @@ from fractions import Fraction
 
 
 class BenchmarkError(RuntimeError):
-    """Invalid experiment or a failed correctness/process check."""
+    """Failed check; rejected numeric output may carry a bounded failed_output receipt."""
 
 
 def oracle_payload(case):
@@ -745,7 +745,20 @@ def run_checked(implementation, case, timeout, program_path=None):
         actual = canonical_output(child.stdout)
     except (UnicodeError, ValueError):
         raise BenchmarkError(label + " produced incorrect output (not numeric)")
-    check_output(case, actual, label)
+    try:
+        check_output(case, actual, label)
+    except BenchmarkError as error:
+        # The syntax check above limits this diagnostic to declared numeric
+        # output, excluding arbitrary child text. Preserve exact small failed
+        # results and a bounded prefix/full identity for larger ones. Rejection
+        # remains a hard failure and never creates a checked timing sample.
+        prefix = child.stdout[:4096]
+        error.failed_output = dict(implementation=implementation['name'], workload=case['name'],
+            checked=False, output_bytes=len(child.stdout),
+            output_sha256=hashlib.sha256(child.stdout).hexdigest(),
+            prefix_hex=prefix.hex(), prefix_bytes=len(prefix),
+            prefix_complete=len(prefix) == len(child.stdout))
+        raise
     return {"seconds": elapsed, "output_bytes": len(child.stdout), "checked": True,
             "output_sha256": hashlib.sha256(child.stdout).hexdigest()}
 
@@ -1145,7 +1158,10 @@ def main():
             len(cases), len(tools), output))
         return 0
     except (BenchmarkError, OSError, ValueError) as error:
-        write_json(output / "failure.json", {"error": str(error), "validation": "failed"})
+        failure = {"error": str(error), "validation": "failed"}
+        if getattr(error, 'failed_output', None) is not None:
+            failure['failed_output'] = error.failed_output
+        write_json(output / "failure.json", failure)
         print("Benchmark failed: " + str(error), file=sys.stderr)
         return 1
 

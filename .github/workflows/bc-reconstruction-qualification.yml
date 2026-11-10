@@ -31,7 +31,7 @@ jobs:
     timeout-minutes: 360
     env:
       BC_CANDIDATE: ${{ github.event.pull_request.head.sha }}
-      BC_BASE: 'b2b98ec1629c9aa98a3abbde01744f4bb95ac444'
+      BC_BASE: '01a3b4ff67737ac244d79f532a50fb03b1bb6573'
       BC_SUITE: ${{ matrix.suite }}
     steps:
       - uses: actions/checkout@v7

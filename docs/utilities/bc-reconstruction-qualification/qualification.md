@@ -71,8 +71,9 @@ their recipes and exact ordinary images before collection, and runs the
 original calibration schedule. This matrix has 180 jobs across the three
 platforms. Every job retains its own original archives and results.
 
-The successor incorporates accepted PRs #718 and #719: the versioned cold-latency
-exclusion and ordinary pre-sampling snapshots. Both ordinary and matched-profile
+The successor incorporates accepted PRs #718, #719 and #720: the versioned
+cold-latency exclusion, ordinary pre-sampling snapshots and exact rejected
+numeric-output receipts. Both ordinary and matched-profile
 build recipes are retained before elapsed children. The cumulative acceptance
 rules, original outcomes and startup requirements are unchanged; these evidence
 repairs are not performance qualification.

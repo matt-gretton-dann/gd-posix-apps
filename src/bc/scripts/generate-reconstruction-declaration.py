@@ -91,7 +91,7 @@ def declaration():
     selected['startup'] = dict(records=0, null_blocks=60, pairs=151)
     assert sum(v['records'] for k,v in selected.items()
                if not k.startswith('arithmetic-') and k != 'startup') == 376
-    return dict(schema=2,base='b2b98ec1629c9aa98a3abbde01744f4bb95ac444',
+    return dict(schema=2,base='01a3b4ff67737ac244d79f532a50fb03b1bb6573',
         source_identity='Exact immutable PR head recorded by each original job',
         files={name:digest(ROOT/name) for name in sorted(files)},selected_inputs=selected,
         mathematical_controls=224,previous_validation_math_records=76,fresh_math_records=76,previous_validation_integer_workloads=5,fresh_integer_workloads=5,
