@@ -132,7 +132,7 @@ def sparse_duration_sufficient(row):
                for role in ('base', 'aa', 'candidate'))
 
 
-def qualify_sparse(builder, evidence, entries):
+def qualify_sparse(builder, evidence, entries, presets=('full', 'holdout')):
     """Fixed latency and throughput cohorts; never retry until a result passes.
 
     Retain full-size operands and their exact product oracle. Increase only the
@@ -143,7 +143,8 @@ def qualify_sparse(builder, evidence, entries):
     config = evidence / 'sparse-qualification.json'
     write(config, {'implementations': entries})
     reports = []
-    for preset, digits, original in (('full', 10000, 1000), ('holdout', 11250, 875)):
+    for preset in presets:
+        digits, original = {'full': (10000, 1000), 'holdout': (11250, 875)}[preset]
         for kind, multiplier, samples in (('latency', 1, 101), ('long', 1000, 31)):
             count = original * multiplier
             name = 'multiply_sparse_{}d_x{}'.format(digits, count)
@@ -201,6 +202,8 @@ def main():
     parser.add_argument('--candidate', type=gd.revision_value, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--broad', action='store_true')
+    parser.add_argument('--partition', choices=('full', 'holdout', 'integer-validation'),
+                        help='run one declared broad cohort and its diagnostics')
     parser.add_argument('--compare-resources', action='store_true')
     parser.add_argument('--sparse-qualification', action='store_true')
     parser.add_argument('--additional-replay-corpus', type=Path,
@@ -211,6 +214,16 @@ def main():
     args = parser.parse_args()
     if args.samples < 3:
         parser.error('at least three paired samples are required')
+    if args.partition and not args.broad:
+        parser.error('--partition requires --broad')
+    validation_only = args.partition == 'integer-validation'
+    if args.partition and validation_only != bool(args.additional_replay_corpus):
+        parser.error('a partition requires replay inputs exactly for integer-validation')
+    if validation_only and args.sparse_qualification:
+        parser.error('sparse qualification belongs to full and holdout partitions')
+    presets = ('full', 'holdout') if args.broad else ('full',)
+    if args.partition:
+        presets = () if validation_only else (args.partition,)
     fresh_cases = None
     if args.additional_replay_corpus:
         args.additional_replay_corpus = args.additional_replay_corpus.resolve()
@@ -275,7 +288,7 @@ def main():
             ('base', 'candidate', 'aa', 'howard', 'base-profile', 'candidate-profile'))
         codegen.collect(entries + howard, evidence / 'elapsed-images', inspect=False)
         reports = []
-        cohorts = [(preset, None) for preset in (('full', 'holdout') if args.broad else ('full',))]
+        cohorts = [(preset, None) for preset in presets]
         if fresh_cases is not None:
             cohorts.append(('integer-validation', args.additional_replay_corpus))
         for preset, replay in cohorts:
@@ -294,7 +307,7 @@ def main():
                     command += ['--replay-corpus', str(replay)]
                 for name in names:
                     command += ['--workload', name]
-                builder.timeout = 14400 if replay else 3600
+                builder.timeout = 14400 if replay or args.partition else 3600
                 builder.run(command)
                 summary = json.loads((target / 'summary.json').read_text())
                 candidate = 'aa' if comparison == 'aa' else 'candidate'
@@ -343,11 +356,12 @@ def main():
                                     **(dict(duration_target_met=row.get('duration_target_met'),
                                              fixed_samples=args.samples) if replay else {})})
         if args.sparse_qualification:
-            reports.extend(qualify_sparse(builder, evidence, entries))
+            reports.extend(qualify_sparse(builder, evidence, entries,
+                presets if args.partition else ('full', 'holdout')))
         if args.compare_resources:
             load('compare-bc-resources').run_diagnostics(builder.run, profiles,
                 dict(base=entries[0], candidate=entries[1]),
-                ('full', 'holdout') if args.broad else ('full',), 'arithmetic', evidence,
+                presets, 'arithmetic', evidence,
                 additional_replay_corpus=args.additional_replay_corpus)
         write(evidence / 'acceptance.json', acceptance_report(reports, args.samples))
         write(evidence / 'decisions.json', {'advisory': True, 'results': reports,
@@ -381,7 +395,7 @@ def main():
         write(evidence / 'orchestration.json', {'base': args.base, 'candidate': args.candidate,
               'split_point': args.split_point, 'candidate_prepared_divisors': args.candidate_prepared_divisors,
               'sparse_qualification': args.sparse_qualification, 'compare_resources': args.compare_resources,
-              'samples': args.samples,
+              'samples': args.samples, 'partition': args.partition,
               'additional_replay_corpus': str(args.additional_replay_corpus) if args.additional_replay_corpus else None,
               'additional_replay_manifest_sha256': (hashlib.sha256(
                   (args.additional_replay_corpus/'manifest.json').read_bytes()).hexdigest()

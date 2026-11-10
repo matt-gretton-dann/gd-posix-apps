@@ -435,7 +435,9 @@ def run_diagnostics(run, profiles, ordinary, presets, suite, evidence, timeout=6
     profile_path, ordinary_path = evidence / 'resource-profiles.json', evidence / 'resource-ordinary.json'
     write(profile_path, role_configuration(profiles, library=suite == 'math'))
     write(ordinary_path, role_configuration(ordinary, library=suite == 'math'))
-    for preset in presets:
+    if not presets and (suite != 'arithmetic' or additional_replay_corpus is None):
+        raise ValueError('resource diagnostics require a preset or fixed arithmetic replay')
+    for preset in presets or ('integer-validation',):
         arguments = [sys.executable, str(Path(__file__).resolve()), '--profiles', str(profile_path),
              '--ordinary', str(ordinary_path), '--suite', suite, '--preset', preset,
              '--output', str(evidence / (preset + '-resource-comparison')),
@@ -450,7 +452,7 @@ def run_diagnostics(run, profiles, ordinary, presets, suite, evidence, timeout=6
                 raise ValueError('additional arithmetic replay requires the arithmetic suite')
             # Collect the fixed validation programs once, after every elapsed
             # cohort, without duplicating them in both ordinary presets.
-            if preset == presets[0]:
+            if not presets or preset == presets[0]:
                 arguments += ['--additional-replay-corpus', str(Path(additional_replay_corpus).resolve())]
         run(arguments)
 
@@ -614,7 +616,7 @@ def main():
     parser.add_argument('--profiles', type=Path, required=True)
     parser.add_argument('--ordinary', type=Path, required=True)
     parser.add_argument('--suite', choices=('arithmetic', 'math'), required=True)
-    parser.add_argument('--preset', choices=('full', 'holdout'), required=True)
+    parser.add_argument('--preset', choices=('full', 'holdout', 'integer-validation'), required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--repetitions', type=bench.positive_integer, default=5)
     parser.add_argument('--seed', type=int, default=661197)
@@ -631,7 +633,10 @@ def main():
             raise ValueError('resource configuration requires two roles')
         profiles = {entry['name']: entry for entry in profiles}
         ordinary = {entry['name']: entry for entry in ordinary}
-        cases = representatives(bench, args.preset, args.suite)
+        replay_only = args.preset == 'integer-validation'
+        if replay_only and (args.additional_replay_corpus is None or args.suite != 'arithmetic'):
+            raise ValueError('integer validation requires fixed arithmetic replay inputs')
+        cases = [] if replay_only else representatives(bench, args.preset, args.suite)
         if args.additional_corpus is not None:
             if args.suite != 'math':
                 raise ValueError('additional partition inputs require the math suite')

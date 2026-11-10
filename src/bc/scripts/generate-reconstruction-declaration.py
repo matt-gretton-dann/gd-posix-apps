@@ -54,6 +54,8 @@ def declaration():
         'src/bc/scripts/verify-bessel-zero-evidence.py','src/bc/test-bessel-zero-evidence.py'])
     files.update(['src/bc/scripts/math_oracle.py','src/bc/scripts/math_library_coverage.py',
                   'src/bc/test-math-library-coverage.py','src/bc/fixtures/math-library-decisions.json'])
+    files.update(['src/bc/scripts/benchmark-ci.py', 'src/bc/test-benchmark-ci.py',
+                  'src/bc/scripts/compare-bc-resources.py', 'src/bc/test-resource-comparison.py'])
     inputs=module('reconstruction-qualification-inputs')
     integers=module('integer-qualification-inputs')
     selected={}
@@ -71,15 +73,22 @@ def declaration():
                         records=len(chosen),names=[r['name'] for r in chosen])
         path=Path(tmp)/'integers'
         integers.write(path)
-        selected['arithmetic-startup']=dict(manifest_sha256=digest(path/'manifest.json'),
+        selected['arithmetic-integer-validation']=dict(manifest_sha256=digest(path/'manifest.json'),
             records=len(integers.cases()),names=[r['name'] for r in integers.cases()])
     assert len(selected)==46
-    assert sum(v['records'] for k,v in selected.items() if k!='arithmetic-startup')==300
-    return dict(schema=1,base='3beebb1461ac7549832707f9b84e547127e3c14a',
+    arithmetic = module('benchmark-ci')
+    bench = module('bench-bc')
+    for preset in ('full', 'holdout'):
+        names = arithmetic.selected_cases(bench, preset, True)
+        selected['arithmetic-' + preset] = dict(records=len(names), names=names)
+    selected['startup'] = dict(records=0, null_blocks=60, pairs=151)
+    assert sum(v['records'] for k,v in selected.items()
+               if not k.startswith('arithmetic-') and k != 'startup') == 300
+    return dict(schema=2,base='b2b98ec1629c9aa98a3abbde01744f4bb95ac444',
         source_identity='Exact immutable PR head recorded by each original job',
         files={name:digest(ROOT/name) for name in sorted(files)},selected_inputs=selected,
-        mathematical_controls=224,fresh_math_records=76,fresh_integer_workloads=5,
-        original_jobs=138,math_samples=dict(aa=151,paired=31),arithmetic_samples=151,
+        mathematical_controls=224,previous_validation_math_records=76,previous_validation_integer_workloads=5,
+        declared_jobs=147,math_samples=dict(aa=151,paired=31),arithmetic_samples=151,
         scope='Prospective canonical hashes only; excludes this manifest to avoid self-reference.')
 
 
@@ -94,4 +103,4 @@ if __name__=='__main__':
         assert args.output.read_bytes().replace(b'\r\n',b'\n')==raw,'prospective declaration differs from source or inputs'
     else:
         args.output.write_bytes(raw)
-    print('Verified prospective source and46 input partitions; no implementation executed')
+    print('Verified prospective source and 49 input partitions; no implementation executed')
