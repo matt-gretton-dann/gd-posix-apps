@@ -87,3 +87,16 @@ Hosted native loader/platform checks remain required for the implementation.
 Any elapsed study must be separately declared after all original PR #712
 observations have been retained and reviewed, with its exposed cases kept
 as controls and the approved regression/Howard/startup rules unchanged.
+
+## Correctness-only publication
+
+The dedicated native workflow covers Linux, macOS and Windows with image,
+source fallback, profile and native-function modes, supported threaded modes
+and a Linux sanitizer build. It retains the tested executable bytes, generated
+source/image data, selected public inputs, actual cache/compiler commands and
+asserted test logs. The original uploaded archive is downloaded and checked
+against its recorded hashes; missing or partial builds cannot pass retention.
+Synthetic fixture tests cover missing/corrupt bytes and source/path identity.
+This is a retention check, not a complete build-input closure or elapsed proof.
+The three ordinary timing workflows exclude only this exact topic branch,
+so the draft starts no replacement performance observations.

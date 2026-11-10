@@ -1,0 +1,260 @@
+name: bc zero-scale Bessel correctness
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/bc/**'
+      - 'CMakeLists.txt'
+      - 'cmake/**'
+      - '.github/workflows/bc-bessel-zero-correctness.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bc-bessel-zero-correctness-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  correctness:
+    if: github.head_ref == 'codex/bc-zero-scale-bessel'
+    name: Bessel zero / ${{ matrix.os }} / ${{ matrix.mode.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2025]
+        mode:
+          - {name: ordinary, typed: 'AUTO', profile: 'OFF', extensions: 'ON', prepared: 'OFF', compact: 'ON', image: 'ON', threaded: 'OFF', sanitize: 'OFF', native: 'OFF'}
+          - {name: profile, typed: 'ON', profile: 'ON', extensions: 'OFF', prepared: 'ON', compact: 'ON', image: 'ON', threaded: 'OFF', sanitize: 'OFF', native: 'OFF'}
+          - {name: generic, typed: 'OFF', profile: 'OFF', extensions: 'OFF', prepared: 'OFF', compact: 'OFF', image: 'OFF', threaded: 'OFF', sanitize: 'OFF', native: 'OFF'}
+        include:
+          - os: ubuntu-24.04
+            mode: {name: native-image, typed: 'ON', profile: 'OFF', extensions: 'ON', prepared: 'OFF', compact: 'ON', image: 'ON', threaded: 'OFF', sanitize: 'OFF', native: 'ON'}
+          - os: macos-15
+            mode: {name: native-image, typed: 'ON', profile: 'OFF', extensions: 'ON', prepared: 'OFF', compact: 'ON', image: 'ON', threaded: 'OFF', sanitize: 'OFF', native: 'ON'}
+          - os: windows-2025
+            mode: {name: native-image, typed: 'ON', profile: 'OFF', extensions: 'ON', prepared: 'OFF', compact: 'ON', image: 'ON', threaded: 'OFF', sanitize: 'OFF', native: 'ON'}
+          - os: ubuntu-24.04
+            mode: {name: sanitizer, typed: 'ON', profile: 'OFF', extensions: 'OFF', prepared: 'ON', compact: 'ON', image: 'ON', threaded: 'OFF', sanitize: 'ON', native: 'OFF'}
+          - os: ubuntu-24.04
+            mode: {name: threaded, typed: 'ON', profile: 'OFF', extensions: 'ON', prepared: 'OFF', compact: 'ON', image: 'ON', threaded: 'ON', sanitize: 'OFF', native: 'OFF'}
+          - os: macos-15
+            mode: {name: threaded, typed: 'ON', profile: 'OFF', extensions: 'ON', prepared: 'OFF', compact: 'ON', image: 'ON', threaded: 'ON', sanitize: 'OFF', native: 'OFF'}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Establish native MSVC environment
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installation = & "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe" -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (!$installation) { throw 'Native x64 MSVC is unavailable' }
+          $variables = & cmd /c "`"$installation\Common7\Tools\VsDevCmd.bat`" -arch=x64 -host_arch=x64 >nul && set"
+          if ($LASTEXITCODE) { throw 'Cannot initialize MSVC' }
+          foreach ($line in $variables) {
+            if ($line -match '^(PATH|INCLUDE|LIB|LIBPATH|VCToolsInstallDir|VCINSTALLDIR|VSINSTALLDIR|WindowsSdkDir|WindowsSDKVersion|UniversalCRTSdkDir|UCRTVersion|Platform)=(.*)$') {
+              "$($matches[1])=$($matches[2])" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            }
+          }
+      - name: Build and check certified zero-scale Bessel modes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir evidence
+          git rev-parse HEAD > evidence/revision.txt
+          python_cmd=python3
+          executable_suffix=
+          if [[ $RUNNER_OS == Windows ]]; then
+            export CC=cl CXX=cl
+            python_cmd=python
+            executable_suffix=.exe
+          fi
+          typed=${{ matrix.mode.typed }}
+          if [[ $typed == AUTO ]]; then
+            typed=ON
+            if [[ $RUNNER_OS == macOS ]]; then typed=OFF; fi
+          fi
+          # Nonempty arrays also work with the macOS Bash 3 nounset behavior.
+          sanitizer_options=(-DIPO_MODE=AUTO)
+          if [[ '${{ matrix.mode.sanitize }}' == ON ]]; then
+            export CC=clang CXX=clang++
+            sanitizer_options=(-DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer" -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined" -DIPO_MODE=OFF)
+          fi
+          cmake -S . -B build-native -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DBUILD_TESTING=ON \
+            -DENABLE_BC_NATIVE_SCALAR=OFF -DENABLE_BC_NATIVE_FUNCTIONS=${{ matrix.mode.native }} \
+            -DENABLE_BC_PREPARED_DIVISORS=${{ matrix.mode.prepared }} \
+            -DENABLE_BC_COMPACT_EXECUTION=${{ matrix.mode.compact }} \
+            -DENABLE_BC_PREPARSED_LIBRARY=${{ matrix.mode.image }} \
+            -DENABLE_BC_THREADED_DISPATCH=${{ matrix.mode.threaded }} \
+            -DENABLE_BC_TYPED_RESULTS="$typed" \
+            -DENABLE_BC_PROFILE=${{ matrix.mode.profile }} \
+            -DENABLE_NON_POSIX_EXTENSIONS=${{ matrix.mode.extensions }} \
+            -DRUN_CLANG_FORMAT=OFF -DRUN_CLANG_TIDY=OFF -DBC_MULTIPLY_SPLIT_POINT=126 \
+            "${sanitizer_options[@]}" 2>&1 | tee evidence/configure.log
+          image_targets=(test-bc-vm-lifetime test-bc-consumer-mode)
+          cmake --build build-native --target test-libbc bc test-bc-signal test-divisor-cache-lifetime "${image_targets[@]}" --parallel 2 \
+            2>&1 | tee evidence/build.log
+          "$python_cmd" - <<'PYCODE'
+          import hashlib,json,os,platform,re,subprocess
+          from pathlib import Path
+          cache=Path('build-native/CMakeCache.txt').read_text(encoding='utf-8')
+          expected={
+              'ENABLE_BC_NATIVE_SCALAR':'OFF',
+              'ENABLE_BC_NATIVE_FUNCTIONS':'${{ matrix.mode.native }}',
+              'ENABLE_BC_PROFILE':'${{ matrix.mode.profile }}',
+              'ENABLE_NON_POSIX_EXTENSIONS':'${{ matrix.mode.extensions }}',
+              'ENABLE_BC_PREPARED_DIVISORS':'${{ matrix.mode.prepared }}',
+              'ENABLE_BC_COMPACT_EXECUTION':'${{ matrix.mode.compact }}',
+              'ENABLE_BC_PREPARSED_LIBRARY':'${{ matrix.mode.image }}',
+              'ENABLE_BC_THREADED_DISPATCH':'${{ matrix.mode.threaded }}',
+              'ENABLE_BC_TYPED_RESULTS':'${{ matrix.mode.typed }}'}
+          if expected['ENABLE_BC_TYPED_RESULTS']=='AUTO':
+              expected['ENABLE_BC_TYPED_RESULTS']='OFF' if platform.system()=='Darwin' else 'ON'
+          for key,value in expected.items():
+              assert re.findall(r'^'+key+r':BOOL=(ON|OFF)$',cache,re.M)==[value],key
+          database=Path('build-native/compile_commands.json')
+          rows=json.loads(database.read_text(encoding='utf-8'))
+          matches=[r for r in rows if r['file'].replace(chr(92),'/').endswith('/src/bc/vm.cc')]
+          assert len(matches)==1
+          command=matches[0].get('command') or ' '.join(matches[0]['arguments'])
+          for macro,option in [('GD_BC_TYPED_RESULTS','ENABLE_BC_TYPED_RESULTS'),
+                               ('GD_BC_COMPACT_EXECUTION','ENABLE_BC_COMPACT_EXECUTION'),
+                               ('GD_BC_PREPARED_DIVISORS','ENABLE_BC_PREPARED_DIVISORS')]:
+              value=str(int(expected[option]=='ON'))
+              assert command.count(macro+'='+value)==1,(macro,command)
+          for macro,option in [('GD_BC_PROFILE','ENABLE_BC_PROFILE'),
+                               ('GD_BC_PREPARSED_LIBRARY','ENABLE_BC_PREPARSED_LIBRARY'),
+                               ('GD_BC_THREADED_DISPATCH','ENABLE_BC_THREADED_DISPATCH'),
+                               ('GD_BC_NATIVE_FUNCTIONS','ENABLE_BC_NATIVE_FUNCTIONS')]:
+              assert (macro+'=1' in command)==(expected[option]=='ON'),macro
+          inputs={}
+          files=['CMakeLists.txt','.github/workflows/bc-bessel-zero-correctness.yml',
+                 'docs/utilities/bc-zero-scale-bessel.md','docs/utilities/bc-portable-math.md']
+          files+=['src/bc/'+name for name in (
+              'bc.hh','vm.cc','test-vm-lifetime.cc',
+              'number.hh','digit-storage.hh','profiling.hh','CMakeLists.txt',
+              'math-library.bc','math-library.cc','math-library.hh.in','math-library-image.hh',
+              'preparse-math-library.cc','test-math-library-cli.py','test-math-library-source.py',
+              'test-bessel-zero-evidence.py','scripts/verify-bessel-zero-evidence.py',
+              'test-bessel-zero-proof.py','scripts/generate-bessel-classification-oracles.py',
+              'fixtures/math-bessel-classification-oracles.json',
+              'fixtures/math-oracles.json','fixtures/math-crossover-oracles.json',
+              'fixtures/math-trig-oracles.json','fixtures/math-bessel-zero-oracles.json',
+              'test-math-library-coverage.py','fixtures/math-library-decisions.json',
+              'scripts/math_library_coverage.py','scripts/math_oracle.py')]
+          files+=['build-native/src/bc/bc-math-library.hh']
+          image=Path('build-native/src/bc/bc-math-library-image.inc')
+          if image.is_file(): files.append(str(image))
+          for name in files:
+              path=Path(name);raw=path.read_bytes()
+              inputs[name]=hashlib.sha256(raw).hexdigest()
+              retained=Path('evidence/inputs',name)
+              retained.parent.mkdir(parents=True,exist_ok=True)
+              retained.write_bytes(raw)
+          # Match normalized source and mechanically embedded data before tests.
+          source=Path('src/bc/math-library.bc').read_text(encoding='utf-8')
+          header=Path('build-native/src/bc/bc-math-library.hh').read_text(encoding='utf-8')
+          embedded=re.search(r'R"GD_BC_LIBRARY\((.*)\)GD_BC_LIBRARY"',header,re.S)
+          assert embedded and embedded.group(1)==source
+          images={}
+          suffix='.exe' if os.environ['RUNNER_OS']=='Windows' else ''
+          for name in ('bc','test-libbc','test-bc-signal','test-divisor-cache-lifetime',
+                       'test-bc-vm-lifetime','test-bc-consumer-mode'):
+              path=Path('build-native/src/bc',name+suffix)
+              raw=path.read_bytes();target=Path('evidence/images',path.name)
+              target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(raw)
+              images[path.name]=hashlib.sha256(raw).hexdigest()
+          ipo=Path('build-native/src/bc','test-bc-vm-lifetime-ipo'+suffix)
+          if ipo.is_file():
+              raw=ipo.read_bytes();Path('evidence/images',ipo.name).write_bytes(raw)
+              images[ipo.name]=hashlib.sha256(raw).hexdigest()
+          Path('evidence/bessel-zero-build.json').write_text(json.dumps(dict(
+              source=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
+              system=platform.system(),machine=platform.machine(),mode='${{ matrix.mode.name }}',
+              options=expected,vm_compile_command=command,
+              compile_commands_sha256=hashlib.sha256(database.read_bytes()).hexdigest(),
+              inputs=inputs,images=images,
+              scope='Native compilation/source/image identity and asserted correctness only; no elapsed or adoption qualification.'),indent=2)+'\n')
+          PYCODE
+          build-native/src/bc/test-libbc${executable_suffix} '[number]' \
+            2>&1 | tee evidence/number-tests.log
+          grep -q 'All tests passed' evidence/number-tests.log
+          build-native/src/bc/test-libbc${executable_suffix} '[bc][vm]' \
+            2>&1 | tee evidence/vm-tests.log
+          if [[ '${{ matrix.mode.native }}' == ON ]]; then
+            build-native/src/bc/test-libbc${executable_suffix} '[native-expression]' 2>&1 | tee evidence/native-tests.log
+            grep -q 'All tests passed' evidence/native-tests.log
+          fi
+          ctest --test-dir build-native --no-tests=error --output-on-failure \
+            -R '^bc/(vm-lifetime(-ipo)?|signal-(normal|exception|delivery)|consumer-mode|divisor-cache-lifetime|bessel-zero-proof|bessel-classification-oracles|bessel-zero-evidence|math-library-(cli|source|image|decisions)|math-imported|math-oracle)$' \
+            2>&1 | tee evidence/ctest.log
+          "$python_cmd" src/bc/test-cli.py "build-native/src/bc/bc${executable_suffix}" \
+            --extensions ${{ matrix.mode.extensions }} 2>&1 | tee evidence/cli.log
+          "$python_cmd" src/bc/test-vm-cli.py "build-native/src/bc/bc${executable_suffix}" \
+            --extensions ${{ matrix.mode.extensions }} 2>&1 | tee evidence/vm-cli.log
+      - name: Preserve configuration and correctness logs
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p evidence
+          for path in build-native/CMakeCache.txt build-native/compile_commands.json; do
+            if [[ -f $path ]]; then cp "$path" evidence/; fi
+          done
+          if [[ -d build-native/Testing ]]; then cp -R build-native/Testing evidence/; fi
+          python_cmd=python3
+          if [[ $RUNNER_OS == Windows ]]; then python_cmd=python; fi
+          "$python_cmd" - <<'PYCODE'
+          import hashlib,json,os
+          from pathlib import Path
+          # Retain available inputs/images even if building or admission failed.
+          names=['src/bc/math-library.bc','src/bc/fixtures/math-library-decisions.json',
+                 'src/bc/CMakeLists.txt','CMakeLists.txt',
+                 'build-native/src/bc/bc-math-library.hh',
+                 'build-native/src/bc/bc-math-library-image.inc']
+          suffix='.exe' if os.environ.get('RUNNER_OS')=='Windows' else ''
+          names+=['build-native/src/bc/'+name+suffix for name in
+                  ('bc','test-libbc','test-bc-signal','test-divisor-cache-lifetime',
+                   'test-bc-vm-lifetime','test-bc-consumer-mode','test-bc-vm-lifetime-ipo')]
+          names+=['build-native/src/bc/'+name for name in ('liblibbc.a','libbc.lib','liblibbc.lib')]
+          retained={}
+          for name in names:
+              path=Path(name)
+              if not path.is_file(): continue
+              raw=path.read_bytes();target=Path('evidence/available',name)
+              target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(raw)
+              retained[name]=hashlib.sha256(raw).hexdigest()
+          Path('evidence/available-inputs.json').write_text(json.dumps(dict(
+              complete_build_metadata=Path('evidence/bessel-zero-build.json').is_file(),
+              files=retained,scope='Available original bytes only; not a successful-build or qualification claim.'),indent=2)+'\n',encoding='utf-8')
+          PYCODE
+      - uses: actions/upload-artifact@v7
+        id: native_upload
+        if: always()
+        with:
+          name: bc-bessel-zero-correctness-${{ matrix.os }}-${{ matrix.mode.name }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: evidence/
+          # The recorded public workflow copy is below inputs/.github/.
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 30
+      - name: Download the original uploaded native evidence
+        id: native_download
+        if: always() && steps.native_upload.outcome == 'success'
+        uses: actions/download-artifact@v8
+        with:
+          artifact-ids: ${{ steps.native_upload.outputs.artifact-id }}
+          path: uploaded-evidence
+      - name: Check the uploaded byte-retention contract
+        if: always() && steps.native_download.outcome == 'success'
+        shell: python
+        run: |
+          import subprocess,sys
+          subprocess.run([sys.executable, 'src/bc/scripts/verify-bessel-zero-evidence.py',
+                          'uploaded-evidence', '--source',
+                          '${{ github.event.pull_request.head.sha }}'], check=True)
