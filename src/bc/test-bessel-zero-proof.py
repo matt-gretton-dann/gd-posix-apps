@@ -59,10 +59,16 @@ with localcontext() as c:
     expected_lower='1.5211440576687651481513018730625235342837878902941129591913817089'
     expected_upper='1.5211440576687651481513018730625235342837878902941129591913817090'
     assert str(lower)==expected_lower and str(upper)==expected_upper
+    # Bind the mathematical endpoint proof to the constants actually used by
+    # the portable implementation, rather than certifying unused literals.
+    from pathlib import Path
+    source=(Path(__file__).parent/'math-library.bc').read_text()
+    assert 'if (x<'+expected_lower+')' in source
+    assert 'if (x>'+expected_upper+')' in source
     result=dict(kind='Exact rational feasibility only; no runtime or elapsed result',
         lower=str(lower),upper=str(upper),endpoint_terms=80,
         lower_above_half=float(al-F(1,2)),upper_below_half=float(F(1,2)-bu),
         energy_at_three_upper=float(energy),p3_minimum=str(p3),
-        identities_require_documented_coefficient_derivation=True,
+        coefficient_derivation='docs/utilities/bc-zero-scale-bessel.md',
         qualified=False)
     print(json.dumps(result,indent=2))

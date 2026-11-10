@@ -72,9 +72,18 @@ and around the scope boundary, with signed arguments and caller bases
 2/8/16. They exercise embedded and ordinary source loading. A large-argument
 redefinition test requires all three public a/c/s calls to remain observable.
 These checks pass against the accepted baseline before implementation.
+The portable source now implements those strict comparisons; the uncertain
+bracket and every excluded regime continue through the accepted code.
 
-Correctness, interpreted decision coverage, generated-source identity and
-hosted native loader/platform checks remain required for the implementation.
+Eight focused local CTests pass, including 628 certified instrumented results.
+All ten outcomes of the five new decisions are observed; overall coverage is
+203/214 observed, 212/214 observed or fault-modeled, with the same two
+mathematically infeasible exponential outcomes. Eleven additional compact
+outward enclosures are reproducible using the committed rational generator.
+The new boundary/state and public-binding tests also pass with Howard bc
+7.0.3 loading this exact source as ordinary input. These are functional
+checks, with no local production elapsed benchmark or CPU sampling.
+Hosted native loader/platform checks remain required for the implementation.
 Any elapsed study must be separately declared after all original PR #712
 observations have been retained and reviewed, with its exposed cases kept
 as controls and the approved regression/Howard/startup rules unchanged.

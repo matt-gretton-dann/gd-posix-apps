@@ -333,6 +333,17 @@ precedes the test, and zero is independent of the recorded parity. The
 ordinary decimal product 16*x is exact because multiplication retains x's
 fractional scale. No transcendental bound calculation runs in the interpreter.
 
+At entry scale zero, order zero and |x|<=8, strict certified threshold
+comparisons classify the nearest integer without evaluating the series.
+The unique J0(x)=1/2 crossing lies strictly between two adjacent 64-place
+decimals. Return one below the lower endpoint and zero above the upper;
+retain the accepted series inside the uncertain bracket. An exact energy
+bound prevents later excursions outside the zero rounding cell. The
+[complete rational argument](bc-zero-scale-bessel.md) includes endpoint,
+monotonicity and tail certificates. Restricting x to eight preserves the
+large-argument path's public a/c/s calls and user-redefinition semantics.
+Other orders/scales and larger arguments keep the existing regimes.
+
 For x > max(8*(n*n+1), W), attempt the real large-argument expansion from
 [NIST DLMF 10.17](https://dlmf.nist.gov/10.17). Coefficients satisfy
 `b_0=1; b_k=b_(k-1)*(4*n*n-(2*k-1)^2)/(8*k*x)`.
@@ -428,7 +439,9 @@ symmetry and an underflowing initial Bessel coefficient. These join the original
 positive and negative three radians. A Bessel zero-bound fixture adds 80
 enclosures across ratio and scale boundaries, signs and the complementary old
 bound. All 616 are independently certified; regeneration uses the same pinned
-optional FLINT environment.
+optional FLINT environment. Eleven additional zero-scale classification
+enclosures use exact alternating remainders and outward rational rounding;
+their separate generator requires no optional FLINT installation.
 
 ## Imported programs and interpreted decisions
 

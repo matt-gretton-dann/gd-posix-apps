@@ -377,7 +377,7 @@ define c(x) {
   return(r)
 }
 
-/* Bessel J: exact symmetries, tiny-result bound and two evaluation regimes. */
+/* Bessel J: symmetries, certified classification and two evaluation regimes. */
 define j(n,x) {
   auto b,d,f,g,h,i,k,m,p,q,r,s,t,u,v,w;
   /* b/s save base/scale; v is symmetry parity; w is working precision.
@@ -418,6 +418,25 @@ define j(n,x) {
         r=0/1
         ibase=b
         return(r)
+      }
+    }
+  }
+  /* At scale zero, certified J0 half-crossing bounds classify the
+     series-only range. Keep strict comparisons: the narrow uncertain
+     bracket uses the accepted series. Arguments above eight retain public
+     a/c/s calls in the Hankel path and ordinary redefinition semantics.
+     Scale is already zero; order-zero symmetry has no sign adjustment. */
+  if (s==0) {
+    if (n==0) {
+      if (x<=8) {
+        if (x<1.5211440576687651481513018730625235342837878902941129591913817089) {
+          ibase=b
+          return(1)
+        }
+        if (x>1.5211440576687651481513018730625235342837878902941129591913817090) {
+          ibase=b
+          return(0)
+        }
       }
     }
   }

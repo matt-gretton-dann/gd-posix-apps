@@ -76,7 +76,7 @@ def main():
     transformed, decisions = instrument(source)
     cases = []
     for filename in ('math-oracles.json', 'math-crossover-oracles.json', 'math-trig-oracles.json',
-                     'math-bessel-zero-oracles.json'):
+                     'math-bessel-zero-oracles.json', 'math-bessel-classification-oracles.json'):
         cases.extend(json.loads((ROOT / 'fixtures' / filename).read_text())['cases'])
     # At this intermediate precision the selector still attempts Hankel, but
     # contraction ends before the terms vanish. Reuse a finer enclosure.

@@ -1,0 +1,50 @@
+#!/usr/bin/env python3
+"""Generate outward decimal enclosures from exact Bessel-series remainders."""
+import argparse
+from fractions import Fraction as F
+import hashlib
+import json
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+LOWER = '1.5211440576687651481513018730625235342837878902941129591913817089'
+UPPER = '1.5211440576687651481513018730625235342837878902941129591913817090'
+ARGUMENTS = ('0', '1', LOWER[:-1] + '8', LOWER, LOWER + '5', UPPER,
+             UPPER[:-1] + '1', '2', '3', '8', '8.00000000000000000001')
+
+
+def generate():
+    cases = []
+    denominator = 10**100
+    for index, argument in enumerate(ARGUMENTS):
+        x = F(argument)
+        term = total = F(1)
+        q = x*x/4
+        for k in range(1, 100):
+            term *= -q/(k*k)
+            total += term
+        following = -term*q/(100*100)
+        assert q/(100*100) < 1
+        lower, upper = sorted((total, total+following))
+        # Integer floor/ceiling enlarge the exact interval. No decimal or
+        # binary floating-point approximation is used to certify these bytes.
+        lo = F(lower.numerator*denominator//lower.denominator, denominator)
+        hi = F(-((-upper.numerator*denominator)//upper.denominator), denominator)
+        assert lo <= lower <= upper <= hi and hi-lo <= F(2, denominator)
+        cases.append(dict(id='j-zero-classification-'+str(index), function='j',
+                          arguments=['0', argument], scale=0, lower=str(lo), upper=str(hi)))
+    return dict(method='Exact 100-term alternating series plus first omitted term; outward 100-place rational bounds',
+                generator_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),cases=cases)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--check', action='store_true')
+    args = parser.parse_args()
+    target = ROOT/'fixtures/math-bessel-classification-oracles.json'
+    raw = (json.dumps(generate(), indent=2, sort_keys=True)+'\n').encode()
+    if args.check:
+        if target.read_bytes() != raw:
+            parser.error('classification enclosures need regeneration')
+    else:
+        target.write_bytes(raw)
