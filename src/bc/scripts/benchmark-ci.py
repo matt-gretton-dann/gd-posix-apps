@@ -4,8 +4,10 @@
 Python 3.6+; SPDX-License-Identifier: Apache-2.0
 """
 import argparse
+import hashlib
 import importlib.util
 import json
+import math
 import os
 from pathlib import Path
 import platform
@@ -185,6 +187,12 @@ def gd_build_command(args, name, revision, directory, cc, cxx):
     return command
 
 
+def profile_build_command(args, name, revision, directory, cc, cxx):
+    command = gd_build_command(args, name, revision, directory, cc, cxx)
+    command[command.index('--name') + 1] = name + '-profile'
+    return command + ['--diagnostic-profile']
+
+
 def main():
     helper = load('build-bc-comparators')
     gd = load('build-gd-bc')
@@ -194,13 +202,29 @@ def main():
     parser.add_argument('--candidate', type=gd.revision_value, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--broad', action='store_true')
+    parser.add_argument('--compare-resources', action='store_true')
     parser.add_argument('--sparse-qualification', action='store_true')
+    parser.add_argument('--additional-replay-corpus', type=Path,
+                        help='append a prospectively fixed arithmetic validation cohort')
     parser.add_argument('--candidate-prepared-divisors', action='store_true')
     parser.add_argument('--samples', type=int, default=9)
     parser.add_argument('--split-point', type=gd.positive_point, default=126)
     args = parser.parse_args()
     if args.samples < 3:
         parser.error('at least three paired samples are required')
+    fresh_cases = None
+    if args.additional_replay_corpus:
+        args.additional_replay_corpus = args.additional_replay_corpus.resolve()
+        fresh_bench = load('bench-bc')
+        try:
+            fresh_cases, _ = fresh_bench.replay_corpus(args.additional_replay_corpus, 'arithmetic')
+            for case in fresh_cases:
+                floor = case['parameters'].get('duration_target_seconds')
+                if (case['parameters'].get('mode') != 'repeated' or
+                        type(floor) not in (int, float) or not math.isfinite(floor) or floor < .25):
+                    raise ValueError('additional validation needs an explicit substantive duration floor')
+        except (ValueError, OSError, fresh_bench.BenchmarkError) as error:
+            parser.error(str(error))
     root = args.output.resolve()
     root.mkdir(parents=True, exist_ok=False)
     evidence = root / 'evidence'
@@ -210,6 +234,7 @@ def main():
     cc, cxx = ('cl', 'cl') if os.name == 'nt' else ('cc', 'c++')
     entries = []
     howard = []
+    profiles = {}
     try:
         # Independent A/A build measures source/build noise; no build runs
         # concurrently with any measured executable. No tuned-binary cache.
@@ -232,6 +257,13 @@ def main():
                 builder.run([sys.executable, str(SCRIPTS.parent / 'test-divisor-reuse-cli.py'),
                              entry['argv'][0]])
         bench = load('bench-bc')
+        if args.compare_resources:
+            for role, revision in (('base', args.base), ('candidate', args.candidate)):
+                directory = root / (role + '-profile')
+                builder.run(profile_build_command(args, role, revision, directory, cc, cxx))
+                profiles[role] = json.loads((directory / 'implementations.json').read_text())['implementations'][0]
+            load('compare-bc-resources').validate_roles(bench, profiles,
+                dict(base=entries[0], candidate=entries[1]))
         base_digest = entries[0]['metadata'].get('binary_sha256')
         identical_binaries = bool(base_digest) and base_digest == entries[1]['metadata'].get('binary_sha256')
         configs = {'paired': [entries[0], entries[1]] + howard,
@@ -239,19 +271,26 @@ def main():
         for name, implementations in configs.items():
             write(root / (name + '.json'), {'implementations': implementations})
         reports = []
-        for preset in (('full', 'holdout') if args.broad else ('full',)):
-            names = selected_cases(bench, preset, args.broad)
+        cohorts = [(preset, None) for preset in (('full', 'holdout') if args.broad else ('full',))]
+        if fresh_cases is not None:
+            cohorts.append(('integer-validation', args.additional_replay_corpus))
+        for preset, replay in cohorts:
+            names = ([case['name'] for case in fresh_cases] if replay else
+                     selected_cases(bench, preset, args.broad))
             controls = {}
             for comparison in ('aa', 'paired'):
                 target = evidence / (preset + '-' + comparison)
                 command = [sys.executable, str(SCRIPTS / 'bench-bc.py'), '--config',
                            str(root / (comparison + '.json')), '--output', str(target),
-                           '--reference', 'base', '--preset', preset, '--samples', str(args.samples),
+                           '--reference', 'base', '--preset', 'holdout' if replay else preset,
+                           '--samples', str(args.samples),
                            '--warmups', '1', '--seed', '197216', '--corpus-seed',
                            '197201' if preset == 'holdout' else '197200', '--require-provenance']
+                if replay:
+                    command += ['--replay-corpus', str(replay)]
                 for name in names:
                     command += ['--workload', name]
-                builder.timeout = 3600
+                builder.timeout = 14400 if replay else 3600
                 builder.run(command)
                 summary = json.loads((target / 'summary.json').read_text())
                 candidate = 'aa' if comparison == 'aa' else 'candidate'
@@ -284,6 +323,9 @@ def main():
                     status = (aa_decision(ratio, second, startup=row['name'] == 'startup')
                               if comparison == 'aa' else
                               decision(ratio, second, startup=row['name'] == 'startup'))
+                    if replay and not all((row.get('duration_target_met') or {}).get(tool['name']) is True
+                                          for tool in configs[comparison]):
+                        status = 'inconclusive duration shortfall'
                     if comparison == 'aa':
                         controls[row['name']] = status
                     elif identical_binaries and status == 'confirmed regression':
@@ -292,9 +334,17 @@ def main():
                     reports.append({'preset': preset, 'comparison': comparison, 'name': row['name'],
                                     'ratio': ratio, 'confirmation': second,
                                     'status': status, 'aa_control_status': controls[row['name']],
-                                    'candidate_over_howard': competitive})
+                                    'candidate_over_howard': competitive,
+                                    **(dict(parameters=row['parameters'],
+                                             duration_target_met=row.get('duration_target_met'),
+                                             fixed_samples=args.samples) if replay else {})})
         if args.sparse_qualification:
             reports.extend(qualify_sparse(builder, evidence, entries))
+        if args.compare_resources:
+            load('compare-bc-resources').run_diagnostics(builder.run, profiles,
+                dict(base=entries[0], candidate=entries[1]),
+                ('full', 'holdout') if args.broad else ('full',), 'arithmetic', evidence,
+                additional_replay_corpus=args.additional_replay_corpus)
         write(evidence / 'acceptance.json', acceptance_report(reports, args.samples))
         write(evidence / 'decisions.json', {'advisory': True, 'results': reports,
               'aa_policy_sha256': AA_POLICY.source_sha256(),
@@ -326,11 +376,16 @@ def main():
         # Preserve exact recipes/logs without uploading cloned source/build trees.
         write(evidence / 'orchestration.json', {'base': args.base, 'candidate': args.candidate,
               'split_point': args.split_point, 'candidate_prepared_divisors': args.candidate_prepared_divisors,
-              'sparse_qualification': args.sparse_qualification,
+              'sparse_qualification': args.sparse_qualification, 'compare_resources': args.compare_resources,
+              'samples': args.samples,
+              'additional_replay_corpus': str(args.additional_replay_corpus) if args.additional_replay_corpus else None,
+              'additional_replay_manifest_sha256': (hashlib.sha256(
+                  (args.additional_replay_corpus/'manifest.json').read_bytes()).hexdigest()
+                  if args.additional_replay_corpus else None),
               'commands': builder.commands})
         for path in root.glob('command-*.log'):
             shutil.copyfile(str(path), str(evidence / path.name))
-        for name in ('base', 'candidate', 'aa', 'howard'):
+        for name in ('base', 'candidate', 'aa', 'howard', 'base-profile', 'candidate-profile'):
             source = root / name
             target = evidence / name
             target.mkdir(exist_ok=True)
@@ -344,6 +399,8 @@ def main():
         # Every timed child has finished. Preserve every measured GD and Howard
         # image without rebuilding, relinking or changing compiler flags.
         load('collect-bc-codegen').collect(entries + howard, evidence / 'codegen')
+        if profiles:
+            load('compare-bc-resources').preserve_profiles(profiles, evidence / 'profile-images')
 
 
 if __name__ == '__main__':

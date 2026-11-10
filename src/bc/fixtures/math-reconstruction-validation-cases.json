@@ -1,0 +1,358 @@
+{
+  "cases": [
+    {
+      "arguments": [
+        "3.711359"
+      ],
+      "function": "a",
+      "id": "reconstruction-validation-00",
+      "regime": "seeded short/dense input",
+      "scale": 0
+    },
+    {
+      "arguments": [
+        "3.0187303139430868923608851457776017396730579255500788378659294074901472749523002203858092412855341993698102474185811907231314171967920219719627818023313100969972701149213835651363419290957117034969372080299416857858077169171723693043498675801331123683285188"
+      ],
+      "function": "a",
+      "id": "reconstruction-validation-01",
+      "regime": "seeded short/dense input",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "-2.972538644732"
+      ],
+      "function": "a",
+      "id": "reconstruction-validation-02",
+      "regime": "seeded short/dense input",
+      "scale": 100
+    },
+    {
+      "arguments": [
+        "2.1460062516735832711362726605938356096184697251564577202434762264"
+      ],
+      "function": "a",
+      "id": "reconstruction-validation-03",
+      "regime": "seeded short/dense input",
+      "scale": 1000
+    },
+    {
+      "arguments": [
+        "-1.619288"
+      ],
+      "function": "e",
+      "id": "reconstruction-validation-04",
+      "regime": "seeded short/dense input",
+      "scale": 0
+    },
+    {
+      "arguments": [
+        "-2.1270993518125442400750299342565433759858990444105049855824640353601330920611393968992671120668881923913142506703997694055789286917333170918094071180292933061199914666899876457083829857813531321035937723182599263026627973984698137258047762465392991879873625"
+      ],
+      "function": "e",
+      "id": "reconstruction-validation-05",
+      "regime": "seeded short/dense input",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "2.342560396811"
+      ],
+      "function": "e",
+      "id": "reconstruction-validation-06",
+      "regime": "seeded short/dense input",
+      "scale": 100
+    },
+    {
+      "arguments": [
+        "1.3106349056753184692205183233023874671009492311260168683007428368"
+      ],
+      "function": "e",
+      "id": "reconstruction-validation-07",
+      "regime": "seeded short/dense input",
+      "scale": 1000
+    },
+    {
+      "arguments": [
+        "3.751164"
+      ],
+      "function": "l",
+      "id": "reconstruction-validation-08",
+      "regime": "seeded short/dense input",
+      "scale": 0
+    },
+    {
+      "arguments": [
+        "1.0720859181500393080503901242373935360699562476782505735093517998598512273025070298377325096040646195940168932653666729584384640062294829797241514461799139235164428815614399352292304167844334475897127686775918106785231980134665895544668867128672188486358684"
+      ],
+      "function": "l",
+      "id": "reconstruction-validation-09",
+      "regime": "seeded short/dense input",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "3.322757840812"
+      ],
+      "function": "l",
+      "id": "reconstruction-validation-10",
+      "regime": "seeded short/dense input",
+      "scale": 100
+    },
+    {
+      "arguments": [
+        "2.7565904698819211270146364235976348090671480596958311523197110681"
+      ],
+      "function": "l",
+      "id": "reconstruction-validation-11",
+      "regime": "seeded short/dense input",
+      "scale": 1000
+    },
+    {
+      "arguments": [
+        "-1.751841"
+      ],
+      "function": "s",
+      "id": "reconstruction-validation-12",
+      "regime": "seeded short/dense input",
+      "scale": 0
+    },
+    {
+      "arguments": [
+        "-2.4195983522774885063007540773544230527494914983741547147223865585129837977522143125947582976889538835137946492212700283641067739692840924597087091566869742835633323970034378491331855166385714175568689734842651309742094747686773632656465270666855299428230145"
+      ],
+      "function": "s",
+      "id": "reconstruction-validation-13",
+      "regime": "seeded short/dense input",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "-1.013475937874"
+      ],
+      "function": "s",
+      "id": "reconstruction-validation-14",
+      "regime": "seeded short/dense input",
+      "scale": 100
+    },
+    {
+      "arguments": [
+        "3.8712227843158745048177217168687123874220462253985532774505911235"
+      ],
+      "function": "s",
+      "id": "reconstruction-validation-15",
+      "regime": "seeded short/dense input",
+      "scale": 1000
+    },
+    {
+      "arguments": [
+        "-1.024586"
+      ],
+      "function": "c",
+      "id": "reconstruction-validation-16",
+      "regime": "seeded short/dense input",
+      "scale": 0
+    },
+    {
+      "arguments": [
+        "-2.8827646904465321055423385687855706853523983918085592232858987342676325386734446541969567279669110337607854590175365576487500205327989260603176377610775340087848525853271854070823938772594049901638377275143594732120517293387945120772394286574530806015613513"
+      ],
+      "function": "c",
+      "id": "reconstruction-validation-17",
+      "regime": "seeded short/dense input",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "-3.435726199334"
+      ],
+      "function": "c",
+      "id": "reconstruction-validation-18",
+      "regime": "seeded short/dense input",
+      "scale": 100
+    },
+    {
+      "arguments": [
+        "3.6874281053520007563432489738872334147671351743639632089366092649"
+      ],
+      "function": "c",
+      "id": "reconstruction-validation-19",
+      "regime": "seeded short/dense input",
+      "scale": 1000
+    },
+    {
+      "arguments": [
+        "1",
+        "2.234314"
+      ],
+      "function": "j",
+      "id": "reconstruction-validation-20",
+      "regime": "seeded short/dense input",
+      "scale": 0
+    },
+    {
+      "arguments": [
+        "1",
+        "1.3640864053019997399081426144270864945982091829832146774592530924546968030604352655610732177965316935405678253239081582835092176432957536933655149342199032224974784080881720597714885997100178082363811475084513073994216658509882350254790793537066616245306321"
+      ],
+      "function": "j",
+      "id": "reconstruction-validation-21",
+      "regime": "seeded short/dense input",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "1",
+        "2.929637701962"
+      ],
+      "function": "j",
+      "id": "reconstruction-validation-22",
+      "regime": "seeded short/dense input",
+      "scale": 100
+    },
+    {
+      "arguments": [
+        "1",
+        "2.3208535757737564696159311453124154873429489576760578795350973327"
+      ],
+      "function": "j",
+      "id": "reconstruction-validation-23",
+      "regime": "seeded short/dense input",
+      "scale": 1000
+    },
+    {
+      "arguments": [
+        "0",
+        "2.373617646062"
+      ],
+      "function": "j",
+      "id": "reconstruction-validation-24",
+      "regime": "additional integer order",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "0",
+        "2.490380913116"
+      ],
+      "function": "j",
+      "id": "reconstruction-validation-25",
+      "regime": "additional integer order",
+      "scale": 1000
+    },
+    {
+      "arguments": [
+        "2",
+        "2.132167317960"
+      ],
+      "function": "j",
+      "id": "reconstruction-validation-26",
+      "regime": "additional integer order",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "2",
+        "2.148738001736"
+      ],
+      "function": "j",
+      "id": "reconstruction-validation-27",
+      "regime": "additional integer order",
+      "scale": 1000
+    },
+    {
+      "arguments": [
+        "0.000000000000000000000000000000000000000000000000000000000000000000000000002745435443031"
+      ],
+      "function": "l",
+      "id": "reconstruction-validation-28",
+      "regime": "normalization cutoff neighbor",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "0.0000000000000000000000000000000000000000000000000000000000000000000000002494698043851"
+      ],
+      "function": "l",
+      "id": "reconstruction-validation-29",
+      "regime": "normalization cutoff neighbor",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "24171056324890000000000000000000000000000000000000000000000000000000000000.520135"
+      ],
+      "function": "l",
+      "id": "reconstruction-validation-30",
+      "regime": "normalization cutoff neighbor",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "2250493313725000000000000000000000000000000000000000000000000000000000000000.866435"
+      ],
+      "function": "l",
+      "id": "reconstruction-validation-31",
+      "regime": "normalization cutoff neighbor",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "1.69413081969"
+      ],
+      "function": "l",
+      "id": "reconstruction-validation-32",
+      "regime": "root-free band",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "2.37018177581"
+      ],
+      "function": "l",
+      "id": "reconstruction-validation-33",
+      "regime": "root-free band",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "17130.754553927474"
+      ],
+      "function": "s",
+      "id": "reconstruction-validation-34",
+      "regime": "large argument reduction",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "16904.680440454175"
+      ],
+      "function": "s",
+      "id": "reconstruction-validation-35",
+      "regime": "large argument reduction",
+      "scale": 1000
+    },
+    {
+      "arguments": [
+        "15203.781471447714"
+      ],
+      "function": "c",
+      "id": "reconstruction-validation-36",
+      "regime": "large argument reduction",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "18248.097694755756"
+      ],
+      "function": "c",
+      "id": "reconstruction-validation-37",
+      "regime": "large argument reduction",
+      "scale": 1000
+    }
+  ],
+  "schema": 1,
+  "scope": "Prospective genuinely fresh validation before first elapsed observation; no implementation run by this generator.",
+  "seed": 883557844368173324465062769653793713845165649631,
+  "source_seed": "9ac41aa0b2e23444dcaa12bdb8cfd9969add2568"
+}

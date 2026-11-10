@@ -14,3 +14,7 @@ math-trig-cases.json text eol=lf
 math-trig-oracles.json -text
 math-bessel-zero-cases.json text eol=lf
 math-bessel-zero-oracles.json -text
+math-adaptive-budget-cases.json text eol=lf
+math-adaptive-budget-oracles.json -text
+math-reconstruction-validation-cases.json text eol=lf
+math-reconstruction-validation-oracles.json -text

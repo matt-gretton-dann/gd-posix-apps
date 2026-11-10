@@ -2,9 +2,10 @@
 
 Issue #683 explores a separate way to reduce function-call and expression
 dispatch costs under #207 and #197. `ENABLE_BC_NATIVE_FUNCTIONS` defaults to
-`OFF`; this option is independent of `ENABLE_BC_NATIVE_SCALAR`. No performance
-benefit or default activation is established by the implementation or its
-correctness workflow.
+`ON` in the unqualified final integration candidate, independently of
+`ENABLE_BC_NATIVE_SCALAR`. Unsupported targets and explicit OFF builds use
+the generic interpreter. Correctness alone does not establish a performance
+benefit or qualify this default activation for merging.
 
 Backends support x86-64 Windows/POSIX and ordinary Apple ARM64 targets with a
 matching compiler. ARM64EC, Apple arm64e, universal Apple builds and other
@@ -14,8 +15,8 @@ processor.
 
 ## Eligibility and ownership
 
-Only verified functions with the parser's one-scalar parameter prologue and
-straight-line parameter loads, single decimal digits, addition, multiplication
+The machine-leaf path admits verified functions with the parser's one-scalar
+parameter prologue and straight-line parameter loads, single decimal digits, addition, multiplication
 and a return are eligible. There are at most 132 source instructions and 64
 native operations. Stores, global reads, branches, calls, arrays, I/O, special
 registers and other operations before the return reject the definition. Single
@@ -99,5 +100,64 @@ are software diagnostics, not speed measurements. Emitter vectors, shared-owner
 headers, strings and executable mappings are outside the selected-container
 allocation counters; code pages also require separate process-memory review.
 Compilation cost, cache footprint, cold startup and unrelated workloads remain
-part of any later acceptance study. This feature is not a general bc JIT and
-does not accelerate recursive or branching function bodies.
+part of any later acceptance study. This feature is not a general bc JIT.
+
+## Pure integer self recurrences
+
+The same opt-in function cache can recognize a closed recurrence with one
+scalar parameter: a threshold comparison, one base return and one return of
+`n+f(n-k)` or `n*f(n-k)`, in either operand order. The comparison may be
+strict or inclusive and either arm may contain the base return. The base
+value is a single-digit integer constant or the parameter. The decrement k
+is a positive single decimal digit. All literals are independent of ibase.
+
+Recognition follows the actual immutable instructions and separately proves
+both conditional paths. It permits no stores after the parameter prologue,
+global or special-register reads, arrays, I/O, second call or other callee.
+A redefinition discards the cached proof; a descriptor also records its
+explicit self-call letter. Unsupported definitions retain normal execution.
+
+Admitted arguments have stored scale zero, are nonnegative, use no retained
+heap storage and fit the existing one-radix-digit input domain. The terminal
+argument and all recurrence operands are integers with scale zero. A negative
+stop threshold can produce negative intermediate factors before the terminal
+call; the reduction keeps their signs through direct Number construction.
+Addition and multiplication retain scale zero at any global scale, so exact
+reassociation preserves bc arithmetic. A Number accumulator computes the
+result beyond machine-word range, without one VM activation per recursive
+step. Subtraction, division and fractional recurrences are excluded. The
+separate machine-leaf path boxes wide integer results directly in Number's
+radix, avoiding decimal-string formatting and parsing.
+
+Before arithmetic, decline more than 65,536 steps or an estimated four
+million decimal-digit steps. For products the estimate uses
+`steps*(steps*digits(input)+2)`; sums use
+`steps*(digits(input)+digits(steps)+2)`. These are general resource bounds
+for the admitted family, not a factorial-specific threshold or measured RSS
+limit. Larger work retains the interpreter. Each iteration checks interruption.
+All arithmetic and final result ownership complete before consuming the
+incoming parameter pack. A declining or interrupted attempt leaves that pack
+unchanged; allocation failure follows the existing generic fallback.
+
+Tests compare checked and optimized execution over different thresholds,
+decrements, signs, operators, base values and caller bases/scales. Explicit
+recognizer assertions distinguish admission from a fallback-only test pass.
+Directed checks cover a 50! result wider than 64 bits, side effects, dynamic
+redefinition, fractional inputs, resource refusal and interrupted output
+ownership. Profiling proves one outer VM call for the real factorial source
+shape. Function-call counters count executed VM dispatches, so folded internal
+calls do not increment them. Counters establish selection, not speed.
+
+The final integration candidate enables the option on supported targets,
+with explicit OFF modes and unsupported-architecture generic fallbacks.
+Correctness, memory/code-size review and source-specific hosted performance
+qualification are required before merging that default activation;
+no earlier native or numerical candidate's timing results transfer.
+
+The generated-code entry bridge uses the platform function-call ABI without a
+compiler-generated UBSan function-type preamble. Clang therefore omits only
+its `function` metadata check at `NativeExpression::execute`; AddressSanitizer
+and other undefined-behavior checks remain enabled. Other compilers retain
+the ordinary bridge. Both supported emitters use this narrow boundary rule.
+The original integrated Linux sanitizer failure remains archived; corrected
+hosted sanitizer results are required before qualification.

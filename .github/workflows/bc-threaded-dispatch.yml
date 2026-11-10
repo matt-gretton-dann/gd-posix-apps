@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   compare:
-    if: github.head_ref != 'codex/bc-652-competitive-margin' && github.head_ref != 'codex/bc-655-array-profile' && github.head_ref != 'codex/bc-659-startup-calibration' && github.head_ref != 'codex/bc-663-versioned-roles' && github.head_ref != 'codex/bc-200-control-audit'
+    if: github.head_ref != 'codex/bc-652-competitive-margin' && github.head_ref != 'codex/bc-655-array-profile' && github.head_ref != 'codex/bc-659-startup-calibration' && github.head_ref != 'codex/bc-663-versioned-roles' && github.head_ref != 'codex/bc-200-control-audit' && github.head_ref != 'codex/bc-zero-scale-bessel' && github.head_ref != 'codex/bc-reconstruction-qualification'
     name: Threaded dispatch / ${{ matrix.image }}
     runs-on: ${{ matrix.image }}
     timeout-minutes: 45
