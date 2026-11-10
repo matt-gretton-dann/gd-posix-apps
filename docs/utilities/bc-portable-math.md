@@ -574,3 +574,11 @@ image implementations and the source loader, the compact preload ratio was
 The compact no-library ratio was 0.988 [0.978, 1.008]. Both image builds
 matched the source loader's output on the timed cases. Both language modes
 also passed the math CLI checks and regenerated the compact image exactly.
+
+## Bounded low-scale rational and Horner candidate
+
+The [bounded kernel certificate](bc-bounded-rational-kernels.md) documents
+the scale-1..20 rational kernels and finite weighted Bessel polynomial.
+Original range reductions and the generic algorithms remain the fallbacks.
+Correctness/error bounds do not establish performance adoption; all original
+#717 failures and missing/inconclusive evidence remain binding.
