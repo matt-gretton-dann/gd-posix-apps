@@ -36,15 +36,33 @@ see [the completed review](https://github.com/matt-gretton-dann/gd-posix-apps/pu
 That source remains unqualified, including inconclusive macOS startup and
 missing Linux image/startup evidence. No old timing qualifies this successor.
 
-Only correctness is enabled for this successor branch. The legacy elapsed
-workflows exclude it, and the existing ready-for-review qualification workflow
-still selects only the original `codex/bc-reconstruction-qualification` branch.
-Do not mark the successor ready to infer an elapsed dispatch: a complete new
-prospective protocol, accepted baseline, evidence-retention fixes and exact-head
-hosted preflight are required first. The declaration below records current
-source/control identities for correctness retention, retaining the historical
-baseline and original input dimensions; it is not a new elapsed authorization.
-The cumulative 864,000-second total pursuit cap is unchanged.
+Opening the successor draft starts correctness. The ready-for-review workflow
+selects the successor and records its exact head. It pins the accepted
+comparison revision and retains each partition separately. Dispatch requires
+exact-head hosted correctness and time remaining for the full run and review
+within the cumulative 864,000-second cap.
+
+The successor repeats all 300 mathematical inputs from #717, including the
+76 previously published validation records. It also repeats all five fixed
+integer validation programs. These are previously exposed controls.
+An additional 38 cases cover the same mathematical regimes with new seeded
+fractional inputs. The seed is the bounded-rational candidate revision
+`c5223efae0722c1e41bd2fab71afaa52648ee52f` XOR 197217207. The committed
+case file and independent FLINT/Arb enclosures supply 76 fresh one-shot and
+repeated records, kept separate from the previous 300 inputs.
+
+On each platform, split the original arithmetic and startup job into five
+jobs. Full and holdout retain their complete arithmetic workloads, sparse
+latency and throughput, and preset resource diagnostics. The fixed integer
+partition retains its five programs and matched diagnostics once. Another
+partition uses the same integer generator with the bounded-rational revision
+XOR 207197200 to declare five fresh programs and their exact oracles. Each
+partition retains its original sample counts, seeds, roles and confirmation
+rules. Broad arithmetic stages have a 14,400-second command deadline.
+The startup job independently rebuilds the same three declared roles, keeps
+their recipes and exact ordinary images before collection, and runs the
+original calibration schedule. This matrix has 177 jobs across the three
+platforms. Every job retains its own original archives and results.
 
 The successor incorporates accepted PRs #718 and #719: the versioned cold-latency
 exclusion and ordinary pre-sampling snapshots. Both ordinary and matched-profile
@@ -52,7 +70,7 @@ build recipes are retained before elapsed children. The cumulative acceptance
 rules, original outcomes and startup requirements are unchanged; these evidence
 repairs are not performance qualification.
 
-## Original publication and one original run
+## Original publication and one run per immutable source
 
 Opening the final draft starts correctness only. All three legacy automatic
 elapsed workflows exclude this branch. The new qualification workflow listens
@@ -160,8 +178,8 @@ exit without cleanup preserves completed receipts, while raw files from the
 unfinished child supply no checked observation. These changes prevent future
 loss; they do not reconstruct the original #717 missing evidence.
 
-After arithmetic/resource work, run the unchanged startup-calibration
-controller with those exact base, independent base A/A and candidate images:
+The original #717 job scheduled startup calibration after arithmetic and
+resource work, using the exact base, independent base A/A and candidate images:
 151 pairs per existing null/candidate block, 2,400-second total and five-second
 child bounds. Preserve clock identity, all null blocks, sensitivity results
 and confirmed bias. Startup still requires qualified empirical calibration
@@ -169,7 +187,7 @@ and candidate acceptance; Howard margins cannot waive it. Missing startup
 data stays unqualified.
 
 Every job has a 20,000-second process-tree deadline around its entire collector
-sequence, including arithmetic and subsequent startup. The workflow bound is
+sequence. The workflow bound is
 360 minutes, within the standard hosted six-hour limit and leaving time for
 retention. These process bounds and finer shards
 are declared before any new elapsed result. No local production elapsed

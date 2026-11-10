@@ -35,11 +35,25 @@ class IntegerInputs(unittest.TestCase):
             manifest=json.loads((directory/'manifest.json').read_text())
             self.assertEqual(manifest['corpus_seed'],INPUTS.SEED)
 
+    def test_successor_programs_are_disjoint_and_replay_exactly(self):
+        previous = INPUTS.cases()
+        fresh = INPUTS.cases(successor=True)
+        self.assertEqual(len(fresh), len(previous))
+        for key in ('name', 'program'):
+            self.assertTrue({row[key] for row in previous}.isdisjoint(row[key] for row in fresh))
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp) / 'inputs'
+            INPUTS.write(directory, successor=True)
+            restored, _ = BENCH.replay_corpus(directory, 'arithmetic')
+            self.assertEqual(restored, fresh)
+            manifest = json.loads((directory / 'manifest.json').read_text())
+            self.assertEqual(manifest['corpus_seed'], INPUTS.SUCCESSOR_SEED)
+
     @unittest.skipUnless(BINARY,'requires the actual test executable')
     def test_small_count_programs_preserve_exact_results_and_outer_bindings(self):
         rows=INPUTS.cases(small_counts=True)
         self.assertEqual(rows[0]['expected'][0],'98')  # sum(i*i+1), i=0..6.
-        for row in rows:
+        for row in rows + INPUTS.cases(small_counts=True, successor=True):
             with self.subTest(name=row['name']):
                 # Seven word calls or two reductions: no production benchmark
                 # count or elapsed sample is executed by this functional test.

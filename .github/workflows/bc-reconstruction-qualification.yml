@@ -20,18 +20,18 @@ jobs:
   qualify:
     # Opening a draft runs correctness only. Mark ready once, after exact-head
     # correctness and original evidence review, to measure this same source.
-    if: github.head_ref == 'codex/bc-reconstruction-qualification'
+    if: github.head_ref == 'codex/bc-bounded-rational-math'
     strategy:
       fail-fast: false
       matrix:
         image: [ubuntu-24.04, macos-15, windows-2025]
-        suite: [full-low-0, full-low-1, full-low-2, full-low-3, full-low-4, full-low-5, full-middle-0, full-middle-1, full-middle-2, full-middle-3, full-middle-4, full-middle-5, full-high-0, full-high-1, full-high-2, full-high-3, full-high-4, full-high-5, holdout-low-0, holdout-low-1, holdout-low-2, holdout-low-3, holdout-low-4, holdout-low-5, holdout-middle-0, holdout-middle-1, holdout-middle-2, holdout-middle-3, holdout-middle-4, holdout-middle-5, holdout-high-0, holdout-high-1, holdout-high-2, holdout-high-3, holdout-high-4, holdout-high-5, validation-low-0, validation-low-1, validation-low-2, validation-middle-0, validation-middle-1, validation-middle-2, validation-high-0, validation-high-1, validation-high-2, arithmetic-startup]
+        suite: [arithmetic-full, arithmetic-holdout, arithmetic-integer-validation, arithmetic-integer-fresh, startup, full-low-0, full-low-1, full-low-2, full-low-3, full-low-4, full-low-5, full-middle-0, full-middle-1, full-middle-2, full-middle-3, full-middle-4, full-middle-5, full-high-0, full-high-1, full-high-2, full-high-3, full-high-4, full-high-5, holdout-low-0, holdout-low-1, holdout-low-2, holdout-low-3, holdout-low-4, holdout-low-5, holdout-middle-0, holdout-middle-1, holdout-middle-2, holdout-middle-3, holdout-middle-4, holdout-middle-5, holdout-high-0, holdout-high-1, holdout-high-2, holdout-high-3, holdout-high-4, holdout-high-5, validation-low-0, validation-low-1, validation-low-2, validation-middle-0, validation-middle-1, validation-middle-2, validation-high-0, validation-high-1, validation-high-2, fresh-low-0, fresh-low-1, fresh-low-2, fresh-middle-0, fresh-middle-1, fresh-middle-2, fresh-high-0, fresh-high-1, fresh-high-2]
     name: Reconstruction / ${{ matrix.image }} / ${{ matrix.suite }}
     runs-on: ${{ matrix.image }}
     timeout-minutes: 360
     env:
       BC_CANDIDATE: ${{ github.event.pull_request.head.sha }}
-      BC_BASE: '3beebb1461ac7549832707f9b84e547127e3c14a'
+      BC_BASE: 'b2b98ec1629c9aa98a3abbde01744f4bb95ac444'
       BC_SUITE: ${{ matrix.suite }}
     steps:
       - uses: actions/checkout@v7
@@ -51,11 +51,13 @@ jobs:
           root=Path('cohort');root.mkdir()
           (root/'source.txt').write_text(source+'\n',encoding='utf-8')
           (root/'comparison.txt').write_text(os.environ['BC_SUITE']+' base='+os.environ['BC_BASE']+
-              ' reconstruction-runtime=6d9db73c native-scalar=default-OFF native-functions=default-ON split=126\n',encoding='utf-8')
+              ' bounded-rational-runtime=c5223efa native-scalar=default-OFF native-functions=default-ON split=126\n',encoding='utf-8')
           directory=Path('docs/utilities/bc-reconstruction-qualification')
           shutil.copyfile(directory/'qualification.md',root/'protocol.md')
           shutil.copyfile(directory/'qualification-hashes.json',root/'qualification-hashes.json')
           pinned=json.loads((directory/'qualification-hashes.json').read_text(encoding='utf-8'))
+          assert pinned['base']==os.environ['BC_BASE']
+          assert os.environ['BC_SUITE'] in pinned['selected_inputs']
           retained={}
           for name,digest in pinned['files'].items():
               raw=Path(name).read_bytes()
@@ -84,6 +86,7 @@ jobs:
         shell: python
         run: |
           import importlib.util,json,os,subprocess,sys
+          from types import SimpleNamespace
           from pathlib import Path
           if os.environ['GITHUB_RUN_ATTEMPT'] != '1':
               raise SystemExit('A frozen cohort cannot be restarted for acceptance')
@@ -96,21 +99,40 @@ jobs:
           commands=deadline.Commands(driver,20000)
           suite=os.environ['BC_SUITE']
           try:
-              if suite=='arithmetic-startup':
-                  integers=cohort/'declared-integers'
-                  subprocess.run([sys.executable,str(scripts/'integer-qualification-inputs.py'),
-                      '--output',str(integers)],check=True)
-                  pinned=json.loads((cohort/'qualification-hashes.json').read_text())
-                  import hashlib
-                  assert hashlib.sha256((integers/'manifest.json').read_bytes()).hexdigest()==pinned['selected_inputs'][suite]['manifest_sha256']
-                  results=source/'arithmetic-results'
+              if suite.startswith('arithmetic-'):
+                  partition=suite.removeprefix('arithmetic-')
+                  options=['--sparse-qualification']
+                  if partition in ('integer-validation','integer-fresh'):
+                      integers=cohort/'declared-integers'
+                      generator=[sys.executable,str(scripts/'integer-qualification-inputs.py'),
+                          '--output',str(integers)]
+                      if partition=='integer-fresh':
+                          generator.append('--successor')
+                      subprocess.run(generator,check=True)
+                      partition='integer-validation'
+                      pinned=json.loads((cohort/'qualification-hashes.json').read_text())
+                      import hashlib
+                      assert hashlib.sha256((integers/'manifest.json').read_bytes()).hexdigest()==pinned['selected_inputs'][suite]['manifest_sha256']
+                      options=['--additional-replay-corpus',str(integers)]
                   commands.run([sys.executable,str(scripts/'benchmark-ci.py'),
                       '--source',str(source),'--base',os.environ['BC_BASE'],
-                      '--candidate',os.environ['BC_CANDIDATE'],'--output',str(results),
-                      '--broad','--sparse-qualification','--compare-resources','--samples','151',
-                      '--additional-replay-corpus',str(integers)])
-                  roles=[json.loads((results/role/'implementations.json').read_text())['implementations'][0]
-                         for role in ('base','aa','candidate')]
+                      '--candidate',os.environ['BC_CANDIDATE'],'--output',str(source/'arithmetic-results'),
+                      '--broad','--partition',partition,'--compare-resources','--samples','151',*options])
+              elif suite=='startup':
+                  spec=importlib.util.spec_from_file_location('arithmetic',scripts/'benchmark-ci.py')
+                  arithmetic=importlib.util.module_from_spec(spec);spec.loader.exec_module(arithmetic)
+                  args=SimpleNamespace(source=source,split_point=126)
+                  builds=source/'startup-builds';builds.mkdir()
+                  cc,cxx=('cl','cl') if os.name=='nt' else ('cc','c++')
+                  roles=[]
+                  for role,revision in (('base',os.environ['BC_BASE']),('aa',os.environ['BC_BASE']),
+                                        ('candidate',os.environ['BC_CANDIDATE'])):
+                      destination=builds/role
+                      commands.run(arithmetic.gd_build_command(args,role,revision,destination,cc,cxx),timeout=1200)
+                      roles.extend(json.loads((destination/'implementations.json').read_text())['implementations'])
+                  codegen=arithmetic.load('collect-bc-codegen')
+                  codegen.preserve_builds(builds,cohort,('base','aa','candidate'))
+                  codegen.collect(roles,cohort/'startup-images',inspect=False)
                   config=cohort/'startup-config.json'
                   config.write_text(json.dumps(dict(implementations=roles),indent=2)+'\n')
                   commands.run([sys.executable,str(scripts/'startup-calibration.py'),
@@ -118,11 +140,11 @@ jobs:
                       '--total-seconds','2400','--child-timeout-seconds','5'])
               else:
                   family,partition,shard=suite.split('-')
-                  preset='holdout' if family=='validation' else family
-                  shards=3 if family=='validation' else 6
+                  preset=family if family in ('full','holdout') else 'holdout'
+                  shards=3 if family in ('validation','fresh') else 6
                   declared=cohort/'declared-corpus'
                   subprocess.run([sys.executable,str(scripts/'reconstruction-qualification-inputs.py'),
-                      '--family','validation' if family=='validation' else 'controls',
+                      '--family',family if family in ('validation','fresh') else 'controls',
                       '--preset',preset,'--partition',partition,'--shard',shard,'--shards',str(shards),
                       '--output',str(declared)],check=True)
                   pinned=json.loads((cohort/'qualification-hashes.json').read_text())

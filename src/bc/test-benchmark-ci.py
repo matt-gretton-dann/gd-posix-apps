@@ -186,7 +186,7 @@ class NativeTrends(unittest.TestCase):
                                  {case['group'] for case in cases})
 
     def exercise(self, fail=False, aa_first=None, aa_second=None, prepared=False,
-                 identical=False, replay=False, shortfall=False):
+                 identical=False, replay=False, shortfall=False, partition=None):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name) / 'results'
@@ -286,11 +286,30 @@ class NativeTrends(unittest.TestCase):
             argv += ['--candidate-prepared-divisors']
         if replay:
             argv += ['--additional-replay-corpus',str(declared)]
+        if partition:
+            argv += ['--broad', '--partition', partition, '--samples', '151']
         with mock.patch.object(CI, 'load', modules), mock.patch.object(CI, 'host_info', return_value={}), \
                 mock.patch.object(sys, 'argv', argv), mock.patch.dict('os.environ', {}, clear=True), \
                 contextlib.redirect_stderr(io.StringIO()):
             result = CI.main()
         return root, calls, result
+
+    def test_partition_preserves_exact_workloads_and_counts(self):
+        bench = CI.load('bench-bc')
+        for partition in ('full', 'holdout', 'integer-validation'):
+            with self.subTest(partition=partition):
+                replay = partition == 'integer-validation'
+                root, calls, result = self.exercise(replay=replay, partition=partition)
+                self.assertEqual(result, 0)
+                measured = [call for call in calls if Path(call[1]).name == 'bench-bc.py']
+                expected = ['integer_fixture'] if replay else CI.selected_cases(bench, partition, True)
+                self.assertEqual(len(measured), 3)
+                for call in measured[:2]:
+                    self.assertEqual([call[i + 1] for i, arg in enumerate(call)
+                                      if arg == '--workload'], expected)
+                    self.assertEqual(call[call.index('--samples') + 1], '151')
+                report = json.loads((root / 'evidence/orchestration.json').read_text())
+                self.assertEqual(report['partition'], partition)
 
     def test_fixed_validation_keeps_replay_identity_and_sampling_controls(self):
         root,calls,result=self.exercise(replay=True)

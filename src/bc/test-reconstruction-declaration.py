@@ -2,7 +2,9 @@
 """Check canonical declarations on CRLF checkouts without waiving content.
 SPDX-License-Identifier: Apache-2.0
 """
+import json
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tempfile
@@ -25,7 +27,12 @@ class DeclarationText(unittest.TestCase):
             self.assertEqual(checked.returncode, 0, checked.stderr)
 
             # Line-ending normalization must not accept changed source identity.
-            base = b'3beebb1461ac7549832707f9b84e547127e3c14a'
+            workflow = (ROOT / '.github/workflows/bc-reconstruction-qualification.yml').read_text()
+            base = re.search(r"BC_BASE: '([0-9a-f]{40})'", workflow)[1].encode('ascii')
+            suites = re.search(r'suite: \[([^\]]+)\]', workflow)[1].split(', ')
+            declaration = json.loads(raw)
+            self.assertEqual(set(suites), set(declaration['selected_inputs']))
+            self.assertEqual(len(suites) * 3, declaration['declared_jobs'])
             self.assertIn(base, raw)
             path.write_bytes(path.read_bytes().replace(base, b'0' * 40))
             corrupted = subprocess.run(command + ['--check'], capture_output=True)

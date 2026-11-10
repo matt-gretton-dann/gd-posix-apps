@@ -37,6 +37,16 @@ class ResourceComparison(unittest.TestCase):
                          str(Path('declared-integers').resolve()))
         self.assertNotIn('--additional-replay-corpus',calls[1])
 
+    def test_validation_partition_runs_only_the_fixed_resource_inputs(self):
+        calls = []
+        self.module.run_diagnostics(calls.append, self.profiles, self.ordinary,
+            (), 'arithmetic', self.root, additional_replay_corpus=Path('declared-integers'))
+        call, = calls
+        self.assertEqual(call[call.index('--preset') + 1], 'integer-validation')
+        self.assertEqual(call[call.index('--additional-replay-corpus') + 1],
+                         str(Path('declared-integers').resolve()))
+        self.assertEqual(call[call.index('--repetitions') + 1], '5')
+
     def test_common_resource_inputs_match_each_elapsed_preset_seed(self):
         for preset, seed in [('full', 197200), ('holdout', 197201)]:
             elapsed = {case['name']: case for case in self.bench.corpus(preset, seed=seed)}
