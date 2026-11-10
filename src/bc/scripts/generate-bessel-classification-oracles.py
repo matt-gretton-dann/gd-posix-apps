@@ -33,8 +33,10 @@ def generate():
         assert lo <= lower <= upper <= hi and hi-lo <= F(2, denominator)
         cases.append(dict(id='j-zero-classification-'+str(index), function='j',
                           arguments=['0', argument], scale=0, lower=str(lo), upper=str(hi)))
+    # Provenance and canonical JSON comparisons normalize native newlines.
+    # Original native artifacts separately retain/hash the physical bytes.
     return dict(method='Exact 100-term alternating series plus first omitted term; outward 100-place rational bounds',
-                generator_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),cases=cases)
+                generator_sha256=hashlib.sha256(Path(__file__).read_text(encoding='utf-8').encode('utf-8')).hexdigest(),cases=cases)
 
 
 if __name__ == '__main__':
@@ -44,7 +46,7 @@ if __name__ == '__main__':
     target = ROOT/'fixtures/math-bessel-classification-oracles.json'
     raw = (json.dumps(generate(), indent=2, sort_keys=True)+'\n').encode()
     if args.check:
-        if target.read_bytes() != raw:
+        if target.read_text(encoding='utf-8') != raw.decode('utf-8'):
             parser.error('classification enclosures need regeneration')
     else:
         target.write_bytes(raw)

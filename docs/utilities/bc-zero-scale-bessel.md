@@ -100,3 +100,13 @@ Synthetic fixture tests cover missing/corrupt bytes and source/path identity.
 This is a retention check, not a complete build-input closure or elapsed proof.
 The three ordinary timing workflows exclude only this exact topic branch,
 so the draft starts no replacement performance observations.
+
+The first published head `83a0168c` retains all 44 original checks: 38
+successful and six Windows failures, with 33 archives and seven decoded logs
+reviewed. The only failing CTest is enclosure regeneration: checkout conversion
+changes both the generator self-hash and raw JSON bytes. A test-first regression
+reproduces all four generator/fixture LF/CRLF combinations (three failures).
+The generator now records normalized source identity and compares normalized
+fixture text; the eleven rational cases and their bounds are unchanged. Native
+archives still retain and hash the actual physical bytes separately. This
+correction requires its own hosted checks and establishes no elapsed benefit.
