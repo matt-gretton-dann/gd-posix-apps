@@ -500,6 +500,12 @@ if(RUN_INTEGRATION_TESTS)
   add_test(NAME bc/math-benchmark-ci COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-benchmark-math-ci.py")
   set_tests_properties(bc/math-benchmark-ci PROPERTIES TIMEOUT 30)
+  add_test(NAME bc/math-qualification-inputs COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-math-qualification-inputs.py")
+  set_tests_properties(bc/math-qualification-inputs PROPERTIES TIMEOUT 60)
+  add_test(NAME bc/resource-comparison COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-resource-comparison.py")
+  set_tests_properties(bc/resource-comparison PROPERTIES TIMEOUT 30)
   add_test(NAME bc/windows-image-probe COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-windows-image-probe.py" --bc "$<TARGET_FILE:bc>")
   set_tests_properties(bc/windows-image-probe PROPERTIES TIMEOUT 60)
